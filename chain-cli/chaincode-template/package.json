@@ -1,0 +1,50 @@
+{
+  "name": "@galachain/product",
+  "version": "1.0.0",
+  "description": "Product Chaincode",
+  "main": "lib/src/index.js",
+  "types": "lib/src/index.d.ts",
+  "scripts": {
+    "start": "node lib/src/cli.js start",
+    "clean": "tsc -b --clean",
+    "build": "tsc -p tsconfig.json",
+    "build:watch": "tsc -p tsconfig.json -w",
+    "lint": "eslint . --ext .ts,.js",
+    "fix": "eslint . --ext .ts,.js --fix",
+    "format": "prettier --config .prettierrc 'src/**/*.ts' 'e2e/**/*.ts' --write",
+    "prepublishOnly": "npm run format && npm run build && npm run lint && npm run test",
+    "network:start": "galachain network:up -C=product-channel -t=curator -n=basic-product -d=./ --envConfig=./.dev-env --watch",
+    "network:prune": "galachain network:prune",
+    "network:recreate": "npm run network:prune && rm -rf ./test-network && npm run network:start",
+    "test": "jest",
+    "test:e2e": "jest --config=e2e/jest.config.js",
+    "update-snapshot": "jest --updateSnapshot"
+  },
+  "dependencies": {
+    "@gala-chain/api": "1.0.0",
+    "@gala-chain/chaincode": "1.0.0",
+    "dotenv": "^16.0.1",
+    "fabric-contract-api": "2.4.2",
+    "fabric-shim": "2.4.2"
+  },
+  "devDependencies": {
+    "@gala-chain/cli": "1.0.0",
+    "@gala-chain/test": "1.0.0",
+    "@gala-chain/client": "1.0.0",
+    "@types/axios": "^0.14.0",
+    "@types/jest": "^28.1.3",
+    "@types/node": "^16.11.41",
+    "@typescript-eslint/eslint-plugin": "^5.47.1",
+    "@typescript-eslint/parser": "^5.47.1",
+    "axios": "^0.27.2",
+    "eslint": "^8.30.0",
+    "eslint-config-prettier": "^8.5.0",
+    "eslint-plugin-prettier": "^5.0.1",
+    "eslint-prettier-config": "^1.0.1",
+    "jest": "^28.1.1",
+    "prettier": "^3.1.1",
+    "ts-jest": "^28.0.5",
+    "ts-node": "^10.9.1",
+    "typescript": "^5.3.3"
+  }
+}

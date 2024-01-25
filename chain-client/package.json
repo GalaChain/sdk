@@ -1,0 +1,68 @@
+{
+  "name": "@gala-chain/client",
+  "version": "1.0.0",
+  "description": "GalaChain client library",
+  "license": "Apache-2.0",
+  "scripts": {
+    "clean": "tsc -b --clean",
+    "build": "tsc -b",
+    "build:watch": "tsc -b -w",
+    "madge": "madge --circular --warning lib",
+    "lint": "nx run lint",
+    "fix": "nx run lint --fix",
+    "prepublishOnly": "npm i && npm run clean && npm run build && npm run lint && npm run madge",
+    "format": "prettier --config ../.prettierrc 'src/**/*.ts' --write",
+    "test": "jest"
+  },
+  "type": "commonjs",
+  "main": "./lib/src/index.js",
+  "typings": "./lib/src/index.d.ts",
+  "files": [
+    "lib"
+  ],
+  "dependencies": {
+    "@gala-chain/api": "1.0.0",
+    "axios": "^1.6.0",
+    "jsonschema": "^1.4.1",
+    "tslib": "^2.6.2",
+    "process": "0.11.10"
+  },
+  "peerDependencies": {
+    "elliptic": "*",
+    "class-validator": "*",
+    "fabric-ca-client": "*",
+    "fabric-network": "*"
+  },
+  "peerDependenciesMeta": {
+    "fabric-ca-client": {
+      "optional": true
+    },
+    "fabric-network": {
+      "optional": true
+    }
+  },
+  "devDependencies": {
+    "fabric-network": "^2.2.20",
+    "fabric-ca-client": "^2.2.20"
+  },
+  "nyc": {
+    "extension": [
+      ".ts",
+      ".tsx"
+    ],
+    "exclude": [
+      "coverage/**",
+      "dist/**"
+    ],
+    "reporter": [
+      "text-summary",
+      "html"
+    ],
+    "all": true,
+    "check-coverage": true,
+    "statements": 100,
+    "branches": 100,
+    "functions": 100,
+    "lines": 100
+  }
+}

@@ -1,0 +1,23 @@
+// For format details, see https://aka.ms/devcontainer.json.
+{
+	"name": "galachain/dev-chaincode",
+	"build": {
+		"dockerfile": "Dockerfile.devcontainer"
+	},
+	"runArgs": [
+		"--name", "dev-chaincode",
+		"--init",
+		"--cap-add=SYS_PTRACE",
+		"--security-opt", "seccomp=unconfined",
+		"--add-host=host.docker.internal:host-gateway"
+	],
+	"workspaceMount": "source=${localWorkspaceFolder},target=${localWorkspaceFolder},type=bind,consistency=cached", 
+	"workspaceFolder": "${localWorkspaceFolder}",
+	"mounts": [
+		"source=/var/run/docker.sock,target=/var/run/docker.sock,type=bind"
+	],
+	"containerEnv": {
+		"GALA_CLIENT_DEV_MODE": "true",
+		"LOCALHOST_NAME": "host.docker.internal"
+	}
+}

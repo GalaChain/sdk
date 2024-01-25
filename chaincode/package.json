@@ -1,0 +1,51 @@
+{
+  "name": "@gala-chain/chaincode",
+  "version": "1.0.0",
+  "description": "Framework for building chaincodes on GalaChain",
+  "license": "Apache-2.0",
+  "type": "commonjs",
+  "main": "./lib/src/index.js",
+  "typings": "./lib/src/index.d.ts",
+  "files": [
+    "lib"
+  ],
+  "scripts": {
+    "build": "tsc -b",
+    "clean": "tsc -b --clean",
+    "tsc": "tsc",
+    "madge": "madge --circular --warning lib",
+    "lint": "nx run lint",
+    "fix": "nx run lint --fix",
+    "prepublishOnly": "npm i && npm run clean && npm run build && npm run lint && npm run madge",
+    "format": "prettier --config ../.prettierrc 'src/**/*.ts' --write",
+    "test": "jest"
+  },
+  "dependencies": {
+    "@gala-chain/api": "1.0.0",
+    "fabric-contract-api": "2.4.2",
+    "fabric-shim": "2.4.2",
+    "nanoid": "^3.3.6",
+    "winston": "^3.8.2"
+  },
+  "peerDependencies": {
+    "bignumber.js": "*",
+    "class-transformer": "*",
+    "class-validator": "*",
+    "class-validator-jsonschema": "*",
+    "dd-trace": "*",
+    "elliptic": "*",
+    "json-stringify-deterministic": "*"
+  },
+  "devDependencies": {
+    "@types/elliptic": "*",
+    "@types/node": "^16.11.41",
+    "@types/setimmediate": "^1.0.2",
+    "dd-trace": "^4.20.0",
+    "git-branch-is": "^4.0.0",
+    "madge": "^5.0.1",
+    "nodemon": "^3.0.1",
+    "nyc": "^14.1.1",
+    "rimraf": "^3.0.2",
+    "setimmediate": "^1.0.5"
+  }
+}
