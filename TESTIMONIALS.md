@@ -25,10 +25,8 @@ Members of Chain Team at Gala Games in alphabetical order:
 
 Past Chain Team members:
 
-- Chris Freeland [@cruxone](https://github.com/cruxone)
 - Piotr Hejwowski [@Hejwo](https://github.com/Hejwo)
 - Greg Horejsi [@BitFlippedCelt](https://github.com/BitFlippedCelt)
-- Derek Jarvis [@DerekJarvis](https://github.com/DerekJarvis)
 - Stephen Nichols [@snichols](https://github.com/snichols)
 
 If by any chance we have unintentionally omitted someone from this list, please accept our sincere apologies.
