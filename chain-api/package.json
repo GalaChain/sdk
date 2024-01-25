@@ -1,0 +1,57 @@
+{
+  "name": "@gala-chain/api",
+  "version": "1.0.0",
+  "description": "Common types, DTOs (Data Transfer Objects), APIs, signatures, and utils for GalaChain.",
+  "license": "Apache-2.0",
+  "dependencies": {
+    "bignumber.js": "^9.0.2",
+    "bn.js": "^4.12.0",
+    "class-transformer": "0.5.1",
+    "class-validator": "^0.14.0",
+    "class-validator-jsonschema": "^5.0.0",
+    "elliptic": "^6.5.4",
+    "js-sha3": "^0.8.0",
+    "json-stringify-deterministic": "^1.0.7",
+    "openapi3-ts": "^3.2.0",
+    "reflect-metadata": "^0.1.13",
+    "tslib": "^2.6.2"
+  },
+  "type": "commonjs",
+  "main": "./lib/src/index.js",
+  "typings": "./lib/src/index.d.ts",
+  "files": [
+    "lib"
+  ],
+  "scripts": {
+    "clean": "tsc -b --clean",
+    "build": "tsc -b",
+    "build:watch": "tsc -b -w",
+    "madge": "madge --circular --warning lib",
+    "lint": "nx run lint",
+    "fix": "nx run lint --fix",
+    "prepublishOnly": "npm i && npm run clean && npm run build && npm run lint && npm run madge",
+    "format": "prettier --config ../.prettierrc 'src/**/*.ts' --write",
+    "test": "jest"
+  },
+  "devDependencies": {},
+  "nyc": {
+    "extension": [
+      ".ts",
+      ".tsx"
+    ],
+    "exclude": [
+      "coverage/**",
+      "dist/**"
+    ],
+    "reporter": [
+      "text-summary",
+      "html"
+    ],
+    "all": true,
+    "check-coverage": true,
+    "statements": 100,
+    "branches": 100,
+    "functions": 100,
+    "lines": 100
+  }
+}

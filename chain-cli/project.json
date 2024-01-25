@@ -1,0 +1,44 @@
+{
+  "name": "chain-cli",
+  "$schema": "../node_modules/nx/schemas/project-schema.json",
+  "sourceRoot": "chain-cli/src",
+  "projectType": "library",
+  "targets": {
+    "build": {
+      "executor": "@nx/js:tsc",
+      "outputs": ["{options.outputPath}"],
+      "options": {
+        "outputPath": "lib/chain-cli",
+        "main": "chain-cli/src/index.ts",
+        "tsConfig": "chain-cli/tsconfig.lib.json",
+        "assets": ["chain-cli/*.md"]
+      }
+    },
+    "publish": {
+      "command": "node tools/scripts/publish.mjs chain-cli {args.ver} {args.tag}",
+      "dependsOn": ["build"]
+    },
+    "lint": {
+      "executor": "@nx/eslint:lint",
+      "outputs": ["{options.outputFile}"],
+      "options": {
+        "lintFilePatterns": ["chain-cli/**/*.ts"]
+      }
+    },
+    "test": {
+      "executor": "@nx/jest:jest",
+      "outputs": ["{workspaceRoot}/coverage/{projectRoot}"],
+      "options": {
+        "jestConfig": "chain-cli/jest.config.ts",
+        "passWithNoTests": true
+      },
+      "configurations": {
+        "ci": {
+          "ci": true,
+          "codeCoverage": true
+        }
+      }
+    }
+  },
+  "tags": []
+}

@@ -1,0 +1,17 @@
+{
+    "channels": [
+      {
+        "pathFragment": "product",
+        "channelName": "product-channel",
+        "asLocalHost": true,
+        "contracts": [
+          {
+            "pathFragment": "public-key-contract",
+            "chaincodeName": "basic-product",
+            "contractName": "PublicKeyContract"
+          }
+        ]
+      }
+    ]
+  }
+  

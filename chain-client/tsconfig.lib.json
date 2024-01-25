@@ -1,0 +1,16 @@
+{
+  "extends": "./tsconfig.json",
+  "compilerOptions": {
+    "rootDir": ".",
+    "outDir": "lib",
+    "declarationDir": "lib",
+    "experimentalDecorators": true,
+    "composite": true,
+    "types": ["node"]
+  },
+  "include": ["src/**/*"],
+  "exclude": ["jest.config.ts", "src/**/*.spec.ts", "src/**/*.test.ts"],
+  "references": [
+    { "path": "../chain-api" }
+  ]
+}

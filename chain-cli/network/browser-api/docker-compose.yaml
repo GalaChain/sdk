@@ -1,0 +1,41 @@
+version: '2.2'
+
+networks:
+  basic:
+
+services:
+  chainbrowserdb:
+    image: postgres:14.6
+    container_name: chain-browser-db
+    environment:
+      - POSTGRES_DB=chain_browser
+      - POSTGRES_PASSWORD=postgres
+    ports:
+      - 5432:5432
+    volumes:
+      - ./init-db:/docker-entrypoint-initdb.d
+    networks:
+      - basic
+
+  chain-browser-curator:
+    image: fabloio/galachain-browser:0.1.0
+    volumes:
+      - ../connection-profiles-browser:/connection-profiles-browser
+      - ../fablo-target/fabric-config/crypto-config:/crypto-config
+    networks:
+      - basic
+    container_name: chain-browser-curator
+    ports:
+      - 3010:3010
+    environment:
+      - USER_ID=${CURATORORG_CA_ADMIN_NAME}
+      - USER_PASS=${CURATORORG_CA_ADMIN_PASSWORD}
+      - CHANNEL_NAMES=${BROWSER_API_CHANNEL_NAMES}
+      - LOG_LEVEL=debug
+      - CONNECTION_PROFILE_PATH=/connection-profiles-browser/cpp-curator.json
+      - AS_LOCAL_HOST=false
+      - CACHED_BLOCKS_COUNT=500
+      - CA_HOST_NAME=ca.curator.local
+      - TYPEORM_HOST=chain-browser-db
+    depends_on:
+      - chainbrowserdb

@@ -1,0 +1,9 @@
+dist
+lib
+logs
+node_modules
+e2e
+test-network
+.vscode
+.env
+.npmrc

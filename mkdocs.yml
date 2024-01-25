@@ -1,0 +1,83 @@
+site_name: GalaChain SDK Docs
+site_url: https://github.com/GalaChain/sdk
+site_author: Gala Games
+repo_url: https://github.com/GalaChain/sdk
+
+theme:
+  name: material
+  logo: assets/white.png
+  favicon: assets/favicon.png
+  features:
+    - navigation.footer
+    - toc.integrate
+    - navigation.top
+    - search.suggest
+    - search.highlight
+    - content.tabs.link
+    - content.code.annotation
+    - content.code.copy
+  palette:
+    # Palette toggle for light mode
+    - scheme: default
+      primary: black
+      accent: blue
+      toggle:
+        icon: material/brightness-7
+        name: Switch to dark mode
+    # Palette toggle for dark mode
+    - scheme: slate
+      primary: black
+      accent: blue
+      toggle:
+        icon: material/brightness-4
+        name: Switch to light mode
+
+extra:
+  version:
+    provider: mike
+  social:
+    - icon: fontawesome/brands/twitter
+      link: https://twitter.com/GoGalaGames
+    - icon: fontawesome/brands/instagram
+      link: https://www.instagram.com/gogalagames/
+    - icon: fontawesome/brands/medium
+      link: https://gogalagames.medium.com/
+    - icon: fontawesome/brands/facebook
+      link: https://www.facebook.com/GoGalaGames
+
+plugins:
+  - search
+  - mike
+  - with-pdf:
+      exclude_pages:
+        - "chain-api-docs/"
+        - "chain-client-docs/"
+        - "chaincode-docs/"
+        - "chain-test-docs/"
+      cover_subtitle: ""
+      output_path: "pdf/sdk-documentation.pdf"
+      copyright: "&copy; 2023 Gala Games"
+      render_js: true
+      headless_chrome_path: google-chrome
+
+markdown_extensions:
+  - pymdownx.superfences:
+      custom_fences:
+        - name: mermaid
+          class: mermaid
+          format: !!python/name:pymdownx.superfences.fence_code_format
+  - pymdownx.highlight:
+      anchor_linenums: true
+  - pymdownx.inlinehilite
+  - pymdownx.snippets
+  - admonition
+  - pymdownx.arithmatex:
+      generic: true
+  - footnotes
+  - pymdownx.details
+  - pymdownx.superfences
+  - pymdownx.mark
+  - attr_list
+
+copyright: |
+  &copy; 2023 <a href="https://gala.com/"  target="_blank" rel="noopener">Gala Games</a>

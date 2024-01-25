@@ -1,0 +1,541 @@
+{
+  "version": "1.0.0",
+  "commands": {
+    "connect": {
+      "id": "connect",
+      "description": "Connect to a new chaincode.",
+      "strict": true,
+      "pluginName": "@gala-chain/cli",
+      "pluginAlias": "@gala-chain/cli",
+      "pluginType": "core",
+      "aliases": [],
+      "examples": [
+        "galachain connect ./dev-private-key",
+        "galachain connect c0fb1924408d936fb7cd0c86695885df4f66861621b5c8660df3924c4d09dd79",
+        "galachain connect"
+      ],
+      "flags": {
+        "json": {
+          "name": "json",
+          "type": "boolean",
+          "description": "Format output as json.",
+          "helpGroup": "GLOBAL",
+          "allowNo": false
+        },
+        "log-level": {
+          "name": "log-level",
+          "type": "option",
+          "summary": "Specify level for logging.",
+          "helpGroup": "GLOBAL",
+          "multiple": false,
+          "options": [
+            "debug",
+            "info",
+            "warn",
+            "error"
+          ]
+        }
+      },
+      "args": {
+        "developerPrivateKey": {
+          "name": "developerPrivateKey",
+          "description": "Optional private key to sign the data. It could be a file or a string. If not provided, the private key will be read from the environment variable DEV_PRIVATE_KEY.",
+          "required": false
+        }
+      }
+    },
+    "deploy": {
+      "id": "deploy",
+      "description": "Schedules deployment of published chaincode Docker image to GalaChain mainnet.",
+      "strict": true,
+      "pluginName": "@gala-chain/cli",
+      "pluginAlias": "@gala-chain/cli",
+      "pluginType": "core",
+      "aliases": [],
+      "examples": [
+        "galachain deploy registry.image.name:latest",
+        "galachain deploy registry.image.name:latest ./dev-private-key",
+        "galachain deploy registry.image.name:latest c0fb1924408d936fb7cd0c86695885df4f66861621b5c8660df3924c4d09dd79"
+      ],
+      "flags": {
+        "json": {
+          "name": "json",
+          "type": "boolean",
+          "description": "Format output as json.",
+          "helpGroup": "GLOBAL",
+          "allowNo": false
+        },
+        "log-level": {
+          "name": "log-level",
+          "type": "option",
+          "summary": "Specify level for logging.",
+          "helpGroup": "GLOBAL",
+          "multiple": false,
+          "options": [
+            "debug",
+            "info",
+            "warn",
+            "error"
+          ]
+        },
+        "testnet": {
+          "name": "testnet",
+          "type": "boolean",
+          "description": "Deploy to testnet instead of mainnet.",
+          "hidden": true,
+          "allowNo": false
+        }
+      },
+      "args": {
+        "imageTag": {
+          "name": "imageTag",
+          "description": "Image tag to deploy. It should follow the pattern imageName:version.",
+          "required": true
+        },
+        "developerPrivateKey": {
+          "name": "developerPrivateKey",
+          "description": "Optional private key to sign the data. It could be a file or a string. If not provided, the private key will be read from the environment variable DEV_PRIVATE_KEY.",
+          "required": false
+        }
+      }
+    },
+    "dto-sign": {
+      "id": "dto-sign",
+      "description": "DTO (Data Transfer Object) signing.",
+      "strict": true,
+      "pluginName": "@gala-chain/cli",
+      "pluginAlias": "@gala-chain/cli",
+      "pluginType": "core",
+      "aliases": [
+        "dto:sign"
+      ],
+      "examples": [
+        "galachain dto:sign -o=output/path ./testkey '{\n      \"tokenClass\": {\n        \"collection\": \"CLITest\",\n        \"category\": \"Currency\",\n      }\n    }'",
+        "galachain dto:sign ./testkey dto.json -o=output/path",
+        "galachain dto:sign ./testkey dto.json -d",
+        "galachain dto:sign 04ea7e8e14f2a0 dto.json -s -o=output/path -d"
+      ],
+      "flags": {
+        "json": {
+          "name": "json",
+          "type": "boolean",
+          "description": "Format output as json.",
+          "helpGroup": "GLOBAL",
+          "allowNo": false
+        },
+        "log-level": {
+          "name": "log-level",
+          "type": "option",
+          "summary": "Specify level for logging.",
+          "helpGroup": "GLOBAL",
+          "multiple": false,
+          "options": [
+            "debug",
+            "info",
+            "warn",
+            "error"
+          ]
+        },
+        "outputFile": {
+          "name": "outputFile",
+          "type": "option",
+          "char": "o",
+          "description": "(optional) File path to an output directory where the signed DTO JSON file will be written. If not provided, signed DTO will be printed to stdout.",
+          "multiple": false
+        },
+        "derSignature": {
+          "name": "derSignature",
+          "type": "boolean",
+          "char": "d",
+          "description": "(optional) If provided, the signature will be used as DER format.",
+          "allowNo": false
+        },
+        "onlySignature": {
+          "name": "onlySignature",
+          "type": "boolean",
+          "char": "s",
+          "description": "(optional) If provided, only the signature will be printed to stdout or written to a file.",
+          "allowNo": false
+        }
+      },
+      "args": {
+        "key": {
+          "name": "key",
+          "description": "Private key string or path to the private key file.",
+          "required": true
+        },
+        "data": {
+          "name": "data",
+          "description": "Data representing an unsigned DTO object you wish to sign. Provide a JSON string or a path to a valid JSON file.",
+          "required": true
+        }
+      }
+    },
+    "dto-verify": {
+      "id": "dto-verify",
+      "description": "It verifies the signature in the DTO using the public key.",
+      "strict": true,
+      "pluginName": "@gala-chain/cli",
+      "pluginAlias": "@gala-chain/cli",
+      "pluginType": "core",
+      "aliases": [
+        "dto:verify"
+      ],
+      "examples": [
+        "galachain dto:verify ./publicKey '{\n      \"tokenClass\": {\n        \"collection\": \"CLITest\",\n        \"category\": \"Currency\",\n      },\n      \"signature\": \"/fYYooumRdFFrL4U3Nzwuf2uzBZAxKv4WrnMjLnbnJFU+Z6lQe2X/CCcLhRqq67jUDEFvOdky0g5D4sRCExXyBw=\",\n    }'",
+        "galachain dto:verify ./publicKey dto.json"
+      ],
+      "flags": {
+        "json": {
+          "name": "json",
+          "type": "boolean",
+          "description": "Format output as json.",
+          "helpGroup": "GLOBAL",
+          "allowNo": false
+        },
+        "log-level": {
+          "name": "log-level",
+          "type": "option",
+          "summary": "Specify level for logging.",
+          "helpGroup": "GLOBAL",
+          "multiple": false,
+          "options": [
+            "debug",
+            "info",
+            "warn",
+            "error"
+          ]
+        }
+      },
+      "args": {
+        "key": {
+          "name": "key",
+          "description": "File path to the public key.",
+          "required": true
+        },
+        "data": {
+          "name": "data",
+          "description": "Data representing an signed DTO object you wish to verify. Provide a JSON string or a path to a valid JSON file.",
+          "required": true
+        }
+      }
+    },
+    "info": {
+      "id": "info",
+      "description": "Show the ChainCode information.",
+      "strict": true,
+      "pluginName": "@gala-chain/cli",
+      "pluginAlias": "@gala-chain/cli",
+      "pluginType": "core",
+      "aliases": [],
+      "examples": [
+        "galachain info",
+        "galachain info ./dev-private-key",
+        "galachain info c0fb1924408d936fb7cd0c86695885df4f66861621b5c8660df3924c4d09dd79"
+      ],
+      "flags": {
+        "json": {
+          "name": "json",
+          "type": "boolean",
+          "description": "Format output as json.",
+          "helpGroup": "GLOBAL",
+          "allowNo": false
+        },
+        "log-level": {
+          "name": "log-level",
+          "type": "option",
+          "summary": "Specify level for logging.",
+          "helpGroup": "GLOBAL",
+          "multiple": false,
+          "options": [
+            "debug",
+            "info",
+            "warn",
+            "error"
+          ]
+        }
+      },
+      "args": {
+        "developerPrivateKey": {
+          "name": "developerPrivateKey",
+          "description": "Optional private key to sign the data. It could be a file or a string. If not provided, the private key will be read from the environment variable DEV_PRIVATE_KEY.",
+          "required": false
+        }
+      }
+    },
+    "init": {
+      "id": "init",
+      "description": "Initialize a project template with Chain CLI.",
+      "strict": true,
+      "pluginName": "@gala-chain/cli",
+      "pluginAlias": "@gala-chain/cli",
+      "pluginType": "core",
+      "aliases": [],
+      "examples": [
+        "galachain init ./linux-mac-path/my-project-name",
+        "galachain init windows-path\\my-project-name"
+      ],
+      "flags": {
+        "json": {
+          "name": "json",
+          "type": "boolean",
+          "description": "Format output as json.",
+          "helpGroup": "GLOBAL",
+          "allowNo": false
+        },
+        "log-level": {
+          "name": "log-level",
+          "type": "option",
+          "summary": "Specify level for logging.",
+          "helpGroup": "GLOBAL",
+          "multiple": false,
+          "options": [
+            "debug",
+            "info",
+            "warn",
+            "error"
+          ]
+        }
+      },
+      "args": {
+        "path": {
+          "name": "path",
+          "description": "Output path for project template.",
+          "required": true
+        }
+      }
+    },
+    "keygen": {
+      "id": "keygen",
+      "description": "Generate a Public / Private key signing pair for Chain DTO (Data Transfer Object) signatures. Uses `@noble/secp256k1` npm library under-the-hood. Always handle private keys with the utmost care.",
+      "strict": true,
+      "pluginName": "@gala-chain/cli",
+      "pluginAlias": "@gala-chain/cli",
+      "pluginType": "core",
+      "aliases": [],
+      "examples": [
+        "galachain keygen data/user1"
+      ],
+      "flags": {
+        "json": {
+          "name": "json",
+          "type": "boolean",
+          "description": "Format output as json.",
+          "helpGroup": "GLOBAL",
+          "allowNo": false
+        },
+        "log-level": {
+          "name": "log-level",
+          "type": "option",
+          "summary": "Specify level for logging.",
+          "helpGroup": "GLOBAL",
+          "multiple": false,
+          "options": [
+            "debug",
+            "info",
+            "warn",
+            "error"
+          ]
+        }
+      },
+      "args": {
+        "file": {
+          "name": "file",
+          "description": "Output file path for private key. Public key will be written alongside it with \".pub\" suffix. ",
+          "required": true
+        }
+      }
+    },
+    "network-prune": {
+      "id": "network-prune",
+      "description": "Removes the network entirely.",
+      "strict": true,
+      "pluginName": "@gala-chain/cli",
+      "pluginAlias": "@gala-chain/cli",
+      "pluginType": "core",
+      "aliases": [
+        "network:prune"
+      ],
+      "examples": [
+        "galachain network:prune -r=./dir-target-netowrk"
+      ],
+      "flags": {
+        "json": {
+          "name": "json",
+          "type": "boolean",
+          "description": "Format output as json.",
+          "helpGroup": "GLOBAL",
+          "allowNo": false
+        },
+        "log-level": {
+          "name": "log-level",
+          "type": "option",
+          "summary": "Specify level for logging.",
+          "helpGroup": "GLOBAL",
+          "multiple": false,
+          "options": [
+            "debug",
+            "info",
+            "warn",
+            "error"
+          ]
+        },
+        "fabloRoot": {
+          "name": "fabloRoot",
+          "type": "option",
+          "char": "r",
+          "description": "Root directory of target network. By default './test-network' is used.",
+          "multiple": false,
+          "default": "./test-network"
+        }
+      },
+      "args": {}
+    },
+    "network-up": {
+      "id": "network-up",
+      "description": "Start the chaincode in dev-mode and browser-api.",
+      "strict": true,
+      "pluginName": "@gala-chain/cli",
+      "pluginAlias": "@gala-chain/cli",
+      "pluginType": "core",
+      "aliases": [
+        "network:up"
+      ],
+      "examples": [
+        "galachain network:up -C=product-channel -t=curator -n=basic-product -d=./ --envConfig=./.dev-env --watch",
+        "galachain network:up -C=product-channel -t=curator -n=basic-product -d=./ --envConfig=./.dev-env"
+      ],
+      "flags": {
+        "json": {
+          "name": "json",
+          "type": "boolean",
+          "description": "Format output as json.",
+          "helpGroup": "GLOBAL",
+          "allowNo": false
+        },
+        "log-level": {
+          "name": "log-level",
+          "type": "option",
+          "summary": "Specify level for logging.",
+          "helpGroup": "GLOBAL",
+          "multiple": false,
+          "options": [
+            "debug",
+            "info",
+            "warn",
+            "error"
+          ]
+        },
+        "channel": {
+          "name": "channel",
+          "type": "option",
+          "char": "C",
+          "description": "Channel name.",
+          "required": true,
+          "multiple": true
+        },
+        "channelType": {
+          "name": "channelType",
+          "type": "option",
+          "char": "t",
+          "description": "Channel type. Can be \"curator\" or \"partner\". It means whether this is a chaincode managed by CuratorOrg or PartnerOrg.",
+          "required": true,
+          "multiple": true,
+          "options": [
+            "curator",
+            "partner"
+          ]
+        },
+        "chaincodeName": {
+          "name": "chaincodeName",
+          "type": "option",
+          "char": "n",
+          "description": "Chaincode name.",
+          "required": true,
+          "multiple": true
+        },
+        "chaincodeDir": {
+          "name": "chaincodeDir",
+          "type": "option",
+          "char": "d",
+          "description": "Root directory of chaincode source, relative to fabloRoot. By default '.' is used.",
+          "multiple": true,
+          "default": [
+            "."
+          ]
+        },
+        "fabloRoot": {
+          "name": "fabloRoot",
+          "type": "option",
+          "char": "r",
+          "description": "Root directory of target network. Should not be the same as chaincodeDir and should not be a child of chaincodeDir. By default './test-network' is used.",
+          "multiple": false,
+          "default": "./test-network"
+        },
+        "envConfig": {
+          "name": "envConfig",
+          "type": "option",
+          "char": "e",
+          "description": "Path to .env file to be used for chaincodes.",
+          "multiple": false
+        },
+        "watch": {
+          "name": "watch",
+          "type": "boolean",
+          "char": "w",
+          "description": "Enable watch mode (live chaincode reload).",
+          "allowNo": false
+        }
+      },
+      "args": {}
+    },
+    "test-deploy": {
+      "id": "test-deploy",
+      "description": "Schedules deployment of published chaincode Docker image to GalaChain testnet.",
+      "strict": true,
+      "pluginName": "@gala-chain/cli",
+      "pluginAlias": "@gala-chain/cli",
+      "pluginType": "core",
+      "aliases": [],
+      "examples": [
+        "galachain test-deploy registry.image.name:latest",
+        "galachain test-deploy registry.image.name:latest ./private-key",
+        "galachain test-deploy registry.image.name:latest c0fb1924408d936fb7cd0c86695885df4f66861621b5c8660df3924c4d09dd79"
+      ],
+      "flags": {
+        "json": {
+          "name": "json",
+          "type": "boolean",
+          "description": "Format output as json.",
+          "helpGroup": "GLOBAL",
+          "allowNo": false
+        },
+        "log-level": {
+          "name": "log-level",
+          "type": "option",
+          "summary": "Specify level for logging.",
+          "helpGroup": "GLOBAL",
+          "multiple": false,
+          "options": [
+            "debug",
+            "info",
+            "warn",
+            "error"
+          ]
+        }
+      },
+      "args": {
+        "imageTag": {
+          "name": "imageTag",
+          "description": "Image tag to deploy. It should follow the pattern imageName:version.",
+          "required": true
+        },
+        "developerPrivateKey": {
+          "name": "developerPrivateKey",
+          "description": "Optional private key to sign the data. It could be a file or a string. If not provided, the private key will be read from the environment variable DEV_PRIVATE_KEY.",
+          "required": false
+        }
+      }
+    }
+  }
+}
