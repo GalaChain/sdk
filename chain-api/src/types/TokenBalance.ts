@@ -1,3 +1,27 @@
+import {
+  BigNumberArrayProperty,
+  BigNumberProperty,
+  ChainKey,
+  ValidationFailedError,
+  getValidationErrorInfo
+} from "../utils";
+import { BigNumberIsNotNegative, BigNumberIsPositive } from "../validators";
+import { ChainObject, ObjectValidationFailedError } from "./ChainObject";
+import { Exclude, Type } from "class-transformer";
+import {
+  IsDefined,
+  IsInt,
+  IsNotEmpty,
+  IsOptional,
+  IsPositive,
+  IsString,
+  Min,
+  ValidateNested,
+  validate
+} from "class-validator";
+import { TokenClassKey, TokenClassKeyProperties } from "./TokenClass";
+import { TokenInstance, TokenInstanceKey } from "./TokenInstance";
+
 /*
  * Copyright (c) Gala Games Inc. All rights reserved.
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -13,31 +37,7 @@
  * limitations under the License.
  */
 import { BigNumber } from "bignumber.js";
-import { Exclude, Type } from "class-transformer";
-import {
-  IsDefined,
-  IsInt,
-  IsNotEmpty,
-  IsOptional,
-  IsPositive,
-  IsString,
-  Min,
-  ValidateNested,
-  validate
-} from "class-validator";
 import { JSONSchema } from "class-validator-jsonschema";
-
-import {
-  BigNumberArrayProperty,
-  BigNumberProperty,
-  ChainKey,
-  ValidationFailedError,
-  getValidationErrorInfo
-} from "../utils";
-import { BigNumberIsNotNegative, BigNumberIsPositive } from "../validators";
-import { ChainObject, ObjectValidationFailedError } from "./ChainObject";
-import { TokenClassKey, TokenClassKeyProperties } from "./TokenClass";
-import { TokenInstance, TokenInstanceKey } from "./TokenInstance";
 
 export class TokenNotInBalanceError extends ValidationFailedError {
   constructor(owner: string, tokenClass: TokenClassKeyProperties, instanceId: BigNumber) {
@@ -155,6 +155,14 @@ export class TokenBalance extends ChainObject {
 
   public getNftInstanceCount(): number {
     return this.getNftInstanceIds().length;
+  }
+
+  public getUnexpiredLockedHolds(currentTime: number): TokenHold[] {
+    return (this.lockedHolds ?? []).filter((h) => !h.isExpired(currentTime));
+  }
+
+  public getUnexpiredInUseHolds(currentTime: number): TokenHold[] {
+    return (this.inUseHolds ?? []).filter((h) => !h.isExpired(currentTime));
   }
 
   public ensureCanAddInstance(instanceId: BigNumber): { add(): void } {
@@ -407,14 +415,6 @@ export class TokenBalance extends ChainObject {
     }
   }
 
-  public getUnexpiredLockedHolds(currentTime: number): TokenHold[] {
-    return (this.lockedHolds ?? []).filter((h) => !h.isExpired(currentTime));
-  }
-
-  public getUnexpiredInUseHolds(currentTime: number): TokenHold[] {
-    return (this.inUseHolds ?? []).filter((h) => !h.isExpired(currentTime));
-  }
-
   private ensureContainsNoNftInstances(): void {
     if (this.containsAnyNftInstanceId()) {
       const message = `Attempted to perform FT-specific operation on balance containing NFT instances`;
@@ -523,3 +523,4 @@ export class TokenHold {
     return this.expires !== 0 && currentTime > this.expires;
   }
 }
+
