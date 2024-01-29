@@ -1,8 +1,6 @@
-import { TokenBalance, TokenHold } from "./TokenBalance";
-import { TokenClassKey } from "./TokenClass";
-import { TokenInstance } from "./TokenInstance";
-
 import BigNumber from "bignumber.js";
+
+import { TokenBalance, TokenHold } from "./TokenBalance";
 
 /*
  * Copyright (c) Gala Games Inc. All rights reserved.

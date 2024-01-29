@@ -346,6 +346,7 @@
 "@nx/linter@17.3.2","@nx/linter","17.3.2","https://github.com/nrwl/nx","The Linter plugin for Nx contains executors, generators and utilities used for linting JavaScript/TypeScript projects within an Nx workspace.","MIT"
 "@nx/nx-linux-x64-gnu@17.2.8","@nx/nx-linux-x64-gnu","17.2.8","https://github.com/nrwl/nx","","MIT"
 "@nx/nx-linux-x64-gnu@17.3.2","@nx/nx-linux-x64-gnu","17.3.2","https://github.com/nrwl/nx","","MIT"
+"@nx/nx-linux-x64-musl@17.3.2","@nx/nx-linux-x64-musl","17.3.2","https://github.com/nrwl/nx","","MIT"
 "@nx/workspace@17.2.8","@nx/workspace","17.2.8","https://github.com/nrwl/nx","The Workspace plugin contains executors and generators that are useful for any Nx workspace. It should be present in every Nx workspace and other plugins build on it.","MIT"
 "@nx/workspace@17.3.2","@nx/workspace","17.3.2","https://github.com/nrwl/nx","The Workspace plugin contains executors and generators that are useful for any Nx workspace. It should be present in every Nx workspace and other plugins build on it.","MIT"
 "@oclif/command@1.8.36","@oclif/command","1.8.36","https://github.com/oclif/command","oclif base command","MIT"
