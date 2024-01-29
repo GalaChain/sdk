@@ -8,7 +8,6 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
       - name: Check Copyright
-        uses: actions/checkout@v4
         run: |
           chmod +x ./verify_copyright.sh
       - name: Use Node.js
