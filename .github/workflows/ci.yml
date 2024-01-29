@@ -12,9 +12,9 @@ jobs:
           chmod +x ./verify_copyright.sh
       - name: Use Node.js
         uses: actions/setup-node@v4
-      - name: Lint
         with:
           node-version: 18
+      - name: Lint
         run: |
           npm i
           npm run lint
