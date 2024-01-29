@@ -1,27 +1,3 @@
-import {
-  BigNumberArrayProperty,
-  BigNumberProperty,
-  ChainKey,
-  ValidationFailedError,
-  getValidationErrorInfo
-} from "../utils";
-import { BigNumberIsNotNegative, BigNumberIsPositive } from "../validators";
-import { ChainObject, ObjectValidationFailedError } from "./ChainObject";
-import { Exclude, Type } from "class-transformer";
-import {
-  IsDefined,
-  IsInt,
-  IsNotEmpty,
-  IsOptional,
-  IsPositive,
-  IsString,
-  Min,
-  ValidateNested,
-  validate
-} from "class-validator";
-import { TokenClassKey, TokenClassKeyProperties } from "./TokenClass";
-import { TokenInstance, TokenInstanceKey } from "./TokenInstance";
-
 /*
  * Copyright (c) Gala Games Inc. All rights reserved.
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -37,7 +13,31 @@ import { TokenInstance, TokenInstanceKey } from "./TokenInstance";
  * limitations under the License.
  */
 import { BigNumber } from "bignumber.js";
+import { Exclude, Type } from "class-transformer";
+import {
+  IsDefined,
+  IsInt,
+  IsNotEmpty,
+  IsOptional,
+  IsPositive,
+  IsString,
+  Min,
+  ValidateNested,
+  validate
+} from "class-validator";
 import { JSONSchema } from "class-validator-jsonschema";
+
+import {
+  BigNumberArrayProperty,
+  BigNumberProperty,
+  ChainKey,
+  ValidationFailedError,
+  getValidationErrorInfo
+} from "../utils";
+import { BigNumberIsNotNegative, BigNumberIsPositive } from "../validators";
+import { ChainObject, ObjectValidationFailedError } from "./ChainObject";
+import { TokenClassKey, TokenClassKeyProperties } from "./TokenClass";
+import { TokenInstance, TokenInstanceKey } from "./TokenInstance";
 
 export class TokenNotInBalanceError extends ValidationFailedError {
   constructor(owner: string, tokenClass: TokenClassKeyProperties, instanceId: BigNumber) {
@@ -561,4 +561,3 @@ export class TokenHold {
     }
   }
 }
-
