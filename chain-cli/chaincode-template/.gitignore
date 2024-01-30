@@ -12,7 +12,8 @@ test-network
 .idea
 .npmrc
 .env
-src/coverage 
+.dev-env
+src/coverage
 /classes
 /interfaces
 /serializers
