@@ -10,6 +10,7 @@ jobs:
       - name: Check Copyright
         run: |
           chmod +x ./verify_copyright.sh
+          ./verify_copyright.sh
       - name: Use Node.js
         uses: actions/setup-node@v4
         with:
