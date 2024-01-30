@@ -15,7 +15,7 @@ You may also be interested in picking up one of our [good first issues](https://
 2. **Clone the Repository**: Clone the forked repository to your local machine using Git.
 
     ```
-    git clone https://github.com/GalaChain/sdk.git
+    git clone https://github.com/<YourGitHub>/sdk.git
     ```
 
 3. **Create a Branch**: Create a new branch for your contributions.
