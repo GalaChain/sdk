@@ -157,6 +157,14 @@ export class TokenBalance extends ChainObject {
     return this.getNftInstanceIds().length;
   }
 
+  public getUnexpiredLockedHolds(currentTime: number): TokenHold[] {
+    return (this.lockedHolds ?? []).filter((h) => !h.isExpired(currentTime));
+  }
+
+  public getUnexpiredInUseHolds(currentTime: number): TokenHold[] {
+    return (this.inUseHolds ?? []).filter((h) => !h.isExpired(currentTime));
+  }
+
   public ensureCanAddInstance(instanceId: BigNumber): { add(): void } {
     this.ensureInstanceIsNft(instanceId);
 
@@ -405,14 +413,6 @@ export class TokenBalance extends ChainObject {
         total: this.quantity.toFixed()
       });
     }
-  }
-
-  public getUnexpiredLockedHolds(currentTime: number): TokenHold[] {
-    return (this.lockedHolds ?? []).filter((h) => !h.isExpired(currentTime));
-  }
-
-  public getUnexpiredInUseHolds(currentTime: number): TokenHold[] {
-    return (this.inUseHolds ?? []).filter((h) => !h.isExpired(currentTime));
   }
 
   private ensureContainsNoNftInstances(): void {

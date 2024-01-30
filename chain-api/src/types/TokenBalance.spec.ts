@@ -38,86 +38,84 @@ function createHold(instance: BigNumber, expires: number) {
 }
 
 describe("fungible", () => {
-  describe("should have tests for fungibles", () => {
-    it("should add quantity", () => {
-      // Given
-      const balance = emptyBalance();
+  it("should add quantity", () => {
+    // Given
+    const balance = emptyBalance();
 
-      // When
-      balance.ensureCanAddQuantity(new BigNumber(1)).add();
+    // When
+    balance.ensureCanAddQuantity(new BigNumber(1)).add();
 
-      // Then
-      expect(balance.getQuantityTotal()).toEqual(new BigNumber(1));
-    });
+    // Then
+    expect(balance.getQuantityTotal()).toEqual(new BigNumber(1));
+  });
 
-    it("should fail to add quantity if balance contains NFT instances", () => {
-      // Given
-      const balance = emptyBalance();
-      balance.ensureCanAddInstance(new BigNumber(1)).add();
+  it("should fail to add quantity if balance contains NFT instances", () => {
+    // Given
+    const balance = emptyBalance();
+    balance.ensureCanAddInstance(new BigNumber(1)).add();
 
-      // When
-      const error = () => balance.ensureCanAddQuantity(new BigNumber(1));
+    // When
+    const error = () => balance.ensureCanAddQuantity(new BigNumber(1));
 
-      // Then
-      expect(error).toThrow("Attempted to perform FT-specific operation on balance containing NFT instances");
-    });
+    // Then
+    expect(error).toThrow("Attempted to perform FT-specific operation on balance containing NFT instances");
+  });
 
-    it("should fail to add quantity if quantity is invalid", () => {
-      // Given
-      const balance = emptyBalance();
+  it("should fail to add quantity if quantity is invalid", () => {
+    // Given
+    const balance = emptyBalance();
 
-      // When
-      const error = () => balance.ensureCanAddQuantity(new BigNumber(-1));
+    // When
+    const error = () => balance.ensureCanAddQuantity(new BigNumber(-1));
 
-      // Then
-      expect(error).toThrow("FT quantity must be positive");
-    });
+    // Then
+    expect(error).toThrow("FT quantity must be positive");
+  });
 
-    it("should subtract quantity", () => {
-      // Given
-      const balance = emptyBalance();
+  it("should subtract quantity", () => {
+    // Given
+    const balance = emptyBalance();
 
-      // When
-      balance.ensureCanAddQuantity(new BigNumber(1)).add();
-      balance.ensureCanSubtractQuantity(new BigNumber(1)).subtract();
+    // When
+    balance.ensureCanAddQuantity(new BigNumber(1)).add();
+    balance.ensureCanSubtractQuantity(new BigNumber(1)).subtract();
 
-      // Then
-      expect(balance.getQuantityTotal()).toEqual(new BigNumber(0));
-    });
+    // Then
+    expect(balance.getQuantityTotal()).toEqual(new BigNumber(0));
+  });
 
-    it("should fail to subtract quantity if balance is insufficient", () => {
-      // Given
-      const balance = emptyBalance();
+  it("should fail to subtract quantity if balance is insufficient", () => {
+    // Given
+    const balance = emptyBalance();
 
-      // When
-      const error = () => balance.ensureCanSubtractQuantity(new BigNumber(1));
+    // When
+    const error = () => balance.ensureCanSubtractQuantity(new BigNumber(1));
 
-      // Then
-      expect(error).toThrow("Insufficient balance");
-    });
+    // Then
+    expect(error).toThrow("Insufficient balance");
+  });
 
-    it("should fail to subtract quantity if balance contains NFT instances", () => {
-      // Given
-      const balance = emptyBalance();
-      balance.ensureCanAddInstance(new BigNumber(1)).add();
+  it("should fail to subtract quantity if balance contains NFT instances", () => {
+    // Given
+    const balance = emptyBalance();
+    balance.ensureCanAddInstance(new BigNumber(1)).add();
 
-      // When
-      const error = () => balance.ensureCanSubtractQuantity(new BigNumber(1));
+    // When
+    const error = () => balance.ensureCanSubtractQuantity(new BigNumber(1));
 
-      // Then
-      expect(error).toThrow("Attempted to perform FT-specific operation on balance containing NFT instances");
-    });
+    // Then
+    expect(error).toThrow("Attempted to perform FT-specific operation on balance containing NFT instances");
+  });
 
-    it("should fail to subtract quantity if quantity is invalid", () => {
-      // Given
-      const balance = emptyBalance();
+  it("should fail to subtract quantity if quantity is invalid", () => {
+    // Given
+    const balance = emptyBalance();
 
-      // When
-      const error = () => balance.ensureCanSubtractQuantity(new BigNumber(-1));
+    // When
+    const error = () => balance.ensureCanSubtractQuantity(new BigNumber(-1));
 
-      // Then
-      expect(error).toThrow("FT quantity must be positive");
-    });
+    // Then
+    expect(error).toThrow("FT quantity must be positive");
   });
 });
 
