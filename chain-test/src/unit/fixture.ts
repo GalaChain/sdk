@@ -196,15 +196,6 @@ class Fixture<Ctx extends TestGalaChainContext, T extends GalaContract<Ctx>> {
   }
 }
 
-function genKeyPair(user) {
-  const pair = new EC("secp256k1").genKeyPair();
-  return {
-    alias: user,
-    privateKey: pair.getPrivate().toString("hex"),
-    publicKey: Buffer.from(pair.getPublic().encode("array", false)).toString("hex")
-  };
-}
-
 export function fixture<Ctx extends TestGalaChainContext, T extends GalaContract<Ctx>>(
   contractClass: ClassConstructor<T>
 ) {

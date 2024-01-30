@@ -14,7 +14,6 @@
  */
 import {
   AllowanceType,
-  ChainCallDTO,
   CreateTokenClassDto,
   FetchBalancesDto,
   GrantAllowanceDto,

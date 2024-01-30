@@ -20,7 +20,6 @@ import {
   CommonContractAPI,
   ContractConfig,
   PublicKeyContractAPI,
-  buildChainUserAPI,
   commonContractAPI,
   publicKeyContractAPI
 } from "@gala-chain/client";

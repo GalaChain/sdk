@@ -52,7 +52,7 @@ function x509Identity(caUser: string, mspId: string): ClientIdentity {
   const id = `x509::/OU=client/CN=${userInCert}::/C=US/ST=California/L=San Francisco/O=curator.local/CN=ca.curator.local`;
 
   return {
-    assertAttributeValue(attrName: string, attrValue: string): boolean {
+    assertAttributeValue(attrValue: string): boolean {
       throw new Error("Method 'assertAttributeValue' not implemented.");
     },
     getAttributeValue(attrName: string): string | null {
@@ -149,9 +149,7 @@ export class TestChaincodeStub extends ChaincodeStub {
 
   getStateByPartialCompositeKeyWithPagination(
     indexKey: string,
-    keyParts: string[],
-    pageSize: number,
-    bookmark?: string
+    keyParts: string[]
   ): Promise<StateQueryResponse<Iterators.StateQueryIterator>> & AsyncIterable<Iterators.KV> {
     const partialKey = "\u0000" + [indexKey, ...keyParts].join("\u0000");
     const keys = Object.keys(this.state)

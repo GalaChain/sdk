@@ -279,10 +279,7 @@ export default class GalaChainTokenContract extends GalaContract {
       }
     ]
   })
-  public async HighThroughputMint(
-    ctx: GalaChainContext,
-    dto: HighThroughputMintTokenDto
-  ): Promise<TokenInstanceKey[]> {
+  public async HighThroughputMint(): Promise<TokenInstanceKey[]> {
     return Promise.reject(
       new Error(`HighThroughputMint is a sequence call: Execute RequestMint and FulfillMint sequentially.`)
     );
