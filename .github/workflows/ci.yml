@@ -1,0 +1,26 @@
+name: CI
+on: [push]
+
+jobs:
+  ci:
+    runs-on: ubuntu-22.04
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Check Copyright
+        run: |
+          ./verify_copyright.sh
+      - name: Use Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 18
+      - name: Lint
+        run: |
+          npm i
+          npm run lint
+      - name: Build
+        run: |
+          npm run build
+      - name: Test
+        run: | 
+          npm run test
