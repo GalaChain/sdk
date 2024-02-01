@@ -12,7 +12,8 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-import { NotImplementedError, TokenBalance, TokenInstanceKey } from "@gala-chain/api";
+import { TokenBalance, TokenInstanceKey, ValidationFailedError } from "@gala-chain/api";
+import BigNumber from "bignumber.js";
 
 import { fetchOrCreateBalance } from "../balances";
 import { fetchTokenInstance } from "../token";
@@ -24,16 +25,15 @@ import { UnlockForbiddenUserError } from "./LockError";
 export interface UnlockTokenParams {
   tokenInstanceKey: TokenInstanceKey;
   name: string | undefined;
+  quantity?: BigNumber | undefined;
 }
 
 export async function unlockToken(
   ctx: GalaChainContext,
-  { tokenInstanceKey, name }: UnlockTokenParams
+  { tokenInstanceKey, name, quantity }: UnlockTokenParams
 ): Promise<TokenBalance> {
   if (tokenInstanceKey.isFungible()) {
-    throw new NotImplementedError("UnlockToken is not supported for fungible tokens", {
-      instanceKey: tokenInstanceKey.toStringKey()
-    });
+    return unlockFungibleToken(ctx, { tokenInstanceKey, name, quantity });
   }
 
   // owner is always present for NFT instances
@@ -70,6 +70,34 @@ export async function unlockToken(
   }
 
   balance.ensureCanUnlockInstance(applicableHold.instanceId, name, ctx.txUnixTime).unlock();
+
+  await putChainObject(ctx, balance);
+
+  return balance;
+}
+
+export async function unlockFungibleToken(
+  ctx: GalaChainContext,
+  { tokenInstanceKey, name, quantity }: UnlockTokenParams
+): Promise<TokenBalance> {
+  const owner = name ?? ctx.callingUser;
+  const quantityToUnlock = quantity ?? new BigNumber("0");
+
+  if (quantityToUnlock.isEqualTo("0")) {
+    throw new ValidationFailedError(`Quantity not provided for Unlock Fungible Token Request.`);
+  }
+
+  const balance = await fetchOrCreateBalance(ctx, owner, tokenInstanceKey.getTokenClassKey());
+
+  // determine if user is authorized to unlock
+  const tokenClass = await fetchTokenClass(ctx, tokenInstanceKey);
+  const isTokenAuthority = tokenClass.authorities.includes(ctx.callingUser);
+
+  if (!isTokenAuthority && ctx.callingUser !== owner) {
+    throw new UnlockForbiddenUserError(ctx.callingUser, tokenInstanceKey.toStringKey());
+  }
+
+  balance.ensureCanUnlockQuantity(quantityToUnlock, ctx.txUnixTime, name, ctx.callingUser).unlock();
 
   await putChainObject(ctx, balance);
 

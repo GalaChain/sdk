@@ -149,7 +149,8 @@ describe("GrantAllowance", () => {
           currencyInstanceKey.toStringKey(),
           AllowanceType[AllowanceType.Lock],
           new BigNumber("1000"),
-          new BigNumber("1001")
+          new BigNumber("1001"),
+          new BigNumber("0")
         )
       )
     );
