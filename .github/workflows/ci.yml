@@ -1,16 +1,24 @@
 name: CI
-on: [push]
+on:
+  push:
+    branches: ['**']
+    tags: [v*]
 
 jobs:
   ci:
+    name: CI
     runs-on: ubuntu-22.04
     steps:
       - name: Checkout
         uses: actions/checkout@v4
+      - name: Install jq
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y jq
       - name: Check Copyright
         run: |
           ./verify_copyright.sh
-      - name: Use Node.js
+      - name: Install Node 18
         uses: actions/setup-node@v4
         with:
           node-version: 18
@@ -22,5 +30,187 @@ jobs:
         run: |
           npm run build
       - name: Test
-        run: | 
+        run: |
           npm run test
+
+  template-e2e:
+    needs: [ci]
+    name: Test Project Template
+    runs-on: ubuntu-22.04
+    env:
+      GALA_CLIENT_DEV_MODE: "true"
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Install tools
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y jq
+          sudo wget -qO /usr/local/bin/yq https://github.com/mikefarah/yq/releases/latest/download/yq_linux_amd64
+          sudo chmod a+x /usr/local/bin/yq
+          git --version
+          node --version
+          npm --version
+          jq --version
+          yq --version
+          bash --version
+          docker version
+          docker-compose version          
+          npm i -g nx
+
+      - name: Build template
+        run: |
+          npm i
+          cd chain-cli
+          ../npm-pack-and-replace.sh --skipConfirmation
+          npm i -g gala-chain-cli-*
+          galachain --help
+          cd ..
+      - name: Create test project
+        run: |
+          galachain init ./project-test
+          cd ./project-test
+          
+          ../npm-pack-and-replace.sh --skipConfirmation
+          cat package.json
+          cat ../chain-cli/chaincode-template/.dev-env > .dev-env
+          npm run network:start & # Run network in background and wait for it to start
+          npm run test
+          
+          sleep 120
+          npm run test:e2e
+          
+          MAX_BLOCK_INDEX=$(curl --location 'http://localhost:3010/product-channel/blocks' --header 'Content-Type: application/json' | jq '.info.fromBlock')
+          if [ $MAX_BLOCK_INDEX -lt 56]; then
+            echo "The number of blocks is less than 56"
+            exit 1
+          else
+            echo "There are at least 56 blocks after the tests ($$MAX_BLOCK_INDEX)"
+          fi
+          npm run network:prune
+
+  template-image-check:
+    name: Template Image Check
+    needs: [ci]
+    runs-on: ubuntu-22.04
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 18
+      - name: Install tools
+        run: |
+          npm i
+          cd chain-cli
+          npm run build
+          npm link ./
+          cd ..
+          galachain init ./project-test
+          cd ./project-test
+          ../npm-pack-and-replace.sh --skipConfirmation
+          npm i
+          docker build . -t chaincode-test
+          run_output=$(docker run --rm chaincode-test 2>&1 || true)
+          echo "$run_output"
+
+          if echo "$run_output" | grep -q 'Missing required argument'; then
+            echo "Success: Got expected error relating with missing required argument."
+            exit 0
+          else
+            echo "---"
+            echo "Unexpected error from the container. Expected: 'Missing required argument'."
+            exit 1
+          fi
+
+  publish:
+    name: Publish Release
+    needs: [template-e2e]
+    if: github.event_name == 'push' && github.ref == 'refs/heads/create-full-blown-ci-pipeline' # TODO: set proper branch
+#    if: github.event_name != 'pull_request' && (startsWith(github.ref, 'refs/tags/v'))
+    runs-on: ubuntu-22.04
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 18
+      - name: Install Dependencies
+        run: npm i
+      - name: Set up version
+        run: |
+          # Extract package name and version
+          NPM_PACKAGE_NAME=$(node -p "require('./package.json').name")
+          NPM_PACKAGE_VERSION=$(node -p "require('./package.json').version")
+          echo "//registry.npmjs.org/:_authToken=${{ secrets.NODE_AUTH_TOKEN }}" > .npmrc
+      - name: publish-chain-api
+        run: |
+          cd chain-api
+          npm i
+          npm run build
+          # Publish to NPM registry
+          #npm publish --access public
+          cd ../
+
+      - name: publish-chain-test
+        run: |
+          cd chain-test
+          npm i
+          npm run build
+          #npm publish --access public
+          cd ../
+
+      - name: publish-chain-cli
+        run: |
+          cd chain-cli
+          npm i
+          npm run build
+          #npm publish --access public
+          cd ../
+
+      - name: publish-chaincode
+        run: |
+          cd chaincode
+          npm i
+          npm run build
+          # npm publish --access public
+          cd ../
+
+      - name: publish-client
+        run: |
+          cd chain-client
+          npm i
+          npm run build
+          #npm publish --access public
+          cd ../
+
+  bump-version:
+    needs: [publish]
+    #if: github.event_name != 'pull_request' && (startsWith(github.ref, 'refs/tags/v'))
+    name: Bump SDK Version
+    runs-on: ubuntu-22.04
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 18
+      - name: Install tools
+        run: npm i -g semver
+      - name: Set up Repository
+        run: |
+          npm ci
+          git config --global user.email "$(git log -1 --pretty=format:'%ae')"
+          NEW_SDK_VERSION="$(semver "$(< package.json jq -r '.version')" -i)"
+          ./unifyVersions.js "$NEW_SDK_VERSION"
+          npm i
+          git add .
+          git commit -m "Bump version to $NEW_SDK_VERSION"
+      - name: Push Changes
+        uses: ad-m/github-push-action@master
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          branch: 'non-existing-temporary-branch'
