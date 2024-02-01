@@ -176,6 +176,12 @@ export class TokenBalance extends ChainObject {
     return (this.lockedHolds ?? []).filter((h) => !h.isExpired(currentTime));
   }
 
+  public getUnexpiredLockedHoldsSortedByAscendingExpiration(currentTime: number): TokenHold[] {
+    const unexpiredHolds = this.getUnexpiredLockedHolds(currentTime);
+
+    return unexpiredHolds.sort(TokenHold.sortByAscendingExpiration);
+  }
+
   public getUnexpiredInUseHolds(currentTime: number): TokenHold[] {
     return (this.inUseHolds ?? []).filter((h) => !h.isExpired(currentTime));
   }
@@ -468,23 +474,10 @@ export class TokenBalance extends ChainObject {
   public ensureCanUnlockQuantity(
     quantity: BigNumber,
     currentTime: number,
-    name?: string | undefined,
-    lockAuthority?: string | undefined
+    name?: string,
+    lockAuthority?: string
   ): { unlock(): void } {
-    const unexpiredLockedHolds = this.getUnexpiredLockedHolds(currentTime);
-
-    // sort holds in order of ascending expiration, 0 = no expiration date
-    unexpiredLockedHolds.sort((a: TokenHold, b: TokenHold) => {
-      if (b.expires === 0 && a.expires === 0) {
-        return 0;
-      } else if (b.expires === 0) {
-        return -1;
-      } else if (a.expires === 0 || a.expires > b.expires) {
-        return 1;
-      } else {
-        return -1;
-      }
-    });
+    const unexpiredLockedHolds = this.getUnexpiredLockedHoldsSortedByAscendingExpiration(currentTime);
 
     const updated: TokenHold[] = [];
     let remainingQuantityToUnlock = quantity;
@@ -499,9 +492,22 @@ export class TokenBalance extends ChainObject {
         remainingQuantityToUnlock = remainingQuantityToUnlock.minus(hold.quantity);
         // this hold's full quantity can be unlocked, drop it from updated array
         continue;
-      }
+      } else {
+        const remainingHoldQuantity = hold.quantity.minus(remainingQuantityToUnlock);
+        remainingQuantityToUnlock = new BigNumber(0);
 
-      updated.push(hold);
+        const partialQuantityHold = new TokenHold({
+          createdBy: hold.createdBy,
+          created: hold.created,
+          instanceId: hold.instanceId,
+          expires: hold.expires,
+          name: hold.name,
+          lockAuthority: hold.lockAuthority,
+          quantity: remainingHoldQuantity
+        });
+
+        updated.push(partialQuantityHold);
+      }
     }
 
     if (remainingQuantityToUnlock.isGreaterThan("0")) {
@@ -516,19 +522,10 @@ export class TokenBalance extends ChainObject {
   }
 
   private getCurrentLockedQuantity(currentTime: number): BigNumber {
-    const lockedHolds = this.getUnexpiredLockedHolds(currentTime);
-
-    return this.getLockedQuantity(lockedHolds);
-  }
-
-  private getLockedQuantity(lockedHolds: TokenHold[]) {
-    let lockedQuantity: BigNumber = new BigNumber("0");
-
-    for (const hold of lockedHolds) {
-      lockedQuantity = lockedQuantity.plus(hold.quantity);
-    }
-
-    return lockedQuantity;
+    return this.getUnexpiredLockedHolds(currentTime).reduce(
+      (sum, h) => sum.plus(h.quantity),
+      new BigNumber(0)
+    );
   }
 
   private ensureContainsNoNftInstances(): void {
@@ -637,5 +634,18 @@ export class TokenHold {
 
   public isExpired(currentTime: number): boolean {
     return this.expires !== 0 && currentTime > this.expires;
+  }
+
+  // sort holds in order of ascending expiration, 0 = no expiration date
+  public static sortByAscendingExpiration(a: TokenHold, b: TokenHold) {
+    if (b.expires === 0 && a.expires === 0) {
+      return 0;
+    } else if (b.expires === 0) {
+      return -1;
+    } else if (a.expires === 0 || a.expires > b.expires) {
+      return 1;
+    } else {
+      return -1;
+    }
   }
 }

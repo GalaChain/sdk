@@ -25,7 +25,7 @@ import { UnlockForbiddenUserError } from "./LockError";
 export interface UnlockTokenParams {
   tokenInstanceKey: TokenInstanceKey;
   name: string | undefined;
-  quantity?: BigNumber | undefined;
+  quantity: BigNumber | undefined;
 }
 
 export async function unlockToken(

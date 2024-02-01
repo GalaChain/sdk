@@ -29,16 +29,11 @@ function emptyBalance() {
   });
 }
 
-function createHold(
-  instance: BigNumber,
-  expires: number,
-  quantity?: BigNumber | undefined,
-  name?: string | undefined
-) {
+function createHold(instance: BigNumber, expires: number, quantity?: BigNumber, name?: string) {
   return new TokenHold({
     createdBy: "user1",
     instanceId: instance,
-    quantity: quantity ?? new BigNumber("1"),
+    quantity: quantity ?? new BigNumber(1),
     created: 1,
     expires: expires,
     name: name
@@ -129,13 +124,13 @@ describe("fungible", () => {
   it("should fail to subtract quantity if quantity is locked by TokenHold", () => {
     // Given
     const balance = emptyBalance();
-    const hold = createHold(TokenInstance.FUNGIBLE_TOKEN_INSTANCE, 0, new BigNumber("10"));
+    const hold = createHold(TokenInstance.FUNGIBLE_TOKEN_INSTANCE, 0, new BigNumber(10));
 
-    balance.ensureCanAddQuantity(new BigNumber("10")).add();
+    balance.ensureCanAddQuantity(new BigNumber(10)).add();
     balance.ensureCanLockQuantity(hold).lock();
 
     // When
-    const error = () => balance.ensureCanSubtractQuantity(new BigNumber("1"), Date.now());
+    const error = () => balance.ensureCanSubtractQuantity(new BigNumber(1), Date.now());
 
     // Then
     expect(error).toThrow("Insufficient balance");
@@ -143,9 +138,9 @@ describe("fungible", () => {
 
   it("should successfully subtract quantity if the total is only partially locked", () => {
     // Given
-    const initialTotal = new BigNumber("10");
-    const lockedTotal = new BigNumber("5");
-    const subtractTotal = new BigNumber("1");
+    const initialTotal = new BigNumber(10);
+    const lockedTotal = new BigNumber(5);
+    const subtractTotal = new BigNumber(1);
 
     const balance = emptyBalance();
     const hold = createHold(TokenInstance.FUNGIBLE_TOKEN_INSTANCE, 0, lockedTotal);
@@ -166,9 +161,9 @@ describe("fungible", () => {
 
   it("should unlock TokenHold quantities from the balance", () => {
     // Given
-    const initialTotal = new BigNumber("10");
-    const lockedTotal = new BigNumber("10");
-    const subtractTotal = new BigNumber("1");
+    const initialTotal = new BigNumber(10);
+    const lockedTotal = new BigNumber(10);
+    const subtractTotal = new BigNumber(1);
 
     const balance = emptyBalance();
     const hold = createHold(TokenInstance.FUNGIBLE_TOKEN_INSTANCE, 0, lockedTotal);
@@ -188,8 +183,8 @@ describe("fungible", () => {
 
   it("should fail to unlock a TokenHold Quantity with mismatched name", () => {
     // Given
-    const initialTotal = new BigNumber("10");
-    const lockedTotal = new BigNumber("10");
+    const initialTotal = new BigNumber(10);
+    const lockedTotal = new BigNumber(10);
 
     const balance = emptyBalance();
     const nameForHold = "client|someone-else";
@@ -213,8 +208,8 @@ describe("fungible", () => {
 
   it("should unlock quantity by using TokenHolds that will expire soonest", () => {
     // Given
-    const initialTotal = new BigNumber("10");
-    const quantityLockedPerHold = new BigNumber("1");
+    const initialTotal = new BigNumber(10);
+    const quantityLockedPerHold = new BigNumber(1);
 
     const noExpirationTimestamp = 0;
     const expiresIn30MinutesTimestamp = Date.now() + 1000 * 60 * 30;
@@ -258,6 +253,40 @@ describe("fungible", () => {
     expect(unexpiredLockedHolds.length).toBe(2);
     expect(unexpiredLockedHolds[0].expires).toBe(expiresIn30DaysTimestamp);
     expect(unexpiredLockedHolds[1].expires).toBe(noExpirationTimestamp);
+  });
+
+  it("should support partial unlocks across multiple TokenHolds", () => {
+    // Given
+    const initialTotal = new BigNumber(10);
+    const quantityLockedPerHold = new BigNumber(5);
+    const quantityToUnlock = new BigNumber(7);
+
+    const balance = emptyBalance();
+    const holds = [
+      createHold(TokenInstance.FUNGIBLE_TOKEN_INSTANCE, 0, quantityLockedPerHold, undefined),
+      createHold(TokenInstance.FUNGIBLE_TOKEN_INSTANCE, 0, quantityLockedPerHold, undefined)
+    ];
+
+    balance.ensureCanAddQuantity(initialTotal).add();
+
+    holds.forEach((hold) => {
+      balance.ensureCanLockQuantity(hold).lock();
+    });
+
+    const expectedTotalLockedInitially = quantityLockedPerHold.times(holds.length);
+    const totalLockedInitially = balance.getLockedQuantityTotal(Date.now());
+    const expectedQuantityToRemainLocked = expectedTotalLockedInitially.minus(quantityToUnlock);
+    const expectedHoldsRemainingOnBalance = quantityToUnlock.dividedToIntegerBy(quantityLockedPerHold);
+
+    // When
+    balance.ensureCanUnlockQuantity(quantityToUnlock, Date.now()).unlock();
+    const remainingLockedQuantity = balance.getLockedQuantityTotal(Date.now());
+    const unexpiredLockedHolds = balance.getUnexpiredLockedHolds(Date.now());
+
+    // Then
+    expect(totalLockedInitially.toNumber()).toEqual(expectedTotalLockedInitially.toNumber());
+    expect(remainingLockedQuantity.toNumber()).toEqual(expectedQuantityToRemainLocked.toNumber());
+    expect(unexpiredLockedHolds.length).toBe(expectedHoldsRemainingOnBalance.toNumber());
   });
 });
 

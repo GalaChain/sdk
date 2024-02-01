@@ -148,7 +148,7 @@ export class UnlockTokenDto extends ChainCallDTO {
   @ValidateIf((o) => o.tokenInstance.instance === TokenInstance.FUNGIBLE_TOKEN_INSTANCE)
   @BigNumberIsPositive()
   @BigNumberProperty()
-  quantity?: BigNumber | undefined;
+  quantity?: BigNumber;
 }
 
 @JSONSchema({
