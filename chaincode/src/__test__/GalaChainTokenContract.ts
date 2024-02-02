@@ -282,7 +282,9 @@ export default class GalaChainTokenContract extends GalaContract {
     ]
   })
   public async HighThroughputMint(
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
     ctx: GalaChainContext,
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
     dto: HighThroughputMintTokenDto
   ): Promise<TokenInstanceKey[]> {
     return Promise.reject(

@@ -280,7 +280,9 @@ export default class GalaChainTokenContract extends GalaContract {
     ]
   })
   public async HighThroughputMint(
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
     ctx: GalaChainContext,
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
     dto: HighThroughputMintTokenDto
   ): Promise<TokenInstanceKey[]> {
     return Promise.reject(
@@ -409,7 +411,7 @@ export default class GalaChainTokenContract extends GalaContract {
       allowancesToUse: dto.useAllowances ?? [],
       name: undefined,
       expires: 0,
-      verifyAuthorizedOnBehalf: async (c: TokenClassKey) => undefined
+      verifyAuthorizedOnBehalf: async () => undefined
     });
   }
 
@@ -427,7 +429,7 @@ export default class GalaChainTokenContract extends GalaContract {
       allowancesToUse: dto.useAllowances ?? [],
       name: dto.name,
       expires: dto.expires ?? 0,
-      verifyAuthorizedOnBehalf: async (c: TokenClassKey) => undefined
+      verifyAuthorizedOnBehalf: async () => undefined
     });
   }
 
