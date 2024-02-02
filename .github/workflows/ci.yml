@@ -203,6 +203,7 @@ jobs:
       - name: Set up Repository
         run: |
           npm ci
+          git config --global user.name "$(git log -1 --pretty=format:'%an')"
           git config --global user.email "$(git log -1 --pretty=format:'%ae')"
           NEW_SDK_VERSION="$(semver "$(< package.json jq -r '.version')" -i)"
           ./unifyVersions.js "$NEW_SDK_VERSION"
