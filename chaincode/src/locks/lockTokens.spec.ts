@@ -15,7 +15,6 @@
 import {
   GalaChainResponse,
   LockTokenDto,
-  NotImplementedError,
   TokenBalance,
   TokenHold,
   ValidationFailedError,

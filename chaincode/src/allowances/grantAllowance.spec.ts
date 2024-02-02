@@ -218,7 +218,7 @@ describe("GrantAllowance", () => {
       quantity: new BigNumber("1000")
     });
 
-    const { ctx, contract, writes } = fixture(GalaChainTokenContract)
+    const { ctx, writes } = fixture(GalaChainTokenContract)
       .callingUser(users.testUser2Id)
       .savedState(currencyClass, currencyInstance, currencyBalance);
 
