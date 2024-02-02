@@ -75,7 +75,10 @@ export abstract class RangedChainObject {
     const plain = instanceToPlain(this);
     const keyParts = fields
       .sort((a, b) => a.position - b.position)
-      .map((field) => plain[field.key.toString()]);
+      .map((field) => {
+        const key = field.key.toString();
+        return typeof this[key]?.toStringKey === "function" ? this[key]?.toStringKey() : plain[key];
+      });
 
     return RangedChainObject.getRangedKeyFromParts(classIndexKey, keyParts);
   }
