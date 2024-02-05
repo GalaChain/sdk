@@ -69,6 +69,7 @@ jobs:
           cd ./project-test
           
           ../npm-pack-and-replace.sh --skipConfirmation
+          ls -la
           cat package.json
           npm run network:start & # Run network in background and wait for it to start
           npm run test
