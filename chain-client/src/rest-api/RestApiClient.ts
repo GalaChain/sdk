@@ -128,8 +128,9 @@ export class RestApiClient extends ChainClient {
     return GalaChainResponse.deserialize<T>(responseType, response.data ?? {});
   }
 
-  public forUser(): ChainClient {
-    throw new Error("Not implemented");
+  public forUser(userId: string): ChainClient {
+    console.warn(`Ignoring forUser(${userId}) for RestApiClient`);
+    return this;
   }
 }
 
@@ -157,13 +158,13 @@ export class RestApiClientBuilder extends ChainClientBuilder {
     }
 
     try {
-      // ensure admin account is created
-      await axios.post(`${this.restApiUrl}/identity/ensure-admin`);
-
       const headers = {
         "x-identity-lookup-key": this.credentials.adminKey,
         "x-user-encryption-key": this.credentials.adminSecret
       };
+
+      // ensure admin account is created
+      await axios.post(`${this.restApiUrl}/identity/ensure-admin`, undefined, { headers });
 
       // refresh api (may fail silently)
       await axios.post(`${this.restApiUrl}/refresh-api`, undefined, { headers });
@@ -200,9 +201,14 @@ export class RestApiClientBuilder extends ChainClientBuilder {
       identityEncryptionKey: this.credentials.adminSecret
     };
 
+    const headers = {
+      "x-identity-lookup-key": this.credentials.adminKey,
+      "x-user-encryption-key": this.credentials.adminSecret
+    };
+
     const credentialsExists = this.ensureInitializedRestApi()
       .then(async () => {
-        const resp = await axios.post(`${this.restApiUrl}/identity/ensure-user`, payload);
+        const resp = await axios.post(`${this.restApiUrl}/identity/ensure-user`, payload, { headers });
         const status = resp.data.status;
         if (![1, 2, 3].includes(status)) {
           throw new Error(`Failed to create user ${this.credentials.adminKey}: ${resp.data}`);

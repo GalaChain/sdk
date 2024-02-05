@@ -40,7 +40,7 @@ export function networkRoot() {
 }
 
 function defaultOpsApiConfigPath() {
-  return path.resolve(networkRoot(), "ops-api/ops-api-config.json");
+  return path.resolve(networkRoot(), "api-config.json");
 }
 
 function defaultConnectionProfilePath(orgKey: "curator" | "users" | "partner"): string {
