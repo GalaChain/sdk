@@ -69,7 +69,6 @@ jobs:
           cd ./project-test
           
           ../npm-pack-and-replace.sh --skipConfirmation
-          ls -la
           cat package.json
           npm run network:start & # Run network in background and wait for it to start
           npm run test
@@ -123,7 +122,7 @@ jobs:
 
   publish:
     name: Publish Release
-    needs: [template-e2e]
+    needs: [template-e2e, template-image-check]
     if: github.event_name != 'pull_request' && (startsWith(github.ref, 'refs/tags/v'))
     runs-on: ubuntu-22.04
     steps:
@@ -147,7 +146,7 @@ jobs:
           npm i
           npm run build
           # Publish to NPM registry
-          #npm publish --access public
+          npm publish --access public
           cd ../
 
       - name: publish-chain-test
@@ -155,7 +154,7 @@ jobs:
           cd chain-test
           npm i
           npm run build
-          #npm publish --access public
+          npm publish --access public
           cd ../
 
       - name: publish-chain-cli
@@ -163,7 +162,7 @@ jobs:
           cd chain-cli
           npm i
           npm run build
-          #npm publish --access public
+          npm publish --access public
           cd ../
 
       - name: publish-chaincode
@@ -171,7 +170,7 @@ jobs:
           cd chaincode
           npm i
           npm run build
-          # npm publish --access public
+          npm publish --access public
           cd ../
 
       - name: publish-client
@@ -179,7 +178,7 @@ jobs:
           cd chain-client
           npm i
           npm run build
-          #npm publish --access public
+          npm publish --access public
           cd ../
 
   bump-version:
