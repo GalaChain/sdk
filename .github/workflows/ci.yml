@@ -16,8 +16,7 @@ jobs:
           sudo apt-get update
           sudo apt-get install -y jq
       - name: Check Copyright
-        run: |
-          ./verify_copyright.sh
+        run: ./verify_copyright.sh
       - name: Install Node 18
         uses: actions/setup-node@v4
         with:
@@ -27,11 +26,9 @@ jobs:
           npm i
           npm run lint
       - name: Build
-        run: |
-          npm run build
+        run: npm run build
       - name: Test
-        run: |
-          npm run test
+        run: npm run test
 
   template-e2e:
     needs: [ci]
@@ -127,8 +124,7 @@ jobs:
   publish:
     name: Publish Release
     needs: [template-e2e]
-    if: github.event_name == 'push' && github.ref == 'refs/heads/create-full-blown-ci-pipeline' # TODO: set proper branch
-#    if: github.event_name != 'pull_request' && (startsWith(github.ref, 'refs/tags/v'))
+    if: github.event_name != 'pull_request' && (startsWith(github.ref, 'refs/tags/v'))
     runs-on: ubuntu-22.04
     steps:
       - name: Checkout
@@ -188,7 +184,7 @@ jobs:
 
   bump-version:
     needs: [publish]
-    #if: github.event_name != 'pull_request' && (startsWith(github.ref, 'refs/tags/v'))
+    if: github.event_name != 'pull_request' && (startsWith(github.ref, 'refs/tags/v'))
     name: Bump SDK Version
     runs-on: ubuntu-22.04
     steps:
@@ -214,4 +210,4 @@ jobs:
         uses: ad-m/github-push-action@master
         with:
           github_token: ${{ secrets.GITHUB_TOKEN }}
-          branch: 'non-existing-temporary-branch'
+          branch: 'main'
