@@ -70,7 +70,6 @@ jobs:
           
           ../npm-pack-and-replace.sh --skipConfirmation
           cat package.json
-#          cat ../chain-cli/chaincode-template/.dev-env > .dev-env
           npm run network:start & # Run network in background and wait for it to start
           npm run test
           
