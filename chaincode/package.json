@@ -1,6 +1,6 @@
 {
   "name": "@gala-chain/chaincode",
-  "version": "1.0.0",
+  "version": "1.0.7",
   "description": "Framework for building chaincodes on GalaChain",
   "license": "Apache-2.0",
   "type": "commonjs",
