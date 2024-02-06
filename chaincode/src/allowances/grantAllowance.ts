@@ -538,13 +538,14 @@ export async function grantAllowance(
       const callingUserBalance = await fetchOrCreateBalance(ctx, ctx.callingUser, instanceClassKey);
 
       // for fungible tokens, we need to check the balance and quantities
-      if (callingUserBalance.getQuantityTotal().isLessThan(totalQuantity)) {
+      if (callingUserBalance.getSpendableQuantityTotal(ctx.txUnixTime).isLessThan(totalQuantity)) {
         throw new InsufficientTokenBalanceError(
           ctx.callingUser,
           instanceKey.toStringKey(),
           AllowanceType[allowanceType],
           callingUserBalance.getQuantityTotal(),
-          totalQuantity
+          totalQuantity,
+          callingUserBalance.getLockedQuantityTotal(ctx.txUnixTime)
         );
       }
     }

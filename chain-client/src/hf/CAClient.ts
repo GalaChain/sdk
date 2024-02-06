@@ -35,7 +35,7 @@ export class CAClient {
     this.orgMsp = orgMsp;
     this.caHostName = getCAHostName(connectionProfile, orgMsp);
     this.caClient = buildCAClient(connectionProfile, this.caHostName);
-    this.wallet = buildWallet();
+    this.wallet = getGlobalWallet(this.orgMsp);
     this.adminId = adminId;
     this.enrolledAdmin = this.wallet.then(async (wallet) => {
       const identity = await enrollUser(this.caClient, wallet, orgMsp, adminId, adminSecret);
@@ -110,14 +110,6 @@ function buildCAClient(ccp: Record<string, unknown>, caHostName: string): Fabric
   return new FabricCAServices(caUrl, tlsConfig, caName);
 }
 
-async function buildWallet(walletPath?: string): Promise<Wallet> {
-  if (walletPath) {
-    return await Wallets.newFileSystemWallet(walletPath);
-  } else {
-    return await Wallets.newInMemoryWallet();
-  }
-}
-
 async function enrollUser(
   caClient: FabricCAServices,
   wallet: Wallet,
@@ -177,4 +169,14 @@ async function registerUser(
     },
     adminUser
   );
+}
+
+const globalWallets: Record<string, Promise<Wallet>> = {};
+
+function getGlobalWallet(orgMsp: string): Promise<Wallet> {
+  if (globalWallets[orgMsp] === undefined) {
+    globalWallets[orgMsp] = Wallets.newInMemoryWallet();
+  }
+
+  return globalWallets[orgMsp];
 }

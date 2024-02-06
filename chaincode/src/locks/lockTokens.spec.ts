@@ -15,9 +15,9 @@
 import {
   GalaChainResponse,
   LockTokenDto,
-  NotImplementedError,
   TokenBalance,
   TokenHold,
+  ValidationFailedError,
   createValidDTO
 } from "@gala-chain/api";
 import { currency, fixture, nft, users, writesMap } from "@gala-chain/test";
@@ -94,9 +94,21 @@ describe("LockTokens", () => {
       quantity: decimalQuantity
     });
 
+    const { collection, category, type, additionalKey } = currencyClass;
+    const expectedBalance = new TokenBalance({
+      owner: users.testUser1Id,
+      collection,
+      category,
+      type,
+      additionalKey
+    });
+
+    expectedBalance.ensureCanAddQuantity(new BigNumber("10"));
+    const balanceKey = expectedBalance.getCompositeKey();
+
     const { ctx, contract, writes } = fixture(GalaChainTokenContract)
       .callingUser(users.testUser1Id)
-      .savedState(currencyClass, currencyInstance);
+      .savedState(currencyClass, currencyInstance, expectedBalance);
 
     // When
     const response = await contract.LockToken(ctx, dto);
@@ -104,8 +116,10 @@ describe("LockTokens", () => {
     // Then
     expect(response).toEqual(
       GalaChainResponse.Error(
-        new NotImplementedError("LockToken is not supported for fungible tokens", {
-          instanceKey: "TEST$Currency$TEST$none$0"
+        new ValidationFailedError("Insufficient balance", {
+          balanceKey: balanceKey,
+          lockedQuantity: "0",
+          total: "0"
         })
       )
     );

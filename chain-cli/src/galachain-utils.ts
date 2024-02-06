@@ -21,6 +21,7 @@ import { nanoid } from "nanoid";
 
 import { ServicePortal } from "./consts";
 import { GetChaincodeDeploymentDto, PostDeployChaincodeDto } from "./dto";
+import { execSync } from "./exec-sync";
 import { parseStringOrFileKey } from "./utils";
 
 const ConfigFileName = ".galachainrc.json";
@@ -92,6 +93,28 @@ export async function getDeploymentResponse(params: { privateKey: string | undef
   return response.data;
 }
 
+function getContractNames(imageTag: string): { contractName: string }[] {
+  const command = `docker run --rm ${imageTag} lib/src/cli.js get-contract-names | tail -n 1`;
+  let response: string = "<failed>";
+
+  try {
+    response = execSync(command);
+    const json = JSON.parse(response);
+    if (!Array.isArray(json)) {
+      throw new Error("Is not array");
+    }
+    json.forEach((n) => {
+      if (typeof n?.contractName !== "string") {
+        throw new Error("Not all elements contain 'contractName' string");
+      }
+    });
+
+    return (json as { contractName: string }[]).map(({ contractName }) => ({ contractName }));
+  } catch (e) {
+    throw new Error(`Invalid contract names config (${e?.message}): ${response}`);
+  }
+}
+
 export async function deployChaincode(params: {
   privateKey: string | undefined;
   isTestnet: boolean;
@@ -104,7 +127,7 @@ export async function deployChaincode(params: {
   const chainCodeDto: PostDeployChaincodeDto = {
     operationId: nanoid(),
     imageTag: params.imageTag,
-    contracts: []
+    contracts: getContractNames(params.imageTag)
   };
 
   const signature = await generateSignature(chainCodeDto, params.privateKey);

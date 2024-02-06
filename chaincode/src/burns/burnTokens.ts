@@ -190,7 +190,7 @@ export async function burnTokens(
     if (tokenInstance.isNonFungible) {
       userBalance.ensureCanRemoveInstance(tokenInstance.instance, ctx.txUnixTime).remove();
     } else {
-      userBalance.ensureCanSubtractQuantity(tokenQuantity.quantity).subtract();
+      userBalance.ensureCanSubtractQuantity(tokenQuantity.quantity, ctx.txUnixTime).subtract();
     }
 
     const newBurn = await createTokenBurn(ctx, owner, tokenQuantity.tokenInstanceKey, tokenQuantity.quantity);

@@ -12,7 +12,6 @@ test-network
 .idea
 .npmrc
 .env
-.dev-env
 src/coverage
 /classes
 /interfaces

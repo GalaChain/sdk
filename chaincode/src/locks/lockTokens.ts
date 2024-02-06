@@ -65,13 +65,7 @@ export async function lockToken(
     `lockAuthority: ${lockAuthority}, allowancesToUse: ${allowancesToUse.length}`;
   ctx.logger.info(msg);
 
-  if (tokenInstanceKey.isFungible()) {
-    throw new NotImplementedError("LockToken is not supported for fungible tokens", {
-      instanceKey: tokenInstanceKey.toStringKey()
-    });
-  }
-
-  if (!quantity.isEqualTo(1)) {
+  if (!tokenInstanceKey.isFungible() && !quantity.isEqualTo(1)) {
     throw new NftInvalidQuantityLockError(quantity, tokenInstanceKey.toStringKey());
   }
 
@@ -93,6 +87,13 @@ export async function lockToken(
   if (owner !== callingOnBehalf) {
     const msg = `LockToken executed on behalf of another user (fromPerson: ${owner}, callingUser: ${callingOnBehalf})`;
     ctx.logger.info(msg);
+
+    // for initial support of fungible tokens, require owner to be the caller.
+    if (tokenInstanceKey.isFungible()) {
+      throw new NotImplementedError("LockToken is not supported for fungible tokens", {
+        instanceKey: tokenInstanceKey.toStringKey()
+      });
+    }
 
     await verifyAndUseAllowances(
       ctx,
@@ -118,7 +119,11 @@ export async function lockToken(
     lockAuthority
   });
 
-  balance.ensureCanLockInstance(hold).lock();
+  if (tokenInstanceKey.isFungible()) {
+    balance.ensureCanLockQuantity(hold).lock();
+  } else {
+    balance.ensureCanLockInstance(hold).lock();
+  }
 
   await putChainObject(ctx, balance);
 
