@@ -61,10 +61,12 @@ export class InsufficientTokenBalanceError extends ValidationFailedError {
     tokenInstanceKey: string,
     allowanceType: string,
     userBalance: BigNumber,
-    allowanceQuantity: BigNumber
+    allowanceQuantity: BigNumber,
+    lockedQuantity: BigNumber
   ) {
     super(
-      `User ${callingUser} has insufficient balance ${userBalance} for token ${tokenInstanceKey} to grant ${allowanceType} allowance for quantity: ${allowanceQuantity}.`,
+      `User ${callingUser} has insufficient total balance ${userBalance} minus locked balance ${lockedQuantity} for token ` +
+        `${tokenInstanceKey} to grant ${allowanceType} allowance for quantity: ${allowanceQuantity}.`,
       { callingUser, tokenInstanceKey, allowanceType, userBalance, allowanceQuantity }
     );
   }

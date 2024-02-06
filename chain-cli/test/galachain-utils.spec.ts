@@ -12,6 +12,8 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
+/* eslint-disable @typescript-eslint/no-var-requires */
 import { ux } from "@oclif/core";
 
 import axios from "axios";
@@ -106,6 +108,12 @@ describe("deployChaincode", () => {
       }
     });
 
+    const execSync = jest.spyOn(require("child_process"), "execSync");
+    execSync.mockImplementation(
+      () =>
+        '[{"contractName":"AppleContract"},{"contractName":"GalaChainToken"},{"contractName":"PublicKeyContract"}]'
+    );
+
     // When
     const response = await deployChaincode({ privateKey, isTestnet, imageTag });
 
@@ -126,6 +134,12 @@ describe("deployChaincode", () => {
 
     jest.spyOn(ux, "prompt").mockResolvedValueOnce(privateKey);
 
+    const execSync = jest.spyOn(require("child_process"), "execSync");
+    execSync.mockImplementation(
+      () =>
+        '[{"contractName":"AppleContract"},{"contractName":"GalaChainToken"},{"contractName":"PublicKeyContract"}]'
+    );
+
     // When
     const response = await deployChaincode(postDeployChaincodeNoPrivateKey);
 
@@ -138,6 +152,12 @@ describe("deployChaincode", () => {
     axios.post = jest.fn().mockResolvedValue({
       status: 401
     });
+
+    const execSync = jest.spyOn(require("child_process"), "execSync");
+    execSync.mockImplementation(
+      () =>
+        '[{"contractName":"AppleContract"},{"contractName":"GalaChainToken"},{"contractName":"PublicKeyContract"}]'
+    );
 
     // When
     expect(async () => await deployChaincode({ privateKey, isTestnet, imageTag })).rejects.toThrowError(

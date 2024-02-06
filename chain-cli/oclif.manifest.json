@@ -1,5 +1,5 @@
 {
-  "version": "1.0.0",
+  "version": "1.0.6",
   "commands": {
     "connect": {
       "id": "connect",
@@ -12,7 +12,7 @@
       "examples": [
         "galachain connect ./dev-private-key",
         "galachain connect c0fb1924408d936fb7cd0c86695885df4f66861621b5c8660df3924c4d09dd79",
-        "galachain connect"
+        "galachain connect --testnet"
       ],
       "flags": {
         "json": {
@@ -34,6 +34,12 @@
             "warn",
             "error"
           ]
+        },
+        "testnet": {
+          "name": "testnet",
+          "type": "boolean",
+          "description": "Connect to testnet instead of mainnet.",
+          "allowNo": false
         }
       },
       "args": {
@@ -230,7 +236,7 @@
       "aliases": [],
       "examples": [
         "galachain info",
-        "galachain info ./dev-private-key",
+        "galachain info ./dev-private-key --testnet",
         "galachain info c0fb1924408d936fb7cd0c86695885df4f66861621b5c8660df3924c4d09dd79"
       ],
       "flags": {
@@ -253,6 +259,12 @@
             "warn",
             "error"
           ]
+        },
+        "testnet": {
+          "name": "testnet",
+          "type": "boolean",
+          "description": "Get info from testnet instead of mainnet.",
+          "allowNo": false
         }
       },
       "args": {

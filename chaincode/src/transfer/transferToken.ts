@@ -80,7 +80,7 @@ export async function transferToken(
     fromPersonBalance.ensureCanRemoveInstance(tokenInstance.instance, ctx.txUnixTime).remove();
     toPersonBalance.ensureCanAddInstance(tokenInstance.instance).add();
   } else {
-    fromPersonBalance.ensureCanSubtractQuantity(quantity).subtract();
+    fromPersonBalance.ensureCanSubtractQuantity(quantity, ctx.txUnixTime).subtract();
     toPersonBalance.ensureCanAddQuantity(quantity).add();
   }
 

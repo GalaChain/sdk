@@ -49,11 +49,14 @@ Connect to a new chaincode.
 
 ```
 USAGE
-  $ galachain connect [DEVELOPERPRIVATEKEY] [--json] [--log-level debug|info|warn|error]
+  $ galachain connect [DEVELOPERPRIVATEKEY] [--json] [--log-level debug|info|warn|error] [--testnet]
 
 ARGUMENTS
   DEVELOPERPRIVATEKEY  Optional private key to sign the data. It could be a file or a string. If not provided, the
                        private key will be read from the environment variable DEV_PRIVATE_KEY.
+
+FLAGS
+  --testnet  Connect to testnet instead of mainnet.
 
 GLOBAL FLAGS
   --json                Format output as json.
@@ -68,7 +71,7 @@ EXAMPLES
 
   $ galachain connect c0fb1924408d936fb7cd0c86695885df4f66861621b5c8660df3924c4d09dd79
 
-  $ galachain connect
+  $ galachain connect --testnet
 ```
 
 ## `galachain deploy IMAGETAG [DEVELOPERPRIVATEKEY]`
@@ -284,11 +287,14 @@ Show the ChainCode information.
 
 ```
 USAGE
-  $ galachain info [DEVELOPERPRIVATEKEY] [--json] [--log-level debug|info|warn|error]
+  $ galachain info [DEVELOPERPRIVATEKEY] [--json] [--log-level debug|info|warn|error] [--testnet]
 
 ARGUMENTS
   DEVELOPERPRIVATEKEY  Optional private key to sign the data. It could be a file or a string. If not provided, the
                        private key will be read from the environment variable DEV_PRIVATE_KEY.
+
+FLAGS
+  --testnet  Get info from testnet instead of mainnet.
 
 GLOBAL FLAGS
   --json                Format output as json.
@@ -301,7 +307,7 @@ DESCRIPTION
 EXAMPLES
   $ galachain info
 
-  $ galachain info ./dev-private-key
+  $ galachain info ./dev-private-key --testnet
 
   $ galachain info c0fb1924408d936fb7cd0c86695885df4f66861621b5c8660df3924c4d09dd79
 ```

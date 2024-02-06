@@ -12,7 +12,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-import { Args } from "@oclif/core";
+import { Args, Flags } from "@oclif/core";
 
 import BaseCommand from "../../base-command";
 import { getDeploymentResponse } from "../../galachain-utils";
@@ -23,8 +23,14 @@ export default class Connect extends BaseCommand<typeof Connect> {
   static override examples = [
     "galachain connect ./dev-private-key",
     "galachain connect c0fb1924408d936fb7cd0c86695885df4f66861621b5c8660df3924c4d09dd79",
-    "galachain connect"
+    "galachain connect --testnet"
   ];
+
+  static override flags = {
+    testnet: Flags.boolean({
+      description: "Connect to testnet instead of mainnet."
+    })
+  };
 
   static override args = {
     developerPrivateKey: Args.string({
@@ -37,14 +43,14 @@ export default class Connect extends BaseCommand<typeof Connect> {
   };
 
   async run(): Promise<void> {
-    const { args } = await this.parse(Connect);
+    const { args, flags } = await this.parse(Connect);
 
     const developerPrivateKey = args.developerPrivateKey ?? process.env.DEV_PRIVATE_KEY;
 
     try {
       const response = await getDeploymentResponse({
         privateKey: developerPrivateKey,
-        isTestnet: true
+        isTestnet: flags.testnet ?? false
       });
 
       this.log(`You are now connected! Chaincode ${response.chaincode} and Channel ${response.channel}.`);
