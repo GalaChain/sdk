@@ -31,7 +31,7 @@ async function getPath(
     throw new Error(`Cannot find contract API for key ${key}`);
   }
 
-  const methodApi = (await contractApi.api).methods.find((m) => m.methodName === method);
+  const methodApi = contractApi.api.methods.find((m) => m.methodName === method);
 
   if (!methodApi) {
     throw new Error(`Cannot find method API for method ${method} and contract key ${key}`);
