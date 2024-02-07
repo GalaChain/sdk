@@ -24,7 +24,12 @@ describe("CheckMintableQuantity", () => {
     const currencyClass = currency.tokenClass();
 
     // When
-    const response = ensureQuantityCanBeMinted(currencyClass, new BigNumber("10"));
+    const response = ensureQuantityCanBeMinted(
+      currencyClass,
+      new BigNumber("10"),
+      new BigNumber("0"),
+      new BigNumber("0")
+    );
 
     // Then
     expect(response).toEqual(true);
@@ -36,7 +41,13 @@ describe("CheckMintableQuantity", () => {
     currencyClass.maxSupply = new BigNumber("100");
 
     // When
-    const response = () => ensureQuantityCanBeMinted(currencyClass, new BigNumber("10000"));
+    const response = () =>
+      ensureQuantityCanBeMinted(
+        currencyClass,
+        new BigNumber("10000"),
+        new BigNumber("0"),
+        new BigNumber("0")
+      );
 
     // Then
     expect(response).toThrow(
@@ -54,7 +65,13 @@ describe("CheckMintableQuantity", () => {
     currencyClass.maxCapacity = new BigNumber("100");
 
     // When
-    const response = () => ensureQuantityCanBeMinted(currencyClass, new BigNumber("10000"));
+    const response = () =>
+      ensureQuantityCanBeMinted(
+        currencyClass,
+        new BigNumber("10000"),
+        new BigNumber("0"),
+        new BigNumber("0")
+      );
 
     // Then
     expect(response).toThrow(

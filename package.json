@@ -17,6 +17,11 @@
   },
   "private": true,
   "dependencies": {
+    "@gala-chain/api": "^1.0.7",
+    "@gala-chain/chaincode": "^1.0.7",
+    "@gala-chain/cli": "^1.0.7",
+    "@gala-chain/client": "^1.0.7",
+    "@gala-chain/test": "^1.0.7",
     "fabric-ca-client": "^2.2.20",
     "nanoid": "^3.3.6",
     "tslib": "^2.3.0"

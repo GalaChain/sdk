@@ -234,8 +234,8 @@ async function grantAllowanceByPartialKey(
 export function ensureQuantityCanBeMinted(
   tokenClass: TokenClass,
   quantity: BigNumber,
-  totalKnownMintAllowanceCount?: BigNumber,
-  totalKnownBurnsCount?: BigNumber
+  totalKnownMintAllowanceCount: BigNumber,
+  totalKnownBurnsCount: BigNumber
 ): boolean {
   // todo: remove if applicable when totalSupply is fully deprecated
   // temporary hotfix for supporting maxSupply in the legacy MintToken function

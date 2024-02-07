@@ -30,10 +30,12 @@ import { BigNumber } from "bignumber.js";
 
 import { checkAllowances, ensureQuantityCanBeMinted, fetchAllowances, useAllowances } from "../allowances";
 import { fetchOrCreateBalance } from "../balances";
+import { fetchKnownBurnCount } from "../burns/fetchBurns";
 import { InvalidDecimalError } from "../token/TokenError";
 import { GalaChainContext } from "../types/GalaChainContext";
 import { getObjectByKey, putChainObject } from "../utils";
 import { InsufficientMintAllowanceError, NftMaxMintError, UseAllowancesFailedError } from "./MintError";
+import { fetchMintAllowanceSupply } from "./fetchMintAllowanceSupply";
 import { writeMintRequest } from "./requestMint";
 
 interface MintTokenParams {
@@ -132,8 +134,17 @@ export async function mintToken(
     );
   }
 
+  // fetch known amounts
+  // legacy mintToken does not account for high throughput concurrency.
+  // a value of 1 here is the smallest value we can use that will offset enough to let us write a
+  // TokenMintRequest while reading prior requests to get the current known supply.
+  // we expect MVCC conflicts in this case when multiple legacy mints happen in the same block
+  // only one will win, and be correct, subsequent requests in the same block would miss the others and potentially oversupply the token
+  // using the legacy mintToken for mints and patching in an accurate supply counter can't work, supporting this method has the above tradeoff
+  const knownMintAllowanceSupply = await fetchMintAllowanceSupply(ctx, tokenClass, 1);
+  const knownBurnsCount = await fetchKnownBurnCount(ctx, tokenClass);
   // check that mint is valid based on max supply, max capacity, etc
-  ensureQuantityCanBeMinted(tokenClass, quantity);
+  ensureQuantityCanBeMinted(tokenClass, quantity, knownMintAllowanceSupply, knownBurnsCount);
 
   // if possible, spend allowances
   const allowancesUsed: boolean = await useAllowances(
