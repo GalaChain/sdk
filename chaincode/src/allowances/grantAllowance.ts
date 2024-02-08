@@ -234,7 +234,7 @@ async function grantAllowanceByPartialKey(
 export function ensureQuantityCanBeMinted(
   tokenClass: TokenClass,
   quantity: BigNumber,
-  totalKnownMintsCount?: BigNumber,
+  totalKnownMintAllowanceCount?: BigNumber,
   totalKnownBurnsCount?: BigNumber
 ): boolean {
   // todo: remove if applicable when totalSupply is fully deprecated
@@ -249,10 +249,10 @@ export function ensureQuantityCanBeMinted(
 
   // todo: totalMintAllowance not being accounted for here in original MintToken implementation.
   // Transitioning to the experimental (as of 2023-03) high-throughput-mint implementation is anticipated to resolve this.
-  // currently, using the original MintToken implementation will always end up setting totalKnownMintsCount to zero,
+  // currently, using the original MintToken implementation will always end up setting totalKnownMintAllowanceCount to zero,
   // leaving open the possibility of exceeding the maxSupply defined in a token class.
-  if (!totalKnownMintsCount) {
-    totalKnownMintsCount = new BigNumber("0");
+  if (!totalKnownMintAllowanceCount) {
+    totalKnownMintAllowanceCount = new BigNumber("0");
   }
 
   // Note older implementation had checked tokenClass.totalBurned,
@@ -263,22 +263,25 @@ export function ensureQuantityCanBeMinted(
     totalKnownBurnsCount = new BigNumber("0");
   }
 
-  // If there is a maxSupply, then total mint allowance cannot exceed that
-  // If there is a maxCapacity, then total mint allowance + burn quantity cannot exceed that
-  if (
-    tokenClass.maxSupply &&
-    tokenClass.maxSupply.isGreaterThan(new BigNumber(0)) &&
-    totalKnownMintsCount.plus(quantity).isGreaterThan(tokenClass.maxSupply)
-  ) {
-    throw new TotalSupplyExceededError(tokenClass.getCompositeKey(), tokenClass.maxSupply, quantity);
-  }
-
+  // If there is a maxCapacity, then total mint allowance cannot exceed that
+  // If there is a maxSupply, then total mint allowance - burn quantity cannot exceed that
   if (
     tokenClass.maxCapacity &&
     tokenClass.maxCapacity.isGreaterThan(new BigNumber(0)) &&
-    totalKnownMintsCount.minus(totalKnownBurnsCount).plus(quantity).isGreaterThan(tokenClass.maxCapacity)
+    totalKnownMintAllowanceCount.plus(quantity).isGreaterThan(tokenClass.maxCapacity)
   ) {
     throw new MintCapacityExceededError(tokenClass.getCompositeKey(), tokenClass.maxCapacity, quantity);
+  }
+
+  if (
+    tokenClass.maxSupply &&
+    tokenClass.maxSupply.isGreaterThan(new BigNumber(0)) &&
+    totalKnownMintAllowanceCount
+      .minus(totalKnownBurnsCount)
+      .plus(quantity)
+      .isGreaterThan(tokenClass.maxSupply)
+  ) {
+    throw new TotalSupplyExceededError(tokenClass.getCompositeKey(), tokenClass.maxSupply, quantity);
   }
 
   return true;

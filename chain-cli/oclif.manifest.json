@@ -1,5 +1,5 @@
 {
-  "version": "1.0.7",
+  "version": "1.0.8",
   "commands": {
     "connect": {
       "id": "connect",
@@ -28,12 +28,7 @@
           "summary": "Specify level for logging.",
           "helpGroup": "GLOBAL",
           "multiple": false,
-          "options": [
-            "debug",
-            "info",
-            "warn",
-            "error"
-          ]
+          "options": ["debug", "info", "warn", "error"]
         },
         "testnet": {
           "name": "testnet",
@@ -77,12 +72,7 @@
           "summary": "Specify level for logging.",
           "helpGroup": "GLOBAL",
           "multiple": false,
-          "options": [
-            "debug",
-            "info",
-            "warn",
-            "error"
-          ]
+          "options": ["debug", "info", "warn", "error"]
         },
         "testnet": {
           "name": "testnet",
@@ -112,9 +102,7 @@
       "pluginName": "@gala-chain/cli",
       "pluginAlias": "@gala-chain/cli",
       "pluginType": "core",
-      "aliases": [
-        "dto:sign"
-      ],
+      "aliases": ["dto:sign"],
       "examples": [
         "galachain dto:sign -o=output/path ./testkey '{\n      \"tokenClass\": {\n        \"collection\": \"CLITest\",\n        \"category\": \"Currency\",\n      }\n    }'",
         "galachain dto:sign ./testkey dto.json -o=output/path",
@@ -135,12 +123,7 @@
           "summary": "Specify level for logging.",
           "helpGroup": "GLOBAL",
           "multiple": false,
-          "options": [
-            "debug",
-            "info",
-            "warn",
-            "error"
-          ]
+          "options": ["debug", "info", "warn", "error"]
         },
         "outputFile": {
           "name": "outputFile",
@@ -184,9 +167,7 @@
       "pluginName": "@gala-chain/cli",
       "pluginAlias": "@gala-chain/cli",
       "pluginType": "core",
-      "aliases": [
-        "dto:verify"
-      ],
+      "aliases": ["dto:verify"],
       "examples": [
         "galachain dto:verify ./publicKey '{\n      \"tokenClass\": {\n        \"collection\": \"CLITest\",\n        \"category\": \"Currency\",\n      },\n      \"signature\": \"/fYYooumRdFFrL4U3Nzwuf2uzBZAxKv4WrnMjLnbnJFU+Z6lQe2X/CCcLhRqq67jUDEFvOdky0g5D4sRCExXyBw=\",\n    }'",
         "galachain dto:verify ./publicKey dto.json"
@@ -205,12 +186,7 @@
           "summary": "Specify level for logging.",
           "helpGroup": "GLOBAL",
           "multiple": false,
-          "options": [
-            "debug",
-            "info",
-            "warn",
-            "error"
-          ]
+          "options": ["debug", "info", "warn", "error"]
         }
       },
       "args": {
@@ -253,12 +229,7 @@
           "summary": "Specify level for logging.",
           "helpGroup": "GLOBAL",
           "multiple": false,
-          "options": [
-            "debug",
-            "info",
-            "warn",
-            "error"
-          ]
+          "options": ["debug", "info", "warn", "error"]
         },
         "testnet": {
           "name": "testnet",
@@ -301,12 +272,7 @@
           "summary": "Specify level for logging.",
           "helpGroup": "GLOBAL",
           "multiple": false,
-          "options": [
-            "debug",
-            "info",
-            "warn",
-            "error"
-          ]
+          "options": ["debug", "info", "warn", "error"]
         }
       },
       "args": {
@@ -325,9 +291,7 @@
       "pluginAlias": "@gala-chain/cli",
       "pluginType": "core",
       "aliases": [],
-      "examples": [
-        "galachain keygen data/user1"
-      ],
+      "examples": ["galachain keygen data/user1"],
       "flags": {
         "json": {
           "name": "json",
@@ -342,12 +306,7 @@
           "summary": "Specify level for logging.",
           "helpGroup": "GLOBAL",
           "multiple": false,
-          "options": [
-            "debug",
-            "info",
-            "warn",
-            "error"
-          ]
+          "options": ["debug", "info", "warn", "error"]
         }
       },
       "args": {
@@ -365,12 +324,8 @@
       "pluginName": "@gala-chain/cli",
       "pluginAlias": "@gala-chain/cli",
       "pluginType": "core",
-      "aliases": [
-        "network:prune"
-      ],
-      "examples": [
-        "galachain network:prune -r=./dir-target-netowrk"
-      ],
+      "aliases": ["network:prune"],
+      "examples": ["galachain network:prune -r=./dir-target-netowrk"],
       "flags": {
         "json": {
           "name": "json",
@@ -385,12 +340,7 @@
           "summary": "Specify level for logging.",
           "helpGroup": "GLOBAL",
           "multiple": false,
-          "options": [
-            "debug",
-            "info",
-            "warn",
-            "error"
-          ]
+          "options": ["debug", "info", "warn", "error"]
         },
         "fabloRoot": {
           "name": "fabloRoot",
@@ -410,9 +360,7 @@
       "pluginName": "@gala-chain/cli",
       "pluginAlias": "@gala-chain/cli",
       "pluginType": "core",
-      "aliases": [
-        "network:up"
-      ],
+      "aliases": ["network:up"],
       "examples": [
         "galachain network:up -C=product-channel -t=curator -n=basic-product -d=./ --envConfig=./.dev-env --watch",
         "galachain network:up -C=product-channel -t=curator -n=basic-product -d=./ --envConfig=./.dev-env"
@@ -431,12 +379,7 @@
           "summary": "Specify level for logging.",
           "helpGroup": "GLOBAL",
           "multiple": false,
-          "options": [
-            "debug",
-            "info",
-            "warn",
-            "error"
-          ]
+          "options": ["debug", "info", "warn", "error"]
         },
         "channel": {
           "name": "channel",
@@ -453,10 +396,7 @@
           "description": "Channel type. Can be \"curator\" or \"partner\". It means whether this is a chaincode managed by CuratorOrg or PartnerOrg.",
           "required": true,
           "multiple": true,
-          "options": [
-            "curator",
-            "partner"
-          ]
+          "options": ["curator", "partner"]
         },
         "chaincodeName": {
           "name": "chaincodeName",
@@ -472,9 +412,7 @@
           "char": "d",
           "description": "Root directory of chaincode source, relative to fabloRoot. By default '.' is used.",
           "multiple": true,
-          "default": [
-            "."
-          ]
+          "default": ["."]
         },
         "fabloRoot": {
           "name": "fabloRoot",
@@ -528,12 +466,7 @@
           "summary": "Specify level for logging.",
           "helpGroup": "GLOBAL",
           "multiple": false,
-          "options": [
-            "debug",
-            "info",
-            "warn",
-            "error"
-          ]
+          "options": ["debug", "info", "warn", "error"]
         }
       },
       "args": {
