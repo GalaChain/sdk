@@ -1,6 +1,6 @@
 ## Experimental! Deploy your chaincode
 
-For the first time we can provide you with the ability to deploy chaincode and make it public. This is an experimental feature, there might be some glitches, and at some point all the data will be probably removed.
+For the first time we're able to provide you with the ability to deploy chaincode and make it public. This is an experimental feature, there might be some glitches, and at some point all the data will be probably removed.
 
 How to deploy:
 
@@ -53,7 +53,7 @@ How to deploy:
 
    Once the status is `CC_DEPLOYED` you can visit the Swagger webpage: https://gateway.stage.galachain.com/docs/. You can find your chaincode (`gc-<eth-addr>`). If the version is still unknown (and you see `v?.?.?`), it means you may need to wait a couple of minutes till the chaincode is ready.
 
-   Once it is ready, you can use the webpage to call chaincodes. A good start is `PublicKeyContract/GetPublicKey` with empty object as request body. It should return the admin public key you provided before.
+   Once it is ready, you can use the webpage to call chaincodes. It's good to start `PublicKeyContract/GetPublicKey` with empty object as request body. It should return the admin public key you provided before.
 
 ## GC support internal notes
 
