@@ -4,7 +4,7 @@ As this is our second GalaChain hackathon, there might be some rough edges and c
 
 # Schedule
 
-The Hackathon will be **48 Hours** held on **February 12-14th, 2023**
+The Hackathon will be **48 Hours** held on **February 12-14th, 2024**
 
 | Time (CST)      | Activity      |
 | -------------   |:-------------:|
@@ -25,16 +25,26 @@ We have have 2 engineers judging: Jakub Dzikowski and Jeff Eganhouse. But! Rest 
 
 We'll be awarding everyone an Epic participation NFT. If your team wins, your entire team will get a Legendary NFT in addition to the participation NFT. Let the bragging rights begin!
 
+# Atmosphere
+
+1. We will be conducting this hackathon in our GalaChain [Discord](https://discord.com/channels/1063868136375459850/1063868139869319315).
+1. Each team will have their own private room with voice, text and screen sharing capabilities.
+1. Don't have a team? Don't panic. Meet us in Discord using the above link. We will help find you a great team.
+2. If you need engineering support, head to the discord link above and let the engineers on duty know you need assistance. Then, someone will pop into your private room to help out.
+
+
 # Getting Started
 
-First, read the [Getting started guide](getting-started.md). If you get stuck contact a Gala engineer in the GalaChain General Discord chat (seriously, don't hesitate, we really want to make this process as smooth and as easy as possible).
+First, pull down the [Public SDK](https://github.com/GalaChain/sdk) onto your machine. 
 
 Next, here's a helpful flow to get you developing:
 
-1. Use the CLI to init a project from template and start a local environment
-1. Use the samples in e2e tests and our reference docs for token operations to design the app flow
-1. Use unit tests or any code/scripts to interact with the chain
-1. Rinse, repeat until you're happy with your hack.
+1. Read the [Getting started guide](getting-started.md). If you get stuck contact a Gala engineer in the GalaChain General Discord chat.
+2. Use the CLI to init a project from template and start a local environment
+3. Use the samples in e2e tests and our reference docs for token operations to design the app flow
+4. Use unit tests or any code/scripts to interact with the chain
+5. Rinse, repeat until you're happy with your hack.
+6. [Deploy](deploy.md) your code to the GalaChain sandbox.
 
 ## Hackathon Ideas
 
