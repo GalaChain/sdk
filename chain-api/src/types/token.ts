@@ -339,6 +339,15 @@ export class UpdateTokenClassDto extends ChainCallDTO {
   })
   @IsOptional()
   overwriteAuthorities?: boolean;
+
+  // TODO: Short term fix for issue in prod, to be removed
+  @JSONSchema({
+    description: "Total existing supply of tokens minted for class. Optional."
+  })
+  @IsOptional()
+  @BigNumberIsNotNegative()
+  @BigNumberProperty()
+  totalSupply?: BigNumber;
 }
 
 @JSONSchema({

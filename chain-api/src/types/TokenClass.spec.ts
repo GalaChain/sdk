@@ -76,6 +76,7 @@ it("should update properties that are allowed to be updated", async () => {
     description: update.description,
     rarity: update.rarity,
     image: update.image,
+    totalSupply: update.totalSupply.toString(),
     contractAddress: update.contractAddress,
     metadataAddress: update.metadataAddress,
     authorities: ["client|new-admin", "client|old-admin"] // sorted

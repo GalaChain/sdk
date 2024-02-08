@@ -248,6 +248,7 @@ interface ToUpdate {
   image?: string;
   authorities?: string[];
   overwriteAuthorities?: boolean;
+  totalSupply?: BigNumber;
 }
 
 function createUpdated(existingToken: TokenClass, toUpdate: ToUpdate): TokenClass {
@@ -259,6 +260,7 @@ function createUpdated(existingToken: TokenClass, toUpdate: ToUpdate): TokenClas
   newToken.metadataAddress = toUpdate.metadataAddress ?? existingToken.metadataAddress;
   newToken.rarity = toUpdate.rarity ?? existingToken.rarity;
   newToken.image = toUpdate.image ?? existingToken.image;
+  newToken.totalSupply = toUpdate.totalSupply ?? existingToken.totalSupply;
 
   if (Array.isArray(toUpdate.authorities) && toUpdate.authorities.length > 0) {
     newToken.authorities = toUpdate.overwriteAuthorities

@@ -14,6 +14,7 @@
  */
 import { GalaChainResponse, TokenClass, UpdateTokenClassDto, createValidDTO } from "@gala-chain/api";
 import { currency, fixture, users, writesMap } from "@gala-chain/test";
+import BigNumber from "bignumber.js";
 
 import GalaChainTokenContract from "../__test__/GalaChainTokenContract";
 import { createValidChainObject } from "../types";
@@ -25,7 +26,8 @@ const defaultUpdate = () => ({
   image: "http://app.gala.games/UPDATED-image-url",
   symbol: "UPDATEDAUTOTESTCOIN",
   rarity: "Updateable",
-  authorities: [users.testAdminId, "client|new-admin"]
+  authorities: [users.testAdminId, "client|new-admin"],
+  totalSupply: new BigNumber(1000000)
 });
 
 it("should update token class", async () => {
