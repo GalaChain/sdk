@@ -1,4 +1,4 @@
-Assuming a brand new channel in the environment
+Assuming a brand new channel is deployed after following the steps in [chaincode-deployment.md](./chaincode-deployment.md).
 
 ## How to create keys
 

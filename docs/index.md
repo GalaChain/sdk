@@ -16,11 +16,16 @@ Read more about [GalaChain](galachain.md).
 
 - [**Getting started guide**](getting-started.md)
 - [Chaincode development](chaincode-development.md)
-- [CLI reference](../chain-cli/README.md)
+- [Chaincode client](chaincode-client.md)
+- [Chaincode testing](chaincode-testing.md)
 
 ## Deploying chaincode to GalaChain
 
 - [Chaincode deployment](chaincode-deployment.md)
+
+## Post Galachain deployment
+
+- [Chaincode post deployment](chaincode-post-deployment.md)
 
 ## Reference documentation
 - [`chain-api`](chain-api-docs/exports.md) - Common types, DTOs (Data Transfer Objects), APIs, signatures, and utils for GalaChain
