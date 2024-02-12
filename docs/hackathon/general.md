@@ -27,7 +27,7 @@ We'll be awarding everyone an Epic participation NFT. If your team wins, your en
 
 # Atmosphere
 
-1. We will be conducting this hackathon in our GalaChain [Discord](https://discord.com/channels/1063868136375459850/1063868139869319315).
+1. We will be conducting this hackathon in our GalaChain [Discord](https://discord.gg/t3gg9XMj44).
 1. Each team will have their own private room with voice, text and screen sharing capabilities.
 1. Don't have a team? Don't panic. Meet us in Discord using the above link. We will help find you a great team.
 2. If you need engineering support, head to the discord link above and let the engineers on duty know you need assistance. Then, someone will pop into your private room to help out.
