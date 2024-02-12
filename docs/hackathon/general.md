@@ -39,7 +39,7 @@ First, pull down the [Public SDK](https://github.com/GalaChain/sdk) onto your ma
 
 Next, here's a helpful flow to get you developing:
 
-1. Read the [Getting started guide](getting-started.md). If you get stuck contact a Gala engineer in the GalaChain General Discord chat.
+1. Read the [Getting started guide](../getting-started.md). If you get stuck contact a Gala engineer in the GalaChain General Discord chat.
 2. Use the CLI to init a project from template and start a local environment
 3. Use the samples in e2e tests and our reference docs for token operations to design the app flow
 4. Use unit tests or any code/scripts to interact with the chain
