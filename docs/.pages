@@ -1,0 +1,10 @@
+nav:
+    - Home: index.md
+    - GalaChain: galachain.md
+    - Getting Started: getting-started.md
+    - Galachain Development: chaincode-development.md
+    - Galachain Client: chaincode-client.md
+    - Galachain Testing: chaincode-testing.md
+    - Chaincode Deployment: chaincode-deployment.md
+    - Chaincode Post Deployment: chaincode-post-deployment.md
+    - ...

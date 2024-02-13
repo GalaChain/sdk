@@ -27,7 +27,7 @@ jobs:
       - name: Install mermaid-cli
         run: npm install -g @mermaid-js/mermaid-cli
       - name: Install pip packages
-        run: pip3 install mkdocs==1.5.3 mkdocs-material==9.4.8 mike==1.1.2 beautifulsoup4==4.9.3 setuptools==58.2.0
+        run: pip3 install mkdocs==1.5.3 mkdocs-material==9.4.8 mike==1.1.2 beautifulsoup4==4.9.3 setuptools==58.2.0 mkdocs-awesome-pages-plugin==2.9.2
       - name: Git config
         run: |
           git config --global user.email "${GITHUB_ACTOR}"
