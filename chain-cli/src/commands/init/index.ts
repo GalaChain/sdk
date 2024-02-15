@@ -24,9 +24,7 @@ import { getPathFileName } from "../../utils";
 export default class Init extends BaseCommand<typeof Init> {
   static override description = "Initialize a project template with Chain CLI.";
 
-  static override examples = [
-    "galachain init ./linux-mac-path/my-project-name",
-  ];
+  static override examples = ["galachain init ./linux-mac-path/my-project-name"];
 
   static override args = {
     path: Args.string({
