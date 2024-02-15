@@ -46,6 +46,7 @@
   "scripts": {
     "clean": "tsc -b --clean",
     "build": "shx rm -rf lib && mkdir -p lib && cp -r network lib/ && rsync -a --exclude-from=chaincode-template/.gitignore chaincode-template lib/ && tsc -b && oclif manifest && oclif readme && rm tsconfig.tsbuildinfo",
+    "build-win": "shx rm -rf lib && tsc -b && oclif manifest && oclif readme && xcopy chaincode-template lib\\chaincode-template /E /I && del tsconfig.tsbuildinfo",
     "madge": "madge --circular --warning lib",
     "lint": "nx run lint",
     "fix": "nx run lint --fix",

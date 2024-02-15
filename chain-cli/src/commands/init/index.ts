@@ -26,7 +26,7 @@ export default class Init extends BaseCommand<typeof Init> {
 
   static override examples = [
     "galachain init ./linux-mac-path/my-project-name",
-    "galachain init windows-path\\my-project-name"
+    "galachain init .windows-pathmy-project-name"
   ];
 
   static override args = {
@@ -71,7 +71,7 @@ export default class Init extends BaseCommand<typeof Init> {
   }
 
   copyChaincodeTemplate(destinationPath: string): void {
-    const sourceTemplateDir = path.resolve(require.resolve("."), "../../../chaincode-template");
+    const sourceTemplateDir = path.resolve(__dirname, "..", "..", "..", "chaincode-template");
     if (process.platform === "win32") {
       execSync(`xcopy ${sourceTemplateDir} ${destinationPath} /E /I`);
       return;
