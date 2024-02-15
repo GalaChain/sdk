@@ -26,7 +26,7 @@ export default class Init extends BaseCommand<typeof Init> {
 
   static override examples = [
     "galachain init ./linux-mac-path/my-project-name",
-    "galachain init .windows-pathmy-project-name"
+    "galachain init .\windows-path\my-project-name"
   ];
 
   static override args = {
