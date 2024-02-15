@@ -333,8 +333,6 @@ DESCRIPTION
 
 EXAMPLES
   $ galachain init ./linux-mac-path/my-project-name
-
-  $ galachain init .windows-pathmy-project-name
 ```
 
 ## `galachain keygen FILE`

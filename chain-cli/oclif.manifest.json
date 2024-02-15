@@ -284,8 +284,7 @@
       "pluginType": "core",
       "aliases": [],
       "examples": [
-        "galachain init ./linux-mac-path/my-project-name",
-        "galachain init .windows-pathmy-project-name"
+        "galachain init ./linux-mac-path/my-project-name"
       ],
       "flags": {
         "json": {
