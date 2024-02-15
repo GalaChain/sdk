@@ -72,6 +72,10 @@ export default class Init extends BaseCommand<typeof Init> {
 
   copyChaincodeTemplate(destinationPath: string): void {
     const sourceTemplateDir = path.resolve(require.resolve("."), "../../../chaincode-template");
+    if (process.platform === "win32") {
+      execSync(`xcopy ${sourceTemplateDir} ${destinationPath} /E /I`);
+      return;
+    }
     execSync(`cp -R ${sourceTemplateDir} ${destinationPath}`);
   }
 }
