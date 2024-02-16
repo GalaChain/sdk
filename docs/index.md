@@ -23,7 +23,7 @@ Read more about [GalaChain](galachain.md).
 
 - [Chaincode deployment](chaincode-deployment.md)
 
-## Post Galachain deployment
+## Galachain post deployment
 
 - [Chaincode post deployment](chaincode-post-deployment.md)
 

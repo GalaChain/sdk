@@ -18,7 +18,7 @@ $ npm install -g @gala-chain/cli
 $ galachain COMMAND
 running command...
 $ galachain (--version)
-@gala-chain/cli/1.0.0 linux-x64 node-v16.20.2
+@gala-chain/cli/1.0.13 linux-x64 node-v18.17.0
 $ galachain --help [COMMAND]
 USAGE
   $ galachain COMMAND
@@ -333,8 +333,6 @@ DESCRIPTION
 
 EXAMPLES
   $ galachain init ./linux-mac-path/my-project-name
-
-  $ galachain init windows-path\my-project-name
 ```
 
 ## `galachain keygen FILE`
