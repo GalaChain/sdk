@@ -35,7 +35,7 @@ export class NftMultipleBurnNotAllowedError extends ValidationFailedError {
 
 export class BurnTokensFailedError extends DefaultError {
   constructor(message: string, payload: Record<string, unknown> | undefined) {
-    super(`BurnTokens failed: ${message}$`, payload);
+    super(`BurnTokens failed: ${message}`, payload);
   }
 }
 
