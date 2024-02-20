@@ -34,3 +34,28 @@ jobs:
             exit 1
           }
 
+  chaincode-template-lint:
+    runs-on: ubuntu-22.04
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '18'
+      - name: Install dependencies
+        run: npm install
+      - name: Build CLI and link it
+        run: |
+          cd chain-cli
+          npm install
+          npm run build
+          npm link --force
+      - name: Chaincode lint
+        run: |
+          galachain init test-project
+          cd test-project
+          npm install
+          npm run build
+          npm run lint
+
