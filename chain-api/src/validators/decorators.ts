@@ -29,7 +29,7 @@ export function IsWholeNumber(property: string, validationOptions?: ValidationOp
           const relatedValue = args.object[relatedPropertyName];
           const num = Number(relatedValue);
 
-          return num - Math.floor(num) !== 0;
+          return num - Math.floor(num) === 0;
         }
       }
     });
