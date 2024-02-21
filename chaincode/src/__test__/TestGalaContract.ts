@@ -126,6 +126,6 @@ export default class TestGalaContract extends GalaContract {
       })
     );
 
-    return getObjectsByPartialCompositeKey(ctx, Superhero.INDEX_KEY, [], Superhero, false);
+    return getObjectsByPartialCompositeKey(ctx, Superhero.INDEX_KEY, [], Superhero);
   }
 }

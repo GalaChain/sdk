@@ -99,8 +99,7 @@ async function grantAllowanceByPartialKey(
             ctx,
             TokenAllowance.INDEX_KEY,
             allowanceQueryParamsForBalance,
-            TokenAllowance,
-            true // TODO: may lead to incomplete results
+            TokenAllowance
           )
         );
       }
@@ -122,8 +121,7 @@ async function grantAllowanceByPartialKey(
           ctx,
           TokenAllowance.INDEX_KEY,
           allowanceQueryParamsForBalance,
-          TokenAllowance,
-          true // TODO: may lead to incomplete results
+          TokenAllowance
         )
       );
     }
@@ -573,8 +571,7 @@ export async function preventDuplicateAllowance(
     ctx,
     TokenAllowance.INDEX_KEY,
     chainKeys,
-    TokenAllowance,
-    true // TODO: may lead to incomplete results
+    TokenAllowance
   );
 
   for (const existingAllowance of results) {

@@ -49,8 +49,7 @@ export async function fetchAllowances(
     ctx,
     TokenAllowance.INDEX_KEY,
     queryParams,
-    TokenAllowance,
-    true // TODO: may lead to incomplete results
+    TokenAllowance
   );
 
   const results = filterByGrantedBy(getObjectsResponse, data.grantedBy);
