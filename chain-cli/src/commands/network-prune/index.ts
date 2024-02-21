@@ -15,11 +15,12 @@
 import { Flags } from "@oclif/core";
 
 import { Fablo } from "fablo";
+import fs from "fs";
 import path from "path";
 
 import BaseCommand from "../../base-command";
 import { defaultFabloRoot } from "../../consts";
-import { execSync, execSyncStdio } from "../../exec-sync";
+import { execSyncStdio } from "../../exec-sync";
 
 export default class NetworkPrune extends BaseCommand<typeof NetworkPrune> {
   static override aliases = ["network:prune"];
@@ -39,7 +40,10 @@ export default class NetworkPrune extends BaseCommand<typeof NetworkPrune> {
   async run(): Promise<void> {
     const { flags } = await this.parse(NetworkPrune);
 
-    const fabloRoot = getOrCreateFabloRoot(flags.fabloRoot);
+    const fabloRoot = getFabloRoot(flags.fabloRoot);
+    if (fabloRoot === "") {
+      this.exit();
+    }
 
     await Fablo.directory(fabloRoot)
       .then(() => downBrowserApi(fabloRoot))
@@ -56,8 +60,11 @@ function downBrowserApi(fabloRoot: string): void {
   }
 }
 
-function getOrCreateFabloRoot(fabloDir: string): string {
-  const fabloRoot = path.resolve(fabloDir);
-  execSync(`mkdir -p "${fabloRoot}"`);
-  return fabloRoot;
+function getFabloRoot(fabloDir: string): string {
+  if (fs.existsSync(fabloDir)) {
+    return path.resolve(fabloDir);
+  } else {
+    console.log(`Directory '${fabloDir}' does not exist.`);
+    return "";
+  }
 }
