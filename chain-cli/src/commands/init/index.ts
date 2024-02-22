@@ -24,10 +24,7 @@ import { getPathFileName } from "../../utils";
 export default class Init extends BaseCommand<typeof Init> {
   static override description = "Initialize a project template with Chain CLI.";
 
-  static override examples = [
-    "galachain init ./linux-mac-path/my-project-name",
-    "galachain init windows-path\\my-project-name"
-  ];
+  static override examples = ["galachain init ./linux-mac-path/my-project-name"];
 
   static override args = {
     path: Args.string({
@@ -71,6 +68,11 @@ export default class Init extends BaseCommand<typeof Init> {
   }
 
   copyChaincodeTemplate(destinationPath: string): void {
+    if (process.platform === "win32") {
+      const sourceTemplateDir = path.resolve(__dirname, "..", "..", "..", "chaincode-template");
+      execSync(`xcopy ${sourceTemplateDir} ${destinationPath} /E /I`);
+      return;
+    }
     const sourceTemplateDir = path.resolve(require.resolve("."), "../../../chaincode-template");
     execSync(`cp -R ${sourceTemplateDir} ${destinationPath}`);
   }

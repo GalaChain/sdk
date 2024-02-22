@@ -1,5 +1,5 @@
 {
-  "version": "1.0.6",
+  "version": "1.0.14",
   "commands": {
     "connect": {
       "id": "connect",
@@ -284,8 +284,7 @@
       "pluginType": "core",
       "aliases": [],
       "examples": [
-        "galachain init ./linux-mac-path/my-project-name",
-        "galachain init windows-path\\my-project-name"
+        "galachain init ./linux-mac-path/my-project-name"
       ],
       "flags": {
         "json": {

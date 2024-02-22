@@ -211,7 +211,7 @@ export class RestApiClientBuilder extends ChainClientBuilder {
         const resp = await axios.post(`${this.restApiUrl}/identity/ensure-user`, payload, { headers });
         const status = resp.data.status;
         if (![1, 2, 3].includes(status)) {
-          throw new Error(`Failed to create user ${this.credentials.adminKey}: ${resp.data}`);
+          console.warn(`Failed to create user ${this.credentials.adminKey}: ${JSON.stringify(resp.data)}`);
         }
       })
       .catch((e) => {
