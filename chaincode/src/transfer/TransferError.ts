@@ -29,6 +29,6 @@ export class SameSenderAndRecipientError extends ValidationFailedError {
 
 export class TransferTokenFailedError extends DefaultError {
   constructor(message: string, payload: Record<string, unknown> | undefined) {
-    super(`TransferToken failed: ${message}$`, payload);
+    super(`TransferToken failed: ${message}`, payload);
   }
 }

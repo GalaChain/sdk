@@ -39,7 +39,7 @@ export class InvalidExpirationError extends ValidationFailedError {
 
 export class LockTokenFailedError extends DefaultError {
   constructor(message: string, payload: Record<string, unknown> | undefined) {
-    super(`LockToken failed: ${message}$`, payload);
+    super(`LockToken failed: ${message}`, payload);
   }
 }
 
