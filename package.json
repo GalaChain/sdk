@@ -12,7 +12,8 @@
     "typedoc-chain-api": "typedoc --tsconfig ./tsconfig.base.json --hideGenerator --plugin typedoc-plugin-markdown --githubPages false --out ./docs/chain-api-docs ./chain-api/src",
     "typedoc-chain-client": "typedoc --tsconfig ./tsconfig.base.json --hideGenerator --plugin typedoc-plugin-markdown --githubPages false --out ./docs/chain-client-docs ./chain-client/src",
     "typedoc-chaincode": "typedoc --tsconfig ./tsconfig.base.json --hideGenerator --plugin typedoc-plugin-markdown --githubPages false --out ./docs/chaincode-docs ./chaincode/src",
-    "typedoc-chain-test": "typedoc --tsconfig ./tsconfig.base.json --hideGenerator --plugin typedoc-plugin-markdown --githubPages false --out ./docs/chain-test-docs ./chain-test/src",
+    "typedoc-chain-test": "typedoc --tsconfig ./tsconfig.base.json --hideGenerator --plugin typedoc-plugin-markdown --githubPages false --out ./docs/chain-test-docs ./chain-test/src && rm ./docs/chain-test-docs/README.md",
+    "replace": "find ./docs/chain-test-docs/ -type f -exec sed -ri 's/∙ \\[README\\]\\(README\\.md\\) //g' {} \\;",
     "prepublish": "npm run licenses"
   },
   "private": true,
