@@ -14,6 +14,15 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+      - name: Install project dependencies
+        run: npm install
+      - name: Generate typedocs
+        run: |
+          npm run typedoc-chain-api
+          npm run typedoc-chain-client
+          npm run typedoc-chaincode
+          npm run typedoc-chain-test
+          npm run replace-readme-docs
       - name: Install google-chrome
         run: |
           wget https://dl.google.com/linux/direct/google-chrome-stable_current_amd64.deb
