@@ -55,7 +55,7 @@ export async function fetchBalancesWithTokenMetadata(
     data.bookmark,
     data.limit
   ).catch((e) => {
-    throw ChainError.map(e, ErrorCode.NOT_FOUND, new BalanceNotFoundError(ctx.callingUser));
+    throw ChainError.map(e, ErrorCode.NOT_FOUND, new BalanceNotFoundError(data.owner));
   });
 
   const results: TokenBalanceWithMetadata[] = [];
