@@ -17,7 +17,7 @@ Members of Chain Team at Gala Games in alphabetical order:
 - Mike Graham [@sentientforest](https://github.com/sentientforest)
 - Dustin Jorge [@dustinmj](https://github.com/dustinmj)
 - Jonas Michel [@jonasrmichel](https://github.com/jonasrmichel)
-- Michał Mital [@m-mital](https://github.com/m-mital)
+- Michał Mital [@herr-bubu](https://github.com/herr-bubu)
 - Rhiannon Nichols [@RhiannonNichols](https://github.com/RhiannonNichols)
 - Umegbewe "Great" Nwebedu [@umegbewe](https://github.com/umegbewe)
 - Todd Rasband [@Rasbandit](https://github.com/Rasbandit)
