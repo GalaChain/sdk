@@ -41,7 +41,7 @@ export default class NetworkPrune extends BaseCommand<typeof NetworkPrune> {
     const { flags } = await this.parse(NetworkPrune);
 
     const fabloRoot = getFabloRoot(flags.fabloRoot);
-    if (fabloRoot === "") {
+    if (fabloRoot === undefined) {
       this.exit();
     }
 
@@ -60,11 +60,11 @@ function downBrowserApi(fabloRoot: string): void {
   }
 }
 
-function getFabloRoot(fabloDir: string): string {
+function getFabloRoot(fabloDir: string): string | undefined {
   if (fs.existsSync(fabloDir)) {
     return path.resolve(fabloDir);
   } else {
-    console.log(`Directory '${fabloDir}' does not exist.`);
-    return "";
+    console.warn(`Directory '${fabloDir}' does not exist.`);
+    return undefined;
   }
 }
