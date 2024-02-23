@@ -315,11 +315,10 @@ export class TokenBalance extends ChainObject {
 
   public findInUseHold(
     instanceId: BigNumber,
-    name: string | undefined,
     currentTime: number
   ): TokenHold | undefined {
     this.ensureInstanceIsNft(instanceId);
-    return this.getUnexpiredInUseHolds(currentTime).find((h) => h.matches(instanceId, name));
+    return this.getUnexpiredInUseHolds(currentTime).find((h) => h.instanceId.isEqualTo(instanceId));
   }
 
   public containsAnyNftInstanceId(): boolean {

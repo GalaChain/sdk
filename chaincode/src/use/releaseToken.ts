@@ -23,12 +23,11 @@ import { ReleaseForbiddenUserError } from "./UseError";
 
 interface ReleaseTokenParams {
   tokenInstanceKey: TokenInstanceKey;
-  name: string | undefined;
 }
 
 export async function releaseToken(
   ctx: GalaChainContext,
-  { tokenInstanceKey, name }: ReleaseTokenParams
+  { tokenInstanceKey }: ReleaseTokenParams
 ): Promise<TokenBalance> {
   if (tokenInstanceKey.isFungible()) {
     throw new NotImplementedError("RealeaseToken is not supported for fungible tokens", {
@@ -41,7 +40,7 @@ export async function releaseToken(
   const owner = tokenInstance.owner as string;
 
   const balance = await fetchOrCreateBalance(ctx, owner, tokenInstanceKey.getTokenClassKey());
-  const applicableHold = balance.findInUseHold(tokenInstanceKey.instance, name, ctx.txUnixTime);
+  const applicableHold = balance.findInUseHold(tokenInstanceKey.instance, ctx.txUnixTime);
 
   // determine if user is authorized to release
   const authorized = applicableHold?.createdBy === ctx.callingUser || balance.owner === ctx.callingUser;
