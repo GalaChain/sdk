@@ -8,8 +8,9 @@ on:
 
 jobs:
   ci:
-    name: CI
+    name: Test SDK
     runs-on: ubuntu-22.04
+    if: github.event_name != 'push' || github.event_name != 'pull_request' || github.event_name != 'workflow_dispatch'
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -35,6 +36,7 @@ jobs:
   template-e2e:
     needs: [ci]
     name: Test Project Template
+    if: github.event_name != 'push' || github.event_name != 'pull_request' || github.event_name != 'workflow_dispatch'
     runs-on: ubuntu-22.04
     env:
       GALA_CLIENT_DEV_MODE: "true"
@@ -90,6 +92,7 @@ jobs:
   template-image-check:
     name: Template Image Check
     needs: [ci]
+    if: github.event_name != 'push' || github.event_name != 'pull_request' || github.event_name != 'workflow_dispatch'
     runs-on: ubuntu-22.04
     steps:
       - name: Checkout
@@ -128,6 +131,12 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v4
+      - uses: dorny/paths-filter@v3
+        id: changes
+        with:
+          filters: |
+            src:
+              - 'chain-cli/src/commands/**'
       - name: Set up Node.js
         uses: actions/setup-node@v4
         with:
@@ -158,6 +167,12 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v4
+      - uses: dorny/paths-filter@v3
+        id: changes
+        with:
+          filters: |
+            src:
+              - 'chain-cli/chaincode-template/**'
       - name: Set up Node.js
         uses: actions/setup-node@v4
         with:
