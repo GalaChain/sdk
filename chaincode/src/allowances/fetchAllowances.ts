@@ -18,7 +18,7 @@ import { GalaChainContext } from "../types";
 import { getObjectsByPartialCompositeKey, getObjectsByPartialCompositeKeyWithPagination } from "../utils";
 import { takeUntilUndefined } from "../utils";
 
-interface FetchAllowancesParams {
+export interface FetchAllowancesParams {
   collection?: string;
   category?: string;
   type?: string;

@@ -23,7 +23,7 @@ import { GalaChainContext } from "../types";
 import { putChainObject } from "../utils";
 import { SameSenderAndRecipientError } from "./TransferError";
 
-interface TransferTokenParams {
+export interface TransferTokenParams {
   from: string;
   to: string;
   tokenInstanceKey: TokenInstanceKey;

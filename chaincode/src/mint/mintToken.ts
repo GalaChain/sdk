@@ -36,7 +36,7 @@ import { getObjectByKey, putChainObject } from "../utils";
 import { InsufficientMintAllowanceError, NftMaxMintError, UseAllowancesFailedError } from "./MintError";
 import { writeMintRequest } from "./requestMint";
 
-interface MintTokenParams {
+export interface MintTokenParams {
   tokenClassKey: TokenClassKey;
   owner: string;
   quantity: BigNumber;
@@ -238,7 +238,7 @@ export async function mintToken(
   }
 }
 
-interface UpdateTokenSupplyParams {
+export interface UpdateTokenSupplyParams {
   tokenClassKey: TokenClassKeyProperties;
   callingUser: string;
   owner: string;
