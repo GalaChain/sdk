@@ -7,7 +7,7 @@ on:
 
 jobs:
   ci:
-    name: Test SDK
+    name: CI
     runs-on: ubuntu-22.04
     steps:
       - name: Checkout
