@@ -163,11 +163,14 @@ jobs:
           node-version: 18
       - name: Install dependencies
         run: npm install
-      - name: Build CLI and link it
+      - name: Build CLI
         run: |
           cd chain-cli
           npm install
           npm run build
+          cd chaincode-template
+          ../../npm-pack-and-replace.sh --skipConfirmation
+          cd ..
           npm link --force
       - name: Chaincode lint
         run: |
