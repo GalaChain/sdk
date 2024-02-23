@@ -169,6 +169,9 @@ jobs:
           cd chain-cli
           npm install
           npm run build
+          cd chaincode-template
+          ../../npm-pack-and-replace.sh --skipConfirmation
+          cd ..
           npm link --force
       - name: Chaincode lint
         run: |
