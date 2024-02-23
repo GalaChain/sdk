@@ -69,7 +69,7 @@ export async function mintToken(
 
   const decimalPlaces = quantity.decimalPlaces() ?? 0;
   if (decimalPlaces > tokenClass.decimals) {
-    throw new InvalidDecimalError(quantity, tokenClass.decimals).logError(ctx.logger);
+    throw new InvalidDecimalError(quantity, tokenClass.decimals);
   }
 
   // dto is valid, do chain code specific validation
@@ -143,13 +143,13 @@ export async function mintToken(
   );
 
   if (!allowancesUsed) {
-    throw new UseAllowancesFailedError(quantity, dtoInstanceKey.toStringKey(), owner).logError(ctx.logger);
+    throw new UseAllowancesFailedError(quantity, dtoInstanceKey.toStringKey(), owner);
   }
 
   if (tokenClass.isNonFungible) {
     // For NFTs we have an upper limit
     if (quantity.isGreaterThan(MintTokenDto.MAX_NFT_MINT_SIZE)) {
-      throw new NftMaxMintError(quantity).logError(ctx.logger);
+      throw new NftMaxMintError(quantity);
     }
 
     /*
