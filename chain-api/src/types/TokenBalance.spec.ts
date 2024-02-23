@@ -608,7 +608,7 @@ describe("non-fungible", () => {
     balance.ensureCanAddInstance(new BigNumber(1)).add();
     balance.ensureCanUseInstance(unexpiredHold, Date.now()).use();
 
-    const foundHold = balance.findInUseHold(new BigNumber(1), undefined, Date.now());
+    const foundHold = balance.findInUseHold(new BigNumber(1), Date.now());
 
     // Then
     expect(foundHold).toEqual(unexpiredHold);
