@@ -313,10 +313,7 @@ export class TokenBalance extends ChainObject {
     return this.getUnexpiredLockedHolds(currentTime).find((h) => h.matches(instanceId, name));
   }
 
-  public findInUseHold(
-    instanceId: BigNumber,
-    currentTime: number
-  ): TokenHold | undefined {
+  public findInUseHold(instanceId: BigNumber, currentTime: number): TokenHold | undefined {
     this.ensureInstanceIsNft(instanceId);
     return this.getUnexpiredInUseHolds(currentTime).find((h) => h.matches(instanceId, undefined));
   }
