@@ -474,7 +474,8 @@ export class TokenBalance extends ChainObject {
   private isMatchingHold(hold: TokenHold, name?: string, lockAuthority?: string): boolean {
     return (
       (hold.name === name || (hold.name === undefined && name === undefined)) &&
-      (hold.lockAuthority === lockAuthority || (hold.lockAuthority === undefined && lockAuthority === undefined))
+      (hold.lockAuthority === lockAuthority ||
+        (hold.lockAuthority === undefined && lockAuthority === undefined))
     );
   }
 
