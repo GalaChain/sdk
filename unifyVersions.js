@@ -95,6 +95,9 @@ packages.forEach(({ packageJson, packageJsonPath }) => {
   }
 });
 
+// execute `npm install` in the root directory to update the lock file and licenses
+execSync("npm install");
+
 // execute `npm run build` in chain-cli to update the new version in README.md and oclif.manifest.json
 const { execSync } = require("child_process");
 execSync("npm run build", { cwd: "chain-cli" });
