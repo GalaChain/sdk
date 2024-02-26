@@ -19,7 +19,8 @@ import path from "path";
 
 import BaseCommand from "../../base-command";
 import { defaultFabloRoot } from "../../consts";
-import { execSync, execSyncStdio } from "../../exec-sync";
+import { execSyncStdio } from "../../exec-sync";
+import { Shell } from "../../shell";
 
 export default class NetworkPrune extends BaseCommand<typeof NetworkPrune> {
   static override aliases = ["network:prune"];
@@ -58,6 +59,7 @@ function downBrowserApi(fabloRoot: string): void {
 
 function getOrCreateFabloRoot(fabloDir: string): string {
   const fabloRoot = path.resolve(fabloDir);
-  execSync(`mkdir -p "${fabloRoot}"`);
+  const shell = new Shell();
+  shell.mkdir(`${fabloRoot}`);
   return fabloRoot;
 }

@@ -22,9 +22,11 @@ import path from "path";
 import BaseCommand from "../../base-command";
 import { getCPPs, getCPPsBrowserApi } from "../../connection-profile";
 import { defaultFabloRoot } from "../../consts";
-import { execSync, execSyncStdio } from "../../exec-sync";
+import { execSyncStdio } from "../../exec-sync";
+import { Shell } from "../../shell";
 
 const defaultChaincodeDir = ".";
+const shell = new Shell();
 
 export interface SingleArg {
   channel: string;
@@ -224,7 +226,7 @@ function updatedFabloConfigWithEntry(
 function customValidation(flags: any): void {
   const { channel, channelType, chaincodeName, chaincodeDir } = flags;
 
-  /* 
+  /*
     The same number of parameters for chaincode, channelTyle, chaincode and chaincodeDir is required
   */
   if (
@@ -237,7 +239,7 @@ function customValidation(flags: any): void {
     );
   }
 
-  /* 
+  /*
     Channel types need to be consistend
   */
   channel.reduce(
@@ -256,7 +258,7 @@ function customValidation(flags: any): void {
     {} as Record<string, "curator" | "partner">
   );
 
-  /* 
+  /*
     (channel, chaincodeName) pairs should be unique
   */
   channel
@@ -267,7 +269,7 @@ function customValidation(flags: any): void {
       }
     });
 
-  /* 
+  /*
     Watch mode
   */
   if (flags.watch) {
@@ -288,7 +290,8 @@ function reduce(args: any): SingleArg[] {
 
 function copyNetworkScriptsTo(targetPath: string): void {
   const sourceScriptsDir = path.resolve(require.resolve("."), "../../../network");
-  execSync(`mkdir -p "${targetPath}" && cd "${targetPath}" && cp -R "${sourceScriptsDir}"/* ./ && ls -lh`);
+
+  shell.mkdir(targetPath).cd(targetPath).cpR(sourceScriptsDir, "./").ls();
 }
 
 function saveConnectionProfiles(
@@ -302,7 +305,7 @@ function saveConnectionProfiles(
   const cpps = getCPPs(cryptoConfigRoot, channelNames, localhostName, !isWatchMode, true, !isWatchMode);
 
   const cppDir = path.resolve(fabloRoot, "connection-profiles");
-  execSync(`mkdir -p "${cppDir}"`);
+  shell.mkdir(cppDir);
 
   const cppPath = (org: string) => path.resolve(cppDir, `cpp-${org}.json`);
   writeFileSync(cppPath("curator"), JSON.stringify(cpps.curator, undefined, 2));
@@ -320,7 +323,7 @@ function saveConnectionProfiles(
   );
 
   const cppDirBrowser = path.resolve(fabloRoot, "connection-profiles-browser");
-  execSync(`mkdir -p "${cppDirBrowser}"`);
+  shell.mkdir(cppDirBrowser);
 
   // Browser-api needs the generated connection profile when running in watch mode and the harded coded one when running in non-watch mode
   if (isWatchMode) {
@@ -328,6 +331,8 @@ function saveConnectionProfiles(
     writeFileSync(cppPathBrowser("curator"), JSON.stringify(cppsBrowser.curator, undefined, 2));
   } else {
     const sourceCppDirBrowser = path.resolve(".", `${defaultFabloRoot}/browser-api/connection-profiles`);
-    execSync(`cp "${sourceCppDirBrowser}/cpp-curator.json" "${cppDirBrowser}/"`);
+    const fileToCopy = `"${sourceCppDirBrowser}/cpp-curator.json"`;
+    const destinationPath = `"${cppDirBrowser}"`;
+    shell.cp(fileToCopy, destinationPath);
   }
 }
