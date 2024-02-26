@@ -18,7 +18,7 @@ import * as fs from "fs";
 import path from "path";
 
 import BaseCommand from "../../base-command";
-import { execSync } from "../../exec-sync";
+import { Shell } from "../../shell";
 import { getPathFileName } from "../../utils";
 
 export default class Init extends BaseCommand<typeof Init> {
@@ -68,12 +68,8 @@ export default class Init extends BaseCommand<typeof Init> {
   }
 
   copyChaincodeTemplate(destinationPath: string): void {
-    if (process.platform === "win32") {
-      const sourceTemplateDir = path.resolve(__dirname, "..", "..", "..", "chaincode-template");
-      execSync(`xcopy ${sourceTemplateDir} ${destinationPath} /E /I`);
-      return;
-    }
+    const shell = new Shell();
     const sourceTemplateDir = path.resolve(require.resolve("."), "../../../chaincode-template");
-    execSync(`cp -R ${sourceTemplateDir} ${destinationPath}`);
+    shell.cpR(sourceTemplateDir, destinationPath);
   }
 }
