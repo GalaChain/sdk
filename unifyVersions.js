@@ -94,3 +94,7 @@ packages.forEach(({ packageJson, packageJsonPath }) => {
     require("fs").writeFileSync(packageJsonPath, JSON.stringify(packageJson, undefined, 2) + "\n");
   }
 });
+
+// execute `npm run build` in chain-cli to update the new version in README.md and oclif.manifest.json
+const { execSync } = require("child_process");
+execSync("npm run build", { cwd: "chain-cli" });
