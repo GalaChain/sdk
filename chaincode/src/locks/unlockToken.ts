@@ -80,7 +80,7 @@ export async function unlockFungibleToken(
   ctx: GalaChainContext,
   { tokenInstanceKey, name, quantity }: UnlockTokenParams
 ): Promise<TokenBalance> {
-  const owner = name ?? ctx.callingUser;
+  const owner = ctx.callingUser;
   const quantityToUnlock = quantity ?? new BigNumber("0");
 
   if (quantityToUnlock.isEqualTo("0")) {
