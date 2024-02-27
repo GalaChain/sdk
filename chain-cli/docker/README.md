@@ -2,50 +2,51 @@
 
 ## Base requirement
 
-- Docker Desktop or Docker CLI installed on your machine.
-- VS Code with [Dev Containers](https://marketplace.visualstudio.com/items?itemName=ms-vscode-remote.remote-containers) extension.
-
-## Build the image
-Run the docker build command
-
-	$ docker build --build-arg PROJECT_NAME=<project_folder_name> -t <image_name> .
-
-You can also run this command without the project name argument:
-
-	$ docker build -t <image_name> .
-
-This will run the `galachain init <project-name>` command with a default project-name of `proj-galachain`
-
+- Docker Desktop or Docker CLI.
+- [Optional] VS Code with [Dev Containers](https://marketplace.visualstudio.com/items?itemName=ms-vscode-remote.remote-containers) extension.
 
 ## Run a container
 Run a container from the built image:
 
-    $ docker run --privileged -d -p 3010:3010 -it --name <container_name> <image_name>
+    $ docker run --privileged -d -p 3010:3010 -it --name <container_name> ghcr.io/gala-games/sdk-cli:latest
     
 Make sure the container is up and running.
+The Docker image initializes a new project with the name `chaincode-template` by default.
 
-## Attach VS Code to the Container
+## Open the running container
 
-Make sure you have the Dev Containers extension installed in VS code.
+### Open the container with bash
 
-Run `Dev Containers: Attach to a running container`
+```
+docker exec -ti <container_name> /bin/bash
+```
+
+### Open the container with VSCode (Requires VSCode and Dev Containers Extension)
+
+Open VSCode and press F1 to open the Command Palette and search for `Dev Containers: Attach to Running Container`
 
 After attach the container you may have to open the project folder manually.
 
-
-## Open the Dev Container Terminal and Start Network
+## Start the network
 
 Once the terminal is open, start the network
-    $ npm run network:start
+
+```
+npm run network:start
+```
 
 The network is going to start in dev mode and the prompt will be left showing the logs, so don't close the prompt and open new ones to proceed with the following commands.
 
-## Open a new Dev Container Terminal and Run Tests
+## Run integration tests
 
-    $ npm run test:e2e
+Now you can run integration tests with:
 
+```
+npm run test:e2e
+```
 
 ## Verify changes in block browser and GraphQL
-Navigate to http://localhost:3010/blocks to see our block browser which allows you to see what's saved on your local GalaChain network.
 
-Navigate to http://localhost:3010/graphiql to interact with GraphQL and execute queries.
+Navigate to [http://localhost:3010/blocks](http://localhost:3010/blocks) to see our block browser which allows you to see what's saved on your local GalaChain network.
+
+Navigate to [http://localhost:3010/graphiql](http://localhost:3010/graphiql) to interact with GraphQL and execute queries.

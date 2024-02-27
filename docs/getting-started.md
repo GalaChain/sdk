@@ -146,13 +146,17 @@ Navigate to [http://localhost:3010/graphiql](http://localhost:3010/graphiql) to 
 
 ### Requirements
 
-- Docker
+- Docker Desktop or Docker CLI.
+- [Optional] VS Code with [Dev Containers](https://marketplace.visualstudio.com/items?itemName=ms-vscode-remote.remote-containers) extension.
 
 ### 1. Run the Docker image
 
 ```
 docker run --privileged -d -p 3010:3010 -it --name <container_name> ghcr.io/gala-games/sdk-cli:latest
 ```
+
+Make sure the container is up and running.
+The Docker image initializes a new project with the name `chaincode-template` by default.
 
 ### 2. Open the running container
 
