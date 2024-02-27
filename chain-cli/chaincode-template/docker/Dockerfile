@@ -27,6 +27,3 @@ RUN npm install
 
 # Expose port 3010
 EXPOSE 3010
-
-# Start the Docker daemon as a background process and tail its log file
-CMD dockerd > /var/log/dockerd.log 2>&1 & tail -f /var/log/dockerd.log
