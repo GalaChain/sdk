@@ -174,7 +174,7 @@ After attach the container you may have to open the project folder manually.
 
 ### 3. Start the network
 
-Once the terminal is open, start the network
+Once the terminal is open, start the network with:
 
 ```
 npm run network:start
