@@ -28,4 +28,4 @@ jobs:
       with:
         context: ./chain-cli/docker
         push: true
-        tags: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:latest
+        tags: galachain/${{ env.IMAGE_NAME }}:latest
