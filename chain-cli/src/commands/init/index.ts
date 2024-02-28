@@ -14,7 +14,9 @@
  */
 import { Args } from "@oclif/core";
 
+import * as secp from "@noble/secp256k1";
 import * as fs from "fs";
+import { writeFile } from "node:fs/promises";
 import path from "path";
 
 import BaseCommand from "../../base-command";
@@ -38,7 +40,7 @@ export default class Init extends BaseCommand<typeof Init> {
     const { args } = await this.parse(Init);
 
     try {
-      this.copyChaincodeTemplate(args.path);
+      await this.copyChaincodeTemplate(args.path);
 
       // Update the name field in the package.json and the package-lock.json to be `@gala-games/<project-name>`
       const fileName = getPathFileName(args.path);
@@ -61,6 +63,10 @@ export default class Init extends BaseCommand<typeof Init> {
           this.error(`Error updating project name in ${projectPath}: ${err}`);
         }
       });
+
+      await this.generateKeys(`${args.path}/keys`);
+      await this.gitignoreKeys(`${args.path}`);
+
       this.log(`Project template initialized at ${args.path}`);
     } catch (error) {
       this.error(`Error initializing project template: ${error}`);
@@ -70,5 +76,28 @@ export default class Init extends BaseCommand<typeof Init> {
   copyChaincodeTemplate(destinationPath: string): void {
     const sourceTemplateDir = path.resolve(require.resolve("."), "../../../chaincode-template");
     execSync(`cp -R ${sourceTemplateDir} ${destinationPath}`);
+  }
+
+  async generateKeys(keysPath: string): Promise<void> {
+    const adminPrivateKey = secp.utils.bytesToHex(secp.utils.randomPrivateKey());
+    const adminPublicKey = secp.utils.bytesToHex(secp.getPublicKey(adminPrivateKey));
+
+    const devPrivateKey = secp.utils.bytesToHex(secp.utils.randomPrivateKey());
+    const devPublicKey = secp.utils.bytesToHex(secp.getPublicKey(adminPrivateKey));
+
+    execSync(`mkdir -p ${keysPath}`);
+
+    this.log(`Generating keys to ${keysPath}`);
+    await writeFile(`${keysPath}/gc-admin-key.pub`, adminPublicKey);
+    await writeFile(`${keysPath}/gc-admin-key`, adminPrivateKey.toString());
+    await writeFile(`${keysPath}/gc-dev-key.pub`, devPublicKey);
+    await writeFile(`${keysPath}/gc-dev-key`, devPrivateKey.toString());
+  }
+
+  private async gitignoreKeys(projectPath: string): Promise<void> {
+    const gitignorePath = path.resolve(projectPath, ".gitignore");
+    const keyEntries = ["gc-admin-key", "gc-dev-key", "gc-dev-key.pub"];
+
+    keyEntries.forEach((entry) => fs.appendFileSync(gitignorePath, `${entry}\n`));
   }
 }
