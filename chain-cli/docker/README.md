@@ -8,7 +8,7 @@
 ## Run a container
 Run a container from the built image:
 
-    $ docker run --privileged -d -p 3010:3010 -it --name <container_name> ghcr.io/gala-chain/sdk:latest
+    $ docker run --privileged -d -p 3010:3010 -it --name <container_name> ghcr.io/galachain/sdk:latest
     
 Make sure the container is up and running.
 The Docker image initializes a new project with the name `chaincode-template` by default.
