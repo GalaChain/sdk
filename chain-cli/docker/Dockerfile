@@ -13,7 +13,7 @@ RUN npm install -g @gala-chain/cli
 # Install Nodemon globally
 RUN npm install -g nodemon
 
-# Initialize a project with galachain
+# Initialize a project with a default name of "chaincode-template"
 RUN galachain init chaincode-template
 
 # Change working directory to the project directory
