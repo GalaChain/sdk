@@ -6,7 +6,7 @@ on:
 
 env:
   REGISTRY: ghcr.io
-  IMAGE_NAME: ${{ github.repository }}
+  IMAGE_NAME: galachain/sdk
 
 jobs:
   build-and-push-image:
@@ -23,9 +23,14 @@ jobs:
         registry: ${{ env.REGISTRY }}
         username: ${{ github.actor }}
         password: ${{ secrets.GITHUB_TOKEN }}
+    - name: Make the repository name lowercase
+      id: lower-repo
+      shell: pwsh
+      run: |
+        "::set-output name=repository::$($env:GITHUB_REPOSITORY.ToLowerInvariant())"
     - name: Build and push Docker image
       uses: docker/build-push-action@v5
       with:
         context: ./chain-cli/docker
         push: true
-        tags: galachain/${{ env.IMAGE_NAME }}:latest
+        tags: ghcr.io/${{ steps.lower-repo.outputs.repository }}:latest
