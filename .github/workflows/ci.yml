@@ -121,6 +121,22 @@ jobs:
             exit 1
           fi
 
+  windows-docker-setup:
+    name: Windows Docker Setup
+    runs-on: windows-latest
+    container:
+      image: ghcr.io/galachain/sdk:latest
+      ports:
+        - 3010:3010
+    steps:
+      - name: Check the folders and files
+        shell: bash
+        run: |
+          ls -la
+      - name: Initialize the network
+        shell: bash
+        run: npm run network:start
+
   chaincode-template-lint:
     name: Chaincode Template Lint
     runs-on: ubuntu-22.04
