@@ -6,7 +6,7 @@ on:
 
 env:
   REGISTRY: ghcr.io
-  IMAGE_NAME: ${{ github.repository }}-cli
+  IMAGE_NAME: gala-chain/${{ github.repository }}
 
 jobs:
   build-and-push-image:

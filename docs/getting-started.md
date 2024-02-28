@@ -152,7 +152,7 @@ Navigate to [http://localhost:3010/graphiql](http://localhost:3010/graphiql) to 
 ### 1. Run the Docker image
 
 ```
-docker run --privileged -d -p 3010:3010 -it --name <container_name> ghcr.io/gala-games/sdk-cli:latest
+docker run --privileged -d -p 3010:3010 -it --name <container_name> ghcr.io/gala-chain/sdk:latest
 ```
 
 Make sure the container is up and running.
