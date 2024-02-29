@@ -26,11 +26,6 @@ describe("getDeploymentResponse", () => {
   const privateKey = "bf2168e0e2238b9d879847987f556a093040a2cab07983a20919ac33103d0d00";
   const isTestnet = true;
 
-  const getDeploymentWithNoPrivateKey = {
-    privateKey: undefined,
-    isTestnet
-  };
-
   beforeEach(() => {
     jest.clearAllMocks();
   });
@@ -46,26 +41,6 @@ describe("getDeploymentResponse", () => {
 
     // When
     const response = await getDeploymentResponse({ privateKey, isTestnet });
-
-    // Then
-    expect(response.status).toEqual("CH_CREATED");
-  });
-
-  it("should ask for private key and get deployment response", async () => {
-    // Given
-    axios.get = jest.fn().mockResolvedValue({
-      status: 200,
-      data: {
-        status: "CH_CREATED"
-      }
-    });
-
-    process.env = { ...process.env, DEV_PRIVATE_KEY: undefined };
-
-    jest.spyOn(ux, "prompt").mockResolvedValueOnce(privateKey);
-
-    // When
-    const response = await getDeploymentResponse(getDeploymentWithNoPrivateKey);
 
     // Then
     expect(response.status).toEqual("CH_CREATED");

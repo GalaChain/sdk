@@ -65,7 +65,7 @@ export default class Init extends BaseCommand<typeof Init> {
 
       this.log(`Generating keys to ${args.path}/keys`);
       await generateKeys(`${args.path}/keys`);
-      await gitignoreKeys(`${args.path}`);
+      gitignoreKeys(`${args.path}`);
 
       this.log(`Project template initialized at ${args.path}`);
     } catch (error) {

@@ -40,8 +40,7 @@ export async function writeConfigFile(config: Config) {
 
 export async function readConfigFile(): Promise<Config> {
   try {
-    const config = JSON.parse(await fsPromises.readFile(ConfigFileName, "utf8"));
-    return config;
+    return JSON.parse(await fsPromises.readFile(ConfigFileName, "utf8"));
   } catch (error) {
     throw new Error(`Can not read chain config file ${ConfigFileName}`);
   }
@@ -58,18 +57,13 @@ export async function readPackageJsonVersion(): Promise<string> {
 
 export async function readDockerfile(): Promise<string> {
   try {
-    const dockerfile = await fsPromises.readFile("Dockerfile", "utf8");
-    return dockerfile;
+    return await fsPromises.readFile("Dockerfile", "utf8");
   } catch (error) {
     throw new Error(`Can not find Dockerfile.`);
   }
 }
 
-export async function getDeploymentResponse(params: { privateKey: string | undefined; isTestnet: boolean }) {
-  if (!params.privateKey) {
-    params.privateKey = await getPrivateKeyPrompt();
-  }
-
+export async function getDeploymentResponse(params: { privateKey: string; isTestnet: boolean }) {
   const getChaincodeDeploymentDto: GetChaincodeDeploymentDto = {
     operationId: nanoid()
   };

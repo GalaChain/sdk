@@ -38,7 +38,7 @@ export async function generateKeys(keysPath: string): Promise<void> {
   await writeFile(`${keysPath}/gc-dev-key`, devPrivateKey.toString());
 }
 
-export async function gitignoreKeys(projectPath: string): Promise<void> {
+export function gitignoreKeys(projectPath: string): void {
   const gitignorePath = path.resolve(projectPath, ".gitignore");
   const keyEntries = [
     "gc-admin-key",
