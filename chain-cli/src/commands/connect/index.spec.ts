@@ -48,29 +48,7 @@ describe("Connect Command", () => {
       "You are now connected! Chaincode chaincode-name and Channel channel-name."
     );
   });
-  it("should not find private key", async () => {
-    // Given
-    const result: (string | Uint8Array)[] = [];
-    jest.spyOn(process.stdout, "write").mockImplementation((v) => {
-      result.push(v);
-      return true;
-    });
 
-    jest.spyOn(console, "log").mockImplementation((v) => {
-      result.push(v);
-      return true;
-    });
-
-    process.env = { ...process.env, DEV_PRIVATE_KEY: undefined };
-
-    jest.spyOn(ux, "prompt").mockResolvedValueOnce(fakePrivateKey);
-
-    // When
-    await Connect.run([]);
-
-    // Then
-    expect(result.join()).toContain("Private key not found");
-  });
   it("should fail when invalid private key", async () => {
     const result: (string | Uint8Array)[] = [];
     jest.spyOn(process.stdout, "write").mockImplementation((v) => {

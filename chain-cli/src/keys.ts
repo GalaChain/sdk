@@ -34,8 +34,8 @@ export async function generateKeys(keysPath: string): Promise<void> {
 
   await writeFile(`${keysPath}/gc-admin-key.pub`, adminPublicKey);
   await writeFile(`${keysPath}/gc-admin-key`, adminPrivateKey.toString());
-  await writeFile(`${keysPath}/gc-dev-key.pub`, devPublicKey);
-  await writeFile(`${keysPath}/gc-dev-key`, devPrivateKey.toString());
+  await writeFile(`${keysPath}/${DEFAULT_DEV_PRIVATE_KEY_NAME}.pub`, devPublicKey);
+  await writeFile(`${keysPath}/${DEFAULT_DEV_PRIVATE_KEY_NAME}`, devPrivateKey.toString());
 }
 
 export function gitignoreKeys(projectPath: string): void {

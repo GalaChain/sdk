@@ -28,7 +28,7 @@ describe("Init Command", () => {
 
     Init.prototype.copyChaincodeTemplate = () => Promise.resolve<string>("cloned repository");
 
-    const target = path.resolve(__dirname, "../../test-project");
+    const target = path.resolve(__dirname, "../../../test/test-project");
     await Init.run([target]);
 
     expect(result.join()).toContain(`Project template initialized at ${target}`);

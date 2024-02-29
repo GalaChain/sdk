@@ -19,8 +19,9 @@ import path from "path";
 
 import BaseCommand from "../../base-command";
 import { execSync } from "../../exec-sync";
-import { generateKeys, gitignoreKeys } from "../../keys";
+import { DEFAULT_PRIVATE_KEYS_DIR, generateKeys, gitignoreKeys } from "../../keys";
 import { getPathFileName } from "../../utils";
+import * as console from "console";
 
 export default class Init extends BaseCommand<typeof Init> {
   static override description = "Initialize a project template with Chain CLI.";
@@ -63,8 +64,8 @@ export default class Init extends BaseCommand<typeof Init> {
         }
       });
 
-      this.log(`Generating keys to ${args.path}/keys`);
-      await generateKeys(`${args.path}/keys`);
+      this.log(`Generating keys to ${args.path}/${DEFAULT_PRIVATE_KEYS_DIR}`);
+      await generateKeys(`${args.path}/${DEFAULT_PRIVATE_KEYS_DIR}`);
       gitignoreKeys(`${args.path}`);
 
       this.log(`Project template initialized at ${args.path}`);
