@@ -31,6 +31,9 @@
       },
       "peer": {
         "instances": 1
+      },
+      "tools": {
+        "fabloRest": true
       }
     },
     {
@@ -41,6 +44,9 @@
       },
       "peer": {
         "instances": 1
+      },
+      "tools": {
+        "fabloRest": true
       }
     },
     {
@@ -48,6 +54,9 @@
         "name": "UsersOrg1",
         "mspName": "UsersOrg1",
         "domain": "users1.local"
+      },
+      "tools": {
+        "fabloRest": true
       }
     }
   ],
