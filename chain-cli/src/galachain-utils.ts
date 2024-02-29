@@ -15,18 +15,17 @@
 import { ux } from "@oclif/core";
 
 import { signatures } from "@gala-chain/api";
+import * as secp from "@noble/secp256k1";
 import axios from "axios";
 import fs, { promises as fsPromises } from "fs";
 import { nanoid } from "nanoid";
+import { writeFile } from "node:fs/promises";
+import process from "process";
 
 import { ServicePortal } from "./consts";
 import { GetChaincodeDeploymentDto, PostDeployChaincodeDto } from "./dto";
 import { execSync } from "./exec-sync";
 import { parseStringOrFileKey } from "./utils";
-import * as secp from "@noble/secp256k1";
-import { writeFile } from "node:fs/promises";
-import path from "path";
-import process from "process";
 
 const ConfigFileName = ".galachainrc.json";
 const PackageJsonFileName = "package.json";
