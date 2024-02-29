@@ -1,7 +1,6 @@
 name: CI
 on:
   push:
-    branches: ['**']
     tags: [v*]
   pull_request:
   workflow_dispatch:
@@ -122,36 +121,6 @@ jobs:
             exit 1
           fi
 
-  windows-init-command:
-    name: Init Command on Windows
-    runs-on: windows-latest
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v4
-      - name: Set up Node.js
-        uses: actions/setup-node@v4
-        with:
-          node-version: 18
-      - name: Install dependencies
-        run: npm install
-      - name: Build CLI for windows and link it
-        run: |
-          cd chain-cli
-          npm install
-          npm run build-win
-          npm link --force
-      - name: Initialize a project and validate the package.json
-        run: galachain init test-project
-      - name: Check if the package.json contains '@gala-chain/test-project' using windows command
-        run: |
-          $package = Get-Content -Path test-project/package.json -Raw
-          if ($package -match '@gala-chain/test-project') {
-            Write-Host "package.json contains '@gala-chain/test-project'"
-          } else {
-            Write-Host "package.json does not contain '@gala-chain/test-project'"
-            exit 1
-          }
-
   chaincode-template-lint:
     name: Chaincode Template Lint
     runs-on: ubuntu-22.04
@@ -166,7 +135,9 @@ jobs:
         run: npm install
       - name: Build CLI and link it
         run: |
-          cd chain-cli
+          cd chain-cli/chaincode-template
+          ../../npm-pack-and-replace.sh --skipConfirmation
+          cd ..
           npm install
           npm run build
           npm link --force

@@ -471,6 +471,14 @@ export class TokenBalance extends ChainObject {
     return { lock };
   }
 
+  private isMatchingHold(hold: TokenHold, name?: string, lockAuthority?: string): boolean {
+    return (
+      (hold.name === name || (hold.name === undefined && name === undefined)) &&
+      (hold.lockAuthority === lockAuthority ||
+        (hold.lockAuthority === undefined && lockAuthority === undefined))
+    );
+  }
+
   public ensureCanUnlockQuantity(
     quantity: BigNumber,
     currentTime: number,
@@ -483,7 +491,8 @@ export class TokenBalance extends ChainObject {
     let remainingQuantityToUnlock = quantity;
 
     for (const hold of unexpiredLockedHolds) {
-      if (hold.lockAuthority !== lockAuthority || name !== hold.name) {
+      // if neither the authority nor the name match, just leave this hold alone
+      if (!this.isMatchingHold(hold, name, lockAuthority)) {
         updated.push(hold);
         continue;
       }
