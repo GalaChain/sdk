@@ -12,8 +12,6 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-import { ux } from "@oclif/core";
-
 import axios from "axios";
 
 import Connect from "../../../src/commands/connect";
