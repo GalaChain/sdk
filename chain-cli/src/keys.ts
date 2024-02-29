@@ -30,7 +30,11 @@ export async function generateKeys(keysPath: string): Promise<void> {
   const devPrivateKey = secp.utils.bytesToHex(secp.utils.randomPrivateKey());
   const devPublicKey = secp.utils.bytesToHex(secp.getPublicKey(adminPrivateKey));
 
-  execSync(`mkdir -p ${keysPath}`);
+  if (process.platform === "win32") {
+    execSync(`mkdir ${keysPath}`);
+  } else {
+    execSync(`mkdir -p ${keysPath}`);
+  }
 
   await writeFile(`${keysPath}/gc-admin-key.pub`, adminPublicKey);
   await writeFile(`${keysPath}/gc-admin-key`, adminPrivateKey.toString());
