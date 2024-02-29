@@ -121,17 +121,6 @@ jobs:
             exit 1
           fi
 
-  windows-docker-setup:
-    name: Windows Docker Setup
-    runs-on: windows-latest
-    steps:
-      - name: Run Docker SDK image
-        run: docker run -d -p 3010:3010 -it --name template ghcr.io/galachain/sdk:latest
-      - name: Open the container with bash
-        run: |
-          docker exec -ti template /bin/bash
-          ls
-
   chaincode-template-lint:
     name: Chaincode Template Lint
     runs-on: ubuntu-22.04
