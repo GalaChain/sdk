@@ -195,3 +195,36 @@ npm run test:e2e
 Navigate to [http://localhost:3010/blocks](http://localhost:3010/blocks) to see our block browser which allows you to see what's saved on your local GalaChain network.
 
 Navigate to [http://localhost:3010/graphiql](http://localhost:3010/graphiql) to interact with GraphQL and execute queries.
+
+# Troubleshooting
+
+## Docker Desktop on Windows
+
+#### If you are using Windows with WSL don't forget to enable integration with WSL on Docker Desktop.
+```
+Docker Desktop > Settins > Resources > WSL Integration
+```
+
+#### Docker: image operating system "linux" cannot be used on this platform: operating system is not supported.
+
+Some versions of the Docker Desktop for Windows have a bug that prevents the use of Linux images. If you are facing this issue, you can use the WSL2 backend to run Docker. To do so, go to Docker Desktop > Settings > General and select WSL2 as the default backend.
+
+#### Docker: "no matching manifest for windows/amd64 in the manifest list entries".
+
+To bypass this issue you can run the Docker daemon in experimental mode:
+
+```
+Docker Desktop > Settins > Docker Engine > Edit the Docker daemon file > Set the "experimental": true > Apply & Restart
+```
+
+## Docker
+
+#### Docker: Error response from daemon: Conflict. The container name "/<container_name>" is already in use by container "<container_id>". 
+
+You have to remove (or rename) that container to be able to reuse that name.
+
+## WSL
+
+#### ./fablo-target/fabric-config/configtx.yaml: no such file or directory
+
+Make sure you are running it as a administrator of the cmd or powershell.
