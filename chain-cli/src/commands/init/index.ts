@@ -39,7 +39,7 @@ export default class Init extends BaseCommand<typeof Init> {
     const { args } = await this.parse(Init);
 
     try {
-      await this.copyChaincodeTemplate(args.path);
+      this.copyChaincodeTemplate(args.path);
 
       // Update the name field in the package.json and the package-lock.json to be `@gala-games/<project-name>`
       const fileName = getPathFileName(args.path);
