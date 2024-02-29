@@ -16,8 +16,9 @@ import * as secp from "@noble/secp256k1";
 import fs from "fs";
 import { writeFile } from "node:fs/promises";
 import path from "path";
-import { execSync } from "./exec-sync";
 import * as process from "process";
+
+import { execSync } from "./exec-sync";
 
 export const DEFAULT_PRIVATE_KEYS_DIR = "keys";
 export const DEFAULT_DEV_PRIVATE_KEY_NAME = "gc-dev-key";

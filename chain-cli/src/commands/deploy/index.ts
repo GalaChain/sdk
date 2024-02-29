@@ -14,13 +14,11 @@
  */
 import { Args, Flags, ux } from "@oclif/core";
 
-import fs from "fs";
-import path from "path";
+import * as process from "process";
 
 import BaseCommand from "../../base-command";
 import { deployChaincode } from "../../galachain-utils";
-import { DEFAULT_DEV_PRIVATE_KEY_NAME, getPrivateKeyFromFile } from "../../keys";
-import * as process from "process";
+import { getPrivateKeyFromFile } from "../../keys";
 
 export default class Deploy extends BaseCommand<typeof Deploy> {
   static override description =
