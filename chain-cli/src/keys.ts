@@ -1,8 +1,12 @@
 import * as secp from "@noble/secp256k1";
-import { execSync } from "./exec-sync";
+import fs from "fs";
 import { writeFile } from "node:fs/promises";
 import path from "path";
-import fs from "fs";
+import { execSync } from "./exec-sync";
+import * as process from "process";
+
+export const DEFAULT_PRIVATE_KEYS_DIR = "keys";
+export const DEFAULT_DEV_PRIVATE_KEY_NAME = "gc-dev-key";
 
 export async function generateKeys(keysPath: string): Promise<void> {
   const adminPrivateKey = secp.utils.bytesToHex(secp.utils.randomPrivateKey());
@@ -21,7 +25,18 @@ export async function generateKeys(keysPath: string): Promise<void> {
 
 export async function gitignoreKeys(projectPath: string): Promise<void> {
   const gitignorePath = path.resolve(projectPath, ".gitignore");
-  const keyEntries = ["gc-admin-key", "gc-dev-key", "gc-dev-key.pub"];
+  const keyEntries = [
+    "gc-admin-key",
+    `${DEFAULT_DEV_PRIVATE_KEY_NAME}`,
+    `${DEFAULT_DEV_PRIVATE_KEY_NAME}.pub`
+  ];
 
   keyEntries.forEach((entry) => fs.appendFileSync(gitignorePath, `${entry}\n`));
+}
+
+export function getPrivateKeyFromFile() {
+  return fs.readFileSync(
+    `${process.cwd()}/${DEFAULT_PRIVATE_KEYS_DIR}/${DEFAULT_DEV_PRIVATE_KEY_NAME}`,
+    "utf8"
+  );
 }
