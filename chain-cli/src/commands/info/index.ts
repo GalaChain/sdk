@@ -16,8 +16,7 @@ import { Args, Flags } from "@oclif/core";
 
 import BaseCommand from "../../base-command";
 import { ChaincodeInfoDto } from "../../dto";
-import { getDeploymentResponse } from "../../galachain-utils";
-import { getPrivateKeyFromFile } from "../../keys";
+import { getDeploymentResponse, getPrivateKey } from "../../galachain-utils";
 
 export default class Info extends BaseCommand<typeof Info> {
   static override description = "Show the ChainCode information.";
@@ -48,7 +47,7 @@ export default class Info extends BaseCommand<typeof Info> {
     const { args, flags } = await this.parse(Info);
 
     const developerPrivateKey =
-      args.developerPrivateKey ?? process.env.DEV_PRIVATE_KEY ?? getPrivateKeyFromFile();
+      args.developerPrivateKey ?? process.env.DEV_PRIVATE_KEY ?? (await getPrivateKey());
 
     try {
       const response = await getDeploymentResponse({

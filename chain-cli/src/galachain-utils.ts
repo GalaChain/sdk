@@ -16,13 +16,17 @@ import { ux } from "@oclif/core";
 
 import { signatures } from "@gala-chain/api";
 import axios from "axios";
-import { promises as fsPromises } from "fs";
+import fs, { promises as fsPromises } from "fs";
 import { nanoid } from "nanoid";
 
 import { ServicePortal } from "./consts";
 import { GetChaincodeDeploymentDto, PostDeployChaincodeDto } from "./dto";
 import { execSync } from "./exec-sync";
 import { parseStringOrFileKey } from "./utils";
+import * as secp from "@noble/secp256k1";
+import { writeFile } from "node:fs/promises";
+import path from "path";
+import process from "process";
 
 const ConfigFileName = ".galachainrc.json";
 const PackageJsonFileName = "package.json";
@@ -138,6 +142,36 @@ export async function deployChaincode(params: {
   }
 
   return response.data;
+}
+
+export const DEFAULT_PRIVATE_KEYS_DIR = "keys";
+export const DEFAULT_ADMIN_PRIVATE_KEY_NAME = "gc-admin-key";
+export const DEFAULT_DEV_PRIVATE_KEY_NAME = "gc-dev-key";
+
+export async function generateKeys(keysPath: string): Promise<void> {
+  const adminPrivateKey = secp.utils.bytesToHex(secp.utils.randomPrivateKey());
+  const adminPublicKey = secp.utils.bytesToHex(secp.getPublicKey(adminPrivateKey));
+
+  const devPrivateKey = secp.utils.bytesToHex(secp.utils.randomPrivateKey());
+  const devPublicKey = secp.utils.bytesToHex(secp.getPublicKey(adminPrivateKey));
+
+  execSync(`mkdir -p ${keysPath}`);
+
+  await writeFile(`${keysPath}/${DEFAULT_ADMIN_PRIVATE_KEY_NAME}.pub`, adminPublicKey);
+  await writeFile(`${keysPath}/${DEFAULT_ADMIN_PRIVATE_KEY_NAME}`, adminPrivateKey.toString());
+  await writeFile(`${keysPath}/${DEFAULT_DEV_PRIVATE_KEY_NAME}.pub`, devPublicKey);
+  await writeFile(`${keysPath}/${DEFAULT_DEV_PRIVATE_KEY_NAME}`, devPrivateKey.toString());
+}
+
+export async function getPrivateKey() {
+  return process.env.DEV_PRIVATE_KEY ?? getPrivateKeyFromFile() ?? (await getPrivateKeyPrompt());
+}
+
+function getPrivateKeyFromFile() {
+  return fs.readFileSync(
+    `${process.cwd()}/${DEFAULT_PRIVATE_KEYS_DIR}/${DEFAULT_DEV_PRIVATE_KEY_NAME}`,
+    "utf8"
+  );
 }
 
 async function getPrivateKeyPrompt(): Promise<string> {

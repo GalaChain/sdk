@@ -19,7 +19,7 @@ import path from "path";
 
 import BaseCommand from "../../base-command";
 import { execSync } from "../../exec-sync";
-import { DEFAULT_PRIVATE_KEYS_DIR, generateKeys, gitignoreKeys } from "../../keys";
+import { DEFAULT_PRIVATE_KEYS_DIR, generateKeys } from "../../galachain-utils";
 import { getPathFileName } from "../../utils";
 
 export default class Init extends BaseCommand<typeof Init> {
@@ -65,7 +65,6 @@ export default class Init extends BaseCommand<typeof Init> {
 
       this.log(`Generating keys to ${args.path}/${DEFAULT_PRIVATE_KEYS_DIR}`);
       await generateKeys(`${args.path}/${DEFAULT_PRIVATE_KEYS_DIR}`);
-      gitignoreKeys(`${args.path}`);
 
       this.log(`Project template initialized at ${args.path}`);
     } catch (error) {

@@ -14,11 +14,8 @@
  */
 import { Args, Flags, ux } from "@oclif/core";
 
-import * as process from "process";
-
 import BaseCommand from "../../base-command";
-import { deployChaincode } from "../../galachain-utils";
-import { getPrivateKeyFromFile } from "../../keys";
+import { deployChaincode, getPrivateKey } from "../../galachain-utils";
 
 export default class Deploy extends BaseCommand<typeof Deploy> {
   static override description =
@@ -63,8 +60,7 @@ export default class Deploy extends BaseCommand<typeof Deploy> {
       return;
     }
 
-    const developerPrivateKey =
-      args.developerPrivateKey ?? process.env.DEV_PRIVATE_KEY ?? getPrivateKeyFromFile();
+    const developerPrivateKey = args.developerPrivateKey ?? (await getPrivateKey());
 
     const response = await ux.prompt(`Are you sure you want to deploy to ${environment}? (y/n)`);
     if (response.toUpperCase() !== "Y") {

@@ -15,8 +15,7 @@
 import { Args, Flags } from "@oclif/core";
 
 import BaseCommand from "../../base-command";
-import { getDeploymentResponse } from "../../galachain-utils";
-import { getPrivateKeyFromFile } from "../../keys";
+import { getDeploymentResponse, getPrivateKey } from "../../galachain-utils";
 
 export default class Connect extends BaseCommand<typeof Connect> {
   static override description = "Connect to a new chaincode.";
@@ -46,8 +45,7 @@ export default class Connect extends BaseCommand<typeof Connect> {
   async run(): Promise<void> {
     const { args, flags } = await this.parse(Connect);
 
-    const developerPrivateKey =
-      args.developerPrivateKey ?? process.env.DEV_PRIVATE_KEY ?? getPrivateKeyFromFile();
+    const developerPrivateKey = args.developerPrivateKey ?? (await getPrivateKey());
 
     try {
       const response = await getDeploymentResponse({
