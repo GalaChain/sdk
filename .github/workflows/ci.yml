@@ -124,18 +124,13 @@ jobs:
   windows-docker-setup:
     name: Windows Docker Setup
     runs-on: windows-latest
-    container:
-      image: ghcr.io/galachain/sdk:latest
-      ports:
-        - 3010:3010
     steps:
-      - name: Check the folders and files
-        shell: bash
+      - name: Run Docker SDK image
+        run: docker run --privileged -d -p 3010:3010 -it --name template ghcr.io/galachain/sdk:latest
+      - name: Open the container with bash
         run: |
-          ls -la
-      - name: Initialize the network
-        shell: bash
-        run: npm run network:start
+          docker exec -ti template /bin/bash
+          ls
 
   chaincode-template-lint:
     name: Chaincode Template Lint
