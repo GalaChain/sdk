@@ -12,7 +12,6 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 import { ContractAPI } from "@gala-chain/api";
 
 import { ContractConfig } from "../generic";
