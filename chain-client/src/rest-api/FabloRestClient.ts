@@ -13,10 +13,11 @@
  * limitations under the License.
  */
 import { ChainCallDTO, ContractAPI, GalaChainResponse, Inferred } from "@gala-chain/api";
-import axios, { AxiosError } from "axios";
+import axios from "axios";
 
 import { ChainClient, ChainClientBuilder, ClassType, ContractConfig, isClassType } from "../generic";
 import { RestApiAdminCredentials, SetContractApiParams, globalRestApiConfig } from "./GlobalRestApiConfig";
+import { catchAxiosError } from "./catchAxiosError";
 import { RestApiConfig } from "./loadRestApiConfig";
 
 async function getPath(
@@ -34,29 +35,19 @@ async function getPath(
   }
 
   if (isWrite && !methodApi.isWrite) {
-    throw new Error(`Method ${method} from contract ${contractPath} is read-only`);
+    throw new Error(`Method ${method} is read-only`);
   }
 
   if (!isWrite && methodApi.isWrite) {
-    throw new Error(`Method ${method} from contract ${contractPath} is not read-only`);
+    throw new Error(`Method ${method} is not read-only`);
   }
 
-  return `${restApiUrl}/${contractPath}/${methodApi.apiMethodName ?? methodApi.methodName}`;
+  const type = isWrite ? "invoke" : "query";
+
+  return `${restApiUrl}/${type}/${cfg.channelName}/${cfg.chaincodeName}`;
 }
 
-function catchAxiosError(e?: AxiosError<{ error?: { Status?: number } }>) {
-  // if data object contains { error: { Status: 0 } }, it means this is GalaChainResponse
-  if (e?.response?.data?.error?.Status === 0) {
-    return { data: e?.response?.data?.error };
-  } else {
-    const data = { axiosError: { message: e?.message, data: e?.response?.data } };
-    console.warn(`Axios error:`, JSON.stringify(data));
-
-    return { data: data };
-  }
-}
-
-export class RestApiClient extends ChainClient {
+export class FabloRestClient extends ChainClient {
   private readonly restApiUrl: Promise<string>;
 
   constructor(
@@ -64,6 +55,7 @@ export class RestApiClient extends ChainClient {
     restApiUrl: string,
     contractConfig: ContractConfig,
     private readonly credentials: RestApiAdminCredentials,
+    private token: Promise<string>,
     orgMsp: string
   ) {
     super(builder, credentials.adminKey, contractConfig, orgMsp);
@@ -72,6 +64,7 @@ export class RestApiClient extends ChainClient {
 
   public async isReady(): Promise<true> {
     await this.builder;
+    await this.token;
     return true;
   }
 
@@ -87,7 +80,7 @@ export class RestApiClient extends ChainClient {
   ): Promise<GalaChainResponse<T>> {
     const path = await getPath(await this.restApiUrl, this.contractConfig, method, true);
 
-    return this.post(path, dtoOrResp, resp);
+    return this.post(path, method, dtoOrResp, resp);
   }
 
   async evaluateTransaction<T>(
@@ -97,77 +90,81 @@ export class RestApiClient extends ChainClient {
   ): Promise<GalaChainResponse<T>> {
     const path = await getPath(await this.restApiUrl, this.contractConfig, method, false);
 
-    return this.post(path, dtoOrResp, resp);
+    return this.post(path, method, dtoOrResp, resp);
   }
 
-  public async post<T>(
+  private async post<T>(
     path: string,
+    methodName: string,
     dtoOrResp?: ChainCallDTO | ClassType<Inferred<T>>,
     resp?: ClassType<Inferred<T>>
   ): Promise<GalaChainResponse<T>> {
-    const { adminKey, adminSecret } = this.credentials;
     const [dto, responseType] = isClassType(dtoOrResp) ? [undefined, dtoOrResp] : [dtoOrResp, resp];
-    const serialized = JSON.parse(dto?.serialize() ?? "{}");
-    console.log(adminKey, "POST:", path, serialized);
+    const serialized = dto?.serialize() ?? "{}";
+    const payload = { method: `${this.contractConfig.contractName}:${methodName}`, args: [serialized] };
 
     const headers = {
-      "x-identity-lookup-key": adminKey,
-      "x-user-encryption-key": adminSecret
+      Authorization: `Bearer ${await this.token}`
     };
 
-    const response = await axios
-      .post<Record<string, unknown>>(path, serialized, { headers: headers })
-      .catch((e) => catchAxiosError(e));
+    const response = await axios.post(path, payload, { headers }).catch((e) => catchAxiosError(e));
 
-    console.log("Response: ", response.data);
+    console.log(`${payload.method} response: `, JSON.stringify(response.data.response));
 
-    return GalaChainResponse.deserialize<T>(responseType, response.data ?? {});
+    return GalaChainResponse.deserialize<T>(responseType, response?.data?.response ?? {});
   }
 
-  public forUser(userId: string): ChainClient {
-    console.warn(`Ignoring forUser(${userId}) for RestApiClient`);
+  public static async enroll(restApiUrl: string, userId: string, secret: string): Promise<string> {
+    const response = await axios
+      .post(`${restApiUrl}/user/enroll`, { id: userId, secret })
+      .catch((e) => catchAxiosError(e));
+
+    if (!response.data.token) {
+      throw new Error(`User enrollment failed, invalid response: ${JSON.stringify(response.data)}`);
+    }
+
+    return response.data.token;
+  }
+
+  public forUser(userId: string, secret?: string): ChainClient {
+    this.token = this.restApiUrl.then((url) =>
+      FabloRestClient.enroll(url, userId, secret ?? this.credentials.adminSecret)
+    );
     return this;
   }
 
   public static async getContractApis(
-    credentials: RestApiAdminCredentials,
+    token: string,
     restApiUrl: string,
     restApiConfig: RestApiConfig
   ): Promise<SetContractApiParams[]> {
     const headers = {
-      "x-identity-lookup-key": credentials.adminKey,
-      "x-user-encryption-key": credentials.adminSecret
+      Authorization: `Bearer ${token}`
     };
-
-    // ensure admin account is created
-    await axios.post(`${restApiUrl}/identity/ensure-admin`, undefined, { headers });
-
-    // refresh api (may fail silently)
-    await axios.post(`${restApiUrl}/refresh-api`, undefined, { headers });
 
     const contractApis: SetContractApiParams[] = [];
 
     for (const channel of restApiConfig.channels) {
       for (const contract of channel.contracts) {
-        const contractPath = `${channel.pathFragment}/${contract.pathFragment}`;
-        const getApiPath = `${restApiUrl}/${contractPath}/GetContractAPI`;
+        const contractPath = `${channel.channelName}/${contract.chaincodeName}`;
+        const getApiPath = `${restApiUrl}/query/${contractPath}`;
+        const payload = { method: `${contract.contractName}:GetContractAPI`, args: [] };
+        const apiResponse = await axios.post(getApiPath, payload, { headers });
 
-        console.log("Loading ContractAPI:", getApiPath);
-        const apiResponse = await axios.post(getApiPath, undefined, { headers });
-
-        if (!GalaChainResponse.isSuccess<ContractAPI>(apiResponse.data)) {
+        if (!GalaChainResponse.isSuccess<ContractAPI>(apiResponse.data.response)) {
           throw new Error(
-            `Failed to load ContractAPI for ${contractPath}: ${JSON.stringify(apiResponse.data)}`
+            `Failed to get ${payload.method} for ${contractPath}: ${JSON.stringify(
+              apiResponse.data.response
+            )}`
           );
         }
 
-        console.log("API:", getApiPath, apiResponse.data);
         contractApis.push({
           channelName: channel.channelName,
           chaincodeName: contract.chaincodeName,
           contractName: contract.contractName,
           contractPath: contractPath,
-          api: apiResponse.data.Data
+          api: apiResponse.data.response.Data
         });
       }
     }

@@ -55,8 +55,6 @@ const defaultParams = {
     connectionProfilePath: process.env.CURATORORG_CONNECTION_PROFILE_PATH,
     defaultConnectionProfilePath: () => defaultConnectionProfilePath("curator"),
     apiUrl: process.env.CURATORORG_OPS_API_URL, // note: no default value
-    adminKey: process.env.CURATORORG_OPS_API_ADMIN_ID ?? "GC_ADMIN_CURATOR",
-    adminSecret: process.env.CURATORORG_OPS_API_ADMIN_SECRET ?? "abc",
     configPath: process.env.CURATORORG_OPS_API_CONFIG_PATH
   },
   UsersOrg1: {
@@ -66,8 +64,6 @@ const defaultParams = {
     connectionProfilePath: process.env.USERSORG1_CONNECTION_PROFILE_PATH,
     defaultConnectionProfilePath: () => defaultConnectionProfilePath("users"),
     apiUrl: process.env.USERSORG1_OPS_API_URL, // note: no default value
-    adminKey: process.env.USERSORG1_OPS_API_ADMIN_ID ?? "GC_ADMIN_USERS",
-    adminSecret: process.env.USERSORG1_OPS_API_ADMIN_SECRET ?? "abc",
     configPath: process.env.USERSORG1_OPS_API_CONFIG_PATH
   },
   PartnerOrg1: {
@@ -77,8 +73,6 @@ const defaultParams = {
     connectionProfilePath: process.env.PARTNERORG1_CONNECTION_PROFILE_PATH,
     defaultConnectionProfilePath: () => defaultConnectionProfilePath("partner"),
     apiUrl: process.env.PARTNERORG1_OPS_API_URL,
-    adminKey: process.env.PARTNERORG1_OPS_API_ADMIN_ID ?? "GC_ADMIN_PARTNER",
-    adminSecret: process.env.PARTNERORG1_OPS_API_ADMIN_SECRET ?? "abc",
     configPath: process.env.PARTNERORG1_OPS_API_CONFIG_PATH
   }
 };
@@ -89,8 +83,6 @@ interface TestClientParams {
   adminPass?: string;
   connectionProfilePath?: string;
   apiUrl?: string;
-  adminKey?: string;
-  adminSecret?: string;
   configPath?: string;
 }
 
@@ -124,8 +116,8 @@ function buildRestApiParams(params: TestClientParams & { apiUrl: string }): Rest
   return {
     orgMsp: params.orgMsp ?? "CuratorOrg",
     apiUrl: params.apiUrl,
-    userKey: params.adminKey,
-    userSecret: params.adminSecret,
+    userKey: params.adminId,
+    userSecret: params.adminPass,
     configPath: params.configPath ?? defaultOpsApiConfigPath()
   };
 }

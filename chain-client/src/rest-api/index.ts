@@ -12,7 +12,9 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-import { RestApiClient, RestApiClientBuilder } from "./RestApiClient";
+import { FabloRestClient } from "./FabloRestClient";
+import { RestApiClient } from "./RestApiClient";
+import { RestApiClientBuilder } from "./RestApiClientBuilder";
 import { loadRestApiConfig } from "./loadRestApiConfig";
 
-export { loadRestApiConfig, RestApiClientBuilder, RestApiClient };
+export { loadRestApiConfig, RestApiClientBuilder, RestApiClient, FabloRestClient };
