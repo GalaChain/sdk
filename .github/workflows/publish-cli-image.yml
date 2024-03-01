@@ -2,7 +2,7 @@ name: Publish CLI Docker image
 on:
   push:
     paths:
-    - 'chain-cli/docker/Dockerfile'
+      - 'chain-cli/docker/Dockerfile'
 
 env:
   REGISTRY: ghcr.io
