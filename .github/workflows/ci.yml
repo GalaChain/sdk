@@ -37,7 +37,7 @@ jobs:
     runs-on: ubuntu-22.04
     env:
       GALA_CLIENT_DEV_MODE: "true"
-      CURATORORG_OPS_API_URL: "http://docker:8801"
+      CURATORORG_OPS_API_URL: "http://localhost:8801"
     steps:
       - name: Checkout
         uses: actions/checkout@v4
