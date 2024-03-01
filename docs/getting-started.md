@@ -160,13 +160,13 @@ The Docker image initializes a new project with the name `chaincode-template` by
 
 ### 2. Open the running container
 
-## 2.1 Open the container with bash
+#### 2.1 Open the container with bash
 
 ```
 docker exec -ti <container_name> /bin/bash
 ```
 
-## 2.2 Open the container with VSCode (Requires VSCode and Dev Containers Extension)
+#### 2.2 Open the container with VSCode (Requires VSCode and Dev Containers Extension)
 
 Open VSCode and press F1 to open the Command Palette and search for `Dev Containers: Attach to Running Container`
 
