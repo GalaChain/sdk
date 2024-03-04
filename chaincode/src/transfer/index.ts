@@ -13,6 +13,6 @@
  * limitations under the License.
  */
 import { SameSenderAndRecipientError, TransferTokenFailedError } from "./TransferError";
-import { transferToken } from "./transferToken";
+import { TransferTokenParams, transferToken } from "./transferToken";
 
-export { SameSenderAndRecipientError, TransferTokenFailedError, transferToken };
+export { SameSenderAndRecipientError, TransferTokenFailedError, transferToken, TransferTokenParams };
