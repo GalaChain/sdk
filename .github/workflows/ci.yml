@@ -12,29 +12,100 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v4
-      - name: Install jq
-        run: |
-          sudo apt-get update
-          sudo apt-get install -y jq
-      - name: Check Copyright
+      - name: Verify copyright
         run: ./verify_copyright.sh
       - name: Install Node 18
         uses: actions/setup-node@v4
         with:
           node-version: 18
+      - name: Install dependencies
+        run: npm i
       - name: Lint
-        run: |
-          npm i
-          npm run lint
+        run: npm run lint
       - name: Build
         run: npm run build
       - name: Test
         run: npm run test
 
-  template-e2e:
-    needs: [ci]
-    name: Test Project Template
+  template-ci:
+    name: Chaincode template CI
     runs-on: ubuntu-22.04
+    needs: [ci]
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 18
+      - name: Install local CLI
+        run: .github/scripts/install-local-cli.sh
+      - name: Create test project
+        run: galachain init ./project-test
+      - name: Install dependencies
+        run: |
+          npm i --prefix ./project-test
+          (cd ./project-test && ../npm-pack-and-replace.sh --skipConfirmation)
+      - name: Lint
+        run: npm run lint --prefix ./project-test
+      - name: Build
+        run: npm run build --prefix ./project-test
+      - name: Test
+        run: npm run test --prefix ./project-test
+
+  template-e2e:
+    name: Chaincode template E2E (watch mode)
+    runs-on: ubuntu-22.04
+    needs: [ ci ]
+    env:
+      GALA_CLIENT_DEV_MODE: "true"
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Install tools
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y jq
+          sudo wget -qO /usr/local/bin/yq https://github.com/mikefarah/yq/releases/latest/download/yq_linux_amd64
+          sudo chmod a+x /usr/local/bin/yq
+          git --version
+          node --version
+          npm --version
+          jq --version
+          yq --version
+          bash --version
+          docker version
+          docker-compose version          
+          npm i -g nx
+      - name: Install local CLI
+        run: .github/scripts/install-local-cli.sh
+      - name: Create test project
+        run: galachain init ./project-test
+      - name: Install dependencies
+        run: |
+          npm i --prefix ./project-test
+          (cd ./project-test && ../npm-pack-and-replace.sh --skipConfirmation)
+      - name: Run network in watch mode and wait for it to start
+        run: |
+          npm run network:start --prefix ./project-test &
+          sleep 120
+      - name: Run E2E tests
+        run: npm run test:e2e
+      - name: Verify chain browser blocks
+        run: |
+          MAX_BLOCK_INDEX=$(curl --location 'http://localhost:3010/product-channel/blocks' --header 'Content-Type: application/json' | jq '.info.fromBlock')
+          if [ $MAX_BLOCK_INDEX -lt 56]; then
+            echo "The number of blocks is less than 56"
+            exit 1
+          else
+            echo "There are at least 56 blocks after the tests ($$MAX_BLOCK_INDEX)"
+          fi
+          npm run network:prune --prefix ./project-test
+
+  template-e2e-rest:
+    name: Chaincode template E2E (REST API)
+    runs-on: ubuntu-22.04
+    needs: [ ci ]
     env:
       GALA_CLIENT_DEV_MODE: "true"
       CURATORORG_OPS_API_URL: "http://localhost:8801"
@@ -56,39 +127,21 @@ jobs:
           docker version
           docker-compose version          
           npm i -g nx
-
-      - name: Build template
-        run: |
-          npm i
-          cd chain-cli
-          ../npm-pack-and-replace.sh --skipConfirmation
-          npm i -g gala-chain-cli-*
-          galachain --help
-          cd ..
+      - name: Install local CLI
+        run: .github/scripts/install-local-cli.sh
       - name: Create test project
+        run: galachain init ./project-test
+      - name: Install dependencies
         run: |
-          galachain init ./project-test
-          cd ./project-test
-          
-          ../npm-pack-and-replace.sh --skipConfirmation
-          cat package.json
-          npm run network:start & # Run network in background and wait for it to start
-          npm run test
-          
-          sleep 120
-          npm run test:e2e
-          
-          MAX_BLOCK_INDEX=$(curl --location 'http://localhost:3010/product-channel/blocks' --header 'Content-Type: application/json' | jq '.info.fromBlock')
-          if [ $MAX_BLOCK_INDEX -lt 56]; then
-            echo "The number of blocks is less than 56"
-            exit 1
-          else
-            echo "There are at least 56 blocks after the tests ($$MAX_BLOCK_INDEX)"
-          fi
-          npm run network:prune
+          npm i --prefix ./project-test
+          (cd ./project-test && ../npm-pack-and-replace.sh --skipConfirmation)
+      - name: Run network
+        run: npm run network:up --prefix ./project-test
+      - name: Run E2E tests
+        run: npm run test:e2e --prefix ./project-test
 
   template-image-check:
-    name: Template Image Check
+    name: Chaincode template image check
     needs: [ci]
     runs-on: ubuntu-22.04
     steps:
@@ -98,17 +151,17 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: 18
-      - name: Install tools
+      - name: Install local CLI
+        run: .github/scripts/install-local-cli.sh
+      - name: Create test project
+        run: galachain init ./project-test
+      - name: Install dependencies
         run: |
-          npm i
-          cd chain-cli
-          npm run build
-          npm link ./
-          cd ..
-          galachain init ./project-test
+          npm i --prefix ./project-test
+          (cd ./project-test && ../npm-pack-and-replace.sh --skipConfirmation)
+      - name: Verify image
+        run: |
           cd ./project-test
-          ../npm-pack-and-replace.sh --skipConfirmation
-          npm i
           docker build . -t chaincode-test
           run_output=$(docker run --rm chaincode-test 2>&1 || true)
           echo "$run_output"
@@ -123,7 +176,7 @@ jobs:
           fi
 
   windows-init-command:
-    name: Init Command on Windows
+    name: Init command on Windows
     runs-on: windows-latest
     steps:
       - name: Checkout
@@ -151,34 +204,6 @@ jobs:
             Write-Host "package.json does not contain '@gala-chain/test-project'"
             exit 1
           }
-
-  chaincode-template-lint:
-    name: Chaincode Template Lint
-    runs-on: ubuntu-22.04
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v4
-      - name: Set up Node.js
-        uses: actions/setup-node@v4
-        with:
-          node-version: 18
-      - name: Install dependencies
-        run: npm install
-      - name: Build CLI and link it
-        run: |
-          cd chain-cli/chaincode-template
-          ../../npm-pack-and-replace.sh --skipConfirmation
-          cd ..
-          npm install
-          npm run build
-          npm link --force
-      - name: Chaincode lint
-        run: |
-          galachain init test-project
-          cd test-project
-          npm install
-          npm run build
-          npm run lint
 
   publish:
     name: Publish Release
