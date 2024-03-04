@@ -136,7 +136,7 @@ jobs:
           npm i --prefix ./project-test
           (cd ./project-test && ../npm-pack-and-replace.sh --skipConfirmation)
       - name: Run network
-        run: npm run network:up --prefix ./project-test
+        run: (cd ./project-test && npm run network:up)
       - name: Run E2E tests
         run: npm run test:e2e --prefix ./project-test
 
