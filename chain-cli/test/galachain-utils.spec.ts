@@ -118,7 +118,6 @@ describe("deployChaincode", () => {
       imageTag
     };
 
-    console.log("dupa");
     // When
     const response = await deployChaincode(postDeployChaincodePrivateKey);
 
