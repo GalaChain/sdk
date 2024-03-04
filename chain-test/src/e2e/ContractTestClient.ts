@@ -106,7 +106,7 @@ function buildHFParams(params: TestClientParams): HFClientConfig {
   return {
     orgMsp: params.orgMsp,
     userId: params.adminId ?? defaultParams[params.orgMsp].adminId,
-    userPass: params.adminPass ?? defaultParams[params.orgMsp].adminPass,
+    userSecret: params.adminPass ?? defaultParams[params.orgMsp].adminPass,
     connectionProfilePath:
       params.connectionProfilePath ?? defaultParams[params.orgMsp].defaultConnectionProfilePath()
   };
@@ -116,7 +116,7 @@ function buildRestApiParams(params: TestClientParams & { apiUrl: string }): Rest
   return {
     orgMsp: params.orgMsp ?? "CuratorOrg",
     apiUrl: params.apiUrl,
-    userKey: params.adminId,
+    userId: params.adminId,
     userSecret: params.adminPass,
     configPath: params.configPath ?? defaultOpsApiConfigPath()
   };
