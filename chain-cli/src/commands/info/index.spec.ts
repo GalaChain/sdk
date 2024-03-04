@@ -15,9 +15,9 @@
 import { ux } from "@oclif/core";
 
 import axios from "axios";
+import fs from "fs";
 
 import Info from "../../../src/commands/info";
-import fs from "fs";
 
 const fakePrivateKey = "bf2168e0e2238b9d879847987f556a093040a2cab07983a20919ac33103d0d00";
 
