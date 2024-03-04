@@ -80,5 +80,7 @@ describe("ChainInfo Command", () => {
 
     // Then
     expect(result.join()).toContain("Private key not found");
+
+    jest.resetAllMocks();
   });
 });

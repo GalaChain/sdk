@@ -46,8 +46,7 @@ export default class Info extends BaseCommand<typeof Info> {
   async run(): Promise<void> {
     const { args, flags } = await this.parse(Info);
 
-    const developerPrivateKey =
-      args.developerPrivateKey ?? process.env.DEV_PRIVATE_KEY ?? (await getPrivateKey());
+    const developerPrivateKey = args.developerPrivateKey ?? (await getPrivateKey());
 
     try {
       const response = await getDeploymentResponse({
