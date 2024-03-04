@@ -21,6 +21,7 @@ export default class Connect extends BaseCommand<typeof Connect> {
   static override description = "Connect to a new chaincode.";
 
   static override examples = [
+    "galachain connect",
     "galachain connect ./dev-private-key",
     "galachain connect c0fb1924408d936fb7cd0c86695885df4f66861621b5c8660df3924c4d09dd79",
     "galachain connect --testnet"

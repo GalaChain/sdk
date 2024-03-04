@@ -12,12 +12,13 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-import { ux } from "@oclif/core";
 
 import axios from "axios";
 
 import Connect from "../../../src/commands/connect";
 import * as utils from "../../galachain-utils";
+import fs from "fs";
+import { ux } from "@oclif/core";
 
 const fakePrivateKey = "bf2168e0e2238b9d879847987f556a093040a2cab07983a20919ac33103d0d00";
 const fakeInvalidPrivateKey = "bf2168e0e2238b9d879";
@@ -65,9 +66,9 @@ describe("Connect Command", () => {
 
     process.env = { ...process.env, DEV_PRIVATE_KEY: undefined };
 
-    jest.spyOn(ux, "prompt").mockResolvedValueOnce("");
+    jest.spyOn(fs, "readFileSync").mockReturnValue("");
 
-    jest.spyOn(utils, "getPrivateKey").mockImplementation(() => Promise.resolve(""));
+    jest.spyOn(ux, "prompt").mockResolvedValueOnce(fakePrivateKey);
 
     // When
     await Connect.run([]);

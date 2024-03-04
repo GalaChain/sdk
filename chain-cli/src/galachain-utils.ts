@@ -117,10 +117,6 @@ function getContractNames(imageTag: string): { contractName: string }[] {
 }
 
 export async function deployChaincode(params: { privateKey: string; isTestnet: boolean; imageTag: string }) {
-  // if (!params.privateKey) {
-  //   params.privateKey = await getPrivateKeyPrompt();
-  // }
-
   const chainCodeDto: PostDeployChaincodeDto = {
     operationId: nanoid(),
     imageTag: params.imageTag,
@@ -159,7 +155,7 @@ export async function generateKeys(keysPath: string): Promise<void> {
 }
 
 export async function getPrivateKey() {
-  return process.env.DEV_PRIVATE_KEY ?? getPrivateKeyFromFile() ?? (await getPrivateKeyPrompt());
+  return process.env.DEV_PRIVATE_KEY || getPrivateKeyFromFile() || (await getPrivateKeyPrompt());
 }
 
 function getPrivateKeyFromFile() {
@@ -171,7 +167,7 @@ function getPrivateKeyFromFile() {
 
 async function getPrivateKeyPrompt(): Promise<string> {
   console.log(
-    "Private key not found. It should be provided as an argument or as an environment variable DEV_PRIVATE_KEY."
+    "Private key not found. It should be provided as an argument, as an environment variable DEV_PRIVATE_KEY or as a file."
   );
   return await ux.prompt("Type the private key or the path to", { type: "mask" });
 }

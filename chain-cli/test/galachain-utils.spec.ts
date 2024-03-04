@@ -17,6 +17,7 @@
 import { ux } from "@oclif/core";
 
 import axios from "axios";
+import fs from "fs";
 
 import { deployChaincode, getDeploymentResponse, getPrivateKey } from "../src/galachain-utils";
 
@@ -90,6 +91,41 @@ describe("deployChaincode", () => {
     expect(response.status).toEqual("CH_CREATED");
   });
 
+  it("should read a file with a private key and get deployChaincode response", async () => {
+    // Given
+    axios.post = jest.fn().mockResolvedValue({
+      status: 201,
+      data: {
+        status: "CH_CREATED"
+      }
+    });
+
+    process.env = { ...process.env, DEV_PRIVATE_KEY: undefined };
+
+    const execSync = jest.spyOn(require("child_process"), "execSync");
+    execSync.mockImplementation(
+      () =>
+        '[{"contractName":"AppleContract"},{"contractName":"GalaChainToken"},{"contractName":"PublicKeyContract"}]'
+    );
+
+    jest.spyOn(fs, "readFileSync").mockImplementation(() => {
+      return "bf2168e0e2238b9d879847987f556a093040a2cab07983a20919ac33103d0d00";
+    });
+
+    const postDeployChaincodePrivateKey = {
+      privateKey: await getPrivateKey(),
+      isTestnet,
+      imageTag
+    };
+
+    console.log("dupa");
+    // When
+    const response = await deployChaincode(postDeployChaincodePrivateKey);
+
+    // Then
+    expect(response.status).toEqual("CH_CREATED");
+  });
+
   it("should ask for private key and get deployChaincode response", async () => {
     // Given
     axios.post = jest.fn().mockResolvedValue({
@@ -101,13 +137,15 @@ describe("deployChaincode", () => {
 
     process.env = { ...process.env, DEV_PRIVATE_KEY: undefined };
 
-    jest.spyOn(ux, "prompt").mockResolvedValueOnce(privateKey);
-
     const execSync = jest.spyOn(require("child_process"), "execSync");
     execSync.mockImplementation(
       () =>
         '[{"contractName":"AppleContract"},{"contractName":"GalaChainToken"},{"contractName":"PublicKeyContract"}]'
     );
+
+    jest.spyOn(fs, "readFileSync").mockImplementation(() => "");
+
+    jest.spyOn(ux, "prompt").mockResolvedValueOnce(privateKey);
 
     const postDeployChaincodePrivateKey = {
       privateKey: await getPrivateKey(),
