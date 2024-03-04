@@ -94,7 +94,7 @@ jobs:
           npm run network:start --prefix ./project-test &
           sleep 120
       - name: Run E2E tests
-        run: npm run test:e2e
+        run: npm run test:e2e --prefix ./project-test
       - name: Verify chain browser blocks
         run: |
           MAX_BLOCK_INDEX=$(curl --location 'http://localhost:3010/product-channel/blocks' --header 'Content-Type: application/json' | jq '.info.fromBlock')
