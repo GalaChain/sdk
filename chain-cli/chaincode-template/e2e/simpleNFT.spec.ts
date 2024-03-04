@@ -150,25 +150,19 @@ describe("Simple NFT scenario", () => {
 
   it("Users should have some NTFs", async () => {
     // Given
-    const user1TokenInstances = await createValidDTO(FetchBalancesDto, {
-      owner: user1.identityKey,
-      ...instanceToPlain(nftClassKey)
-    });
-
-    const user2TokenInstances = await createValidDTO(FetchBalancesDto, {
-      owner: user2.identityKey,
-      ...instanceToPlain(nftClassKey)
-    });
+    const balancesDto = await createValidDTO(FetchBalancesDto, { ...instanceToPlain(nftClassKey) });
+    const user1BalancesDto = balancesDto.signed(user1.privateKey);
+    const user2BalancesDto = balancesDto.signed(user2.privateKey);
 
     // When
     const user1checkResponse = await client.assets.evaluateTransaction(
       "FetchBalances",
-      user1TokenInstances,
+      user1BalancesDto,
       TokenBalance
     );
     const user2checkResponse = await client.assets.evaluateTransaction(
       "FetchBalances",
-      user2TokenInstances,
+      user2BalancesDto,
       TokenBalance
     );
 

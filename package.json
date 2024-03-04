@@ -1,6 +1,6 @@
 {
   "name": "@gala-chain/sdk",
-  "version": "1.0.14",
+  "version": "1.0.16",
   "license": "Apache-2.0",
   "scripts": {
     "lint": "nx run-many -t lint",
@@ -9,10 +9,11 @@
     "madge": "nx run-many -t madge",
     "test": "nx run-many -t test",
     "licenses": "license-checker --csv --customPath ./licenses/format.json > ./licenses/licenses.csv",
-    "typedoc-chain-api": "typedoc --tsconfig ./tsconfig.base.json --hideGenerator --plugin typedoc-plugin-markdown --githubPages false --out ./docs/chain-api-docs ./chain-api/src",
-    "typedoc-chain-client": "typedoc --tsconfig ./tsconfig.base.json --hideGenerator --plugin typedoc-plugin-markdown --githubPages false --out ./docs/chain-client-docs ./chain-client/src",
-    "typedoc-chaincode": "typedoc --tsconfig ./tsconfig.base.json --hideGenerator --plugin typedoc-plugin-markdown --githubPages false --out ./docs/chaincode-docs ./chaincode/src",
-    "typedoc-chain-test": "typedoc --tsconfig ./tsconfig.base.json --hideGenerator --plugin typedoc-plugin-markdown --githubPages false --out ./docs/chain-test-docs ./chain-test/src",
+    "typedoc-chain-api": "typedoc --tsconfig ./tsconfig.base.json --hideGenerator --plugin typedoc-plugin-markdown --githubPages false --out ./docs/chain-api-docs ./chain-api/src && rm ./docs/chain-api-docs/README.md",
+    "typedoc-chain-client": "typedoc --tsconfig ./tsconfig.base.json --hideGenerator --plugin typedoc-plugin-markdown --githubPages false --out ./docs/chain-client-docs ./chain-client/src && rm ./docs/chain-client-docs/README.md",
+    "typedoc-chaincode": "typedoc --tsconfig ./tsconfig.base.json --hideGenerator --plugin typedoc-plugin-markdown --githubPages false --out ./docs/chaincode-docs ./chaincode/src && rm ./docs/chaincode-docs/README.md",
+    "typedoc-chain-test": "typedoc --tsconfig ./tsconfig.base.json --hideGenerator --plugin typedoc-plugin-markdown --githubPages false --out ./docs/chain-test-docs ./chain-test/src && rm ./docs/chain-test-docs/README.md",
+    "replace-readme-docs": "find ./docs -type f -exec sed -ri 's/∙ \\[README\\]\\(README\\.md\\) //g' {} + && find ./docs -type f -exec sed -ri 's/∙ \\[README\\]\\(..\\/README\\.md\\) //g' {} +",
     "prepublish": "npm run licenses"
   },
   "private": true,

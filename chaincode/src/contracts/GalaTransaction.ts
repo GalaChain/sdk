@@ -127,12 +127,13 @@ function GalaTransaction<T extends ChainCallDTO>(
       throw new RuntimeError("Undefined method name for descriptor.value: " + inspect(method));
     }
 
+    const loggingContext = `${className}:${method.name ?? "UnknownMethod"}`;
+
     // Creates the new method. The first parameter is always ctx, the second,
     // optional one, is a plain dto object. We ignore the rest. This is our
     // convention.
     // eslint-disable-next-line no-param-reassign
     descriptor.value = async function (ctx, dtoPlain) {
-      const loggingContext = `${className}:${method?.name ?? "Unidentified Transaction"}`;
       try {
         const metadata = [{ dto: dtoPlain }];
         ctx?.logger?.logTimeline("Begin Transaction", loggingContext, metadata);
