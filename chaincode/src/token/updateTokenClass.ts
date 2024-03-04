@@ -18,7 +18,7 @@ import { GalaChainContext } from "../types";
 import { getObjectByKey, putChainObject } from "../utils/state";
 import { NotATokenAuthorityError, TokenClassNotFoundError } from "./TokenError";
 
-interface UpdateTokenClassParams {
+export interface UpdateTokenClassParams {
   tokenClass: TokenClassKey;
   name?: string;
   symbol?: string;

@@ -20,16 +20,18 @@ import {
   TokenAlreadyExistsError,
   TokenClassNotFoundError
 } from "./TokenError";
-import { createTokenClass } from "./createTokenClass";
+import { CreateTokenClassParams, createTokenClass } from "./createTokenClass";
 import { fetchTokenClass, fetchTokenClasses, fetchTokenClassesWithPagination } from "./fetchTokenClasses";
 import { fetchTokenInstance, fetchTokenInstances } from "./fetchTokenInstance";
-import { updateTokenClass } from "./updateTokenClass";
+import { UpdateTokenClassParams, updateTokenClass } from "./updateTokenClass";
 
 export {
   fetchTokenInstance,
   fetchTokenInstances,
   createTokenClass,
+  CreateTokenClassParams,
   updateTokenClass,
+  UpdateTokenClassParams,
   fetchTokenClass,
   fetchTokenClasses,
   fetchTokenClassesWithPagination,
