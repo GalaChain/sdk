@@ -230,7 +230,7 @@ describe("RegisterUser", () => {
 });
 
 describe("UpdatePublicKey", () => {
-  it.skip("should allow to update public key", async () => {
+  it("should allow to update public key", async () => {
     // Given
     const { chaincode, user } = await setup();
     const newPrivateKey = "62fa12aaf85829fab618755747a7f75c256bfc5ceab2cc24c668c55f1985cfad";
@@ -259,6 +259,61 @@ describe("UpdatePublicKey", () => {
     const signedWithNewKey = updateDto.signed(newPrivateKey);
     const verifyResponse = await chaincode.invoke("PublicKeyContract:VerifySignature", signedWithNewKey);
     expect(verifyResponse).toEqual(transactionSuccess());
+  });
+
+  it("should allow new user to save under old public key after update", async () => {
+    // Given
+    const { chaincode, user } = await setup();
+    const oldPublicKey = user.publicKey;
+
+    const newPrivateKey = "62fa12aaf85829fab618755747a7f75c256bfc5ceab2cc24c668c55f1985cfad";
+    const newPublicKey =
+      "040e8bda5af346c5a7a7312a94b34023e8c9610abf40e550de9696422312a9a67ea748dbe2686f9a115c58021fe538163285a97368f44b6bf8b13a8306c86e8c5a";
+    expect(newPublicKey).not.toEqual(user.publicKey);
+
+    const updateDto = await createValidDTO(UpdatePublicKeyDto, { publicKey: newPublicKey });
+    const signedUpdateDto = updateDto.signed(user.privateKey);
+
+    // When
+    const updateResponse = await chaincode.invoke("PublicKeyContract:UpdatePublicKey", signedUpdateDto);
+
+    // Then
+    expect(updateResponse).toEqual(transactionSuccess());
+
+    // New key is saved
+    const savedPk = await chaincode.invoke("PublicKeyContract:GetPublicKey", "{}");
+    expect(savedPk).toEqual(
+      transactionSuccess({
+        publicKey: PublicKeyService.normalizePublicKey(newPublicKey)
+      })
+    );
+
+    // New key works for signature verification
+    const signedWithNewKey = updateDto.signed(newPrivateKey);
+    const verifyResponse = await chaincode.invoke("PublicKeyContract:VerifySignature", signedWithNewKey);
+    expect(verifyResponse).toEqual(transactionSuccess());
+
+    // new User Register under old public key
+    // Given
+    const dto = await createValidDTO<RegisterUserDto>(RegisterUserDto, {
+      user: "client|newUser",
+      publicKey: oldPublicKey
+    });
+    const signedDto = dto.signed(process.env.DEV_ADMIN_PRIVATE_KEY as string);
+
+    // When
+    const response = await chaincode.invoke("PublicKeyContract:RegisterUser", signedDto);
+
+    // Then
+    expect(response).toEqual(transactionSuccess());
+
+    const getPublicKeyDto = await createValidDTO<GetPublicKeyDto>(GetPublicKeyDto, { user: dto.user });
+    const getPublicKeyResponse = await chaincode.invoke("PublicKeyContract:GetPublicKey", getPublicKeyDto);
+    expect(getPublicKeyResponse).toEqual(
+      transactionSuccess({
+        publicKey: PublicKeyService.normalizePublicKey(oldPublicKey)
+      })
+    );
   });
 });
 

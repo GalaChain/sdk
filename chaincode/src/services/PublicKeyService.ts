@@ -62,6 +62,11 @@ export class PublicKeyService {
     await ctx.stub.putState(key, data);
   }
 
+  public static async deleteUserProfile(ctx: GalaChainContext, ethAddress: string): Promise<void> {
+    const key = PublicKeyService.getUserProfileKey(ctx, ethAddress);
+    await ctx.stub.deleteState(key);
+  }
+
   public static async getUserProfile(ctx: Context, ethAddress: string): Promise<UserProfile | undefined> {
     const key = PublicKeyService.getUserProfileKey(ctx, ethAddress);
     const data = await ctx.stub.getState(key);
