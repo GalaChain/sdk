@@ -77,6 +77,10 @@ jobs:
           docker version
           docker-compose version          
           npm i -g nx
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 18
       - name: Install local CLI
         run: .github/scripts/install-local-cli.sh
       - name: Create test project
@@ -127,6 +131,10 @@ jobs:
           docker version
           docker-compose version          
           npm i -g nx
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 18
       - name: Install local CLI
         run: .github/scripts/install-local-cli.sh
       - name: Create test project
@@ -136,7 +144,7 @@ jobs:
           npm i --prefix ./project-test
           (cd ./project-test && ../npm-pack-and-replace.sh --skipConfirmation)
       - name: Run network
-        run: (cd ./project-test && unset npm_config_prefix && npm run network:up)
+        run: (cd ./project-test && npm run network:up)
       - name: Run E2E tests
         run: npm run test:e2e --prefix ./project-test
 
