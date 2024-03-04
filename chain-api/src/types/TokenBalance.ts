@@ -229,14 +229,14 @@ export class TokenBalance extends ChainObject {
     return { remove };
   }
 
-  public ensureCanLockInstance(hold: TokenHold): { lock(): void } {
+  public ensureCanLockInstance(hold: TokenHold, currentTime: number): { lock(): void } {
     this.ensureInstanceIsNft(hold.instanceId);
     this.ensureInstanceIsInBalance(hold.instanceId);
-    this.ensureInstanceIsNotLockedWithTheSameName(hold.instanceId, hold.name, hold.created);
-    this.ensureInstanceIsNotUsed(hold.instanceId, hold.created);
+    this.ensureInstanceIsNotLockedWithTheSameName(hold.instanceId, hold.name, currentTime);
+    this.ensureInstanceIsNotUsed(hold.instanceId, currentTime);
 
     const lock = () => {
-      this.lockedHolds = [...this.getUnexpiredLockedHolds(hold.created), hold];
+      this.lockedHolds = [...this.getUnexpiredLockedHolds(currentTime), hold];
     };
 
     return { lock };
@@ -261,14 +261,14 @@ export class TokenBalance extends ChainObject {
     return { unlock };
   }
 
-  public ensureCanUseInstance(hold: TokenHold): { use(): void } {
+  public ensureCanUseInstance(hold: TokenHold, currentTime: number): { use(): void } {
     this.ensureInstanceIsNft(hold.instanceId);
     this.ensureInstanceIsInBalance(hold.instanceId);
-    this.ensureInstanceIsNotLocked(hold.instanceId, hold.created);
-    this.ensureInstanceIsNotUsed(hold.instanceId, hold.created);
+    this.ensureInstanceIsNotLocked(hold.instanceId, currentTime);
+    this.ensureInstanceIsNotUsed(hold.instanceId, currentTime);
 
     const use = () => {
-      this.inUseHolds = [...this.getUnexpiredInUseHolds(hold.created), hold];
+      this.inUseHolds = [...this.getUnexpiredInUseHolds(currentTime), hold];
     };
 
     return { use };
@@ -471,6 +471,14 @@ export class TokenBalance extends ChainObject {
     return { lock };
   }
 
+  private isMatchingHold(hold: TokenHold, name?: string, lockAuthority?: string): boolean {
+    return (
+      (hold.name === name || (hold.name === undefined && name === undefined)) &&
+      (hold.lockAuthority === lockAuthority ||
+        (hold.lockAuthority === undefined && lockAuthority === undefined))
+    );
+  }
+
   public ensureCanUnlockQuantity(
     quantity: BigNumber,
     currentTime: number,
@@ -483,7 +491,8 @@ export class TokenBalance extends ChainObject {
     let remainingQuantityToUnlock = quantity;
 
     for (const hold of unexpiredLockedHolds) {
-      if (hold.lockAuthority !== lockAuthority || name !== hold.name) {
+      // if neither the authority nor the name match, just leave this hold alone
+      if (!this.isMatchingHold(hold, name, lockAuthority)) {
         updated.push(hold);
         continue;
       }

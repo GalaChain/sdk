@@ -15,6 +15,8 @@
 import BigNumber from "bignumber.js";
 import { ValidationArguments, ValidationOptions, registerDecorator } from "class-validator";
 
+import { NotImplementedError } from "../utils/error";
+
 export function IsWholeNumber(property: string, validationOptions?: ValidationOptions) {
   return function (object: Record<string, unknown>, propertyName: string): void {
     registerDecorator({
@@ -35,27 +37,6 @@ export function IsWholeNumber(property: string, validationOptions?: ValidationOp
     });
   };
 }
-export function IsNot(
-  property: string,
-  condition: (instance: Record<string, unknown>) => unknown,
-  validationOptions?: ValidationOptions
-) {
-  return function (object: Record<string, unknown>, propertyName: string): void {
-    registerDecorator({
-      name: "isNot",
-      target: object.constructor,
-      propertyName,
-      constraints: [property],
-      options: validationOptions,
-      validator: {
-        // eslint-disable-next-line
-        validate(value: Record<string, unknown>, args: ValidationArguments) {
-          return true;
-        }
-      }
-    });
-  };
-}
 
 export function IsDifferentValue(property: string, validationOptions?: ValidationOptions) {
   return function (object: object, propertyName: string): void {
@@ -69,6 +50,9 @@ export function IsDifferentValue(property: string, validationOptions?: Validatio
         validate(value: Record<string, unknown>, args: ValidationArguments) {
           const [relatedPropertyName] = args.constraints;
           const relatedValue = args.object[relatedPropertyName];
+          if (typeof value !== "object" || typeof relatedValue !== "object") {
+            throw new NotImplementedError("IsDifferentValue only works with plain objects");
+          }
           return value !== relatedValue;
         }
       }
