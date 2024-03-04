@@ -12,9 +12,12 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+import { ux } from "@oclif/core";
+
 import axios from "axios";
 
 import Connect from "../../../src/commands/connect";
+import * as utils from "../../galachain-utils";
 
 const fakePrivateKey = "bf2168e0e2238b9d879847987f556a093040a2cab07983a20919ac33103d0d00";
 const fakeInvalidPrivateKey = "bf2168e0e2238b9d879";
@@ -45,6 +48,32 @@ describe("Connect Command", () => {
     expect(result.join()).toContain(
       "You are now connected! Chaincode chaincode-name and Channel channel-name."
     );
+  });
+
+  it("should not find private key", async () => {
+    // Given
+    const result: (string | Uint8Array)[] = [];
+    jest.spyOn(process.stdout, "write").mockImplementation((v) => {
+      result.push(v);
+      return true;
+    });
+
+    jest.spyOn(console, "log").mockImplementation((v) => {
+      result.push(v);
+      return true;
+    });
+
+    process.env = { ...process.env, DEV_PRIVATE_KEY: undefined };
+
+    jest.spyOn(ux, "prompt").mockResolvedValueOnce("");
+
+    jest.spyOn(utils, "getPrivateKey").mockImplementation(() => Promise.resolve(""));
+
+    // When
+    await Connect.run([]);
+
+    // Then
+    expect(result.join()).toContain("Private key not found");
   });
 
   it("should fail when invalid private key", async () => {

@@ -18,7 +18,7 @@ import { ux } from "@oclif/core";
 
 import axios from "axios";
 
-import { deployChaincode, getDeploymentResponse } from "../src/galachain-utils";
+import { deployChaincode, getDeploymentResponse, getPrivateKey } from "../src/galachain-utils";
 
 jest.mock("axios");
 
@@ -63,12 +63,6 @@ describe("deployChaincode", () => {
   const privateKey = "bf2168e0e2238b9d879847987f556a093040a2cab07983a20919ac33103d0d00";
   const isTestnet = true;
   const imageTag = "registry.image.name:latest";
-
-  const postDeployChaincodeNoPrivateKey = {
-    privateKey: undefined,
-    isTestnet,
-    imageTag
-  };
 
   beforeEach(() => {
     jest.clearAllMocks();
@@ -115,8 +109,13 @@ describe("deployChaincode", () => {
         '[{"contractName":"AppleContract"},{"contractName":"GalaChainToken"},{"contractName":"PublicKeyContract"}]'
     );
 
+    const postDeployChaincodePrivateKey = {
+      privateKey: await getPrivateKey(),
+      isTestnet,
+      imageTag
+    };
     // When
-    const response = await deployChaincode(postDeployChaincodeNoPrivateKey);
+    const response = await deployChaincode(postDeployChaincodePrivateKey);
 
     // Then
     expect(response.status).toEqual("CH_CREATED");

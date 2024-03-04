@@ -30,6 +30,10 @@ import { parseStringOrFileKey } from "./utils";
 const ConfigFileName = ".galachainrc.json";
 const PackageJsonFileName = "package.json";
 
+export const DEFAULT_PRIVATE_KEYS_DIR = "keys";
+export const DEFAULT_ADMIN_PRIVATE_KEY_NAME = "gc-admin-key";
+export const DEFAULT_DEV_PRIVATE_KEY_NAME = "gc-dev-key";
+
 export interface Config {
   org: string;
   channel: string;
@@ -112,14 +116,10 @@ function getContractNames(imageTag: string): { contractName: string }[] {
   }
 }
 
-export async function deployChaincode(params: {
-  privateKey: string | undefined;
-  isTestnet: boolean;
-  imageTag: string;
-}) {
-  if (!params.privateKey) {
-    params.privateKey = await getPrivateKeyPrompt();
-  }
+export async function deployChaincode(params: { privateKey: string; isTestnet: boolean; imageTag: string }) {
+  // if (!params.privateKey) {
+  //   params.privateKey = await getPrivateKeyPrompt();
+  // }
 
   const chainCodeDto: PostDeployChaincodeDto = {
     operationId: nanoid(),
@@ -142,10 +142,6 @@ export async function deployChaincode(params: {
 
   return response.data;
 }
-
-export const DEFAULT_PRIVATE_KEYS_DIR = "keys";
-export const DEFAULT_ADMIN_PRIVATE_KEY_NAME = "gc-admin-key";
-export const DEFAULT_DEV_PRIVATE_KEY_NAME = "gc-dev-key";
 
 export async function generateKeys(keysPath: string): Promise<void> {
   const adminPrivateKey = secp.utils.bytesToHex(secp.utils.randomPrivateKey());
