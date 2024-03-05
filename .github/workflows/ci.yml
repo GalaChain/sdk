@@ -141,8 +141,8 @@ jobs:
             exit 1
           fi
   bump-version:
-    #needs: [ template-e2e, template-image-check ]
-    #if: github.event_name != 'pull_request' && (startsWith(github.ref, 'refs/tags/v'))
+    needs: [ template-e2e, template-image-check ]
+    if: github.event_name != 'pull_request' && (startsWith(github.ref, 'refs/tags/v'))
     name: Bump SDK Version
     runs-on: ubuntu-22.04
     steps:
@@ -158,15 +158,15 @@ jobs:
           git config --global user.email "galachain-release-bot@users.noreply.github.com"
       - name: Set version from tag
         run: |
-          VERSION=1.0.18
+          TAG=$(git describe --tags --abbrev=0)
+          VERSION=${TAG:1}
           echo "TAG: $TAG"
           echo "VERSION: $VERSION"
           ./unifyVersions.js $VERSION
           npm i
-          git checkout -b test-branch-$VERSION
-          git add .
-          git commit -a -m "Bump version to $VERSION"
-          git push -u origin test-branch-$VERSION
+          git commit -a -m "Bump version to $VERSION [skip ci]"
+          git tag -a "$TAG" -m "Release $TAG"
+          git push -u origin "$TAG"
   publish:
     name: Publish Release
     needs: [ bump-version ]
