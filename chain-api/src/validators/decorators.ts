@@ -51,13 +51,10 @@ export function IsDifferentValue(property: string, validationOptions?: Validatio
           const [relatedPropertyName] = args.constraints;
           const relatedValue = args.object[relatedPropertyName];
           if (
-            typeof value === "object" ||
-            typeof value === "function" ||
-            typeof relatedValue === "object" ||
-            typeof relatedValue === "function" ||
-            typeof value !== typeof relatedValue
+            (typeof value !== "string" && value !== undefined) ||
+            (typeof relatedValue !== "string" && relatedValue !== undefined)
           ) {
-            throw new NotImplementedError("IsDifferentValue only works with plain objects");
+            throw new NotImplementedError("IsDifferentValue only works with string or undefined");
           }
           return value !== relatedValue;
         }
