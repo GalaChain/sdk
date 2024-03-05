@@ -50,8 +50,11 @@ export function IsDifferentValue(property: string, validationOptions?: Validatio
         validate(value: Record<string, unknown>, args: ValidationArguments) {
           const [relatedPropertyName] = args.constraints;
           const relatedValue = args.object[relatedPropertyName];
-          if (typeof value !== "object" || typeof relatedValue !== "object") {
-            throw new NotImplementedError("IsDifferentValue only works with plain objects");
+          if (
+            (typeof value !== "string" && value !== undefined) ||
+            (typeof relatedValue !== "string" && relatedValue !== undefined)
+          ) {
+            throw new NotImplementedError("IsDifferentValue only works with string or undefined");
           }
           return value !== relatedValue;
         }
