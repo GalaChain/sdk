@@ -23,4 +23,4 @@ Please check if there are any approved pull requests that can be easily merged a
 5. Provide a release name. It should start with the tag name (`vX.Y.Z`), because the version is not visible enough in the GitHub releases UI. After the tag, you may want to add an optional short highlight of the most notable changes.
 6. Ensure "Set as a pre-release" is unchecked, and "Set as the latest release" is checked.
 7. Click on the "Publish release" button.
-8. The CI will handle publishing Node.js packages, publishing the CLI Docker image, and publishing the new version of docs.
+8. The CI will handle setting the SDK version number from the tag name, publishing Node.js packages, publishing the CLI Docker image, and publishing the new version of docs.
