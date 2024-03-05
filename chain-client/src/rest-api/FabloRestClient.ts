@@ -155,11 +155,11 @@ export class FabloRestClient extends ChainClient {
           .post(getApiPath, payload, { headers })
           .catch((e) => catchAxiosError(e));
 
-        console.log(`Got contract API for ${contractPath}: `, JSON.stringify(apiResponse));
+        console.log(`Got contract API for ${contractPath}: `, JSON.stringify(apiResponse.data));
 
         if (!GalaChainResponse.isSuccess<ContractAPI>(apiResponse.data.response)) {
           throw new Error(
-            `Failed to get ${payload.method} for ${contractPath}: ${JSON.stringify(apiResponse)}`
+            `Failed to get ${payload.method} for ${contractPath}: ${JSON.stringify(apiResponse.data)}`
           );
         }
 
