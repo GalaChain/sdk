@@ -166,7 +166,7 @@ jobs:
           ./unifyVersions.js $VERSION
           npm i
           git commit -a -m "Bump version to $VERSION [skip ci]"
-          git tag -a "$TAG" -m "Release $TAG"
+          git tag -fa "$TAG" -m "Release $TAG"
           git push -u origin "$TAG"
   publish:
     name: Publish Release
