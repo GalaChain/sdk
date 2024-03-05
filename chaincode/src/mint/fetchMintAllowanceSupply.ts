@@ -24,7 +24,7 @@ import BigNumber from "bignumber.js";
 import { plainToInstance } from "class-transformer";
 
 import { GalaChainContext } from "../types/GalaChainContext";
-import { blockTimeout, getObjectByKey, inverseKeyLength, inverseTime, lookbackTxCount } from "../utils";
+import { getObjectByKey, inverseKeyLength, inverseTime, lookbackTimeOffset, lookbackTxCount } from "../utils";
 
 export async function fetchMintAllowanceSupply(
   ctx: GalaChainContext,
@@ -34,7 +34,7 @@ export async function fetchMintAllowanceSupply(
   // The block timeout times 2 is the default offset, rather than zero, because querying requests from
   // the current time could cause concurrent minting to fail with MVCC_READ_CONFLICTs.
   // Consumers must explicitly override this with a 0 value to read with no offset.
-  const startTimeOffset: number = offsetCurrentTimeMs ?? blockTimeout * 2;
+  const startTimeOffset: number = offsetCurrentTimeMs ?? lookbackTimeOffset;
 
   const startTimeKey: string = inverseTime(ctx, startTimeOffset);
   const keyLen = inverseKeyLength;

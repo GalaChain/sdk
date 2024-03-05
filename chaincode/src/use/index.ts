@@ -12,7 +12,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-import { releaseToken } from "./releaseToken";
-import { useToken } from "./useToken";
+import { ReleaseTokenParams, releaseToken } from "./releaseToken";
+import { UseTokenParams, useToken } from "./useToken";
 
-export { releaseToken, useToken };
+export { releaseToken, useToken, ReleaseTokenParams, UseTokenParams };

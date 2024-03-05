@@ -18,7 +18,7 @@ import { TokenBalance } from "@gala-chain/api";
 import { GalaChainContext } from "../types";
 import { getObjectsByPartialCompositeKey, takeUntilUndefined } from "../utils";
 
-interface FullAllowanceCheckParams {
+export interface FullAllowanceCheckParams {
   owner: string;
   grantedTo: string;
   allowanceType: AllowanceType;

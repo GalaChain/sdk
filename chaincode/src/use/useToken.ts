@@ -29,7 +29,7 @@ import { GalaChainContext } from "../types";
 import { putChainObject } from "../utils";
 import { NftInvalidQuantityUseError } from "./UseError";
 
-interface UseTokenParams {
+export interface UseTokenParams {
   owner: string;
   inUseBy: string;
   tokenInstanceKey: TokenInstanceKey;
