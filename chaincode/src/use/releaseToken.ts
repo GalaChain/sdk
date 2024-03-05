@@ -21,7 +21,7 @@ import { GalaChainContext } from "../types";
 import { putChainObject } from "../utils";
 import { ReleaseForbiddenUserError } from "./UseError";
 
-interface ReleaseTokenParams {
+export interface ReleaseTokenParams {
   tokenInstanceKey: TokenInstanceKey;
 }
 

@@ -121,65 +121,33 @@ jobs:
             exit 1
           fi
 
-  # TODO: Fix the jobs to work when running unifyVersions.js
-  # windows-init-command:
-  #   name: Init Command on Windows
-  #   runs-on: windows-latest
-  #   steps:
-  #     - name: Checkout
-  #       uses: actions/checkout@v4
-  #     - name: Set up Node.js
-  #       uses: actions/setup-node@v4
-  #       with:
-  #         node-version: 18
-  #     - name: Install dependencies
-  #       run: npm install
-  #     - name: Build CLI for windows and link it
-  #       run: |
-  #         cd chain-cli
-  #         npm install
-  #         npm run build-win
-  #         npm link --force
-  #     - name: Initialize a project and validate the package.json
-  #       run: galachain init test-project
-  #     - name: Check if the package.json contains '@gala-chain/test-project' using windows command
-  #       run: |
-  #         $package = Get-Content -Path test-project/package.json -Raw
-  #         if ($package -match '@gala-chain/test-project') {
-  #           Write-Host "package.json contains '@gala-chain/test-project'"
-  #         } else {
-  #           Write-Host "package.json does not contain '@gala-chain/test-project'"
-  #           exit 1
-  #         }
-
-  # chaincode-template-lint:
-  #   name: Chaincode Template Lint
-  #   runs-on: ubuntu-22.04
-  #   steps:
-  #     - name: Checkout
-  #       uses: actions/checkout@v4
-  #     - name: Set up Node.js
-  #       uses: actions/setup-node@v4
-  #       with:
-  #         node-version: 18
-  #     - name: Install dependencies
-  #       run: npm install
-  #     - name: Build CLI and link it
-  #       run: |
-  #         cd chain-cli
-  #         npm install
-  #         npm run build
-  #         cd chaincode-template
-  #         ../../npm-pack-and-replace.sh --skipConfirmation
-  #         cd ..
-  #         npm link --force
-  #     - name: Chaincode lint
-  #       run: |
-  #         galachain init test-project
-  #         cd test-project
-  #         npm install
-  #         npm run build
-  #         npm run lint
+  chaincode-template-lint:
+    name: Chaincode Template Lint
+    runs-on: ubuntu-22.04
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 18
+      - name: Install dependencies
+        run: npm install
+      - name: Build CLI and link it
+        run: |
+          cd chain-cli/chaincode-template
+          ../../npm-pack-and-replace.sh --skipConfirmation
+          cd ..
+          npm install
+          npm run build
+          npm link --force
+      - name: Chaincode lint
+        run: |
+          galachain init test-project
+          cd test-project
+          npm install
+          npm run build
+          npm run lint
 
   publish:
     name: Publish Release
@@ -242,8 +210,40 @@ jobs:
           npm publish --access public
           cd ../
 
+  publish-cli-image:
+    name: Publish CLI Image
+    needs: [ publish ]
+    if: github.event_name != 'pull_request' && (startsWith(github.ref, 'refs/tags/v'))
+    env:
+      REGISTRY: ghcr.io
+      IMAGE_NAME: galachain/sdk
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Log in to the Container registry
+        uses: docker/login-action@v3
+        with:
+          registry: ${{ env.REGISTRY }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+      - name: Make the repository name lowercase
+        id: lower-repo
+        shell: pwsh
+        run: |
+          "::set-output name=repository::$($env:GITHUB_REPOSITORY.ToLowerInvariant())"
+      - name: Build and push Docker image
+        uses: docker/build-push-action@v5
+        with:
+          context: ./chain-cli/docker
+          push: true
+          tags: ghcr.io/${{ steps.lower-repo.outputs.repository }}:latest
+
   bump-version:
-    needs: [publish]
+    needs: [ publish, publish-cli-image ]
     if: github.event_name != 'pull_request' && (startsWith(github.ref, 'refs/tags/v'))
     name: Bump SDK Version
     runs-on: ubuntu-22.04
