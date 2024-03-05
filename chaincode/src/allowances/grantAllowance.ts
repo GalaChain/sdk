@@ -305,7 +305,7 @@ async function putAllowancesOnChain(
   for (let index = 0; index < quantities.length; index++) {
     const decimalPlaces = quantities[index].quantity.decimalPlaces() ?? 0;
     if (decimalPlaces > tokenClass.decimals) {
-      throw new InvalidDecimalError(quantities[index].quantity, tokenClass.decimals).logError(ctx.logger);
+      throw new InvalidDecimalError(quantities[index].quantity, tokenClass.decimals);
     }
 
     const grantedTo = quantities[index].user;
@@ -364,7 +364,7 @@ export async function putMintAllowanceRequestsOnChain(
   for (let index = 0; index < quantities.length; index++) {
     const decimalPlaces = quantities[index].quantity.decimalPlaces() ?? 0;
     if (decimalPlaces > tokenClass.decimals) {
-      throw new InvalidDecimalError(quantities[index].quantity, tokenClass.decimals).logError(ctx.logger);
+      throw new InvalidDecimalError(quantities[index].quantity, tokenClass.decimals);
     }
 
     const grantedTo = quantities[index].user;
@@ -412,7 +412,7 @@ export async function putMintAllowancesOnChain(
   for (const mintAllowanceRequest of mintAllowanceRequests) {
     const decimalPlaces = mintAllowanceRequest.quantity.decimalPlaces() ?? 0;
     if (decimalPlaces > tokenClass.decimals) {
-      throw new InvalidDecimalError(mintAllowanceRequest.quantity, tokenClass.decimals).logError(ctx.logger);
+      throw new InvalidDecimalError(mintAllowanceRequest.quantity, tokenClass.decimals);
     }
 
     const grantedTo = mintAllowanceRequest.grantedTo;
@@ -478,9 +478,7 @@ export async function grantAllowance(
     }
 
     if (tokenClass.isNonFungible && !instanceKey.instance.isEqualTo(TokenInstance.FUNGIBLE_TOKEN_INSTANCE)) {
-      throw new NftInstanceAllowanceMismatchError(instanceKey.instance, AllowanceType.Mint).logError(
-        ctx.logger
-      );
+      throw new NftInstanceAllowanceMismatchError(instanceKey.instance, AllowanceType.Mint);
     }
 
     // fetch known amounts
@@ -519,7 +517,7 @@ export async function grantAllowance(
       tokenInstance.isNonFungible &&
       tokenInstance.instance.isEqualTo(TokenInstance.FUNGIBLE_TOKEN_INSTANCE)
     ) {
-      throw new NftInstanceAllowanceMismatchError(tokenInstance.instance, allowanceType).logError(ctx.logger);
+      throw new NftInstanceAllowanceMismatchError(tokenInstance.instance, allowanceType);
     }
 
     // Check that the caller owns the token that they are granting an allowance for:
