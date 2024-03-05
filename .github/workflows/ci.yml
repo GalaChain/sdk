@@ -169,7 +169,7 @@ jobs:
           git add .
           git commit -a -m "Bump version to ${{ env.NEW_SDK_VERSION }}"
           # git tag -a "$TAG" -m "Release $TAG"
-          git push
+          git push -u origin test-branch-${{ env.NEW_SDK_VERSION }}
   publish:
     name: Publish Release
     needs: [ bump-version ]
