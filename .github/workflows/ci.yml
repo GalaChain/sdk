@@ -158,17 +158,14 @@ jobs:
           git config --global user.email "galachain-release-bot@users.noreply.github.com"
       - name: Set version from tag
         run: |
-          #TAG=$(git describe --tags --abbrev=0)
           VERSION=1.0.18
           echo "TAG: $TAG"
           echo "VERSION: $VERSION"
-#          echo "NEW_SDK_VERSION=$VERSION" >> $GITHUB_ENV
           ./unifyVersions.js $VERSION
           npm i
           git checkout -b test-branch-$VERSION
           git add .
           git commit -a -m "Bump version to $VERSION"
-          # git tag -a "$TAG" -m "Release $TAG"
           git push -u origin test-branch-$VERSION
   publish:
     name: Publish Release
