@@ -27,6 +27,12 @@ export class ProfileExistsError extends ConflictError {
   }
 }
 
+export class ProfileNotFoundError extends NotFoundError {
+  constructor(address: string) {
+    super(`UserProfile is not saved for ethereum address ${address}`, { address });
+  }
+}
+
 export class PkMismatchError extends ConflictError {
   constructor(user: string) {
     super(`Public key does not match existing publicKey on chain for user ${user}`, { user });

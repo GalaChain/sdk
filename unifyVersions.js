@@ -94,3 +94,11 @@ packages.forEach(({ packageJson, packageJsonPath }) => {
     require("fs").writeFileSync(packageJsonPath, JSON.stringify(packageJson, undefined, 2) + "\n");
   }
 });
+
+const { execSync } = require("child_process");
+
+// execute `npm install` in the root directory to update the lock file and licenses
+execSync("npm install");
+
+// execute `npm run build` in chain-cli to update the new version in README.md and oclif.manifest.json
+execSync("npm run build", { cwd: "chain-cli" });

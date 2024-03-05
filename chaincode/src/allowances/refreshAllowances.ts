@@ -19,7 +19,7 @@ import { GalaChainContext } from "../types";
 import { getObjectByKey, putChainObject } from "../utils";
 import { UnauthorizedAllowanceRefreshError } from "./AllowanceError";
 
-interface AllowanceType {
+export interface AllowanceType {
   allowanceKey: AllowanceKey;
   uses: BigNumber;
   expires: number;

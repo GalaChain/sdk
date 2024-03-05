@@ -26,7 +26,7 @@ import { grantAllowance } from "../allowances";
 import { GalaChainContext } from "../types/GalaChainContext";
 import { mintToken } from "./mintToken";
 
-interface MintTokenWithAllowanceParams {
+export interface MintTokenWithAllowanceParams {
   tokenClassKey: TokenClassKey;
   tokenInstance: BigNumber;
   owner: string;

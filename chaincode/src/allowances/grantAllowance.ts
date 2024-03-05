@@ -287,7 +287,7 @@ export function ensureQuantityCanBeMinted(
   return true;
 }
 
-interface GrantAllowanceParams {
+export interface GrantAllowanceParams {
   tokenInstance: TokenInstanceQueryKey;
   allowanceType: AllowanceType;
   quantities: Array<GrantAllowanceQuantity>;
@@ -397,7 +397,7 @@ export async function putMintAllowanceRequestsOnChain(
   return mintAllowanceQtyEntries;
 }
 
-interface PutMintAllowancesOnChainParams {
+export interface PutMintAllowancesOnChainParams {
   mintAllowanceRequests: Array<TokenMintAllowanceRequest>;
 }
 // todo: when grantAllowance is deprecated for Mints, move this function to ../mint module

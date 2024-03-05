@@ -95,7 +95,7 @@ async function createTokenBurnCounter(
   return burnCounter;
 }
 
-interface BurnsTokensParams {
+export interface BurnsTokensParams {
   owner: string;
   toBurn: BurnTokenQuantity[];
   preValidated?: boolean;
