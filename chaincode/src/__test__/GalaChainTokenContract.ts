@@ -393,8 +393,7 @@ export default class GalaChainTokenContract extends GalaContract {
   })
   public ReleaseToken(ctx: GalaChainContext, dto: ReleaseTokenDto): Promise<TokenBalance> {
     return releaseToken(ctx, {
-      tokenInstanceKey: dto.tokenInstance,
-      name: undefined
+      tokenInstanceKey: dto.tokenInstance
     });
   }
 
