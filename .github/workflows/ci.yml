@@ -44,8 +44,8 @@ jobs:
         run: galachain init ./project-test
       - name: Install dependencies
         run: |
-          npm i --prefix ./project-test
           (cd ./project-test && ../npm-pack-and-replace.sh --skipConfirmation)
+          npm i --prefix ./project-test
       - name: Lint
         run: npm run lint --prefix ./project-test
       - name: Build
@@ -87,8 +87,8 @@ jobs:
         run: galachain init ./project-test
       - name: Install dependencies
         run: |
-          npm i --prefix ./project-test
           (cd ./project-test && ../npm-pack-and-replace.sh --skipConfirmation)
+          npm i --prefix ./project-test
       - name: Run network in watch mode and wait for it to start
         run: |
           npm run network:start --prefix ./project-test &
@@ -123,8 +123,8 @@ jobs:
         run: galachain init ./project-test
       - name: Install dependencies
         run: |
-          npm i --prefix ./project-test
           (cd ./project-test && ../npm-pack-and-replace.sh --skipConfirmation)
+          npm i --prefix ./project-test
       - name: Verify image
         run: |
           cd ./project-test
