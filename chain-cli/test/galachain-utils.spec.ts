@@ -113,7 +113,7 @@ describe("deployChaincode", () => {
     });
 
     const postDeployChaincodePrivateKey = {
-      privateKey: await getPrivateKey(),
+      privateKey: await getPrivateKey(undefined),
       isTestnet,
       imageTag
     };
@@ -147,7 +147,7 @@ describe("deployChaincode", () => {
     jest.spyOn(ux, "prompt").mockResolvedValueOnce(privateKey);
 
     const postDeployChaincodePrivateKey = {
-      privateKey: await getPrivateKey(),
+      privateKey: await getPrivateKey(undefined),
       isTestnet,
       imageTag
     };
