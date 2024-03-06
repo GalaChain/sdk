@@ -75,7 +75,7 @@ jobs:
           yq --version
           bash --version
           docker version
-          docker-compose version          
+          docker-compose version
           npm i -g nx
       - name: Set up Node.js
         uses: actions/setup-node@v4
@@ -141,36 +141,9 @@ jobs:
             exit 1
           fi
 
-  bump-version:
-    needs: [ template-e2e, template-image-check ]
-    if: github.event_name != 'pull_request' && (startsWith(github.ref, 'refs/tags/v'))
-    name: Bump SDK Version
-    runs-on: ubuntu-22.04
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v4
-      - name: Set up Node.js
-        uses: actions/setup-node@v4
-        with:
-          node-version: 18
-      - name: Configure Git
-        run: |
-          git config --global user.name "galachain-release-bot"
-          git config --global user.email "galachain-release-bot@users.noreply.github.com"
-      - name: Set version from tag
-        run: |
-          TAG=$(git describe --tags --abbrev=0)
-          VERSION=${TAG:1}
-          echo "TAG: $TAG"
-          echo "VERSION: $VERSION"
-          ./unifyVersions.js $VERSION
-          npm i
-          git commit -a -m "Bump version to $VERSION [skip ci]"
-          git tag -fa "$TAG" -m "Release $TAG"
-          git push -u origin "$TAG"
   publish:
     name: Publish Release
-    needs: [ bump-version ]
+    needs: [ template-e2e, template-image-check ]
     if: github.event_name != 'pull_request' && (startsWith(github.ref, 'refs/tags/v'))
     runs-on: ubuntu-22.04
     steps:
@@ -260,3 +233,35 @@ jobs:
           context: ./chain-cli/docker
           push: true
           tags: ghcr.io/${{ steps.lower-repo.outputs.repository }}:latest
+
+  bump-version:
+    needs: [ publish, publish-cli-image ]
+    if: github.event_name != 'pull_request' && (startsWith(github.ref, 'refs/tags/v'))
+    name: Bump SDK Version
+    runs-on: ubuntu-22.04
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          ref: 'main'
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 18
+      - name: Install tools
+        run: npm i -g semver
+      - name: Configure Git
+        run: |
+          git config --global user.name "galachain-release-bot"
+          git config --global user.email "galachain-release-bot@users.noreply.github.com"
+      - name: Bump version
+        run: |
+          VERSION="$(semver "$(< package.json jq -r '.version')" -i)"
+          ./unifyVersions.js $VERSION
+          npm i
+          git commit -am "Bump version to $VERSION"
+      - name: Push next version release
+        uses: ad-m/github-push-action@master
+        with:
+          branch: 'main'
+          github_token: ${{ secrets.GITHUB_TOKEN }}
