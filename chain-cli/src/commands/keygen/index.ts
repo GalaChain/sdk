@@ -25,7 +25,7 @@ export default class Keygen extends BaseCommand<typeof Keygen> {
     `Uses ${"`@noble/secp256k1`"} npm library under-the-hood. ` +
     `Always handle private keys with the utmost care.`;
 
-  static override examples = ["galachain keygen data/user1"]; //TODO: it will return error if `data` directory doesn't exist
+  static override examples = ["galachain keygen data/user1"];
 
   static override args = {
     file: Args.string({

@@ -146,7 +146,9 @@ export async function generateKeys(keysPath: string): Promise<void> {
   const devPrivateKey = secp.utils.bytesToHex(secp.utils.randomPrivateKey());
   const devPublicKey = secp.utils.bytesToHex(secp.getPublicKey(adminPrivateKey));
 
-  execSync(`mkdir -p ${keysPath}`);
+  fs.mkdir(`${keysPath}`, (err) => {
+    if (err) this.log(`Could not create a directory ${keysPath}. Error: ${err}`);
+  });
 
   await writeFile(`${keysPath}/${DEFAULT_ADMIN_PRIVATE_KEY_NAME}.pub`, adminPublicKey);
   await writeFile(`${keysPath}/${DEFAULT_ADMIN_PRIVATE_KEY_NAME}`, adminPrivateKey.toString());
@@ -154,8 +156,10 @@ export async function generateKeys(keysPath: string): Promise<void> {
   await writeFile(`${keysPath}/${DEFAULT_DEV_PRIVATE_KEY_NAME}`, devPrivateKey.toString());
 }
 
-export async function getPrivateKey() {
-  return process.env.DEV_PRIVATE_KEY || getPrivateKeyFromFile() || (await getPrivateKeyPrompt());
+export async function getPrivateKey(keysFromArg: string | undefined) {
+  return (
+    keysFromArg || process.env.DEV_PRIVATE_KEY || getPrivateKeyFromFile() || (await getPrivateKeyPrompt())
+  );
 }
 
 function getPrivateKeyFromFile() {
