@@ -60,7 +60,7 @@ export default class Deploy extends BaseCommand<typeof Deploy> {
       return;
     }
 
-    const developerPrivateKey = args.developerPrivateKey ?? (await getPrivateKey());
+    const developerPrivateKey = await getPrivateKey(args.developerPrivateKey);
 
     const response = await ux.prompt(`Are you sure you want to deploy to ${environment}? (y/n)`);
     if (response.toUpperCase() !== "Y") {
