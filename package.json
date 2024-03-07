@@ -1,6 +1,6 @@
 {
   "name": "@gala-chain/sdk",
-  "version": "1.0.17",
+  "version": "1.0.19",
   "license": "Apache-2.0",
   "scripts": {
     "lint": "nx run-many -t lint",
@@ -8,6 +8,7 @@
     "build": "nx run-many -t build",
     "madge": "nx run-many -t madge",
     "test": "nx run-many -t test",
+    "set-version": "node unifyVersions.js",
     "licenses": "license-checker --csv --customPath ./licenses/format.json > ./licenses/licenses.csv",
     "typedoc-chain-api": "typedoc --tsconfig ./tsconfig.base.json --hideGenerator --plugin typedoc-plugin-markdown --githubPages false --out ./docs/chain-api-docs ./chain-api/src && rm ./docs/chain-api-docs/README.md",
     "typedoc-chain-client": "typedoc --tsconfig ./tsconfig.base.json --hideGenerator --plugin typedoc-plugin-markdown --githubPages false --out ./docs/chain-client-docs ./chain-client/src && rm ./docs/chain-client-docs/README.md",
