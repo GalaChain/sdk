@@ -46,7 +46,7 @@ export default class Connect extends BaseCommand<typeof Connect> {
   async run(): Promise<void> {
     const { args, flags } = await this.parse(Connect);
 
-    const developerPrivateKey = args.developerPrivateKey ?? (await getPrivateKey(args.developerPrivateKey));
+    const developerPrivateKey = await getPrivateKey(args.developerPrivateKey);
 
     try {
       const response = await getDeploymentResponse({
