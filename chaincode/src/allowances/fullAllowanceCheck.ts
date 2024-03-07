@@ -45,8 +45,7 @@ export async function fullAllowanceCheck(
     ctx,
     TokenBalance.INDEX_KEY,
     queryParams,
-    TokenBalance,
-    true // TODO: may lead to incomplete results
+    TokenBalance
   );
 
   // For each relevant balance, fetch relevant allowance(s)
@@ -69,8 +68,7 @@ export async function fullAllowanceCheck(
         ctx,
         TokenAllowance.INDEX_KEY,
         allowanceParams,
-        TokenAllowance,
-        true // TODO: may lead to incomplete results
+        TokenAllowance
       );
 
       const expiredAllowances = allowanceResults.filter((allowance) => {
