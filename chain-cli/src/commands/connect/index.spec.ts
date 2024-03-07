@@ -65,7 +65,9 @@ describe("Connect Command", () => {
 
     process.env = { ...process.env, DEV_PRIVATE_KEY: undefined };
 
-    jest.spyOn(fs, "readFileSync").mockImplementation(() => undefined as unknown as string | Buffer);
+    jest.spyOn(fs, "readFileSync").mockImplementation(() => {
+      throw new Error();
+    });
 
     jest.spyOn(ux, "prompt").mockResolvedValueOnce(fakePrivateKey);
 

@@ -26,6 +26,7 @@ import { ServicePortal } from "./consts";
 import { GetChaincodeDeploymentDto, PostDeployChaincodeDto } from "./dto";
 import { execSync } from "./exec-sync";
 import { parseStringOrFileKey } from "./utils";
+import * as console from "console";
 
 const ConfigFileName = ".galachainrc.json";
 const PackageJsonFileName = "package.json";
@@ -147,7 +148,7 @@ export async function generateKeys(keysPath: string): Promise<void> {
   const devPublicKey = secp.utils.bytesToHex(secp.getPublicKey(adminPrivateKey));
 
   fs.mkdir(`${keysPath}`, (err) => {
-    if (err) this.log(`Could not create a directory ${keysPath}. Error: ${err}`);
+    if (err) console.error(`Could not create a directory ${keysPath}. Error: ${err}`);
   });
 
   await writeFile(`${keysPath}/${DEFAULT_ADMIN_PRIVATE_KEY_NAME}.pub`, adminPublicKey);
@@ -169,7 +170,7 @@ function getPrivateKeyFromFile(): string | undefined {
       "utf8"
     );
   } catch (e) {
-    this.log(`Error reading file: ${e}`);
+    console.error(`Error reading file: ${e}`);
   }
 }
 
