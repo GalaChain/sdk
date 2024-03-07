@@ -20,6 +20,6 @@ set -eu
 cd "$GITHUB_WORKSPACE"
 
 npm i
-(cd chain-cli && ../npm-pack-and-replace.sh --skipConfirmation && npm link)
+(cd chain-cli && ../npm-pack-and-replace.sh --skipConfirmation && npm pack && npm i -g gala-chain-cli-*)
 
 galachain --help
