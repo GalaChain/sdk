@@ -26,7 +26,6 @@ import { ServicePortal } from "./consts";
 import { GetChaincodeDeploymentDto, PostDeployChaincodeDto } from "./dto";
 import { execSync } from "./exec-sync";
 import { parseStringOrFileKey } from "./utils";
-import * as console from "console";
 
 const ConfigFileName = ".galachainrc.json";
 const PackageJsonFileName = "package.json";
