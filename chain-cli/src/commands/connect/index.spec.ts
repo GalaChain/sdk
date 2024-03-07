@@ -15,19 +15,23 @@
 import { ux } from "@oclif/core";
 
 import axios from "axios";
+import fs from "fs";
 
-import Info from "../../../src/commands/info";
+import Connect from "../../../src/commands/connect";
 
 const fakePrivateKey = "bf2168e0e2238b9d879847987f556a093040a2cab07983a20919ac33103d0d00";
+const fakeInvalidPrivateKey = "bf2168e0e2238b9d879";
 
-describe("ChainInfo Command", () => {
-  it("should check if it gets info from a chaincode", async () => {
+describe("Connect Command", () => {
+  it("should check if it connects to a new chaincode", async () => {
     // Given
     axios.get = jest.fn().mockResolvedValue({
       status: 200,
       data: {
         status: "CH_CREATED",
-        lastOperationId: "operation-id"
+        lastOperationId: "operation-id",
+        chaincode: "chaincode-name",
+        channel: "channel-name"
       }
     });
 
@@ -38,24 +42,16 @@ describe("ChainInfo Command", () => {
     });
 
     // When
-    await Info.run([fakePrivateKey]);
+    await Connect.run([fakePrivateKey]);
 
     // Then
-    expect(result.join()).toContain(`CH_CREATED`);
-    expect(result.join()).toContain(`operation-id`);
-
-    jest.resetAllMocks();
+    expect(result.join()).toContain(
+      "You are now connected! Chaincode chaincode-name and Channel channel-name."
+    );
   });
-  it("should not find private key and prompt", async () => {
-    // Given
-    axios.get = jest.fn().mockResolvedValue({
-      status: 200,
-      data: {
-        status: "CH_CREATED",
-        lastOperationId: "operation-id"
-      }
-    });
 
+  it("should not find private key", async () => {
+    // Given
     const result: (string | Uint8Array)[] = [];
     jest.spyOn(process.stdout, "write").mockImplementation((v) => {
       result.push(v);
@@ -69,14 +65,26 @@ describe("ChainInfo Command", () => {
 
     process.env = { ...process.env, DEV_PRIVATE_KEY: undefined };
 
+    jest.spyOn(fs, "readFileSync").mockImplementation(() => {
+      throw new Error();
+    });
+
     jest.spyOn(ux, "prompt").mockResolvedValueOnce(fakePrivateKey);
 
     // When
-    await Info.run();
+    await Connect.run([]);
 
     // Then
     expect(result.join()).toContain("Private key not found");
+  });
 
-    jest.resetAllMocks();
+  it("should fail when invalid private key", async () => {
+    const result: (string | Uint8Array)[] = [];
+    jest.spyOn(process.stdout, "write").mockImplementation((v) => {
+      result.push(v);
+      return true;
+    });
+
+    await expect(Connect.run([fakeInvalidPrivateKey])).rejects.toThrow();
   });
 });

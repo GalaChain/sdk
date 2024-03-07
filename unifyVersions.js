@@ -45,8 +45,8 @@ if (optionalVersion) {
   console.log("Applying version from command line:", optionalVersion);
 
   // just a sanity check
-  if (!optionalVersion.startsWith("1.0.")) {
-    console.error("Version must start with '1.0.'");
+  if (!optionalVersion.startsWith("1.1.")) {
+    console.error("Version must start with '1.1.'");
     process.exit(1);
   }
   packages.forEach(({ packageJson, packageJsonPath }) => {

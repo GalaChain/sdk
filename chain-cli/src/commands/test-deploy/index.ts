@@ -15,6 +15,7 @@
 import { Args } from "@oclif/core";
 
 import BaseCommand from "../../base-command";
+import { getPrivateKey } from "../../galachain-utils";
 
 export default class TestDeploy extends BaseCommand<typeof TestDeploy> {
   static override description =
@@ -44,7 +45,7 @@ export default class TestDeploy extends BaseCommand<typeof TestDeploy> {
   async run(): Promise<void> {
     const { args } = await this.parse(TestDeploy);
 
-    const developerPrivateKey = args.developerPrivateKey ?? process.env.DEV_PRIVATE_KEY;
+    const developerPrivateKey = await getPrivateKey(args.developerPrivateKey);
     if (!developerPrivateKey) {
       await this.config.runCommand("deploy", ["--testnet"]);
     } else {
