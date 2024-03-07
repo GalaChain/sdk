@@ -33,7 +33,7 @@ import BigNumber from "bignumber.js";
 import { plainToInstance } from "class-transformer";
 
 import GalaChainTokenContract from "../__test__/GalaChainTokenContract";
-import { generateInverseTimeKey, inverseEpoch, inverseTime } from "../utils";
+import { generateInverseTimeKey, inverseEpoch, inverseTime, lookbackTimeOffset } from "../utils";
 
 describe("FulfillMint", () => {
   it("should fetch TokenMintRequest chain objects", async () => {
@@ -208,32 +208,6 @@ describe("FulfillMint", () => {
 
     const { ctx, contract, writes } = testFixture;
 
-    const nft1Key = plainToInstance(TokenInstanceKey, {
-      ...nftInstanceKey,
-      instance: new BigNumber("1")
-    });
-    const nft1 = plainToInstance(TokenInstance, {
-      ...nftInstanceKey,
-      instance: new BigNumber("1"),
-      isNonFungible: true,
-      owner: users.testUser1Id
-    });
-    const nft2Key = plainToInstance(TokenInstanceKey, {
-      ...nftInstanceKey,
-      instance: new BigNumber("2")
-    });
-    const nft2 = plainToInstance(TokenInstance, {
-      ...nftInstanceKey,
-      instance: new BigNumber("2"),
-      isNonFungible: true,
-      owner: users.testUser1Id
-    });
-    const expectedBalance = plainToInstance(TokenBalance, {
-      ...nft.tokenBalance(),
-      quantity: new BigNumber("2"),
-      instanceIds: [new BigNumber("1"), new BigNumber("2")]
-    });
-
     const tokenClaim = plainToInstance(TokenClaim, {
       ...nftInstanceKey,
       ownerKey: users.testAdminId,
@@ -256,13 +230,74 @@ describe("FulfillMint", () => {
     const epochKey = inverseEpoch(ctx, 0);
     const timeKey = inverseTime(ctx, 0);
 
+    const pastMintRequests: TokenMintRequest[] = [5, 6, 7, 8].map((i) => {
+      const distantPastTimestamp = ctx.txUnixTime - (lookbackTimeOffset * 5 - i);
+      const distantPastTimeKey = inverseTime(ctx, lookbackTimeOffset * 5 - i);
+
+      const mintRequest = plainToInstance(TokenMintRequest, {
+        collection,
+        category,
+        type,
+        additionalKey,
+        timeKey: distantPastTimeKey,
+        totalKnownMintsCount: new BigNumber("0"),
+        requestor: users.testAdminId,
+        owner: users.testUser2Id,
+        created: distantPastTimestamp,
+        quantity: new BigNumber("1"),
+        state: TokenMintStatus.Unknown,
+        epoch: epochKey
+      });
+
+      mintRequest.id = mintRequest.requestId();
+
+      return mintRequest;
+    });
+
+    expect(pastMintRequests.length).toBe(4);
+
+    const mintRequestInterval = 500;
+    const mintRequestsInLookbackRange = Math.round(lookbackTimeOffset / mintRequestInterval);
+    let mintRequestIntervalMultipliers: number[] = new Array(mintRequestsInLookbackRange);
+    mintRequestIntervalMultipliers = mintRequestIntervalMultipliers
+      .fill(0, 0, mintRequestsInLookbackRange)
+      .map((_, index) => {
+        return index + 1;
+      });
+
+    expect(mintRequestIntervalMultipliers).toEqual([1, 2, 3, 4, 5, 6, 7, 8]);
+
+    const concurrentMintRequests: TokenMintRequest[] = mintRequestIntervalMultipliers.map((i) => {
+      const nearbyTimestamp = ctx.txUnixTime - i * 500;
+      const nearbyTimeKey = inverseTime(ctx, i * 500);
+
+      const mintRequest = plainToInstance(TokenMintRequest, {
+        collection,
+        category,
+        type,
+        additionalKey,
+        timeKey: nearbyTimeKey,
+        totalKnownMintsCount: new BigNumber(pastMintRequests.length),
+        requestor: users.testAdminId,
+        owner: users.testUser2Id,
+        created: nearbyTimestamp,
+        quantity: new BigNumber("1"),
+        state: TokenMintStatus.Unknown,
+        epoch: epochKey
+      });
+
+      mintRequest.id = mintRequest.requestId();
+
+      return mintRequest;
+    });
+
     const mintRequest = plainToInstance(TokenMintRequest, {
       collection,
       category,
       type,
       additionalKey,
       timeKey,
-      totalKnownMintsCount: new BigNumber("0"),
+      totalKnownMintsCount: new BigNumber(pastMintRequests.length),
       requestor: users.testAdminId,
       owner: users.testUser1Id,
       created: ctx.txUnixTime,
@@ -272,6 +307,8 @@ describe("FulfillMint", () => {
     });
 
     mintRequest.id = mintRequest.requestId();
+
+    const allMintRequests = pastMintRequests.concat(concurrentMintRequests.concat([mintRequest]));
 
     const mintFulfillment: TokenMintFulfillment = mintRequest.fulfill(mintRequest.quantity);
 
@@ -283,22 +320,54 @@ describe("FulfillMint", () => {
           type,
           additionalKey,
           timeKey,
-          totalKnownMintsCount: new BigNumber("0"),
+          totalKnownMintsCount: new BigNumber(pastMintRequests.length),
           id: mintRequest.requestId(),
           owner: users.testUser1Id
         })
       ]
     });
 
-    testFixture.savedState(nftClass, nftInstance, tokenAllowance, tokenClaim).savedRangeState([mintRequest]);
+    testFixture
+      .savedState(nftClass, nftInstance, tokenAllowance, tokenClaim)
+      .savedRangeState(allMintRequests);
+
+    const expectedStartingInstance = new BigNumber(pastMintRequests.length).plus(
+      concurrentMintRequests.length
+    );
+
+    const expectedNft1Key = plainToInstance(TokenInstanceKey, {
+      ...nftInstanceKey,
+      instance: expectedStartingInstance.plus("1")
+    });
+    const expectedNft1 = plainToInstance(TokenInstance, {
+      ...nftInstanceKey,
+      instance: expectedStartingInstance.plus("1"),
+      isNonFungible: true,
+      owner: users.testUser1Id
+    });
+    const expectedNft2Key = plainToInstance(TokenInstanceKey, {
+      ...nftInstanceKey,
+      instance: expectedStartingInstance.plus("2")
+    });
+    const expectedNft2 = plainToInstance(TokenInstance, {
+      ...nftInstanceKey,
+      instance: expectedStartingInstance.plus("2"),
+      isNonFungible: true,
+      owner: users.testUser1Id
+    });
+    const expectedBalance = plainToInstance(TokenBalance, {
+      ...nft.tokenBalance(),
+      quantity: new BigNumber("2"),
+      instanceIds: [expectedStartingInstance.plus("1"), expectedStartingInstance.plus("2")]
+    });
 
     // When
     const response = await contract.FulfillMint(ctx, dto);
 
     // Then
-    expect(response).toEqual(GalaChainResponse.Success([nft1Key, nft2Key]));
+    expect(response).toEqual(GalaChainResponse.Success([expectedNft1Key, expectedNft2Key]));
     expect(writes).toEqual(
-      writesMap(tokenClaim, expectedAllowance, nft1, nft2, expectedBalance, mintFulfillment)
+      writesMap(tokenClaim, expectedAllowance, expectedNft1, expectedNft2, expectedBalance, mintFulfillment)
     );
   });
 

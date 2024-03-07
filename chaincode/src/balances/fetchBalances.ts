@@ -45,7 +45,7 @@ export async function fetchBalances(
     queryParams,
     TokenBalance
   ).catch((e) => {
-    throw ChainError.map(e, ErrorCode.NOT_FOUND, new BalanceNotFoundError(ctx.callingUser));
+    throw ChainError.map(e, ErrorCode.NOT_FOUND, new BalanceNotFoundError(data.owner));
   });
   return results;
 }

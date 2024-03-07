@@ -19,14 +19,18 @@ import {
   NftInvalidQuantityLockError,
   UnlockForbiddenUserError
 } from "./LockError";
-import { lockToken, lockTokens } from "./lockTokens";
-import { unlockToken, unlockTokens } from "./unlockToken";
+import { LockTokenParams, LockTokensParams, TokenQuantity, lockToken, lockTokens } from "./lockTokens";
+import { UnlockTokenParams, unlockToken, unlockTokens } from "./unlockToken";
 
 export {
   unlockToken,
   lockToken,
   lockTokens,
+  TokenQuantity,
+  LockTokenParams,
+  LockTokensParams,
   unlockTokens,
+  UnlockTokenParams,
   LockTokenFailedError,
   MissingLockError,
   NftInvalidQuantityLockError,

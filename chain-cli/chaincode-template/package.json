@@ -1,6 +1,6 @@
 {
   "name": "@galachain/product",
-  "version": "1.0.14",
+  "version": "1.0.19",
   "description": "Product Chaincode",
   "main": "lib/src/index.js",
   "types": "lib/src/index.d.ts",
@@ -14,23 +14,24 @@
     "format": "prettier --config .prettierrc 'src/**/*.ts' 'e2e/**/*.ts' --write",
     "prepublishOnly": "npm run format && npm run build && npm run lint && npm run test",
     "network:start": "galachain network:up -C=product-channel -t=curator -n=basic-product -d=./ --envConfig=./.dev-env --watch",
+    "network:up": "galachain network:up -C=product-channel -t=curator -n=basic-product -d=./ --envConfig=./.dev-env",
     "network:prune": "galachain network:prune",
     "network:recreate": "npm run network:prune && rm -rf ./test-network && npm run network:start",
     "test": "jest",
-    "test:e2e": "jest --config=e2e/jest.config.js",
+    "test:e2e": "jest --config=e2e/jest.config.js --runInBand",
     "update-snapshot": "jest --updateSnapshot"
   },
   "dependencies": {
-    "@gala-chain/api": "1.0.14",
-    "@gala-chain/chaincode": "1.0.14",
+    "@gala-chain/api": "1.0.19",
+    "@gala-chain/chaincode": "1.0.19",
     "dotenv": "^16.0.1",
     "fabric-contract-api": "2.4.2",
     "fabric-shim": "2.4.2"
   },
   "devDependencies": {
-    "@gala-chain/cli": "1.0.14",
-    "@gala-chain/client": "1.0.14",
-    "@gala-chain/test": "1.0.14",
+    "@gala-chain/cli": "1.0.19",
+    "@gala-chain/client": "1.0.19",
+    "@gala-chain/test": "1.0.19",
     "@trivago/prettier-plugin-sort-imports": "^4.3.0",
     "@types/axios": "^0.14.0",
     "@types/jest": "^29.5.12",

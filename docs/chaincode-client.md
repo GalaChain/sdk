@@ -1,11 +1,12 @@
 # Chaincode Client
 
 The `@gala-chain/client` package provides a client for interacting with the chaincode.
-Currently, it supports two client types:
+Currently, it supports the following client types:
 * client for interacting directly with the Hyperledger Fabric network, built on top of the [`fabric-network`](https://www.npmjs.com/package/fabric-network) and [`fabric-ca-client`](https://www.npmjs.com/package/fabric-ca-client) packages;
-* client for interacting with the chaincode via REST API that meets the GalaChain REST API specification, used internally at GalaGames.
+* client for interacting with the chaincode via REST API that meets the GalaChain REST API specification, used internally at GalaGames,
+  and is also compatible with the slightly different REST API exposed by [Fablo REST](https://github.com/fablo-io/fablo-rest).
 
-They share the same API, so it is easy to switch between them, depending on your needs.
+All client types share the same API, so it is easy to switch between them, depending on your needs.
 
 Also, `@gala-chain/client` package is designed to be lightweight.
 This is why `fabric-network` and `fabric-ca-client` dependencies are marked as optional `peerDependencies` and should be installed separately.
@@ -27,14 +28,14 @@ The `HFClientConfig` interface defines parameters that are required to connect t
 const params: HFClientConfig = {
   orgMsp: "PartnerOrg1",
   userId: "admin",
-  userPass: "adminpw",
+  userSecret: "adminpw",
   connectionProfilePath: path.resolve(networkRoot, "connection-profiles/cpp-partner.json")
 };
 ```
 
 * `orgMsp` - Hyperledger Fabric MSP name of the organization that the client will connect to;
 * `userId` - id of the user in Fabric CA that will be used to connect to the network;
-* `userPass` - password of the user in CA;
+* `userSecret` - password/secret of the user in CA;
 * `connectionProfilePath` - path to the connection profile file that describes the network topology.
 
 Both `adminId` and `adminPass` are required to authorize the client with the network.
@@ -98,7 +99,7 @@ The `RestApiClientConfig` interface defines parameters that are required to conn
 ```typescript
 const params: RestApiClientConfig = {
   orgMsp: "CuratorOrg",
-  userKey: "GC_ADMIN_CURATOR",
+  userId: "GC_ADMIN_CURATOR",
   userSecret: "abc",
   apiUrl: "http://localhost:3000/api",
   configPath: path.resolve(__dirname, "api-config.json")
@@ -106,8 +107,8 @@ const params: RestApiClientConfig = {
 ```
 
 * `orgMsp` - Hyperledger Fabric MSP name of the organization that the client will connect to;
-* `userKey` - key of the user in the API key store that will be used to connect to the network;
-* `userSecret` - secret of the user in the API key store;
+* `userId` - key of the user in the API key store that will be used to connect to the network (for GC services), or a CA user ID (for Fablo REST);
+* `userSecret` - secret of the user in the API key store (for GC services), or a password secret of CA user (for Fablo REST);
 * `apiUrl` - URL of the REST API;
 * `configPath` - path to the configuration file that describes path mapping for channels, chaincodes, and contracts.
   Sample configuration file can be found in the `e2e` directory of the chaincode generated from template by GalaChain CLI.

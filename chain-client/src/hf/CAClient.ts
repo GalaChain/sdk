@@ -115,7 +115,7 @@ async function enrollUser(
   wallet: Wallet,
   orgMspId: string,
   userId: string,
-  userPass: string
+  userSecret: string
 ): Promise<Identity> {
   // Check to see if we've already enrolled the admin user.
   const identity = await wallet.get(userId);
@@ -127,7 +127,7 @@ async function enrollUser(
   // Enroll the user, and import the new identity into the wallet.
   const enrollment = await caClient.enroll({
     enrollmentID: userId,
-    enrollmentSecret: userPass
+    enrollmentSecret: userSecret
   });
 
   const x509Identity = {

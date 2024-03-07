@@ -30,13 +30,13 @@ import { GalaChainContext } from "../types";
 import { putChainObject } from "../utils";
 import { InvalidExpirationError, NftInvalidQuantityLockError } from "./LockError";
 
-interface TokenQuantity {
+export interface TokenQuantity {
   tokenInstanceKey: TokenInstanceKey;
   quantity: BigNumber;
   owner?: string;
 }
 
-interface LockTokenParams {
+export interface LockTokenParams {
   owner: string | undefined;
   lockAuthority: string | undefined;
   tokenInstanceKey: TokenInstanceKey;
@@ -122,7 +122,7 @@ export async function lockToken(
   if (tokenInstanceKey.isFungible()) {
     balance.ensureCanLockQuantity(hold).lock();
   } else {
-    balance.ensureCanLockInstance(hold).lock();
+    balance.ensureCanLockInstance(hold, ctx.txUnixTime).lock();
   }
 
   await putChainObject(ctx, balance);
@@ -130,7 +130,7 @@ export async function lockToken(
   return balance;
 }
 
-interface LockTokensParams {
+export interface LockTokensParams {
   tokenInstances: TokenQuantity[];
   allowancesToUse: string[];
   name: string | undefined;

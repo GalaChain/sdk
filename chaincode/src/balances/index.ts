@@ -13,7 +13,16 @@
  * limitations under the License.
  */
 import { FetchBalancesParams, fetchBalances } from "./fetchBalances";
-import { fetchBalancesWithTokenMetadata } from "./fetchBalancesWithTokenMetadata";
+import {
+  FetchBalancesWithTokenMetadataParams,
+  fetchBalancesWithTokenMetadata
+} from "./fetchBalancesWithTokenMetadata";
 import { fetchOrCreateBalance } from "./fetchOrCreateBalance";
 
-export { fetchOrCreateBalance, fetchBalances, fetchBalancesWithTokenMetadata, FetchBalancesParams };
+export {
+  fetchOrCreateBalance,
+  fetchBalances,
+  FetchBalancesParams,
+  fetchBalancesWithTokenMetadata,
+  FetchBalancesWithTokenMetadataParams
+};

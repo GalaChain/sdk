@@ -46,7 +46,7 @@ describe("Chaincode client (PartnerOrg1)", () => {
     const params = {
       orgMsp: "PartnerOrg1",
       userId: "admin",
-      userPass: "adminpw",
+      userSecret: "adminpw",
       connectionProfilePath: path.resolve(networkRoot(), "connection-profiles/cpp-partner.json")
     };
 
@@ -83,7 +83,7 @@ describe("Chaincode client (CuratorOrg)", () => {
     const params: HFClientConfig = {
       orgMsp: "CuratorOrg",
       userId: "admin",
-      userPass: "adminpw",
+      userSecret: "adminpw",
       connectionProfilePath: path.resolve(networkRoot(), "connection-profiles/cpp-curator.json")
     };
 
@@ -132,7 +132,7 @@ describe.skip("REST API client", () => {
   beforeAll(() => {
     const params: RestApiClientConfig = {
       orgMsp: "CuratorOrg",
-      userKey: "GC_ADMIN_CURATOR",
+      userId: "GC_ADMIN_CURATOR",
       userSecret: "abc",
       apiUrl: "http://localhost:3000/api",
       configPath: path.resolve(__dirname, "api-config.json")

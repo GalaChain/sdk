@@ -32,7 +32,12 @@ import {
 import { Info } from "fabric-contract-api";
 
 import { PublicKeyService } from "../services";
-import { PkMismatchError, PkNotFoundError, ProfileExistsError } from "../services/PublicKeyError";
+import {
+  PkMismatchError,
+  PkNotFoundError,
+  ProfileExistsError,
+  ProfileNotFoundError
+} from "../services/PublicKeyError";
 import { GalaChainContext } from "../types";
 import { GalaContract } from "./GalaContract";
 import { EVALUATE, GalaTransaction, SUBMIT } from "./GalaTransaction";
@@ -85,6 +90,35 @@ export class PublicKeyContract extends GalaContract {
     await PublicKeyService.putUserProfile(ctx, ethAddress, userAlias);
 
     return GalaChainResponse.Success(userAlias);
+  }
+
+  private async updatePublicKey(
+    ctx: GalaChainContext,
+    newPkHex: string,
+    newEthAddress: string
+  ): Promise<void> {
+    const userAlias = ctx.callingUser;
+
+    // fetch old public key for finding old user profile
+    const oldPublicKey = await PublicKeyService.getPublicKey(ctx, ctx.callingUser);
+    if (oldPublicKey === undefined) {
+      throw new PkNotFoundError(userAlias);
+    }
+
+    // need to fetch userProfile from old address
+    const oldNonCompactPublicKey = signatures.getNonCompactHexPublicKey(oldPublicKey.publicKey);
+    const oldEthAddress = signatures.getEthAddress(oldNonCompactPublicKey);
+    const userProfile = await PublicKeyService.getUserProfile(ctx, oldEthAddress);
+
+    // Note: we don't throw an error if userProfile is undefined in order to support legacy users with unsaved profiles
+    if (userProfile !== undefined) {
+      // remove old user profile
+      await PublicKeyService.deleteUserProfile(ctx, oldEthAddress);
+    }
+
+    // update Public Key, and add user profile under new eth address
+    await PublicKeyService.putPublicKey(ctx, newPkHex, userAlias);
+    await PublicKeyService.putUserProfile(ctx, newEthAddress, userAlias);
   }
 
   @GalaTransaction({
@@ -167,7 +201,11 @@ export class PublicKeyContract extends GalaContract {
     ctx: GalaChainContext,
     dto: UpdatePublicKeyDto
   ): Promise<GalaChainResponse<void>> {
-    await PublicKeyService.putPublicKey(ctx, dto.publicKey);
+    const providedPkHex = signatures.getNonCompactHexPublicKey(dto.publicKey);
+    const ethAddress = signatures.getEthAddress(providedPkHex);
+
+    await this.updatePublicKey(ctx, providedPkHex, ethAddress);
+
     return GalaChainResponse.Success(undefined);
   }
 

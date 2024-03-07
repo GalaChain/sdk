@@ -12,7 +12,12 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-import { batchMintToken } from "./batchMintToken";
+import {
+  MintOperationParams,
+  batchMintToken,
+  indexedMintOperations,
+  indexedMintOperationsByTokenClass
+} from "./batchMintToken";
 import { constructVerifiedMints } from "./constructVerifiedMints";
 import { fetchMintAllowanceSupply, fetchMintAllowanceSupplyForToken } from "./fetchMintAllowanceSupply";
 import { fetchMintSupply } from "./fetchMintSupply";
@@ -21,26 +26,34 @@ import { fulfillMintRequest } from "./fulfillMint";
 import { mintRequestsByTimeRange } from "./fulfillMint";
 import { fulfillMintAllowanceRequest } from "./fulfillMintAllowance";
 import { indexMintRequests } from "./indexMintRequests";
-import { mintToken } from "./mintToken";
-import { mintTokenWithAllowance } from "./mintTokenWithAllowance";
-import { requestMint } from "./requestMint";
-import { requestMintAllowance } from "./requestMintAllowance";
+import { MintTokenParams, UpdateTokenSupplyParams, mintToken } from "./mintToken";
+import { MintTokenWithAllowanceParams, mintTokenWithAllowance } from "./mintTokenWithAllowance";
+import { WriteMintRequestParams, requestMint } from "./requestMint";
+import { InternalGrantAllowanceData, requestMintAllowance } from "./requestMintAllowance";
 import { validateMintRequest } from "./validateMintRequest";
 
 export {
   batchMintToken,
+  MintOperationParams,
+  indexedMintOperations,
+  indexedMintOperationsByTokenClass,
   constructVerifiedMints,
   fulfillMintAllowanceRequest,
   fulfillMintRequest,
   indexMintRequests,
   mintRequestsByTimeRange,
   mintToken,
+  MintTokenParams,
+  UpdateTokenSupplyParams,
   requestMint,
+  WriteMintRequestParams,
   requestMintAllowance,
+  InternalGrantAllowanceData,
   validateMintRequest,
   fetchMintAllowanceSupply,
   fetchMintSupply,
   fetchMintAllowanceSupplyForToken,
   fetchTokenClassesWithSupply,
-  mintTokenWithAllowance
+  mintTokenWithAllowance,
+  MintTokenWithAllowanceParams
 };

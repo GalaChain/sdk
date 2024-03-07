@@ -25,7 +25,7 @@ import {
   takeUntilUndefined
 } from "../utils";
 
-interface FetchBurnParams {
+export interface FetchBurnParams {
   collection?: string;
   category?: string;
   type?: string;
@@ -55,7 +55,7 @@ export async function fetchBurns(ctx: GalaChainContext, data: FetchBurnParams): 
   return results;
 }
 
-interface FetchBurnCounterParams {
+export interface FetchBurnCounterParams {
   collection: string;
   category: string;
   type: string;
