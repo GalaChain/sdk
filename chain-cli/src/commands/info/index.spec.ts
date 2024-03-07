@@ -71,7 +71,7 @@ describe("ChainInfo Command", () => {
 
     process.env = { ...process.env, DEV_PRIVATE_KEY: undefined };
 
-    jest.spyOn(fs, "readFileSync").mockReturnValue("");
+    jest.spyOn(fs, "readFileSync").mockImplementation(() => undefined as unknown as string | Buffer);
 
     jest.spyOn(ux, "prompt").mockResolvedValueOnce(fakePrivateKey);
 

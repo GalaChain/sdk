@@ -108,9 +108,9 @@ describe("deployChaincode", () => {
         '[{"contractName":"AppleContract"},{"contractName":"GalaChainToken"},{"contractName":"PublicKeyContract"}]'
     );
 
-    jest.spyOn(fs, "readFileSync").mockImplementation(() => {
-      return "bf2168e0e2238b9d879847987f556a093040a2cab07983a20919ac33103d0d00";
-    });
+    jest
+      .spyOn(fs, "readFileSync")
+      .mockImplementation(() => "bf2168e0e2238b9d879847987f556a093040a2cab07983a20919ac33103d0d00");
 
     const postDeployChaincodePrivateKey = {
       privateKey: await getPrivateKey(undefined),
@@ -142,7 +142,7 @@ describe("deployChaincode", () => {
         '[{"contractName":"AppleContract"},{"contractName":"GalaChainToken"},{"contractName":"PublicKeyContract"}]'
     );
 
-    jest.spyOn(fs, "readFileSync").mockImplementation(() => "");
+    jest.spyOn(fs, "readFileSync").mockImplementation(() => undefined as unknown as string | Buffer);
 
     jest.spyOn(ux, "prompt").mockResolvedValueOnce(privateKey);
 

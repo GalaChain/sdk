@@ -162,11 +162,15 @@ export async function getPrivateKey(keysFromArg: string | undefined) {
   );
 }
 
-function getPrivateKeyFromFile() {
-  return fs.readFileSync(
-    `${process.cwd()}/${DEFAULT_PRIVATE_KEYS_DIR}/${DEFAULT_DEV_PRIVATE_KEY_NAME}`,
-    "utf8"
-  );
+function getPrivateKeyFromFile(): string | undefined {
+  try {
+    return fs.readFileSync(
+      `${process.cwd()}/${DEFAULT_PRIVATE_KEYS_DIR}/${DEFAULT_DEV_PRIVATE_KEY_NAME}`,
+      "utf8"
+    );
+  } catch (e) {
+    this.log(`Error reading file: ${e}`);
+  }
 }
 
 async function getPrivateKeyPrompt(): Promise<string> {
