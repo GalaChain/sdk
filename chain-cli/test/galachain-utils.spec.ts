@@ -19,7 +19,7 @@ import { ux } from "@oclif/core";
 import axios from "axios";
 import fs from "fs";
 
-import { deployChaincode, getDeploymentResponse, getPrivateKey } from "../src/galachain-utils";
+import { deployChaincode, getDeploymentResponse, getPrivateKey } from "../src";
 
 jest.mock("axios");
 
