@@ -15,7 +15,7 @@
 import { Args } from "@oclif/core";
 
 import BaseCommand from "../../base-command";
-import { getPrivateKey } from "@gala-chain/cli";
+import { getPrivateKey } from "../../galachain-utils";
 
 export default class TestDeploy extends BaseCommand<typeof TestDeploy> {
   static override description =
