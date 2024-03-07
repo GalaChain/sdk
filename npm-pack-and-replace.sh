@@ -40,7 +40,12 @@ to_install=()
 replace_in_pwd_package_json() {
   path="$1"
   package="$2"
-  package_escaped="${package//\//\\/}"
+  current_package_json_path="$current_dir/package.json"
+
+  if ! grep -q "\"$package\":" "$current_package_json_path"; then
+    echo "Package $package not found in $current_package_json_path. Skipping."
+    return
+  fi
 
   echo "Packing and replacing $package..."
 
@@ -48,8 +53,10 @@ replace_in_pwd_package_json() {
   tar_file="$( (cd "$path" && npm run build && npm pack --pack-destination="$current_dir") | tail -n 1)"
 
   # update package json with reference to the file
-  updated_package_json="$(sed "s/\"$package_escaped\": \"[^\"]*\"/\"$package_escaped\": \"file:$tar_file\"/g" < "$current_dir/package.json")"
-  echo "$updated_package_json" > "$current_dir/package.json"
+  current_package_json="$(cat "$current_package_json_path")"
+  package_escaped="${package//\//\\/}"
+  updated_package_json="$(echo "$current_package_json" | sed "s/\"$package_escaped\": \"[^\"]*\"/\"$package_escaped\": \"file:$tar_file\"/g")"
+  echo "$updated_package_json" > "$current_package_json_path"
 
   to_install+=("file:$tar_file")
 }
