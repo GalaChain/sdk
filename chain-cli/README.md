@@ -18,7 +18,7 @@ $ npm install -g @gala-chain/cli
 $ galachain COMMAND
 running command...
 $ galachain (--version)
-@gala-chain/cli/1.0.19 linux-x64 node-v16.16.0
+@gala-chain/cli/1.1.0 darwin-arm64 node-v16.20.2
 $ galachain --help [COMMAND]
 USAGE
   $ galachain COMMAND
@@ -67,6 +67,8 @@ DESCRIPTION
   Connect to a new chaincode.
 
 EXAMPLES
+  $ galachain connect
+
   $ galachain connect ./dev-private-key
 
   $ galachain connect c0fb1924408d936fb7cd0c86695885df4f66861621b5c8660df3924c4d09dd79

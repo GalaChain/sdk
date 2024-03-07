@@ -15,9 +15,12 @@
 import { ux } from "@oclif/core";
 
 import { signatures } from "@gala-chain/api";
+import * as secp from "@noble/secp256k1";
 import axios from "axios";
-import { promises as fsPromises } from "fs";
+import fs, { promises as fsPromises } from "fs";
 import { nanoid } from "nanoid";
+import { writeFile } from "node:fs/promises";
+import process from "process";
 
 import { ServicePortal } from "./consts";
 import { GetChaincodeDeploymentDto, PostDeployChaincodeDto } from "./dto";
@@ -26,6 +29,10 @@ import { parseStringOrFileKey } from "./utils";
 
 const ConfigFileName = ".galachainrc.json";
 const PackageJsonFileName = "package.json";
+
+export const DEFAULT_PRIVATE_KEYS_DIR = "keys";
+export const DEFAULT_ADMIN_PRIVATE_KEY_NAME = "gc-admin-key";
+export const DEFAULT_DEV_PRIVATE_KEY_NAME = "gc-dev-key";
 
 export interface Config {
   org: string;
@@ -40,8 +47,7 @@ export async function writeConfigFile(config: Config) {
 
 export async function readConfigFile(): Promise<Config> {
   try {
-    const config = JSON.parse(await fsPromises.readFile(ConfigFileName, "utf8"));
-    return config;
+    return JSON.parse(await fsPromises.readFile(ConfigFileName, "utf8"));
   } catch (error) {
     throw new Error(`Can not read chain config file ${ConfigFileName}`);
   }
@@ -58,18 +64,13 @@ export async function readPackageJsonVersion(): Promise<string> {
 
 export async function readDockerfile(): Promise<string> {
   try {
-    const dockerfile = await fsPromises.readFile("Dockerfile", "utf8");
-    return dockerfile;
+    return await fsPromises.readFile("Dockerfile", "utf8");
   } catch (error) {
     throw new Error(`Can not find Dockerfile.`);
   }
 }
 
-export async function getDeploymentResponse(params: { privateKey: string | undefined; isTestnet: boolean }) {
-  if (!params.privateKey) {
-    params.privateKey = await getPrivateKeyPrompt();
-  }
-
+export async function getDeploymentResponse(params: { privateKey: string; isTestnet: boolean }) {
   const getChaincodeDeploymentDto: GetChaincodeDeploymentDto = {
     operationId: nanoid()
   };
@@ -115,15 +116,7 @@ function getContractNames(imageTag: string): { contractName: string }[] {
   }
 }
 
-export async function deployChaincode(params: {
-  privateKey: string | undefined;
-  isTestnet: boolean;
-  imageTag: string;
-}) {
-  if (!params.privateKey) {
-    params.privateKey = await getPrivateKeyPrompt();
-  }
-
+export async function deployChaincode(params: { privateKey: string; isTestnet: boolean; imageTag: string }) {
   const chainCodeDto: PostDeployChaincodeDto = {
     operationId: nanoid(),
     imageTag: params.imageTag,
@@ -146,9 +139,43 @@ export async function deployChaincode(params: {
   return response.data;
 }
 
+export async function generateKeys(keysPath: string): Promise<void> {
+  const adminPrivateKey = secp.utils.bytesToHex(secp.utils.randomPrivateKey());
+  const adminPublicKey = secp.utils.bytesToHex(secp.getPublicKey(adminPrivateKey));
+
+  const devPrivateKey = secp.utils.bytesToHex(secp.utils.randomPrivateKey());
+  const devPublicKey = secp.utils.bytesToHex(secp.getPublicKey(adminPrivateKey));
+
+  fs.mkdir(`${keysPath}`, (err) => {
+    if (err) console.error(`Could not create a directory ${keysPath}. Error: ${err}`);
+  });
+
+  await writeFile(`${keysPath}/${DEFAULT_ADMIN_PRIVATE_KEY_NAME}.pub`, adminPublicKey);
+  await writeFile(`${keysPath}/${DEFAULT_ADMIN_PRIVATE_KEY_NAME}`, adminPrivateKey.toString());
+  await writeFile(`${keysPath}/${DEFAULT_DEV_PRIVATE_KEY_NAME}.pub`, devPublicKey);
+  await writeFile(`${keysPath}/${DEFAULT_DEV_PRIVATE_KEY_NAME}`, devPrivateKey.toString());
+}
+
+export async function getPrivateKey(keysFromArg: string | undefined) {
+  return (
+    keysFromArg || process.env.DEV_PRIVATE_KEY || getPrivateKeyFromFile() || (await getPrivateKeyPrompt())
+  );
+}
+
+function getPrivateKeyFromFile(): string | undefined {
+  try {
+    return fs.readFileSync(
+      `${process.cwd()}/${DEFAULT_PRIVATE_KEYS_DIR}/${DEFAULT_DEV_PRIVATE_KEY_NAME}`,
+      "utf8"
+    );
+  } catch (e) {
+    console.error(`Error reading file: ${e}`);
+  }
+}
+
 async function getPrivateKeyPrompt(): Promise<string> {
   console.log(
-    "Private key not found. It should be provided as an argument or as an environment variable DEV_PRIVATE_KEY."
+    "Private key not found. It should be provided as an argument, as an environment variable DEV_PRIVATE_KEY or as a file."
   );
   return await ux.prompt("Type the private key or the path to", { type: "mask" });
 }
