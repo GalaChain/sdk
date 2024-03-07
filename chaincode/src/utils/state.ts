@@ -66,8 +66,7 @@ export async function getObjectsByPartialCompositeKey<T extends ChainObject>(
   ctx: GalaChainContext,
   objectType: string,
   attributes: string[],
-  constructor: ClassConstructor<Inferred<T, ChainObject>>,
-  muteQueryLimitError: boolean
+  constructor: ClassConstructor<Inferred<T, ChainObject>>
 ): Promise<Array<T>> {
   const iterator = ctx.stub.getCachedStateByPartialCompositeKey(objectType, attributes);
 
@@ -84,12 +83,7 @@ export async function getObjectsByPartialCompositeKey<T extends ChainObject>(
       `It means your results would be probably incomplete. ` +
       `Please narrow your query or use pagination.`;
 
-    if (muteQueryLimitError) {
-      ctx.logger.warn(message);
-    } else {
-      // why it is "forbidden" type of error: https://stackoverflow.com/a/15192643
-      throw new ForbiddenError(message, { objectType, attributes });
-    }
+    throw new ForbiddenError(message, { objectType, attributes });
   }
 
   // iterator will be automatically closed on exit from the loop
