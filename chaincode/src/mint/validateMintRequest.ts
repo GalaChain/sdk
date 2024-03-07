@@ -84,8 +84,7 @@ export async function validateMintRequest(
       ctx,
       TokenAllowance.INDEX_KEY,
       queryParams,
-      TokenAllowance,
-      true // TODO may lead to incomplete results!
+      TokenAllowance
     );
 
     results.sort((a: TokenAllowance, b: TokenAllowance): number => (a.created < b.created ? -1 : 1));

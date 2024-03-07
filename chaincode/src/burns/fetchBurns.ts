@@ -47,13 +47,7 @@ export async function fetchBurns(ctx: GalaChainContext, data: FetchBurnParams): 
     data.created?.toString()
   );
 
-  let results = await getObjectsByPartialCompositeKey(
-    ctx,
-    TokenBurn.INDEX_KEY,
-    queryParams,
-    TokenBurn,
-    false
-  );
+  let results = await getObjectsByPartialCompositeKey(ctx, TokenBurn.INDEX_KEY, queryParams, TokenBurn);
 
   // Sort the items ascending by date
   results = results.sort((a: TokenBurn, b: TokenBurn): number => (a.created < b.created ? -1 : 1));
