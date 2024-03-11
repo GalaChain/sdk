@@ -42,43 +42,6 @@ perl -i -pe 's/_CA_VERSION=1.5.0/_CA_VERSION=1.5.5/g' "$target_env"
 perl -i -pe 's/chaincodeInstall "cli.users1.local"/echo "Skipping..." # chaincodeInstall "cli.users1.local"/g' "./fablo-target/fabric-docker/commands-generated.sh"
 
 #
-# overwrite default policies
-#
-setFromPoliciesConfigtx() {
-  yaml_path="$1"
-  configtx_policies="./configtx-policies.yml"
-  echo " - $yaml_path"
-  yq eval-all --inplace "select(fileIndex == 0)$yaml_path = select(fileIndex == 1)$yaml_path | select(fileIndex == 0)" "$target_configtx" "$configtx_policies"
-}
-
-executeInConfigtx() {
-  expression="$1"
-  echo " - $expression"
-  yq eval --inplace "$expression" "$target_configtx"
-}
-
-echo "Overriding policies:"
-setFromPoliciesConfigtx ".Organizations[0].Policies"
-setFromPoliciesConfigtx ".Organizations[1].Policies"
-setFromPoliciesConfigtx ".Organizations[2].Policies"
-setFromPoliciesConfigtx ".Organizations[3].Policies"
-setFromPoliciesConfigtx ".Application.ACLs"
-setFromPoliciesConfigtx ".Application.Policies"
-executeInConfigtx '.Application.Policies anchor = "ApplicationDefaultPolicies"'
-setFromPoliciesConfigtx ".Orderer.Policies"
-setFromPoliciesConfigtx ".Channel.Policies"
-setFromPoliciesConfigtx '.Profiles.CuratorChannel'
-executeInConfigtx '.Profiles.CuratorChannel anchor = "CuratorChannelDefaults"'
-setFromPoliciesConfigtx '.Profiles.PartnerChannel'
-executeInConfigtx '.Profiles.PartnerChannel anchor = "PartnerChannelDefaults"'
-
-for channel_name in $(cat "$fablo_config" | jq -r '.channels[] | .name'); do
-  channel_name_pascal_case="$(perl -pe 's/(^|-)(\w)/\U$2/g' <<<"$channel_name")"
-  executeInConfigtx "del(.Profiles.$channel_name_pascal_case)"
-  setFromPoliciesConfigtx ".Profiles.$channel_name_pascal_case"
-done
-
-#
 # Some sample commands that might be useful in experiments
 #
 # In chaincode commit phase of chaincode lifecycle you may want to approve only by the CuratorOrg
