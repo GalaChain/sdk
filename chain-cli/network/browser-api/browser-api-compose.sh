@@ -23,7 +23,7 @@ command="$1"
 host=${LOCALHOST_NAME:-localhost}
 
 if [ "$command" = "up" ]; then
-  echo "Starting secrets manager and ops api instances..."
+  echo "Starting Fablo instances..."
   (cd "$current_dir" && docker compose --env-file ../fablo-target/fabric-docker/.env up -d)
 elif [ "$command" = "success-message" ]; then
   echo ""
@@ -31,9 +31,9 @@ elif [ "$command" = "success-message" ]; then
   echo "  block browser:   http://$host:3010/blocks"
   echo "  state browser:   http://$host:3010/graphiql"
 elif [ "$command" = "down" ]; then
-  echo "Downing secrets manager and ops api instances..."
+  echo "Downing Fablo instances..."
   (cd "$current_dir" && docker compose --env-file ../fablo-target/fabric-docker/.env down -t 1)
-else
+  else
   echo "Invalid command. Usage: $current_script <up|down>"
   exit 0
 fi
