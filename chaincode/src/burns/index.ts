@@ -19,13 +19,16 @@ import {
   NftMultipleBurnNotAllowedError,
   UseAllowancesFailedError
 } from "./BurnError";
-import { burnTokens } from "./burnTokens";
-import { fetchBurns, fetchKnownBurnCount } from "./fetchBurns";
+import { BurnsTokensParams, burnTokens } from "./burnTokens";
+import { FetchBurnCounterParams, FetchBurnParams, fetchBurns, fetchKnownBurnCount } from "./fetchBurns";
 
 export {
   burnTokens,
+  BurnsTokensParams,
   fetchBurns,
+  FetchBurnParams,
   fetchKnownBurnCount,
+  FetchBurnCounterParams,
   BurnTokensFailedError,
   InsufficientBurnAllowanceError,
   UseAllowancesFailedError,

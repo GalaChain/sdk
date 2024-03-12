@@ -32,7 +32,7 @@ import { GalaChainContext } from "../types/GalaChainContext";
 import { getObjectByKey } from "../utils";
 import { fetchMintAllowanceSupply } from "./fetchMintAllowanceSupply";
 
-interface InternalGrantAllowanceData {
+export interface InternalGrantAllowanceData {
   tokenInstance: TokenInstanceQueryKey;
   allowanceType: AllowanceType;
   quantities: Array<GrantAllowanceQuantity>;

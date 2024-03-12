@@ -25,7 +25,7 @@ import {
   takeUntilUndefined
 } from "../utils";
 
-interface FetchBurnParams {
+export interface FetchBurnParams {
   collection?: string;
   category?: string;
   type?: string;
@@ -47,13 +47,7 @@ export async function fetchBurns(ctx: GalaChainContext, data: FetchBurnParams): 
     data.created?.toString()
   );
 
-  let results = await getObjectsByPartialCompositeKey(
-    ctx,
-    TokenBurn.INDEX_KEY,
-    queryParams,
-    TokenBurn,
-    false
-  );
+  let results = await getObjectsByPartialCompositeKey(ctx, TokenBurn.INDEX_KEY, queryParams, TokenBurn);
 
   // Sort the items ascending by date
   results = results.sort((a: TokenBurn, b: TokenBurn): number => (a.created < b.created ? -1 : 1));
@@ -61,7 +55,7 @@ export async function fetchBurns(ctx: GalaChainContext, data: FetchBurnParams): 
   return results;
 }
 
-interface FetchBurnCounterParams {
+export interface FetchBurnCounterParams {
   collection: string;
   category: string;
   type: string;

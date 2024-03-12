@@ -18,7 +18,7 @@ import { GalaChainContext } from "../types";
 import { getObjectsByPartialCompositeKey, getObjectsByPartialCompositeKeyWithPagination } from "../utils";
 import { takeUntilUndefined } from "../utils";
 
-interface FetchAllowancesParams {
+export interface FetchAllowancesParams {
   collection?: string;
   category?: string;
   type?: string;
@@ -49,8 +49,7 @@ export async function fetchAllowances(
     ctx,
     TokenAllowance.INDEX_KEY,
     queryParams,
-    TokenAllowance,
-    true // TODO: may lead to incomplete results
+    TokenAllowance
   );
 
   const results = filterByGrantedBy(getObjectsResponse, data.grantedBy);

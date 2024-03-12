@@ -35,7 +35,7 @@ describe("forConnectionProfile", () => {
     const org = {
       orgMsp: "CuratorOrg",
       userId: "admin",
-      userPass: "adminpw",
+      userSecret: "adminpw",
       connectionProfilePath: "some/path"
     };
 
@@ -51,7 +51,7 @@ describe("forConnectionProfile", () => {
     const org = {
       orgMsp: "MissingOrg",
       userId: "admin",
-      userPass: "adminpw",
+      userSecret: "adminpw",
       connectionProfilePath: "some/path"
     };
 
@@ -79,7 +79,7 @@ describe("forApiConfig", () => {
     const api = {
       orgMsp: "CuratorOrg",
       apiUrl: "http://localhost:3000",
-      userKey: "GC_ADMIN_KEY",
+      userId: "GC_ADMIN_ID",
       userSecret: "GC_ADMIN_SECRET",
       configPath: "some/path"
     };

@@ -45,8 +45,8 @@ if (optionalVersion) {
   console.log("Applying version from command line:", optionalVersion);
 
   // just a sanity check
-  if (!optionalVersion.startsWith("1.0.")) {
-    console.error("Version must start with '1.0.'");
+  if (!optionalVersion.startsWith("1.1.")) {
+    console.error("Version must start with '1.1.'");
     process.exit(1);
   }
   packages.forEach(({ packageJson, packageJsonPath }) => {
@@ -94,3 +94,11 @@ packages.forEach(({ packageJson, packageJsonPath }) => {
     require("fs").writeFileSync(packageJsonPath, JSON.stringify(packageJson, undefined, 2) + "\n");
   }
 });
+
+const { execSync } = require("child_process");
+
+// execute `npm install` in the root directory to update the lock file and licenses
+execSync("npm install");
+
+// execute `npm run build` in chain-cli to update the new version in README.md and oclif.manifest.json
+execSync("npm run build", { cwd: "chain-cli" });

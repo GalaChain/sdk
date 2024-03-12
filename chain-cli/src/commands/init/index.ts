@@ -19,15 +19,13 @@ import path from "path";
 
 import BaseCommand from "../../base-command";
 import { execSync } from "../../exec-sync";
+import { DEFAULT_PRIVATE_KEYS_DIR, generateKeys } from "../../galachain-utils";
 import { getPathFileName } from "../../utils";
 
 export default class Init extends BaseCommand<typeof Init> {
   static override description = "Initialize a project template with Chain CLI.";
 
-  static override examples = [
-    "galachain init ./linux-mac-path/my-project-name",
-    "galachain init windows-path\\my-project-name"
-  ];
+  static override examples = ["galachain init ./linux-mac-path/my-project-name"];
 
   static override args = {
     path: Args.string({
@@ -64,6 +62,10 @@ export default class Init extends BaseCommand<typeof Init> {
           this.error(`Error updating project name in ${projectPath}: ${err}`);
         }
       });
+
+      this.log(`Generating keys to ${args.path}/${DEFAULT_PRIVATE_KEYS_DIR}`);
+      await generateKeys(`${args.path}/${DEFAULT_PRIVATE_KEYS_DIR}`);
+
       this.log(`Project template initialized at ${args.path}`);
     } catch (error) {
       this.error(`Error initializing project template: ${error}`);

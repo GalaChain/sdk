@@ -16,6 +16,7 @@ import { ChainCallDTO, ContractAPI, GalaChainResponse, Inferred } from "@gala-ch
 import axios, { AxiosError } from "axios";
 
 import { ChainClient, ChainClientBuilder, ClassType, ContractConfig, isClassType } from "../generic";
+import { RestApiAdminCredentials, SetContractApiParams, globalRestApiConfig } from "./GlobalRestApiConfig";
 import { RestApiConfig } from "./loadRestApiConfig";
 
 async function getPath(
@@ -24,28 +25,23 @@ async function getPath(
   method: string,
   isWrite: boolean
 ): Promise<string> {
-  const key = `${cfg.channelName}|${cfg.chaincodeName}|${cfg.contractName}`;
-  const contractApi = RestApiClientBuilder.restApiConfigReversed[key];
+  const { api, contractPath } = globalRestApiConfig.getContractApi(cfg);
 
-  if (!contractApi) {
-    throw new Error(`Cannot find contract API for key ${key}`);
-  }
-
-  const methodApi = (await contractApi.api).methods.find((m) => m.methodName === method);
+  const methodApi = api.methods.find((m) => m.methodName === method);
 
   if (!methodApi) {
-    throw new Error(`Cannot find method API for method ${method} and contract key ${key}`);
+    throw new Error(`Cannot find method API for method ${method} and contract ${contractPath}`);
   }
 
   if (isWrite && !methodApi.isWrite) {
-    throw new Error(`Method ${method} is read-only`);
+    throw new Error(`Method ${method} from contract ${contractPath} is read-only`);
   }
 
   if (!isWrite && methodApi.isWrite) {
-    throw new Error(`Method ${method} is not read-only`);
+    throw new Error(`Method ${method} from contract ${contractPath} is not read-only`);
   }
 
-  return `${restApiUrl}/${contractApi.path}/${methodApi.apiMethodName ?? methodApi.methodName}`;
+  return `${restApiUrl}/${contractPath}/${methodApi.apiMethodName ?? methodApi.methodName}`;
 }
 
 function catchAxiosError(e?: AxiosError<{ error?: { Status?: number } }>) {
@@ -64,18 +60,18 @@ export class RestApiClient extends ChainClient {
   private readonly restApiUrl: Promise<string>;
 
   constructor(
-    builder: Promise<RestApiClientBuilder>,
+    builder: Promise<ChainClientBuilder>,
+    restApiUrl: string,
     contractConfig: ContractConfig,
     private readonly credentials: RestApiAdminCredentials,
     orgMsp: string
   ) {
     super(builder, credentials.adminKey, contractConfig, orgMsp);
-    this.restApiUrl = builder.then((b) => b.restApiUrl);
+    this.restApiUrl = builder.then(() => restApiUrl);
   }
 
   public async isReady(): Promise<true> {
     await this.builder;
-    await this.credentials;
     return true;
   }
 
@@ -132,94 +128,50 @@ export class RestApiClient extends ChainClient {
     console.warn(`Ignoring forUser(${userId}) for RestApiClient`);
     return this;
   }
-}
 
-export interface RestApiAdminCredentials {
-  adminKey: string;
-  adminSecret: string;
-}
-
-export class RestApiClientBuilder extends ChainClientBuilder {
-  static isRestApiInitializedAndHealthy: Record<string, boolean> = {};
-  static restApiConfigReversed: Record<string, { path: string; api: ContractAPI }> = {};
-
-  constructor(
-    public readonly restApiUrl: string,
-    public readonly orgMsp: string,
-    private readonly credentials: RestApiAdminCredentials,
-    public readonly restApiConfig: RestApiConfig
-  ) {
-    super();
-  }
-
-  private async ensureInitializedRestApi(): Promise<void> {
-    if (RestApiClientBuilder.isRestApiInitializedAndHealthy[this.restApiUrl]) {
-      return;
-    }
-
-    try {
-      const headers = {
-        "x-identity-lookup-key": this.credentials.adminKey,
-        "x-user-encryption-key": this.credentials.adminSecret
-      };
-
-      // ensure admin account is created
-      await axios.post(`${this.restApiUrl}/identity/ensure-admin`, undefined, { headers });
-
-      // refresh api (may fail silently)
-      await axios.post(`${this.restApiUrl}/refresh-api`, undefined, { headers });
-
-      for (const channel of this.restApiConfig.channels) {
-        for (const contract of channel.contracts) {
-          const key = `${channel.channelName}|${contract.chaincodeName}|${contract.contractName}`;
-          const path = `${channel.pathFragment}/${contract.pathFragment}`;
-          const getApiPath = `${this.restApiUrl}/${path}/GetContractAPI`;
-
-          console.log("Loading ContractAPI:", getApiPath);
-          const apiResponse = await axios.post(getApiPath, undefined, { headers });
-
-          if (!GalaChainResponse.isSuccess<ContractAPI>(apiResponse.data)) {
-            throw new Error(`Failed to load ContractAPI for ${key}: ${JSON.stringify(apiResponse.data)}`);
-          }
-
-          console.log("API:", getApiPath, apiResponse.data);
-          RestApiClientBuilder.restApiConfigReversed[key] = { path: path, api: apiResponse.data.Data };
-        }
-      }
-
-      RestApiClientBuilder.isRestApiInitializedAndHealthy[this.restApiUrl] = true;
-    } catch (e) {
-      const { data } = catchAxiosError(e);
-      console.error(JSON.stringify(data));
-      throw e;
-    }
-  }
-
-  public forContract(config: ContractConfig): RestApiClient {
-    const payload = {
-      userId: this.credentials.adminKey,
-      identityEncryptionKey: this.credentials.adminSecret
-    };
-
+  public static async getContractApis(
+    credentials: RestApiAdminCredentials,
+    restApiUrl: string,
+    restApiConfig: RestApiConfig
+  ): Promise<SetContractApiParams[]> {
     const headers = {
-      "x-identity-lookup-key": this.credentials.adminKey,
-      "x-user-encryption-key": this.credentials.adminSecret
+      "x-identity-lookup-key": credentials.adminKey,
+      "x-user-encryption-key": credentials.adminSecret
     };
 
-    const credentialsExists = this.ensureInitializedRestApi()
-      .then(async () => {
-        const resp = await axios.post(`${this.restApiUrl}/identity/ensure-user`, payload, { headers });
-        const status = resp.data.status;
-        if (![1, 2, 3].includes(status)) {
-          throw new Error(`Failed to create user ${this.credentials.adminKey}: ${resp.data}`);
+    // ensure admin account is created
+    await axios.post(`${restApiUrl}/identity/ensure-admin`, undefined, { headers });
+
+    // refresh api (may fail silently)
+    await axios.post(`${restApiUrl}/refresh-api`, undefined, { headers });
+
+    const contractApis: SetContractApiParams[] = [];
+
+    for (const channel of restApiConfig.channels) {
+      for (const contract of channel.contracts) {
+        const contractPath = `${channel.pathFragment}/${contract.pathFragment}`;
+        const getApiPath = `${restApiUrl}/${contractPath}/GetContractAPI`;
+
+        console.log("Loading ContractAPI:", getApiPath);
+        const apiResponse = await axios.post(getApiPath, undefined, { headers });
+
+        if (!GalaChainResponse.isSuccess<ContractAPI>(apiResponse.data)) {
+          throw new Error(
+            `Failed to load ContractAPI for ${contractPath}: ${JSON.stringify(apiResponse.data)}`
+          );
         }
-      })
-      .catch((e) => {
-        throw new Error(`Failed to create user ${this.credentials.adminKey}: ${e.message}`);
-      });
 
-    const readyBuilder = credentialsExists.then(() => this);
+        console.log("API:", getApiPath, apiResponse.data);
+        contractApis.push({
+          channelName: channel.channelName,
+          chaincodeName: contract.chaincodeName,
+          contractName: contract.contractName,
+          contractPath: contractPath,
+          api: apiResponse.data.Data
+        });
+      }
+    }
 
-    return new RestApiClient(readyBuilder, config, this.credentials, this.orgMsp);
+    return contractApis;
   }
 }

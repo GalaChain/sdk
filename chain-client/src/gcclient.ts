@@ -21,7 +21,7 @@ import { RestApiClientBuilder, loadRestApiConfig } from "./rest-api";
 export interface HFClientConfig {
   orgMsp: string;
   userId?: string;
-  userPass?: string;
+  userSecret?: string;
   connectionProfilePath: string;
 }
 
@@ -43,7 +43,7 @@ function forConnectionProfile(hf: HFClientConfig): ChainClientBuilder {
     throw new Error("Missing user id. Please provide it manually or in GC_USER_ID environment variable.");
   }
 
-  const adminPass = hf.userPass ?? process.env.GC_USER_PASS;
+  const adminPass = hf.userSecret ?? process.env.GC_USER_PASS;
   if (!adminPass) {
     throw new Error("Missing user pass. Please provide it manually or in GC_USER_PASS environment variable.");
   }
@@ -54,7 +54,7 @@ function forConnectionProfile(hf: HFClientConfig): ChainClientBuilder {
 export interface RestApiClientConfig {
   orgMsp: string;
   apiUrl: string;
-  userKey?: string;
+  userId?: string;
   userSecret?: string;
   configPath: string;
 }
@@ -62,7 +62,7 @@ export interface RestApiClientConfig {
 function forApiConfig(api: RestApiClientConfig): ChainClientBuilder {
   const config = loadRestApiConfig(api.configPath);
 
-  const adminKey = api.userKey ?? process.env.GC_API_KEY;
+  const adminKey = api.userId ?? process.env.GC_API_KEY;
   if (!adminKey) {
     throw new Error("Missing admin key. Please provide it manually or GC_API_KEY environment variable.");
   }

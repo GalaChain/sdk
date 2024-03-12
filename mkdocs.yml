@@ -8,6 +8,8 @@ theme:
   logo: assets/white.png
   favicon: assets/favicon.png
   features:
+    - navigation.instant
+    - navigation.instant.progress
     - navigation.footer
     - toc.integrate
     - navigation.top
@@ -48,6 +50,7 @@ extra:
 plugins:
   - search
   - mike
+  - awesome-pages
   - with-pdf:
       exclude_pages:
         - "chain-api-docs/"
