@@ -18,7 +18,7 @@ $ npm install -g @gala-chain/cli
 $ galachain COMMAND
 running command...
 $ galachain (--version)
-@gala-chain/cli/1.1.0 darwin-arm64 node-v16.20.2
+@gala-chain/cli/1.1.0 linux-x64 node-v18.17.0
 $ galachain --help [COMMAND]
 USAGE
   $ galachain COMMAND
@@ -395,7 +395,7 @@ Start the chaincode in dev-mode and browser-api.
 ```
 USAGE
   $ galachain network-up -C <value> -t curator|partner -n <value> [--json] [--log-level debug|info|warn|error]
-    [-d <value>] [-r <value>] [-e <value>] [-w]
+    [-d <value>] [-r <value>] [-e <value>] [-w] [-o <value>]
 
 FLAGS
   -C, --channel=<value>...        (required) Channel name.
@@ -403,6 +403,7 @@ FLAGS
                                   is used.
   -e, --envConfig=<value>         Path to .env file to be used for chaincodes.
   -n, --chaincodeName=<value>...  (required) Chaincode name.
+  -o, --contracts=<value>         Contract names in a JSON format.
   -r, --fabloRoot=<value>         [default: ./test-network] Root directory of target network. Should not be the same as
                                   chaincodeDir and should not be a child of chaincodeDir. By default './test-network' is
                                   used.
@@ -462,7 +463,7 @@ Start the chaincode in dev-mode and browser-api.
 ```
 USAGE
   $ galachain network:up -C <value> -t curator|partner -n <value> [--json] [--log-level debug|info|warn|error]
-    [-d <value>] [-r <value>] [-e <value>] [-w]
+    [-d <value>] [-r <value>] [-e <value>] [-w] [-o <value>]
 
 FLAGS
   -C, --channel=<value>...        (required) Channel name.
@@ -470,6 +471,7 @@ FLAGS
                                   is used.
   -e, --envConfig=<value>         Path to .env file to be used for chaincodes.
   -n, --chaincodeName=<value>...  (required) Chaincode name.
+  -o, --contracts=<value>         Contract names in a JSON format.
   -r, --fabloRoot=<value>         [default: ./test-network] Root directory of target network. Should not be the same as
                                   chaincodeDir and should not be a child of chaincodeDir. By default './test-network' is
                                   used.

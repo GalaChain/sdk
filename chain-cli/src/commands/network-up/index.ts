@@ -23,6 +23,7 @@ import BaseCommand from "../../base-command";
 import { getCPPs, getCPPsBrowserApi } from "../../connection-profile";
 import { defaultFabloRoot } from "../../consts";
 import { execSync, execSyncStdio } from "../../exec-sync";
+import { overwriteApiConfig } from "../../galachain-utils";
 
 const defaultChaincodeDir = ".";
 
@@ -87,12 +88,22 @@ export default class NetworkUp extends BaseCommand<typeof NetworkUp> {
     watch: Flags.boolean({
       char: "w",
       description: "Enable watch mode (live chaincode reload)."
+    }),
+    contracts: Flags.string({
+      char: "o",
+      description: "Contract names in a JSON format."
     })
   };
 
   async run(): Promise<void> {
     const { flags } = await this.parse(NetworkUp);
     customValidation(flags);
+
+    if (flags.contracts) {
+      // This feature supports only a single channel
+      console.log("Overwriting api-config.json with contracts: " + flags.contracts);
+      overwriteApiConfig(flags.contracts, flags.channel[0], flags.chaincodeName[0]);
+    }
 
     const fabloRoot = path.resolve(flags.fabloRoot);
 
