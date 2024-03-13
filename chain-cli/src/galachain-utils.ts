@@ -20,6 +20,7 @@ import axios from "axios";
 import fs, { promises as fsPromises } from "fs";
 import { nanoid } from "nanoid";
 import { writeFile } from "node:fs/promises";
+import path from "path";
 import process from "process";
 
 import { ServicePortal } from "./consts";
@@ -160,6 +161,37 @@ export async function getPrivateKey(keysFromArg: string | undefined) {
   return (
     keysFromArg || process.env.DEV_PRIVATE_KEY || getPrivateKeyFromFile() || (await getPrivateKeyPrompt())
   );
+}
+
+export async function overwriteApiConfig(contracts: string, channel: string, chaincodeName: string) {
+  const contractsJson = JSON.parse(contracts);
+
+  let contractJson = "";
+  contractsJson.forEach((contract: { contractName: string }) => {
+    contractJson =
+      contractJson +
+      `{ 
+          "pathFragment": "${contract.contractName.toLocaleLowerCase()}", 
+          "chaincodeName": "${chaincodeName}", 
+          "contractName": "${contract.contractName}" 
+        },`;
+  });
+  // remove the last comma
+  contractJson = contractJson.slice(0, -1);
+
+  // write a new api-config.json file and overwrite the old one
+  const apiConfigPath = path.resolve(".", "api-config.json");
+  const apiConfigJson = `{
+        "channels": [
+          {
+            "pathFragment": "product",
+            "channelName": "${channel}",
+            "asLocalHost": true,
+            "contracts": [${contractJson}]
+          }
+        ]
+      }`;
+  fs.writeFileSync(apiConfigPath, JSON.stringify(JSON.parse(apiConfigJson), null, 2));
 }
 
 function getPrivateKeyFromFile(): string | undefined {

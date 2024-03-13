@@ -1,5 +1,5 @@
 {
-  "version": "1.1.1",
+  "version": "1.1.2",
   "commands": {
     "connect": {
       "id": "connect",
@@ -497,6 +497,13 @@
           "char": "w",
           "description": "Enable watch mode (live chaincode reload).",
           "allowNo": false
+        },
+        "contracts": {
+          "name": "contracts",
+          "type": "option",
+          "char": "o",
+          "description": "Contract names in a JSON format.",
+          "multiple": false
         }
       },
       "args": {}
