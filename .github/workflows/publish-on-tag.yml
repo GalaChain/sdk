@@ -181,4 +181,4 @@ jobs:
         uses: ad-m/github-push-action@master
         with:
           branch: "main"
-          github_token: ${{ secrets.GITHUB_TOKEN }}
+          github_token: ${{ secrets.RELEASE_BOT_TOKEN }}
