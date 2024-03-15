@@ -12,11 +12,11 @@ How to deploy:
    docker build --push -t ttl.sh/<IMAGE_NAME>:1d .
    ````
 
-   Provide us the image name (everything before the `:` character of full docker tag). In the sample above it is the content of `IMAGE_NAME`.
+   Provide us the image name (everything before the `:` character of full docker tag). In the sample above it is the content of `ttl.sh/<IMAGE_NAME>`.
 
 2. Provide us your secp **public** key for chaincode admin, and secp **public** keys for all developers.
 
-   The keys are automatically generated when you initialized the project using `galachain init`, so you can find these keys in `keys/gc-admin-key.pub` and `keys/gc-dev-key.pub`.
+   The keys are automatically generated when you initialize the project using `galachain init`, so you can find these keys in `keys/gc-admin-key.pub` and `keys/gc-dev-key.pub`.
    
    If you can't find the keys, you can generate them using the following commands:
 
