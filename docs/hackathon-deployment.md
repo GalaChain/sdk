@@ -6,17 +6,19 @@ How to deploy:
 
 1. Build and publish your chaincode as a docker image in public repo (for instance DockerHub, GitHub registry or GitLab registry). Remember to `docker login` before pushing.
 
-   Sample for GitLab:
+   Sample for DockerHub (It uses the ttl.sh to make it available for 1 day):
 
    ````
-   IMG_TAG=registry.gitlab.com/<your-username>/my-gc-chaincode:0.0.1
-   docker buildx build . -t "$IMG_TAG" -o type=image --platform=linux/amd64
-   docker push "$IMG_TAG"
+   docker build --push -t ttl.sh/<IMAGE_NAME>:1d .
    ````
 
-   Provide us the image name (everything before the `:` character of full docker tag). In the sample above it is the content of `IMG_TAG` var without `:0.0.1` part.
+   Provide us the image name (everything before the `:` character of full docker tag). In the sample above it is the content of `ttl.sh/<IMAGE_NAME>`.
 
-2. Provide us your secp **public** key for chaincode admin, and secp **public** keys for all developers. You can generate sone with the command:
+2. Provide us your secp **public** key for chaincode admin, and secp **public** keys for all developers.
+
+   The keys are automatically generated when you initialize the project using `galachain init`, so you can find these keys in `keys/gc-admin-key.pub` and `keys/gc-dev-key.pub`.
+   
+   If you can't find the keys, you can generate them using the following commands:
 
    ```
    galachain keygen gc-admin-key
@@ -54,14 +56,3 @@ How to deploy:
    Once the status is `CC_DEPLOYED` you can visit the Swagger webpage: https://gateway.stage.galachain.com/docs/. You can find your chaincode (`gc-<eth-addr>`). If the version is still unknown (and you see `v?.?.?`), it means you may need to wait a couple of minutes till the chaincode is ready.
 
    Once it is ready, you can use the webpage to call chaincodes. It's good to start `PublicKeyContract/GetPublicKey` with empty object as request body. It should return the admin public key you provided before.
-
-## GC support internal notes
-
-To register a user, go to https://gitlab.com/gala-games/chain/platform/infrastructure-api/-/pipelines/new and provide:
-
-* Run for branch name or tag: `register-user`
-* Variable key: `CHAINCODE_IMAGE_NAME` and value: provided image name from the participant (should not contain `:`)
-* Variable key: `CHAINCODE_ADMIN_PUBLIC_KEY` and value: provided key from the participant
-* Variable key: `CHAINCODE_DEV_PUBLIC_KEYS` and value: provided keys from participant, separated by a single space
-
-Then run the pipeline and wait till it ends. If the output contains error response, it probably means, something was wrong with the input.
