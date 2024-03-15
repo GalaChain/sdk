@@ -29,7 +29,7 @@ export default class Connect extends BaseCommand<typeof Connect> {
 
   static override flags = {
     testnet: Flags.boolean({
-      description: "Connect to testnet instead of mainnet."
+      description: "Connect to testnet instead of sandbox."
     })
   };
 

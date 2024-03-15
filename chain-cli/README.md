@@ -18,7 +18,7 @@ $ npm install -g @gala-chain/cli
 $ galachain COMMAND
 running command...
 $ galachain (--version)
-@gala-chain/cli/1.1.2 linux-x64 node-v18.17.0
+@gala-chain/cli/1.1.3 linux-x64 node-v18.17.0
 $ galachain --help [COMMAND]
 USAGE
   $ galachain COMMAND
@@ -56,7 +56,7 @@ ARGUMENTS
                        private key will be read from the environment variable DEV_PRIVATE_KEY.
 
 FLAGS
-  --testnet  Connect to testnet instead of mainnet.
+  --testnet  Connect to testnet instead of sandbox.
 
 GLOBAL FLAGS
   --json                Format output as json.
@@ -78,7 +78,7 @@ EXAMPLES
 
 ## `galachain deploy IMAGETAG [DEVELOPERPRIVATEKEY]`
 
-Schedules deployment of published chaincode Docker image to GalaChain mainnet.
+Schedules deployment of published chaincode Docker image to GalaChain sandbox.
 
 ```
 USAGE
@@ -95,7 +95,7 @@ GLOBAL FLAGS
                         <options: debug|info|warn|error>
 
 DESCRIPTION
-  Schedules deployment of published chaincode Docker image to GalaChain mainnet.
+  Schedules deployment of published chaincode Docker image to GalaChain sandbox.
 
 EXAMPLES
   $ galachain deploy registry.image.name:latest
@@ -296,7 +296,7 @@ ARGUMENTS
                        private key will be read from the environment variable DEV_PRIVATE_KEY.
 
 FLAGS
-  --testnet  Get info from testnet instead of mainnet.
+  --testnet  Get info from testnet instead of sandbox.
 
 GLOBAL FLAGS
   --json                Format output as json.

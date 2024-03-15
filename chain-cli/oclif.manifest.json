@@ -1,5 +1,5 @@
 {
-  "version": "1.1.2",
+  "version": "1.1.3",
   "commands": {
     "connect": {
       "id": "connect",
@@ -39,7 +39,7 @@
         "testnet": {
           "name": "testnet",
           "type": "boolean",
-          "description": "Connect to testnet instead of mainnet.",
+          "description": "Connect to testnet instead of sandbox.",
           "allowNo": false
         }
       },
@@ -53,7 +53,7 @@
     },
     "deploy": {
       "id": "deploy",
-      "description": "Schedules deployment of published chaincode Docker image to GalaChain mainnet.",
+      "description": "Schedules deployment of published chaincode Docker image to GalaChain sandbox.",
       "strict": true,
       "pluginName": "@gala-chain/cli",
       "pluginAlias": "@gala-chain/cli",
@@ -88,7 +88,7 @@
         "testnet": {
           "name": "testnet",
           "type": "boolean",
-          "description": "Deploy to testnet instead of mainnet.",
+          "description": "Deploy to testnet instead of sandbox.",
           "hidden": true,
           "allowNo": false
         }
@@ -264,7 +264,7 @@
         "testnet": {
           "name": "testnet",
           "type": "boolean",
-          "description": "Get info from testnet instead of mainnet.",
+          "description": "Get info from testnet instead of sandbox.",
           "allowNo": false
         }
       },

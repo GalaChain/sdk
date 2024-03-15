@@ -29,7 +29,7 @@ export default class Info extends BaseCommand<typeof Info> {
 
   static override flags = {
     testnet: Flags.boolean({
-      description: "Get info from testnet instead of mainnet."
+      description: "Get info from testnet instead of sandbox."
     })
   };
 

@@ -19,7 +19,7 @@ import { deployChaincode, getPrivateKey } from "../../galachain-utils";
 
 export default class Deploy extends BaseCommand<typeof Deploy> {
   static override description =
-    "Schedules deployment of published chaincode Docker image to GalaChain mainnet.";
+    "Schedules deployment of published chaincode Docker image to GalaChain sandbox.";
 
   static override examples = [
     "galachain deploy registry.image.name:latest",
@@ -29,7 +29,7 @@ export default class Deploy extends BaseCommand<typeof Deploy> {
 
   static override flags = {
     testnet: Flags.boolean({
-      description: "Deploy to testnet instead of mainnet.",
+      description: "Deploy to testnet instead of sandbox.",
       hidden: true
     })
   };
@@ -52,7 +52,7 @@ export default class Deploy extends BaseCommand<typeof Deploy> {
   async run(): Promise<void> {
     const { args, flags } = await this.parse(Deploy);
 
-    const environment = flags.testnet ? "testnet" : "mainnet";
+    const environment = flags.testnet ? "testnet" : "sandbox";
 
     const imageTag = args.imageTag;
     if (!imageTag.includes(":")) {
