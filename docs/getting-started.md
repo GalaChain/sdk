@@ -9,7 +9,7 @@ If you are using Windows with WSL don't forget to enable integration with WSL on
 You need to have the following tools installed on your machine:
 - Node.js 16+
 - Docker and Docker Compose
-- [jq](https://jqlang.github.io/jq/)
+- [jq](https://jqlang.github.io/jq/) and [yq](https://github.com/mikefarah/yq)
 
 ### 1. Install our CLI
 

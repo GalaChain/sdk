@@ -15,6 +15,7 @@
 import { Flags } from "@oclif/core";
 
 import { Fablo, FabloConfig } from "fablo";
+import * as fs from "fs";
 import { readFileSync, writeFileSync } from "fs";
 import path from "path";
 
@@ -121,6 +122,7 @@ export default class NetworkUp extends BaseCommand<typeof NetworkUp> {
     await Fablo.directory(fabloRoot)
       .then(() => saveConnectionProfiles(fabloRoot, flags.watch, flags.channel ?? [], localhostName))
       .config(fabloConfig, (cfg) => updatedFabloConfig(cfg, fabloRoot, singleArgs))
+      .then(() => updateConfigTxWithChannelProfile(fabloRoot, singleArgs))
       .then(() =>
         copyEnvFile(
           fabloRoot,
@@ -164,6 +166,22 @@ function copyEnvFile(fabloRoot: string, envConfigPath: string | undefined, chain
     const chaincodeEnvPath = path.resolve("./", dir, ".env");
     writeFileSync(chaincodeEnvPath, envConfig);
   });
+}
+
+function updateConfigTxWithChannelProfile(fabloRoot: string, args: SingleArg[]) {
+  const update = createConfigtxProfiles(args);
+  const configtxFilePath = path.resolve(fabloRoot, "configtx-policies.yml");
+  fs.appendFileSync(configtxFilePath, update);
+}
+
+export function createConfigtxProfiles(args: SingleArg[]): string {
+  const profiles = args.map(({ channel, channelType }) => {
+    const configtxProfileName = channel.replace(/(^\w|-\w)/g, (t) => t.replace(/-/, "").toUpperCase());
+    const configtxProfileDefaults =
+      channelType === "curator" ? "CuratorChannelDefaults" : "PartnerChannelDefaults";
+    return `  ${configtxProfileName}:\n    <<: *${configtxProfileDefaults}`;
+  });
+  return `\n${profiles.join("\n")}`;
 }
 
 export function updatedFabloConfig(
