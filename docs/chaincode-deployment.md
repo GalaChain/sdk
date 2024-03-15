@@ -4,7 +4,7 @@
 > This page describes the future functionality and is subject to change.
 
 Chaincode is published as a Docker image to GalaChain repository.
-Once the image is published, it can be deployed to GalaChain testnet or mainnet.
+Once the image is published, it can be deployed to GalaChain testnet or sandbox.
 In order to publish and deploy chaincode, you need to contact GalaChain support and add provide your secp256k1 public key.
 
 ## The process
@@ -16,7 +16,7 @@ In order to publish and deploy chaincode, you need to contact GalaChain support 
 
 2. Build and publish chaincode Docker image.
 
-3. Deploy the chaincode to testnet or mainnet:
+3. Deploy the chaincode to testnet or sandbox:
    ```
    galachain [test-]deploy <image-tag>
    ```
@@ -40,7 +40,7 @@ Once you have generated secp256k1 key pair, you should send the following data t
 * Channel name
 * Chaincode name
 * List of secp256k1 public keys that are allowed to deploy a chaincode to testnet
-* List of secp256k1 public keys that are allowed to deploy a chaincode to mainnet
+* List of secp256k1 public keys that are allowed to deploy a chaincode to sandbox
 
 This is an off-line process.
 Once you send the data, GalaChain support will ask you about some details, to ensure the data is not corrupted.
@@ -78,13 +78,13 @@ This command will display:
 * Org, channel, chaincode names (from `.galachainrc` file)
 * Tags available for deployment (from `.galachainrc` file)
 * Information about deployment to testnet (if applicable)
-* Information about deployment to mainnet (if applicable)
+* Information about deployment to sandbox (if applicable)
 
 ```mermaid
 sequenceDiagram
     Developer ->>+ GalaChain CLI: info
     GalaChain CLI ->>+ ServicePortal: /deployment { org, ch, cc, tag }
-    ServicePortal -->>- GalaChain CLI: mainnet + testnet info
+    ServicePortal -->>- GalaChain CLI: sandbox + testnet info
     GalaChain CLI -->>- Developer: info (org, ch, cc, tag, deployments)
 ```
 
@@ -96,13 +96,13 @@ Deploying to GalaChain testnet:
 galachain test-deploy <image-tag>
 ```
 
-Deploying to GalaChain mainnet:
+Deploying to GalaChain sandbox:
 
 ```
 galachain deploy <image-tag>
 ```
 
-This command schedules deployment of published chaincode Docker image to GalaChain testnet or mainnet.
+This command schedules deployment of published chaincode Docker image to GalaChain testnet or sandbox.
 In order to get the information about the current status of deployments, you need to use `galachain info` command.
 
 ```mermaid
