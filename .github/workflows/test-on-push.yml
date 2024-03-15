@@ -64,10 +64,13 @@ jobs:
         run: |
           sudo apt-get update
           sudo apt-get install -y jq
+          sudo wget -qO /usr/local/bin/yq https://github.com/mikefarah/yq/releases/latest/download/yq_linux_amd64
+          sudo chmod a+x /usr/local/bin/yq
           git --version
           node --version
           npm --version
           jq --version
+          yq --version
           bash --version
           docker version
           docker-compose version
