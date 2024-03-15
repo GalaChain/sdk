@@ -145,7 +145,7 @@ export async function generateKeys(keysPath: string): Promise<void> {
   const adminPublicKey = secp.utils.bytesToHex(secp.getPublicKey(adminPrivateKey));
 
   const devPrivateKey = secp.utils.bytesToHex(secp.utils.randomPrivateKey());
-  const devPublicKey = secp.utils.bytesToHex(secp.getPublicKey(adminPrivateKey));
+  const devPublicKey = secp.utils.bytesToHex(secp.getPublicKey(devPrivateKey));
 
   fs.mkdir(`${keysPath}`, (err) => {
     if (err) console.error(`Could not create a directory ${keysPath}. Error: ${err}`);
