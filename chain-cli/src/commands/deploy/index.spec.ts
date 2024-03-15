@@ -54,7 +54,7 @@ describe("Deploy Command", () => {
 
     // Then
     expect(result.join()).toContain(
-      "Deployment scheduled to mainnet. Status CC_DEPLOY_SCHEDULED for Chaincode chaincode-name and Channel channel-name."
+      "Deployment scheduled to sandbox. Status CC_DEPLOY_SCHEDULED for Chaincode chaincode-name and Channel channel-name."
     );
   });
 
