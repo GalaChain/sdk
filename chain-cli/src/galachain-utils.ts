@@ -168,10 +168,14 @@ export async function overwriteApiConfig(contracts: string, channel: string, cha
 
   let contractJson = "";
   contractsJson.forEach((contract: { contractName: string }) => {
+
+    // It converts CamelCase to kebab-case
+    const pathFragment = contract.contractName.replace(/([A-Z])/g, "-$1").toLowerCase().replace(/^-/, "");
+
     contractJson =
       contractJson +
       `{ 
-          "pathFragment": "${contract.contractName.toLocaleLowerCase()}", 
+          "pathFragment": "${pathFragment}", 
           "chaincodeName": "${chaincodeName}", 
           "contractName": "${contract.contractName}" 
         },`;
