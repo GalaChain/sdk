@@ -53,6 +53,6 @@ For the first time we're able to provide you with the ability to deploy chaincod
    galachain info <path-to>/gc-dev-key
    ```
 
-   Once the status is `CC_DEPLOYED` you can visit the Swagger webpage: https://gateway.stage.galachain.com/docs/. You can find your chaincode (`gc-<eth-addr>`). If the version is still unknown (and you see `v?.?.?`), it means you may need to wait a couple of minutes till the chaincode is ready.
+   Once the status is `CC_DEPLOYED` you can visit the Swagger webpage: [https://gateway.stage.galachain.com/docs/](https://gateway.stage.galachain.com/docs/). You can find your chaincode (`gc-<eth-addr>`). If the version is still unknown (and you see `v?.?.?`), it means you may need to wait a couple of minutes till the chaincode is ready.
 
    Once it is ready, you can use the webpage to call chaincodes. It's good to start `PublicKeyContract/GetPublicKey` with empty object as request body. It should return the admin public key you provided before.
