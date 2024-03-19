@@ -21,7 +21,8 @@
           "type": "solo",
           "instances": 1
         }
-      ]
+      ],
+      "tools": { "fabloRest": true }
     },
     {
       "organization": {
@@ -31,7 +32,8 @@
       },
       "peer": {
         "instances": 1
-      }
+      },
+      "tools": { "fabloRest": true }
     },
     {
       "organization": {
@@ -41,7 +43,8 @@
       },
       "peer": {
         "instances": 1
-      }
+      },
+      "tools": { "fabloRest": true }
     },
     {
       "organization": {
