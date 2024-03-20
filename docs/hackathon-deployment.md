@@ -14,9 +14,11 @@ For the first time we're able to provide you with the ability to deploy chaincod
 
    Provide us the image name (everything before the `:` character of full docker tag). In the sample above it is the content of `ttl.sh/<IMAGE_NAME>`.
 
-#### 2 Provide us your secp **public** key for chaincode **admin**, and secp **public** keys for all **developers**.
+#### 2 Provide us your secp **public admin** key for chaincode, and secp **public developer** key.
 
    The keys are automatically generated when you initialize the project using `galachain init`, so you can find these keys in `keys/gc-admin-key.pub` and `keys/gc-dev-key.pub`.
+
+   _Note: The developer key should be shared with all team members who want to deploy the chaincode._
    
    If you can't find the keys, you can generate them using the following commands:
 
@@ -25,7 +27,7 @@ For the first time we're able to provide you with the ability to deploy chaincod
    galachain keygen gc-dev-key
    ```
 
-   The above command creates a private keys in `./gc-admin-key` and `./gc-dev1-key`, and public keys in `./gc-key.pub`, `./gc-dev-key.pub`.  We need the content of `*.pub` files for chaincode admin user and for all developers who want to deploy. Keep **private** keys safe, they will be needed later.
+   The above command creates a private keys in `./gc-admin-key` and `./gc-dev1-key`, and public keys in `./gc-key.pub`, `./gc-dev-key.pub`.  We need the content of `*.pub` files for chaincode admin user and for developer user who want to deploy. Keep **private** keys safe, they will be needed later.
 
 #### 3 Once we register your public keys, you will be able to connect your chaincode with GalaChain. To do it, navigate to the root directory of your chaincode and call the following command, providing path to developer private key:
 
