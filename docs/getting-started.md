@@ -1,5 +1,8 @@
 # Getting started
 
+> ### In Person participants only:
+> **To help speed up the development process, it's recommended to follow the steps on [Hackathon Registry Cache](./registry-cache.md) before moving forward.**
+
 ---
 
 ## Local Environment (Linux, MacOS, or Windows with WSL)
