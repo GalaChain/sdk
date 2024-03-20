@@ -27,7 +27,7 @@ For the first time we're able to provide you with the ability to deploy chaincod
    galachain keygen gc-dev-key
    ```
 
-   The above command creates a private keys in `./gc-admin-key` and `./gc-dev1-key`, and public keys in `./gc-key.pub`, `./gc-dev-key.pub`.  We need the content of `*.pub` files for chaincode admin user and for developer user who want to deploy. Keep **private** keys safe, they will be needed later.
+   The above command creates a private keys in `./gc-admin-key` and `./gc-dev1-key`, and public keys in `./gc-key.pub`, `./gc-dev-key.pub`.  We need the content of `*.pub` files for chaincode admin user and for developer user who want to deploy. All the team members will use only one developer key, so make sure to share this with the other team member who want to deploy. Keep **private** keys safe, they will be needed later.
 
 #### 3 Once we register your public keys, you will be able to connect your chaincode with GalaChain. To do it, navigate to the root directory of your chaincode and call the following command, providing path to developer private key:
 
