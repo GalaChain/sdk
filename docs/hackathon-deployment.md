@@ -56,3 +56,15 @@ For the first time we're able to provide you with the ability to deploy chaincod
    Once the status is `CC_DEPLOYED` you can visit the Swagger webpage: [https://gateway.stage.galachain.com/docs/](https://gateway.stage.galachain.com/docs/). You can find your chaincode (`gc-<eth-addr>`). If the version is still unknown (and you see `v?.?.?`), it means you may need to wait a couple of minutes till the chaincode is ready.
 
    Once it is ready, you can use the webpage to call chaincodes. It's good to start `PublicKeyContract/GetPublicKey` with empty object as request body. It should return the admin public key you provided before.
+
+#### 6 Call the deployed chaincode
+
+   You can use any REST API client (like `axios` to call your chaincodes). Remember in most cases you will need to sign the DTO with either the `gc-admin-key` or any key of registered user.
+   
+   We highly recommend to use the `@gala-chain/api` library for handling DTOs and signing. For instance you can register a user by calling `/api/.../...-PublicKeyContract/RegisterEthUser` and providing the following `[RegisterEthUser](https://galahackathon.com/latest/chain-api-docs/classes/RegisterEthUserDto/)` as payload:
+   ```
+   const dto = new RegisterEthUser();
+   dto.publicKey = <newUserPublicKey>;
+   dto.sign(<gc-admin-key>);
+   const payloadString = dto.serialize();
+   ```
