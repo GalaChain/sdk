@@ -63,10 +63,14 @@ For the first time we're able to provide you with the ability to deploy chaincod
 
    You can use any REST API client (like `axios` to call your chaincodes). Remember in most cases you will need to sign the DTO with either the `gc-admin-key` or any key of registered user.
    
-   We highly recommend to use the `@gala-chain/api` library for handling DTOs and signing. For instance you can register a user by calling `/api/.../...-PublicKeyContract/RegisterEthUser` and providing the following `[RegisterEthUser](https://galahackathon.com/latest/chain-api-docs/classes/RegisterEthUserDto/)` as payload:
+   We highly recommend to use the `@gala-chain/api` library for handling DTOs and signing. For instance, you can register a user by calling `/api/.../...-PublicKeyContract/RegisterEthUser` and providing the following `[RegisterEthUser](https://galahackathon.com/latest/chain-api-docs/classes/RegisterEthUserDto/)` as payload:
    ```
    const dto = new RegisterEthUser();
    dto.publicKey = <newUserPublicKey>;
    dto.sign(<gc-admin-key>);
    const payloadString = dto.serialize();
    ```
+   
+   In the current version of the library, local environment exposes slightly different endpoints than the production environment.
+   `gcclient` and `@gala-chain/client` packages are compatible with the local environment only.
+   For calling the production environment, you should consult the Swagger documentation at [https://gateway.stage.galachain.com/docs/](https://gateway.stage.galachain.com/docs/), and use generic REST API client.
