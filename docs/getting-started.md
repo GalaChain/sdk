@@ -2,6 +2,8 @@
 
 > ### In Person participants only:
 > **To help speed up the development process, it's recommended to follow the steps on [Hackathon Registry Cache](./registry-cache.md) before moving forward.**
+>
+> **If you need to install the Docker, VSCode or/and Node.js, you can download from our [local server](http://172.23.0.79:8080/).**
 
 ---
 
