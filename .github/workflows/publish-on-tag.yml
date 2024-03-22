@@ -86,16 +86,18 @@ jobs:
       - name: Set a new version
         run: |
           VERSION="$(semver "$(< package.json jq -r '.version')" -i)"
+          echo "VERSION=$VERSION" >> $GITHUB_ENV
       - name: Create a new branch
         run: |
           BRANCH_NAME="bump-version-to-$VERSION"
           git checkout -b $BRANCH_NAME main2
+          echo "BRANCH_NAME=$BRANCH_NAME" >> $GITHUB_ENV
       - name: Bump version and commit changes
         run: |
           ./unifyVersions.js $VERSION
           npm i
           git commit -am "Bump version to $VERSION"
-          git push origin $BRANCH_NAME
+          git push --set-upstream origin bump-version-to-$VERSION
       - name: Create Pull Request
         uses: repo-sync/pull-request@v2
         with:
