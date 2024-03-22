@@ -160,7 +160,7 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
         with:
-          ref: "main"
+          ref: "main2"
       - name: Set up Node.js
         uses: actions/setup-node@v4
         with:
@@ -171,14 +171,33 @@ jobs:
         run: |
           git config --global user.name "galachain-release-bot"
           git config --global user.email "galachain-release-bot@users.noreply.github.com"
-      - name: Bump version
+      - name: Set a new version
         run: |
           VERSION="$(semver "$(< package.json jq -r '.version')" -i)"
+      - name: Create a new branch
+        run: |
+          BRANCH_NAME="bump-version-to-$VERSION"
+      - name: Bump version and commit changes
+        run: |
           ./unifyVersions.js $VERSION
           npm i
           git commit -am "Bump version to $VERSION"
-      - name: Push next version release
-        uses: ad-m/github-push-action@master
+          git push origin HEAD
+      - name: Create Pull Request
+        uses: repo-sync/pull-request@v2
         with:
-          branch: "main"
-          github_token: ${{ secrets.RELEASE_BOT_TOKEN }}
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          source_branch: $BRANCH_NAME
+          destination_branch: "main2"
+          pr_title: "Bump Version to $VERSION"
+          pr_body: "Bump version to $VERSION"
+          pr_label: "automated-pr"
+      - name: Push next version release
+        uses: pascalgn/automerge-action@v0.14.3
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          MERGE_LABELS: "automated-pr"
+          MERGE_METHOD: "squash"
+          MERGE_COMMIT_MESSAGE: "Bump Version to $VERSION"
+          MERGE_RETRIES: "6"
+          MERGE_RETRY_SLEEP: "10000"
