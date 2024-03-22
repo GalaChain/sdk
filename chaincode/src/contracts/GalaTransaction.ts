@@ -148,7 +148,8 @@ function GalaTransaction<T extends ChainCallDTO>(
         if (options?.verifySignature || dto?.signature !== undefined) {
           ctx.callingUserData = await authorize(ctx, dto, legacyClientAccountId(ctx));
         } else {
-          ctx.callingUserData = { alias: legacyClientAccountId(ctx) }; // TODO consider authorizing all calls
+          // it means a request where authorization is not required
+          ctx.callingUserData = { alias: legacyClientAccountId(ctx) };
         }
 
         // Prevent the same transaction from being submitted multiple times
@@ -188,9 +189,8 @@ function GalaTransaction<T extends ChainCallDTO>(
           ChainError.from(err).logWarn(ctx.logger);
           ctx.logger.logTimeline("Failed Transaction", loggingContext, [dtoPlain], err);
         }
-        // TODO to be considered - since we catch all errors here, failed
-        // transaction are saved on chain (including transactions that failed
-        // because of dto validation). Do we want it?
+        // Note: since it does not end with an exception, failed transactions are also saved 
+        // on chain in transaction history.
         return GalaChainResponse.Error(err as Error);
       }
     };
