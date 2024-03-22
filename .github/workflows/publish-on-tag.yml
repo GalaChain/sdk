@@ -86,10 +86,12 @@ jobs:
       - name: Set a new version
         run: |
           VERSION="$(semver "$(< package.json jq -r '.version')" -i)"
+          echo "VERSION=$VERSION" >> $GITHUB_ENV
       - name: Create a new branch
         run: |
-          BRANCH_NAME=bump-version-to-$VERSION
+          BRANCH_NAME="bump-version-to-$VERSION"
           git checkout -b $BRANCH_NAME main2
+          echo "BRANCH_NAME=$BRANCH_NAME" >> $GITHUB_ENV
       - name: Bump version and commit changes
         run: |
           ./unifyVersions.js $VERSION
