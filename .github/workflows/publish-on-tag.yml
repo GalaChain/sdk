@@ -89,6 +89,7 @@ jobs:
       - name: Create a new branch
         run: |
           BRANCH_NAME="bump-version-to-$VERSION"
+          git checkout -b $BRANCH_NAME main2
       - name: Bump version and commit changes
         run: |
           ./unifyVersions.js $VERSION
