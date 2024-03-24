@@ -79,8 +79,10 @@ jobs:
           node-version: 18
       - name: Install tools
         run: npm i -g semver
-      - name: Configure Git
+      - name: Setup GitHub CLI & Configure Git
         run: |
+          gh auth setup-git
+          gh auth status
           git config --global user.name "galachain-release-bot"
           git config --global user.email "galachain-release-bot@users.noreply.github.com"
       - name: Set a new version
@@ -99,20 +101,14 @@ jobs:
           git commit -am "Bump version to $VERSION"
           git push --set-upstream origin bump-version-to-$VERSION
       - name: Create Pull Request
-        uses: repo-sync/pull-request@v2
-        with:
-          github_token: ${{ secrets.GITHUB_TOKEN }}
-          source_branch: $BRANCH_NAME
-          destination_branch: "main2"
-          pr_title: "Bump Version to $VERSION"
-          pr_body: "Bump version to $VERSION"
-          pr_label: "automated-pr"
+        run: gh pr create --title "Bump Version to $VERSION" --body "Bump Version to $VERSION" -label "bump-version-pr" --head "${GITHUB_REF#refs/heads/}" --base main2
       - name: Push next version release
         uses: pascalgn/automerge-action@v0.14.3
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          MERGE_LABELS: "automated-pr"
+          MERGE_LABELS: "bump-version-pr"
           MERGE_METHOD: "squash"
+          MERGE_FILTER_AUTHOR: "galachain-release-bot"
           MERGE_COMMIT_MESSAGE: "Bump Version to $VERSION"
           MERGE_RETRIES: "6"
           MERGE_RETRY_SLEEP: "10000"
