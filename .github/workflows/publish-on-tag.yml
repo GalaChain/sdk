@@ -12,7 +12,7 @@ jobs:
   publish:
     name: Publish Release
     if: github.event_name != 'pull_request' && (startsWith(github.ref, 'refs/tags/v'))
-    runs-on: ubuntu-22.04
+    runs-on: ubuntu-latest
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -67,7 +67,7 @@ jobs:
     needs: [publish]
     if: github.event_name != 'pull_request' && (startsWith(github.ref, 'refs/tags/v'))
     name: Bump SDK Version
-    runs-on: ubuntu-22.04
+    runs-on: ubuntu-latest
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -81,8 +81,6 @@ jobs:
         run: npm i -g semver
       - name: Setup GitHub CLI & Configure Git
         run: |
-          gh auth setup-git
-          gh auth status
           git config --global user.name "galachain-release-bot"
           git config --global user.email "galachain-release-bot@users.noreply.github.com"
       - name: Set a new version
