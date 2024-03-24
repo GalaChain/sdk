@@ -108,7 +108,5 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           MERGE_LABELS: "bump-version-pr"
           MERGE_METHOD: "squash"
-          MERGE_FILTER_AUTHOR: "galachain-release-bot"
+          MERGE_FILTER_AUTHOR: "github-actions"
           MERGE_COMMIT_MESSAGE: "Bump Version to $VERSION"
-          MERGE_RETRIES: "6"
-          MERGE_RETRY_SLEEP: "10000"
