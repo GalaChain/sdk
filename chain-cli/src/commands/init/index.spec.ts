@@ -32,5 +32,8 @@ describe("Init Command", () => {
     await Init.run([target]);
 
     expect(result.join()).toContain(`Project template initialized at ${target}`);
+
+    const fs = require("fs");
+    fs.rmdirSync(path.join(target, "keys"), { recursive: true });
   });
 });

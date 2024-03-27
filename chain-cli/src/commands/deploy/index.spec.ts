@@ -50,7 +50,7 @@ describe("Deploy Command", () => {
     });
 
     // When
-    await Deploy.run(["imageName:version", consts.developerPrivateKey]);
+    await Deploy.run(["ttl.sh/image-name:1d", consts.developerPrivateKey]);
 
     // Then
     expect(result.join()).toContain(
@@ -79,7 +79,7 @@ describe("Deploy Command", () => {
     });
 
     // When
-    await Deploy.run(["imageName:version", consts.developerPrivateKey]);
+    await Deploy.run(["ghcr.io/gala/image-name:2.5", consts.developerPrivateKey]);
 
     // Then
     expect(result.join()).toContain("Deployment cancelled.");
