@@ -33,6 +33,7 @@ describe("Init Command", () => {
 
     expect(result.join()).toContain(`Project template initialized at ${target}`);
 
+    // eslint-disable-next-line @typescript-eslint/no-var-requires
     const fs = require("fs");
     fs.rmdirSync(path.join(target, "keys"), { recursive: true });
   });
