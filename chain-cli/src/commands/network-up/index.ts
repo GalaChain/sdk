@@ -233,7 +233,54 @@ function updatedFabloConfigWithEntry(
 }
 
 function customValidation(flags: any): void {
-  const { channel, channelType, chaincodeName, chaincodeDir } = flags;
+  const { channel, channelType, chaincodeName, chaincodeDir, envConfig } = flags;
+  console.log(flags);
+
+  /*
+    Check if the flags does not have special characters like &, |, ;, :, etc. Only -, _ and . and are allowed
+    Check the maximum length of the flag is 64 characters
+  */
+  const specialChars = /[&\\#,+()$~%'":;*?<>@{}|]/;
+  const maxLength = 64;
+
+  // Transform envConfig to array to use the same validation
+  const envConfigArray = [envConfig]
+
+  const invalidFlags = [channel, channelType, chaincodeName, chaincodeDir, envConfigArray].reduce(
+    (acc: string[], arr: string[]) => [
+      ...acc,
+      ...arr.filter((flag: string) => {
+        if (flag.length > maxLength) {
+          throw new Error(`Error: Flag ${flag} is too long. Maximum length is ${maxLength} characters.`);
+        }
+        console.log(flag);
+        console.log(specialChars.test(flag));
+        if (specialChars.test(flag)) {
+          throw new Error(`Error: Flag ${flag} contains special characters. Only - and _ are allowed.`);
+        }
+        return false;
+      })
+    ],
+    []
+  );
+  if (invalidFlags.length) {
+    throw new Error(`Error: Found invalid flags: ${invalidFlags.join(", ")}`);
+  }
+
+
+  /*
+    Check if chaincodeDir and envConfig are valid paths
+  */
+  if (chaincodeDir) {
+    chaincodeDir.forEach((dir: string) => {
+      if (!fs.existsSync(dir)) {
+        throw new Error(`Error: Chaincode directory ${dir} does not exist.`);
+      }
+    });
+  }
+  if (envConfig && !fs.existsSync(envConfig)) {
+    throw new Error(`Error: Env config file ${envConfig} does not exist.`);
+  }
 
   /* 
     The same number of parameters for chaincode, channelTyle, chaincode and chaincodeDir is required
