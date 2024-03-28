@@ -55,7 +55,9 @@ export default class Deploy extends BaseCommand<typeof Deploy> {
     const environment = flags.testnet ? "testnet" : "sandbox";
 
     const imageTag = args.imageTag;
-    if (!imageTag.includes(":")) {
+    // eslint-disable-next-line
+    const imageTagRegex = /^[a-zA-Z0-9\.?][+\/?a-zA-Z0-9_.-]+\:.{0,127}$/;
+    if (!imageTagRegex.test(imageTag)) {
       this.log(`The image tag ${imageTag} is not valid. It should follow the pattern imageName:version.`);
       return;
     }
