@@ -244,7 +244,7 @@ function customValidation(flags: any): void {
   const maxLength = 64;
 
   // Transform envConfig to array to use the same validation
-  const envConfigArray = [envConfig]
+  const envConfigArray = [envConfig];
 
   const invalidFlags = [channel, channelType, chaincodeName, chaincodeDir, envConfigArray].reduce(
     (acc: string[], arr: string[]) => [
@@ -266,7 +266,6 @@ function customValidation(flags: any): void {
   if (invalidFlags.length) {
     throw new Error(`Error: Found invalid flags: ${invalidFlags.join(", ")}`);
   }
-
 
   /*
     Check if chaincodeDir and envConfig are valid paths
