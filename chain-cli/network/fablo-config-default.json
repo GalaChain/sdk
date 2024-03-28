@@ -20,7 +20,8 @@
           "type": "raft",
           "instances": 1
         }
-      ]
+      ],
+      "tools": { "fabloRest": true }
     },
     {
       "organization": {
