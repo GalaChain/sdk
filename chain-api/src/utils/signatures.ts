@@ -62,7 +62,10 @@ function normalizePrivateKey(input: string): Buffer {
 
   if (encoding !== undefined) {
     const missing0 = secpPrivKeyLength.isMissingTrailing0(length) ? "0" : "";
-    return Buffer.from(missing0 + inputNo0x, encoding);
+    if (isValidHex(inputNo0x) || isValidBase64(inputNo0x)) {
+      return Buffer.from(missing0 + inputNo0x, encoding);
+    }
+    throw new InvalidKeyError(`Invalid private key: ${input}`);
   } else {
     const excl0x = startsWith0x ? " (excluding trailing '0x')" : "";
     const errorMessage =
@@ -96,9 +99,13 @@ function normalizePublicKey(input: string): Buffer {
       ? "base64"
       : undefined;
   if (encoding !== undefined) {
-    const buffer = Buffer.from(startsWith0x ? input.slice(2) : input, encoding);
-    const pair = validateSecp256k1PublicKey(buffer);
-    return Buffer.from(pair.getPublic().encode("array", true));
+    const inputNo0x = startsWith0x ? input.slice(2) : input;
+    if (isValidHex(inputNo0x) || isValidBase64(inputNo0x)) {
+      const buffer = Buffer.from(inputNo0x, encoding);
+      const pair = validateSecp256k1PublicKey(buffer);
+      return Buffer.from(pair.getPublic().encode("array", true));
+    }
+    throw new InvalidKeyError(`Invalid public key: ${input}`);
   } else {
     const excl0x = startsWith0x ? " (excluding trailing '0x')" : "";
     const errorMessage =
@@ -347,6 +354,14 @@ function enforceValidPublicKey(
   }
 }
 
+function isValidHex(input: string) {
+  return /^[0-9a-fA-F]*$/.test(input);
+}
+
+function isValidBase64(input: string) {
+  return /^(?:[A-Za-z0-9+/]{4})*(?:[A-Za-z0-9+/]{2}==|[A-Za-z0-9+/]{3}=)?$/.test(input);
+}
+
 export default {
   calculateKeccak256,
   enforceValidPublicKey,
@@ -358,6 +373,8 @@ export default {
   getSignature,
   getDERSignature,
   isValid,
+  isValidBase64,
+  isValidHex,
   isValidSecp256k1Signature,
   normalizePrivateKey,
   normalizePublicKey,

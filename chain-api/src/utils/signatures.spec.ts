@@ -56,12 +56,35 @@ describe("ethAddress", () => {
   });
 });
 
+describe("private key", () => {
+  const invalidPrivateKey = "xxx9099e\\dccf44e1dfc13c89xxx490d902a9xXx791faf185e19XXX0e71786d";
+  const privateKey = "3b19099e96dccf44e1dfc13c89c7e490d902a96b0791faf185e194ae0e71786d";
+
+  it("should throw an error for invalid private key", () => {
+    expect(() => signatures.normalizePrivateKey(invalidPrivateKey)).toThrow(/Invalid private key/);
+  });
+
+  it("should normalize private key", () => {
+    // When
+    const normalized = signatures.normalizePrivateKey(privateKey);
+
+    // Then
+    expect(normalized.toString("hex")).toEqual(privateKey);
+  });
+});
+
 describe("public key", () => {
   // https://privatekeys.pw/key/313871326028141e0bdeef59fe32a6fc51bce449e44907c191558cb6fdca1341#public
   const nonCompact =
     "04651b1e822f794444fbc96424da6b3536e725c92dbe0047f357cec15fbe5ff148ef0d0d37affaf4ee1d6d0da680bdbd177240913353c6792a60be6ddfb1ce25fb";
+  const invalidNonCompact =
+    "04651b1e822f794444xxx96424da6b3536e725c92dbe00xxx357cec15fbe5ff148ef0d0d37affaf4ee1d6d0xxx80bdbd177240913353c6792a60be6ddfb1ce25fb";
   const compact = "03651b1e822f794444fbc96424da6b3536e725c92dbe0047f357cec15fbe5ff148";
   const normalized = "A2UbHoIveURE+8lkJNprNTbnJcktvgBH81fOwV++X/FI";
+
+  it("should throw an error for invalid public key", () => {
+    expect(() => signatures.normalizePublicKey(invalidNonCompact)).toThrow(/Invalid public key/);
+  });
 
   // Legacy - on prod we keep all public keys as compact base64
   it("should normalize public key", () => {
