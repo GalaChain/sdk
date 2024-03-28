@@ -44,6 +44,11 @@ Install all dependencies:
 npm i
 ```
 
+Build the project:
+
+```
+npm run build
+```
 ### 3. Start the network
 
 ```
