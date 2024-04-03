@@ -26,7 +26,7 @@ function isAllowanceSpent(allowance: TokenAllowance): boolean {
   );
 }
 
-function isAllowanceExpired(ctx: GalaChainContext, allowance: TokenAllowance): boolean {
+export function isAllowanceExpired(ctx: GalaChainContext, allowance: TokenAllowance): boolean {
   return allowance.expires !== 0 && allowance.expires !== undefined && allowance.expires <= ctx.txUnixTime;
 }
 
@@ -112,7 +112,7 @@ export async function checkAllowances(
       allowance.additionalKey === tokenInstanceKey.additionalKey &&
       allowance.instance.isEqualTo(tokenInstanceKey.instance) &&
       allowance.allowanceType === action &&
-      (allowance.expires === 0 || (allowance.expires && allowance.expires >= ctx.txUnixTime))
+      (allowance.expires === 0 || isAllowanceExpired(ctx, allowance))
     ) {
       totalAllowance = totalAllowance.plus(allowance.quantity).minus(allowance.quantitySpent);
     }
