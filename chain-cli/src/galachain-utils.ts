@@ -28,12 +28,12 @@ import { GetChaincodeDeploymentDto, PostDeployChaincodeDto } from "./dto";
 import { execSync } from "./exec-sync";
 import { parseStringOrFileKey } from "./utils";
 
-const GCKeysDir = ".gc-keys";
 const ConfigFileName = ".galachainrc.json";
 const PackageJsonFileName = "package.json";
 // eslint-disable-next-line @typescript-eslint/no-var-requires
 const os = require("os");
 
+const DEFAULT_PRIVATE_KEYS_DIR = ".gc-keys";
 const DEFAULT_PUBLIC_KEYS_DIR = "keys";
 const DEFAULT_ADMIN_PRIVATE_KEY_NAME = "gc-admin-key";
 const DEFAULT_DEV_PRIVATE_KEY_NAME = "gc-dev-key";
@@ -158,12 +158,12 @@ export async function generateKeys(projectPath: string): Promise<void> {
     if (err) console.error(`Could not create a directory ${keysPath}. Error: ${err}`);
   });
 
-  const adminPrivateKeyPath = path.join(os.homedir(), GCKeysDir, adminPublicKeyEthAddr);
+  const adminPrivateKeyPath = path.join(os.homedir(), DEFAULT_PRIVATE_KEYS_DIR, adminPublicKeyEthAddr);
   fs.mkdir(adminPrivateKeyPath, { recursive: true }, (err) => {
     if (err) console.error(`Could not create a directory ${adminPrivateKeyPath}. Error: ${err}`);
   });
 
-  const devPrivateKeyPath = path.join(os.homedir(), GCKeysDir, devPublicKeyEthAddr);
+  const devPrivateKeyPath = path.join(os.homedir(), DEFAULT_PRIVATE_KEYS_DIR, devPublicKeyEthAddr);
   fs.mkdir(devPrivateKeyPath, { recursive: true }, (err) => {
     if (err) console.error(`Could not create a directory ${devPrivateKeyPath}. Error: ${err}`);
   });
