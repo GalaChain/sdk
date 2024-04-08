@@ -1,20 +1,16 @@
 # Getting started
 
-> ### In Person participants only:
-> **To help speed up the development process, it's recommended to follow the steps on [Hackathon Registry Cache](./registry-cache.md) before moving forward.**
->
-> **If you need to install the Docker, VSCode or/and Node.js, you can download from our [local server](http://172.23.0.79:8080/).**
+## Option 1: Local Environment (Linux, MacOS, or Windows with WSL)
 
----
+> If you are using Windows with WSL don't forget to enable integration with WSL on Docker Desktop.
 
-## Local Environment (Linux, MacOS, or Windows with WSL)
-
-If you are using Windows with WSL don't forget to enable integration with WSL on Docker Desktop.
+[How to use Windows with WSL](./windows-wsl.md)
 
 ### Requirements
 
 You need to have the following tools installed on your machine:
-- Node.js 16+
+
+- Node.js 18+
 - Docker and Docker Compose
 - [jq](https://jqlang.github.io/jq/) and [yq](https://github.com/mikefarah/yq)
 
@@ -75,7 +71,7 @@ Navigate to [http://localhost:3010/graphiql](http://localhost:3010/graphiql) to 
 
 ---
 
-## Use Docker image (Linux, MacOS or Windows)
+## Option 2: Use Docker image (Linux, MacOS or Windows)
 
 ### Requirements
 
@@ -131,7 +127,7 @@ Navigate to [http://localhost:3010/graphiql](http://localhost:3010/graphiql) to 
 
 ---
 
-## Using Dev Containers (Linux or MacOS)
+## Option 3: Using Dev Containers (Linux or MacOS)
 
 ### Requirements
 
@@ -239,3 +235,7 @@ You have to remove (or rename) that container to be able to reuse that name.
 #### ./fablo-target/fabric-config/configtx.yaml: no such file or directory
 
 Make sure you are running it as a administrator of the cmd or powershell.
+
+#### docker: Got permission denied
+
+If you get a `docker: Got permission denied` error when running npm run network:start or npm run network:up, you may need to enable the configuration `Settings` > `Resources` > `Expose daemon on tcp://localhost:2375 without TLS`.

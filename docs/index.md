@@ -23,10 +23,6 @@ Read more about [GalaChain](galachain.md).
 
 - [Chaincode deployment](chaincode-deployment.md)
 
-## Galachain post deployment
-
-- [Chaincode post deployment](chaincode-post-deployment.md)
-
 ## Reference documentation
 - [`chain-api`](chain-api-docs/exports.md) - Common types, DTOs (Data Transfer Objects), APIs, signatures, and utils for GalaChain
 - [`chain-client`](chain-client-docs/exports.md) - GalaChain client library
