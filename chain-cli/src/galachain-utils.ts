@@ -33,9 +33,9 @@ const ConfigFileName = ".galachainrc.json";
 const PackageJsonFileName = "package.json";
 const os = require('os');
 
-export const DEFAULT_PRIVATE_KEYS_DIR = "keys";
-export const DEFAULT_ADMIN_PRIVATE_KEY_NAME = "gc-admin-key";
-export const DEFAULT_DEV_PRIVATE_KEY_NAME = "gc-dev-key";
+const DEFAULT_PRIVATE_KEYS_DIR = "keys";
+const DEFAULT_ADMIN_PRIVATE_KEY_NAME = "gc-admin-key";
+const DEFAULT_DEV_PRIVATE_KEY_NAME = "gc-dev-key";
 
 export interface Config {
   org: string;
@@ -142,7 +142,9 @@ export async function deployChaincode(params: { privateKey: string; isTestnet: b
   return response.data;
 }
 
-export async function generateKeys(keysPath: string): Promise<void> {
+export async function generateKeys(projectPath: string): Promise<void> {
+  const keysPath = path.join(projectPath, DEFAULT_PRIVATE_KEYS_DIR);
+
   const adminPrivateKey = secp.utils.bytesToHex(secp.utils.randomPrivateKey());
   const adminPublicKey = secp.utils.bytesToHex(secp.getPublicKey(adminPrivateKey));
   const adminOublicKeyEthAddr = "gc-"+signatures.getEthAddress(adminPublicKey);
@@ -156,21 +158,22 @@ export async function generateKeys(keysPath: string): Promise<void> {
   });
 
   const adminPrivateKeyPath = path.join(os.homedir(), GCKeysDir, adminOublicKeyEthAddr);
-  console.log(`adminPrivateKeyPath: ${adminPrivateKeyPath}`);
   fs.mkdir(adminPrivateKeyPath, { recursive: true }, (err) => {
     if (err) console.error(`Could not create a directory ${adminPrivateKeyPath}. Error: ${err}`);
   });
 
   const devPrivateKeyPath = path.join(os.homedir(), GCKeysDir, devPublicKeyEthAddr);
-  console.log(`devPrivateKeyPath: ${devPrivateKeyPath}`);
   fs.mkdir(devPrivateKeyPath, { recursive: true }, (err) => {
     if (err) console.error(`Could not create a directory ${devPrivateKeyPath}. Error: ${err}`);
   });
 
   await writeFile(`${keysPath}/${DEFAULT_ADMIN_PRIVATE_KEY_NAME}.pub`, adminPublicKey);
-  await writeFile(`${adminPrivateKeyPath}/${DEFAULT_ADMIN_PRIVATE_KEY_NAME}`, adminPrivateKey.toString());
   await writeFile(`${keysPath}/${DEFAULT_DEV_PRIVATE_KEY_NAME}.pub`, devPublicKey);
+
+  await writeFile(`${adminPrivateKeyPath}/${DEFAULT_ADMIN_PRIVATE_KEY_NAME}`, adminPrivateKey.toString());
   await writeFile(`${devPrivateKeyPath}/${DEFAULT_DEV_PRIVATE_KEY_NAME}`, devPrivateKey.toString());
+
+  console.log(`Public keys created at ${keysPath} directory. Private keys created at ${adminPrivateKeyPath} and ${devPrivateKeyPath} directory.`);
 }
 
 export async function getPrivateKey(keysFromArg: string | undefined) {
