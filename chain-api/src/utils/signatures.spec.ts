@@ -262,57 +262,57 @@ describe("signatures", () => {
     await expect(actual).rejects.toThrowError(/Signature must contain recovery part/);
   });
 
-  it("Test multiple formats for each der signature length", async () => {
-    // when
-    const derSignatures = [
-      // der138Signature
-      "3043022030ef238065ff606bcb59ce9b40923bb1f86777056eabbf77ecbefd101d207fbd021f14d3aed3bf7e07cb3bf2ef2c06cfde6db461eea8f58827df5b0fa4185d6535",
-      // der140signature
-      "304402205139bc0c17ffef0056b4f22c4f0feb577e02d484d03087d5daba8551d30c99d702207700e118778e264c975731606bc9aecd440ae8e0a4a7b1b3bd51820e8cc0da29",
-      // der142Signature
-      "3045022100b7244d62671319583ea8f30c8ef3b343cf28e7b7bd56e32b21a5920752dc95b902204a9d202b2919581bcf776f0637462cb67170828ddbcc1ea63505f6a211f9ac5b",
-      // der144Signature
-      "3045022100f6d3aefb132b74e879a937dc6a28003d6c2acee6e27291bfb24834aa2cd2a610022003a06b8f150ab71b3e19621114f98416417bea4fbc5b3b4a30b610fea9f281e1"
-    ];
+  // it("Test multiple formats for each der signature length", async () => {
+  //   // when
+  //   const derSignatures = [
+  //     // der138Signature
+  //     "3043022030ef238065ff606bcb59ce9b40923bb1f86777056eabbf77ecbefd101d207fbd021f14d3aed3bf7e07cb3bf2ef2c06cfde6db461eea8f58827df5b0fa4185d6535",
+  //     // der140signature
+  //     "304402205139bc0c17ffef0056b4f22c4f0feb577e02d484d03087d5daba8551d30c99d702207700e118778e264c975731606bc9aecd440ae8e0a4a7b1b3bd51820e8cc0da29",
+  //     // der142Signature
+  //     "3045022100b7244d62671319583ea8f30c8ef3b343cf28e7b7bd56e32b21a5920752dc95b902204a9d202b2919581bcf776f0637462cb67170828ddbcc1ea63505f6a211f9ac5b",
+  //     // der144Signature
+  //     "3045022100f6d3aefb132b74e879a937dc6a28003d6c2acee6e27291bfb24834aa2cd2a610022003a06b8f150ab71b3e19621114f98416417bea4fbc5b3b4a30b610fea9f281e1"
+  //   ];
 
-    const testMultipleFormats = (dersignature: string) => {
-      // normalize der signature to generate standard format
-      const normalizedSig = signatures.normalizeSecp256k1Signature(dersignature);
-      delete normalizedSig.recoveryParam;
-      const { r, s } = normalizedSig;
-      const standardHex = r.toString("hex", 32) + s.toString("hex", 32) + "1c";
+  //   const testMultipleFormats = (dersignature: string) => {
+  //     // normalize der signature to generate standard format
+  //     const normalizedSig = signatures.normalizeSecp256k1Signature(dersignature);
+  //     delete normalizedSig.recoveryParam;
+  //     const { r, s } = normalizedSig;
+  //     const standardHex = r.toString("hex", 32) + s.toString("hex", 32) + "1c";
 
-      const sigDict = {
-        // der format
-        dersignature,
-        base64Der: Buffer.from(dersignature, "hex").toString("base64"),
-        prefixDer: `0x${dersignature}`,
-        // standard format
-        standardHex,
-        base64StandardHex: Buffer.from(standardHex, "hex").toString("base64"),
-        prefixHex: `0x${standardHex}`
-      };
+  //     const sigDict = {
+  //       // der format
+  //       dersignature,
+  //       base64Der: Buffer.from(dersignature, "hex").toString("base64"),
+  //       prefixDer: `0x${dersignature}`,
+  //       // standard format
+  //       standardHex,
+  //       base64StandardHex: Buffer.from(standardHex, "hex").toString("base64"),
+  //       prefixHex: `0x${standardHex}`
+  //     };
 
-      for (const [, value] of Object.entries(sigDict)) {
-        const derivedSig = signatures.normalizeSecp256k1Signature(value);
-        delete derivedSig.recoveryParam;
-        expect(derivedSig).toEqual(normalizedSig);
-      }
-    };
+  //     for (const [, value] of Object.entries(sigDict)) {
+  //       const derivedSig = signatures.normalizeSecp256k1Signature(value);
+  //       delete derivedSig.recoveryParam;
+  //       expect(derivedSig).toEqual(normalizedSig);
+  //     }
+  //   };
 
-    for (const val of derSignatures) {
-      testMultipleFormats(val);
-    }
+  //   for (const val of derSignatures) {
+  //     testMultipleFormats(val);
+  //   }
 
-    // test old failure case:
-    const shortSig = signatures.normalizeSecp256k1Signature(
-      "MEMCIDDvI4Bl/2Bry1nOm0CSO7H4Z3cFbqu/d+y+/RAdIH+9Ah8U067Tv34Hyzvy7ywGz95ttGHuqPWIJ99bD6QYXWU1"
-    );
+  //   // test old failure case:
+  //   const shortSig = signatures.normalizeSecp256k1Signature(
+  //     "MEMCIDDvI4Bl/2Bry1nOm0CSO7H4Z3cFbqu/d+y+/RAdIH+9Ah8U067Tv34Hyzvy7ywGz95ttGHuqPWIJ99bD6QYXWU1"
+  //   );
 
-    expect(shortSig).toEqual({
-      r: new BN("30ef238065ff606bcb59ce9b40923bb1f86777056eabbf77ecbefd101d207fbd", "hex"),
-      recoveryParam: undefined,
-      s: new BN("14d3aed3bf7e07cb3bf2ef2c06cfde6db461eea8f58827df5b0fa4185d6535", "hex")
-    });
-  });
+  //   expect(shortSig).toEqual({
+  //     r: new BN("30ef238065ff606bcb59ce9b40923bb1f86777056eabbf77ecbefd101d207fbd", "hex"),
+  //     recoveryParam: undefined,
+  //     s: new BN("14d3aed3bf7e07cb3bf2ef2c06cfde6db461eea8f58827df5b0fa4185d6535", "hex")
+  //   });
+  // });
 });

@@ -201,42 +201,53 @@ function secp256k1signatureFromDERHexString(hex: string): Secp256k1Signature {
 }
 
 function normalizeSecp256k1Signature(s: string): Secp256k1Signature {
+  let signatureObj: Secp256k1Signature | undefined;
+
   // standard format with recovery parameter
   if (s.length === 130) {
-    return secp256k1signatureFrom130HexString(s);
+    signatureObj = secp256k1signatureFrom130HexString(s);
   }
 
   // standard format with recovery parameter, preceded by 0x
   if (s.length === 132 && s.startsWith("0x")) {
-    return secp256k1signatureFrom130HexString(s.slice(2));
+    signatureObj = secp256k1signatureFrom130HexString(s.slice(2));
   }
 
   // standard format with recovery parameter, encoded with base64
   if (s.length === 88) {
     const hex = Buffer.from(s, "base64").toString("hex");
     if (hex.length === 130) {
-      return secp256k1signatureFrom130HexString(hex);
+      signatureObj = secp256k1signatureFrom130HexString(hex);
     }
   }
 
   // DER format, preceded by 0x
-  if (s.startsWith("0x") && s.length <= 146) {
-    return secp256k1signatureFromDERHexString(s.slice(2));
+  if (s.startsWith("0x") && s.length <= 146 && signatureObj === undefined) {
+    signatureObj = secp256k1signatureFromDERHexString(s.slice(2));
   }
 
   // DER format
   if (s.length === 138 || s.length === 140 || s.length === 142 || s.length === 144) {
-    return secp256k1signatureFromDERHexString(s);
+    signatureObj = secp256k1signatureFromDERHexString(s);
   }
 
   // DER format, encoded with base64
   if (s.length === 96 || s.length === 92) {
     const hex = Buffer.from(s, "base64").toString("hex");
-    return secp256k1signatureFromDERHexString(hex);
+    signatureObj = secp256k1signatureFromDERHexString(hex);
   }
 
-  const errorMessage = `Unknown signature format. Expected 88, 92, 96, 130, 132, 138, 140, 142, or 144 characters, but got ${s.length}`;
-  throw new InvalidSignatureFormatError(errorMessage, { signature: s });
+  // Additional check for low-S normalization
+  if (signatureObj !== undefined && signatureObj.s.cmp(ecSecp256k1.curve.n.shrn(1)) > 0) {
+    throw new InvalidSignatureFormatError("S value is too high");
+  }
+
+  if (signatureObj === undefined) {
+    const errorMessage = `Unknown signature format. Expected 88, 92, 96, 130, 132, 138, 140, 142, or 144 characters, but got ${s.length}`;
+    throw new InvalidSignatureFormatError(errorMessage, { signature: s });
+  }
+
+  return signatureObj;
 }
 
 function signSecp256k1(dataHash: Buffer, privateKey: Buffer, useDer?: "DER"): string {
