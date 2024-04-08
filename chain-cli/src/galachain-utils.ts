@@ -33,7 +33,7 @@ const ConfigFileName = ".galachainrc.json";
 const PackageJsonFileName = "package.json";
 const os = require('os');
 
-const DEFAULT_PRIVATE_KEYS_DIR = "keys";
+const DEFAULT_PUBLIC_KEYS_DIR = "keys";
 const DEFAULT_ADMIN_PRIVATE_KEY_NAME = "gc-admin-key";
 const DEFAULT_DEV_PRIVATE_KEY_NAME = "gc-dev-key";
 
@@ -143,11 +143,11 @@ export async function deployChaincode(params: { privateKey: string; isTestnet: b
 }
 
 export async function generateKeys(projectPath: string): Promise<void> {
-  const keysPath = path.join(projectPath, DEFAULT_PRIVATE_KEYS_DIR);
+  const keysPath = path.join(projectPath, DEFAULT_PUBLIC_KEYS_DIR);
 
   const adminPrivateKey = secp.utils.bytesToHex(secp.utils.randomPrivateKey());
   const adminPublicKey = secp.utils.bytesToHex(secp.getPublicKey(adminPrivateKey));
-  const adminOublicKeyEthAddr = "gc-"+signatures.getEthAddress(adminPublicKey);
+  const adminPublicKeyEthAddr = "gc-"+signatures.getEthAddress(adminPublicKey);
 
   const devPrivateKey = secp.utils.bytesToHex(secp.utils.randomPrivateKey());
   const devPublicKey = secp.utils.bytesToHex(secp.getPublicKey(devPrivateKey));
@@ -157,7 +157,7 @@ export async function generateKeys(projectPath: string): Promise<void> {
     if (err) console.error(`Could not create a directory ${keysPath}. Error: ${err}`);
   });
 
-  const adminPrivateKeyPath = path.join(os.homedir(), GCKeysDir, adminOublicKeyEthAddr);
+  const adminPrivateKeyPath = path.join(os.homedir(), GCKeysDir, adminPublicKeyEthAddr);
   fs.mkdir(adminPrivateKeyPath, { recursive: true }, (err) => {
     if (err) console.error(`Could not create a directory ${adminPrivateKeyPath}. Error: ${err}`);
   });
@@ -178,7 +178,7 @@ export async function generateKeys(projectPath: string): Promise<void> {
 
 export async function getPrivateKey(keysFromArg: string | undefined) {
   return (
-    keysFromArg || process.env.DEV_PRIVATE_KEY || getPrivateKeyFromFile() || (await getPrivateKeyPrompt())
+    keysFromArg || process.env.DEV_PRIVATE_KEY || (await getPrivateKeyPrompt())
   );
 }
 
@@ -217,17 +217,6 @@ export async function overwriteApiConfig(contracts: string, channel: string, cha
         ]
       }`;
   fs.writeFileSync(apiConfigPath, JSON.stringify(JSON.parse(apiConfigJson), null, 2));
-}
-
-function getPrivateKeyFromFile(): string | undefined {
-  try {
-    return fs.readFileSync(
-      `${process.cwd()}/${DEFAULT_PRIVATE_KEYS_DIR}/${DEFAULT_DEV_PRIVATE_KEY_NAME}`,
-      "utf8"
-    );
-  } catch (e) {
-    console.error(`Error reading file: ${e}`);
-  }
 }
 
 async function getPrivateKeyPrompt(): Promise<string> {
