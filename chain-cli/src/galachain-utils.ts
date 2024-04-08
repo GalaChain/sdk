@@ -31,7 +31,8 @@ import { parseStringOrFileKey } from "./utils";
 const GCKeysDir = ".gc-keys";
 const ConfigFileName = ".galachainrc.json";
 const PackageJsonFileName = "package.json";
-const os = require('os');
+// eslint-disable-next-line @typescript-eslint/no-var-requires
+const os = require("os");
 
 const DEFAULT_PUBLIC_KEYS_DIR = "keys";
 const DEFAULT_ADMIN_PRIVATE_KEY_NAME = "gc-admin-key";
@@ -147,11 +148,11 @@ export async function generateKeys(projectPath: string): Promise<void> {
 
   const adminPrivateKey = secp.utils.bytesToHex(secp.utils.randomPrivateKey());
   const adminPublicKey = secp.utils.bytesToHex(secp.getPublicKey(adminPrivateKey));
-  const adminPublicKeyEthAddr = "gc-"+signatures.getEthAddress(adminPublicKey);
+  const adminPublicKeyEthAddr = "gc-" + signatures.getEthAddress(adminPublicKey);
 
   const devPrivateKey = secp.utils.bytesToHex(secp.utils.randomPrivateKey());
   const devPublicKey = secp.utils.bytesToHex(secp.getPublicKey(devPrivateKey));
-  const devPublicKeyEthAddr = "gc-"+signatures.getEthAddress(devPublicKey);
+  const devPublicKeyEthAddr = "gc-" + signatures.getEthAddress(devPublicKey);
 
   fs.mkdir(`${keysPath}`, (err) => {
     if (err) console.error(`Could not create a directory ${keysPath}. Error: ${err}`);
@@ -173,13 +174,13 @@ export async function generateKeys(projectPath: string): Promise<void> {
   await writeFile(`${adminPrivateKeyPath}/${DEFAULT_ADMIN_PRIVATE_KEY_NAME}`, adminPrivateKey.toString());
   await writeFile(`${devPrivateKeyPath}/${DEFAULT_DEV_PRIVATE_KEY_NAME}`, devPrivateKey.toString());
 
-  console.log(`Public keys created at ${keysPath} directory. Private keys created at ${adminPrivateKeyPath} and ${devPrivateKeyPath} directory.`);
+  console.log(
+    `Public keys created at ${keysPath} directory. Private keys created at ${adminPrivateKeyPath} and ${devPrivateKeyPath} directory.`
+  );
 }
 
 export async function getPrivateKey(keysFromArg: string | undefined) {
-  return (
-    keysFromArg || process.env.DEV_PRIVATE_KEY || (await getPrivateKeyPrompt())
-  );
+  return keysFromArg || process.env.DEV_PRIVATE_KEY || (await getPrivateKeyPrompt());
 }
 
 export async function overwriteApiConfig(contracts: string, channel: string, chaincodeName: string) {
