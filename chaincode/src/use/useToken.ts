@@ -86,7 +86,7 @@ export async function useToken(
     createdBy: callingOnBehalf,
     instanceId: tokenInstance.instance,
     quantity: quantity,
-    created: ctx.txUnixTime,
+    createdAt: ctx.txUnixTime,
     expires: 0,
     name: undefined,
     lockAuthority: undefined
