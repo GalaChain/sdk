@@ -115,19 +115,3 @@ export async function fetchMintAllowanceSupply(
 
   return updatedKnownMintAllowancesCount;
 }
-
-export async function fetchMintAllowanceSupplyForToken(ctx: GalaChainContext, data: TokenClassKeyProperties) {
-  const { collection, category, type, additionalKey } = data;
-
-  const keyList = [collection, category, type, additionalKey];
-  const compositeKey = ChainObject.getCompositeKeyFromParts(TokenClass.INDEX_KEY, keyList);
-  const tokenClass: TokenClass = await getObjectByKey(ctx, TokenClass, compositeKey);
-
-  const supply = await fetchMintAllowanceSupply(ctx, tokenClass);
-
-  const response = plainToInstance(FetchTokenSupplyResponse, {
-    supply
-  });
-
-  return response;
-}
