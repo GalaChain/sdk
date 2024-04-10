@@ -115,7 +115,7 @@ export async function fetchKnownBurnCount(
 
         // inverted timeKeys read most recent first; using unshift sorts a new array as oldest first.
         // essentially, we rewind the tape and then play it forward.
-        // covering the following possible scensarios:
+        // covering the following possible scenarios:
         //     a) no results yet - empty array, start with zero below.
         //     b) no recent results. continue back toward the beginning of the ledger until we find at least one.
         //     c) recent results. Get all results within two past block spans to cover any missing timestamp gaps from concurrent recent transactions.
