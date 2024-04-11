@@ -19,7 +19,7 @@ import {
   indexedMintOperationsByTokenClass
 } from "./batchMintToken";
 import { constructVerifiedMints } from "./constructVerifiedMints";
-import { fetchMintAllowanceSupply, fetchMintAllowanceSupplyForToken } from "./fetchMintAllowanceSupply";
+import { fetchMintAllowanceSupply } from "./fetchMintAllowanceSupply";
 import { fetchMintSupply } from "./fetchMintSupply";
 import { fetchTokenClassesWithSupply } from "./fetchTokenClassWithSupply";
 import { fulfillMintRequest } from "./fulfillMint";
@@ -52,7 +52,6 @@ export {
   validateMintRequest,
   fetchMintAllowanceSupply,
   fetchMintSupply,
-  fetchMintAllowanceSupplyForToken,
   fetchTokenClassesWithSupply,
   mintTokenWithAllowance,
   MintTokenWithAllowanceParams
