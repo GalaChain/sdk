@@ -28,35 +28,37 @@ describe("Deploy Command", () => {
     jest.clearAllMocks();
   });
 
-  // it("should deploy an image", async () => {
-  //   // Given
-  //   const result: (string | Uint8Array)[] = [];
-  //   jest.spyOn(process.stdout, "write").mockImplementation((v) => {
-  //     result.push(v);
-  //     return true;
-  //   });
+  it("should deploy an image", async () => {
+    // Given
+    const result: (string | Uint8Array)[] = [];
+    jest.spyOn(process.stdout, "write").mockImplementation((v) => {
+      result.push(v);
+      return true;
+    });
 
-  //   jest.spyOn(console, "log").mockImplementation((v) => {
-  //     result.push(v);
-  //     return true;
-  //   });
+    jest.spyOn(console, "log").mockImplementation((v) => {
+      result.push(v);
+      return true;
+    });
 
-  //   jest.spyOn(ux, "prompt").mockResolvedValueOnce("Y");
+    jest.spyOn(ux, "prompt").mockResolvedValueOnce("Y");
 
-  //   jest.mocked(deployChaincode).mockResolvedValue({
-  //     status: "CC_DEPLOY_SCHEDULED",
-  //     chaincode: "chaincode-name",
-  //     channel: "channel-name"
-  //   });
+    jest.mocked(deployChaincode).mockImplementation(async () => {
+      return {
+        status: "CC_DEPLOY_SCHEDULED",
+        chaincode: "chaincode-name",
+        channel: "channel-name"
+      };
+    });
 
-  //   // When
-  //   await Deploy.run(["ttl.sh/image-name:1d", consts.developerPrivateKey]);
+    // When
+    await Deploy.run(["ttl.sh/image-name:1d", consts.developerPrivateKey]);
 
-  //   // Then
-  //   expect(result.join()).toContain(
-  //     "Deployment scheduled to sandbox. Status CC_DEPLOY_SCHEDULED for Chaincode chaincode-name and Channel channel-name."
-  //   );
-  // });
+    // Then
+    expect(result.join()).toContain(
+      "Deployment scheduled to sandbox. Status CC_DEPLOY_SCHEDULED for Chaincode chaincode-name and Channel channel-name."
+    );
+  });
 
   it("should cancel the deployment", async () => {
     // Given
