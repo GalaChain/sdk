@@ -112,6 +112,8 @@ export async function mintRequestsByTimeKeys(
       `Error encountered while processing ctx.stub.getStateByRange Async Iterator for ` +
         `startKey ${startKey}, endKey ${endKey}: ${e?.message ?? e}`
     );
+  } finally {
+    (await iterator).close;
   }
 
   return requestEntries;

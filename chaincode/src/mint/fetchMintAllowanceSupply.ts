@@ -12,19 +12,11 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-import {
-  ChainObject,
-  FetchTokenSupplyResponse,
-  RangedChainObject,
-  TokenClass,
-  TokenClassKeyProperties,
-  TokenMintAllowanceRequest
-} from "@gala-chain/api";
+import { ChainObject, RangedChainObject, TokenClass, TokenMintAllowanceRequest } from "@gala-chain/api";
 import BigNumber from "bignumber.js";
-import { plainToInstance } from "class-transformer";
 
 import { GalaChainContext } from "../types/GalaChainContext";
-import { getObjectByKey, inverseKeyLength, inverseTime, lookbackTimeOffset, lookbackTxCount } from "../utils";
+import { inverseKeyLength, inverseTime, lookbackTimeOffset, lookbackTxCount } from "../utils";
 
 export async function fetchMintAllowanceSupply(
   ctx: GalaChainContext,
@@ -76,9 +68,6 @@ export async function fetchMintAllowanceSupply(
         const stringResult = Buffer.from(kv.value).toString("utf8");
         const entry = RangedChainObject.deserialize(TokenMintAllowanceRequest, stringResult);
 
-        // timeKey is a string padded with leading zeros. BigNumber.js will parse this format into an integer.
-        const entryTime = new BigNumber(entry.timeKey);
-
         seekingFirstResult = false;
 
         resultsCount++;
@@ -94,6 +83,8 @@ export async function fetchMintAllowanceSupply(
     }
   } catch (e) {
     throw new Error(`Failed to get iterator for getStateByRange with key: ${startKey}, ${iterator}, ${e}`);
+  } finally {
+    (await iterator).close;
   }
 
   let startingKnownMintAllowancesCount: BigNumber = new BigNumber("0");

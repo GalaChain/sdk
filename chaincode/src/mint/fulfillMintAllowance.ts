@@ -12,7 +12,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-import { ChainError, ChainObject, GalaChainResponse } from "@gala-chain/api";
+import { ChainError, ChainObject, GalaChainResponse, RuntimeError } from "@gala-chain/api";
 import {
   MintRequestDto,
   TokenAllowance,
@@ -29,7 +29,7 @@ import { ensureQuantityCanBeMinted } from "../allowances";
 import { fetchKnownBurnCount } from "../burns/fetchBurns";
 import { GalaChainContext } from "../types";
 import { getObjectByKey, lookbackTimeOffset, putChainObject } from "../utils";
-import { blockTimeout, inverseKeyLength, inversionHeight } from "../utils";
+import { inverseKeyLength, inversionHeight } from "../utils";
 import { indexMintRequests } from "./indexMintRequests";
 
 // Sequence operations, such as RequestMintAllowance immediately followed by FulfillMintAllowance,
@@ -136,19 +136,28 @@ export async function fulfillMintAllowanceRequest(
 
     const requestEntries: TokenMintAllowanceRequest[] = [];
 
-    for await (const kv of iterator) {
-      if (kv.value) {
-        const stringResult = Buffer.from(kv.value).toString("utf8");
-        const entry: TokenMintAllowanceRequest = TokenMintAllowanceRequest.deserialize(
-          TokenMintAllowanceRequest,
-          stringResult
-        );
+    try {
+      for await (const kv of iterator) {
+        if (kv.value) {
+          const stringResult = Buffer.from(kv.value).toString("utf8");
+          const entry: TokenMintAllowanceRequest = TokenMintAllowanceRequest.deserialize(
+            TokenMintAllowanceRequest,
+            stringResult
+          );
 
-        // Inverted time keys order our results most recent first.
-        // By using unshift(), we are filling a result array with oldest first,
-        // for minting/fulfillment in the order received.
-        requestEntries.unshift(entry);
+          // Inverted time keys order our results most recent first.
+          // By using unshift(), we are filling a result array with oldest first,
+          // for minting/fulfillment in the order received.
+          requestEntries.unshift(entry);
+        }
       }
+    } catch (e) {
+      throw new RuntimeError(
+        `Error encountered while processing ctx.stub.getStateByRange Async Iterator for ` +
+          `startKey ${startKey}, endKey ${endKey}: ${e?.message ?? e}`
+      );
+    } finally {
+      (await iterator).close;
     }
 
     if (requestEntries.length < 1) {

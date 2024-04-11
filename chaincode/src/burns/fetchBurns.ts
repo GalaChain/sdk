@@ -106,9 +106,6 @@ export async function fetchKnownBurnCount(
         const stringResult = Buffer.from(kv.value).toString("utf8");
         const entry = RangedChainObject.deserialize(TokenBurnCounter, stringResult);
 
-        // timeKey is a string padded with leading zeros. BigNumber will parse into an integer.
-        const entryTime = new BigNumber(entry.timeKey);
-
         seekingFirstResult = false;
 
         resultsCount++;
@@ -124,6 +121,8 @@ export async function fetchKnownBurnCount(
     }
   } catch (e) {
     throw new Error(`Failed to get iterator for getStateByRange with key: ${startKey}, ${iterator}, ${e}`);
+  } finally {
+    (await iterator).close;
   }
 
   let startingKnownBurnsCount: BigNumber = new BigNumber("0");
