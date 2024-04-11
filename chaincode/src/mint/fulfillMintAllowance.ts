@@ -54,7 +54,7 @@ export async function fulfillMintAllowanceRequest(
   // todo: type this failures array and work it into response
   const failures: any[] = [];
 
-  for (const [key, values] of Object.entries(reqIdx)) {
+  for (const [_, values] of Object.entries(reqIdx)) {
     // Entries in the Request Index represent
     // some number of mint requests for the same token, at the same running total height.
     // Because our original GrantAllowance implementation allowed (potentially large) arrays,
@@ -84,6 +84,18 @@ export async function fulfillMintAllowanceRequest(
 
     for (const req of values) {
       // timeKeys are inverted timestamps, lowest = most recent, highest = oldest
+      if (req.isTimeKeyValid() === false) {
+        throw new Error(
+          `FulfillMintAllowance failure: Invalid timeKey value: ${
+            req.timeKey
+          }. The value of timeKey should be a valid BigNumber, ${inspect(req, {
+            depth: 4,
+            breakLength: Infinity,
+            compact: true
+          })}`
+        );
+      }
+
       const reqTime = new BigNumber(req.timeKey);
       if (reqTime.isLessThan(mostRecentTimeInversion)) {
         mostRecentTimeInversion = reqTime;
