@@ -85,7 +85,7 @@ export async function fetchMintAllowanceSupply(
 
         // inverted timeKeys read most recent first; using unshift sorts a new array as oldest first.
         // essentially, we rewind the tape and then play it forward.
-        // covering the following possible scensarios:
+        // covering the following possible scenarios:
         //     a) no results yet - empty array, start with zero below.
         //     b) no recent results. continue back toward the beginning of the ledger until we find at least one.
         //     c) recent results. Get all results within two past block spans to cover any missing timestamp gaps from concurrent recent transactions.
@@ -114,20 +114,4 @@ export async function fetchMintAllowanceSupply(
   }
 
   return updatedKnownMintAllowancesCount;
-}
-
-export async function fetchMintAllowanceSupplyForToken(ctx: GalaChainContext, data: TokenClassKeyProperties) {
-  const { collection, category, type, additionalKey } = data;
-
-  const keyList = [collection, category, type, additionalKey];
-  const compositeKey = ChainObject.getCompositeKeyFromParts(TokenClass.INDEX_KEY, keyList);
-  const tokenClass: TokenClass = await getObjectByKey(ctx, TokenClass, compositeKey);
-
-  const supply = await fetchMintAllowanceSupply(ctx, tokenClass);
-
-  const response = plainToInstance(FetchTokenSupplyResponse, {
-    supply
-  });
-
-  return response;
 }

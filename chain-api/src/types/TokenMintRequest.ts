@@ -82,6 +82,15 @@ export class TokenMintRequest extends RangedChainObject {
   @IsNotEmpty()
   public allowanceKey?: AllowanceKey;
 
+  public isTimeKeyValid(): boolean {
+    try {
+      new BigNumber(this.timeKey);
+      return true;
+    } catch (e) {
+      return false;
+    }
+  }
+
   public requestId(): string {
     const { collection, category, type, additionalKey, totalKnownMintsCount, requestor, owner, created } =
       this;
