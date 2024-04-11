@@ -55,7 +55,7 @@ describe("UseToken", () => {
       createdBy: users.testUser1Id,
       instanceId: nftInstanceKey.instance,
       quantity: new BigNumber("1"),
-      created: ctx.txUnixTime,
+      createdAt: ctx.txUnixTime,
       expires: 0
     });
 

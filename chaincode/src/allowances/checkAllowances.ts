@@ -96,7 +96,6 @@ export async function checkAllowances(
   action: AllowanceType,
   callingOnBehalf: string
 ): Promise<BigNumber> {
-  // Sum the quantity applicable
   let totalAllowance: BigNumber = new BigNumber(0);
 
   const validAllowances = await cleanAllowances(ctx, applicableAllowances, callingOnBehalf);
@@ -104,7 +103,7 @@ export async function checkAllowances(
   validAllowances.forEach((allowance: TokenAllowance) => {
     // Check if the token instance matches
     // Check if the action matches
-    // Check if the swap has expired
+    // Check if allowance is expired
     if (
       allowance.collection === tokenInstanceKey.collection &&
       allowance.category === tokenInstanceKey.category &&

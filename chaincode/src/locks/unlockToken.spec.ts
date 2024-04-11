@@ -34,7 +34,7 @@ describe("UnlockToken", () => {
           createdBy: users.testUser1Id,
           instanceId: nftInstance.instance,
           quantity: new BigNumber("1"),
-          created: 1,
+          createdAt: 1,
           expires: 0
         }
       ]
@@ -70,7 +70,7 @@ describe("UnlockToken", () => {
           createdBy: users.testUser1Id,
           instanceId: nftInstance.instance,
           quantity: new BigNumber("1"),
-          created: 1,
+          createdAt: 1,
           expires: 0
         }
       ]
@@ -114,7 +114,7 @@ describe("UnlockToken", () => {
           createdBy: users.testUser1Id,
           instanceId: nftInstance.instance,
           quantity: new BigNumber("1"),
-          created: 1,
+          createdAt: 1,
           expires: 0
         }
       ]
@@ -151,7 +151,7 @@ describe("UnlockToken", () => {
           createdBy: users.testUser1Id,
           instanceId: nftInstance.instance,
           quantity: new BigNumber("1"),
-          created: 1,
+          createdAt: 1,
           expires: 0
         }
       ]
