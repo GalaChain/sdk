@@ -116,4 +116,13 @@ export class MintRequestDto {
   @Type(() => AllowanceKey)
   @IsNotEmpty()
   public allowanceKey?: AllowanceKey;
+
+  public isTimeKeyValid(): boolean {
+    try {
+      new BigNumber(this.timeKey);
+      return true;
+    } catch (e) {
+      return false;
+    }
+  }
 }

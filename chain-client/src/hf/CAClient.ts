@@ -52,7 +52,7 @@ export class CAClient {
     return true;
   }
 
-  async getIdentityOrRegisterUser(userId: string) {
+  async getIdentityOrRegisterUser(userId: string): Promise<Identity> {
     await this.isReady();
 
     const identity = await this.wallet.then((w) => w.get(userId));

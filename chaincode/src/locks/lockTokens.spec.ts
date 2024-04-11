@@ -66,7 +66,7 @@ describe("LockTokens", () => {
       createdBy: users.testUser1Id,
       instanceId: nftInstanceKey.instance,
       quantity: new BigNumber("1"),
-      created: ctx.txUnixTime,
+      createdAt: ctx.txUnixTime,
       lockAuthority: users.testUser1Id,
       expires: 0
     });
