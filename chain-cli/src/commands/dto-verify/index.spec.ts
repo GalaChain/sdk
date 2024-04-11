@@ -13,7 +13,6 @@
  * limitations under the License.
  */
 import fs from "fs/promises";
-import path from "path";
 
 import DtoVerify from "../../../src/commands/dto-verify";
 
@@ -38,8 +37,7 @@ describe("DtoVerify Command", () => {
 
     fs.readFile = jest.fn().mockResolvedValue(fakePublicKey);
 
-    const target = path.resolve(__dirname, "./test-key");
-    await DtoVerify.run([target, dataTestJson]);
+    await DtoVerify.run(["./test-key", dataTestJson]);
 
     expect(result.join()).toContain("Signature is valid.");
   });
@@ -52,8 +50,7 @@ describe("DtoVerify Command", () => {
 
     fs.readFile = jest.fn().mockRejectedValue(new Error("File not found"));
 
-    const target = path.resolve(__dirname, "./test-key");
-    await DtoVerify.run([target, dataTestJson]).catch((e) => {
+    await DtoVerify.run(["./test-key", dataTestJson]).catch((e) => {
       expect(e.message).toContain("Failed to read public key from flag");
     });
   });
@@ -70,8 +67,7 @@ describe("DtoVerify Command", () => {
     delete jsonModified.signature;
     jsonModified = JSON.stringify(jsonModified);
 
-    const target = path.resolve(__dirname, "./test-key");
-    await DtoVerify.run([target, jsonModified]).catch((e) => {
+    await DtoVerify.run(["./test-key", jsonModified]).catch((e) => {
       expect(e.message).toContain("Signature is not present in the DTO.");
     });
   });
