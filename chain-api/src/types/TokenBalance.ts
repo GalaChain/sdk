@@ -458,10 +458,10 @@ export class TokenBalance extends ChainObject {
 
   public ensureCanLockQuantity(hold: TokenHold): { lock(): void } {
     this.ensureTokenQuantityHoldIsFungible(hold);
-    this.ensureQuantityIsSpendable(hold.quantity, hold.created);
+    this.ensureQuantityIsSpendable(hold.quantity, hold.createdAt);
 
     const lock = () => {
-      this.lockedHolds = [...this.getUnexpiredLockedHolds(hold.created), hold];
+      this.lockedHolds = [...this.getUnexpiredLockedHolds(hold.createdAt), hold];
     };
 
     return { lock };
@@ -503,7 +503,7 @@ export class TokenBalance extends ChainObject {
 
         const partialQuantityHold = new TokenHold({
           createdBy: hold.createdBy,
-          created: hold.created,
+          createdAt: hold.createdAt,
           instanceId: hold.instanceId,
           expires: hold.expires,
           name: hold.name,
@@ -570,7 +570,7 @@ export class TokenHold {
 
   @IsPositive()
   @IsInt()
-  public readonly created: number;
+  public readonly createdAt: number;
 
   @Min(0)
   @IsInt()
@@ -594,7 +594,7 @@ export class TokenHold {
     createdBy: string;
     instanceId: BigNumber;
     quantity: BigNumber;
-    created: number;
+    createdAt: number;
     expires?: number;
     name?: string;
     lockAuthority?: string;
@@ -603,7 +603,7 @@ export class TokenHold {
       this.createdBy = params.createdBy;
       this.instanceId = params.instanceId;
       this.quantity = params.quantity;
-      this.created = params.created;
+      this.createdAt = params.createdAt;
       this.expires = params.expires ?? TokenHold.DEFAULT_EXPIRES;
       if (params.name) {
         this.name = params.name;
@@ -618,7 +618,7 @@ export class TokenHold {
     createdBy: string;
     instanceId: BigNumber;
     quantity: BigNumber;
-    created: number;
+    createdAt: number;
     expires: number | undefined;
     name: string | undefined;
     lockAuthority: string | undefined;

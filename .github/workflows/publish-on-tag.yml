@@ -12,7 +12,7 @@ jobs:
   publish:
     name: Publish Release
     if: github.event_name != 'pull_request' && (startsWith(github.ref, 'refs/tags/v'))
-    runs-on: ubuntu-22.04
+    runs-on: ubuntu-latest
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -156,7 +156,7 @@ jobs:
     needs: [publish, publish-cli-image]
     if: github.event_name != 'pull_request' && (startsWith(github.ref, 'refs/tags/v'))
     name: Bump SDK Version
-    runs-on: ubuntu-22.04
+    runs-on: ubuntu-latest
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -172,14 +172,22 @@ jobs:
         run: |
           git config --global user.name "galachain-release-bot"
           git config --global user.email "galachain-release-bot@users.noreply.github.com"
-      - name: Bump version
+      - name: Set a new version
         run: |
           VERSION="$(semver "$(< package.json jq -r '.version')" -i)"
+          echo "VERSION=$VERSION" >> $GITHUB_ENV
+      - name: Create a new branch
+        run: |
+          BRANCH_NAME="bump-version-to-$VERSION"
+          git checkout -b $BRANCH_NAME main
+          echo "BRANCH_NAME=$BRANCH_NAME" >> $GITHUB_ENV
+      - name: Bump version and commit changes
+        run: |
           ./unifyVersions.js $VERSION
           npm i
           git commit -am "Bump version to $VERSION"
-      - name: Push next version release
-        uses: ad-m/github-push-action@master
-        with:
-          branch: "main"
-          github_token: ${{ secrets.RELEASE_BOT_TOKEN }}
+          git push --set-upstream origin bump-version-to-$VERSION
+      - name: Create Pull Request
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: gh pr create --title "Bump Version to $VERSION" --body "Bump Version to $VERSION" --label "bump-version-pr" --head "bump-version-to-$VERSION" --base main
