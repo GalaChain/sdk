@@ -281,7 +281,7 @@ DESCRIPTION
   display help for galachain
 ```
 
-_See code: [@oclif/plugin-help](https://github.com/oclif/plugin-help/blob/v2.2.3/src/commands/help.ts)_
+_See code: [@oclif/plugin-help](https://github.com/oclif/plugin-help/blob/v3.3.1/src/commands/help.ts)_
 
 ## `galachain info [DEVELOPERPRIVATEKEY]`
 
@@ -289,7 +289,7 @@ Show the ChainCode information.
 
 ```
 USAGE
-  $ galachain info [DEVELOPERPRIVATEKEY] [--json] [--log-level debug|info|warn|error] [--testnet]
+  $ galachain info [DEVELOPERPRIVATEKEY] [--json] [--log-level debug||warn|error] [--testnet]
 
 ARGUMENTS
   DEVELOPERPRIVATEKEY  Optional private key to sign the data. It could be a file or a string. If not provided, the
