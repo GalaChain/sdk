@@ -38,7 +38,7 @@
   },
   "devDependencies": {
     "@types/elliptic": "*",
-    "@types/node": "^16.11.41",
+    "@types/node": "18.11.9",
     "@types/setimmediate": "^1.0.2",
     "dd-trace": "^4.20.0",
     "git-branch-is": "^4.0.0",
