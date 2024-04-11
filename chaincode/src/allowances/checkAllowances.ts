@@ -26,7 +26,7 @@ function isAllowanceSpent(allowance: TokenAllowance): boolean {
   );
 }
 
-function isAllowanceExpired(ctx: GalaChainContext, allowance: TokenAllowance): boolean {
+export function isAllowanceExpired(ctx: GalaChainContext, allowance: TokenAllowance): boolean {
   return allowance.expires !== 0 && allowance.expires !== undefined && allowance.expires <= ctx.txUnixTime;
 }
 
