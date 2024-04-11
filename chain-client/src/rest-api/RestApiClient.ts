@@ -13,10 +13,11 @@
  * limitations under the License.
  */
 import { ChainCallDTO, ContractAPI, GalaChainResponse, Inferred } from "@gala-chain/api";
-import axios, { AxiosError } from "axios";
+import axios from "axios";
 
 import { ChainClient, ChainClientBuilder, ClassType, ContractConfig, isClassType } from "../generic";
 import { RestApiAdminCredentials, SetContractApiParams, globalRestApiConfig } from "./GlobalRestApiConfig";
+import { catchAxiosError } from "./catchAxiosError";
 import { RestApiConfig } from "./loadRestApiConfig";
 
 async function getPath(
@@ -42,18 +43,6 @@ async function getPath(
   }
 
   return `${restApiUrl}/${contractPath}/${methodApi.apiMethodName ?? methodApi.methodName}`;
-}
-
-function catchAxiosError(e?: AxiosError<{ error?: { Status?: number } }>) {
-  // if data object contains { error: { Status: 0 } }, it means this is GalaChainResponse
-  if (e?.response?.data?.error?.Status === 0) {
-    return { data: e?.response?.data?.error };
-  } else {
-    const data = { axiosError: { message: e?.message, data: e?.response?.data } };
-    console.warn(`Axios error:`, JSON.stringify(data));
-
-    return { data: data };
-  }
 }
 
 export class RestApiClient extends ChainClient {

@@ -198,9 +198,6 @@ export async function fulfillMintRequest(
     );
 
     if (requestEntries.length < 1) {
-      const recentTimeKey = mostRecentTimeInversion.toString().padStart(inverseKeyLength, "0");
-      const oldestTimeKey = oldestTimeInversion.toString().padStart(inverseKeyLength, "0");
-
       throw GalaChainResponse.Error(
         new Error(
           `FulfillMint failure: No TokenMintRequest(s) found on chain. ` +
