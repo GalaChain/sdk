@@ -28,6 +28,21 @@ export function legacyClientAccountId(ctx: Context): string {
   const CNPrefix = "/CN=";
   const CNSuffix = ":";
 
+  if (
+    !clientAccountID.includes(OUPrefix) ||
+    !clientAccountID.includes(OUSuffix) ||
+    !clientAccountID.includes(CNPrefix) ||
+    !clientAccountID.includes(CNSuffix)
+  ) {
+    throw new Error("Invalid client account ID format");
+  }
+
+  // eslint-disable-next-line
+  const clientAccountIDRegex = /^x509::\/OU\=(.+)\/CN=(.+)\:/;
+  if (!clientAccountIDRegex.test(clientAccountID)) {
+    throw new Error("Invalid client account ID format");
+  }
+
   const orgStartIndex = clientAccountID.indexOf(OUPrefix) + OUPrefix.length;
   const orgEndIndex = clientAccountID.indexOf(OUSuffix, orgStartIndex);
 
