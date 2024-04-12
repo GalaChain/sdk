@@ -1,25 +1,27 @@
 {
   "commands": {
-    "dto-verify": {
+    "dto-sign": {
       "aliases": [
-        "dto:verify"
+        "dto:sign"
       ],
       "args": {
         "key": {
-          "description": "File path to the public key.",
+          "description": "Private key string or path to the private key file.",
           "name": "key",
           "required": true
         },
         "data": {
-          "description": "Data representing an signed DTO object you wish to verify. Provide a JSON string or a path to a valid JSON file.",
+          "description": "Data representing an unsigned DTO object you wish to sign. Provide a JSON string or a path to a valid JSON file.",
           "name": "data",
           "required": true
         }
       },
-      "description": "It verifies the signature in the DTO using the public key.",
+      "description": "DTO (Data Transfer Object) signing.",
       "examples": [
-        "galachain dto:verify ./publicKey '{\n      \"tokenClass\": {\n        \"collection\": \"CLITest\",\n        \"category\": \"Currency\",\n      },\n      \"signature\": \"/fYYooumRdFFrL4U3Nzwuf2uzBZAxKv4WrnMjLnbnJFU+Z6lQe2X/CCcLhRqq67jUDEFvOdky0g5D4sRCExXyBw=\",\n    }'",
-        "galachain dto:verify ./publicKey dto.json"
+        "galachain dto:sign -o=output/path ./testkey '{\n      \"tokenClass\": {\n        \"collection\": \"CLITest\",\n        \"category\": \"Currency\",\n      }\n    }'",
+        "galachain dto:sign ./testkey dto.json -o=output/path",
+        "galachain dto:sign ./testkey dto.json -d",
+        "galachain dto:sign 04ea7e8e14f2a0 dto.json -s -o=output/path -d"
       ],
       "flags": {
         "json": {
@@ -42,11 +44,33 @@
             "error"
           ],
           "type": "option"
+        },
+        "outputFile": {
+          "char": "o",
+          "description": "(optional) File path to an output directory where the signed DTO JSON file will be written. If not provided, signed DTO will be printed to stdout.",
+          "name": "outputFile",
+          "hasDynamicHelp": false,
+          "multiple": false,
+          "type": "option"
+        },
+        "derSignature": {
+          "char": "d",
+          "description": "(optional) If provided, the signature will be used as DER format.",
+          "name": "derSignature",
+          "allowNo": false,
+          "type": "boolean"
+        },
+        "onlySignature": {
+          "char": "s",
+          "description": "(optional) If provided, only the signature will be printed to stdout or written to a file.",
+          "name": "onlySignature",
+          "allowNo": false,
+          "type": "boolean"
         }
       },
       "hasDynamicHelp": false,
       "hiddenAliases": [],
-      "id": "dto-verify",
+      "id": "dto-sign",
       "pluginAlias": "@gala-chain/cli",
       "pluginName": "@gala-chain/cli",
       "pluginType": "core",
@@ -56,7 +80,7 @@
       "relativePath": [
         "lib",
         "commands",
-        "dto-verify",
+        "dto-sign",
         "index.js"
       ]
     },
@@ -221,90 +245,6 @@
         "lib",
         "commands",
         "keygen",
-        "index.js"
-      ]
-    },
-    "dto-sign": {
-      "aliases": [
-        "dto:sign"
-      ],
-      "args": {
-        "key": {
-          "description": "Private key string or path to the private key file.",
-          "name": "key",
-          "required": true
-        },
-        "data": {
-          "description": "Data representing an unsigned DTO object you wish to sign. Provide a JSON string or a path to a valid JSON file.",
-          "name": "data",
-          "required": true
-        }
-      },
-      "description": "DTO (Data Transfer Object) signing.",
-      "examples": [
-        "galachain dto:sign -o=output/path ./testkey '{\n      \"tokenClass\": {\n        \"collection\": \"CLITest\",\n        \"category\": \"Currency\",\n      }\n    }'",
-        "galachain dto:sign ./testkey dto.json -o=output/path",
-        "galachain dto:sign ./testkey dto.json -d",
-        "galachain dto:sign 04ea7e8e14f2a0 dto.json -s -o=output/path -d"
-      ],
-      "flags": {
-        "json": {
-          "description": "Format output as json.",
-          "helpGroup": "GLOBAL",
-          "name": "json",
-          "allowNo": false,
-          "type": "boolean"
-        },
-        "log-level": {
-          "helpGroup": "GLOBAL",
-          "name": "log-level",
-          "summary": "Specify level for logging.",
-          "hasDynamicHelp": false,
-          "multiple": false,
-          "options": [
-            "debug",
-            "info",
-            "warn",
-            "error"
-          ],
-          "type": "option"
-        },
-        "outputFile": {
-          "char": "o",
-          "description": "(optional) File path to an output directory where the signed DTO JSON file will be written. If not provided, signed DTO will be printed to stdout.",
-          "name": "outputFile",
-          "hasDynamicHelp": false,
-          "multiple": false,
-          "type": "option"
-        },
-        "derSignature": {
-          "char": "d",
-          "description": "(optional) If provided, the signature will be used as DER format.",
-          "name": "derSignature",
-          "allowNo": false,
-          "type": "boolean"
-        },
-        "onlySignature": {
-          "char": "s",
-          "description": "(optional) If provided, only the signature will be printed to stdout or written to a file.",
-          "name": "onlySignature",
-          "allowNo": false,
-          "type": "boolean"
-        }
-      },
-      "hasDynamicHelp": false,
-      "hiddenAliases": [],
-      "id": "dto-sign",
-      "pluginAlias": "@gala-chain/cli",
-      "pluginName": "@gala-chain/cli",
-      "pluginType": "core",
-      "strict": true,
-      "enableJsonFlag": true,
-      "isESM": false,
-      "relativePath": [
-        "lib",
-        "commands",
-        "dto-sign",
         "index.js"
       ]
     },
@@ -489,6 +429,66 @@
         "lib",
         "commands",
         "deploy",
+        "index.js"
+      ]
+    },
+    "dto-verify": {
+      "aliases": [
+        "dto:verify"
+      ],
+      "args": {
+        "key": {
+          "description": "File path to the public key.",
+          "name": "key",
+          "required": true
+        },
+        "data": {
+          "description": "Data representing an signed DTO object you wish to verify. Provide a JSON string or a path to a valid JSON file.",
+          "name": "data",
+          "required": true
+        }
+      },
+      "description": "It verifies the signature in the DTO using the public key.",
+      "examples": [
+        "galachain dto:verify ./publicKey '{\n      \"tokenClass\": {\n        \"collection\": \"CLITest\",\n        \"category\": \"Currency\",\n      },\n      \"signature\": \"/fYYooumRdFFrL4U3Nzwuf2uzBZAxKv4WrnMjLnbnJFU+Z6lQe2X/CCcLhRqq67jUDEFvOdky0g5D4sRCExXyBw=\",\n    }'",
+        "galachain dto:verify ./publicKey dto.json"
+      ],
+      "flags": {
+        "json": {
+          "description": "Format output as json.",
+          "helpGroup": "GLOBAL",
+          "name": "json",
+          "allowNo": false,
+          "type": "boolean"
+        },
+        "log-level": {
+          "helpGroup": "GLOBAL",
+          "name": "log-level",
+          "summary": "Specify level for logging.",
+          "hasDynamicHelp": false,
+          "multiple": false,
+          "options": [
+            "debug",
+            "info",
+            "warn",
+            "error"
+          ],
+          "type": "option"
+        }
+      },
+      "hasDynamicHelp": false,
+      "hiddenAliases": [],
+      "id": "dto-verify",
+      "pluginAlias": "@gala-chain/cli",
+      "pluginName": "@gala-chain/cli",
+      "pluginType": "core",
+      "strict": true,
+      "enableJsonFlag": true,
+      "isESM": false,
+      "relativePath": [
+        "lib",
+        "commands",
+        "dto-verify",
         "index.js"
       ]
     },
