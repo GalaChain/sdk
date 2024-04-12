@@ -12,10 +12,8 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-// import { ux } from "@oclif/core";
 import axios from "axios";
 
-// import fs from "fs";
 import Info from "../../../src/commands/info";
 
 const fakePrivateKey = "bf2168e0e2238b9d879847987f556a093040a2cab07983a20919ac33103d0d00";
@@ -51,43 +49,34 @@ describe("ChainInfo Command", () => {
     expect(result.join()).toContain(`operation-id`);
   });
 
-  it("should not find private key and prompt", async () => {
-    expect(true).toBeTruthy();
+  it("should get private key from local environment", async () => {
+    // Given
+    axios.get = jest.fn().mockResolvedValue({
+      status: 200,
+      data: {
+        status: "CH_CREATED",
+        lastOperationId: "operation-id"
+      }
+    });
 
-    // // Given
-    // axios.get = jest.fn().mockResolvedValue({
-    //   status: 200,
-    //   data: {
-    //     status: "CH_CREATED",
-    //     lastOperationId: "operation-id"
-    //   }
-    // });
+    const result: (string | Uint8Array)[] = [];
+    jest.spyOn(process.stdout, "write").mockImplementation((v) => {
+      result.push(v);
+      return true;
+    });
 
-    // const result: (string | Uint8Array)[] = [];
-    // jest.spyOn(process.stdout, "write").mockImplementation((v) => {
-    //   result.push(v);
-    //   return true;
-    // });
+    jest.spyOn(console, "log").mockImplementation((v) => {
+      result.push(v);
+      return true;
+    });
 
-    // jest.spyOn(console, "log").mockImplementation((v) => {
-    //   result.push(v);
-    //   return true;
-    // });
+    process.env = { ...process.env, DEV_PRIVATE_KEY: fakePrivateKey };
 
-    // process.env = { ...process.env, DEV_PRIVATE_KEY: undefined };
+    // When
+    await Info.run();
 
-    // jest.spyOn(fs, "readFileSync").mockImplementation(() => {
-    //   throw new Error();
-    // });
-
-    // jest.spyOn(ux, "prompt").mockResolvedValueOnce(fakePrivateKey);
-
-    // // When
-    // await Info.run();
-
-    // // Then
-    // expect(result.join()).toContain("Private key not found");
-
-    // jest.resetAllMocks();
+    // Then
+    expect(result.join()).toContain(`CH_CREATED`);
+    expect(result.join()).toContain(`operation-id`);
   });
 });
