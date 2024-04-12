@@ -53,36 +53,46 @@ describe("DtoSign Command", () => {
     expect(result.join()).toContain(`signature`);
   });
   it("it should check DER signature field in the response", async () => {
-    expect(true).toBeTruthy();
+    const result: (string | Uint8Array)[] = [];
+    jest.spyOn(process.stdout, "write").mockImplementation((v) => {
+      result.push(v);
+      return true;
+    });
 
-    // const result: (string | Uint8Array)[] = [];
-    // jest.spyOn(process.stdout, "write").mockImplementation((v) => {
-    //   result.push(v);
-    //   return true;
-    // });
+    jest.mocked(parseJsonFromStringOrFile).mockImplementation(async () => {
+      return {
+        dataTestJson
+      };
+    });
 
-    // fs.readFile = jest.fn().mockResolvedValue(fakePrivateKey);
+    jest.mocked(parseStringOrFileKey).mockResolvedValue(fakePrivateKey);
 
-    // const target = path.resolve(__dirname, "./test-key");
-    // await DtoSign.run([target, dataTestJson, "-d"]);
+    const target = path.resolve(__dirname, "./test-key");
+    await DtoSign.run([target, dataTestJson, "-d"]);
 
-    // expect(result.join()).toContain(`tokenClass`);
-    // expect(result.join()).toContain(`signature`);
+    expect(result.join()).toContain(`tokenClass`);
+    expect(result.join()).toContain(`signature`);
   });
   it("it should return only the signature", async () => {
-    expect(true).toBeTruthy();
+    const result: (string | Uint8Array)[] = [];
+    jest.spyOn(process.stdout, "write").mockImplementation((v) => {
+      result.push(v);
+      return true;
+    });
 
-    // const result: (string | Uint8Array)[] = [];
-    // jest.spyOn(process.stdout, "write").mockImplementation((v) => {
-    //   result.push(v);
-    //   return true;
-    // });
+    jest.mocked(parseJsonFromStringOrFile).mockImplementation(async () => {
+      return {
+        dataTestJson
+      };
+    });
 
-    // fs.readFile = jest.fn().mockResolvedValue(fakePrivateKey);
+    jest.mocked(parseStringOrFileKey).mockResolvedValue(fakePrivateKey);
 
-    // const target = path.resolve(__dirname, "./test-key");
-    // await DtoSign.run([target, dataTestJson, "-d"]);
+    const target = path.resolve(__dirname, "./test-key");
+    await DtoSign.run([target, dataTestJson, "-s"]);
 
-    // expect(result.join()).not.toBeNull();
+    expect(result.join()).toContain(
+      `4Q1j8HZWfKDL0xqqVB6O0qX965NPQ06RYixjjI6n9j5CaQ3jIW0bsDCD6ultCW4DsZpDjrYBhH5HWanGEg93ixs=`
+    );
   });
 });
