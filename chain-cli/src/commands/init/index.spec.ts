@@ -12,28 +12,33 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-// import path from "path";
+import path from "path";
 
-// import Init from "../../../src/commands/init";
+import Init from "../../../src/commands/init";
+import { generateKeys } from "../../../src/galachain-utils";
 
 describe("Init Command", () => {
   afterEach(() => jest.restoreAllMocks());
 
   it("should check Init Command", async () => {
-    expect(true).toBeTruthy();
+    //expect(true).toBeTruthy();
 
-    // const result: (string | Uint8Array)[] = [];
-    // jest.spyOn(process.stdout, "write").mockImplementation((v) => {
-    //   result.push(v);
-    //   return true;
-    // });
+    const result: (string | Uint8Array)[] = [];
+    jest.spyOn(process.stdout, "write").mockImplementation((v) => {
+      result.push(v);
+      return true;
+    });
 
-    // Init.prototype.copyChaincodeTemplate = () => Promise.resolve<string>("cloned repository");
+    // eslint-disable-next-line @typescript-eslint/no-var-requires
+    const execSync = jest.spyOn(require("child_process"), "execSync");
+    execSync.mockImplementation(() => "cloned repository");
 
-    // const target = path.resolve(__dirname, "../../../test/test-project");
-    // await Init.run([target]);
+    jest.mocked(generateKeys).mockImplementation();
 
-    // expect(result.join()).toContain(`Project template initialized at ${target}`);
+    const target = path.resolve(__dirname, "../../../test/test-project");
+    await Init.run([target]);
+
+    expect(result.join()).toContain(`Project template initialized at ${target}`);
 
     // // eslint-disable-next-line @typescript-eslint/no-var-requires
     // const fs = require("fs");
