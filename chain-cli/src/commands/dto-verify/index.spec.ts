@@ -45,37 +45,35 @@ describe("DtoVerify Command", () => {
     expect(result.join()).toContain("Signature is valid.");
   });
   it("it should fail when not found the signature", async () => {
-    expect(true).toBeTruthy();
+    const result: (string | Uint8Array)[] = [];
+    jest.spyOn(process.stdout, "write").mockImplementation((v) => {
+      result.push(v);
+      return true;
+    });
 
-    // const result: (string | Uint8Array)[] = [];
-    // jest.spyOn(process.stdout, "write").mockImplementation((v) => {
-    //   result.push(v);
-    //   return true;
-    // });
+    jest.mocked(readPublicKeyFromFile).mockRejectedValue(new Error("Failed to read public key from file"));
 
-    // fs.readFile = jest.fn().mockRejectedValue(new Error("File not found"));
-
-    // await DtoVerify.run(["./test-key", dataTestJson]).catch((e) => {
-    //   expect(e.message).toContain("Failed to read public key from flag");
-    // });
+    await DtoVerify.run(["./test-key", dataTestJson]).catch((e) => {
+      expect(e.message).toContain("Failed to read public key from file");
+    });
   });
   it("it should validate the signature field", async () => {
-    expect(true).toBeTruthy();
+    const result: (string | Uint8Array)[] = [];
+    jest.spyOn(process.stdout, "write").mockImplementation((v) => {
+      result.push(v);
+      return true;
+    });
 
-    // const result: (string | Uint8Array)[] = [];
-    // jest.spyOn(process.stdout, "write").mockImplementation((v) => {
-    //   result.push(v);
-    //   return true;
-    // });
+    jest.mocked(readPublicKeyFromFile).mockResolvedValue(fakePublicKey);
 
-    // fs.readFile = jest.fn().mockResolvedValue(fakePublicKey);
+    let jsonModified = JSON.parse(dataTestJson);
+    delete jsonModified.signature;
+    jsonModified = JSON.stringify(jsonModified);
 
-    // let jsonModified = JSON.parse(dataTestJson);
-    // delete jsonModified.signature;
-    // jsonModified = JSON.stringify(jsonModified);
+    jest.mocked(parseJsonFromStringOrFile).mockResolvedValue(JSON.parse(jsonModified));
 
-    // await DtoVerify.run(["./test-key", jsonModified]).catch((e) => {
-    //   expect(e.message).toContain("Signature is not present in the DTO.");
-    // });
+    await DtoVerify.run(["./test-key", jsonModified]).catch((e) => {
+      expect(e.message).toContain("Signature is not present in the DTO.");
+    });
   });
 });
