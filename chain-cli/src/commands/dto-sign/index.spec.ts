@@ -12,39 +12,45 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-// import fs from "fs/promises";
-// import path from "path";
+import path from "path";
 
-// import DtoSign from "../../../src/commands/dto-sign";
+import DtoSign from "../../../src/commands/dto-sign";
+import { parseJsonFromStringOrFile, parseStringOrFileKey } from "../../utils";
 
-// const dataTestJson = `{
-//   "tokenClass": {
-//     "collection": "CLITest",
-//     "category": "Currency",
-//     "type": "TEST",
-//     "additionalKey": "none"
-//   }
-// }`;
+const dataTestJson = `{
+  "tokenClass": {
+    "collection": "CLITest",
+    "category": "Currency",
+    "type": "TEST",
+    "additionalKey": "none"
+  }
+}`;
 
-// const fakePrivateKey = "45f2db331d77c0154c70be06d7d9fe00fa2b5471872f134d73a6e43c6b7e3d29";
+const fakePrivateKey: string = "45f2db331d77c0154c70be06d7d9fe00fa2b5471872f134d73a6e43c6b7e3d29";
+
+jest.mock("../../utils");
 
 describe("DtoSign Command", () => {
   it("it should check signature field in the response", async () => {
-    expect(true).toBeTruthy();
+    const result: (string | Uint8Array)[] = [];
+    jest.spyOn(process.stdout, "write").mockImplementation((v) => {
+      result.push(v);
+      return true;
+    });
 
-    // const result: (string | Uint8Array)[] = [];
-    // jest.spyOn(process.stdout, "write").mockImplementation((v) => {
-    //   result.push(v);
-    //   return true;
-    // });
+    jest.mocked(parseJsonFromStringOrFile).mockImplementation(async () => {
+      return {
+        dataTestJson
+      };
+    });
 
-    // fs.readFile = jest.fn().mockResolvedValue(fakePrivateKey);
+    jest.mocked(parseStringOrFileKey).mockResolvedValue(fakePrivateKey);
 
-    // const target = path.resolve(__dirname, "./test-key");
-    // await DtoSign.run([target, dataTestJson]);
+    const target = path.resolve(__dirname, "./test-key");
+    await DtoSign.run([target, dataTestJson]);
 
-    // expect(result.join()).toContain(`tokenClass`);
-    // expect(result.join()).toContain(`signature`);
+    expect(result.join()).toContain(`tokenClass`);
+    expect(result.join()).toContain(`signature`);
   });
   it("it should check DER signature field in the response", async () => {
     expect(true).toBeTruthy();
