@@ -13,41 +13,42 @@
  * limitations under the License.
  */
 // import { ux } from "@oclif/core";
+import axios from "axios";
 
-// import axios from "axios";
 // import fs from "fs";
+import Info from "../../../src/commands/info";
 
-// import Info from "../../../src/commands/info";
+const fakePrivateKey = "bf2168e0e2238b9d879847987f556a093040a2cab07983a20919ac33103d0d00";
 
-// const fakePrivateKey = "bf2168e0e2238b9d879847987f556a093040a2cab07983a20919ac33103d0d00";
+jest.mock("axios");
 
 describe("ChainInfo Command", () => {
+  beforeEach(() => {
+    jest.clearAllMocks();
+  });
+
   it("should check if it gets info from a chaincode", async () => {
-    expect(true).toBeTruthy();
+    // Given
+    axios.get = jest.fn().mockResolvedValue({
+      status: 200,
+      data: {
+        status: "CH_CREATED",
+        lastOperationId: "operation-id"
+      }
+    });
 
-    // // Given
-    // axios.get = jest.fn().mockResolvedValue({
-    //   status: 200,
-    //   data: {
-    //     status: "CH_CREATED",
-    //     lastOperationId: "operation-id"
-    //   }
-    // });
+    const result: (string | Uint8Array)[] = [];
+    jest.spyOn(process.stdout, "write").mockImplementation((v) => {
+      result.push(v);
+      return true;
+    });
 
-    // const result: (string | Uint8Array)[] = [];
-    // jest.spyOn(process.stdout, "write").mockImplementation((v) => {
-    //   result.push(v);
-    //   return true;
-    // });
+    // When
+    await Info.run([fakePrivateKey]);
 
-    // // When
-    // await Info.run([fakePrivateKey]);
-
-    // // Then
-    // expect(result.join()).toContain(`CH_CREATED`);
-    // expect(result.join()).toContain(`operation-id`);
-
-    // jest.resetAllMocks();
+    // Then
+    expect(result.join()).toContain(`CH_CREATED`);
+    expect(result.join()).toContain(`operation-id`);
   });
 
   it("should not find private key and prompt", async () => {
