@@ -36,11 +36,7 @@ describe("DtoVerify Command", () => {
       return true;
     });
 
-    jest.mocked(parseJsonFromStringOrFile).mockImplementation(async () => {
-      return {
-        dataTestJson
-      };
-    });
+    jest.mocked(parseJsonFromStringOrFile).mockResolvedValue(JSON.parse(dataTestJson));
 
     jest.mocked(readPublicKeyFromFile).mockResolvedValue(fakePublicKey);
 
