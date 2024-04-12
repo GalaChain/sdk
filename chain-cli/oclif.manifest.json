@@ -172,21 +172,25 @@
         "index.js"
       ]
     },
-    "connect": {
+    "deploy": {
       "aliases": [],
       "args": {
+        "imageTag": {
+          "description": "Image tag to deploy. It should follow the pattern imageName:version.",
+          "name": "imageTag",
+          "required": true
+        },
         "developerPrivateKey": {
           "description": "Optional private key to sign the data. It could be a file or a string. If not provided, the private key will be read from the environment variable DEV_PRIVATE_KEY.",
           "name": "developerPrivateKey",
           "required": false
         }
       },
-      "description": "Connect to a new chaincode.",
+      "description": "Schedules deployment of published chaincode Docker image to GalaChain sandbox.",
       "examples": [
-        "galachain connect",
-        "galachain connect ./dev-private-key",
-        "galachain connect c0fb1924408d936fb7cd0c86695885df4f66861621b5c8660df3924c4d09dd79",
-        "galachain connect --testnet"
+        "galachain deploy registry.image.name:latest",
+        "galachain deploy registry.image.name:latest ./dev-private-key",
+        "galachain deploy registry.image.name:latest c0fb1924408d936fb7cd0c86695885df4f66861621b5c8660df3924c4d09dd79"
       ],
       "flags": {
         "json": {
@@ -211,7 +215,8 @@
           "type": "option"
         },
         "testnet": {
-          "description": "Connect to testnet instead of sandbox.",
+          "description": "Deploy to testnet instead of sandbox.",
+          "hidden": true,
           "name": "testnet",
           "allowNo": false,
           "type": "boolean"
@@ -219,7 +224,7 @@
       },
       "hasDynamicHelp": false,
       "hiddenAliases": [],
-      "id": "connect",
+      "id": "deploy",
       "pluginAlias": "@gala-chain/cli",
       "pluginName": "@gala-chain/cli",
       "pluginType": "core",
@@ -229,7 +234,7 @@
       "relativePath": [
         "lib",
         "commands",
-        "connect",
+        "deploy",
         "index.js"
       ]
     },
@@ -369,72 +374,6 @@
         "index.js"
       ]
     },
-    "deploy": {
-      "aliases": [],
-      "args": {
-        "imageTag": {
-          "description": "Image tag to deploy. It should follow the pattern imageName:version.",
-          "name": "imageTag",
-          "required": true
-        },
-        "developerPrivateKey": {
-          "description": "Optional private key to sign the data. It could be a file or a string. If not provided, the private key will be read from the environment variable DEV_PRIVATE_KEY.",
-          "name": "developerPrivateKey",
-          "required": false
-        }
-      },
-      "description": "Schedules deployment of published chaincode Docker image to GalaChain sandbox.",
-      "examples": [
-        "galachain deploy registry.image.name:latest",
-        "galachain deploy registry.image.name:latest ./dev-private-key",
-        "galachain deploy registry.image.name:latest c0fb1924408d936fb7cd0c86695885df4f66861621b5c8660df3924c4d09dd79"
-      ],
-      "flags": {
-        "json": {
-          "description": "Format output as json.",
-          "helpGroup": "GLOBAL",
-          "name": "json",
-          "allowNo": false,
-          "type": "boolean"
-        },
-        "log-level": {
-          "helpGroup": "GLOBAL",
-          "name": "log-level",
-          "summary": "Specify level for logging.",
-          "hasDynamicHelp": false,
-          "multiple": false,
-          "options": [
-            "debug",
-            "info",
-            "warn",
-            "error"
-          ],
-          "type": "option"
-        },
-        "testnet": {
-          "description": "Deploy to testnet instead of sandbox.",
-          "hidden": true,
-          "name": "testnet",
-          "allowNo": false,
-          "type": "boolean"
-        }
-      },
-      "hasDynamicHelp": false,
-      "hiddenAliases": [],
-      "id": "deploy",
-      "pluginAlias": "@gala-chain/cli",
-      "pluginName": "@gala-chain/cli",
-      "pluginType": "core",
-      "strict": true,
-      "enableJsonFlag": true,
-      "isESM": false,
-      "relativePath": [
-        "lib",
-        "commands",
-        "deploy",
-        "index.js"
-      ]
-    },
     "network-prune": {
       "aliases": [
         "network:prune"
@@ -489,6 +428,67 @@
         "lib",
         "commands",
         "network-prune",
+        "index.js"
+      ]
+    },
+    "connect": {
+      "aliases": [],
+      "args": {
+        "developerPrivateKey": {
+          "description": "Optional private key to sign the data. It could be a file or a string. If not provided, the private key will be read from the environment variable DEV_PRIVATE_KEY.",
+          "name": "developerPrivateKey",
+          "required": false
+        }
+      },
+      "description": "Connect to a new chaincode.",
+      "examples": [
+        "galachain connect",
+        "galachain connect ./dev-private-key",
+        "galachain connect c0fb1924408d936fb7cd0c86695885df4f66861621b5c8660df3924c4d09dd79",
+        "galachain connect --testnet"
+      ],
+      "flags": {
+        "json": {
+          "description": "Format output as json.",
+          "helpGroup": "GLOBAL",
+          "name": "json",
+          "allowNo": false,
+          "type": "boolean"
+        },
+        "log-level": {
+          "helpGroup": "GLOBAL",
+          "name": "log-level",
+          "summary": "Specify level for logging.",
+          "hasDynamicHelp": false,
+          "multiple": false,
+          "options": [
+            "debug",
+            "info",
+            "warn",
+            "error"
+          ],
+          "type": "option"
+        },
+        "testnet": {
+          "description": "Connect to testnet instead of sandbox.",
+          "name": "testnet",
+          "allowNo": false,
+          "type": "boolean"
+        }
+      },
+      "hasDynamicHelp": false,
+      "hiddenAliases": [],
+      "id": "connect",
+      "pluginAlias": "@gala-chain/cli",
+      "pluginName": "@gala-chain/cli",
+      "pluginType": "core",
+      "strict": true,
+      "enableJsonFlag": true,
+      "isESM": false,
+      "relativePath": [
+        "lib",
+        "commands",
+        "connect",
         "index.js"
       ]
     },
