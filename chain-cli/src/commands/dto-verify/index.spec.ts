@@ -12,36 +12,41 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-// import fs from "fs/promises";
+import DtoVerify from "../../../src/commands/dto-verify";
+import { parseJsonFromStringOrFile, readPublicKeyFromFile } from "../../utils";
 
-// import DtoVerify from "../../../src/commands/dto-verify";
+const dataTestJson = `{
+  "firstName": "Tom",
+  "id": "1",
+  "lastName": "Cruise",
+  "photo": "https://jsonformatter.org/img/tom-cruise.jpg",
+  "signature": "N9aRUvGUedrnOrZch0o0bHUyHHXIUDvV6xOhKsja7j63/eyWDoilWW35iTXFXFQ8uSP3mejoRS4NkVVcd13xchs="
+}`;
 
-// const dataTestJson = `{
-//   "firstName": "Tom",
-//   "id": "1",
-//   "lastName": "Cruise",
-//   "photo": "https://jsonformatter.org/img/tom-cruise.jpg",
-//   "signature": "N9aRUvGUedrnOrZch0o0bHUyHHXIUDvV6xOhKsja7j63/eyWDoilWW35iTXFXFQ8uSP3mejoRS4NkVVcd13xchs="
-// }`;
+const fakePublicKey =
+  "04692dd79bfded81ec75994eee9b50c9aac299272df3ca21fd4661028094ce6b3fe07c1abc10c8188ae62b120508f8aacbdff150a1910248c9bf49d4b730ad5813";
 
-// const fakePublicKey =
-//   "04692dd79bfded81ec75994eee9b50c9aac299272df3ca21fd4661028094ce6b3fe07c1abc10c8188ae62b120508f8aacbdff150a1910248c9bf49d4b730ad5813";
+jest.mock("../../utils");
 
 describe("DtoVerify Command", () => {
   it("it should validate the signature", async () => {
-    expect(true).toBeTruthy();
+    const result: (string | Uint8Array)[] = [];
+    jest.spyOn(process.stdout, "write").mockImplementation((v) => {
+      result.push(v);
+      return true;
+    });
 
-    // const result: (string | Uint8Array)[] = [];
-    // jest.spyOn(process.stdout, "write").mockImplementation((v) => {
-    //   result.push(v);
-    //   return true;
-    // });
+    jest.mocked(parseJsonFromStringOrFile).mockImplementation(async () => {
+      return {
+        dataTestJson
+      };
+    });
 
-    // fs.readFile = jest.fn().mockResolvedValue(fakePublicKey);
+    jest.mocked(readPublicKeyFromFile).mockResolvedValue(fakePublicKey);
 
-    // await DtoVerify.run(["./test-key", dataTestJson]);
+    await DtoVerify.run(["./test-key", dataTestJson]);
 
-    // expect(result.join()).toContain("Signature is valid.");
+    expect(result.join()).toContain("Signature is valid.");
   });
   it("it should fail when not found the signature", async () => {
     expect(true).toBeTruthy();
