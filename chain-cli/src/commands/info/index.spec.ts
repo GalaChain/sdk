@@ -12,14 +12,14 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-import { ux } from "@oclif/core";
+// import { ux } from "@oclif/core";
 
-import axios from "axios";
-import fs from "fs";
+// import axios from "axios";
+// import fs from "fs";
 
-import Info from "../../../src/commands/info";
+// import Info from "../../../src/commands/info";
 
-const fakePrivateKey = "bf2168e0e2238b9d879847987f556a093040a2cab07983a20919ac33103d0d00";
+// const fakePrivateKey = "bf2168e0e2238b9d879847987f556a093040a2cab07983a20919ac33103d0d00";
 
 describe("ChainInfo Command", () => {
   it("should check if it gets info from a chaincode", async () => {

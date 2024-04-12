@@ -12,20 +12,20 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-import fs from "fs/promises";
+// import fs from "fs/promises";
 
-import DtoVerify from "../../../src/commands/dto-verify";
+// import DtoVerify from "../../../src/commands/dto-verify";
 
-const dataTestJson = `{
-  "firstName": "Tom",
-  "id": "1",
-  "lastName": "Cruise",
-  "photo": "https://jsonformatter.org/img/tom-cruise.jpg",
-  "signature": "N9aRUvGUedrnOrZch0o0bHUyHHXIUDvV6xOhKsja7j63/eyWDoilWW35iTXFXFQ8uSP3mejoRS4NkVVcd13xchs="
-}`;
+// const dataTestJson = `{
+//   "firstName": "Tom",
+//   "id": "1",
+//   "lastName": "Cruise",
+//   "photo": "https://jsonformatter.org/img/tom-cruise.jpg",
+//   "signature": "N9aRUvGUedrnOrZch0o0bHUyHHXIUDvV6xOhKsja7j63/eyWDoilWW35iTXFXFQ8uSP3mejoRS4NkVVcd13xchs="
+// }`;
 
-const fakePublicKey =
-  "04692dd79bfded81ec75994eee9b50c9aac299272df3ca21fd4661028094ce6b3fe07c1abc10c8188ae62b120508f8aacbdff150a1910248c9bf49d4b730ad5813";
+// const fakePublicKey =
+//   "04692dd79bfded81ec75994eee9b50c9aac299272df3ca21fd4661028094ce6b3fe07c1abc10c8188ae62b120508f8aacbdff150a1910248c9bf49d4b730ad5813";
 
 describe("DtoVerify Command", () => {
   it("it should validate the signature", async () => {

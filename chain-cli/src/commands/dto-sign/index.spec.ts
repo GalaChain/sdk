@@ -12,21 +12,21 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-import fs from "fs/promises";
-import path from "path";
+// import fs from "fs/promises";
+// import path from "path";
 
-import DtoSign from "../../../src/commands/dto-sign";
+// import DtoSign from "../../../src/commands/dto-sign";
 
-const dataTestJson = `{
-  "tokenClass": {
-    "collection": "CLITest",
-    "category": "Currency",
-    "type": "TEST",
-    "additionalKey": "none"
-  }
-}`;
+// const dataTestJson = `{
+//   "tokenClass": {
+//     "collection": "CLITest",
+//     "category": "Currency",
+//     "type": "TEST",
+//     "additionalKey": "none"
+//   }
+// }`;
 
-const fakePrivateKey = "45f2db331d77c0154c70be06d7d9fe00fa2b5471872f134d73a6e43c6b7e3d29";
+// const fakePrivateKey = "45f2db331d77c0154c70be06d7d9fe00fa2b5471872f134d73a6e43c6b7e3d29";
 
 describe("DtoSign Command", () => {
   it("it should check signature field in the response", async () => {
