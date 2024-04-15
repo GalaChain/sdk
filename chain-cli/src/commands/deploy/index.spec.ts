@@ -43,10 +43,12 @@ describe("Deploy Command", () => {
 
     jest.spyOn(ux, "prompt").mockResolvedValueOnce("Y");
 
-    jest.mocked(deployChaincode).mockResolvedValue({
-      status: "CC_DEPLOY_SCHEDULED",
-      chaincode: "chaincode-name",
-      channel: "channel-name"
+    jest.mocked(deployChaincode).mockImplementation(async () => {
+      return {
+        status: "CC_DEPLOY_SCHEDULED",
+        chaincode: "chaincode-name",
+        channel: "channel-name"
+      };
     });
 
     // When
