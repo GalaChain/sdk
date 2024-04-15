@@ -99,7 +99,9 @@ function buildCAClient(ccp: Record<string, unknown>, caHostName: string): Fabric
 
   const tlsCACerts = caInfo.tlsCACerts as unknown as { pem?: string; path?: string };
   const caTLSCACerts = tlsCACerts?.pem ?? tlsCACerts?.path;
-  const tlsConfig = caTLSCACerts ? { trustedRoots: [caTLSCACerts], verify: false } : undefined;
+  const tlsConfig = caTLSCACerts
+    ? { trustedRoots: [caTLSCACerts], verify: caInfo?.httpOptions?.verify }
+    : undefined;
 
   const caName = caInfo.caName;
   if (caName === undefined) {
