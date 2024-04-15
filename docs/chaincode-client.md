@@ -98,17 +98,12 @@ The `RestApiClientConfig` interface defines parameters that are required to conn
 
 ```typescript
 const params: RestApiClientConfig = {
-  orgMsp: "CuratorOrg",
-  userId: "GC_ADMIN_CURATOR",
-  userSecret: "abc",
   apiUrl: "http://localhost:3000/api",
   configPath: path.resolve(__dirname, "api-config.json")
 };
 ```
 
 * `orgMsp` - Hyperledger Fabric MSP name of the organization that the client will connect to;
-* `userId` - key of the user in the API key store that will be used to connect to the network (for GC services), or a CA user ID (for Fablo REST);
-* `userSecret` - secret of the user in the API key store (for GC services), or a password secret of CA user (for Fablo REST);
 * `apiUrl` - URL of the REST API;
 * `configPath` - path to the configuration file that describes path mapping for channels, chaincodes, and contracts.
   Sample configuration file can be found in the `e2e` directory of the chaincode generated from template by GalaChain CLI.

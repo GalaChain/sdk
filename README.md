@@ -16,17 +16,18 @@ Please see our [contribution guide](CONTRIBUTION_GUIDE.md) for more information,
 
 ## Getting started
 
-To get started with GalaChain SDK, please see our [getting started guide](docs/getting-started.md).
+To get started with GalaChain SDK, please see our [Getting started guide](docs/getting-started.md) or follow the [From zero to deployment](docs/from-zero-to-deployment.md) tutorial.
 
-### Using GalaChain SDK
+## Working with GalaChain
 
-- [Documentation main page](docs/index.md)
-- [Getting started guide](docs/getting-started.md)
 - [Chaincode development](docs/chaincode-development.md)
-- [CLI reference](chain-cli/README.md)
+- [Chaincode testing](docs/chaincode-testing.md)
 - [Chaincode deployment](docs/chaincode-deployment.md)
+- [Authorization](docs/authorization.md)
+- [Chaincode client](docs/chaincode-client.md)
 
 ### Reference documentation
+
 - [`chain-api`](docs/chain-api-docs/exports.md) - Common types, DTOs (Data Transfer Objects), APIs, signatures, and utils for GalaChain
 - [`chain-client`](docs/chain-client-docs/exports.md) - GalaChain client library
 - [`chain-test`](docs/chain-test-docs/exports.md) - Unit testing and integration testing for GalaChain

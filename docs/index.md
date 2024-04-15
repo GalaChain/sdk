@@ -12,18 +12,21 @@ GalaChain is a layer 1 blockchain designed to be the foundation of Web3 Gaming, 
 
 Read more about [GalaChain](galachain.md).
 
+## Tutorials
+
+- [**From zero to deployment**](from-zero-to-deployment.md)
+- [Getting started guide](getting-started.md)
+
 ## Working with GalaChain
 
-- [**Getting started guide**](getting-started.md)
 - [Chaincode development](chaincode-development.md)
-- [Chaincode client](chaincode-client.md)
 - [Chaincode testing](chaincode-testing.md)
-
-## Deploying chaincode to GalaChain
-
 - [Chaincode deployment](chaincode-deployment.md)
+- [Authorization](authorization.md)
+- [Chaincode client](chaincode-client.md)
 
 ## Reference documentation
+
 - [`chain-api`](chain-api-docs/exports.md) - Common types, DTOs (Data Transfer Objects), APIs, signatures, and utils for GalaChain
 - [`chain-client`](chain-client-docs/exports.md) - GalaChain client library
 - [`chain-test`](chain-test-docs/exports.md) - Unit testing and integration testing for GalaChain
