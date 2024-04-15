@@ -15,10 +15,9 @@
 import { Args } from "@oclif/core";
 
 import { ChainCallDTO, signatures } from "@gala-chain/api";
-import { readFile } from "fs/promises";
 
 import BaseCommand from "../../base-command";
-import { parseJsonFromStringOrFile } from "../../utils";
+import { parseJsonFromStringOrFile, readPublicKeyFromFile } from "../../utils";
 
 export default class DtoVerify extends BaseCommand<typeof DtoVerify> {
   static override aliases = ["dto:verify"];
@@ -54,9 +53,12 @@ export default class DtoVerify extends BaseCommand<typeof DtoVerify> {
   async run(): Promise<void> {
     const { args } = await this.parse(DtoVerify);
 
-    const publicKey = await readFile(args.key, "utf-8").catch((e) => {
-      this.error(`Failed to read public key from flag: ${args.key}. ${e}`, { exit: 1 });
-    });
+    let publicKey: string;
+    try {
+      publicKey = await readPublicKeyFromFile(args.key);
+    } catch (e) {
+      this.error(`Failed to read public key from file: ${args.key}. ${e}`, { exit: 1 });
+    }
 
     const dto = (await parseJsonFromStringOrFile(args.data)) as ChainCallDTO;
 

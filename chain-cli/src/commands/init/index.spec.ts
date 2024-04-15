@@ -12,6 +12,8 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
+/* eslint-disable @typescript-eslint/no-var-requires */
 import path from "path";
 
 import Init from "../../../src/commands/init";
@@ -26,15 +28,15 @@ describe("Init Command", () => {
       return true;
     });
 
-    Init.prototype.copyChaincodeTemplate = () => Promise.resolve<string>("cloned repository");
+    const execSync = jest.spyOn(require("child_process"), "execSync");
+    execSync.mockImplementation(() => "cloned repository");
+
+    const fs = require("fs");
+    fs.promises.writeFile = jest.fn().mockResolvedValue(undefined);
 
     const target = path.resolve(__dirname, "../../../test/test-project");
     await Init.run([target]);
 
     expect(result.join()).toContain(`Project template initialized at ${target}`);
-
-    // eslint-disable-next-line @typescript-eslint/no-var-requires
-    const fs = require("fs");
-    fs.rmdirSync(path.join(target, "keys"), { recursive: true });
   });
 });

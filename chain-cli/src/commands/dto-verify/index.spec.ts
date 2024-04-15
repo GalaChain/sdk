@@ -12,10 +12,8 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-import fs from "fs/promises";
-import path from "path";
-
 import DtoVerify from "../../../src/commands/dto-verify";
+import { parseJsonFromStringOrFile, readPublicKeyFromFile } from "../../utils";
 
 const dataTestJson = `{
   "firstName": "Tom",
@@ -28,6 +26,8 @@ const dataTestJson = `{
 const fakePublicKey =
   "04692dd79bfded81ec75994eee9b50c9aac299272df3ca21fd4661028094ce6b3fe07c1abc10c8188ae62b120508f8aacbdff150a1910248c9bf49d4b730ad5813";
 
+jest.mock("../../utils");
+
 describe("DtoVerify Command", () => {
   it("it should validate the signature", async () => {
     const result: (string | Uint8Array)[] = [];
@@ -36,10 +36,11 @@ describe("DtoVerify Command", () => {
       return true;
     });
 
-    fs.readFile = jest.fn().mockResolvedValue(fakePublicKey);
+    jest.mocked(parseJsonFromStringOrFile).mockResolvedValue(JSON.parse(dataTestJson));
 
-    const target = path.resolve(__dirname, "./test-key");
-    await DtoVerify.run([target, dataTestJson]);
+    jest.mocked(readPublicKeyFromFile).mockResolvedValue(fakePublicKey);
+
+    await DtoVerify.run(["./test-key", dataTestJson]);
 
     expect(result.join()).toContain("Signature is valid.");
   });
@@ -50,11 +51,10 @@ describe("DtoVerify Command", () => {
       return true;
     });
 
-    fs.readFile = jest.fn().mockRejectedValue(new Error("File not found"));
+    jest.mocked(readPublicKeyFromFile).mockRejectedValue(new Error("Failed to read public key from file"));
 
-    const target = path.resolve(__dirname, "./test-key");
-    await DtoVerify.run([target, dataTestJson]).catch((e) => {
-      expect(e.message).toContain("Failed to read public key from flag");
+    await DtoVerify.run(["./test-key", dataTestJson]).catch((e) => {
+      expect(e.message).toContain("Failed to read public key from file");
     });
   });
   it("it should validate the signature field", async () => {
@@ -64,14 +64,15 @@ describe("DtoVerify Command", () => {
       return true;
     });
 
-    fs.readFile = jest.fn().mockResolvedValue(fakePublicKey);
+    jest.mocked(readPublicKeyFromFile).mockResolvedValue(fakePublicKey);
 
     let jsonModified = JSON.parse(dataTestJson);
     delete jsonModified.signature;
     jsonModified = JSON.stringify(jsonModified);
 
-    const target = path.resolve(__dirname, "./test-key");
-    await DtoVerify.run([target, jsonModified]).catch((e) => {
+    jest.mocked(parseJsonFromStringOrFile).mockResolvedValue(JSON.parse(jsonModified));
+
+    await DtoVerify.run(["./test-key", jsonModified]).catch((e) => {
       expect(e.message).toContain("Signature is not present in the DTO.");
     });
   });
