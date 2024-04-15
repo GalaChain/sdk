@@ -10,7 +10,7 @@
     "class-validator": "^0.14.0",
     "class-validator-jsonschema": "^5.0.0",
     "elliptic": "^6.5.4",
-    "js-sha3": "^0.8.0",
+    "js-sha3": "^0.9.3",
     "json-stringify-deterministic": "^1.0.7",
     "openapi3-ts": "^3.2.0",
     "reflect-metadata": "^0.1.13",
