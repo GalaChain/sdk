@@ -23,7 +23,7 @@ import { writeFile } from "node:fs/promises";
 import path from "path";
 import process from "process";
 
-import { ServicePortal } from "./consts";
+import { ExpectedImageArchitecture, ServicePortal } from "./consts";
 import { GetChaincodeDeploymentDto, PostDeployChaincodeDto } from "./dto";
 import { execSync } from "./exec-sync";
 import { parseStringOrFileKey } from "./utils";
@@ -99,6 +99,15 @@ export async function getDeploymentResponse(params: { privateKey: string; isTest
 }
 
 function getContractNames(imageTag: string): { contractName: string }[] {
+  const imageArchitecture = execSync(
+    "docker inspect --format=json ${imageTag} | jq -r '.[0].Os + \"/\" + .[0].Architecture'"
+  )
+    .toString()
+    .trim();
+  if (imageArchitecture !== ExpectedImageArchitecture) {
+    throw new Error(`Unsupported architecture ${imageArchitecture}, expected ${ExpectedImageArchitecture}`);
+  }
+
   const command = `docker run --rm ${imageTag} lib/src/cli.js get-contract-names | tail -n 1`;
   let response: string = "<failed>";
 

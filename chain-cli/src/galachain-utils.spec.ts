@@ -78,11 +78,13 @@ describe("deployChaincode", () => {
       }
     });
 
-    const execSync = jest.spyOn(require("child_process"), "execSync");
-    execSync.mockImplementation(
-      () =>
-        '[{"contractName":"AppleContract"},{"contractName":"GalaChainToken"},{"contractName":"PublicKeyContract"}]'
-    );
+    jest
+      .spyOn(require("child_process"), "execSync")
+      .mockImplementationOnce(() => "linux/amd64")
+      .mockImplementationOnce(
+        () =>
+          '[{"contractName":"AppleContract"},{"contractName":"GalaChainToken"},{"contractName":"PublicKeyContract"}]'
+      );
 
     // When
     const response = await deployChaincode({ privateKey, isTestnet, imageTag });
@@ -102,11 +104,13 @@ describe("deployChaincode", () => {
 
     process.env = { ...process.env, DEV_PRIVATE_KEY: undefined };
 
-    const execSync = jest.spyOn(require("child_process"), "execSync");
-    execSync.mockImplementation(
-      () =>
-        '[{"contractName":"AppleContract"},{"contractName":"GalaChainToken"},{"contractName":"PublicKeyContract"}]'
-    );
+    jest
+      .spyOn(require("child_process"), "execSync")
+      .mockImplementationOnce(() => "linux/amd64")
+      .mockImplementationOnce(
+        () =>
+          '[{"contractName":"AppleContract"},{"contractName":"GalaChainToken"},{"contractName":"PublicKeyContract"}]'
+      );
 
     jest.spyOn(fs, "readFileSync").mockImplementation(() => {
       throw new Error();
@@ -132,11 +136,13 @@ describe("deployChaincode", () => {
       status: 401
     });
 
-    const execSync = jest.spyOn(require("child_process"), "execSync");
-    execSync.mockImplementation(
-      () =>
-        '[{"contractName":"AppleContract"},{"contractName":"GalaChainToken"},{"contractName":"PublicKeyContract"}]'
-    );
+    jest
+      .spyOn(require("child_process"), "execSync")
+      .mockImplementationOnce(() => "linux/amd64")
+      .mockImplementationOnce(
+        () =>
+          '[{"contractName":"AppleContract"},{"contractName":"GalaChainToken"},{"contractName":"PublicKeyContract"}]'
+      );
 
     // When
     expect(async () => await deployChaincode({ privateKey, isTestnet, imageTag })).rejects.toThrowError(
