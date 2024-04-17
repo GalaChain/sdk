@@ -90,14 +90,18 @@ export async function unlockFungibleToken(
   const balance = await fetchOrCreateBalance(ctx, owner, tokenInstanceKey.getTokenClassKey());
 
   // determine if user is authorized to unlock
+  // if calling user is not authorized, always token class authority can unlock
+  let lockAuthority: string = ctx.callingUser;
   const tokenClass = await fetchTokenClass(ctx, tokenInstanceKey);
   const isTokenAuthority = tokenClass.authorities.includes(ctx.callingUser);
 
   if (!isTokenAuthority && ctx.callingUser !== owner) {
     throw new UnlockForbiddenUserError(ctx.callingUser, tokenInstanceKey.toStringKey());
+  } else if (isTokenAuthority) {
+    lockAuthority = ctx.callingUser;
   }
 
-  balance.ensureCanUnlockQuantity(quantityToUnlock, ctx.txUnixTime, name, ctx.callingUser).unlock();
+  balance.ensureCanUnlockQuantity(quantityToUnlock, ctx.txUnixTime, name, lockAuthority).unlock();
 
   await putChainObject(ctx, balance);
 
