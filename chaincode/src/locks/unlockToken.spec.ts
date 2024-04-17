@@ -123,7 +123,8 @@ describe("UnlockToken", () => {
     const dto = await createValidDTO(UnlockTokenDto, {
       tokenInstance: currencyInstanceKey,
       quantity: new BigNumber("1"),
-      lockedHoldName: testLockedHoldName
+      lockedHoldName: testLockedHoldName,
+      owner: users.testUser1Id
     });
 
     // When

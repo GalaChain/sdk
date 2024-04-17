@@ -101,7 +101,7 @@ export async function unlockFungibleToken(
   if (!isTokenAuthority && ctx.callingUser !== owner) {
     throw new UnlockForbiddenUserError(ctx.callingUser, tokenInstanceKey.toStringKey());
   } else if (isTokenAuthority) {
-    lockAuthority = ctx.callingUser;
+    lockAuthority = owner;
   }
 
   const balance = await fetchOrCreateBalance(ctx, owner, tokenInstanceKey.getTokenClassKey());
