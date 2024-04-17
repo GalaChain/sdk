@@ -149,6 +149,13 @@ export class UnlockTokenDto extends ChainCallDTO {
   @BigNumberIsPositive()
   @BigNumberProperty()
   quantity?: BigNumber;
+
+  @JSONSchema({
+    description: "Optional. Owner of the token. Calling User by default."
+  })
+  @IsOptional()
+  @IsNotEmpty()
+  owner?: string;
 }
 
 @JSONSchema({

@@ -107,7 +107,8 @@ describe("UnlockToken", () => {
           instanceId: currencyInstance.instance,
           quantity: new BigNumber("1"),
           createdAt: 1,
-          expires: 0
+          expires: 0,
+          lockAuthority: users.testUser1Id
         }
       ]
     });
