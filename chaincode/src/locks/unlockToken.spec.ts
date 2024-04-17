@@ -13,7 +13,7 @@
  * limitations under the License.
  */
 import { GalaChainResponse, TokenBalance, UnlockTokenDto, createValidDTO } from "@gala-chain/api";
-import { fixture, nft, users, writesMap } from "@gala-chain/test";
+import { currency, fixture, nft, users, writesMap } from "@gala-chain/test";
 import BigNumber from "bignumber.js";
 import { plainToInstance } from "class-transformer";
 
@@ -57,7 +57,7 @@ describe("UnlockToken", () => {
     expect(writes).toEqual(writesMap(balanceNoLockedHolds));
   });
 
-  test("unlocks for Token Authority", async () => {
+  test("NFT unlocks for Token Authority", async () => {
     // Given
     const nftInstance = nft.tokenInstance1();
     const nftInstanceKey = nft.tokenInstance1Key();
@@ -82,6 +82,49 @@ describe("UnlockToken", () => {
 
     const dto = await createValidDTO(UnlockTokenDto, {
       tokenInstance: nftInstanceKey
+    });
+
+    // When
+    const response = await contract.UnlockToken(ctx, dto);
+
+    // Then
+    const balanceNoLockedHolds = plainToInstance(TokenBalance, { ...ownerBalance, lockedHolds: [] });
+    expect(response).toEqual(GalaChainResponse.Success(balanceNoLockedHolds));
+    expect(writes).toEqual(writesMap(balanceNoLockedHolds));
+  });
+
+  test("Fungible unlocks for Token Authority", async () => {
+    // Given
+    const currencyInstance = currency.tokenInstance();
+    const currencyInstanceKey = currency.tokenInstanceKey();
+    const currencyClass = currency.tokenClass();
+
+    const testLockedHoldName = "some test locked hold name";
+
+    const ownerBalance = plainToInstance(TokenBalance, {
+      ...currency.tokenBalance(),
+      lockedHolds: [
+        {
+          createdBy: users.testUser1Id,
+          instanceId: currencyInstance.instance,
+          quantity: new BigNumber("1"),
+          createdAt: 1,
+          expires: 0,
+          lockAuthority: users.testUser1Id,
+          name: testLockedHoldName
+        }
+      ]
+    });
+
+    const { ctx, contract, writes } = fixture(GalaChainTokenContract)
+      .callingUser(users.testAdminId)
+      .savedState(currencyClass, currencyInstance, ownerBalance);
+
+    const dto = await createValidDTO(UnlockTokenDto, {
+      tokenInstance: currencyInstanceKey,
+      quantity: new BigNumber("1"),
+      lockedHoldName: testLockedHoldName,
+      owner: users.testUser1Id
     });
 
     // When
