@@ -18,7 +18,8 @@
     "fix": "nx run lint --fix",
     "prepublishOnly": "npm i && npm run clean && npm run build && npm run lint && npm run madge",
     "format": "prettier --config ../.prettierrc 'src/**/*.ts' --write",
-    "test": "jest"
+    "test": "jest",
+    "update-snapshot": "jest --updateSnapshot"
   },
   "dependencies": {
     "@gala-chain/api": "1.1.10",

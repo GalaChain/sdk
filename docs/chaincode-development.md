@@ -56,7 +56,7 @@ export class AppleContract extends GalaContract {
 `GalaContract` is a base class for all contract classes.
 It provides several features:
 - It ensures that all contract methods have access to the proper transaction context (`GalaChainContext`, see [Transaction decorators](#transaction-decorators)).
-- It adds common methods for a contract: `GetChaincodeVersion`, `GetContractAPI`, `GetObjectByKey`, and `GetObjectHistory`.
+- It adds common methods for a contract: `GetContractVersion`, `GetContractAPI`, `GetObjectByKey`, and `GetObjectHistory`.
 - It saves all writes from the GalaChain state cache to the ledger at the end of a successful transaction (see [State cache](#state-cache)).
 - It enhances tracing (see [Tracing support](#tracing-support)).
 
