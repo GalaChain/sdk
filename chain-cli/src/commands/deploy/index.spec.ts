@@ -26,7 +26,7 @@ const consts = {
 describe("Deploy Command", () => {
   beforeEach(() => {
     jest.clearAllMocks();
-  });
+  }, 10000);
 
   it("should deploy an image", async () => {
     // Given
