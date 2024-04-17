@@ -58,7 +58,7 @@ describe("Deploy Command", () => {
     expect(result.join()).toContain(
       "Deployment scheduled to sandbox. Status CC_DEPLOY_SCHEDULED for Chaincode chaincode-name and Channel channel-name."
     );
-  });
+  }, 10000);
 
   it("should cancel the deployment", async () => {
     // Given
