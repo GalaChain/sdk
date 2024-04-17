@@ -12,7 +12,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-import { TokenBalance, TokenInstanceKey, ValidationFailedError } from "@gala-chain/api";
+import { TokenBalance, TokenInstanceKey, UnauthorizedError, ValidationFailedError } from "@gala-chain/api";
 import BigNumber from "bignumber.js";
 
 import { fetchOrCreateBalance } from "../balances";
@@ -62,6 +62,10 @@ export async function unlockToken(
 
     if (!isTokenAuthority) {
       throw new UnlockForbiddenUserError(ctx.callingUser, tokenInstanceKey.toStringKey());
+    } else if (name !== undefined) {
+      throw new UnauthorizedError(
+        `callingUser ${ctx.callingUser} is not a token authority and passed in a lockedHoldName property for unlocking`
+      );
     }
   }
 

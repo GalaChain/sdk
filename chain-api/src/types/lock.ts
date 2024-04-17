@@ -151,11 +151,19 @@ export class UnlockTokenDto extends ChainCallDTO {
   quantity?: BigNumber;
 
   @JSONSchema({
-    description: "Optional. Owner of the token. Calling User by default."
+    description: "Optional. Owner of the token. Calling User by default. Usable by Token Authorities only."
   })
   @IsOptional()
   @IsNotEmpty()
   owner?: string;
+
+  @JSONSchema({
+    description:
+      "Optional. name property of the lockedHold defined on the balance. undefined by default. Usable by Token Authorities only."
+  })
+  @IsOptional()
+  @IsNotEmpty()
+  lockedHoldName?: string;
 }
 
 @JSONSchema({

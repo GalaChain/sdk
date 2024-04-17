@@ -99,6 +99,8 @@ describe("UnlockToken", () => {
     const currencyInstanceKey = currency.tokenInstanceKey();
     const currencyClass = currency.tokenClass();
 
+    const testLockedHoldName = "some test locked hold name";
+
     const ownerBalance = plainToInstance(TokenBalance, {
       ...currency.tokenBalance(),
       lockedHolds: [
@@ -108,7 +110,8 @@ describe("UnlockToken", () => {
           quantity: new BigNumber("1"),
           createdAt: 1,
           expires: 0,
-          lockAuthority: users.testUser1Id
+          lockAuthority: users.testUser1Id,
+          name: testLockedHoldName
         }
       ]
     });
@@ -118,7 +121,9 @@ describe("UnlockToken", () => {
       .savedState(currencyClass, currencyInstance, ownerBalance);
 
     const dto = await createValidDTO(UnlockTokenDto, {
-      tokenInstance: currencyInstanceKey
+      tokenInstance: currencyInstanceKey,
+      quantity: new BigNumber("1"),
+      lockedHoldName: testLockedHoldName
     });
 
     // When

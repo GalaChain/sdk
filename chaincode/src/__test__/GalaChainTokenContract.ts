@@ -443,8 +443,9 @@ export default class GalaChainTokenContract extends GalaContract {
   public async UnlockToken(ctx: GalaChainContext, dto: UnlockTokenDto): Promise<TokenBalance> {
     return unlockToken(ctx, {
       tokenInstanceKey: dto.tokenInstance,
-      name: undefined,
-      quantity: dto.quantity
+      name: dto.lockedHoldName ?? undefined,
+      quantity: dto.quantity,
+      owner: dto.owner
     });
   }
 
