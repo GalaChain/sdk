@@ -19,7 +19,7 @@ import { ChaincodeInfoDto } from "../../dto";
 import { getDeploymentResponse, getPrivateKey } from "../../galachain-utils";
 
 export default class Info extends BaseCommand<typeof Info> {
-  static override description = "Show the ChainCode information.";
+  static override description = "Get ChainCode information.";
 
   static override examples = [
     "galachain info",
