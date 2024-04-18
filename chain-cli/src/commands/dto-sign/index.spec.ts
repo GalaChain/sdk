@@ -26,7 +26,7 @@ const dataTestJson = `{
   }
 }`;
 
-const fakePrivateKey: string = "45f2db331d77c0154c70be06d7d9fe00fa2b5471872f134d73a6e43c6b7e3d29";
+const fakePrivateKey = "45f2db331d77c0154c70be06d7d9fe00fa2b5471872f134d73a6e43c6b7e3d29";
 
 jest.mock("../../utils");
 
