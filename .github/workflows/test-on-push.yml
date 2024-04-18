@@ -74,7 +74,6 @@ jobs:
           bash --version
           docker version
           docker-compose version
-          npm i -g nx
       - name: Set up Node.js
         uses: actions/setup-node@v4
         with:
