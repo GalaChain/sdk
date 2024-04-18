@@ -34,7 +34,7 @@ function createHold(instance: BigNumber, expires: number, quantity?: BigNumber, 
     createdBy: "user1",
     instanceId: instance,
     quantity: quantity ?? new BigNumber(1),
-    createdAt: 1,
+    created: 1,
     expires: expires,
     name: name
   });

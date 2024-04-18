@@ -35,7 +35,7 @@ it("should create client for default config", async () => {
   // Then (some random checks verifying that the clients are created, and compilation succeeds)
   expect(typeof clients.pk).toEqual("object");
   expect(typeof clients.pk.RegisterUser).toEqual("function");
-  expect(typeof clients.assets.GetChaincodeVersion).toEqual("function");
+  expect(typeof clients.assets.GetContractVersion).toEqual("function");
   expect(typeof clients.disconnect).toEqual("function");
 });
 
@@ -51,7 +51,7 @@ it("should create client for custom config", async () => {
 
   // Then
   expect(typeof clients.token).toEqual("object");
-  expect(typeof clients.token.GetChaincodeVersion).toEqual("function");
+  expect(typeof clients.token.GetContractVersion).toEqual("function");
   expect(typeof clients.auth).toEqual("object");
   expect(typeof clients.auth.RegisterUser).toEqual("function");
   expect(typeof clients.disconnect).toEqual("function");
@@ -68,7 +68,7 @@ it("should use common contract API if no API is defined", async () => {
 
   // Then
   expect(typeof clients.token).toEqual("object");
-  expect(typeof clients.token.GetChaincodeVersion).toEqual("function");
+  expect(typeof clients.token.GetContractVersion).toEqual("function");
   expect(typeof clients.disconnect).toEqual("function");
 });
 
@@ -83,7 +83,7 @@ it("should include and admin API for admin client", async () => {
 
   // Then
   expect(typeof clients.token).toEqual("object");
-  expect(typeof clients.token.GetChaincodeVersion).toEqual("function");
+  expect(typeof clients.token.GetContractVersion).toEqual("function");
   expect(typeof clients.createRegisteredUser).toEqual("function");
 });
 

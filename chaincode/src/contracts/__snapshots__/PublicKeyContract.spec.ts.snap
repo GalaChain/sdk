@@ -8,11 +8,11 @@ exports[`should serve proper API 1`] = `
     "methods": [
       {
         "isWrite": false,
-        "methodName": "GetChaincodeVersion",
+        "methodName": "GetContractAPI",
         "responseSchema": {
           "properties": {
             "Data": {
-              "type": "string",
+              "type": "object",
             },
             "Message": {
               "type": "string",
@@ -33,11 +33,11 @@ exports[`should serve proper API 1`] = `
       },
       {
         "isWrite": false,
-        "methodName": "GetContractAPI",
+        "methodName": "GetContractVersion",
         "responseSchema": {
           "properties": {
             "Data": {
-              "type": "object",
+              "type": "string",
             },
             "Message": {
               "type": "string",

@@ -54,7 +54,7 @@ export default class TestChaincode {
     contracts: ClassConstructor<Contract>[],
     public readonly state: Record<string, string> = {},
     public readonly writes: Record<string, string> = {},
-    public callingUser: string = "client|admin",
+    public callingUser = "client|admin",
     public readonly callHistory: unknown[] = []
   ) {
     const getCurrentCallingUser = () => {
