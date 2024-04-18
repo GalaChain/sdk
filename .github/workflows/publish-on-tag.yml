@@ -193,5 +193,5 @@ jobs:
           git push --set-upstream origin bump-version-to-$VERSION
       - name: Create Pull Request
         env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GH_TOKEN: ${{ secrets.RELEASE_BOT_TOKEN }}
         run: gh pr create --title "Bump Version to $VERSION" --body "Bump Version to $VERSION" --label "bump-version-pr" --head "bump-version-to-$VERSION" --base main
