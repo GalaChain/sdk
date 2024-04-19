@@ -43,7 +43,7 @@ describe("TransferToken", () => {
       createdBy: users.testUser1Id,
       instanceId: nftInstanceKey.instance,
       quantity: new BigNumber("1"),
-      createdAt: 1,
+      created: 1,
       expires: 0
     });
     const tokenBalance = nft.tokenBalance();
@@ -82,7 +82,7 @@ describe("TransferToken", () => {
       createdBy: users.testUser1Id,
       instanceId: nftInstanceKey.instance,
       quantity: new BigNumber("1"),
-      createdAt: 1,
+      created: 1,
       expires: 0
     });
     const tokenBalance = nft.tokenBalance();

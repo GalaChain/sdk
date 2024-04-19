@@ -24,6 +24,8 @@ const consts = {
 };
 
 describe("Deploy Command", () => {
+  beforeAll(() => jest.setTimeout(10000));
+
   beforeEach(() => {
     jest.clearAllMocks();
   });

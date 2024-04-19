@@ -1,65 +1,5 @@
 {
   "commands": {
-    "dto-verify": {
-      "aliases": [
-        "dto:verify"
-      ],
-      "args": {
-        "key": {
-          "description": "File path to the public key.",
-          "name": "key",
-          "required": true
-        },
-        "data": {
-          "description": "Data representing an signed DTO object you wish to verify. Provide a JSON string or a path to a valid JSON file.",
-          "name": "data",
-          "required": true
-        }
-      },
-      "description": "It verifies the signature in the DTO using the public key.",
-      "examples": [
-        "galachain dto:verify ./publicKey '{\n      \"tokenClass\": {\n        \"collection\": \"CLITest\",\n        \"category\": \"Currency\",\n      },\n      \"signature\": \"/fYYooumRdFFrL4U3Nzwuf2uzBZAxKv4WrnMjLnbnJFU+Z6lQe2X/CCcLhRqq67jUDEFvOdky0g5D4sRCExXyBw=\",\n    }'",
-        "galachain dto:verify ./publicKey dto.json"
-      ],
-      "flags": {
-        "json": {
-          "description": "Format output as json.",
-          "helpGroup": "GLOBAL",
-          "name": "json",
-          "allowNo": false,
-          "type": "boolean"
-        },
-        "log-level": {
-          "helpGroup": "GLOBAL",
-          "name": "log-level",
-          "summary": "Specify level for logging.",
-          "hasDynamicHelp": false,
-          "multiple": false,
-          "options": [
-            "debug",
-            "info",
-            "warn",
-            "error"
-          ],
-          "type": "option"
-        }
-      },
-      "hasDynamicHelp": false,
-      "hiddenAliases": [],
-      "id": "dto-verify",
-      "pluginAlias": "@gala-chain/cli",
-      "pluginName": "@gala-chain/cli",
-      "pluginType": "core",
-      "strict": true,
-      "enableJsonFlag": true,
-      "isESM": false,
-      "relativePath": [
-        "lib",
-        "commands",
-        "dto-verify",
-        "index.js"
-      ]
-    },
     "info": {
       "aliases": [],
       "args": {
@@ -69,7 +9,7 @@
           "required": false
         }
       },
-      "description": "Show the ChainCode information.",
+      "description": "Get ChainCode information.",
       "examples": [
         "galachain info",
         "galachain info ./dev-private-key --testnet",
@@ -172,6 +112,175 @@
         "index.js"
       ]
     },
+    "keygen": {
+      "aliases": [],
+      "args": {
+        "file": {
+          "description": "Output file path for private key. Public key will be written alongside it with \".pub\" suffix. ",
+          "name": "file",
+          "required": true
+        }
+      },
+      "description": "Generate a Public / Private key signing pair for Chain DTO (Data Transfer Object) signatures. Uses `@noble/secp256k1` npm library under-the-hood. Always handle private keys with the utmost care.",
+      "examples": [
+        "galachain keygen data/user1"
+      ],
+      "flags": {
+        "json": {
+          "description": "Format output as json.",
+          "helpGroup": "GLOBAL",
+          "name": "json",
+          "allowNo": false,
+          "type": "boolean"
+        },
+        "log-level": {
+          "helpGroup": "GLOBAL",
+          "name": "log-level",
+          "summary": "Specify level for logging.",
+          "hasDynamicHelp": false,
+          "multiple": false,
+          "options": [
+            "debug",
+            "info",
+            "warn",
+            "error"
+          ],
+          "type": "option"
+        }
+      },
+      "hasDynamicHelp": false,
+      "hiddenAliases": [],
+      "id": "keygen",
+      "pluginAlias": "@gala-chain/cli",
+      "pluginName": "@gala-chain/cli",
+      "pluginType": "core",
+      "strict": true,
+      "enableJsonFlag": true,
+      "isESM": false,
+      "relativePath": [
+        "lib",
+        "commands",
+        "keygen",
+        "index.js"
+      ]
+    },
+    "dto-verify": {
+      "aliases": [
+        "dto:verify"
+      ],
+      "args": {
+        "key": {
+          "description": "File path to the public key.",
+          "name": "key",
+          "required": true
+        },
+        "data": {
+          "description": "Data representing an signed DTO object you wish to verify. Provide a JSON string or a path to a valid JSON file.",
+          "name": "data",
+          "required": true
+        }
+      },
+      "description": "It verifies the signature in the DTO using the public key.",
+      "examples": [
+        "galachain dto:verify ./publicKey '{\n      \"tokenClass\": {\n        \"collection\": \"CLITest\",\n        \"category\": \"Currency\",\n      },\n      \"signature\": \"/fYYooumRdFFrL4U3Nzwuf2uzBZAxKv4WrnMjLnbnJFU+Z6lQe2X/CCcLhRqq67jUDEFvOdky0g5D4sRCExXyBw=\",\n    }'",
+        "galachain dto:verify ./publicKey dto.json"
+      ],
+      "flags": {
+        "json": {
+          "description": "Format output as json.",
+          "helpGroup": "GLOBAL",
+          "name": "json",
+          "allowNo": false,
+          "type": "boolean"
+        },
+        "log-level": {
+          "helpGroup": "GLOBAL",
+          "name": "log-level",
+          "summary": "Specify level for logging.",
+          "hasDynamicHelp": false,
+          "multiple": false,
+          "options": [
+            "debug",
+            "info",
+            "warn",
+            "error"
+          ],
+          "type": "option"
+        }
+      },
+      "hasDynamicHelp": false,
+      "hiddenAliases": [],
+      "id": "dto-verify",
+      "pluginAlias": "@gala-chain/cli",
+      "pluginName": "@gala-chain/cli",
+      "pluginType": "core",
+      "strict": true,
+      "enableJsonFlag": true,
+      "isESM": false,
+      "relativePath": [
+        "lib",
+        "commands",
+        "dto-verify",
+        "index.js"
+      ]
+    },
+    "network-prune": {
+      "aliases": [
+        "network:prune"
+      ],
+      "args": {},
+      "description": "Removes the network entirely.",
+      "examples": [
+        "galachain network:prune -r=./dir-target-netowrk"
+      ],
+      "flags": {
+        "json": {
+          "description": "Format output as json.",
+          "helpGroup": "GLOBAL",
+          "name": "json",
+          "allowNo": false,
+          "type": "boolean"
+        },
+        "log-level": {
+          "helpGroup": "GLOBAL",
+          "name": "log-level",
+          "summary": "Specify level for logging.",
+          "hasDynamicHelp": false,
+          "multiple": false,
+          "options": [
+            "debug",
+            "info",
+            "warn",
+            "error"
+          ],
+          "type": "option"
+        },
+        "fabloRoot": {
+          "char": "r",
+          "description": "Root directory of target network. By default './test-network' is used.",
+          "name": "fabloRoot",
+          "default": "./test-network",
+          "hasDynamicHelp": false,
+          "multiple": false,
+          "type": "option"
+        }
+      },
+      "hasDynamicHelp": false,
+      "hiddenAliases": [],
+      "id": "network-prune",
+      "pluginAlias": "@gala-chain/cli",
+      "pluginName": "@gala-chain/cli",
+      "pluginType": "core",
+      "strict": true,
+      "enableJsonFlag": true,
+      "isESM": false,
+      "relativePath": [
+        "lib",
+        "commands",
+        "network-prune",
+        "index.js"
+      ]
+    },
     "dto-sign": {
       "aliases": [
         "dto:sign"
@@ -253,242 +362,6 @@
         "lib",
         "commands",
         "dto-sign",
-        "index.js"
-      ]
-    },
-    "connect": {
-      "aliases": [],
-      "args": {
-        "developerPrivateKey": {
-          "description": "Optional private key to sign the data. It could be a file or a string. If not provided, the private key will be read from the environment variable DEV_PRIVATE_KEY.",
-          "name": "developerPrivateKey",
-          "required": false
-        }
-      },
-      "description": "Connect to a new chaincode.",
-      "examples": [
-        "galachain connect",
-        "galachain connect ./dev-private-key",
-        "galachain connect c0fb1924408d936fb7cd0c86695885df4f66861621b5c8660df3924c4d09dd79",
-        "galachain connect --testnet"
-      ],
-      "flags": {
-        "json": {
-          "description": "Format output as json.",
-          "helpGroup": "GLOBAL",
-          "name": "json",
-          "allowNo": false,
-          "type": "boolean"
-        },
-        "log-level": {
-          "helpGroup": "GLOBAL",
-          "name": "log-level",
-          "summary": "Specify level for logging.",
-          "hasDynamicHelp": false,
-          "multiple": false,
-          "options": [
-            "debug",
-            "info",
-            "warn",
-            "error"
-          ],
-          "type": "option"
-        },
-        "testnet": {
-          "description": "Connect to testnet instead of sandbox.",
-          "name": "testnet",
-          "allowNo": false,
-          "type": "boolean"
-        }
-      },
-      "hasDynamicHelp": false,
-      "hiddenAliases": [],
-      "id": "connect",
-      "pluginAlias": "@gala-chain/cli",
-      "pluginName": "@gala-chain/cli",
-      "pluginType": "core",
-      "strict": true,
-      "enableJsonFlag": true,
-      "isESM": false,
-      "relativePath": [
-        "lib",
-        "commands",
-        "connect",
-        "index.js"
-      ]
-    },
-    "deploy": {
-      "aliases": [],
-      "args": {
-        "imageTag": {
-          "description": "Image tag to deploy. It should follow the pattern imageName:version.",
-          "name": "imageTag",
-          "required": true
-        },
-        "developerPrivateKey": {
-          "description": "Optional private key to sign the data. It could be a file or a string. If not provided, the private key will be read from the environment variable DEV_PRIVATE_KEY.",
-          "name": "developerPrivateKey",
-          "required": false
-        }
-      },
-      "description": "Schedules deployment of published chaincode Docker image to GalaChain sandbox.",
-      "examples": [
-        "galachain deploy registry.image.name:latest",
-        "galachain deploy registry.image.name:latest ./dev-private-key",
-        "galachain deploy registry.image.name:latest c0fb1924408d936fb7cd0c86695885df4f66861621b5c8660df3924c4d09dd79"
-      ],
-      "flags": {
-        "json": {
-          "description": "Format output as json.",
-          "helpGroup": "GLOBAL",
-          "name": "json",
-          "allowNo": false,
-          "type": "boolean"
-        },
-        "log-level": {
-          "helpGroup": "GLOBAL",
-          "name": "log-level",
-          "summary": "Specify level for logging.",
-          "hasDynamicHelp": false,
-          "multiple": false,
-          "options": [
-            "debug",
-            "info",
-            "warn",
-            "error"
-          ],
-          "type": "option"
-        },
-        "testnet": {
-          "description": "Deploy to testnet instead of sandbox.",
-          "hidden": true,
-          "name": "testnet",
-          "allowNo": false,
-          "type": "boolean"
-        }
-      },
-      "hasDynamicHelp": false,
-      "hiddenAliases": [],
-      "id": "deploy",
-      "pluginAlias": "@gala-chain/cli",
-      "pluginName": "@gala-chain/cli",
-      "pluginType": "core",
-      "strict": true,
-      "enableJsonFlag": true,
-      "isESM": false,
-      "relativePath": [
-        "lib",
-        "commands",
-        "deploy",
-        "index.js"
-      ]
-    },
-    "keygen": {
-      "aliases": [],
-      "args": {
-        "file": {
-          "description": "Output file path for private key. Public key will be written alongside it with \".pub\" suffix. ",
-          "name": "file",
-          "required": true
-        }
-      },
-      "description": "Generate a Public / Private key signing pair for Chain DTO (Data Transfer Object) signatures. Uses `@noble/secp256k1` npm library under-the-hood. Always handle private keys with the utmost care.",
-      "examples": [
-        "galachain keygen data/user1"
-      ],
-      "flags": {
-        "json": {
-          "description": "Format output as json.",
-          "helpGroup": "GLOBAL",
-          "name": "json",
-          "allowNo": false,
-          "type": "boolean"
-        },
-        "log-level": {
-          "helpGroup": "GLOBAL",
-          "name": "log-level",
-          "summary": "Specify level for logging.",
-          "hasDynamicHelp": false,
-          "multiple": false,
-          "options": [
-            "debug",
-            "info",
-            "warn",
-            "error"
-          ],
-          "type": "option"
-        }
-      },
-      "hasDynamicHelp": false,
-      "hiddenAliases": [],
-      "id": "keygen",
-      "pluginAlias": "@gala-chain/cli",
-      "pluginName": "@gala-chain/cli",
-      "pluginType": "core",
-      "strict": true,
-      "enableJsonFlag": true,
-      "isESM": false,
-      "relativePath": [
-        "lib",
-        "commands",
-        "keygen",
-        "index.js"
-      ]
-    },
-    "network-prune": {
-      "aliases": [
-        "network:prune"
-      ],
-      "args": {},
-      "description": "Removes the network entirely.",
-      "examples": [
-        "galachain network:prune -r=./dir-target-netowrk"
-      ],
-      "flags": {
-        "json": {
-          "description": "Format output as json.",
-          "helpGroup": "GLOBAL",
-          "name": "json",
-          "allowNo": false,
-          "type": "boolean"
-        },
-        "log-level": {
-          "helpGroup": "GLOBAL",
-          "name": "log-level",
-          "summary": "Specify level for logging.",
-          "hasDynamicHelp": false,
-          "multiple": false,
-          "options": [
-            "debug",
-            "info",
-            "warn",
-            "error"
-          ],
-          "type": "option"
-        },
-        "fabloRoot": {
-          "char": "r",
-          "description": "Root directory of target network. By default './test-network' is used.",
-          "name": "fabloRoot",
-          "default": "./test-network",
-          "hasDynamicHelp": false,
-          "multiple": false,
-          "type": "option"
-        }
-      },
-      "hasDynamicHelp": false,
-      "hiddenAliases": [],
-      "id": "network-prune",
-      "pluginAlias": "@gala-chain/cli",
-      "pluginName": "@gala-chain/cli",
-      "pluginType": "core",
-      "strict": true,
-      "enableJsonFlag": true,
-      "isESM": false,
-      "relativePath": [
-        "lib",
-        "commands",
-        "network-prune",
         "index.js"
       ]
     },
@@ -615,6 +488,72 @@
         "index.js"
       ]
     },
+    "deploy": {
+      "aliases": [],
+      "args": {
+        "imageTag": {
+          "description": "Image tag to deploy. It should follow the pattern imageName:version.",
+          "name": "imageTag",
+          "required": true
+        },
+        "developerPrivateKey": {
+          "description": "Optional private key to sign the data. It could be a file or a string. If not provided, the private key will be read from the environment variable DEV_PRIVATE_KEY.",
+          "name": "developerPrivateKey",
+          "required": false
+        }
+      },
+      "description": "Schedules deployment of published chaincode Docker image to GalaChain sandbox.",
+      "examples": [
+        "galachain deploy registry.image.name:latest",
+        "galachain deploy registry.image.name:latest ./dev-private-key",
+        "galachain deploy registry.image.name:latest c0fb1924408d936fb7cd0c86695885df4f66861621b5c8660df3924c4d09dd79"
+      ],
+      "flags": {
+        "json": {
+          "description": "Format output as json.",
+          "helpGroup": "GLOBAL",
+          "name": "json",
+          "allowNo": false,
+          "type": "boolean"
+        },
+        "log-level": {
+          "helpGroup": "GLOBAL",
+          "name": "log-level",
+          "summary": "Specify level for logging.",
+          "hasDynamicHelp": false,
+          "multiple": false,
+          "options": [
+            "debug",
+            "info",
+            "warn",
+            "error"
+          ],
+          "type": "option"
+        },
+        "testnet": {
+          "description": "Deploy to testnet instead of sandbox.",
+          "hidden": true,
+          "name": "testnet",
+          "allowNo": false,
+          "type": "boolean"
+        }
+      },
+      "hasDynamicHelp": false,
+      "hiddenAliases": [],
+      "id": "deploy",
+      "pluginAlias": "@gala-chain/cli",
+      "pluginName": "@gala-chain/cli",
+      "pluginType": "core",
+      "strict": true,
+      "enableJsonFlag": true,
+      "isESM": false,
+      "relativePath": [
+        "lib",
+        "commands",
+        "deploy",
+        "index.js"
+      ]
+    },
     "test-deploy": {
       "aliases": [],
       "args": {
@@ -675,5 +614,5 @@
       ]
     }
   },
-  "version": "1.1.10"
+  "version": "1.1.13"
 }
