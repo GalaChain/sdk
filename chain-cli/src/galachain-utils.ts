@@ -100,7 +100,13 @@ export async function getDeploymentResponse(params: { privateKey: string; isTest
 
 function getContractNames(imageTag: string): { contractName: string }[] {
   const dockerImageInspect = execSync("docker inspect --format=json ${imageTag}");
-  const dockerJson = JSON.parse(dockerImageInspect);
+  let dockerJson;
+  try {
+    dockerJson = JSON.parse(dockerImageInspect);
+  } catch (e) {
+    throw new Error(`Invalid docker image inspect output: ${dockerImageInspect} - Error ${e}`);
+  }
+
   const imageArchitecture = dockerJson[0].Os + "/" + dockerJson[0].Architecture;
 
   if (imageArchitecture !== ExpectedImageArchitecture) {
