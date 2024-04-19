@@ -100,7 +100,7 @@ export async function getDeploymentResponse(params: { privateKey: string; isTest
 
 function getContractNames(imageTag: string): { contractName: string }[] {
   const command = `docker run --rm ${imageTag} lib/src/cli.js get-contract-names | tail -n 1`;
-  let response: string = "<failed>";
+  let response = "<failed>";
 
   try {
     response = execSync(command);

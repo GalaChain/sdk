@@ -32,13 +32,7 @@ For the first time we're able to provide you with the ability to deploy chaincod
 #### 3 Once we register your public keys, you will be able to connect your chaincode with GalaChain. To do it, navigate to the root directory of your chaincode and call the following command, providing path to developer private key:
 
    ```
-   galachain connect <path-to>/gc-dev-key
-   ```
-
-   You should see the message that confirms you are connected:
-
-   ```
-   You are now connected! Chaincode gc-<eth-addr-from-admin-pub-key>
+   galachain info <path-to>/gc-dev-key
    ```
 
 #### 4 If your docker image is published, and your chaincode is connected, you can deploy it to our sandbox environment with the command:
