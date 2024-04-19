@@ -60,25 +60,20 @@
         "index.js"
       ]
     },
-    "deploy": {
+    "info": {
       "aliases": [],
       "args": {
-        "imageTag": {
-          "description": "Image tag to deploy. It should follow the pattern imageName:version.",
-          "name": "imageTag",
-          "required": true
-        },
         "developerPrivateKey": {
           "description": "Optional private key to sign the data. It could be a file or a string. If not provided, the private key will be read from the environment variable DEV_PRIVATE_KEY.",
           "name": "developerPrivateKey",
           "required": false
         }
       },
-      "description": "Schedules deployment of published chaincode Docker image to GalaChain sandbox.",
+      "description": "Show the ChainCode information.",
       "examples": [
-        "galachain deploy registry.image.name:latest",
-        "galachain deploy registry.image.name:latest ./dev-private-key",
-        "galachain deploy registry.image.name:latest c0fb1924408d936fb7cd0c86695885df4f66861621b5c8660df3924c4d09dd79"
+        "galachain info",
+        "galachain info ./dev-private-key --testnet",
+        "galachain info c0fb1924408d936fb7cd0c86695885df4f66861621b5c8660df3924c4d09dd79"
       ],
       "flags": {
         "json": {
@@ -103,8 +98,7 @@
           "type": "option"
         },
         "testnet": {
-          "description": "Deploy to testnet instead of sandbox.",
-          "hidden": true,
+          "description": "Get info from testnet instead of sandbox.",
           "name": "testnet",
           "allowNo": false,
           "type": "boolean"
@@ -112,7 +106,7 @@
       },
       "hasDynamicHelp": false,
       "hiddenAliases": [],
-      "id": "deploy",
+      "id": "info",
       "pluginAlias": "@gala-chain/cli",
       "pluginName": "@gala-chain/cli",
       "pluginType": "core",
@@ -122,7 +116,59 @@
       "relativePath": [
         "lib",
         "commands",
-        "deploy",
+        "info",
+        "index.js"
+      ]
+    },
+    "init": {
+      "aliases": [],
+      "args": {
+        "path": {
+          "description": "Output path for project template.",
+          "name": "path",
+          "required": true
+        }
+      },
+      "description": "Initialize a project template with Chain CLI.",
+      "examples": [
+        "galachain init ./linux-mac-path/my-project-name"
+      ],
+      "flags": {
+        "json": {
+          "description": "Format output as json.",
+          "helpGroup": "GLOBAL",
+          "name": "json",
+          "allowNo": false,
+          "type": "boolean"
+        },
+        "log-level": {
+          "helpGroup": "GLOBAL",
+          "name": "log-level",
+          "summary": "Specify level for logging.",
+          "hasDynamicHelp": false,
+          "multiple": false,
+          "options": [
+            "debug",
+            "info",
+            "warn",
+            "error"
+          ],
+          "type": "option"
+        }
+      },
+      "hasDynamicHelp": false,
+      "hiddenAliases": [],
+      "id": "init",
+      "pluginAlias": "@gala-chain/cli",
+      "pluginName": "@gala-chain/cli",
+      "pluginType": "core",
+      "strict": true,
+      "enableJsonFlag": true,
+      "isESM": false,
+      "relativePath": [
+        "lib",
+        "commands",
+        "init",
         "index.js"
       ]
     },
@@ -210,66 +256,6 @@
         "index.js"
       ]
     },
-    "info": {
-      "aliases": [],
-      "args": {
-        "developerPrivateKey": {
-          "description": "Optional private key to sign the data. It could be a file or a string. If not provided, the private key will be read from the environment variable DEV_PRIVATE_KEY.",
-          "name": "developerPrivateKey",
-          "required": false
-        }
-      },
-      "description": "Show the ChainCode information.",
-      "examples": [
-        "galachain info",
-        "galachain info ./dev-private-key --testnet",
-        "galachain info c0fb1924408d936fb7cd0c86695885df4f66861621b5c8660df3924c4d09dd79"
-      ],
-      "flags": {
-        "json": {
-          "description": "Format output as json.",
-          "helpGroup": "GLOBAL",
-          "name": "json",
-          "allowNo": false,
-          "type": "boolean"
-        },
-        "log-level": {
-          "helpGroup": "GLOBAL",
-          "name": "log-level",
-          "summary": "Specify level for logging.",
-          "hasDynamicHelp": false,
-          "multiple": false,
-          "options": [
-            "debug",
-            "info",
-            "warn",
-            "error"
-          ],
-          "type": "option"
-        },
-        "testnet": {
-          "description": "Get info from testnet instead of sandbox.",
-          "name": "testnet",
-          "allowNo": false,
-          "type": "boolean"
-        }
-      },
-      "hasDynamicHelp": false,
-      "hiddenAliases": [],
-      "id": "info",
-      "pluginAlias": "@gala-chain/cli",
-      "pluginName": "@gala-chain/cli",
-      "pluginType": "core",
-      "strict": true,
-      "enableJsonFlag": true,
-      "isESM": false,
-      "relativePath": [
-        "lib",
-        "commands",
-        "info",
-        "index.js"
-      ]
-    },
     "connect": {
       "aliases": [],
       "args": {
@@ -331,18 +317,25 @@
         "index.js"
       ]
     },
-    "init": {
+    "deploy": {
       "aliases": [],
       "args": {
-        "path": {
-          "description": "Output path for project template.",
-          "name": "path",
+        "imageTag": {
+          "description": "Image tag to deploy. It should follow the pattern imageName:version.",
+          "name": "imageTag",
           "required": true
+        },
+        "developerPrivateKey": {
+          "description": "Optional private key to sign the data. It could be a file or a string. If not provided, the private key will be read from the environment variable DEV_PRIVATE_KEY.",
+          "name": "developerPrivateKey",
+          "required": false
         }
       },
-      "description": "Initialize a project template with Chain CLI.",
+      "description": "Schedules deployment of published chaincode Docker image to GalaChain sandbox.",
       "examples": [
-        "galachain init ./linux-mac-path/my-project-name"
+        "galachain deploy registry.image.name:latest",
+        "galachain deploy registry.image.name:latest ./dev-private-key",
+        "galachain deploy registry.image.name:latest c0fb1924408d936fb7cd0c86695885df4f66861621b5c8660df3924c4d09dd79"
       ],
       "flags": {
         "json": {
@@ -365,11 +358,18 @@
             "error"
           ],
           "type": "option"
+        },
+        "testnet": {
+          "description": "Deploy to testnet instead of sandbox.",
+          "hidden": true,
+          "name": "testnet",
+          "allowNo": false,
+          "type": "boolean"
         }
       },
       "hasDynamicHelp": false,
       "hiddenAliases": [],
-      "id": "init",
+      "id": "deploy",
       "pluginAlias": "@gala-chain/cli",
       "pluginName": "@gala-chain/cli",
       "pluginType": "core",
@@ -379,7 +379,7 @@
       "relativePath": [
         "lib",
         "commands",
-        "init",
+        "deploy",
         "index.js"
       ]
     },

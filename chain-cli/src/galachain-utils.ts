@@ -99,11 +99,10 @@ export async function getDeploymentResponse(params: { privateKey: string; isTest
 }
 
 function getContractNames(imageTag: string): { contractName: string }[] {
-  const imageArchitecture = execSync(
-    "docker inspect --format=json ${imageTag} | jq -r '.[0].Os + \"/\" + .[0].Architecture'"
-  )
-    .toString()
-    .trim();
+  const dockerImageInspect = execSync("docker inspect --format=json ${imageTag}");
+  const dockerJson = JSON.parse(dockerImageInspect);
+  const imageArchitecture = dockerJson[0].Os + "/" + dockerJson[0].Architecture;
+
   if (imageArchitecture !== ExpectedImageArchitecture) {
     throw new Error(`Unsupported architecture ${imageArchitecture}, expected ${ExpectedImageArchitecture}`);
   }

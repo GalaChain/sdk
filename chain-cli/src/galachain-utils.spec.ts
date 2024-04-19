@@ -80,7 +80,7 @@ describe("deployChaincode", () => {
 
     jest
       .spyOn(require("child_process"), "execSync")
-      .mockImplementationOnce(() => "linux/amd64")
+      .mockImplementationOnce(() => `[{"Architecture":"amd64","Os":"linux"}]`)
       .mockImplementationOnce(
         () =>
           '[{"contractName":"AppleContract"},{"contractName":"GalaChainToken"},{"contractName":"PublicKeyContract"}]'
@@ -106,7 +106,7 @@ describe("deployChaincode", () => {
 
     jest
       .spyOn(require("child_process"), "execSync")
-      .mockImplementationOnce(() => "linux/amd64")
+      .mockImplementationOnce(() => `[{"Architecture":"amd64","Os":"linux"}]`)
       .mockImplementationOnce(
         () =>
           '[{"contractName":"AppleContract"},{"contractName":"GalaChainToken"},{"contractName":"PublicKeyContract"}]'
@@ -138,7 +138,7 @@ describe("deployChaincode", () => {
 
     jest
       .spyOn(require("child_process"), "execSync")
-      .mockImplementationOnce(() => "linux/amd64")
+      .mockImplementationOnce(() => `[{"Architecture":"amd64","Os":"linux"}]`)
       .mockImplementationOnce(
         () =>
           '[{"contractName":"AppleContract"},{"contractName":"GalaChainToken"},{"contractName":"PublicKeyContract"}]'
