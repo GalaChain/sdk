@@ -27,12 +27,12 @@ echo "Enroll response: $enroll_response"
 
 token="$(echo "$enroll_response" | jq -r '.token')"
 
-# Call chaincode (GetChaincodeVersion - the simplest call)
+# Call chaincode (GetContractVersion - the simplest call)
 version_response="$(
   curl --request POST \
     --url http://localhost:8801/invoke/product-channel/basic-product \
     --header "Authorization: Bearer $token" \
-    --data '{"method": "PublicKeyContract:GetChaincodeVersion", "args": []}'
+    --data '{"method": "PublicKeyContract:GetContractVersion", "args": []}'
 )"
 echo "Version response: $version_response"
 

@@ -10,11 +10,11 @@ exports[`PublicKeyContract API should match snapshot 1`] = `
       "description": undefined,
       "dtoSchema": undefined,
       "isWrite": false,
-      "methodName": "GetChaincodeVersion",
+      "methodName": "GetContractAPI",
       "responseSchema": {
         "properties": {
           "Data": {
-            "type": "string",
+            "type": "object",
           },
           "Message": {
             "type": "string",
@@ -39,11 +39,11 @@ exports[`PublicKeyContract API should match snapshot 1`] = `
       "description": undefined,
       "dtoSchema": undefined,
       "isWrite": false,
-      "methodName": "GetContractAPI",
+      "methodName": "GetContractVersion",
       "responseSchema": {
         "properties": {
           "Data": {
-            "type": "object",
+            "type": "string",
           },
           "Message": {
             "type": "string",

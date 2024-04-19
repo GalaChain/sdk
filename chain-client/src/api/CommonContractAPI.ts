@@ -23,15 +23,15 @@ import {
 import { ChainClient } from "../generic/ChainClient";
 
 export interface CommonContractAPI extends Record<string, unknown> {
-  GetChaincodeVersion(): Promise<GalaChainResponse<string>>;
+  GetContractVersion(): Promise<GalaChainResponse<string>>;
   GetContractAPI(): Promise<GalaChainResponse<ContractAPI>>;
   GetObjectByKey(key: string): Promise<GalaChainResponse<Record<string, unknown>>>;
   GetObjectHistory(key: string): Promise<GalaChainResponse<Record<string, unknown>>>;
 }
 
 export const commonContractAPI = (client: ChainClient): CommonContractAPI => ({
-  async GetChaincodeVersion(): Promise<GalaChainResponse<string>> {
-    const resp = await client.evaluateTransaction("GetChaincodeVersion");
+  async GetContractVersion(): Promise<GalaChainResponse<string>> {
+    const resp = await client.evaluateTransaction("GetContractVersion");
     return resp as GalaChainResponse<string>;
   },
 
