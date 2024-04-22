@@ -18,7 +18,7 @@ import Deploy from "../../../src/commands/deploy";
 import { deployChaincode } from "../../../src/galachain-utils";
 
 jest.mock("../../../src/galachain-utils");
-jest.setTimeout(10000)
+jest.setTimeout(10000);
 
 const consts = {
   developerPrivateKey: "bf2168e0e2238b9d879847987f556a093040a2cab07983a20919ac33103d0d00"
