@@ -62,10 +62,6 @@ export async function unlockToken(
 
     if (!isTokenAuthority) {
       throw new UnlockForbiddenUserError(ctx.callingUser, tokenInstanceKey.toStringKey());
-    } else if (name !== undefined) {
-      throw new UnauthorizedError(
-        `callingUser ${ctx.callingUser} is not a token authority and passed in a lockedHoldName property for unlocking`
-      );
     }
   }
 
