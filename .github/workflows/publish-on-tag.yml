@@ -1,5 +1,6 @@
 name: Publish on tag
 on:
+  pull_request:
   push:
     tags: [v*]
   workflow_dispatch:
