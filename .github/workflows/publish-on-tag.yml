@@ -32,42 +32,42 @@ jobs:
       - name: publish-chain-api
         run: |
           cd chain-api
-          npm i
-          npm run build
+          # npm i
+          # npm run build
           # Publish to NPM registry
-          npm publish --access public
+          # npm publish --access public
           cd ../
 
       - name: publish-chain-test
         run: |
           cd chain-test
-          npm i
-          npm run build
-          npm publish --access public
+          # npm i
+          # npm run build
+          # npm publish --access public
           cd ../
 
       - name: publish-chain-cli
         run: |
           cd chain-cli
-          npm i
-          npm run build
-          npm publish --access public
+          # npm i
+          # npm run build
+          # npm publish --access public
           cd ../
 
       - name: publish-chaincode
         run: |
           cd chaincode
-          npm i
-          npm run build
-          npm publish --access public
+          # npm i
+          # npm run build
+          # npm publish --access public
           cd ../
 
       - name: publish-client
         run: |
           cd chain-client
-          npm i
-          npm run build
-          npm publish --access public
+          # npm i
+          # npm run build
+          # npm publish --access public
           cd ../
 
   publish-pages:
@@ -75,51 +75,8 @@ jobs:
     runs-on: ubuntu-latest
     needs: [publish]
     steps:
-      - uses: actions/checkout@v4
-      - name: Install project dependencies
-        run: npm install
-      - name: Generate typedocs
-        run: |
-          npm run typedoc-chain-api
-          npm run typedoc-chain-client
-          npm run typedoc-chaincode
-          npm run typedoc-chain-test
-          npm run replace-readme-docs
-      - name: Install google-chrome
-        run: |
-          wget https://dl.google.com/linux/direct/google-chrome-stable_current_amd64.deb
-          sudo dpkg -i google-chrome*.deb
-      - name: Install python3 and pip
-        run: |
-          sudo apt-get install -y python3
-          sudo apt-get install -y python3-pip python3-pillow python3-cffi python3-brotli gcc musl-dev python3-dev
-      - name: Setup Node.js
-        uses: actions/setup-node@v3
-      - name: Install mermaid-cli
-        run: npm install -g @mermaid-js/mermaid-cli
-      - name: Install pip packages
-        run: pip3 install mkdocs==1.5.3 mkdocs-material==9.4.8 mike==1.1.2 beautifulsoup4==4.9.3 setuptools==58.2.0 mkdocs-awesome-pages-plugin==2.9.2
-      - name: Git config
-        run: |
-          git config --global user.email "${GITHUB_ACTOR}"
-          git config --global user.name "${GITHUB_ACTOR}@gala.games.com"
-      - name: Clone mkdocs-with-pdf fixed branch and install
-        run: |
-          git clone -b render-mermaid-png https://github.com/Fuerback/mkdocs-with-pdf.git
-          cd mkdocs-with-pdf
-          sudo python3 setup.py install
-          cd ..
-      - name: Mkdocs build
-        run: |
-          mkdocs build
-      - name: Push a new version of the docs
-        run: |
-          git stash
-          git fetch origin $PAGES_BRANCH && git -b checkout $PAGES_BRANCH origin/$PAGES_BRANCH || git checkout $PAGES_BRANCH || echo "Pages branch not deployed yet."
-          git checkout $GITHUB_SHA
-          mike deploy --rebase --prefix docs -r $HTTPS_REMOTE -p -b $PAGES_BRANCH -u ${GITHUB_REF#refs/tags/} latest
-          mike set-default --rebase --prefix docs -r $HTTPS_REMOTE -p -b $PAGES_BRANCH latest
-          git checkout $PAGES_BRANCH -- docs/
+      - name: Publish pages
+        run: echo "Publish pages"
 
   publish-cli-image:
     name: Publish CLI Image
@@ -133,29 +90,8 @@ jobs:
       contents: read
       packages: write
     steps:
-      - name: Checkout
-        uses: actions/checkout@v4
-      - name: Set up QEMU
-        uses: docker/setup-qemu-action@v3
-      - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@v3
-      - name: Log in to the Container registry
-        uses: docker/login-action@v3
-        with:
-          registry: ${{ env.REGISTRY }}
-          username: ${{ github.actor }}
-          password: ${{ secrets.GITHUB_TOKEN }}
-      - name: Make the repository name lowercase
-        id: lower-repo
-        shell: pwsh
-        run: |
-          "::set-output name=repository::$($env:GITHUB_REPOSITORY.ToLowerInvariant())"
-      - name: Build and push Docker image
-        uses: docker/build-push-action@v5
-        with:
-          context: ./chain-cli/docker
-          push: true
-          tags: ghcr.io/${{ steps.lower-repo.outputs.repository }}:latest
+      - name: Publish CLI Image
+        run: echo "Publish pages"
 
   bump-version:
     needs: [publish, publish-cli-image]
@@ -196,3 +132,16 @@ jobs:
         env:
           GH_TOKEN: ${{ secrets.RELEASE_BOT_TOKEN }}
         run: gh pr create --title "Bump Version to $VERSION" --body "Bump Version to $VERSION" --label "bump-version-pr" --head "bump-version-to-$VERSION" --base main
+  approve-and-merge:
+    needs: [bump-version]
+    runs-on: ubuntu-latest
+    if: github.actor == 'github-actions'
+    steps:
+      - name: Auto Approve PR
+        uses: hmarr/auto-approve-action@v4
+      - name: Push next version release
+        uses: pascalgn/automerge-action@v0.16.2
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          MERGE_METHOD: "squash"
+          MERGE_COMMIT_MESSAGE: "Bump Version to ${env.VERSION}"
