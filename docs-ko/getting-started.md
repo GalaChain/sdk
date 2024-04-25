@@ -4,7 +4,7 @@
 
 > If you are using Windows with WSL don't forget to enable integration with WSL on Docker Desktop.
 
-[How to use Windows with WSL](./windows-wsl.md)
+[How to use Windows with WSL](windows-wsl.md)
 
 ### Requirements
 
