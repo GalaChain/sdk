@@ -162,35 +162,30 @@ export async function generateKeys(projectPath: string): Promise<void> {
 
   const adminPrivateKey = secp.utils.bytesToHex(secp.utils.randomPrivateKey());
   const adminPublicKey = secp.utils.bytesToHex(secp.getPublicKey(adminPrivateKey));
-  const adminPublicKeyEthAddr = "gc-" + signatures.getEthAddress(adminPublicKey);
 
   const devPrivateKey = secp.utils.bytesToHex(secp.utils.randomPrivateKey());
   const devPublicKey = secp.utils.bytesToHex(secp.getPublicKey(devPrivateKey));
-  const devPublicKeyEthAddr = "gc-" + signatures.getEthAddress(devPublicKey);
+
+  const chaincodeName = "gc-" + signatures.getEthAddress(adminPublicKey);
+  const privateKeysPath = path.join(os.homedir(), DEFAULT_PRIVATE_KEYS_DIR, chaincodeName);
 
   fs.mkdir(`${keysPath}`, (err) => {
     if (err) console.error(`Could not create a directory ${keysPath}. Error: ${err}`);
   });
 
-  const adminPrivateKeyPath = path.join(os.homedir(), DEFAULT_PRIVATE_KEYS_DIR, adminPublicKeyEthAddr);
-  fs.mkdir(adminPrivateKeyPath, { recursive: true }, (err) => {
-    if (err) console.error(`Could not create a directory ${adminPrivateKeyPath}. Error: ${err}`);
-  });
-
-  const devPrivateKeyPath = path.join(os.homedir(), DEFAULT_PRIVATE_KEYS_DIR, devPublicKeyEthAddr);
-  fs.mkdir(devPrivateKeyPath, { recursive: true }, (err) => {
-    if (err) console.error(`Could not create a directory ${devPrivateKeyPath}. Error: ${err}`);
+  fs.mkdir(privateKeysPath, { recursive: true }, (err) => {
+    if (err) console.error(`Could not create a directory ${privateKeysPath}. Error: ${err}`);
   });
 
   await writeFile(`${keysPath}/${DEFAULT_ADMIN_PRIVATE_KEY_NAME}.pub`, adminPublicKey);
   await writeFile(`${keysPath}/${DEFAULT_DEV_PRIVATE_KEY_NAME}.pub`, devPublicKey);
 
-  await writeFile(`${adminPrivateKeyPath}/${DEFAULT_ADMIN_PRIVATE_KEY_NAME}`, adminPrivateKey.toString());
-  await writeFile(`${devPrivateKeyPath}/${DEFAULT_DEV_PRIVATE_KEY_NAME}`, devPrivateKey.toString());
+  await writeFile(`${privateKeysPath}/${DEFAULT_ADMIN_PRIVATE_KEY_NAME}`, adminPrivateKey.toString());
+  await writeFile(`${privateKeysPath}/${DEFAULT_DEV_PRIVATE_KEY_NAME}`, devPrivateKey.toString());
 
-  console.log(
-    `Public keys created at ${keysPath} directory. Private keys created at ${adminPrivateKeyPath} and ${devPrivateKeyPath} directory.`
-  );
+  console.log(`Chaincode name:         ${chaincodeName}`);
+  console.log(`Public keys directory:  ${keysPath}`);
+  console.log(`Private keys directory: ${privateKeysPath}`);
 }
 
 export async function getPrivateKey(keysFromArg: string | undefined) {
@@ -241,17 +236,18 @@ export async function overwriteApiConfig(contracts: string, channel: string, cha
 
 function getDefaultDevPrivateKeyFile(): string | undefined {
   try {
-    const defaultDevPublicKeyPath = path.join(
+    const defaultAdminPublicKeyPath = path.join(
       process.cwd(),
       DEFAULT_PUBLIC_KEYS_DIR,
       `${DEFAULT_DEV_PRIVATE_KEY_NAME}.pub`
     );
-    const defaultDevPublicKey = fs.readFileSync(defaultDevPublicKeyPath, "utf8");
+    const defaultAdminPublicKey = fs.readFileSync(defaultAdminPublicKeyPath, "utf8");
+    const chaincodeName = "gc-" + signatures.getEthAddress(defaultAdminPublicKey);
 
     const defaultDevPrivateKeyPath = path.join(
       os.homedir(),
       DEFAULT_PRIVATE_KEYS_DIR,
-      "gc-" + signatures.getEthAddress(defaultDevPublicKey),
+      chaincodeName,
       DEFAULT_DEV_PRIVATE_KEY_NAME
     );
 
