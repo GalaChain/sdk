@@ -113,7 +113,7 @@ export async function lockToken(
     createdBy: callingOnBehalf,
     instanceId: tokenInstance.instance,
     quantity: quantity,
-    createdAt: ctx.txUnixTime,
+    created: ctx.txUnixTime,
     expires: expires,
     name: name,
     lockAuthority

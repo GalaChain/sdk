@@ -9,10 +9,7 @@ In order to publish and deploy chaincode, you need to contact GalaChain support 
 
 ## The process
 
-1. Provide to GalaChain support chaincode information and public keys, then connect the chaincode with:
-   ```
-   galachain connect
-   ```
+1. Provide to GalaChain support chaincode information and public keys.
 
 2. Build and publish chaincode Docker image.
 
@@ -47,10 +44,10 @@ Once you send the data, GalaChain support will ask you about some details, to en
 
 Tip: you can use `galachain keygen <path>` command to create a valid key pair.
 
-Then you need to call in the chaincode directory:
+Then you can check if you have access to the chaincode with:
 
 ```
-galachain connect <org-name> <channel-name> <chaincode-name>
+galachain info
 ```
 
 This way GalaChain CLI will verify your public key is authorized to deploy chaincodes, and it will create a configuration file in root project directory (`.galachainrc`) containing org, channel and chaincode names.

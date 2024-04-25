@@ -18,7 +18,7 @@ $ npm install -g @gala-chain/cli
 $ galachain COMMAND
 running command...
 $ galachain (--version)
-@gala-chain/cli/1.1.10 linux-x64 node-v18.17.0
+@gala-chain/cli/1.1.15 linux-x64 node-v18.20.2
 $ galachain --help [COMMAND]
 USAGE
   $ galachain COMMAND
@@ -27,7 +27,6 @@ USAGE
 <!-- usagestop -->
 # Commands
 <!-- commands -->
-* [`galachain connect [DEVELOPERPRIVATEKEY]`](#galachain-connect-developerprivatekey)
 * [`galachain deploy IMAGETAG [DEVELOPERPRIVATEKEY]`](#galachain-deploy-imagetag-developerprivatekey)
 * [`galachain dto-sign KEY DATA`](#galachain-dto-sign-key-data)
 * [`galachain dto-verify KEY DATA`](#galachain-dto-verify-key-data)
@@ -42,39 +41,6 @@ USAGE
 * [`galachain network:prune`](#galachain-networkprune)
 * [`galachain network:up`](#galachain-networkup)
 * [`galachain test-deploy IMAGETAG [DEVELOPERPRIVATEKEY]`](#galachain-test-deploy-imagetag-developerprivatekey)
-
-## `galachain connect [DEVELOPERPRIVATEKEY]`
-
-Connect to a new chaincode.
-
-```
-USAGE
-  $ galachain connect [DEVELOPERPRIVATEKEY] [--json] [--log-level debug|info|warn|error] [--testnet]
-
-ARGUMENTS
-  DEVELOPERPRIVATEKEY  Optional private key to sign the data. It could be a file or a string. If not provided, the
-                       private key will be read from the environment variable DEV_PRIVATE_KEY.
-
-FLAGS
-  --testnet  Connect to testnet instead of sandbox.
-
-GLOBAL FLAGS
-  --json                Format output as json.
-  --log-level=<option>  Specify level for logging.
-                        <options: debug|info|warn|error>
-
-DESCRIPTION
-  Connect to a new chaincode.
-
-EXAMPLES
-  $ galachain connect
-
-  $ galachain connect ./dev-private-key
-
-  $ galachain connect c0fb1924408d936fb7cd0c86695885df4f66861621b5c8660df3924c4d09dd79
-
-  $ galachain connect --testnet
-```
 
 ## `galachain deploy IMAGETAG [DEVELOPERPRIVATEKEY]`
 
@@ -285,7 +251,7 @@ _See code: [@oclif/plugin-help](https://github.com/oclif/plugin-help/blob/v3.3.1
 
 ## `galachain info [DEVELOPERPRIVATEKEY]`
 
-Show the ChainCode information.
+Get ChainCode information.
 
 ```
 USAGE
@@ -304,7 +270,7 @@ GLOBAL FLAGS
                         <options: debug|info|warn|error>
 
 DESCRIPTION
-  Show the ChainCode information.
+  Get ChainCode information.
 
 EXAMPLES
   $ galachain info
