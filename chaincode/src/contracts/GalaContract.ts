@@ -92,7 +92,7 @@ export abstract class GalaContract extends Contract {
   })
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
   public async GetChaincodeVersion(ctx: GalaChainContext): Promise<GalaChainResponse<string>> {
-    return this.GetContractVersion(ctx);
+    return GalaChainResponse.Success(this.version);
   }
 
   @GalaTransaction({
