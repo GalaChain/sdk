@@ -135,7 +135,7 @@ jobs:
   approve-and-merge:
     needs: [bump-version]
     runs-on: ubuntu-latest
-    if: github.actor == 'github-actions'
+    if: github.actor == 'galachain-release-bot'
     steps:
       - name: Auto Approve PR
         uses: hmarr/auto-approve-action@v4
