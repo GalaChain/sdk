@@ -12,8 +12,8 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-import DtoVerify from "../../../src/commands/dto-verify";
 import { parseJsonFromStringOrFile, readPublicKeyFromFile } from "../../utils";
+import DtoVerify from "./index";
 
 const dataTestJson = `{
   "firstName": "Tom",

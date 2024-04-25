@@ -15,7 +15,7 @@
 import fs from "fs/promises";
 import path from "path";
 
-import KeyGen from "../../../src/commands/keygen";
+import KeyGen from "./index";
 
 describe("KeyGen Command", () => {
   it("should check KeyGen Command", async () => {

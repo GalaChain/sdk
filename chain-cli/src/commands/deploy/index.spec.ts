@@ -14,10 +14,10 @@
  */
 import { ux } from "@oclif/core";
 
-import Deploy from "../../../src/commands/deploy";
-import { deployChaincode } from "../../../src/galachain-utils";
+import { deployChaincode } from "../../galachain-utils";
+import Deploy from "./index";
 
-jest.mock("../../../src/galachain-utils");
+jest.mock("../../galachain-utils");
 jest.setTimeout(10000);
 
 const consts = {

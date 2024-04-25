@@ -16,7 +16,7 @@
 /* eslint-disable @typescript-eslint/no-var-requires */
 import path from "path";
 
-import Init from "../../../src/commands/init";
+import Init from "./index";
 
 describe("Init Command", () => {
   afterEach(() => jest.restoreAllMocks());
@@ -28,13 +28,12 @@ describe("Init Command", () => {
       return true;
     });
 
-    const execSync = jest.spyOn(require("child_process"), "execSync");
-    execSync.mockImplementation(() => "cloned repository");
+    jest.spyOn(require("child_process"), "execSync").mockImplementation(() => "");
 
     const fs = require("fs");
     fs.promises.writeFile = jest.fn().mockResolvedValue(undefined);
 
-    const target = path.resolve(__dirname, "../../../test/test-project");
+    const target = path.resolve(__dirname, "../../__test__/test-project");
     await Init.run([target]);
 
     expect(result.join()).toContain(`Project template initialized at ${target}`);
