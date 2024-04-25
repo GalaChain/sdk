@@ -7,6 +7,32 @@ exports[`should serve proper API 1`] = `
     "contractVersion": "0.0.0",
     "methods": [
       {
+        "description": "Gets the contract version. Deprecated. Use GetContractVersion instead.",
+        "isWrite": false,
+        "methodName": "GetChaincodeVersion",
+        "responseSchema": {
+          "properties": {
+            "Data": {
+              "type": "string",
+            },
+            "Message": {
+              "type": "string",
+            },
+            "Status": {
+              "description": "Indicates Error (0) or Success (1)",
+              "enum": [
+                0,
+                1,
+              ],
+            },
+          },
+          "required": [
+            "Status",
+          ],
+          "type": "object",
+        },
+      },
+      {
         "isWrite": false,
         "methodName": "GetContractAPI",
         "responseSchema": {

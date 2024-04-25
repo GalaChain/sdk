@@ -87,6 +87,16 @@ export abstract class GalaContract extends Contract {
 
   @GalaTransaction({
     type: EVALUATE,
+    out: "string",
+    description: "Gets the contract version. Deprecated. Use GetContractVersion instead."
+  })
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  public async GetChaincodeVersion(ctx: GalaChainContext): Promise<GalaChainResponse<string>> {
+    return this.GetContractVersion(ctx);
+  }
+
+  @GalaTransaction({
+    type: EVALUATE,
     out: "object"
   })
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
