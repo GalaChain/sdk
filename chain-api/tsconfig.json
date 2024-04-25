@@ -8,13 +8,5 @@
   },
   "files": [],
   "include": ["**/*", "package.json"],
-  "exclude": ["lib", "**/*spec.ts", "src/__mocks__", "src/__test__"],
-  "references": [
-    {
-      "path": "./tsconfig.lib.json"
-    },
-    {
-      "path": "./tsconfig.spec.json"
-    }
-  ]
+  "exclude": ["lib"]
 }
