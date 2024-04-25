@@ -43,7 +43,9 @@ ls
 Among others, you will find the following directories:
 - `src` - the source code of your chaincode,
 - `e2e` - end-to-end tests for your chaincode,
-- `keys` - keys that are required for deployment.
+- `keys` - keys that are required for calling our managed infrastructure.
+
+Additionally, init command creates private keys for the chaincode admin and developer in your home directory at `~/.gc-keys/<chaincode-name>`, where `<chaincode-name>` consists of `gc-` prefix and eth address calculated from chaincode admin public key.
 
 
 ## 3. Update the contract (optional)
@@ -95,8 +97,6 @@ To do so, you need to provide us the following information:
 - Docker image tag (without the version, or `:latest` part),
 - Chaincode admin public key (from `keys/gc-admin-key.pub` file),
 - Developer public key (from `keys/gc-dev-key.pub` file).
-
-TODO VERIFY: You can send this information to us via email or any other communication channel.
 
 After the approval, call the following command to verify you registration:
 
@@ -156,5 +156,5 @@ const client: ChainClient = gcclient
 ```
 
 Also remember to sign the payload with your private key before sending it to the network.
-The initial user on chain is the admin, so you can use the `gc-admin-key` from the `keys` directory.
+The initial user on chain is the admin, so you can use the relevant `gc-admin-key` from the `~/.gc-keys/<chaincode-name>` directory.
 See the [Chaincode Client](chaincode-client.md) and the [Authorization](authorization.md) reference for more details.
