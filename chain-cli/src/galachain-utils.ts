@@ -194,7 +194,12 @@ export async function generateKeys(projectPath: string): Promise<void> {
 }
 
 export async function getPrivateKey(keysFromArg: string | undefined) {
-  return keysFromArg || process.env.DEV_PRIVATE_KEY || (await getPrivateKeyPrompt());
+  return (
+    keysFromArg ??
+    process.env.DEV_PRIVATE_KEY ??
+    (await getDefaultDevPrivateKeyFile()) ??
+    (await getPrivateKeyPrompt())
+  );
 }
 
 export async function overwriteApiConfig(contracts: string, channel: string, chaincodeName: string) {
@@ -232,6 +237,29 @@ export async function overwriteApiConfig(contracts: string, channel: string, cha
         ]
       }`;
   fs.writeFileSync(apiConfigPath, JSON.stringify(JSON.parse(apiConfigJson), null, 2));
+}
+
+function getDefaultDevPrivateKeyFile(): string | undefined {
+  try {
+    const defaultDevPublicKeyPath = path.join(
+      process.cwd(),
+      DEFAULT_PUBLIC_KEYS_DIR,
+      `${DEFAULT_DEV_PRIVATE_KEY_NAME}.pub`
+    );
+    const defaultDevPublicKey = fs.readFileSync(defaultDevPublicKeyPath, "utf8");
+
+    const defaultDevPrivateKeyPath = path.join(
+      os.homedir(),
+      DEFAULT_PRIVATE_KEYS_DIR,
+      "gc-" + signatures.getEthAddress(defaultDevPublicKey),
+      DEFAULT_DEV_PRIVATE_KEY_NAME
+    );
+
+    return fs.readFileSync(defaultDevPrivateKeyPath, "utf8");
+  } catch (e) {
+    console.error(`Error reading file: ${e}`);
+    return undefined;
+  }
 }
 
 async function getPrivateKeyPrompt(): Promise<string> {

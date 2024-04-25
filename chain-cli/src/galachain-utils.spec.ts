@@ -112,10 +112,6 @@ describe("deployChaincode", () => {
           '[{"contractName":"AppleContract"},{"contractName":"GalaChainToken"},{"contractName":"PublicKeyContract"}]'
       );
 
-    jest.spyOn(fs, "readFileSync").mockImplementation(() => {
-      throw new Error();
-    });
-
     jest.spyOn(ux, "prompt").mockResolvedValueOnce(privateKey);
 
     const postDeployChaincodePrivateKey = {
