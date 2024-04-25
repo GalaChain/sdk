@@ -7,6 +7,35 @@ exports[`PublicKeyContract API should match snapshot 1`] = `
   "methods": [
     {
       "apiMethodName": undefined,
+      "description": "Gets the contract version. Deprecated. Use GetContractVersion instead.",
+      "dtoSchema": undefined,
+      "isWrite": false,
+      "methodName": "GetChaincodeVersion",
+      "responseSchema": {
+        "properties": {
+          "Data": {
+            "type": "string",
+          },
+          "Message": {
+            "type": "string",
+          },
+          "Status": {
+            "description": "Indicates Error (0) or Success (1)",
+            "enum": [
+              0,
+              1,
+            ],
+          },
+        },
+        "required": [
+          "Status",
+        ],
+        "type": "object",
+      },
+      "sequence": undefined,
+    },
+    {
+      "apiMethodName": undefined,
       "description": undefined,
       "dtoSchema": undefined,
       "isWrite": false,
