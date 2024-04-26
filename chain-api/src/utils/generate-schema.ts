@@ -103,6 +103,8 @@ function updateDefinitions(
           object[k] = schema[k];
         }
       });
+    } catch (e) {
+      console.error("Error processing schema:", e.message);
     } finally {
       object.type = "object";
       delete object["$ref"];
