@@ -28,7 +28,8 @@ describe("Init Command", () => {
       return true;
     });
 
-    jest.spyOn(require("child_process"), "execSync").mockImplementation(() => "");
+    const mkdirMock = jest.spyOn(require("fs"), "mkdirSync").mockImplementation(() => {});
+    const cpMock = jest.spyOn(require("fs"), "cpSync").mockImplementation(() => {});
 
     const fs = require("fs");
     fs.promises.writeFile = jest.fn().mockResolvedValue(undefined);
@@ -37,5 +38,13 @@ describe("Init Command", () => {
     await Init.run([target]);
 
     expect(result.join()).toContain(`Project template initialized at ${target}`);
+    expect(mkdirMock).toHaveBeenCalledWith(path.resolve(__dirname, "../../__test__/test-project"), {
+      recursive: true
+    });
+    expect(cpMock).toHaveBeenCalledWith(
+      path.resolve(__dirname, "../../chaincode-template"),
+      path.resolve(__dirname, "../../__test__/test-project"),
+      { recursive: true }
+    );
   });
 });
