@@ -14,8 +14,8 @@
  */
 import path from "path";
 
-import DtoSign from "../../../src/commands/dto-sign";
 import { parseJsonFromStringOrFile, parseStringOrFileKey } from "../../utils";
+import DtoSign from "./index";
 
 const dataTestJson = `{
   "tokenClass": {
