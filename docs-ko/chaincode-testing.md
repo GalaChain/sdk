@@ -25,7 +25,7 @@ Let's create tests for the following scenarios:
 3. `AppleContract` should allow to pick an apple.
 
 Note: `AppleContract` with the referenced implementation and all relevant tests are available in chaincode template.
-You can follow the instructions in [Getting started](getting-started.md) to create a new chaincode project with `AppleContract` included.
+You can follow the instructions in [Getting started](./getting-started.md) to create a new chaincode project with `AppleContract` included.
 
 #### Test 1. `AppleContract` should allow to plant a tree
 

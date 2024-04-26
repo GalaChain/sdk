@@ -29,5 +29,5 @@ Open Docker Desktop and go to `Settings` > `Resources` > `WSL Integration` and e
     ```bash
     sudo snap install yq jq
     ```
-4. At this point your WSL environment should be ready to use GalaChain. Follow the instructions on the [Getting Started](getting-started.md) guide to install the CLI and initialize your project.
+4. At this point your WSL environment should be ready to use GalaChain. Follow the instructions on the [Getting Started](./getting-started.md) guide to install the CLI and initialize your project.
 
