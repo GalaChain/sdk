@@ -60,7 +60,7 @@ export async function authorize(
     throw new MissingSignatureError();
   }
 
-  const recoveredPkHex = recoverPublicKey(dto.signature, dto);
+  const recoveredPkHex = recoverPublicKey(dto.signature, dto, dto.prefix ?? '');
 
   if (recoveredPkHex !== undefined) {
     if (dto.signerPublicKey !== undefined) {
@@ -134,9 +134,9 @@ export function ensureOrganizationIsAllowed(ctx: GalaChainContext, allowedOrgsMS
   }
 }
 
-function recoverPublicKey(signature: string, dto: ChainCallDTO): string | undefined {
+function recoverPublicKey(signature: string, dto: ChainCallDTO, prefix: string = ''): string | undefined {
   try {
-    return signatures.recoverPublicKey(signature, dto);
+    return signatures.recoverPublicKey(signature, dto, prefix);
   } catch (err) {
     return undefined;
   }
