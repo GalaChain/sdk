@@ -121,7 +121,6 @@ describe("fungible", () => {
     expect(error).toThrow("FT quantity must be positive");
   });
 
-
   it("should fail to subtract quantity if quantity is locked by TokenHold", () => {
     // Given
     const balance = emptyBalance();
