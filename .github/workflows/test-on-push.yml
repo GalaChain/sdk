@@ -1,6 +1,8 @@
 name: Test on push
 on:
   push:
+    tags: [v*]
+  pull_request:
   workflow_dispatch:
 
 jobs:
