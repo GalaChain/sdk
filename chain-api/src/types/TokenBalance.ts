@@ -1,3 +1,27 @@
+import {
+  BigNumberArrayProperty,
+  BigNumberProperty,
+  ChainKey,
+  ValidationFailedError,
+  getValidationErrorInfo
+} from "../utils";
+import { BigNumberIsNotNegative, BigNumberIsPositive } from "../validators";
+import { ChainObject, ObjectValidationFailedError } from "./ChainObject";
+import { Exclude, Type } from "class-transformer";
+import {
+  IsDefined,
+  IsInt,
+  IsNotEmpty,
+  IsOptional,
+  IsPositive,
+  IsString,
+  Min,
+  ValidateNested,
+  validate
+} from "class-validator";
+import { TokenClassKey, TokenClassKeyProperties } from "./TokenClass";
+import { TokenInstance, TokenInstanceKey } from "./TokenInstance";
+
 /*
  * Copyright (c) Gala Games Inc. All rights reserved.
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -13,31 +37,7 @@
  * limitations under the License.
  */
 import { BigNumber } from "bignumber.js";
-import { Exclude, Type } from "class-transformer";
-import {
-  IsDefined,
-  IsInt,
-  IsNotEmpty,
-  IsOptional,
-  IsPositive,
-  IsString,
-  Min,
-  ValidateNested,
-  validate
-} from "class-validator";
 import { JSONSchema } from "class-validator-jsonschema";
-
-import {
-  BigNumberArrayProperty,
-  BigNumberProperty,
-  ChainKey,
-  ValidationFailedError,
-  getValidationErrorInfo
-} from "../utils";
-import { BigNumberIsNotNegative, BigNumberIsPositive } from "../validators";
-import { ChainObject, ObjectValidationFailedError } from "./ChainObject";
-import { TokenClassKey, TokenClassKeyProperties } from "./TokenClass";
-import { TokenInstance, TokenInstanceKey } from "./TokenInstance";
 
 export class TokenNotInBalanceError extends ValidationFailedError {
   constructor(owner: string, tokenClass: TokenClassKeyProperties, instanceId: BigNumber) {
@@ -174,12 +174,6 @@ export class TokenBalance extends ChainObject {
 
   public getUnexpiredLockedHolds(currentTime: number): TokenHold[] {
     return (this.lockedHolds ?? []).filter((h) => !h.isExpired(currentTime));
-  }
-
-  public getUnexpiredLockedHoldsSortedByAscendingExpiration(currentTime: number): TokenHold[] {
-    const unexpiredHolds = this.getUnexpiredLockedHolds(currentTime);
-
-    return unexpiredHolds.sort(TokenHold.sortByAscendingExpiration);
   }
 
   public getUnexpiredInUseHolds(currentTime: number): TokenHold[] {
@@ -446,93 +440,6 @@ export class TokenBalance extends ChainObject {
     }
   }
 
-  private ensureTokenQuantityHoldIsFungible(hold: TokenHold) {
-    if (!hold.instanceId.isEqualTo(TokenInstance.FUNGIBLE_TOKEN_INSTANCE)) {
-      const message = `Attempted to perform FT-specific operation on balance containing NFT instances`;
-      throw new ValidationFailedError(message, {
-        balanceKey: this.getCompositeKey(),
-        tokenHold: hold
-      });
-    }
-  }
-
-  public ensureCanLockQuantity(hold: TokenHold): { lock(): void } {
-    this.ensureTokenQuantityHoldIsFungible(hold);
-    this.ensureQuantityIsSpendable(hold.quantity, hold.created);
-
-    const lock = () => {
-      this.lockedHolds = [...this.getUnexpiredLockedHolds(hold.created), hold];
-    };
-
-    return { lock };
-  }
-
-  private isMatchingHold(hold: TokenHold, name?: string, lockAuthority?: string): boolean {
-    return (
-      (hold.name === name || (hold.name === undefined && name === undefined)) &&
-      (hold.lockAuthority === lockAuthority ||
-        (hold.lockAuthority === undefined && lockAuthority === undefined))
-    );
-  }
-
-  public ensureCanUnlockQuantity(
-    quantity: BigNumber,
-    currentTime: number,
-    name?: string,
-    lockAuthority?: string
-  ): { unlock(): void } {
-    const unexpiredLockedHolds = this.getUnexpiredLockedHoldsSortedByAscendingExpiration(currentTime);
-
-    const updated: TokenHold[] = [];
-    let remainingQuantityToUnlock = quantity;
-
-    for (const hold of unexpiredLockedHolds) {
-      // if neither the authority nor the name match, just leave this hold alone
-      if (!this.isMatchingHold(hold, name, lockAuthority)) {
-        updated.push(hold);
-        continue;
-      }
-
-      if (hold.quantity.isLessThanOrEqualTo(remainingQuantityToUnlock)) {
-        remainingQuantityToUnlock = remainingQuantityToUnlock.minus(hold.quantity);
-        // this hold's full quantity can be unlocked, drop it from updated array
-        continue;
-      } else {
-        const remainingHoldQuantity = hold.quantity.minus(remainingQuantityToUnlock);
-        remainingQuantityToUnlock = new BigNumber(0);
-
-        const partialQuantityHold = new TokenHold({
-          createdBy: hold.createdBy,
-          created: hold.created,
-          instanceId: hold.instanceId,
-          expires: hold.expires,
-          name: hold.name,
-          lockAuthority: hold.lockAuthority,
-          quantity: remainingHoldQuantity
-        });
-
-        updated.push(partialQuantityHold);
-      }
-    }
-
-    if (remainingQuantityToUnlock.isGreaterThan("0")) {
-      throw new TokenQuantityNotUnlockedError(this.owner, this, quantity, name);
-    }
-
-    const unlock = () => {
-      this.lockedHolds = updated;
-    };
-
-    return { unlock };
-  }
-
-  private getCurrentLockedQuantity(currentTime: number): BigNumber {
-    return this.getUnexpiredLockedHolds(currentTime).reduce(
-      (sum, h) => sum.plus(h.quantity),
-      new BigNumber(0)
-    );
-  }
-
   private ensureContainsNoNftInstances(): void {
     if (this.containsAnyNftInstanceId()) {
       const message = `Attempted to perform FT-specific operation on balance containing NFT instances`;
@@ -654,3 +561,4 @@ export class TokenHold {
     }
   }
 }
+
