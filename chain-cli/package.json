@@ -1,6 +1,6 @@
 {
   "name": "@gala-chain/cli",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "CLI for GalaChain to manage and deploy chaincodes",
   "license": "Apache-2.0",
   "bin": {
@@ -14,7 +14,7 @@
     "/oclif.manifest.json"
   ],
   "dependencies": {
-    "@gala-chain/api": "1.0.0",
+    "@gala-chain/api": "1.0.1",
     "@noble/secp256k1": "^1.7.1",
     "@oclif/core": "^2",
     "@oclif/plugin-help": "^2",

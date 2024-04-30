@@ -294,8 +294,6 @@ describe("signatures", () => {
   });
 
   it("test metamask signatures vs galachain signatures", async () => {
-    // const metamask = "168a70e0c8ae6ff0cb1d8ddefd55c8dea935e8363d813b91d9b410bc81e4ec3e7220da64d9da73c9b01bb61d3bdbb23a22b210731f79d8e524ab1c563fb486381c"
-    // const metamaskPayload = {"quantity":"1","to":"client|63580d94c574ad78b121c267","tokenInstance":{"additionalKey":"none","category":"Unit","collection":"GALA","instance":"0","type":"none"},"uniqueKey":"8ad19f56-453a-40c8-aee5-11c0f753c7d8","signature":"0x168a70e0c8ae6ff0cb1d8ddefd55c8dea935e8363d813b91d9b410bc81e4ec3e7220da64d9da73c9b01bb61d3bdbb23a22b210731f79d8e524ab1c563fb486381c"}
     const metamask = "5078520b05186d8babacee43d061f14b3575ad2999e561772b57032aa019bc2a7b01eb5ec412c9330d343025697e9449a0766995e3646941948e4acf0d0dff501c"
     const metamaskPayload = {"quantity":"1","to":"client|63580d94c574ad78b121c267","tokenInstance":{"additionalKey":"none","category":"Unit","collection":"GALA","instance":"0","type":"none"},"uniqueKey":"26d4122e-34c8-4639-baa6-4382b398e68e"}
 

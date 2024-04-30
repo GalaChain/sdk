@@ -1,10 +1,10 @@
 {
   "name": "@gala-chain/test",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "Unit testing and integration testing for GalaChain",
   "license": "Apache-2.0",
   "dependencies": {
-    "@gala-chain/client": "1.0.0",
+    "@gala-chain/client": "1.0.1",
     "nanoid": "^3.3.6",
     "tslib": "^2.6.2",
     "path": "0.12.7",
@@ -12,7 +12,7 @@
     "@jest/globals": "29.7.0"
   },
   "peerDependencies": {
-    "@gala-chain/api": "1.0.0",
+    "@gala-chain/api": "1.0.1",
     "bignumber.js": "*",
     "class-transformer": "*",
     "elliptic": "*",
