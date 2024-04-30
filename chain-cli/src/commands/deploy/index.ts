@@ -15,11 +15,11 @@
 import { Args, Flags, ux } from "@oclif/core";
 
 import BaseCommand from "../../base-command";
-import { deployChaincode } from "../../galachain-utils";
+import { deployChaincode, getPrivateKey } from "../../galachain-utils";
 
 export default class Deploy extends BaseCommand<typeof Deploy> {
   static override description =
-    "Schedules deployment of published chaincode Docker image to GalaChain mainnet.";
+    "Schedules deployment of published chaincode Docker image to GalaChain sandbox.";
 
   static override examples = [
     "galachain deploy registry.image.name:latest",
@@ -29,7 +29,7 @@ export default class Deploy extends BaseCommand<typeof Deploy> {
 
   static override flags = {
     testnet: Flags.boolean({
-      description: "Deploy to testnet instead of mainnet.",
+      description: "Deploy to testnet instead of sandbox.",
       hidden: true
     })
   };
@@ -52,15 +52,17 @@ export default class Deploy extends BaseCommand<typeof Deploy> {
   async run(): Promise<void> {
     const { args, flags } = await this.parse(Deploy);
 
-    const environment = flags.testnet ? "testnet" : "mainnet";
+    const environment = flags.testnet ? "testnet" : "sandbox";
 
     const imageTag = args.imageTag;
-    if (!imageTag.includes(":")) {
+    // eslint-disable-next-line
+    const imageTagRegex = /^[a-zA-Z0-9\.?][+\/?a-zA-Z0-9_.-]+\:.{0,127}$/;
+    if (!imageTagRegex.test(imageTag)) {
       this.log(`The image tag ${imageTag} is not valid. It should follow the pattern imageName:version.`);
       return;
     }
 
-    const developerPrivateKey = args.developerPrivateKey ?? process.env.DEV_PRIVATE_KEY;
+    const developerPrivateKey = await getPrivateKey(args.developerPrivateKey);
 
     const response = await ux.prompt(`Are you sure you want to deploy to ${environment}? (y/n)`);
     if (response.toUpperCase() !== "Y") {

@@ -21,7 +21,7 @@ import { BatchMintError } from "./MintError";
 import { fetchMintSupply } from "./fetchMintSupply";
 import { mintToken } from "./mintToken";
 
-interface MintOperationParams {
+export interface MintOperationParams {
   tokenClassKey: TokenClassKey;
   owner: string;
   quantity: BigNumber;
@@ -89,12 +89,12 @@ export async function batchMintToken(
   }
 }
 
-interface indexedMintOperations {
+export interface indexedMintOperations {
   callingOnBehalf: AuthorizedOnBehalf | string;
   mintOperations: MintOperationParams[];
 }
 
-interface indexedMintOperationsByTokenClass {
+export interface indexedMintOperationsByTokenClass {
   tokenClassKey: TokenClassKey;
   mintOperationsIndex: Record<string, indexedMintOperations>;
 }

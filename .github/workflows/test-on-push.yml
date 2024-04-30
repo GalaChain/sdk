@@ -1,0 +1,139 @@
+name: Test on push
+on:
+  push:
+  workflow_dispatch:
+
+jobs:
+  ci:
+    name: CI
+    runs-on: ubuntu-22.04
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Verify copyright
+        run: ./verify_copyright.sh
+      - name: Install Node 18
+        uses: actions/setup-node@v4
+        with:
+          node-version: 18
+      - name: Install dependencies
+        run: npm i
+      - name: Lint
+        run: npm run lint
+      - name: Build
+        run: npm run build
+      - name: Test
+        run: npm run test
+
+  template-ci:
+    name: Chaincode template CI
+    runs-on: ubuntu-22.04
+    needs: [ci]
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 18
+      - name: Install local CLI
+        run: .github/scripts/install-local-cli.sh
+      - name: Create test project
+        run: galachain init ./project-test
+      - name: Install dependencies
+        run: |
+          (cd ./project-test && ../npm-pack-and-replace.sh --skipConfirmation)
+          npm i --prefix ./project-test
+      - name: Lint
+        run: npm run lint --prefix ./project-test
+      - name: Build
+        run: npm run build --prefix ./project-test
+      - name: Test
+        run: npm run test --prefix ./project-test
+
+  template-e2e:
+    name: Chaincode template E2E (watch mode)
+    runs-on: ubuntu-22.04
+    needs: [ci]
+    env:
+      GALA_CLIENT_DEV_MODE: "true"
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Install tools
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y jq
+          sudo wget -qO /usr/local/bin/yq https://github.com/mikefarah/yq/releases/latest/download/yq_linux_amd64
+          sudo chmod a+x /usr/local/bin/yq
+          git --version
+          node --version
+          npm --version
+          jq --version
+          yq --version
+          bash --version
+          docker version
+          docker-compose version
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 18
+      - name: Install local CLI
+        run: .github/scripts/install-local-cli.sh
+      - name: Create test project
+        run: galachain init ./project-test
+      - name: Install dependencies
+        run: |
+          (cd ./project-test && ../npm-pack-and-replace.sh --skipConfirmation)
+          npm i --prefix ./project-test
+      - name: Run network in watch mode and wait for it to start
+        run: |
+          npm run network:start --prefix ./project-test &
+          sleep 120
+      - name: Run E2E tests
+        run: npm run test:e2e --prefix ./project-test
+      - name: Verify chain browser blocks
+        run: |
+          MAX_BLOCK_INDEX=$(curl --location 'http://localhost:3010/product-channel/blocks' --header 'Content-Type: application/json' | jq '.info.fromBlock')
+          if [ $MAX_BLOCK_INDEX -lt 56]; then
+            echo "The number of blocks is less than 56"
+            exit 1
+          else
+            echo "There are at least 56 blocks after the tests ($$MAX_BLOCK_INDEX)"
+          fi
+          npm run network:prune --prefix ./project-test
+
+  template-image-check:
+    name: Chaincode template image check
+    needs: [ci]
+    runs-on: ubuntu-22.04
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 18
+      - name: Install local CLI
+        run: .github/scripts/install-local-cli.sh
+      - name: Create test project
+        run: galachain init ./project-test
+      - name: Install dependencies
+        run: |
+          (cd ./project-test && ../npm-pack-and-replace.sh --skipConfirmation)
+          npm i --prefix ./project-test
+      - name: Verify image
+        run: |
+          cd ./project-test
+          docker build . -t chaincode-test
+          run_output=$(docker run --rm chaincode-test 2>&1 || true)
+          echo "$run_output"
+
+          if echo "$run_output" | grep -q 'Missing required argument'; then
+            echo "Success: Got expected error relating with missing required argument."
+            exit 0
+          else
+            echo "---"
+            echo "Unexpected error from the container. Expected: 'Missing required argument'."
+            exit 1
+          fi

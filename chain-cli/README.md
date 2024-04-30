@@ -18,7 +18,7 @@ $ npm install -g @gala-chain/cli
 $ galachain COMMAND
 running command...
 $ galachain (--version)
-@gala-chain/cli/1.0.0 linux-x64 node-v16.20.2
+@gala-chain/cli/1.1.16 linux-x64 node-v18.20.2
 $ galachain --help [COMMAND]
 USAGE
   $ galachain COMMAND
@@ -27,7 +27,6 @@ USAGE
 <!-- usagestop -->
 # Commands
 <!-- commands -->
-* [`galachain connect [DEVELOPERPRIVATEKEY]`](#galachain-connect-developerprivatekey)
 * [`galachain deploy IMAGETAG [DEVELOPERPRIVATEKEY]`](#galachain-deploy-imagetag-developerprivatekey)
 * [`galachain dto-sign KEY DATA`](#galachain-dto-sign-key-data)
 * [`galachain dto-verify KEY DATA`](#galachain-dto-verify-key-data)
@@ -43,37 +42,9 @@ USAGE
 * [`galachain network:up`](#galachain-networkup)
 * [`galachain test-deploy IMAGETAG [DEVELOPERPRIVATEKEY]`](#galachain-test-deploy-imagetag-developerprivatekey)
 
-## `galachain connect [DEVELOPERPRIVATEKEY]`
-
-Connect to a new chaincode.
-
-```
-USAGE
-  $ galachain connect [DEVELOPERPRIVATEKEY] [--json] [--log-level debug|info|warn|error]
-
-ARGUMENTS
-  DEVELOPERPRIVATEKEY  Optional private key to sign the data. It could be a file or a string. If not provided, the
-                       private key will be read from the environment variable DEV_PRIVATE_KEY.
-
-GLOBAL FLAGS
-  --json                Format output as json.
-  --log-level=<option>  Specify level for logging.
-                        <options: debug|info|warn|error>
-
-DESCRIPTION
-  Connect to a new chaincode.
-
-EXAMPLES
-  $ galachain connect ./dev-private-key
-
-  $ galachain connect c0fb1924408d936fb7cd0c86695885df4f66861621b5c8660df3924c4d09dd79
-
-  $ galachain connect
-```
-
 ## `galachain deploy IMAGETAG [DEVELOPERPRIVATEKEY]`
 
-Schedules deployment of published chaincode Docker image to GalaChain mainnet.
+Schedules deployment of published chaincode Docker image to GalaChain sandbox.
 
 ```
 USAGE
@@ -90,7 +61,7 @@ GLOBAL FLAGS
                         <options: debug|info|warn|error>
 
 DESCRIPTION
-  Schedules deployment of published chaincode Docker image to GalaChain mainnet.
+  Schedules deployment of published chaincode Docker image to GalaChain sandbox.
 
 EXAMPLES
   $ galachain deploy registry.image.name:latest
@@ -276,19 +247,22 @@ DESCRIPTION
   display help for galachain
 ```
 
-_See code: [@oclif/plugin-help](https://github.com/oclif/plugin-help/blob/v2.2.3/src/commands/help.ts)_
+_See code: [@oclif/plugin-help](https://github.com/oclif/plugin-help/blob/v3.3.1/src/commands/help.ts)_
 
 ## `galachain info [DEVELOPERPRIVATEKEY]`
 
-Show the ChainCode information.
+Get ChainCode information.
 
 ```
 USAGE
-  $ galachain info [DEVELOPERPRIVATEKEY] [--json] [--log-level debug|info|warn|error]
+  $ galachain info [DEVELOPERPRIVATEKEY] [--json] [--log-level debug||warn|error] [--testnet]
 
 ARGUMENTS
   DEVELOPERPRIVATEKEY  Optional private key to sign the data. It could be a file or a string. If not provided, the
                        private key will be read from the environment variable DEV_PRIVATE_KEY.
+
+FLAGS
+  --testnet  Get info from testnet instead of sandbox.
 
 GLOBAL FLAGS
   --json                Format output as json.
@@ -296,12 +270,12 @@ GLOBAL FLAGS
                         <options: debug|info|warn|error>
 
 DESCRIPTION
-  Show the ChainCode information.
+  Get ChainCode information.
 
 EXAMPLES
   $ galachain info
 
-  $ galachain info ./dev-private-key
+  $ galachain info ./dev-private-key --testnet
 
   $ galachain info c0fb1924408d936fb7cd0c86695885df4f66861621b5c8660df3924c4d09dd79
 ```
@@ -327,8 +301,6 @@ DESCRIPTION
 
 EXAMPLES
   $ galachain init ./linux-mac-path/my-project-name
-
-  $ galachain init windows-path\my-project-name
 ```
 
 ## `galachain keygen FILE`
@@ -389,7 +361,7 @@ Start the chaincode in dev-mode and browser-api.
 ```
 USAGE
   $ galachain network-up -C <value> -t curator|partner -n <value> [--json] [--log-level debug|info|warn|error]
-    [-d <value>] [-r <value>] [-e <value>] [-w]
+    [-d <value>] [-r <value>] [-e <value>] [-w] [-o <value>]
 
 FLAGS
   -C, --channel=<value>...        (required) Channel name.
@@ -397,6 +369,7 @@ FLAGS
                                   is used.
   -e, --envConfig=<value>         Path to .env file to be used for chaincodes.
   -n, --chaincodeName=<value>...  (required) Chaincode name.
+  -o, --contracts=<value>         Contract names in a JSON format.
   -r, --fabloRoot=<value>         [default: ./test-network] Root directory of target network. Should not be the same as
                                   chaincodeDir and should not be a child of chaincodeDir. By default './test-network' is
                                   used.
@@ -456,7 +429,7 @@ Start the chaincode in dev-mode and browser-api.
 ```
 USAGE
   $ galachain network:up -C <value> -t curator|partner -n <value> [--json] [--log-level debug|info|warn|error]
-    [-d <value>] [-r <value>] [-e <value>] [-w]
+    [-d <value>] [-r <value>] [-e <value>] [-w] [-o <value>]
 
 FLAGS
   -C, --channel=<value>...        (required) Channel name.
@@ -464,6 +437,7 @@ FLAGS
                                   is used.
   -e, --envConfig=<value>         Path to .env file to be used for chaincodes.
   -n, --chaincodeName=<value>...  (required) Chaincode name.
+  -o, --contracts=<value>         Contract names in a JSON format.
   -r, --fabloRoot=<value>         [default: ./test-network] Root directory of target network. Should not be the same as
                                   chaincodeDir and should not be a child of chaincodeDir. By default './test-network' is
                                   used.

@@ -33,7 +33,13 @@ import { ensureQuantityCanBeMinted, useAllowances } from "../allowances";
 import { fetchKnownBurnCount } from "../burns/fetchBurns";
 import { GalaChainContext } from "../types";
 import { getObjectByKey, putChainObject } from "../utils";
-import { blockTimeout, generateInverseTimeKey, inverseKeyLength, inversionHeight } from "../utils";
+import {
+  blockTimeout,
+  generateInverseTimeKey,
+  inverseKeyLength,
+  inversionHeight,
+  lookbackTimeOffset
+} from "../utils";
 import { constructVerifiedMints } from "./constructVerifiedMints";
 import { indexMintRequests } from "./indexMintRequests";
 import { validateMintRequest } from "./validateMintRequest";
@@ -126,7 +132,7 @@ export async function fulfillMintRequest(
   // todo: type this failures array and work it into response
   const failures: unknown[] = [];
 
-  for (const [_, values] of Object.entries(reqIdx)) {
+  for (const [, values] of Object.entries(reqIdx)) {
     // Entries in the Request Index represent
     // some number of mint requests for the same token, at the same running total height.
     // Because our original GrantAllowance implementation allowed (potentially large) arrays,
@@ -163,25 +169,26 @@ export async function fulfillMintRequest(
       instance: TokenInstance.FUNGIBLE_TOKEN_INSTANCE
     });
 
-    let mostRecentTime = new BigNumber(inversionHeight),
-      oldestTime = new BigNumber("0");
+    let mostRecentTimeInversion = new BigNumber(inversionHeight),
+      oldestTimeInversion = new BigNumber("0");
 
     for (const req of values) {
       // timeKeys are inverted timestamps, lowest = most recent, highest = oldest
       const reqTime = new BigNumber(req.timeKey);
-      if (reqTime.isLessThan(mostRecentTime)) {
-        mostRecentTime = reqTime;
+      if (reqTime.isLessThan(mostRecentTimeInversion)) {
+        mostRecentTimeInversion = reqTime;
       }
       // no else/if here. we check for both, to prevent a single result causing an unbounded range query.
-      if (reqTime.isGreaterThan(oldestTime)) {
-        oldestTime = reqTime;
+      if (reqTime.isGreaterThan(oldestTimeInversion)) {
+        oldestTimeInversion = reqTime;
       }
     }
 
-    oldestTime = oldestTime.plus(blockTimeout);
+    // working with an inverted time, adding to the inverted timestamp makes it older, not newer
+    oldestTimeInversion = oldestTimeInversion.plus(lookbackTimeOffset);
 
-    const recentTimeKey = mostRecentTime.toString().padStart(inverseKeyLength, "0");
-    const oldestTimeKey = oldestTime.toString().padStart(inverseKeyLength, "0");
+    const recentTimeKey = mostRecentTimeInversion.toString().padStart(inverseKeyLength, "0");
+    const oldestTimeKey = oldestTimeInversion.toString().padStart(inverseKeyLength, "0");
 
     const requestEntries: TokenMintRequest[] = await mintRequestsByTimeKeys(
       ctx,
@@ -191,9 +198,6 @@ export async function fulfillMintRequest(
     );
 
     if (requestEntries.length < 1) {
-      const recentTimeKey = mostRecentTime.toString().padStart(inverseKeyLength, "0");
-      const oldestTimeKey = oldestTime.toString().padStart(inverseKeyLength, "0");
-
       throw GalaChainResponse.Error(
         new Error(
           `FulfillMint failure: No TokenMintRequest(s) found on chain. ` +

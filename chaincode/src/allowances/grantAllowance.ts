@@ -56,6 +56,7 @@ import {
   MintCapacityExceededError,
   TotalSupplyExceededError
 } from "./AllowanceError";
+import { isAllowanceExpired } from "./checkAllowances";
 import { refreshAllowances } from "./refreshAllowances";
 
 // this determines how many balances is enough to warrant optimization of allowance fetch
@@ -99,8 +100,7 @@ async function grantAllowanceByPartialKey(
             ctx,
             TokenAllowance.INDEX_KEY,
             allowanceQueryParamsForBalance,
-            TokenAllowance,
-            true // TODO: may lead to incomplete results
+            TokenAllowance
           )
         );
       }
@@ -122,8 +122,7 @@ async function grantAllowanceByPartialKey(
           ctx,
           TokenAllowance.INDEX_KEY,
           allowanceQueryParamsForBalance,
-          TokenAllowance,
-          true // TODO: may lead to incomplete results
+          TokenAllowance
         )
       );
     }
@@ -234,7 +233,7 @@ async function grantAllowanceByPartialKey(
 export function ensureQuantityCanBeMinted(
   tokenClass: TokenClass,
   quantity: BigNumber,
-  totalKnownMintsCount?: BigNumber,
+  totalKnownMintAllowanceCount?: BigNumber,
   totalKnownBurnsCount?: BigNumber
 ): boolean {
   // todo: remove if applicable when totalSupply is fully deprecated
@@ -249,10 +248,10 @@ export function ensureQuantityCanBeMinted(
 
   // todo: totalMintAllowance not being accounted for here in original MintToken implementation.
   // Transitioning to the experimental (as of 2023-03) high-throughput-mint implementation is anticipated to resolve this.
-  // currently, using the original MintToken implementation will always end up setting totalKnownMintsCount to zero,
+  // currently, using the original MintToken implementation will always end up setting totalKnownMintAllowanceCount to zero,
   // leaving open the possibility of exceeding the maxSupply defined in a token class.
-  if (!totalKnownMintsCount) {
-    totalKnownMintsCount = new BigNumber("0");
+  if (!totalKnownMintAllowanceCount) {
+    totalKnownMintAllowanceCount = new BigNumber("0");
   }
 
   // Note older implementation had checked tokenClass.totalBurned,
@@ -263,28 +262,31 @@ export function ensureQuantityCanBeMinted(
     totalKnownBurnsCount = new BigNumber("0");
   }
 
-  // If there is a maxSupply, then total mint allowance cannot exceed that
-  // If there is a maxCapacity, then total mint allowance + burn quantity cannot exceed that
-  if (
-    tokenClass.maxSupply &&
-    tokenClass.maxSupply.isGreaterThan(new BigNumber(0)) &&
-    totalKnownMintsCount.plus(quantity).isGreaterThan(tokenClass.maxSupply)
-  ) {
-    throw new TotalSupplyExceededError(tokenClass.getCompositeKey(), tokenClass.maxSupply, quantity);
-  }
-
+  // If there is a maxCapacity, then total mint allowance cannot exceed that
+  // If there is a maxSupply, then total mint allowance - burn quantity cannot exceed that
   if (
     tokenClass.maxCapacity &&
     tokenClass.maxCapacity.isGreaterThan(new BigNumber(0)) &&
-    totalKnownMintsCount.minus(totalKnownBurnsCount).plus(quantity).isGreaterThan(tokenClass.maxCapacity)
+    totalKnownMintAllowanceCount.plus(quantity).isGreaterThan(tokenClass.maxCapacity)
   ) {
     throw new MintCapacityExceededError(tokenClass.getCompositeKey(), tokenClass.maxCapacity, quantity);
+  }
+
+  if (
+    tokenClass.maxSupply &&
+    tokenClass.maxSupply.isGreaterThan(new BigNumber(0)) &&
+    totalKnownMintAllowanceCount
+      .minus(totalKnownBurnsCount)
+      .plus(quantity)
+      .isGreaterThan(tokenClass.maxSupply)
+  ) {
+    throw new TotalSupplyExceededError(tokenClass.getCompositeKey(), tokenClass.maxSupply, quantity);
   }
 
   return true;
 }
 
-interface GrantAllowanceParams {
+export interface GrantAllowanceParams {
   tokenInstance: TokenInstanceQueryKey;
   allowanceType: AllowanceType;
   quantities: Array<GrantAllowanceQuantity>;
@@ -302,7 +304,7 @@ async function putAllowancesOnChain(
   for (let index = 0; index < quantities.length; index++) {
     const decimalPlaces = quantities[index].quantity.decimalPlaces() ?? 0;
     if (decimalPlaces > tokenClass.decimals) {
-      throw new InvalidDecimalError(quantities[index].quantity, tokenClass.decimals).logError(ctx.logger);
+      throw new InvalidDecimalError(quantities[index].quantity, tokenClass.decimals);
     }
 
     const grantedTo = quantities[index].user;
@@ -361,7 +363,7 @@ export async function putMintAllowanceRequestsOnChain(
   for (let index = 0; index < quantities.length; index++) {
     const decimalPlaces = quantities[index].quantity.decimalPlaces() ?? 0;
     if (decimalPlaces > tokenClass.decimals) {
-      throw new InvalidDecimalError(quantities[index].quantity, tokenClass.decimals).logError(ctx.logger);
+      throw new InvalidDecimalError(quantities[index].quantity, tokenClass.decimals);
     }
 
     const grantedTo = quantities[index].user;
@@ -394,7 +396,7 @@ export async function putMintAllowanceRequestsOnChain(
   return mintAllowanceQtyEntries;
 }
 
-interface PutMintAllowancesOnChainParams {
+export interface PutMintAllowancesOnChainParams {
   mintAllowanceRequests: Array<TokenMintAllowanceRequest>;
 }
 // todo: when grantAllowance is deprecated for Mints, move this function to ../mint module
@@ -409,7 +411,7 @@ export async function putMintAllowancesOnChain(
   for (const mintAllowanceRequest of mintAllowanceRequests) {
     const decimalPlaces = mintAllowanceRequest.quantity.decimalPlaces() ?? 0;
     if (decimalPlaces > tokenClass.decimals) {
-      throw new InvalidDecimalError(mintAllowanceRequest.quantity, tokenClass.decimals).logError(ctx.logger);
+      throw new InvalidDecimalError(mintAllowanceRequest.quantity, tokenClass.decimals);
     }
 
     const grantedTo = mintAllowanceRequest.grantedTo;
@@ -475,9 +477,7 @@ export async function grantAllowance(
     }
 
     if (tokenClass.isNonFungible && !instanceKey.instance.isEqualTo(TokenInstance.FUNGIBLE_TOKEN_INSTANCE)) {
-      throw new NftInstanceAllowanceMismatchError(instanceKey.instance, AllowanceType.Mint).logError(
-        ctx.logger
-      );
+      throw new NftInstanceAllowanceMismatchError(instanceKey.instance, AllowanceType.Mint);
     }
 
     // fetch known amounts
@@ -516,7 +516,7 @@ export async function grantAllowance(
       tokenInstance.isNonFungible &&
       tokenInstance.instance.isEqualTo(TokenInstance.FUNGIBLE_TOKEN_INSTANCE)
     ) {
-      throw new NftInstanceAllowanceMismatchError(tokenInstance.instance, allowanceType).logError(ctx.logger);
+      throw new NftInstanceAllowanceMismatchError(tokenInstance.instance, allowanceType);
     }
 
     // Check that the caller owns the token that they are granting an allowance for:
@@ -535,13 +535,14 @@ export async function grantAllowance(
       const callingUserBalance = await fetchOrCreateBalance(ctx, ctx.callingUser, instanceClassKey);
 
       // for fungible tokens, we need to check the balance and quantities
-      if (callingUserBalance.getQuantityTotal().isLessThan(totalQuantity)) {
+      if (callingUserBalance.getSpendableQuantityTotal(ctx.txUnixTime).isLessThan(totalQuantity)) {
         throw new InsufficientTokenBalanceError(
           ctx.callingUser,
           instanceKey.toStringKey(),
           AllowanceType[allowanceType],
           callingUserBalance.getQuantityTotal(),
-          totalQuantity
+          totalQuantity,
+          callingUserBalance.getLockedQuantityTotal(ctx.txUnixTime)
         );
       }
     }
@@ -569,8 +570,7 @@ export async function preventDuplicateAllowance(
     ctx,
     TokenAllowance.INDEX_KEY,
     chainKeys,
-    TokenAllowance,
-    true // TODO: may lead to incomplete results
+    TokenAllowance
   );
 
   for (const existingAllowance of results) {
@@ -583,7 +583,7 @@ export async function preventDuplicateAllowance(
 }
 
 export function allowanceIsUseable(ctx: GalaChainContext, tokenAllowance: TokenAllowance): boolean {
-  if (tokenAllowance.expires && tokenAllowance.expires != 0 && tokenAllowance.expires < ctx.txUnixTime) {
+  if (isAllowanceExpired(ctx, tokenAllowance)) {
     return false;
   }
 

@@ -15,6 +15,8 @@
 import BigNumber from "bignumber.js";
 import { ValidationArguments, ValidationOptions, registerDecorator } from "class-validator";
 
+import { NotImplementedError } from "../utils/error";
+
 export function IsWholeNumber(property: string, validationOptions?: ValidationOptions) {
   return function (object: Record<string, unknown>, propertyName: string): void {
     registerDecorator({
@@ -29,28 +31,7 @@ export function IsWholeNumber(property: string, validationOptions?: ValidationOp
           const relatedValue = args.object[relatedPropertyName];
           const num = Number(relatedValue);
 
-          return num - Math.floor(num) !== 0;
-        }
-      }
-    });
-  };
-}
-export function IsNot(
-  property: string,
-  condition: (instance: Record<string, unknown>) => unknown,
-  validationOptions?: ValidationOptions
-) {
-  return function (object: Record<string, unknown>, propertyName: string): void {
-    registerDecorator({
-      name: "isNot",
-      target: object.constructor,
-      propertyName,
-      constraints: [property],
-      options: validationOptions,
-      validator: {
-        // eslint-disable-next-line
-        validate(value: Record<string, unknown>, args: ValidationArguments) {
-          return true;
+          return num - Math.floor(num) === 0;
         }
       }
     });
@@ -69,6 +50,12 @@ export function IsDifferentValue(property: string, validationOptions?: Validatio
         validate(value: Record<string, unknown>, args: ValidationArguments) {
           const [relatedPropertyName] = args.constraints;
           const relatedValue = args.object[relatedPropertyName];
+          if (
+            (typeof value !== "string" && value !== undefined) ||
+            (typeof relatedValue !== "string" && relatedValue !== undefined)
+          ) {
+            throw new NotImplementedError("IsDifferentValue only works with string or undefined");
+          }
           return value !== relatedValue;
         }
       }

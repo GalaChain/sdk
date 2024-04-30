@@ -35,7 +35,7 @@ export class CAClient {
     this.orgMsp = orgMsp;
     this.caHostName = getCAHostName(connectionProfile, orgMsp);
     this.caClient = buildCAClient(connectionProfile, this.caHostName);
-    this.wallet = buildWallet();
+    this.wallet = getGlobalWallet(this.orgMsp);
     this.adminId = adminId;
     this.enrolledAdmin = this.wallet.then(async (wallet) => {
       const identity = await enrollUser(this.caClient, wallet, orgMsp, adminId, adminSecret);
@@ -52,7 +52,7 @@ export class CAClient {
     return true;
   }
 
-  async getIdentityOrRegisterUser(userId: string) {
+  async getIdentityOrRegisterUser(userId: string): Promise<Identity> {
     await this.isReady();
 
     const identity = await this.wallet.then((w) => w.get(userId));
@@ -99,7 +99,9 @@ function buildCAClient(ccp: Record<string, unknown>, caHostName: string): Fabric
 
   const tlsCACerts = caInfo.tlsCACerts as unknown as { pem?: string; path?: string };
   const caTLSCACerts = tlsCACerts?.pem ?? tlsCACerts?.path;
-  const tlsConfig = caTLSCACerts ? { trustedRoots: [caTLSCACerts], verify: false } : undefined;
+  const tlsConfig = caTLSCACerts
+    ? { trustedRoots: [caTLSCACerts], verify: caInfo?.httpOptions?.verify }
+    : undefined;
 
   const caName = caInfo.caName;
   if (caName === undefined) {
@@ -110,20 +112,12 @@ function buildCAClient(ccp: Record<string, unknown>, caHostName: string): Fabric
   return new FabricCAServices(caUrl, tlsConfig, caName);
 }
 
-async function buildWallet(walletPath?: string): Promise<Wallet> {
-  if (walletPath) {
-    return await Wallets.newFileSystemWallet(walletPath);
-  } else {
-    return await Wallets.newInMemoryWallet();
-  }
-}
-
 async function enrollUser(
   caClient: FabricCAServices,
   wallet: Wallet,
   orgMspId: string,
   userId: string,
-  userPass: string
+  userSecret: string
 ): Promise<Identity> {
   // Check to see if we've already enrolled the admin user.
   const identity = await wallet.get(userId);
@@ -135,7 +129,7 @@ async function enrollUser(
   // Enroll the user, and import the new identity into the wallet.
   const enrollment = await caClient.enroll({
     enrollmentID: userId,
-    enrollmentSecret: userPass
+    enrollmentSecret: userSecret
   });
 
   const x509Identity = {
@@ -177,4 +171,14 @@ async function registerUser(
     },
     adminUser
   );
+}
+
+const globalWallets: Record<string, Promise<Wallet>> = {};
+
+function getGlobalWallet(orgMsp: string): Promise<Wallet> {
+  if (globalWallets[orgMsp] === undefined) {
+    globalWallets[orgMsp] = Wallets.newInMemoryWallet();
+  }
+
+  return globalWallets[orgMsp];
 }

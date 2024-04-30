@@ -28,7 +28,7 @@ import { inspect } from "util";
 import { ensureQuantityCanBeMinted } from "../allowances";
 import { fetchKnownBurnCount } from "../burns/fetchBurns";
 import { GalaChainContext } from "../types";
-import { getObjectByKey, putChainObject } from "../utils";
+import { getObjectByKey, lookbackTimeOffset, putChainObject } from "../utils";
 import { blockTimeout, inverseKeyLength, inversionHeight } from "../utils";
 import { indexMintRequests } from "./indexMintRequests";
 
@@ -54,7 +54,7 @@ export async function fulfillMintAllowanceRequest(
   // todo: type this failures array and work it into response
   const failures: any[] = [];
 
-  for (const [key, values] of Object.entries(reqIdx)) {
+  for (const [_, values] of Object.entries(reqIdx)) {
     // Entries in the Request Index represent
     // some number of mint requests for the same token, at the same running total height.
     // Because our original GrantAllowance implementation allowed (potentially large) arrays,
@@ -79,25 +79,38 @@ export async function fulfillMintAllowanceRequest(
 
     const tokenClass: TokenClass = await getObjectByKey(ctx, TokenClass, tokenKey);
 
-    let mostRecentTime = new BigNumber(inversionHeight),
-      oldestTime = new BigNumber("0");
+    let mostRecentTimeInversion = new BigNumber(inversionHeight),
+      oldestTimeInversion = new BigNumber("0");
 
     for (const req of values) {
       // timeKeys are inverted timestamps, lowest = most recent, highest = oldest
+      if (req.isTimeKeyValid() === false) {
+        throw new Error(
+          `FulfillMintAllowance failure: Invalid timeKey value: ${
+            req.timeKey
+          }. The value of timeKey should be a valid BigNumber, ${inspect(req, {
+            depth: 4,
+            breakLength: Infinity,
+            compact: true
+          })}`
+        );
+      }
+
       const reqTime = new BigNumber(req.timeKey);
-      if (reqTime.isLessThan(mostRecentTime)) {
-        mostRecentTime = reqTime;
+      if (reqTime.isLessThan(mostRecentTimeInversion)) {
+        mostRecentTimeInversion = reqTime;
       }
       // no else/if here. we check for both, to prevent a single result causing an unbounded range query.
-      if (reqTime.isGreaterThan(oldestTime)) {
-        oldestTime = reqTime;
+      if (reqTime.isGreaterThan(oldestTimeInversion)) {
+        oldestTimeInversion = reqTime;
       }
     }
 
-    oldestTime = oldestTime.plus(blockTimeout);
+    // working with an inverted time, adding to the inverted timestamp makes it older, not newer
+    oldestTimeInversion = oldestTimeInversion.plus(lookbackTimeOffset);
 
-    const recentTimeKey = mostRecentTime.toString().padStart(inverseKeyLength, "0");
-    const oldestTimeKey = oldestTime.toString().padStart(inverseKeyLength, "0");
+    const recentTimeKey = mostRecentTimeInversion.toString().padStart(inverseKeyLength, "0");
+    const oldestTimeKey = oldestTimeInversion.toString().padStart(inverseKeyLength, "0");
 
     const startKey = [
       TokenMintAllowanceRequest.INDEX_KEY,

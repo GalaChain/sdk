@@ -6,6 +6,7 @@ tmp
 /out-tsc
 public/
 lib
+**/oclif.manifest.json
 
 # dependencies
 node_modules

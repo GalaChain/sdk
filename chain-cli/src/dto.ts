@@ -27,7 +27,7 @@ export interface PostChaincodeDto {
 export interface PostDeployChaincodeDto {
   operationId: string;
   imageTag: string;
-  contracts: string[];
+  contracts: { contractName: string }[];
 }
 
 export interface ChaincodeInfoDto {

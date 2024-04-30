@@ -27,11 +27,16 @@ import {
   UnauthorizedAllowanceRefreshError
 } from "./AllowanceError";
 import { checkAllowances } from "./checkAllowances";
-import { deleteAllowances } from "./deleteAllowances";
-import { fetchAllowances, fetchAllowancesWithPagination } from "./fetchAllowances";
-import { fullAllowanceCheck } from "./fullAllowanceCheck";
-import { ensureQuantityCanBeMinted, grantAllowance } from "./grantAllowance";
-import { refreshAllowances } from "./refreshAllowances";
+import { DeleteAllowancesParams, DeleteOneAllowanceParams, deleteAllowances } from "./deleteAllowances";
+import { FetchAllowancesParams, fetchAllowances, fetchAllowancesWithPagination } from "./fetchAllowances";
+import { FullAllowanceCheckParams, fullAllowanceCheck } from "./fullAllowanceCheck";
+import {
+  GrantAllowanceParams,
+  PutMintAllowancesOnChainParams,
+  ensureQuantityCanBeMinted,
+  grantAllowance
+} from "./grantAllowance";
+import { AllowanceType, refreshAllowances } from "./refreshAllowances";
 import { useAllowances } from "./useAllowances";
 import { verifyAndUseAllowances } from "./verifyAndUseAllowances";
 
@@ -52,10 +57,17 @@ export {
   useAllowances,
   fetchAllowances,
   fetchAllowancesWithPagination,
+  FetchAllowancesParams,
   fullAllowanceCheck,
+  FullAllowanceCheckParams,
   refreshAllowances,
+  AllowanceType,
   grantAllowance,
+  GrantAllowanceParams,
+  PutMintAllowancesOnChainParams,
   deleteAllowances,
+  DeleteAllowancesParams,
+  DeleteOneAllowanceParams,
   ensureQuantityCanBeMinted,
   verifyAndUseAllowances
 };

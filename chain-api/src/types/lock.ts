@@ -14,13 +14,22 @@
  */
 import BigNumber from "bignumber.js";
 import { Type } from "class-transformer";
-import { ArrayNotEmpty, IsInt, IsNotEmpty, IsOptional, IsString, Min, ValidateNested } from "class-validator";
+import {
+  ArrayNotEmpty,
+  IsInt,
+  IsNotEmpty,
+  IsOptional,
+  IsString,
+  Min,
+  ValidateIf,
+  ValidateNested
+} from "class-validator";
 import { JSONSchema } from "class-validator-jsonschema";
 
 import { TokenInstance, TokenInstanceKey } from "../types/TokenInstance";
 import { ChainCallDTO } from "../types/dtos";
 import { BigNumberProperty } from "../utils";
-import { BigNumberIsNotNegative } from "../validators";
+import { BigNumberIsNotNegative, BigNumberIsPositive } from "../validators";
 import { LockTokenQuantity } from "./LockTokenQuantity";
 
 @JSONSchema({
@@ -131,6 +140,30 @@ export class UnlockTokenDto extends ChainCallDTO {
   @Type(() => TokenInstanceKey)
   @IsNotEmpty()
   tokenInstance: TokenInstanceKey;
+
+  @JSONSchema({
+    description: "Optional quantity for unlocking fungible tokens. Not for use with NFT token instances."
+  })
+  @IsOptional()
+  @ValidateIf((o) => o.tokenInstance.instance === TokenInstance.FUNGIBLE_TOKEN_INSTANCE)
+  @BigNumberIsPositive()
+  @BigNumberProperty()
+  quantity?: BigNumber;
+
+  @JSONSchema({
+    description: "Optional. Owner of the token. Calling User by default. Usable by Token Authorities only."
+  })
+  @IsOptional()
+  @IsNotEmpty()
+  owner?: string;
+
+  @JSONSchema({
+    description:
+      "Optional. name property of the lockedHold defined on the balance. undefined by default. Usable by Token Authorities only."
+  })
+  @IsOptional()
+  @IsNotEmpty()
+  lockedHoldName?: string;
 }
 
 @JSONSchema({

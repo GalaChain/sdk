@@ -12,20 +12,26 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-import { Args } from "@oclif/core";
+import { Args, Flags } from "@oclif/core";
 
 import BaseCommand from "../../base-command";
 import { ChaincodeInfoDto } from "../../dto";
-import { getDeploymentResponse } from "../../galachain-utils";
+import { getDeploymentResponse, getPrivateKey } from "../../galachain-utils";
 
 export default class Info extends BaseCommand<typeof Info> {
-  static override description = "Show the ChainCode information.";
+  static override description = "Get ChainCode information.";
 
   static override examples = [
     "galachain info",
-    "galachain info ./dev-private-key",
+    "galachain info ./dev-private-key --testnet",
     "galachain info c0fb1924408d936fb7cd0c86695885df4f66861621b5c8660df3924c4d09dd79"
   ];
+
+  static override flags = {
+    testnet: Flags.boolean({
+      description: "Get info from testnet instead of sandbox."
+    })
+  };
 
   static override args = {
     developerPrivateKey: Args.string({
@@ -38,14 +44,14 @@ export default class Info extends BaseCommand<typeof Info> {
   };
 
   async run(): Promise<void> {
-    const { args } = await this.parse(Info);
+    const { args, flags } = await this.parse(Info);
 
-    const developerPrivateKey = args.developerPrivateKey ?? process.env.DEV_PRIVATE_KEY;
+    const developerPrivateKey = await getPrivateKey(args.developerPrivateKey);
 
     try {
       const response = await getDeploymentResponse({
         privateKey: developerPrivateKey,
-        isTestnet: true
+        isTestnet: flags.testnet ?? false
       });
 
       const chainCodeInfo: ChaincodeInfoDto = {

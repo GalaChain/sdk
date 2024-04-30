@@ -47,7 +47,7 @@ describe("TransferToken", () => {
       expires: 0
     });
     const tokenBalance = nft.tokenBalance();
-    tokenBalance.ensureCanLockInstance(expectedHold).lock();
+    tokenBalance.ensureCanLockInstance(expectedHold, Date.now()).lock();
 
     const { ctx, contract, writes } = fixture(GalaChainTokenContract)
       .callingUser(users.testUser1Id)
@@ -86,7 +86,7 @@ describe("TransferToken", () => {
       expires: 0
     });
     const tokenBalance = nft.tokenBalance();
-    tokenBalance.ensureCanLockInstance(expectedHold).lock();
+    tokenBalance.ensureCanLockInstance(expectedHold, Date.now()).lock();
     expect(tokenBalance.owner).toEqual(expectedHold.createdBy);
 
     const { ctx, contract, writes } = fixture(GalaChainTokenContract)

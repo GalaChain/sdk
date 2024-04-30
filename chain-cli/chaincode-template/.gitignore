@@ -12,7 +12,7 @@ test-network
 .idea
 .npmrc
 .env
-src/coverage 
+src/coverage
 /classes
 /interfaces
 /serializers
@@ -21,3 +21,4 @@ src/coverage
 /logs
 .yalc*
 yalc*
+/keys

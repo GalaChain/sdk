@@ -8,6 +8,8 @@ theme:
   logo: assets/white.png
   favicon: assets/favicon.png
   features:
+    - navigation.instant
+    - navigation.instant.progress
     - navigation.footer
     - toc.integrate
     - navigation.top
@@ -48,6 +50,7 @@ extra:
 plugins:
   - search
   - mike
+  - awesome-pages
   - with-pdf:
       exclude_pages:
         - "chain-api-docs/"
@@ -56,7 +59,7 @@ plugins:
         - "chain-test-docs/"
       cover_subtitle: ""
       output_path: "pdf/sdk-documentation.pdf"
-      copyright: "&copy; 2023 Gala Games"
+      copyright: "&copy; 2024 Gala Games"
       render_js: true
       headless_chrome_path: google-chrome
 
@@ -80,4 +83,4 @@ markdown_extensions:
   - attr_list
 
 copyright: |
-  &copy; 2023 <a href="https://gala.com/"  target="_blank" rel="noopener">Gala Games</a>
+  &copy; 2024 <a href="https://gala.com/"  target="_blank" rel="noopener">Gala Games</a>

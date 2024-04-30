@@ -1,0 +1,11 @@
+{
+  "singleQuote": false,
+  "printWidth": 110,
+  "tabWidth": 2,
+  "trailingComma": "none",
+  "importOrder": ["^@oclif/(.*)$", "^dotenv/(.*)$", "^dd-trace(.*)$", "tracer(.*)$", "<THIRD_PARTY_MODULES>", "^[./]"],
+  "importOrderSeparation": true,
+  "importOrderSortSpecifiers": true,
+  "plugins": ["@trivago/prettier-plugin-sort-imports"],
+  "importOrderParserPlugins": ["typescript", "decorators-legacy"]
+}

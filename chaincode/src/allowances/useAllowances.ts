@@ -17,6 +17,7 @@ import { BigNumber } from "bignumber.js";
 
 import { GalaChainContext } from "../types";
 import { putChainObject } from "../utils";
+import { isAllowanceExpired } from "./checkAllowances";
 
 // Update allowances according to using an quantity
 export async function useAllowances(
@@ -40,7 +41,7 @@ export async function useAllowances(
     }
 
     // Skip expired allowances https://app.shortcut.com/gala-games/story/27971/using-mint-allowances-may-debit-expired-allowances
-    if (tokenAllowance.expires && tokenAllowance.expires != 0 && tokenAllowance.expires < ctx.txUnixTime) {
+    if (isAllowanceExpired(ctx, tokenAllowance)) {
       continue;
     }
 

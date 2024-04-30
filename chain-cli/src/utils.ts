@@ -15,6 +15,12 @@
 import { signatures } from "@gala-chain/api";
 import { readFile } from "fs/promises";
 
+export async function readPublicKeyFromFile(path: string): Promise<string> {
+  return await readFile(path, { encoding: "utf-8" }).catch((e) => {
+    throw new Error(`Failed to read public key from file: ${path}. ${e}`);
+  });
+}
+
 export async function parseStringOrFileKey(stringOrPath: string): Promise<string> {
   const errorMessages: string[] = [];
 

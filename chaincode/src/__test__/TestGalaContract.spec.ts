@@ -29,7 +29,7 @@ describe("TestChaincode", () => {
     const expectedVersion = require("../../package.json").version;
 
     // When
-    const result = await chaincode.invoke("GetChaincodeVersion");
+    const result = await chaincode.invoke("GetContractVersion");
 
     // Then
     expect(result).toEqual(transactionSuccess(expectedVersion));

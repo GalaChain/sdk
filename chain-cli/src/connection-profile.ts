@@ -14,19 +14,19 @@
  */
 import * as path from "path";
 
-interface CaConfig {
+export interface CaConfig {
   domain: string;
   caHost: string;
   caPort: number;
 }
 
-interface PeerConfig {
+export interface PeerConfig {
   domain: string;
   peerHost: string;
   peerPort: number;
 }
 
-interface OrgConfig extends CaConfig, PeerConfig {}
+export interface OrgConfig extends CaConfig, PeerConfig {}
 
 const curatorCfg: OrgConfig = {
   domain: "curator.local",
@@ -75,7 +75,12 @@ function caConfig(
     ? {}
     : {
         tlsCACerts: {
-          path: path.resolve(cryptoConfigRoot, "peerOrganizations", orgDomain, "peers", host, "tls/ca.crt")
+          path: path.resolve(
+            cryptoConfigRoot,
+            "peerOrganizations",
+            orgDomain,
+            `msp/tlscacerts/tlsca.${orgDomain}-cert.pem`
+          )
         }
       };
   const httpOptions = {

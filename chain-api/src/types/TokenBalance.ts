@@ -67,6 +67,21 @@ export class TokenNotLockedError extends ValidationFailedError {
   }
 }
 
+export class TokenQuantityNotUnlockedError extends ValidationFailedError {
+  constructor(
+    owner: string,
+    tokenClass: TokenClassKeyProperties,
+    quantity: BigNumber,
+    name: string | undefined
+  ) {
+    const tokenClassKey = TokenClassKey.toStringKey(tokenClass);
+    super(
+      `Failed to unlock quantity ${quantity} of Fungible token ${tokenClassKey} for TokenHold.name = ${name}.`,
+      { owner, tokenClassKey }
+    );
+  }
+}
+
 export class TokenInUseError extends ValidationFailedError {
   constructor(owner: string, tokenClass: TokenClassKeyProperties, instanceId: BigNumber) {
     const tokenInstanceKey = TokenInstanceKey.nftKey(tokenClass, instanceId).toStringKey();
@@ -208,14 +223,14 @@ export class TokenBalance extends ChainObject {
     return { remove };
   }
 
-  public ensureCanLockInstance(hold: TokenHold): { lock(): void } {
+  public ensureCanLockInstance(hold: TokenHold, currentTime: number): { lock(): void } {
     this.ensureInstanceIsNft(hold.instanceId);
     this.ensureInstanceIsInBalance(hold.instanceId);
-    this.ensureInstanceIsNotLockedWithTheSameName(hold.instanceId, hold.name, hold.created);
-    this.ensureInstanceIsNotUsed(hold.instanceId, hold.created);
+    this.ensureInstanceIsNotLockedWithTheSameName(hold.instanceId, hold.name, currentTime);
+    this.ensureInstanceIsNotUsed(hold.instanceId, currentTime);
 
     const lock = () => {
-      this.lockedHolds = [...this.getUnexpiredLockedHolds(hold.created), hold];
+      this.lockedHolds = [...this.getUnexpiredLockedHolds(currentTime), hold];
     };
 
     return { lock };
@@ -240,14 +255,14 @@ export class TokenBalance extends ChainObject {
     return { unlock };
   }
 
-  public ensureCanUseInstance(hold: TokenHold): { use(): void } {
+  public ensureCanUseInstance(hold: TokenHold, currentTime: number): { use(): void } {
     this.ensureInstanceIsNft(hold.instanceId);
     this.ensureInstanceIsInBalance(hold.instanceId);
-    this.ensureInstanceIsNotLocked(hold.instanceId, hold.created);
-    this.ensureInstanceIsNotUsed(hold.instanceId, hold.created);
+    this.ensureInstanceIsNotLocked(hold.instanceId, currentTime);
+    this.ensureInstanceIsNotUsed(hold.instanceId, currentTime);
 
     const use = () => {
-      this.inUseHolds = [...this.getUnexpiredInUseHolds(hold.created), hold];
+      this.inUseHolds = [...this.getUnexpiredInUseHolds(currentTime), hold];
     };
 
     return { use };
@@ -292,13 +307,9 @@ export class TokenBalance extends ChainObject {
     return this.getUnexpiredLockedHolds(currentTime).find((h) => h.matches(instanceId, name));
   }
 
-  public findInUseHold(
-    instanceId: BigNumber,
-    name: string | undefined,
-    currentTime: number
-  ): TokenHold | undefined {
+  public findInUseHold(instanceId: BigNumber, currentTime: number): TokenHold | undefined {
     this.ensureInstanceIsNft(instanceId);
-    return this.getUnexpiredInUseHolds(currentTime).find((h) => h.matches(instanceId, name));
+    return this.getUnexpiredInUseHolds(currentTime).find((h) => h.matches(instanceId, undefined));
   }
 
   public containsAnyNftInstanceId(): boolean {
@@ -380,6 +391,18 @@ export class TokenBalance extends ChainObject {
     return this.quantity;
   }
 
+  public getSpendableQuantityTotal(currentTime: number): BigNumber {
+    this.ensureContainsNoNftInstances();
+    const lockedQuantity = this.getCurrentLockedQuantity(currentTime);
+    return this.quantity.minus(lockedQuantity);
+  }
+
+  public getLockedQuantityTotal(currentTime: number): BigNumber {
+    this.ensureContainsNoNftInstances();
+    const lockedQuantity = this.getCurrentLockedQuantity(currentTime);
+    return lockedQuantity;
+  }
+
   public ensureCanAddQuantity(quantity: BigNumber): { add(): void } {
     this.ensureContainsNoNftInstances();
     this.ensureIsValidQuantityForFungible(quantity);
@@ -391,10 +414,10 @@ export class TokenBalance extends ChainObject {
     return { add };
   }
 
-  public ensureCanSubtractQuantity(quantity: BigNumber): { subtract(): void } {
+  public ensureCanSubtractQuantity(quantity: BigNumber, currentTime: number): { subtract(): void } {
     this.ensureContainsNoNftInstances();
     this.ensureIsValidQuantityForFungible(quantity);
-    this.ensureQuantityIsSpendable(quantity);
+    this.ensureQuantityIsSpendable(quantity, currentTime);
 
     const subtract = () => {
       this.quantity = this.quantity.minus(quantity);
@@ -403,14 +426,16 @@ export class TokenBalance extends ChainObject {
     return { subtract };
   }
 
-  private ensureQuantityIsSpendable(quantity: BigNumber): void {
-    // locked & in use are not supported for fungibles
-    const spendableQuantity = this.quantity;
+  private ensureQuantityIsSpendable(quantity: BigNumber, currentTime: number): void {
+    // in use not supported for fungibles
+    const lockedQuantity = this.getCurrentLockedQuantity(currentTime);
+    const spendableQuantity = this.quantity.minus(lockedQuantity);
 
     if (spendableQuantity.isLessThan(quantity)) {
       throw new ValidationFailedError("Insufficient balance", {
         balanceKey: this.getCompositeKey(),
-        total: this.quantity.toFixed()
+        total: this.quantity.toFixed(),
+        lockedQuantity: lockedQuantity.toFixed()
       });
     }
   }
@@ -521,5 +546,18 @@ export class TokenHold {
 
   public isExpired(currentTime: number): boolean {
     return this.expires !== 0 && currentTime > this.expires;
+  }
+
+  // sort holds in order of ascending expiration, 0 = no expiration date
+  public static sortByAscendingExpiration(a: TokenHold, b: TokenHold) {
+    if (b.expires === 0 && a.expires === 0) {
+      return 0;
+    } else if (b.expires === 0) {
+      return -1;
+    } else if (a.expires === 0 || a.expires > b.expires) {
+      return 1;
+    } else {
+      return -1;
+    }
   }
 }

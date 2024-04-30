@@ -149,7 +149,8 @@ describe("GrantAllowance", () => {
           currencyInstanceKey.toStringKey(),
           AllowanceType[AllowanceType.Lock],
           new BigNumber("1000"),
-          new BigNumber("1001")
+          new BigNumber("1001"),
+          new BigNumber("0")
         )
       )
     );
@@ -217,7 +218,7 @@ describe("GrantAllowance", () => {
       quantity: new BigNumber("1000")
     });
 
-    const { ctx, contract, writes } = fixture(GalaChainTokenContract)
+    const { ctx, writes } = fixture(GalaChainTokenContract)
       .callingUser(users.testUser2Id)
       .savedState(currencyClass, currencyInstance, currencyBalance);
 

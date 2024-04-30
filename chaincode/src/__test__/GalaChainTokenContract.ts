@@ -282,7 +282,9 @@ export default class GalaChainTokenContract extends GalaContract {
     ]
   })
   public async HighThroughputMint(
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
     ctx: GalaChainContext,
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
     dto: HighThroughputMintTokenDto
   ): Promise<TokenInstanceKey[]> {
     return Promise.reject(
@@ -391,8 +393,7 @@ export default class GalaChainTokenContract extends GalaContract {
   })
   public ReleaseToken(ctx: GalaChainContext, dto: ReleaseTokenDto): Promise<TokenBalance> {
     return releaseToken(ctx, {
-      tokenInstanceKey: dto.tokenInstance,
-      name: undefined
+      tokenInstanceKey: dto.tokenInstance
     });
   }
 
@@ -442,7 +443,9 @@ export default class GalaChainTokenContract extends GalaContract {
   public async UnlockToken(ctx: GalaChainContext, dto: UnlockTokenDto): Promise<TokenBalance> {
     return unlockToken(ctx, {
       tokenInstanceKey: dto.tokenInstance,
-      name: undefined
+      name: dto.lockedHoldName ?? undefined,
+      quantity: dto.quantity,
+      owner: dto.owner
     });
   }
 
