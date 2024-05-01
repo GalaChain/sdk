@@ -131,9 +131,10 @@ const expectedTestDtoSchema = {
       type: "string"
     },
     prefix: {
-      description: "Prefix for metamask transaction signatures. Necessary to format payloads correctly to recover publicKey from web3 signatures.",
+      description:
+        "Prefix for metamask transaction signatures. Necessary to format payloads correctly to recover publicKey from web3 signatures.",
       minLength: 1,
-      type: "string",
+      type: "string"
     },
     quantities: {
       items: {
