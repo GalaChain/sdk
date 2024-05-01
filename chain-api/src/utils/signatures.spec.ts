@@ -317,18 +317,45 @@ describe("signatures", () => {
   });
 
   it("test metamask signatures vs galachain signatures", async () => {
-    const metamask = "5078520b05186d8babacee43d061f14b3575ad2999e561772b57032aa019bc2a7b01eb5ec412c9330d343025697e9449a0766995e3646941948e4acf0d0dff501c"
-    const metamaskPayload = {"quantity":"1","to":"client|63580d94c574ad78b121c267","tokenInstance":{"additionalKey":"none","category":"Unit","collection":"GALA","instance":"0","type":"none"},"uniqueKey":"26d4122e-34c8-4639-baa6-4382b398e68e"}
+    // Given
+    // Note: uniqueKey will be different for each payload
+    const metamask =
+      "5078520b05186d8babacee43d061f14b3575ad2999e561772b57032aa019bc2a7b01eb5ec412c9330d343025697e9449a0766995e3646941948e4acf0d0dff501c";
+    const metamaskPayload = {
+      quantity: "1",
+      to: "client|63580d94c574ad78b121c267",
+      tokenInstance: {
+        additionalKey: "none",
+        category: "Unit",
+        collection: "GALA",
+        instance: "0",
+        type: "none"
+      },
+      uniqueKey: "26d4122e-34c8-4639-baa6-4382b398e68e"
+    };
+    const metamaskPrefix =
+      "\u0019Ethereum Signed Message:\n" + signatures.getPayloadToSign(metamaskPayload).length;
 
-    const galachain = "4ae122398fb2e69f95d7322043d72d18fce83a0a034c8faa5643d673693ae0c2a6ccb049fdff8d2220015f20635f6cb888fec60df2c3ae5eb1e5b6e0e8785cf21c"
-    const galachainPayload = {"quantity":"1","to":"client|63580d94c574ad78b121c267","tokenInstance":{"additionalKey":"none","category":"Unit","collection":"GALA","instance":"0","type":"none"},"uniqueKey":"8ad19f56-453a-40c8-aee5-11c0f753c7d8","signature":"4ae122398fb2e69f95d7322043d72d18fce83a0a034c8faa5643d673693ae0c2a6ccb049fdff8d2220015f20635f6cb888fec60df2c3ae5eb1e5b6e0e8785cf21c"}
-    
+    const galachain =
+      "4ae122398fb2e69f95d7322043d72d18fce83a0a034c8faa5643d673693ae0c2a6ccb049fdff8d2220015f20635f6cb888fec60df2c3ae5eb1e5b6e0e8785cf21c";
+    const galachainPayload = {
+      quantity: "1",
+      to: "client|63580d94c574ad78b121c267",
+      tokenInstance: {
+        additionalKey: "none",
+        category: "Unit",
+        collection: "GALA",
+        instance: "0",
+        type: "none"
+      },
+      uniqueKey: "8ad19f56-453a-40c8-aee5-11c0f753c7d8"
+    };
+
     // When
-    const metamaskPubKey = signatures.recoverPublicKey(metamask, metamaskPayload, "\u0019Ethereum Signed Message:\n" + JSON.stringify(metamaskPayload).length);
+    const metamaskPubKey = signatures.recoverPublicKey(metamask, metamaskPayload, metamaskPrefix);
     const galachainPubKey = signatures.recoverPublicKey(galachain, galachainPayload);
-  
+
     // Then
-    console.log('metamaskPubKey', metamaskPubKey, "galachainPubKey", galachainPubKey)
-    expect(metamaskPubKey).toEqual(galachainPubKey)
+    expect(metamaskPubKey).toEqual(galachainPubKey);
   });
 });
