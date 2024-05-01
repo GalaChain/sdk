@@ -108,11 +108,12 @@ describe("BurnTokens", () => {
     const currencyClass = currency.tokenClass();
     const tokenBalance = currency.tokenBalance();
     const burnQty = new BigNumber("1");
-    const tokenAllowance = currency.tokenBurnAllowance();
+    const tokenMintAllowance = currency.tokenMintAllowance();
+    const tokenBurnAllowance = currency.tokenBurnAllowance();
 
     const { ctx, contract, writes } = fixture(GalaChainTokenContract)
       .callingUser(users.testUser2Id)
-      .savedState(currencyClass, currencyInstance, tokenAllowance, tokenBalance)
+      .savedState(currencyClass, currencyInstance, tokenMintAllowance, tokenBurnAllowance, tokenBalance)
       .savedRangeState([]);
 
     const dto = await createValidDTO(BurnTokensDto, {
@@ -146,7 +147,7 @@ describe("BurnTokens", () => {
     });
 
     const expectedAllowance = plainToInstance(TokenAllowance, {
-      ...tokenAllowance,
+      ...tokenBurnAllowance,
       usesSpent: new BigNumber("1"),
       quantitySpent: burnQty,
       expires: ctx.txUnixTime
