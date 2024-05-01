@@ -13,6 +13,7 @@
  * limitations under the License.
  */
 import { TokenAllowance, TokenClaim } from "@gala-chain/api";
+import { AllowanceType } from "@gala-chain/api";
 import { BigNumber } from "bignumber.js";
 
 import { GalaChainContext } from "../types";
@@ -23,7 +24,8 @@ import { isAllowanceExpired } from "./checkAllowances";
 export async function useAllowances(
   ctx: GalaChainContext,
   quantity: BigNumber,
-  applicableAllowances: TokenAllowance[]
+  applicableAllowances: TokenAllowance[],
+  allowanceType: AllowanceType
 ): Promise<boolean> {
   ctx.logger.info(
     `UseAllowances: quantity: ${quantity.toFixed()}, number of allowances: ${applicableAllowances.length}`
@@ -33,6 +35,11 @@ export async function useAllowances(
   let quantityRemaining = quantity;
 
   for (const tokenAllowance of applicableAllowances) {
+    // Check if tokenAllowance is for the correct action type
+    if (tokenAllowance.allowanceType !== allowanceType) {
+      continue;
+    }
+
     // Check if quantity to consume is 0, then exit.
     if (quantityRemaining.isEqualTo(0)) {
       break;

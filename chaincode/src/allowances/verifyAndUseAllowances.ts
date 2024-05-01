@@ -89,6 +89,6 @@ export async function verifyAndUseAllowances(
   }
 
   // Use allowances (which also creates claims)
-  const useResult = await useAllowances(ctx, quantity, applicableAllowances);
+  const useResult = await useAllowances(ctx, quantity, applicableAllowances, actionType);
   return useResult;
 }

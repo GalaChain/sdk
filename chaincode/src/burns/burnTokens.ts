@@ -162,7 +162,8 @@ export async function burnTokens(
       const allowancesUsed: boolean = await useAllowances(
         ctx,
         new BigNumber(tokenQuantity.quantity),
-        applicableAllowanceResponse
+        applicableAllowanceResponse,
+        AllowanceType.Burn
       );
 
       if (!allowancesUsed) {

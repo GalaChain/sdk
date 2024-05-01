@@ -277,7 +277,8 @@ export async function fulfillMintRequest(
         const allowancesUsed: boolean = await useAllowances(
           ctx,
           new BigNumber(req.quantity),
-          applicableAllowances
+          applicableAllowances,
+          AllowanceType.Mint
         );
 
         if (!allowancesUsed) {

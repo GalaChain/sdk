@@ -139,7 +139,8 @@ export async function mintToken(
   const allowancesUsed: boolean = await useAllowances(
     ctx,
     new BigNumber(quantity),
-    applicableAllowanceResponse
+    applicableAllowanceResponse,
+    AllowanceType.Mint
   );
 
   if (!allowancesUsed) {
