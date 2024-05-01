@@ -77,7 +77,7 @@ export async function fetchMintAllowanceSupply(
         const entry = RangedChainObject.deserialize(TokenMintAllowanceRequest, stringResult);
 
         // timeKey is a string padded with leading zeros. BigNumber.js will parse this format into an integer.
-        const entryTime = new BigNumber(entry.timeKey);
+        // const entryTime = new BigNumber(entry.timeKey);
 
         seekingFirstResult = false;
 

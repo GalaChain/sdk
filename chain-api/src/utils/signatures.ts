@@ -296,7 +296,7 @@ function getDERSignature(obj: object, privateKey: Buffer): string {
   return signSecp256k1(calculateKeccak256(data), privateKey, "DER");
 }
 
-function recoverPublicKey(signature: string, obj: object): string {
+function recoverPublicKey(signature: string, obj: object, prefix = ""): string {
   const signatureObj = normalizeSecp256k1Signature(signature);
   const recoveryParam = signatureObj.recoveryParam;
   if (recoveryParam === undefined) {
@@ -304,7 +304,7 @@ function recoverPublicKey(signature: string, obj: object): string {
     throw new InvalidSignatureFormatError(message, { signature });
   }
 
-  const data = Buffer.from(getPayloadToSign(obj));
+  const data = Buffer.concat([Buffer.from(prefix), Buffer.from(getPayloadToSign(obj))]);
   const dataHash = Buffer.from(keccak256.hex(data), "hex");
   const publicKeyObj = ecSecp256k1.recoverPubKey(dataHash, signatureObj, recoveryParam);
   return publicKeyObj.encode("hex", false);
