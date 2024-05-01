@@ -60,7 +60,7 @@ import { isAllowanceExpired } from "./checkAllowances";
 import { refreshAllowances } from "./refreshAllowances";
 
 // this determines how many balances is enough to warrant optimization of allowance fetch
-const BALANCE_COUNT_THRESHOLD = 50;
+// const BALANCE_COUNT_THRESHOLD = 50;
 
 async function grantAllowanceByPartialKey(
   ctx: GalaChainContext,

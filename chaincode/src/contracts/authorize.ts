@@ -134,7 +134,7 @@ export function ensureOrganizationIsAllowed(ctx: GalaChainContext, allowedOrgsMS
   }
 }
 
-function recoverPublicKey(signature: string, dto: ChainCallDTO, prefix: string = ""): string | undefined {
+function recoverPublicKey(signature: string, dto: ChainCallDTO, prefix = ""): string | undefined {
   try {
     return signatures.recoverPublicKey(signature, dto, prefix);
   } catch (err) {

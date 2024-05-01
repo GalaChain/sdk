@@ -296,7 +296,7 @@ function getDERSignature(obj: object, privateKey: Buffer): string {
   return signSecp256k1(calculateKeccak256(data), privateKey, "DER");
 }
 
-function recoverPublicKey(signature: string, obj: object, prefix: string = ""): string {
+function recoverPublicKey(signature: string, obj: object, prefix = ""): string {
   const signatureObj = normalizeSecp256k1Signature(signature);
   const recoveryParam = signatureObj.recoveryParam;
   if (recoveryParam === undefined) {

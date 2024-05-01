@@ -29,7 +29,7 @@ import { ensureQuantityCanBeMinted } from "../allowances";
 import { fetchKnownBurnCount } from "../burns/fetchBurns";
 import { GalaChainContext } from "../types";
 import { getObjectByKey, lookbackTimeOffset, putChainObject } from "../utils";
-import { blockTimeout, inverseKeyLength, inversionHeight } from "../utils";
+import { inverseKeyLength, inversionHeight } from "../utils";
 import { indexMintRequests } from "./indexMintRequests";
 
 // Sequence operations, such as RequestMintAllowance immediately followed by FulfillMintAllowance,

@@ -32,12 +32,7 @@ import {
 import { Info } from "fabric-contract-api";
 
 import { PublicKeyService } from "../services";
-import {
-  PkMismatchError,
-  PkNotFoundError,
-  ProfileExistsError,
-  ProfileNotFoundError
-} from "../services/PublicKeyError";
+import { PkMismatchError, PkNotFoundError, ProfileExistsError } from "../services/PublicKeyError";
 import { GalaChainContext } from "../types";
 import { GalaContract } from "./GalaContract";
 import { EVALUATE, GalaTransaction, SUBMIT } from "./GalaTransaction";

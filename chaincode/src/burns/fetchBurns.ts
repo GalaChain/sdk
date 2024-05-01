@@ -107,7 +107,7 @@ export async function fetchKnownBurnCount(
         const entry = RangedChainObject.deserialize(TokenBurnCounter, stringResult);
 
         // timeKey is a string padded with leading zeros. BigNumber will parse into an integer.
-        const entryTime = new BigNumber(entry.timeKey);
+        // const entryTime = new BigNumber(entry.timeKey);
 
         seekingFirstResult = false;
 
