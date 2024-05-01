@@ -134,7 +134,9 @@ export async function burnTokens(
         collection: tokenInstanceClassKey.collection,
         category: tokenInstanceClassKey.category,
         type: tokenInstanceClassKey.type,
-        additionalKey: tokenInstanceClassKey.additionalKey
+        additionalKey: tokenInstanceClassKey.additionalKey,
+        instance: tokenInstance.instance.toString(),
+        allowanceType: AllowanceType.Burn
       };
 
       applicableAllowanceResponse = await fetchAllowances(ctx, fetchAllowancesData);

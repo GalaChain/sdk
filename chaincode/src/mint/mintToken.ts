@@ -102,7 +102,9 @@ export async function mintToken(
       collection: tokenClassKey.collection,
       category: tokenClassKey.category,
       type: tokenClassKey.type,
-      additionalKey: tokenClassKey.additionalKey
+      additionalKey: tokenClassKey.additionalKey,
+      instance: TokenInstance.FUNGIBLE_TOKEN_INSTANCE.toString(),
+      allowanceType: AllowanceType.Mint
     };
 
     applicableAllowanceResponse = await fetchAllowances(ctx, fetchAllowancesData);
