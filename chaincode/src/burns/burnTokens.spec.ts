@@ -168,7 +168,7 @@ describe("BurnTokens", () => {
     );
   });
 
-  test("burns currency with multiple allowance", async () => {
+  test("burns currency with multiple allowances", async () => {
     // Given
     const currencyInstance = currency.tokenInstance();
     const currencyInstanceKey = currency.tokenInstanceKey();
@@ -236,7 +236,7 @@ describe("BurnTokens", () => {
     );
   });
 
-  test("should filter allowances by brantedBy (owner)", async () => {
+  test("should filter allowances by owner (grantedBy)", async () => {
     // Given
     const currencyInstance = currency.tokenInstance();
     const currencyInstanceKey = currency.tokenInstanceKey();
@@ -304,7 +304,7 @@ describe("BurnTokens", () => {
     );
   });
 
-  test("should fail to burn currency wrong allowance", async () => {
+  test("should fail to burn currency with wrong allowance", async () => {
     // Given
     const currencyInstance = currency.tokenInstance();
     const currencyInstanceKey = currency.tokenInstanceKey();
@@ -335,18 +335,6 @@ describe("BurnTokens", () => {
       )
     );
     tokenBurnCounter.referenceId = tokenBurnCounter.referencedBurnId();
-
-    const tokenClaim = plainToInstance(TokenClaim, {
-      ...currencyInstanceKey,
-      ownerKey: users.testUser2Id,
-      issuerKey: users.testUser1Id,
-      instance: new BigNumber("0"),
-      action: 6,
-      quantity: burnQty,
-      allowanceCreated: 1,
-      claimSequence: new BigNumber("1"),
-      created: ctx.txUnixTime
-    });
 
     // When
     const response = await contract.BurnTokens(ctx, dto);
