@@ -84,6 +84,20 @@ const tokenBurnAllowancePlain = (txUnixTime: number) => ({
   usesSpent: new BigNumber(0)
 });
 
+const tokenBurnAllowanceUser3Plain = (txUnixTime: number) => ({
+  ...tokenClassKeyPlain(),
+  allowanceType: 6,
+  quantity: new BigNumber(1),
+  quantitySpent: new BigNumber(0),
+  created: txUnixTime,
+  expires: 0,
+  instance: new BigNumber(0),
+  grantedBy: users.testUser3Id,
+  grantedTo: users.testUser2Id,
+  uses: new BigNumber(1),
+  usesSpent: new BigNumber(0)
+});
+
 const tokenMintAllowancePlain = (txUnixTime: number) => ({
   ...tokenClassKeyPlain(),
   allowanceType: 4,
@@ -145,6 +159,8 @@ export default {
   tokenAllowance: createInstanceFn(TokenAllowance, tokenAllowancePlain(1)),
   tokenBurnAllowancePlain,
   tokenBurnAllowance: createInstanceFn(TokenAllowance, tokenBurnAllowancePlain(1)),
+  tokenBurnAllowanceUser3Plain,
+  tokenBurnAllowanceUser3: createInstanceFn(TokenAllowance, tokenBurnAllowanceUser3Plain(1)),
   tokenMintAllowancePlain,
   tokenMintAllowance: createInstanceFn(TokenAllowance, tokenMintAllowancePlain(1)),
   tokenInstanceKeyPlain,
