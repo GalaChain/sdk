@@ -74,6 +74,11 @@ export class PublicKeyService {
     if (data.length > 0) {
       const userProfile = ChainObject.deserialize<UserProfile>(UserProfile, data.toString());
 
+      // TODO test to ensure empty array does not allow to submit
+      if (userProfile.roles === undefined) {
+        userProfile.roles = Array.from(UserProfile.DEFAULT_ROLES);
+      }
+
       return userProfile;
     }
 
@@ -91,6 +96,7 @@ export class PublicKeyService {
         const adminProfile = new UserProfile();
         adminProfile.ethAddress = adminEthAddress;
         adminProfile.alias = process.env.DEV_ADMIN_USER_ID;
+        adminProfile.roles = Array.from(UserProfile.ADMIN_ROLES);
         return adminProfile;
       }
     }

@@ -55,7 +55,7 @@ export async function authorize(
   ctx: GalaChainContext,
   dto: ChainCallDTO | undefined,
   legacyCAUser: string
-): Promise<{ alias: string; ethAddress?: string }> {
+): Promise<{ alias: string; ethAddress?: string; roles?: string[] }> {
   if (!dto || dto.signature === undefined) {
     throw new MissingSignatureError();
   }

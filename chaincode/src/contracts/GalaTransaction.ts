@@ -19,9 +19,11 @@ import {
   GalaChainResponse,
   Inferred,
   MethodAPI,
+  NotImplementedError,
   Primitive,
   RuntimeError,
   UnauthorizedError,
+  UserRole,
   generateResponseSchema,
   generateSchema,
   parseValidDTO
@@ -73,7 +75,9 @@ export interface GalaTransactionOptions<T extends ChainCallDTO> {
   description?: string;
   in?: ClassConstructor<Inferred<T>>;
   out?: OutType | OutArrType;
+  /** @deprecated */
   allowedOrgs?: string[];
+  allowedRoles?: string[];
   verifySignature?: true;
   apiMethodName?: string;
   sequence?: MethodAPI[];
@@ -114,8 +118,25 @@ function GalaTransaction<T extends ChainCallDTO>(
 
   if (options.type === SUBMIT && !options.verifySignature && !options.allowedOrgs?.length) {
     const message = `SUBMIT transaction must have either verifySignature or allowedOrgs defined`;
-    throw new UnauthorizedError(message);
+    throw new NotImplementedError(message);
   }
+
+  if (!options.verifySignature && options.allowedRoles !== undefined) {
+    const message = `allowedRoles can be defined only for transactions with verifySignature`;
+    throw new NotImplementedError(message);
+  }
+
+  if (options.allowedRoles !== undefined && options.allowedOrgs !== undefined) {
+    const message = `allowedRoles and allowedOrgs cannot be defined at the same time`;
+    throw new NotImplementedError(message);
+  }
+
+  const allowedRoles = options.allowedRoles ?? [
+    options.type === SUBMIT ? UserRole.SUBMIT : UserRole.EVALUATE
+  ];
+
+  // TODO register user
+  // TODO public access
 
   // An actual decorator
   return (target, propertyKey, descriptor): void => {
@@ -152,6 +173,21 @@ function GalaTransaction<T extends ChainCallDTO>(
           ctx.callingUserData = { alias: legacyClientAccountId(ctx) };
         }
 
+        // Verify if organization can invoke this method - throws exception in case of failure
+        if (options?.allowedOrgs) {
+          ensureOrganizationIsAllowed(ctx, options.allowedOrgs);
+        }
+        // Ensure that the calling user has the required role (only for transactions where no allowedOrgs are defined)
+        else if (allowedRoles.length > 0) {
+          const hasRole = allowedRoles.some((role) => ctx.callingUserData.roles?.includes(role));
+          if (!hasRole) {
+            const message =
+              `User ${ctx.callingUserData.alias} does not have one of required roles: ` +
+              `${allowedRoles.join(", ")} (has: ${ctx.callingUserData.roles?.join(", ")})`;
+            throw new UnauthorizedError(message);
+          }
+        }
+
         // Prevent the same transaction from being submitted multiple times
         if (dto?.uniqueKey) {
           await UniqueTransactionService.ensureUniqueTransaction(ctx, dto.uniqueKey);
@@ -160,11 +196,6 @@ function GalaTransaction<T extends ChainCallDTO>(
         }
 
         const argArray: [GalaChainContext, T] | [GalaChainContext] = dto ? [ctx, dto] : [ctx];
-
-        // Verify if organization can invoke this method - throws exception in case of failure
-        if (options?.allowedOrgs) {
-          ensureOrganizationIsAllowed(ctx, options.allowedOrgs);
-        }
 
         if (options?.before !== undefined) {
           await options?.before?.apply(this, argArray);

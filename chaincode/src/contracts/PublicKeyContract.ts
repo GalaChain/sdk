@@ -26,6 +26,7 @@ import {
   RegisterUserDto,
   UpdatePublicKeyDto,
   UserProfile,
+  UserRole,
   ValidationFailedError,
   signatures
 } from "@gala-chain/api";
@@ -35,7 +36,7 @@ import { PublicKeyService } from "../services";
 import { PkMismatchError, PkNotFoundError, ProfileExistsError } from "../services/PublicKeyError";
 import { GalaChainContext } from "../types";
 import { GalaContract } from "./GalaContract";
-import { EVALUATE, GalaTransaction, SUBMIT } from "./GalaTransaction";
+import { EVALUATE, GalaTransaction, SUBMIT, Submit } from "./GalaTransaction";
 
 let version = "0.0.0";
 
@@ -184,6 +185,20 @@ export class PublicKeyContract extends GalaContract {
     const userAlias = `eth|${ethAddress}`;
 
     return this.registerUser(ctx, providedPkHex, ethAddress, userAlias);
+  }
+
+  @Submit({
+    in: ChainCallDTO,
+    description: "Updates roles for the user with alias provided in DTO.",
+    allowedRoles: [UserRole.CURATOR]
+  })
+  public async UpdateUserRoles(
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
+    ctx: GalaChainContext,
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
+    dto: ChainCallDTO
+  ): Promise<GalaChainResponse<void>> {
+    throw new NotImplementedError("Function is not supported");
   }
 
   @GalaTransaction({

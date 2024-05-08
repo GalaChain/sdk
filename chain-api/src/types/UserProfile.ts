@@ -12,12 +12,21 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-import { IsNotEmpty } from "class-validator";
+import { ArrayMinSize, IsNotEmpty, IsString } from "class-validator";
 import { JSONSchema } from "class-validator-jsonschema";
 
 import { ChainObject } from "./ChainObject";
 
+export enum UserRole {
+  CURATOR = "CURATOR",
+  SUBMIT = "SUBMIT",
+  EVALUATE = "EVALUATE"
+}
+
 export class UserProfile extends ChainObject {
+  static ADMIN_ROLES = [UserRole.CURATOR, UserRole.EVALUATE, UserRole.SUBMIT] as const;
+  static DEFAULT_ROLES = [UserRole.EVALUATE, UserRole.SUBMIT] as const;
+
   @JSONSchema({
     description: `Legacy caller id from user name or identifier derived from ethAddress for new users.`
   })
@@ -29,6 +38,15 @@ export class UserProfile extends ChainObject {
   })
   @IsNotEmpty()
   ethAddress: string;
+
+  @JSONSchema({
+    description: `Roles assigned to the user. Predefined roles are: ${Object.values(UserRole)
+      .sort()
+      .join(", ")}, but you can use arbitrary string to define your own roles.`
+  })
+  @IsString({ each: true })
+  @ArrayMinSize(1)
+  roles: string[];
 }
 
 export const UP_INDEX_KEY = "GCUP";
