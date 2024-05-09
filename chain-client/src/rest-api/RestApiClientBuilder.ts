@@ -31,30 +31,48 @@ export class RestApiClientBuilder extends ChainClientBuilder {
     super();
   }
 
-  private async ensureInitializedRestApi(): Promise<void> {
-    if (globalRestApiConfig.isHealthy(this.restApiUrl)) {
-      return;
+  private async ensureInitializedRestApi(retriesLeft = 50): Promise<void> {
+    const status = globalRestApiConfig.isInitialized(this.restApiUrl);
+
+    if (status === false) {
+      try {
+        globalRestApiConfig.markPending(this.restApiUrl);
+
+        const shouldUseFabloRest = await this.shouldUseFabloRest();
+
+        const apis = shouldUseFabloRest
+          ? await this.getContractApisFromFabloRest()
+          : await this.getContractApisFromGCRestApi();
+
+        for (const api of apis) {
+          globalRestApiConfig.setContractApi(api);
+        }
+
+        globalRestApiConfig.markHealthy(this.restApiUrl);
+        return;
+      } catch (e) {
+        globalRestApiConfig.markUnhealthy(this.restApiUrl, e);
+        throw e;
+      }
     }
 
-    const shouldUseFabloRest = await this.shouldUseFabloRest();
-
-    const apis = shouldUseFabloRest
-      ? await this.getContractApisFromFabloRest()
-      : await this.getContractApisFromGCRestApi();
-
-    for (const api of apis) {
-      globalRestApiConfig.setContractApi(api);
+    if (retriesLeft === 0) {
+      const error = new Error(`Failed to initialize Rest API at ${this.restApiUrl} after 50 retries`);
+      globalRestApiConfig.markUnhealthy(this.restApiUrl, error);
+      throw error;
     }
 
-    globalRestApiConfig.markHealthy(this.restApiUrl);
+    if (status === "pending") {
+      await new Promise((resolve) => setTimeout(resolve, 200));
+      return this.ensureInitializedRestApi(retriesLeft - 1);
+    }
   }
 
   private async shouldUseFabloRest(): Promise<boolean> {
     try {
       await axios.get(`${this.restApiUrl}/user/identities`);
-      return false; // won't happen for Fablo REST
+      return false;
     } catch (e) {
-      // the path is present, but it should fail with 400 because of missing bearer token
       return e.response?.status === 400;
     }
   }
@@ -107,13 +125,7 @@ class AsyncProxyClient extends ChainClient {
           this.orgMsp
         );
       } else {
-        return new RestApiClient(
-          Promise.resolve(b),
-          b.restApiUrl,
-          contractConfig,
-          b.credentials,
-          this.orgMsp
-        );
+        return new RestApiClient(Promise.resolve(b), b.restApiUrl, contractConfig, this.orgMsp);
       }
     });
   }

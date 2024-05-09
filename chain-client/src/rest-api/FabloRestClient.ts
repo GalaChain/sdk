@@ -109,8 +109,6 @@ export class FabloRestClient extends ChainClient {
 
     const response = await axios.post(path, payload, { headers }).catch((e) => catchAxiosError(e));
 
-    console.log(`${payload.method} response: `, JSON.stringify(response.data.response));
-
     return GalaChainResponse.deserialize<T>(responseType, response?.data?.response ?? {});
   }
 
@@ -150,12 +148,9 @@ export class FabloRestClient extends ChainClient {
         const getApiPath = `${restApiUrl}/query/${contractPath}`;
         const payload = { method: `${contract.contractName}:GetContractAPI`, args: [] };
 
-        console.log(`Getting contract API for ${contractPath}, payload: ${JSON.stringify(payload)}`);
         const apiResponse = await axios
           .post(getApiPath, payload, { headers })
           .catch((e) => catchAxiosError(e));
-
-        console.log(`Got contract API for ${contractPath}: `, JSON.stringify(apiResponse.data));
 
         if (!GalaChainResponse.isSuccess<ContractAPI>(apiResponse.data.response)) {
           throw new Error(
