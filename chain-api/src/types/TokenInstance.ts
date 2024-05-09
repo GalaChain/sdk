@@ -259,6 +259,11 @@ export class TokenInstance extends ChainObject {
   @IsBoolean()
   public isNonFungible: boolean;
 
+  @IsBoolean()
+  public isNonTransferrable: boolean = false;
+
+  public nonTransferrableExpiration: number = 0;
+
   @ValidateIf((i) => i.isNonFungible === true)
   @IsNotEmpty()
   public owner?: string;

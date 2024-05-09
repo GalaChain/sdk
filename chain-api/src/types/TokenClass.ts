@@ -125,6 +125,11 @@ export class TokenClass extends ChainObject {
   @IsBoolean()
   public isNonFungible: boolean;
 
+  @IsBoolean()
+  public isNonTransferrable: boolean = false;
+
+  public nonTransferrableExpiration: number = 0;
+
   @IsNotEmpty()
   @BigNumberIsPositive()
   @BigNumberProperty({ allowInfinity: true })
