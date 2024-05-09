@@ -17,7 +17,12 @@ import axios from "axios";
 
 import { ChainClient, ChainClientBuilder, ClassType, ContractConfig } from "../generic";
 import { FabloRestClient } from "./FabloRestClient";
-import { RestApiAdminCredentials, SetContractApiParams, globalRestApiConfig } from "./GlobalRestApiConfig";
+import {
+  RestApiAdminCredentials,
+  RestApiStatus,
+  SetContractApiParams,
+  globalRestApiConfig
+} from "./GlobalRestApiConfig";
 import { RestApiClient } from "./RestApiClient";
 import { RestApiConfig } from "./loadRestApiConfig";
 
@@ -32,9 +37,9 @@ export class RestApiClientBuilder extends ChainClientBuilder {
   }
 
   private async ensureInitializedRestApi(retriesLeft = 50): Promise<void> {
-    const status = globalRestApiConfig.isInitialized(this.restApiUrl);
+    const status = globalRestApiConfig.getStatus(this.restApiUrl);
 
-    if (status === false) {
+    if (status === RestApiStatus.NONE) {
       try {
         globalRestApiConfig.markPending(this.restApiUrl);
 
@@ -48,21 +53,21 @@ export class RestApiClientBuilder extends ChainClientBuilder {
           globalRestApiConfig.setContractApi(api);
         }
 
-        globalRestApiConfig.markHealthy(this.restApiUrl);
+        globalRestApiConfig.markInitialized(this.restApiUrl);
         return;
       } catch (e) {
-        globalRestApiConfig.markUnhealthy(this.restApiUrl, e);
+        globalRestApiConfig.markFailed(this.restApiUrl, e);
         throw e;
       }
     }
 
     if (retriesLeft === 0) {
       const error = new Error(`Failed to initialize Rest API at ${this.restApiUrl} after 50 retries`);
-      globalRestApiConfig.markUnhealthy(this.restApiUrl, error);
+      globalRestApiConfig.markFailed(this.restApiUrl, error);
       throw error;
     }
 
-    if (status === "pending") {
+    if (status === RestApiStatus.PENDING) {
       await new Promise((resolve) => setTimeout(resolve, 200));
       return this.ensureInitializedRestApi(retriesLeft - 1);
     }
