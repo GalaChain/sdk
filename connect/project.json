@@ -1,0 +1,33 @@
+{
+  "name": "connect",
+  "$schema": "../node_modules/nx/schemas/project-schema.json",
+  "sourceRoot": "connect/src",
+  "projectType": "library",
+  "targets": {
+    "build": {
+      "executor": "@nx/js:tsc",
+      "outputs": ["{options.outputPath}"],
+      "options": {
+        "outputPath": "dist/connect",
+        "main": "connect/src/index.ts",
+        "tsConfig": "connect/tsconfig.lib.json",
+        "assets": ["connect/*.md"]
+      }
+    },
+    "publish": {
+      "command": "node tools/scripts/publish.mjs connect {args.ver} {args.tag}",
+      "dependsOn": ["build"]
+    },
+    "lint": {
+      "executor": "@nx/eslint:lint"
+    },
+    "test": {
+      "executor": "@nx/jest:jest",
+      "outputs": ["{workspaceRoot}/coverage/{projectRoot}"],
+      "options": {
+        "jestConfig": "connect/jest.config.ts"
+      }
+    }
+  },
+  "tags": []
+}
