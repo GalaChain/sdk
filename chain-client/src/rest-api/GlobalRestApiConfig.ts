@@ -29,15 +29,15 @@ interface ContractApiValue {
 export type SetContractApiParams = ContractApiValue & ContractConfig;
 
 export class GlobalRestApiConfig {
-  private isRestApiInitializedAndHealthy: Record<string, true | Error> = {};
+  private isRestApiInitializedAndHealthy: Record<string, true | Error | "pending"> = {};
   private contractApis: Record<string, ContractApiValue> = {};
   private authorizedFabloRest: Record<string, string> = {};
 
-  public isHealthy(apiUrl: string) {
+  public isInitialized(apiUrl: string): boolean | "pending" {
     const result = this.isRestApiInitializedAndHealthy[apiUrl];
 
-    if (result === true) {
-      return true;
+    if (result === true || result === "pending") {
+      return result;
     }
 
     if (result === undefined) {
@@ -49,6 +49,10 @@ export class GlobalRestApiConfig {
 
   public markHealthy(apiUrl: string) {
     this.isRestApiInitializedAndHealthy[apiUrl] = true;
+  }
+
+  public markPending(apiUrl: string) {
+    this.isRestApiInitializedAndHealthy[apiUrl] = "pending";
   }
 
   public markUnhealthy(apiUrl: string, error: Error) {
