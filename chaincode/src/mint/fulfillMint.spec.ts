@@ -40,7 +40,7 @@ describe("FulfillMint", () => {
     // Given
     const currencyClassKey = currency.tokenClassKey();
 
-    const testFixture = fixture(GalaChainTokenContract).callingUser(users.testAdminId);
+    const testFixture = fixture(GalaChainTokenContract).callingUser(users.admin);
 
     const { ctx, contract } = testFixture;
 
@@ -62,8 +62,8 @@ describe("FulfillMint", () => {
       additionalKey,
       timeKey,
       totalKnownMintsCount: new BigNumber("0"),
-      requestor: users.testAdminId,
-      owner: users.testUser1Id,
+      requestor: users.admin,
+      owner: users.testUser1,
       created: ctx.txUnixTime,
       quantity: new BigNumber("1"),
       state: TokenMintStatus.Unknown,
@@ -99,7 +99,7 @@ describe("FulfillMint", () => {
     const mintQty = new BigNumber("1000000000000");
     const tokenAllowance = currency.tokenAllowance();
 
-    const testFixture = fixture(GalaChainTokenContract).callingUser(users.testAdminId);
+    const testFixture = fixture(GalaChainTokenContract).callingUser(users.admin);
 
     const { ctx, contract, writes } = testFixture;
 
@@ -115,8 +115,8 @@ describe("FulfillMint", () => {
       additionalKey,
       timeKey,
       totalKnownMintsCount: new BigNumber("0"),
-      requestor: users.testAdminId,
-      owner: users.testUser1Id,
+      requestor: users.admin,
+      owner: users.testUser1,
       created: ctx.txUnixTime,
       quantity: mintQty,
       state: TokenMintStatus.Unknown,
@@ -135,7 +135,7 @@ describe("FulfillMint", () => {
       timeKey,
       instance: TokenInstance.FUNGIBLE_TOKEN_INSTANCE,
       totalKnownBurnsCount: new BigNumber("0"),
-      burnedBy: users.testUser2Id,
+      burnedBy: users.testUser2,
       created: ctx.txUnixTime,
       quantity: new BigNumber("1"),
       epoch: epochKey
@@ -145,8 +145,8 @@ describe("FulfillMint", () => {
 
     const tokenClaim = plainToInstance(TokenClaim, {
       ...currencyInstanceKey,
-      ownerKey: users.testAdminId,
-      issuerKey: users.testAdminId,
+      ownerKey: users.admin,
+      issuerKey: users.admin,
       instance: new BigNumber("0"),
       action: 4,
       quantity: mintQty,
@@ -169,7 +169,7 @@ describe("FulfillMint", () => {
           timeKey,
           totalKnownMintsCount: new BigNumber("0"),
           id: mintRequest.requestId(),
-          owner: users.testUser1Id
+          owner: users.testUser1
         })
       ]
     });
@@ -204,14 +204,14 @@ describe("FulfillMint", () => {
 
     const { collection, category, type, additionalKey } = nftClass;
 
-    const testFixture = fixture(GalaChainTokenContract).callingUser(users.testAdminId);
+    const testFixture = fixture(GalaChainTokenContract).callingUser(users.admin);
 
     const { ctx, contract, writes } = testFixture;
 
     const tokenClaim = plainToInstance(TokenClaim, {
       ...nftInstanceKey,
-      ownerKey: users.testAdminId,
-      issuerKey: users.testAdminId,
+      ownerKey: users.admin,
+      issuerKey: users.admin,
       instance: new BigNumber("0"),
       action: 4,
       quantity: mintQty,
@@ -241,8 +241,8 @@ describe("FulfillMint", () => {
         additionalKey,
         timeKey: distantPastTimeKey,
         totalKnownMintsCount: new BigNumber("0"),
-        requestor: users.testAdminId,
-        owner: users.testUser2Id,
+        requestor: users.admin,
+        owner: users.testUser2,
         created: distantPastTimestamp,
         quantity: new BigNumber("1"),
         state: TokenMintStatus.Unknown,
@@ -278,8 +278,8 @@ describe("FulfillMint", () => {
         additionalKey,
         timeKey: nearbyTimeKey,
         totalKnownMintsCount: new BigNumber(pastMintRequests.length),
-        requestor: users.testAdminId,
-        owner: users.testUser2Id,
+        requestor: users.admin,
+        owner: users.testUser2,
         created: nearbyTimestamp,
         quantity: new BigNumber("1"),
         state: TokenMintStatus.Unknown,
@@ -298,8 +298,8 @@ describe("FulfillMint", () => {
       additionalKey,
       timeKey,
       totalKnownMintsCount: new BigNumber(pastMintRequests.length),
-      requestor: users.testAdminId,
-      owner: users.testUser1Id,
+      requestor: users.admin,
+      owner: users.testUser1,
       created: ctx.txUnixTime,
       quantity: mintQty,
       state: TokenMintStatus.Unknown,
@@ -322,7 +322,7 @@ describe("FulfillMint", () => {
           timeKey,
           totalKnownMintsCount: new BigNumber(pastMintRequests.length),
           id: mintRequest.requestId(),
-          owner: users.testUser1Id
+          owner: users.testUser1
         })
       ]
     });
@@ -343,7 +343,7 @@ describe("FulfillMint", () => {
       ...nftInstanceKey,
       instance: expectedStartingInstance.plus("1"),
       isNonFungible: true,
-      owner: users.testUser1Id
+      owner: users.testUser1
     });
     const expectedNft2Key = plainToInstance(TokenInstanceKey, {
       ...nftInstanceKey,
@@ -353,7 +353,7 @@ describe("FulfillMint", () => {
       ...nftInstanceKey,
       instance: expectedStartingInstance.plus("2"),
       isNonFungible: true,
-      owner: users.testUser1Id
+      owner: users.testUser1
     });
     const expectedBalance = plainToInstance(TokenBalance, {
       ...nft.tokenBalance(),
@@ -379,7 +379,7 @@ describe("FulfillMint", () => {
     const decimalQuantity = new BigNumber("0.000000000001");
 
     const testFixture = fixture(GalaChainTokenContract)
-      .callingUser(users.testUser1Id)
+      .callingUser(users.testUser1)
       .savedState(currencyClass, currencyInstance, tokenAllowance);
 
     const { ctx, contract, writes } = testFixture;
@@ -396,8 +396,8 @@ describe("FulfillMint", () => {
       additionalKey,
       timeKey,
       totalKnownMintsCount: new BigNumber("0"),
-      requestor: users.testAdminId,
-      owner: users.testUser1Id,
+      requestor: users.admin,
+      owner: users.testUser1,
       created: ctx.txUnixTime,
       quantity: decimalQuantity,
       state: TokenMintStatus.Unknown,
@@ -418,7 +418,7 @@ describe("FulfillMint", () => {
           timeKey,
           totalKnownMintsCount: new BigNumber("0"),
           id: mintRequest.requestId(),
-          owner: users.testUser1Id
+          owner: users.testUser1
         })
       ]
     });
@@ -451,8 +451,8 @@ describe("FulfillMint", () => {
 
     const tokenClaim = plainToInstance(TokenClaim, {
       ...nftInstanceKey,
-      ownerKey: users.testAdminId,
-      issuerKey: users.testAdminId,
+      ownerKey: users.admin,
+      issuerKey: users.admin,
       instance: new BigNumber("0"),
       action: 4,
       quantity: mintQty,
@@ -471,8 +471,8 @@ describe("FulfillMint", () => {
       additionalKey,
       timeKey,
       totalKnownMintsCount: new BigNumber("0"),
-      requestor: users.testAdminId,
-      owner: users.testUser1Id,
+      requestor: users.admin,
+      owner: users.testUser1,
       created: ctx.txUnixTime,
       quantity: mintQty,
       state: TokenMintStatus.Unknown,
@@ -489,7 +489,7 @@ describe("FulfillMint", () => {
       timeKey,
       totalKnownBurnsCount: new BigNumber("0"),
       instance: nftInstance.instance,
-      burnedBy: users.testUser2Id,
+      burnedBy: users.testUser2,
       created: ctx.txUnixTime,
       quantity: new BigNumber("1"),
       epoch: epochKey

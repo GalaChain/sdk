@@ -12,12 +12,13 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+import { ChainUser } from "@gala-chain/client";
 
 export default {
-  testAdminId: "client|admin",
-  testUser1Id: "client|testUser1",
-  testUser2Id: "client|testUser2",
-  testUser3Id: "client|testUser3",
-  tokenHolder: "client|tokenHolder",
-  attacker: "client|maliciousUser"
+  admin: ChainUser.withRandomKeys("client|admin"),
+  testUser1: ChainUser.withRandomKeys("client|testUser1"),
+  testUser2: ChainUser.withRandomKeys("client|testUser2"),
+  testUser3: ChainUser.withRandomKeys("client|testUser3"),
+  tokenHolder: ChainUser.withRandomKeys("client|tokenHolder"),
+  attacker: ChainUser.withRandomKeys("client|maliciousUser")
 };

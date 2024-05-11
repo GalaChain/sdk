@@ -27,11 +27,11 @@ describe("FetchBurns", () => {
     const nftTokenBurn2 = plainToInstance(TokenBurn, { ...nftTokenBurn, created: 10000 });
 
     const { ctx, contract, writes } = fixture(GalaChainTokenContract)
-      .callingUser(users.testUser1Id)
+      .callingUser(users.testUser1)
       .savedState(nftClass, nftInstance, nftTokenBurn, nftTokenBurn2);
 
     const dto = await createValidDTO(FetchBurnsDto, {
-      burnedBy: users.testUser1Id
+      burnedBy: users.testUser1
     });
 
     // When

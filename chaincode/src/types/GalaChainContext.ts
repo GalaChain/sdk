@@ -88,6 +88,7 @@ export class GalaChainContext extends Context {
   span?: SpanContext;
   private callingUserValue?: string;
   private callingUserEthAddressValue?: string;
+  private callingUserRolesValue?: string[];
   private txUnixTimeValue?: number;
   private loggerInstance?: GalaLoggerInstance;
 
@@ -112,12 +113,20 @@ export class GalaChainContext extends Context {
     return this.callingUserEthAddressValue;
   }
 
-  set callingUserData(d: { alias: string; ethAddress: string | undefined }) {
+  get callingUserRoles(): string[] {
+    if (this.callingUserRolesValue === undefined) {
+      throw new UnauthorizedError(`No roles known for user ${this.callingUserValue}`);
+    }
+    return this.callingUserRolesValue;
+  }
+
+  set callingUserData(d: { alias: string; ethAddress?: string; roles?: string[] }) {
     if (this.callingUserValue !== undefined) {
       throw new Error("Calling user already set to " + this.callingUserValue);
     }
     this.callingUserValue = d.alias;
     this.callingUserEthAddressValue = d.ethAddress;
+    this.callingUserRolesValue = d.roles ?? [];
   }
 
   get txUnixTime(): number {

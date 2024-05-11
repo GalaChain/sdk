@@ -36,7 +36,7 @@ it("should CreateTokenClass", async () => {
     image: "http://app.gala.games/some-test-image-url",
     symbol: "AUTOTESTCOIN",
     isNonFungible: false,
-    authorities: [users.testAdminId]
+    authorities: [users.admin]
   });
 
   // When

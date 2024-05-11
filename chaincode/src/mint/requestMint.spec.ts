@@ -37,7 +37,7 @@ describe("MintToken", () => {
     const tokenAllowance = currency.tokenAllowance();
 
     const { ctx, contract, writes } = fixture(GalaChainTokenContract)
-      .callingUser(users.testAdminId)
+      .callingUser(users.admin)
       .savedState(currencyClass, currencyInstance, tokenAllowance)
       .savedRangeState([]);
 
@@ -59,7 +59,7 @@ describe("MintToken", () => {
 
     const dto = await createValidDTO(MintTokenDto, {
       tokenClass: currency.tokenClassKey(),
-      owner: users.testUser1Id,
+      owner: users.testUser1,
       quantity: mintQty
     });
 
@@ -70,8 +70,8 @@ describe("MintToken", () => {
       additionalKey,
       timeKey,
       totalKnownMintsCount: new BigNumber("0"),
-      requestor: users.testAdminId,
-      owner: users.testUser1Id,
+      requestor: users.admin,
+      owner: users.testUser1,
       created: ctx.txUnixTime,
       quantity: mintQty,
       state: TokenMintStatus.Unknown,
@@ -90,7 +90,7 @@ describe("MintToken", () => {
           timeKey,
           totalKnownMintsCount: new BigNumber("0"),
           id: mintRequest.requestId(),
-          owner: users.testUser1Id
+          owner: users.testUser1
         })
       ]
     });
@@ -111,7 +111,7 @@ describe("MintToken", () => {
     const tokenAllowance = nft.tokenMintAllowance();
 
     const { ctx, contract, writes } = fixture(GalaChainTokenContract)
-      .callingUser(users.testAdminId)
+      .callingUser(users.admin)
       .savedState(nftClass, nftInstance, tokenAllowance)
       .savedRangeState([]);
 
@@ -122,7 +122,7 @@ describe("MintToken", () => {
 
     const dto = await createValidDTO(MintTokenDto, {
       tokenClass: nft.tokenClassKey(),
-      owner: users.testUser1Id,
+      owner: users.testUser1,
       quantity: mintQty
     });
 
@@ -133,8 +133,8 @@ describe("MintToken", () => {
       additionalKey,
       timeKey,
       totalKnownMintsCount: new BigNumber("0"),
-      requestor: users.testAdminId,
-      owner: users.testUser1Id,
+      requestor: users.admin,
+      owner: users.testUser1,
       created: ctx.txUnixTime,
       quantity: mintQty,
       state: TokenMintStatus.Unknown,
@@ -153,7 +153,7 @@ describe("MintToken", () => {
           timeKey,
           totalKnownMintsCount: new BigNumber("0"),
           id: mintRequest.requestId(),
-          owner: users.testUser1Id
+          owner: users.testUser1
         })
       ]
     });
@@ -172,12 +172,12 @@ describe("MintToken", () => {
     const decimalQuantity = new BigNumber("0.000000000001");
 
     const { ctx, contract, writes } = fixture(GalaChainTokenContract)
-      .callingUser(users.testUser1Id)
+      .callingUser(users.testUser1)
       .savedState(currencyClass, currencyInstance, tokenAllowance);
 
     const dto = await createValidDTO(MintTokenDto, {
       tokenClass: currency.tokenClassKey(),
-      owner: users.testUser1Id,
+      owner: users.testUser1,
       quantity: decimalQuantity
     });
 

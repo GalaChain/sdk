@@ -18,7 +18,8 @@ import {
   ClassConstructor,
   PublicKey,
   RangedChainObject,
-  UserProfile
+  UserProfile,
+  UserRole
 } from "@gala-chain/api";
 import { ChainUser } from "@gala-chain/client";
 import { plainToInstance } from "class-transformer";
@@ -62,9 +63,10 @@ type GalaChainStub = ChaincodeStub & {
 type TestGalaChainContext = Context & {
   readonly stub: GalaChainStub;
   readonly logger: GalaLoggerInstance;
-  set callingUserData(d: { alias: string; ethAddress: string | undefined });
+  set callingUserData(d: { alias: string; ethAddress?: string; roles?: string[] });
   get callingUser(): string;
   get callingUserEthAddress(): string;
+  get callingUserRoles(): string[];
   get txUnixTime(): number;
   setChaincodeStub(stub: ChaincodeStub): void;
 };
@@ -74,13 +76,18 @@ type GalaContract<Ctx extends TestGalaChainContext> = Contract & {
   createContext(): Ctx;
 };
 
+interface ChainUserWithRoles {
+  identityKey: string;
+  ethAddress: string;
+  publicKey: string;
+  privateKey: string;
+  roles: string[];
+}
+
 class Fixture<Ctx extends TestGalaChainContext, T extends GalaContract<Ctx>> {
   private readonly stub: TestChaincodeStub;
   public readonly contract: T;
   public readonly ctx: Ctx;
-
-  public callingChainUser: ChainUser;
-  private knownUsers: Record<string, ChainUser> = {};
 
   constructor(
     contractClass: ClassConstructor<T>,
@@ -94,16 +101,9 @@ class Fixture<Ctx extends TestGalaChainContext, T extends GalaContract<Ctx>> {
         if (typeof target[prop as string] === "function" && target[prop as string].length === 2) {
           const method = target[prop as string];
           return async (ctx: Ctx, dto?: ChainCallDTO) => {
-            if (this.callingChainUser === undefined) {
-              throw new Error("ChainUser is not set.");
-            }
-
-            const signedDto =
-              dto && dto.signature === undefined ? dto.signed(this.callingChainUser.privateKey) : dto;
-
             await contractInstance.beforeTransaction(ctx);
-            const result = signedDto
-              ? await method.call(contractInstance, ctx, signedDto)
+            const result = dto
+              ? await method.call(contractInstance, ctx, dto)
               : await method.call(contractInstance, ctx);
             await contractInstance.afterTransaction(ctx, result);
             return result;
@@ -124,50 +124,7 @@ class Fixture<Ctx extends TestGalaChainContext, T extends GalaContract<Ctx>> {
         return Logger.getLogger(name ? `${contractClass?.name}:${name}` : contractClass?.name);
       }
     };
-    this.ctx = new Proxy(ctxInstance, {
-      get: (target, prop) => {
-        if (prop === "callingUser") {
-          return this.callingChainUser.identityKey;
-        }
-
-        return target[prop];
-      }
-    });
-
-    this.callingUser("client|admin");
-  }
-
-  callingUser(user: ChainUser, mspId?: string): Fixture<Ctx, T>;
-
-  callingUser(user: string, mspId?: string): Fixture<Ctx, T>;
-
-  callingUser(user: string | ChainUser, mspId = "CuratorOrg"): Fixture<Ctx, T> {
-    if (typeof user === "string" && !user.startsWith("client|")) {
-      throw new Error("Calling user string should start with 'client|', but provided: " + user);
-    }
-
-    const chainUser =
-      typeof user === "string" ? this.knownUsers[user] ?? ChainUser.withRandomKeys(user) : user;
-    this.callingChainUser = chainUser;
-    this.knownUsers[chainUser.identityKey] = chainUser;
-
-    // eslint-disable-next-line @typescript-eslint/ban-ts-comment
-    // @ts-ignore
-    this.ctx.setClientIdentity(this.stub.getClientIdentity(chainUser.identityKey, mspId));
-
-    const userProfile = plainToInstance(UserProfile, {
-      alias: chainUser.identityKey,
-      ethAddress: chainUser.ethAddress,
-      publicKey: chainUser.publicKey
-    });
-    const userProfileKey = this.ctx.stub.createCompositeKey("GCUP", [userProfile.ethAddress]);
-    this.stub.mockState(userProfileKey, userProfile.serialize());
-
-    const publicKey = plainToInstance(PublicKey, { publicKey: chainUser.publicKey });
-    const publicKeyKey = this.ctx.stub.createCompositeKey("GCPK", [userProfile.alias]);
-    this.stub.mockState(publicKeyKey, publicKey.serialize());
-
-    return this;
+    this.ctx = ctxInstance;
   }
 
   savedState(...objs: ChainObject[]): Fixture<Ctx, T> {

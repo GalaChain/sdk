@@ -40,7 +40,7 @@ describe("BurnTokens", () => {
     const tokenBalance = nft.tokenBalance();
 
     const { ctx, contract, writes } = fixture(GalaChainTokenContract)
-      .callingUser(users.testUser1Id)
+      .callingUser(users.testUser1)
       .savedState(nftClass, nftInstance, tokenBalance)
       .savedRangeState([]);
 
@@ -82,7 +82,7 @@ describe("BurnTokens", () => {
     const tokenBalance = currency.tokenBalance();
 
     const { ctx, contract, writes } = fixture(GalaChainTokenContract)
-      .callingUser(users.testUser1Id)
+      .callingUser(users.testUser1)
       .savedState(currencyClass, currencyInstance, tokenBalance)
       .savedRangeState([]);
 
@@ -111,13 +111,13 @@ describe("BurnTokens", () => {
     const tokenBurnAllowance = currency.tokenBurnAllowance();
 
     const { ctx, contract, writes } = fixture(GalaChainTokenContract)
-      .callingUser(users.testUser2Id)
+      .callingUser(users.testUser2)
       .savedState(currencyClass, currencyInstance, tokenBurnAllowance, tokenBalance)
       .savedRangeState([]);
 
     const dto = await createValidDTO(BurnTokensDto, {
       tokenInstances: [{ tokenInstanceKey: currencyInstanceKey, quantity: burnQty }],
-      owner: users.testUser1Id
+      owner: users.testUser1
     });
 
     const tokenBurn = currency.tokenBurn();
@@ -135,8 +135,8 @@ describe("BurnTokens", () => {
 
     const tokenClaim = plainToInstance(TokenClaim, {
       ...currencyInstanceKey,
-      ownerKey: users.testUser2Id,
-      issuerKey: users.testUser1Id,
+      ownerKey: users.testUser2,
+      issuerKey: users.testUser1,
       instance: new BigNumber("0"),
       action: 6,
       quantity: burnQty,
@@ -179,13 +179,13 @@ describe("BurnTokens", () => {
     const tokenBurnAllowance = currency.tokenBurnAllowance();
 
     const { ctx, contract, writes } = fixture(GalaChainTokenContract)
-      .callingUser(users.testUser2Id)
+      .callingUser(users.testUser2)
       .savedState(currencyClass, currencyInstance, tokenMintAllowance, tokenBurnAllowance, tokenBalance)
       .savedRangeState([]);
 
     const dto = await createValidDTO(BurnTokensDto, {
       tokenInstances: [{ tokenInstanceKey: currencyInstanceKey, quantity: burnQty }],
-      owner: users.testUser1Id
+      owner: users.testUser1
     });
 
     const tokenBurn = currency.tokenBurn();
@@ -203,8 +203,8 @@ describe("BurnTokens", () => {
 
     const tokenClaim = plainToInstance(TokenClaim, {
       ...currencyInstanceKey,
-      ownerKey: users.testUser2Id,
-      issuerKey: users.testUser1Id,
+      ownerKey: users.testUser2,
+      issuerKey: users.testUser1,
       instance: new BigNumber("0"),
       action: 6,
       quantity: burnQty,
@@ -247,13 +247,13 @@ describe("BurnTokens", () => {
     const tokenBurnAllowance = currency.tokenBurnAllowance();
 
     const { ctx, contract, writes } = fixture(GalaChainTokenContract)
-      .callingUser(users.testUser2Id)
+      .callingUser(users.testUser2)
       .savedState(currencyClass, currencyInstance, tokenBurnAllowanceUser3, tokenBurnAllowance, tokenBalance)
       .savedRangeState([]);
 
     const dto = await createValidDTO(BurnTokensDto, {
       tokenInstances: [{ tokenInstanceKey: currencyInstanceKey, quantity: burnQty }],
-      owner: users.testUser1Id
+      owner: users.testUser1
     });
 
     const tokenBurn = currency.tokenBurn();
@@ -271,8 +271,8 @@ describe("BurnTokens", () => {
 
     const tokenClaim = plainToInstance(TokenClaim, {
       ...currencyInstanceKey,
-      ownerKey: users.testUser2Id,
-      issuerKey: users.testUser1Id,
+      ownerKey: users.testUser2,
+      issuerKey: users.testUser1,
       instance: new BigNumber("0"),
       action: 6,
       quantity: burnQty,
@@ -314,13 +314,13 @@ describe("BurnTokens", () => {
     const tokenMintAllowance = currency.tokenMintAllowance();
 
     const { ctx, contract, writes } = fixture(GalaChainTokenContract)
-      .callingUser(users.testUser2Id)
+      .callingUser(users.testUser2)
       .savedState(currencyClass, currencyInstance, tokenMintAllowance, tokenBalance)
       .savedRangeState([]);
 
     const dto = await createValidDTO(BurnTokensDto, {
       tokenInstances: [{ tokenInstanceKey: currencyInstanceKey, quantity: burnQty }],
-      owner: users.testUser1Id
+      owner: users.testUser1
     });
 
     const tokenBurn = currency.tokenBurn();
@@ -343,11 +343,11 @@ describe("BurnTokens", () => {
     expect(response).toEqual(
       GalaChainResponse.Error(
         new InsufficientBurnAllowanceError(
-          users.testUser2Id,
+          users.testUser2,
           new BigNumber("0"),
           burnQty,
           currencyInstanceKey,
-          users.testUser1Id
+          users.testUser1
         )
       )
     );
@@ -363,13 +363,13 @@ describe("BurnTokens", () => {
     const burnQty = new BigNumber("1");
 
     const { ctx, contract, writes } = fixture(GalaChainTokenContract)
-      .callingUser(users.testUser2Id)
+      .callingUser(users.testUser2)
       .savedState(currencyClass, currencyInstance, tokenBalance)
       .savedRangeState([]);
 
     const dto = await createValidDTO(BurnTokensDto, {
       tokenInstances: [{ tokenInstanceKey: currencyInstanceKey, quantity: burnQty }],
-      owner: users.testUser1Id
+      owner: users.testUser1
     });
 
     // When
@@ -379,11 +379,11 @@ describe("BurnTokens", () => {
     expect(response).toEqual(
       GalaChainResponse.Error(
         new InsufficientBurnAllowanceError(
-          users.testUser2Id,
+          users.testUser2,
           new BigNumber("0"),
           burnQty,
           currencyInstanceKey,
-          users.testUser1Id
+          users.testUser1
         )
       )
     );

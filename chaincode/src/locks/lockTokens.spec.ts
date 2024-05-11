@@ -33,7 +33,7 @@ describe("LockTokens", () => {
     const nftInstanceKey = nft.tokenInstance1Key();
     const nftClass = nft.tokenClass();
     const nftTokenBalancePlain = {
-      owner: users.testUser1Id,
+      owner: users.testUser1,
       collection: nftInstanceKey.collection,
       category: nftInstanceKey.category,
       type: nftInstanceKey.type,
@@ -44,14 +44,14 @@ describe("LockTokens", () => {
       quantity: new BigNumber("1")
     };
     const dto = await createValidDTO(LockTokenDto, {
-      owner: users.testUser1Id,
-      lockAuthority: users.testUser1Id,
+      owner: users.testUser1,
+      lockAuthority: users.testUser1,
       tokenInstance: nftInstanceKey,
       quantity: new BigNumber("1")
     });
     const balance = plainToInstance(TokenBalance, {
       ...nftTokenBalancePlain,
-      owner: users.testUser1Id,
+      owner: users.testUser1,
       instanceIds: [nftInstanceKey.instance],
       lockedHolds: [],
       inUseHolds: [],
@@ -59,15 +59,15 @@ describe("LockTokens", () => {
     });
 
     const { ctx, contract, writes } = fixture(GalaChainTokenContract)
-      .callingUser(users.testUser1Id)
+      .callingUser(users.testUser1)
       .savedState(nftClass, nftInstance, balance);
 
     const expectedHold = new TokenHold({
-      createdBy: users.testUser1Id,
+      createdBy: users.testUser1,
       instanceId: nftInstanceKey.instance,
       quantity: new BigNumber("1"),
       created: ctx.txUnixTime,
-      lockAuthority: users.testUser1Id,
+      lockAuthority: users.testUser1,
       expires: 0
     });
 
@@ -88,15 +88,15 @@ describe("LockTokens", () => {
     const decimalQuantity = new BigNumber("0.000000000001");
 
     const dto = await createValidDTO(LockTokenDto, {
-      owner: users.testUser1Id,
-      lockAuthority: users.testUser1Id,
+      owner: users.testUser1,
+      lockAuthority: users.testUser1,
       tokenInstance: currencyInstanceKey,
       quantity: decimalQuantity
     });
 
     const { collection, category, type, additionalKey } = currencyClass;
     const expectedBalance = new TokenBalance({
-      owner: users.testUser1Id,
+      owner: users.testUser1,
       collection,
       category,
       type,
@@ -107,7 +107,7 @@ describe("LockTokens", () => {
     const balanceKey = expectedBalance.getCompositeKey();
 
     const { ctx, contract, writes } = fixture(GalaChainTokenContract)
-      .callingUser(users.testUser1Id)
+      .callingUser(users.testUser1)
       .savedState(currencyClass, currencyInstance, expectedBalance);
 
     // When

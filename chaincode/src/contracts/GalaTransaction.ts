@@ -131,9 +131,11 @@ function GalaTransaction<T extends ChainCallDTO>(
     throw new NotImplementedError(message);
   }
 
+  console.log("GalaTransaction options", options);
   const allowedRoles = options.allowedRoles ?? [
     options.type === SUBMIT ? UserRole.SUBMIT : UserRole.EVALUATE
   ];
+  console.log("GalaTransaction allowedRoles", allowedRoles);
 
   // TODO register user
   // TODO public access
@@ -177,13 +179,14 @@ function GalaTransaction<T extends ChainCallDTO>(
         if (options?.allowedOrgs) {
           ensureOrganizationIsAllowed(ctx, options.allowedOrgs);
         }
+
         // Ensure that the calling user has the required role (only for transactions where no allowedOrgs are defined)
         else if (allowedRoles.length > 0) {
-          const hasRole = allowedRoles.some((role) => ctx.callingUserData.roles?.includes(role));
+          const hasRole = allowedRoles.some((role) => ctx.callingUserRoles?.includes(role));
           if (!hasRole) {
             const message =
-              `User ${ctx.callingUserData.alias} does not have one of required roles: ` +
-              `${allowedRoles.join(", ")} (has: ${ctx.callingUserData.roles?.join(", ")})`;
+              `User ${ctx.callingUser} does not have one of required roles: ` +
+              `${allowedRoles.join(", ")} (has: ${ctx.callingUserRoles?.join(", ")})`;
             throw new UnauthorizedError(message);
           }
         }
@@ -228,12 +231,29 @@ function GalaTransaction<T extends ChainCallDTO>(
 
     // Update API of contract object
     const isWrite = options.type === GalaTransactionType.SUBMIT;
+
+    let description = options.description ? options.description + " " : "";
+
+    if (options.type === GalaTransactionType.SUBMIT) {
+      description += description ?? `Transaction updates the chain (submit).`;
+    } else {
+      description += `Transaction is read only (evaluate).`;
+    }
+
+    if (options.allowedRoles && options.allowedRoles.length > 0) {
+      description += ` Allowed roles: ${options.allowedRoles.join(", ")}.`;
+    }
+
+    if (options.allowedOrgs && options.allowedOrgs.length > 0) {
+      description += ` Allowed orgs: ${options.allowedOrgs.join(", ")}.`;
+    }
+
     updateApi(target, {
       isWrite,
       methodName: method.name,
       apiMethodName: options.apiMethodName,
       dtoSchema: options.in === undefined ? undefined : generateSchema(options.in),
-      description: options.description,
+      description,
       responseSchema: isArrayOut(options.out)
         ? generateResponseSchema(options.out.arrayOf, "array")
         : generateResponseSchema(options.out),

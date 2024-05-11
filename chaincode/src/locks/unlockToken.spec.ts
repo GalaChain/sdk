@@ -31,7 +31,7 @@ describe("UnlockToken", () => {
       ...nft.tokenBalance(),
       lockedHolds: [
         {
-          createdBy: users.testUser1Id,
+          createdBy: users.testUser1,
           instanceId: nftInstance.instance,
           quantity: new BigNumber("1"),
           created: 1,
@@ -41,7 +41,7 @@ describe("UnlockToken", () => {
     });
 
     const { ctx, contract, writes } = fixture(GalaChainTokenContract)
-      .callingUser(users.testUser1Id)
+      .callingUser(users.testUser1)
       .savedState(nftClass, nftInstance, ownerBalance);
 
     const dto = await createValidDTO(UnlockTokenDto, {
@@ -67,7 +67,7 @@ describe("UnlockToken", () => {
       ...nft.tokenBalance(),
       lockedHolds: [
         {
-          createdBy: users.testUser1Id,
+          createdBy: users.testUser1,
           instanceId: nftInstance.instance,
           quantity: new BigNumber("1"),
           created: 1,
@@ -77,7 +77,7 @@ describe("UnlockToken", () => {
     });
 
     const { ctx, contract, writes } = fixture(GalaChainTokenContract)
-      .callingUser(users.testAdminId)
+      .callingUser(users.admin)
       .savedState(nftClass, nftInstance, ownerBalance);
 
     const dto = await createValidDTO(UnlockTokenDto, {
@@ -104,7 +104,7 @@ describe("UnlockToken", () => {
       ...nft.tokenBalance(),
       lockedHolds: [
         {
-          createdBy: users.testUser1Id,
+          createdBy: users.testUser1,
           instanceId: nftInstance.instance,
           quantity: new BigNumber("1"),
           created: 1,
@@ -115,7 +115,7 @@ describe("UnlockToken", () => {
     });
 
     const { ctx, contract, writes } = fixture(GalaChainTokenContract)
-      .callingUser(users.testAdminId)
+      .callingUser(users.admin)
       .savedState(nftClass, nftInstance, ownerBalance);
 
     const dto = await createValidDTO(UnlockTokenDto, {
@@ -144,26 +144,26 @@ describe("UnlockToken", () => {
       ...currency.tokenBalance(),
       lockedHolds: [
         {
-          createdBy: users.testUser1Id,
+          createdBy: users.testUser1,
           instanceId: currencyInstance.instance,
           quantity: new BigNumber("1"),
           created: 1,
           expires: 0,
-          lockAuthority: users.testUser1Id,
+          lockAuthority: users.testUser1,
           name: testLockedHoldName
         }
       ]
     });
 
     const { ctx, contract, writes } = fixture(GalaChainTokenContract)
-      .callingUser(users.testAdminId)
+      .callingUser(users.admin)
       .savedState(currencyClass, currencyInstance, ownerBalance);
 
     const dto = await createValidDTO(UnlockTokenDto, {
       tokenInstance: currencyInstanceKey,
       quantity: new BigNumber("1"),
       lockedHoldName: testLockedHoldName,
-      owner: users.testUser1Id
+      owner: users.testUser1
     });
 
     // When
@@ -193,7 +193,7 @@ describe("UnlockToken", () => {
       ...nft.tokenBalance(),
       lockedHolds: [
         {
-          createdBy: users.testUser1Id,
+          createdBy: users.testUser1,
           instanceId: nftInstance.instance,
           quantity: new BigNumber("1"),
           created: 1,
@@ -230,7 +230,7 @@ describe("UnlockToken", () => {
       ...nft.tokenBalance(),
       lockedHolds: [
         {
-          createdBy: users.testUser1Id,
+          createdBy: users.testUser1,
           instanceId: nftInstance.instance,
           quantity: new BigNumber("1"),
           created: 1,
@@ -240,7 +240,7 @@ describe("UnlockToken", () => {
     });
 
     const { ctx, contract, writes } = fixture(GalaChainTokenContract)
-      .callingUser(users.testAdminId)
+      .callingUser(users.admin)
       .savedState(nftClass, nftInstance, ownerBalance);
 
     const dto = await createValidDTO(UnlockTokenDto, {
