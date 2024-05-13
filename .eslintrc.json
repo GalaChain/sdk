@@ -51,7 +51,7 @@
     },
     {
       "files": ["*.js", "*.jsx"],
-      "extends": ["plugin:@nx/typescript"],
+      "extends": ["plugin:@nx/javascript"],
       "rules": {}
     },
     {
