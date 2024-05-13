@@ -1,5 +1,13 @@
 {
   "name": "@sdk/source",
   "$schema": "node_modules/nx/schemas/project-schema.json",
-  "targets": {}
+  "targets": {
+    "lint": {
+      "executor": "@nx/eslint:lint",
+      "outputs": ["{options.outputFile}"],
+      "options": {
+        "lintFilePatterns": ["**/*.ts"]
+      }
+    }
+  }
 }

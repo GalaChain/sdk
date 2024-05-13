@@ -1,5 +1,5 @@
 {
-  "extends": ["../.eslintrc.json", "../.eslintrc.base.json"],
+  "extends": ["../.eslintrc.json"],
   "ignorePatterns": ["!**/*"],
   "rules": {
     "@typescript-eslint/no-unused-vars": "warn"
