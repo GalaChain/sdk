@@ -13,16 +13,19 @@
  * limitations under the License.
  */
 import { TokenAllowance, TokenClaim } from "@gala-chain/api";
+import { AllowanceType } from "@gala-chain/api";
 import { BigNumber } from "bignumber.js";
 
 import { GalaChainContext } from "../types";
 import { putChainObject } from "../utils";
+import { isAllowanceExpired } from "./checkAllowances";
 
 // Update allowances according to using an quantity
 export async function useAllowances(
   ctx: GalaChainContext,
   quantity: BigNumber,
-  applicableAllowances: TokenAllowance[]
+  applicableAllowances: TokenAllowance[],
+  allowanceType: AllowanceType
 ): Promise<boolean> {
   ctx.logger.info(
     `UseAllowances: quantity: ${quantity.toFixed()}, number of allowances: ${applicableAllowances.length}`
@@ -32,6 +35,11 @@ export async function useAllowances(
   let quantityRemaining = quantity;
 
   for (const tokenAllowance of applicableAllowances) {
+    // Check if tokenAllowance is for the correct action type
+    if (tokenAllowance.allowanceType !== allowanceType) {
+      continue;
+    }
+
     // Check if quantity to consume is 0, then exit.
     if (quantityRemaining.isEqualTo(0)) {
       break;
@@ -40,7 +48,7 @@ export async function useAllowances(
     }
 
     // Skip expired allowances https://app.shortcut.com/gala-games/story/27971/using-mint-allowances-may-debit-expired-allowances
-    if (tokenAllowance.expires && tokenAllowance.expires != 0 && tokenAllowance.expires < ctx.txUnixTime) {
+    if (isAllowanceExpired(ctx, tokenAllowance)) {
       continue;
     }
 

@@ -17,19 +17,15 @@
 import { ux } from "@oclif/core";
 
 import axios from "axios";
+import fs from "fs";
 
-import { deployChaincode, getDeploymentResponse } from "../src/galachain-utils";
+import { deployChaincode, getDeploymentResponse, getPrivateKey } from "../src";
 
 jest.mock("axios");
 
 describe("getDeploymentResponse", () => {
   const privateKey = "bf2168e0e2238b9d879847987f556a093040a2cab07983a20919ac33103d0d00";
   const isTestnet = true;
-
-  const getDeploymentWithNoPrivateKey = {
-    privateKey: undefined,
-    isTestnet
-  };
 
   beforeEach(() => {
     jest.clearAllMocks();
@@ -46,26 +42,6 @@ describe("getDeploymentResponse", () => {
 
     // When
     const response = await getDeploymentResponse({ privateKey, isTestnet });
-
-    // Then
-    expect(response.status).toEqual("CH_CREATED");
-  });
-
-  it("should ask for private key and get deployment response", async () => {
-    // Given
-    axios.get = jest.fn().mockResolvedValue({
-      status: 200,
-      data: {
-        status: "CH_CREATED"
-      }
-    });
-
-    process.env = { ...process.env, DEV_PRIVATE_KEY: undefined };
-
-    jest.spyOn(ux, "prompt").mockResolvedValueOnce(privateKey);
-
-    // When
-    const response = await getDeploymentResponse(getDeploymentWithNoPrivateKey);
 
     // Then
     expect(response.status).toEqual("CH_CREATED");
@@ -89,12 +65,6 @@ describe("deployChaincode", () => {
   const isTestnet = true;
   const imageTag = "registry.image.name:latest";
 
-  const postDeployChaincodeNoPrivateKey = {
-    privateKey: undefined,
-    isTestnet,
-    imageTag
-  };
-
   beforeEach(() => {
     jest.clearAllMocks();
   });
@@ -108,11 +78,13 @@ describe("deployChaincode", () => {
       }
     });
 
-    const execSync = jest.spyOn(require("child_process"), "execSync");
-    execSync.mockImplementation(
-      () =>
-        '[{"contractName":"AppleContract"},{"contractName":"GalaChainToken"},{"contractName":"PublicKeyContract"}]'
-    );
+    jest
+      .spyOn(require("child_process"), "execSync")
+      .mockImplementationOnce(() => `[{"Architecture":"amd64","Os":"linux"}]`)
+      .mockImplementationOnce(
+        () =>
+          '[{"contractName":"AppleContract"},{"contractName":"GalaChainToken"},{"contractName":"PublicKeyContract"}]'
+      );
 
     // When
     const response = await deployChaincode({ privateKey, isTestnet, imageTag });
@@ -132,16 +104,23 @@ describe("deployChaincode", () => {
 
     process.env = { ...process.env, DEV_PRIVATE_KEY: undefined };
 
+    jest
+      .spyOn(require("child_process"), "execSync")
+      .mockImplementationOnce(() => `[{"Architecture":"amd64","Os":"linux"}]`)
+      .mockImplementationOnce(
+        () =>
+          '[{"contractName":"AppleContract"},{"contractName":"GalaChainToken"},{"contractName":"PublicKeyContract"}]'
+      );
+
     jest.spyOn(ux, "prompt").mockResolvedValueOnce(privateKey);
 
-    const execSync = jest.spyOn(require("child_process"), "execSync");
-    execSync.mockImplementation(
-      () =>
-        '[{"contractName":"AppleContract"},{"contractName":"GalaChainToken"},{"contractName":"PublicKeyContract"}]'
-    );
-
+    const postDeployChaincodePrivateKey = {
+      privateKey: await getPrivateKey(undefined),
+      isTestnet,
+      imageTag
+    };
     // When
-    const response = await deployChaincode(postDeployChaincodeNoPrivateKey);
+    const response = await deployChaincode(postDeployChaincodePrivateKey);
 
     // Then
     expect(response.status).toEqual("CH_CREATED");
@@ -153,11 +132,13 @@ describe("deployChaincode", () => {
       status: 401
     });
 
-    const execSync = jest.spyOn(require("child_process"), "execSync");
-    execSync.mockImplementation(
-      () =>
-        '[{"contractName":"AppleContract"},{"contractName":"GalaChainToken"},{"contractName":"PublicKeyContract"}]'
-    );
+    jest
+      .spyOn(require("child_process"), "execSync")
+      .mockImplementationOnce(() => `[{"Architecture":"amd64","Os":"linux"}]`)
+      .mockImplementationOnce(
+        () =>
+          '[{"contractName":"AppleContract"},{"contractName":"GalaChainToken"},{"contractName":"PublicKeyContract"}]'
+      );
 
     // When
     expect(async () => await deployChaincode({ privateKey, isTestnet, imageTag })).rejects.toThrowError(

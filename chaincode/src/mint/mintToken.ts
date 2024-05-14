@@ -36,7 +36,7 @@ import { getObjectByKey, putChainObject } from "../utils";
 import { InsufficientMintAllowanceError, NftMaxMintError, UseAllowancesFailedError } from "./MintError";
 import { writeMintRequest } from "./requestMint";
 
-interface MintTokenParams {
+export interface MintTokenParams {
   tokenClassKey: TokenClassKey;
   owner: string;
   quantity: BigNumber;
@@ -69,7 +69,7 @@ export async function mintToken(
 
   const decimalPlaces = quantity.decimalPlaces() ?? 0;
   if (decimalPlaces > tokenClass.decimals) {
-    throw new InvalidDecimalError(quantity, tokenClass.decimals).logError(ctx.logger);
+    throw new InvalidDecimalError(quantity, tokenClass.decimals);
   }
 
   // dto is valid, do chain code specific validation
@@ -102,7 +102,9 @@ export async function mintToken(
       collection: tokenClassKey.collection,
       category: tokenClassKey.category,
       type: tokenClassKey.type,
-      additionalKey: tokenClassKey.additionalKey
+      additionalKey: tokenClassKey.additionalKey,
+      instance: TokenInstance.FUNGIBLE_TOKEN_INSTANCE.toString(),
+      allowanceType: AllowanceType.Mint
     };
 
     applicableAllowanceResponse = await fetchAllowances(ctx, fetchAllowancesData);
@@ -139,17 +141,18 @@ export async function mintToken(
   const allowancesUsed: boolean = await useAllowances(
     ctx,
     new BigNumber(quantity),
-    applicableAllowanceResponse
+    applicableAllowanceResponse,
+    AllowanceType.Mint
   );
 
   if (!allowancesUsed) {
-    throw new UseAllowancesFailedError(quantity, dtoInstanceKey.toStringKey(), owner).logError(ctx.logger);
+    throw new UseAllowancesFailedError(quantity, dtoInstanceKey.toStringKey(), owner);
   }
 
   if (tokenClass.isNonFungible) {
     // For NFTs we have an upper limit
     if (quantity.isGreaterThan(MintTokenDto.MAX_NFT_MINT_SIZE)) {
-      throw new NftMaxMintError(quantity).logError(ctx.logger);
+      throw new NftMaxMintError(quantity);
     }
 
     /*
@@ -238,7 +241,7 @@ export async function mintToken(
   }
 }
 
-interface UpdateTokenSupplyParams {
+export interface UpdateTokenSupplyParams {
   tokenClassKey: TokenClassKeyProperties;
   callingUser: string;
   owner: string;

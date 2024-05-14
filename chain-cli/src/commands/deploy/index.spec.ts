@@ -14,10 +14,11 @@
  */
 import { ux } from "@oclif/core";
 
-import Deploy from "../../../src/commands/deploy";
-import { deployChaincode } from "../../../src/galachain-utils";
+import { deployChaincode } from "../../galachain-utils";
+import Deploy from "./index";
 
-jest.mock("../../../src/galachain-utils");
+jest.mock("../../galachain-utils");
+jest.setTimeout(10000);
 
 const consts = {
   developerPrivateKey: "bf2168e0e2238b9d879847987f556a093040a2cab07983a20919ac33103d0d00"
@@ -43,18 +44,20 @@ describe("Deploy Command", () => {
 
     jest.spyOn(ux, "prompt").mockResolvedValueOnce("Y");
 
-    jest.mocked(deployChaincode).mockResolvedValue({
-      status: "CC_DEPLOY_SCHEDULED",
-      chaincode: "chaincode-name",
-      channel: "channel-name"
+    jest.mocked(deployChaincode).mockImplementation(async () => {
+      return {
+        status: "CC_DEPLOY_SCHEDULED",
+        chaincode: "chaincode-name",
+        channel: "channel-name"
+      };
     });
 
     // When
-    await Deploy.run(["imageName:version", consts.developerPrivateKey]);
+    await Deploy.run(["ttl.sh/image-name:1d", consts.developerPrivateKey]);
 
     // Then
     expect(result.join()).toContain(
-      "Deployment scheduled to mainnet. Status CC_DEPLOY_SCHEDULED for Chaincode chaincode-name and Channel channel-name."
+      "Deployment scheduled to sandbox. Status CC_DEPLOY_SCHEDULED for Chaincode chaincode-name and Channel channel-name."
     );
   });
 
@@ -79,7 +82,7 @@ describe("Deploy Command", () => {
     });
 
     // When
-    await Deploy.run(["imageName:version", consts.developerPrivateKey]);
+    await Deploy.run(["ghcr.io/gala/image-name:2.5", consts.developerPrivateKey]);
 
     // Then
     expect(result.join()).toContain("Deployment cancelled.");

@@ -30,30 +30,26 @@ if [ -z "${LOCALHOST_NAME:-}" ]; then
   LOCALHOST_NAME="127.0.0.1"
 fi
 
-networkDown() {
+function networkDown() {
+  echo "Stopping chaincode $chaincode_id build in watch mode"
   galachain network:prune
-  exit 1
 }
 
 (
-  cd "$chaincode_path" || exit 1
+    cd "$chaincode_path" || exit 1
 
   if [ "$mode" = "watch" ]; then
-    trap networkDown 0
+    trap "networkDown" EXIT
 
     echo "Starting chaincode $chaincode_id build in watch mode"
     (npm run build:watch) &
-    build_pid="$!"
     sleep 5 # wait a bit until compilation ends
 
     echo "Starting chaincode $chaincode_id processes in watch mode"
     npx nodemon \
       --watch "$chaincode_path/lib" \
       --verbose \
-      --exec "$current_script" start "${2:-""}"
-
-    echo "Stopping chaincode $chaincode_id build in watch mode"
-    kill "$build_pid"
+      --exec "$current_script" start "${2:-""}" || true
 
   elif [ "$mode" = "start" ]; then
     echo "Starting chaincode $chaincode_id from $chaincode_path"

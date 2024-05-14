@@ -17,6 +17,7 @@ export default {
   testAdminId: "client|admin",
   testUser1Id: "client|testUser1",
   testUser2Id: "client|testUser2",
+  testUser3Id: "client|testUser3",
   tokenHolder: "client|tokenHolder",
   attacker: "client|maliciousUser"
 };

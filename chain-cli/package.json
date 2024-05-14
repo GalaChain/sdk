@@ -1,6 +1,6 @@
 {
   "name": "@gala-chain/cli",
-  "version": "1.0.16",
+  "version": "1.1.19",
   "description": "CLI for GalaChain to manage and deploy chaincodes",
   "license": "Apache-2.0",
   "bin": {
@@ -14,20 +14,20 @@
     "/oclif.manifest.json"
   ],
   "dependencies": {
-    "@gala-chain/api": "1.0.16",
+    "@gala-chain/api": "1.1.19",
     "@noble/secp256k1": "^1.7.1",
-    "@oclif/core": "^2",
-    "@oclif/plugin-help": "^2",
+    "@oclif/core": "^3",
+    "@oclif/plugin-help": "^3",
     "axios": "^1.6.0",
+    "dotenv": "16.3.1",
     "fablo": "^0.0.1",
     "nanoid": "^3.3.6",
-    "tslib": "^2.6.2",
-    "dotenv": "16.3.1"
+    "tslib": "^2.6.2"
   },
   "devDependencies": {
     "eslint-config-oclif": "^4",
     "eslint-config-oclif-typescript": "^1.0.3",
-    "oclif": "^3.11.3",
+    "oclif": "^4.8.0",
     "shx": "^0.3.3"
   },
   "oclif": {
@@ -46,7 +46,6 @@
   "scripts": {
     "clean": "tsc -b --clean",
     "build": "shx rm -rf lib && mkdir -p lib && cp -r network lib/ && rsync -a --exclude-from=chaincode-template/.gitignore chaincode-template lib/ && tsc -b && oclif manifest && oclif readme && rm tsconfig.tsbuildinfo",
-    "build-win": "shx rm -rf lib && tsc -b && oclif manifest && oclif readme && xcopy chaincode-template lib\\chaincode-template /E /I && del tsconfig.tsbuildinfo",
     "madge": "madge --circular --warning lib",
     "lint": "nx run lint",
     "fix": "nx run lint --fix",

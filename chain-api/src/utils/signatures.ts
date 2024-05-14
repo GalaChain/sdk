@@ -62,7 +62,10 @@ function normalizePrivateKey(input: string): Buffer {
 
   if (encoding !== undefined) {
     const missing0 = secpPrivKeyLength.isMissingTrailing0(length) ? "0" : "";
-    return Buffer.from(missing0 + inputNo0x, encoding);
+    if (isValidHex(inputNo0x) || isValidBase64(inputNo0x)) {
+      return Buffer.from(missing0 + inputNo0x, encoding);
+    }
+    throw new InvalidKeyError(`Invalid private key: ${input}`);
   } else {
     const excl0x = startsWith0x ? " (excluding trailing '0x')" : "";
     const errorMessage =
@@ -96,9 +99,13 @@ function normalizePublicKey(input: string): Buffer {
       ? "base64"
       : undefined;
   if (encoding !== undefined) {
-    const buffer = Buffer.from(startsWith0x ? input.slice(2) : input, encoding);
-    const pair = validateSecp256k1PublicKey(buffer);
-    return Buffer.from(pair.getPublic().encode("array", true));
+    const inputNo0x = startsWith0x ? input.slice(2) : input;
+    if (isValidHex(inputNo0x) || isValidBase64(inputNo0x)) {
+      const buffer = Buffer.from(inputNo0x, encoding);
+      const pair = validateSecp256k1PublicKey(buffer);
+      return Buffer.from(pair.getPublic().encode("array", true));
+    }
+    throw new InvalidKeyError(`Invalid public key: ${input}`);
   } else {
     const excl0x = startsWith0x ? " (excluding trailing '0x')" : "";
     const errorMessage =
@@ -289,7 +296,7 @@ function getDERSignature(obj: object, privateKey: Buffer): string {
   return signSecp256k1(calculateKeccak256(data), privateKey, "DER");
 }
 
-function recoverPublicKey(signature: string, obj: object): string {
+function recoverPublicKey(signature: string, obj: object, prefix = ""): string {
   const signatureObj = normalizeSecp256k1Signature(signature);
   const recoveryParam = signatureObj.recoveryParam;
   if (recoveryParam === undefined) {
@@ -297,7 +304,7 @@ function recoverPublicKey(signature: string, obj: object): string {
     throw new InvalidSignatureFormatError(message, { signature });
   }
 
-  const data = Buffer.from(getPayloadToSign(obj));
+  const data = Buffer.concat([Buffer.from(prefix), Buffer.from(getPayloadToSign(obj))]);
   const dataHash = Buffer.from(keccak256.hex(data), "hex");
   const publicKeyObj = ecSecp256k1.recoverPubKey(dataHash, signatureObj, recoveryParam);
   return publicKeyObj.encode("hex", false);
@@ -347,6 +354,14 @@ function enforceValidPublicKey(
   }
 }
 
+function isValidHex(input: string) {
+  return /^[0-9a-fA-F]*$/.test(input);
+}
+
+function isValidBase64(input: string) {
+  return /^(?:[A-Za-z0-9+/]{4})*(?:[A-Za-z0-9+/]{2}==|[A-Za-z0-9+/]{3}=)?$/.test(input);
+}
+
 export default {
   calculateKeccak256,
   enforceValidPublicKey,
@@ -358,6 +373,8 @@ export default {
   getSignature,
   getDERSignature,
   isValid,
+  isValidBase64,
+  isValidHex,
   isValidSecp256k1Signature,
   normalizePrivateKey,
   normalizePublicKey,

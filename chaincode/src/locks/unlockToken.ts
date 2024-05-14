@@ -26,19 +26,20 @@ export interface UnlockTokenParams {
   tokenInstanceKey: TokenInstanceKey;
   name: string | undefined;
   quantity: BigNumber | undefined;
+  owner?: string | undefined;
 }
 
 export async function unlockToken(
   ctx: GalaChainContext,
-  { tokenInstanceKey, name, quantity }: UnlockTokenParams
+  { tokenInstanceKey, name, quantity, owner }: UnlockTokenParams
 ): Promise<TokenBalance> {
   if (tokenInstanceKey.isFungible()) {
-    return unlockFungibleToken(ctx, { tokenInstanceKey, name, quantity });
+    return unlockFungibleToken(ctx, { tokenInstanceKey, name, quantity, owner });
   }
 
   // owner is always present for NFT instances
   const tokenInstance = await fetchTokenInstance(ctx, tokenInstanceKey);
-  const owner = tokenInstance.owner as string;
+  owner = tokenInstance.owner as string;
 
   const balance = await fetchOrCreateBalance(ctx, owner, tokenInstanceKey.getTokenClassKey());
   const applicableHold = balance.findLockedHold(tokenInstanceKey.instance, name, ctx.txUnixTime);
@@ -78,26 +79,30 @@ export async function unlockToken(
 
 export async function unlockFungibleToken(
   ctx: GalaChainContext,
-  { tokenInstanceKey, name, quantity }: UnlockTokenParams
+  { tokenInstanceKey, name, quantity, owner }: UnlockTokenParams
 ): Promise<TokenBalance> {
-  const owner = ctx.callingUser;
+  owner = owner ?? ctx.callingUser;
   const quantityToUnlock = quantity ?? new BigNumber("0");
 
   if (quantityToUnlock.isEqualTo("0")) {
     throw new ValidationFailedError(`Quantity not provided for Unlock Fungible Token Request.`);
   }
 
-  const balance = await fetchOrCreateBalance(ctx, owner, tokenInstanceKey.getTokenClassKey());
-
   // determine if user is authorized to unlock
+  // if calling user is not authorized, always token class authority can unlock
+  let lockAuthority: string = ctx.callingUser;
   const tokenClass = await fetchTokenClass(ctx, tokenInstanceKey);
   const isTokenAuthority = tokenClass.authorities.includes(ctx.callingUser);
 
   if (!isTokenAuthority && ctx.callingUser !== owner) {
     throw new UnlockForbiddenUserError(ctx.callingUser, tokenInstanceKey.toStringKey());
+  } else if (isTokenAuthority) {
+    lockAuthority = owner;
   }
 
-  balance.ensureCanUnlockQuantity(quantityToUnlock, ctx.txUnixTime, name, ctx.callingUser).unlock();
+  const balance = await fetchOrCreateBalance(ctx, owner, tokenInstanceKey.getTokenClassKey());
+
+  balance.ensureCanUnlockQuantity(quantityToUnlock, ctx.txUnixTime, name, lockAuthority).unlock();
 
   await putChainObject(ctx, balance);
 

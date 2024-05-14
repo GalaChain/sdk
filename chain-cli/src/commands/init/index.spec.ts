@@ -12,9 +12,11 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
+/* eslint-disable @typescript-eslint/no-var-requires */
 import path from "path";
 
-import Init from "../../../src/commands/init";
+import Init from "./index";
 
 describe("Init Command", () => {
   afterEach(() => jest.restoreAllMocks());
@@ -26,11 +28,23 @@ describe("Init Command", () => {
       return true;
     });
 
-    Init.prototype.copyChaincodeTemplate = () => Promise.resolve<string>("cloned repository");
+    const mkdirMock = jest.spyOn(require("fs"), "mkdirSync").mockImplementation(() => {});
+    const cpMock = jest.spyOn(require("fs"), "cpSync").mockImplementation(() => {});
 
-    const target = path.resolve(__dirname, "../../test-project");
+    const fs = require("fs");
+    fs.promises.writeFile = jest.fn().mockResolvedValue(undefined);
+
+    const target = path.resolve(__dirname, "../../__test__/test-project");
     await Init.run([target]);
 
     expect(result.join()).toContain(`Project template initialized at ${target}`);
+    expect(mkdirMock).toHaveBeenCalledWith(path.resolve(__dirname, "../../__test__/test-project"), {
+      recursive: true
+    });
+    expect(cpMock).toHaveBeenCalledWith(
+      path.resolve(__dirname, "../../chaincode-template"),
+      path.resolve(__dirname, "../../__test__/test-project"),
+      { recursive: true }
+    );
   });
 });

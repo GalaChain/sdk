@@ -6,5 +6,4 @@ nav:
     - Galachain Client: chaincode-client.md
     - Galachain Testing: chaincode-testing.md
     - Chaincode Deployment: chaincode-deployment.md
-    - Chaincode Post Deployment: chaincode-post-deployment.md
     - ...

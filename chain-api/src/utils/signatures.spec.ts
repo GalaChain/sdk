@@ -56,12 +56,35 @@ describe("ethAddress", () => {
   });
 });
 
+describe("private key", () => {
+  const invalidPrivateKey = "xxx9099e\\dccf44e1dfc13c89xxx490d902a9xXx791faf185e19XXX0e71786d";
+  const privateKey = "3b19099e96dccf44e1dfc13c89c7e490d902a96b0791faf185e194ae0e71786d";
+
+  it("should throw an error for invalid private key", () => {
+    expect(() => signatures.normalizePrivateKey(invalidPrivateKey)).toThrow(/Invalid private key/);
+  });
+
+  it("should normalize private key", () => {
+    // When
+    const normalized = signatures.normalizePrivateKey(privateKey);
+
+    // Then
+    expect(normalized.toString("hex")).toEqual(privateKey);
+  });
+});
+
 describe("public key", () => {
   // https://privatekeys.pw/key/313871326028141e0bdeef59fe32a6fc51bce449e44907c191558cb6fdca1341#public
   const nonCompact =
     "04651b1e822f794444fbc96424da6b3536e725c92dbe0047f357cec15fbe5ff148ef0d0d37affaf4ee1d6d0da680bdbd177240913353c6792a60be6ddfb1ce25fb";
+  const invalidNonCompact =
+    "04651b1e822f794444xxx96424da6b3536e725c92dbe00xxx357cec15fbe5ff148ef0d0d37affaf4ee1d6d0xxx80bdbd177240913353c6792a60be6ddfb1ce25fb";
   const compact = "03651b1e822f794444fbc96424da6b3536e725c92dbe0047f357cec15fbe5ff148";
   const normalized = "A2UbHoIveURE+8lkJNprNTbnJcktvgBH81fOwV++X/FI";
+
+  it("should throw an error for invalid public key", () => {
+    expect(() => signatures.normalizePublicKey(invalidNonCompact)).toThrow(/Invalid public key/);
+  });
 
   // Legacy - on prod we keep all public keys as compact base64
   it("should normalize public key", () => {
@@ -291,5 +314,48 @@ describe("signatures", () => {
       recoveryParam: undefined,
       s: new BN("14d3aed3bf7e07cb3bf2ef2c06cfde6db461eea8f58827df5b0fa4185d6535", "hex")
     });
+  });
+
+  it("test metamask signatures vs galachain signatures", async () => {
+    // Given
+    // Note: uniqueKey will be different for each payload
+    const metamask =
+      "5078520b05186d8babacee43d061f14b3575ad2999e561772b57032aa019bc2a7b01eb5ec412c9330d343025697e9449a0766995e3646941948e4acf0d0dff501c";
+    const metamaskPayload = {
+      quantity: "1",
+      to: "client|63580d94c574ad78b121c267",
+      tokenInstance: {
+        additionalKey: "none",
+        category: "Unit",
+        collection: "GALA",
+        instance: "0",
+        type: "none"
+      },
+      uniqueKey: "26d4122e-34c8-4639-baa6-4382b398e68e"
+    };
+    const metamaskPrefix =
+      "\u0019Ethereum Signed Message:\n" + signatures.getPayloadToSign(metamaskPayload).length;
+
+    const galachain =
+      "4ae122398fb2e69f95d7322043d72d18fce83a0a034c8faa5643d673693ae0c2a6ccb049fdff8d2220015f20635f6cb888fec60df2c3ae5eb1e5b6e0e8785cf21c";
+    const galachainPayload = {
+      quantity: "1",
+      to: "client|63580d94c574ad78b121c267",
+      tokenInstance: {
+        additionalKey: "none",
+        category: "Unit",
+        collection: "GALA",
+        instance: "0",
+        type: "none"
+      },
+      uniqueKey: "8ad19f56-453a-40c8-aee5-11c0f753c7d8"
+    };
+
+    // When
+    const metamaskPubKey = signatures.recoverPublicKey(metamask, metamaskPayload, metamaskPrefix);
+    const galachainPubKey = signatures.recoverPublicKey(galachain, galachainPayload);
+
+    // Then
+    expect(metamaskPubKey).toEqual(galachainPubKey);
   });
 });

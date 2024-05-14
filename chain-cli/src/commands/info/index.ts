@@ -16,10 +16,10 @@ import { Args, Flags } from "@oclif/core";
 
 import BaseCommand from "../../base-command";
 import { ChaincodeInfoDto } from "../../dto";
-import { getDeploymentResponse } from "../../galachain-utils";
+import { getDeploymentResponse, getPrivateKey } from "../../galachain-utils";
 
 export default class Info extends BaseCommand<typeof Info> {
-  static override description = "Show the ChainCode information.";
+  static override description = "Get ChainCode information.";
 
   static override examples = [
     "galachain info",
@@ -29,7 +29,7 @@ export default class Info extends BaseCommand<typeof Info> {
 
   static override flags = {
     testnet: Flags.boolean({
-      description: "Get info from testnet instead of mainnet."
+      description: "Get info from testnet instead of sandbox."
     })
   };
 
@@ -46,7 +46,7 @@ export default class Info extends BaseCommand<typeof Info> {
   async run(): Promise<void> {
     const { args, flags } = await this.parse(Info);
 
-    const developerPrivateKey = args.developerPrivateKey ?? process.env.DEV_PRIVATE_KEY;
+    const developerPrivateKey = await getPrivateKey(args.developerPrivateKey);
 
     try {
       const response = await getDeploymentResponse({

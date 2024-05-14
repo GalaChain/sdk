@@ -28,30 +28,40 @@ interface ContractApiValue {
 
 export type SetContractApiParams = ContractApiValue & ContractConfig;
 
+export enum RestApiStatus {
+  NONE = "NONE",
+  PENDING = "PENDING",
+  INITIALIZED = "INITIALIZED"
+}
+
 export class GlobalRestApiConfig {
-  private isRestApiInitializedAndHealthy: Record<string, true | Error> = {};
+  private isRestApiInitializedAndHealthy: Record<string, RestApiStatus | Error> = {};
   private contractApis: Record<string, ContractApiValue> = {};
   private authorizedFabloRest: Record<string, string> = {};
 
-  public isHealthy(apiUrl: string) {
+  public getStatus(apiUrl: string): RestApiStatus {
     const result = this.isRestApiInitializedAndHealthy[apiUrl];
 
-    if (result === true) {
-      return true;
-    }
-
-    if (result === undefined) {
-      return false;
+    if (
+      result === RestApiStatus.INITIALIZED ||
+      result === RestApiStatus.PENDING ||
+      result === RestApiStatus.NONE
+    ) {
+      return result;
     }
 
     throw new Error(`Failed to initialize Rest API at ${apiUrl} failed to initialize: ${result?.message}`);
   }
 
-  public markHealthy(apiUrl: string) {
-    this.isRestApiInitializedAndHealthy[apiUrl] = true;
+  public markInitialized(apiUrl: string) {
+    this.isRestApiInitializedAndHealthy[apiUrl] = RestApiStatus.INITIALIZED;
   }
 
-  public markUnhealthy(apiUrl: string, error: Error) {
+  public markPending(apiUrl: string) {
+    this.isRestApiInitializedAndHealthy[apiUrl] = RestApiStatus.PENDING;
+  }
+
+  public markFailed(apiUrl: string, error: Error) {
     this.isRestApiInitializedAndHealthy[apiUrl] = error;
   }
 

@@ -20,7 +20,7 @@ import { objectExists, putChainObject } from "../utils";
 import { NftDecimalError } from "./TokenError";
 import { TokenAlreadyExistsError } from "./TokenError";
 
-interface CreateTokenClassParams {
+export interface CreateTokenClassParams {
   network: string;
   tokenClass: TokenClassKey;
   isNonFungible: boolean;

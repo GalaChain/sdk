@@ -95,7 +95,7 @@ async function createTokenBurnCounter(
   return burnCounter;
 }
 
-interface BurnsTokensParams {
+export interface BurnsTokensParams {
   owner: string;
   toBurn: BurnTokenQuantity[];
   preValidated?: boolean;
@@ -134,7 +134,10 @@ export async function burnTokens(
         collection: tokenInstanceClassKey.collection,
         category: tokenInstanceClassKey.category,
         type: tokenInstanceClassKey.type,
-        additionalKey: tokenInstanceClassKey.additionalKey
+        additionalKey: tokenInstanceClassKey.additionalKey,
+        instance: tokenInstance.instance.toString(),
+        allowanceType: AllowanceType.Burn,
+        grantedBy: owner
       };
 
       applicableAllowanceResponse = await fetchAllowances(ctx, fetchAllowancesData);
@@ -155,14 +158,15 @@ export async function burnTokens(
           tokenQuantity.quantity,
           tokenQuantity.tokenInstanceKey,
           owner
-        ).logError(ctx.logger);
+        );
       }
 
       // if possible, spend allowances
       const allowancesUsed: boolean = await useAllowances(
         ctx,
         new BigNumber(tokenQuantity.quantity),
-        applicableAllowanceResponse
+        applicableAllowanceResponse,
+        AllowanceType.Burn
       );
 
       if (!allowancesUsed) {
@@ -170,7 +174,7 @@ export async function burnTokens(
           tokenQuantity.quantity,
           tokenQuantity.tokenInstanceKey.toStringKey(),
           owner
-        ).logError(ctx.logger);
+        );
       }
     }
     if (tokenInstance.isNonFungible && !tokenQuantity.quantity.isEqualTo(1)) {
@@ -182,7 +186,7 @@ export async function burnTokens(
 
     const decimalPlaces = tokenQuantity.quantity.decimalPlaces() ?? 0;
     if (decimalPlaces > tokenClass.decimals) {
-      throw new InvalidDecimalError(tokenQuantity.quantity, tokenClass.decimals).logError(ctx.logger);
+      throw new InvalidDecimalError(tokenQuantity.quantity, tokenClass.decimals);
     }
 
     const userBalance = await fetchOrCreateBalance(ctx, owner, tokenInstanceClassKey);

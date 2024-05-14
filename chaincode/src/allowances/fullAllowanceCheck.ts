@@ -18,7 +18,7 @@ import { TokenBalance } from "@gala-chain/api";
 import { GalaChainContext } from "../types";
 import { getObjectsByPartialCompositeKey, takeUntilUndefined } from "../utils";
 
-interface FullAllowanceCheckParams {
+export interface FullAllowanceCheckParams {
   owner: string;
   grantedTo: string;
   allowanceType: AllowanceType;
@@ -45,8 +45,7 @@ export async function fullAllowanceCheck(
     ctx,
     TokenBalance.INDEX_KEY,
     queryParams,
-    TokenBalance,
-    true // TODO: may lead to incomplete results
+    TokenBalance
   );
 
   // For each relevant balance, fetch relevant allowance(s)
@@ -69,8 +68,7 @@ export async function fullAllowanceCheck(
         ctx,
         TokenAllowance.INDEX_KEY,
         allowanceParams,
-        TokenAllowance,
-        true // TODO: may lead to incomplete results
+        TokenAllowance
       );
 
       const expiredAllowances = allowanceResults.filter((allowance) => {

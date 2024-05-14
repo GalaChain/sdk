@@ -15,13 +15,14 @@
 
 /* eslint-disable */
 export default {
-  displayName: 'chain-cli',
+  displayName: "chain-cli",
   preset: "../jest.preset.js",
-  testEnvironment: 'node',
+  testEnvironment: "node",
   transform: {
     "^.+\\.[tj]s$": ["ts-jest", { tsconfig: "<rootDir>/tsconfig.spec.json" }]
   },
-  moduleFileExtensions: ['ts', 'js', 'html'],
-  modulePathIgnorePatterns: ["<rootDir>/chaincode-template/", "lib/chaincode-template/"],
-  coverageDirectory: '../coverage/chain-cli',
+  moduleFileExtensions: ["ts", "js", "html"],
+  coverageDirectory: "../coverage/chain-cli",
+  modulePathIgnorePatterns: ["chaincode-template/", "lib"],
+  setupFilesAfterEnv: ["setimmediate"]
 };

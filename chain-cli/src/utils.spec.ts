@@ -14,7 +14,7 @@
  */
 import fs from "fs/promises";
 
-import { getPathFileName, parseJsonFromStringOrFile } from "../src/utils";
+import { getPathFileName, parseJsonFromStringOrFile } from "./utils";
 
 describe("parseJsonFromStringOrFile", () => {
   it("should parse JSON string", async () => {

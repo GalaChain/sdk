@@ -15,17 +15,28 @@
 import { ux } from "@oclif/core";
 
 import { signatures } from "@gala-chain/api";
+import * as secp from "@noble/secp256k1";
 import axios from "axios";
-import { promises as fsPromises } from "fs";
+import fs, { promises as fsPromises } from "fs";
 import { nanoid } from "nanoid";
+import { writeFile } from "node:fs/promises";
+import path from "path";
+import process from "process";
 
-import { ServicePortal } from "./consts";
+import { ExpectedImageArchitecture, ServicePortal } from "./consts";
 import { GetChaincodeDeploymentDto, PostDeployChaincodeDto } from "./dto";
 import { execSync } from "./exec-sync";
 import { parseStringOrFileKey } from "./utils";
 
 const ConfigFileName = ".galachainrc.json";
 const PackageJsonFileName = "package.json";
+// eslint-disable-next-line @typescript-eslint/no-var-requires
+const os = require("os");
+
+const DEFAULT_PRIVATE_KEYS_DIR = ".gc-keys";
+const DEFAULT_PUBLIC_KEYS_DIR = "keys";
+const DEFAULT_ADMIN_PRIVATE_KEY_NAME = "gc-admin-key";
+const DEFAULT_DEV_PRIVATE_KEY_NAME = "gc-dev-key";
 
 export interface Config {
   org: string;
@@ -40,8 +51,7 @@ export async function writeConfigFile(config: Config) {
 
 export async function readConfigFile(): Promise<Config> {
   try {
-    const config = JSON.parse(await fsPromises.readFile(ConfigFileName, "utf8"));
-    return config;
+    return JSON.parse(await fsPromises.readFile(ConfigFileName, "utf8"));
   } catch (error) {
     throw new Error(`Can not read chain config file ${ConfigFileName}`);
   }
@@ -58,18 +68,13 @@ export async function readPackageJsonVersion(): Promise<string> {
 
 export async function readDockerfile(): Promise<string> {
   try {
-    const dockerfile = await fsPromises.readFile("Dockerfile", "utf8");
-    return dockerfile;
+    return await fsPromises.readFile("Dockerfile", "utf8");
   } catch (error) {
     throw new Error(`Can not find Dockerfile.`);
   }
 }
 
-export async function getDeploymentResponse(params: { privateKey: string | undefined; isTestnet: boolean }) {
-  if (!params.privateKey) {
-    params.privateKey = await getPrivateKeyPrompt();
-  }
-
+export async function getDeploymentResponse(params: { privateKey: string; isTestnet: boolean }) {
   const getChaincodeDeploymentDto: GetChaincodeDeploymentDto = {
     operationId: nanoid()
   };
@@ -94,8 +99,22 @@ export async function getDeploymentResponse(params: { privateKey: string | undef
 }
 
 function getContractNames(imageTag: string): { contractName: string }[] {
+  const dockerImageInspect = execSync("docker inspect --format=json ${imageTag}");
+  let dockerJson;
+  try {
+    dockerJson = JSON.parse(dockerImageInspect);
+  } catch (e) {
+    throw new Error(`Invalid docker image inspect output: ${dockerImageInspect} - Error ${e}`);
+  }
+
+  const imageArchitecture = dockerJson[0].Os + "/" + dockerJson[0].Architecture;
+
+  if (imageArchitecture !== ExpectedImageArchitecture) {
+    throw new Error(`Unsupported architecture ${imageArchitecture}, expected ${ExpectedImageArchitecture}`);
+  }
+
   const command = `docker run --rm ${imageTag} lib/src/cli.js get-contract-names | tail -n 1`;
-  let response: string = "<failed>";
+  let response = "<failed>";
 
   try {
     response = execSync(command);
@@ -115,15 +134,7 @@ function getContractNames(imageTag: string): { contractName: string }[] {
   }
 }
 
-export async function deployChaincode(params: {
-  privateKey: string | undefined;
-  isTestnet: boolean;
-  imageTag: string;
-}) {
-  if (!params.privateKey) {
-    params.privateKey = await getPrivateKeyPrompt();
-  }
-
+export async function deployChaincode(params: { privateKey: string; isTestnet: boolean; imageTag: string }) {
   const chainCodeDto: PostDeployChaincodeDto = {
     operationId: nanoid(),
     imageTag: params.imageTag,
@@ -146,9 +157,110 @@ export async function deployChaincode(params: {
   return response.data;
 }
 
+export async function generateKeys(projectPath: string): Promise<void> {
+  const keysPath = path.join(projectPath, DEFAULT_PUBLIC_KEYS_DIR);
+
+  const adminPrivateKey = secp.utils.bytesToHex(secp.utils.randomPrivateKey());
+  const adminPublicKey = secp.utils.bytesToHex(secp.getPublicKey(adminPrivateKey));
+
+  const devPrivateKey = secp.utils.bytesToHex(secp.utils.randomPrivateKey());
+  const devPublicKey = secp.utils.bytesToHex(secp.getPublicKey(devPrivateKey));
+
+  const chaincodeName = "gc-" + signatures.getEthAddress(adminPublicKey);
+  const privateKeysPath = path.join(os.homedir(), DEFAULT_PRIVATE_KEYS_DIR, chaincodeName);
+
+  fs.mkdir(`${keysPath}`, (err) => {
+    if (err) console.error(`Could not create a directory ${keysPath}. Error: ${err}`);
+  });
+
+  fs.mkdir(privateKeysPath, { recursive: true }, (err) => {
+    if (err) console.error(`Could not create a directory ${privateKeysPath}. Error: ${err}`);
+  });
+
+  await writeFile(`${keysPath}/${DEFAULT_ADMIN_PRIVATE_KEY_NAME}.pub`, adminPublicKey);
+  await writeFile(`${keysPath}/${DEFAULT_DEV_PRIVATE_KEY_NAME}.pub`, devPublicKey);
+
+  await writeFile(`${privateKeysPath}/${DEFAULT_ADMIN_PRIVATE_KEY_NAME}`, adminPrivateKey.toString());
+  await writeFile(`${privateKeysPath}/${DEFAULT_DEV_PRIVATE_KEY_NAME}`, devPrivateKey.toString());
+
+  console.log(`Chaincode name:         ${chaincodeName}`);
+  console.log(`Public keys directory:  ${keysPath}`);
+  console.log(`Private keys directory: ${privateKeysPath}`);
+}
+
+export async function getPrivateKey(keysFromArg: string | undefined) {
+  return (
+    keysFromArg ??
+    process.env.DEV_PRIVATE_KEY ??
+    (await getDefaultDevPrivateKeyFile()) ??
+    (await getPrivateKeyPrompt())
+  );
+}
+
+export async function overwriteApiConfig(contracts: string, channel: string, chaincodeName: string) {
+  const contractsJson = JSON.parse(contracts);
+
+  let contractJson = "";
+  contractsJson.forEach((contract: { contractName: string }) => {
+    // It converts CamelCase to kebab-case
+    const pathFragment = contract.contractName
+      .replace(/([A-Z])/g, "-$1")
+      .toLowerCase()
+      .replace(/^-/, "");
+
+    contractJson =
+      contractJson +
+      `{ 
+          "pathFragment": "${pathFragment}", 
+          "chaincodeName": "${chaincodeName}", 
+          "contractName": "${contract.contractName}" 
+        },`;
+  });
+  // remove the last comma
+  contractJson = contractJson.slice(0, -1);
+
+  // write a new api-config.json file and overwrite the old one
+  const apiConfigPath = path.resolve(".", "api-config.json");
+  const apiConfigJson = `{
+        "channels": [
+          {
+            "pathFragment": "product",
+            "channelName": "${channel}",
+            "asLocalHost": true,
+            "contracts": [${contractJson}]
+          }
+        ]
+      }`;
+  fs.writeFileSync(apiConfigPath, JSON.stringify(JSON.parse(apiConfigJson), null, 2));
+}
+
+function getDefaultDevPrivateKeyFile(): string | undefined {
+  try {
+    const defaultAdminPublicKeyPath = path.join(
+      process.cwd(),
+      DEFAULT_PUBLIC_KEYS_DIR,
+      `${DEFAULT_DEV_PRIVATE_KEY_NAME}.pub`
+    );
+    const defaultAdminPublicKey = fs.readFileSync(defaultAdminPublicKeyPath, "utf8");
+    const chaincodeName = "gc-" + signatures.getEthAddress(defaultAdminPublicKey);
+
+    const defaultDevPrivateKeyPath = path.join(
+      os.homedir(),
+      DEFAULT_PRIVATE_KEYS_DIR,
+      chaincodeName,
+      DEFAULT_DEV_PRIVATE_KEY_NAME
+    );
+
+    return fs.readFileSync(defaultDevPrivateKeyPath, "utf8");
+  } catch (e) {
+    console.error(`Error reading file: ${e}`);
+    return undefined;
+  }
+}
+
 async function getPrivateKeyPrompt(): Promise<string> {
   console.log(
-    "Private key not found. It should be provided as an argument or as an environment variable DEV_PRIVATE_KEY."
+    "Private key not found. It should be provided as an argument, as an environment variable DEV_PRIVATE_KEY or as a file."
   );
   return await ux.prompt("Type the private key or the path to", { type: "mask" });
 }

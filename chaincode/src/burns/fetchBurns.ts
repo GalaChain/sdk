@@ -25,7 +25,7 @@ import {
   takeUntilUndefined
 } from "../utils";
 
-interface FetchBurnParams {
+export interface FetchBurnParams {
   collection?: string;
   category?: string;
   type?: string;
@@ -47,13 +47,7 @@ export async function fetchBurns(ctx: GalaChainContext, data: FetchBurnParams): 
     data.created?.toString()
   );
 
-  let results = await getObjectsByPartialCompositeKey(
-    ctx,
-    TokenBurn.INDEX_KEY,
-    queryParams,
-    TokenBurn,
-    false
-  );
+  let results = await getObjectsByPartialCompositeKey(ctx, TokenBurn.INDEX_KEY, queryParams, TokenBurn);
 
   // Sort the items ascending by date
   results = results.sort((a: TokenBurn, b: TokenBurn): number => (a.created < b.created ? -1 : 1));
@@ -61,7 +55,7 @@ export async function fetchBurns(ctx: GalaChainContext, data: FetchBurnParams): 
   return results;
 }
 
-interface FetchBurnCounterParams {
+export interface FetchBurnCounterParams {
   collection: string;
   category: string;
   type: string;
@@ -113,7 +107,7 @@ export async function fetchKnownBurnCount(
         const entry = RangedChainObject.deserialize(TokenBurnCounter, stringResult);
 
         // timeKey is a string padded with leading zeros. BigNumber will parse into an integer.
-        const entryTime = new BigNumber(entry.timeKey);
+        // const entryTime = new BigNumber(entry.timeKey);
 
         seekingFirstResult = false;
 
@@ -121,7 +115,7 @@ export async function fetchKnownBurnCount(
 
         // inverted timeKeys read most recent first; using unshift sorts a new array as oldest first.
         // essentially, we rewind the tape and then play it forward.
-        // covering the following possible scensarios:
+        // covering the following possible scenarios:
         //     a) no results yet - empty array, start with zero below.
         //     b) no recent results. continue back toward the beginning of the ledger until we find at least one.
         //     c) recent results. Get all results within two past block spans to cover any missing timestamp gaps from concurrent recent transactions.

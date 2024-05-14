@@ -19,6 +19,7 @@ import path from "path";
 
 import BaseCommand from "../../base-command";
 import { execSync } from "../../exec-sync";
+import { generateKeys } from "../../galachain-utils";
 import { getPathFileName } from "../../utils";
 
 export default class Init extends BaseCommand<typeof Init> {
@@ -61,6 +62,9 @@ export default class Init extends BaseCommand<typeof Init> {
           this.error(`Error updating project name in ${projectPath}: ${err}`);
         }
       });
+
+      await generateKeys(args.path);
+
       this.log(`Project template initialized at ${args.path}`);
     } catch (error) {
       this.error(`Error initializing project template: ${error}`);
@@ -69,6 +73,7 @@ export default class Init extends BaseCommand<typeof Init> {
 
   copyChaincodeTemplate(destinationPath: string): void {
     const sourceTemplateDir = path.resolve(require.resolve("."), "../../../chaincode-template");
-    execSync(`cp -R ${sourceTemplateDir} ${destinationPath}`);
+    fs.mkdirSync(destinationPath, { recursive: true });
+    fs.cpSync(sourceTemplateDir, destinationPath, { recursive: true });
   }
 }

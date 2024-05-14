@@ -12,15 +12,19 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-import { ux } from "@oclif/core";
-
 import axios from "axios";
 
-import Info from "../../../src/commands/info";
+import Info from "./index";
 
 const fakePrivateKey = "bf2168e0e2238b9d879847987f556a093040a2cab07983a20919ac33103d0d00";
 
+jest.mock("axios");
+
 describe("ChainInfo Command", () => {
+  beforeEach(() => {
+    jest.clearAllMocks();
+  });
+
   it("should check if it gets info from a chaincode", async () => {
     // Given
     axios.get = jest.fn().mockResolvedValue({
@@ -43,10 +47,9 @@ describe("ChainInfo Command", () => {
     // Then
     expect(result.join()).toContain(`CH_CREATED`);
     expect(result.join()).toContain(`operation-id`);
-
-    jest.resetAllMocks();
   });
-  it("should not find private key and prompt", async () => {
+
+  it("should get private key from local environment", async () => {
     // Given
     axios.get = jest.fn().mockResolvedValue({
       status: 200,
@@ -67,16 +70,13 @@ describe("ChainInfo Command", () => {
       return true;
     });
 
-    process.env = { ...process.env, DEV_PRIVATE_KEY: undefined };
-
-    jest.spyOn(ux, "prompt").mockResolvedValueOnce(fakePrivateKey);
+    process.env = { ...process.env, DEV_PRIVATE_KEY: fakePrivateKey };
 
     // When
     await Info.run();
 
     // Then
-    expect(result.join()).toContain("Private key not found");
-
-    jest.resetAllMocks();
+    expect(result.join()).toContain(`CH_CREATED`);
+    expect(result.join()).toContain(`operation-id`);
   });
 });

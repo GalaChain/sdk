@@ -135,6 +135,15 @@ export class ChainCallDTO {
 
   @JSONSchema({
     description:
+      "Prefix for Metamask transaction signatures. " +
+      "Necessary to format payloads correctly to recover publicKey from web3 signatures."
+  })
+  @IsOptional()
+  @IsNotEmpty()
+  public prefix?: string;
+
+  @JSONSchema({
+    description:
       "Public key of the user who signed the DTO. " +
       "Required for DER encoded signatures, since they miss recovery part."
   })
