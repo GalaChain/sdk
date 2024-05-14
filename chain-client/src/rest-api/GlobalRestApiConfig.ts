@@ -42,10 +42,7 @@ export class GlobalRestApiConfig {
   public getStatus(apiUrl: string): RestApiStatus {
     const result = this.isRestApiInitializedAndHealthy[apiUrl];
 
-    if (
-      result === RestApiStatus.INITIALIZED ||
-      result === RestApiStatus.PENDING
-    ) {
+    if (result === RestApiStatus.INITIALIZED || result === RestApiStatus.PENDING) {
       return result;
     }
 
