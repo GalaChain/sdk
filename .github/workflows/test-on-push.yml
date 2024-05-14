@@ -105,6 +105,47 @@ jobs:
           fi
           npm run network:prune --prefix ./project-test
 
+  template-e2e-rest:
+    name: Chaincode template E2E (REST API)
+    runs-on: ubuntu-22.04
+    needs: [ci]
+    env:
+      GALA_CLIENT_DEV_MODE: "false"
+      CURATORORG_OPS_API_URL: "http://localhost:8801"
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Install tools
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y jq
+          sudo wget -qO /usr/local/bin/yq https://github.com/mikefarah/yq/releases/latest/download/yq_linux_amd64
+          sudo chmod a+x /usr/local/bin/yq
+          git --version
+          node --version
+          npm --version
+          jq --version
+          yq --version
+          bash --version
+          docker version
+          docker-compose version
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 18
+      - name: Install local CLI
+        run: .github/scripts/install-local-cli.sh
+      - name: Create test project
+        run: galachain init ./project-test
+      - name: Install dependencies
+        run: |
+          (cd ./project-test && ../npm-pack-and-replace.sh --skipConfirmation)
+          npm i --prefix ./project-test
+      - name: Run network in non-watch mode
+        run: npm run network:up --prefix ./project-test
+      - name: Run E2E tests
+        run: npm run test:e2e --prefix ./project-test
+
   template-image-check:
     name: Chaincode template image check
     needs: [ci]
