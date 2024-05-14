@@ -6,19 +6,19 @@
       "asLocalHost": true,
       "contracts": [
         {
-          "pathFragment": "apple",
+          "pathFragment": "apple-contract",
           "chaincodeName": "basic-product",
           "contractName": "AppleContract"
+        },
+        {
+          "pathFragment": "gala-chain-token",
+          "chaincodeName": "basic-product",
+          "contractName": "GalaChainToken"
         },
         {
           "pathFragment": "public-key-contract",
           "chaincodeName": "basic-product",
           "contractName": "PublicKeyContract"
-        },
-        {
-          "pathFragment": "token-contract",
-          "chaincodeName": "basic-product",
-          "contractName": "GalaChainToken"
         }
       ]
     }
