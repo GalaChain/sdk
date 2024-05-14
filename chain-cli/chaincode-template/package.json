@@ -24,6 +24,7 @@
   "dependencies": {
     "@gala-chain/api": "1.1.19",
     "@gala-chain/chaincode": "1.1.19",
+    "@grpc/grpc-js": "1.8.15",
     "dotenv": "^16.0.1",
     "fabric-contract-api": "2.5.4",
     "fabric-shim": "2.5.4"
