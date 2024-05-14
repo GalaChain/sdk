@@ -42,8 +42,14 @@
     }
   },
   "devDependencies": {
-    "fabric-network": "^2.2.20",
+    "@grpc/grpc-js": "1.8.15",
+    "fabric-network": "2.2.20",
     "fabric-ca-client": "^2.2.20"
+  },
+  "overrides": {
+    "fabric-network": {
+      "@grpc/grpc-js": "1.8.15"
+    }
   },
   "nyc": {
     "extension": [
