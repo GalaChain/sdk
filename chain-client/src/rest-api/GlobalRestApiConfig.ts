@@ -44,10 +44,13 @@ export class GlobalRestApiConfig {
 
     if (
       result === RestApiStatus.INITIALIZED ||
-      result === RestApiStatus.PENDING ||
-      result === RestApiStatus.NONE
+      result === RestApiStatus.PENDING
     ) {
       return result;
+    }
+
+    if (!result || result === RestApiStatus.NONE) {
+      return RestApiStatus.NONE;
     }
 
     throw new Error(`Failed to initialize Rest API at ${apiUrl} failed to initialize: ${result?.message}`);
