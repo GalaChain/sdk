@@ -42,12 +42,12 @@ export class GlobalRestApiConfig {
   public getStatus(apiUrl: string): RestApiStatus {
     const result = this.isRestApiInitializedAndHealthy[apiUrl];
 
-    if (
-      result === RestApiStatus.INITIALIZED ||
-      result === RestApiStatus.PENDING ||
-      result === RestApiStatus.NONE
-    ) {
+    if (result === RestApiStatus.INITIALIZED || result === RestApiStatus.PENDING) {
       return result;
+    }
+
+    if (!result || result === RestApiStatus.NONE) {
+      return RestApiStatus.NONE;
     }
 
     throw new Error(`Failed to initialize Rest API at ${apiUrl} failed to initialize: ${result?.message}`);

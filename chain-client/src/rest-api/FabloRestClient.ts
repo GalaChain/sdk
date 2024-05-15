@@ -100,8 +100,8 @@ export class FabloRestClient extends ChainClient {
     resp?: ClassType<Inferred<T>>
   ): Promise<GalaChainResponse<T>> {
     const [dto, responseType] = isClassType(dtoOrResp) ? [undefined, dtoOrResp] : [dtoOrResp, resp];
-    const serialized = dto?.serialize() ?? "{}";
-    const payload = { method: `${this.contractConfig.contractName}:${methodName}`, args: [serialized] };
+    const args = dto ? [dto.serialize()] : [];
+    const payload = { method: `${this.contractConfig.contractName}:${methodName}`, args };
 
     const headers = {
       Authorization: `Bearer ${await this.token}`
