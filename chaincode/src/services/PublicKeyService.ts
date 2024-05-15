@@ -80,7 +80,7 @@ export class PublicKeyService {
     // check if we want the profile of the admin
     if (process.env.DEV_ADMIN_PUBLIC_KEY !== undefined && process.env.DEV_ADMIN_USER_ID !== undefined) {
       const nonCompactPK = signatures.getNonCompactHexPublicKey(process.env.DEV_ADMIN_PUBLIC_KEY);
-      const adminEthAddress = signatures.getEthAddress(nonCompact);
+      const adminEthAddress = signatures.getEthAddress(nonCompactPK);
 
       if (adminEthAddress === ethAddress) {
         const message =
