@@ -40,7 +40,8 @@ export function networkRoot() {
 }
 
 function defaultOpsApiConfigPath() {
-  return path.resolve(networkRoot(), "api-config.json");
+  // by default project root is a parent of network root
+  return path.resolve(networkRoot(), "..", "api-config.json");
 }
 
 function defaultConnectionProfilePath(orgKey: "curator" | "users" | "partner"): string {
