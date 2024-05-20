@@ -2,7 +2,7 @@ name: Trigger GitLab Pipeline
 on:
   push:
     branches:
-      - chain-slack-messaging  # This ensures the workflow triggers on pushes to the main branch, including merges
+      - main  # This ensures the workflow triggers on pushes to the main branch, including merges
 
 jobs:
   trigger-gitlab:
