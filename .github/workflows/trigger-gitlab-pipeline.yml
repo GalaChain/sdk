@@ -1,0 +1,20 @@
+name: Trigger GitLab Pipeline
+on:
+  push:
+    branches:
+      - main  # This ensures the workflow triggers on pushes to the main branch, including merges
+
+jobs:
+  trigger-gitlab:
+    runs-on: ubuntu-latest
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v2
+
+    - name: Trigger GitLab pipeline
+      uses: appleboy/gitlab-ci-action@master
+      with:
+        host: https://gitlab.com
+        token: ${{ secrets.GITLAB_TOKEN }}
+        project_id: 35484791
+        ref: main
