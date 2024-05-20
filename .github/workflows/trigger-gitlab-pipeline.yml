@@ -4,6 +4,7 @@ on:
     branches:
       - chain-slack-messaging  # This ensures the workflow triggers on pushes to the main branch, including merges
 
+
 jobs:
   trigger-gitlab:
     runs-on: ubuntu-latest
