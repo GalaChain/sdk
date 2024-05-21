@@ -1,6 +1,7 @@
 {
   "extends": "../tsconfig.base.json",
   "compilerOptions": {
+    "lib": ["dom"],
     "module": "commonjs",
     "forceConsistentCasingInFileNames": true,
     "strict": true,
