@@ -12,10 +12,4 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-import { BrowserProvider } from "ethers";
-
-import { connectAndSign } from "./connectAndSign";
-
-const execute = (chaincode, method, signedPayload) => {};
-
-export * from "./connectAndSign";
+export * from "./GalachainConnectClient";

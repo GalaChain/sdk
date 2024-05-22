@@ -49,13 +49,13 @@ export class GalachainConnectClient {
 
     try {
       const prefix = this.calculatePersonalSignPrefix(payload);
-      const challenge = { ...payload, prefix };
-      const dto = signatures.getPayloadToSign(challenge);
+      const prefixedPayload = { ...payload, prefix };
+      const dto = signatures.getPayloadToSign(prefixedPayload);
 
       const signer = await this.provider.getSigner();
       const signature = await signer.provider.send("personal_sign", [this.address, dto]);
 
-      return await this.submit({ ...challenge, signature }, chaincodeUrl, method);
+      return await this.submit({ ...prefixedPayload, signature }, chaincodeUrl, method);
     } catch (error: any) {
       throw new Error(error.message);
     }
