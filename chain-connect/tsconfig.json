@@ -1,6 +1,10 @@
 {
   "extends": "../tsconfig.base.json",
   "compilerOptions": {
+    "rootDir": ".",
+    "outDir": "lib",
+    "declarationDir": "lib",
+    "composite": true,
     "lib": ["dom"],
     "module": "commonjs",
     "forceConsistentCasingInFileNames": true,
@@ -11,7 +15,8 @@
     "noFallthroughCasesInSwitch": true
   },
   "files": [],
-  "include": [],
+  "include": ["**/*"],
+  "exclude": ["lib", "**/*spec.ts", "src/__mocks__", "src/__test__"],
   "references": [
     {
       "path": "./tsconfig.lib.json"
