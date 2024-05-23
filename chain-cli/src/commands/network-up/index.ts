@@ -102,7 +102,7 @@ export default class NetworkUp extends BaseCommand<typeof NetworkUp> {
     if (flags.contracts) {
       // This feature supports only a single channel
       console.log("Overwriting api-config.json with contracts: " + flags.contracts);
-      overwriteApiConfig(flags.contracts, flags.channel[0], flags.chaincodeName[0]);
+      await overwriteApiConfig(flags.contracts, flags.channel[0], flags.chaincodeName[0]);
     }
 
     const fabloRoot = path.resolve(flags.fabloRoot);
@@ -110,7 +110,7 @@ export default class NetworkUp extends BaseCommand<typeof NetworkUp> {
     const localhostName = process.env.LOCALHOST_NAME ?? "localhost";
     console.log("Network root directory:", fabloRoot);
 
-    await copyNetworkScriptsTo(fabloRoot);
+    copyNetworkScriptsTo(fabloRoot);
 
     const singleArgs = reduce(flags).map((a) => ({
       ...a,

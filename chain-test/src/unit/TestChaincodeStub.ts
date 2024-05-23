@@ -80,16 +80,19 @@ export class TestChaincodeStub extends ChaincodeStub {
     state: Record<string, string> | undefined,
     writes: Record<string, string> | undefined
   ) {
-    super({}, "asset-channel", nanoid(), { args: args }, undefined);
+    super({}, "asset-channel", nanoid(), { getArgsList_asU8: () => args }, undefined);
     this.creator = creatorMock();
     this.state = state ?? {};
     this.writes = writes ?? {};
 
+    const seconds = Long.fromNumber(Date.now() / 1000);
     // eslint-disable-next-line @typescript-eslint/ban-ts-comment
     // @ts-ignore
     this.txTimestamp = {
-      seconds: Long.fromNumber(Date.now() / 1000),
-      nanos: 0
+      seconds,
+      nanos: 0,
+      getSeconds: () => seconds,
+      getNanos: () => 0
     };
 
     TestChaincodeStub.epoch += 1;
