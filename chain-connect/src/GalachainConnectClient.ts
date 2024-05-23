@@ -12,7 +12,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-import { signatures } from "@gala-chain/api";
+import { serialize, signatures } from "@gala-chain/api";
 import { BrowserProvider } from "ethers";
 
 declare global {
@@ -39,7 +39,7 @@ export class GalachainConnectClient {
     }
   }
 
-  async sendTransaction(payload: Record<string, any>, chaincodeUrl: string, method: string) {
+  async sendTransaction(chaincodeUrl: string, method: string, payload: object): Promise<object> {
     if (!this.provider) {
       throw new Error("Ethereum provider not found");
     }
@@ -61,16 +61,18 @@ export class GalachainConnectClient {
     }
   }
 
-  private async submit(signedPayload: Record<string, any>, chaincodeUrl: string, method: string) {
-    // TODO: use gateway rather than ops
-
+  private async submit(
+    signedPayload: Record<string, any>,
+    chaincodeUrl: string,
+    method: string
+  ): Promise<object> {
     // Note: GalaChain Uri maybe should be constructed based on channel and method,
     // rather than passing full url as arg
     // ie `${baseUri}/api/${channel}/token-contract/${method}`
     const url = `${chaincodeUrl}/${method}`;
     const response = await fetch(url, {
       method: "POST",
-      body: JSON.stringify(signedPayload),
+      body: serialize(signedPayload),
       headers: {
         "Content-Type": "application/json"
       }
