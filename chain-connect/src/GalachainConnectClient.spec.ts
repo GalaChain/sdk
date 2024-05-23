@@ -18,20 +18,18 @@ global.fetch = jest.fn((url: string, options?: Record<string, unknown>) =>
   Promise.resolve({
     json: () => Promise.resolve({ Request: { url, options } }),
     headers: {
-      get: () => {
-        status: 1;
-      }
+      get: () => ({ status: 1 })
     }
   })
 ) as jest.Mock;
 
 window.ethereum = {
-  // @ts-ignore
+  // @ts-expect-error mockup
   getSigner() {
     return {
       provider: {
         send(method: string) {
-          if (method == "personal_sign") {
+          if (method === "personal_sign") {
             return "sampleSignature";
           } else {
             throw new Error(`Method for signer not mocked: ${method}`);
@@ -40,9 +38,9 @@ window.ethereum = {
       }
     };
   },
-  // @ts-ignore
+  // @ts-expect-error mockup
   send(method: string) {
-    if ((method = "eth_requestAccounts")) {
+    if (method === "eth_requestAccounts") {
       return ["sampleAddress"];
     } else {
       throw new Error(`Method not mocked: ${method}`);
@@ -73,6 +71,9 @@ describe("GalachainConnectClient", () => {
     const response = await client.sendTransaction("https://example.com", "TransferToken", dto);
 
     expect(response).toEqual({
+      Hash: {
+        status: 1
+      },
       Request: {
         options: {
           body: '{"prefix":"\\u0019Ethereum Signed Message:\\n261","quantity":"1","signature":"sampleSignature","to":"client|63580d94c574ad78b121c267","tokenInstance":{"additionalKey":"none","category":"Unit","collection":"GALA","instance":"0","type":"none"},"uniqueKey":"26d4122e-34c8-4639-baa6-4382b398e68e"}',

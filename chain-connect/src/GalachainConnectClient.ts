@@ -23,7 +23,7 @@ declare global {
 
 export class GalachainConnectClient {
   private address: string;
-  private provider: any;
+  private provider: BrowserProvider | undefined;
 
   async connectToMetaMask() {
     this.provider = window.ethereum;
