@@ -56,6 +56,6 @@
     "chain-client",
     "chain-test",
     "chaincode",
-    "connect"
+    "chain-connect"
   ]
 }
