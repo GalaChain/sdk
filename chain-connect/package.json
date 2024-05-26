@@ -1,8 +1,8 @@
 {
   "name": "@gala-chain/connect",
-  "version": "1.1.17",
+  "version": "1.1.21",
   "dependencies": {
-    "@gala-chain/api": "1.1.18",
+    "@gala-chain/api": "1.1.21",
     "ethers": "^6.12.1"
   },
   "type": "commonjs",

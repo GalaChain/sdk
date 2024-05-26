@@ -1,7 +1,7 @@
 {
-  "name": "connect",
+  "name": "chain-connect",
   "$schema": "../node_modules/nx/schemas/project-schema.json",
-  "sourceRoot": "connect/src",
+  "sourceRoot": "chain-connect/src",
   "projectType": "library",
   "targets": {
     "build": {
@@ -9,9 +9,9 @@
       "outputs": ["{options.outputPath}"],
       "options": {
         "outputPath": "dist/connect",
-        "main": "connect/src/index.ts",
-        "tsConfig": "connect/tsconfig.lib.json",
-        "assets": ["connect/*.md"]
+        "main": "chain-connect/src/index.ts",
+        "tsConfig": "chain-connect/tsconfig.lib.json",
+        "assets": ["chain-connect/*.md"]
       }
     },
     "publish": {
@@ -25,7 +25,7 @@
       "executor": "@nx/jest:jest",
       "outputs": ["{workspaceRoot}/coverage/{projectRoot}"],
       "options": {
-        "jestConfig": "connect/jest.config.ts"
+        "jestConfig": "chain-connect/jest.config.ts"
       }
     }
   },

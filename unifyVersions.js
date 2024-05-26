@@ -35,9 +35,9 @@ const packages = [
   "./chain-cli",
   "./chain-cli/chaincode-template",
   "./chain-client",
+  "./chain-connect",
   "./chain-test",
-  "./chaincode",
-  "./chain-connect"
+  "./chaincode"
 ].map((p) => {
   const packageJsonPath = require.resolve(`${p}/package.json`);
   // eslint-disable-next-line @typescript-eslint/no-var-requires

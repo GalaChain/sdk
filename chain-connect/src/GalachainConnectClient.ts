@@ -34,8 +34,8 @@ export class GalachainConnectClient {
       const accounts = (await this.provider.send("eth_requestAccounts", [])) as string[];
       this.address = accounts[0];
       return this.address;
-    } catch (error: any) {
-      throw new Error(error.message);
+    } catch (error: unknown) {
+      throw new Error((error as Error).message);
     }
   }
 
@@ -56,13 +56,13 @@ export class GalachainConnectClient {
       const signature = await signer.provider.send("personal_sign", [this.address, dto]);
 
       return await this.submit({ ...prefixedPayload, signature }, chaincodeUrl, method);
-    } catch (error: any) {
-      throw new Error(error.message);
+    } catch (error: unknown) {
+      throw new Error((error as Error).message);
     }
   }
 
   private async submit(
-    signedPayload: Record<string, any>,
+    signedPayload: Record<string, unknown>,
     chaincodeUrl: string,
     method: string
   ): Promise<object> {
@@ -88,7 +88,7 @@ export class GalachainConnectClient {
     return id ? { Hash: id, ...data } : data;
   }
 
-  private calculatePersonalSignPrefix(payload: Record<string, any>): string {
+  private calculatePersonalSignPrefix(payload: object): string {
     const payloadLength = signatures.getPayloadToSign(payload).length;
     const prefix = "\u0019Ethereum Signed Message:\n" + payloadLength;
 
