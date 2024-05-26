@@ -37,7 +37,7 @@ window.ethereum = {
     } else {
       throw new Error(`Method not mocked: ${request.method}`);
     }
-  },
+  }
 };
 
 describe("GalachainConnectClient", () => {
