@@ -5,14 +5,7 @@
     "outDir": "lib",
     "declarationDir": "lib",
     "composite": true,
-    "lib": ["dom"],
-    "module": "commonjs",
-    "forceConsistentCasingInFileNames": true,
-    "strict": true,
-    "noImplicitOverride": true,
-    "noPropertyAccessFromIndexSignature": true,
-    "noImplicitReturns": true,
-    "noFallthroughCasesInSwitch": true
+    "lib": ["dom"]
   },
   "files": [],
   "include": ["**/*"],
