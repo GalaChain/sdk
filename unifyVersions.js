@@ -35,6 +35,7 @@ const packages = [
   "./chain-cli",
   "./chain-cli/chaincode-template",
   "./chain-client",
+  "./chain-connect",
   "./chain-test",
   "./chaincode"
 ].map((p) => {
