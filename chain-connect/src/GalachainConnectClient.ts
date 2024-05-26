@@ -13,11 +13,11 @@
  * limitations under the License.
  */
 import { serialize, signatures } from "@gala-chain/api";
-import { BrowserProvider } from "ethers";
+import { BrowserProvider, Eip1193Provider } from "ethers";
 
 declare global {
   interface Window {
-    ethereum?: BrowserProvider;
+    ethereum?: Eip1193Provider;
   }
 }
 
@@ -26,10 +26,12 @@ export class GalachainConnectClient {
   private provider: BrowserProvider | undefined;
 
   async connectToMetaMask() {
-    this.provider = window.ethereum;
-    if (!this.provider) {
+    if (!window.ethereum) {
       throw new Error("Ethereum provider not found");
     }
+
+    this.provider = new BrowserProvider(window.ethereum);
+
     try {
       const accounts = (await this.provider.send("eth_requestAccounts", [])) as string[];
       this.address = accounts[0];
