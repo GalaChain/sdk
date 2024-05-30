@@ -111,7 +111,7 @@ export async function checkAllowances(
       allowance.additionalKey === tokenInstanceKey.additionalKey &&
       allowance.instance.isEqualTo(tokenInstanceKey.instance) &&
       allowance.allowanceType === action &&
-      (allowance.expires === 0 || isAllowanceExpired(ctx, allowance))
+      (allowance.expires === 0 || !isAllowanceExpired(ctx, allowance))
     ) {
       totalAllowance = totalAllowance.plus(allowance.quantity).minus(allowance.quantitySpent);
     }
