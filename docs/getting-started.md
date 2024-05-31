@@ -139,7 +139,7 @@ Navigate to [http://localhost:3010/graphiql](http://localhost:3010/graphiql) to 
 ### 1. Install our CLI
 
 ```
-npm i -g @gala-games/chain-cli
+npm i -g @gala-chain/cli
 ```
 
 Check the CLI:
