@@ -13,7 +13,7 @@
  * limitations under the License.
  */
 import {
-  AllowanceType,
+  AllowanceType, createValidDTO,
   MintRequestDto,
   TokenAllowance,
   TokenClass,
@@ -253,8 +253,8 @@ export async function fulfillMintRequest(
       } else {
         const mintFulfillmentEntry: TokenMintFulfillment = req.fulfill(req.quantity);
 
-        const mintDto: MintTokenDto = plainToInstance(MintTokenDto, {
-          tokenClass: { collection, category, type, additionalKey },
+        const mintDto: MintTokenDto = await createValidDTO(MintTokenDto, {
+          tokenClass: plainToInstance(TokenClassKey, { collection, category, type, additionalKey }),
           owner: req.owner,
           quantity: req.quantity,
           allowanceKey: req.allowanceKey

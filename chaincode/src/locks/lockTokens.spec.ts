@@ -49,7 +49,7 @@ describe("LockTokens", () => {
       tokenInstance: nftInstanceKey,
       quantity: new BigNumber("1")
     });
-    const balance = plainToInstance(TokenBalance, {
+    const balance = await createValidChainObject(TokenBalance, {
       ...nftTokenBalancePlain,
       owner: users.testUser1,
       instanceIds: [nftInstanceKey.instance],
@@ -75,7 +75,7 @@ describe("LockTokens", () => {
     const response = await contract.LockToken(ctx, dto);
 
     // Then
-    const balanceWithHold = plainToInstance(TokenBalance, { ...balance, lockedHolds: [expectedHold] });
+    const balanceWithHold = await createValidChainObject(TokenBalance, { ...balance, lockedHolds: [expectedHold] });
     expect(response).toEqual(GalaChainResponse.Success(balanceWithHold));
     expect(writes).toEqual(writesMap(balanceWithHold));
   });

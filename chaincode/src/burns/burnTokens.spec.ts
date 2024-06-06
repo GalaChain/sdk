@@ -49,7 +49,7 @@ describe("BurnTokens", () => {
     });
 
     const totalKnownBurns = new BigNumber("0");
-    const nftTokenBurn = plainToInstance(TokenBurn, nft.tokenBurnPlain(ctx.txUnixTime));
+    const nftTokenBurn = await createValidChainObject(TokenBurn, nft.tokenBurnPlain(ctx.txUnixTime));
 
     const nftTokenBurnCounterPlain = nft.tokenBurnCounterPlain(
       ctx.txUnixTime,
@@ -57,7 +57,7 @@ describe("BurnTokens", () => {
       inverseEpoch(ctx, 0),
       totalKnownBurns
     );
-    const nftTokenBurnCounter = plainToInstance(TokenBurnCounter, nftTokenBurnCounterPlain);
+    const nftTokenBurnCounter = await createValidChainObject(TokenBurnCounter, nftTokenBurnCounterPlain);
     nftTokenBurnCounter.referenceId = nftTokenBurnCounter.referencedBurnId();
 
     // When
@@ -67,7 +67,7 @@ describe("BurnTokens", () => {
     expect(response).toEqual(GalaChainResponse.Success([nftTokenBurn]));
     expect(writes).toEqual(
       writesMap(
-        plainToInstance(TokenBalance, { ...tokenBalance, quantity: new BigNumber(0), instanceIds: [] }),
+        await createValidChainObject(TokenBalance, { ...tokenBalance, quantity: new BigNumber(0), instanceIds: [] }),
         nftTokenBurn,
         nftTokenBurnCounter
       )
@@ -122,7 +122,7 @@ describe("BurnTokens", () => {
 
     const tokenBurn = currency.tokenBurn();
     tokenBurn.created = ctx.txUnixTime;
-    const tokenBurnCounter = plainToInstance(
+    const tokenBurnCounter = await createValidChainObject(
       TokenBurnCounter,
       currency.tokenBurnCounterPlain(
         ctx.txUnixTime,
@@ -133,7 +133,7 @@ describe("BurnTokens", () => {
     );
     tokenBurnCounter.referenceId = tokenBurnCounter.referencedBurnId();
 
-    const tokenClaim = plainToInstance(TokenClaim, {
+    const tokenClaim = await createValidChainObject(TokenClaim, {
       ...currencyInstanceKey,
       ownerKey: users.testUser2,
       issuerKey: users.testUser1,
@@ -145,7 +145,7 @@ describe("BurnTokens", () => {
       created: ctx.txUnixTime
     });
 
-    const expectedAllowance = plainToInstance(TokenAllowance, {
+    const expectedAllowance = await createValidChainObject(TokenAllowance, {
       ...tokenBurnAllowance,
       usesSpent: new BigNumber("1"),
       quantitySpent: burnQty,
@@ -161,7 +161,7 @@ describe("BurnTokens", () => {
       writesMap(
         tokenClaim,
         expectedAllowance,
-        plainToInstance(TokenBalance, { ...currency.tokenBalance(), quantity: new BigNumber("999") }),
+        await createValidChainObject(TokenBalance, { ...currency.tokenBalance(), quantity: new BigNumber("999") }),
         tokenBurn,
         tokenBurnCounter
       )
@@ -190,7 +190,7 @@ describe("BurnTokens", () => {
 
     const tokenBurn = currency.tokenBurn();
     tokenBurn.created = ctx.txUnixTime;
-    const tokenBurnCounter = plainToInstance(
+    const tokenBurnCounter = await createValidChainObject(
       TokenBurnCounter,
       currency.tokenBurnCounterPlain(
         ctx.txUnixTime,
@@ -201,7 +201,7 @@ describe("BurnTokens", () => {
     );
     tokenBurnCounter.referenceId = tokenBurnCounter.referencedBurnId();
 
-    const tokenClaim = plainToInstance(TokenClaim, {
+    const tokenClaim = await createValidChainObject(TokenClaim, {
       ...currencyInstanceKey,
       ownerKey: users.testUser2,
       issuerKey: users.testUser1,
@@ -213,7 +213,7 @@ describe("BurnTokens", () => {
       created: ctx.txUnixTime
     });
 
-    const expectedAllowance = plainToInstance(TokenAllowance, {
+    const expectedAllowance = await createValidChainObject(TokenAllowance, {
       ...tokenBurnAllowance,
       usesSpent: new BigNumber("1"),
       quantitySpent: burnQty,
@@ -229,7 +229,7 @@ describe("BurnTokens", () => {
       writesMap(
         tokenClaim,
         expectedAllowance,
-        plainToInstance(TokenBalance, { ...currency.tokenBalance(), quantity: new BigNumber("999") }),
+        await createValidChainObject(TokenBalance, { ...currency.tokenBalance(), quantity: new BigNumber("999") }),
         tokenBurn,
         tokenBurnCounter
       )
@@ -258,7 +258,7 @@ describe("BurnTokens", () => {
 
     const tokenBurn = currency.tokenBurn();
     tokenBurn.created = ctx.txUnixTime;
-    const tokenBurnCounter = plainToInstance(
+    const tokenBurnCounter = await createValidChainObject(
       TokenBurnCounter,
       currency.tokenBurnCounterPlain(
         ctx.txUnixTime,
@@ -269,7 +269,7 @@ describe("BurnTokens", () => {
     );
     tokenBurnCounter.referenceId = tokenBurnCounter.referencedBurnId();
 
-    const tokenClaim = plainToInstance(TokenClaim, {
+    const tokenClaim = await createValidChainObject(TokenClaim, {
       ...currencyInstanceKey,
       ownerKey: users.testUser2,
       issuerKey: users.testUser1,
@@ -281,7 +281,7 @@ describe("BurnTokens", () => {
       created: ctx.txUnixTime
     });
 
-    const expectedAllowance = plainToInstance(TokenAllowance, {
+    const expectedAllowance = await createValidChainObject(TokenAllowance, {
       ...tokenBurnAllowance,
       usesSpent: new BigNumber("1"),
       quantitySpent: burnQty,
@@ -297,7 +297,7 @@ describe("BurnTokens", () => {
       writesMap(
         tokenClaim,
         expectedAllowance,
-        plainToInstance(TokenBalance, { ...currency.tokenBalance(), quantity: new BigNumber("999") }),
+        await createValidChainObject(TokenBalance, { ...currency.tokenBalance(), quantity: new BigNumber("999") }),
         tokenBurn,
         tokenBurnCounter
       )
@@ -325,7 +325,7 @@ describe("BurnTokens", () => {
 
     const tokenBurn = currency.tokenBurn();
     tokenBurn.created = ctx.txUnixTime;
-    const tokenBurnCounter = plainToInstance(
+    const tokenBurnCounter = await createValidChainObject(
       TokenBurnCounter,
       currency.tokenBurnCounterPlain(
         ctx.txUnixTime,

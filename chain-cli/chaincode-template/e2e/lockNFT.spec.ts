@@ -44,7 +44,7 @@ describe("NFT lock scenario", () => {
   let user1: ChainUser;
   let user2: ChainUser;
 
-  const nftClassKey: TokenClassKey = plainToInstance(TokenClassKey, {
+  const nftClassKey: TokenClassKey = await createValidChainObject(TokenClassKey, {
     collection: randomize("NFT").slice(0, 20),
     category: "Weapon",
     type: "Axe",
@@ -196,7 +196,7 @@ describe("lock with allowances", () => {
   let user1: ChainUser;
   let user2: ChainUser;
 
-  const nftClassKey: TokenClassKey = plainToInstance(TokenClassKey, {
+  const nftClassKey: TokenClassKey = await createValidChainObject(TokenClassKey, {
     collection: randomize("NFT").slice(0, 20),
     category: "Weapon",
     type: "Axe",

@@ -12,13 +12,33 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+import { UserProfile } from "@gala-chain/api";
 import { ChainUser } from "@gala-chain/client";
 
+export interface ChainUserWithRoles {
+  identityKey: string;
+  ethAddress: string;
+  publicKey: string;
+  privateKey: string;
+  roles: string[];
+}
+
+function user(string: string, roles: string[]): ChainUserWithRoles {
+  const user = ChainUser.withRandomKeys(string);
+  return {
+    identityKey: user.identityKey,
+    ethAddress: user.ethAddress,
+    publicKey: user.publicKey,
+    privateKey: user.privateKey,
+    roles
+  };
+}
+
 export default {
-  admin: ChainUser.withRandomKeys("client|admin"),
-  testUser1: ChainUser.withRandomKeys("client|testUser1"),
-  testUser2: ChainUser.withRandomKeys("client|testUser2"),
-  testUser3: ChainUser.withRandomKeys("client|testUser3"),
-  tokenHolder: ChainUser.withRandomKeys("client|tokenHolder"),
-  attacker: ChainUser.withRandomKeys("client|maliciousUser")
+  admin: user("client|admin", [...UserProfile.ADMIN_ROLES]),
+  testUser1: user("client|testUser1", [...UserProfile.DEFAULT_ROLES]),
+  testUser2: user("client|testUser2", [...UserProfile.DEFAULT_ROLES]),
+  testUser3: user("client|testUser3", [...UserProfile.DEFAULT_ROLES]),
+  tokenHolder: user("client|tokenHolder", [...UserProfile.DEFAULT_ROLES]),
+  attacker: user("client|maliciousUser", [...UserProfile.ADMIN_ROLES])
 };

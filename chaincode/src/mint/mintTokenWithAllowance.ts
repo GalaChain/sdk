@@ -14,7 +14,7 @@
  */
 import {
   AllowanceKey,
-  AllowanceType,
+  AllowanceType, createValidDTO,
   TokenClassKey,
   TokenInstanceKey,
   TokenInstanceQueryKey
@@ -40,7 +40,7 @@ export async function mintTokenWithAllowance(
   const { tokenClassKey, tokenInstance, quantity, owner } = dto;
 
   const response = await grantAllowance(ctx, {
-    tokenInstance: plainToInstance(TokenInstanceQueryKey, { ...tokenClassKey, instance: tokenInstance }),
+    tokenInstance: await createValidDTO(TokenInstanceQueryKey, { ...tokenClassKey, instance: tokenInstance }),
     allowanceType: AllowanceType.Mint,
     quantities: [{ user: ctx.callingUser, quantity }],
     uses: new BigNumber("1"),
@@ -50,7 +50,7 @@ export async function mintTokenWithAllowance(
   const tokenInstanceArray = await mintToken(ctx, {
     tokenClassKey: tokenClassKey,
     owner: owner,
-    applicableAllowanceKey: plainToInstance(AllowanceKey, response[0]),
+    applicableAllowanceKey: await createValidDTO(AllowanceKey, response[0]),
     quantity,
     authorizedOnBehalf: undefined
   });

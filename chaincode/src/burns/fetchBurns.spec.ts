@@ -24,7 +24,7 @@ describe("FetchBurns", () => {
     const nftInstance = nft.tokenInstance1();
     const nftClass = nft.tokenClass();
     const nftTokenBurn = nft.tokenBurn();
-    const nftTokenBurn2 = plainToInstance(TokenBurn, { ...nftTokenBurn, created: 10000 });
+    const nftTokenBurn2 = await createValidChainObject(TokenBurn, { ...nftTokenBurn, created: 10000 });
 
     const { ctx, contract, writes } = fixture(GalaChainTokenContract)
       .callingUser(users.testUser1)

@@ -47,7 +47,7 @@ IGYQH8J4+PICOoEcHZAuaQYh53DHSONgC1/A45aWNoE/AiAfnoxXiiD2f1MdiKx4
 neOrBgBGMDzq2aBbdX5EeQZbAw==
 -----END CERTIFICATE-----`);
 
-function x509Identity(caUser: string, mspId: string): ClientIdentity {
+export function x509Identity(caUser: string, mspId: string): ClientIdentity {
   const userInCert = caUser.replace("client|", "");
   const id = `x509::/OU=client/CN=${userInCert}::/C=US/ST=California/L=San Francisco/O=curator.local/CN=ca.curator.local`;
 
@@ -132,7 +132,6 @@ export class TestChaincodeStub extends ChaincodeStub {
 
   getState: (key: string) => Promise<Uint8Array> = (key) => {
     const response = this.state[key] ?? "";
-
     return Promise.resolve(Buffer.from(response));
   };
 

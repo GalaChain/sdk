@@ -55,7 +55,7 @@ describe("FulfillMint", () => {
 
     const { collection, category, type, additionalKey } = currencyClassKey;
 
-    const mintRequest = plainToInstance(TokenMintRequest, {
+    const mintRequest = await createValidChainObject(TokenMintRequest, {
       collection,
       category,
       type,
@@ -108,7 +108,7 @@ describe("FulfillMint", () => {
 
     const { collection, category, type, additionalKey } = currencyClass;
 
-    const mintRequest = plainToInstance(TokenMintRequest, {
+    const mintRequest = await createValidChainObject(TokenMintRequest, {
       collection,
       category,
       type,
@@ -127,7 +127,7 @@ describe("FulfillMint", () => {
 
     const mintFulfillment: TokenMintFulfillment = mintRequest.fulfill(mintRequest.quantity);
 
-    const tokenBurnCounter = plainToInstance(TokenBurnCounter, {
+    const tokenBurnCounter = await createValidChainObject(TokenBurnCounter, {
       collection,
       category,
       type,
@@ -143,7 +143,7 @@ describe("FulfillMint", () => {
 
     tokenBurnCounter.referenceId = tokenBurnCounter.referencedBurnId();
 
-    const tokenClaim = plainToInstance(TokenClaim, {
+    const tokenClaim = await createValidChainObject(TokenClaim, {
       ...currencyInstanceKey,
       ownerKey: users.admin,
       issuerKey: users.admin,
@@ -159,9 +159,9 @@ describe("FulfillMint", () => {
       .savedState(currencyClass, currencyInstance, tokenAllowance, tokenClaim)
       .savedRangeState([mintRequest, tokenBurnCounter]);
 
-    const dto = plainToInstance(FulfillMintDto, {
+    const dto = await createValidChainObject(FulfillMintDto, {
       requests: [
-        plainToInstance(MintRequestDto, {
+        await createValidChainObject(MintRequestDto, {
           collection,
           category,
           type,
@@ -174,12 +174,12 @@ describe("FulfillMint", () => {
       ]
     });
 
-    const expectedBalance = plainToInstance(TokenBalance, {
+    const expectedBalance = await createValidChainObject(TokenBalance, {
       ...currency.tokenBalance(),
       quantity: mintQty
     });
 
-    const expectedAllowance = plainToInstance(TokenAllowance, {
+    const expectedAllowance = await createValidChainObject(TokenAllowance, {
       ...tokenAllowance,
       quantitySpent: mintQty,
       usesSpent: new BigNumber("1"),
@@ -208,7 +208,7 @@ describe("FulfillMint", () => {
 
     const { ctx, contract, writes } = testFixture;
 
-    const tokenClaim = plainToInstance(TokenClaim, {
+    const tokenClaim = await createValidChainObject(TokenClaim, {
       ...nftInstanceKey,
       ownerKey: users.admin,
       issuerKey: users.admin,
@@ -220,7 +220,7 @@ describe("FulfillMint", () => {
       created: ctx.txUnixTime
     });
 
-    const expectedAllowance = plainToInstance(TokenAllowance, {
+    const expectedAllowance = await createValidChainObject(TokenAllowance, {
       ...tokenAllowance,
       quantitySpent: mintQty,
       usesSpent: new BigNumber("1"),
@@ -234,7 +234,7 @@ describe("FulfillMint", () => {
       const distantPastTimestamp = ctx.txUnixTime - (lookbackTimeOffset * 5 - i);
       const distantPastTimeKey = inverseTime(ctx, lookbackTimeOffset * 5 - i);
 
-      const mintRequest = plainToInstance(TokenMintRequest, {
+      const mintRequest = await createValidChainObject(TokenMintRequest, {
         collection,
         category,
         type,
@@ -271,7 +271,7 @@ describe("FulfillMint", () => {
       const nearbyTimestamp = ctx.txUnixTime - i * 500;
       const nearbyTimeKey = inverseTime(ctx, i * 500);
 
-      const mintRequest = plainToInstance(TokenMintRequest, {
+      const mintRequest = await createValidChainObject(TokenMintRequest, {
         collection,
         category,
         type,
@@ -291,7 +291,7 @@ describe("FulfillMint", () => {
       return mintRequest;
     });
 
-    const mintRequest = plainToInstance(TokenMintRequest, {
+    const mintRequest = await createValidChainObject(TokenMintRequest, {
       collection,
       category,
       type,
@@ -312,9 +312,9 @@ describe("FulfillMint", () => {
 
     const mintFulfillment: TokenMintFulfillment = mintRequest.fulfill(mintRequest.quantity);
 
-    const dto = plainToInstance(FulfillMintDto, {
+    const dto = await createValidChainObject(FulfillMintDto, {
       requests: [
-        plainToInstance(MintRequestDto, {
+        await createValidChainObject(MintRequestDto, {
           collection,
           category,
           type,
@@ -335,27 +335,27 @@ describe("FulfillMint", () => {
       concurrentMintRequests.length
     );
 
-    const expectedNft1Key = plainToInstance(TokenInstanceKey, {
+    const expectedNft1Key = await createValidChainObject(TokenInstanceKey, {
       ...nftInstanceKey,
       instance: expectedStartingInstance.plus("1")
     });
-    const expectedNft1 = plainToInstance(TokenInstance, {
+    const expectedNft1 = await createValidChainObject(TokenInstance, {
       ...nftInstanceKey,
       instance: expectedStartingInstance.plus("1"),
       isNonFungible: true,
       owner: users.testUser1
     });
-    const expectedNft2Key = plainToInstance(TokenInstanceKey, {
+    const expectedNft2Key = await createValidChainObject(TokenInstanceKey, {
       ...nftInstanceKey,
       instance: expectedStartingInstance.plus("2")
     });
-    const expectedNft2 = plainToInstance(TokenInstance, {
+    const expectedNft2 = await createValidChainObject(TokenInstance, {
       ...nftInstanceKey,
       instance: expectedStartingInstance.plus("2"),
       isNonFungible: true,
       owner: users.testUser1
     });
-    const expectedBalance = plainToInstance(TokenBalance, {
+    const expectedBalance = await createValidChainObject(TokenBalance, {
       ...nft.tokenBalance(),
       quantity: new BigNumber("2"),
       instanceIds: [expectedStartingInstance.plus("1"), expectedStartingInstance.plus("2")]
@@ -389,7 +389,7 @@ describe("FulfillMint", () => {
 
     const { collection, category, type, additionalKey } = currencyClass;
 
-    const mintRequest = plainToInstance(TokenMintRequest, {
+    const mintRequest = await createValidChainObject(TokenMintRequest, {
       collection,
       category,
       type,
@@ -408,9 +408,9 @@ describe("FulfillMint", () => {
 
     testFixture.savedRangeState([mintRequest]);
 
-    const dto = plainToInstance(FulfillMintDto, {
+    const dto = await createValidChainObject(FulfillMintDto, {
       requests: [
-        plainToInstance(MintRequestDto, {
+        await createValidChainObject(MintRequestDto, {
           collection,
           category,
           type,
@@ -449,7 +449,7 @@ describe("FulfillMint", () => {
 
     const { ctx, contract, writes } = testFixture;
 
-    const tokenClaim = plainToInstance(TokenClaim, {
+    const tokenClaim = await createValidChainObject(TokenClaim, {
       ...nftInstanceKey,
       ownerKey: users.admin,
       issuerKey: users.admin,
@@ -464,7 +464,7 @@ describe("FulfillMint", () => {
     const epochKey = inverseEpoch(ctx, 0);
     const timeKey = inverseTime(ctx, 0);
 
-    const mintRequest = plainToInstance(TokenMintRequest, {
+    const mintRequest = await createValidChainObject(TokenMintRequest, {
       collection,
       category,
       type,
@@ -481,7 +481,7 @@ describe("FulfillMint", () => {
 
     mintRequest.id = mintRequest.requestId();
 
-    const tokenBurnCounter = plainToInstance(TokenBurnCounter, {
+    const tokenBurnCounter = await createValidChainObject(TokenBurnCounter, {
       collection,
       category,
       type,
@@ -497,9 +497,9 @@ describe("FulfillMint", () => {
 
     tokenBurnCounter.referenceId = tokenBurnCounter.referencedBurnId();
 
-    const dto = plainToInstance(FulfillMintDto, {
+    const dto = await createValidChainObject(FulfillMintDto, {
       requests: [
-        plainToInstance(MintRequestDto, {
+        await createValidChainObject(MintRequestDto, {
           collection,
           category,
           type,

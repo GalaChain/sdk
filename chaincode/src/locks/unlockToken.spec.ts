@@ -27,7 +27,7 @@ describe("UnlockToken", () => {
     const nftInstanceKey = nft.tokenInstance1Key();
     const nftClass = nft.tokenClass();
 
-    const ownerBalance = plainToInstance(TokenBalance, {
+    const ownerBalance = await createValidChainObject(TokenBalance, {
       ...nft.tokenBalance(),
       lockedHolds: [
         {
@@ -52,7 +52,7 @@ describe("UnlockToken", () => {
     const response = await contract.UnlockToken(ctx, dto);
 
     // Then
-    const balanceNoLockedHolds = plainToInstance(TokenBalance, { ...ownerBalance, lockedHolds: [] });
+    const balanceNoLockedHolds = await createValidChainObject(TokenBalance, { ...ownerBalance, lockedHolds: [] });
     expect(response).toEqual(GalaChainResponse.Success(balanceNoLockedHolds));
     expect(writes).toEqual(writesMap(balanceNoLockedHolds));
   });
@@ -63,7 +63,7 @@ describe("UnlockToken", () => {
     const nftInstanceKey = nft.tokenInstance1Key();
     const nftClass = nft.tokenClass();
 
-    const ownerBalance = plainToInstance(TokenBalance, {
+    const ownerBalance = await createValidChainObject(TokenBalance, {
       ...nft.tokenBalance(),
       lockedHolds: [
         {
@@ -88,7 +88,7 @@ describe("UnlockToken", () => {
     const response = await contract.UnlockToken(ctx, dto);
 
     // Then
-    const balanceNoLockedHolds = plainToInstance(TokenBalance, { ...ownerBalance, lockedHolds: [] });
+    const balanceNoLockedHolds = await createValidChainObject(TokenBalance, { ...ownerBalance, lockedHolds: [] });
     expect(response).toEqual(GalaChainResponse.Success(balanceNoLockedHolds));
     expect(writes).toEqual(writesMap(balanceNoLockedHolds));
   });
@@ -100,7 +100,7 @@ describe("UnlockToken", () => {
     const nftClass = nft.tokenClass();
     const lockedHoldName = "some test locked hold name";
 
-    const ownerBalance = plainToInstance(TokenBalance, {
+    const ownerBalance = await createValidChainObject(TokenBalance, {
       ...nft.tokenBalance(),
       lockedHolds: [
         {
@@ -127,7 +127,7 @@ describe("UnlockToken", () => {
     const response = await contract.UnlockToken(ctx, dto);
 
     // Then
-    const balanceNoLockedHolds = plainToInstance(TokenBalance, { ...ownerBalance, lockedHolds: [] });
+    const balanceNoLockedHolds = await createValidChainObject(TokenBalance, { ...ownerBalance, lockedHolds: [] });
     expect(response).toEqual(GalaChainResponse.Success(balanceNoLockedHolds));
     expect(writes).toEqual(writesMap(balanceNoLockedHolds));
   });
@@ -140,7 +140,7 @@ describe("UnlockToken", () => {
 
     const testLockedHoldName = "some test locked hold name";
 
-    const ownerBalance = plainToInstance(TokenBalance, {
+    const ownerBalance = await createValidChainObject(TokenBalance, {
       ...currency.tokenBalance(),
       lockedHolds: [
         {
@@ -170,7 +170,7 @@ describe("UnlockToken", () => {
     const response = await contract.UnlockToken(ctx, dto);
 
     // Then
-    const balanceNoLockedHolds = plainToInstance(TokenBalance, { ...ownerBalance, lockedHolds: [] });
+    const balanceNoLockedHolds = await createValidChainObject(TokenBalance, { ...ownerBalance, lockedHolds: [] });
     expect(response).toEqual(GalaChainResponse.Success(balanceNoLockedHolds));
     expect(writes).toEqual(writesMap(balanceNoLockedHolds));
   });
@@ -189,7 +189,7 @@ describe("UnlockToken", () => {
     const nftInstance = nft.tokenInstance1();
     const nftInstanceKey = nft.tokenInstance1Key();
     const nftClass = nft.tokenClass();
-    const ownerBalance = plainToInstance(TokenBalance, {
+    const ownerBalance = await createValidChainObject(TokenBalance, {
       ...nft.tokenBalance(),
       lockedHolds: [
         {
@@ -226,7 +226,7 @@ describe("UnlockToken", () => {
     const nftInstanceKey = nft.tokenInstance1Key();
     const nftClass = nft.tokenClass();
 
-    const ownerBalance = plainToInstance(TokenBalance, {
+    const ownerBalance = await createValidChainObject(TokenBalance, {
       ...nft.tokenBalance(),
       lockedHolds: [
         {
@@ -250,8 +250,8 @@ describe("UnlockToken", () => {
     const response = await contract.UnlockToken(ctx, dto);
 
     expect(response).toEqual(
-      GalaChainResponse.Success(plainToInstance(TokenBalance, { ...ownerBalance, lockedHolds: [] }))
+      GalaChainResponse.Success(await createValidChainObject(TokenBalance, { ...ownerBalance, lockedHolds: [] }))
     );
-    expect(writes).toEqual(writesMap(plainToInstance(TokenBalance, { ...ownerBalance, lockedHolds: [] })));
+    expect(writes).toEqual(writesMap(await createValidChainObject(TokenBalance, { ...ownerBalance, lockedHolds: [] })));
   });
 });

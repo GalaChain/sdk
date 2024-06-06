@@ -21,14 +21,14 @@ import {
   TokenLockedError,
   TokenNotInBalanceError,
   TransferTokenDto,
+  createValidChainObject,
   createValidDTO
 } from "@gala-chain/api";
 import { currency, fixture, nft, users } from "@gala-chain/test";
 import BigNumber from "bignumber.js";
-import { plainToInstance } from "class-transformer";
 
 import GalaChainTokenContract from "../__test__/GalaChainTokenContract";
-import { AllowanceUsersMismatchError, InsufficientAllowanceError } from "../allowances/AllowanceError";
+import { AllowanceUsersMismatchError, InsufficientAllowanceError } from "../allowances";
 import { InvalidDecimalError } from "../token";
 import { SameSenderAndRecipientError } from "./TransferError";
 
@@ -49,11 +49,9 @@ describe("TransferToken", () => {
     const tokenBalance = nft.tokenBalance();
     tokenBalance.ensureCanLockInstance(expectedHold, Date.now()).lock();
 
-    const { ctx, contract, writes } = fixture(GalaChainTokenContract).savedState(
-      nftClass,
-      nftInstance,
-      tokenBalance
-    );
+    const { ctx, contract, writes } = fixture(GalaChainTokenContract)
+      .registeredUsers(users.testUser1, users.testUser2)
+      .savedState(nftClass, nftInstance, tokenBalance);
 
     const dto = await createValidDTO(TransferTokenDto, {
       from: users.testUser1.identityKey,
@@ -93,11 +91,9 @@ describe("TransferToken", () => {
     tokenBalance.ensureCanLockInstance(expectedHold, Date.now()).lock();
     expect(tokenBalance.owner).toEqual(expectedHold.createdBy);
 
-    const { ctx, contract, writes } = fixture(GalaChainTokenContract).savedState(
-      nftClass,
-      nftInstance,
-      tokenBalance
-    );
+    const { ctx, contract, writes } = fixture(GalaChainTokenContract)
+      .registeredUsers(users.testUser1, users.testUser2)
+      .savedState(nftClass, nftInstance, tokenBalance);
 
     // case 1: callingUser is the sender
     const dto1 = await createValidDTO(TransferTokenDto, {
@@ -147,21 +143,23 @@ describe("TransferToken", () => {
     const nftClass = nft.tokenClass();
     const tokenBalance = nft.tokenBalance();
 
-    const transferAllowance = plainToInstance(TokenAllowance, {
-      grantedTo: users.testUser2,
+    const transferAllowance = await createValidChainObject(TokenAllowance, {
+      grantedTo: users.testUser2.identityKey,
       ...nftInstanceKey,
       instance: nftInstanceKey.instance,
       allowanceType: AllowanceType.Transfer,
-      grantedBy: users.testUser1,
-      created: 1
+      grantedBy: users.testUser1.identityKey,
+      created: 1,
+      uses: new BigNumber("1"),
+      usesSpent: new BigNumber("0"),
+      expires: 0,
+      quantity: new BigNumber("1"),
+      quantitySpent: new BigNumber("0")
     });
 
-    const { ctx, contract, writes } = fixture(GalaChainTokenContract).savedState(
-      nftClass,
-      nftInstance,
-      tokenBalance,
-      transferAllowance
-    );
+    const { ctx, contract, writes } = fixture(GalaChainTokenContract)
+      .registeredUsers(users.testUser1, users.attacker)
+      .savedState(nftClass, nftInstance, tokenBalance, transferAllowance);
 
     const dto: TransferTokenDto = await createValidDTO(TransferTokenDto, {
       from: users.testUser1.identityKey,
@@ -199,11 +197,9 @@ describe("TransferToken", () => {
 
     const tokenBalance = nft.tokenBalance();
 
-    const { ctx, contract, writes } = fixture(GalaChainTokenContract).savedState(
-      nftClass,
-      nftInstance,
-      tokenBalance
-    );
+    const { ctx, contract, writes } = fixture(GalaChainTokenContract)
+      .registeredUsers(users.testUser2)
+      .savedState(nftClass, nftInstance, tokenBalance);
 
     const dto: TransferTokenDto = await createValidDTO(TransferTokenDto, {
       from: users.testUser1.identityKey,
@@ -241,11 +237,9 @@ describe("TransferToken", () => {
     const nftClass = nft.tokenClass();
     const tokenBalance = nft.tokenBalance();
 
-    const { ctx, contract, writes } = fixture(GalaChainTokenContract).savedState(
-      nftClass,
-      nftInstance,
-      tokenBalance
-    );
+    const { ctx, contract, writes } = fixture(GalaChainTokenContract)
+      .registeredUsers(users.testUser1, users.testUser2)
+      .savedState(nftClass, nftInstance, tokenBalance);
 
     const dto: TransferTokenDto = await createValidDTO(TransferTokenDto, {
       from: users.testUser1.identityKey,
@@ -281,7 +275,7 @@ describe("TransferToken", () => {
     const nftClass = nft.tokenClass();
     const tokenBalance = nft.tokenBalance();
     tokenBalance.ensureCanRemoveInstance(nftInstance.instance, 1).remove();
-    const transferAllowance = plainToInstance(TokenAllowance, {
+    const transferAllowance = await createValidChainObject(TokenAllowance, {
       grantedTo: users.testUser2.identityKey,
       grantedBy: users.testUser1.identityKey,
       ...nftInstanceKey,
@@ -295,12 +289,9 @@ describe("TransferToken", () => {
       quantitySpent: new BigNumber("0")
     });
 
-    const { ctx, contract, writes } = fixture(GalaChainTokenContract).savedState(
-      nftClass,
-      nftInstance,
-      tokenBalance,
-      transferAllowance
-    );
+    const { ctx, contract, writes } = fixture(GalaChainTokenContract)
+      .registeredUsers(users.testUser1, users.testUser2)
+      .savedState(nftClass, nftInstance, tokenBalance, transferAllowance);
 
     const dto: TransferTokenDto = await createValidDTO(TransferTokenDto, {
       from: users.testUser1.identityKey,
@@ -334,9 +325,9 @@ describe("TransferToken", () => {
     const currencyClass = currency.tokenClass();
     const tokenBalance = currency.tokenBalance((b) => ({ ...b, owner: users.testUser2.identityKey }));
 
-    const transferAllowance = plainToInstance(TokenAllowance, {
+    const transferAllowance = await createValidChainObject(TokenAllowance, {
       grantedTo: "system-user",
-      grantedBy: users.tokenHolder,
+      grantedBy: users.tokenHolder.identityKey,
       ...currencyInstanceKey,
       instance: currencyInstance.instance,
       allowanceType: AllowanceType.Transfer,
@@ -348,19 +339,13 @@ describe("TransferToken", () => {
       quantitySpent: new BigNumber("0")
     });
     const transferAllowanceId = transferAllowance.getCompositeKey();
-    const ownerBalance = plainToInstance(TokenBalance, {
-      owner: users.tokenHolder,
-      ...currencyInstanceKey,
-      quantity: new BigNumber("100000")
-    });
 
-    const { ctx, contract, writes } = fixture(GalaChainTokenContract).savedState(
-      currencyClass,
-      currencyInstance,
-      tokenBalance,
-      transferAllowance,
-      ownerBalance
-    );
+    const ownerBalance = new TokenBalance({ owner: users.tokenHolder.identityKey, ...currencyInstanceKey });
+    ownerBalance.ensureCanAddQuantity(new BigNumber("50000")).add();
+
+    const { ctx, contract, writes } = fixture(GalaChainTokenContract)
+      .registeredUsers(users.tokenHolder, users.attacker)
+      .savedState(currencyClass, currencyInstance, tokenBalance, transferAllowance, ownerBalance);
 
     const dto: TransferTokenDto = await createValidDTO(TransferTokenDto, {
       from: users.tokenHolder.identityKey,
@@ -393,7 +378,7 @@ describe("TransferToken", () => {
 
     const tokenBalance = currency.tokenBalance((b) => ({ ...b, owner: users.testUser2.identityKey }));
 
-    const transferAllowance = plainToInstance(TokenAllowance, {
+    const transferAllowance = await createValidChainObject(TokenAllowance, {
       grantedTo: "system-user",
       grantedBy: users.tokenHolder.identityKey,
       ...currencyInstanceKey,
@@ -406,19 +391,13 @@ describe("TransferToken", () => {
       quantity: new BigNumber("50000"),
       quantitySpent: new BigNumber("0")
     });
-    const ownerBalance = plainToInstance(TokenBalance, {
-      owner: users.tokenHolder.identityKey,
-      ...currencyInstanceKey,
-      quantity: new BigNumber("100000")
-    });
 
-    const { ctx, contract, writes } = fixture(GalaChainTokenContract).savedState(
-      currencyClass,
-      currencyInstance,
-      tokenBalance,
-      transferAllowance,
-      ownerBalance
-    );
+    const ownerBalance = new TokenBalance({ owner: users.tokenHolder.identityKey, ...currencyInstanceKey });
+    ownerBalance.ensureCanAddQuantity(new BigNumber("100000")).add();
+
+    const { ctx, contract, writes } = fixture(GalaChainTokenContract)
+      .registeredUsers(users.tokenHolder)
+      .savedState(currencyClass, currencyInstance, tokenBalance, transferAllowance, ownerBalance);
 
     const decimalQuantity = new BigNumber("0.000000000001");
     const transferDto: TransferTokenDto = await createValidDTO(TransferTokenDto, {

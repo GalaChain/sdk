@@ -37,12 +37,12 @@ import { grantAllowance } from "./grantAllowance";
 
 describe("GrantAllowance", () => {
   it("should GrantAllowance", async () => {
-    const nftInstance = plainToInstance(TokenInstance, { ...nft.tokenInstance1(), owner: users.testUser2 });
+    const nftInstance = await createValidChainObject(TokenInstance, { ...nft.tokenInstance1(), owner: users.testUser2 });
     const nftClass = nft.tokenClass();
     const nftClassKey = nft.tokenClassKey();
     const nftInstanceQueryKey = await createValidDTO(TokenInstanceQueryKey, nft.tokenInstance1KeyPlain());
 
-    const nftBalance = plainToInstance(TokenBalance, {
+    const nftBalance = await createValidChainObject(TokenBalance, {
       owner: users.testUser2,
       ...nftClassKey,
       instanceIds: [new BigNumber("1")],
@@ -79,7 +79,7 @@ describe("GrantAllowance", () => {
       currency.tokenInstanceKeyPlain()
     );
 
-    const currencyBalance = plainToInstance(TokenBalance, {
+    const currencyBalance = await createValidChainObject(TokenBalance, {
       owner: users.testUser2,
       ...currencyClassKey,
       instanceIds: [],
@@ -120,7 +120,7 @@ describe("GrantAllowance", () => {
       currency.tokenInstanceKeyPlain()
     );
 
-    const currencyBalance = plainToInstance(TokenBalance, {
+    const currencyBalance = await createValidChainObject(TokenBalance, {
       owner: users.testUser2,
       ...currencyClassKey,
       instanceIds: [],
@@ -167,7 +167,7 @@ describe("GrantAllowance", () => {
       currency.tokenInstanceKeyPlain()
     );
 
-    const currencyBalance = plainToInstance(TokenBalance, {
+    const currencyBalance = await createValidChainObject(TokenBalance, {
       owner: users.testUser2,
       ...currencyClassKey,
       instanceIds: [],
@@ -211,7 +211,7 @@ describe("GrantAllowance", () => {
       currency.tokenInstanceKeyPlain()
     );
 
-    const currencyBalance = plainToInstance(TokenBalance, {
+    const currencyBalance = await createValidChainObject(TokenBalance, {
       owner: users.testUser2,
       ...currencyClassKey,
       instanceIds: [],
@@ -256,15 +256,15 @@ describe("GrantAllowance", () => {
 
     const nftClass = nft.tokenClass();
     const nftClassKey = nft.tokenClassKey();
-    const nftInstance = plainToInstance(TokenInstance, { ...nft.tokenInstance1(), owner: users.testUser2 });
+    const nftInstance = await createValidChainObject(TokenInstance, { ...nft.tokenInstance1(), owner: users.testUser2 });
 
-    const currencyBalance = plainToInstance(TokenBalance, {
+    const currencyBalance = await createValidChainObject(TokenBalance, {
       owner: users.testUser2,
       ...currencyClassKey,
       instanceIds: [],
       quantity: new BigNumber("1000")
     });
-    const nftBalance = plainToInstance(TokenBalance, {
+    const nftBalance = await createValidChainObject(TokenBalance, {
       owner: users.testUser2,
       ...nftClassKey,
       instanceIds: [new BigNumber("1")],
@@ -283,7 +283,7 @@ describe("GrantAllowance", () => {
     });
 
     const partialDto = instanceToInstance(dto);
-    partialDto.tokenInstance = plainToInstance(TokenInstanceQueryKey, {
+    partialDto.tokenInstance = await createValidChainObject(TokenInstanceQueryKey, {
       collection: "TEST"
     });
 
@@ -298,7 +298,7 @@ describe("GrantAllowance", () => {
 
   it("only permits tokenClass.authorities to Mint", async () => {
     // Given
-    const nftInstance = plainToInstance(TokenInstance, { ...nft.tokenInstance1(), owner: users.testUser2 });
+    const nftInstance = await createValidChainObject(TokenInstance, { ...nft.tokenInstance1(), owner: users.testUser2 });
     const nftClass = nft.tokenClass();
     const nftInstanceQueryKey = await createValidDTO(TokenInstanceQueryKey, nft.tokenInstance1KeyPlain());
 
@@ -326,19 +326,19 @@ describe("GrantAllowance", () => {
 
   it("prevents issuing duplicate Lock allowances", async () => {
     // Given
-    const nftInstance = plainToInstance(TokenInstance, { ...nft.tokenInstance1(), owner: users.testUser2 });
+    const nftInstance = await createValidChainObject(TokenInstance, { ...nft.tokenInstance1(), owner: users.testUser2 });
     const nftClass = nft.tokenClass();
     const nftClassKey = nft.tokenClassKey();
     const nftInstanceQueryKey = await createValidDTO(TokenInstanceQueryKey, nft.tokenInstance1KeyPlain());
 
-    const nftBalance = plainToInstance(TokenBalance, {
+    const nftBalance = await createValidChainObject(TokenBalance, {
       owner: users.testUser2,
       ...nftClassKey,
       instanceIds: [new BigNumber("1")],
       quantity: new BigNumber("1")
     });
 
-    const existingAllowance = plainToInstance(TokenAllowance, {
+    const existingAllowance = await createValidChainObject(TokenAllowance, {
       grantedTo: users.testUser1,
       ...nft.tokenInstance1KeyPlain(),
       allowanceType: AllowanceType.Lock,
@@ -379,7 +379,7 @@ describe("GrantAllowance", () => {
 
   it("writes TokenMintAllowanceRequest chain objects for mint allowances", async () => {
     // Given
-    const nftInstance = plainToInstance(TokenInstance, { ...nft.tokenInstance1(), owner: users.testUser2 });
+    const nftInstance = await createValidChainObject(TokenInstance, { ...nft.tokenInstance1(), owner: users.testUser2 });
     const nftClass = nft.tokenClass();
     const { collection, category, type, additionalKey } = nft.tokenInstance1KeyPlain();
     const instance = TokenInstance.FUNGIBLE_TOKEN_INSTANCE;
@@ -418,7 +418,7 @@ describe("GrantAllowance", () => {
     }));
     const { grantedTo, grantedBy } = allowance;
     const totalKnownMintAllowancesCount = new BigNumber("0");
-    const mintAllowance = plainToInstance(TokenMintAllowance, {
+    const mintAllowance = await createValidChainObject(TokenMintAllowance, {
       collection,
       category,
       type,
@@ -429,7 +429,7 @@ describe("GrantAllowance", () => {
       totalKnownMintAllowancesAtRequest: new BigNumber("0"),
       quantity: requestedQuantity
     });
-    const mintAllowanceRequest = plainToInstance(TokenMintAllowanceRequest, {
+    const mintAllowanceRequest = await createValidChainObject(TokenMintAllowanceRequest, {
       collection,
       category,
       type,

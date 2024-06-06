@@ -56,7 +56,7 @@ describe("MintToken", () => {
       quantity: mintQty
     });
 
-    const tokenClaim = plainToInstance(TokenClaim, {
+    const tokenClaim = await createValidChainObject(TokenClaim, {
       ...currencyInstanceKey,
       ownerKey: users.admin,
       issuerKey: users.admin,
@@ -72,7 +72,7 @@ describe("MintToken", () => {
     const timeKey = inverseTime(ctx, 0);
     const epochKey = inverseEpoch(ctx, 0);
 
-    const mintRequest = plainToInstance(TokenMintRequest, {
+    const mintRequest = await createValidChainObject(TokenMintRequest, {
       collection,
       category,
       type,
@@ -91,11 +91,11 @@ describe("MintToken", () => {
 
     const mintFulfillment: TokenMintFulfillment = mintRequest.fulfill(mintRequest.quantity);
 
-    const expectedClass = plainToInstance(TokenClass, { ...currencyClass, totalSupply: mintQty });
+    const expectedClass = await createValidChainObject(TokenClass, { ...currencyClass, totalSupply: mintQty });
 
-    const expectedBalance = plainToInstance(TokenBalance, { ...currency.tokenBalance(), quantity: mintQty });
+    const expectedBalance = await createValidChainObject(TokenBalance, { ...currency.tokenBalance(), quantity: mintQty });
 
-    const expectedAllowance = plainToInstance(TokenAllowance, {
+    const expectedAllowance = await createValidChainObject(TokenAllowance, {
       ...tokenAllowance,
       quantitySpent: mintQty,
       usesSpent: new BigNumber("1"),
@@ -131,42 +131,42 @@ describe("MintToken", () => {
       owner: users.testUser1,
       quantity: mintQty
     });
-    const nft1Key = plainToInstance(TokenInstanceKey, {
+    const nft1Key = await createValidChainObject(TokenInstanceKey, {
       ...nftInstanceKey,
       instance: new BigNumber("1")
     });
-    const nft1 = plainToInstance(TokenInstance, {
+    const nft1 = await createValidChainObject(TokenInstance, {
       ...nftInstanceKey,
       instance: new BigNumber("1"),
       isNonFungible: true,
       owner: users.testUser1
     });
-    const nft2Key = plainToInstance(TokenInstanceKey, {
+    const nft2Key = await createValidChainObject(TokenInstanceKey, {
       ...nftInstanceKey,
       instance: new BigNumber("2")
     });
-    const nft2 = plainToInstance(TokenInstance, {
+    const nft2 = await createValidChainObject(TokenInstance, {
       ...nftInstanceKey,
       instance: new BigNumber("2"),
       isNonFungible: true,
       owner: users.testUser1
     });
-    const expectedBalance = plainToInstance(TokenBalance, {
+    const expectedBalance = await createValidChainObject(TokenBalance, {
       ...nft.tokenBalance(),
       quantity: new BigNumber("2"),
       instanceIds: [new BigNumber("1"), new BigNumber("2")]
     });
 
-    const expectedAllowance = plainToInstance(TokenAllowance, {
+    const expectedAllowance = await createValidChainObject(TokenAllowance, {
       ...tokenAllowance,
       usesSpent: new BigNumber("1"),
       quantitySpent: mintQty,
       expires: ctx.txUnixTime
     });
 
-    const expectedClass = plainToInstance(TokenClass, { ...nftClass, totalSupply: new BigNumber("2") });
+    const expectedClass = await createValidChainObject(TokenClass, { ...nftClass, totalSupply: new BigNumber("2") });
 
-    const tokenClaim = plainToInstance(TokenClaim, {
+    const tokenClaim = await createValidChainObject(TokenClaim, {
       ...nftInstanceKey,
       ownerKey: users.admin,
       issuerKey: users.admin,
@@ -182,7 +182,7 @@ describe("MintToken", () => {
     const timeKey = inverseTime(ctx, 0);
     const epochKey = inverseEpoch(ctx, 0);
 
-    const mintRequest = plainToInstance(TokenMintRequest, {
+    const mintRequest = await createValidChainObject(TokenMintRequest, {
       collection,
       category,
       type,
@@ -292,7 +292,7 @@ describe("MintToken", () => {
     const nftClass = nft.tokenClass();
     const mintQty = new BigNumber("2");
     const tokenAllowance = nft.tokenMintAllowance();
-    const allowanceKey = plainToInstance(AllowanceKey, {
+    const allowanceKey = await createValidChainObject(AllowanceKey, {
       grantedTo: tokenAllowance.grantedTo,
       collection: tokenAllowance.collection,
       category: tokenAllowance.category,
@@ -315,42 +315,42 @@ describe("MintToken", () => {
       quantity: mintQty,
       allowanceKey: allowanceKey
     });
-    const nft1Key = plainToInstance(TokenInstanceKey, {
+    const nft1Key = await createValidChainObject(TokenInstanceKey, {
       ...nftInstanceKey,
       instance: new BigNumber("1")
     });
-    const nft1 = plainToInstance(TokenInstance, {
+    const nft1 = await createValidChainObject(TokenInstance, {
       ...nftInstanceKey,
       instance: new BigNumber("1"),
       isNonFungible: true,
       owner: users.testUser1
     });
-    const nft2Key = plainToInstance(TokenInstanceKey, {
+    const nft2Key = await createValidChainObject(TokenInstanceKey, {
       ...nftInstanceKey,
       instance: new BigNumber("2")
     });
-    const nft2 = plainToInstance(TokenInstance, {
+    const nft2 = await createValidChainObject(TokenInstance, {
       ...nftInstanceKey,
       instance: new BigNumber("2"),
       isNonFungible: true,
       owner: users.testUser1
     });
-    const expectedBalance = plainToInstance(TokenBalance, {
+    const expectedBalance = await createValidChainObject(TokenBalance, {
       ...nft.tokenBalance(),
       quantity: new BigNumber("2"),
       instanceIds: [new BigNumber("1"), new BigNumber("2")]
     });
 
-    const expectedAllowance = plainToInstance(TokenAllowance, {
+    const expectedAllowance = await createValidChainObject(TokenAllowance, {
       ...tokenAllowance,
       usesSpent: new BigNumber("1"),
       quantitySpent: mintQty,
       expires: ctx.txUnixTime
     });
 
-    const expectedClass = plainToInstance(TokenClass, { ...nftClass, totalSupply: new BigNumber("2") });
+    const expectedClass = await createValidChainObject(TokenClass, { ...nftClass, totalSupply: new BigNumber("2") });
 
-    const tokenClaim = plainToInstance(TokenClaim, {
+    const tokenClaim = await createValidChainObject(TokenClaim, {
       ...nftInstanceKey,
       ownerKey: users.admin,
       issuerKey: users.admin,
@@ -366,7 +366,7 @@ describe("MintToken", () => {
     const timeKey = inverseTime(ctx, 0);
     const epochKey = inverseEpoch(ctx, 0);
 
-    const mintRequest = plainToInstance(TokenMintRequest, {
+    const mintRequest = await createValidChainObject(TokenMintRequest, {
       collection,
       category,
       type,

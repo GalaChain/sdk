@@ -13,6 +13,7 @@
  * limitations under the License.
  */
 import {
+  createValidDTO,
   FetchTokenClassesResponse,
   FetchTokenClassesWithPaginationDto,
   TokenClass,
@@ -66,7 +67,7 @@ export async function fetchTokenClassesWithPagination(
     dto.limit ?? FetchTokenClassesWithPaginationDto.DEFAULT_LIMIT
   );
 
-  const response = plainToInstance(FetchTokenClassesResponse, {
+  const response = await createValidDTO(FetchTokenClassesResponse, {
     results: getObjectsResponse.results,
     nextPageBookmark: getObjectsResponse.metadata.bookmark
   });

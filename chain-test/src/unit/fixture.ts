@@ -19,7 +19,8 @@ import {
   PublicKey,
   RangedChainObject,
   UserProfile,
-  UserRole
+  UserRole,
+  signatures
 } from "@gala-chain/api";
 import { ChainUser } from "@gala-chain/client";
 import { plainToInstance } from "class-transformer";
@@ -28,8 +29,9 @@ import { Context, Contract } from "fabric-contract-api";
 import { ChaincodeStub } from "fabric-shim";
 import Logger from "fabric-shim/lib/logger";
 
+import { ChainUserWithRoles } from "../data/users";
 import { CachedKV, FabricIterable } from "./FabricIterable";
-import { TestChaincodeStub } from "./TestChaincodeStub";
+import { TestChaincodeStub, x509Identity } from "./TestChaincodeStub";
 
 interface GalaLoggerInstance {
   getLogger(name?: string): Logger;
@@ -69,20 +71,13 @@ type TestGalaChainContext = Context & {
   get callingUserRoles(): string[];
   get txUnixTime(): number;
   setChaincodeStub(stub: ChaincodeStub): void;
+  resetCallingUserData(): void;
 };
 
 type GalaContract<Ctx extends TestGalaChainContext> = Contract & {
   beforeTransaction(ctx: Ctx): Promise<void>;
   createContext(): Ctx;
 };
-
-interface ChainUserWithRoles {
-  identityKey: string;
-  ethAddress: string;
-  publicKey: string;
-  privateKey: string;
-  roles: string[];
-}
 
 class Fixture<Ctx extends TestGalaChainContext, T extends GalaContract<Ctx>> {
   private readonly stub: TestChaincodeStub;
@@ -106,6 +101,7 @@ class Fixture<Ctx extends TestGalaChainContext, T extends GalaContract<Ctx>> {
               ? await method.call(contractInstance, ctx, dto)
               : await method.call(contractInstance, ctx);
             await contractInstance.afterTransaction(ctx, result);
+            ctx.resetCallingUserData();
             return result;
           };
         }
@@ -124,7 +120,22 @@ class Fixture<Ctx extends TestGalaChainContext, T extends GalaContract<Ctx>> {
         return Logger.getLogger(name ? `${contractClass?.name}:${name}` : contractClass?.name);
       }
     };
+    ctxInstance.clientIdentity = x509Identity("test", "test");
     this.ctx = ctxInstance;
+  }
+
+  registeredUsers(...users: ChainUserWithRoles[]): Fixture<Ctx, T> {
+    const publicKeys = users.map((u) => ({
+      key: `\u0000GCPK\u0000${u.identityKey}\u0000`,
+      value: JSON.stringify({ publicKey: signatures.normalizePublicKey(u.publicKey).toString("base64") })
+    }));
+
+    const userProfiles = users.map((u) => ({
+      key: `\u0000GCUP\u0000${u.ethAddress}\u0000`,
+      value: JSON.stringify({ alias: u.identityKey, ethAddress: u.ethAddress, roles: u.roles })
+    }));
+
+    return this.savedKVState(...publicKeys, ...userProfiles);
   }
 
   savedState(...objs: ChainObject[]): Fixture<Ctx, T> {

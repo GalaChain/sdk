@@ -45,7 +45,6 @@ export class UserProfile extends ChainObject {
       .join(", ")}, but you can use arbitrary string to define your own roles.`
   })
   @IsString({ each: true })
-  @ArrayMinSize(1)
   roles: string[];
 }
 

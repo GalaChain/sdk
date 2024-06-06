@@ -26,7 +26,7 @@ const getInstanceOrErrorInfo = async <T extends ChainCallDTO>(
   jsonString: string
 ): Promise<T | ValidationErrorInfo> => {
   try {
-    const deserialized = plainToInstance(constructor, JSON.parse(jsonString)); // note: throws exception here if JSON is invalid
+    const deserialized = await createValidChainObject(constructor, JSON.parse(jsonString)); // note: throws exception here if JSON is invalid
     const validationErrors = await deserialized.validate();
     if (validationErrors.length) {
       return getValidationErrorInfo(validationErrors);

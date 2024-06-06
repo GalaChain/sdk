@@ -63,7 +63,7 @@ describe("MintToken", () => {
       quantity: mintQty
     });
 
-    const mintRequest = plainToInstance(TokenMintRequest, {
+    const mintRequest = await createValidChainObject(TokenMintRequest, {
       collection,
       category,
       type,
@@ -80,9 +80,9 @@ describe("MintToken", () => {
 
     mintRequest.id = mintRequest.requestId();
 
-    const fulfillmentDto = plainToInstance(FulfillMintDto, {
+    const fulfillmentDto = await createValidChainObject(FulfillMintDto, {
       requests: [
-        plainToInstance(MintRequestDto, {
+        await createValidChainObject(MintRequestDto, {
           collection,
           category,
           type,
@@ -126,7 +126,7 @@ describe("MintToken", () => {
       quantity: mintQty
     });
 
-    const mintRequest = plainToInstance(TokenMintRequest, {
+    const mintRequest = await createValidChainObject(TokenMintRequest, {
       collection,
       category,
       type,
@@ -143,9 +143,9 @@ describe("MintToken", () => {
 
     mintRequest.id = mintRequest.requestId();
 
-    const fulfillmentDto = plainToInstance(FulfillMintDto, {
+    const fulfillmentDto = await createValidChainObject(FulfillMintDto, {
       requests: [
-        plainToInstance(MintRequestDto, {
+        await createValidChainObject(MintRequestDto, {
           collection,
           category,
           type,

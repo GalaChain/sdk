@@ -54,7 +54,7 @@ describe("FullAllowanceCheck", () => {
         await createValidDTO(FullAllowanceCheckResDto, {
           all: false,
           missing: [
-            plainToInstance(TokenInstanceKey, {
+            await createValidChainObject(TokenInstanceKey, {
               additionalKey: "Elixir",
               category: "Item",
               collection: "TEST",

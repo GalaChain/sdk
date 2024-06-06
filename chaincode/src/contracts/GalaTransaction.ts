@@ -131,11 +131,9 @@ function GalaTransaction<T extends ChainCallDTO>(
     throw new NotImplementedError(message);
   }
 
-  console.log("GalaTransaction options", options);
   const allowedRoles = options.allowedRoles ?? [
     options.type === SUBMIT ? UserRole.SUBMIT : UserRole.EVALUATE
   ];
-  console.log("GalaTransaction allowedRoles", allowedRoles);
 
   // TODO register user
   // TODO public access

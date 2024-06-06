@@ -146,6 +146,7 @@ async function getSavedPKOrReject(ctx: GalaChainContext, userId: string): Promis
   const publicKey = await PublicKeyService.getPublicKey(ctx, userId);
 
   if (publicKey === undefined) {
+    console.error(`User ${userId} is not registered.`);
     throw new UserNotRegisteredError(userId);
   }
 

@@ -17,7 +17,7 @@ import { plainToClass as plainToInstance } from "class-transformer";
 
 import { TokenClass } from "./TokenClass";
 
-const existingToken = plainToInstance(TokenClass, {
+const existingToken = await createValidChainObject(TokenClass, {
   network: "GC",
   decimals: 32,
   maxCapacity: new BigNumber("50000000000"),

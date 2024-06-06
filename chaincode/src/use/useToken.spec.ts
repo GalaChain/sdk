@@ -38,7 +38,7 @@ describe("UseToken", () => {
       quantity: new BigNumber("1")
     };
 
-    const expectedBalance = plainToInstance(TokenBalance, nftTokenBalancePlain);
+    const expectedBalance = await createValidChainObject(TokenBalance, nftTokenBalancePlain);
 
     const { ctx, contract, writes } = fixture(GalaChainTokenContract)
       .callingUser(users.testUser1)
@@ -63,7 +63,7 @@ describe("UseToken", () => {
     const response = await contract.UseToken(ctx, dto);
 
     // Then
-    const balanceWithHold = plainToInstance(TokenBalance, { ...expectedBalance, inUseHolds: [expectedHold] });
+    const balanceWithHold = await createValidChainObject(TokenBalance, { ...expectedBalance, inUseHolds: [expectedHold] });
     expect(response).toEqual(GalaChainResponse.Success(balanceWithHold));
     expect(writes).toEqual(writesMap(balanceWithHold));
   });

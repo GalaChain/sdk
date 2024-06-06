@@ -31,11 +31,11 @@ export class PublicKeyService {
   private static PK_INDEX_KEY = PK_INDEX_KEY;
   private static UP_INDEX_KEY = UP_INDEX_KEY;
 
-  private static getPublicKeyKey(ctx: Context, userId: string): string {
+  public static getPublicKeyKey(ctx: Context, userId: string): string {
     return ctx.stub.createCompositeKey(PublicKeyService.PK_INDEX_KEY, [userId]);
   }
 
-  private static getUserProfileKey(ctx: Context, ethAddress: string): string {
+  public static getUserProfileKey(ctx: Context, ethAddress: string): string {
     return ctx.stub.createCompositeKey(PublicKeyService.UP_INDEX_KEY, [ethAddress]);
   }
 
