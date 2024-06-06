@@ -115,7 +115,11 @@ export async function getObjectsByPartialCompositeKeyWithPagination<T extends Ch
     results.push(ChainObject.deserialize(constructor, stringResult));
   }
 
-  const metadata = (await response).metadata;
+  // Typically, Fabric returns undefined here if there are no results
+  const metadata: QueryResponseMetadata = (await response).metadata ?? {
+    bookmark: "",
+    fetchedRecordsCount: results.length
+  };
 
   return { results, metadata };
 }

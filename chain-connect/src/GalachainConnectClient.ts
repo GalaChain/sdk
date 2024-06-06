@@ -12,7 +12,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-import { serialize, signatures } from "@gala-chain/api";
+import { ChainCallDTO, serialize, signatures } from "@gala-chain/api";
 import { BrowserProvider, Eip1193Provider } from "ethers";
 
 declare global {
@@ -25,7 +25,7 @@ export class GalachainConnectClient {
   private address: string;
   private provider: BrowserProvider | undefined;
 
-  async connectToMetaMask() {
+  public async connectToMetaMask() {
     if (!window.ethereum) {
       throw new Error("Ethereum provider not found");
     }
@@ -41,7 +41,7 @@ export class GalachainConnectClient {
     }
   }
 
-  async sendTransaction(chaincodeUrl: string, method: string, payload: object): Promise<object> {
+  public async sendTransaction(chaincodeUrl: string, method: string, payload: object): Promise<object> {
     if (!this.provider) {
       throw new Error("Ethereum provider not found");
     }
@@ -57,17 +57,21 @@ export class GalachainConnectClient {
       const signer = await this.provider.getSigner();
       const signature = await signer.provider.send("personal_sign", [this.address, dto]);
 
-      return await this.submit({ ...prefixedPayload, signature }, chaincodeUrl, method);
+      return await this.submit(chaincodeUrl, method, { ...prefixedPayload, signature });
     } catch (error: unknown) {
       throw new Error((error as Error).message);
     }
   }
 
-  private async submit(
-    signedPayload: Record<string, unknown>,
+  public async submit(
     chaincodeUrl: string,
-    method: string
+    method: string,
+    signedPayload: Record<string, unknown>
   ): Promise<object> {
+    if (signedPayload instanceof ChainCallDTO) {
+      await signedPayload.validateOrReject();
+    }
+
     // Note: GalaChain Uri maybe should be constructed based on channel and method,
     // rather than passing full url as arg
     // ie `${baseUri}/api/${channel}/token-contract/${method}`
