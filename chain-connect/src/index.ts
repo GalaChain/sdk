@@ -13,3 +13,5 @@
  * limitations under the License.
  */
 export * from "./GalachainConnectClient";
+export * from "./PublicKeyClient";
+export * from "./TokenClient";
