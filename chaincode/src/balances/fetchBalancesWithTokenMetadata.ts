@@ -12,16 +12,18 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-import { ChainError, ChainObject, ErrorCode } from "@gala-chain/api";
 import {
+  ChainError,
+  ChainObject,
+  ErrorCode,
   FetchBalancesWithTokenMetadataResponse,
   TokenBalance,
   TokenBalanceWithMetadata,
-  TokenClass
+  TokenClass,
+  createValidDTO
 } from "@gala-chain/api";
-import { plainToInstance } from "class-transformer";
 
-import { GalaChainContext } from "../types/GalaChainContext";
+import { GalaChainContext } from "../types";
 import { getObjectByKey, getObjectsByPartialCompositeKeyWithPagination, takeUntilUndefined } from "../utils";
 import { BalanceNotFoundError } from "./BalanceError";
 
@@ -68,7 +70,7 @@ export async function fetchBalancesWithTokenMetadata(
     const compositeKey = ChainObject.getCompositeKeyFromParts(TokenClass.INDEX_KEY, keyList);
     const tokenClass: TokenClass = await getObjectByKey(ctx, TokenClass, compositeKey);
 
-    const balanceWithTokenMetadata = plainToInstance(TokenBalanceWithMetadata, {
+    const balanceWithTokenMetadata = await createValidDTO(TokenBalanceWithMetadata, {
       balance: balance,
       token: tokenClass
     });
@@ -76,8 +78,8 @@ export async function fetchBalancesWithTokenMetadata(
     results.push(balanceWithTokenMetadata);
   }
 
-  const response = plainToInstance(FetchBalancesWithTokenMetadataResponse, {
-    bookmark: balancesLookup.metadata.bookmark,
+  const response = await createValidDTO(FetchBalancesWithTokenMetadataResponse, {
+    nextPageBookmark: balancesLookup.metadata.bookmark,
     results: results
   });
 
