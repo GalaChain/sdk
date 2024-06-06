@@ -70,6 +70,15 @@ jobs:
           npm publish --access public
           cd ../
 
+      - name: publish-chain-connect
+        run: |
+          cd chain-connect
+          npm i
+          npm run build
+          # Publish to NPM registry
+          npm publish --access public
+          cd ../
+
   publish-pages:
     name: Publish Pages
     runs-on: ubuntu-latest

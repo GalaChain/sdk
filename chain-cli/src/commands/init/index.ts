@@ -41,7 +41,7 @@ export default class Init extends BaseCommand<typeof Init> {
     try {
       this.copyChaincodeTemplate(args.path);
 
-      // Update the name field in the package.json and the package-lock.json to be `@gala-games/<project-name>`
+      // Update the name field in the package.json and the package-lock.json to be `@gala-chain/<project-name>`
       const fileName = getPathFileName(args.path);
       const filesToUpdate = ["package.json", "package-lock.json"];
 
