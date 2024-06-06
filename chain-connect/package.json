@@ -1,0 +1,28 @@
+{
+  "name": "@gala-chain/connect",
+  "version": "1.1.24",
+  "dependencies": {
+    "@gala-chain/api": "1.1.24",
+    "ethers": "^6.12.1",
+    "tslib": "^2.3.0"
+  },
+  "overrides": {
+    "ethers": {
+      "elliptic": "6.5.4"
+    }
+  },
+  "type": "commonjs",
+  "main": "./src/index.js",
+  "typings": "./src/index.d.ts",
+  "scripts": {
+    "clean": "tsc -b --clean",
+    "build": "tsc -b",
+    "build:watch": "tsc -b -w",
+    "madge": "madge --circular --warning lib",
+    "lint": "nx run lint",
+    "fix": "nx run lint --fix",
+    "prepublishOnly": "npm i && npm run clean && npm run build && npm run lint && npm run madge",
+    "format": "prettier --config ../.prettierrc 'src/**/*.ts' --write",
+    "test": "jest"
+  }
+}
