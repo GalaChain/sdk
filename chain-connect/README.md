@@ -29,5 +29,5 @@ A new GalachainConnectClient can be created and connected by instantiating a new
 
 PublicKeyClient and TokenClient can be instantiated with the GalachainConnectClient and the url as arguments:
 
-> const publicKeyClient = new PublicKeyClient(this, url)
-> const tokenClient = new TokenClient(this, url);
+> const publicKeyClient = new PublicKeyClient(client, url)
+> const tokenClient = new TokenClient(client, url);
