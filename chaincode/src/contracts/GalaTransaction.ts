@@ -72,6 +72,7 @@ export type GalaTransactionAfterFn = (
 
 export interface GalaTransactionOptions<T extends ChainCallDTO> {
   type: GalaTransactionType;
+  deprecated?: true;
   description?: string;
   in?: ClassConstructor<Inferred<T>>;
   out?: OutType | OutArrType;
@@ -246,16 +247,19 @@ function GalaTransaction<T extends ChainCallDTO>(
       description += ` Allowed orgs: ${options.allowedOrgs.join(", ")}.`;
     }
 
+    const responseSchema = isArrayOut(options.out)
+      ? generateResponseSchema(options.out.arrayOf, "array")
+      : generateResponseSchema(options.out);
+
     updateApi(target, {
       isWrite,
       methodName: method.name,
-      apiMethodName: options.apiMethodName,
-      dtoSchema: options.in === undefined ? undefined : generateSchema(options.in),
+      ...(options.apiMethodName === undefined ? {} : { apiMethodName: options.apiMethodName }),
+      ...(options.in === undefined ? {} : { dtoSchema: generateSchema(options.in) }),
       description,
-      responseSchema: isArrayOut(options.out)
-        ? generateResponseSchema(options.out.arrayOf, "array")
-        : generateResponseSchema(options.out),
-      sequence: options.sequence
+      responseSchema,
+      ...(options.deprecated === undefined ? {} : { deprecated: options.deprecated }),
+      ...(options.sequence === undefined ? {} : { sequence: options.sequence })
     });
 
     // Ensure this is an actual HLF transaction.
