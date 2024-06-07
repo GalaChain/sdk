@@ -231,12 +231,12 @@ function GalaTransaction<T extends ChainCallDTO>(
     // Update API of contract object
     const isWrite = options.type === GalaTransactionType.SUBMIT;
 
-    let description = options.description ? options.description + " " : "";
+    let description = options.description ? options.description : "";
 
     if (options.type === GalaTransactionType.SUBMIT) {
-      description += description ?? `Transaction updates the chain (submit).`;
+      description += description ?? ` Transaction updates the chain (submit).`;
     } else {
-      description += `Transaction is read only (evaluate).`;
+      description += ` Transaction is read only (evaluate).`;
     }
 
     if (options.allowedRoles && options.allowedRoles.length > 0) {
