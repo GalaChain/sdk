@@ -65,7 +65,7 @@ type GalaChainStub = ChaincodeStub & {
 type TestGalaChainContext = Context & {
   readonly stub: GalaChainStub;
   readonly logger: GalaLoggerInstance;
-  set callingUserData(d: { alias: string; ethAddress?: string; roles?: string[] });
+  set callingUserData(d: { alias: string; ethAddress?: string; roles: string[] });
   get callingUser(): string;
   get callingUserEthAddress(): string;
   get callingUserRoles(): string[];

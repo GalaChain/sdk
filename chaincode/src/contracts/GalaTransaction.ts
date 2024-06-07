@@ -170,7 +170,7 @@ function GalaTransaction<T extends ChainCallDTO>(
           ctx.callingUserData = await authorize(ctx, dto, legacyClientAccountId(ctx));
         } else {
           // it means a request where authorization is not required
-          ctx.callingUserData = { alias: legacyClientAccountId(ctx) };
+          ctx.callingUserData = { alias: legacyClientAccountId(ctx), roles: [UserRole.EVALUATE] };
         }
 
         // Verify if organization can invoke this method - throws exception in case of failure

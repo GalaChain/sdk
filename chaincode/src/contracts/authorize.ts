@@ -17,6 +17,7 @@ import {
   ForbiddenError,
   PublicKey,
   UserProfile,
+  UserRole,
   ValidationFailedError,
   signatures
 } from "@gala-chain/api";
@@ -55,7 +56,7 @@ export async function authorize(
   ctx: GalaChainContext,
   dto: ChainCallDTO | undefined,
   legacyCAUser: string
-): Promise<{ alias: string; ethAddress?: string; roles?: string[] }> {
+): Promise<{ alias: string; ethAddress?: string; roles: string[] }> {
   if (!dto || dto.signature === undefined) {
     throw new MissingSignatureError();
   }
@@ -110,7 +111,7 @@ async function legacyAuthorize(
   ctx: GalaChainContext,
   dto: ChainCallDTO,
   legacyCAUser: string
-): Promise<{ alias: string; ethAddress: undefined }> {
+): Promise<{ alias: string; ethAddress: undefined; roles: string[] }> {
   const pk = await getSavedPKOrReject(ctx, legacyCAUser);
 
   if (!dto.isSignatureValid(pk.publicKey)) {
@@ -119,7 +120,8 @@ async function legacyAuthorize(
 
   return {
     alias: legacyCAUser,
-    ethAddress: undefined
+    ethAddress: undefined,
+    roles: [UserRole.EVALUATE] // read-only
   };
 }
 
