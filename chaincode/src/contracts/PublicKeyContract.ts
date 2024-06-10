@@ -47,6 +47,8 @@ try {
   version = require("../../package.json").version;
 }
 
+const curatorOrgMsp = process.env.CURATOR_ORG_MSP ?? "CuratorOrg";
+
 @Info({
   title: "PublicKeyContract",
   description: "Contract for managing public keys for accounts"
@@ -151,7 +153,7 @@ export class PublicKeyContract extends GalaContract {
     in: RegisterUserDto,
     out: "string",
     description: "Registers a new user on chain under provided user alias.",
-    allowedOrgs: ["CuratorOrg"],
+    allowedOrgs: [curatorOrgMsp],
     verifySignature: true
   })
   public async RegisterUser(ctx: GalaChainContext, dto: RegisterUserDto): Promise<GalaChainResponse<string>> {
@@ -172,7 +174,7 @@ export class PublicKeyContract extends GalaContract {
     in: RegisterEthUserDto,
     out: "string",
     description: "Registers a new user on chain under alias derived from eth address.",
-    allowedOrgs: ["CuratorOrg"],
+    allowedOrgs: [curatorOrgMsp],
     verifySignature: true
   })
   public async RegisterEthUser(
