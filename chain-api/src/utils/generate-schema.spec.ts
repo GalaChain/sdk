@@ -86,6 +86,15 @@ const expectedNestedTestClassSchema = {
 const expectedTestDtoSchema = {
   description: "Some test DTO class",
   properties: {
+    dryRun: {
+      description:
+        "Dry Run: Set this property to true on a top-level DTO to simulate SUBMIT chaincode " +
+        "execution without writing the resulting data to chain. GalaChainStubCache will not " +
+        "flush writes, and response will contain a ReadWriteSet property that includes " +
+        "the reads, writes, and deletes that would have been executed if the dryRun flag " +
+        "had not been provided. ",
+      type: "boolean"
+    },
     nestedClass: {
       ...expectedNestedTestClassSchema,
       description: `First part of the description. ${expectedNestedTestClassSchema.description}`

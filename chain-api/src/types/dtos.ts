@@ -13,7 +13,7 @@
  * limitations under the License.
  */
 import { instanceToInstance, plainToInstance } from "class-transformer";
-import { IsNotEmpty, IsOptional, ValidationError, validate } from "class-validator";
+import { IsBoolean, IsNotEmpty, IsOptional, ValidationError, validate } from "class-validator";
 import { JSONSchema } from "class-validator-jsonschema";
 
 import { ValidationFailedError, deserialize, getValidationErrorInfo, serialize, signatures } from "../utils";
@@ -150,6 +150,18 @@ export class ChainCallDTO {
   @IsOptional()
   @IsNotEmpty()
   public signerPublicKey?: string;
+
+  @JSONSchema({
+    description:
+      "Dry Run: Set this property to true on a top-level DTO to simulate " +
+      "SUBMIT chaincode execution without writing the resulting data to chain. " +
+      "GalaChainStubCache will not flush writes, and response will contain a ReadWriteSet property " +
+      "that includes the reads, writes, and deletes that would have been executed " +
+      "if the dryRun flag had not been provided. "
+  })
+  @IsOptional()
+  @IsBoolean()
+  public dryRun?: boolean;
 
   validate(): Promise<ValidationError[]> {
     return validate(this);

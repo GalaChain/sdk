@@ -17,6 +17,8 @@ import {
   ChainError,
   ClassConstructor,
   GalaChainResponse,
+  IGalaChainStubCachedState,
+  IGalaChainVerboseResponseOptions,
   Inferred,
   MethodAPI,
   Primitive,
@@ -175,10 +177,19 @@ function GalaTransaction<T extends ChainCallDTO>(
         // function, so it is safe to do the `await`
         const result = await method?.apply(this, argArray);
 
+        let verboseOptions: IGalaChainVerboseResponseOptions | undefined;
+
+        if (dto?.dryRun) {
+          verboseOptions = {
+            dryRun: true,
+            readWriteSet: ctx.stub.getAllCachedState()
+          };
+        }
+
         const normalizedResult =
           typeof result === "object" && "Status" in result && typeof result.Status === "number"
             ? result
-            : GalaChainResponse.Success(result);
+            : GalaChainResponse.Success(result, verboseOptions);
 
         if (options?.after !== undefined) {
           await options?.after?.apply(this, [ctx, dto, normalizedResult]);

@@ -12,7 +12,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-import { NotImplementedError } from "@gala-chain/api";
+import { IGalaChainStubCachedState, NotImplementedError } from "@gala-chain/api";
 import { ChaincodeStub } from "fabric-shim";
 
 import { CachedKV, FabricIterable, fabricIterable, filter, prepend } from "./FabricIterable";
@@ -72,6 +72,28 @@ class StubCache {
     const filteredState = filter((kv) => !keysToExclude.has(kv.key), state[Symbol.asyncIterator]());
 
     return fabricIterable(prepend(cached, filteredState));
+  }
+
+  getAllCachedState(): IGalaChainStubCachedState {
+    const { reads, writes, deletes } = this;
+
+    const serializedReads: Record<string, string> = {};
+    Object.entries(reads).forEach(([k, v]) => {
+      serializedReads[k] = v.toString();
+    });
+
+    const serializedWrites: Record<string, string> = {};
+    Object.entries(writes).forEach(([k, v]) => {
+      serializedWrites[k] = v.toString();
+    });
+
+    const allCachedState: IGalaChainStubCachedState = {
+      writes: serializedWrites,
+      reads: serializedReads,
+      deletes: deletes
+    };
+
+    return allCachedState;
   }
 
   putState(key: string, value: Uint8Array): Promise<void> {
@@ -139,6 +161,8 @@ export interface GalaChainStub extends ChaincodeStub {
   getCachedState(key: string): Promise<Uint8Array>;
 
   getCachedStateByPartialCompositeKey(objectType: string, attributes: string[]): FabricIterable<CachedKV>;
+
+  getAllCachedState(): IGalaChainStubCachedState;
 
   flushWrites(): Promise<void>;
 }

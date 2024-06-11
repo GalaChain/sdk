@@ -16,6 +16,7 @@ import {
   ChainCallDTO,
   ChainObject,
   ClassConstructor,
+  IGalaChainStubCachedState,
   PublicKey,
   RangedChainObject,
   UserProfile
@@ -56,6 +57,7 @@ interface GalaLoggerInstance {
 type GalaChainStub = ChaincodeStub & {
   getCachedState(key: string): Promise<Uint8Array>;
   getCachedStateByPartialCompositeKey(objectType: string, attributes: string[]): FabricIterable<CachedKV>;
+  getAllCachedState(): IGalaChainStubCachedState;
   flushWrites(): Promise<void>;
 };
 

@@ -19,7 +19,8 @@ import { ClassConstructor, Inferred } from "./dtos";
 export const GC_NETWORK_ID = "GC";
 export enum GalaChainResponseType {
   Error,
-  Success
+  Success,
+  SuccessDryRun
 }
 
 export abstract class GalaChainResponse<T> {
@@ -29,8 +30,13 @@ export abstract class GalaChainResponse<T> {
   public readonly ErrorKey?: string;
   public readonly ErrorPayload?: unknown;
   public readonly Data?: T;
-  public static Success<T>(Data: T): GalaChainResponse<T> {
-    return new GalaChainSuccessResponse<T>(Data);
+  public readonly ReadWriteSet?: IGalaChainStubCachedState;
+  public static Success<T>(Data: T, verboseOptions?: IGalaChainVerboseResponseOptions): GalaChainResponse<T> {
+    if (verboseOptions !== undefined) {
+      return new GalaChainSuccessResponse<T>(Data, verboseOptions);
+    } else {
+      return new GalaChainSuccessResponse<T>(Data);
+    }
   }
   public static Error<T>(e: { message?: string }): GalaChainResponse<T>;
   public static Error<T>(e: ChainError): GalaChainResponse<T>;
@@ -126,12 +132,36 @@ export class GalaChainErrorResponse<T> extends GalaChainResponse<T> {
   }
 }
 
+export interface IGalaChainStubCachedState {
+  writes: Record<string, string>;
+  reads: Record<string, string>;
+  deletes: Record<string, true>;
+}
+
+export interface IGalaChainVerboseResponseOptions {
+  readWriteSet: IGalaChainStubCachedState;
+  dryRun?: boolean;
+}
+
 export class GalaChainSuccessResponse<T> extends GalaChainResponse<T> {
-  public readonly Status: GalaChainResponseType.Success;
+  public readonly Status: GalaChainResponseType.Success | GalaChainResponseType.SuccessDryRun;
   public readonly Data: T;
-  constructor(data: T) {
+  public readonly ReadWriteSet?: IGalaChainStubCachedState;
+  constructor(data: T);
+  constructor(data: T, verbose: IGalaChainVerboseResponseOptions);
+  constructor(data: T, verbose?: IGalaChainVerboseResponseOptions) {
     super();
-    this.Status = GalaChainResponseType.Success;
+
+    if (verbose?.dryRun) {
+      this.Status = GalaChainResponseType.SuccessDryRun;
+    } else {
+      this.Status = GalaChainResponseType.Success;
+    }
+
     this.Data = data;
+
+    if (verbose !== undefined) {
+      this.ReadWriteSet = verbose.readWriteSet;
+    }
   }
 }

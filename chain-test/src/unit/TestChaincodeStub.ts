@@ -12,6 +12,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+import { IGalaChainStubCachedState } from "@gala-chain/api";
 import { ClientIdentity, ChaincodeStub as FChaincodeStub, Iterators, StateQueryResponse } from "fabric-shim";
 import Long from "long";
 import { nanoid } from "nanoid";
@@ -194,5 +195,19 @@ export class TestChaincodeStub extends ChaincodeStub {
     const iterator = asyncIterator(kvs);
     const filtered = filter((obj) => obj.key >= start && obj.key < end, iterator);
     return fabricIterable<Iterators.KV>(filtered);
+  }
+
+  getAllCachedState(): IGalaChainStubCachedState {
+    const reads: Record<string, string> = {};
+    const writes: Record<string, string> = {};
+    const deletes: Record<string, true> = {};
+
+    const allCachedState: IGalaChainStubCachedState = {
+      reads,
+      writes,
+      deletes
+    };
+
+    return allCachedState;
   }
 }
