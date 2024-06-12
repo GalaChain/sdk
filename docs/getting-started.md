@@ -238,4 +238,8 @@ Make sure you are running it as a administrator of the cmd or powershell.
 
 #### docker: Got permission denied
 
-If you get a `docker: Got permission denied` error when running npm run network:start or npm run network:up, you may need to enable the configuration `Settings` > `Resources` > `Expose daemon on tcp://localhost:2375 without TLS`.
+If you get a `docker: Got permission denied` error when running npm run network:start or npm run network:up, you may need to enable the configuration:
+ ```
+Docker Desktop > Settins > General > Expose daemon on tcp://localhost:2375 without TLS
+```
+If it still doesn't work, you can try use the WSL Ubuntu-20.04 distribution to run the network.
