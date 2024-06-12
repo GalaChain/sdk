@@ -18,7 +18,7 @@ import * as fs from "fs";
 import path from "path";
 
 import BaseCommand from "../../base-command";
-import { generateKeys, checkCliVersion } from "../../galachain-utils";
+import { checkCliVersion, generateKeys } from "../../galachain-utils";
 import { getPathFileName } from "../../utils";
 
 export default class Init extends BaseCommand<typeof Init> {
