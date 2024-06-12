@@ -19,7 +19,6 @@ import * as secp from "@noble/secp256k1";
 import axios from "axios";
 import fs, { promises as fsPromises } from "fs";
 import { nanoid } from "nanoid";
-import { writeFile } from "node:fs/promises";
 import path from "path";
 import process from "process";
 
@@ -177,11 +176,11 @@ export async function generateKeys(projectPath: string): Promise<void> {
     if (err) console.error(`Could not create a directory ${privateKeysPath}. Error: ${err}`);
   });
 
-  await writeFile(`${keysPath}/${DEFAULT_ADMIN_PRIVATE_KEY_NAME}.pub`, adminPublicKey);
-  await writeFile(`${keysPath}/${DEFAULT_DEV_PRIVATE_KEY_NAME}.pub`, devPublicKey);
+  execSync(`echo '${adminPublicKey}' > ${keysPath}/${DEFAULT_ADMIN_PRIVATE_KEY_NAME}.pub`);
+  execSync(`echo '${devPublicKey}' > ${keysPath}/${DEFAULT_DEV_PRIVATE_KEY_NAME}.pub`);
 
-  await writeFile(`${privateKeysPath}/${DEFAULT_ADMIN_PRIVATE_KEY_NAME}`, adminPrivateKey.toString());
-  await writeFile(`${privateKeysPath}/${DEFAULT_DEV_PRIVATE_KEY_NAME}`, devPrivateKey.toString());
+  execSync(`echo '${adminPrivateKey.toString()}' > ${privateKeysPath}/${DEFAULT_ADMIN_PRIVATE_KEY_NAME}`);
+  execSync(`echo '${devPrivateKey.toString()}' > ${privateKeysPath}/${DEFAULT_DEV_PRIVATE_KEY_NAME}`);
 
   console.log(`Chaincode name:         ${chaincodeName}`);
   console.log(`Public keys directory:  ${keysPath}`);
