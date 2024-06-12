@@ -18,7 +18,7 @@ $ npm install -g @gala-chain/cli
 $ galachain COMMAND
 running command...
 $ galachain (--version)
-@gala-chain/cli/1.1.25 linux-x64 node-v18.20.3
+@gala-chain/cli/1.1.26 linux-x64 node-v18.20.3
 $ galachain --help [COMMAND]
 USAGE
   $ galachain COMMAND
