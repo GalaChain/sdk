@@ -188,6 +188,16 @@ export async function generateKeys(projectPath: string): Promise<void> {
   console.log(`Private keys directory: ${privateKeysPath}`);
 }
 
+export function checkCliVersion() {
+  const cliLatestVersion = execSync("npm show @gala-chain/cli version");
+  const cliCurrentVersion = execSync("galachain --version").split(" ")[0].split("\/")[2];
+  if (cliLatestVersion > cliCurrentVersion) {
+    this.warn(
+      `Your Chain CLI is out of date, current version is ${cliCurrentVersion}, latest version is ${cliLatestVersion}. Please run 'npm install -g @gala-chain/cli --force' to update to the latest version.`
+    );
+  }
+}
+
 export async function getPrivateKey(keysFromArg: string | undefined) {
   return (
     keysFromArg ??
