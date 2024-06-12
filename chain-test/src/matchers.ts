@@ -23,6 +23,14 @@ export function transactionSuccess<T>(payload?: T): unknown {
   }
 }
 
+export function transactionSuccessDryRun<T>(payload?: T): unknown {
+  if (payload === undefined) {
+    return expect.objectContaining({ Status: GalaChainResponseType.SuccessDryRun });
+  } else {
+    return expect.objectContaining({ Status: GalaChainResponseType.SuccessDryRun, Data: payload });
+  }
+}
+
 export function transactionError(matcher?: string | unknown | ChainError): unknown {
   if (matcher === undefined) {
     return expect.objectContaining({ Status: GalaChainResponseType.Error });

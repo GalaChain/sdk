@@ -30,7 +30,7 @@ export abstract class GalaChainResponse<T> {
   public readonly ErrorKey?: string;
   public readonly ErrorPayload?: unknown;
   public readonly Data?: T;
-  public readonly ReadWriteSet?: IGalaChainStubCachedState;
+  public readonly ReadWriteSet?: GalaChainStubCachedState;
   public static Success<T>(Data: T, verboseOptions?: IGalaChainVerboseResponseOptions): GalaChainResponse<T> {
     if (verboseOptions !== undefined) {
       return new GalaChainSuccessResponse<T>(Data, verboseOptions);
@@ -90,6 +90,19 @@ export abstract class GalaChainResponse<T> {
         typeof json.Data === "object"
           ? deserialize(constructor, (json.Data ?? {}) as Record<string, unknown>)
           : json.Data;
+
+      if (json.ReadWriteSet) {
+        const verboseOptions: IGalaChainVerboseResponseOptions = {
+          readWriteSet: json.ReadWriteSet
+        };
+
+        if (json.Status === GalaChainResponseType.SuccessDryRun) {
+          verboseOptions.dryRun = true;
+        }
+
+        return new GalaChainSuccessResponse<T>(data, verboseOptions);
+      }
+
       return new GalaChainSuccessResponse<T>(data);
     }
   }
@@ -138,6 +151,18 @@ export interface IGalaChainStubCachedState {
   deletes: Record<string, true>;
 }
 
+export class GalaChainStubCachedState {
+  writes: Record<string, string>;
+  reads: Record<string, string>;
+  deletes: Record<string, true>;
+
+  constructor(data: IGalaChainStubCachedState) {
+    this.writes = data.writes;
+    this.reads = data.reads;
+    this.deletes = data.deletes;
+  }
+}
+
 export interface IGalaChainVerboseResponseOptions {
   readWriteSet: IGalaChainStubCachedState;
   dryRun?: boolean;
@@ -146,9 +171,9 @@ export interface IGalaChainVerboseResponseOptions {
 export class GalaChainSuccessResponse<T> extends GalaChainResponse<T> {
   public readonly Status: GalaChainResponseType.Success | GalaChainResponseType.SuccessDryRun;
   public readonly Data: T;
-  public readonly ReadWriteSet?: IGalaChainStubCachedState;
-  constructor(data: T);
+  public readonly ReadWriteSet?: GalaChainStubCachedState;
   constructor(data: T, verbose: IGalaChainVerboseResponseOptions);
+  constructor(data: T);
   constructor(data: T, verbose?: IGalaChainVerboseResponseOptions) {
     super();
 

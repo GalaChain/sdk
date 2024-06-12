@@ -88,7 +88,7 @@ const expectedTestDtoSchema = {
   properties: {
     dryRun: {
       description:
-        "Dry Run: Set this property to true on a top-level DTO to simulate SUBMIT chaincode " +
+        "(Optional) Dry Run: Set this property to true on a top-level DTO to simulate SUBMIT chaincode " +
         "execution without writing the resulting data to chain. GalaChainStubCache will not " +
         "flush writes, and response will contain a ReadWriteSet property that includes " +
         "the reads, writes, and deletes that would have been executed if the dryRun flag " +

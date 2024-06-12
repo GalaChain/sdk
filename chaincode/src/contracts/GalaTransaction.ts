@@ -179,17 +179,25 @@ function GalaTransaction<T extends ChainCallDTO>(
 
         let verboseOptions: IGalaChainVerboseResponseOptions | undefined;
 
+        let normalizedResult: any;
+
         if (dto?.dryRun) {
           verboseOptions = {
             dryRun: true,
             readWriteSet: ctx.stub.getAllCachedState()
           };
-        }
 
-        const normalizedResult =
-          typeof result === "object" && "Status" in result && typeof result.Status === "number"
-            ? result
-            : GalaChainResponse.Success(result, verboseOptions);
+          if (typeof result === "object" && "Status" in result && typeof result.Status === "number") {
+            normalizedResult = GalaChainResponse.Success(result.Data, verboseOptions);
+          } else {
+            normalizedResult = GalaChainResponse.Success(result, verboseOptions);
+          }
+        } else {
+          normalizedResult =
+            typeof result === "object" && "Status" in result && typeof result.Status === "number"
+              ? result
+              : GalaChainResponse.Success(result, verboseOptions);
+        }
 
         if (options?.after !== undefined) {
           await options?.after?.apply(this, [ctx, dto, normalizedResult]);
