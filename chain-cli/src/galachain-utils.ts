@@ -168,14 +168,11 @@ export async function generateKeys(projectPath: string): Promise<void> {
   const chaincodeName = "gc-" + signatures.getEthAddress(adminPublicKey);
   const privateKeysPath = path.join(os.homedir(), DEFAULT_PRIVATE_KEYS_DIR, chaincodeName);
 
-  fs.mkdir(`${keysPath}`, (err) => {
-    if (err) console.error(`Could not create a directory ${keysPath}. Error: ${err}`);
-  });
+  // create the keys directory
+  execSync(`mkdir -p ${keysPath}`);
+  execSync(`mkdir -p ${privateKeysPath}`);
 
-  fs.mkdir(privateKeysPath, { recursive: true }, (err) => {
-    if (err) console.error(`Could not create a directory ${privateKeysPath}. Error: ${err}`);
-  });
-
+  // create the public and private keys files
   execSync(`echo '${adminPublicKey}' > ${keysPath}/${DEFAULT_ADMIN_PRIVATE_KEY_NAME}.pub`);
   execSync(`echo '${devPublicKey}' > ${keysPath}/${DEFAULT_DEV_PRIVATE_KEY_NAME}.pub`);
 
