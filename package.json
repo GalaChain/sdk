@@ -59,5 +59,8 @@
     "chaincode",
     "chain-connect",
     "chain-ui"
-  ]
+  ],
+  "optionalDependencies": {
+    "@nx/nx-darwin-arm64": "^19.3.0"
+  }
 }
