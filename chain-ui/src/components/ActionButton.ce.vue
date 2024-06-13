@@ -5,8 +5,8 @@
         severity="secondary"
         rounded
         @click="isVisible = true"
-        class="px-6 py-3 rounded-full bg-sky-600 text-white mb-2"
-        >Hello World</PrimeButton
+        label="Action Button"
+        ></PrimeButton
       >
     </div>
     <p>is modal visible? {{ isVisible }}</p>
@@ -29,8 +29,8 @@ watch(
 )
 </script>
 
-<style scoped>
-@tailwind base;
-@tailwind components;
-@tailwind utilities;
+<style lang="css">
+  @tailwind base;
+  @tailwind components;
+  @tailwind utilities;
 </style>

@@ -12,7 +12,7 @@ import AppContainer from '@/components/AppContainer.vue'
 
 interface IOptions {
   includeStyles?: boolean
-  plugins?: Plugin[]
+  plugins?: { plugin: Plugin; options: any }[]
 }
 
 export const defineCustomElement = (
@@ -26,7 +26,7 @@ export const defineCustomElement = (
       const app = createApp(AppContainer)
 
       // install plugins
-      plugins.forEach(app.use)
+      plugins.forEach(({ plugin, options }) => app.use(plugin, options))
 
       const inst = getCurrentInstance() as
         | (ComponentInternalInstance & { provides: AppContext['provides'] })
