@@ -18,7 +18,6 @@ import * as fs from "fs";
 import path from "path";
 
 import BaseCommand from "../../base-command";
-import { execSync } from "../../exec-sync";
 import { generateKeys } from "../../galachain-utils";
 import { getPathFileName } from "../../utils";
 
