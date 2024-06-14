@@ -209,7 +209,7 @@ function parseSecp256k1Signature(s: string): Secp256k1Signature {
     // flip sign of s to prevent malleability (S')
     const newS = new BN(curveN).sub(sigObject.s);
     // flip recovery param
-    let newRecoverParam = sigObject.recoveryParam !== undefined ? 1 - sigObject.recoveryParam : undefined;
+    const newRecoverParam = sigObject.recoveryParam !== undefined ? 1 - sigObject.recoveryParam : undefined;
     // normalized signature
 
     // console.log(
@@ -282,7 +282,7 @@ function signSecp256k1(dataHash: Buffer, privateKey: Buffer, useDer?: "DER"): st
     // flip sign of s to prevent malleability (S')
     const newS = new BN(curveN).sub(signature.s);
     // flip recovery param
-    let newRecoverParam = signature.recoveryParam !== null ? 1 - signature.recoveryParam : null;
+    const newRecoverParam = signature.recoveryParam !== null ? 1 - signature.recoveryParam : null;
     // normalized signature
 
     console.log(
