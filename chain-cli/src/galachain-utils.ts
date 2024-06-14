@@ -19,7 +19,6 @@ import * as secp from "@noble/secp256k1";
 import axios from "axios";
 import fs, { promises as fsPromises } from "fs";
 import { nanoid } from "nanoid";
-import { writeFile } from "node:fs/promises";
 import path from "path";
 import process from "process";
 
@@ -169,23 +168,30 @@ export async function generateKeys(projectPath: string): Promise<void> {
   const chaincodeName = "gc-" + signatures.getEthAddress(adminPublicKey);
   const privateKeysPath = path.join(os.homedir(), DEFAULT_PRIVATE_KEYS_DIR, chaincodeName);
 
-  fs.mkdir(`${keysPath}`, (err) => {
-    if (err) console.error(`Could not create a directory ${keysPath}. Error: ${err}`);
-  });
+  // create the keys directory
+  execSync(`mkdir -p ${keysPath}`);
+  execSync(`mkdir -p ${privateKeysPath}`);
 
-  fs.mkdir(privateKeysPath, { recursive: true }, (err) => {
-    if (err) console.error(`Could not create a directory ${privateKeysPath}. Error: ${err}`);
-  });
+  // create the public and private keys files
+  execSync(`echo '${adminPublicKey}' > ${keysPath}/${DEFAULT_ADMIN_PRIVATE_KEY_NAME}.pub`);
+  execSync(`echo '${devPublicKey}' > ${keysPath}/${DEFAULT_DEV_PRIVATE_KEY_NAME}.pub`);
 
-  await writeFile(`${keysPath}/${DEFAULT_ADMIN_PRIVATE_KEY_NAME}.pub`, adminPublicKey);
-  await writeFile(`${keysPath}/${DEFAULT_DEV_PRIVATE_KEY_NAME}.pub`, devPublicKey);
-
-  await writeFile(`${privateKeysPath}/${DEFAULT_ADMIN_PRIVATE_KEY_NAME}`, adminPrivateKey.toString());
-  await writeFile(`${privateKeysPath}/${DEFAULT_DEV_PRIVATE_KEY_NAME}`, devPrivateKey.toString());
+  execSync(`echo '${adminPrivateKey.toString()}' > ${privateKeysPath}/${DEFAULT_ADMIN_PRIVATE_KEY_NAME}`);
+  execSync(`echo '${devPrivateKey.toString()}' > ${privateKeysPath}/${DEFAULT_DEV_PRIVATE_KEY_NAME}`);
 
   console.log(`Chaincode name:         ${chaincodeName}`);
   console.log(`Public keys directory:  ${keysPath}`);
   console.log(`Private keys directory: ${privateKeysPath}`);
+}
+
+export function checkCliVersion() {
+  const cliLatestVersion = execSync("npm show @gala-chain/cli version");
+  const cliCurrentVersion = execSync("galachain --version").split(" ")[0].split("/")[2];
+  if (cliLatestVersion > cliCurrentVersion) {
+    this.warn(
+      `Your Chain CLI is out of date, current version is ${cliCurrentVersion}, latest version is ${cliLatestVersion}. Please run 'npm install -g @gala-chain/cli --force' to update to the latest version.`
+    );
+  }
 }
 
 export async function getPrivateKey(keysFromArg: string | undefined) {

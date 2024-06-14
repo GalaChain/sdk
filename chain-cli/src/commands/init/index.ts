@@ -18,8 +18,7 @@ import * as fs from "fs";
 import path from "path";
 
 import BaseCommand from "../../base-command";
-import { execSync } from "../../exec-sync";
-import { generateKeys } from "../../galachain-utils";
+import { checkCliVersion, generateKeys } from "../../galachain-utils";
 import { getPathFileName } from "../../utils";
 
 export default class Init extends BaseCommand<typeof Init> {
@@ -39,6 +38,8 @@ export default class Init extends BaseCommand<typeof Init> {
     const { args } = await this.parse(Init);
 
     try {
+      checkCliVersion();
+
       this.copyChaincodeTemplate(args.path);
 
       // Update the name field in the package.json and the package-lock.json to be `@gala-chain/<project-name>`
