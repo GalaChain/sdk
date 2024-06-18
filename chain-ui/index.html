@@ -7,8 +7,19 @@
     <title>GalaChain UI Example</title>
   </head>
   <body class="p-16">
-    <gala-button></gala-button>
-    <gala-action-button></gala-action-button>
+    <div class="flex flex-col gap-12">
+      <gala-button></gala-button>
+      <gala-action-button></gala-action-button>
+      <div class="w-1/2">
+        <gala-transfer-token address="client|63580d94c574ad78b121c267"></gala-transfer-token>
+      </div>
+      <div class="w-1/2">
+        <gala-mint-token address="client|63580d94c574ad78b121c267"></gala-mint-with-allowance>
+      </div>
+      <div class="w-1/2">
+        <gala-mint-token-with-allowance address="client|63580d94c574ad78b121c267"></gala-mint-with-allowance>
+      </div>
+    </div>
     <script type="module" src="/src/main.ts"></script>
   </body>
 </html>
