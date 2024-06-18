@@ -5,7 +5,40 @@ on:
       - main  # This ensures the workflow triggers on pushes to the main branch, including merges
 
 jobs:
-  trigger-gitlab:
+  trigger-and-check-gitlab:
     runs-on: ubuntu-latest
     steps:
-      - run: curl --request POST --form token=${{secrets.GITLAB_TOKEN}} --form ref=main "https://gitlab.com/api/v4/projects/35484791/trigger/pipeline"
+      - name: Checkout code
+        uses: actions/checkout@v2
+      
+      - name: Trigger GitLab Pipeline
+        id: trigger
+        run: |
+          response=$(curl --request POST \
+                           --form token=${{ secrets.GITLAB_TRIGGER_TOKEN }} \
+                           --form ref=main \
+                           "https://gitlab.com/api/v4/projects/35484791/trigger/pipeline")
+          echo "::set-output name=pipeline_id::$(echo $response | jq -r '.id')"
+      
+      - name: Poll Pipeline Status
+        run: |
+          status=""
+          while [[ "$status" != "success" && "$status" != "failed" ]]; do
+            result=$(curl "https://gitlab.com/api/v4/projects/35484791/pipelines/${{ steps.trigger.outputs.pipeline_id }}")
+            status=$(echo $result | jq -r '.status')
+            echo "Pipeline status: $status"
+            if [[ "$status" == "failed" ]]; then
+              echo "Pipeline failed"
+              exit 1
+            fi
+            sleep 10
+          done
+
+      - name: Increment Version Number
+        if: ${{ success() }}
+        run: |
+          # Increment the patch version
+          npm version patch
+
+          # Push the changes to the repository
+          git push --follow-tags
