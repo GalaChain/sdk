@@ -1,6 +1,6 @@
 <script lang="ts" setup>
   import { computed } from 'vue';
-  import { TransferTokenDto } from '@gala-chain/api/src/types' 
+  import { TransferTokenDto } from '@gala-chain/api' 
   import GalaSend from '../components/Send.vue';
   import { calculateAvailableBalance } from '../utils/calculateBalance';
 import type { TokenBalance, TokenClass } from '@gala-chain/api';
@@ -8,6 +8,7 @@ import type { TokenBalance, TokenClass } from '@gala-chain/api';
   const props = defineProps({
     address: String
   })
+  
   const tokens: {token: TokenClass, balance: TokenBalance}[] = [
       {
         balance: {

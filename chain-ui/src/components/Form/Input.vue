@@ -170,7 +170,7 @@ const getAriaDescribedBy = (id?: string) => {
     <div class="relative">
       <label
         :for="`${container?.id}-input`"
-        class="block font-medium leading-6"
+        class="font-medium leading-6"
         :class="{
           'sr-only': labelStyle === 'hidden',
           'text-sm': labelStyle === 'floating' || labelSize === 'sm',

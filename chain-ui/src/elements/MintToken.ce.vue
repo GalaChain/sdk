@@ -1,6 +1,6 @@
 <script lang="ts" setup>
-  import { computed, ref } from 'vue';
-  import { TransferTokenDto, TokenBalance, TokenClass } from '@gala-chain/api/src/types' 
+  import { computed } from 'vue';
+  import { TransferTokenDto, TokenClass } from '@gala-chain/api' 
   import GalaSend from '../components/Send.vue';
 import { calculateAvailableMintSupply } from '../utils/calculateBalance';
 

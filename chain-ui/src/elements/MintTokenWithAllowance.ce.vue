@@ -1,6 +1,6 @@
 <script lang="ts" setup>
-  import { computed, ref } from 'vue';
-  import { TransferTokenDto, TokenClass } from '@gala-chain/api/src/types' 
+  import { computed } from 'vue';
+  import { TransferTokenDto, TokenClass } from '@gala-chain/api' 
   import GalaSend from '../components/Send.vue';
   import type { TokenAllowance } from '@gala-chain/api';
   import { calculateAvailableMintAllowances } from '../utils/calculateBalance';
@@ -59,7 +59,7 @@
 </script>
 
 <template>
-  <GalaSend :tokens="availableTokens" @submit="submit" to-header="Mint to" submit-text="Mint"></GalaSend>
+  <GalaSend :tokens="availableTokens" @submit="submit" to-header="Mint to" submit-text="Mint" :from-address="address"></GalaSend>
 </template>
 
 <style>

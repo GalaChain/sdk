@@ -22,6 +22,7 @@ const props = withDefaults(
     tokens: TokenClass & { available: string }[];
     disabled?: boolean;
     loading?: boolean;
+    fromAddress?: string;
     showRecipient?: boolean;
     toHeader?: string;
     toPlaceholder?: string;
@@ -263,6 +264,17 @@ watch(
         "
         @change="v$.to.$touch"
       >
+        <template #prefix>
+          <button
+            v-if="fromAddress"
+            type="button"
+            class="float-right text-primary-500 font-semibold transition-colors duration-150 rounded-md hover:text-surface-primary focus-visible:focus-ring"
+            aria-label="set recipient to my wallet address"
+            @click="model.to = fromAddress"
+          >
+            My Wallet
+          </button>
+        </template>
       </FormInput>
     </div>
     <div v-if="globalError">
