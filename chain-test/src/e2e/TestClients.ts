@@ -32,12 +32,12 @@ import { createChainClient } from "./createChainClient";
 import { randomize } from "./tokenOps";
 
 interface ContractAPIConfig<API = object> {
-  name: string | ContractConfig;
+  name: ContractConfig;
   api: (c: ChainClient) => API;
 }
 
 interface ChainClientOptions {
-  [key: string]: ContractAPIConfig | string;
+  [key: string]: ContractAPIConfig;
 }
 
 type TestChainClient = ChainClient & ChainUserAPI;
@@ -58,8 +58,7 @@ function createChainClientsObj<T extends ChainClientOptions>(user: ChainUser, ob
   const result: ChainClientResult<T> = {} as ChainClientResult<T>;
 
   for (const [key, contract] of Object.entries(obj)) {
-    const { name, api } =
-      typeof contract === "string" ? { name: contract, api: commonContractAPI } : contract;
+    const { name, api } = contract;
 
     const client = createChainClient(user, name).extendAPI(api);
 
@@ -82,8 +81,22 @@ export interface DefaultChainClientOptions extends ChainClientOptions {
 
 function defaultChainClientsOptions(): DefaultChainClientOptions {
   return {
-    assets: { name: "GalaChainToken", api: commonContractAPI },
-    pk: { name: "PublicKeyContract", api: publicKeyContractAPI }
+    assets: {
+      name: {
+        channelName: "product-channel",
+        chaincodeName: "basic-product",
+        contractName: "product"
+      },
+      api: commonContractAPI
+    },
+    pk: {
+      name: {
+        channelName: "public-key-channel",
+        chaincodeName: "public-key",
+        contractName: "public-key"
+      },
+      api: publicKeyContractAPI
+    }
   };
 }
 
