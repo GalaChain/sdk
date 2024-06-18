@@ -116,8 +116,12 @@ See the [Organization based authorization](#organization-based-authorization) se
 
 When the chaincode is deployed, it contains a default admin end user.
 It is provided by two environment variables:
-* `DEV_ADMIN_USER_ID` - it contains the admin user alias (sample: `client|admin`),
-* `DEV_ADMIN_PRIVATE_KEY` - it contains the admin user public key (sample: `88698cb1145865953be1a6dafd9646c3dd4c0ec3955b35d89676242129636a0b`).
+* `DEV_ADMIN_PUBLIC_KEY` - it contains the admin user public key (sample: `88698cb1145865953be1a6dafd9646c3dd4c0ec3955b35d89676242129636a0b`).
+* `DEV_ADMIN_USER_ID` - it contains the admin user alias (sample: `client|admin`; this variable is optional),
+
+If the user profile is not found in the chain data, and the public key recovered from the signature is the same as the admin user public key (`DEV_ADMIN_PUBLIC_KEY`), the admin user is set as the calling user.
+Additionally, if the admin user alias is specified (`DEV_ADMIN_USER_ID`), it is used as the calling user alias.
+Otherwise, the default admin user alias is  `eth|<eth-addr-from-public-key>`.
 
 The admin user is required to register other users.
 
