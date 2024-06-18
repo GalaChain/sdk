@@ -389,18 +389,19 @@ describe("signatures", () => {
       lastName: "Cruise",
       photo: "https://jsonformatter.org/img/tom-cruise.jpg"
     };
-
-    const flippedSignatureObj = flipSignatureParity(normalizeSecp256k1Signature(originalSig));
-    const flippedSig =
-      flippedSignatureObj.r.toString("hex", 32) +
-      flippedSignatureObj.s.toString("hex", 32) +
-      new BN(flippedSignatureObj.recoveryParam === 1 ? 28 : 27).toString("hex", 1);
+    const originalPubKey = recoverPublicKeyTestFunction(originalSig, payload);
 
     // When
-    const originalPubKey = recoverPublicKeyTestFunction(originalSig, payload);
-    const newPubKey = recoverPublicKeyTestFunction(flippedSig, payload);
+    const flippedSigObj = flipSignatureParity(normalizeSecp256k1Signature(originalSig));
 
     // Then
+    const flippedSig =
+      flippedSigObj.r.toString("hex", 32) +
+      flippedSigObj.s.toString("hex", 32) +
+      new BN(flippedSigObj.recoveryParam === 1 ? 28 : 27).toString("hex", 1);
+
+    const newPubKey = recoverPublicKeyTestFunction(flippedSig, payload);
+
     expect(originalPubKey).toEqual(newPubKey);
   });
 });

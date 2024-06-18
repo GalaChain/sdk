@@ -205,8 +205,6 @@ function parseSecp256k1Signature(s: string): Secp256k1Signature {
 
   // Additional check for low-S normalization
   if (sigObject && sigObject.s.cmp(ecSecp256k1.curve.n.shrn(1)) > 0) {
-    flipSignatureParity(sigObject);
-
     throw new InvalidSignatureFormatError("S value is too high", { signature: s });
   }
 
@@ -252,14 +250,12 @@ export function normalizeSecp256k1Signature(s: string): Secp256k1Signature {
   throw new InvalidSignatureFormatError(errorMessage, { signature: s });
 }
 
-export function flipSignatureParity(
-  signatureObj: Secp256k1Signature | EC.Signature
-): Secp256k1Signature | EC.Signature {
+export function flipSignatureParity<T extends EC.Signature | Secp256k1Signature>(signatureObj: T): T {
   const curveN = ecSecp256k1.curve.n;
   // flip sign of s to prevent malleability (S')
   const newS = new BN(curveN).sub(signatureObj.s);
   // flip recovery param
-  const newRecoverParam = signatureObj.recoveryParam != null ? 1 - signatureObj.recoveryParam : undefined;
+  const newRecoverParam = signatureObj.recoveryParam != null ? 1 - signatureObj.recoveryParam : null;
 
   // normalized signature
   signatureObj.s = newS;
@@ -274,13 +270,11 @@ function signSecp256k1(dataHash: Buffer, privateKey: Buffer, useDer?: "DER"): st
     throw new InvalidDataHashError(msg);
   }
 
-  const signature = ecSecp256k1.sign(dataHash, privateKey);
+  let signature = ecSecp256k1.sign(dataHash, privateKey);
 
   // Low-S normalization
-  let newSig;
   if (signature.s.cmp(ecSecp256k1.curve.n.shrn(1)) > 0) {
-    newSig = flipSignatureParity(signature);
-    newSig.toDER = signature.toDER;
+    signature = flipSignatureParity(signature);
   }
 
   if (!useDer) {
