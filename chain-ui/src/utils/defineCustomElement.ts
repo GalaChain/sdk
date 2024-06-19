@@ -21,8 +21,10 @@ export const defineCustomElement = (
 ) =>
   VueDefineCustomElement({
     styles: includeStyles ? component.styles : undefined,
+    props: component.props,
+    emits: component.emits,
     render: () => h(component),
-    setup() {
+    setup(props, { emit }) {
       const app = createApp(AppContainer)
 
       // install plugins
@@ -34,5 +36,20 @@ export const defineCustomElement = (
       if (!inst) return
       Object.assign(inst.appContext, app._context)
       Object.assign(inst.provides, app._context.provides)
+
+      const events = Object.fromEntries(
+        (component.emits || []).map((event: string) => {
+          return [
+            `on${event[0].toUpperCase()}${event.slice(1)}`,
+            (payload: unknown) => emit(event, payload)
+          ]
+        })
+      )
+
+      return () =>
+        h(component, {
+          ...props,
+          ...events
+        })
     }
   })

@@ -1,12 +1,18 @@
 <script lang="ts" setup>
   import { computed } from 'vue';
   import { TransferTokenDto, TokenClass } from '@gala-chain/api' 
-  import GalaSend from '../components/Send.vue';
-import { calculateAvailableMintSupply } from '../utils/calculateBalance';
+  import GalaSend, { type TokenClassBalance } from '@/components/Send.vue';
+import { calculateAvailableMintSupply } from '@/utils/calculateBalance';
+import type { IGalaChainError } from '@/types/galachain-error';
 
   const props = defineProps({
     address: String
   })
+
+  const emit = defineEmits<{
+    submit: [value: TransferTokenDto];
+    error: [value: IGalaChainError];
+  }>();
 
   const tokens: { token: TokenClass }[] = [
     {
@@ -36,19 +42,21 @@ import { calculateAvailableMintSupply } from '../utils/calculateBalance';
   const availableTokens = computed(() => tokens.map(token => ({
     ...token.token, 
     available: calculateAvailableMintSupply(token.token).toString()
-  })))
-
-  const submit = (payload: TransferTokenDto) => {
-    console.log(payload);
-  } 
+  } as TokenClassBalance)))
 </script>
 
 <template>
-  <GalaSend :tokens="availableTokens" @submit="submit" to-header="Mint to" submit-text="Mint"></GalaSend>
+  <GalaSend 
+    :tokens="availableTokens" 
+    to-header="Mint to" 
+    submit-text="Mint"
+    @submit="event => emit('submit', event)" 
+    @error="event => emit('error', event)" 
+  ></GalaSend>
 </template>
 
 <style>
   @tailwind base;
   @tailwind components;
   @tailwind utilities;
-</style>
+</style>../types/galachainError

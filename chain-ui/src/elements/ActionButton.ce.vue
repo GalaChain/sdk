@@ -17,7 +17,7 @@
 <script setup lang="ts">
 import { ref, watch } from 'vue'
 import PrimeButton from 'primevue/button'
-import ActionModal from '../components/ActionModal.vue'
+import ActionModal from '@/components/ActionModal.vue'
 
 const isVisible = ref(false)
 watch(

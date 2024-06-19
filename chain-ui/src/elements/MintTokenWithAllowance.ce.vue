@@ -1,9 +1,9 @@
 <script lang="ts" setup>
   import { computed } from 'vue';
   import { TransferTokenDto, TokenClass } from '@gala-chain/api' 
-  import GalaSend from '../components/Send.vue';
+  import GalaSend, { type TokenClassBalance } from '@/components/Send.vue';
   import type { TokenAllowance } from '@gala-chain/api';
-  import { calculateAvailableMintAllowances } from '../utils/calculateBalance';
+  import { calculateAvailableMintAllowances } from '@/utils/calculateBalance';
 
   const props = defineProps({
     address: String
@@ -19,7 +19,7 @@
           created: 1718655547156,
           expires: 0,
           grantedBy: "client|ops-admin",
-          grantedTo: "client|63580d94c574ad78b121c267",
+          grantedTo: "client|000000000000000000000000",
           instance: "0",
           quantity: "1000",
           quantitySpent: "1",
@@ -51,7 +51,7 @@
     const availableTokens = computed(() => tokens.map(token => ({
       ...token.token, 
       available: calculateAvailableMintAllowances(token.allowances).toString()
-    })))
+    } as TokenClassBalance)))
 
   const submit = (payload: TransferTokenDto) => {
     console.log(payload);

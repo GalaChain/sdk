@@ -1,38 +1,36 @@
 // import { defineCustomElement } from 'vue'
 import PrimeVue from 'primevue/config'
 // import Button from './components/Button.ce.vue'
-import ActionButton from './elements/ActionButton.ce.vue'
-import './main.css'
-import { defineCustomElement as defineCustomElementWithOptions } from './utils/defineCustomElement'
+import { defineCustomElement } from './utils/defineCustomElement'
 import primevueTheme from './theme/primevue/gala'
-import TransferTokenCe from './elements/TransferToken.ce.vue'
-import MintTokenWithAllowanceCe from './elements/MintTokenWithAllowance.ce.vue'
-import MintTokenCe from './elements/MintToken.ce.vue'
+import ActionButton from './elements/ActionButton.ce.vue'
+import TransferToken from './elements/TransferToken.ce.vue'
+import MintTokenWithAllowance from './elements/MintTokenWithAllowance.ce.vue'
+import MintToken from './elements/MintToken.ce.vue'
+import type { Component, VueElementConstructor } from 'vue'
 
-customElements.define(
-  'gala-action-button',
-  defineCustomElementWithOptions(ActionButton, {
+const defineCustomElementWithOptions = (component: Component) => {
+  return defineCustomElement(component, {
     plugins: [{ plugin: PrimeVue, options: { pt: primevueTheme } }]
   })
-)
+}
 
-customElements.define(
-  'gala-transfer-token',
-  defineCustomElementWithOptions(TransferTokenCe, {
-    plugins: [{ plugin: PrimeVue, options: { pt: primevueTheme } }]
-  })
-)
+// TODO auto-construct from folder contents
+const GalaActionButton = defineCustomElementWithOptions(ActionButton)
+const GalaTransferToken = defineCustomElementWithOptions(TransferToken)
+const GalaMintToken = defineCustomElementWithOptions(MintToken)
+const GalaMintTokenWithAllowance = defineCustomElementWithOptions(MintTokenWithAllowance)
 
-customElements.define(
-  'gala-mint-token',
-  defineCustomElementWithOptions(MintTokenCe, {
-    plugins: [{ plugin: PrimeVue, options: { pt: primevueTheme } }]
-  })
-)
+const prefix = 'gala'
+export const galaChainElements: Record<string, VueElementConstructor> = {
+  'action-button': GalaActionButton,
+  'transfer-token': GalaTransferToken,
+  'mint-token': GalaMintToken,
+  'mint-token-with-allowance': GalaMintTokenWithAllowance
+}
 
-customElements.define(
-  'gala-mint-token-with-allowance',
-  defineCustomElementWithOptions(MintTokenWithAllowanceCe, {
-    plugins: [{ plugin: PrimeVue, options: { pt: primevueTheme } }]
-  })
-)
+Object.entries(galaChainElements).forEach(([key, value]) => {
+  customElements.define(`${prefix}-${key}`, value)
+})
+
+export { GalaActionButton, GalaTransferToken, GalaMintToken, GalaMintTokenWithAllowance }

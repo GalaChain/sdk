@@ -1,21 +1,27 @@
 <script lang="ts" setup>
   import { computed } from 'vue';
   import { TransferTokenDto } from '@gala-chain/api' 
-  import GalaSend from '../components/Send.vue';
-  import { calculateAvailableBalance } from '../utils/calculateBalance';
+  import GalaSend, { type TokenClassBalance } from '@/components/Send.vue';
+  import { calculateAvailableBalance } from '@/utils/calculateBalance';
 import type { TokenBalance, TokenClass } from '@gala-chain/api';
+import type { IGalaChainError } from '@/types/galachain-error';
 
   const props = defineProps({
     address: String
   })
-  
+
+  const emit = defineEmits<{
+    submit: [value: TransferTokenDto];
+    error: [value: IGalaChainError];
+  }>()
+
   const tokens: {token: TokenClass, balance: TokenBalance}[] = [
       {
         balance: {
           additionalKey: 'none',
           category: 'Unit',
           collection: 'GALA',
-          owner: 'client|63580d94c574ad78b121c267',
+          owner: 'client|000000000000000000000000',
           quantity: '74543.25694633',
           type: 'none'
         },
@@ -43,19 +49,22 @@ import type { TokenBalance, TokenClass } from '@gala-chain/api';
   const availableTokens = computed(() => tokens.map(token => ({
     ...token.token, 
     available: calculateAvailableBalance(token.balance).toString()
-  })))
-
-  const submit = (payload: TransferTokenDto) => {
-    console.log(payload);
-  } 
+  } as TokenClassBalance)))
+ 
 </script>
 
 <template>
-  <GalaSend :tokens="availableTokens" @submit="submit" to-header="Send to" submit-text="Send"></GalaSend>
+  <GalaSend 
+    :tokens="availableTokens"
+    to-header="Send to"
+    submit-text="Send"
+    @submit="event => emit('submit', event)" 
+    @error="event => emit('error', event)" 
+  ></GalaSend>
 </template>
 
 <style>
   @tailwind base;
   @tailwind components;
   @tailwind utilities;
-</style>
+</style>../types/galachainError

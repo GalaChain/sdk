@@ -11,15 +11,19 @@ import FormErrors from './Form/Errors.vue';
 import PrimeButton from 'primevue/button';
 import BigNumber from 'bignumber.js';
 
+export interface TokenClassBalance extends TokenClass {
+  available: string
+}
+
 interface IFormModel {
-  token: TokenClass & { available: string }
+  token: TokenClassBalance
   quantity: number;
   to: string;
 }
 
 const props = withDefaults(
   defineProps<{
-    tokens: TokenClass & { available: string }[];
+    tokens: TokenClassBalance[];
     disabled?: boolean;
     loading?: boolean;
     fromAddress?: string;
@@ -315,4 +319,4 @@ watch(
     @apply inline-block float-right;
   }
 }
-</style>
+</style>../types/galachainError
