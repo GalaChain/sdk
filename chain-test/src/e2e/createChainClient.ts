@@ -16,35 +16,6 @@ import { ChainClient, ChainUser, ChainUserAPI, ContractConfig } from "@gala-chai
 
 import { ContractTestClient } from "./ContractTestClient";
 
-// function contractConfig(c: string | ContractConfig): ContractConfig {
-//   if (typeof c === "string") {
-//     return {
-//       channelName: "product-channel",
-//       chaincodeName: "basic-product",
-//       contractName: c
-//     };
-//   } else {
-//     return c;
-//   }
-// }
-
-// assets: {
-//   name: {
-//     channelName: "product-channel",
-//     chaincodeName: "basic-product",
-//     contractName: "product"
-//   },
-//   api: commonContractAPI
-// },
-// pk: {
-//   name: {
-//     channelName: "public-key-channel",
-//     chaincodeName: "public-key",
-//     contractName: "public-key"
-//   },
-//   api: publicKeyContractAPI
-// }
-
 export function createChainClient(user: ChainUser, contract: ContractConfig): ChainClient & ChainUserAPI {
   return ContractTestClient.createForCurator(user, contract);
 }
