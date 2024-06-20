@@ -13,7 +13,7 @@
  * limitations under the License.
  */
 import { GalaChainResponse } from "@gala-chain/api";
-import { ChainClient, commonContractAPI, publicKeyContractAPI } from "@gala-chain/client";
+import { ChainClient, CommonContractAPI, commonContractAPI, publicKeyContractAPI } from "@gala-chain/client";
 import { AdminChainClients, TestClients, transactionSuccess } from "@gala-chain/test";
 
 import { AppleTreeDto, AppleTreesDto, FetchTreesDto, PagedTreesDto, PickAppleDto } from "../src/apples";
@@ -86,7 +86,7 @@ describe("API snapshots", () => {
   });
 });
 
-interface AppleContractAPI {
+interface AppleContractAPI extends CommonContractAPI {
   PlantTree(dto: AppleTreeDto): Promise<GalaChainResponse<void>>;
   PlantTrees(dto: AppleTreesDto): Promise<GalaChainResponse<void>>;
   FetchTrees(dto: FetchTreesDto): Promise<GalaChainResponse<PagedTreesDto>>;
@@ -95,6 +95,7 @@ interface AppleContractAPI {
 
 function appleContractAPI(client: ChainClient): AppleContractAPI {
   return {
+    ...commonContractAPI(client),
     PlantTree(dto: AppleTreeDto) {
       return client.submitTransaction("PlantTree", dto) as Promise<GalaChainResponse<void>>;
     },
@@ -104,7 +105,7 @@ function appleContractAPI(client: ChainClient): AppleContractAPI {
     },
 
     FetchTrees(dto: FetchTreesDto) {
-      return client.evaluateTransaction("FetchTrees", dto, PagedTreesDto);
+      return client.evaluateTransaction("FetchTrees", dto) as Promise<GalaChainResponse<PagedTreesDto>>;
     },
 
     PickApple(dto: PickAppleDto) {
