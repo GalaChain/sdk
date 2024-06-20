@@ -12,10 +12,11 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-import { commonContractAPI, publicKeyContractAPI } from "@gala-chain/client";
+import { GalaChainResponse } from "@gala-chain/api";
+import { ChainClient, commonContractAPI, publicKeyContractAPI } from "@gala-chain/client";
 import { AdminChainClients, TestClients, transactionSuccess } from "@gala-chain/test";
 
-import { appleContractAPI } from "./apples.spec.ts";
+import { AppleTreeDto, AppleTreesDto, FetchTreesDto, PagedTreesDto, PickAppleDto } from "../src/apples";
 
 jest.setTimeout(30000);
 
@@ -84,3 +85,30 @@ describe("API snapshots", () => {
     expect({ ...response.Data, contractVersion: "?.?.?" }).toMatchSnapshot();
   });
 });
+
+interface AppleContractAPI {
+  PlantTree(dto: AppleTreeDto): Promise<GalaChainResponse<void>>;
+  PlantTrees(dto: AppleTreesDto): Promise<GalaChainResponse<void>>;
+  FetchTrees(dto: FetchTreesDto): Promise<GalaChainResponse<PagedTreesDto>>;
+  PickApple(dto: PickAppleDto): Promise<GalaChainResponse<void>>;
+}
+
+function appleContractAPI(client: ChainClient): AppleContractAPI {
+  return {
+    PlantTree(dto: AppleTreeDto) {
+      return client.submitTransaction("PlantTree", dto) as Promise<GalaChainResponse<void>>;
+    },
+
+    PlantTrees(dto: AppleTreesDto) {
+      return client.submitTransaction("PlantTrees", dto) as Promise<GalaChainResponse<void>>;
+    },
+
+    FetchTrees(dto: FetchTreesDto) {
+      return client.evaluateTransaction("FetchTrees", dto, PagedTreesDto);
+    },
+
+    PickApple(dto: PickAppleDto) {
+      return client.submitTransaction("PickApple", dto) as Promise<GalaChainResponse<void>>;
+    }
+  };
+}
