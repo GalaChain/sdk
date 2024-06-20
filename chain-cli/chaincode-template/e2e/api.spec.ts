@@ -12,15 +12,39 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+import { commonContractAPI, publicKeyContractAPI } from "@gala-chain/client";
 import { AdminChainClients, TestClients, transactionSuccess } from "@gala-chain/test";
+
+import { appleContractAPI } from "./apples.spec.ts";
 
 jest.setTimeout(30000);
 
 describe("API snapshots", () => {
   const contractConfig = {
-    apples: "AppleContract",
-    pk: "PublicKeyContract",
-    assets: "GalaChainToken"
+    apples: {
+      name: {
+        channelName: "apple-channel",
+        chaincodeName: "basic-apple",
+        contractName: "apple-contract"
+      },
+      api: appleContractAPI
+    },
+    pk: {
+      name: {
+        channelName: "public-key-channel",
+        chaincodeName: "public-key",
+        contractName: "public-key"
+      },
+      api: publicKeyContractAPI
+    },
+    assets: {
+      name: {
+        channelName: "product-channel",
+        chaincodeName: "basic-product",
+        contractName: "product"
+      },
+      api: commonContractAPI
+    }
   };
 
   let client: AdminChainClients<typeof contractConfig>;

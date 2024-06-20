@@ -103,7 +103,7 @@ interface AppleContractAPI {
   PickApple(dto: PickAppleDto): Promise<GalaChainResponse<void>>;
 }
 
-function appleContractAPI(client: ChainClient): AppleContractAPI {
+export function appleContractAPI(client: ChainClient): AppleContractAPI {
   return {
     PlantTree(dto: AppleTreeDto) {
       return client.submitTransaction("PlantTree", dto) as Promise<GalaChainResponse<void>>;
