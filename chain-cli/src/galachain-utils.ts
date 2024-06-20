@@ -98,7 +98,7 @@ export async function getDeploymentResponse(params: { privateKey: string; isTest
 }
 
 function getContractNames(imageTag: string): { contractName: string }[] {
-  const dockerImageInspect = execSync("docker inspect --format=json ${imageTag}");
+  const dockerImageInspect = execSync(`docker inspect --format=json ${imageTag}`);
   let dockerJson;
   try {
     dockerJson = JSON.parse(dockerImageInspect);
