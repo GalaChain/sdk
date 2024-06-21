@@ -22,7 +22,7 @@
       "executor": "@nx/eslint:lint",
       "outputs": ["{options.outputFile}"],
       "options": {
-        "lintFilePatterns": ["chain-client/**/*.ts", "chain-client/package.json"]
+        "lintFilePatterns": ["chain-connect/**/*.ts", "chain-connect/package.json"]
       }
     },
     "test": {
