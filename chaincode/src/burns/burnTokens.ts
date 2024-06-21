@@ -21,14 +21,16 @@ import {
   TokenBurnCounter,
   TokenClass,
   TokenInstanceKey,
-  ValidationFailedError
+  ValidationFailedError,
+  createValidChainObject,
+  createValidRangedChainObject
 } from "@gala-chain/api";
 import { BigNumber } from "bignumber.js";
 
 import { checkAllowances, fetchAllowances, useAllowances } from "../allowances";
 import { fetchOrCreateBalance } from "../balances";
 import { InvalidDecimalError, fetchTokenInstance } from "../token";
-import { GalaChainContext, createValidChainObject } from "../types";
+import { GalaChainContext } from "../types";
 import { getObjectByKey, inverseEpoch, inverseTime, putChainObject, putRangedChainObject } from "../utils";
 import { InsufficientBurnAllowanceError, UseAllowancesFailedError } from "./BurnError";
 import { fetchKnownBurnCount } from "./fetchBurns";
@@ -77,7 +79,7 @@ async function createTokenBurnCounter(
     additionalKey
   });
 
-  const burnCounter = await createValidChainObject(TokenBurnCounter, {
+  const burnCounter = await createValidRangedChainObject(TokenBurnCounter, {
     collection,
     category,
     type,

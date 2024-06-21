@@ -15,7 +15,7 @@
 import {
   AllowanceKey,
   AuthorizedOnBehalf,
-  BatchMintTokenDto,
+  BatchMintTokenDto, createValidDTO, createValidRangedChainObject,
   FulfillMintDto,
   HighThroughputMintTokenDto,
   MintRequestDto,
@@ -83,7 +83,7 @@ export async function requestMintBatch(
   if (errors.length > 0) {
     throw new Error(`No token was minted. Errors: ${errors.join("; ")}.`);
   } else {
-    const resDto = plainToInstance(FulfillMintDto, {
+    const resDto = await createValidDTO(FulfillMintDto, {
       requests: minted
     });
 

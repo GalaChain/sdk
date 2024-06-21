@@ -54,7 +54,7 @@ describe("Simple NFT scenario", () => {
     await client.disconnect();
   });
 
-  const nftClassKey: TokenClassKey = plainToInstance(TokenClassKey, {
+  const nftClassKey: TokenClassKey = await createValidChainObject(TokenClassKey, {
     collection: randomize("NFT"),
     category: "Weapon",
     type: "Axe",

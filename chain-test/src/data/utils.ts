@@ -28,7 +28,8 @@ export function createInstanceFn<T>(
   cls: ClassConstructor<T>,
   plain: NonFunctionProperties<T>
 ): CreateInstanceFn<T> {
-  return (override) => plainToInstance(cls, !override ? plain : override(plain));
+  return (override) =>
+    plainToInstance<T, NonFunctionProperties<T>>(cls, !override ? plain : override(plain)) as T;
 }
 
 export function createPlainFn<T extends Record<string, unknown>>(t: T): () => T {

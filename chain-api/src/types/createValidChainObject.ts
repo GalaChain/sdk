@@ -16,9 +16,25 @@
 /*
  * Creates valid chain object. Throws error in case of failure
  */
-import { ChainObject, ClassConstructor, NonFunctionProperties, RangedChainObject } from "@gala-chain/api";
+import { ChainObject } from "./ChainObject";
+import { ClassConstructor, NonFunctionProperties } from "./dtos";
+import { RangedChainObject } from "./RangedChainObject";
 
-export async function createValidChainObject<T extends ChainObject | RangedChainObject>(
+export async function createValidChainObject<T extends ChainObject>(
+  constructor: ClassConstructor<T>,
+  plain: NonFunctionProperties<T>
+): Promise<T> {
+  const obj = new constructor();
+  Object.entries(plain).forEach(([k, v]) => {
+    obj[k] = v;
+  });
+
+  await obj.validateOrReject();
+
+  return obj;
+}
+
+export async function createValidRangedChainObject<T extends RangedChainObject>(
   constructor: ClassConstructor<T>,
   plain: NonFunctionProperties<T>
 ): Promise<T> {

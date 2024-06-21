@@ -5,7 +5,9 @@
     "outDir": "lib",
     "declarationDir": "lib",
     "composite": true,
-    "lib": ["dom"]
+    "lib": ["dom"],
+    "declarationMap": true,
+    "sourceMap": true
   },
   "files": [],
   "include": ["**/*"],

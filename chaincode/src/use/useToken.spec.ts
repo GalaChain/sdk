@@ -27,7 +27,7 @@ describe("UseToken", () => {
     const nftClass = nft.tokenClass();
 
     const nftTokenBalancePlain = {
-      owner: users.testUser1Id,
+      owner: users.testUser1,
       collection: nftInstanceKey.collection,
       category: nftInstanceKey.category,
       type: nftInstanceKey.type,
@@ -38,21 +38,21 @@ describe("UseToken", () => {
       quantity: new BigNumber("1")
     };
 
-    const expectedBalance = plainToInstance(TokenBalance, nftTokenBalancePlain);
+    const expectedBalance = await createValidChainObject(TokenBalance, nftTokenBalancePlain);
 
     const { ctx, contract, writes } = fixture(GalaChainTokenContract)
-      .callingUser(users.testUser1Id)
+      .callingUser(users.testUser1)
       .savedState(nftClass, nftInstance, expectedBalance);
 
     const dto: UseTokenDto = await createValidDTO(UseTokenDto, {
-      owner: users.testUser1Id,
-      inUseBy: users.testUser1Id,
+      owner: users.testUser1,
+      inUseBy: users.testUser1,
       tokenInstance: nftInstanceKey,
       quantity: new BigNumber("1")
     });
 
     const expectedHold = new TokenHold({
-      createdBy: users.testUser1Id,
+      createdBy: users.testUser1,
       instanceId: nftInstanceKey.instance,
       quantity: new BigNumber("1"),
       created: ctx.txUnixTime,
@@ -63,7 +63,7 @@ describe("UseToken", () => {
     const response = await contract.UseToken(ctx, dto);
 
     // Then
-    const balanceWithHold = plainToInstance(TokenBalance, { ...expectedBalance, inUseHolds: [expectedHold] });
+    const balanceWithHold = await createValidChainObject(TokenBalance, { ...expectedBalance, inUseHolds: [expectedHold] });
     expect(response).toEqual(GalaChainResponse.Success(balanceWithHold));
     expect(writes).toEqual(writesMap(balanceWithHold));
   });

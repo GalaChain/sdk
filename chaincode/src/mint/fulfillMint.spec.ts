@@ -40,7 +40,7 @@ describe("FulfillMint", () => {
     // Given
     const currencyClassKey = currency.tokenClassKey();
 
-    const testFixture = fixture(GalaChainTokenContract).callingUser(users.testAdminId);
+    const testFixture = fixture(GalaChainTokenContract).callingUser(users.admin);
 
     const { ctx, contract } = testFixture;
 
@@ -55,15 +55,15 @@ describe("FulfillMint", () => {
 
     const { collection, category, type, additionalKey } = currencyClassKey;
 
-    const mintRequest = plainToInstance(TokenMintRequest, {
+    const mintRequest = await createValidChainObject(TokenMintRequest, {
       collection,
       category,
       type,
       additionalKey,
       timeKey,
       totalKnownMintsCount: new BigNumber("0"),
-      requestor: users.testAdminId,
-      owner: users.testUser1Id,
+      requestor: users.admin,
+      owner: users.testUser1,
       created: ctx.txUnixTime,
       quantity: new BigNumber("1"),
       state: TokenMintStatus.Unknown,
@@ -99,7 +99,7 @@ describe("FulfillMint", () => {
     const mintQty = new BigNumber("1000000000000");
     const tokenAllowance = currency.tokenAllowance();
 
-    const testFixture = fixture(GalaChainTokenContract).callingUser(users.testAdminId);
+    const testFixture = fixture(GalaChainTokenContract).callingUser(users.admin);
 
     const { ctx, contract, writes } = testFixture;
 
@@ -108,15 +108,15 @@ describe("FulfillMint", () => {
 
     const { collection, category, type, additionalKey } = currencyClass;
 
-    const mintRequest = plainToInstance(TokenMintRequest, {
+    const mintRequest = await createValidChainObject(TokenMintRequest, {
       collection,
       category,
       type,
       additionalKey,
       timeKey,
       totalKnownMintsCount: new BigNumber("0"),
-      requestor: users.testAdminId,
-      owner: users.testUser1Id,
+      requestor: users.admin,
+      owner: users.testUser1,
       created: ctx.txUnixTime,
       quantity: mintQty,
       state: TokenMintStatus.Unknown,
@@ -127,7 +127,7 @@ describe("FulfillMint", () => {
 
     const mintFulfillment: TokenMintFulfillment = mintRequest.fulfill(mintRequest.quantity);
 
-    const tokenBurnCounter = plainToInstance(TokenBurnCounter, {
+    const tokenBurnCounter = await createValidChainObject(TokenBurnCounter, {
       collection,
       category,
       type,
@@ -135,7 +135,7 @@ describe("FulfillMint", () => {
       timeKey,
       instance: TokenInstance.FUNGIBLE_TOKEN_INSTANCE,
       totalKnownBurnsCount: new BigNumber("0"),
-      burnedBy: users.testUser2Id,
+      burnedBy: users.testUser2,
       created: ctx.txUnixTime,
       quantity: new BigNumber("1"),
       epoch: epochKey
@@ -143,10 +143,10 @@ describe("FulfillMint", () => {
 
     tokenBurnCounter.referenceId = tokenBurnCounter.referencedBurnId();
 
-    const tokenClaim = plainToInstance(TokenClaim, {
+    const tokenClaim = await createValidChainObject(TokenClaim, {
       ...currencyInstanceKey,
-      ownerKey: users.testAdminId,
-      issuerKey: users.testAdminId,
+      ownerKey: users.admin,
+      issuerKey: users.admin,
       instance: new BigNumber("0"),
       action: 4,
       quantity: mintQty,
@@ -159,9 +159,9 @@ describe("FulfillMint", () => {
       .savedState(currencyClass, currencyInstance, tokenAllowance, tokenClaim)
       .savedRangeState([mintRequest, tokenBurnCounter]);
 
-    const dto = plainToInstance(FulfillMintDto, {
+    const dto = await createValidChainObject(FulfillMintDto, {
       requests: [
-        plainToInstance(MintRequestDto, {
+        await createValidChainObject(MintRequestDto, {
           collection,
           category,
           type,
@@ -169,17 +169,17 @@ describe("FulfillMint", () => {
           timeKey,
           totalKnownMintsCount: new BigNumber("0"),
           id: mintRequest.requestId(),
-          owner: users.testUser1Id
+          owner: users.testUser1
         })
       ]
     });
 
-    const expectedBalance = plainToInstance(TokenBalance, {
+    const expectedBalance = await createValidChainObject(TokenBalance, {
       ...currency.tokenBalance(),
       quantity: mintQty
     });
 
-    const expectedAllowance = plainToInstance(TokenAllowance, {
+    const expectedAllowance = await createValidChainObject(TokenAllowance, {
       ...tokenAllowance,
       quantitySpent: mintQty,
       usesSpent: new BigNumber("1"),
@@ -204,14 +204,14 @@ describe("FulfillMint", () => {
 
     const { collection, category, type, additionalKey } = nftClass;
 
-    const testFixture = fixture(GalaChainTokenContract).callingUser(users.testAdminId);
+    const testFixture = fixture(GalaChainTokenContract).callingUser(users.admin);
 
     const { ctx, contract, writes } = testFixture;
 
-    const tokenClaim = plainToInstance(TokenClaim, {
+    const tokenClaim = await createValidChainObject(TokenClaim, {
       ...nftInstanceKey,
-      ownerKey: users.testAdminId,
-      issuerKey: users.testAdminId,
+      ownerKey: users.admin,
+      issuerKey: users.admin,
       instance: new BigNumber("0"),
       action: 4,
       quantity: mintQty,
@@ -220,7 +220,7 @@ describe("FulfillMint", () => {
       created: ctx.txUnixTime
     });
 
-    const expectedAllowance = plainToInstance(TokenAllowance, {
+    const expectedAllowance = await createValidChainObject(TokenAllowance, {
       ...tokenAllowance,
       quantitySpent: mintQty,
       usesSpent: new BigNumber("1"),
@@ -234,15 +234,15 @@ describe("FulfillMint", () => {
       const distantPastTimestamp = ctx.txUnixTime - (lookbackTimeOffset * 5 - i);
       const distantPastTimeKey = inverseTime(ctx, lookbackTimeOffset * 5 - i);
 
-      const mintRequest = plainToInstance(TokenMintRequest, {
+      const mintRequest = await createValidChainObject(TokenMintRequest, {
         collection,
         category,
         type,
         additionalKey,
         timeKey: distantPastTimeKey,
         totalKnownMintsCount: new BigNumber("0"),
-        requestor: users.testAdminId,
-        owner: users.testUser2Id,
+        requestor: users.admin,
+        owner: users.testUser2,
         created: distantPastTimestamp,
         quantity: new BigNumber("1"),
         state: TokenMintStatus.Unknown,
@@ -271,15 +271,15 @@ describe("FulfillMint", () => {
       const nearbyTimestamp = ctx.txUnixTime - i * 500;
       const nearbyTimeKey = inverseTime(ctx, i * 500);
 
-      const mintRequest = plainToInstance(TokenMintRequest, {
+      const mintRequest = await createValidChainObject(TokenMintRequest, {
         collection,
         category,
         type,
         additionalKey,
         timeKey: nearbyTimeKey,
         totalKnownMintsCount: new BigNumber(pastMintRequests.length),
-        requestor: users.testAdminId,
-        owner: users.testUser2Id,
+        requestor: users.admin,
+        owner: users.testUser2,
         created: nearbyTimestamp,
         quantity: new BigNumber("1"),
         state: TokenMintStatus.Unknown,
@@ -291,15 +291,15 @@ describe("FulfillMint", () => {
       return mintRequest;
     });
 
-    const mintRequest = plainToInstance(TokenMintRequest, {
+    const mintRequest = await createValidChainObject(TokenMintRequest, {
       collection,
       category,
       type,
       additionalKey,
       timeKey,
       totalKnownMintsCount: new BigNumber(pastMintRequests.length),
-      requestor: users.testAdminId,
-      owner: users.testUser1Id,
+      requestor: users.admin,
+      owner: users.testUser1,
       created: ctx.txUnixTime,
       quantity: mintQty,
       state: TokenMintStatus.Unknown,
@@ -312,9 +312,9 @@ describe("FulfillMint", () => {
 
     const mintFulfillment: TokenMintFulfillment = mintRequest.fulfill(mintRequest.quantity);
 
-    const dto = plainToInstance(FulfillMintDto, {
+    const dto = await createValidChainObject(FulfillMintDto, {
       requests: [
-        plainToInstance(MintRequestDto, {
+        await createValidChainObject(MintRequestDto, {
           collection,
           category,
           type,
@@ -322,7 +322,7 @@ describe("FulfillMint", () => {
           timeKey,
           totalKnownMintsCount: new BigNumber(pastMintRequests.length),
           id: mintRequest.requestId(),
-          owner: users.testUser1Id
+          owner: users.testUser1
         })
       ]
     });
@@ -335,27 +335,27 @@ describe("FulfillMint", () => {
       concurrentMintRequests.length
     );
 
-    const expectedNft1Key = plainToInstance(TokenInstanceKey, {
+    const expectedNft1Key = await createValidChainObject(TokenInstanceKey, {
       ...nftInstanceKey,
       instance: expectedStartingInstance.plus("1")
     });
-    const expectedNft1 = plainToInstance(TokenInstance, {
+    const expectedNft1 = await createValidChainObject(TokenInstance, {
       ...nftInstanceKey,
       instance: expectedStartingInstance.plus("1"),
       isNonFungible: true,
-      owner: users.testUser1Id
+      owner: users.testUser1
     });
-    const expectedNft2Key = plainToInstance(TokenInstanceKey, {
+    const expectedNft2Key = await createValidChainObject(TokenInstanceKey, {
       ...nftInstanceKey,
       instance: expectedStartingInstance.plus("2")
     });
-    const expectedNft2 = plainToInstance(TokenInstance, {
+    const expectedNft2 = await createValidChainObject(TokenInstance, {
       ...nftInstanceKey,
       instance: expectedStartingInstance.plus("2"),
       isNonFungible: true,
-      owner: users.testUser1Id
+      owner: users.testUser1
     });
-    const expectedBalance = plainToInstance(TokenBalance, {
+    const expectedBalance = await createValidChainObject(TokenBalance, {
       ...nft.tokenBalance(),
       quantity: new BigNumber("2"),
       instanceIds: [expectedStartingInstance.plus("1"), expectedStartingInstance.plus("2")]
@@ -379,7 +379,7 @@ describe("FulfillMint", () => {
     const decimalQuantity = new BigNumber("0.000000000001");
 
     const testFixture = fixture(GalaChainTokenContract)
-      .callingUser(users.testUser1Id)
+      .callingUser(users.testUser1)
       .savedState(currencyClass, currencyInstance, tokenAllowance);
 
     const { ctx, contract, writes } = testFixture;
@@ -389,15 +389,15 @@ describe("FulfillMint", () => {
 
     const { collection, category, type, additionalKey } = currencyClass;
 
-    const mintRequest = plainToInstance(TokenMintRequest, {
+    const mintRequest = await createValidChainObject(TokenMintRequest, {
       collection,
       category,
       type,
       additionalKey,
       timeKey,
       totalKnownMintsCount: new BigNumber("0"),
-      requestor: users.testAdminId,
-      owner: users.testUser1Id,
+      requestor: users.admin,
+      owner: users.testUser1,
       created: ctx.txUnixTime,
       quantity: decimalQuantity,
       state: TokenMintStatus.Unknown,
@@ -408,9 +408,9 @@ describe("FulfillMint", () => {
 
     testFixture.savedRangeState([mintRequest]);
 
-    const dto = plainToInstance(FulfillMintDto, {
+    const dto = await createValidChainObject(FulfillMintDto, {
       requests: [
-        plainToInstance(MintRequestDto, {
+        await createValidChainObject(MintRequestDto, {
           collection,
           category,
           type,
@@ -418,7 +418,7 @@ describe("FulfillMint", () => {
           timeKey,
           totalKnownMintsCount: new BigNumber("0"),
           id: mintRequest.requestId(),
-          owner: users.testUser1Id
+          owner: users.testUser1
         })
       ]
     });
@@ -449,10 +449,10 @@ describe("FulfillMint", () => {
 
     const { ctx, contract, writes } = testFixture;
 
-    const tokenClaim = plainToInstance(TokenClaim, {
+    const tokenClaim = await createValidChainObject(TokenClaim, {
       ...nftInstanceKey,
-      ownerKey: users.testAdminId,
-      issuerKey: users.testAdminId,
+      ownerKey: users.admin,
+      issuerKey: users.admin,
       instance: new BigNumber("0"),
       action: 4,
       quantity: mintQty,
@@ -464,15 +464,15 @@ describe("FulfillMint", () => {
     const epochKey = inverseEpoch(ctx, 0);
     const timeKey = inverseTime(ctx, 0);
 
-    const mintRequest = plainToInstance(TokenMintRequest, {
+    const mintRequest = await createValidChainObject(TokenMintRequest, {
       collection,
       category,
       type,
       additionalKey,
       timeKey,
       totalKnownMintsCount: new BigNumber("0"),
-      requestor: users.testAdminId,
-      owner: users.testUser1Id,
+      requestor: users.admin,
+      owner: users.testUser1,
       created: ctx.txUnixTime,
       quantity: mintQty,
       state: TokenMintStatus.Unknown,
@@ -481,7 +481,7 @@ describe("FulfillMint", () => {
 
     mintRequest.id = mintRequest.requestId();
 
-    const tokenBurnCounter = plainToInstance(TokenBurnCounter, {
+    const tokenBurnCounter = await createValidChainObject(TokenBurnCounter, {
       collection,
       category,
       type,
@@ -489,7 +489,7 @@ describe("FulfillMint", () => {
       timeKey,
       totalKnownBurnsCount: new BigNumber("0"),
       instance: nftInstance.instance,
-      burnedBy: users.testUser2Id,
+      burnedBy: users.testUser2,
       created: ctx.txUnixTime,
       quantity: new BigNumber("1"),
       epoch: epochKey
@@ -497,9 +497,9 @@ describe("FulfillMint", () => {
 
     tokenBurnCounter.referenceId = tokenBurnCounter.referencedBurnId();
 
-    const dto = plainToInstance(FulfillMintDto, {
+    const dto = await createValidChainObject(FulfillMintDto, {
       requests: [
-        plainToInstance(MintRequestDto, {
+        await createValidChainObject(MintRequestDto, {
           collection,
           category,
           type,

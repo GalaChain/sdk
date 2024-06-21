@@ -25,7 +25,7 @@ const defaultUpdate = () => ({
   image: "http://app.gala.games/UPDATED-image-url",
   symbol: "UPDATEDAUTOTESTCOIN",
   rarity: "Updateable",
-  authorities: [users.testAdminId, "client|new-admin"]
+  authorities: [users.admin, "client|new-admin"]
 });
 
 it("should update token class", async () => {
@@ -33,7 +33,7 @@ it("should update token class", async () => {
   const savedTokenClass = currency.tokenClass();
 
   const { ctx, contract, writes } = fixture(GalaChainTokenContract)
-    .callingUser(users.testAdminId)
+    .callingUser(users.admin)
     .savedState(savedTokenClass);
 
   const dto: UpdateTokenClassDto = await createValidDTO(UpdateTokenClassDto, {
@@ -57,7 +57,7 @@ it("should update token class", async () => {
 it("should fail if callingUser is not token authority", async () => {
   // Given
   const savedTokenClass = currency.tokenClass();
-  const callingUser = users.testUser1Id;
+  const callingUser = users.testUser1;
   expect(savedTokenClass.authorities).not.toContain(callingUser);
 
   const { ctx, contract, writes } = fixture(GalaChainTokenContract)

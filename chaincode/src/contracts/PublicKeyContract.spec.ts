@@ -22,7 +22,7 @@ import {
   createValidDTO,
   signatures
 } from "@gala-chain/api";
-import { transactionSuccess } from "@gala-chain/test";
+import { fixture, transactionSuccess } from "@gala-chain/test";
 import { classToPlain, instanceToInstance, plainToClass } from "class-transformer";
 import { randomUUID } from "crypto";
 
@@ -32,10 +32,10 @@ import { PublicKeyContract } from "./PublicKeyContract";
 
 it("should serve proper API", async () => {
   // Given
-  const chaincode = new TestChaincode([PublicKeyContract]);
+  const { contract, ctx } = fixture(PublicKeyContract);
 
   // When
-  const response = await chaincode.invoke("PublicKeyContract:GetContractAPI");
+  const response = await contract.GetContractAPI(ctx);
 
   // Then
   expect(response).toEqual(transactionSuccess());

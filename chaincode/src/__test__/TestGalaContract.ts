@@ -14,14 +14,14 @@
  */
 // eslint-disable-next-line @typescript-eslint/ban-ts-comment
 // @ts-ignore
-import { ChainCallDTO, ChainKey, ChainObject, GalaChainResponse } from "@gala-chain/api";
+import { ChainCallDTO, ChainKey, ChainObject, createValidChainObject, GalaChainResponse } from "@gala-chain/api";
 import { NotImplementedError } from "@gala-chain/api";
 import { Exclude } from "class-transformer";
 import { Transaction } from "fabric-contract-api";
 
 import { version } from "../../package.json";
 import { EVALUATE, GalaContract, GalaTransaction, SUBMIT } from "../contracts";
-import { GalaChainContext, createValidChainObject } from "../types";
+import { GalaChainContext } from "../types";
 import { getObjectsByPartialCompositeKey, putChainObject } from "../utils/state";
 
 export class SuperheroDto extends ChainCallDTO {

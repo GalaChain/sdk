@@ -64,7 +64,7 @@ it("should allow to pick apples", async () => {
   expect(response).toEqual(transactionSuccess());
   expect(writes).toEqual(
     writesMap(
-      plainToInstance(AppleTree, {
+      await createValidChainObject(AppleTree, {
         ...existingTree,
         applesPicked: existingTree.applesPicked.plus(1)
       })

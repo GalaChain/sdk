@@ -54,7 +54,7 @@ export async function fulfillMintAllowanceRequest(
   // todo: type this failures array and work it into response
   const failures: any[] = [];
 
-  for (const [_, values] of Object.entries(reqIdx)) {
+  for (const [, values] of Object.entries(reqIdx)) {
     // Entries in the Request Index represent
     // some number of mint requests for the same token, at the same running total height.
     // Because our original GrantAllowance implementation allowed (potentially large) arrays,

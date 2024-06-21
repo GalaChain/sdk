@@ -12,10 +12,10 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-import { TokenClass, TokenClassKey, TokenInstance } from "@gala-chain/api";
+import { createValidChainObject, TokenClass, TokenClassKey, TokenInstance } from "@gala-chain/api";
 import BigNumber from "bignumber.js";
 
-import { GalaChainContext, createValidChainObject } from "../types";
+import { GalaChainContext } from "../types";
 import { objectExists, putChainObject } from "../utils";
 import { NftDecimalError } from "./TokenError";
 import { TokenAlreadyExistsError } from "./TokenError";
