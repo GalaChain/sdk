@@ -24,6 +24,11 @@ declare global {
 export class GalachainConnectClient {
   private address: string;
   private provider: BrowserProvider | undefined;
+  private chainCodeUrl: string;
+
+  constructor(chainCodeUrl: string) {
+    this.chainCodeUrl = chainCodeUrl;
+  }
 
   public async connectToMetaMask() {
     if (!window.ethereum) {
@@ -41,7 +46,7 @@ export class GalachainConnectClient {
     }
   }
 
-  public async sendTransaction(chaincodeUrl: string, method: string, payload: object): Promise<object> {
+  public async sendTransaction(method: string, payload: object): Promise<object> {
     if (!this.provider) {
       throw new Error("Ethereum provider not found");
     }
@@ -57,25 +62,18 @@ export class GalachainConnectClient {
       const signer = await this.provider.getSigner();
       const signature = await signer.provider.send("personal_sign", [this.address, dto]);
 
-      return await this.submit(chaincodeUrl, method, { ...prefixedPayload, signature });
+      return await this.submit(method, { ...prefixedPayload, signature });
     } catch (error: unknown) {
       throw new Error((error as Error).message);
     }
   }
 
-  public async submit(
-    chaincodeUrl: string,
-    method: string,
-    signedPayload: Record<string, unknown>
-  ): Promise<object> {
+  public async submit(method: string, signedPayload: Record<string, unknown>): Promise<object> {
     if (signedPayload instanceof ChainCallDTO) {
       await signedPayload.validateOrReject();
     }
 
-    // Note: GalaChain Uri maybe should be constructed based on channel and method,
-    // rather than passing full url as arg
-    // ie `${baseUri}/api/${channel}/token-contract/${method}`
-    const url = `${chaincodeUrl}/${method}`;
+    const url = `${this.chainCodeUrl}/${method}`;
     const response = await fetch(url, {
       method: "POST",
       body: serialize(signedPayload),
