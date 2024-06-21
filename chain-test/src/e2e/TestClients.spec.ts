@@ -44,17 +44,17 @@ it("should create client for custom config", async () => {
   const customConfig = {
     token: {
       name: {
-        channelName: "product-channel",
-        chaincodeName: "basic-product",
-        contractName: "product"
+        channelName: "token-contract",
+        chaincodeName: "basic-asset",
+        contractName: "GalaChainToken"
       },
       api: commonContractAPI
     },
     auth: {
       name: {
-        channelName: "public-key-channel",
-        chaincodeName: "public-key",
-        contractName: "public-key"
+        channelName: "public-key-contract",
+        chaincodeName: "basic-asset",
+        contractName: "PublicKeyContract"
       },
       api: publicKeyContractAPI
     }
@@ -78,7 +78,7 @@ it("should include and admin API for admin client", async () => {
       name: {
         channelName: "product-channel",
         chaincodeName: "basic-product",
-        contractName: "product"
+        contractName: "GalaChainToken"
       },
       api: commonContractAPI
     }

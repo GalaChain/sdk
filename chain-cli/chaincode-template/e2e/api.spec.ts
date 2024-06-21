@@ -25,26 +25,26 @@ describe("API snapshots", () => {
     apples: {
       name: {
         channelName: "apple-channel",
-        chaincodeName: "basic-apple",
-        contractName: "apple-contract"
+        chaincodeName: "basic-asset",
+        contractName: "AppleContract"
       },
       api: appleContractAPI
     },
-    pk: {
-      name: {
-        channelName: "public-key-channel",
-        chaincodeName: "public-key",
-        contractName: "public-key"
-      },
-      api: publicKeyContractAPI
-    },
     assets: {
       name: {
-        channelName: "product-channel",
-        chaincodeName: "basic-product",
-        contractName: "product"
+        channelName: "token-contract",
+        chaincodeName: "basic-asset",
+        contractName: "GalaChainToken"
       },
       api: commonContractAPI
+    },
+    pk: {
+      name: {
+        channelName: "public-key-contract",
+        chaincodeName: "basic-asset",
+        contractName: "PublicKeyContract"
+      },
+      api: publicKeyContractAPI
     }
   };
 

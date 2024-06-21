@@ -83,17 +83,17 @@ function defaultChainClientsOptions(): DefaultChainClientOptions {
   return {
     assets: {
       name: {
-        channelName: "product-channel",
-        chaincodeName: "basic-product",
-        contractName: "product"
+        channelName: "token-contract",
+        chaincodeName: "basic-asset",
+        contractName: "GalaChainToken"
       },
       api: commonContractAPI
     },
     pk: {
       name: {
-        channelName: "public-key-channel",
-        chaincodeName: "public-key",
-        contractName: "public-key"
+        channelName: "public-key-contract",
+        chaincodeName: "basic-asset",
+        contractName: "PublicKeyContract"
       },
       api: publicKeyContractAPI
     }
