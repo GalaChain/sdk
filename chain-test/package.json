@@ -7,8 +7,6 @@
     "@gala-chain/client": "1.1.27",
     "nanoid": "^3.3.6",
     "tslib": "^2.6.2",
-    "path": "0.12.7",
-    "process": "0.11.10",
     "@jest/globals": "29.7.0"
   },
   "peerDependencies": {
