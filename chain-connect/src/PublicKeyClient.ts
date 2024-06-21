@@ -23,18 +23,18 @@ export class PublicKeyClient {
   ) {}
 
   public GetMyProfile(dto: GetMyProfileDto) {
-    return this.client.sendTransaction(this.url, "GetMyProfile", dto);
+    return this.client.sendTransaction({ url: this.url, method: "GetMyProfile", payload: dto });
   }
 
   public RegisterUser(dto: RegisterUserDto) {
-    return this.client.sendTransaction(this.url, "RegisterUser", dto);
+    return this.client.sendTransaction({ url: this.url, method: "RegisterUser", payload: dto });
   }
 
   public RegisterEthUser(dto: RegisterEthUserDto) {
-    return this.client.sendTransaction(this.url, "RegisterEthUser", dto);
+    return this.client.sendTransaction({ url: this.url, method: "RegisterEthUser", payload: dto });
   }
 
   public UpdatePublicKey(dto: UpdatePublicKeyDto) {
-    return this.client.sendTransaction(this.url, "UpdatePublicKey", dto);
+    return this.client.sendTransaction({ url: this.url, method: "UpdatePublicKey", payload: dto });
   }
 }

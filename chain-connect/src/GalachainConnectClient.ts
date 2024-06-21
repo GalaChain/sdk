@@ -46,7 +46,15 @@ export class GalachainConnectClient {
     }
   }
 
-  public async sendTransaction(method: string, payload: object): Promise<object> {
+  public async sendTransaction({
+    url = this.chainCodeUrl,
+    method,
+    payload
+  }: {
+    url: string;
+    method: string;
+    payload: object;
+  }): Promise<object> {
     if (!this.provider) {
       throw new Error("Ethereum provider not found");
     }
@@ -62,18 +70,22 @@ export class GalachainConnectClient {
       const signer = await this.provider.getSigner();
       const signature = await signer.provider.send("personal_sign", [this.address, dto]);
 
-      return await this.submit(method, { ...prefixedPayload, signature });
+      return await this.submit(url, method, { ...prefixedPayload, signature });
     } catch (error: unknown) {
       throw new Error((error as Error).message);
     }
   }
 
-  public async submit(method: string, signedPayload: Record<string, unknown>): Promise<object> {
+  public async submit(
+    chainCodeUrl: string,
+    method: string,
+    signedPayload: Record<string, unknown>
+  ): Promise<object> {
     if (signedPayload instanceof ChainCallDTO) {
       await signedPayload.validateOrReject();
     }
 
-    const url = `${this.chainCodeUrl}/${method}`;
+    const url = `${chainCodeUrl}/${method}`;
     const response = await fetch(url, {
       method: "POST",
       body: serialize(signedPayload),
