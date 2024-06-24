@@ -12,15 +12,24 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-import { ChainObject, GalaChainResponse, createValidDTO } from "@gala-chain/api";
-import { DefaultError } from "@gala-chain/api";
+import {
+  ChainCallDTO,
+  ChainObject,
+  DefaultError,
+  DryRunDto,
+  GalaChainResponse,
+  GalaChainResponseType,
+  GetObjectDto,
+  createValidDTO
+} from "@gala-chain/api";
 import { transactionError, transactionSuccess } from "@gala-chain/test";
+import { instanceToPlain } from "class-transformer";
 import { Context } from "fabric-contract-api";
 import { inspect } from "util";
 
 import TestChaincode from "../__test__/TestChaincode";
 import TestGalaContract, { Superhero, SuperheroDto, SuperheroQueryDto } from "../__test__/TestGalaContract";
-import { GalaChainContext } from "../types";
+import { GalaChainContext, createValidChainObject } from "../types";
 
 /*
  * Test below verifies that the base class of TestGalaContract (i.e. GalaContract) provides stub to
@@ -209,5 +218,136 @@ describe("GalaContract.GetObjectsByPartialCompositeKey", () => {
     );
 
     expect(results.find((r) => r.getCompositeKey() === batmanKey)?.age).toEqual(updatedBatman.age);
+  });
+});
+
+describe("GalaContract.DryRun", () => {
+  it("should support DryRun for submit operations", async () => {
+    // Given
+    const chaincode = new TestChaincode([TestGalaContract]);
+    const method = "CreateSuperhero";
+    const dto = SuperheroDto.create("Batman", 32);
+    const superhero = await createValidChainObject(Superhero, dto);
+    const dryRunDto = await createValidDTO(DryRunDto, { method, dto });
+
+    // When
+    const response = await chaincode.invoke("TestGalaContract:DryRun", dryRunDto);
+
+    // Then
+    expect(response).toEqual({
+      Status: GalaChainResponseType.Success,
+      Data: {
+        response: { Status: GalaChainResponseType.Success },
+        reads: {},
+        writes: { [superhero.getCompositeKey()]: superhero.serialize() },
+        deletes: {}
+      }
+    });
+  });
+
+  it("should support DryRun for evaluate operations (read existing object)", async () => {
+    // Given
+    const chaincode = new TestChaincode([TestGalaContract]);
+    const batman = SuperheroDto.create("Batman", 32);
+    const batmanKey = (await createValidChainObject(Superhero, batman)).getCompositeKey();
+    await chaincode.invoke("TestGalaContract:CreateSuperhero", batman.serialize());
+
+    const method = "GetObjectByKey";
+    const dto = await createValidDTO(GetObjectDto, { objectId: batmanKey });
+    const dryRunDto = await createValidDTO(DryRunDto, { method, dto });
+
+    // When
+    const response = await chaincode.invoke("TestGalaContract:DryRun", dryRunDto);
+
+    // Then
+    expect(response).toEqual({
+      Status: GalaChainResponseType.Success,
+      Data: {
+        response: { Status: GalaChainResponseType.Success, Data: instanceToPlain(batman) },
+        reads: { [batmanKey]: batman.serialize() },
+        writes: {},
+        deletes: {}
+      }
+    });
+  });
+
+  it("should support DryRun for evaluate operations (read missing object)", async () => {
+    // Given
+    const chaincode = new TestChaincode([TestGalaContract]);
+    const batman = SuperheroDto.create("Batman", 32);
+    const batmanKey = (await createValidChainObject(Superhero, batman)).getCompositeKey();
+    // no save
+    // await chaincode.invoke("TestGalaContract:CreateSuperhero", batman.serialize());
+
+    const method = "GetObjectByKey";
+    const dto = await createValidDTO(GetObjectDto, { objectId: batmanKey });
+    const dryRunDto = await createValidDTO(DryRunDto, { method, dto });
+
+    // When
+    const response = await chaincode.invoke("TestGalaContract:DryRun", dryRunDto);
+
+    // Then
+    expect(response).toEqual({
+      Status: GalaChainResponseType.Success,
+      Data: {
+        response: {
+          Status: GalaChainResponseType.Error,
+          ErrorCode: 404,
+          ErrorKey: "OBJECT_NOT_FOUND",
+          ErrorPayload: { objectId: batmanKey },
+          Message: `No object with id ${batmanKey} exists`
+        },
+        reads: { [batmanKey]: "" }, // empty string because object is missing
+        writes: {},
+        deletes: {}
+      }
+    });
+  });
+
+  it("should return success response with error on chaincode error", async () => {
+    // Given
+    const chaincode = new TestChaincode([TestGalaContract]);
+    const method = "CreateSuperhero";
+    const dto = SuperheroDto.create("Batman", -1); // invalid age
+    const dryRunDto = await createValidDTO(DryRunDto, { method, dto });
+
+    // When
+    const response = await chaincode.invoke("TestGalaContract:DryRun", dryRunDto);
+
+    // Then
+    expect(response).toEqual({
+      Status: GalaChainResponseType.Success,
+      Data: {
+        response: {
+          Status: GalaChainResponseType.Error,
+          ErrorCode: 400,
+          ErrorKey: "DTO_VALIDATION_FAILED",
+          ErrorPayload: ["isPositive: age must be a positive number"],
+          Message: "Property 'age' of SuperheroDto has failed the following constraints: isPositive"
+        },
+        reads: {},
+        writes: {},
+        deletes: {}
+      }
+    });
+  });
+
+  it("should return error response on method not found", async () => {
+    // Given
+    const chaincode = new TestChaincode([TestGalaContract]);
+    const method = "UnknownMethod";
+    const dryRunDto = await createValidDTO(DryRunDto, { method, dto: new ChainCallDTO() });
+
+    // When
+    const response = await chaincode.invoke("TestGalaContract:DryRun", dryRunDto);
+
+    // Then
+    expect(response).toEqual({
+      Status: GalaChainResponseType.Error,
+      ErrorCode: 404,
+      ErrorKey: "NOT_FOUND",
+      Message:
+        "Method UnknownMethod not found. Available methods: CreateSuperhero, DryRun, GetChaincodeVersion, GetContractAPI, GetContractVersion, GetObjectByKey, GetObjectHistory, QuerySuperheroes"
+    });
   });
 });

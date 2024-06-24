@@ -120,6 +120,11 @@ export class GalaChainContext extends Context {
     this.callingUserEthAddressValue = d.ethAddress;
   }
 
+  public resetCallingUser(): void {
+    this.callingUserValue = undefined;
+    this.callingUserEthAddressValue = undefined;
+  }
+
   get txUnixTime(): number {
     if (this.txUnixTimeValue === undefined) {
       this.txUnixTimeValue = getTxUnixTime(this);

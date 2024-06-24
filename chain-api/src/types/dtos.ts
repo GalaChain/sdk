@@ -12,11 +12,12 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-import { instanceToInstance, plainToInstance } from "class-transformer";
+import { Type, instanceToInstance, plainToInstance } from "class-transformer";
 import { IsNotEmpty, IsOptional, ValidationError, validate } from "class-validator";
 import { JSONSchema } from "class-validator-jsonschema";
 
 import { ValidationFailedError, deserialize, getValidationErrorInfo, serialize, signatures } from "../utils";
+import { GalaChainResponse } from "./contract";
 
 type Base<T, BaseT> = T extends BaseT ? T : never;
 
@@ -204,6 +205,23 @@ export class GetObjectDto extends ChainCallDTO {
 export class GetObjectHistoryDto extends ChainCallDTO {
   @IsNotEmpty()
   public readonly objectId: string;
+}
+
+export class DryRunDto extends ChainCallDTO {
+  @IsNotEmpty()
+  public readonly method: string;
+
+  @IsNotEmpty()
+  @IsOptional()
+  @Type(() => ChainCallDTO)
+  dto?: ChainCallDTO;
+}
+
+export class DryRunResultDto extends ChainCallDTO {
+  public response: GalaChainResponse<unknown>;
+  public writes: Record<string, Uint8Array> = {};
+  public reads: Record<string, Uint8Array> = {};
+  public deletes: Record<string, true> = {};
 }
 
 const publicKeyDescription =
