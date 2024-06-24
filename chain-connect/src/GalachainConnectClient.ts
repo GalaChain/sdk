@@ -51,7 +51,7 @@ export class GalachainConnectClient {
     method,
     payload
   }: {
-    url: string;
+    url?: string;
     method: string;
     payload: object;
   }): Promise<object> {

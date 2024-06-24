@@ -56,11 +56,11 @@ describe("GalachainConnectClient", () => {
     };
 
     // call connect
-    const client = new GalachainConnectClient();
+    const client = new GalachainConnectClient("https://example.com");
     await client.connectToMetaMask();
 
     // send dto payload in sendTransaction
-    const response = await client.sendTransaction("https://example.com", "TransferToken", dto);
+    const response = await client.sendTransaction({ method: "TransferToken", payload: dto });
 
     expect(response).toEqual({
       Hash: {
