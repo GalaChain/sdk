@@ -31,9 +31,9 @@ describe("Apple trees", () => {
   const appleContractConfig = {
     apples: {
       name: {
-        channelName: "apple-channel",
-        chaincodeName: "basic-apple",
-        contractName: "apple-contract"
+        channelName: "product-channel",
+        chaincodeName: "basic-product",
+        contractName: "AppleContract"
       },
       api: appleContractAPI
     }
@@ -96,7 +96,7 @@ describe("Apple trees", () => {
   });
 });
 
-interface AppleContractAPI extends CommonContractAPI {
+interface AppleContractAPI {
   PlantTree(dto: AppleTreeDto): Promise<GalaChainResponse<void>>;
   PlantTrees(dto: AppleTreesDto): Promise<GalaChainResponse<void>>;
   FetchTrees(dto: FetchTreesDto): Promise<GalaChainResponse<PagedTreesDto>>;
@@ -105,7 +105,6 @@ interface AppleContractAPI extends CommonContractAPI {
 
 function appleContractAPI(client: ChainClient): AppleContractAPI {
   return {
-    ...commonContractAPI(client),
     PlantTree(dto: AppleTreeDto) {
       return client.submitTransaction("PlantTree", dto) as Promise<GalaChainResponse<void>>;
     },

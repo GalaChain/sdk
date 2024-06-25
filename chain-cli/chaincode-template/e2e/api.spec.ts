@@ -12,11 +12,8 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-import { GalaChainResponse } from "@gala-chain/api";
-import { ChainClient, CommonContractAPI, commonContractAPI, publicKeyContractAPI } from "@gala-chain/client";
+import { commonContractAPI } from "@gala-chain/client";
 import { AdminChainClients, TestClients, transactionSuccess } from "@gala-chain/test";
-
-import { AppleTreeDto, AppleTreesDto, FetchTreesDto, PagedTreesDto, PickAppleDto } from "../src/apples";
 
 jest.setTimeout(30000);
 
@@ -28,7 +25,7 @@ describe("API snapshots", () => {
         chaincodeName: "basic-asset",
         contractName: "AppleContract"
       },
-      api: appleContractAPI
+      api: commonContractAPI
     },
     assets: {
       name: {
@@ -44,7 +41,7 @@ describe("API snapshots", () => {
         chaincodeName: "basic-asset",
         contractName: "PublicKeyContract"
       },
-      api: publicKeyContractAPI
+      api: commonContractAPI
     }
   };
 
@@ -85,31 +82,3 @@ describe("API snapshots", () => {
     expect({ ...response.Data, contractVersion: "?.?.?" }).toMatchSnapshot();
   });
 });
-
-interface AppleContractAPI extends CommonContractAPI {
-  PlantTree(dto: AppleTreeDto): Promise<GalaChainResponse<void>>;
-  PlantTrees(dto: AppleTreesDto): Promise<GalaChainResponse<void>>;
-  FetchTrees(dto: FetchTreesDto): Promise<GalaChainResponse<PagedTreesDto>>;
-  PickApple(dto: PickAppleDto): Promise<GalaChainResponse<void>>;
-}
-
-function appleContractAPI(client: ChainClient): AppleContractAPI {
-  return {
-    ...commonContractAPI(client),
-    PlantTree(dto: AppleTreeDto) {
-      return client.submitTransaction("PlantTree", dto) as Promise<GalaChainResponse<void>>;
-    },
-
-    PlantTrees(dto: AppleTreesDto) {
-      return client.submitTransaction("PlantTrees", dto) as Promise<GalaChainResponse<void>>;
-    },
-
-    FetchTrees(dto: FetchTreesDto) {
-      return client.evaluateTransaction("FetchTrees", dto) as Promise<GalaChainResponse<PagedTreesDto>>;
-    },
-
-    PickApple(dto: PickAppleDto) {
-      return client.submitTransaction("PickApple", dto) as Promise<GalaChainResponse<void>>;
-    }
-  };
-}
