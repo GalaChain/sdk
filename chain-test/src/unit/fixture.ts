@@ -57,6 +57,9 @@ type GalaChainStub = ChaincodeStub & {
   getCachedState(key: string): Promise<Uint8Array>;
   getCachedStateByPartialCompositeKey(objectType: string, attributes: string[]): FabricIterable<CachedKV>;
   flushWrites(): Promise<void>;
+  getReads(): Record<string, Uint8Array>;
+  getWrites(): Record<string, Uint8Array>;
+  getDeletes(): Record<string, true>;
 };
 
 type TestGalaChainContext = Context & {
@@ -65,6 +68,7 @@ type TestGalaChainContext = Context & {
   set callingUserData(d: { alias: string; ethAddress: string | undefined });
   get callingUser(): string;
   get callingUserEthAddress(): string;
+  resetCallingUser(): void;
   get txUnixTime(): number;
   setChaincodeStub(stub: ChaincodeStub): void;
 };
