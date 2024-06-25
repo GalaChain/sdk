@@ -271,6 +271,29 @@ describe("GalaContract.DryRun", () => {
     });
   });
 
+  it("should support DryRun for operations with no dto", async () => {
+    // Given
+    const chaincode = new TestChaincode([TestGalaContract]);
+    const dryRunDto = await createValidDTO(DryRunDto, { method: "GetContractVersion" });
+
+    // eslint-disable-next-line @typescript-eslint/no-var-requires
+    const expectedVersion = require("../../package.json").version;
+
+    // When
+    const response = await chaincode.invoke("TestGalaContract:DryRun", dryRunDto);
+
+    // Then
+    expect(response).toEqual({
+      Status: GalaChainResponseType.Success,
+      Data: {
+        response: { Status: GalaChainResponseType.Success, Data: expectedVersion },
+        reads: {},
+        writes: {},
+        deletes: {}
+      }
+    });
+  });
+
   it("should support DryRun for evaluate operations (read missing object)", async () => {
     // Given
     const chaincode = new TestChaincode([TestGalaContract]);
