@@ -23,12 +23,12 @@ jobs:
       - name: Poll Pipeline Status
         run: |
           status=""
-          while [[ "$status" != "success" && "$status" != "failed" ]]; do
+          while [[ "$status" != "success" && "$status" != "failed" &&  "$status" != "canceled" ]]; do
             result=$(curl "https://gitlab.com/api/v4/projects/35484791/pipelines/${{ steps.trigger.outputs.pipeline_id }}")
             status=$(echo $result | jq -r '.status')
             echo "Pipeline status: $status"
-            if [[ "$status" == "failed" ]]; then
-              echo "Pipeline failed"
+            if [[ "$status" == "failed" || "$status" == "canceled" ]]; then
+              echo "Pipeline $status"
               exit 1
             fi
             sleep 10
