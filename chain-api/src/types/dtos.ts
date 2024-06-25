@@ -219,8 +219,8 @@ export class DryRunDto extends ChainCallDTO {
 
 export class DryRunResultDto extends ChainCallDTO {
   public response: GalaChainResponse<unknown>;
-  public writes: Record<string, Uint8Array>;
-  public reads: Record<string, Uint8Array>;
+  public writes: Record<string, string>;
+  public reads: Record<string, string>;
   public deletes: Record<string, true>;
 }
 
