@@ -13,7 +13,7 @@
  * limitations under the License.
  */
 import { GalaChainResponse } from "@gala-chain/api";
-import { ChainClient, ChainUser, CommonContractAPI, commonContractAPI } from "@gala-chain/client";
+import { ChainClient, ChainUser } from "@gala-chain/client";
 import { AdminChainClients, TestClients, transactionErrorKey, transactionSuccess } from "@gala-chain/test";
 
 import {

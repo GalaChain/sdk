@@ -21,24 +21,24 @@ describe("API snapshots", () => {
   const contractConfig = {
     apples: {
       name: {
-        channelName: "apple-channel",
-        chaincodeName: "basic-asset",
+        channelName: "product-channel",
+        chaincodeName: "basic-product",
         contractName: "AppleContract"
       },
       api: commonContractAPI
     },
     assets: {
       name: {
-        channelName: "token-contract",
-        chaincodeName: "basic-asset",
+        channelName: "product-channel",
+        chaincodeName: "basic-product",
         contractName: "GalaChainToken"
       },
       api: commonContractAPI
     },
     pk: {
       name: {
-        channelName: "public-key-contract",
-        chaincodeName: "basic-asset",
+        channelName: "product-channel",
+        chaincodeName: "basic-product",
         contractName: "PublicKeyContract"
       },
       api: commonContractAPI
