@@ -44,16 +44,16 @@ it("should create client for custom config", async () => {
   const customConfig = {
     token: {
       name: {
-        channelName: "token-contract",
-        chaincodeName: "basic-asset",
+        channelName: "product-channel",
+        chaincodeName: "basic-product",
         contractName: "GalaChainToken"
       },
       api: commonContractAPI
     },
     auth: {
       name: {
-        channelName: "public-key-contract",
-        chaincodeName: "basic-asset",
+        channelName: "product-channel",
+        chaincodeName: "basic-product",
         contractName: "PublicKeyContract"
       },
       api: publicKeyContractAPI
