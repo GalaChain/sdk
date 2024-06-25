@@ -1,6 +1,6 @@
 {
   "name": "@gala-chain/chaincode",
-  "version": "1.1.26",
+  "version": "1.1.28",
   "description": "Framework for building chaincodes on GalaChain",
   "license": "Apache-2.0",
   "type": "commonjs",
@@ -22,7 +22,7 @@
     "update-snapshot": "jest --updateSnapshot"
   },
   "dependencies": {
-    "@gala-chain/api": "1.1.26",
+    "@gala-chain/api": "1.1.28",
     "@grpc/grpc-js": "1.8.15",
     "fabric-contract-api": "2.5.4",
     "fabric-shim": "2.5.4",

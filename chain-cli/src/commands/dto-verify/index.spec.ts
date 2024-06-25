@@ -20,7 +20,7 @@ const dataTestJson = `{
   "id": "1",
   "lastName": "Cruise",
   "photo": "https://jsonformatter.org/img/tom-cruise.jpg",
-  "signature": "N9aRUvGUedrnOrZch0o0bHUyHHXIUDvV6xOhKsja7j63/eyWDoilWW35iTXFXFQ8uSP3mejoRS4NkVVcd13xchs="
+  "signature": "37d69152f19479dae73ab65c874a346c75321c75c8503bd5eb13a12ac8daee3e48021369f1775aa6920676ca3aa3abc2018ae54cc6605b0db241093058d84fcf1c"
 }`;
 
 const fakePublicKey =
