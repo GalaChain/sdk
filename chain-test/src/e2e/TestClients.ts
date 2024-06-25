@@ -25,7 +25,6 @@ import {
 } from "@gala-chain/client";
 import * as fs from "fs";
 import * as path from "path";
-import process from "process";
 
 import { networkRoot } from "./ContractTestClient";
 import { createChainClient } from "./createChainClient";
