@@ -19,6 +19,7 @@ import {
   DeleteAllowancesDto,
   FetchAllowancesDto,
   FetchBalancesDto,
+  FetchBalancesWithTokenMetadataResponse,
   FetchBurnsDto,
   FetchMintRequestsDto,
   FetchTokenClassesDto,
@@ -90,6 +91,14 @@ export class TokenClient {
 
   public FetchBalances(dto: FetchBalancesDto) {
     return this.client.sendTransaction({ url: this.url, method: "FetchBalances", payload: dto });
+  }
+
+  public FetchBalancesWithTokenMetadata(dto: FetchBalancesDto) {
+    return this.client.sendTransaction<FetchBalancesWithTokenMetadataResponse, FetchBalancesDto>({
+      url: this.url,
+      method: "FetchBalancesWithTokenMetadata",
+      payload: dto
+    });
   }
 
   public RequestMint(dto: HighThroughputMintTokenDto) {

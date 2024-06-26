@@ -22,7 +22,7 @@ declare global {
 }
 
 export class GalachainConnectClient {
-  private address: string;
+  public address: string;
   private provider: BrowserProvider | undefined;
   private chainCodeUrl: string;
 
@@ -46,15 +46,15 @@ export class GalachainConnectClient {
     }
   }
 
-  public async sendTransaction({
+  public async sendTransaction<T, U extends ChainCallDTO>({
     url = this.chainCodeUrl,
     method,
     payload
   }: {
     url?: string;
     method: string;
-    payload: object;
-  }): Promise<object> {
+    payload: U;
+  }): Promise<T> {
     if (!this.provider) {
       throw new Error("Ethereum provider not found");
     }
@@ -76,11 +76,11 @@ export class GalachainConnectClient {
     }
   }
 
-  public async submit(
+  public async submit<T, U extends ChainCallDTO>(
     chainCodeUrl: string,
     method: string,
-    signedPayload: Record<string, unknown>
-  ): Promise<object> {
+    signedPayload: U
+  ): Promise<T> {
     if (signedPayload instanceof ChainCallDTO) {
       await signedPayload.validateOrReject();
     }
