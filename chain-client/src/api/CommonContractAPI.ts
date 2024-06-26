@@ -30,7 +30,11 @@ export interface CommonContractAPI extends Record<string, unknown> {
   GetContractAPI(): Promise<GalaChainResponse<ContractAPI>>;
   GetObjectByKey(key: string): Promise<GalaChainResponse<Record<string, unknown>>>;
   GetObjectHistory(key: string): Promise<GalaChainResponse<Record<string, unknown>>>;
-  DryRun(method: string, dto: ChainCallDTO): Promise<GalaChainResponse<DryRunResultDto>>;
+  DryRun(
+    method: string,
+    callerPublicKey: string,
+    dto: ChainCallDTO
+  ): Promise<GalaChainResponse<DryRunResultDto>>;
 }
 
 export const commonContractAPI = (client: ChainClient): CommonContractAPI => ({
@@ -56,8 +60,12 @@ export const commonContractAPI = (client: ChainClient): CommonContractAPI => ({
     return resp as GalaChainResponse<Record<string, unknown>>;
   },
 
-  async DryRun(method: string, dto: ChainCallDTO): Promise<GalaChainResponse<DryRunResultDto>> {
-    const dryRunDto = await createValidDTO(DryRunDto, { method, dto });
+  async DryRun(
+    method: string,
+    callerPublicKey: string,
+    dto: ChainCallDTO
+  ): Promise<GalaChainResponse<DryRunResultDto>> {
+    const dryRunDto = await createValidDTO(DryRunDto, { method, callerPublicKey, dto });
     const resp = await client.evaluateTransaction("DryRun", dryRunDto);
     return resp as GalaChainResponse<DryRunResultDto>;
   }

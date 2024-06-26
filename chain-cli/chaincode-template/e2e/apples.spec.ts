@@ -96,11 +96,11 @@ describe("Apple trees", () => {
 
   test("Support Dry Run operations", async () => {
     // Given
-    const dto = new AppleTreeDto(Variety.HONEYCRISP, 10).signed(user.privateKey);
+    const dto = new AppleTreeDto(Variety.HONEYCRISP, 10);
     const saved = new AppleTree(user.identityKey, Variety.HONEYCRISP, 10, new Date().getTime());
 
     // When
-    const response = await client.apples.DryRun("PlantTree", dto);
+    const response = await client.apples.DryRun("PlantTree", user.publicKey, dto);
 
     // Then
     expect(response).toEqual(

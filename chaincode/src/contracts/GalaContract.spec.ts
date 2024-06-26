@@ -22,7 +22,7 @@ import {
   GetObjectDto,
   createValidDTO
 } from "@gala-chain/api";
-import { transactionError, transactionSuccess } from "@gala-chain/test";
+import { transactionError, transactionSuccess, users } from "@gala-chain/test";
 import { instanceToPlain } from "class-transformer";
 import { Context } from "fabric-contract-api";
 import { inspect } from "util";
@@ -30,6 +30,7 @@ import { inspect } from "util";
 import TestChaincode from "../__test__/TestChaincode";
 import TestGalaContract, { Superhero, SuperheroDto, SuperheroQueryDto } from "../__test__/TestGalaContract";
 import { GalaChainContext, createValidChainObject } from "../types";
+import * as secp from "@noble/secp256k1";
 
 /*
  * Test below verifies that the base class of TestGalaContract (i.e. GalaContract) provides stub to
@@ -222,13 +223,15 @@ describe("GalaContract.GetObjectsByPartialCompositeKey", () => {
 });
 
 describe("GalaContract.DryRun", () => {
+  const callerPublicKey = process.env.DEV_ADMIN_PUBLIC_KEY as string;
+
   it("should support DryRun for submit operations", async () => {
     // Given
     const chaincode = new TestChaincode([TestGalaContract]);
     const method = "CreateSuperhero";
     const dto = SuperheroDto.create("Batman", 32);
     const superhero = await createValidChainObject(Superhero, dto);
-    const dryRunDto = await createValidDTO(DryRunDto, { method, dto });
+    const dryRunDto = await createValidDTO(DryRunDto, { method, callerPublicKey, dto });
 
     // When
     const response = await chaincode.invoke("TestGalaContract:DryRun", dryRunDto);
@@ -254,7 +257,7 @@ describe("GalaContract.DryRun", () => {
 
     const method = "GetObjectByKey";
     const dto = await createValidDTO(GetObjectDto, { objectId: batmanKey });
-    const dryRunDto = await createValidDTO(DryRunDto, { method, dto });
+    const dryRunDto = await createValidDTO(DryRunDto, { method, callerPublicKey, dto });
 
     // When
     const response = await chaincode.invoke("TestGalaContract:DryRun", dryRunDto);
@@ -274,7 +277,7 @@ describe("GalaContract.DryRun", () => {
   it("should support DryRun for operations with no dto", async () => {
     // Given
     const chaincode = new TestChaincode([TestGalaContract]);
-    const dryRunDto = await createValidDTO(DryRunDto, { method: "GetContractVersion" });
+    const dryRunDto = await createValidDTO(DryRunDto, { method: "GetContractVersion", callerPublicKey });
 
     // eslint-disable-next-line @typescript-eslint/no-var-requires
     const expectedVersion = require("../../package.json").version;
@@ -304,7 +307,7 @@ describe("GalaContract.DryRun", () => {
 
     const method = "GetObjectByKey";
     const dto = await createValidDTO(GetObjectDto, { objectId: batmanKey });
-    const dryRunDto = await createValidDTO(DryRunDto, { method, dto });
+    const dryRunDto = await createValidDTO(DryRunDto, { method,callerPublicKey, dto });
 
     // When
     const response = await chaincode.invoke("TestGalaContract:DryRun", dryRunDto);
@@ -332,7 +335,7 @@ describe("GalaContract.DryRun", () => {
     const chaincode = new TestChaincode([TestGalaContract]);
     const method = "CreateSuperhero";
     const dto = SuperheroDto.create("Batman", -1); // invalid age
-    const dryRunDto = await createValidDTO(DryRunDto, { method, dto });
+    const dryRunDto = await createValidDTO(DryRunDto, { method, callerPublicKey, dto });
 
     // When
     const response = await chaincode.invoke("TestGalaContract:DryRun", dryRunDto);
@@ -359,7 +362,7 @@ describe("GalaContract.DryRun", () => {
     // Given
     const chaincode = new TestChaincode([TestGalaContract]);
     const method = "UnknownMethod";
-    const dryRunDto = await createValidDTO(DryRunDto, { method, dto: new ChainCallDTO() });
+    const dryRunDto = await createValidDTO(DryRunDto, { method, callerPublicKey, dto: new ChainCallDTO() });
 
     // When
     const response = await chaincode.invoke("TestGalaContract:DryRun", dryRunDto);
@@ -373,4 +376,29 @@ describe("GalaContract.DryRun", () => {
         "Method UnknownMethod not found. Available methods: CreateSuperhero, DryRun, GetChaincodeVersion, GetContractAPI, GetContractVersion, GetObjectByKey, GetObjectHistory, QuerySuperheroes"
     });
   });
+
+  it("should return error response if inner dto contains signature", async () => {
+    // Given
+    const chaincode = new TestChaincode([TestGalaContract]);
+    const method = "CreateSuperhero";
+    const dto = await createValidDTO(ChainCallDTO, { signature: "some-signature" });
+    const dryRunDto = await createValidDTO(DryRunDto, { method, callerPublicKey, dto });
+
+    // When
+    const response = await chaincode.invoke("TestGalaContract:DryRun", dryRunDto);
+
+    // Then
+    expect(response).toEqual({
+      Status: GalaChainResponseType.Error,
+      ErrorCode: 400,
+      ErrorKey: "VALIDATION_FAILED",
+      Message: "The dto should have no signature for dry run execution"
+    });
+  });
 });
+
+function randomPublicKey() {
+  const privateKey = secp.utils.bytesToHex(secp.utils.randomPrivateKey());
+  const publicKey = secp.utils.bytesToHex(secp.getPublicKey(privateKey));
+  return { privateKey, publicKey };
+}

@@ -20,7 +20,7 @@ import {
   GetObjectDto,
   GetObjectHistoryDto,
   NotFoundError,
-  createValidDTO
+  createValidDTO, signatures, ValidationFailedError
 } from "@gala-chain/api";
 import { Contract } from "fabric-contract-api";
 
@@ -29,6 +29,7 @@ import { getObjectHistory, getPlainObjectByKey } from "../utils";
 import { getApiMethods } from "./GalaContractApi";
 import { EVALUATE, GalaTransaction } from "./GalaTransaction";
 import { trace } from "./tracing";
+import { PublicKeyService } from "../services";
 
 export abstract class GalaContract extends Contract {
   /**
@@ -67,7 +68,7 @@ export abstract class GalaContract extends Contract {
       await super.afterTransaction(ctx, result);
 
       // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
-      if (typeof result === "object" && result?.["Status"] === GalaChainResponseType.Success) {
+      if (typeof result === "object" && result?.["Status"] === GalaChainResponseType.Success && !ctx.isDryRun) {
         await (ctx.stub as unknown as GalaChainStub).flushWrites();
       }
 
@@ -152,8 +153,21 @@ export abstract class GalaContract extends Contract {
       );
     }
 
-    // reset authorization so the method will be executed as the calling user from DTO
-    ctx.resetCallingUser();
+    // For dry run we don't use the regular authorization. We don't want users to provide signatures
+    // to avoid reply attack in case if the method is eventually not executed, and someone in the middle
+    // will replay the request.
+    if (dto.dto && dto.dto.signature) {
+      throw new ValidationFailedError("The dto should have no signature for dry run execution");
+    }
+
+    const ethAddr = signatures.getEthAddress(dto.callerPublicKey);
+    const userProfile = await PublicKeyService.getUserProfile(ctx, ethAddr);
+
+    if (!userProfile) {
+      throw new NotFoundError(`User profile for ${ethAddr} not found`);
+    }
+
+    ctx.setDryRunOnBehalfOf(userProfile);
 
     // method needs to be executed first to populate reads, writes and deletes
     const response = await this[methodName](ctx, dto.dto);
