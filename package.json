@@ -1,6 +1,6 @@
 {
   "name": "@gala-chain/sdk",
-  "version": "1.1.27",
+  "version": "1.1.28",
   "license": "Apache-2.0",
   "scripts": {
     "lint": "nx run-many -t lint",
@@ -19,12 +19,12 @@
   },
   "private": true,
   "devDependencies": {
-    "@nx/eslint": "17.3.2",
-    "@nx/eslint-plugin": "17.3.2",
-    "@nx/jest": "17.3.2",
-    "@nx/js": "17.3.2",
-    "@nx/linter": "17.3.2",
-    "@nx/workspace": "17.3.2",
+    "@nx/eslint": "^19.3.0",
+    "@nx/eslint-plugin": "^19.3.0",
+    "@nx/jest": "^19.3.0",
+    "@nx/js": "^19.3.0",
+    "@nx/linter": "^19.3.0",
+    "@nx/workspace": "^19.3.0",
     "@trivago/prettier-plugin-sort-imports": "^4.3.0",
     "@types/jest": "29.5.11",
     "@types/node": "18.16.9",
@@ -38,7 +38,7 @@
     "jest-environment-jsdom": "^29.7.0",
     "jest-environment-node": "^29.7.0",
     "license-checker": "^25.0.1",
-    "nx": "17.3.2",
+    "nx": "^19.3.0",
     "prettier": "3.1.1",
     "ts-jest": "29.1.1",
     "ts-node": "^10.9.2",
@@ -51,11 +51,11 @@
     "includedScripts": []
   },
   "workspaces": [
-    "chain-cli",
     "chain-api",
+    "chain-cli",
     "chain-client",
+    "chain-connect",
     "chain-test",
-    "chaincode",
-    "chain-connect"
+    "chaincode"
   ]
 }

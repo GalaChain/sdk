@@ -8,7 +8,7 @@
       "executor": "@nx/js:tsc",
       "outputs": ["{options.outputPath}"],
       "options": {
-        "outputPath": "dist/connect",
+        "outputPath": "chain-connect/lib",
         "main": "chain-connect/src/index.ts",
         "tsConfig": "chain-connect/tsconfig.lib.json",
         "assets": ["chain-connect/*.md"]
@@ -19,7 +19,11 @@
       "dependsOn": ["build"]
     },
     "lint": {
-      "executor": "@nx/eslint:lint"
+      "executor": "@nx/eslint:lint",
+      "outputs": ["{options.outputFile}"],
+      "options": {
+        "lintFilePatterns": ["chain-connect/**/*.ts", "chain-connect/package.json"]
+      }
     },
     "test": {
       "executor": "@nx/jest:jest",
