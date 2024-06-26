@@ -42,8 +42,22 @@ it("should create client for default config", async () => {
 it("should create client for custom config", async () => {
   // Given
   const customConfig = {
-    token: { name: "GalaChainToken", api: commonContractAPI },
-    auth: { name: "PublicKeyContract", api: publicKeyContractAPI }
+    token: {
+      name: {
+        channelName: "product-channel",
+        chaincodeName: "basic-product",
+        contractName: "GalaChainToken"
+      },
+      api: commonContractAPI
+    },
+    auth: {
+      name: {
+        channelName: "product-channel",
+        chaincodeName: "basic-product",
+        contractName: "PublicKeyContract"
+      },
+      api: publicKeyContractAPI
+    }
   };
 
   // When
@@ -57,25 +71,17 @@ it("should create client for custom config", async () => {
   expect(typeof clients.disconnect).toEqual("function");
 });
 
-it("should use common contract API if no API is defined", async () => {
-  // Given
-  const customConfig = {
-    token: "GalaChainToken"
-  };
-
-  // When
-  const clients = await TestClients.create(customConfig);
-
-  // Then
-  expect(typeof clients.token).toEqual("object");
-  expect(typeof clients.token.GetContractVersion).toEqual("function");
-  expect(typeof clients.disconnect).toEqual("function");
-});
-
 it("should include and admin API for admin client", async () => {
   // Given
   const customConfig = {
-    token: { name: "GalaChainToken", api: commonContractAPI }
+    token: {
+      name: {
+        channelName: "product-channel",
+        chaincodeName: "basic-product",
+        contractName: "GalaChainToken"
+      },
+      api: commonContractAPI
+    }
   };
 
   // When
