@@ -1,68 +1,71 @@
 <script lang="ts" setup>
-  import { computed } from 'vue';
-  import { TransferTokenDto, TokenClass } from '@gala-chain/api' 
-  import GalaSend, { type TokenClassBalance } from '@/components/Send.vue';
-  import type { TokenAllowance } from '@gala-chain/api';
-  import { calculateAvailableMintAllowances } from '@/utils/calculateBalance';
+import { computed } from 'vue';
+import { TokenClass, MintTokenWithAllowanceDto, TransferTokenDto } from '@gala-chain/api' 
+import GalaSend, { type TokenClassBalance } from '@/components/Send.vue';
+import { calculateAvailableMintSupply } from '@/utils/calculateBalance';
+import type { IGalaChainError } from '@/types/galachain-error';
+import PrimeSkeleton from 'primevue/skeleton';
 
-  const props = defineProps({
-    address: String
+  const props = defineProps<{
+    address?: string,
+    token?: TokenClass,
+    loading?: boolean
+  }>()
+
+  const emit = defineEmits<{
+    submit: [value: MintTokenWithAllowanceDto];
+    error: [value: IGalaChainError];
+  }>();
+
+  const availableToken = computed(() => {
+    const token: TokenClass = typeof props.token === 'string' ? JSON.parse(props.token) : props.token; 
+    return token ? {
+      ...token, 
+      available: calculateAvailableMintSupply(token, props.address).toString()
+    } as TokenClassBalance :
+    undefined
   })
 
-  const tokens: {token: TokenClass, allowances: TokenAllowance []}[] = [
-      {
-        allowances: [{
-          additionalKey: "none",
-          allowanceType: 4,
-          category: "Unit",
-          collection: "GALA",
-          created: 1718655547156,
-          expires: 0,
-          grantedBy: "client|ops-admin",
-          grantedTo: "client|000000000000000000000000",
-          instance: "0",
-          quantity: "1000",
-          quantitySpent: "1",
-          type: "none",
-          uses: "1000",
-          usesSpent: "1"
-        }],
-        token: {
-          additionalKey: 'none',
-          category: 'Unit',
-          collection: 'GALA',
-          decimals: 8,
-          description: 'GALA token',
-          image: 'https://app.gala.games/_nuxt/img/GALA-icon.b642e24.png',
-          isNonFungible: false,
-          maxCapacity: '50000000000',
-          maxSupply: '50000000000',
-          name: 'GALA',
-          network: 'GC',
-          symbol: 'GALA',
-          totalBurned: '0',
-          totalMintAllowance: '0',
-          totalSupply: '12587861171.99876767',
-          type: 'none'
-        },
-      }
-    ];
-
-    const availableTokens = computed(() => tokens.map(token => ({
-      ...token.token, 
-      available: calculateAvailableMintAllowances(token.allowances).toString()
-    } as TokenClassBalance)))
-
   const submit = (payload: TransferTokenDto) => {
-    console.log(payload);
-  } 
+    const { quantity, tokenInstance } = payload;
+    const { collection, category, type, additionalKey } = tokenInstance;
+    const mintTokenWithAllowanceDto = {
+      quantity,
+      tokenClass: {
+        collection,
+        category,
+        type,
+        additionalKey
+      }
+    } as MintTokenWithAllowanceDto
+    emit('submit', mintTokenWithAllowanceDto)
+  }
 </script>
 
 <template>
-  <GalaSend :tokens="availableTokens" @submit="submit" to-header="Mint to" submit-text="Mint" :from-address="address"></GalaSend>
+  <GalaSend 
+    v-if="availableToken"
+    :token="availableToken" 
+    :loading="loading"
+    to-header="Mint to" 
+    submit-text="Mint"
+    :from-address="address"
+    @submit="submit" 
+    @error="event => emit('error', event)" 
+  ></GalaSend>
+  <slot v-else name="empty">
+    <div class="flex flex-col items-center mt-6">
+      <div class="flex items-center w-full">
+        <PrimeSkeleton shape="circle" size="8rem" class="shrink-0 mr-4"></PrimeSkeleton>
+        <PrimeSkeleton height="3.5rem"></PrimeSkeleton>
+      </div>
+      <PrimeSkeleton height="3.5rem" class="my-6"></PrimeSkeleton>
+      <PrimeSkeleton height="3.5rem" width="10rem" border-radius="2rem"></PrimeSkeleton>
+    </div>
+  </slot>
 </template>
 
-<style>
+<style lang="css">
   @tailwind base;
   @tailwind components;
   @tailwind utilities;

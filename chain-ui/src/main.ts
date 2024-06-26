@@ -7,9 +7,10 @@ import ActionButton from './elements/ActionButton.ce.vue'
 import TransferToken from './elements/TransferToken.ce.vue'
 import MintTokenWithAllowance from './elements/MintTokenWithAllowance.ce.vue'
 import MintToken from './elements/MintToken.ce.vue'
-import type { Component, VueElementConstructor } from 'vue'
+import { type Component, type VueElementConstructor } from 'vue'
 
-const defineCustomElementWithOptions = (component: Component) => {
+const defineCustomElementWithOptions = <T extends Component>(component: T) => {
+  // TODO change types so contructor param "initialProps" is typed to component props
   return defineCustomElement(component, {
     plugins: [{ plugin: PrimeVue, options: { pt: primevueTheme } }]
   })

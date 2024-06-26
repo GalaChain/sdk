@@ -3,10 +3,9 @@ import { reactive, ref, computed, watch } from 'vue';
 import { type ValidationArgs, useVuelidate } from '@vuelidate/core';
 import { helpers, required, minValue, maxValue } from '@vuelidate/validators';
 import { getStepSizeFromDecimals } from '../utils/validation';
-import { TransferTokenDto, TokenClass } from '@gala-chain/api' 
+import { TransferTokenDto, TokenClass, ChainCallDTO } from '@gala-chain/api' 
 import { type IGalaChainError } from '../types/galachain-error';
 import FormInput from './Form/Input.vue';
-/* import FormTokenSelect from './Form/Select.vue'; TODO */ 
 import FormErrors from './Form/Errors.vue';
 import PrimeButton from 'primevue/button';
 import BigNumber from 'bignumber.js';
@@ -23,7 +22,7 @@ interface IFormModel {
 
 const props = withDefaults(
   defineProps<{
-    tokens: TokenClassBalance[];
+    token: TokenClassBalance;
     disabled?: boolean;
     loading?: boolean;
     fromAddress?: string;
@@ -101,7 +100,7 @@ const validationRules = computed(() => {
 const v$ = useVuelidate<Partial<IFormModel>>(validationRules, model);
 
 const globalError = computed(() =>
-
+  props.error ? props.error.message :
   v$.value.$error && v$.value.$dirty
       ? 'Please fix all errors before submitting'
       : ''
@@ -129,9 +128,9 @@ const send = async () => {
 };
 
 watch(
-  () => props.tokens,
+  () => props.token,
   (current) => {
-    model.token = current?.[0] ?? 0;
+    model.token = current;
     model.quantity = 0;
   },
   { immediate: true }
@@ -158,36 +157,9 @@ watch(
       </div>
 
       <div
-        class="px-2 xs:pl-0 xs:text-left flex-grow"
-        :class="props.tokens.length === 1 ? 'mt-4 xs:mt-3' : 'mt-4 xs:mt-0'"
+        class="px-2 xs:pl-0 xs:text-left flex-grow mt-4 xs:mt-3"
       >
-        <FormTokensSelect
-          v-if="props.tokens?.length > 1"
-          v-model="model.token"
-          :tokens="props.tokens"
-          label="Token"
-          placeholder="Select a token"
-          class="!w-full mb-3"
-          name="token"
-          label-style="hidden"
-          :errors="
-            v$.token.$error && v$.token.$errors[0]?.$message
-              ? [v$.token.$errors[0].$message]
-              : undefined
-          "
-          @change="v$.token.$touch"
-        >
-          <template #label>
-            <span class="text-[1rem] font-semibold">Token</span>
-          </template>
-          <template #selected="{ tokenName, tokenSymbol }">
-            <span class="sr-only">{{ tokenName }}</span>
-            <span aria-hidden="true" class="symbol block truncate">{{
-              tokenSymbol
-            }}</span>
-          </template>
-        </FormTokensSelect>
-        <div v-else-if="tokens.length === 1 && model.token">
+        <div v-if="!!model.token">
           <label :for="`${formEl?.id}-send-token`" class="sr-only">
             Token
           </label>
@@ -215,8 +187,7 @@ watch(
           "
           :aria-describedby="`${formEl?.id}-max-quantity`"
           class="form-element-quantity text-left"
-          :placeholder="props.tokens.length === 1 ? '0.0' : ''"
-          :label-style="props.tokens.length === 1 ? undefined : 'floating'"
+          placeholder="0.0"
           :errors="
             v$.quantity.$error && v$.quantity.$errors[0]?.$message
               ? [v$.quantity.$errors[0].$message]
@@ -319,4 +290,4 @@ watch(
     @apply inline-block float-right;
   }
 }
-</style>../types/galachainError
+</style>

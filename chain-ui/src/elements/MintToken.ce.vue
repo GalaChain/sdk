@@ -1,62 +1,71 @@
 <script lang="ts" setup>
-  import { computed } from 'vue';
-  import { TransferTokenDto, TokenClass } from '@gala-chain/api' 
-  import GalaSend, { type TokenClassBalance } from '@/components/Send.vue';
-import { calculateAvailableMintSupply } from '@/utils/calculateBalance';
-import type { IGalaChainError } from '@/types/galachain-error';
+import { computed } from 'vue';
+import { TokenClass, MintTokenDto, TransferTokenDto } from '@gala-chain/api' 
+import GalaSend, { type TokenClassBalance } from '@/components/Send.vue';
+import { TokenAllowance } from '@gala-chain/api';
+import { calculateAvailableMintAllowances } from '@/utils/calculateBalance';
+import type { IGalaChainError } from '../types/galachain-error';
+import PrimeSkeleton from 'primevue/skeleton';
 
-  const props = defineProps({
-    address: String
-  })
+  const props = defineProps<{
+    tokenAllowance?: {token: TokenClass, allowances: TokenAllowance[] },
+    loading?: boolean
+  }>()
 
   const emit = defineEmits<{
-    submit: [value: TransferTokenDto];
+    submit: [value: MintTokenDto];
     error: [value: IGalaChainError];
   }>();
 
-  const tokens: { token: TokenClass }[] = [
-    {
-      token: {
-        additionalKey: 'none',
-        category: 'Unit',
-        collection: 'GALA',
-        decimals: 8,
-        description: 'GALA token',
-        image: 'https://app.gala.games/_nuxt/img/GALA-icon.b642e24.png',
-        isNonFungible: false,
-        maxCapacity: '50000000000',
-        maxSupply: '50000000000',
-        name: 'GALA',
-        network: 'GC',
-        symbol: 'GALA',
-        totalBurned: '0',
-        totalMintAllowance: '0',
-        totalSupply: '12587861171.99876767',
-        type: 'none',
-        knownMintAllowanceSupply: "5760597134.02388959",
-        knownMintSupply: "12557871753.41399767",
-      },
-    }
-  ];
+  const availableToken = computed(() => {
+    const token: {token: TokenClass, allowances: TokenAllowance[] } = typeof props.tokenAllowance === 'string' ? JSON.parse(props.tokenAllowance) : props.tokenAllowance;
+    return token ? {
+      ...token.token, 
+      available: calculateAvailableMintAllowances(token.allowances).toString()
+    } as TokenClassBalance :
+    undefined
+  })
 
-  const availableTokens = computed(() => tokens.map(token => ({
-    ...token.token, 
-    available: calculateAvailableMintSupply(token.token).toString()
-  } as TokenClassBalance)))
+  const submit = (payload: TransferTokenDto) => {
+    const { quantity, tokenInstance } = payload;
+    const { collection, category, type, additionalKey } = tokenInstance;
+    const mintTokenDto = {
+      quantity,
+      tokenClass: {
+        collection,
+        category,
+        type,
+        additionalKey
+      }
+    } as MintTokenDto
+    emit('submit', mintTokenDto)
+  }
 </script>
 
 <template>
   <GalaSend 
-    :tokens="availableTokens" 
-    to-header="Mint to" 
-    submit-text="Mint"
-    @submit="event => emit('submit', event)" 
+    v-if="availableToken" 
+    :token="availableToken" 
+    :loading="loading"
+    :show-recipient="false"
+    @submit="submit" 
     @error="event => emit('error', event)" 
-  ></GalaSend>
+    to-header="Mint to" 
+    submit-text="Mint">
+  </GalaSend>
+  <slot v-else name="empty">
+    <div class="flex flex-col items-center mt-6">
+      <div class="flex items-center w-full mb-6">
+        <PrimeSkeleton shape="circle" size="8rem" class="shrink-0 mr-4"></PrimeSkeleton>
+        <PrimeSkeleton height="3.5rem"></PrimeSkeleton>
+      </div>
+      <PrimeSkeleton height="3.5rem" width="10rem" border-radius="2rem"></PrimeSkeleton>
+    </div>
+  </slot>
 </template>
 
-<style>
+<style lang="css">
   @tailwind base;
   @tailwind components;
   @tailwind utilities;
-</style>../types/galachainError
+</style>

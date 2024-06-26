@@ -20,7 +20,10 @@ export const calculateAvailableMintAllowances = (allowances: TokenAllowance[]) =
   }, new BigNumber(0))
 }
 
-export const calculateAvailableMintSupply = (token: TokenClass) => {
+export const calculateAvailableMintSupply = (token: TokenClass, address?: string) => {
+  if (address && !token.authorities.includes(address)) {
+    return new BigNumber(0)
+  }
   const value1 = BigNumber(token.maxSupply)
     .minus(token.knownMintAllowanceSupply as BigNumber)
     .plus(token.totalBurned)

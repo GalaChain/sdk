@@ -1,70 +1,58 @@
 <script lang="ts" setup>
-  import { computed } from 'vue';
-  import { TransferTokenDto } from '@gala-chain/api' 
-  import GalaSend, { type TokenClassBalance } from '@/components/Send.vue';
-  import { calculateAvailableBalance } from '@/utils/calculateBalance';
-import type { TokenBalance, TokenClass } from '@gala-chain/api';
+import { computed } from 'vue';
+import { TokenBalanceWithMetadata, TransferTokenDto } from '@gala-chain/api' 
+import GalaSend, { type TokenClassBalance } from '@/components/Send.vue';
+import { calculateAvailableBalance } from '@/utils/calculateBalance';
+import { TokenBalance } from '@gala-chain/api';
 import type { IGalaChainError } from '@/types/galachain-error';
+import PrimeSkeleton from 'primevue/skeleton';
 
-  const props = defineProps({
-    address: String
-  })
+  const props = defineProps<{
+    tokenBalance?: TokenBalanceWithMetadata,
+    loading?: boolean,
+    disabled?: boolean,
+  }>()
 
   const emit = defineEmits<{
     submit: [value: TransferTokenDto];
     error: [value: IGalaChainError];
   }>()
 
-  const tokens: {token: TokenClass, balance: TokenBalance}[] = [
+  const availableToken = computed(() => {
+    const token: TokenBalanceWithMetadata = typeof props.tokenBalance === 'string' ? JSON.parse(props.tokenBalance) : props.tokenBalance; 
+    return token ? 
       {
-        balance: {
-          additionalKey: 'none',
-          category: 'Unit',
-          collection: 'GALA',
-          owner: 'client|000000000000000000000000',
-          quantity: '74543.25694633',
-          type: 'none'
-        },
-        token: {
-          additionalKey: 'none',
-          category: 'Unit',
-          collection: 'GALA',
-          decimals: 8,
-          description: 'GALA token',
-          image: 'https://app.gala.games/_nuxt/img/GALA-icon.b642e24.png',
-          isNonFungible: false,
-          maxCapacity: '50000000000',
-          maxSupply: '50000000000',
-          name: 'GALA',
-          network: 'GC',
-          symbol: 'GALA',
-          totalBurned: '0',
-          totalMintAllowance: '0',
-          totalSupply: '12587861171.99876767',
-          type: 'none'
-        },
-      }
-    ];
-
-  const availableTokens = computed(() => tokens.map(token => ({
-    ...token.token, 
-    available: calculateAvailableBalance(token.balance).toString()
-  } as TokenClassBalance)))
- 
+        ...token.token,
+        available: calculateAvailableBalance(token.balance as TokenBalance).toString()
+      } as TokenClassBalance : 
+      undefined;
+  })
 </script>
 
 <template>
   <GalaSend 
-    :tokens="availableTokens"
+    v-if="availableToken"
+    :token="availableToken"
+    :loading="loading"
     to-header="Send to"
     submit-text="Send"
-    @submit="event => emit('submit', event)" 
+    @submit="event => emit('submit', event as TransferTokenDto)" 
     @error="event => emit('error', event)" 
   ></GalaSend>
+  <slot v-else name="empty">
+    <div class="flex flex-col items-center mt-6">
+      <div class="flex items-center w-full">
+        <PrimeSkeleton shape="circle" size="8rem" class="shrink-0 mr-4"></PrimeSkeleton>
+        <PrimeSkeleton height="3.5rem"></PrimeSkeleton>
+      </div>
+      <PrimeSkeleton height="3.5rem" class="my-6"></PrimeSkeleton>
+      <PrimeSkeleton height="3.5rem" width="10rem" border-radius="2rem"></PrimeSkeleton>
+    </div>
+  </slot>
 </template>
 
-<style>
+<style lang="css">
   @tailwind base;
   @tailwind components;
   @tailwind utilities;
-</style>../types/galachainError
+</style>
