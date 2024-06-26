@@ -69,7 +69,8 @@ type TestGalaChainContext = Context & {
   set callingUserData(d: { alias: string; ethAddress: string | undefined });
   get callingUser(): string;
   get callingUserEthAddress(): string;
-  resetCallingUser(): void;
+  setDryRunOnBehalfOf(d: { alias: string; ethAddress: string | undefined }): void;
+  isDryRun: boolean;
   get txUnixTime(): number;
   setChaincodeStub(stub: ChaincodeStub): void;
 };

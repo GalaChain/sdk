@@ -212,6 +212,9 @@ export class DryRunDto extends ChainCallDTO {
   public readonly method: string;
 
   @IsNotEmpty()
+  public readonly callerPublicKey: string;
+
+  @IsNotEmpty()
   @IsOptional()
   @Type(() => ChainCallDTO)
   dto?: ChainCallDTO;
