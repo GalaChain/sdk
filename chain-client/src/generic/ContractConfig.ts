@@ -14,7 +14,7 @@
  */
 
 export interface ContractConfig {
-  readonly channelName: string;
-  readonly chaincodeName: string;
-  readonly contractName: string;
+  readonly channel: string;
+  readonly chaincode: string;
+  readonly contract: string;
 }

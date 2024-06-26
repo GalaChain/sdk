@@ -30,8 +30,7 @@ import { networkRoot } from "./ContractTestClient";
 import { createChainClient } from "./createChainClient";
 import { randomize } from "./tokenOps";
 
-interface ContractAPIConfig<API = object> {
-  name: ContractConfig;
+interface ContractAPIConfig<API = object> extends ContractConfig {
   api: (c: ChainClient) => API;
 }
 
@@ -57,9 +56,7 @@ function createChainClientsObj<T extends ChainClientOptions>(user: ChainUser, ob
   const result: ChainClientResult<T> = {} as ChainClientResult<T>;
 
   for (const [key, contract] of Object.entries(obj)) {
-    const { name, api } = contract;
-
-    const client = createChainClient(user, name).extendAPI(api);
+    const client = createChainClient(user, contract).extendAPI(contract.api);
 
     // eslint-disable-next-line @typescript-eslint/ban-ts-comment
     // @ts-ignore
@@ -81,19 +78,15 @@ export interface DefaultChainClientOptions extends ChainClientOptions {
 function defaultChainClientsOptions(): DefaultChainClientOptions {
   return {
     assets: {
-      name: {
-        channelName: "product-channel",
-        chaincodeName: "basic-product",
-        contractName: "GalaChainToken"
-      },
+      channel: "product-channel",
+      chaincode: "basic-product",
+      contract: "GalaChainToken",
       api: commonContractAPI
     },
     pk: {
-      name: {
-        channelName: "product-channel",
-        chaincodeName: "basic-product",
-        contractName: "PublicKeyContract"
-      },
+      channel: "product-channel",
+      chaincode: "basic-product",
+      contract: "PublicKeyContract",
       api: publicKeyContractAPI
     }
   };
@@ -179,7 +172,7 @@ function isUserConfig(user: ChainUser | unknown): user is ChainUser {
 
 function getAdminUser() {
   const privateKey =
-    process.env.TEST_ADMIN_PRIVATE_KEY ??
+    process.env.DEV_ADMIN_PRIVATE_KEY ??
     fs.readFileSync(path.resolve(networkRoot(), "dev-admin-key/dev-admin.priv.hex.txt"), "utf-8").toString();
 
   return new ChainUser({ name: "admin", privateKey });

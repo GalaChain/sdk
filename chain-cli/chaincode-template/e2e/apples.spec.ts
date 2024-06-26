@@ -31,11 +31,9 @@ jest.setTimeout(30000);
 describe("Apple trees", () => {
   const appleContractConfig = {
     apples: {
-      name: {
-        channelName: "product-channel",
-        chaincodeName: "basic-product",
-        contractName: "AppleContract"
-      },
+      channel: "product-channel",
+      chaincode: "basic-product",
+      contract: "AppleContract",
       api: appleContractAPI
     }
   };
