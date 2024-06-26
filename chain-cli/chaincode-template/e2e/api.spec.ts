@@ -12,15 +12,31 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+import { commonContractAPI } from "@gala-chain/client";
 import { AdminChainClients, TestClients, transactionSuccess } from "@gala-chain/test";
 
 jest.setTimeout(30000);
 
 describe("API snapshots", () => {
   const contractConfig = {
-    apples: "AppleContract",
-    pk: "PublicKeyContract",
-    assets: "GalaChainToken"
+    apples: {
+      channel: "product-channel",
+      chaincode: "basic-product",
+      contract: "AppleContract",
+      api: commonContractAPI
+    },
+    assets: {
+      channel: "product-channel",
+      chaincode: "basic-product",
+      contract: "GalaChainToken",
+      api: commonContractAPI
+    },
+    pk: {
+      channel: "product-channel",
+      chaincode: "basic-product",
+      contract: "PublicKeyContract",
+      api: commonContractAPI
+    }
   };
 
   let client: AdminChainClients<typeof contractConfig>;
@@ -33,7 +49,7 @@ describe("API snapshots", () => {
     await client.disconnect();
   });
 
-  test(`Api of ${contractConfig.pk}`, async () => {
+  test(`Api of ${contractConfig.pk.contract}`, async () => {
     // When
     const response = await client.pk.GetContractAPI();
 
@@ -42,7 +58,7 @@ describe("API snapshots", () => {
     expect({ ...response.Data, contractVersion: "?.?.?" }).toMatchSnapshot();
   });
 
-  test(`Api of ${contractConfig.assets}`, async () => {
+  test(`Api of ${contractConfig.assets.contract}`, async () => {
     // When
     const response = await client.assets.GetContractAPI();
 
@@ -51,7 +67,7 @@ describe("API snapshots", () => {
     expect({ ...response.Data, contractVersion: "?.?.?" }).toMatchSnapshot();
   });
 
-  test(`Api of ${contractConfig.apples}`, async () => {
+  test(`Api of ${contractConfig.apples.contract}`, async () => {
     // When
     const response = await client.apples.GetContractAPI();
 

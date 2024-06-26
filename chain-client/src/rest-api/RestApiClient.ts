@@ -16,7 +16,11 @@ import { ChainCallDTO, ContractAPI, GalaChainResponse, Inferred } from "@gala-ch
 import axios from "axios";
 
 import { ChainClient, ChainClientBuilder, ClassType, ContractConfig, isClassType } from "../generic";
-import { RestApiAdminCredentials, SetContractApiParams, globalRestApiConfig } from "./GlobalRestApiConfig";
+import {
+  RestApiAdminCredentials,
+  SetContractApiParams,
+  globalRestApiConfig
+} from "./GlobalRestApiConfig";
 import { catchAxiosError } from "./catchAxiosError";
 import { RestApiConfig } from "./loadRestApiConfig";
 

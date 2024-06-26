@@ -29,7 +29,14 @@ import {
 jest.setTimeout(30000);
 
 describe("Apple trees", () => {
-  const appleContractConfig = { apples: { name: "AppleContract", api: appleContractAPI } };
+  const appleContractConfig = {
+    apples: {
+      channel: "product-channel",
+      chaincode: "basic-product",
+      contract: "AppleContract",
+      api: appleContractAPI
+    }
+  };
   let client: AdminChainClients<typeof appleContractConfig>;
   let user: ChainUser;
 
@@ -127,7 +134,7 @@ function appleContractAPI(client: ChainClient): AppleContractAPI & CommonContrac
     },
 
     FetchTrees(dto: FetchTreesDto) {
-      return client.evaluateTransaction("FetchTrees", dto, PagedTreesDto);
+      return client.evaluateTransaction("FetchTrees", dto) as Promise<GalaChainResponse<PagedTreesDto>>;
     },
 
     PickApple(dto: PickAppleDto) {
