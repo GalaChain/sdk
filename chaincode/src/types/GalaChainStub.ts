@@ -143,7 +143,7 @@ class StubCache {
   }
 
   getDeletes(): Record<string, true> {
-    return this.deletes;
+    return { ...this.deletes };
   }
 }
 
@@ -164,9 +164,9 @@ export interface GalaChainStub extends ChaincodeStub {
 
   flushWrites(): Promise<void>;
 
-  getReads(): Record<string, Uint8Array>;
+  getReads(): Record<string, string>;
 
-  getWrites(): Record<string, Uint8Array>;
+  getWrites(): Record<string, string>;
 
   getDeletes(): Record<string, true>;
 }
