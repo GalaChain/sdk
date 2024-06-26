@@ -30,7 +30,6 @@ import { inspect } from "util";
 import TestChaincode from "../__test__/TestChaincode";
 import TestGalaContract, { Superhero, SuperheroDto, SuperheroQueryDto } from "../__test__/TestGalaContract";
 import { GalaChainContext, createValidChainObject } from "../types";
-import * as secp from "@noble/secp256k1";
 
 /*
  * Test below verifies that the base class of TestGalaContract (i.e. GalaContract) provides stub to
@@ -307,7 +306,7 @@ describe("GalaContract.DryRun", () => {
 
     const method = "GetObjectByKey";
     const dto = await createValidDTO(GetObjectDto, { objectId: batmanKey });
-    const dryRunDto = await createValidDTO(DryRunDto, { method,callerPublicKey, dto });
+    const dryRunDto = await createValidDTO(DryRunDto, { method, callerPublicKey, dto });
 
     // When
     const response = await chaincode.invoke("TestGalaContract:DryRun", dryRunDto);
@@ -396,9 +395,3 @@ describe("GalaContract.DryRun", () => {
     });
   });
 });
-
-function randomPublicKey() {
-  const privateKey = secp.utils.bytesToHex(secp.utils.randomPrivateKey());
-  const publicKey = secp.utils.bytesToHex(secp.getPublicKey(privateKey));
-  return { privateKey, publicKey };
-}

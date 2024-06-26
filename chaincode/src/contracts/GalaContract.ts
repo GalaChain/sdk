@@ -20,16 +20,18 @@ import {
   GetObjectDto,
   GetObjectHistoryDto,
   NotFoundError,
-  createValidDTO, signatures, ValidationFailedError
+  ValidationFailedError,
+  createValidDTO,
+  signatures
 } from "@gala-chain/api";
 import { Contract } from "fabric-contract-api";
 
+import { PublicKeyService } from "../services";
 import { GalaChainContext, GalaChainStub } from "../types";
 import { getObjectHistory, getPlainObjectByKey } from "../utils";
 import { getApiMethods } from "./GalaContractApi";
 import { EVALUATE, GalaTransaction } from "./GalaTransaction";
 import { trace } from "./tracing";
-import { PublicKeyService } from "../services";
 
 export abstract class GalaContract extends Contract {
   /**
@@ -68,7 +70,11 @@ export abstract class GalaContract extends Contract {
       await super.afterTransaction(ctx, result);
 
       // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
-      if (typeof result === "object" && result?.["Status"] === GalaChainResponseType.Success && !ctx.isDryRun) {
+      if (
+        typeof result === "object" &&
+        result?.["Status"] === GalaChainResponseType.Success &&
+        !ctx.isDryRun
+      ) {
         await (ctx.stub as unknown as GalaChainStub).flushWrites();
       }
 
