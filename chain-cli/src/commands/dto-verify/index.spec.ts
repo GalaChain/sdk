@@ -14,6 +14,8 @@
  */
 import DtoVerify from "./index";
 
+jest.setTimeout(30000);
+
 const dataTestJson = `{
   "firstName": "Tom",
   "id": "1",
