@@ -20,27 +20,21 @@ jest.setTimeout(30000);
 describe("API snapshots", () => {
   const contractConfig = {
     apples: {
-      name: {
-        channelName: "product-channel",
-        chaincodeName: "basic-product",
-        contractName: "AppleContract"
-      },
+      channel: "product-channel",
+      chaincode: "basic-product",
+      contract: "AppleContract",
       api: commonContractAPI
     },
     assets: {
-      name: {
-        channelName: "product-channel",
-        chaincodeName: "basic-product",
-        contractName: "GalaChainToken"
-      },
+      channel: "product-channel",
+      chaincode: "basic-product",
+      contract: "GalaChainToken",
       api: commonContractAPI
     },
     pk: {
-      name: {
-        channelName: "product-channel",
-        chaincodeName: "basic-product",
-        contractName: "PublicKeyContract"
-      },
+      channel: "product-channel",
+      chaincode: "basic-product",
+      contract: "PublicKeyContract",
       api: commonContractAPI
     }
   };
@@ -55,7 +49,7 @@ describe("API snapshots", () => {
     await client.disconnect();
   });
 
-  test(`Api of ${contractConfig.pk}`, async () => {
+  test(`Api of ${contractConfig.pk.contract}`, async () => {
     // When
     const response = await client.pk.GetContractAPI();
 
@@ -64,7 +58,7 @@ describe("API snapshots", () => {
     expect({ ...response.Data, contractVersion: "?.?.?" }).toMatchSnapshot();
   });
 
-  test(`Api of ${contractConfig.assets}`, async () => {
+  test(`Api of ${contractConfig.assets.contract}`, async () => {
     // When
     const response = await client.assets.GetContractAPI();
 
@@ -73,7 +67,7 @@ describe("API snapshots", () => {
     expect({ ...response.Data, contractVersion: "?.?.?" }).toMatchSnapshot();
   });
 
-  test(`Api of ${contractConfig.apples}`, async () => {
+  test(`Api of ${contractConfig.apples.contract}`, async () => {
     // When
     const response = await client.apples.GetContractAPI();
 

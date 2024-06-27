@@ -133,6 +133,28 @@ class StubCache {
     await Promise.all(deleteOps);
     await Promise.all(putOps);
   }
+
+  getReads(): Record<string, string> {
+    return keysToUtfStrings(this.reads);
+  }
+
+  getWrites(): Record<string, string> {
+    return keysToUtfStrings(this.writes);
+  }
+
+  getDeletes(): Record<string, true> {
+    return { ...this.deletes };
+  }
+}
+
+function keysToUtfStrings(obj: Record<string, Uint8Array>): Record<string, string> {
+  return Object.entries(obj).reduce(
+    (acc, [key, value]) => {
+      acc[key] = value.toString();
+      return acc;
+    },
+    {} as Record<string, string>
+  );
 }
 
 export interface GalaChainStub extends ChaincodeStub {
@@ -141,6 +163,12 @@ export interface GalaChainStub extends ChaincodeStub {
   getCachedStateByPartialCompositeKey(objectType: string, attributes: string[]): FabricIterable<CachedKV>;
 
   flushWrites(): Promise<void>;
+
+  getReads(): Record<string, string>;
+
+  getWrites(): Record<string, string>;
+
+  getDeletes(): Record<string, true>;
 }
 
 export const createGalaChainStub = (stub: ChaincodeStub): GalaChainStub => {
