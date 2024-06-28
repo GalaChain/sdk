@@ -62,7 +62,7 @@ export default class DtoVerify extends BaseCommand<typeof DtoVerify> {
 
     const dto = (await parseJsonFromStringOrFile(args.data)) as ChainCallDTO;
 
-    if (dto.signature == null || dto.signature == undefined) {
+    if (!dto.signature) {
       this.error("Signature is not present in the DTO.", { exit: 1 });
     }
 

@@ -16,22 +16,6 @@ import { ChainClient, ChainUser, ChainUserAPI, ContractConfig } from "@gala-chai
 
 import { ContractTestClient } from "./ContractTestClient";
 
-function contractConfig(c: string | ContractConfig): ContractConfig {
-  if (typeof c === "string") {
-    return {
-      channelName: "product-channel",
-      chaincodeName: "basic-product",
-      contractName: c
-    };
-  } else {
-    return c;
-  }
-}
-
-export function createChainClient(
-  user: ChainUser,
-  contract: string | ContractConfig
-): ChainClient & ChainUserAPI {
-  const cfg = contractConfig(contract);
-  return ContractTestClient.createForCurator(user, cfg);
+export function createChainClient(user: ChainUser, contract: ContractConfig): ChainClient & ChainUserAPI {
+  return ContractTestClient.createForCurator(user, contract);
 }

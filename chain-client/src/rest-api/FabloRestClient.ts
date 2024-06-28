@@ -44,7 +44,7 @@ async function getPath(
 
   const type = isWrite ? "invoke" : "query";
 
-  return `${restApiUrl}/${type}/${cfg.channelName}/${cfg.chaincodeName}`;
+  return `${restApiUrl}/${type}/${cfg.channel}/${cfg.chaincode}`;
 }
 
 export class FabloRestClient extends ChainClient {
@@ -101,7 +101,7 @@ export class FabloRestClient extends ChainClient {
   ): Promise<GalaChainResponse<T>> {
     const [dto, responseType] = isClassType(dtoOrResp) ? [undefined, dtoOrResp] : [dtoOrResp, resp];
     const args = dto ? [dto.serialize()] : [];
-    const payload = { method: `${this.contractConfig.contractName}:${methodName}`, args };
+    const payload = { method: `${this.contractConfig.contract}:${methodName}`, args };
 
     const headers = {
       Authorization: `Bearer ${await this.token}`

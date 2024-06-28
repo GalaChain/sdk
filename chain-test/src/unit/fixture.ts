@@ -16,6 +16,7 @@ import {
   ChainCallDTO,
   ChainObject,
   ClassConstructor,
+  GalaChainResponse,
   PublicKey,
   RangedChainObject,
   UserProfile
@@ -57,6 +58,9 @@ type GalaChainStub = ChaincodeStub & {
   getCachedState(key: string): Promise<Uint8Array>;
   getCachedStateByPartialCompositeKey(objectType: string, attributes: string[]): FabricIterable<CachedKV>;
   flushWrites(): Promise<void>;
+  getReads(): Record<string, string>;
+  getWrites(): Record<string, string>;
+  getDeletes(): Record<string, true>;
 };
 
 type TestGalaChainContext = Context & {
@@ -65,6 +69,8 @@ type TestGalaChainContext = Context & {
   set callingUserData(d: { alias: string; ethAddress: string | undefined });
   get callingUser(): string;
   get callingUserEthAddress(): string;
+  setDryRunOnBehalfOf(d: { alias: string; ethAddress: string | undefined }): void;
+  isDryRun: boolean;
   get txUnixTime(): number;
   setChaincodeStub(stub: ChaincodeStub): void;
 };
@@ -74,9 +80,17 @@ type GalaContract<Ctx extends TestGalaChainContext> = Contract & {
   createContext(): Ctx;
 };
 
+type Wrapped<Contract> = {
+  [K in keyof Contract]: Contract[K] extends (...args: infer A) => Promise<GalaChainResponse<infer R>>
+    ? Contract[K] // If it already returns Promise<GalaChainResponse<R>>, keep it as is.
+    : Contract[K] extends (...args: infer A) => Promise<infer R>
+      ? (...args: A) => Promise<GalaChainResponse<R>> // Otherwise, transform Promise<R> to Promise<GalaChainResponse<R>>.
+      : Contract[K]; // Keep non-Promise methods as is.
+};
+
 class Fixture<Ctx extends TestGalaChainContext, T extends GalaContract<Ctx>> {
   private readonly stub: TestChaincodeStub;
-  public readonly contract: T;
+  public readonly contract: Wrapped<T>;
   public readonly ctx: Ctx;
 
   public callingChainUser: ChainUser;
@@ -87,7 +101,7 @@ class Fixture<Ctx extends TestGalaChainContext, T extends GalaContract<Ctx>> {
     public readonly writes: Record<string, string> = {},
     public readonly state: Record<string, string> = {}
   ) {
-    const contractInstance = new contractClass();
+    const contractInstance = new contractClass() as Wrapped<T>; // it's done by @GalaTransaction decorator
     this.contract = new Proxy(contractInstance, {
       get: (target, prop) => {
         // check if target property is a function with ctx + dto as parameters

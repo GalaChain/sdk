@@ -135,18 +135,18 @@ The simplest way to call it is to use `curl` (for convenience, you can use `gala
 info=$(galachain info)
 chaincode=$(jq -r '.chaincode' <<< $info)
 channel=$(jq -r '.channel' <<< $info)
-url=https://gateway.stage.galachain.com/api/$channel/$chaincode-AppleContract/GetChaincodeVersion
+url=https://gateway-testnet.galachain.com/api/$channel/$chaincode-AppleContract/GetChaincodeVersion
 
 curl -X POST -d '{}' $url
 ```
 
-You can also visit the GalaChain Gateway page at [https://gateway.stage.galachain.com/docs](https://gateway.stage.galachain.com/docs) to see the Swagger UI and explore the API.
+You can also visit the GalaChain Gateway page at [https://gateway-testnet.galachain.com/docs](https://gateway-testnet.galachain.com/docs) to see the Swagger UI and explore the API.
 
 Additionally, which is most convenient, you can use the GalaChain client library to interact with the chaincode.
 
 ```typescript
 const params: RestApiClientConfig = {
-  apiUrl: "https://gateway.stage.galachain.com/api",
+  apiUrl: "https://gateway-testnet.galachain.com/api",
   configPath: path.resolve(__dirname, "api-config.json")
 };
 
