@@ -146,7 +146,9 @@ function GalaTransaction<T extends ChainCallDTO>(
           : await parseValidDTO<T>(dtoClass, dtoPlain as string | Record<string, unknown>);
 
         // Verify public key signature if needed - throws exception in case of failure
-        if (options?.verifySignature || dto?.signature !== undefined) {
+        if (ctx.isDryRun) {
+          // Do not verify signature in dry run mode
+        } else if (options?.verifySignature || dto?.signature !== undefined) {
           ctx.callingUserData = await authorize(ctx, dto, legacyClientAccountId(ctx));
         } else {
           // it means a request where authorization is not required
