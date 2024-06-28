@@ -60,7 +60,7 @@ export class TokenClient {
   ) {}
 
   public CreateTokenClass(dto: CreateTokenClassDto) {
-    return this.client.sendTransaction<TokenClassKey, CreateTokenClassDto>({
+    return this.client.send<TokenClassKey, CreateTokenClassDto>({
       url: this.url,
       method: "CreateTokenClass",
       payload: dto,
@@ -69,7 +69,7 @@ export class TokenClient {
   }
 
   public UpdateTokenClass(dto: UpdateTokenClassDto) {
-    return this.client.sendTransaction<TokenClassKey, UpdateTokenClassDto>({
+    return this.client.send<TokenClassKey, UpdateTokenClassDto>({
       url: this.url,
       method: "UpdateTokenClass",
       payload: dto,
@@ -78,7 +78,7 @@ export class TokenClient {
   }
 
   public FetchTokenClasses(dto: FetchTokenClassesDto) {
-    return this.client.sendTransaction<TokenClass[], FetchTokenClassesDto>({
+    return this.client.send<TokenClass[], FetchTokenClassesDto>({
       url: this.url,
       method: "FetchTokenClasses",
       payload: dto
@@ -86,7 +86,7 @@ export class TokenClient {
   }
 
   public FetchTokenClassesWithPagination(dto: FetchTokenClassesWithPaginationDto) {
-    return this.client.sendTransaction<FetchTokenClassesResponse, FetchTokenClassesWithPaginationDto>({
+    return this.client.send<FetchTokenClassesResponse, FetchTokenClassesWithPaginationDto>({
       url: this.url,
       method: "FetchTokenClassesWithPagination",
       payload: dto
@@ -94,7 +94,7 @@ export class TokenClient {
   }
 
   public GrantAllowance(dto: GrantAllowanceDto) {
-    return this.client.sendTransaction<TokenAllowance[], GrantAllowanceDto>({
+    return this.client.send<TokenAllowance[], GrantAllowanceDto>({
       url: this.url,
       method: "GrantAllowance",
       payload: dto,
@@ -103,7 +103,7 @@ export class TokenClient {
   }
 
   public RefreshAllowances(dto: RefreshAllowanceDto) {
-    return this.client.sendTransaction<TokenAllowance[], RefreshAllowanceDto>({
+    return this.client.send<TokenAllowance[], RefreshAllowanceDto>({
       url: this.url,
       method: "RefreshAllowances",
       payload: dto,
@@ -112,7 +112,7 @@ export class TokenClient {
   }
 
   public FullAllowanceCheck(dto: FullAllowanceCheckDto) {
-    return this.client.sendTransaction<FullAllowanceCheckResDto, FullAllowanceCheckDto>({
+    return this.client.send<FullAllowanceCheckResDto, FullAllowanceCheckDto>({
       url: this.url,
       method: "FullAllowanceCheck",
       payload: dto,
@@ -121,7 +121,7 @@ export class TokenClient {
   }
 
   public FetchAllowances(dto: FetchAllowancesDto) {
-    return this.client.sendTransaction<FetchAllowancesResponse, FetchAllowancesDto>({
+    return this.client.send<FetchAllowancesResponse, FetchAllowancesDto>({
       url: this.url,
       method: "FetchAllowances",
       payload: dto,
@@ -130,7 +130,7 @@ export class TokenClient {
   }
 
   public DeleteAllowances(dto: DeleteAllowancesDto) {
-    return this.client.sendTransaction<number, DeleteAllowancesDto>({
+    return this.client.send<number, DeleteAllowancesDto>({
       url: this.url,
       method: "DeleteAllowances",
       payload: dto,
@@ -139,7 +139,7 @@ export class TokenClient {
   }
 
   public FetchBalances(dto: FetchBalancesDto) {
-    return this.client.sendTransaction<TokenBalance[], FetchBalancesDto>({
+    return this.client.send<TokenBalance[], FetchBalancesDto>({
       url: this.url,
       method: "FetchBalances",
       payload: dto
@@ -147,7 +147,7 @@ export class TokenClient {
   }
 
   public FetchBalancesWithTokenMetadata(dto: FetchBalancesDto) {
-    return this.client.sendTransaction<FetchBalancesWithTokenMetadataResponse, FetchBalancesDto>({
+    return this.client.send<FetchBalancesWithTokenMetadataResponse, FetchBalancesDto>({
       url: this.url,
       method: "FetchBalancesWithTokenMetadata",
       payload: dto
@@ -155,7 +155,7 @@ export class TokenClient {
   }
 
   public RequestMint(dto: HighThroughputMintTokenDto) {
-    return this.client.sendTransaction<FulfillMintDto, HighThroughputMintTokenDto>({
+    return this.client.send<FulfillMintDto, HighThroughputMintTokenDto>({
       url: this.url,
       method: "RequestMint",
       payload: dto,
@@ -164,7 +164,7 @@ export class TokenClient {
   }
 
   public FulfillMint(dto: FulfillMintDto) {
-    return this.client.sendTransaction<TokenInstanceKey[], FulfillMintDto>({
+    return this.client.send<TokenInstanceKey[], FulfillMintDto>({
       url: this.url,
       method: "FulfillMint",
       payload: dto,
@@ -173,7 +173,7 @@ export class TokenClient {
   }
 
   public HighThroughputMint(dto: HighThroughputMintTokenDto) {
-    return this.client.sendTransaction<TokenInstanceKey[], HighThroughputMintTokenDto>({
+    return this.client.send<TokenInstanceKey[], HighThroughputMintTokenDto>({
       url: this.url,
       method: "HighThroughputMint",
       payload: dto,
@@ -182,7 +182,7 @@ export class TokenClient {
   }
 
   public FetchMintRequests(dto: FetchMintRequestsDto) {
-    return this.client.sendTransaction<MintRequestDto[], FetchMintRequestsDto>({
+    return this.client.send<MintRequestDto[], FetchMintRequestsDto>({
       url: this.url,
       method: "FetchMintRequests",
       payload: dto
@@ -190,7 +190,7 @@ export class TokenClient {
   }
 
   public MintToken(dto: MintTokenDto) {
-    return this.client.sendTransaction<TokenInstanceKey[], MintTokenDto>({
+    return this.client.send<TokenInstanceKey[], MintTokenDto>({
       url: this.url,
       method: "MintToken",
       payload: dto,
@@ -199,7 +199,7 @@ export class TokenClient {
   }
 
   public MintTokenWithAllowance(dto: MintTokenWithAllowanceDto) {
-    return this.client.sendTransaction<TokenInstanceKey[], MintTokenWithAllowanceDto>({
+    return this.client.send<TokenInstanceKey[], MintTokenWithAllowanceDto>({
       url: this.url,
       method: "MintTokenWithAllowance",
       payload: dto,
@@ -208,7 +208,7 @@ export class TokenClient {
   }
 
   public BatchMintToken(dto: BatchMintTokenDto) {
-    return this.client.sendTransaction<TokenInstanceKey[], BatchMintTokenDto>({
+    return this.client.send<TokenInstanceKey[], BatchMintTokenDto>({
       url: this.url,
       method: "BatchMintToken",
       payload: dto,
@@ -217,7 +217,7 @@ export class TokenClient {
   }
 
   public UseToken(dto: UseTokenDto) {
-    return this.client.sendTransaction<TokenBalance, UseTokenDto>({
+    return this.client.send<TokenBalance, UseTokenDto>({
       url: this.url,
       method: "UseToken",
       payload: dto,
@@ -226,7 +226,7 @@ export class TokenClient {
   }
 
   public ReleaseToken(dto: ReleaseTokenDto) {
-    return this.client.sendTransaction<TokenBalance, ReleaseTokenDto>({
+    return this.client.send<TokenBalance, ReleaseTokenDto>({
       url: this.url,
       method: "ReleaseToken",
       payload: dto,
@@ -235,7 +235,7 @@ export class TokenClient {
   }
 
   public LockToken(dto: LockTokenDto) {
-    return this.client.sendTransaction<TokenBalance, LockTokenDto>({
+    return this.client.send<TokenBalance, LockTokenDto>({
       url: this.url,
       method: "LockToken",
       payload: dto,
@@ -244,7 +244,7 @@ export class TokenClient {
   }
 
   public LockTokens(dto: LockTokensDto) {
-    return this.client.sendTransaction<TokenBalance[], LockTokensDto>({
+    return this.client.send<TokenBalance[], LockTokensDto>({
       url: this.url,
       method: "LockTokens",
       payload: dto,
@@ -253,7 +253,7 @@ export class TokenClient {
   }
 
   public UnlockToken(dto: UnlockTokenDto) {
-    return this.client.sendTransaction<TokenBalance, UnlockTokenDto>({
+    return this.client.send<TokenBalance, UnlockTokenDto>({
       url: this.url,
       method: "UnlockToken",
       payload: dto,
@@ -262,7 +262,7 @@ export class TokenClient {
   }
 
   public UnlockTokens(dto: UnlockTokensDto) {
-    return this.client.sendTransaction<TokenBalance[], UnlockTokensDto>({
+    return this.client.send<TokenBalance[], UnlockTokensDto>({
       url: this.url,
       method: "UnlockTokens",
       payload: dto,
@@ -271,7 +271,7 @@ export class TokenClient {
   }
 
   public TransferToken(dto: TransferTokenDto) {
-    return this.client.sendTransaction<TokenBalance[], TransferTokenDto>({
+    return this.client.send<TokenBalance[], TransferTokenDto>({
       url: this.url,
       method: "TransferToken",
       payload: dto,
@@ -280,7 +280,7 @@ export class TokenClient {
   }
 
   public BurnTokens(dto: BurnTokensDto) {
-    return this.client.sendTransaction<TokenBurn[], BurnTokensDto>({
+    return this.client.send<TokenBurn[], BurnTokensDto>({
       url: this.url,
       method: "BurnTokens",
       payload: dto,
@@ -289,7 +289,7 @@ export class TokenClient {
   }
 
   public FetchBurns(dto: FetchBurnsDto) {
-    return this.client.sendTransaction<TokenBurn[], FetchBurnsDto>({
+    return this.client.send<TokenBurn[], FetchBurnsDto>({
       url: this.url,
       method: "FetchBurns",
       payload: dto

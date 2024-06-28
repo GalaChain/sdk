@@ -59,7 +59,7 @@ export class GalachainConnectClient {
     }
   }
 
-  public async sendTransaction<T, U extends ChainCallDTO>({
+  public async send<T, U extends ChainCallDTO>({
     url = this.chainCodeUrl,
     method,
     payload,

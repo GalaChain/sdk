@@ -29,7 +29,7 @@ export class PublicKeyClient {
   ) {}
 
   public GetMyProfile(dto: GetMyProfileDto) {
-    return this.client.sendTransaction<UserProfile, GetMyProfileDto>({
+    return this.client.send<UserProfile, GetMyProfileDto>({
       url: this.url,
       method: "GetMyProfile",
       payload: dto,
@@ -38,7 +38,7 @@ export class PublicKeyClient {
   }
 
   public RegisterUser(dto: RegisterUserDto) {
-    return this.client.sendTransaction<string, RegisterUserDto>({
+    return this.client.send<string, RegisterUserDto>({
       url: this.url,
       method: "RegisterUser",
       payload: dto,
@@ -47,7 +47,7 @@ export class PublicKeyClient {
   }
 
   public RegisterEthUser(dto: RegisterEthUserDto) {
-    return this.client.sendTransaction<string, RegisterEthUserDto>({
+    return this.client.send<string, RegisterEthUserDto>({
       url: this.url,
       method: "RegisterEthUser",
       payload: dto,
@@ -56,7 +56,7 @@ export class PublicKeyClient {
   }
 
   public UpdatePublicKey(dto: UpdatePublicKeyDto) {
-    return this.client.sendTransaction<void, UpdatePublicKeyDto>({
+    return this.client.send<void, UpdatePublicKeyDto>({
       url: this.url,
       method: "UpdatePublicKey",
       payload: dto,
