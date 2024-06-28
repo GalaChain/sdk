@@ -12,9 +12,8 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-import { TokenInstanceKey, createValidDTO } from "@gala-chain/api";
+import { TokenInstanceKey } from "@gala-chain/api";
 import { TransferTokenDto } from "@gala-chain/api";
-import BigNumber from "bignumber.js";
 import { plainToInstance } from "class-transformer";
 
 import { GalachainConnectClient } from "./GalachainConnectClient";

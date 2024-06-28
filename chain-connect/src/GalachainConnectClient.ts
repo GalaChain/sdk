@@ -31,8 +31,7 @@ export class GalachainConnectClient {
   }
 
   set address(val: string) {
-    let cleanedVal = val.replace(/0x|eth\|/, "");
-    this.address_ = cleanedVal;
+    this.address_ = val.replace(/0x|eth\|/, "");
   }
 
   get provider() {
