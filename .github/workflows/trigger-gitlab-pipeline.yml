@@ -36,7 +36,7 @@ jobs:
               "https://gitlab.com/api/v4/projects/35484791/pipelines/${{ steps.trigger.outputs.pipeline_id }}")
             status=$(echo $result | jq -r '.status')
             echo "Pipeline status: $status"
-            if [[ "$status" == "failed" || "$status" == "canceled" ]]; then
+            if [[ "$status" == "failed" ]]; then
               curl -X POST -H 'Content-type: application/json' --data "{
                 \"channel\": \"#chain_dependency_alerts\",
                 \"username\": \"ChainBot\",
