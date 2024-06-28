@@ -62,7 +62,7 @@ jobs:
                       \"short\": true
                     }
                   ]
-                }]" https://hooks.slack.com/services/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
+                }]" ${{ secrets.SLACK_WEBHOOK_URL }}
               echo "Pipeline $status"
               exit 1
             fi
