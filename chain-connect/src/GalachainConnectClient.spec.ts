@@ -12,6 +12,11 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+import { TokenInstanceKey, createValidDTO } from "@gala-chain/api";
+import { TransferTokenDto } from "@gala-chain/api";
+import BigNumber from "bignumber.js";
+import { plainToInstance } from "class-transformer";
+
 import { GalachainConnectClient } from "./GalachainConnectClient";
 
 global.fetch = jest.fn((url: string, options?: Record<string, unknown>) =>
@@ -42,25 +47,25 @@ window.ethereum = {
 
 describe("GalachainConnectClient", () => {
   it("test full flow", async () => {
-    const dto = {
+    const dto = plainToInstance(TransferTokenDto, {
       quantity: "1",
       to: "client|63580d94c574ad78b121c267",
-      tokenInstance: {
+      tokenInstance: plainToInstance(TokenInstanceKey, {
         additionalKey: "none",
         category: "Unit",
         collection: "GALA",
         instance: "0",
         type: "none"
-      },
+      }),
       uniqueKey: "26d4122e-34c8-4639-baa6-4382b398e68e"
-    };
+    });
 
     // call connect
     const client = new GalachainConnectClient("https://example.com");
     await client.connectToMetaMask();
 
     // send dto payload in sendTransaction
-    const response = await client.sendTransaction({ method: "TransferToken", payload: dto });
+    const response = await client.sendTransaction({ method: "TransferToken", payload: dto, sign: true });
 
     expect(response).toEqual({
       Hash: {
@@ -68,7 +73,7 @@ describe("GalachainConnectClient", () => {
       },
       Request: {
         options: {
-          body: '{"prefix":"\\u0019Ethereum Signed Message:\\n261","quantity":"1","signature":"sampleSignature","to":"client|63580d94c574ad78b121c267","tokenInstance":{"additionalKey":"none","category":"Unit","collection":"GALA","instance":"0","type":"none"},"uniqueKey":"26d4122e-34c8-4639-baa6-4382b398e68e"}',
+          body: '{"prefix":"\\u0019Ethereum Signed Message:\\n279","quantity":{"c":[1],"e":0,"s":1},"signature":"sampleSignature","to":"client|63580d94c574ad78b121c267","tokenInstance":{"additionalKey":"none","category":"Unit","collection":"GALA","instance":"0","type":"none"},"uniqueKey":"26d4122e-34c8-4639-baa6-4382b398e68e"}',
           headers: {
             "Content-Type": "application/json"
           },

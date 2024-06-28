@@ -27,7 +27,12 @@ export class GalachainConnectClient {
   private chainCodeUrl: string;
 
   get address() {
-    return this.address_;
+    return `eth|${this.address_}`;
+  }
+
+  set address(val: string) {
+    let cleanedVal = val.replace(/0x|eth\|/, "");
+    this.address_ = cleanedVal;
   }
 
   get provider() {
@@ -48,10 +53,6 @@ export class GalachainConnectClient {
     try {
       const accounts = (await this.provider_.send("eth_requestAccounts", [])) as string[];
       this.address_ = accounts[0];
-
-      this.provider_.on("accountsChanged", function (accounts) {
-        this.address = accounts[0];
-      });
 
       return this.address;
     } catch (error: unknown) {
