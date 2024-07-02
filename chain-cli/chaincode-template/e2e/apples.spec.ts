@@ -12,11 +12,12 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-import { GalaChainResponse } from "@gala-chain/api";
-import { ChainClient, ChainUser } from "@gala-chain/client";
+import { GalaChainResponse, GalaChainResponseType } from "@gala-chain/api";
+import { ChainClient, ChainUser, CommonContractAPI, commonContractAPI } from "@gala-chain/client";
 import { AdminChainClients, TestClients, transactionErrorKey, transactionSuccess } from "@gala-chain/test";
 
 import {
+  AppleTree,
   AppleTreeDto,
   AppleTreesDto,
   FetchTreesDto,
@@ -28,7 +29,14 @@ import {
 jest.setTimeout(30000);
 
 describe("Apple trees", () => {
-  const appleContractConfig = { apples: { name: "AppleContract", api: appleContractAPI } };
+  const appleContractConfig = {
+    apples: {
+      channel: "product-channel",
+      chaincode: "basic-product",
+      contract: "AppleContract",
+      api: appleContractAPI
+    }
+  };
   let client: AdminChainClients<typeof appleContractConfig>;
   let user: ChainUser;
 
@@ -85,6 +93,25 @@ describe("Apple trees", () => {
     // Then
     expect(response).toEqual(transactionErrorKey("NO_APPLES_LEFT"));
   });
+
+  test("Support Dry Run operations", async () => {
+    // Given
+    const dto = new AppleTreeDto(Variety.HONEYCRISP, 10);
+    const saved = new AppleTree(user.identityKey, Variety.HONEYCRISP, 10, new Date().getTime());
+
+    // When
+    const response = await client.apples.DryRun("PlantTree", user.publicKey, dto);
+
+    // Then
+    expect(response).toEqual(
+      transactionSuccess({
+        response: { Status: GalaChainResponseType.Success },
+        reads: {},
+        writes: { [saved.getCompositeKey()]: expect.any(String) },
+        deletes: {}
+      })
+    );
+  });
 });
 
 interface AppleContractAPI {
@@ -94,8 +121,10 @@ interface AppleContractAPI {
   PickApple(dto: PickAppleDto): Promise<GalaChainResponse<void>>;
 }
 
-function appleContractAPI(client: ChainClient): AppleContractAPI {
+function appleContractAPI(client: ChainClient): AppleContractAPI & CommonContractAPI {
   return {
+    ...commonContractAPI(client),
+
     PlantTree(dto: AppleTreeDto) {
       return client.submitTransaction("PlantTree", dto) as Promise<GalaChainResponse<void>>;
     },
@@ -105,7 +134,7 @@ function appleContractAPI(client: ChainClient): AppleContractAPI {
     },
 
     FetchTrees(dto: FetchTreesDto) {
-      return client.evaluateTransaction("FetchTrees", dto, PagedTreesDto);
+      return client.evaluateTransaction("FetchTrees", dto) as Promise<GalaChainResponse<PagedTreesDto>>;
     },
 
     PickApple(dto: PickAppleDto) {

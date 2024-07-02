@@ -54,8 +54,8 @@ export class HFClientBuilder extends ChainClientBuilder {
   public forContract(cfg: ContractConfig): HFClient {
     const createContractPromise = async (userId: string) => {
       const gateway = await this.buildConnectedGateway(userId);
-      const network = await gateway.getNetwork(cfg.channelName);
-      const contract = network.getContract(cfg.chaincodeName, cfg.contractName);
+      const network = await gateway.getNetwork(cfg.channel);
+      const contract = network.getContract(cfg.chaincode, cfg.contract);
 
       return { contract: contract, gateway: gateway, network: network };
     };

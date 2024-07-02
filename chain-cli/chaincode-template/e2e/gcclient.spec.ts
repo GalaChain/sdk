@@ -51,9 +51,9 @@ describe("Chaincode client (PartnerOrg1)", () => {
     };
 
     const contract = {
-      channelName: "product-channel",
-      chaincodeName: "basic-product",
-      contractName: "PublicKeyContract"
+      channel: "product-channel",
+      chaincode: "basic-product",
+      contract: "PublicKeyContract"
     };
 
     client = gcclient.forConnectionProfile(params).forContract(contract).extendAPI(customAPI);
@@ -88,9 +88,9 @@ describe("Chaincode client (CuratorOrg)", () => {
     };
 
     const contract: ContractConfig = {
-      channelName: "product-channel",
-      chaincodeName: "basic-product",
-      contractName: "PublicKeyContract"
+      channel: "product-channel",
+      chaincode: "basic-product",
+      contract: "PublicKeyContract"
     };
 
     client = gcclient
@@ -139,9 +139,9 @@ describe.skip("REST API client", () => {
     };
 
     const contract: ContractConfig = {
-      channelName: "product-channel",
-      chaincodeName: "basic-product",
-      contractName: "PublicKeyContract"
+      channel: "product-channel",
+      chaincode: "basic-product",
+      contract: "PublicKeyContract"
     };
 
     client = gcclient.forApiConfig(params).forContract(contract).extendAPI(customAPI);
