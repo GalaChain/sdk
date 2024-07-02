@@ -17,7 +17,14 @@ export default defineConfig({
   ],
   resolve: {
     alias: {
-      '@': fileURLToPath(new URL('./src', import.meta.url))
+      '@': fileURLToPath(new URL('./src', import.meta.url)),
+      '@gala-chain/connect': fileURLToPath(
+        new URL('../chain-connect/src/index.ts', import.meta.url)
+      ),
+      '@gala-chain/api': fileURLToPath(new URL('../chain-api/src/index.ts', import.meta.url))
     }
+  },
+  optimizeDeps: {
+    include: ['@gala-chain/api', '@gala-chain/connect']
   }
 })
