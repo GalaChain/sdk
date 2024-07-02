@@ -22,27 +22,57 @@ declare global {
 }
 
 export class GalachainConnectClient {
-  private address: string;
-  private provider: BrowserProvider | undefined;
+  private address_: string;
+  private provider_: BrowserProvider | undefined;
+  private chainCodeUrl: string;
+
+  get address() {
+    return `eth|${this.address_}`;
+  }
+
+  set address(val: string) {
+    this.address_ = val.replace(/0x|eth\|/, "");
+  }
+
+  get provider() {
+    return this.provider_;
+  }
+
+  constructor(chainCodeUrl: string) {
+    this.chainCodeUrl = chainCodeUrl;
+  }
 
   public async connectToMetaMask() {
     if (!window.ethereum) {
       throw new Error("Ethereum provider not found");
     }
 
-    this.provider = new BrowserProvider(window.ethereum);
+    this.provider_ = new BrowserProvider(window.ethereum);
 
     try {
-      const accounts = (await this.provider.send("eth_requestAccounts", [])) as string[];
-      this.address = accounts[0];
+      const accounts = (await this.provider_.send("eth_requestAccounts", [])) as string[];
+      this.address_ = accounts[0];
+
       return this.address;
     } catch (error: unknown) {
       throw new Error((error as Error).message);
     }
   }
 
-  public async sendTransaction(chaincodeUrl: string, method: string, payload: object): Promise<object> {
-    if (!this.provider) {
+  public async send<T, U extends ChainCallDTO>({
+    url = this.chainCodeUrl,
+    method,
+    payload,
+    sign = false,
+    headers = {}
+  }: {
+    url?: string;
+    method: string;
+    payload: U;
+    sign?: boolean;
+    headers?: object;
+  }): Promise<{ Data: T }> {
+    if (!this.provider_) {
       throw new Error("Ethereum provider not found");
     }
     if (!this.address) {
@@ -50,37 +80,40 @@ export class GalachainConnectClient {
     }
 
     try {
-      const prefix = this.calculatePersonalSignPrefix(payload);
-      const prefixedPayload = { ...payload, prefix };
-      const dto = signatures.getPayloadToSign(prefixedPayload);
+      if (sign === true) {
+        const prefix = this.calculatePersonalSignPrefix(payload);
+        const prefixedPayload = { ...payload, prefix };
+        const dto = signatures.getPayloadToSign(prefixedPayload);
 
-      const signer = await this.provider.getSigner();
-      const signature = await signer.provider.send("personal_sign", [this.address, dto]);
+        const signer = await this.provider_.getSigner();
+        const signature = await signer.provider.send("personal_sign", [this.address, dto]);
 
-      return await this.submit(chaincodeUrl, method, { ...prefixedPayload, signature });
+        return await this.submit(url, method, { ...prefixedPayload, signature }, headers);
+      }
+
+      return await this.submit(url, method, payload, headers);
     } catch (error: unknown) {
       throw new Error((error as Error).message);
     }
   }
 
-  public async submit(
-    chaincodeUrl: string,
+  private async submit<T, U extends ChainCallDTO>(
+    chainCodeUrl: string,
     method: string,
-    signedPayload: Record<string, unknown>
-  ): Promise<object> {
+    signedPayload: U,
+    headers: object
+  ): Promise<T> {
     if (signedPayload instanceof ChainCallDTO) {
       await signedPayload.validateOrReject();
     }
 
-    // Note: GalaChain Uri maybe should be constructed based on channel and method,
-    // rather than passing full url as arg
-    // ie `${baseUri}/api/${channel}/token-contract/${method}`
-    const url = `${chaincodeUrl}/${method}`;
+    const url = `${chainCodeUrl}/${method}`;
     const response = await fetch(url, {
       method: "POST",
       body: serialize(signedPayload),
       headers: {
-        "Content-Type": "application/json"
+        "Content-Type": "application/json",
+        ...headers
       }
     });
 
