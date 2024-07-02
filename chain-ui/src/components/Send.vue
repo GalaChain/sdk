@@ -3,7 +3,7 @@ import { reactive, ref, computed, watch } from 'vue';
 import { type ValidationArgs, useVuelidate } from '@vuelidate/core';
 import { helpers, required, minValue, maxValue } from '@vuelidate/validators';
 import { getStepSizeFromDecimals } from '../utils/validation';
-import { TransferTokenDto, TokenClass, ChainCallDTO } from '@gala-chain/api' 
+import { TransferTokenDto, TokenClass } from '@gala-chain/api' 
 import { type IGalaChainError } from '../types/galachain-error';
 import FormInput from './Form/Input.vue';
 import FormErrors from './Form/Errors.vue';
@@ -97,7 +97,7 @@ const validationRules = computed(() => {
   return rules;
 });
 
-const v$ = useVuelidate<Partial<IFormModel>>(validationRules, model);
+const v$ = useVuelidate<Partial<IFormModel>>(validationRules, model as Partial<IFormModel>);
 
 const globalError = computed(() =>
   props.error ? props.error.message :
@@ -113,7 +113,7 @@ const send = async () => {
   }
 
   const { token, to, quantity } = model;
-  const { collection, category, type, additionalKey } = token;
+  const { collection, category, type, additionalKey } = token! ;
   emit('submit', {
     quantity,
     to,

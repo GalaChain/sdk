@@ -26,8 +26,9 @@
       "@gala-chain/chaincode": ["chaincode/src/index.ts"],
       "@gala-chain/cli": ["chain-cli/src/index.ts"],
       "@gala-chain/client": ["chain-client/src/index.ts"],
-      "@gala-chain/connect": ["connect/src/index.ts"],
-      "@gala-chain/test": ["chain-test/src/index.ts"]
+      "@gala-chain/connect": ["chain-connect/src/index.ts"],
+      "@gala-chain/test": ["chain-test/src/index.ts"],
+      "@gala-chain/ui": ["connect/src/index.ts"]
     }
   },
   "exclude": ["node_modules", "tmp"],
@@ -37,6 +38,8 @@
     "chain-client/**/*.ts",
     "chaincode/**/*.ts",
     "chain-test/**/*.ts",
+    "chain-connect/**/*.ts",
+    "chain-ui/**/*.ts",
     "package.json",
     "chain-client/src/ops-api-config-schema.json"
   ]
