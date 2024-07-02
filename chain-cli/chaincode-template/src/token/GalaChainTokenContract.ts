@@ -21,6 +21,7 @@ import {
   FetchAllowancesDto,
   FetchAllowancesResponse,
   FetchBalancesDto,
+  FetchBalancesWithTokenMetadataResponse,
   FetchBurnsDto,
   FetchMintRequestsDto,
   FetchTokenClassesDto,
@@ -64,6 +65,7 @@ import {
   deleteAllowances,
   fetchAllowancesWithPagination,
   fetchBalances,
+  fetchBalancesWithTokenMetadata,
   fetchBurns,
   fetchTokenClasses,
   fetchTokenClassesWithPagination,
@@ -230,6 +232,18 @@ export default class GalaChainTokenContract extends GalaContract {
   })
   public FetchBalances(ctx: GalaChainContext, dto: FetchBalancesDto): Promise<TokenBalance[]> {
     return fetchBalances(ctx, { ...dto, owner: dto.owner ?? ctx.callingUser });
+  }
+
+  @GalaTransaction({
+    type: EVALUATE,
+    in: FetchBalancesDto,
+    out: { arrayOf: TokenBalance }
+  })
+  public FetchBalancesWithTokenMetadata(
+    ctx: GalaChainContext,
+    dto: FetchBalancesDto
+  ): Promise<FetchBalancesWithTokenMetadataResponse> {
+    return fetchBalancesWithTokenMetadata(ctx, { ...dto, owner: dto.owner ?? ctx.callingUser });
   }
 
   @GalaTransaction({

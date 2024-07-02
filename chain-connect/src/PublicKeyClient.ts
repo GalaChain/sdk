@@ -12,7 +12,13 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-import { GetMyProfileDto, RegisterEthUserDto, RegisterUserDto, UpdatePublicKeyDto } from "@gala-chain/api";
+import {
+  GetMyProfileDto,
+  RegisterEthUserDto,
+  RegisterUserDto,
+  UpdatePublicKeyDto,
+  UserProfile
+} from "@gala-chain/api";
 
 import { GalachainConnectClient } from "./GalachainConnectClient";
 
@@ -23,18 +29,38 @@ export class PublicKeyClient {
   ) {}
 
   public GetMyProfile(dto: GetMyProfileDto) {
-    return this.client.sendTransaction(this.url, "GetMyProfile", dto);
+    return this.client.send<UserProfile, GetMyProfileDto>({
+      url: this.url,
+      method: "GetMyProfile",
+      payload: dto,
+      sign: true
+    });
   }
 
   public RegisterUser(dto: RegisterUserDto) {
-    return this.client.sendTransaction(this.url, "RegisterUser", dto);
+    return this.client.send<string, RegisterUserDto>({
+      url: this.url,
+      method: "RegisterUser",
+      payload: dto,
+      sign: true
+    });
   }
 
   public RegisterEthUser(dto: RegisterEthUserDto) {
-    return this.client.sendTransaction(this.url, "RegisterEthUser", dto);
+    return this.client.send<string, RegisterEthUserDto>({
+      url: this.url,
+      method: "RegisterEthUser",
+      payload: dto,
+      sign: true
+    });
   }
 
   public UpdatePublicKey(dto: UpdatePublicKeyDto) {
-    return this.client.sendTransaction(this.url, "UpdatePublicKey", dto);
+    return this.client.send<void, UpdatePublicKeyDto>({
+      url: this.url,
+      method: "UpdatePublicKey",
+      payload: dto,
+      sign: true
+    });
   }
 }
