@@ -53,7 +53,7 @@ export class GalachainConnectClient {
       const accounts = (await this.#provider.send("eth_requestAccounts", [])) as string[];
       this.address = accounts[0];
 
-      return this.#address;
+      return this.address;
     } catch (error: unknown) {
       throw new Error((error as Error).message);
     }
