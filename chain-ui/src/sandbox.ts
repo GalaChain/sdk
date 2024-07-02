@@ -2,13 +2,14 @@ import { GalachainConnectClient, TokenClient } from '@gala-chain/connect'
 import { GalaMintToken, GalaMintTokenWithAllowance, GalaTransferToken } from './main'
 import { ChainCallDTO, TokenAllowance, TokenBalanceWithMetadata } from '@gala-chain/api'
 import { v4 as uuidv4 } from 'uuid'
+import { getAddress } from 'ethers'
 
 const connectClient = new GalachainConnectClient()
 connectClient.connectToMetaMask()
 const addresses = await window.ethereum?.request({
   method: 'eth_requestAccounts'
 })
-const address = addresses[0]
+const address = getAddress(addresses[0])?.replace('0x', 'eth|')
 
 const submit = async (element: HTMLElement, method: keyof TokenClient, payload: ChainCallDTO) => {
   element.setAttribute('loading', 'true')
