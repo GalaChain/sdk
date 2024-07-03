@@ -3,22 +3,26 @@ import PrimeVue from 'primevue/config'
 // import Button from './components/Button.ce.vue'
 import { defineCustomElement } from './utils/defineCustomElement'
 import primevueTheme from './theme/primevue/gala'
-import TransferToken from './elements/TransferToken.ce.vue'
-import MintTokenWithAllowance from './elements/MintTokenWithAllowance.ce.vue'
-import MintToken from './elements/MintToken.ce.vue'
+import TransferTokenComponent, { type TransferToken } from './elements/TransferToken.ce.vue'
+import MintTokenWithAllowanceComponent, {
+  type MintTokenWithAllowance
+} from './elements/MintTokenWithAllowance.ce.vue'
+import MintTokenComponent, { type MintToken } from './elements/MintToken.ce.vue'
 import { type Component, type VueElementConstructor } from 'vue'
 
-const defineCustomElementWithOptions = <T extends Component>(component: T) => {
+const defineCustomElementWithOptions = <T>(component: Component) => {
   // TODO change types so contructor param "initialProps" is typed to component props
-  return defineCustomElement(component, {
+  return defineCustomElement<T>(component, {
     plugins: [{ plugin: PrimeVue, options: { pt: primevueTheme } }]
   })
 }
 
 // TODO auto-construct from folder contents
-const GalaTransferToken = defineCustomElementWithOptions(TransferToken)
-const GalaMintToken = defineCustomElementWithOptions(MintToken)
-const GalaMintTokenWithAllowance = defineCustomElementWithOptions(MintTokenWithAllowance)
+const GalaTransferToken = defineCustomElementWithOptions<TransferToken>(TransferTokenComponent)
+const GalaMintToken = defineCustomElementWithOptions<MintToken>(MintTokenComponent)
+const GalaMintTokenWithAllowance = defineCustomElementWithOptions<MintTokenWithAllowance>(
+  MintTokenWithAllowanceComponent
+)
 
 const prefix = 'gala'
 export const galaChainElements: Record<string, VueElementConstructor> = {

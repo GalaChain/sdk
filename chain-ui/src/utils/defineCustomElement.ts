@@ -6,7 +6,8 @@ import {
   getCurrentInstance,
   type AppContext,
   type ComponentInternalInstance,
-  type Plugin
+  type Plugin,
+  type VueElementConstructor
 } from 'vue'
 import AppContainer from '@/components/AppContainer.vue'
 
@@ -15,7 +16,7 @@ interface IOptions {
   plugins?: { plugin: Plugin; options: any }[]
 }
 
-export const defineCustomElement = (
+export const defineCustomElement = <T>(
   component: ReturnType<typeof defineComponent>,
   { includeStyles = true, plugins = [] }: IOptions
 ) =>
@@ -52,4 +53,4 @@ export const defineCustomElement = (
           ...events
         })
     }
-  })
+  }) as VueElementConstructor<T>

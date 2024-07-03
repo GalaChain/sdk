@@ -7,11 +7,13 @@ import { TokenBalance } from '@gala-chain/api';
 import type { IGalaChainError } from '@/types/galachain-error';
 import PrimeSkeleton from 'primevue/skeleton';
 
-  const props = defineProps<{
+  export interface TransferToken {
     tokenBalance?: TokenBalanceWithMetadata,
     loading?: boolean,
     disabled?: boolean,
-  }>()
+  }
+
+  const props = defineProps<TransferToken>()
 
   const emit = defineEmits<{
     submit: [value: TransferTokenDto];

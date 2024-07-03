@@ -6,11 +6,13 @@ import { calculateAvailableMintSupply } from '@/utils/calculateBalance';
 import type { IGalaChainError } from '@/types/galachain-error';
 import PrimeSkeleton from 'primevue/skeleton';
 
-  const props = defineProps<{
+  export interface MintTokenWithAllowance {
     address?: string,
     token?: TokenClass,
     loading?: boolean
-  }>()
+  }
+
+  const props = defineProps<MintTokenWithAllowance>()
 
   const emit = defineEmits<{
     submit: [value: MintTokenWithAllowanceDto];
