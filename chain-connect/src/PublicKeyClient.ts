@@ -23,14 +23,10 @@ import {
 import { GalachainConnectClient } from "./GalachainConnectClient";
 
 export class PublicKeyClient {
-  constructor(
-    private client: GalachainConnectClient,
-    private url: string
-  ) {}
+  constructor(private client: GalachainConnectClient) {}
 
   public GetMyProfile(dto: GetMyProfileDto) {
     return this.client.send<UserProfile, GetMyProfileDto>({
-      url: this.url,
       method: "GetMyProfile",
       payload: dto,
       sign: true
@@ -39,7 +35,6 @@ export class PublicKeyClient {
 
   public RegisterUser(dto: RegisterUserDto) {
     return this.client.send<string, RegisterUserDto>({
-      url: this.url,
       method: "RegisterUser",
       payload: dto,
       sign: true
@@ -48,7 +43,6 @@ export class PublicKeyClient {
 
   public RegisterEthUser(dto: RegisterEthUserDto) {
     return this.client.send<string, RegisterEthUserDto>({
-      url: this.url,
       method: "RegisterEthUser",
       payload: dto,
       sign: true
@@ -57,7 +51,6 @@ export class PublicKeyClient {
 
   public UpdatePublicKey(dto: UpdatePublicKeyDto) {
     return this.client.send<void, UpdatePublicKeyDto>({
-      url: this.url,
       method: "UpdatePublicKey",
       payload: dto,
       sign: true
