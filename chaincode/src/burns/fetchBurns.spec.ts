@@ -12,7 +12,13 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-import { FetchBurnsDto, GalaChainResponse, TokenBurn, createValidDTO } from "@gala-chain/api";
+import {
+  FetchBurnsDto,
+  GalaChainResponse,
+  TokenBurn,
+  createValidChainObject,
+  createValidDTO
+} from "@gala-chain/api";
 import { fixture, nft, users } from "@gala-chain/test";
 import { plainToInstance } from "class-transformer";
 
@@ -27,12 +33,12 @@ describe("FetchBurns", () => {
     const nftTokenBurn2 = await createValidChainObject(TokenBurn, { ...nftTokenBurn, created: 10000 });
 
     const { ctx, contract, writes } = fixture(GalaChainTokenContract)
-      .callingUser(users.testUser1)
+      .registeredUsers(users.testUser1)
       .savedState(nftClass, nftInstance, nftTokenBurn, nftTokenBurn2);
 
     const dto = await createValidDTO(FetchBurnsDto, {
-      burnedBy: users.testUser1
-    });
+      burnedBy: users.testUser1.identityKey
+    }).signed(users.testUser1.privateKey);
 
     // When
     const response = await contract.FetchBurns(ctx, dto);

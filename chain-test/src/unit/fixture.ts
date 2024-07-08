@@ -79,7 +79,7 @@ type GalaContract<Ctx extends TestGalaChainContext> = Contract & {
   createContext(): Ctx;
 };
 
-const defaultCaClientIdentity = x509Identity("test", "test");
+const defaultCaClientIdentity = x509Identity("test", "TestOrg");
 
 class Fixture<Ctx extends TestGalaChainContext, T extends GalaContract<Ctx>> {
   private readonly stub: TestChaincodeStub;

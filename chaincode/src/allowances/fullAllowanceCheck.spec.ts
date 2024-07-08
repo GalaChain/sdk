@@ -32,7 +32,7 @@ describe("FullAllowanceCheck", () => {
     const tokenBalance = nft.tokenBalance();
 
     const { ctx, contract, writes } = fixture(GalaChainTokenContract)
-      .callingUser(users.admin)
+      .registeredUsers(users.admin)
       .savedState(nftClass, nftInstance, tokenBalance);
 
     const dto = await createValidDTO(FullAllowanceCheckDto, {
@@ -40,10 +40,10 @@ describe("FullAllowanceCheck", () => {
       category: nftInstance.category,
       type: nftInstance.type,
       additionalKey: nftInstance.additionalKey,
-      owner: users.testUser1,
-      grantedTo: users.admin,
+      owner: users.testUser1.identityKey,
+      grantedTo: users.admin.identityKey,
       allowanceType: 1
-    });
+    }).signed(users.admin.privateKey);
 
     // When
     const response = await contract.FullAllowanceCheck(ctx, dto);
@@ -54,7 +54,7 @@ describe("FullAllowanceCheck", () => {
         await createValidDTO(FullAllowanceCheckResDto, {
           all: false,
           missing: [
-            await createValidChainObject(TokenInstanceKey, {
+            plainToInstance(TokenInstanceKey, {
               additionalKey: "Elixir",
               category: "Item",
               collection: "TEST",
