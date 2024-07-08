@@ -2,11 +2,11 @@
 import { reactive, ref, computed, watch } from 'vue';
 import { type ValidationArgs, useVuelidate } from '@vuelidate/core';
 import { helpers, required, minValue, maxValue } from '@vuelidate/validators';
-import { getStepSizeFromDecimals } from '../utils/validation';
+import { getStepSizeFromDecimals } from '@/utils/validation';
 import { TransferTokenDto, TokenClass } from '@gala-chain/api' 
-import { type IGalaChainError } from '../types/galachain-error';
-import FormInput from './Form/Input.vue';
-import FormErrors from './Form/Errors.vue';
+import { type IGalaChainError } from '@/types/galachain-error';
+import FormInput from '../Form/Input.vue';
+import FormErrors from '../Form/Errors.vue';
 import PrimeButton from 'primevue/button';
 import BigNumber from 'bignumber.js';
 

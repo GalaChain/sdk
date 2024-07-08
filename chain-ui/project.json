@@ -11,7 +11,7 @@
       ],
       "options": {
         "outputPath": "dist/ui",
-        "main": "chain-ui/src/main.ts",
+        "main": "chain-ui/src/index.ts",
         "tsConfig": "chain-ui/tsconfig.app.json",
         "assets": [
           "chain-ui/*.md"

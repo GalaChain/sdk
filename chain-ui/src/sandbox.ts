@@ -1,5 +1,5 @@
 import { GalachainConnectClient, TokenClient } from '@gala-chain/connect'
-import { GalaMintToken, GalaMintTokenWithAllowance, GalaTransferToken } from './main'
+import { GalaMintToken, GalaMintTokenWithAllowance, GalaTransferToken } from './elements'
 import { ChainCallDTO, TokenAllowance, TokenBalanceWithMetadata } from '@gala-chain/api'
 import { v4 as uuidv4 } from 'uuid'
 
@@ -57,7 +57,7 @@ const balancesResponse: any = await connectClient.submit(
   'http://localhost:3002/api/asset/token-contract',
   'FetchBalancesWithTokenMetadata',
   {
-    owner: 'eth|E11F175251222B62cCB0D045D9aC8f9278Cd08ea',
+    owner: address,
     collection: 'GALA',
     category: 'Unit',
     type: 'none',
