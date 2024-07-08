@@ -12,62 +12,61 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-import { GalaChainResponse, TokenClass, UpdateTokenClassDto, createValidDTO } from "@gala-chain/api";
+import {
+  GalaChainResponse,
+  TokenClass,
+  TokenClassKey,
+  UpdateTokenClassDto,
+  createValidChainObject,
+  createValidDTO
+} from "@gala-chain/api";
 import { currency, fixture, users, writesMap } from "@gala-chain/test";
 
 import GalaChainTokenContract from "../__test__/GalaChainTokenContract";
-import { createValidChainObject } from "../types";
+import { OrganizationNotAllowedError } from "../contracts";
 import { NotATokenAuthorityError, TokenClassNotFoundError } from "./TokenError";
-
-const defaultUpdate = () => ({
-  name: "UPDATEDTESTCURRENCY",
-  description: "UPDATED: A mock currency for automated tests.",
-  image: "http://app.gala.games/UPDATED-image-url",
-  symbol: "UPDATEDAUTOTESTCOIN",
-  rarity: "Updateable",
-  authorities: [users.admin, "client|new-admin"]
-});
 
 it("should update token class", async () => {
   // Given
   const savedTokenClass = currency.tokenClass();
+  const savedTokenClassKey = await savedTokenClass.getKey();
 
   const { ctx, contract, writes } = fixture(GalaChainTokenContract)
-    .callingUser(users.admin)
+    .caClientIdentity("curator", "CuratorOrg")
+    .registeredUsers(users.admin)
     .savedState(savedTokenClass);
 
-  const dto: UpdateTokenClassDto = await createValidDTO(UpdateTokenClassDto, {
-    tokenClass: await savedTokenClass.getKey(),
-    ...defaultUpdate()
+  const update = defaultUpdate();
+  const dto: UpdateTokenClassDto = await defaultUpdateDto(savedTokenClassKey, update).signed(
+    users.admin.privateKey
+  );
+
+  const expectedWrite = await createValidChainObject(TokenClass, {
+    ...savedTokenClass,
+    ...update
   });
 
   // When
   const response = await contract.UpdateTokenClass(ctx, dto);
 
   // Then
-  expect(response).toEqual(GalaChainResponse.Success(dto.tokenClass));
-
-  const expectedWrite = await createValidChainObject(TokenClass, {
-    ...savedTokenClass,
-    ...defaultUpdate()
-  });
+  expect(response).toEqual(GalaChainResponse.Success(savedTokenClassKey));
   expect(writes).toEqual(writesMap(expectedWrite));
 });
 
 it("should fail if callingUser is not token authority", async () => {
   // Given
   const savedTokenClass = currency.tokenClass();
+  const savedTokenClassKey = await savedTokenClass.getKey();
   const callingUser = users.testUser1;
-  expect(savedTokenClass.authorities).not.toContain(callingUser);
+  expect(savedTokenClass.authorities).not.toContain(callingUser.identityKey);
 
   const { ctx, contract, writes } = fixture(GalaChainTokenContract)
-    .callingUser(callingUser)
+    .caClientIdentity("curator", "CuratorOrg")
+    .registeredUsers(callingUser)
     .savedState(savedTokenClass);
 
-  const dto: UpdateTokenClassDto = await createValidDTO(UpdateTokenClassDto, {
-    tokenClass: await savedTokenClass.getKey(),
-    ...defaultUpdate()
-  });
+  const dto: UpdateTokenClassDto = await defaultUpdateDto(savedTokenClassKey).signed(callingUser.privateKey);
 
   // When
   const response = await contract.UpdateTokenClass(ctx, dto);
@@ -75,7 +74,35 @@ it("should fail if callingUser is not token authority", async () => {
   // Then
   const [key, authorities] = [savedTokenClass.getCompositeKey(), savedTokenClass.authorities];
   expect(response).toEqual(
-    GalaChainResponse.Error(new NotATokenAuthorityError(callingUser, key, authorities))
+    GalaChainResponse.Error(new NotATokenAuthorityError(callingUser.identityKey, key, authorities))
+  );
+
+  expect(writes).toEqual({});
+});
+
+it("should fail if CA client is not a member of CuratorOrg", async () => {
+  // Given
+  const savedTokenClass = currency.tokenClass();
+  const savedTokenClassKey = await savedTokenClass.getKey();
+
+  const { ctx, contract, writes } = fixture(GalaChainTokenContract)
+    .caClientIdentity("non-curator", "NonCuratorOrg")
+    .registeredUsers(users.admin)
+    .savedState(savedTokenClass);
+
+  const dto: UpdateTokenClassDto = await defaultUpdateDto(savedTokenClassKey).signed(users.admin.privateKey);
+
+  // When
+  const response = await contract.UpdateTokenClass(ctx, dto);
+
+  // Then
+  expect(response).toEqual(
+    GalaChainResponse.Error(
+      new OrganizationNotAllowedError(
+        "Members of organization NonCuratorOrg do not have sufficient permissions. Required one of [CuratorOrg].",
+        { caUser: "client|non-curator", userMsp: "NonCuratorOrg" }
+      )
+    )
   );
 
   expect(writes).toEqual({});
@@ -83,19 +110,35 @@ it("should fail if callingUser is not token authority", async () => {
 
 it("should fail if token does not exist", async () => {
   // Given
-  const tokenClassKey = currency.tokenClassKey();
-  const { ctx, contract, writes } = fixture(GalaChainTokenContract); // no saved token class
+  const { ctx, contract, writes } = fixture(GalaChainTokenContract)
+    .caClientIdentity("curator", "CuratorOrg")
+    .registeredUsers(users.admin); // no saved token class
 
-  const dto: UpdateTokenClassDto = await createValidDTO(UpdateTokenClassDto, {
-    tokenClass: tokenClassKey,
-    ...defaultUpdate()
-  });
+  const tokenClassKey = currency.tokenClassKey();
+  const dto: UpdateTokenClassDto = await defaultUpdateDto(tokenClassKey).signed(users.admin.privateKey);
 
   // When
   const response = await contract.UpdateTokenClass(ctx, dto);
 
   // Then
   expect(response).toEqual(GalaChainResponse.Error(new TokenClassNotFoundError(tokenClassKey.toStringKey())));
-
   expect(writes).toEqual({});
 });
+
+function defaultUpdate() {
+  return {
+    name: "UPDATEDTESTCURRENCY",
+    description: "UPDATED: A mock currency for automated tests.",
+    image: "http://app.gala.games/UPDATED-image-url",
+    symbol: "UPDATEDAUTOTESTCOIN",
+    rarity: "Updateable",
+    authorities: [users.admin.identityKey, "client|new-admin"]
+  };
+}
+
+function defaultUpdateDto(tokenClassKey: TokenClassKey, update = defaultUpdate()) {
+  return createValidDTO(UpdateTokenClassDto, {
+    tokenClass: tokenClassKey,
+    ...update
+  });
+}

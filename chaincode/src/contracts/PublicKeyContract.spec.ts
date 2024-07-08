@@ -20,7 +20,7 @@ import {
   RegisterUserDto,
   UpdatePublicKeyDto,
   createValidDTO,
-  signatures
+  signatures, UserProfile, UserRole
 } from "@gala-chain/api";
 import { fixture, transactionSuccess } from "@gala-chain/test";
 import { classToPlain, instanceToInstance, plainToClass } from "class-transformer";
@@ -438,7 +438,8 @@ describe("GetMyProfile", () => {
     expect(response).toEqual(
       transactionSuccess({
         alias: user.name,
-        ethAddress: user.ethAddress
+        ethAddress: user.ethAddress,
+        roles: [UserRole.EVALUATE, UserRole.SUBMIT]
       })
     );
   });

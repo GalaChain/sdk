@@ -114,7 +114,6 @@ export class FetchTokenClassesResponse extends ChainCallDTO {
 
   @JSONSchema({ description: "Next page bookmark." })
   @IsOptional()
-  @IsNotEmpty()
   nextPageBookmark?: string;
 }
 

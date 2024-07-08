@@ -75,7 +75,7 @@ it("should FetchTokenClassesWithPagination", async () => {
     {}
   );
 
-  const expectedResponse = await createValidChainObject(FetchTokenClassesResponse, {
+  const expectedResponse = await createValidDTO(FetchTokenClassesResponse, {
     nextPageBookmark: "",
     results: [currencyClass, nftClass]
   });
@@ -102,7 +102,7 @@ it("should limit results for FetchTokenClassesWithPagination", async () => {
     collection: searchCollection
   });
 
-  const expectedResponse = await createValidChainObject(FetchTokenClassesResponse, {
+  const expectedResponse = await createValidDTO(FetchTokenClassesResponse, {
     nextPageBookmark: "",
     results: [nftClass]
   });
@@ -127,7 +127,7 @@ it("should not throw a 404 error if no tokens are found when using the Paginatio
     collection: missingKey.collection
   });
 
-  const expectedResponse = await createValidChainObject(FetchTokenClassesResponse, {
+  const expectedResponse = await createValidDTO(FetchTokenClassesResponse, {
     nextPageBookmark: "",
     results: []
   });

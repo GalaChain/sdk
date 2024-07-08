@@ -79,6 +79,8 @@ type GalaContract<Ctx extends TestGalaChainContext> = Contract & {
   createContext(): Ctx;
 };
 
+const defaultCaClientIdentity = x509Identity("test", "test");
+
 class Fixture<Ctx extends TestGalaChainContext, T extends GalaContract<Ctx>> {
   private readonly stub: TestChaincodeStub;
   public readonly contract: T;
@@ -102,6 +104,7 @@ class Fixture<Ctx extends TestGalaChainContext, T extends GalaContract<Ctx>> {
               : await method.call(contractInstance, ctx);
             await contractInstance.afterTransaction(ctx, result);
             ctx.resetCallingUserData();
+            this.ctx.clientIdentity = defaultCaClientIdentity;
             return result;
           };
         }
@@ -120,7 +123,7 @@ class Fixture<Ctx extends TestGalaChainContext, T extends GalaContract<Ctx>> {
         return Logger.getLogger(name ? `${contractClass?.name}:${name}` : contractClass?.name);
       }
     };
-    ctxInstance.clientIdentity = x509Identity("test", "test");
+    ctxInstance.clientIdentity = defaultCaClientIdentity;
     this.ctx = ctxInstance;
   }
 
@@ -136,6 +139,11 @@ class Fixture<Ctx extends TestGalaChainContext, T extends GalaContract<Ctx>> {
     }));
 
     return this.savedKVState(...publicKeys, ...userProfiles);
+  }
+
+  caClientIdentity(caUser: string, mspId: string): Fixture<Ctx, T> {
+    this.ctx.clientIdentity = x509Identity(caUser, mspId);
+    return this;
   }
 
   savedState(...objs: ChainObject[]): Fixture<Ctx, T> {
