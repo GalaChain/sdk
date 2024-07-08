@@ -65,14 +65,18 @@ export type NonFunctionProperties<T> = Pick<T, NonFunctionPropertyNames<T>>;
 /**
  * Creates valid DTO object from provided plain object. Throws exception in case of validation errors.
  */
-export const createValidDTO = async <T extends ChainCallDTO>(
+export function createValidDTO<T extends ChainCallDTO>(
   constructor: ClassConstructor<T>,
   plain: NonFunctionProperties<T>
-): Promise<T> => {
+): Promise<T> & { signed(privateKey: string): Promise<T> } {
   const instance = plainToInstance(constructor, plain) as T;
-  await validateDTO(instance);
-  return instance;
-};
+  const response = validateDTO(instance);
+
+  // @ts-expect-error adding new method in runtime
+  response.signed = (k: string) => response.then(r => r.signed(k));
+
+  return response as Promise<T> & { signed(privateKey: string): Promise<T> };
+}
 
 /**
  * Creates valid signed DTO object from provided plain object. Throws exception in case of validation errors.
