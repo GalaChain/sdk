@@ -15,15 +15,17 @@
 import {
   ChainCallDTO,
   ForbiddenError,
+  NotFoundError,
   PublicKey,
+  signatures,
   UserProfile,
   UserRole,
-  ValidationFailedError,
-  signatures
+  ValidationFailedError
 } from "@gala-chain/api";
 
 import { PkInvalidSignatureError, PublicKeyService } from "../services";
 import { GalaChainContext } from "../types";
+import { legacyClientAccountId } from "./legacyClientAccountId";
 
 class MissingSignatureError extends ValidationFailedError {
   constructor() {
@@ -43,7 +45,13 @@ class UserNotRegisteredError extends ValidationFailedError {
   }
 }
 
-class OrganizationNotAllowedError extends ForbiddenError {}
+export class OrganizationNotAllowedError extends ForbiddenError {}
+
+class PkNotFoundError extends NotFoundError {
+  constructor(userId: string) {
+    super(`Public key for user ${userId} not found.`, { userId });
+  }
+}
 
 /**
  *
@@ -126,13 +134,15 @@ async function legacyAuthorize(
 }
 
 export function ensureOrganizationIsAllowed(ctx: GalaChainContext, allowedOrgsMSPs: string[] | undefined) {
-  const userOrg: string = ctx.clientIdentity.getMSPID();
-  const isAllowed = (allowedOrgsMSPs || []).some((o) => o === userOrg);
+  const userMsp: string = ctx.clientIdentity.getMSPID();
+  const isAllowed = (allowedOrgsMSPs || []).some((o) => o === userMsp);
 
   if (!isAllowed) {
-    const message = `Members of organization ${userOrg} do not have sufficient permissions.`;
-    const user = (ctx as { callingUser?: string } | undefined)?.callingUser;
-    throw new OrganizationNotAllowedError(message, { user, userOrg });
+    const message =
+      `Members of organization ${userMsp} do not have sufficient permissions.` +
+      ` Required one of [${allowedOrgsMSPs?.join(", ")}].`;
+    const caUser = legacyClientAccountId(ctx);
+    throw new OrganizationNotAllowedError(message, { caUser, userMsp });
   }
 }
 
@@ -148,8 +158,7 @@ async function getSavedPKOrReject(ctx: GalaChainContext, userId: string): Promis
   const publicKey = await PublicKeyService.getPublicKey(ctx, userId);
 
   if (publicKey === undefined) {
-    console.error(`User ${userId} is not registered.`);
-    throw new UserNotRegisteredError(userId);
+    throw new PkNotFoundError(userId);
   }
 
   return publicKey;
