@@ -17,6 +17,7 @@
 import { ChainCallDTO, ChainKey, ChainObject, createValidChainObject, GalaChainResponse } from "@gala-chain/api";
 import { NotImplementedError } from "@gala-chain/api";
 import { Exclude } from "class-transformer";
+import { IsPositive } from "class-validator";
 import { Transaction } from "fabric-contract-api";
 
 import { version } from "../../package.json";
@@ -27,6 +28,7 @@ import { getObjectsByPartialCompositeKey, putChainObject } from "../utils/state"
 export class SuperheroDto extends ChainCallDTO {
   public name: string;
 
+  @IsPositive()
   public age: number;
 
   public static create(name: string, age: number) {

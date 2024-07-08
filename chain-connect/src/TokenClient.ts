@@ -18,21 +18,32 @@ import {
   CreateTokenClassDto,
   DeleteAllowancesDto,
   FetchAllowancesDto,
+  FetchAllowancesResponse,
   FetchBalancesDto,
+  FetchBalancesWithTokenMetadataResponse,
   FetchBurnsDto,
   FetchMintRequestsDto,
   FetchTokenClassesDto,
+  FetchTokenClassesResponse,
   FetchTokenClassesWithPaginationDto,
   FulfillMintDto,
   FullAllowanceCheckDto,
+  FullAllowanceCheckResDto,
   GrantAllowanceDto,
   HighThroughputMintTokenDto,
   LockTokenDto,
   LockTokensDto,
+  MintRequestDto,
   MintTokenDto,
   MintTokenWithAllowanceDto,
   RefreshAllowanceDto,
   ReleaseTokenDto,
+  TokenAllowance,
+  TokenBalance,
+  TokenBurn,
+  TokenClass,
+  TokenClassKey,
+  TokenInstanceKey,
   TransferTokenDto,
   UnlockTokenDto,
   UnlockTokensDto,
@@ -43,112 +54,215 @@ import {
 import { GalachainConnectClient } from "./GalachainConnectClient";
 
 export class TokenClient {
-  constructor(
-    private client: GalachainConnectClient,
-    private url: string
-  ) {}
+  constructor(private client: GalachainConnectClient) {}
 
   public CreateTokenClass(dto: CreateTokenClassDto) {
-    return this.client.sendTransaction(this.url, "CreateTokenClass", dto);
+    return this.client.send<TokenClassKey, CreateTokenClassDto>({
+      method: "CreateTokenClass",
+      payload: dto,
+      sign: true
+    });
   }
 
   public UpdateTokenClass(dto: UpdateTokenClassDto) {
-    return this.client.sendTransaction(this.url, "UpdateTokenClass", dto);
+    return this.client.send<TokenClassKey, UpdateTokenClassDto>({
+      method: "UpdateTokenClass",
+      payload: dto,
+      sign: true
+    });
   }
 
   public FetchTokenClasses(dto: FetchTokenClassesDto) {
-    return this.client.sendTransaction(this.url, "FetchTokenClasses", dto);
+    return this.client.send<TokenClass[], FetchTokenClassesDto>({
+      method: "FetchTokenClasses",
+      payload: dto
+    });
   }
 
   public FetchTokenClassesWithPagination(dto: FetchTokenClassesWithPaginationDto) {
-    return this.client.sendTransaction(this.url, "FetchTokenClassesWithPagination", dto);
+    return this.client.send<FetchTokenClassesResponse, FetchTokenClassesWithPaginationDto>({
+      method: "FetchTokenClassesWithPagination",
+      payload: dto
+    });
   }
 
   public GrantAllowance(dto: GrantAllowanceDto) {
-    return this.client.sendTransaction(this.url, "GrantAllowance", dto);
+    return this.client.send<TokenAllowance[], GrantAllowanceDto>({
+      method: "GrantAllowance",
+      payload: dto,
+      sign: true
+    });
   }
 
   public RefreshAllowances(dto: RefreshAllowanceDto) {
-    return this.client.sendTransaction(this.url, "RefreshAllowances", dto);
+    return this.client.send<TokenAllowance[], RefreshAllowanceDto>({
+      method: "RefreshAllowances",
+      payload: dto,
+      sign: true
+    });
   }
 
   public FullAllowanceCheck(dto: FullAllowanceCheckDto) {
-    return this.client.sendTransaction(this.url, "FullAllowanceCheck", dto);
+    return this.client.send<FullAllowanceCheckResDto, FullAllowanceCheckDto>({
+      method: "FullAllowanceCheck",
+      payload: dto,
+      sign: true
+    });
   }
 
   public FetchAllowances(dto: FetchAllowancesDto) {
-    return this.client.sendTransaction(this.url, "FetchAllowances", dto);
+    return this.client.send<FetchAllowancesResponse, FetchAllowancesDto>({
+      method: "FetchAllowances",
+      payload: dto,
+      sign: true
+    });
   }
 
   public DeleteAllowances(dto: DeleteAllowancesDto) {
-    return this.client.sendTransaction(this.url, "DeleteAllowances", dto);
+    return this.client.send<number, DeleteAllowancesDto>({
+      method: "DeleteAllowances",
+      payload: dto,
+      sign: true
+    });
   }
 
   public FetchBalances(dto: FetchBalancesDto) {
-    return this.client.sendTransaction(this.url, "FetchBalances", dto);
+    return this.client.send<TokenBalance[], FetchBalancesDto>({
+      method: "FetchBalances",
+      payload: dto
+    });
+  }
+
+  public FetchBalancesWithTokenMetadata(dto: FetchBalancesDto) {
+    return this.client.send<FetchBalancesWithTokenMetadataResponse, FetchBalancesDto>({
+      method: "FetchBalancesWithTokenMetadata",
+      payload: dto
+    });
   }
 
   public RequestMint(dto: HighThroughputMintTokenDto) {
-    return this.client.sendTransaction(this.url, "RequestMint", dto);
+    return this.client.send<FulfillMintDto, HighThroughputMintTokenDto>({
+      method: "RequestMint",
+      payload: dto,
+      sign: true
+    });
   }
 
   public FulfillMint(dto: FulfillMintDto) {
-    return this.client.sendTransaction(this.url, "FulfillMint", dto);
+    return this.client.send<TokenInstanceKey[], FulfillMintDto>({
+      method: "FulfillMint",
+      payload: dto,
+      sign: true
+    });
   }
 
   public HighThroughputMint(dto: HighThroughputMintTokenDto) {
-    return this.client.sendTransaction(this.url, "HighThroughputMint", dto);
+    return this.client.send<TokenInstanceKey[], HighThroughputMintTokenDto>({
+      method: "HighThroughputMint",
+      payload: dto,
+      sign: true
+    });
   }
 
   public FetchMintRequests(dto: FetchMintRequestsDto) {
-    return this.client.sendTransaction(this.url, "FetchMintRequests", dto);
+    return this.client.send<MintRequestDto[], FetchMintRequestsDto>({
+      method: "FetchMintRequests",
+      payload: dto
+    });
   }
 
   public MintToken(dto: MintTokenDto) {
-    return this.client.sendTransaction(this.url, "MintToken", dto);
+    return this.client.send<TokenInstanceKey[], MintTokenDto>({
+      method: "MintToken",
+      payload: dto,
+      sign: true
+    });
   }
 
   public MintTokenWithAllowance(dto: MintTokenWithAllowanceDto) {
-    return this.client.sendTransaction(this.url, "MintTokenWithAllowance", dto);
+    return this.client.send<TokenInstanceKey[], MintTokenWithAllowanceDto>({
+      method: "MintTokenWithAllowance",
+      payload: dto,
+      sign: true
+    });
   }
 
   public BatchMintToken(dto: BatchMintTokenDto) {
-    return this.client.sendTransaction(this.url, "BatchMintToken", dto);
+    return this.client.send<TokenInstanceKey[], BatchMintTokenDto>({
+      method: "BatchMintToken",
+      payload: dto,
+      sign: true
+    });
   }
 
   public UseToken(dto: UseTokenDto) {
-    return this.client.sendTransaction(this.url, "UseToken", dto);
+    return this.client.send<TokenBalance, UseTokenDto>({
+      method: "UseToken",
+      payload: dto,
+      sign: true
+    });
   }
 
   public ReleaseToken(dto: ReleaseTokenDto) {
-    return this.client.sendTransaction(this.url, "ReleaseToken", dto);
+    return this.client.send<TokenBalance, ReleaseTokenDto>({
+      method: "ReleaseToken",
+      payload: dto,
+      sign: true
+    });
   }
 
   public LockToken(dto: LockTokenDto) {
-    return this.client.sendTransaction(this.url, "LockToken", dto);
+    return this.client.send<TokenBalance, LockTokenDto>({
+      method: "LockToken",
+      payload: dto,
+      sign: true
+    });
   }
 
   public LockTokens(dto: LockTokensDto) {
-    return this.client.sendTransaction(this.url, "LockTokens", dto);
+    return this.client.send<TokenBalance[], LockTokensDto>({
+      method: "LockTokens",
+      payload: dto,
+      sign: true
+    });
   }
 
   public UnlockToken(dto: UnlockTokenDto) {
-    return this.client.sendTransaction(this.url, "UnlockToken", dto);
+    return this.client.send<TokenBalance, UnlockTokenDto>({
+      method: "UnlockToken",
+      payload: dto,
+      sign: true
+    });
   }
 
   public UnlockTokens(dto: UnlockTokensDto) {
-    return this.client.sendTransaction(this.url, "UnlockTokens", dto);
+    return this.client.send<TokenBalance[], UnlockTokensDto>({
+      method: "UnlockTokens",
+      payload: dto,
+      sign: true
+    });
   }
 
   public TransferToken(dto: TransferTokenDto) {
-    return this.client.sendTransaction(this.url, "TransferToken", dto);
+    return this.client.send<TokenBalance[], TransferTokenDto>({
+      method: "TransferToken",
+      payload: dto,
+      sign: true
+    });
   }
 
   public BurnTokens(dto: BurnTokensDto) {
-    return this.client.sendTransaction(this.url, "BurnTokens", dto);
+    return this.client.send<TokenBurn[], BurnTokensDto>({
+      method: "BurnTokens",
+      payload: dto,
+      sign: true
+    });
   }
 
   public FetchBurns(dto: FetchBurnsDto) {
-    return this.client.sendTransaction(this.url, "FetchBurns", dto);
+    return this.client.send<TokenBurn[], FetchBurnsDto>({
+      method: "FetchBurns",
+      payload: dto
+    });
   }
 }

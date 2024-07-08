@@ -89,6 +89,7 @@ export class GalaChainContext extends Context {
   private callingUserValue?: string;
   private callingUserEthAddressValue?: string;
   private callingUserRolesValue?: string[];
+  public isDryRun = false;
   private txUnixTimeValue?: number;
   private loggerInstance?: GalaLoggerInstance;
 
@@ -133,6 +134,12 @@ export class GalaChainContext extends Context {
     this.callingUserValue = undefined;
     this.callingUserEthAddressValue = undefined;
     this.callingUserRolesValue = undefined;
+  }
+
+  public setDryRunOnBehalfOf(d: { alias: string; ethAddress: string | undefined }): void {
+    this.callingUserValue = d.alias;
+    this.callingUserEthAddressValue = d.ethAddress;
+    this.isDryRun = true;
   }
 
   get txUnixTime(): number {

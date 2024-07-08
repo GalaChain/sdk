@@ -12,8 +12,6 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-import process from "process";
-
 import { ChainClientBuilder, loadJson } from "./generic";
 import { HFClientBuilder } from "./hf";
 import { RestApiClientBuilder, loadRestApiConfig } from "./rest-api";
