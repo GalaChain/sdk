@@ -109,7 +109,7 @@ describe("GrantAllowance", () => {
     expect(writes).toEqual({});
   });
 
-  it("should fail to GrantAllowance for fungible token when quantity is greater than balance", async () => {
+  it("should no longer fail to GrantAllowance for fungible token when quantity is greater than balance", async () => {
     // Given
     const currencyInstance = currency.tokenInstance();
     const currencyInstanceKey = currency.tokenInstanceKey();
@@ -142,19 +142,16 @@ describe("GrantAllowance", () => {
     const response = await contract.GrantAllowance(ctx, dto);
 
     // Then
-    expect(response).toEqual(
-      GalaChainResponse.Error(
-        new InsufficientTokenBalanceError(
-          users.testUser2Id,
-          currencyInstanceKey.toStringKey(),
-          AllowanceType[AllowanceType.Lock],
-          new BigNumber("1000"),
-          new BigNumber("1001"),
-          new BigNumber("0")
-        )
-      )
-    );
-    expect(writes).toEqual({});
+    const allowance = currency.tokenAllowance((a) => ({
+      ...a,
+      created: ctx.txUnixTime,
+      quantity: new BigNumber("1001"),
+      grantedBy: users.testUser2Id,
+      grantedTo: users.testUser1Id,
+      allowanceType: AllowanceType.Lock
+    }));
+    expect(response).toEqual(GalaChainResponse.Success([allowance]));
+    expect(writes).toEqual(writesMap(allowance));
   });
 
   it("should GrantAllowance for fungible token when quantity is exactly balance", async () => {

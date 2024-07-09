@@ -530,21 +530,6 @@ export async function grantAllowance(
           tokenInstance.owner
         );
       }
-    } else {
-      const instanceClassKey = await TokenClass.buildClassKeyObject(tokenInstance);
-      const callingUserBalance = await fetchOrCreateBalance(ctx, ctx.callingUser, instanceClassKey);
-
-      // for fungible tokens, we need to check the balance and quantities
-      if (callingUserBalance.getSpendableQuantityTotal(ctx.txUnixTime).isLessThan(totalQuantity)) {
-        throw new InsufficientTokenBalanceError(
-          ctx.callingUser,
-          instanceKey.toStringKey(),
-          AllowanceType[allowanceType],
-          callingUserBalance.getQuantityTotal(),
-          totalQuantity,
-          callingUserBalance.getLockedQuantityTotal(ctx.txUnixTime)
-        );
-      }
     }
 
     return putAllowancesOnChain(ctx, { allowanceType, quantities, uses, expires }, instanceKey, tokenClass);
