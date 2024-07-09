@@ -2,7 +2,7 @@ name: Trigger GitLab Pipeline
 on:
   push:
     branches:
-      - main  # Triggers on pushes to the main branch, including merges
+      - github-action-fixes  # Triggers on pushes to the main branch, including merges
 
 jobs:
   trigger-and-check-gitlab:
