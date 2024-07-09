@@ -15,11 +15,13 @@
 import {
   BatchMintTokenDto,
   BurnTokensDto,
+  ConstructorArgs,
   CreateTokenClassDto,
   DeleteAllowancesDto,
   FetchAllowancesDto,
   FetchAllowancesResponse,
   FetchBalancesDto,
+  FetchBalancesWithPaginationDto,
   FetchBalancesWithTokenMetadataResponse,
   FetchBurnsDto,
   FetchMintRequestsDto,
@@ -133,17 +135,17 @@ export class TokenClient {
     });
   }
 
-  public FetchBalancesWithTokenMetadata(dto: FetchBalancesDto) {
+  public FetchBalancesWithTokenMetadata(dto: ConstructorArgs<FetchBalancesWithPaginationDto>) {
     return this.client.send<FetchBalancesWithTokenMetadataResponse, FetchBalancesDto>({
       method: "FetchBalancesWithTokenMetadata",
-      payload: dto
+      payload: new FetchBalancesWithPaginationDto(dto)
     });
   }
 
-  public RequestMint(dto: HighThroughputMintTokenDto) {
+  public RequestMint(dto: ConstructorArgs<HighThroughputMintTokenDto>) {
     return this.client.send<FulfillMintDto, HighThroughputMintTokenDto>({
       method: "RequestMint",
-      payload: dto,
+      payload: new HighThroughputMintTokenDto(dto),
       sign: true
     });
   }

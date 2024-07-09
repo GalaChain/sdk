@@ -14,11 +14,11 @@ library allows the application to connect to a GalaChain API (ops or gateway) an
 
 ## Building
 
-Run `nx build connect` to build the library.
+Run `nx build chain-connect` to build the library.
 
 ## Running unit tests
 
-Run `nx test connect` to execute the unit tests via [Jest](https://jestjs.io).
+Run `nx test chain-connect` to execute the unit tests via [Jest](https://jestjs.io).
 
 ## Example client usage
 
@@ -31,3 +31,10 @@ PublicKeyClient and TokenClient can be instantiated with the GalachainConnectCli
 
 > const publicKeyClient = new PublicKeyClient(client, url)
 > const tokenClient = new TokenClient(client, url);
+
+
+## Local Library testing
+
+First build the library with `nx build chain-connect`
+Then run `npm link`
+In the project you want to test the library in run `npm link @gala-chain/connect`

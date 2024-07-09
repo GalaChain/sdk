@@ -22,6 +22,7 @@ import { ArrayUniqueObjects, BigNumberIsNotNegative } from "../validators";
 import { TokenClassKey } from "./TokenClass";
 import { AllowanceKey, MintRequestDto } from "./common";
 import { ChainCallDTO } from "./dtos";
+import { ConstructorArgs } from "../utils/type-utils";
 
 @JSONSchema({
   description:
@@ -134,7 +135,10 @@ export class HighThroughputMintTokenDto extends ChainCallDTO {
   // update: seems extending MintTokenDto results in failures value.toFixed is not a function,
   // presumably something about the quantity and our dynamic type/class validator
   static MAX_NFT_MINT_SIZE = 1000;
-
+  constructor(params: ConstructorArgs<HighThroughputMintTokenDto>) {
+    super();
+    Object.assign(this, params);
+  }
   @JSONSchema({
     description: "Token class of token to be minted."
   })

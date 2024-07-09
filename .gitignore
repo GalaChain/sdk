@@ -43,3 +43,4 @@ testem.log
 Thumbs.db
 .npmrc
 /.nx
+chain-cli/bin/run
