@@ -98,8 +98,10 @@ export async function useAllowances(
 
     await putChainObject(ctx, newClaim);
 
-    // Update the allowance in the context
-    await putChainObject(ctx, tokenAllowance);
+    // Update the allowance in the context if quantity is finite
+    if (tokenAllowance.quantity.isFinite()) {
+      await putChainObject(ctx, tokenAllowance);
+    }
   }
 
   // This means there was an exception because we should not have started

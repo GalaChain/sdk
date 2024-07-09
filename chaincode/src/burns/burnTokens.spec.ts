@@ -168,6 +168,66 @@ describe("BurnTokens", () => {
     );
   });
 
+  test("burns currency with infinite burn allowance", async () => {
+    // Given
+    const currencyInstance = currency.tokenInstance();
+    const currencyInstanceKey = currency.tokenInstanceKey();
+    const currencyClass = currency.tokenClass();
+    const tokenBalance = currency.tokenBalance();
+    const burnQty = new BigNumber("1");
+    const tokenBurnAllowance = currency.tokenBurnAllowance();
+    tokenBurnAllowance.quantity = new BigNumber(Infinity);
+
+    const { ctx, contract, writes } = fixture(GalaChainTokenContract)
+      .callingUser(users.testUser2Id)
+      .savedState(currencyClass, currencyInstance, tokenBurnAllowance, tokenBalance)
+      .savedRangeState([]);
+
+    const dto = await createValidDTO(BurnTokensDto, {
+      tokenInstances: [{ tokenInstanceKey: currencyInstanceKey, quantity: burnQty }],
+      owner: users.testUser1Id
+    });
+
+    const tokenBurn = currency.tokenBurn();
+    tokenBurn.created = ctx.txUnixTime;
+    const tokenBurnCounter = plainToInstance(
+      TokenBurnCounter,
+      currency.tokenBurnCounterPlain(
+        ctx.txUnixTime,
+        inverseTime(ctx, 0),
+        inverseEpoch(ctx, 0),
+        new BigNumber("0")
+      )
+    );
+    tokenBurnCounter.referenceId = tokenBurnCounter.referencedBurnId();
+
+    const tokenClaim = plainToInstance(TokenClaim, {
+      ...currencyInstanceKey,
+      ownerKey: users.testUser2Id,
+      issuerKey: users.testUser1Id,
+      instance: new BigNumber("0"),
+      action: 6,
+      quantity: burnQty,
+      allowanceCreated: 1,
+      claimSequence: new BigNumber("1"),
+      created: ctx.txUnixTime
+    });
+
+    // When
+    const response = await contract.BurnTokens(ctx, dto);
+
+    // Then
+    expect(response).toEqual(GalaChainResponse.Success([tokenBurn]));
+    expect(writes).toEqual(
+      writesMap(
+        tokenClaim,
+        plainToInstance(TokenBalance, { ...currency.tokenBalance(), quantity: new BigNumber("999") }),
+        tokenBurn,
+        tokenBurnCounter
+      )
+    );
+  });
+
   test("burns currency with multiple allowances", async () => {
     // Given
     const currencyInstance = currency.tokenInstance();

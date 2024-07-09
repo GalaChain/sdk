@@ -82,7 +82,7 @@ export class TokenAllowance extends ChainObject {
 
   @IsNotEmpty()
   @BigNumberIsNotNegative()
-  @BigNumberProperty()
+  @BigNumberProperty({ allowInfinity: true })
   public quantity: BigNumber;
 
   @IsNotEmpty()

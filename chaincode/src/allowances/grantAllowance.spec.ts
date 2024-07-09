@@ -112,7 +112,6 @@ describe("GrantAllowance", () => {
   it("should no longer fail to GrantAllowance for fungible token when quantity is greater than balance", async () => {
     // Given
     const currencyInstance = currency.tokenInstance();
-    const currencyInstanceKey = currency.tokenInstanceKey();
     const currencyClass = currency.tokenClass();
     const currencyClassKey = currency.tokenClassKey();
     const currencyInstanceQueryKey = await createValidDTO(
@@ -190,6 +189,50 @@ describe("GrantAllowance", () => {
       ...a,
       created: ctx.txUnixTime,
       quantity: new BigNumber("1000"),
+      grantedBy: users.testUser2Id,
+      grantedTo: users.testUser1Id,
+      allowanceType: AllowanceType.Lock
+    }));
+    expect(response).toEqual(GalaChainResponse.Success([allowance]));
+    expect(writes).toEqual(writesMap(allowance));
+  });
+
+  it("should allow infinite Allowances for fungible token", async () => {
+    // Given
+    const currencyInstance = currency.tokenInstance();
+    const currencyClass = currency.tokenClass();
+    const currencyClassKey = currency.tokenClassKey();
+    const currencyInstanceQueryKey = await createValidDTO(
+      TokenInstanceQueryKey,
+      currency.tokenInstanceKeyPlain()
+    );
+
+    const currencyBalance = plainToInstance(TokenBalance, {
+      owner: users.testUser2Id,
+      ...currencyClassKey,
+      instanceIds: [],
+      quantity: new BigNumber("1000")
+    });
+
+    const { ctx, contract, writes } = fixture(GalaChainTokenContract)
+      .callingUser(users.testUser2Id)
+      .savedState(currencyClass, currencyInstance, currencyBalance);
+
+    const dto: GrantAllowanceDto = await createValidDTO(GrantAllowanceDto, {
+      tokenInstance: currencyInstanceQueryKey,
+      quantities: [{ user: users.testUser1Id, quantity: new BigNumber(Infinity) }],
+      allowanceType: AllowanceType.Lock,
+      uses: new BigNumber("1")
+    });
+
+    // When
+    const response = await contract.GrantAllowance(ctx, dto);
+
+    // Then
+    const allowance = currency.tokenAllowance((a) => ({
+      ...a,
+      created: ctx.txUnixTime,
+      quantity: new BigNumber(Infinity),
       grantedBy: users.testUser2Id,
       grantedTo: users.testUser1Id,
       allowanceType: AllowanceType.Lock
