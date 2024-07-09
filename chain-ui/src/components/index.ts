@@ -1,5 +1,6 @@
-import MintToken from './MintToken.vue'
-import MintTokenWithAllowance from './MintTokenWithAllowance.vue'
-import TransferToken from './TransferToken.vue'
+import GalaMintToken from './MintToken.vue'
+import GalaMintTokenWithAllowance from './MintTokenWithAllowance.vue'
+import GalaTransferToken from './TransferToken.vue'
+import GalaSend from './common/Send.vue'
 
-export { MintToken, MintTokenWithAllowance, TransferToken }
+export { GalaMintToken, GalaMintTokenWithAllowance, GalaTransferToken, GalaSend }

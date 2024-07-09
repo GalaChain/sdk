@@ -27,9 +27,10 @@ export default defineConfig({
     }
   },
   build: {
+    minify: true,
     lib: {
       entry: path.resolve(__dirname, 'src/index.ts'),
-      formats: ['es', 'umd', 'cjs'],
+      formats: ['es', 'umd'],
       name: '@gala-chain/ui',
       fileName: (format) => `gala-chain-ui.${format}.js`
     },
