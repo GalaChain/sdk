@@ -23,7 +23,7 @@
   },
   "dependencies": {
     "@gala-chain/api": "1.2.2",
-    "@grpc/grpc-js": "1.8.15",
+    "@grpc/grpc-js": "1.10.10",
     "fabric-contract-api": "2.5.6",
     "fabric-shim": "2.5.6",
     "nanoid": "^3.3.6",
