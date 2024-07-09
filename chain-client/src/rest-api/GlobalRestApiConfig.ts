@@ -25,8 +25,13 @@ interface ContractApiValue {
   contractPath: string;
   api: ContractAPI;
 }
+export interface ContractApiConfig {
+  readonly channelName: string;
+  readonly chaincodeName: string;
+  readonly contractName: string;
+}
 
-export type SetContractApiParams = ContractApiValue & ContractConfig;
+export type SetContractApiParams = ContractApiValue & ContractApiConfig;
 
 export enum RestApiStatus {
   NONE = "NONE",
@@ -70,8 +75,8 @@ export class GlobalRestApiConfig {
     this.contractApis[key] = { contractPath: params.contractPath, api: params.api };
   }
 
-  public getContractApi(params: { channelName: string; chaincodeName: string; contractName: string }) {
-    const key = `${params.channelName}|${params.chaincodeName}|${params.contractName}`;
+  public getContractApi(params: ContractConfig) {
+    const key = `${params.channel}|${params.chaincode}|${params.contract}`;
     return (
       this.contractApis[key] ??
       (() => {

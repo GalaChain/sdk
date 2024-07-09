@@ -61,11 +61,11 @@ For the `@gala-chain/connect` library, signing is done automatically when you ca
 ```typescript
 import { GalachainConnectClient } from "@gala-chain/connect";
 
-const client = new GalaChainConnectClient();
+const client = new GalaChainConnectClient(contractUrl);
 await client.connectToMetaMask();
 
 const dto = ...;
-const response = await client.sendTransaction(contractUrl, "TransferToken", dto);
+const response = await client.send({ method: "TransferToken", payload: dto });
 ```
 
 #### "Manual" process:
@@ -101,6 +101,7 @@ See the [RBAC section](#next-role-based-access-control-rbac) for more informatio
 Gala chain does not allow anonymous users to access the chaincode.
 In order to access the chaincode, the user must be registered with the chaincode.
 There are two methods to register a user:
+
 1. `RegisterUser` method in the `PublicKeyContract`.
 2. `RegisterEthUser` method in the `PublicKeyContract`.
 

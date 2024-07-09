@@ -12,68 +12,87 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-import { parseJsonFromStringOrFile, readPublicKeyFromFile } from "../../utils";
 import DtoVerify from "./index";
+
+jest.setTimeout(30000);
 
 const dataTestJson = `{
   "firstName": "Tom",
   "id": "1",
   "lastName": "Cruise",
   "photo": "https://jsonformatter.org/img/tom-cruise.jpg",
-  "signature": "N9aRUvGUedrnOrZch0o0bHUyHHXIUDvV6xOhKsja7j63/eyWDoilWW35iTXFXFQ8uSP3mejoRS4NkVVcd13xchs="
+  "signature": "37d69152f19479dae73ab65c874a346c75321c75c8503bd5eb13a12ac8daee3e48021369f1775aa6920676ca3aa3abc2018ae54cc6605b0db241093058d84fcf1c"
 }`;
 
 const fakePublicKey =
   "04692dd79bfded81ec75994eee9b50c9aac299272df3ca21fd4661028094ce6b3fe07c1abc10c8188ae62b120508f8aacbdff150a1910248c9bf49d4b730ad5813";
 
-jest.mock("../../utils");
+const mockParseJsonFromStringOrFile = jest.fn();
+const mockReadPublicKeyFromFile = jest.fn();
+
+jest.mock("../../utils", () => ({
+  ...jest.requireActual("../../utils"),
+  // see: https://jestjs.io/docs/es6-class-mocks#calling-jestmock-with-the-module-factory-parameter
+  parseJsonFromStringOrFile: () => mockParseJsonFromStringOrFile(),
+  readPublicKeyFromFile: () => mockReadPublicKeyFromFile()
+}));
 
 describe("DtoVerify Command", () => {
   it("it should validate the signature", async () => {
+    // Given
     const result: (string | Uint8Array)[] = [];
     jest.spyOn(process.stdout, "write").mockImplementation((v) => {
       result.push(v);
       return true;
     });
 
-    jest.mocked(parseJsonFromStringOrFile).mockResolvedValue(JSON.parse(dataTestJson));
+    mockReadPublicKeyFromFile.mockResolvedValue(Promise.resolve(fakePublicKey));
+    mockParseJsonFromStringOrFile.mockResolvedValue(Promise.resolve(JSON.parse(dataTestJson)));
 
-    jest.mocked(readPublicKeyFromFile).mockResolvedValue(fakePublicKey);
-
+    // When
     await DtoVerify.run(["./test-key", dataTestJson]);
 
+    // Then
     expect(result.join()).toContain("Signature is valid.");
   });
+
   it("it should fail when not found the signature", async () => {
+    // Given
     const result: (string | Uint8Array)[] = [];
     jest.spyOn(process.stdout, "write").mockImplementation((v) => {
       result.push(v);
       return true;
     });
 
-    jest.mocked(readPublicKeyFromFile).mockRejectedValue(new Error("Failed to read public key from file"));
+    mockReadPublicKeyFromFile.mockRejectedValue(new Error("Failed to read public key from file"));
 
-    await DtoVerify.run(["./test-key", dataTestJson]).catch((e) => {
-      expect(e.message).toContain("Failed to read public key from file");
-    });
+    // When
+    const op = DtoVerify.run(["./test-key", dataTestJson]);
+
+    // Then
+    await expect(op).rejects.toThrow("Failed to read public key from file");
   });
+
   it("it should validate the signature field", async () => {
+    // Given
     const result: (string | Uint8Array)[] = [];
     jest.spyOn(process.stdout, "write").mockImplementation((v) => {
       result.push(v);
       return true;
     });
 
-    jest.mocked(readPublicKeyFromFile).mockResolvedValue(fakePublicKey);
+    mockReadPublicKeyFromFile.mockResolvedValue(fakePublicKey);
 
     let jsonModified = JSON.parse(dataTestJson);
     delete jsonModified.signature;
     jsonModified = JSON.stringify(jsonModified);
 
-    jest.mocked(parseJsonFromStringOrFile).mockResolvedValue(JSON.parse(jsonModified));
+    mockParseJsonFromStringOrFile.mockResolvedValue(JSON.parse(jsonModified));
 
-    await DtoVerify.run(["./test-key", jsonModified]).catch((e) => {
-      expect(e.message).toContain("Signature is not present in the DTO.");
-    });
+    // When
+    const op = DtoVerify.run(["./test-key", jsonModified]);
+
+    // Then
+    await expect(op).rejects.toThrow("Signature is not present in the DTO.");
   });
 });

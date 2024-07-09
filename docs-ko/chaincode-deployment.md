@@ -41,7 +41,7 @@ In order to publish and deploy chaincode, you need to contact GalaChain support 
     galachain info <path-to>/gc-dev-key
     ```
 
-    Once the status is `CC_DEPLOYED` you can visit the Swagger webpage: [https://gateway.stage.galachain.com/docs/](https://gateway.stage.galachain.com/docs/). You can find your chaincode (`gc-<eth-addr>`). If the version is still unknown (and you see `v?.?.?`), it means you may need to wait a couple of minutes till the chaincode is ready.
+    Once the status is `CC_DEPLOYED` you can visit the Swagger webpage: [https://gateway-testnet.galachain.com/docs/](https://gateway-testnet.galachain.com/docs/). You can find your chaincode (`gc-<eth-addr>`). If the version is still unknown (and you see `v?.?.?`), it means you may need to wait a couple of minutes till the chaincode is ready.
 
     Once it is ready, you can use the webpage to call chaincodes. It's good to start `PublicKeyContract/GetPublicKey` with empty object as request body. It should return the admin public key you provided before.
 
@@ -60,7 +60,7 @@ In order to publish and deploy chaincode, you need to contact GalaChain support 
     
     In the current version of the library, local environment exposes slightly different endpoints than the production environment.
     `gcclient` and `@gala-chain/client` packages are compatible with the local environment only.
-    For calling the production environment, you should consult the Swagger documentation at [https://gateway.stage.galachain.com/docs/](https://gateway.stage.galachain.com/docs/), and use generic REST API client.
+    For calling the production environment, you should consult the Swagger documentation at [https://gateway-testnet.galachain.com/docs/](https://gateway-testnet.galachain.com/docs/), and use generic REST API client.
 
 ## Reference
 
