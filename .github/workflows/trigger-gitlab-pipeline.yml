@@ -19,7 +19,7 @@ jobs:
                           --form ref=main \
                           "https://gitlab.com/api/v4/projects/35484791/trigger/pipeline")
           echo "pipeline_id=$(echo "$response" | jq -r '.id')" >> $GITHUB_ENV
-          echo "PIPELINE_URL=https://gitlab.com/gala-games/chain/chaincodes/assets-chaincode/-/pipelines/${{ steps.trigger.outputs.pipeline_id }}" >> $GITHUB_ENV
+          echo "PIPELINE_URL=https://gitlab.com/gala-games/chain/chaincodes/assets-chaincode/-/pipelines/$(echo "$response" | jq -r '.id')" >> $GITHUB_ENV
 
       - name: Fetch Commit Details
         run: |
@@ -66,7 +66,7 @@ jobs:
               echo "Pipeline $status"
               exit 1
             fi
-            sleep 10
+            sleep 600 #Sleep for 10 mins
           done
 
       - name: Increment Version Number
