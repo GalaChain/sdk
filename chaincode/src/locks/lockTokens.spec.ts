@@ -115,13 +115,7 @@ describe("LockTokens", () => {
 
     // Then
     expect(response).toEqual(
-      GalaChainResponse.Error(
-        new ValidationFailedError("Insufficient balance", {
-          balanceKey: balanceKey,
-          lockedQuantity: "0",
-          total: "0"
-        })
-      )
+      GalaChainResponse.Error(new InvalidDecimalError(decimalQuantity, currencyClass.decimals))
     );
     expect(writes).toEqual({});
   });
