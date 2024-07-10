@@ -39,7 +39,7 @@ import {
   FetchTokenClassesWithPaginationParams,
   FulfillMintDto,
   FulfillMintParams,
-  FullAllowanceCheckBody,
+  FullAllowanceCheckParams,
   FullAllowanceCheckDto,
   FullAllowanceCheckParams,
   GrantAllowanceDto,
@@ -130,7 +130,7 @@ export class TokenClient {
   }
 
   public FullAllowanceCheck(dto: FullAllowanceCheckParams) {
-    return this.client.send<FullAllowanceCheckBody, FullAllowanceCheckDto>({
+    return this.client.send<FullAllowanceCheckParams, FullAllowanceCheckDto>({
       method: "FullAllowanceCheck",
       payload: new FullAllowanceCheckDto(dto),
       sign: true

@@ -469,13 +469,13 @@ export class FullAllowanceCheckDto extends ChainCallDTO {
   allowanceType?: AllowanceType;
 }
 
-export type FullAllowanceCheckBody = ConstructorArgs<FullAllowanceCheckResDto>;
+export type FullAllowanceCheckResParams = ConstructorArgs<FullAllowanceCheckResDto>;
 
 @JSONSchema({
   description: "Response Data Transfer Object for FullLockAllowance request."
 })
 export class FullAllowanceCheckResDto extends ChainCallDTO {
-  constructor(params: FullAllowanceCheckBody) {
+  constructor(params: FullAllowanceCheckResParams) {
     super();
     Object.assign(this, params);
   }
@@ -492,7 +492,7 @@ export class FullAllowanceCheckResDto extends ChainCallDTO {
   @ValidateNested({ each: true })
   @Type(() => TokenInstanceKey)
   @ArrayNotEmpty()
-  missing: Array<TokenInstanceKey>;
+  missing?: Array<TokenInstanceKey>;
 }
 
 export type RefreshAllowanceParams = ConstructorArgs<RefreshAllowanceDto>;
