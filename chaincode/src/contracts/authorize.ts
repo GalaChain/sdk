@@ -17,10 +17,10 @@ import {
   ForbiddenError,
   NotFoundError,
   PublicKey,
-  signatures,
   UserProfile,
   UserRole,
-  ValidationFailedError
+  ValidationFailedError,
+  signatures
 } from "@gala-chain/api";
 
 import { PkInvalidSignatureError, PublicKeyService } from "../services";

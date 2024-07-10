@@ -74,7 +74,7 @@ export function createValidDTO<T extends ChainCallDTO>(
   const response = validateDTO(instance);
 
   // @ts-expect-error adding new method in runtime
-  response.signed = (k: string) => response.then(r => r.signed(k));
+  response.signed = (k: string) => response.then((r) => r.signed(k));
 
   return response as Promise<T> & { signed(privateKey: string): Promise<T> };
 }

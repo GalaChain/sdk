@@ -137,7 +137,7 @@ describe("UnlockToken", () => {
     const dto = await createValidDTO(UnlockTokenDto, {
       tokenInstance: nftInstanceKey,
       lockedHoldName: lockedHoldName
-    });
+    }).signed(users.admin.privateKey);
 
     // When
     const response = await contract.UnlockToken(ctx, dto);
@@ -161,6 +161,7 @@ describe("UnlockToken", () => {
       .ensureCanLockQuantity(
         new TokenHold({
           createdBy: users.testUser1.identityKey,
+          lockAuthority: users.testUser1.identityKey,
           instanceId: currencyInstance.instance,
           quantity: new BigNumber("1"),
           created: 1,
@@ -179,7 +180,7 @@ describe("UnlockToken", () => {
       quantity: new BigNumber("1"),
       lockedHoldName: testLockedHoldName,
       owner: users.testUser1.identityKey
-    });
+    }).signed(users.admin.privateKey);
 
     // When
     const response = await contract.UnlockToken(ctx, dto);

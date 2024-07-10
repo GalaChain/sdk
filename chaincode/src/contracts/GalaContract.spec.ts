@@ -20,6 +20,7 @@ import {
   GalaChainResponse,
   GalaChainResponseType,
   GetObjectDto,
+  createValidChainObject,
   createValidDTO
 } from "@gala-chain/api";
 import { transactionError, transactionSuccess, users } from "@gala-chain/test";
@@ -29,7 +30,7 @@ import { inspect } from "util";
 
 import TestChaincode from "../__test__/TestChaincode";
 import TestGalaContract, { Superhero, SuperheroDto, SuperheroQueryDto } from "../__test__/TestGalaContract";
-import { GalaChainContext, createValidChainObject } from "../types";
+import { GalaChainContext } from "../types";
 
 /*
  * Test below verifies that the base class of TestGalaContract (i.e. GalaContract) provides stub to

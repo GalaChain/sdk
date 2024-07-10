@@ -13,7 +13,7 @@
  * limitations under the License.
  */
 import {
-  AllowanceType, createValidDTO,
+  AllowanceType,
   MintRequestDto,
   TokenAllowance,
   TokenClass,
@@ -21,7 +21,8 @@ import {
   TokenInstance,
   TokenInstanceKey,
   TokenMintFulfillment,
-  TokenMintRequest
+  TokenMintRequest,
+  createValidDTO
 } from "@gala-chain/api";
 import { ChainCallDTO, ChainError, ChainObject, GalaChainResponse, RuntimeError } from "@gala-chain/api";
 import { FulfillMintDto, MintTokenDto } from "@gala-chain/api";

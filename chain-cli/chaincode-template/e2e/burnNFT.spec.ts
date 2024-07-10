@@ -30,7 +30,7 @@ import {
   transactionSuccess
 } from "@gala-chain/test";
 import BigNumber from "bignumber.js";
-import { instanceToPlain, plainToClass as plainToInstance } from "class-transformer";
+import { instanceToPlain, plainToInstance } from "class-transformer";
 
 jest.setTimeout(30000);
 
@@ -39,7 +39,7 @@ describe("NFT Burn scenario", () => {
   let user1: ChainUser;
   let user2: ChainUser;
 
-  const nftClassKey: TokenClassKey = await createValidChainObject(TokenClassKey, {
+  const nftClassKey: TokenClassKey = plainToInstance(TokenClassKey, {
     collection: randomize("NFT").slice(0, 20),
     category: "Weapon",
     type: "Axe",

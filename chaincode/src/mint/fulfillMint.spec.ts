@@ -99,7 +99,9 @@ describe("FulfillMint", () => {
     const mintQty = new BigNumber("1000000000000");
     const tokenAllowance = currency.tokenAllowance();
 
-    const testFixture = fixture(GalaChainTokenContract).registeredUsers(users.admin);
+    const testFixture = fixture(GalaChainTokenContract)
+      .registeredUsers(users.admin)
+      .caClientIdentity("admin", "CuratorOrg");
     const { ctx, contract, writes } = testFixture;
 
     const epochKey = inverseEpoch(ctx, 0);
@@ -203,7 +205,9 @@ describe("FulfillMint", () => {
 
     const { collection, category, type, additionalKey } = nftClass;
 
-    const testFixture = fixture(GalaChainTokenContract).registeredUsers(users.admin);
+    const testFixture = fixture(GalaChainTokenContract)
+      .registeredUsers(users.admin)
+      .caClientIdentity("admin", "CuratorOrg");
 
     const { ctx, contract, writes } = testFixture;
 
@@ -240,8 +244,8 @@ describe("FulfillMint", () => {
         additionalKey,
         timeKey: distantPastTimeKey,
         totalKnownMintsCount: new BigNumber("0"),
-        requestor: users.admin,
-        owner: users.testUser2,
+        requestor: users.admin.identityKey,
+        owner: users.testUser2.identityKey,
         created: distantPastTimestamp,
         quantity: new BigNumber("1"),
         state: TokenMintStatus.Unknown,
@@ -357,7 +361,7 @@ describe("FulfillMint", () => {
       owner: users.testUser1.identityKey
     });
 
-    const expectedBalance = nft.tokenBalance();
+    const expectedBalance = new TokenBalance({ ...nftInstance, owner: users.testUser1.identityKey });
     expectedBalance.ensureCanAddInstance(expectedStartingInstance.plus("1")).add();
     expectedBalance.ensureCanAddInstance(expectedStartingInstance.plus("2")).add();
 
@@ -380,6 +384,7 @@ describe("FulfillMint", () => {
 
     const testFixture = fixture(GalaChainTokenContract)
       .registeredUsers(users.testUser1)
+      .caClientIdentity("admin", "CuratorOrg")
       .savedState(currencyClass, currencyInstance, tokenAllowance);
 
     const { ctx, contract, writes } = testFixture;
@@ -422,7 +427,7 @@ describe("FulfillMint", () => {
           owner: users.testUser1
         })
       ]
-    }).signed(users.admin.privateKey);
+    }).signed(users.testUser1.privateKey);
 
     // When
     const response = await contract.FulfillMint(ctx, dto);
@@ -446,8 +451,9 @@ describe("FulfillMint", () => {
 
     const { collection, category, type, additionalKey } = nftClass;
 
-    const testFixture = fixture(GalaChainTokenContract).registeredUsers(users.attacker);
-
+    const testFixture = fixture(GalaChainTokenContract)
+      .registeredUsers(users.attacker)
+      .caClientIdentity("admin", "CuratorOrg");
     const { ctx, contract, writes } = testFixture;
 
     const tokenClaim = await createValidChainObject(TokenClaim, {

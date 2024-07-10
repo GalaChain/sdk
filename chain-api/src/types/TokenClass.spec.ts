@@ -13,11 +13,11 @@
  * limitations under the License.
  */
 import BigNumber from "bignumber.js";
-import { plainToClass as plainToInstance } from "class-transformer";
+import { plainToInstance } from "class-transformer";
 
 import { TokenClass } from "./TokenClass";
 
-const existingToken = await createValidChainObject(TokenClass, {
+const existingToken = plainToInstance(TokenClass, {
   network: "GC",
   decimals: 32,
   maxCapacity: new BigNumber("50000000000"),

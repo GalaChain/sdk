@@ -25,6 +25,11 @@ describe("checkAllowances", () => {
     const checkAllowancesFixture = fixture(GalaChainTokenContract);
 
     const { ctx } = checkAllowancesFixture;
+    ctx.callingUserData = {
+      alias: users.admin.identityKey,
+      ethAddress: users.admin.ethAddress,
+      roles: users.admin.roles
+    };
 
     const txTime = ctx.txUnixTime;
 

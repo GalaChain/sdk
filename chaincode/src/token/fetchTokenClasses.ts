@@ -13,12 +13,12 @@
  * limitations under the License.
  */
 import {
-  createValidDTO,
   FetchTokenClassesResponse,
   FetchTokenClassesWithPaginationDto,
   TokenClass,
   TokenClassKey,
-  TokenInstanceKey
+  TokenInstanceKey,
+  createValidDTO
 } from "@gala-chain/api";
 import { plainToInstance } from "class-transformer";
 

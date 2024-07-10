@@ -14,7 +14,6 @@
  */
 import { ChainUser } from "@gala-chain/client";
 import { fixture, transactionErrorMessageContains, transactionSuccess, writesMap } from "@gala-chain/test";
-import { plainToInstance } from "class-transformer";
 
 import { AppleTree, AppleTreeDto, PickAppleDto, Variety } from "../apples";
 import { AppleContract } from "./AppleContract";

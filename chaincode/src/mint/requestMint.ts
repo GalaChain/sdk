@@ -15,14 +15,16 @@
 import {
   AllowanceKey,
   AuthorizedOnBehalf,
-  BatchMintTokenDto, createValidDTO, createValidRangedChainObject,
+  BatchMintTokenDto,
   FulfillMintDto,
   HighThroughputMintTokenDto,
   MintRequestDto,
   TokenClass,
   TokenClassKeyProperties,
   TokenMintRequest,
-  TokenMintStatus
+  TokenMintStatus,
+  createValidDTO,
+  createValidRangedChainObject
 } from "@gala-chain/api";
 import BigNumber from "bignumber.js";
 import { plainToInstance } from "class-transformer";

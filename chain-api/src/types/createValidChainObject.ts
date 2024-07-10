@@ -17,8 +17,8 @@
  * Creates valid chain object. Throws error in case of failure
  */
 import { ChainObject } from "./ChainObject";
-import { ClassConstructor, NonFunctionProperties } from "./dtos";
 import { RangedChainObject } from "./RangedChainObject";
+import { ClassConstructor, NonFunctionProperties } from "./dtos";
 
 export async function createValidChainObject<T extends ChainObject>(
   constructor: ClassConstructor<T>,

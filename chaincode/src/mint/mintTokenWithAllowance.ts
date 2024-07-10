@@ -14,10 +14,11 @@
  */
 import {
   AllowanceKey,
-  AllowanceType, createValidDTO,
+  AllowanceType,
   TokenClassKey,
   TokenInstanceKey,
-  TokenInstanceQueryKey
+  TokenInstanceQueryKey,
+  createValidDTO
 } from "@gala-chain/api";
 import { BigNumber } from "bignumber.js";
 import { plainToInstance } from "class-transformer";

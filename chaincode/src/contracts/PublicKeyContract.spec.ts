@@ -19,8 +19,10 @@ import {
   RegisterEthUserDto,
   RegisterUserDto,
   UpdatePublicKeyDto,
+  UserProfile,
+  UserRole,
   createValidDTO,
-  signatures, UserProfile, UserRole
+  signatures
 } from "@gala-chain/api";
 import { fixture, transactionSuccess } from "@gala-chain/test";
 import { classToPlain, instanceToInstance, plainToClass } from "class-transformer";
@@ -457,7 +459,7 @@ describe("GetMyProfile", () => {
     [Regular_, Malformed, Registered___, Error("REDUNDANT_SIGNER_PUBLIC_KEY")],
     [Regular_, Malformed, NotRegistered, Error("REDUNDANT_SIGNER_PUBLIC_KEY")],
     [DER_____, Missing__, Registered___, Error("NOT_IMPLEMENTED")], // we don't support legacy here
-    [DER_____, Missing__, NotRegistered, Error("USER_NOT_REGISTERED")],
+    [DER_____, Missing__, NotRegistered, Error("PK_NOT_FOUND")],
     [DER_____, Present__, Registered___, Success],
     [DER_____, Present__, NotRegistered, Error("USER_NOT_REGISTERED")],
     [DER_____, Malformed, Registered___, Error("INVALID_KEY")],

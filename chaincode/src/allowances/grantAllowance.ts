@@ -372,7 +372,7 @@ export async function putMintAllowanceRequestsOnChain(
 
     // Ledger entry for new mint allowance qty
     const mintAllowanceEntry = await createValidRangedChainObject(TokenMintAllowanceRequest, {
-      id: "", // hack to avoid compilation error
+      id: "-", // hack to avoid compilation error
       collection: tokenClass.collection,
       category: tokenClass.category,
       type: tokenClass.type,

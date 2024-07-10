@@ -14,7 +14,13 @@
  */
 // eslint-disable-next-line @typescript-eslint/ban-ts-comment
 // @ts-ignore
-import { ChainCallDTO, ChainKey, ChainObject, createValidChainObject, GalaChainResponse } from "@gala-chain/api";
+import {
+  ChainCallDTO,
+  ChainKey,
+  ChainObject,
+  GalaChainResponse,
+  createValidChainObject
+} from "@gala-chain/api";
 import { NotImplementedError } from "@gala-chain/api";
 import { Exclude } from "class-transformer";
 import { IsPositive } from "class-validator";

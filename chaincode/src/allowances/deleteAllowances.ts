@@ -32,11 +32,9 @@ export interface DeleteAllowancesParams {
 }
 
 class InvalidAllowanceUsersError extends ForbiddenError {
-  constructor(grantedBy: string | undefined, grantedTo: string) {
-    super("Only the user who granted the allowance or the user who is granted the allowance can delete it", {
-      grantedBy,
-      grantedTo
-    });
+  constructor(grantedBy: string | undefined, grantedTo: string, callingUser: string) {
+    const message = `Only the user who granted the allowance (${grantedBy}) or the user who is granted the allowance (${grantedTo}) can delete it. Called by ${callingUser}`;
+    super(message, { grantedBy, grantedTo, callingUser });
   }
 }
 
@@ -45,7 +43,7 @@ export async function deleteAllowances(
   params: DeleteAllowancesParams
 ): Promise<number> {
   if (params.grantedBy !== ctx.callingUser && params.grantedTo !== ctx.callingUser) {
-    throw new InvalidAllowanceUsersError(params.grantedBy, params.grantedTo);
+    throw new InvalidAllowanceUsersError(params.grantedBy, params.grantedTo, ctx.callingUser);
   }
 
   const allowances = await fetchAllowances(ctx, params);
@@ -73,7 +71,7 @@ export async function deleteOneAllowance(
   authorizedOnBehalf: string
 ): Promise<void> {
   if (params.grantedBy !== authorizedOnBehalf && params.grantedTo !== authorizedOnBehalf) {
-    throw new InvalidAllowanceUsersError(params.grantedBy, params.grantedTo);
+    throw new InvalidAllowanceUsersError(params.grantedBy, params.grantedTo, ctx.callingUser);
   }
 
   const allowance: TokenAllowance = await getObjectByKey(

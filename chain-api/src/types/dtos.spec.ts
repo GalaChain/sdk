@@ -13,7 +13,7 @@
  * limitations under the License.
  */
 import BigNumber from "bignumber.js";
-import { classToPlain as instanceToPlain, plainToClass as plainToInstance } from "class-transformer";
+import { instanceToPlain, plainToInstance } from "class-transformer";
 import { ArrayMinSize, ArrayNotEmpty, IsString } from "class-validator";
 import { ec as EC } from "elliptic";
 
@@ -26,7 +26,7 @@ const getInstanceOrErrorInfo = async <T extends ChainCallDTO>(
   jsonString: string
 ): Promise<T | ValidationErrorInfo> => {
   try {
-    const deserialized = await createValidChainObject(constructor, JSON.parse(jsonString)); // note: throws exception here if JSON is invalid
+    const deserialized = plainToInstance(constructor, JSON.parse(jsonString)); // note: throws exception here if JSON is invalid
     const validationErrors = await deserialized.validate();
     if (validationErrors.length) {
       return getValidationErrorInfo(validationErrors);
