@@ -39,7 +39,6 @@ import {
   FetchTokenClassesWithPaginationParams,
   FulfillMintDto,
   FulfillMintParams,
-  FullAllowanceCheckParams,
   FullAllowanceCheckDto,
   FullAllowanceCheckParams,
   GrantAllowanceDto,
