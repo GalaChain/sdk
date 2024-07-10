@@ -25,6 +25,7 @@ import {
   FetchAllowancesDto,
   FetchAllowancesParams,
   FetchBalancesDto,
+  FetchBalancesParams,
   FetchBalancesWithPaginationDto,
   FetchBalancesWithPaginationParams,
   FetchBalancesWithTokenMetadataBody,
@@ -152,10 +153,10 @@ export class TokenClient {
     });
   }
 
-  public FetchBalances(dto: FetchBalancesDto) {
+  public FetchBalances(dto: FetchBalancesParams) {
     return this.client.send<TokenBalanceBody[], FetchBalancesDto>({
       method: "FetchBalances",
-      payload: dto
+      payload: new FetchBalancesDto(dto)
     });
   }
 
