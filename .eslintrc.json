@@ -23,7 +23,8 @@
         },
         "extendDefaults": true
       }
-    ]
+    ],
+    "linebreak-style": ["error", "windows"]
   },
   "overrides": [
     {
