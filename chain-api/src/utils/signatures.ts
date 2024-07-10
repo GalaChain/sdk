@@ -23,7 +23,7 @@ import serialize from "./serialize";
 
 class InvalidKeyError extends ValidationFailedError {}
 
-class InvalidSignatureFormatError extends ValidationFailedError {}
+export class InvalidSignatureFormatError extends ValidationFailedError {}
 
 class InvalidDataHashError extends ValidationFailedError {}
 
@@ -200,7 +200,18 @@ function secp256k1signatureFromDERHexString(hex: string): Secp256k1Signature {
   return { r: signature.r, s: signature.s, recoveryParam: undefined };
 }
 
-function normalizeSecp256k1Signature(s: string): Secp256k1Signature {
+function parseSecp256k1Signature(s: string): Secp256k1Signature {
+  const sigObject = normalizeSecp256k1Signature(s);
+
+  // Additional check for low-S normalization
+  if (sigObject && sigObject.s.cmp(ecSecp256k1.curve.n.shrn(1)) > 0) {
+    throw new InvalidSignatureFormatError("S value is too high", { signature: s });
+  }
+
+  return sigObject;
+}
+
+export function normalizeSecp256k1Signature(s: string): Secp256k1Signature {
   // standard format with recovery parameter
   if (s.length === 130) {
     return secp256k1signatureFrom130HexString(s);
@@ -239,13 +250,32 @@ function normalizeSecp256k1Signature(s: string): Secp256k1Signature {
   throw new InvalidSignatureFormatError(errorMessage, { signature: s });
 }
 
+export function flipSignatureParity<T extends EC.Signature | Secp256k1Signature>(signatureObj: T): T {
+  const curveN = ecSecp256k1.curve.n;
+  // flip sign of s to prevent malleability (S')
+  const newS = new BN(curveN).sub(signatureObj.s);
+  // flip recovery param
+  const newRecoverParam = signatureObj.recoveryParam != null ? 1 - signatureObj.recoveryParam : null;
+
+  // normalized signature
+  signatureObj.s = newS;
+  signatureObj.recoveryParam = newRecoverParam;
+
+  return signatureObj;
+}
+
 function signSecp256k1(dataHash: Buffer, privateKey: Buffer, useDer?: "DER"): string {
   if (dataHash.length !== 32) {
     const msg = `secp256k1 can sign only 32-bytes long data keccak hash (got ${dataHash.length})`;
     throw new InvalidDataHashError(msg);
   }
 
-  const signature = ecSecp256k1.sign(dataHash, privateKey);
+  let signature = ecSecp256k1.sign(dataHash, privateKey);
+
+  // Low-S normalization
+  if (signature.s.cmp(ecSecp256k1.curve.n.shrn(1)) > 0) {
+    signature = flipSignatureParity(signature);
+  }
 
   if (!useDer) {
     return (
@@ -297,7 +327,7 @@ function getDERSignature(obj: object, privateKey: Buffer): string {
 }
 
 function recoverPublicKey(signature: string, obj: object, prefix = ""): string {
-  const signatureObj = normalizeSecp256k1Signature(signature);
+  const signatureObj = parseSecp256k1Signature(signature);
   const recoveryParam = signatureObj.recoveryParam;
   if (recoveryParam === undefined) {
     const message = "Signature must contain recovery part (typically 1b or 1c as the last two characters)";
@@ -314,7 +344,7 @@ function isValid(signature: string, obj: object, publicKey: string): boolean {
   const data = Buffer.from(getPayloadToSign(obj));
   const publicKeyBuffer = normalizePublicKey(publicKey);
 
-  const signatureObj = normalizeSecp256k1Signature(signature);
+  const signatureObj = parseSecp256k1Signature(signature);
   const dataHash = Buffer.from(keccak256.hex(data), "hex");
   return isValidSecp256k1Signature(signatureObj, dataHash, publicKeyBuffer);
 }
@@ -332,7 +362,7 @@ function enforceValidPublicKey(
     throw new InvalidSignatureFormatError(`Signature is ${signature}`, { signature });
   }
 
-  const signatureObj = normalizeSecp256k1Signature(signature);
+  const signatureObj = parseSecp256k1Signature(signature);
 
   if (publicKey === undefined) {
     if (signatureObj.recoveryParam === undefined) {
@@ -378,7 +408,7 @@ export default {
   isValidSecp256k1Signature,
   normalizePrivateKey,
   normalizePublicKey,
-  normalizeSecp256k1Signature,
+  parseSecp256k1Signature,
   recoverPublicKey,
   validatePublicKey,
   validateSecp256k1PublicKey

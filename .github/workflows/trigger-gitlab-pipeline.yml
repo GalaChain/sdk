@@ -1,0 +1,79 @@
+name: Trigger GitLab Pipeline
+on:
+  push:
+    branches:
+      - github-action-fixes  # Triggers on pushes to the main branch, including merges
+
+jobs:
+  trigger-and-check-gitlab:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v2
+
+      - name: Trigger GitLab Pipeline
+        id: trigger
+        run: |
+          response=$(curl --request POST \
+                          --form token=${{ secrets.GITLAB_TOKEN }} \
+                          --form ref=main \
+                          "https://gitlab.com/api/v4/projects/35484791/trigger/pipeline")
+          echo "pipeline_id=$(echo "$response" | jq -r '.id')" >> $GITHUB_ENV
+          echo "PIPELINE_URL=https://gitlab.com/gala-games/chain/chaincodes/assets-chaincode/-/pipelines/$(echo "$response" | jq -r '.id')" >> $GITHUB_ENV
+
+      - name: Fetch Commit Details
+        run: |
+          commit_details=$(curl --header "PRIVATE-TOKEN: ${{ secrets.GITLAB_TOKEN }}" \
+            "https://gitlab.com/api/v4/projects/35484791/repository/commits/${{ github.sha }}")
+          author_name=$(echo "$commit_details" | jq -r '.author_name')
+          echo "AUTHOR_NAME=$author_name" >> $GITHUB_ENV
+
+      - name: Poll Pipeline Status
+        run: |
+          status=""
+          while [[ "$status" != "success" && "$status" != "failed" && "$status" != "canceled" ]]; do
+            result=$(curl --header "PRIVATE-TOKEN: ${{ secrets.GITLAB_TOKEN }}" \
+              "https://gitlab.com/api/v4/projects/35484791/pipelines/${{ env.pipeline_id }}")
+            status=$(echo $result | jq -r '.status')
+            echo "Pipeline status: $status"
+            if [[ "$status" == "failed" ]]; then
+              curl -X POST -H 'Content-type: application/json' --data "{
+                \"channel\": \"#chain_dependency_alerts\",
+                \"username\": \"ChainBot\",
+                \"text\": \"Pipeline failed!\",
+                \"attachments\": [{
+                  \"fallback\": \"Detailed information about pipeline failure.\",
+                  \"color\": \"danger\",
+                  \"pretext\": \"Pipeline for assets-chaincode failed!\",
+                  \"fields\": [
+                    {
+                      \"title\": \"Responsible Person\",
+                      \"value\": \"${{ env.AUTHOR_NAME }}\",
+                      \"short\": true
+                    },
+                    {
+                      \"title\": \"Commit URL\",
+                      \"value\": \"<${{ github.server_url }}/${{ github.repository }}/commit/${{ github.sha }}|View Commit>\",
+                      \"short\": true
+                    },
+                    {
+                      \"title\": \"Pipeline URL\",
+                      \"value\": \"<${{ env.PIPELINE_URL }}|View Pipeline>\",
+                      \"short\": true
+                    }
+                  ]
+                }]" ${{ secrets.SLACK_WEBHOOK_URL }}
+              echo "Pipeline $status"
+              exit 1
+            fi
+            sleep 600 #Sleep for 10 mins
+          done
+
+      - name: Increment Version Number
+        if: ${{ success() }}
+        run: |
+          # Increment the patch version
+          npm version patch
+          
+          # Push the changes to the repository
+          git push --follow-tags

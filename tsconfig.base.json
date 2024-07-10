@@ -23,10 +23,11 @@
     "strictPropertyInitialization": false,
     "paths": {
       "@gala-chain/api": ["chain-api/src/index.ts"],
+      "@gala-chain/chaincode": ["chaincode/src/index.ts"],
       "@gala-chain/cli": ["chain-cli/src/index.ts"],
       "@gala-chain/client": ["chain-client/src/index.ts"],
-      "@gala-chain/test": ["chain-test/src/index.ts"],
-      "@gala-chain/chaincode": ["chaincode/src/index.ts"]
+      "@gala-chain/connect": ["connect/src/index.ts"],
+      "@gala-chain/test": ["chain-test/src/index.ts"]
     }
   },
   "exclude": ["node_modules", "tmp"],

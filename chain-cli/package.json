@@ -1,6 +1,6 @@
 {
   "name": "@gala-chain/cli",
-  "version": "1.1.19",
+  "version": "1.2.2",
   "description": "CLI for GalaChain to manage and deploy chaincodes",
   "license": "Apache-2.0",
   "bin": {
@@ -14,7 +14,7 @@
     "/oclif.manifest.json"
   ],
   "dependencies": {
-    "@gala-chain/api": "1.1.19",
+    "@gala-chain/api": "1.2.2",
     "@noble/secp256k1": "^1.7.1",
     "@oclif/core": "^3",
     "@oclif/plugin-help": "^3",
@@ -53,7 +53,7 @@
     "prepack": "npm run build",
     "test": "jest",
     "version": "npm run build && git add README.md",
-    "format": "prettier --config ../.prettierrc 'src/**/*.ts' 'chaincode-template/**/*.ts' 'test/**/*.ts' 'test/**/*.js' --write",
+    "format": "prettier --config ../.prettierrc 'src/**/*.ts' 'chaincode-template/**/*.ts' --write",
     "prepublishOnly": "npm i && npm run clean && npm run build && npm run lint && npm run madge"
   },
   "type": "commonjs",

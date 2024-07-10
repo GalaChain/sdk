@@ -8,9 +8,15 @@ Download and install Docker Desktop from the official website: [https://www.dock
 
 **If you already have Docker Desktop installed, make sure to update it to the latest version.**
 
-### 2. Install WSL 2 and a Ubuntu distribution
+### 2. Install WSL 2 and a Ubuntu-20.04 distribution
 
 Follow the official guide to install WSL 2: [https://docs.microsoft.com/en-us/windows/wsl/install](https://docs.microsoft.com/en-us/windows/wsl/install)
+
+We reccomend using Ubuntu-20.04 as your distribution. You can install it running the following command on PowerShell:
+
+```powershell
+wsl --install -d Ubuntu-20.04
+```
 
 Here is a short video from Microsoft about how to install WSL 2 and how to prepare it to build Node.js applications:
 <iframe width="560" height="315" src="https://www.youtube.com/embed/lOXatmtBb88?si=tVmp-Jd8Nc-Mm6aS" title="YouTube video player" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" referrerpolicy="strict-origin-when-cross-origin" allowfullscreen></iframe>

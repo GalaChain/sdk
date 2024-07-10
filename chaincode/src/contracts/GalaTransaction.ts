@@ -70,6 +70,7 @@ export type GalaTransactionAfterFn = (
 
 export interface GalaTransactionOptions<T extends ChainCallDTO> {
   type: GalaTransactionType;
+  deprecated?: true;
   description?: string;
   in?: ClassConstructor<Inferred<T>>;
   out?: OutType | OutArrType;
@@ -145,7 +146,9 @@ function GalaTransaction<T extends ChainCallDTO>(
           : await parseValidDTO<T>(dtoClass, dtoPlain as string | Record<string, unknown>);
 
         // Verify public key signature if needed - throws exception in case of failure
-        if (options?.verifySignature || dto?.signature !== undefined) {
+        if (ctx.isDryRun) {
+          // Do not verify signature in dry run mode
+        } else if (options?.verifySignature || dto?.signature !== undefined) {
           ctx.callingUserData = await authorize(ctx, dto, legacyClientAccountId(ctx));
         } else {
           // it means a request where authorization is not required
@@ -197,16 +200,18 @@ function GalaTransaction<T extends ChainCallDTO>(
 
     // Update API of contract object
     const isWrite = options.type === GalaTransactionType.SUBMIT;
+    const responseSchema = isArrayOut(options.out)
+      ? generateResponseSchema(options.out.arrayOf, "array")
+      : generateResponseSchema(options.out);
     updateApi(target, {
       isWrite,
       methodName: method.name,
-      apiMethodName: options.apiMethodName,
-      dtoSchema: options.in === undefined ? undefined : generateSchema(options.in),
-      description: options.description,
-      responseSchema: isArrayOut(options.out)
-        ? generateResponseSchema(options.out.arrayOf, "array")
-        : generateResponseSchema(options.out),
-      sequence: options.sequence
+      ...(options.apiMethodName === undefined ? {} : { apiMethodName: options.apiMethodName }),
+      ...(options.in === undefined ? {} : { dtoSchema: generateSchema(options.in) }),
+      responseSchema,
+      ...(options.deprecated === undefined ? {} : { deprecated: options.deprecated }),
+      ...(options.description === undefined ? {} : { description: options.description }),
+      ...(options.sequence === undefined ? {} : { sequence: options.sequence })
     });
 
     // Ensure this is an actual HLF transaction.

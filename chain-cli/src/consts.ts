@@ -13,7 +13,7 @@
  * limitations under the License.
  */
 
-const GC_API_URL = process.env.GC_API_URL ?? "https://gateway.stage.galachain.com/cli/";
+const GC_API_URL = process.env.GC_API_URL ?? "https://gateway-testnet.galachain.com/cli/";
 export const defaultFabloRoot = "./test-network";
 export const ExpectedImageArchitecture = "linux/amd64";
 
