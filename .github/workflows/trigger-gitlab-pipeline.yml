@@ -26,8 +26,9 @@ jobs:
           commit_details=$(curl --header "PRIVATE-TOKEN: ${{ secrets.GITLAB_TOKEN }}" \
             "https://gitlab.com/api/v4/projects/35484791/repository/commits/${{ github.sha }}")
           author_name=$(echo "$commit_details" | jq -r '.author_name') >> $GITHUB_ENV
-          echo "$commit_details"
-          echo "AUTHOR_NAME=$author_name" >> $GITHUB_ENV
+          echo "Response: $response"
+          echo "Commit Details: $commit_details"
+          echo "AUTHOR_NAME=$author_name"
 
       - name: Poll Pipeline Status
         run: |
