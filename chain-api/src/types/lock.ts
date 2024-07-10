@@ -38,7 +38,7 @@ export type LockTokenParams = ConstructorArgs<LockTokenDto>;
   description: "Describes an action to lock a token."
 })
 export class LockTokenDto extends ChainCallDTO {
-  constructor(params: LockTokenParams) {
+  constructor(params?: LockTokenParams) {
     super();
     Object.assign(this, params);
   }
@@ -92,7 +92,7 @@ export type LockTokensParams = ConstructorArgs<LockTokensDto>;
   description: "Describes an action to lock multiple tokens."
 })
 export class LockTokensDto extends ChainCallDTO {
-  constructor(params: LockTokensParams) {
+  constructor(params?: LockTokensParams) {
     super();
     Object.assign(this, params);
   }
@@ -147,7 +147,7 @@ export type UnlockTokenParams = ConstructorArgs<UnlockTokenDto>;
   description: "Describes an action to unlock a token."
 })
 export class UnlockTokenDto extends ChainCallDTO {
-  constructor(params: UnlockTokenParams) {
+  constructor(params?: UnlockTokenParams) {
     super();
     Object.assign(this, params);
   }
@@ -191,7 +191,7 @@ export type UnlockTokensParams = ConstructorArgs<UnlockTokensDto>;
   description: "Describes an action to unlock multiple tokens."
 })
 export class UnlockTokensDto extends ChainCallDTO {
-  constructor(params: UnlockTokensParams) {
+  constructor(params?: UnlockTokensParams) {
     super();
     Object.assign(this, params);
   }

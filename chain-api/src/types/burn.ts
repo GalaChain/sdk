@@ -42,7 +42,7 @@ export type FetchBurnsParams = ConstructorArgs<FetchBurnsDto>;
   description: "Contains parameters for fetching burns."
 })
 export class FetchBurnsDto extends ChainCallDTO {
-  constructor(params: FetchBurnsParams) {
+  constructor(params?: FetchBurnsParams) {
     super();
     Object.assign(this, params);
   }
@@ -103,7 +103,7 @@ export type BurnTokensParams = ConstructorArgs<BurnTokensDto>;
   description: "Defines burns to be created."
 })
 export class BurnTokensDto extends ChainCallDTO {
-  constructor(params: BurnTokensParams) {
+  constructor(params?: BurnTokensParams) {
     super();
     Object.assign(this, params);
   }
@@ -140,7 +140,7 @@ export type BurnAndMintParams = ConstructorArgs<BurnAndMintDto>;
     "All operations occur in the same transaction, meaning either all succeed or none are written to chain."
 })
 export class BurnAndMintDto extends ChainCallDTO {
-  constructor(params: BurnAndMintParams) {
+  constructor(params?: BurnAndMintParams) {
     super();
     Object.assign(this, params);
   }
@@ -178,7 +178,7 @@ export type FetchBurnCountersWithPaginationParams = ConstructorArgs<FetchBurnCou
   description: "Contains parameters for fetching TokenBurnCounters with pagination."
 })
 export class FetchBurnCountersWithPaginationDto extends ChainCallDTO {
-  constructor(params: FetchBurnCountersWithPaginationParams) {
+  constructor(params?: FetchBurnCountersWithPaginationParams) {
     super();
     Object.assign(this, params);
   }

@@ -28,7 +28,7 @@ export type ReleaseTokenParams = ConstructorArgs<ReleaseTokenDto>;
   description: "Describes an action to release a token that is in use."
 })
 export class ReleaseTokenDto extends ChainCallDTO {
-  constructor(params: ReleaseTokenParams) {
+  constructor(params?: ReleaseTokenParams) {
     super();
     Object.assign(this, params);
   }
@@ -48,7 +48,7 @@ export type UseTokenParams = ConstructorArgs<UseTokenDto>;
   description: "Describes an action to use a token."
 })
 export class UseTokenDto extends ChainCallDTO {
-  constructor(params: UseTokenParams) {
+  constructor(params?: UseTokenParams) {
     super();
     Object.assign(this, params);
   }

@@ -248,7 +248,7 @@ const publicKeyDescription =
   description: `Dto for secure method to save public keys for legacy users. Method is called and signed by Curators`
 })
 export class RegisterUserDto extends ChainCallDTO {
-  constructor(params: RegisterUserParams) {
+  constructor(params?: RegisterUserParams) {
     super();
     Object.assign(this, params);
   }
@@ -270,7 +270,7 @@ export type RegisterEthUserParams = ConstructorArgs<RegisterEthUserDto>;
   description: `Dto for secure method to save public keys for Eth users. Method is called and signed by Curators`
 })
 export class RegisterEthUserDto extends ChainCallDTO {
-  constructor(params: RegisterEthUserParams) {
+  constructor(params?: RegisterEthUserParams) {
     super();
     Object.assign(this, params);
   }
@@ -283,7 +283,7 @@ export class RegisterEthUserDto extends ChainCallDTO {
 export type UpdatePublicKeyParams = ConstructorArgs<UpdatePublicKeyDto>;
 
 export class UpdatePublicKeyDto extends ChainCallDTO {
-  constructor(params: UpdatePublicKeyParams) {
+  constructor(params?: UpdatePublicKeyParams) {
     super();
     Object.assign(this, params);
   }
@@ -303,7 +303,7 @@ export class GetPublicKeyDto extends ChainCallDTO {
 
 export type GetMyProfileParams = ConstructorArgs<GetMyProfileDto>;
 export class GetMyProfileDto extends ChainCallDTO {
-  constructor(params: GetMyProfileParams) {
+  constructor(params?: GetMyProfileParams) {
     super();
     Object.assign(this, params);
   }

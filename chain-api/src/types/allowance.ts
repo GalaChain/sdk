@@ -42,7 +42,7 @@ export type FetchAllowancesParams = ConstructorArgs<FetchAllowancesDto>;
   description: "Contains parameters for fetching allowances with pagination."
 })
 export class FetchAllowancesDto extends ChainCallDTO {
-  constructor(params: FetchAllowancesParams) {
+  constructor(params?: FetchAllowancesParams) {
     super();
     Object.assign(this, params);
   }
@@ -211,7 +211,7 @@ export type DeleteAllowancesParams = ConstructorArgs<DeleteAllowancesDto>;
   description: "Contains parameters for deleting allowances for a calling user."
 })
 export class DeleteAllowancesDto extends ChainCallDTO {
-  constructor(params: DeleteAllowancesParams) {
+  constructor(params?: DeleteAllowancesParams) {
     super();
     Object.assign(this, params);
   }
@@ -275,7 +275,7 @@ export type GrantAllowanceParams = ConstructorArgs<GrantAllowanceDto>;
   description: "Defines allowances to be created."
 })
 export class GrantAllowanceDto extends ChainCallDTO {
-  constructor(params: GrantAllowanceParams) {
+  constructor(params?: GrantAllowanceParams) {
     super();
     Object.assign(this, params);
   }
@@ -337,7 +337,7 @@ export type HighThroughputGrantAllowanceParams = ConstructorArgs<HighThroughputG
     "exception that this implementation only supports AllowanceType.Mint."
 })
 export class HighThroughputGrantAllowanceDto extends ChainCallDTO {
-  constructor(params: HighThroughputGrantAllowanceParams) {
+  constructor(params?: HighThroughputGrantAllowanceParams) {
     super();
     Object.assign(this, params);
   }
@@ -414,7 +414,7 @@ export type FullAllowanceCheckParams = ConstructorArgs<FullAllowanceCheckDto>;
     "be returned in the response."
 })
 export class FullAllowanceCheckDto extends ChainCallDTO {
-  constructor(params: FullAllowanceCheckParams) {
+  constructor(params?: FullAllowanceCheckParams) {
     super();
     Object.assign(this, params);
   }
@@ -475,7 +475,7 @@ export type FullAllowanceCheckResParams = ConstructorArgs<FullAllowanceCheckResD
   description: "Response Data Transfer Object for FullLockAllowance request."
 })
 export class FullAllowanceCheckResDto extends ChainCallDTO {
-  constructor(params: FullAllowanceCheckResParams) {
+  constructor(params?: FullAllowanceCheckResParams) {
     super();
     Object.assign(this, params);
   }
@@ -503,7 +503,7 @@ export type RefreshAllowanceParams = ConstructorArgs<RefreshAllowanceDto>;
     "If quantity needs updating, grant a new allowance instead."
 })
 export class RefreshAllowanceDto extends ChainCallDTO {
-  constructor(params: RefreshAllowanceParams) {
+  constructor(params?: RefreshAllowanceParams) {
     super();
     Object.assign(this, params);
   }
@@ -530,7 +530,7 @@ export type RefreshAllowancesParams = ConstructorArgs<RefreshAllowancesDto>;
     "If quantity needs updating, grant a new allowance instead."
 })
 export class RefreshAllowancesDto extends ChainCallDTO {
-  constructor(params: RefreshAllowancesParams) {
+  constructor(params?: RefreshAllowancesParams) {
     super();
     Object.assign(this, params);
   }
