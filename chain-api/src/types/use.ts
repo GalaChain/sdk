@@ -22,7 +22,6 @@ import { ChainCallDTO } from "../types/dtos";
 import { BigNumberProperty, ConstructorArgs } from "../utils";
 import { BigNumberIsNotNegative } from "../validators";
 
-
 export type ReleaseTokenParams = ConstructorArgs<ReleaseTokenDto>;
 
 @JSONSchema({
@@ -42,7 +41,6 @@ export class ReleaseTokenDto extends ChainCallDTO {
   @IsNotEmpty()
   tokenInstance: TokenInstanceKey;
 }
-
 
 export type UseTokenParams = ConstructorArgs<UseTokenDto>;
 

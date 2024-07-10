@@ -43,7 +43,6 @@ export interface TokenClassKeyProperties {
 
 export type TokenClassKeyBody = ConstructorArgs<TokenClassKey>;
 
-
 @JSONSchema({
   description: "Object representing the chain identifier of token class."
 })

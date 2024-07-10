@@ -16,7 +16,14 @@ import { Type, instanceToInstance, plainToInstance } from "class-transformer";
 import { IsNotEmpty, IsOptional, ValidationError, validate } from "class-validator";
 import { JSONSchema } from "class-validator-jsonschema";
 
-import { ConstructorArgs, ValidationFailedError, deserialize, getValidationErrorInfo, serialize, signatures } from "../utils";
+import {
+  ConstructorArgs,
+  ValidationFailedError,
+  deserialize,
+  getValidationErrorInfo,
+  serialize,
+  signatures
+} from "../utils";
 import { GalaChainResponse } from "./contract";
 
 type Base<T, BaseT> = T extends BaseT ? T : never;
@@ -241,7 +248,6 @@ const publicKeyDescription =
   description: `Dto for secure method to save public keys for legacy users. Method is called and signed by Curators`
 })
 export class RegisterUserDto extends ChainCallDTO {
-
   constructor(params: RegisterUserParams) {
     super();
     Object.assign(this, params);
@@ -257,8 +263,6 @@ export class RegisterUserDto extends ChainCallDTO {
   @IsNotEmpty()
   publicKey: string;
 }
-
-
 
 export type RegisterEthUserParams = ConstructorArgs<RegisterEthUserDto>;
 
@@ -299,7 +303,6 @@ export class GetPublicKeyDto extends ChainCallDTO {
 
 export type GetMyProfileParams = ConstructorArgs<GetMyProfileDto>;
 export class GetMyProfileDto extends ChainCallDTO {
-
   constructor(params: GetMyProfileParams) {
     super();
     Object.assign(this, params);

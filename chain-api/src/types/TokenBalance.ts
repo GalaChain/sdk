@@ -97,7 +97,6 @@ export class TokenNotInUseError extends ValidationFailedError {
   }
 }
 
-
 export type TokenBalanceBody = ConstructorArgs<TokenBalance>;
 
 export class TokenBalance extends ChainObject {

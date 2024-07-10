@@ -25,13 +25,13 @@ import {
 } from "class-validator";
 import { JSONSchema } from "class-validator-jsonschema";
 
+import { ConstructorArgs } from "../utils";
 import { ChainKey } from "../utils/chain-decorators";
 import { BigNumberProperty } from "../utils/transform-decorators";
 import { BigNumberIsInteger, BigNumberIsNotNegative } from "../validators/decorators";
 import { ChainObject } from "./ChainObject";
 import { TokenClass, TokenClassKey, TokenClassKeyProperties } from "./TokenClass";
 import { ChainCallDTO } from "./dtos";
-import { ConstructorArgs } from "../utils";
 
 export interface TokenInstanceKeyProperties {
   collection: string;
