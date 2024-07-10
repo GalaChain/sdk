@@ -13,7 +13,7 @@
  * limitations under the License.
  */
 import { ChainCallDTO, serialize, signatures } from "@gala-chain/api";
-import { BrowserProvider, Eip1193Provider } from "ethers";
+import { BrowserProvider, Eip1193Provider, getAddress } from "ethers";
 
 declare global {
   interface Window {
@@ -26,12 +26,16 @@ export class GalachainConnectClient {
   #provider: BrowserProvider | undefined;
   #chainCodeUrl: string;
 
-  get address() {
+  get ethAddress() {
     return `eth|${this.#address}`;
   }
 
+  get galachainAddress() {
+    return getAddress(this.#address);
+  }
+
   set address(val: string) {
-    this.#address = val.replace(/0x|eth\|/, "");
+    this.#address = `0x${val.replace(/0x|eth\|/, "")}`;
   }
 
   get provider() {
@@ -53,7 +57,7 @@ export class GalachainConnectClient {
       const accounts = (await this.#provider.send("eth_requestAccounts", [])) as string[];
       this.address = accounts[0];
 
-      return this.address;
+      return this.ethAddress;
     } catch (error: unknown) {
       throw new Error((error as Error).message);
     }
@@ -86,7 +90,7 @@ export class GalachainConnectClient {
         const dto = signatures.getPayloadToSign(prefixedPayload);
 
         const signer = await this.#provider.getSigner();
-        const signature = await signer.provider.send("personal_sign", ["0x" + this.#address, dto]);
+        const signature = await signer.provider.send("personal_sign", [this.galachainAddress, dto]);
 
         return await this.submit(url, method, { ...prefixedPayload, signature }, headers);
       }
