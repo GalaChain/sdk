@@ -26,15 +26,17 @@ jobs:
           commit_details=$(curl --header "PRIVATE-TOKEN: ${{ secrets.GITLAB_TOKEN }}" \
             "https://gitlab.com/api/v4/projects/35484791/repository/commits/${{ github.sha }}")
           author_name=$(echo "$commit_details" | jq -r '.author_name')
+          echo "$commit_details"
           echo "AUTHOR_NAME=$author_name" >> $GITHUB_ENV
 
       - name: Poll Pipeline Status
         run: |
           status=""
+          echo "Polling Pipeline Status for ID: ${{ env.pipeline_id }}"
           while [[ "$status" != "success" && "$status" != "failed" && "$status" != "canceled" ]]; do
             result=$(curl --header "PRIVATE-TOKEN: ${{ secrets.GITLAB_TOKEN }}" \
               "https://gitlab.com/api/v4/projects/35484791/pipelines/${{ env.pipeline_id }}")
-            status=$(echo $result | jq -r '.status')
+            status=$(echo "$result" | jq -r '.status')
             echo "Pipeline status: $status"
             if [[ "$status" == "failed" ]]; then
               curl -X POST -H 'Content-type: application/json' --data "{
@@ -63,7 +65,7 @@ jobs:
                     }
                   ]
                 }]" ${{ secrets.SLACK_WEBHOOK_URL }}
-              echo "Pipeline $status"
+              echo "Pipeline status after failure: $status"
               exit 1
             fi
             sleep 600 #Sleep for 10 mins.
