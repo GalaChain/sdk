@@ -93,10 +93,14 @@ export async function fullAllowanceCheck(
     }
   }
 
-  const result = new FullAllowanceCheckResDto({
-    all: missing.length === 0,
-    missing: missing.length ? missing : undefined
-  });
+  const result = new FullAllowanceCheckResDto();
+
+  if (missing.length > 0) {
+    result.all = false;
+    result.missing = missing;
+  } else {
+    result.all = true;
+  }
 
   return result;
 }
