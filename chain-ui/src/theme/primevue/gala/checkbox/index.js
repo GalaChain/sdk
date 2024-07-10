@@ -13,8 +13,8 @@ export default {
 
       // Misc
       'cursor-pointer',
-      'select-none',
-    ],
+      'select-none'
+    ]
   },
   box: ({ props, context }) => ({
     class: [
@@ -36,7 +36,7 @@ export default {
         'border-surface-500 bg-surface-100 dark:border-surface-600 dark:bg-surface-900':
           !context.checked,
         'border-primary-500 bg-primary-500 dark:border-primary-500 dark:bg-primary-500':
-          context.checked,
+          context.checked
       },
 
       // States
@@ -45,16 +45,15 @@ export default {
           !props.disabled && !context.checked,
         'peer-hover:bg-primary-700 dark:peer-hover:bg-primary-300 peer-hover:border-primary-700 dark:peer-hover:border-primary-300':
           !props.disabled && context.checked,
-        'peer-focus-visible:focus-ring peer-focus-visible:focus-ring-offset':
-          !props.disabled,
-        'cursor-default opacity-60': props.disabled,
+        'peer-focus-visible:focus-ring peer-focus-visible:focus-ring-offset': !props.disabled,
+        'cursor-default opacity-60': props.disabled
       },
       'peer-invalid:border-error-500/50 peer-invalid:bg-gradient-to-r peer-invalid:from-transparent peer-invalid:to-error-500/30',
 
       // Transitions
       'transition-colors',
-      'duration-200',
-    ],
+      'duration-200'
+    ]
   }),
   input: {
     class: [
@@ -81,8 +80,8 @@ export default {
 
       // Misc
       'appareance-none',
-      'cursor-pointer',
-    ],
+      'cursor-pointer'
+    ]
   },
   icon: {
     class: [
@@ -98,7 +97,7 @@ export default {
 
       // Transitions
       'transition-all',
-      'duration-200',
-    ],
-  },
-};
+      'duration-200'
+    ]
+  }
+}

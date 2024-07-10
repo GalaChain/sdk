@@ -10,13 +10,10 @@ export default {
         'py-0 px-1':
           context?.right ||
           context?.left ||
-          (!context?.right &&
-            !context?.left &&
-            !context?.top &&
-            !context?.bottom),
-        'py-1 px-0': context?.top || context?.bottom,
-      },
-    ],
+          (!context?.right && !context?.left && !context?.top && !context?.bottom),
+        'py-1 px-0': context?.top || context?.bottom
+      }
+    ]
   }),
   arrow: ({ context, props }) => ({
     class: [
@@ -34,30 +31,24 @@ export default {
       {
         'border-y-[0.25rem] border-r-[0.25rem] border-l-0 border-r-surface-300 dark:border-r-surface-800':
           context?.right ||
-          (!context?.right &&
-            !context?.left &&
-            !context?.top &&
-            !context?.bottom),
+          (!context?.right && !context?.left && !context?.top && !context?.bottom),
         'border-y-[0.25rem] border-l-[0.25rem] border-r-0 border-l-surface-300 dark:border-l-surface-800':
           context?.left,
         'border-x-[0.25rem] border-t-[0.25rem] border-b-0 border-t-surface-300 dark:border-t-surface-800':
           context?.top,
         'border-x-[0.25rem] border-b-[0.25rem] border-t-0 border-b-surface-300 dark:border-b-surface-800':
-          context?.bottom,
+          context?.bottom
       },
 
       // Spacing
       {
         '-mt-1 ':
           context?.right ||
-          (!context?.right &&
-            !context?.left &&
-            !context?.top &&
-            !context?.bottom),
+          (!context?.right && !context?.left && !context?.top && !context?.bottom),
         '-mt-1': context?.left,
-        '-ml-1': context?.top || context?.bottom,
-      },
-    ],
+        '-ml-1': context?.top || context?.bottom
+      }
+    ]
   }),
   text: {
     class: [
@@ -67,9 +58,9 @@ export default {
       'p-3',
       'leading-none',
       // 'rounded-md',
-      'text-sm',
+      'text-sm'
       // 'whitespace-pre-line',
       // 'break-words',
-    ],
-  },
-};
+    ]
+  }
+}

@@ -21,13 +21,12 @@ export default {
       {
         'focus:outline-none ring-1 ring-inset ring-transparent ring-opacity-50 focus-visible:focus-ring':
           !context.disabled,
-        'opacity-60 select-none pointer-events-none cursor-default':
-          context.disabled,
+        'opacity-60 select-none pointer-events-none cursor-default': context.disabled
       },
 
       // Misc
       'appearance-none',
-      'transition-colors duration-200',
-    ],
-  }),
-};
+      'transition-colors duration-200'
+    ]
+  })
+}

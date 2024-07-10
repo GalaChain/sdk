@@ -1,6 +1,6 @@
 export default {
   root: {
-    class: 'overflow-x-auto',
+    class: 'overflow-x-auto'
   },
   menu: {
     class: [
@@ -13,11 +13,11 @@ export default {
 
       // Colors
       'border-b border-surface-200 dark:border-surface-0/10',
-      'text-surface-400 dark:text-surface-600',
-    ],
+      'text-surface-400 dark:text-surface-600'
+    ]
   },
   menuitem: {
-    class: 'mr-0',
+    class: 'mr-0'
   },
   action: ({ context, state }) => ({
     class: [
@@ -39,22 +39,17 @@ export default {
 
       // Colors and Conditions
       {
-        'border-surface-0/0 dark:border-surface-0/0':
-          state.d_activeIndex !== context.index,
-        'text-surface-400 dark:text-surface-600':
-          state.d_activeIndex !== context.index,
-        'border-white dark:border-surface-0':
-          state.d_activeIndex === context.index,
-        'text-surface-900 dark:text-surface-0':
-          state.d_activeIndex === context.index,
+        'border-surface-0/0 dark:border-surface-0/0': state.d_activeIndex !== context.index,
+        'text-surface-400 dark:text-surface-600': state.d_activeIndex !== context.index,
+        'border-white dark:border-surface-0': state.d_activeIndex === context.index,
+        'text-surface-900 dark:text-surface-0': state.d_activeIndex === context.index
       },
 
       // States
       'focus-visible:outline-none focus-visible:outline-offset-0 focus-visible:ring focus-visible:ring-inset',
       'focus-visible:ring-white dark:focus-visible:ring-white',
       {
-        'hover:text-surface-600 dark:hover:text-surface-0':
-          state.d_activeIndex !== context.index,
+        'hover:text-surface-600 dark:hover:text-surface-0': state.d_activeIndex !== context.index
       },
 
       // Transitions
@@ -63,10 +58,10 @@ export default {
       // Misc
       'cursor-pointer select-none text-decoration-none',
       'overflow-hidden',
-      'user-select-none',
-    ],
+      'user-select-none'
+    ]
   }),
   icon: {
-    class: 'mr-2',
-  },
-};
+    class: 'mr-2'
+  }
+}

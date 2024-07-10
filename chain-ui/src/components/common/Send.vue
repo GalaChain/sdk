@@ -1,14 +1,14 @@
 <script lang="ts" setup>
-import { reactive, ref, computed, watch } from 'vue';
-import { type ValidationArgs, useVuelidate } from '@vuelidate/core';
-import { helpers, required, minValue, maxValue } from '@vuelidate/validators';
-import { getStepSizeFromDecimals } from '@/utils/validation';
-import { TransferTokenDto, TokenClass } from '@gala-chain/api' 
-import { type IGalaChainError } from '@/types/galachain-error';
-import FormInput from '../Form/Input.vue';
-import FormErrors from '../Form/Errors.vue';
-import PrimeButton from 'primevue/button';
-import BigNumber from 'bignumber.js';
+import { reactive, ref, computed, watch } from 'vue'
+import { type ValidationArgs, useVuelidate } from '@vuelidate/core'
+import { helpers, required, minValue, maxValue } from '@vuelidate/validators'
+import { getStepSizeFromDecimals } from '@/utils/validation'
+import { TransferTokenDto, TokenClass } from '@gala-chain/api'
+import { type IGalaChainError } from '@/types/galachain-error'
+import FormInput from '../Form/Input.vue'
+import FormErrors from '../Form/Errors.vue'
+import PrimeButton from 'primevue/button'
+import BigNumber from 'bignumber.js'
 
 export interface TokenClassBalance extends TokenClass {
   available: string
@@ -16,22 +16,22 @@ export interface TokenClassBalance extends TokenClass {
 
 interface IFormModel {
   token: TokenClassBalance
-  quantity: number;
-  to: string;
+  quantity: number
+  to: string
 }
 
 const props = withDefaults(
   defineProps<{
-    token: TokenClassBalance;
-    disabled?: boolean;
-    loading?: boolean;
-    fromAddress?: string;
-    showRecipient?: boolean;
-    toHeader?: string;
-    toPlaceholder?: string;
-    submitText?: string;
-    rules?: ValidationArgs<Partial<IFormModel>>;
-    error?: IGalaChainError;
+    token: TokenClassBalance
+    disabled?: boolean
+    loading?: boolean
+    fromAddress?: string
+    showRecipient?: boolean
+    toHeader?: string
+    toPlaceholder?: string
+    submitText?: string
+    rules?: ValidationArgs<Partial<IFormModel>>
+    error?: IGalaChainError
   }>(),
   {
     disabled: false,
@@ -40,102 +40,92 @@ const props = withDefaults(
     toPlaceholder: 'client|000000000000000000000000',
     submitText: 'Submit',
     rules: undefined,
-    error: undefined,
+    error: undefined
   }
-);
+)
 
 const emit = defineEmits<{
-  submit: [value: TransferTokenDto];
-  error: [value: IGalaChainError];
-}>();
+  submit: [value: TransferTokenDto]
+  error: [value: IGalaChainError]
+}>()
 
 const model = reactive<Partial<IFormModel>>({
   token: undefined,
   to: '',
-  quantity: 1,
-});
+  quantity: 1
+})
 
-const formEl = ref<HTMLFormElement>();
+const formEl = ref<HTMLFormElement>()
 
 const maxAvailable = computed(() => new BigNumber(model.token?.available ?? 0))
 const validationRules = computed(() => {
   if (props.rules) {
-    return props.rules;
+    return props.rules
   }
 
   const rules: ValidationArgs<Partial<IFormModel>> = {
     quantity: {
       required,
       min: minValue(
-        model.token?.decimals
-          ? getStepSizeFromDecimals(model.token.decimals).toNumber()
-          : 1
+        model.token?.decimals ? getStepSizeFromDecimals(model.token.decimals).toNumber() : 1
       ),
       max:
-        !maxAvailable.value ||
-        maxAvailable.value.eq(0) ||
-        maxAvailable.value.isNaN()
-          ? helpers.withMessage(
-              `You do not have any ${model.token?.symbol}`,
-              maxValue(0)
-            )
-          : maxValue(maxAvailable.value.toNumber()),
+        !maxAvailable.value || maxAvailable.value.eq(0) || maxAvailable.value.isNaN()
+          ? helpers.withMessage(`You do not have any ${model.token?.symbol}`, maxValue(0))
+          : maxValue(maxAvailable.value.toNumber())
     },
     token: {
-      required,
-    },
-  };
+      required
+    }
+  }
   if (props.showRecipient) {
     rules.to = {
-      required: helpers.withMessage(
-        'A valid wallet address is required',
-        required
-      ),
-    };
+      required: helpers.withMessage('A valid wallet address is required', required)
+    }
   }
 
-  return rules;
-});
+  return rules
+})
 
-const v$ = useVuelidate<Partial<IFormModel>>(validationRules, model as Partial<IFormModel>);
+const v$ = useVuelidate<Partial<IFormModel>>(validationRules, model as Partial<IFormModel>)
 
 const globalError = computed(() =>
-  props.error ? props.error.message :
-  v$.value.$error && v$.value.$dirty
+  props.error
+    ? props.error.message
+    : v$.value.$error && v$.value.$dirty
       ? 'Please fix all errors before submitting'
       : ''
-);
+)
 
 const send = async () => {
-  await v$.value.$validate();
+  await v$.value.$validate()
   if (v$.value.$error) {
-    return;
+    return
   }
 
-  const { token, to, quantity } = model;
-  const { collection, category, type, additionalKey } = token! ;
+  const { token, to, quantity } = model
+  const { collection, category, type, additionalKey } = token!
   emit('submit', {
     quantity,
     to,
     tokenInstance: {
-      instance: "0",
+      instance: '0',
       collection,
       category,
       type,
       additionalKey
     }
-  } as unknown as TransferTokenDto);
-};
+  } as unknown as TransferTokenDto)
+}
 
 watch(
   () => props.token,
   (current) => {
-    model.token = current;
-    model.quantity = 0;
+    model.token = current
+    model.quantity = 0
   },
   { immediate: true }
-);
-
+)
 </script>
 
 <template>
@@ -156,13 +146,9 @@ watch(
         ></div>
       </div>
 
-      <div
-        class="px-2 xs:pl-0 xs:text-left flex-grow mt-4 xs:mt-3"
-      >
+      <div class="px-2 xs:pl-0 xs:text-left flex-grow mt-4 xs:mt-3">
         <div v-if="!!model.token">
-          <label :for="`${formEl?.id}-send-token`" class="sr-only">
-            Token
-          </label>
+          <label :for="`${formEl?.id}-send-token`" class="sr-only"> Token </label>
           <input
             :id="`${formEl?.id}-send-token`"
             :value="model.token.name"
@@ -181,9 +167,7 @@ watch(
           type="number"
           name="quantity"
           :step="
-            model.token?.decimals
-              ? getStepSizeFromDecimals(model.token.decimals).toString()
-              : '1'
+            model.token?.decimals ? getStepSizeFromDecimals(model.token.decimals).toString() : '1'
           "
           :aria-describedby="`${formEl?.id}-max-quantity`"
           class="form-element-quantity text-left"
@@ -211,16 +195,11 @@ watch(
           </template>
         </FormInput>
         <div
-          v-if="
-            maxAvailable &&
-            !(v$.quantity.$error && v$.quantity.$errors[0]?.$message)
-          "
+          v-if="maxAvailable && !(v$.quantity.$error && v$.quantity.$errors[0]?.$message)"
           :id="`${formEl?.id}-max-quantity`"
           class="mt-2"
         >
-          <p class="text-surface-secondary text-xs">
-            Available: {{ maxAvailable }}
-          </p>
+          <p class="text-surface-secondary text-xs">Available: {{ maxAvailable }}</p>
         </div>
       </div>
     </div>
@@ -233,9 +212,7 @@ watch(
         name="to"
         class="form-element-to text-left"
         :errors="
-          v$.to.$error && v$.to.$errors[0]?.$message
-            ? [v$.to.$errors[0].$message]
-            : undefined
+          v$.to.$error && v$.to.$errors[0]?.$message ? [v$.to.$errors[0].$message] : undefined
         "
         @change="v$.to.$touch"
       >
@@ -253,9 +230,7 @@ watch(
       </FormInput>
     </div>
     <div v-if="globalError">
-      <div
-        class="bg-red-400 dark:bg-red-900 text-surface-primary px-4 py-2 rounded-lg mx-2 mb-4"
-      >
+      <div class="bg-red-400 dark:bg-red-900 text-surface-primary px-4 py-2 rounded-lg mx-2 mb-4">
         <FormErrors
           class="text-surface-primary justify-center"
           color="text-white"

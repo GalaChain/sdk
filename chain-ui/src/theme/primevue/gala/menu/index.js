@@ -9,8 +9,8 @@ export default {
       // Colors
       'bg-surface-1000/10 dark:bg-surface-0/10 backdrop-blur-xl',
       'text-surface-primary',
-      'border border-surface-1000/10 dark:border-surface-0/10',
-    ],
+      'border border-surface-1000/10 dark:border-surface-0/10'
+    ]
   },
   menu: {
     class: [
@@ -18,13 +18,11 @@ export default {
       'list-none',
       'm-0',
       'p-0',
-      'outline-none',
-    ],
+      'outline-none'
+    ]
   },
   menuitem: ({ _context }) => ({
-    class: [
-      'border-b last:border-b-0 border-b-surface-1000/10 dark:border-b-surface-0/10',
-    ],
+    class: ['border-b last:border-b-0 border-b-surface-1000/10 dark:border-b-surface-0/10']
   }),
   content: ({ _context }) => ({
     class: [
@@ -41,8 +39,8 @@ export default {
       'duration-200',
       // States
       'hover:text-surface-700 dark:hover:text-white/80',
-      'hover:bg-surface-100/10 dark:hover:bg-surface-400/10',
-    ],
+      'hover:bg-surface-100/10 dark:hover:bg-surface-400/10'
+    ]
   }),
   action: {
     class: [
@@ -63,8 +61,8 @@ export default {
       'no-underline',
       'overflow-hidden',
       'cursor-pointer',
-      'select-none',
-    ],
+      'select-none'
+    ]
   },
   icon: {
     class: [
@@ -72,11 +70,11 @@ export default {
       'mr-2',
 
       // Color
-      'text-surface-600 dark:text-white/70',
-    ],
+      'text-surface-600 dark:text-white/70'
+    ]
   },
   label: {
-    class: ['leading-none'],
+    class: ['leading-none']
   },
   submenuheader: {
     class: [
@@ -90,14 +88,14 @@ export default {
       'rounded-tr-none',
       // Colors
       'bg-surface-0 dark:bg-surface-700',
-      'text-surface-700 dark:text-white',
-    ],
+      'text-surface-700 dark:text-white'
+    ]
   },
   transition: {
     enterFromClass: 'opacity-0 scale-y-[0.8]',
     enterActiveClass:
       'transition-[transform,opacity] duration-[120ms] ease-[cubic-bezier(0,0,0.2,1)]',
     leaveActiveClass: 'transition-opacity duration-100 ease-linear',
-    leaveToClass: 'opacity-0',
-  },
-};
+    leaveToClass: 'opacity-0'
+  }
+}

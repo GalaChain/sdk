@@ -28,7 +28,20 @@
     "@nx/jest": "^19.3.0",
     "@nx/js": "^19.3.0",
     "@nx/linter": "^19.3.0",
+    "@nx/storybook": "19.3.0",
+    "@nx/web": "19.3.0",
     "@nx/workspace": "^19.3.0",
+    "@storybook/addon-essentials": "7.6.20",
+    "@storybook/addon-interactions": "^7.6.20",
+    "@storybook/core-server": "7.6.20",
+    "@storybook/jest": "^0.2.3",
+    "@storybook/test-runner": "^0.13.0",
+    "@storybook/testing-library": "^0.2.2",
+    "@storybook/vue3": "7.6.20",
+    "@storybook/vue3-vite": "7.6.20",
+    "@swc-node/register": "~1.9.1",
+    "@swc/core": "~1.5.7",
+    "@swc/helpers": "~0.5.11",
     "@trivago/prettier-plugin-sort-imports": "^4.3.0",
     "@types/jest": "29.5.11",
     "@types/node": "18.16.9",
@@ -44,12 +57,14 @@
     "license-checker": "^25.0.1",
     "nx": "^19.3.0",
     "prettier": "3.1.1",
+    "storybook": "7.6.20",
     "ts-jest": "29.1.1",
     "ts-node": "^10.9.2",
     "tslib": "^2.3.0",
     "typedoc": "^0.25.4",
     "typedoc-plugin-markdown": "^4.0.0-next.22",
-    "typescript": "5.3.3"
+    "typescript": "5.3.3",
+    "vite": "~5.0.0"
   },
   "nx": {
     "includedScripts": []
@@ -62,5 +77,9 @@
     "chain-test",
     "chain-ui",
     "chaincode"
-  ]
+  ],
+  "dependencies": {
+    "react": "^18.2.0",
+    "react-dom": "^18.2.0"
+  }
 }

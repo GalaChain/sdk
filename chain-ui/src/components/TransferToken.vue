@@ -1,45 +1,54 @@
 <script lang="ts" setup>
-import { computed } from 'vue';
+import { computed } from 'vue'
 import { TokenBalanceWithMetadata, TransferTokenDto } from '@gala-chain/api'
-import GalaSend, { type TokenClassBalance } from '@/components/common/Send.vue';
-import { calculateAvailableBalance } from '@/utils/calculateBalance';
-import { TokenBalance } from '@gala-chain/api';
-import type { IGalaChainError } from '@/types/galachain-error';
-import PrimeSkeleton from 'primevue/skeleton';
+import GalaSend, { type TokenClassBalance } from '@/components/common/Send.vue'
+import { calculateAvailableBalance } from '@/utils/calculateBalance'
+import { TokenBalance } from '@gala-chain/api'
+import type { IGalaChainError } from '@/types/galachain-error'
+import PrimeSkeleton from 'primevue/skeleton'
 
-  export interface TransferTokenProps {
-    tokenBalance?: TokenBalanceWithMetadata,
-    loading?: boolean,
-    disabled?: boolean,
-  }
+export interface TransferTokenProps {
+  /** User token balance */
+  tokenBalance?: TokenBalanceWithMetadata
+  /** Submit button loading state */
+  loading?: boolean
+  /** Submit button disabled state */
+  disabled?: boolean
+}
 
-  const props = defineProps<TransferTokenProps>()
+export interface TransferTokenEmits {
+  /** Fired when the form is successfully submitted */
+  (event: 'submit', value: TransferTokenDto): void
+  /** Fired when a form error occurs, does not include validation errors */
+  (event: 'error', value: IGalaChainError): void
+}
 
-  const emit = defineEmits<{
-    submit: [value: TransferTokenDto];
-    error: [value: IGalaChainError];
-  }>()
+const props = defineProps<TransferTokenProps>()
 
-  const availableToken = computed(() => {
-    const token: TokenBalanceWithMetadata = typeof props.tokenBalance === 'string' ? JSON.parse(props.tokenBalance) : props.tokenBalance; 
-    return token ? 
-      {
+const emit = defineEmits<TransferTokenEmits>()
+
+const availableToken = computed(() => {
+  const token: TokenBalanceWithMetadata =
+    typeof props.tokenBalance === 'string' ? JSON.parse(props.tokenBalance) : props.tokenBalance
+  return token
+    ? ({
         ...token.token,
         available: calculateAvailableBalance(token.balance as TokenBalance).toString()
-      } as TokenClassBalance : 
-      undefined;
-  })
+      } as TokenClassBalance)
+    : undefined
+})
 </script>
 
 <template>
-  <GalaSend 
+  <GalaSend
     v-if="availableToken"
     :token="availableToken"
     :loading="loading"
+    :disabled="disabled"
     to-header="Send to"
     submit-text="Send"
-    @submit="event => emit('submit', event as TransferTokenDto)" 
-    @error="event => emit('error', event)" 
+    @submit="(event) => emit('submit', event as TransferTokenDto)"
+    @error="(event) => emit('error', event)"
   ></GalaSend>
   <slot v-else name="empty">
     <div class="flex flex-col items-center mt-6">

@@ -27,6 +27,10 @@
     },
     {
       "path": "./tsconfig.vitest.json"
+    },
+    {
+      "path": "./tsconfig.storybook.json"
     }
-  ]
+  ],
+  "exclude": ["**/*.stories.ts", "**/*.stories.js"]
 }

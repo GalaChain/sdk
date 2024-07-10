@@ -1,15 +1,15 @@
 <script lang="ts" setup>
-import { ExclamationTriangleIcon } from '@heroicons/vue/20/solid';
+import { ExclamationTriangleIcon } from '@heroicons/vue/20/solid'
 withDefaults(
   defineProps<{
-    errors?: string[];
-    limit?: number;
-    color?: string;
+    errors?: string[]
+    limit?: number
+    color?: string
   }>(),
   {
-    color: 'text-red-500',
+    color: 'text-red-500'
   }
-);
+)
 </script>
 
 <template>

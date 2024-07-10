@@ -24,7 +24,8 @@
     "build-only": "vite build --config vite.config.lib.ts",
     "type-check": "vue-tsc --build --force",
     "lint": "eslint . --ext .vue,.js,.jsx,.cjs,.mjs,.ts,.tsx,.cts,.mts --fix --ignore-path .gitignore",
-    "format": "prettier --write src/"
+    "format": "prettier --write src/",
+    "storybook": "storybook dev"
   },
   "dependencies": {
     "@gala-chain/api": "^1.2.0",
@@ -40,7 +41,9 @@
     "vue": "^3.4.21"
   },
   "devDependencies": {
-    "@nx/vite": "^19.3.2",
+    "@nx/storybook": "19.4.2",
+    "@nx/vite": "19.4.2",
+    "@nx/vue": "19.4.2",
     "@rushstack/eslint-patch": "^1.8.0",
     "@tsconfig/node20": "^20.1.4",
     "@types/jsdom": "^21.1.6",

@@ -5,8 +5,8 @@ export default {
       'relative',
 
       // Misc
-      { 'overflow-hidden': props.scrollable },
-    ],
+      { 'overflow-hidden': props.scrollable }
+    ]
   }),
   navContent: {
     class: [
@@ -14,8 +14,8 @@ export default {
       'overflow-y-hidden overscroll-contain',
       'overscroll-auto',
       'scroll-smooth',
-      '[&::-webkit-scrollbar]:hidden',
-    ],
+      '[&::-webkit-scrollbar]:hidden'
+    ]
   },
   previousButton: {
     class: [
@@ -37,8 +37,8 @@ export default {
       'focus-visible:focus-ring focus-visible:focus-ring-offset',
       // 'bg-surface-0 dark:bg-surface-800',
       // 'text-primary-500 dark:text-primary-400',
-      'shadow-md',
-    ],
+      'shadow-md'
+    ]
   },
   nextButton: {
     class: [
@@ -59,8 +59,8 @@ export default {
       // 'text-primary-500 dark:text-primary-400',
       'text-surface-primary bg-surface-200 dark:bg-surface-850',
       'focus-visible:focus-ring focus-visible:focus-ring-offset',
-      'shadow-md',
-    ],
+      'shadow-md'
+    ]
   },
   nav: {
     class: [
@@ -76,8 +76,8 @@ export default {
       // 'bg-surface-0 dark:bg-surface-800',
       //   'border-b-2 border-surface-200 dark:border-surface-700',
       'border-b-2 border-transparent dark:border-transparent',
-      'text-surface-900 dark:text-surface-0/80',
-    ],
+      'text-surface-900 dark:text-surface-0/80'
+    ]
   },
   tabpanel: {
     header: ({ props }) => ({
@@ -88,9 +88,9 @@ export default {
         // Misc
         {
           'opacity-60 cursor-default user-select-none select-none pointer-events-none':
-            props?.disabled,
-        },
-      ],
+            props?.disabled
+        }
+      ]
     }),
     headerAction: ({ parent, context }) => ({
       class: [
@@ -117,15 +117,13 @@ export default {
           //     parent.state.d_activeIndex !== context.index,
           //   'bg-surface-0 dark:bg-surface-800':
           //     parent.state.d_activeIndex !== context.index,
-          'text-surface-secondary':
-            parent.state.d_activeIndex !== context.index,
+          'text-surface-secondary': parent.state.d_activeIndex !== context.index,
 
           //   'bg-surface-0 dark:bg-surface-800':
           //     parent.state.d_activeIndex === context.index,
           //   'border-primary-500 dark:border-primary-400':
           //     parent.state.d_activeIndex === context.index,
-          'text-surface-1000 dark:text-surface-0':
-            parent.state.d_activeIndex === context.index,
+          'text-surface-1000 dark:text-surface-0': parent.state.d_activeIndex === context.index
         },
 
         // States
@@ -139,7 +137,7 @@ export default {
           //   'hover:border-surface-400 dark:hover:border-primary-400':
           //     parent.state.d_activeIndex !== context.index,
           'hover:text-surface-1000 dark:hover:text-surface-0':
-            parent.state.d_activeIndex !== context.index,
+            parent.state.d_activeIndex !== context.index
         },
 
         // Transitions
@@ -148,15 +146,15 @@ export default {
         // Misc
         'cursor-pointer select-none text-decoration-none',
         'overflow-hidden',
-        'user-select-none',
-      ],
+        'user-select-none'
+      ]
     }),
     headerTitle: {
       class: [
         // Text
         'leading-none',
-        'whitespace-nowrap',
-      ],
+        'whitespace-nowrap'
+      ]
     },
     content: {
       class: [
@@ -169,8 +167,8 @@ export default {
         // Colors
         // 'bg-surface-0 dark:bg-surface-800',
         // 'text-surface-700 dark:text-surface-0/80',
-        'border-0',
-      ],
-    },
-  },
-};
+        'border-0'
+      ]
+    }
+  }
+}

@@ -9,8 +9,8 @@ export default {
 
       // Misc
       'cursor-pointer',
-      'select-none',
-    ],
+      'select-none'
+    ]
   },
   box: ({ props }) => ({
     class: [
@@ -29,7 +29,7 @@ export default {
         'border-surface-200 dark:border-surface-700 ': !props.modelValue,
         'text-surface-700 dark:text-white/80': !props.modelValue,
         'bg-primary-500 dark:bg-primary-400 border-primary-500 dark:border-primary-400 text-white dark:text-surface-900':
-          props.modelValue,
+          props.modelValue
       },
 
       // States
@@ -39,7 +39,7 @@ export default {
         'peer-hover:bg-primary-600 peer-hover:border-primary-600 dark:peer-hover:bg-primary-300 dark:peer-hover:border-primary-300':
           props.modelValue,
         'peer-focus-visible:ring peer-focus-visible:ring-primary-400/50 dark:peer-focus-visible:ring-primary-300/50':
-          !props.disabled,
+          !props.disabled
       },
 
       // Transitions
@@ -48,13 +48,12 @@ export default {
       // Misc
       {
         'cursor-pointer': !props.disabled,
-        'opacity-60 select-none pointer-events-none cursor-default':
-          props.disabled,
-      },
-    ],
+        'opacity-60 select-none pointer-events-none cursor-default': props.disabled
+      }
+    ]
   }),
   label: {
-    class: 'font-bold text-center w-full empty:hidden',
+    class: 'font-bold text-center w-full empty:hidden'
   },
   input: {
     class: [
@@ -81,16 +80,16 @@ export default {
 
       // Misc
       'appareance-none',
-      'cursor-pointer',
-    ],
+      'cursor-pointer'
+    ]
   },
   icon: ({ props }) => ({
     class: [
       ' mr-2',
       {
         'text-surface-600 dark:text-white/70': !props.modelValue,
-        'text-white dark:text-surface-900': props.modelValue,
-      },
-    ],
-  }),
-};
+        'text-white dark:text-surface-900': props.modelValue
+      }
+    ]
+  })
+}

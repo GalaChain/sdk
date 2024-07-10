@@ -1,7 +1,7 @@
 <script lang="ts">
-import TransferToken from '@/components/TransferToken.vue';
-import { h } from 'vue';
-import { defineComponent } from 'vue';
+import TransferToken from '@/components/TransferToken.vue'
+import { h } from 'vue'
+import { defineComponent } from 'vue'
 
 export default defineComponent({
   extends: TransferToken,
@@ -10,7 +10,7 @@ export default defineComponent({
 </script>
 
 <style lang="css">
-  @tailwind base;
-  @tailwind components;
-  @tailwind utilities;
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
 </style>

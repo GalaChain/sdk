@@ -1,158 +1,148 @@
 <script lang="ts" setup>
-import { MinusIcon, PlusIcon } from '@heroicons/vue/20/solid';
-import { computed, ref } from 'vue';
+import { MinusIcon, PlusIcon } from '@heroicons/vue/20/solid'
+import { computed, ref } from 'vue'
 import type {
   IFieldProps,
   IInputProps,
   INumberInputProps,
   IPasswordInputProps,
-  ITextAreaInputProps,
+  ITextAreaInputProps
 } from '../../types/input'
-import FormErrors from './Errors.vue';
+import FormErrors from './Errors.vue'
 import PrimePassword from 'primevue/password'
 import PrimeTextarea from 'primevue/textarea'
 import PrimeInputText from 'primevue/inputText'
 
 const props = defineProps<
-  IFieldProps &
-    (
-      | IInputProps
-      | INumberInputProps
-      | IPasswordInputProps
-      | ITextAreaInputProps
-    )
->();
+  IFieldProps & (IInputProps | INumberInputProps | IPasswordInputProps | ITextAreaInputProps)
+>()
 
 const emit = defineEmits<{
-  focus: [e: FocusEvent];
-  blur: [e: FocusEvent];
-}>();
+  focus: [e: FocusEvent]
+  blur: [e: FocusEvent]
+}>()
 
 const model = defineModel<string | number>({
-  default: '',
-});
+  default: ''
+})
 
-const container = ref<HTMLDivElement>();
-const touched = ref(false);
-const isFocused = ref(false);
+const container = ref<HTMLDivElement>()
+const touched = ref(false)
+const isFocused = ref(false)
 const ariaDescribedByNormalized = computed(() =>
   !props.ariaDescribedby
     ? []
     : Array.isArray(props.ariaDescribedby)
       ? props.ariaDescribedby
       : [props.ariaDescribedby]
-);
+)
 const shouldShowNumberControls = computed(() => {
   return (
     props.labelStyle !== 'floating' &&
     props.type === 'number' &&
     (props as INumberInputProps).controls
-  );
-});
+  )
+})
 
 const inputClass = computed(() => {
-  const { inputClass } = props;
+  const { inputClass } = props
   if (!inputClass) {
-    return 'w-full';
+    return 'w-full'
   } else {
     return typeof inputClass === 'string'
       ? `${inputClass} w-full`
-      : { ...inputClass, 'w-full': true };
+      : { ...inputClass, 'w-full': true }
   }
-});
+})
 
 const inputProps = computed(() => {
-  const { autocomplete, name, placeholder, readonly, required, type } = props;
+  const { autocomplete, name, placeholder, readonly, required, type } = props
   const baseProps = {
     autocomplete,
     name,
     placeholder,
     readonly,
     required,
-    type,
-  };
+    type
+  }
 
   if (type === 'password') {
     return {
       ...baseProps,
       feedback: (props as IPasswordInputProps).feedback,
-      toggleMask: (props as IPasswordInputProps).toggleMask,
-    };
+      toggleMask: (props as IPasswordInputProps).toggleMask
+    }
   }
   if (type === 'number') {
     return {
       ...baseProps,
-      max: !shouldShowNumberControls.value
-        ? (props as INumberInputProps).max
-        : undefined,
-      min: !shouldShowNumberControls.value
-        ? (props as INumberInputProps).min
-        : undefined,
-      step: (props as INumberInputProps).step,
-    };
+      max: !shouldShowNumberControls.value ? (props as INumberInputProps).max : undefined,
+      min: !shouldShowNumberControls.value ? (props as INumberInputProps).min : undefined,
+      step: (props as INumberInputProps).step
+    }
   }
   if (type === 'textarea') {
     return {
       ...baseProps,
       autoResize: (props as ITextAreaInputProps).autoResize,
-      rows: (props as ITextAreaInputProps).rows,
-    };
+      rows: (props as ITextAreaInputProps).rows
+    }
   }
 
-  return baseProps;
-});
+  return baseProps
+})
 
 const handleFocus = (e: FocusEvent) => {
-  isFocused.value = true;
-  emit('focus', e);
-};
+  isFocused.value = true
+  emit('focus', e)
+}
 
 const handleBlur = (e: FocusEvent) => {
-  isFocused.value = false;
+  isFocused.value = false
   if (!touched.value) {
-    touched.value = true;
+    touched.value = true
   }
   if (props.type === 'number' && model.value === '') {
     // a number input's parsed value is an empty string when it contains an invalid number format,
     // so there may still be text in the input. set to empty string to clear it.
     if (e.target) {
-      (e.target as HTMLInputElement).value = '';
+      ;(e.target as HTMLInputElement).value = ''
     }
   }
-  emit('blur', e);
-};
+  emit('blur', e)
+}
 
 const handleDecrement = (e: Event) => {
-  e.preventDefault();
-  const startValue = isNaN(+model.value) ? 0 : +model.value;
-  const { min, step } = props as INumberInputProps;
-  const newValue = startValue - (step ? parseFloat(step) : 1);
-  model.value = min !== undefined ? Math.max(newValue, min) : newValue;
-};
+  e.preventDefault()
+  const startValue = isNaN(+model.value) ? 0 : +model.value
+  const { min, step } = props as INumberInputProps
+  const newValue = startValue - (step ? parseFloat(step) : 1)
+  model.value = min !== undefined ? Math.max(newValue, min) : newValue
+}
 
 const handleIncrement = (e: Event) => {
-  e.preventDefault();
-  const startValue = isNaN(+model.value) ? 0 : +model.value;
-  const { max, step } = props as INumberInputProps;
-  const newValue = startValue + (step ? parseFloat(step) : 1);
-  model.value = max !== undefined ? Math.min(newValue, max) : newValue;
-};
+  e.preventDefault()
+  const startValue = isNaN(+model.value) ? 0 : +model.value
+  const { max, step } = props as INumberInputProps
+  const newValue = startValue + (step ? parseFloat(step) : 1)
+  model.value = max !== undefined ? Math.min(newValue, max) : newValue
+}
 
 const getAriaDescribedBy = (id?: string) => {
-  const value = [...ariaDescribedByNormalized.value];
+  const value = [...ariaDescribedByNormalized.value]
   if (id) {
     if (props.prefix) {
-      value.push(`${id}-prefix`);
+      value.push(`${id}-prefix`)
     }
     if (props.hint) {
-      value.push(`${id}-hint`);
+      value.push(`${id}-hint`)
     }
     if (props.errors?.length) {
-      value.push(`${id}-errors`);
+      value.push(`${id}-errors`)
     }
   }
-  return value.length ? value.join(' ') : undefined;
-};
+  return value.length ? value.join(' ') : undefined
+}
 </script>
 
 <template>
@@ -164,7 +154,7 @@ const getAriaDescribedBy = (id?: string) => {
       'floating-label': props.labelStyle === 'floating',
       'is-filled': model || (type === 'number' && model === 0),
       'is-focused': isFocused,
-      'with-number-controls': shouldShowNumberControls,
+      'with-number-controls': shouldShowNumberControls
     }"
   >
     <div class="relative">
@@ -175,7 +165,7 @@ const getAriaDescribedBy = (id?: string) => {
           'sr-only': labelStyle === 'hidden',
           'text-sm': labelStyle === 'floating' || labelSize === 'sm',
           'text-lg': labelStyle !== 'floating' && labelSize === 'lg',
-          'text-xl': labelStyle !== 'floating' && labelSize === 'xl',
+          'text-xl': labelStyle !== 'floating' && labelSize === 'xl'
         }"
         ><slot name="label" :label="label">{{ label }}</slot></label
       >
@@ -184,7 +174,7 @@ const getAriaDescribedBy = (id?: string) => {
         :prefix="prefix"
         :attrs="{
           id: `${container?.id}-prefix`,
-          class: 'prefix mb-2 text-sm text-surface-secondary',
+          class: 'prefix mb-2 text-sm text-surface-secondary'
         }"
       >
         <p
@@ -199,7 +189,7 @@ const getAriaDescribedBy = (id?: string) => {
         class="input-container"
         :class="{
           'mt-2': !labelStyle,
-          relative: shouldShowNumberControls,
+          relative: shouldShowNumberControls
         }"
       >
         <PrimePassword
@@ -207,7 +197,7 @@ const getAriaDescribedBy = (id?: string) => {
           v-model="model"
           :input-id="`${container?.id}-input`"
           :input-props="{
-            'aria-describedby': getAriaDescribedBy(container?.id),
+            'aria-describedby': getAriaDescribedBy(container?.id)
           }"
           :disabled="disabled"
           :input-class="inputClass"
@@ -221,17 +211,17 @@ const getAriaDescribedBy = (id?: string) => {
           v-else-if="type === 'textarea' && typeof model === 'string'"
           v-model="model"
           :input-props="{
-            'aria-describedby': getAriaDescribedBy(container?.id),
+            'aria-describedby': getAriaDescribedBy(container?.id)
           }"
           :disabled="disabled"
           :invalid="!!errors?.length"
           :pt="{
             root: {
-              class: inputClass,
-            },
+              class: inputClass
+            }
           }"
           :pt-options="{
-            mergeProps: true,
+            mergeProps: true
           }"
           v-bind="inputProps"
           @focus="handleFocus"
@@ -274,11 +264,7 @@ const getAriaDescribedBy = (id?: string) => {
       </div>
     </div>
     <slot name="hint" :hint="hint">
-      <p
-        v-if="hint"
-        :id="`${container?.id}-hint`"
-        class="mt-2 text-sm text-surface-secondary"
-      >
+      <p v-if="hint" :id="`${container?.id}-hint`" class="mt-2 text-sm text-surface-secondary">
         {{ hint }}
       </p>
     </slot>
