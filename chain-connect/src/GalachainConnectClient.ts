@@ -86,7 +86,7 @@ export class GalachainConnectClient {
         const dto = signatures.getPayloadToSign(prefixedPayload);
 
         const signer = await this.#provider.getSigner();
-        const signature = await signer.provider.send("personal_sign", [this.#address, dto]);
+        const signature = await signer.provider.send("personal_sign", ["0x" + this.#address, dto]);
 
         return await this.submit(url, method, { ...prefixedPayload, signature }, headers);
       }
