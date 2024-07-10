@@ -147,28 +147,102 @@ function getEthAddress(publicKey: string) {
   return checksumedEthAddress(addressLowerCased);
 }
 
-// the function below to calculate checksumed address is adapted from ethers.js
-// see: https://github.com/ethers-io/ethers.js/blob/main/src.ts/address/address.ts
+// // the function below to calculate checksumed address is adapted from ethers.js
+// // see: https://github.com/ethers-io/ethers.js/blob/main/src.ts/address/address.ts
+// function checksumedEthAddress(addressLowerCased: string): string {
+//   const chars = addressLowerCased.split("");
+
+//   const expanded = new Uint8Array(40);
+//   for (let i = 0; i < 40; i++) {
+//     expanded[i] = chars[i].charCodeAt(0);
+//   }
+
+//   const hashed = keccak256.digest(expanded);
+
+//   for (let i = 0; i < 40; i += 2) {
+//     if (hashed[i >> 1] >> 4 >= 8) {
+//       chars[i] = chars[i].toUpperCase();
+//     }
+//     if ((hashed[i >> 1] & 0x0f) >= 8) {
+//       chars[i + 1] = chars[i + 1].toUpperCase();
+//     }
+//   }
+
+//   return chars.join("");
+// }
+
 function checksumedEthAddress(addressLowerCased: string): string {
-  const chars = addressLowerCased.split("");
+  // Step 1: Input Validation
+  // Why: Ethereum addresses must adhere to a specific format to be valid.
+  // The regular expression ensures:
+  // - An optional '0x' prefix
+  // - Exactly 40 hexadecimal characters (case-insensitive)
+  // This validation is crucial because:
+  // 1. It prevents processing of invalid inputs, which could lead to errors or security vulnerabilities.
+  // 2. It ensures that the function only operates on well-formed Ethereum addresses.
+  // 3. It provides immediate feedback to the caller if the input is malformed.
+  if (!/^(0x)?[0-9a-fA-F]{40}$/.test(addressLowerCased)) {
+    throw new Error('Invalid Ethereum address format');
+  }
 
-  const expanded = new Uint8Array(40);
+  // Step 2: Address Cleaning
+  // Why: We need a standardized format for consistent processing.
+  // 1. Converting to lowercase ensures that the hash calculation is consistent regardless of input case.
+  // 2. Removing the '0x' prefix (if present) standardizes the input length to exactly 40 characters.
+  // This standardization is essential because:
+  // - It allows the checksum algorithm to work consistently across all valid inputs.
+  // - It simplifies subsequent processing steps by ensuring a uniform input format.
+  const cleanAddress = addressLowerCased.toLowerCase().replace(/^0x/, '');
+
+  // Step 3: Keccak-256 Hash Calculation
+  // Why: The Keccak-256 hash provides a unique, deterministic value for each address.
+  // This hash is crucial because:
+  // 1. It forms the basis for determining which characters in the address should be capitalized.
+  // 2. It ensures that the checksum is sensitive to the entire address, not just portions of it.
+  // 3. As a cryptographic hash function, it provides a high degree of uniqueness and collision resistance.
+  // This step is fundamental to the security and reliability of the checksum mechanism.
+  const hash = keccak256(cleanAddress);
+
+  // Step 4: Checksummed Address Creation
+  // Why: We create a unique capitalization pattern based on the address's hash.
+  // This process:
+  // 1. Generates a checksum that's integral to the address itself, not a separate entity.
+  // 2. Creates a human-readable format that's still machine-verifiable.
+  // 3. Allows for error detection in address transcription or transmission.
+  let checksumAddress = '0x'; // Start with '0x' to maintain the standard Ethereum address format
   for (let i = 0; i < 40; i++) {
-    expanded[i] = chars[i].charCodeAt(0);
+    // For each character, we check the corresponding nibble (4 bits) of the hash.
+    // Why use 8 as the threshold?
+    // 1. It creates a roughly 50/50 split between uppercase and lowercase characters.
+    // 2. This balance provides good error detection without making addresses too difficult to read or type.
+    // 3. It follows the EIP-55 standard, ensuring compatibility with other Ethereum tools and systems.
+    checksumAddress += parseInt(hash[i], 16) > 7 ? cleanAddress[i].toUpperCase() : cleanAddress[i];
   }
 
-  const hashed = keccak256.digest(expanded);
+  // Step 5: Checksum Verification
+  // Why: If the input address had mixed case, we need to verify it matches our calculated checksum.
+  // This step is critical because:
+  // 1. It catches incorrectly checksummed addresses, which could indicate typos or malicious intent.
+  // 2. It ensures that if a user provides a checksummed address, it's the correct checksum.
+  // 3. It maintains the integrity of the checksumming system by rejecting invalid checksums.
+if (addressLowerCased !== addressLowerCased.toLowerCase() && addressLowerCased.toLowerCase() !== checksumAddress.toLowerCase()) {
+  // This condition checks two things:
+  // 1. If the address is not all lowercase (address !== address.toLowerCase())
+  //    This indicates that the input address has some uppercase letters, suggesting it might be checksummed
+  // 2. If the lowercase version of the input address doesn't match the lowercase version of the calculated checksum address
+  //    This checks if the capitalization in the input address matches the expected checksum pattern
 
-  for (let i = 0; i < 40; i += 2) {
-    if (hashed[i >> 1] >> 4 >= 8) {
-      chars[i] = chars[i].toUpperCase();
-    }
-    if ((hashed[i >> 1] & 0x0f) >= 8) {
-      chars[i + 1] = chars[i + 1].toUpperCase();
-    }
-  }
+  // If both conditions are true, it means:
+  // - The input address has mixed case (suggesting it's meant to be checksummed)
+  // - But the capitalization doesn't match the correct checksum pattern
 
-  return chars.join("");
+  // In this case, we throw an error because the address is likely mistyped or incorrectly checksummed
+  throw new Error('Address is not correctly checksummed');
+}
+
+  // Step 6: Return Result
+  // Why: After all checks and transformations, we return the standardized, checksummed address.
+  return checksumAddress;
 }
 
 interface Secp256k1Signature {
