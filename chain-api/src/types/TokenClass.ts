@@ -28,7 +28,7 @@ import {
 } from "class-validator";
 import { JSONSchema } from "class-validator-jsonschema";
 
-import { BigNumberProperty, ChainKey } from "../utils";
+import { BigNumberProperty, ChainKey, ConstructorArgs } from "../utils";
 import { BigNumberIsPositive } from "../validators";
 import { ChainObject } from "./ChainObject";
 import { GC_NETWORK_ID } from "./contract";
@@ -40,6 +40,9 @@ export interface TokenClassKeyProperties {
   type: string;
   additionalKey: string;
 }
+
+export type TokenClassKeyBody = ConstructorArgs<TokenClassKey>;
+
 
 @JSONSchema({
   description: "Object representing the chain identifier of token class."
@@ -81,6 +84,8 @@ export class TokenClassKey extends ChainCallDTO {
     return false;
   }
 }
+
+export type TokenClassBody = ConstructorArgs<TokenClassKey>;
 
 export class TokenClass extends ChainObject {
   public static INDEX_KEY = "GCTI";

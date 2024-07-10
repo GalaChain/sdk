@@ -31,6 +31,7 @@ import { BigNumberIsInteger, BigNumberIsNotNegative } from "../validators/decora
 import { ChainObject } from "./ChainObject";
 import { TokenClass, TokenClassKey, TokenClassKeyProperties } from "./TokenClass";
 import { ChainCallDTO } from "./dtos";
+import { ConstructorArgs } from "../utils";
 
 export interface TokenInstanceKeyProperties {
   collection: string;
@@ -39,6 +40,8 @@ export interface TokenInstanceKeyProperties {
   additionalKey: string;
   instance: BigNumber;
 }
+
+export type TokenInstanceKeyBody = ConstructorArgs<TokenInstanceKey>;
 
 @JSONSchema({
   description: "Object representing the chain identifier of token instance."

@@ -28,7 +28,7 @@ import {
 } from "class-validator";
 import { JSONSchema } from "class-validator-jsonschema";
 
-import { BigNumberProperty } from "../utils";
+import { BigNumberProperty, ConstructorArgs } from "../utils";
 import { BigNumberIsInteger, BigNumberIsNotNegative } from "../validators";
 import { BurnTokenQuantity } from "./BurnTokenQuantity";
 import { TokenBurnCounter } from "./TokenBurnCounter";
@@ -36,10 +36,17 @@ import { TokenInstance } from "./TokenInstance";
 import { ChainCallDTO } from "./dtos";
 import { BatchMintTokenDto } from "./mint";
 
+export type FetchBurnsParams = ConstructorArgs<FetchBurnsDto>;
+
 @JSONSchema({
   description: "Contains parameters for fetching burns."
 })
 export class FetchBurnsDto extends ChainCallDTO {
+  constructor(params: FetchBurnsParams) {
+    super();
+    Object.assign(this, params);
+  }
+
   @JSONSchema({
     description: "The user who burned the token."
   })
@@ -90,10 +97,17 @@ export class FetchBurnsDto extends ChainCallDTO {
   public created?: number;
 }
 
+export type BurnTokensParams = ConstructorArgs<BurnTokensDto>;
+
 @JSONSchema({
   description: "Defines burns to be created."
 })
 export class BurnTokensDto extends ChainCallDTO {
+  constructor(params: BurnTokensParams) {
+    super();
+    Object.assign(this, params);
+  }
+
   @JSONSchema({
     description:
       "Array of token instances of token to be burned. In case of fungible tokens, tokenInstance.instance field " +
@@ -113,6 +127,8 @@ export class BurnTokensDto extends ChainCallDTO {
   owner?: string;
 }
 
+export type BurnAndMintParams = ConstructorArgs<BurnAndMintDto>;
+
 @JSONSchema({
   description:
     "Permits an atomic burn-to-mint transaction. Supply the token(s) to be burned, and the token(s) to be minted. " +
@@ -124,6 +140,11 @@ export class BurnTokensDto extends ChainCallDTO {
     "All operations occur in the same transaction, meaning either all succeed or none are written to chain."
 })
 export class BurnAndMintDto extends ChainCallDTO {
+  constructor(params: BurnAndMintParams) {
+    super();
+    Object.assign(this, params);
+  }
+
   static MAX_ARR_SIZE = 1000;
 
   @JSONSchema({
@@ -151,10 +172,17 @@ export class BurnAndMintDto extends ChainCallDTO {
   mintDto: BatchMintTokenDto;
 }
 
+export type FetchBurnCountersWithPaginationParams = ConstructorArgs<FetchBurnCountersWithPaginationDto>;
+
 @JSONSchema({
   description: "Contains parameters for fetching TokenBurnCounters with pagination."
 })
 export class FetchBurnCountersWithPaginationDto extends ChainCallDTO {
+  constructor(params: FetchBurnCountersWithPaginationParams) {
+    super();
+    Object.assign(this, params);
+  }
+
   static readonly MAX_LIMIT = 10 * 1000;
   static readonly DEFAULT_LIMIT = 1000;
 
@@ -205,6 +233,8 @@ export class FetchBurnCountersWithPaginationDto extends ChainCallDTO {
   @IsInt()
   limit?: number;
 }
+
+export type FetchBurnCountersBody = ConstructorArgs<FetchBurnCountersResponse>;
 
 export class FetchBurnCountersResponse extends ChainCallDTO {
   @JSONSchema({ description: "List of token burn counters." })

@@ -39,15 +39,24 @@ import { TokenClass, TokenClassKey } from "./TokenClass";
 import { TokenInstance, TokenInstanceKey } from "./TokenInstance";
 import { ChainCallDTO } from "./dtos";
 
+export type FetchTokenClassesParams = ConstructorArgs<FetchTokenClassesDto>;
+
 @JSONSchema({
   description: "Contains list of objects representing token classes to fetch."
 })
 export class FetchTokenClassesDto extends ChainCallDTO {
+  constructor(params: FetchTokenClassesParams) {
+    super();
+    Object.assign(this, params);
+  }
+
   @ValidateNested({ each: true })
   @Type(() => TokenClassKey)
   @ArrayNotEmpty()
   tokenClasses: Array<TokenClassKey>;
 }
+
+export type FetchTokenClassesWithPaginationParams = ConstructorArgs<FetchTokenClassesWithPaginationDto>;
 
 @JSONSchema({
   description:
@@ -55,13 +64,13 @@ export class FetchTokenClassesDto extends ChainCallDTO {
     "pagination, and optionality of TokenClassKey properties."
 })
 export class FetchTokenClassesWithPaginationDto extends ChainCallDTO {
-  static readonly MAX_LIMIT = 10 * 1000;
-  static readonly DEFAULT_LIMIT = 1000;
-
-  constructor(params: ConstructorArgs<FetchTokenClassesWithPaginationDto>) {
+  constructor(params: FetchTokenClassesWithPaginationParams) {
     super();
     Object.assign(this, params);
   }
+
+  static readonly MAX_LIMIT = 10 * 1000;
+  static readonly DEFAULT_LIMIT = 1000;
 
   @JSONSchema({
     description: "Token collection. Optional, but required if category is provided."
@@ -111,6 +120,8 @@ export class FetchTokenClassesWithPaginationDto extends ChainCallDTO {
   limit?: number;
 }
 
+export type FetchTokenClassesResponseBody = ConstructorArgs<FetchTokenClassesResponse>;
+
 export class FetchTokenClassesResponse extends ChainCallDTO {
   @JSONSchema({ description: "List of Token Classes." })
   @ValidateNested({ each: true })
@@ -123,11 +134,13 @@ export class FetchTokenClassesResponse extends ChainCallDTO {
   nextPageBookmark?: string;
 }
 
+export type FetchTokenInstancesParams = ConstructorArgs<FetchTokenInstancesDto>;
+
 @JSONSchema({
   description: "Contains list of objects representing token instances to fetch."
 })
 export class FetchTokenInstancesDto extends ChainCallDTO {
-  constructor(params: ConstructorArgs<FetchTokenInstancesDto>) {
+  constructor(params: FetchTokenInstancesParams) {
     super();
     Object.assign(this, params);
   }
@@ -138,11 +151,18 @@ export class FetchTokenInstancesDto extends ChainCallDTO {
   tokenInstances: Array<TokenInstanceKey>;
 }
 
+export type CreateTokenClassParams = ConstructorArgs<CreateTokenClassDto>;
+
 @JSONSchema({
   description:
     "Contains properties of token class to be created. Actual token units and NFT instances are created on mint."
 })
 export class CreateTokenClassDto extends ChainCallDTO {
+  constructor(params: CreateTokenClassParams) {
+    super();
+    Object.assign(this, params);
+  }
+
   static DEFAULT_NETWORK = "GC";
   static DEFAULT_DECIMALS = 0;
   static DEFAULT_MAX_CAPACITY = new BigNumber("Infinity");
@@ -150,11 +170,6 @@ export class CreateTokenClassDto extends ChainCallDTO {
   static INITIAL_MINT_ALLOWANCE = new BigNumber("0");
   static INITIAL_TOTAL_SUPPLY = new BigNumber("0");
   static INITIAL_TOTAL_BURNED = new BigNumber("0");
-
-  constructor(params: ConstructorArgs<CreateTokenClassDto>) {
-    super();
-    Object.assign(this, params);
-  }
 
   @JSONSchema({
     description:
@@ -279,6 +294,8 @@ export class CreateTokenClassDto extends ChainCallDTO {
   authorities?: string[];
 }
 
+export type UpdateTokenClassParams = ConstructorArgs<UpdateTokenClassDto>;
+
 export class UpdateTokenClassDto extends ChainCallDTO {
   /* todo: should these fields be update-able? probably not, unless in exceptional circumstances.
            these are more complicted, as they track properties with second order effects.
@@ -294,7 +311,7 @@ export class UpdateTokenClassDto extends ChainCallDTO {
   network?: string;
   */
 
-  constructor(params: ConstructorArgs<UpdateTokenClassDto>) {
+  constructor(params: UpdateTokenClassParams) {
     super();
     Object.assign(this, params);
   }
@@ -361,11 +378,12 @@ export class UpdateTokenClassDto extends ChainCallDTO {
   overwriteAuthorities?: boolean;
 }
 
+export type FetchBalancesParams = ConstructorArgs<FetchBalancesDto>;
 @JSONSchema({
   description: "Contains parameters for fetching balances. Each parameter is optional."
 })
 export class FetchBalancesDto extends ChainCallDTO {
-  constructor(params: ConstructorArgs<FetchBalancesDto>) {
+  constructor(params: FetchBalancesParams) {
     super();
     Object.assign(this, params);
   }
@@ -405,6 +423,8 @@ export class FetchBalancesDto extends ChainCallDTO {
   additionalKey?: string;
 }
 
+export type FetchBalancesWithPaginationParams = ConstructorArgs<FetchBalancesWithPaginationDto>;
+
 @JSONSchema({
   description: "Contains parameters for fetching balances. Each parameter is optional."
 })
@@ -412,7 +432,7 @@ export class FetchBalancesWithPaginationDto extends ChainCallDTO {
   static readonly MAX_LIMIT = 10 * 1000;
   static readonly DEFAULT_LIMIT = 1000;
 
-  constructor(params: ConstructorArgs<FetchBalancesWithPaginationDto>) {
+  constructor(params: FetchBalancesWithPaginationParams) {
     super();
     Object.assign(this, params);
   }
@@ -471,11 +491,13 @@ export class FetchBalancesWithPaginationDto extends ChainCallDTO {
   limit?: number;
 }
 
+export type TokenBalanceWithMetadataParams = ConstructorArgs<TokenBalanceWithMetadata>;
+
 @JSONSchema({
   description: "Response DTO containing a TokenBalance and the balance's corresponding TokenClass."
 })
 export class TokenBalanceWithMetadata extends ChainCallDTO {
-  constructor(params: ConstructorArgs<TokenBalanceWithMetadata>) {
+  constructor(params: TokenBalanceWithMetadataParams) {
     super();
     Object.assign(this, params);
   }
@@ -496,6 +518,8 @@ export class TokenBalanceWithMetadata extends ChainCallDTO {
   token: TokenClass;
 }
 
+export type FetchBalancesWithTokenMetadataBody = ConstructorArgs<FetchBalancesWithTokenMetadataResponse>;
+
 export class FetchBalancesWithTokenMetadataResponse extends ChainCallDTO {
   @JSONSchema({ description: "List of balances with token metadata." })
   @ValidateNested({ each: true })
@@ -508,12 +532,14 @@ export class FetchBalancesWithTokenMetadataResponse extends ChainCallDTO {
   nextPageBookmark?: string;
 }
 
+export type TransferTokenParams = ConstructorArgs<TransferTokenDto>;
+
 @JSONSchema({
   description:
     "Experimental: After submitting request to RequestMintAllowance, follow up with FulfillMintAllowance."
 })
 export class TransferTokenDto extends ChainCallDTO {
-  constructor(params: ConstructorArgs<TransferTokenDto>) {
+  constructor(params: TransferTokenParams) {
     super();
     Object.assign(this, params);
   }

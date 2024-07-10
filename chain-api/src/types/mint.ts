@@ -24,6 +24,8 @@ import { TokenClassKey } from "./TokenClass";
 import { AllowanceKey, MintRequestDto } from "./common";
 import { ChainCallDTO } from "./dtos";
 
+export type MintTokenParams = ConstructorArgs<MintTokenDto>;
+
 @JSONSchema({
   description:
     "Describes an action to mint a token. " +
@@ -32,7 +34,7 @@ import { ChainCallDTO } from "./dtos";
 export class MintTokenDto extends ChainCallDTO {
   static MAX_NFT_MINT_SIZE = 1000;
 
-  constructor(params: ConstructorArgs<MintTokenDto>) {
+  constructor(params: MintTokenParams) {
     super();
     Object.assign(this, params);
   }
@@ -66,13 +68,15 @@ export class MintTokenDto extends ChainCallDTO {
   public allowanceKey?: AllowanceKey;
 }
 
+export type MintTokenWithAllowanceParams = ConstructorArgs<MintTokenWithAllowanceDto>;
+
 @JSONSchema({
   description:
     "Describes an action to grant allowance to self and mint token to owner in single transaction. " +
     "This action will fail is the calling user lacks the authority to grant MINT allowances."
 })
 export class MintTokenWithAllowanceDto extends ChainCallDTO {
-  constructor(params: ConstructorArgs<MintTokenWithAllowanceDto>) {
+  constructor(params: MintTokenWithAllowanceParams) {
     super();
     Object.assign(this, params);
   }
@@ -109,6 +113,7 @@ export class MintTokenWithAllowanceDto extends ChainCallDTO {
   quantity: BigNumber;
 }
 
+export type BatchMintTokenParams = ConstructorArgs<BatchMintTokenDto>;
 @JSONSchema({
   description:
     "Describes an action to transferToken a token. " +
@@ -117,7 +122,7 @@ export class MintTokenWithAllowanceDto extends ChainCallDTO {
 export class BatchMintTokenDto extends ChainCallDTO {
   static MAX_ARR_SIZE = 1000;
 
-  constructor(params: ConstructorArgs<BatchMintTokenDto>) {
+  constructor(params: BatchMintTokenParams) {
     super();
     Object.assign(this, params);
   }
@@ -132,6 +137,8 @@ export class BatchMintTokenDto extends ChainCallDTO {
   mintDtos: Array<MintTokenDto>;
 }
 
+export type HighThroughputMintTokenParams = ConstructorArgs<HighThroughputMintTokenDto>;
+
 /**
  * Experimental: Defines an action to mint a token. High-throughput implementation.
  *
@@ -143,7 +150,7 @@ export class BatchMintTokenDto extends ChainCallDTO {
     "DTO properties backwards-compatible with prior MintTokenDto,"
 })
 export class HighThroughputMintTokenDto extends ChainCallDTO {
-  constructor(params: ConstructorArgs<HighThroughputMintTokenDto>) {
+  constructor(params: HighThroughputMintTokenParams) {
     super();
     Object.assign(this, params);
   }
@@ -185,12 +192,14 @@ export class HighThroughputMintTokenDto extends ChainCallDTO {
   public allowanceKey?: AllowanceKey;
 }
 
+export type FulfillMintParams = ConstructorArgs<FulfillMintDto>;
+
 @JSONSchema({
   description:
     "Experimental: After submitting request to RequestMintAllowance, follow up with FulfillMintAllowance."
 })
 export class FulfillMintDto extends ChainCallDTO {
-  constructor(params: ConstructorArgs<FulfillMintDto>) {
+  constructor(params: FulfillMintParams) {
     super();
     Object.assign(this, params);
   }
@@ -205,11 +214,13 @@ export class FulfillMintDto extends ChainCallDTO {
   requests: MintRequestDto[];
 }
 
+export type FetchMintRequestsParams = ConstructorArgs<FetchMintRequestsDto>;
+
 @JSONSchema({
   description: "Fetch MintRequest or MintAllowanceRequest objects off chain."
 })
 export class FetchMintRequestsDto extends ChainCallDTO {
-  constructor(params: ConstructorArgs<FetchMintRequestsDto>) {
+  constructor(params: FetchMintRequestsParams) {
     super();
     Object.assign(this, params);
   }
@@ -245,11 +256,13 @@ export class FetchMintRequestsDto extends ChainCallDTO {
   endTimestamp: number;
 }
 
+export type FetchTokenSupplyParams = ConstructorArgs<FetchTokenSupplyDto>;
+
 @JSONSchema({
   description: "Fetch Mint, Burn or Mint Allowance supply totals off chain."
 })
 export class FetchTokenSupplyDto extends ChainCallDTO {
-  constructor(params: ConstructorArgs<FetchTokenSupplyDto>) {
+  constructor(params: FetchTokenSupplyParams) {
     super();
     Object.assign(this, params);
   }
@@ -279,6 +292,8 @@ export class FetchTokenSupplyDto extends ChainCallDTO {
   additionalKey: string;
 }
 
+export type FetchTokenSupplyResponseBody = ConstructorArgs<FetchTokenSupplyDto>;
+
 @JSONSchema({
   description: "Fetch MintRequest or MintAllowanceRequest objects off chain and return the supply."
 })
@@ -295,6 +310,8 @@ export class FetchTokenSupplyResponse extends ChainCallDTO {
   supply: BigNumber;
 }
 
+export type PatchMintAllowanceRequestParams = ConstructorArgs<PatchMintAllowanceRequestDto>;
+
 @JSONSchema({
   description:
     "Write a MintAllowanceRequest object to chain. " +
@@ -305,11 +322,10 @@ export class FetchTokenSupplyResponse extends ChainCallDTO {
     "to a correct running total."
 })
 export class PatchMintAllowanceRequestDto extends ChainCallDTO {
-  constructor(params: ConstructorArgs<PatchMintAllowanceRequestDto>) {
+  constructor(params: PatchMintAllowanceRequestParams) {
     super();
     Object.assign(this, params);
   }
-
 
   @JSONSchema({
     description: "Token collection."
@@ -343,6 +359,8 @@ export class PatchMintAllowanceRequestDto extends ChainCallDTO {
   totalKnownMintAllowancesCount: BigNumber;
 }
 
+export type PatchMintRequestParams = ConstructorArgs<PatchMintRequestDto>;
+
 @JSONSchema({
   description:
     "Write MintRequest objects to chain. " +
@@ -353,7 +371,7 @@ export class PatchMintAllowanceRequestDto extends ChainCallDTO {
     "to a correct running total."
 })
 export class PatchMintRequestDto extends ChainCallDTO {
-  constructor(params: ConstructorArgs<PatchMintRequestDto>) {
+  constructor(params: PatchMintRequestParams) {
     super();
     Object.assign(this, params);
   }

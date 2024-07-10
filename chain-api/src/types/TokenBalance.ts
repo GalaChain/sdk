@@ -31,6 +31,7 @@ import {
   BigNumberArrayProperty,
   BigNumberProperty,
   ChainKey,
+  ConstructorArgs,
   ValidationFailedError,
   getValidationErrorInfo
 } from "../utils";
@@ -95,6 +96,9 @@ export class TokenNotInUseError extends ValidationFailedError {
     super(`Token instance ${tokenInstanceKey} is not in use`, { owner, tokenInstanceKey });
   }
 }
+
+
+export type TokenBalanceBody = ConstructorArgs<TokenBalance>;
 
 export class TokenBalance extends ChainObject {
   @Exclude()
