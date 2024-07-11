@@ -18,10 +18,13 @@ import { ArrayMaxSize, ArrayNotEmpty, IsNotEmpty, IsOptional, ValidateNested } f
 import { JSONSchema } from "class-validator-jsonschema";
 
 import { BigNumberProperty } from "../utils";
+import { ConstructorArgs } from "../utils/type-utils";
 import { ArrayUniqueObjects, BigNumberIsNotNegative } from "../validators";
 import { TokenClassKey } from "./TokenClass";
 import { AllowanceKey, MintRequestDto } from "./common";
 import { ChainCallDTO } from "./dtos";
+
+export type MintTokenParams = ConstructorArgs<MintTokenDto>;
 
 @JSONSchema({
   description:
@@ -30,6 +33,11 @@ import { ChainCallDTO } from "./dtos";
 })
 export class MintTokenDto extends ChainCallDTO {
   static MAX_NFT_MINT_SIZE = 1000;
+
+  constructor(params?: MintTokenParams) {
+    super();
+    Object.assign(this, params);
+  }
 
   @JSONSchema({
     description: "Token class of token to be minted."
@@ -60,12 +68,19 @@ export class MintTokenDto extends ChainCallDTO {
   public allowanceKey?: AllowanceKey;
 }
 
+export type MintTokenWithAllowanceParams = ConstructorArgs<MintTokenWithAllowanceDto>;
+
 @JSONSchema({
   description:
     "Describes an action to grant allowance to self and mint token to owner in single transaction. " +
     "This action will fail is the calling user lacks the authority to grant MINT allowances."
 })
 export class MintTokenWithAllowanceDto extends ChainCallDTO {
+  constructor(params?: MintTokenWithAllowanceParams) {
+    super();
+    Object.assign(this, params);
+  }
+
   @JSONSchema({
     description: "Token class of token to be minted."
   })
@@ -98,6 +113,7 @@ export class MintTokenWithAllowanceDto extends ChainCallDTO {
   quantity: BigNumber;
 }
 
+export type BatchMintTokenParams = ConstructorArgs<BatchMintTokenDto>;
 @JSONSchema({
   description:
     "Describes an action to transferToken a token. " +
@@ -105,6 +121,11 @@ export class MintTokenWithAllowanceDto extends ChainCallDTO {
 })
 export class BatchMintTokenDto extends ChainCallDTO {
   static MAX_ARR_SIZE = 1000;
+
+  constructor(params?: BatchMintTokenParams) {
+    super();
+    Object.assign(this, params);
+  }
 
   @JSONSchema({
     description: "DTOs of tokens to mint."
@@ -115,6 +136,8 @@ export class BatchMintTokenDto extends ChainCallDTO {
   @ArrayMaxSize(BatchMintTokenDto.MAX_ARR_SIZE)
   mintDtos: Array<MintTokenDto>;
 }
+
+export type HighThroughputMintTokenParams = ConstructorArgs<HighThroughputMintTokenDto>;
 
 /**
  * Experimental: Defines an action to mint a token. High-throughput implementation.
@@ -127,6 +150,11 @@ export class BatchMintTokenDto extends ChainCallDTO {
     "DTO properties backwards-compatible with prior MintTokenDto,"
 })
 export class HighThroughputMintTokenDto extends ChainCallDTO {
+  constructor(params?: HighThroughputMintTokenParams) {
+    super();
+    Object.assign(this, params);
+  }
+
   // todo: remove all these duplicated properties
   // it seems something about our @GalaTransaction decorator does not pass through
   // parent properties. Leaving this class empty with just the `extends MintTokenDto`
@@ -164,11 +192,18 @@ export class HighThroughputMintTokenDto extends ChainCallDTO {
   public allowanceKey?: AllowanceKey;
 }
 
+export type FulfillMintParams = ConstructorArgs<FulfillMintDto>;
+
 @JSONSchema({
   description:
     "Experimental: After submitting request to RequestMintAllowance, follow up with FulfillMintAllowance."
 })
 export class FulfillMintDto extends ChainCallDTO {
+  constructor(params?: FulfillMintParams) {
+    super();
+    Object.assign(this, params);
+  }
+
   static MAX_ARR_SIZE = 1000;
 
   @ValidateNested({ each: true })
@@ -179,10 +214,17 @@ export class FulfillMintDto extends ChainCallDTO {
   requests: MintRequestDto[];
 }
 
+export type FetchMintRequestsParams = ConstructorArgs<FetchMintRequestsDto>;
+
 @JSONSchema({
   description: "Fetch MintRequest or MintAllowanceRequest objects off chain."
 })
 export class FetchMintRequestsDto extends ChainCallDTO {
+  constructor(params?: FetchMintRequestsParams) {
+    super();
+    Object.assign(this, params);
+  }
+
   @JSONSchema({
     description: "Token collection."
   })
@@ -214,10 +256,17 @@ export class FetchMintRequestsDto extends ChainCallDTO {
   endTimestamp: number;
 }
 
+export type FetchTokenSupplyParams = ConstructorArgs<FetchTokenSupplyDto>;
+
 @JSONSchema({
   description: "Fetch Mint, Burn or Mint Allowance supply totals off chain."
 })
 export class FetchTokenSupplyDto extends ChainCallDTO {
+  constructor(params?: FetchTokenSupplyParams) {
+    super();
+    Object.assign(this, params);
+  }
+
   @JSONSchema({
     description: "Token collection."
   })
@@ -243,16 +292,25 @@ export class FetchTokenSupplyDto extends ChainCallDTO {
   additionalKey: string;
 }
 
+export type FetchTokenSupplyResponseBody = ConstructorArgs<FetchTokenSupplyDto>;
+
 @JSONSchema({
   description: "Fetch MintRequest or MintAllowanceRequest objects off chain and return the supply."
 })
 export class FetchTokenSupplyResponse extends ChainCallDTO {
+  constructor(params?: ConstructorArgs<FetchTokenSupplyResponse>) {
+    super();
+    Object.assign(this, params);
+  }
+
   @JSONSchema({
     description: "Total known supply at time of chaincode execution."
   })
   @BigNumberProperty()
   supply: BigNumber;
 }
+
+export type PatchMintAllowanceRequestParams = ConstructorArgs<PatchMintAllowanceRequestDto>;
 
 @JSONSchema({
   description:
@@ -264,6 +322,11 @@ export class FetchTokenSupplyResponse extends ChainCallDTO {
     "to a correct running total."
 })
 export class PatchMintAllowanceRequestDto extends ChainCallDTO {
+  constructor(params?: PatchMintAllowanceRequestParams) {
+    super();
+    Object.assign(this, params);
+  }
+
   @JSONSchema({
     description: "Token collection."
   })
@@ -296,6 +359,8 @@ export class PatchMintAllowanceRequestDto extends ChainCallDTO {
   totalKnownMintAllowancesCount: BigNumber;
 }
 
+export type PatchMintRequestParams = ConstructorArgs<PatchMintRequestDto>;
+
 @JSONSchema({
   description:
     "Write MintRequest objects to chain. " +
@@ -306,6 +371,11 @@ export class PatchMintAllowanceRequestDto extends ChainCallDTO {
     "to a correct running total."
 })
 export class PatchMintRequestDto extends ChainCallDTO {
+  constructor(params?: PatchMintRequestParams) {
+    super();
+    Object.assign(this, params);
+  }
+
   @JSONSchema({
     description: "Token collection."
   })

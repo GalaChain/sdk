@@ -28,7 +28,7 @@ import {
 } from "class-validator";
 import { JSONSchema } from "class-validator-jsonschema";
 
-import { BigNumberProperty, EnumProperty } from "../utils";
+import { BigNumberProperty, ConstructorArgs, EnumProperty } from "../utils";
 import { ArrayUniqueObjects, BigNumberIsInteger, BigNumberIsPositive } from "../validators";
 import { GrantAllowanceQuantity } from "./GrantAllowance";
 import { TokenAllowance } from "./TokenAllowance";
@@ -36,10 +36,17 @@ import { TokenInstance, TokenInstanceKey, TokenInstanceQueryKey } from "./TokenI
 import { AllowanceKey, AllowanceType, MintRequestDto } from "./common";
 import { ChainCallDTO } from "./dtos";
 
+export type FetchAllowancesParams = ConstructorArgs<FetchAllowancesDto>;
+
 @JSONSchema({
   description: "Contains parameters for fetching allowances with pagination."
 })
 export class FetchAllowancesDto extends ChainCallDTO {
+  constructor(params?: FetchAllowancesParams) {
+    super();
+    Object.assign(this, params);
+  }
+
   static readonly MAX_LIMIT = 10 * 1000;
   static readonly DEFAULT_LIMIT = 1000;
 
@@ -184,6 +191,8 @@ export class FetchAllowancesLegacyDto extends ChainCallDTO {
   bookmark?: string;
 }
 
+export type FetchAllowancesBody = ConstructorArgs<FetchAllowancesResponse>;
+
 export class FetchAllowancesResponse extends ChainCallDTO {
   @JSONSchema({ description: "List of allowances." })
   @ValidateNested({ each: true })
@@ -196,10 +205,17 @@ export class FetchAllowancesResponse extends ChainCallDTO {
   nextPageBookmark?: string;
 }
 
+export type DeleteAllowancesParams = ConstructorArgs<DeleteAllowancesDto>;
+
 @JSONSchema({
   description: "Contains parameters for deleting allowances for a calling user."
 })
 export class DeleteAllowancesDto extends ChainCallDTO {
+  constructor(params?: DeleteAllowancesParams) {
+    super();
+    Object.assign(this, params);
+  }
+
   @JSONSchema({
     description: "A user who can use an allowance."
   })
@@ -253,10 +269,17 @@ export class DeleteAllowancesDto extends ChainCallDTO {
   allowanceType?: AllowanceType;
 }
 
+export type GrantAllowanceParams = ConstructorArgs<GrantAllowanceDto>;
+
 @JSONSchema({
   description: "Defines allowances to be created."
 })
 export class GrantAllowanceDto extends ChainCallDTO {
+  constructor(params?: GrantAllowanceParams) {
+    super();
+    Object.assign(this, params);
+  }
+
   static DEFAULT_EXPIRES = 0;
 
   @JSONSchema({
@@ -300,6 +323,8 @@ export class GrantAllowanceDto extends ChainCallDTO {
   expires?: number;
 }
 
+export type HighThroughputGrantAllowanceParams = ConstructorArgs<HighThroughputGrantAllowanceDto>;
+
 /**
  * Experimental: Defines allowances to be created. High-throughput implementation.
  *
@@ -312,6 +337,11 @@ export class GrantAllowanceDto extends ChainCallDTO {
     "exception that this implementation only supports AllowanceType.Mint."
 })
 export class HighThroughputGrantAllowanceDto extends ChainCallDTO {
+  constructor(params?: HighThroughputGrantAllowanceParams) {
+    super();
+    Object.assign(this, params);
+  }
+
   // todo: remove all these duplicated properties
   // it seems something about our @GalaTransaction decorator does not pass through
   // parent properties. Leaving this class empty with just the `extends GrantAllowanceDto`
@@ -375,6 +405,8 @@ export class FulfillMintAllowanceDto extends ChainCallDTO {
   requests: MintRequestDto[];
 }
 
+export type FullAllowanceCheckParams = ConstructorArgs<FullAllowanceCheckDto>;
+
 @JSONSchema({
   description:
     "Fetch one or more balances, verify all owned TokenInstances have at least one available " +
@@ -382,6 +414,11 @@ export class FulfillMintAllowanceDto extends ChainCallDTO {
     "be returned in the response."
 })
 export class FullAllowanceCheckDto extends ChainCallDTO {
+  constructor(params?: FullAllowanceCheckParams) {
+    super();
+    Object.assign(this, params);
+  }
+
   @JSONSchema({
     description: "Person who owns the balance(s). If the value is missing, chaincode caller is used."
   })
@@ -432,10 +469,17 @@ export class FullAllowanceCheckDto extends ChainCallDTO {
   allowanceType?: AllowanceType;
 }
 
+export type FullAllowanceCheckResParams = ConstructorArgs<FullAllowanceCheckResDto>;
+
 @JSONSchema({
   description: "Response Data Transfer Object for FullLockAllowance request."
 })
 export class FullAllowanceCheckResDto extends ChainCallDTO {
+  constructor(params?: FullAllowanceCheckResParams) {
+    super();
+    Object.assign(this, params);
+  }
+
   @JSONSchema({
     description: "True if all resulting token(s) have active/un-expired allowances available."
   })
@@ -448,8 +492,10 @@ export class FullAllowanceCheckResDto extends ChainCallDTO {
   @ValidateNested({ each: true })
   @Type(() => TokenInstanceKey)
   @ArrayNotEmpty()
-  missing: Array<TokenInstanceKey>;
+  missing?: Array<TokenInstanceKey>;
 }
+
+export type RefreshAllowanceParams = ConstructorArgs<RefreshAllowanceDto>;
 
 @JSONSchema({
   description:
@@ -457,6 +503,11 @@ export class FullAllowanceCheckResDto extends ChainCallDTO {
     "If quantity needs updating, grant a new allowance instead."
 })
 export class RefreshAllowanceDto extends ChainCallDTO {
+  constructor(params?: RefreshAllowanceParams) {
+    super();
+    Object.assign(this, params);
+  }
+
   @Type(() => AllowanceKey)
   @IsNotEmpty()
   public allowanceKey: AllowanceKey;
@@ -471,12 +522,19 @@ export class RefreshAllowanceDto extends ChainCallDTO {
   public expires: number;
 }
 
+export type RefreshAllowancesParams = ConstructorArgs<RefreshAllowancesDto>;
+
 @JSONSchema({
   description:
     "Refresh the uses or expiration date of an existing allowance. " +
     "If quantity needs updating, grant a new allowance instead."
 })
 export class RefreshAllowancesDto extends ChainCallDTO {
+  constructor(params?: RefreshAllowancesParams) {
+    super();
+    Object.assign(this, params);
+  }
+
   @ValidateNested({ each: true })
   @Type(() => RefreshAllowanceDto)
   @ArrayNotEmpty()

@@ -25,6 +25,7 @@ import {
 } from "class-validator";
 import { JSONSchema } from "class-validator-jsonschema";
 
+import { ConstructorArgs } from "../utils";
 import { ChainKey } from "../utils/chain-decorators";
 import { BigNumberProperty } from "../utils/transform-decorators";
 import { BigNumberIsInteger, BigNumberIsNotNegative } from "../validators/decorators";
@@ -39,6 +40,8 @@ export interface TokenInstanceKeyProperties {
   additionalKey: string;
   instance: BigNumber;
 }
+
+export type TokenInstanceKeyBody = ConstructorArgs<TokenInstanceKey>;
 
 @JSONSchema({
   description: "Object representing the chain identifier of token instance."
