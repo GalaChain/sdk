@@ -16,9 +16,11 @@ import { BigNumber } from "bignumber.js";
 import { Exclude } from "class-transformer";
 import { IsDefined, IsInt, IsNotEmpty, IsPositive } from "class-validator";
 
-import { BigNumberProperty, ChainKey } from "../utils";
+import { BigNumberProperty, ChainKey, ConstructorArgs } from "../utils";
 import { BigNumberIsInteger, BigNumberIsNotNegative } from "../validators";
 import { ChainObject } from "./ChainObject";
+
+export type TokenBurnBody = ConstructorArgs<TokenBurn>;
 
 export class TokenBurn extends ChainObject {
   @Exclude()
