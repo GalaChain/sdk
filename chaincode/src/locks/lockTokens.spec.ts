@@ -12,19 +12,13 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-import {
-  GalaChainResponse,
-  LockTokenDto,
-  TokenBalance,
-  TokenHold,
-  ValidationFailedError,
-  createValidDTO
-} from "@gala-chain/api";
+import { GalaChainResponse, LockTokenDto, TokenBalance, TokenHold, createValidDTO } from "@gala-chain/api";
 import { currency, fixture, nft, users, writesMap } from "@gala-chain/test";
 import BigNumber from "bignumber.js";
 import { plainToInstance } from "class-transformer";
 
 import GalaChainTokenContract from "../__test__/GalaChainTokenContract";
+import { InvalidDecimalError } from "../token";
 
 describe("LockTokens", () => {
   test(`Adds a "lock" hold to a user's GalaChainTokenBalance`, async () => {
