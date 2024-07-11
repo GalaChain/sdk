@@ -225,7 +225,7 @@ function checksumedEthAddress(addressLowerCased: string): string {
   // 1. It catches incorrectly checksummed addresses, which could indicate typos or malicious intent.
   // 2. It ensures that if a user provides a checksummed address, it's the correct checksum.
   // 3. It maintains the integrity of the checksumming system by rejecting invalid checksums.
-if (addressLowerCased !== addressLowerCased.toLowerCase() && addressLowerCased.toLowerCase() !== checksumAddress.toLowerCase()) {
+if (addressLowerCased !== addressLowerCased.toLowerCase() && addressLowerCased !== checksumAddress) {
   // This condition checks two things:
   // 1. If the address is not all lowercase (address !== address.toLowerCase())
   //    This indicates that the input address has some uppercase letters, suggesting it might be checksummed
