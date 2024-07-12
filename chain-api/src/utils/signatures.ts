@@ -146,12 +146,10 @@ function getEthAddress(publicKey: string) {
   const addressLowerCased = Buffer.from(keccak.slice(-20)).toString("hex");
   const checksummedAddress = checksumedEthAddress(addressLowerCased);
   const fullAddress = `0x${checksummedAddress}`;
-  
+
   // Validate the address as a final check
   return validateEthereumAddress(fullAddress);
 }
-
-
 
 // the function below to calculate checksumed address is adapted from ethers.js
 // see: https://github.com/ethers-io/ethers.js/blob/main/src.ts/address/address.ts
@@ -177,9 +175,7 @@ function checksumedEthAddress(addressLowerCased: string): string {
   return chars.join("");
 }
 
-
-// Function based on EIP-55
-function validateEthereumAddress(publicKey: string): string {
+export function validateEthereumAddress(publicKey: string): string {
   // Check length
   if (publicKey.length !== 42) {
     throw new InvalidKeyError("Invalid address length");
@@ -196,14 +192,15 @@ function validateEthereumAddress(publicKey: string): string {
   }
 
   // Checksum validation
-  const addressLower = publicKey.toLowerCase();
-  const addressHash = keccak256(addressLower.slice(2));
+  const address = publicKey.slice(2);
+  const addressLower = address.toLowerCase();
+  const hash = keccak256(addressLower);
 
   for (let i = 0; i < 40; i++) {
-    const hashChar = parseInt(addressHash[i], 16);
+    const hashChar = parseInt(hash[i], 16);
     if (
-      (hashChar > 7 && publicKey[i + 2].toLowerCase() !== publicKey[i + 2]) ||
-      (hashChar <= 7 && publicKey[i + 2].toUpperCase() !== publicKey[i + 2])
+      (hashChar > 7 && address[i].toUpperCase() !== address[i]) ||
+      (hashChar <= 7 && address[i].toLowerCase() !== address[i])
     ) {
       throw new InvalidKeyError("Invalid checksum");
     }
