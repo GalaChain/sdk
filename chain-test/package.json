@@ -6,7 +6,12 @@
   "dependencies": {
     "@gala-chain/client": "1.2.4",
     "nanoid": "^3.3.6",
-    "tslib": "^2.6.2"
+    "tslib": "^2.6.2",
+    "bignumber.js": "9.1.2",
+    "class-transformer": "0.5.1",
+    "@jest/globals": "29.7.0",
+    "elliptic": "6.5.4",
+    "fabric-contract-api": "2.5.6"
   },
   "peerDependencies": {
     "@gala-chain/api": "1.2.4",

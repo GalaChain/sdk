@@ -13,7 +13,8 @@
     "json-stringify-deterministic": "^1.0.7",
     "openapi3-ts": "^3.2.0",
     "reflect-metadata": "^0.1.13",
-    "tslib": "^2.6.2"
+    "tslib": "^2.6.2",
+    "elliptic": "6.5.4"
   },
   "type": "commonjs",
   "main": "./lib/src/index.js",

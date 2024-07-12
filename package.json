@@ -60,5 +60,8 @@
     "chain-connect",
     "chain-test",
     "chaincode"
-  ]
+  ],
+  "dependencies": {
+    "@nx/nx-darwin-arm64": "^19.4.2"
+  }
 }
