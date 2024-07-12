@@ -36,7 +36,6 @@ export type LockTokenRequestParams = ConstructorArgs<
   Omit<LockTokenDto, "tokenInstance"> & { tokenInstance: TokenInstanceKeyBody }
 >;
 
-
 @JSONSchema({
   description: "Describes an action to lock a token."
 })

@@ -242,7 +242,7 @@ export class TokenClient {
   public LockToken(dto: LockTokenRequestParams) {
     return this.client.send<TokenBalanceBody, LockTokenRequestParams>({
       method: "LockToken",
-      payload: dto,
+      payload: new LockTokenDto(dto),
       sign: true
     });
   }

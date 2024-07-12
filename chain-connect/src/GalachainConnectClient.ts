@@ -22,16 +22,20 @@ declare global {
 }
 
 export class GalachainConnectClient {
-  #address: string;
+  #ethAddress: string;
   #provider: BrowserProvider | undefined;
   #chainCodeUrl: string;
 
-  get address() {
-    return `eth|${this.#address}`;
+  get galachainAddress() {
+    return this.#ethAddress.replace("0x", "eth|");
   }
 
-  set address(val: string) {
-    this.#address = val.replace(/0x|eth\|/, "");
+  get ethAddress() {
+    return this.#ethAddress;
+  }
+
+  set ethAddress(val: string) {
+    this.#ethAddress = getAddress(`0x${val.replace(/0x|eth\|/, "")}`);
   }
 
   get provider() {
@@ -53,7 +57,7 @@ export class GalachainConnectClient {
       const accounts = (await this.#provider.send("eth_requestAccounts", [])) as string[];
       this.address = getAddress(accounts[0]);
 
-      return this.address;
+      return this.galachainAddress;
     } catch (error: unknown) {
       throw new Error((error as Error).message);
     }
@@ -75,7 +79,7 @@ export class GalachainConnectClient {
     if (!this.#provider) {
       throw new Error("Ethereum provider not found");
     }
-    if (!this.#address) {
+    if (!this.#ethAddress) {
       throw new Error("No account connected");
     }
 

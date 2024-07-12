@@ -44,6 +44,8 @@ export type TokenInstanceKeyBody = NonFunctionProperties<
   Omit<TokenInstanceKey, "instance"> & { instance: string }
 >;
 
+export type TokenInstanceKeyBody = ConstructorArgs<TokenInstanceKey>;
+
 @JSONSchema({
   description: "Object representing the chain identifier of token instance."
 })

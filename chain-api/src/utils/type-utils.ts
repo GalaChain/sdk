@@ -13,6 +13,7 @@
  * limitations under the License.
  */
 
+
 import BigNumber from "bignumber.js";
 
 // Utility type to pick only optional properties of a class
