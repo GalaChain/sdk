@@ -3,6 +3,7 @@
   "version": "1.2.4",
   "dependencies": {
     "@gala-chain/api": "1.2.4",
+    "ethers": "^6.12.1",
     "tslib": "^2.3.0"
   },
   "overrides": {
