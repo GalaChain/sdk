@@ -176,15 +176,15 @@ function getEthAddress(publicKey: string) {
 
 function checksumedEthAddress(addressLowerCased: string): string {
   // Remove '0x' prefix if present
-  const cleanAddress = addressLowerCased.toLowerCase().replace(/^0x/, '');
+  const cleanAddress = addressLowerCased.toLowerCase().replace(/^0x/, "");
 
   // Check if the address is a valid Ethereum address
   if (!/^[0-9a-f]{40}$/i.test(cleanAddress)) {
-    throw new InvalidKeyError('Invalid Ethereum address format');
+    throw new InvalidKeyError("Invalid Ethereum address format");
   }
 
   const hash = keccak256(cleanAddress);
-  let checksumAddress = '0x';
+  let checksumAddress = "0x";
   let isChecksumed = false;
 
   for (let i = 0; i < 40; i++) {
@@ -203,7 +203,7 @@ function checksumedEthAddress(addressLowerCased: string): string {
 
   // If the input was already checksummed, validate it
   if (addressLowerCased !== checksumAddress && /[A-F]/.test(addressLowerCased)) {
-    throw new InvalidKeyError('Invalid checksum address');
+    throw new InvalidKeyError("Invalid checksum address");
   }
 
   return checksumAddress;
