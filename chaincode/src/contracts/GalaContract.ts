@@ -166,7 +166,7 @@ export abstract class GalaContract extends Contract {
       throw new ValidationFailedError("The dto should have no signature for dry run execution");
     }
 
-    const ethAddr = signatures.getEthAddress(dto.callerPublicKey);
+    const ethAddr = signatures.getEthAddress(signatures.getNonCompactHexPublicKey(dto.callerPublicKey));
     const userProfile = await PublicKeyService.getUserProfile(ctx, ethAddr);
 
     if (!userProfile) {

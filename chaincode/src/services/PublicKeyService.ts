@@ -18,6 +18,7 @@ import {
   PK_INDEX_KEY,
   PublicKey,
   UP_INDEX_KEY,
+  UnauthorizedError,
   UserProfile,
   normalizePublicKey,
   signatures
@@ -83,21 +84,29 @@ export class PublicKeyService {
     }
 
     // check if we want the profile of the admin
-    if (process.env.DEV_ADMIN_PUBLIC_KEY && process.env.DEV_ADMIN_USER_ID) {
+    if (process.env.DEV_ADMIN_PUBLIC_KEY) {
       const nonCompactPK = signatures.getNonCompactHexPublicKey(process.env.DEV_ADMIN_PUBLIC_KEY);
       const adminEthAddress = signatures.getEthAddress(nonCompactPK);
 
       if (adminEthAddress === ethAddress) {
         const message =
           `User Profile is not saved on chain for user ${adminEthAddress}. ` +
-          `But env variables DEV_ADMIN_USER_ID and DEV_ADMIN_PUBLIC_KEY are set for the user. ` +
+          `But env variable DEV_ADMIN_PUBLIC_KEY is set for the user. ` +
           `Thus, the public key from env will be used.`;
         ctx.logging.getLogger().warn(message);
 
+        const alias = process.env.DEV_ADMIN_USER_ID ?? `eth|${adminEthAddress}`;
+
+        if (!alias.startsWith("eth|") && !alias.startsWith("client|")) {
+          const message = `Invalid alias for user: ${alias} with public key: ${process.env.DEV_ADMIN_PUBLIC_KEY}`;
+          throw new UnauthorizedError(message, { alias, publicKey: process.env.DEV_ADMIN_PUBLIC_KEY });
+        }
+
         const adminProfile = new UserProfile();
         adminProfile.ethAddress = adminEthAddress;
-        adminProfile.alias = process.env.DEV_ADMIN_USER_ID;
+        adminProfile.alias = alias;
         adminProfile.roles = Array.from(UserProfile.ADMIN_ROLES);
+
         return adminProfile;
       }
     }

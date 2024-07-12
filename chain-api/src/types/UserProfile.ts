@@ -15,6 +15,7 @@
 import { ArrayMinSize, IsNotEmpty, IsString } from "class-validator";
 import { JSONSchema } from "class-validator-jsonschema";
 
+import { ConstructorArgs } from "../utils";
 import { ChainObject } from "./ChainObject";
 
 export enum UserRole {
@@ -22,6 +23,8 @@ export enum UserRole {
   SUBMIT = "SUBMIT",
   EVALUATE = "EVALUATE"
 }
+
+export type UserProfileBody = ConstructorArgs<UserProfile>;
 
 export class UserProfile extends ChainObject {
   static ADMIN_ROLES = [UserRole.CURATOR, UserRole.EVALUATE, UserRole.SUBMIT] as const;

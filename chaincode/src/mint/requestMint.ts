@@ -53,8 +53,7 @@ export async function requestMint(
   mintRequestDto.id = mintRequest.requestId();
   mintRequestDto.allowanceKey = dto.allowanceKey;
 
-  const resDto = new FulfillMintDto();
-  resDto.requests = [mintRequestDto];
+  const resDto = new FulfillMintDto({ requests: [mintRequestDto] });
 
   return resDto;
 }
