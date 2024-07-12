@@ -21,5 +21,4 @@ type ReplaceType<T, From, To> = {
   [K in keyof T]: T[K] extends From ? To : T[K];
 };
 
-
 export type ConstructorArgs<T> = ReplaceType<NonFunctionProperties<T>, BigNumber, string>;
