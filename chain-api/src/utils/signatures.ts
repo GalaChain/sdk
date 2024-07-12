@@ -152,26 +152,61 @@ function getEthAddress(publicKey: string) {
 
 // the function below to calculate checksumed address is adapted from ethers.js
 // see: https://github.com/ethers-io/ethers.js/blob/main/src.ts/address/address.ts
+// function checksumedEthAddress(addressLowerCased: string): string {
+//   const chars = addressLowerCased.split("");
+
+//   const expanded = new Uint8Array(40);
+//   for (let i = 0; i < 40; i++) {
+//     expanded[i] = chars[i].charCodeAt(0);
+//   }
+
+//   const hashed = keccak256.digest(expanded);
+
+//   for (let i = 0; i < 40; i += 2) {
+//     if (hashed[i >> 1] >> 4 >= 8) {
+//       chars[i] = chars[i].toUpperCase();
+//     }
+//     if ((hashed[i >> 1] & 0x0f) >= 8) {
+//       chars[i + 1] = chars[i + 1].toUpperCase();
+//     }
+//   }
+
+//   return chars.join("");
+// }
+
 function checksumedEthAddress(addressLowerCased: string): string {
-  const chars = addressLowerCased.split("");
+  // Remove '0x' prefix if present
+  const cleanAddress = addressLowerCased.toLowerCase().replace(/^0x/, '');
 
-  const expanded = new Uint8Array(40);
+  // Check if the address is a valid Ethereum address
+  if (!/^[0-9a-f]{40}$/i.test(cleanAddress)) {
+    throw new InvalidKeyError('Invalid Ethereum address format');
+  }
+
+  const hash = keccak256(cleanAddress);
+  let checksumAddress = '0x';
+  let isChecksumed = false;
+
   for (let i = 0; i < 40; i++) {
-    expanded[i] = chars[i].charCodeAt(0);
+    const character = cleanAddress[i];
+    const hashChar = parseInt(hash[i], 16);
+
+    if (
+      (hashChar > 7 && character.toUpperCase() !== character) ||
+      (hashChar <= 7 && character.toLowerCase() !== character)
+    ) {
+      isChecksumed = true;
+    }
+
+    checksumAddress += hashChar > 7 ? character.toUpperCase() : character.toLowerCase();
   }
 
-  const hashed = keccak256.digest(expanded);
-
-  for (let i = 0; i < 40; i += 2) {
-    if (hashed[i >> 1] >> 4 >= 8) {
-      chars[i] = chars[i].toUpperCase();
-    }
-    if ((hashed[i >> 1] & 0x0f) >= 8) {
-      chars[i + 1] = chars[i + 1].toUpperCase();
-    }
+  // If the input was already checksummed, validate it
+  if (addressLowerCased !== checksumAddress && /[A-F]/.test(addressLowerCased)) {
+    throw new InvalidKeyError('Invalid checksum address');
   }
 
-  return chars.join("");
+  return checksumAddress;
 }
 
 export function validateEthereumAddress(publicKey: string): string {
@@ -438,6 +473,7 @@ export default {
   getPayloadToSign,
   getPublicKey,
   getSignature,
+  checksumedEthAddress,
   getDERSignature,
   isValid,
   isValidBase64,
