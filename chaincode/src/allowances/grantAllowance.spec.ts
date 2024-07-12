@@ -109,7 +109,7 @@ describe("GrantAllowance", () => {
     expect(writes).toEqual({});
   });
 
-  it("should no longer fail to GrantAllowance for fungible token when quantity is greater than balance", async () => {
+  it("should allow user to GrantAllowance for fungible token when quantity is greater than balance", async () => {
     // Given
     const currencyInstance = currency.tokenInstance();
     const currencyClass = currency.tokenClass();
