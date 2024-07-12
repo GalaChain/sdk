@@ -1,45 +1,27 @@
-# chain-ui
+# @gala-chain/ui-vue
 
-This template should help get you started developing with Vue 3 in Vite.
+GalaChain UI is a collection of Vue3 components that can be used to easily interact with GalaChain.
 
-## Recommended IDE Setup
+## Download
 
-[VSCode](https://code.visualstudio.com/) + [Volar](https://marketplace.visualstudio.com/items?itemName=Vue.volar) (and disable Vetur).
+```
+# Using npm
+npm install @gala-chain/ui
 
-## Type Support for `.vue` Imports in TS
-
-TypeScript cannot handle type information for `.vue` imports by default, so we replace the `tsc` CLI with `vue-tsc` for type checking. In editors, we need [Volar](https://marketplace.visualstudio.com/items?itemName=Vue.volar) to make the TypeScript language service aware of `.vue` types.
-
-## Customize configuration
-
-See [Vite Configuration Reference](https://vitejs.dev/config/).
-
-## Project Setup
-
-```sh
-npm install
+# Using yarn
+yarn add @gala-chain/ui
 ```
 
-### Compile and Hot-Reload for Development
+## Usage
 
-```sh
-npm run dev
-```
+Components can be imported from the @gala-chain/ui-vue package and implemented directly in your application.
 
-### Type-Check, Compile and Minify for Production
+```javascript
+<script setup>
+    import GalaTransferToken from '@gala-chain/ui-vue'
+</script>
 
-```sh
-npm run build
-```
-
-### Run Unit Tests with [Vitest](https://vitest.dev/)
-
-```sh
-npm run test:unit
-```
-
-### Lint with [ESLint](https://eslint.org/)
-
-```sh
-npm run lint
+<template>
+    <GalaTransferToken></GalaTransferToken>
+</template>
 ```

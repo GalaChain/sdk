@@ -1,15 +1,15 @@
 import type { Meta, StoryObj } from '@storybook/vue3'
 import { action } from '@storybook/addon-actions'
-import TransferToken from './TransferToken.vue'
+import MintToken from './MintToken.vue'
 
-const meta: Meta<typeof TransferToken> = {
-  component: TransferToken
+const meta: Meta<typeof MintToken> = {
+  component: MintToken
 }
 
 export default meta
-type Story = StoryObj<typeof TransferToken>
+type Story = StoryObj<typeof MintToken>
 
-const tokenBalance = {
+const tokenAllowance = {
   token: {
     additionalKey: 'none',
     authorities: [],
@@ -29,38 +29,47 @@ const tokenBalance = {
     totalSupply: '50000000000',
     type: 'none'
   },
-  balance: {
-    additionalKey: 'none',
-    category: 'Unit',
-    collection: 'GALA',
-    inUseHolds: [],
-    instanceIds: [],
-    lockedHolds: [],
-    owner: '',
-    quantity: '1000',
-    type: 'none'
-  }
+  allowances: [
+    {
+      additionalKey: 'none',
+      allowanceType: 4,
+      category: 'Unit',
+      collection: 'GALA',
+      created: 1719413534107,
+      expires: 0,
+      grantedBy: '',
+      grantedTo: '',
+      instance: '0',
+      quantity: '1000',
+      quantitySpent: '0',
+      type: 'none',
+      uses: '1000',
+      usesSpent: '0'
+    }
+  ]
 }
 
-const Template = (args) => ({
-  components: { TransferToken },
+const submitAction = action('submit')
+
+const Template = (args, { argTypes }) => ({
+  components: { MintToken },
   setup() {
     return { args }
   },
   methods: { submit: action('submit') },
-  template: '<TransferToken v-bind="args" @submit="submit"/>'
+  template: '<MintToken v-bind="args" @submit="submit"/>'
 })
 
 export const Primary: Story = Template.bind({})
 Primary.args = {
-  tokenBalance,
+  tokenAllowance,
   loading: false,
   disabled: false
 }
 
 export const Empty: Story = Template.bind({})
 Empty.args = {
-  tokenBalance: undefined,
+  tokenAllowance: undefined,
   loading: false,
   disabled: false
 }
