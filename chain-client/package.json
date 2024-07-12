@@ -1,6 +1,6 @@
 {
   "name": "@gala-chain/client",
-  "version": "1.2.0",
+  "version": "1.2.4",
   "description": "GalaChain client library",
   "license": "Apache-2.0",
   "scripts": {
@@ -21,7 +21,7 @@
     "lib"
   ],
   "dependencies": {
-    "@gala-chain/api": "1.2.0",
+    "@gala-chain/api": "1.2.4",
     "axios": "^1.6.0",
     "jsonschema": "^1.4.1",
     "tslib": "^2.6.2"
@@ -41,14 +41,8 @@
     }
   },
   "devDependencies": {
-    "@grpc/grpc-js": "1.8.15",
     "fabric-network": "2.2.20",
-    "fabric-ca-client": "^2.2.20"
-  },
-  "overrides": {
-    "fabric-network": {
-      "@grpc/grpc-js": "1.8.15"
-    }
+    "fabric-ca-client": "2.2.20"
   },
   "nyc": {
     "extension": [

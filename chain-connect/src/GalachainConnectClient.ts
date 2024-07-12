@@ -13,7 +13,7 @@
  * limitations under the License.
  */
 import { ChainCallDTO, serialize, signatures } from "@gala-chain/api";
-import { BrowserProvider, Eip1193Provider } from "ethers";
+import { BrowserProvider, Eip1193Provider, getAddress } from "ethers";
 
 declare global {
   interface Window {
@@ -22,24 +22,28 @@ declare global {
 }
 
 export class GalachainConnectClient {
-  private address_: string;
-  private provider_: BrowserProvider | undefined;
-  private chainCodeUrl: string;
+  #ethAddress: string;
+  #provider: BrowserProvider | undefined;
+  #chainCodeUrl: string;
 
-  get address() {
-    return `eth|${this.address_}`;
+  get galachainAddress() {
+    return this.#ethAddress.replace("0x", "eth|");
   }
 
-  set address(val: string) {
-    this.address_ = val.replace(/0x|eth\|/, "");
+  get ethAddress() {
+    return this.#ethAddress;
+  }
+
+  set ethAddress(val: string) {
+    this.#ethAddress = getAddress(`0x${val.replace(/0x|eth\|/, "")}`);
   }
 
   get provider() {
-    return this.provider_;
+    return this.#provider;
   }
 
   constructor(chainCodeUrl: string) {
-    this.chainCodeUrl = chainCodeUrl;
+    this.#chainCodeUrl = chainCodeUrl;
   }
 
   public async connectToMetaMask() {
@@ -47,20 +51,20 @@ export class GalachainConnectClient {
       throw new Error("Ethereum provider not found");
     }
 
-    this.provider_ = new BrowserProvider(window.ethereum);
+    this.#provider = new BrowserProvider(window.ethereum);
 
     try {
-      const accounts = (await this.provider_.send("eth_requestAccounts", [])) as string[];
-      this.address_ = accounts[0];
+      const accounts = (await this.#provider.send("eth_requestAccounts", [])) as string[];
+      this.ethAddress = accounts[0];
 
-      return this.address;
+      return this.galachainAddress;
     } catch (error: unknown) {
       throw new Error((error as Error).message);
     }
   }
 
   public async send<T, U extends ChainCallDTO>({
-    url = this.chainCodeUrl,
+    url = this.#chainCodeUrl,
     method,
     payload,
     sign = false,
@@ -72,10 +76,10 @@ export class GalachainConnectClient {
     sign?: boolean;
     headers?: object;
   }): Promise<{ Data: T }> {
-    if (!this.provider_) {
+    if (!this.#provider) {
       throw new Error("Ethereum provider not found");
     }
-    if (!this.address) {
+    if (!this.#ethAddress) {
       throw new Error("No account connected");
     }
 
@@ -85,8 +89,8 @@ export class GalachainConnectClient {
         const prefixedPayload = { ...payload, prefix };
         const dto = signatures.getPayloadToSign(prefixedPayload);
 
-        const signer = await this.provider_.getSigner();
-        const signature = await signer.provider.send("personal_sign", [this.address, dto]);
+        const signer = await this.#provider.getSigner();
+        const signature = await signer.provider.send("personal_sign", [this.ethAddress, dto]);
 
         return await this.submit(url, method, { ...prefixedPayload, signature }, headers);
       }
