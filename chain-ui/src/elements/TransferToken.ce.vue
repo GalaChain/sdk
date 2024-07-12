@@ -1,12 +1,7 @@
 <script lang="ts">
-import TransferToken from '@/components/TransferToken.vue'
-import { h } from 'vue'
-import { defineComponent } from 'vue'
+import TransferToken from '@/components/TransferToken.vue';
 
-export default defineComponent({
-  extends: TransferToken,
-  render: () => h(TransferToken)
-})
+export default TransferToken
 </script>
 
 <style lang="css">

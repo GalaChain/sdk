@@ -67,7 +67,8 @@ replace_in_pwd_package_json "$script_dir/chain-client" "@gala-chain/client"
 replace_in_pwd_package_json "$script_dir/chain-test" "@gala-chain/test"
 replace_in_pwd_package_json "$script_dir/chaincode" "@gala-chain/chaincode"
 replace_in_pwd_package_json "$script_dir/chain-cli" "@gala-chain/cli"
-replace_in_pwd_package_json "$script_dir/chain-ui" "@gala-chain/ui"
+replace_in_pwd_package_json "$script_dir/chain-ui/packages/galachain-ui" "@gala-chain/ui"
+replace_in_pwd_package_json "$script_dir/chain-ui/packages/galachain-ui-vue" "@gala-chain/ui-vue"
 
 # we need to install it at the end, because they are cross-dependent
 npm i --no-cache "${to_install[@]}"

@@ -1,13 +1,7 @@
 <script lang="ts">
-import MintToken from '@/components/MintToken.vue'
-import { h } from 'vue'
-import { defineComponent } from 'vue'
+import MintToken from '@/components/MintToken.vue';
 
-// Figure out a way to extend component and add styles, this almost works but props aren't reacting
-export default defineComponent({
-  extends: MintToken,
-  render: () => h(MintToken)
-})
+export default MintToken
 </script>
 
 <style lang="css">

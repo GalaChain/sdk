@@ -27,15 +27,15 @@ export default defineConfig({
     }
   },
   build: {
-    minify: true,
+    outDir: 'packages/galachain-ui/dist',
     lib: {
-      entry: path.resolve(__dirname, 'src/index.ts'),
-      formats: ['es', 'umd'],
+      entry: path.resolve(__dirname, 'src/web-components-package.ts'),
+      formats: ['es', 'umd', 'cjs'],
       name: '@gala-chain/ui',
       fileName: (format) => `gala-chain-ui.${format}.js`
     },
     rollupOptions: {
-      external: ['vue'],
+      // external: ['vue'],
       output: {
         globals: {
           vue: 'Vue'

@@ -1,12 +1,7 @@
 <script lang="ts">
-import MintTokenWithAllowance from '@/components/MintTokenWithAllowance.vue'
-import { h } from 'vue'
-import { defineComponent } from 'vue'
+import MintTokenWithAllowance from '@/components/MintTokenWithAllowance.vue';
 
-export default defineComponent({
-  extends: MintTokenWithAllowance,
-  render: () => h(MintTokenWithAllowance)
-})
+export default MintTokenWithAllowance
 </script>
 
 <style lang="css">

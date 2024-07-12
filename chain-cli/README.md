@@ -18,7 +18,7 @@ $ npm install -g @gala-chain/cli
 $ galachain COMMAND
 running command...
 $ galachain (--version)
-@gala-chain/cli/1.1.25 linux-x64 node-v18.20.3
+@gala-chain/cli/1.2.0 darwin-arm64 node-v20.11.0
 $ galachain --help [COMMAND]
 USAGE
   $ galachain COMMAND
@@ -255,7 +255,7 @@ Get ChainCode information.
 
 ```
 USAGE
-  $ galachain info [DEVELOPERPRIVATEKEY] [--json] [--log-level debug||warn|error] [--testnet]
+  $ galachain info [DEVELOPERPRIVATEKEY] [--json] [--log-level debug|info|warn|error] [--testnet]
 
 ARGUMENTS
   DEVELOPERPRIVATEKEY  Optional private key to sign the data. It could be a file or a string. If not provided, the
@@ -360,8 +360,8 @@ Start the chaincode in dev-mode and browser-api.
 
 ```
 USAGE
-  $ galachain network-up -C <value> -t curator|partner -n <value> [--json] [--log-level debug|info|warn|error]
-    [-d <value>] [-r <value>] [-e <value>] [-w] [-o <value>]
+  $ galachain network-up -C <value>... -t curator|partner... -n <value>... [--json] [--log-level
+    debug|info|warn|error] [-d <value>...] [-r <value>] [-e <value>] [-w] [-o <value>]
 
 FLAGS
   -C, --channel=<value>...        (required) Channel name.
@@ -428,8 +428,8 @@ Start the chaincode in dev-mode and browser-api.
 
 ```
 USAGE
-  $ galachain network:up -C <value> -t curator|partner -n <value> [--json] [--log-level debug|info|warn|error]
-    [-d <value>] [-r <value>] [-e <value>] [-w] [-o <value>]
+  $ galachain network:up -C <value>... -t curator|partner... -n <value>... [--json] [--log-level
+    debug|info|warn|error] [-d <value>...] [-r <value>] [-e <value>] [-w] [-o <value>]
 
 FLAGS
   -C, --channel=<value>...        (required) Channel name.
