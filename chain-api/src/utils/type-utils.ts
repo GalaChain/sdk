@@ -13,6 +13,8 @@
  * limitations under the License.
  */
 
+import BigNumber from "bignumber.js";
+
 // Utility type to pick only optional properties of a class
 type OptionalProperties<T> = Pick<T, { [K in keyof T]: T[K] extends Required<T>[K] ? never : K }[keyof T]>;
 
@@ -30,5 +32,12 @@ type OmitFields =
   | "signed"
   | "isSignatureValid";
 
-export type ConstructorArgs<T> = RequiredProperties<Omit<T, OmitFields>> &
+// Utility type to replace all properties of type `From` with `To`
+type ReplaceType<T, From, To> = {
+  [K in keyof T]: T[K] extends From ? To : T[K];
+};
+
+type FieldsOmitted<T> = RequiredProperties<Omit<T, OmitFields>> &
   Partial<OptionalProperties<Omit<T, OmitFields>>>;
+
+export type ConstructorArgs<T> = ReplaceType<FieldsOmitted<T>, BigNumber, string>;

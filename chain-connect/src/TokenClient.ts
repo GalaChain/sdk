@@ -47,7 +47,7 @@ import {
   HighThroughputMintTokenDto,
   HighThroughputMintTokenParams,
   LockTokenDto,
-  LockTokenParams,
+  LockTokenRequestParams,
   LockTokensDto,
   LockTokensParams,
   MintRequestDto,
@@ -239,10 +239,10 @@ export class TokenClient {
     });
   }
 
-  public LockToken(dto: LockTokenParams) {
-    return this.client.send<TokenBalanceBody, LockTokenDto>({
+  public LockToken(dto: LockTokenRequestParams) {
+    return this.client.send<TokenBalanceBody, LockTokenRequestParams>({
       method: "LockToken",
-      payload: new LockTokenDto(dto),
+      payload: dto,
       sign: true
     });
   }

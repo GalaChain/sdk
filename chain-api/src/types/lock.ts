@@ -26,21 +26,29 @@ import {
 } from "class-validator";
 import { JSONSchema } from "class-validator-jsonschema";
 
-import { TokenInstance, TokenInstanceKey } from "../types/TokenInstance";
+import { TokenInstance, TokenInstanceKey, TokenInstanceKeyBody } from "../types/TokenInstance";
 import { ChainCallDTO } from "../types/dtos";
 import { BigNumberProperty, ConstructorArgs } from "../utils";
 import { BigNumberIsNotNegative, BigNumberIsPositive } from "../validators";
 import { LockTokenQuantity } from "./LockTokenQuantity";
 
-export type LockTokenParams = ConstructorArgs<LockTokenDto>;
+export type LockTokenRequestParams = ConstructorArgs<
+  Omit<LockTokenDto, "tokenInstance"> & { tokenInstance: TokenInstanceKeyBody }
+>;
+
 
 @JSONSchema({
   description: "Describes an action to lock a token."
 })
 export class LockTokenDto extends ChainCallDTO {
-  constructor(params?: LockTokenParams) {
+  constructor(params?: LockTokenRequestParams) {
     super();
-    Object.assign(this, params);
+    if (params) {
+      const { tokenInstance, quantity, ...rest } = params;
+      Object.assign(this, rest);
+      this.tokenInstance = new TokenInstanceKey(tokenInstance);
+      this.quantity = new BigNumber(quantity);
+    }
   }
 
   @JSONSchema({
