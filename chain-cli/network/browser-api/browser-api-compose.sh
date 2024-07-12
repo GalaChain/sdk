@@ -24,7 +24,7 @@ host=${LOCALHOST_NAME:-localhost}
 
 if [ "$command" = "up" ]; then
   echo "Starting Fablo instances..."
-  (cd "$current_dir" && docker compose --env-file ../fablo-target/fabric-docker/.env up -d)
+  (cd "$current_dir" && docker-compose --env-file ../fablo-target/fabric-docker/.env up -d)
 elif [ "$command" = "success-message" ]; then
   echo ""
   echo "The test network is ready! You can now use the following URLs to access it:"
@@ -32,7 +32,7 @@ elif [ "$command" = "success-message" ]; then
   echo "  state browser:   http://$host:3010/graphiql"
 elif [ "$command" = "down" ]; then
   echo "Downing Fablo instances..."
-  (cd "$current_dir" && docker compose --env-file ../fablo-target/fabric-docker/.env down -t 1)
+  (cd "$current_dir" && docker-compose --env-file ../fablo-target/fabric-docker/.env down -t 1)
   else
   echo "Invalid command. Usage: $current_script <up|down>"
   exit 0
