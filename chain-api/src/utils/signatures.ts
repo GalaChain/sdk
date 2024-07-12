@@ -184,7 +184,7 @@ function checksumedEthAddress(addressLowerCased: string): string {
   }
 
   const hash = keccak256(cleanAddress);
-  let checksumAddress = "0x";
+  let checksumAddress = "";
   let isChecksumed = false;
 
   for (let i = 0; i < 40; i++) {
