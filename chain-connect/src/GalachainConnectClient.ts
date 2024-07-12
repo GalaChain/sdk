@@ -31,7 +31,7 @@ export class GalachainConnectClient {
   }
 
   get ethAddress() {
-    return this.#ethAddress;
+    return getAddress(this.#ethAddress);
   }
 
   set ethAddress(val: string) {
@@ -55,7 +55,7 @@ export class GalachainConnectClient {
 
     try {
       const accounts = (await this.#provider.send("eth_requestAccounts", [])) as string[];
-      this.address = getAddress(accounts[0]);
+      this.ethAddress = getAddress(accounts[0]);
 
       return this.galachainAddress;
     } catch (error: unknown) {
@@ -90,7 +90,7 @@ export class GalachainConnectClient {
         const dto = signatures.getPayloadToSign(prefixedPayload);
 
         const signer = await this.#provider.getSigner();
-        const signature = await signer.provider.send("personal_sign", ["0x" + this.#address, dto]);
+        const signature = await signer.provider.send("personal_sign", [this.#ethAddress, dto]);
 
         return await this.submit(url, method, { ...prefixedPayload, signature }, headers);
       }

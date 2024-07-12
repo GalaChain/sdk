@@ -31,7 +31,7 @@ import { BigNumberProperty } from "../utils/transform-decorators";
 import { BigNumberIsInteger, BigNumberIsNotNegative } from "../validators/decorators";
 import { ChainObject } from "./ChainObject";
 import { TokenClass, TokenClassKey, TokenClassKeyProperties } from "./TokenClass";
-import { ChainCallDTO, NonFunctionProperties } from "./dtos";
+import { ChainCallDTO } from "./dtos";
 
 export interface TokenInstanceKeyProperties {
   collection: string;
@@ -40,10 +40,6 @@ export interface TokenInstanceKeyProperties {
   additionalKey: string;
   instance: BigNumber;
 }
-export type TokenInstanceKeyBody = NonFunctionProperties<
-  Omit<TokenInstanceKey, "instance"> & { instance: string }
->;
-
 export type TokenInstanceKeyBody = ConstructorArgs<TokenInstanceKey>;
 
 @JSONSchema({
