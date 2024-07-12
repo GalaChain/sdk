@@ -62,6 +62,6 @@
     "chaincode"
   ],
   "dependencies": {
-    "@nx/nx-darwin-arm64": "^19.4.2"
+    "nx": "^19.4.2"
   }
 }
