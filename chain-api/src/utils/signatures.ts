@@ -145,7 +145,7 @@ function getEthAddress(publicKey: string) {
   const keccak = keccak256.digest(publicKeyBuffer.slice(1)); // skip "04" prefix
   const addressLowerCased = Buffer.from(keccak.slice(-20)).toString("hex");
   const checksummedAddress = checksumedEthAddress(addressLowerCased);
-  const fullAddress = `0x${checksummedAddress}`;
+  // const fullAddress = `0x${checksummedAddress}`;
   // Validate the address as a final check
   return validateEthereumAddress(fullAddress);
 }
