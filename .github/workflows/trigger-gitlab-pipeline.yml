@@ -67,7 +67,7 @@ jobs:
               echo "Pipeline status after failure: $status"
               exit 1
             fi
-            sleep 600 #Sleep for 10 mins.
+            sleep 600 #Sleep for 10 mins
           done
 
       - name: Increment Version Number
