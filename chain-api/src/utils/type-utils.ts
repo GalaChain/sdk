@@ -16,15 +16,13 @@ import BigNumber from "bignumber.js";
 
 import { NonFunctionProperties } from "../types";
 
-// Utility type to replace all properties of type `From` with `To` recursively
-type ReplaceTypeRecursive<T, From, To> = {
-  [K in keyof T]: T[K] extends From ? To : T[K] extends object ? ReplaceTypeRecursive<T[K], From, To> : T[K];
+// Recursive type to pick non-function properties and replace specified types
+type NonFunctionPropertiesAndReplaceRecursive<T, From, To> = {
+  [K in keyof NonFunctionProperties<T>]: NonFunctionProperties<T>[K] extends From
+    ? To
+    : NonFunctionProperties<T>[K] extends object
+      ? NonFunctionPropertiesAndReplaceRecursive<NonFunctionProperties<T>[K], From, To>
+      : NonFunctionProperties<T>[K];
 };
 
-type NonFunctionPropertiesRecursive<T> = {
-  [K in keyof NonFunctionProperties<T>]: NonFunctionProperties<T>[K] extends object
-    ? NonFunctionPropertiesRecursive<NonFunctionProperties<T>[K]>
-    : NonFunctionProperties<T>[K];
-};
-
-export type ConstructorArgs<T> = ReplaceTypeRecursive<NonFunctionPropertiesRecursive<T>, BigNumber, string>;
+export type ConstructorArgs<T> = NonFunctionPropertiesAndReplaceRecursive<T, BigNumber, string>;
