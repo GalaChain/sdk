@@ -144,7 +144,11 @@ function getEthAddress(publicKey: string) {
   const publicKeyBuffer = Buffer.from(publicKey, "hex");
   const keccak = keccak256.digest(publicKeyBuffer.slice(1)); // skip "04" prefix
   const addressLowerCased = Buffer.from(keccak.slice(-20)).toString("hex");
-  return checksumedEthAddress(addressLowerCased);
+  const checksummedAddress = checksumedEthAddress(addressLowerCased);
+  const fullAddress = `0x${checksummedAddress}`;
+
+  // Validate the address as a final check
+  return validateEthereumAddress(fullAddress);
 }
 
 // the function below to calculate checksumed address is adapted from ethers.js
@@ -169,6 +173,40 @@ function checksumedEthAddress(addressLowerCased: string): string {
   }
 
   return chars.join("");
+}
+
+export function validateEthereumAddress(publicKey: string): string {
+  // Check length
+  if (publicKey.length !== 42) {
+    throw new InvalidKeyError("Invalid address length");
+  }
+
+  // Check prefix
+  if (!publicKey.startsWith("0x")) {
+    throw new InvalidKeyError("Invalid address prefix");
+  }
+
+  // Check if it's valid hex
+  if (!/^0x[0-9a-fA-F]{40}$/.test(publicKey)) {
+    throw new InvalidKeyError("Invalid hexadecimal characters");
+  }
+
+  // Checksum validation
+  const address = publicKey.slice(2);
+  const addressLower = address.toLowerCase();
+  const hash = keccak256(addressLower);
+
+  for (let i = 0; i < 40; i++) {
+    const hashChar = parseInt(hash[i], 16);
+    if (
+      (hashChar > 7 && address[i].toUpperCase() !== address[i]) ||
+      (hashChar <= 7 && address[i].toLowerCase() !== address[i])
+    ) {
+      throw new InvalidKeyError("Invalid checksum");
+    }
+  }
+
+  return publicKey;
 }
 
 interface Secp256k1Signature {
@@ -405,6 +443,7 @@ export default {
   isValid,
   isValidBase64,
   isValidHex,
+  validateEthereumAddress,
   isValidSecp256k1Signature,
   normalizePrivateKey,
   normalizePublicKey,

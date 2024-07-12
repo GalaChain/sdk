@@ -16,12 +16,19 @@ import BN from "bn.js";
 import { ec as EC } from "elliptic";
 import { keccak256 } from "js-sha3";
 
+import { validateEthereumAddress } from "./signatures";
 import signatures, {
   InvalidSignatureFormatError,
   flipSignatureParity,
   normalizeSecp256k1Signature
 } from "./signatures";
 
+class InvalidKeyError extends Error {
+  constructor(message: string) {
+    super(message);
+    this.name = "InvalidKeyError";
+  }
+}
 function recoverPublicKeyTestFunction(signature: string, obj: object, prefix = ""): string {
   const ecSecp256k1 = new EC("secp256k1");
   const signatureObj = normalizeSecp256k1Signature(signature);
@@ -129,6 +136,80 @@ describe("public key", () => {
 
     // Then
     expect(normalizedKey).toEqual(normalized);
+  });
+});
+
+describe("validateEthereumAddress", () => {
+  it("should validate a correct Ethereum address", () => {
+    const validAddress = "0x5aAeb6053F3E94C9b9A09f33669435E7Ef1BeAed";
+    expect(validateEthereumAddress(validAddress)).toBe(validAddress);
+  });
+
+  it("should throw an error for an address with invalid length", () => {
+    const invalidAddress = "0x5aAeb6053F3E94C9b9A09f33669435E7Ef1BeA";
+    expect(() => validateEthereumAddress(invalidAddress)).toThrow(Error);
+    expect(() => validateEthereumAddress(invalidAddress)).toThrow("Invalid address length");
+  });
+
+  it("should throw an error for an address with invalid prefix", () => {
+    const invalidAddress = "1x5aAeb6053F3E94C9b9A09f33669435E7Ef1BeAed";
+    expect(() => validateEthereumAddress(invalidAddress)).toThrow(Error);
+    expect(() => validateEthereumAddress(invalidAddress)).toThrow("Invalid address prefix");
+  });
+
+  it("should throw an error for an address with invalid hexadecimal characters", () => {
+    const invalidAddress = "0x5aAeb6053F3E94C9b9A09f33669435E7Ef1BeAeG";
+    expect(() => validateEthereumAddress(invalidAddress)).toThrow(Error);
+    expect(() => validateEthereumAddress(invalidAddress)).toThrow("Invalid hexadecimal characters");
+  });
+
+  it("should throw an error for an address with invalid checksum", () => {
+    const invalidAddress = "0x5aAeb6053F3E94C9b9A09f33669435E7Ef1BeAeD"; // Last character should be lowercase
+    expect(() => validateEthereumAddress(invalidAddress)).toThrow(Error);
+    expect(() => validateEthereumAddress(invalidAddress)).toThrow("Invalid checksum");
+  });
+
+  it("should throw an error for an address with all lowercase letters", () => {
+    const invalidAddress = "0x5aaeb6053f3e94c9b9a09f33669435e7ef1beaed";
+    expect(() => validateEthereumAddress(invalidAddress)).toThrow(Error);
+    expect(() => validateEthereumAddress(invalidAddress)).toThrow("Invalid checksum");
+  });
+
+  it("should throw an error for an address with all uppercase letters", () => {
+    const invalidAddress = "0x5AAEB6053F3E94C9B9A09F33669435E7EF1BEAED";
+    expect(() => validateEthereumAddress(invalidAddress)).toThrow(Error);
+    expect(() => validateEthereumAddress(invalidAddress)).toThrow("Invalid checksum");
+  });
+
+  it("should throw an error for an address with one incorrect capitalization", () => {
+    const invalidAddress = "0x5aAeb6053F3E94C9b9A09f33669435E7Ef1BeAeD"; // Last character should be lowercase
+    expect(() => validateEthereumAddress(invalidAddress)).toThrow(Error);
+    expect(() => validateEthereumAddress(invalidAddress)).toThrow("Invalid checksum");
+  });
+
+  it("should throw an error for an address with multiple incorrect capitalizations", () => {
+    const invalidAddress = "0x5AAeb6053F3E94C9b9A09f33669435E7Ef1BeAed";
+    expect(() => validateEthereumAddress(invalidAddress)).toThrow(Error);
+    expect(() => validateEthereumAddress(invalidAddress)).toThrow("Invalid checksum");
+  });
+
+  it("should throw an error for an address with reversed capitalization", () => {
+    const invalidAddress = "0x5AaEB6053f3e94c9B9a09F33669435e7eF1bEaED";
+    expect(() => validateEthereumAddress(invalidAddress)).toThrow(Error);
+    expect(() => validateEthereumAddress(invalidAddress)).toThrow("Invalid checksum");
+  });
+
+  it("should validate multiple correct addresses", () => {
+    const validAddresses = [
+      "0x5aAeb6053F3E94C9b9A09f33669435E7Ef1BeAed",
+      "0xfB6916095ca1df60bB79Ce92cE3Ea74c37c5d359",
+      "0xdbF03B407c01E7cD3CBea99509d93f8DDDC8C6FB",
+      "0xD1220A0cf47c7B9Be7A2E6BA89F429762e7b9aDb"
+    ];
+
+    validAddresses.forEach((address) => {
+      expect(validateEthereumAddress(address)).toBe(address);
+    });
   });
 });
 
