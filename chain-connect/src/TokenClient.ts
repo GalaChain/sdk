@@ -232,9 +232,9 @@ export class TokenClient {
   }
 
   public ReleaseToken(dto: ReleaseTokenParams) {
-    return this.client.send<TokenBalanceBody, ReleaseTokenDto>({
+    return this.client.send<TokenBalanceBody, ReleaseTokenParams>({
       method: "ReleaseToken",
-      payload: new ReleaseTokenDto(dto),
+      payload: dto,
       sign: true
     });
   }
@@ -248,25 +248,25 @@ export class TokenClient {
   }
 
   public LockTokens(dto: LockTokensParams) {
-    return this.client.send<TokenBalanceBody[], LockTokensDto>({
+    return this.client.send<TokenBalanceBody[], LockTokensParams>({
       method: "LockTokens",
-      payload: new LockTokensDto(dto),
+      payload: dto,
       sign: true
     });
   }
 
   public UnlockToken(dto: UnlockTokenParams) {
-    return this.client.send<TokenBalanceBody, UnlockTokenDto>({
+    return this.client.send<TokenBalanceBody, UnlockTokenParams>({
       method: "UnlockToken",
-      payload: new UnlockTokenDto(dto),
+      payload: dto,
       sign: true
     });
   }
 
   public UnlockTokens(dto: UnlockTokensParams) {
-    return this.client.send<TokenBalanceBody[], UnlockTokensDto>({
+    return this.client.send<TokenBalanceBody[], UnlockTokensParams>({
       method: "UnlockTokens",
-      payload: new UnlockTokensDto(dto),
+      payload: dto,
       sign: true
     });
   }
