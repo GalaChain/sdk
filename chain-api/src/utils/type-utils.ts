@@ -21,4 +21,10 @@ type ReplaceTypeRecursive<T, From, To> = {
   [K in keyof T]: T[K] extends From ? To : T[K] extends object ? ReplaceTypeRecursive<T[K], From, To> : T[K];
 };
 
-export type ConstructorArgs<T> = ReplaceTypeRecursive<NonFunctionProperties<T>, BigNumber, string>;
+type NonFunctionPropertiesRecursive<T> = {
+  [K in keyof NonFunctionProperties<T>]: NonFunctionProperties<T>[K] extends object
+    ? NonFunctionPropertiesRecursive<NonFunctionProperties<T>[K]>
+    : NonFunctionProperties<T>[K];
+};
+
+export type ConstructorArgs<T> = ReplaceTypeRecursive<NonFunctionPropertiesRecursive<T>, BigNumber, string>;

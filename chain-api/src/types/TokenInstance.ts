@@ -46,15 +46,6 @@ export type TokenInstanceKeyBody = ConstructorArgs<TokenInstanceKey>;
   description: "Object representing the chain identifier of token instance."
 })
 export class TokenInstanceKey extends ChainCallDTO {
-  constructor(params?: TokenInstanceKeyBody) {
-    super();
-    if (params) {
-      const { instance, ...rest } = params;
-      Object.assign(this, rest);
-      this.instance = new BigNumber(instance);
-    }
-  }
-
   @IsNotEmpty()
   public collection: string;
 
