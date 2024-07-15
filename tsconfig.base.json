@@ -28,7 +28,7 @@
       "@gala-chain/client": ["chain-client/src/index.ts"],
       "@gala-chain/connect": ["chain-connect/src/index.ts"],
       "@gala-chain/test": ["chain-test/src/index.ts"],
-      "@gala-chain/ui": ["connect/src/index.ts"]
+      "@gala-chain/ui": ["chain-ui/src/index.ts"]
     }
   },
   "exclude": ["node_modules", "tmp"],

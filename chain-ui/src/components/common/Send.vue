@@ -129,7 +129,7 @@ watch(
 </script>
 
 <template>
-  <form ref="formEl" v-uid @submit.prevent="send">
+  <form ref="formEl" v-uid @submit.prevent="send" class="dark:text-white">
     <div class="xs:flex xs:gap-4 mt-6 mb-6">
       <div class="px-2 flex-grow-0 flex-shrink-0 text-center">
         <img
@@ -146,7 +146,7 @@ watch(
         ></div>
       </div>
 
-      <div class="px-2 xs:pl-0 xs:text-left flex-grow mt-4 xs:mt-3">
+      <div class="px-2 xs:pl-0 xs:text-left flex-grow mt-4 xs:mt-3" >
         <div v-if="!!model.token">
           <label :for="`${formEl?.id}-send-token`" class="sr-only"> Token </label>
           <input

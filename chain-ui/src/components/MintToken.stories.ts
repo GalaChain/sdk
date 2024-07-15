@@ -49,8 +49,6 @@ const tokenAllowance = {
   ]
 }
 
-const submitAction = action('submit')
-
 const Template = (args, { argTypes }) => ({
   components: { MintToken },
   setup() {
