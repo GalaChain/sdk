@@ -47,8 +47,12 @@ Among others, you will find the following directories:
 
 Additionally, init command creates private keys for the chaincode admin and developer in your home directory at `~/.gc-keys/<chaincode-name>`, where `<chaincode-name>` consists of `gc-` prefix and eth address calculated from chaincode admin public key.
 
+## 3. Register the chaincode
 
-## 3. Update the contract (optional)
+Since this is an early access feature, the ability to deploy to the testnet requires GalaChain approval.
+We require the following data to approve your registration: channel admin public key, developer admin key, chaincode Docker image.
+
+## 4. Update the contract (optional)
 
 The chaincode template comes with some sample contract code.
 It exposes three contract classes:
@@ -73,7 +77,7 @@ npm run test:e2e
 See the [Chaincode Development](chaincode-development.md) and [Chaincode Testing](chaincode-testing.md) reference for more details.
 
 
-## 4. Prepare and publish chaincode docker image
+## 5. Prepare and publish chaincode docker image
 
 Before you can deploy your chaincode, you need to build a Docker image with it and publish it to a registry of your choice (e.g. Docker Hub).
 
@@ -90,7 +94,7 @@ docker push $TAG
 Docker image should be publicly accessible, as GalaChain network will download it during the deployment.
 
 
-## 5. Connect your chaincode with GalaChain network
+## 6. Connect your chaincode with GalaChain network
 
 In order to deploy a chaincode GalaChain support needs to review and approve it.
 To do so, you need to provide us the following information:
@@ -108,7 +112,7 @@ You should get a JSON response with your chaincode information.
 Note the `chaincode` field, which is your chaincode name, and the `image` field, which is the Docker image tag you provided.
 
 
-## 6. Deploy the chaincode
+## 7. Deploy the chaincode
 
 To deploy the chaincode, you need to call the following command:
 
@@ -126,7 +130,7 @@ You can verify the deployment status with `galachain info` command.
 See the [Chaincode Deployment](chaincode-deployment.md) reference for more details.
 
 
-## 7. Call REST API
+## 8. Call REST API
 
 GalaChain Gateway provides a REST API to interact with the chaincode.
 The simplest way to call it is to use `curl` (for convenience, you can use `galachain info` and `jq` to build chaincode url):
