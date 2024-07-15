@@ -13,18 +13,61 @@
  * limitations under the License.
  */
 import BN from "bn.js";
-import { ec as EC } from "elliptic";
+import { ec as EC, eddsa } from "elliptic";
 import { keccak256 } from "js-sha3";
 
 import signatures, {
   InvalidSignatureFormatError,
   flipSignatureParity,
-  normalizeSecp256k1Signature
 } from "./signatures";
+
+it("platform", () => {
+  const privateKey = "0x0000000000000000000000000000000000000000000000000000000000000001"
+
+  const obj ={
+    swapRequestId:
+      '\u0000GCTSR\u00001712241257995\u0000f096cfda086df84a8ee38980b2c14cc9785930bf66dcf3e0448d661127e369b7\u0000',
+    uniqueKey: 'galaswap-operation-1',
+    signerPublicKey: 'Anm+Zn753LusVaBilc6HCwcCm/zbLc4o2VnygVsW+BeY',
+  }
+    // 'MEUCIQCUq4lOUHtpwp1UWMrRuA9iAa6CPikgszHpvM94JM3OugIgJesJc2LsPbu9iYWAsKyCN+mmGlJjOXnthUMo/4/B6ic=',
+      // 'MEYCIQCUq4lOUHtpwp1UWMrRuA9iAa6CPikgszHpvM94JM3OugIhANoU9oydE8JEQnZ6f09TfcbRCMKUTA8mTjqPNY1AdFca',
+
+  const signature = signatures.getSignature(obj, Buffer.from(privateKey.slice(2), "hex"));
+  console.log(signature);
+
+  const derSignature = signatures.getDERSignature(obj, Buffer.from(privateKey.slice(2), "hex"));
+  console.log(Buffer.from(derSignature, "hex").toString("base64"));
+})
+
+
+
+it("b", () => {
+  const normalized = signatures.getNonCompactHexPublicKey("A/W4bZCRTQAezSf1VtV9rY5HFZUvPhxLH37u/CIua/oX");
+  console.log(normalized);
+});
+
+it("aa", () => {
+  const toString = (s) => Buffer.from(s.toDER()).toString("base64");
+
+  const ecSecp256k1 = new EC("secp256k1");
+  const expectedFlippedDerSignature = "MEUCIQDOfdt0+83Q3irzVQXfIrXdz9Dq+ttA4TWc0U0UIdvBewIgXxK5qusaIszQxEq3ev5TQnCHvnhdViTJ4OUEuqXeNHE=";
+
+  // note: low s value, but this is fine
+  const derSignature = "MEYCIQCUq4lOUHtpwp1UWMrRuA9iAa6CPikgszHpvM94JM3OugIhANoU9oydE8JEQnZ6f09TfcbRCMKUTA8mTjqPNY1AdFca";
+
+  const Signature = require("elliptic/lib/elliptic/ec/signature");
+  const signatureObj = new Signature(signatures.normalizeSecp256k1Signature(derSignature), "base64");
+  expect(toString(signatureObj)).toEqual(derSignature);
+
+  const flippedObj = signatures.flipSignatureParity(signatureObj);
+
+  expect(toString(flippedObj)).toEqual(expectedFlippedDerSignature);
+})
 
 function recoverPublicKeyTestFunction(signature: string, obj: object, prefix = ""): string {
   const ecSecp256k1 = new EC("secp256k1");
-  const signatureObj = normalizeSecp256k1Signature(signature);
+  const signatureObj = signatures.normalizeSecp256k1Signature(signature);
   const recoveryParam = signatureObj.recoveryParam;
   if (recoveryParam === undefined) {
     const message = "Signature must contain recovery part (typically 1b or 1c as the last two characters)";
@@ -392,7 +435,7 @@ describe("signatures", () => {
     const originalPubKey = recoverPublicKeyTestFunction(originalSig, payload);
 
     // When
-    const flippedSigObj = flipSignatureParity(normalizeSecp256k1Signature(originalSig));
+    const flippedSigObj = flipSignatureParity(signatures.normalizeSecp256k1Signature(originalSig));
 
     // Then
     const flippedSig =

@@ -35,6 +35,7 @@ import { UniqueTransactionService } from "../services";
 import { GalaChainContext } from "../types";
 import { GalaContract } from "./GalaContract";
 import { updateApi } from "./GalaContractApi";
+import { authenticate } from "./authenticate";
 import { authorize, ensureOrganizationIsAllowed } from "./authorize";
 import { legacyClientAccountId } from "./legacyClientAccountId";
 
@@ -46,7 +47,7 @@ DTOObject()(ChainCallDTO);
 
 // Note: it is just a metadata, you cannot effectively forbid to submit the transaction
 // (you can, however make it readonly by passing random value to the result or manipulating the context)
-enum GalaTransactionType {
+export enum GalaTransactionType {
   EVALUATE,
   SUBMIT
 }
@@ -122,22 +123,14 @@ function GalaTransaction<T extends ChainCallDTO>(
     throw new NotImplementedError(message);
   }
 
-  if (!options.verifySignature && options.allowedRoles !== undefined) {
-    const message = `allowedRoles can be defined only for transactions with verifySignature`;
-    throw new NotImplementedError(message);
-  }
-
   if (options.allowedRoles !== undefined && options.allowedOrgs !== undefined) {
     const message = `allowedRoles and allowedOrgs cannot be defined at the same time`;
     throw new NotImplementedError(message);
   }
 
-  const allowedRoles = options.allowedRoles ?? [
+  options.allowedRoles = options.allowedRoles ?? [
     options.type === SUBMIT ? UserRole.SUBMIT : UserRole.EVALUATE
   ];
-
-  // TODO register user
-  // TODO public access
 
   // An actual decorator
   return (target, propertyKey, descriptor): void => {
@@ -166,31 +159,18 @@ function GalaTransaction<T extends ChainCallDTO>(
           ? undefined
           : await parseValidDTO<T>(dtoClass, dtoPlain as string | Record<string, unknown>);
 
-        // Verify public key signature if needed - throws exception in case of failure
+        // Authenticate the user
         if (ctx.isDryRun) {
-          // Do not verify signature in dry run mode
+          // Do not authenticate in dry run mode
         } else if (options?.verifySignature || dto?.signature !== undefined) {
-          ctx.callingUserData = await authorize(ctx, dto, legacyClientAccountId(ctx));
+          ctx.callingUserData = await authenticate(ctx, dto, legacyClientAccountId(ctx));
         } else {
           // it means a request where authorization is not required
           ctx.callingUserData = { alias: legacyClientAccountId(ctx), roles: [UserRole.EVALUATE] };
         }
 
-        // Verify if organization can invoke this method - throws exception in case of failure
-        if (options?.allowedOrgs) {
-          ensureOrganizationIsAllowed(ctx, options.allowedOrgs);
-        }
-
-        // Ensure that the calling user has the required role (only for transactions where no allowedOrgs are defined)
-        else if (allowedRoles.length > 0) {
-          const hasRole = allowedRoles.some((role) => ctx.callingUserRoles?.includes(role));
-          if (!hasRole) {
-            const message =
-              `User ${ctx.callingUser} does not have one of required roles: ` +
-              `${allowedRoles.join(", ")} (has: ${ctx.callingUserRoles?.join(", ")})`;
-            throw new UnauthorizedError(message);
-          }
-        }
+        // Authorize the user
+        await authorize(ctx, options);
 
         // Prevent the same transaction from being submitted multiple times
         if (dto?.uniqueKey) {

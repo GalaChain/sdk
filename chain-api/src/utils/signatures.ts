@@ -211,7 +211,7 @@ function parseSecp256k1Signature(s: string): Secp256k1Signature {
   return sigObject;
 }
 
-export function normalizeSecp256k1Signature(s: string): Secp256k1Signature {
+function normalizeSecp256k1Signature(s: string): Secp256k1Signature {
   // standard format with recovery parameter
   if (s.length === 130) {
     return secp256k1signatureFrom130HexString(s);
@@ -395,6 +395,7 @@ function isValidBase64(input: string) {
 export default {
   calculateKeccak256,
   enforceValidPublicKey,
+  flipSignatureParity,
   getCompactBase64PublicKey,
   getNonCompactHexPublicKey,
   getEthAddress,
@@ -408,6 +409,7 @@ export default {
   isValidSecp256k1Signature,
   normalizePrivateKey,
   normalizePublicKey,
+  normalizeSecp256k1Signature,
   parseSecp256k1Signature,
   recoverPublicKey,
   validatePublicKey,

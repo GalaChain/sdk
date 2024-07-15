@@ -20,7 +20,7 @@ export interface ChainUserWithRoles {
   ethAddress: string;
   publicKey: string;
   privateKey: string;
-  roles: string[];
+  roles: string[] | undefined;
 }
 
 function user(string: string, roles: string[]): ChainUserWithRoles {

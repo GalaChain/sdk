@@ -118,7 +118,6 @@ class Fixture<Ctx extends TestGalaChainContext, T extends GalaContract<Ctx>> {
               : await method.call(contractInstance, ctx);
             await contractInstance.afterTransaction(ctx, result);
             ctx.resetCallingUserData();
-            this.ctx.clientIdentity = defaultCaClientIdentity;
             return result;
           };
         }
