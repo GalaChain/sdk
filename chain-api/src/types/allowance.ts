@@ -21,6 +21,7 @@ import {
   IsInt,
   IsNotEmpty,
   IsOptional,
+  IsString,
   Max,
   Min,
   ValidateIf,
@@ -196,6 +197,7 @@ export class FetchAllowancesResponse extends ChainCallDTO {
 
   @JSONSchema({ description: "Next page bookmark." })
   @IsOptional()
+  @IsString()
   nextPageBookmark?: string;
 }
 

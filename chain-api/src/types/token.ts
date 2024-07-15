@@ -120,6 +120,7 @@ export class FetchTokenClassesResponse extends ChainCallDTO {
 
   @JSONSchema({ description: "Next page bookmark." })
   @IsOptional()
+  @IsString()
   nextPageBookmark?: string;
 }
 
@@ -487,6 +488,7 @@ export class FetchBalancesWithTokenMetadataResponse extends ChainCallDTO {
 
   @JSONSchema({ description: "Next page bookmark." })
   @IsOptional()
+  @IsString()
   nextPageBookmark?: string;
 }
 
