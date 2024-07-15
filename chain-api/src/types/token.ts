@@ -45,11 +45,6 @@ export type FetchTokenClassesParams = ConstructorArgs<FetchTokenClassesDto>;
   description: "Contains list of objects representing token classes to fetch."
 })
 export class FetchTokenClassesDto extends ChainCallDTO {
-  constructor(params?: FetchTokenClassesParams) {
-    super();
-    Object.assign(this, params);
-  }
-
   @ValidateNested({ each: true })
   @Type(() => TokenClassKey)
   @ArrayNotEmpty()
@@ -64,11 +59,6 @@ export type FetchTokenClassesWithPaginationParams = ConstructorArgs<FetchTokenCl
     "pagination, and optionality of TokenClassKey properties."
 })
 export class FetchTokenClassesWithPaginationDto extends ChainCallDTO {
-  constructor(params?: FetchTokenClassesWithPaginationParams) {
-    super();
-    Object.assign(this, params);
-  }
-
   static readonly MAX_LIMIT = 10 * 1000;
   static readonly DEFAULT_LIMIT = 1000;
 
@@ -140,11 +130,6 @@ export type FetchTokenInstancesParams = ConstructorArgs<FetchTokenInstancesDto>;
   description: "Contains list of objects representing token instances to fetch."
 })
 export class FetchTokenInstancesDto extends ChainCallDTO {
-  constructor(params?: FetchTokenInstancesParams) {
-    super();
-    Object.assign(this, params);
-  }
-
   @ValidateNested({ each: true })
   @Type(() => TokenInstanceKey)
   @ArrayNotEmpty()
@@ -158,11 +143,6 @@ export type CreateTokenClassParams = ConstructorArgs<CreateTokenClassDto>;
     "Contains properties of token class to be created. Actual token units and NFT instances are created on mint."
 })
 export class CreateTokenClassDto extends ChainCallDTO {
-  constructor(params?: CreateTokenClassParams) {
-    super();
-    Object.assign(this, params);
-  }
-
   static DEFAULT_NETWORK = "GC";
   static DEFAULT_DECIMALS = 0;
   static DEFAULT_MAX_CAPACITY = new BigNumber("Infinity");
@@ -311,11 +291,6 @@ export class UpdateTokenClassDto extends ChainCallDTO {
   network?: string;
   */
 
-  constructor(params?: UpdateTokenClassParams) {
-    super();
-    Object.assign(this, params);
-  }
-
   @JSONSchema({
     description: "The unique identifier of the existing token which will be updated."
   })
@@ -383,11 +358,6 @@ export type FetchBalancesParams = ConstructorArgs<FetchBalancesDto>;
   description: "Contains parameters for fetching balances. Each parameter is optional."
 })
 export class FetchBalancesDto extends ChainCallDTO {
-  constructor(params?: FetchBalancesParams) {
-    super();
-    Object.assign(this, params);
-  }
-
   @JSONSchema({
     description: "Person who owns the balance. If the value is missing, chaincode caller is used."
   })
@@ -431,11 +401,6 @@ export type FetchBalancesWithPaginationParams = ConstructorArgs<FetchBalancesWit
 export class FetchBalancesWithPaginationDto extends ChainCallDTO {
   static readonly MAX_LIMIT = 10 * 1000;
   static readonly DEFAULT_LIMIT = 1000;
-
-  constructor(params?: FetchBalancesWithPaginationParams) {
-    super();
-    Object.assign(this, params);
-  }
 
   @JSONSchema({
     description: "Person who owns the balance. If the value is missing, chaincode caller is used."
@@ -497,11 +462,6 @@ export type TokenBalanceWithMetadataParams = ConstructorArgs<TokenBalanceWithMet
   description: "Response DTO containing a TokenBalance and the balance's corresponding TokenClass."
 })
 export class TokenBalanceWithMetadata extends ChainCallDTO {
-  constructor(params?: TokenBalanceWithMetadataParams) {
-    super();
-    Object.assign(this, params);
-  }
-
   @JSONSchema({
     description: "A TokenBalance read of chain."
   })
@@ -539,11 +499,6 @@ export type TransferTokenParams = ConstructorArgs<TransferTokenDto>;
     "Experimental: After submitting request to RequestMintAllowance, follow up with FulfillMintAllowance."
 })
 export class TransferTokenDto extends ChainCallDTO {
-  constructor(params?: TransferTokenParams) {
-    super();
-    Object.assign(this, params);
-  }
-
   @JSONSchema({
     description: "The current owner of tokens. If the value is missing, chaincode caller is used."
   })

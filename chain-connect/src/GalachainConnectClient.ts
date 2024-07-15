@@ -12,7 +12,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-import { ChainCallDTO, serialize, signatures } from "@gala-chain/api";
+import { ChainCallDTO, ConstructorArgs, serialize, signatures } from "@gala-chain/api";
 import { BrowserProvider, Eip1193Provider, getAddress } from "ethers";
 
 declare global {
@@ -31,7 +31,7 @@ export class GalachainConnectClient {
   }
 
   get ethAddress() {
-    return this.#ethAddress;
+    return getAddress(this.#ethAddress);
   }
 
   set ethAddress(val: string) {
@@ -55,7 +55,7 @@ export class GalachainConnectClient {
 
     try {
       const accounts = (await this.#provider.send("eth_requestAccounts", [])) as string[];
-      this.ethAddress = accounts[0];
+      this.ethAddress = getAddress(accounts[0]);
 
       return this.galachainAddress;
     } catch (error: unknown) {
@@ -63,7 +63,7 @@ export class GalachainConnectClient {
     }
   }
 
-  public async send<T, U extends ChainCallDTO>({
+  public async send<T, U extends ConstructorArgs<ChainCallDTO>>({
     url = this.#chainCodeUrl,
     method,
     payload,
@@ -90,7 +90,7 @@ export class GalachainConnectClient {
         const dto = signatures.getPayloadToSign(prefixedPayload);
 
         const signer = await this.#provider.getSigner();
-        const signature = await signer.provider.send("personal_sign", [this.ethAddress, dto]);
+        const signature = await signer.provider.send("personal_sign", [this.#ethAddress, dto]);
 
         return await this.submit(url, method, { ...prefixedPayload, signature }, headers);
       }
@@ -101,7 +101,7 @@ export class GalachainConnectClient {
     }
   }
 
-  private async submit<T, U extends ChainCallDTO>(
+  private async submit<T, U extends ConstructorArgs<ChainCallDTO>>(
     chainCodeUrl: string,
     method: string,
     signedPayload: U,

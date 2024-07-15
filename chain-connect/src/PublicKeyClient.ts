@@ -29,33 +29,33 @@ export class PublicKeyClient {
   constructor(private client: GalachainConnectClient) {}
 
   public GetMyProfile(dto: GetMyProfileParams) {
-    return this.client.send<UserProfileBody, GetMyProfileDto>({
+    return this.client.send<UserProfileBody, GetMyProfileParams>({
       method: "GetMyProfile",
-      payload: new GetMyProfileDto(dto),
+      payload: dto,
       sign: true
     });
   }
 
   public RegisterUser(dto: RegisterUserParams) {
-    return this.client.send<string, RegisterUserDto>({
+    return this.client.send<string, RegisterUserParams>({
       method: "RegisterUser",
-      payload: new RegisterUserDto(dto),
+      payload: dto,
       sign: true
     });
   }
 
   public RegisterEthUser(dto: RegisterUserParams) {
-    return this.client.send<string, RegisterEthUserDto>({
+    return this.client.send<string, RegisterUserParams>({
       method: "RegisterEthUser",
-      payload: new RegisterEthUserDto(dto),
+      payload: dto,
       sign: true
     });
   }
 
   public UpdatePublicKey(dto: UpdatePublicKeyParams) {
-    return this.client.send<void, UpdatePublicKeyDto>({
+    return this.client.send<void, UpdatePublicKeyParams>({
       method: "UpdatePublicKey",
-      payload: new UpdatePublicKeyDto(dto),
+      payload: dto,
       sign: true
     });
   }
