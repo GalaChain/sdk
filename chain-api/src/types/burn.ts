@@ -42,11 +42,6 @@ export type FetchBurnsParams = ConstructorArgs<FetchBurnsDto>;
   description: "Contains parameters for fetching burns."
 })
 export class FetchBurnsDto extends ChainCallDTO {
-  constructor(params?: FetchBurnsParams) {
-    super();
-    Object.assign(this, params);
-  }
-
   @JSONSchema({
     description: "The user who burned the token."
   })
@@ -103,11 +98,6 @@ export type BurnTokensParams = ConstructorArgs<BurnTokensDto>;
   description: "Defines burns to be created."
 })
 export class BurnTokensDto extends ChainCallDTO {
-  constructor(params?: BurnTokensParams) {
-    super();
-    Object.assign(this, params);
-  }
-
   @JSONSchema({
     description:
       "Array of token instances of token to be burned. In case of fungible tokens, tokenInstance.instance field " +
@@ -140,11 +130,6 @@ export type BurnAndMintParams = ConstructorArgs<BurnAndMintDto>;
     "All operations occur in the same transaction, meaning either all succeed or none are written to chain."
 })
 export class BurnAndMintDto extends ChainCallDTO {
-  constructor(params?: BurnAndMintParams) {
-    super();
-    Object.assign(this, params);
-  }
-
   static MAX_ARR_SIZE = 1000;
 
   @JSONSchema({
@@ -178,11 +163,6 @@ export type FetchBurnCountersWithPaginationParams = ConstructorArgs<FetchBurnCou
   description: "Contains parameters for fetching TokenBurnCounters with pagination."
 })
 export class FetchBurnCountersWithPaginationDto extends ChainCallDTO {
-  constructor(params?: FetchBurnCountersWithPaginationParams) {
-    super();
-    Object.assign(this, params);
-  }
-
   static readonly MAX_LIMIT = 10 * 1000;
   static readonly DEFAULT_LIMIT = 1000;
 

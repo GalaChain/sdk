@@ -28,11 +28,6 @@ export type ReleaseTokenParams = ConstructorArgs<ReleaseTokenDto>;
   description: "Describes an action to release a token that is in use."
 })
 export class ReleaseTokenDto extends ChainCallDTO {
-  constructor(params?: ReleaseTokenParams) {
-    super();
-    Object.assign(this, params);
-  }
-
   @JSONSchema({
     description: "Token instance of token to be released."
   })
@@ -48,11 +43,6 @@ export type UseTokenParams = ConstructorArgs<UseTokenDto>;
   description: "Describes an action to use a token."
 })
 export class UseTokenDto extends ChainCallDTO {
-  constructor(params?: UseTokenParams) {
-    super();
-    Object.assign(this, params);
-  }
-
   @JSONSchema({
     description: "The current owner of tokens. If the value is missing, chaincode caller is used."
   })
