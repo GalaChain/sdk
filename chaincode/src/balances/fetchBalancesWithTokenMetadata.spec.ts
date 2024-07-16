@@ -58,7 +58,7 @@ it("should Fetch Token Balances with Token Class Metadata", async () => {
   });
 
   // When
-  const response = await contract.FetchBalancesWithTokenMetadata(ctx, dto);
+  const response = await contract.FetchBalancesWithTokenMetadata(ctx, dto).catch((e) => e);
 
   // Then
   expect(response).toEqual(GalaChainResponse.Success(expectedResponse));
@@ -79,17 +79,15 @@ it("should validate the response DTO if the nextPageBookmark is the empty string
     token: nftClass
   });
 
-  const dto = await createValidDTO(FetchBalancesWithTokenMetadataResponse, {
+  // When
+  const dtoIsValid = await createValidDTO(FetchBalancesWithTokenMetadataResponse, {
     results: [curencyBalanceWithMetadata, nftBalanceWithMetadata],
     nextPageBookmark: ""
-  });
-
-  // Then
-  const dtoIsValid = await dto
-    .validateOrReject()
+  })
     .then(() => true)
     .catch((e) => e);
 
+  // Then
   expect(dtoIsValid).toBe(true);
 });
 
@@ -108,13 +106,10 @@ it("should validate the response DTO if the nextPageBookmark is undefined", asyn
     token: nftClass
   });
 
-  const dto = await createValidDTO(FetchBalancesWithTokenMetadataResponse, {
-    results: [curencyBalanceWithMetadata, nftBalanceWithMetadata]
-  });
-
   // When
-  const dtoIsValid = await dto
-    .validateOrReject()
+  const dtoIsValid = await createValidDTO(FetchBalancesWithTokenMetadataResponse, {
+    results: [curencyBalanceWithMetadata, nftBalanceWithMetadata]
+  })
     .then(() => true)
     .catch((e) => e);
 
