@@ -12,8 +12,8 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-import { ChainCallDTO, serialize, signatures } from "@gala-chain/api";
-import { BrowserProvider, Eip1193Provider } from "ethers";
+import { ChainCallDTO, ConstructorArgs, serialize, signatures } from "@gala-chain/api";
+import { BrowserProvider, Eip1193Provider, getAddress } from "ethers";
 
 declare global {
   interface Window {
@@ -22,16 +22,20 @@ declare global {
 }
 
 export class GalachainConnectClient {
-  #address: string;
+  #ethAddress: string;
   #provider: BrowserProvider | undefined;
   #chainCodeUrl: string;
 
-  get address() {
-    return `eth|${this.#address}`;
+  get galachainAddress() {
+    return this.#ethAddress.replace("0x", "eth|");
   }
 
-  set address(val: string) {
-    this.#address = val.replace(/0x|eth\|/, "");
+  get ethAddress() {
+    return getAddress(this.#ethAddress);
+  }
+
+  set ethAddress(val: string) {
+    this.#ethAddress = getAddress(`0x${val.replace(/0x|eth\|/, "")}`);
   }
 
   get provider() {
@@ -51,15 +55,15 @@ export class GalachainConnectClient {
 
     try {
       const accounts = (await this.#provider.send("eth_requestAccounts", [])) as string[];
-      this.address = accounts[0];
+      this.ethAddress = getAddress(accounts[0]);
 
-      return this.address;
+      return this.galachainAddress;
     } catch (error: unknown) {
       throw new Error((error as Error).message);
     }
   }
 
-  public async send<T, U extends ChainCallDTO>({
+  public async send<T, U extends ConstructorArgs<ChainCallDTO>>({
     url = this.#chainCodeUrl,
     method,
     payload,
@@ -75,7 +79,7 @@ export class GalachainConnectClient {
     if (!this.#provider) {
       throw new Error("Ethereum provider not found");
     }
-    if (!this.#address) {
+    if (!this.#ethAddress) {
       throw new Error("No account connected");
     }
 
@@ -86,7 +90,7 @@ export class GalachainConnectClient {
         const dto = signatures.getPayloadToSign(prefixedPayload);
 
         const signer = await this.#provider.getSigner();
-        const signature = await signer.provider.send("personal_sign", [this.#address, dto]);
+        const signature = await signer.provider.send("personal_sign", [this.#ethAddress, dto]);
 
         return await this.submit(url, method, { ...prefixedPayload, signature }, headers);
       }
@@ -97,7 +101,7 @@ export class GalachainConnectClient {
     }
   }
 
-  private async submit<T, U extends ChainCallDTO>(
+  private async submit<T, U extends ConstructorArgs<ChainCallDTO>>(
     chainCodeUrl: string,
     method: string,
     signedPayload: U,

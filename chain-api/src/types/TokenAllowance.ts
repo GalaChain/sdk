@@ -16,10 +16,12 @@ import { BigNumber } from "bignumber.js";
 import { Exclude } from "class-transformer";
 import { IsDefined, IsInt, IsNotEmpty, IsPositive, Min } from "class-validator";
 
-import { BigNumberProperty, ChainKey, EnumProperty } from "../utils";
+import { BigNumberProperty, ChainKey, ConstructorArgs, EnumProperty } from "../utils";
 import { BigNumberIsInteger, BigNumberIsNotNegative, BigNumberIsPositive } from "../validators/decorators";
 import { ChainObject } from "./ChainObject";
 import { AllowanceType } from "./common";
+
+export type TokenAllowanceBody = ConstructorArgs<TokenAllowance>;
 
 export class TokenAllowance extends ChainObject {
   @Exclude()

@@ -28,13 +28,15 @@ import {
 } from "class-validator";
 import { JSONSchema } from "class-validator-jsonschema";
 
-import { BigNumberProperty } from "../utils";
+import { BigNumberProperty, ConstructorArgs } from "../utils";
 import { BigNumberIsInteger, BigNumberIsNotNegative } from "../validators";
 import { BurnTokenQuantity } from "./BurnTokenQuantity";
 import { TokenBurnCounter } from "./TokenBurnCounter";
 import { TokenInstance } from "./TokenInstance";
 import { ChainCallDTO } from "./dtos";
 import { BatchMintTokenDto } from "./mint";
+
+export type FetchBurnsParams = ConstructorArgs<FetchBurnsDto>;
 
 @JSONSchema({
   description: "Contains parameters for fetching burns."
@@ -90,6 +92,8 @@ export class FetchBurnsDto extends ChainCallDTO {
   public created?: number;
 }
 
+export type BurnTokensParams = ConstructorArgs<BurnTokensDto>;
+
 @JSONSchema({
   description: "Defines burns to be created."
 })
@@ -112,6 +116,8 @@ export class BurnTokensDto extends ChainCallDTO {
   @IsNotEmpty()
   owner?: string;
 }
+
+export type BurnAndMintParams = ConstructorArgs<BurnAndMintDto>;
 
 @JSONSchema({
   description:
@@ -150,6 +156,8 @@ export class BurnAndMintDto extends ChainCallDTO {
   @IsNotEmpty()
   mintDto: BatchMintTokenDto;
 }
+
+export type FetchBurnCountersWithPaginationParams = ConstructorArgs<FetchBurnCountersWithPaginationDto>;
 
 @JSONSchema({
   description: "Contains parameters for fetching TokenBurnCounters with pagination."
@@ -205,6 +213,8 @@ export class FetchBurnCountersWithPaginationDto extends ChainCallDTO {
   @IsInt()
   limit?: number;
 }
+
+export type FetchBurnCountersBody = ConstructorArgs<FetchBurnCountersResponse>;
 
 export class FetchBurnCountersResponse extends ChainCallDTO {
   @JSONSchema({ description: "List of token burn counters." })

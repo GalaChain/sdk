@@ -14,10 +14,13 @@
  */
 import {
   GetMyProfileDto,
+  GetMyProfileParams,
   RegisterEthUserDto,
   RegisterUserDto,
+  RegisterUserParams,
   UpdatePublicKeyDto,
-  UserProfile
+  UpdatePublicKeyParams,
+  UserProfileBody
 } from "@gala-chain/api";
 
 import { GalachainConnectClient } from "./GalachainConnectClient";
@@ -25,32 +28,32 @@ import { GalachainConnectClient } from "./GalachainConnectClient";
 export class PublicKeyClient {
   constructor(private client: GalachainConnectClient) {}
 
-  public GetMyProfile(dto: GetMyProfileDto) {
-    return this.client.send<UserProfile, GetMyProfileDto>({
+  public GetMyProfile(dto: GetMyProfileParams) {
+    return this.client.send<UserProfileBody, GetMyProfileParams>({
       method: "GetMyProfile",
       payload: dto,
       sign: true
     });
   }
 
-  public RegisterUser(dto: RegisterUserDto) {
-    return this.client.send<string, RegisterUserDto>({
+  public RegisterUser(dto: RegisterUserParams) {
+    return this.client.send<string, RegisterUserParams>({
       method: "RegisterUser",
       payload: dto,
       sign: true
     });
   }
 
-  public RegisterEthUser(dto: RegisterEthUserDto) {
-    return this.client.send<string, RegisterEthUserDto>({
+  public RegisterEthUser(dto: RegisterUserParams) {
+    return this.client.send<string, RegisterUserParams>({
       method: "RegisterEthUser",
       payload: dto,
       sign: true
     });
   }
 
-  public UpdatePublicKey(dto: UpdatePublicKeyDto) {
-    return this.client.send<void, UpdatePublicKeyDto>({
+  public UpdatePublicKey(dto: UpdatePublicKeyParams) {
+    return this.client.send<void, UpdatePublicKeyParams>({
       method: "UpdatePublicKey",
       payload: dto,
       sign: true
