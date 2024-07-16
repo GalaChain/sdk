@@ -165,7 +165,7 @@ export async function generateKeys(projectPath: string): Promise<void> {
   const devPrivateKey = secp.utils.bytesToHex(secp.utils.randomPrivateKey());
   const devPublicKey = secp.utils.bytesToHex(secp.getPublicKey(devPrivateKey));
 
-  const chaincodeName = "gc-" + signatures.getEthAddress(adminPublicKey);
+  const chaincodeName = "gc-" + signatures.getEthAddress(adminPublicKey).toLowerCase();
   const privateKeysPath = path.join(os.homedir(), DEFAULT_PRIVATE_KEYS_DIR, chaincodeName);
 
   // create the keys directory
