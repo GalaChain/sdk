@@ -48,18 +48,8 @@ Among others, you will find the following directories:
 
 Additionally, init command creates private keys for the chaincode admin and developer in your home directory at `~/.gc-keys/<chaincode-name>`, where `<chaincode-name>` consists of `gc-` prefix and eth address calculated from chaincode admin public key.
 
-## 3. Register the chaincode
 
-Since this is an early access feature, the ability to deploy to the testnet requires GalaChain approval.
-We require the following data to approve your registration:
-1. channel admin public key (the content of `keys/gc-admin-key.pub`),
-2. developer public keys (the content of `keys/gc-dev-key.pub` files of all developers who want to deploy the chaincode),
-3. chaincode Docker image (it needs to be publicly accessible).
-
-The channel admin public key is used as a public key of the channel admin (the initial, single user on the chain with admin permissions).
-Developer public keys are used to sign deploy requests in CLI.
-
-## 4. Update the contract (optional)
+## 3. Update the contract (optional)
 
 The chaincode template comes with some sample contract code.
 It exposes three contract classes:
@@ -84,7 +74,7 @@ npm run test:e2e
 See the [Chaincode Development](chaincode-development.md) and [Chaincode Testing](chaincode-testing.md) reference for more details.
 
 
-## 5. Prepare and publish chaincode docker image
+## 4. Prepare and publish chaincode docker image
 
 Before you can deploy your chaincode, you need to build a Docker image with it and publish it to a registry of your choice (e.g. Docker Hub).
 
@@ -101,13 +91,16 @@ docker push $TAG
 Docker image should be publicly accessible, as GalaChain network will download it during the deployment.
 
 
-## 6. Connect your chaincode with GalaChain network
+## 5. Connect your chaincode with GalaChain network
 
-In order to deploy a chaincode GalaChain support needs to review and approve it.
-To do so, you need to provide us the following information:
-- Docker image tag (without the version, or `:latest` part),
-- Chaincode admin public key (from `keys/gc-admin-key.pub` file),
-- Developer public key (from `keys/gc-dev-key.pub` file).
+Since this is an early access feature, the ability to deploy to the testnet requires GalaChain approval.
+We require the following data to approve your registration:
+- Docker image tag (without the version, or `:latest` part; the image needs to be publicly available),
+- Chaincode admin public key (the content of `keys/gc-admin-key.pub` file),
+- Developer public keys (the content of `keys/gc-dev-key.pub` files of all developers who want to deploy the chaincode).
+
+The channel admin public key is used as a public key of the channel admin (the initial, single user on the chain with admin permissions).
+Developer public keys are used to sign deploy requests in CLI.
 
 After the approval, call the following command to verify you registration:
 
@@ -119,7 +112,7 @@ You should get a JSON response with your chaincode information.
 Note the `chaincode` field, which is your chaincode name, and the `image` field, which is the Docker image tag you provided.
 
 
-## 7. Deploy the chaincode
+## 6. Deploy the chaincode
 
 To deploy the chaincode, you need to call the following command:
 
@@ -137,7 +130,7 @@ You can verify the deployment status with `galachain info` command.
 See the [Chaincode Deployment](chaincode-deployment.md) reference for more details.
 
 
-## 8. Call REST API
+## 7. Call REST API
 
 GalaChain Gateway provides a REST API to interact with the chaincode.
 The simplest way to call it is to use `curl` (for convenience, you can use `galachain info` and `jq` to build chaincode url):
