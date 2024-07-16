@@ -15,6 +15,7 @@
 import { TokenInstanceKey } from "@gala-chain/api";
 import { TransferTokenDto } from "@gala-chain/api";
 import { plainToInstance } from "class-transformer";
+import { EventEmitter } from "events";
 
 import { GalachainConnectClient } from "./GalachainConnectClient";
 
@@ -30,7 +31,7 @@ global.fetch = jest.fn((url: string, options?: Record<string, unknown>) =>
 // https://privatekeys.pw/key/1d3cc061492016bcd5e7ea2c31b1cf3dec584e07a38e21df7ef3049c6b224e70#addresses
 const sampleAddr = "0x3bb75c2Da3B669E253C338101420CC8dEBf0a777";
 
-window.ethereum = {
+class EthereumMock extends EventEmitter {
   request(request: { method: string; params?: Array<any> | Record<string, any> }): Promise<any> {
     if (request.method === "eth_requestAccounts") {
       return Promise.resolve([sampleAddr]);
@@ -42,7 +43,25 @@ window.ethereum = {
       throw new Error(`Method not mocked: ${request.method}`);
     }
   }
-};
+}
+window.ethereum = new EthereumMock();
+// window.ethereum = {
+//   request(request: { method: string; params?: Array<any> | Record<string, any> }): Promise<any> {
+//     if (request.method === "eth_requestAccounts") {
+//       return Promise.resolve([sampleAddr]);
+//     } else if (request.method === "eth_accounts") {
+//       return Promise.resolve([sampleAddr]);
+//     } else if (request.method === "personal_sign") {
+//       return Promise.resolve("sampleSignature");
+//     } else {
+//       throw new Error(`Method not mocked: ${request.method}`);
+//     }
+//   },
+//   // eslint-disable-next-line @typescript-eslint/no-explicit-any
+//   on(event: string, handler: (...args: any[]) => void): void {
+//     this.addListener(event, handler);
+//   }
+// };
 
 describe("GalachainConnectClient", () => {
   it("test full flow", async () => {
@@ -81,5 +100,20 @@ describe("GalachainConnectClient", () => {
         url: "https://example.com/TransferToken"
       }
     });
+  });
+
+  test("should log accounts changed", () => {
+    const consoleSpy = jest.spyOn(console, "log");
+    const accounts = [sampleAddr];
+
+    window.ethereum?.on("accountsChanged", () => {
+      console.log("Accounts changed:", accounts);
+    });
+    // Trigger the accountsChanged event
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    (window.ethereum as any).emit("accountsChanged", accounts);
+
+    expect(consoleSpy).toHaveBeenCalledWith("Accounts changed:", accounts);
+    consoleSpy.mockRestore();
   });
 });
