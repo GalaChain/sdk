@@ -33,7 +33,7 @@
           "error",
           {
             "enforceBuildableLibDependency": true,
-            "allow": ["eventemitter3"],
+            "allow": [],
             "depConstraints": [
               {
                 "sourceTag": "*",

@@ -45,23 +45,6 @@ class EthereumMock extends EventEmitter {
   }
 }
 window.ethereum = new EthereumMock();
-// window.ethereum = {
-//   request(request: { method: string; params?: Array<any> | Record<string, any> }): Promise<any> {
-//     if (request.method === "eth_requestAccounts") {
-//       return Promise.resolve([sampleAddr]);
-//     } else if (request.method === "eth_accounts") {
-//       return Promise.resolve([sampleAddr]);
-//     } else if (request.method === "personal_sign") {
-//       return Promise.resolve("sampleSignature");
-//     } else {
-//       throw new Error(`Method not mocked: ${request.method}`);
-//     }
-//   },
-//   // eslint-disable-next-line @typescript-eslint/no-explicit-any
-//   on(event: string, handler: (...args: any[]) => void): void {
-//     this.addListener(event, handler);
-//   }
-// };
 
 describe("GalachainConnectClient", () => {
   it("test full flow", async () => {
