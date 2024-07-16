@@ -44,13 +44,20 @@ Among others, you will find the following directories:
 - `src` - the source code of your chaincode,
 - `e2e` - end-to-end tests for your chaincode,
 - `keys` - keys that are required for calling our managed infrastructure.
+  It contains two files: `gc-admin-key.pub`, and `gc-dev-key.pub`.
 
 Additionally, init command creates private keys for the chaincode admin and developer in your home directory at `~/.gc-keys/<chaincode-name>`, where `<chaincode-name>` consists of `gc-` prefix and eth address calculated from chaincode admin public key.
 
 ## 3. Register the chaincode
 
 Since this is an early access feature, the ability to deploy to the testnet requires GalaChain approval.
-We require the following data to approve your registration: channel admin public key, developer admin key, chaincode Docker image.
+We require the following data to approve your registration:
+1. channel admin public key (the content of `keys/gc-admin-key.pub`),
+2. developer public keys (the content of `keys/gc-dev-key.pub` files of all developers who want to deploy the chaincode),
+3. chaincode Docker image (it needs to be publicly accessible).
+
+The channel admin public key is used as a public key of the channel admin (the initial, single user on the chain with admin permissions).
+Developer public keys are used to sign deploy requests in CLI.
 
 ## 4. Update the contract (optional)
 
