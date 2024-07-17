@@ -21,6 +21,7 @@ import {
   IsInt,
   IsNotEmpty,
   IsOptional,
+  IsString,
   Max,
   Min,
   ValidateIf,
@@ -28,13 +29,15 @@ import {
 } from "class-validator";
 import { JSONSchema } from "class-validator-jsonschema";
 
-import { BigNumberProperty, EnumProperty } from "../utils";
+import { BigNumberProperty, ConstructorArgs, EnumProperty } from "../utils";
 import { ArrayUniqueObjects, BigNumberIsInteger, BigNumberIsPositive } from "../validators";
 import { GrantAllowanceQuantity } from "./GrantAllowance";
 import { TokenAllowance } from "./TokenAllowance";
 import { TokenInstance, TokenInstanceKey, TokenInstanceQueryKey } from "./TokenInstance";
 import { AllowanceKey, AllowanceType, MintRequestDto } from "./common";
 import { ChainCallDTO } from "./dtos";
+
+export type FetchAllowancesParams = ConstructorArgs<FetchAllowancesDto>;
 
 @JSONSchema({
   description: "Contains parameters for fetching allowances with pagination."
@@ -184,6 +187,8 @@ export class FetchAllowancesLegacyDto extends ChainCallDTO {
   bookmark?: string;
 }
 
+export type FetchAllowancesBody = ConstructorArgs<FetchAllowancesResponse>;
+
 export class FetchAllowancesResponse extends ChainCallDTO {
   @JSONSchema({ description: "List of allowances." })
   @ValidateNested({ each: true })
@@ -192,9 +197,11 @@ export class FetchAllowancesResponse extends ChainCallDTO {
 
   @JSONSchema({ description: "Next page bookmark." })
   @IsOptional()
-  @IsNotEmpty()
+  @IsString()
   nextPageBookmark?: string;
 }
+
+export type DeleteAllowancesParams = ConstructorArgs<DeleteAllowancesDto>;
 
 @JSONSchema({
   description: "Contains parameters for deleting allowances for a calling user."
@@ -253,6 +260,8 @@ export class DeleteAllowancesDto extends ChainCallDTO {
   allowanceType?: AllowanceType;
 }
 
+export type GrantAllowanceParams = ConstructorArgs<GrantAllowanceDto>;
+
 @JSONSchema({
   description: "Defines allowances to be created."
 })
@@ -298,6 +307,8 @@ export class GrantAllowanceDto extends ChainCallDTO {
   @IsOptional()
   expires?: number;
 }
+
+export type HighThroughputGrantAllowanceParams = ConstructorArgs<HighThroughputGrantAllowanceDto>;
 
 /**
  * Experimental: Defines allowances to be created. High-throughput implementation.
@@ -374,6 +385,8 @@ export class FulfillMintAllowanceDto extends ChainCallDTO {
   requests: MintRequestDto[];
 }
 
+export type FullAllowanceCheckParams = ConstructorArgs<FullAllowanceCheckDto>;
+
 @JSONSchema({
   description:
     "Fetch one or more balances, verify all owned TokenInstances have at least one available " +
@@ -431,6 +444,8 @@ export class FullAllowanceCheckDto extends ChainCallDTO {
   allowanceType?: AllowanceType;
 }
 
+export type FullAllowanceCheckResParams = ConstructorArgs<FullAllowanceCheckResDto>;
+
 @JSONSchema({
   description: "Response Data Transfer Object for FullLockAllowance request."
 })
@@ -447,8 +462,10 @@ export class FullAllowanceCheckResDto extends ChainCallDTO {
   @ValidateNested({ each: true })
   @Type(() => TokenInstanceKey)
   @ArrayNotEmpty()
-  missing: Array<TokenInstanceKey>;
+  missing?: Array<TokenInstanceKey>;
 }
+
+export type RefreshAllowanceParams = ConstructorArgs<RefreshAllowanceDto>;
 
 @JSONSchema({
   description:
@@ -469,6 +486,8 @@ export class RefreshAllowanceDto extends ChainCallDTO {
   @IsInt()
   public expires: number;
 }
+
+export type RefreshAllowancesParams = ConstructorArgs<RefreshAllowancesDto>;
 
 @JSONSchema({
   description:

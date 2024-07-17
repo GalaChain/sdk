@@ -18,10 +18,13 @@ import { ArrayMaxSize, ArrayNotEmpty, IsNotEmpty, IsOptional, ValidateNested } f
 import { JSONSchema } from "class-validator-jsonschema";
 
 import { BigNumberProperty } from "../utils";
+import { ConstructorArgs } from "../utils/type-utils";
 import { ArrayUniqueObjects, BigNumberIsNotNegative } from "../validators";
 import { TokenClassKey } from "./TokenClass";
 import { AllowanceKey, MintRequestDto } from "./common";
 import { ChainCallDTO } from "./dtos";
+
+export type MintTokenParams = ConstructorArgs<MintTokenDto>;
 
 @JSONSchema({
   description:
@@ -59,6 +62,8 @@ export class MintTokenDto extends ChainCallDTO {
   @IsNotEmpty()
   public allowanceKey?: AllowanceKey;
 }
+
+export type MintTokenWithAllowanceParams = ConstructorArgs<MintTokenWithAllowanceDto>;
 
 @JSONSchema({
   description:
@@ -98,6 +103,7 @@ export class MintTokenWithAllowanceDto extends ChainCallDTO {
   quantity: BigNumber;
 }
 
+export type BatchMintTokenParams = ConstructorArgs<BatchMintTokenDto>;
 @JSONSchema({
   description:
     "Describes an action to transferToken a token. " +
@@ -115,6 +121,8 @@ export class BatchMintTokenDto extends ChainCallDTO {
   @ArrayMaxSize(BatchMintTokenDto.MAX_ARR_SIZE)
   mintDtos: Array<MintTokenDto>;
 }
+
+export type HighThroughputMintTokenParams = ConstructorArgs<HighThroughputMintTokenDto>;
 
 /**
  * Experimental: Defines an action to mint a token. High-throughput implementation.
@@ -164,6 +172,8 @@ export class HighThroughputMintTokenDto extends ChainCallDTO {
   public allowanceKey?: AllowanceKey;
 }
 
+export type FulfillMintParams = ConstructorArgs<FulfillMintDto>;
+
 @JSONSchema({
   description:
     "Experimental: After submitting request to RequestMintAllowance, follow up with FulfillMintAllowance."
@@ -178,6 +188,8 @@ export class FulfillMintDto extends ChainCallDTO {
   @ArrayUniqueObjects("id")
   requests: MintRequestDto[];
 }
+
+export type FetchMintRequestsParams = ConstructorArgs<FetchMintRequestsDto>;
 
 @JSONSchema({
   description: "Fetch MintRequest or MintAllowanceRequest objects off chain."
@@ -214,6 +226,8 @@ export class FetchMintRequestsDto extends ChainCallDTO {
   endTimestamp: number;
 }
 
+export type FetchTokenSupplyParams = ConstructorArgs<FetchTokenSupplyDto>;
+
 @JSONSchema({
   description: "Fetch Mint, Burn or Mint Allowance supply totals off chain."
 })
@@ -243,6 +257,8 @@ export class FetchTokenSupplyDto extends ChainCallDTO {
   additionalKey: string;
 }
 
+export type FetchTokenSupplyResponseBody = ConstructorArgs<FetchTokenSupplyDto>;
+
 @JSONSchema({
   description: "Fetch MintRequest or MintAllowanceRequest objects off chain and return the supply."
 })
@@ -253,6 +269,8 @@ export class FetchTokenSupplyResponse extends ChainCallDTO {
   @BigNumberProperty()
   supply: BigNumber;
 }
+
+export type PatchMintAllowanceRequestParams = ConstructorArgs<PatchMintAllowanceRequestDto>;
 
 @JSONSchema({
   description:
@@ -295,6 +313,8 @@ export class PatchMintAllowanceRequestDto extends ChainCallDTO {
   @BigNumberProperty()
   totalKnownMintAllowancesCount: BigNumber;
 }
+
+export type PatchMintRequestParams = ConstructorArgs<PatchMintRequestDto>;
 
 @JSONSchema({
   description:

@@ -12,26 +12,17 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-import { IsNotEmpty } from "class-validator";
-import { JSONSchema } from "class-validator-jsonschema";
+import BigNumber from "bignumber.js";
 
-import { ConstructorArgs } from "../utils";
-import { ChainObject } from "./ChainObject";
+import { NonFunctionProperties } from "../types";
 
-export type UserProfileBody = ConstructorArgs<UserProfile>;
+// Recursive type to pick non-function properties and replace specified types
+type NonFunctionPropertiesAndReplaceRecursive<T, From, To> = {
+  [K in keyof NonFunctionProperties<T>]: NonFunctionProperties<T>[K] extends From
+    ? To
+    : NonFunctionProperties<T>[K] extends object
+      ? NonFunctionPropertiesAndReplaceRecursive<NonFunctionProperties<T>[K], From, To>
+      : NonFunctionProperties<T>[K];
+};
 
-export class UserProfile extends ChainObject {
-  @JSONSchema({
-    description: `Legacy caller id from user name or identifier derived from ethAddress for new users.`
-  })
-  @IsNotEmpty()
-  alias: string;
-
-  @JSONSchema({
-    description: `Eth address of the user.`
-  })
-  @IsNotEmpty()
-  ethAddress: string;
-}
-
-export const UP_INDEX_KEY = "GCUP";
+export type ConstructorArgs<T> = NonFunctionPropertiesAndReplaceRecursive<T, BigNumber, string>;
