@@ -144,36 +144,10 @@ function getEthAddress(publicKey: string) {
   const publicKeyBuffer = Buffer.from(publicKey, "hex");
   const keccak = keccak256.digest(publicKeyBuffer.slice(1)); // skip "04" prefix
   const addressLowerCased = Buffer.from(keccak.slice(-20)).toString("hex");
-  // const checksummedAddress = checksumedEthAddress(addressLowerCased);
-  // const fullAddress = checksummedAddress;
-  // Validate the address as a final check
   return checksumedEthAddress(addressLowerCased);
 }
 
-// the function below to calculate checksumed address is adapted from ethers.js
-// see: https://github.com/ethers-io/ethers.js/blob/main/src.ts/address/address.ts
-// function checksumedEthAddress(addressLowerCased: string): string {
-//   const chars = addressLowerCased.split("");
-
-//   const expanded = new Uint8Array(40);
-//   for (let i = 0; i < 40; i++) {
-//     expanded[i] = chars[i].charCodeAt(0);
-//   }
-
-//   const hashed = keccak256.digest(expanded);
-
-//   for (let i = 0; i < 40; i += 2) {
-//     if (hashed[i >> 1] >> 4 >= 8) {
-//       chars[i] = chars[i].toUpperCase();
-//     }
-//     if ((hashed[i >> 1] & 0x0f) >= 8) {
-//       chars[i + 1] = chars[i + 1].toUpperCase();
-//     }
-//   }
-
-//   return chars.join("");
-// }
-
+// Check function for checksummed Ethereum address and if not valid convert it to checksummed address
 function checksumedEthAddress(addressLowerCased: string): string {
   // Remove '0x' prefix if present
   const cleanAddress = addressLowerCased.toLowerCase().replace(/^0x/, "");
@@ -209,6 +183,7 @@ function checksumedEthAddress(addressLowerCased: string): string {
   return checksumAddress;
 }
 
+// Validation of Etherumn address based on EIP-55. See: https://eips.ethereum.org/EIPS/eip-55 for more details
 export function validateEthereumAddress(publicKey: string): string {
   // Check length
   if (publicKey.length !== 42) {
