@@ -20,10 +20,13 @@ import { GalaChainContext } from "../types";
 import { DeleteOneAllowanceParams, deleteOneAllowance } from "./deleteAllowances";
 
 function isAllowanceSpent(allowance: TokenAllowance): boolean {
-  return (
-    allowance.usesSpent.isGreaterThanOrEqualTo(allowance.uses) ||
-    allowance.quantitySpent.isGreaterThanOrEqualTo(allowance.quantity)
-  );
+  if (allowance.usesSpent !== undefined && allowance.quantitySpent !== undefined) {
+    return (
+      allowance.usesSpent.isGreaterThanOrEqualTo(allowance.uses) ||
+      allowance.quantitySpent.isGreaterThanOrEqualTo(allowance.quantity)
+    );
+  }
+  return false;
 }
 
 export function isAllowanceExpired(ctx: GalaChainContext, allowance: TokenAllowance): boolean {
@@ -113,7 +116,9 @@ export async function checkAllowances(
       allowance.allowanceType === action &&
       !isAllowanceExpired(ctx, allowance)
     ) {
-      totalAllowance = totalAllowance.plus(allowance.quantity).minus(allowance.quantitySpent);
+      // quantitySpent could be undefined
+      const quantitySpent = allowance.quantitySpent ?? new BigNumber("0");
+      totalAllowance = totalAllowance.plus(allowance.quantity).minus(quantitySpent);
     }
   });
 

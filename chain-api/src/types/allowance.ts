@@ -296,8 +296,7 @@ export class GrantAllowanceDto extends ChainCallDTO {
     description: "How many times each allowance can be used."
   })
   @BigNumberIsPositive()
-  @BigNumberIsInteger()
-  @BigNumberProperty()
+  @BigNumberProperty({ allowInfinity: true })
   uses: BigNumber;
 
   @JSONSchema({

@@ -23,7 +23,7 @@ export class GrantAllowanceQuantity {
   @IsString()
   user: string;
 
-  @BigNumberProperty()
+  @BigNumberProperty({ allowInfinity: true })
   @BigNumberIsNotNegative()
   quantity: BigNumber;
 }
