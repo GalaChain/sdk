@@ -149,10 +149,8 @@ describe("TransferToken", () => {
       allowanceType: AllowanceType.Transfer,
       created: 1,
       uses: new BigNumber("1"),
-      usesSpent: new BigNumber("0"),
       expires: 0,
-      quantity: new BigNumber(Infinity),
-      quantitySpent: new BigNumber("0")
+      quantity: new BigNumber(Infinity)
     });
     const transferAllowanceId = transferAllowance.getCompositeKey();
     const ownerBalance = currency.tokenBalance((b) => ({
@@ -174,18 +172,6 @@ describe("TransferToken", () => {
     });
 
     const response = await contract.TransferToken(ctx, dto);
-
-    const tokenClaim = plainToInstance(TokenClaim, {
-      ...currencyInstanceKey,
-      ownerKey: users.testUser2Id,
-      issuerKey: users.tokenHolder,
-      instance: new BigNumber("0"),
-      action: 3,
-      quantity: new BigNumber("50000"),
-      allowanceCreated: 1,
-      claimSequence: new BigNumber("1"),
-      created: ctx.txUnixTime
-    });
 
     expect(response).toEqual(
       GalaChainResponse.Success([
@@ -212,8 +198,7 @@ describe("TransferToken", () => {
           ...currency.tokenBalance(),
           owner: users.tokenHolder,
           quantity: new BigNumber("50000")
-        }),
-        tokenClaim
+        })
       )
     );
   });

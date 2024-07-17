@@ -177,6 +177,8 @@ describe("BurnTokens", () => {
     const burnQty = new BigNumber("1");
     const tokenBurnAllowance = currency.tokenBurnAllowance();
     tokenBurnAllowance.quantity = new BigNumber(Infinity);
+    delete tokenBurnAllowance.usesSpent;
+    delete tokenBurnAllowance.quantitySpent;
 
     const { ctx, contract, writes } = fixture(GalaChainTokenContract)
       .callingUser(users.testUser2Id)
@@ -220,7 +222,8 @@ describe("BurnTokens", () => {
     expect(response).toEqual(GalaChainResponse.Success([tokenBurn]));
     expect(writes).toEqual(
       writesMap(
-        tokenClaim,
+        // tokenBurnAllowance,
+        // tokenClaim,
         plainToInstance(TokenBalance, { ...currency.tokenBalance(), quantity: new BigNumber("999") }),
         tokenBurn,
         tokenBurnCounter

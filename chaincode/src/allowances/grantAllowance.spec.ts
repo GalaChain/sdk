@@ -222,7 +222,7 @@ describe("GrantAllowance", () => {
       tokenInstance: currencyInstanceQueryKey,
       quantities: [{ user: users.testUser1Id, quantity: new BigNumber(Infinity) }],
       allowanceType: AllowanceType.Lock,
-      uses: new BigNumber("1")
+      uses: new BigNumber(Infinity)
     });
 
     // When
@@ -235,8 +235,12 @@ describe("GrantAllowance", () => {
       quantity: new BigNumber(Infinity),
       grantedBy: users.testUser2Id,
       grantedTo: users.testUser1Id,
-      allowanceType: AllowanceType.Lock
+      allowanceType: AllowanceType.Lock,
+      uses: new BigNumber(Infinity)
     }));
+    delete allowance.quantitySpent;
+    delete allowance.usesSpent;
+
     expect(response).toEqual(GalaChainResponse.Success([allowance]));
     expect(writes).toEqual(writesMap(allowance));
   });

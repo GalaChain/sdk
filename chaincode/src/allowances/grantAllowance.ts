@@ -51,7 +51,6 @@ import {
   DuplicateAllowanceError,
   DuplicateUserError,
   GrantAllowanceFailedError,
-  InsufficientTokenBalanceError,
   InvalidTokenOwnerError,
   MintCapacityExceededError,
   TotalSupplyExceededError
@@ -67,7 +66,7 @@ async function grantAllowanceByPartialKey(
   tokenInstance: TokenInstanceQueryKey,
   allowanceType: AllowanceType,
   quantities: Array<GrantAllowanceQuantity>,
-  uses: BigNumber,
+  uses: BigNumber | undefined,
   expires: number
 ): Promise<TokenAllowance[]> {
   const tokenBalances = await fetchBalances(ctx, {
@@ -290,7 +289,7 @@ export interface GrantAllowanceParams {
   tokenInstance: TokenInstanceQueryKey;
   allowanceType: AllowanceType;
   quantities: Array<GrantAllowanceQuantity>;
-  uses: BigNumber;
+  uses?: BigNumber;
   expires: number;
 }
 
@@ -318,13 +317,16 @@ async function putAllowancesOnChain(
       quantity: quantities[index].quantity,
       uses,
       expires,
-      quantitySpent: new BigNumber(0),
-      usesSpent: new BigNumber(0),
       allowanceType: allowanceType,
       grantedBy: ctx.callingUser,
       created: ctx.txUnixTime,
       grantedTo
     });
+
+    if (quantities[index].quantity.isFinite()) {
+      newAllowance.quantitySpent = new BigNumber(0);
+      newAllowance.usesSpent = new BigNumber(0);
+    }
 
     if (allowanceType !== AllowanceType.Mint) {
       // Validate instance
@@ -572,9 +574,13 @@ export function allowanceIsUseable(ctx: GalaChainContext, tokenAllowance: TokenA
     return false;
   }
 
+  if (tokenAllowance.usesSpent === undefined && tokenAllowance.quantitySpent === undefined) {
+    return true;
+  }
+
   if (
-    tokenAllowance.usesSpent.isGreaterThanOrEqualTo(tokenAllowance.uses) ||
-    tokenAllowance.quantitySpent.isGreaterThanOrEqualTo(tokenAllowance.quantity)
+    tokenAllowance.usesSpent?.isGreaterThanOrEqualTo(tokenAllowance.uses) ||
+    tokenAllowance.quantitySpent?.isGreaterThanOrEqualTo(tokenAllowance.quantity)
   ) {
     return false;
   }
