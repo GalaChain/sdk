@@ -32,7 +32,7 @@ import { instanceToInstance, instanceToPlain, plainToInstance } from "class-tran
 import GalaChainTokenContract from "../__test__/GalaChainTokenContract";
 import { InvalidDecimalError, NotATokenAuthorityError } from "../token/TokenError";
 import { inverseEpoch, inverseTime } from "../utils";
-import { DuplicateAllowanceError, DuplicateUserError, InsufficientTokenBalanceError } from "./AllowanceError";
+import { DuplicateAllowanceError, DuplicateUserError, MintCapacityExceededError } from "./AllowanceError";
 import { grantAllowance } from "./grantAllowance";
 
 describe("GrantAllowance", () => {
@@ -360,9 +360,44 @@ describe("GrantAllowance", () => {
     const response = await contract.GrantAllowance(ctx, dto);
 
     // Then
-    await expect(response).toEqual(
+    expect(response).toEqual(
       GalaChainResponse.Error(
         new NotATokenAuthorityError(users.testUser2Id, nftClass.getCompositeKey(), nftClass.authorities)
+      )
+    );
+    expect(writes).toEqual({});
+  });
+
+  it("should fail to grant Infinite Mint allowance", async () => {
+    // Given
+    const currencyInstance = currency.tokenInstance();
+    const currencyClass = currency.tokenClass();
+    const currencyInstanceQueryKey = await createValidDTO(
+      TokenInstanceQueryKey,
+      currency.tokenInstanceKeyPlain()
+    );
+
+    const { ctx, contract, writes } = fixture(GalaChainTokenContract)
+      .callingUser(users.testAdminId)
+      .savedState(currencyClass, currencyInstance);
+
+    const dto: GrantAllowanceDto = await createValidDTO(GrantAllowanceDto, {
+      tokenInstance: currencyInstanceQueryKey,
+      quantities: [{ user: users.testUser1Id, quantity: new BigNumber(Infinity) }],
+      allowanceType: AllowanceType.Mint,
+      uses: new BigNumber(Infinity)
+    });
+
+    const response = await contract.GrantAllowance(ctx, dto);
+
+    // Then
+    expect(response).toEqual(
+      GalaChainResponse.Error(
+        new MintCapacityExceededError(
+          currencyClass.getCompositeKey(),
+          currencyClass.maxCapacity,
+          new BigNumber(Infinity)
+        )
       )
     );
     expect(writes).toEqual({});

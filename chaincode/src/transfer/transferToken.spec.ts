@@ -17,7 +17,6 @@ import {
   GalaChainResponse,
   TokenAllowance,
   TokenBalance,
-  TokenClaim,
   TokenHold,
   TokenLockedError,
   TokenNotInBalanceError,

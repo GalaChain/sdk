@@ -21,14 +21,14 @@ import { UnauthorizedAllowanceRefreshError } from "./AllowanceError";
 
 export interface AllowanceType {
   allowanceKey: AllowanceKey;
-  uses?: BigNumber;
+  uses: BigNumber;
   expires: number;
 }
 
 async function refreshAllowanceProperties(
   ctx: GalaChainContext,
   allowanceKey: AllowanceKey,
-  uses: BigNumber | undefined,
+  uses: BigNumber,
   expires: number
 ): Promise<TokenAllowance> {
   const allowanceKeys: Array<string> = [

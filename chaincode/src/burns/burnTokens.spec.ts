@@ -203,18 +203,6 @@ describe("BurnTokens", () => {
     );
     tokenBurnCounter.referenceId = tokenBurnCounter.referencedBurnId();
 
-    const tokenClaim = plainToInstance(TokenClaim, {
-      ...currencyInstanceKey,
-      ownerKey: users.testUser2Id,
-      issuerKey: users.testUser1Id,
-      instance: new BigNumber("0"),
-      action: 6,
-      quantity: burnQty,
-      allowanceCreated: 1,
-      claimSequence: new BigNumber("1"),
-      created: ctx.txUnixTime
-    });
-
     // When
     const response = await contract.BurnTokens(ctx, dto);
 
@@ -222,8 +210,6 @@ describe("BurnTokens", () => {
     expect(response).toEqual(GalaChainResponse.Success([tokenBurn]));
     expect(writes).toEqual(
       writesMap(
-        // tokenBurnAllowance,
-        // tokenClaim,
         plainToInstance(TokenBalance, { ...currency.tokenBalance(), quantity: new BigNumber("999") }),
         tokenBurn,
         tokenBurnCounter

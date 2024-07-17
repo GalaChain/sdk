@@ -66,7 +66,7 @@ async function grantAllowanceByPartialKey(
   tokenInstance: TokenInstanceQueryKey,
   allowanceType: AllowanceType,
   quantities: Array<GrantAllowanceQuantity>,
-  uses: BigNumber | undefined,
+  uses: BigNumber,
   expires: number
 ): Promise<TokenAllowance[]> {
   const tokenBalances = await fetchBalances(ctx, {
@@ -289,7 +289,7 @@ export interface GrantAllowanceParams {
   tokenInstance: TokenInstanceQueryKey;
   allowanceType: AllowanceType;
   quantities: Array<GrantAllowanceQuantity>;
-  uses?: BigNumber;
+  uses: BigNumber;
   expires: number;
 }
 
@@ -315,7 +315,7 @@ async function putAllowancesOnChain(
       additionalKey: instanceKey.additionalKey,
       instance: instanceKey.instance,
       quantity: quantities[index].quantity,
-      uses,
+      uses: quantities[index].quantity.isFinite() ? uses : new BigNumber(Infinity),
       expires,
       allowanceType: allowanceType,
       grantedBy: ctx.callingUser,
