@@ -31,8 +31,7 @@ describe("Init Command", () => {
     const mkdirMock = jest.spyOn(require("fs"), "mkdirSync").mockImplementation(() => {});
     const cpMock = jest.spyOn(require("fs"), "cpSync").mockImplementation(() => {});
 
-    const fs = require("fs");
-    fs.promises.writeFile = jest.fn().mockResolvedValue(undefined);
+    jest.spyOn(require("child_process"), "execSync").mockResolvedValue(undefined);
 
     const target = path.resolve(__dirname, "../../__test__/test-project");
     await Init.run([target]);
