@@ -186,7 +186,7 @@
 "@gala-chain/cli@1.2.4","@gala-chain/cli","1.2.4","","CLI for GalaChain to manage and deploy chaincodes","Apache-2.0"
 "@gala-chain/client@1.2.4","@gala-chain/client","1.2.4","","GalaChain client library","Apache-2.0"
 "@gala-chain/connect@1.2.4","@gala-chain/connect","1.2.4","","Connect is a library that gives developers capabilities comparable to ethers.js for allowing users to connect to and interact with GalaChain using wallets such as Metamask.","Custom: https://jestjs.io"
-"@gala-chain/sdk@1.2.4","@gala-chain/sdk","1.2.4","","Welcome to developing with GalaChain! GalaChain SDK is a set of TS tools to help you develop on GalaChain:","UNLICENSED"
+"@gala-chain/sdk@1.2.5","@gala-chain/sdk","1.2.5","","Welcome to developing with GalaChain! GalaChain SDK is a set of TS tools to help you develop on GalaChain:","UNLICENSED"
 "@gala-chain/test@1.2.4","@gala-chain/test","1.2.4","","Unit testing and integration testing for GalaChain","Apache-2.0"
 "@grpc/grpc-js@1.10.10","@grpc/grpc-js","1.10.10","https://github.com/grpc/grpc-node/tree/master/packages/grpc-js","gRPC Library for Node - pure JS implementation","Apache-2.0"
 "@grpc/grpc-js@1.9.15","@grpc/grpc-js","1.9.15","https://github.com/grpc/grpc-node/tree/master/packages/grpc-js","gRPC Library for Node - pure JS implementation","Apache-2.0"
