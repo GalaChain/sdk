@@ -1,15 +1,15 @@
 # @gala-chain/ui-vue
 
-GalaChain UI is a collection of Vue3 components that can be used to easily interact with GalaChain.
+GalaChain UI (Vue) is a collection of Vue3 components that can be used to easily interact with GalaChain.
 
 ## Download
 
 ```
 # Using npm
-npm install @gala-chain/ui
+npm install @gala-chain/ui-vue
 
 # Using yarn
-yarn add @gala-chain/ui
+yarn add @gala-chain/ui-vue
 ```
 
 ## Usage
@@ -25,5 +25,3 @@ Components can be imported from the @gala-chain/ui-vue package and implemented d
     <GalaTransferToken></GalaTransferToken>
 </template>
 ```
-
-gala-chain/ui uses
