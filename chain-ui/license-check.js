@@ -72,7 +72,9 @@ function checkAndAddLicenseVue(filePath) {
 }
 
 try {
-  const files = await glob('**/*.{js,ts}', { ignore: ['node_modules/**', 'dist/**', 'public/**'] })
+  const files = await glob(['**/*.{js,ts}', '.storybook/*.ts'], {
+    ignore: ['node_modules/**', 'dist/**', 'public/**']
+  })
   files.forEach((file) => checkAndAddLicense(path.resolve(file)))
 
   const vueFiles = await glob('src/**/*.vue')
