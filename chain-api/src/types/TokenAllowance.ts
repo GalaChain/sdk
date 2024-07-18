@@ -89,7 +89,6 @@ export class TokenAllowance extends ChainObject {
   public quantity: BigNumber;
 
   @BigNumberIsNotNegative()
-  @BigNumberIsInteger()
   @BigNumberProperty()
   @IsOptional()
   public quantitySpent?: BigNumber;
