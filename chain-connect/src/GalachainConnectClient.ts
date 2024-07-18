@@ -15,11 +15,18 @@
 import { ChainCallDTO, ConstructorArgs, serialize, signatures } from "@gala-chain/api";
 import { BrowserProvider, Eip1193Provider, getAddress } from "ethers";
 
+import { EIP6963AnnounceProviderEvent, EIP6963ProviderDetail } from "./EthereumProviderTypes";
+
 declare global {
   interface Window {
     ethereum?: Eip1193Provider;
   }
+  interface WindowEventMap {
+    "eip6963:announceProvider": CustomEvent<EIP6963AnnounceProviderEvent>;
+  }
 }
+
+let providers: EIP6963ProviderDetail[] = [];
 
 export class GalachainConnectClient {
   #ethAddress: string;
