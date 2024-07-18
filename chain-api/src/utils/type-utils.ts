@@ -12,23 +12,17 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+import BigNumber from "bignumber.js";
 
-// Utility type to pick only optional properties of a class
-type OptionalProperties<T> = Pick<T, { [K in keyof T]: T[K] extends Required<T>[K] ? never : K }[keyof T]>;
+import { NonFunctionProperties } from "../types";
 
-// Utility type to require only the required properties of a class
-type RequiredProperties<T> = Required<
-  Pick<T, { [K in keyof T]: T[K] extends Required<T>[K] ? K : never }[keyof T]>
->;
+// Recursive type to pick non-function properties and replace specified types
+type NonFunctionPropertiesAndReplaceRecursive<T, From, To> = {
+  [K in keyof NonFunctionProperties<T>]: NonFunctionProperties<T>[K] extends From
+    ? To
+    : NonFunctionProperties<T>[K] extends object
+      ? NonFunctionPropertiesAndReplaceRecursive<NonFunctionProperties<T>[K], From, To>
+      : NonFunctionProperties<T>[K];
+};
 
-type OmitFields =
-  | "validate"
-  | "validateOrReject"
-  | "serialize"
-  | "deserialize"
-  | "sign"
-  | "signed"
-  | "isSignatureValid";
-
-export type ConstructorArgs<T> = RequiredProperties<Omit<T, OmitFields>> &
-  Partial<OptionalProperties<Omit<T, OmitFields>>>;
+export type ConstructorArgs<T> = NonFunctionPropertiesAndReplaceRecursive<T, BigNumber, string>;

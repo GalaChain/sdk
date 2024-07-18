@@ -7,6 +7,7 @@ tmp
 public/
 lib
 **/oclif.manifest.json
+gala-chain-*-*.tgz
 
 # dependencies
 node_modules
@@ -37,11 +38,10 @@ npm-debug.log
 yarn-error.log
 testem.log
 /typings
+storybook-static
 
 # System Files
 .DS_Store
 Thumbs.db
 .npmrc
 /.nx
-
-storybook-static

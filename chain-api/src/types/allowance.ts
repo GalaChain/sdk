@@ -21,6 +21,7 @@ import {
   IsInt,
   IsNotEmpty,
   IsOptional,
+  IsString,
   Max,
   Min,
   ValidateIf,
@@ -42,11 +43,6 @@ export type FetchAllowancesParams = ConstructorArgs<FetchAllowancesDto>;
   description: "Contains parameters for fetching allowances with pagination."
 })
 export class FetchAllowancesDto extends ChainCallDTO {
-  constructor(params?: FetchAllowancesParams) {
-    super();
-    Object.assign(this, params);
-  }
-
   static readonly MAX_LIMIT = 10 * 1000;
   static readonly DEFAULT_LIMIT = 1000;
 
@@ -201,7 +197,7 @@ export class FetchAllowancesResponse extends ChainCallDTO {
 
   @JSONSchema({ description: "Next page bookmark." })
   @IsOptional()
-  @IsNotEmpty()
+  @IsString()
   nextPageBookmark?: string;
 }
 
@@ -211,11 +207,6 @@ export type DeleteAllowancesParams = ConstructorArgs<DeleteAllowancesDto>;
   description: "Contains parameters for deleting allowances for a calling user."
 })
 export class DeleteAllowancesDto extends ChainCallDTO {
-  constructor(params?: DeleteAllowancesParams) {
-    super();
-    Object.assign(this, params);
-  }
-
   @JSONSchema({
     description: "A user who can use an allowance."
   })
@@ -275,11 +266,6 @@ export type GrantAllowanceParams = ConstructorArgs<GrantAllowanceDto>;
   description: "Defines allowances to be created."
 })
 export class GrantAllowanceDto extends ChainCallDTO {
-  constructor(params?: GrantAllowanceParams) {
-    super();
-    Object.assign(this, params);
-  }
-
   static DEFAULT_EXPIRES = 0;
 
   @JSONSchema({
@@ -310,8 +296,7 @@ export class GrantAllowanceDto extends ChainCallDTO {
     description: "How many times each allowance can be used."
   })
   @BigNumberIsPositive()
-  @BigNumberIsInteger()
-  @BigNumberProperty()
+  @BigNumberProperty({ allowInfinity: true })
   uses: BigNumber;
 
   @JSONSchema({
@@ -337,11 +322,6 @@ export type HighThroughputGrantAllowanceParams = ConstructorArgs<HighThroughputG
     "exception that this implementation only supports AllowanceType.Mint."
 })
 export class HighThroughputGrantAllowanceDto extends ChainCallDTO {
-  constructor(params?: HighThroughputGrantAllowanceParams) {
-    super();
-    Object.assign(this, params);
-  }
-
   // todo: remove all these duplicated properties
   // it seems something about our @GalaTransaction decorator does not pass through
   // parent properties. Leaving this class empty with just the `extends GrantAllowanceDto`
@@ -414,11 +394,6 @@ export type FullAllowanceCheckParams = ConstructorArgs<FullAllowanceCheckDto>;
     "be returned in the response."
 })
 export class FullAllowanceCheckDto extends ChainCallDTO {
-  constructor(params?: FullAllowanceCheckParams) {
-    super();
-    Object.assign(this, params);
-  }
-
   @JSONSchema({
     description: "Person who owns the balance(s). If the value is missing, chaincode caller is used."
   })
@@ -475,11 +450,6 @@ export type FullAllowanceCheckResParams = ConstructorArgs<FullAllowanceCheckResD
   description: "Response Data Transfer Object for FullLockAllowance request."
 })
 export class FullAllowanceCheckResDto extends ChainCallDTO {
-  constructor(params?: FullAllowanceCheckResParams) {
-    super();
-    Object.assign(this, params);
-  }
-
   @JSONSchema({
     description: "True if all resulting token(s) have active/un-expired allowances available."
   })
@@ -503,11 +473,6 @@ export type RefreshAllowanceParams = ConstructorArgs<RefreshAllowanceDto>;
     "If quantity needs updating, grant a new allowance instead."
 })
 export class RefreshAllowanceDto extends ChainCallDTO {
-  constructor(params?: RefreshAllowanceParams) {
-    super();
-    Object.assign(this, params);
-  }
-
   @Type(() => AllowanceKey)
   @IsNotEmpty()
   public allowanceKey: AllowanceKey;
@@ -530,11 +495,6 @@ export type RefreshAllowancesParams = ConstructorArgs<RefreshAllowancesDto>;
     "If quantity needs updating, grant a new allowance instead."
 })
 export class RefreshAllowancesDto extends ChainCallDTO {
-  constructor(params?: RefreshAllowancesParams) {
-    super();
-    Object.assign(this, params);
-  }
-
   @ValidateNested({ each: true })
   @Type(() => RefreshAllowanceDto)
   @ArrayNotEmpty()

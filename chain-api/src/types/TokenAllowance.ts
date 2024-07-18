@@ -14,7 +14,7 @@
  */
 import { BigNumber } from "bignumber.js";
 import { Exclude } from "class-transformer";
-import { IsDefined, IsInt, IsNotEmpty, IsPositive, Min } from "class-validator";
+import { IsDefined, IsInt, IsNotEmpty, IsOptional, IsPositive, Min } from "class-validator";
 
 import { BigNumberProperty, ChainKey, ConstructorArgs, EnumProperty } from "../utils";
 import { BigNumberIsInteger, BigNumberIsNotNegative, BigNumberIsPositive } from "../validators/decorators";
@@ -68,15 +68,16 @@ export class TokenAllowance extends ChainObject {
   @IsInt()
   public created: number;
 
+  @IsNotEmpty()
   @BigNumberIsPositive()
-  @BigNumberIsInteger()
-  @BigNumberProperty()
+  @BigNumberProperty({ allowInfinity: true })
   public uses: BigNumber;
 
   @BigNumberIsNotNegative()
   @BigNumberIsInteger()
   @BigNumberProperty()
-  public usesSpent: BigNumber;
+  @IsOptional()
+  public usesSpent?: BigNumber;
 
   @Min(0)
   @IsInt()
@@ -84,11 +85,12 @@ export class TokenAllowance extends ChainObject {
 
   @IsNotEmpty()
   @BigNumberIsNotNegative()
-  @BigNumberProperty()
+  @BigNumberProperty({ allowInfinity: true })
   public quantity: BigNumber;
 
-  @IsNotEmpty()
   @BigNumberIsNotNegative()
+  @BigNumberIsInteger()
   @BigNumberProperty()
-  public quantitySpent: BigNumber;
+  @IsOptional()
+  public quantitySpent?: BigNumber;
 }
