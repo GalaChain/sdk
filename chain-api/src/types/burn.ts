@@ -21,6 +21,7 @@ import {
   IsNotEmpty,
   IsOptional,
   IsPositive,
+  IsString,
   Max,
   Min,
   ValidateIf,
@@ -224,7 +225,7 @@ export class FetchBurnCountersResponse extends ChainCallDTO {
 
   @JSONSchema({ description: "Next page bookmark." })
   @IsOptional()
-  @IsNotEmpty()
+  @IsString()
   nextPageBookmark?: string;
 }
 

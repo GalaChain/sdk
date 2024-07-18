@@ -7,6 +7,7 @@ tmp
 public/
 lib
 **/oclif.manifest.json
+gala-chain-*-*.tgz
 
 # dependencies
 node_modules
@@ -43,3 +44,4 @@ testem.log
 Thumbs.db
 .npmrc
 /.nx
+
