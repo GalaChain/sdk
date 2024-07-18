@@ -7,47 +7,44 @@ CLI tool for Gala chaincode
 [![GitHub license](https://img.shields.io/github/license/oclif/hello-world)](https://github.com/oclif/hello-world/blob/main/LICENSE)
 
 <!-- toc -->
-
-- [Usage](#usage)
-- [Commands](#commands)
+* [galachain](#galachain)
+* [Usage](#usage)
+* [Commands](#commands)
 <!-- tocstop -->
 
 # Usage
 
 <!-- usage -->
-
 ```sh-session
 $ npm install -g @gala-chain/cli
 $ galachain COMMAND
 running command...
 $ galachain (--version)
-@gala-chain/cli/1.2.5 linux-x64 node-v18.20.4
+@gala-chain/cli/1.2.6 linux-x64 node-v18.20.4
 $ galachain --help [COMMAND]
 USAGE
   $ galachain COMMAND
 ...
 ```
-
 <!-- usagestop -->
 
 # Commands
 
 <!-- commands -->
-
-- [`galachain deploy IMAGETAG [DEVELOPERPRIVATEKEY]`](#galachain-deploy-imagetag-developerprivatekey)
-- [`galachain dto-sign KEY DATA`](#galachain-dto-sign-key-data)
-- [`galachain dto-verify KEY DATA`](#galachain-dto-verify-key-data)
-- [`galachain dto:sign KEY DATA`](#galachain-dtosign-key-data)
-- [`galachain dto:verify KEY DATA`](#galachain-dtoverify-key-data)
-- [`galachain help [COMMAND]`](#galachain-help-command)
-- [`galachain info [DEVELOPERPRIVATEKEY]`](#galachain-info-developerprivatekey)
-- [`galachain init PATH`](#galachain-init-path)
-- [`galachain keygen FILE`](#galachain-keygen-file)
-- [`galachain network-prune`](#galachain-network-prune)
-- [`galachain network-up`](#galachain-network-up)
-- [`galachain network:prune`](#galachain-networkprune)
-- [`galachain network:up`](#galachain-networkup)
-- [`galachain test-deploy IMAGETAG [DEVELOPERPRIVATEKEY]`](#galachain-test-deploy-imagetag-developerprivatekey)
+* [`galachain deploy IMAGETAG [DEVELOPERPRIVATEKEY]`](#galachain-deploy-imagetag-developerprivatekey)
+* [`galachain dto-sign KEY DATA`](#galachain-dto-sign-key-data)
+* [`galachain dto-verify KEY DATA`](#galachain-dto-verify-key-data)
+* [`galachain dto:sign KEY DATA`](#galachain-dtosign-key-data)
+* [`galachain dto:verify KEY DATA`](#galachain-dtoverify-key-data)
+* [`galachain help [COMMAND]`](#galachain-help-command)
+* [`galachain info [DEVELOPERPRIVATEKEY]`](#galachain-info-developerprivatekey)
+* [`galachain init PATH`](#galachain-init-path)
+* [`galachain keygen FILE`](#galachain-keygen-file)
+* [`galachain network-prune`](#galachain-network-prune)
+* [`galachain network-up`](#galachain-network-up)
+* [`galachain network:prune`](#galachain-networkprune)
+* [`galachain network:up`](#galachain-networkup)
+* [`galachain test-deploy IMAGETAG [DEVELOPERPRIVATEKEY]`](#galachain-test-deploy-imagetag-developerprivatekey)
 
 ## `galachain deploy IMAGETAG [DEVELOPERPRIVATEKEY]`
 
@@ -498,5 +495,4 @@ EXAMPLES
 
   $ galachain test-deploy registry.image.name:latest c0fb1924408d936fb7cd0c86695885df4f66861621b5c8660df3924c4d09dd79
 ```
-
 <!-- commandsstop -->
