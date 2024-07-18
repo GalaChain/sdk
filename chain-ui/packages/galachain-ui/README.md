@@ -16,9 +16,13 @@ yarn add @gala-chain/ui
 
 Components can be integrated from the @gala-chain/ui package directly in to your application using custom web component tags.
 
+index.js
+
 ```js index.js
 import galaChainUi from '@gala-chain/ui'
 ```
+
+index.html
 
 ```html index.html
 <gala-transfer-token></gala-transfer-token>
@@ -28,12 +32,16 @@ import galaChainUi from '@gala-chain/ui'
 
 Alternatively, you can instantiate components programmatically.
 
+index.js
+
 ```js index.js
 import { GalaTransferToken } from '@gala-chain/ui'
 
 const galaTransferToken = new GalaTransferToken()
 document.getElementById('gala-transfer-token')?.appendChild(galaTransferToken)
 ```
+
+index.html
 
 ```html index.html
 <div id="gala-transfer-token"></div>
