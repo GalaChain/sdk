@@ -20,7 +20,7 @@ import {
   ConstructorArgs,
   ValidationFailedError,
   deserialize,
-  getValidationErrorInfo,
+  getValidationErrorMessages,
   serialize,
   signatures
 } from "../utils";
@@ -37,8 +37,10 @@ export interface ClassConstructor<T> {
 }
 
 class DtoValidationFailedError extends ValidationFailedError {
-  constructor({ message, details }: { message: string; details: string[] }) {
-    super(message, details);
+  constructor(errors: ValidationError[]) {
+    const messages = getValidationErrorMessages(errors);
+    const messagesString = messages.map((s, i) => `(${i + 1}) ${s}`).join(", ");
+    super(`DTO validation failed: ${messagesString}`, messages);
   }
 }
 
@@ -46,7 +48,7 @@ export const validateDTO = async <T extends ChainCallDTO>(dto: T): Promise<T> =>
   const validationErrors = await dto.validate();
 
   if (validationErrors.length) {
-    throw new DtoValidationFailedError(getValidationErrorInfo(validationErrors));
+    throw new DtoValidationFailedError(validationErrors);
   } else {
     return dto;
   }
@@ -167,7 +169,7 @@ export class ChainCallDTO {
     const validationErrors = await this.validate();
 
     if (validationErrors.length) {
-      throw new DtoValidationFailedError(getValidationErrorInfo(validationErrors));
+      throw new DtoValidationFailedError(validationErrors);
     }
   }
 

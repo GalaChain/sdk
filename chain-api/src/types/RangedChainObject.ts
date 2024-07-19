@@ -16,13 +16,7 @@ import { instanceToPlain } from "class-transformer";
 import { ValidationError, validate } from "class-validator";
 import "reflect-metadata";
 
-import {
-  ChainKeyMetadata,
-  ValidationFailedError,
-  deserialize,
-  getValidationErrorInfo,
-  serialize
-} from "../utils";
+import { ChainKeyMetadata, ValidationFailedError, deserialize, serialize } from "../utils";
 import { ChainObject, ObjectValidationFailedError } from "./ChainObject";
 import { ClassConstructor, Inferred } from "./dtos";
 
@@ -45,7 +39,7 @@ export abstract class RangedChainObject {
     const validationErrors = await this.validate();
 
     if (validationErrors.length) {
-      throw new ObjectValidationFailedError(getValidationErrorInfo(validationErrors));
+      throw new ObjectValidationFailedError(validationErrors);
     }
   }
 
