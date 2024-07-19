@@ -12,23 +12,15 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-import deserialize from "./deserialize";
-import { Primitive, generateResponseSchema, generateSchema } from "./generate-schema";
-import { getValidationErrorMessages } from "./getValidationErrorMessages";
-import serialize from "./serialize";
-import signatures from "./signatures";
+import { ValidationError } from "class-validator";
 
-export * from "./chain-decorators";
-export * from "./error";
-export * from "./transform-decorators";
-export * from "./type-utils";
-
-export {
-  deserialize,
-  serialize,
-  generateSchema,
-  generateResponseSchema,
-  getValidationErrorMessages,
-  Primitive,
-  signatures
-};
+export function getValidationErrorMessages(validationErrors: ValidationError[]): string[] {
+  return validationErrors
+    .map((e) => {
+      const constraints = e.constraints ?? {};
+      const constraintsKeys = Object.keys(constraints).sort();
+      const details = constraintsKeys.map((k) => `${k}: ${constraints[k]}`);
+      return details;
+    })
+    .flat();
+}
