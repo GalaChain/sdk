@@ -21,6 +21,7 @@ import {
   IsInt,
   IsNotEmpty,
   IsOptional,
+  IsString,
   Max,
   Min,
   ValidateIf,
@@ -196,7 +197,7 @@ export class FetchAllowancesResponse extends ChainCallDTO {
 
   @JSONSchema({ description: "Next page bookmark." })
   @IsOptional()
-  @IsNotEmpty()
+  @IsString()
   nextPageBookmark?: string;
 }
 
@@ -295,8 +296,7 @@ export class GrantAllowanceDto extends ChainCallDTO {
     description: "How many times each allowance can be used."
   })
   @BigNumberIsPositive()
-  @BigNumberIsInteger()
-  @BigNumberProperty()
+  @BigNumberProperty({ allowInfinity: true })
   uses: BigNumber;
 
   @JSONSchema({

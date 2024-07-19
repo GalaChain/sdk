@@ -1,6 +1,6 @@
 {
   "name": "@gala-chain/api",
-  "version": "1.2.4",
+  "version": "1.2.6",
   "description": "Common types, DTOs (Data Transfer Objects), APIs, signatures, and utils for GalaChain.",
   "license": "Apache-2.0",
   "dependencies": {

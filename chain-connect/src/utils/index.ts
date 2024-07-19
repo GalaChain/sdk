@@ -12,7 +12,5 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-export * from "./GalachainConnectClient";
-export * from "./PublicKeyClient";
-export * from "./TokenClient";
-export * from "./utils/WalletUtils";
+
+export * from "./WalletUtils";
