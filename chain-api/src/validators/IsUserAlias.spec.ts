@@ -12,10 +12,8 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-import { Type } from "class-transformer";
-
 import { ChainCallDTO, createValidDTO } from "../types";
-import { generateSchema } from "../utils/index";
+import { generateSchema } from "../utils";
 import { IsUserAlias } from "./IsUserAlias";
 
 class TestDto extends ChainCallDTO {
@@ -24,7 +22,6 @@ class TestDto extends ChainCallDTO {
 }
 
 class TestArrayDto extends ChainCallDTO {
-  @Type(() => String)
   @IsUserAlias({ each: true })
   users: string[];
 }
