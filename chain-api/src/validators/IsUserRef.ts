@@ -1,3 +1,4 @@
+import { Transform } from "class-transformer";
 import { ValidationArguments, ValidationOptions, registerDecorator } from "class-validator";
 
 import signatures from "../utils/signatures";
@@ -26,27 +27,29 @@ function validateUserRef(value: unknown): UserRefValidationResult {
     return UserRefValidationResult.INVALID_FORMAT;
   }
 
-  const [prefix, userId] = value.split("|");
+  const parts = value.split("|");
 
-  if (prefix === "client" && userId.length > 0) {
-    return UserRefValidationResult.VALID_USER_ALIAS;
-  }
-
-  if (prefix === "eth") {
-    if (signatures.isChecksumedEthAddress(userId)) {
-      return UserRefValidationResult.VALID_USER_ALIAS;
-    } else {
-      return UserRefValidationResult.INVALID_ETH_USER_ALIAS;
-    }
-  }
-
-  if (userId === undefined) {
-    if (signatures.isLowercasedEthAddress(prefix)) {
+  if (parts.length === 1) {
+    if (signatures.isLowercasedEthAddress(parts[0])) {
       return UserRefValidationResult.VALID_LOWERCASED_ADDR;
-    } else if (signatures.isChecksumedEthAddress(prefix)) {
+    } else if (signatures.isChecksumedEthAddress(parts[0])) {
       return UserRefValidationResult.VALID_CHECKSUMED_ADDR;
     } else {
       return UserRefValidationResult.INVALID_ETH_ADDR;
+    }
+  }
+
+  if (parts.length === 2) {
+    if (parts[0] === "client" && parts[1]) {
+      return UserRefValidationResult.VALID_USER_ALIAS;
+    }
+
+    if (parts[0] === "eth") {
+      if (signatures.isChecksumedEthAddress(parts[1])) {
+        return UserRefValidationResult.VALID_USER_ALIAS;
+      } else {
+        return UserRefValidationResult.INVALID_ETH_USER_ALIAS;
+      }
     }
   }
 
@@ -55,6 +58,7 @@ function validateUserRef(value: unknown): UserRefValidationResult {
 
 export function IsUserRef(options?: ValidationOptions) {
   return function (object: object, propertyName: string) {
+    // validation of the input
     registerDecorator({
       name: "IsUserId",
       target: object.constructor,
@@ -78,5 +82,22 @@ export function IsUserRef(options?: ValidationOptions) {
         }
       }
     });
+
+    // normalization of the input
+    Transform(({ value }) => {
+      // we need to repeat the validation here to ensure the value is correct, since the validation and serialization
+      // may be called independently
+      const result = validateUserRef(value);
+
+      if (
+        result === UserRefValidationResult.VALID_LOWERCASED_ADDR ||
+        result === UserRefValidationResult.VALID_CHECKSUMED_ADDR
+      ) {
+        return `eth|${signatures.normalizeEthAddress(value)}`;
+      } else {
+        // note: we also allow invalid values here to be compliant with class-transformer/validator behavior
+        return value;
+      }
+    })(object, propertyName);
   };
 }
