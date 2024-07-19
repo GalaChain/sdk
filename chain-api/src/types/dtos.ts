@@ -25,6 +25,7 @@ import {
   signatures
 } from "../utils";
 import { GalaChainResponse } from "./contract";
+import { IsUserRef } from "../validators";
 
 type Base<T, BaseT> = T extends BaseT ? T : never;
 
@@ -253,7 +254,7 @@ export class RegisterUserDto extends ChainCallDTO {
   @JSONSchema({
     description: `Id of user to save public key for.`
   })
-  @IsNotEmpty()
+  @IsUserRef()
   user: string;
 
   @JSONSchema({ description: publicKeyDescription })
@@ -285,6 +286,7 @@ export class GetPublicKeyDto extends ChainCallDTO {
     description: `Id of a public key holder. Optional field, by default caller's public key is returned.`
   })
   @IsOptional()
+  @IsUserRef()
   user?: string;
 }
 

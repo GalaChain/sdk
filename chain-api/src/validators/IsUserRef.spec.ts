@@ -27,10 +27,6 @@ const invalidChecksum = checksumedEthAddress.replace("a", "A");
 test.each<[string, string, string]>([
   ["valid legacy alias", "client|123", "client|123"],
   ["valid eth alias", `eth|${checksumedEthAddress}`, `eth|${checksumedEthAddress}`],
-  ["valid checksumed address", checksumedEthAddress, `eth|${checksumedEthAddress}`],
-  ["valid checksumed address (trailing 0x)", `0x${checksumedEthAddress}`, `eth|${checksumedEthAddress}`],
-  ["valid lower-cased address", lowerCased, `eth|${checksumedEthAddress}`],
-  ["valid lower-cased address (trailing 0x)", `0x${lowerCased}`, `eth|${checksumedEthAddress}`],
   ["valid bridge (eth)", `EthereumBridge`, `EthereumBridge`],
   ["valid bridge (GalaChain)", `GalaChainBridge-42`, `GalaChainBridge-42`]
 ])("%s", async (label, input, expected) => {
@@ -49,9 +45,7 @@ test.each<[string, string, string]>([
   ["invalid client alias (empty id)", "client|", "Expected string following the format"],
   ["invalid eth alias (lower-cased eth)", `eth|${lowerCased}`, "'eth|' must end with valid checksumed"],
   ["invalid eth alias (invalid eth)", "eth|123", "'eth|' must end with valid checksumed"],
-  ["invalid eth address (invalid checksum)", invalidChecksum, "please make sure it is checksumed"],
-  ["invalid eth address (invalid checksum, 0x)", `0x${invalidChecksum}`, "please make sure it is checksumed"],
-  ["invalid eth address (invalid characters)", "0xabcdefg", "Expected string following the format"],
+  ["invalid value (pure eth addr)", checksumedEthAddress, "Expected string following the format"],
   ["invalid bridge (external)", "GoldenGateBridge", "Expected string following the format"],
   ["invalid bridge (GalaChain)", "GalaChainBridge-A", "Expected string following the format"]
 ])("%s", async (label, input, expectedError) => {

@@ -15,9 +15,9 @@
 import BigNumber from "bignumber.js";
 import { IsDefined, IsNotEmpty } from "class-validator";
 
-import { TokenMintStatus } from "../types/common";
+import { TokenMintStatus } from "../types";
 import { BigNumberProperty, ChainKey } from "../utils";
-import { BigNumberIsNotNegative } from "../validators";
+import { BigNumberIsNotNegative, IsUserRef } from "../validators";
 import { ChainObject } from "./ChainObject";
 
 export class TokenMintFulfillment extends ChainObject {
@@ -39,14 +39,14 @@ export class TokenMintFulfillment extends ChainObject {
   public additionalKey: string;
 
   @ChainKey({ position: 4 })
-  @IsNotEmpty()
+  @IsUserRef()
   public requestor: string;
 
   @ChainKey({ position: 5 })
   @IsNotEmpty()
   public requestCreated: number;
 
-  @IsNotEmpty()
+  @IsUserRef()
   public owner: string;
 
   @IsNotEmpty()

@@ -12,31 +12,25 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-import { Transform } from "class-transformer";
 import { ValidationArguments, ValidationOptions, registerDecorator } from "class-validator";
 
 import signatures from "../utils/signatures";
 
 enum UserRefValidationResult {
   VALID_USER_ALIAS,
-  VALID_LOWERCASED_ADDR,
-  VALID_CHECKSUMED_ADDR,
   VALID_SYSTEM_USER,
   INVALID_ETH_USER_ALIAS,
-  INVALID_ETH_ADDR,
   INVALID_FORMAT
 }
 
 const customMessages = {
   [UserRefValidationResult.INVALID_ETH_USER_ALIAS]:
-    "User alias starting with 'eth|' must end with valid checksumed eth address.",
-  [UserRefValidationResult.INVALID_ETH_ADDR]:
-    "Invalid eth address provided. If some characters are upper-cased, please make sure it is checksumed properly."
+    "User alias starting with 'eth|' must end with valid checksumed eth address."
 };
 
 const genericMessage =
   "Expected string following the format of 'client|<user-id>', or 'eth|<checksumed-eth-addr>', " +
-  "or valid eth address (either checksumed or lowercased), or valid system-level username.";
+  "or valid system-level username.";
 
 function validateUserRef(value: unknown): UserRefValidationResult {
   if (typeof value !== "string" || value.length === 0) {
@@ -46,23 +40,15 @@ function validateUserRef(value: unknown): UserRefValidationResult {
   const parts = value.split("|");
 
   if (parts.length === 1) {
-    if (signatures.isLowercasedEthAddress(parts[0])) {
-      return UserRefValidationResult.VALID_LOWERCASED_ADDR;
-    } else if (signatures.isChecksumedEthAddress(parts[0])) {
-      return UserRefValidationResult.VALID_CHECKSUMED_ADDR;
-    } else if (parts[0] === "EthereumBridge" || /^GalaChainBridge-\d+$/.test(parts[0])) {
+    if (parts[0] === "EthereumBridge" || /^GalaChainBridge-\d+$/.test(parts[0])) {
       return UserRefValidationResult.VALID_SYSTEM_USER;
     } else {
-      if (parts[0].length === 40 || parts[0].length === 42) {
-        return UserRefValidationResult.INVALID_ETH_ADDR;
-      } else {
-        return UserRefValidationResult.INVALID_FORMAT;
-      }
+      return UserRefValidationResult.INVALID_FORMAT;
     }
   }
 
   if (parts.length === 2) {
-    if (parts[0] === "client" && parts[1]) {
+    if (parts[0] === "client" && parts[1].length > 0) {
       return UserRefValidationResult.VALID_USER_ALIAS;
     }
 
@@ -91,8 +77,6 @@ export function IsUserRef(options?: ValidationOptions) {
           const result = validateUserRef(value);
           return (
             result === UserRefValidationResult.VALID_USER_ALIAS ||
-            result === UserRefValidationResult.VALID_LOWERCASED_ADDR ||
-            result === UserRefValidationResult.VALID_CHECKSUMED_ADDR ||
             result === UserRefValidationResult.VALID_SYSTEM_USER
           );
         },
@@ -105,22 +89,5 @@ export function IsUserRef(options?: ValidationOptions) {
         }
       }
     });
-
-    // normalization of the input
-    Transform(({ value }) => {
-      // we need to repeat the validation here to ensure the value is correct, since the validation and serialization
-      // may be called independently
-      const result = validateUserRef(value);
-
-      if (
-        result === UserRefValidationResult.VALID_LOWERCASED_ADDR ||
-        result === UserRefValidationResult.VALID_CHECKSUMED_ADDR
-      ) {
-        return `eth|${signatures.normalizeEthAddress(value)}`;
-      } else {
-        // note: we also allow invalid values here to be compliant with class-transformer/validator behavior
-        return value;
-      }
-    })(object, propertyName);
   };
 }

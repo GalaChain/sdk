@@ -17,6 +17,7 @@ import { JSONSchema } from "class-validator-jsonschema";
 
 import { ConstructorArgs } from "../utils";
 import { ChainObject } from "./ChainObject";
+import { IsUserRef } from "../validators";
 
 export type UserProfileBody = ConstructorArgs<UserProfile>;
 
@@ -24,7 +25,7 @@ export class UserProfile extends ChainObject {
   @JSONSchema({
     description: `Legacy caller id from user name or identifier derived from ethAddress for new users.`
   })
-  @IsNotEmpty()
+  @IsUserRef()
   alias: string;
 
   @JSONSchema({

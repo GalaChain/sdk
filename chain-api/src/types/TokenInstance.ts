@@ -32,6 +32,7 @@ import { BigNumberIsInteger, BigNumberIsNotNegative } from "../validators/decora
 import { ChainObject } from "./ChainObject";
 import { TokenClass, TokenClassKey, TokenClassKeyProperties } from "./TokenClass";
 import { ChainCallDTO } from "./dtos";
+import { IsUserRef } from "../validators";
 
 export interface TokenInstanceKeyProperties {
   collection: string;
@@ -262,7 +263,7 @@ export class TokenInstance extends ChainObject {
   public isNonFungible: boolean;
 
   @ValidateIf((i) => i.isNonFungible === true)
-  @IsNotEmpty()
+  @IsUserRef()
   public owner?: string;
 
   public static INDEX_KEY = "GCTI2";

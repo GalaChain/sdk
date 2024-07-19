@@ -16,11 +16,11 @@ import BigNumber from "bignumber.js";
 import { IsNotEmpty, IsString } from "class-validator";
 
 import { BigNumberProperty } from "../utils";
-import { BigNumberIsNotNegative } from "../validators";
+import { BigNumberIsNotNegative, IsUserRef } from "../validators";
 
 export class GrantAllowanceQuantity {
   @IsNotEmpty()
-  @IsString()
+  @IsUserRef()
   user: string;
 
   @BigNumberProperty({ allowInfinity: true })

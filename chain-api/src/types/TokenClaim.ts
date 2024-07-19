@@ -17,7 +17,7 @@ import { Exclude } from "class-transformer";
 import { IsDefined, IsInt, IsNotEmpty, IsPositive } from "class-validator";
 
 import { BigNumberProperty, ChainKey, EnumProperty } from "../utils";
-import { BigNumberIsInteger, BigNumberIsNotNegative } from "../validators";
+import { BigNumberIsInteger, BigNumberIsNotNegative, IsUserRef } from "../validators";
 import { ChainObject } from "./ChainObject";
 import { AllowanceType } from "./common";
 
@@ -39,7 +39,7 @@ export class TokenClaim extends ChainObject {
 
   // This is the owner of the allowance, not the token
   @ChainKey({ position: 0 })
-  @IsNotEmpty()
+  @IsUserRef()
   public ownerKey: string;
 
   @ChainKey({ position: 1 })
@@ -70,7 +70,7 @@ export class TokenClaim extends ChainObject {
 
   // This is the person making the claim
   @ChainKey({ position: 7 })
-  @IsNotEmpty()
+  @IsUserRef()
   public issuerKey: string;
 
   @ChainKey({ position: 8 })

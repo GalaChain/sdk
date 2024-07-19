@@ -29,7 +29,7 @@ import { JSONSchema } from "class-validator-jsonschema";
 import { TokenInstance, TokenInstanceKey, TokenInstanceKeyBody } from "../types/TokenInstance";
 import { ChainCallDTO } from "../types/dtos";
 import { BigNumberProperty, ConstructorArgs } from "../utils";
-import { BigNumberIsNotNegative, BigNumberIsPositive } from "../validators";
+import { BigNumberIsNotNegative, BigNumberIsPositive, IsUserRef } from "../validators";
 import { LockTokenQuantity } from "./LockTokenQuantity";
 
 export type LockTokenRequestParams = ConstructorArgs<LockTokenDto>;
@@ -42,7 +42,7 @@ export class LockTokenDto extends ChainCallDTO {
     description: "The current owner of tokens. If the value is missing, chaincode caller is used."
   })
   @IsOptional()
-  @IsNotEmpty()
+  @IsUserRef()
   owner?: string;
 
   @JSONSchema({
@@ -52,7 +52,7 @@ export class LockTokenDto extends ChainCallDTO {
       "in all cases token authority can unlock token."
   })
   @IsNotEmpty()
-  @IsOptional()
+  @IsUserRef()
   lockAuthority?: string;
 
   @JSONSchema({
@@ -94,7 +94,7 @@ export class LockTokensDto extends ChainCallDTO {
       "in all cases token authority can unlock token."
   })
   @IsNotEmpty()
-  @IsOptional()
+  @IsUserRef()
   lockAuthority?: string;
 
   @JSONSchema({
@@ -159,7 +159,7 @@ export class UnlockTokenDto extends ChainCallDTO {
     description: "Optional. Owner of the token. Calling User by default. Usable by Token Authorities only."
   })
   @IsOptional()
-  @IsNotEmpty()
+  @IsUserRef()
   owner?: string;
 
   @JSONSchema({
