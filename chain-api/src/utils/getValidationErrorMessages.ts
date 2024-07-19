@@ -20,6 +20,12 @@ export function getValidationErrorMessages(validationErrors: ValidationError[]):
       const constraints = e.constraints ?? {};
       const constraintsKeys = Object.keys(constraints).sort();
       const details = constraintsKeys.map((k) => `${k}: ${constraints[k]}`);
+
+      if (e.children) {
+        const childDetails = getValidationErrorMessages(e.children);
+        details.push(...childDetails);
+      }
+
       return details;
     })
     .flat();
