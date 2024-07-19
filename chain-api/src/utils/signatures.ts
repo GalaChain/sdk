@@ -171,6 +171,20 @@ function checksumedEthAddress(addressLowerCased: string): string {
   return chars.join("");
 }
 
+function isLowercasedEthAddress(address: string): boolean {
+  return /^(0x)?[0-9a-f]{40}$/.test(address);
+}
+
+function isChecksumedEthAddress(address: string): boolean {
+  if (!/^(0x)?[0-9a-fA-F]{40}$/.test(address)) {
+    return false;
+  }
+
+  const nonPrefixed = address.slice(-40);
+
+  return checksumedEthAddress(nonPrefixed.toLowerCase()) === nonPrefixed;
+}
+
 interface Secp256k1Signature {
   r: BN;
   s: BN;
@@ -402,6 +416,8 @@ export default {
   getPublicKey,
   getSignature,
   getDERSignature,
+  isChecksumedEthAddress,
+  isLowercasedEthAddress,
   isValid,
   isValidBase64,
   isValidHex,
