@@ -20,7 +20,7 @@ import { JSONSchema } from "class-validator-jsonschema";
 import { TokenInstance, TokenInstanceKey } from "../types/TokenInstance";
 import { ChainCallDTO } from "../types/dtos";
 import { BigNumberProperty, ConstructorArgs } from "../utils";
-import { BigNumberIsNotNegative, IsUserRef } from "../validators";
+import { BigNumberIsNotNegative, IsUserAlias } from "../validators";
 
 export type ReleaseTokenParams = ConstructorArgs<ReleaseTokenDto>;
 
@@ -47,13 +47,13 @@ export class UseTokenDto extends ChainCallDTO {
     description: "The current owner of tokens. If the value is missing, chaincode caller is used."
   })
   @IsOptional()
-  @IsUserRef()
+  @IsUserAlias()
   owner?: string;
 
   @JSONSchema({
     description: "The user who is going to use token."
   })
-  @IsUserRef()
+  @IsUserAlias()
   inUseBy: string;
 
   @JSONSchema({

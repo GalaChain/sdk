@@ -17,9 +17,8 @@ import { Type } from "class-transformer";
 import { ArrayMaxSize, ArrayNotEmpty, IsNotEmpty, IsOptional, ValidateNested } from "class-validator";
 import { JSONSchema } from "class-validator-jsonschema";
 
-import { BigNumberProperty } from "../utils";
-import { ConstructorArgs } from "../utils";
-import { ArrayUniqueObjects, BigNumberIsNotNegative, IsUserRef } from "../validators";
+import { BigNumberProperty, ConstructorArgs } from "../utils";
+import { ArrayUniqueObjects, BigNumberIsNotNegative, IsUserAlias } from "../validators";
 import { TokenClassKey } from "./TokenClass";
 import { AllowanceKey, MintRequestDto } from "./common";
 import { ChainCallDTO } from "./dtos";
@@ -46,7 +45,7 @@ export class MintTokenDto extends ChainCallDTO {
     description: "The owner of minted tokens. If the value is missing, chaincode caller is used."
   })
   @IsOptional()
-  @IsUserRef()
+  @IsUserAlias()
   owner?: string;
 
   @JSONSchema({
@@ -83,7 +82,7 @@ export class MintTokenWithAllowanceDto extends ChainCallDTO {
     description: "The owner of minted tokens. If the value is missing, chaincode caller is used."
   })
   @IsOptional()
-  @IsUserRef()
+  @IsUserAlias()
   owner?: string;
 
   @JSONSchema({
@@ -155,7 +154,7 @@ export class HighThroughputMintTokenDto extends ChainCallDTO {
     description: "The owner of minted tokens. If the value is missing, chaincode caller is used."
   })
   @IsOptional()
-  @IsUserRef()
+  @IsUserAlias()
   owner?: string;
 
   @JSONSchema({

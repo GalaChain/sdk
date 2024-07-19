@@ -34,7 +34,7 @@ import {
   ConstructorArgs,
   ValidationFailedError
 } from "../utils";
-import { BigNumberIsNotNegative, BigNumberIsPositive, IsUserRef } from "../validators";
+import { BigNumberIsNotNegative, BigNumberIsPositive, IsUserAlias } from "../validators";
 import { ChainObject, ObjectValidationFailedError } from "./ChainObject";
 import { TokenClassKey, TokenClassKeyProperties } from "./TokenClass";
 import { TokenInstance, TokenInstanceKey } from "./TokenInstance";
@@ -103,7 +103,7 @@ export class TokenBalance extends ChainObject {
   public static readonly INDEX_KEY = "GCTB";
 
   @ChainKey({ position: 0 })
-  @IsUserRef()
+  @IsUserAlias()
   public readonly owner: string;
 
   @ChainKey({ position: 1 })
@@ -558,7 +558,7 @@ export class TokenBalance extends ChainObject {
 export class TokenHold {
   public static readonly DEFAULT_EXPIRES = 0;
 
-  @IsUserRef()
+  @IsUserAlias()
   public readonly createdBy: string;
 
   @IsNotEmpty()
@@ -589,7 +589,7 @@ export class TokenHold {
       "in all cases token authority can unlock token."
   })
   @IsNotEmpty()
-  @IsUserRef()
+  @IsUserAlias()
   lockAuthority?: string;
 
   public constructor(params?: {

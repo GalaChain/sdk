@@ -13,10 +13,10 @@
  * limitations under the License.
  */
 import { ChainCallDTO, createValidDTO } from "../types";
-import { IsUserRef } from "./IsUserRef";
+import { IsUserAlias } from "./IsUserAlias";
 
 class TestClass extends ChainCallDTO {
-  @IsUserRef()
+  @IsUserAlias()
   user: string;
 }
 

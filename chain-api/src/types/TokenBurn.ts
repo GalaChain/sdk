@@ -17,7 +17,7 @@ import { Exclude } from "class-transformer";
 import { IsDefined, IsInt, IsNotEmpty, IsPositive } from "class-validator";
 
 import { BigNumberProperty, ChainKey, ConstructorArgs } from "../utils";
-import { BigNumberIsInteger, BigNumberIsNotNegative, IsUserRef } from "../validators";
+import { BigNumberIsInteger, BigNumberIsNotNegative, IsUserAlias } from "../validators";
 import { ChainObject } from "./ChainObject";
 
 export type TokenBurnBody = ConstructorArgs<TokenBurn>;
@@ -27,7 +27,7 @@ export class TokenBurn extends ChainObject {
   public static INDEX_KEY = "GCTBR";
 
   @ChainKey({ position: 0 })
-  @IsUserRef()
+  @IsUserAlias()
   public burnedBy: string;
 
   @ChainKey({ position: 1 })

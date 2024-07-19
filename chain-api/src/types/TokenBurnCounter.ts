@@ -17,7 +17,7 @@ import { Exclude } from "class-transformer";
 import { IsDefined, IsNotEmpty } from "class-validator";
 
 import { BigNumberProperty, ChainKey } from "../utils";
-import { BigNumberIsInteger, BigNumberIsNotNegative, IsUserRef } from "../validators";
+import { BigNumberIsInteger, BigNumberIsNotNegative, IsUserAlias } from "../validators";
 import { ChainObject } from "./ChainObject";
 import { RangedChainObject } from "./RangedChainObject";
 
@@ -45,7 +45,7 @@ export class TokenBurnCounter extends RangedChainObject {
   public timeKey: string;
 
   @ChainKey({ position: 5 })
-  @IsUserRef()
+  @IsUserAlias()
   public burnedBy: string;
 
   @ChainKey({ position: 6 })

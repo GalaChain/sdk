@@ -64,11 +64,11 @@ function validateUserRef(value: unknown): UserRefValidationResult {
   return UserRefValidationResult.INVALID_FORMAT;
 }
 
-export function IsUserRef(options?: ValidationOptions) {
+export function IsUserAlias(options?: ValidationOptions) {
   return function (object: object, propertyName: string) {
     // validation of the input
     registerDecorator({
-      name: "IsUserId",
+      name: "IsUserAlias",
       target: object.constructor,
       propertyName,
       options,
@@ -85,7 +85,7 @@ export function IsUserRef(options?: ValidationOptions) {
           const result = validateUserRef(args.value);
           const details = customMessages[result] ?? genericMessage;
 
-          return `${args.property} property with value ${args.value} is not a valid GalaChain user identifier. ${details}`;
+          return `${args.property} property with value ${args.value} is not a valid GalaChain user alias. ${details}`;
         }
       }
     });

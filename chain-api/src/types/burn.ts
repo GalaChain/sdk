@@ -30,7 +30,7 @@ import {
 import { JSONSchema } from "class-validator-jsonschema";
 
 import { BigNumberProperty, ConstructorArgs } from "../utils";
-import { BigNumberIsInteger, BigNumberIsNotNegative, IsUserRef } from "../validators";
+import { BigNumberIsInteger, BigNumberIsNotNegative, IsUserAlias } from "../validators";
 import { BurnTokenQuantity } from "./BurnTokenQuantity";
 import { TokenBurnCounter } from "./TokenBurnCounter";
 import { TokenInstance } from "./TokenInstance";
@@ -46,7 +46,7 @@ export class FetchBurnsDto extends ChainCallDTO {
   @JSONSchema({
     description: "The user who burned the token."
   })
-  @IsUserRef()
+  @IsUserAlias()
   burnedBy: string;
 
   @JSONSchema({
@@ -114,7 +114,7 @@ export class BurnTokensDto extends ChainCallDTO {
       "Owner of the tokens to be burned. If not provided, the calling user is assumed to be the owner."
   })
   @IsOptional()
-  @IsUserRef()
+  @IsUserAlias()
   owner?: string;
 }
 
@@ -146,7 +146,7 @@ export class BurnAndMintDto extends ChainCallDTO {
       "User ID of the identity that owns the tokens to be burned. " +
       "The burnDto signature will be validated against this user's public key on chain."
   })
-  @IsUserRef()
+  @IsUserAlias()
   burnOwner: string;
 
   @JSONSchema({
@@ -264,7 +264,7 @@ export class TokenBurnCounterCompositeKeyDto extends ChainCallDTO {
   @JSONSchema({
     description: "burnedBy user."
   })
-  @IsUserRef()
+  @IsUserAlias()
   burnedBy: string;
 
   @JSONSchema({

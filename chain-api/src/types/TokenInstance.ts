@@ -28,11 +28,11 @@ import { JSONSchema } from "class-validator-jsonschema";
 import { ConstructorArgs } from "../utils";
 import { ChainKey } from "../utils/chain-decorators";
 import { BigNumberProperty } from "../utils/transform-decorators";
+import { IsUserAlias } from "../validators";
 import { BigNumberIsInteger, BigNumberIsNotNegative } from "../validators/decorators";
 import { ChainObject } from "./ChainObject";
 import { TokenClass, TokenClassKey, TokenClassKeyProperties } from "./TokenClass";
 import { ChainCallDTO } from "./dtos";
-import { IsUserRef } from "../validators";
 
 export interface TokenInstanceKeyProperties {
   collection: string;
@@ -263,7 +263,7 @@ export class TokenInstance extends ChainObject {
   public isNonFungible: boolean;
 
   @ValidateIf((i) => i.isNonFungible === true)
-  @IsUserRef()
+  @IsUserAlias()
   public owner?: string;
 
   public static INDEX_KEY = "GCTI2";

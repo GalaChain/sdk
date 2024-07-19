@@ -33,7 +33,7 @@ import {
 import { JSONSchema } from "class-validator-jsonschema";
 
 import { BigNumberProperty, ConstructorArgs } from "../utils";
-import { BigNumberIsNotNegative, BigNumberIsPositive, IsUserRef } from "../validators";
+import { BigNumberIsNotNegative, BigNumberIsPositive, IsUserAlias } from "../validators";
 import { TokenBalance } from "./TokenBalance";
 import { TokenClass, TokenClassKey } from "./TokenClass";
 import { TokenInstance, TokenInstanceKey } from "./TokenInstance";
@@ -338,7 +338,7 @@ export class UpdateTokenClassDto extends ChainCallDTO {
       "Only token authorities can give mint allowances. " +
       "By default the calling user becomes a single token authority. "
   })
-  @IsUserRef({ each: true })
+  @IsUserAlias({ each: true })
   @IsOptional()
   @ArrayNotEmpty()
   authorities?: string[];
@@ -362,7 +362,7 @@ export class FetchBalancesDto extends ChainCallDTO {
     description: "Person who owns the balance. If the value is missing, chaincode caller is used."
   })
   @IsOptional()
-  @IsUserRef()
+  @IsUserAlias()
   owner?: string;
 
   @JSONSchema({
@@ -406,7 +406,7 @@ export class FetchBalancesWithPaginationDto extends ChainCallDTO {
     description: "Person who owns the balance. If the value is missing, chaincode caller is used."
   })
   @IsOptional()
-  @IsUserRef()
+  @IsUserAlias()
   owner?: string;
 
   @JSONSchema({
@@ -503,10 +503,10 @@ export class TransferTokenDto extends ChainCallDTO {
     description: "The current owner of tokens. If the value is missing, chaincode caller is used."
   })
   @IsOptional()
-  @IsUserRef()
+  @IsUserAlias()
   from?: string;
 
-  @IsUserRef()
+  @IsUserAlias()
   to: string;
 
   @JSONSchema({
