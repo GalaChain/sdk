@@ -32,8 +32,7 @@ import {
   BigNumberProperty,
   ChainKey,
   ConstructorArgs,
-  ValidationFailedError,
-  getValidationErrorInfo
+  ValidationFailedError
 } from "../utils";
 import { BigNumberIsNotNegative, BigNumberIsPositive } from "../validators";
 import { ChainObject, ObjectValidationFailedError } from "./ChainObject";
@@ -630,7 +629,7 @@ export class TokenHold {
 
     const errors = await validate(hold);
     if (errors.length > 0) {
-      throw new ObjectValidationFailedError(getValidationErrorInfo(errors));
+      throw new ObjectValidationFailedError(errors);
     }
 
     return hold;
