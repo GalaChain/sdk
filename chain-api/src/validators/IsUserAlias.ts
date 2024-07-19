@@ -12,9 +12,15 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-import { ValidationArguments, ValidationOptions, registerDecorator } from "class-validator";
+import {
+  ValidationArguments,
+  ValidationOptions,
+  ValidatorConstraint,
+  ValidatorConstraintInterface,
+  registerDecorator
+} from "class-validator";
 
-import signatures from "../utils/signatures";
+import { signatures } from "../utils";
 
 enum UserRefValidationResult {
   VALID_USER_ALIAS,
@@ -64,30 +70,44 @@ function validateUserRef(value: unknown): UserRefValidationResult {
   return UserRefValidationResult.INVALID_FORMAT;
 }
 
+@ValidatorConstraint({ async: false })
+class IsUserAliasConstraint implements ValidatorConstraintInterface {
+  validate(value: unknown, args: ValidationArguments): boolean {
+    if (Array.isArray(value)) {
+      return value.every((val) => this.validate(val, args));
+    }
+    const result = validateUserRef(value);
+    return (
+      result === UserRefValidationResult.VALID_USER_ALIAS ||
+      result === UserRefValidationResult.VALID_SYSTEM_USER
+    );
+  }
+
+  defaultMessage(args: ValidationArguments): string {
+    const value = args.value;
+    if (Array.isArray(value)) {
+      const invalidValues = value.filter(
+        (val) =>
+          validateUserRef(val) !== UserRefValidationResult.VALID_USER_ALIAS &&
+          validateUserRef(val) !== UserRefValidationResult.VALID_SYSTEM_USER
+      );
+      return `${args.property} property with values ${invalidValues} are not valid GalaChain user aliases. ${genericMessage}`;
+    }
+    const result = validateUserRef(args.value);
+    const details = customMessages[result] ?? genericMessage;
+    return `${args.property} property with value ${args.value} is not a valid GalaChain user alias. ${details}`;
+  }
+}
+
 export function IsUserAlias(options?: ValidationOptions) {
   return function (object: object, propertyName: string) {
-    // validation of the input
     registerDecorator({
-      name: "IsUserAlias",
+      name: "isUserAlias",
       target: object.constructor,
       propertyName,
       options,
-      validator: {
-        validate(value: unknown) {
-          const result = validateUserRef(value);
-          return (
-            result === UserRefValidationResult.VALID_USER_ALIAS ||
-            result === UserRefValidationResult.VALID_SYSTEM_USER
-          );
-        },
-        defaultMessage(args: ValidationArguments) {
-          // need to validate again to serve detailed custom message
-          const result = validateUserRef(args.value);
-          const details = customMessages[result] ?? genericMessage;
-
-          return `${args.property} property with value ${args.value} is not a valid GalaChain user alias. ${details}`;
-        }
-      }
+      constraints: [],
+      validator: IsUserAliasConstraint
     });
   };
 }

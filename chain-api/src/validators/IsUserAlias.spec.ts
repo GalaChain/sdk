@@ -12,12 +12,21 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+import { Type } from "class-transformer";
+
 import { ChainCallDTO, createValidDTO } from "../types";
+import { generateSchema } from "../utils/index";
 import { IsUserAlias } from "./IsUserAlias";
 
-class TestClass extends ChainCallDTO {
+class TestDto extends ChainCallDTO {
   @IsUserAlias()
   user: string;
+}
+
+class TestArrayDto extends ChainCallDTO {
+  @Type(() => String)
+  @IsUserAlias({ each: true })
+  users: string[];
 }
 
 const checksumedEthAddress = "0abB6F637a51eb26665e0DeBc5CE8A84e1fa8AC3";
@@ -34,7 +43,7 @@ test.each<[string, string, string]>([
   const plain = { user: input };
 
   // When
-  const validated = await createValidDTO(TestClass, plain);
+  const validated = await createValidDTO(TestDto, plain);
 
   // Then
   expect(validated.user).toBe(expected);
@@ -53,8 +62,56 @@ test.each<[string, string, string]>([
   const plain = { user: input };
 
   // When
-  const failed = createValidDTO(TestClass, plain);
+  const failed = createValidDTO(TestDto, plain);
 
   // Then
   await expect(failed).rejects.toThrow(expectedError);
+});
+
+it("should validate array of user aliases", async () => {
+  // Given
+  const validPlain = {
+    users: ["client|123", `eth|${checksumedEthAddress}`, `EthereumBridge`, `GalaChainBridge-42`]
+  };
+
+  const invalidPlain = { users: ["client|123", `eth|${invalidChecksum}`, "EthereumBridge"] };
+
+  // When
+  const valid = await createValidDTO(TestArrayDto, validPlain);
+  const invalid = createValidDTO(TestArrayDto, invalidPlain);
+
+  // Then
+  expect(valid.users).toEqual(validPlain.users);
+  await expect(invalid).rejects.toThrow(`users property with values eth|${invalidChecksum} are not valid`);
+});
+
+it("should support schema generation", () => {
+  // When
+  const schema1 = generateSchema(TestDto);
+  const schema2 = generateSchema(TestArrayDto);
+
+  // Then
+  expect(schema1).toEqual(
+    expect.objectContaining({
+      properties: expect.objectContaining({
+        user: {
+          type: "string",
+          description: expect.stringContaining("Allowed value is string following the format")
+        }
+      })
+    })
+  );
+  expect(schema2).toEqual(
+    expect.objectContaining({
+      properties: expect.objectContaining({
+        users: {
+          type: "array",
+          items: {
+            type: "string",
+            description: expect.stringContaining("Allowed value is string following the format")
+          }
+        }
+      })
+    })
+  );
 });
