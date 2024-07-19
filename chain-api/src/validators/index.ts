@@ -14,3 +14,4 @@
  */
 
 export * from "./decorators";
+export * from "./IsUserAlias";

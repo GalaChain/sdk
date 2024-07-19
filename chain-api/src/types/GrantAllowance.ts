@@ -13,14 +13,14 @@
  * limitations under the License.
  */
 import BigNumber from "bignumber.js";
-import { IsNotEmpty, IsString } from "class-validator";
+import { IsNotEmpty } from "class-validator";
 
 import { BigNumberProperty } from "../utils";
-import { BigNumberIsNotNegative } from "../validators";
+import { BigNumberIsNotNegative, IsUserAlias } from "../validators";
 
 export class GrantAllowanceQuantity {
   @IsNotEmpty()
-  @IsString()
+  @IsUserAlias()
   user: string;
 
   @BigNumberProperty({ allowInfinity: true })

@@ -17,7 +17,7 @@ import { Type } from "class-transformer";
 import { IsDefined, IsNotEmpty, IsOptional } from "class-validator";
 
 import { BigNumberProperty, ChainKey } from "../utils";
-import { BigNumberIsNotNegative } from "../validators";
+import { BigNumberIsNotNegative, IsUserAlias } from "../validators";
 import { ChainObject } from "./ChainObject";
 import { RangedChainObject } from "./RangedChainObject";
 import { TokenMintFulfillment } from "./TokenMintFulfillment";
@@ -48,14 +48,14 @@ export class TokenMintRequest extends RangedChainObject {
   public timeKey: string;
 
   @ChainKey({ position: 5 })
-  @IsNotEmpty()
+  @IsUserAlias()
   public owner: string;
 
   @IsNotEmpty()
   @BigNumberProperty()
   public totalKnownMintsCount: BigNumber;
 
-  @IsNotEmpty()
+  @IsUserAlias()
   public requestor: string;
 
   @IsNotEmpty()

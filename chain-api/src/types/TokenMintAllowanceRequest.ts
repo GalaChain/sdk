@@ -18,7 +18,7 @@ import { IsDefined, IsNotEmpty, IsOptional } from "class-validator";
 import { TokenAllowance } from "../types/TokenAllowance";
 import { AllowanceType, TokenMintStatus } from "../types/common";
 import { BigNumberProperty, ChainKey } from "../utils";
-import { BigNumberIsNotNegative } from "../validators";
+import { BigNumberIsNotNegative, IsUserAlias } from "../validators";
 import { ChainObject } from "./ChainObject";
 import { RangedChainObject } from "./RangedChainObject";
 import { TokenMintAllowance } from "./TokenMintAllowance";
@@ -47,7 +47,7 @@ export class TokenMintAllowanceRequest extends RangedChainObject {
   public timeKey: string;
 
   @ChainKey({ position: 5 })
-  @IsNotEmpty()
+  @IsUserAlias()
   public grantedTo: string;
 
   @IsNotEmpty()
@@ -57,7 +57,7 @@ export class TokenMintAllowanceRequest extends RangedChainObject {
   @IsNotEmpty()
   public created: number;
 
-  @IsNotEmpty()
+  @IsUserAlias()
   public grantedBy: string;
 
   @IsNotEmpty()

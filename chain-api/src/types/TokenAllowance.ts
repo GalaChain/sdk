@@ -17,7 +17,7 @@ import { Exclude } from "class-transformer";
 import { IsDefined, IsInt, IsNotEmpty, IsOptional, IsPositive, Min } from "class-validator";
 
 import { BigNumberProperty, ChainKey, ConstructorArgs, EnumProperty } from "../utils";
-import { BigNumberIsInteger, BigNumberIsNotNegative, BigNumberIsPositive } from "../validators/decorators";
+import { BigNumberIsInteger, BigNumberIsNotNegative, BigNumberIsPositive, IsUserAlias } from "../validators";
 import { ChainObject } from "./ChainObject";
 import { AllowanceType } from "./common";
 
@@ -28,7 +28,7 @@ export class TokenAllowance extends ChainObject {
   public static INDEX_KEY = "GCTA";
 
   @ChainKey({ position: 0 })
-  @IsNotEmpty()
+  @IsUserAlias()
   public grantedTo: string;
 
   @ChainKey({ position: 1 })
@@ -60,7 +60,7 @@ export class TokenAllowance extends ChainObject {
 
   // This would make it hard to find all allowances issued out...
   @ChainKey({ position: 7 })
-  @IsNotEmpty()
+  @IsUserAlias()
   public grantedBy: string;
 
   @ChainKey({ position: 8 })

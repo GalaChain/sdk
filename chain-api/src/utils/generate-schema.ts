@@ -38,6 +38,13 @@ function customTargetConstructorToSchema(classType: ClassConstructor) {
           description: enumValuesInfo
         };
         return schemaObj;
+      },
+      ["IsUserAliasConstraint"]: (meta) => {
+        return {
+          type: "string",
+          description:
+            "Allowed value is string following the format of 'client|<user-id>', or 'eth|<checksumed-eth-addr>', or valid system-level username."
+        };
       }
     },
     classTransformerMetadataStorage: defaultMetadataStorage

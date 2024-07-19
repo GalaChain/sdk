@@ -16,6 +16,7 @@ import BigNumber from "bignumber.js";
 import { IsDefined, IsNotEmpty } from "class-validator";
 
 import { BigNumberProperty, ChainKey } from "../utils";
+import { IsUserAlias } from "../validators";
 import { ChainObject } from "./ChainObject";
 
 // Replaces singular TokenClass property totalMintAllowance
@@ -44,11 +45,11 @@ export class TokenMintAllowance extends ChainObject {
   public totalKnownMintAllowancesAtRequest: BigNumber;
 
   @ChainKey({ position: 5 })
-  @IsNotEmpty()
+  @IsUserAlias()
   public grantedBy: string;
 
   @ChainKey({ position: 6 })
-  @IsNotEmpty()
+  @IsUserAlias()
   public grantedTo: string;
 
   @ChainKey({ position: 7 })
