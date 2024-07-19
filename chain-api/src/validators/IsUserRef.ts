@@ -21,6 +21,7 @@ enum UserRefValidationResult {
   VALID_USER_ALIAS,
   VALID_LOWERCASED_ADDR,
   VALID_CHECKSUMED_ADDR,
+  VALID_SYSTEM_USER,
   INVALID_ETH_USER_ALIAS,
   INVALID_ETH_ADDR,
   INVALID_FORMAT
@@ -34,7 +35,8 @@ const customMessages = {
 };
 
 const genericMessage =
-  "Expected string following the format of 'client|<user-id>', or 'eth|<checksumed-eth-addr>', or valid eth address (either checksumed or lowercased).";
+  "Expected string following the format of 'client|<user-id>', or 'eth|<checksumed-eth-addr>', " +
+  "or valid eth address (either checksumed or lowercased), or valid system-level username.";
 
 function validateUserRef(value: unknown): UserRefValidationResult {
   if (typeof value !== "string" || value.length === 0) {
@@ -48,8 +50,14 @@ function validateUserRef(value: unknown): UserRefValidationResult {
       return UserRefValidationResult.VALID_LOWERCASED_ADDR;
     } else if (signatures.isChecksumedEthAddress(parts[0])) {
       return UserRefValidationResult.VALID_CHECKSUMED_ADDR;
+    } else if (parts[0] === "EthereumBridge" || /^GalaChainBridge-\d+$/.test(parts[0])) {
+      return UserRefValidationResult.VALID_SYSTEM_USER;
     } else {
-      return UserRefValidationResult.INVALID_ETH_ADDR;
+      if (parts[0].length === 40 || parts[0].length === 42) {
+        return UserRefValidationResult.INVALID_ETH_ADDR;
+      } else {
+        return UserRefValidationResult.INVALID_FORMAT;
+      }
     }
   }
 
@@ -84,7 +92,8 @@ export function IsUserRef(options?: ValidationOptions) {
           return (
             result === UserRefValidationResult.VALID_USER_ALIAS ||
             result === UserRefValidationResult.VALID_LOWERCASED_ADDR ||
-            result === UserRefValidationResult.VALID_CHECKSUMED_ADDR
+            result === UserRefValidationResult.VALID_CHECKSUMED_ADDR ||
+            result === UserRefValidationResult.VALID_SYSTEM_USER
           );
         },
         defaultMessage(args: ValidationArguments) {
