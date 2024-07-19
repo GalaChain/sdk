@@ -14,4 +14,4 @@
  */
 
 export * from "./decorators";
-export * from "./IsUserId";
+export * from "./IsUserRef";
