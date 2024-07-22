@@ -29,8 +29,15 @@ import {
 } from "class-validator";
 import { JSONSchema } from "class-validator-jsonschema";
 
-import { BigNumberProperty, ConstructorArgs, EnumProperty } from "../utils";
-import { ArrayUniqueObjects, BigNumberIsInteger, BigNumberIsPositive, IsUserAlias } from "../validators";
+import { ConstructorArgs } from "../utils";
+import {
+  ArrayUniqueObjects,
+  BigNumberIsInteger,
+  BigNumberIsPositive,
+  BigNumberProperty,
+  EnumProperty,
+  IsUserAlias
+} from "../validators";
 import { GrantAllowanceQuantity } from "./GrantAllowance";
 import { TokenAllowance } from "./TokenAllowance";
 import { TokenInstance, TokenInstanceKey, TokenInstanceQueryKey } from "./TokenInstance";

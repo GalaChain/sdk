@@ -16,8 +16,14 @@ import { BigNumber } from "bignumber.js";
 import { Exclude } from "class-transformer";
 import { IsDefined, IsInt, IsNotEmpty, IsPositive } from "class-validator";
 
-import { BigNumberProperty, ChainKey, EnumProperty } from "../utils";
-import { BigNumberIsInteger, BigNumberIsNotNegative, IsUserAlias } from "../validators";
+import { ChainKey } from "../utils";
+import {
+  BigNumberIsInteger,
+  BigNumberIsNotNegative,
+  BigNumberProperty,
+  EnumProperty,
+  IsUserAlias
+} from "../validators";
 import { ChainObject } from "./ChainObject";
 import { AllowanceType } from "./common";
 

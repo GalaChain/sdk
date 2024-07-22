@@ -25,11 +25,8 @@ import {
 } from "class-validator";
 import { JSONSchema } from "class-validator-jsonschema";
 
-import { ConstructorArgs } from "../utils";
-import { ChainKey } from "../utils/chain-decorators";
-import { BigNumberProperty } from "../utils/transform-decorators";
-import { IsUserAlias } from "../validators";
-import { BigNumberIsInteger, BigNumberIsNotNegative } from "../validators/decorators";
+import { ChainKey, ConstructorArgs } from "../utils";
+import { BigNumberIsInteger, BigNumberIsNotNegative, BigNumberProperty, IsUserAlias } from "../validators";
 import { ChainObject } from "./ChainObject";
 import { TokenClass, TokenClassKey, TokenClassKeyProperties } from "./TokenClass";
 import { ChainCallDTO } from "./dtos";

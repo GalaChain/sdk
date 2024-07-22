@@ -20,7 +20,6 @@ import signatures from "./signatures";
 
 export * from "./chain-decorators";
 export * from "./error";
-export * from "./transform-decorators";
 export * from "./type-utils";
 
 export {

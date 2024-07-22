@@ -17,8 +17,8 @@ import { Type } from "class-transformer";
 import { ArrayMaxSize, ArrayNotEmpty, IsNotEmpty, IsOptional, ValidateNested } from "class-validator";
 import { JSONSchema } from "class-validator-jsonschema";
 
-import { BigNumberProperty, ConstructorArgs } from "../utils";
-import { ArrayUniqueObjects, BigNumberIsNotNegative, IsUserAlias } from "../validators";
+import { ConstructorArgs } from "../utils";
+import { ArrayUniqueObjects, BigNumberIsNotNegative, BigNumberProperty, IsUserAlias } from "../validators";
 import { TokenClassKey } from "./TokenClass";
 import { AllowanceKey, MintRequestDto } from "./common";
 import { ChainCallDTO } from "./dtos";

@@ -17,10 +17,10 @@ import { Type } from "class-transformer";
 import { ArrayNotEmpty, IsNotEmpty, IsOptional, IsString, ValidateNested } from "class-validator";
 import { JSONSchema } from "class-validator-jsonschema";
 
-import { TokenInstance, TokenInstanceKey } from "../types/TokenInstance";
-import { ChainCallDTO } from "../types/dtos";
-import { BigNumberProperty, ConstructorArgs } from "../utils";
-import { BigNumberIsNotNegative, IsUserAlias } from "../validators";
+import { ConstructorArgs } from "../utils";
+import { BigNumberIsNotNegative, BigNumberProperty, IsUserAlias } from "../validators";
+import { TokenInstance, TokenInstanceKey } from "./TokenInstance";
+import { ChainCallDTO } from "./dtos";
 
 export type ReleaseTokenParams = ConstructorArgs<ReleaseTokenDto>;
 

@@ -27,14 +27,14 @@ import {
 } from "class-validator";
 import { JSONSchema } from "class-validator-jsonschema";
 
+import { ChainKey, ConstructorArgs, ValidationFailedError } from "../utils";
 import {
   BigNumberArrayProperty,
+  BigNumberIsNotNegative,
+  BigNumberIsPositive,
   BigNumberProperty,
-  ChainKey,
-  ConstructorArgs,
-  ValidationFailedError
-} from "../utils";
-import { BigNumberIsNotNegative, BigNumberIsPositive, IsUserAlias } from "../validators";
+  IsUserAlias
+} from "../validators";
 import { ChainObject, ObjectValidationFailedError } from "./ChainObject";
 import { TokenClassKey, TokenClassKeyProperties } from "./TokenClass";
 import { TokenInstance, TokenInstanceKey } from "./TokenInstance";

@@ -17,9 +17,13 @@ import { Type } from "class-transformer";
 import { IsDefined, IsInt, IsNotEmpty, IsOptional, IsPositive } from "class-validator";
 import { JSONSchema } from "class-validator-jsonschema";
 
-import { BigNumberProperty, EnumProperty } from "../utils/transform-decorators";
-import { IsUserAlias } from "../validators";
-import { BigNumberIsInteger, BigNumberIsNotNegative } from "../validators/decorators";
+import {
+  BigNumberIsInteger,
+  BigNumberIsNotNegative,
+  BigNumberProperty,
+  EnumProperty,
+  IsUserAlias
+} from "../validators";
 import { ChainCallDTO } from "./dtos";
 
 export enum AllowanceType {

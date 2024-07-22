@@ -17,7 +17,8 @@ import { classToPlain as instanceToPlain, plainToClass as plainToInstance } from
 import { ArrayMinSize, ArrayNotEmpty, IsString } from "class-validator";
 import { ec as EC } from "elliptic";
 
-import { BigNumberArrayProperty, BigNumberProperty, getValidationErrorMessages } from "../utils";
+import { getValidationErrorMessages } from "../utils";
+import { BigNumberArrayProperty, BigNumberProperty } from "../validators";
 import { ChainCallDTO, ClassConstructor } from "./dtos";
 
 const getInstanceOrErrorInfo = async <T extends ChainCallDTO>(

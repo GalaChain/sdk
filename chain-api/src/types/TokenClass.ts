@@ -27,8 +27,8 @@ import {
 } from "class-validator";
 import { JSONSchema } from "class-validator-jsonschema";
 
-import { BigNumberProperty, ChainKey, ConstructorArgs } from "../utils";
-import { BigNumberIsPositive, IsUserAlias } from "../validators";
+import { ChainKey, ConstructorArgs } from "../utils";
+import { BigNumberIsPositive, BigNumberProperty, IsUserAlias } from "../validators";
 import { ChainObject } from "./ChainObject";
 import { GC_NETWORK_ID } from "./contract";
 import { ChainCallDTO } from "./dtos";

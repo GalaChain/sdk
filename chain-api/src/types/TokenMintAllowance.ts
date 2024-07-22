@@ -15,8 +15,8 @@
 import BigNumber from "bignumber.js";
 import { IsDefined, IsNotEmpty } from "class-validator";
 
-import { BigNumberProperty, ChainKey } from "../utils";
-import { IsUserAlias } from "../validators";
+import { ChainKey } from "../utils";
+import { BigNumberProperty, IsUserAlias } from "../validators";
 import { ChainObject } from "./ChainObject";
 
 // Replaces singular TokenClass property totalMintAllowance

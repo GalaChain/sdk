@@ -18,9 +18,8 @@ import { ArrayNotEmpty, IsNotEmpty, IsOptional, ValidateNested } from "class-val
 import { JSONSchema } from "class-validator-jsonschema";
 
 import { ChainCallDTO } from "../types";
-import { BigNumberIsPositive } from "../validators";
+import { BigNumberIsPositive, BigNumberProperty, EnumProperty } from "../validators";
 import { generateResponseSchema, generateSchema } from "./generate-schema";
-import { BigNumberProperty, EnumProperty } from "./transform-decorators";
 
 enum YesNoEnum {
   Yes,
