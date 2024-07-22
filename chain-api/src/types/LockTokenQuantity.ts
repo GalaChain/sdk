@@ -17,8 +17,7 @@ import { Type } from "class-transformer";
 import { IsNotEmpty, IsOptional, ValidateNested } from "class-validator";
 import { JSONSchema } from "class-validator-jsonschema";
 
-import { BigNumberProperty } from "../utils";
-import { BigNumberIsNotNegative, IsUserAlias } from "../validators";
+import { BigNumberIsNotNegative, BigNumberProperty, IsUserAlias } from "../validators";
 import { TokenInstanceKey } from "./TokenInstance";
 
 export class LockTokenQuantity {

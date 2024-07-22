@@ -16,8 +16,8 @@ import { BigNumber } from "bignumber.js";
 import { Exclude } from "class-transformer";
 import { IsDefined, IsInt, IsNotEmpty, IsPositive } from "class-validator";
 
-import { BigNumberProperty, ChainKey, ConstructorArgs } from "../utils";
-import { BigNumberIsInteger, BigNumberIsNotNegative, IsUserAlias } from "../validators";
+import { ChainKey, ConstructorArgs } from "../utils";
+import { BigNumberIsInteger, BigNumberIsNotNegative, BigNumberProperty, IsUserAlias } from "../validators";
 import { ChainObject } from "./ChainObject";
 
 export type TokenBurnBody = ConstructorArgs<TokenBurn>;

@@ -26,11 +26,11 @@ import {
 } from "class-validator";
 import { JSONSchema } from "class-validator-jsonschema";
 
-import { TokenInstance, TokenInstanceKey } from "../types/TokenInstance";
-import { ChainCallDTO } from "../types/dtos";
-import { BigNumberProperty, ConstructorArgs } from "../utils";
-import { BigNumberIsNotNegative, BigNumberIsPositive, IsUserAlias } from "../validators";
+import { ConstructorArgs } from "../utils";
+import { BigNumberIsNotNegative, BigNumberIsPositive, BigNumberProperty, IsUserAlias } from "../validators";
 import { LockTokenQuantity } from "./LockTokenQuantity";
+import { TokenInstance, TokenInstanceKey } from "./TokenInstance";
+import { ChainCallDTO } from "./dtos";
 
 export type LockTokenRequestParams = ConstructorArgs<LockTokenDto>;
 

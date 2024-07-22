@@ -15,13 +15,13 @@
 import { BigNumber } from "bignumber.js";
 import { IsDefined, IsNotEmpty, IsOptional } from "class-validator";
 
-import { TokenAllowance } from "../types/TokenAllowance";
-import { AllowanceType, TokenMintStatus } from "../types/common";
-import { BigNumberProperty, ChainKey } from "../utils";
-import { BigNumberIsNotNegative, IsUserAlias } from "../validators";
+import { ChainKey } from "../utils";
+import { BigNumberIsNotNegative, BigNumberProperty, IsUserAlias } from "../validators";
 import { ChainObject } from "./ChainObject";
 import { RangedChainObject } from "./RangedChainObject";
+import { TokenAllowance } from "./TokenAllowance";
 import { TokenMintAllowance } from "./TokenMintAllowance";
+import { AllowanceType, TokenMintStatus } from "./common";
 
 export class TokenMintAllowanceRequest extends RangedChainObject {
   public static INDEX_KEY = "GCTMAR";

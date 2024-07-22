@@ -16,8 +16,8 @@ import BigNumber from "bignumber.js";
 import { Type } from "class-transformer";
 import { IsDefined, IsNotEmpty, IsOptional } from "class-validator";
 
-import { BigNumberProperty, ChainKey } from "../utils";
-import { BigNumberIsNotNegative, IsUserAlias } from "../validators";
+import { ChainKey } from "../utils";
+import { BigNumberIsNotNegative, BigNumberProperty, IsUserAlias } from "../validators";
 import { ChainObject } from "./ChainObject";
 import { RangedChainObject } from "./RangedChainObject";
 import { TokenMintFulfillment } from "./TokenMintFulfillment";

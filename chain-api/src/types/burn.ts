@@ -29,8 +29,8 @@ import {
 } from "class-validator";
 import { JSONSchema } from "class-validator-jsonschema";
 
-import { BigNumberProperty, ConstructorArgs } from "../utils";
-import { BigNumberIsInteger, BigNumberIsNotNegative, IsUserAlias } from "../validators";
+import { ConstructorArgs } from "../utils";
+import { BigNumberIsInteger, BigNumberIsNotNegative, BigNumberProperty, IsUserAlias } from "../validators";
 import { BurnTokenQuantity } from "./BurnTokenQuantity";
 import { TokenBurnCounter } from "./TokenBurnCounter";
 import { TokenInstance } from "./TokenInstance";

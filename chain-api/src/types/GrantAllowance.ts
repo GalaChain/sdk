@@ -15,8 +15,7 @@
 import BigNumber from "bignumber.js";
 import { IsNotEmpty } from "class-validator";
 
-import { BigNumberProperty } from "../utils";
-import { BigNumberIsNotNegative, IsUserAlias } from "../validators";
+import { BigNumberIsNotNegative, BigNumberProperty, IsUserAlias } from "../validators";
 
 export class GrantAllowanceQuantity {
   @IsNotEmpty()

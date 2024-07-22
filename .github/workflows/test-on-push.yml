@@ -24,6 +24,8 @@ jobs:
         run: npm run build
       - name: Lint
         run: npm run lint
+      - name: Circular dependencies
+        run: npm run madge
       - name: Test
         run: npm run test
 
