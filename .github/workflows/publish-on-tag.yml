@@ -205,3 +205,115 @@ jobs:
         env:
           GH_TOKEN: ${{ secrets.RELEASE_BOT_TOKEN }}
         run: gh pr create --title "Bump Version to $VERSION" --body "Bump Version to $VERSION" --label "bump-version-pr" --head "bump-version-to-$VERSION" --base main
+
+  notify-tag:
+    needs: [publish, publish-cli-image]
+    if: github.event_name != 'pull_request' && (startsWith(github.ref, 'refs/tags/v'))
+    name: Notify Tag
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v2
+  
+      - name: Get tag details
+        id: tag_details
+        run: |
+          TAG_NAME=$(git describe --tags --abbrev=0)
+          TAG_AUTHOR=$(git show -s --format='%an' $TAG_NAME)
+          echo "::set-output name=tag_name::$TAG_NAME"
+          echo "::set-output name=tag_author::$TAG_AUTHOR"
+  
+      - name: Send notification to Slack
+        uses: rtCamp/action-slack-notify@v2.1.2
+        env:
+          SLACK_CHANNEL: chain_dependency_alerts
+          SLACK_COLOR: good
+          SLACK_TITLE: New Tag Created
+          SLACK_MESSAGE: "A new tag \`${{ steps.tag_details.outputs.tag_name }}\` was created by `${{ steps.tag_details.outputs.tag_author }}`"
+          SLACK_WEBHOOK: ${{ secrets.SLACK_WEBHOOK }}
+  
+  update-assets-chaincode:
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v2
+
+    - name: Set up Git
+      run: |
+        git config --global user.name "github-actions[bot]"
+        git config --global user.email "github-actions[bot]@users.noreply.github.com"
+
+    - name: Clone GitLab repository
+      env:
+        GITLAB_ACCESS_TOKEN: ${{ secrets.GITLAB_ACCESS_TOKEN }}
+      run: |
+        git clone https://oauth2:${GITLAB_ACCESS_TOKEN}@gitlab.com/your-username/your-repo.git
+        cd your-repo
+
+    - name: Update package.json version
+      id: update_version
+      run: |
+        cd your-repo
+        # Update the version in package.json (this is an example, adjust as needed)
+        NEW_VERSION=${GITHUB_REF#refs/tags/}
+        jq ".version = \"$NEW_VERSION\"" package.json > temp.json && mv temp.json package.json
+
+    - name: Commit and push changes
+      env:
+        GITLAB_ACCESS_TOKEN: ${{ secrets.GITLAB_ACCESS_TOKEN }}
+      run: |
+        cd your-repo
+        git add package.json
+        git commit -m "Update version to ${{ steps.update_version.outputs.NEW_VERSION }}"
+        git push origin main
+
+  pull-pipeline-for-commit-to-main:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Poll Pipeline Status
+        run: |
+          TAG_NAME=$(git describe --tags --abbrev=0)
+          TAG_AUTHOR=$(git show -s --format='%an' $TAG_NAME)
+          echo "::set-output name=tag_name::$TAG_NAME"
+          echo "::set-output name=tag_author::$TAG_AUTHOR"
+
+          status=""
+          echo "Polling Pipeline Status for ID: ${{ env.pipeline_id }}"
+          while [[ "$status" != "success" && "$status" != "failed" && "$status" != "canceled" ]]; do
+            result=$(curl --header "PRIVATE-TOKEN: ${{ secrets.GITLAB_TOKEN }}" \
+              "https://gitlab.com/api/v4/projects/35484791/pipelines/${{ env.pipeline_id }}")
+            status=$(echo "$result" | jq -r '.status')
+            echo "Pipeline status: $status"
+            if [[ "$status" == "failed" ]]; then
+              curl -X POST -H 'Content-type: application/json' --data "{
+                \"channel\": \"#chain_dependency_alerts\",
+                \"username\": \"ChainBot\",
+                \"text\": \"Pipeline failed!\",
+                \"attachments\": [{
+                  \"fallback\": \"Detailed information about pipeline failure.\",
+                  \"color\": \"danger\",
+                  \"pretext\": \"Pipeline for assets-chaincode failed!\",
+                  \"fields\": [
+                    {
+                      \"title\": \"Responsible Person\",
+                      \"value\": \"${{ TAG_AUTHOR }}\",
+                      \"short\": true
+                    },
+                    {
+                      \"title\": \"Commit URL\",
+                      \"value\": \"<${{ github.server_url }}/${{ github.repository }}/commit/${{ github.sha }}|View Commit>\",
+                      \"short\": true
+                    },
+                    {
+                      \"title\": \"Pipeline URL\",
+                      \"value\": \"<${{ env.PIPELINE_URL }}|View Pipeline>\",
+                      \"short\": true
+                    }
+                  ]
+                }]" ${{ secrets.SLACK_WEBHOOK_URL }}
+              echo "Pipeline status after failure: $status"
+              exit 1
+            fi
+            sleep 600 #Sleep for 10 mins
+          done
