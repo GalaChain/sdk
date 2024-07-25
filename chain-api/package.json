@@ -16,6 +16,22 @@
     "reflect-metadata": "^0.1.13",
     "tslib": "^2.6.2"
   },
+  "peerDependencies": {
+    "@ton/crypto": "^3.2.0",
+    "@ton/ton": "^14.0.0"
+  },
+  "peerDependenciesMeta": {
+    "@ton/crypto": {
+      "optional": true
+    },
+    "@ton/ton": {
+      "optional": true
+    }
+  },
+  "devDependencies": {
+    "@ton/crypto": "^3.2.0",
+    "@ton/ton": "^14.0.0"
+  },
   "type": "commonjs",
   "main": "./lib/src/index.js",
   "typings": "./lib/src/index.d.ts",
