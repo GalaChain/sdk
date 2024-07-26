@@ -13,7 +13,6 @@
  * limitations under the License.
  */
 import BN from "bn.js";
-import { classToPlain as instanceToPlain } from "class-transformer";
 import { ec as EC, ec } from "elliptic";
 import Signature from "elliptic/lib/elliptic/ec/signature";
 import { keccak256 } from "js-sha3";
@@ -21,6 +20,8 @@ import { keccak256 } from "js-sha3";
 import { TypedDataEncoder } from "../ethers/hash/typed-data";
 import { ValidationFailedError } from "./error";
 import serialize from "./serialize";
+
+import { getPayloadToSign } from "./getPayloadToSign";
 
 class InvalidKeyError extends ValidationFailedError {}
 
@@ -232,7 +233,7 @@ function normalizeEthAddress(address: string): string {
   throw new ValidationFailedError(`Invalid checksum for eth address provided: ${address}`);
 }
 
-interface Secp256k1Signature {
+export interface Secp256k1Signature {
   r: BN;
   s: BN;
   recoveryParam: number | undefined;
@@ -464,7 +465,6 @@ export default {
   getCompactBase64PublicKey,
   getNonCompactHexPublicKey,
   getEthAddress,
-  getPayloadToSign,
   getPublicKey,
   getSignature,
   getDERSignature,

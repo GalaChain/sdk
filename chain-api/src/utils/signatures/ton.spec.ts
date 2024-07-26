@@ -1,7 +1,8 @@
-import { getSecureRandomBytes, keyPairFromSeed, sign, signVerify } from "@ton/crypto"
-import { Address, beginCell } from "@ton/core"
-import signatures from "./signatures";
+import { Address, beginCell } from "@ton/core";
+import { getSecureRandomBytes, keyPairFromSeed, sign, signVerify } from "@ton/crypto";
 import { safeSign, safeSignVerify } from "@ton/ton";
+
+import { getPayloadToSign } from "./getPayloadToSign";
 
 // Keys and nacl signature are generated at: https://tweetnacl.js.org/#/sign)
 const key = {
@@ -14,8 +15,8 @@ const keyBuff = {
   public: Buffer.from(key.public, "base64")
 };
 
-const payload = {ton: "Hello world"};
-const message = signatures.getPayloadToSign(payload);
+const payload = { ton: "Hello world" };
+const message = getPayloadToSign(payload);
 expect(message).toBe('{"ton":"Hello world"}');
 
 it("should showcase Ed25519 signatures", async () => {
@@ -26,7 +27,8 @@ it("should showcase Ed25519 signatures", async () => {
   // }
   //
   const messageBuff = Buffer.from(message);
-  const expectedSignature = "DMPJyZr5GW4dakldYyDBkcR9a5YI8Mp/83o1+4BUpGnDOgm08ho/efA8Np6J5nzz8omtIQcTf4DZ6GERjKkOCA==";
+  const expectedSignature =
+    "DMPJyZr5GW4dakldYyDBkcR9a5YI8Mp/83o1+4BUpGnDOgm08ho/efA8Np6J5nzz8omtIQcTf4DZ6GERjKkOCA==";
   // const expectedSignature = "4hrlMzf5ugmUZi/sTU0Ic2wEjH7dh4xVGGVRkr3HlQS+s5tM/fP8teVfys6sT4D1ESLKmO+hQgXJ9+ZdAgTQDA==";
 
   // When
@@ -51,12 +53,11 @@ it("should showcase Ed25519 signatures", async () => {
 //
 it("should showcase TON signatures", async () => {
   // Given
-  const messageCell = beginCell()
-    .storeBuffer(Buffer.from(message))
-    .endCell();
+  const messageCell = beginCell().storeBuffer(Buffer.from(message)).endCell();
   const seed = "my-ton-app";
 
-  const expectedSignature = "ZnJrUk+G1oiAe6IgetS6pbWsbFn+kH5eQsUwIQ1ZK5ZbJn+rG/KSQjWsDK4PWFVtBH4NbeGV7u4BvTwBhf2XDg=="
+  const expectedSignature =
+    "ZnJrUk+G1oiAe6IgetS6pbWsbFn+kH5eQsUwIQ1ZK5ZbJn+rG/KSQjWsDK4PWFVtBH4NbeGV7u4BvTwBhf2XDg==";
 
   // When
   const signature = safeSign(messageCell, keyBuff.secret, seed);
@@ -75,7 +76,7 @@ it("should showcase TON signatures", async () => {
 it("should generate sample key", async () => {
   // Given
   const pair = await genKeyPair();
-  const dto = {ton: "Hello world"};
+  const dto = { ton: "Hello world" };
   const seed = "my-ton-app";
 
   // When
@@ -93,32 +94,26 @@ async function genKeyPair() {
   console.log("secret", secret.toString("base64"));
   console.log("public", pair.publicKey.toString("base64"));
 
-  const cell = beginCell()
-    .storeBuffer(Buffer.from(pair.publicKey))
-    .endCell();
+  const cell = beginCell().storeBuffer(Buffer.from(pair.publicKey)).endCell();
 
   const hash = cell.hash();
   const address = new Address(0, hash);
 
   console.log("address", address.toString());
 
-  return {secret: pair.secretKey, public: pair.publicKey, address};
+  return { secret: pair.secretKey, public: pair.publicKey, address };
 }
 
 function getSignature(obj: object, privateKey: Buffer, seed: string) {
-  const data = signatures.getPayloadToSign(obj);
-  const cell = beginCell()
-    .storeBuffer(Buffer.from(data))
-    .endCell();
+  const data = getPayloadToSign(obj);
+  const cell = beginCell().storeBuffer(Buffer.from(data)).endCell();
 
   return safeSign(cell, privateKey, seed);
 }
 
 function isValidSignature(signature: Buffer, obj: object, publicKey: Buffer, seed: string) {
-  const data = signatures.getPayloadToSign(obj);
-  const cell = beginCell()
-    .storeBuffer(Buffer.from(data))
-    .endCell();
+  const data = getPayloadToSign(obj);
+  const cell = beginCell().storeBuffer(Buffer.from(data)).endCell();
 
   return safeSignVerify(cell, signature, publicKey, seed);
 }
