@@ -12,9 +12,9 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-import { getSecureRandomBytes, keyPairFromSeed, sign, signVerify } from "@ton/crypto"
-import { Address, beginCell } from "@ton/core"
 import { ChainCallDTO, ConstructorArgs, serialize, signatures } from "@gala-chain/api";
+import { Address, beginCell } from "@ton/core";
+import { getSecureRandomBytes, keyPairFromSeed, sign, signVerify } from "@ton/crypto";
 import { TonProofItemReplySuccess } from "@tonconnect/protocol";
 import { Account, TonConnect } from "@tonconnect/sdk";
 
@@ -128,7 +128,7 @@ export class GalachainConnectTONClient {
         // const signer = await this.#provider.getSigner();
         // const signature = await signer.provider.send("personal_sign", [this.#tonAddress, dto]);
 
-        const signature = 
+        // const signature =
 
         // return await this.submit(url, method, { ...prefixedPayload, signature }, headers);
       }
