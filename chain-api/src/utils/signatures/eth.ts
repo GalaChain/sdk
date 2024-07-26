@@ -13,25 +13,18 @@
  * limitations under the License.
  */
 import BN from "bn.js";
-import { classToPlain as instanceToPlain } from "class-transformer";
 import { ec as EC, ec } from "elliptic";
 import Signature from "elliptic/lib/elliptic/ec/signature";
 import { keccak256 } from "js-sha3";
 
-import { ValidationFailedError } from "./error";
-import serialize from "./serialize";
+import { ValidationFailedError } from "../error";
+import { getPayloadToSign } from "./getPayloadToSign";
 
 class InvalidKeyError extends ValidationFailedError {}
 
 export class InvalidSignatureFormatError extends ValidationFailedError {}
 
 class InvalidDataHashError extends ValidationFailedError {}
-
-function getPayloadToSign(obj: object): string {
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  const { signature, trace, ...plain } = instanceToPlain(obj);
-  return serialize(plain);
-}
 
 const secpPrivKeyLength = {
   secpBase64: 44,
@@ -207,7 +200,7 @@ function normalizeEthAddress(address: string): string {
   throw new ValidationFailedError(`Invalid checksum for eth address provided: ${address}`);
 }
 
-interface Secp256k1Signature {
+export interface Secp256k1Signature {
   r: BN;
   s: BN;
   recoveryParam: number | undefined;
@@ -434,7 +427,6 @@ export default {
   getCompactBase64PublicKey,
   getNonCompactHexPublicKey,
   getEthAddress,
-  getPayloadToSign,
   getPublicKey,
   getSignature,
   getDERSignature,
