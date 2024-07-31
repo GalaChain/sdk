@@ -21,11 +21,7 @@ jobs:
                           --form variables[GITHUB_AUTHOR]="${{ github.actor }}" \
                           --form variables[GITHUB_COMMIT_URL]="${{ github.server_url }}/${{ github.repository }}/commit/${{ github.sha }}" \
                           "https://gitlab.com/api/v4/projects/35484791/trigger/pipeline")
-          echo "$response"
-          pipeline_id=$(echo "$response" | jq -r '.id')
-          echo "pipeline_id=$pipeline_id" >> $GITHUB_ENV
-          echo "PIPELINE_URL=https://gitlab.com/gala-games/chain/chaincodes/assets-chaincode/-/pipelines/$pipeline_id" >> $GITHUB_ENV
-
+          
       # - name: Fetch Commit Details
       #   run: |
       #     commit_details=$(curl --header "PRIVATE-TOKEN: ${{ secrets.GITLAB_TOKEN }}" \
