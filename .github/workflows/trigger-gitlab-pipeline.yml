@@ -15,7 +15,7 @@ jobs:
         id: trigger
         run: |
           response=$(curl --request POST \
-                          --form token=${{ secrets.GITLAB_TOKEN }} \
+                          --form token=${{ secrets.GITLAB_PIPELINE_TOKEN }} \
                           --form ref=sdk-pipeline-integration \
                           --form variables[TEST_SDK_CHANGES]="true" \
                           "https://gitlab.com/api/v4/projects/35484791/trigger/pipeline")
