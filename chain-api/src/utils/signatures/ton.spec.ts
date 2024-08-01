@@ -17,6 +17,7 @@ import { getSecureRandomBytes, keyPairFromSeed, sign, signVerify } from "@ton/cr
 import { safeSign, safeSignVerify } from "@ton/ton";
 
 import { getPayloadToSign } from "./getPayloadToSign";
+import ton from "./ton";
 
 // Keys and nacl signature are generated at: https://tweetnacl.js.org/#/sign)
 const key = {
@@ -99,6 +100,20 @@ it("should generate sample key", async () => {
 
   // Then
   expect(isValid).toBeTruthy();
+});
+
+it("should validate TON address", () => {
+  // Given
+  const valid = "0:EQBW0XQcFXLVu_gvFpwMldv5l5pqMn4w_jLrSC5gyuuSuhFV";
+  const missingChain = valid.replace("0:", "");
+  const wrongChecksum = valid.replace("V", "v");
+  const undef = undefined as unknown as string;
+
+  // When & Then
+  expect(ton.isValidTonAddress(valid)).toBeTruthy();
+  expect(ton.isValidTonAddress(missingChain)).toBeFalsy();
+  expect(ton.isValidTonAddress(wrongChecksum)).toBeFalsy();
+  expect(ton.isValidTonAddress(undef)).toBeFalsy();
 });
 
 async function genKeyPair() {

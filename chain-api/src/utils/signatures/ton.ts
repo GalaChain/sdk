@@ -15,7 +15,7 @@
 import { NotImplementedError } from "../error";
 
 // verify if TON is supported
-function isTonSupported() {
+function importTonOrReject() {
   // eslint-disable-next-line @typescript-eslint/no-var-requires
   const ton = require("@ton/ton");
   if (!ton) {
@@ -27,4 +27,28 @@ function isTonSupported() {
   if (!crypto) {
     throw new NotImplementedError("TON is not supported. Missing library @ton/crypto");
   }
+
+  return { ton, crypto };
 }
+
+function isValidTonAddress(address: string): boolean {
+  const { ton } = importTonOrReject();
+
+  try {
+    const [wc, hash] = address.split(":");
+
+    if (!wc || !hash || !Number.isInteger(parseFloat(wc))) {
+      return false;
+    }
+
+    const parsed = ton.Address.parseFriendly(hash);
+
+    return parsed && !parsed.isTestOnly;
+  } catch (e) {
+    return false;
+  }
+}
+
+export default {
+  isValidTonAddress
+} as const;
