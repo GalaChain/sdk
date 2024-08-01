@@ -34,7 +34,7 @@ const customMessages = {
   [UserRefValidationResult.INVALID_ETH_USER_ALIAS]:
     "User alias starting with 'eth|' must end with valid checksumed eth address.",
   [UserRefValidationResult.INVALID_TON_USER_ALIAS]:
-    "User alias starting with 'ton|' must end with valid TON address (chain number and base64 hash separated by ':')."
+    "User alias starting with 'ton|' must end with valid bounceable base64 TON address."
 };
 
 const genericMessage =
