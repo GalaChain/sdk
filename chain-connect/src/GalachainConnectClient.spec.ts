@@ -38,6 +38,8 @@ window.ethereum = {
       return Promise.resolve([sampleAddr]);
     } else if (request.method === "personal_sign") {
       return Promise.resolve("sampleSignature");
+    } else if (request.method === "eth_signTypedData_v4") {
+      return Promise.resolve("sampleSignature");
     } else {
       throw new Error(`Method not mocked: ${request.method}`);
     }
