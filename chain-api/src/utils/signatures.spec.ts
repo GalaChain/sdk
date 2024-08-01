@@ -405,3 +405,68 @@ describe("signatures", () => {
     expect(originalPubKey).toEqual(newPubKey);
   });
 });
+
+describe("eth addr validation", () => {
+  it("should validate lowercased eth address", () => {
+    const valid = "a8c6eb52a018cd3fc34dfbcbff06af1f9952ab6e";
+    expect(signatures.isLowercasedEthAddress(`0x${valid}`)).toEqual(true);
+    expect(signatures.isLowercasedEthAddress(valid)).toEqual(true);
+
+    // some characters are uppercased
+    const upp = "A" + valid.slice(1);
+    expect(signatures.isLowercasedEthAddress(`0x${upp}`)).toEqual(false);
+    expect(signatures.isLowercasedEthAddress(upp)).toEqual(false);
+
+    // too short
+    const short = valid.slice(1);
+    expect(signatures.isLowercasedEthAddress(`0x${short}`)).toEqual(false);
+    expect(signatures.isLowercasedEthAddress(short)).toEqual(false);
+
+    // too long
+    const long = valid + "2";
+    expect(signatures.isLowercasedEthAddress(`0x${long}`)).toEqual(false);
+    expect(signatures.isLowercasedEthAddress(long)).toEqual(false);
+
+    // invalid characters
+    const invalid = valid.replace("a", "g");
+    expect(signatures.isLowercasedEthAddress(`0x${invalid}`)).toEqual(false);
+    expect(signatures.isLowercasedEthAddress(invalid)).toEqual(false);
+
+    // wrong prefix
+    expect(signatures.isLowercasedEthAddress(`1x${valid}`)).toEqual(false);
+  });
+
+  it("should validate checksumed eth address", () => {
+    const valid = "999999cf1046e68e36E1aA2E0E07105eDDD1f08E";
+    expect(signatures.isChecksumedEthAddress(`0x${valid}`)).toEqual(true);
+    expect(signatures.isChecksumedEthAddress(valid)).toEqual(true);
+
+    // wrong checksum (last character lower-cased)
+    const wrongCh = valid.slice(0, -1) + valid.slice(-1).toLowerCase();
+    expect(signatures.isChecksumedEthAddress(`0x${wrongCh}`)).toEqual(false);
+    expect(signatures.isChecksumedEthAddress(wrongCh)).toEqual(false);
+
+    // no checksum (all lowercased)
+    const lower = valid.toLowerCase();
+    expect(signatures.isChecksumedEthAddress(`0x${lower}`)).toEqual(false);
+    expect(signatures.isChecksumedEthAddress(lower)).toEqual(false);
+
+    // too short
+    const short = valid.slice(1);
+    expect(signatures.isChecksumedEthAddress(`0x${short}`)).toEqual(false);
+    expect(signatures.isChecksumedEthAddress(short)).toEqual(false);
+
+    // too long
+    const long = valid + "2";
+    expect(signatures.isChecksumedEthAddress(`0x${long}`)).toEqual(false);
+    expect(signatures.isChecksumedEthAddress(long)).toEqual(false);
+
+    // invalid characters
+    const invalid = valid.replace("9", "g");
+    expect(signatures.isChecksumedEthAddress(`0x${invalid}`)).toEqual(false);
+    expect(signatures.isChecksumedEthAddress(invalid)).toEqual(false);
+
+    // wrong prefix
+    expect(signatures.isChecksumedEthAddress(`1x${valid}`)).toEqual(false);
+  });
+});

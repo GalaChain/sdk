@@ -15,3 +15,4 @@
 export * from "./GalachainConnectClient";
 export * from "./PublicKeyClient";
 export * from "./TokenClient";
+export * from "./utils/WalletUtils";

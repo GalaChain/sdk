@@ -14,10 +14,17 @@
  */
 import { BigNumber } from "bignumber.js";
 import { Exclude } from "class-transformer";
-import { IsDefined, IsInt, IsNotEmpty, IsPositive, Min } from "class-validator";
+import { IsDefined, IsInt, IsNotEmpty, IsOptional, IsPositive, Min } from "class-validator";
 
-import { BigNumberProperty, ChainKey, ConstructorArgs, EnumProperty } from "../utils";
-import { BigNumberIsInteger, BigNumberIsNotNegative, BigNumberIsPositive } from "../validators/decorators";
+import { ChainKey, ConstructorArgs } from "../utils";
+import {
+  BigNumberIsInteger,
+  BigNumberIsNotNegative,
+  BigNumberIsPositive,
+  BigNumberProperty,
+  EnumProperty,
+  IsUserAlias
+} from "../validators";
 import { ChainObject } from "./ChainObject";
 import { AllowanceType } from "./common";
 
@@ -28,7 +35,7 @@ export class TokenAllowance extends ChainObject {
   public static INDEX_KEY = "GCTA";
 
   @ChainKey({ position: 0 })
-  @IsNotEmpty()
+  @IsUserAlias()
   public grantedTo: string;
 
   @ChainKey({ position: 1 })
@@ -60,7 +67,7 @@ export class TokenAllowance extends ChainObject {
 
   // This would make it hard to find all allowances issued out...
   @ChainKey({ position: 7 })
-  @IsNotEmpty()
+  @IsUserAlias()
   public grantedBy: string;
 
   @ChainKey({ position: 8 })
@@ -68,15 +75,16 @@ export class TokenAllowance extends ChainObject {
   @IsInt()
   public created: number;
 
+  @IsNotEmpty()
   @BigNumberIsPositive()
-  @BigNumberIsInteger()
-  @BigNumberProperty()
+  @BigNumberProperty({ allowInfinity: true })
   public uses: BigNumber;
 
   @BigNumberIsNotNegative()
   @BigNumberIsInteger()
   @BigNumberProperty()
-  public usesSpent: BigNumber;
+  @IsOptional()
+  public usesSpent?: BigNumber;
 
   @Min(0)
   @IsInt()
@@ -84,11 +92,11 @@ export class TokenAllowance extends ChainObject {
 
   @IsNotEmpty()
   @BigNumberIsNotNegative()
-  @BigNumberProperty()
+  @BigNumberProperty({ allowInfinity: true })
   public quantity: BigNumber;
 
-  @IsNotEmpty()
   @BigNumberIsNotNegative()
   @BigNumberProperty()
-  public quantitySpent: BigNumber;
+  @IsOptional()
+  public quantitySpent?: BigNumber;
 }
