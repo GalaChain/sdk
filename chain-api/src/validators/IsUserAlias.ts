@@ -26,19 +26,22 @@ enum UserRefValidationResult {
   VALID_USER_ALIAS,
   VALID_SYSTEM_USER,
   INVALID_ETH_USER_ALIAS,
+  INVALID_TON_USER_ALIAS,
   INVALID_FORMAT
 }
 
 const customMessages = {
   [UserRefValidationResult.INVALID_ETH_USER_ALIAS]:
-    "User alias starting with 'eth|' must end with valid checksumed eth address."
+    "User alias starting with 'eth|' must end with valid checksumed eth address.",
+  [UserRefValidationResult.INVALID_TON_USER_ALIAS]:
+    "User alias starting with 'ton|' must end with valid TON address (chain number and base64 hash separated by ':')."
 };
 
 const genericMessage =
   "Expected string following the format of 'client|<user-id>', or 'eth|<checksumed-eth-addr>', " +
-  "or valid system-level username.";
+  "or 'ton|<chain:ton-address>', or valid system-level username.";
 
-function validateUserRef(value: unknown): UserRefValidationResult {
+function validateUserAlias(value: unknown): UserRefValidationResult {
   if (typeof value !== "string" || value.length === 0) {
     return UserRefValidationResult.INVALID_FORMAT;
   }
@@ -65,6 +68,14 @@ function validateUserRef(value: unknown): UserRefValidationResult {
         return UserRefValidationResult.INVALID_ETH_USER_ALIAS;
       }
     }
+
+    if (parts[0] === "ton") {
+      if (signatures.ton.isValidTonAddress(parts[1])) {
+        return UserRefValidationResult.VALID_USER_ALIAS;
+      } else {
+        return UserRefValidationResult.INVALID_TON_USER_ALIAS;
+      }
+    }
   }
 
   return UserRefValidationResult.INVALID_FORMAT;
@@ -76,7 +87,7 @@ class IsUserAliasConstraint implements ValidatorConstraintInterface {
     if (Array.isArray(value)) {
       return value.every((val) => this.validate(val, args));
     }
-    const result = validateUserRef(value);
+    const result = validateUserAlias(value);
     return (
       result === UserRefValidationResult.VALID_USER_ALIAS ||
       result === UserRefValidationResult.VALID_SYSTEM_USER
@@ -88,12 +99,12 @@ class IsUserAliasConstraint implements ValidatorConstraintInterface {
     if (Array.isArray(value)) {
       const invalidValues = value.filter(
         (val) =>
-          validateUserRef(val) !== UserRefValidationResult.VALID_USER_ALIAS &&
-          validateUserRef(val) !== UserRefValidationResult.VALID_SYSTEM_USER
+          validateUserAlias(val) !== UserRefValidationResult.VALID_USER_ALIAS &&
+          validateUserAlias(val) !== UserRefValidationResult.VALID_SYSTEM_USER
       );
       return `${args.property} property with values ${invalidValues} are not valid GalaChain user aliases. ${genericMessage}`;
     }
-    const result = validateUserRef(args.value);
+    const result = validateUserAlias(args.value);
     const details = customMessages[result] ?? genericMessage;
     return `${args.property} property with value ${args.value} is not a valid GalaChain user alias. ${details}`;
   }
