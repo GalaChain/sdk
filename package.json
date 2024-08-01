@@ -28,7 +28,7 @@
     "@nx/jest": "^19.3.0",
     "@nx/js": "^19.3.0",
     "@nx/linter": "^19.3.0",
-    "@nx/storybook": "19.3.0",
+    "@nx/storybook": "^19.3.0",
     "@nx/web": "19.3.0",
     "@nx/workspace": "^19.3.0",
     "@storybook/addon-essentials": "7.6.20",
