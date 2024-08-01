@@ -13,6 +13,7 @@
  * limitations under the License.
  */
 import { NotImplementedError } from "../error";
+import { getPayloadToSign } from "./getPayloadToSign";
 
 // verify if TON is supported
 function importTonOrReject() {
@@ -31,24 +32,56 @@ function importTonOrReject() {
   return { ton, crypto };
 }
 
+async function genKeyPair() {
+  const { getSecureRandomBytes, keyPairFromSeed } = importTonOrReject().crypto;
+  const secret = await getSecureRandomBytes(32);
+  const pair = keyPairFromSeed(secret);
+  return { secretKey: pair.secretKey, publicKey: pair.publicKey };
+}
+
+function getTonAddress(publicKey: Buffer, workChain = 0) {
+  const { Address, beginCell } = importTonOrReject().ton;
+  const cell = beginCell().storeBuffer(Buffer.from(publicKey)).endCell();
+  const hash = cell.hash();
+  const address = new Address(workChain, hash);
+  return address.toString();
+}
+
 function isValidTonAddress(address: string): boolean {
-  const { ton } = importTonOrReject();
-
+  const { Address } = importTonOrReject().ton;
   try {
-    const [wc, hash] = address.split(":");
-
-    if (!wc || !hash || !Number.isInteger(parseFloat(wc))) {
-      return false;
-    }
-
-    const parsed = ton.Address.parseFriendly(hash);
-
-    return parsed && !parsed.isTestOnly;
+    const parsed = Address.parseFriendly(address);
+    return parsed && !parsed.isTestOnly && parsed.isBounceable;
   } catch (e) {
     return false;
   }
 }
 
+// TON uses Ed25519 signatures, but with a different payload
+// signature = Ed25519Sign(privkey, sha256(0xffff ++ utf8_encode("my-ton-app") ++ sha256(message)))
+// see: https://github.com/ton-connect/demo-dapp-with-react-ui/blob/master/src/server/services/ton-proof-service.ts
+//
+// To achieve it, we need to use safeSign and safeSignVerify functions instead of sign and signVerify.
+// They transform the payload accordingly.
+//
+function getSignature(obj: object, privateKey: Buffer, seed: string) {
+  const { beginCell, safeSign } = importTonOrReject().ton;
+  const data = getPayloadToSign(obj);
+  const cell = beginCell().storeBuffer(Buffer.from(data)).endCell();
+  return safeSign(cell, privateKey, seed);
+}
+
+function isValidSignature(signature: Buffer, obj: object, publicKey: Buffer, seed: string) {
+  const { beginCell, safeSignVerify } = importTonOrReject().ton;
+  const data = getPayloadToSign(obj);
+  const cell = beginCell().storeBuffer(Buffer.from(data)).endCell();
+  return safeSignVerify(cell, signature, publicKey, seed);
+}
+
 export default {
-  isValidTonAddress
+  genKeyPair,
+  getSignature,
+  getTonAddress,
+  isValidTonAddress,
+  isValidSignature
 } as const;

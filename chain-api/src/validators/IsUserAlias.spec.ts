@@ -30,8 +30,7 @@ const validEthAddress = "0abB6F637a51eb26665e0DeBc5CE8A84e1fa8AC3";
 const lowerCasedEth = validEthAddress.toLowerCase();
 const invalidChecksumEth = validEthAddress.replace("a", "A");
 
-const validTonAddress = "0:EQD3GhfZXYhnQrgXsV8xqe0X6FkYLtW8ys8NiqpkSlWWPUG1";
-const missingChainTon = validTonAddress.replace("0:", "");
+const validTonAddress = "EQD3GhfZXYhnQrgXsV8xqe0X6FkYLtW8ys8NiqpkSlWWPUG1";
 const invalidTon = validTonAddress.replace("Q", "q");
 
 test.each<[string, string, string]>([
@@ -58,9 +57,8 @@ test.each<[string, string, string]>([
   ["invalid eth alias (lower-cased eth)", `eth|${lowerCasedEth}`, "'eth|' must end with valid checksumed"],
   ["invalid eth alias (invalid eth)", "eth|123", "'eth|' must end with valid checksumed"],
   ["invalid value (pure eth addr)", validEthAddress, "Expected string following the format"],
-  ["invalid ton alias (missing chain)", `ton|${missingChainTon}`, "'ton|' must end with valid TON"],
-  ["invalid ton alias (invalid checksum)", `ton|${invalidTon}`, "'ton|' must end with valid TON"],
-  ["invalid ton alias (invalid ton)", "ton|123", "'ton|' must end with valid TON"],
+  ["invalid ton alias (invalid checksum)", `ton|${invalidTon}`, "'ton|' must end with valid bounceable"],
+  ["invalid ton alias (invalid ton)", "ton|123", "'ton|' must end with valid bounceable base64 TON"],
   ["invalid value (pure ton addr)", validTonAddress, "Expected string following the format"],
   ["invalid bridge (external)", "GoldenGateBridge", "Expected string following the format"],
   ["invalid bridge (GalaChain)", "GalaChainBridge-A", "Expected string following the format"]
