@@ -38,10 +38,10 @@ npm-debug.log
 yarn-error.log
 testem.log
 /typings
+storybook-static
 
 # System Files
 .DS_Store
 Thumbs.db
 .npmrc
 /.nx
-
