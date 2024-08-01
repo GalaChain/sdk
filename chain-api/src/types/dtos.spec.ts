@@ -17,19 +17,19 @@ import { classToPlain as instanceToPlain, plainToClass as plainToInstance } from
 import { ArrayMinSize, ArrayNotEmpty, IsString } from "class-validator";
 import { ec as EC } from "elliptic";
 
-import { BigNumberArrayProperty, BigNumberProperty, getValidationErrorInfo } from "../utils";
-import { ValidationErrorInfo } from "../utils/getValidationErrorMessage";
+import { getValidationErrorMessages } from "../utils";
+import { BigNumberArrayProperty, BigNumberProperty } from "../validators";
 import { ChainCallDTO, ClassConstructor } from "./dtos";
 
 const getInstanceOrErrorInfo = async <T extends ChainCallDTO>(
   constructor: ClassConstructor<T>,
   jsonString: string
-): Promise<T | ValidationErrorInfo> => {
+): Promise<T | string[]> => {
   try {
     const deserialized = plainToInstance(constructor, JSON.parse(jsonString)); // note: throws exception here if JSON is invalid
     const validationErrors = await deserialized.validate();
     if (validationErrors.length) {
-      return getValidationErrorInfo(validationErrors);
+      return getValidationErrorMessages(validationErrors);
     } else {
       return deserialized;
     }
@@ -63,9 +63,9 @@ it("should parse TestDtoWithArray", async () => {
   const invalid2 = '{"playerId":"aaa"}';
   const invalid3 = '{"invalid":"json';
 
-  const failedArrayMatcher = expect.objectContaining({
-    message: expect.stringContaining("has failed the following constraints: arrayMinSize")
-  });
+  const failedArrayMatcher = expect.arrayContaining([
+    "arrayMinSize: playerIds must contain at least 1 elements"
+  ]);
 
   expect(await getPlainOrError(TestDtoWithArray, valid)).toEqual({ playerIds: ["123"] });
   expect(await getPlainOrError(TestDtoWithArray, invalid1)).toEqual(failedArrayMatcher);
@@ -86,25 +86,21 @@ it("should parse TestDtoWithBigNumber", async () => {
 
   expect(await getInstanceOrErrorInfo(TestDtoWithBigNumber, valid)).toEqual({ quantity: new BigNumber(123) });
 
-  expect(await getInstanceOrErrorInfo(TestDtoWithBigNumber, invalid1)).toEqual(
-    expect.objectContaining({ details: [expect.stringContaining(`${expectedErrorPart} (valid value: 123)`)] })
-  );
+  expect(await getInstanceOrErrorInfo(TestDtoWithBigNumber, invalid1)).toEqual([
+    expect.stringContaining(`${expectedErrorPart} (valid value: 123)`)
+  ]);
 
-  expect(await getInstanceOrErrorInfo(TestDtoWithBigNumber, invalid2)).toEqual(
-    expect.objectContaining({
-      details: [expect.stringContaining(`${expectedErrorPart} (valid value: 123.1)`)]
-    })
-  );
+  expect(await getInstanceOrErrorInfo(TestDtoWithBigNumber, invalid2)).toEqual([
+    expect.stringContaining(`${expectedErrorPart} (valid value: 123.1)`)
+  ]);
 
-  expect(await getInstanceOrErrorInfo(TestDtoWithBigNumber, invalid3)).toEqual(
-    expect.objectContaining({
-      details: [expect.stringContaining(`${expectedErrorPart} (valid value: 123000)`)]
-    })
-  );
+  expect(await getInstanceOrErrorInfo(TestDtoWithBigNumber, invalid3)).toEqual([
+    expect.stringContaining(`${expectedErrorPart} (valid value: 123000)`)
+  ]);
 
-  expect(await getInstanceOrErrorInfo(TestDtoWithBigNumber, invalid4)).toEqual(
-    expect.objectContaining({ details: [expect.stringContaining(expectedErrorPart)] })
-  );
+  expect(await getInstanceOrErrorInfo(TestDtoWithBigNumber, invalid4)).toEqual([
+    expect.stringContaining(expectedErrorPart)
+  ]);
 });
 
 describe("ChainCallDTO", () => {

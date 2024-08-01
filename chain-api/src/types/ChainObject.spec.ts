@@ -15,7 +15,8 @@
 import { BigNumber } from "bignumber.js";
 import { Transform } from "class-transformer";
 
-import { BigNumberProperty, ChainKey } from "../utils";
+import { ChainKey } from "../utils";
+import { BigNumberProperty } from "../validators";
 import { ChainObject } from "./ChainObject";
 
 class TestClass extends ChainObject {

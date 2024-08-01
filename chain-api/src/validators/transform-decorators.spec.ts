@@ -16,9 +16,8 @@ import BigNumber from "bignumber.js";
 import { IsOptional } from "class-validator";
 
 import { ChainCallDTO } from "../types";
-import { BigNumberIsInteger, BigNumberIsNotNegative } from "../validators";
-import deserialize from "./deserialize";
-import serialize from "./serialize";
+import { deserialize, serialize } from "../utils";
+import { BigNumberIsInteger, BigNumberIsNotNegative } from "./decorators";
 import { BigNumberProperty } from "./transform-decorators";
 
 describe("infinity", () => {

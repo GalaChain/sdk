@@ -17,7 +17,7 @@ import { Transform, Type } from "class-transformer";
 import { IsIn, ValidateBy, ValidationOptions, buildMessage } from "class-validator";
 import "reflect-metadata";
 
-import { BigNumberIsNotInfinity, IsBigNumber } from "../validators";
+import { BigNumberIsNotInfinity, IsBigNumber } from "./decorators";
 
 type ClassConstructor<Signature = unknown[]> = {
   new (args: Signature): unknown;

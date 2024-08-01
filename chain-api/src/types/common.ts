@@ -17,8 +17,13 @@ import { Type } from "class-transformer";
 import { IsDefined, IsInt, IsNotEmpty, IsOptional, IsPositive } from "class-validator";
 import { JSONSchema } from "class-validator-jsonschema";
 
-import { BigNumberProperty, EnumProperty } from "../utils/transform-decorators";
-import { BigNumberIsInteger, BigNumberIsNotNegative } from "../validators/decorators";
+import {
+  BigNumberIsInteger,
+  BigNumberIsNotNegative,
+  BigNumberProperty,
+  EnumProperty,
+  IsUserAlias
+} from "../validators";
 import { ChainCallDTO } from "./dtos";
 
 export enum AllowanceType {
@@ -36,7 +41,7 @@ export enum AllowanceType {
   description: "Key fields that identity an existing TokenAllowance."
 })
 export class AllowanceKey extends ChainCallDTO {
-  @IsNotEmpty()
+  @IsUserAlias()
   public grantedTo: string;
 
   @IsNotEmpty()
@@ -60,7 +65,7 @@ export class AllowanceKey extends ChainCallDTO {
   @EnumProperty(AllowanceType)
   public allowanceType: AllowanceType;
 
-  @IsNotEmpty()
+  @IsUserAlias()
   public grantedBy: string;
 
   @IsPositive()
@@ -106,7 +111,7 @@ export class MintRequestDto {
     description: "The owner of minted tokens. If the value is missing, chaincode caller is used."
   })
   @IsOptional()
-  @IsNotEmpty()
+  @IsUserAlias()
   owner?: string;
 
   @JSONSchema({

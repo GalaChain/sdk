@@ -20,10 +20,11 @@ import {
   ConstructorArgs,
   ValidationFailedError,
   deserialize,
-  getValidationErrorInfo,
+  getValidationErrorMessages,
   serialize,
   signatures
 } from "../utils";
+import { IsUserAlias } from "../validators";
 import { GalaChainResponse } from "./contract";
 
 type Base<T, BaseT> = T extends BaseT ? T : never;
@@ -37,8 +38,10 @@ export interface ClassConstructor<T> {
 }
 
 class DtoValidationFailedError extends ValidationFailedError {
-  constructor({ message, details }: { message: string; details: string[] }) {
-    super(message, details);
+  constructor(errors: ValidationError[]) {
+    const messages = getValidationErrorMessages(errors);
+    const messagesString = messages.map((s, i) => `(${i + 1}) ${s}`).join(", ");
+    super(`DTO validation failed: ${messagesString}`, messages);
   }
 }
 
@@ -46,7 +49,7 @@ export const validateDTO = async <T extends ChainCallDTO>(dto: T): Promise<T> =>
   const validationErrors = await dto.validate();
 
   if (validationErrors.length) {
-    throw new DtoValidationFailedError(getValidationErrorInfo(validationErrors));
+    throw new DtoValidationFailedError(validationErrors);
   } else {
     return dto;
   }
@@ -167,7 +170,7 @@ export class ChainCallDTO {
     const validationErrors = await this.validate();
 
     if (validationErrors.length) {
-      throw new DtoValidationFailedError(getValidationErrorInfo(validationErrors));
+      throw new DtoValidationFailedError(validationErrors);
     }
   }
 
@@ -251,7 +254,7 @@ export class RegisterUserDto extends ChainCallDTO {
   @JSONSchema({
     description: `Id of user to save public key for.`
   })
-  @IsNotEmpty()
+  @IsUserAlias()
   user: string;
 
   @JSONSchema({ description: publicKeyDescription })
@@ -283,6 +286,7 @@ export class GetPublicKeyDto extends ChainCallDTO {
     description: `Id of a public key holder. Optional field, by default caller's public key is returned.`
   })
   @IsOptional()
+  @IsUserAlias()
   user?: string;
 }
 
