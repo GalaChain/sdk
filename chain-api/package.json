@@ -10,6 +10,7 @@
     "class-validator": "^0.14.0",
     "class-validator-jsonschema": "^5.0.0",
     "elliptic": "^6.5.4",
+    "ethers": "^6.13.2",
     "js-sha3": "^0.9.3",
     "json-stringify-deterministic": "^1.0.7",
     "openapi3-ts": "^3.2.0",
@@ -33,7 +34,6 @@
     "format": "prettier --config ../.prettierrc 'src/**/*.ts' --write",
     "test": "jest"
   },
-  "devDependencies": {},
   "nyc": {
     "extension": [
       ".ts",
