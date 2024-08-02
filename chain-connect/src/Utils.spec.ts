@@ -15,7 +15,7 @@
 import { LockTokenRequestParams, LockTokensParams } from "@gala-chain/api";
 import { ethers } from "ethers";
 
-import { generateEIP712Types, generateEIP712Value } from "./Utils";
+import { generateEIP712Types } from "./Utils";
 
 describe("EIP-712 Signing", () => {
   it("should correctly generate EIP-712 types and values and sign the data for single types", async () => {
@@ -30,7 +30,6 @@ describe("EIP-712 Signing", () => {
       }
     };
     const types = generateEIP712Types("LockTokenRequest", params);
-    // const value = generateEIP712Value(params);
 
     const expectedTypes = {
       LockTokenRequest: [
@@ -50,7 +49,7 @@ describe("EIP-712 Signing", () => {
 
     console.log("EIP-712 Types:", types);
 
-    const subchainRpcUrl = "https://rpc.your-subchain.network";
+    const subchainRpcUrl = "https://rpc.foo";
     const privateKey = "0x0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef";
 
     const provider = new ethers.JsonRpcProvider(subchainRpcUrl);
@@ -100,7 +99,7 @@ describe("EIP-712 Signing", () => {
 
     console.log("EIP-712 Types:", types);
 
-    const subchainRpcUrl = "https://rpc.your-subchain.network";
+    const subchainRpcUrl = "https://rpc.foo";
     const privateKey = "0x0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef";
 
     const provider = new ethers.JsonRpcProvider(subchainRpcUrl);

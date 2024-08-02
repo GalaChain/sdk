@@ -12,9 +12,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-import { LockTokenRequestParams, TokenInstanceKey, TransferTokenParams, signatures } from "@gala-chain/api";
-import { TransferTokenDto } from "@gala-chain/api";
-import { plainToInstance } from "class-transformer";
+import { LockTokenRequestParams, TransferTokenParams, signatures } from "@gala-chain/api";
 import { ethers } from "ethers";
 import { EventEmitter } from "events";
 
@@ -185,8 +183,6 @@ describe("GalachainConnectClient", () => {
     const signature = await wallet.signTypedData({}, types, prefixedPayload);
 
     const publicKey = ethers.verifyTypedData({}, types, prefixedPayload, signature);
-    // const publickKey = signatures.recoverPublicKey(signature, { ...prefixedPayload, signature }, prefix);
-    // const ethAddress = signatures.getEthAddress(publicKey);
     expect(publicKey).toBe("0xe737c4D3072DA526f3566999e0434EAD423d06ec");
   });
   it("should properly recover signature for typed signing using signature utils", async () => {
@@ -216,7 +212,6 @@ describe("GalachainConnectClient", () => {
     const signature = await wallet.signTypedData(domain, types, prefixedPayload);
 
     const publicKey = signatures.recoverPublicKey(signature, { ...prefixedPayload, types, domain });
-    // const publickKey = signatures.recoverPublicKey(signature, { ...prefixedPayload, signature }, prefix);
     const ethAddress = signatures.getEthAddress(publicKey);
     expect(ethAddress).toBe("e737c4D3072DA526f3566999e0434EAD423d06ec");
   });

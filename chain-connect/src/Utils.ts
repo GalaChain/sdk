@@ -32,7 +32,7 @@ export function generateEIP712Types<T>(typeName: string, params: T): EIP712Types
           eipType = "bool";
           break;
         default:
-          eipType = "string"; // Default to string for any unknown type
+          throw new Error(`Unsupported type, ${typeof fieldValue}, value: ${fieldValue}`);
       }
       if (!onlyGetType) types[parentTypeName].push({ name, type: eipType });
     }
