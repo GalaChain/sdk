@@ -154,6 +154,13 @@ export class ChainCallDTO {
   public prefix?: string;
 
   @JSONSchema({
+    description: "Address of the user who signed the DTO. Typically Ethereum or TON address."
+  })
+  @IsOptional()
+  @IsNotEmpty()
+  public signerAddress?: string;
+
+  @JSONSchema({
     description:
       "Public key of the user who signed the DTO. " +
       "Required for DER encoded signatures, since they miss recovery part."

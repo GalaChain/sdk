@@ -22,6 +22,7 @@ import {
 } from "@gala-chain/api";
 
 import { PkInvalidSignatureError, PublicKeyService } from "../services";
+import { PkMissingError } from "../services/PublicKeyError";
 import { GalaChainContext } from "../types";
 
 class MissingSignatureError extends ValidationFailedError {
@@ -32,7 +33,16 @@ class MissingSignatureError extends ValidationFailedError {
 
 class RedundantSignerPublicKeyError extends ValidationFailedError {
   constructor(recovered: string, inDto: string) {
-    super("Public key is redundant, when it can be recovered from signature.", { recovered, inDto });
+    super(
+      "Public key is redundant, when it can be recovered from signature, or when the address is provided.",
+      { recovered, inDto }
+    );
+  }
+}
+
+class RedundantSignerAddressError extends ValidationFailedError {
+  constructor(recovered: string, inDto: string) {
+    super("Signer address redundant, when it can be recovered from signature.", { recovered, inDto });
   }
 }
 
@@ -66,12 +76,27 @@ export async function authorize(
     if (dto.signerPublicKey !== undefined) {
       throw new RedundantSignerPublicKeyError(recoveredPkHex, dto.signerPublicKey);
     }
+    if (dto.signerAddress !== undefined) {
+      throw new RedundantSignerAddressError(recoveredPkHex, dto.signerAddress);
+    }
     return await getUserProfile(ctx, recoveredPkHex); // new flow only
+  } else if (dto.signerAddress !== undefined) {
+    if (dto.signerPublicKey !== undefined) {
+      throw new RedundantSignerPublicKeyError(dto.signerAddress, dto.signerPublicKey);
+    }
+
+    const { profile, publicKey } = await getUserProfileAndPublicKey(ctx, dto.signerAddress);
+
+    if (!dto.isSignatureValid(publicKey.publicKey)) {
+      throw new PkInvalidSignatureError(profile.alias);
+    }
+
+    return profile;
   } else if (dto.signerPublicKey !== undefined) {
     const providedPkHex = signatures.getNonCompactHexPublicKey(dto.signerPublicKey);
-    const ethAddress = signatures.getEthAddress(providedPkHex);
 
     if (!dto.isSignatureValid(providedPkHex)) {
+      const ethAddress = signatures.getEthAddress(providedPkHex);
       throw new PkInvalidSignatureError(`eth|${ethAddress}`);
     }
 
@@ -104,6 +129,25 @@ async function getUserProfile(ctx: GalaChainContext, pkHex: string): Promise<Use
   }
 
   return profile;
+}
+
+async function getUserProfileAndPublicKey(
+  ctx: GalaChainContext,
+  address
+): Promise<{ profile: UserProfile; publicKey: PublicKey }> {
+  const profile = await PublicKeyService.getUserProfile(ctx, address);
+
+  if (profile === undefined) {
+    throw new UserNotRegisteredError(address);
+  }
+
+  const publicKey = await PublicKeyService.getPublicKey(ctx, profile.alias);
+
+  if (publicKey === undefined) {
+    throw new PkMissingError(profile.alias);
+  }
+
+  return { profile, publicKey };
 }
 
 async function legacyAuthorize(
