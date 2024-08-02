@@ -174,7 +174,7 @@ class Fixture<Ctx extends TestGalaChainContext, T extends GalaContract<Ctx>> {
       ethAddress: chainUser.ethAddress,
       publicKey: chainUser.publicKey
     });
-    const userProfileKey = this.ctx.stub.createCompositeKey("GCUP", [userProfile.ethAddress]);
+    const userProfileKey = this.ctx.stub.createCompositeKey("GCUP", [chainUser.ethAddress]);
     this.stub.mockState(userProfileKey, userProfile.serialize());
 
     const publicKey = plainToInstance(PublicKey, { publicKey: chainUser.publicKey });

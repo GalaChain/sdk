@@ -117,9 +117,14 @@ const expectedTestDtoSchema = {
       type: "string"
     },
     signerPublicKey: {
-      description:
-        "Public key of the user who signed the DTO. Required for DER encoded signatures, since they miss recovery part.",
+      description: "Public key of the user who signed the DTO.",
       minLength: 1,
+      type: "string"
+    },
+    signing: {
+      description:
+        'Signing scheme used for the signature. "ETH" for Ethereum, and "TON" for The Open Network are supported. Default: "ETH".',
+      enum: ["ETH", "TON"],
       type: "string"
     },
     uniqueKey: {

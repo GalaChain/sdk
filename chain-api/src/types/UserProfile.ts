@@ -12,7 +12,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-import { IsNotEmpty } from "class-validator";
+import { IsNotEmpty, ValidateIf } from "class-validator";
 import { JSONSchema } from "class-validator-jsonschema";
 
 import { ConstructorArgs } from "../utils";
@@ -32,7 +32,15 @@ export class UserProfile extends ChainObject {
     description: `Eth address of the user.`
   })
   @IsNotEmpty()
-  ethAddress: string;
+  @ValidateIf((o) => !o.tonAddress)
+  ethAddress?: string;
+
+  @JSONSchema({
+    description: `TON address of the user.`
+  })
+  @IsNotEmpty()
+  @ValidateIf((o) => !o.ethAddress)
+  tonAddress?: string;
 }
 
 export const UP_INDEX_KEY = "GCUP";

@@ -46,7 +46,6 @@ const serializers = {
 
 type InvokeResponse = Record<string, unknown> | Array<Record<string, unknown>>;
 
-/** @deprecated */
 export default class TestChaincode {
   private readonly chaincode: ChaincodeFromContractClassType;
 

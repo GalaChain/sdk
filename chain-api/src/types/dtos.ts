@@ -18,13 +18,14 @@ import { JSONSchema } from "class-validator-jsonschema";
 
 import {
   ConstructorArgs,
+  SigningScheme,
   ValidationFailedError,
   deserialize,
   getValidationErrorMessages,
   serialize,
   signatures
 } from "../utils";
-import { IsUserAlias } from "../validators";
+import { IsUserAlias, StringEnumProperty } from "../validators";
 import { GalaChainResponse } from "./contract";
 
 type Base<T, BaseT> = T extends BaseT ? T : never;
@@ -127,18 +128,8 @@ export class ChainCallDTO {
   @JSONSchema({
     description:
       "Signature of the DTO signed with caller's private key to be verified with user's public key saved on chain. " +
-      "The 'signature' field is optional for DTO, but is required for a transaction to be executed on chain.\n" +
-      "JSON payload to be signed is created from an object without 'signature' and 'trace` properties, " +
-      "and it's keys should be sorted alphabetically and no end of line at the end. " +
-      'Sample jq command to produce valid data to sign: `jq -cSj "." dto-file.json`.' +
-      "Also all BigNumber data should be provided as strings (not numbers) with fixed decimal point notation.\n" +
-      "The EC secp256k1 signature should be created for keccak256 hash of the data. " +
-      "The recommended format of the signature is a HEX encoded string, including r + s + v values. " +
-      "Signature in this format is supported by ethers.js library. " +
-      "Sample signature: b7244d62671319583ea8f30c8ef3b343cf28e7b7bd56e32b21a5920752dc95b94a9d202b2919581bcf776f0637462cb67170828ddbcc1ea63505f6a211f9ac5b1b\n" +
-      "This field can also contain a DER encoded signature, but this is deprecated and supported only to provide backwards compatibility. " +
-      "DER encoded signature cannot be used recover user's public key from the signature, " +
-      "and cannot be used with the new signature-based authorization flow for Gala Chain.\n"
+      "The 'signature' field is optional for DTO, but is required for a transaction to be executed on chain. \n" +
+      "Please consult [GalaChain SDK documentation](https://github.com/GalaChain/sdk/blob/main/docs/authorization.md#signature-based-authorization) on how to create signatures."
   })
   @IsOptional()
   @IsNotEmpty()
@@ -161,13 +152,21 @@ export class ChainCallDTO {
   public signerAddress?: string;
 
   @JSONSchema({
-    description:
-      "Public key of the user who signed the DTO. " +
-      "Required for DER encoded signatures, since they miss recovery part."
+    description: "Public key of the user who signed the DTO."
   })
   @IsOptional()
   @IsNotEmpty()
   public signerPublicKey?: string;
+
+  @JSONSchema({
+    description:
+      `Signing scheme used for the signature. ` +
+      `"${SigningScheme.ETH}" for Ethereum, and "${SigningScheme.TON}" for The Open Network are supported. ` +
+      `Default: "${SigningScheme.ETH}.`
+  })
+  @IsOptional()
+  @StringEnumProperty(SigningScheme)
+  public signing?: SigningScheme;
 
   validate(): Promise<ValidationError[]> {
     return validate(this);
@@ -193,10 +192,15 @@ export class ChainCallDTO {
   }
 
   public sign(privateKey: string, useDer = false): void {
-    const keyBuffer = signatures.normalizePrivateKey(privateKey);
-    this.signature = useDer
-      ? signatures.getDERSignature(this, keyBuffer)
-      : signatures.getSignature(this, keyBuffer);
+    if (this.signing === SigningScheme.TON) {
+      const keyBuffer = Buffer.from(privateKey, "base64");
+      this.signature = signatures.ton.getSignature(this, keyBuffer, this.prefix).toString("base64");
+    } else {
+      const keyBuffer = signatures.normalizePrivateKey(privateKey);
+      this.signature = useDer
+        ? signatures.getDERSignature(this, keyBuffer)
+        : signatures.getSignature(this, keyBuffer);
+    }
   }
 
   /**
@@ -210,7 +214,13 @@ export class ChainCallDTO {
   }
 
   public isSignatureValid(publicKey: string): boolean {
-    return signatures.isValid(this.signature ?? "", this, publicKey);
+    if (this.signing === SigningScheme.TON) {
+      const signatureBuff = Buffer.from(this.signature ?? "", "base64");
+      const publicKeyBuff = Buffer.from(publicKey, "base64");
+      return signatures.ton.isValidSignature(signatureBuff, this, publicKeyBuff, this.prefix);
+    } else {
+      return signatures.isValid(this.signature ?? "", this, publicKey);
+    }
   }
 }
 
@@ -280,12 +290,27 @@ export class RegisterEthUserDto extends ChainCallDTO {
   publicKey: string;
 }
 
+export type RegisterTonUserParams = ConstructorArgs<RegisterTonUserDto>;
+
+@JSONSchema({
+  description: `Dto for secure method to save public keys for TON users. Method is called and signed by Curators`
+})
+export class RegisterTonUserDto extends ChainCallDTO {
+  @JSONSchema({ description: "TON user public key" })
+  @IsNotEmpty()
+  publicKey: string;
+}
+
 export type UpdatePublicKeyParams = ConstructorArgs<UpdatePublicKeyDto>;
 
 export class UpdatePublicKeyDto extends ChainCallDTO {
   @JSONSchema({ description: publicKeyDescription })
   @IsNotEmpty()
   publicKey: string;
+
+  @IsOptional()
+  @StringEnumProperty(SigningScheme)
+  public signing?: SigningScheme;
 }
 
 export class GetPublicKeyDto extends ChainCallDTO {

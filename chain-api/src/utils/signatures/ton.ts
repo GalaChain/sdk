@@ -64,14 +64,14 @@ function isValidTonAddress(address: string): boolean {
 // To achieve it, we need to use safeSign and safeSignVerify functions instead of sign and signVerify.
 // They transform the payload accordingly.
 //
-function getSignature(obj: object, privateKey: Buffer, seed: string) {
+function getSignature(obj: object, privateKey: Buffer, seed: string | undefined) {
   const { beginCell, safeSign } = importTonOrReject().ton;
   const data = getPayloadToSign(obj);
   const cell = beginCell().storeBuffer(Buffer.from(data)).endCell();
   return safeSign(cell, privateKey, seed);
 }
 
-function isValidSignature(signature: Buffer, obj: object, publicKey: Buffer, seed: string) {
+function isValidSignature(signature: Buffer, obj: object, publicKey: Buffer, seed: string | undefined) {
   const { beginCell, safeSignVerify } = importTonOrReject().ton;
   const data = getPayloadToSign(obj);
   const cell = beginCell().storeBuffer(Buffer.from(data)).endCell();
