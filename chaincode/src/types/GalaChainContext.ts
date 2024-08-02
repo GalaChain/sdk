@@ -109,17 +109,31 @@ export class GalaChainContext extends Context {
 
   get callingUserEthAddress(): string {
     if (this.callingUserEthAddressValue === undefined) {
-      throw new UnauthorizedError(`No eth address known for user ${this.callingUserValue}`);
+      throw new UnauthorizedError(`No ETH address known for user ${this.callingUserValue}`);
     }
     return this.callingUserEthAddressValue;
   }
 
-  set callingUserData(d: { alias: string; ethAddress: string | undefined }) {
+  get callingUserTonAddress(): string {
+    if (this.callingUserTonAddressValue === undefined) {
+      throw new UnauthorizedError(`No TON address known for user ${this.callingUserValue}`);
+    }
+    return this.callingUserTonAddressValue;
+  }
+
+  set callingUserData(d: { alias: string; ethAddress?: string; tonAddress?: string }) {
     if (this.callingUserValue !== undefined) {
       throw new Error("Calling user already set to " + this.callingUserValue);
     }
     this.callingUserValue = d.alias;
-    this.callingUserEthAddressValue = d.ethAddress;
+
+    if (d.ethAddress !== undefined) {
+      this.callingUserEthAddressValue = d.ethAddress;
+    }
+
+    if (d.tonAddress !== undefined) {
+      this.callingUserTonAddressValue = d.tonAddress;
+    }
   }
 
   public setDryRunOnBehalfOf(d: { alias: string; ethAddress?: string; tonAddress?: string }): void {
