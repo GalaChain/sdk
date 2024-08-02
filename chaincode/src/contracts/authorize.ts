@@ -16,6 +16,7 @@ import {
   ChainCallDTO,
   ForbiddenError,
   PublicKey,
+  SigningScheme,
   UserProfile,
   ValidationFailedError,
   signatures
@@ -79,7 +80,7 @@ export async function authorize(
     if (dto.signerAddress !== undefined) {
       throw new RedundantSignerAddressError(recoveredPkHex, dto.signerAddress);
     }
-    return await getUserProfile(ctx, recoveredPkHex); // new flow only
+    return await getUserProfile(ctx, recoveredPkHex, dto.signing); // new flow only
   } else if (dto.signerAddress !== undefined) {
     if (dto.signerPublicKey !== undefined) {
       throw new RedundantSignerPublicKeyError(dto.signerAddress, dto.signerPublicKey);
@@ -93,14 +94,13 @@ export async function authorize(
 
     return profile;
   } else if (dto.signerPublicKey !== undefined) {
-    const providedPkHex = signatures.getNonCompactHexPublicKey(dto.signerPublicKey);
-
-    if (!dto.isSignatureValid(providedPkHex)) {
+    if (!dto.isSignatureValid(dto.signerPublicKey)) {
+      const providedPkHex = signatures.getNonCompactHexPublicKey(dto.signerPublicKey);
       const ethAddress = signatures.getEthAddress(providedPkHex);
       throw new PkInvalidSignatureError(`eth|${ethAddress}`);
     }
 
-    return await getUserProfile(ctx, providedPkHex); // new flow only
+    return await getUserProfile(ctx, dto.signerPublicKey, dto.signing); // new flow only
   } else {
     return await legacyAuthorize(ctx, dto, legacyCAUser); // legacy flow only
   }
@@ -120,12 +120,20 @@ export async function ensureIsAuthorizedBy(
   return authorized;
 }
 
-async function getUserProfile(ctx: GalaChainContext, pkHex: string): Promise<UserProfile> {
-  const ethAddress = signatures.getEthAddress(pkHex);
-  const profile = await PublicKeyService.getUserProfile(ctx, ethAddress);
+async function getUserProfile(
+  ctx: GalaChainContext,
+  publicKey: string,
+  signing: SigningScheme | undefined
+): Promise<UserProfile> {
+  const address =
+    signing === SigningScheme.TON
+      ? signatures.ton.getTonAddress(Buffer.from(publicKey, "base64"))
+      : signatures.getEthAddress(signatures.getNonCompactHexPublicKey(publicKey));
+
+  const profile = await PublicKeyService.getUserProfile(ctx, address);
 
   if (profile === undefined) {
-    throw new UserNotRegisteredError(ethAddress);
+    throw new UserNotRegisteredError(address);
   }
 
   return profile;
@@ -179,6 +187,10 @@ export function ensureOrganizationIsAllowed(ctx: GalaChainContext, allowedOrgsMS
 }
 
 function recoverPublicKey(signature: string, dto: ChainCallDTO, prefix = ""): string | undefined {
+  if (dto.signing === SigningScheme.TON) {
+    return undefined;
+  }
+
   try {
     return signatures.recoverPublicKey(signature, dto, prefix);
   } catch (err) {

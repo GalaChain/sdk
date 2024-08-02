@@ -25,10 +25,11 @@ import {
   RegisterEthUserDto,
   RegisterTonUserDto,
   RegisterUserDto,
+  SigningScheme,
   UpdatePublicKeyDto,
   UserProfile,
   ValidationFailedError,
-  signatures, SigningScheme
+  signatures
 } from "@gala-chain/api";
 import { Info } from "fabric-contract-api";
 
@@ -69,8 +70,9 @@ export class PublicKeyContract extends GalaContract {
     ctx: GalaChainContext,
     dto: GetMyProfileDto
   ): Promise<GalaChainResponse<UserProfile>> {
-    const ethAddress = ctx.callingUserEthAddress; // will throw error for legacy auth if eth addr is missing
-    const profile = await PublicKeyService.getUserProfile(ctx, ethAddress);
+    // will throw error for legacy auth if the addr is missing
+    const address = dto.signing === SigningScheme.TON ? ctx.callingUserTonAddress : ctx.callingUserEthAddress;
+    const profile = await PublicKeyService.getUserProfile(ctx, address);
 
     if (profile === undefined) {
       throw new NotFoundError(`UserProfile not found for ${ctx.callingUser}`, {
