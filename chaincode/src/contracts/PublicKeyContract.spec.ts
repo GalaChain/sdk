@@ -443,7 +443,7 @@ describe("VerifySignature", () => {
  * Also for each of the above cases, we need to test if the signature is valid,
  * matches public key, etc.
  */
-describe("GetMyProfile", () => {
+describe("GetMyProfile (ETH)", () => {
   // this is a hack to make pretty display of test cases
   function labeled<F>(label: string): (fn: F) => F & { toString: () => string } {
     // eslint-disable-next-line @typescript-eslint/ban-ts-comment
@@ -530,6 +530,33 @@ describe("GetMyProfile", () => {
       expectation(response, userObj);
     }
   );
+
+  it("should get profile with DER signatures", async () => {
+    // Given
+    const chaincode = new TestChaincode([PublicKeyContract]);
+    const user = await createRegisteredUser(chaincode);
+
+    const dto1 = new GetMyProfileDto();
+    dto1.signerPublicKey = user.publicKey;
+    dto1.sign(user.privateKey, true);
+
+    const dto2 = new GetMyProfileDto();
+    dto2.signerAddress = user.ethAddress;
+    dto2.sign(user.privateKey, true);
+
+    // When
+    const resp1 = await chaincode.invoke("PublicKeyContract:GetMyProfile", dto1);
+    const resp2 = await chaincode.invoke("PublicKeyContract:GetMyProfile", dto2);
+
+    // Then
+    expect(resp1).toEqual(
+      transactionSuccess({
+        alias: user.name,
+        ethAddress: user.ethAddress
+      })
+    );
+    expect(resp2).toEqual(resp1);
+  });
 });
 
 describe("GetMyProfile (TON)", () => {
