@@ -421,9 +421,17 @@ function isValidBase64(input: string) {
   return /^(?:[A-Za-z0-9+/]{4})*(?:[A-Za-z0-9+/]{2}==|[A-Za-z0-9+/]{3}=)?$/.test(input);
 }
 
+function genKeyPair() {
+  const pair = ecSecp256k1.genKeyPair();
+  const privateKey = pair.getPrivate().toString("hex");
+  const publicKey = Buffer.from(pair.getPublic().encode("array", false)).toString("hex");
+  return { privateKey, publicKey };
+}
+
 export default {
   calculateKeccak256,
   enforceValidPublicKey,
+  genKeyPair,
   getCompactBase64PublicKey,
   getNonCompactHexPublicKey,
   getEthAddress,

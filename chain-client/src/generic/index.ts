@@ -17,5 +17,4 @@ export { ChainClient, isClassType, ClassType } from "./ChainClient";
 export { ChainClientBuilder } from "./ChainClientBuilder";
 export { ChainUser } from "./ChainUser";
 export { ContractConfig } from "./ContractConfig";
-export * as createRandomKeys from "./createRandomKeys";
 export { loadJson } from "./loadJson";
