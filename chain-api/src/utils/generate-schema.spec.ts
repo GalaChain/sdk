@@ -93,6 +93,11 @@ const expectedTestDtoSchema = {
       description: "Quantity used in some place to support some feature. Number provided as a string.",
       type: "string"
     },
+    signerAddress: {
+      description: "Address of the user who signed the DTO. Typically Ethereum or TON address.",
+      minLength: 1,
+      type: "string"
+    },
     signature: {
       description:
         "Signature of the DTO signed with caller's private key to be verified with user's public key saved on chain. " +
