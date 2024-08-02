@@ -18,7 +18,6 @@ import ton from "./ton";
 
 export enum SigningScheme {
   ETH = "ETH",
-  ETH_DER = "ETH_DER",
   TON = "TON"
 }
 

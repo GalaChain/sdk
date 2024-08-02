@@ -17,7 +17,7 @@ import { classToPlain as instanceToPlain, plainToClass as plainToInstance } from
 import { ArrayMinSize, ArrayNotEmpty, IsString } from "class-validator";
 import { ec as EC } from "elliptic";
 
-import { getValidationErrorMessages } from "../utils";
+import { SigningScheme, getValidationErrorMessages, signatures } from "../utils";
 import { BigNumberArrayProperty, BigNumberProperty } from "../validators";
 import { ChainCallDTO, ClassConstructor } from "./dtos";
 
@@ -119,6 +119,7 @@ describe("ChainCallDTO", () => {
       publicKey: Buffer.from(pair.getPublic().encode("array", true)).toString("hex")
     };
   }
+
   it("should sign and verify signature", () => {
     // Given
     const { privateKey, publicKey } = genKeyPair();
@@ -178,5 +179,21 @@ describe("ChainCallDTO", () => {
 
     // Then
     expect(dto.isSignatureValid(publicKey)).toEqual(false);
+  });
+
+  it("should sign and verify TON signature", async () => {
+    // Given
+    const pair = await signatures.ton.genKeyPair();
+    const dto = new TestDto();
+    dto.amounts = [new BigNumber("78.9")];
+    dto.signing = SigningScheme.TON;
+    expect(dto.signature).toEqual(undefined);
+
+    // When
+    dto.sign(pair.secretKey);
+
+    // Then
+    expect(dto.signature).toEqual(expect.stringMatching(/.{50,}/));
+    expect(dto.isSignatureValid(pair.publicKey)).toEqual(true);
   });
 });

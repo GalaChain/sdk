@@ -12,15 +12,20 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-import { IsNotEmpty, IsString } from "class-validator";
+import { IsNotEmpty, IsOptional, IsString } from "class-validator";
 
-import { signatures } from "../utils";
+import { SigningScheme, signatures } from "../utils";
+import { StringEnumProperty } from "../validators";
 import { ChainObject } from "./ChainObject";
 
 export class PublicKey extends ChainObject {
   @IsString()
   @IsNotEmpty()
   publicKey: string;
+
+  @IsOptional()
+  @StringEnumProperty(SigningScheme)
+  public signing?: SigningScheme;
 }
 
 export const PK_INDEX_KEY = "GCPK";
