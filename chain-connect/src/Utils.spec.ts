@@ -49,7 +49,6 @@ describe("EIP-712 Signing", () => {
     expect(types).toMatchObject(expectedTypes);
 
     console.log("EIP-712 Types:", types);
-    // console.log("EIP-712 Value:", value);
 
     const subchainRpcUrl = "https://rpc.your-subchain.network";
     const privateKey = "0x0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef";
@@ -81,7 +80,6 @@ describe("EIP-712 Signing", () => {
       ]
     };
     const types = generateEIP712Types("LockTokensRequest", params);
-    const value = generateEIP712Value(params);
 
     const expectedTypes = {
       LockTokensRequest: [{ name: "tokenInstances", type: "tokenInstances[]" }],
@@ -101,7 +99,6 @@ describe("EIP-712 Signing", () => {
     expect(types).toMatchObject(expectedTypes);
 
     console.log("EIP-712 Types:", types);
-    console.log("EIP-712 Value:", value);
 
     const subchainRpcUrl = "https://rpc.your-subchain.network";
     const privateKey = "0x0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef";
@@ -109,12 +106,56 @@ describe("EIP-712 Signing", () => {
     const provider = new ethers.JsonRpcProvider(subchainRpcUrl);
     const wallet = new ethers.Wallet(privateKey, provider);
 
-    const signature = await wallet.signTypedData({}, types, value);
+    const signature = await wallet.signTypedData({}, types, params);
 
     console.log("Signature:", signature);
 
     // Assert that the signature is a valid string
     expect(typeof signature).toBe("string");
     expect(signature).toMatch(/^0x[a-fA-F0-9]{130}$/); // Simple regex to match the format of a signature
+  });
+  it("should correctly generate EIP-712 types and values and sign the data for arrays with multiple values", async () => {
+    const params: LockTokensParams = {
+      tokenInstances: [
+        {
+          quantity: "1",
+          tokenInstanceKey: {
+            collection: "GALA",
+            category: "Unit",
+            additionalKey: "none",
+            instance: "0",
+            type: "none"
+          }
+        },
+        {
+          quantity: "1",
+          tokenInstanceKey: {
+            collection: "GALA",
+            category: "Unit",
+            additionalKey: "none",
+            instance: "0",
+            type: "none"
+          }
+        }
+      ]
+    };
+    const types = generateEIP712Types("LockTokensRequest", params);
+
+    const expectedTypes = {
+      LockTokensRequest: [{ name: "tokenInstances", type: "tokenInstances[]" }],
+      tokenInstances: [
+        { name: "quantity", type: "string" },
+        { name: "tokenInstanceKey", type: "tokenInstanceKey" }
+      ],
+      tokenInstanceKey: [
+        { name: "collection", type: "string" },
+        { name: "category", type: "string" },
+        { name: "additionalKey", type: "string" },
+        { name: "instance", type: "string" },
+        { name: "type", type: "string" }
+      ]
+    };
+
+    expect(types).toMatchObject(expectedTypes);
   });
 });

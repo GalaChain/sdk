@@ -5,10 +5,11 @@ export function generateEIP712Types<T>(typeName: string, params: T): EIP712Types
   const types: EIP712Types = {};
   types[typeName] = [];
 
-  function addField(name: string, fieldValue: unknown, parentTypeName: string) {
+  function addField(name: string, fieldValue: unknown, parentTypeName: string, onlyGetType = false) {
     if (Array.isArray(fieldValue)) {
       //Take the type of the first element
-      types[parentTypeName].push({ name, type: "string" });
+      addField(name, fieldValue[0], parentTypeName, true);
+      if (!onlyGetType) types[parentTypeName].push({ name, type: name + "[]" });
     } else if (typeof fieldValue === "object" && fieldValue !== null) {
       if (types[name]) {
         throw new Error("Name collisions not yet supported");
@@ -17,7 +18,7 @@ export function generateEIP712Types<T>(typeName: string, params: T): EIP712Types
       Object.entries(fieldValue).forEach(([key, value]) => {
         addField(key, value, name);
       });
-      types[parentTypeName].push({ name, type: name });
+      if (!onlyGetType) types[parentTypeName].push({ name, type: name });
     } else {
       let eipType: string;
       switch (typeof fieldValue) {
@@ -33,7 +34,7 @@ export function generateEIP712Types<T>(typeName: string, params: T): EIP712Types
         default:
           eipType = "string"; // Default to string for any unknown type
       }
-      types[parentTypeName].push({ name, type: eipType });
+      if (!onlyGetType) types[parentTypeName].push({ name, type: eipType });
     }
   }
 
