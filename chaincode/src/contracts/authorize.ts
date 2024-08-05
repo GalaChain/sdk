@@ -80,7 +80,7 @@ export async function authorize(
     if (dto.signerAddress !== undefined) {
       throw new RedundantSignerAddressError(recoveredPkHex, dto.signerAddress);
     }
-    return await getUserProfile(ctx, recoveredPkHex, dto.signing); // new flow only
+    return await getUserProfile(ctx, recoveredPkHex, dto.signing ?? SigningScheme.ETH); // new flow only
   } else if (dto.signerAddress !== undefined) {
     if (dto.signerPublicKey !== undefined) {
       throw new RedundantSignerPublicKeyError(dto.signerAddress, dto.signerPublicKey);
@@ -100,7 +100,7 @@ export async function authorize(
       throw new PkInvalidSignatureError(`eth|${ethAddress}`);
     }
 
-    return await getUserProfile(ctx, dto.signerPublicKey, dto.signing); // new flow only
+    return await getUserProfile(ctx, dto.signerPublicKey, dto.signing ?? SigningScheme.ETH); // new flow only
   } else {
     return await legacyAuthorize(ctx, dto, legacyCAUser); // legacy flow only
   }
@@ -123,13 +123,9 @@ export async function ensureIsAuthorizedBy(
 async function getUserProfile(
   ctx: GalaChainContext,
   publicKey: string,
-  signing: SigningScheme | undefined
+  signing: SigningScheme
 ): Promise<UserProfile> {
-  const address =
-    signing === SigningScheme.TON
-      ? signatures.ton.getTonAddress(Buffer.from(publicKey, "base64"))
-      : signatures.getEthAddress(signatures.getNonCompactHexPublicKey(publicKey));
-
+  const address = PublicKeyService.getUserAddress(publicKey, signing);
   const profile = await PublicKeyService.getUserProfile(ctx, address);
 
   if (profile === undefined) {

@@ -355,7 +355,7 @@ function validateSecp256k1PublicKey(publicKey: Buffer): ec.KeyPair {
   try {
     return ecSecp256k1.keyFromPublic(publicKey);
   } catch (e) {
-    throw new InvalidKeyError(`Public Key seems to be invalid. Error: ${e?.message ?? e}`);
+    throw new InvalidKeyError(`Public key seems to be invalid. Error: ${e?.message ?? e}`);
   }
 }
 
