@@ -28,7 +28,31 @@ export class InvalidSignatureFormatError extends ValidationFailedError {}
 
 class InvalidDataHashError extends ValidationFailedError {}
 
+// Type definitions
+type EIP712Domain = Record<string, any>;
+type EIP712Types = Record<string, any>;
+type EIP712Value = Record<string, any>;
+
+interface EIP712Object {
+  domain: EIP712Domain;
+  types: EIP712Types;
+  value: EIP712Value;
+}
+
+// Type guard to check if an object is EIP712Object
+function isEIP712Object(obj: object): obj is EIP712Object {
+  return obj && typeof obj === "object" && "domain" in obj && "types" in obj;
+}
+
+function getEIP712PayloadToSign(obj: EIP712Object): string {
+  return ethers.TypedDataEncoder.encode(obj.domain, obj.types, obj);
+}
+
 function getPayloadToSign(obj: object): string {
+  if (isEIP712Object(obj)) {
+    return getEIP712PayloadToSign(obj);
+  }
+
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const { signature, trace, ...plain } = instanceToPlain(obj);
   return serialize(plain);
@@ -363,23 +387,7 @@ function getDERSignature(obj: object, privateKey: Buffer): string {
   return signSecp256k1(calculateKeccak256(data), privateKey, "DER");
 }
 
-// Type definitions
-type EIP712Domain = Record<string, any>;
-type EIP712Types = Record<string, any>;
-type EIP712Value = Record<string, any>;
-
-interface EIP712Object {
-  domain: EIP712Domain;
-  types: EIP712Types;
-  value: EIP712Value;
-}
-
-// Type guard to check if an object is EIP712Object
-function isEIP712Object(obj: object): obj is EIP712Object {
-  return obj && typeof obj === "object" && "domain" in obj && "types" in obj;
-}
-
-function recoverPublicKey(signature: string, obj: object, prefix = ""): string {
+function recoverPublicKey(signature: string, obj: object, prefix?: string): string {
   const signatureObj = parseSecp256k1Signature(signature);
   const recoveryParam = signatureObj.recoveryParam;
   if (recoveryParam === undefined) {
@@ -387,17 +395,15 @@ function recoverPublicKey(signature: string, obj: object, prefix = ""): string {
     throw new InvalidSignatureFormatError(message, { signature });
   }
 
-  if (isEIP712Object(obj)) {
-    const digest = ethers.TypedDataEncoder.hash(obj.domain, obj.types, obj);
-    const publicKey = ethers.SigningKey.recoverPublicKey(digest, signature);
-    return publicKey.slice(2);
-  } else {
-    // Otherwise, assume personal sign
-    const data = Buffer.concat([Buffer.from(prefix), Buffer.from(getPayloadToSign(obj))]);
-    const dataHash = Buffer.from(keccak256.hex(data), "hex");
-    const publicKeyObj = ecSecp256k1.recoverPubKey(dataHash, signatureObj, recoveryParam);
-    return publicKeyObj.encode("hex", false);
-  }
+  const dataString = getPayloadToSign(obj);
+  const data = dataString.startsWith("0x")
+    ? Buffer.from(dataString.slice(2), "hex")
+    : Buffer.from((prefix ?? "") + dataString);
+
+  const dataHash = Buffer.from(keccak256.hex(data), "hex");
+
+  const publicKeyObj = ecSecp256k1.recoverPubKey(dataHash, signatureObj, recoveryParam);
+  return publicKeyObj.encode("hex", false);
 }
 
 function isValid(signature: string, obj: object, publicKey: string): boolean {
