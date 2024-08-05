@@ -256,14 +256,6 @@ export class DryRunResultDto extends ChainCallDTO {
 
 export type RegisterUserParams = ConstructorArgs<RegisterUserDto>;
 
-const publicKeyDescription =
-  "A public key to be saved on chain.\n" +
-  `It should be just the private part of the EC secp256k1 key, than can be retrieved this way: ` +
-  "`openssl ec -in priv-key.pem -text | grep pub -A 5 | tail -n +2 | tr -d '\\n[:space:]:`. " +
-  "The previous command produces an uncompressed hex string, but you can also provide an compressed one, " +
-  `as well as compressed and uncompressed base64 secp256k1 key. ` +
-  `A secp256k1 public key is saved on chain as compressed base64 string.`;
-
 @JSONSchema({
   description: `Dto for secure method to save public keys for legacy users. Method is called and signed by Curators`
 })
@@ -274,7 +266,7 @@ export class RegisterUserDto extends ChainCallDTO {
   @IsUserAlias()
   user: string;
 
-  @JSONSchema({ description: publicKeyDescription })
+  @JSONSchema({ description: "Public secp256k1 key (compact or non-compact, hex or base64)." })
   @IsNotEmpty()
   publicKey: string;
 }
@@ -285,7 +277,7 @@ export type RegisterEthUserParams = ConstructorArgs<RegisterEthUserDto>;
   description: `Dto for secure method to save public keys for Eth users. Method is called and signed by Curators`
 })
 export class RegisterEthUserDto extends ChainCallDTO {
-  @JSONSchema({ description: publicKeyDescription })
+  @JSONSchema({ description: "Public secp256k1 key (compact or non-compact, hex or base64)." })
   @IsNotEmpty()
   publicKey: string;
 }
@@ -296,7 +288,7 @@ export type RegisterTonUserParams = ConstructorArgs<RegisterTonUserDto>;
   description: `Dto for secure method to save public keys for TON users. Method is called and signed by Curators`
 })
 export class RegisterTonUserDto extends ChainCallDTO {
-  @JSONSchema({ description: "TON user public key" })
+  @JSONSchema({ description: "TON user public key (Ed25519 in base64)." })
   @IsNotEmpty()
   publicKey: string;
 }
@@ -304,13 +296,13 @@ export class RegisterTonUserDto extends ChainCallDTO {
 export type UpdatePublicKeyParams = ConstructorArgs<UpdatePublicKeyDto>;
 
 export class UpdatePublicKeyDto extends ChainCallDTO {
-  @JSONSchema({ description: publicKeyDescription })
+  @JSONSchema({
+    description:
+      "For users with ETH signing scheme it is public secp256k1 key (compact or non-compact, hex or base64). " +
+      "For users with TON signing scheme it is public Ed25519 key (base64)."
+  })
   @IsNotEmpty()
   publicKey: string;
-
-  @IsOptional()
-  @StringEnumProperty(SigningScheme)
-  public signing?: SigningScheme;
 }
 
 export class GetPublicKeyDto extends ChainCallDTO {

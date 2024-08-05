@@ -14,13 +14,10 @@
  */
 import {
   ChainCallDTO,
-  ChainError,
-  ErrorCode,
   GalaChainResponse,
   GetMyProfileDto,
   GetPublicKeyDto,
   NotFoundError,
-  NotImplementedError,
   PublicKey,
   RegisterEthUserDto,
   RegisterTonUserDto,
@@ -34,10 +31,10 @@ import {
 import { Info } from "fabric-contract-api";
 
 import { PublicKeyService } from "../services";
-import { PkMismatchError, PkNotFoundError, ProfileExistsError } from "../services/PublicKeyError";
+import { PkNotFoundError } from "../services/PublicKeyError";
 import { GalaChainContext } from "../types";
 import { GalaContract } from "./GalaContract";
-import { EVALUATE, Evaluate, GalaTransaction, SUBMIT, Submit } from "./GalaTransaction";
+import { EVALUATE, Evaluate, GalaTransaction, Submit } from "./GalaTransaction";
 
 let version = "0.0.0";
 
@@ -145,11 +142,9 @@ export class PublicKeyContract extends GalaContract {
     ctx: GalaChainContext,
     dto: UpdatePublicKeyDto
   ): Promise<GalaChainResponse<void>> {
-    const providedPkHex = signatures.getNonCompactHexPublicKey(dto.publicKey);
-    const ethAddress = signatures.getEthAddress(providedPkHex);
     const signing = dto.signing ?? SigningScheme.ETH;
-
-    await PublicKeyService.updatePublicKey(ctx, providedPkHex, ethAddress, signing);
+    const address = PublicKeyService.getUserAddress(dto.publicKey, signing);
+    await PublicKeyService.updatePublicKey(ctx, dto.publicKey, address, signing);
 
     return GalaChainResponse.Success(undefined);
   }

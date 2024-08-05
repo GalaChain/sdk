@@ -29,7 +29,12 @@ import {
   createValidDTO,
   signatures
 } from "@gala-chain/api";
-import { transactionSuccess } from "@gala-chain/test";
+import {
+  transactionErrorCode,
+  transactionErrorKey,
+  transactionErrorMessageContains,
+  transactionSuccess
+} from "@gala-chain/test";
 import { classToPlain, instanceToInstance, plainToClass } from "class-transformer";
 import { randomUUID } from "crypto";
 
@@ -351,12 +356,77 @@ describe("UpdatePublicKey", () => {
   });
 
   it("should update TON public key", async () => {
-    throw new Error("Not implemented");
+    // Given
+    const chaincode = new TestChaincode([PublicKeyContract]);
+    const user = await createRegisteredTonUser(chaincode);
+    const newPair = await signatures.ton.genKeyPair();
+    const dto = await createValidDTO(UpdatePublicKeyDto, {
+      publicKey: Buffer.from(newPair.publicKey).toString("base64"),
+      signerPublicKey: user.publicKey,
+      signing: SigningScheme.TON
+    });
+
+    // When
+    const response = await chaincode.invoke("PublicKeyContract:UpdatePublicKey", dto.signed(user.privateKey));
+
+    // Then
+    expect(response).toEqual(transactionSuccess());
+
+    expect(await getPublicKey(chaincode, user.alias)).toEqual(
+      transactionSuccess({
+        publicKey: dto.publicKey,
+        signing: SigningScheme.TON
+      })
+    );
   });
 
   it("should prevent from changing key type", async () => {
-    // changing TON => Eth should fail
-    throw new Error("Not implemented");
+    // Given
+    const chaincode = new TestChaincode([PublicKeyContract]);
+    const tonUser = await createRegisteredTonUser(chaincode);
+    const ethUser = await createRegisteredUser(chaincode);
+
+    const ethKeyPair = signatures.genKeyPair();
+    const tonKeyPair = await signatures.ton.genKeyPair();
+
+    const dtoTonToEth = await createValidDTO(UpdatePublicKeyDto, {
+      publicKey: ethKeyPair.publicKey,
+      signerPublicKey: tonUser.publicKey,
+      signing: SigningScheme.TON
+    });
+
+    const dtoEthToTon = await createValidDTO(UpdatePublicKeyDto, {
+      publicKey: Buffer.from(tonKeyPair.publicKey).toString("base64")
+    });
+
+    // When
+    const responseTonToEth = await chaincode.invoke(
+      "PublicKeyContract:UpdatePublicKey",
+      dtoTonToEth.signed(tonUser.privateKey)
+    );
+
+    const responseEthToTon = await chaincode.invoke(
+      "PublicKeyContract:UpdatePublicKey",
+      dtoEthToTon.signed(ethUser.privateKey)
+    );
+
+    // Then
+    expect(responseTonToEth).toEqual(transactionErrorMessageContains("Invalid public key length"));
+    expect(responseEthToTon).toEqual(transactionErrorMessageContains("Public key seems to be invalid"));
+
+    // Old keys are still there
+    expect(await getPublicKey(chaincode, tonUser.alias)).toEqual(
+      transactionSuccess({
+        publicKey: tonUser.publicKey,
+        signing: SigningScheme.TON
+      })
+    );
+    expect(await getPublicKey(chaincode, ethUser.alias)).toEqual(
+      transactionSuccess({
+        publicKey: signatures.normalizePublicKey(ethUser.publicKey).toString("base64"),
+        signing: SigningScheme.ETH
+      })
+    );
   });
 });
 

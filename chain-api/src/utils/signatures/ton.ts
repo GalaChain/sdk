@@ -12,7 +12,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-import { NotImplementedError } from "../error";
+import { NotImplementedError, ValidationFailedError } from "../error";
 import { getPayloadToSign } from "./getPayloadToSign";
 
 // verify if TON is supported
@@ -41,6 +41,11 @@ async function genKeyPair() {
 
 function getTonAddress(publicKey: Buffer, workChain = 0) {
   const { Address, beginCell } = importTonOrReject().ton;
+
+  if (publicKey.length !== 32) {
+    throw new ValidationFailedError(`Invalid public key length: ${publicKey.length} (32 bytes required)`);
+  }
+
   const cell = beginCell().storeBuffer(Buffer.from(publicKey)).endCell();
   const hash = cell.hash();
   const address = new Address(workChain, hash);
@@ -57,6 +62,30 @@ function isValidTonAddress(address: string): boolean {
   }
 }
 
+function splitDataIntoCells(data: Buffer) {
+  const { beginCell, Cell } = importTonOrReject().ton;
+
+  const buffer = Buffer.from(data);
+  const cellSizeLimit = 127; // 127 bytes (127 * 8 = 1016 bits, within the 1023 bits limit)
+
+  // @ts-expect-error TS2749
+  const cells: Cell[] = [];
+  for (let i = 0; i < buffer.length; i += cellSizeLimit) {
+    const chunk = buffer.slice(i, i + cellSizeLimit);
+    const cell = beginCell().storeBuffer(chunk).endCell();
+    cells.push(cell);
+  }
+
+  // Now link the cells together if necessary
+  for (let i = cells.length - 2; i >= 0; i--) {
+    cells[i] = beginCell()
+      .storeRef(cells[i + 1])
+      .endCell();
+  }
+
+  return cells[0]; // Return the root cell
+}
+
 // TON uses Ed25519 signatures, but with a different payload
 // signature = Ed25519Sign(privkey, sha256(0xffff ++ utf8_encode("my-ton-app") ++ sha256(message)))
 // see: https://github.com/ton-connect/demo-dapp-with-react-ui/blob/master/src/server/services/ton-proof-service.ts
@@ -65,16 +94,16 @@ function isValidTonAddress(address: string): boolean {
 // They transform the payload accordingly.
 //
 function getSignature(obj: object, privateKey: Buffer, seed: string | undefined) {
-  const { beginCell, safeSign } = importTonOrReject().ton;
+  const { safeSign } = importTonOrReject().ton;
   const data = getPayloadToSign(obj);
-  const cell = beginCell().storeBuffer(Buffer.from(data)).endCell();
+  const cell = splitDataIntoCells(Buffer.from(data));
   return safeSign(cell, privateKey, seed);
 }
 
 function isValidSignature(signature: Buffer, obj: object, publicKey: Buffer, seed: string | undefined) {
-  const { beginCell, safeSignVerify } = importTonOrReject().ton;
+  const { safeSignVerify } = importTonOrReject().ton;
   const data = getPayloadToSign(obj);
-  const cell = beginCell().storeBuffer(Buffer.from(data)).endCell();
+  const cell = splitDataIntoCells(Buffer.from(data));
   return safeSignVerify(cell, signature, publicKey, seed);
 }
 

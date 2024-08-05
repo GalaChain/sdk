@@ -90,8 +90,14 @@ export class PublicKeyService {
     await ctx.stub.deleteState(key);
   }
 
-  public static async getUserProfile(ctx: Context, ethAddress: string): Promise<UserProfile | undefined> {
-    const key = PublicKeyService.getUserProfileKey(ctx, ethAddress);
+  public static getUserAddress(publicKey: string, signing: SigningScheme): string {
+    return signing === SigningScheme.TON
+      ? signatures.ton.getTonAddress(Buffer.from(publicKey, "base64"))
+      : signatures.getEthAddress(signatures.getNonCompactHexPublicKey(publicKey));
+  }
+
+  public static async getUserProfile(ctx: Context, address: string): Promise<UserProfile | undefined> {
+    const key = PublicKeyService.getUserProfileKey(ctx, address);
     const data = await ctx.stub.getState(key);
 
     if (data.length > 0) {
@@ -105,7 +111,7 @@ export class PublicKeyService {
       const nonCompactPK = signatures.getNonCompactHexPublicKey(process.env.DEV_ADMIN_PUBLIC_KEY);
       const adminEthAddress = signatures.getEthAddress(nonCompactPK);
 
-      if (adminEthAddress === ethAddress) {
+      if (adminEthAddress === address) {
         const message =
           `User Profile is not saved on chain for user ${adminEthAddress}. ` +
           `But env variable DEV_ADMIN_PUBLIC_KEY is set for the user. ` +
@@ -214,7 +220,7 @@ export class PublicKeyService {
   public static async updatePublicKey(
     ctx: GalaChainContext,
     newPkHex: string,
-    newEthAddress: string,
+    newAddress: string,
     signing: SigningScheme
   ): Promise<void> {
     const userAlias = ctx.callingUser;
@@ -226,18 +232,17 @@ export class PublicKeyService {
     }
 
     // need to fetch userProfile from old address
-    const oldNonCompactPublicKey = signatures.getNonCompactHexPublicKey(oldPublicKey.publicKey);
-    const oldEthAddress = signatures.getEthAddress(oldNonCompactPublicKey);
-    const userProfile = await PublicKeyService.getUserProfile(ctx, oldEthAddress);
+    const oldAddress = PublicKeyService.getUserAddress(oldPublicKey.publicKey, signing);
+    const userProfile = await PublicKeyService.getUserProfile(ctx, oldAddress);
 
     // Note: we don't throw an error if userProfile is undefined in order to support legacy users with unsaved profiles
     if (userProfile !== undefined) {
       // remove old user profile
-      await PublicKeyService.deleteUserProfile(ctx, oldEthAddress);
+      await PublicKeyService.deleteUserProfile(ctx, oldAddress);
     }
 
     // update Public Key, and add user profile under new eth address
     await PublicKeyService.putPublicKey(ctx, newPkHex, userAlias, signing);
-    await PublicKeyService.putUserProfile(ctx, newEthAddress, userAlias, signing);
+    await PublicKeyService.putUserProfile(ctx, newAddress, userAlias, signing);
   }
 }
