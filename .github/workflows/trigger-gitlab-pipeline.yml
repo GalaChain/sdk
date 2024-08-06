@@ -8,20 +8,32 @@ jobs:
   trigger-and-check-gitlab:
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout code
-        uses: actions/checkout@v2
+      - name: Trigger GitLab Pipeline
+        id: trigger
+        run: |
+          curl --request POST \
+            --form token=${{ secrets.GITLAB_PIPELINE_TOKEN }} \
+            --form ref=sdk-pipeline-integration \
+            --form variables[DEPLOY_NEW_SDK_TAG]="true" \
+            --form variables[NEW_VERSION_TAG]="1.2.3" \
+            --form variables[GITHUB_AUTHOR]="${{ github.actor }}" \
+            --form variables[GITHUB_COMMIT_URL]="${{ github.server_url }}/${{ github.repository }}/commit/${{ github.sha }}" \
+            "https://gitlab.com/api/v4/projects/35484791/trigger/pipeline"
+
+  trigger-and-check-gitlab-tag:
+    runs-on: ubuntu-latest
+    steps:
 
       - name: Trigger GitLab Pipeline
         id: trigger
         run: |
-          response=$(curl --request POST \
-                          --form token=${{ secrets.GITLAB_PIPELINE_TOKEN }} \
-                          --form ref=sdk-pipeline-integration \
-                          --form variables[TEST_SDK_CHANGES]="true" \
-                          --form variables[DEPLOY_NEW_SDK_TAG]="1.2.3" \
-                          --form variables[GITHUB_AUTHOR]="${{ github.actor }}" \
-                          --form variables[GITHUB_COMMIT_URL]="${{ github.server_url }}/${{ github.repository }}/commit/${{ github.sha }}" \
-                          "https://gitlab.com/api/v4/projects/35484791/trigger/pipeline")
+          curl --request POST \
+            --form token=${{ secrets.GITLAB_PIPELINE_TOKEN }} \
+            --form ref=sdk-pipeline-integration \
+            --form variables[TEST_SDK_CHANGES]="true" \
+            --form variables[GITHUB_AUTHOR]="${{ github.actor }}" \
+            --form variables[GITHUB_COMMIT_URL]="${{ github.server_url }}/${{ github.repository }}/commit/${{ github.sha }}" \
+            "https://gitlab.com/api/v4/projects/35484791/trigger/pipeline"
           
       # - name: Fetch Commit Details
       #   run: |
