@@ -7,21 +7,15 @@
       "rules": {}
     },
     {
-      "files": [
-        "*.vue"
-      ],
+      "files": ["*.vue"],
       "parser": "vue-eslint-parser",
       "parserOptions": {
         "parser": "@typescript-eslint/parser",
         "ecmaVersion": 2021,
         "sourceType": "module"
       },
-      "plugins": [
-        "vue"
-      ],
-      "extends": [
-        "plugin:vue/vue3-essential"
-      ],
+      "plugins": ["vue"],
+      "extends": ["plugin:vue/vue3-essential"],
       "rules": {
         "vue/multi-word-component-names": "warn"
       }
