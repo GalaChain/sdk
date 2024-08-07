@@ -12,8 +12,8 @@
     "preview": "vite preview",
     "test:unit": "vitest",
     "type-check": "vue-tsc --build --force",
-    "lint": "node license-check.js && eslint . --ext .vue,.js,.jsx,.cjs,.mjs,.ts,.tsx,.cts,.mts --fix --ignore-path .gitignore",
-    "fix": "eslint . --ext .vue,.js,.jsx,.cjs,.mjs,.ts,.tsx,.cts,.mts --fix --ignore-path .gitignore",
+    "lint": "node license-check.js && eslint .",
+    "fix": "eslint . --fix",
     "format": "prettier --write src/",
     "storybook": "storybook dev"
   },
@@ -30,7 +30,7 @@
     "tailwindcss": "^3.4.4",
     "vue": "^3.4.21",
     "glob": "11.0.0",
-    "vite": "~5.0.0",
+    "vite": "~5.3.0",
     "@vitejs/plugin-vue": "5.0.5",
     "vite-plugin-dts": "3.9.1",
     "vitest": "1.6.0"
