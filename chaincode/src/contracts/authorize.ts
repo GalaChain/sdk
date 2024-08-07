@@ -47,6 +47,12 @@ class RedundantSignerAddressError extends ValidationFailedError {
   }
 }
 
+class MissingSignerError extends ValidationFailedError {
+  constructor() {
+    super("Missing signerPublicKey or signerAddress field in dto");
+  }
+}
+
 class UserNotRegisteredError extends ValidationFailedError {
   constructor(userId: string) {
     super(`User ${userId} is not registered.`, { userId });
@@ -95,13 +101,15 @@ export async function authorize(
     return profile;
   } else if (dto.signerPublicKey !== undefined) {
     if (!dto.isSignatureValid(dto.signerPublicKey)) {
-      const providedPkHex = signatures.getNonCompactHexPublicKey(dto.signerPublicKey);
-      const ethAddress = signatures.getEthAddress(providedPkHex);
-      throw new PkInvalidSignatureError(`eth|${ethAddress}`);
+      const address = PublicKeyService.getUserAddress(dto.signerPublicKey, dto.signing ?? SigningScheme.ETH);
+      throw new PkInvalidSignatureError(address);
     }
 
     return await getUserProfile(ctx, dto.signerPublicKey, dto.signing ?? SigningScheme.ETH); // new flow only
+  } else if (dto.signing === SigningScheme.TON) {
+    throw new MissingSignerError();
   } else {
+    // once we dropp support for legacy auth, it should be changed to throw MissingSignerError
     return await legacyAuthorize(ctx, dto, legacyCAUser); // legacy flow only
   }
 }

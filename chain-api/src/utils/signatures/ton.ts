@@ -32,14 +32,14 @@ function importTonOrReject() {
   return { ton, crypto };
 }
 
-async function genKeyPair() {
+async function genKeyPair(): Promise<{ secretKey: Buffer; publicKey: Buffer }> {
   const { getSecureRandomBytes, keyPairFromSeed } = importTonOrReject().crypto;
   const secret = await getSecureRandomBytes(32);
   const pair = keyPairFromSeed(secret);
   return { secretKey: pair.secretKey, publicKey: pair.publicKey };
 }
 
-function getTonAddress(publicKey: Buffer, workChain = 0) {
+function getTonAddress(publicKey: Buffer, workChain = 0): string {
   const { Address, beginCell } = importTonOrReject().ton;
 
   if (publicKey.length !== 32) {
@@ -93,14 +93,19 @@ function splitDataIntoCells(data: Buffer) {
 // To achieve it, we need to use safeSign and safeSignVerify functions instead of sign and signVerify.
 // They transform the payload accordingly.
 //
-function getSignature(obj: object, privateKey: Buffer, seed: string | undefined) {
+function getSignature(obj: object, privateKey: Buffer, seed: string | undefined): Buffer {
   const { safeSign } = importTonOrReject().ton;
   const data = getPayloadToSign(obj);
   const cell = splitDataIntoCells(Buffer.from(data));
   return safeSign(cell, privateKey, seed);
 }
 
-function isValidSignature(signature: Buffer, obj: object, publicKey: Buffer, seed: string | undefined) {
+function isValidSignature(
+  signature: Buffer,
+  obj: object,
+  publicKey: Buffer,
+  seed: string | undefined
+): boolean {
   const { safeSignVerify } = importTonOrReject().ton;
   const data = getPayloadToSign(obj);
   const cell = splitDataIntoCells(Buffer.from(data));

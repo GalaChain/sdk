@@ -22,7 +22,7 @@ import {
   GetObjectDto,
   createValidDTO
 } from "@gala-chain/api";
-import { transactionError, transactionSuccess, users } from "@gala-chain/test";
+import { transactionError, transactionSuccess } from "@gala-chain/test";
 import { instanceToPlain } from "class-transformer";
 import { Context } from "fabric-contract-api";
 import { inspect } from "util";

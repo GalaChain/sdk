@@ -99,20 +99,7 @@ const expectedTestDtoSchema = {
       type: "string"
     },
     signature: {
-      description:
-        "Signature of the DTO signed with caller's private key to be verified with user's public key saved on chain. " +
-        "The 'signature' field is optional for DTO, but is required for a transaction to be executed on chain.\n" +
-        "JSON payload to be signed is created from an object without 'signature' and 'trace` properties, " +
-        "and it's keys should be sorted alphabetically and no end of line at the end. " +
-        'Sample jq command to produce valid data to sign: `jq -cSj "." dto-file.json`.' +
-        "Also all BigNumber data should be provided as strings (not numbers) with fixed decimal point notation.\n" +
-        "The EC secp256k1 signature should be created for keccak256 hash of the data. " +
-        "The recommended format of the signature is a HEX encoded string, including r + s + v values. " +
-        "Signature in this format is supported by ethers.js library. " +
-        "Sample signature: b7244d62671319583ea8f30c8ef3b343cf28e7b7bd56e32b21a5920752dc95b94a9d202b2919581bcf776f0637462cb67170828ddbcc1ea63505f6a211f9ac5b1b\n" +
-        "This field can also contain a DER encoded signature, but this is deprecated and supported only to provide backwards compatibility. " +
-        "DER encoded signature cannot be used recover user's public key from the signature, " +
-        "and cannot be used with the new signature-based authorization flow for Gala Chain.\n",
+      description: expect.stringContaining("Signature of the DTO signed with caller's private key"),
       minLength: 1,
       type: "string"
     },

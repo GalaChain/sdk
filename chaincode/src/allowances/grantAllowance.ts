@@ -29,7 +29,7 @@ import {
 import { BigNumber } from "bignumber.js";
 import { classToPlain as instanceToPlain, plainToInstance } from "class-transformer";
 
-import { fetchBalances, fetchOrCreateBalance } from "../balances";
+import { fetchBalances } from "../balances";
 import { fetchKnownBurnCount } from "../burns/fetchBurns";
 import { fetchMintAllowanceSupply } from "../mint/fetchMintAllowanceSupply";
 import { fetchTokenInstance } from "../token";

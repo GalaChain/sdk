@@ -66,9 +66,10 @@ type GalaChainStub = ChaincodeStub & {
 type TestGalaChainContext = Context & {
   readonly stub: GalaChainStub;
   readonly logger: GalaLoggerInstance;
-  set callingUserData(d: { alias: string; ethAddress: string | undefined });
+  set callingUserData(d: { alias: string; ethAddress?: string; tonAddress?: string });
   get callingUser(): string;
   get callingUserEthAddress(): string;
+  get callingUserTonAddress(): string;
   setDryRunOnBehalfOf(d: { alias: string; ethAddress: string | undefined }): void;
   isDryRun: boolean;
   get txUnixTime(): number;
