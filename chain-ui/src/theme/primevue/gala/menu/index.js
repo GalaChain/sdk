@@ -36,10 +36,10 @@ export default {
       'outline-none'
     ]
   },
-  menuitem: ({ _context }) => ({
+  menuitem: () => ({
     class: ['border-b last:border-b-0 border-b-surface-1000/10 dark:border-b-surface-0/10']
   }),
-  content: ({ _context }) => ({
+  content: () => ({
     class: [
       // Shape
       'rounded-none',

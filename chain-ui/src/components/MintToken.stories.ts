@@ -64,7 +64,7 @@ const tokenAllowance = {
   ]
 }
 
-const Template = (args, { argTypes }) => ({
+const Template = (args) => ({
   components: { MintToken },
   setup() {
     return { args }
