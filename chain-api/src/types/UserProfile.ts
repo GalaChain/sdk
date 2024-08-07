@@ -23,7 +23,9 @@ export type UserProfileBody = ConstructorArgs<UserProfile>;
 
 export class UserProfile extends ChainObject {
   @JSONSchema({
-    description: `Legacy caller id from user name or identifier derived from ethAddress for new users.`
+    description:
+      "A unique identifier of the user. " +
+      "It may have the following format: client|<id>, eth|<checksumed-eth-addr>, or ton|<ton-bounceable-addr>."
   })
   @IsUserAlias()
   alias: string;

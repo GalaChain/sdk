@@ -43,7 +43,7 @@ Please consult [GalaChain SDK documentation](https://github.com/GalaChain/sdk/bl
               "type": "string",
             },
             "signing": {
-              "description": "Signing scheme used for the signature. "ETH" for Ethereum, and "TON" for The Open Network are supported. Default: "ETH.",
+              "description": "Signing scheme used for the signature. "ETH" for Ethereum, and "TON" for The Open Network are supported. Default: "ETH".",
               "enum": [
                 "ETH",
                 "TON",
@@ -91,7 +91,7 @@ Please consult [GalaChain SDK documentation](https://github.com/GalaChain/sdk/bl
                   "type": "string",
                 },
                 "signing": {
-                  "description": "Signing scheme used for the signature. "ETH" for Ethereum, and "TON" for The Open Network are supported. Default: "ETH.",
+                  "description": "Signing scheme used for the signature. "ETH" for Ethereum, and "TON" for The Open Network are supported. Default: "ETH".",
                   "enum": [
                     "ETH",
                     "TON",
@@ -227,7 +227,7 @@ Please consult [GalaChain SDK documentation](https://github.com/GalaChain/sdk/bl
               "type": "string",
             },
             "signing": {
-              "description": "Signing scheme used for the signature. "ETH" for Ethereum, and "TON" for The Open Network are supported. Default: "ETH.",
+              "description": "Signing scheme used for the signature. "ETH" for Ethereum, and "TON" for The Open Network are supported. Default: "ETH".",
               "enum": [
                 "ETH",
                 "TON",
@@ -296,7 +296,7 @@ Please consult [GalaChain SDK documentation](https://github.com/GalaChain/sdk/bl
               "type": "string",
             },
             "signing": {
-              "description": "Signing scheme used for the signature. "ETH" for Ethereum, and "TON" for The Open Network are supported. Default: "ETH.",
+              "description": "Signing scheme used for the signature. "ETH" for Ethereum, and "TON" for The Open Network are supported. Default: "ETH".",
               "enum": [
                 "ETH",
                 "TON",
@@ -368,7 +368,7 @@ Please consult [GalaChain SDK documentation](https://github.com/GalaChain/sdk/bl
               "type": "string",
             },
             "signing": {
-              "description": "Signing scheme used for the signature. "ETH" for Ethereum, and "TON" for The Open Network are supported. Default: "ETH.",
+              "description": "Signing scheme used for the signature. "ETH" for Ethereum, and "TON" for The Open Network are supported. Default: "ETH".",
               "enum": [
                 "ETH",
                 "TON",
@@ -437,7 +437,7 @@ Please consult [GalaChain SDK documentation](https://github.com/GalaChain/sdk/bl
               "type": "string",
             },
             "signing": {
-              "description": "Signing scheme used for the signature. "ETH" for Ethereum, and "TON" for The Open Network are supported. Default: "ETH.",
+              "description": "Signing scheme used for the signature. "ETH" for Ethereum, and "TON" for The Open Network are supported. Default: "ETH".",
               "enum": [
                 "ETH",
                 "TON",
@@ -529,7 +529,7 @@ Please consult [GalaChain SDK documentation](https://github.com/GalaChain/sdk/bl
               "type": "string",
             },
             "signing": {
-              "description": "Signing scheme used for the signature. "ETH" for Ethereum, and "TON" for The Open Network are supported. Default: "ETH.",
+              "description": "Signing scheme used for the signature. "ETH" for Ethereum, and "TON" for The Open Network are supported. Default: "ETH".",
               "enum": [
                 "ETH",
                 "TON",
@@ -604,7 +604,7 @@ Please consult [GalaChain SDK documentation](https://github.com/GalaChain/sdk/bl
               "type": "string",
             },
             "signing": {
-              "description": "Signing scheme used for the signature. "ETH" for Ethereum, and "TON" for The Open Network are supported. Default: "ETH.",
+              "description": "Signing scheme used for the signature. "ETH" for Ethereum, and "TON" for The Open Network are supported. Default: "ETH".",
               "enum": [
                 "ETH",
                 "TON",
@@ -679,7 +679,7 @@ Please consult [GalaChain SDK documentation](https://github.com/GalaChain/sdk/bl
               "type": "string",
             },
             "signing": {
-              "description": "Signing scheme used for the signature. "ETH" for Ethereum, and "TON" for The Open Network are supported. Default: "ETH.",
+              "description": "Signing scheme used for the signature. "ETH" for Ethereum, and "TON" for The Open Network are supported. Default: "ETH".",
               "enum": [
                 "ETH",
                 "TON",
@@ -758,7 +758,7 @@ Please consult [GalaChain SDK documentation](https://github.com/GalaChain/sdk/bl
               "type": "string",
             },
             "signing": {
-              "description": "Signing scheme used for the signature. "ETH" for Ethereum, and "TON" for The Open Network are supported. Default: "ETH.",
+              "description": "Signing scheme used for the signature. "ETH" for Ethereum, and "TON" for The Open Network are supported. Default: "ETH".",
               "enum": [
                 "ETH",
                 "TON",
@@ -827,7 +827,7 @@ Please consult [GalaChain SDK documentation](https://github.com/GalaChain/sdk/bl
               "type": "string",
             },
             "signing": {
-              "description": "Signing scheme used for the signature. "ETH" for Ethereum, and "TON" for The Open Network are supported. Default: "ETH.",
+              "description": "Signing scheme used for the signature. "ETH" for Ethereum, and "TON" for The Open Network are supported. Default: "ETH".",
               "enum": [
                 "ETH",
                 "TON",

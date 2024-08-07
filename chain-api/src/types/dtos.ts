@@ -162,7 +162,7 @@ export class ChainCallDTO {
     description:
       `Signing scheme used for the signature. ` +
       `"${SigningScheme.ETH}" for Ethereum, and "${SigningScheme.TON}" for The Open Network are supported. ` +
-      `Default: "${SigningScheme.ETH}.`
+      `Default: "${SigningScheme.ETH}".`
   })
   @IsOptional()
   @StringEnumProperty(SigningScheme)
