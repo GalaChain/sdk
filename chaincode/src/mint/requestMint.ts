@@ -23,8 +23,7 @@ import {
   TokenClassKeyProperties,
   TokenMintRequest,
   TokenMintStatus,
-  createValidDTO,
-  createValidRangedChainObject
+  createValidDTO
 } from "@gala-chain/api";
 import BigNumber from "bignumber.js";
 import { plainToInstance } from "class-transformer";

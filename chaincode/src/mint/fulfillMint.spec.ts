@@ -172,7 +172,7 @@ describe("FulfillMint", () => {
           timeKey,
           totalKnownMintsCount: new BigNumber("0"),
           id: mintRequest.requestId(),
-          owner: users.testUser1
+          owner: users.testUser1.identityKey
         })
       ]
     }).signed(users.admin.privateKey);
@@ -424,7 +424,7 @@ describe("FulfillMint", () => {
           timeKey,
           totalKnownMintsCount: new BigNumber("0"),
           id: mintRequest.requestId(),
-          owner: users.testUser1
+          owner: users.testUser1.identityKey
         })
       ]
     }).signed(users.testUser1.privateKey);
@@ -516,7 +516,7 @@ describe("FulfillMint", () => {
           timeKey,
           totalKnownMintsCount: new BigNumber("0"),
           id: mintRequest.requestId(),
-          owner: users.attacker // <- tampered here. code expects users.testUser1Id
+          owner: users.attacker.identityKey // <- tampered here. code expects users.testUser1Id
         })
       ]
     }).signed(users.attacker.privateKey);

@@ -141,8 +141,8 @@ describe("GrantAllowance", () => {
       ...a,
       created: ctx.txUnixTime,
       quantity: new BigNumber("1001"),
-      grantedBy: users.testUser2Id.identityKey,
-      grantedTo: users.testUser1Id.identityKey,
+      grantedBy: users.testUser2.identityKey,
+      grantedTo: users.testUser1.identityKey,
       allowanceType: AllowanceType.Lock
     }));
     expect(response).toEqual(GalaChainResponse.Success([allowance]));
@@ -200,22 +200,22 @@ describe("GrantAllowance", () => {
     );
 
     const currencyBalance = plainToInstance(TokenBalance, {
-      owner: users.testUser2Id,
+      owner: users.testUser2.identityKey,
       ...currencyClassKey,
       instanceIds: [],
       quantity: new BigNumber("1000")
     });
 
     const { ctx, contract, writes } = fixture(GalaChainTokenContract)
-      .callingUser(users.testUser2Id)
+      .registeredUsers(users.testUser2)
       .savedState(currencyClass, currencyInstance, currencyBalance);
 
     const dto: GrantAllowanceDto = await createValidDTO(GrantAllowanceDto, {
       tokenInstance: currencyInstanceQueryKey,
-      quantities: [{ user: users.testUser1Id, quantity: new BigNumber(Infinity) }],
+      quantities: [{ user: users.testUser1.identityKey, quantity: new BigNumber(Infinity) }],
       allowanceType: AllowanceType.Lock,
       uses: new BigNumber(Infinity)
-    });
+    }).signed(users.testUser2.privateKey);
 
     // When
     const response = await contract.GrantAllowance(ctx, dto);
@@ -225,8 +225,8 @@ describe("GrantAllowance", () => {
       ...a,
       created: ctx.txUnixTime,
       quantity: new BigNumber(Infinity),
-      grantedBy: users.testUser2Id,
-      grantedTo: users.testUser1Id,
+      grantedBy: users.testUser2.identityKey,
+      grantedTo: users.testUser1.identityKey,
       allowanceType: AllowanceType.Lock,
       uses: new BigNumber(Infinity)
     }));
@@ -373,15 +373,15 @@ describe("GrantAllowance", () => {
     );
 
     const { ctx, contract, writes } = fixture(GalaChainTokenContract)
-      .callingUser(users.testAdminId)
+      .registeredUsers(users.admin)
       .savedState(currencyClass, currencyInstance);
 
     const dto: GrantAllowanceDto = await createValidDTO(GrantAllowanceDto, {
       tokenInstance: currencyInstanceQueryKey,
-      quantities: [{ user: users.testUser1Id, quantity: new BigNumber(Infinity) }],
+      quantities: [{ user: users.testUser1.identityKey, quantity: new BigNumber(Infinity) }],
       allowanceType: AllowanceType.Mint,
       uses: new BigNumber(Infinity)
-    });
+    }).signed(users.admin.privateKey);
 
     const response = await contract.GrantAllowance(ctx, dto);
 

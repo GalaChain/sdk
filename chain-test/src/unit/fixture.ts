@@ -74,7 +74,7 @@ type TestGalaChainContext = Context & {
   get callingUserEthAddress(): string;
   get callingUserRoles(): string[];
   get callingUserTonAddress(): string;
-  setDryRunOnBehalfOf(d: { alias: string; ethAddress: string | undefined }): void;
+  setDryRunOnBehalfOf(d: { alias: string; ethAddress?: string; tonAddress?: string; roles: string[] }): void;
   isDryRun: boolean;
   get txUnixTime(): number;
   setChaincodeStub(stub: ChaincodeStub): void;

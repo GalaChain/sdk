@@ -22,7 +22,6 @@ import {
   NotImplementedError,
   Primitive,
   RuntimeError,
-  UnauthorizedError,
   UserRole,
   generateResponseSchema,
   generateSchema,
@@ -36,7 +35,7 @@ import { GalaChainContext } from "../types";
 import { GalaContract } from "./GalaContract";
 import { updateApi } from "./GalaContractApi";
 import { authenticate } from "./authenticate";
-import { authorize, ensureOrganizationIsAllowed } from "./authorize";
+import { authorize } from "./authorize";
 import { legacyClientAccountId } from "./legacyClientAccountId";
 
 // All DTOs need to be registered in the application, including super classes. Otherwise, chaincode

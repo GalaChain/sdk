@@ -22,14 +22,11 @@ import {
   RegisterUserDto,
   SigningScheme,
   UpdatePublicKeyDto,
-  UserProfile,
   UserRole,
   createValidDTO,
-  signatures
+  signatures, UserProfile
 } from "@gala-chain/api";
 import { fixture, transactionErrorMessageContains, transactionSuccess } from "@gala-chain/test";
-import { classToPlain, instanceToInstance, plainToClass } from "class-transformer";
-import { randomUUID } from "crypto";
 
 import TestChaincode from "../__test__/TestChaincode";
 import { PublicKeyService } from "../services";
@@ -568,7 +565,8 @@ describe("GetMyProfile", () => {
     expect(resp1).toEqual(
       transactionSuccess({
         alias: user.alias,
-        tonAddress: user.tonAddress
+        tonAddress: user.tonAddress,
+        roles: UserProfile.DEFAULT_ROLES
       })
     );
     expect(resp2).toEqual(resp1);

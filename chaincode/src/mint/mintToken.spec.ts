@@ -21,7 +21,6 @@ import {
   TokenClaim,
   TokenClass,
   TokenInstance,
-  TokenInstanceKey,
   TokenMintFulfillment,
   TokenMintRequest,
   TokenMintStatus,
@@ -31,7 +30,6 @@ import {
 } from "@gala-chain/api";
 import { currency, fixture, nft, users, writesMap } from "@gala-chain/test";
 import BigNumber from "bignumber.js";
-import { plainToInstance } from "class-transformer";
 
 import GalaChainTokenContract from "../__test__/GalaChainTokenContract";
 import { TotalSupplyExceededError } from "../allowances/AllowanceError";

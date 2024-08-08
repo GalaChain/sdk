@@ -23,7 +23,7 @@ export interface ChainUserWithRoles {
   roles: string[] | undefined;
 }
 
-function user(string: string, roles: string[]): ChainUserWithRoles {
+function user(string: string, roles: string[]): ChainUserWithRoles & { roles: string[] } {
   const user = ChainUser.withRandomKeys(string);
   return {
     identityKey: user.identityKey,

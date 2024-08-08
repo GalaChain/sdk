@@ -21,7 +21,6 @@ import {
   createValidDTO
 } from "@gala-chain/api";
 import { BigNumber } from "bignumber.js";
-import { plainToInstance } from "class-transformer";
 
 import { grantAllowance } from "../allowances";
 import { GalaChainContext } from "../types/GalaChainContext";

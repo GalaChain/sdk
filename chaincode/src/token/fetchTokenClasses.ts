@@ -20,7 +20,6 @@ import {
   TokenInstanceKey,
   createValidDTO
 } from "@gala-chain/api";
-import { plainToInstance } from "class-transformer";
 
 import { GalaChainContext } from "../types";
 import { getObjectByKey, getObjectsByPartialCompositeKeyWithPagination, takeUntilUndefined } from "../utils";

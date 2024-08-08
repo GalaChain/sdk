@@ -18,6 +18,7 @@ import {
   GetMyProfileDto,
   GetPublicKeyDto,
   NotFoundError,
+  NotImplementedError,
   PublicKey,
   RegisterEthUserDto,
   RegisterTonUserDto,

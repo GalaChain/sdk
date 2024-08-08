@@ -12,8 +12,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-import { ChainCallDTO, GalaChainResponse, UserProfile, UserRole } from "@gala-chain/api";
-import { EVALUATE, GalaChainContext, SUBMIT } from "@gala-chain/chaincode";
+import { ChainCallDTO, UserProfile, UserRole } from "@gala-chain/api";
 import { ChainUser } from "@gala-chain/client";
 import {
   fixture,
@@ -22,8 +21,9 @@ import {
   transactionSuccess
 } from "@gala-chain/test";
 
+import { GalaChainContext } from "../types";
 import { GalaContract } from "./GalaContract";
-import { GalaTransaction, GalaTransactionType } from "./GalaTransaction";
+import { EVALUATE, GalaTransaction, GalaTransactionType, SUBMIT } from "./GalaTransaction";
 
 describe("authorization", () => {
   type TestParams = [
@@ -203,10 +203,10 @@ describe("authorization", () => {
       roles: []
     };
 
-    const expectedUser = {
-      alias: customUser.alias,
-      roles: []
-    };
+    // const expectedUser = {
+    //   alias: customUser.alias,
+    //   roles: []
+    // };
 
     // When
     const f1 = authFixture(["Evaluate", "no org constraint", "no roles constraint"], customUser);

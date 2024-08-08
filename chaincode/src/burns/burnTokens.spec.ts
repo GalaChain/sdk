@@ -21,12 +21,11 @@ import {
   TokenBurnCounter,
   TokenClaim,
   createValidChainObject,
-  createValidDTO,
-  createValidRangedChainObject
+  createValidDTO
 } from "@gala-chain/api";
 import { currency, fixture, nft, users, writesMap } from "@gala-chain/test";
 import BigNumber from "bignumber.js";
-import { instanceToPlain, plainToInstance } from "class-transformer";
+import { plainToInstance } from "class-transformer";
 
 import GalaChainTokenContract from "../__test__/GalaChainTokenContract";
 import { InvalidDecimalError } from "../token";
@@ -186,14 +185,14 @@ describe("BurnTokens", () => {
     delete tokenBurnAllowance.quantitySpent;
 
     const { ctx, contract, writes } = fixture(GalaChainTokenContract)
-      .callingUser(users.testUser2Id)
+      .registeredUsers(users.testUser2)
       .savedState(currencyClass, currencyInstance, tokenBurnAllowance, tokenBalance)
       .savedRangeState([]);
 
     const dto = await createValidDTO(BurnTokensDto, {
       tokenInstances: [{ tokenInstanceKey: currencyInstanceKey, quantity: burnQty }],
-      owner: users.testUser1Id
-    });
+      owner: users.testUser1.identityKey
+    }).signed(users.testUser2.privateKey);
 
     const tokenBurn = currency.tokenBurn();
     tokenBurn.created = ctx.txUnixTime;

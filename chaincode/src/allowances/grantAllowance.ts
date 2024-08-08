@@ -29,7 +29,7 @@ import {
   createValidRangedChainObject
 } from "@gala-chain/api";
 import { BigNumber } from "bignumber.js";
-import { classToPlain as instanceToPlain, plainToInstance } from "class-transformer";
+import { instanceToPlain } from "class-transformer";
 
 import { fetchBalances } from "../balances";
 import { fetchKnownBurnCount } from "../burns/fetchBurns";

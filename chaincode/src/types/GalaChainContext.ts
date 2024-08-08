@@ -152,7 +152,12 @@ export class GalaChainContext extends Context {
     this.callingUserTonAddressValue = undefined;
   }
 
-  public setDryRunOnBehalfOf(d: { alias: string; ethAddress?: string; tonAddress?: string; roles: string[] }): void {
+  public setDryRunOnBehalfOf(d: {
+    alias: string;
+    ethAddress?: string;
+    tonAddress?: string;
+    roles: string[];
+  }): void {
     this.callingUserValue = d.alias;
     this.callingUserRolesValue = d.roles ?? [];
     this.callingUserEthAddressValue = d.ethAddress;

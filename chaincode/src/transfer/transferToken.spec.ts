@@ -26,6 +26,7 @@ import {
 } from "@gala-chain/api";
 import { currency, fixture, nft, users, writesMap } from "@gala-chain/test";
 import BigNumber from "bignumber.js";
+import { plainToInstance } from "class-transformer";
 
 import GalaChainTokenContract from "../__test__/GalaChainTokenContract";
 import { AllowanceUsersMismatchError, InsufficientAllowanceError } from "../allowances";
@@ -137,13 +138,13 @@ describe("TransferToken", () => {
     const currencyClass = currency.tokenClass();
     const tokenBalance = currency.tokenBalance((b) => ({
       ...b,
-      owner: users.testUser2Id,
+      owner: users.testUser2.identityKey,
       quantity: new BigNumber("0")
     }));
 
     const transferAllowance = plainToInstance(TokenAllowance, {
-      grantedTo: users.testUser2Id,
-      grantedBy: users.tokenHolder,
+      grantedTo: users.testUser2.identityKey,
+      grantedBy: users.tokenHolder.identityKey,
       ...currencyInstanceKey,
       instance: currencyInstance.instance,
       allowanceType: AllowanceType.Transfer,
@@ -155,21 +156,21 @@ describe("TransferToken", () => {
     const transferAllowanceId = transferAllowance.getCompositeKey();
     const ownerBalance = currency.tokenBalance((b) => ({
       ...b,
-      owner: users.tokenHolder,
+      owner: users.tokenHolder.identityKey,
       quantity: new BigNumber("100000")
     }));
 
     const { ctx, contract, writes } = fixture(GalaChainTokenContract)
-      .callingUser(users.testUser2Id)
+      .registeredUsers(users.tokenHolder)
       .savedState(currencyClass, currencyInstance, tokenBalance, transferAllowance, ownerBalance);
 
     const dto: TransferTokenDto = await createValidDTO(TransferTokenDto, {
-      from: users.tokenHolder,
-      to: users.testUser2Id,
+      from: users.tokenHolder.identityKey,
+      to: users.testUser2.identityKey,
       tokenInstance: currencyInstanceKey,
       quantity: new BigNumber("50000"),
       useAllowances: [transferAllowanceId]
-    });
+    }).signed(users.tokenHolder.privateKey);
 
     const response = await contract.TransferToken(ctx, dto);
 
@@ -177,12 +178,12 @@ describe("TransferToken", () => {
       GalaChainResponse.Success([
         plainToInstance(TokenBalance, {
           ...currency.tokenBalance(),
-          owner: users.tokenHolder,
+          owner: users.tokenHolder.identityKey,
           quantity: new BigNumber("50000")
         }),
         plainToInstance(TokenBalance, {
           ...currency.tokenBalance(),
-          owner: users.testUser2Id,
+          owner: users.testUser2.identityKey,
           quantity: new BigNumber("50000")
         })
       ])
@@ -191,12 +192,12 @@ describe("TransferToken", () => {
       writesMap(
         plainToInstance(TokenBalance, {
           ...currency.tokenBalance(),
-          owner: users.testUser2Id,
+          owner: users.testUser2.identityKey,
           quantity: new BigNumber("50000")
         }),
         plainToInstance(TokenBalance, {
           ...currency.tokenBalance(),
-          owner: users.tokenHolder,
+          owner: users.tokenHolder.identityKey,
           quantity: new BigNumber("50000")
         })
       )
@@ -399,7 +400,7 @@ describe("TransferToken", () => {
     const tokenBalance = currency.tokenBalance((b) => ({ ...b, owner: users.testUser2.identityKey }));
 
     const transferAllowance = await createValidChainObject(TokenAllowance, {
-      grantedTo: "system-user",
+      grantedTo: "TonBridge",
       grantedBy: users.tokenHolder.identityKey,
       ...currencyInstanceKey,
       instance: currencyInstance.instance,
@@ -452,7 +453,7 @@ describe("TransferToken", () => {
     const tokenBalance = currency.tokenBalance((b) => ({ ...b, owner: users.testUser2.identityKey }));
 
     const transferAllowance = await createValidChainObject(TokenAllowance, {
-      grantedTo: "system-user",
+      grantedTo: "EthereumBridge",
       grantedBy: users.tokenHolder.identityKey,
       ...currencyInstanceKey,
       instance: currencyInstance.instance,

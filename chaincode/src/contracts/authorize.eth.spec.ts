@@ -12,7 +12,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-import { ChainCallDTO, RegisterUserDto, createValidDTO, signatures } from "@gala-chain/api";
+import { ChainCallDTO, RegisterUserDto, createValidDTO, signatures, UserProfile } from "@gala-chain/api";
 import { transactionSuccess } from "@gala-chain/test";
 import { instanceToInstance, instanceToPlain, plainToClass } from "class-transformer";
 import { randomUUID } from "crypto";
@@ -58,7 +58,8 @@ const Success = labeled<Expectation>("Success")((response, user) => {
   expect(response).toEqual(
     transactionSuccess({
       alias: user.alias,
-      ethAddress: user.ethAddress
+      ethAddress: user.ethAddress,
+      roles: UserProfile.DEFAULT_ROLES
     })
   );
 });
@@ -76,7 +77,7 @@ test.each([
   [__valid___, signerAdd, ___registered, Error("REDUNDANT_SIGNER_ADDRESS")],
   [__valid___, signerAdd, notRegistered, Error("REDUNDANT_SIGNER_ADDRESS")],
   [__validDER, _________, ___registered, Error("UNAUTHORIZED")], // we don't support legacy here
-  [__validDER, _________, notRegistered, Error("USER_NOT_REGISTERED")],
+  [__validDER, _________, notRegistered, Error("PK_NOT_FOUND")],
   [__validDER, signerKey, ___registered, Success],
   [__validDER, signerKey, notRegistered, Error("USER_NOT_REGISTERED")],
   [__validDER, signerAdd, ___registered, Success],

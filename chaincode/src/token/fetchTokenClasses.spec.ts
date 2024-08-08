@@ -20,7 +20,6 @@ import {
   createValidDTO
 } from "@gala-chain/api";
 import { currency, fixture, nft } from "@gala-chain/test";
-import { plainToInstance } from "class-transformer";
 
 import GalaChainTokenContract from "../__test__/GalaChainTokenContract";
 import { TokenClassNotFoundError } from "./TokenError";

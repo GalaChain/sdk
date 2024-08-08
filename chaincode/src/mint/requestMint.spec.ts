@@ -19,7 +19,6 @@ import {
   MintTokenDto,
   TokenMintRequest,
   TokenMintStatus,
-  createValidChainObject,
   createValidDTO,
   createValidRangedChainObject
 } from "@gala-chain/api";

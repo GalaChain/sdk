@@ -12,7 +12,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-import { ChainCallDTO, SigningScheme, signatures } from "@gala-chain/api";
+import { ChainCallDTO, SigningScheme, signatures, UserProfile } from "@gala-chain/api";
 import { transactionSuccess } from "@gala-chain/test";
 import { instanceToPlain, plainToClass } from "class-transformer";
 
@@ -61,7 +61,8 @@ const Success = labeled<Expectation>("Success")((response, user) => {
   expect(response).toEqual(
     transactionSuccess({
       alias: user.alias,
-      tonAddress: user.tonAddress
+      tonAddress: user.tonAddress,
+      roles: UserProfile.DEFAULT_ROLES
     })
   );
 });
@@ -95,7 +96,6 @@ test.each([
     // Given
     const chaincode = new TestChaincode([PublicKeyContract]);
     const userObj = await createUserFn(chaincode);
-    // chaincode.setCallingUser(userObj.alias);
 
     const dto = new ChainCallDTO();
     dto.signing = SigningScheme.TON;

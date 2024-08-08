@@ -20,7 +20,6 @@ import {
   createValidDTO
 } from "@gala-chain/api";
 import { fixture, nft, users } from "@gala-chain/test";
-import { plainToInstance } from "class-transformer";
 
 import GalaChainTokenContract from "../__test__/GalaChainTokenContract";
 

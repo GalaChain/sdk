@@ -52,7 +52,6 @@ export class UserProfile extends ChainObject {
   @IsNotEmpty()
   @ValidateIf((o) => !o.ethAddress)
   tonAddress?: string;
-  ethAddress: string;
 
   @JSONSchema({
     description: `Roles assigned to the user. Predefined roles are: ${Object.values(UserRole)
