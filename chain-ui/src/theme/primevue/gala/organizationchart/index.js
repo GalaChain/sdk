@@ -32,7 +32,7 @@ export default {
       'py-0 px-3'
     ]
   },
-  node: ({ props, context }) => ({
+  node: ({ context }) => ({
     class: [
       'relative inline-block',
 

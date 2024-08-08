@@ -99,7 +99,7 @@ export default {
       ]
     })
   },
-  buttongroup: ({ props }) => ({
+  buttongroup: () => ({
     class: [
       // Flex
       'flex',

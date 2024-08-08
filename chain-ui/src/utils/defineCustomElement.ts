@@ -28,7 +28,7 @@ import AppContainer from '@/components/AppContainer.vue'
 
 interface IOptions {
   includeStyles?: boolean
-  plugins?: { plugin: Plugin; options: any }[]
+  plugins?: { plugin: Plugin; options: unknown }[]
 }
 
 export const defineCustomElement = <T>(
