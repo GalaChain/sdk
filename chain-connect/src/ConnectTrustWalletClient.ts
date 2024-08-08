@@ -15,7 +15,7 @@
 import { ChainCallDTO, ConstructorArgs, serialize, signatures } from "@gala-chain/api";
 import { BrowserProvider, Eip1193Provider, getAddress } from "ethers";
 
-interface ExtendedEip1193Provider extends Eip1193Provider {
+interface ExtendedEip1193TrustProvider extends Eip1193Provider {
   on(event: "accountsChanged", handler: (accounts: string[]) => void): void;
   providers: Array<any>;
   isTrust?: boolean;
@@ -23,7 +23,7 @@ interface ExtendedEip1193Provider extends Eip1193Provider {
 
 declare global {
   interface Window {
-    ethereum?: ExtendedEip1193Provider;
+    ethereum?: ExtendedEip1193TrustProvider;
   }
 }
 
@@ -59,7 +59,71 @@ class CustomEventEmitter<Events extends Record<string, any>> {
   }
 }
 
-export class GalachainConnectClient extends CustomEventEmitter<MetaMaskEvents> {
+export async function getTrustWalletInjectedProvider({ timeout } = { timeout: 3000 }) {
+  const provider = getTrustWalletFromWindow();
+
+  if (provider) {
+    return provider;
+  }
+
+  return listenForTrustWalletInitialized({ timeout });
+}
+
+async function listenForTrustWalletInitialized({ timeout } = { timeout: 3000 }) {
+  return new Promise((resolve) => {
+    const handleInitialization = () => {
+      resolve(getTrustWalletFromWindow());
+    };
+
+    window.addEventListener("trustwallet#initialized", handleInitialization, {
+      once: true
+    });
+
+    setTimeout(() => {
+      window.removeEventListener("trustwallet#initialized", handleInitialization, false);
+      resolve(null);
+    }, timeout);
+  });
+}
+
+function getTrustWalletFromWindow() {
+  const isTrustWallet = (ethereum: ExtendedEip1193TrustProvider | undefined) => {
+    // Identify if Trust Wallet injected provider is present.
+    const trustWallet = !!ethereum?.isTrust;
+
+    return trustWallet;
+  };
+
+  const injectedProviderExist = typeof window !== "undefined" && typeof window.ethereum !== "undefined";
+
+  // No injected providers exist.
+  if (!injectedProviderExist) {
+    return null;
+  }
+
+  // Trust Wallet was injected into window.ethereum.
+  if (isTrustWallet(window.ethereum)) {
+    return window.ethereum;
+  }
+
+  // Trust Wallet provider might be replaced by another
+  // injected provider, check the providers array.
+  if (window.ethereum?.providers) {
+    // ethereum.providers array is a non-standard way to
+    // preserve multiple injected providers. Eventually, EIP-5749
+    // will become a living standard and we will have to update this.
+    return window.ethereum.providers.find(isTrustWallet) ?? null;
+  }
+
+  // Trust Wallet injected provider is available in the global scope.
+  // There are cases that some cases injected providers can replace window.ethereum
+  // without updating the ethereum.providers array. To prevent issues where
+  // the TW connector does not recognize the provider when TW extension is installed,
+  // we begin our checks by relying on TW's global object.
+  return window["trustwallet"] ?? null;
+}
+
+export class GalachainConnectTrustClient extends CustomEventEmitter<MetaMaskEvents> {
   #ethAddress: string;
   #provider: BrowserProvider | undefined;
   #chainCodeUrl: string;
@@ -83,19 +147,13 @@ export class GalachainConnectClient extends CustomEventEmitter<MetaMaskEvents> {
   constructor(chainCodeUrl: string) {
     super();
     this.#chainCodeUrl = chainCodeUrl;
-
-    if (window.ethereum) {
-      this.#provider = new BrowserProvider(window.ethereum);
-    } else {
-      throw new Error("Ethereum provider not found");
-    }
   }
 
   private initializeListeners(): void {
-    if (!window.ethereum) {
+    if (!this.#provider) {
       return;
     }
-    window.ethereum.on("accountsChanged", (accounts: string[]) => {
+    this.#provider.addListener("accountsChanged", (accounts: string[]) => {
       if (accounts.length > 0) {
         this.ethAddress = getAddress(accounts[0]);
         this.emit("accountChanged", this.galachainAddress);
@@ -108,7 +166,8 @@ export class GalachainConnectClient extends CustomEventEmitter<MetaMaskEvents> {
     });
   }
 
-  public async connectToMetaMask() {
+  public async connectToTrust() {
+    this.#provider = await getTrustWalletInjectedProvider();
     if (!this.#provider) {
       throw new Error("Ethereum provider not found");
     }
@@ -118,7 +177,10 @@ export class GalachainConnectClient extends CustomEventEmitter<MetaMaskEvents> {
       const accounts = (await this.#provider.send("eth_requestAccounts", [])) as string[];
       this.ethAddress = getAddress(accounts[0]);
       return this.galachainAddress;
-    } catch (error: unknown) {
+    } catch (error: any) {
+      if (error.code === 4001) {
+        console.error("User denied connection.");
+      }
       throw new Error((error as Error).message);
     }
   }
