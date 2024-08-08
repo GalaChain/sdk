@@ -13,25 +13,18 @@
  * limitations under the License.
  */
 import BN from "bn.js";
-import { classToPlain as instanceToPlain } from "class-transformer";
 import { ec as EC, ec } from "elliptic";
 import Signature from "elliptic/lib/elliptic/ec/signature";
 import { keccak256 } from "js-sha3";
 
-import { ValidationFailedError } from "./error";
-import serialize from "./serialize";
+import { ValidationFailedError } from "../error";
+import { getPayloadToSign } from "./getPayloadToSign";
 
 class InvalidKeyError extends ValidationFailedError {}
 
 export class InvalidSignatureFormatError extends ValidationFailedError {}
 
 class InvalidDataHashError extends ValidationFailedError {}
-
-function getPayloadToSign(obj: object): string {
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  const { signature, trace, ...plain } = instanceToPlain(obj);
-  return serialize(plain);
-}
 
 const secpPrivKeyLength = {
   secpBase64: 44,
@@ -207,7 +200,7 @@ function normalizeEthAddress(address: string): string {
   throw new ValidationFailedError(`Invalid checksum for eth address provided: ${address}`);
 }
 
-interface Secp256k1Signature {
+export interface Secp256k1Signature {
   r: BN;
   s: BN;
   recoveryParam: number | undefined;
@@ -329,7 +322,7 @@ function validateSecp256k1PublicKey(publicKey: Buffer): ec.KeyPair {
   try {
     return ecSecp256k1.keyFromPublic(publicKey);
   } catch (e) {
-    throw new InvalidKeyError(`Public Key seems to be invalid. Error: ${e?.message ?? e}`);
+    throw new InvalidKeyError(`Public key seems to be invalid. Error: ${e?.message ?? e}`);
   }
 }
 
@@ -428,13 +421,20 @@ function isValidBase64(input: string) {
   return /^(?:[A-Za-z0-9+/]{4})*(?:[A-Za-z0-9+/]{2}==|[A-Za-z0-9+/]{3}=)?$/.test(input);
 }
 
+function genKeyPair() {
+  const pair = ecSecp256k1.genKeyPair();
+  const privateKey = pair.getPrivate().toString("hex");
+  const publicKey = Buffer.from(pair.getPublic().encode("array", false)).toString("hex");
+  return { privateKey, publicKey };
+}
+
 export default {
   calculateKeccak256,
   enforceValidPublicKey,
+  genKeyPair,
   getCompactBase64PublicKey,
   getNonCompactHexPublicKey,
   getEthAddress,
-  getPayloadToSign,
   getPublicKey,
   getSignature,
   getDERSignature,

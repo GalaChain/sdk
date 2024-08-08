@@ -15,8 +15,10 @@
 import {
   ChainCallDTO,
   ChainObject,
+  GalaChainResponse,
   PK_INDEX_KEY,
   PublicKey,
+  SigningScheme,
   UP_INDEX_KEY,
   UnauthorizedError,
   UserProfile,
@@ -26,14 +28,20 @@ import {
 import { Context } from "fabric-contract-api";
 
 import { GalaChainContext } from "../types";
-import { PkInvalidSignatureError, PkMissingError } from "./PublicKeyError";
+import {
+  PkInvalidSignatureError,
+  PkMismatchError,
+  PkMissingError,
+  PkNotFoundError,
+  ProfileExistsError
+} from "./PublicKeyError";
 
 export class PublicKeyService {
   private static PK_INDEX_KEY = PK_INDEX_KEY;
   private static UP_INDEX_KEY = UP_INDEX_KEY;
 
-  private static getPublicKeyKey(ctx: Context, userId: string): string {
-    return ctx.stub.createCompositeKey(PublicKeyService.PK_INDEX_KEY, [userId]);
+  private static getPublicKeyKey(ctx: Context, userAlias: string): string {
+    return ctx.stub.createCompositeKey(PublicKeyService.PK_INDEX_KEY, [userAlias]);
   }
 
   private static getUserProfileKey(ctx: Context, ethAddress: string): string {
@@ -42,23 +50,37 @@ export class PublicKeyService {
 
   public static normalizePublicKey = normalizePublicKey;
 
-  public static async putPublicKey(ctx: GalaChainContext, publicKey: string, userId?: string): Promise<void> {
-    const key = PublicKeyService.getPublicKeyKey(ctx, userId || ctx.callingUser);
+  public static async putPublicKey(
+    ctx: GalaChainContext,
+    publicKey: string,
+    userAlias: string,
+    signing: SigningScheme
+  ): Promise<void> {
+    const key = PublicKeyService.getPublicKeyKey(ctx, userAlias);
     const obj = new PublicKey();
-    obj.publicKey = PublicKeyService.normalizePublicKey(publicKey);
+    obj.publicKey =
+      signing !== SigningScheme.TON ? PublicKeyService.normalizePublicKey(publicKey) : publicKey;
+    obj.signing = signing;
     const data = Buffer.from(obj.serialize());
     await ctx.stub.putState(key, data);
   }
 
   public static async putUserProfile(
     ctx: GalaChainContext,
-    ethAddress: string,
-    userAlias: string
+    address: string,
+    userAlias: string,
+    signing: SigningScheme
   ): Promise<void> {
-    const key = PublicKeyService.getUserProfileKey(ctx, ethAddress);
+    const key = PublicKeyService.getUserProfileKey(ctx, address);
     const obj = new UserProfile();
-    obj.ethAddress = ethAddress;
     obj.alias = userAlias;
+
+    if (signing === SigningScheme.TON) {
+      obj.tonAddress = address;
+    } else {
+      obj.ethAddress = address;
+    }
+
     const data = Buffer.from(obj.serialize());
     await ctx.stub.putState(key, data);
   }
@@ -68,8 +90,14 @@ export class PublicKeyService {
     await ctx.stub.deleteState(key);
   }
 
-  public static async getUserProfile(ctx: Context, ethAddress: string): Promise<UserProfile | undefined> {
-    const key = PublicKeyService.getUserProfileKey(ctx, ethAddress);
+  public static getUserAddress(publicKey: string, signing: SigningScheme): string {
+    return signing === SigningScheme.TON
+      ? signatures.ton.getTonAddress(Buffer.from(publicKey, "base64"))
+      : signatures.getEthAddress(signatures.getNonCompactHexPublicKey(publicKey));
+  }
+
+  public static async getUserProfile(ctx: Context, address: string): Promise<UserProfile | undefined> {
+    const key = PublicKeyService.getUserProfileKey(ctx, address);
     const data = await ctx.stub.getState(key);
 
     if (data.length > 0) {
@@ -83,7 +111,7 @@ export class PublicKeyService {
       const nonCompactPK = signatures.getNonCompactHexPublicKey(process.env.DEV_ADMIN_PUBLIC_KEY);
       const adminEthAddress = signatures.getEthAddress(nonCompactPK);
 
-      if (adminEthAddress === ethAddress) {
+      if (adminEthAddress === address) {
         const message =
           `User Profile is not saved on chain for user ${adminEthAddress}. ` +
           `But env variable DEV_ADMIN_PUBLIC_KEY is set for the user. ` +
@@ -113,6 +141,7 @@ export class PublicKeyService {
 
     if (data.length > 0) {
       const publicKey = ChainObject.deserialize<PublicKey>(PublicKey, data.toString());
+      publicKey.signing = publicKey.signing ?? SigningScheme.ETH;
 
       return publicKey;
     }
@@ -126,6 +155,7 @@ export class PublicKeyService {
 
       const pk = new PublicKey();
       pk.publicKey = process.env.DEV_ADMIN_PUBLIC_KEY;
+      pk.signing = SigningScheme.ETH;
       return pk;
     }
 
@@ -153,5 +183,66 @@ export class PublicKeyService {
     }
 
     return pk;
+  }
+
+  public static async registerUser(
+    ctx: GalaChainContext,
+    providedPkHex: string,
+    ethAddress: string,
+    userAlias: string,
+    signing: SigningScheme
+  ): Promise<GalaChainResponse<string>> {
+    const currPublicKey = await PublicKeyService.getPublicKey(ctx, userAlias);
+
+    // If we are migrating a legacy user to new flow, the public key should match
+    if (currPublicKey !== undefined) {
+      const nonCompactCurrPubKey = signatures.getNonCompactHexPublicKey(currPublicKey.publicKey);
+      if (nonCompactCurrPubKey !== providedPkHex) {
+        throw new PkMismatchError(userAlias);
+      }
+    }
+
+    // If User Profile already exists on chain for this ethereum address, we should not allow registering the same user again
+    const existingUserProfile = await PublicKeyService.getUserProfile(ctx, ethAddress);
+    if (existingUserProfile !== undefined) {
+      throw new ProfileExistsError(ethAddress, existingUserProfile.alias);
+    }
+
+    // supports legacy flow (required for backwards compatibility)
+    await PublicKeyService.putPublicKey(ctx, providedPkHex, userAlias, signing);
+
+    // for the new flow, we need to store the user profile separately
+    await PublicKeyService.putUserProfile(ctx, ethAddress, userAlias, signing);
+
+    return GalaChainResponse.Success(userAlias);
+  }
+
+  public static async updatePublicKey(
+    ctx: GalaChainContext,
+    newPkHex: string,
+    newAddress: string,
+    signing: SigningScheme
+  ): Promise<void> {
+    const userAlias = ctx.callingUser;
+
+    // fetch old public key for finding old user profile
+    const oldPublicKey = await PublicKeyService.getPublicKey(ctx, ctx.callingUser);
+    if (oldPublicKey === undefined) {
+      throw new PkNotFoundError(userAlias);
+    }
+
+    // need to fetch userProfile from old address
+    const oldAddress = PublicKeyService.getUserAddress(oldPublicKey.publicKey, signing);
+    const userProfile = await PublicKeyService.getUserProfile(ctx, oldAddress);
+
+    // Note: we don't throw an error if userProfile is undefined in order to support legacy users with unsaved profiles
+    if (userProfile !== undefined) {
+      // remove old user profile
+      await PublicKeyService.deleteUserProfile(ctx, oldAddress);
+    }
+
+    // update Public Key, and add user profile under new eth address
+    await PublicKeyService.putPublicKey(ctx, newPkHex, userAlias, signing);
+    await PublicKeyService.putUserProfile(ctx, newAddress, userAlias, signing);
   }
 }

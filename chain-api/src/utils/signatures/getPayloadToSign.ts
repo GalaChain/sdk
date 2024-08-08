@@ -12,24 +12,12 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-import { IsNotEmpty, IsOptional, IsString } from "class-validator";
+import { instanceToPlain } from "class-transformer";
 
-import { SigningScheme, signatures } from "../utils";
-import { StringEnumProperty } from "../validators";
-import { ChainObject } from "./ChainObject";
+import serialize from "../serialize";
 
-export class PublicKey extends ChainObject {
-  @IsString()
-  @IsNotEmpty()
-  publicKey: string;
-
-  @IsOptional()
-  @StringEnumProperty(SigningScheme)
-  public signing?: SigningScheme;
-}
-
-export const PK_INDEX_KEY = "GCPK";
-
-export function normalizePublicKey(input: string): string {
-  return signatures.normalizePublicKey(input).toString("base64");
+export function getPayloadToSign(obj: object): string {
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  const { signature, trace, ...plain } = instanceToPlain(obj);
+  return serialize(plain);
 }
