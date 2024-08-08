@@ -12,8 +12,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-import { deserialize } from "../utils";
-import { ChainError, ErrorCode } from "../utils/error";
+import { ChainError, ErrorCode, deserialize } from "../utils";
 import { ClassConstructor, Inferred } from "./dtos";
 
 export const GC_NETWORK_ID = "GC";

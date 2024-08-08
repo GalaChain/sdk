@@ -20,10 +20,11 @@ import {
   ConstructorArgs,
   ValidationFailedError,
   deserialize,
-  getValidationErrorInfo,
+  getValidationErrorMessages,
   serialize,
   signatures
 } from "../utils";
+import { IsUserAlias } from "../validators";
 import { GalaChainResponse } from "./contract";
 
 type Base<T, BaseT> = T extends BaseT ? T : never;
@@ -37,8 +38,10 @@ export interface ClassConstructor<T> {
 }
 
 class DtoValidationFailedError extends ValidationFailedError {
-  constructor({ message, details }: { message: string; details: string[] }) {
-    super(message, details);
+  constructor(errors: ValidationError[]) {
+    const messages = getValidationErrorMessages(errors);
+    const messagesString = messages.map((s, i) => `(${i + 1}) ${s}`).join(", ");
+    super(`DTO validation failed: ${messagesString}`, messages);
   }
 }
 
@@ -46,7 +49,7 @@ export const validateDTO = async <T extends ChainCallDTO>(dto: T): Promise<T> =>
   const validationErrors = await dto.validate();
 
   if (validationErrors.length) {
-    throw new DtoValidationFailedError(getValidationErrorInfo(validationErrors));
+    throw new DtoValidationFailedError(validationErrors);
   } else {
     return dto;
   }
@@ -167,7 +170,7 @@ export class ChainCallDTO {
     const validationErrors = await this.validate();
 
     if (validationErrors.length) {
-      throw new DtoValidationFailedError(getValidationErrorInfo(validationErrors));
+      throw new DtoValidationFailedError(validationErrors);
     }
   }
 
@@ -248,15 +251,10 @@ const publicKeyDescription =
   description: `Dto for secure method to save public keys for legacy users. Method is called and signed by Curators`
 })
 export class RegisterUserDto extends ChainCallDTO {
-  constructor(params?: RegisterUserParams) {
-    super();
-    Object.assign(this, params);
-  }
-
   @JSONSchema({
     description: `Id of user to save public key for.`
   })
-  @IsNotEmpty()
+  @IsUserAlias()
   user: string;
 
   @JSONSchema({ description: publicKeyDescription })
@@ -270,11 +268,6 @@ export type RegisterEthUserParams = ConstructorArgs<RegisterEthUserDto>;
   description: `Dto for secure method to save public keys for Eth users. Method is called and signed by Curators`
 })
 export class RegisterEthUserDto extends ChainCallDTO {
-  constructor(params?: RegisterEthUserParams) {
-    super();
-    Object.assign(this, params);
-  }
-
   @JSONSchema({ description: publicKeyDescription })
   @IsNotEmpty()
   publicKey: string;
@@ -283,11 +276,6 @@ export class RegisterEthUserDto extends ChainCallDTO {
 export type UpdatePublicKeyParams = ConstructorArgs<UpdatePublicKeyDto>;
 
 export class UpdatePublicKeyDto extends ChainCallDTO {
-  constructor(params?: UpdatePublicKeyParams) {
-    super();
-    Object.assign(this, params);
-  }
-
   @JSONSchema({ description: publicKeyDescription })
   @IsNotEmpty()
   publicKey: string;
@@ -298,16 +286,12 @@ export class GetPublicKeyDto extends ChainCallDTO {
     description: `Id of a public key holder. Optional field, by default caller's public key is returned.`
   })
   @IsOptional()
+  @IsUserAlias()
   user?: string;
 }
 
 export type GetMyProfileParams = ConstructorArgs<GetMyProfileDto>;
 export class GetMyProfileDto extends ChainCallDTO {
-  constructor(params?: GetMyProfileParams) {
-    super();
-    Object.assign(this, params);
-  }
-
   // make signature required
   @IsNotEmpty()
   signature: string;

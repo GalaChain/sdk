@@ -27,15 +27,14 @@ import {
 } from "class-validator";
 import { JSONSchema } from "class-validator-jsonschema";
 
+import { ChainKey, ConstructorArgs, ValidationFailedError } from "../utils";
 import {
   BigNumberArrayProperty,
+  BigNumberIsNotNegative,
+  BigNumberIsPositive,
   BigNumberProperty,
-  ChainKey,
-  ConstructorArgs,
-  ValidationFailedError,
-  getValidationErrorInfo
-} from "../utils";
-import { BigNumberIsNotNegative, BigNumberIsPositive } from "../validators";
+  IsUserAlias
+} from "../validators";
 import { ChainObject, ObjectValidationFailedError } from "./ChainObject";
 import { TokenClassKey, TokenClassKeyProperties } from "./TokenClass";
 import { TokenInstance, TokenInstanceKey } from "./TokenInstance";
@@ -104,7 +103,7 @@ export class TokenBalance extends ChainObject {
   public static readonly INDEX_KEY = "GCTB";
 
   @ChainKey({ position: 0 })
-  @IsNotEmpty()
+  @IsUserAlias()
   public readonly owner: string;
 
   @ChainKey({ position: 1 })
@@ -559,7 +558,7 @@ export class TokenBalance extends ChainObject {
 export class TokenHold {
   public static readonly DEFAULT_EXPIRES = 0;
 
-  @IsNotEmpty()
+  @IsUserAlias()
   public readonly createdBy: string;
 
   @IsNotEmpty()
@@ -589,8 +588,8 @@ export class TokenHold {
       "If the value is missing, then token owner and lock creator can unlock " +
       "in all cases token authority can unlock token."
   })
-  @IsNotEmpty()
   @IsOptional()
+  @IsUserAlias()
   lockAuthority?: string;
 
   public constructor(params?: {
@@ -630,7 +629,7 @@ export class TokenHold {
 
     const errors = await validate(hold);
     if (errors.length > 0) {
-      throw new ObjectValidationFailedError(getValidationErrorInfo(errors));
+      throw new ObjectValidationFailedError(errors);
     }
 
     return hold;

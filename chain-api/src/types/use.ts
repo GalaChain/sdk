@@ -17,10 +17,10 @@ import { Type } from "class-transformer";
 import { ArrayNotEmpty, IsNotEmpty, IsOptional, IsString, ValidateNested } from "class-validator";
 import { JSONSchema } from "class-validator-jsonschema";
 
-import { TokenInstance, TokenInstanceKey } from "../types/TokenInstance";
-import { ChainCallDTO } from "../types/dtos";
-import { BigNumberProperty, ConstructorArgs } from "../utils";
-import { BigNumberIsNotNegative } from "../validators";
+import { ConstructorArgs } from "../utils";
+import { BigNumberIsNotNegative, BigNumberProperty, IsUserAlias } from "../validators";
+import { TokenInstance, TokenInstanceKey } from "./TokenInstance";
+import { ChainCallDTO } from "./dtos";
 
 export type ReleaseTokenParams = ConstructorArgs<ReleaseTokenDto>;
 
@@ -28,11 +28,6 @@ export type ReleaseTokenParams = ConstructorArgs<ReleaseTokenDto>;
   description: "Describes an action to release a token that is in use."
 })
 export class ReleaseTokenDto extends ChainCallDTO {
-  constructor(params?: ReleaseTokenParams) {
-    super();
-    Object.assign(this, params);
-  }
-
   @JSONSchema({
     description: "Token instance of token to be released."
   })
@@ -48,22 +43,17 @@ export type UseTokenParams = ConstructorArgs<UseTokenDto>;
   description: "Describes an action to use a token."
 })
 export class UseTokenDto extends ChainCallDTO {
-  constructor(params?: UseTokenParams) {
-    super();
-    Object.assign(this, params);
-  }
-
   @JSONSchema({
     description: "The current owner of tokens. If the value is missing, chaincode caller is used."
   })
   @IsOptional()
-  @IsNotEmpty()
+  @IsUserAlias()
   owner?: string;
 
   @JSONSchema({
     description: "The user who is going to use token."
   })
-  @IsNotEmpty()
+  @IsUserAlias()
   inUseBy: string;
 
   @JSONSchema({
