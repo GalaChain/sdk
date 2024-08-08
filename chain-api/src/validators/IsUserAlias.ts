@@ -49,7 +49,7 @@ function validateUserAlias(value: unknown): UserRefValidationResult {
   const parts = value.split("|");
 
   if (parts.length === 1) {
-    if (parts[0] === "EthereumBridge" || /^GalaChainBridge-\d+$/.test(parts[0])) {
+    if (parts[0] === "EthereumBridge" || parts[0] === "TonBridge" || /^GalaChainBridge-\d+$/.test(parts[0])) {
       return UserRefValidationResult.VALID_SYSTEM_USER;
     } else {
       return UserRefValidationResult.INVALID_FORMAT;
