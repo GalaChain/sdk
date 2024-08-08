@@ -20,14 +20,16 @@ import {
   ChainKeyMetadata,
   ValidationFailedError,
   deserialize,
-  getValidationErrorInfo,
+  getValidationErrorMessages,
   serialize
 } from "../utils";
 import { ClassConstructor, Inferred } from "./dtos";
 
 export class ObjectValidationFailedError extends ValidationFailedError {
-  constructor({ message, details }: { message: string; details?: string[] }) {
-    super(message, details);
+  constructor(errors: ValidationError[]) {
+    const messages = getValidationErrorMessages(errors);
+    const messagesString = messages.map((s, i) => `(${i + 1}) ${s}`).join(", ");
+    super(`Object validation failed: ${messagesString}`, messages);
   }
 }
 
@@ -59,7 +61,7 @@ export abstract class ChainObject {
     const validationErrors = await this.validate();
 
     if (validationErrors.length) {
-      throw new ObjectValidationFailedError(getValidationErrorInfo(validationErrors));
+      throw new ObjectValidationFailedError(validationErrors);
     }
   }
 

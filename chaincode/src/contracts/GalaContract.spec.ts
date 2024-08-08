@@ -23,7 +23,7 @@ import {
   createValidChainObject,
   createValidDTO
 } from "@gala-chain/api";
-import { transactionError, transactionSuccess, users } from "@gala-chain/test";
+import { transactionError, transactionSuccess } from "@gala-chain/test";
 import { instanceToPlain } from "class-transformer";
 import { Context } from "fabric-contract-api";
 import { inspect } from "util";
@@ -349,7 +349,7 @@ describe("GalaContract.DryRun", () => {
           ErrorCode: 400,
           ErrorKey: "DTO_VALIDATION_FAILED",
           ErrorPayload: ["isPositive: age must be a positive number"],
-          Message: "Property 'age' of SuperheroDto has failed the following constraints: isPositive"
+          Message: "DTO validation failed: (1) isPositive: age must be a positive number"
         },
         reads: {},
         writes: {},

@@ -14,7 +14,8 @@
  */
 import BigNumber from "bignumber.js";
 
-import { BigNumberProperty, NotFoundError } from "../utils";
+import { NotFoundError } from "../utils";
+import { BigNumberProperty } from "../validators";
 import { ChainObject } from "./ChainObject";
 import { GalaChainResponse } from "./contract";
 

@@ -37,6 +37,8 @@ const packages = [
   "./chain-client",
   "./chain-connect",
   "./chain-test",
+  "./chain-ui/packages/galachain-ui",
+  "./chain-ui/packages/galachain-ui-vue",
   "./chaincode"
 ].map((p) => {
   const packageJsonPath = require.resolve(`${p}/package.json`);
@@ -50,8 +52,8 @@ if (optionalVersion) {
   console.log("Applying version from command line:", optionalVersion);
 
   // just a sanity check
-  if (!optionalVersion.startsWith("1.2.")) {
-    console.error("Version must start with '1.2.'");
+  if (!optionalVersion.startsWith("1.3.")) {
+    console.error("Version must start with '1.3.'");
     process.exit(1);
   }
   packages.forEach(({ packageJson, packageJsonPath }) => {

@@ -31,7 +31,7 @@ import {
 import { BigNumber } from "bignumber.js";
 import { classToPlain as instanceToPlain, plainToInstance } from "class-transformer";
 
-import { fetchBalances, fetchOrCreateBalance } from "../balances";
+import { fetchBalances } from "../balances";
 import { fetchKnownBurnCount } from "../burns/fetchBurns";
 import { fetchMintAllowanceSupply } from "../mint/fetchMintAllowanceSupply";
 import { fetchTokenInstance } from "../token";
@@ -53,7 +53,6 @@ import {
   DuplicateAllowanceError,
   DuplicateUserError,
   GrantAllowanceFailedError,
-  InsufficientTokenBalanceError,
   InvalidTokenOwnerError,
   MintCapacityExceededError,
   TotalSupplyExceededError
@@ -318,15 +317,18 @@ async function putAllowancesOnChain(
       additionalKey: instanceKey.additionalKey,
       instance: instanceKey.instance,
       quantity: quantities[index].quantity,
-      uses,
+      uses: quantities[index].quantity.isFinite() ? uses : new BigNumber(Infinity),
       expires,
-      quantitySpent: new BigNumber(0),
-      usesSpent: new BigNumber(0),
       allowanceType: allowanceType,
       grantedBy: ctx.callingUser,
       created: ctx.txUnixTime,
       grantedTo
     });
+
+    if (quantities[index].quantity.isFinite()) {
+      newAllowance.quantitySpent = new BigNumber(0);
+      newAllowance.usesSpent = new BigNumber(0);
+    }
 
     if (allowanceType !== AllowanceType.Mint) {
       // Validate instance
@@ -532,21 +534,6 @@ export async function grantAllowance(
           tokenInstance.owner
         );
       }
-    } else {
-      const instanceClassKey = await TokenClass.buildClassKeyObject(tokenInstance);
-      const callingUserBalance = await fetchOrCreateBalance(ctx, ctx.callingUser, instanceClassKey);
-
-      // for fungible tokens, we need to check the balance and quantities
-      if (callingUserBalance.getSpendableQuantityTotal(ctx.txUnixTime).isLessThan(totalQuantity)) {
-        throw new InsufficientTokenBalanceError(
-          ctx.callingUser,
-          instanceKey.toStringKey(),
-          AllowanceType[allowanceType],
-          callingUserBalance.getQuantityTotal(),
-          totalQuantity,
-          callingUserBalance.getLockedQuantityTotal(ctx.txUnixTime)
-        );
-      }
     }
 
     return putAllowancesOnChain(ctx, { allowanceType, quantities, uses, expires }, instanceKey, tokenClass);
@@ -589,9 +576,13 @@ export function allowanceIsUseable(ctx: GalaChainContext, tokenAllowance: TokenA
     return false;
   }
 
+  if (tokenAllowance.usesSpent === undefined && tokenAllowance.quantitySpent === undefined) {
+    return true;
+  }
+
   if (
-    tokenAllowance.usesSpent.isGreaterThanOrEqualTo(tokenAllowance.uses) ||
-    tokenAllowance.quantitySpent.isGreaterThanOrEqualTo(tokenAllowance.quantity)
+    tokenAllowance.usesSpent?.isGreaterThanOrEqualTo(tokenAllowance.uses) ||
+    tokenAllowance.quantitySpent?.isGreaterThanOrEqualTo(tokenAllowance.quantity)
   ) {
     return false;
   }

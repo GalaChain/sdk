@@ -12,10 +12,11 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-import { ArrayMinSize, IsNotEmpty, IsString } from "class-validator";
+import { ArrayMinSize, IsNotEmpty, IsString, ValidateIf } from "class-validator";
 import { JSONSchema } from "class-validator-jsonschema";
 
 import { ConstructorArgs } from "../utils";
+import { IsUserAlias } from "../validators";
 import { ChainObject } from "./ChainObject";
 
 export enum UserRole {
@@ -31,15 +32,26 @@ export class UserProfile extends ChainObject {
   static DEFAULT_ROLES = [UserRole.EVALUATE, UserRole.SUBMIT] as const;
 
   @JSONSchema({
-    description: `Legacy caller id from user name or identifier derived from ethAddress for new users.`
+    description:
+      "A unique identifier of the user. " +
+      "It may have the following format: client|<id>, eth|<checksumed-eth-addr>, or ton|<ton-bounceable-addr>."
   })
-  @IsNotEmpty()
+  @IsUserAlias()
   alias: string;
 
   @JSONSchema({
     description: `Eth address of the user.`
   })
   @IsNotEmpty()
+  @ValidateIf((o) => !o.tonAddress)
+  ethAddress?: string;
+
+  @JSONSchema({
+    description: `TON address of the user.`
+  })
+  @IsNotEmpty()
+  @ValidateIf((o) => !o.ethAddress)
+  tonAddress?: string;
   ethAddress: string;
 
   @JSONSchema({

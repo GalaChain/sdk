@@ -14,16 +14,15 @@
  */
 import {
   ChainCallDTO,
-  ChainError,
-  ErrorCode,
   GalaChainResponse,
   GetMyProfileDto,
   GetPublicKeyDto,
   NotFoundError,
-  NotImplementedError,
   PublicKey,
   RegisterEthUserDto,
+  RegisterTonUserDto,
   RegisterUserDto,
+  SigningScheme,
   UpdatePublicKeyDto,
   UserProfile,
   UserRole,
@@ -33,10 +32,10 @@ import {
 import { Info } from "fabric-contract-api";
 
 import { PublicKeyService } from "../services";
-import { PkMismatchError, PkNotFoundError, ProfileExistsError } from "../services/PublicKeyError";
+import { PkNotFoundError } from "../services/PublicKeyError";
 import { GalaChainContext } from "../types";
 import { GalaContract } from "./GalaContract";
-import { EVALUATE, GalaTransaction, SUBMIT, Submit } from "./GalaTransaction";
+import { EVALUATE, Evaluate, GalaTransaction, Submit } from "./GalaTransaction";
 
 let version = "0.0.0";
 
@@ -59,70 +58,8 @@ export class PublicKeyContract extends GalaContract {
     super("PublicKeyContract", version);
   }
 
-  private async registerUser(
-    ctx: GalaChainContext,
-    providedPkHex: string,
-    ethAddress: string,
-    userAlias: string
-  ): Promise<GalaChainResponse<string>> {
-    const currPublicKey = await PublicKeyService.getPublicKey(ctx, userAlias);
-
-    // If we are migrating a legacy user to new flow, the public key should match
-    if (currPublicKey !== undefined) {
-      const nonCompactCurrPubKey = signatures.getNonCompactHexPublicKey(currPublicKey.publicKey);
-      if (nonCompactCurrPubKey !== providedPkHex) {
-        throw new PkMismatchError(userAlias);
-      }
-    }
-
-    // If User Profile already exists on chain for this ethereum address, we should not allow registering the same user again
-    const existingUserProfile = await PublicKeyService.getUserProfile(ctx, ethAddress);
-    if (existingUserProfile !== undefined) {
-      throw new ProfileExistsError(ethAddress, existingUserProfile.alias);
-    }
-
-    // supports legacy flow (required for backwards compatibility)
-    await PublicKeyService.putPublicKey(ctx, providedPkHex, userAlias);
-
-    // for the new flow, we need to store the user profile separately
-    await PublicKeyService.putUserProfile(ctx, ethAddress, userAlias);
-
-    return GalaChainResponse.Success(userAlias);
-  }
-
-  private async updatePublicKey(
-    ctx: GalaChainContext,
-    newPkHex: string,
-    newEthAddress: string
-  ): Promise<void> {
-    const userAlias = ctx.callingUser;
-
-    // fetch old public key for finding old user profile
-    const oldPublicKey = await PublicKeyService.getPublicKey(ctx, ctx.callingUser);
-    if (oldPublicKey === undefined) {
-      throw new PkNotFoundError(userAlias);
-    }
-
-    // need to fetch userProfile from old address
-    const oldNonCompactPublicKey = signatures.getNonCompactHexPublicKey(oldPublicKey.publicKey);
-    const oldEthAddress = signatures.getEthAddress(oldNonCompactPublicKey);
-    const userProfile = await PublicKeyService.getUserProfile(ctx, oldEthAddress);
-
-    // Note: we don't throw an error if userProfile is undefined in order to support legacy users with unsaved profiles
-    if (userProfile !== undefined) {
-      // remove old user profile
-      await PublicKeyService.deleteUserProfile(ctx, oldEthAddress);
-    }
-
-    // update Public Key, and add user profile under new eth address
-    await PublicKeyService.putPublicKey(ctx, newPkHex, userAlias);
-    await PublicKeyService.putUserProfile(ctx, newEthAddress, userAlias);
-  }
-
-  @GalaTransaction({
-    type: EVALUATE,
+  @Evaluate({
     in: GetMyProfileDto,
-    verifySignature: true,
     description:
       "Returns profile for the calling user. " +
       "Since the profile contains also eth address of the user, this method is supported only for signature based authentication."
@@ -131,13 +68,9 @@ export class PublicKeyContract extends GalaContract {
     ctx: GalaChainContext,
     dto: GetMyProfileDto
   ): Promise<GalaChainResponse<UserProfile>> {
-    const ethAddress = await new Promise<string>((resolve) => resolve(ctx.callingUserEthAddress)).catch(
-      (e) => {
-        const newError = new NotImplementedError("Function is not supported for legacy auth");
-        throw ChainError.map(e, ErrorCode.UNAUTHORIZED, newError);
-      }
-    );
-    const profile = await PublicKeyService.getUserProfile(ctx, ethAddress);
+    // will throw error for legacy auth if the addr is missing
+    const address = dto.signing === SigningScheme.TON ? ctx.callingUserTonAddress : ctx.callingUserEthAddress;
+    const profile = await PublicKeyService.getUserProfile(ctx, address);
 
     if (profile === undefined) {
       throw new NotFoundError(`UserProfile not found for ${ctx.callingUser}`, {
@@ -149,13 +82,11 @@ export class PublicKeyContract extends GalaContract {
     return GalaChainResponse.Success(profile);
   }
 
-  @GalaTransaction({
-    type: SUBMIT,
+  @Submit({
     in: RegisterUserDto,
     out: "string",
     description: "Registers a new user on chain under provided user alias.",
-    allowedOrgs: [curatorOrgMsp],
-    verifySignature: true
+    allowedOrgs: [curatorOrgMsp]
   })
   public async RegisterUser(ctx: GalaChainContext, dto: RegisterUserDto): Promise<GalaChainResponse<string>> {
     if (!dto.user.startsWith("client|")) {
@@ -167,16 +98,14 @@ export class PublicKeyContract extends GalaContract {
     const ethAddress = signatures.getEthAddress(providedPkHex);
     const userAlias = dto.user;
 
-    return this.registerUser(ctx, providedPkHex, ethAddress, userAlias);
+    return PublicKeyService.registerUser(ctx, providedPkHex, ethAddress, userAlias, SigningScheme.ETH);
   }
 
-  @GalaTransaction({
-    type: SUBMIT,
+  @Submit({
     in: RegisterEthUserDto,
     out: "string",
     description: "Registers a new user on chain under alias derived from eth address.",
-    allowedOrgs: [curatorOrgMsp],
-    verifySignature: true
+    allowedOrgs: [curatorOrgMsp]
   })
   public async RegisterEthUser(
     ctx: GalaChainContext,
@@ -186,7 +115,24 @@ export class PublicKeyContract extends GalaContract {
     const ethAddress = signatures.getEthAddress(providedPkHex);
     const userAlias = `eth|${ethAddress}`;
 
-    return this.registerUser(ctx, providedPkHex, ethAddress, userAlias);
+    return PublicKeyService.registerUser(ctx, providedPkHex, ethAddress, userAlias, SigningScheme.ETH);
+  }
+
+  @Submit({
+    in: RegisterTonUserDto,
+    out: "string",
+    description: "Registers a new user on chain under alias derived from TON address.",
+    allowedOrgs: [curatorOrgMsp]
+  })
+  public async RegisterTonUser(
+    ctx: GalaChainContext,
+    dto: RegisterTonUserDto
+  ): Promise<GalaChainResponse<string>> {
+    const publicKey = dto.publicKey;
+    const address = signatures.ton.getTonAddress(Buffer.from(publicKey, "base64"));
+    const userAlias = `ton|${address}`;
+
+    return PublicKeyService.registerUser(ctx, publicKey, address, userAlias, SigningScheme.TON);
   }
 
   @Submit({
@@ -203,20 +149,17 @@ export class PublicKeyContract extends GalaContract {
     throw new NotImplementedError("Function is not supported");
   }
 
-  @GalaTransaction({
-    type: SUBMIT,
+  @Submit({
     in: UpdatePublicKeyDto,
-    description: "Updates public key for the calling user.",
-    verifySignature: true
+    description: "Updates public key for the calling user."
   })
   public async UpdatePublicKey(
     ctx: GalaChainContext,
     dto: UpdatePublicKeyDto
   ): Promise<GalaChainResponse<void>> {
-    const providedPkHex = signatures.getNonCompactHexPublicKey(dto.publicKey);
-    const ethAddress = signatures.getEthAddress(providedPkHex);
-
-    await this.updatePublicKey(ctx, providedPkHex, ethAddress);
+    const signing = dto.signing ?? SigningScheme.ETH;
+    const address = PublicKeyService.getUserAddress(dto.publicKey, signing);
+    await PublicKeyService.updatePublicKey(ctx, dto.publicKey, address, signing);
 
     return GalaChainResponse.Success(undefined);
   }
@@ -225,7 +168,7 @@ export class PublicKeyContract extends GalaContract {
     type: EVALUATE,
     in: GetPublicKeyDto,
     out: PublicKey,
-    description: "[Deprecated] Returns public key for the user"
+    description: "Returns public key for the user"
   })
   public async GetPublicKey(
     ctx: GalaChainContext,
@@ -241,12 +184,10 @@ export class PublicKeyContract extends GalaContract {
     return GalaChainResponse.Success(publicKey);
   }
 
-  @GalaTransaction({
-    type: EVALUATE,
+  @Evaluate({
     in: ChainCallDTO,
     description:
-      "Verifies signature of the DTO signed with caller's private key to be verified with user's public key saved on chain.",
-    verifySignature: true
+      "Verifies signature of the DTO signed with caller's private key to be verified with user's public key saved on chain."
   })
   public async VerifySignature(
     // eslint-disable-next-line @typescript-eslint/no-unused-vars

@@ -66,7 +66,9 @@ describe("checkAllowances", () => {
     let expiredTotal = new BigNumber(0);
 
     for (const allowance of applicableAllowances) {
-      const allowanceQuantity = allowance.quantity.minus(allowance.quantitySpent);
+      // quantitySpent could be undefined
+      const quantitySpent = allowance.quantitySpent ?? new BigNumber("0");
+      const allowanceQuantity = allowance.quantity.minus(quantitySpent);
 
       allAllowancesTotal = allAllowancesTotal.plus(allowanceQuantity);
 

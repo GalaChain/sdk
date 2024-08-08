@@ -26,28 +26,23 @@ import {
 } from "class-validator";
 import { JSONSchema } from "class-validator-jsonschema";
 
-import { TokenInstance, TokenInstanceKey } from "../types/TokenInstance";
-import { ChainCallDTO } from "../types/dtos";
-import { BigNumberProperty, ConstructorArgs } from "../utils";
-import { BigNumberIsNotNegative, BigNumberIsPositive } from "../validators";
+import { ConstructorArgs } from "../utils";
+import { BigNumberIsNotNegative, BigNumberIsPositive, BigNumberProperty, IsUserAlias } from "../validators";
 import { LockTokenQuantity } from "./LockTokenQuantity";
+import { TokenInstance, TokenInstanceKey } from "./TokenInstance";
+import { ChainCallDTO } from "./dtos";
 
-export type LockTokenParams = ConstructorArgs<LockTokenDto>;
+export type LockTokenRequestParams = ConstructorArgs<LockTokenDto>;
 
 @JSONSchema({
   description: "Describes an action to lock a token."
 })
 export class LockTokenDto extends ChainCallDTO {
-  constructor(params?: LockTokenParams) {
-    super();
-    Object.assign(this, params);
-  }
-
   @JSONSchema({
     description: "The current owner of tokens. If the value is missing, chaincode caller is used."
   })
   @IsOptional()
-  @IsNotEmpty()
+  @IsUserAlias()
   owner?: string;
 
   @JSONSchema({
@@ -57,7 +52,7 @@ export class LockTokenDto extends ChainCallDTO {
       "in all cases token authority can unlock token."
   })
   @IsNotEmpty()
-  @IsOptional()
+  @IsUserAlias()
   lockAuthority?: string;
 
   @JSONSchema({
@@ -92,10 +87,6 @@ export type LockTokensParams = ConstructorArgs<LockTokensDto>;
   description: "Describes an action to lock multiple tokens."
 })
 export class LockTokensDto extends ChainCallDTO {
-  constructor(params?: LockTokensParams) {
-    super();
-    Object.assign(this, params);
-  }
   @JSONSchema({
     description:
       "User who will be able to unlock token. " +
@@ -103,7 +94,7 @@ export class LockTokensDto extends ChainCallDTO {
       "in all cases token authority can unlock token."
   })
   @IsNotEmpty()
-  @IsOptional()
+  @IsUserAlias()
   lockAuthority?: string;
 
   @JSONSchema({
@@ -147,11 +138,6 @@ export type UnlockTokenParams = ConstructorArgs<UnlockTokenDto>;
   description: "Describes an action to unlock a token."
 })
 export class UnlockTokenDto extends ChainCallDTO {
-  constructor(params?: UnlockTokenParams) {
-    super();
-    Object.assign(this, params);
-  }
-
   @JSONSchema({
     description: "Token instance of token to be unlocked."
   })
@@ -173,7 +159,7 @@ export class UnlockTokenDto extends ChainCallDTO {
     description: "Optional. Owner of the token. Calling User by default. Usable by Token Authorities only."
   })
   @IsOptional()
-  @IsNotEmpty()
+  @IsUserAlias()
   owner?: string;
 
   @JSONSchema({
@@ -191,10 +177,6 @@ export type UnlockTokensParams = ConstructorArgs<UnlockTokensDto>;
   description: "Describes an action to unlock multiple tokens."
 })
 export class UnlockTokensDto extends ChainCallDTO {
-  constructor(params?: UnlockTokensParams) {
-    super();
-    Object.assign(this, params);
-  }
   @JSONSchema({
     description:
       "Array of token instances of token to be locked. In case of fungible tokens, tokenInstance.instance field " +

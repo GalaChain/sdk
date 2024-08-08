@@ -16,8 +16,8 @@ import BigNumber from "bignumber.js";
 import { ArrayMinSize, IsString } from "class-validator";
 
 import { ChainCallDTO, ChainObject } from "../types";
+import { BigNumberProperty } from "../validators";
 import serialize from "./serialize";
-import { BigNumberProperty } from "./transform-decorators";
 
 class TestDTO extends ChainCallDTO {
   @BigNumberProperty()

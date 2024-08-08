@@ -1,5 +1,4 @@
-galachain
-=================
+# galachain
 
 CLI tool for Gala chaincode
 
@@ -8,24 +7,29 @@ CLI tool for Gala chaincode
 [![GitHub license](https://img.shields.io/github/license/oclif/hello-world)](https://github.com/oclif/hello-world/blob/main/LICENSE)
 
 <!-- toc -->
+* [galachain](#galachain)
 * [Usage](#usage)
 * [Commands](#commands)
 <!-- tocstop -->
+
 # Usage
+
 <!-- usage -->
 ```sh-session
 $ npm install -g @gala-chain/cli
 $ galachain COMMAND
 running command...
 $ galachain (--version)
-@gala-chain/cli/1.2.4 linux-x64 node-v18.20.3
+@gala-chain/cli/1.2.6 linux-x64 node-v18.20.4
 $ galachain --help [COMMAND]
 USAGE
   $ galachain COMMAND
 ...
 ```
 <!-- usagestop -->
+
 # Commands
+
 <!-- commands -->
 * [`galachain deploy IMAGETAG [DEVELOPERPRIVATEKEY]`](#galachain-deploy-imagetag-developerprivatekey)
 * [`galachain dto-sign KEY DATA`](#galachain-dto-sign-key-data)

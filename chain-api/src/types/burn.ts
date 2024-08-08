@@ -21,6 +21,7 @@ import {
   IsNotEmpty,
   IsOptional,
   IsPositive,
+  IsString,
   Max,
   Min,
   ValidateIf,
@@ -28,8 +29,8 @@ import {
 } from "class-validator";
 import { JSONSchema } from "class-validator-jsonschema";
 
-import { BigNumberProperty, ConstructorArgs } from "../utils";
-import { BigNumberIsInteger, BigNumberIsNotNegative } from "../validators";
+import { ConstructorArgs } from "../utils";
+import { BigNumberIsInteger, BigNumberIsNotNegative, BigNumberProperty, IsUserAlias } from "../validators";
 import { BurnTokenQuantity } from "./BurnTokenQuantity";
 import { TokenBurnCounter } from "./TokenBurnCounter";
 import { TokenInstance } from "./TokenInstance";
@@ -42,15 +43,10 @@ export type FetchBurnsParams = ConstructorArgs<FetchBurnsDto>;
   description: "Contains parameters for fetching burns."
 })
 export class FetchBurnsDto extends ChainCallDTO {
-  constructor(params?: FetchBurnsParams) {
-    super();
-    Object.assign(this, params);
-  }
-
   @JSONSchema({
     description: "The user who burned the token."
   })
-  @IsNotEmpty()
+  @IsUserAlias()
   burnedBy: string;
 
   @JSONSchema({
@@ -103,11 +99,6 @@ export type BurnTokensParams = ConstructorArgs<BurnTokensDto>;
   description: "Defines burns to be created."
 })
 export class BurnTokensDto extends ChainCallDTO {
-  constructor(params?: BurnTokensParams) {
-    super();
-    Object.assign(this, params);
-  }
-
   @JSONSchema({
     description:
       "Array of token instances of token to be burned. In case of fungible tokens, tokenInstance.instance field " +
@@ -123,7 +114,7 @@ export class BurnTokensDto extends ChainCallDTO {
       "Owner of the tokens to be burned. If not provided, the calling user is assumed to be the owner."
   })
   @IsOptional()
-  @IsNotEmpty()
+  @IsUserAlias()
   owner?: string;
 }
 
@@ -140,11 +131,6 @@ export type BurnAndMintParams = ConstructorArgs<BurnAndMintDto>;
     "All operations occur in the same transaction, meaning either all succeed or none are written to chain."
 })
 export class BurnAndMintDto extends ChainCallDTO {
-  constructor(params?: BurnAndMintParams) {
-    super();
-    Object.assign(this, params);
-  }
-
   static MAX_ARR_SIZE = 1000;
 
   @JSONSchema({
@@ -160,7 +146,7 @@ export class BurnAndMintDto extends ChainCallDTO {
       "User ID of the identity that owns the tokens to be burned. " +
       "The burnDto signature will be validated against this user's public key on chain."
   })
-  @IsNotEmpty()
+  @IsUserAlias()
   burnOwner: string;
 
   @JSONSchema({
@@ -178,11 +164,6 @@ export type FetchBurnCountersWithPaginationParams = ConstructorArgs<FetchBurnCou
   description: "Contains parameters for fetching TokenBurnCounters with pagination."
 })
 export class FetchBurnCountersWithPaginationDto extends ChainCallDTO {
-  constructor(params?: FetchBurnCountersWithPaginationParams) {
-    super();
-    Object.assign(this, params);
-  }
-
   static readonly MAX_LIMIT = 10 * 1000;
   static readonly DEFAULT_LIMIT = 1000;
 
@@ -244,7 +225,7 @@ export class FetchBurnCountersResponse extends ChainCallDTO {
 
   @JSONSchema({ description: "Next page bookmark." })
   @IsOptional()
-  @IsNotEmpty()
+  @IsString()
   nextPageBookmark?: string;
 }
 
@@ -283,7 +264,7 @@ export class TokenBurnCounterCompositeKeyDto extends ChainCallDTO {
   @JSONSchema({
     description: "burnedBy user."
   })
-  @IsNotEmpty()
+  @IsUserAlias()
   burnedBy: string;
 
   @JSONSchema({

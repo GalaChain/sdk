@@ -203,7 +203,10 @@ function GalaTransaction<T extends ChainCallDTO>(
         if (ctx.logger) {
           ChainError.from(err).logWarn(ctx.logger);
           ctx.logger.logTimeline("Failed Transaction", loggingContext, [dtoPlain], err);
+          ctx.logger.debug(err.message);
+          ctx.logger.debug(err.stack);
         }
+
         // Note: since it does not end with an exception, failed transactions are also saved
         // on chain in transaction history.
         return GalaChainResponse.Error(err as Error);

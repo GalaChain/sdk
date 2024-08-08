@@ -21,15 +21,14 @@ import {
   IsDefined,
   IsNotEmpty,
   IsOptional,
-  IsString,
   Max,
   MaxLength,
   Min
 } from "class-validator";
 import { JSONSchema } from "class-validator-jsonschema";
 
-import { BigNumberProperty, ChainKey, ConstructorArgs } from "../utils";
-import { BigNumberIsPositive } from "../validators";
+import { ChainKey, ConstructorArgs } from "../utils";
+import { BigNumberIsPositive, BigNumberProperty, IsUserAlias } from "../validators";
 import { ChainObject } from "./ChainObject";
 import { GC_NETWORK_ID } from "./contract";
 import { ChainCallDTO } from "./dtos";
@@ -135,7 +134,7 @@ export class TokenClass extends ChainObject {
   public maxCapacity: BigNumber;
 
   // IDs of authorities who can manage this token
-  @IsString({ each: true })
+  @IsUserAlias({ each: true })
   public authorities: Array<string>;
 
   /// ///////////////////////////////////////////////////

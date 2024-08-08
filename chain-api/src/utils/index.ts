@@ -1,9 +1,3 @@
-import deserialize from "./deserialize";
-import { Primitive, generateResponseSchema, generateSchema } from "./generate-schema";
-import { ValidationErrorInfo, getValidationErrorInfo } from "./getValidationErrorMessage";
-import serialize from "./serialize";
-import signatures from "./signatures";
-
 /*
  * Copyright (c) Gala Games Inc. All rights reserved.
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -18,10 +12,14 @@ import signatures from "./signatures";
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+import deserialize from "./deserialize";
+import { Primitive, generateResponseSchema, generateSchema } from "./generate-schema";
+import { getValidationErrorMessages } from "./getValidationErrorMessages";
+import serialize from "./serialize";
+import signatures, { SigningScheme } from "./signatures";
 
 export * from "./chain-decorators";
 export * from "./error";
-export * from "./transform-decorators";
 export * from "./type-utils";
 
 export {
@@ -29,8 +27,8 @@ export {
   serialize,
   generateSchema,
   generateResponseSchema,
-  getValidationErrorInfo,
-  ValidationErrorInfo,
+  getValidationErrorMessages,
   Primitive,
-  signatures
+  signatures,
+  SigningScheme
 };

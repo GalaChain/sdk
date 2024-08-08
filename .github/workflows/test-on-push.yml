@@ -8,7 +8,7 @@ on:
 jobs:
   ci:
     name: CI
-    runs-on: ubuntu-22.04
+    runs-on: ubuntu-latest
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -24,12 +24,14 @@ jobs:
         run: npm run build
       - name: Lint
         run: npm run lint
+      - name: Circular dependencies
+        run: npm run madge
       - name: Test
         run: npm run test
 
   template-ci:
     name: Chaincode template CI
-    runs-on: ubuntu-22.04
+    runs-on: ubuntu-latest
     needs: [ci]
     steps:
       - name: Checkout
@@ -55,7 +57,7 @@ jobs:
 
   template-e2e:
     name: Chaincode template E2E (watch mode)
-    runs-on: ubuntu-22.04
+    runs-on: ubuntu-latest
     needs: [ci]
     env:
       GALA_CLIENT_DEV_MODE: "true"
@@ -75,7 +77,6 @@ jobs:
           yq --version
           bash --version
           docker version
-          docker-compose version
       - name: Set up Node.js
         uses: actions/setup-node@v4
         with:
@@ -107,7 +108,7 @@ jobs:
 
   template-e2e-rest:
     name: Chaincode template E2E (REST API)
-    runs-on: ubuntu-22.04
+    runs-on: ubuntu-latest
     needs: [ci]
     env:
       GALA_CLIENT_DEV_MODE: "false"
@@ -128,7 +129,6 @@ jobs:
           yq --version
           bash --version
           docker version
-          docker-compose version
       - name: Set up Node.js
         uses: actions/setup-node@v4
         with:
@@ -151,7 +151,7 @@ jobs:
   template-image-check:
     name: Chaincode template image check
     needs: [ci]
-    runs-on: ubuntu-22.04
+    runs-on: ubuntu-latest
     steps:
       - name: Checkout
         uses: actions/checkout@v4

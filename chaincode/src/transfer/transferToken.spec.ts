@@ -24,7 +24,7 @@ import {
   createValidChainObject,
   createValidDTO
 } from "@gala-chain/api";
-import { currency, fixture, nft, users } from "@gala-chain/test";
+import { currency, fixture, nft, users, writesMap } from "@gala-chain/test";
 import BigNumber from "bignumber.js";
 
 import GalaChainTokenContract from "../__test__/GalaChainTokenContract";
@@ -128,6 +128,79 @@ describe("TransferToken", () => {
       )
     );
     expect(writes).toEqual({});
+  });
+
+  test("TransferToken succeeds when providing infinite allowance to a user", async () => {
+    // Given
+    const currencyInstance = currency.tokenInstance();
+    const currencyInstanceKey = currency.tokenInstanceKey();
+    const currencyClass = currency.tokenClass();
+    const tokenBalance = currency.tokenBalance((b) => ({
+      ...b,
+      owner: users.testUser2Id,
+      quantity: new BigNumber("0")
+    }));
+
+    const transferAllowance = plainToInstance(TokenAllowance, {
+      grantedTo: users.testUser2Id,
+      grantedBy: users.tokenHolder,
+      ...currencyInstanceKey,
+      instance: currencyInstance.instance,
+      allowanceType: AllowanceType.Transfer,
+      created: 1,
+      uses: new BigNumber("1"),
+      expires: 0,
+      quantity: new BigNumber(Infinity)
+    });
+    const transferAllowanceId = transferAllowance.getCompositeKey();
+    const ownerBalance = currency.tokenBalance((b) => ({
+      ...b,
+      owner: users.tokenHolder,
+      quantity: new BigNumber("100000")
+    }));
+
+    const { ctx, contract, writes } = fixture(GalaChainTokenContract)
+      .callingUser(users.testUser2Id)
+      .savedState(currencyClass, currencyInstance, tokenBalance, transferAllowance, ownerBalance);
+
+    const dto: TransferTokenDto = await createValidDTO(TransferTokenDto, {
+      from: users.tokenHolder,
+      to: users.testUser2Id,
+      tokenInstance: currencyInstanceKey,
+      quantity: new BigNumber("50000"),
+      useAllowances: [transferAllowanceId]
+    });
+
+    const response = await contract.TransferToken(ctx, dto);
+
+    expect(response).toEqual(
+      GalaChainResponse.Success([
+        plainToInstance(TokenBalance, {
+          ...currency.tokenBalance(),
+          owner: users.tokenHolder,
+          quantity: new BigNumber("50000")
+        }),
+        plainToInstance(TokenBalance, {
+          ...currency.tokenBalance(),
+          owner: users.testUser2Id,
+          quantity: new BigNumber("50000")
+        })
+      ])
+    );
+    expect(writes).toEqual(
+      writesMap(
+        plainToInstance(TokenBalance, {
+          ...currency.tokenBalance(),
+          owner: users.testUser2Id,
+          quantity: new BigNumber("50000")
+        }),
+        plainToInstance(TokenBalance, {
+          ...currency.tokenBalance(),
+          owner: users.tokenHolder,
+          quantity: new BigNumber("50000")
+        })
+      )
+    );
   });
 
   test("TransferToken fails when provided allowance is issued to another", async () => {
