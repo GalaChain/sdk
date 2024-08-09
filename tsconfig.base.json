@@ -13,7 +13,7 @@
     "experimentalDecorators": true,
     "declaration": true,
     "declarationMap": false,
-    "sourceMap": false,
+    "sourceMap": true,
     "importHelpers": true,
     "esModuleInterop": true,
     "strictNullChecks": true,

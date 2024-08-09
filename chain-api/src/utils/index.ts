@@ -20,7 +20,7 @@ import signatures from "./signatures";
 
 export * from "./chain-decorators";
 export * from "./error";
-export * from "./type-utils";
+export * from "../ethers/type-utils";
 
 export {
   deserialize,
