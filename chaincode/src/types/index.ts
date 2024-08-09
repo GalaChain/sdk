@@ -13,7 +13,6 @@
  * limitations under the License.
  */
 
-export * from "./createValidChainObject";
 export * from "./FabricIterable";
 export * from "./GalaChainContext";
 export * from "./GalaChainStub";

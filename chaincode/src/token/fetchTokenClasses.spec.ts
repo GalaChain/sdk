@@ -20,7 +20,6 @@ import {
   createValidDTO
 } from "@gala-chain/api";
 import { currency, fixture, nft } from "@gala-chain/test";
-import { plainToInstance } from "class-transformer";
 
 import GalaChainTokenContract from "../__test__/GalaChainTokenContract";
 import { TokenClassNotFoundError } from "./TokenError";
@@ -75,7 +74,7 @@ it("should FetchTokenClassesWithPagination", async () => {
     {}
   );
 
-  const expectedResponse = plainToInstance(FetchTokenClassesResponse, {
+  const expectedResponse = await createValidDTO(FetchTokenClassesResponse, {
     nextPageBookmark: "",
     results: [currencyClass, nftClass]
   });
@@ -102,7 +101,7 @@ it("should limit results for FetchTokenClassesWithPagination", async () => {
     collection: searchCollection
   });
 
-  const expectedResponse = plainToInstance(FetchTokenClassesResponse, {
+  const expectedResponse = await createValidDTO(FetchTokenClassesResponse, {
     nextPageBookmark: "",
     results: [nftClass]
   });
@@ -127,7 +126,7 @@ it("should not throw a 404 error if no tokens are found when using the Paginatio
     collection: missingKey.collection
   });
 
-  const expectedResponse = plainToInstance(FetchTokenClassesResponse, {
+  const expectedResponse = await createValidDTO(FetchTokenClassesResponse, {
     nextPageBookmark: "",
     results: []
   });

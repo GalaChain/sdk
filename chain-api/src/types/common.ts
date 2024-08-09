@@ -84,7 +84,7 @@ export enum TokenMintStatus {
 
 // todo: with various other class definitions moving out of common.ts to fix circular dependencies,
 // consider where a better home for this definition could be.
-@JSONSchema({ description: "Minimal property set represnting a mint request." })
+@JSONSchema({ description: "Minimal property set representing a mint request." })
 export class MintRequestDto {
   @IsNotEmpty()
   public collection: string;

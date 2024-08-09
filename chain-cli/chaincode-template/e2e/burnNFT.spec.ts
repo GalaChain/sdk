@@ -30,7 +30,7 @@ import {
   transactionSuccess
 } from "@gala-chain/test";
 import BigNumber from "bignumber.js";
-import { instanceToPlain, plainToClass as plainToInstance } from "class-transformer";
+import { instanceToPlain, plainToInstance } from "class-transformer";
 
 jest.setTimeout(30000);
 

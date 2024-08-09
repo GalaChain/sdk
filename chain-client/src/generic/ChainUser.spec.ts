@@ -15,13 +15,12 @@
 import { signatures } from "@gala-chain/api";
 
 import { ChainUser } from "./ChainUser";
-import { createRandomKeys } from "./createRandomKeys";
 
 describe("ChainUser", () => {
   describe("constructor", () => {
     it("should create a ChainUser with eth prefix when name is not provided", () => {
       // Given
-      const { privateKey, publicKey } = createRandomKeys();
+      const { privateKey, publicKey } = signatures.genKeyPair();
       const ethAddress = signatures.getEthAddress(publicKey);
 
       // When
@@ -42,7 +41,7 @@ describe("ChainUser", () => {
 
     it("should create a ChainUser with client prefix when name is provided", () => {
       // Given
-      const { privateKey, publicKey } = createRandomKeys();
+      const { privateKey, publicKey } = signatures.genKeyPair();
       const ethAddress = signatures.getEthAddress(publicKey);
       const name = "some-name";
 

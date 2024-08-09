@@ -20,7 +20,18 @@ In this document, if we refer to the **user**, we mean the **end user**.
 ## Signature based authorization
 
 Signature based authorization user secp256k1 signatures to verify the identity of the end user.
-It uses the same algorithm as Ethereum.
+By default, it uses the same algorithm as Ethereum (keccak256 + secp256k1), but also TON (The Open Network) signing scheme is supported.
+
+### Required fields in dto object
+
+The following fields are required in the transaction payload object:
+* For Ethereum signing scheme with regular signature format (r + s + v): `signature` field only.
+* For Ethereum signing scheme with DER signature formar: `signature` and `signerPublicKey` fields. 
+  The `signerPublicKey` field is required to recover the public key from the signature, since DER signature does not contain the recovery parameter `v`.
+* For TON signing scheme: `signature`, `signerPublicKey`, and `signing` fields. The `signing` field must be set to `TON`.
+
+Both for Eth DER signature and TON signing scheme, instead of `signerPublicKey` field, you can use `signerAddress` field, which contains the user's checksumed Ethereum address or bounceable TON address respectively.
+The address will be used to get public key of a registered user and use it for signature verification.
 
 ### Signing the transaction payload
 
@@ -48,6 +59,21 @@ const dto3 = {myField: "myValue"};
 dto3.signature = signatures.getSignature(dto3, Buffer.from(userPrivateKey));
 ```
 
+If you want to use `TON` signing scheme, just provide `TON` as the signing scheme in your DTO object:
+
+```typescript
+// recommended way to sign the transaction
+const dto1 = await createValidDto(MyDtoClass, {myField: "myValue", signing: "TON"}).signed(userPrivateKey);
+
+// alternate way, imperative style
+const dto2 = new MyDtoClass({myField: "myValue", signing: "TON"});
+dto2.sign(userPrivateKey);
+
+// when you don't have the dto class, but just a plain object
+const dto3 = {myField: "myValue", signing: "TON"};
+dto3.signature = signatures.getSignature(dto3, Buffer.from(userPrivateKey));
+```
+
 #### Using `@gala-chain/cli`:
 
 ```bash
@@ -68,7 +94,7 @@ const dto = ...;
 const response = await client.send({ method: "TransferToken", payload: dto });
 ```
 
-#### "Manual" process:
+#### "Manual" process (ETH):
 
 If you are not using any of the libraries, you can sign the transaction with the following steps:
 
@@ -79,6 +105,30 @@ If you are not using any of the libraries, you can sign the transaction with the
 
 It is important to follow these steps exactly, because chain side the same way of serialization and hashing is used to verify the signature.
 If the payload is not serialized and hashed in the same way, the signature will not be verified.
+
+### "Manual" process (TON):
+
+In this case you need to have ed25519 private key and seed for the signing and signature verification, and we recommend using `safeSign` method from `@ton/core` library:
+
+```typescript
+import { beginCell, safeSign } from "@ton/core";
+
+const data = "..."; // properly serialized payload string
+const cell = beginCell().storeBuffer(Buffer.from(data)).endCell();
+const signature = safeSign(cell, privateKey, seed);
+```
+
+The serialized payload string must be prepared in the same way as for Ethereum signing:
+- no additional spaces or newlines,
+- fields sorted alphabetically,
+- all `BigNumber` values are converted to strings with fixed notation,
+- top-level `signature` and `trace` fields excluded from the payload.
+
+`safeSign` method generates the signature in the following way:
+
+```
+signature = Ed25519Sign(privkey, sha256(0xffff ++ utf8_encode(seed) ++ sha256(message)))
+```
 
 ### Authenticating and authorizing in the chaincode
 

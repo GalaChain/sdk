@@ -14,7 +14,6 @@
  */
 import { ChainUser } from "@gala-chain/client";
 import { fixture, transactionErrorMessageContains, transactionSuccess, writesMap } from "@gala-chain/test";
-import { plainToInstance } from "class-transformer";
 
 import { AppleTree, AppleTreeDto, PickAppleDto, Variety } from "../apples";
 import { AppleContract } from "./AppleContract";
@@ -64,7 +63,7 @@ it("should allow to pick apples", async () => {
   expect(response).toEqual(transactionSuccess());
   expect(writes).toEqual(
     writesMap(
-      plainToInstance(AppleTree, {
+      await createValidChainObject(AppleTree, {
         ...existingTree,
         applesPicked: existingTree.applesPicked.plus(1)
       })

@@ -20,7 +20,9 @@ import GalaChainTokenContract from "../__test__/GalaChainTokenContract";
 
 it("should CreateTokenClass", async () => {
   // Given
-  const { ctx, contract, writes } = fixture(GalaChainTokenContract);
+  const { ctx, contract, writes } = fixture(GalaChainTokenContract)
+    .caClientIdentity("test-admin", "CuratorOrg")
+    .registeredUsers(users.admin);
 
   const tokenClassKey = currency.tokenClassKey();
 
@@ -36,8 +38,8 @@ it("should CreateTokenClass", async () => {
     image: "http://app.gala.games/some-test-image-url",
     symbol: "AUTOTESTCOIN",
     isNonFungible: false,
-    authorities: [users.testAdminId]
-  });
+    authorities: [users.admin.identityKey]
+  }).signed(users.admin.privateKey);
 
   // When
   const response = await contract.CreateTokenClass(ctx, dto);
@@ -47,7 +49,7 @@ it("should CreateTokenClass", async () => {
 
   const expectedInstance = currency.tokenInstance();
   const expectedClass = currency.tokenClass((defaults) => {
-    const { tokenClass, ...fromDto } = dto;
+    const { tokenClass, signature, ...fromDto } = dto;
     const missingInDto = { contractAddress: undefined, metadataAddress: undefined, rarity: undefined };
     return { ...defaults, ...fromDto, ...missingInDto, ...tokenClass };
   });

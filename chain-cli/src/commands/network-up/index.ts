@@ -281,7 +281,7 @@ function customValidation(flags: any): void {
     throw new Error(`Error: Env config file ${envConfig} does not exist.`);
   }
 
-  /* 
+  /*
     The same number of parameters for chaincode, channelTyle, chaincode and chaincodeDir is required
   */
   if (
@@ -294,7 +294,7 @@ function customValidation(flags: any): void {
     );
   }
 
-  /* 
+  /*
     Channel types need to be consistend
   */
   channel.reduce(
@@ -313,7 +313,7 @@ function customValidation(flags: any): void {
     {} as Record<string, "curator" | "partner">
   );
 
-  /* 
+  /*
     (channel, chaincodeName) pairs should be unique
   */
   channel
@@ -324,7 +324,7 @@ function customValidation(flags: any): void {
       }
     });
 
-  /* 
+  /*
     Watch mode
   */
   if (flags.watch) {
@@ -335,7 +335,7 @@ function customValidation(flags: any): void {
 }
 
 function reduce(args: any): SingleArg[] {
-  return args.chaincodeName.map((chaincodeName: any, i: number) => ({
+  return args.chaincodeName.map((chaincodeName: unknown, i: number) => ({
     chaincodeName,
     chaincodeDir: args.chaincodeDir?.[i],
     channel: args.channel[i],

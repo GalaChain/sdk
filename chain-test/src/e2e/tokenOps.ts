@@ -24,6 +24,7 @@ import {
   TokenInstance,
   TokenInstanceKey,
   TransferTokenDto,
+  createValidChainObject,
   createValidDTO
 } from "@gala-chain/api";
 import { ChainClient, ChainUser, ChainUserAPI } from "@gala-chain/client";
@@ -52,7 +53,7 @@ export async function createTransferDto(
   nftClassKey: TokenClassKey,
   opts: { from: string; to: string; tokenInstance: BigNumber }
 ): Promise<TransferTokenDto> {
-  const tokenInstance = plainToInstance(TokenInstanceKey, {
+  const tokenInstance = await createValidDTO(TokenInstanceKey, {
     ...nftClassKey,
     instance: opts.tokenInstance
   });
@@ -106,10 +107,12 @@ async function grantUsersMintingAllowance(
   users: { user: ChainUser; quantity: BigNumber }[]
 ) {
   const galaAllowanceDto = await createValidDTO<GrantAllowanceDto>(GrantAllowanceDto, {
-    tokenInstance: plainToInstance(TokenInstanceKey, {
-      ...nftClassKey,
-      instance: TokenInstance.FUNGIBLE_TOKEN_INSTANCE
-    }).toQueryKey(),
+    tokenInstance: (
+      await createValidDTO(TokenInstanceKey, {
+        ...nftClassKey,
+        instance: TokenInstance.FUNGIBLE_TOKEN_INSTANCE
+      })
+    ).toQueryKey(),
     allowanceType: AllowanceType.Mint,
     quantities: users.map(({ user, quantity }) => ({
       user: user.identityKey,

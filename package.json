@@ -66,6 +66,22 @@
     "typescript": "5.3.3",
     "vite": "~5.0.0"
   },
+  "peerDependencies": {
+    "@nx/nx-darwin-arm64": "17.3.2",
+    "@nx/nx-linux-x64-gnu": "17.3.2",
+    "@nx/nx-linux-x64-musl": "17.3.2"
+  },
+  "peerDependenciesMeta": {
+    "@nx/nx-darwin-arm64": {
+      "optional": true
+    },
+    "@nx/nx-linux-x64-gnu": {
+      "optional": true
+    },
+    "@nx/nx-linux-x64-musl": {
+      "optional": true
+    }
+  },
   "nx": {
     "includedScripts": []
   },
