@@ -1,6 +1,6 @@
 import { keccak256 } from "js-sha3";
 
-import { toUtf8Bytes } from "../utils";
+import { toUtf8Bytes } from "../utils/utf8";
 
 /**
  *  A simple hashing function which operates on UTF-8 strings to

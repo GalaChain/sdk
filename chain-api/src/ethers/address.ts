@@ -1,6 +1,7 @@
 import { keccak256 } from "js-sha3";
 
-import { assertArgument, getBytes } from "./utils";
+import { assertArgument } from "./errors";
+import { getBytes } from "./utils/data";
 
 const BN_0 = BigInt(0);
 const BN_36 = BigInt(36);

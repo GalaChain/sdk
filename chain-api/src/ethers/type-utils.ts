@@ -14,7 +14,7 @@
  */
 import BigNumber from "bignumber.js";
 
-import { assertArgument } from "../ethers/errors";
+import { assertArgument } from "./errors";
 import { NonFunctionProperties } from "../types";
 
 // Recursive type to pick non-function properties and replace specified types

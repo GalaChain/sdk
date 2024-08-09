@@ -1,19 +1,10 @@
-import type { BigNumberish, Numeric } from "../utils/index.js";
+import { toBeArray } from "ethers/lib.commonjs/utils/maths.js";
+
 import { ZeroHash } from "./constants/hashes.js";
-import {
-  BytesLike,
-  assertArgument,
-  assertPrivate,
-  concat,
-  dataLength,
-  getBigInt,
-  getBytes,
-  getNumber,
-  hexlify,
-  isHexString,
-  toBeArray
-} from "./utils.js";
-import { zeroPadValue } from "./utils/data.js";
+import { assertArgument, assertPrivate } from "./errors.js";
+import { BigNumberish, Numeric } from "./type-utils.js";
+import { BytesLike, concat, dataLength, getBytes, hexlify, isHexString, zeroPadValue } from "./utils/data.js";
+import { getBigInt, getNumber } from "./utils/maths.js";
 
 // Constants
 const BN_0 = BigInt(0);
