@@ -14,7 +14,7 @@
  -->
 
 <script lang="ts">
-import MintToken from '@/components/MintToken.vue';
+import MintToken from '@/components/MintToken.vue'
 
 export default MintToken
 </script>
