@@ -12,13 +12,18 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-import { ChainCallDTO, RegisterUserDto, createValidDTO, signatures, UserProfile } from "@gala-chain/api";
+import { ChainCallDTO, UserProfile, signatures } from "@gala-chain/api";
 import { transactionSuccess } from "@gala-chain/test";
-import { instanceToInstance, instanceToPlain, plainToClass } from "class-transformer";
-import { randomUUID } from "crypto";
+import { instanceToPlain, plainToClass } from "class-transformer";
 
 import TestChaincode from "../__test__/TestChaincode";
 import { PublicKeyContract } from "./PublicKeyContract";
+import {
+  createDerSignedDto,
+  createRegisteredUser,
+  createSignedDto,
+  createUser
+} from "./authenticate.testutils.spec";
 
 /**
  * Tests below cover a wide range of scenarios for GetMyProfile method, and in
@@ -118,38 +123,6 @@ interface User {
   privateKey: string;
   publicKey: string;
   ethAddress: string;
-}
-
-async function createUser(): Promise<User> {
-  const name = "client|user-" + randomUUID();
-  const privateKey = "a2e0b584004a7dd3f6257078b38b4271cb39c7a3ecba4f2a2c541ef44a940922";
-  const publicKey =
-    "04215291d9d04aad96832bffe808acdc1d985b4b547c8b16f841e14e8fbfb11284d5a5a5c71d95bd520b90403abff8fe7ccf793e755baf69672ab6cf25b60fc942";
-  const ethAddress = "a2a29d98b18C28EF5764f3944F01eEE1A54a668d";
-  return { alias: name, privateKey, publicKey, ethAddress };
-}
-
-async function createRegisteredUser(chaincode: TestChaincode): Promise<User> {
-  const { alias, privateKey, publicKey, ethAddress } = await createUser();
-  const dto = await createValidDTO(RegisterUserDto, { user: alias, publicKey });
-  const signedDto = dto.signed(process.env.DEV_ADMIN_PRIVATE_KEY as string);
-  const response = await chaincode.invoke("PublicKeyContract:RegisterUser", signedDto);
-  expect(response).toEqual(transactionSuccess());
-  return { alias: alias, privateKey, publicKey, ethAddress };
-}
-
-function createSignedDto(unsigned: ChainCallDTO, privateKey: string) {
-  const dto = instanceToInstance(unsigned);
-  dto.signature = signatures.getSignature(dto, Buffer.from(privateKey, "hex"));
-  expect(dto.signature).toHaveLength(130);
-  return dto;
-}
-
-function createDerSignedDto(unsigned: ChainCallDTO, privateKey: string) {
-  const dto = instanceToInstance(unsigned);
-  dto.signature = signatures.getDERSignature(dto, Buffer.from(privateKey, "hex"));
-  expect([140, 142, 144]).toContain(dto.signature.length);
-  return dto;
 }
 
 // this is a hack to make pretty display of test cases

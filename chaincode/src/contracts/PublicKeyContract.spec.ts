@@ -22,9 +22,10 @@ import {
   RegisterUserDto,
   SigningScheme,
   UpdatePublicKeyDto,
+  UserProfile,
   UserRole,
   createValidDTO,
-  signatures, UserProfile
+  signatures
 } from "@gala-chain/api";
 import { fixture, transactionErrorMessageContains, transactionSuccess } from "@gala-chain/test";
 
@@ -39,7 +40,7 @@ import {
   createUser,
   getPublicKey,
   getUserProfile
-} from "./authorize.testutils.spec";
+} from "./authenticate.testutils.spec";
 
 it("should serve proper API", async () => {
   // Given

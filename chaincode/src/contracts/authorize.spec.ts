@@ -203,11 +203,6 @@ describe("authorization", () => {
       roles: []
     };
 
-    // const expectedUser = {
-    //   alias: customUser.alias,
-    //   roles: []
-    // };
-
     // When
     const f1 = authFixture(["Evaluate", "no org constraint", "no roles constraint"], customUser);
     const f2 = authFixture(["Submit", "no org constraint", "no roles constraint"], customUser);

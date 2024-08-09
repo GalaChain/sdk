@@ -12,7 +12,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-import { ChainCallDTO, SigningScheme, signatures, UserProfile } from "@gala-chain/api";
+import { ChainCallDTO, SigningScheme, UserProfile, signatures } from "@gala-chain/api";
 import { transactionSuccess } from "@gala-chain/test";
 import { instanceToPlain, plainToClass } from "class-transformer";
 
@@ -23,7 +23,7 @@ import {
   createRegisteredTonUser,
   createTonSignedDto,
   createTonUser
-} from "./authorize.testutils.spec";
+} from "./authenticate.testutils.spec";
 
 /**
  * Tests below cover a wide range of scenarios for GetMyProfile method for TON signing scheme,
