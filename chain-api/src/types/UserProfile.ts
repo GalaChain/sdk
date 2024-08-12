@@ -15,13 +15,17 @@
 import { IsNotEmpty } from "class-validator";
 import { JSONSchema } from "class-validator-jsonschema";
 
+import { ConstructorArgs } from "../utils";
+import { IsUserAlias } from "../validators";
 import { ChainObject } from "./ChainObject";
+
+export type UserProfileBody = ConstructorArgs<UserProfile>;
 
 export class UserProfile extends ChainObject {
   @JSONSchema({
     description: `Legacy caller id from user name or identifier derived from ethAddress for new users.`
   })
-  @IsNotEmpty()
+  @IsUserAlias()
   alias: string;
 
   @JSONSchema({

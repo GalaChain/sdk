@@ -171,6 +171,42 @@ function checksumedEthAddress(addressLowerCased: string): string {
   return chars.join("");
 }
 
+function isLowercasedEthAddress(address: string): boolean {
+  return /^(0x)?[0-9a-f]{40}$/.test(address);
+}
+
+function isChecksumedEthAddress(address: string): boolean {
+  if (!/^(0x)?[0-9a-fA-F]{40}$/.test(address)) {
+    return false;
+  }
+
+  const nonPrefixed = address.slice(-40);
+
+  return checksumedEthAddress(nonPrefixed.toLowerCase()) === nonPrefixed;
+}
+
+function normalizeEthAddress(address: string): string {
+  const noTrailing0x = address.startsWith("0x") ? address.slice(2) : address;
+
+  if (noTrailing0x.length !== 40) {
+    throw new ValidationFailedError(`Invalid length of eth address: ${address}`);
+  }
+
+  const lowerCased = noTrailing0x.toLowerCase();
+
+  if (!/^[0-9a-f]*$/.test(lowerCased)) {
+    throw new ValidationFailedError(`Eth address contains invalid characters: ${address}`);
+  }
+
+  const checksumed = checksumedEthAddress(lowerCased);
+
+  if (lowerCased === noTrailing0x || checksumed === noTrailing0x) {
+    return checksumed;
+  }
+
+  throw new ValidationFailedError(`Invalid checksum for eth address provided: ${address}`);
+}
+
 interface Secp256k1Signature {
   r: BN;
   s: BN;
@@ -402,10 +438,13 @@ export default {
   getPublicKey,
   getSignature,
   getDERSignature,
+  isChecksumedEthAddress,
+  isLowercasedEthAddress,
   isValid,
   isValidBase64,
   isValidHex,
   isValidSecp256k1Signature,
+  normalizeEthAddress,
   normalizePrivateKey,
   normalizePublicKey,
   parseSecp256k1Signature,

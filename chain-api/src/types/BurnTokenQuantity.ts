@@ -16,8 +16,7 @@ import BigNumber from "bignumber.js";
 import { Type } from "class-transformer";
 import { IsNotEmpty, ValidateNested } from "class-validator";
 
-import { BigNumberProperty } from "../utils";
-import { BigNumberIsNotNegative } from "../validators";
+import { BigNumberIsNotNegative, BigNumberProperty } from "../validators";
 import { TokenInstanceKey } from "./TokenInstance";
 
 export class BurnTokenQuantity {

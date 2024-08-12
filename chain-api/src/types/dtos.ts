@@ -16,7 +16,15 @@ import { Type, instanceToInstance, plainToInstance } from "class-transformer";
 import { IsNotEmpty, IsOptional, ValidationError, validate } from "class-validator";
 import { JSONSchema } from "class-validator-jsonschema";
 
-import { ValidationFailedError, deserialize, getValidationErrorInfo, serialize, signatures } from "../utils";
+import {
+  ConstructorArgs,
+  ValidationFailedError,
+  deserialize,
+  getValidationErrorMessages,
+  serialize,
+  signatures
+} from "../utils";
+import { IsUserAlias } from "../validators";
 import { GalaChainResponse } from "./contract";
 
 type Base<T, BaseT> = T extends BaseT ? T : never;
@@ -30,8 +38,10 @@ export interface ClassConstructor<T> {
 }
 
 class DtoValidationFailedError extends ValidationFailedError {
-  constructor({ message, details }: { message: string; details: string[] }) {
-    super(message, details);
+  constructor(errors: ValidationError[]) {
+    const messages = getValidationErrorMessages(errors);
+    const messagesString = messages.map((s, i) => `(${i + 1}) ${s}`).join(", ");
+    super(`DTO validation failed: ${messagesString}`, messages);
   }
 }
 
@@ -39,7 +49,7 @@ export const validateDTO = async <T extends ChainCallDTO>(dto: T): Promise<T> =>
   const validationErrors = await dto.validate();
 
   if (validationErrors.length) {
-    throw new DtoValidationFailedError(getValidationErrorInfo(validationErrors));
+    throw new DtoValidationFailedError(validationErrors);
   } else {
     return dto;
   }
@@ -160,7 +170,7 @@ export class ChainCallDTO {
     const validationErrors = await this.validate();
 
     if (validationErrors.length) {
-      throw new DtoValidationFailedError(getValidationErrorInfo(validationErrors));
+      throw new DtoValidationFailedError(validationErrors);
     }
   }
 
@@ -227,6 +237,8 @@ export class DryRunResultDto extends ChainCallDTO {
   public deletes: Record<string, true>;
 }
 
+export type RegisterUserParams = ConstructorArgs<RegisterUserDto>;
+
 const publicKeyDescription =
   "A public key to be saved on chain.\n" +
   `It should be just the private part of the EC secp256k1 key, than can be retrieved this way: ` +
@@ -242,13 +254,15 @@ export class RegisterUserDto extends ChainCallDTO {
   @JSONSchema({
     description: `Id of user to save public key for.`
   })
-  @IsNotEmpty()
+  @IsUserAlias()
   user: string;
 
   @JSONSchema({ description: publicKeyDescription })
   @IsNotEmpty()
   publicKey: string;
 }
+
+export type RegisterEthUserParams = ConstructorArgs<RegisterEthUserDto>;
 
 @JSONSchema({
   description: `Dto for secure method to save public keys for Eth users. Method is called and signed by Curators`
@@ -258,6 +272,8 @@ export class RegisterEthUserDto extends ChainCallDTO {
   @IsNotEmpty()
   publicKey: string;
 }
+
+export type UpdatePublicKeyParams = ConstructorArgs<UpdatePublicKeyDto>;
 
 export class UpdatePublicKeyDto extends ChainCallDTO {
   @JSONSchema({ description: publicKeyDescription })
@@ -270,9 +286,11 @@ export class GetPublicKeyDto extends ChainCallDTO {
     description: `Id of a public key holder. Optional field, by default caller's public key is returned.`
   })
   @IsOptional()
+  @IsUserAlias()
   user?: string;
 }
 
+export type GetMyProfileParams = ConstructorArgs<GetMyProfileDto>;
 export class GetMyProfileDto extends ChainCallDTO {
   // make signature required
   @IsNotEmpty()

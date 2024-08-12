@@ -32,12 +32,14 @@ import {
 } from "class-validator";
 import { JSONSchema } from "class-validator-jsonschema";
 
-import { BigNumberProperty } from "../utils";
-import { BigNumberIsNotNegative, BigNumberIsPositive } from "../validators";
+import { ConstructorArgs } from "../utils";
+import { BigNumberIsNotNegative, BigNumberIsPositive, BigNumberProperty, IsUserAlias } from "../validators";
 import { TokenBalance } from "./TokenBalance";
 import { TokenClass, TokenClassKey } from "./TokenClass";
 import { TokenInstance, TokenInstanceKey } from "./TokenInstance";
 import { ChainCallDTO } from "./dtos";
+
+export type FetchTokenClassesParams = ConstructorArgs<FetchTokenClassesDto>;
 
 @JSONSchema({
   description: "Contains list of objects representing token classes to fetch."
@@ -48,6 +50,8 @@ export class FetchTokenClassesDto extends ChainCallDTO {
   @ArrayNotEmpty()
   tokenClasses: Array<TokenClassKey>;
 }
+
+export type FetchTokenClassesWithPaginationParams = ConstructorArgs<FetchTokenClassesWithPaginationDto>;
 
 @JSONSchema({
   description:
@@ -106,6 +110,8 @@ export class FetchTokenClassesWithPaginationDto extends ChainCallDTO {
   limit?: number;
 }
 
+export type FetchTokenClassesResponseBody = ConstructorArgs<FetchTokenClassesResponse>;
+
 export class FetchTokenClassesResponse extends ChainCallDTO {
   @JSONSchema({ description: "List of Token Classes." })
   @ValidateNested({ each: true })
@@ -114,9 +120,11 @@ export class FetchTokenClassesResponse extends ChainCallDTO {
 
   @JSONSchema({ description: "Next page bookmark." })
   @IsOptional()
-  @IsNotEmpty()
+  @IsString()
   nextPageBookmark?: string;
 }
+
+export type FetchTokenInstancesParams = ConstructorArgs<FetchTokenInstancesDto>;
 
 @JSONSchema({
   description: "Contains list of objects representing token instances to fetch."
@@ -127,6 +135,8 @@ export class FetchTokenInstancesDto extends ChainCallDTO {
   @ArrayNotEmpty()
   tokenInstances: Array<TokenInstanceKey>;
 }
+
+export type CreateTokenClassParams = ConstructorArgs<CreateTokenClassDto>;
 
 @JSONSchema({
   description:
@@ -264,6 +274,8 @@ export class CreateTokenClassDto extends ChainCallDTO {
   authorities?: string[];
 }
 
+export type UpdateTokenClassParams = ConstructorArgs<UpdateTokenClassDto>;
+
 export class UpdateTokenClassDto extends ChainCallDTO {
   /* todo: should these fields be update-able? probably not, unless in exceptional circumstances.
            these are more complicted, as they track properties with second order effects.
@@ -326,7 +338,7 @@ export class UpdateTokenClassDto extends ChainCallDTO {
       "Only token authorities can give mint allowances. " +
       "By default the calling user becomes a single token authority. "
   })
-  @IsString({ each: true })
+  @IsUserAlias({ each: true })
   @IsOptional()
   @ArrayNotEmpty()
   authorities?: string[];
@@ -341,6 +353,7 @@ export class UpdateTokenClassDto extends ChainCallDTO {
   overwriteAuthorities?: boolean;
 }
 
+export type FetchBalancesParams = ConstructorArgs<FetchBalancesDto>;
 @JSONSchema({
   description: "Contains parameters for fetching balances. Each parameter is optional."
 })
@@ -349,7 +362,7 @@ export class FetchBalancesDto extends ChainCallDTO {
     description: "Person who owns the balance. If the value is missing, chaincode caller is used."
   })
   @IsOptional()
-  @IsNotEmpty()
+  @IsUserAlias()
   owner?: string;
 
   @JSONSchema({
@@ -380,6 +393,8 @@ export class FetchBalancesDto extends ChainCallDTO {
   additionalKey?: string;
 }
 
+export type FetchBalancesWithPaginationParams = ConstructorArgs<FetchBalancesWithPaginationDto>;
+
 @JSONSchema({
   description: "Contains parameters for fetching balances. Each parameter is optional."
 })
@@ -391,7 +406,7 @@ export class FetchBalancesWithPaginationDto extends ChainCallDTO {
     description: "Person who owns the balance. If the value is missing, chaincode caller is used."
   })
   @IsOptional()
-  @IsNotEmpty()
+  @IsUserAlias()
   owner?: string;
 
   @JSONSchema({
@@ -441,6 +456,8 @@ export class FetchBalancesWithPaginationDto extends ChainCallDTO {
   limit?: number;
 }
 
+export type TokenBalanceWithMetadataParams = ConstructorArgs<TokenBalanceWithMetadata>;
+
 @JSONSchema({
   description: "Response DTO containing a TokenBalance and the balance's corresponding TokenClass."
 })
@@ -461,6 +478,8 @@ export class TokenBalanceWithMetadata extends ChainCallDTO {
   token: TokenClass;
 }
 
+export type FetchBalancesWithTokenMetadataBody = ConstructorArgs<FetchBalancesWithTokenMetadataResponse>;
+
 export class FetchBalancesWithTokenMetadataResponse extends ChainCallDTO {
   @JSONSchema({ description: "List of balances with token metadata." })
   @ValidateNested({ each: true })
@@ -469,9 +488,11 @@ export class FetchBalancesWithTokenMetadataResponse extends ChainCallDTO {
 
   @JSONSchema({ description: "Next page bookmark." })
   @IsOptional()
-  @IsNotEmpty()
+  @IsString()
   nextPageBookmark?: string;
 }
+
+export type TransferTokenParams = ConstructorArgs<TransferTokenDto>;
 
 @JSONSchema({
   description:
@@ -482,10 +503,10 @@ export class TransferTokenDto extends ChainCallDTO {
     description: "The current owner of tokens. If the value is missing, chaincode caller is used."
   })
   @IsOptional()
-  @IsNotEmpty()
+  @IsUserAlias()
   from?: string;
 
-  @IsNotEmpty()
+  @IsUserAlias()
   to: string;
 
   @JSONSchema({

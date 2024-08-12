@@ -17,8 +17,7 @@ import { Type } from "class-transformer";
 import { IsNotEmpty, IsOptional, ValidateNested } from "class-validator";
 import { JSONSchema } from "class-validator-jsonschema";
 
-import { BigNumberProperty } from "../utils";
-import { BigNumberIsNotNegative } from "../validators";
+import { BigNumberIsNotNegative, BigNumberProperty, IsUserAlias } from "../validators";
 import { TokenInstanceKey } from "./TokenInstance";
 
 export class LockTokenQuantity {
@@ -35,6 +34,6 @@ export class LockTokenQuantity {
     description: "The current owner of tokens. If the value is missing, chaincode caller is used."
   })
   @IsOptional()
-  @IsNotEmpty()
+  @IsUserAlias()
   owner?: string;
 }

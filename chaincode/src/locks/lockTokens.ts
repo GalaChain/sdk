@@ -25,7 +25,7 @@ import { BigNumber } from "bignumber.js";
 
 import { verifyAndUseAllowances } from "../allowances";
 import { fetchOrCreateBalance } from "../balances";
-import { fetchTokenInstance } from "../token";
+import { InvalidDecimalError, fetchTokenClass, fetchTokenInstance } from "../token";
 import { GalaChainContext } from "../types";
 import { putChainObject } from "../utils";
 import { InvalidExpirationError, NftInvalidQuantityLockError } from "./LockError";
@@ -71,6 +71,14 @@ export async function lockToken(
 
   if (expires > 0 && expires < ctx.txUnixTime) {
     throw new InvalidExpirationError(expires);
+  }
+
+  // Get the token class
+  const tokenClass = await fetchTokenClass(ctx, tokenInstanceKey);
+
+  const decimalPlaces = quantity.decimalPlaces() ?? 0;
+  if (decimalPlaces > tokenClass.decimals) {
+    throw new InvalidDecimalError(quantity, tokenClass.decimals);
   }
 
   // Get the token instance

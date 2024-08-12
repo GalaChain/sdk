@@ -73,8 +73,9 @@ export async function fullAllowanceCheck(
 
       const expiredAllowances = allowanceResults.filter((allowance) => {
         return (
-          allowance.usesSpent.isGreaterThanOrEqualTo(allowance.uses) ||
-          allowance.quantitySpent.isGreaterThanOrEqualTo(allowance.quantity) ||
+          (!!allowance.usesSpent && allowance.usesSpent?.isGreaterThanOrEqualTo(allowance.uses)) ||
+          (!!allowance.quantitySpent &&
+            allowance.quantitySpent?.isGreaterThanOrEqualTo(allowance.quantity)) ||
           (allowance.expires !== 0 && allowance.expires && allowance.expires <= ctx.txUnixTime)
         );
       });

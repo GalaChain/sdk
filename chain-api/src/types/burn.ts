@@ -21,6 +21,7 @@ import {
   IsNotEmpty,
   IsOptional,
   IsPositive,
+  IsString,
   Max,
   Min,
   ValidateIf,
@@ -28,13 +29,15 @@ import {
 } from "class-validator";
 import { JSONSchema } from "class-validator-jsonschema";
 
-import { BigNumberProperty } from "../utils";
-import { BigNumberIsInteger, BigNumberIsNotNegative } from "../validators";
+import { ConstructorArgs } from "../utils";
+import { BigNumberIsInteger, BigNumberIsNotNegative, BigNumberProperty, IsUserAlias } from "../validators";
 import { BurnTokenQuantity } from "./BurnTokenQuantity";
 import { TokenBurnCounter } from "./TokenBurnCounter";
 import { TokenInstance } from "./TokenInstance";
 import { ChainCallDTO } from "./dtos";
 import { BatchMintTokenDto } from "./mint";
+
+export type FetchBurnsParams = ConstructorArgs<FetchBurnsDto>;
 
 @JSONSchema({
   description: "Contains parameters for fetching burns."
@@ -43,7 +46,7 @@ export class FetchBurnsDto extends ChainCallDTO {
   @JSONSchema({
     description: "The user who burned the token."
   })
-  @IsNotEmpty()
+  @IsUserAlias()
   burnedBy: string;
 
   @JSONSchema({
@@ -90,6 +93,8 @@ export class FetchBurnsDto extends ChainCallDTO {
   public created?: number;
 }
 
+export type BurnTokensParams = ConstructorArgs<BurnTokensDto>;
+
 @JSONSchema({
   description: "Defines burns to be created."
 })
@@ -109,9 +114,11 @@ export class BurnTokensDto extends ChainCallDTO {
       "Owner of the tokens to be burned. If not provided, the calling user is assumed to be the owner."
   })
   @IsOptional()
-  @IsNotEmpty()
+  @IsUserAlias()
   owner?: string;
 }
+
+export type BurnAndMintParams = ConstructorArgs<BurnAndMintDto>;
 
 @JSONSchema({
   description:
@@ -139,7 +146,7 @@ export class BurnAndMintDto extends ChainCallDTO {
       "User ID of the identity that owns the tokens to be burned. " +
       "The burnDto signature will be validated against this user's public key on chain."
   })
-  @IsNotEmpty()
+  @IsUserAlias()
   burnOwner: string;
 
   @JSONSchema({
@@ -150,6 +157,8 @@ export class BurnAndMintDto extends ChainCallDTO {
   @IsNotEmpty()
   mintDto: BatchMintTokenDto;
 }
+
+export type FetchBurnCountersWithPaginationParams = ConstructorArgs<FetchBurnCountersWithPaginationDto>;
 
 @JSONSchema({
   description: "Contains parameters for fetching TokenBurnCounters with pagination."
@@ -206,6 +215,8 @@ export class FetchBurnCountersWithPaginationDto extends ChainCallDTO {
   limit?: number;
 }
 
+export type FetchBurnCountersBody = ConstructorArgs<FetchBurnCountersResponse>;
+
 export class FetchBurnCountersResponse extends ChainCallDTO {
   @JSONSchema({ description: "List of token burn counters." })
   @ValidateNested({ each: true })
@@ -214,7 +225,7 @@ export class FetchBurnCountersResponse extends ChainCallDTO {
 
   @JSONSchema({ description: "Next page bookmark." })
   @IsOptional()
-  @IsNotEmpty()
+  @IsString()
   nextPageBookmark?: string;
 }
 
@@ -253,7 +264,7 @@ export class TokenBurnCounterCompositeKeyDto extends ChainCallDTO {
   @JSONSchema({
     description: "burnedBy user."
   })
-  @IsNotEmpty()
+  @IsUserAlias()
   burnedBy: string;
 
   @JSONSchema({

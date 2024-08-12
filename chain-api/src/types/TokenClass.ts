@@ -21,15 +21,14 @@ import {
   IsDefined,
   IsNotEmpty,
   IsOptional,
-  IsString,
   Max,
   MaxLength,
   Min
 } from "class-validator";
 import { JSONSchema } from "class-validator-jsonschema";
 
-import { BigNumberProperty, ChainKey } from "../utils";
-import { BigNumberIsPositive } from "../validators";
+import { ChainKey, ConstructorArgs } from "../utils";
+import { BigNumberIsPositive, BigNumberProperty, IsUserAlias } from "../validators";
 import { ChainObject } from "./ChainObject";
 import { GC_NETWORK_ID } from "./contract";
 import { ChainCallDTO } from "./dtos";
@@ -40,6 +39,8 @@ export interface TokenClassKeyProperties {
   type: string;
   additionalKey: string;
 }
+
+export type TokenClassKeyBody = ConstructorArgs<TokenClassKey>;
 
 @JSONSchema({
   description: "Object representing the chain identifier of token class."
@@ -81,6 +82,8 @@ export class TokenClassKey extends ChainCallDTO {
     return false;
   }
 }
+
+export type TokenClassBody = ConstructorArgs<TokenClassKey>;
 
 export class TokenClass extends ChainObject {
   public static INDEX_KEY = "GCTI";
@@ -131,7 +134,7 @@ export class TokenClass extends ChainObject {
   public maxCapacity: BigNumber;
 
   // IDs of authorities who can manage this token
-  @IsString({ each: true })
+  @IsUserAlias({ each: true })
   public authorities: Array<string>;
 
   /// ///////////////////////////////////////////////////

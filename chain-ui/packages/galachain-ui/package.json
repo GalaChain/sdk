@@ -1,0 +1,22 @@
+{
+  "name": "@gala-chain/ui",
+  "version": "1.3.3",
+  "type": "module",
+  "license": "Apache-2.0",
+  "files": [
+    "dist",
+    "package.json"
+  ],
+  "main": "./dist/gala-chain-ui.umd.js",
+  "module": "./dist/gala-chain-ui.es.js",
+  "types": "./dist/web-components-package.d.ts",
+  "exports": {
+    ".": {
+      "import": "./dist/gala-chain-ui.es.js",
+      "require": "./dist/gala-chain-ui.umd.js"
+    }
+  },
+  "scripts": {},
+  "dependencies": {},
+  "devDependencies": {}
+}

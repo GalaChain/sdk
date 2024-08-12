@@ -133,8 +133,16 @@ it("should not throw a 404 error if no tokens are found when using the Paginatio
   });
 
   // When
-  const response = await contract.FetchTokenClassesWithPagination(ctx, dto).catch((e) => e);
+  const response: GalaChainResponse<FetchTokenClassesResponse> = await contract
+    .FetchTokenClassesWithPagination(ctx, dto)
+    .catch((e) => e);
 
   // Then
   expect(response).toEqual(GalaChainResponse.Success(expectedResponse));
+
+  const responseIsValid: boolean | undefined = await response.Data?.validateOrReject()
+    .then(() => true)
+    .catch(() => false);
+
+  expect(responseIsValid).toBe(true);
 });
