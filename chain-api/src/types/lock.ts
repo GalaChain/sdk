@@ -51,6 +51,7 @@ export class LockTokenDto extends ChainCallDTO {
       "If the value is missing, then token owner and lock creator can unlock " +
       "in all cases token authority can unlock token."
   })
+  @IsOptional()
   @IsNotEmpty()
   @IsUserAlias()
   lockAuthority?: string;
