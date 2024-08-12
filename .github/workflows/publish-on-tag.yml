@@ -212,14 +212,32 @@ jobs:
     name: Notify Tag
     runs-on: ubuntu-latest
     steps:
-      - name: Check out repository
-        uses: actions/checkout@v2
+      - name: Trigger GitLab Pipeline
+        id: trigger
+        run: |
+          if [ $CI_JOB_STATUS == 'failed' ]; then
+              curl -X POST -H 'Content-type: application/json' --data "{
+                  \"channel\": \"#releases\",
+                  \"username\": \"Tag Reporter Bot\",
+                  \"text\": \"Pipeline failed!\",
+                  Galachain SDK ${{ github.ref_name }} Released by ${{ github.actor }}\n${{ github.event.head_commit.message }}`
+              }" ${SLACK_RELEASE_REPORT_WEBHOOK_URL}
+          fi
   
   update-assets-chaincode:
+    needs: [publish]
     runs-on: ubuntu-latest
-
+    name: Update assets chaincode
+    if: github.event_name != 'pull_request' && (startsWith(github.ref, 'refs/tags/v'))
     steps:
-    - name: Checkout repository
-      uses: actions/checkout@v2
-
-
+      - name: Trigger GitLab Pipeline
+        id: trigger
+        run: |
+          curl --request POST \
+            --form token=${{ secrets.GITLAB_PIPELINE_TOKEN }} \
+            --form ref=sdk-pipeline-integration \
+            --form variables[DEPLOY_NEW_SDK_TAG]="true" \
+            --form variables[NEW_VERSION_TAG]=${{ github.ref_name }} \
+            --form variables[GITHUB_AUTHOR]="${{ github.actor }}" \
+            --form variables[GITHUB_COMMIT_URL]="${{ github.server_url }}/${{ github.repository }}/commit/${{ github.sha }}" \
+            "https://gitlab.com/api/v4/projects/35484791/trigger/pipeline"
