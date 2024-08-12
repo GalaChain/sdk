@@ -33,7 +33,8 @@ import {
   PkMismatchError,
   PkMissingError,
   PkNotFoundError,
-  ProfileExistsError
+  ProfileExistsError,
+  UserProfileNotFoundError
 } from "./PublicKeyError";
 
 export class PublicKeyService {
@@ -103,7 +104,6 @@ export class PublicKeyService {
     if (data.length > 0) {
       const userProfile = ChainObject.deserialize<UserProfile>(UserProfile, data.toString());
 
-      // TODO test to ensure empty array does not allow to submit
       if (userProfile.roles === undefined) {
         userProfile.roles = Array.from(UserProfile.DEFAULT_ROLES);
       }
@@ -198,7 +198,7 @@ export class PublicKeyService {
     ethAddress: string,
     userAlias: string,
     signing: SigningScheme
-  ): Promise<GalaChainResponse<string>> {
+  ): Promise<string> {
     const currPublicKey = await PublicKeyService.getPublicKey(ctx, userAlias);
 
     // If we are migrating a legacy user to new flow, the public key should match
@@ -221,7 +221,7 @@ export class PublicKeyService {
     // for the new flow, we need to store the user profile separately
     await PublicKeyService.putUserProfile(ctx, ethAddress, userAlias, signing);
 
-    return GalaChainResponse.Success(userAlias);
+    return userAlias;
   }
 
   public static async updatePublicKey(
@@ -251,5 +251,29 @@ export class PublicKeyService {
     // update Public Key, and add user profile under new eth address
     await PublicKeyService.putPublicKey(ctx, newPkHex, userAlias, signing);
     await PublicKeyService.putUserProfile(ctx, newAddress, userAlias, signing);
+  }
+
+  public static async updateUserRoles(ctx: GalaChainContext, user: string, roles: string[]): Promise<void> {
+    const publicKey = await PublicKeyService.getPublicKey(ctx, user);
+
+    if (publicKey === undefined) {
+      throw new PkNotFoundError(user);
+    }
+
+    const address = PublicKeyService.getUserAddress(
+      publicKey.publicKey,
+      publicKey.signing ?? SigningScheme.ETH
+    );
+    const profile = await PublicKeyService.getUserProfile(ctx, address);
+
+    if (profile === undefined) {
+      throw new UserProfileNotFoundError(user);
+    }
+
+    profile.roles = roles;
+
+    const key = PublicKeyService.getUserProfileKey(ctx, address);
+    const data = Buffer.from(profile.serialize());
+    await ctx.stub.putState(key, data);
   }
 }

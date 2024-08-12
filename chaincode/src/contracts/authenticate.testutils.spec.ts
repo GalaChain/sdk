@@ -15,6 +15,7 @@
 import {
   ChainCallDTO,
   GalaChainResponse,
+  GetMyProfileDto,
   GetObjectDto,
   GetPublicKeyDto,
   PublicKey,
@@ -47,10 +48,8 @@ export interface TonUser {
 
 export async function createUser(): Promise<User> {
   const name = "client|user-" + randomUUID();
-  const privateKey = "a2e0b584004a7dd3f6257078b38b4271cb39c7a3ecba4f2a2c541ef44a940922";
-  const publicKey =
-    "04215291d9d04aad96832bffe808acdc1d985b4b547c8b16f841e14e8fbfb11284d5a5a5c71d95bd520b90403abff8fe7ccf793e755baf69672ab6cf25b60fc942";
-  const ethAddress = "a2a29d98b18C28EF5764f3944F01eEE1A54a668d";
+  const { privateKey, publicKey } = signatures.genKeyPair();
+  const ethAddress = signatures.getEthAddress(publicKey);
   return { alias: name, privateKey, publicKey, ethAddress };
 }
 
@@ -122,6 +121,15 @@ export async function getUserProfile(
     objectId: `\u0000GCUP\u0000${address}\u0000`
   });
   return chaincode.invoke("PublicKeyContract:GetObjectByKey", dto);
+}
+
+export async function getMyProfile(
+  chaincode: TestChaincode,
+  privateKey: string
+): Promise<GalaChainResponse<UserProfile>> {
+  const dto = new GetMyProfileDto();
+  dto.sign(privateKey);
+  return chaincode.invoke("PublicKeyContract:GetMyProfile", dto);
 }
 
 test.skip("Workaround", () => {

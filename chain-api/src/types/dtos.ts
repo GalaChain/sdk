@@ -309,6 +309,19 @@ export class UpdatePublicKeyDto extends ChainCallDTO {
   publicKey: string;
 }
 
+export type UpdateUserRolesParams = ConstructorArgs<UpdateUserRolesDto>;
+
+export class UpdateUserRolesDto extends ChainCallDTO {
+  @IsUserAlias()
+  user: string;
+
+  @JSONSchema({ description: "New set of roles for the user that will replace the old ones." })
+  @IsNotEmpty()
+  roles: string[];
+}
+
+export type GetPublicKeyParams = ConstructorArgs<GetPublicKeyDto>;
+
 export class GetPublicKeyDto extends ChainCallDTO {
   @JSONSchema({
     description: `Id of a public key holder. Optional field, by default caller's public key is returned.`

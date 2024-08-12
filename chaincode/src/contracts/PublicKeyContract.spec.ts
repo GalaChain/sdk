@@ -14,6 +14,7 @@
  */
 import {
   ChainCallDTO,
+  GalaChainResponse,
   GalaChainSuccessResponse,
   GetMyProfileDto,
   GetPublicKeyDto,
@@ -22,6 +23,7 @@ import {
   RegisterUserDto,
   SigningScheme,
   UpdatePublicKeyDto,
+  UpdateUserRolesDto,
   UserProfile,
   UserRole,
   createValidDTO,
@@ -38,6 +40,7 @@ import {
   createRegisteredUser,
   createSignedDto,
   createUser,
+  getMyProfile,
   getPublicKey,
   getUserProfile
 } from "./authenticate.testutils.spec";
@@ -572,6 +575,56 @@ describe("GetMyProfile", () => {
     );
     expect(resp2).toEqual(resp1);
   });
+});
+
+describe("UpdateUserRoles", () => {
+  it("should update user roles", async () => {
+    // Given
+    const chaincode = new TestChaincode([PublicKeyContract]);
+
+    // admin has curator role
+    const adminPrivateKey = process.env.DEV_ADMIN_PRIVATE_KEY as string;
+    const adminProfileResp = await getMyProfile(chaincode, adminPrivateKey);
+    expect(adminProfileResp).toEqual(
+      transactionSuccess(
+        expect.objectContaining({ roles: [UserRole.CURATOR, UserRole.EVALUATE, UserRole.SUBMIT] })
+      )
+    );
+
+    // test users
+    const user1 = await createRegisteredUser(chaincode);
+    const user2 = await createRegisteredUser(chaincode);
+
+    function setCuratorRole(user: string, signerPrivateKey: string) {
+      return updateUserRoles(chaincode, user, [UserRole.CURATOR], signerPrivateKey);
+    }
+
+    // When
+    const notAllowedByUser1 = await setCuratorRole(user2.alias, user1.privateKey);
+    const allowedByAdmin = await setCuratorRole(user1.alias, adminPrivateKey);
+    const allowedByUser1 = await setCuratorRole(user2.alias, user1.privateKey);
+
+    // Then
+    expect(notAllowedByUser1).toEqual(
+      transactionErrorMessageContains("does not have one of required roles: CURATOR")
+    );
+    expect(allowedByAdmin).toEqual(transactionSuccess());
+    expect(allowedByUser1).toEqual(transactionSuccess());
+  });
+
+  function updateUserRoles(
+    chaincode: TestChaincode,
+    user: string,
+    roles: UserRole[],
+    signerPrivateKey: string
+  ): Promise<GalaChainResponse<any>> {
+    const dto = new UpdateUserRolesDto();
+    dto.user = user;
+    dto.roles = roles;
+    dto.sign(signerPrivateKey);
+
+    return chaincode.invoke("PublicKeyContract:UpdateUserRoles", dto);
+  }
 });
 
 async function setup() {
