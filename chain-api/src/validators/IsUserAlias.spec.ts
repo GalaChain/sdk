@@ -34,6 +34,7 @@ test.each<[string, string, string]>([
   ["valid legacy alias", "client|123", "client|123"],
   ["valid eth alias", `eth|${checksumedEthAddress}`, `eth|${checksumedEthAddress}`],
   ["valid bridge (eth)", `EthereumBridge`, `EthereumBridge`],
+  ["valid bridge (ton)", `TonBridge`, `TonBridge`],
   ["valid bridge (GalaChain)", `GalaChainBridge-42`, `GalaChainBridge-42`]
 ])("%s", async (label, input, expected) => {
   // Given
