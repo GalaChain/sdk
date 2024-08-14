@@ -16,9 +16,9 @@ import BN from "bn.js";
 import { classToPlain as instanceToPlain } from "class-transformer";
 import { ec as EC, ec } from "elliptic";
 import Signature from "elliptic/lib/elliptic/ec/signature";
-import { ethers } from "ethers";
 import { keccak256 } from "js-sha3";
 
+import { TypedDataEncoder } from "../ethers/hash/typed-data";
 import { ValidationFailedError } from "./error";
 import serialize from "./serialize";
 
@@ -45,7 +45,9 @@ function isEIP712Object(obj: object): obj is EIP712Object {
 }
 
 function getEIP712PayloadToSign(obj: EIP712Object): string {
-  return ethers.TypedDataEncoder.encode(obj.domain, obj.types, obj);
+  // return ethers.TypedDataEncoder.encode(obj.domain, obj.types, obj);
+
+  return TypedDataEncoder.encode(obj.domain, obj.types, obj);
 }
 
 function getPayloadToSign(obj: object): string {

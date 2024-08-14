@@ -7,6 +7,13 @@
 import { assert, assertArgument } from "../errors.js";
 
 /**
+ *  Some data helpers.
+ *
+ *
+ *  @_subsection api/utils:Data Helpers  [about-data]
+ */
+
+/**
  *  A [[HexString]] whose length is even, which ensures it is a valid
  *  representation of binary data.
  */
