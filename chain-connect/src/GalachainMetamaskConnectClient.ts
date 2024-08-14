@@ -13,13 +13,10 @@
  * limitations under the License.
  */
 import { ChainCallDTO, ConstructorArgs, serialize, signatures } from "@gala-chain/api";
-import { BrowserProvider, Eip1193Provider, getAddress } from "ethers";
+import { BrowserProvider, getAddress } from "ethers";
 
-interface ExtendedEip1193Provider extends Eip1193Provider {
-  on(event: "accountsChanged", handler: (accounts: string[]) => void): void;
-  providers: Array<any>;
-  isTrust?: boolean;
-}
+import { CustomEventEmitter, ExtendedEip1193Provider, MetaMaskEvents } from "./helpers";
+import { CustomClient } from "./types/GalachainClient";
 
 declare global {
   interface Window {
@@ -27,57 +24,28 @@ declare global {
   }
 }
 
-interface MetaMaskEvents {
-  accountChanged: string | null;
-  accountsChanged: string[] | null;
-}
-
-type Listener<T> = (data: T) => void;
-
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-class CustomEventEmitter<Events extends Record<string, any>> {
-  private listeners: { [K in keyof Events]?: Listener<Events[K]>[] } = {};
-
-  public on<K extends keyof Events>(event: K, listener: Listener<Events[K]>): this {
-    if (!this.listeners[event]) {
-      this.listeners[event] = [];
-    }
-    this.listeners[event]?.push(listener);
-    return this;
-  }
-
-  public off<K extends keyof Events>(event: K, listener: Listener<Events[K]>): this {
-    if (!this.listeners[event]) return this;
-    this.listeners[event] = this.listeners[event]?.filter((l) => l !== listener);
-    return this;
-  }
-
-  public emit<K extends keyof Events>(event: K, data: Events[K]): boolean {
-    if (!this.listeners[event]) return false;
-    this.listeners[event]?.forEach((listener) => listener(data));
-    return true;
-  }
-}
-
-export class GalachainConnectClient extends CustomEventEmitter<MetaMaskEvents> {
+export class GalachainMetamaskConnectClient
+  extends CustomEventEmitter<MetaMaskEvents>
+  implements CustomClient
+{
   #ethAddress: string;
   #provider: BrowserProvider | undefined;
   #chainCodeUrl: string;
 
-  get galachainAddress() {
+  get getChaincodeUrl() {
+    return this.#chainCodeUrl;
+  }
+
+  get getGalachainAddress() {
     return this.#ethAddress.replace("0x", "eth|");
   }
 
-  get ethAddress() {
+  get getWalletAddress(): string {
     return getAddress(this.#ethAddress);
   }
 
-  set ethAddress(val: string) {
+  set setWalletAddress(val: string) {
     this.#ethAddress = getAddress(`0x${val.replace(/0x|eth\|/, "")}`);
-  }
-
-  get provider() {
-    return this.#provider;
   }
 
   constructor(chainCodeUrl: string) {
@@ -97,18 +65,18 @@ export class GalachainConnectClient extends CustomEventEmitter<MetaMaskEvents> {
     }
     window.ethereum.on("accountsChanged", (accounts: string[]) => {
       if (accounts.length > 0) {
-        this.ethAddress = getAddress(accounts[0]);
-        this.emit("accountChanged", this.galachainAddress);
+        this.setWalletAddress = getAddress(accounts[0]);
+        this.emit("accountChanged", this.getGalachainAddress);
         this.emit("accountsChanged", accounts);
       } else {
-        this.ethAddress = "";
+        this.setWalletAddress = "";
         this.emit("accountChanged", null);
         this.emit("accountsChanged", null);
       }
     });
   }
 
-  public async connectToMetaMask() {
+  public async connect() {
     if (!this.#provider) {
       throw new Error("Ethereum provider not found");
     }
@@ -116,8 +84,32 @@ export class GalachainConnectClient extends CustomEventEmitter<MetaMaskEvents> {
 
     try {
       const accounts = (await this.#provider.send("eth_requestAccounts", [])) as string[];
-      this.ethAddress = getAddress(accounts[0]);
-      return this.galachainAddress;
+      this.setWalletAddress = getAddress(accounts[0]);
+      return this.getGalachainAddress;
+    } catch (error: unknown) {
+      throw new Error((error as Error).message);
+    }
+  }
+
+  public async sign<U extends ConstructorArgs<ChainCallDTO>>(
+    payload: U
+  ): Promise<U & { signature: string; prefix: string }> {
+    if (!this.#provider) {
+      throw new Error("Ethereum provider not found");
+    }
+    if (!this.#ethAddress) {
+      throw new Error("No account connected");
+    }
+
+    try {
+      const prefix = this.calculatePersonalSignPrefix(payload);
+      const prefixedPayload = { ...payload, prefix };
+      const dto = signatures.getPayloadToSign(prefixedPayload);
+
+      const signer = await this.#provider.getSigner();
+      const signature = await signer.provider.send("personal_sign", [this.#ethAddress, dto]);
+
+      return { ...prefixedPayload, signature };
     } catch (error: unknown) {
       throw new Error((error as Error).message);
     }
@@ -136,23 +128,11 @@ export class GalachainConnectClient extends CustomEventEmitter<MetaMaskEvents> {
     sign?: boolean;
     headers?: object;
   }): Promise<T> {
-    if (!this.#provider) {
-      throw new Error("Ethereum provider not found");
-    }
-    if (!this.#ethAddress) {
-      throw new Error("No account connected");
-    }
-
     try {
       if (sign === true) {
-        const prefix = this.calculatePersonalSignPrefix(payload);
-        const prefixedPayload = { ...payload, prefix };
-        const dto = signatures.getPayloadToSign(prefixedPayload);
+        const newPayload = await this.sign(payload);
 
-        const signer = await this.#provider.getSigner();
-        const signature = await signer.provider.send("personal_sign", [this.#ethAddress, dto]);
-
-        return await this.submit(url, method, { ...prefixedPayload, signature }, headers);
+        return await this.submit(url, method, newPayload, headers);
       }
 
       return await this.submit(url, method, payload, headers);

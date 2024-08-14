@@ -23,7 +23,7 @@ import {
   UserProfileBody
 } from "@gala-chain/api";
 
-import { GalachainConnectClient } from "./GalachainConnectClient";
+import { GalachainConnectClient } from "./GalachainMetamaskConnectClient";
 
 export class PublicKeyClient {
   constructor(private client: GalachainConnectClient) {}

@@ -13,49 +13,13 @@
  * limitations under the License.
  */
 import { ChainCallDTO, ConstructorArgs, serialize, signatures } from "@gala-chain/api";
-import { BrowserProvider, Eip1193Provider, getAddress } from "ethers";
+import { BrowserProvider, getAddress } from "ethers";
 
-interface ExtendedEip1193TrustProvider extends Eip1193Provider {
-  on(event: "accountsChanged", handler: (accounts: string[]) => void): void;
-  providers: Array<any>;
-  isTrust?: boolean;
-}
+import { CustomEventEmitter, ExtendedEip1193Provider, MetaMaskEvents } from "./helpers";
 
 declare global {
   interface Window {
-    ethereum?: ExtendedEip1193TrustProvider;
-  }
-}
-
-interface MetaMaskEvents {
-  accountChanged: string | null;
-  accountsChanged: string[] | null;
-}
-
-type Listener<T> = (data: T) => void;
-
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-class CustomEventEmitter<Events extends Record<string, any>> {
-  private listeners: { [K in keyof Events]?: Listener<Events[K]>[] } = {};
-
-  public on<K extends keyof Events>(event: K, listener: Listener<Events[K]>): this {
-    if (!this.listeners[event]) {
-      this.listeners[event] = [];
-    }
-    this.listeners[event]?.push(listener);
-    return this;
-  }
-
-  public off<K extends keyof Events>(event: K, listener: Listener<Events[K]>): this {
-    if (!this.listeners[event]) return this;
-    this.listeners[event] = this.listeners[event]?.filter((l) => l !== listener);
-    return this;
-  }
-
-  public emit<K extends keyof Events>(event: K, data: Events[K]): boolean {
-    if (!this.listeners[event]) return false;
-    this.listeners[event]?.forEach((listener) => listener(data));
-    return true;
+    ethereum?: ExtendedEip1193Provider;
   }
 }
 
@@ -87,7 +51,7 @@ async function listenForTrustWalletInitialized({ timeout } = { timeout: 3000 }) 
 }
 
 function getTrustWalletFromWindow() {
-  const isTrustWallet = (ethereum: ExtendedEip1193TrustProvider | undefined) => {
+  const isTrustWallet = (ethereum: ExtendedEip1193Provider | undefined) => {
     // Identify if Trust Wallet injected provider is present.
     const trustWallet = !!ethereum?.isTrust;
 

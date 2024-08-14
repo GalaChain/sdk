@@ -17,7 +17,7 @@ import { TransferTokenDto } from "@gala-chain/api";
 import { plainToInstance } from "class-transformer";
 import { EventEmitter } from "events";
 
-import { GalachainConnectClient } from "./GalachainConnectClient";
+import { GalachainMetamaskConnectClient } from "./GalachainMetamaskConnectClient";
 
 global.fetch = jest.fn((url: string, options?: Record<string, unknown>) =>
   Promise.resolve({
@@ -46,7 +46,7 @@ class EthereumMock extends EventEmitter {
 }
 window.ethereum = new EthereumMock();
 
-describe("GalachainConnectClient", () => {
+describe("GalachainMetamaskConnectClient", () => {
   it("test full flow", async () => {
     const dto = plainToInstance(TransferTokenDto, {
       quantity: "1",
@@ -62,7 +62,7 @@ describe("GalachainConnectClient", () => {
     });
 
     // call connect
-    const client = new GalachainConnectClient("https://example.com");
+    const client = new GalachainMetamaskConnectClient("https://example.com");
     await client.connectToMetaMask();
 
     // send dto payload in send function

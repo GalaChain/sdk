@@ -54,7 +54,7 @@ import {
   UseTokenParams
 } from "@gala-chain/api";
 
-import { GalachainConnectClient } from "./GalachainConnectClient";
+import { GalachainConnectClient } from "./GalachainMetamaskConnectClient";
 
 export class TokenClient {
   constructor(private client: GalachainConnectClient) {}
