@@ -4,7 +4,7 @@
 
 /* eslint-disable @typescript-eslint/no-explicit-any */
 // import { keccak256 } from "../../crypto/keccak_256";
-import { keccak256 } from "../../crypto/keccak_256";
+import { keccak256 } from "../crypto/keccak_256";
 import { getAddress } from "../address";
 import { assertArgument } from "../errors";
 import { defineProperties } from "../properties";

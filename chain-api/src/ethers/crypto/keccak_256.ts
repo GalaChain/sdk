@@ -10,7 +10,7 @@
 */
 import { keccak256 as keccak256_js_sha3 } from "js-sha3";
 
-import { BytesLike, getBytes, hexlify } from "../ethers/utils/data";
+import { BytesLike, getBytes, hexlify } from "../utils/data";
 
 let locked = false;
 

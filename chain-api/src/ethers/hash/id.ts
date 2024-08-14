@@ -1,4 +1,4 @@
-import { keccak256 } from "../../crypto/keccak_256";
+import { keccak256 } from "../crypto/keccak_256";
 import { toUtf8Bytes } from "../utils/utf8";
 
 /**

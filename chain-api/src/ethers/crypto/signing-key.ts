@@ -11,10 +11,10 @@
 //I used to use this:
 import { ec as EC, ec } from "elliptic";
 
-import { assertArgument } from "../ethers/errors";
-import { Signature, SignatureLike } from "../ethers/signature";
-import { BytesLike, dataLength, getBytes, getBytesCopy, hexlify } from "../ethers/utils/data";
-import { toBeHex } from "../ethers/utils/maths";
+import { assertArgument } from "../errors";
+import { Signature, SignatureLike } from "../signature";
+import { BytesLike, dataLength, getBytes, getBytesCopy, hexlify } from "../utils/data";
+import { toBeHex } from "../utils/maths";
 
 /**
  *  A **SigningKey** provides high-level access to the elliptic curve
