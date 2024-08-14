@@ -1,7 +1,7 @@
 import { keccak256 } from "js-sha3";
 
-import { SigningKey } from "../crypto/signing-key";
 import { getAddress } from "../address";
+import { SigningKey } from "../crypto/signing-key";
 import { SignatureLike } from "../signature";
 import { BytesLike } from "../utils/data";
 
