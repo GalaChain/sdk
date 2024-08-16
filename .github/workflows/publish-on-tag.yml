@@ -219,7 +219,7 @@ jobs:
                   \"channel\": \"#releases\",
                   \"username\": \"Tag Reporter Bot\",
                   \"text\": Galachain SDK ${{ github.ref_name }} Released by ${{ github.actor }}\n${{ github.event.head_commit.message }}`
-              }" ${{ secrets.SLACK_TAG_WEBHOOK_URL }} #correct url?
+              }" ${{ secrets.SLACK_TAG_WEBHOOK_URL }}
   
   update-assets-chaincode:
     needs: [publish]
