@@ -215,14 +215,11 @@ jobs:
       - name: Trigger GitLab Pipeline
         id: trigger
         run: |
-          if [ $CI_JOB_STATUS == 'failed' ]; then
               curl -X POST -H 'Content-type: application/json' --data "{
                   \"channel\": \"#releases\",
                   \"username\": \"Tag Reporter Bot\",
-                  \"text\": \"Pipeline failed!\",
-                  Galachain SDK ${{ github.ref_name }} Released by ${{ github.actor }}\n${{ github.event.head_commit.message }}`
-              }" ${SLACK_RELEASE_REPORT_WEBHOOK_URL}
-          fi
+                  \"text\": Galachain SDK ${{ github.ref_name }} Released by ${{ github.actor }}\n${{ github.event.head_commit.message }}`
+              }" ${{ secrets.SLACK_TAG_WEBHOOK_URL }} #correct url?
   
   update-assets-chaincode:
     needs: [publish]
@@ -235,7 +232,7 @@ jobs:
         run: |
           curl --request POST \
             --form token=${{ secrets.GITLAB_PIPELINE_TOKEN }} \
-            --form ref=sdk-pipeline-integration \
+            --form ref=main \
             --form variables[DEPLOY_NEW_SDK_TAG]="true" \
             --form variables[NEW_VERSION_TAG]=${{ github.ref_name }} \
             --form variables[GITHUB_AUTHOR]="${{ github.actor }}" \
