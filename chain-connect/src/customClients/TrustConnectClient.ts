@@ -15,7 +15,8 @@
 import { ChainCallDTO, ConstructorArgs, serialize, signatures } from "@gala-chain/api";
 import { BrowserProvider, getAddress } from "ethers";
 
-import { CustomEventEmitter, ExtendedEip1193Provider, MetaMaskEvents } from "./helpers";
+import { CustomEventEmitter, ExtendedEip1193Provider, MetaMaskEvents } from "../helpers";
+import { CustomClient } from "../types/CustomClient";
 
 declare global {
   interface Window {
@@ -87,7 +88,7 @@ function getTrustWalletFromWindow() {
   return window["trustwallet"] ?? null;
 }
 
-export class GalachainConnectTrustClient extends CustomEventEmitter<MetaMaskEvents> {
+export class GalachainConnectTrustClient extends CustomEventEmitter<MetaMaskEvents> implements CustomClient {
   #ethAddress: string;
   #provider: BrowserProvider | undefined;
   #chainCodeUrl: string;

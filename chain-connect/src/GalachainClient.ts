@@ -1,17 +1,4 @@
-/*
- * Copyright (c) Gala Games Inc. All rights reserved.
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- */
+import { ChainCallDTO, ConstructorArgs, serialize } from "@gala-chain/api";
 import {
   BatchMintTokenParams,
   BurnTokensParams,
@@ -31,6 +18,7 @@ import {
   FulfillMintParams,
   FullAllowanceCheckParams,
   GalaChainResponse,
+  GetMyProfileParams,
   GrantAllowanceParams,
   HighThroughputMintTokenParams,
   LockTokenRequestParams,
@@ -39,6 +27,7 @@ import {
   MintTokenParams,
   MintTokenWithAllowanceParams,
   RefreshAllowanceParams,
+  RegisterUserParams,
   ReleaseTokenParams,
   TokenAllowanceBody,
   TokenBalanceBody,
@@ -50,17 +39,114 @@ import {
   TransferTokenParams,
   UnlockTokenParams,
   UnlockTokensParams,
+  UpdatePublicKeyParams,
   UpdateTokenClassParams,
-  UseTokenParams
+  UseTokenParams,
+  UserProfileBody
 } from "@gala-chain/api";
 
-import { GalachainConnectClient } from "./GalachainMetamaskConnectClient";
+import { CustomClient } from "./types/CustomClient";
 
-export class TokenClient {
-  constructor(private client: GalachainConnectClient) {}
+export class GalachainClient implements CustomClient {
+  constructor(private features: CustomClient) {}
 
+  async connect(): Promise<string> {
+    return this.features.connect();
+  }
+
+  async sign(dto: object): Promise<object> {
+    return this.features.sign(dto);
+  }
+
+  getGalachainAddress = this.features.getGalachainAddress;
+  getWalletAddress = this.features.getWalletAddress;
+  setWalletAddress = this.features.setWalletAddress;
+  getChaincodeUrl = this.features.getChaincodeUrl;
+
+  async submit<T, U extends ConstructorArgs<ChainCallDTO>>({
+    url = this.getChaincodeUrl,
+    method,
+    payload,
+    sign = false,
+    headers = {}
+  }: {
+    url?: string;
+    method: string;
+    payload: U;
+    sign?: boolean;
+    headers?: object;
+  }): Promise<T> {
+    let newPayload;
+    try {
+      if (sign === true) {
+        newPayload = await this.sign(payload);
+      }
+
+      newPayload = payload;
+    } catch (error: unknown) {
+      throw new Error((error as Error).message);
+    }
+
+    if (newPayload instanceof ChainCallDTO) {
+      await newPayload.validateOrReject();
+    }
+
+    const fullUrl = `${url}/${method}`;
+    const response = await fetch(fullUrl, {
+      method: "POST",
+      body: serialize(newPayload),
+      headers: {
+        "Content-Type": "application/json",
+        ...headers
+      }
+    });
+
+    const id = response.headers.get("x-transaction-id");
+    const data = await response.json();
+
+    if (data.error) {
+      return data.error;
+    }
+
+    return new Promise(id ? { Hash: id, ...data } : data);
+  }
+
+  // PublicKey Chaincode calls:
+  public GetMyProfile(dto: GetMyProfileParams) {
+    return this.submit<UserProfileBody, GetMyProfileParams>({
+      method: "GetMyProfile",
+      payload: dto,
+      sign: true
+    });
+  }
+
+  public RegisterUser(dto: RegisterUserParams) {
+    return this.submit<string, RegisterUserParams>({
+      method: "RegisterUser",
+      payload: dto,
+      sign: true
+    });
+  }
+
+  public RegisterEthUser(dto: RegisterUserParams) {
+    return this.submit<string, RegisterUserParams>({
+      method: "RegisterEthUser",
+      payload: dto,
+      sign: true
+    });
+  }
+
+  public UpdatePublicKey(dto: UpdatePublicKeyParams) {
+    return this.submit<void, UpdatePublicKeyParams>({
+      method: "UpdatePublicKey",
+      payload: dto,
+      sign: true
+    });
+  }
+
+  // Token Chaincode Calls:
   public CreateTokenClass(dto: CreateTokenClassParams) {
-    return this.client.send<GalaChainResponse<TokenClassKeyBody>, CreateTokenClassParams>({
+    return this.submit<GalaChainResponse<TokenClassKeyBody>, CreateTokenClassParams>({
       method: "CreateTokenClass",
       payload: dto,
       sign: true
@@ -68,7 +154,7 @@ export class TokenClient {
   }
 
   public UpdateTokenClass(dto: UpdateTokenClassParams) {
-    return this.client.send<GalaChainResponse<TokenClassKeyBody>, UpdateTokenClassParams>({
+    return this.submit<GalaChainResponse<TokenClassKeyBody>, UpdateTokenClassParams>({
       method: "UpdateTokenClass",
       payload: dto,
       sign: true
@@ -76,14 +162,14 @@ export class TokenClient {
   }
 
   public FetchTokenClasses(dto: FetchTokenClassesParams) {
-    return this.client.send<GalaChainResponse<TokenClassBody[]>, FetchTokenClassesParams>({
+    return this.submit<GalaChainResponse<TokenClassBody[]>, FetchTokenClassesParams>({
       method: "FetchTokenClasses",
       payload: dto
     });
   }
 
   public FetchTokenClassesWithPagination(dto: FetchTokenClassesWithPaginationParams) {
-    return this.client.send<
+    return this.submit<
       GalaChainResponse<FetchTokenClassesResponseBody>,
       FetchTokenClassesWithPaginationParams
     >({
@@ -93,7 +179,7 @@ export class TokenClient {
   }
 
   public GrantAllowance(dto: GrantAllowanceParams) {
-    return this.client.send<GalaChainResponse<TokenAllowanceBody[]>, GrantAllowanceParams>({
+    return this.submit<GalaChainResponse<TokenAllowanceBody[]>, GrantAllowanceParams>({
       method: "GrantAllowance",
       payload: dto,
       sign: true
@@ -101,7 +187,7 @@ export class TokenClient {
   }
 
   public RefreshAllowances(dto: RefreshAllowanceParams) {
-    return this.client.send<GalaChainResponse<TokenAllowanceBody[]>, RefreshAllowanceParams>({
+    return this.submit<GalaChainResponse<TokenAllowanceBody[]>, RefreshAllowanceParams>({
       method: "RefreshAllowances",
       payload: dto,
       sign: true
@@ -109,7 +195,7 @@ export class TokenClient {
   }
 
   public FullAllowanceCheck(dto: FullAllowanceCheckParams) {
-    return this.client.send<GalaChainResponse<FullAllowanceCheckParams>, FullAllowanceCheckParams>({
+    return this.submit<GalaChainResponse<FullAllowanceCheckParams>, FullAllowanceCheckParams>({
       method: "FullAllowanceCheck",
       payload: dto,
       sign: true
@@ -117,7 +203,7 @@ export class TokenClient {
   }
 
   public FetchAllowances(dto: FetchAllowancesParams) {
-    return this.client.send<GalaChainResponse<FetchAllowancesBody>, FetchAllowancesParams>({
+    return this.submit<GalaChainResponse<FetchAllowancesBody>, FetchAllowancesParams>({
       method: "FetchAllowances",
       payload: dto,
       sign: true
@@ -125,7 +211,7 @@ export class TokenClient {
   }
 
   public DeleteAllowances(dto: DeleteAllowancesParams) {
-    return this.client.send<GalaChainResponse<number>, DeleteAllowancesParams>({
+    return this.submit<GalaChainResponse<number>, DeleteAllowancesParams>({
       method: "DeleteAllowances",
       payload: dto,
       sign: true
@@ -133,14 +219,14 @@ export class TokenClient {
   }
 
   public FetchBalances(dto: FetchBalancesParams) {
-    return this.client.send<GalaChainResponse<TokenBalanceBody[]>, FetchBalancesParams>({
+    return this.submit<GalaChainResponse<TokenBalanceBody[]>, FetchBalancesParams>({
       method: "FetchBalances",
       payload: dto
     });
   }
 
   public FetchBalancesWithTokenMetadata(dto: FetchBalancesWithPaginationParams) {
-    return this.client.send<
+    return this.submit<
       GalaChainResponse<FetchBalancesWithTokenMetadataBody>,
       FetchBalancesWithPaginationParams
     >({
@@ -151,7 +237,7 @@ export class TokenClient {
 
   public RequestMint(dto: HighThroughputMintTokenParams) {
     // todo: Is fulfillMintDto really the response here?
-    return this.client.send<GalaChainResponse<FulfillMintDto>, HighThroughputMintTokenParams>({
+    return this.submit<GalaChainResponse<FulfillMintDto>, HighThroughputMintTokenParams>({
       method: "RequestMint",
       payload: dto,
       sign: true
@@ -159,7 +245,7 @@ export class TokenClient {
   }
 
   public FulfillMint(dto: FulfillMintParams) {
-    return this.client.send<GalaChainResponse<TokenInstanceKeyBody[]>, FulfillMintParams>({
+    return this.submit<GalaChainResponse<TokenInstanceKeyBody[]>, FulfillMintParams>({
       method: "FulfillMint",
       payload: dto,
       sign: true
@@ -167,7 +253,7 @@ export class TokenClient {
   }
 
   public HighThroughputMint(dto: HighThroughputMintTokenParams) {
-    return this.client.send<GalaChainResponse<TokenInstanceKeyBody[]>, HighThroughputMintTokenParams>({
+    return this.submit<GalaChainResponse<TokenInstanceKeyBody[]>, HighThroughputMintTokenParams>({
       method: "HighThroughputMint",
       payload: dto,
       sign: true
@@ -175,14 +261,14 @@ export class TokenClient {
   }
 
   public FetchMintRequests(dto: FetchMintRequestsParams) {
-    return this.client.send<GalaChainResponse<MintRequestDto[]>, FetchMintRequestsParams>({
+    return this.submit<GalaChainResponse<MintRequestDto[]>, FetchMintRequestsParams>({
       method: "FetchMintRequests",
       payload: dto
     });
   }
 
   public MintToken(dto: MintTokenParams) {
-    return this.client.send<GalaChainResponse<TokenInstanceKeyBody[]>, MintTokenParams>({
+    return this.submit<GalaChainResponse<TokenInstanceKeyBody[]>, MintTokenParams>({
       method: "MintToken",
       payload: dto,
       sign: true
@@ -190,7 +276,7 @@ export class TokenClient {
   }
 
   public MintTokenWithAllowance(dto: MintTokenWithAllowanceParams) {
-    return this.client.send<GalaChainResponse<TokenInstanceKey[]>, MintTokenWithAllowanceParams>({
+    return this.submit<GalaChainResponse<TokenInstanceKey[]>, MintTokenWithAllowanceParams>({
       method: "MintTokenWithAllowance",
       payload: dto,
       sign: true
@@ -198,7 +284,7 @@ export class TokenClient {
   }
 
   public BatchMintToken(dto: BatchMintTokenParams) {
-    return this.client.send<GalaChainResponse<TokenInstanceKeyBody[]>, BatchMintTokenParams>({
+    return this.submit<GalaChainResponse<TokenInstanceKeyBody[]>, BatchMintTokenParams>({
       method: "BatchMintToken",
       payload: dto,
       sign: true
@@ -206,7 +292,7 @@ export class TokenClient {
   }
 
   public UseToken(dto: UseTokenParams) {
-    return this.client.send<GalaChainResponse<TokenBalanceBody>, UseTokenParams>({
+    return this.submit<GalaChainResponse<TokenBalanceBody>, UseTokenParams>({
       method: "UseToken",
       payload: dto,
       sign: true
@@ -214,7 +300,7 @@ export class TokenClient {
   }
 
   public ReleaseToken(dto: ReleaseTokenParams) {
-    return this.client.send<GalaChainResponse<TokenBalanceBody>, ReleaseTokenParams>({
+    return this.submit<GalaChainResponse<TokenBalanceBody>, ReleaseTokenParams>({
       method: "ReleaseToken",
       payload: dto,
       sign: true
@@ -222,7 +308,7 @@ export class TokenClient {
   }
 
   public LockToken(dto: LockTokenRequestParams) {
-    return this.client.send<GalaChainResponse<TokenBalanceBody>, LockTokenRequestParams>({
+    return this.submit<GalaChainResponse<TokenBalanceBody>, LockTokenRequestParams>({
       method: "LockToken",
       payload: dto,
       sign: true
@@ -230,7 +316,7 @@ export class TokenClient {
   }
 
   public LockTokens(dto: LockTokensParams) {
-    return this.client.send<GalaChainResponse<TokenBalanceBody[]>, LockTokensParams>({
+    return this.submit<GalaChainResponse<TokenBalanceBody[]>, LockTokensParams>({
       method: "LockTokens",
       payload: dto,
       sign: true
@@ -238,7 +324,7 @@ export class TokenClient {
   }
 
   public UnlockToken(dto: UnlockTokenParams) {
-    return this.client.send<GalaChainResponse<TokenBalanceBody>, UnlockTokenParams>({
+    return this.submit<GalaChainResponse<TokenBalanceBody>, UnlockTokenParams>({
       method: "UnlockToken",
       payload: dto,
       sign: true
@@ -246,7 +332,7 @@ export class TokenClient {
   }
 
   public UnlockTokens(dto: UnlockTokensParams) {
-    return this.client.send<GalaChainResponse<TokenBalanceBody[]>, UnlockTokensParams>({
+    return this.submit<GalaChainResponse<TokenBalanceBody[]>, UnlockTokensParams>({
       method: "UnlockTokens",
       payload: dto,
       sign: true
@@ -254,7 +340,7 @@ export class TokenClient {
   }
 
   public TransferToken(dto: TransferTokenParams) {
-    return this.client.send<GalaChainResponse<TokenBalanceBody[]>, TransferTokenParams>({
+    return this.submit<GalaChainResponse<TokenBalanceBody[]>, TransferTokenParams>({
       method: "TransferToken",
       payload: dto,
       sign: true
@@ -262,7 +348,7 @@ export class TokenClient {
   }
 
   public BurnTokens(dto: BurnTokensParams) {
-    return this.client.send<GalaChainResponse<TokenBurnBody[]>, BurnTokensParams>({
+    return this.submit<GalaChainResponse<TokenBurnBody[]>, BurnTokensParams>({
       method: "BurnTokens",
       payload: dto,
       sign: true
@@ -270,7 +356,7 @@ export class TokenClient {
   }
 
   public FetchBurns(dto: FetchBurnsParams) {
-    return this.client.send<GalaChainResponse<TokenBurnBody[]>, FetchBurnsParams>({
+    return this.submit<GalaChainResponse<TokenBurnBody[]>, FetchBurnsParams>({
       method: "FetchBurns",
       payload: dto
     });

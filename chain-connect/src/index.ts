@@ -12,7 +12,6 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-export * from "./GalachainMetamaskConnectClient";
-export * from "./PublicKeyClient";
-export * from "./TokenClient";
+export * from "./customClients";
+export * from "./GalachainClient";
 export * from "./utils/WalletUtils";

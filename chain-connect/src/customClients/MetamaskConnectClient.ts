@@ -15,8 +15,8 @@
 import { ChainCallDTO, ConstructorArgs, serialize, signatures } from "@gala-chain/api";
 import { BrowserProvider, getAddress } from "ethers";
 
-import { CustomEventEmitter, ExtendedEip1193Provider, MetaMaskEvents } from "./helpers";
-import { CustomClient } from "./types/GalachainClient";
+import { CustomEventEmitter, ExtendedEip1193Provider, MetaMaskEvents } from "../helpers";
+import { CustomClient } from "../types/CustomClient";
 
 declare global {
   interface Window {
@@ -24,10 +24,7 @@ declare global {
   }
 }
 
-export class GalachainMetamaskConnectClient
-  extends CustomEventEmitter<MetaMaskEvents>
-  implements CustomClient
-{
+export class MetamaskConnectClient extends CustomEventEmitter<MetaMaskEvents> implements CustomClient {
   #ethAddress: string;
   #provider: BrowserProvider | undefined;
   #chainCodeUrl: string;
@@ -113,62 +110,6 @@ export class GalachainMetamaskConnectClient
     } catch (error: unknown) {
       throw new Error((error as Error).message);
     }
-  }
-
-  public async send<T, U extends ConstructorArgs<ChainCallDTO>>({
-    url = this.#chainCodeUrl,
-    method,
-    payload,
-    sign = false,
-    headers = {}
-  }: {
-    url?: string;
-    method: string;
-    payload: U;
-    sign?: boolean;
-    headers?: object;
-  }): Promise<T> {
-    try {
-      if (sign === true) {
-        const newPayload = await this.sign(payload);
-
-        return await this.submit(url, method, newPayload, headers);
-      }
-
-      return await this.submit(url, method, payload, headers);
-    } catch (error: unknown) {
-      throw new Error((error as Error).message);
-    }
-  }
-
-  private async submit<T, U extends ConstructorArgs<ChainCallDTO>>(
-    chainCodeUrl: string,
-    method: string,
-    signedPayload: U,
-    headers: object
-  ): Promise<T> {
-    if (signedPayload instanceof ChainCallDTO) {
-      await signedPayload.validateOrReject();
-    }
-
-    const url = `${chainCodeUrl}/${method}`;
-    const response = await fetch(url, {
-      method: "POST",
-      body: serialize(signedPayload),
-      headers: {
-        "Content-Type": "application/json",
-        ...headers
-      }
-    });
-
-    const id = response.headers.get("x-transaction-id");
-    const data = await response.json();
-
-    if (data.error) {
-      return data.error;
-    }
-
-    return id ? { Hash: id, ...data } : data;
   }
 
   private calculatePersonalSignPrefix(payload: object): string {
