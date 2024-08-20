@@ -33,7 +33,6 @@
     "format": "prettier --config ../.prettierrc 'src/**/*.ts' --write",
     "test": "jest"
   },
-  "devDependencies": {},
   "nyc": {
     "extension": [
       ".ts",
