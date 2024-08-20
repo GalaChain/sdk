@@ -31,8 +31,7 @@
     "fix": "nx run lint --fix",
     "prepublishOnly": "npm i && npm run clean && npm run build && npm run lint && npm run madge",
     "format": "prettier --config ../.prettierrc 'src/**/*.ts' --write",
-    "test": "jest",
-    "clear_jest": "jest --clearCache"
+    "test": "jest"
   },
   "devDependencies": {},
   "nyc": {

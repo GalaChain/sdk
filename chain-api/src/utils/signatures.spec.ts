@@ -14,7 +14,6 @@
  */
 import BN from "bn.js";
 import { ec as EC } from "elliptic";
-import fs from "fs";
 import { keccak256 } from "js-sha3";
 
 import signatures, {
