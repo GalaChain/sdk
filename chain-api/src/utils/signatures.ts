@@ -297,7 +297,7 @@ export function normalizeSecp256k1Signature(s: string): Secp256k1Signature {
   }
 
   // DER format
-  if (s.length === 138 || s.length === 140 || s.length === 142 || s.length === 144) {
+  if (s.length === 136 || s.length === 138 || s.length === 140 || s.length === 142 || s.length === 144) {
     return secp256k1signatureFromDERHexString(s);
   }
 
@@ -307,7 +307,7 @@ export function normalizeSecp256k1Signature(s: string): Secp256k1Signature {
     return secp256k1signatureFromDERHexString(hex);
   }
 
-  const errorMessage = `Unknown signature format. Expected 88, 92, 96, 130, 132, 138, 140, 142, or 144 characters, but got ${s.length}`;
+  const errorMessage = `Unknown signature format. Expected 88, 92, 96, 130, 132, 136, 138, 140, 142, or 144 characters, but got ${s.length}`;
   throw new InvalidSignatureFormatError(errorMessage, { signature: s });
 }
 
