@@ -7,10 +7,6 @@ const BN_0 = BigInt(0);
 const BN_36 = BigInt(36);
 
 function getChecksumAddress(address: string): string {
-  //    if (!isHexString(address, 20)) {
-  //        logger.throwArgumentError("invalid address", "address", address);
-  //    }
-
   address = address.toLowerCase();
 
   const chars = address.substring(2).split("");

@@ -45,8 +45,6 @@ function isEIP712Object(obj: object): obj is EIP712Object {
 }
 
 function getEIP712PayloadToSign(obj: EIP712Object): string {
-  // return ethers.TypedDataEncoder.encode(obj.domain, obj.types, obj);
-
   return TypedDataEncoder.encode(obj.domain, obj.types, obj);
 }
 
