@@ -14,6 +14,7 @@
  */
 import BN from "bn.js";
 import { ec as EC } from "elliptic";
+import fs from "fs";
 import { keccak256 } from "js-sha3";
 
 import signatures, {
@@ -333,6 +334,17 @@ describe("signatures", () => {
       r: new BN("30ef238065ff606bcb59ce9b40923bb1f86777056eabbf77ecbefd101d207fbd", "hex"),
       recoveryParam: undefined,
       s: new BN("14d3aed3bf7e07cb3bf2ef2c06cfde6db461eea8f58827df5b0fa4185d6535", "hex")
+    });
+
+    // test 136 length der case:
+    const weirdDer = signatures.parseSecp256k1Signature(
+      "3042021e638cd4b430a0e3e343e30601284eaea6d929e9c660c8e11ad3fe68fe95b102207f4e7c048a36564e60e56f093e0f7353de9a6f902afa10870f77a2fb4ce0efab"
+    );
+
+    expect(weirdDer).toEqual({
+      r: new BN("638cd4b430a0e3e343e30601284eaea6d929e9c660c8e11ad3fe68fe95b1", "hex"),
+      recoveryParam: undefined,
+      s: new BN("7f4e7c048a36564e60e56f093e0f7353de9a6f902afa10870f77a2fb4ce0efab", "hex")
     });
   });
 
