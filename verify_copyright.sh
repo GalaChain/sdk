@@ -19,8 +19,8 @@
 copyright_pattern="Copyright (c|\(c\)) Gala Games Inc"
 
 # Find all files that need copyright in the current repository
-# respecting .gitignore
-files=$(git ls-files | grep -E '\.js$|\.ts$|\.sh$')
+# respecting .gitignore and ignoring any ethers folder
+files=$(git ls-files | grep -E '\.js$|\.ts$|\.sh$' | grep -v '/ethers/')
 
 # Array to store files missing the copyright header
 missing_copyright_files=()
