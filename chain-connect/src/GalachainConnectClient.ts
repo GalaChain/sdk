@@ -15,6 +15,8 @@
 import { ChainCallDTO, ConstructorArgs, serialize, signatures } from "@gala-chain/api";
 import { BrowserProvider, Eip1193Provider, getAddress } from "ethers";
 
+import { generateEIP712Types } from "./Utils";
+
 interface ExtendedEip1193Provider extends Eip1193Provider {
   on(event: "accountsChanged", handler: (accounts: string[]) => void): void;
 }
@@ -143,14 +145,17 @@ export class GalachainConnectClient extends CustomEventEmitter<MetaMaskEvents> {
 
     try {
       if (sign === true) {
+        const domain = { name: "Galachain" };
+        const types = generateEIP712Types(method, payload);
+
         const prefix = this.calculatePersonalSignPrefix(payload);
-        const prefixedPayload = { ...payload, prefix };
-        const dto = signatures.getPayloadToSign(prefixedPayload);
+        const prefixedPayload = { prefix, ...payload };
 
         const signer = await this.#provider.getSigner();
-        const signature = await signer.provider.send("personal_sign", [this.#ethAddress, dto]);
 
-        return await this.submit(url, method, { ...prefixedPayload, signature }, headers);
+        const signature = await signer.signTypedData(domain, types, prefixedPayload);
+
+        return await this.submit(url, method, { ...prefixedPayload, signature, types, domain }, headers);
       }
 
       return await this.submit(url, method, payload, headers);
@@ -189,7 +194,7 @@ export class GalachainConnectClient extends CustomEventEmitter<MetaMaskEvents> {
     return id ? { Hash: id, ...data } : data;
   }
 
-  private calculatePersonalSignPrefix(payload: object): string {
+  public calculatePersonalSignPrefix(payload: object): string {
     const payloadLength = signatures.getPayloadToSign(payload).length;
     const prefix = "\u0019Ethereum Signed Message:\n" + payloadLength;
 
