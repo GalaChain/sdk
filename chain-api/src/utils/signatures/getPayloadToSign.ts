@@ -14,8 +14,8 @@
  */
 import { instanceToPlain } from "class-transformer";
 
-import serialize from "../serialize";
 import { TypedDataEncoder } from "../../ethers/hash/typed-data";
+import serialize from "../serialize";
 
 // Type definitions
 type EIP712Domain = Record<string, any>;
@@ -46,4 +46,3 @@ export function getPayloadToSign(obj: object): string {
   const { signature, trace, ...plain } = instanceToPlain(obj);
   return serialize(plain);
 }
-
