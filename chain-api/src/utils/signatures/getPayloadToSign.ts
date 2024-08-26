@@ -15,9 +15,35 @@
 import { instanceToPlain } from "class-transformer";
 
 import serialize from "../serialize";
+import { TypedDataEncoder } from "../../ethers/hash/typed-data";
+
+// Type definitions
+type EIP712Domain = Record<string, any>;
+type EIP712Types = Record<string, any>;
+type EIP712Value = Record<string, any>;
+
+interface EIP712Object {
+  domain: EIP712Domain;
+  types: EIP712Types;
+  value: EIP712Value;
+}
+
+// Type guard to check if an object is EIP712Object
+function isEIP712Object(obj: object): obj is EIP712Object {
+  return obj && typeof obj === "object" && "domain" in obj && "types" in obj;
+}
+
+function getEIP712PayloadToSign(obj: EIP712Object): string {
+  return TypedDataEncoder.encode(obj.domain, obj.types, obj);
+}
 
 export function getPayloadToSign(obj: object): string {
+  if (isEIP712Object(obj)) {
+    return getEIP712PayloadToSign(obj);
+  }
+
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const { signature, trace, ...plain } = instanceToPlain(obj);
   return serialize(plain);
 }
+

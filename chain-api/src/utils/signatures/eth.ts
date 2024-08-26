@@ -17,10 +17,7 @@ import { ec as EC, ec } from "elliptic";
 import Signature from "elliptic/lib/elliptic/ec/signature";
 import { keccak256 } from "js-sha3";
 
-import { TypedDataEncoder } from "../ethers/hash/typed-data";
-import { ValidationFailedError } from "./error";
-import serialize from "./serialize";
-
+import { ValidationFailedError } from "../error";
 import { getPayloadToSign } from "./getPayloadToSign";
 
 class InvalidKeyError extends ValidationFailedError {}
@@ -28,36 +25,6 @@ class InvalidKeyError extends ValidationFailedError {}
 export class InvalidSignatureFormatError extends ValidationFailedError {}
 
 class InvalidDataHashError extends ValidationFailedError {}
-
-// Type definitions
-type EIP712Domain = Record<string, any>;
-type EIP712Types = Record<string, any>;
-type EIP712Value = Record<string, any>;
-
-interface EIP712Object {
-  domain: EIP712Domain;
-  types: EIP712Types;
-  value: EIP712Value;
-}
-
-// Type guard to check if an object is EIP712Object
-function isEIP712Object(obj: object): obj is EIP712Object {
-  return obj && typeof obj === "object" && "domain" in obj && "types" in obj;
-}
-
-function getEIP712PayloadToSign(obj: EIP712Object): string {
-  return TypedDataEncoder.encode(obj.domain, obj.types, obj);
-}
-
-function getPayloadToSign(obj: object): string {
-  if (isEIP712Object(obj)) {
-    return getEIP712PayloadToSign(obj);
-  }
-
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  const { signature, trace, ...plain } = instanceToPlain(obj);
-  return serialize(plain);
-}
 
 const secpPrivKeyLength = {
   secpBase64: 44,
