@@ -348,7 +348,7 @@ describe("GalaContract.DryRun", () => {
           ErrorCode: 400,
           ErrorKey: "DTO_VALIDATION_FAILED",
           ErrorPayload: ["isPositive: age must be a positive number"],
-          Message: "DTO validation failed: (1) isPositive: age must be a positive number"
+          Message: "Property 'age' of SuperheroDto has failed the following constraints: isPositive"
         },
         reads: {},
         writes: {},

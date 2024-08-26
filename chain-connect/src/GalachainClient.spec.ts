@@ -17,7 +17,7 @@ import { TransferTokenDto } from "@gala-chain/api";
 import { plainToInstance } from "class-transformer";
 import { EventEmitter } from "events";
 
-import { GalachainMetamaskConnectClient } from "./GalachainMetamaskConnectClient";
+import { ClientFactory } from "./ClientFactory";
 
 global.fetch = jest.fn((url: string, options?: Record<string, unknown>) =>
   Promise.resolve({
@@ -32,6 +32,17 @@ global.fetch = jest.fn((url: string, options?: Record<string, unknown>) =>
 const sampleAddr = "0x3bb75c2Da3B669E253C338101420CC8dEBf0a777";
 
 class EthereumMock extends EventEmitter {
+  send(method: string, params?: Array<any> | Record<string, any>): Promise<any> {
+    if (method === "eth_requestAccounts") {
+      return Promise.resolve([sampleAddr]);
+    } else if (method === "eth_accounts") {
+      return Promise.resolve([sampleAddr]);
+    } else if (method === "personal_sign") {
+      return Promise.resolve("sampleSignature");
+    } else {
+      throw new Error(`Method not mocked: ${method}`);
+    }
+  }
   request(request: { method: string; params?: Array<any> | Record<string, any> }): Promise<any> {
     if (request.method === "eth_requestAccounts") {
       return Promise.resolve([sampleAddr]);
@@ -46,7 +57,7 @@ class EthereumMock extends EventEmitter {
 }
 window.ethereum = new EthereumMock();
 
-describe("GalachainMetamaskConnectClient", () => {
+describe("MetamaskConnectClient", () => {
   it("test full flow", async () => {
     const dto = plainToInstance(TransferTokenDto, {
       quantity: "1",
@@ -62,11 +73,11 @@ describe("GalachainMetamaskConnectClient", () => {
     });
 
     // call connect
-    const client = new GalachainMetamaskConnectClient("https://example.com");
-    await client.connectToMetaMask();
+    const client = new ClientFactory().metamaskClient("https://example.com");
+    await client.connect();
 
     // send dto payload in send function
-    const response = await client.send({ method: "TransferToken", payload: dto, sign: true });
+    const response = await client.submit({ method: "TransferToken", payload: dto, sign: true });
 
     expect(response).toEqual({
       Hash: {
@@ -98,5 +109,45 @@ describe("GalachainMetamaskConnectClient", () => {
 
     expect(consoleSpy).toHaveBeenCalledWith("Accounts changed:", accounts);
     consoleSpy.mockRestore();
+  });
+});
+
+describe("TrustConnectClient", () => {
+  it("test full flow", async () => {
+    const dto = plainToInstance(TransferTokenDto, {
+      quantity: "1",
+      to: "client|63580d94c574ad78b121c267",
+      tokenInstance: plainToInstance(TokenInstanceKey, {
+        additionalKey: "none",
+        category: "Unit",
+        collection: "GALA",
+        instance: "0",
+        type: "none"
+      }),
+      uniqueKey: "26d4122e-34c8-4639-baa6-4382b398e68e"
+    });
+
+    // call connect
+    const client = new ClientFactory().trustClient("https://example.com");
+    await client.connect();
+
+    // send dto payload in send function
+    const response = await client.submit({ method: "TransferToken", payload: dto, sign: true });
+
+    expect(response).toEqual({
+      Hash: {
+        status: 1
+      },
+      Request: {
+        options: {
+          body: '{"prefix":"\\u0019Ethereum Signed Message:\\n279","quantity":{"c":[1],"e":0,"s":1},"signature":"sampleSignature","to":"client|63580d94c574ad78b121c267","tokenInstance":{"additionalKey":"none","category":"Unit","collection":"GALA","instance":"0","type":"none"},"uniqueKey":"26d4122e-34c8-4639-baa6-4382b398e68e"}',
+          headers: {
+            "Content-Type": "application/json"
+          },
+          method: "POST"
+        },
+        url: "https://example.com/TransferToken"
+      }
+    });
   });
 });

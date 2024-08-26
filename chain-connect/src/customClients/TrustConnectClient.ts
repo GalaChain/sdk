@@ -12,7 +12,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-import { ChainCallDTO, ConstructorArgs, serialize, signatures } from "@gala-chain/api";
+import { ChainCallDTO, ConstructorArgs, signatures } from "@gala-chain/api";
 import { BrowserProvider, getAddress } from "ethers";
 
 import { CustomEventEmitter, ExtendedEip1193Provider, MetaMaskEvents } from "../helpers";
@@ -89,20 +89,24 @@ function getTrustWalletFromWindow() {
 }
 
 export class GalachainConnectTrustClient extends CustomEventEmitter<MetaMaskEvents> implements CustomClient {
-  #ethAddress: string;
+  #address: string;
   #provider: BrowserProvider | undefined;
   #chainCodeUrl: string;
 
-  get galachainAddress() {
-    return this.#ethAddress.replace("0x", "eth|");
+  get getChaincodeUrl() {
+    return this.#chainCodeUrl;
   }
 
-  get ethAddress() {
-    return getAddress(this.#ethAddress);
+  get getGalachainAddress() {
+    return this.#address.replace("0x", "eth|");
   }
 
-  set ethAddress(val: string) {
-    this.#ethAddress = getAddress(`0x${val.replace(/0x|eth\|/, "")}`);
+  get getWalletAddress() {
+    return this.#address;
+  }
+
+  set setWalletAddress(val: string) {
+    this.#address = getAddress(`0x${val.replace(/0x|eth\|/, "")}`);
   }
 
   get provider() {
@@ -112,6 +116,7 @@ export class GalachainConnectTrustClient extends CustomEventEmitter<MetaMaskEven
   constructor(chainCodeUrl: string) {
     super();
     this.#chainCodeUrl = chainCodeUrl;
+    this.#address = "";
   }
 
   private initializeListeners(): void {
@@ -120,28 +125,28 @@ export class GalachainConnectTrustClient extends CustomEventEmitter<MetaMaskEven
     }
     this.#provider.addListener("accountsChanged", (accounts: string[]) => {
       if (accounts.length > 0) {
-        this.ethAddress = getAddress(accounts[0]);
-        this.emit("accountChanged", this.galachainAddress);
+        this.setWalletAddress = getAddress(accounts[0]);
+        this.emit("accountChanged", this.getGalachainAddress);
         this.emit("accountsChanged", accounts);
       } else {
-        this.ethAddress = "";
+        this.setWalletAddress = "";
         this.emit("accountChanged", null);
         this.emit("accountsChanged", null);
       }
     });
   }
 
-  public async connectToTrust() {
+  public async connect() {
     this.#provider = await getTrustWalletInjectedProvider();
     if (!this.#provider) {
-      throw new Error("Ethereum provider not found");
+      throw new Error("Trust Wallet provider not found");
     }
     this.initializeListeners();
 
     try {
       const accounts = (await this.#provider.send("eth_requestAccounts", [])) as string[];
-      this.ethAddress = getAddress(accounts[0]);
-      return this.galachainAddress;
+      this.setWalletAddress = getAddress(accounts[0]);
+      return this.getGalachainAddress;
     } catch (error: any) {
       if (error.code === 4001) {
         console.error("User denied connection.");
@@ -150,72 +155,28 @@ export class GalachainConnectTrustClient extends CustomEventEmitter<MetaMaskEven
     }
   }
 
-  public async send<T, U extends ConstructorArgs<ChainCallDTO>>({
-    url = this.#chainCodeUrl,
-    method,
-    payload,
-    sign = false,
-    headers = {}
-  }: {
-    url?: string;
-    method: string;
-    payload: U;
-    sign?: boolean;
-    headers?: object;
-  }): Promise<T> {
+  public async sign<U extends ConstructorArgs<ChainCallDTO>>(
+    payload: U
+  ): Promise<U & { signature: string; prefix: string }> {
     if (!this.#provider) {
-      throw new Error("Ethereum provider not found");
+      throw new Error("Trust Wallet provider not found");
     }
-    if (!this.#ethAddress) {
+    if (!this.#address) {
       throw new Error("No account connected");
     }
 
     try {
-      if (sign === true) {
-        const prefix = this.calculatePersonalSignPrefix(payload);
-        const prefixedPayload = { ...payload, prefix };
-        const dto = signatures.getPayloadToSign(prefixedPayload);
+      const prefix = this.calculatePersonalSignPrefix(payload);
+      const prefixedPayload = { ...payload, prefix };
+      const dto = signatures.getPayloadToSign(prefixedPayload);
 
-        const signer = await this.#provider.getSigner();
-        const signature = await signer.provider.send("personal_sign", [this.#ethAddress, dto]);
+      const signer = await this.#provider.getSigner();
+      const signature = await signer.provider.send("personal_sign", [this.#address, dto]);
 
-        return await this.submit(url, method, { ...prefixedPayload, signature }, headers);
-      }
-
-      return await this.submit(url, method, payload, headers);
+      return { ...prefixedPayload, signature };
     } catch (error: unknown) {
       throw new Error((error as Error).message);
     }
-  }
-
-  private async submit<T, U extends ConstructorArgs<ChainCallDTO>>(
-    chainCodeUrl: string,
-    method: string,
-    signedPayload: U,
-    headers: object
-  ): Promise<T> {
-    if (signedPayload instanceof ChainCallDTO) {
-      await signedPayload.validateOrReject();
-    }
-
-    const url = `${chainCodeUrl}/${method}`;
-    const response = await fetch(url, {
-      method: "POST",
-      body: serialize(signedPayload),
-      headers: {
-        "Content-Type": "application/json",
-        ...headers
-      }
-    });
-
-    const id = response.headers.get("x-transaction-id");
-    const data = await response.json();
-
-    if (data.error) {
-      return data.error;
-    }
-
-    return id ? { Hash: id, ...data } : data;
   }
 
   private calculatePersonalSignPrefix(payload: object): string {

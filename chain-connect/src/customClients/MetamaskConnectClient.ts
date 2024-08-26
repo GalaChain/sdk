@@ -12,7 +12,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-import { ChainCallDTO, ConstructorArgs, serialize, signatures } from "@gala-chain/api";
+import { ChainCallDTO, ConstructorArgs, signatures } from "@gala-chain/api";
 import { BrowserProvider, getAddress } from "ethers";
 
 import { CustomEventEmitter, ExtendedEip1193Provider, MetaMaskEvents } from "../helpers";
@@ -25,7 +25,7 @@ declare global {
 }
 
 export class MetamaskConnectClient extends CustomEventEmitter<MetaMaskEvents> implements CustomClient {
-  #ethAddress: string;
+  #address: string;
   #provider: BrowserProvider | undefined;
   #chainCodeUrl: string;
 
@@ -34,20 +34,21 @@ export class MetamaskConnectClient extends CustomEventEmitter<MetaMaskEvents> im
   }
 
   get getGalachainAddress() {
-    return this.#ethAddress.replace("0x", "eth|");
+    return this.#address.replace("0x", "eth|");
   }
 
   get getWalletAddress(): string {
-    return getAddress(this.#ethAddress);
+    return this.#address;
   }
 
   set setWalletAddress(val: string) {
-    this.#ethAddress = getAddress(`0x${val.replace(/0x|eth\|/, "")}`);
+    this.#address = getAddress(`0x${val.replace(/0x|eth\|/, "")}`);
   }
 
   constructor(chainCodeUrl: string) {
     super();
     this.#chainCodeUrl = chainCodeUrl;
+    this.#address = "";
 
     if (window.ethereum) {
       this.#provider = new BrowserProvider(window.ethereum);
@@ -81,6 +82,7 @@ export class MetamaskConnectClient extends CustomEventEmitter<MetaMaskEvents> im
 
     try {
       const accounts = (await this.#provider.send("eth_requestAccounts", [])) as string[];
+      console.log("accounts plz", accounts);
       this.setWalletAddress = getAddress(accounts[0]);
       return this.getGalachainAddress;
     } catch (error: unknown) {
@@ -94,7 +96,7 @@ export class MetamaskConnectClient extends CustomEventEmitter<MetaMaskEvents> im
     if (!this.#provider) {
       throw new Error("Ethereum provider not found");
     }
-    if (!this.#ethAddress) {
+    if (!this.#address) {
       throw new Error("No account connected");
     }
 
@@ -104,7 +106,7 @@ export class MetamaskConnectClient extends CustomEventEmitter<MetaMaskEvents> im
       const dto = signatures.getPayloadToSign(prefixedPayload);
 
       const signer = await this.#provider.getSigner();
-      const signature = await signer.provider.send("personal_sign", [this.#ethAddress, dto]);
+      const signature = await signer.provider.send("personal_sign", [this.#address, dto]);
 
       return { ...prefixedPayload, signature };
     } catch (error: unknown) {
