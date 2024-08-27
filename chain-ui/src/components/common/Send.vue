@@ -161,7 +161,7 @@ watch(
         ></div>
       </div>
 
-      <div class="px-2 xs:pl-0 xs:text-left flex-grow mt-4 xs:mt-3" >
+      <div class="px-2 xs:pl-0 xs:text-left flex-grow mt-4 xs:mt-3">
         <div v-if="!!model.token">
           <label :for="`${formEl?.id}-send-token`" class="sr-only"> Token </label>
           <input

@@ -18,6 +18,7 @@ import { ec as EC, ec } from "elliptic";
 import Signature from "elliptic/lib/elliptic/ec/signature";
 import { keccak256 } from "js-sha3";
 
+import { TypedDataEncoder } from "../ethers/hash/typed-data";
 import { ValidationFailedError } from "./error";
 import serialize from "./serialize";
 
@@ -27,7 +28,31 @@ export class InvalidSignatureFormatError extends ValidationFailedError {}
 
 class InvalidDataHashError extends ValidationFailedError {}
 
+// Type definitions
+type EIP712Domain = Record<string, any>;
+type EIP712Types = Record<string, any>;
+type EIP712Value = Record<string, any>;
+
+interface EIP712Object {
+  domain: EIP712Domain;
+  types: EIP712Types;
+  value: EIP712Value;
+}
+
+// Type guard to check if an object is EIP712Object
+function isEIP712Object(obj: object): obj is EIP712Object {
+  return obj && typeof obj === "object" && "domain" in obj && "types" in obj;
+}
+
+function getEIP712PayloadToSign(obj: EIP712Object): string {
+  return TypedDataEncoder.encode(obj.domain, obj.types, obj);
+}
+
 function getPayloadToSign(obj: object): string {
+  if (isEIP712Object(obj)) {
+    return getEIP712PayloadToSign(obj);
+  }
+
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const { signature, trace, ...plain } = instanceToPlain(obj);
   return serialize(plain);
@@ -272,7 +297,7 @@ export function normalizeSecp256k1Signature(s: string): Secp256k1Signature {
   }
 
   // DER format
-  if (s.length === 138 || s.length === 140 || s.length === 142 || s.length === 144) {
+  if (s.length === 136 || s.length === 138 || s.length === 140 || s.length === 142 || s.length === 144) {
     return secp256k1signatureFromDERHexString(s);
   }
 
@@ -282,7 +307,7 @@ export function normalizeSecp256k1Signature(s: string): Secp256k1Signature {
     return secp256k1signatureFromDERHexString(hex);
   }
 
-  const errorMessage = `Unknown signature format. Expected 88, 92, 96, 130, 132, 138, 140, 142, or 144 characters, but got ${s.length}`;
+  const errorMessage = `Unknown signature format. Expected 88, 92, 96, 130, 132, 136, 138, 140, 142, or 144 characters, but got ${s.length}`;
   throw new InvalidSignatureFormatError(errorMessage, { signature: s });
 }
 
@@ -362,7 +387,7 @@ function getDERSignature(obj: object, privateKey: Buffer): string {
   return signSecp256k1(calculateKeccak256(data), privateKey, "DER");
 }
 
-function recoverPublicKey(signature: string, obj: object, prefix = ""): string {
+function recoverPublicKey(signature: string, obj: object, prefix?: string): string {
   const signatureObj = parseSecp256k1Signature(signature);
   const recoveryParam = signatureObj.recoveryParam;
   if (recoveryParam === undefined) {
@@ -370,8 +395,13 @@ function recoverPublicKey(signature: string, obj: object, prefix = ""): string {
     throw new InvalidSignatureFormatError(message, { signature });
   }
 
-  const data = Buffer.concat([Buffer.from(prefix), Buffer.from(getPayloadToSign(obj))]);
+  const dataString = getPayloadToSign(obj);
+  const data = dataString.startsWith("0x")
+    ? Buffer.from(dataString.slice(2), "hex")
+    : Buffer.from((prefix ?? "") + dataString);
+
   const dataHash = Buffer.from(keccak256.hex(data), "hex");
+
   const publicKeyObj = ecSecp256k1.recoverPubKey(dataHash, signatureObj, recoveryParam);
   return publicKeyObj.encode("hex", false);
 }

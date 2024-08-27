@@ -12,12 +12,13 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-import { TokenInstanceKey } from "@gala-chain/api";
-import { TransferTokenDto } from "@gala-chain/api";
-import { plainToInstance } from "class-transformer";
+import { LockTokenRequestParams, TransferTokenParams, signatures } from "@gala-chain/api";
+import { ethers } from "ethers";
 import { EventEmitter } from "events";
 
 import { ClientFactory } from "./ClientFactory";
+import { generateEIP712Types } from "./Utils";
+import { MetamaskConnectClient } from "./customClients";
 
 global.fetch = jest.fn((url: string, options?: Record<string, unknown>) =>
   Promise.resolve({
@@ -50,6 +51,8 @@ class EthereumMock extends EventEmitter {
       return Promise.resolve([sampleAddr]);
     } else if (request.method === "personal_sign") {
       return Promise.resolve("sampleSignature");
+    } else if (request.method === "eth_signTypedData_v4") {
+      return Promise.resolve("sampleSignature");
     } else {
       throw new Error(`Method not mocked: ${request.method}`);
     }
@@ -59,18 +62,18 @@ window.ethereum = new EthereumMock();
 
 describe("MetamaskConnectClient", () => {
   it("test full flow", async () => {
-    const dto = plainToInstance(TransferTokenDto, {
+    const dto: TransferTokenParams = {
       quantity: "1",
       to: "client|63580d94c574ad78b121c267",
-      tokenInstance: plainToInstance(TokenInstanceKey, {
+      tokenInstance: {
         additionalKey: "none",
         category: "Unit",
         collection: "GALA",
         instance: "0",
         type: "none"
-      }),
+      },
       uniqueKey: "26d4122e-34c8-4639-baa6-4382b398e68e"
-    });
+    };
 
     // call connect
     const client = new ClientFactory().metamaskClient("https://example.com");
@@ -85,7 +88,7 @@ describe("MetamaskConnectClient", () => {
       },
       Request: {
         options: {
-          body: '{"prefix":"\\u0019Ethereum Signed Message:\\n279","quantity":{"c":[1],"e":0,"s":1},"signature":"sampleSignature","to":"client|63580d94c574ad78b121c267","tokenInstance":{"additionalKey":"none","category":"Unit","collection":"GALA","instance":"0","type":"none"},"uniqueKey":"26d4122e-34c8-4639-baa6-4382b398e68e"}',
+          body: '{"domain":{"name":"Galachain"},"prefix":"\\u0019Ethereum Signed Message:\\n261","quantity":"1","signature":"sampleSignature","to":"client|63580d94c574ad78b121c267","tokenInstance":{"additionalKey":"none","category":"Unit","collection":"GALA","instance":"0","type":"none"},"types":{"TransferToken":[{"name":"quantity","type":"string"},{"name":"to","type":"string"},{"name":"tokenInstance","type":"tokenInstance"},{"name":"uniqueKey","type":"string"}],"tokenInstance":[{"name":"additionalKey","type":"string"},{"name":"category","type":"string"},{"name":"collection","type":"string"},{"name":"instance","type":"string"},{"name":"type","type":"string"}]},"uniqueKey":"26d4122e-34c8-4639-baa6-4382b398e68e"}',
           headers: {
             "Content-Type": "application/json"
           },
@@ -110,22 +113,142 @@ describe("MetamaskConnectClient", () => {
     expect(consoleSpy).toHaveBeenCalledWith("Accounts changed:", accounts);
     consoleSpy.mockRestore();
   });
+
+  it("should properly recover signature", async () => {
+    const params: LockTokenRequestParams = {
+      quantity: "1",
+      tokenInstance: {
+        collection: "GALA",
+        category: "Unit",
+        additionalKey: "none",
+        instance: "0",
+        type: "none"
+      }
+    };
+
+    const privateKey = "0x311e3750b1b698e70a2b37fd08b68fdcb389f955faea163f6ffa5be65cd0c251";
+
+    const client = new MetamaskConnectClient("https://example.com");
+    await client.connect();
+
+    const prefix = client.calculatePersonalSignPrefix(params);
+    const prefixedPayload = { prefix, ...params };
+    const wallet = new ethers.Wallet(privateKey);
+    const dto = signatures.getPayloadToSign(prefixedPayload);
+
+    const signature = await wallet.signMessage(dto);
+    console.log(signature);
+
+    const publickKey = signatures.recoverPublicKey(signature, { ...prefixedPayload, signature }, prefix);
+    const ethAddress = signatures.getEthAddress(publickKey);
+    expect(ethAddress).toBe("e737c4D3072DA526f3566999e0434EAD423d06ec");
+  });
+  it("should properly recover signature", async () => {
+    const params: LockTokenRequestParams = {
+      quantity: "1",
+      tokenInstance: {
+        collection: "GALA",
+        category: "Unit",
+        additionalKey: "none",
+        instance: "0",
+        type: "none"
+      }
+    };
+
+    const privateKey = "0x311e3750b1b698e70a2b37fd08b68fdcb389f955faea163f6ffa5be65cd0c251";
+
+    const client = new MetamaskConnectClient("https://example.com");
+    await client.connect();
+
+    const prefix = client.calculatePersonalSignPrefix(params);
+    const prefixedPayload = { prefix, ...params };
+    const wallet = new ethers.Wallet(privateKey);
+    const dto = signatures.getPayloadToSign(prefixedPayload);
+
+    const signature = await wallet.signMessage(dto);
+    console.log(signature);
+
+    const publickKey = signatures.recoverPublicKey(signature, { ...prefixedPayload, signature }, prefix);
+    const ethAddress = signatures.getEthAddress(publickKey);
+    expect(ethAddress).toBe("e737c4D3072DA526f3566999e0434EAD423d06ec");
+  });
+  it("should properly recover signature for typed signing", async () => {
+    const params: LockTokenRequestParams = {
+      quantity: "1",
+      tokenInstance: {
+        collection: "GALA",
+        category: "Unit",
+        additionalKey: "none",
+        instance: "0",
+        type: "none"
+      }
+    };
+
+    const privateKey = "0x311e3750b1b698e70a2b37fd08b68fdcb389f955faea163f6ffa5be65cd0c251";
+
+    const client = new MetamaskConnectClient("https://example.com");
+    await client.connect();
+
+    const prefix = client.calculatePersonalSignPrefix(params);
+    const prefixedPayload = { prefix, ...params };
+    const wallet = new ethers.Wallet(privateKey);
+
+    const types = generateEIP712Types("LockTokenRequest", prefixedPayload);
+
+    const signature = await wallet.signTypedData({}, types, prefixedPayload);
+
+    const publicKey = ethers.verifyTypedData({}, types, prefixedPayload, signature);
+    expect(publicKey).toBe("0xe737c4D3072DA526f3566999e0434EAD423d06ec");
+  });
+  it("should properly recover signature for typed signing using signature utils", async () => {
+    const params: LockTokenRequestParams = {
+      quantity: "1",
+      tokenInstance: {
+        collection: "GALA",
+        category: "Unit",
+        additionalKey: "none",
+        instance: "0",
+        type: "none"
+      }
+    };
+
+    const privateKey = "0x311e3750b1b698e70a2b37fd08b68fdcb389f955faea163f6ffa5be65cd0c251";
+
+    const client = new MetamaskConnectClient("https://example.com");
+    await client.connect();
+
+    const prefix = client.calculatePersonalSignPrefix(params);
+    const prefixedPayload = { prefix, ...params };
+    const wallet = new ethers.Wallet(privateKey);
+
+    const types = generateEIP712Types("LockTokenRequest", params);
+
+    const domain = {};
+
+    const signature = await wallet.signTypedData(domain, types, prefixedPayload);
+
+    const publicKey = signatures.recoverPublicKey(signature, { ...prefixedPayload, types, domain });
+    const ethAddress = signatures.getEthAddress(publicKey);
+    expect(ethAddress).toBe("e737c4D3072DA526f3566999e0434EAD423d06ec");
+  });
 });
 
 describe("TrustConnectClient", () => {
   it("test full flow", async () => {
-    const dto = plainToInstance(TransferTokenDto, {
+    window.ethereum = new EthereumMock();
+    window.ethereum.isTrust = true;
+    const dto: TransferTokenParams = {
       quantity: "1",
       to: "client|63580d94c574ad78b121c267",
-      tokenInstance: plainToInstance(TokenInstanceKey, {
+      tokenInstance: {
         additionalKey: "none",
         category: "Unit",
         collection: "GALA",
         instance: "0",
         type: "none"
-      }),
+      },
       uniqueKey: "26d4122e-34c8-4639-baa6-4382b398e68e"
-    });
+    };
 
     // call connect
     const client = new ClientFactory().trustClient("https://example.com");
@@ -140,7 +263,7 @@ describe("TrustConnectClient", () => {
       },
       Request: {
         options: {
-          body: '{"prefix":"\\u0019Ethereum Signed Message:\\n279","quantity":{"c":[1],"e":0,"s":1},"signature":"sampleSignature","to":"client|63580d94c574ad78b121c267","tokenInstance":{"additionalKey":"none","category":"Unit","collection":"GALA","instance":"0","type":"none"},"uniqueKey":"26d4122e-34c8-4639-baa6-4382b398e68e"}',
+          body: '{"domain":{"name":"Galachain"},"prefix":"\\u0019Ethereum Signed Message:\\n261","quantity":"1","signature":"sampleSignature","to":"client|63580d94c574ad78b121c267","tokenInstance":{"additionalKey":"none","category":"Unit","collection":"GALA","instance":"0","type":"none"},"types":{"TransferToken":[{"name":"quantity","type":"string"},{"name":"to","type":"string"},{"name":"tokenInstance","type":"tokenInstance"},{"name":"uniqueKey","type":"string"}],"tokenInstance":[{"name":"additionalKey","type":"string"},{"name":"category","type":"string"},{"name":"collection","type":"string"},{"name":"instance","type":"string"},{"name":"type","type":"string"}]},"uniqueKey":"26d4122e-34c8-4639-baa6-4382b398e68e"}',
           headers: {
             "Content-Type": "application/json"
           },

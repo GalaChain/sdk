@@ -59,6 +59,7 @@ import {
   UserProfileBody
 } from "@gala-chain/api";
 
+import { generateEIP712Types } from "./Utils";
 import { CustomClient } from "./types/CustomClient";
 
 export class GalachainClient implements CustomClient {
@@ -68,8 +69,11 @@ export class GalachainClient implements CustomClient {
     return this.features.connect();
   }
 
-  async sign(dto: object): Promise<object> {
-    return this.features.sign(dto);
+  async sign<U extends ConstructorArgs<ChainCallDTO>>(
+    method: string,
+    dto: U
+  ): Promise<U & { signature: string; prefix: string }> {
+    return this.features.sign(method, dto);
   }
 
   getGalachainAddress = this.features.getGalachainAddress;
@@ -90,15 +94,14 @@ export class GalachainClient implements CustomClient {
     sign?: boolean;
     headers?: object;
   }): Promise<T> {
-    let newPayload;
-    try {
-      if (sign === true) {
-        newPayload = await this.sign(payload);
-      }
+    let newPayload = payload;
 
-      newPayload = payload;
-    } catch (error: unknown) {
-      throw new Error((error as Error).message);
+    if (sign === true) {
+      try {
+        newPayload = await this.sign(method, payload);
+      } catch (error: unknown) {
+        throw new Error((error as Error).message);
+      }
     }
 
     if (newPayload instanceof ChainCallDTO) {
@@ -122,7 +125,7 @@ export class GalachainClient implements CustomClient {
       return data.error;
     }
 
-    return new Promise(id ? { Hash: id, ...data } : data);
+    return Promise.resolve(id ? { Hash: id, ...data } : data);
   }
 
   // PublicKey Chaincode calls:

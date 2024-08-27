@@ -15,6 +15,7 @@
 import { ChainCallDTO, ConstructorArgs, signatures } from "@gala-chain/api";
 import { BrowserProvider, getAddress } from "ethers";
 
+import { generateEIP712Types } from "../Utils";
 import { CustomEventEmitter, ExtendedEip1193Provider, MetaMaskEvents } from "../helpers";
 import { CustomClient } from "../types/CustomClient";
 
@@ -82,7 +83,6 @@ export class MetamaskConnectClient extends CustomEventEmitter<MetaMaskEvents> im
 
     try {
       const accounts = (await this.#provider.send("eth_requestAccounts", [])) as string[];
-      console.log("accounts plz", accounts);
       this.setWalletAddress = getAddress(accounts[0]);
       return this.getGalachainAddress;
     } catch (error: unknown) {
@@ -91,6 +91,7 @@ export class MetamaskConnectClient extends CustomEventEmitter<MetaMaskEvents> im
   }
 
   public async sign<U extends ConstructorArgs<ChainCallDTO>>(
+    method: string,
     payload: U
   ): Promise<U & { signature: string; prefix: string }> {
     if (!this.#provider) {
@@ -101,20 +102,22 @@ export class MetamaskConnectClient extends CustomEventEmitter<MetaMaskEvents> im
     }
 
     try {
+      const domain = { name: "Galachain" };
+      const types = generateEIP712Types(method, payload);
+
       const prefix = this.calculatePersonalSignPrefix(payload);
       const prefixedPayload = { ...payload, prefix };
-      const dto = signatures.getPayloadToSign(prefixedPayload);
 
       const signer = await this.#provider.getSigner();
-      const signature = await signer.provider.send("personal_sign", [this.#address, dto]);
+      const signature = await signer.signTypedData(domain, types, prefixedPayload);
 
-      return { ...prefixedPayload, signature };
+      return { ...prefixedPayload, signature, types, domain };
     } catch (error: unknown) {
       throw new Error((error as Error).message);
     }
   }
 
-  private calculatePersonalSignPrefix(payload: object): string {
+  public calculatePersonalSignPrefix(payload: object): string {
     const payloadLength = signatures.getPayloadToSign(payload).length;
     const prefix = "\u0019Ethereum Signed Message:\n" + payloadLength;
 

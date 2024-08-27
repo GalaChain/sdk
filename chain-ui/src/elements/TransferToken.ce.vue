@@ -14,7 +14,7 @@
  -->
 
 <script lang="ts">
-import TransferToken from '@/components/TransferToken.vue';
+import TransferToken from '@/components/TransferToken.vue'
 
 export default TransferToken
 </script>

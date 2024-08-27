@@ -18,5 +18,5 @@ export interface CustomClient {
   setWalletAddress: string;
   getChaincodeUrl: string;
   connect: () => Promise<string>;
-  sign: (dto: object) => Promise<object>;
+  sign: (method: string, dto: any) => Promise<any>;
 }

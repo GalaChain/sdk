@@ -100,3 +100,8 @@ done
 
 echo "Adding BROWSER_API_CHANNEL_NAMES to .env"
 echo "BROWSER_API_CHANNEL_NAMES=$(cat "$fablo_config" | jq -r '.channels | map(.name) | join(",")')" >> "$target_env"
+
+# replace all "docker-compose" calls with "docker compose"
+# see: https://stackoverflow.com/questions/77641240
+perl -i -pe 's/docker-compose/docker compose/g' "./fablo-target/fabric-docker/commands-generated.sh"
+perl -i -pe 's/docker-compose/docker compose/g' "./fablo-target/fabric-docker/snapshot-scripts.sh"

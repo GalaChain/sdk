@@ -1,0 +1,21 @@
+name: Trigger GitLab Pipeline
+on:
+  push:
+    branches:
+      - main  # Triggers on pushes to the main branch, including merges
+
+jobs:
+  trigger-and-check-gitlab:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Trigger GitLab Pipeline
+        id: trigger
+        run: |
+          curl --request POST \
+            --form token=${{ secrets.GITLAB_PIPELINE_TOKEN }} \
+            --form ref=main \
+            --form variables[TEST_SDK_CHANGES]="true" \
+            --form variables[GITHUB_AUTHOR]="${{ github.actor }}" \
+            --form variables[GITHUB_COMMIT_URL]="${{ github.server_url }}/${{ github.repository }}/commit/${{ github.sha }}" \
+            "https://gitlab.com/api/v4/projects/35484791/trigger/pipeline"
+          

@@ -15,6 +15,7 @@
 import { ChainCallDTO, ConstructorArgs, signatures } from "@gala-chain/api";
 import { BrowserProvider, getAddress } from "ethers";
 
+import { generateEIP712Types } from "../Utils";
 import { CustomEventEmitter, ExtendedEip1193Provider, MetaMaskEvents } from "../helpers";
 import { CustomClient } from "../types/CustomClient";
 
@@ -25,7 +26,7 @@ declare global {
 }
 
 export async function getTrustWalletInjectedProvider({ timeout } = { timeout: 3000 }) {
-  const provider = getTrustWalletFromWindow();
+  const provider = new BrowserProvider(getTrustWalletFromWindow());
 
   if (provider) {
     return provider;
@@ -34,7 +35,9 @@ export async function getTrustWalletInjectedProvider({ timeout } = { timeout: 30
   return listenForTrustWalletInitialized({ timeout });
 }
 
-async function listenForTrustWalletInitialized({ timeout } = { timeout: 3000 }) {
+async function listenForTrustWalletInitialized(
+  { timeout } = { timeout: 3000 }
+): Promise<BrowserProvider | undefined> {
   return new Promise((resolve) => {
     const handleInitialization = () => {
       resolve(getTrustWalletFromWindow());
@@ -46,7 +49,7 @@ async function listenForTrustWalletInitialized({ timeout } = { timeout: 3000 }) 
 
     setTimeout(() => {
       window.removeEventListener("trustwallet#initialized", handleInitialization, false);
-      resolve(null);
+      resolve(undefined);
     }, timeout);
   });
 }
@@ -109,10 +112,6 @@ export class GalachainConnectTrustClient extends CustomEventEmitter<MetaMaskEven
     this.#address = getAddress(`0x${val.replace(/0x|eth\|/, "")}`);
   }
 
-  get provider() {
-    return this.#provider;
-  }
-
   constructor(chainCodeUrl: string) {
     super();
     this.#chainCodeUrl = chainCodeUrl;
@@ -120,10 +119,10 @@ export class GalachainConnectTrustClient extends CustomEventEmitter<MetaMaskEven
   }
 
   private initializeListeners(): void {
-    if (!this.#provider) {
+    if (!window.ethereum) {
       return;
     }
-    this.#provider.addListener("accountsChanged", (accounts: string[]) => {
+    window.ethereum.on("accountsChanged", (accounts: string[]) => {
       if (accounts.length > 0) {
         this.setWalletAddress = getAddress(accounts[0]);
         this.emit("accountChanged", this.getGalachainAddress);
@@ -156,6 +155,7 @@ export class GalachainConnectTrustClient extends CustomEventEmitter<MetaMaskEven
   }
 
   public async sign<U extends ConstructorArgs<ChainCallDTO>>(
+    method: string,
     payload: U
   ): Promise<U & { signature: string; prefix: string }> {
     if (!this.#provider) {
@@ -166,20 +166,22 @@ export class GalachainConnectTrustClient extends CustomEventEmitter<MetaMaskEven
     }
 
     try {
+      const domain = { name: "Galachain" };
+      const types = generateEIP712Types(method, payload);
+
       const prefix = this.calculatePersonalSignPrefix(payload);
       const prefixedPayload = { ...payload, prefix };
-      const dto = signatures.getPayloadToSign(prefixedPayload);
 
       const signer = await this.#provider.getSigner();
-      const signature = await signer.provider.send("personal_sign", [this.#address, dto]);
+      const signature = await signer.signTypedData(domain, types, prefixedPayload);
 
-      return { ...prefixedPayload, signature };
+      return { ...prefixedPayload, signature, types, domain };
     } catch (error: unknown) {
       throw new Error((error as Error).message);
     }
   }
 
-  private calculatePersonalSignPrefix(payload: object): string {
+  public calculatePersonalSignPrefix(payload: object): string {
     const payloadLength = signatures.getPayloadToSign(payload).length;
     const prefix = "\u0019Ethereum Signed Message:\n" + payloadLength;
 
