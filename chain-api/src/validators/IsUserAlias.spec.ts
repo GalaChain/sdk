@@ -26,13 +26,17 @@ class TestArrayDto extends ChainCallDTO {
   users: string[];
 }
 
-const checksumedEthAddress = "0abB6F637a51eb26665e0DeBc5CE8A84e1fa8AC3";
-const lowerCased = checksumedEthAddress.toLowerCase();
-const invalidChecksum = checksumedEthAddress.replace("a", "A");
+const validEthAddress = "0abB6F637a51eb26665e0DeBc5CE8A84e1fa8AC3";
+const lowerCasedEth = validEthAddress.toLowerCase();
+const invalidChecksumEth = validEthAddress.replace("a", "A");
+
+const validTonAddress = "EQD3GhfZXYhnQrgXsV8xqe0X6FkYLtW8ys8NiqpkSlWWPUG1";
+const invalidTon = validTonAddress.replace("Q", "q");
 
 test.each<[string, string, string]>([
   ["valid legacy alias", "client|123", "client|123"],
-  ["valid eth alias", `eth|${checksumedEthAddress}`, `eth|${checksumedEthAddress}`],
+  ["valid eth alias", `eth|${validEthAddress}`, `eth|${validEthAddress}`],
+  ["valid ton alias", `ton|${validTonAddress}`, `ton|${validTonAddress}`],
   ["valid bridge (eth)", `EthereumBridge`, `EthereumBridge`],
   ["valid bridge (ton)", `TonBridge`, `TonBridge`],
   ["valid bridge (GalaChain)", `GalaChainBridge-42`, `GalaChainBridge-42`]
@@ -50,9 +54,12 @@ test.each<[string, string, string]>([
 test.each<[string, string, string]>([
   ["invalid client alias (multiple |)", "client|123|45", "Expected string following the format"],
   ["invalid client alias (empty id)", "client|", "Expected string following the format"],
-  ["invalid eth alias (lower-cased eth)", `eth|${lowerCased}`, "'eth|' must end with valid checksumed"],
+  ["invalid eth alias (lower-cased eth)", `eth|${lowerCasedEth}`, "'eth|' must end with valid checksumed"],
   ["invalid eth alias (invalid eth)", "eth|123", "'eth|' must end with valid checksumed"],
-  ["invalid value (pure eth addr)", checksumedEthAddress, "Expected string following the format"],
+  ["invalid value (pure eth addr)", validEthAddress, "Expected string following the format"],
+  ["invalid ton alias (invalid checksum)", `ton|${invalidTon}`, "'ton|' must end with valid bounceable"],
+  ["invalid ton alias (invalid ton)", "ton|123", "'ton|' must end with valid bounceable base64 TON"],
+  ["invalid value (pure ton addr)", validTonAddress, "Expected string following the format"],
   ["invalid bridge (external)", "GoldenGateBridge", "Expected string following the format"],
   ["invalid bridge (GalaChain)", "GalaChainBridge-A", "Expected string following the format"]
 ])("%s", async (label, input, expectedError) => {
@@ -69,10 +76,16 @@ test.each<[string, string, string]>([
 it("should validate array of user aliases", async () => {
   // Given
   const validPlain = {
-    users: ["client|123", `eth|${checksumedEthAddress}`, `EthereumBridge`, `GalaChainBridge-42`]
+    users: [
+      "client|123",
+      `eth|${validEthAddress}`,
+      `EthereumBridge`,
+      `GalaChainBridge-42`,
+      `ton|${validTonAddress}`
+    ]
   };
 
-  const invalidPlain = { users: ["client|123", `eth|${invalidChecksum}`, "EthereumBridge"] };
+  const invalidPlain = { users: ["client|123", `eth|${invalidChecksumEth}`, "EthereumBridge"] };
 
   // When
   const valid = await createValidDTO(TestArrayDto, validPlain);
@@ -80,7 +93,7 @@ it("should validate array of user aliases", async () => {
 
   // Then
   expect(valid.users).toEqual(validPlain.users);
-  await expect(invalid).rejects.toThrow(`users property with values eth|${invalidChecksum} are not valid`);
+  await expect(invalid).rejects.toThrow(`users property with values eth|${invalidChecksumEth} are not valid`);
 });
 
 it("should support schema generation", () => {

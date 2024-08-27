@@ -20,7 +20,8 @@ import signatures, {
   InvalidSignatureFormatError,
   flipSignatureParity,
   normalizeSecp256k1Signature
-} from "./signatures";
+} from "./eth";
+import { getPayloadToSign } from "./getPayloadToSign";
 
 function recoverPublicKeyTestFunction(signature: string, obj: object, prefix = ""): string {
   const ecSecp256k1 = new EC("secp256k1");
@@ -31,35 +32,11 @@ function recoverPublicKeyTestFunction(signature: string, obj: object, prefix = "
     throw new InvalidSignatureFormatError(message, { signature });
   }
 
-  const data = Buffer.concat([Buffer.from(prefix), Buffer.from(signatures.getPayloadToSign(obj))]);
+  const data = Buffer.concat([Buffer.from(prefix), Buffer.from(getPayloadToSign(obj))]);
   const dataHash = Buffer.from(keccak256.hex(data), "hex");
   const publicKeyObj = ecSecp256k1.recoverPubKey(dataHash, signatureObj, recoveryParam);
   return publicKeyObj.encode("hex", false);
 }
-
-describe("getPayloadToSign", () => {
-  it("should sort keys", () => {
-    // Given
-    const obj = { c: 8, b: [{ z: 6, y: 5, x: 4 }, 7], a: 3 };
-
-    // When
-    const toSign = signatures.getPayloadToSign(obj);
-
-    // Then
-    expect(toSign).toEqual('{"a":3,"b":[{"x":4,"y":5,"z":6},7],"c":8}');
-  });
-
-  it("should ignore 'signature' and 'trace' fields", () => {
-    // Given
-    const obj = { c: 8, signature: "to-be-ignored", trace: 3 };
-
-    // When
-    const toSign = signatures.getPayloadToSign(obj);
-
-    // Then
-    expect(toSign).toEqual('{"c":8}');
-  });
-});
 
 describe("ethAddress", () => {
   it("should calculate eth address from public key", () => {
@@ -159,7 +136,7 @@ describe("signatures", () => {
     );
     expect(pkKeccak.slice(-20).toString("hex")).toEqual(ethAddress.toLowerCase());
 
-    const payloadBuffer = Buffer.from(signatures.getPayloadToSign(payload));
+    const payloadBuffer = Buffer.from(getPayloadToSign(payload));
     expect(signatures.calculateKeccak256(payloadBuffer).toString("hex")).toEqual(keccak);
   });
 
@@ -364,8 +341,7 @@ describe("signatures", () => {
       },
       uniqueKey: "26d4122e-34c8-4639-baa6-4382b398e68e"
     };
-    const metamaskPrefix =
-      "\u0019Ethereum Signed Message:\n" + signatures.getPayloadToSign(metamaskPayload).length;
+    const metamaskPrefix = "\u0019Ethereum Signed Message:\n" + getPayloadToSign(metamaskPayload).length;
 
     const galachain =
       "4ae122398fb2e69f95d7322043d72d18fce83a0a034c8faa5643d673693ae0c259334fb6020072dddffea0df9ca0934631b016d8bc84f1dd0deca7abe7bde44f1b";

@@ -66,9 +66,10 @@ type GalaChainStub = ChaincodeStub & {
 type TestGalaChainContext = Context & {
   readonly stub: GalaChainStub;
   readonly logger: GalaLoggerInstance;
-  set callingUserData(d: { alias: string; ethAddress: string | undefined });
+  set callingUserData(d: { alias: string; ethAddress?: string; tonAddress?: string });
   get callingUser(): string;
   get callingUserEthAddress(): string;
+  get callingUserTonAddress(): string;
   setDryRunOnBehalfOf(d: { alias: string; ethAddress: string | undefined }): void;
   isDryRun: boolean;
   get txUnixTime(): number;
@@ -174,7 +175,7 @@ class Fixture<Ctx extends TestGalaChainContext, T extends GalaContract<Ctx>> {
       ethAddress: chainUser.ethAddress,
       publicKey: chainUser.publicKey
     });
-    const userProfileKey = this.ctx.stub.createCompositeKey("GCUP", [userProfile.ethAddress]);
+    const userProfileKey = this.ctx.stub.createCompositeKey("GCUP", [chainUser.ethAddress]);
     this.stub.mockState(userProfileKey, userProfile.serialize());
 
     const publicKey = plainToInstance(PublicKey, { publicKey: chainUser.publicKey });
