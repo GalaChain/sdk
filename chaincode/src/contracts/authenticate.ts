@@ -15,11 +15,9 @@
 import {
   ChainCallDTO,
   ForbiddenError,
-  NotFoundError,
   PublicKey,
   SigningScheme,
   UserProfile,
-  UserRole,
   ValidationFailedError,
   signatures
 } from "@gala-chain/api";
@@ -61,11 +59,7 @@ class UserNotRegisteredError extends ValidationFailedError {
   }
 }
 
-class PkNotFoundError extends NotFoundError {
-  constructor(userId: string) {
-    super(`Public key for user ${userId} not found.`, { userId });
-  }
-}
+class OrganizationNotAllowedError extends ForbiddenError {}
 
 /**
  *
@@ -78,7 +72,7 @@ export async function authenticate(
   ctx: GalaChainContext,
   dto: ChainCallDTO | undefined,
   legacyCAUser: string
-): Promise<{ alias: string; ethAddress?: string; roles: string[] }> {
+): Promise<{ alias: string; ethAddress?: string }> {
   if (!dto || dto.signature === undefined) {
     throw new MissingSignatureError();
   }
@@ -116,24 +110,22 @@ export async function authenticate(
     throw new MissingSignerError();
   } else {
     // once we dropp support for legacy auth, it should be changed to throw MissingSignerError
-    return await legacyAuthenticate(ctx, dto, legacyCAUser); // legacy flow only
+    return await legacyAuthorize(ctx, dto, legacyCAUser); // legacy flow only
   }
 }
 
-export async function ensureIsAuthenticatedBy(
+export async function ensureIsAuthorizedBy(
   ctx: GalaChainContext,
   dto: ChainCallDTO,
   userAlias: string
 ): Promise<{ alias: string; ethAddress?: string }> {
-  const authenticated = await authenticate(ctx, dto, userAlias);
+  const authorized = await authenticate(ctx, dto, userAlias);
 
-  if (authenticated.alias !== userAlias) {
-    throw new ForbiddenError(`Dto is authenticated by ${authenticated}, and not by ${userAlias}`, {
-      authenticated
-    });
+  if (authorized.alias !== userAlias) {
+    throw new ForbiddenError(`Dto is authorized by ${authorized}, and not by ${userAlias}`, { authorized });
   }
 
-  return authenticated;
+  return authorized;
 }
 
 async function getUserProfile(
@@ -170,11 +162,11 @@ async function getUserProfileAndPublicKey(
   return { profile, publicKey };
 }
 
-async function legacyAuthenticate(
+async function legacyAuthorize(
   ctx: GalaChainContext,
   dto: ChainCallDTO,
   legacyCAUser: string
-): Promise<{ alias: string; ethAddress: undefined; roles: string[] }> {
+): Promise<{ alias: string; ethAddress: undefined }> {
   const pk = await getSavedPKOrReject(ctx, legacyCAUser);
 
   if (!dto.isSignatureValid(pk.publicKey)) {
@@ -183,9 +175,19 @@ async function legacyAuthenticate(
 
   return {
     alias: legacyCAUser,
-    ethAddress: undefined,
-    roles: [UserRole.EVALUATE] // read-only
+    ethAddress: undefined
   };
+}
+
+export function ensureOrganizationIsAllowed(ctx: GalaChainContext, allowedOrgsMSPs: string[] | undefined) {
+  const userOrg: string = ctx.clientIdentity.getMSPID();
+  const isAllowed = (allowedOrgsMSPs || []).some((o) => o === userOrg);
+
+  if (!isAllowed) {
+    const message = `Members of organization ${userOrg} do not have sufficient permissions.`;
+    const user = (ctx as { callingUser?: string } | undefined)?.callingUser;
+    throw new OrganizationNotAllowedError(message, { user, userOrg });
+  }
 }
 
 function recoverPublicKey(signature: string, dto: ChainCallDTO, prefix = ""): string | undefined {
@@ -204,7 +206,7 @@ async function getSavedPKOrReject(ctx: GalaChainContext, userId: string): Promis
   const publicKey = await PublicKeyService.getPublicKey(ctx, userId);
 
   if (publicKey === undefined) {
-    throw new PkNotFoundError(userId);
+    throw new UserNotRegisteredError(userId);
   }
 
   return publicKey;

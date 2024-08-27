@@ -13,7 +13,6 @@
     "@gala-chain/api": "1.4.0",
     "bignumber.js": "*",
     "class-transformer": "*",
-    "elliptic": "*",
     "fabric-contract-api": "*",
     "fabric-shim": "*",
     "long": "*"
