@@ -12,7 +12,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-import { ArrayMinSize, IsNotEmpty, IsString, ValidateIf } from "class-validator";
+import { IsNotEmpty, IsString, ValidateIf } from "class-validator";
 import { JSONSchema } from "class-validator-jsonschema";
 
 import { ConstructorArgs } from "../utils";
