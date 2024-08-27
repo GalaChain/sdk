@@ -14,8 +14,6 @@
  */
 import { signatures } from "@gala-chain/api";
 
-import { createRandomKeys } from "./createRandomKeys";
-
 /**
  * Represents a user configuration object, containing all the information
  * needed to authenticate and sign transactions.
@@ -68,6 +66,6 @@ export class ChainUser {
    * random keys and the provided or default name.
    */
   public static withRandomKeys(name?: string): ChainUser {
-    return new ChainUser({ ...createRandomKeys(), name });
+    return new ChainUser({ ...signatures.genKeyPair(), name });
   }
 }

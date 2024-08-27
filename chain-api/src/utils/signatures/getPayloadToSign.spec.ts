@@ -12,13 +12,28 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-import { ec as EC } from "elliptic";
+import { getPayloadToSign } from "./getPayloadToSign";
 
-const ec = new EC("secp256k1");
+describe("getPayloadToSign", () => {
+  it("should sort keys", () => {
+    // Given
+    const obj = { c: 8, b: [{ z: 6, y: 5, x: 4 }, 7], a: 3 };
 
-export function createRandomKeys() {
-  const pair = ec.genKeyPair();
-  const privateKey = pair.getPrivate().toString("hex");
-  const publicKey = Buffer.from(pair.getPublic().encode("array", false)).toString("hex");
-  return { privateKey, publicKey };
-}
+    // When
+    const toSign = getPayloadToSign(obj);
+
+    // Then
+    expect(toSign).toEqual('{"a":3,"b":[{"x":4,"y":5,"z":6},7],"c":8}');
+  });
+
+  it("should ignore 'signature' and 'trace' fields", () => {
+    // Given
+    const obj = { c: 8, signature: "to-be-ignored", trace: 3 };
+
+    // When
+    const toSign = getPayloadToSign(obj);
+
+    // Then
+    expect(toSign).toEqual('{"c":8}');
+  });
+});

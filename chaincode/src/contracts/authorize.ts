@@ -16,12 +16,14 @@ import {
   ChainCallDTO,
   ForbiddenError,
   PublicKey,
+  SigningScheme,
   UserProfile,
   ValidationFailedError,
   signatures
 } from "@gala-chain/api";
 
 import { PkInvalidSignatureError, PublicKeyService } from "../services";
+import { PkMissingError } from "../services/PublicKeyError";
 import { GalaChainContext } from "../types";
 
 class MissingSignatureError extends ValidationFailedError {
@@ -32,7 +34,22 @@ class MissingSignatureError extends ValidationFailedError {
 
 class RedundantSignerPublicKeyError extends ValidationFailedError {
   constructor(recovered: string, inDto: string) {
-    super("Public key is redundant, when it can be recovered from signature.", { recovered, inDto });
+    super(
+      "Public key is redundant, when it can be recovered from signature, or when the address is provided.",
+      { recovered, inDto }
+    );
+  }
+}
+
+class RedundantSignerAddressError extends ValidationFailedError {
+  constructor(recovered: string, inDto: string) {
+    super("Signer address redundant, when it can be recovered from signature.", { recovered, inDto });
+  }
+}
+
+class MissingSignerError extends ValidationFailedError {
+  constructor() {
+    super("Missing signerPublicKey or signerAddress field in dto");
   }
 }
 
@@ -66,17 +83,33 @@ export async function authorize(
     if (dto.signerPublicKey !== undefined) {
       throw new RedundantSignerPublicKeyError(recoveredPkHex, dto.signerPublicKey);
     }
-    return await getUserProfile(ctx, recoveredPkHex); // new flow only
-  } else if (dto.signerPublicKey !== undefined) {
-    const providedPkHex = signatures.getNonCompactHexPublicKey(dto.signerPublicKey);
-    const ethAddress = signatures.getEthAddress(providedPkHex);
-
-    if (!dto.isSignatureValid(providedPkHex)) {
-      throw new PkInvalidSignatureError(`eth|${ethAddress}`);
+    if (dto.signerAddress !== undefined) {
+      throw new RedundantSignerAddressError(recoveredPkHex, dto.signerAddress);
+    }
+    return await getUserProfile(ctx, recoveredPkHex, dto.signing ?? SigningScheme.ETH); // new flow only
+  } else if (dto.signerAddress !== undefined) {
+    if (dto.signerPublicKey !== undefined) {
+      throw new RedundantSignerPublicKeyError(dto.signerAddress, dto.signerPublicKey);
     }
 
-    return await getUserProfile(ctx, providedPkHex); // new flow only
+    const { profile, publicKey } = await getUserProfileAndPublicKey(ctx, dto.signerAddress);
+
+    if (!dto.isSignatureValid(publicKey.publicKey)) {
+      throw new PkInvalidSignatureError(profile.alias);
+    }
+
+    return profile;
+  } else if (dto.signerPublicKey !== undefined) {
+    if (!dto.isSignatureValid(dto.signerPublicKey)) {
+      const address = PublicKeyService.getUserAddress(dto.signerPublicKey, dto.signing ?? SigningScheme.ETH);
+      throw new PkInvalidSignatureError(address);
+    }
+
+    return await getUserProfile(ctx, dto.signerPublicKey, dto.signing ?? SigningScheme.ETH); // new flow only
+  } else if (dto.signing === SigningScheme.TON) {
+    throw new MissingSignerError();
   } else {
+    // once we dropp support for legacy auth, it should be changed to throw MissingSignerError
     return await legacyAuthorize(ctx, dto, legacyCAUser); // legacy flow only
   }
 }
@@ -95,15 +128,38 @@ export async function ensureIsAuthorizedBy(
   return authorized;
 }
 
-async function getUserProfile(ctx: GalaChainContext, pkHex: string): Promise<UserProfile> {
-  const ethAddress = signatures.getEthAddress(pkHex);
-  const profile = await PublicKeyService.getUserProfile(ctx, ethAddress);
+async function getUserProfile(
+  ctx: GalaChainContext,
+  publicKey: string,
+  signing: SigningScheme
+): Promise<UserProfile> {
+  const address = PublicKeyService.getUserAddress(publicKey, signing);
+  const profile = await PublicKeyService.getUserProfile(ctx, address);
 
   if (profile === undefined) {
-    throw new UserNotRegisteredError(ethAddress);
+    throw new UserNotRegisteredError(address);
   }
 
   return profile;
+}
+
+async function getUserProfileAndPublicKey(
+  ctx: GalaChainContext,
+  address
+): Promise<{ profile: UserProfile; publicKey: PublicKey }> {
+  const profile = await PublicKeyService.getUserProfile(ctx, address);
+
+  if (profile === undefined) {
+    throw new UserNotRegisteredError(address);
+  }
+
+  const publicKey = await PublicKeyService.getPublicKey(ctx, profile.alias);
+
+  if (publicKey === undefined) {
+    throw new PkMissingError(profile.alias);
+  }
+
+  return { profile, publicKey };
 }
 
 async function legacyAuthorize(
@@ -135,6 +191,10 @@ export function ensureOrganizationIsAllowed(ctx: GalaChainContext, allowedOrgsMS
 }
 
 function recoverPublicKey(signature: string, dto: ChainCallDTO, prefix = ""): string | undefined {
+  if (dto.signing === SigningScheme.TON) {
+    return undefined;
+  }
+
   try {
     return signatures.recoverPublicKey(signature, dto, prefix);
   } catch (err) {

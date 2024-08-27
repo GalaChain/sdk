@@ -27,7 +27,6 @@
     "tslib": "^2.6.2"
   },
   "peerDependencies": {
-    "elliptic": "*",
     "class-validator": "*",
     "fabric-ca-client": "*",
     "fabric-network": "*"
