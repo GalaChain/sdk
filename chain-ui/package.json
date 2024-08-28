@@ -32,7 +32,8 @@
     "glob": "11.0.0",
     "@vitejs/plugin-vue": "5.1.2",
     "vite-plugin-dts": "3.9.1",
-    "vitest": "1.6.0"
+    "vitest": "1.6.0",
+    "vite": "^5.0.0"
   },
   "devDependencies": {
     "@nx/storybook": "19.4.2",
