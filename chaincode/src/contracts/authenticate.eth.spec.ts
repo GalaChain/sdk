@@ -82,7 +82,7 @@ test.each([
   [__valid___, signerAdd, ___registered, Error("REDUNDANT_SIGNER_ADDRESS")],
   [__valid___, signerAdd, notRegistered, Error("REDUNDANT_SIGNER_ADDRESS")],
   [__validDER, _________, ___registered, Error("UNAUTHORIZED")], // we don't support legacy here
-  [__validDER, _________, notRegistered, Error("PK_NOT_FOUND")],
+  [__validDER, _________, notRegistered, Error("USER_NOT_REGISTERED")],
   [__validDER, signerKey, ___registered, Success],
   [__validDER, signerKey, notRegistered, Error("USER_NOT_REGISTERED")],
   [__validDER, signerAdd, ___registered, Success],

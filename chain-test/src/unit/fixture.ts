@@ -17,15 +17,9 @@ import {
   ChainObject,
   ClassConstructor,
   GalaChainResponse,
-  PublicKey,
   RangedChainObject,
-  UserProfile,
-  UserRole,
   signatures
 } from "@gala-chain/api";
-import { ChainUser } from "@gala-chain/client";
-import { plainToInstance } from "class-transformer";
-import { ec as EC } from "elliptic";
 import { Context, Contract } from "fabric-contract-api";
 import { ChaincodeStub } from "fabric-shim";
 import Logger from "fabric-shim/lib/logger";

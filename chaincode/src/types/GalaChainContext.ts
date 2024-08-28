@@ -12,7 +12,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-import { TraceContext, UnauthorizedError } from "@gala-chain/api";
+import { TraceContext, UnauthorizedError, UserRole } from "@gala-chain/api";
 import { Context } from "fabric-contract-api";
 import { ChaincodeStub, Timestamp } from "fabric-shim";
 import { SpanContext } from "opentracing";
@@ -134,7 +134,7 @@ export class GalaChainContext extends Context {
       throw new Error("Calling user already set to " + this.callingUserValue);
     }
     this.callingUserValue = d.alias;
-    this.callingUserRolesValue = d.roles ?? [];
+    this.callingUserRolesValue = d.roles ?? [UserRole.EVALUATE]; // default if `roles` is undefined
 
     if (d.ethAddress !== undefined) {
       this.callingUserEthAddressValue = d.ethAddress;

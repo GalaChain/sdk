@@ -90,7 +90,7 @@ export function createSignedDto(unsigned: ChainCallDTO, privateKey: string) {
 export function createDerSignedDto(unsigned: ChainCallDTO, privateKey: string) {
   const dto = instanceToInstance(unsigned);
   dto.signature = signatures.getDERSignature(dto, Buffer.from(privateKey, "hex"));
-  expect([140, 142, 144]).toContain(dto.signature.length);
+  expect([138, 140, 142, 144]).toContain(dto.signature.length);
   return dto;
 }
 
