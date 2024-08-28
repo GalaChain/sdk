@@ -12,24 +12,17 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-import { IsNotEmpty, IsOptional, IsString } from "class-validator";
+import eth from "./eth";
+import { getPayloadToSign } from "./getPayloadToSign";
+import ton from "./ton";
 
-import { SigningScheme, signatures } from "../utils";
-import { StringEnumProperty } from "../validators";
-import { ChainObject } from "./ChainObject";
-
-export class PublicKey extends ChainObject {
-  @IsString()
-  @IsNotEmpty()
-  publicKey: string;
-
-  @IsOptional()
-  @StringEnumProperty(SigningScheme)
-  public signing?: SigningScheme;
+export enum SigningScheme {
+  ETH = "ETH",
+  TON = "TON"
 }
 
-export const PK_INDEX_KEY = "GCPK";
-
-export function normalizePublicKey(input: string): string {
-  return signatures.normalizePublicKey(input).toString("base64");
-}
+export default {
+  ...eth,
+  ton,
+  getPayloadToSign
+} as const;
