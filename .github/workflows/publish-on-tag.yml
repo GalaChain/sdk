@@ -218,7 +218,7 @@ jobs:
               curl -X POST -H 'Content-type: application/json' --data "{
                   \"channel\": \"#releases\",
                   \"username\": \"Tag Reporter Bot\",
-                  \"text\": Galachain SDK ${{ github.ref_name }} Released by ${{ github.actor }}\n${{ github.event.head_commit.message }}`
+                  \"text\": Galachain SDK ${{ github.ref_name }} Released by ${{ github.actor }}\n${{ github.event.head_commit.message }}
               }" ${{ secrets.SLACK_TAG_WEBHOOK_URL }}
   
   update-assets-chaincode:
