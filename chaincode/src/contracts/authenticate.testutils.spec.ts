@@ -82,14 +82,16 @@ export async function createRegisteredTonUser(chaincode: TestChaincode): Promise
 
 export function createSignedDto(unsigned: ChainCallDTO, privateKey: string) {
   const dto = instanceToInstance(unsigned);
-  dto.signature = signatures.getSignature(dto, Buffer.from(privateKey, "hex"));
+  const keyBuff = signatures.normalizePrivateKey(privateKey);
+  dto.signature = signatures.getSignature(dto, keyBuff);
   expect(dto.signature).toHaveLength(130);
   return dto;
 }
 
 export function createDerSignedDto(unsigned: ChainCallDTO, privateKey: string) {
   const dto = instanceToInstance(unsigned);
-  dto.signature = signatures.getDERSignature(dto, Buffer.from(privateKey, "hex"));
+  const keyBuff = signatures.normalizePrivateKey(privateKey);
+  dto.signature = signatures.getDERSignature(dto, keyBuff);
   expect([138, 140, 142, 144]).toContain(dto.signature.length);
   return dto;
 }
