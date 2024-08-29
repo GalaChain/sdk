@@ -126,7 +126,5 @@ it("should handle very large numbers with no decimals", () => {
 
 it("Bignumber toUtf8Bytes", () => {
   const bigNumber = BigNumber("300");
-  console.log(`Type: ${typeof bigNumber}`);
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  expect(toUtf8Bytes(bigNumber as any)).toEqual(toUtf8Bytes("300"));
+  expect(toUtf8Bytes(bigNumber)).toEqual(toUtf8Bytes("300"));
 });

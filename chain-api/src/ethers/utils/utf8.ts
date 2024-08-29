@@ -288,7 +288,9 @@ export function toUtf8Bytes(str: string | BigNumber, form?: UnicodeNormalization
     str
   );
 
-  str = str.toString();
+  if (BigNumber.isBigNumber(str)) {
+    str = str.toFixed();
+  }
 
   if (form != null) {
     assertNormalize(form);
