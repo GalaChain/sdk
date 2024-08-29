@@ -25,7 +25,7 @@ import { EVALUATE, GalaContract, GalaTransaction, SUBMIT } from "../contracts";
 import { GalaChainContext, createValidChainObject } from "../types";
 import { getObjectsByPartialCompositeKey, putChainObject } from "../utils/state";
 
-const curatorOrgMsp = process.env.CURATOR_ORG_MSP ?? curatorOrgMsp;
+const curatorOrgMsp = process.env.CURATOR_ORG_MSP ?? "CuratorOrg";
 
 export class SuperheroDto extends ChainCallDTO {
   public name: string;
