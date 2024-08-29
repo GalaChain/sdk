@@ -6,6 +6,8 @@
  *
  *  @_subsection api/utils:Strings and UTF-8  [about-strings]
  */
+import BigNumber from "bignumber.js";
+
 import { assertArgument, assertNormalize } from "../errors.js";
 import { BytesLike, getBytes } from "./data.js";
 
@@ -278,8 +280,17 @@ function getUtf8CodePoints(_bytes: BytesLike, onError?: Utf8ErrorFunc): Array<nu
  *
  *  If %%form%% is specified, the string is normalized.
  */
-export function toUtf8Bytes(str: string, form?: UnicodeNormalizationForm): Uint8Array {
-  assertArgument(typeof str === "string", "invalid string value", "str", str);
+export function toUtf8Bytes(str: string | BigNumber, form?: UnicodeNormalizationForm): Uint8Array {
+  assertArgument(
+    typeof str === "string" || BigNumber.isBigNumber(str),
+    `invalid string or bignumber value`,
+    "str or BN",
+    str
+  );
+
+  if (BigNumber.isBigNumber(str)) {
+    str = str.toFixed();
+  }
 
   if (form != null) {
     assertNormalize(form);
