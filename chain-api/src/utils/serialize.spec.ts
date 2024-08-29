@@ -15,6 +15,7 @@
 import BigNumber from "bignumber.js";
 import { ArrayMinSize, IsString } from "class-validator";
 
+import { toUtf8Bytes } from "../ethers/utils/utf8";
 import { ChainCallDTO, ChainObject } from "../types";
 import { BigNumberProperty } from "../validators";
 import serialize from "./serialize";
@@ -121,4 +122,11 @@ it("should handle very large numbers with no decimals", () => {
   expect(dtoS).toEqual(expectedClassS);
   expect(chainObjectS).toEqual(expectedClassS);
   expect(plainS).toEqual(expectedPlainS);
+});
+
+it("Bignumber toUtf8Bytes", () => {
+  const bigNumber = BigNumber("300");
+  console.log(`Type: ${typeof bigNumber}`);
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  expect(toUtf8Bytes(bigNumber as any)).toEqual(toUtf8Bytes("300"));
 });
