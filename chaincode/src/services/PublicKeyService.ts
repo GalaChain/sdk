@@ -270,7 +270,7 @@ export class PublicKeyService {
       throw new UserProfileNotFoundError(user);
     }
 
-    profile.roles = roles;
+    profile.roles = Array.from(new Set(roles)).sort();
 
     const key = PublicKeyService.getUserProfileKey(ctx, address);
     const data = Buffer.from(profile.serialize());

@@ -60,7 +60,10 @@ export function x509Identity(caUser: string, mspId: string): ClientIdentity {
     },
     getMSPID: () => mspId,
     getID: () => id,
-    getIDBytes: () => sampleIdBytes
+    getIDBytes: () => sampleIdBytes,
+    // @ts-expect-error TS2353
+    idBytes: sampleIdBytes,
+    mspid: mspId
   };
 }
 
@@ -114,8 +117,12 @@ export class TestChaincodeStub extends ChaincodeStub {
     return x509Identity(caUser, mspId);
   }
 
-  mockState(key: string, value: string): void {
+  public mockState(key: string, value: string): void {
     this.state[key] = value;
+  }
+
+  public mockCreator(mspId: string, caUser: string): void {
+    this.creator = x509Identity(caUser, mspId);
   }
 
   putState: (key: string, value: Uint8Array) => Promise<void> = (key, value) => {
