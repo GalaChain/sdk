@@ -25,6 +25,8 @@ import { EVALUATE, GalaContract, GalaTransaction, SUBMIT } from "../contracts";
 import { GalaChainContext, createValidChainObject } from "../types";
 import { getObjectsByPartialCompositeKey, putChainObject } from "../utils/state";
 
+const curatorOrgMsp = process.env.CURATOR_ORG_MSP ?? curatorOrgMsp;
+
 export class SuperheroDto extends ChainCallDTO {
   public name: string;
 
@@ -101,7 +103,7 @@ export default class TestGalaContract extends GalaContract {
   @GalaTransaction({
     type: SUBMIT,
     in: SuperheroDto,
-    allowedOrgs: ["CuratorOrg"]
+    allowedOrgs: [curatorOrgMsp]
   })
   public async CreateSuperhero(ctx: GalaChainContext, dto: SuperheroDto): Promise<GalaChainResponse<void>> {
     ctx.logger.info(`Creating superhero ${dto.name}`);

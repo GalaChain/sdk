@@ -91,6 +91,8 @@ import { Info } from "fabric-contract-api";
 
 import { version } from "../../package.json";
 
+const curatorOrgMsp = process.env.CURATOR_ORG_MSP ?? curatorOrgMsp;
+
 @Info({ title: "GalaChainToken", description: "Contract for managing GalaChain tokens" })
 export default class GalaChainTokenContract extends GalaContract {
   constructor() {
@@ -100,7 +102,7 @@ export default class GalaChainTokenContract extends GalaContract {
     type: SUBMIT,
     in: CreateTokenClassDto,
     out: TokenClassKey,
-    allowedOrgs: ["CuratorOrg"],
+    allowedOrgs: [curatorOrgMsp],
     verifySignature: true
   })
   public CreateTokenClass(ctx: GalaChainContext, dto: CreateTokenClassDto): Promise<TokenClassKey> {
@@ -129,7 +131,7 @@ export default class GalaChainTokenContract extends GalaContract {
     type: SUBMIT,
     in: UpdateTokenClassDto,
     out: TokenClassKey,
-    allowedOrgs: ["CuratorOrg"],
+    allowedOrgs: [curatorOrgMsp],
     verifySignature: true
   })
   public UpdateTokenClass(ctx: GalaChainContext, dto: UpdateTokenClassDto): Promise<TokenClassKey> {
@@ -260,7 +262,7 @@ export default class GalaChainTokenContract extends GalaContract {
     type: SUBMIT,
     in: FulfillMintDto,
     out: { arrayOf: TokenInstanceKey },
-    allowedOrgs: ["CuratorOrg"]
+    allowedOrgs: [curatorOrgMsp]
   })
   public async FulfillMint(ctx: GalaChainContext, dto: FulfillMintDto): Promise<TokenInstanceKey[]> {
     return fulfillMintRequest(ctx, dto);
