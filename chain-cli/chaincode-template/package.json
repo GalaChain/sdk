@@ -24,7 +24,6 @@
   "dependencies": {
     "@gala-chain/api": "2.0.0-alpha1",
     "@gala-chain/chaincode": "2.0.0-alpha1",
-    "@galachain/product": "2.0.0-alpha1",
     "@grpc/grpc-js": "1.10.10",
     "dotenv": "^16.0.1",
     "fabric-contract-api": "2.5.6",
