@@ -12,17 +12,40 @@ If you have any questions or need further assistance, please refer to the GalaCh
 ## Version 2.0.0
 
 ### Removal of Deprecated Features
-
-- Removal of `allowedOrgs` marker
-- Removal of legacy auth https://github.com/GalaChain/sdk/issues/176
+*none*
 
 ### Changes to API Contracts
-- Different way of handling authorization. Since 2.0.0 we support role-based auth, described in detail here (TBD link)
+
+#### Different way of handling authorization
+
+Since 2.0.0 we support role-based auth, described in detail here, and we changed how `@GalaTransaction`, `@Submit`, and `@Evaluate` handle transactions.
+The most important breaking change is that all methods that update the chain need to be signed.
+We no longer support writing to the chain without a signature.
+
+Please, ensure that all methods that update the chain are signed (`@GalaTransaction` has `verifySignature: true` property, or `@Submit`, or `@Evaluate` is used, which enforce signature verification).
+
+Additionally, we deprecated `allowedOrgs` property in decorator in favor of `allowedRoles` only, and encourage users to migrate to the new approach.
+As a backward compatibility measure, we still support `allowedOrgs` for now, but we don't allow to combine `allowedOrgs` and `allowedRoles` in the same decorator.
+
+This the migration steps from `allowedOrgs` to `allowedRoles` are as follows:
+1. Verify which users should have access to the method, and what roles they should have.
+   For instance, if you have a curator-like organization for privileged access, like `allowedOrgs: ["CuratorOrg"]`, you may want a `CURATOR` role and assign it to the users.
+2. Assign roles to the users, using `PublicKeyContract:UpdateUserRoles` method.
+   You need to provide the full list of roles for the user, as the method replaces the existing roles with the new ones.
+3. Ensure that your custom client code for user registration assigns the correct roles.
+   Registration methods from `PublicKeyContract` assign `EVALUATE` and `SUBMIT` as default roles, but you may want additional ones.
+4. Update the contract method decorators to use `allowedRoles` instead of `allowedOrgs`.
+
+Probably for most users you won't need to do anything, as the default roles are `EVALUATE` and `SUBMIT`, which are sufficient for calling methods with no `allowedRoles` specified.
+
+You may want to consult our acceptance test for migration from `allowedOrgs` to `allowedRoles` for more details, see [PublicKeyContract.migration.spec.ts](chaincode/src/contracts/PublicKeyContract.migration.spec.ts).
+
+#### Enforcing dto.uniqueKey for each submit transactions
+*TBD*
+
+#### Other
 - Different way of providing calling user in unit tests.
 - Field `uniqueKey` in contract method DTOs is now mandatory. https://github.com/GalaChain/sdk/issues/27
-
-### Dependency Updates
-- TBD
 
 ### Other Breaking Changes
 - TBD
