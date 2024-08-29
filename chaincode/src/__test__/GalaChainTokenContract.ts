@@ -92,8 +92,7 @@ import {
 import { version } from "../../package.json";
 import { EVALUATE, SUBMIT } from "../contracts";
 
-const curatorOrgMsp = process.env.CURATOR_ORG_MSP ?? curatorOrgMsp;
-
+const curatorOrgMsp = process.env.CURATOR_ORG_MSP ?? "CuratorOrg";
 
 @Info({ title: "GalaChainToken", description: "Contract for managing GalaChain tokens" })
 export default class GalaChainTokenContract extends GalaContract {
