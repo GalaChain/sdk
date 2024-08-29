@@ -18,8 +18,10 @@ import {
   ClassConstructor,
   GalaChainResponse,
   RangedChainObject,
+  UserRole,
   signatures
 } from "@gala-chain/api";
+import { ChainUser } from "@gala-chain/client";
 import { Context, Contract } from "fabric-contract-api";
 import { ChaincodeStub } from "fabric-shim";
 import Logger from "fabric-shim/lib/logger";
@@ -149,8 +151,24 @@ class Fixture<Ctx extends TestGalaChainContext, T extends GalaContract<Ctx>> {
     return this.savedKVState(...publicKeys, ...userProfiles);
   }
 
-  caClientIdentity(caUser: string, mspId: string): Fixture<Ctx, T> {
-    this.ctx.clientIdentity = x509Identity(caUser, mspId);
+  caClientIdentity(caUser: string, mspId?: string): Fixture<Ctx, T> {
+    this.ctx.clientIdentity = x509Identity(caUser, mspId ?? this.ctx.clientIdentity.getMSPID());
+    return this;
+  }
+
+  mockCallingUser(
+    user: ChainUserWithRoles | { alias: string; ethAddress?: string; tonAddress?: string; roles: string[] }
+  ): Fixture<Ctx, T> {
+    if ("identityKey" in user) {
+      this.ctx.callingUserData = {
+        alias: user.identityKey,
+        ethAddress: user.ethAddress,
+        roles: user.roles ?? []
+      };
+      return this;
+    }
+
+    this.ctx.callingUserData = user;
     return this;
   }
 

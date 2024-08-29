@@ -13,8 +13,7 @@
  * limitations under the License.
  */
 import { GalaContract } from "@gala-chain/chaincode";
-import { ChainUser } from "@gala-chain/client";
-import { fixture, writesMap } from "@gala-chain/test";
+import { fixture, users, writesMap } from "@gala-chain/test";
 
 import { AppleTree } from "./AppleTree";
 import { AppleTreeDto, AppleTreesDto } from "./dtos";
@@ -29,9 +28,9 @@ class TestContract extends GalaContract {
 
 it("should allow to plant trees", async () => {
   // Given
-  const user = ChainUser.withRandomKeys();
+  const user = users.random();
 
-  const { ctx, writes } = fixture(TestContract).callingUser(user);
+  const { ctx, writes } = fixture(TestContract).mockCallingUser(user);
 
   const dto = new AppleTreesDto([new AppleTreeDto(Variety.GALA, 1), new AppleTreeDto(Variety.MCINTOSH, 2)]);
 

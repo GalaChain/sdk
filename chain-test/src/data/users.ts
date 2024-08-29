@@ -23,7 +23,10 @@ export interface ChainUserWithRoles {
   roles: string[] | undefined;
 }
 
-function user(string: string, roles: string[]): ChainUserWithRoles & { roles: string[] } {
+function randomUser(
+  string?: string | undefined,
+  roles: string[] = [...UserProfile.DEFAULT_ROLES]
+): ChainUserWithRoles & { roles: string[] } {
   const user = ChainUser.withRandomKeys(string);
   return {
     identityKey: user.identityKey,
@@ -35,10 +38,11 @@ function user(string: string, roles: string[]): ChainUserWithRoles & { roles: st
 }
 
 export default {
-  admin: user("client|admin", [...UserProfile.ADMIN_ROLES]),
-  testUser1: user("client|testUser1", [...UserProfile.DEFAULT_ROLES]),
-  testUser2: user("client|testUser2", [...UserProfile.DEFAULT_ROLES]),
-  testUser3: user("client|testUser3", [...UserProfile.DEFAULT_ROLES]),
-  tokenHolder: user("client|tokenHolder", [...UserProfile.DEFAULT_ROLES]),
-  attacker: user("client|maliciousUser", [...UserProfile.ADMIN_ROLES])
+  admin: randomUser("client|admin", [...UserProfile.ADMIN_ROLES]),
+  testUser1: randomUser("client|testUser1"),
+  testUser2: randomUser("client|testUser2"),
+  testUser3: randomUser("client|testUser3"),
+  tokenHolder: randomUser("client|tokenHolder"),
+  attacker: randomUser("client|maliciousUser", [...UserProfile.ADMIN_ROLES]),
+  random: randomUser
 };
