@@ -62,8 +62,8 @@ describe("FulfillMint", () => {
       additionalKey,
       timeKey,
       totalKnownMintsCount: new BigNumber("0"),
-      requestor: users.admin.identityKey,
-      owner: users.testUser1.identityKey,
+      requestor: users.admin.alias,
+      owner: users.testUser1.alias,
       created: ctx.txUnixTime,
       quantity: new BigNumber("1"),
       state: TokenMintStatus.Unknown,
@@ -117,8 +117,8 @@ describe("FulfillMint", () => {
       additionalKey,
       timeKey,
       totalKnownMintsCount: new BigNumber("0"),
-      requestor: users.admin.identityKey,
-      owner: users.testUser1.identityKey,
+      requestor: users.admin.alias,
+      owner: users.testUser1.alias,
       created: ctx.txUnixTime,
       quantity: mintQty,
       state: TokenMintStatus.Unknown,
@@ -138,7 +138,7 @@ describe("FulfillMint", () => {
       timeKey,
       instance: TokenInstance.FUNGIBLE_TOKEN_INSTANCE,
       totalKnownBurnsCount: new BigNumber("0"),
-      burnedBy: users.testUser2.identityKey,
+      burnedBy: users.testUser2.alias,
       created: ctx.txUnixTime,
       quantity: new BigNumber("1"),
       epoch: epochKey
@@ -148,8 +148,8 @@ describe("FulfillMint", () => {
 
     const tokenClaim = await createValidChainObject(TokenClaim, {
       ...currencyInstanceKey,
-      ownerKey: users.admin.identityKey,
-      issuerKey: users.admin.identityKey,
+      ownerKey: users.admin.alias,
+      issuerKey: users.admin.alias,
       instance: new BigNumber("0"),
       action: 4,
       quantity: mintQty,
@@ -172,7 +172,7 @@ describe("FulfillMint", () => {
           timeKey,
           totalKnownMintsCount: new BigNumber("0"),
           id: mintRequest.requestId(),
-          owner: users.testUser1.identityKey
+          owner: users.testUser1.alias
         })
       ]
     }).signed(users.admin.privateKey);
@@ -213,8 +213,8 @@ describe("FulfillMint", () => {
 
     const tokenClaim = await createValidChainObject(TokenClaim, {
       ...nftInstanceKey,
-      ownerKey: users.admin.identityKey,
-      issuerKey: users.admin.identityKey,
+      ownerKey: users.admin.alias,
+      issuerKey: users.admin.alias,
       instance: new BigNumber("0"),
       action: 4,
       quantity: mintQty,
@@ -244,8 +244,8 @@ describe("FulfillMint", () => {
         additionalKey,
         timeKey: distantPastTimeKey,
         totalKnownMintsCount: new BigNumber("0"),
-        requestor: users.admin.identityKey,
-        owner: users.testUser2.identityKey,
+        requestor: users.admin.alias,
+        owner: users.testUser2.alias,
         created: distantPastTimestamp,
         quantity: new BigNumber("1"),
         state: TokenMintStatus.Unknown,
@@ -281,8 +281,8 @@ describe("FulfillMint", () => {
         additionalKey,
         timeKey: nearbyTimeKey,
         totalKnownMintsCount: new BigNumber(pastMintRequests.length),
-        requestor: users.admin.identityKey,
-        owner: users.testUser2.identityKey,
+        requestor: users.admin.alias,
+        owner: users.testUser2.alias,
         created: nearbyTimestamp,
         quantity: new BigNumber("1"),
         state: TokenMintStatus.Unknown,
@@ -301,8 +301,8 @@ describe("FulfillMint", () => {
       additionalKey,
       timeKey,
       totalKnownMintsCount: new BigNumber(pastMintRequests.length),
-      requestor: users.admin.identityKey,
-      owner: users.testUser1.identityKey,
+      requestor: users.admin.alias,
+      owner: users.testUser1.alias,
       created: ctx.txUnixTime,
       quantity: mintQty,
       state: TokenMintStatus.Unknown,
@@ -325,7 +325,7 @@ describe("FulfillMint", () => {
           timeKey,
           totalKnownMintsCount: new BigNumber(pastMintRequests.length),
           id: mintRequest.requestId(),
-          owner: users.testUser1.identityKey
+          owner: users.testUser1.alias
         })
       ]
     }).signed(users.admin.privateKey);
@@ -347,7 +347,7 @@ describe("FulfillMint", () => {
       ...nftInstanceKey,
       instance: expectedStartingInstance.plus("1"),
       isNonFungible: true,
-      owner: users.testUser1.identityKey
+      owner: users.testUser1.alias
     });
     const expectedNft2Key = await createValidDTO(TokenInstanceKey, {
       ...nftInstanceKey,
@@ -358,10 +358,10 @@ describe("FulfillMint", () => {
       ...nftInstanceKey,
       instance: expectedStartingInstance.plus("2"),
       isNonFungible: true,
-      owner: users.testUser1.identityKey
+      owner: users.testUser1.alias
     });
 
-    const expectedBalance = new TokenBalance({ ...nftInstance, owner: users.testUser1.identityKey });
+    const expectedBalance = new TokenBalance({ ...nftInstance, owner: users.testUser1.alias });
     expectedBalance.ensureCanAddInstance(expectedStartingInstance.plus("1")).add();
     expectedBalance.ensureCanAddInstance(expectedStartingInstance.plus("2")).add();
 
@@ -402,8 +402,8 @@ describe("FulfillMint", () => {
       additionalKey,
       timeKey,
       totalKnownMintsCount: new BigNumber("0"),
-      requestor: users.admin.identityKey,
-      owner: users.testUser1.identityKey,
+      requestor: users.admin.alias,
+      owner: users.testUser1.alias,
       created: ctx.txUnixTime,
       quantity: decimalQuantity,
       state: TokenMintStatus.Unknown,
@@ -424,7 +424,7 @@ describe("FulfillMint", () => {
           timeKey,
           totalKnownMintsCount: new BigNumber("0"),
           id: mintRequest.requestId(),
-          owner: users.testUser1.identityKey
+          owner: users.testUser1.alias
         })
       ]
     }).signed(users.testUser1.privateKey);
@@ -458,8 +458,8 @@ describe("FulfillMint", () => {
 
     const tokenClaim = await createValidChainObject(TokenClaim, {
       ...nftInstanceKey,
-      ownerKey: users.admin.identityKey,
-      issuerKey: users.admin.identityKey,
+      ownerKey: users.admin.alias,
+      issuerKey: users.admin.alias,
       instance: new BigNumber("0"),
       action: 4,
       quantity: mintQty,
@@ -479,8 +479,8 @@ describe("FulfillMint", () => {
       additionalKey,
       timeKey,
       totalKnownMintsCount: new BigNumber("0"),
-      requestor: users.admin.identityKey,
-      owner: users.testUser1.identityKey,
+      requestor: users.admin.alias,
+      owner: users.testUser1.alias,
       created: ctx.txUnixTime,
       quantity: mintQty,
       state: TokenMintStatus.Unknown,
@@ -498,7 +498,7 @@ describe("FulfillMint", () => {
       timeKey,
       totalKnownBurnsCount: new BigNumber("0"),
       instance: nftInstance.instance,
-      burnedBy: users.testUser2.identityKey,
+      burnedBy: users.testUser2.alias,
       created: ctx.txUnixTime,
       quantity: new BigNumber("1"),
       epoch: epochKey
@@ -516,7 +516,7 @@ describe("FulfillMint", () => {
           timeKey,
           totalKnownMintsCount: new BigNumber("0"),
           id: mintRequest.requestId(),
-          owner: users.attacker.identityKey // <- tampered here. code expects users.testUser1Id
+          owner: users.attacker.alias // <- tampered here. code expects users.testUser1Id
         })
       ]
     }).signed(users.attacker.privateKey);

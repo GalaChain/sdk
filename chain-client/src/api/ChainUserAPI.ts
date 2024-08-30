@@ -16,7 +16,7 @@ import { ChainClient, ChainUser } from "../generic";
 
 export interface ChainUserAPI {
   privateKey: string;
-  identityKey: string;
+  alias: string;
   publicKey: string;
   ethAddress: string;
 }

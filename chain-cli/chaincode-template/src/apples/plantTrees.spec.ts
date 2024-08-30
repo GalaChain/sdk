@@ -34,9 +34,7 @@ it("should allow to plant trees", async () => {
 
   const dto = new AppleTreesDto([new AppleTreeDto(Variety.GALA, 1), new AppleTreeDto(Variety.MCINTOSH, 2)]);
 
-  const expectedTrees = dto.trees.map(
-    (t) => new AppleTree(user.identityKey, t.variety, t.index, ctx.txUnixTime)
-  );
+  const expectedTrees = dto.trees.map((t) => new AppleTree(user.alias, t.variety, t.index, ctx.txUnixTime));
 
   // When
   const response = await plantTrees(ctx, dto);

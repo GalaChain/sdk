@@ -91,8 +91,8 @@ describe("Simple NFT scenario", () => {
       tokenInstance: TokenInstanceKey.nftKey(nftClassKey, TokenInstance.FUNGIBLE_TOKEN_INSTANCE).toQueryKey(),
       allowanceType: AllowanceType.Mint,
       quantities: [
-        { user: user1.identityKey, quantity: new BigNumber(1) },
-        { user: user2.identityKey, quantity: new BigNumber(1) }
+        { user: user1.alias, quantity: new BigNumber(1) },
+        { user: user2.alias, quantity: new BigNumber(1) }
       ],
       uses: new BigNumber(10)
     });
@@ -108,11 +108,11 @@ describe("Simple NFT scenario", () => {
     expect(galaResult).toEqual(
       transactionSuccess([
         expect.objectContaining({
-          grantedTo: user1.identityKey,
+          grantedTo: user1.alias,
           quantity: new BigNumber(1)
         }),
         expect.objectContaining({
-          grantedTo: user2.identityKey,
+          grantedTo: user2.alias,
           quantity: new BigNumber(1)
         })
       ])
@@ -122,13 +122,13 @@ describe("Simple NFT scenario", () => {
   it("Users should mint NFT", async () => {
     // Given
     const user1MintDto = await createValidDTO<MintTokenDto>(MintTokenDto, {
-      owner: user1.identityKey,
+      owner: user1.alias,
       tokenClass: nftClassKey,
       quantity: new BigNumber(1)
     });
 
     const user2MintDto = await createValidDTO<MintTokenDto>(MintTokenDto, {
-      owner: user2.identityKey,
+      owner: user2.alias,
       tokenClass: nftClassKey,
       quantity: new BigNumber(1)
     });
@@ -174,8 +174,8 @@ describe("Simple NFT scenario", () => {
   it("transfer NFT between users", async () => {
     // Given
     const transferDto = await createTransferDto(nftClassKey, {
-      from: user1.identityKey,
-      to: user2.identityKey,
+      from: user1.alias,
+      to: user2.alias,
       tokenInstance: new BigNumber(1)
     });
 
@@ -187,8 +187,8 @@ describe("Simple NFT scenario", () => {
 
     // Then
     expect(transferResponse).toEqual(transactionSuccess());
-    expect(await fetchNFTInstances(client.assets, nftClassKey, user1.identityKey)).toEqual([]);
-    expect(await fetchNFTInstances(client.assets, nftClassKey, user2.identityKey)).toEqual([
+    expect(await fetchNFTInstances(client.assets, nftClassKey, user1.alias)).toEqual([]);
+    expect(await fetchNFTInstances(client.assets, nftClassKey, user2.alias)).toEqual([
       new BigNumber(1),
       new BigNumber(2)
     ]);

@@ -71,7 +71,7 @@ describe("NFT lock scenario", () => {
   it("User1 should lock own token", async () => {
     // Given
     const lockDto = await createValidDTO<LockTokensDto>(LockTokensDto, {
-      lockAuthority: user1.identityKey,
+      lockAuthority: user1.alias,
       tokenInstances: [
         {
           tokenInstanceKey: token1Key,
@@ -94,8 +94,8 @@ describe("NFT lock scenario", () => {
   it("User1 cannot transfer locked token", async () => {
     // Given
     const transferDto = await createTransferDto(nftClassKey, {
-      from: user1.identityKey,
-      to: user2.identityKey,
+      from: user1.alias,
+      to: user2.alias,
       tokenInstance: new BigNumber(1)
     });
 
@@ -127,8 +127,8 @@ describe("NFT lock scenario", () => {
     );
 
     const transferDto = await createTransferDto(nftClassKey, {
-      from: user1.identityKey,
-      to: user2.identityKey,
+      from: user1.alias,
+      to: user2.alias,
       tokenInstance: new BigNumber(1)
     });
 
@@ -146,12 +146,12 @@ describe("NFT lock scenario", () => {
   it("Only lock authority can unlock token", async () => {
     // Given
     const lockDto = await createValidDTO<LockTokensDto>(LockTokensDto, {
-      lockAuthority: user1.identityKey,
+      lockAuthority: user1.alias,
       tokenInstances: [
         {
           tokenInstanceKey: TokenInstanceKey.nftKey(nftClassKey, 2),
           quantity: new BigNumber(1),
-          owner: user1.identityKey
+          owner: user1.alias
         }
       ]
     });
@@ -223,7 +223,7 @@ describe("lock with allowances", () => {
     const galaAllowanceDto = await createValidDTO<GrantAllowanceDto>(GrantAllowanceDto, {
       tokenInstance: token2Key.toQueryKey(),
       allowanceType: AllowanceType.Lock,
-      quantities: [{ user: user2.identityKey, quantity: new BigNumber(1) }],
+      quantities: [{ user: user2.alias, quantity: new BigNumber(1) }],
       uses: new BigNumber(1)
     });
 
@@ -238,12 +238,12 @@ describe("lock with allowances", () => {
 
   it("User2 can lock User1 token", async () => {
     const lockDto = await createValidDTO<LockTokensDto>(LockTokensDto, {
-      lockAuthority: user1.identityKey,
+      lockAuthority: user1.alias,
       tokenInstances: [
         {
           tokenInstanceKey: token2Key,
           quantity: new BigNumber(1),
-          owner: user1.identityKey
+          owner: user1.alias
         }
       ]
     });

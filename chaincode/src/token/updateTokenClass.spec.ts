@@ -59,7 +59,7 @@ it("should fail if callingUser is not token authority", async () => {
   const savedTokenClass = currency.tokenClass();
   const savedTokenClassKey = await savedTokenClass.getKey();
   const callingUser = users.testUser1;
-  expect(savedTokenClass.authorities).not.toContain(callingUser.identityKey);
+  expect(savedTokenClass.authorities).not.toContain(callingUser.alias);
 
   const { ctx, contract, writes } = fixture(GalaChainTokenContract)
     .caClientIdentity("curator", "CuratorOrg")
@@ -74,7 +74,7 @@ it("should fail if callingUser is not token authority", async () => {
   // Then
   const [key, authorities] = [savedTokenClass.getCompositeKey(), savedTokenClass.authorities];
   expect(response).toEqual(
-    GalaChainResponse.Error(new NotATokenAuthorityError(callingUser.identityKey, key, authorities))
+    GalaChainResponse.Error(new NotATokenAuthorityError(callingUser.alias, key, authorities))
   );
 
   expect(writes).toEqual({});
@@ -132,7 +132,7 @@ function defaultUpdate() {
     image: "http://app.gala.games/UPDATED-image-url",
     symbol: "UPDATEDAUTOTESTCOIN",
     rarity: "Updateable",
-    authorities: [users.admin.identityKey, "client|new-admin"]
+    authorities: [users.admin.alias, "client|new-admin"]
   };
 }
 

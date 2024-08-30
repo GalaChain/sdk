@@ -48,7 +48,7 @@ const tokenClassPlain = createPlainFn({
   totalBurned: new BigNumber(0),
   totalMintAllowance: new BigNumber(0),
   totalSupply: new BigNumber(0),
-  authorities: [users.admin.identityKey]
+  authorities: [users.admin.alias]
 });
 
 const tokenAllowancePlain = (txUnixTime: number) => ({
@@ -61,8 +61,8 @@ const tokenAllowancePlain = (txUnixTime: number) => ({
   created: txUnixTime,
   expires: 0,
   instance: new BigNumber(1),
-  grantedBy: users.testUser2.identityKey,
-  grantedTo: users.testUser1.identityKey,
+  grantedBy: users.testUser2.alias,
+  grantedTo: users.testUser1.alias,
   type: "Potion",
   uses: new BigNumber(1),
   usesSpent: new BigNumber(0)
@@ -78,8 +78,8 @@ const tokenMintAllowancePlain = (txUnixTime: number) => ({
   created: txUnixTime,
   expires: 0,
   instance: new BigNumber(0),
-  grantedBy: users.admin.identityKey,
-  grantedTo: users.admin.identityKey,
+  grantedBy: users.admin.alias,
+  grantedTo: users.admin.alias,
   type: "Potion",
   uses: new BigNumber(1),
   usesSpent: new BigNumber(0)
@@ -93,12 +93,12 @@ const tokenInstance1KeyPlain = createPlainFn({
 const tokenInstance1Plain = createPlainFn({
   ...tokenInstance1KeyPlain(),
   isNonFungible: true,
-  owner: users.testUser1.identityKey
+  owner: users.testUser1.alias
 });
 
 const tokenBalancePlain = createPlainFn({
   ...tokenClassKeyPlain(),
-  owner: users.testUser1.identityKey,
+  owner: users.testUser1.alias,
   instanceIds: [new BigNumber(1)],
   lockedHolds: [],
   inUseHolds: [],
@@ -107,7 +107,7 @@ const tokenBalancePlain = createPlainFn({
 
 const tokenBurnPlain = (txUnixTime: number) => ({
   ...tokenInstance1KeyPlain(),
-  burnedBy: users.testUser1.identityKey,
+  burnedBy: users.testUser1.alias,
   created: txUnixTime,
   quantity: new BigNumber(1)
 });

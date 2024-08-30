@@ -115,7 +115,7 @@ async function grantUsersMintingAllowance(
     ).toQueryKey(),
     allowanceType: AllowanceType.Mint,
     quantities: users.map(({ user, quantity }) => ({
-      user: user.identityKey,
+      user: user.alias,
       quantity
     })),
     uses: new BigNumber(10)
@@ -135,7 +135,7 @@ async function usersMintNFT(
 ) {
   for await (const { user, quantity } of users) {
     const userMintDto = await createValidDTO<MintTokenDto>(MintTokenDto, {
-      owner: user.identityKey,
+      owner: user.alias,
       tokenClass: nftClassKey,
       quantity: quantity
     });

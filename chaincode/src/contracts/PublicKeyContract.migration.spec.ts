@@ -75,7 +75,7 @@ describe("Migration from allowedOrgs to allowedRoles", () => {
     expect(await chaincode.invoke("PublicKeyContract:RegisterEthUser", dto)).toEqual(transactionSuccess());
 
     const profile = await getUserProfile();
-    expect(profile).toEqual(expect.objectContaining({ alias: user.identityKey }));
+    expect(profile).toEqual(expect.objectContaining({ alias: user.alias }));
     expect(profile.roles).not.toContain(allowedRole);
   });
 
@@ -93,7 +93,7 @@ describe("Migration from allowedOrgs to allowedRoles", () => {
     const currentProfile = await getUserProfile();
 
     const updateRolesDto = await createValidDTO(UpdateUserRolesDto, {
-      user: user.identityKey,
+      user: user.alias,
       roles: [allowedRole, ...currentProfile.roles] // need to provide all roles
     }).signed(adminPrivateKey);
     const updateRolesResp = await chaincode

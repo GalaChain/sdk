@@ -163,7 +163,7 @@ function isUserConfig(user: ChainUser | unknown): user is ChainUser {
     !!user &&
     "prefix" in user &&
     "name" in user &&
-    "identityKey" in user &&
+    "alias" in user &&
     "ethAddress" in user &&
     "privateKey" in user &&
     "publicKey" in user
@@ -191,7 +191,7 @@ async function createRegisteredUser(
       throw new Error(`Failed to register eth user: ${response.Message}`);
     }
   } else {
-    const dto = await createValidDTO(RegisterUserDto, { user: user.identityKey, publicKey: user.publicKey });
+    const dto = await createValidDTO(RegisterUserDto, { user: user.alias, publicKey: user.publicKey });
     const response = await client.RegisterUser(dto.signed(client.privateKey));
     if (response.Status !== GalaChainResponseType.Success) {
       throw new Error(`Failed to register user: ${response.Message}`);

@@ -86,7 +86,7 @@ describe("NFT Burn scenario", () => {
   it("Should confirm token burn was successful", async () => {
     // Given
     const user1TokenInstances = await createValidDTO(FetchBalancesDto, {
-      owner: user1.identityKey,
+      owner: user1.alias,
       ...instanceToPlain(nftClassKey)
     });
 

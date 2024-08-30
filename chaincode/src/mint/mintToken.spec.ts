@@ -52,14 +52,14 @@ describe("MintToken", () => {
 
     const dto = await createValidDTO(MintTokenDto, {
       tokenClass: currency.tokenClassKey(),
-      owner: users.testUser1.identityKey,
+      owner: users.testUser1.alias,
       quantity: mintQty
     }).signed(users.admin.privateKey);
 
     const tokenClaim = await createValidChainObject(TokenClaim, {
       ...currencyInstanceKey,
-      ownerKey: users.admin.identityKey,
-      issuerKey: users.admin.identityKey,
+      ownerKey: users.admin.alias,
+      issuerKey: users.admin.alias,
       instance: new BigNumber("0"),
       action: 4,
       quantity: mintQty,
@@ -80,8 +80,8 @@ describe("MintToken", () => {
       additionalKey,
       timeKey,
       totalKnownMintsCount: new BigNumber("0"),
-      requestor: users.admin.identityKey,
-      owner: users.testUser1.identityKey,
+      requestor: users.admin.alias,
+      owner: users.testUser1.alias,
       created: ctx.txUnixTime,
       quantity: mintQty,
       state: TokenMintStatus.Unknown,
@@ -97,7 +97,7 @@ describe("MintToken", () => {
       totalSupply: mintQty
     });
 
-    const expectedBalance = new TokenBalance({ ...currencyClass, owner: users.testUser1.identityKey });
+    const expectedBalance = new TokenBalance({ ...currencyClass, owner: users.testUser1.alias });
     expectedBalance.ensureCanAddQuantity(mintQty).add();
 
     const expectedAllowance = await createValidChainObject(TokenAllowance, {
@@ -133,7 +133,7 @@ describe("MintToken", () => {
 
     const dto = await createValidDTO(MintTokenDto, {
       tokenClass: nft.tokenClassKey(),
-      owner: users.testUser1.identityKey,
+      owner: users.testUser1.alias,
       quantity: mintQty
     }).signed(users.admin.privateKey);
 
@@ -141,17 +141,17 @@ describe("MintToken", () => {
       ...nftInstanceKey,
       instance: new BigNumber("1"),
       isNonFungible: true,
-      owner: users.testUser1.identityKey
+      owner: users.testUser1.alias
     });
 
     const nft2 = await createValidChainObject(TokenInstance, {
       ...nftInstanceKey,
       instance: new BigNumber("2"),
       isNonFungible: true,
-      owner: users.testUser1.identityKey
+      owner: users.testUser1.alias
     });
 
-    const expectedBalance = new TokenBalance({ ...nftClass, owner: users.testUser1.identityKey });
+    const expectedBalance = new TokenBalance({ ...nftClass, owner: users.testUser1.alias });
     expectedBalance.ensureCanAddInstance(new BigNumber("1")).add();
     expectedBalance.ensureCanAddInstance(new BigNumber("2")).add();
 
@@ -169,8 +169,8 @@ describe("MintToken", () => {
 
     const tokenClaim = await createValidChainObject(TokenClaim, {
       ...nftInstanceKey,
-      ownerKey: users.admin.identityKey,
-      issuerKey: users.admin.identityKey,
+      ownerKey: users.admin.alias,
+      issuerKey: users.admin.alias,
       instance: new BigNumber("0"),
       action: 4,
       quantity: mintQty,
@@ -191,8 +191,8 @@ describe("MintToken", () => {
       additionalKey,
       timeKey,
       totalKnownMintsCount: new BigNumber("0"),
-      requestor: users.admin.identityKey,
-      owner: users.testUser1.identityKey,
+      requestor: users.admin.alias,
+      owner: users.testUser1.alias,
       created: ctx.txUnixTime,
       quantity: mintQty,
       state: TokenMintStatus.Unknown,
@@ -237,7 +237,7 @@ describe("MintToken", () => {
 
     const dto = await createValidDTO(MintTokenDto, {
       tokenClass: currency.tokenClassKey(),
-      owner: users.testUser1.identityKey,
+      owner: users.testUser1.alias,
       quantity: decimalQuantity
     }).signed(users.testUser1.privateKey);
 
@@ -267,7 +267,7 @@ describe("MintToken", () => {
 
     const dto = await createValidDTO(MintTokenDto, {
       tokenClass: currency.tokenClassKey(),
-      owner: users.admin.identityKey,
+      owner: users.admin.alias,
       quantity: mintQuantity
     }).signed(users.admin.privateKey);
 
@@ -313,7 +313,7 @@ describe("MintToken", () => {
 
     const dto = await createValidDTO(MintTokenDto, {
       tokenClass: nft.tokenClassKey(),
-      owner: users.testUser1.identityKey,
+      owner: users.testUser1.alias,
       quantity: mintQty,
       allowanceKey: allowanceKey
     }).signed(users.admin.privateKey);
@@ -322,17 +322,17 @@ describe("MintToken", () => {
       ...nftInstanceKey,
       instance: new BigNumber("1"),
       isNonFungible: true,
-      owner: users.testUser1.identityKey
+      owner: users.testUser1.alias
     });
 
     const nft2 = await createValidChainObject(TokenInstance, {
       ...nftInstanceKey,
       instance: new BigNumber("2"),
       isNonFungible: true,
-      owner: users.testUser1.identityKey
+      owner: users.testUser1.alias
     });
 
-    const expectedBalance = new TokenBalance({ ...nftClass, owner: users.testUser1.identityKey });
+    const expectedBalance = new TokenBalance({ ...nftClass, owner: users.testUser1.alias });
     expectedBalance.ensureCanAddInstance(new BigNumber("1")).add();
     expectedBalance.ensureCanAddInstance(new BigNumber("2")).add();
 
@@ -350,8 +350,8 @@ describe("MintToken", () => {
 
     const tokenClaim = await createValidChainObject(TokenClaim, {
       ...nftInstanceKey,
-      ownerKey: users.admin.identityKey,
-      issuerKey: users.admin.identityKey,
+      ownerKey: users.admin.alias,
+      issuerKey: users.admin.alias,
       instance: new BigNumber("0"),
       action: 4,
       quantity: mintQty,
@@ -373,8 +373,8 @@ describe("MintToken", () => {
       timeKey,
       allowanceKey,
       totalKnownMintsCount: new BigNumber("0"),
-      requestor: users.admin.identityKey,
-      owner: users.testUser1.identityKey,
+      requestor: users.admin.alias,
+      owner: users.testUser1.alias,
       created: ctx.txUnixTime,
       quantity: mintQty,
       state: TokenMintStatus.Unknown,

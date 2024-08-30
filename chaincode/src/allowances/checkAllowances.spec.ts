@@ -26,7 +26,7 @@ describe("checkAllowances", () => {
 
     const { ctx } = checkAllowancesFixture;
     ctx.callingUserData = {
-      alias: users.admin.identityKey,
+      alias: users.admin.alias,
       ethAddress: users.admin.ethAddress,
       roles: users.admin.roles
     };

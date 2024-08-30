@@ -23,7 +23,7 @@ import { signatures } from "@gala-chain/api";
 export class ChainUser {
   public readonly prefix: string;
   public readonly name: string;
-  public readonly identityKey: string;
+  public readonly alias: string;
   public readonly ethAddress: string;
   public readonly privateKey: string;
   public readonly publicKey: string;
@@ -32,8 +32,8 @@ export class ChainUser {
    * @param {Object} config - Configuration object for the constructor.
    *
    * @param {string} [config.name] - If provided, the resulting prefix will be
-   * `client` and identityKey will be `client|${name}`. Otherwise, the prefix
-   * will be `eth` and identityKey will be `eth|${ethAddress}`.
+   * `client` and alias will be `client|${name}`. Otherwise, the prefix
+   * will be `eth` and alias will be `eth|${ethAddress}`.
    *
    * @param {string} config.privateKey - A secp256k1 private key to be used for
    * cryptographic operations. It will be used to calculate the public key and
@@ -52,15 +52,15 @@ export class ChainUser {
       this.name = config.name.replace("client|", "");
     }
 
-    this.identityKey = `${this.prefix}|${this.name}`;
+    this.alias = `${this.prefix}|${this.name}`;
   }
 
   /**
    * Generates a new ChainUser object with random keys.
    *
    * @param {string} [name] - The name to be used for the ChainUser.
-   * If provided, the resulting identityKey will be `client|${name}`.
-   * Otherwise, the identityKey will be `eth|${ethAddress}`.
+   * If provided, the resulting alias will be `client|${name}`.
+   * Otherwise, the alias will be `eth|${ethAddress}`.
    *
    * @return {ChainUser} - A new ChainUser object with the generated
    * random keys and the provided or default name.

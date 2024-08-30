@@ -66,7 +66,7 @@ describe("Apple trees", () => {
 
   test("Fetch GALA trees planted by a user", async () => {
     // Given
-    const dto = new FetchTreesDto(user.identityKey, Variety.GALA).signed(user.privateKey);
+    const dto = new FetchTreesDto(user.alias, Variety.GALA).signed(user.privateKey);
 
     // When
     const response = await client.apples.FetchTrees(dto);
@@ -75,8 +75,8 @@ describe("Apple trees", () => {
     expect(response).toEqual(
       transactionSuccess({
         trees: [
-          expect.objectContaining({ plantedBy: user.identityKey, variety: Variety.GALA, index: 1 }),
-          expect.objectContaining({ plantedBy: user.identityKey, variety: Variety.GALA, index: 3 })
+          expect.objectContaining({ plantedBy: user.alias, variety: Variety.GALA, index: 1 }),
+          expect.objectContaining({ plantedBy: user.alias, variety: Variety.GALA, index: 3 })
         ],
         bookmark: ""
       })
@@ -85,7 +85,7 @@ describe("Apple trees", () => {
 
   test("Fail to pick a GOLDEN_DELICIOUS apple because tree is too young", async () => {
     // Given
-    const dto = new PickAppleDto(user.identityKey, Variety.GOLDEN_DELICIOUS, 2).signed(user.privateKey);
+    const dto = new PickAppleDto(user.alias, Variety.GOLDEN_DELICIOUS, 2).signed(user.privateKey);
 
     // When
     const response = await client.apples.PickApple(dto);
@@ -97,7 +97,7 @@ describe("Apple trees", () => {
   test("Support Dry Run operations", async () => {
     // Given
     const dto = new AppleTreeDto(Variety.HONEYCRISP, 10);
-    const saved = new AppleTree(user.identityKey, Variety.HONEYCRISP, 10, new Date().getTime());
+    const saved = new AppleTree(user.alias, Variety.HONEYCRISP, 10, new Date().getTime());
 
     // When
     const response = await client.apples.DryRun("PlantTree", user.publicKey, dto);

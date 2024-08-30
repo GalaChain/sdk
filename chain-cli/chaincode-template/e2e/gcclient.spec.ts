@@ -116,11 +116,11 @@ describe("Chaincode client (CuratorOrg)", () => {
     const response = await client.RegisterEthUser(dto);
 
     // Then
-    expect(response).toEqual(GalaChainResponse.Success(newUser.identityKey));
+    expect(response).toEqual(GalaChainResponse.Success(newUser.alias));
 
     const newUserProfile = await client.GetProfile(newUser.privateKey);
     expect(newUserProfile).toEqual(
-      expect.objectContaining({ alias: newUser.identityKey, ethAddress: newUser.ethAddress })
+      expect.objectContaining({ alias: newUser.alias, ethAddress: newUser.ethAddress })
     );
   });
 });

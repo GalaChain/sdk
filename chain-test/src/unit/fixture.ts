@@ -139,13 +139,13 @@ class Fixture<Ctx extends TestGalaChainContext, T extends GalaContract<Ctx>> {
 
   registeredUsers(...users: ChainUserWithRoles[]): Fixture<Ctx, T> {
     const publicKeys = users.map((u) => ({
-      key: `\u0000GCPK\u0000${u.identityKey}\u0000`,
+      key: `\u0000GCPK\u0000${u.alias}\u0000`,
       value: JSON.stringify({ publicKey: signatures.normalizePublicKey(u.publicKey).toString("base64") })
     }));
 
     const userProfiles = users.map((u) => ({
       key: `\u0000GCUP\u0000${u.ethAddress}\u0000`,
-      value: JSON.stringify({ alias: u.identityKey, ethAddress: u.ethAddress, roles: u.roles })
+      value: JSON.stringify({ alias: u.alias, ethAddress: u.ethAddress, roles: u.roles })
     }));
 
     return this.savedKVState(...publicKeys, ...userProfiles);
@@ -159,9 +159,9 @@ class Fixture<Ctx extends TestGalaChainContext, T extends GalaContract<Ctx>> {
   callingUser(
     user: ChainUserWithRoles | { alias: string; ethAddress?: string; tonAddress?: string; roles: string[] }
   ): Fixture<Ctx, T> {
-    if ("identityKey" in user) {
+    if ("alias" in user) {
       this.ctx.callingUserData = {
-        alias: user.identityKey,
+        alias: user.alias,
         ethAddress: user.ethAddress,
         roles: user.roles ?? []
       };

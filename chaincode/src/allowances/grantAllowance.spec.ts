@@ -41,14 +41,14 @@ describe("GrantAllowance", () => {
   it("should GrantAllowance", async () => {
     const nftInstance = await createValidChainObject(TokenInstance, {
       ...nft.tokenInstance1(),
-      owner: users.testUser2.identityKey
+      owner: users.testUser2.alias
     });
     const nftClass = nft.tokenClass();
     const nftClassKey = nft.tokenClassKey();
     const nftInstanceQueryKey = await createValidDTO(TokenInstanceQueryKey, nft.tokenInstance1KeyPlain());
 
     const nftBalance = new TokenBalance({
-      owner: users.testUser2.identityKey,
+      owner: users.testUser2.alias,
       ...nftClassKey
     });
     nftBalance.ensureCanAddInstance(new BigNumber("1"));
@@ -59,7 +59,7 @@ describe("GrantAllowance", () => {
 
     const dto: GrantAllowanceDto = await createValidDTO(GrantAllowanceDto, {
       tokenInstance: nftInstanceQueryKey,
-      quantities: [{ user: users.testUser1.identityKey, quantity: new BigNumber("100") }],
+      quantities: [{ user: users.testUser1.alias, quantity: new BigNumber("100") }],
       allowanceType: AllowanceType.Lock,
       uses: new BigNumber("1")
     }).signed(users.testUser2.privateKey);
@@ -83,7 +83,7 @@ describe("GrantAllowance", () => {
       currency.tokenInstanceKeyPlain()
     );
 
-    const currencyBalance = new TokenBalance({ owner: users.testUser2.identityKey, ...currencyClassKey });
+    const currencyBalance = new TokenBalance({ owner: users.testUser2.alias, ...currencyClassKey });
     currencyBalance.ensureCanAddQuantity(new BigNumber("1000")).add();
 
     const { ctx, contract, writes } = fixture(GalaChainTokenContract)
@@ -94,7 +94,7 @@ describe("GrantAllowance", () => {
 
     const dto: GrantAllowanceDto = await createValidDTO(GrantAllowanceDto, {
       tokenInstance: currencyInstanceQueryKey,
-      quantities: [{ user: users.testUser1.identityKey, quantity: decimalQuantity }],
+      quantities: [{ user: users.testUser1.alias, quantity: decimalQuantity }],
       allowanceType: AllowanceType.Lock,
       uses: new BigNumber("1")
     }).signed(users.testUser2.privateKey);
@@ -119,7 +119,7 @@ describe("GrantAllowance", () => {
       currency.tokenInstanceKeyPlain()
     );
 
-    const currencyBalance = new TokenBalance({ owner: users.testUser2.identityKey, ...currencyClassKey });
+    const currencyBalance = new TokenBalance({ owner: users.testUser2.alias, ...currencyClassKey });
     currencyBalance.ensureCanAddQuantity(new BigNumber("1000")).add();
 
     const { ctx, contract, writes } = fixture(GalaChainTokenContract)
@@ -128,7 +128,7 @@ describe("GrantAllowance", () => {
 
     const dto: GrantAllowanceDto = await createValidDTO(GrantAllowanceDto, {
       tokenInstance: currencyInstanceQueryKey,
-      quantities: [{ user: users.testUser1.identityKey, quantity: new BigNumber("1001") }],
+      quantities: [{ user: users.testUser1.alias, quantity: new BigNumber("1001") }],
       allowanceType: AllowanceType.Lock,
       uses: new BigNumber("1")
     }).signed(users.testUser2.privateKey);
@@ -141,8 +141,8 @@ describe("GrantAllowance", () => {
       ...a,
       created: ctx.txUnixTime,
       quantity: new BigNumber("1001"),
-      grantedBy: users.testUser2.identityKey,
-      grantedTo: users.testUser1.identityKey,
+      grantedBy: users.testUser2.alias,
+      grantedTo: users.testUser1.alias,
       allowanceType: AllowanceType.Lock
     }));
     expect(response).toEqual(GalaChainResponse.Success([allowance]));
@@ -159,7 +159,7 @@ describe("GrantAllowance", () => {
       currency.tokenInstanceKeyPlain()
     );
 
-    const currencyBalance = new TokenBalance({ owner: users.testUser2.identityKey, ...currencyClassKey });
+    const currencyBalance = new TokenBalance({ owner: users.testUser2.alias, ...currencyClassKey });
     currencyBalance.ensureCanAddQuantity(new BigNumber("1000")).add();
 
     const { ctx, contract, writes } = fixture(GalaChainTokenContract)
@@ -168,7 +168,7 @@ describe("GrantAllowance", () => {
 
     const dto: GrantAllowanceDto = await createValidDTO(GrantAllowanceDto, {
       tokenInstance: currencyInstanceQueryKey,
-      quantities: [{ user: users.testUser1.identityKey, quantity: new BigNumber("1000") }],
+      quantities: [{ user: users.testUser1.alias, quantity: new BigNumber("1000") }],
       allowanceType: AllowanceType.Lock,
       uses: new BigNumber("1")
     }).signed(users.testUser2.privateKey);
@@ -181,8 +181,8 @@ describe("GrantAllowance", () => {
       ...a,
       created: ctx.txUnixTime,
       quantity: new BigNumber("1000"),
-      grantedBy: users.testUser2.identityKey,
-      grantedTo: users.testUser1.identityKey,
+      grantedBy: users.testUser2.alias,
+      grantedTo: users.testUser1.alias,
       allowanceType: AllowanceType.Lock
     }));
     expect(response).toEqual(GalaChainResponse.Success([allowance]));
@@ -200,7 +200,7 @@ describe("GrantAllowance", () => {
     );
 
     const currencyBalance = plainToInstance(TokenBalance, {
-      owner: users.testUser2.identityKey,
+      owner: users.testUser2.alias,
       ...currencyClassKey,
       instanceIds: [],
       quantity: new BigNumber("1000")
@@ -212,7 +212,7 @@ describe("GrantAllowance", () => {
 
     const dto: GrantAllowanceDto = await createValidDTO(GrantAllowanceDto, {
       tokenInstance: currencyInstanceQueryKey,
-      quantities: [{ user: users.testUser1.identityKey, quantity: new BigNumber(Infinity) }],
+      quantities: [{ user: users.testUser1.alias, quantity: new BigNumber(Infinity) }],
       allowanceType: AllowanceType.Lock,
       uses: new BigNumber(Infinity)
     }).signed(users.testUser2.privateKey);
@@ -225,8 +225,8 @@ describe("GrantAllowance", () => {
       ...a,
       created: ctx.txUnixTime,
       quantity: new BigNumber(Infinity),
-      grantedBy: users.testUser2.identityKey,
-      grantedTo: users.testUser1.identityKey,
+      grantedBy: users.testUser2.alias,
+      grantedTo: users.testUser1.alias,
       allowanceType: AllowanceType.Lock,
       uses: new BigNumber(Infinity)
     }));
@@ -247,7 +247,7 @@ describe("GrantAllowance", () => {
       currency.tokenInstanceKeyPlain()
     );
 
-    const currencyBalance = new TokenBalance({ owner: users.testUser2.identityKey, ...currencyClassKey });
+    const currencyBalance = new TokenBalance({ owner: users.testUser2.alias, ...currencyClassKey });
     currencyBalance.ensureCanAddQuantity(new BigNumber("1000")).add();
 
     const { ctx, writes } = fixture(GalaChainTokenContract)
@@ -256,7 +256,7 @@ describe("GrantAllowance", () => {
 
     const dto: GrantAllowanceDto = await createValidDTO(GrantAllowanceDto, {
       tokenInstance: currencyInstanceQueryKey,
-      quantities: [{ user: users.testUser1.identityKey, quantity: new BigNumber("100") }],
+      quantities: [{ user: users.testUser1.alias, quantity: new BigNumber("100") }],
       allowanceType: AllowanceType.Lock,
       uses: new BigNumber("1")
     });
@@ -290,16 +290,16 @@ describe("GrantAllowance", () => {
     const nftClassKey = nft.tokenClassKey();
     const nftInstance = await createValidChainObject(TokenInstance, {
       ...nft.tokenInstance1(),
-      owner: users.testUser2.identityKey
+      owner: users.testUser2.alias
     });
 
     const currencyBalance = new TokenBalance({
-      owner: users.testUser2.identityKey,
+      owner: users.testUser2.alias,
       ...currencyClassKey
     });
     currencyBalance.ensureCanAddQuantity(new BigNumber("1000")).add();
 
-    const nftBalance = new TokenBalance({ owner: users.testUser2.identityKey, ...nftClassKey });
+    const nftBalance = new TokenBalance({ owner: users.testUser2.alias, ...nftClassKey });
     nftBalance.ensureCanAddInstance(new BigNumber("1")).add();
 
     const { ctx, contract, writes } = fixture(GalaChainTokenContract)
@@ -308,7 +308,7 @@ describe("GrantAllowance", () => {
 
     const dto: GrantAllowanceDto = await createValidDTO(GrantAllowanceDto, {
       tokenInstance: currencyInstanceQueryKey,
-      quantities: [{ user: users.testUser1.identityKey, quantity: new BigNumber("100") }],
+      quantities: [{ user: users.testUser1.alias, quantity: new BigNumber("100") }],
       allowanceType: AllowanceType.Lock,
       uses: new BigNumber("1")
     });
@@ -331,7 +331,7 @@ describe("GrantAllowance", () => {
     // Given
     const nftInstance = await createValidChainObject(TokenInstance, {
       ...nft.tokenInstance1(),
-      owner: users.testUser2.identityKey
+      owner: users.testUser2.alias
     });
     const nftClass = nft.tokenClass();
     const nftInstanceQueryKey = await createValidDTO(TokenInstanceQueryKey, nft.tokenInstance1KeyPlain());
@@ -342,7 +342,7 @@ describe("GrantAllowance", () => {
 
     const dto: GrantAllowanceDto = await createValidDTO(GrantAllowanceDto, {
       tokenInstance: nftInstanceQueryKey,
-      quantities: [{ user: users.testUser1.identityKey, quantity: new BigNumber("100") }],
+      quantities: [{ user: users.testUser1.alias, quantity: new BigNumber("100") }],
       allowanceType: AllowanceType.Mint,
       uses: new BigNumber("1")
     }).signed(users.testUser2.privateKey);
@@ -353,11 +353,7 @@ describe("GrantAllowance", () => {
     // Then
     expect(response).toEqual(
       GalaChainResponse.Error(
-        new NotATokenAuthorityError(
-          users.testUser2.identityKey,
-          nftClass.getCompositeKey(),
-          nftClass.authorities
-        )
+        new NotATokenAuthorityError(users.testUser2.alias, nftClass.getCompositeKey(), nftClass.authorities)
       )
     );
     expect(writes).toEqual({});
@@ -378,7 +374,7 @@ describe("GrantAllowance", () => {
 
     const dto: GrantAllowanceDto = await createValidDTO(GrantAllowanceDto, {
       tokenInstance: currencyInstanceQueryKey,
-      quantities: [{ user: users.testUser1.identityKey, quantity: new BigNumber(Infinity) }],
+      quantities: [{ user: users.testUser1.alias, quantity: new BigNumber(Infinity) }],
       allowanceType: AllowanceType.Mint,
       uses: new BigNumber(Infinity)
     }).signed(users.admin.privateKey);
@@ -402,20 +398,20 @@ describe("GrantAllowance", () => {
     // Given
     const nftInstance = await createValidChainObject(TokenInstance, {
       ...nft.tokenInstance1(),
-      owner: users.testUser2.identityKey
+      owner: users.testUser2.alias
     });
     const nftClass = nft.tokenClass();
     const nftClassKey = nft.tokenClassKey();
     const nftInstanceQueryKey = await createValidDTO(TokenInstanceQueryKey, nft.tokenInstance1KeyPlain());
 
-    const nftBalance = new TokenBalance({ owner: users.testUser2.identityKey, ...nftClassKey });
+    const nftBalance = new TokenBalance({ owner: users.testUser2.alias, ...nftClassKey });
     nftBalance.ensureCanAddInstance(new BigNumber("1")).add();
 
     const existingAllowance = await createValidChainObject(TokenAllowance, {
-      grantedTo: users.testUser1.identityKey,
+      grantedTo: users.testUser1.alias,
       ...nft.tokenInstance1KeyPlain(),
       allowanceType: AllowanceType.Lock,
-      grantedBy: users.testUser2.identityKey,
+      grantedBy: users.testUser2.alias,
       created: 1,
       uses: new BigNumber("1"),
       usesSpent: new BigNumber("0"),
@@ -435,7 +431,7 @@ describe("GrantAllowance", () => {
 
     const dto: GrantAllowanceDto = await createValidDTO(GrantAllowanceDto, {
       tokenInstance: nftInstanceQueryKey,
-      quantities: [{ user: users.testUser1.identityKey, quantity: new BigNumber("100") }],
+      quantities: [{ user: users.testUser1.alias, quantity: new BigNumber("100") }],
       allowanceType: AllowanceType.Lock,
       uses: new BigNumber("1")
     }).signed(users.testUser2.privateKey);
@@ -454,7 +450,7 @@ describe("GrantAllowance", () => {
     // Given
     const nftInstance = await createValidChainObject(TokenInstance, {
       ...nft.tokenInstance1(),
-      owner: users.testUser2.identityKey
+      owner: users.testUser2.alias
     });
     const nftClass = nft.tokenClass();
     const { collection, category, type, additionalKey } = nft.tokenInstance1KeyPlain();
@@ -474,7 +470,7 @@ describe("GrantAllowance", () => {
     const requestedQuantity = new BigNumber("100");
     const dto: GrantAllowanceDto = await createValidDTO(GrantAllowanceDto, {
       tokenInstance: nftInstanceQueryKey,
-      quantities: [{ user: users.testUser1.identityKey, quantity: requestedQuantity }],
+      quantities: [{ user: users.testUser1.alias, quantity: requestedQuantity }],
       allowanceType: AllowanceType.Mint,
       uses: new BigNumber("1")
     }).signed(users.admin.privateKey);
@@ -487,7 +483,7 @@ describe("GrantAllowance", () => {
     const epoch = inverseEpoch(ctx);
     const allowance = nft.tokenAllowance((a) => ({
       ...a,
-      grantedBy: users.admin.identityKey,
+      grantedBy: users.admin.alias,
       created: ctx.txUnixTime,
       allowanceType: AllowanceType.Mint,
       instance: new BigNumber("0")

@@ -16,7 +16,7 @@ import { UserProfile } from "@gala-chain/api";
 import { ChainUser } from "@gala-chain/client";
 
 export interface ChainUserWithRoles {
-  identityKey: string;
+  alias: string;
   ethAddress: string;
   publicKey: string;
   privateKey: string;
@@ -29,7 +29,7 @@ function randomUser(
 ): ChainUserWithRoles & { roles: string[] } {
   const user = ChainUser.withRandomKeys(string);
   return {
-    identityKey: user.identityKey,
+    alias: user.alias,
     ethAddress: user.ethAddress,
     publicKey: user.publicKey,
     privateKey: user.privateKey,

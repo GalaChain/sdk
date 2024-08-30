@@ -29,7 +29,7 @@ it("should allow to plant a tree", async () => {
   const user = users.random();
   const { contract, ctx, writes } = fixture(AppleContract).registeredUsers(user);
   const dto = new AppleTreeDto(Variety.GALA, 1).signed(user.privateKey);
-  const expectedTree = new AppleTree(user.identityKey, dto.variety, dto.index, ctx.txUnixTime);
+  const expectedTree = new AppleTree(user.alias, dto.variety, dto.index, ctx.txUnixTime);
 
   // When
   const response = await contract.PlantTree(ctx, dto);
@@ -45,7 +45,7 @@ it("should fail to plant a tree if tree already exists", async () => {
 
   const { contract, ctx, writes } = fixture(AppleContract)
     .registeredUsers(user)
-    .savedState(new AppleTree(user.identityKey, Variety.GOLDEN_DELICIOUS, 1, 0));
+    .savedState(new AppleTree(user.alias, Variety.GOLDEN_DELICIOUS, 1, 0));
 
   const dto = new AppleTreeDto(Variety.GOLDEN_DELICIOUS, 1).signed(user.privateKey);
 

@@ -36,7 +36,7 @@ describe("FetchBurns", () => {
       .savedState(nftClass, nftInstance, nftTokenBurn, nftTokenBurn2);
 
     const dto = await createValidDTO(FetchBurnsDto, {
-      burnedBy: users.testUser1.identityKey
+      burnedBy: users.testUser1.alias
     }).signed(users.testUser1.privateKey);
 
     // When

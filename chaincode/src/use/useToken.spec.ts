@@ -26,7 +26,7 @@ describe("UseToken", () => {
     const nftClass = nft.tokenClass();
 
     const nftTokenBalance = new TokenBalance({
-      owner: users.testUser1.identityKey,
+      owner: users.testUser1.alias,
       collection: nftInstanceKey.collection,
       category: nftInstanceKey.category,
       type: nftInstanceKey.type,
@@ -39,15 +39,15 @@ describe("UseToken", () => {
       .savedState(nftClass, nftInstance, nftTokenBalance);
 
     const dto: UseTokenDto = await createValidDTO(UseTokenDto, {
-      owner: users.testUser1.identityKey,
-      inUseBy: users.testUser1.identityKey,
+      owner: users.testUser1.alias,
+      inUseBy: users.testUser1.alias,
       tokenInstance: nftInstanceKey,
       quantity: new BigNumber("1")
     });
     dto.sign(users.testUser1.privateKey);
 
     const expectedHold = new TokenHold({
-      createdBy: users.testUser1.identityKey,
+      createdBy: users.testUser1.alias,
       instanceId: nftInstanceKey.instance,
       quantity: new BigNumber("1"),
       created: ctx.txUnixTime,

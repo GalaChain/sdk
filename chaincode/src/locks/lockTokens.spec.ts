@@ -30,8 +30,8 @@ describe("LockTokens", () => {
     expect(balance.getNftInstanceIds()).toContainEqual(nftInstance.instance);
 
     const dto = await createValidDTO(LockTokenDto, {
-      owner: users.testUser1.identityKey,
-      lockAuthority: users.testUser1.identityKey,
+      owner: users.testUser1.alias,
+      lockAuthority: users.testUser1.alias,
       tokenInstance: nftInstanceKey,
       quantity: new BigNumber("1")
     }).signed(users.testUser1.privateKey);
@@ -44,11 +44,11 @@ describe("LockTokens", () => {
     balanceWithHold
       .ensureCanLockInstance(
         new TokenHold({
-          createdBy: users.testUser1.identityKey,
+          createdBy: users.testUser1.alias,
           instanceId: nftInstance.instance,
           quantity: new BigNumber("1"),
           created: ctx.txUnixTime,
-          lockAuthority: users.testUser1.identityKey,
+          lockAuthority: users.testUser1.alias,
           expires: 0
         }),
         1
@@ -75,8 +75,8 @@ describe("LockTokens", () => {
     const decimalQuantity = new BigNumber("0.000000000001");
 
     const dto = await createValidDTO(LockTokenDto, {
-      owner: users.testUser1.identityKey,
-      lockAuthority: users.testUser1.identityKey,
+      owner: users.testUser1.alias,
+      lockAuthority: users.testUser1.alias,
       tokenInstance: currencyInstanceKey,
       quantity: decimalQuantity
     }).signed(users.testUser1.privateKey);

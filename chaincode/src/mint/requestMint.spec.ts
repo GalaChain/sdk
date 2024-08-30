@@ -49,7 +49,7 @@ describe("MintToken", () => {
 
     const dto = await createValidDTO(MintTokenDto, {
       tokenClass: currency.tokenClassKey(),
-      owner: users.testUser1.identityKey,
+      owner: users.testUser1.alias,
       quantity: mintQty
     }).signed(users.admin.privateKey);
 
@@ -61,8 +61,8 @@ describe("MintToken", () => {
       additionalKey,
       timeKey,
       totalKnownMintsCount: new BigNumber("0"),
-      requestor: users.admin.identityKey,
-      owner: users.testUser1.identityKey,
+      requestor: users.admin.alias,
+      owner: users.testUser1.alias,
       created: ctx.txUnixTime,
       quantity: mintQty,
       state: TokenMintStatus.Unknown,
@@ -81,7 +81,7 @@ describe("MintToken", () => {
           timeKey,
           totalKnownMintsCount: new BigNumber("0"),
           id: mintRequest.requestId(),
-          owner: users.testUser1.identityKey
+          owner: users.testUser1.alias
         })
       ]
     });
@@ -113,7 +113,7 @@ describe("MintToken", () => {
 
     const dto = await createValidDTO(MintTokenDto, {
       tokenClass: nft.tokenClassKey(),
-      owner: users.testUser1.identityKey,
+      owner: users.testUser1.alias,
       quantity: mintQty
     }).signed(users.admin.privateKey);
 
@@ -125,8 +125,8 @@ describe("MintToken", () => {
       additionalKey,
       timeKey,
       totalKnownMintsCount: new BigNumber("0"),
-      requestor: users.admin.identityKey,
-      owner: users.testUser1.identityKey,
+      requestor: users.admin.alias,
+      owner: users.testUser1.alias,
       created: ctx.txUnixTime,
       quantity: mintQty,
       state: TokenMintStatus.Unknown,
@@ -145,7 +145,7 @@ describe("MintToken", () => {
           timeKey,
           totalKnownMintsCount: new BigNumber("0"),
           id: mintRequest.requestId(),
-          owner: users.testUser1.identityKey
+          owner: users.testUser1.alias
         })
       ]
     });
@@ -169,7 +169,7 @@ describe("MintToken", () => {
 
     const dto = await createValidDTO(MintTokenDto, {
       tokenClass: currency.tokenClassKey(),
-      owner: users.testUser1.identityKey,
+      owner: users.testUser1.alias,
       quantity: decimalQuantity
     }).signed(users.testUser1.privateKey);
 

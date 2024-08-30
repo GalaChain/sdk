@@ -31,7 +31,7 @@ describe("ChainUser", () => {
         expect.objectContaining({
           prefix: "eth",
           name: ethAddress,
-          identityKey: `eth|${ethAddress}`,
+          alias: `eth|${ethAddress}`,
           ethAddress,
           privateKey,
           publicKey
@@ -53,7 +53,7 @@ describe("ChainUser", () => {
         expect.objectContaining({
           prefix: "client",
           name,
-          identityKey: `client|${name}`,
+          alias: `client|${name}`,
           ethAddress,
           privateKey,
           publicKey
@@ -72,7 +72,7 @@ describe("ChainUser", () => {
         expect.objectContaining({
           prefix: "eth",
           name: chainUser.ethAddress,
-          identityKey: `eth|${chainUser.ethAddress}`
+          alias: `eth|${chainUser.ethAddress}`
         })
       );
     });
@@ -89,7 +89,7 @@ describe("ChainUser", () => {
         expect.objectContaining({
           prefix: "client",
           name,
-          identityKey: `client|${name}`
+          alias: `client|${name}`
         })
       );
     });

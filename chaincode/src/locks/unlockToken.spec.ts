@@ -33,7 +33,7 @@ describe("UnlockToken", () => {
     balanceWithLockedHold
       .ensureCanLockInstance(
         new TokenHold({
-          createdBy: users.testUser1.identityKey,
+          createdBy: users.testUser1.alias,
           instanceId: nftInstance.instance,
           quantity: new BigNumber("1"),
           created: 1,
@@ -72,7 +72,7 @@ describe("UnlockToken", () => {
     balanceWithLockedHold
       .ensureCanLockInstance(
         new TokenHold({
-          createdBy: users.testUser1.identityKey,
+          createdBy: users.testUser1.alias,
           instanceId: nftInstance.instance,
           quantity: new BigNumber("1"),
           created: 1,
@@ -90,11 +90,9 @@ describe("UnlockToken", () => {
       users.admin.privateKey
     );
 
-    expect(balanceWithLockedHold.getUnexpiredLockedHolds(0)[0].createdBy).toEqual(
-      users.testUser1.identityKey
-    );
-    expect(users.admin.identityKey).not.toEqual(users.testUser1.identityKey);
-    expect(nftClass.authorities).toContain(users.admin.identityKey);
+    expect(balanceWithLockedHold.getUnexpiredLockedHolds(0)[0].createdBy).toEqual(users.testUser1.alias);
+    expect(users.admin.alias).not.toEqual(users.testUser1.alias);
+    expect(nftClass.authorities).toContain(users.admin.alias);
 
     // When
     const response = await contract.UnlockToken(ctx, dto);
@@ -118,7 +116,7 @@ describe("UnlockToken", () => {
     balanceWithLockedHold
       .ensureCanLockInstance(
         new TokenHold({
-          createdBy: users.testUser1.identityKey,
+          createdBy: users.testUser1.alias,
           instanceId: nftInstance.instance,
           quantity: new BigNumber("1"),
           created: 1,
@@ -159,8 +157,8 @@ describe("UnlockToken", () => {
     balanceWithLockedHold
       .ensureCanLockQuantity(
         new TokenHold({
-          createdBy: users.testUser1.identityKey,
-          lockAuthority: users.testUser1.identityKey,
+          createdBy: users.testUser1.alias,
+          lockAuthority: users.testUser1.alias,
           instanceId: currencyInstance.instance,
           quantity: new BigNumber("1"),
           created: 1,
@@ -178,7 +176,7 @@ describe("UnlockToken", () => {
       tokenInstance: currencyInstanceKey,
       quantity: new BigNumber("1"),
       lockedHoldName: testLockedHoldName,
-      owner: users.testUser1.identityKey
+      owner: users.testUser1.alias
     }).signed(users.admin.privateKey);
 
     // When
@@ -209,7 +207,7 @@ describe("UnlockToken", () => {
     ownerBalance
       .ensureCanLockInstance(
         new TokenHold({
-          createdBy: users.testUser1.identityKey,
+          createdBy: users.testUser1.alias,
           instanceId: nftInstance.instance,
           quantity: new BigNumber("1"),
           created: 1,
@@ -233,7 +231,7 @@ describe("UnlockToken", () => {
     // Then
     expect(response).toEqual(
       GalaChainResponse.Error(
-        new UnlockForbiddenUserError(users.attacker.identityKey, nftInstanceKey.toStringKey())
+        new UnlockForbiddenUserError(users.attacker.alias, nftInstanceKey.toStringKey())
       )
     );
     expect(writes).toEqual({});

@@ -118,7 +118,7 @@ describe("BurnTokens", () => {
 
     const dto = await createValidDTO(BurnTokensDto, {
       tokenInstances: [{ tokenInstanceKey: currencyInstanceKey, quantity: burnQty }],
-      owner: users.testUser1.identityKey
+      owner: users.testUser1.alias
     }).signed(users.testUser2.privateKey);
 
     const tokenBurn = currency.tokenBurn();
@@ -136,8 +136,8 @@ describe("BurnTokens", () => {
 
     const tokenClaim = await createValidChainObject(TokenClaim, {
       ...currencyInstanceKey,
-      ownerKey: users.testUser2.identityKey,
-      issuerKey: users.testUser1.identityKey,
+      ownerKey: users.testUser2.alias,
+      issuerKey: users.testUser1.alias,
       instance: new BigNumber("0"),
       action: 6,
       quantity: burnQty,
@@ -191,7 +191,7 @@ describe("BurnTokens", () => {
 
     const dto = await createValidDTO(BurnTokensDto, {
       tokenInstances: [{ tokenInstanceKey: currencyInstanceKey, quantity: burnQty }],
-      owner: users.testUser1.identityKey
+      owner: users.testUser1.alias
     }).signed(users.testUser2.privateKey);
 
     const tokenBurn = currency.tokenBurn();
@@ -238,7 +238,7 @@ describe("BurnTokens", () => {
 
     const dto = await createValidDTO(BurnTokensDto, {
       tokenInstances: [{ tokenInstanceKey: currencyInstanceKey, quantity: burnQty }],
-      owner: users.testUser1.identityKey
+      owner: users.testUser1.alias
     }).signed(users.testUser2.privateKey);
 
     const tokenBurn = currency.tokenBurn();
@@ -256,8 +256,8 @@ describe("BurnTokens", () => {
 
     const tokenClaim = await createValidChainObject(TokenClaim, {
       ...currencyInstanceKey,
-      ownerKey: users.testUser2.identityKey,
-      issuerKey: users.testUser1.identityKey,
+      ownerKey: users.testUser2.alias,
+      issuerKey: users.testUser1.alias,
       instance: new BigNumber("0"),
       action: 6,
       quantity: burnQty,
@@ -306,7 +306,7 @@ describe("BurnTokens", () => {
 
     const dto = await createValidDTO(BurnTokensDto, {
       tokenInstances: [{ tokenInstanceKey: currencyInstanceKey, quantity: burnQty }],
-      owner: users.testUser1.identityKey
+      owner: users.testUser1.alias
     }).signed(users.testUser2.privateKey);
 
     const tokenBurn = currency.tokenBurn();
@@ -324,8 +324,8 @@ describe("BurnTokens", () => {
 
     const tokenClaim = await createValidChainObject(TokenClaim, {
       ...currencyInstanceKey,
-      ownerKey: users.testUser2.identityKey,
-      issuerKey: users.testUser1.identityKey,
+      ownerKey: users.testUser2.alias,
+      issuerKey: users.testUser1.alias,
       instance: new BigNumber("0"),
       action: 6,
       quantity: burnQty,
@@ -373,7 +373,7 @@ describe("BurnTokens", () => {
 
     const dto = await createValidDTO(BurnTokensDto, {
       tokenInstances: [{ tokenInstanceKey: currencyInstanceKey, quantity: burnQty }],
-      owner: users.testUser1.identityKey
+      owner: users.testUser1.alias
     }).signed(users.testUser2.privateKey);
 
     const tokenBurn = currency.tokenBurn();
@@ -396,11 +396,11 @@ describe("BurnTokens", () => {
     expect(response).toEqual(
       GalaChainResponse.Error(
         new InsufficientBurnAllowanceError(
-          users.testUser2.identityKey,
+          users.testUser2.alias,
           new BigNumber("0"),
           burnQty,
           currencyInstanceKey,
-          users.testUser1.identityKey
+          users.testUser1.alias
         )
       )
     );
@@ -422,7 +422,7 @@ describe("BurnTokens", () => {
 
     const dto = await createValidDTO(BurnTokensDto, {
       tokenInstances: [{ tokenInstanceKey: currencyInstanceKey, quantity: burnQty }],
-      owner: users.testUser1.identityKey
+      owner: users.testUser1.alias
     }).signed(users.testUser2.privateKey);
 
     // When
@@ -432,11 +432,11 @@ describe("BurnTokens", () => {
     expect(response).toEqual(
       GalaChainResponse.Error(
         new InsufficientBurnAllowanceError(
-          users.testUser2.identityKey,
+          users.testUser2.alias,
           new BigNumber("0"),
           burnQty,
           currencyInstanceKey,
-          users.testUser1.identityKey
+          users.testUser1.alias
         )
       )
     );

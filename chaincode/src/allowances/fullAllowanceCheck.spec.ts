@@ -40,8 +40,8 @@ describe("FullAllowanceCheck", () => {
       category: nftInstance.category,
       type: nftInstance.type,
       additionalKey: nftInstance.additionalKey,
-      owner: users.testUser1.identityKey,
-      grantedTo: users.admin.identityKey,
+      owner: users.testUser1.alias,
+      grantedTo: users.admin.alias,
       allowanceType: 1
     }).signed(users.admin.privateKey);
 
