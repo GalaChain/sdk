@@ -30,7 +30,7 @@ it("should allow to plant trees", async () => {
   // Given
   const user = users.random();
 
-  const { ctx, writes } = fixture(TestContract).mockCallingUser(user);
+  const { ctx, writes } = fixture(TestContract).callingUser(user);
 
   const dto = new AppleTreesDto([new AppleTreeDto(Variety.GALA, 1), new AppleTreeDto(Variety.MCINTOSH, 2)]);
 

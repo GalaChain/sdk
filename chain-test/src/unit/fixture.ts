@@ -156,7 +156,7 @@ class Fixture<Ctx extends TestGalaChainContext, T extends GalaContract<Ctx>> {
     return this;
   }
 
-  mockCallingUser(
+  callingUser(
     user: ChainUserWithRoles | { alias: string; ethAddress?: string; tonAddress?: string; roles: string[] }
   ): Fixture<Ctx, T> {
     if ("identityKey" in user) {
