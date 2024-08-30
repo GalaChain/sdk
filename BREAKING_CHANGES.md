@@ -11,6 +11,12 @@ If you have any questions or need further assistance, please refer to the GalaCh
 
 ## Version 2.0.0
 
+The version contains various breaking changes in terms of how authorization is handled, how transactions are signed, and how the API is structured.
+However, it is backward compatible with the previous version in terms of the current chaincode state.
+The changes are mostly related to the way the SDK is used and how the chaincode is structured.
+If you have current production chain, you don't need to update the data, but you may need to update the code to be compatible with the new version.
+The only exception is the authorization, which requires a migration of the roles from `allowedOrgs` to `allowedRoles`, and setting up the roles for some user profiles.
+
 ### Removal of Deprecated Features
 *none*
 
@@ -39,6 +45,45 @@ This the migration steps from `allowedOrgs` to `allowedRoles` are as follows:
 Probably for most users you won't need to do anything, as the default roles are `EVALUATE` and `SUBMIT`, which are sufficient for calling methods with no `allowedRoles` specified.
 
 You may want to consult our acceptance test for migration from `allowedOrgs` to `allowedRoles` for more details, see [PublicKeyContract.migration.spec.ts](chaincode/src/contracts/PublicKeyContract.migration.spec.ts).
+
+#### API changes for unit tests with `fixture` utility
+
+Starting from version `2.0.0`:
+- Test data for `users` contains full user objects with roles, not just user aliases (identity keys).
+- User field `identityKey` was renamed to `alias` for clarity.
+- We recommend to use signature-based authentication and authorization for all transactions, which requires signing the DTOs with the user's private key.
+
+Sample usage of using `fixture` for testing transactions the previous version:
+```typescript
+const { ctx, contract } = fixture(GalaChainTokenContract)
+  .callingUser(users.testUser1Id)
+  .savedState(nftClass, nftInstance, balance);
+
+const dto = await createValidDTO(LockTokenDto, { ... });
+
+const response = await contract.LockToken(ctx, dto);
+```
+
+After upgrade to `2.0.0`:
+```typescript
+const { ctx, contract } = fixture(GalaChainTokenContract)
+  .registeredUsers(users.testUser1)
+  .savedState(nftClass, nftInstance, balance);
+
+const dto = await createValidDTO(LockTokenDto, { ... })
+  .signed(users.testUser1.privateKey);
+
+const response = await contract.LockToken(ctx, dto);
+```
+
+The main difference between the old CA-based auth and the new signature-based auth is that instead of using the user's CA identity, we use the user public key that is recovered from the DTO and the signature.
+We use the public key as a unique identifier of the user.
+
+In the previous flow we were using `callingUser` to set the user, and the user was identified by the CA identity.
+In the new flow we use `registeredUsers` to save relevant `UserProfile` objects in the mocked chain state, and the user is authenticated on the basis of the signature.
+This is why in the code for the new version we use `signed` to sign the DTO with the user's private key.
+
+#### API change for `TestChaincode` for unit tests
 
 #### Enforcing dto.uniqueKey for each submit transactions
 *TBD*
