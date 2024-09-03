@@ -20,14 +20,14 @@ import {
   UpdateUserRolesDto,
   UserProfile,
   UserRole,
-  createValidDTO
+  createValidSubmitDTO
 } from "@gala-chain/api";
 import { transactionErrorKey, transactionSuccess, users } from "@gala-chain/test";
 
 import TestChaincode from "../__test__/TestChaincode";
 import { GalaChainContext } from "../types";
 import { GalaContract } from "./GalaContract";
-import { EVALUATE, GalaTransaction, Submit } from "./GalaTransaction";
+import { Submit } from "./GalaTransaction";
 import { PublicKeyContract } from "./PublicKeyContract";
 
 const allowedOrg = "AllowedOrg";
@@ -69,7 +69,7 @@ describe("Migration from allowedOrgs to allowedRoles", () => {
   }
 
   test("When: User is registered with no allowed role", async () => {
-    const dto = await createValidDTO(RegisterEthUserDto, { publicKey: user.publicKey }).signed(
+    const dto = await createValidSubmitDTO(RegisterEthUserDto, { publicKey: user.publicKey }).signed(
       adminPrivateKey
     );
     expect(await chaincode.invoke("PublicKeyContract:RegisterEthUser", dto)).toEqual(transactionSuccess());
@@ -92,7 +92,7 @@ describe("Migration from allowedOrgs to allowedRoles", () => {
   test("When: Admin grants the user the allowed role", async () => {
     const currentProfile = await getUserProfile();
 
-    const updateRolesDto = await createValidDTO(UpdateUserRolesDto, {
+    const updateRolesDto = await createValidSubmitDTO(UpdateUserRolesDto, {
       user: user.identityKey,
       roles: [allowedRole, ...currentProfile.roles] // need to provide all roles
     }).signed(adminPrivateKey);

@@ -83,14 +83,13 @@ In the previous flow we were using `callingUser` to set the user, and the user w
 In the new flow we use `registeredUsers` to save relevant `UserProfile` objects in the mocked chain state, and the user is authenticated on the basis of the signature.
 This is why in the code for the new version we use `signed` to sign the DTO with the user's private key.
 
-#### API change for `TestChaincode` for unit tests
-
 #### Enforcing dto.uniqueKey for each submit transactions
-*TBD*
 
-#### Other
-- Different way of providing calling user in unit tests.
-- Field `uniqueKey` in contract method DTOs is now mandatory. https://github.com/GalaChain/sdk/issues/27
+Starting from version `2.0.0` we enforce the `uniqueKey` field in each DTO that is used in `@Submit` or `@GalaTransaction({ type: SUBMIT })` methods.
+This was done to prevent duplicate transactions from being submitted to the chain, and from the replay attacks.
+The constraint is enforced on the parent DTO only.
+Once you submit a DTO with missing `uniqueKey`, the SDK will throw a validation error.
+Once you submit a DTO with a `uniqueKey` that was already used, the SDK will throw a conflict error.
 
 ### Other Breaking Changes
 - TBD

@@ -15,6 +15,7 @@
 import { Type, instanceToInstance, plainToInstance } from "class-transformer";
 import { IsNotEmpty, IsOptional, ValidationError, validate } from "class-validator";
 import { JSONSchema } from "class-validator-jsonschema";
+import crypto from "crypto";
 
 import {
   ConstructorArgs,
@@ -74,8 +75,13 @@ type NonFunctionPropertyNames<T> = { [K in keyof T]: T[K] extends Function ? nev
 
 export type NonFunctionProperties<T> = Pick<T, NonFunctionPropertyNames<T>>;
 
+export function randomUniqueKey(): string {
+  return crypto.randomBytes(32).toString("base64");
+}
+
 /**
- * Creates valid DTO object from provided plain object. Throws exception in case of validation errors.
+ * Creates valid DTO object from provided plain object.
+ * Throws exception in case of validation errors.
  */
 export function createValidDTO<T extends ChainCallDTO>(
   constructor: ClassConstructor<T>,
@@ -91,20 +97,19 @@ export function createValidDTO<T extends ChainCallDTO>(
 }
 
 /**
- * Creates valid signed DTO object from provided plain object. Throws exception in case of validation errors.
- *
- * @deprecated Use `(await createValidDTO(...)).signed(...)` instead
+ * Creates valid submit DTO object from provided plain object.
+ * Throws exception in case of validation errors.
+ * If the uniqueKey is not provided, it generates a random one: 32 random bytes in base64.
  */
-export const createAndSignValidDTO = async <T extends ChainCallDTO>(
+export function createValidSubmitDTO<T extends SubmitCallDTO>(
   constructor: ClassConstructor<T>,
-  plain: NonFunctionProperties<T>,
-  privateKey: string
-): Promise<T> => {
-  const instance = plainToInstance(constructor, plain) as T;
-  instance.sign(privateKey);
-  await validateDTO(instance);
-  return instance;
-};
+  plain: Omit<NonFunctionProperties<T>, "uniqueKey"> & { uniqueKey?: string }
+): Promise<T> & { signed(privateKey: string): Promise<T> } {
+  return createValidDTO<T>(constructor, {
+    ...plain,
+    uniqueKey: plain?.uniqueKey ?? randomUniqueKey()
+  } as unknown as NonFunctionProperties<T>);
+}
 
 export interface TraceContext {
   spanId: string;
@@ -228,6 +233,12 @@ export class ChainCallDTO {
   }
 }
 
+// It just makes uniqueKey required
+export class SubmitCallDTO extends ChainCallDTO {
+  @IsNotEmpty()
+  public uniqueKey: string;
+}
+
 export class GetObjectDto extends ChainCallDTO {
   @IsNotEmpty()
   public readonly objectId: string;
@@ -263,7 +274,7 @@ export type RegisterUserParams = ConstructorArgs<RegisterUserDto>;
 @JSONSchema({
   description: `Dto for secure method to save public keys for legacy users. Method is called and signed by Curators`
 })
-export class RegisterUserDto extends ChainCallDTO {
+export class RegisterUserDto extends SubmitCallDTO {
   @JSONSchema({
     description: `Id of user to save public key for.`
   })
@@ -280,7 +291,7 @@ export type RegisterEthUserParams = ConstructorArgs<RegisterEthUserDto>;
 @JSONSchema({
   description: `Dto for secure method to save public keys for Eth users. Method is called and signed by Curators`
 })
-export class RegisterEthUserDto extends ChainCallDTO {
+export class RegisterEthUserDto extends SubmitCallDTO {
   @JSONSchema({ description: "Public secp256k1 key (compact or non-compact, hex or base64)." })
   @IsNotEmpty()
   publicKey: string;
@@ -291,7 +302,7 @@ export type RegisterTonUserParams = ConstructorArgs<RegisterTonUserDto>;
 @JSONSchema({
   description: `Dto for secure method to save public keys for TON users. Method is called and signed by Curators`
 })
-export class RegisterTonUserDto extends ChainCallDTO {
+export class RegisterTonUserDto extends SubmitCallDTO {
   @JSONSchema({ description: "TON user public key (Ed25519 in base64)." })
   @IsNotEmpty()
   publicKey: string;
@@ -299,7 +310,7 @@ export class RegisterTonUserDto extends ChainCallDTO {
 
 export type UpdatePublicKeyParams = ConstructorArgs<UpdatePublicKeyDto>;
 
-export class UpdatePublicKeyDto extends ChainCallDTO {
+export class UpdatePublicKeyDto extends SubmitCallDTO {
   @JSONSchema({
     description:
       "For users with ETH signing scheme it is public secp256k1 key (compact or non-compact, hex or base64). " +
@@ -311,7 +322,7 @@ export class UpdatePublicKeyDto extends ChainCallDTO {
 
 export type UpdateUserRolesParams = ConstructorArgs<UpdateUserRolesDto>;
 
-export class UpdateUserRolesDto extends ChainCallDTO {
+export class UpdateUserRolesDto extends SubmitCallDTO {
   @IsUserAlias()
   user: string;
 

@@ -22,6 +22,7 @@ import {
   NotImplementedError,
   Primitive,
   RuntimeError,
+  SubmitCallDTO,
   UserRole,
   generateResponseSchema,
   generateSchema,
@@ -64,14 +65,14 @@ type OutType = ClassConstructor<unknown> | Primitive;
 type OutArrType = { arrayOf: OutType };
 
 export type GalaTransactionBeforeFn = (ctx: GalaChainContext, dto: ChainCallDTO) => Promise<void>;
+
 export type GalaTransactionAfterFn = (
   ctx: GalaChainContext,
   dto: ChainCallDTO,
   result: GalaChainResponse<unknown>
 ) => Promise<unknown>;
 
-export interface GalaTransactionOptions<T extends ChainCallDTO> {
-  type: GalaTransactionType;
+export interface CommonTransactionOptions<T extends ChainCallDTO> {
   deprecated?: true;
   description?: string;
   in?: ClassConstructor<Inferred<T>>;
@@ -79,30 +80,31 @@ export interface GalaTransactionOptions<T extends ChainCallDTO> {
   /** @deprecated */
   allowedOrgs?: string[];
   allowedRoles?: string[];
-  verifySignature?: true;
   apiMethodName?: string;
   sequence?: MethodAPI[];
-  enforceUniqueKey?: true;
   before?: GalaTransactionBeforeFn;
   after?: GalaTransactionAfterFn;
 }
 
-type GalaSubmitOptions<T extends ChainCallDTO> = Omit<
-  Omit<GalaTransactionOptions<T>, "type">,
-  "verifySignature"
->;
+export interface GalaTransactionOptions<T extends ChainCallDTO> extends CommonTransactionOptions<T> {
+  type: GalaTransactionType;
+  verifySignature?: true;
+  enforceUniqueKey?: true;
+}
 
-type GalaEvaluateOptions<T extends ChainCallDTO> = Omit<
-  Omit<GalaTransactionOptions<T>, "type">,
-  "verifySignature"
->;
+export type GalaSubmitOptions<T extends SubmitCallDTO> = CommonTransactionOptions<T>;
+
+export interface GalaEvaluateOptions<T extends ChainCallDTO> extends CommonTransactionOptions<T> {
+  verifySignature?: true;
+  enforceUniqueKey?: true;
+}
 
 function isArrayOut(x: OutType | OutArrType | undefined): x is OutArrType {
   return typeof x === "object" && "arrayOf" in x;
 }
 
-function Submit<T extends ChainCallDTO>(options: GalaSubmitOptions<T>): GalaTransactionDecoratorFunction {
-  return GalaTransaction({ ...options, type: SUBMIT, verifySignature: true });
+function Submit<T extends SubmitCallDTO>(options: GalaSubmitOptions<T>): GalaTransactionDecoratorFunction {
+  return GalaTransaction({ ...options, type: SUBMIT, verifySignature: true, enforceUniqueKey: true });
 }
 
 function Evaluate<T extends ChainCallDTO>(options: GalaEvaluateOptions<T>): GalaTransactionDecoratorFunction {
