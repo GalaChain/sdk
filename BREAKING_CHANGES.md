@@ -18,7 +18,7 @@ If you have current production chain, you don't need to update the data, but you
 The only exception is the authorization, which requires a migration of the roles from `allowedOrgs` to `allowedRoles`, and setting up the roles for some user profiles.
 
 ### Removal of Deprecated Features
-*none*
+- `createAndSignValidDTO` was removed in favor of `createValidDTO(...).signed(...)`.
 
 ### Changes to API Contracts
 
