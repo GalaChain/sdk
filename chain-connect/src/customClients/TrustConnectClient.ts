@@ -12,12 +12,12 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-import { ChainCallDTO, ConstructorArgs, signatures } from "@gala-chain/api";
+import { ChainCallDTO, ConstructorArgs } from "@gala-chain/api";
 import { BrowserProvider, getAddress } from "ethers";
 
+import { CustomClient } from "../GalachainClient";
 import { generateEIP712Types } from "../Utils";
-import { CustomEventEmitter, ExtendedEip1193Provider, MetaMaskEvents } from "../helpers";
-import { CustomClient } from "../types/CustomClient";
+import { ExtendedEip1193Provider } from "../helpers";
 
 declare global {
   interface Window {
@@ -91,31 +91,11 @@ function getTrustWalletFromWindow() {
   return window["trustwallet"] ?? null;
 }
 
-export class GalachainConnectTrustClient extends CustomEventEmitter<MetaMaskEvents> implements CustomClient {
-  #address: string;
-  #provider: BrowserProvider | undefined;
-  #chainCodeUrl: string;
-
-  get getChaincodeUrl() {
-    return this.#chainCodeUrl;
-  }
-
-  get getGalachainAddress() {
-    return this.#address.replace("0x", "eth|");
-  }
-
-  get getWalletAddress() {
-    return this.#address;
-  }
-
-  set setWalletAddress(val: string) {
-    this.#address = getAddress(`0x${val.replace(/0x|eth\|/, "")}`);
-  }
-
+export class GalachainConnectTrustClient extends CustomClient {
   constructor(chainCodeUrl: string) {
     super();
-    this.#chainCodeUrl = chainCodeUrl;
-    this.#address = "";
+    this.chainCodeUrl = chainCodeUrl;
+    this.address = "";
   }
 
   private initializeListeners(): void {
@@ -136,14 +116,14 @@ export class GalachainConnectTrustClient extends CustomEventEmitter<MetaMaskEven
   }
 
   public async connect() {
-    this.#provider = await getTrustWalletInjectedProvider();
-    if (!this.#provider) {
+    this.provider = await getTrustWalletInjectedProvider();
+    if (!this.provider) {
       throw new Error("Trust Wallet provider not found");
     }
     this.initializeListeners();
 
     try {
-      const accounts = (await this.#provider.send("eth_requestAccounts", [])) as string[];
+      const accounts = (await this.provider.send("eth_requestAccounts", [])) as string[];
       this.setWalletAddress = getAddress(accounts[0]);
       return this.getGalachainAddress;
     } catch (error: any) {
@@ -158,10 +138,10 @@ export class GalachainConnectTrustClient extends CustomEventEmitter<MetaMaskEven
     method: string,
     payload: U
   ): Promise<U & { signature: string; prefix: string }> {
-    if (!this.#provider) {
+    if (!this.provider) {
       throw new Error("Trust Wallet provider not found");
     }
-    if (!this.#address) {
+    if (!this.address) {
       throw new Error("No account connected");
     }
 
@@ -172,25 +152,12 @@ export class GalachainConnectTrustClient extends CustomEventEmitter<MetaMaskEven
       const prefix = this.calculatePersonalSignPrefix(payload);
       const prefixedPayload = { ...payload, prefix };
 
-      const signer = await this.#provider.getSigner();
+      const signer = await this.provider.getSigner();
       const signature = await signer.signTypedData(domain, types, prefixedPayload);
 
       return { ...prefixedPayload, signature, types, domain };
     } catch (error: unknown) {
       throw new Error((error as Error).message);
     }
-  }
-
-  public calculatePersonalSignPrefix(payload: object): string {
-    const payloadLength = signatures.getPayloadToSign(payload).length;
-    const prefix = "\u0019Ethereum Signed Message:\n" + payloadLength;
-
-    const newPayload = { ...payload, prefix };
-    const newPayloadLength = signatures.getPayloadToSign(newPayload).length;
-
-    if (payloadLength === newPayloadLength) {
-      return prefix;
-    }
-    return this.calculatePersonalSignPrefix(newPayload);
   }
 }

@@ -16,9 +16,8 @@ import { LockTokenRequestParams, TransferTokenParams, signatures } from "@gala-c
 import { ethers } from "ethers";
 import { EventEmitter } from "events";
 
-import { ClientFactory } from "./ClientFactory";
 import { generateEIP712Types } from "./Utils";
-import { MetamaskConnectClient } from "./customClients";
+import { GalachainConnectTrustClient, MetamaskConnectClient } from "./customClients";
 
 global.fetch = jest.fn((url: string, options?: Record<string, unknown>) =>
   Promise.resolve({
@@ -76,7 +75,7 @@ describe("MetamaskConnectClient", () => {
     };
 
     // call connect
-    const client = new ClientFactory().metamaskClient("https://example.com");
+    const client = new MetamaskConnectClient("https://example.com");
     await client.connect();
 
     // send dto payload in send function
@@ -251,7 +250,7 @@ describe("TrustConnectClient", () => {
     };
 
     // call connect
-    const client = new ClientFactory().trustClient("https://example.com");
+    const client = new GalachainConnectTrustClient("https://example.com");
     await client.connect();
 
     // send dto payload in send function
