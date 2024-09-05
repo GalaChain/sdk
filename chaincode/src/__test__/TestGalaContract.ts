@@ -19,19 +19,21 @@ import {
   ChainKey,
   ChainObject,
   GalaChainResponse,
-  createValidChainObject
+  NotImplementedError,
+  SubmitCallDTO,
+  createValidChainObject,
+  randomUniqueKey
 } from "@gala-chain/api";
-import { NotImplementedError } from "@gala-chain/api";
 import { Exclude } from "class-transformer";
 import { IsPositive } from "class-validator";
 import { Transaction } from "fabric-contract-api";
 
 import { version } from "../../package.json";
-import { EVALUATE, GalaContract, GalaTransaction, SUBMIT } from "../contracts";
+import { EVALUATE, GalaContract, GalaTransaction, Submit } from "../contracts";
 import { GalaChainContext } from "../types";
 import { getObjectsByPartialCompositeKey, putChainObject } from "../utils/state";
 
-export class SuperheroDto extends ChainCallDTO {
+export class SuperheroDto extends SubmitCallDTO {
   public name: string;
 
   @IsPositive()
@@ -41,6 +43,7 @@ export class SuperheroDto extends ChainCallDTO {
     const dto = new SuperheroDto();
     dto.name = name;
     dto.age = age;
+    dto.uniqueKey = randomUniqueKey();
 
     return dto;
   }
@@ -104,8 +107,7 @@ export default class TestGalaContract extends GalaContract {
     return GalaChainResponse.Success(undefined);
   }
 
-  @GalaTransaction({
-    type: SUBMIT,
+  @Submit({
     in: SuperheroDto,
     allowedOrgs: ["CuratorOrg"]
   })

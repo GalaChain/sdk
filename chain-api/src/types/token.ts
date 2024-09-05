@@ -37,7 +37,7 @@ import { BigNumberIsNotNegative, BigNumberIsPositive, BigNumberProperty, IsUserA
 import { TokenBalance } from "./TokenBalance";
 import { TokenClass, TokenClassKey } from "./TokenClass";
 import { TokenInstance, TokenInstanceKey } from "./TokenInstance";
-import { ChainCallDTO } from "./dtos";
+import { ChainCallDTO, SubmitCallDTO } from "./dtos";
 
 export type FetchTokenClassesParams = ConstructorArgs<FetchTokenClassesDto>;
 
@@ -142,7 +142,7 @@ export type CreateTokenClassParams = ConstructorArgs<CreateTokenClassDto>;
   description:
     "Contains properties of token class to be created. Actual token units and NFT instances are created on mint."
 })
-export class CreateTokenClassDto extends ChainCallDTO {
+export class CreateTokenClassDto extends SubmitCallDTO {
   static DEFAULT_NETWORK = "GC";
   static DEFAULT_DECIMALS = 0;
   static DEFAULT_MAX_CAPACITY = new BigNumber("Infinity");
@@ -276,7 +276,7 @@ export class CreateTokenClassDto extends ChainCallDTO {
 
 export type UpdateTokenClassParams = ConstructorArgs<UpdateTokenClassDto>;
 
-export class UpdateTokenClassDto extends ChainCallDTO {
+export class UpdateTokenClassDto extends SubmitCallDTO {
   /* todo: should these fields be update-able? probably not, unless in exceptional circumstances.
            these are more complicted, as they track properties with second order effects.
            in theory, it's probably a bad idea if a token authority can just come in later
@@ -498,7 +498,7 @@ export type TransferTokenParams = ConstructorArgs<TransferTokenDto>;
   description:
     "Experimental: After submitting request to RequestMintAllowance, follow up with FulfillMintAllowance."
 })
-export class TransferTokenDto extends ChainCallDTO {
+export class TransferTokenDto extends SubmitCallDTO {
   @JSONSchema({
     description: "The current owner of tokens. If the value is missing, chaincode caller is used."
   })

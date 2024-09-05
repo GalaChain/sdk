@@ -44,6 +44,7 @@ import { legacyClientAccountId } from "./legacyClientAccountId";
 // registered inside decorator factory.
 //
 DTOObject()(ChainCallDTO);
+DTOObject()(SubmitCallDTO);
 
 // Note: it is just a metadata, you cannot effectively forbid to submit the transaction
 // (you can, however make it readonly by passing random value to the result or manipulating the context)
@@ -96,7 +97,6 @@ export type GalaSubmitOptions<T extends SubmitCallDTO> = CommonTransactionOption
 
 export interface GalaEvaluateOptions<T extends ChainCallDTO> extends CommonTransactionOptions<T> {
   verifySignature?: true;
-  enforceUniqueKey?: true;
 }
 
 function isArrayOut(x: OutType | OutArrType | undefined): x is OutArrType {
@@ -132,6 +132,16 @@ function GalaTransaction<T extends ChainCallDTO>(
   options.allowedRoles = options.allowedRoles ?? [
     options.type === SUBMIT ? UserRole.SUBMIT : UserRole.EVALUATE
   ];
+
+  if (options.type === SUBMIT && !options.enforceUniqueKey) {
+    const message = `SUBMIT transaction must have enforceUniqueKey defined`;
+    throw new NotImplementedError(message);
+  }
+
+  if (options.type === EVALUATE && options.enforceUniqueKey) {
+    const message = `EVALUATE transaction cannot have enforceUniqueKey defined`;
+    throw new NotImplementedError(message);
+  }
 
   // An actual decorator
   return (target, propertyKey, descriptor): void => {
@@ -174,10 +184,12 @@ function GalaTransaction<T extends ChainCallDTO>(
         await authorize(ctx, options);
 
         // Prevent the same transaction from being submitted multiple times
-        if (dto?.uniqueKey) {
-          await UniqueTransactionService.ensureUniqueTransaction(ctx, dto.uniqueKey);
-        } else if (options.enforceUniqueKey) {
-          throw new RuntimeError("Missing uniqueKey in transaction dto");
+        if (options.enforceUniqueKey) {
+          if (dto?.uniqueKey) {
+            await UniqueTransactionService.ensureUniqueTransaction(ctx, dto.uniqueKey);
+          } else {
+            throw new RuntimeError("Missing uniqueKey in transaction dto");
+          }
         }
 
         const argArray: [GalaChainContext, T] | [GalaChainContext] = dto ? [ctx, dto] : [ctx];

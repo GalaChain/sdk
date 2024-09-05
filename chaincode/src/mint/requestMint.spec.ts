@@ -19,8 +19,8 @@ import {
   MintTokenDto,
   TokenMintRequest,
   TokenMintStatus,
-  createValidDTO,
-  createValidRangedChainObject
+  createValidRangedChainObject,
+  createValidSubmitDTO
 } from "@gala-chain/api";
 import { currency, fixture, nft, users, writesMap } from "@gala-chain/test";
 import BigNumber from "bignumber.js";
@@ -37,7 +37,7 @@ describe("MintToken", () => {
     const mintQty = new BigNumber("1000000000000");
     const tokenAllowance = currency.tokenAllowance();
 
-    const { ctx, contract, writes } = fixture(GalaChainTokenContract)
+    const { ctx, contract, getWrites } = fixture(GalaChainTokenContract)
       .registeredUsers(users.admin)
       .savedState(currencyClass, currencyInstance, tokenAllowance)
       .savedRangeState([]);
@@ -47,7 +47,7 @@ describe("MintToken", () => {
 
     const { collection, category, type, additionalKey } = currencyClass;
 
-    const dto = await createValidDTO(MintTokenDto, {
+    const dto = await createValidSubmitDTO(MintTokenDto, {
       tokenClass: currency.tokenClassKey(),
       owner: users.testUser1.identityKey,
       quantity: mintQty
@@ -71,7 +71,7 @@ describe("MintToken", () => {
 
     mintRequest.id = mintRequest.requestId();
 
-    const fulfillmentDto = await createValidDTO(FulfillMintDto, {
+    const fulfillmentDto = await createValidSubmitDTO(FulfillMintDto, {
       requests: [
         plainToInstance(MintRequestDto, {
           collection,
@@ -91,7 +91,7 @@ describe("MintToken", () => {
 
     // Then
     expect(response).toEqual(GalaChainResponse.Success(fulfillmentDto));
-    expect(writes).toEqual(writesMap(mintRequest));
+    expect(getWrites()).toEqual(writesMap(mintRequest));
   });
 
   test("request mint for unique items, i.e. NFTs", async () => {
@@ -101,7 +101,7 @@ describe("MintToken", () => {
     const mintQty = new BigNumber("2");
     const tokenAllowance = nft.tokenMintAllowance();
 
-    const { ctx, contract, writes } = fixture(GalaChainTokenContract)
+    const { ctx, contract, getWrites } = fixture(GalaChainTokenContract)
       .registeredUsers(users.admin)
       .savedState(nftClass, nftInstance, tokenAllowance)
       .savedRangeState([]);
@@ -111,7 +111,7 @@ describe("MintToken", () => {
 
     const { collection, category, type, additionalKey } = nftClass;
 
-    const dto = await createValidDTO(MintTokenDto, {
+    const dto = await createValidSubmitDTO(MintTokenDto, {
       tokenClass: nft.tokenClassKey(),
       owner: users.testUser1.identityKey,
       quantity: mintQty
@@ -135,7 +135,7 @@ describe("MintToken", () => {
 
     mintRequest.id = mintRequest.requestId();
 
-    const fulfillmentDto = await createValidDTO(FulfillMintDto, {
+    const fulfillmentDto = await createValidSubmitDTO(FulfillMintDto, {
       requests: [
         plainToInstance(MintRequestDto, {
           collection,
@@ -153,7 +153,7 @@ describe("MintToken", () => {
     const response = await contract.RequestMint(ctx, dto);
 
     expect(response).toEqual(GalaChainResponse.Success(fulfillmentDto));
-    expect(writes).toEqual(writesMap(mintRequest));
+    expect(getWrites()).toEqual(writesMap(mintRequest));
   });
 
   test("does not mint lower than decimal limit (10)", async () => {
@@ -163,11 +163,11 @@ describe("MintToken", () => {
     const tokenAllowance = currency.tokenAllowance();
     const decimalQuantity = new BigNumber("0.000000000001");
 
-    const { ctx, contract, writes } = fixture(GalaChainTokenContract)
+    const { ctx, contract, getWrites } = fixture(GalaChainTokenContract)
       .registeredUsers(users.testUser1)
       .savedState(currencyClass, currencyInstance, tokenAllowance);
 
-    const dto = await createValidDTO(MintTokenDto, {
+    const dto = await createValidSubmitDTO(MintTokenDto, {
       tokenClass: currency.tokenClassKey(),
       owner: users.testUser1.identityKey,
       quantity: decimalQuantity
@@ -184,6 +184,6 @@ describe("MintToken", () => {
         )
       )
     );
-    expect(writes).toEqual({});
+    expect(getWrites()).toEqual({});
   });
 });

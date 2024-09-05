@@ -17,6 +17,7 @@ import {
   GalaChainResponse,
   GalaChainSuccessResponse,
   RegisterEthUserDto,
+  SubmitCallDTO,
   UpdateUserRolesDto,
   UserProfile,
   UserRole,
@@ -52,7 +53,7 @@ describe("Migration from allowedOrgs to allowedRoles", () => {
   const chaincode = new TestChaincode([PublicKeyContract, TestContract]);
 
   async function callChaincode(msp: string, method: "V1" | "V2") {
-    const dto = new ChainCallDTO().signed(user.privateKey);
+    const dto = await createValidSubmitDTO(SubmitCallDTO, {}).signed(user.privateKey);
     return await chaincode
       .setCallingUserMsp(msp)
       .invoke<GalaChainResponse<string>>(`TestContract:${method}`, dto);
