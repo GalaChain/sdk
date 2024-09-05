@@ -172,10 +172,10 @@ export abstract class CustomClient extends CustomEventEmitter<MetaMaskEvents> {
     }
   }
   // PublicKey Chaincode calls:
-  public GetMyProfile(dto: GetMyProfileParams) {
-    return this.submit<UserProfileBody, GetMyProfileParams>({
+  public GetMyProfile() {
+    return this.submit<UserProfileBody, {}>({
       method: "GetMyProfile",
-      payload: dto,
+      payload: {},
       sign: true
     });
   }

@@ -1,6 +1,6 @@
 {
   "name": "@gala-chain/connect",
-  "version": "1.4.1",
+  "version": "1.4.2",
   "dependencies": {
     "@gala-chain/api": "1.4.1",
     "ethers": "^6.12.1",
