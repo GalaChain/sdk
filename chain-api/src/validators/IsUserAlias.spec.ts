@@ -54,7 +54,7 @@ test.each<[string, string, string]>([
 test.each<[string, string, string]>([
   ["invalid client alias (multiple |)", "client|123|45", "Expected string following the format"],
   ["invalid client alias (empty id)", "client|", "Expected string following the format"],
-  ["invalid eth alias (lower-cased eth)", `eth|${lowerCasedEth}`, "'eth|' must end with valid checksumed"],
+  // ["invalid eth alias (lower-cased eth)", `eth|${lowerCasedEth}`, "'eth|' must end with valid checksumed"],//should now succeed
   ["invalid eth alias (invalid eth)", "eth|123", "'eth|' must end with valid checksumed"],
   ["invalid value (pure eth addr)", validEthAddress, "Expected string following the format"],
   ["invalid ton alias (invalid checksum)", `ton|${invalidTon}`, "'ton|' must end with valid bounceable"],

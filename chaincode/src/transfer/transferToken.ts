@@ -22,6 +22,7 @@ import { fetchTokenClass } from "../token/fetchTokenClasses";
 import { GalaChainContext } from "../types";
 import { putChainObject } from "../utils";
 import { SameSenderAndRecipientError } from "./TransferError";
+import { PublicKeyService } from "../services";
 
 export interface TransferTokenParams {
   from: string;
@@ -32,17 +33,34 @@ export interface TransferTokenParams {
   authorizedOnBehalf: AuthorizedOnBehalf | undefined;
 }
 
+async function getUserAlias(ctx: GalaChainContext, userId: string): Promise<string> {
+  if(userId.includes('|')) {
+    if(userId.split('|')[0] === "client") {
+      return userId
+    } else {
+      var userProfile = await PublicKeyService.getUserProfile(ctx, userId.split('|')[1])
+      return userProfile ? userProfile.alias : userId // fail here if no profile?
+    }
+  }
+
+  // fail here?
+  return userId
+}
+
 export async function transferToken(
   ctx: GalaChainContext,
   { from, to, tokenInstanceKey, quantity, allowancesToUse, authorizedOnBehalf }: TransferTokenParams
 ): Promise<TokenBalance[]> {
+  // Resolve user Alias
+  var toAlias = await getUserAlias(ctx, to)
+
   const msg =
-    `TransferToken ${tokenInstanceKey.toStringKey()} from ${from ?? "?"} to ${to}, ` +
+    `TransferToken ${tokenInstanceKey.toStringKey()} from ${from ?? "?"} to ${toAlias}, ` +
     `quantity: ${quantity.toFixed()}, allowancesToUse: ${allowancesToUse.length}.`;
   ctx.logger.info(msg);
 
-  if (from === to) {
-    throw new SameSenderAndRecipientError(from, to);
+  if (from === toAlias) {
+    throw new SameSenderAndRecipientError(from, toAlias);
   }
 
   const tokenInstance = await fetchTokenInstance(ctx, tokenInstanceKey);
@@ -74,7 +92,7 @@ export async function transferToken(
   }
 
   const fromPersonBalance = await fetchOrCreateBalance(ctx, from, tokenInstanceKey);
-  const toPersonBalance = await fetchOrCreateBalance(ctx, to, tokenInstanceKey);
+  const toPersonBalance = await fetchOrCreateBalance(ctx, toAlias, tokenInstanceKey);
 
   if (tokenInstance.isNonFungible) {
     fromPersonBalance.ensureCanRemoveInstance(tokenInstance.instance, ctx.txUnixTime).remove();
@@ -88,7 +106,7 @@ export async function transferToken(
   await putChainObject(ctx, toPersonBalance);
 
   if (tokenInstance.isNonFungible) {
-    tokenInstance.owner = to;
+    tokenInstance.owner = toAlias;
     await putChainObject(ctx, tokenInstance);
   }
 
