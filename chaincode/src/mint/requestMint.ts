@@ -28,7 +28,7 @@ import {
 import BigNumber from "bignumber.js";
 import { plainToInstance } from "class-transformer";
 
-import { GalaChainContext } from "../types/GalaChainContext";
+import { GalaChainContext } from "../types";
 import { getObjectByKey, inverseEpoch, inverseTime, putRangedChainObject } from "../utils";
 import { fetchMintSupply } from "./fetchMintSupply";
 import { validateMintRequest } from "./validateMintRequest";
@@ -54,6 +54,7 @@ export async function requestMint(
 
   const resDto = new FulfillMintDto();
   resDto.requests = [mintRequestDto];
+  resDto.uniqueKey = mintRequest.requestId();
 
   return resDto;
 }

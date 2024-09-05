@@ -90,7 +90,7 @@ describe("MintToken", () => {
     const response = await contract.RequestMint(ctx, dto);
 
     // Then
-    expect(response).toEqual(GalaChainResponse.Success(fulfillmentDto));
+    expect(response).toEqual(GalaChainResponse.Success({ ...fulfillmentDto, uniqueKey: expect.any(String) }));
     expect(getWrites()).toEqual(writesMap(mintRequest));
   });
 
@@ -152,7 +152,7 @@ describe("MintToken", () => {
 
     const response = await contract.RequestMint(ctx, dto);
 
-    expect(response).toEqual(GalaChainResponse.Success(fulfillmentDto));
+    expect(response).toEqual(GalaChainResponse.Success({ ...fulfillmentDto, uniqueKey: expect.any(String) }));
     expect(getWrites()).toEqual(writesMap(mintRequest));
   });
 
