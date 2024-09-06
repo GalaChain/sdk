@@ -255,7 +255,7 @@ describe("TrustConnectClient", () => {
     };
 
     // call connect
-    const client = new GalachainConnectTrustClient("https://example.com");
+    const client = new GalachainConnectTrustClient();
     await client.connect();
 
     // send dto payload in send function
