@@ -75,11 +75,16 @@ describe("MetamaskConnectClient", () => {
     };
 
     // call connect
-    const client = new MetamaskConnectClient("https://example.com");
+    const client = new MetamaskConnectClient();
     await client.connect();
 
     // send dto payload in send function
-    const response = await client.submit({ method: "TransferToken", payload: dto, sign: true });
+    const response = await client.submit({
+      method: "TransferToken",
+      payload: dto,
+      sign: true,
+      url: "https://example.com"
+    });
 
     expect(response).toEqual({
       Hash: {
@@ -127,7 +132,7 @@ describe("MetamaskConnectClient", () => {
 
     const privateKey = "0x311e3750b1b698e70a2b37fd08b68fdcb389f955faea163f6ffa5be65cd0c251";
 
-    const client = new MetamaskConnectClient("https://example.com");
+    const client = new MetamaskConnectClient();
     await client.connect();
 
     const prefix = client.calculatePersonalSignPrefix(params);
@@ -156,7 +161,7 @@ describe("MetamaskConnectClient", () => {
 
     const privateKey = "0x311e3750b1b698e70a2b37fd08b68fdcb389f955faea163f6ffa5be65cd0c251";
 
-    const client = new MetamaskConnectClient("https://example.com");
+    const client = new MetamaskConnectClient();
     await client.connect();
 
     const prefix = client.calculatePersonalSignPrefix(params);
@@ -185,7 +190,7 @@ describe("MetamaskConnectClient", () => {
 
     const privateKey = "0x311e3750b1b698e70a2b37fd08b68fdcb389f955faea163f6ffa5be65cd0c251";
 
-    const client = new MetamaskConnectClient("https://example.com");
+    const client = new MetamaskConnectClient();
     await client.connect();
 
     const prefix = client.calculatePersonalSignPrefix(params);
@@ -213,7 +218,7 @@ describe("MetamaskConnectClient", () => {
 
     const privateKey = "0x311e3750b1b698e70a2b37fd08b68fdcb389f955faea163f6ffa5be65cd0c251";
 
-    const client = new MetamaskConnectClient("https://example.com");
+    const client = new MetamaskConnectClient();
     await client.connect();
 
     const prefix = client.calculatePersonalSignPrefix(params);
@@ -254,7 +259,12 @@ describe("TrustConnectClient", () => {
     await client.connect();
 
     // send dto payload in send function
-    const response = await client.submit({ method: "TransferToken", payload: dto, sign: true });
+    const response = await client.submit({
+      method: "TransferToken",
+      payload: dto,
+      sign: true,
+      url: "https://example.com"
+    });
 
     expect(response).toEqual({
       Hash: {

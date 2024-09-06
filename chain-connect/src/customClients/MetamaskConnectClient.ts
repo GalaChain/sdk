@@ -26,11 +26,9 @@ declare global {
 }
 
 export class MetamaskConnectClient extends CustomClient {
-  constructor(chainCodeUrl: string) {
+  constructor() {
     super();
-    this.chainCodeUrl = chainCodeUrl;
     this.address = "";
-
     if (window.ethereum) {
       this.provider = new BrowserProvider(window.ethereum);
     } else {

@@ -92,9 +92,8 @@ function getTrustWalletFromWindow() {
 }
 
 export class GalachainConnectTrustClient extends CustomClient {
-  constructor(chainCodeUrl: string) {
+  constructor() {
     super();
-    this.chainCodeUrl = chainCodeUrl;
     this.address = "";
   }
 
