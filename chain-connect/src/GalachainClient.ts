@@ -50,7 +50,7 @@ export abstract class CustomClient extends CustomEventEmitter<MetaMaskEvents> {
     return { publicKey, recoveredAddress };
   }
 
-  async submit<T, U extends ConstructorArgs<ChainCallDTO>>({
+  async submit<T, U>({
     url,
     method,
     payload,
