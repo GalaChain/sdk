@@ -538,7 +538,7 @@ export async function grantAllowance(
         );
       }
 
-      // verify if the token is in the correct state
+      // verify if the token exists in the balance
       const [balance]: (TokenBalance | undefined)[] = await fetchBalances(ctx, {
         ...instanceKey,
         owner: tokenInstance.owner
