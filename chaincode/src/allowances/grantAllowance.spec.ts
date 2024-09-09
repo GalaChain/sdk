@@ -27,7 +27,7 @@ import {
   createValidDTO,
   createValidRangedChainObject
 } from "@gala-chain/api";
-import { currency, fixture, nft, users, writesMap } from "@gala-chain/test";
+import { currency, fixture, nft, transactionErrorKey, users, writesMap } from "@gala-chain/test";
 import BigNumber from "bignumber.js";
 import { instanceToInstance, instanceToPlain, plainToInstance } from "class-transformer";
 
@@ -71,6 +71,40 @@ describe("GrantAllowance", () => {
     const allowance = nft.tokenAllowance((a) => ({ ...a, created: ctx.txUnixTime }));
     expect(response).toEqual(GalaChainResponse.Success([allowance]));
     expect(writes).toEqual(writesMap(allowance));
+  });
+
+  it("should fail to GrantAllowance when the instance is missing in balance", async () => {
+    const nftInstance = await createValidChainObject(TokenInstance, {
+      ...nft.tokenInstance1(),
+      owner: users.testUser2.identityKey
+    });
+    const nftClass = nft.tokenClass();
+    const nftClassKey = nft.tokenClassKey();
+    const nftInstanceQueryKey = await createValidDTO(TokenInstanceQueryKey, nft.tokenInstance1KeyPlain());
+
+    const nftBalance = new TokenBalance({
+      owner: users.testUser2.identityKey,
+      ...nftClassKey
+    });
+    expect(nftBalance.getNftInstanceIds()).toEqual([]);
+
+    const { ctx, contract, writes } = fixture(GalaChainTokenContract)
+      .registeredUsers(users.testUser2)
+      .savedState(nftClass, nftInstance, nftBalance);
+
+    const dto: GrantAllowanceDto = await createValidDTO(GrantAllowanceDto, {
+      tokenInstance: nftInstanceQueryKey,
+      quantities: [{ user: users.testUser1.identityKey, quantity: new BigNumber("100") }],
+      allowanceType: AllowanceType.Lock,
+      uses: new BigNumber("1")
+    }).signed(users.testUser2.privateKey);
+
+    // When
+    const response = await contract.GrantAllowance(ctx, dto);
+
+    // Then
+    expect(response).toEqual(transactionErrorKey("TOKEN_NOT_IN_BALANCE"));
+    expect(writes).toEqual(writesMap());
   });
 
   it("should fail to GrantAllowance when quantity is less than decimal limit", async () => {
