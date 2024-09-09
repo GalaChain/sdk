@@ -33,7 +33,7 @@ Please, ensure that all methods that update the chain are signed (`@GalaTransact
 Additionally, we deprecated `allowedOrgs` property in decorator in favor of `allowedRoles` only, and encourage users to migrate to the new approach.
 As a backward compatibility measure, we still support `allowedOrgs` for now, but we don't allow to combine `allowedOrgs` and `allowedRoles` in the same decorator.
 
-This the migration steps from `allowedOrgs` to `allowedRoles` are as follows:
+The migration steps from `allowedOrgs` to `allowedRoles` are as follows:
 1. Verify which users should have access to the method, and what roles they should have.
    For instance, if you have a curator-like organization for privileged access, like `allowedOrgs: ["CuratorOrg"]`, you may want a `CURATOR` role and assign it to the users.
 2. Assign roles to the users, using `PublicKeyContract:UpdateUserRoles` method.
