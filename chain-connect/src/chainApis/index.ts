@@ -12,11 +12,5 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-export interface CustomClient {
-  getGalachainAddress: string;
-  getWalletAddress: string;
-  setWalletAddress: string;
-  getChaincodeUrl: string;
-  connect: () => Promise<string>;
-  sign: (method: string, dto: any) => Promise<any>;
-}
+export * from "./TokenApi";
+export * from "./PublicKeyApi";
