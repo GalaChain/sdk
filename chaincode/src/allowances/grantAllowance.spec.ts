@@ -267,7 +267,7 @@ describe("GrantAllowance", () => {
     dto.sign(users.testUser2.privateKey);
 
     // When
-    // we don't call contract.GrantAllowance directly because it will throw an error od dto validation,
+    // we don't call contract.GrantAllowance directly because it will throw an error on dto validation,
     // and we want to be sure we validate it again inside the function (TODO do we?)
     const response = grantAllowance(ctx, { ...dto, expires: dto.expires ?? 0 });
 
