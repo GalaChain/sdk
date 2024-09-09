@@ -544,7 +544,7 @@ export async function grantAllowance(
         owner: tokenInstance.owner
       });
       const currentInstances = balance?.getNftInstanceIds() ?? [];
-      if (!currentInstances.includes(instanceKey.instance)) {
+      if (!currentInstances.some((i) => i.eq(instanceKey.instance))) {
         throw new TokenNotInBalanceError(tokenInstance.owner, instanceKey, instanceKey.instance);
       }
     }
