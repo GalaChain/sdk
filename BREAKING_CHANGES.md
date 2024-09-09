@@ -33,13 +33,13 @@ Please, ensure that all methods that update the chain are signed (`@GalaTransact
 Additionally, we deprecated `allowedOrgs` property in decorator in favor of `allowedRoles` only, and encourage users to migrate to the new approach.
 As a backward compatibility measure, we still support `allowedOrgs` for now, but we don't allow to combine `allowedOrgs` and `allowedRoles` in the same decorator.
 
-This the migration steps from `allowedOrgs` to `allowedRoles` are as follows:
+The migration steps from `allowedOrgs` to `allowedRoles` are as follows:
 1. Verify which users should have access to the method, and what roles they should have.
-   For instance, if you have a curator-like organization for privileged access, like `allowedOrgs: ["CuratorOrg"]`, you may want a `CURATOR` role and assign it to the users.
-2. Assign roles to the users, using `PublicKeyContract:UpdateUserRoles` method.
+   For instance, if you have a curator-like organization for privileged access, like `allowedOrgs: ["CuratorOrg"]`, you may want to designate a `CURATOR` role and assign it to the users.
+2. Assign roles to the users, using the `PublicKeyContract:UpdateUserRoles` method.
    You need to provide the full list of roles for the user, as the method replaces the existing roles with the new ones.
 3. Ensure that your custom client code for user registration assigns the correct roles.
-   Registration methods from `PublicKeyContract` assign `EVALUATE` and `SUBMIT` as default roles, but you may want additional ones.
+   Registration methods from the `PublicKeyContract` assign `EVALUATE` and `SUBMIT` as default roles, but you may want additional ones.
 4. Update the contract method decorators to use `allowedRoles` instead of `allowedOrgs`.
 
 Probably for most users you won't need to do anything, as the default roles are `EVALUATE` and `SUBMIT`, which are sufficient for calling methods with no `allowedRoles` specified.
@@ -51,9 +51,11 @@ You may want to consult our acceptance test for migration from `allowedOrgs` to 
 Starting from version `2.0.0`:
 - Test data for `users` contains full user objects with roles, not just user aliases (identity keys).
 - User field `identityKey` was renamed to `alias` for clarity.
-- We recommend to use signature-based authentication and authorization for all transactions, which requires signing the DTOs with the user's private key.
+- We recommend using signature-based authentication and authorization for all transactions, which requires signing the DTOs with the user's private key.
 
-Sample usage of using `fixture` for testing transactions the previous version:
+Sample usage of `fixture` for testing transactions:
+
+Using the previous version (`1.x.x`):
 
 ```typescript
 const { ctx, contract, writes } = fixture(GalaChainTokenContract)
@@ -77,7 +79,7 @@ const dto = await createValidSubmitDTO(LockTokenDto, { ... })
 const response = await contract.LockToken(ctx, dto);
 ```
 
-The main difference between the old CA-based auth and the new signature-based auth is that instead of using the user's CA identity, we use the user public key that is recovered from the DTO and the signature.
+The main difference between the old CA-based auth and the new signature-based auth is that instead of using the user's CA (Certificate Authority) identity, we use the user's public key that is recovered from the DTO (Data Transfer Object) and the signature.
 We use the public key as a unique identifier of the user.
 
 In the previous flow we were using `callingUser` to set the user, and the user was identified by the CA identity.

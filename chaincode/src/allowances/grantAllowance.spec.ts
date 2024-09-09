@@ -52,7 +52,7 @@ describe("GrantAllowance", () => {
       owner: users.testUser2.identityKey,
       ...nftClassKey
     });
-    nftBalance.ensureCanAddInstance(new BigNumber("1"));
+    nftBalance.ensureCanAddInstance(new BigNumber("1")).add();
 
     const { ctx, contract, getWrites } = fixture(GalaChainTokenContract)
       .registeredUsers(users.testUser2)
@@ -268,7 +268,7 @@ describe("GrantAllowance", () => {
     dto.sign(users.testUser2.privateKey);
 
     // When
-    // we don't call contract.GrantAllowance directly because it will throw an error od dto validation,
+    // we don't call contract.GrantAllowance directly because it will throw an error on dto validation,
     // and we want to be sure we validate it again inside the function (TODO do we?)
     const response = grantAllowance(ctx, { ...dto, expires: dto.expires ?? 0 });
 
