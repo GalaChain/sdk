@@ -51,7 +51,7 @@ describe("GrantAllowance", () => {
       owner: users.testUser2.identityKey,
       ...nftClassKey
     });
-    nftBalance.ensureCanAddInstance(new BigNumber("1"));
+    nftBalance.ensureCanAddInstance(new BigNumber("1")).add();
 
     const { ctx, contract, writes } = fixture(GalaChainTokenContract)
       .registeredUsers(users.testUser2)
