@@ -56,7 +56,7 @@ export class UserProfile extends ChainObject {
   @JSONSchema({
     description: `Roles assigned to the user. Predefined roles are: ${Object.values(UserRole)
       .sort()
-      .join(", ")}, but you can use arbitrary string to define your own roles.`
+      .join(", ")}, but you can use arbitrary strings to define your own roles.`
   })
   @IsString({ each: true })
   roles: string[];
