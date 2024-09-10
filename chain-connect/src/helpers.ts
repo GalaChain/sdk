@@ -28,7 +28,7 @@ export interface MetaMaskEvents {
 type Listener<T> = (data: T) => void;
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
-export class CustomEventEmitter<Events extends Record<string, any>> {
+export abstract class CustomEventEmitter<Events extends Record<string, any>> {
   private listeners: { [K in keyof Events]?: Listener<Events[K]>[] } = {};
 
   public on<K extends keyof Events>(event: K, listener: Listener<Events[K]>): this {
