@@ -28,6 +28,8 @@ import {
 import { jest } from "@jest/globals";
 import * as path from "path";
 
+import { MockedChaincodeClientBuilder } from "./MockedChaincodeClient";
+
 // use this timeout in each test that uses ContractTestClient
 jest.setTimeout(60 * 1000);
 
@@ -84,6 +86,19 @@ interface TestClientParams {
   connectionProfilePath?: string;
   apiUrl?: string;
   configPath?: string;
+  mockedChaincodeDir?: string;
+}
+
+type TestClientParamsForApi = TestClientParams & { apiUrl: string };
+
+function isApiUrlDefined(p: TestClientParams): p is TestClientParamsForApi {
+  return p.apiUrl !== undefined;
+}
+
+type TestClientParamsForDir = TestClientParams & { mockedChaincodeDir: string };
+
+function isChaincodeDirDefined(p: TestClientParams): p is TestClientParamsForDir {
+  return p.mockedChaincodeDir !== undefined;
 }
 
 function buildHFParams(params: TestClientParams): HFClientConfig {
@@ -112,7 +127,7 @@ function buildHFParams(params: TestClientParams): HFClientConfig {
   };
 }
 
-function buildRestApiParams(params: TestClientParams & { apiUrl: string }): RestApiClientConfig {
+function buildRestApiParams(params: TestClientParamsForApi): RestApiClientConfig {
   return {
     orgMsp: params.orgMsp ?? "CuratorOrg",
     apiUrl: params.apiUrl,
@@ -123,10 +138,9 @@ function buildRestApiParams(params: TestClientParams & { apiUrl: string }): Rest
 }
 
 function getBuilder(params: TestClientParams): ChainClientBuilder {
-  const isApiUrlDefined = (p: TestClientParams): p is TestClientParams & { apiUrl: string } =>
-    p.apiUrl !== undefined;
-
-  if (isApiUrlDefined(params)) {
+  if (isChaincodeDirDefined(params)) {
+    return new MockedChaincodeClientBuilder(params);
+  } else if (isApiUrlDefined(params)) {
     const restApiParams = buildRestApiParams(params);
     return gcclient.forApiConfig(restApiParams);
   } else {
