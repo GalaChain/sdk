@@ -12,19 +12,15 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-import {
-  BigNumberIsPositive,
-  IsBigNumber,
-  IsUserAlias
-} from "../validators";
-import { ChainKey } from "../utils";
-import { ChainObject } from "./ChainObject";
-import { ValidationFailedError } from "../utils";
-
 import { BigNumber } from "bignumber.js";
 import { Exclude, Type, plainToInstance } from "class-transformer";
 import { ArrayMinSize, IsNotEmpty, IsNumber, IsString, Max, Min, ValidateNested } from "class-validator";
 import { JSONSchema } from "class-validator-jsonschema";
+
+import { ChainKey } from "../utils";
+import { ValidationFailedError } from "../utils";
+import { BigNumberIsPositive, IsBigNumber, IsUserAlias } from "../validators";
+import { ChainObject } from "./ChainObject";
 
 @JSONSchema({
   description: "Define an address/identity to which a percentage of Fees should be transferred."

@@ -13,10 +13,11 @@
  * limitations under the License.
  */
 import { FeeChannelPaymentReceipt, FeeReceiptStatus } from "@gala-chain/api";
-import { GalaChainContext } from "../types";
-import { putChainObject } from "../utils";
 import BigNumber from "bignumber.js";
 import { plainToInstance } from "class-transformer";
+
+import { GalaChainContext } from "../types";
+import { putChainObject } from "../utils";
 
 export interface WriteChannelPaymentReceiptParams {
   year: string;

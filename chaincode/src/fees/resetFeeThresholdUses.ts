@@ -13,9 +13,10 @@
  * limitations under the License.
  */
 import { FeeThresholdUses } from "@gala-chain/api";
+import BigNumber from "bignumber.js";
+
 import { GalaChainContext } from "../types";
 import { getObjectsByKeys, putChainObject } from "../utils";
-import BigNumber from "bignumber.js";
 
 export interface ResetFeeThresholdUsesParams {
   chainKeys: string[];

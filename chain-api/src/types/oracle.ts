@@ -12,13 +12,6 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-import { BigNumberProperty } from "../validators";
-import {
-  NotImplementedError,
-  ValidationFailedError
-} from "../utils";
-import { TokenInstanceKey } from "./TokenInstance";
-
 import BigNumber from "bignumber.js";
 import { Exclude, Type } from "class-transformer";
 import {
@@ -35,10 +28,13 @@ import {
 } from "class-validator";
 import { JSONSchema } from "class-validator-jsonschema";
 
-import { ChainCallDTO } from "./dtos";
+import { NotImplementedError, ValidationFailedError } from "../utils";
+import { BigNumberProperty } from "../validators";
 import { OracleDefinition } from "./OracleDefinition";
 import { ExternalToken, OraclePriceAssertion } from "./OraclePriceAssertion";
 import { OraclePriceCrossRateAssertion } from "./OraclePriceCrossRateAssertion";
+import { TokenInstanceKey } from "./TokenInstance";
+import { ChainCallDTO } from "./dtos";
 
 @JSONSchema({
   description: "Save an Oracle definition on chain"

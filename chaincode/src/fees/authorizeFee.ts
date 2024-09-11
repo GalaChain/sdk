@@ -24,11 +24,11 @@ import {
   UnauthorizedError,
   createValidDTO
 } from "@gala-chain/api";
-import { GalaChainContext } from "../types";
-import { burnTokens } from "../burns";
-import { putChainObject } from "../utils";
 import { plainToClass as plainToInstance } from "class-transformer";
 
+import { burnTokens } from "../burns";
+import { GalaChainContext } from "../types";
+import { putChainObject } from "../utils";
 import { txUnixTimeToDateIndexKeys } from "../utils";
 import { fetchGalaFeeProperties } from "./galaFeeProperties";
 

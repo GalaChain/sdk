@@ -12,7 +12,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-import { 
+import {
   FeeAccelerationRateType,
   FeeCodeDefinition,
   FeeCodeDefinitionDto,
@@ -22,12 +22,12 @@ import {
   TokenInstance,
   createValidDTO
 } from "@gala-chain/api";
-import { GalaChainContext } from "../types";
 import { currency, fixture, users } from "@gala-chain/test";
 import BigNumber from "bignumber.js";
 import { plainToInstance } from "class-transformer";
 
 import GalaChainTokenContract from "../__test__/GalaChainTokenContract";
+import { GalaChainContext } from "../types";
 
 describe("defineFeeSchedule", () => {
   it("should save FeeCodeDefinitions on chain", async () => {

@@ -13,12 +13,10 @@
  * limitations under the License.
  */
 import { FetchOracleDefinitionsResponse, OracleDefinition } from "@gala-chain/api";
-import { GalaChainContext } from "../types";
-import {
-  getObjectsByPartialCompositeKeyWithPagination,
-  takeUntilUndefined
-} from "../utils";
 import { plainToInstance } from "class-transformer";
+
+import { GalaChainContext } from "../types";
+import { getObjectsByPartialCompositeKeyWithPagination, takeUntilUndefined } from "../utils";
 
 export interface IFetchOracleDefinitions {
   name?: string | undefined;

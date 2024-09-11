@@ -13,9 +13,10 @@
  * limitations under the License.
  */
 import { ChainError, ErrorCode, OracleDefinition, UnauthorizedError } from "@gala-chain/api";
+import { plainToInstance } from "class-transformer";
+
 import { GalaChainContext } from "../types";
 import { getObjectByKey, putChainObject } from "../utils";
-import { plainToInstance } from "class-transformer";
 
 export interface IOracleDefinition {
   name: string;

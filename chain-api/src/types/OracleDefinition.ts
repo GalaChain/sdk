@@ -12,10 +12,10 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+import { ArrayNotEmpty, IsNotEmpty, IsString } from "class-validator";
+
 import { ChainKey } from "../utils";
 import { ChainObject } from "./ChainObject";
-
-import { ArrayNotEmpty, IsNotEmpty, IsString } from "class-validator";
 
 export class OracleDefinition extends ChainObject {
   public static INDEX_KEY = "GCOE"; // GalaChain Oracle (first and last letter of Oracle)

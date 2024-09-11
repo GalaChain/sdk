@@ -12,8 +12,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-import { 
-  createValidDTO,
+import {
   FeeAuthorization,
   FeeAuthorizationDto,
   FeeAuthorizationResDto,
@@ -21,15 +20,16 @@ import {
   GalaChainResponse,
   TokenBalance,
   TokenClass,
-  TokenInstance
+  TokenInstance,
+  createValidDTO
 } from "@gala-chain/api";
-import { GalaChainContext } from "../types";
 import { currency, fixture, users } from "@gala-chain/test";
 import BigNumber from "bignumber.js";
 import { plainToInstance } from "class-transformer";
 import { randomUUID } from "crypto";
 
 import { GalaChainFeeContract } from "../contracts";
+import { GalaChainContext } from "../types";
 import { txUnixTimeToDateIndexKeys } from "../utils";
 
 describe("authorizeFee", () => {

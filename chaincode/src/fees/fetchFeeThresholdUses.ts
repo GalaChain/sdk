@@ -12,21 +12,18 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-import { 
+import {
   ChainObject,
   FeeThresholdUses,
   FeeThresholdUsesKeyValueResult,
   FetchFeeThresholdUsesResDto,
   FetchFeeThresholdUsesWithPaginationResponse
 } from "@gala-chain/api";
-import { GalaChainContext } from "../types";
-import { 
-  getObjectByKey,
-  getObjectsByPartialCompositeKeyWithPagination,
-  takeUntilUndefined
-} from "../utils";
 import BigNumber from "bignumber.js";
 import { plainToInstance } from "class-transformer";
+
+import { GalaChainContext } from "../types";
+import { getObjectByKey, getObjectsByPartialCompositeKeyWithPagination, takeUntilUndefined } from "../utils";
 
 export interface FetchFeeThresholdUsesParams {
   feeCode: string;

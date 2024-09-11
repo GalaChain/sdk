@@ -12,17 +12,17 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-import { 
+import {
   ChainError,
   ErrorCode,
-  FeeChannelPaymentReceipt,
   FeeChannelPaymentKeyValueResult,
+  FeeChannelPaymentReceipt,
   FetchFeeChannelPaymentsResDto,
   NotFoundError
 } from "@gala-chain/api";
-import { GalaChainContext } from "../types";
 import { plainToInstance } from "class-transformer";
 
+import { GalaChainContext } from "../types";
 import { getObjectsByPartialCompositeKeyWithPagination, takeUntilUndefined } from "../utils";
 
 export interface FetchFeeChannelPaymentReceiptsParams {

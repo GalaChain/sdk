@@ -12,16 +12,6 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-import {
-  BigNumberIsInteger,
-  BigNumberIsPositive,
-  BigNumberProperty,
-  IsDifferentValue,
-  IsUserAlias,
-} from "../validators";
-import { ChainCallDTO } from "./dtos";
-import { ChainObject } from "./ChainObject";
-import { TokenInstanceQuantity } from "./TokenInstance";
 import BigNumber from "bignumber.js";
 import { Type } from "class-transformer";
 import {
@@ -41,7 +31,17 @@ import {
 } from "class-validator";
 import { JSONSchema } from "class-validator-jsonschema";
 
+import {
+  BigNumberIsInteger,
+  BigNumberIsPositive,
+  BigNumberProperty,
+  IsDifferentValue,
+  IsUserAlias
+} from "../validators";
+import { ChainObject } from "./ChainObject";
+import { TokenInstanceQuantity } from "./TokenInstance";
 import { TokenSwapRequest } from "./TokenSwapRequest";
+import { ChainCallDTO } from "./dtos";
 
 @JSONSchema({
   description:

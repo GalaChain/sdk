@@ -12,16 +12,15 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-import { BigNumberProperty } from "../validators";
-import { TokenInstanceKey } from "./TokenInstance";
-
-import { ChainKey } from "../utils";
-import { ChainObject } from "./ChainObject";
-
 import BigNumber from "bignumber.js";
 import { Type } from "class-transformer";
 import { IsNotEmpty, IsNumber, IsOptional, ValidateIf, ValidateNested } from "class-validator";
 import { JSONSchema } from "class-validator-jsonschema";
+
+import { ChainKey } from "../utils";
+import { BigNumberProperty } from "../validators";
+import { ChainObject } from "./ChainObject";
+import { TokenInstanceKey } from "./TokenInstance";
 
 @JSONSchema({
   description:

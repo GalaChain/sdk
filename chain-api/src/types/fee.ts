@@ -12,13 +12,6 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-import {
-  BigNumberIsInteger,
-  BigNumberIsNotNegative,
-  BigNumberProperty,
-  EnumProperty,
-  IsUserAlias
-} from "../validators";
 import BigNumber from "bignumber.js";
 import { Type } from "class-transformer";
 import {
@@ -38,15 +31,22 @@ import {
 } from "class-validator";
 import { JSONSchema } from "class-validator-jsonschema";
 
-import { ChainCallDTO } from "./dtos";
+import {
+  BigNumberIsInteger,
+  BigNumberIsNotNegative,
+  BigNumberProperty,
+  EnumProperty,
+  IsUserAlias
+} from "../validators";
 import { ChainObject } from "./ChainObject";
-import { FeeAccelerationRateType, FeeCodeDefinition } from "./FeeCodeDefinition";
 import { FeeAuthorization } from "./FeeAuthorization";
 import { FeeBalanceCreditReceipt } from "./FeeBalanceCreditReceipt";
 import { FeeChannelPaymentReceipt } from "./FeeChannelPaymentReceipt";
+import { FeeAccelerationRateType, FeeCodeDefinition } from "./FeeCodeDefinition";
 import { FeeCodeTransferPercentage } from "./FeeCodeSplitFormula";
 import { FeePendingBalance } from "./FeePendingBalance";
 import { FeeThresholdUses } from "./FeeThresholdUses";
+import { ChainCallDTO } from "./dtos";
 
 @JSONSchema({
   description: "Configure GALA token properties on chain for use with supporting chaincalls."

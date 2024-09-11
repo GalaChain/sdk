@@ -14,14 +14,15 @@
  */
 import {
   ChainObject,
-  FeeChannelPaymentReceipt, 
+  FeeChannelPaymentReceipt,
   FeeReceiptStatus,
   FeeUserPaymentReceipt,
   SettleFeePaymentReceiptsResponse
 } from "@gala-chain/api";
+import { plainToInstance } from "class-transformer";
+
 import { GalaChainContext } from "../types";
 import { getObjectByKey, getObjectsByKeys, putChainObject } from "../utils";
-import { plainToInstance } from "class-transformer";
 
 export interface SettleFeePaymentReceiptsParams {
   chainKeys: string[];

@@ -12,7 +12,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-import { 
+import {
   ChainCallDTO,
   ChainObject,
   FeeAuthorizationDto,
@@ -22,11 +22,12 @@ import {
   UnauthorizedError,
   ValidationFailedError
 } from "@gala-chain/api";
-import { GalaChainContext } from "../types";
-import { ensureIsAuthorizedBy } from "../contracts";
-import { getObjectByKey, putChainObject } from "../utils";
 import BigNumber from "bignumber.js";
 import { plainToClass as plainToInstance } from "class-transformer";
+
+import { ensureIsAuthorizedBy } from "../contracts";
+import { GalaChainContext } from "../types";
+import { getObjectByKey, putChainObject } from "../utils";
 
 export async function creditFeeBalance(
   ctx: GalaChainContext,

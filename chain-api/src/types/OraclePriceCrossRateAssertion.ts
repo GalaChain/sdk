@@ -12,11 +12,11 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-import { ChainKey } from "../utils";
-import { ChainObject } from "./ChainObject";
-
 import { IsNotEmpty } from "class-validator";
 import { JSONSchema } from "class-validator-jsonschema";
+
+import { ChainKey } from "../utils";
+import { ChainObject } from "./ChainObject";
 
 export class OraclePriceCrossRateAssertion extends ChainObject {
   public static INDEX_KEY = "GCOC"; // GalaChain Oracle Cross-rate

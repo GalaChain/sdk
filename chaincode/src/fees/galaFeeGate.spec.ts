@@ -12,7 +12,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-import { 
+import {
   FeeAccelerationRateType,
   FeeChannelPaymentReceipt,
   FeeCodeDefinition,
@@ -22,13 +22,12 @@ import {
   FeeUserPaymentReceipt,
   PaymentRequiredError
 } from "@gala-chain/api";
-import { GalaChainContext } from "../types";
 import { fixture, users, writesMap } from "@gala-chain/test";
 import BigNumber from "bignumber.js";
 import { instanceToInstance, plainToInstance } from "class-transformer";
 
 import GalaChainTokenContract from "../__test__/GalaChainTokenContract";
-
+import { GalaChainContext } from "../types";
 import { txUnixTimeToDateIndexKeys } from "../utils";
 import { galaFeeGate } from "./galaFeeGate";
 

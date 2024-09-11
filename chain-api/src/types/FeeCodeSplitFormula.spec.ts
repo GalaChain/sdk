@@ -12,10 +12,10 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-import { ValidationFailedError } from "../utils";
 import BigNumber from "bignumber.js";
 import { plainToInstance } from "class-transformer";
 
+import { ValidationFailedError } from "../utils";
 import {
   FeeCodeSplitFormula,
   FeeCodeTransferPercentage,

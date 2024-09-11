@@ -12,7 +12,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-import { 
+import {
   ChainError,
   ChainObject,
   ErrorCode,
@@ -21,15 +21,11 @@ import {
   FeeExemption,
   FeeThresholdUses
 } from "@gala-chain/api";
-import { GalaChainContext } from "../types";
-import {
-  getObjectByKey,
-  getObjectsByPartialCompositeKey,
-  putChainObject
-} from "../utils";
 import BigNumber from "bignumber.js";
 import { plainToInstance } from "class-transformer";
 
+import { GalaChainContext } from "../types";
+import { getObjectByKey, getObjectsByPartialCompositeKey, putChainObject } from "../utils";
 import { payFeeFromCrossChannelAuthorization } from "./payFeeFromCrossChannelAuthorization";
 import { payFeeImmediatelyFromBalance } from "./payFeeImmediatelyFromBalance";
 

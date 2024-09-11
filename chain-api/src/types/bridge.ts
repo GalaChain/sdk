@@ -12,15 +12,6 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-import {
-  BigNumberIsPositive,
-  BigNumberProperty,
-  EnumProperty,
-  IsUserAlias
-} from "../validators";
-import { TokenClassKey } from "./TokenClass";
-import { TokenInstance, TokenInstanceQuantity, TokenInstanceKey } from "./TokenInstance";
-import { ChainCallDTO } from "./dtos"
 import BigNumber from "bignumber.js";
 import { Type } from "class-transformer";
 import {
@@ -34,7 +25,11 @@ import {
 } from "class-validator";
 import { JSONSchema } from "class-validator-jsonschema";
 
+import { BigNumberIsPositive, BigNumberProperty, EnumProperty, IsUserAlias } from "../validators";
 import { ChainId } from "./ChainId";
+import { TokenClassKey } from "./TokenClass";
+import { TokenInstance, TokenInstanceKey, TokenInstanceQuantity } from "./TokenInstance";
+import { ChainCallDTO } from "./dtos";
 import { OracleBridgeFeeAssertionDto } from "./oracle";
 
 @JSONSchema({

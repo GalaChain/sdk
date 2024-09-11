@@ -13,10 +13,10 @@
  * limitations under the License.
  */
 import { ChainObject, FeePendingBalance, FeeReceiptStatus, PaymentRequiredError } from "@gala-chain/api";
-import { GalaChainContext } from "../types";
-import { getObjectByKey, putChainObject, txUnixTimeToDateIndexKeys } from "../utils";
 import BigNumber from "bignumber.js";
 
+import { GalaChainContext } from "../types";
+import { getObjectByKey, putChainObject, txUnixTimeToDateIndexKeys } from "../utils";
 import { writeChannelPaymentReceipt } from "./writeChannelPaymentReceipt";
 import { writeUserPaymentReceipt } from "./writeUserPaymentReceipt";
 

@@ -12,14 +12,11 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-import { 
-  FeeBalanceCreditReceipt,
-  FeeReceiptStatus,
-  SettleFeeCreditReceiptsResponse
-} from "@gala-chain/api";
+import { FeeBalanceCreditReceipt, FeeReceiptStatus, SettleFeeCreditReceiptsResponse } from "@gala-chain/api";
+import { plainToInstance } from "class-transformer";
+
 import { GalaChainContext } from "../types";
 import { getObjectsByKeys, putChainObject } from "../utils";
-import { plainToInstance } from "class-transformer";
 
 export interface SettleFeeCreditReceiptsParams {
   chainKeys: string[];

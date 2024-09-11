@@ -25,7 +25,6 @@ import {
   TokenInstance,
   createValidDTO
 } from "@gala-chain/api";
-import { GalaChainContext } from "../types";
 import { currency, fixture, users } from "@gala-chain/test";
 import BigNumber from "bignumber.js";
 import { plainToClass as plainToInstance } from "class-transformer";
@@ -34,6 +33,7 @@ import { randomUUID } from "crypto";
 import { Wallet } from "ethers";
 
 import GalaChainTokenContract from "../__test__/GalaChainTokenContract";
+import { GalaChainContext } from "../types";
 import { txUnixTimeToDateIndexKeys } from "../utils";
 
 // todo: temporarily defining this here, because .savedState() fails with:
@@ -46,7 +46,7 @@ class TestPublicKey extends ChainObject {
 
   @ChainKey({ position: 0 })
   public userId: string;
-  
+
   @IsString()
   @IsNotEmpty()
   public publicKey: string;

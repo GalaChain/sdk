@@ -12,16 +12,17 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-import { 
-  FeeBalanceCreditReceipt, 
+import {
+  FeeBalanceCreditReceipt,
   FeeBalanceSettlement,
   FeePendingBalance,
   FeeReceiptStatus,
   SettleFeeBalancesResponse
 } from "@gala-chain/api";
-import { GalaChainContext } from "../types";
 import BigNumber from "bignumber.js";
 import { plainToInstance } from "class-transformer";
+
+import { GalaChainContext } from "../types";
 import { getObjectsByKeys, putChainObject, txUnixTimeToDateIndexKeys } from "../utils";
 
 export interface SettleFeeBalancesParams {

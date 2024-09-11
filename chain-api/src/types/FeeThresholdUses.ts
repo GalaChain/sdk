@@ -12,17 +12,12 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-import {
-  BigNumberIsInteger,
-  BigNumberIsNotNegative,
-  BigNumberProperty,
-  IsUserAlias
-} from "../validators";
-import { ChainKey } from "../utils";
-import { ChainObject } from "./ChainObject";
-
 import { BigNumber } from "bignumber.js";
 import { IsNotEmpty, IsString } from "class-validator";
+
+import { ChainKey } from "../utils";
+import { BigNumberIsInteger, BigNumberIsNotNegative, BigNumberProperty, IsUserAlias } from "../validators";
+import { ChainObject } from "./ChainObject";
 
 export class FeeThresholdUses extends ChainObject {
   public static INDEX_KEY = "GCFTU";

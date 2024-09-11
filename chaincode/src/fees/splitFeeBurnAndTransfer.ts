@@ -12,18 +12,19 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-import { 
+import {
   BurnTokenQuantity,
   FeeCodeSplitFormula,
   PaymentRequiredError,
   TokenClass,
   TokenInstanceKey
 } from "@gala-chain/api";
-import { GalaChainContext } from "../types";
+import BigNumber from "bignumber.js";
+
 import { burnTokens } from "../burns";
 import { transferToken } from "../transfer";
+import { GalaChainContext } from "../types";
 import { getObjectByKey } from "../utils";
-import BigNumber from "bignumber.js";
 
 export interface splitFeeBurnAndTransferParams {
   feeCode: string;

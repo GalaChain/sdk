@@ -12,11 +12,11 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-import { GalaChainContext } from "../types";
-import { putChainObject } from "../utils";
+import { FeeCodeSplitFormula, FeeCodeSplitFormulaDto } from "@gala-chain/api";
 import { plainToClass as plainToInstance } from "class-transformer";
 
-import { FeeCodeSplitFormula, FeeCodeSplitFormulaDto } from "@gala-chain/api";
+import { GalaChainContext } from "../types";
+import { putChainObject } from "../utils";
 
 export async function defineFeeSplitFormula(
   ctx: GalaChainContext,

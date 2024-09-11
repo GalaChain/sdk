@@ -12,18 +12,14 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-import {
-  BigNumberIsInteger,
-  BigNumberIsPositive,
-  BigNumberProperty,
-  IsUserAlias
-} from "../validators";
-import { ChainKey } from "../utils";
-import { TokenInstanceQuantity } from "./TokenInstance";
-import { ChainObject } from "./ChainObject";
 import BigNumber from "bignumber.js";
 import { Exclude, Type } from "class-transformer";
 import { ArrayNotEmpty, IsInt, IsNotEmpty, IsNumber, IsOptional, Min, ValidateNested } from "class-validator";
+
+import { ChainKey } from "../utils";
+import { BigNumberIsInteger, BigNumberIsPositive, BigNumberProperty, IsUserAlias } from "../validators";
+import { ChainObject } from "./ChainObject";
+import { TokenInstanceQuantity } from "./TokenInstance";
 
 export class TokenSwapRequest extends ChainObject {
   @ChainKey({ position: 0 })

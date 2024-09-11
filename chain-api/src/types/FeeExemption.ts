@@ -12,11 +12,11 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-import { IsUserAlias } from "../validators";
-import { ChainKey } from "../utils";
-import { ChainObject } from "./ChainObject";
-
 import { ArrayUnique, IsOptional } from "class-validator";
+
+import { ChainKey } from "../utils";
+import { IsUserAlias } from "../validators";
+import { ChainObject } from "./ChainObject";
 
 export class FeeExemption extends ChainObject {
   public static INDEX_KEY = "GCFE"; // GalaChain Fee Exemption

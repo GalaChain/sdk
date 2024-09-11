@@ -13,13 +13,14 @@
  * limitations under the License.
  */
 import { ChainError, ChainObject, FeeProperties, FeePropertiesDto } from "@gala-chain/api";
+import { plainToInstance } from "class-transformer";
+
 import { GalaChainContext } from "../types";
 import { getObjectByKey, putChainObject } from "../utils";
-import { plainToInstance } from "class-transformer";
 
 // features like Fees are anticipated to *only* support $GALA as the currency of choice.
 // Current plans are for all fees to be paid in $GALA.
-// This hardcoded id here gives us something to use as a ChainKey for the properties 
+// This hardcoded id here gives us something to use as a ChainKey for the properties
 // while keeping it effectively immutable
 // from outside assets-chaincode calls without a code change.
 export const galaFeePropertiesIdentifier = "galachain";

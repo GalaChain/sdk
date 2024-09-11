@@ -12,14 +12,11 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-import { GalaChainContext } from "../types";
-import {
-  getObjectsByPartialCompositeKeyWithPagination,
-  takeUntilUndefined
-} from "../utils";
+import { FetchOraclePriceAssertionsResponse, OraclePriceAssertion } from "@gala-chain/api";
 import { plainToInstance } from "class-transformer";
 
-import { FetchOraclePriceAssertionsResponse, OraclePriceAssertion } from "@gala-chain/api";
+import { GalaChainContext } from "../types";
+import { getObjectsByPartialCompositeKeyWithPagination, takeUntilUndefined } from "../utils";
 
 export interface IFetchOraclePriceAssertions {
   oracle?: string | undefined;

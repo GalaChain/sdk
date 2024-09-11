@@ -15,37 +15,39 @@
 import {
   BatchBridgeTokenInDto,
   BatchFillTokenSwapDto,
-  BridgeTokenOutDto,
-  ChainId, FeeGateCodes, OracleBridgeFeeAssertion, OracleDefinition, OraclePriceAssertion,
-  FillTokenSwapDto,
-  OracleBridgeFeeAssertionDto,
-  RequestTokenBridgeOutDto,
-  TerminateTokenSwapDto,
   BatchMintTokenDto,
+  BridgeTokenOutDto,
   BurnTokensDto,
   ChainCallDTO,
   ChainError,
+  ChainId,
   ChainObject,
   ErrorCode,
+  FeeGateCodes,
+  FillTokenSwapDto,
   FulfillMintAllowanceDto,
   FulfillMintDto,
   HighThroughputGrantAllowanceDto,
   HighThroughputMintTokenDto,
   MintTokenDto,
   MintTokenWithAllowanceDto,
+  OracleBridgeFeeAssertion,
+  OracleBridgeFeeAssertionDto,
+  OracleDefinition,
+  OraclePriceAssertion,
   PaymentRequiredError,
+  RequestTokenBridgeOutDto,
+  TerminateTokenSwapDto,
   TransferTokenDto,
   ValidationFailedError
 } from "@gala-chain/api";
-import { GalaChainContext } from "../types";
-import { authorize } from "../contracts";
-import { getObjectByKey, putChainObject } from "../utils";
-
 import BigNumber from "bignumber.js";
 import { plainToInstance } from "class-transformer";
 
+import { authorize } from "../contracts";
 import { KnownOracles } from "../oracle";
-
+import { GalaChainContext } from "../types";
+import { getObjectByKey, putChainObject } from "../utils";
 import { galaFeeGate, writeUsageAndCalculateFeeAmount } from "./galaFeeGate";
 import { payFeeFromCrossChannelAuthorization } from "./payFeeFromCrossChannelAuthorization";
 import { payFeeImmediatelyFromBalance } from "./payFeeImmediatelyFromBalance";

@@ -12,10 +12,16 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-import { ChainError, ErrorCode, FeeCodeDefinition, FetchFeeScheduleResDto, NotFoundError } from "@gala-chain/api";
-import { GalaChainContext } from "../types";
+import {
+  ChainError,
+  ErrorCode,
+  FeeCodeDefinition,
+  FetchFeeScheduleResDto,
+  NotFoundError
+} from "@gala-chain/api";
 import BigNumber from "bignumber.js";
 
+import { GalaChainContext } from "../types";
 import { getObjectsByPartialCompositeKeyWithPagination, takeUntilUndefined } from "../utils";
 
 export interface FetchFeeScheduleParams {

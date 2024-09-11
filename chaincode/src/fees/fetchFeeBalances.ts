@@ -12,7 +12,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-import { 
+import {
   ChainError,
   ErrorCode,
   FeePendingBalance,
@@ -20,9 +20,10 @@ import {
   FetchFeePendingBalancesResDto,
   NotFoundError
 } from "@gala-chain/api";
+import { plainToInstance } from "class-transformer";
+
 import { GalaChainContext } from "../types";
 import { getObjectsByPartialCompositeKeyWithPagination, takeUntilUndefined } from "../utils";
-import { plainToInstance } from "class-transformer";
 
 export interface FetchFeePendingBalancesParams {
   owner?: string;

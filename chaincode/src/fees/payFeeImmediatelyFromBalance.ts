@@ -22,12 +22,12 @@ import {
   PaymentRequiredError,
   TokenInstanceKey
 } from "@gala-chain/api";
-import { GalaChainContext } from "../types";
-import { burnTokens } from "../burns";
-import { getObjectByKey, txUnixTimeToDateIndexKeys } from "../utils";
 import BigNumber from "bignumber.js";
 import { plainToInstance } from "class-transformer";
 
+import { burnTokens } from "../burns";
+import { GalaChainContext } from "../types";
+import { getObjectByKey, txUnixTimeToDateIndexKeys } from "../utils";
 import { fetchGalaFeeProperties } from "./galaFeeProperties";
 import { splitFeeImmediatelyWithBurnAndTransfer } from "./splitFeeBurnAndTransfer";
 import { writeChannelPaymentReceipt } from "./writeChannelPaymentReceipt";
