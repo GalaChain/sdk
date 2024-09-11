@@ -12,10 +12,19 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+import { ChainKey } from "../utils";
+import { ChainObject } from "./ChainObject";
 
-export * from "./authorize";
-export * from "./PublicKeyContract";
-export * from "./GalaChainFeeContract";
-export * from "./GalaContract";
-export * from "./GalaContractApi";
-export * from "./GalaTransaction";
+import { ArrayNotEmpty, IsNotEmpty, IsString } from "class-validator";
+
+export class OracleDefinition extends ChainObject {
+  public static INDEX_KEY = "GCOE"; // GalaChain Oracle (first and last letter of Oracle)
+
+  @ChainKey({ position: 0 })
+  @IsString()
+  @IsNotEmpty()
+  public name: string;
+
+  @ArrayNotEmpty()
+  public authorities: string[];
+}

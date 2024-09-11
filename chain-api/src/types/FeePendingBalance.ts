@@ -12,10 +12,26 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+import {
+  BigNumberIsNotNegative,
+  BigNumberProperty,
+  IsUserAlias
+} from "../validators";
+import { ChainKey } from "../utils";
+import { ChainObject } from "./ChainObject";
 
-export * from "./authorize";
-export * from "./PublicKeyContract";
-export * from "./GalaChainFeeContract";
-export * from "./GalaContract";
-export * from "./GalaContractApi";
-export * from "./GalaTransaction";
+import { BigNumber } from "bignumber.js";
+import { IsNotEmpty } from "class-validator";
+
+export class FeePendingBalance extends ChainObject {
+  public static INDEX_KEY = "GCFB";
+
+  @ChainKey({ position: 0 })
+  @IsUserAlias()
+  public owner: string;
+
+  @IsNotEmpty()
+  @BigNumberIsNotNegative()
+  @BigNumberProperty()
+  public quantity: BigNumber;
+}

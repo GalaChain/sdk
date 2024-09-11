@@ -12,10 +12,17 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+export interface IExternalToken {
+  name: string;
+  symbol: string;
+}
 
-export * from "./authorize";
-export * from "./PublicKeyContract";
-export * from "./GalaChainFeeContract";
-export * from "./GalaContract";
-export * from "./GalaContractApi";
-export * from "./GalaTransaction";
+export const BitcoinDefinition: IExternalToken = {
+  name: "Bitcoin",
+  symbol: "BTC"
+};
+
+export const EthereumDefinition: IExternalToken = {
+  name: "Ethereum",
+  symbol: "ETH"
+};

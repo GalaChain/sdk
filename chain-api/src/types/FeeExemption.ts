@@ -12,10 +12,20 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+import { IsUserAlias } from "../validators";
+import { ChainKey } from "../utils";
+import { ChainObject } from "./ChainObject";
 
-export * from "./authorize";
-export * from "./PublicKeyContract";
-export * from "./GalaChainFeeContract";
-export * from "./GalaContract";
-export * from "./GalaContractApi";
-export * from "./GalaTransaction";
+import { ArrayUnique, IsOptional } from "class-validator";
+
+export class FeeExemption extends ChainObject {
+  public static INDEX_KEY = "GCFE"; // GalaChain Fee Exemption
+
+  @ChainKey({ position: 0 })
+  @IsUserAlias()
+  public user: string;
+
+  @IsOptional()
+  @ArrayUnique()
+  public limitedTo?: string[];
+}

@@ -12,10 +12,18 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+import { FeeExemption, FeeExemptionDto } from "@gala-chain/api";
+import { GalaChainContext } from "../types";
+import { deleteChainObject, getObjectByKey } from "../utils";
 
-export * from "./authorize";
-export * from "./PublicKeyContract";
-export * from "./GalaChainFeeContract";
-export * from "./GalaContract";
-export * from "./GalaContractApi";
-export * from "./GalaTransaction";
+export async function revokeExemptionForUser(ctx: GalaChainContext, dto: FeeExemptionDto) {
+  const exemption = await getObjectByKey(
+    ctx,
+    FeeExemption,
+    FeeExemption.getCompositeKeyFromParts(FeeExemption.INDEX_KEY, [dto.user])
+  );
+
+  await deleteChainObject(ctx, exemption);
+
+  return exemption;
+}

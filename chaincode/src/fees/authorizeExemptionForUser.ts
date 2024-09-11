@@ -12,10 +12,24 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+import { GalaChainContext } from "../types";
+import { putChainObject } from "../utils";
+import { plainToInstance } from "class-transformer";
 
-export * from "./authorize";
-export * from "./PublicKeyContract";
-export * from "./GalaChainFeeContract";
-export * from "./GalaContract";
-export * from "./GalaContractApi";
-export * from "./GalaTransaction";
+import { FeeExemption, FeeExemptionDto } from "@gala-chain/api";
+
+export async function authorizeExemptionForUser(ctx: GalaChainContext, dto: FeeExemptionDto) {
+  const exemption: FeeExemption = plainToInstance(FeeExemption, {
+    user: dto.user
+  });
+
+  if (dto.limitTo) {
+    exemption.limitedTo = dto.limitTo;
+  }
+
+  await exemption.validateOrReject();
+
+  await putChainObject(ctx, exemption);
+
+  return exemption;
+}

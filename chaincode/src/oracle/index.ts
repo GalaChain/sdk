@@ -12,10 +12,12 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
-export * from "./authorize";
-export * from "./PublicKeyContract";
-export * from "./GalaChainFeeContract";
-export * from "./GalaContract";
-export * from "./GalaContractApi";
-export * from "./GalaTransaction";
+export * from "./deleteOracleDefinition";
+export * from "./deleteOraclePriceAssertions";
+export * from "./fetchOracleDefinitions";
+export * from "./fetchOraclePriceAssertions";
+export * from "./fetchOraclePriceCrossRates";
+export * from "./knownExternalTokens";
+export * from "./knownOracles";
+export * from "./saveOracleDefinition";
+export * from "./saveOraclePriceAssertion";
