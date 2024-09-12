@@ -12,12 +12,13 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+import { ChainObject } from "./ChainObject";
+import { RangedChainObject } from "./RangedChainObject";
+import { ClassConstructor, NonFunctionProperties } from "./dtos";
 
 /*
  * Creates valid chain object. Throws error in case of failure
  */
-import { ChainObject, ClassConstructor, NonFunctionProperties, RangedChainObject } from "@gala-chain/api";
-
 export async function createValidChainObject<T extends ChainObject | RangedChainObject>(
   constructor: ClassConstructor<T>,
   plain: NonFunctionProperties<T>

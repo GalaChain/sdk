@@ -15,14 +15,14 @@
 // eslint-disable-next-line @typescript-eslint/ban-ts-comment
 // @ts-ignore
 import { ChainCallDTO, ChainKey, ChainObject, GalaChainResponse } from "@gala-chain/api";
-import { NotImplementedError } from "@gala-chain/api";
+import { NotImplementedError, createValidChainObject } from "@gala-chain/api";
 import { Exclude } from "class-transformer";
 import { IsPositive } from "class-validator";
 import { Transaction } from "fabric-contract-api";
 
 import { version } from "../../package.json";
 import { EVALUATE, GalaContract, GalaTransaction, SUBMIT } from "../contracts";
-import { GalaChainContext, createValidChainObject } from "../types";
+import { GalaChainContext } from "../types";
 import { getObjectsByPartialCompositeKey, putChainObject } from "../utils/state";
 
 const curatorOrgMsp = process.env.CURATOR_ORG_MSP ?? "CuratorOrg";

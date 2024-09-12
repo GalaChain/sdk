@@ -12,11 +12,16 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-import { GalaChainResponse, TokenClass, UpdateTokenClassDto, createValidDTO } from "@gala-chain/api";
+import {
+  GalaChainResponse,
+  TokenClass,
+  UpdateTokenClassDto,
+  createValidChainObject,
+  createValidDTO
+} from "@gala-chain/api";
 import { currency, fixture, users, writesMap } from "@gala-chain/test";
 
 import GalaChainTokenContract from "../__test__/GalaChainTokenContract";
-import { createValidChainObject } from "../types";
 import { NotATokenAuthorityError, TokenClassNotFoundError } from "./TokenError";
 
 const defaultUpdate = () => ({
