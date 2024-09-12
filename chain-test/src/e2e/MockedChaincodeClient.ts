@@ -15,7 +15,6 @@
 import { ChainCallDTO, ClassConstructor, GalaChainResponse, Inferred, serialize } from "@gala-chain/api";
 import { ChainClient, ChainClientBuilder, ClassType, ContractConfig } from "@gala-chain/client";
 import { Contract } from "fabric-contract-api";
-import { type } from "typedoc/dist/lib/output/themes/default/partials/type";
 
 import TestChaincode from "../unit/TestChaincode";
 
@@ -32,6 +31,18 @@ interface ImportedChaincodeLib {
 interface ChaincodeLib {
   contracts: (ClassConstructor<Contract> & { name: string })[];
   contractsByName: Record<string, ClassConstructor<Contract>>;
+}
+
+const globalState = {} as Record<string, Record<string, Record<string, string>>>;
+
+function getOrCreateState(channel: string, chaincode: string) {
+  if (!globalState[channel]) {
+    globalState[channel] = {};
+  }
+  if (!globalState[channel][chaincode]) {
+    globalState[channel][chaincode] = {};
+  }
+  return globalState[channel][chaincode];
 }
 
 export class MockedChaincodeClientBuilder implements ChainClientBuilder {
@@ -56,13 +67,14 @@ export class MockedChaincodeClientBuilder implements ChainClientBuilder {
       });
   }
 
-  public forContract(config: ContractConfig): ChainClient {
+  public forContract(config: ContractConfig): MockedChaincodeClient {
     const chaincode = this.mockedChaincodeLib.then((lib) => {
       const contract = lib.contractsByName[config.contract];
       if (!contract) {
         throw new Error(`Contract ${config.contract} not found in ${this.mockedChaincodeDir}`);
       }
-      return new TestChaincode([contract], {}, {}, this.adminId, this.orgMsp);
+      const state = getOrCreateState(config.channel, config.chaincode);
+      return new TestChaincode([contract], state, {}, this.adminId, this.orgMsp);
       // TODO state should be global => provide test
       // TODO do not save on evaluates => test
     });
@@ -70,8 +82,9 @@ export class MockedChaincodeClientBuilder implements ChainClientBuilder {
   }
 }
 
-class MockedChaincodeClient extends ChainClient {
+export class MockedChaincodeClient extends ChainClient {
   private readonly chaincode: Promise<TestChaincode>;
+  private transactionDelayMs: number;
 
   constructor(
     builder: MockedChaincodeClientBuilder,
@@ -81,7 +94,14 @@ class MockedChaincodeClient extends ChainClient {
     userId: string
   ) {
     super(Promise.resolve(builder), userId, contractConfig, orgMsp);
+    this.transactionDelayMs = 0;
     this.chaincode = chaincode;
+  }
+
+  private async optionalDelay() {
+    if (this.transactionDelayMs > 0) {
+      await new Promise((resolve) => setTimeout(resolve, this.transactionDelayMs));
+    }
   }
 
   async submitTransaction<T>(
@@ -89,6 +109,7 @@ class MockedChaincodeClient extends ChainClient {
     dtoOrResp?: ChainCallDTO | ClassType<Inferred<T>>,
     resp?: ClassType<Inferred<T>>
   ): Promise<GalaChainResponse<T>> {
+    await this.optionalDelay();
     const chaincode = await this.chaincode;
     const { fullMethod, args, responseClass } = this.getParameters(method, dtoOrResp, resp);
     const response = await chaincode.invoke<Record<string, unknown>>(fullMethod, ...args);
@@ -100,6 +121,7 @@ class MockedChaincodeClient extends ChainClient {
     dtoOrResp?: ChainCallDTO | ClassType<Inferred<T>>,
     resp?: ClassType<Inferred<T>>
   ): Promise<GalaChainResponse<T>> {
+    await this.optionalDelay();
     const chaincode = await this.chaincode;
     const { fullMethod, args, responseClass } = this.getParameters(method, dtoOrResp, resp);
     const response = await chaincode.query<Record<string, unknown>>(fullMethod, ...args);
@@ -128,6 +150,11 @@ class MockedChaincodeClient extends ChainClient {
 
   async disconnect(): Promise<void> {
     // do nothing
+  }
+
+  withTransactionDelay(transactionDelayMs: number) {
+    this.transactionDelayMs = transactionDelayMs;
+    return this;
   }
 }
 

@@ -12,21 +12,151 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-import { ChainCallDTO } from "@gala-chain/api";
+import {
+  ChainCallDTO,
+  GetPublicKeyDto,
+  PublicKey,
+  RegisterEthUserDto,
+  SigningScheme,
+  createValidChainObject,
+  createValidDTO,
+  signatures
+} from "@gala-chain/api";
 
-import { transactionErrorKey } from "../matchers";
+import { transactionErrorKey, transactionSuccess } from "../matchers";
 import { MockedChaincodeClientBuilder } from "./MockedChaincodeClient";
 
-it("should call chaincode", async () => {
-  const path = "/Users/jakubdzikowski/IdeaProjects/gh-sdk/chain-cli/chaincode-template/lib/src/index.js";
-  const contractName = "PublicKeyContract";
-  const client = new MockedChaincodeClientBuilder({ mockedChaincodeDir: path }).forContract({
-    channel: "mychannel",
-    chaincode: "mychaincode",
-    contract: contractName
-  });
+let admin, user;
 
+beforeAll(() => {
+  // Setup admin
+  admin = signatures.genKeyPair();
+  process.env.DEV_ADMIN_PUBLIC_KEY = admin.publicKey;
+
+  // Prepare user data
+  const userKeys = signatures.genKeyPair();
+  const userAlias = `eth|${signatures.getEthAddress(userKeys.publicKey)}`;
+  user = {
+    ...userKeys,
+    base64PublicKey: signatures.getCompactBase64PublicKey(userKeys.publicKey),
+    alias: userAlias
+  };
+});
+
+afterAll(() => {
+  // Cleanup
+  process.env.DEV_ADMIN_PUBLIC_KEY = undefined;
+});
+
+it("should be able to call chaincode", async () => {
+  // Given
+  const client = createClient();
+
+  // When
   const response = await client.submitTransaction("GetPublicKey", new ChainCallDTO());
 
+  // Then
   expect(response).toEqual(transactionErrorKey("PK_NOT_FOUND"));
 });
+
+it("should support the global state", async () => {
+  // Given
+  const client1 = createClient();
+  const client2 = createClient();
+
+  const registerDto = await createValidDTO(RegisterEthUserDto, { publicKey: user.publicKey });
+  registerDto.sign(admin.privateKey);
+
+  const getProfileDto = await createValidDTO(GetPublicKeyDto, { user: user.alias });
+
+  const expectedPublicKey = await createValidChainObject(PublicKey, {
+    publicKey: user.base64PublicKey,
+    signing: SigningScheme.ETH
+  });
+
+  // initially the key is missing
+  const noKeyResponse = await client1.evaluateTransaction("GetPublicKey", getProfileDto);
+  expect(noKeyResponse).toEqual(transactionErrorKey("PK_NOT_FOUND"));
+
+  // When
+  const registerResponse = await client1.submitTransaction("RegisterEthUser", registerDto);
+
+  // Then
+  expect(registerResponse).toEqual(transactionSuccess());
+
+  // both clients can get the key
+  const keyResponse1 = await client1.evaluateTransaction("GetPublicKey", getProfileDto);
+  const keyResponse2 = await client2.evaluateTransaction("GetPublicKey", getProfileDto);
+  expect(keyResponse1).toEqual(transactionSuccess(expectedPublicKey));
+  expect(keyResponse2).toEqual(transactionSuccess(expectedPublicKey));
+});
+
+it("should not change the state for evaluateTransaction", async () => {
+  // Given
+  const client = createClient();
+
+  const otherUser = signatures.genKeyPair();
+  const otherUserAlias = `eth|${signatures.getEthAddress(otherUser.publicKey)}`;
+
+  const registerDto = await createValidDTO(RegisterEthUserDto, { publicKey: otherUser.publicKey });
+  registerDto.sign(admin.privateKey);
+
+  const getProfileDto = await createValidDTO(GetPublicKeyDto, { user: otherUserAlias });
+
+  // initially the key is missing
+  const noKeyResponse1 = await client.evaluateTransaction("GetPublicKey", getProfileDto);
+  expect(noKeyResponse1).toEqual(transactionErrorKey("PK_NOT_FOUND")); // initially the key is missing
+
+  // When
+  const registerEvaluateResponse = await client.evaluateTransaction("RegisterEthUser", registerDto);
+
+  // Then
+  expect(registerEvaluateResponse).toEqual(transactionSuccess()); // evaluate does not change the state
+
+  // the key is still missing
+  const noKeyResponse2 = await client.evaluateTransaction("GetPublicKey", getProfileDto);
+  expect(noKeyResponse2).toEqual(transactionErrorKey("PK_NOT_FOUND")); // the key is still missing
+});
+
+it.skip("should support key collision validation", async () => {
+  // Given
+  const transactionDelayMs = 100;
+  const client1 = createClient(transactionDelayMs);
+  const client2 = createClient(transactionDelayMs);
+
+  const otherUser = signatures.genKeyPair();
+  const registerDto = await createValidDTO(RegisterEthUserDto, { publicKey: otherUser.publicKey });
+  registerDto.sign(admin.privateKey);
+
+  // When
+  const parallelCalls = await Promise.all([
+    client1.submitTransaction("RegisterEthUser", registerDto),
+    client2.submitTransaction("RegisterEthUser", registerDto)
+  ]);
+
+  // Then
+  expect(parallelCalls).toEqual([transactionSuccess(), "MVCC_CONFLICT"]); // change the last value
+
+  // Set transaction delay, and call two conflicting transactions in parallel (either the same client or different client)
+  throw new Error("Not implemented");
+});
+
+it.skip("should support phantom read collision validation", async () => {
+  // Set transaction delay, and call two conflicting transactions in parallel (either the same client or different client)
+  throw new Error("Not implemented");
+});
+
+function createClient(transactionDelayMs = 0) {
+  const path = "/Users/jakubdzikowski/IdeaProjects/gh-sdk/chain-cli/chaincode-template/lib/src/index.js";
+  const contractName = "PublicKeyContract";
+  return new MockedChaincodeClientBuilder({
+    mockedChaincodeDir: path,
+    orgMsp: "CuratorOrg"
+  })
+    .forContract({
+      channel: "mychannel",
+      chaincode: "mychaincode",
+      contract: contractName
+    })
+    .withTransactionDelay(transactionDelayMs);
+}
