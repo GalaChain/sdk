@@ -23,15 +23,22 @@ import {
   FetchFeePropertiesDto,
   GalaChainResponse
 } from "@gala-chain/api";
+import {
+  EVALUATE,
+  GalaChainContext,
+  GalaContract,
+  GalaTransaction,
+  SUBMIT,
+  authorizeFee,
+  fetchFeeAuthorizations,
+  fetchGalaFeeProperties,
+  setGalaFeeProperties
+} from "@gala-chain/chaincode";
 import { Info } from "fabric-contract-api";
 
 // eslint-disable-next-line @typescript-eslint/ban-ts-comment
 // @ts-ignore
 import { version } from "../../package.json";
-import { authorizeFee, fetchFeeAuthorizations, fetchGalaFeeProperties, setGalaFeeProperties } from "../fees";
-import { GalaChainContext } from "../types";
-import { GalaContract } from "./GalaContract";
-import { EVALUATE, GalaTransaction, SUBMIT } from "./GalaTransaction";
 
 @Info({
   title: "GalaChainFee",
