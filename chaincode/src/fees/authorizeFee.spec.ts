@@ -28,7 +28,7 @@ import BigNumber from "bignumber.js";
 import { plainToInstance } from "class-transformer";
 import { randomUUID } from "crypto";
 
-import { GalaChainFeeContract } from "../contracts";
+import { GalaChainFeeContract } from "../__test__/GalaChainFeeContract";
 import { GalaChainContext } from "../types";
 import { txUnixTimeToDateIndexKeys } from "../utils";
 
