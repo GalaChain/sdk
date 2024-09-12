@@ -26,7 +26,7 @@ export * from "./galaFeeGate";
 export * from "./galaFeeProperties";
 export * from "./payFeeFromCrossChannelAuthorization";
 export * from "./payFeeImmediatelyFromBalance";
-export * from "./feeGate";
+export * from "./feeGateImplementations";
 export * from "./resetFeeThresholdUses";
 export * from "./settleFeeBalances";
 export * from "./settleFeeCreditReceipts";

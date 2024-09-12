@@ -13,10 +13,8 @@
  * limitations under the License.
  */
 import {
-  BatchBridgeTokenInDto,
   BatchFillTokenSwapDto,
   BatchMintTokenDto,
-  BridgeTokenOutDto,
   BurnTokensDto,
   ChainCallDTO,
   ChainError,
@@ -72,10 +70,6 @@ export function extractUniqueUsersFromRequests(ctx: GalaChainContext, requests: 
   return Array.from(new Set(users));
 }
 
-export async function batchBridgeTokenInFeeGate(ctx: GalaChainContext, dto: BatchBridgeTokenInDto) {
-  return galaFeeGate(ctx, { feeCode: FeeGateCodes.BatchBridgeTokenIn });
-}
-
 export async function batchFillTokenSwapFeeGate(ctx: GalaChainContext, dto: BatchFillTokenSwapDto) {
   return galaFeeGate(ctx, { feeCode: FeeGateCodes.BatchFillTokenSwap });
 }
@@ -94,10 +88,6 @@ export async function batchMintTokenFeeGate(ctx: GalaChainContext, dto: BatchMin
   }
 
   return Promise.resolve();
-}
-
-export async function bridgeTokenOutFeeGate(ctx: GalaChainContext, dto: BridgeTokenOutDto) {
-  return galaFeeGate(ctx, { feeCode: FeeGateCodes.BridgeTokenOut });
 }
 
 export async function burnTokensFeeGate(ctx: GalaChainContext, dto: BurnTokensDto) {
