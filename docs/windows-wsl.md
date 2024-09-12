@@ -27,6 +27,54 @@ Open Docker Desktop and go to `Settings` > `Resources` > `WSL Integration` and e
 
 ![remote-command-palette](./assets/wsl-integration.png)
 
+### 4. Mount Your Current Windows Directory in WSL (Optional)
+
+If you want to access your Windows file system directly from WSL (e.g., to work with files in your Windows directories like `C:\Users\YourUsername\Documents\`), you can set up WSL to automatically mount your Windows drives.
+
+1. **Edit the WSL Configuration File**:
+
+   Open your `/etc/wsl.conf` file in a text editor. If it doesn’t exist, create it:
+
+   ```bash
+   sudo nano /etc/wsl.conf
+   ```
+
+2. **Add the Following Configuration**:
+
+   Add these lines to the file:
+
+   ```ini
+   [boot]
+   systemd=true
+
+   [automount]
+   enabled=true
+   root=/mnt/
+   options="metadata,umask=22,fmask=11"
+   ```
+
+   - **`metadata`**: Enables the storage of Linux file system metadata (such as permissions and symbolic links) on the mounted Windows drives.
+   - **`umask=22`**: Sets the default permission of new directories to `0755` and files to `0644`.
+   - **`fmask=11`**: Sets the default permission of new files to `0666`, ensuring they are not executable by default.
+
+3. **Restart WSL**:
+
+   After saving the changes, restart your WSL environment:
+
+   ```bash
+   wsl --shutdown
+   ```
+
+   Start WSL again, and your Windows drives should be mounted under `/mnt/`, for example, `/mnt/c` for the `C:` drive.
+
+4. **Access Your Windows Directories**:
+
+   Now you can navigate to your Windows directories from within WSL, like this:
+
+   ```bash
+   cd /mnt/c/Users/YourUsername/Documents/MyFolder
+   ```
+   
 ### 4. Install dependencies and start network
 
 1. Use the [WSL extension on VSCode](https://marketplace.visualstudio.com/items?itemName=ms-vscode-remote.remote-wsl) to connect to your WSL distribution.

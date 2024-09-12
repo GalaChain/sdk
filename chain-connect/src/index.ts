@@ -15,3 +15,4 @@
 export * from "./customClients";
 export * from "./GalachainClient";
 export * from "./utils/WalletUtils";
+export * from "./chainApis";

@@ -35,6 +35,7 @@ const invalidTon = validTonAddress.replace("Q", "q");
 
 test.each<[string, string, string]>([
   ["valid legacy alias", "client|123", "client|123"],
+  ["valid legacy service alias", "service|123", "service|123"],
   ["valid eth alias", `eth|${validEthAddress}`, `eth|${validEthAddress}`],
   ["valid ton alias", `ton|${validTonAddress}`, `ton|${validTonAddress}`],
   ["valid bridge (eth)", `EthereumBridge`, `EthereumBridge`],

@@ -57,7 +57,7 @@ function validateUserAlias(value: unknown): UserRefValidationResult {
   }
 
   if (parts.length === 2) {
-    if (parts[0] === "client" && parts[1].length > 0) {
+    if ((parts[0] === "client" || parts[0] === "service") && parts[1].length > 0) {
       return UserRefValidationResult.VALID_USER_ALIAS;
     }
 
