@@ -20,6 +20,7 @@ export * from "./ChainId";
 export * from "./ChainObject";
 export * from "./RangedChainObject";
 export * from "./contract";
+export * from "./createValidChainObject";
 export * from "./dtos";
 export * from "./fee";
 export * from "./FeeAuthorization";

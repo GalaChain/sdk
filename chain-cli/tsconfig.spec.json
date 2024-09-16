@@ -4,6 +4,7 @@
     "outDir": "../lib/out-tsc",
     "module": "commonjs",
     "types": ["jest", "node"],
+    "declarationMap": true,
     "sourceMap": true
   },
   "include": [

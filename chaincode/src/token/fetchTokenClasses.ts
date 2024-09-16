@@ -17,9 +17,9 @@ import {
   FetchTokenClassesWithPaginationDto,
   TokenClass,
   TokenClassKey,
-  TokenInstanceKey
+  TokenInstanceKey,
+  createValidDTO
 } from "@gala-chain/api";
-import { plainToInstance } from "class-transformer";
 
 import { GalaChainContext } from "../types";
 import { getObjectByKey, getObjectsByPartialCompositeKeyWithPagination, takeUntilUndefined } from "../utils";
@@ -66,7 +66,7 @@ export async function fetchTokenClassesWithPagination(
     dto.limit ?? FetchTokenClassesWithPaginationDto.DEFAULT_LIMIT
   );
 
-  const response = plainToInstance(FetchTokenClassesResponse, {
+  const response = await createValidDTO(FetchTokenClassesResponse, {
     results: getObjectsResponse.results,
     nextPageBookmark: getObjectsResponse.metadata.bookmark
   });
