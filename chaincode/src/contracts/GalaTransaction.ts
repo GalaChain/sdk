@@ -19,9 +19,10 @@ import {
   GalaChainResponse,
   Inferred,
   MethodAPI,
+  NotImplementedError,
   Primitive,
   RuntimeError,
-  UnauthorizedError,
+  UserRole,
   generateResponseSchema,
   generateSchema,
   parseValidDTO
@@ -33,7 +34,8 @@ import { UniqueTransactionService } from "../services";
 import { GalaChainContext } from "../types";
 import { GalaContract } from "./GalaContract";
 import { updateApi } from "./GalaContractApi";
-import { authorize, ensureOrganizationIsAllowed } from "./authorize";
+import { authenticate } from "./authenticate";
+import { authorize } from "./authorize";
 import { legacyClientAccountId } from "./legacyClientAccountId";
 
 // All DTOs need to be registered in the application, including super classes. Otherwise, chaincode
@@ -44,7 +46,7 @@ DTOObject()(ChainCallDTO);
 
 // Note: it is just a metadata, you cannot effectively forbid to submit the transaction
 // (you can, however make it readonly by passing random value to the result or manipulating the context)
-enum GalaTransactionType {
+export enum GalaTransactionType {
   EVALUATE,
   SUBMIT
 }
@@ -74,7 +76,9 @@ export interface GalaTransactionOptions<T extends ChainCallDTO> {
   description?: string;
   in?: ClassConstructor<Inferred<T>>;
   out?: OutType | OutArrType;
+  /** @deprecated */
   allowedOrgs?: string[];
+  allowedRoles?: string[];
   verifySignature?: true;
   apiMethodName?: string;
   sequence?: MethodAPI[];
@@ -115,8 +119,17 @@ function GalaTransaction<T extends ChainCallDTO>(
 
   if (options.type === SUBMIT && !options.verifySignature && !options.allowedOrgs?.length) {
     const message = `SUBMIT transaction must have either verifySignature or allowedOrgs defined`;
-    throw new UnauthorizedError(message);
+    throw new NotImplementedError(message);
   }
+
+  if (options.allowedRoles !== undefined && options.allowedOrgs !== undefined) {
+    const message = `allowedRoles and allowedOrgs cannot be defined at the same time`;
+    throw new NotImplementedError(message);
+  }
+
+  options.allowedRoles = options.allowedRoles ?? [
+    options.type === SUBMIT ? UserRole.SUBMIT : UserRole.EVALUATE
+  ];
 
   // An actual decorator
   return (target, propertyKey, descriptor): void => {
@@ -145,15 +158,18 @@ function GalaTransaction<T extends ChainCallDTO>(
           ? undefined
           : await parseValidDTO<T>(dtoClass, dtoPlain as string | Record<string, unknown>);
 
-        // Verify public key signature if needed - throws exception in case of failure
+        // Authenticate the user
         if (ctx.isDryRun) {
-          // Do not verify signature in dry run mode
+          // Do not authenticate in dry run mode
         } else if (options?.verifySignature || dto?.signature !== undefined) {
-          ctx.callingUserData = await authorize(ctx, dto, legacyClientAccountId(ctx));
+          ctx.callingUserData = await authenticate(ctx, dto, legacyClientAccountId(ctx));
         } else {
           // it means a request where authorization is not required
-          ctx.callingUserData = { alias: legacyClientAccountId(ctx) };
+          ctx.callingUserData = { alias: legacyClientAccountId(ctx), roles: [UserRole.EVALUATE] };
         }
+
+        // Authorize the user
+        await authorize(ctx, options);
 
         // Prevent the same transaction from being submitted multiple times
         if (dto?.uniqueKey) {
@@ -163,11 +179,6 @@ function GalaTransaction<T extends ChainCallDTO>(
         }
 
         const argArray: [GalaChainContext, T] | [GalaChainContext] = dto ? [ctx, dto] : [ctx];
-
-        // Verify if organization can invoke this method - throws exception in case of failure
-        if (options?.allowedOrgs) {
-          ensureOrganizationIsAllowed(ctx, options.allowedOrgs);
-        }
 
         if (options?.before !== undefined) {
           await options?.before?.apply(this, argArray);
@@ -203,17 +214,35 @@ function GalaTransaction<T extends ChainCallDTO>(
 
     // Update API of contract object
     const isWrite = options.type === GalaTransactionType.SUBMIT;
+
+    let description = options.description ? options.description : "";
+
+    if (options.type === GalaTransactionType.SUBMIT) {
+      description += description ?? ` Transaction updates the chain (submit).`;
+    } else {
+      description += ` Transaction is read only (evaluate).`;
+    }
+
+    if (options.allowedRoles && options.allowedRoles.length > 0) {
+      description += ` Allowed roles: ${options.allowedRoles.join(", ")}.`;
+    }
+
+    if (options.allowedOrgs && options.allowedOrgs.length > 0) {
+      description += ` Allowed orgs: ${options.allowedOrgs.join(", ")}.`;
+    }
+
     const responseSchema = isArrayOut(options.out)
       ? generateResponseSchema(options.out.arrayOf, "array")
       : generateResponseSchema(options.out);
+
     updateApi(target, {
       isWrite,
       methodName: method.name,
       ...(options.apiMethodName === undefined ? {} : { apiMethodName: options.apiMethodName }),
       ...(options.in === undefined ? {} : { dtoSchema: generateSchema(options.in) }),
+      description,
       responseSchema,
       ...(options.deprecated === undefined ? {} : { deprecated: options.deprecated }),
-      ...(options.description === undefined ? {} : { description: options.description }),
       ...(options.sequence === undefined ? {} : { sequence: options.sequence })
     });
 
