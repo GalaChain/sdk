@@ -22,9 +22,14 @@ import { checkAllowances, isAllowanceExpired } from "./checkAllowances";
 
 describe("checkAllowances", () => {
   it("should not count expired allowances", async () => {
-    const checkAllowancesFixture = fixture(GalaChainTokenContract).callingUser(users.testAdminId);
+    const checkAllowancesFixture = fixture(GalaChainTokenContract);
 
     const { ctx } = checkAllowancesFixture;
+    ctx.callingUserData = {
+      alias: users.admin.identityKey,
+      ethAddress: users.admin.ethAddress,
+      roles: users.admin.roles
+    };
 
     const txTime = ctx.txUnixTime;
 
@@ -90,7 +95,7 @@ describe("checkAllowances", () => {
 
 describe("isAllowanceExpired", () => {
   it("should support allowances that never expire by a 0 timestamp value", () => {
-    const { ctx } = fixture(GalaChainTokenContract).callingUser(users.testAdminId);
+    const { ctx } = fixture(GalaChainTokenContract);
 
     const neverExpires = 0;
 
@@ -103,7 +108,7 @@ describe("isAllowanceExpired", () => {
   });
 
   it("should return false for an allowance with an expiration timestamp in the future", () => {
-    const { ctx } = fixture(GalaChainTokenContract).callingUser(users.testAdminId);
+    const { ctx } = fixture(GalaChainTokenContract);
 
     const txTime = ctx.txUnixTime;
     const futureTime = txTime + 1000 * 60 * 60;
@@ -117,7 +122,7 @@ describe("isAllowanceExpired", () => {
   });
 
   it("should return true for an allowance with a non-zero timestamp in the past", () => {
-    const { ctx } = fixture(GalaChainTokenContract).callingUser(users.testAdminId);
+    const { ctx } = fixture(GalaChainTokenContract);
 
     const txTime = ctx.txUnixTime;
     const pastTime = txTime - 1000 * 60 * 60;
