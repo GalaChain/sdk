@@ -20,6 +20,7 @@ import {
   GalaChainResponse,
   GalaChainResponseType,
   GetObjectDto,
+  createValidChainObject,
   createValidDTO
 } from "@gala-chain/api";
 import { transactionError, transactionSuccess } from "@gala-chain/test";
@@ -29,7 +30,7 @@ import { inspect } from "util";
 
 import TestChaincode from "../__test__/TestChaincode";
 import TestGalaContract, { Superhero, SuperheroDto, SuperheroQueryDto } from "../__test__/TestGalaContract";
-import { GalaChainContext, createValidChainObject } from "../types";
+import { GalaChainContext } from "../types";
 
 /*
  * Test below verifies that the base class of TestGalaContract (i.e. GalaContract) provides stub to
@@ -145,17 +146,18 @@ describe("GalaContract.GetObjectsByPartialCompositeKey", () => {
 
   const createTestFixture = async () => {
     const chaincode = new TestChaincode([TestGalaContract]);
+    const adminPrivateKey = process.env.DEV_ADMIN_PRIVATE_KEY as string;
 
     const batman = SuperheroDto.create("Batman", 32);
     const penguin = SuperheroDto.create("Penguin", 55);
     const unsubmittedJoker = SuperheroDto.create("Joker", 44);
 
-    expect(await chaincode.invoke("TestGalaContract:CreateSuperhero", batman.serialize())).toEqual(
-      transactionSuccess()
-    );
-    expect(await chaincode.invoke("TestGalaContract:CreateSuperhero", penguin.serialize())).toEqual(
-      transactionSuccess()
-    );
+    expect(
+      await chaincode.invoke("TestGalaContract:CreateSuperhero", batman.signed(adminPrivateKey).serialize())
+    ).toEqual(transactionSuccess());
+    expect(
+      await chaincode.invoke("TestGalaContract:CreateSuperhero", penguin.signed(adminPrivateKey).serialize())
+    ).toEqual(transactionSuccess());
 
     return {
       chaincode: chaincode,
@@ -250,9 +252,10 @@ describe("GalaContract.DryRun", () => {
   it("should support DryRun for evaluate operations (read existing object)", async () => {
     // Given
     const chaincode = new TestChaincode([TestGalaContract]);
+    const adminPrivateKey = process.env.DEV_ADMIN_PRIVATE_KEY as string;
     const batman = SuperheroDto.create("Batman", 32);
     const batmanKey = (await createValidChainObject(Superhero, batman)).getCompositeKey();
-    await chaincode.invoke("TestGalaContract:CreateSuperhero", batman.serialize());
+    await chaincode.invoke("TestGalaContract:CreateSuperhero", batman.signed(adminPrivateKey).serialize());
 
     const method = "GetObjectByKey";
     const dto = await createValidDTO(GetObjectDto, { objectId: batmanKey });

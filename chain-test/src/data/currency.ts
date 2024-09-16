@@ -53,7 +53,7 @@ const tokenClassPlain = createPlainFn({
   totalBurned: new BigNumber(0),
   totalMintAllowance: new BigNumber(0),
   totalSupply: new BigNumber(0),
-  authorities: [users.testAdminId]
+  authorities: [users.admin.identityKey]
 });
 
 const tokenAllowancePlain = (txUnixTime: number) => ({
@@ -64,8 +64,8 @@ const tokenAllowancePlain = (txUnixTime: number) => ({
   created: txUnixTime,
   expires: 0,
   instance: new BigNumber(0),
-  grantedBy: users.testAdminId,
-  grantedTo: users.testAdminId,
+  grantedBy: users.admin.identityKey,
+  grantedTo: users.admin.identityKey,
   uses: new BigNumber(1),
   usesSpent: new BigNumber(0)
 });
@@ -78,8 +78,8 @@ const tokenBurnAllowancePlain = (txUnixTime: number) => ({
   created: txUnixTime,
   expires: 0,
   instance: new BigNumber(0),
-  grantedBy: users.testUser1Id,
-  grantedTo: users.testUser2Id,
+  grantedBy: users.testUser1.identityKey,
+  grantedTo: users.testUser2.identityKey,
   uses: new BigNumber(1),
   usesSpent: new BigNumber(0)
 });
@@ -92,8 +92,8 @@ const tokenBurnAllowanceUser3Plain = (txUnixTime: number) => ({
   created: txUnixTime,
   expires: 0,
   instance: new BigNumber(0),
-  grantedBy: users.testUser3Id,
-  grantedTo: users.testUser2Id,
+  grantedBy: users.testUser3.identityKey,
+  grantedTo: users.testUser2.identityKey,
   uses: new BigNumber(1),
   usesSpent: new BigNumber(0)
 });
@@ -106,8 +106,8 @@ const tokenMintAllowancePlain = (txUnixTime: number) => ({
   created: txUnixTime,
   expires: 0,
   instance: new BigNumber(0),
-  grantedBy: users.testUser1Id,
-  grantedTo: users.testUser2Id,
+  grantedBy: users.testUser1.identityKey,
+  grantedTo: users.testUser2.identityKey,
   uses: new BigNumber(1),
   usesSpent: new BigNumber(0)
 });
@@ -124,7 +124,7 @@ const tokenInstancePlain = createPlainFn({
 
 const tokenBalancePlain = createPlainFn({
   ...tokenClassKeyPlain(),
-  owner: users.testUser1Id,
+  owner: users.testUser1.identityKey,
   inUseHolds: [],
   lockedHolds: [],
   instanceIds: [],
@@ -133,7 +133,7 @@ const tokenBalancePlain = createPlainFn({
 
 const tokenBurnPlain = (txUnixTime: number) => ({
   ...tokenInstanceKeyPlain(),
-  burnedBy: users.testUser1Id,
+  burnedBy: users.testUser1.identityKey,
   created: txUnixTime,
   quantity: new BigNumber(1)
 });

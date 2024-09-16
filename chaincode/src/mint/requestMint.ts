@@ -22,7 +22,8 @@ import {
   TokenClass,
   TokenClassKeyProperties,
   TokenMintRequest,
-  TokenMintStatus
+  TokenMintStatus,
+  createValidDTO
 } from "@gala-chain/api";
 import BigNumber from "bignumber.js";
 import { plainToInstance } from "class-transformer";
@@ -83,7 +84,7 @@ export async function requestMintBatch(
   if (errors.length > 0) {
     throw new Error(`No token was minted. Errors: ${errors.join("; ")}.`);
   } else {
-    const resDto = plainToInstance(FulfillMintDto, {
+    const resDto = await createValidDTO(FulfillMintDto, {
       requests: minted
     });
 

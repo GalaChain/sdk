@@ -12,9 +12,15 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-import { MintTokenDto, TokenBalance, TokenClass, TokenInstance, TokenMintFulfillment } from "@gala-chain/api";
+import {
+  MintTokenDto,
+  TokenBalance,
+  TokenClass,
+  TokenInstance,
+  TokenMintFulfillment,
+  createValidChainObject
+} from "@gala-chain/api";
 import BigNumber from "bignumber.js";
-import { plainToInstance } from "class-transformer";
 
 import { fetchOrCreateBalance } from "../balances";
 import { GalaChainContext } from "../types";
@@ -56,7 +62,7 @@ export async function constructVerifiedMints(
       instanceCounter = instanceCounter.plus("1");
       const mintInstance = new BigNumber(instanceCounter);
 
-      const nftInfo = plainToInstance(TokenInstance, {
+      const nftInfo = await createValidChainObject(TokenInstance, {
         collection,
         category,
         type,
@@ -80,7 +86,7 @@ export async function constructVerifiedMints(
 
     userBalance.ensureCanAddQuantity(quantity).add();
 
-    const fungibleReturnInstance = plainToInstance(TokenInstance, {
+    const fungibleReturnInstance = await createValidChainObject(TokenInstance, {
       collection,
       category,
       type,
