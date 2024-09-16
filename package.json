@@ -6,6 +6,7 @@
     "node": ">=16"
   },
   "scripts": {
+    "reset": "nx reset",
     "lint": "nx run-many -t lint",
     "fix": "nx run-many -t fix",
     "build": "nx run-many -t build",
