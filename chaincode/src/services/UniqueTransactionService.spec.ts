@@ -22,12 +22,13 @@ describe("UniqueTransactionService", () => {
   it("should not error if transaction with uniqueKey does not exist on chain", async () => {
     // Given
     const chaincode = new TestChaincode([TestGalaContract]);
+    const adminPrivateKey = process.env.DEV_ADMIN_PRIVATE_KEY as string;
 
     const dto = await createValidDTO(SuperheroDto, {
       name: "foo",
       age: 2,
       uniqueKey: "foo1"
-    });
+    }).signed(adminPrivateKey);
 
     const saveResponse = await chaincode.invoke("TestGalaContract:CreateSuperhero", dto.serialize());
     expect(saveResponse).toEqual(transactionSuccess());

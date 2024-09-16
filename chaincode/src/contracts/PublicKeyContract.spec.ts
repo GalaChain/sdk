@@ -14,6 +14,7 @@
  */
 import {
   ChainCallDTO,
+  GalaChainResponse,
   GalaChainSuccessResponse,
   GetMyProfileDto,
   GetPublicKeyDto,
@@ -22,10 +23,13 @@ import {
   RegisterUserDto,
   SigningScheme,
   UpdatePublicKeyDto,
+  UpdateUserRolesDto,
+  UserProfile,
+  UserRole,
   createValidDTO,
   signatures
 } from "@gala-chain/api";
-import { transactionErrorMessageContains, transactionSuccess } from "@gala-chain/test";
+import { fixture, transactionErrorMessageContains, transactionSuccess } from "@gala-chain/test";
 
 import TestChaincode from "../__test__/TestChaincode";
 import { PublicKeyService } from "../services";
@@ -36,16 +40,17 @@ import {
   createRegisteredUser,
   createSignedDto,
   createUser,
+  getMyProfile,
   getPublicKey,
   getUserProfile
-} from "./authorize.testutils.spec";
+} from "./authenticate.testutils.spec";
 
 it("should serve proper API", async () => {
   // Given
-  const chaincode = new TestChaincode([PublicKeyContract]);
+  const { contract, ctx } = fixture(PublicKeyContract);
 
   // When
-  const response = await chaincode.invoke("PublicKeyContract:GetContractAPI");
+  const response = await contract.GetContractAPI(ctx);
 
   // Then
   expect(response).toEqual(transactionSuccess());
@@ -533,7 +538,8 @@ describe("GetMyProfile", () => {
     expect(resp1).toEqual(
       transactionSuccess({
         alias: user.alias,
-        ethAddress: user.ethAddress
+        ethAddress: user.ethAddress,
+        roles: [UserRole.EVALUATE, UserRole.SUBMIT]
       })
     );
     expect(resp2).toEqual(resp1);
@@ -563,11 +569,62 @@ describe("GetMyProfile", () => {
     expect(resp1).toEqual(
       transactionSuccess({
         alias: user.alias,
-        tonAddress: user.tonAddress
+        tonAddress: user.tonAddress,
+        roles: UserProfile.DEFAULT_ROLES
       })
     );
     expect(resp2).toEqual(resp1);
   });
+});
+
+describe("UpdateUserRoles", () => {
+  it("should update user roles", async () => {
+    // Given
+    const chaincode = new TestChaincode([PublicKeyContract]);
+
+    // admin has curator role
+    const adminPrivateKey = process.env.DEV_ADMIN_PRIVATE_KEY as string;
+    const adminProfileResp = await getMyProfile(chaincode, adminPrivateKey);
+    expect(adminProfileResp).toEqual(
+      transactionSuccess(
+        expect.objectContaining({ roles: [UserRole.CURATOR, UserRole.EVALUATE, UserRole.SUBMIT] })
+      )
+    );
+
+    // test users
+    const user1 = await createRegisteredUser(chaincode);
+    const user2 = await createRegisteredUser(chaincode);
+
+    function setCuratorRole(user: string, signerPrivateKey: string) {
+      return updateUserRoles(chaincode, user, [UserRole.CURATOR], signerPrivateKey);
+    }
+
+    // When
+    const notAllowedByUser1 = await setCuratorRole(user2.alias, user1.privateKey);
+    const allowedByAdmin = await setCuratorRole(user1.alias, adminPrivateKey);
+    const allowedByUser1 = await setCuratorRole(user2.alias, user1.privateKey);
+
+    // Then
+    expect(notAllowedByUser1).toEqual(
+      transactionErrorMessageContains("does not have one of required roles: CURATOR")
+    );
+    expect(allowedByAdmin).toEqual(transactionSuccess());
+    expect(allowedByUser1).toEqual(transactionSuccess());
+  });
+
+  function updateUserRoles(
+    chaincode: TestChaincode,
+    user: string,
+    roles: UserRole[],
+    signerPrivateKey: string
+  ): Promise<GalaChainResponse<any>> {
+    const dto = new UpdateUserRolesDto();
+    dto.user = user;
+    dto.roles = roles;
+    dto.sign(signerPrivateKey);
+
+    return chaincode.invoke("PublicKeyContract:UpdateUserRoles", dto);
+  }
 });
 
 async function setup() {

@@ -5,6 +5,7 @@
     "outDir": "lib",
     "declarationDir": "lib",
     "composite": true,
+    "declarationMap": true,
     "sourceMap": true
   },
   "files": [],
