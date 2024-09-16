@@ -54,12 +54,13 @@ export default class TestChaincode {
     public readonly state: Record<string, string> = {},
     public readonly writes: Record<string, string> = {},
     public callingUser = "client|admin",
+    public callingUserMsp = "CuratorOrg",
     public readonly callHistory: unknown[] = []
   ) {
     const getCurrentCallingUser = () => {
       const [prefix, userId] = this.callingUser.split("|");
       if (userId === undefined) {
-        throw new Error("invalid calling user, expected format: client|userId");
+        throw new Error(`invalid calling user ${this.callingUser}, expected format: client|userId`);
       } else {
         return { userId, prefix };
       }
@@ -94,12 +95,18 @@ export default class TestChaincode {
     return this;
   }
 
+  public setCallingUserMsp(msp: string): TestChaincode {
+    this.callingUserMsp = msp;
+    return this;
+  }
+
   public async invoke<T = InvokeResponse>(
     method: string,
     ...args: (string | { serialize: () => string })[]
   ): Promise<T> {
     const argsSerialized = args.map((arg) => (typeof arg === "string" ? arg : arg.serialize()));
     const stub = new TestChaincodeStub([method, ...argsSerialized], this.state, this.writes);
+    stub.mockCreator(this.callingUserMsp, this.callingUser);
     const rawResponse = await this.chaincode.Invoke(stub);
 
     if (rawResponse.status === 200) {
