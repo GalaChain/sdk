@@ -16,8 +16,9 @@ import { LockTokenRequestParams, TransferTokenParams, signatures } from "@gala-c
 import { ethers } from "ethers";
 import { EventEmitter } from "events";
 
-import { GalachainConnectClient } from "./GalachainConnectClient";
+import { ClientFactory } from "./ClientFactory";
 import { generateEIP712Types } from "./Utils";
+import { MetamaskConnectClient } from "./customClients";
 
 global.fetch = jest.fn((url: string, options?: Record<string, unknown>) =>
   Promise.resolve({
@@ -32,6 +33,17 @@ global.fetch = jest.fn((url: string, options?: Record<string, unknown>) =>
 const sampleAddr = "0x3bb75c2Da3B669E253C338101420CC8dEBf0a777";
 
 class EthereumMock extends EventEmitter {
+  send(method: string, params?: Array<any> | Record<string, any>): Promise<any> {
+    if (method === "eth_requestAccounts") {
+      return Promise.resolve([sampleAddr]);
+    } else if (method === "eth_accounts") {
+      return Promise.resolve([sampleAddr]);
+    } else if (method === "personal_sign") {
+      return Promise.resolve("sampleSignature");
+    } else {
+      throw new Error(`Method not mocked: ${method}`);
+    }
+  }
   request(request: { method: string; params?: Array<any> | Record<string, any> }): Promise<any> {
     if (request.method === "eth_requestAccounts") {
       return Promise.resolve([sampleAddr]);
@@ -48,7 +60,7 @@ class EthereumMock extends EventEmitter {
 }
 window.ethereum = new EthereumMock();
 
-describe("GalachainConnectClient", () => {
+describe("MetamaskConnectClient", () => {
   it("test full flow", async () => {
     const dto: TransferTokenParams = {
       quantity: "1",
@@ -64,11 +76,11 @@ describe("GalachainConnectClient", () => {
     };
 
     // call connect
-    const client = new GalachainConnectClient("https://example.com");
-    await client.connectToMetaMask();
+    const client = new ClientFactory().metamaskClient("https://example.com");
+    await client.connect();
 
     // send dto payload in send function
-    const response = await client.send({ method: "TransferToken", payload: dto, sign: true });
+    const response = await client.submit({ method: "TransferToken", payload: dto, sign: true });
 
     expect(response).toEqual({
       Hash: {
@@ -116,7 +128,8 @@ describe("GalachainConnectClient", () => {
 
     const privateKey = "0x311e3750b1b698e70a2b37fd08b68fdcb389f955faea163f6ffa5be65cd0c251";
 
-    const client = new GalachainConnectClient("https://example.com");
+    const client = new MetamaskConnectClient("https://example.com");
+    await client.connect();
 
     const prefix = client.calculatePersonalSignPrefix(params);
     const prefixedPayload = { prefix, ...params };
@@ -144,7 +157,8 @@ describe("GalachainConnectClient", () => {
 
     const privateKey = "0x311e3750b1b698e70a2b37fd08b68fdcb389f955faea163f6ffa5be65cd0c251";
 
-    const client = new GalachainConnectClient("https://example.com");
+    const client = new MetamaskConnectClient("https://example.com");
+    await client.connect();
 
     const prefix = client.calculatePersonalSignPrefix(params);
     const prefixedPayload = { prefix, ...params };
@@ -172,7 +186,8 @@ describe("GalachainConnectClient", () => {
 
     const privateKey = "0x311e3750b1b698e70a2b37fd08b68fdcb389f955faea163f6ffa5be65cd0c251";
 
-    const client = new GalachainConnectClient("https://example.com");
+    const client = new MetamaskConnectClient("https://example.com");
+    await client.connect();
 
     const prefix = client.calculatePersonalSignPrefix(params);
     const prefixedPayload = { prefix, ...params };
@@ -199,7 +214,8 @@ describe("GalachainConnectClient", () => {
 
     const privateKey = "0x311e3750b1b698e70a2b37fd08b68fdcb389f955faea163f6ffa5be65cd0c251";
 
-    const client = new GalachainConnectClient("https://example.com");
+    const client = new MetamaskConnectClient("https://example.com");
+    await client.connect();
 
     const prefix = client.calculatePersonalSignPrefix(params);
     const prefixedPayload = { prefix, ...params };
@@ -214,5 +230,47 @@ describe("GalachainConnectClient", () => {
     const publicKey = signatures.recoverPublicKey(signature, { ...prefixedPayload, types, domain });
     const ethAddress = signatures.getEthAddress(publicKey);
     expect(ethAddress).toBe("e737c4D3072DA526f3566999e0434EAD423d06ec");
+  });
+});
+
+describe("TrustConnectClient", () => {
+  it("test full flow", async () => {
+    window.ethereum = new EthereumMock();
+    window.ethereum.isTrust = true;
+    const dto: TransferTokenParams = {
+      quantity: "1",
+      to: "client|63580d94c574ad78b121c267",
+      tokenInstance: {
+        additionalKey: "none",
+        category: "Unit",
+        collection: "GALA",
+        instance: "0",
+        type: "none"
+      },
+      uniqueKey: "26d4122e-34c8-4639-baa6-4382b398e68e"
+    };
+
+    // call connect
+    const client = new ClientFactory().trustClient("https://example.com");
+    await client.connect();
+
+    // send dto payload in send function
+    const response = await client.submit({ method: "TransferToken", payload: dto, sign: true });
+
+    expect(response).toEqual({
+      Hash: {
+        status: 1
+      },
+      Request: {
+        options: {
+          body: '{"domain":{"name":"Galachain"},"prefix":"\\u0019Ethereum Signed Message:\\n261","quantity":"1","signature":"sampleSignature","to":"client|63580d94c574ad78b121c267","tokenInstance":{"additionalKey":"none","category":"Unit","collection":"GALA","instance":"0","type":"none"},"types":{"TransferToken":[{"name":"quantity","type":"string"},{"name":"to","type":"string"},{"name":"tokenInstance","type":"tokenInstance"},{"name":"uniqueKey","type":"string"}],"tokenInstance":[{"name":"additionalKey","type":"string"},{"name":"category","type":"string"},{"name":"collection","type":"string"},{"name":"instance","type":"string"},{"name":"type","type":"string"}]},"uniqueKey":"26d4122e-34c8-4639-baa6-4382b398e68e"}',
+          headers: {
+            "Content-Type": "application/json"
+          },
+          method: "POST"
+        },
+        url: "https://example.com/TransferToken"
+      }
+    });
   });
 });
