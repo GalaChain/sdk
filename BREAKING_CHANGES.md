@@ -46,6 +46,16 @@ Probably for most users you won't need to do anything, as the default roles are 
 
 You may want to consult our acceptance test for migration from `allowedOrgs` to `allowedRoles` for more details, see [PublicKeyContract.migration.spec.ts](chaincode/src/contracts/PublicKeyContract.migration.spec.ts).
 
+#### Dropping support for legacy authentication
+
+We dropped support for the legacy authentication mechanism based on the Certificate Authority (CA) identity.
+We now require all transactions, that either (1) need to get current user (`ctx.callingUser`), or (2) need to verify the DTO signature, to be signed with the user's private key.
+This is a breaking change, as the old way of calling methods without a signature is no longer supported.
+
+It also means that:
+* DER signature with no additional data (`signerPublicKey` or `signerAddress`) is no longer supported, since it does not allow to recover the public key from the signature.
+* Some endpoints that were previously available without a signature and defaulted to CA username as `ctx.callingUser` now require a signature or explicit user parameter (for instance `GetPublicKey`, `FetchBalances`, `FetchAllowances`).
+
 #### API changes for unit tests with `fixture` utility
 
 Starting from version `2.0.0`:
