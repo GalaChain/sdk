@@ -49,8 +49,12 @@ const invalid___ = labeled<Signature>("invalid signature")((srcDto, privK) => {
 
 // Public key can be either present or not
 type PublicKey = (dto: ChainCallDTO, u: User) => void;
+const otherPK = signatures.genKeyPair().publicKey;
+const otherAdd = signatures.getEthAddress(otherPK);
 const signerKey = labeled<PublicKey>("signer key")((dto, u) => (dto.signerPublicKey = u.publicKey));
+const _wrongKey = labeled<PublicKey>("wrong signer key")((dto) => (dto.signerPublicKey = otherPK));
 const signerAdd = labeled<PublicKey>("signer address")((dto, u) => (dto.signerAddress = u.ethAddress));
+const _wrongAdd = labeled<PublicKey>("wrong signer address")((dto) => (dto.signerAddress = otherAdd));
 const _________ = labeled<PublicKey>("raw dto")(() => ({}));
 
 // User can be registered or not
@@ -78,21 +82,27 @@ test.each([
   [__valid___, _________, ___registered, Success],
   [__valid___, _________, notRegistered, Error("USER_NOT_REGISTERED")],
   [__valid___, signerKey, ___registered, Error("REDUNDANT_SIGNER_PUBLIC_KEY")],
+  [__valid___, _wrongKey, ___registered, Error("PUBLIC_KEY_MISMATCH")],
   [__valid___, signerKey, notRegistered, Error("REDUNDANT_SIGNER_PUBLIC_KEY")],
+  [__valid___, _wrongKey, ___registered, Error("PUBLIC_KEY_MISMATCH")],
   [__valid___, signerAdd, ___registered, Error("REDUNDANT_SIGNER_ADDRESS")],
+  [__valid___, _wrongAdd, ___registered, Error("ADDRESS_MISMATCH")],
   [__valid___, signerAdd, notRegistered, Error("REDUNDANT_SIGNER_ADDRESS")],
-  [__validDER, _________, ___registered, Error("UNAUTHORIZED")], // we don't support legacy here
-  [__validDER, _________, notRegistered, Error("USER_NOT_REGISTERED")],
+  [__valid___, _wrongAdd, notRegistered, Error("ADDRESS_MISMATCH")],
+  [__validDER, _________, ___registered, Error("MISSING_SIGNER")],
+  [__validDER, _________, notRegistered, Error("MISSING_SIGNER")],
   [__validDER, signerKey, ___registered, Success],
+  [__validDER, _wrongKey, ___registered, Error("PK_INVALID_SIGNATURE")],
   [__validDER, signerKey, notRegistered, Error("USER_NOT_REGISTERED")],
   [__validDER, signerAdd, ___registered, Success],
+  [__validDER, _wrongAdd, ___registered, Error("USER_NOT_REGISTERED")],
   [__validDER, signerAdd, notRegistered, Error("USER_NOT_REGISTERED")],
   [invalid___, _________, ___registered, Error("USER_NOT_REGISTERED")], // tries to get other user's profile
   [invalid___, _________, notRegistered, Error("USER_NOT_REGISTERED")],
-  [invalid___, signerKey, ___registered, Error("REDUNDANT_SIGNER_PUBLIC_KEY")],
-  [invalid___, signerKey, notRegistered, Error("REDUNDANT_SIGNER_PUBLIC_KEY")],
-  [invalid___, signerAdd, ___registered, Error("REDUNDANT_SIGNER_ADDRESS")],
-  [invalid___, signerAdd, notRegistered, Error("REDUNDANT_SIGNER_ADDRESS")]
+  [invalid___, signerKey, ___registered, Error("PUBLIC_KEY_MISMATCH")],
+  [invalid___, signerKey, notRegistered, Error("PUBLIC_KEY_MISMATCH")],
+  [invalid___, signerAdd, ___registered, Error("ADDRESS_MISMATCH")],
+  [invalid___, signerAdd, notRegistered, Error("ADDRESS_MISMATCH")]
 ])(
   "(sig: %s, dto: %s, user: %s) => %s",
   async (

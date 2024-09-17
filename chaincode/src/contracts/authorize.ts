@@ -15,7 +15,6 @@
 import { ForbiddenError, UnauthorizedError } from "@gala-chain/api";
 
 import { GalaChainContext } from "../types";
-import { legacyClientAccountId } from "./legacyClientAccountId";
 
 class MissingRoleError extends UnauthorizedError {
   constructor(callingUser: string, callingUserRoles: string[] | undefined, allowedRoles: string[]) {
@@ -36,8 +35,7 @@ export function ensureOrganizationIsAllowed(ctx: GalaChainContext, allowedOrgsMS
     const message =
       `Members of organization ${userMsp} do not have sufficient permissions.` +
       ` Required one of [${allowedOrgsMSPs?.join(", ")}].`;
-    const caUser = legacyClientAccountId(ctx);
-    throw new OrganizationNotAllowedError(message, { caUser, userMsp });
+    throw new OrganizationNotAllowedError(message, { userMsp });
   }
 }
 
