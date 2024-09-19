@@ -39,10 +39,11 @@ export function ensureOrganizationIsAllowed(ctx: GalaChainContext, allowedOrgsMS
   }
 }
 
-export function ensureRoleIsAllowed(ctx: GalaChainContext, allowedRoles: string[]) {
+export async function ensureRoleIsAllowed(ctx: GalaChainContext, allowedRoles: string[]) {
   const hasRole = allowedRoles.some((role) => ctx.callingUserRoles?.includes(role));
   if (!hasRole) {
-    throw new MissingRoleError(ctx.callingUser, ctx.callingUserRoles, allowedRoles);
+    const callingUser = await (async () => ctx.callingUser)().catch(() => "anonymous");
+    throw new MissingRoleError(callingUser, ctx.callingUserRoles, allowedRoles);
   }
 }
 
@@ -55,6 +56,6 @@ export async function authorize(
   }
 
   if (options.allowedRoles) {
-    ensureRoleIsAllowed(ctx, options.allowedRoles);
+    await ensureRoleIsAllowed(ctx, options.allowedRoles);
   }
 }
