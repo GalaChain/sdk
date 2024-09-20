@@ -234,7 +234,6 @@ function updatedFabloConfigWithEntry(
 
 function customValidation(flags: any): void {
   const { channel, channelType, chaincodeName, chaincodeDir, envConfig } = flags;
-  console.log(flags);
 
   /*
     Check if the flags does not have special characters like &, |, ;, :, etc. Only -, _ and . and are allowed
@@ -253,8 +252,6 @@ function customValidation(flags: any): void {
         if (flag.length > maxLength) {
           throw new Error(`Error: Flag ${flag} is too long. Maximum length is ${maxLength} characters.`);
         }
-        console.log(flag);
-        console.log(specialChars.test(flag));
         if (specialChars.test(flag)) {
           throw new Error(`Error: Flag ${flag} contains special characters. Only - and _ are allowed.`);
         }
@@ -345,7 +342,7 @@ function reduce(args: any): SingleArg[] {
 
 function copyNetworkScriptsTo(targetPath: string): void {
   const sourceScriptsDir = path.resolve(require.resolve("."), "../../../network");
-  execSync(`mkdir -p "${targetPath}" && cd "${targetPath}" && cp -R "${sourceScriptsDir}"/* ./ && ls -lh`);
+  execSync(`mkdir -p "${targetPath}" && cd "${targetPath}" && cp -R "${sourceScriptsDir}"/* ./`);
 }
 
 function saveConnectionProfiles(
