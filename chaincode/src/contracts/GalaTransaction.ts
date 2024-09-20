@@ -36,7 +36,6 @@ import { GalaContract } from "./GalaContract";
 import { updateApi } from "./GalaContractApi";
 import { authenticate } from "./authenticate";
 import { authorize } from "./authorize";
-import { legacyClientAccountId } from "./legacyClientAccountId";
 
 // All DTOs need to be registered in the application, including super classes. Otherwise, chaincode
 // containers will fail to start. Below we register just some base classes. Actual DTO classes are
@@ -162,10 +161,10 @@ function GalaTransaction<T extends ChainCallDTO>(
         if (ctx.isDryRun) {
           // Do not authenticate in dry run mode
         } else if (options?.verifySignature || dto?.signature !== undefined) {
-          ctx.callingUserData = await authenticate(ctx, dto, legacyClientAccountId(ctx));
+          ctx.callingUserData = await authenticate(ctx, dto);
         } else {
-          // it means a request where authorization is not required
-          ctx.callingUserData = { alias: legacyClientAccountId(ctx), roles: [UserRole.EVALUATE] };
+          // it means a request where authorization is not required. Intentionally misses alias field
+          ctx.callingUserData = { roles: [UserRole.EVALUATE] };
         }
 
         // Authorize the user
