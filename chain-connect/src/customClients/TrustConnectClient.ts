@@ -15,7 +15,7 @@
 import { ChainCallDTO, ConstructorArgs } from "@gala-chain/api";
 import { BrowserProvider, getAddress } from "ethers";
 
-import { CustomClient } from "../GalachainClient";
+import { CustomClient, WebSigner } from "../GalachainClient";
 import { generateEIP712Types } from "../Utils";
 import { ExtendedEip1193Provider } from "../helpers";
 
@@ -91,7 +91,7 @@ function getTrustWalletFromWindow() {
   return window["trustwallet"] ?? null;
 }
 
-export class GalachainConnectTrustClient extends CustomClient {
+export class GalachainConnectTrustClient extends WebSigner {
   constructor() {
     super();
     this.address = "";

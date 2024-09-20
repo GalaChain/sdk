@@ -12,43 +12,15 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-import { ChainCallDTO, ConstructorArgs, serialize, signatures } from "@gala-chain/api";
+import { ChainCallDTO, serialize, signatures } from "@gala-chain/api";
 import { BrowserProvider, SigningKey, computeAddress, getAddress, getBytes, hashMessage } from "ethers";
 
-import { CustomEventEmitter, MetaMaskEvents } from "./helpers";
+import { EventEmitter, Listener, MetaMaskEvents } from "./helpers";
 
-export abstract class CustomClient extends CustomEventEmitter<MetaMaskEvents> {
-  abstract connect(): Promise<string>;
+export abstract class CustomClient {
   abstract sign(method: string, dto: any): Promise<any>;
-
-  protected address: string;
-  protected provider: BrowserProvider | undefined;
-
-  set setWalletAddress(val: string) {
-    this.address = getAddress(`0x${val.replace(/0x|eth\|/, "")}`);
-  }
-
-  get getGalachainAddress() {
-    return this.address.replace("0x", "eth|");
-  }
-
-  get getWalletAddress(): string {
-    return this.address;
-  }
-
-  async getPublicKey() {
-    const message = "Sign this to retrieve your public key";
-
-    const signature = await this.signMessage(message);
-
-    const messageHash = hashMessage(message);
-
-    const publicKey = SigningKey.recoverPublicKey(getBytes(messageHash), signature);
-
-    const recoveredAddress = computeAddress(publicKey);
-
-    return { publicKey, recoveredAddress };
-  }
+  abstract getPublicKey(): Promise<{ publicKey: string; recoveredAddress: string }>;
+  abstract getWalletAddress: string;
 
   async submit<T, U>({
     url,
@@ -115,6 +87,53 @@ export abstract class CustomClient extends CustomEventEmitter<MetaMaskEvents> {
       return prefix;
     }
     return this.calculatePersonalSignPrefix(newPayload);
+  }
+}
+export abstract class WebSigner extends CustomClient {
+  protected address: string;
+  protected provider: BrowserProvider | undefined;
+  abstract connect(): Promise<string>;
+
+  set setWalletAddress(val: string) {
+    this.address = getAddress(`0x${val.replace(/0x|eth\|/, "")}`);
+  }
+
+  get getGalachainAddress() {
+    return this.address.replace("0x", "eth|");
+  }
+
+  get getWalletAddress(): string {
+    return this.address;
+  }
+
+  private eventEmitter = new EventEmitter<MetaMaskEvents>();
+
+  public on(event: keyof MetaMaskEvents, listener: Listener<string | string[] | null>): this {
+    this.eventEmitter.on(event, listener);
+    return this;
+  }
+
+  public off(event: keyof MetaMaskEvents, listener: Listener<string | string[] | null>): this {
+    this.eventEmitter.off(event, listener);
+    return this;
+  }
+
+  public emit(event: keyof MetaMaskEvents, data: string[] | string | null): boolean {
+    return this.eventEmitter.emit(event, data);
+  }
+
+  async getPublicKey() {
+    const message = "Sign this to retrieve your public key";
+
+    const signature = await this.signMessage(message);
+
+    const messageHash = hashMessage(message);
+
+    const publicKey = SigningKey.recoverPublicKey(getBytes(messageHash), signature);
+
+    const recoveredAddress = computeAddress(publicKey);
+
+    return { publicKey, recoveredAddress };
   }
 
   public async signMessage(message: string) {

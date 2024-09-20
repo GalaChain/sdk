@@ -12,7 +12,21 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+import { signatures } from "@gala-chain/api";
 import { Eip1193Provider } from "ethers";
+
+export function calculatePersonalSignPrefix(payload: object): string {
+  const payloadLength = signatures.getPayloadToSign(payload).length;
+  const prefix = "\u0019Ethereum Signed Message:\n" + payloadLength;
+
+  const newPayload = { ...payload, prefix };
+  const newPayloadLength = signatures.getPayloadToSign(newPayload).length;
+
+  if (payloadLength === newPayloadLength) {
+    return prefix;
+  }
+  return this.calculatePersonalSignPrefix(newPayload);
+}
 
 export interface ExtendedEip1193Provider extends Eip1193Provider {
   on(event: "accountsChanged", handler: (accounts: string[]) => void): void;
@@ -25,10 +39,10 @@ export interface MetaMaskEvents {
   accountsChanged: string[] | null;
 }
 
-type Listener<T> = (data: T) => void;
+export type Listener<T> = (data: T) => void;
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
-export abstract class CustomEventEmitter<Events extends Record<string, any>> {
+export class EventEmitter<Events extends Record<string, any>> {
   private listeners: { [K in keyof Events]?: Listener<Events[K]>[] } = {};
 
   public on<K extends keyof Events>(event: K, listener: Listener<Events[K]>): this {

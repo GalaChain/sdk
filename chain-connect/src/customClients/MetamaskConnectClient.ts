@@ -12,12 +12,12 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-import { ChainCallDTO, ConstructorArgs, signatures } from "@gala-chain/api";
+import { ChainCallDTO, ConstructorArgs } from "@gala-chain/api";
 import { BrowserProvider, getAddress } from "ethers";
 
-import { CustomClient } from "../GalachainClient";
+import { WebSigner } from "../GalachainClient";
 import { generateEIP712Types } from "../Utils";
-import { CustomEventEmitter, ExtendedEip1193Provider, MetaMaskEvents } from "../helpers";
+import { ExtendedEip1193Provider } from "../helpers";
 
 declare global {
   interface Window {
@@ -25,7 +25,7 @@ declare global {
   }
 }
 
-export class MetamaskConnectClient extends CustomClient {
+export class MetamaskConnectClient extends WebSigner {
   constructor() {
     super();
     this.address = "";
