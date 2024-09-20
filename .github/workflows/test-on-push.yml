@@ -141,8 +141,6 @@ jobs:
         run: |
           (cd ./project-test && ../npm-pack-and-replace.sh --skipConfirmation)
           npm i --prefix ./project-test
-      - name: Remove nvm file to avoid Fablo calling it and raising nvm issue with npm_config_prefix env
-        run: rm ~/.nvm/nvm.sh
       - name: Run network in non-watch mode
         run: npm run network:up --prefix ./project-test
       - name: Run E2E tests
