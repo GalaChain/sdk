@@ -6,6 +6,7 @@
     "node": ">=16"
   },
   "scripts": {
+    "reset": "nx reset",
     "lint": "nx run-many -t lint",
     "fix": "nx run-many -t fix",
     "build": "nx run-many -t build",
@@ -68,11 +69,15 @@
   },
   "peerDependencies": {
     "@nx/nx-darwin-arm64": "17.3.2",
+    "@nx/nx-linux-arm64-gnu": "17.3.2",
     "@nx/nx-linux-x64-gnu": "17.3.2",
     "@nx/nx-linux-x64-musl": "17.3.2"
   },
   "peerDependenciesMeta": {
     "@nx/nx-darwin-arm64": {
+      "optional": true
+    },
+    "@nx/nx-linux-arm64-gnu": {
       "optional": true
     },
     "@nx/nx-linux-x64-gnu": {

@@ -12,15 +12,5 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
-/* eslint-disable */
-export default {
-  displayName: "chain-connect",
-  preset: "../jest.preset.js",
-  testEnvironment: "jsdom",
-  transform: {
-    "^.+\\.ts$": ["ts-jest", { tsconfig: "<rootDir>/tsconfig.spec.json" }]
-  },
-  moduleFileExtensions: ["ts", "js", "html"],
-  coverageDirectory: "../coverage/chain-connect"
-};
+export * from "./TokenApi";
+export * from "./PublicKeyApi";

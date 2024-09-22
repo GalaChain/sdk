@@ -12,51 +12,50 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-import {
-  GetMyProfileDto,
-  GetMyProfileParams,
-  RegisterEthUserDto,
-  RegisterUserDto,
-  RegisterUserParams,
-  UpdatePublicKeyDto,
-  UpdatePublicKeyParams,
-  UserProfileBody
-} from "@gala-chain/api";
+import { RegisterUserParams, UpdatePublicKeyParams, UserProfileBody } from "@gala-chain/api";
 
-import { GalachainConnectClient } from "./GalachainConnectClient";
+import { CustomClient } from "../GalachainClient";
 
-export class PublicKeyClient {
-  constructor(private client: GalachainConnectClient) {}
+export class PublicKeyApi {
+  constructor(
+    private chainCodeUrl: string,
+    private connection: CustomClient
+  ) {}
 
-  public GetMyProfile(dto: GetMyProfileParams) {
-    return this.client.send<UserProfileBody, GetMyProfileParams>({
+  // PublicKey Chaincode calls:
+  public GetMyProfile(message?: string) {
+    return this.connection.submit<UserProfileBody, { message?: string }>({
       method: "GetMyProfile",
-      payload: dto,
-      sign: true
+      payload: { message },
+      sign: true,
+      url: this.chainCodeUrl
     });
   }
 
   public RegisterUser(dto: RegisterUserParams) {
-    return this.client.send<string, RegisterUserParams>({
+    return this.connection.submit<string, RegisterUserParams>({
       method: "RegisterUser",
       payload: dto,
-      sign: true
+      sign: true,
+      url: this.chainCodeUrl
     });
   }
 
   public RegisterEthUser(dto: RegisterUserParams) {
-    return this.client.send<string, RegisterUserParams>({
+    return this.connection.submit<string, RegisterUserParams>({
       method: "RegisterEthUser",
       payload: dto,
-      sign: true
+      sign: true,
+      url: this.chainCodeUrl
     });
   }
 
   public UpdatePublicKey(dto: UpdatePublicKeyParams) {
-    return this.client.send<void, UpdatePublicKeyParams>({
+    return this.connection.submit<void, UpdatePublicKeyParams>({
       method: "UpdatePublicKey",
       payload: dto,
-      sign: true
+      sign: true,
+      url: this.chainCodeUrl
     });
   }
 }

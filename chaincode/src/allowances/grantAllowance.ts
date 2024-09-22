@@ -18,6 +18,7 @@ import {
   ChainObject,
   GrantAllowanceQuantity,
   TokenAllowance,
+  TokenBalance,
   TokenClass,
   TokenInstance,
   TokenInstanceKey,
@@ -25,6 +26,7 @@ import {
   TokenMintAllowance,
   TokenMintAllowanceRequest,
   TokenMintStatus,
+  TokenNotInBalanceError,
   createValidChainObject,
   createValidRangedChainObject
 } from "@gala-chain/api";
@@ -50,6 +52,7 @@ import {
   putRangedChainObject
 } from "../utils";
 import {
+  BalanceNotFoundError,
   DuplicateAllowanceError,
   DuplicateUserError,
   GrantAllowanceFailedError,
@@ -533,6 +536,16 @@ export async function grantAllowance(
           AllowanceType[allowanceType],
           tokenInstance.owner
         );
+      }
+
+      // verify if the token exists in the balance
+      const [balance]: (TokenBalance | undefined)[] = await fetchBalances(ctx, {
+        ...instanceKey,
+        owner: tokenInstance.owner
+      });
+      const currentInstances = balance?.getNftInstanceIds() ?? [];
+      if (!currentInstances.some((i) => i.eq(instanceKey.instance))) {
+        throw new TokenNotInBalanceError(tokenInstance.owner, instanceKey, instanceKey.instance);
       }
     }
 
