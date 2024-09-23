@@ -20,13 +20,15 @@ export class PublicKeyApi {
   constructor(
     private chainCodeUrl: string,
     private connection: CustomClient
-  ) {}
+  ) { }
 
   // PublicKey Chaincode calls:
   public GetMyProfile(message?: string) {
     return this.connection.submit<UserProfileBody, { message?: string }>({
       method: "GetMyProfile",
-      payload: { message },
+      payload: {
+        ...(message ? { message } : {})
+      },
       sign: true,
       url: this.chainCodeUrl
     });

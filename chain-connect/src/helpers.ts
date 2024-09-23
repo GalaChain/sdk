@@ -25,7 +25,7 @@ export function calculatePersonalSignPrefix(payload: object): string {
   if (payloadLength === newPayloadLength) {
     return prefix;
   }
-  return this.calculatePersonalSignPrefix(newPayload);
+  return calculatePersonalSignPrefix(newPayload);
 }
 
 export interface ExtendedEip1193Provider extends Eip1193Provider {
