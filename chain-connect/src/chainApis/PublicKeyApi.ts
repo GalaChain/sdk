@@ -20,7 +20,7 @@ export class PublicKeyApi {
   constructor(
     private chainCodeUrl: string,
     private connection: CustomClient
-  ) { }
+  ) {}
 
   // PublicKey Chaincode calls:
   public GetMyProfile(message?: string) {
