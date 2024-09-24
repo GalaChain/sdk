@@ -66,7 +66,7 @@ export abstract class CustomClient {
       try {
         const data = await response.json();
         if (data.error) {
-          return Promise.reject(data.message || data.error);
+          return Promise.reject(data.message ? new Error(data.message) : data.error);
         }
         return Promise.resolve(id ? { Hash: id, ...data } : data);
       } catch (error) {
