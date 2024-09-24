@@ -12,12 +12,12 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-import { ChainCallDTO, ConstructorArgs, signatures } from "@gala-chain/api";
+import { ChainCallDTO, ConstructorArgs } from "@gala-chain/api";
 import { BrowserProvider, getAddress } from "ethers";
 
-import { CustomClient } from "../GalachainClient";
+import { WebSigner } from "../GalachainClient";
 import { generateEIP712Types } from "../Utils";
-import { CustomEventEmitter, ExtendedEip1193Provider, MetaMaskEvents } from "../helpers";
+import { ExtendedEip1193Provider } from "../helpers";
 
 declare global {
   interface Window {
@@ -25,7 +25,7 @@ declare global {
   }
 }
 
-export class MetamaskConnectClient extends CustomClient {
+export class MetamaskConnectClient extends WebSigner {
   constructor() {
     super();
     this.address = "";
@@ -42,11 +42,11 @@ export class MetamaskConnectClient extends CustomClient {
     }
     window.ethereum.on("accountsChanged", (accounts: string[]) => {
       if (accounts.length > 0) {
-        this.setWalletAddress = getAddress(accounts[0]);
-        this.emit("accountChanged", this.getGalachainAddress);
+        this.walletAddress = getAddress(accounts[0]);
+        this.emit("accountChanged", this.galachainEthAlias);
         this.emit("accountsChanged", accounts);
       } else {
-        this.setWalletAddress = "";
+        this.walletAddress = "";
         this.emit("accountChanged", null);
         this.emit("accountsChanged", null);
       }
@@ -61,8 +61,8 @@ export class MetamaskConnectClient extends CustomClient {
 
     try {
       const accounts = (await this.provider.send("eth_requestAccounts", [])) as string[];
-      this.setWalletAddress = getAddress(accounts[0]);
-      return this.getGalachainAddress;
+      this.walletAddress = getAddress(accounts[0]);
+      return this.galachainEthAlias;
     } catch (error: unknown) {
       throw new Error((error as Error).message);
     }
@@ -80,7 +80,7 @@ export class MetamaskConnectClient extends CustomClient {
     }
 
     try {
-      const domain = { name: "Galachain" };
+      const domain = { name: "GalaChain" };
       const types = generateEIP712Types(method, payload);
 
       const prefix = this.calculatePersonalSignPrefix(payload);
