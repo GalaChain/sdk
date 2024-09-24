@@ -51,17 +51,6 @@ plugins:
   - search
   - mike
   - awesome-pages
-  - with-pdf:
-      exclude_pages:
-        - "chain-api-docs/"
-        - "chain-client-docs/"
-        - "chaincode-docs/"
-        - "chain-test-docs/"
-      cover_subtitle: ""
-      output_path: "pdf/sdk-documentation.pdf"
-      copyright: "&copy; 2024 Gala Games"
-      render_js: true
-      headless_chrome_path: google-chrome
 
 markdown_extensions:
   - pymdownx.superfences:
