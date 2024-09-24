@@ -75,7 +75,7 @@ If you want to access your Windows file system directly from WSL (e.g., to work 
    cd /mnt/c/Users/YourUsername/Documents/MyFolder
    ```
    
-### 4. Install dependencies and start network
+### 5. Install dependencies and start network
 
 1. Use the [WSL extension on VSCode](https://marketplace.visualstudio.com/items?itemName=ms-vscode-remote.remote-wsl) to connect to your WSL distribution.
 2. Install Node Version Manager (NVM) on your WSL distribution: https://learn.microsoft.com/en-us/windows/dev-environment/javascript/nodejs-on-wsl#install-nvm-nodejs-and-npm
