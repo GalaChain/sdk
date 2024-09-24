@@ -20,7 +20,7 @@ import { EventEmitter, Listener, MetaMaskEvents } from "./helpers";
 export abstract class CustomClient {
   abstract sign(method: string, dto: any): Promise<any>;
   abstract getPublicKey(): Promise<{ publicKey: string; recoveredAddress: string }>;
-  abstract getWalletAddress: string;
+  abstract walletAddress: string;
 
   async submit<T, U>({
     url,
@@ -94,16 +94,16 @@ export abstract class WebSigner extends CustomClient {
   protected provider: BrowserProvider | undefined;
   abstract connect(): Promise<string>;
 
-  set setWalletAddress(val: string) {
+  set walletAddress(val: string) {
     this.address = getAddress(`0x${val.replace(/0x|eth\|/, "")}`);
   }
 
-  get getGalachainAddress() {
-    return this.address.replace("0x", "eth|");
+  get walletAddress(): string {
+    return this.address;
   }
 
-  get getWalletAddress(): string {
-    return this.address;
+  get galachainEthAlias() {
+    return this.address.replace("0x", "eth|");
   }
 
   private eventEmitter = new EventEmitter<MetaMaskEvents>();

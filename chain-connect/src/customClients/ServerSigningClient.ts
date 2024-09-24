@@ -19,7 +19,7 @@ import { generateEIP712Types } from "../Utils";
 import { calculatePersonalSignPrefix } from "../helpers";
 
 export class ServerSigningClient extends CustomClient {
-  get getWalletAddress(): string {
+  get walletAddress(): string {
     return this.wallet.address;
   }
   async getPublicKey(): Promise<{ publicKey: string; recoveredAddress: string }> {

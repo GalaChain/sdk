@@ -103,11 +103,11 @@ export class GalachainConnectTrustClient extends WebSigner {
     }
     window.ethereum.on("accountsChanged", (accounts: string[]) => {
       if (accounts.length > 0) {
-        this.setWalletAddress = getAddress(accounts[0]);
+        this.walletAddress = getAddress(accounts[0]);
         this.emit("accountChanged", this.getGalachainAddress);
         this.emit("accountsChanged", accounts);
       } else {
-        this.setWalletAddress = "";
+        this.walletAddress = "";
         this.emit("accountChanged", null);
         this.emit("accountsChanged", null);
       }
@@ -123,7 +123,7 @@ export class GalachainConnectTrustClient extends WebSigner {
 
     try {
       const accounts = (await this.provider.send("eth_requestAccounts", [])) as string[];
-      this.setWalletAddress = getAddress(accounts[0]);
+      this.walletAddress = getAddress(accounts[0]);
       return this.getGalachainAddress;
     } catch (error: any) {
       if (error.code === 4001) {
