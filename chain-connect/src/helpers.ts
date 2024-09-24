@@ -16,16 +16,18 @@ import { signatures } from "@gala-chain/api";
 import { Eip1193Provider } from "ethers";
 
 export function calculatePersonalSignPrefix(payload: object): string {
-  const payloadLength = signatures.getPayloadToSign(payload).length;
-  const prefix = "\u0019Ethereum Signed Message:\n" + payloadLength;
+  let payloadLength = signatures.getPayloadToSign(payload).length;
+  let prefix = "\u0019Ethereum Signed Message:\n" + payloadLength;
+  let previousLength = -1;
 
-  const newPayload = { ...payload, prefix };
-  const newPayloadLength = signatures.getPayloadToSign(newPayload).length;
-
-  if (payloadLength === newPayloadLength) {
-    return prefix;
+  while (payloadLength !== previousLength) {
+    previousLength = payloadLength;
+    prefix = "\u0019Ethereum Signed Message:\n" + payloadLength;
+    const newPayload = { ...payload, prefix };
+    payloadLength = signatures.getPayloadToSign(newPayload).length;
   }
-  return calculatePersonalSignPrefix(newPayload);
+
+  return prefix;
 }
 
 export interface ExtendedEip1193Provider extends Eip1193Provider {

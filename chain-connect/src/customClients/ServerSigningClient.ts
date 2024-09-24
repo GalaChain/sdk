@@ -23,7 +23,7 @@ export class ServerSigningClient extends CustomClient {
     return this.wallet.address;
   }
   async getPublicKey(): Promise<{ publicKey: string; recoveredAddress: string }> {
-    const message = "I <3 Galachain";
+    const message = "I <3 GalaChain";
     const signedMessage = await this.wallet.signMessage(message);
     const publicKey = SigningKey.recoverPublicKey(hashMessage(message), signedMessage);
     const recoveredAddress = computeAddress(publicKey);
@@ -42,7 +42,7 @@ export class ServerSigningClient extends CustomClient {
     payload: U
   ): Promise<U & { signature: string; prefix: string }> {
     try {
-      const domain = { name: "Galachain" };
+      const domain = { name: "GalaChain" };
       const types = generateEIP712Types(method, payload);
 
       const prefix = calculatePersonalSignPrefix(payload);

@@ -43,7 +43,7 @@ export class MetamaskConnectClient extends WebSigner {
     window.ethereum.on("accountsChanged", (accounts: string[]) => {
       if (accounts.length > 0) {
         this.walletAddress = getAddress(accounts[0]);
-        this.emit("accountChanged", this.getGalachainAddress);
+        this.emit("accountChanged", this.galachainEthAlias);
         this.emit("accountsChanged", accounts);
       } else {
         this.walletAddress = "";
@@ -62,7 +62,7 @@ export class MetamaskConnectClient extends WebSigner {
     try {
       const accounts = (await this.provider.send("eth_requestAccounts", [])) as string[];
       this.walletAddress = getAddress(accounts[0]);
-      return this.getGalachainAddress;
+      return this.galachainEthAlias;
     } catch (error: unknown) {
       throw new Error((error as Error).message);
     }
@@ -80,7 +80,7 @@ export class MetamaskConnectClient extends WebSigner {
     }
 
     try {
-      const domain = { name: "Galachain" };
+      const domain = { name: "GalaChain" };
       const types = generateEIP712Types(method, payload);
 
       const prefix = this.calculatePersonalSignPrefix(payload);
