@@ -56,8 +56,6 @@ export async function saveOracleDefinition(
     authorities: data.authorities
   });
 
-  await oracle.validateOrReject();
-
   await putChainObject(ctx, oracle);
 
   return oracle;

@@ -17,6 +17,7 @@ import { Exclude, Type } from "class-transformer";
 import {
   ArrayNotEmpty,
   ArrayUnique,
+  IsBoolean,
   IsNotEmpty,
   IsNumber,
   IsOptional,
@@ -33,6 +34,7 @@ import { BigNumberProperty } from "../validators";
 import { OracleDefinition } from "./OracleDefinition";
 import { ExternalToken, OraclePriceAssertion } from "./OraclePriceAssertion";
 import { OraclePriceCrossRateAssertion } from "./OraclePriceCrossRateAssertion";
+import { TokenClassKey } from "./TokenClass";
 import { TokenInstanceKey } from "./TokenInstance";
 import { ChainCallDTO } from "./dtos";
 
@@ -337,6 +339,22 @@ export class OracleBridgeFeeAssertionDto extends ChainCallDTO {
   @Min(0)
   @Max(32)
   public galaDecimals: number;
+
+  @JSONSchema({
+    description:
+      "The token requested to bridge. Token Class used to query the estimated " + "transaction fee units."
+  })
+  @ValidateNested()
+  @Type(() => TokenClassKey)
+  public bridgeToken: TokenClassKey;
+
+  @JSONSchema({
+    description:
+      "Set to true if the query to the bridge validator for the bridge-request token " +
+      "included ?nft=true. Otherwise false."
+  })
+  @IsBoolean()
+  public bridgeTokenIsNonFungible: boolean;
 
   @JSONSchema({
     description: "Estimated number of gas units required for the transaction."

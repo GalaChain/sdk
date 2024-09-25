@@ -35,6 +35,5 @@ export async function writeChannelPaymentReceipt(
 ): Promise<void> {
   const channelPaymentReceipt: FeeChannelPaymentReceipt = plainToInstance(FeeChannelPaymentReceipt, data);
 
-  await channelPaymentReceipt.validateOrReject();
   await putChainObject(ctx, channelPaymentReceipt);
 }

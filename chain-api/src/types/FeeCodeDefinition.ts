@@ -25,7 +25,8 @@ export enum FeeAccelerationRateType {
   Additive = 1,
   Multiplicative = 2,
   Exponential = 3,
-  Logarithmic = 4
+  Logarithmic = 4,
+  Custom = 5
 }
 
 export class FeeCodeDefinition extends ChainObject {

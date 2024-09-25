@@ -21,6 +21,8 @@ import {
   ChainId,
   ChainObject,
   ErrorCode,
+  FeeAccelerationRateType,
+  FeeCodeDefinition,
   FeeGateCodes,
   FillTokenSwapDto,
   FulfillMintAllowanceDto,
@@ -33,10 +35,10 @@ import {
   OracleBridgeFeeAssertionDto,
   OracleDefinition,
   OraclePriceAssertion,
-  PaymentRequiredError,
   RequestTokenBridgeOutDto,
   TerminateTokenSwapDto,
   TransferTokenDto,
+  UnauthorizedError,
   ValidationFailedError
 } from "@gala-chain/api";
 import BigNumber from "bignumber.js";
@@ -44,7 +46,7 @@ import { plainToInstance } from "class-transformer";
 
 import { authorize } from "../contracts";
 import { KnownOracles } from "../oracle";
-import { GalaChainContext } from "../types";
+import { GalaChainContext, createValidChainObject } from "../types";
 import { getObjectByKey, putChainObject } from "../utils";
 import { galaFeeGate, writeUsageAndCalculateFeeAmount } from "./galaFeeGate";
 import { payFeeFromCrossChannelAuthorization } from "./payFeeFromCrossChannelAuthorization";
@@ -212,11 +214,10 @@ export async function requestTokenBridgeOutFeeGate(ctx: GalaChainContext, dto: R
   }
 
   await oracleAssertion.validateOrReject().catch((e) => {
-    throw new PaymentRequiredError(
+    throw new ValidationFailedError(
       `Bridge Token Out Fee Gate requires a valid Oracle Assertion providing the ` +
         `estimated transaction fee for the destination chain. Provided ` +
-        `oracleAssertion DTO validation failed: ${e.message}`,
-      { paymentQuantity: oracleAssertion.estimatedTotalTxFeeInGala?.toString() }
+        `oracleAssertion DTO validation failed: ${e.message}`
     );
   });
 
@@ -227,26 +228,43 @@ export async function requestTokenBridgeOutFeeGate(ctx: GalaChainContext, dto: R
     !oracleDefinition.authorities.includes(identity.ethAddress ?? "") &&
     !oracleDefinition.authorities.includes(oracleAssertion.signingIdentity)
   ) {
-    throw new PaymentRequiredError(
+    throw new UnauthorizedError(
       `BridgeTokenOut to destination chain ${destinationChainId} requires ` +
         `an Oracle to calculate an appropriate transaction fee. ` +
         `Received an assertion dto  with alias: ${identity.alias}, ` +
         `ethAddress?: ${identity.ethAddress}, and ` +
         `assertion signingIdentity: ${oracleAssertion.signingIdentity}. ` +
         `None of which are listed in the authorities definition: ` +
-        `${oracleDefinition.authorities.join(", ")}`,
-      { paymentQuantity: oracleAssertion.estimatedTotalTxFeeInGala.toString() }
+        `${oracleDefinition.authorities.join(", ")}`
     );
   }
 
   const gasFeeQuantity: BigNumber = oracleAssertion.estimatedTotalTxFeeInGala;
 
-  // additional, GalaChain usage based fees optionally defined with FeeCodeDefinition(s)
-  const { feeAmount, feeCodeDefinitions } = await writeUsageAndCalculateFeeAmount(ctx, {
+  // standard GalaChain usage based fees optionally defined with FeeCodeDefinition(s)
+  const { feeAmount, feeCodeDefinitions, cumulativeUses } = await writeUsageAndCalculateFeeAmount(ctx, {
     feeCode: FeeGateCodes.BridgeTokenOut
   });
 
-  const combinedFeeTotal = gasFeeQuantity.plus(feeAmount);
+  const individualUsageFee = feeAmount;
+
+  const bridgeSpecificFeeDefinitions: FeeCodeDefinition[] = feeCodeDefinitions.filter((d) => {
+    return (
+      d.feeAccelerationRateType === FeeAccelerationRateType.Custom &&
+      cumulativeUses.isGreaterThanOrEqualTo(d.feeThresholdUses)
+    );
+  });
+
+  const txFeeAccelerationDefinition = bridgeSpecificFeeDefinitions.pop();
+
+  const destinationChainTxFeeMultiplier: BigNumber =
+    txFeeAccelerationDefinition !== undefined
+      ? txFeeAccelerationDefinition.feeAccelerationRate
+      : new BigNumber("1");
+
+  const paddedGasFeeQuantity = gasFeeQuantity.times(destinationChainTxFeeMultiplier);
+
+  const combinedFeeTotal = paddedGasFeeQuantity.plus(individualUsageFee);
 
   if (combinedFeeTotal.isGreaterThan(0)) {
     const isCrossChannelFee = feeCodeDefinitions[0]?.isCrossChannel ?? false;
@@ -289,13 +307,10 @@ export async function requestTokenBridgeOutFeeGate(ctx: GalaChainContext, dto: R
     timestamp
   });
 
-  bridgeFeeAssertionRecord.galaExchangeRate = plainToInstance(OraclePriceAssertion, {
+  bridgeFeeAssertionRecord.galaExchangeRate = await createValidChainObject(OraclePriceAssertion, {
     ...galaExchangeRate,
     txid
   });
-
-  await bridgeFeeAssertionRecord.galaExchangeRate.validateOrReject();
-  await bridgeFeeAssertionRecord.validateOrReject();
 
   await putChainObject(ctx, bridgeFeeAssertionRecord);
 }

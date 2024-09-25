@@ -66,8 +66,6 @@ export async function settleFeeBalances(
       status: FeeReceiptStatus.Open
     });
 
-    await receipt.validateOrReject();
-
     await putChainObject(ctx, receipt);
 
     settlement.receipt = receipt;

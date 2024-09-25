@@ -70,6 +70,7 @@ export async function galaFeeGate(ctx: GalaChainContext, data: GalaFeeGateParams
 export interface FeeAmountAndUses {
   feeAmount: BigNumber;
   feeCodeDefinitions: FeeCodeDefinition[];
+  cumulativeUses: BigNumber;
 }
 
 export async function writeUsageAndCalculateFeeAmount(
@@ -85,6 +86,10 @@ export async function writeUsageAndCalculateFeeAmount(
     [feeCode],
     FeeCodeDefinition
   );
+
+  feeCodeDefinitions.sort((a: FeeCodeDefinition, b: FeeCodeDefinition) => {
+    return a.feeThresholdUses.minus(b.feeThresholdUses).toNumber();
+  });
 
   const useThresholdChainKey = ChainObject.getCompositeKeyFromParts(FeeThresholdUses.INDEX_KEY, [
     feeCode,
@@ -116,7 +121,7 @@ export async function writeUsageAndCalculateFeeAmount(
 
   await putChainObject(ctx, userFeeThresholdUses);
 
-  return { feeAmount, feeCodeDefinitions };
+  return { feeAmount, feeCodeDefinitions, cumulativeUses };
 }
 
 export interface cumulativeUsesAndFeeAmount {
@@ -187,6 +192,9 @@ function calculateFeeAmountBasedOnAccelerationRateType(
           Math.log(chargeableUses.multipliedBy(billableCode.feeAccelerationRate).toNumber())
         ); // baseQuantity + log(chargeableUses * feeAccelerationRate)
         break;
+      case FeeAccelerationRateType.Custom:
+        // Expect Custom FeeCodeDefintions rate accelerations to be calculated elsewhere
+        continue;
       default:
         //feeAmount = feeAmount.plus(billableCode.baseQuantity);
         feeAmount = billableCode.baseQuantity.plus(

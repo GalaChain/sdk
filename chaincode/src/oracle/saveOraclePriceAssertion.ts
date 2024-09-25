@@ -68,8 +68,6 @@ export async function saveOraclePriceAssertion(ctx: GalaChainContext, dto: Oracl
     timestamp
   });
 
-  await priceAssertion.validateOrReject();
-
   await putChainObject(ctx, priceAssertion);
 
   return priceAssertion;

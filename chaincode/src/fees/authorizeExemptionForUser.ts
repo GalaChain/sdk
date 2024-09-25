@@ -27,8 +27,6 @@ export async function authorizeExemptionForUser(ctx: GalaChainContext, dto: FeeE
     exemption.limitedTo = dto.limitTo;
   }
 
-  await exemption.validateOrReject();
-
   await putChainObject(ctx, exemption);
 
   return exemption;

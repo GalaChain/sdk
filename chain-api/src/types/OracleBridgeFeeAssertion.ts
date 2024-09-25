@@ -14,13 +14,14 @@
  */
 import BigNumber from "bignumber.js";
 import { Type } from "class-transformer";
-import { IsNotEmpty, IsNumber, Max, Min, ValidateNested } from "class-validator";
+import { IsBoolean, IsNotEmpty, IsNumber, Max, Min, ValidateNested } from "class-validator";
 import { JSONSchema } from "class-validator-jsonschema";
 
 import { ChainKey } from "../utils";
 import { BigNumberProperty } from "../validators";
 import { ChainObject } from "./ChainObject";
 import { OraclePriceAssertion } from "./OraclePriceAssertion";
+import { TokenClassKey } from "./TokenClass";
 
 @JSONSchema({
   description: "Response with signed bridging fee data."
@@ -60,6 +61,22 @@ export class OracleBridgeFeeAssertion extends ChainObject {
   @Min(0)
   @Max(32)
   public galaDecimals: number;
+
+  @JSONSchema({
+    description:
+      "The token requested to bridge. Token Class used to query the estimated " + "transaction fee units."
+  })
+  @ValidateNested()
+  @Type(() => TokenClassKey)
+  public bridgeToken: TokenClassKey;
+
+  @JSONSchema({
+    description:
+      "Set to true if the query to the bridge validator for the bridge-request token " +
+      "included ?nft=true. Otherwise false."
+  })
+  @IsBoolean()
+  public bridgeTokenIsNonFungible: boolean;
 
   @JSONSchema({
     description: "Estimated number of gas units required for the transaction."
