@@ -14,3 +14,4 @@
  */
 export * from "./MetamaskConnectClient";
 export * from "./TrustConnectClient";
+export * from "./ServerSigningClient";

@@ -1,0 +1,42 @@
+{
+  "compileOnSave": false,
+  "compilerOptions": {
+    "moduleDetection": "force",
+    "baseUrl": ".",
+    "rootDir": ".",
+    "module": "commonjs",
+    "moduleResolution": "node",
+    "resolveJsonModule": true,
+    "target": "ES2019",
+    "lib": ["ES2019"],
+    "emitDecoratorMetadata": true,
+    "experimentalDecorators": true,
+    "declaration": true,
+    "declarationMap": false,
+    "sourceMap": true,
+    "importHelpers": true,
+    "esModuleInterop": true,
+    "strictNullChecks": true,
+    "composite": true,
+    "skipLibCheck": true,
+    "noPropertyAccessFromIndexSignature": false,
+    "strictPropertyInitialization": false,
+    "paths": {
+      "@gala-chain/api": ["chain-api/src/index.ts"],
+      "@gala-chain/chaincode": ["chaincode/src/index.ts"],
+      "@gala-chain/cli": ["chain-cli/src/index.ts"],
+      "@gala-chain/client": ["chain-client/src/index.ts"],
+      "@gala-chain/test": ["chain-test/src/index.ts"]
+    }
+  },
+  "exclude": ["node_modules", "tmp"],
+  "include": [
+    "chain-cli/**/*.ts",
+    "chain-api/**/*.ts",
+    "chain-client/**/*.ts",
+    "chaincode/**/*.ts",
+    "chain-test/**/*.ts",
+    "package.json",
+    "chain-client/src/ops-api-config-schema.json"
+  ]
+}
