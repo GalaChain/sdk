@@ -8,11 +8,8 @@ GalaChain Connect is a library that provides developers with capabilities compar
 - [Installation](#installation)
 - [Building](#building)
 - [Running Unit Tests](#running-unit-tests)
-- [Usage](#usage)
 - [Examples](#examples)
 - [Local Library Testing](#local-library-testing)
-- [API Documentation](#api-documentation)
-- [License](#license)
 
 ## Features
 
@@ -44,13 +41,9 @@ To execute the unit tests via [Jest](https://jestjs.io), run:
 nx test chain-connect
 ```
 
-## Usage
-
-For detailed usage examples, including client-side and server-side signing and calling of GalaChain, please refer to the [Examples Documentation](docs/EXAMPLES.md).
-
 ## Examples
 
-The [Examples Documentation](docs/EXAMPLES.md) provides detailed examples on how to use GalaChain Connect, including:
+The [Examples Documentation](docs/Examples.md) provides detailed examples on how to use GalaChain Connect, including:
 
 - Connecting to a Web3 wallet and interacting with GalaChain on the client side.
 - Performing server-side signing and interactions using a private key.
