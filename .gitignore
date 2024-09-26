@@ -8,6 +8,10 @@ public/
 lib
 **/oclif.manifest.json
 gala-chain-*-*.tgz
+docs/chain-api-docs
+docs/chain-client-docs
+docs/chain-test-docs
+docs/chaincode-docs
 
 # dependencies
 node_modules

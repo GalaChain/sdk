@@ -25,12 +25,13 @@ import {
 } from "@gala-chain/api";
 import { currency, fixture, nft, users, writesMap } from "@gala-chain/test";
 import BigNumber from "bignumber.js";
-import { plainToInstance } from "class-transformer";
+import { instanceToInstance, plainToInstance } from "class-transformer";
 
 import GalaChainTokenContract from "../__test__/GalaChainTokenContract";
 import { InvalidDecimalError } from "../token";
 import { inverseEpoch, inverseTime } from "../utils";
 import { InsufficientBurnAllowanceError } from "./BurnError";
+import { burnTokens } from "./burnTokens";
 
 describe("BurnTokens", () => {
   it("should BurnTokens", async () => {
@@ -442,4 +443,131 @@ describe("BurnTokens", () => {
     );
     expect(getWrites()).toEqual({});
   });
+
+  it(
+    "should increment the total when multiple quantities " +
+      "with identical parameters are passed to burnTokens()",
+    async () => {
+      // Given
+      const currencyInstance = currency.tokenInstance();
+      const currencyInstanceKey = currency.tokenInstanceKey();
+      const currencyClass = currency.tokenClass();
+      const tokenBalance = currency.tokenBalance();
+      const burnQty = new BigNumber("1");
+      const burn2Qty = new BigNumber("2");
+
+      const { ctx, contract, writes } = fixture(GalaChainTokenContract)
+        .callingUser(users.testUser1Id)
+        .savedState(currencyClass, currencyInstance, tokenBalance)
+        .savedRangeState([]);
+
+      const dto = await createValidDTO(BurnTokensDto, {
+        tokenInstances: [
+          { tokenInstanceKey: currencyInstanceKey, quantity: burnQty },
+          { tokenInstanceKey: currencyInstanceKey, quantity: burn2Qty }
+        ],
+        owner: users.testUser1Id
+      });
+
+      const tokenBurn = currency.tokenBurn();
+      tokenBurn.created = ctx.txUnixTime;
+      tokenBurn.quantity = burnQty.plus(burn2Qty);
+
+      const tokenBurnCounter = plainToInstance(
+        TokenBurnCounter,
+        currency.tokenBurnCounterPlain(
+          ctx.txUnixTime,
+          inverseTime(ctx, 0),
+          inverseEpoch(ctx, 0),
+          new BigNumber("0")
+        )
+      );
+      tokenBurnCounter.referenceId = tokenBurnCounter.referencedBurnId();
+      tokenBurnCounter.quantity = burnQty.plus(burn2Qty);
+
+      // When
+      const response = await contract.BurnTokens(ctx, dto);
+
+      // Then
+      expect(response).toEqual(GalaChainResponse.Success([tokenBurn]));
+      expect(writes).toEqual(
+        writesMap(
+          plainToInstance(TokenBalance, {
+            ...currency.tokenBalance(),
+            quantity: tokenBalance.getQuantityTotal().minus(burnQty).minus(burn2Qty)
+          }),
+          tokenBurn,
+          tokenBurnCounter
+        )
+      );
+    }
+  );
+
+  it(
+    "should increment the total when burnTokens() is called multiple times with identical " +
+      "token instance parameters within a single transaction",
+    async () => {
+      // Given
+      const currencyInstance = currency.tokenInstance();
+      const currencyInstanceKey = currency.tokenInstanceKey();
+      const currencyClass = currency.tokenClass();
+      const tokenBalance = currency.tokenBalance();
+      const burnQty = new BigNumber("1");
+      const burn2Qty = new BigNumber("2");
+
+      const { ctx, contract, writes } = fixture(GalaChainTokenContract)
+        .callingUser(users.testUser1Id)
+        .savedState(currencyClass, currencyInstance, tokenBalance)
+        .savedRangeState([]);
+
+      const call1 = {
+        toBurn: [{ tokenInstanceKey: currencyInstanceKey, quantity: burnQty }],
+        owner: users.testUser1Id
+      };
+
+      const call2 = {
+        toBurn: [{ tokenInstanceKey: currencyInstanceKey, quantity: burn2Qty }],
+        owner: users.testUser1Id
+      };
+
+      const tokenBurn = currency.tokenBurn();
+      tokenBurn.created = ctx.txUnixTime;
+      tokenBurn.quantity = burnQty;
+
+      const tokenBurnWithSumTotal = instanceToInstance(tokenBurn);
+      tokenBurnWithSumTotal.quantity = burnQty.plus(burn2Qty);
+
+      const tokenBurnCounter = plainToInstance(
+        TokenBurnCounter,
+        currency.tokenBurnCounterPlain(
+          ctx.txUnixTime,
+          inverseTime(ctx, 0),
+          inverseEpoch(ctx, 0),
+          new BigNumber("0")
+        )
+      );
+      tokenBurnCounter.referenceId = tokenBurnCounter.referencedBurnId();
+      tokenBurnCounter.quantity = burnQty.plus(burn2Qty);
+
+      // When
+      const result1 = await burnTokens(ctx, call1);
+      const result2 = await burnTokens(ctx, call2);
+
+      await ctx.stub.flushWrites();
+
+      // Then
+      expect(result1).toEqual([tokenBurn]);
+      expect(result2).toEqual([tokenBurnWithSumTotal]);
+      expect(writes).toEqual(
+        writesMap(
+          plainToInstance(TokenBalance, {
+            ...currency.tokenBalance(),
+            quantity: tokenBalance.getQuantityTotal().minus(burnQty).minus(burn2Qty)
+          }),
+          tokenBurnWithSumTotal,
+          tokenBurnCounter
+        )
+      );
+    }
+  );
 });
