@@ -100,6 +100,40 @@ export async function createTokenClass() {
 }
 ```
 
+### Template
+
+In your Vue component, you can add a simple template with a connect button and a button to create a token class:
+
+```html
+<template>
+    <div>
+        <button @click="connectToMetaMask">Connect to MetaMask</button>
+        <button @click="createTokenClass" :disabled="!isConnected">Create Token Class</button>
+        <p v-if="connectedUser">
+            Connected Account(s):
+            <span> {{ connectedUser }}</span>
+        </p>
+    </div>
+</template>
+
+<script>
+import { connectToMetaMask, createTokenClass, connectedUser, isConnected } from './your-code-from-above';
+
+export default {
+    setup() {
+        return {
+            connectToMetaMask,
+            createTokenClass,
+            message,
+            connectedUser,
+            isConnected,
+        };
+    },
+};
+</script>
+```
+
+
 ### Generating Wallets
 
 You can generate new wallets using the `WalletUtils` utility provided by GalaChain Connect.
@@ -208,38 +242,6 @@ In your Vue component, you can add a button to generate a wallet:
 </script>
 ```
 
-### Template
-
-In your Vue component, you can add a simple template with a connect button and a button to create a token class:
-
-```html
-<template>
-    <div>
-        <button @click="connectToMetaMask">Connect to MetaMask</button>
-        <button @click="createTokenClass" :disabled="!isConnected">Create Token Class</button>
-        <p v-if="connectedUser">
-            Connected Account(s):
-            <span> {{ connectedUser }}</span>
-        </p>
-    </div>
-</template>
-
-<script>
-import { connectToMetaMask, createTokenClass, connectedUser, isConnected } from './path-to-your-script';
-
-export default {
-    setup() {
-        return {
-            connectToMetaMask,
-            createTokenClass,
-            message,
-            connectedUser,
-            isConnected,
-        };
-    },
-};
-</script>
-```
 
 ## Server-Side Signing
 
