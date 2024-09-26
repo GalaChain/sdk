@@ -127,7 +127,8 @@ describe("MetamaskConnectClient", () => {
         additionalKey: "none",
         instance: "0",
         type: "none"
-      }
+      },
+      uniqueKey: "uniqueKey-123"
     };
 
     const privateKey = "0x311e3750b1b698e70a2b37fd08b68fdcb389f955faea163f6ffa5be65cd0c251";
@@ -156,7 +157,8 @@ describe("MetamaskConnectClient", () => {
         additionalKey: "none",
         instance: "0",
         type: "none"
-      }
+      },
+      uniqueKey: "uniqueKey-123"
     };
 
     const privateKey = "0x311e3750b1b698e70a2b37fd08b68fdcb389f955faea163f6ffa5be65cd0c251";
@@ -185,7 +187,8 @@ describe("MetamaskConnectClient", () => {
         additionalKey: "none",
         instance: "0",
         type: "none"
-      }
+      },
+      uniqueKey: "uniqueKey-123"
     };
 
     const privateKey = "0x311e3750b1b698e70a2b37fd08b68fdcb389f955faea163f6ffa5be65cd0c251";
@@ -213,7 +216,8 @@ describe("MetamaskConnectClient", () => {
         additionalKey: "none",
         instance: "0",
         type: "none"
-      }
+      },
+      uniqueKey: "uniqueKey-123"
     };
 
     const privateKey = "0x311e3750b1b698e70a2b37fd08b68fdcb389f955faea163f6ffa5be65cd0c251";

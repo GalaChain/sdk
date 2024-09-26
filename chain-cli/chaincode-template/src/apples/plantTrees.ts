@@ -16,9 +16,9 @@ import { ConflictError } from "@gala-chain/api";
 import { GalaChainContext, getObjectByKey, putChainObject } from "@gala-chain/chaincode";
 
 import { AppleTree } from "./AppleTree";
-import { AppleTreeDto, AppleTreesDto } from "./dtos";
+import { AppleTreeDto, PlantAppleTreesDto } from "./dtos";
 
-export async function plantTrees(ctx: GalaChainContext, dto: AppleTreesDto): Promise<AppleTree[]> {
+export async function plantTrees(ctx: GalaChainContext, dto: PlantAppleTreesDto): Promise<AppleTree[]> {
   const ops = dto.trees.map((tree) => plantTree(ctx, tree));
 
   return await Promise.all(ops);
