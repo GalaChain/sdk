@@ -19,7 +19,8 @@ import {
   TokenBurn,
   TokenClassKey,
   TokenInstanceKey,
-  createValidDTO
+  createValidDTO,
+  createValidSubmitDTO
 } from "@gala-chain/api";
 import { ChainUser } from "@gala-chain/client";
 import {
@@ -63,7 +64,7 @@ describe("NFT Burn scenario", () => {
 
   it("User should burn tokens", async () => {
     // Given
-    const burnTokensDto = await createValidDTO<BurnTokensDto>(BurnTokensDto, {
+    const burnTokensDto = await createValidSubmitDTO(BurnTokensDto, {
       tokenInstances: [
         {
           tokenInstanceKey: TokenInstanceKey.nftKey(nftClassKey, 1),

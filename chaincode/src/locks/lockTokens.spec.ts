@@ -12,7 +12,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-import { GalaChainResponse, LockTokenDto, TokenHold, createValidDTO } from "@gala-chain/api";
+import { GalaChainResponse, LockTokenDto, TokenHold, createValidSubmitDTO } from "@gala-chain/api";
 import { currency, fixture, nft, users, writesMap } from "@gala-chain/test";
 import BigNumber from "bignumber.js";
 
@@ -29,14 +29,14 @@ describe("LockTokens", () => {
     const balance = nft.tokenBalance();
     expect(balance.getNftInstanceIds()).toContainEqual(nftInstance.instance);
 
-    const dto = await createValidDTO(LockTokenDto, {
+    const dto = await createValidSubmitDTO(LockTokenDto, {
       owner: users.testUser1.identityKey,
       lockAuthority: users.testUser1.identityKey,
       tokenInstance: nftInstanceKey,
       quantity: new BigNumber("1")
     }).signed(users.testUser1.privateKey);
 
-    const { ctx, contract, writes } = fixture(GalaChainTokenContract)
+    const { ctx, contract, getWrites } = fixture(GalaChainTokenContract)
       .registeredUsers(users.testUser1)
       .savedState(nftClass, nftInstance, balance);
 
@@ -60,7 +60,7 @@ describe("LockTokens", () => {
 
     // Then
     expect(response).toEqual(GalaChainResponse.Success(balanceWithHold));
-    expect(writes).toEqual(writesMap(balanceWithHold));
+    expect(getWrites()).toEqual(writesMap(balanceWithHold));
   });
 
   test(`Fails when quantity lower than decimal limit (10)`, async () => {
@@ -74,14 +74,14 @@ describe("LockTokens", () => {
 
     const decimalQuantity = new BigNumber("0.000000000001");
 
-    const dto = await createValidDTO(LockTokenDto, {
+    const dto = await createValidSubmitDTO(LockTokenDto, {
       owner: users.testUser1.identityKey,
       lockAuthority: users.testUser1.identityKey,
       tokenInstance: currencyInstanceKey,
       quantity: decimalQuantity
     }).signed(users.testUser1.privateKey);
 
-    const { ctx, contract, writes } = fixture(GalaChainTokenContract)
+    const { ctx, contract, getWrites } = fixture(GalaChainTokenContract)
       .registeredUsers(users.testUser1)
       .savedState(currencyClass, currencyInstance, balance);
 
@@ -92,6 +92,6 @@ describe("LockTokens", () => {
     expect(response).toEqual(
       GalaChainResponse.Error(new InvalidDecimalError(decimalQuantity, currencyClass.decimals))
     );
-    expect(writes).toEqual({});
+    expect(getWrites()).toEqual({});
   });
 });

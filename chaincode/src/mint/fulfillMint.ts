@@ -14,7 +14,14 @@
  */
 import {
   AllowanceType,
+  ChainCallDTO,
+  ChainError,
+  ChainObject,
+  FulfillMintDto,
+  GalaChainResponse,
   MintRequestDto,
+  MintTokenDto,
+  RuntimeError,
   TokenAllowance,
   TokenClass,
   TokenClassKey,
@@ -22,10 +29,8 @@ import {
   TokenInstanceKey,
   TokenMintFulfillment,
   TokenMintRequest,
-  createValidDTO
+  createValidSubmitDTO
 } from "@gala-chain/api";
-import { ChainCallDTO, ChainError, ChainObject, GalaChainResponse, RuntimeError } from "@gala-chain/api";
-import { FulfillMintDto, MintTokenDto } from "@gala-chain/api";
 import BigNumber from "bignumber.js";
 import { plainToInstance } from "class-transformer";
 import { inspect } from "util";
@@ -33,13 +38,14 @@ import { inspect } from "util";
 import { ensureQuantityCanBeMinted, useAllowances } from "../allowances";
 import { fetchKnownBurnCount } from "../burns/fetchBurns";
 import { GalaChainContext } from "../types";
-import { getObjectByKey, putChainObject } from "../utils";
 import {
   blockTimeout,
   generateInverseTimeKey,
+  getObjectByKey,
   inverseKeyLength,
   inversionHeight,
-  lookbackTimeOffset
+  lookbackTimeOffset,
+  putChainObject
 } from "../utils";
 import { constructVerifiedMints } from "./constructVerifiedMints";
 import { indexMintRequests } from "./indexMintRequests";
@@ -254,7 +260,7 @@ export async function fulfillMintRequest(
       } else {
         const mintFulfillmentEntry: TokenMintFulfillment = req.fulfill(req.quantity);
 
-        const mintDto: MintTokenDto = await createValidDTO(MintTokenDto, {
+        const mintDto: MintTokenDto = await createValidSubmitDTO(MintTokenDto, {
           tokenClass: plainToInstance(TokenClassKey, { collection, category, type, additionalKey }),
           owner: req.owner,
           quantity: req.quantity,

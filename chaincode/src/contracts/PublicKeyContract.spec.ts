@@ -27,6 +27,8 @@ import {
   UserProfile,
   UserRole,
   createValidDTO,
+  createValidSubmitDTO,
+  randomUniqueKey,
   signatures
 } from "@gala-chain/api";
 import { fixture, transactionErrorMessageContains, transactionSuccess } from "@gala-chain/test";
@@ -68,7 +70,7 @@ describe("RegisterUser", () => {
   it("should register user", async () => {
     // Given
     const chaincode = new TestChaincode([PublicKeyContract]);
-    const dto = await createValidDTO<RegisterUserDto>(RegisterUserDto, { user: "client|user1", publicKey });
+    const dto = await createValidSubmitDTO(RegisterUserDto, { user: "client|user1", publicKey });
     const signedDto = dto.signed(process.env.DEV_ADMIN_PRIVATE_KEY as string);
 
     // When
@@ -97,7 +99,7 @@ describe("RegisterUser", () => {
     const chaincode = new TestChaincode([PublicKeyContract]);
     const user = await createRegisteredUser(chaincode);
 
-    const registerDto = await createValidDTO(RegisterUserDto, {
+    const registerDto = await createValidSubmitDTO(RegisterUserDto, {
       publicKey: user.publicKey,
       user: user.alias
     });
@@ -115,7 +117,7 @@ describe("RegisterUser", () => {
     const chaincode = new TestChaincode([PublicKeyContract]);
     const user = await createRegisteredUser(chaincode);
 
-    const registerDto = await createValidDTO(RegisterUserDto, {
+    const registerDto = await createValidSubmitDTO(RegisterUserDto, {
       publicKey: user.publicKey,
       user: "client|new_user"
     });
@@ -134,7 +136,7 @@ describe("RegisterUser", () => {
     const chaincode = new TestChaincode([PublicKeyContract]);
     const user2 = await createUser();
     chaincode.setCallingUser(user2.alias);
-    const dto = await createValidDTO<RegisterUserDto>(RegisterUserDto, {
+    const dto = await createValidSubmitDTO<RegisterUserDto>(RegisterUserDto, {
       user: user2.alias,
       publicKey: user2.publicKey
     });
@@ -148,7 +150,10 @@ describe("RegisterUser", () => {
     expect(user2.publicKey.length).toEqual(newPublicKey.length);
 
     chaincode.setCallingUser("client|admin");
-    const registerDto = await createValidDTO(RegisterUserDto, { publicKey: newPublicKey, user: user2.alias });
+    const registerDto = await createValidSubmitDTO(RegisterUserDto, {
+      publicKey: newPublicKey,
+      user: user2.alias
+    });
     const signedRegisterDto = registerDto.signed(process.env.DEV_ADMIN_PRIVATE_KEY as string);
 
     // When
@@ -173,7 +178,7 @@ describe("RegisterUser", () => {
     const chaincode = new TestChaincode([PublicKeyContract]);
     const user2 = await createUser();
     chaincode.setCallingUser(user2.alias);
-    const dto = await createValidDTO<RegisterUserDto>(RegisterUserDto, {
+    const dto = await createValidSubmitDTO<RegisterUserDto>(RegisterUserDto, {
       user: user2.alias,
       publicKey: user2.publicKey
     });
@@ -185,7 +190,7 @@ describe("RegisterUser", () => {
     expect(response).toEqual(transactionSuccess());
 
     chaincode.setCallingUser("client|admin");
-    const registerDto = await createValidDTO(RegisterUserDto, {
+    const registerDto = await createValidSubmitDTO(RegisterUserDto, {
       publicKey: user2.publicKey,
       user: user2.alias
     });
@@ -215,7 +220,7 @@ describe("RegisterUser", () => {
     const alias = `eth|${ethAddress}`;
 
     const chaincode = new TestChaincode([PublicKeyContract]);
-    const dto = await createValidDTO<RegisterEthUserDto>(RegisterEthUserDto, { publicKey });
+    const dto = await createValidSubmitDTO<RegisterEthUserDto>(RegisterEthUserDto, { publicKey });
     const signedDto = dto.signed(process.env.DEV_ADMIN_PRIVATE_KEY as string);
 
     // When
@@ -247,7 +252,7 @@ describe("RegisterUser", () => {
     const alias = `ton|${address}`;
 
     const chaincode = new TestChaincode([PublicKeyContract]);
-    const dto = await createValidDTO<RegisterTonUserDto>(RegisterTonUserDto, { publicKey });
+    const dto = await createValidSubmitDTO<RegisterTonUserDto>(RegisterTonUserDto, { publicKey });
     const signedDto = dto.signed(process.env.DEV_ADMIN_PRIVATE_KEY as string);
 
     // When
@@ -281,7 +286,7 @@ describe("UpdatePublicKey", () => {
       "040e8bda5af346c5a7a7312a94b34023e8c9610abf40e550de9696422312a9a67ea748dbe2686f9a115c58021fe538163285a97368f44b6bf8b13a8306c86e8c5a";
     expect(newPublicKey).not.toEqual(user.publicKey);
 
-    const updateDto = await createValidDTO(UpdatePublicKeyDto, { publicKey: newPublicKey });
+    const updateDto = await createValidSubmitDTO(UpdatePublicKeyDto, { publicKey: newPublicKey });
     const signedUpdateDto = updateDto.signed(user.privateKey);
 
     // When
@@ -314,7 +319,7 @@ describe("UpdatePublicKey", () => {
       "040e8bda5af346c5a7a7312a94b34023e8c9610abf40e550de9696422312a9a67ea748dbe2686f9a115c58021fe538163285a97368f44b6bf8b13a8306c86e8c5a";
     expect(newPublicKey).not.toEqual(user.publicKey);
 
-    const updateDto = await createValidDTO(UpdatePublicKeyDto, { publicKey: newPublicKey });
+    const updateDto = await createValidSubmitDTO(UpdatePublicKeyDto, { publicKey: newPublicKey });
     const signedUpdateDto = updateDto.signed(user.privateKey);
 
     // When
@@ -338,7 +343,7 @@ describe("UpdatePublicKey", () => {
 
     // new User Register under old public key
     // Given
-    const dto = await createValidDTO<RegisterUserDto>(RegisterUserDto, {
+    const dto = await createValidSubmitDTO<RegisterUserDto>(RegisterUserDto, {
       user: "client|newUser",
       publicKey: oldPublicKey
     });
@@ -363,7 +368,7 @@ describe("UpdatePublicKey", () => {
     const chaincode = new TestChaincode([PublicKeyContract]);
     const user = await createRegisteredTonUser(chaincode);
     const newPair = await signatures.ton.genKeyPair();
-    const dto = await createValidDTO(UpdatePublicKeyDto, {
+    const dto = await createValidSubmitDTO(UpdatePublicKeyDto, {
       publicKey: Buffer.from(newPair.publicKey).toString("base64"),
       signerPublicKey: user.publicKey,
       signing: SigningScheme.TON
@@ -392,13 +397,13 @@ describe("UpdatePublicKey", () => {
     const ethKeyPair = signatures.genKeyPair();
     const tonKeyPair = await signatures.ton.genKeyPair();
 
-    const dtoTonToEth = await createValidDTO(UpdatePublicKeyDto, {
+    const dtoTonToEth = await createValidSubmitDTO(UpdatePublicKeyDto, {
       publicKey: ethKeyPair.publicKey,
       signerPublicKey: tonUser.publicKey,
       signing: SigningScheme.TON
     });
 
-    const dtoEthToTon = await createValidDTO(UpdatePublicKeyDto, {
+    const dtoEthToTon = await createValidSubmitDTO(UpdatePublicKeyDto, {
       publicKey: Buffer.from(tonKeyPair.publicKey).toString("base64")
     });
 
@@ -621,6 +626,7 @@ describe("UpdateUserRoles", () => {
     const dto = new UpdateUserRolesDto();
     dto.user = user;
     dto.roles = roles;
+    dto.uniqueKey = randomUniqueKey();
     dto.sign(signerPrivateKey);
 
     return chaincode.invoke("PublicKeyContract:UpdateUserRoles", dto);
