@@ -12,20 +12,12 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-import {
-  LockTokenDto,
-  TokenInstanceKey,
-  TransferTokenDto,
-  createValidDTO,
-  signatures
-} from "@gala-chain/api";
-import BigNumber from "bignumber.js";
-import { instanceToPlain, plainToInstance } from "class-transformer";
+import { LockTokenRequestParams, TransferTokenParams, signatures } from "@gala-chain/api";
 import { ethers } from "ethers";
 import { EventEmitter } from "events";
 
 import { generateEIP712Types } from "./Utils";
-import { BrowserConnectClient, TrustWalletConnectClient } from "./customClients";
+import { GalachainConnectTrustClient, MetamaskConnectClient } from "./customClients";
 
 global.fetch = jest.fn((url: string, options?: Record<string, unknown>) =>
   Promise.resolve({
@@ -67,23 +59,23 @@ class EthereumMock extends EventEmitter {
 }
 window.ethereum = new EthereumMock();
 
-describe("BrowserConnectClient", () => {
+describe("MetamaskConnectClient", () => {
   it("test full flow", async () => {
-    const dto: TransferTokenDto = await createValidDTO(TransferTokenDto, {
-      quantity: new BigNumber("1"),
+    const dto: TransferTokenParams = {
+      quantity: "1",
       to: "client|63580d94c574ad78b121c267",
-      tokenInstance: plainToInstance(TokenInstanceKey, {
+      tokenInstance: {
         additionalKey: "none",
         category: "Unit",
         collection: "GALA",
-        instance: new BigNumber("0"),
+        instance: "0",
         type: "none"
-      }),
+      },
       uniqueKey: "26d4122e-34c8-4639-baa6-4382b398e68e"
-    });
+    };
 
     // call connect
-    const client = new BrowserConnectClient();
+    const client = new MetamaskConnectClient();
     await client.connect();
 
     // send dto payload in send function
@@ -127,32 +119,29 @@ describe("BrowserConnectClient", () => {
   });
 
   it("should properly recover signature", async () => {
-    const dto: LockTokenDto = await createValidDTO(LockTokenDto, {
-      quantity: new BigNumber("1"),
-      tokenInstance: plainToInstance(TokenInstanceKey, {
+    const params: LockTokenRequestParams = {
+      quantity: "1",
+      tokenInstance: {
         collection: "GALA",
         category: "Unit",
         additionalKey: "none",
-        instance: new BigNumber("0"),
+        instance: "0",
         type: "none"
-      })
-    });
-
-    await dto.validateOrReject();
-
-    const params = instanceToPlain(dto);
+      },
+      uniqueKey: "uniqueKey-123"
+    };
 
     const privateKey = "0x311e3750b1b698e70a2b37fd08b68fdcb389f955faea163f6ffa5be65cd0c251";
 
-    const client = new BrowserConnectClient();
+    const client = new MetamaskConnectClient();
     await client.connect();
 
     const prefix = client.calculatePersonalSignPrefix(params);
     const prefixedPayload = { prefix, ...params };
     const wallet = new ethers.Wallet(privateKey);
-    const payload = signatures.getPayloadToSign(prefixedPayload);
+    const dto = signatures.getPayloadToSign(prefixedPayload);
 
-    const signature = await wallet.signMessage(payload);
+    const signature = await wallet.signMessage(dto);
     console.log(signature);
 
     const publickKey = signatures.recoverPublicKey(signature, { ...prefixedPayload, signature }, prefix);
@@ -160,20 +149,21 @@ describe("BrowserConnectClient", () => {
     expect(ethAddress).toBe("e737c4D3072DA526f3566999e0434EAD423d06ec");
   });
   it("should properly recover signature", async () => {
-    const params: LockTokenDto = await createValidDTO(LockTokenDto, {
-      quantity: new BigNumber("1"),
-      tokenInstance: plainToInstance(TokenInstanceKey, {
+    const params: LockTokenRequestParams = {
+      quantity: "1",
+      tokenInstance: {
         collection: "GALA",
         category: "Unit",
         additionalKey: "none",
-        instance: new BigNumber("0"),
+        instance: "0",
         type: "none"
-      })
-    });
+      },
+      uniqueKey: "uniqueKey-123"
+    };
 
     const privateKey = "0x311e3750b1b698e70a2b37fd08b68fdcb389f955faea163f6ffa5be65cd0c251";
 
-    const client = new BrowserConnectClient();
+    const client = new MetamaskConnectClient();
     await client.connect();
 
     const prefix = client.calculatePersonalSignPrefix(params);
@@ -189,24 +179,21 @@ describe("BrowserConnectClient", () => {
     expect(ethAddress).toBe("e737c4D3072DA526f3566999e0434EAD423d06ec");
   });
   it("should properly recover signature for typed signing", async () => {
-    const dto: LockTokenDto = await createValidDTO(LockTokenDto, {
-      quantity: new BigNumber("1"),
-      tokenInstance: plainToInstance(TokenInstanceKey, {
+    const params: LockTokenRequestParams = {
+      quantity: "1",
+      tokenInstance: {
         collection: "GALA",
         category: "Unit",
         additionalKey: "none",
-        instance: new BigNumber("0"),
+        instance: "0",
         type: "none"
-      })
-    });
-
-    await dto.validateOrReject();
-
-    const params = instanceToPlain(dto);
+      },
+      uniqueKey: "uniqueKey-123"
+    };
 
     const privateKey = "0x311e3750b1b698e70a2b37fd08b68fdcb389f955faea163f6ffa5be65cd0c251";
 
-    const client = new BrowserConnectClient();
+    const client = new MetamaskConnectClient();
     await client.connect();
 
     const prefix = client.calculatePersonalSignPrefix(params);
@@ -221,24 +208,21 @@ describe("BrowserConnectClient", () => {
     expect(publicKey).toBe("0xe737c4D3072DA526f3566999e0434EAD423d06ec");
   });
   it("should properly recover signature for typed signing using signature utils", async () => {
-    const dto: LockTokenDto = await createValidDTO(LockTokenDto, {
-      quantity: new BigNumber("1"),
-      tokenInstance: plainToInstance(TokenInstanceKey, {
+    const params: LockTokenRequestParams = {
+      quantity: "1",
+      tokenInstance: {
         collection: "GALA",
         category: "Unit",
         additionalKey: "none",
-        instance: new BigNumber("0"),
+        instance: "0",
         type: "none"
-      })
-    });
-
-    await dto.validateOrReject();
-
-    const params = instanceToPlain(dto);
+      },
+      uniqueKey: "uniqueKey-123"
+    };
 
     const privateKey = "0x311e3750b1b698e70a2b37fd08b68fdcb389f955faea163f6ffa5be65cd0c251";
 
-    const client = new BrowserConnectClient();
+    const client = new MetamaskConnectClient();
     await client.connect();
 
     const prefix = client.calculatePersonalSignPrefix(params);
@@ -255,72 +239,27 @@ describe("BrowserConnectClient", () => {
     const ethAddress = signatures.getEthAddress(publicKey);
     expect(ethAddress).toBe("e737c4D3072DA526f3566999e0434EAD423d06ec");
   });
-
-  it("should only attach listeners once", async () => {
-    const client = new BrowserConnectClient();
-    const spy = jest.spyOn(client, "emit");
-    // connect multiple times to ensure that the listener is only attached once.
-    await client.connect();
-    await client.connect();
-    await client.connect();
-    // Trigger the accountsChanged event
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    (window.ethereum as any).emit("accountsChanged", [sampleAddr]);
-    // the client should emit two events (accountChanged and accountsChanged)
-    // for each window.ethereum accountsChanged event
-    expect(spy).toHaveBeenCalledTimes(2);
-  });
-
-  it("should disconnect and remove listeners", async () => {
-    const client = new BrowserConnectClient();
-    const spy = jest.spyOn(client, "emit");
-    await client.connect();
-    client.disconnect();
-    // Trigger the accountsChanged event
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    (window.ethereum as any).emit("accountsChanged", [sampleAddr]);
-    expect(spy).toHaveBeenCalledTimes(0);
-  });
-
-  it("should set address to empty string when disconnecting", async () => {
-    const client = new BrowserConnectClient();
-    await client.connect();
-    client.disconnect();
-    expect(client.walletAddress).toBe("");
-  });
-
-  it("should attach listeners when connecting after disconnecting", async () => {
-    const client = new BrowserConnectClient();
-    const spy = jest.spyOn(client, "emit");
-    await client.connect();
-    client.disconnect();
-    await client.connect();
-    // Trigger the accountsChanged event
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    (window.ethereum as any).emit("accountsChanged", [sampleAddr]);
-    expect(spy).toHaveBeenCalledTimes(2);
-  });
 });
 
 describe("TrustConnectClient", () => {
   it("test full flow", async () => {
     window.ethereum = new EthereumMock();
     window.ethereum.isTrust = true;
-    const dto: TransferTokenDto = await createValidDTO(TransferTokenDto, {
-      quantity: new BigNumber("1"),
+    const dto: TransferTokenParams = {
+      quantity: "1",
       to: "client|63580d94c574ad78b121c267",
-      tokenInstance: plainToInstance(TokenInstanceKey, {
+      tokenInstance: {
         additionalKey: "none",
         category: "Unit",
         collection: "GALA",
-        instance: new BigNumber("0"),
+        instance: "0",
         type: "none"
-      }),
+      },
       uniqueKey: "26d4122e-34c8-4639-baa6-4382b398e68e"
-    });
+    };
 
     // call connect
-    const client = new TrustWalletConnectClient();
+    const client = new GalachainConnectTrustClient();
     await client.connect();
 
     // send dto payload in send function

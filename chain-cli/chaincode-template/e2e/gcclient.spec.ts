@@ -17,6 +17,7 @@ import {
   GetMyProfileDto,
   RegisterUserDto,
   UserProfile,
+  randomUniqueKey,
   signatures
 } from "@gala-chain/api";
 import {
@@ -110,6 +111,7 @@ describe("Chaincode client (CuratorOrg)", () => {
 
     const dto = new RegisterUserDto();
     dto.publicKey = newUser.publicKey;
+    dto.uniqueKey = randomUniqueKey();
     dto.sign(getAdminPrivateKey(), false);
 
     // When
