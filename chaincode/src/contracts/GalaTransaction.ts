@@ -22,6 +22,7 @@ import {
   NotImplementedError,
   Primitive,
   RuntimeError,
+  SubmitCallDTO,
   UserRole,
   generateResponseSchema,
   generateSchema,
@@ -42,6 +43,7 @@ import { authorize } from "./authorize";
 // registered inside decorator factory.
 //
 DTOObject()(ChainCallDTO);
+DTOObject()(SubmitCallDTO);
 
 // Note: it is just a metadata, you cannot effectively forbid to submit the transaction
 // (you can, however make it readonly by passing random value to the result or manipulating the context)
@@ -63,14 +65,14 @@ type OutType = ClassConstructor<unknown> | Primitive;
 type OutArrType = { arrayOf: OutType };
 
 export type GalaTransactionBeforeFn = (ctx: GalaChainContext, dto: ChainCallDTO) => Promise<void>;
+
 export type GalaTransactionAfterFn = (
   ctx: GalaChainContext,
   dto: ChainCallDTO,
   result: GalaChainResponse<unknown>
 ) => Promise<unknown>;
 
-export interface GalaTransactionOptions<T extends ChainCallDTO> {
-  type: GalaTransactionType;
+export interface CommonTransactionOptions<T extends ChainCallDTO> {
   deprecated?: true;
   description?: string;
   in?: ClassConstructor<Inferred<T>>;
@@ -78,30 +80,30 @@ export interface GalaTransactionOptions<T extends ChainCallDTO> {
   /** @deprecated */
   allowedOrgs?: string[];
   allowedRoles?: string[];
-  verifySignature?: true;
   apiMethodName?: string;
   sequence?: MethodAPI[];
-  enforceUniqueKey?: true;
   before?: GalaTransactionBeforeFn;
   after?: GalaTransactionAfterFn;
 }
 
-type GalaSubmitOptions<T extends ChainCallDTO> = Omit<
-  Omit<GalaTransactionOptions<T>, "type">,
-  "verifySignature"
->;
+export interface GalaTransactionOptions<T extends ChainCallDTO> extends CommonTransactionOptions<T> {
+  type: GalaTransactionType;
+  verifySignature?: true;
+  enforceUniqueKey?: true;
+}
 
-type GalaEvaluateOptions<T extends ChainCallDTO> = Omit<
-  Omit<GalaTransactionOptions<T>, "type">,
-  "verifySignature"
->;
+export type GalaSubmitOptions<T extends SubmitCallDTO> = CommonTransactionOptions<T>;
+
+export interface GalaEvaluateOptions<T extends ChainCallDTO> extends CommonTransactionOptions<T> {
+  verifySignature?: true;
+}
 
 function isArrayOut(x: OutType | OutArrType | undefined): x is OutArrType {
   return typeof x === "object" && "arrayOf" in x;
 }
 
-function Submit<T extends ChainCallDTO>(options: GalaSubmitOptions<T>): GalaTransactionDecoratorFunction {
-  return GalaTransaction({ ...options, type: SUBMIT, verifySignature: true });
+function Submit<T extends SubmitCallDTO>(options: GalaSubmitOptions<T>): GalaTransactionDecoratorFunction {
+  return GalaTransaction({ ...options, type: SUBMIT, verifySignature: true, enforceUniqueKey: true });
 }
 
 function Evaluate<T extends ChainCallDTO>(options: GalaEvaluateOptions<T>): GalaTransactionDecoratorFunction {
@@ -129,6 +131,16 @@ function GalaTransaction<T extends ChainCallDTO>(
   options.allowedRoles = options.allowedRoles ?? [
     options.type === SUBMIT ? UserRole.SUBMIT : UserRole.EVALUATE
   ];
+
+  if (options.type === SUBMIT && !options.enforceUniqueKey) {
+    const message = `SUBMIT transaction must have enforceUniqueKey defined`;
+    throw new NotImplementedError(message);
+  }
+
+  if (options.type === EVALUATE && options.enforceUniqueKey) {
+    const message = `EVALUATE transaction cannot have enforceUniqueKey defined`;
+    throw new NotImplementedError(message);
+  }
 
   // An actual decorator
   return (target, propertyKey, descriptor): void => {
@@ -171,10 +183,12 @@ function GalaTransaction<T extends ChainCallDTO>(
         await authorize(ctx, options);
 
         // Prevent the same transaction from being submitted multiple times
-        if (dto?.uniqueKey) {
-          await UniqueTransactionService.ensureUniqueTransaction(ctx, dto.uniqueKey);
-        } else if (options.enforceUniqueKey) {
-          throw new RuntimeError("Missing uniqueKey in transaction dto");
+        if (options.enforceUniqueKey) {
+          if (dto?.uniqueKey) {
+            await UniqueTransactionService.ensureUniqueTransaction(ctx, dto.uniqueKey);
+          } else {
+            throw new RuntimeError("Missing uniqueKey in transaction dto");
+          }
         }
 
         const argArray: [GalaChainContext, T] | [GalaChainContext] = dto ? [ctx, dto] : [ctx];

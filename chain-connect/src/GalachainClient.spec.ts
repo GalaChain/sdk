@@ -92,7 +92,7 @@ describe("MetamaskConnectClient", () => {
       },
       Request: {
         options: {
-          body: '{"domain":{"name":"Galachain"},"prefix":"\\u0019Ethereum Signed Message:\\n261","quantity":"1","signature":"sampleSignature","to":"client|63580d94c574ad78b121c267","tokenInstance":{"additionalKey":"none","category":"Unit","collection":"GALA","instance":"0","type":"none"},"types":{"TransferToken":[{"name":"quantity","type":"string"},{"name":"to","type":"string"},{"name":"tokenInstance","type":"tokenInstance"},{"name":"uniqueKey","type":"string"}],"tokenInstance":[{"name":"additionalKey","type":"string"},{"name":"category","type":"string"},{"name":"collection","type":"string"},{"name":"instance","type":"string"},{"name":"type","type":"string"}]},"uniqueKey":"26d4122e-34c8-4639-baa6-4382b398e68e"}',
+          body: '{"domain":{"name":"GalaChain"},"prefix":"\\u0019Ethereum Signed Message:\\n261","quantity":"1","signature":"sampleSignature","to":"client|63580d94c574ad78b121c267","tokenInstance":{"additionalKey":"none","category":"Unit","collection":"GALA","instance":"0","type":"none"},"types":{"TransferToken":[{"name":"quantity","type":"string"},{"name":"to","type":"string"},{"name":"tokenInstance","type":"tokenInstance"},{"name":"uniqueKey","type":"string"}],"tokenInstance":[{"name":"additionalKey","type":"string"},{"name":"category","type":"string"},{"name":"collection","type":"string"},{"name":"instance","type":"string"},{"name":"type","type":"string"}]},"uniqueKey":"26d4122e-34c8-4639-baa6-4382b398e68e"}',
           headers: {
             "Content-Type": "application/json"
           },
@@ -127,7 +127,8 @@ describe("MetamaskConnectClient", () => {
         additionalKey: "none",
         instance: "0",
         type: "none"
-      }
+      },
+      uniqueKey: "uniqueKey-123"
     };
 
     const privateKey = "0x311e3750b1b698e70a2b37fd08b68fdcb389f955faea163f6ffa5be65cd0c251";
@@ -156,7 +157,8 @@ describe("MetamaskConnectClient", () => {
         additionalKey: "none",
         instance: "0",
         type: "none"
-      }
+      },
+      uniqueKey: "uniqueKey-123"
     };
 
     const privateKey = "0x311e3750b1b698e70a2b37fd08b68fdcb389f955faea163f6ffa5be65cd0c251";
@@ -185,7 +187,8 @@ describe("MetamaskConnectClient", () => {
         additionalKey: "none",
         instance: "0",
         type: "none"
-      }
+      },
+      uniqueKey: "uniqueKey-123"
     };
 
     const privateKey = "0x311e3750b1b698e70a2b37fd08b68fdcb389f955faea163f6ffa5be65cd0c251";
@@ -213,7 +216,8 @@ describe("MetamaskConnectClient", () => {
         additionalKey: "none",
         instance: "0",
         type: "none"
-      }
+      },
+      uniqueKey: "uniqueKey-123"
     };
 
     const privateKey = "0x311e3750b1b698e70a2b37fd08b68fdcb389f955faea163f6ffa5be65cd0c251";
@@ -272,7 +276,7 @@ describe("TrustConnectClient", () => {
       },
       Request: {
         options: {
-          body: '{"domain":{"name":"Galachain"},"prefix":"\\u0019Ethereum Signed Message:\\n261","quantity":"1","signature":"sampleSignature","to":"client|63580d94c574ad78b121c267","tokenInstance":{"additionalKey":"none","category":"Unit","collection":"GALA","instance":"0","type":"none"},"types":{"TransferToken":[{"name":"quantity","type":"string"},{"name":"to","type":"string"},{"name":"tokenInstance","type":"tokenInstance"},{"name":"uniqueKey","type":"string"}],"tokenInstance":[{"name":"additionalKey","type":"string"},{"name":"category","type":"string"},{"name":"collection","type":"string"},{"name":"instance","type":"string"},{"name":"type","type":"string"}]},"uniqueKey":"26d4122e-34c8-4639-baa6-4382b398e68e"}',
+          body: '{"domain":{"name":"GalaChain"},"prefix":"\\u0019Ethereum Signed Message:\\n261","quantity":"1","signature":"sampleSignature","to":"client|63580d94c574ad78b121c267","tokenInstance":{"additionalKey":"none","category":"Unit","collection":"GALA","instance":"0","type":"none"},"types":{"TransferToken":[{"name":"quantity","type":"string"},{"name":"to","type":"string"},{"name":"tokenInstance","type":"tokenInstance"},{"name":"uniqueKey","type":"string"}],"tokenInstance":[{"name":"additionalKey","type":"string"},{"name":"category","type":"string"},{"name":"collection","type":"string"},{"name":"instance","type":"string"},{"name":"type","type":"string"}]},"uniqueKey":"26d4122e-34c8-4639-baa6-4382b398e68e"}',
           headers: {
             "Content-Type": "application/json"
           },

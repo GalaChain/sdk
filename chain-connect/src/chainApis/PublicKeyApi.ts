@@ -26,7 +26,9 @@ export class PublicKeyApi {
   public GetMyProfile(message?: string) {
     return this.connection.submit<UserProfileBody, { message?: string }>({
       method: "GetMyProfile",
-      payload: { message },
+      payload: {
+        ...(message ? { message } : {})
+      },
       sign: true,
       url: this.chainCodeUrl
     });

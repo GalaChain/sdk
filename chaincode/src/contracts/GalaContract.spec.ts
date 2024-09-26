@@ -21,7 +21,8 @@ import {
   GalaChainResponseType,
   GetObjectDto,
   createValidChainObject,
-  createValidDTO
+  createValidDTO,
+  serialize
 } from "@gala-chain/api";
 import { transactionError, transactionSuccess } from "@gala-chain/test";
 import { instanceToPlain } from "class-transformer";
@@ -243,7 +244,10 @@ describe("GalaContract.DryRun", () => {
       Data: {
         response: { Status: GalaChainResponseType.Success },
         reads: {},
-        writes: { [superhero.getCompositeKey()]: superhero.serialize() },
+        writes: {
+          [superhero.getCompositeKey()]: serialize({ age: 32, name: "Batman" }),
+          [`\u0000UNTX\u0000${dto.uniqueKey}\u0000`]: expect.any(String)
+        },
         deletes: {}
       }
     });
@@ -265,11 +269,12 @@ describe("GalaContract.DryRun", () => {
     const response = await chaincode.invoke("TestGalaContract:DryRun", dryRunDto);
 
     // Then
+    const plainBatman = { age: 32, name: "Batman" };
     expect(response).toEqual({
       Status: GalaChainResponseType.Success,
       Data: {
-        response: { Status: GalaChainResponseType.Success, Data: instanceToPlain(batman) },
-        reads: { [batmanKey]: batman.serialize() },
+        response: { Status: GalaChainResponseType.Success, Data: instanceToPlain(plainBatman) },
+        reads: { [batmanKey]: serialize(plainBatman) },
         writes: {},
         deletes: {}
       }

@@ -18,7 +18,7 @@ If you have current production chain, you don't need to update the data, but you
 The only exception is the authorization, which requires a migration of the roles from `allowedOrgs` to `allowedRoles`, and setting up the roles for some user profiles.
 
 ### Removal of Deprecated Features
-*none*
+- `createAndSignValidDTO` was removed in favor of `createValidDTO(...).signed(...)`.
 
 ### Changes to API Contracts
 
@@ -65,27 +65,32 @@ Starting from version `2.0.0`:
 
 Sample usage of `fixture` for testing transactions:
 
- Using the previous version (`1.x.x`):
+Using the previous version (`1.x.x`):
+
 ```typescript
-const { ctx, contract } = fixture(GalaChainTokenContract)
+const { ctx, contract, writes } = fixture(GalaChainTokenContract)
   .callingUser(users.testUser1Id)
   .savedState(nftClass, nftInstance, balance);
 
 const dto = await createValidDTO(LockTokenDto, { ... });
 
 const response = await contract.LockToken(ctx, dto);
+
+expect(writes).toEqual(expectedWrites);
 ```
 
 After upgrade to `2.0.0`:
 ```typescript
-const { ctx, contract } = fixture(GalaChainTokenContract)
+const { ctx, contract, getWrites } = fixture(GalaChainTokenContract)
   .registeredUsers(users.testUser1)
   .savedState(nftClass, nftInstance, balance);
 
-const dto = await createValidDTO(LockTokenDto, { ... })
+const dto = await createValidSubmitDTO(LockTokenDto, { ... })
   .signed(users.testUser1.privateKey);
 
 const response = await contract.LockToken(ctx, dto);
+
+expect(getWrites()).toEqual(expectedWrites);
 ```
 
 The main difference between the old CA-based auth and the new signature-based auth is that instead of using the user's CA (Certificate Authority) identity, we use the user's public key that is recovered from the DTO (Data Transfer Object) and the signature.
@@ -95,14 +100,35 @@ In the previous flow we were using `callingUser` to set the user, and the user w
 In the new flow we use `registeredUsers` to save relevant `UserProfile` objects in the mocked chain state, and the user is authenticated on the basis of the signature.
 This is why in the code for the new version we use `signed` to sign the DTO with the user's private key.
 
-#### API change for `TestChaincode` for unit tests
+The `callingUser()` function is still supported, but it should be used for low-level stuff, when you don't call contract methods directly.
+The parameter it takes is the user's object, as opposed to the alias, which was used previously.
+It is done on purpose to allow you to detect if you need to update the code for the new version.
+
+Additionally, `writes` property was changed to `allWrites`, and we recommend to use a new `getWrites()` function, which returns the writes in the form of a dictionary, but skips low-level writes that are not relevant for the test.
+By default, it skips the keys of `UniqueTransaction` objects, which are used for enforcing the `uniqueKey` field in the DTOs.
+This behavior can be altered by providing custom `skipKeysStartingWith: string[]` parameter.
 
 #### Enforcing dto.uniqueKey for each submit transactions
-*TBD*
 
-#### Other
-- Different way of providing calling user in unit tests.
-- Field `uniqueKey` in contract method DTOs is now mandatory. https://github.com/GalaChain/sdk/issues/27
+Starting from version `2.0.0` we enforce the `uniqueKey` field in each DTO that is used in `@Submit` or `@GalaTransaction({ type: SUBMIT })` methods.
+This was done to prevent duplicate transactions from being submitted to the chain, and from the replay attacks.
+Once you submit a DTO with missing `uniqueKey`, the SDK will throw a validation error.
+Once you submit a DTO with a `uniqueKey` that was already used, the SDK will throw a conflict error.
+
+It is recommended to use `@Submit` decorator for all transactions that update the chain, as it enforces the signature verification, and the `uniqueKey` field in the DTOs by enforcing `SubmitCallDTO` as parent DTO class.
+
+In order to make the creation of the `uniqueKey` easier, we added additional method for creating DTOs with `uniqueKey`, aside from the `createValidDTO` method and with similar syntax:
+
+```typescript
+const dto = await createValidSubmitDTO(DtoClass, { ... }).signed(...);
+```
+
+Additionally, we added a utility method for creating a unique key, which can be used in the DTOs:
+
+```typescript
+const uniqueKey = createUniqueKey();
+```
+
 
 ### Other Breaking Changes
 - TBD

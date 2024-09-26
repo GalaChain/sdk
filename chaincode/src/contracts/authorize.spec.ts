@@ -283,6 +283,7 @@ describe("authorization", () => {
       out: "object",
       allowedOrgs,
       allowedRoles,
+      ...(type === SUBMIT ? { enforceUniqueKey: true } : {}),
       ...(verifySignature ? { verifySignature: true } : {})
     })(target, propertyKey, descriptor);
 

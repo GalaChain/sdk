@@ -12,7 +12,12 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-import { GalaChainResponseType, RegisterEthUserDto, RegisterUserDto, createValidDTO } from "@gala-chain/api";
+import {
+  GalaChainResponseType,
+  RegisterEthUserDto,
+  RegisterUserDto,
+  createValidSubmitDTO
+} from "@gala-chain/api";
 import {
   ChainClient,
   ChainUser,
@@ -185,13 +190,16 @@ async function createRegisteredUser(
   const user = ChainUser.withRandomKeys(userAlias);
 
   if (userAlias === undefined) {
-    const dto = await createValidDTO(RegisterEthUserDto, { publicKey: user.publicKey });
+    const dto = await createValidSubmitDTO(RegisterEthUserDto, { publicKey: user.publicKey });
     const response = await client.RegisterEthUser(dto.signed(client.privateKey));
     if (response.Status !== GalaChainResponseType.Success) {
       throw new Error(`Failed to register eth user: ${response.Message}`);
     }
   } else {
-    const dto = await createValidDTO(RegisterUserDto, { user: user.identityKey, publicKey: user.publicKey });
+    const dto = await createValidSubmitDTO(RegisterUserDto, {
+      user: user.identityKey,
+      publicKey: user.publicKey
+    });
     const response = await client.RegisterUser(dto.signed(client.privateKey));
     if (response.Status !== GalaChainResponseType.Success) {
       throw new Error(`Failed to register user: ${response.Message}`);

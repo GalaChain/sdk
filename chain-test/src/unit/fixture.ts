@@ -18,10 +18,8 @@ import {
   ClassConstructor,
   GalaChainResponse,
   RangedChainObject,
-  UserRole,
   signatures
 } from "@gala-chain/api";
-import { ChainUser } from "@gala-chain/client";
 import { Context, Contract } from "fabric-contract-api";
 import { ChaincodeStub } from "fabric-shim";
 import Logger from "fabric-shim/lib/logger";
@@ -93,15 +91,13 @@ type Wrapped<Contract> = {
 };
 
 class Fixture<Ctx extends TestGalaChainContext, T extends GalaContract<Ctx>> {
-  private readonly stub: TestChaincodeStub;
+  public readonly state: Record<string, string> = {};
   public readonly contract: Wrapped<T>;
   public readonly ctx: Ctx;
+  private readonly stub: TestChaincodeStub;
+  private readonly allWrites: Record<string, string> = {};
 
-  constructor(
-    contractClass: ClassConstructor<T>,
-    public readonly writes: Record<string, string> = {},
-    public readonly state: Record<string, string> = {}
-  ) {
+  constructor(contractClass: ClassConstructor<T>) {
     const contractInstance = new contractClass() as Wrapped<T>; // it's done by @GalaTransaction decorator
     this.contract = new Proxy(contractInstance, {
       get: (target, prop) => {
@@ -123,7 +119,7 @@ class Fixture<Ctx extends TestGalaChainContext, T extends GalaContract<Ctx>> {
       }
     });
 
-    this.stub = new TestChaincodeStub([], this.state, this.writes);
+    this.stub = new TestChaincodeStub([], this.state, this.allWrites);
 
     const ctxInstance = this.contract.createContext() as Ctx;
     ctxInstance.setChaincodeStub(this.stub);
@@ -196,6 +192,18 @@ class Fixture<Ctx extends TestGalaChainContext, T extends GalaContract<Ctx>> {
     });
     return this;
   }
+
+  getWrites: (skipKeysStartingWith?: string[]) => Record<string, string> = (
+    skipKeysStartingWith = ["\u0000UNTX\u0000"]
+  ) => {
+    return Object.entries(this.allWrites).reduce((acc, [key, value]) => {
+      const shouldSkip = skipKeysStartingWith.some((prefix) => key.startsWith(prefix));
+      if (!shouldSkip) {
+        acc[key] = value;
+      }
+      return acc;
+    }, {});
+  };
 }
 
 export function fixture<Ctx extends TestGalaChainContext, T extends GalaContract<Ctx>>(

@@ -28,7 +28,8 @@ import {
   TokenMintStatus,
   createValidChainObject,
   createValidDTO,
-  createValidRangedChainObject
+  createValidRangedChainObject,
+  createValidSubmitDTO
 } from "@gala-chain/api";
 import { currency, fixture, nft, users, writesMap } from "@gala-chain/test";
 import BigNumber from "bignumber.js";
@@ -102,7 +103,7 @@ describe("FulfillMint", () => {
     const testFixture = fixture(GalaChainTokenContract)
       .registeredUsers(users.admin)
       .caClientIdentity("admin", "CuratorOrg");
-    const { ctx, contract, writes } = testFixture;
+    const { ctx, contract, getWrites } = testFixture;
 
     const epochKey = inverseEpoch(ctx, 0);
     const timeKey = inverseTime(ctx, 0);
@@ -162,7 +163,7 @@ describe("FulfillMint", () => {
       .savedState(currencyClass, currencyInstance, tokenAllowance, tokenClaim)
       .savedRangeState([mintRequest, tokenBurnCounter]);
 
-    const dto = await createValidDTO(FulfillMintDto, {
+    const dto = await createValidSubmitDTO(FulfillMintDto, {
       requests: [
         plainToInstance(MintRequestDto, {
           collection,
@@ -192,7 +193,7 @@ describe("FulfillMint", () => {
 
     // Then
     expect(response).toEqual(GalaChainResponse.Success([currency.tokenInstanceKey()]));
-    expect(writes).toEqual(writesMap(tokenClaim, expectedAllowance, expectedBalance, mintFulfillment));
+    expect(getWrites()).toEqual(writesMap(tokenClaim, expectedAllowance, expectedBalance, mintFulfillment));
   });
 
   test("mints unique items, i.e. NFTs", async () => {
@@ -209,7 +210,7 @@ describe("FulfillMint", () => {
       .registeredUsers(users.admin)
       .caClientIdentity("admin", "CuratorOrg");
 
-    const { ctx, contract, writes } = testFixture;
+    const { ctx, contract, getWrites } = testFixture;
 
     const tokenClaim = await createValidChainObject(TokenClaim, {
       ...nftInstanceKey,
@@ -315,7 +316,7 @@ describe("FulfillMint", () => {
 
     const mintFulfillment: TokenMintFulfillment = mintRequest.fulfill(mintRequest.quantity);
 
-    const dto = await createValidDTO(FulfillMintDto, {
+    const dto = await createValidSubmitDTO(FulfillMintDto, {
       requests: [
         plainToInstance(MintRequestDto, {
           collection,
@@ -370,7 +371,7 @@ describe("FulfillMint", () => {
 
     // Then
     expect(response).toEqual(GalaChainResponse.Success([expectedNft1Key, expectedNft2Key]));
-    expect(writes).toEqual(
+    expect(getWrites()).toEqual(
       writesMap(tokenClaim, expectedAllowance, expectedNft1, expectedNft2, expectedBalance, mintFulfillment)
     );
   });
@@ -387,7 +388,7 @@ describe("FulfillMint", () => {
       .caClientIdentity("admin", "CuratorOrg")
       .savedState(currencyClass, currencyInstance, tokenAllowance);
 
-    const { ctx, contract, writes } = testFixture;
+    const { ctx, contract, getWrites } = testFixture;
 
     const epochKey = inverseEpoch(ctx, 0);
     const timeKey = inverseTime(ctx, 0);
@@ -414,7 +415,7 @@ describe("FulfillMint", () => {
 
     testFixture.savedRangeState([mintRequest]);
 
-    const dto = await createValidDTO(FulfillMintDto, {
+    const dto = await createValidSubmitDTO(FulfillMintDto, {
       requests: [
         plainToInstance(MintRequestDto, {
           collection,
@@ -438,7 +439,7 @@ describe("FulfillMint", () => {
         new Error(`Quantity: ${decimalQuantity} has more than ${currencyClass.decimals} decimal places.`)
       )
     );
-    expect(writes).toEqual({});
+    expect(getWrites()).toEqual({});
   });
 
   it("prevents attackers from exploiting the lack of signing requirement", async () => {
@@ -454,7 +455,7 @@ describe("FulfillMint", () => {
     const testFixture = fixture(GalaChainTokenContract)
       .registeredUsers(users.attacker)
       .caClientIdentity("admin", "CuratorOrg");
-    const { ctx, contract, writes } = testFixture;
+    const { ctx, contract, getWrites } = testFixture;
 
     const tokenClaim = await createValidChainObject(TokenClaim, {
       ...nftInstanceKey,
@@ -506,7 +507,7 @@ describe("FulfillMint", () => {
 
     tokenBurnCounter.referenceId = tokenBurnCounter.referencedBurnId();
 
-    const dto = await createValidDTO(FulfillMintDto, {
+    const dto = await createValidSubmitDTO(FulfillMintDto, {
       requests: [
         plainToInstance(MintRequestDto, {
           collection,
@@ -537,6 +538,6 @@ describe("FulfillMint", () => {
       )
     );
 
-    expect(writes).toEqual({});
+    expect(getWrites()).toEqual({});
   });
 });

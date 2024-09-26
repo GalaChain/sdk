@@ -18,7 +18,7 @@ import {
   TokenClassKey,
   UpdateTokenClassDto,
   createValidChainObject,
-  createValidDTO
+  createValidSubmitDTO
 } from "@gala-chain/api";
 import { currency, fixture, users, writesMap } from "@gala-chain/test";
 
@@ -31,7 +31,7 @@ it("should update token class", async () => {
   const savedTokenClass = currency.tokenClass();
   const savedTokenClassKey = await savedTokenClass.getKey();
 
-  const { ctx, contract, writes } = fixture(GalaChainTokenContract)
+  const { ctx, contract, getWrites } = fixture(GalaChainTokenContract)
     .caClientIdentity("curator", "CuratorOrg")
     .registeredUsers(users.admin)
     .savedState(savedTokenClass);
@@ -51,7 +51,7 @@ it("should update token class", async () => {
 
   // Then
   expect(response).toEqual(GalaChainResponse.Success(savedTokenClassKey));
-  expect(writes).toEqual(writesMap(expectedWrite));
+  expect(getWrites()).toEqual(writesMap(expectedWrite));
 });
 
 it("should fail if callingUser is not token authority", async () => {
@@ -61,7 +61,7 @@ it("should fail if callingUser is not token authority", async () => {
   const callingUser = users.testUser1;
   expect(savedTokenClass.authorities).not.toContain(callingUser.identityKey);
 
-  const { ctx, contract, writes } = fixture(GalaChainTokenContract)
+  const { ctx, contract, getWrites } = fixture(GalaChainTokenContract)
     .caClientIdentity("curator", "CuratorOrg")
     .registeredUsers(callingUser)
     .savedState(savedTokenClass);
@@ -77,7 +77,7 @@ it("should fail if callingUser is not token authority", async () => {
     GalaChainResponse.Error(new NotATokenAuthorityError(callingUser.identityKey, key, authorities))
   );
 
-  expect(writes).toEqual({});
+  expect(getWrites()).toEqual({});
 });
 
 it("should fail if CA client is not a member of CuratorOrg", async () => {
@@ -85,7 +85,7 @@ it("should fail if CA client is not a member of CuratorOrg", async () => {
   const savedTokenClass = currency.tokenClass();
   const savedTokenClassKey = await savedTokenClass.getKey();
 
-  const { ctx, contract, writes } = fixture(GalaChainTokenContract)
+  const { ctx, contract, getWrites } = fixture(GalaChainTokenContract)
     .caClientIdentity("non-curator", "NonCuratorOrg")
     .registeredUsers(users.admin)
     .savedState(savedTokenClass);
@@ -105,12 +105,12 @@ it("should fail if CA client is not a member of CuratorOrg", async () => {
     )
   );
 
-  expect(writes).toEqual({});
+  expect(getWrites()).toEqual({});
 });
 
 it("should fail if token does not exist", async () => {
   // Given
-  const { ctx, contract, writes } = fixture(GalaChainTokenContract)
+  const { ctx, contract, getWrites } = fixture(GalaChainTokenContract)
     .caClientIdentity("curator", "CuratorOrg")
     .registeredUsers(users.admin); // no saved token class
 
@@ -122,7 +122,7 @@ it("should fail if token does not exist", async () => {
 
   // Then
   expect(response).toEqual(GalaChainResponse.Error(new TokenClassNotFoundError(tokenClassKey.toStringKey())));
-  expect(writes).toEqual({});
+  expect(getWrites()).toEqual({});
 });
 
 function defaultUpdate() {
@@ -137,7 +137,7 @@ function defaultUpdate() {
 }
 
 function defaultUpdateDto(tokenClassKey: TokenClassKey, update = defaultUpdate()) {
-  return createValidDTO(UpdateTokenClassDto, {
+  return createValidSubmitDTO(UpdateTokenClassDto, {
     tokenClass: tokenClassKey,
     ...update
   });
