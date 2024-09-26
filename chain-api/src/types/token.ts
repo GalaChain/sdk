@@ -36,7 +36,9 @@ import { BigNumberIsNotNegative, BigNumberIsPositive, BigNumberProperty, IsUserA
 import { TokenBalance } from "./TokenBalance";
 import { TokenClass, TokenClassKey } from "./TokenClass";
 import { TokenInstance, TokenInstanceKey } from "./TokenInstance";
-import { ChainCallDTO } from "./dtos";
+import { ChainCallDTO, SubmitCallDTO } from "./dtos";
+
+export type FetchTokenClassesParams = ConstructorArgs<FetchTokenClassesDto>;
 
 @JSONSchema({
   description: "Contains list of objects representing token classes to fetch."
@@ -47,6 +49,8 @@ export class FetchTokenClassesDto extends ChainCallDTO {
   @ArrayNotEmpty()
   tokenClasses: Array<TokenClassKey>;
 }
+
+export type FetchTokenClassesWithPaginationParams = ConstructorArgs<FetchTokenClassesWithPaginationDto>;
 
 @JSONSchema({
   description:
@@ -117,6 +121,8 @@ export class FetchTokenClassesResponse extends ChainCallDTO {
   nextPageBookmark?: string;
 }
 
+export type FetchTokenInstancesParams = ConstructorArgs<FetchTokenInstancesDto>;
+
 @JSONSchema({
   description: "Contains list of objects representing token instances to fetch."
 })
@@ -127,11 +133,13 @@ export class FetchTokenInstancesDto extends ChainCallDTO {
   tokenInstances: Array<TokenInstanceKey>;
 }
 
+export type CreateTokenClassParams = ConstructorArgs<CreateTokenClassDto>;
+
 @JSONSchema({
   description:
     "Contains properties of token class to be created. Actual token units and NFT instances are created on mint."
 })
-export class CreateTokenClassDto extends ChainCallDTO {
+export class CreateTokenClassDto extends SubmitCallDTO {
   static DEFAULT_NETWORK = "GC";
   static DEFAULT_DECIMALS = 0;
   static DEFAULT_MAX_CAPACITY = new BigNumber("Infinity");
@@ -263,7 +271,9 @@ export class CreateTokenClassDto extends ChainCallDTO {
   authorities?: string[];
 }
 
-export class UpdateTokenClassDto extends ChainCallDTO {
+export type UpdateTokenClassParams = ConstructorArgs<UpdateTokenClassDto>;
+
+export class UpdateTokenClassDto extends SubmitCallDTO {
   /* todo: should these fields be update-able? probably not, unless in exceptional circumstances.
            these are more complicted, as they track properties with second order effects.
            in theory, it's probably a bad idea if a token authority can just come in later
@@ -340,6 +350,7 @@ export class UpdateTokenClassDto extends ChainCallDTO {
   overwriteAuthorities?: boolean;
 }
 
+export type FetchBalancesParams = ConstructorArgs<FetchBalancesDto>;
 @JSONSchema({
   description: "Contains parameters for fetching balances. Each parameter is optional."
 })
@@ -378,6 +389,8 @@ export class FetchBalancesDto extends ChainCallDTO {
   @IsOptional()
   additionalKey?: string;
 }
+
+export type FetchBalancesWithPaginationParams = ConstructorArgs<FetchBalancesWithPaginationDto>;
 
 @JSONSchema({
   description: "Contains parameters for fetching balances. Each parameter is optional."
@@ -440,6 +453,8 @@ export class FetchBalancesWithPaginationDto extends ChainCallDTO {
   limit?: number;
 }
 
+export type TokenBalanceWithMetadataParams = ConstructorArgs<TokenBalanceWithMetadata>;
+
 @JSONSchema({
   description: "Response DTO containing a TokenBalance and the balance's corresponding TokenClass."
 })
@@ -472,11 +487,13 @@ export class FetchBalancesWithTokenMetadataResponse extends ChainCallDTO {
   nextPageBookmark?: string;
 }
 
+export type TransferTokenParams = ConstructorArgs<TransferTokenDto>;
+
 @JSONSchema({
   description:
     "Experimental: After submitting request to RequestMintAllowance, follow up with FulfillMintAllowance."
 })
-export class TransferTokenDto extends ChainCallDTO {
+export class TransferTokenDto extends SubmitCallDTO {
   @JSONSchema({
     description: "The current owner of tokens. If the value is missing, chaincode caller is used."
   })

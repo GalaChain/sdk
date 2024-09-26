@@ -31,7 +31,7 @@ describe("FullAllowanceCheck", () => {
     const nftClass = nft.tokenClass();
     const tokenBalance = nft.tokenBalance();
 
-    const { ctx, contract, writes } = fixture(GalaChainTokenContract)
+    const { ctx, contract, getWrites } = fixture(GalaChainTokenContract)
       .registeredUsers(users.admin)
       .savedState(nftClass, nftInstance, tokenBalance);
 
@@ -65,6 +65,6 @@ describe("FullAllowanceCheck", () => {
         })
       )
     );
-    expect(writes).toEqual({});
+    expect(getWrites()).toEqual({});
   });
 });

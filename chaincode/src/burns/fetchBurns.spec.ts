@@ -31,7 +31,7 @@ describe("FetchBurns", () => {
     const nftTokenBurn = nft.tokenBurn();
     const nftTokenBurn2 = await createValidChainObject(TokenBurn, { ...nftTokenBurn, created: 10000 });
 
-    const { ctx, contract, writes } = fixture(GalaChainTokenContract)
+    const { ctx, contract, getWrites } = fixture(GalaChainTokenContract)
       .registeredUsers(users.testUser1)
       .savedState(nftClass, nftInstance, nftTokenBurn, nftTokenBurn2);
 
@@ -44,6 +44,6 @@ describe("FetchBurns", () => {
 
     // Then
     expect(response).toEqual(GalaChainResponse.Success([nftTokenBurn, nftTokenBurn2]));
-    expect(writes).toEqual({});
+    expect(getWrites()).toEqual({});
   });
 });

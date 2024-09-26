@@ -12,7 +12,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-import { CreateTokenClassDto, GalaChainResponse, createValidDTO } from "@gala-chain/api";
+import { CreateTokenClassDto, GalaChainResponse, createValidSubmitDTO } from "@gala-chain/api";
 import { currency, fixture, users, writesMap } from "@gala-chain/test";
 import BigNumber from "bignumber.js";
 
@@ -20,13 +20,13 @@ import GalaChainTokenContract from "../__test__/GalaChainTokenContract";
 
 it("should CreateTokenClass", async () => {
   // Given
-  const { ctx, contract, writes } = fixture(GalaChainTokenContract)
+  const { ctx, contract, getWrites } = fixture(GalaChainTokenContract)
     .caClientIdentity("test-admin", "CuratorOrg")
     .registeredUsers(users.admin);
 
   const tokenClassKey = currency.tokenClassKey();
 
-  const dto: CreateTokenClassDto = await createValidDTO(CreateTokenClassDto, {
+  const dto: CreateTokenClassDto = await createValidSubmitDTO(CreateTokenClassDto, {
     tokenClass: tokenClassKey,
     maxCapacity: new BigNumber("1000000000"),
     maxSupply: new BigNumber("10000000000"),
@@ -49,9 +49,9 @@ it("should CreateTokenClass", async () => {
 
   const expectedInstance = currency.tokenInstance();
   const expectedClass = currency.tokenClass((defaults) => {
-    const { tokenClass, signature, ...fromDto } = dto;
+    const { tokenClass, signature, uniqueKey, ...fromDto } = dto;
     const missingInDto = { contractAddress: undefined, metadataAddress: undefined, rarity: undefined };
     return { ...defaults, ...fromDto, ...missingInDto, ...tokenClass };
   });
-  expect(writes).toEqual(writesMap(expectedInstance, expectedClass));
+  expect(getWrites()).toEqual(writesMap(expectedInstance, expectedClass));
 });

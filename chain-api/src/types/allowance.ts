@@ -41,7 +41,7 @@ import { GrantAllowanceQuantity } from "./GrantAllowance";
 import { TokenAllowance } from "./TokenAllowance";
 import { TokenInstance, TokenInstanceKey, TokenInstanceQueryKey } from "./TokenInstance";
 import { AllowanceKey, AllowanceType, MintRequestDto } from "./common";
-import { ChainCallDTO } from "./dtos";
+import { ChainCallDTO, SubmitCallDTO } from "./dtos";
 
 @JSONSchema({
   description: "Contains parameters for fetching allowances with pagination."
@@ -206,7 +206,7 @@ export class FetchAllowancesResponse extends ChainCallDTO {
 @JSONSchema({
   description: "Contains parameters for deleting allowances for a calling user."
 })
-export class DeleteAllowancesDto extends ChainCallDTO {
+export class DeleteAllowancesDto extends SubmitCallDTO {
   @JSONSchema({
     description: "A user who can use an allowance."
   })
@@ -263,7 +263,7 @@ export class DeleteAllowancesDto extends ChainCallDTO {
 @JSONSchema({
   description: "Defines allowances to be created."
 })
-export class GrantAllowanceDto extends ChainCallDTO {
+export class GrantAllowanceDto extends SubmitCallDTO {
   static DEFAULT_EXPIRES = 0;
 
   @JSONSchema({
@@ -482,7 +482,7 @@ export class RefreshAllowanceDto extends ChainCallDTO {
     "Refresh the uses or expiration date of an existing allowance. " +
     "If quantity needs updating, grant a new allowance instead."
 })
-export class RefreshAllowancesDto extends ChainCallDTO {
+export class RefreshAllowancesDto extends SubmitCallDTO {
   @ValidateNested({ each: true })
   @Type(() => RefreshAllowanceDto)
   @ArrayNotEmpty()
