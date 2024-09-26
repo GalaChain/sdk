@@ -65,12 +65,7 @@ it("should allow to pick apples", async () => {
   const user = users.random();
   const { contract, ctx, getWrites } = fixture(AppleContract).registeredUsers(user).savedState(tree);
 
-  const dto = new PickAppleDto(
-    tree.plantedBy,
-    tree.variety,
-    tree.index,
-    randomUniqueKey()
-  ).signed(
+  const dto = new PickAppleDto(tree.plantedBy, tree.variety, tree.index, randomUniqueKey()).signed(
     user.privateKey
   );
 

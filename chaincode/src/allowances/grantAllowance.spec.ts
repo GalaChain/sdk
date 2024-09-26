@@ -89,11 +89,11 @@ describe("GrantAllowance", () => {
     });
     expect(nftBalance.getNftInstanceIds()).toEqual([]);
 
-    const { ctx, contract, writes } = fixture(GalaChainTokenContract)
+    const { ctx, contract, getWrites } = fixture(GalaChainTokenContract)
       .registeredUsers(users.testUser2)
       .savedState(nftClass, nftInstance, nftBalance);
 
-    const dto: GrantAllowanceDto = await createValidDTO(GrantAllowanceDto, {
+    const dto: GrantAllowanceDto = await createValidSubmitDTO(GrantAllowanceDto, {
       tokenInstance: nftInstanceQueryKey,
       quantities: [{ user: users.testUser1.identityKey, quantity: new BigNumber("100") }],
       allowanceType: AllowanceType.Lock,
@@ -105,7 +105,7 @@ describe("GrantAllowance", () => {
 
     // Then
     expect(response).toEqual(transactionErrorKey("TOKEN_NOT_IN_BALANCE"));
-    expect(writes).toEqual(writesMap());
+    expect(getWrites()).toEqual(writesMap());
   });
 
   it("should fail to GrantAllowance when quantity is less than decimal limit", async () => {

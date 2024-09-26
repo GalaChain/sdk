@@ -90,6 +90,10 @@ In the previous flow we were using `callingUser` to set the user, and the user w
 In the new flow we use `registeredUsers` to save relevant `UserProfile` objects in the mocked chain state, and the user is authenticated on the basis of the signature.
 This is why in the code for the new version we use `signed` to sign the DTO with the user's private key.
 
+The `callingUser()` function is still supported, but it should be used for low-level stuff, when you don't call contract methods directly.
+The parameter it takes is the user's object, as opposed to the alias, which was used previously.
+It is done on purpose to allow you to detect if you need to update the code for the new version.
+
 Additionally, `writes` property was changed to `allWrites`, and we recommend to use a new `getWrites()` function, which returns the writes in the form of a dictionary, but skips low-level writes that are not relevant for the test.
 By default, it skips the keys of `UniqueTransaction` objects, which are used for enforcing the `uniqueKey` field in the DTOs.
 This behavior can be altered by providing custom `skipKeysStartingWith: string[]` parameter.

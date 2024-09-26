@@ -456,18 +456,18 @@ describe("BurnTokens", () => {
       const burnQty = new BigNumber("1");
       const burn2Qty = new BigNumber("2");
 
-      const { ctx, contract, writes } = fixture(GalaChainTokenContract)
-        .callingUser(users.testUser1Id)
+      const { ctx, contract, getWrites } = fixture(GalaChainTokenContract)
+        .registeredUsers(users.testUser1)
         .savedState(currencyClass, currencyInstance, tokenBalance)
         .savedRangeState([]);
 
-      const dto = await createValidDTO(BurnTokensDto, {
+      const dto = await createValidSubmitDTO(BurnTokensDto, {
         tokenInstances: [
           { tokenInstanceKey: currencyInstanceKey, quantity: burnQty },
           { tokenInstanceKey: currencyInstanceKey, quantity: burn2Qty }
         ],
-        owner: users.testUser1Id
-      });
+        owner: users.testUser1.identityKey
+      }).signed(users.testUser1.privateKey);
 
       const tokenBurn = currency.tokenBurn();
       tokenBurn.created = ctx.txUnixTime;
@@ -490,7 +490,7 @@ describe("BurnTokens", () => {
 
       // Then
       expect(response).toEqual(GalaChainResponse.Success([tokenBurn]));
-      expect(writes).toEqual(
+      expect(getWrites()).toEqual(
         writesMap(
           plainToInstance(TokenBalance, {
             ...currency.tokenBalance(),
@@ -515,19 +515,19 @@ describe("BurnTokens", () => {
       const burnQty = new BigNumber("1");
       const burn2Qty = new BigNumber("2");
 
-      const { ctx, contract, writes } = fixture(GalaChainTokenContract)
-        .callingUser(users.testUser1Id)
+      const { ctx, contract, getWrites } = fixture(GalaChainTokenContract)
+        .callingUser(users.testUser1)
         .savedState(currencyClass, currencyInstance, tokenBalance)
         .savedRangeState([]);
 
       const call1 = {
         toBurn: [{ tokenInstanceKey: currencyInstanceKey, quantity: burnQty }],
-        owner: users.testUser1Id
+        owner: users.testUser1.identityKey
       };
 
       const call2 = {
         toBurn: [{ tokenInstanceKey: currencyInstanceKey, quantity: burn2Qty }],
-        owner: users.testUser1Id
+        owner: users.testUser1.identityKey
       };
 
       const tokenBurn = currency.tokenBurn();
@@ -558,7 +558,7 @@ describe("BurnTokens", () => {
       // Then
       expect(result1).toEqual([tokenBurn]);
       expect(result2).toEqual([tokenBurnWithSumTotal]);
-      expect(writes).toEqual(
+      expect(getWrites()).toEqual(
         writesMap(
           plainToInstance(TokenBalance, {
             ...currency.tokenBalance(),
