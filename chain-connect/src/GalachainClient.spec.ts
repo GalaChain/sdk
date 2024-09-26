@@ -16,9 +16,8 @@ import { LockTokenRequestParams, TransferTokenParams, signatures } from "@gala-c
 import { ethers } from "ethers";
 import { EventEmitter } from "events";
 
-import { ClientFactory } from "./ClientFactory";
 import { generateEIP712Types } from "./Utils";
-import { MetamaskConnectClient } from "./customClients";
+import { GalachainConnectTrustClient, MetamaskConnectClient } from "./customClients";
 
 global.fetch = jest.fn((url: string, options?: Record<string, unknown>) =>
   Promise.resolve({
@@ -76,11 +75,16 @@ describe("MetamaskConnectClient", () => {
     };
 
     // call connect
-    const client = new ClientFactory().metamaskClient("https://example.com");
+    const client = new MetamaskConnectClient();
     await client.connect();
 
     // send dto payload in send function
-    const response = await client.submit({ method: "TransferToken", payload: dto, sign: true });
+    const response = await client.submit({
+      method: "TransferToken",
+      payload: dto,
+      sign: true,
+      url: "https://example.com"
+    });
 
     expect(response).toEqual({
       Hash: {
@@ -129,7 +133,7 @@ describe("MetamaskConnectClient", () => {
 
     const privateKey = "0x311e3750b1b698e70a2b37fd08b68fdcb389f955faea163f6ffa5be65cd0c251";
 
-    const client = new MetamaskConnectClient("https://example.com");
+    const client = new MetamaskConnectClient();
     await client.connect();
 
     const prefix = client.calculatePersonalSignPrefix(params);
@@ -159,7 +163,7 @@ describe("MetamaskConnectClient", () => {
 
     const privateKey = "0x311e3750b1b698e70a2b37fd08b68fdcb389f955faea163f6ffa5be65cd0c251";
 
-    const client = new MetamaskConnectClient("https://example.com");
+    const client = new MetamaskConnectClient();
     await client.connect();
 
     const prefix = client.calculatePersonalSignPrefix(params);
@@ -189,7 +193,7 @@ describe("MetamaskConnectClient", () => {
 
     const privateKey = "0x311e3750b1b698e70a2b37fd08b68fdcb389f955faea163f6ffa5be65cd0c251";
 
-    const client = new MetamaskConnectClient("https://example.com");
+    const client = new MetamaskConnectClient();
     await client.connect();
 
     const prefix = client.calculatePersonalSignPrefix(params);
@@ -218,7 +222,7 @@ describe("MetamaskConnectClient", () => {
 
     const privateKey = "0x311e3750b1b698e70a2b37fd08b68fdcb389f955faea163f6ffa5be65cd0c251";
 
-    const client = new MetamaskConnectClient("https://example.com");
+    const client = new MetamaskConnectClient();
     await client.connect();
 
     const prefix = client.calculatePersonalSignPrefix(params);
@@ -255,11 +259,16 @@ describe("TrustConnectClient", () => {
     };
 
     // call connect
-    const client = new ClientFactory().trustClient("https://example.com");
+    const client = new GalachainConnectTrustClient();
     await client.connect();
 
     // send dto payload in send function
-    const response = await client.submit({ method: "TransferToken", payload: dto, sign: true });
+    const response = await client.submit({
+      method: "TransferToken",
+      payload: dto,
+      sign: true,
+      url: "https://example.com"
+    });
 
     expect(response).toEqual({
       Hash: {
