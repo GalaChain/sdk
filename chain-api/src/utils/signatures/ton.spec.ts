@@ -67,7 +67,7 @@ it("should sign and verify TON signature", async () => {
   expect(signature.toString("base64")).toBe(expectedSignature);
 
   // When
-  const isValid = ton.isValidSignature(signature, payload, keyPairBuff.publicKey, seed);
+  const isValid = ton.isValidSignature(signature, payload, keyPairBuff.publicKey, undefined);
 
   // Then
   expect(isValid).toBeTruthy();

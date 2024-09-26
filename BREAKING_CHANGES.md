@@ -65,6 +65,8 @@ const { ctx, contract, writes } = fixture(GalaChainTokenContract)
 const dto = await createValidDTO(LockTokenDto, { ... });
 
 const response = await contract.LockToken(ctx, dto);
+
+expect(writes).toEqual(expectedWrites);
 ```
 
 After upgrade to `2.0.0`:
@@ -77,6 +79,8 @@ const dto = await createValidSubmitDTO(LockTokenDto, { ... })
   .signed(users.testUser1.privateKey);
 
 const response = await contract.LockToken(ctx, dto);
+
+expect(getWrites()).toEqual(expectedWrites);
 ```
 
 The main difference between the old CA-based auth and the new signature-based auth is that instead of using the user's CA (Certificate Authority) identity, we use the user's public key that is recovered from the DTO (Data Transfer Object) and the signature.
