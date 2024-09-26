@@ -34,7 +34,7 @@ import { BigNumberIsInteger, BigNumberIsNotNegative, BigNumberProperty, IsUserAl
 import { BurnTokenQuantity } from "./BurnTokenQuantity";
 import { TokenBurnCounter } from "./TokenBurnCounter";
 import { TokenInstance } from "./TokenInstance";
-import { ChainCallDTO } from "./dtos";
+import { ChainCallDTO, SubmitCallDTO } from "./dtos";
 import { BatchMintTokenDto } from "./mint";
 
 export type FetchBurnsParams = ConstructorArgs<FetchBurnsDto>;
@@ -98,7 +98,7 @@ export type BurnTokensParams = ConstructorArgs<BurnTokensDto>;
 @JSONSchema({
   description: "Defines burns to be created."
 })
-export class BurnTokensDto extends ChainCallDTO {
+export class BurnTokensDto extends SubmitCallDTO {
   @JSONSchema({
     description:
       "Array of token instances of token to be burned. In case of fungible tokens, tokenInstance.instance field " +
