@@ -24,7 +24,7 @@ This document provides examples of how to use GalaChain Connect in your applicat
 
 ### Connecting to a Web3 Wallet
 
-First, you need to create a client and connect to a web3 wallet, the below shows Metamask:
+First, you need to create a client and connect to a web3 wallet, the below shows Metamask connection:
 
 ```typescript
 import { MetamaskConnectClient } from "@gala-chain/connect";
@@ -35,25 +35,35 @@ export const message = ref("");
 export const connectedUser = ref<string | null>(null);
 
 export async function connectToMetaMask() {
-  try {
-    const connectionResult = await metamaskClient.connect();
-    message.value = `Connected! User: ${connectionResult}`;
-    connectedUser.value = connectionResult;
+    try {
+        const connectionResult = await metamaskClient.connect();
+        message.value = `Connected! User: ${connectionResult}`;
+        connectedUser.value = connectionResult;
 
-    // Listening to account changes
-    metamaskClient.on("accountChanged", (account: string | null) => {
-      console.log(`Account changed: ${account}`);
-      message.value = `Account Changed! User: ${account}`;
-      connectedUser.value = account;
-    });
-  } catch (error) {
-    message.value = "Failed to connect!";
-    console.error(error);
-  }
+        // Listening to account changes
+        metamaskClient.on("accountChanged", (account: string[] | string | null) => {
+            if (Array.isArray(account)) {
+                //For simplicity of the example,we'll just grab the first connected wallet
+                if (account.length > 0) {
+                    connectedUser.value = account[0];
+                }
+            } else {
+                console.log(`Account changed: ${account}`);
+                message.value = `Account Changed! User: ${account}`;
+                connectedUser.value = account;
+            }
+        });
+    } catch (error) {
+        message.value = "Failed to connect!";
+        console.error(error);
+    }
 }
 
 export function isConnected() {
-  return connectedUser.value !== null;
+    if (Array.isArray(connectedUser.value)) {
+        return connectedUser.value.length > 0;
+    }
+    return connectedUser.value !== null;
 }
 ```
 
@@ -84,10 +94,8 @@ export async function createTokenClass() {
   try {
     const result = await tokenClient.CreateTokenClass(arbitraryTokenData);
     console.log("Token class created:", result);
-    message.value = "Token class created successfully!";
   } catch (error) {
     console.error("Failed to create token class:", error);
-    message.value = "Failed to create token class!";
   }
 }
 ```
@@ -98,7 +106,7 @@ You can generate new wallets using the `WalletUtils` utility provided by GalaCha
 
 #### Creating a Random Wallet
 
-```javascript
+```typescript
 import { WalletUtils } from "@gala-chain/connect";
 
 // Generate a random wallet
@@ -123,7 +131,7 @@ The `createRandom()` method returns an object containing:
 
 To create a random wallet and register it with a GalaChain service, use `createAndRegisterRandomWallet`:
 
-```javascript
+```typescript
 import { WalletUtils } from "@gala-chain/connect";
 
 // Replace with your registration endpoint, or use this to test stage
@@ -133,11 +141,7 @@ async function createAndRegisterWallet() {
   try {
     const randomWallet = await WalletUtils.createAndRegisterRandomWallet(registrationEndpoint);
 
-    console.log("GalaChain Address:", randomWallet.galachainAddress);
     console.log("Private Key:", randomWallet.privateKey);
-    console.log("Public Key:", randomWallet.publicKey);
-    console.log("Ethereum Address:", randomWallet.ethAddress);
-    console.log("Mnemonic:", randomWallet.mnemonic?.phrase);
   } catch (error) {
     console.error("Failed to create and register wallet:", error);
   }
@@ -187,19 +191,17 @@ In your Vue component, you can add a button to generate a wallet:
 ```html
 <template>
   <div>
-    <!-- Other buttons -->
     <button @click="generateWallet">Generate Wallet</button>
   </div>
 </template>
 
 <script>
-  import { WalletUtils } from "@gala-chain/connect";
+  import { generateWallet } from "./your-code-from-above";
 
   export default {
     setup() {
       return {
         generateWallet,
-        message
       };
     }
   };
@@ -212,26 +214,30 @@ In your Vue component, you can add a simple template with a connect button and a
 
 ```html
 <template>
-  <div>
-    <button @click="connectToMetaMask">Connect to MetaMask</button>
-    <button @click="createTokenClass" :disabled="!isConnected">Create Token Class</button>
-    <p>{{ message }}</p>
-  </div>
+    <div>
+        <button @click="connectToMetaMask">Connect to MetaMask</button>
+        <button @click="createTokenClass" :disabled="!isConnected">Create Token Class</button>
+        <p v-if="connectedUser">
+            Connected Account(s):
+            <span> {{ connectedUser }}</span>
+        </p>
+    </div>
 </template>
 
 <script>
-  import { connectToMetaMask, createTokenClass, isConnected, message } from "./path-to-your-script";
+import { connectToMetaMask, createTokenClass, connectedUser, isConnected } from './path-to-your-script';
 
-  export default {
+export default {
     setup() {
-      return {
-        connectToMetaMask,
-        createTokenClass,
-        message,
-        isConnected
-      };
-    }
-  };
+        return {
+            connectToMetaMask,
+            createTokenClass,
+            message,
+            connectedUser,
+            isConnected,
+        };
+    },
+};
 </script>
 ```
 
