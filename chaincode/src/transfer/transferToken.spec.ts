@@ -22,7 +22,7 @@ import {
   TokenNotInBalanceError,
   TransferTokenDto,
   createValidChainObject,
-  createValidDTO
+  createValidSubmitDTO
 } from "@gala-chain/api";
 import { currency, fixture, nft, users, writesMap } from "@gala-chain/test";
 import BigNumber from "bignumber.js";
@@ -50,11 +50,11 @@ describe("TransferToken", () => {
     const tokenBalance = nft.tokenBalance();
     tokenBalance.ensureCanLockInstance(expectedHold, Date.now()).lock();
 
-    const { ctx, contract, writes } = fixture(GalaChainTokenContract)
+    const { ctx, contract, getWrites } = fixture(GalaChainTokenContract)
       .registeredUsers(users.testUser1, users.testUser2)
       .savedState(nftClass, nftInstance, tokenBalance);
 
-    const dto = await createValidDTO(TransferTokenDto, {
+    const dto = await createValidSubmitDTO(TransferTokenDto, {
       from: users.testUser1.identityKey,
       to: users.testUser2.identityKey,
       tokenInstance: nftInstanceKey,
@@ -71,7 +71,7 @@ describe("TransferToken", () => {
         new TokenLockedError(users.testUser1.identityKey, nftInstance, nftInstance.instance, undefined)
       )
     );
-    expect(writes).toEqual({});
+    expect(getWrites()).toEqual({});
   });
 
   test("TransferToken to self fails, sender and recipient must be different", async () => {
@@ -92,12 +92,12 @@ describe("TransferToken", () => {
     tokenBalance.ensureCanLockInstance(expectedHold, Date.now()).lock();
     expect(tokenBalance.owner).toEqual(expectedHold.createdBy);
 
-    const { ctx, contract, writes } = fixture(GalaChainTokenContract)
+    const { ctx, contract, getWrites } = fixture(GalaChainTokenContract)
       .registeredUsers(users.testUser1, users.testUser2)
       .savedState(nftClass, nftInstance, tokenBalance);
 
     // case 1: callingUser is the sender
-    const dto1 = await createValidDTO(TransferTokenDto, {
+    const dto1 = await createValidSubmitDTO(TransferTokenDto, {
       to: users.testUser1.identityKey,
       tokenInstance: nftInstanceKey,
       quantity: new BigNumber("1")
@@ -105,7 +105,7 @@ describe("TransferToken", () => {
     dto1.sign(users.testUser1.privateKey);
 
     // case 2: from is the sender
-    const dto2 = await createValidDTO(TransferTokenDto, {
+    const dto2 = await createValidSubmitDTO(TransferTokenDto, {
       to: users.testUser2.identityKey,
       from: users.testUser2.identityKey,
       tokenInstance: nftInstanceKey,
@@ -128,7 +128,7 @@ describe("TransferToken", () => {
         new SameSenderAndRecipientError(users.testUser2.identityKey, users.testUser2.identityKey)
       )
     );
-    expect(writes).toEqual({});
+    expect(getWrites()).toEqual({});
   });
 
   test("TransferToken succeeds when providing infinite allowance to a user", async () => {
@@ -160,11 +160,11 @@ describe("TransferToken", () => {
       quantity: new BigNumber("100000")
     }));
 
-    const { ctx, contract, writes } = fixture(GalaChainTokenContract)
+    const { ctx, contract, getWrites } = fixture(GalaChainTokenContract)
       .registeredUsers(users.tokenHolder)
       .savedState(currencyClass, currencyInstance, tokenBalance, transferAllowance, ownerBalance);
 
-    const dto: TransferTokenDto = await createValidDTO(TransferTokenDto, {
+    const dto: TransferTokenDto = await createValidSubmitDTO(TransferTokenDto, {
       from: users.tokenHolder.identityKey,
       to: users.testUser2.identityKey,
       tokenInstance: currencyInstanceKey,
@@ -188,7 +188,7 @@ describe("TransferToken", () => {
         })
       ])
     );
-    expect(writes).toEqual(
+    expect(getWrites()).toEqual(
       writesMap(
         plainToInstance(TokenBalance, {
           ...currency.tokenBalance(),
@@ -231,11 +231,11 @@ describe("TransferToken", () => {
       quantitySpent: new BigNumber("0")
     });
 
-    const { ctx, contract, writes } = fixture(GalaChainTokenContract)
+    const { ctx, contract, getWrites } = fixture(GalaChainTokenContract)
       .registeredUsers(users.testUser1, users.attacker)
       .savedState(nftClass, nftInstance, tokenBalance, transferAllowance);
 
-    const dto: TransferTokenDto = await createValidDTO(TransferTokenDto, {
+    const dto: TransferTokenDto = await createValidSubmitDTO(TransferTokenDto, {
       from: users.testUser1.identityKey,
       to: users.attacker.identityKey,
       tokenInstance: nftInstanceKey,
@@ -257,7 +257,7 @@ describe("TransferToken", () => {
         )
       )
     );
-    expect(writes).toEqual({});
+    expect(getWrites()).toEqual({});
   });
 
   test("TransferToken fails if allowances are neither provided nor found on chain", async () => {
@@ -271,11 +271,11 @@ describe("TransferToken", () => {
 
     const tokenBalance = nft.tokenBalance();
 
-    const { ctx, contract, writes } = fixture(GalaChainTokenContract)
+    const { ctx, contract, getWrites } = fixture(GalaChainTokenContract)
       .registeredUsers(users.testUser2)
       .savedState(nftClass, nftInstance, tokenBalance);
 
-    const dto: TransferTokenDto = await createValidDTO(TransferTokenDto, {
+    const dto: TransferTokenDto = await createValidSubmitDTO(TransferTokenDto, {
       from: users.testUser1.identityKey,
       to: users.testUser2.identityKey,
       tokenInstance: nftInstanceKey,
@@ -299,7 +299,7 @@ describe("TransferToken", () => {
         )
       )
     );
-    expect(writes).toEqual({});
+    expect(getWrites()).toEqual({});
   });
 
   test("TransferToken fails when valid allowances are used up", async () => {
@@ -311,11 +311,11 @@ describe("TransferToken", () => {
     const nftClass = nft.tokenClass();
     const tokenBalance = nft.tokenBalance();
 
-    const { ctx, contract, writes } = fixture(GalaChainTokenContract)
+    const { ctx, contract, getWrites } = fixture(GalaChainTokenContract)
       .registeredUsers(users.testUser1, users.testUser2)
       .savedState(nftClass, nftInstance, tokenBalance);
 
-    const dto: TransferTokenDto = await createValidDTO(TransferTokenDto, {
+    const dto: TransferTokenDto = await createValidSubmitDTO(TransferTokenDto, {
       from: users.testUser1.identityKey,
       to: users.testUser2.identityKey,
       tokenInstance: nftInstanceKey,
@@ -339,7 +339,7 @@ describe("TransferToken", () => {
         )
       )
     );
-    expect(writes).toEqual({});
+    expect(getWrites()).toEqual({});
   });
 
   test("TransferToken fails if user has insufficient balance", async () => {
@@ -363,11 +363,11 @@ describe("TransferToken", () => {
       quantitySpent: new BigNumber("0")
     });
 
-    const { ctx, contract, writes } = fixture(GalaChainTokenContract)
+    const { ctx, contract, getWrites } = fixture(GalaChainTokenContract)
       .registeredUsers(users.testUser1, users.testUser2)
       .savedState(nftClass, nftInstance, tokenBalance, transferAllowance);
 
-    const dto: TransferTokenDto = await createValidDTO(TransferTokenDto, {
+    const dto: TransferTokenDto = await createValidSubmitDTO(TransferTokenDto, {
       from: users.testUser1.identityKey,
       to: users.testUser2.identityKey,
       tokenInstance: nftInstanceKey,
@@ -384,7 +384,7 @@ describe("TransferToken", () => {
         new TokenNotInBalanceError(users.testUser1.identityKey, nftInstance, nftInstance.instance)
       )
     );
-    expect(writes).toEqual({});
+    expect(getWrites()).toEqual({});
   });
 
   test("TransferToken fails for another Fungible Tokens without allowance", async () => {
@@ -417,11 +417,11 @@ describe("TransferToken", () => {
     const ownerBalance = new TokenBalance({ owner: users.tokenHolder.identityKey, ...currencyInstanceKey });
     ownerBalance.ensureCanAddQuantity(new BigNumber("50000")).add();
 
-    const { ctx, contract, writes } = fixture(GalaChainTokenContract)
+    const { ctx, contract, getWrites } = fixture(GalaChainTokenContract)
       .registeredUsers(users.tokenHolder, users.attacker)
       .savedState(currencyClass, currencyInstance, tokenBalance, transferAllowance, ownerBalance);
 
-    const dto: TransferTokenDto = await createValidDTO(TransferTokenDto, {
+    const dto: TransferTokenDto = await createValidSubmitDTO(TransferTokenDto, {
       from: users.tokenHolder.identityKey,
       to: users.attacker.identityKey,
       tokenInstance: currencyInstanceKey,
@@ -441,7 +441,7 @@ describe("TransferToken", () => {
         )
       )
     );
-    expect(writes).toEqual({});
+    expect(getWrites()).toEqual({});
   });
 
   test("TransferToken fails for quantity less than decimal limit", async () => {
@@ -469,12 +469,12 @@ describe("TransferToken", () => {
     const ownerBalance = new TokenBalance({ owner: users.tokenHolder.identityKey, ...currencyInstanceKey });
     ownerBalance.ensureCanAddQuantity(new BigNumber("100000")).add();
 
-    const { ctx, contract, writes } = fixture(GalaChainTokenContract)
+    const { ctx, contract, getWrites } = fixture(GalaChainTokenContract)
       .registeredUsers(users.tokenHolder)
       .savedState(currencyClass, currencyInstance, tokenBalance, transferAllowance, ownerBalance);
 
     const decimalQuantity = new BigNumber("0.000000000001");
-    const transferDto: TransferTokenDto = await createValidDTO(TransferTokenDto, {
+    const transferDto: TransferTokenDto = await createValidSubmitDTO(TransferTokenDto, {
       from: users.tokenHolder.identityKey,
       to: users.testUser2.identityKey,
       tokenInstance: currencyInstanceKey,
@@ -489,6 +489,6 @@ describe("TransferToken", () => {
     expect(response).toEqual(
       GalaChainResponse.Error(new InvalidDecimalError(decimalQuantity, currencyClass.decimals))
     );
-    expect(writes).toEqual({});
+    expect(getWrites()).toEqual({});
   });
 });

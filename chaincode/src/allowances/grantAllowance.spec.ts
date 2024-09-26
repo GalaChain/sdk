@@ -25,7 +25,8 @@ import {
   TokenMintStatus,
   createValidChainObject,
   createValidDTO,
-  createValidRangedChainObject
+  createValidRangedChainObject,
+  createValidSubmitDTO
 } from "@gala-chain/api";
 import { currency, fixture, nft, transactionErrorKey, users, writesMap } from "@gala-chain/test";
 import BigNumber from "bignumber.js";
@@ -53,11 +54,11 @@ describe("GrantAllowance", () => {
     });
     nftBalance.ensureCanAddInstance(new BigNumber("1")).add();
 
-    const { ctx, contract, writes } = fixture(GalaChainTokenContract)
+    const { ctx, contract, getWrites } = fixture(GalaChainTokenContract)
       .registeredUsers(users.testUser2)
       .savedState(nftClass, nftInstance, nftBalance);
 
-    const dto: GrantAllowanceDto = await createValidDTO(GrantAllowanceDto, {
+    const dto: GrantAllowanceDto = await createValidSubmitDTO(GrantAllowanceDto, {
       tokenInstance: nftInstanceQueryKey,
       quantities: [{ user: users.testUser1.identityKey, quantity: new BigNumber("100") }],
       allowanceType: AllowanceType.Lock,
@@ -70,7 +71,7 @@ describe("GrantAllowance", () => {
     // Then
     const allowance = nft.tokenAllowance((a) => ({ ...a, created: ctx.txUnixTime }));
     expect(response).toEqual(GalaChainResponse.Success([allowance]));
-    expect(writes).toEqual(writesMap(allowance));
+    expect(getWrites()).toEqual(writesMap(allowance));
   });
 
   it("should fail to GrantAllowance when the instance is missing in balance", async () => {
@@ -88,11 +89,11 @@ describe("GrantAllowance", () => {
     });
     expect(nftBalance.getNftInstanceIds()).toEqual([]);
 
-    const { ctx, contract, writes } = fixture(GalaChainTokenContract)
+    const { ctx, contract, getWrites } = fixture(GalaChainTokenContract)
       .registeredUsers(users.testUser2)
       .savedState(nftClass, nftInstance, nftBalance);
 
-    const dto: GrantAllowanceDto = await createValidDTO(GrantAllowanceDto, {
+    const dto: GrantAllowanceDto = await createValidSubmitDTO(GrantAllowanceDto, {
       tokenInstance: nftInstanceQueryKey,
       quantities: [{ user: users.testUser1.identityKey, quantity: new BigNumber("100") }],
       allowanceType: AllowanceType.Lock,
@@ -104,7 +105,7 @@ describe("GrantAllowance", () => {
 
     // Then
     expect(response).toEqual(transactionErrorKey("TOKEN_NOT_IN_BALANCE"));
-    expect(writes).toEqual(writesMap());
+    expect(getWrites()).toEqual(writesMap());
   });
 
   it("should fail to GrantAllowance when quantity is less than decimal limit", async () => {
@@ -120,13 +121,13 @@ describe("GrantAllowance", () => {
     const currencyBalance = new TokenBalance({ owner: users.testUser2.identityKey, ...currencyClassKey });
     currencyBalance.ensureCanAddQuantity(new BigNumber("1000")).add();
 
-    const { ctx, contract, writes } = fixture(GalaChainTokenContract)
+    const { ctx, contract, getWrites } = fixture(GalaChainTokenContract)
       .registeredUsers(users.testUser2)
       .savedState(currencyClass, currencyInstance, currencyBalance);
 
     const decimalQuantity = new BigNumber("0.000000000001");
 
-    const dto: GrantAllowanceDto = await createValidDTO(GrantAllowanceDto, {
+    const dto: GrantAllowanceDto = await createValidSubmitDTO(GrantAllowanceDto, {
       tokenInstance: currencyInstanceQueryKey,
       quantities: [{ user: users.testUser1.identityKey, quantity: decimalQuantity }],
       allowanceType: AllowanceType.Lock,
@@ -140,7 +141,7 @@ describe("GrantAllowance", () => {
     expect(response).toEqual(
       GalaChainResponse.Error(new InvalidDecimalError(decimalQuantity, currencyClass.decimals))
     );
-    expect(writes).toEqual({});
+    expect(getWrites()).toEqual({});
   });
 
   it("should allow user to GrantAllowance for fungible token when quantity is greater than balance", async () => {
@@ -156,11 +157,11 @@ describe("GrantAllowance", () => {
     const currencyBalance = new TokenBalance({ owner: users.testUser2.identityKey, ...currencyClassKey });
     currencyBalance.ensureCanAddQuantity(new BigNumber("1000")).add();
 
-    const { ctx, contract, writes } = fixture(GalaChainTokenContract)
+    const { ctx, contract, getWrites } = fixture(GalaChainTokenContract)
       .registeredUsers(users.testUser2)
       .savedState(currencyClass, currencyInstance, currencyBalance);
 
-    const dto: GrantAllowanceDto = await createValidDTO(GrantAllowanceDto, {
+    const dto: GrantAllowanceDto = await createValidSubmitDTO(GrantAllowanceDto, {
       tokenInstance: currencyInstanceQueryKey,
       quantities: [{ user: users.testUser1.identityKey, quantity: new BigNumber("1001") }],
       allowanceType: AllowanceType.Lock,
@@ -180,7 +181,7 @@ describe("GrantAllowance", () => {
       allowanceType: AllowanceType.Lock
     }));
     expect(response).toEqual(GalaChainResponse.Success([allowance]));
-    expect(writes).toEqual(writesMap(allowance));
+    expect(getWrites()).toEqual(writesMap(allowance));
   });
 
   it("should GrantAllowance for fungible token when quantity is exactly balance", async () => {
@@ -196,11 +197,11 @@ describe("GrantAllowance", () => {
     const currencyBalance = new TokenBalance({ owner: users.testUser2.identityKey, ...currencyClassKey });
     currencyBalance.ensureCanAddQuantity(new BigNumber("1000")).add();
 
-    const { ctx, contract, writes } = fixture(GalaChainTokenContract)
+    const { ctx, contract, getWrites } = fixture(GalaChainTokenContract)
       .registeredUsers(users.testUser2)
       .savedState(currencyClass, currencyInstance, currencyBalance);
 
-    const dto: GrantAllowanceDto = await createValidDTO(GrantAllowanceDto, {
+    const dto: GrantAllowanceDto = await createValidSubmitDTO(GrantAllowanceDto, {
       tokenInstance: currencyInstanceQueryKey,
       quantities: [{ user: users.testUser1.identityKey, quantity: new BigNumber("1000") }],
       allowanceType: AllowanceType.Lock,
@@ -220,7 +221,7 @@ describe("GrantAllowance", () => {
       allowanceType: AllowanceType.Lock
     }));
     expect(response).toEqual(GalaChainResponse.Success([allowance]));
-    expect(writes).toEqual(writesMap(allowance));
+    expect(getWrites()).toEqual(writesMap(allowance));
   });
 
   it("should allow infinite Allowances for fungible token", async () => {
@@ -240,11 +241,11 @@ describe("GrantAllowance", () => {
       quantity: new BigNumber("1000")
     });
 
-    const { ctx, contract, writes } = fixture(GalaChainTokenContract)
+    const { ctx, contract, getWrites } = fixture(GalaChainTokenContract)
       .registeredUsers(users.testUser2)
       .savedState(currencyClass, currencyInstance, currencyBalance);
 
-    const dto: GrantAllowanceDto = await createValidDTO(GrantAllowanceDto, {
+    const dto: GrantAllowanceDto = await createValidSubmitDTO(GrantAllowanceDto, {
       tokenInstance: currencyInstanceQueryKey,
       quantities: [{ user: users.testUser1.identityKey, quantity: new BigNumber(Infinity) }],
       allowanceType: AllowanceType.Lock,
@@ -268,7 +269,7 @@ describe("GrantAllowance", () => {
     delete allowance.usesSpent;
 
     expect(response).toEqual(GalaChainResponse.Success([allowance]));
-    expect(writes).toEqual(writesMap(allowance));
+    expect(getWrites()).toEqual(writesMap(allowance));
   });
 
   it("ensures a unique set of users", async () => {
@@ -284,11 +285,11 @@ describe("GrantAllowance", () => {
     const currencyBalance = new TokenBalance({ owner: users.testUser2.identityKey, ...currencyClassKey });
     currencyBalance.ensureCanAddQuantity(new BigNumber("1000")).add();
 
-    const { ctx, writes } = fixture(GalaChainTokenContract)
+    const { ctx, getWrites } = fixture(GalaChainTokenContract)
       .registeredUsers(users.testUser2)
       .savedState(currencyClass, currencyInstance, currencyBalance);
 
-    const dto: GrantAllowanceDto = await createValidDTO(GrantAllowanceDto, {
+    const dto: GrantAllowanceDto = await createValidSubmitDTO(GrantAllowanceDto, {
       tokenInstance: currencyInstanceQueryKey,
       quantities: [{ user: users.testUser1.identityKey, quantity: new BigNumber("100") }],
       allowanceType: AllowanceType.Lock,
@@ -307,7 +308,7 @@ describe("GrantAllowance", () => {
 
     // Then
     await expect(response).rejects.toEqual(new DuplicateUserError(dto.quantities.map((q) => q.user)));
-    expect(writes).toEqual({});
+    expect(getWrites()).toEqual({});
   });
 
   it("Supports PartialKeys for NFTs, but skips any FT retrieved", async () => {
@@ -336,11 +337,11 @@ describe("GrantAllowance", () => {
     const nftBalance = new TokenBalance({ owner: users.testUser2.identityKey, ...nftClassKey });
     nftBalance.ensureCanAddInstance(new BigNumber("1")).add();
 
-    const { ctx, contract, writes } = fixture(GalaChainTokenContract)
+    const { ctx, contract, getWrites } = fixture(GalaChainTokenContract)
       .registeredUsers(users.testUser2)
       .savedState(currencyClass, currencyInstance, nftClass, currencyBalance, nftBalance, nftInstance);
 
-    const dto: GrantAllowanceDto = await createValidDTO(GrantAllowanceDto, {
+    const dto: GrantAllowanceDto = await createValidSubmitDTO(GrantAllowanceDto, {
       tokenInstance: currencyInstanceQueryKey,
       quantities: [{ user: users.testUser1.identityKey, quantity: new BigNumber("100") }],
       allowanceType: AllowanceType.Lock,
@@ -358,7 +359,7 @@ describe("GrantAllowance", () => {
     // Then
     const allowance = nft.tokenAllowance((a) => ({ ...a, created: ctx.txUnixTime }));
     expect(response).toEqual(GalaChainResponse.Success([allowance]));
-    expect(writes).toEqual(writesMap(allowance));
+    expect(getWrites()).toEqual(writesMap(allowance));
   });
 
   it("only permits tokenClass.authorities to Mint", async () => {
@@ -370,11 +371,11 @@ describe("GrantAllowance", () => {
     const nftClass = nft.tokenClass();
     const nftInstanceQueryKey = await createValidDTO(TokenInstanceQueryKey, nft.tokenInstance1KeyPlain());
 
-    const { ctx, contract, writes } = fixture(GalaChainTokenContract)
+    const { ctx, contract, getWrites } = fixture(GalaChainTokenContract)
       .registeredUsers(users.testUser2)
       .savedState(nftClass, nftInstance);
 
-    const dto: GrantAllowanceDto = await createValidDTO(GrantAllowanceDto, {
+    const dto: GrantAllowanceDto = await createValidSubmitDTO(GrantAllowanceDto, {
       tokenInstance: nftInstanceQueryKey,
       quantities: [{ user: users.testUser1.identityKey, quantity: new BigNumber("100") }],
       allowanceType: AllowanceType.Mint,
@@ -394,7 +395,7 @@ describe("GrantAllowance", () => {
         )
       )
     );
-    expect(writes).toEqual({});
+    expect(getWrites()).toEqual({});
   });
 
   it("should fail to grant Infinite Mint allowance", async () => {
@@ -406,11 +407,11 @@ describe("GrantAllowance", () => {
       currency.tokenInstanceKeyPlain()
     );
 
-    const { ctx, contract, writes } = fixture(GalaChainTokenContract)
+    const { ctx, contract, getWrites } = fixture(GalaChainTokenContract)
       .registeredUsers(users.admin)
       .savedState(currencyClass, currencyInstance);
 
-    const dto: GrantAllowanceDto = await createValidDTO(GrantAllowanceDto, {
+    const dto: GrantAllowanceDto = await createValidSubmitDTO(GrantAllowanceDto, {
       tokenInstance: currencyInstanceQueryKey,
       quantities: [{ user: users.testUser1.identityKey, quantity: new BigNumber(Infinity) }],
       allowanceType: AllowanceType.Mint,
@@ -429,7 +430,7 @@ describe("GrantAllowance", () => {
         )
       )
     );
-    expect(writes).toEqual({});
+    expect(getWrites()).toEqual({});
   });
 
   it("prevents issuing duplicate Lock allowances", async () => {
@@ -458,7 +459,7 @@ describe("GrantAllowance", () => {
       quantitySpent: new BigNumber("0")
     });
 
-    const { ctx, contract, writes } = fixture(GalaChainTokenContract)
+    const { ctx, contract, getWrites } = fixture(GalaChainTokenContract)
       .registeredUsers(users.testUser2)
       .savedState(nftClass, nftInstance, existingAllowance, nftBalance);
 
@@ -467,7 +468,7 @@ describe("GrantAllowance", () => {
     const existingChainKey = `client|testUser1$TEST$Item$Potion$Elixir$1$1$client|testUser2`;
     const expectedErrorPayload = instanceToPlain(existingAllowance);
 
-    const dto: GrantAllowanceDto = await createValidDTO(GrantAllowanceDto, {
+    const dto: GrantAllowanceDto = await createValidSubmitDTO(GrantAllowanceDto, {
       tokenInstance: nftInstanceQueryKey,
       quantities: [{ user: users.testUser1.identityKey, quantity: new BigNumber("100") }],
       allowanceType: AllowanceType.Lock,
@@ -481,7 +482,7 @@ describe("GrantAllowance", () => {
     expect(response).toEqual(
       GalaChainResponse.Error(new DuplicateAllowanceError(existingChainKey, expectedErrorPayload))
     );
-    expect(writes).toEqual({});
+    expect(getWrites()).toEqual({});
   });
 
   it("writes TokenMintAllowanceRequest chain objects for mint allowances", async () => {
@@ -501,12 +502,12 @@ describe("GrantAllowance", () => {
       instance
     });
 
-    const { ctx, contract, writes } = fixture(GalaChainTokenContract)
+    const { ctx, contract, getWrites } = fixture(GalaChainTokenContract)
       .registeredUsers(users.admin)
       .savedState(nftClass, nftInstance);
 
     const requestedQuantity = new BigNumber("100");
-    const dto: GrantAllowanceDto = await createValidDTO(GrantAllowanceDto, {
+    const dto: GrantAllowanceDto = await createValidSubmitDTO(GrantAllowanceDto, {
       tokenInstance: nftInstanceQueryKey,
       quantities: [{ user: users.testUser1.identityKey, quantity: requestedQuantity }],
       allowanceType: AllowanceType.Mint,
@@ -563,6 +564,6 @@ describe("GrantAllowance", () => {
 
     expect(response).toEqual(GalaChainResponse.Success([allowance]));
 
-    expect(writes).toEqual(writesMap(allowance, mintAllowance, mintAllowanceRequest));
+    expect(getWrites()).toEqual(writesMap(allowance, mintAllowance, mintAllowanceRequest));
   });
 });

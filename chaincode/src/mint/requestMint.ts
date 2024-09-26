@@ -23,12 +23,12 @@ import {
   TokenClassKeyProperties,
   TokenMintRequest,
   TokenMintStatus,
-  createValidDTO
+  createValidSubmitDTO
 } from "@gala-chain/api";
 import BigNumber from "bignumber.js";
 import { plainToInstance } from "class-transformer";
 
-import { GalaChainContext } from "../types/GalaChainContext";
+import { GalaChainContext } from "../types";
 import { getObjectByKey, inverseEpoch, inverseTime, putRangedChainObject } from "../utils";
 import { fetchMintSupply } from "./fetchMintSupply";
 import { validateMintRequest } from "./validateMintRequest";
@@ -54,6 +54,7 @@ export async function requestMint(
 
   const resDto = new FulfillMintDto();
   resDto.requests = [mintRequestDto];
+  resDto.uniqueKey = mintRequest.requestId();
 
   return resDto;
 }
@@ -84,7 +85,7 @@ export async function requestMintBatch(
   if (errors.length > 0) {
     throw new Error(`No token was minted. Errors: ${errors.join("; ")}.`);
   } else {
-    const resDto = await createValidDTO(FulfillMintDto, {
+    const resDto = await createValidSubmitDTO(FulfillMintDto, {
       requests: minted
     });
 

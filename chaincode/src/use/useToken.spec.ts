@@ -12,7 +12,13 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-import { GalaChainResponse, TokenBalance, TokenHold, UseTokenDto, createValidDTO } from "@gala-chain/api";
+import {
+  GalaChainResponse,
+  TokenBalance,
+  TokenHold,
+  UseTokenDto,
+  createValidSubmitDTO
+} from "@gala-chain/api";
 import { fixture, nft, users, writesMap } from "@gala-chain/test";
 import BigNumber from "bignumber.js";
 
@@ -34,11 +40,11 @@ describe("UseToken", () => {
     });
     nftTokenBalance.ensureCanAddInstance(nftInstanceKey.instance).add();
 
-    const { ctx, contract, writes } = fixture(GalaChainTokenContract)
+    const { ctx, contract, getWrites } = fixture(GalaChainTokenContract)
       .registeredUsers(users.testUser1)
       .savedState(nftClass, nftInstance, nftTokenBalance);
 
-    const dto: UseTokenDto = await createValidDTO(UseTokenDto, {
+    const dto: UseTokenDto = await createValidSubmitDTO(UseTokenDto, {
       owner: users.testUser1.identityKey,
       inUseBy: users.testUser1.identityKey,
       tokenInstance: nftInstanceKey,
@@ -62,6 +68,6 @@ describe("UseToken", () => {
 
     // Then
     expect(response).toEqual(GalaChainResponse.Success(expectedBalance));
-    expect(writes).toEqual(writesMap(expectedBalance));
+    expect(getWrites()).toEqual(writesMap(expectedBalance));
   });
 });

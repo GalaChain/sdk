@@ -15,6 +15,7 @@
 import { Type, instanceToInstance, plainToInstance } from "class-transformer";
 import { IsNotEmpty, IsOptional, ValidationError, validate } from "class-validator";
 import { JSONSchema } from "class-validator-jsonschema";
+import crypto from "crypto";
 
 import {
   SigningScheme,
@@ -73,8 +74,13 @@ type NonFunctionPropertyNames<T> = { [K in keyof T]: T[K] extends Function ? nev
 
 export type NonFunctionProperties<T> = Pick<T, NonFunctionPropertyNames<T>>;
 
+export function randomUniqueKey(): string {
+  return crypto.randomBytes(32).toString("base64");
+}
+
 /**
- * Creates valid DTO object from provided plain object. Throws exception in case of validation errors.
+ * Creates valid DTO object from provided plain object.
+ * Throws exception in case of validation errors.
  */
 export function createValidDTO<T extends ChainCallDTO>(
   constructor: ClassConstructor<T>,
@@ -90,42 +96,25 @@ export function createValidDTO<T extends ChainCallDTO>(
 }
 
 /**
- * Creates valid signed DTO object from provided plain object. Throws exception in case of validation errors.
- *
- * @deprecated Use `(await createValidDTO(...)).signed(...)` instead
+ * Creates valid submit DTO object from provided plain object.
+ * Throws exception in case of validation errors.
+ * If the uniqueKey is not provided, it generates a random one: 32 random bytes in base64.
  */
-export const createAndSignValidDTO = async <T extends ChainCallDTO>(
+export function createValidSubmitDTO<T extends SubmitCallDTO>(
   constructor: ClassConstructor<T>,
-  plain: NonFunctionProperties<T>,
-  privateKey: string
-): Promise<T> => {
-  const instance = plainToInstance(constructor, plain) as T;
-  instance.sign(privateKey);
-  await validateDTO(instance);
-  return instance;
-};
+  plain: Omit<NonFunctionProperties<T>, "uniqueKey"> & { uniqueKey?: string }
+): Promise<T> & { signed(privateKey: string): Promise<T> } {
+  return createValidDTO<T>(constructor, {
+    ...plain,
+    uniqueKey: plain?.uniqueKey ?? randomUniqueKey()
+  } as unknown as NonFunctionProperties<T>);
+}
 
 export interface TraceContext {
   spanId: string;
   traceId: string;
 }
 
-/**
- * @description
- *
- * The base DTO (Data Transfer Object) class. Provides common properties and
- * methods for signing, uniqueness, validation, and serialization. All other DTOs in the
- * SDK extend from this base class. To implement custom a custom DTO, create a new class that
- * extends `ChainCallDTO`, and use the `class-validator` npm package to decorate
- * the properties of the new class.
- *
- * @remarks
- *
- * Additional details for specific properties of this class
- * are generated via the `class-validator-jsonschema` npm module and can either
- *  be viewed in the source code
- * or in the OpenAPI documentation served alongside GalaChain's API endpoints.
- */
 export class ChainCallDTO {
   public trace?: TraceContext;
   public static readonly ENCODING = "base64";
@@ -199,37 +188,10 @@ export class ChainCallDTO {
     }
   }
 
-  /**
-   * @description
-   *
-   * Serialze this object to string in a determinsitic fashion.
-   * See Hyperledger Fabric's documentation on
-   * [JSON Determinism](https://hyperledger-fabric.readthedocs.io/en/release-2.5/chaincode4ade.html#json-determinism)
-   * for more details.
-   *
-   * @returns string
-   */
   serialize(): string {
     return serialize(this);
   }
 
-  /**
-   * @description
-   *
-   * Instantiate a class instance from a serialized object using the provided `ClassConstructor`.
-   *
-   * @param constructor
-   *
-   * `ClassConstructor` that extends `ChainCallDTO`
-   *
-   * @param object
-   *
-   * serialized string or plain object to be instantiated via the provided `ClassConstructor`
-   *
-   * @returns
-   *
-   * An instantiated class created with the provided `ClassConstructor`
-   */
   public static deserialize<T>(
     constructor: ClassConstructor<Inferred<T, ChainCallDTO>>,
     object: string | Record<string, unknown> | Record<string, unknown>[]
@@ -270,190 +232,84 @@ export class ChainCallDTO {
   }
 }
 
-/**
- * @description
- *
- * Input for the `GetObjectByKey` chaincode method defined on the GalaContract class.
- */
+// It just makes uniqueKey required
+export class SubmitCallDTO extends ChainCallDTO {
+  @IsNotEmpty()
+  public uniqueKey: string;
+}
+
 export class GetObjectDto extends ChainCallDTO {
   @IsNotEmpty()
   public readonly objectId: string;
 }
 
-/**
- * @description
- *
- * Input for the `GetObjectByHistory` chaincode method defined on the GalaContract class.
- */
 export class GetObjectHistoryDto extends ChainCallDTO {
   @IsNotEmpty()
   public readonly objectId: string;
 }
 
-/**
- * @description
- *
- * Input for the `DryRun` chaincode method defined on the GalaContract class.
- * Use a `DryRunDto` and the `DryRun` chaincode method to simulate the
- * execution of a chaincode contract method. The results of the `DryRun`
- * will not be written chain. Instead, the Read/Write set that would have resulted from
- * the transaction will be returned to the consuming client for analysis.
- *
- * @remarks
- *
- * Authorization is not checked for `DryRun` execution. This allows application,
- * administrative, game server identities etc. to simulate a transaction result
- * without prompting the end user to sign the input first. This helps avoid
- * replay attacks (as the unique id would not be written to chain in a DryRun)
- * and also allows applications to present certain outcomes to the end user
- * before they decide to sign and authorize the transaction.
- *
- * Example use case: Executing a `DryRun` on a given method, and then processing
- * the results for `FeeChannelPaymentReceipt` or `FeeUserPaymentReceipt` objects
- * can yield the exepcted/estimated fee prior to executing a transaction. The
- * estimated fee can then be presented to an end user for them to decide whether
- * or not they want to authorize the transaction.
- */
 export class DryRunDto extends ChainCallDTO {
-  /**
-   * @description
-   *
-   * The contract method intended for `DryRun` execution.
-   *
-   * @example
-   *
-   * "TransferToken"
-   */
   @IsNotEmpty()
   public readonly method: string;
 
-  /**
-   * @description
-   *
-   * The identity used for the transaction simulation.
-   */
   @IsNotEmpty()
   public readonly callerPublicKey: string;
 
-  /**
-   * @description
-   *
-   * A input to be used for the `DryRun` execution. For example, if the
-   * method to be `DryRun` is `TransferToken`, then a `TransferTokenDto` should
-   * be provided here.
-   */
   @IsNotEmpty()
   @IsOptional()
   @Type(() => ChainCallDTO)
   dto?: ChainCallDTO;
 }
 
-/**
- * @description
- *
- * Data Transfer Object (DTO) representing the  results of a successful `DryRun` execution,
- * to be sent back to the  consuming client.
- */
 export class DryRunResultDto extends ChainCallDTO {
-  /**
-   * @description
-   *
-   * The `GalaChainResponse` that would have occurred if the provided inputs had been
-   * sent to the provided method, with a valid signature.
-   */
   public response: GalaChainResponse<unknown>;
-  /**
-   * @description
-   *
-   * The `writes` from the Hyperledger Fabric Read/Write set that would have been
-   * written to chain, if the provided inputs had been sent to the provided method
-   * with a valid signature. See the Hyperledger Fabric documentation on
-   * [Valid Transactions](https://hyperledger-fabric.readthedocs.io/en/release-2.5/smartcontract/smartcontract.html#valid-transactions)
-   * for more details on the importantce of Read/Write sets.
-   */
   public writes: Record<string, string>;
-  /**
-   * @description
-   *
-   * The `reads` from the Hyperledger Fabric Read/Write set that would have been
-   * read from world state, if the provided inputs had been sent to the provided method
-   * with a valid signature. See the Hyperledger Fabric documentation on
-   * [Valid Transactions](https://hyperledger-fabric.readthedocs.io/en/release-2.5/smartcontract/smartcontract.html#valid-transactions)
-   * for more details on the importantce of Read/Write sets.
-   */
   public reads: Record<string, string>;
-  /**
-   * @description
-   *
-   * The `deletes` from the Read/Write set that would have been deleted from
-   * world state, if the provided inputs had been sent to the provided method with a
-   * valid signature. See the Hyperledger Fabric documentation on
-   * [Valid Transactions](https://hyperledger-fabric.readthedocs.io/en/release-2.5/smartcontract/smartcontract.html#valid-transactions)
-   * for more details on the importantce of Read/Write sets.
-   */
   public deletes: Record<string, true>;
 }
 
-/**
- * @description
- *
- * Dto for secure method to save public keys for legacy users.
- * Method is called and signed by Curators
- */
+export type RegisterUserParams = ConstructorArgs<RegisterUserDto>;
+
 @JSONSchema({
   description: `Dto for secure method to save public keys for legacy users. Method is called and signed by Curators`
 })
-export class RegisterUserDto extends ChainCallDTO {
-  /**
-   * @description
-   *
-   * Id of user to save public key for.
-   * Must be a valid user alias. See also @IsUserAlias().
-   */
+export class RegisterUserDto extends SubmitCallDTO {
   @JSONSchema({
     description: `Id of user to save public key for.`
   })
   @IsUserAlias()
   user: string;
 
-  /**
-   * @description Public secp256k1 key (compact or non-compact, hex or base64).
-   */
   @JSONSchema({ description: "Public secp256k1 key (compact or non-compact, hex or base64)." })
   @IsNotEmpty()
   publicKey: string;
 }
 
-/**
- * @description
- *
- * Dto for secure method to save public keys for Eth users.
- * Method is called and signed by Curators
- */
+export type RegisterEthUserParams = ConstructorArgs<RegisterEthUserDto>;
+
 @JSONSchema({
   description: `Dto for secure method to save public keys for Eth users. Method is called and signed by Curators`
 })
-export class RegisterEthUserDto extends ChainCallDTO {
+export class RegisterEthUserDto extends SubmitCallDTO {
   @JSONSchema({ description: "Public secp256k1 key (compact or non-compact, hex or base64)." })
   @IsNotEmpty()
   publicKey: string;
 }
 
-/**
- * @description
- *
- * Dto for secure method to save public keys for TON users.
- * Method is called and signed by Curators
- */
+export type RegisterTonUserParams = ConstructorArgs<RegisterTonUserDto>;
+
 @JSONSchema({
   description: `Dto for secure method to save public keys for TON users. Method is called and signed by Curators`
 })
-export class RegisterTonUserDto extends ChainCallDTO {
+export class RegisterTonUserDto extends SubmitCallDTO {
   @JSONSchema({ description: "TON user public key (Ed25519 in base64)." })
   @IsNotEmpty()
   publicKey: string;
 }
-export class UpdatePublicKeyDto extends ChainCallDTO {
+
+export type UpdatePublicKeyParams = ConstructorArgs<UpdatePublicKeyDto>;
+
+export class UpdatePublicKeyDto extends SubmitCallDTO {
   @JSONSchema({
     description:
       "For users with ETH signing scheme it is public secp256k1 key (compact or non-compact, hex or base64). " +
@@ -465,7 +321,7 @@ export class UpdatePublicKeyDto extends ChainCallDTO {
 
 export type UpdateUserRolesParams = ConstructorArgs<UpdateUserRolesDto>;
 
-export class UpdateUserRolesDto extends ChainCallDTO {
+export class UpdateUserRolesDto extends SubmitCallDTO {
   @IsUserAlias()
   user: string;
 
@@ -485,6 +341,7 @@ export class GetPublicKeyDto extends ChainCallDTO {
   user?: string;
 }
 
+export type GetMyProfileParams = ConstructorArgs<GetMyProfileDto>;
 export class GetMyProfileDto extends ChainCallDTO {
   // make signature required
   @IsNotEmpty()
