@@ -12,11 +12,8 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-import { ChainCallDTO, ConstructorArgs } from "@gala-chain/api";
-import { BrowserProvider, getAddress } from "ethers";
+import { BrowserProvider } from "ethers";
 
-import { CustomClient, WebSigner } from "../GalachainClient";
-import { generateEIP712Types } from "../Utils";
 import { ExtendedEip1193Provider } from "../helpers";
 import { BrowserConnectClient } from "./BrowserConnectClient";
 
