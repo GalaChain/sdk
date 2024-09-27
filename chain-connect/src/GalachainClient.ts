@@ -31,7 +31,7 @@ export abstract class GalaChainProvider {
     payload: U;
     sign?: boolean;
     headers?: object;
-  }): Promise<T | { status: number }> {
+  }): Promise<{ data: T; hash: string; status: number; message?: string }> {
     let newPayload = payload;
 
     if (sign === true) {
@@ -78,7 +78,7 @@ export abstract class GalaChainProvider {
         return Promise.reject("Invalid JSON response");
       }
     }
-    return Promise.resolve(id ? { Hash: id, status: response.status } : { status: response.status });
+    throw new Error(`Unable to get data. Received response: ${JSON.stringify(response)}`);
   }
 }
 export abstract class CustomClient extends GalaChainProvider {
