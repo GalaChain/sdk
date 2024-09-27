@@ -17,11 +17,8 @@ import { BrowserProvider, SigningKey, computeAddress, getAddress, getBytes, hash
 
 import { EventEmitter, Listener, MetaMaskEvents } from "./helpers";
 
-export abstract class CustomClient {
+export abstract class GalaChainProvider {
   abstract sign(method: string, dto: any): Promise<any>;
-  abstract getPublicKey(): Promise<{ publicKey: string; recoveredAddress: string }>;
-  abstract walletAddress: string;
-
   async submit<T, U>({
     url,
     method,
@@ -83,6 +80,10 @@ export abstract class CustomClient {
     }
     return Promise.resolve(id ? { Hash: id, status: response.status } : { status: response.status });
   }
+}
+export abstract class CustomClient extends GalaChainProvider {
+  abstract getPublicKey(): Promise<{ publicKey: string; recoveredAddress: string }>;
+  abstract walletAddress: string;
 
   public calculatePersonalSignPrefix(payload: object): string {
     const payloadLength = signatures.getPayloadToSign(payload).length;

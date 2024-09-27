@@ -54,12 +54,12 @@ import {
   UseTokenParams
 } from "@gala-chain/api";
 
-import { CustomClient } from "../GalachainClient";
+import { GalaChainProvider } from "../GalachainClient";
 
 export class TokenApi {
   constructor(
     private chainCodeUrl: string,
-    private connection: CustomClient
+    private connection: GalaChainProvider
   ) {}
 
   // Token Chaincode Calls:
