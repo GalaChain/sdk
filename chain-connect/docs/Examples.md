@@ -9,6 +9,7 @@ This document provides examples of how to use GalaChain Connect in your applicat
   - [Connecting to a Web3 Wallet](#connecting-to-a-web3-wallet)
   - [Creating a Token Class](#creating-a-token-class)
   - [Generating Wallets](#generating-wallets)
+  - [Connecting to an arbitrary provider](#using-an-arbitrary-provider)
 - [Server-Side Signing](#server-side-signing)
   - [Server-Side Example](#server-side-example)
 - [Notes](#notes)
