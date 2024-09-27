@@ -38,10 +38,18 @@ export abstract class CustomClient {
     let newPayload = payload;
 
     if (sign === true) {
-      try {
-        newPayload = await this.sign(method, payload);
-      } catch (error: unknown) {
-        throw new Error((error as Error).message);
+      //Only try signing if signature is not already present
+      if (
+        typeof payload !== "object" ||
+        payload === null ||
+        !("signature" in payload) ||
+        payload.signature === null
+      ) {
+        try {
+          newPayload = await this.sign(method, payload);
+        } catch (error: unknown) {
+          throw new Error((error as Error).message);
+        }
       }
     }
 
