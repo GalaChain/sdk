@@ -15,3 +15,4 @@
 export * from "./BrowserConnectClient";
 export * from "./TrustConnectClient";
 export * from "./ServerSigningClient";
+export * from "./PresignedClient";
