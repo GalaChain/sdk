@@ -23,11 +23,12 @@ export class PublicKeyApi {
   ) {}
 
   // PublicKey Chaincode calls:
-  public GetMyProfile(message?: string) {
+  public GetMyProfile(message?: string, signature?: string) {
     return this.connection.submit<UserProfileBody, { message?: string }>({
       method: "GetMyProfile",
       payload: {
-        ...(message ? { message } : {})
+        ...(message ? { message } : {}),
+        ...(signature ? { signature } : {})
       },
       sign: true,
       url: this.chainCodeUrl
