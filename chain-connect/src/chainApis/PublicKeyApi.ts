@@ -14,12 +14,12 @@
  */
 import { RegisterUserParams, UpdatePublicKeyParams, UserProfileBody } from "@gala-chain/api";
 
-import { CustomClient } from "../GalachainClient";
+import { GalaChainProvider } from "../GalachainClient";
 
 export class PublicKeyApi {
   constructor(
     private chainCodeUrl: string,
-    private connection: CustomClient
+    private connection: GalaChainProvider
   ) {}
 
   // PublicKey Chaincode calls:
