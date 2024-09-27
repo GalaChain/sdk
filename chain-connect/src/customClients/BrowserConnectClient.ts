@@ -13,7 +13,7 @@
  * limitations under the License.
  */
 import { ChainCallDTO, ConstructorArgs } from "@gala-chain/api";
-import { BrowserProvider, getAddress } from "ethers";
+import { BrowserProvider, Eip1193Provider, getAddress } from "ethers";
 
 import { WebSigner } from "../GalachainClient";
 import { generateEIP712Types } from "../Utils";
@@ -26,11 +26,11 @@ declare global {
 }
 
 export class BrowserConnectClient extends WebSigner {
-  constructor(provider?: BrowserProvider) {
+  constructor(provider?: Eip1193Provider) {
     super();
     this.address = "";
     if (provider) {
-      this.provider = provider;
+      this.provider = new BrowserProvider(provider);
     } else if (window.ethereum) {
       this.provider = new BrowserProvider(window.ethereum);
     } else {
