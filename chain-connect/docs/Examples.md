@@ -24,24 +24,24 @@ This document provides examples of how to use GalaChain Connect in your applicat
 
 ### Connecting to a Web3 Wallet
 
-First, you need to create a client and connect to a web3 wallet, the below shows Metamask connection:
+First, you need to create a client and connect to a web3 wallet, the below shows a connection:
 
 ```typescript
-import { MetamaskConnectClient } from "@gala-chain/connect";
+import { BrowserConnectClient } from "@gala-chain/connect";
 import { ref } from "vue";
 
-const metamaskClient = new MetamaskConnectClient();
+const web3Wallet = new BrowserConnectClient();
 export const message = ref("");
 export const connectedUser = ref<string | null>(null);
 
-export async function connectToMetaMask() {
+export async function connectToWeb3Wallet() {
     try {
-        const connectionResult = await metamaskClient.connect();
+        const connectionResult = await web3Wallet.connect();
         message.value = `Connected! User: ${connectionResult}`;
         connectedUser.value = connectionResult;
 
         // Listening to account changes
-        metamaskClient.on("accountChanged", (account: string[] | string | null) => {
+        web3Wallet.on("accountChanged", (account: string[] | string | null) => {
             if (Array.isArray(account)) {
                 //For simplicity of the example,we'll just grab the first connected wallet
                 if (account.length > 0) {
@@ -74,7 +74,7 @@ Once connected to a web3 wallet, you can create a token class using the `TokenAp
 ```typescript
 import { TokenApi } from "@gala-chain/connect";
 
-const tokenClient = new TokenApi("https://your-galachain-api-url/asset/token-contract", metamaskClient);
+const tokenClient = new TokenApi("https://your-galachain-api-url/asset/token-contract", web3Wallet);
 
 const arbitraryTokenData = {
   tokenClass: {
@@ -107,7 +107,7 @@ In your Vue component, you can add a simple template with a connect button and a
 ```html
 <template>
     <div>
-        <button @click="connectToMetaMask">Connect to MetaMask</button>
+        <button @click="connectToWeb3Wallet">Connect to Web3 Wallet</button>
         <button @click="createTokenClass" :disabled="!isConnected">Create Token Class</button>
         <p v-if="connectedUser">
             Connected Account(s):
@@ -117,14 +117,13 @@ In your Vue component, you can add a simple template with a connect button and a
 </template>
 
 <script>
-import { connectToMetaMask, createTokenClass, connectedUser, isConnected } from './your-code-from-above';
+import { connectToWeb3Wallet, createTokenClass, connectedUser, isConnected } from './your-code-from-above';
 
 export default {
     setup() {
         return {
-            connectToMetaMask,
+            connectToWeb3Wallet,
             createTokenClass,
-            message,
             connectedUser,
             isConnected,
         };
@@ -240,6 +239,75 @@ In your Vue component, you can add a button to generate a wallet:
     }
   };
 </script>
+```
+
+### Using an Arbitrary Provider
+
+GalaChain Connect allows you to use any EIP-1193 compliant provider to interact with GalaChain. This is useful when you want to support multiple wallet providers beyond MetaMask, such as WalletConnect, Coinbase Wallet, or any other provider supported by libraries like Web3Modal.
+
+#### Example with Web3Modal
+
+In this example, we'll use Web3Modal to connect to various wallet providers and use the connected provider with GalaChain Connect.
+
+##### Setup
+
+First, install Web3Modal and any required dependencies:
+
+```bash
+npm install @web3modal/ethers ethers @web3modal/html
+```
+
+##### Code Example
+
+```typescript
+import { BrowserConnectClient, TokenApi } from '@gala-chain/connect';
+import { createWeb3Modal } from '@web3modal/ethers';
+import {type Eip1193Provider } from 'ethers';
+
+// Web3Modal configuration options
+const web3Modal = createWeb3Modal({
+  projectId: 'YOUR_PROJECT_ID', // Replace with your Web3Modal project ID
+  walletConnectVersion: 2,
+  wallets: [
+    // List of wallets you want to support
+  ],
+});
+
+async function connectWallet() {
+  try {
+    const provider = await web3Modal.getProvider();
+
+    if (provider) {
+      const browserConnectClient = new BrowserConnectClient(provider as Eip1193Provider);
+      const tokenClient = new TokenApi('https://your-galachain-api-url/asset/token-contract', browserConnectClient);
+
+      // Now you can use tokenClient to interact with GalaChain
+      // For example, create a token class
+      const arbitraryTokenData = {
+        tokenClass: {
+          additionalKey: 'arbitraryKey',
+          category: 'arbitraryCategory',
+          collection: 'arbitraryCollection',
+          type: 'arbitraryType',
+        },
+        description: 'An arbitrary token class created using an arbitrary provider',
+        image: 'image.png',
+        name: 'ArbitraryToken',
+        symbol: 'ARB',
+        maxSupply: '1000000',
+      };
+
+      const result = await tokenClient.CreateTokenClass(arbitraryTokenData);
+      console.log('Token class created:', result);
+    } else {
+      console.error('No provider found');
+    }
+  } catch (error) {
+    console.error('Error connecting to wallet:', error);
+  }
+}
+
+connectWallet();
 ```
 
 

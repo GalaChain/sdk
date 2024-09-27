@@ -25,18 +25,23 @@ declare global {
   }
 }
 
-export class MetamaskConnectClient extends WebSigner {
-  constructor() {
+export class BrowserConnectClient extends WebSigner {
+  constructor(provider?: BrowserProvider) {
     super();
     this.address = "";
-    if (window.ethereum) {
+    if (provider) {
+      this.provider = provider;
+    } else if (window.ethereum) {
       this.provider = new BrowserProvider(window.ethereum);
     } else {
       throw new Error("Ethereum provider not found");
     }
   }
 
-  private initializeListeners(): void {
+  /**
+   * Initializes the listeners to watch for events from the provider. Not all providers may support every event
+   */
+  protected initializeListeners(): void {
     if (!window.ethereum) {
       return;
     }
