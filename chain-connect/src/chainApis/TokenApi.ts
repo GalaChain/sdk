@@ -54,7 +54,7 @@ import {
   UseTokenParams
 } from "@gala-chain/api";
 
-import { GalaChainProvider } from "../GalachainClient";
+import { GalaChainProvider } from "../GalaChainClient";
 
 export class TokenApi {
   constructor(

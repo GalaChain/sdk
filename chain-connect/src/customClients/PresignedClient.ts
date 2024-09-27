@@ -16,7 +16,7 @@
  */
 import { NotImplementedError } from "@gala-chain/api";
 
-import { GalaChainProvider } from "../GalachainClient";
+import { GalaChainProvider } from "../GalaChainClient";
 
 /**
  * Use this provider when you simply want to forward presigned requests, or requests that do not require a signature

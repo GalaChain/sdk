@@ -14,7 +14,7 @@
  */
 import { RegisterUserParams, UpdatePublicKeyParams, UserProfileBody } from "@gala-chain/api";
 
-import { GalaChainProvider } from "../GalachainClient";
+import { GalaChainProvider } from "../GalaChainClient";
 
 export class PublicKeyApi {
   constructor(
