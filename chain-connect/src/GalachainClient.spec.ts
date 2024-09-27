@@ -17,7 +17,7 @@ import { ethers } from "ethers";
 import { EventEmitter } from "events";
 
 import { generateEIP712Types } from "./Utils";
-import { GalachainConnectTrustClient, BrowserConnectClient } from "./customClients";
+import { BrowserConnectClient, GalachainConnectTrustClient } from "./customClients";
 
 global.fetch = jest.fn((url: string, options?: Record<string, unknown>) =>
   Promise.resolve({
