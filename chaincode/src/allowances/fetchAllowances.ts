@@ -42,17 +42,24 @@ export async function fetchAllowances(
     data.type,
     data.additionalKey,
     data.instance,
-    data.allowanceType?.toString()
+    data.allowanceType?.toString(),
+    data.grantedBy
   );
 
-  const getObjectsResponse = await getObjectsByPartialCompositeKey(
+  const getObjectsResponse: TokenAllowance[] = await getObjectsByPartialCompositeKey(
     ctx,
     TokenAllowance.INDEX_KEY,
     queryParams,
     TokenAllowance
   );
 
-  const results = filterByGrantedBy(getObjectsResponse, data.grantedBy);
+  // ChainKeys 0 through 7 already provided, `grantedBy` included in query, skip filtering
+  if (queryParams.length >= 8) {
+    sort(getObjectsResponse);
+    return getObjectsResponse;
+  }
+
+  const results: TokenAllowance[] = filterByGrantedBy(getObjectsResponse, data.grantedBy);
   sort(results);
 
   return results;
