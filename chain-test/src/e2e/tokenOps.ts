@@ -40,12 +40,13 @@ export function randomize(str: string): string {
 
 export async function mintTokensToUsers(
   client: ChainClient & ChainUserAPI,
-  nftClassKey: TokenClassKey,
-  users: { user: ChainUser; quantity: BigNumber }[]
+  tokenClassKey: TokenClassKey,
+  users: { user: ChainUser; quantity: BigNumber }[],
+  isNonFungible = true
 ) {
-  await createGalaNFT(client, nftClassKey);
-  await grantUsersMintingAllowance(client, nftClassKey, users);
-  await usersMintNFT(client, nftClassKey, users);
+  await createTokenClass(client, tokenClassKey, isNonFungible);
+  await grantUsersAllowance(client, tokenClassKey, users);
+  await usersMintToken(client, tokenClassKey, users, isNonFungible);
 }
 
 export async function createTransferDto(
@@ -81,16 +82,22 @@ export async function fetchNFTInstances(
   return (resp.Data ?? [])[0].instanceIds.sort((a, b) => a.comparedTo(b));
 }
 
-async function createGalaNFT(client: ChainClient & ChainUserAPI, nftClassKey: TokenClassKey) {
+export async function createTokenClass(
+  client: ChainClient & ChainUserAPI,
+  tokenClassKey: TokenClassKey,
+  isNonFungible = true
+) {
+  const maximum = isNonFungible ? new BigNumber(10) : new BigNumber(50000000000);
   const galaTokenDto: CreateTokenClassDto = await createValidDTO<CreateTokenClassDto>(CreateTokenClassDto, {
     decimals: 0,
-    tokenClass: nftClassKey,
-    name: nftClassKey.collection,
-    symbol: nftClassKey.collection,
+    tokenClass: tokenClassKey,
+    name: tokenClassKey.collection,
+    symbol: tokenClassKey.collection,
     description: "This is a test description!",
-    isNonFungible: true,
+    isNonFungible: isNonFungible,
     image: "https://app.gala.games/_nuxt/img/gala-logo_horizontal_white.8b0409c.png",
-    maxSupply: new BigNumber(10)
+    maxCapacity: maximum,
+    maxSupply: maximum
   });
 
   await client.submitTransaction<TokenClassKey>(
@@ -100,17 +107,18 @@ async function createGalaNFT(client: ChainClient & ChainUserAPI, nftClassKey: To
   );
 }
 
-async function grantUsersMintingAllowance(
+export async function grantUsersAllowance(
   client: ChainClient & ChainUserAPI,
-  nftClassKey: TokenClassKey,
-  users: { user: ChainUser; quantity: BigNumber }[]
+  tokenClassKey: TokenClassKey,
+  users: { user: ChainUser; quantity: BigNumber }[],
+  allowanceType: AllowanceType = AllowanceType.Mint
 ) {
   const galaAllowanceDto = await createValidDTO<GrantAllowanceDto>(GrantAllowanceDto, {
     tokenInstance: plainToInstance(TokenInstanceKey, {
-      ...nftClassKey,
+      ...tokenClassKey,
       instance: TokenInstance.FUNGIBLE_TOKEN_INSTANCE
     }).toQueryKey(),
-    allowanceType: AllowanceType.Mint,
+    allowanceType: allowanceType,
     quantities: users.map(({ user, quantity }) => ({
       user: user.identityKey,
       quantity
@@ -125,21 +133,27 @@ async function grantUsersMintingAllowance(
   );
 }
 
-async function usersMintNFT(
+export async function usersMintToken(
   client: ChainClient,
-  nftClassKey: TokenClassKey,
-  users: { user: ChainUser; quantity: BigNumber }[]
+  tokenClassKey: TokenClassKey,
+  users: { user: ChainUser; quantity: BigNumber }[],
+  isNonFungible = true
 ) {
   for await (const { user, quantity } of users) {
     const userMintDto = await createValidDTO<MintTokenDto>(MintTokenDto, {
       owner: user.identityKey,
-      tokenClass: nftClassKey,
+      tokenClass: tokenClassKey,
       quantity: quantity
     });
 
     const response = await client.submitTransaction("MintToken", userMintDto.signed(user.privateKey));
 
-    const responseMatchers = Array.from({ length: quantity.toNumber() }).map(() => expect.anything());
-    expect(response).toEqual(transactionSuccess(responseMatchers));
+    if (isNonFungible) {
+      const responseMatchers = Array.from({ length: quantity.toNumber() }).map(() => expect.anything());
+      expect(response).toEqual(transactionSuccess(responseMatchers));
+    } else {
+      // Fungible token won't return individual instances per quantity, so response should be length 1
+      expect(response).toEqual(transactionSuccess([expect.anything()]));
+    }
   }
 }
