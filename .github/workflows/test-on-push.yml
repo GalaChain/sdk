@@ -146,6 +146,39 @@ jobs:
       - name: Run E2E tests
         run: npm run test:e2e --prefix ./project-test
 
+  template-e2e-mocked:
+    name: Chaincode template E2E (Mocked client)
+    runs-on: ubuntu-latest
+    needs: [ci]
+    env:
+      CURATORORG_MOCKED_CHAINCODE_DIR: "${{ github.workspace }}/project-test"
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Install tools
+        run: |
+          git --version
+          node --version
+          npm --version
+          jq --version
+          yq --version
+          bash --version
+          docker version
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 18
+      - name: Install local CLI
+        run: .github/scripts/install-local-cli.sh
+      - name: Create test project
+        run: galachain init ./project-test
+      - name: Install dependencies
+        run: |
+          (cd ./project-test && ../npm-pack-and-replace.sh --skipConfirmation)
+          npm i --prefix ./project-test
+      - name: Run E2E tests
+        run: npm run test:e2e --prefix ./project-test
+
   template-image-check:
     name: Chaincode template image check
     needs: [ci]

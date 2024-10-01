@@ -57,7 +57,8 @@ const defaultParams = {
     connectionProfilePath: process.env.CURATORORG_CONNECTION_PROFILE_PATH,
     defaultConnectionProfilePath: () => defaultConnectionProfilePath("curator"),
     apiUrl: process.env.CURATORORG_OPS_API_URL, // note: no default value
-    configPath: process.env.CURATORORG_OPS_API_CONFIG_PATH
+    configPath: process.env.CURATORORG_OPS_API_CONFIG_PATH,
+    mockedChaincodeDir: process.env.CURATORORG_MOCKED_CHAINCODE_DIR
   },
   UsersOrg1: {
     orgMsp: "UsersOrg1",
@@ -66,7 +67,8 @@ const defaultParams = {
     connectionProfilePath: process.env.USERSORG1_CONNECTION_PROFILE_PATH,
     defaultConnectionProfilePath: () => defaultConnectionProfilePath("users"),
     apiUrl: process.env.USERSORG1_OPS_API_URL, // note: no default value
-    configPath: process.env.USERSORG1_OPS_API_CONFIG_PATH
+    configPath: process.env.USERSORG1_OPS_API_CONFIG_PATH,
+    mockedChaincodeDir: process.env.USERSORG1_MOCKED_CHAINCODE_DIR
   },
   PartnerOrg1: {
     orgMsp: "PartnerOrg1",
@@ -75,7 +77,8 @@ const defaultParams = {
     connectionProfilePath: process.env.PARTNERORG1_CONNECTION_PROFILE_PATH,
     defaultConnectionProfilePath: () => defaultConnectionProfilePath("partner"),
     apiUrl: process.env.PARTNERORG1_OPS_API_URL,
-    configPath: process.env.PARTNERORG1_OPS_API_CONFIG_PATH
+    configPath: process.env.PARTNERORG1_OPS_API_CONFIG_PATH,
+    mockedChaincodeDir: process.env.PARTNERORG1_MOCKED_CHAINCODE_DIR
   }
 };
 
