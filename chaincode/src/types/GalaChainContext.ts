@@ -103,7 +103,12 @@ export class GalaChainContext extends Context {
 
   get callingUser(): string {
     if (this.callingUserValue === undefined) {
-      throw new UnauthorizedError("No calling user set");
+      const message =
+        "No calling user set. " +
+        "It usually means that chaincode tried to get ctx.callingUser for unauthorized call (no DTO signature).";
+      const error = new UnauthorizedError(message);
+      console.error(error);
+      throw new UnauthorizedError(message);
     }
     return this.callingUserValue;
   }
@@ -129,10 +134,11 @@ export class GalaChainContext extends Context {
     return this.callingUserRolesValue;
   }
 
-  set callingUserData(d: { alias: string; ethAddress?: string; tonAddress?: string; roles: string[] }) {
+  set callingUserData(d: { alias?: string; ethAddress?: string; tonAddress?: string; roles: string[] }) {
     if (this.callingUserValue !== undefined) {
       throw new Error("Calling user already set to " + this.callingUserValue);
     }
+
     this.callingUserValue = d.alias;
     this.callingUserRolesValue = d.roles ?? [UserRole.EVALUATE]; // default if `roles` is undefined
 
