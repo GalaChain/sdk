@@ -31,7 +31,12 @@ import {
   randomUniqueKey,
   signatures
 } from "@gala-chain/api";
-import { fixture, transactionErrorMessageContains, transactionSuccess } from "@gala-chain/test";
+import {
+  fixture,
+  transactionErrorKey,
+  transactionErrorMessageContains,
+  transactionSuccess
+} from "@gala-chain/test";
 
 import TestChaincode from "../__test__/TestChaincode";
 import { PublicKeyService } from "../services";
@@ -296,7 +301,7 @@ describe("UpdatePublicKey", () => {
     expect(updateResponse).toEqual(transactionSuccess());
 
     // New key is saved
-    expect(await getPublicKey(chaincode)).toEqual(
+    expect(await getPublicKey(chaincode, user.alias)).toEqual(
       transactionSuccess({
         publicKey: PublicKeyService.normalizePublicKey(newPublicKey),
         signing: SigningScheme.ETH
@@ -329,7 +334,7 @@ describe("UpdatePublicKey", () => {
     expect(updateResponse).toEqual(transactionSuccess());
 
     // New key is saved
-    expect(await getPublicKey(chaincode)).toEqual(
+    expect(await getPublicKey(chaincode, user.alias)).toEqual(
       transactionSuccess({
         publicKey: PublicKeyService.normalizePublicKey(newPublicKey),
         signing: SigningScheme.ETH
@@ -451,26 +456,29 @@ describe("VerifySignature", () => {
     expect(response).toEqual(transactionSuccess());
   });
 
-  it("should verify signature even if it is signed by another user", async () => {
+  it("should fail to verify signature if signerPublicKey is different", async () => {
     // Given
     const { chaincode, user } = await setup();
-    const otherUserPrivateKey = process.env.DEV_ADMIN_PRIVATE_KEY as string;
-    expect(otherUserPrivateKey).not.toEqual(user.privateKey);
+    const otherUserPublicKey = process.env.DEV_ADMIN_PUBLIC_KEY as string;
+    expect(otherUserPublicKey).not.toEqual(user.publicKey);
 
-    const signedDto = createSignedDto(new ChainCallDTO(), otherUserPrivateKey);
+    const dto = new ChainCallDTO();
+    dto.signerPublicKey = otherUserPublicKey;
+    const signedDto = createSignedDto(dto, user.privateKey);
 
     // When
     const response = await chaincode.invoke("PublicKeyContract:VerifySignature", signedDto);
 
     // Then
-    expect(response).toEqual(transactionSuccess());
+    expect(response).toEqual(transactionErrorKey("PUBLIC_KEY_MISMATCH"));
   });
 
   it("should verify DER signature", async () => {
     // Given
     const { chaincode, user } = await setup();
-    const signedDto = createDerSignedDto(new ChainCallDTO(), user.privateKey);
-    expect(signedDto.signerPublicKey).toBeUndefined();
+    const dto = new ChainCallDTO();
+    dto.signerPublicKey = user.publicKey;
+    const signedDto = createDerSignedDto(dto, user.privateKey);
 
     // When
     const response = await chaincode.invoke("PublicKeyContract:VerifySignature", signedDto);
@@ -479,38 +487,21 @@ describe("VerifySignature", () => {
     expect(response).toEqual(transactionSuccess());
   });
 
-  it("should fail to verify DER signature if it is signed by other user", async () => {
+  it("should fail to verify DER signature if signerPublicKey is different", async () => {
     // Given
     const { chaincode, user } = await setup();
-    const otherUserPrivateKey = process.env.DEV_ADMIN_PRIVATE_KEY as string;
-    expect(otherUserPrivateKey).not.toEqual(user.privateKey);
-
-    const signedDto = createDerSignedDto(new ChainCallDTO(), otherUserPrivateKey);
-
-    // When
-    const response = await chaincode.invoke("PublicKeyContract:VerifySignature", signedDto);
-
-    // Then
-    expect(response).toEqual(expect.objectContaining({ Status: 0, ErrorKey: "PK_INVALID_SIGNATURE" }));
-  });
-
-  it("should verify DER signature, signed by other user with signerPublicKey", async () => {
-    // Given
-    const { chaincode, user } = await setup();
-    const otherUserPrivateKey = process.env.DEV_ADMIN_PRIVATE_KEY as string;
     const otherUserPublicKey = process.env.DEV_ADMIN_PUBLIC_KEY as string;
-    expect(otherUserPrivateKey).not.toEqual(user.privateKey);
     expect(otherUserPublicKey).not.toEqual(user.publicKey);
 
     const dto = new ChainCallDTO();
     dto.signerPublicKey = otherUserPublicKey;
-    const signedDto = createDerSignedDto(dto, otherUserPrivateKey);
+    const signedDto = createDerSignedDto(dto, user.privateKey);
 
     // When
     const response = await chaincode.invoke("PublicKeyContract:VerifySignature", signedDto);
 
     // Then
-    expect(response).toEqual(expect.objectContaining({ Status: 1 }));
+    expect(response).toEqual(transactionErrorKey("PK_INVALID_SIGNATURE"));
   });
 });
 
