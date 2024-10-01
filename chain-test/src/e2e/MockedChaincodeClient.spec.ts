@@ -20,6 +20,7 @@ import {
   SigningScheme,
   createValidChainObject,
   createValidDTO,
+  createValidSubmitDTO,
   signatures
 } from "@gala-chain/api";
 import { execSync } from "child_process";
@@ -73,7 +74,7 @@ it("should support the global state", async () => {
   const client1 = createClient(chaincodeIndexJs);
   const client2 = createClient(chaincodeIndexJs);
 
-  const registerDto = await createValidDTO(RegisterEthUserDto, { publicKey: user.publicKey });
+  const registerDto = await createValidSubmitDTO(RegisterEthUserDto, { publicKey: user.publicKey });
   registerDto.sign(admin.privateKey);
 
   const getProfileDto = await createValidDTO(GetPublicKeyDto, { user: user.alias });
@@ -107,7 +108,7 @@ it("should not change the state for evaluateTransaction", async () => {
   const otherUser = signatures.genKeyPair();
   const otherUserAlias = `eth|${signatures.getEthAddress(otherUser.publicKey)}`;
 
-  const registerDto = await createValidDTO(RegisterEthUserDto, { publicKey: otherUser.publicKey });
+  const registerDto = await createValidSubmitDTO(RegisterEthUserDto, { publicKey: otherUser.publicKey });
   registerDto.sign(admin.privateKey);
 
   const getProfileDto = await createValidDTO(GetPublicKeyDto, { user: otherUserAlias });
@@ -135,7 +136,7 @@ it.skip("should support key collision validation", async () => {
   const client2 = createClient(chaincodeIndexJs, transactionDelayMs);
 
   const otherUser = signatures.genKeyPair();
-  const registerDto = await createValidDTO(RegisterEthUserDto, { publicKey: otherUser.publicKey });
+  const registerDto = await createValidSubmitDTO(RegisterEthUserDto, { publicKey: otherUser.publicKey });
   registerDto.sign(admin.privateKey);
 
   // When
@@ -175,11 +176,15 @@ async function ensureChaincode(): Promise<string> {
   const chaincodeDir = "test-chaincode";
   const chaincodePackageJsonPath = path.join(tmpdir, chaincodeDir, "package.json");
 
-  if (fs.existsSync(chaincodePackageJsonPath)) {
+  function chaincodeIndexJsPath() {
     // eslint-disable-next-line @typescript-eslint/no-var-requires
     const chaincodePackageJson = require(chaincodePackageJsonPath) as { main: string };
     const chaincodeIndexJsPath = path.join(tmpdir, chaincodeDir, chaincodePackageJson.main);
     return chaincodeIndexJsPath;
+  }
+
+  if (fs.existsSync(chaincodePackageJsonPath)) {
+    return chaincodeIndexJsPath();
   }
 
   const command = `cd "${tmpdir}" && \
@@ -196,8 +201,5 @@ async function ensureChaincode(): Promise<string> {
     throw new Error("Failed to create chaincode at " + chaincodePackageJsonPath);
   }
 
-  // eslint-disable-next-line @typescript-eslint/no-var-requires
-  const chaincodePackageJson = require(chaincodePackageJsonPath) as { main: string };
-  const chaincodeIndexJsPath = path.join(tmpdir, chaincodeDir, chaincodePackageJson.main);
-  return chaincodeIndexJsPath;
+  return chaincodeIndexJsPath();
 }
