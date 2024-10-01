@@ -1,8 +1,8 @@
 # Authorization and authentication
 
 GalaChain uses two layers of authorization and authentication to ensure that only authorized users can access the system.
-First level, exposed to the client, is based on secp256k1 signatures and private/public key authorization for Ethereum signing scheme, and eddsa signatures for TON signing scheme.
-Second level uses native Hyperledger Fabric CA users and organizations MSPs.
+The first level, exposed to the client, is based on secp256k1 signatures and private/public key authorization for the Ethereum signing scheme, and eddsa signatures for the TON signing scheme.
+The second level uses native Hyperledger Fabric CA users and organizations MSPs.
 
 ## How it works
 
@@ -19,9 +19,9 @@ In this document, if we refer to the **user**, we mean the **end user**.
 
 ## Signature based authorization
 
-Signature based authorization user secp256k1 signatures to verify the identity of the end user.
-By default, it uses the same algorithm as Ethereum (keccak256 + secp256k1), but also TON (The Open Network) signing scheme is supported.
-All payloads that should be authorized with TON signing scheme must have the `signing` field set to `TON`.
+Signature-based authorization uses secp256k1 signatures to verify the identity of the end user.
+By default, it uses the same algorithm as Ethereum (keccak256 + secp256k1), but the TON (The Open Network) signing scheme is also supported.
+All payloads that should be authorized by the TON signing scheme must have the `signing` field set to `TON`.
 
 ### Required fields in dto object
 
@@ -210,6 +210,6 @@ Instead, you should use the `allowedRoles` property to specify which **roles** c
 The `allowedRoles` property is an array of strings that represent the roles that are allowed to access the method.
 The roles are assigned to the `UserProfile` object in the chain data.
 By default, the `EVALUATE` and `SUBMIT` roles are assigned to the user when they are registered.
-You can assign additional roles to the user using the `PublicKeyContract:UpdateUserRoles` method (requires `CURATOR` role or being called by CA user from a curator organization).
+You can assign additional roles to the user using the `PublicKeyContract:UpdateUserRoles` method. This method requires that the calling user either has the `CURATOR` role or is a CA user from a curator organization.
 
-There are some predefined roles (`EVALUATE`, `SUBMIT`, `CURATOR`), you can also define custom roles for more granular access control.
+There are some predefined roles (`EVALUATE`, `SUBMIT`, `CURATOR`). You can also define custom roles for more granular access control.

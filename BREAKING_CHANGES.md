@@ -49,12 +49,12 @@ You may want to consult our acceptance test for migration from `allowedOrgs` to 
 #### Dropping support for legacy authentication
 
 We dropped support for the legacy authentication mechanism based on the Certificate Authority (CA) identity.
-We now require all transactions, that either (1) need to get current user (`ctx.callingUser`), or (2) need to verify the DTO signature, to be signed with the user's private key.
+We now require all transactions that either (1) need to get the current user (`ctx.callingUser`), or (2) need to verify the DTO signature, to be signed with the user's private key.
 This is a breaking change, as the old way of calling methods without a signature is no longer supported.
 
 It also means that:
-* DER signature with no additional data (`signerPublicKey` or `signerAddress`) is no longer supported, since it does not allow to recover the public key from the signature.
-* Some endpoints that were previously available without a signature and defaulted to CA username as `ctx.callingUser` now require a signature or explicit user parameter (for instance `GetPublicKey`, `FetchBalances`, `FetchAllowances`).
+* DER signatures with no additional data (`signerPublicKey` or `signerAddress`) are no longer supported, since they do not allow recovery of the public key from the signature.
+* Some endpoints that were previously available without a signature defaulted to setting the CA username as the value of `ctx.callingUser`. These endpoints now require a signature or an explicit user parameter (for instance `GetPublicKey`, `FetchBalances`, `FetchAllowances`).
 
 #### API changes for unit tests with `fixture` utility
 
