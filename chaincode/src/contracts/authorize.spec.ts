@@ -33,7 +33,7 @@ describe("authorization", () => {
     "no sig verif"?
   ];
 
-  const defaultCaId = "client|ca-user";
+  const anonymousUserId = "anonymous";
   const defaultMsp = "TestOrg";
 
   const registeredUser = {
@@ -48,7 +48,7 @@ describe("authorization", () => {
     // Then
     expect(await f.signedCall()).toEqual(transactionSuccess(registeredUser));
     expect(await f.unsignedCall()).toEqual(
-      transactionSuccess({ alias: defaultCaId, roles: [UserRole.EVALUATE] })
+      transactionSuccess({ alias: anonymousUserId, roles: [UserRole.EVALUATE] })
     );
   });
 
@@ -70,7 +70,7 @@ describe("authorization", () => {
     // Then
     expect(await f1.signedCall()).toEqual(transactionSuccess(registeredUser));
     expect(await f1.unsignedCall()).toEqual(
-      transactionSuccess({ alias: defaultCaId, roles: [UserRole.EVALUATE] })
+      transactionSuccess({ alias: anonymousUserId, roles: [UserRole.EVALUATE] })
     );
 
     expect(await f2.signedCall()).toEqual(transactionErrorKey("ORGANIZATION_NOT_ALLOWED"));
@@ -97,7 +97,7 @@ describe("authorization", () => {
     expect(f1UnsignedCallResponse).toEqual(
       transactionErrorMessageContains(
         // EVALUATE is default role for anonymous user (no signature)
-        "User client|ca-user does not have one of required roles: SUBMIT (has: EVALUATE)"
+        `User ${anonymousUserId} does not have one of required roles: SUBMIT (has: EVALUATE)`
       )
     );
 
@@ -124,7 +124,7 @@ describe("authorization", () => {
     expect(await f1.signedCall()).toEqual(transactionSuccess(registeredUser));
     expect(await f1.unsignedCall()).toEqual(
       // EVALUATE is default role for anonymous user (no signature)
-      transactionSuccess({ alias: defaultCaId, roles: [UserRole.EVALUATE] })
+      transactionSuccess({ alias: anonymousUserId, roles: [UserRole.EVALUATE] })
     );
 
     expect(await f2.signedCall()).toEqual(transactionSuccess(registeredUser));
@@ -232,7 +232,7 @@ describe("authorization", () => {
 
     const ContractClass = TestContractClass(type, verifySignature, allowedOrgs, allowedRoles);
 
-    const f = fixture(ContractClass).caClientIdentity(defaultCaId, defaultMsp).registeredUsers(user);
+    const f = fixture(ContractClass).caClientIdentity(anonymousUserId, defaultMsp).registeredUsers(user);
 
     const unsignedDto = new ChainCallDTO();
     unsignedDto.uniqueKey = "uniqueKey-123";
@@ -262,7 +262,7 @@ describe("authorization", () => {
       public async GetCallingUser(ctx: GalaChainContext, dto: ChainCallDTO): Promise<unknown> {
         try {
           return {
-            alias: ctx.callingUser,
+            alias: await (async () => ctx.callingUser)().catch((e) => "anonymous"),
             roles: ctx.callingUserRoles
           };
         } catch (e) {
