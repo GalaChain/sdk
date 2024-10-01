@@ -15,6 +15,7 @@
 import { ChainCallDTO, ClassConstructor, GalaChainResponse, Inferred, serialize } from "@gala-chain/api";
 import { ChainClient, ChainClientBuilder, ClassType, ContractConfig } from "@gala-chain/client";
 import { Contract } from "fabric-contract-api";
+import path from "path";
 
 import TestChaincode from "../unit/TestChaincode";
 
@@ -47,17 +48,19 @@ function getOrCreateState(channel: string, chaincode: string) {
 
 export class MockedChaincodeClientBuilder implements ChainClientBuilder {
   private readonly mockedChaincodeDir: string;
+  private readonly mockedChaincodeIndexJs: string;
   private readonly mockedChaincodeLib: Promise<ChaincodeLib>;
   private readonly orgMsp: string;
   private readonly adminId: string;
 
   constructor(params: MockedChaincodeClientParams) {
     this.mockedChaincodeDir = params.mockedChaincodeDir;
+    this.mockedChaincodeIndexJs = chaincodeIndexJsPath(this.mockedChaincodeDir);
     this.orgMsp = params.orgMsp ?? "MockedOrg";
     this.adminId = params.adminId ?? "client|mocked-user";
 
     this.mockedChaincodeLib = Promise.resolve()
-      .then(async () => (await import(this.mockedChaincodeDir)) as ImportedChaincodeLib) // TODO verify or throw
+      .then(async () => (await import(this.mockedChaincodeIndexJs)) as ImportedChaincodeLib) // TODO verify or throw
       .then((lib) => {
         const contractsByName = {} as Record<string, ClassConstructor<Contract>>;
         lib.contracts.forEach((contract) => {
@@ -80,6 +83,13 @@ export class MockedChaincodeClientBuilder implements ChainClientBuilder {
     });
     return new MockedChaincodeClient(this, chaincode, config, this.orgMsp, this.adminId);
   }
+}
+
+function chaincodeIndexJsPath(chaincodeDir: string) {
+  // eslint-disable-next-line @typescript-eslint/no-var-requires
+  const chaincodePackageJson = require(path.join(chaincodeDir, "package.json")) as { main: string };
+  const chaincodeIndexJsPath = path.join(chaincodeDir, chaincodePackageJson.main);
+  return chaincodeIndexJsPath;
 }
 
 export class MockedChaincodeClient extends ChainClient {

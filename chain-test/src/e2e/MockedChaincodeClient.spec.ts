@@ -32,7 +32,7 @@ import process from "process";
 import { transactionErrorKey, transactionSuccess } from "../matchers";
 import { MockedChaincodeClientBuilder } from "./MockedChaincodeClient";
 
-let admin, user, chaincodeIndexJs;
+let admin, user, chaincodeDir;
 
 beforeAll(async () => {
   // Setup admin
@@ -49,7 +49,7 @@ beforeAll(async () => {
   };
 
   // Setup chaincode
-  chaincodeIndexJs = await ensureChaincode();
+  chaincodeDir = await ensureChaincode();
 });
 
 afterAll(() => {
@@ -59,7 +59,7 @@ afterAll(() => {
 
 it("should be able to call chaincode", async () => {
   // Given
-  const client = createClient(chaincodeIndexJs);
+  const client = createClient(chaincodeDir);
   const dto = new ChainCallDTO().signed(admin.privateKey);
 
   // When
@@ -71,8 +71,8 @@ it("should be able to call chaincode", async () => {
 
 it("should support the global state", async () => {
   // Given
-  const client1 = createClient(chaincodeIndexJs);
-  const client2 = createClient(chaincodeIndexJs);
+  const client1 = createClient(chaincodeDir);
+  const client2 = createClient(chaincodeDir);
 
   const registerDto = await createValidSubmitDTO(RegisterEthUserDto, { publicKey: user.publicKey });
   registerDto.sign(admin.privateKey);
@@ -103,7 +103,7 @@ it("should support the global state", async () => {
 
 it("should not change the state for evaluateTransaction", async () => {
   // Given
-  const client = createClient(chaincodeIndexJs);
+  const client = createClient(chaincodeDir);
 
   const otherUser = signatures.genKeyPair();
   const otherUserAlias = `eth|${signatures.getEthAddress(otherUser.publicKey)}`;
@@ -132,8 +132,8 @@ it("should not change the state for evaluateTransaction", async () => {
 it.skip("should support key collision validation", async () => {
   // Given
   const transactionDelayMs = 100;
-  const client1 = createClient(chaincodeIndexJs, transactionDelayMs);
-  const client2 = createClient(chaincodeIndexJs, transactionDelayMs);
+  const client1 = createClient(chaincodeDir, transactionDelayMs);
+  const client2 = createClient(chaincodeDir, transactionDelayMs);
 
   const otherUser = signatures.genKeyPair();
   const registerDto = await createValidSubmitDTO(RegisterEthUserDto, { publicKey: otherUser.publicKey });
@@ -157,10 +157,10 @@ it.skip("should support phantom read collision validation", async () => {
   throw new Error("Not implemented");
 });
 
-function createClient(chaincodeIndexJs: string, transactionDelayMs = 0) {
+function createClient(chaincodeDir: string, transactionDelayMs = 0) {
   const contractName = "PublicKeyContract";
   return new MockedChaincodeClientBuilder({
-    mockedChaincodeDir: chaincodeIndexJs,
+    mockedChaincodeDir: chaincodeDir,
     orgMsp: "CuratorOrg"
   })
     .forContract({
@@ -173,18 +173,12 @@ function createClient(chaincodeIndexJs: string, transactionDelayMs = 0) {
 
 async function ensureChaincode(): Promise<string> {
   const tmpdir = os.tmpdir();
-  const chaincodeDir = "test-chaincode";
-  const chaincodePackageJsonPath = path.join(tmpdir, chaincodeDir, "package.json");
-
-  function chaincodeIndexJsPath() {
-    // eslint-disable-next-line @typescript-eslint/no-var-requires
-    const chaincodePackageJson = require(chaincodePackageJsonPath) as { main: string };
-    const chaincodeIndexJsPath = path.join(tmpdir, chaincodeDir, chaincodePackageJson.main);
-    return chaincodeIndexJsPath;
-  }
+  const chaincodeDirname = "test-chaincode";
+  const chaincodeDir = path.join(tmpdir, chaincodeDirname);
+  const chaincodePackageJsonPath = path.join(chaincodeDir, "package.json");
 
   if (fs.existsSync(chaincodePackageJsonPath)) {
-    return chaincodeIndexJsPath();
+    return chaincodeDir;
   }
 
   const command = `cd "${tmpdir}" && \
@@ -201,5 +195,5 @@ async function ensureChaincode(): Promise<string> {
     throw new Error("Failed to create chaincode at " + chaincodePackageJsonPath);
   }
 
-  return chaincodeIndexJsPath();
+  return chaincodeDir;
 }
