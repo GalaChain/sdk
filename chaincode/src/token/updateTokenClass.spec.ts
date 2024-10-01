@@ -100,7 +100,7 @@ it("should fail if CA client is not a member of CuratorOrg", async () => {
     GalaChainResponse.Error(
       new OrganizationNotAllowedError(
         "Members of organization NonCuratorOrg do not have sufficient permissions. Required one of [CuratorOrg].",
-        { caUser: "client|non-curator", userMsp: "NonCuratorOrg" }
+        { userMsp: "NonCuratorOrg" }
       )
     )
   );

@@ -110,7 +110,7 @@ export function createTonSignedDto(unsigned: ChainCallDTO, privateKey: string) {
 
 export async function getPublicKey(
   chaincode: TestChaincode,
-  userAlias?: string
+  userAlias: string
 ): Promise<GalaChainResponse<PublicKey>> {
   const dto = await createValidDTO<GetPublicKeyDto>(GetPublicKeyDto, { user: userAlias });
   return chaincode.invoke("PublicKeyContract:GetPublicKey", dto);
