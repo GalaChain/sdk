@@ -12,14 +12,29 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-import { ChainObject } from "./ChainObject";
-import { RangedChainObject } from "./RangedChainObject";
-import { ClassConstructor, NonFunctionProperties } from "./dtos";
 
 /*
  * Creates valid chain object. Throws error in case of failure
  */
-export async function createValidChainObject<T extends ChainObject | RangedChainObject>(
+import { ChainObject } from "./ChainObject";
+import { RangedChainObject } from "./RangedChainObject";
+import { ClassConstructor, NonFunctionProperties } from "./dtos";
+
+export async function createValidChainObject<T extends ChainObject>(
+  constructor: ClassConstructor<T>,
+  plain: NonFunctionProperties<T>
+): Promise<T> {
+  const obj = new constructor();
+  Object.entries(plain).forEach(([k, v]) => {
+    obj[k] = v;
+  });
+
+  await obj.validateOrReject();
+
+  return obj;
+}
+
+export async function createValidRangedChainObject<T extends RangedChainObject>(
   constructor: ClassConstructor<T>,
   plain: NonFunctionProperties<T>
 ): Promise<T> {

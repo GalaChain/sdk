@@ -138,6 +138,20 @@ export async function getObjectByKey<T extends ChainObject>(
   return ChainObject.deserialize(constructor, objectBuffer.toString());
 }
 
+export async function getRangedObjectByKey<T extends RangedChainObject>(
+  ctx: GalaChainContext,
+  constructor: ClassConstructor<Inferred<T, RangedChainObject>>,
+  objectId: string
+): Promise<T> {
+  const objectBuffer = await ctx.stub.getCachedState(objectId);
+
+  if (!objectBuffer || objectBuffer.length === 0) {
+    throw new ObjectNotFoundError(objectId);
+  }
+
+  return RangedChainObject.deserialize(constructor, objectBuffer.toString());
+}
+
 export async function getPlainObjectByKey(
   ctx: GalaChainContext,
   objectId: string

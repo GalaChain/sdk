@@ -19,9 +19,11 @@ import {
   GalaChainResponse,
   Inferred,
   MethodAPI,
+  NotImplementedError,
   Primitive,
   RuntimeError,
-  UnauthorizedError,
+  SubmitCallDTO,
+  UserRole,
   generateResponseSchema,
   generateSchema,
   parseValidDTO
@@ -33,7 +35,8 @@ import { UniqueTransactionService } from "../services";
 import { GalaChainContext } from "../types";
 import { GalaContract } from "./GalaContract";
 import { updateApi } from "./GalaContractApi";
-import { authorize, ensureOrganizationIsAllowed } from "./authorize";
+import { authenticate } from "./authenticate";
+import { authorize } from "./authorize";
 import { legacyClientAccountId } from "./legacyClientAccountId";
 
 // All DTOs need to be registered in the application, including super classes. Otherwise, chaincode
@@ -41,10 +44,11 @@ import { legacyClientAccountId } from "./legacyClientAccountId";
 // registered inside decorator factory.
 //
 DTOObject()(ChainCallDTO);
+DTOObject()(SubmitCallDTO);
 
 // Note: it is just a metadata, you cannot effectively forbid to submit the transaction
 // (you can, however make it readonly by passing random value to the result or manipulating the context)
-enum GalaTransactionType {
+export enum GalaTransactionType {
   EVALUATE,
   SUBMIT
 }
@@ -62,43 +66,45 @@ type OutType = ClassConstructor<unknown> | Primitive;
 type OutArrType = { arrayOf: OutType };
 
 export type GalaTransactionBeforeFn = (ctx: GalaChainContext, dto: ChainCallDTO) => Promise<void>;
+
 export type GalaTransactionAfterFn = (
   ctx: GalaChainContext,
   dto: ChainCallDTO,
   result: GalaChainResponse<unknown>
 ) => Promise<unknown>;
 
-export interface GalaTransactionOptions<T extends ChainCallDTO> {
-  type: GalaTransactionType;
+export interface CommonTransactionOptions<T extends ChainCallDTO> {
   deprecated?: true;
   description?: string;
   in?: ClassConstructor<Inferred<T>>;
   out?: OutType | OutArrType;
+  /** @deprecated */
   allowedOrgs?: string[];
-  verifySignature?: true;
+  allowedRoles?: string[];
   apiMethodName?: string;
   sequence?: MethodAPI[];
-  enforceUniqueKey?: true;
   before?: GalaTransactionBeforeFn;
   after?: GalaTransactionAfterFn;
 }
 
-type GalaSubmitOptions<T extends ChainCallDTO> = Omit<
-  Omit<GalaTransactionOptions<T>, "type">,
-  "verifySignature"
->;
+export interface GalaTransactionOptions<T extends ChainCallDTO> extends CommonTransactionOptions<T> {
+  type: GalaTransactionType;
+  verifySignature?: true;
+  enforceUniqueKey?: true;
+}
 
-type GalaEvaluateOptions<T extends ChainCallDTO> = Omit<
-  Omit<GalaTransactionOptions<T>, "type">,
-  "verifySignature"
->;
+export type GalaSubmitOptions<T extends SubmitCallDTO> = CommonTransactionOptions<T>;
+
+export interface GalaEvaluateOptions<T extends ChainCallDTO> extends CommonTransactionOptions<T> {
+  verifySignature?: true;
+}
 
 function isArrayOut(x: OutType | OutArrType | undefined): x is OutArrType {
   return typeof x === "object" && "arrayOf" in x;
 }
 
-function Submit<T extends ChainCallDTO>(options: GalaSubmitOptions<T>): GalaTransactionDecoratorFunction {
-  return GalaTransaction({ ...options, type: SUBMIT, verifySignature: true });
+function Submit<T extends SubmitCallDTO>(options: GalaSubmitOptions<T>): GalaTransactionDecoratorFunction {
+  return GalaTransaction({ ...options, type: SUBMIT, verifySignature: true, enforceUniqueKey: true });
 }
 
 function Evaluate<T extends ChainCallDTO>(options: GalaEvaluateOptions<T>): GalaTransactionDecoratorFunction {
@@ -115,7 +121,26 @@ function GalaTransaction<T extends ChainCallDTO>(
 
   if (options.type === SUBMIT && !options.verifySignature && !options.allowedOrgs?.length) {
     const message = `SUBMIT transaction must have either verifySignature or allowedOrgs defined`;
-    throw new UnauthorizedError(message);
+    throw new NotImplementedError(message);
+  }
+
+  if (options.allowedRoles !== undefined && options.allowedOrgs !== undefined) {
+    const message = `allowedRoles and allowedOrgs cannot be defined at the same time`;
+    throw new NotImplementedError(message);
+  }
+
+  options.allowedRoles = options.allowedRoles ?? [
+    options.type === SUBMIT ? UserRole.SUBMIT : UserRole.EVALUATE
+  ];
+
+  if (options.type === SUBMIT && !options.enforceUniqueKey) {
+    const message = `SUBMIT transaction must have enforceUniqueKey defined`;
+    throw new NotImplementedError(message);
+  }
+
+  if (options.type === EVALUATE && options.enforceUniqueKey) {
+    const message = `EVALUATE transaction cannot have enforceUniqueKey defined`;
+    throw new NotImplementedError(message);
   }
 
   // An actual decorator
@@ -145,29 +170,29 @@ function GalaTransaction<T extends ChainCallDTO>(
           ? undefined
           : await parseValidDTO<T>(dtoClass, dtoPlain as string | Record<string, unknown>);
 
-        // Verify public key signature if needed - throws exception in case of failure
+        // Authenticate the user
         if (ctx.isDryRun) {
-          // Do not verify signature in dry run mode
+          // Do not authenticate in dry run mode
         } else if (options?.verifySignature || dto?.signature !== undefined) {
-          ctx.callingUserData = await authorize(ctx, dto, legacyClientAccountId(ctx));
+          ctx.callingUserData = await authenticate(ctx, dto, legacyClientAccountId(ctx));
         } else {
           // it means a request where authorization is not required
-          ctx.callingUserData = { alias: legacyClientAccountId(ctx) };
+          ctx.callingUserData = { alias: legacyClientAccountId(ctx), roles: [UserRole.EVALUATE] };
         }
 
+        // Authorize the user
+        await authorize(ctx, options);
+
         // Prevent the same transaction from being submitted multiple times
-        if (dto?.uniqueKey) {
-          await UniqueTransactionService.ensureUniqueTransaction(ctx, dto.uniqueKey);
-        } else if (options.enforceUniqueKey) {
-          throw new RuntimeError("Missing uniqueKey in transaction dto");
+        if (options.enforceUniqueKey) {
+          if (dto?.uniqueKey) {
+            await UniqueTransactionService.ensureUniqueTransaction(ctx, dto.uniqueKey);
+          } else {
+            throw new RuntimeError("Missing uniqueKey in transaction dto");
+          }
         }
 
         const argArray: [GalaChainContext, T] | [GalaChainContext] = dto ? [ctx, dto] : [ctx];
-
-        // Verify if organization can invoke this method - throws exception in case of failure
-        if (options?.allowedOrgs) {
-          ensureOrganizationIsAllowed(ctx, options.allowedOrgs);
-        }
 
         if (options?.before !== undefined) {
           await options?.before?.apply(this, argArray);
@@ -203,17 +228,35 @@ function GalaTransaction<T extends ChainCallDTO>(
 
     // Update API of contract object
     const isWrite = options.type === GalaTransactionType.SUBMIT;
+
+    let description = options.description ? options.description : "";
+
+    if (options.type === GalaTransactionType.SUBMIT) {
+      description += description ?? ` Transaction updates the chain (submit).`;
+    } else {
+      description += ` Transaction is read only (evaluate).`;
+    }
+
+    if (options.allowedRoles && options.allowedRoles.length > 0) {
+      description += ` Allowed roles: ${options.allowedRoles.join(", ")}.`;
+    }
+
+    if (options.allowedOrgs && options.allowedOrgs.length > 0) {
+      description += ` Allowed orgs: ${options.allowedOrgs.join(", ")}.`;
+    }
+
     const responseSchema = isArrayOut(options.out)
       ? generateResponseSchema(options.out.arrayOf, "array")
       : generateResponseSchema(options.out);
+
     updateApi(target, {
       isWrite,
       methodName: method.name,
       ...(options.apiMethodName === undefined ? {} : { apiMethodName: options.apiMethodName }),
       ...(options.in === undefined ? {} : { dtoSchema: generateSchema(options.in) }),
+      description,
       responseSchema,
       ...(options.deprecated === undefined ? {} : { deprecated: options.deprecated }),
-      ...(options.description === undefined ? {} : { description: options.description }),
       ...(options.sequence === undefined ? {} : { sequence: options.sequence })
     });
 

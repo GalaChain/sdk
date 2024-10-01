@@ -24,12 +24,13 @@ import {
   TokenInstance,
   TokenInstanceKey,
   TransferTokenDto,
-  createValidDTO
+  createValidDTO,
+  createValidSubmitDTO
 } from "@gala-chain/api";
 import { ChainClient, ChainUser, ChainUserAPI } from "@gala-chain/client";
 import { expect } from "@jest/globals";
 import BigNumber from "bignumber.js";
-import { instanceToPlain, plainToInstance } from "class-transformer";
+import { instanceToPlain } from "class-transformer";
 import { nanoid } from "nanoid";
 
 import { transactionSuccess } from "../matchers";
@@ -52,12 +53,12 @@ export async function createTransferDto(
   nftClassKey: TokenClassKey,
   opts: { from: string; to: string; tokenInstance: BigNumber }
 ): Promise<TransferTokenDto> {
-  const tokenInstance = plainToInstance(TokenInstanceKey, {
+  const tokenInstance = await createValidDTO(TokenInstanceKey, {
     ...nftClassKey,
     instance: opts.tokenInstance
   });
 
-  return createValidDTO(TransferTokenDto, {
+  return createValidSubmitDTO(TransferTokenDto, {
     from: opts.from,
     to: opts.to,
     tokenInstance,
@@ -82,7 +83,7 @@ export async function fetchNFTInstances(
 }
 
 async function createGalaNFT(client: ChainClient & ChainUserAPI, nftClassKey: TokenClassKey) {
-  const galaTokenDto: CreateTokenClassDto = await createValidDTO<CreateTokenClassDto>(CreateTokenClassDto, {
+  const galaTokenDto: CreateTokenClassDto = await createValidSubmitDTO(CreateTokenClassDto, {
     decimals: 0,
     tokenClass: nftClassKey,
     name: nftClassKey.collection,
@@ -105,11 +106,13 @@ async function grantUsersMintingAllowance(
   nftClassKey: TokenClassKey,
   users: { user: ChainUser; quantity: BigNumber }[]
 ) {
-  const galaAllowanceDto = await createValidDTO<GrantAllowanceDto>(GrantAllowanceDto, {
-    tokenInstance: plainToInstance(TokenInstanceKey, {
-      ...nftClassKey,
-      instance: TokenInstance.FUNGIBLE_TOKEN_INSTANCE
-    }).toQueryKey(),
+  const galaAllowanceDto = await createValidSubmitDTO(GrantAllowanceDto, {
+    tokenInstance: (
+      await createValidDTO(TokenInstanceKey, {
+        ...nftClassKey,
+        instance: TokenInstance.FUNGIBLE_TOKEN_INSTANCE
+      })
+    ).toQueryKey(),
     allowanceType: AllowanceType.Mint,
     quantities: users.map(({ user, quantity }) => ({
       user: user.identityKey,
@@ -131,7 +134,7 @@ async function usersMintNFT(
   users: { user: ChainUser; quantity: BigNumber }[]
 ) {
   for await (const { user, quantity } of users) {
-    const userMintDto = await createValidDTO<MintTokenDto>(MintTokenDto, {
+    const userMintDto = await createValidSubmitDTO<MintTokenDto>(MintTokenDto, {
       owner: user.identityKey,
       tokenClass: nftClassKey,
       quantity: quantity

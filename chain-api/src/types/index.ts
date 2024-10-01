@@ -19,6 +19,7 @@ export * from "./ChainObject";
 export * from "./RangedChainObject";
 export * from "./createValidChainObject";
 export * from "./contract";
+export * from "./createValidChainObject";
 export * from "./dtos";
 export * from "./logger";
 export * from "./PublicKey";

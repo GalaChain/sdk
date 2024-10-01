@@ -15,7 +15,7 @@
 import { ChainCallDTO, ConstructorArgs } from "@gala-chain/api";
 import { BrowserProvider, getAddress } from "ethers";
 
-import { CustomClient } from "../GalachainClient";
+import { CustomClient, WebSigner } from "../GalachainClient";
 import { generateEIP712Types } from "../Utils";
 import { ExtendedEip1193Provider } from "../helpers";
 
@@ -91,7 +91,7 @@ function getTrustWalletFromWindow() {
   return window["trustwallet"] ?? null;
 }
 
-export class GalachainConnectTrustClient extends CustomClient {
+export class GalachainConnectTrustClient extends WebSigner {
   constructor() {
     super();
     this.address = "";
@@ -103,11 +103,11 @@ export class GalachainConnectTrustClient extends CustomClient {
     }
     window.ethereum.on("accountsChanged", (accounts: string[]) => {
       if (accounts.length > 0) {
-        this.setWalletAddress = getAddress(accounts[0]);
-        this.emit("accountChanged", this.getGalachainAddress);
+        this.walletAddress = getAddress(accounts[0]);
+        this.emit("accountChanged", this.galachainEthAlias);
         this.emit("accountsChanged", accounts);
       } else {
-        this.setWalletAddress = "";
+        this.walletAddress = "";
         this.emit("accountChanged", null);
         this.emit("accountsChanged", null);
       }
@@ -123,8 +123,8 @@ export class GalachainConnectTrustClient extends CustomClient {
 
     try {
       const accounts = (await this.provider.send("eth_requestAccounts", [])) as string[];
-      this.setWalletAddress = getAddress(accounts[0]);
-      return this.getGalachainAddress;
+      this.walletAddress = getAddress(accounts[0]);
+      return this.galachainEthAlias;
     } catch (error: any) {
       if (error.code === 4001) {
         console.error("User denied connection.");
@@ -145,7 +145,7 @@ export class GalachainConnectTrustClient extends CustomClient {
     }
 
     try {
-      const domain = { name: "Galachain" };
+      const domain = { name: "GalaChain" };
       const types = generateEIP712Types(method, payload);
 
       const prefix = this.calculatePersonalSignPrefix(payload);

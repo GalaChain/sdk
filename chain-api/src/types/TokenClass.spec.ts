@@ -13,7 +13,7 @@
  * limitations under the License.
  */
 import BigNumber from "bignumber.js";
-import { plainToClass as plainToInstance } from "class-transformer";
+import { plainToInstance } from "class-transformer";
 
 import { TokenClass } from "./TokenClass";
 

@@ -15,6 +15,7 @@
 import {
   ChainCallDTO,
   GalaChainResponse,
+  GetMyProfileDto,
   GetObjectDto,
   GetPublicKeyDto,
   PublicKey,
@@ -23,6 +24,7 @@ import {
   SigningScheme,
   UserProfile,
   createValidDTO,
+  createValidSubmitDTO,
   signatures
 } from "@gala-chain/api";
 import { transactionSuccess } from "@gala-chain/test";
@@ -47,16 +49,14 @@ export interface TonUser {
 
 export async function createUser(): Promise<User> {
   const name = "client|user-" + randomUUID();
-  const privateKey = "a2e0b584004a7dd3f6257078b38b4271cb39c7a3ecba4f2a2c541ef44a940922";
-  const publicKey =
-    "04215291d9d04aad96832bffe808acdc1d985b4b547c8b16f841e14e8fbfb11284d5a5a5c71d95bd520b90403abff8fe7ccf793e755baf69672ab6cf25b60fc942";
-  const ethAddress = "a2a29d98b18C28EF5764f3944F01eEE1A54a668d";
+  const { privateKey, publicKey } = signatures.genKeyPair();
+  const ethAddress = signatures.getEthAddress(publicKey);
   return { alias: name, privateKey, publicKey, ethAddress };
 }
 
 export async function createRegisteredUser(chaincode: TestChaincode): Promise<User> {
   const { alias, privateKey, publicKey, ethAddress } = await createUser();
-  const dto = await createValidDTO(RegisterUserDto, { user: alias, publicKey });
+  const dto = await createValidSubmitDTO(RegisterUserDto, { user: alias, publicKey });
   const signedDto = dto.signed(process.env.DEV_ADMIN_PRIVATE_KEY as string);
   const response = await chaincode.invoke("PublicKeyContract:RegisterUser", signedDto);
   expect(response).toEqual(transactionSuccess());
@@ -74,7 +74,7 @@ export async function createTonUser(): Promise<TonUser> {
 
 export async function createRegisteredTonUser(chaincode: TestChaincode): Promise<TonUser> {
   const user = await createTonUser();
-  const dto = await createValidDTO(RegisterTonUserDto, { publicKey: user.publicKey });
+  const dto = await createValidSubmitDTO(RegisterTonUserDto, { publicKey: user.publicKey });
   const signedDto = dto.signed(process.env.DEV_ADMIN_PRIVATE_KEY as string);
   const response = await chaincode.invoke("PublicKeyContract:RegisterTonUser", signedDto);
   expect(response).toEqual(transactionSuccess());
@@ -83,15 +83,17 @@ export async function createRegisteredTonUser(chaincode: TestChaincode): Promise
 
 export function createSignedDto(unsigned: ChainCallDTO, privateKey: string) {
   const dto = instanceToInstance(unsigned);
-  dto.signature = signatures.getSignature(dto, Buffer.from(privateKey, "hex"));
+  const keyBuff = signatures.normalizePrivateKey(privateKey);
+  dto.signature = signatures.getSignature(dto, keyBuff);
   expect(dto.signature).toHaveLength(130);
   return dto;
 }
 
 export function createDerSignedDto(unsigned: ChainCallDTO, privateKey: string) {
   const dto = instanceToInstance(unsigned);
-  dto.signature = signatures.getDERSignature(dto, Buffer.from(privateKey, "hex"));
-  expect([140, 142, 144]).toContain(dto.signature.length);
+  const keyBuff = signatures.normalizePrivateKey(privateKey);
+  dto.signature = signatures.getDERSignature(dto, keyBuff);
+  expect([138, 140, 142, 144]).toContain(dto.signature.length);
   return dto;
 }
 
@@ -122,6 +124,15 @@ export async function getUserProfile(
     objectId: `\u0000GCUP\u0000${address}\u0000`
   });
   return chaincode.invoke("PublicKeyContract:GetObjectByKey", dto);
+}
+
+export async function getMyProfile(
+  chaincode: TestChaincode,
+  privateKey: string
+): Promise<GalaChainResponse<UserProfile>> {
+  const dto = new GetMyProfileDto();
+  dto.sign(privateKey);
+  return chaincode.invoke("PublicKeyContract:GetMyProfile", dto);
 }
 
 test.skip("Workaround", () => {

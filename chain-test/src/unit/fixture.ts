@@ -17,19 +17,16 @@ import {
   ChainObject,
   ClassConstructor,
   GalaChainResponse,
-  PublicKey,
   RangedChainObject,
-  UserProfile
+  signatures
 } from "@gala-chain/api";
-import { ChainUser } from "@gala-chain/client";
-import { plainToInstance } from "class-transformer";
-import { ec as EC } from "elliptic";
 import { Context, Contract } from "fabric-contract-api";
 import { ChaincodeStub } from "fabric-shim";
 import Logger from "fabric-shim/lib/logger";
 
+import { ChainUserWithRoles } from "../data/users";
 import { CachedKV, FabricIterable } from "./FabricIterable";
-import { TestChaincodeStub } from "./TestChaincodeStub";
+import { TestChaincodeStub, x509Identity } from "./TestChaincodeStub";
 
 interface GalaLoggerInstance {
   getLogger(name?: string): Logger;
@@ -66,20 +63,24 @@ type GalaChainStub = ChaincodeStub & {
 type TestGalaChainContext = Context & {
   readonly stub: GalaChainStub;
   readonly logger: GalaLoggerInstance;
-  set callingUserData(d: { alias: string; ethAddress?: string; tonAddress?: string });
+  set callingUserData(d: { alias: string; ethAddress?: string; tonAddress?: string; roles: string[] });
   get callingUser(): string;
   get callingUserEthAddress(): string;
+  get callingUserRoles(): string[];
   get callingUserTonAddress(): string;
-  setDryRunOnBehalfOf(d: { alias: string; ethAddress: string | undefined }): void;
+  setDryRunOnBehalfOf(d: { alias: string; ethAddress?: string; tonAddress?: string; roles: string[] }): void;
   isDryRun: boolean;
   get txUnixTime(): number;
   setChaincodeStub(stub: ChaincodeStub): void;
+  resetCallingUserData(): void;
 };
 
 type GalaContract<Ctx extends TestGalaChainContext> = Contract & {
   beforeTransaction(ctx: Ctx): Promise<void>;
   createContext(): Ctx;
 };
+
+const defaultCaClientIdentity = x509Identity("test", "TestOrg");
 
 type Wrapped<Contract> = {
   [K in keyof Contract]: Contract[K] extends (...args: infer A) => Promise<GalaChainResponse<infer R>>
@@ -90,18 +91,13 @@ type Wrapped<Contract> = {
 };
 
 class Fixture<Ctx extends TestGalaChainContext, T extends GalaContract<Ctx>> {
-  private readonly stub: TestChaincodeStub;
+  public readonly state: Record<string, string> = {};
   public readonly contract: Wrapped<T>;
   public readonly ctx: Ctx;
+  private readonly stub: TestChaincodeStub;
+  private readonly allWrites: Record<string, string> = {};
 
-  public callingChainUser: ChainUser;
-  private knownUsers: Record<string, ChainUser> = {};
-
-  constructor(
-    contractClass: ClassConstructor<T>,
-    public readonly writes: Record<string, string> = {},
-    public readonly state: Record<string, string> = {}
-  ) {
+  constructor(contractClass: ClassConstructor<T>) {
     const contractInstance = new contractClass() as Wrapped<T>; // it's done by @GalaTransaction decorator
     this.contract = new Proxy(contractInstance, {
       get: (target, prop) => {
@@ -109,18 +105,12 @@ class Fixture<Ctx extends TestGalaChainContext, T extends GalaContract<Ctx>> {
         if (typeof target[prop as string] === "function" && target[prop as string].length === 2) {
           const method = target[prop as string];
           return async (ctx: Ctx, dto?: ChainCallDTO) => {
-            if (this.callingChainUser === undefined) {
-              throw new Error("ChainUser is not set.");
-            }
-
-            const signedDto =
-              dto && dto.signature === undefined ? dto.signed(this.callingChainUser.privateKey) : dto;
-
             await contractInstance.beforeTransaction(ctx);
-            const result = signedDto
-              ? await method.call(contractInstance, ctx, signedDto)
+            const result = dto
+              ? await method.call(contractInstance, ctx, dto)
               : await method.call(contractInstance, ctx);
             await contractInstance.afterTransaction(ctx, result);
+            ctx.resetCallingUserData();
             return result;
           };
         }
@@ -129,7 +119,7 @@ class Fixture<Ctx extends TestGalaChainContext, T extends GalaContract<Ctx>> {
       }
     });
 
-    this.stub = new TestChaincodeStub([], this.state, this.writes);
+    this.stub = new TestChaincodeStub([], this.state, this.allWrites);
 
     const ctxInstance = this.contract.createContext() as Ctx;
     ctxInstance.setChaincodeStub(this.stub);
@@ -139,49 +129,42 @@ class Fixture<Ctx extends TestGalaChainContext, T extends GalaContract<Ctx>> {
         return Logger.getLogger(name ? `${contractClass?.name}:${name}` : contractClass?.name);
       }
     };
-    this.ctx = new Proxy(ctxInstance, {
-      get: (target, prop) => {
-        if (prop === "callingUser") {
-          return this.callingChainUser.identityKey;
-        }
-
-        return target[prop];
-      }
-    });
-
-    this.callingUser("client|admin");
+    ctxInstance.clientIdentity = defaultCaClientIdentity;
+    this.ctx = ctxInstance;
   }
 
-  callingUser(user: ChainUser, mspId?: string): Fixture<Ctx, T>;
+  registeredUsers(...users: ChainUserWithRoles[]): Fixture<Ctx, T> {
+    const publicKeys = users.map((u) => ({
+      key: `\u0000GCPK\u0000${u.identityKey}\u0000`,
+      value: JSON.stringify({ publicKey: signatures.normalizePublicKey(u.publicKey).toString("base64") })
+    }));
 
-  callingUser(user: string, mspId?: string): Fixture<Ctx, T>;
+    const userProfiles = users.map((u) => ({
+      key: `\u0000GCUP\u0000${u.ethAddress}\u0000`,
+      value: JSON.stringify({ alias: u.identityKey, ethAddress: u.ethAddress, roles: u.roles })
+    }));
 
-  callingUser(user: string | ChainUser, mspId = "CuratorOrg"): Fixture<Ctx, T> {
-    if (typeof user === "string" && !user.startsWith("client|")) {
-      throw new Error("Calling user string should start with 'client|', but provided: " + user);
+    return this.savedKVState(...publicKeys, ...userProfiles);
+  }
+
+  caClientIdentity(caUser: string, mspId?: string): Fixture<Ctx, T> {
+    this.ctx.clientIdentity = x509Identity(caUser, mspId ?? this.ctx.clientIdentity.getMSPID());
+    return this;
+  }
+
+  callingUser(
+    user: ChainUserWithRoles | { alias: string; ethAddress?: string; tonAddress?: string; roles: string[] }
+  ): Fixture<Ctx, T> {
+    if ("identityKey" in user) {
+      this.ctx.callingUserData = {
+        alias: user.identityKey,
+        ethAddress: user.ethAddress,
+        roles: user.roles ?? []
+      };
+      return this;
     }
 
-    const chainUser =
-      typeof user === "string" ? this.knownUsers[user] ?? ChainUser.withRandomKeys(user) : user;
-    this.callingChainUser = chainUser;
-    this.knownUsers[chainUser.identityKey] = chainUser;
-
-    // eslint-disable-next-line @typescript-eslint/ban-ts-comment
-    // @ts-ignore
-    this.ctx.setClientIdentity(this.stub.getClientIdentity(chainUser.identityKey, mspId));
-
-    const userProfile = plainToInstance(UserProfile, {
-      alias: chainUser.identityKey,
-      ethAddress: chainUser.ethAddress,
-      publicKey: chainUser.publicKey
-    });
-    const userProfileKey = this.ctx.stub.createCompositeKey("GCUP", [chainUser.ethAddress]);
-    this.stub.mockState(userProfileKey, userProfile.serialize());
-
-    const publicKey = plainToInstance(PublicKey, { publicKey: chainUser.publicKey });
-    const publicKeyKey = this.ctx.stub.createCompositeKey("GCPK", [userProfile.alias]);
-    this.stub.mockState(publicKeyKey, publicKey.serialize());
-
+    this.ctx.callingUserData = user;
     return this;
   }
 
@@ -209,6 +192,18 @@ class Fixture<Ctx extends TestGalaChainContext, T extends GalaContract<Ctx>> {
     });
     return this;
   }
+
+  getWrites: (skipKeysStartingWith?: string[]) => Record<string, string> = (
+    skipKeysStartingWith = ["\u0000UNTX\u0000"]
+  ) => {
+    return Object.entries(this.allWrites).reduce((acc, [key, value]) => {
+      const shouldSkip = skipKeysStartingWith.some((prefix) => key.startsWith(prefix));
+      if (!shouldSkip) {
+        acc[key] = value;
+      }
+      return acc;
+    }, {});
+  };
 }
 
 export function fixture<Ctx extends TestGalaChainContext, T extends GalaContract<Ctx>>(
