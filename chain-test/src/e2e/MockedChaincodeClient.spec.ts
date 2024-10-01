@@ -22,13 +22,18 @@ import {
   createValidDTO,
   signatures
 } from "@gala-chain/api";
+import { execSync } from "child_process";
+import fs from "fs";
+import os from "os";
+import path from "path";
+import process from "process";
 
 import { transactionErrorKey, transactionSuccess } from "../matchers";
 import { MockedChaincodeClientBuilder } from "./MockedChaincodeClient";
 
-let admin, user;
+let admin, user, chaincodeIndexJs;
 
-beforeAll(() => {
+beforeAll(async () => {
   // Setup admin
   admin = signatures.genKeyPair();
   process.env.DEV_ADMIN_PUBLIC_KEY = admin.publicKey;
@@ -41,6 +46,9 @@ beforeAll(() => {
     base64PublicKey: signatures.getCompactBase64PublicKey(userKeys.publicKey),
     alias: userAlias
   };
+
+  // Setup chaincode
+  chaincodeIndexJs = await ensureChaincode();
 });
 
 afterAll(() => {
@@ -50,10 +58,11 @@ afterAll(() => {
 
 it("should be able to call chaincode", async () => {
   // Given
-  const client = createClient();
+  const client = createClient(chaincodeIndexJs);
+  const dto = new ChainCallDTO().signed(admin.privateKey);
 
   // When
-  const response = await client.submitTransaction("GetPublicKey", new ChainCallDTO());
+  const response = await client.submitTransaction("GetPublicKey", dto);
 
   // Then
   expect(response).toEqual(transactionErrorKey("PK_NOT_FOUND"));
@@ -61,8 +70,8 @@ it("should be able to call chaincode", async () => {
 
 it("should support the global state", async () => {
   // Given
-  const client1 = createClient();
-  const client2 = createClient();
+  const client1 = createClient(chaincodeIndexJs);
+  const client2 = createClient(chaincodeIndexJs);
 
   const registerDto = await createValidDTO(RegisterEthUserDto, { publicKey: user.publicKey });
   registerDto.sign(admin.privateKey);
@@ -93,7 +102,7 @@ it("should support the global state", async () => {
 
 it("should not change the state for evaluateTransaction", async () => {
   // Given
-  const client = createClient();
+  const client = createClient(chaincodeIndexJs);
 
   const otherUser = signatures.genKeyPair();
   const otherUserAlias = `eth|${signatures.getEthAddress(otherUser.publicKey)}`;
@@ -116,13 +125,14 @@ it("should not change the state for evaluateTransaction", async () => {
   // the key is still missing
   const noKeyResponse2 = await client.evaluateTransaction("GetPublicKey", getProfileDto);
   expect(noKeyResponse2).toEqual(transactionErrorKey("PK_NOT_FOUND")); // the key is still missing
+  // TODO verify if call history is skipped
 });
 
 it.skip("should support key collision validation", async () => {
   // Given
   const transactionDelayMs = 100;
-  const client1 = createClient(transactionDelayMs);
-  const client2 = createClient(transactionDelayMs);
+  const client1 = createClient(chaincodeIndexJs, transactionDelayMs);
+  const client2 = createClient(chaincodeIndexJs, transactionDelayMs);
 
   const otherUser = signatures.genKeyPair();
   const registerDto = await createValidDTO(RegisterEthUserDto, { publicKey: otherUser.publicKey });
@@ -146,11 +156,10 @@ it.skip("should support phantom read collision validation", async () => {
   throw new Error("Not implemented");
 });
 
-function createClient(transactionDelayMs = 0) {
-  const path = "/Users/jakubdzikowski/IdeaProjects/gh-sdk/chain-cli/chaincode-template/lib/src/index.js";
+function createClient(chaincodeIndexJs: string, transactionDelayMs = 0) {
   const contractName = "PublicKeyContract";
   return new MockedChaincodeClientBuilder({
-    mockedChaincodeDir: path,
+    mockedChaincodeDir: chaincodeIndexJs,
     orgMsp: "CuratorOrg"
   })
     .forContract({
@@ -159,4 +168,36 @@ function createClient(transactionDelayMs = 0) {
       contract: contractName
     })
     .withTransactionDelay(transactionDelayMs);
+}
+
+async function ensureChaincode(): Promise<string> {
+  const tmpdir = os.tmpdir();
+  const chaincodeDir = "test-chaincode";
+  const chaincodePackageJsonPath = path.join(tmpdir, chaincodeDir, "package.json");
+
+  if (fs.existsSync(chaincodePackageJsonPath)) {
+    // eslint-disable-next-line @typescript-eslint/no-var-requires
+    const chaincodePackageJson = require(chaincodePackageJsonPath) as { main: string };
+    const chaincodeIndexJsPath = path.join(tmpdir, chaincodeDir, chaincodePackageJson.main);
+    return chaincodeIndexJsPath;
+  }
+
+  const command = `cd "${tmpdir}" && \
+    npm i -g @gala-chain/cli && \
+    galachain --version && \
+    galachain init "${chaincodeDir}" && \
+    cd "${chaincodeDir}" && \
+    npm install && \
+    npm run build`;
+
+  execSync(command, { stdio: "inherit" });
+
+  if (!fs.existsSync(chaincodePackageJsonPath)) {
+    throw new Error("Failed to create chaincode at " + chaincodePackageJsonPath);
+  }
+
+  // eslint-disable-next-line @typescript-eslint/no-var-requires
+  const chaincodePackageJson = require(chaincodePackageJsonPath) as { main: string };
+  const chaincodeIndexJsPath = path.join(tmpdir, chaincodeDir, chaincodePackageJson.main);
+  return chaincodeIndexJsPath;
 }
