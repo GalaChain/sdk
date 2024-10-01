@@ -14,7 +14,6 @@
  */
 import {
   ChainCallDTO,
-  ForbiddenError,
   PublicKey,
   SigningScheme,
   UserProfile,
@@ -41,9 +40,21 @@ class RedundantSignerPublicKeyError extends ValidationFailedError {
   }
 }
 
+class PublicKeyMismatchError extends ValidationFailedError {
+  constructor(recovered: string, inDto: string) {
+    super("Public key recovered from signature is different than provided in dto.", { recovered, inDto });
+  }
+}
+
 class RedundantSignerAddressError extends ValidationFailedError {
   constructor(recovered: string, inDto: string) {
     super("Signer address redundant, when it can be recovered from signature.", { recovered, inDto });
+  }
+}
+
+class AddressMismatchError extends ValidationFailedError {
+  constructor(recovered: string, inDto: string) {
+    super("Signer address recovered from signature is different than provided in dto.", { recovered, inDto });
   }
 }
 
@@ -59,19 +70,15 @@ class UserNotRegisteredError extends ValidationFailedError {
   }
 }
 
-class OrganizationNotAllowedError extends ForbiddenError {}
-
 /**
  *
  * @param ctx
  * @param dto
- * @param legacyCAUser fallback user alias to use then the new flow is not applicable
  * @returns User alias of the calling user.
  */
 export async function authenticate(
   ctx: GalaChainContext,
-  dto: ChainCallDTO | undefined,
-  legacyCAUser: string
+  dto: ChainCallDTO | undefined
 ): Promise<{ alias: string; ethAddress?: string }> {
   if (!dto || dto.signature === undefined) {
     throw new MissingSignatureError();
@@ -81,10 +88,20 @@ export async function authenticate(
 
   if (recoveredPkHex !== undefined) {
     if (dto.signerPublicKey !== undefined) {
-      throw new RedundantSignerPublicKeyError(recoveredPkHex, dto.signerPublicKey);
+      const hexKey = signatures.getNonCompactHexPublicKey(dto.signerPublicKey);
+      if (recoveredPkHex !== hexKey) {
+        throw new PublicKeyMismatchError(recoveredPkHex, hexKey);
+      } else {
+        throw new RedundantSignerPublicKeyError(recoveredPkHex, dto.signerPublicKey);
+      }
     }
     if (dto.signerAddress !== undefined) {
-      throw new RedundantSignerAddressError(recoveredPkHex, dto.signerAddress);
+      const ethAddress = signatures.getEthAddress(recoveredPkHex);
+      if (dto.signerAddress !== ethAddress) {
+        throw new AddressMismatchError(ethAddress, dto.signerAddress);
+      } else {
+        throw new RedundantSignerAddressError(ethAddress, dto.signerAddress);
+      }
     }
     return await getUserProfile(ctx, recoveredPkHex, dto.signing ?? SigningScheme.ETH); // new flow only
   } else if (dto.signerAddress !== undefined) {
@@ -106,26 +123,9 @@ export async function authenticate(
     }
 
     return await getUserProfile(ctx, dto.signerPublicKey, dto.signing ?? SigningScheme.ETH); // new flow only
-  } else if (dto.signing === SigningScheme.TON) {
-    throw new MissingSignerError();
   } else {
-    // once we dropp support for legacy auth, it should be changed to throw MissingSignerError
-    return await legacyAuthorize(ctx, dto, legacyCAUser); // legacy flow only
+    throw new MissingSignerError();
   }
-}
-
-export async function ensureIsAuthorizedBy(
-  ctx: GalaChainContext,
-  dto: ChainCallDTO,
-  userAlias: string
-): Promise<{ alias: string; ethAddress?: string }> {
-  const authorized = await authenticate(ctx, dto, userAlias);
-
-  if (authorized.alias !== userAlias) {
-    throw new ForbiddenError(`Dto is authorized by ${authorized}, and not by ${userAlias}`, { authorized });
-  }
-
-  return authorized;
 }
 
 async function getUserProfile(
@@ -162,34 +162,6 @@ async function getUserProfileAndPublicKey(
   return { profile, publicKey };
 }
 
-async function legacyAuthorize(
-  ctx: GalaChainContext,
-  dto: ChainCallDTO,
-  legacyCAUser: string
-): Promise<{ alias: string; ethAddress: undefined }> {
-  const pk = await getSavedPKOrReject(ctx, legacyCAUser);
-
-  if (!dto.isSignatureValid(pk.publicKey)) {
-    throw new PkInvalidSignatureError(legacyCAUser);
-  }
-
-  return {
-    alias: legacyCAUser,
-    ethAddress: undefined
-  };
-}
-
-export function ensureOrganizationIsAllowed(ctx: GalaChainContext, allowedOrgsMSPs: string[] | undefined) {
-  const userOrg: string = ctx.clientIdentity.getMSPID();
-  const isAllowed = (allowedOrgsMSPs || []).some((o) => o === userOrg);
-
-  if (!isAllowed) {
-    const message = `Members of organization ${userOrg} do not have sufficient permissions.`;
-    const user = (ctx as { callingUser?: string } | undefined)?.callingUser;
-    throw new OrganizationNotAllowedError(message, { user, userOrg });
-  }
-}
-
 function recoverPublicKey(signature: string, dto: ChainCallDTO, prefix = ""): string | undefined {
   if (dto.signing === SigningScheme.TON) {
     return undefined;
@@ -200,14 +172,4 @@ function recoverPublicKey(signature: string, dto: ChainCallDTO, prefix = ""): st
   } catch (err) {
     return undefined;
   }
-}
-
-async function getSavedPKOrReject(ctx: GalaChainContext, userId: string): Promise<PublicKey> {
-  const publicKey = await PublicKeyService.getPublicKey(ctx, userId);
-
-  if (publicKey === undefined) {
-    throw new UserNotRegisteredError(userId);
-  }
-
-  return publicKey;
 }
