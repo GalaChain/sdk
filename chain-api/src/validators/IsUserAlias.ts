@@ -62,7 +62,7 @@ function validateUserAlias(value: unknown): UserRefValidationResult {
     }
 
     if (parts[0] === "eth") {
-      if (signatures.isChecksumedEthAddress(parts[1])) {
+      if (signatures.isChecksumedEthAddress(parts[1]) || signatures.isLowercasedEthAddress(parts[1])) {
         return UserRefValidationResult.VALID_USER_ALIAS;
       } else {
         return UserRefValidationResult.INVALID_ETH_USER_ALIAS;
