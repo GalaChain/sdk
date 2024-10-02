@@ -17,7 +17,6 @@ import {
   BurnTokenQuantity,
   ChainError,
   ChainObject,
-  DefaultError,
   ErrorCode,
   TokenAllowance,
   TokenBurn,
@@ -244,22 +243,14 @@ export async function incrementOrCreateTokenBurnForTx(
 
   const burnKey = newBurn.getCompositeKey();
 
-  const cachedBurn: TokenBurn | undefined = await getObjectByKey(ctx, TokenBurn, burnKey).catch((e) => {
-    const chainError = ChainError.from(e);
-    if (chainError.matches(ErrorCode.NOT_FOUND)) {
-      return undefined;
-    } else {
-      throw chainError;
-    }
-  });
+  const response: TokenBurn | undefined = await getObjectByKey(ctx, TokenBurn, burnKey)
+    .then((cachedBurn) => {
+      cachedBurn.quantity = cachedBurn.quantity.plus(quantity);
+      return cachedBurn;
+    })
+    .catch((e) => ChainError.ignore(e, ErrorCode.NOT_FOUND, newBurn));
 
-  if (cachedBurn !== undefined) {
-    cachedBurn.quantity = cachedBurn.quantity.plus(quantity);
-
-    return cachedBurn;
-  } else {
-    return newBurn;
-  }
+  return response;
 }
 
 /**
@@ -316,22 +307,12 @@ export async function incrementOrCreateTokenBurnCounterForTx(
 
   const burnCounterKey = burnCounter.getRangedKey();
 
-  const cachedBurnCounterValue = await getRangedObjectByKey(ctx, TokenBurnCounter, burnCounterKey).catch(
-    (e) => {
-      const chainError = ChainError.from(e);
-      if (chainError.matches(ErrorCode.NOT_FOUND)) {
-        return undefined;
-      } else {
-        throw chainError;
-      }
-    }
-  );
+  const response = await getRangedObjectByKey(ctx, TokenBurnCounter, burnCounterKey)
+    .then((cachedBurnCounter) => {
+      cachedBurnCounter.quantity = cachedBurnCounter.quantity.plus(quantity);
+      return cachedBurnCounter;
+    })
+    .catch((e) => ChainError.ignore(e, ErrorCode.NOT_FOUND, burnCounter));
 
-  if (cachedBurnCounterValue !== undefined) {
-    cachedBurnCounterValue.quantity = cachedBurnCounterValue.quantity.plus(quantity);
-
-    return cachedBurnCounterValue;
-  } else {
-    return burnCounter;
-  }
+  return response;
 }
