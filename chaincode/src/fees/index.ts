@@ -12,22 +12,27 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+export * from "./authorizeExemptionForUser";
 export * from "./authorizeFee";
+export * from "./creditFeeBalance";
 export * from "./defineFeeSchedule";
 export * from "./defineFeeSplitFormula";
+export * from "./feeGateImplementations";
 export * from "./fetchFeeAuthorizations";
-export * from "./fetchFeeCreditReceipts";
 export * from "./fetchFeeBalances";
+export * from "./fetchFeeCreditReceipts";
 export * from "./fetchFeePayments";
 export * from "./fetchFeeSchedule";
 export * from "./fetchFeeThresholdUses";
-export * from "./creditFeeBalance";
 export * from "./galaFeeGate";
 export * from "./galaFeeProperties";
 export * from "./payFeeFromCrossChannelAuthorization";
 export * from "./payFeeImmediatelyFromBalance";
-export * from "./feeGateImplementations";
 export * from "./resetFeeThresholdUses";
+export * from "./revokeExemptionForUser";
 export * from "./settleFeeBalances";
 export * from "./settleFeeCreditReceipts";
 export * from "./settleFeePaymentReceipts";
+export * from "./splitFeeBurnAndTransfer";
+export * from "./writeChannelPaymentReceipt";
+export * from "./writeUserPaymentReceipt";
