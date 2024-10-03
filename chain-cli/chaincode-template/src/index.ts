@@ -18,12 +18,14 @@ import "dotenv/config";
 import { GalaContract, GalaJSONSerializer } from "@gala-chain/chaincode";
 
 import { AppleContract } from "./apples";
+import { GalaChainFeeContract } from "./fee";
 import { GalaChainTokenContract } from "./token";
 import { PublicKeyContract } from "./pk";
 
 export const contracts: { new (): GalaContract }[] = [
   PublicKeyContract,
   GalaChainTokenContract,
+  GalaChainFeeContract,
   AppleContract
 ];
 

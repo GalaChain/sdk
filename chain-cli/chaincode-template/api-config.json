@@ -11,6 +11,11 @@
           "contractName": "AppleContract"
         },
         {
+          "pathFragment": "gala-chain-fee",
+          "chaincodeName": "basic-product",
+          "contractName": "GalaChainFee"
+        },
+        {
           "pathFragment": "gala-chain-token",
           "chaincodeName": "basic-product",
           "contractName": "GalaChainToken"
