@@ -57,8 +57,8 @@ describe("feeGate", () => {
 
   const feeCodeDefinition3 = instanceToInstance(feeCodeDefinition1);
   feeCodeDefinition3.feeThresholdUses = new BigNumber(0);
-  (feeCodeDefinition3.feeAccelerationRateType = FeeAccelerationRateType.Multiplicative),
-    (feeCodeDefinition3.baseQuantity = new BigNumber("2"));
+  feeCodeDefinition3.feeAccelerationRateType = FeeAccelerationRateType.Multiplicative;
+  feeCodeDefinition3.baseQuantity = new BigNumber("2");
   feeCodeDefinition3.feeAccelerationRate = new BigNumber("2");
 
   it("should proceed when existing usage is below the fee threshold", async () => {
