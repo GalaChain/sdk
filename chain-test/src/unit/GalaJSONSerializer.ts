@@ -16,7 +16,7 @@ import { serialize } from "@gala-chain/api";
 import { plainToInstance } from "class-transformer";
 import * as Logger from "fabric-contract-api/lib/logger";
 
-// TODO duplicate file
+// intentionally copied from GalaJSONSerializer from @gala-chain/chaincode library
 
 /*
  * This is a custom serializer that uses the class-transformer library to convert

@@ -17,7 +17,7 @@ import { ChainClient, ChainClientBuilder, ClassType, ContractConfig } from "@gal
 import { Contract } from "fabric-contract-api";
 import path from "path";
 
-import TestChaincode from "../unit/TestChaincode";
+import { TestChaincode } from "../unit";
 
 export interface MockedChaincodeClientParams {
   mockedChaincodeDir: string;
