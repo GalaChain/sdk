@@ -23,14 +23,9 @@ import {
   createValidSubmitDTO,
   signatures
 } from "@gala-chain/api";
-import { execSync } from "child_process";
-import fs from "fs";
-import os from "os";
+import { MockedChaincodeClientBuilder, transactionErrorKey, transactionSuccess } from "@gala-chain/test";
 import path from "path";
 import process from "process";
-
-import { transactionErrorKey, transactionSuccess } from "../matchers";
-import { MockedChaincodeClientBuilder } from "./MockedChaincodeClient";
 
 let admin, user, chaincodeDir;
 
@@ -49,7 +44,7 @@ beforeAll(async () => {
   };
 
   // Setup chaincode
-  chaincodeDir = await ensureChaincode();
+  chaincodeDir = path.dirname(require.resolve("./mockedChaincode"));
 });
 
 afterAll(() => {
@@ -66,7 +61,12 @@ it("should be able to call chaincode", async () => {
   const response = await client.submitTransaction("GetPublicKey", dto);
 
   // Then
-  expect(response).toEqual(transactionErrorKey("PK_NOT_FOUND"));
+  expect(response).toEqual(
+    transactionSuccess({
+      publicKey: admin.publicKey,
+      signing: SigningScheme.ETH
+    })
+  );
 });
 
 it("should support the global state", async () => {
@@ -169,31 +169,4 @@ function createClient(chaincodeDir: string, transactionDelayMs = 0) {
       contract: contractName
     })
     .withTransactionDelay(transactionDelayMs);
-}
-
-async function ensureChaincode(): Promise<string> {
-  const tmpdir = os.tmpdir();
-  const chaincodeDirname = "test-chaincode";
-  const chaincodeDir = path.join(tmpdir, chaincodeDirname);
-  const chaincodePackageJsonPath = path.join(chaincodeDir, "package.json");
-
-  if (fs.existsSync(chaincodePackageJsonPath)) {
-    return chaincodeDir;
-  }
-
-  const command = `cd "${tmpdir}" && \
-    npm i -g @gala-chain/cli && \
-    galachain --version && \
-    galachain init "${chaincodeDir}" && \
-    cd "${chaincodeDir}" && \
-    npm install && \
-    npm run build`;
-
-  execSync(command, { stdio: "inherit" });
-
-  if (!fs.existsSync(chaincodePackageJsonPath)) {
-    throw new Error("Failed to create chaincode at " + chaincodePackageJsonPath);
-  }
-
-  return chaincodeDir;
 }

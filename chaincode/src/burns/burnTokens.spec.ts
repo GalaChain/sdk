@@ -515,7 +515,7 @@ describe("BurnTokens", () => {
       const burnQty = new BigNumber("1");
       const burn2Qty = new BigNumber("2");
 
-      const { ctx, contract, getWrites } = fixture(GalaChainTokenContract)
+      const { ctx, getWrites } = fixture(GalaChainTokenContract)
         .callingUser(users.testUser1)
         .savedState(currencyClass, currencyInstance, tokenBalance)
         .savedRangeState([]);
