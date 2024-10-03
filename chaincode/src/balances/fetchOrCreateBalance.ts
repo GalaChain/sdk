@@ -24,15 +24,8 @@ export async function fetchOrCreateBalance(
 ): Promise<TokenBalance> {
   const emptyBalance = new TokenBalance({ owner, ...tokenClassKey });
 
-  const fetchedBalance = await getObjectByKey(ctx, TokenBalance, emptyBalance.getCompositeKey()).catch(
-    (e) => {
-      const chainError = ChainError.from(e);
-      if (chainError.matches(ErrorCode.NOT_FOUND)) {
-        return emptyBalance;
-      } else {
-        throw chainError;
-      }
-    }
+  const fetchedBalance = await getObjectByKey(ctx, TokenBalance, emptyBalance.getCompositeKey()).catch((e) =>
+    ChainError.ignore(e, ErrorCode.NOT_FOUND, emptyBalance)
   );
 
   await fetchedBalance.validateOrReject();

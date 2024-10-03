@@ -43,7 +43,7 @@ export async function fetchAllowances(
     data.additionalKey,
     data.instance,
     data.allowanceType?.toString(),
-    data.grantedBy
+    data.allowanceType === undefined ? undefined : data.grantedBy
   );
 
   const getObjectsResponse: TokenAllowance[] = await getObjectsByPartialCompositeKey(
