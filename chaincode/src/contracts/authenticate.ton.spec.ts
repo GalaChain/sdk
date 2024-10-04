@@ -13,10 +13,9 @@
  * limitations under the License.
  */
 import { ChainCallDTO, SigningScheme, UserProfile, signatures } from "@gala-chain/api";
-import { transactionSuccess } from "@gala-chain/test";
+import { TestChaincode, transactionSuccess } from "@gala-chain/test";
 import { instanceToPlain, plainToClass } from "class-transformer";
 
-import TestChaincode from "../__test__/TestChaincode";
 import { PublicKeyContract } from "./PublicKeyContract";
 import {
   TonUser,
