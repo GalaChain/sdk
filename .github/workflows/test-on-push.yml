@@ -29,27 +29,10 @@ jobs:
       - name: Test
         run: npm run test
 
-  ensure-docker-cache:
-    name: Ensure Docker cache
-    runs-on: ubuntu-latest
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v4
-      - name: Cache Docker images
-        uses: ScribeMD/docker-cache@0.5.0
-        with:
-          key: docker-${{ runner.os }}-${{ github.ref_name }}
-      - name: Prefetch Fabric Docker layers
-        run: |
-            cd chain-cli/network
-            curl -Lf https://github.com/hyperledger-labs/fablo/releases/download/1.2.0/fablo.sh -o ./fablo && chmod +x ./fablo
-            ./fablo generate fablo-config-default.json
-            docker compose -f fablo-target/fabric-docker/docker-compose.yaml pull
-
   template-ci:
     name: Chaincode template CI
     runs-on: ubuntu-latest
-    needs: [ci, ensure-docker-cache]
+    needs: [ci]
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -57,10 +40,6 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: 18
-      - name: Cache Docker images
-        uses: ScribeMD/docker-cache@0.5.0
-        with:
-          key: docker-${{ runner.os }}-${{ github.ref_name }}
       - name: Install local CLI
         run: .github/scripts/install-local-cli.sh
       - name: Create test project
@@ -79,9 +58,7 @@ jobs:
   template-e2e:
     name: Chaincode template E2E (watch mode)
     runs-on: ubuntu-latest
-    needs: [ci, ensure-docker-cache]
-    env:
-      GALA_CLIENT_DEV_MODE: "true"
+    needs: [ci]
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -102,10 +79,6 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: 18
-      - name: Cache Docker images
-        uses: ScribeMD/docker-cache@0.5.0
-        with:
-          key: docker-${{ runner.os }}-${{ github.ref_name }}
       - name: Install local CLI
         run: .github/scripts/install-local-cli.sh
       - name: Create test project
@@ -134,9 +107,8 @@ jobs:
   template-e2e-rest:
     name: Chaincode template E2E (REST API)
     runs-on: ubuntu-latest
-    needs: [ci, ensure-docker-cache]
+    needs: [ci]
     env:
-      GALA_CLIENT_DEV_MODE: "false"
       CURATORORG_OPS_API_URL: "http://localhost:8801"
     steps:
       - name: Checkout
@@ -158,10 +130,6 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: 18
-      - name: Cache Docker images
-        uses: ScribeMD/docker-cache@0.5.0
-        with:
-          key: docker-${{ runner.os }}-${{ github.ref_name }}
       - name: Install local CLI
         run: .github/scripts/install-local-cli.sh
       - name: Create test project
@@ -175,9 +143,46 @@ jobs:
       - name: Run E2E tests
         run: npm run test:e2e --prefix ./project-test
 
+  template-e2e-mocked:
+    name: Chaincode template E2E (Mocked client)
+    runs-on: ubuntu-latest
+    needs: [ci]
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Install tools
+        run: |
+          git --version
+          node --version
+          npm --version
+          jq --version
+          yq --version
+          bash --version
+          docker version
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 18
+      - name: Install local CLI
+        run: .github/scripts/install-local-cli.sh
+      - name: Create test project
+        run: galachain init ./project-test
+      - name: Install dependencies
+        run: |
+          (cd ./project-test && ../npm-pack-and-replace.sh --skipConfirmation)
+          npm i --prefix ./project-test
+      - name: Build test project
+        run: npm run build --prefix ./project-test
+      - name: Install dependencies
+        run: |
+          (cd ./project-test && ../npm-pack-and-replace.sh --skipConfirmation)
+          npm i --prefix ./project-test
+      - name: Run E2E tests on mocked client
+        run: npm run test:e2e-mocked --prefix ./project-test
+
   template-image-check:
     name: Chaincode template image check
-    needs: [ci, ensure-docker-cache]
+    needs: [ci]
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
@@ -186,10 +191,6 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: 18
-      - name: Cache Docker images
-        uses: ScribeMD/docker-cache@0.5.0
-        with:
-          key: docker-${{ runner.os }}-${{ github.ref_name }}
       - name: Install local CLI
         run: .github/scripts/install-local-cli.sh
       - name: Create test project

@@ -24,12 +24,11 @@ import {
   createValidDTO,
   serialize
 } from "@gala-chain/api";
-import { transactionError, transactionSuccess } from "@gala-chain/test";
+import { TestChaincode, transactionError, transactionSuccess } from "@gala-chain/test";
 import { instanceToPlain } from "class-transformer";
 import { Context } from "fabric-contract-api";
 import { inspect } from "util";
 
-import TestChaincode from "../__test__/TestChaincode";
 import TestGalaContract, { Superhero, SuperheroDto, SuperheroQueryDto } from "../__test__/TestGalaContract";
 import { GalaChainContext } from "../types";
 

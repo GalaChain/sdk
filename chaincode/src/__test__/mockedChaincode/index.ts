@@ -12,8 +12,16 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+import "dotenv/config";
 
-export * from "./writes";
-export * from "./fixture";
-export * from "./TestChaincode";
-export * from "./TestChaincodeStub";
+import { GalaContract, PublicKeyContract } from "../../contracts/";
+import { GalaJSONSerializer } from "../../utils";
+
+export const contracts: { new (): GalaContract }[] = [PublicKeyContract];
+
+export const serializers = {
+  transaction: "galaJsonSerializer",
+  serializers: {
+    galaJsonSerializer: GalaJSONSerializer
+  }
+};

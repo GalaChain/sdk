@@ -27,11 +27,9 @@ import {
   createValidSubmitDTO,
   signatures
 } from "@gala-chain/api";
-import { transactionSuccess } from "@gala-chain/test";
+import { TestChaincode, transactionSuccess } from "@gala-chain/test";
 import { instanceToInstance } from "class-transformer";
 import { randomUUID } from "crypto";
-
-import TestChaincode from "../__test__/TestChaincode";
 
 export interface User {
   alias: string;
