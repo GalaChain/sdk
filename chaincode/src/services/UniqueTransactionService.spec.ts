@@ -13,9 +13,8 @@
  * limitations under the License.
  */
 import { createValidDTO } from "@gala-chain/api";
-import { transactionError, transactionSuccess } from "@gala-chain/test";
+import { TestChaincode, transactionError, transactionSuccess } from "@gala-chain/test";
 
-import TestChaincode from "../__test__/TestChaincode";
 import TestGalaContract, { SuperheroDto } from "../__test__/TestGalaContract";
 
 describe("UniqueTransactionService", () => {

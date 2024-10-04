@@ -32,13 +32,13 @@ import {
   signatures
 } from "@gala-chain/api";
 import {
+  TestChaincode,
   fixture,
   transactionErrorKey,
   transactionErrorMessageContains,
   transactionSuccess
 } from "@gala-chain/test";
 
-import TestChaincode from "../__test__/TestChaincode";
 import { PublicKeyService } from "../services";
 import { PublicKeyContract } from "./PublicKeyContract";
 import {

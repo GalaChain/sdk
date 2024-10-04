@@ -19,6 +19,7 @@
     "network:recreate": "npm run network:prune && rm -rf ./test-network && npm run network:start",
     "test": "jest",
     "test:e2e": "jest --config=e2e/jest.config.js --runInBand",
+    "test:e2e-mocked": "env $(grep -v '^#' .dev-env | grep -v '^$' | xargs) CURATORORG_MOCKED_CHAINCODE_DIR=./ jest --config=e2e/jest.config.js --runInBand",
     "update-snapshot": "jest --updateSnapshot"
   },
   "dependencies": {
