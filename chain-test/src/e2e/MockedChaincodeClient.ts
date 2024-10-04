@@ -64,7 +64,7 @@ export class MockedChaincodeClientBuilder implements ChainClientBuilder {
       .then((lib) => {
         const contractsByName = {} as Record<string, ClassConstructor<Contract>>;
         lib.contracts.forEach((contract) => {
-          contractsByName[contract.name] = contract;
+          contractsByName[new contract().getName()] = contract;
         });
         return { ...lib, contractsByName };
       });
@@ -78,8 +78,6 @@ export class MockedChaincodeClientBuilder implements ChainClientBuilder {
       }
       const state = getOrCreateState(config.channel, config.chaincode);
       return new TestChaincode([contract], state, {}, this.adminId, this.orgMsp);
-      // TODO state should be global => provide test
-      // TODO do not save on evaluates => test
     });
     return new MockedChaincodeClient(this, chaincode, config, this.orgMsp, this.adminId);
   }
@@ -87,14 +85,15 @@ export class MockedChaincodeClientBuilder implements ChainClientBuilder {
 
 function chaincodeIndexJsPath(chaincodeDir: string) {
   // eslint-disable-next-line @typescript-eslint/no-var-requires
-  const chaincodePackageJson = require(path.join(chaincodeDir, "package.json")) as { main: string };
-  const chaincodeIndexJsPath = path.join(chaincodeDir, chaincodePackageJson.main);
+  const chaincodePackageJson = require(path.resolve(chaincodeDir, "package.json")) as { main: string };
+  const chaincodeIndexJsPath = path.resolve(chaincodeDir, chaincodePackageJson.main);
   return chaincodeIndexJsPath;
 }
 
 export class MockedChaincodeClient extends ChainClient {
   private readonly chaincode: Promise<TestChaincode>;
   private transactionDelayMs: number;
+  private readonly customBuilder: MockedChaincodeClientBuilder;
 
   constructor(
     builder: MockedChaincodeClientBuilder,
@@ -106,6 +105,7 @@ export class MockedChaincodeClient extends ChainClient {
     super(Promise.resolve(builder), userId, contractConfig, orgMsp);
     this.transactionDelayMs = 0;
     this.chaincode = chaincode;
+    this.customBuilder = builder;
   }
 
   private async optionalDelay() {
@@ -155,7 +155,13 @@ export class MockedChaincodeClient extends ChainClient {
   }
 
   forUser(userId: string, secret?: string | undefined): ChainClient {
-    throw new Error("Method not implemented.");
+    return new MockedChaincodeClient(
+      this.customBuilder,
+      this.chaincode.then((c) => c.setCallingUser(`client|${userId}`)),
+      this.contractConfig,
+      this.orgMsp,
+      userId
+    );
   }
 
   async disconnect(): Promise<void> {
