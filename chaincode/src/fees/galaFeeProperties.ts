@@ -18,11 +18,13 @@ import { plainToInstance } from "class-transformer";
 import { GalaChainContext } from "../types";
 import { getObjectByKey, putChainObject } from "../utils";
 
-// features like Fees are anticipated to *only* support $GALA as the currency of choice.
-// Current plans are for all fees to be paid in $GALA.
-// This hardcoded id here gives us something to use as a ChainKey for the properties
-// while keeping it effectively immutable
-// from outside assets-chaincode calls without a code change.
+/**
+ * features like Fees are anticipated to *only* support $GALA as the currency of choice.
+ * Current plans are for all fees to be paid in $GALA.
+ * This hardcoded id here gives us something to use as a ChainKey for the properties
+ * while keeping it effectively immutable
+ * from outside assets-chaincode calls without a code change.
+ */
 export const galaFeePropertiesIdentifier = "galachain";
 
 export async function fetchGalaFeeProperties(ctx: GalaChainContext): Promise<FeeProperties | ChainError> {

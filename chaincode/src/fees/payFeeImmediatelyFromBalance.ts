@@ -41,7 +41,7 @@ export interface payFeeImmediatelyParams {
 // A version of ./payFee.ts designed to only be used on the assets channel
 // where fee payments can be settled atomically / transactionally
 // rather than authoritatively across channels.
-// payFeeInGala, on the channel where Gala balances are stored (assets).
+// payFeeImmediatelyFromBalance, on the channel where Gala balances are stored (assets).
 // do not use on non-assets channels where users don't hold Gala.
 export async function payFeeImmediatelyFromBalance(ctx: GalaChainContext, data: payFeeImmediatelyParams) {
   const payingUser = ctx.callingUser;

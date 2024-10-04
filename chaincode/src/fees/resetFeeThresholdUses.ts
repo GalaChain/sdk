@@ -22,6 +22,23 @@ export interface ResetFeeThresholdUsesParams {
   chainKeys: string[];
 }
 
+/**
+ * Use in conjucntion with `fetchFeeThresholdUses` to reset usage
+ * thresholds recorded on-chain for indvidual identities.
+ *
+ * @remarks
+ *
+ * Designed for flexibility - channel oeprators might page through
+ * results retrieved wtih `fetchFeeThresholdUses`, submit each
+ * page's keys to this method, and effectively reset all
+ * usage thresholds at a regular interval, say daily. Or specific
+ * entry index keys can be provided to reset individual user
+ * usage counts, as needed.
+ *
+ * @param ctx
+ * @param data
+ * @returns
+ */
 export async function resetFeeThresholdUses(
   ctx: GalaChainContext,
   data: ResetFeeThresholdUsesParams

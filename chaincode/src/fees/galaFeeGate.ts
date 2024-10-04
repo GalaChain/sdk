@@ -34,6 +34,17 @@ export interface GalaFeeGateParams {
   activeUser?: string | undefined;
 }
 
+/**
+ * A standardized, pre-defined Fee Gate designed to work with `FeeUsageThreshold`,
+ * `FeeCodeDefinition`, and `FeeCodeDefintion.FeeAccelerationRateType` schemes to
+ * increase fees for heavy, abusive, or denial-of-service level usage by individual
+ * identities. Fees will increase by the defined acceleration rate as users hit
+ * increasingly high usage thresholds defined by authoritative channel operators.
+ *
+ * @param ctx
+ * @param data
+ * @returns
+ */
 export async function galaFeeGate(ctx: GalaChainContext, data: GalaFeeGateParams) {
   const user = data.activeUser ?? ctx.callingUser;
 
@@ -143,13 +154,6 @@ export function incrementCumulativeUsesAndCalculateFee(
   const usageQuantity = new BigNumber("1");
   const cumulativeUses = userFeeThresholdUses.cumulativeUses.plus(usageQuantity);
 
-  // todo: if/when additional FeeAccelerationRateType's are defined,
-  // different billing calculations would have to be applied here
-  // for now, CuratorUsers can manually define multiple chain objects for fees that increase in amount
-  // as multiple usage thresholds are exceeeded.
-  // this option is a balance of flexibility of billing schedules and ease of implementation,
-  // at the tradeoff of greater complexity for implementing clients.
-  // iterate in reverse to find the highest exceeded threshold
   const feeAmount = calculateFeeAmountBasedOnAccelerationRateType(feeCodeDefinitions, cumulativeUses);
 
   return { feeAmount, cumulativeUses };
@@ -205,6 +209,8 @@ function calculateFeeAmountBasedOnAccelerationRateType(
 
     break;
   }
+
+  feeAmount = feeAmount.decimalPlaces(FeeCodeDefinition.DECIMAL_PRECISION);
 
   return feeAmount;
 }

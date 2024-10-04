@@ -21,6 +21,8 @@ export interface IDeleteOracleDefinition {
   name: string;
 }
 
+const curatorOrgMsp = process.env.CURATOR_ORG_MSP ?? "CuratorOrg";
+
 export async function deleteOracleDefinition(ctx: GalaChainContext, data: IDeleteOracleDefinition) {
   const oracle = await getObjectByKey(
     ctx,
@@ -28,7 +30,7 @@ export async function deleteOracleDefinition(ctx: GalaChainContext, data: IDelet
     OracleDefinition.getCompositeKeyFromParts(OracleDefinition.INDEX_KEY, [data.name])
   );
 
-  if (!oracle.authorities.includes(ctx.callingUser)) {
+  if (ctx.clientIdentity.getMSPID() !== curatorOrgMsp && !oracle.authorities.includes(ctx.callingUser)) {
     throw new UnauthorizedError(
       `callingUser ${ctx.callingUser} attempted to delete ` +
         `OracleDefinition ${oracle.name}, but is not listed as an authority: ` +

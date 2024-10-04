@@ -395,14 +395,16 @@ describe("feeGate", () => {
 
     // baseQuantity + log(feeAccelerationRate * (cumulativeUses + 1)) = expectedFeeAmount
     // 2 + log(2*4) = 4.0794415416798357
-    const expectedFeeAmount = feeCodeDefinition3.baseQuantity.plus(
-      Math.log(
-        userThresholdUses.cumulativeUses
-          .plus("1")
-          .multipliedBy(feeCodeDefinition3.feeAccelerationRate)
-          .toNumber()
+    const expectedFeeAmount = feeCodeDefinition3.baseQuantity
+      .plus(
+        Math.log(
+          userThresholdUses.cumulativeUses
+            .plus("1")
+            .multipliedBy(feeCodeDefinition3.feeAccelerationRate)
+            .toNumber()
+        )
       )
-    );
+      .decimalPlaces(FeeCodeDefinition.DECIMAL_PRECISION);
 
     const { ctx, writes } = fixture<GalaChainContext, GalaChainTokenContract>(GalaChainTokenContract)
       .callingUser(users.testUser1Id)

@@ -22,6 +22,25 @@ export interface SettleFeeCreditReceiptsParams {
   chainKeys: string[];
 }
 
+/**
+ * Intended for use with cross-channel fees (i.e. secondary channels other than
+ * the asset channel).
+ *
+ * Given an array of `FeeBalanceCreditReceipt` index keys,
+ * query the entries and mark the `FeeBalanceCreditReceipt` entries as `Settled`.
+ *
+ * The intended flow cross-channel is that a secondary channel operator
+ * first executes `settleFeeBalances` to zero out unspent fee credit authorizations
+ * as needed.
+ *
+ * Then, after verifying that $GALA has been credited back on the
+ * asset channel, the `FeeBalanceCreditReceipt` on the secondary channel can
+ * be marked as `Settled`, indicating the credit has been issued and finalized.
+ *
+ * @param ctx
+ * @param data
+ * @returns
+ */
 export async function settleFeeCreditReceipts(
   ctx: GalaChainContext,
   data: SettleFeeCreditReceiptsParams

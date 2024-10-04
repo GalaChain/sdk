@@ -23,6 +23,8 @@ export interface IOracleDefinition {
   authorities: string[];
 }
 
+const curatorOrgMsp = process.env.CURATOR_ORG_MSP ?? "CuratorOrg";
+
 export async function saveOracleDefinition(
   ctx: GalaChainContext,
   data: IOracleDefinition
@@ -40,11 +42,14 @@ export async function saveOracleDefinition(
     }
   });
 
-  if (existingOracle !== undefined && !existingOracle.authorities.includes(ctx.callingUser)) {
-    throw new UnauthorizedError(
-      `Oracle ${data.name} exists and callingUser ${ctx.callingUser} is not ` +
-        `an authority: ${existingOracle.authorities.join(", ")}`
-    );
+  if (ctx.clientIdentity.getMSPID() !== curatorOrgMsp) {
+    if (!existingOracle || !existingOracle.authorities.includes(ctx.callingUser)) {
+      throw new UnauthorizedError(
+        `CallingUser ${ctx.callingUser} is not authorized to create or update ` +
+          `Oracle ${data.name}. ` +
+          `${existingOracle ? "Authorities: " + existingOracle.authorities.join(", ") : ""}`
+      );
+    }
   }
 
   if (data.authorities.length < 1) {

@@ -31,6 +31,7 @@ export enum FeeAccelerationRateType {
 
 export class FeeCodeDefinition extends ChainObject {
   public static INDEX_KEY = "GCFD";
+  public static DECIMAL_PRECISION = 8;
 
   @ChainKey({ position: 0 })
   @IsString()

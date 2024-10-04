@@ -25,12 +25,34 @@ import { plainToInstance } from "class-transformer";
 import { GalaChainContext } from "../types";
 import { getObjectsByPartialCompositeKeyWithPagination, takeUntilUndefined } from "../utils";
 
+/**
+ * Typed arguments to the `fetchFeePendingBalances()` method.
+ * Used to fetch `FeePendingBalance` entries previously written to chain. `FeePendingBalance`
+ * entries represent a pending credit or temporary balance used to pay cross-channel
+ * fees. Generally intended to be used in near-realtime in a subsequent block,
+ * these pending balances are written to chain by an authortiative identity that has
+ * verified a corresponding burn of $GALA on the Gala's asset channel. Supports pagination -
+ * the optional bookmark and limit variables control the starting chainkey and size of the
+ * returned page, respectively.
+ *
+ */
 export interface FetchFeePendingBalancesParams {
   owner?: string;
   bookmark?: string;
   limit?: number;
 }
 
+/**
+ * Fetch `FeePendingBalance` entries previously written to chain. `FeePendingBalance`
+ * entries represent a pending credit or temporary balance used to pay cross-channel
+ * fees. Generally intended to be used in near-realtime in a subsequent block,
+ * these pending balances are written to chain by an authortiative identity that has
+ * verified a corresponding burn of $GALA on the Gala's asset channel. Supports pagination.
+ *
+ * @param ctx
+ * @param data
+ * @returns
+ */
 export async function fetchFeePendingBalances(
   ctx: GalaChainContext,
   data: FetchFeePendingBalancesParams

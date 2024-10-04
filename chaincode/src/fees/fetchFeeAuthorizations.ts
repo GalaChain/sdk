@@ -23,6 +23,16 @@ import {
 import { GalaChainContext } from "../types";
 import { getObjectsByPartialCompositeKeyWithPagination, takeUntilUndefined } from "../utils";
 
+/**
+ * Typed arguments to the `fetchFeeAuthorizations()` function.
+ * All parameters are optional; however care should be taken to provide
+ * chain keys in order of specificity. Refer to the `FeeAuthorization`
+ * class definition for details on the order of `ChainKey`s.
+ * Supports pagination -
+ * the optional bookmark and limit variables control the starting chainkey and size of the
+ * returned page, respectively.
+ */
+
 export interface FetchFeeAuthorizationsParams {
   authority?: string;
   year?: string;
@@ -36,6 +46,15 @@ export interface FetchFeeAuthorizationsParams {
   limit?: number;
 }
 
+/**
+ * Fetch `FeeAuthorization` entries previously written on-chain. `FeeAuthorization`
+ * entries represent a burn of `$GALA` initiated by a specific user,
+ *  intended for use as a cross-channel fee payment. Supports pagination.
+ *
+ * @param ctx
+ * @param data
+ * @returns
+ */
 export async function fetchFeeAuthorizations(
   ctx: GalaChainContext,
   data: FetchFeeAuthorizationsParams

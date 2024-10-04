@@ -30,6 +30,17 @@ export interface FetchFeeThresholdUsesParams {
   user: string;
 }
 
+/**
+ * Query the chain world state for `FeeThresholdUses` entries. These entries
+ * represent the (current) usage for a single on-chain identity within a
+ * channel-operator defined time period. The on-chain entries are used to track
+ * individual usage, which can trigger increasing fees as users hit usage thresholds
+ * defined in the channel's Fee Schedule.
+ *
+ * @param ctx
+ * @param data
+ * @returns
+ */
 export async function fetchFeeThresholdUses(
   ctx: GalaChainContext,
   data: FetchFeeThresholdUsesParams

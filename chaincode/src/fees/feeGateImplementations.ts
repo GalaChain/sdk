@@ -56,6 +56,12 @@ export interface IRequestOwner {
   owner?: string | undefined;
 }
 
+const assertionExpirationLimit: number = process?.env?.ORACLE_ASSERTION_EXPIRATION
+  ? isFinite(parseInt(process?.env?.ORACLE_ASSERTION_EXPIRATION, 10))
+    ? parseInt(process?.env?.ORACLE_ASSERTION_EXPIRATION)
+    : 15 * 60 * 1000
+  : 15 * 60 * 1000;
+
 export function extractUniqueOwnersFromRequests(ctx: GalaChainContext, requests: IRequestOwner[]) {
   const owners = requests.map((r) => r.owner ?? ctx.callingUser);
 
@@ -221,6 +227,22 @@ export async function requestTokenBridgeOutFeeGate(ctx: GalaChainContext, dto: R
     );
   });
 
+  const assertionTimestamp: number = oracleAssertion.timestamp;
+
+  const assertionExpirationTime: number = new Date(
+    new Date(ctx.txUnixTime).getTime() - assertionExpirationLimit
+  ).getTime();
+
+  if (assertionTimestamp <= assertionExpirationTime) {
+    throw new ValidationFailedError(
+      `BridgeTokenOut to destination chain ${destinationChainId} requires ` +
+        `an Oracle to calculate an appropriate transaction fee. ` +
+        `Received expired assertion with timestamp: ${assertionTimestamp}. ` +
+        `Conifigured ORACLE_ASSERTION_EXPIRATION: ${assertionExpirationLimit}, ` +
+        `Calculated expiration time: ${assertionExpirationTime}. `
+    );
+  }
+
   const identity = await authorize(ctx, oracleAssertion, oracleAssertion.signingIdentity);
 
   if (
@@ -262,7 +284,9 @@ export async function requestTokenBridgeOutFeeGate(ctx: GalaChainContext, dto: R
       ? txFeeAccelerationDefinition.feeAccelerationRate
       : new BigNumber("1");
 
-  const paddedGasFeeQuantity = gasFeeQuantity.times(destinationChainTxFeeMultiplier);
+  const paddedGasFeeQuantity = gasFeeQuantity
+    .times(destinationChainTxFeeMultiplier)
+    .decimalPlaces(FeeCodeDefinition.DECIMAL_PRECISION);
 
   const combinedFeeTotal = paddedGasFeeQuantity.plus(individualUsageFee);
 
@@ -285,6 +309,8 @@ export async function requestTokenBridgeOutFeeGate(ctx: GalaChainContext, dto: R
   const {
     galaExchangeRate,
     galaDecimals,
+    bridgeToken,
+    bridgeTokenIsNonFungible,
     estimatedTxFeeUnitsTotal,
     estimatedPricePerTxFeeUnit,
     estimatedTotalTxFeeInExternalToken,
@@ -300,6 +326,8 @@ export async function requestTokenBridgeOutFeeGate(ctx: GalaChainContext, dto: R
     signingIdentity,
     txid,
     galaDecimals,
+    bridgeToken,
+    bridgeTokenIsNonFungible,
     estimatedTxFeeUnitsTotal,
     estimatedPricePerTxFeeUnit,
     estimatedTotalTxFeeInExternalToken,

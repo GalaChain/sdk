@@ -25,6 +25,15 @@ import { plainToInstance } from "class-transformer";
 import { GalaChainContext } from "../types";
 import { getObjectsByPartialCompositeKeyWithPagination, takeUntilUndefined } from "../utils";
 
+/**
+ * Typed arguments to the `fetchFeeCreditReceipts() function.
+ * All parameters are optional; however care should be take to provide
+ * chain keys in order of specificity. Refer to the `FeeBalanceCreditReceipt`
+ * class definition for details on the order of `ChainKey`s.
+ * Supports pagination -
+ * the optional `bookmark` and `limit` variables control the starting
+ * index key and size of the returned page, respectively.
+ */
 export interface FetchFeeCreditReceiptsParams {
   year?: string;
   month?: string;
@@ -38,6 +47,25 @@ export interface FetchFeeCreditReceiptsParams {
   limit?: number;
 }
 
+/**
+ * Read `FeeBalanceCreditReceipt` entries from the ledger.
+ * `FeeBalanceCreditReceipt` entries represent a `FeePendingBalance`
+ * that was unused, settled, and designated to be credited back to the
+ * end user. Similar to a "Pending authorization" or "Pending hold" that
+ * drops off a credit card statement because it was never settled, these
+ * credit receipts designate a refund or credit-back of prior `FeeAuthorization`s
+ * where $GALA was  burned on Gala's asset channel to cover cross channel fees,
+ * but the corresponding  fee was less than expected or never settled.
+ * Refer to the `FeeBalanceCreditReceipt` class definition for further
+ * details.
+ * Supports pagionation -
+ * the optional bookmark and limit variables control the starting index key and size of the
+ * returned page, respectively.
+ *
+ * @param ctx
+ * @param data
+ * @returns
+ */
 export async function fetchFeeCreditReceipts(
   ctx: GalaChainContext,
   data: FetchFeeCreditReceiptsParams

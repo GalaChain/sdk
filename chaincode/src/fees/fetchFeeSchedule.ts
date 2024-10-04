@@ -31,8 +31,14 @@ export interface FetchFeeScheduleParams {
   limit?: number;
 }
 
-// provide no feeCode to return the whole schedule
-// provide a feeCode to return a specific feeCode progression
+/**
+ * Provide no `feeCode` paramenter to return the entire fee schedule.
+ * Define a `feeCode` value to lookup the `FeeCodeDefinition` of a specific code.
+ *
+ * @param ctx
+ * @param data
+ * @returns
+ */
 export async function fetchFeeSchedule(
   ctx: GalaChainContext,
   data: FetchFeeScheduleParams

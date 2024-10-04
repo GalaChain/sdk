@@ -29,6 +29,31 @@ export interface SettleFeeBalancesParams {
   chainKeys: string[];
 }
 
+/**
+ * Intended for use with cross-channel fees (i.e. secondary channels other than
+ * the asset channel).
+ *
+ * Given an array of `FeePendingBalance` index keys,
+ * query the entries and determine if an unspent balance is present.
+ *
+ * @remarks
+ *
+ * Zero out any positive balances and write `FeeBalanceCreditReceipt`
+ * entries to note that unspent fees should be credited back to the
+ * end user / identity to their $GALA balance on the asset channel.
+ *
+ * The intended flow for cross-channel fees expects that a secondary channel operator
+ * first executes this chaincode method, `settleFeeBalances` to zero out
+ * unspent fee credit authorizations as needed.
+ *
+ * The `FeeBalanceCreditReceipt`
+ * written on-chain represents a credit due in $GALA on the asset channel to
+ * refund unspent, previously-authorized (burned) $GALA for cross-channel fees.
+ *
+ * @param ctx
+ * @param data
+ * @returns
+ */
 export async function settleFeeBalances(
   ctx: GalaChainContext,
   data: SettleFeeBalancesParams
