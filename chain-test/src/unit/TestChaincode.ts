@@ -13,10 +13,10 @@
  * limitations under the License.
  */
 import { ClassConstructor, NotImplementedError } from "@gala-chain/api";
-import { ChaincodeStubClassType, TestChaincodeStub } from "@gala-chain/test";
 import { Context, Contract } from "fabric-contract-api";
 
-import { GalaJSONSerializer } from "../utils";
+import GalaJSONSerializer from "./GalaJSONSerializer";
+import { ChaincodeStubClassType, TestChaincodeStub } from "./TestChaincodeStub";
 
 interface ChaincodeFromContractClassType {
   // eslint-disable-next-line  @typescript-eslint/no-misused-new
@@ -46,7 +46,7 @@ const serializers = {
 
 type InvokeResponse = Record<string, unknown> | Array<Record<string, unknown>>;
 
-export default class TestChaincode {
+export class TestChaincode {
   private readonly chaincode: ChaincodeFromContractClassType;
 
   public constructor(
@@ -106,6 +106,25 @@ export default class TestChaincode {
   ): Promise<T> {
     const argsSerialized = args.map((arg) => (typeof arg === "string" ? arg : arg.serialize()));
     const stub = new TestChaincodeStub([method, ...argsSerialized], this.state, this.writes);
+    stub.mockCreator(this.callingUserMsp, this.callingUser);
+    const rawResponse = await this.chaincode.Invoke(stub);
+
+    if (rawResponse.status === 200) {
+      const stringResponse = rawResponse.payload.toString();
+
+      return JSON.parse(stringResponse) as T;
+    } else {
+      throw rawResponse.message;
+    }
+  }
+
+  public async query<T = InvokeResponse>(
+    method: string,
+    ...args: (string | { serialize: () => string })[]
+  ): Promise<T> {
+    const argsSerialized = args.map((arg) => (typeof arg === "string" ? arg : arg.serialize()));
+    const copyOfState = { ...this.state }; // to prevent writes
+    const stub = new TestChaincodeStub([method, ...argsSerialized], copyOfState, this.writes);
     stub.mockCreator(this.callingUserMsp, this.callingUser);
     const rawResponse = await this.chaincode.Invoke(stub);
 
