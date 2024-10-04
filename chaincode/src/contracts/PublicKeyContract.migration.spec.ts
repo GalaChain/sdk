@@ -23,9 +23,8 @@ import {
   UserRole,
   createValidSubmitDTO
 } from "@gala-chain/api";
-import { transactionErrorKey, transactionSuccess, users } from "@gala-chain/test";
+import { TestChaincode, transactionErrorKey, transactionSuccess, users } from "@gala-chain/test";
 
-import TestChaincode from "../__test__/TestChaincode";
 import { GalaChainContext } from "../types";
 import { GalaContract } from "./GalaContract";
 import { Submit } from "./GalaTransaction";

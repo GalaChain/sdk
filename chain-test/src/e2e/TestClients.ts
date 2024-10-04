@@ -16,7 +16,8 @@ import {
   GalaChainResponseType,
   RegisterEthUserDto,
   RegisterUserDto,
-  createValidSubmitDTO
+  createValidSubmitDTO,
+  signatures
 } from "@gala-chain/api";
 import {
   ChainClient,
@@ -175,10 +176,23 @@ function isUserConfig(user: ChainUser | unknown): user is ChainUser {
   );
 }
 
+function getAdminKeyFromPath(keyPath: string) {
+  try {
+    return fs.readFileSync(keyPath, "utf-8").toString();
+  } catch (e) {
+    return undefined;
+  }
+}
+
 function getAdminUser() {
-  const privateKey =
-    process.env.DEV_ADMIN_PRIVATE_KEY ??
-    fs.readFileSync(path.resolve(networkRoot(), "dev-admin-key/dev-admin.priv.hex.txt"), "utf-8").toString();
+  const defaultKeyPath = path.resolve(networkRoot(), "dev-admin-key/dev-admin.priv.hex.txt");
+  const privateKey = process.env.DEV_ADMIN_PRIVATE_KEY ?? getAdminKeyFromPath(defaultKeyPath);
+
+  if (privateKey === undefined) {
+    throw new Error(
+      `Admin private key not found in ${defaultKeyPath} or environment variable DEV_ADMIN_PRIVATE_KEY`
+    );
+  }
 
   return new ChainUser({ name: "admin", privateKey });
 }
