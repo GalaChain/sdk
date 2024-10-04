@@ -12,18 +12,19 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+import { ArrayNotEmpty, IsNotEmpty, IsString } from "class-validator";
 
-export * from "./allowances";
-export * from "./balances";
-export * from "./burns";
-export * from "./contracts";
-export * from "./fees";
-export * from "./locks";
-export * from "./mint";
-export * from "./oracle";
-export * from "./services";
-export * from "./token";
-export * from "./types";
-export * from "./utils";
-export * from "./use";
-export * from "./transfer";
+import { ChainKey } from "../utils";
+import { ChainObject } from "./ChainObject";
+
+export class OracleDefinition extends ChainObject {
+  public static INDEX_KEY = "GCOE"; // GalaChain Oracle (first and last letter of Oracle)
+
+  @ChainKey({ position: 0 })
+  @IsString()
+  @IsNotEmpty()
+  public name: string;
+
+  @ArrayNotEmpty()
+  public authorities: string[];
+}

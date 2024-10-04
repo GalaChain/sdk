@@ -12,18 +12,20 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+import { ArrayUnique, IsOptional } from "class-validator";
 
-export * from "./allowances";
-export * from "./balances";
-export * from "./burns";
-export * from "./contracts";
-export * from "./fees";
-export * from "./locks";
-export * from "./mint";
-export * from "./oracle";
-export * from "./services";
-export * from "./token";
-export * from "./types";
-export * from "./utils";
-export * from "./use";
-export * from "./transfer";
+import { ChainKey } from "../utils";
+import { IsUserAlias } from "../validators";
+import { ChainObject } from "./ChainObject";
+
+export class FeeExemption extends ChainObject {
+  public static INDEX_KEY = "GCFE"; // GalaChain Fee Exemption
+
+  @ChainKey({ position: 0 })
+  @IsUserAlias()
+  public user: string;
+
+  @IsOptional()
+  @ArrayUnique()
+  public limitedTo?: string[];
+}
