@@ -167,6 +167,8 @@ jobs:
         run: .github/scripts/install-local-cli.sh
       - name: Create test project
         run: galachain init ./project-test
+      - name: Npm install test project
+        run: npm run build --prefix ./project-test
       - name: Build test project
         run: npm run build --prefix ./project-test
       - name: Install dependencies
