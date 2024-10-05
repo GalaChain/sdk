@@ -13,7 +13,7 @@
  * limitations under the License.
  */
 export * from "./customClients";
-export * from "./GalachainClient";
+export * from "./GalaChainClient";
 export * from "./utils/WalletUtils";
 export * from "./chainApis";
 export * from "./helpers";
