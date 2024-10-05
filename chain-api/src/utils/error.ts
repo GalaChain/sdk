@@ -199,6 +199,38 @@ export abstract class ChainError extends Error implements OptionalChainErrorData
       return ChainError.from(e);
     }
   }
+
+  /**
+   * Maps ChainError to a specified return value by error code, or re-throws
+   * original error if no error code matches, or returns default chain error
+   * if a given parameter is not a ChainError instance.
+   *
+   * Useful in rethrowing an error or mapping an error to another one in catch
+   * clauses or catch methods in promises.
+   *
+   * For instance when you want to get an object from chain, and ignore the
+   * NOT_FOUND error, but you don't want to mute other errors:
+   *
+   * ```ts
+   * getObjectByKey(...)
+   *   .catch((e) => CommonChainError.map(e, ErrorCode.NOT_FOUND));
+   * ```
+   *
+   * @param e original error
+   * @param key error code or error class to match
+   * @param returnValue value to be returned if error code matches
+   */
+  public static ignore<T = undefined>(
+    e: { message?: string } | ChainError,
+    key: ErrorCode | ClassConstructor<ChainError>,
+    returnValue: T = undefined as T
+  ): T {
+    if (ChainError.isChainError(e) && e.matches(key)) {
+      return returnValue;
+    } else {
+      throw e;
+    }
+  }
 }
 
 export class ValidationFailedError extends ChainError.withCode(ErrorCode.VALIDATION_FAILED) {}
