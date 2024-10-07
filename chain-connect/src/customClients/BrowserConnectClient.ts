@@ -13,9 +13,9 @@
  * limitations under the License.
  */
 import { ChainCallDTO, ConstructorArgs } from "@gala-chain/api";
-import { BrowserProvider, getAddress } from "ethers";
+import { BrowserProvider, Eip1193Provider, getAddress } from "ethers";
 
-import { WebSigner } from "../GalachainClient";
+import { WebSigner } from "../GalaChainClient";
 import { generateEIP712Types } from "../Utils";
 import { ExtendedEip1193Provider } from "../helpers";
 
@@ -25,18 +25,23 @@ declare global {
   }
 }
 
-export class MetamaskConnectClient extends WebSigner {
-  constructor() {
+export class BrowserConnectClient extends WebSigner {
+  constructor(provider?: Eip1193Provider) {
     super();
     this.address = "";
-    if (window.ethereum) {
+    if (provider) {
+      this.provider = new BrowserProvider(provider);
+    } else if (window.ethereum) {
       this.provider = new BrowserProvider(window.ethereum);
     } else {
       throw new Error("Ethereum provider not found");
     }
   }
 
-  private initializeListeners(): void {
+  /**
+   * Initializes the listeners to watch for events from the provider. Not all providers may support every event
+   */
+  protected initializeListeners(): void {
     if (!window.ethereum) {
       return;
     }

@@ -12,12 +12,10 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-import { ChainCallDTO, ConstructorArgs } from "@gala-chain/api";
-import { BrowserProvider, getAddress } from "ethers";
+import { BrowserProvider } from "ethers";
 
-import { CustomClient, WebSigner } from "../GalachainClient";
-import { generateEIP712Types } from "../Utils";
 import { ExtendedEip1193Provider } from "../helpers";
+import { BrowserConnectClient } from "./BrowserConnectClient";
 
 declare global {
   interface Window {
@@ -91,72 +89,14 @@ function getTrustWalletFromWindow() {
   return window["trustwallet"] ?? null;
 }
 
-export class GalachainConnectTrustClient extends WebSigner {
+export class TrustWalletConnectClient extends BrowserConnectClient {
   constructor() {
     super();
     this.address = "";
   }
 
-  private initializeListeners(): void {
-    if (!window.ethereum) {
-      return;
-    }
-    window.ethereum.on("accountsChanged", (accounts: string[]) => {
-      if (accounts.length > 0) {
-        this.walletAddress = getAddress(accounts[0]);
-        this.emit("accountChanged", this.galachainEthAlias);
-        this.emit("accountsChanged", accounts);
-      } else {
-        this.walletAddress = "";
-        this.emit("accountChanged", null);
-        this.emit("accountsChanged", null);
-      }
-    });
-  }
-
   public async connect() {
     this.provider = await getTrustWalletInjectedProvider();
-    if (!this.provider) {
-      throw new Error("Trust Wallet provider not found");
-    }
-    this.initializeListeners();
-
-    try {
-      const accounts = (await this.provider.send("eth_requestAccounts", [])) as string[];
-      this.walletAddress = getAddress(accounts[0]);
-      return this.galachainEthAlias;
-    } catch (error: any) {
-      if (error.code === 4001) {
-        console.error("User denied connection.");
-      }
-      throw new Error((error as Error).message);
-    }
-  }
-
-  public async sign<U extends ConstructorArgs<ChainCallDTO>>(
-    method: string,
-    payload: U
-  ): Promise<U & { signature: string; prefix: string }> {
-    if (!this.provider) {
-      throw new Error("Trust Wallet provider not found");
-    }
-    if (!this.address) {
-      throw new Error("No account connected");
-    }
-
-    try {
-      const domain = { name: "GalaChain" };
-      const types = generateEIP712Types(method, payload);
-
-      const prefix = this.calculatePersonalSignPrefix(payload);
-      const prefixedPayload = { ...payload, prefix };
-
-      const signer = await this.provider.getSigner();
-      const signature = await signer.signTypedData(domain, types, prefixedPayload);
-
-      return { ...prefixedPayload, signature, types, domain };
-    } catch (error: unknown) {
-      throw new Error((error as Error).message);
-    }
+    return super.connect();
   }
 }

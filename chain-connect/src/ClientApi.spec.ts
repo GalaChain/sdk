@@ -16,7 +16,7 @@ import { RegisterUserParams, TransferTokenParams } from "@gala-chain/api";
 import { EventEmitter } from "events";
 
 import { PublicKeyApi, TokenApi } from "./chainApis";
-import { MetamaskConnectClient } from "./customClients";
+import { BrowserConnectClient } from "./customClients";
 
 global.fetch = jest.fn((url: string, options?: Record<string, unknown>) =>
   Promise.resolve({
@@ -74,7 +74,7 @@ describe("API tests", () => {
     };
 
     // call connect
-    const connection = new MetamaskConnectClient();
+    const connection = new BrowserConnectClient();
     await connection.connect();
 
     const tokenApi = new TokenApi("https://example.com", connection);
@@ -104,7 +104,7 @@ describe("API tests", () => {
     };
 
     // call connect
-    const connection = new MetamaskConnectClient();
+    const connection = new BrowserConnectClient();
     await connection.connect();
 
     const publicKeyApi = new PublicKeyApi("https://example.com", connection);
@@ -134,7 +134,7 @@ describe("API tests", () => {
     };
 
     // call connect
-    const connection = new MetamaskConnectClient();
+    const connection = new BrowserConnectClient();
     await connection.connect();
 
     const tokenApi = new PublicKeyApi("https://example.com", connection);

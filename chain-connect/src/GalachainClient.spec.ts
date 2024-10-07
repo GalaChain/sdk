@@ -17,7 +17,7 @@ import { ethers } from "ethers";
 import { EventEmitter } from "events";
 
 import { generateEIP712Types } from "./Utils";
-import { GalachainConnectTrustClient, MetamaskConnectClient } from "./customClients";
+import { BrowserConnectClient, TrustWalletConnectClient } from "./customClients";
 
 global.fetch = jest.fn((url: string, options?: Record<string, unknown>) =>
   Promise.resolve({
@@ -59,7 +59,7 @@ class EthereumMock extends EventEmitter {
 }
 window.ethereum = new EthereumMock();
 
-describe("MetamaskConnectClient", () => {
+describe("BrowserConnectClient", () => {
   it("test full flow", async () => {
     const dto: TransferTokenParams = {
       quantity: "1",
@@ -75,7 +75,7 @@ describe("MetamaskConnectClient", () => {
     };
 
     // call connect
-    const client = new MetamaskConnectClient();
+    const client = new BrowserConnectClient();
     await client.connect();
 
     // send dto payload in send function
@@ -132,7 +132,7 @@ describe("MetamaskConnectClient", () => {
 
     const privateKey = "0x311e3750b1b698e70a2b37fd08b68fdcb389f955faea163f6ffa5be65cd0c251";
 
-    const client = new MetamaskConnectClient();
+    const client = new BrowserConnectClient();
     await client.connect();
 
     const prefix = client.calculatePersonalSignPrefix(params);
@@ -161,7 +161,7 @@ describe("MetamaskConnectClient", () => {
 
     const privateKey = "0x311e3750b1b698e70a2b37fd08b68fdcb389f955faea163f6ffa5be65cd0c251";
 
-    const client = new MetamaskConnectClient();
+    const client = new BrowserConnectClient();
     await client.connect();
 
     const prefix = client.calculatePersonalSignPrefix(params);
@@ -190,7 +190,7 @@ describe("MetamaskConnectClient", () => {
 
     const privateKey = "0x311e3750b1b698e70a2b37fd08b68fdcb389f955faea163f6ffa5be65cd0c251";
 
-    const client = new MetamaskConnectClient();
+    const client = new BrowserConnectClient();
     await client.connect();
 
     const prefix = client.calculatePersonalSignPrefix(params);
@@ -218,7 +218,7 @@ describe("MetamaskConnectClient", () => {
 
     const privateKey = "0x311e3750b1b698e70a2b37fd08b68fdcb389f955faea163f6ffa5be65cd0c251";
 
-    const client = new MetamaskConnectClient();
+    const client = new BrowserConnectClient();
     await client.connect();
 
     const prefix = client.calculatePersonalSignPrefix(params);
@@ -255,7 +255,7 @@ describe("TrustConnectClient", () => {
     };
 
     // call connect
-    const client = new GalachainConnectTrustClient();
+    const client = new TrustWalletConnectClient();
     await client.connect();
 
     // send dto payload in send function

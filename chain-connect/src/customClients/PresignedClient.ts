@@ -1,3 +1,5 @@
+/* eslint-disable @typescript-eslint/no-unused-vars */
+
 /*
  * Copyright (c) Gala Games Inc. All rights reserved.
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -12,7 +14,19 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-export * from "./BrowserConnectClient";
-export * from "./TrustWalletConnectClient";
-export * from "./SigningClient";
-export * from "./PresignedClient";
+import { NotImplementedError } from "@gala-chain/api";
+
+import { GalaChainProvider } from "../GalaChainClient";
+
+/**
+ * Use this provider when you simply want to forward presigned requests, or requests that do not require a signature
+ */
+
+export class PresignedClient extends GalaChainProvider {
+  public async sign<U extends object>(
+    method: string,
+    payload: U
+  ): Promise<U & { signature: string; prefix: string }> {
+    throw new NotImplementedError("Signing not supported for this provider!");
+  }
+}
