@@ -17,7 +17,7 @@ import { ethers } from "ethers";
 import { EventEmitter } from "events";
 
 import { generateEIP712Types } from "./Utils";
-import { BrowserConnectClient, GalachainConnectTrustClient } from "./customClients";
+import { BrowserConnectClient, TrustWalletConnectClient } from "./customClients";
 
 global.fetch = jest.fn((url: string, options?: Record<string, unknown>) =>
   Promise.resolve({
@@ -255,7 +255,7 @@ describe("TrustConnectClient", () => {
     };
 
     // call connect
-    const client = new GalachainConnectTrustClient();
+    const client = new TrustWalletConnectClient();
     await client.connect();
 
     // send dto payload in send function

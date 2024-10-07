@@ -13,6 +13,6 @@
  * limitations under the License.
  */
 export * from "./BrowserConnectClient";
-export * from "./TrustConnectClient";
-export * from "./ServerSigningClient";
+export * from "./TrustWalletConnectClient";
+export * from "./SigningClient";
 export * from "./PresignedClient";
