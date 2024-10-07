@@ -1,8 +1,8 @@
 # Authorization and authentication
 
 GalaChain uses two layers of authorization and authentication to ensure that only authorized users can access the system.
-First level, exposed to the client, is based on secp256k1 signatures and private/public key authorization.
-Second level uses native Hyperledger Fabric CA users and organizations MSPs.
+The first level, exposed to the client, is based on secp256k1 signatures and private/public key authorization for the Ethereum signing scheme, and eddsa signatures for the TON signing scheme.
+The second level uses native Hyperledger Fabric CA users and organizations MSPs.
 
 ## How it works
 
@@ -19,8 +19,9 @@ In this document, if we refer to the **user**, we mean the **end user**.
 
 ## Signature based authorization
 
-Signature based authorization user secp256k1 signatures to verify the identity of the end user.
-By default, it uses the same algorithm as Ethereum (keccak256 + secp256k1), but also TON (The Open Network) signing scheme is supported.
+Signature-based authorization uses secp256k1 signatures to verify the identity of the end user.
+By default, it uses the same algorithm as Ethereum (keccak256 + secp256k1), but the TON (The Open Network) signing scheme is also supported.
+All payloads that should be authorized by the TON signing scheme must have the `signing` field set to `TON`.
 
 ### Required fields in dto object
 
@@ -130,7 +131,7 @@ The serialized payload string must be prepared in the same way as for Ethereum s
 signature = Ed25519Sign(privkey, sha256(0xffff ++ utf8_encode(seed) ++ sha256(message)))
 ```
 
-### Authenticating and authorizing in the chaincode
+### Authenticating in the chaincode
 
 In the chaincode, before the transaction is executed, GalaChain SDK will recover the public key from the signature and check if the user is registered.
 If the user is not registered, the transaction will be rejected with an error.
@@ -140,10 +141,12 @@ The `@GalaTransaction` decorator is more flexible and can be used to disable sig
 Disabling signature based authorization is useful when you want to allow anonymous access to a method, but it is not recommended for most use cases.
 
 Chain side `ctx.callingUser` property will be populated with the user's alias, which is either `client|<custom-name>` or `eth|<eth-addr>` (if there is no custom name defined).
-Also, `ctx.callingUserEthAddress` will contain the user's Ethereum address.
+Also, `ctx.callingUserEthAddress` will contain the user's Ethereum address, if the user is registered with the Ethereum address.
+If the TON signing scheme is used, `ctx.callingUserTonAddress` will contain the user's TON address.
+
 This way it is possible to get the current user's properties in the chaincode and use them in the business logic.
 
-Additionally, we plan to support role-based access control (RBAC) in the future, which will allow for more fine-grained control over who can access what resources.
+Additionally, we support role-based access control (RBAC) in the future, which will allow for more fine-grained control over who can access what resources.
 See the [RBAC section](#next-role-based-access-control-rbac) for more information.
 
 ### User registration
@@ -197,13 +200,16 @@ You can restrict access to the contract method to a specific organizations by se
 For the `PublicKeyContract` chaincode, the `CURATOR_ORG_MSP` environment variable is used as the organization that is allowed to register users (default value is `CuratorOrg`).
 It is recommended to use the same variable for curator-level access to the chaincode methods.
 
-## Next: Role Based Access Control (RBAC)
+## Role Based Access Control (RBAC)
 
-GalaChain v2 will drop support for the chaincode level authorization using Orgs and MSPs.
-Instead, we will introduce a new Role Based Access Control (RBAC) system that will allow for more fine-grained control over who can access what resources.
+GalaChain SDK v2 introduced a Role Based Access Control (RBAC) system that will allow for more fine-grained control over who can access what resources.
 
-The `allowedOrgs` property will be removed from the chaincode definition and replaced with a new `allowedRoles` property.
-For instance, instead of specifying that only `CuratorOrg` can access a certain chaincode, you will be able to specify that only users with the `CURATOR` role can access it.
-User roles will be saved with `UserProfile` objects in chain data.
+The `allowedOrgs` property is deprecated and will be eventually removed from the chaincode definition.
+Instead, you should use the `allowedRoles` property to specify which **roles** can access the method.
 
-See the current progress in the [RBAC issue](https://github.com/GalaChain/sdk/issues/249).
+The `allowedRoles` property is an array of strings that represent the roles that are allowed to access the method.
+The roles are assigned to the `UserProfile` object in the chain data.
+By default, the `EVALUATE` and `SUBMIT` roles are assigned to the user when they are registered.
+You can assign additional roles to the user using the `PublicKeyContract:UpdateUserRoles` method. This method requires that the calling user either has the `CURATOR` role or is a CA user from a curator organization.
+
+There are some predefined roles (`EVALUATE`, `SUBMIT`, `CURATOR`). You can also define custom roles for more granular access control.

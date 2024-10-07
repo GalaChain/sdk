@@ -20,14 +20,14 @@ import { JSONSchema } from "class-validator-jsonschema";
 import { ConstructorArgs } from "../utils";
 import { BigNumberIsNotNegative, BigNumberProperty, IsUserAlias } from "../validators";
 import { TokenInstance, TokenInstanceKey } from "./TokenInstance";
-import { ChainCallDTO } from "./dtos";
+import { SubmitCallDTO } from "./dtos";
 
 export type ReleaseTokenParams = ConstructorArgs<ReleaseTokenDto>;
 
 @JSONSchema({
   description: "Describes an action to release a token that is in use."
 })
-export class ReleaseTokenDto extends ChainCallDTO {
+export class ReleaseTokenDto extends SubmitCallDTO {
   @JSONSchema({
     description: "Token instance of token to be released."
   })
@@ -42,7 +42,7 @@ export type UseTokenParams = ConstructorArgs<UseTokenDto>;
 @JSONSchema({
   description: "Describes an action to use a token."
 })
-export class UseTokenDto extends ChainCallDTO {
+export class UseTokenDto extends SubmitCallDTO {
   @JSONSchema({
     description: "The current owner of tokens. If the value is missing, chaincode caller is used."
   })

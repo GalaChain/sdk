@@ -42,7 +42,7 @@ import { TokenInstance, TokenInstanceKey } from "./TokenInstance";
 export class TokenNotInBalanceError extends ValidationFailedError {
   constructor(owner: string, tokenClass: TokenClassKeyProperties, instanceId: BigNumber) {
     const tokenInstanceKey = TokenInstanceKey.nftKey(tokenClass, instanceId).toStringKey();
-    super(`Token instance ${tokenInstanceKey} not found in balance`, { owner, tokenInstanceKey });
+    super(`Token instance ${tokenInstanceKey} not found in balance of ${owner}`, { owner, tokenInstanceKey });
   }
 }
 

@@ -19,7 +19,8 @@ import {
   MintTokenDto,
   TokenMintRequest,
   TokenMintStatus,
-  createValidDTO
+  createValidRangedChainObject,
+  createValidSubmitDTO
 } from "@gala-chain/api";
 import { currency, fixture, nft, users, writesMap } from "@gala-chain/test";
 import BigNumber from "bignumber.js";
@@ -36,42 +37,32 @@ describe("MintToken", () => {
     const mintQty = new BigNumber("1000000000000");
     const tokenAllowance = currency.tokenAllowance();
 
-    const { ctx, contract, writes } = fixture(GalaChainTokenContract)
-      .callingUser(users.testAdminId)
+    const { ctx, contract, getWrites } = fixture(GalaChainTokenContract)
+      .registeredUsers(users.admin)
       .savedState(currencyClass, currencyInstance, tokenAllowance)
       .savedRangeState([]);
-
-    // todo: figure out how to mock `putState` or code an alternative for simple keys
-    // below does not actually work, the mocked function reports 0 calls
-    // import { fixture } from "../../__test__";
-    // fixture implementation does not support direct calls to ctx.stub.putState
-    // this spy is not actually called, possibly because using jest.MockClass will
-    // not also mock the underlying ChaincodeStub class?
-    // https://chrisboakes.com/mocking-javascript-class-inner-functions-with-jest/
-    // const putState = jest
-    //   .spyOn(ctx.stub, "putState")
-    //   .mockImplementation(() => Promise.resolve());
 
     const epochKey = inverseEpoch(ctx, 0);
     const timeKey = inverseTime(ctx, 0);
 
     const { collection, category, type, additionalKey } = currencyClass;
 
-    const dto = await createValidDTO(MintTokenDto, {
+    const dto = await createValidSubmitDTO(MintTokenDto, {
       tokenClass: currency.tokenClassKey(),
-      owner: users.testUser1Id,
+      owner: users.testUser1.identityKey,
       quantity: mintQty
-    });
+    }).signed(users.admin.privateKey);
 
-    const mintRequest = plainToInstance(TokenMintRequest, {
+    const mintRequest = await createValidRangedChainObject(TokenMintRequest, {
+      id: "-", // will be set in the mintRequest.requestId() call
       collection,
       category,
       type,
       additionalKey,
       timeKey,
       totalKnownMintsCount: new BigNumber("0"),
-      requestor: users.testAdminId,
-      owner: users.testUser1Id,
+      requestor: users.admin.identityKey,
+      owner: users.testUser1.identityKey,
       created: ctx.txUnixTime,
       quantity: mintQty,
       state: TokenMintStatus.Unknown,
@@ -80,7 +71,7 @@ describe("MintToken", () => {
 
     mintRequest.id = mintRequest.requestId();
 
-    const fulfillmentDto = plainToInstance(FulfillMintDto, {
+    const fulfillmentDto = await createValidSubmitDTO(FulfillMintDto, {
       requests: [
         plainToInstance(MintRequestDto, {
           collection,
@@ -90,7 +81,7 @@ describe("MintToken", () => {
           timeKey,
           totalKnownMintsCount: new BigNumber("0"),
           id: mintRequest.requestId(),
-          owner: users.testUser1Id
+          owner: users.testUser1.identityKey
         })
       ]
     });
@@ -99,8 +90,8 @@ describe("MintToken", () => {
     const response = await contract.RequestMint(ctx, dto);
 
     // Then
-    expect(response).toEqual(GalaChainResponse.Success(fulfillmentDto));
-    expect(writes).toEqual(writesMap(mintRequest));
+    expect(response).toEqual(GalaChainResponse.Success({ ...fulfillmentDto, uniqueKey: expect.any(String) }));
+    expect(getWrites()).toEqual(writesMap(mintRequest));
   });
 
   test("request mint for unique items, i.e. NFTs", async () => {
@@ -110,8 +101,8 @@ describe("MintToken", () => {
     const mintQty = new BigNumber("2");
     const tokenAllowance = nft.tokenMintAllowance();
 
-    const { ctx, contract, writes } = fixture(GalaChainTokenContract)
-      .callingUser(users.testAdminId)
+    const { ctx, contract, getWrites } = fixture(GalaChainTokenContract)
+      .registeredUsers(users.admin)
       .savedState(nftClass, nftInstance, tokenAllowance)
       .savedRangeState([]);
 
@@ -120,21 +111,22 @@ describe("MintToken", () => {
 
     const { collection, category, type, additionalKey } = nftClass;
 
-    const dto = await createValidDTO(MintTokenDto, {
+    const dto = await createValidSubmitDTO(MintTokenDto, {
       tokenClass: nft.tokenClassKey(),
-      owner: users.testUser1Id,
+      owner: users.testUser1.identityKey,
       quantity: mintQty
-    });
+    }).signed(users.admin.privateKey);
 
-    const mintRequest = plainToInstance(TokenMintRequest, {
+    const mintRequest = await createValidRangedChainObject(TokenMintRequest, {
+      id: "-", // will be set in the mintRequest.requestId() call
       collection,
       category,
       type,
       additionalKey,
       timeKey,
       totalKnownMintsCount: new BigNumber("0"),
-      requestor: users.testAdminId,
-      owner: users.testUser1Id,
+      requestor: users.admin.identityKey,
+      owner: users.testUser1.identityKey,
       created: ctx.txUnixTime,
       quantity: mintQty,
       state: TokenMintStatus.Unknown,
@@ -143,7 +135,7 @@ describe("MintToken", () => {
 
     mintRequest.id = mintRequest.requestId();
 
-    const fulfillmentDto = plainToInstance(FulfillMintDto, {
+    const fulfillmentDto = await createValidSubmitDTO(FulfillMintDto, {
       requests: [
         plainToInstance(MintRequestDto, {
           collection,
@@ -153,15 +145,15 @@ describe("MintToken", () => {
           timeKey,
           totalKnownMintsCount: new BigNumber("0"),
           id: mintRequest.requestId(),
-          owner: users.testUser1Id
+          owner: users.testUser1.identityKey
         })
       ]
     });
 
     const response = await contract.RequestMint(ctx, dto);
 
-    expect(response).toEqual(GalaChainResponse.Success(fulfillmentDto));
-    expect(writes).toEqual(writesMap(mintRequest));
+    expect(response).toEqual(GalaChainResponse.Success({ ...fulfillmentDto, uniqueKey: expect.any(String) }));
+    expect(getWrites()).toEqual(writesMap(mintRequest));
   });
 
   test("does not mint lower than decimal limit (10)", async () => {
@@ -171,15 +163,15 @@ describe("MintToken", () => {
     const tokenAllowance = currency.tokenAllowance();
     const decimalQuantity = new BigNumber("0.000000000001");
 
-    const { ctx, contract, writes } = fixture(GalaChainTokenContract)
-      .callingUser(users.testUser1Id)
+    const { ctx, contract, getWrites } = fixture(GalaChainTokenContract)
+      .registeredUsers(users.testUser1)
       .savedState(currencyClass, currencyInstance, tokenAllowance);
 
-    const dto = await createValidDTO(MintTokenDto, {
+    const dto = await createValidSubmitDTO(MintTokenDto, {
       tokenClass: currency.tokenClassKey(),
-      owner: users.testUser1Id,
+      owner: users.testUser1.identityKey,
       quantity: decimalQuantity
-    });
+    }).signed(users.testUser1.privateKey);
 
     // When
     const response = await contract.RequestMint(ctx, dto);
@@ -192,6 +184,6 @@ describe("MintToken", () => {
         )
       )
     );
-    expect(writes).toEqual({});
+    expect(getWrites()).toEqual({});
   });
 });

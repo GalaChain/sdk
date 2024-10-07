@@ -12,7 +12,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-import { ChainCallDTO, StringEnumProperty } from "@gala-chain/api";
+import { ChainCallDTO, StringEnumProperty, SubmitCallDTO } from "@gala-chain/api";
 import { Type } from "class-transformer";
 import {
   ArrayNotEmpty,
@@ -27,45 +27,60 @@ import {
 import { AppleTree } from "./AppleTree";
 import { Variety } from "./types";
 
-export class AppleTreeDto extends ChainCallDTO {
+export class PlantAppleTreeDto extends SubmitCallDTO {
+  @StringEnumProperty(Variety)
+  public readonly variety: Variety;
+
+  public readonly index: number;
+
+  constructor(variety: Variety, index: number, uniqueKey: string) {
+    super();
+    this.variety = variety;
+    this.index = index;
+    this.uniqueKey = uniqueKey;
+  }
+}
+
+export class AppleTreeDto {
   @StringEnumProperty(Variety)
   public readonly variety: Variety;
 
   public readonly index: number;
 
   constructor(variety: Variety, index: number) {
-    super();
     this.variety = variety;
     this.index = index;
   }
 }
 
-export class AppleTreesDto extends ChainCallDTO {
+export class PlantAppleTreesDto extends SubmitCallDTO {
   @ValidateNested({ each: true })
   @Type(() => AppleTreeDto)
   @ArrayNotEmpty()
   public readonly trees: AppleTreeDto[];
 
-  constructor(trees: AppleTreeDto[]) {
+  constructor(trees: AppleTreeDto[], uniqueKey: string) {
     super();
     this.trees = trees;
+    this.uniqueKey = uniqueKey;
   }
 }
 
-export class PickAppleDto extends ChainCallDTO {
+export class PickAppleDto extends SubmitCallDTO {
   @IsString()
-  public readonly PlantedBy: string;
+  public readonly plantedBy: string;
 
   @StringEnumProperty(Variety)
   public readonly variety: Variety;
 
   public readonly index: number;
 
-  constructor(treePlantedBy: string, variety: Variety, index: number) {
+  constructor(treePlantedBy: string, variety: Variety, index: number, uniqueKey: string) {
     super();
-    this.PlantedBy = treePlantedBy;
+    this.plantedBy = treePlantedBy;
     this.variety = variety;
     this.index = index;
+    this.uniqueKey = uniqueKey;
   }
 }
 

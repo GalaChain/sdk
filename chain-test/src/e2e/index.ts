@@ -16,3 +16,5 @@
 export * from "./ContractTestClient";
 export * from "./TestClients";
 export * from "./tokenOps";
+export { MockedChaincodeClient } from "./MockedChaincodeClient";
+export { MockedChaincodeClientBuilder } from "./MockedChaincodeClient";

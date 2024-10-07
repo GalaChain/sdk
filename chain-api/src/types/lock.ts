@@ -30,14 +30,14 @@ import { ConstructorArgs } from "../utils";
 import { BigNumberIsNotNegative, BigNumberIsPositive, BigNumberProperty, IsUserAlias } from "../validators";
 import { LockTokenQuantity } from "./LockTokenQuantity";
 import { TokenInstance, TokenInstanceKey } from "./TokenInstance";
-import { ChainCallDTO } from "./dtos";
+import { SubmitCallDTO } from "./dtos";
 
 export type LockTokenRequestParams = ConstructorArgs<LockTokenDto>;
 
 @JSONSchema({
   description: "Describes an action to lock a token."
 })
-export class LockTokenDto extends ChainCallDTO {
+export class LockTokenDto extends SubmitCallDTO {
   @JSONSchema({
     description: "The current owner of tokens. If the value is missing, chaincode caller is used."
   })
@@ -86,7 +86,7 @@ export type LockTokensParams = ConstructorArgs<LockTokensDto>;
 @JSONSchema({
   description: "Describes an action to lock multiple tokens."
 })
-export class LockTokensDto extends ChainCallDTO {
+export class LockTokensDto extends SubmitCallDTO {
   @JSONSchema({
     description:
       "User who will be able to unlock token. " +
@@ -137,7 +137,7 @@ export type UnlockTokenParams = ConstructorArgs<UnlockTokenDto>;
 @JSONSchema({
   description: "Describes an action to unlock a token."
 })
-export class UnlockTokenDto extends ChainCallDTO {
+export class UnlockTokenDto extends SubmitCallDTO {
   @JSONSchema({
     description: "Token instance of token to be unlocked."
   })
@@ -176,7 +176,7 @@ export type UnlockTokensParams = ConstructorArgs<UnlockTokensDto>;
 @JSONSchema({
   description: "Describes an action to unlock multiple tokens."
 })
-export class UnlockTokensDto extends ChainCallDTO {
+export class UnlockTokensDto extends SubmitCallDTO {
   @JSONSchema({
     description:
       "Array of token instances of token to be locked. In case of fungible tokens, tokenInstance.instance field " +

@@ -21,7 +21,7 @@ import { ConstructorArgs } from "../utils";
 import { ArrayUniqueObjects, BigNumberIsNotNegative, BigNumberProperty, IsUserAlias } from "../validators";
 import { TokenClassKey } from "./TokenClass";
 import { AllowanceKey, MintRequestDto } from "./common";
-import { ChainCallDTO } from "./dtos";
+import { ChainCallDTO, SubmitCallDTO } from "./dtos";
 
 export type MintTokenParams = ConstructorArgs<MintTokenDto>;
 
@@ -30,7 +30,7 @@ export type MintTokenParams = ConstructorArgs<MintTokenDto>;
     "Describes an action to mint a token. " +
     `For NFTs you can mint up to ${MintTokenDto.MAX_NFT_MINT_SIZE} tokens.`
 })
-export class MintTokenDto extends ChainCallDTO {
+export class MintTokenDto extends SubmitCallDTO {
   static MAX_NFT_MINT_SIZE = 1000;
 
   @JSONSchema({
@@ -69,7 +69,7 @@ export type MintTokenWithAllowanceParams = ConstructorArgs<MintTokenWithAllowanc
     "Describes an action to grant allowance to self and mint token to owner in single transaction. " +
     "This action will fail is the calling user lacks the authority to grant MINT allowances."
 })
-export class MintTokenWithAllowanceDto extends ChainCallDTO {
+export class MintTokenWithAllowanceDto extends SubmitCallDTO {
   @JSONSchema({
     description: "Token class of token to be minted."
   })
@@ -108,7 +108,7 @@ export type BatchMintTokenParams = ConstructorArgs<BatchMintTokenDto>;
     "Describes an action to transferToken a token. " +
     `For NFTs you can mint up to ${MintTokenDto.MAX_NFT_MINT_SIZE} tokens.`
 })
-export class BatchMintTokenDto extends ChainCallDTO {
+export class BatchMintTokenDto extends SubmitCallDTO {
   static MAX_ARR_SIZE = 1000;
 
   @JSONSchema({
@@ -133,7 +133,7 @@ export type HighThroughputMintTokenParams = ConstructorArgs<HighThroughputMintTo
     "Experimental: Describes an action to mint a token. High-throughput implementation. " +
     "DTO properties backwards-compatible with prior MintTokenDto,"
 })
-export class HighThroughputMintTokenDto extends ChainCallDTO {
+export class HighThroughputMintTokenDto extends SubmitCallDTO {
   // todo: remove all these duplicated properties
   // it seems something about our @GalaTransaction decorator does not pass through
   // parent properties. Leaving this class empty with just the `extends MintTokenDto`
@@ -177,7 +177,7 @@ export type FulfillMintParams = ConstructorArgs<FulfillMintDto>;
   description:
     "Experimental: After submitting request to RequestMintAllowance, follow up with FulfillMintAllowance."
 })
-export class FulfillMintDto extends ChainCallDTO {
+export class FulfillMintDto extends SubmitCallDTO {
   static MAX_ARR_SIZE = 1000;
 
   @ValidateNested({ each: true })

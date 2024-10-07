@@ -12,22 +12,16 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+import "dotenv/config";
 
-/*
- * Creates valid chain object. Throws error in case of failure
- */
-import { ChainObject, ClassConstructor, NonFunctionProperties, RangedChainObject } from "@gala-chain/api";
+import { GalaContract, PublicKeyContract } from "../../contracts/";
+import { GalaJSONSerializer } from "../../utils";
 
-export async function createValidChainObject<T extends ChainObject | RangedChainObject>(
-  constructor: ClassConstructor<T>,
-  plain: NonFunctionProperties<T>
-): Promise<T> {
-  const obj = new constructor();
-  Object.entries(plain).forEach(([k, v]) => {
-    obj[k] = v;
-  });
+export const contracts: { new (): GalaContract }[] = [PublicKeyContract];
 
-  await obj.validateOrReject();
-
-  return obj;
-}
+export const serializers = {
+  transaction: "galaJsonSerializer",
+  serializers: {
+    galaJsonSerializer: GalaJSONSerializer
+  }
+};

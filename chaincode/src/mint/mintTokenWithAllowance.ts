@@ -17,10 +17,10 @@ import {
   AllowanceType,
   TokenClassKey,
   TokenInstanceKey,
-  TokenInstanceQueryKey
+  TokenInstanceQueryKey,
+  createValidDTO
 } from "@gala-chain/api";
 import { BigNumber } from "bignumber.js";
-import { plainToInstance } from "class-transformer";
 
 import { grantAllowance } from "../allowances";
 import { GalaChainContext } from "../types/GalaChainContext";
@@ -40,7 +40,7 @@ export async function mintTokenWithAllowance(
   const { tokenClassKey, tokenInstance, quantity, owner } = dto;
 
   const response = await grantAllowance(ctx, {
-    tokenInstance: plainToInstance(TokenInstanceQueryKey, { ...tokenClassKey, instance: tokenInstance }),
+    tokenInstance: await createValidDTO(TokenInstanceQueryKey, { ...tokenClassKey, instance: tokenInstance }),
     allowanceType: AllowanceType.Mint,
     quantities: [{ user: ctx.callingUser, quantity }],
     uses: new BigNumber("1"),
@@ -50,7 +50,7 @@ export async function mintTokenWithAllowance(
   const tokenInstanceArray = await mintToken(ctx, {
     tokenClassKey: tokenClassKey,
     owner: owner,
-    applicableAllowanceKey: plainToInstance(AllowanceKey, response[0]),
+    applicableAllowanceKey: await createValidDTO(AllowanceKey, response[0]),
     quantity,
     authorizedOnBehalf: undefined
   });

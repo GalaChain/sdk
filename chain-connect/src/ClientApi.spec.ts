@@ -100,7 +100,8 @@ describe("API tests", () => {
   it("test register", async () => {
     const dto: RegisterUserParams = {
       publicKey: "3",
-      user: "4"
+      user: "4",
+      uniqueKey: "26d4122e-34c8-4639-baa6-4382b398e68e"
     };
 
     // call connect
@@ -117,7 +118,7 @@ describe("API tests", () => {
       },
       Request: {
         options: {
-          body: '{"domain":{"name":"GalaChain"},"prefix":"\\u0019Ethereum Signed Message:\\n74","publicKey":"3","signature":"sampleSignature","types":{"RegisterUser":[{"name":"publicKey","type":"string"},{"name":"user","type":"string"}]},"user":"4"}',
+          body: '{"domain":{"name":"GalaChain"},"prefix":"\\u0019Ethereum Signed Message:\\n126","publicKey":"3","signature":"sampleSignature","types":{"RegisterUser":[{"name":"publicKey","type":"string"},{"name":"user","type":"string"},{"name":"uniqueKey","type":"string"}]},"uniqueKey":"26d4122e-34c8-4639-baa6-4382b398e68e","user":"4"}',
           headers: {
             "Content-Type": "application/json"
           },
@@ -130,7 +131,8 @@ describe("API tests", () => {
   it("test both using same connection", async () => {
     const dto: RegisterUserParams = {
       publicKey: "3",
-      user: "4"
+      user: "4",
+      uniqueKey: "26d4122e-34c8-4639-baa6-4382b398e68e"
     };
 
     // call connect
@@ -146,7 +148,7 @@ describe("API tests", () => {
       },
       Request: {
         options: {
-          body: '{"domain":{"name":"GalaChain"},"prefix":"\\u0019Ethereum Signed Message:\\n74","publicKey":"3","signature":"sampleSignature","types":{"RegisterUser":[{"name":"publicKey","type":"string"},{"name":"user","type":"string"}]},"user":"4"}',
+          body: '{"domain":{"name":"GalaChain"},"prefix":"\\u0019Ethereum Signed Message:\\n126","publicKey":"3","signature":"sampleSignature","types":{"RegisterUser":[{"name":"publicKey","type":"string"},{"name":"user","type":"string"},{"name":"uniqueKey","type":"string"}]},"uniqueKey":"26d4122e-34c8-4639-baa6-4382b398e68e","user":"4"}',
           headers: {
             "Content-Type": "application/json"
           },
@@ -166,7 +168,7 @@ describe("API tests", () => {
       },
       Request: {
         options: {
-          body: '{"domain":{"name":"GalaChain"},"prefix":"\\u0019Ethereum Signed Message:\\n74","publicKey":"3","signature":"sampleSignature","types":{"RegisterUser":[{"name":"publicKey","type":"string"},{"name":"user","type":"string"}]},"user":"4"}',
+          body: '{"domain":{"name":"GalaChain"},"prefix":"\\u0019Ethereum Signed Message:\\n126","publicKey":"3","signature":"sampleSignature","types":{"RegisterUser":[{"name":"publicKey","type":"string"},{"name":"user","type":"string"},{"name":"uniqueKey","type":"string"}]},"uniqueKey":"26d4122e-34c8-4639-baa6-4382b398e68e","user":"4"}',
           headers: {
             "Content-Type": "application/json"
           },

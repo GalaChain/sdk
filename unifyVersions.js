@@ -37,6 +37,7 @@ const packages = [
   "./chain-client",
   "./chain-connect",
   "./chain-test",
+  "./chain-ui",
   "./chain-ui/packages/galachain-ui",
   "./chain-ui/packages/galachain-ui-vue",
   "./chaincode"
@@ -52,8 +53,8 @@ if (optionalVersion) {
   console.log("Applying version from command line:", optionalVersion);
 
   // just a sanity check
-  if (!optionalVersion.startsWith("1.4.")) {
-    console.error("Version must start with '1.4.'");
+  if (!optionalVersion.startsWith("2.0.")) {
+    console.error("Version must start with '2.0.'");
     process.exit(1);
   }
   packages.forEach(({ packageJson, packageJsonPath }) => {

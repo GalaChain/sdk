@@ -22,11 +22,6 @@ if (process.env.GALA_NETWORK_ROOT_PATH === undefined) {
   process.env.GALA_NETWORK_ROOT_PATH = networkRoot;
 }
 
-// we use dev mode by default for tests
-if (process.env.GALA_CLIENT_DEV_MODE === undefined) {
-  process.env.GALA_CLIENT_DEV_MODE = "true";
-}
-
 // Force less information in logs.
 // We want this, because while running tests from command line Fabric produces
 // a lot of logs, and it's hard to see the actual test output.

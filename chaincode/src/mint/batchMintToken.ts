@@ -16,7 +16,7 @@ import { AuthorizedOnBehalf, TokenAllowance, TokenClassKey, TokenInstanceKey } f
 import BigNumber from "bignumber.js";
 
 import { fetchAllowances } from "../allowances";
-import { GalaChainContext } from "../types/GalaChainContext";
+import { GalaChainContext } from "../types";
 import { BatchMintError } from "./MintError";
 import { fetchMintSupply } from "./fetchMintSupply";
 import { mintToken } from "./mintToken";

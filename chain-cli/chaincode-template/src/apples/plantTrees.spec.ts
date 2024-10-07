@@ -12,12 +12,12 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+import { randomUniqueKey } from "@gala-chain/api";
 import { GalaContract } from "@gala-chain/chaincode";
-import { ChainUser } from "@gala-chain/client";
-import { fixture, writesMap } from "@gala-chain/test";
+import { fixture, users, writesMap } from "@gala-chain/test";
 
 import { AppleTree } from "./AppleTree";
-import { AppleTreeDto, AppleTreesDto } from "./dtos";
+import { AppleTreeDto, PlantAppleTreesDto } from "./dtos";
 import { plantTrees } from "./plantTrees";
 import { Variety } from "./types";
 
@@ -29,11 +29,14 @@ class TestContract extends GalaContract {
 
 it("should allow to plant trees", async () => {
   // Given
-  const user = ChainUser.withRandomKeys();
+  const user = users.random();
 
-  const { ctx, writes } = fixture(TestContract).callingUser(user);
+  const { ctx, getWrites } = fixture(TestContract).callingUser(user);
 
-  const dto = new AppleTreesDto([new AppleTreeDto(Variety.GALA, 1), new AppleTreeDto(Variety.MCINTOSH, 2)]);
+  const dto = new PlantAppleTreesDto(
+    [new AppleTreeDto(Variety.GALA, 1), new AppleTreeDto(Variety.MCINTOSH, 2)],
+    randomUniqueKey()
+  );
 
   const expectedTrees = dto.trees.map(
     (t) => new AppleTree(user.identityKey, t.variety, t.index, ctx.txUnixTime)
@@ -46,5 +49,5 @@ it("should allow to plant trees", async () => {
   expect(response).toEqual(expectedTrees);
 
   await ctx.stub.flushWrites();
-  expect(writes).toEqual(writesMap(...expectedTrees));
+  expect(getWrites()).toEqual(writesMap(...expectedTrees));
 });

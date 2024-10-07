@@ -18,16 +18,20 @@ import {
   ChainObject,
   GrantAllowanceQuantity,
   TokenAllowance,
+  TokenBalance,
   TokenClass,
   TokenInstance,
   TokenInstanceKey,
   TokenInstanceQueryKey,
   TokenMintAllowance,
   TokenMintAllowanceRequest,
-  TokenMintStatus
+  TokenMintStatus,
+  TokenNotInBalanceError,
+  createValidChainObject,
+  createValidRangedChainObject
 } from "@gala-chain/api";
 import { BigNumber } from "bignumber.js";
-import { classToPlain as instanceToPlain, plainToInstance } from "class-transformer";
+import { instanceToPlain } from "class-transformer";
 
 import { fetchBalances } from "../balances";
 import { fetchKnownBurnCount } from "../burns/fetchBurns";
@@ -48,6 +52,7 @@ import {
   putRangedChainObject
 } from "../utils";
 import {
+  BalanceNotFoundError,
   DuplicateAllowanceError,
   DuplicateUserError,
   GrantAllowanceFailedError,
@@ -308,7 +313,7 @@ async function putAllowancesOnChain(
 
     const grantedTo = quantities[index].user;
 
-    const newAllowance = plainToInstance(TokenAllowance, {
+    const newAllowance = await createValidChainObject(TokenAllowance, {
       collection: instanceKey.collection,
       category: instanceKey.category,
       type: instanceKey.type,
@@ -371,7 +376,8 @@ export async function putMintAllowanceRequestsOnChain(
     const grantedTo = quantities[index].user;
 
     // Ledger entry for new mint allowance qty
-    const mintAllowanceEntry = plainToInstance(TokenMintAllowanceRequest, {
+    const mintAllowanceEntry = await createValidRangedChainObject(TokenMintAllowanceRequest, {
+      id: "-", // hack to avoid compilation error
       collection: tokenClass.collection,
       category: tokenClass.category,
       type: tokenClass.type,
@@ -419,7 +425,7 @@ export async function putMintAllowancesOnChain(
     const grantedTo = mintAllowanceRequest.grantedTo;
 
     // Ledger entry for new mint allowance chain object for tracking quantity
-    const mintAllowanceEntry = plainToInstance(TokenMintAllowance, {
+    const mintAllowanceEntry = await createValidChainObject(TokenMintAllowance, {
       collection: tokenClass.collection,
       category: tokenClass.category,
       type: tokenClass.type,
@@ -428,10 +434,9 @@ export async function putMintAllowancesOnChain(
       grantedBy: ctx.callingUser,
       grantedTo: grantedTo,
       created: ctx.txUnixTime,
-      quantity: mintAllowanceRequest.quantity
+      quantity: mintAllowanceRequest.quantity,
+      reqId: mintAllowanceRequest.requestId()
     });
-
-    mintAllowanceEntry.reqId = mintAllowanceRequest.requestId();
 
     await putChainObject(ctx, mintAllowanceEntry);
 
@@ -531,6 +536,16 @@ export async function grantAllowance(
           AllowanceType[allowanceType],
           tokenInstance.owner
         );
+      }
+
+      // verify if the token exists in the balance
+      const [balance]: (TokenBalance | undefined)[] = await fetchBalances(ctx, {
+        ...instanceKey,
+        owner: tokenInstance.owner
+      });
+      const currentInstances = balance?.getNftInstanceIds() ?? [];
+      if (!currentInstances.some((i) => i.eq(instanceKey.instance))) {
+        throw new TokenNotInBalanceError(tokenInstance.owner, instanceKey, instanceKey.instance);
       }
     }
 

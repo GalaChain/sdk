@@ -69,6 +69,11 @@ export abstract class ChainObject {
     return instanceToPlain(this);
   }
 
+  public copy(): typeof this {
+    // @ts-expect-error type conversion
+    return ChainObject.deserialize<typeof this>(this.constructor, this.toPlainObject());
+  }
+
   public static deserialize<T>(
     constructor: ClassConstructor<Inferred<T, ChainObject>>,
     object: string | Record<string, unknown> | Record<string, unknown>[]

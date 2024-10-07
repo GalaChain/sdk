@@ -27,14 +27,16 @@ describe("EIP-712 Signing", () => {
         additionalKey: "none",
         instance: "0",
         type: "none"
-      }
+      },
+      uniqueKey: "uniqueKey-123"
     };
     const types = generateEIP712Types("LockTokenRequest", params);
 
     const expectedTypes = {
       LockTokenRequest: [
         { name: "quantity", type: "string" },
-        { name: "tokenInstance", type: "tokenInstance" }
+        { name: "tokenInstance", type: "tokenInstance" },
+        { name: "uniqueKey", type: "string" }
       ],
       tokenInstance: [
         { name: "collection", type: "string" },
@@ -76,12 +78,16 @@ describe("EIP-712 Signing", () => {
             type: "none"
           }
         }
-      ]
+      ],
+      uniqueKey: "uniqueKey-123"
     };
     const types = generateEIP712Types("LockTokensRequest", params);
 
     const expectedTypes = {
-      LockTokensRequest: [{ name: "tokenInstances", type: "tokenInstances[]" }],
+      LockTokensRequest: [
+        { name: "tokenInstances", type: "tokenInstances[]" },
+        { name: "uniqueKey", type: "string" }
+      ],
       tokenInstances: [
         { name: "quantity", type: "string" },
         { name: "tokenInstanceKey", type: "tokenInstanceKey" }
@@ -136,12 +142,16 @@ describe("EIP-712 Signing", () => {
             type: "none"
           }
         }
-      ]
+      ],
+      uniqueKey: "uniqueKey-123"
     };
     const types = generateEIP712Types("LockTokensRequest", params);
 
     const expectedTypes = {
-      LockTokensRequest: [{ name: "tokenInstances", type: "tokenInstances[]" }],
+      LockTokensRequest: [
+        { name: "tokenInstances", type: "tokenInstances[]" },
+        { name: "uniqueKey", type: "string" }
+      ],
       tokenInstances: [
         { name: "quantity", type: "string" },
         { name: "tokenInstanceKey", type: "tokenInstanceKey" }
