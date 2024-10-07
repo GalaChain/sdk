@@ -182,10 +182,10 @@ GalaChain Connect supports server-side signing using a private key. This is usef
 ### Server-Side Example
 
 ```typescript
-import { PublicKeyApi, ServerSigningClient } from "@gala-chain/connect";
+import { PublicKeyApi, SigningClient } from "@gala-chain/connect";
 
 const privateKey = "your-private-key-here";
-const connection = new ServerSigningClient(privateKey);
+const connection = new SigningClient(privateKey);
 
 // The below URI is an example; you can use any URI that supports this
 const uri =
@@ -212,10 +212,10 @@ getProfile();
 You can also create a token class on the server side:
 
 ```typescript
-import { ServerSigningClient, TokenApi } from "@gala-chain/connect";
+import { SigningClient, TokenApi } from "@gala-chain/connect";
 
 const privateKey = "your-private-key-here";
-const connection = new ServerSigningClient(privateKey);
+const connection = new SigningClient(privateKey);
 
 const tokenClient = new TokenApi("https://your-galachain-api-url/asset/token-contract", connection);
 
