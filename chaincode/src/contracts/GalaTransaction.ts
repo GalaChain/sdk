@@ -37,6 +37,7 @@ import { GalaContract } from "./GalaContract";
 import { updateApi } from "./GalaContractApi";
 import { authenticate } from "./authenticate";
 import { authorize } from "./authorize";
+import { verifyTransactionExpiration } from "./verifyTransactionExpiration";
 
 // All DTOs need to be registered in the application, including super classes. Otherwise, chaincode
 // containers will fail to start. Below we register just some base classes. Actual DTO classes are
@@ -168,6 +169,9 @@ function GalaTransaction<T extends ChainCallDTO>(
         const dto = !dtoPlain
           ? undefined
           : await parseValidDTO<T>(dtoClass, dtoPlain as string | Record<string, unknown>);
+
+        // Verify transaction expiration
+        verifyTransactionExpiration(ctx, dto);
 
         // Authenticate the user
         if (ctx.isDryRun) {

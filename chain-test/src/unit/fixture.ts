@@ -24,7 +24,7 @@ import { Context, Contract } from "fabric-contract-api";
 import { ChaincodeStub } from "fabric-shim";
 import Logger from "fabric-shim/lib/logger";
 
-import { ChainUserWithRoles } from "../data/users";
+import { ChainUserWithRoles } from "../data";
 import { CachedKV, FabricIterable } from "./FabricIterable";
 import { TestChaincodeStub, x509Identity } from "./TestChaincodeStub";
 
@@ -82,7 +82,7 @@ type GalaContract<Ctx extends TestGalaChainContext> = Contract & {
 
 const defaultCaClientIdentity = x509Identity("test", "TestOrg");
 
-type Wrapped<Contract> = {
+export type Wrapped<Contract extends GalaContract<TestGalaChainContext>> = {
   [K in keyof Contract]: Contract[K] extends (...args: infer A) => Promise<GalaChainResponse<infer R>>
     ? Contract[K] // If it already returns Promise<GalaChainResponse<R>>, keep it as is.
     : Contract[K] extends (...args: infer A) => Promise<infer R>
