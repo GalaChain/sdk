@@ -126,6 +126,11 @@ const expectedTestDtoSchema = {
       minLength: 1,
       type: "string"
     },
+    transactionExpiresAt: {
+      description:
+        "Unix timestamp (ms) for transaction expiration (max 1 year from the current time). " +
+        "If the operation is expired, the transaction will be rejected with the unauthorized error."
+    },
     prefix: {
       description:
         "Prefix for Metamask transaction signatures. Necessary to format payloads correctly to recover publicKey from web3 signatures.",
