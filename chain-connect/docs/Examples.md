@@ -28,17 +28,13 @@ First, you need to create a client and connect to a web3 wallet, the below shows
 
 ```typescript
 import { BrowserConnectClient } from "@gala-chain/connect";
-import { ref } from "vue";
 
 const web3Wallet = new BrowserConnectClient();
-export const message = ref("");
-export const connectedUser = ref<string | null>(null);
 
 export async function connectToWeb3Wallet() {
     try {
         const connectionResult = await web3Wallet.connect();
-        message.value = `Connected! User: ${connectionResult}`;
-        connectedUser.value = connectionResult;
+        console.log(`User connected with wallet: ${connectionResult}`)
 
         // Listening to account changes
         web3Wallet.on("accountChanged", (account: string[] | string | null) => {
@@ -49,8 +45,6 @@ export async function connectToWeb3Wallet() {
                 }
             } else {
                 console.log(`Account changed: ${account}`);
-                message.value = `Account Changed! User: ${account}`;
-                connectedUser.value = account;
             }
         });
     } catch (error) {
@@ -98,38 +92,6 @@ export async function createTokenClass() {
     console.error("Failed to create token class:", error);
   }
 }
-```
-
-### Template
-
-In your Vue component, you can add a simple template with a connect button and a button to create a token class:
-
-```html
-<template>
-    <div>
-        <button @click="connectToWeb3Wallet">Connect to Web3 Wallet</button>
-        <button @click="createTokenClass" :disabled="!isConnected">Create Token Class</button>
-        <p v-if="connectedUser">
-            Connected Account(s):
-            <span> {{ connectedUser }}</span>
-        </p>
-    </div>
-</template>
-
-<script>
-import { connectToWeb3Wallet, createTokenClass, connectedUser, isConnected } from './your-code-from-above';
-
-export default {
-    setup() {
-        return {
-            connectToWeb3Wallet,
-            createTokenClass,
-            connectedUser,
-            isConnected,
-        };
-    },
-};
-</script>
 ```
 
 
@@ -195,50 +157,22 @@ The `createAndRegisterRandomWallet()` function returns an object containing:
 
 ```typescript
 import { WalletUtils } from "@gala-chain/connect";
-import { ref } from "vue";
-
-export const message = ref("");
-export const createdUser = ref<string | null>(null);
 
 export async function generateWallet() {
   try {
     const wallet = await WalletUtils.createAndRegisterRandomWallet(
       "https://stage-galaswap.gala.com/v1/CreateHeadlessWallet"
     );
-    message.value = `Wallet generated and registered. Address: ${wallet.ethAddress}`;
+    console.log(`Wallet generated and registered. Address: ${wallet.ethAddress}`);
     createdUser.value = wallet.ethAddress;
 
     //This is unsafe, please don't use in production
     console.log("Private Key:", wallet.privateKey);
   } catch (error) {
-    message.value = "Failed to generate wallet!";
+    console.log("Failed to generate wallet!");
     console.error(error);
   }
 }
-```
-
-### Template Integration
-
-In your Vue component, you can add a button to generate a wallet:
-
-```html
-<template>
-  <div>
-    <button @click="generateWallet">Generate Wallet</button>
-  </div>
-</template>
-
-<script>
-  import { generateWallet } from "./your-code-from-above";
-
-  export default {
-    setup() {
-      return {
-        generateWallet,
-      };
-    }
-  };
-</script>
 ```
 
 ## Server-Side Signing
