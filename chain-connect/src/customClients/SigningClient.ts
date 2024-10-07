@@ -18,7 +18,7 @@ import { CustomClient } from "../GalaChainClient";
 import { generateEIP712Types } from "../Utils";
 import { calculatePersonalSignPrefix } from "../helpers";
 
-export class ServerSigningClient extends CustomClient {
+export class SigningClient extends CustomClient {
   get walletAddress(): string {
     return this.wallet.address;
   }
