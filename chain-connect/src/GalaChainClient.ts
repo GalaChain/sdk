@@ -17,11 +17,8 @@ import { BrowserProvider, SigningKey, computeAddress, getAddress, getBytes, hash
 
 import { EventEmitter, Listener, MetaMaskEvents } from "./helpers";
 
-export abstract class CustomClient {
+export abstract class GalaChainProvider {
   abstract sign(method: string, dto: any): Promise<any>;
-  abstract getPublicKey(): Promise<{ publicKey: string; recoveredAddress: string }>;
-  abstract walletAddress: string;
-
   async submit<T, U>({
     url,
     method,
@@ -34,14 +31,22 @@ export abstract class CustomClient {
     payload: U;
     sign?: boolean;
     headers?: object;
-  }): Promise<T | { status: number }> {
+  }): Promise<{ data: T; hash: string; status: number; message?: string }> {
     let newPayload = payload;
 
     if (sign === true) {
-      try {
-        newPayload = await this.sign(method, payload);
-      } catch (error: unknown) {
-        throw new Error((error as Error).message);
+      //Only try signing if signature is not already present
+      if (
+        typeof payload !== "object" ||
+        payload === null ||
+        !("signature" in payload) ||
+        payload.signature === null
+      ) {
+        try {
+          newPayload = await this.sign(method, payload);
+        } catch (error: unknown) {
+          throw new Error((error as Error).message);
+        }
       }
     }
 
@@ -73,8 +78,12 @@ export abstract class CustomClient {
         return Promise.reject("Invalid JSON response");
       }
     }
-    return Promise.resolve(id ? { Hash: id, status: response.status } : { status: response.status });
+    throw new Error(`Unable to get data. Received response: ${JSON.stringify(response)}`);
   }
+}
+export abstract class CustomClient extends GalaChainProvider {
+  abstract getPublicKey(): Promise<{ publicKey: string; recoveredAddress: string }>;
+  abstract walletAddress: string;
 
   public calculatePersonalSignPrefix(payload: object): string {
     const payloadLength = signatures.getPayloadToSign(payload).length;

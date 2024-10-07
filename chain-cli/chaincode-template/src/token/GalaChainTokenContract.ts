@@ -18,11 +18,24 @@ import {
   BurnTokensDto,
   CreateTokenClassDto,
   DeleteAllowancesDto,
+  FeeAuthorizationResDto,
+  FeeCodeDefinition,
+  FeeCodeDefinitionDto,
+  FeeCodeSplitFormula,
+  FeeCodeSplitFormulaDto,
+  FeeThresholdUses,
+  FeeVerificationDto,
   FetchAllowancesDto,
   FetchAllowancesResponse,
   FetchBalancesDto,
   FetchBalancesWithTokenMetadataResponse,
   FetchBurnsDto,
+  FetchFeeScheduleDto,
+  FetchFeeScheduleResDto,
+  FetchFeeThresholdUsesDto,
+  FetchFeeThresholdUsesResDto,
+  FetchFeeThresholdUsesWithPaginationDto,
+  FetchFeeThresholdUsesWithPaginationResponse,
   FetchMintRequestsDto,
   FetchTokenClassesDto,
   FetchTokenClassesResponse,
@@ -30,6 +43,7 @@ import {
   FulfillMintDto,
   FullAllowanceCheckDto,
   FullAllowanceCheckResDto,
+  GalaChainResponse,
   GrantAllowanceDto,
   HighThroughputMintTokenDto,
   LockTokenDto,
@@ -63,11 +77,17 @@ import {
   batchMintToken,
   burnTokens,
   createTokenClass,
+  creditFeeBalance,
+  defineFeeSchedule,
+  defineFeeSplitFormula,
   deleteAllowances,
   fetchAllowancesWithPagination,
   fetchBalances,
   fetchBalancesWithTokenMetadata,
   fetchBurns,
+  fetchFeeSchedule,
+  fetchFeeThresholdUses,
+  fetchFeeThresholdUsesWithPagination,
   fetchTokenClasses,
   fetchTokenClassesWithPagination,
   fulfillMintRequest,
@@ -481,5 +501,95 @@ export default class GalaChainTokenContract extends GalaContract {
   })
   public FetchBurns(ctx: GalaChainContext, dto: FetchBurnsDto): Promise<TokenBurn[]> {
     return fetchBurns(ctx, dto);
+  }
+
+  @GalaTransaction({
+    type: SUBMIT,
+    in: FeeCodeDefinitionDto,
+    out: FeeCodeDefinition,
+    verifySignature: true,
+    allowedOrgs: ["CuratorOrg"]
+  })
+  public async DefineFeeSchedule(
+    ctx: GalaChainContext,
+    dto: FeeCodeDefinitionDto
+  ): Promise<GalaChainResponse<FeeCodeDefinition>> {
+    return GalaChainResponse.Wrap(defineFeeSchedule(ctx, dto));
+  }
+
+  @GalaTransaction({
+    type: SUBMIT,
+    in: FeeCodeSplitFormulaDto,
+    out: FeeCodeSplitFormula,
+    verifySignature: true,
+    allowedOrgs: ["CuratorOrg"]
+  })
+  public async DefineFeeSplitFormula(
+    ctx: GalaChainContext,
+    dto: FeeCodeSplitFormulaDto
+  ): Promise<GalaChainResponse<FeeCodeSplitFormula>> {
+    return GalaChainResponse.Wrap(defineFeeSplitFormula(ctx, dto));
+  }
+
+  @GalaTransaction({
+    type: SUBMIT,
+    in: FeeVerificationDto,
+    out: FeeAuthorizationResDto,
+    verifySignature: true,
+    allowedOrgs: ["CuratorOrg"],
+    enforceUniqueKey: true
+  })
+  public async CreditFeeBalance(
+    ctx: GalaChainContext,
+    dto: FeeVerificationDto
+  ): Promise<GalaChainResponse<FeeAuthorizationResDto>> {
+    return GalaChainResponse.Wrap(creditFeeBalance(ctx, dto));
+  }
+
+  @GalaTransaction({
+    type: EVALUATE,
+    in: FetchFeeScheduleDto,
+    out: FetchFeeScheduleResDto
+  })
+  public async FetchFeeSchedule(
+    ctx: GalaChainContext,
+    dto: FetchFeeScheduleDto
+  ): Promise<GalaChainResponse<FetchFeeScheduleResDto>> {
+    return GalaChainResponse.Wrap(fetchFeeSchedule(ctx, dto));
+  }
+
+  @GalaTransaction({
+    type: EVALUATE,
+    in: FetchFeeThresholdUsesDto,
+    out: FeeThresholdUses
+  })
+  public async FetchFeeThresholdUses(
+    ctx: GalaChainContext,
+    dto: FetchFeeThresholdUsesDto
+  ): Promise<GalaChainResponse<FetchFeeThresholdUsesResDto>> {
+    return GalaChainResponse.Wrap(
+      fetchFeeThresholdUses(ctx, {
+        feeCode: dto.feeCode,
+        user: dto.user ?? ctx.callingUser
+      })
+    );
+  }
+
+  @GalaTransaction({
+    type: EVALUATE,
+    in: FetchFeeThresholdUsesWithPaginationDto,
+    out: FetchFeeThresholdUsesWithPaginationResponse
+  })
+  public async FetchFeeThresholdUsesWithPagination(
+    ctx: GalaChainContext,
+    dto: FetchFeeThresholdUsesWithPaginationDto
+  ): Promise<GalaChainResponse<FetchFeeThresholdUsesWithPaginationResponse>> {
+    return GalaChainResponse.Wrap(
+      fetchFeeThresholdUsesWithPagination(ctx, {
+        feeCode: dto.feeCode,
+        bookmark: dto.bookmark,
+        limit: dto.limit
+      })
+    );
   }
 }

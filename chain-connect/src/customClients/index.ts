@@ -12,6 +12,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-export * from "./MetamaskConnectClient";
+export * from "./BrowserConnectClient";
 export * from "./TrustConnectClient";
 export * from "./ServerSigningClient";
+export * from "./PresignedClient";
