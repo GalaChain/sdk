@@ -14,20 +14,21 @@
  */
 import { RegisterUserParams, UpdatePublicKeyParams, UserProfileBody } from "@gala-chain/api";
 
-import { CustomClient } from "../GalachainClient";
+import { GalaChainProvider } from "../GalaChainClient";
 
 export class PublicKeyApi {
   constructor(
     private chainCodeUrl: string,
-    private connection: CustomClient
+    private connection: GalaChainProvider
   ) {}
 
   // PublicKey Chaincode calls:
-  public GetMyProfile(message?: string) {
+  public GetMyProfile(message?: string, signature?: string) {
     return this.connection.submit<UserProfileBody, { message?: string }>({
       method: "GetMyProfile",
       payload: {
-        ...(message ? { message } : {})
+        ...(message ? { message } : {}),
+        ...(signature ? { signature } : {})
       },
       sign: true,
       url: this.chainCodeUrl
