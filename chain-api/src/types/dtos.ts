@@ -247,12 +247,16 @@ export class DryRunDto extends ChainCallDTO {
   dto?: ChainCallDTO;
 }
 
+export type DryRunParams = ConstructorArgs<DryRunDto>;
+
 export class DryRunResultDto extends ChainCallDTO {
   public response: GalaChainResponse<unknown>;
   public writes: Record<string, string>;
   public reads: Record<string, string>;
   public deletes: Record<string, true>;
 }
+
+export type DryRunResponseBody = ConstructorArgs<DryRunResultDto>;
 
 export type RegisterUserParams = ConstructorArgs<RegisterUserDto>;
 
