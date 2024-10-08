@@ -42,7 +42,7 @@ export default defineConfig({
     }
   },
   build: {
-    outDir: 'packages/galachain-ui-vue/dist',
+    outDir: 'packages/galachain-ui-vue/lib',
     minify: true,
     lib: {
       entry: path.resolve(__dirname, 'src/vue-package.ts'),

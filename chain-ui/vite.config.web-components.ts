@@ -42,7 +42,7 @@ export default defineConfig({
     }
   },
   build: {
-    outDir: 'packages/galachain-ui/dist',
+    outDir: 'packages/galachain-ui/lib',
     lib: {
       entry: path.resolve(__dirname, 'src/web-components-package.ts'),
       formats: ['es', 'umd', 'cjs'],
