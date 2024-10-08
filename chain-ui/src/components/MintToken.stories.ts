@@ -69,13 +69,21 @@ const Template = (args) => ({
   setup() {
     return { args }
   },
-  methods: { submit: action('submit') },
-  template: '<MintToken v-bind="args" @submit="submit"/>'
+  methods: { submit: action('submit'), change: action('change') },
+  template: '<MintToken v-bind="args" @submit="submit" @change="change"/>'
 })
 
 export const Primary: Story = Template.bind({})
 Primary.args = {
   tokenAllowance,
+  loading: false,
+  disabled: false
+}
+
+export const Fee: Story = Template.bind({})
+Fee.args = {
+  tokenAllowance,
+  feeAmount: '1',
   loading: false,
   disabled: false
 }

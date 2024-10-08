@@ -14,7 +14,7 @@
  -->
 
 <script lang="ts" setup>
-import { reactive, ref, computed, watch } from 'vue'
+import { ref, computed, watch } from 'vue'
 import { type ValidationArgs, useVuelidate } from '@vuelidate/core'
 import { helpers, required, minValue, maxValue } from '@vuelidate/validators'
 import { getStepSizeFromDecimals } from '@/utils/validation'
@@ -32,47 +32,48 @@ export interface TokenClassBalance extends TokenClassBody {
 interface IFormModel {
   token: TokenClassBalance
   quantity: string
-  to: string
+  recipient: string
 }
 
 const props = withDefaults(
   defineProps<{
     token: TokenClassBalance
+    walletAddress?: string
     disabled?: boolean
     loading?: boolean
-    fromAddress?: string
     showRecipient?: boolean
-    toHeader?: string
-    toPlaceholder?: string
+    recipientHeader?: string
+    recipientPlaceholder?: string
     submitText?: string
+    feeAmount?: string,
+    feeCurrency?: string,
     rules?: ValidationArgs<Partial<IFormModel>>
     error?: IGalaChainError
   }>(),
   {
     disabled: false,
     showRecipient: true,
-    toHeader: 'To',
-    toPlaceholder: 'client|000000000000000000000000',
+    recipientHeader: 'To',
+    recipientPlaceholder: 'client|000000000000000000000000',
     submitText: 'Submit',
+    feeCurrency: 'GALA',
     rules: undefined,
-    error: undefined
+    error: undefined, 
   }
 )
+
+const recipient = defineModel<string>('recipient');
+const quantity = defineModel<string>('quantity');
 
 const emit = defineEmits<{
   submit: [value: TransferTokenParams]
   error: [value: IGalaChainError]
+  change: [value: TransferTokenParams]
 }>()
-
-const model = reactive<Partial<IFormModel>>({
-  token: undefined,
-  to: '',
-  quantity: '1'
-})
 
 const formEl = ref<HTMLFormElement>()
 
-const maxAvailable = computed(() => new BigNumber(model.token?.available ?? 0))
+const maxAvailable = computed(() => new BigNumber(props.token?.available ?? 0))
 const validationRules = computed(() => {
   if (props.rules) {
     return props.rules
@@ -82,11 +83,11 @@ const validationRules = computed(() => {
     quantity: {
       required,
       min: minValue(
-        model.token?.decimals ? getStepSizeFromDecimals(model.token.decimals).toNumber() : 1
+        props.token?.decimals ? getStepSizeFromDecimals(props.token.decimals).toNumber() : 1
       ),
       max:
         !maxAvailable.value || maxAvailable.value.eq(0) || maxAvailable.value.isNaN()
-          ? helpers.withMessage(`You do not have any ${model.token?.symbol}`, maxValue(0))
+          ? helpers.withMessage(`You do not have any ${props.token?.symbol}`, maxValue(0))
           : maxValue(maxAvailable.value.toNumber())
     },
     token: {
@@ -94,7 +95,7 @@ const validationRules = computed(() => {
     }
   }
   if (props.showRecipient) {
-    rules.to = {
+    rules.recipient = {
       required: helpers.withMessage('A valid wallet address is required', required)
     }
   }
@@ -102,7 +103,8 @@ const validationRules = computed(() => {
   return rules
 })
 
-const v$ = useVuelidate<Partial<IFormModel>>(validationRules, model as Partial<IFormModel>)
+const validationModel = computed(() => ({ recipient: recipient.value, token: props.token, quantity: quantity.value }))
+const v$ = useVuelidate<Partial<IFormModel>>(validationRules, validationModel)
 
 const globalError = computed(() =>
   props.error
@@ -118,11 +120,10 @@ const send = async () => {
     return
   }
 
-  const { token, to, quantity } = model
-  const { collection, category, type, additionalKey } = token!
+  const { collection, category, type, additionalKey } = props.token!
   emit('submit', {
-    quantity,
-    to,
+    quantity: quantity.value,
+    recipient: recipient.value,
     tokenInstance: {
       instance: '0',
       collection,
@@ -135,12 +136,26 @@ const send = async () => {
 
 watch(
   () => props.token,
-  (current) => {
-    model.token = current
-    model.quantity = '0'
+  () => {
+    quantity.value = '0'
   },
   { immediate: true }
 )
+
+watch([recipient, quantity], () => {
+  const { collection, category, type, additionalKey } = props.token!
+  emit('change', {
+    quantity: quantity.value,
+    recipient: recipient.value,
+    tokenInstance: {
+      instance: '0',
+      collection,
+      category,
+      type,
+      additionalKey
+    }
+  } as unknown as TransferTokenParams)
+})
 </script>
 
 <template>
@@ -148,9 +163,9 @@ watch(
     <div class="xs:flex xs:gap-4 mt-6 mb-6">
       <div class="px-2 flex-grow-0 flex-shrink-0 text-center">
         <img
-          v-if="model.token?.image"
-          :src="model.token.image"
-          :alt="model.token.name"
+          v-if="props.token?.image"
+          :src="props.token.image"
+          :alt="props.token.name"
           width="128"
           height="128"
           class="w-24 h-24 xs:w-32 xs:h-32 rounded-md mx-auto"
@@ -162,27 +177,27 @@ watch(
       </div>
 
       <div class="px-2 xs:pl-0 xs:text-left flex-grow mt-4 xs:mt-3">
-        <div v-if="!!model.token">
+        <div v-if="!!props.token">
           <label :for="`${formEl?.id}-send-token`" class="sr-only"> Token </label>
           <input
             :id="`${formEl?.id}-send-token`"
-            :value="model.token.name"
+            :value="props.token.name"
             readonly
             type="hidden"
             class=""
           />
           <p class="font-semibold text-center text-lg xs:text-left">
-            {{ model.token.name }}
+            {{ props.token.name }}
           </p>
         </div>
 
         <FormInput
-          v-model="model.quantity"
+          v-model="quantity"
           label="Amount"
           type="number"
           name="quantity"
           :step="
-            model.token?.decimals ? getStepSizeFromDecimals(model.token.decimals).toString() : '1'
+            props.token?.decimals ? getStepSizeFromDecimals(props.token.decimals).toString() : '1'
           "
           :aria-describedby="`${formEl?.id}-max-quantity`"
           class="form-element-quantity text-left"
@@ -202,7 +217,7 @@ watch(
               <button
                 type="button"
                 class="h-8 bg-surface-50 dark:bg-surface-925 text-surface-secondary hocus:text-surface-primary transition-colors duration-150 px-2.5 py-1.5 text-sm font-semibold rounded-md focus-visible:focus-ring"
-                @click="model.quantity = maxAvailable.toString()"
+                @click="quantity = maxAvailable.toString()"
               >
                 Max
               </button>
@@ -220,30 +235,38 @@ watch(
     </div>
     <div v-if="showRecipient" class="px-2 mb-6">
       <FormInput
-        v-model.trim="model.to"
-        :label="toHeader"
-        :placeholder="toPlaceholder"
+        v-model.trim="recipient"
+        :label="recipientHeader"
+        :placeholder="recipientPlaceholder"
         type="text"
-        name="to"
+        name="recipient"
         class="form-element-to text-left"
         :errors="
-          v$.to.$error && v$.to.$errors[0]?.$message ? [v$.to.$errors[0].$message] : undefined
+          v$.recipient.$error && v$.recipient.$errors[0]?.$message ? [v$.recipient.$errors[0].$message] : undefined
         "
-        @change="v$.to.$touch"
+        @change="v$.recipient.$touch"
       >
         <template #prefix>
           <button
-            v-if="fromAddress"
+            v-if="walletAddress"
             type="button"
             class="float-right text-primary-500 font-semibold transition-colors duration-150 rounded-md hover:text-surface-primary focus-visible:focus-ring"
             aria-label="set recipient to my wallet address"
-            @click="model.to = fromAddress"
+            @click="recipient = walletAddress"
           >
             My Wallet
           </button>
         </template>
       </FormInput>
     </div>
+    <Transition name="slide-fade">
+      <div v-if="feeAmount" class="overflow-hidden">
+        <div class="bg-surface-200 dark:bg-surface-850 rounded-xl px-4 py-2 mb-6 mx-2 flex">
+          <span class="mr-auto">Fee:</span>
+          <span>{{feeAmount}} {{feeCurrency ?? 'GALA'}}</span>
+        </div>
+      </div>
+    </Transition>
     <div v-if="globalError">
       <div class="bg-red-400 dark:bg-red-900 text-surface-primary px-4 py-2 rounded-lg mx-2 mb-4">
         <FormErrors
@@ -279,5 +302,16 @@ watch(
   .user-wallet-address-btn {
     @apply inline-block float-right;
   }
+}
+
+.slide-fade-leave-active,
+.slide-fade-enter-active {
+  transition: all 0.3s ease-out;
+  max-height: 100px;
+}
+
+.slide-fade-enter-from,
+.slide-fade-leave-to {
+  max-height: 0px;
 }
 </style>

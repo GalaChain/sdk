@@ -62,13 +62,21 @@ const Template = (args) => ({
   setup() {
     return { args }
   },
-  methods: { submit: action('submit') },
-  template: '<TransferToken v-bind="args" @submit="submit"/>'
+  methods: { submit: action('submit'), change: action('change') },
+  template: '<TransferToken v-bind="args" @submit="submit" @change="change"/>'
 })
 
 export const Primary: Story = Template.bind({})
 Primary.args = {
   tokenBalance,
+  loading: false,
+  disabled: false
+}
+
+export const Fee: Story = Template.bind({})
+Fee.args = {
+  tokenBalance,
+  feeAmount: '1',
   loading: false,
   disabled: false
 }

@@ -28,6 +28,10 @@ export interface TransferTokenProps {
   loading?: boolean
   /** Submit button disabled state */
   disabled?: boolean
+  /** Fee amount */
+  feeAmount?: string
+  /** Fee currency */
+  feeCurrency?: string
 }
 
 export interface TransferTokenEmits {
@@ -35,10 +39,11 @@ export interface TransferTokenEmits {
   (event: 'submit', value: TransferTokenParams): void
   /** Fired when a form error occurs, does not include validation errors */
   (event: 'error', value: IGalaChainError): void
+  /** Fired when the form is changed */
+  (event: 'change', value: TransferTokenParams): void
 }
 
 const props = defineProps<TransferTokenProps>()
-
 const emit = defineEmits<TransferTokenEmits>()
 
 const availableToken = computed(() => {
@@ -59,10 +64,13 @@ const availableToken = computed(() => {
     :token="availableToken"
     :loading="loading"
     :disabled="disabled"
-    to-header="Send to"
+    :fee-amount="feeAmount"
+    :fee-currency="feeCurrency"
+    recipientHeader="Send to"
     submit-text="Send"
-    @submit="(event) => emit('submit', event as TransferTokenParams)"
+    @submit="(event) => emit('submit', event)"
     @error="(event) => emit('error', event)"
+    @change="(event) => emit('change', event)"
   ></GalaSend>
   <slot v-else name="empty">
     <div class="flex flex-col items-center mt-6">
