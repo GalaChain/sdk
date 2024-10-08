@@ -229,6 +229,18 @@ async function grantAllowanceByPartialKey(
   return grantedAllowances;
 }
 
+/**
+ * @description
+ *
+ * Calculate whether or not the requested quantity exceeds the maximum
+ * capacity or supply for the given `TokenClass`.
+ *
+ * @param tokenClass
+ * @param quantity
+ * @param totalKnownMintAllowanceCount
+ * @param totalKnownBurnsCount
+ * @returns boolean
+ */
 export function ensureQuantityCanBeMinted(
   tokenClass: TokenClass,
   quantity: BigNumber,
@@ -441,6 +453,21 @@ export async function putMintAllowancesOnChain(
   return mintAllowanceEntries;
 }
 
+/**
+ * @description
+ *
+ * Grant one or more allowances to one or more users with the specified quantities, uses,
+ * and expiration timestamp. `TokenAllowance` entries granted on-chain will
+ * always set the `grantedBy` field to the calling user.
+ *
+ * Supports open-ended token instance query (refer to: `TokenInstanceQueryKey`).
+ *
+ * Ensure that the user identities specified in the quantities array are unique.
+ *
+ * @param ctx
+ * @param GrantAllowanceParams
+ * @returns Promise<TokenAllowance[]>
+ */
 export async function grantAllowance(
   ctx: GalaChainContext,
   { tokenInstance: tokenInstanceQueryKey, allowanceType, quantities, uses, expires }: GrantAllowanceParams

@@ -60,6 +60,20 @@ async function refreshAllowanceProperties(
   return allowance;
 }
 
+/**
+ * @description
+ *
+ * Lookup existing `TokenAllowance` entries by composite key, and set the
+ * expires timestamp and the uses property to new values.
+ *
+ * Used for extending the duration of existing allowances. Can also be used to
+ * revoke existing allowances by setting uses to 0 or expires to a valid
+ * non-zero timestamp in the past.
+ *
+ * @param ctx
+ * @param allowances
+ * @returns Promise<TokenAllowance[]>
+ */
 export async function refreshAllowances(
   ctx: GalaChainContext,
   allowances: AllowanceType[]
