@@ -15,6 +15,6 @@
 import currency from "./currency";
 import nft from "./nft";
 import users from "./users";
-import { ChainUserWithRoles } from "./users";
+import { ChainUserWithRoles, randomUser } from "./users";
 
-export { currency, nft, users, ChainUserWithRoles };
+export { currency, nft, users, ChainUserWithRoles, randomUser };

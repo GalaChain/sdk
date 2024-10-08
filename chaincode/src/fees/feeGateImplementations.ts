@@ -39,14 +39,15 @@ import {
   TerminateTokenSwapDto,
   TransferTokenDto,
   UnauthorizedError,
-  ValidationFailedError
+  ValidationFailedError,
+  createValidChainObject
 } from "@gala-chain/api";
 import BigNumber from "bignumber.js";
 import { plainToInstance } from "class-transformer";
 
-import { authorize } from "../contracts";
+import { authenticate } from "../contracts";
 import { KnownOracles } from "../oracle";
-import { GalaChainContext, createValidChainObject } from "../types";
+import { GalaChainContext } from "../types";
 import { getObjectByKey, putChainObject } from "../utils";
 import { galaFeeGate, writeUsageAndCalculateFeeAmount } from "./galaFeeGate";
 import { payFeeFromCrossChannelAuthorization } from "./payFeeFromCrossChannelAuthorization";
@@ -243,7 +244,7 @@ export async function requestTokenBridgeOutFeeGate(ctx: GalaChainContext, dto: R
     );
   }
 
-  const identity = await authorize(ctx, oracleAssertion, oracleAssertion.signingIdentity);
+  const identity = await authenticate(ctx, oracleAssertion);
 
   if (
     !oracleDefinition.authorities.includes(identity.alias) &&
