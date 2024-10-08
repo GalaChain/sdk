@@ -15,7 +15,12 @@
 
 <script lang="ts" setup>
 import { computed, ref } from 'vue'
-import type { TokenClassBody, MintTokenParams, TransferTokenParams, TokenAllowanceBody } from '@gala-chain/api'
+import type {
+  TokenClassBody,
+  MintTokenParams,
+  TransferTokenParams,
+  TokenAllowanceBody
+} from '@gala-chain/api'
 import GalaSend, { type TokenClassBalance } from '@/components/common/Send.vue'
 import { calculateAvailableMintAllowances } from '@/utils/calculateBalance'
 import type { IGalaChainError } from '../types/galachain-error'

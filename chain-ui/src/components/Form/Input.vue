@@ -127,14 +127,13 @@ const handleBlur = (e: FocusEvent) => {
   emit('blur', e)
 }
 
-
 const handleDecrement = (e: Event) => {
   e.preventDefault()
   const startValue = isNaN(+model.value) ? 0 : +model.value
   const { min, step } = props as INumberInputProps
   const newValue = startValue - (step ? parseFloat(step) : 1)
   const modelValue = min !== undefined ? Math.max(newValue, min) : newValue
-  model.value = modelValue.toString();
+  model.value = modelValue.toString()
 }
 
 const handleIncrement = (e: Event) => {
@@ -143,7 +142,7 @@ const handleIncrement = (e: Event) => {
   const { max, step } = props as INumberInputProps
   const newValue = startValue + (step ? parseFloat(step) : 1)
   const modelValue = max !== undefined ? Math.min(newValue, max) : newValue
-  model.value = modelValue.toString();
+  model.value = modelValue.toString()
 }
 
 const getAriaDescribedBy = (id?: string) => {

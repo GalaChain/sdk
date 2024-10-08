@@ -45,8 +45,8 @@ const props = withDefaults(
     recipientHeader?: string
     recipientPlaceholder?: string
     submitText?: string
-    feeAmount?: string,
-    feeCurrency?: string,
+    feeAmount?: string
+    feeCurrency?: string
     rules?: ValidationArgs<Partial<IFormModel>>
     error?: IGalaChainError
   }>(),
@@ -58,12 +58,12 @@ const props = withDefaults(
     submitText: 'Submit',
     feeCurrency: 'GALA',
     rules: undefined,
-    error: undefined, 
+    error: undefined
   }
 )
 
-const recipient = defineModel<string>('recipient');
-const quantity = defineModel<string>('quantity');
+const recipient = defineModel<string>('recipient')
+const quantity = defineModel<string>('quantity')
 
 const emit = defineEmits<{
   submit: [value: TransferTokenParams]
@@ -103,7 +103,11 @@ const validationRules = computed(() => {
   return rules
 })
 
-const validationModel = computed(() => ({ recipient: recipient.value, token: props.token, quantity: quantity.value }))
+const validationModel = computed(() => ({
+  recipient: recipient.value,
+  token: props.token,
+  quantity: quantity.value
+}))
 const v$ = useVuelidate<Partial<IFormModel>>(validationRules, validationModel)
 
 const globalError = computed(() =>
@@ -242,7 +246,9 @@ watch([recipient, quantity], () => {
         name="recipient"
         class="form-element-to text-left"
         :errors="
-          v$.recipient.$error && v$.recipient.$errors[0]?.$message ? [v$.recipient.$errors[0].$message] : undefined
+          v$.recipient.$error && v$.recipient.$errors[0]?.$message
+            ? [v$.recipient.$errors[0].$message]
+            : undefined
         "
         @change="v$.recipient.$touch"
       >
@@ -263,7 +269,7 @@ watch([recipient, quantity], () => {
       <div v-if="feeAmount" class="overflow-hidden">
         <div class="bg-surface-200 dark:bg-surface-850 rounded-xl px-4 py-2 mb-6 mx-2 flex">
           <span class="mr-auto">Fee:</span>
-          <span>{{feeAmount}} {{feeCurrency ?? 'GALA'}}</span>
+          <span>{{ feeAmount }} {{ feeCurrency ?? 'GALA' }}</span>
         </div>
       </div>
     </Transition>
