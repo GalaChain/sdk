@@ -26,8 +26,7 @@ import type {
 import FormErrors from './Errors.vue'
 import PrimePassword from 'primevue/password'
 import PrimeTextarea from 'primevue/textarea'
-// @ts-ignore
-import PrimeInputText from 'primevue/inputText'
+import PrimeInputText from 'primevue/inputtext'
 
 const props = defineProps<
   IFieldProps & (IInputProps | INumberInputProps | IPasswordInputProps | ITextAreaInputProps)
