@@ -31,7 +31,7 @@ const token = {
   collection: 'GALA',
   decimals: 8,
   description: 'GALA token',
-  image: 'https://app.gala.games/_nuxt/img/GALA-icon.b642e24.png',
+  image: 'https://static.gala.games/images/icons/units/gala.png',
   isNonFungible: false,
   knownMintAllowanceSupply: '5000000000',
   knownMintSupply: '50000000000',

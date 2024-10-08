@@ -32,7 +32,7 @@ const tokenBalance = {
     collection: 'GALA',
     decimals: 8,
     description: 'GALA token',
-    image: 'https://app.gala.games/_nuxt/img/GALA-icon.b642e24.png',
+    image: 'https://static.gala.games/images/icons/units/gala.png',
     isNonFungible: false,
     maxCapacity: '50000000000',
     maxSupply: '50000000000',
