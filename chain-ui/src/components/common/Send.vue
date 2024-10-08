@@ -31,7 +31,7 @@ export interface TokenClassBalance extends TokenClassBody {
 
 interface IFormModel {
   token: TokenClassBalance
-  quantity: number
+  quantity: string
   to: string
 }
 
@@ -67,7 +67,7 @@ const emit = defineEmits<{
 const model = reactive<Partial<IFormModel>>({
   token: undefined,
   to: '',
-  quantity: 1
+  quantity: '1'
 })
 
 const formEl = ref<HTMLFormElement>()
@@ -137,7 +137,7 @@ watch(
   () => props.token,
   (current) => {
     model.token = current
-    model.quantity = 0
+    model.quantity = '0'
   },
   { immediate: true }
 )
@@ -202,7 +202,7 @@ watch(
               <button
                 type="button"
                 class="h-8 bg-surface-50 dark:bg-surface-925 text-surface-secondary hocus:text-surface-primary transition-colors duration-150 px-2.5 py-1.5 text-sm font-semibold rounded-md focus-visible:focus-ring"
-                @click="model.quantity = +maxAvailable"
+                @click="model.quantity = maxAvailable.toString()"
               >
                 Max
               </button>

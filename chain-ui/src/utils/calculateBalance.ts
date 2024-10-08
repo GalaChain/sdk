@@ -18,12 +18,14 @@ import BigNumber from 'bignumber.js'
 
 export const calculateAvailableBalance = (balance: TokenBalanceBody) => {
   const now = Date.now()
+  // @ts-ignore
   const locked = balance?.lockedHolds?.reduce((acc, hold) => {
     if (hold.expires && hold.expires < now) {
       return acc
     }
     return acc.plus(hold.quantity)
   }, BigNumber(0))
+  // @ts-ignore
   const available = BigNumber(balance?.quantity ?? 0).minus(locked ?? BigNumber(0))
   return BigNumber.max(available, BigNumber(0))
 }
@@ -36,6 +38,7 @@ export const calculateAvailableMintAllowances = (allowances: TokenAllowanceBody[
 }
 
 export const calculateAvailableMintSupply = (token: TokenClassBody, address?: string) => {
+  // @ts-ignore
   if (address && !token.authorities.includes(address)) {
     return new BigNumber(0)
   }
