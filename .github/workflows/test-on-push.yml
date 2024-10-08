@@ -28,6 +28,8 @@ jobs:
         run: npm run madge
       - name: Test
         run: npm run test
+      - name: Build UI
+        run: cd chain-ui && vite build --config vite.config.web-components.ts
 
   template-ci:
     name: Chaincode template CI
