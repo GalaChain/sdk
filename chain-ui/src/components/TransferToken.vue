@@ -15,7 +15,7 @@
 
 <script lang="ts" setup>
 import { computed } from 'vue'
-import { TokenBalanceWithMetadata, TransferTokenDto } from '@gala-chain/api'
+import { TokenBalanceWithMetadata, type TransferTokenParams } from '@gala-chain/api'
 import GalaSend, { type TokenClassBalance } from '@/components/common/Send.vue'
 import { calculateAvailableBalance } from '@/utils/calculateBalance'
 import { TokenBalance } from '@gala-chain/api'
@@ -33,7 +33,7 @@ export interface TransferTokenProps {
 
 export interface TransferTokenEmits {
   /** Fired when the form is successfully submitted */
-  (event: 'submit', value: TransferTokenDto): void
+  (event: 'submit', value: TransferTokenParams): void
   /** Fired when a form error occurs, does not include validation errors */
   (event: 'error', value: IGalaChainError): void
 }
@@ -62,7 +62,7 @@ const availableToken = computed(() => {
     :disabled="disabled"
     to-header="Send to"
     submit-text="Send"
-    @submit="(event) => emit('submit', event as TransferTokenDto)"
+    @submit="(event) => emit('submit', event as TransferTokenParams)"
     @error="(event) => emit('error', event)"
   ></GalaSend>
   <slot v-else name="empty">

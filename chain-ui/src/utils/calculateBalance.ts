@@ -13,10 +13,10 @@
  * limitations under the License.
  */
 
-import type { TokenAllowance, TokenBalance, TokenClass } from '@gala-chain/api'
+import type { TokenAllowance, TokenBalanceBody, TokenClass } from '@gala-chain/api'
 import BigNumber from 'bignumber.js'
 
-export const calculateAvailableBalance = (balance: TokenBalance) => {
+export const calculateAvailableBalance = (balance: TokenBalanceBody) => {
   const now = Date.now()
   const locked = balance?.lockedHolds?.reduce((acc, hold) => {
     if (hold.expires && hold.expires < now) {
