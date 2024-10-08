@@ -56,6 +56,18 @@ async function isAllowanceInvalid(ctx: GalaChainContext, allowance: TokenAllowan
   );
 }
 
+/**
+ * @description
+ *
+ * Iterate through the provided `TokenAllowance` chain objects,
+ * deleting those from world state that: a) have exhausted all uses, b) are expired,
+ * c) are otherwise invalid or unnecessary
+ *
+ * @param ctx
+ * @param allowancesToClean `TokenAllowance[]`
+ * @param authorizedOnBehalf `string`
+ * @returns `Promise<Array<TokenAllowance>>`
+ */
 export async function cleanAllowances(
   ctx: GalaChainContext,
   allowancesToClean: TokenAllowance[],
@@ -91,7 +103,22 @@ export async function cleanAllowances(
   return allowancesToClean;
 }
 
-// Check if a user has enough allowance to do a certain thing
+/**
+ * @description
+ *
+ * Given an array of allowances,
+ *
+ * 1. clean up and delete expired / fully used allowances
+ * 2. Match the remaining allowances against the `TokenInstanceKey` and `AllowanceType`
+ * 3. Sum up and return the total useable allowance quantity available
+ *
+ * @param ctx
+ * @param applicableAllowances
+ * @param tokenInstanceKey
+ * @param action
+ * @param callingOnBehalf
+ * @returns `Promise<BigNumber>`
+ */
 export async function checkAllowances(
   ctx: GalaChainContext,
   applicableAllowances: TokenAllowance[],

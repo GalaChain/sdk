@@ -41,6 +41,16 @@ const genericMessage =
   "Expected string following the format of 'client|<user-id>', or 'eth|<checksumed-eth-addr>', " +
   "or 'ton|<chain:ton-address>', or valid system-level username.";
 
+/**
+ * @description
+ *
+ * Validates a provided user alias. As of 2024-10, The following alias types
+ * are supported: legacy client| and service| prefixed aliases,
+ * eth| and ton| prefixed addresses, and internally reserved identities.
+ *
+ * @param value
+ * @returns UserRefValidationResult
+ */
 function validateUserAlias(value: unknown): UserRefValidationResult {
   if (typeof value !== "string" || value.length === 0) {
     return UserRefValidationResult.INVALID_FORMAT;
@@ -110,6 +120,19 @@ class IsUserAliasConstraint implements ValidatorConstraintInterface {
   }
 }
 
+/**
+ * @description
+ *
+ * Used to register a decorator for class validation.
+ * Validates against IsUserAliasConstraint.
+ * See also IsUserAliasConstraint, validateUserAlias.
+ * As of 2024-10, The following alias types
+ * are supported: legacy client| and service| prefixed aliases,
+ * eth| and ton| prefixed addresses, and internally reserved identities.
+ *
+ * @param options
+ *
+ */
 export function IsUserAlias(options?: ValidationOptions) {
   return function (object: object, propertyName: string) {
     registerDecorator({
