@@ -298,7 +298,7 @@ export class GetObjectHistoryDto extends ChainCallDTO {
  *
  * @remarks
  *
- * Authorization is not checked for `DryRun` execution. This allows applicaiton,
+ * Authorization is not checked for `DryRun` execution. This allows application,
  * administrative, game server identities etc. to simulate a transaction result
  * without prompting the end user to sign the input first. This helps avoid
  * replay attacks (as the unique id would not be written to chain in a DryRun)
