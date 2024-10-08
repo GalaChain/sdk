@@ -20,7 +20,27 @@ import { GalaChainContext } from "../types";
 import { putChainObject } from "../utils";
 import { isAllowanceExpired } from "./checkAllowances";
 
-// Update allowances according to using an quantity
+/**
+ * @description
+ *
+ * Given one or more `TokenAllowance` entries allocated to a single action,
+ * apply the remaining quantity of each applicable allowance to the total quantity.
+ *
+ * Return `true` after accounting for the full spend. Write a `TokenClaim` entry
+ * for each allowance used.
+ *
+ * Throws an exception if the full quantity cannot be
+ * met by the provided allowances.
+ *
+ * This function expects `applicableAllowances` to be pre-filtered by `grantedTo` / `grantedBy`.
+ * See also `verifyAndUseAllowances` for a function that includes these identity checks.
+ *
+ * @param ctx
+ * @param quantity
+ * @param applicableAllowances
+ * @param allowanceType
+ * @returns Promise<boolean>
+ */
 export async function useAllowances(
   ctx: GalaChainContext,
   quantity: BigNumber,
@@ -97,11 +117,7 @@ export async function useAllowances(
       newClaim.claimSequence = tokenAllowance.usesSpent; // 1-based claim sequence
       newClaim.created = ctx.txUnixTime;
 
-      // Validate instance
-      await newClaim.validateOrReject();
-
       await putChainObject(ctx, newClaim);
-
       await putChainObject(ctx, tokenAllowance);
     } else {
       hasInfiniteAllowances = true;
