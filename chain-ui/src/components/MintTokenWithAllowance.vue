@@ -15,7 +15,7 @@
 
 <script lang="ts" setup>
 import { computed } from 'vue'
-import { TokenClass, type MintTokenWithAllowanceParams, type TransferTokenParams } from '@gala-chain/api'
+import type { TokenClassBody, MintTokenWithAllowanceParams, TransferTokenParams } from '@gala-chain/api'
 import GalaSend, { type TokenClassBalance } from '@/components/common/Send.vue'
 import { calculateAvailableMintSupply } from '@/utils/calculateBalance'
 import type { IGalaChainError } from '@/types/galachain-error'
@@ -23,7 +23,7 @@ import PrimeSkeleton from 'primevue/skeleton'
 
 export interface MintTokenWithAllowanceProps {
   address?: string
-  token?: TokenClass
+  token?: TokenClassBody
   loading?: boolean
 }
 
@@ -35,7 +35,7 @@ const emit = defineEmits<{
 }>()
 
 const availableToken = computed(() => {
-  const token: TokenClass = typeof props.token === 'string' ? JSON.parse(props.token) : props.token
+  const token: TokenClassBody = typeof props.token === 'string' ? JSON.parse(props.token) : props.token
   return token
     ? ({
         ...token,

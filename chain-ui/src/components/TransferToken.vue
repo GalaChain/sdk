@@ -15,16 +15,15 @@
 
 <script lang="ts" setup>
 import { computed } from 'vue'
-import { TokenBalanceWithMetadata, type TransferTokenParams } from '@gala-chain/api'
+import type { TokenBalanceWithMetadataParams, TransferTokenParams } from '@gala-chain/api'
 import GalaSend, { type TokenClassBalance } from '@/components/common/Send.vue'
 import { calculateAvailableBalance } from '@/utils/calculateBalance'
-import { TokenBalance } from '@gala-chain/api'
 import type { IGalaChainError } from '@/types/galachain-error'
 import PrimeSkeleton from 'primevue/skeleton'
 
 export interface TransferTokenProps {
   /** User token balance */
-  tokenBalance?: TokenBalanceWithMetadata
+  tokenBalance?: TokenBalanceWithMetadataParams
   /** Submit button loading state */
   loading?: boolean
   /** Submit button disabled state */
@@ -43,12 +42,12 @@ const props = defineProps<TransferTokenProps>()
 const emit = defineEmits<TransferTokenEmits>()
 
 const availableToken = computed(() => {
-  const token: TokenBalanceWithMetadata =
+  const token: TokenBalanceWithMetadataParams =
     typeof props.tokenBalance === 'string' ? JSON.parse(props.tokenBalance) : props.tokenBalance
   return token
     ? ({
         ...token.token,
-        available: calculateAvailableBalance(token.balance as TokenBalance).toString()
+        available: calculateAvailableBalance(token.balance).toString()
       } as TokenClassBalance)
     : undefined
 })

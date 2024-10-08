@@ -18,14 +18,14 @@ import { reactive, ref, computed, watch } from 'vue'
 import { type ValidationArgs, useVuelidate } from '@vuelidate/core'
 import { helpers, required, minValue, maxValue } from '@vuelidate/validators'
 import { getStepSizeFromDecimals } from '@/utils/validation'
-import { type TransferTokenParams, TokenClass } from '@gala-chain/api'
+import type { TransferTokenParams, TokenClassBody } from '@gala-chain/api'
 import { type IGalaChainError } from '@/types/galachain-error'
 import FormInput from '../Form/Input.vue'
 import FormErrors from '../Form/Errors.vue'
 import PrimeButton from 'primevue/button'
 import BigNumber from 'bignumber.js'
 
-export interface TokenClassBalance extends TokenClass {
+export interface TokenClassBalance extends TokenClassBody {
   available: string
 }
 

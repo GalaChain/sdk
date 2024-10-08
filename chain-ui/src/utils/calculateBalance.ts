@@ -13,7 +13,7 @@
  * limitations under the License.
  */
 
-import type { TokenAllowance, TokenBalanceBody, TokenClass } from '@gala-chain/api'
+import type { TokenAllowanceBody, TokenBalanceBody, TokenClassBody } from '@gala-chain/api'
 import BigNumber from 'bignumber.js'
 
 export const calculateAvailableBalance = (balance: TokenBalanceBody) => {
@@ -28,21 +28,21 @@ export const calculateAvailableBalance = (balance: TokenBalanceBody) => {
   return BigNumber.max(available, BigNumber(0))
 }
 
-export const calculateAvailableMintAllowances = (allowances: TokenAllowance[]) => {
+export const calculateAvailableMintAllowances = (allowances: TokenAllowanceBody[]) => {
   return allowances.reduce((total, allowance) => {
-    const availableAllowance = BigNumber(allowance.quantity).minus(allowance.quantitySpent)
+    const availableAllowance = BigNumber(allowance.quantity ?? 0).minus(allowance.quantitySpent ?? 0)
     return total.plus(availableAllowance)
   }, new BigNumber(0))
 }
 
-export const calculateAvailableMintSupply = (token: TokenClass, address?: string) => {
+export const calculateAvailableMintSupply = (token: TokenClassBody, address?: string) => {
   if (address && !token.authorities.includes(address)) {
     return new BigNumber(0)
   }
-  const value1 = BigNumber(token.maxSupply)
-    .minus(token.knownMintAllowanceSupply as BigNumber)
-    .plus(token.totalBurned)
-  const value2 = BigNumber(token.maxCapacity).minus(token.knownMintAllowanceSupply as BigNumber)
+  const value1 = BigNumber(token.maxSupply ?? 0)
+    .minus(token.knownMintAllowanceSupply ?? 0)
+    .plus(token.totalBurned ?? 0)
+  const value2 = BigNumber(token.maxCapacity ?? 0).minus(token.knownMintAllowanceSupply ?? 0)
   const min = BigNumber.min(value1, value2)
   return min.isGreaterThan(0) ? min : new BigNumber(0)
 }
