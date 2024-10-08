@@ -23,7 +23,7 @@ export interface ChainUserWithRoles {
   roles: string[] | undefined;
 }
 
-function randomUser(
+export function randomUser(
   string?: string | undefined,
   roles: string[] = [...UserProfile.DEFAULT_ROLES]
 ): ChainUserWithRoles & { roles: string[] } {
