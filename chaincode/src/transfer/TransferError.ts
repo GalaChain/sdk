@@ -32,3 +32,12 @@ export class TransferTokenFailedError extends DefaultError {
     super(`TransferToken failed: ${message}`, payload);
   }
 }
+
+export class PublicKeySignatureValidationError extends ValidationFailedError {
+  constructor(dtoName: string, error: { message: string; payload: Record<string, unknown> }) {
+    super(`BurnAndTransfer failed to validate signature on ${dtoName}: ${error.message}`, {
+      ...error.payload,
+      dtoName
+    });
+  }
+}

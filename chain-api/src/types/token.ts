@@ -38,6 +38,7 @@ import { TokenBalance } from "./TokenBalance";
 import { TokenClass, TokenClassKey } from "./TokenClass";
 import { TokenInstance, TokenInstanceKey } from "./TokenInstance";
 import { ChainCallDTO } from "./dtos";
+import { BatchMintTokenDto } from "./mint";
 
 export type FetchTokenClassesParams = ConstructorArgs<FetchTokenClassesDto>;
 
@@ -534,4 +535,34 @@ export class TransferTokenDto extends ChainCallDTO {
   @IsOptional()
   @ArrayNotEmpty()
   useAllowances?: Array<string>;
+}
+
+@JSONSchema({
+  description:
+    "Permits an atomic transfer-to-mint transaction. Supply the token(s) to be transferred, and the token(s) to be minted. " +
+    "The `transferDto` and `mintDto` properties should be signed by their respective approving parties: " +
+    "As an example for NFTs, the `transferDto` might be signed by the end user that owns the tokens, while " +
+    "the mintDto is signed by an NFT token authority with the ability to mint NFTs. " +
+    "If the transfer is successful, mint the requested token(s)." +
+    "Mints are executed under the identity of the calling user of this function. " +
+    "All operations occur in the same transaction, meaning either all succeed or none are written to chain."
+})
+export class TransferAndMintDto extends ChainCallDTO {
+  static MAX_ARR_SIZE = 1000;
+
+  @JSONSchema({
+    description: "A valid TransferTokenDto, properly signed by the owner of the tokens to be transferred."
+  })
+  @ValidateNested()
+  @Type(() => TransferTokenDto)
+  @IsNotEmpty()
+  transferDto: TransferTokenDto;
+
+  @JSONSchema({
+    description: "DTOs of tokens to mint."
+  })
+  @ValidateNested()
+  @Type(() => BatchMintTokenDto)
+  @IsNotEmpty()
+  mintDto: BatchMintTokenDto;
 }

@@ -30,11 +30,22 @@ export interface TransferTokenParams {
   quantity: BigNumber;
   allowancesToUse: string[];
   authorizedOnBehalf: AuthorizedOnBehalf | undefined;
+  preValidated?: boolean;
 }
 
 export async function transferToken(
   ctx: GalaChainContext,
-  { from, to, tokenInstanceKey, quantity, allowancesToUse, authorizedOnBehalf }: TransferTokenParams
+  {
+    from,
+    to,
+    tokenInstanceKey,
+    quantity,
+    allowancesToUse,
+    authorizedOnBehalf,
+    // NOTE: flag used so transferAndMint can bypass allowance check.
+    // Eventually we want to move toward using Sale requests and fulfillment to formalize this better
+    preValidated
+  }: TransferTokenParams
 ): Promise<TokenBalance[]> {
   const msg =
     `TransferToken ${tokenInstanceKey.toStringKey()} from ${from ?? "?"} to ${to}, ` +
@@ -57,7 +68,7 @@ export async function transferToken(
   const callingOnBehalf = authorizedOnBehalf?.callingOnBehalf ?? ctx.callingUser;
 
   // If a user is trying to transfer tokens on someone else's behalf, we need to verify and use allowances
-  if (from !== callingOnBehalf) {
+  if (from !== callingOnBehalf && !preValidated) {
     const msg = `Transfer executed on behalf of another user (fromPerson: ${from}, callingUser: ${callingOnBehalf})`;
     ctx.logger.info(msg);
 
