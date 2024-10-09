@@ -89,7 +89,7 @@ function getTrustWalletFromWindow() {
   return window["trustwallet"] ?? null;
 }
 
-export class GalachainConnectTrustClient extends BrowserConnectClient {
+export class TrustWalletConnectClient extends BrowserConnectClient {
   constructor() {
     super();
     this.address = "";

@@ -78,6 +78,17 @@ jobs:
           # Publish to NPM registry
           npm publish --access public
           cd ../
+      - name: publish-chain-ui
+        run: |
+          cd chain-ui
+          npm i
+          npm run build
+          # Publish to NPM registry
+          cd ./packages/galachain-ui
+          npm publish --access public
+          cd ../../packages/galachain-ui-vue
+          npm publish --access public
+          cd ../../../
 
   publish-pages:
     name: Publish Pages
@@ -92,6 +103,8 @@ jobs:
           npm run typedoc-chain-api
           npm run typedoc-chain-client
           npm run typedoc-chaincode
+          npm run typedoc-chain-connect
+          npm run typedoc-chain-ui
           npm run typedoc-chain-test
           npm run replace-readme-docs
       - name: Install google-chrome
@@ -215,12 +228,12 @@ jobs:
       - name: Trigger GitLab Pipeline
         id: trigger
         run: |
-              curl -X POST -H 'Content-type: application/json' --data "{
-                  \"channel\": \"#releases\",
-                  \"username\": \"Tag Reporter Bot\",
-                  \"text\": Galachain SDK ${{ github.ref_name }} Released by ${{ github.actor }}\n${{ github.event.head_commit.message }}
-              }" ${{ secrets.SLACK_TAG_WEBHOOK_URL }}
-  
+          curl -X POST -H 'Content-type: application/json' --data "{
+              \"channel\": \"#releases\",
+              \"username\": \"Tag Reporter Bot\",
+              \"text\": Galachain SDK ${{ github.ref_name }} Released by ${{ github.actor }}\n${{ github.event.head_commit.message }}
+          }" ${{ secrets.SLACK_TAG_WEBHOOK_URL }}
+
   update-assets-chaincode:
     needs: [publish]
     runs-on: ubuntu-latest
