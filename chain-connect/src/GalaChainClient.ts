@@ -31,7 +31,7 @@ export abstract class GalaChainProvider {
     payload: U;
     sign?: boolean;
     headers?: object;
-  }): Promise<{ data: T; hash: string; status: number; message?: string }> {
+  }): Promise<{ Data: T; hash: string; status: number; message?: string }> {
     let newPayload = payload;
 
     if (sign === true) {
