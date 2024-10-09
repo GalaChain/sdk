@@ -15,7 +15,7 @@ export async function fetchTokenSalesWithPagination(
     throw new ValidationFailedError(`FetchTokenSalesWithPaginationDto.MAX_LIMIT exceeded: ${limit}`);
   }
 
-  const tokenSalesByUser = await getObjectsByPartialCompositeKeyWithPagination(
+  const tokenSaleOwnerObjects = await getObjectsByPartialCompositeKeyWithPagination(
     ctx,
     TokenSaleOwner.INDEX_KEY,
     instanceQueryKeys,
@@ -24,13 +24,13 @@ export async function fetchTokenSalesWithPagination(
     limit
   );
 
-  const tokenSaleIds = tokenSalesByUser.results.map((instanceOffered) => {
-    return instanceOffered.tokenSaleId;
+  const tokenSaleIds = tokenSaleOwnerObjects.results.map((tokenSaleOwner) => {
+    return tokenSaleOwner.tokenSaleId;
   });
 
   if (tokenSaleIds.length === 0) {
     return plainToInstance(FetchTokenSalesWithPaginationResponse, {
-      nextPageBookMark: tokenSalesByUser.metadata.bookmark,
+      nextPageBookMark: tokenSaleOwnerObjects.metadata.bookmark,
       results: []
     });
   }
@@ -44,7 +44,7 @@ export async function fetchTokenSalesWithPagination(
   // }
 
   const response = plainToInstance(FetchTokenSalesWithPaginationResponse, {
-    nextPageBookMark: tokenSalesByUser.metadata.bookmark,
+    nextPageBookMark: tokenSaleOwnerObjects.metadata.bookmark,
     results: results
   });
 

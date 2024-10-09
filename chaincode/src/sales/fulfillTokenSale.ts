@@ -1,6 +1,5 @@
 import {
   ExpectedTokenSale,
-  TokenInstanceQuantity,
   TokenSale,
   TokenSaleDtoValidationError,
   TokenSaleFulfillment,
@@ -51,21 +50,10 @@ export async function fillTokenSwap(
 
   // Validate if the expected token sale matches the actual token sale
   if (expectedTokenSale !== undefined) {
-    validateTokenSaleFill(tokenSale, expectedTokenSale, chainValidationErrors, tokenSaleId);
+    validateTokenSaleFulfillment(tokenSale, expectedTokenSale, chainValidationErrors, tokenSaleId);
   }
 
-  // Check that token IDs exist
-  const sellingClassKeys = tokenSale.selling.map((t) => t.tokenClassKey);
-  await fetchTokenClasses(ctx, sellingClassKeys).catch((e) => {
-    chainValidationErrors.push(`Error fetching from tokens: ${e.message}. tokenSaleId ${tokenSaleId}`);
-    return [];
-  });
-
-  const costClassKeys = tokenSale.cost.map((t) => t.tokenClassKey);
-  const costTokenClasses = await fetchTokenClasses(ctx, costClassKeys).catch((e) => {
-    chainValidationErrors.push(`Error fetching to tokens: ${e.message}. tokenSaleId ${tokenSaleId}`);
-    return [];
-  });
+  // Should be able to skip validating existence of token classes, since they are already validated in CreateTokenSale
 
   // TODO: Deal with infinity here https://app.shortcut.com/gala-games/story/4361/ensure-infinity-is-supported-on-uses
   // Check that uses remaining > 0
@@ -78,11 +66,10 @@ export async function fillTokenSwap(
   }
 
   // Check that there are enough uses left
-  // This is separate in case we decide to short circuit later
   if (!quantity || !quantity.isInteger() || quantity.isLessThanOrEqualTo(0)) {
     chainValidationErrors.push(`Quantity must be > 0. tokenSaleId ${tokenSaleId}`);
-  } else if (tokenSale.quantity.minus(tokenSale.quantityFulfilled).isLessThan(quantity)) {
-    chainValidationErrors.push(`Insufficient quantity remaining on this sale. tokenSaleId ${tokenSaleId}`);
+  } else if (tokenSale.quantity.minus(tokenSale.quantityFulfilled).isGreaterThanOrEqualTo(quantity)) {
+    chainValidationErrors.push(`Insufficient quantity remaining on this sale to fulfill. tokenSaleId ${tokenSaleId}`);
   }
 
   // Check if the swap has started
@@ -98,27 +85,33 @@ export async function fillTokenSwap(
   // We have established that the sale is still valid.
   // Now we need to ensure that the user has sufficient balances to pay costs
 
-  // TODO: Ensure there are still enough mint allowances to fufill the sale
+  // TODO: Ensure there are still enough mint allowances to fufill the sale, its possible the owner can use allowance outside of the sale
   //
 
-  // If we have any errors, don't proceed to check the spendable quantity and
+  const costClassKeys = tokenSale.cost.map((t) => t.tokenClassKey);
+    const costTokenClasses = await fetchTokenClasses(ctx, costClassKeys).catch((e) => {
+      chainValidationErrors.push(`Error fetching to tokens: ${e.message}. tokenSaleId ${tokenSaleId}`);
+      return [];
+    });
+
+  // If we have any errors, don't proceed to check the cost quantity and
   // issue the transaction
   if (chainValidationErrors.length === 0) {
     // Check from balances
     for (let index = 0; index < costTokenClasses.length; index++) {
       const costToken = costTokenClasses[index];
-      const balance = await fetchOrCreateBalance(ctx, fulfilledBy, costToken);
+      const costBalance = await fetchOrCreateBalance(ctx, fulfilledBy, costToken);
 
-      // TODO: non-fungible tokens should not be supported, if this state occurs than a validation error failed in CreateTokenSale
+      // TODO: non-fungible tokens should not be supported, if this state occurs than a validation failed in CreateTokenSale
       if (costToken.isNonFungible) {
         chainValidationErrors.push(`Non-fungible tokens are not supported for cost tokens. tokenSaleId ${tokenSaleId}`);
       } else {
-        const currentSpendableQuantity = balance.getQuantityTotal();
-        const currentQuantity = tokenSale.cost[index].quantity.times(quantity);
+        const currentSpendableQuantity = costBalance.getQuantityTotal();
+        const totalCostQuantity = tokenSale.cost[index].quantity.times(quantity);
 
-        if (!currentSpendableQuantity.toNumber() || currentSpendableQuantity.isLessThan(currentQuantity)) {
+        if (!currentSpendableQuantity.toNumber() || currentSpendableQuantity.isLessThan(totalCostQuantity)) {
           chainValidationErrors.push(
-            `${fulfilledBy} has insufficient balance to spend ${currentQuantity} of token ${costToken.getCompositeKey()}. tokenSaleId ${tokenSaleId}`
+            `${fulfilledBy} has insufficient balance to spend ${totalCostQuantity} of token ${costToken.getCompositeKey()}. tokenSaleId ${tokenSaleId}`
           );
         }
       }
@@ -150,7 +143,7 @@ export async function fillTokenSwap(
   }
 }
 
-function validateTokenSaleFill(
+function validateTokenSaleFulfillment(
   tokenSale: TokenSale,
   expectedTokenSale: ExpectedTokenSale,
   chainValidationErrors: Array<string>,

@@ -66,7 +66,7 @@ export async function createTokenSale(
   // Check that start is empty or a valid time
   if (newSale.start && newSale.start <= ctx.txUnixTime) {
     chainValidationErrors.push(
-      `If start is provided it must be a valid epoch time in the future: ${newSale.end}`
+      `If start is provided it must be a valid epoch time in the future: ${newSale.start}`
     );
   }
 
@@ -78,8 +78,8 @@ export async function createTokenSale(
   });
 
   if (sellingTokenClasses.length != newSale.selling.length) {
-    chainValidationErrors.push(`From: Length mismatch on fetched token classes ${sellingTokenClasses.length} 
-            and providved token classes ${newSale.selling.length}`);
+    chainValidationErrors.push(`From: Length mismatch on fetched token classes ${sellingTokenClasses.length}` + 
+      `and providved token classes ${newSale.selling.length}`);
   }
 
   const costTokenClassKeys = newSale.cost.map((t) => t.tokenClassKey);
@@ -105,7 +105,7 @@ export async function createTokenSale(
   }
 
   // Check that the sale tokens and cost tokens are not the same
-  // Both sold and cost token lists cannot contain duplicates of the same token class
+  // Both sold and cost token lists must contain unique token class keys
   const soldTokenClasssKeys: string[] = [];
   for (let index = 0; index < newSale.selling.length; index += 1) {
     const tokenClassKey = newSale.selling[index].tokenClassKey;
@@ -115,7 +115,7 @@ export async function createTokenSale(
 
     const quantityResults = validateTokenSaleQuantity(newSale.selling[index].quantity, tokenClass);
     for (const validationMessage of quantityResults) {
-      chainValidationErrors.push(`From ${validationMessage}`);
+      chainValidationErrors.push(`Selling: ${validationMessage}`);
     }
   }
 
@@ -131,6 +131,7 @@ export async function createTokenSale(
     const compositeKey = TokenClass.buildTokenClassCompositeKey(tokenClassKey);
     const tokenClass = await getObjectByKey(ctx, TokenClass, compositeKey);
 
+    // Cost and sold tokens cannot be the same
     if (soldTokenClasssKeys.includes(compositeKey)) {
       chainValidationErrors.push(
         `Error validating tokens to being offered: cost and purchase tokens cannot be the same.`
@@ -139,7 +140,7 @@ export async function createTokenSale(
 
     const quantityResults = validateTokenSaleQuantity(newSale.cost[index].quantity, tokenClass);
     for (const validationMessage of quantityResults) {
-      chainValidationErrors.push(`To ${validationMessage}`);
+      chainValidationErrors.push(`Cost: ${validationMessage}`);
     }
   }
 
@@ -166,6 +167,7 @@ export async function createTokenSale(
         );
       }
 
+      // TODO: Is this the correct way to check for remaining supply?
       const saleQuantity = newSale.selling[index].quantity;
       const totalSaleQuantity = newSale.quantity.multipliedBy(saleQuantity);
       const saleQuantityDelta = totalSaleQuantity.plus(tokenClass.knownMintSupply ?? 0).minus(tokenClass.maxSupply);
@@ -195,7 +197,7 @@ export async function createTokenSale(
       uses: newSale.quantity, // Number of uses is the number of items to be sold
     });
 
-    // Create index-objects of allowance keys so they can be removed later 
+    // Create index-objects of allowance keys so they can be removed later if sale is manually removed
     await Promise.all(allowances.map(async (allowance) => {
       const allowanceObjectKey = allowance.getCompositeKey();
       const newSaleInstance = plainToInstance(TokenSaleMintAllowance, {
@@ -215,6 +217,7 @@ export async function createTokenSale(
   }
 
   // sale is valid and successfully written. Create index-objects to faciliate performant client application queries
+  // TODO: not sure if TokenSaleTokenSold and TokenSaleTokenCost are needed, surrently not used in other methods
   for (const selling of newSale.selling) {
     const newSaleInstance = plainToInstance(TokenSaleTokenSold, {
       ...selling.tokenClassKey,
