@@ -136,6 +136,14 @@ export class ChainCallDTO {
 
   @JSONSchema({
     description:
+      "Unix timestamp (ms) for transaction expiration (max 1 year from the current time). " +
+      "If the operation is expired, the transaction will be rejected with the unauthorized error."
+  })
+  @IsOptional()
+  public transactionExpiresAt?: number;
+
+  @JSONSchema({
+    description:
       "Signature of the DTO signed with caller's private key to be verified with user's public key saved on chain. " +
       "The 'signature' field is optional for DTO, but is required for a transaction to be executed on chain. \n" +
       "Please consult [GalaChain SDK documentation](https://github.com/GalaChain/sdk/blob/main/docs/authorization.md#signature-based-authorization) on how to create signatures."

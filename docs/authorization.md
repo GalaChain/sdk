@@ -147,7 +147,7 @@ If the TON signing scheme is used, `ctx.callingUserTonAddress` will contain the 
 This way it is possible to get the current user's properties in the chaincode and use them in the business logic.
 
 Additionally, we support role-based access control (RBAC) in the future, which will allow for more fine-grained control over who can access what resources.
-See the [RBAC section](#next-role-based-access-control-rbac) for more information.
+See the [RBAC section](#role-based-access-control-rbac) for more information.
 
 ### User registration
 
@@ -213,3 +213,10 @@ By default, the `EVALUATE` and `SUBMIT` roles are assigned to the user when they
 You can assign additional roles to the user using the `PublicKeyContract:UpdateUserRoles` method. This method requires that the calling user either has the `CURATOR` role or is a CA user from a curator organization.
 
 There are some predefined roles (`EVALUATE`, `SUBMIT`, `CURATOR`). You can also define custom roles for more granular access control.
+
+### DTO expiration
+
+Optionally you can set the expiration time of the transaction.
+To do so, you need to provide unix timestamp in milliseconds in the optional `transactionExpiresAt` parameter in the DTO object.
+If the transaction is expired, it is rejected.
+Additionally, we have a hard limit on max expiration time which is current date + 1 year (365 days) in the future.
