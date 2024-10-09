@@ -24,6 +24,7 @@ import {
   IsNotEmpty,
   IsNumber,
   IsOptional,
+  IsPositive,
   Max,
   Min,
   ValidateNested
@@ -41,7 +42,8 @@ import { TokenInstanceQuantity } from "./TokenInstance";
 import { TokenSwapRequest } from "./TokenSwapRequest";
 import { ChainCallDTO } from "./dtos";
 import { TokenClassKey } from "./TokenClass";
-import { ChainKey } from "../utils";
+import { ChainKey, DefaultError, ValidationFailedError } from "../utils";
+import { AllowanceType } from "./common";
 
 @JSONSchema({
   description:
@@ -65,6 +67,8 @@ export class TokenSaleQuantity extends ChainCallDTO {
   @BigNumberProperty()
   public quantity: BigNumber;
 }
+
+// Chain objects
 
 @JSONSchema({
   description:
@@ -133,25 +137,129 @@ export class TokenSale extends ChainObject {
   @BigNumberIsPositive()
   @BigNumberIsInteger()
   @BigNumberProperty()
-  public salesFulfilled: BigNumber;
+  public quantityFulfilled: BigNumber;
 
   @JSONSchema({
     description: "Timestamp when sale ends"
   })
   @Min(0)
   @IsInt()
-  public ends: number;
+  public end: number;
 
   @JSONSchema({
     description: "Timestamp when sale starts"
   })
   @Min(0)
   @IsInt()
-  public starts: number;
+  public start: number;
 
   @Exclude()
   public static INDEX_KEY = "GCTTS";
 }
+
+export class TokenSaleTokenSold extends ChainObject {
+  public static INDEX_KEY = `${TokenSale.INDEX_KEY}TS`;
+
+  @ChainKey({ position: 0 })
+  @IsNotEmpty()
+  public collection: string;
+
+  @ChainKey({ position: 1 })
+  public category: string;
+
+  @ChainKey({ position: 2 })
+  @IsNotEmpty()
+  public type: string;
+
+  @ChainKey({ position: 3 })
+  @IsNotEmpty()
+  public additionalKey: string;
+
+  @ChainKey({ position: 4 })
+  @BigNumberIsPositive()
+  @BigNumberIsInteger()
+  @BigNumberProperty()
+  public quantity: string;
+
+  @ChainKey({ position: 5 })
+  @IsNotEmpty()
+  public tokenSaleId: string;
+}
+
+export class TokenSaleTokenCost extends ChainObject {
+  public static INDEX_KEY = `${TokenSale.INDEX_KEY}TC`;
+
+  @ChainKey({ position: 0 })
+  @IsNotEmpty()
+  public collection: string;
+
+  @ChainKey({ position: 1 })
+  public category: string;
+
+  @ChainKey({ position: 2 })
+  @IsNotEmpty()
+  public type: string;
+
+  @ChainKey({ position: 3 })
+  @IsNotEmpty()
+  public additionalKey: string;
+
+  @ChainKey({ position: 4 })
+  @BigNumberIsPositive()
+  @BigNumberIsInteger()
+  @BigNumberProperty()
+  public quantity: string;
+
+  @ChainKey({ position: 5 })
+  @IsNotEmpty()
+  public tokenSaleId: string;
+}
+
+export class TokenSaleOwner extends ChainObject {
+  public static INDEX_KEY = `${TokenSale.INDEX_KEY}O`;
+
+  @ChainKey({ position: 0 })
+  @IsUserAlias()
+  public owner: string;
+
+  @ChainKey({ position: 1 })
+  @IsNotEmpty()
+  public tokenSaleId: string;
+}
+
+export class TokenSaleMintAllowance extends ChainObject {
+  public static INDEX_KEY = `${TokenSale.INDEX_KEY}MA`;
+
+  @ChainKey({ position: 0 })
+  @IsNotEmpty()
+  public tokenSaleId: string;
+
+  @ChainKey({ position: 1 })
+  @IsNotEmpty()
+  public allowanceObjectKey: string;
+}  
+
+export class TokenSaleFulfillment extends ChainObject {
+  public static INDEX_KEY = "GCTSF";
+
+  @ChainKey({ position: 0 })
+  @IsNotEmpty()
+  public tokenSaleId: string;
+
+  @ChainKey({ position: 1 })
+  @IsUserAlias()
+  public fulfilledBy: string;
+
+  @ChainKey({ position: 2 })
+  @IsPositive()
+  public created: number;
+
+  @BigNumberIsPositive()
+  @BigNumberProperty()
+  public quantity: BigNumber;
+}
+
+// Chain DTOs
 
 @JSONSchema({
   description:
@@ -159,7 +267,7 @@ export class TokenSale extends ChainObject {
     "offers some tokens to another user in exchange of another tokens."
 })
 export class CreateTokenSaleDto extends ChainCallDTO {
-  static DEFAULT_EXPIRES = 0;
+  static DEFAULT_END = 0;
   static DEFAULT_START = 0;
 
   @JSONSchema({
@@ -199,13 +307,13 @@ export class CreateTokenSaleDto extends ChainCallDTO {
 
   @JSONSchema({
     description:
-      "Unix timestamp of the date when the sale should end. 0 means that it won' expire. " +
-      `By default set to ${CreateTokenSaleDto.DEFAULT_EXPIRES}.`
+      "Unix timestamp of the date when the sale should end. 0 means that it won't end. " +
+      `By default set to ${CreateTokenSaleDto.DEFAULT_END}.`
   })
   @IsOptional()
   @Min(0)
   @IsInt()
-  public expires?: number;
+  public end?: number;
 
   @JSONSchema({
     description:
@@ -297,13 +405,6 @@ export class FetchTokenSalesWithPaginationDto extends ChainCallDTO {
   static readonly DEFAULT_LIMIT = 1000;
 
   @JSONSchema({
-    description: "(optional). ChainKey 0 - Created timestamp of swap."
-  })
-  @IsOptional()
-  @IsNumber()
-  public created?: number;
-
-  @JSONSchema({
     description: "(optional). User alias of the creating user."
   })
   @IsOptional()
@@ -374,3 +475,21 @@ export class EnsureTokenSaleIndexingResponse extends ChainCallDTO {
   @ArrayMinSize(0)
   writes: ChainObject[];
 }
+
+// Errors
+
+export class TokenSaleDtoValidationError extends ValidationFailedError {
+  constructor(dtoName: string, errors: string[]) {
+    super(`${dtoName} validation failed: ${errors.join(". ")}`, {
+      dtoName,
+      errors
+    });
+  }
+}
+
+export class TokenSaleFailedError extends DefaultError {
+  constructor(message: string, payload: Record<string, unknown> | undefined) {
+    super(`SwapToken failed: ${message}$`, payload);
+  }
+}
+
