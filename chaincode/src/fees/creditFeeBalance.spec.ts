@@ -23,17 +23,15 @@ import {
   TokenBalance,
   TokenClass,
   TokenInstance,
-  createValidDTO
+  createValidChainObject,
+  createValidDTO,
+  createValidSubmitDTO
 } from "@gala-chain/api";
-import { currency, fixture, users } from "@gala-chain/test";
+import { currency, fixture, randomUser, users } from "@gala-chain/test";
 import BigNumber from "bignumber.js";
-import { plainToClass as plainToInstance } from "class-transformer";
 import { IsNotEmpty, IsString } from "class-validator";
-import { randomUUID } from "crypto";
-import { Wallet } from "ethers";
 
 import GalaChainTokenContract from "../__test__/GalaChainTokenContract";
-import { GalaChainContext } from "../types";
 import { txUnixTimeToDateIndexKeys } from "../utils";
 
 // todo: temporarily defining this here, because .savedState() fails with:
@@ -60,26 +58,26 @@ describe("creditFeeBalance", () => {
     const userBalance: TokenBalance = currency.tokenBalance();
     const authorizedFeeQuantity = new BigNumber("100");
 
-    const { privateKey, publicKey } = Wallet.createRandom();
+    const feeAuthority = randomUser("client|fee-authority");
 
-    const authDto = await createValidDTO(FeeAuthorizationDto, {
-      authority: users.testUser1Id,
+    const authDto = await createValidSubmitDTO(FeeAuthorizationDto, {
+      authority: feeAuthority.identityKey,
       quantity: authorizedFeeQuantity,
-      uniqueKey: randomUUID()
+      signerPublicKey: feeAuthority.publicKey
     });
-
-    authDto.sign(privateKey, true);
+    authDto.sign(feeAuthority.privateKey, true);
 
     const savedPublicKey = new TestPublicKey();
-    savedPublicKey.publicKey = publicKey; // PublicKeyService.normalizePublicKey(publicKey)
-    savedPublicKey.userId = users.testUser1Id;
+    savedPublicKey.publicKey = feeAuthority.publicKey;
+    savedPublicKey.userId = feeAuthority.identityKey;
+
     const priorTimeStamp = 1693003573844;
 
     const { year, month, day } = txUnixTimeToDateIndexKeys(priorTimeStamp);
     const txId = "testTxId";
 
-    const feeAuth = plainToInstance(FeeAuthorization, {
-      authority: users.testUser1Id,
+    const feeAuth = await createValidChainObject(FeeAuthorization, {
+      authority: feeAuthority.identityKey,
       year,
       month,
       day,
@@ -87,39 +85,34 @@ describe("creditFeeBalance", () => {
       txId: txId
     });
 
-    const { ctx, contract, writes, callingChainUser } = fixture<GalaChainContext, GalaChainTokenContract>(
-      GalaChainTokenContract
-    )
-      .callingUser(users.testUser1Id)
-      .savedState(currencyInstance, currencyClass, userBalance, feeAuth, savedPublicKey)
-      .savedRangeState([]);
+    const { ctx, contract } = fixture(GalaChainTokenContract)
+      .caClientIdentity("client|admin", "CuratorOrg")
+      .registeredUsers(users.testUser1, feeAuthority)
+      .savedState(currencyInstance, currencyClass, userBalance, feeAuth, savedPublicKey);
 
     const feeAuthorizationKey = FeeAuthorization.getStringKeyFromParts([
-      users.testUser1Id,
+      users.testUser1.identityKey,
       year,
       month,
       day,
       txId
     ]);
 
-    const verificationDto = await createValidDTO(FeeVerificationDto, {
+    const verificationDto = await createValidSubmitDTO(FeeVerificationDto, {
       authorization: authDto.serialize(),
-      ...authDto,
+      authority: feeAuthority.identityKey,
       created: priorTimeStamp,
       txId: txId,
       quantity: authorizedFeeQuantity,
-      feeAuthorizationKey: feeAuthorizationKey,
-      uniqueKey: randomUUID()
-    });
-
-    verificationDto.sign(callingChainUser.privateKey, false);
+      feeAuthorizationKey: feeAuthorizationKey
+    }).signed(users.testUser1.privateKey);
 
     // When
     const response = await contract.CreditFeeBalance(ctx, verificationDto);
 
     // Then
     const resDto = await createValidDTO(FeeAuthorizationResDto, {
-      authority: users.testUser1Id,
+      authority: feeAuthority.identityKey,
       authorization: authDto.serialize(),
       created: ctx.txUnixTime,
       txId: ctx.stub.getTxID(),

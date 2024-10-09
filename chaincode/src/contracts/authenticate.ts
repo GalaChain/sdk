@@ -14,6 +14,7 @@
  */
 import {
   ChainCallDTO,
+  ForbiddenError,
   PublicKey,
   SigningScheme,
   UserProfile,
@@ -59,8 +60,8 @@ class AddressMismatchError extends ValidationFailedError {
 }
 
 class MissingSignerError extends ValidationFailedError {
-  constructor() {
-    super("Missing signerPublicKey or signerAddress field in dto");
+  constructor(signature: string) {
+    super(`Missing signerPublicKey or signerAddress field in dto. Signature: ${signature}`, { signature });
   }
 }
 
@@ -124,7 +125,7 @@ export async function authenticate(
 
     return await getUserProfile(ctx, dto.signerPublicKey, dto.signing ?? SigningScheme.ETH); // new flow only
   } else {
-    throw new MissingSignerError();
+    throw new MissingSignerError(dto.signature);
   }
 }
 
@@ -172,4 +173,20 @@ function recoverPublicKey(signature: string, dto: ChainCallDTO, prefix = ""): st
   } catch (err) {
     return undefined;
   }
+}
+
+export async function ensureIsAuthenticatedBy(
+  ctx: GalaChainContext,
+  dto: ChainCallDTO,
+  expectedAlias: string
+): Promise<{ alias: string; ethAddress?: string }> {
+  const user = await authenticate(ctx, dto);
+
+  if (user.alias !== expectedAlias) {
+    throw new ForbiddenError(`Dto is authenticated by ${user.alias}, and not by ${expectedAlias}`, {
+      authorized: user
+    });
+  }
+
+  return user;
 }

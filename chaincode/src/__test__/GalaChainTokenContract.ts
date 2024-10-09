@@ -517,11 +517,9 @@ export default class GalaChainTokenContract extends GalaContract {
     return fetchBurns(ctx, dto);
   }
 
-  @GalaTransaction({
-    type: SUBMIT,
+  @Submit({
     in: FeeCodeDefinitionDto,
     out: FeeCodeDefinition,
-    verifySignature: true,
     allowedOrgs: ["CuratorOrg"]
   })
   public async DefineFeeSchedule(
@@ -531,11 +529,9 @@ export default class GalaChainTokenContract extends GalaContract {
     return GalaChainResponse.Wrap(defineFeeSchedule(ctx, dto));
   }
 
-  @GalaTransaction({
-    type: SUBMIT,
+  @Submit({
     in: FeeCodeSplitFormulaDto,
     out: FeeCodeSplitFormula,
-    verifySignature: true,
     allowedOrgs: ["CuratorOrg"]
   })
   public async DefineFeeSplitFormula(
@@ -545,13 +541,10 @@ export default class GalaChainTokenContract extends GalaContract {
     return GalaChainResponse.Wrap(defineFeeSplitFormula(ctx, dto));
   }
 
-  @GalaTransaction({
-    type: SUBMIT,
+  @Submit({
     in: FeeVerificationDto,
     out: FeeAuthorizationResDto,
-    verifySignature: true,
-    allowedOrgs: ["CuratorOrg"],
-    enforceUniqueKey: true
+    allowedOrgs: ["CuratorOrg"]
   })
   public async CreditFeeBalance(
     ctx: GalaChainContext,
