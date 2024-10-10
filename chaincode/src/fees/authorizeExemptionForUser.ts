@@ -18,6 +18,23 @@ import { plainToInstance } from "class-transformer";
 import { GalaChainContext } from "../types";
 import { putChainObject } from "../utils";
 
+/**
+ * @description
+ *
+ * Write a new (or overwrite an existing) `FeeExemption` entry.
+ *
+ * `FeeExemption` entries are intended for use cases where the calling user
+ * should not be expected to cover fees, possibly when users have paid fees
+ * through some other means.
+ *
+ * Typically these identities would
+ * represent game server identities, application services, or other
+ * channel-operator defined entities that need a special-case exemption.
+ *
+ * @param ctx
+ * @param dto
+ * @returns
+ */
 export async function authorizeExemptionForUser(ctx: GalaChainContext, dto: FeeExemptionDto) {
   const exemption: FeeExemption = plainToInstance(FeeExemption, {
     user: dto.user

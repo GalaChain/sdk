@@ -32,7 +32,29 @@ import { putChainObject } from "../utils";
 import { txUnixTimeToDateIndexKeys } from "../utils";
 import { fetchGalaFeeProperties } from "./galaFeeProperties";
 
-export async function authorizeFee(ctx: GalaChainContext, dto: FeeAuthorizationDto) {
+/**
+ * @description
+ *
+ * For Cross-Channel Fees. Executed by an end user in GalaChain's
+ * asset channel where the $GALA token is defined. This action
+ * burns $GALA on the assets channel and writes a `FeeAuthorization` record
+ * to chain.
+ *
+ * `FeeAuthorization` entries recorded in the ledger of the assets channel
+ * represent a burn intended to cover a fee in a different channel.
+ *
+ * This is the first phase in the two phase cross-channel flow. The second phase
+ * invovles an authorized channel authority executing `CreditFeeBalance` on the
+ * cross-channel with the resulting details of a successful `authorizeFee` call.
+ *
+ * @param ctx
+ * @param dto
+ * @returns Promise<FeeAuthorizationResDto>
+ */
+export async function authorizeFee(
+  ctx: GalaChainContext,
+  dto: FeeAuthorizationDto
+): Promise<FeeAuthorizationResDto> {
   const authorizingUser = ctx.callingUser;
 
   if (authorizingUser !== dto.authority) {
