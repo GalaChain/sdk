@@ -1,5 +1,7 @@
 import {
+  ChainError,
   ExpectedTokenSale,
+  TokenInstanceQuantity,
   TokenSale,
   TokenSaleDtoValidationError,
   TokenSaleFulfillment,
@@ -11,11 +13,15 @@ import {
   fetchOrCreateBalance,
   fetchTokenClasses,
   getObjectByKey,
+  mintToken,
   putChainObject,
+  transferToken
 } from "@gala-chain/chaincode";
 import { BigNumber } from "bignumber.js";
 import { plainToInstance } from "class-transformer";
 
+import { MintTokenFailedError } from "../mint/MintError";
+import { TransferTokenFailedError } from "../transfer/TransferError";
 
 interface FillTokenSaleParams {
   fulfilledBy: string;
@@ -59,9 +65,9 @@ export async function fillTokenSwap(
   // Check that uses remaining > 0
   if (tokenSale.quantity.minus(tokenSale.quantityFulfilled).isLessThanOrEqualTo(0)) {
     chainValidationErrors.push(
-      `Sales quantity remaining must be >= 0 (${tokenSale.quantity} - ${tokenSale.quantityFulfilled} = ${tokenSale.quantity.minus(
+      `Sales quantity remaining must be >= 0 (${tokenSale.quantity} - ${
         tokenSale.quantityFulfilled
-      )}. tokenSaleId ${tokenSaleId})`
+      } = ${tokenSale.quantity.minus(tokenSale.quantityFulfilled)}. tokenSaleId ${tokenSaleId})`
     );
   }
 
@@ -69,7 +75,9 @@ export async function fillTokenSwap(
   if (!quantity || !quantity.isInteger() || quantity.isLessThanOrEqualTo(0)) {
     chainValidationErrors.push(`Quantity must be > 0. tokenSaleId ${tokenSaleId}`);
   } else if (tokenSale.quantity.minus(tokenSale.quantityFulfilled).isGreaterThanOrEqualTo(quantity)) {
-    chainValidationErrors.push(`Insufficient quantity remaining on this sale to fulfill. tokenSaleId ${tokenSaleId}`);
+    chainValidationErrors.push(
+      `Insufficient quantity remaining on this sale to fulfill. tokenSaleId ${tokenSaleId}`
+    );
   }
 
   // Check if the swap has started
@@ -77,7 +85,7 @@ export async function fillTokenSwap(
     chainValidationErrors.push(`Token sale has not started. tokenSaleId ${tokenSaleId}`);
   }
 
-  // Check if the swap has ended
+  // Check if the sale has ended
   if (tokenSale.end && tokenSale.end !== 0 && tokenSale.end <= ctx.txUnixTime) {
     chainValidationErrors.push(`Token sale has ended. tokenSaleId ${tokenSaleId}`);
   }
@@ -88,11 +96,11 @@ export async function fillTokenSwap(
   // TODO: Ensure there are still enough mint allowances to fufill the sale, its possible the owner can use allowance outside of the sale
   //
 
-  const costClassKeys = tokenSale.cost.map((t) => t.tokenClassKey);
-    const costTokenClasses = await fetchTokenClasses(ctx, costClassKeys).catch((e) => {
-      chainValidationErrors.push(`Error fetching to tokens: ${e.message}. tokenSaleId ${tokenSaleId}`);
-      return [];
-    });
+  const costClassKeys = tokenSale.cost.map((t) => t.getTokenClassKey());
+  const costTokenClasses = await fetchTokenClasses(ctx, costClassKeys).catch((e) => {
+    chainValidationErrors.push(`Error fetching to tokens: ${e.message}. tokenSaleId ${tokenSaleId}`);
+    return [];
+  });
 
   // If we have any errors, don't proceed to check the cost quantity and
   // issue the transaction
@@ -104,7 +112,9 @@ export async function fillTokenSwap(
 
       // TODO: non-fungible tokens should not be supported, if this state occurs than a validation failed in CreateTokenSale
       if (costToken.isNonFungible) {
-        chainValidationErrors.push(`Non-fungible tokens are not supported for cost tokens. tokenSaleId ${tokenSaleId}`);
+        chainValidationErrors.push(
+          `Non-fungible tokens are not supported for cost tokens. tokenSaleId ${tokenSaleId}`
+        );
       } else {
         const currentSpendableQuantity = costBalance.getQuantityTotal();
         const totalCostQuantity = tokenSale.cost[index].quantity.times(quantity);
@@ -120,7 +130,45 @@ export async function fillTokenSwap(
 
   // If we have any errors after checking balances, don't proceed
   if (chainValidationErrors.length === 0) {
-    // TODO: use transfer and mint function to fulfill the sale
+    // Mint Sale Tokens
+    for (let index = 0; index < tokenSale.selling.length; index++) {
+      const saleTokenClassKey = tokenSale.selling[index].tokenClassKey;
+      const currentQuantity = tokenSale.selling[index].quantity;
+
+      await mintToken(ctx, {
+        tokenClassKey: saleTokenClassKey,
+        owner: tokenSale.owner,
+        quantity: currentQuantity,
+        // used to allow user to mint on behalf of the seller if cost requirements are met
+        authorizedOnBehalf: {
+          callingOnBehalf: tokenSale.owner,
+          callingUser: ctx.callingUser
+        }
+      }).catch((e) => {
+        const chainError = ChainError.from(e);
+        throw new MintTokenFailedError(chainError.message + `TokenSaleId ${tokenSaleId}`, chainError.payload);
+      });
+    }
+
+    for (let index = 0; index < tokenSale.cost.length; index++) {
+      const costTokenInstanceKey = tokenSale.cost[index].tokenInstance;
+      const currentQuantity = tokenSale.cost[index].quantity;
+
+      await transferToken(ctx, {
+        from: fulfilledBy,
+        to: tokenSale.owner,
+        tokenInstanceKey: costTokenInstanceKey,
+        quantity: currentQuantity,
+        allowancesToUse: [],
+        authorizedOnBehalf: undefined
+      }).catch((e) => {
+        const chainError = ChainError.from(e);
+        throw new TransferTokenFailedError(
+          chainError.message + `TokenSaleId ${tokenSaleId}`,
+          chainError.payload
+        );
+      });
+    }
 
     const newTokenSaleFulfillmentId: string = newTokenSaleFulfillment.getCompositeKey();
 
@@ -182,15 +230,15 @@ function validateTokenSaleFulfillment(
   }
 
   for (let index = 0; index < expectedTokenSale.cost.length; index++) {
-    const expectedcost = plainToInstance(TokenSaleQuantity, {
-      tokenClassKey: expectedTokenSale.cost[index].tokenClassKey,
+    const expectedcost = plainToInstance(TokenInstanceQuantity, {
+      tokenInstance: expectedTokenSale.cost[index].tokenInstance,
       quantity: expectedTokenSale.cost[index].quantity
     });
     const actualcost = tokenSale.cost[index];
 
-    if (expectedcost.tokenClassKey.toStringKey() !== actualcost.tokenClassKey.toStringKey()) {
+    if (expectedcost.tokenInstance.toStringKey() !== actualcost.tokenInstance.toStringKey()) {
       chainValidationErrors.push(
-        `Expected cost token tokenClassKey of ${expectedcost.tokenClassKey.toStringKey()} does not match actual tokenClassKey of ${actualcost.tokenClassKey.toStringKey()}. tokenSaleId ${tokenSaleId}`
+        `Expected cost token tokenInstanceKey of ${expectedcost.tokenInstance.toStringKey()} does not match actual tokenClassKey of ${actualcost.tokenInstance.toStringKey()}. tokenSaleId ${tokenSaleId}`
       );
     }
 

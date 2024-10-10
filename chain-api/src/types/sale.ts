@@ -31,23 +31,17 @@ import {
 } from "class-validator";
 import { JSONSchema } from "class-validator-jsonschema";
 
-import {
-  BigNumberIsInteger,
-  BigNumberIsPositive,
-  BigNumberProperty,
-  IsUserAlias
-} from "../validators";
+import { ChainKey, DefaultError, ValidationFailedError } from "../utils";
+import { BigNumberIsInteger, BigNumberIsPositive, BigNumberProperty, IsUserAlias } from "../validators";
 import { ChainObject } from "./ChainObject";
+import { TokenClassKey } from "./TokenClass";
 import { TokenInstanceQuantity } from "./TokenInstance";
 import { TokenSwapRequest } from "./TokenSwapRequest";
-import { ChainCallDTO } from "./dtos";
-import { TokenClassKey } from "./TokenClass";
-import { ChainKey, DefaultError, ValidationFailedError } from "../utils";
 import { AllowanceType } from "./common";
+import { ChainCallDTO } from "./dtos";
 
 @JSONSchema({
-  description:
-    "Defines a sale token with quantity of tokens to be received"
+  description: "Defines a sale token with quantity of tokens to be received"
 })
 export class TokenSaleQuantity extends ChainCallDTO {
   @JSONSchema({
@@ -107,9 +101,9 @@ export class TokenSale extends ChainObject {
     description: "Tokens and quantities to be received"
   })
   @ValidateNested({ each: true })
-  @Type(() => TokenSaleQuantity)
+  @Type(() => TokenInstanceQuantity)
   @ArrayNotEmpty()
-  public cost: Array<TokenSaleQuantity>;
+  public cost: Array<TokenInstanceQuantity>;
 
   @JSONSchema({
     description: "User who created the sale"
@@ -120,7 +114,7 @@ export class TokenSale extends ChainObject {
   @JSONSchema({
     description: "Ids of each sale fullfillment"
   })
-  @IsNotEmpty() 
+  @IsNotEmpty()
   public fulfillmentIds: Array<string>;
 
   @JSONSchema({
@@ -237,7 +231,7 @@ export class TokenSaleMintAllowance extends ChainObject {
   @ChainKey({ position: 1 })
   @IsNotEmpty()
   public allowanceObjectKey: string;
-}  
+}
 
 export class TokenSaleFulfillment extends ChainObject {
   public static INDEX_KEY = "GCTSF";
@@ -292,10 +286,10 @@ export class CreateTokenSaleDto extends ChainCallDTO {
     description: "A list of tokens to be paid to the seller."
   })
   @ValidateNested({ each: true })
-  @Type(() => TokenSaleQuantity)
+  @Type(() => TokenInstanceQuantity)
   @ArrayMinSize(1)
   @ArrayUnique()
-  public cost: Array<TokenSaleQuantity>;
+  public cost: Array<TokenInstanceQuantity>;
 
   @JSONSchema({
     description: "How many sale items can be purchased."
@@ -342,10 +336,10 @@ export class ExpectedTokenSale extends ChainCallDTO {
       "A list of cost token classes and quantites. The order of this array must match the order of the TokenSale stored on chain."
   })
   @ValidateNested({ each: true })
-  @Type(() => TokenSaleQuantity)
+  @Type(() => TokenInstanceQuantity)
   @ArrayMinSize(1)
   @ArrayUnique()
-  public cost: Array<TokenSaleQuantity>;
+  public cost: Array<TokenInstanceQuantity>;
 }
 
 @JSONSchema({
@@ -390,7 +384,7 @@ export class FulfillTokenSaleDto extends ChainCallDTO {
 
 export class RemoveTokenSaleDto extends ChainCallDTO {
   @JSONSchema({
-    description: "Token sale ID to be removed." 
+    description: "Token sale ID to be removed."
   })
   @IsNotEmpty()
   public readonly tokenSaleId: string;
@@ -492,4 +486,3 @@ export class TokenSaleFailedError extends DefaultError {
     super(`SwapToken failed: ${message}$`, payload);
   }
 }
-
