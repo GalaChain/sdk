@@ -166,6 +166,7 @@ export class TokenBalance extends ChainObject {
   @BigNumberProperty()
   private quantity: BigNumber;
 
+
   //
   // NFT
   //

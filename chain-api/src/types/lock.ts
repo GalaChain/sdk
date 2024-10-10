@@ -25,8 +25,6 @@ import {
   ValidateNested
 } from "class-validator";
 import { JSONSchema } from "class-validator-jsonschema";
-
-import { ConstructorArgs } from "../utils";
 import { BigNumberIsNotNegative, BigNumberIsPositive, BigNumberProperty, IsUserAlias } from "../validators";
 import { LockTokenQuantity } from "./LockTokenQuantity";
 import { TokenInstance, TokenInstanceKey } from "./TokenInstance";

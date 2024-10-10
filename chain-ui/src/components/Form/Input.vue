@@ -26,7 +26,7 @@ import type {
 import FormErrors from './Errors.vue'
 import PrimePassword from 'primevue/password'
 import PrimeTextarea from 'primevue/textarea'
-import PrimeInputText from 'primevue/inputText'
+import PrimeInputText from 'primevue/inputtext'
 
 const props = defineProps<
   IFieldProps & (IInputProps | INumberInputProps | IPasswordInputProps | ITextAreaInputProps)
@@ -37,7 +37,7 @@ const emit = defineEmits<{
   blur: [e: FocusEvent]
 }>()
 
-const model = defineModel<string | number>({
+const model = defineModel<string>({
   default: ''
 })
 
@@ -132,7 +132,8 @@ const handleDecrement = (e: Event) => {
   const startValue = isNaN(+model.value) ? 0 : +model.value
   const { min, step } = props as INumberInputProps
   const newValue = startValue - (step ? parseFloat(step) : 1)
-  model.value = min !== undefined ? Math.max(newValue, min) : newValue
+  const modelValue = min !== undefined ? Math.max(newValue, min) : newValue
+  model.value = modelValue.toString()
 }
 
 const handleIncrement = (e: Event) => {
@@ -140,7 +141,8 @@ const handleIncrement = (e: Event) => {
   const startValue = isNaN(+model.value) ? 0 : +model.value
   const { max, step } = props as INumberInputProps
   const newValue = startValue + (step ? parseFloat(step) : 1)
-  model.value = max !== undefined ? Math.min(newValue, max) : newValue
+  const modelValue = max !== undefined ? Math.min(newValue, max) : newValue
+  model.value = modelValue.toString()
 }
 
 const getAriaDescribedBy = (id?: string) => {
@@ -167,7 +169,7 @@ const getAriaDescribedBy = (id?: string) => {
     class="gc-form-input"
     :class="{
       'floating-label': props.labelStyle === 'floating',
-      'is-filled': model || (type === 'number' && model === 0),
+      'is-filled': model || (type === 'number' && model === '0'),
       'is-focused': isFocused,
       'with-number-controls': shouldShowNumberControls
     }"

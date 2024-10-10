@@ -16,6 +16,8 @@
 import type { Meta, StoryObj } from '@storybook/vue3'
 import { action } from '@storybook/addon-actions'
 import MintTokenWithAllowance from './MintTokenWithAllowance.vue'
+import { plainToInstance } from 'class-transformer'
+import { TokenClass } from '@gala-chain/api'
 
 const meta: Meta<typeof MintTokenWithAllowance> = {
   component: MintTokenWithAllowance
@@ -24,14 +26,14 @@ const meta: Meta<typeof MintTokenWithAllowance> = {
 export default meta
 type Story = StoryObj<typeof MintTokenWithAllowance>
 
-const token = {
+const token = plainToInstance(TokenClass, {
   additionalKey: 'none',
   authorities: ['client|test'],
   category: 'Unit',
   collection: 'GALA',
   decimals: 8,
   description: 'GALA token',
-  image: 'https://app.gala.games/_nuxt/img/GALA-icon.b642e24.png',
+  image: 'https://static.gala.games/images/icons/units/gala.png',
   isNonFungible: false,
   knownMintAllowanceSupply: '5000000000',
   knownMintSupply: '50000000000',
@@ -44,21 +46,30 @@ const token = {
   totalMintAllowance: '50000000000',
   totalSupply: '50000000000',
   type: 'none'
-}
+})
 
 const Template = (args) => ({
   components: { MintTokenWithAllowance },
   setup() {
     return { args }
   },
-  methods: { submit: action('submit') },
-  template: '<MintTokenWithAllowance v-bind="args" @submit="submit"/>'
+  methods: { submit: action('submit'), change: action('change') },
+  template: '<MintTokenWithAllowance v-bind="args" @submit="submit" @change="change"/>'
 })
 
 export const Primary: Story = Template.bind({})
 Primary.args = {
   token,
   address: 'client|test',
+  loading: false,
+  disabled: false
+}
+
+export const Fee: Story = Template.bind({})
+Fee.args = {
+  token,
+  address: 'client|test',
+  feeAmount: '1',
   loading: false,
   disabled: false
 }

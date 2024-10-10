@@ -15,24 +15,42 @@
 
 <script lang="ts" setup>
 import { computed } from 'vue'
-import { TokenClass, MintTokenDto, TransferTokenDto } from '@gala-chain/api'
+import {
+  type TokenClass,
+  MintTokenDto,
+  type TokenAllowance,
+  type TransferTokenDto
+} from '@gala-chain/api'
 import GalaSend, { type TokenClassBalance } from '@/components/common/Send.vue'
-import { TokenAllowance } from '@gala-chain/api'
 import { calculateAvailableMintAllowances } from '@/utils/calculateBalance'
 import type { IGalaChainError } from '../types/galachain-error'
 import PrimeSkeleton from 'primevue/skeleton'
+import { plainToInstance } from "class-transformer";
 
 export interface MintTokenProps {
+  /** Token allowance */
   tokenAllowance?: { token: TokenClass; allowances: TokenAllowance[] }
+  /** Submit button loading state */
   loading?: boolean
+  /** Submit button disabled state */
+  disabled?: boolean
+  /** Fee amount */
+  feeAmount?: string
+  /** Fee currency */
+  feeCurrency?: string
+}
+
+export interface MintTokenEmits {
+  /** Fired when the form is successfully submitted */
+  (event: 'submit', value: MintTokenDto): void
+  /** Fired when a form error occurs, does not include validation errors */
+  (event: 'error', value: IGalaChainError): void
+  /** Fired when the form is changed */
+  (event: 'change', value: MintTokenDto): void
 }
 
 const props = defineProps<MintTokenProps>()
-
-const emit = defineEmits<{
-  submit: [value: MintTokenDto]
-  error: [value: IGalaChainError]
-}>()
+const emit = defineEmits<MintTokenEmits>()
 
 const availableToken = computed(() => {
   const token: { token: TokenClass; allowances: TokenAllowance[] } =
@@ -50,7 +68,7 @@ const availableToken = computed(() => {
 const submit = (payload: TransferTokenDto) => {
   const { quantity, tokenInstance } = payload
   const { collection, category, type, additionalKey } = tokenInstance
-  const mintTokenDto = {
+  const mintTokenDto = plainToInstance(MintTokenDto, {
     quantity,
     tokenClass: {
       collection,
@@ -58,8 +76,23 @@ const submit = (payload: TransferTokenDto) => {
       type,
       additionalKey
     }
-  } as MintTokenDto
+  })
   emit('submit', mintTokenDto)
+}
+
+const change = (payload: TransferTokenDto) => {
+  const { quantity, tokenInstance } = payload
+  const { collection, category, type, additionalKey } = tokenInstance
+  const mintTokenDto = plainToInstance(MintTokenDto, {
+    quantity,
+    tokenClass: {
+      collection,
+      category,
+      type,
+      additionalKey
+    }
+  })
+  emit('change', mintTokenDto)
 }
 </script>
 
@@ -69,9 +102,12 @@ const submit = (payload: TransferTokenDto) => {
     :token="availableToken"
     :loading="loading"
     :show-recipient="false"
+    :disabled="disabled"
+    :fee-amount="feeAmount"
+    :fee-currency="feeCurrency"
     @submit="submit"
     @error="(event) => emit('error', event)"
-    to-header="Mint to"
+    @change="change"
     submit-text="Mint"
   >
   </GalaSend>

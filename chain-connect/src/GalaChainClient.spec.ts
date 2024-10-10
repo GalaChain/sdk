@@ -24,7 +24,7 @@ import { instanceToPlain, plainToInstance } from "class-transformer";
 import { ethers } from "ethers";
 import { EventEmitter } from "events";
 
-import { generateEIP712Types } from "./Utils";
+import { generateEIP712Types } from "./utils";
 import { BrowserConnectClient, TrustWalletConnectClient } from "./customClients";
 
 global.fetch = jest.fn((url: string, options?: Record<string, unknown>) =>

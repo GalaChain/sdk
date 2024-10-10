@@ -1,3 +1,4 @@
+import { dirname, join } from "path";
 /*
  * Copyright (c) Gala Games Inc. All rights reserved.
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -16,16 +17,23 @@
 import type { StorybookConfig } from '@storybook/vue3-vite'
 
 const config: StorybookConfig = {
-  stories: ['../src/**/*.stories.@(js|jsx|ts|tsx|mdx)'],
-  addons: ['@storybook/addon-essentials', '@storybook/addon-interactions'],
+  stories: ['../src/**/*.@(mdx|stories.@(js|jsx|ts|tsx))'],
+  addons: [
+    getAbsolutePath("@storybook/addon-essentials"),
+    getAbsolutePath("@storybook/addon-interactions"),
+    "@chromatic-com/storybook"
+  ],
+
   framework: {
-    name: '@storybook/vue3-vite',
+    name: getAbsolutePath("@storybook/vue3-vite"),
     options: {
       builder: {
         viteConfigPath: 'vite.config.ts'
       }
     }
-  }
+  },
+
+  docs: {}
 }
 
 export default config
@@ -33,3 +41,7 @@ export default config
 // To customize your Vite configuration you can use the viteFinal field.
 // Check https://storybook.js.org/docs/react/builders/vite#configuration
 // and https://nx.dev/recipes/storybook/custom-builder-configs
+
+function getAbsolutePath(value: string): any {
+  return dirname(require.resolve(join(value, "package.json")));
+}

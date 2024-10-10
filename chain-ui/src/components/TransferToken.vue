@@ -15,10 +15,9 @@
 
 <script lang="ts" setup>
 import { computed } from 'vue'
-import { TokenBalanceWithMetadata, TransferTokenDto } from '@gala-chain/api'
+import type { TokenBalanceWithMetadata, TransferTokenDto } from '@gala-chain/api'
 import GalaSend, { type TokenClassBalance } from '@/components/common/Send.vue'
 import { calculateAvailableBalance } from '@/utils/calculateBalance'
-import { TokenBalance } from '@gala-chain/api'
 import type { IGalaChainError } from '@/types/galachain-error'
 import PrimeSkeleton from 'primevue/skeleton'
 
@@ -29,6 +28,10 @@ export interface TransferTokenProps {
   loading?: boolean
   /** Submit button disabled state */
   disabled?: boolean
+  /** Fee amount */
+  feeAmount?: string
+  /** Fee currency */
+  feeCurrency?: string
 }
 
 export interface TransferTokenEmits {
@@ -36,10 +39,11 @@ export interface TransferTokenEmits {
   (event: 'submit', value: TransferTokenDto): void
   /** Fired when a form error occurs, does not include validation errors */
   (event: 'error', value: IGalaChainError): void
+  /** Fired when the form is changed */
+  (event: 'change', value: TransferTokenDto): void
 }
 
 const props = defineProps<TransferTokenProps>()
-
 const emit = defineEmits<TransferTokenEmits>()
 
 const availableToken = computed(() => {
@@ -48,7 +52,7 @@ const availableToken = computed(() => {
   return token
     ? ({
         ...token.token,
-        available: calculateAvailableBalance(token.balance as TokenBalance).toString()
+        available: calculateAvailableBalance(token.balance).toString()
       } as TokenClassBalance)
     : undefined
 })
@@ -60,10 +64,13 @@ const availableToken = computed(() => {
     :token="availableToken"
     :loading="loading"
     :disabled="disabled"
-    to-header="Send to"
+    :fee-amount="feeAmount"
+    :fee-currency="feeCurrency"
+    recipientHeader="Send to"
     submit-text="Send"
-    @submit="(event) => emit('submit', event as TransferTokenDto)"
+    @submit="(event) => emit('submit', event)"
     @error="(event) => emit('error', event)"
+    @change="(event) => emit('change', event)"
   ></GalaSend>
   <slot v-else name="empty">
     <div class="flex flex-col items-center mt-6">

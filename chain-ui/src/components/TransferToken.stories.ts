@@ -16,6 +16,8 @@
 import type { Meta, StoryObj } from '@storybook/vue3'
 import { action } from '@storybook/addon-actions'
 import TransferToken from './TransferToken.vue'
+import { plainToInstance } from 'class-transformer'
+import { TokenBalance, TokenBalanceWithMetadata, TokenClass } from '@gala-chain/api'
 
 const meta: Meta<typeof TransferToken> = {
   component: TransferToken
@@ -24,7 +26,7 @@ const meta: Meta<typeof TransferToken> = {
 export default meta
 type Story = StoryObj<typeof TransferToken>
 
-const tokenBalance = {
+const tokenBalance = plainToInstance(TokenBalanceWithMetadata, {
   token: {
     additionalKey: 'none',
     authorities: [],
@@ -32,7 +34,7 @@ const tokenBalance = {
     collection: 'GALA',
     decimals: 8,
     description: 'GALA token',
-    image: 'https://app.gala.games/_nuxt/img/GALA-icon.b642e24.png',
+    image: 'https://static.gala.games/images/icons/units/gala.png',
     isNonFungible: false,
     maxCapacity: '50000000000',
     maxSupply: '50000000000',
@@ -55,20 +57,28 @@ const tokenBalance = {
     quantity: '1000',
     type: 'none'
   }
-}
+})
 
 const Template = (args) => ({
   components: { TransferToken },
   setup() {
     return { args }
   },
-  methods: { submit: action('submit') },
-  template: '<TransferToken v-bind="args" @submit="submit"/>'
+  methods: { submit: action('submit'), change: action('change') },
+  template: '<TransferToken v-bind="args" @submit="submit" @change="change"/>'
 })
 
 export const Primary: Story = Template.bind({})
 Primary.args = {
   tokenBalance,
+  loading: false,
+  disabled: false
+}
+
+export const Fee: Story = Template.bind({})
+Fee.args = {
+  tokenBalance,
+  feeAmount: '1',
   loading: false,
   disabled: false
 }
