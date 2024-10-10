@@ -166,16 +166,16 @@ export class TokenBalance extends ChainObject {
   @BigNumberProperty()
   private _quantity: BigNumber;
 
-  get instanceIds(): BigNumber[] {
-    return JSON.parse(JSON.stringify(this._instanceIds));
+  get instanceIds(){
+    return structuredClone(this._instanceIds);
   }
 
-  get lockedHolds(): TokenHold[] {
-    return JSON.parse(JSON.stringify(this._lockedHolds));
+  get lockedHolds() {
+    return structuredClone(this._lockedHolds);
   }
 
-  get inUseHolds(): TokenHold[] {
-    return JSON.parse(JSON.stringify(this._inUseHolds));
+  get inUseHolds() {
+    return structuredClone(this._inUseHolds); 
   }
 
   get quantity(): BigNumber {
