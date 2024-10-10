@@ -18,14 +18,15 @@ import { ref, computed, watch } from 'vue'
 import { type ValidationArgs, useVuelidate } from '@vuelidate/core'
 import { helpers, required, minValue, maxValue } from '@vuelidate/validators'
 import { getStepSizeFromDecimals } from '@/utils/validation'
-import type { TransferTokenParams, TokenClassBody } from '@gala-chain/api'
+import { TransferTokenDto, TokenClass } from '@gala-chain/api'
 import { type IGalaChainError } from '@/types/galachain-error'
 import FormInput from '../Form/Input.vue'
 import FormErrors from '../Form/Errors.vue'
 import PrimeButton from 'primevue/button'
 import BigNumber from 'bignumber.js'
+import { plainToInstance } from "class-transformer";
 
-export interface TokenClassBalance extends TokenClassBody {
+export interface TokenClassBalance extends TokenClass {
   available: string
 }
 
@@ -66,9 +67,9 @@ const recipient = defineModel<string>('recipient')
 const quantity = defineModel<string>('quantity')
 
 const emit = defineEmits<{
-  submit: [value: TransferTokenParams]
+  submit: [value: TransferTokenDto]
   error: [value: IGalaChainError]
-  change: [value: TransferTokenParams]
+  change: [value: TransferTokenDto]
 }>()
 
 const formEl = ref<HTMLFormElement>()
@@ -125,7 +126,7 @@ const send = async () => {
   }
 
   const { collection, category, type, additionalKey } = props.token!
-  emit('submit', {
+  emit('submit', plainToInstance(TransferTokenDto, {
     quantity: quantity.value,
     recipient: recipient.value,
     tokenInstance: {
@@ -135,7 +136,7 @@ const send = async () => {
       type,
       additionalKey
     }
-  } as unknown as TransferTokenParams)
+  }))
 }
 
 watch(
@@ -148,7 +149,7 @@ watch(
 
 watch([recipient, quantity], () => {
   const { collection, category, type, additionalKey } = props.token!
-  emit('change', {
+  emit('change', plainToInstance(TransferTokenDto, {
     quantity: quantity.value,
     recipient: recipient.value,
     tokenInstance: {
@@ -158,7 +159,7 @@ watch([recipient, quantity], () => {
       type,
       additionalKey
     }
-  } as unknown as TransferTokenParams)
+  }))
 })
 </script>
 

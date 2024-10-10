@@ -30,8 +30,6 @@ import {
   ValidateNested
 } from "class-validator";
 import { JSONSchema } from "class-validator-jsonschema";
-
-import { ConstructorArgs } from "../utils";
 import {
   BigNumberIsInteger,
   BigNumberIsNotNegative,
@@ -170,8 +168,6 @@ export class FeeAuthorizationResDto extends ChainCallDTO {
   @IsNotEmpty()
   feeAuthorizationKey: string;
 }
-
-export type FeeAuthorizationResponseBody = ConstructorArgs<FeeAuthorizationResDto>;
 
 @JSONSchema({
   description:

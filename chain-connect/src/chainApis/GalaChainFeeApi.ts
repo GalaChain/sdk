@@ -13,16 +13,16 @@
  * limitations under the License.
  */
 import {
-  DryRunParams,
-  DryRunResponseBody,
-  FeeAuthorizationParams,
-  FeeAuthorizationResponseBody,
+  DryRunDto,
+  DryRunResultDto,
+  FeeAuthorizationDto,
+  FeeAuthorizationResDto,
   FeeProperties,
-  FetchFeeAuthorizationsParams,
-  FetchFeeAuthorizationsResponseBody,
-  FetchFeePropertiesParams,
+  FeePropertiesDto,
+  FetchFeeAuthorizationsDto,
+  FetchFeeAuthorizationsResDto,
+  FetchFeePropertiesDto,
   GalaChainResponse,
-  SetFeePropertiesParams
 } from "@gala-chain/api";
 
 import { GalaChainProvider } from "../GalaChainClient";
@@ -33,8 +33,8 @@ export class GalaChainFeeApi {
     private connection: GalaChainProvider
   ) {}
 
-  public AuthorizeFee(dto: FeeAuthorizationParams) {
-    return this.connection.submit<GalaChainResponse<FeeAuthorizationResponseBody>, FeeAuthorizationParams>({
+  public AuthorizeFee(dto: FeeAuthorizationDto) {
+    return this.connection.submit<GalaChainResponse<FeeAuthorizationResDto>, FeeAuthorizationDto>({
       method: "AuthorizeFee",
       payload: dto,
       sign: true,
@@ -42,8 +42,8 @@ export class GalaChainFeeApi {
     });
   }
 
-  public DryRun(dto: DryRunParams) {
-    return this.connection.submit<GalaChainResponse<DryRunResponseBody>, DryRunParams>({
+  public DryRun(dto: DryRunDto) {
+    return this.connection.submit<GalaChainResponse<DryRunResultDto>, DryRunDto>({
       method: "DryRun",
       payload: dto,
       sign: false,
@@ -51,10 +51,10 @@ export class GalaChainFeeApi {
     });
   }
 
-  public FetchFeeAutorizations(dto: FetchFeeAuthorizationsParams) {
+  public FetchFeeAutorizations(dto: FetchFeeAuthorizationsDto) {
     return this.connection.submit<
-      GalaChainResponse<FetchFeeAuthorizationsResponseBody>,
-      FetchFeeAuthorizationsParams
+      GalaChainResponse<FetchFeeAuthorizationsResDto>,
+      FetchFeeAuthorizationsDto
     >({
       method: "DryRun",
       payload: dto,
@@ -63,8 +63,8 @@ export class GalaChainFeeApi {
     });
   }
 
-  public FetchFeeProperties(dto: FetchFeePropertiesParams) {
-    return this.connection.submit<GalaChainResponse<FeeProperties>, FetchFeePropertiesParams>({
+  public FetchFeeProperties(dto: FetchFeePropertiesDto) {
+    return this.connection.submit<GalaChainResponse<FeeProperties>, FetchFeePropertiesDto>({
       method: "FetchFeeProperties",
       payload: dto,
       sign: true,
@@ -72,8 +72,8 @@ export class GalaChainFeeApi {
     });
   }
 
-  public SetFeeProperties(dto: SetFeePropertiesParams) {
-    return this.connection.submit<GalaChainResponse<FeeProperties>, SetFeePropertiesParams>({
+  public SetFeeProperties(dto: FeePropertiesDto) {
+    return this.connection.submit<GalaChainResponse<FeeProperties>, FeePropertiesDto>({
       method: "FetchFeeProperties",
       payload: dto,
       sign: false,

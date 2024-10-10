@@ -16,8 +16,8 @@ import { ChainCallDTO, ConstructorArgs } from "@gala-chain/api";
 import { BrowserProvider, Eip1193Provider, getAddress } from "ethers";
 
 import { WebSigner } from "../GalaChainClient";
-import { ExtendedEip1193Provider } from "../helpers";
 import { generateEIP712Types } from "../utils";
+import { ExtendedEip1193Provider } from "../helpers";
 
 declare global {
   interface Window {

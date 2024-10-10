@@ -15,7 +15,7 @@
 
 <script lang="ts" setup>
 import { computed } from 'vue'
-import type { TokenBalanceWithMetadataParams, TransferTokenParams } from '@gala-chain/api'
+import type { TokenBalanceWithMetadata, TransferTokenDto } from '@gala-chain/api'
 import GalaSend, { type TokenClassBalance } from '@/components/common/Send.vue'
 import { calculateAvailableBalance } from '@/utils/calculateBalance'
 import type { IGalaChainError } from '@/types/galachain-error'
@@ -23,7 +23,7 @@ import PrimeSkeleton from 'primevue/skeleton'
 
 export interface TransferTokenProps {
   /** User token balance */
-  tokenBalance?: TokenBalanceWithMetadataParams
+  tokenBalance?: TokenBalanceWithMetadata
   /** Submit button loading state */
   loading?: boolean
   /** Submit button disabled state */
@@ -36,18 +36,18 @@ export interface TransferTokenProps {
 
 export interface TransferTokenEmits {
   /** Fired when the form is successfully submitted */
-  (event: 'submit', value: TransferTokenParams): void
+  (event: 'submit', value: TransferTokenDto): void
   /** Fired when a form error occurs, does not include validation errors */
   (event: 'error', value: IGalaChainError): void
   /** Fired when the form is changed */
-  (event: 'change', value: TransferTokenParams): void
+  (event: 'change', value: TransferTokenDto): void
 }
 
 const props = defineProps<TransferTokenProps>()
 const emit = defineEmits<TransferTokenEmits>()
 
 const availableToken = computed(() => {
-  const token: TokenBalanceWithMetadataParams =
+  const token: TokenBalanceWithMetadata =
     typeof props.tokenBalance === 'string' ? JSON.parse(props.tokenBalance) : props.tokenBalance
   return token
     ? ({

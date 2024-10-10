@@ -16,9 +16,9 @@
 <script lang="ts" setup>
 import { computed } from 'vue'
 import type {
-  TokenClassBody,
-  MintTokenWithAllowanceParams,
-  TransferTokenParams
+  TokenClass,
+  MintTokenWithAllowanceDto,
+  TransferTokenDto
 } from '@gala-chain/api'
 import GalaSend, { type TokenClassBalance } from '@/components/common/Send.vue'
 import { calculateAvailableMintSupply } from '@/utils/calculateBalance'
@@ -29,7 +29,7 @@ export interface MintTokenWithAllowanceProps {
   /** User address */
   address?: string
   /** Token class */
-  token?: TokenClassBody
+  token?: TokenClass
   /** Submit button loading state */
   loading?: boolean
   /** Submit button disabled state */
@@ -42,18 +42,18 @@ export interface MintTokenWithAllowanceProps {
 
 export interface MintTokenWithAllowanceEmits {
   /** Fired when the form is successfully submitted */
-  (event: 'submit', value: MintTokenWithAllowanceParams): void
+  (event: 'submit', value: MintTokenWithAllowanceDto): void
   /** Fired when a form error occurs, does not include validation errors */
   (event: 'error', value: IGalaChainError): void
   /** Fired when the form is changed */
-  (event: 'change', value: MintTokenWithAllowanceParams): void
+  (event: 'change', value: MintTokenWithAllowanceDto): void
 }
 
 const props = defineProps<MintTokenWithAllowanceProps>()
 const emit = defineEmits<MintTokenWithAllowanceEmits>()
 
 const availableToken = computed(() => {
-  const token: TokenClassBody =
+  const token: TokenClass =
     typeof props.token === 'string' ? JSON.parse(props.token) : props.token
   return token
     ? ({
@@ -63,7 +63,7 @@ const availableToken = computed(() => {
     : undefined
 })
 
-const submit = (payload: TransferTokenParams) => {
+const submit = (payload: TransferTokenDto) => {
   const { quantity, tokenInstance } = payload
   const { collection, category, type, additionalKey } = tokenInstance
   const mintTokenWithAllowanceDto = {
@@ -74,11 +74,11 @@ const submit = (payload: TransferTokenParams) => {
       type,
       additionalKey
     }
-  } as MintTokenWithAllowanceParams
+  } as MintTokenWithAllowanceDto
   emit('submit', mintTokenWithAllowanceDto)
 }
 
-const change = (payload: TransferTokenParams) => {
+const change = (payload: TransferTokenDto) => {
   const { quantity, tokenInstance } = payload
   const { collection, category, type, additionalKey } = tokenInstance
   const mintTokenWithAllowanceDto = {
@@ -89,7 +89,7 @@ const change = (payload: TransferTokenParams) => {
       type,
       additionalKey
     }
-  } as MintTokenWithAllowanceParams
+  } as MintTokenWithAllowanceDto
   emit('change', mintTokenWithAllowanceDto)
 }
 </script>

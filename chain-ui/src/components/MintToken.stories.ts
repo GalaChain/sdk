@@ -16,6 +16,8 @@
 import type { Meta, StoryObj } from '@storybook/vue3'
 import { action } from '@storybook/addon-actions'
 import MintToken from './MintToken.vue'
+import { plainToInstance } from "class-transformer";
+import { TokenAllowance, TokenClass } from '@gala-chain/api';
 
 const meta: Meta<typeof MintToken> = {
   component: MintToken
@@ -25,7 +27,7 @@ export default meta
 type Story = StoryObj<typeof MintToken>
 
 const tokenAllowance = {
-  token: {
+  token: plainToInstance(TokenClass, {
     additionalKey: 'none',
     authorities: [],
     category: 'Unit',
@@ -43,9 +45,9 @@ const tokenAllowance = {
     totalMintAllowance: '0',
     totalSupply: '50000000000',
     type: 'none'
-  },
+  }),
   allowances: [
-    {
+    plainToInstance(TokenAllowance, {
       additionalKey: 'none',
       allowanceType: 4,
       category: 'Unit',
@@ -60,7 +62,7 @@ const tokenAllowance = {
       type: 'none',
       uses: '1000',
       usesSpent: '0'
-    }
+    })
   ]
 }
 

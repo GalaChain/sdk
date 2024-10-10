@@ -13,24 +13,22 @@
  * limitations under the License.
  */
 
-import type { TokenAllowanceBody, TokenBalanceBody, TokenClassBody } from '@gala-chain/api'
+import type { TokenAllowance, TokenBalance, TokenClass } from '@gala-chain/api'
 import BigNumber from 'bignumber.js'
 
-export const calculateAvailableBalance = (balance: TokenBalanceBody) => {
+export const calculateAvailableBalance = (balance: TokenBalance) => {
   const now = Date.now()
-  // @ts-expect-error awaiting new type definitions
   const locked = balance?.lockedHolds?.reduce((acc, hold) => {
     if (hold.expires && hold.expires < now) {
       return acc
     }
     return acc.plus(hold.quantity)
   }, BigNumber(0))
-  // @ts-expect-error awaiting new type definitions
   const available = BigNumber(balance?.quantity ?? 0).minus(locked ?? BigNumber(0))
   return BigNumber.max(available, BigNumber(0))
 }
 
-export const calculateAvailableMintAllowances = (allowances: TokenAllowanceBody[]) => {
+export const calculateAvailableMintAllowances = (allowances: TokenAllowance[]) => {
   return allowances.reduce((total, allowance) => {
     const availableAllowance = BigNumber(allowance.quantity ?? 0).minus(
       allowance.quantitySpent ?? 0
@@ -39,8 +37,7 @@ export const calculateAvailableMintAllowances = (allowances: TokenAllowanceBody[
   }, new BigNumber(0))
 }
 
-export const calculateAvailableMintSupply = (token: TokenClassBody, address?: string) => {
-  // @ts-expect-error awaiting new type definitions
+export const calculateAvailableMintSupply = (token: TokenClass, address?: string) => {
   if (address && !token.authorities.includes(address)) {
     return new BigNumber(0)
   }
