@@ -86,14 +86,10 @@ export class FeePropertiesDto extends ChainCallDTO {
   public uniqueKey?: string;
 }
 
-export type SetFeePropertiesParams = ConstructorArgs<FeePropertiesDto>;
-
 @JSONSchema({
   description: "Empty DTO object for Read-only chaincode execution."
 })
 export class FetchFeePropertiesDto extends ChainCallDTO {}
-
-export type FetchFeePropertiesParams = ConstructorArgs<FetchFeePropertiesDto>;
 
 @JSONSchema({
   description:
@@ -129,8 +125,6 @@ export class FeeAuthorizationDto extends ChainCallDTO {
   @IsOptional()
   public uniqueKey?: string;
 }
-
-export type FeeAuthorizationParams = ConstructorArgs<FeeAuthorizationDto>;
 
 @JSONSchema({
   description:
@@ -263,8 +257,6 @@ export class FetchFeeAuthorizationsDto extends ChainCallDTO {
   limit?: number;
 }
 
-export type FetchFeeAuthorizationsParams = ConstructorArgs<FetchFeeAuthorizationsDto>;
-
 @JSONSchema({
   description: "Response DTO from a successful FetchFeeAuthorizations query."
 })
@@ -279,8 +271,6 @@ export class FetchFeeAuthorizationsResDto extends ChainCallDTO {
   @IsNotEmpty()
   nextPageBookmark?: string;
 }
-
-export type FetchFeeAuthorizationsResponseBody = ConstructorArgs<FetchFeeAuthorizationsResDto>;
 
 @JSONSchema({
   description: "Fetch fee receipts."

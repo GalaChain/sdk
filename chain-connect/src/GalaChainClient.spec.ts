@@ -12,7 +12,15 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-import { LockTokenRequestParams, TransferTokenParams, signatures } from "@gala-chain/api";
+import {
+  LockTokenDto,
+  TokenInstanceKey,
+  TransferTokenDto,
+  createValidDTO,
+  signatures
+} from "@gala-chain/api";
+import BigNumber from "bignumber.js";
+import { instanceToPlain, plainToInstance } from "class-transformer";
 import { ethers } from "ethers";
 import { EventEmitter } from "events";
 
@@ -61,18 +69,18 @@ window.ethereum = new EthereumMock();
 
 describe("BrowserConnectClient", () => {
   it("test full flow", async () => {
-    const dto: TransferTokenParams = {
-      quantity: "1",
+    const dto: TransferTokenDto = await createValidDTO(TransferTokenDto, {
+      quantity: new BigNumber("1"),
       to: "client|63580d94c574ad78b121c267",
-      tokenInstance: {
+      tokenInstance: plainToInstance(TokenInstanceKey, {
         additionalKey: "none",
         category: "Unit",
         collection: "GALA",
-        instance: "0",
+        instance: new BigNumber("0"),
         type: "none"
-      },
+      }),
       uniqueKey: "26d4122e-34c8-4639-baa6-4382b398e68e"
-    };
+    });
 
     // call connect
     const client = new BrowserConnectClient();
@@ -119,16 +127,20 @@ describe("BrowserConnectClient", () => {
   });
 
   it("should properly recover signature", async () => {
-    const params: LockTokenRequestParams = {
-      quantity: "1",
-      tokenInstance: {
+    const dto: LockTokenDto = await createValidDTO(LockTokenDto, {
+      quantity: new BigNumber("1"),
+      tokenInstance: plainToInstance(TokenInstanceKey, {
         collection: "GALA",
         category: "Unit",
         additionalKey: "none",
-        instance: "0",
+        instance: new BigNumber("0"),
         type: "none"
-      }
-    };
+      })
+    });
+
+    await dto.validateOrReject();
+
+    const params = instanceToPlain(dto);
 
     const privateKey = "0x311e3750b1b698e70a2b37fd08b68fdcb389f955faea163f6ffa5be65cd0c251";
 
@@ -138,9 +150,9 @@ describe("BrowserConnectClient", () => {
     const prefix = client.calculatePersonalSignPrefix(params);
     const prefixedPayload = { prefix, ...params };
     const wallet = new ethers.Wallet(privateKey);
-    const dto = signatures.getPayloadToSign(prefixedPayload);
+    const payload = signatures.getPayloadToSign(prefixedPayload);
 
-    const signature = await wallet.signMessage(dto);
+    const signature = await wallet.signMessage(payload);
     console.log(signature);
 
     const publickKey = signatures.recoverPublicKey(signature, { ...prefixedPayload, signature }, prefix);
@@ -148,16 +160,16 @@ describe("BrowserConnectClient", () => {
     expect(ethAddress).toBe("e737c4D3072DA526f3566999e0434EAD423d06ec");
   });
   it("should properly recover signature", async () => {
-    const params: LockTokenRequestParams = {
-      quantity: "1",
-      tokenInstance: {
+    const params: LockTokenDto = await createValidDTO(LockTokenDto, {
+      quantity: new BigNumber("1"),
+      tokenInstance: plainToInstance(TokenInstanceKey, {
         collection: "GALA",
         category: "Unit",
         additionalKey: "none",
-        instance: "0",
+        instance: new BigNumber("0"),
         type: "none"
-      }
-    };
+      })
+    });
 
     const privateKey = "0x311e3750b1b698e70a2b37fd08b68fdcb389f955faea163f6ffa5be65cd0c251";
 
@@ -177,16 +189,20 @@ describe("BrowserConnectClient", () => {
     expect(ethAddress).toBe("e737c4D3072DA526f3566999e0434EAD423d06ec");
   });
   it("should properly recover signature for typed signing", async () => {
-    const params: LockTokenRequestParams = {
-      quantity: "1",
-      tokenInstance: {
+    const dto: LockTokenDto = await createValidDTO(LockTokenDto, {
+      quantity: new BigNumber("1"),
+      tokenInstance: plainToInstance(TokenInstanceKey, {
         collection: "GALA",
         category: "Unit",
         additionalKey: "none",
-        instance: "0",
+        instance: new BigNumber("0"),
         type: "none"
-      }
-    };
+      })
+    });
+
+    await dto.validateOrReject();
+
+    const params = instanceToPlain(dto);
 
     const privateKey = "0x311e3750b1b698e70a2b37fd08b68fdcb389f955faea163f6ffa5be65cd0c251";
 
@@ -205,16 +221,20 @@ describe("BrowserConnectClient", () => {
     expect(publicKey).toBe("0xe737c4D3072DA526f3566999e0434EAD423d06ec");
   });
   it("should properly recover signature for typed signing using signature utils", async () => {
-    const params: LockTokenRequestParams = {
-      quantity: "1",
-      tokenInstance: {
+    const dto: LockTokenDto = await createValidDTO(LockTokenDto, {
+      quantity: new BigNumber("1"),
+      tokenInstance: plainToInstance(TokenInstanceKey, {
         collection: "GALA",
         category: "Unit",
         additionalKey: "none",
-        instance: "0",
+        instance: new BigNumber("0"),
         type: "none"
-      }
-    };
+      })
+    });
+
+    await dto.validateOrReject();
+
+    const params = instanceToPlain(dto);
 
     const privateKey = "0x311e3750b1b698e70a2b37fd08b68fdcb389f955faea163f6ffa5be65cd0c251";
 
@@ -241,18 +261,18 @@ describe("TrustConnectClient", () => {
   it("test full flow", async () => {
     window.ethereum = new EthereumMock();
     window.ethereum.isTrust = true;
-    const dto: TransferTokenParams = {
-      quantity: "1",
+    const dto: TransferTokenDto = await createValidDTO(TransferTokenDto, {
+      quantity: new BigNumber("1"),
       to: "client|63580d94c574ad78b121c267",
-      tokenInstance: {
+      tokenInstance: plainToInstance(TokenInstanceKey, {
         additionalKey: "none",
         category: "Unit",
         collection: "GALA",
-        instance: "0",
+        instance: new BigNumber("0"),
         type: "none"
-      },
+      }),
       uniqueKey: "26d4122e-34c8-4639-baa6-4382b398e68e"
-    };
+    });
 
     // call connect
     const client = new TrustWalletConnectClient();
