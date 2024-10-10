@@ -365,8 +365,6 @@ export class ExpectedTokenSale extends ChainCallDTO {
   description: "Defines a swap fill object, i.e. a response of another user for a swap request."
 })
 export class FulfillTokenSaleDto extends ChainCallDTO {
-  public static DEFAULT_QUANTITY = new BigNumber(1);
-
   @JSONSchema({
     description: "Token sale ID to be filled"
   })
@@ -391,14 +389,12 @@ export class FulfillTokenSaleDto extends ChainCallDTO {
 
   @JSONSchema({
     description:
-      "How many uses are filled with this swap fill. " +
-      `In most cases it will be ${FulfillTokenSaleDto.DEFAULT_QUANTITY}, and this is the default value for it.`
+      "The quantity of items to be purchased " 
   })
-  @IsOptional()
   @BigNumberIsPositive()
   @BigNumberIsInteger()
   @BigNumberProperty()
-  public quantity?: BigNumber;
+  public quantity: BigNumber;
 }
 
 export class RemoveTokenSaleDto extends ChainCallDTO {
