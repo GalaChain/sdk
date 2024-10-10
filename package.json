@@ -29,6 +29,7 @@
     "@nx/jest": "^19.6.3",
     "@nx/js": "^19.6.3",
     "@nx/linter": "^19.6.3",
+    "@nx/storybook": "19.4.2",
     "@nx/web": "19.6.3",
     "@nx/workspace": "^19.6.3",
     "@swc-node/register": "~1.9.1",
