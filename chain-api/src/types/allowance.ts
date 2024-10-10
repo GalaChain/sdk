@@ -44,8 +44,6 @@ import { TokenInstance, TokenInstanceKey, TokenInstanceQueryKey } from "./TokenI
 import { AllowanceKey, AllowanceType, MintRequestDto } from "./common";
 import { ChainCallDTO } from "./dtos";
 
-export type FetchAllowancesParams = ConstructorArgs<FetchAllowancesDto>;
-
 @JSONSchema({
   description: "Contains parameters for fetching allowances with pagination."
 })
@@ -208,8 +206,6 @@ export class FetchAllowancesResponse extends ChainCallDTO {
   nextPageBookmark?: string;
 }
 
-export type DeleteAllowancesParams = ConstructorArgs<DeleteAllowancesDto>;
-
 @JSONSchema({
   description: "Contains parameters for deleting allowances for a calling user."
 })
@@ -267,8 +263,6 @@ export class DeleteAllowancesDto extends ChainCallDTO {
   allowanceType?: AllowanceType;
 }
 
-export type GrantAllowanceParams = ConstructorArgs<GrantAllowanceDto>;
-
 @JSONSchema({
   description: "Defines allowances to be created."
 })
@@ -314,8 +308,6 @@ export class GrantAllowanceDto extends ChainCallDTO {
   @IsOptional()
   expires?: number;
 }
-
-export type HighThroughputGrantAllowanceParams = ConstructorArgs<HighThroughputGrantAllowanceDto>;
 
 /**
  * Experimental: Defines allowances to be created. High-throughput implementation.
@@ -392,8 +384,6 @@ export class FulfillMintAllowanceDto extends ChainCallDTO {
   requests: MintRequestDto[];
 }
 
-export type FullAllowanceCheckParams = ConstructorArgs<FullAllowanceCheckDto>;
-
 @JSONSchema({
   description:
     "Fetch one or more balances, verify all owned TokenInstances have at least one available " +
@@ -451,8 +441,6 @@ export class FullAllowanceCheckDto extends ChainCallDTO {
   allowanceType?: AllowanceType;
 }
 
-export type FullAllowanceCheckResParams = ConstructorArgs<FullAllowanceCheckResDto>;
-
 @JSONSchema({
   description: "Response Data Transfer Object for FullLockAllowance request."
 })
@@ -471,8 +459,6 @@ export class FullAllowanceCheckResDto extends ChainCallDTO {
   @ArrayNotEmpty()
   missing?: Array<TokenInstanceKey>;
 }
-
-export type RefreshAllowanceParams = ConstructorArgs<RefreshAllowanceDto>;
 
 @JSONSchema({
   description:
@@ -493,8 +479,6 @@ export class RefreshAllowanceDto extends ChainCallDTO {
   @IsInt()
   public expires: number;
 }
-
-export type RefreshAllowancesParams = ConstructorArgs<RefreshAllowancesDto>;
 
 @JSONSchema({
   description:
