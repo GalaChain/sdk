@@ -24,17 +24,17 @@ export const calculateAvailableBalance = (balance: TokenBalance) => {
     }
     return acc.plus(hold.quantity)
   }, BigNumber(0))
-  const available = BigNumber(balance?.quantity ?? 0).minus(locked ?? BigNumber(0))
-  return BigNumber.max(available, BigNumber(0))
+  const available = BigNumber(balance?.quantity ?? 0).minus(locked ?? 0)
+  return BigNumber.max(available, 0)
 }
 
 export const calculateAvailableMintAllowances = (allowances: TokenAllowance[]) => {
   return allowances.reduce((total, allowance) => {
-    const availableAllowance = BigNumber(allowance.quantity ?? 0).minus(
+    const availableAllowance = allowance.quantity.minus(
       allowance.quantitySpent ?? 0
     )
     return total.plus(availableAllowance)
-  }, new BigNumber(0))
+  }, BigNumber(0))
 }
 
 export const calculateAvailableMintSupply = (token: TokenClass, address?: string) => {
