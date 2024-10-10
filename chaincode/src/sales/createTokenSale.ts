@@ -82,7 +82,7 @@ export async function createTokenSale(
       `and providved token classes ${newSale.selling.length}`);
   }
 
-  const costTokenClassKeys = newSale.cost.map((t) => t.tokenClassKey);
+  const costTokenClassKeys = newSale.cost.map((t) => t.tokenInstance.getTokenClassKey());
   const costTokenClasses = await fetchTokenClasses(ctx, costTokenClassKeys).catch((e) => {
     chainValidationErrors.push(`Error fetching to tokens: ${e.message}`);
     return [];
@@ -127,7 +127,7 @@ export async function createTokenSale(
   }
 
   for (let index = 0; index < newSale.cost.length; index++) {
-    const tokenClassKey = newSale.cost[index].tokenClassKey;
+    const tokenClassKey = newSale.cost[index].tokenInstance.getTokenClassKey();
     const compositeKey = TokenClass.buildTokenClassCompositeKey(tokenClassKey);
     const tokenClass = await getObjectByKey(ctx, TokenClass, compositeKey);
 
@@ -201,6 +201,11 @@ export async function createTokenSale(
     await Promise.all(allowances.map(async (allowance) => {
       const allowanceObjectKey = allowance.getCompositeKey();
       const newSaleInstance = plainToInstance(TokenSaleMintAllowance, {
+        collection: allowance.collection,
+        category: allowance.category,
+        type: allowance.type,
+        additionalKey: allowance.additionalKey,
+        quantity: allowance.quantity,
         allowanceObjectKey,
         tokenSaleId
       });
@@ -217,7 +222,8 @@ export async function createTokenSale(
   }
 
   // sale is valid and successfully written. Create index-objects to faciliate performant client application queries
-  // TODO: not sure if TokenSaleTokenSold and TokenSaleTokenCost are needed, surrently not used in other methods
+  // TODO: not sure if TokenSaleTokenSold and TokenSaleTokenCost are needed, currently not used in other methods
+  // Really only useful if user can fetch sales by a specific cost or sale, which could be a nice to have in the future
   for (const selling of newSale.selling) {
     const newSaleInstance = plainToInstance(TokenSaleTokenSold, {
       ...selling.tokenClassKey,
@@ -231,7 +237,7 @@ export async function createTokenSale(
 
   for (const cost of newSale.cost) {
     const newSaleInstance = plainToInstance(TokenSaleTokenCost, {
-      ...cost.tokenClassKey,
+      ...cost.tokenInstance,
       quantity: cost.quantity,
       tokenSaleId
     });

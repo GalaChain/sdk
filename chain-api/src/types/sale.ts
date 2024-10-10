@@ -36,8 +36,6 @@ import { BigNumberIsInteger, BigNumberIsPositive, BigNumberProperty, IsUserAlias
 import { ChainObject } from "./ChainObject";
 import { TokenClassKey } from "./TokenClass";
 import { TokenInstanceQuantity } from "./TokenInstance";
-import { TokenSwapRequest } from "./TokenSwapRequest";
-import { AllowanceType } from "./common";
 import { ChainCallDTO } from "./dtos";
 
 @JSONSchema({
@@ -229,6 +227,27 @@ export class TokenSaleMintAllowance extends ChainObject {
   public tokenSaleId: string;
 
   @ChainKey({ position: 1 })
+  @IsNotEmpty()
+  public collection: string;
+
+  @ChainKey({ position: 2 })
+  @IsNotEmpty()
+  public category: string;
+
+  @ChainKey({ position: 3 })
+  @IsNotEmpty()
+  public type: string;
+
+  @ChainKey({ position: 4 })
+  @IsNotEmpty()
+  public additionalKey: string;
+
+  @ChainKey({ position: 5 })
+  @BigNumberIsPositive()
+  @BigNumberProperty()
+  public quantity: BigNumber;
+
+  @ChainKey({ position: 6 })
   @IsNotEmpty()
   public allowanceObjectKey: string;
 }

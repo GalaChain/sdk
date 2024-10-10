@@ -1,20 +1,26 @@
 import {
   ChainError,
   ExpectedTokenSale,
+  TokenAllowance,
+  TokenClassKey,
   TokenInstanceQuantity,
   TokenSale,
   TokenSaleDtoValidationError,
   TokenSaleFulfillment,
+  TokenSaleMintAllowance,
   TokenSaleQuantity
 } from "@gala-chain/api";
 import {
   GalaChainContext,
   createValidChainObject,
+  fetchAllowances,
   fetchOrCreateBalance,
   fetchTokenClasses,
   getObjectByKey,
+  getObjectsByPartialCompositeKey,
   mintToken,
   putChainObject,
+  takeUntilUndefined,
   transferToken
 } from "@gala-chain/chaincode";
 import { BigNumber } from "bignumber.js";
@@ -23,16 +29,32 @@ import { plainToInstance } from "class-transformer";
 import { MintTokenFailedError } from "../mint/MintError";
 import { TransferTokenFailedError } from "../transfer/TransferError";
 
-interface FillTokenSaleParams {
+interface FulfillTokenSaleParams {
   fulfilledBy: string;
   quantity: BigNumber;
   tokenSaleId: string;
   expectedTokenSale?: ExpectedTokenSale | undefined;
+  // expectedCosts?: Array<TokenInstanceQuantity> | undefined; 
+  // TODO: may want to include this to support NFT costs in the future as user will need to pick instances to pay with
 }
 
-export async function fillTokenSwap(
+async function getTokenSaleAllowanceForToken(ctx: GalaChainContext, tokenSaleId: string, tokenClassKey: TokenClassKey) {
+  const instanceQueryKeys = takeUntilUndefined(tokenSaleId);
+  const tokenSaleMintAllowances = await getObjectsByPartialCompositeKey(ctx, TokenSaleMintAllowance.INDEX_KEY, instanceQueryKeys, TokenSaleMintAllowance);
+  const tokenSaleAllowance = tokenSaleMintAllowances.find(t => 
+    t.collection === tokenClassKey.collection && 
+    t.category === tokenClassKey.category && 
+    t.type === tokenClassKey.type && 
+    t.additionalKey === tokenClassKey.additionalKey
+  );
+  if(tokenSaleAllowance?.allowanceObjectKey) {
+    return await getObjectByKey(ctx, TokenAllowance, tokenSaleAllowance.allowanceObjectKey);
+  }
+}
+
+export async function fulfillTokenSwap(
   ctx: GalaChainContext,
-  { fulfilledBy, quantity, tokenSaleId, expectedTokenSale }: FillTokenSaleParams
+  { fulfilledBy, quantity, tokenSaleId, expectedTokenSale }: FulfillTokenSaleParams
 ): Promise<TokenSaleFulfillment> {
   const newTokenSaleFulfillment = await createValidChainObject(TokenSaleFulfillment, {
     tokenSaleId,
@@ -93,24 +115,37 @@ export async function fillTokenSwap(
   // We have established that the sale is still valid.
   // Now we need to ensure that the user has sufficient balances to pay costs
 
-  // TODO: Ensure there are still enough mint allowances to fufill the sale, its possible the owner can use allowance outside of the sale
-  //
-
-  const costClassKeys = tokenSale.cost.map((t) => t.getTokenClassKey());
-  const costTokenClasses = await fetchTokenClasses(ctx, costClassKeys).catch((e) => {
-    chainValidationErrors.push(`Error fetching to tokens: ${e.message}. tokenSaleId ${tokenSaleId}`);
-    return [];
-  });
+  // Ensure there are still enough mint allowances to fufill the sale, its possible the owner can use allowances outside of the sale
+  const applicableAllowances: TokenAllowance[] = [];
+  for (let index = 0; index < tokenSale.selling.length; index++) {
+    const tokenSaleQuantity = tokenSale.selling[index];
+    const allowance = await getTokenSaleAllowanceForToken(ctx, tokenSaleId, tokenSaleQuantity.tokenClassKey)
+    if(!allowance) {
+      chainValidationErrors.push(`Missing allowance for ${tokenSaleQuantity.tokenClassKey.toStringKey()} on sale ${tokenSaleId}`);
+    } else {
+      const quantityNeeded = tokenSaleQuantity.quantity.multipliedBy(quantity);
+      if(!allowance.quantity.minus(allowance.quantitySpent ?? 0).isGreaterThanOrEqualTo(quantityNeeded)) {
+        chainValidationErrors.push(`Insufficient allowance ${quantityNeeded} for ${tokenSaleQuantity.tokenClassKey.toStringKey()} on sale ${tokenSaleId}`)
+      } else {
+        applicableAllowances.push(allowance);
+      }
+    }
+  }
 
   // If we have any errors, don't proceed to check the cost quantity and
   // issue the transaction
   if (chainValidationErrors.length === 0) {
+    const costClassKeys = tokenSale.cost.map((t) => t.getTokenClassKey());
+    const costTokenClasses = await fetchTokenClasses(ctx, costClassKeys).catch((e) => {
+      chainValidationErrors.push(`Error fetching to tokens: ${e.message}. tokenSaleId ${tokenSaleId}`);
+      return [];
+    });
     // Check from balances
     for (let index = 0; index < costTokenClasses.length; index++) {
       const costToken = costTokenClasses[index];
       const costBalance = await fetchOrCreateBalance(ctx, fulfilledBy, costToken);
 
-      // TODO: non-fungible tokens should not be supported, if this state occurs than a validation failed in CreateTokenSale
+      // TODO: non-fungible tokens should not be supported, if this state occurs then a validation failed in CreateTokenSale
       if (costToken.isNonFungible) {
         chainValidationErrors.push(
           `Non-fungible tokens are not supported for cost tokens. tokenSaleId ${tokenSaleId}`
@@ -134,12 +169,18 @@ export async function fillTokenSwap(
     for (let index = 0; index < tokenSale.selling.length; index++) {
       const saleTokenClassKey = tokenSale.selling[index].tokenClassKey;
       const currentQuantity = tokenSale.selling[index].quantity;
+      const allowance = applicableAllowances.filter(x => 
+        x.collection === saleTokenClassKey.collection && 
+        x.category === saleTokenClassKey.category && 
+        x.type === saleTokenClassKey.type && 
+        x.additionalKey === saleTokenClassKey.additionalKey
+      );
 
       await mintToken(ctx, {
         tokenClassKey: saleTokenClassKey,
         owner: tokenSale.owner,
         quantity: currentQuantity,
-        // used to allow user to mint on behalf of the seller if cost requirements are met
+        applicableAllowances: allowance,
         authorizedOnBehalf: {
           callingOnBehalf: tokenSale.owner,
           callingUser: ctx.callingUser
