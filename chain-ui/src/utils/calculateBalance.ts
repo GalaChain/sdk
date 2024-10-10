@@ -18,12 +18,14 @@ import BigNumber from 'bignumber.js'
 
 export const calculateAvailableBalance = (balance: TokenBalance) => {
   const now = Date.now()
+  // @ts-expect-error awaiting new type definitions
   const locked = balance?.lockedHolds?.reduce((acc, hold) => {
     if (hold.expires && hold.expires < now) {
       return acc
     }
     return acc.plus(hold.quantity)
   }, BigNumber(0))
+  // @ts-expect-error awaiting new type definitions
   const available = BigNumber(balance?.quantity ?? 0).minus(locked ?? 0)
   return BigNumber.max(available, 0)
 }

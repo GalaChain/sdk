@@ -26,7 +26,9 @@ const preview: Preview = {
     backgrounds: {
       default: 'dark'
     }
-  }
+  },
+
+  tags: ['autodocs']
 }
 
 export default preview

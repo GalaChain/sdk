@@ -16,8 +16,8 @@
 import type { Meta, StoryObj } from '@storybook/vue3'
 import { action } from '@storybook/addon-actions'
 import MintToken from './MintToken.vue'
-import { plainToInstance } from "class-transformer";
-import { TokenAllowance, TokenClass } from '@gala-chain/api';
+import { plainToInstance } from 'class-transformer'
+import { TokenAllowance, TokenClass } from '@gala-chain/api'
 
 const meta: Meta<typeof MintToken> = {
   component: MintToken
