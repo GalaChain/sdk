@@ -25,7 +25,7 @@ import GalaSend, { type TokenClassBalance } from '@/components/common/Send.vue'
 import { calculateAvailableMintAllowances } from '@/utils/calculateBalance'
 import type { IGalaChainError } from '../types/galachain-error'
 import PrimeSkeleton from 'primevue/skeleton'
-import { plainToInstance } from "class-transformer";
+import { plainToInstance } from 'class-transformer'
 
 export interface MintTokenProps {
   /** Token allowance */

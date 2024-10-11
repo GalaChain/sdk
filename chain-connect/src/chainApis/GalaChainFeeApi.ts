@@ -22,7 +22,7 @@ import {
   FetchFeeAuthorizationsDto,
   FetchFeeAuthorizationsResDto,
   FetchFeePropertiesDto,
-  GalaChainResponse,
+  GalaChainResponse
 } from "@gala-chain/api";
 
 import { GalaChainProvider } from "../GalaChainClient";
@@ -52,15 +52,14 @@ export class GalaChainFeeApi {
   }
 
   public FetchFeeAutorizations(dto: FetchFeeAuthorizationsDto) {
-    return this.connection.submit<
-      GalaChainResponse<FetchFeeAuthorizationsResDto>,
-      FetchFeeAuthorizationsDto
-    >({
-      method: "DryRun",
-      payload: dto,
-      sign: false,
-      url: this.chainCodeUrl
-    });
+    return this.connection.submit<GalaChainResponse<FetchFeeAuthorizationsResDto>, FetchFeeAuthorizationsDto>(
+      {
+        method: "DryRun",
+        payload: dto,
+        sign: false,
+        url: this.chainCodeUrl
+      }
+    );
   }
 
   public FetchFeeProperties(dto: FetchFeePropertiesDto) {

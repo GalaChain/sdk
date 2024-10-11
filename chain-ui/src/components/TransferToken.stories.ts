@@ -17,7 +17,7 @@ import type { Meta, StoryObj } from '@storybook/vue3'
 import { action } from '@storybook/addon-actions'
 import TransferToken from './TransferToken.vue'
 import { plainToInstance } from 'class-transformer'
-import { TokenBalance, TokenBalanceWithMetadata, TokenClass } from '@gala-chain/api'
+import { TokenBalanceWithMetadata } from '@gala-chain/api'
 
 const meta: Meta<typeof TransferToken> = {
   component: TransferToken

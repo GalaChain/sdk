@@ -32,9 +32,7 @@ export const calculateAvailableBalance = (balance: TokenBalance) => {
 
 export const calculateAvailableMintAllowances = (allowances: TokenAllowance[]) => {
   return allowances.reduce((total, allowance) => {
-    const availableAllowance = allowance.quantity.minus(
-      allowance.quantitySpent ?? 0
-    )
+    const availableAllowance = allowance.quantity.minus(allowance.quantitySpent ?? 0)
     return total.plus(availableAllowance)
   }, BigNumber(0))
 }

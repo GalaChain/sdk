@@ -15,11 +15,7 @@
 
 <script lang="ts" setup>
 import { computed } from 'vue'
-import type {
-  TokenClass,
-  MintTokenWithAllowanceDto,
-  TransferTokenDto
-} from '@gala-chain/api'
+import type { TokenClass, MintTokenWithAllowanceDto, TransferTokenDto } from '@gala-chain/api'
 import GalaSend, { type TokenClassBalance } from '@/components/common/Send.vue'
 import { calculateAvailableMintSupply } from '@/utils/calculateBalance'
 import type { IGalaChainError } from '@/types/galachain-error'
@@ -53,8 +49,7 @@ const props = defineProps<MintTokenWithAllowanceProps>()
 const emit = defineEmits<MintTokenWithAllowanceEmits>()
 
 const availableToken = computed(() => {
-  const token: TokenClass =
-    typeof props.token === 'string' ? JSON.parse(props.token) : props.token
+  const token: TokenClass = typeof props.token === 'string' ? JSON.parse(props.token) : props.token
   return token
     ? ({
         ...token,

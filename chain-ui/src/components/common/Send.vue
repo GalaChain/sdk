@@ -24,7 +24,7 @@ import FormInput from '../Form/Input.vue'
 import FormErrors from '../Form/Errors.vue'
 import PrimeButton from 'primevue/button'
 import BigNumber from 'bignumber.js'
-import { plainToInstance } from "class-transformer";
+import { plainToInstance } from 'class-transformer'
 
 export interface TokenClassBalance extends TokenClass {
   available: string
@@ -126,17 +126,20 @@ const send = async () => {
   }
 
   const { collection, category, type, additionalKey } = props.token!
-  emit('submit', plainToInstance(TransferTokenDto, {
-    quantity: quantity.value,
-    recipient: recipient.value,
-    tokenInstance: {
-      instance: '0',
-      collection,
-      category,
-      type,
-      additionalKey
-    }
-  }))
+  emit(
+    'submit',
+    plainToInstance(TransferTokenDto, {
+      quantity: quantity.value,
+      recipient: recipient.value,
+      tokenInstance: {
+        instance: '0',
+        collection,
+        category,
+        type,
+        additionalKey
+      }
+    })
+  )
 }
 
 watch(
@@ -149,17 +152,20 @@ watch(
 
 watch([recipient, quantity], () => {
   const { collection, category, type, additionalKey } = props.token!
-  emit('change', plainToInstance(TransferTokenDto, {
-    quantity: quantity.value,
-    recipient: recipient.value,
-    tokenInstance: {
-      instance: '0',
-      collection,
-      category,
-      type,
-      additionalKey
-    }
-  }))
+  emit(
+    'change',
+    plainToInstance(TransferTokenDto, {
+      quantity: quantity.value,
+      recipient: recipient.value,
+      tokenInstance: {
+        instance: '0',
+        collection,
+        category,
+        type,
+        additionalKey
+      }
+    })
+  )
 })
 </script>
 
