@@ -85,6 +85,7 @@ export class BrowserConnectClient extends WebSigner {
   public disconnect() {
     if (this.isInitialized && window.ethereum) {
       window.ethereum.removeListener("accountsChanged", this.onAccountsChanged);
+      this.isInitialized = false;
     }
     this.walletAddress = "";
   }

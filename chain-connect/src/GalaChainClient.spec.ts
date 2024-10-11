@@ -288,6 +288,18 @@ describe("BrowserConnectClient", () => {
     client.disconnect();
     expect(client.walletAddress).toBe("");
   });
+
+  it("should attach listeners when connecting after disconnecting", async () => {
+    const client = new BrowserConnectClient();
+    const spy = jest.spyOn(client, "emit");
+    await client.connect();
+    client.disconnect();
+    await client.connect();
+    // Trigger the accountsChanged event
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    (window.ethereum as any).emit("accountsChanged", [sampleAddr]);
+    expect(spy).toHaveBeenCalledTimes(2);
+  });
 });
 
 describe("TrustConnectClient", () => {
