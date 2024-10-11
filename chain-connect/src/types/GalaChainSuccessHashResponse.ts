@@ -12,11 +12,9 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-import { GalaChainResponseType, GalaChainSuccessResponse } from "@gala-chain/api";
+import { GalaChainSuccessResponse } from "@gala-chain/api";
 
 export class GalaChainSuccessHashResponse<T> extends GalaChainSuccessResponse<T> {
-  public readonly Status: GalaChainResponseType.Success;
-  public readonly Data: T;
   public readonly Hash?: string;
 
   constructor(data: T, hash?: string) {
