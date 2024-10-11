@@ -12,7 +12,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-import { ChainCallDTO, serialize, signatures } from "@gala-chain/api";
+import { ChainCallDTO, GalaChainResponse, serialize, signatures } from "@gala-chain/api";
 import { BrowserProvider, SigningKey, computeAddress, getAddress, getBytes, hashMessage } from "ethers";
 
 import { EventEmitter, Listener, MetaMaskEvents } from "./helpers";
@@ -31,7 +31,7 @@ export abstract class GalaChainProvider {
     payload: U;
     sign?: boolean;
     headers?: object;
-  }): Promise<{ Data: T; hash: string; status: number; message?: string }> {
+  }): Promise<GalaChainResponse<T>> {
     let newPayload = payload;
 
     if (sign === true) {
