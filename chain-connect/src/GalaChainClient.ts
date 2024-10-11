@@ -12,7 +12,8 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-import { ChainCallDTO, GalaChainResponse, serialize, signatures } from "@gala-chain/api";
+import { ChainCallDTO, serialize, signatures } from "@gala-chain/api";
+import { instanceToPlain } from "class-transformer";
 import { BrowserProvider, SigningKey, computeAddress, getAddress, getBytes, hashMessage } from "ethers";
 
 import { EventEmitter, Listener, MetaMaskEvents } from "./helpers";
@@ -28,11 +29,13 @@ export abstract class GalaChainProvider {
   }: {
     url: string;
     method: string;
-    payload: U;
+    payload: ChainCallDTO;
     sign?: boolean;
     headers?: object;
-  }): Promise<GalaChainResponse<T>> {
-    let newPayload = payload;
+  }): Promise<{ data: T; hash: string; status: number; message?: string }> {
+    await payload.validateOrReject();
+
+    let newPayload = instanceToPlain(payload);
 
     if (sign === true) {
       //Only try signing if signature is not already present
@@ -43,15 +46,11 @@ export abstract class GalaChainProvider {
         payload.signature === null
       ) {
         try {
-          newPayload = await this.sign(method, payload);
+          newPayload = await this.sign(method, instanceToPlain(payload));
         } catch (error: unknown) {
           throw new Error((error as Error).message);
         }
       }
-    }
-
-    if (newPayload instanceof ChainCallDTO) {
-      await newPayload.validateOrReject();
     }
 
     const fullUrl = `${url}/${method}`;

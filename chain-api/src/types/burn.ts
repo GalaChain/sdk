@@ -37,8 +37,6 @@ import { TokenInstance } from "./TokenInstance";
 import { ChainCallDTO } from "./dtos";
 import { BatchMintTokenDto } from "./mint";
 
-export type FetchBurnsParams = ConstructorArgs<FetchBurnsDto>;
-
 @JSONSchema({
   description: "Contains parameters for fetching burns."
 })
@@ -93,8 +91,6 @@ export class FetchBurnsDto extends ChainCallDTO {
   public created?: number;
 }
 
-export type BurnTokensParams = ConstructorArgs<BurnTokensDto>;
-
 @JSONSchema({
   description: "Defines burns to be created."
 })
@@ -117,8 +113,6 @@ export class BurnTokensDto extends ChainCallDTO {
   @IsUserAlias()
   owner?: string;
 }
-
-export type BurnAndMintParams = ConstructorArgs<BurnAndMintDto>;
 
 @JSONSchema({
   description:
@@ -157,8 +151,6 @@ export class BurnAndMintDto extends ChainCallDTO {
   @IsNotEmpty()
   mintDto: BatchMintTokenDto;
 }
-
-export type FetchBurnCountersWithPaginationParams = ConstructorArgs<FetchBurnCountersWithPaginationDto>;
 
 @JSONSchema({
   description: "Contains parameters for fetching TokenBurnCounters with pagination."
