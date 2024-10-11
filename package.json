@@ -18,7 +18,6 @@
     "typedoc-chain-client": "typedoc --tsconfig ./tsconfig.docs.json --hideGenerator --plugin typedoc-plugin-markdown --githubPages false --out ./docs/chain-client-docs ./chain-client/src && rm ./docs/chain-client-docs/README.md",
     "typedoc-chaincode": "typedoc --tsconfig ./tsconfig.docs.json --hideGenerator --plugin typedoc-plugin-markdown --githubPages false --out ./docs/chaincode-docs ./chaincode/src && rm ./docs/chaincode-docs/README.md",
     "typedoc-chain-test": "typedoc --tsconfig ./tsconfig.docs.json --hideGenerator --plugin typedoc-plugin-markdown --githubPages false --out ./docs/chain-test-docs ./chain-test/src && rm ./docs/chain-test-docs/README.md",
-    "typedoc-chain-ui": "echo 'todo: fix chain-ui monorepo compilation and typedoc build'",
     "replace-readme-docs": "find ./docs -type f -exec sed -ri 's/∙ \\[README\\]\\(README\\.md\\) //g' {} + && find ./docs -type f -exec sed -ri 's/∙ \\[README\\]\\(..\\/README\\.md\\) //g' {} +",
     "prepublish": "npm run licenses"
   },
@@ -29,7 +28,6 @@
     "@nx/jest": "^19.6.3",
     "@nx/js": "^19.6.3",
     "@nx/linter": "^19.6.3",
-    "@nx/storybook": "19.4.2",
     "@nx/web": "19.6.3",
     "@nx/workspace": "^19.6.3",
     "@swc-node/register": "~1.9.1",
@@ -67,11 +65,6 @@
     "chain-client",
     "chain-connect",
     "chain-test",
-    "chain-ui",
     "chaincode"
-  ],
-  "dependencies": {
-    "react": "^18.2.0",
-    "react-dom": "^18.2.0"
-  }
+  ]
 }
