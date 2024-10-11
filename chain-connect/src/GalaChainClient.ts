@@ -12,12 +12,12 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-import { ChainCallDTO, GalaChainErrorResponse, GalaChainResponse, GalaChainSuccessResponse, serialize, signatures } from "@gala-chain/api";
+import { ChainCallDTO, serialize, signatures } from "@gala-chain/api";
 import { instanceToPlain } from "class-transformer";
 import { BrowserProvider, SigningKey, computeAddress, getAddress, getBytes, hashMessage } from "ethers";
 
 import { EventEmitter, Listener, MetaMaskEvents } from "./helpers";
-import { GalaChainSuccessHashResponse } from "./types/GalaChainSuccessHashResponse";
+import { GalaChainResponseError, GalaChainResponseSuccess } from "./types/GalaChainResponse";
 
 export abstract class GalaChainProvider {
   abstract sign(method: string, dto: any): Promise<any>;
@@ -33,7 +33,7 @@ export abstract class GalaChainProvider {
     payload: U,
     sign?: boolean;
     headers?: object;
-  }): Promise<GalaChainSuccessHashResponse<T>> {
+  }): Promise<GalaChainResponseSuccess<T>> {
     await payload.validateOrReject();
 
     let newPayload = instanceToPlain(payload);
@@ -70,10 +70,10 @@ export abstract class GalaChainProvider {
     if (response.headers.get("content-length") !== "0") {
       try {
         const data = await response.json()
-        if (GalaChainResponse.isError<T>(data)) {
-          throw data as GalaChainErrorResponse<T>;
+        if (data.error) {
+          throw new GalaChainResponseError<T>(data);
         } else {
-          return new GalaChainSuccessHashResponse(data, hash); 
+          return new GalaChainResponseSuccess<T>(data, hash); 
         }
       } catch (error) {
         throw new error("Invalid JSON response"); 
