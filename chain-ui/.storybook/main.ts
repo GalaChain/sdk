@@ -1,4 +1,4 @@
-import { dirname, join } from 'path';
+import { dirname, join } from 'path'
 /*
  * Copyright (c) Gala Games Inc. All rights reserved.
  * Licensed under the Apache License, Version 2.0 (the 'License');
