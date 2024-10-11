@@ -255,6 +255,39 @@ describe("BrowserConnectClient", () => {
     const ethAddress = signatures.getEthAddress(publicKey);
     expect(ethAddress).toBe("e737c4D3072DA526f3566999e0434EAD423d06ec");
   });
+
+  it("should only attach listeners once", async () => {
+    const client = new BrowserConnectClient();
+    const spy = jest.spyOn(client, "emit");
+    // connect multiple times to ensure that the listener is only attached once.
+    await client.connect();
+    await client.connect();
+    await client.connect();
+    // Trigger the accountsChanged event
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    (window.ethereum as any).emit("accountsChanged", [sampleAddr]);
+    // the client should emit two events (accountChanged and accountsChanged)
+    // for each window.ethereum accountsChanged event
+    expect(spy).toHaveBeenCalledTimes(2);
+  });
+
+  it("should disconnect and remove listeners", async () => {
+    const client = new BrowserConnectClient();
+    const spy = jest.spyOn(client, "emit");
+    await client.connect();
+    client.disconnect();
+    // Trigger the accountsChanged event
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    (window.ethereum as any).emit("accountsChanged", [sampleAddr]);
+    expect(spy).toHaveBeenCalledTimes(0);
+  });
+
+  it("should set address to empty string when disconnecting", async () => {
+    const client = new BrowserConnectClient();
+    await client.connect();
+    client.disconnect();
+    expect(client.walletAddress).toBe("");
+  });
 });
 
 describe("TrustConnectClient", () => {

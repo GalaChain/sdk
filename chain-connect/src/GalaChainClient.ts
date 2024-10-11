@@ -103,7 +103,7 @@ export abstract class WebSigner extends CustomClient {
   abstract connect(): Promise<string>;
 
   set walletAddress(val: string) {
-    this.address = getAddress(`0x${val.replace(/0x|eth\|/, "")}`);
+    this.address = val ? getAddress(`0x${val.replace(/0x|eth\|/, "")}`) : "";
   }
 
   get walletAddress(): string {
