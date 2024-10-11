@@ -18,7 +18,7 @@ import {
   FulfillTokenSaleDto,
   TokenAllowance,
   TokenClassKey,
-  TokenInstanceQuantity,
+  TokenInstanceKey,
   TokenSale,
   TokenSaleDtoValidationError,
   TokenSaleFulfillment,
@@ -37,21 +37,32 @@ import {
   takeUntilUndefined,
   transferToken
 } from "@gala-chain/chaincode";
+import { BigNumber } from "bignumber.js";
 import { plainToInstance } from "class-transformer";
 
 import { MintTokenFailedError } from "../mint/MintError";
 import { TransferTokenFailedError } from "../transfer/TransferError";
 
-async function getTokenSaleAllowanceForToken(ctx: GalaChainContext, tokenSaleId: string, tokenClassKey: TokenClassKey) {
+async function getTokenSaleAllowanceForToken(
+  ctx: GalaChainContext,
+  tokenSaleId: string,
+  tokenClassKey: TokenClassKey
+) {
   const instanceQueryKeys = takeUntilUndefined(tokenSaleId);
-  const tokenSaleMintAllowances = await getObjectsByPartialCompositeKey(ctx, TokenSaleMintAllowance.INDEX_KEY, instanceQueryKeys, TokenSaleMintAllowance);
-  const tokenSaleAllowance = tokenSaleMintAllowances.find(t => 
-    t.collection === tokenClassKey.collection && 
-    t.category === tokenClassKey.category && 
-    t.type === tokenClassKey.type && 
-    t.additionalKey === tokenClassKey.additionalKey
+  const tokenSaleMintAllowances = await getObjectsByPartialCompositeKey(
+    ctx,
+    TokenSaleMintAllowance.INDEX_KEY,
+    instanceQueryKeys,
+    TokenSaleMintAllowance
   );
-  if(tokenSaleAllowance?.allowanceObjectKey) {
+  const tokenSaleAllowance = tokenSaleMintAllowances.find(
+    (t) =>
+      t.collection === tokenClassKey.collection &&
+      t.category === tokenClassKey.category &&
+      t.type === tokenClassKey.type &&
+      t.additionalKey === tokenClassKey.additionalKey
+  );
+  if (tokenSaleAllowance?.allowanceObjectKey) {
     return await getObjectByKey(ctx, TokenAllowance, tokenSaleAllowance.allowanceObjectKey);
   }
 }
@@ -102,14 +113,14 @@ export async function fulfillTokenSale(
   // Check that there are enough uses left
   if (!quantity || !quantity.isInteger() || quantity.isLessThanOrEqualTo(0)) {
     chainValidationErrors.push(`Quantity must be > 0. tokenSaleId ${tokenSaleId}`);
-  } else if (tokenSale.quantity.minus(tokenSale.quantityFulfilled).isGreaterThanOrEqualTo(quantity)) {
+  } else if (tokenSale.quantity.minus(tokenSale.quantityFulfilled).isLessThan(quantity)) {
     chainValidationErrors.push(
       `Insufficient quantity remaining on this sale to fulfill. tokenSaleId ${tokenSaleId}`
     );
   }
 
   // Check if the swap has started
-  if (tokenSale.start && tokenSale.start !== 0 && tokenSale.start <= ctx.txUnixTime) {
+  if (tokenSale.start && tokenSale.start !== 0 && tokenSale.start >= ctx.txUnixTime) {
     chainValidationErrors.push(`Token sale has not started. tokenSaleId ${tokenSaleId}`);
   }
 
@@ -125,13 +136,17 @@ export async function fulfillTokenSale(
   const applicableAllowances: TokenAllowance[] = [];
   for (let index = 0; index < tokenSale.selling.length; index++) {
     const tokenSaleQuantity = tokenSale.selling[index];
-    const allowance = await getTokenSaleAllowanceForToken(ctx, tokenSaleId, tokenSaleQuantity.tokenClassKey)
-    if(!allowance) {
-      chainValidationErrors.push(`Missing allowance for ${tokenSaleQuantity.tokenClassKey.toStringKey()} on sale ${tokenSaleId}`);
+    const allowance = await getTokenSaleAllowanceForToken(ctx, tokenSaleId, tokenSaleQuantity.tokenClassKey);
+    if (!allowance) {
+      chainValidationErrors.push(
+        `Missing allowance for ${tokenSaleQuantity.tokenClassKey.toStringKey()} on sale ${tokenSaleId}`
+      );
     } else {
       const quantityNeeded = tokenSaleQuantity.quantity.multipliedBy(quantity);
-      if(!allowance.quantity.minus(allowance.quantitySpent ?? 0).isGreaterThanOrEqualTo(quantityNeeded)) {
-        chainValidationErrors.push(`Insufficient allowance ${quantityNeeded} for ${tokenSaleQuantity.tokenClassKey.toStringKey()} on sale ${tokenSaleId}`)
+      if (!allowance.quantity.minus(allowance.quantitySpent ?? 0).isGreaterThanOrEqualTo(quantityNeeded)) {
+        chainValidationErrors.push(
+          `Insufficient allowance ${quantityNeeded} for ${tokenSaleQuantity.tokenClassKey.toStringKey()} on sale ${tokenSaleId}`
+        );
       } else {
         applicableAllowances.push(allowance);
       }
@@ -141,7 +156,7 @@ export async function fulfillTokenSale(
   // If we have any errors, don't proceed to check the cost quantity and
   // issue the transaction
   if (chainValidationErrors.length === 0) {
-    const costClassKeys = tokenSale.cost.map((t) => t.getTokenClassKey());
+    const costClassKeys = tokenSale.cost.map((t) => t.tokenClassKey);
     const costTokenClasses = await fetchTokenClasses(ctx, costClassKeys).catch((e) => {
       chainValidationErrors.push(`Error fetching to tokens: ${e.message}. tokenSaleId ${tokenSaleId}`);
       return [];
@@ -175,11 +190,12 @@ export async function fulfillTokenSale(
     for (let index = 0; index < tokenSale.selling.length; index++) {
       const saleTokenClassKey = tokenSale.selling[index].tokenClassKey;
       const currentQuantity = tokenSale.selling[index].quantity;
-      const allowance = applicableAllowances.filter(x => 
-        x.collection === saleTokenClassKey.collection && 
-        x.category === saleTokenClassKey.category && 
-        x.type === saleTokenClassKey.type && 
-        x.additionalKey === saleTokenClassKey.additionalKey
+      const allowance = applicableAllowances.filter(
+        (x) =>
+          x.collection === saleTokenClassKey.collection &&
+          x.category === saleTokenClassKey.category &&
+          x.type === saleTokenClassKey.type &&
+          x.additionalKey === saleTokenClassKey.additionalKey
       );
 
       await mintToken(ctx, {
@@ -198,7 +214,10 @@ export async function fulfillTokenSale(
     }
 
     for (let index = 0; index < tokenSale.cost.length; index++) {
-      const costTokenInstanceKey = tokenSale.cost[index].tokenInstance;
+      const costTokenInstanceKey = plainToInstance(TokenInstanceKey, {
+        ...tokenSale.cost[index].tokenClassKey,
+        instance: new BigNumber(0)
+      });
       const currentQuantity = tokenSale.cost[index].quantity;
 
       await transferToken(ctx, {
@@ -277,15 +296,15 @@ function validateTokenSaleFulfillment(
   }
 
   for (let index = 0; index < expectedTokenSale.cost.length; index++) {
-    const expectedcost = plainToInstance(TokenInstanceQuantity, {
-      tokenInstance: expectedTokenSale.cost[index].tokenInstance,
+    const expectedcost = plainToInstance(TokenSaleQuantity, {
+      tokenClassKey: expectedTokenSale.cost[index].tokenClassKey,
       quantity: expectedTokenSale.cost[index].quantity
     });
     const actualcost = tokenSale.cost[index];
 
-    if (expectedcost.tokenInstance.toStringKey() !== actualcost.tokenInstance.toStringKey()) {
+    if (expectedcost.tokenClassKey.toStringKey() !== actualcost.tokenClassKey.toStringKey()) {
       chainValidationErrors.push(
-        `Expected cost token tokenInstanceKey of ${expectedcost.tokenInstance.toStringKey()} does not match actual tokenClassKey of ${actualcost.tokenInstance.toStringKey()}. tokenSaleId ${tokenSaleId}`
+        `Expected cost token tokenClassKeyKey of ${expectedcost.tokenClassKey.toStringKey()} does not match actual tokenClassKey of ${actualcost.tokenClassKey.toStringKey()}. tokenSaleId ${tokenSaleId}`
       );
     }
 

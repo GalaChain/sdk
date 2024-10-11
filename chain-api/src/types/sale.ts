@@ -15,7 +15,6 @@
 import BigNumber from "bignumber.js";
 import { Exclude, Type } from "class-transformer";
 import {
-  ArrayMaxSize,
   ArrayMinSize,
   ArrayNotEmpty,
   ArrayUnique,
@@ -35,7 +34,6 @@ import { ChainKey, DefaultError, ValidationFailedError } from "../utils";
 import { BigNumberIsInteger, BigNumberIsPositive, BigNumberProperty, IsUserAlias } from "../validators";
 import { ChainObject } from "./ChainObject";
 import { TokenClassKey } from "./TokenClass";
-import { TokenInstanceQuantity } from "./TokenInstance";
 import { ChainCallDTO } from "./dtos";
 
 @JSONSchema({
@@ -99,9 +97,9 @@ export class TokenSale extends ChainObject {
     description: "Tokens and quantities to be received"
   })
   @ValidateNested({ each: true })
-  @Type(() => TokenInstanceQuantity)
+  @Type(() => TokenSaleQuantity)
   @ArrayNotEmpty()
-  public cost: Array<TokenInstanceQuantity>;
+  public cost: Array<TokenSaleQuantity>;
 
   @JSONSchema({
     description: "User who created the sale"
@@ -305,10 +303,10 @@ export class CreateTokenSaleDto extends ChainCallDTO {
     description: "A list of tokens to be paid to the seller."
   })
   @ValidateNested({ each: true })
-  @Type(() => TokenInstanceQuantity)
+  @Type(() => TokenSaleQuantity)
   @ArrayMinSize(1)
   @ArrayUnique()
-  public cost: Array<TokenInstanceQuantity>;
+  public cost: Array<TokenSaleQuantity>;
 
   @JSONSchema({
     description: "How many sale items can be purchased."
@@ -355,10 +353,10 @@ export class ExpectedTokenSale extends ChainCallDTO {
       "A list of cost token classes and quantites. The order of this array must match the order of the TokenSale stored on chain."
   })
   @ValidateNested({ each: true })
-  @Type(() => TokenInstanceQuantity)
+  @Type(() => TokenSaleQuantity)
   @ArrayMinSize(1)
   @ArrayUnique()
-  public cost: Array<TokenInstanceQuantity>;
+  public cost: Array<TokenSaleQuantity>;
 }
 
 @JSONSchema({
@@ -388,8 +386,7 @@ export class FulfillTokenSaleDto extends ChainCallDTO {
   public fulfilledBy?: string;
 
   @JSONSchema({
-    description:
-      "The quantity of items to be purchased " 
+    description: "The quantity of items to be purchased "
   })
   @BigNumberIsPositive()
   @BigNumberIsInteger()

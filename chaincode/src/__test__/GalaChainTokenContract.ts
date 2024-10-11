@@ -661,7 +661,7 @@ export default class GalaChainTokenContract extends GalaContract {
   @GalaTransaction({
     type: EVALUATE,
     in: FetchTokenSaleByIdDto,
-    out: TokenSale,
+    out: TokenSale
   })
   public async FetchTokenSaleById(
     ctx: GalaChainContext,
@@ -673,7 +673,7 @@ export default class GalaChainTokenContract extends GalaContract {
   @GalaTransaction({
     type: EVALUATE,
     in: FetchTokenClassesWithPaginationDto,
-    out: FetchTokenSalesWithPaginationResponse,
+    out: FetchTokenSalesWithPaginationResponse
   })
   public async FetchTokenSalesWithPagination(
     ctx: GalaChainContext,
@@ -701,7 +701,7 @@ export default class GalaChainTokenContract extends GalaContract {
     in: RemoveTokenSaleDto,
     out: TokenSale,
     allowedOrgs: ["CuratorOrg"],
-    verifySignature: true,
+    verifySignature: true
   })
   public async RemoveTokenSale(
     ctx: GalaChainContext,

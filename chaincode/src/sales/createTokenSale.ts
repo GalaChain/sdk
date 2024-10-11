@@ -12,7 +12,18 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-import { AllowanceType, createValidDTO, TokenClass, TokenInstanceQueryKey, TokenSaleDtoValidationError, TokenSaleMintAllowance, TokenSaleOwner, TokenSaleTokenCost, TokenSaleTokenSold } from "@gala-chain/api";
+import {
+  AllowanceType,
+  TokenClass,
+  TokenInstanceQueryKey,
+  TokenSaleDtoValidationError,
+  TokenSaleMintAllowance,
+  TokenSaleOwner,
+  TokenSaleTokenCost,
+  TokenSaleTokenSold,
+  createValidDTO
+} from "@gala-chain/api";
+import { CreateTokenSaleDto, TokenSale } from "@gala-chain/api";
 import {
   GalaChainContext,
   fetchTokenClasses,
@@ -22,8 +33,6 @@ import {
 } from "@gala-chain/chaincode";
 import { BigNumber } from "bignumber.js";
 import { plainToInstance } from "class-transformer";
-
-import { CreateTokenSaleDto, TokenSale } from "@gala-chain/api";
 
 function validateTokenSaleQuantity(quantity: BigNumber, tokenClass: TokenClass): Array<string> {
   const validationResults: Array<string> = [];
@@ -51,7 +60,7 @@ export async function createTokenSale(
   newSale.quantity = quantity;
   newSale.quantityFulfilled = new BigNumber(0);
   newSale.end = end ?? CreateTokenSaleDto.DEFAULT_END;
-  newSale.start = start ?? CreateTokenSaleDto.DEFAULT_END
+  newSale.start = start ?? CreateTokenSaleDto.DEFAULT_END;
   newSale.fulfillmentIds = [];
   newSale.selling = selling;
   newSale.cost = cost;
@@ -92,11 +101,13 @@ export async function createTokenSale(
   });
 
   if (sellingTokenClasses.length != newSale.selling.length) {
-    chainValidationErrors.push(`From: Length mismatch on fetched token classes ${sellingTokenClasses.length}` + 
-      `and providved token classes ${newSale.selling.length}`);
+    chainValidationErrors.push(
+      `From: Length mismatch on fetched token classes ${sellingTokenClasses.length}` +
+        `and providved token classes ${newSale.selling.length}`
+    );
   }
 
-  const costTokenClassKeys = newSale.cost.map((t) => t.tokenInstance.getTokenClassKey());
+  const costTokenClassKeys = newSale.cost.map((t) => t.tokenClassKey);
   const costTokenClasses = await fetchTokenClasses(ctx, costTokenClassKeys).catch((e) => {
     chainValidationErrors.push(`Error fetching to tokens: ${e.message}`);
     return [];
@@ -109,7 +120,7 @@ export async function createTokenSale(
     );
   }
 
-  // Only allow cost tokens that are non-fungible 
+  // Only allow cost tokens that are non-fungible
   // TODO: Eventually we will support non-fungible cost tokens
   for (let index = 0; index < costTokenClasses.length; index += 1) {
     const costTokenClass = costTokenClasses[index];
@@ -135,13 +146,15 @@ export async function createTokenSale(
 
   // All sold tokens in array must be unique
   const uniqueSoldTokenCompositeKeys = soldTokenClasssKeys.filter((v, i, a) => a.indexOf(v) === i);
-  if(uniqueSoldTokenCompositeKeys.length != soldTokenClasssKeys.length) {
-    chainValidationErrors.push(`Length mismatch on sold token classes ${soldTokenClasssKeys.length} ` +
-        `and unique sold token classes ${uniqueSoldTokenCompositeKeys.length}. All tokens must be unique.`);
+  if (uniqueSoldTokenCompositeKeys.length != soldTokenClasssKeys.length) {
+    chainValidationErrors.push(
+      `Length mismatch on sold token classes ${soldTokenClasssKeys.length} ` +
+        `and unique sold token classes ${uniqueSoldTokenCompositeKeys.length}. All tokens must be unique.`
+    );
   }
 
   for (let index = 0; index < newSale.cost.length; index++) {
-    const tokenClassKey = newSale.cost[index].tokenInstance.getTokenClassKey();
+    const tokenClassKey = newSale.cost[index].tokenClassKey;
     const compositeKey = TokenClass.buildTokenClassCompositeKey(tokenClassKey);
     const tokenClass = await getObjectByKey(ctx, TokenClass, compositeKey);
 
@@ -160,12 +173,14 @@ export async function createTokenSale(
 
   // All cost tokens in array must be unique
   const uniqueCostTokenCompositeKeys = costTokenClassKeys.filter((v, i, a) => a.indexOf(v) === i);
-  if(uniqueCostTokenCompositeKeys.length != costTokenClassKeys.length) {
-    chainValidationErrors.push(`Length mismatch on cost token classes ${costTokenClassKeys.length} ` +
-        `and unique cost token classes ${uniqueCostTokenCompositeKeys.length}. All tokens must be unique.`);
+  if (uniqueCostTokenCompositeKeys.length != costTokenClassKeys.length) {
+    chainValidationErrors.push(
+      `Length mismatch on cost token classes ${costTokenClassKeys.length} ` +
+        `and unique cost token classes ${uniqueCostTokenCompositeKeys.length}. All tokens must be unique.`
+    );
   }
 
-  // Ensure that the sale token is one that the user is an authority of 
+  // Ensure that the sale token is one that the user is an authority of
   // At a later date we can support users with mint allowances as well
   // Also ensure enough supply remains to mint the token with granted allowances
   if (chainValidationErrors.length === 0) {
@@ -175,16 +190,16 @@ export async function createTokenSale(
       const compositeKey = TokenClass.buildTokenClassCompositeKey(tokenClassKey);
       const tokenClass = await getObjectByKey(ctx, TokenClass, compositeKey);
 
-      if(!tokenClass.authorities.includes(newSale.owner)) {
-        chainValidationErrors.push(
-          `${newSale.owner} is not an authority on ${tokenClassKey.toStringKey()}`
-        );
+      if (!tokenClass.authorities.includes(newSale.owner)) {
+        chainValidationErrors.push(`${newSale.owner} is not an authority on ${tokenClassKey.toStringKey()}`);
       }
 
-      // TODO: Is this the correct way to check for remaining supply?
+      // TODO: Might want to check not just supply here but also Capacity
       const saleQuantity = newSale.selling[index].quantity;
       const totalSaleQuantity = newSale.quantity.multipliedBy(saleQuantity);
-      const saleQuantityDelta = totalSaleQuantity.plus(tokenClass.knownMintSupply ?? 0).minus(tokenClass.maxSupply);
+      const saleQuantityDelta = tokenClass.maxSupply
+        .minus(totalSaleQuantity)
+        .minus(tokenClass.knownMintSupply ?? 0);
 
       if (saleQuantityDelta.isNegative()) {
         chainValidationErrors.push(
@@ -195,38 +210,44 @@ export async function createTokenSale(
   }
 
   // Grant mint allowances for sale items to be used during fulfillment
-  Promise.all(newSale.selling.map(async (tokenSaleQuantity) => {
-    const tokenInstanceQueryKey = await createValidDTO(TokenInstanceQueryKey, {
-      ...tokenSaleQuantity.tokenClassKey,
-      instance: BigNumber(0)
-    });
-    const allowances = await grantAllowance(ctx, {
-      tokenInstance: tokenInstanceQueryKey,
-      allowanceType: AllowanceType.Mint,
-      expires: 0,
-      quantities: [{
-        user: newSale.owner,
-        quantity: tokenSaleQuantity.quantity
-      }],
-      uses: newSale.quantity, // Number of uses is the number of items to be sold
-    });
-
-    // Create index-objects of allowance keys so they can be removed later if sale is manually removed
-    await Promise.all(allowances.map(async (allowance) => {
-      const allowanceObjectKey = allowance.getCompositeKey();
-      const newSaleInstance = plainToInstance(TokenSaleMintAllowance, {
-        collection: allowance.collection,
-        category: allowance.category,
-        type: allowance.type,
-        additionalKey: allowance.additionalKey,
-        quantity: allowance.quantity,
-        allowanceObjectKey,
-        tokenSaleId
+  Promise.all(
+    newSale.selling.map(async (tokenSaleQuantity) => {
+      const tokenInstanceQueryKey = await createValidDTO(TokenInstanceQueryKey, {
+        ...tokenSaleQuantity.tokenClassKey,
+        instance: BigNumber(0)
       });
-      await newSaleInstance.validateOrReject();
-      await putChainObject(ctx, newSaleInstance);
-    }));
-  }));
+      const allowances = await grantAllowance(ctx, {
+        tokenInstance: tokenInstanceQueryKey,
+        allowanceType: AllowanceType.Mint,
+        expires: 0,
+        quantities: [
+          {
+            user: newSale.owner,
+            quantity: tokenSaleQuantity.quantity
+          }
+        ],
+        uses: newSale.quantity // Number of uses is the number of items to be sold
+      });
+
+      // Create index-objects of allowance keys so they can be removed later if sale is manually removed
+      await Promise.all(
+        allowances.map(async (allowance) => {
+          const allowanceObjectKey = allowance.getCompositeKey();
+          const newSaleInstance = plainToInstance(TokenSaleMintAllowance, {
+            collection: allowance.collection,
+            category: allowance.category,
+            type: allowance.type,
+            additionalKey: allowance.additionalKey,
+            quantity: allowance.quantity,
+            allowanceObjectKey,
+            tokenSaleId
+          });
+          await newSaleInstance.validateOrReject();
+          await putChainObject(ctx, newSaleInstance);
+        })
+      );
+    })
+  );
 
   // Persist the sale request
   await putChainObject(ctx, newSale);
@@ -251,7 +272,8 @@ export async function createTokenSale(
 
   for (const cost of newSale.cost) {
     const newSaleInstance = plainToInstance(TokenSaleTokenCost, {
-      ...cost.tokenInstance,
+      ...cost.tokenClassKey,
+      instance: new BigNumber(0),
       quantity: cost.quantity,
       tokenSaleId
     });
