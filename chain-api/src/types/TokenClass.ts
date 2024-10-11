@@ -83,7 +83,7 @@ export class TokenClassKey extends ChainCallDTO {
   }
 }
 
-export type TokenClassBody = ConstructorArgs<TokenClass>;
+export type TokenClassBody = ConstructorArgs<TokenClassKey>;
 
 export class TokenClass extends ChainObject {
   public static INDEX_KEY = "GCTI";
