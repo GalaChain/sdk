@@ -12,27 +12,28 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-import { ChainCallDTO, serialize, signatures } from "@gala-chain/api";
+import { ChainCallDTO, GalaChainErrorResponse, GalaChainResponse, GalaChainSuccessResponse, serialize, signatures } from "@gala-chain/api";
 import { instanceToPlain } from "class-transformer";
 import { BrowserProvider, SigningKey, computeAddress, getAddress, getBytes, hashMessage } from "ethers";
 
 import { EventEmitter, Listener, MetaMaskEvents } from "./helpers";
+import { GalaChainSuccessHashResponse } from "./types/GalaChainSuccessHashResponse";
 
 export abstract class GalaChainProvider {
   abstract sign(method: string, dto: any): Promise<any>;
-  async submit<T, U>({
+  async submit<T, U extends ChainCallDTO>({
     url,
     method,
     payload,
-    sign = false,
+    sign,
     headers = {}
   }: {
     url: string;
     method: string;
-    payload: ChainCallDTO;
+    payload: U,
     sign?: boolean;
     headers?: object;
-  }): Promise<{ data: T; hash: string; status: number; message?: string }> {
+  }): Promise<GalaChainSuccessHashResponse<T>> {
     await payload.validateOrReject();
 
     let newPayload = instanceToPlain(payload);
@@ -63,23 +64,25 @@ export abstract class GalaChainProvider {
       }
     });
 
-    const id = response.headers.get("x-transaction-id");
+    const hash = response.headers.get("x-transaction-id") ?? undefined;
 
     // Check if the content-length is not zero and try to parse JSON
     if (response.headers.get("content-length") !== "0") {
       try {
-        const data = await response.json();
-        if (data.error) {
-          return Promise.reject(data.message ? new Error(data.message) : data.error);
+        const data = await response.json()
+        if (GalaChainResponse.isError<T>(data)) {
+          throw data as GalaChainErrorResponse<T>;
+        } else {
+          return new GalaChainSuccessHashResponse(data, hash); 
         }
-        return Promise.resolve(id ? { Hash: id, ...data } : data);
       } catch (error) {
-        return Promise.reject("Invalid JSON response");
+        throw new error("Invalid JSON response"); 
       }
     }
     throw new Error(`Unable to get data. Received response: ${JSON.stringify(response)}`);
   }
 }
+
 export abstract class CustomClient extends GalaChainProvider {
   abstract getPublicKey(): Promise<{ publicKey: string; recoveredAddress: string }>;
   abstract walletAddress: string;

@@ -463,8 +463,6 @@ export class TokenBalanceWithMetadata extends ChainCallDTO {
   token: TokenClass;
 }
 
-export type FetchBalancesWithTokenMetadataBody = ConstructorArgs<FetchBalancesWithTokenMetadataResponse>;
-
 export class FetchBalancesWithTokenMetadataResponse extends ChainCallDTO {
   @JSONSchema({ description: "List of balances with token metadata." })
   @ValidateNested({ each: true })

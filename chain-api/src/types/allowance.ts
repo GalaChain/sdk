@@ -192,8 +192,6 @@ export class FetchAllowancesLegacyDto extends ChainCallDTO {
   bookmark?: string;
 }
 
-export type FetchAllowancesBody = ConstructorArgs<FetchAllowancesResponse>;
-
 export class FetchAllowancesResponse extends ChainCallDTO {
   @JSONSchema({ description: "List of allowances." })
   @ValidateNested({ each: true })
