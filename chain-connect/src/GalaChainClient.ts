@@ -12,7 +12,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-import { ChainCallDTO, serialize, signatures } from "@gala-chain/api";
+import { ChainCallDTO, GalaChainResponse, serialize, signatures } from "@gala-chain/api";
 import { instanceToPlain } from "class-transformer";
 import { BrowserProvider, SigningKey, computeAddress, getAddress, getBytes, hashMessage } from "ethers";
 
@@ -32,7 +32,7 @@ export abstract class GalaChainProvider {
     payload: ChainCallDTO;
     sign?: boolean;
     headers?: object;
-  }): Promise<{ data: T; hash: string; status: number; message?: string }> {
+  }): Promise<GalaChainResponse<T>> {
     await payload.validateOrReject();
 
     let newPayload = instanceToPlain(payload);
