@@ -34,6 +34,6 @@ export class LockTokenQuantity {
     description: "The current owner of tokens. If the value is missing, chaincode caller is used."
   })
   @IsOptional()
-  @IsUserAlias()
+  @IsUserAlias() // TODO??
   owner?: string;
 }

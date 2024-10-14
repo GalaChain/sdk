@@ -54,7 +54,7 @@ export class FetchAllowancesDto extends ChainCallDTO {
   @JSONSchema({
     description: "A user who can use an allowance."
   })
-  @IsUserAlias()
+  @IsUserRef()
   grantedTo: string;
 
   @JSONSchema({
@@ -100,7 +100,7 @@ export class FetchAllowancesDto extends ChainCallDTO {
     description: "User who granted allowances."
   })
   @IsOptional()
-  @IsUserAlias()
+  @IsUserRef()
   grantedBy?: string;
 
   @JSONSchema({
@@ -135,7 +135,7 @@ export class FetchAllowancesLegacyDto extends ChainCallDTO {
   @JSONSchema({
     description: "A user who can use an allowance."
   })
-  @IsUserAlias()
+  @IsUserRef()
   grantedTo: string;
 
   @JSONSchema({
@@ -181,7 +181,7 @@ export class FetchAllowancesLegacyDto extends ChainCallDTO {
     description: "User who granted allowances."
   })
   @IsOptional()
-  @IsUserAlias()
+  @IsUserRef()
   grantedBy?: string;
 
   @JSONSchema({
@@ -213,14 +213,14 @@ export class DeleteAllowancesDto extends SubmitCallDTO {
   @JSONSchema({
     description: "A user who can use an allowance."
   })
-  @IsUserAlias()
+  @IsUserRef()
   grantedTo: string;
 
   @JSONSchema({
     description: "User who granted allowances."
   })
   @IsOptional()
-  @IsUserAlias()
+  @IsUserRef()
   grantedBy?: string;
 
   @JSONSchema({
@@ -395,7 +395,7 @@ export class FullAllowanceCheckDto extends ChainCallDTO {
     description: "Person who owns the balance(s). If the value is missing, chaincode caller is used."
   })
   @IsOptional()
-  @IsUserAlias()
+  @IsUserRef()
   owner?: string;
 
   @JSONSchema({
@@ -403,7 +403,7 @@ export class FullAllowanceCheckDto extends ChainCallDTO {
       "Person/UserId to whom allowance(s) were granted. If the value is missing, chaincode caller is used."
   })
   @IsOptional()
-  @IsUserAlias()
+  @IsUserRef()
   grantedTo?: string;
 
   @JSONSchema({

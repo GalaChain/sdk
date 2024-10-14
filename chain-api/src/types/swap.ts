@@ -57,7 +57,7 @@ export class RequestTokenSwapDto extends ChainCallDTO {
       "Optional field, by default set to chaincode calling user."
   })
   @IsOptional()
-  @IsUserAlias()
+  @IsUserRef()
   public offeredBy?: string;
 
   @JSONSchema({
@@ -71,7 +71,7 @@ export class RequestTokenSwapDto extends ChainCallDTO {
   })
   @IsOptional()
   @IsNotEmpty()
-  @IsUserAlias()
+  @IsUserRef()
   public offeredTo?: string;
 
   @JSONSchema({
@@ -161,7 +161,7 @@ export class FillTokenSwapDto extends ChainCallDTO {
       "Optional field, by default set to chaincode calling user."
   })
   @IsOptional()
-  @IsUserAlias()
+  @IsUserRef()
   public filledBy?: string;
 
   @JSONSchema({
@@ -292,7 +292,7 @@ export class FetchTokenSwapsByUserDto extends ChainCallDTO {
   static readonly DEFAULT_LIMIT = 1000;
 
   @IsOptional()
-  @IsUserAlias()
+  @IsUserRef()
   public user?: string;
 
   @JSONSchema({

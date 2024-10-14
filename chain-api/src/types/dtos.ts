@@ -323,7 +323,7 @@ export class UpdatePublicKeyDto extends SubmitCallDTO {
 export type UpdateUserRolesParams = ConstructorArgs<UpdateUserRolesDto>;
 
 export class UpdateUserRolesDto extends SubmitCallDTO {
-  @IsUserAlias()
+  @IsUserRef()
   user: string;
 
   @JSONSchema({ description: "New set of roles for the user that will replace the old ones." })
@@ -338,7 +338,7 @@ export class GetPublicKeyDto extends ChainCallDTO {
     description: `Id of a public key holder. Optional field, by default caller's public key is returned.`
   })
   @IsOptional()
-  @IsUserAlias()
+  @IsUserRef()
   user?: string;
 }
 

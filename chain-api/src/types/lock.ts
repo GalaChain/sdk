@@ -40,7 +40,7 @@ export class LockTokenDto extends SubmitCallDTO {
     description: "The current owner of tokens. If the value is missing, chaincode caller is used."
   })
   @IsOptional()
-  @IsUserAlias()
+  @IsUserRef()
   owner?: string;
 
   @JSONSchema({
@@ -50,7 +50,7 @@ export class LockTokenDto extends SubmitCallDTO {
       "in all cases token authority can unlock token."
   })
   @IsOptional()
-  @IsUserAlias()
+  @IsUserRef()
   lockAuthority?: string;
 
   @JSONSchema({
@@ -90,7 +90,7 @@ export class LockTokensDto extends SubmitCallDTO {
       "in all cases token authority can unlock token."
   })
   @IsOptional()
-  @IsUserAlias()
+  @IsUserRef()
   lockAuthority?: string;
 
   @JSONSchema({
@@ -154,7 +154,7 @@ export class UnlockTokenDto extends SubmitCallDTO {
     description: "Optional. Owner of the token. Calling User by default. Usable by Token Authorities only."
   })
   @IsOptional()
-  @IsUserAlias()
+  @IsUserRef()
   owner?: string;
 
   @JSONSchema({

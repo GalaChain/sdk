@@ -43,7 +43,7 @@ export class MintTokenDto extends SubmitCallDTO {
     description: "The owner of minted tokens. If the value is missing, chaincode caller is used."
   })
   @IsOptional()
-  @IsUserAlias()
+  @IsUserRef()
   owner?: string;
 
   @JSONSchema({
@@ -78,7 +78,7 @@ export class MintTokenWithAllowanceDto extends SubmitCallDTO {
     description: "The owner of minted tokens. If the value is missing, chaincode caller is used."
   })
   @IsOptional()
-  @IsUserAlias()
+  @IsUserRef()
   owner?: string;
 
   @JSONSchema({
@@ -147,7 +147,7 @@ export class HighThroughputMintTokenDto extends SubmitCallDTO {
     description: "The owner of minted tokens. If the value is missing, chaincode caller is used."
   })
   @IsOptional()
-  @IsUserAlias()
+  @IsUserRef()
   owner?: string;
 
   @JSONSchema({

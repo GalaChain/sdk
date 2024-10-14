@@ -44,7 +44,7 @@ export class FetchBurnsDto extends ChainCallDTO {
   @JSONSchema({
     description: "The user who burned the token."
   })
-  @IsUserAlias()
+  @IsUserRef()
   burnedBy: string;
 
   @JSONSchema({
@@ -110,7 +110,7 @@ export class BurnTokensDto extends SubmitCallDTO {
       "Owner of the tokens to be burned. If not provided, the calling user is assumed to be the owner."
   })
   @IsOptional()
-  @IsUserAlias()
+  @IsUserRef()
   owner?: string;
 }
 
@@ -140,7 +140,7 @@ export class BurnAndMintDto extends ChainCallDTO {
       "User ID of the identity that owns the tokens to be burned. " +
       "The burnDto signature will be validated against this user's public key on chain."
   })
-  @IsUserAlias()
+  @IsUserRef()
   burnOwner: string;
 
   @JSONSchema({
@@ -256,7 +256,7 @@ export class TokenBurnCounterCompositeKeyDto extends ChainCallDTO {
   @JSONSchema({
     description: "burnedBy user."
   })
-  @IsUserAlias()
+  @IsUserRef()
   burnedBy: string;
 
   @JSONSchema({
