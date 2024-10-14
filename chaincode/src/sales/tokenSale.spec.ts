@@ -1,9 +1,12 @@
 import {
   CreateTokenSaleDto,
+  FetchTokenSaleByIdDto,
   FulfillTokenSaleDto,
   GalaChainResponse,
   TokenAllowance,
   TokenBalance,
+  TokenClass,
+  TokenInstance,
   TokenInstanceQuantity,
   TokenSale,
   TokenSaleFulfillment,
@@ -148,7 +151,7 @@ describe("TokenSale", () => {
       start: 1,
       end: 0,
       fulfillmentIds: [],
-      quantity: new BigNumber(2),
+      quantity: new BigNumber(1),
       quantityFulfilled: new BigNumber(0)
     });
     givenSale.tokenSaleId = givenSale.getCompositeKey();
@@ -157,7 +160,6 @@ describe("TokenSale", () => {
       .callingUser(users.testUser2Id)
       .savedState(
         nftClass,
-        nftInstance,
         currencyClass,
         currencyInstance,
         tokenAllowance,
@@ -182,7 +184,8 @@ describe("TokenSale", () => {
 
     const expectedTokenSale = plainToInstance(TokenSale, {
       ...givenSale,
-      fullfillmentIds: [expectedTokenSaleFulfillment.getCompositeKey()]
+      quantityFulfilled: new BigNumber(1),
+      fulfillmentIds: [expectedTokenSaleFulfillment.getCompositeKey()]
     });
 
     // When
@@ -199,12 +202,61 @@ describe("TokenSale", () => {
           expires: ctx.txUnixTime
         }),
         plainToInstance(TokenBalance, { ...tokenBalance, quantity: new BigNumber(0) }),
-        // TODO: this NFT is supposed to be minted to testUser2
-        plainToInstance(TokenBalance, { ...nftTokenBalance, owner: users.testAdminId }),
+        plainToInstance(TokenBalance, { ...nftTokenBalance, owner: users.testUser2Id }),
         plainToInstance(TokenBalance, { ...tokenBalance, owner: users.testAdminId }),
+        plainToInstance(TokenClass, { ...nftClass, totalSupply: new BigNumber(1) }),
+        plainToInstance(TokenInstance, { ...nftInstance, owner: users.testUser2Id }),
         expectedTokenSaleFulfillment,
         expectedTokenSale
       )
     );
+  });
+
+  it("should fetch TokenSale by id", async () => {
+    // Given
+    const currencyClass = currency.tokenClass();
+    const currencyClassKey = currency.tokenClassKey();
+    const nftSalePrice = new BigNumber("1000000");
+
+    const nftClass = nft.tokenClass();
+    const nftClassKey = nft.tokenClassKey();
+
+    const givenSale: TokenSale = plainToInstance(TokenSale, {
+      created: 1,
+      txid: "test-tx-id",
+      selling: [
+        {
+          tokenClassKey: nftClassKey,
+          quantity: new BigNumber("1")
+        }
+      ],
+      cost: [
+        {
+          tokenClassKey: currencyClassKey,
+          quantity: nftSalePrice
+        }
+      ],
+      owner: users.testAdminId,
+      start: 1,
+      end: 0,
+      fulfillmentIds: [],
+      quantity: new BigNumber(2),
+      quantityFulfilled: new BigNumber(0)
+    });
+    givenSale.tokenSaleId = givenSale.getCompositeKey();
+
+    const { ctx, contract, writes } = fixture(GalaChainTokenContract)
+      .callingUser(users.testUser2Id)
+      .savedState(nftClass, currencyClass, givenSale);
+
+    // When
+    const response = await contract.FetchTokenSaleById(
+      ctx,
+      plainToInstance(FetchTokenSaleByIdDto, { tokenSaleId: givenSale.tokenSaleId })
+    );
+
+    // Then
+    expect(response).toEqual(GalaChainResponse.Success(givenSale));
+    expect(writes).toEqual(writesMap());
   });
 });

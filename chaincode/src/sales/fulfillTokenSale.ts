@@ -200,7 +200,7 @@ export async function fulfillTokenSale(
 
       await mintToken(ctx, {
         tokenClassKey: saleTokenClassKey,
-        owner: tokenSale.owner,
+        owner: fulfilledBy,
         quantity: currentQuantity,
         applicableAllowances: allowance,
         authorizedOnBehalf: {
