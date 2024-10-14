@@ -12,7 +12,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-import { ChainCallDTO, GalaChainResponse } from "@gala-chain/api";
+import { GalaChainResponse, SubmitCallDTO, createValidSubmitDTO } from "@gala-chain/api";
 import { Wrapped, fixture, transactionErrorKey, transactionSuccess, users } from "@gala-chain/test";
 import { ChainUserWithRoles } from "@gala-chain/test";
 
@@ -26,15 +26,15 @@ class TestContract extends GalaContract {
   }
 
   @Submit({
-    in: ChainCallDTO,
+    in: SubmitCallDTO,
     out: "string"
   })
-  async TestMethod(ctx: GalaChainContext, dto: ChainCallDTO) {
+  async TestMethod(ctx: GalaChainContext, dto: SubmitCallDTO) {
     return GalaChainResponse.Success("Hello!");
   }
 }
 
-describe("Operation expiration", () => {
+describe("Transaction expiration", () => {
   let contract: Wrapped<TestContract>;
   let ctx: GalaChainContext;
   let user: ChainUserWithRoles;
@@ -48,11 +48,10 @@ describe("Operation expiration", () => {
 
   it("should verify transaction with no expiration", async () => {
     // Given
-    const dto = new ChainCallDTO();
-    const signedDto = dto.signed(user.privateKey);
+    const dto = await createValidSubmitDTO(SubmitCallDTO, {}).signed(user.privateKey);
 
     // When
-    const response = await contract.TestMethod(ctx, signedDto);
+    const response = await contract.TestMethod(ctx, dto);
 
     // Then
     expect(response).toEqual(transactionSuccess());
@@ -60,12 +59,12 @@ describe("Operation expiration", () => {
 
   it("should verify transaction with expiration in the future", async () => {
     // Given
-    const dto = new ChainCallDTO();
-    dto.transactionExpiresAt = Date.now() + 1000 * 60 * 60;
-    const signedDto = dto.signed(user.privateKey);
+    const dto = await createValidSubmitDTO(SubmitCallDTO, {
+      transactionExpiresAt: Date.now() + 1000 * 60 * 60
+    }).signed(user.privateKey);
 
     // When
-    const response = await contract.TestMethod(ctx, signedDto);
+    const response = await contract.TestMethod(ctx, dto);
 
     // Then
     expect(response).toEqual(transactionSuccess());
@@ -73,12 +72,12 @@ describe("Operation expiration", () => {
 
   it("should reject transaction with expiration in the past", async () => {
     // Given
-    const dto = new ChainCallDTO();
-    dto.transactionExpiresAt = Date.now() - 1000 * 60 * 60;
-    const signedDto = dto.signed(user.privateKey);
+    const dto = await createValidSubmitDTO(SubmitCallDTO, {
+      transactionExpiresAt: Date.now() - 1000 * 60 * 60
+    }).signed(user.privateKey);
 
     // When
-    const response = await contract.TestMethod(ctx, signedDto);
+    const response = await contract.TestMethod(ctx, dto);
 
     // Then
     expect(response).toEqual(transactionErrorKey("TRANSACTION_EXPIRED"));
@@ -86,12 +85,12 @@ describe("Operation expiration", () => {
 
   it("should reject transaction with expiration more than a year in the future", async () => {
     // Given
-    const dto = new ChainCallDTO();
-    dto.transactionExpiresAt = Date.now() + 1000 * 60 * 60 * 24 * 365 * 2;
-    const signedDto = dto.signed(user.privateKey);
+    const dto = await createValidSubmitDTO(SubmitCallDTO, {
+      transactionExpiresAt: Date.now() + 1000 * 60 * 60 * 24 * 365 * 2
+    }).signed(user.privateKey);
 
     // When
-    const response = await contract.TestMethod(ctx, signedDto);
+    const response = await contract.TestMethod(ctx, dto);
 
     // Then
     expect(response).toEqual(transactionErrorKey("TRANSACTION_EXPIRATION_TOO_FAR"));

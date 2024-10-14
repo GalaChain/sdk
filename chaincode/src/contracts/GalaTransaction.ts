@@ -32,6 +32,7 @@ import { Object as DTOObject, Transaction } from "fabric-contract-api";
 import { inspect } from "util";
 
 import { UniqueTransactionService } from "../services";
+import { MissingUniqueKeyError } from "../services/UniqueTransactionService";
 import { GalaChainContext } from "../types";
 import { GalaContract } from "./GalaContract";
 import { updateApi } from "./GalaContractApi";
@@ -191,7 +192,7 @@ function GalaTransaction<T extends ChainCallDTO>(
           if (dto?.uniqueKey) {
             await UniqueTransactionService.ensureUniqueTransaction(ctx, dto.uniqueKey);
           } else {
-            throw new RuntimeError("Missing uniqueKey in transaction dto");
+            throw new MissingUniqueKeyError();
           }
         }
 
