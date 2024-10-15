@@ -22,8 +22,6 @@ import { BigNumberIsNotNegative, BigNumberProperty, IsUserAlias } from "../valid
 import { TokenInstance, TokenInstanceKey } from "./TokenInstance";
 import { SubmitCallDTO } from "./dtos";
 
-export type ReleaseTokenParams = ConstructorArgs<ReleaseTokenDto>;
-
 @JSONSchema({
   description: "Describes an action to release a token that is in use."
 })
@@ -36,8 +34,6 @@ export class ReleaseTokenDto extends SubmitCallDTO {
   @IsNotEmpty()
   tokenInstance: TokenInstanceKey;
 }
-
-export type UseTokenParams = ConstructorArgs<UseTokenDto>;
 
 @JSONSchema({
   description: "Describes an action to use a token."

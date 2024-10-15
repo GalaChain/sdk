@@ -32,8 +32,6 @@ import { LockTokenQuantity } from "./LockTokenQuantity";
 import { TokenInstance, TokenInstanceKey } from "./TokenInstance";
 import { SubmitCallDTO } from "./dtos";
 
-export type LockTokenRequestParams = ConstructorArgs<LockTokenDto>;
-
 @JSONSchema({
   description: "Describes an action to lock a token."
 })
@@ -80,8 +78,6 @@ export class LockTokenDto extends SubmitCallDTO {
   @ArrayNotEmpty()
   useAllowances?: Array<string>;
 }
-
-export type LockTokensParams = ConstructorArgs<LockTokensDto>;
 
 @JSONSchema({
   description: "Describes an action to lock multiple tokens."
@@ -132,7 +128,6 @@ export class LockTokensDto extends SubmitCallDTO {
   @IsOptional()
   public expires?: number;
 }
-export type UnlockTokenParams = ConstructorArgs<UnlockTokenDto>;
 
 @JSONSchema({
   description: "Describes an action to unlock a token."
@@ -170,8 +165,6 @@ export class UnlockTokenDto extends SubmitCallDTO {
   @IsNotEmpty()
   lockedHoldName?: string;
 }
-
-export type UnlockTokensParams = ConstructorArgs<UnlockTokensDto>;
 
 @JSONSchema({
   description: "Describes an action to unlock multiple tokens."

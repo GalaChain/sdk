@@ -38,6 +38,18 @@ class InvalidAllowanceUsersError extends ForbiddenError {
   }
 }
 
+/**
+ * @description
+ *
+ * Fetch all `TokenAllowance` chain objects that match the provided parameters, and
+ * delete them from World State.
+ *
+ * Does not support paginated queries.
+ *
+ * @param ctx
+ * @param params
+ * @returns `Promise<number>`
+ */
 export async function deleteAllowances(
   ctx: GalaChainContext,
   params: DeleteAllowancesParams
@@ -65,6 +77,17 @@ export interface DeleteOneAllowanceParams {
   created: number;
 }
 
+/**
+ * @description
+ *
+ * Delete a single allowance specified by all `@ChainKey` properties.
+ *
+ * Fails if the `authorizedOnBehalf` agrument is neither the grantedBy nor grantedTo identity.
+ *
+ * @param ctx
+ * @param params
+ * @param authorizedOnBehalf
+ */
 export async function deleteOneAllowance(
   ctx: GalaChainContext,
   params: DeleteOneAllowanceParams,

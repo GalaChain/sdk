@@ -12,7 +12,9 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-import { RegisterUserParams, TransferTokenParams } from "@gala-chain/api";
+import { RegisterUserDto, TokenInstanceKey, TransferTokenDto, createValidDTO } from "@gala-chain/api";
+import BigNumber from "bignumber.js";
+import { plainToInstance } from "class-transformer";
 import { EventEmitter } from "events";
 
 import { PublicKeyApi, TokenApi } from "./chainApis";
@@ -60,18 +62,18 @@ window.ethereum = new EthereumMock();
 
 describe("API tests", () => {
   it("test transfer", async () => {
-    const dto: TransferTokenParams = {
-      quantity: "1",
+    const dto: TransferTokenDto = await createValidDTO(TransferTokenDto, {
+      quantity: new BigNumber("1"),
       to: "client|63580d94c574ad78b121c267",
-      tokenInstance: {
+      tokenInstance: plainToInstance(TokenInstanceKey, {
         additionalKey: "none",
         category: "Unit",
         collection: "GALA",
-        instance: "0",
+        instance: new BigNumber("0"),
         type: "none"
-      },
+      }),
       uniqueKey: "26d4122e-34c8-4639-baa6-4382b398e68e"
-    };
+    });
 
     // call connect
     const connection = new BrowserConnectClient();
@@ -98,11 +100,10 @@ describe("API tests", () => {
     });
   });
   it("test register", async () => {
-    const dto: RegisterUserParams = {
+    const dto: RegisterUserDto = await createValidSubmitDTO(RegisterUserDto, {
       publicKey: "3",
-      user: "4",
-      uniqueKey: "26d4122e-34c8-4639-baa6-4382b398e68e"
-    };
+      user: "client|4"
+    });
 
     // call connect
     const connection = new BrowserConnectClient();
@@ -118,7 +119,7 @@ describe("API tests", () => {
       },
       Request: {
         options: {
-          body: '{"domain":{"name":"GalaChain"},"prefix":"\\u0019Ethereum Signed Message:\\n126","publicKey":"3","signature":"sampleSignature","types":{"RegisterUser":[{"name":"publicKey","type":"string"},{"name":"user","type":"string"},{"name":"uniqueKey","type":"string"}]},"uniqueKey":"26d4122e-34c8-4639-baa6-4382b398e68e","user":"4"}',
+          body: '{"domain":{"name":"GalaChain"},"prefix":"\\u0019Ethereum Signed Message:\\n133","publicKey":"3","signature":"sampleSignature","types":{"RegisterUser":[{"name":"publicKey","type":"string"},{"name":"user","type":"string"},{"name":"uniqueKey","type":"string"}]},"uniqueKey":"26d4122e-34c8-4639-baa6-4382b398e68e","user":"client|4"}',
           headers: {
             "Content-Type": "application/json"
           },
@@ -129,11 +130,10 @@ describe("API tests", () => {
     });
   });
   it("test both using same connection", async () => {
-    const dto: RegisterUserParams = {
+    const dto: RegisterUserDto = await createValidSubmitDTO(RegisterUserDto, {
       publicKey: "3",
-      user: "4",
-      uniqueKey: "26d4122e-34c8-4639-baa6-4382b398e68e"
-    };
+      user: "client|4"
+    });
 
     // call connect
     const connection = new BrowserConnectClient();
@@ -148,7 +148,7 @@ describe("API tests", () => {
       },
       Request: {
         options: {
-          body: '{"domain":{"name":"GalaChain"},"prefix":"\\u0019Ethereum Signed Message:\\n126","publicKey":"3","signature":"sampleSignature","types":{"RegisterUser":[{"name":"publicKey","type":"string"},{"name":"user","type":"string"},{"name":"uniqueKey","type":"string"}]},"uniqueKey":"26d4122e-34c8-4639-baa6-4382b398e68e","user":"4"}',
+          body: '{"domain":{"name":"GalaChain"},"prefix":"\\u0019Ethereum Signed Message:\\n133","publicKey":"3","signature":"sampleSignature","types":{"RegisterUser":[{"name":"publicKey","type":"string"},{"name":"user","type":"string"},{"name":"uniqueKey","type":"string"}]},"uniqueKey":"26d4122e-34c8-4639-baa6-4382b398e68e","user":"client|4"}',
           headers: {
             "Content-Type": "application/json"
           },
@@ -168,7 +168,7 @@ describe("API tests", () => {
       },
       Request: {
         options: {
-          body: '{"domain":{"name":"GalaChain"},"prefix":"\\u0019Ethereum Signed Message:\\n126","publicKey":"3","signature":"sampleSignature","types":{"RegisterUser":[{"name":"publicKey","type":"string"},{"name":"user","type":"string"},{"name":"uniqueKey","type":"string"}]},"uniqueKey":"26d4122e-34c8-4639-baa6-4382b398e68e","user":"4"}',
+          body: '{"domain":{"name":"GalaChain"},"prefix":"\\u0019Ethereum Signed Message:\\n133","publicKey":"3","signature":"sampleSignature","types":{"RegisterUser":[{"name":"publicKey","type":"string"},{"name":"user","type":"string"},{"name":"uniqueKey","type":"string"}]},"uniqueKey":"26d4122e-34c8-4639-baa6-4382b398e68e","user":"client|4"}',
           headers: {
             "Content-Type": "application/json"
           },
