@@ -17,9 +17,9 @@ import BigNumber from "bignumber.js";
 import { plainToInstance } from "class-transformer";
 import { EventEmitter } from "events";
 
+import { createRandomHash, mockFetch } from "../test/test-utils";
 import { PublicKeyApi, TokenApi } from "./chainApis";
 import { BrowserConnectClient } from "./customClients";
-import { mockFetch, createRandomHash } from "../test/test-utils";
 
 // https://privatekeys.pw/key/1d3cc061492016bcd5e7ea2c31b1cf3dec584e07a38e21df7ef3049c6b224e70#addresses
 const sampleAddr = "0x3bb75c2Da3B669E253C338101420CC8dEBf0a777";
@@ -75,7 +75,7 @@ describe("API tests", () => {
 
     // send dto payload in send function
     const mockResponse = {
-      "Data": [
+      Data: [
         {
           additionalKey: "none",
           category: "Unit",
@@ -85,8 +85,8 @@ describe("API tests", () => {
           type: "none"
         }
       ],
-      "Status": 1
-    }
+      Status: 1
+    };
     const mockHash = createRandomHash();
     mockFetch(mockResponse, { "x-transaction-id": mockHash });
 
@@ -112,9 +112,9 @@ describe("API tests", () => {
 
     // send dto payload in send function
     const mockResponse = {
-      "Data": "test",
-      "Status": 1
-    }
+      Data: "test",
+      Status: 1
+    };
     const mockHash = createRandomHash();
     mockFetch(mockResponse, { "x-transaction-id": mockHash });
     const response = await publicKeyApi.RegisterUser(dto);
@@ -138,9 +138,9 @@ describe("API tests", () => {
     const tokenApi = new PublicKeyApi("https://example.com", connection);
 
     const mockResponse = {
-      "Data": "test",
-      "Status": 1
-    }
+      Data: "test",
+      Status: 1
+    };
     const mockHash = createRandomHash();
     mockFetch(mockResponse, { "x-transaction-id": mockHash });
     let response = await tokenApi.RegisterUser(dto);
@@ -155,16 +155,16 @@ describe("API tests", () => {
 
     // send dto payload in send function
     const mockResponse2 = {
-      "Data": "test2",
-      "Status": 1
-    }
+      Data: "test2",
+      Status: 1
+    };
     const mockHash2 = createRandomHash();
     mockFetch(mockResponse2, { "x-transaction-id": mockHash2 });
     response = await publicKeyApi.RegisterUser(dto);
 
     expect(response).toEqual({
       hash: mockHash2,
-      data: mockResponse2.Data,      
+      data: mockResponse2.Data,
       status: mockResponse2.Status
     });
   });

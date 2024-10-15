@@ -24,9 +24,9 @@ import { instanceToPlain, plainToInstance } from "class-transformer";
 import { ethers } from "ethers";
 import { EventEmitter } from "events";
 
+import { createRandomHash, mockFetch } from "../test/test-utils";
 import { generateEIP712Types } from "./Utils";
 import { BrowserConnectClient, TrustWalletConnectClient } from "./customClients";
-import { mockFetch, createRandomHash } from "../test/test-utils";
 
 // https://privatekeys.pw/key/1d3cc061492016bcd5e7ea2c31b1cf3dec584e07a38e21df7ef3049c6b224e70#addresses
 const sampleAddr = "0x3bb75c2Da3B669E253C338101420CC8dEBf0a777";
@@ -79,7 +79,7 @@ describe("BrowserConnectClient", () => {
     await client.connect();
 
     const mockResponse = {
-      "Data": [
+      Data: [
         {
           additionalKey: "none",
           category: "Unit",
@@ -89,8 +89,8 @@ describe("BrowserConnectClient", () => {
           type: "none"
         }
       ],
-      "Status": 1
-    }
+      Status: 1
+    };
     const mockHash = createRandomHash();
     mockFetch(mockResponse, { "x-transaction-id": mockHash });
 
@@ -128,24 +128,26 @@ describe("BrowserConnectClient", () => {
 
     const mockResponse = {
       statusCode: 400,
-	    message: "Unexpected token } in JSON at position 117",
-	    error: "Bad Request"
-    }
+      message: "Unexpected token } in JSON at position 117",
+      error: "Bad Request"
+    };
     mockFetch(mockResponse);
 
     // send dto payload in send function
-    await client.submit({
-      method: "TransferToken",
-      payload: dto,
-      sign: true,
-      url: "https://example.com"
-    }).catch(error => {
-      expect(error).toEqual({
-        error: mockResponse.error,
-        message: mockResponse.message,
-        errorCode: mockResponse.statusCode
+    await client
+      .submit({
+        method: "TransferToken",
+        payload: dto,
+        sign: true,
+        url: "https://example.com"
+      })
+      .catch((error) => {
+        expect(error).toEqual({
+          error: mockResponse.error,
+          message: mockResponse.message,
+          errorCode: mockResponse.statusCode
+        });
       });
-    });
   });
   it("test full flow (chain error)", async () => {
     const dto: TransferTokenDto = await createValidDTO(TransferTokenDto, {
@@ -188,22 +190,24 @@ describe("BrowserConnectClient", () => {
         ErrorCode: 404,
         ErrorKey: "TOKEN_CLASS_NOT_FOUND"
       }
-    }
+    };
     mockFetch(mockResponse);
 
     // send dto payload in send function
-    await client.submit({
-      method: "TransferToken",
-      payload: dto,
-      sign: true,
-      url: "https://example.com"
-    }).catch(error => {
-      expect(error).toEqual({
-        error: mockResponse.error.ErrorKey,
-        message: mockResponse.message,
-        errorCode: mockResponse.error.ErrorCode
+    await client
+      .submit({
+        method: "TransferToken",
+        payload: dto,
+        sign: true,
+        url: "https://example.com"
+      })
+      .catch((error) => {
+        expect(error).toEqual({
+          error: mockResponse.error.ErrorKey,
+          message: mockResponse.message,
+          errorCode: mockResponse.error.ErrorCode
+        });
       });
-    });
   });
 
   test("should log accounts changed", () => {
@@ -419,7 +423,7 @@ describe("TrustConnectClient", () => {
     await client.connect();
 
     const mockResponse = {
-      "Data": [
+      Data: [
         {
           additionalKey: "none",
           category: "Unit",
@@ -429,8 +433,8 @@ describe("TrustConnectClient", () => {
           type: "none"
         }
       ],
-      "Status": 1
-    }
+      Status: 1
+    };
     const mockHash = createRandomHash();
     mockFetch(mockResponse, { "x-transaction-id": mockHash });
 
