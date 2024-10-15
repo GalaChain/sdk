@@ -243,6 +243,3 @@ jobs:
             --form variables[GITHUB_AUTHOR]="${{ github.actor }}" \
             --form variables[GITHUB_COMMIT_URL]="${{ github.server_url }}/${{ github.repository }}/commit/${{ github.sha }}" \
             "https://gitlab.com/api/v4/projects/35484791/trigger/pipeline"
-
-https://github:
-  com/GalaChain/sdk/pull/408:
