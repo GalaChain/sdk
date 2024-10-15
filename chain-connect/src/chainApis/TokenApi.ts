@@ -88,10 +88,7 @@ export class TokenApi {
   }
 
   public FetchTokenClassesWithPagination(dto: FetchTokenClassesWithPaginationDto) {
-    return this.connection.submit<
-      FetchTokenClassesResponse,
-      FetchTokenClassesWithPaginationDto
-    >({
+    return this.connection.submit<FetchTokenClassesResponse, FetchTokenClassesWithPaginationDto>({
       method: "FetchTokenClassesWithPagination",
       payload: dto,
       url: this.chainCodeUrl
@@ -152,10 +149,7 @@ export class TokenApi {
   }
 
   public FetchBalancesWithTokenMetadata(dto: FetchBalancesWithPaginationDto) {
-    return this.connection.submit<
-      FetchBalancesWithTokenMetadataResponse,
-      FetchBalancesDto
-    >({
+    return this.connection.submit<FetchBalancesWithTokenMetadataResponse, FetchBalancesDto>({
       method: "FetchBalancesWithTokenMetadata",
       payload: dto,
       url: this.chainCodeUrl

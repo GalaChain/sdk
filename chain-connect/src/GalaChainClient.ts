@@ -30,7 +30,7 @@ export abstract class GalaChainProvider {
   }: {
     url: string;
     method: string;
-    payload: U,
+    payload: U;
     sign?: boolean;
     headers?: object;
   }): Promise<GalaChainResponseSuccess<T>> {
@@ -69,14 +69,14 @@ export abstract class GalaChainProvider {
     // Check if the content-length is not zero and try to parse JSON
     if (response.headers.get("content-length") !== "0") {
       try {
-        const data = await response.json()
+        const data = await response.json();
         if (data.error) {
           throw new GalaChainResponseError<T>(data);
         } else {
-          return new GalaChainResponseSuccess<T>(data, hash); 
+          return new GalaChainResponseSuccess<T>(data, hash);
         }
       } catch (error) {
-        throw new error("Invalid JSON response"); 
+        throw new error("Invalid JSON response");
       }
     }
     throw new Error(`Unable to get data. Received response: ${JSON.stringify(response)}`);

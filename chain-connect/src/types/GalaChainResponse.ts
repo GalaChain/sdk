@@ -18,7 +18,7 @@ type GalaChainError<T> = {
   error: string | GalaChainErrorResponse<T>;
   message: string;
   satusCode?: number;
-}
+};
 
 export class GalaChainResponseSuccess<T> {
   public readonly status: GalaChainResponseType;
@@ -38,7 +38,7 @@ export class GalaChainResponseError<T> {
   public readonly errorCode: number;
 
   constructor(data: GalaChainError<T>) {
-    if(typeof data.error === 'string') {
+    if (typeof data.error === "string") {
       this.error = data.error;
       this.message = data.message;
       this.errorCode = data.satusCode ?? 500;
