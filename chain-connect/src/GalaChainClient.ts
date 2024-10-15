@@ -68,15 +68,16 @@ export abstract class GalaChainProvider {
 
     // Check if the content-length is not zero and try to parse JSON
     if (response.headers.get("content-length") !== "0") {
+      let data: any;
       try {
-        const data = await response.json();
-        if (data.error) {
-          throw new GalaChainResponseError<T>(data);
-        } else {
-          return new GalaChainResponseSuccess<T>(data, hash);
-        }
+        data = await response.json();
       } catch (error) {
-        throw new error("Invalid JSON response");
+        throw new Error("Invalid JSON response");
+      }
+      if (data.error) {
+        throw new GalaChainResponseError<T>(data);
+      } else {
+        return new GalaChainResponseSuccess<T>(data, hash);
       }
     }
     throw new Error(`Unable to get data. Received response: ${JSON.stringify(response)}`);

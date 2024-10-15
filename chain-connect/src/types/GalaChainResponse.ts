@@ -17,7 +17,7 @@ import { GalaChainErrorResponse, GalaChainResponseType, GalaChainSuccessResponse
 type GalaChainError<T> = {
   error: string | GalaChainErrorResponse<T>;
   message: string;
-  satusCode?: number;
+  statusCode?: number;
 };
 
 export class GalaChainResponseSuccess<T> {
@@ -41,7 +41,7 @@ export class GalaChainResponseError<T> {
     if (typeof data.error === "string") {
       this.error = data.error;
       this.message = data.message;
-      this.errorCode = data.satusCode ?? 500;
+      this.errorCode = data.statusCode ?? 500;
     } else {
       this.error = data.error.ErrorKey;
       this.message = data.message;
