@@ -493,7 +493,7 @@ export class TokenSaleDtoValidationError extends ValidationFailedError {
   }
 }
 
-export class TokenSaleFailedError extends DefaultError {
+export class TokenSaleFailedError extends ValidationFailedError {
   constructor(message: string, payload: Record<string, unknown> | undefined) {
     super(`SwapToken failed: ${message}$`, payload);
   }
