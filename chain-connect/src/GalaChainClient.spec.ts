@@ -103,9 +103,9 @@ describe("BrowserConnectClient", () => {
     });
 
     expect(response).toEqual({
-      hash: mockHash,
-      data: mockResponse.Data,
-      status: mockResponse.Status
+      Hash: mockHash,
+      Data: mockResponse.Data,
+      Status: mockResponse.Status
     });
   });
   it("test full flow (server error)", async () => {
@@ -143,9 +143,9 @@ describe("BrowserConnectClient", () => {
       })
       .catch((error) => {
         expect(error).toEqual({
-          error: mockResponse.error,
-          message: mockResponse.message,
-          errorCode: mockResponse.statusCode
+          Error: mockResponse.error,
+          Message: mockResponse.message,
+          ErrorCode: mockResponse.statusCode
         });
       });
   });
@@ -203,9 +203,9 @@ describe("BrowserConnectClient", () => {
       })
       .catch((error) => {
         expect(error).toEqual({
-          error: mockResponse.error.ErrorKey,
-          message: mockResponse.message,
-          errorCode: mockResponse.error.ErrorCode
+          Error: mockResponse.error.ErrorKey,
+          Message: mockResponse.message,
+          ErrorCode: mockResponse.error.ErrorCode
         });
       });
   });
@@ -447,9 +447,9 @@ describe("TrustConnectClient", () => {
     });
 
     expect(response).toEqual({
-      hash: mockHash,
-      data: mockResponse.Data,
-      status: mockResponse.Status
+      Hash: mockHash,
+      Data: mockResponse.Data,
+      Status: mockResponse.Status
     });
   });
 });

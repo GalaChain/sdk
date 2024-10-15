@@ -93,9 +93,9 @@ describe("API tests", () => {
     const response = await tokenApi.TransferToken(dto);
 
     expect(response).toEqual({
-      hash: mockHash,
-      data: mockResponse.Data,
-      status: mockResponse.Status
+      Hash: mockHash,
+      Data: mockResponse.Data,
+      Status: mockResponse.Status
     });
   });
   it("test register", async () => {
@@ -120,9 +120,9 @@ describe("API tests", () => {
     const response = await publicKeyApi.RegisterUser(dto);
 
     expect(response).toEqual({
-      hash: mockHash,
-      data: mockResponse.Data,
-      status: mockResponse.Status
+      Hash: mockHash,
+      Data: mockResponse.Data,
+      Status: mockResponse.Status
     });
   });
   it("test both using same connection", async () => {
@@ -146,9 +146,9 @@ describe("API tests", () => {
     let response = await tokenApi.RegisterUser(dto);
 
     expect(response).toEqual({
-      hash: mockHash,
-      data: mockResponse.Data,
-      status: mockResponse.Status
+      Hash: mockHash,
+      Data: mockResponse.Data,
+      Status: mockResponse.Status
     });
 
     const publicKeyApi = new PublicKeyApi("https://example.com", connection);
@@ -163,9 +163,9 @@ describe("API tests", () => {
     response = await publicKeyApi.RegisterUser(dto);
 
     expect(response).toEqual({
-      hash: mockHash2,
-      data: mockResponse2.Data,
-      status: mockResponse2.Status
+      Hash: mockHash2,
+      Data: mockResponse2.Data,
+      Status: mockResponse2.Status
     });
   });
 });

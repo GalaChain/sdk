@@ -21,31 +21,31 @@ type GalaChainError<T> = {
 };
 
 export class GalaChainResponseSuccess<T> {
-  public readonly status: GalaChainResponseType;
-  public readonly data: T;
-  public readonly hash?: string;
+  public readonly Status: GalaChainResponseType;
+  public readonly Data: T;
+  public readonly Hash?: string;
 
   constructor(data: GalaChainSuccessResponse<T>, hash?: string) {
-    this.hash = hash;
-    this.status = data.Status;
-    this.data = data.Data;
+    this.Hash = hash;
+    this.Status = data.Status;
+    this.Data = data.Data;
   }
 }
 
 export class GalaChainResponseError<T> {
-  public readonly error: string;
-  public readonly message: string;
-  public readonly errorCode: number;
+  public readonly Error: string;
+  public readonly Message: string;
+  public readonly ErrorCode: number;
 
   constructor(data: GalaChainError<T>) {
     if (typeof data.error === "string") {
-      this.error = data.error;
-      this.message = data.message;
-      this.errorCode = data.statusCode ?? 500;
+      this.Error = data.error;
+      this.Message = data.message;
+      this.ErrorCode = data.statusCode ?? 500;
     } else {
-      this.error = data.error.ErrorKey;
-      this.message = data.message;
-      this.errorCode = data.error.ErrorCode;
+      this.Error = data.error.ErrorKey;
+      this.Message = data.message;
+      this.ErrorCode = data.error.ErrorCode;
     }
   }
 }
