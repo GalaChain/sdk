@@ -1,8 +1,7 @@
 ## GalaChain SDK Documentation 
 
 At the time of this writing (October 2024), the GalaChain SDK is using a combination of generated `TypeDoc` HTML, 
-`class-validator-jsonschema` generated OpenAPI definitions, `mkdocs` (a Python-based command line tool), and `Storybook` 
-for visual / UI components. 
+`class-validator-jsonschema` generated OpenAPI definitions, `mkdocs` (a Python-based command line tool).
 
 This page aims to provide guidance on adding, maintaining, building, and locally-serving our documentation. 
 
