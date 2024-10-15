@@ -14,7 +14,8 @@
  */
 import { TokenSale } from "@gala-chain/api";
 
-import { GalaChainContext, getObjectByKey } from "../";
+import { GalaChainContext } from "../types";
+import { getObjectByKey } from "../utils";
 
 export async function fetchTokenSaleById(ctx: GalaChainContext, tokenSaleId: string): Promise<TokenSale> {
   let tokenSale: TokenSale;

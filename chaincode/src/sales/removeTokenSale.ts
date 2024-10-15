@@ -19,13 +19,13 @@ import {
   TokenSaleMintAllowance
 } from "@gala-chain/api";
 
+import { GalaChainContext } from "../types";
 import {
-  GalaChainContext,
   deleteChainObject,
   getObjectByKey,
   getObjectsByPartialCompositeKey,
   takeUntilUndefined
-} from "../";
+} from "../utils";
 
 export async function removeTokenSale(ctx: GalaChainContext, tokenSaleId: string): Promise<TokenSale> {
   const chainValidationErrors: Array<string> = [];

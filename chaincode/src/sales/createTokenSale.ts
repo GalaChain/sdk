@@ -28,7 +28,10 @@ import {
 import { BigNumber } from "bignumber.js";
 import { plainToInstance } from "class-transformer";
 
-import { GalaChainContext, fetchTokenClasses, getObjectByKey, grantAllowance, putChainObject } from "../";
+import { grantAllowance } from "../allowances/grantAllowance";
+import { fetchTokenClasses } from "../token/fetchTokenClasses";
+import { GalaChainContext } from "../types";
+import { getObjectByKey, putChainObject } from "../utils";
 
 function validateTokenSaleQuantity(quantity: BigNumber, tokenClass: TokenClass): Array<string> {
   const validationResults: Array<string> = [];

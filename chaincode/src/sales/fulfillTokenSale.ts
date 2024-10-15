@@ -28,20 +28,17 @@ import {
 import { BigNumber } from "bignumber.js";
 import { plainToInstance } from "class-transformer";
 
+import { fetchOrCreateBalance } from "../balances";
+import { MintTokenFailedError, mintToken } from "../mint";
+import { fetchTokenClasses } from "../token/fetchTokenClasses";
+import { TransferTokenFailedError, transferToken } from "../transfer";
+import { GalaChainContext, createValidChainObject } from "../types";
 import {
-  GalaChainContext,
-  createValidChainObject,
-  fetchOrCreateBalance,
-  fetchTokenClasses,
   getObjectByKey,
   getObjectsByPartialCompositeKey,
-  mintToken,
   putChainObject,
-  takeUntilUndefined,
-  transferToken
-} from "../";
-import { MintTokenFailedError } from "../mint/MintError";
-import { TransferTokenFailedError } from "../transfer/TransferError";
+  takeUntilUndefined
+} from "../utils";
 
 async function getTokenSaleAllowanceForToken(
   ctx: GalaChainContext,
