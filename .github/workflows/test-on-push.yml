@@ -29,10 +29,32 @@ jobs:
       - name: Test
         run: npm run test
 
+  ensure-docker-cache:
+    name: Ensure Docker cache
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+      - name: Cache Docker layers
+        uses: actions/cache@v3
+        with:
+          path: ./.buildx-cache
+          key: ${{ runner.os }}-buildx-${{ github.sha }}
+          restore-keys: |
+            ${{ runner.os }}-buildx-
+      - name: Prefetch Fabric Docker layers
+        run: |
+            cd chain-cli/network
+            curl -Lf https://github.com/hyperledger-labs/fablo/releases/download/2.0.0/fablo.sh -o ./fablo && chmod +x ./fablo
+            ./fablo generate fablo-config-default.json
+            docker compose -f fablo-target/fabric-docker/docker-compose.yaml pull
+
   template-ci:
     name: Chaincode template CI
     runs-on: ubuntu-latest
-    needs: [ci]
+    needs: [ci, ensure-docker-cache]
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -67,7 +89,7 @@ jobs:
   template-e2e:
     name: Chaincode template E2E (watch mode)
     runs-on: ubuntu-latest
-    needs: [ci]
+    needs: [ci, ensure-docker-cache]
     env:
       GALA_CLIENT_DEV_MODE: "true"
     steps:
@@ -127,7 +149,7 @@ jobs:
   template-e2e-rest:
     name: Chaincode template E2E (REST API)
     runs-on: ubuntu-latest
-    needs: [ci]
+    needs: [ci, ensure-docker-cache]
     env:
       GALA_CLIENT_DEV_MODE: "false"
       CURATORORG_OPS_API_URL: "http://localhost:8801"
@@ -177,7 +199,7 @@ jobs:
 
   template-image-check:
     name: Chaincode template image check
-    needs: [ci]
+    needs: [ci, ensure-docker-cache]
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
