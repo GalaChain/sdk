@@ -12,7 +12,13 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-import { RegisterUserDto, TokenInstanceKey, TransferTokenDto, createValidDTO } from "@gala-chain/api";
+import {
+  RegisterUserDto,
+  TokenInstanceKey,
+  TransferTokenDto,
+  createValidDTO,
+  createValidSubmitDTO
+} from "@gala-chain/api";
 import BigNumber from "bignumber.js";
 import { plainToInstance } from "class-transformer";
 import { EventEmitter } from "events";
@@ -119,7 +125,7 @@ describe("API tests", () => {
       },
       Request: {
         options: {
-          body: '{"domain":{"name":"GalaChain"},"prefix":"\\u0019Ethereum Signed Message:\\n133","publicKey":"3","signature":"sampleSignature","types":{"RegisterUser":[{"name":"publicKey","type":"string"},{"name":"user","type":"string"},{"name":"uniqueKey","type":"string"}]},"uniqueKey":"26d4122e-34c8-4639-baa6-4382b398e68e","user":"client|4"}',
+          body: `{"domain":{"name":"GalaChain"},"prefix":"\\u0019Ethereum Signed Message:\\n141","publicKey":"3","signature":"sampleSignature","types":{"RegisterUser":[{"name":"publicKey","type":"string"},{"name":"user","type":"string"},{"name":"uniqueKey","type":"string"}]},"uniqueKey":"${dto.uniqueKey}","user":"client|4"}`,
           headers: {
             "Content-Type": "application/json"
           },
@@ -148,7 +154,7 @@ describe("API tests", () => {
       },
       Request: {
         options: {
-          body: '{"domain":{"name":"GalaChain"},"prefix":"\\u0019Ethereum Signed Message:\\n133","publicKey":"3","signature":"sampleSignature","types":{"RegisterUser":[{"name":"publicKey","type":"string"},{"name":"user","type":"string"},{"name":"uniqueKey","type":"string"}]},"uniqueKey":"26d4122e-34c8-4639-baa6-4382b398e68e","user":"client|4"}',
+          body: `{"domain":{"name":"GalaChain"},"prefix":"\\u0019Ethereum Signed Message:\\n141","publicKey":"3","signature":"sampleSignature","types":{"RegisterUser":[{"name":"publicKey","type":"string"},{"name":"user","type":"string"},{"name":"uniqueKey","type":"string"}]},"uniqueKey":"${dto.uniqueKey}","user":"client|4"}`,
           headers: {
             "Content-Type": "application/json"
           },
@@ -168,7 +174,7 @@ describe("API tests", () => {
       },
       Request: {
         options: {
-          body: '{"domain":{"name":"GalaChain"},"prefix":"\\u0019Ethereum Signed Message:\\n133","publicKey":"3","signature":"sampleSignature","types":{"RegisterUser":[{"name":"publicKey","type":"string"},{"name":"user","type":"string"},{"name":"uniqueKey","type":"string"}]},"uniqueKey":"26d4122e-34c8-4639-baa6-4382b398e68e","user":"client|4"}',
+          body: `{"domain":{"name":"GalaChain"},"prefix":"\\u0019Ethereum Signed Message:\\n141","publicKey":"3","signature":"sampleSignature","types":{"RegisterUser":[{"name":"publicKey","type":"string"},{"name":"user","type":"string"},{"name":"uniqueKey","type":"string"}]},"uniqueKey":"${dto.uniqueKey}","user":"client|4"}`,
           headers: {
             "Content-Type": "application/json"
           },

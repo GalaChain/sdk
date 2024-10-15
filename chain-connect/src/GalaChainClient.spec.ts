@@ -17,6 +17,7 @@ import {
   TokenInstanceKey,
   TransferTokenDto,
   createValidDTO,
+  createValidSubmitDTO,
   signatures
 } from "@gala-chain/api";
 import BigNumber from "bignumber.js";
@@ -127,7 +128,7 @@ describe("BrowserConnectClient", () => {
   });
 
   it("should properly recover signature", async () => {
-    const dto: LockTokenDto = await createValidDTO(LockTokenDto, {
+    const dto: LockTokenDto = await createValidSubmitDTO(LockTokenDto, {
       quantity: new BigNumber("1"),
       tokenInstance: plainToInstance(TokenInstanceKey, {
         collection: "GALA",
@@ -160,7 +161,7 @@ describe("BrowserConnectClient", () => {
     expect(ethAddress).toBe("e737c4D3072DA526f3566999e0434EAD423d06ec");
   });
   it("should properly recover signature", async () => {
-    const params: LockTokenDto = await createValidDTO(LockTokenDto, {
+    const params: LockTokenDto = await createValidSubmitDTO(LockTokenDto, {
       quantity: new BigNumber("1"),
       tokenInstance: plainToInstance(TokenInstanceKey, {
         collection: "GALA",
@@ -189,7 +190,7 @@ describe("BrowserConnectClient", () => {
     expect(ethAddress).toBe("e737c4D3072DA526f3566999e0434EAD423d06ec");
   });
   it("should properly recover signature for typed signing", async () => {
-    const dto: LockTokenDto = await createValidDTO(LockTokenDto, {
+    const dto: LockTokenDto = await createValidSubmitDTO(LockTokenDto, {
       quantity: new BigNumber("1"),
       tokenInstance: plainToInstance(TokenInstanceKey, {
         collection: "GALA",
@@ -221,7 +222,7 @@ describe("BrowserConnectClient", () => {
     expect(publicKey).toBe("0xe737c4D3072DA526f3566999e0434EAD423d06ec");
   });
   it("should properly recover signature for typed signing using signature utils", async () => {
-    const dto: LockTokenDto = await createValidDTO(LockTokenDto, {
+    const dto: LockTokenDto = await createValidSubmitDTO(LockTokenDto, {
       quantity: new BigNumber("1"),
       tokenInstance: plainToInstance(TokenInstanceKey, {
         collection: "GALA",

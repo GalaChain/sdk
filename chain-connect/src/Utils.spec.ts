@@ -12,7 +12,13 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-import { LockTokenDto, LockTokensDto, TokenInstanceKey, createValidDTO } from "@gala-chain/api";
+import {
+  LockTokenDto,
+  LockTokensDto,
+  TokenInstanceKey,
+  createValidDTO,
+  createValidSubmitDTO
+} from "@gala-chain/api";
 import BigNumber from "bignumber.js";
 import { instanceToPlain, plainToInstance } from "class-transformer";
 import { ethers } from "ethers";
