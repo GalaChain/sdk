@@ -13,12 +13,10 @@
  * limitations under the License.
  */
 import { TokenSale } from "@gala-chain/api";
-import { GalaChainContext, getObjectByKey } from "@gala-chain/chaincode";
 
-export async function fetchTokenSaleById(
-  ctx: GalaChainContext,
-  tokenSaleId: string
-): Promise<TokenSale> {
+import { GalaChainContext, getObjectByKey } from "../";
+
+export async function fetchTokenSaleById(ctx: GalaChainContext, tokenSaleId: string): Promise<TokenSale> {
   let tokenSale: TokenSale;
 
   try {

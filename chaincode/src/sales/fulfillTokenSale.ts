@@ -25,6 +25,9 @@ import {
   TokenSaleMintAllowance,
   TokenSaleQuantity
 } from "@gala-chain/api";
+import { BigNumber } from "bignumber.js";
+import { plainToInstance } from "class-transformer";
+
 import {
   GalaChainContext,
   createValidChainObject,
@@ -36,10 +39,7 @@ import {
   putChainObject,
   takeUntilUndefined,
   transferToken
-} from "@gala-chain/chaincode";
-import { BigNumber } from "bignumber.js";
-import { plainToInstance } from "class-transformer";
-
+} from "../";
 import { MintTokenFailedError } from "../mint/MintError";
 import { TransferTokenFailedError } from "../transfer/TransferError";
 

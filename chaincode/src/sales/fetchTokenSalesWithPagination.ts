@@ -12,10 +12,21 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-import { FetchTokenSalesWithPaginationDto, FetchTokenSalesWithPaginationResponse, TokenSale, TokenSaleOwner, ValidationFailedError } from "@gala-chain/api";
-import { GalaChainContext } from "../types";
-import { getObjectsByKeys, getObjectsByPartialCompositeKeyWithPagination, takeUntilUndefined } from "../utils";
+import {
+  FetchTokenSalesWithPaginationDto,
+  FetchTokenSalesWithPaginationResponse,
+  TokenSale,
+  TokenSaleOwner,
+  ValidationFailedError
+} from "@gala-chain/api";
 import { plainToInstance } from "class-transformer";
+
+import { GalaChainContext } from "../types";
+import {
+  getObjectsByKeys,
+  getObjectsByPartialCompositeKeyWithPagination,
+  takeUntilUndefined
+} from "../utils";
 
 export async function fetchTokenSalesWithPagination(
   ctx: GalaChainContext,
@@ -50,7 +61,6 @@ export async function fetchTokenSalesWithPagination(
   }
 
   const results = await getObjectsByKeys(ctx, TokenSale, tokenSaleIds);
-
 
   // TODO: not sure what metadata get is for here, taken from swap code
   // for (const result of results) {

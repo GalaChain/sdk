@@ -14,8 +14,10 @@
  */
 import {
   AllowanceType,
+  CreateTokenSaleDto,
   TokenClass,
   TokenInstanceQueryKey,
+  TokenSale,
   TokenSaleDtoValidationError,
   TokenSaleMintAllowance,
   TokenSaleOwner,
@@ -23,16 +25,10 @@ import {
   TokenSaleTokenSold,
   createValidDTO
 } from "@gala-chain/api";
-import { CreateTokenSaleDto, TokenSale } from "@gala-chain/api";
-import {
-  GalaChainContext,
-  fetchTokenClasses,
-  getObjectByKey,
-  grantAllowance,
-  putChainObject
-} from "@gala-chain/chaincode";
 import { BigNumber } from "bignumber.js";
 import { plainToInstance } from "class-transformer";
+
+import { GalaChainContext, fetchTokenClasses, getObjectByKey, grantAllowance, putChainObject } from "../";
 
 function validateTokenSaleQuantity(quantity: BigNumber, tokenClass: TokenClass): Array<string> {
   const validationResults: Array<string> = [];

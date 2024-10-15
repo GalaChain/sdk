@@ -12,14 +12,22 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-import { TokenAllowance, TokenSale, TokenSaleDtoValidationError, TokenSaleMintAllowance } from "@gala-chain/api";
-import { deleteChainObject, GalaChainContext, getObjectByKey, getObjectsByPartialCompositeKey, takeUntilUndefined } from "@gala-chain/chaincode";
+import {
+  TokenAllowance,
+  TokenSale,
+  TokenSaleDtoValidationError,
+  TokenSaleMintAllowance
+} from "@gala-chain/api";
 
-export async function removeTokenSale(
-  ctx: GalaChainContext,
-  tokenSaleId: string
-): Promise<TokenSale> {
+import {
+  GalaChainContext,
+  deleteChainObject,
+  getObjectByKey,
+  getObjectsByPartialCompositeKey,
+  takeUntilUndefined
+} from "../";
 
+export async function removeTokenSale(ctx: GalaChainContext, tokenSaleId: string): Promise<TokenSale> {
   const chainValidationErrors: Array<string> = [];
 
   // This will throw an error if it can't be found
@@ -36,18 +44,24 @@ export async function removeTokenSale(
   }
 
   if (chainValidationErrors.length === 0) {
-
     const instanceQueryKeys = takeUntilUndefined(tokenSaleId);
-    const tokenSaleMintAllowances = await getObjectsByPartialCompositeKey(ctx, TokenSaleMintAllowance.INDEX_KEY, instanceQueryKeys, TokenSaleMintAllowance);
-    
+    const tokenSaleMintAllowances = await getObjectsByPartialCompositeKey(
+      ctx,
+      TokenSaleMintAllowance.INDEX_KEY,
+      instanceQueryKeys,
+      TokenSaleMintAllowance
+    );
+
     // Remove remaining mint allowances that weren't sold
     await Promise.all(
-      tokenSaleMintAllowances.map(
-        async (tokenSaleMintAllowance) => {
-          const allowance = await getObjectByKey(ctx, TokenAllowance, tokenSaleMintAllowance.allowanceObjectKey);
-          await deleteChainObject(ctx, allowance)
-        }
-      )
+      tokenSaleMintAllowances.map(async (tokenSaleMintAllowance) => {
+        const allowance = await getObjectByKey(
+          ctx,
+          TokenAllowance,
+          tokenSaleMintAllowance.allowanceObjectKey
+        );
+        await deleteChainObject(ctx, allowance);
+      })
     );
 
     // Remove token
