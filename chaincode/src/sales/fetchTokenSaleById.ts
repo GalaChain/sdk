@@ -12,19 +12,19 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+import { TokenSale } from "@gala-chain/api";
 
-export * from "./allowances";
-export * from "./balances";
-export * from "./burns";
-export * from "./contracts";
-export * from "./fees";
-export * from "./locks";
-export * from "./mint";
-export * from "./oracle";
-export * from "./sales";
-export * from "./services";
-export * from "./token";
-export * from "./types";
-export * from "./utils";
-export * from "./use";
-export * from "./transfer";
+import { GalaChainContext } from "../types";
+import { getObjectByKey } from "../utils";
+
+export async function fetchTokenSaleById(ctx: GalaChainContext, tokenSaleId: string): Promise<TokenSale> {
+  let tokenSale: TokenSale;
+
+  try {
+    tokenSale = await getObjectByKey(ctx, TokenSale, tokenSaleId);
+  } catch (error) {
+    throw new Error(`Token sale with tokenSaleId ${tokenSaleId} not found.`);
+  }
+
+  return tokenSale;
+}
