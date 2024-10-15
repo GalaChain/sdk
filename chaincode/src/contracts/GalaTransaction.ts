@@ -32,11 +32,13 @@ import { Object as DTOObject, Transaction } from "fabric-contract-api";
 import { inspect } from "util";
 
 import { UniqueTransactionService } from "../services";
+import { MissingUniqueKeyError } from "../services/UniqueTransactionService";
 import { GalaChainContext } from "../types";
 import { GalaContract } from "./GalaContract";
 import { updateApi } from "./GalaContractApi";
 import { authenticate } from "./authenticate";
 import { authorize } from "./authorize";
+import { verifyTransactionExpiration } from "./verifyTransactionExpiration";
 
 // All DTOs need to be registered in the application, including super classes. Otherwise, chaincode
 // containers will fail to start. Below we register just some base classes. Actual DTO classes are
@@ -169,6 +171,9 @@ function GalaTransaction<T extends ChainCallDTO>(
           ? undefined
           : await parseValidDTO<T>(dtoClass, dtoPlain as string | Record<string, unknown>);
 
+        // Verify transaction expiration
+        verifyTransactionExpiration(ctx, dto);
+
         // Authenticate the user
         if (ctx.isDryRun) {
           // Do not authenticate in dry run mode
@@ -187,7 +192,7 @@ function GalaTransaction<T extends ChainCallDTO>(
           if (dto?.uniqueKey) {
             await UniqueTransactionService.ensureUniqueTransaction(ctx, dto.uniqueKey);
           } else {
-            throw new RuntimeError("Missing uniqueKey in transaction dto");
+            throw new MissingUniqueKeyError();
           }
         }
 

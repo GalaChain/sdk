@@ -12,13 +12,19 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-import { ChainError, ErrorCode } from "@gala-chain/api";
+import { ChainError, ErrorCode, RuntimeError } from "@gala-chain/api";
 import { Context } from "fabric-contract-api";
 
 import { GalaChainContext } from "../types";
 import { getObjectByKey, putChainObject } from "../utils/state";
 import { UniqueTransaction } from "./UniqueTransaction";
 import { UniqueTransactionConflictError } from "./UniqueTransactionError";
+
+export class MissingUniqueKeyError extends RuntimeError {
+  constructor() {
+    super("Missing uniqueKey in transaction dto");
+  }
+}
 
 export class UniqueTransactionService {
   private static UT_INDEX_KEY = UniqueTransaction.INDEX_KEY;
