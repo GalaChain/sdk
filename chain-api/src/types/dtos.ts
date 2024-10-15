@@ -391,8 +391,6 @@ export class DryRunResultDto extends ChainCallDTO {
   public deletes: Record<string, true>;
 }
 
-export type RegisterUserParams = ConstructorArgs<RegisterUserDto>;
-
 /**
  * @description
  *
@@ -423,8 +421,6 @@ export class RegisterUserDto extends ChainCallDTO {
   publicKey: string;
 }
 
-export type RegisterEthUserParams = ConstructorArgs<RegisterEthUserDto>;
-
 /**
  * @description
  *
@@ -440,8 +436,6 @@ export class RegisterEthUserDto extends ChainCallDTO {
   publicKey: string;
 }
 
-export type RegisterTonUserParams = ConstructorArgs<RegisterTonUserDto>;
-
 /**
  * @description
  *
@@ -456,9 +450,6 @@ export class RegisterTonUserDto extends ChainCallDTO {
   @IsNotEmpty()
   publicKey: string;
 }
-
-export type UpdatePublicKeyParams = ConstructorArgs<UpdatePublicKeyDto>;
-
 export class UpdatePublicKeyDto extends ChainCallDTO {
   @JSONSchema({
     description:
@@ -478,7 +469,6 @@ export class GetPublicKeyDto extends ChainCallDTO {
   user?: string;
 }
 
-export type GetMyProfileParams = ConstructorArgs<GetMyProfileDto>;
 export class GetMyProfileDto extends ChainCallDTO {
   // make signature required
   @IsNotEmpty()

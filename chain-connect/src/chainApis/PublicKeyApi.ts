@@ -12,7 +12,14 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-import { RegisterUserParams, UpdatePublicKeyParams, UserProfileBody } from "@gala-chain/api";
+import {
+  GetMyProfileDto,
+  RegisterEthUserDto,
+  RegisterUserDto,
+  UpdatePublicKeyDto,
+  UserProfileBody
+} from "@gala-chain/api";
+import { plainToInstance } from "class-transformer";
 
 import { GalaChainProvider } from "../GalaChainClient";
 
@@ -26,17 +33,17 @@ export class PublicKeyApi {
   public GetMyProfile(message?: string, signature?: string) {
     return this.connection.submit<UserProfileBody, { message?: string }>({
       method: "GetMyProfile",
-      payload: {
+      payload: plainToInstance(GetMyProfileDto, {
         ...(message ? { message } : {}),
         ...(signature ? { signature } : {})
-      },
+      }),
       sign: true,
       url: this.chainCodeUrl
     });
   }
 
-  public RegisterUser(dto: RegisterUserParams) {
-    return this.connection.submit<string, RegisterUserParams>({
+  public RegisterUser(dto: RegisterUserDto) {
+    return this.connection.submit<string, RegisterUserDto>({
       method: "RegisterUser",
       payload: dto,
       sign: true,
@@ -44,8 +51,8 @@ export class PublicKeyApi {
     });
   }
 
-  public RegisterEthUser(dto: RegisterUserParams) {
-    return this.connection.submit<string, RegisterUserParams>({
+  public RegisterEthUser(dto: RegisterEthUserDto) {
+    return this.connection.submit<string, RegisterEthUserDto>({
       method: "RegisterEthUser",
       payload: dto,
       sign: true,
@@ -53,8 +60,8 @@ export class PublicKeyApi {
     });
   }
 
-  public UpdatePublicKey(dto: UpdatePublicKeyParams) {
-    return this.connection.submit<void, UpdatePublicKeyParams>({
+  public UpdatePublicKey(dto: UpdatePublicKeyDto) {
+    return this.connection.submit<void, UpdatePublicKeyDto>({
       method: "UpdatePublicKey",
       payload: dto,
       sign: true,
