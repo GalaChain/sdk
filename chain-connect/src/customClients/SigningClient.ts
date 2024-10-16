@@ -15,8 +15,8 @@
 import { SigningKey, computeAddress, ethers, hashMessage } from "ethers";
 
 import { CustomClient } from "../GalaChainClient";
-import { generateEIP712Types } from "../Utils";
 import { calculatePersonalSignPrefix } from "../helpers";
+import { generateEIP712Types } from "../utils";
 
 export class SigningClient extends CustomClient {
   get walletAddress(): string {
