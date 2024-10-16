@@ -17,7 +17,7 @@ import {
   RegisterEthUserDto,
   RegisterUserDto,
   UpdatePublicKeyDto,
-  UserProfileBody
+  UserProfile
 } from "@gala-chain/api";
 import { plainToInstance } from "class-transformer";
 
@@ -31,7 +31,7 @@ export class PublicKeyApi {
 
   // PublicKey Chaincode calls:
   public GetMyProfile(message?: string, signature?: string) {
-    return this.connection.submit<UserProfileBody, { message?: string }>({
+    return this.connection.submit<UserProfile, GetMyProfileDto>({
       method: "GetMyProfile",
       payload: plainToInstance(GetMyProfileDto, {
         ...(message ? { message } : {}),

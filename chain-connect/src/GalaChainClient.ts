@@ -17,22 +17,23 @@ import { instanceToPlain } from "class-transformer";
 import { BrowserProvider, SigningKey, computeAddress, getAddress, getBytes, hashMessage } from "ethers";
 
 import { EventEmitter, Listener, MetaMaskEvents } from "./helpers";
+import { GalaChainResponseError, GalaChainResponseSuccess } from "./types/GalaChainResponse";
 
 export abstract class GalaChainProvider {
   abstract sign(method: string, dto: any): Promise<any>;
-  async submit<T, U>({
+  async submit<T, U extends ChainCallDTO>({
     url,
     method,
     payload,
-    sign = false,
+    sign,
     headers = {}
   }: {
     url: string;
     method: string;
-    payload: ChainCallDTO;
+    payload: U;
     sign?: boolean;
     headers?: object;
-  }): Promise<{ data: T; hash: string; status: number; message?: string }> {
+  }): Promise<GalaChainResponseSuccess<T>> {
     await payload.validateOrReject();
 
     let newPayload = instanceToPlain(payload);
@@ -63,23 +64,26 @@ export abstract class GalaChainProvider {
       }
     });
 
-    const id = response.headers.get("x-transaction-id");
+    const hash = response.headers.get("x-transaction-id") ?? undefined;
 
     // Check if the content-length is not zero and try to parse JSON
     if (response.headers.get("content-length") !== "0") {
+      let data: any;
       try {
-        const data = await response.json();
-        if (data.error) {
-          return Promise.reject(data.message ? new Error(data.message) : data.error);
-        }
-        return Promise.resolve(id ? { Hash: id, ...data } : data);
+        data = await response.json();
       } catch (error) {
-        return Promise.reject("Invalid JSON response");
+        throw new Error("Invalid JSON response");
+      }
+      if (data.error) {
+        throw new GalaChainResponseError<T>(data);
+      } else {
+        return new GalaChainResponseSuccess<T>(data, hash);
       }
     }
     throw new Error(`Unable to get data. Received response: ${JSON.stringify(response)}`);
   }
 }
+
 export abstract class CustomClient extends GalaChainProvider {
   abstract getPublicKey(): Promise<{ publicKey: string; recoveredAddress: string }>;
   abstract walletAddress: string;

@@ -20,8 +20,6 @@ import { ChainKey, ConstructorArgs } from "../utils";
 import { BigNumberIsInteger, BigNumberIsNotNegative, BigNumberProperty, IsUserAlias } from "../validators";
 import { ChainObject } from "./ChainObject";
 
-export type TokenBurnBody = ConstructorArgs<TokenBurn>;
-
 export class TokenBurn extends ChainObject {
   @Exclude()
   public static INDEX_KEY = "GCTBR";
