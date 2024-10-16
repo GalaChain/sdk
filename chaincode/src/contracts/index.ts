@@ -13,8 +13,10 @@
  * limitations under the License.
  */
 
-export * from "./authorize";
+export * from "./authenticate";
 export * from "./PublicKeyContract";
 export * from "./GalaContract";
 export * from "./GalaContractApi";
 export * from "./GalaTransaction";
+export { ensureOrganizationIsAllowed } from "./authorize";
+export { OrganizationNotAllowedError } from "./authorize";

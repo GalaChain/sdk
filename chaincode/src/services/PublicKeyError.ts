@@ -13,6 +13,7 @@
  * limitations under the License.
  */
 import { ConflictError, NotFoundError, UnauthorizedError } from "@gala-chain/api";
+import { a } from "@storybook/vue3/dist/render-18d12fa7";
 
 export class PkExistsError extends ConflictError {
   constructor(user: string) {
@@ -55,5 +56,11 @@ export class PkInvalidSignatureError extends UnauthorizedError {
   constructor(user: string) {
     const message = `Signature is invalid. DTO should be signed by ${user} private key with secp256k1 algorithm`;
     super(message, { user });
+  }
+}
+
+export class UserProfileNotFoundError extends NotFoundError {
+  constructor(user: string) {
+    super(`UserProfile not found for user alias ${user}`, { user });
   }
 }

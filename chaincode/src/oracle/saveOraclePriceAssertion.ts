@@ -22,7 +22,7 @@ import {
 import BigNumber from "bignumber.js";
 import { plainToInstance } from "class-transformer";
 
-import { ensureIsAuthorizedBy } from "../contracts";
+import { ensureIsAuthenticatedBy } from "../contracts";
 import { GalaChainContext } from "../types";
 import { getObjectByKey, putChainObject } from "../utils";
 
@@ -52,7 +52,7 @@ export async function saveOraclePriceAssertion(ctx: GalaChainContext, dto: Oracl
     );
   }
 
-  await ensureIsAuthorizedBy(ctx, dto, identity);
+  await ensureIsAuthenticatedBy(ctx, dto, identity);
 
   const { oracle, baseToken, quoteToken, exchangeRate, source, sourceUrl, timestamp } = dto;
   const txid = ctx.stub.getTxID();

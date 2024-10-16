@@ -35,7 +35,7 @@ describe("parseJsonFromStringOrFile", () => {
     // When
     try {
       await parseJsonFromStringOrFile(jsonString);
-    } catch (e: any) {
+    } catch (e) {
       expect(e.message).toContain("string passed to --data flag failed to parse as valid JSON.");
       expect(e.message).toContain(
         "No valid JSON value found at filepath provided. Provided either a JSON.parse()-able string or file path to a valid JSON object."
@@ -67,7 +67,7 @@ describe("parseJsonFromStringOrFile", () => {
     // When
     try {
       await parseJsonFromStringOrFile(filePath);
-    } catch (e: any) {
+    } catch (e) {
       expect(e.message).toContain("string passed to --data flag failed to parse as valid JSON.");
       expect(e.message).toContain(
         "No valid JSON value found at filepath provided. Provided either a JSON.parse()-able string or file path to a valid JSON object."

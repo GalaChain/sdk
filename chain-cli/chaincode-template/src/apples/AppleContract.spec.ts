@@ -12,61 +12,73 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-import { ChainUser } from "@gala-chain/client";
-import { fixture, transactionErrorMessageContains, transactionSuccess, writesMap } from "@gala-chain/test";
-import { plainToInstance } from "class-transformer";
+import { createValidChainObject, randomUniqueKey } from "@gala-chain/api";
+import {
+  fixture,
+  transactionErrorMessageContains,
+  transactionSuccess,
+  users,
+  writesMap
+} from "@gala-chain/test";
 
-import { AppleTree, AppleTreeDto, PickAppleDto, Variety } from "../apples";
+import { AppleTree, PickAppleDto, Variety } from "../apples";
 import { AppleContract } from "./AppleContract";
+import { PlantAppleTreeDto } from "./dtos";
 
 it("should allow to plant a tree", async () => {
   // Given
-  const { contract, ctx, writes } = fixture(AppleContract);
-  const dto = new AppleTreeDto(Variety.GALA, 1);
-  const expectedTree = new AppleTree(ctx.callingUser, dto.variety, dto.index, ctx.txUnixTime);
+  const user = users.random();
+  const { contract, ctx, getWrites } = fixture(AppleContract).registeredUsers(user);
+  const dto = new PlantAppleTreeDto(Variety.GALA, 1, randomUniqueKey()).signed(user.privateKey);
+  const expectedTree = new AppleTree(user.identityKey, dto.variety, dto.index, ctx.txUnixTime);
 
   // When
   const response = await contract.PlantTree(ctx, dto);
 
   // Then
   expect(response).toEqual(transactionSuccess());
-  expect(writes).toEqual(writesMap(expectedTree));
+  expect(getWrites()).toEqual(writesMap(expectedTree));
 });
 
 it("should fail to plant a tree if tree already exists", async () => {
   // Given
-  const user = ChainUser.withRandomKeys();
+  const user = users.random();
 
-  const { contract, ctx, writes } = fixture(AppleContract)
-    .callingUser(user)
+  const { contract, ctx, getWrites } = fixture(AppleContract)
+    .registeredUsers(user)
     .savedState(new AppleTree(user.identityKey, Variety.GOLDEN_DELICIOUS, 1, 0));
 
+  const dto = new PlantAppleTreeDto(Variety.GOLDEN_DELICIOUS, 1, randomUniqueKey()).signed(user.privateKey);
+
   // When
-  const response = await contract.PlantTree(ctx, new AppleTreeDto(Variety.GOLDEN_DELICIOUS, 1));
+  const response = await contract.PlantTree(ctx, dto);
 
   // Then
   expect(response).toEqual(transactionErrorMessageContains("Tree already exists"));
-  expect(writes).toEqual({});
+  expect(getWrites()).toEqual({});
 });
 
 it("should allow to pick apples", async () => {
   // Given
   const twoYearsAgo = new Date(new Date().getTime() - 1000 * 60 * 60 * 24 * 365 * 2).getTime();
-  const existingTree = new AppleTree("client|some-user", Variety.GALA, 1, twoYearsAgo);
-  const { contract, ctx, writes } = fixture(AppleContract).savedState(existingTree);
+  const tree = new AppleTree("client|some-user", Variety.GALA, 1, twoYearsAgo);
+  const user = users.random();
+  const { contract, ctx, getWrites } = fixture(AppleContract).registeredUsers(user).savedState(tree);
 
-  const dto = new PickAppleDto(existingTree.plantedBy, existingTree.variety, existingTree.index);
+  const dto = new PickAppleDto(tree.plantedBy, tree.variety, tree.index, randomUniqueKey()).signed(
+    user.privateKey
+  );
 
   // When
   const response = await contract.PickApple(ctx, dto);
 
   // Then
   expect(response).toEqual(transactionSuccess());
-  expect(writes).toEqual(
+  expect(getWrites()).toEqual(
     writesMap(
-      plainToInstance(AppleTree, {
-        ...existingTree,
-        applesPicked: existingTree.applesPicked.plus(1)
+      await createValidChainObject(AppleTree, {
+        ...tree,
+        applesPicked: tree.applesPicked.plus(1)
       })
     )
   );

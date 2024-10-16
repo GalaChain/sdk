@@ -234,7 +234,6 @@ function updatedFabloConfigWithEntry(
 
 function customValidation(flags: any): void {
   const { channel, channelType, chaincodeName, chaincodeDir, envConfig } = flags;
-  console.log(flags);
 
   /*
     Check if the flags does not have special characters like &, |, ;, :, etc. Only -, _ and . and are allowed
@@ -253,8 +252,6 @@ function customValidation(flags: any): void {
         if (flag.length > maxLength) {
           throw new Error(`Error: Flag ${flag} is too long. Maximum length is ${maxLength} characters.`);
         }
-        console.log(flag);
-        console.log(specialChars.test(flag));
         if (specialChars.test(flag)) {
           throw new Error(`Error: Flag ${flag} contains special characters. Only - and _ are allowed.`);
         }
@@ -281,7 +278,7 @@ function customValidation(flags: any): void {
     throw new Error(`Error: Env config file ${envConfig} does not exist.`);
   }
 
-  /* 
+  /*
     The same number of parameters for chaincode, channelTyle, chaincode and chaincodeDir is required
   */
   if (
@@ -294,7 +291,7 @@ function customValidation(flags: any): void {
     );
   }
 
-  /* 
+  /*
     Channel types need to be consistend
   */
   channel.reduce(
@@ -313,7 +310,7 @@ function customValidation(flags: any): void {
     {} as Record<string, "curator" | "partner">
   );
 
-  /* 
+  /*
     (channel, chaincodeName) pairs should be unique
   */
   channel
@@ -324,7 +321,7 @@ function customValidation(flags: any): void {
       }
     });
 
-  /* 
+  /*
     Watch mode
   */
   if (flags.watch) {
@@ -335,7 +332,7 @@ function customValidation(flags: any): void {
 }
 
 function reduce(args: any): SingleArg[] {
-  return args.chaincodeName.map((chaincodeName: any, i: number) => ({
+  return args.chaincodeName.map((chaincodeName: unknown, i: number) => ({
     chaincodeName,
     chaincodeDir: args.chaincodeDir?.[i],
     channel: args.channel[i],
@@ -345,7 +342,7 @@ function reduce(args: any): SingleArg[] {
 
 function copyNetworkScriptsTo(targetPath: string): void {
   const sourceScriptsDir = path.resolve(require.resolve("."), "../../../network");
-  execSync(`mkdir -p "${targetPath}" && cd "${targetPath}" && cp -R "${sourceScriptsDir}"/* ./ && ls -lh`);
+  execSync(`mkdir -p "${targetPath}" && cd "${targetPath}" && cp -R "${sourceScriptsDir}"/* ./`);
 }
 
 function saveConnectionProfiles(

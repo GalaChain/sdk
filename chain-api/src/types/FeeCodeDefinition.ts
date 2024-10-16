@@ -18,6 +18,7 @@ import { IsBoolean, IsNotEmpty, IsNumber, IsOptional, IsString } from "class-val
 import { ChainKey } from "../utils";
 import { BigNumberIsInteger, BigNumberIsNotNegative, BigNumberProperty, EnumProperty } from "../validators";
 import { ChainObject } from "./ChainObject";
+import { SubmitCallDTO } from "./dtos";
 
 export enum FeeAccelerationRateType {
   CuratorDefined = 0,

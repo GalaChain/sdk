@@ -28,6 +28,8 @@ import {
 import { jest } from "@jest/globals";
 import * as path from "path";
 
+import { MockedChaincodeClientBuilder } from "./MockedChaincodeClient";
+
 // use this timeout in each test that uses ContractTestClient
 jest.setTimeout(60 * 1000);
 
@@ -55,7 +57,8 @@ const defaultParams = {
     connectionProfilePath: process.env.CURATORORG_CONNECTION_PROFILE_PATH,
     defaultConnectionProfilePath: () => defaultConnectionProfilePath("curator"),
     apiUrl: process.env.CURATORORG_OPS_API_URL, // note: no default value
-    configPath: process.env.CURATORORG_OPS_API_CONFIG_PATH
+    configPath: process.env.CURATORORG_OPS_API_CONFIG_PATH,
+    mockedChaincodeDir: process.env.CURATORORG_MOCKED_CHAINCODE_DIR
   },
   UsersOrg1: {
     orgMsp: "UsersOrg1",
@@ -64,7 +67,8 @@ const defaultParams = {
     connectionProfilePath: process.env.USERSORG1_CONNECTION_PROFILE_PATH,
     defaultConnectionProfilePath: () => defaultConnectionProfilePath("users"),
     apiUrl: process.env.USERSORG1_OPS_API_URL, // note: no default value
-    configPath: process.env.USERSORG1_OPS_API_CONFIG_PATH
+    configPath: process.env.USERSORG1_OPS_API_CONFIG_PATH,
+    mockedChaincodeDir: process.env.USERSORG1_MOCKED_CHAINCODE_DIR
   },
   PartnerOrg1: {
     orgMsp: "PartnerOrg1",
@@ -73,7 +77,8 @@ const defaultParams = {
     connectionProfilePath: process.env.PARTNERORG1_CONNECTION_PROFILE_PATH,
     defaultConnectionProfilePath: () => defaultConnectionProfilePath("partner"),
     apiUrl: process.env.PARTNERORG1_OPS_API_URL,
-    configPath: process.env.PARTNERORG1_OPS_API_CONFIG_PATH
+    configPath: process.env.PARTNERORG1_OPS_API_CONFIG_PATH,
+    mockedChaincodeDir: process.env.PARTNERORG1_MOCKED_CHAINCODE_DIR
   }
 };
 
@@ -84,6 +89,19 @@ interface TestClientParams {
   connectionProfilePath?: string;
   apiUrl?: string;
   configPath?: string;
+  mockedChaincodeDir?: string;
+}
+
+type TestClientParamsForApi = TestClientParams & { apiUrl: string };
+
+function isApiUrlDefined(p: TestClientParams): p is TestClientParamsForApi {
+  return p.apiUrl !== undefined;
+}
+
+type TestClientParamsForDir = TestClientParams & { mockedChaincodeDir: string };
+
+function isChaincodeDirDefined(p: TestClientParams): p is TestClientParamsForDir {
+  return p.mockedChaincodeDir !== undefined;
 }
 
 function buildHFParams(params: TestClientParams): HFClientConfig {
@@ -112,7 +130,7 @@ function buildHFParams(params: TestClientParams): HFClientConfig {
   };
 }
 
-function buildRestApiParams(params: TestClientParams & { apiUrl: string }): RestApiClientConfig {
+function buildRestApiParams(params: TestClientParamsForApi): RestApiClientConfig {
   return {
     orgMsp: params.orgMsp ?? "CuratorOrg",
     apiUrl: params.apiUrl,
@@ -123,10 +141,9 @@ function buildRestApiParams(params: TestClientParams & { apiUrl: string }): Rest
 }
 
 function getBuilder(params: TestClientParams): ChainClientBuilder {
-  const isApiUrlDefined = (p: TestClientParams): p is TestClientParams & { apiUrl: string } =>
-    p.apiUrl !== undefined;
-
-  if (isApiUrlDefined(params)) {
+  if (isChaincodeDirDefined(params)) {
+    return new MockedChaincodeClientBuilder(params);
+  } else if (isApiUrlDefined(params)) {
     const restApiParams = buildRestApiParams(params);
     return gcclient.forApiConfig(restApiParams);
   } else {

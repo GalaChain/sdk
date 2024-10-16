@@ -12,7 +12,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-import { ChainCallDTO, ContractAPI, GalaChainResponse, Inferred } from "@gala-chain/api";
+import { ChainCallDTO, ContractAPI, GalaChainResponse, Inferred, serialize } from "@gala-chain/api";
 import axios from "axios";
 
 import { ChainClient, ChainClientBuilder, ClassType, ContractConfig, isClassType } from "../generic";
@@ -94,7 +94,7 @@ export class RestApiClient extends ChainClient {
     resp?: ClassType<Inferred<T>>
   ): Promise<GalaChainResponse<T>> {
     const [dto, responseType] = isClassType(dtoOrResp) ? [undefined, dtoOrResp] : [dtoOrResp, resp];
-    const serialized = JSON.parse(dto?.serialize() ?? "{}");
+    const serialized = JSON.parse(dto ? serialize(dto) : "{}");
 
     const response = await axios
       .post<Record<string, unknown>>(path, serialized)

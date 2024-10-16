@@ -20,7 +20,7 @@ import {
   TokenBalance,
   TokenClass,
   TokenInstance,
-  createValidDTO
+  createValidSubmitDTO
 } from "@gala-chain/api";
 import { currency, fixture, users } from "@gala-chain/test";
 import BigNumber from "bignumber.js";
@@ -37,14 +37,15 @@ describe("defineFeeSchedule", () => {
     const userBalance: TokenBalance = currency.tokenBalance();
     const authorizedFeeQuantity = new BigNumber("100");
 
-    const { ctx, contract, writes } = fixture<GalaChainContext, GalaChainTokenContract>(
+    const { ctx, contract, getWrites } = fixture<GalaChainContext, GalaChainTokenContract>(
       GalaChainTokenContract
     )
-      .callingUser(users.testUser1Id)
+      .caClientIdentity("admin|admin", "CuratorOrg")
+      .registeredUsers(users.testUser1)
       .savedState(currencyInstance, currencyClass, userBalance)
       .savedRangeState([]);
 
-    const dto = await createValidDTO(FeeCodeDefinitionDto, {
+    const dto = await createValidSubmitDTO(FeeCodeDefinitionDto, {
       feeCode: "TestFeeContractFunction",
       feeThresholdUses: new BigNumber("10"),
       feeThresholdTimePeriod: 1,
@@ -52,7 +53,7 @@ describe("defineFeeSchedule", () => {
       maxQuantity: new BigNumber("1000"),
       feeAccelerationRateType: FeeAccelerationRateType.CuratorDefined,
       feeAccelerationRate: new BigNumber("1")
-    });
+    }).signed(users.testUser1.privateKey);
 
     // When
     const response = await contract.DefineFeeSchedule(ctx, dto);

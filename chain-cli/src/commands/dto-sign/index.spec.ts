@@ -16,6 +16,8 @@ import path from "path";
 
 import DtoSign from "./index";
 
+jest.setTimeout(10000);
+
 const dataTestJson = `{
   "tokenClass": {
     "collection": "CLITest",

@@ -12,13 +12,11 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-import { RegisterUserDto, TokenInstanceKey, TransferTokenDto, createValidDTO } from "@gala-chain/api";
-import BigNumber from "bignumber.js";
-import { plainToInstance } from "class-transformer";
+import { RegisterUserParams, TransferTokenParams } from "@gala-chain/api";
 import { EventEmitter } from "events";
 
 import { PublicKeyApi, TokenApi } from "./chainApis";
-import { BrowserConnectClient } from "./customClients";
+import { MetamaskConnectClient } from "./customClients";
 
 global.fetch = jest.fn((url: string, options?: Record<string, unknown>) =>
   Promise.resolve({
@@ -62,21 +60,21 @@ window.ethereum = new EthereumMock();
 
 describe("API tests", () => {
   it("test transfer", async () => {
-    const dto: TransferTokenDto = await createValidDTO(TransferTokenDto, {
-      quantity: new BigNumber("1"),
+    const dto: TransferTokenParams = {
+      quantity: "1",
       to: "client|63580d94c574ad78b121c267",
-      tokenInstance: plainToInstance(TokenInstanceKey, {
+      tokenInstance: {
         additionalKey: "none",
         category: "Unit",
         collection: "GALA",
-        instance: new BigNumber("0"),
+        instance: "0",
         type: "none"
-      }),
+      },
       uniqueKey: "26d4122e-34c8-4639-baa6-4382b398e68e"
-    });
+    };
 
     // call connect
-    const connection = new BrowserConnectClient();
+    const connection = new MetamaskConnectClient();
     await connection.connect();
 
     const tokenApi = new TokenApi("https://example.com", connection);
@@ -100,13 +98,14 @@ describe("API tests", () => {
     });
   });
   it("test register", async () => {
-    const dto: RegisterUserDto = await createValidDTO(RegisterUserDto, {
+    const dto: RegisterUserParams = {
       publicKey: "3",
-      user: "client|4"
-    });
+      user: "4",
+      uniqueKey: "26d4122e-34c8-4639-baa6-4382b398e68e"
+    };
 
     // call connect
-    const connection = new BrowserConnectClient();
+    const connection = new MetamaskConnectClient();
     await connection.connect();
 
     const publicKeyApi = new PublicKeyApi("https://example.com", connection);
@@ -119,7 +118,7 @@ describe("API tests", () => {
       },
       Request: {
         options: {
-          body: '{"domain":{"name":"GalaChain"},"prefix":"\\u0019Ethereum Signed Message:\\n81","publicKey":"3","signature":"sampleSignature","types":{"RegisterUser":[{"name":"publicKey","type":"string"},{"name":"user","type":"string"}]},"user":"client|4"}',
+          body: '{"domain":{"name":"GalaChain"},"prefix":"\\u0019Ethereum Signed Message:\\n126","publicKey":"3","signature":"sampleSignature","types":{"RegisterUser":[{"name":"publicKey","type":"string"},{"name":"user","type":"string"},{"name":"uniqueKey","type":"string"}]},"uniqueKey":"26d4122e-34c8-4639-baa6-4382b398e68e","user":"4"}',
           headers: {
             "Content-Type": "application/json"
           },
@@ -130,13 +129,14 @@ describe("API tests", () => {
     });
   });
   it("test both using same connection", async () => {
-    const dto: RegisterUserDto = await createValidDTO(RegisterUserDto, {
+    const dto: RegisterUserParams = {
       publicKey: "3",
-      user: "client|4"
-    });
+      user: "4",
+      uniqueKey: "26d4122e-34c8-4639-baa6-4382b398e68e"
+    };
 
     // call connect
-    const connection = new BrowserConnectClient();
+    const connection = new MetamaskConnectClient();
     await connection.connect();
 
     const tokenApi = new PublicKeyApi("https://example.com", connection);
@@ -148,7 +148,7 @@ describe("API tests", () => {
       },
       Request: {
         options: {
-          body: '{"domain":{"name":"GalaChain"},"prefix":"\\u0019Ethereum Signed Message:\\n81","publicKey":"3","signature":"sampleSignature","types":{"RegisterUser":[{"name":"publicKey","type":"string"},{"name":"user","type":"string"}]},"user":"client|4"}',
+          body: '{"domain":{"name":"GalaChain"},"prefix":"\\u0019Ethereum Signed Message:\\n126","publicKey":"3","signature":"sampleSignature","types":{"RegisterUser":[{"name":"publicKey","type":"string"},{"name":"user","type":"string"},{"name":"uniqueKey","type":"string"}]},"uniqueKey":"26d4122e-34c8-4639-baa6-4382b398e68e","user":"4"}',
           headers: {
             "Content-Type": "application/json"
           },
@@ -168,7 +168,7 @@ describe("API tests", () => {
       },
       Request: {
         options: {
-          body: '{"domain":{"name":"GalaChain"},"prefix":"\\u0019Ethereum Signed Message:\\n81","publicKey":"3","signature":"sampleSignature","types":{"RegisterUser":[{"name":"publicKey","type":"string"},{"name":"user","type":"string"}]},"user":"client|4"}',
+          body: '{"domain":{"name":"GalaChain"},"prefix":"\\u0019Ethereum Signed Message:\\n126","publicKey":"3","signature":"sampleSignature","types":{"RegisterUser":[{"name":"publicKey","type":"string"},{"name":"user","type":"string"},{"name":"uniqueKey","type":"string"}]},"uniqueKey":"26d4122e-34c8-4639-baa6-4382b398e68e","user":"4"}',
           headers: {
             "Content-Type": "application/json"
           },
