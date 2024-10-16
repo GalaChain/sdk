@@ -26,9 +26,12 @@ declare global {
 }
 
 export class BrowserConnectClient extends WebSigner {
+  protected isInitialized = false;
+
   constructor(provider?: Eip1193Provider) {
     super();
     this.address = "";
+    this.onAccountsChanged = this.onAccountsChanged.bind(this);
     if (provider) {
       this.provider = new BrowserProvider(provider);
     } else if (window.ethereum) {
@@ -45,23 +48,29 @@ export class BrowserConnectClient extends WebSigner {
     if (!window.ethereum) {
       return;
     }
-    window.ethereum.on("accountsChanged", (accounts: string[]) => {
-      if (accounts.length > 0) {
-        this.walletAddress = getAddress(accounts[0]);
-        this.emit("accountChanged", this.galachainEthAlias);
-        this.emit("accountsChanged", accounts);
-      } else {
-        this.walletAddress = "";
-        this.emit("accountChanged", null);
-        this.emit("accountsChanged", null);
-      }
-    });
+    if (!this.isInitialized) {
+      window.ethereum.on("accountsChanged", this.onAccountsChanged);
+      this.isInitialized = true;
+    }
+  }
+
+  protected onAccountsChanged(accounts: string[]) {
+    if (accounts.length > 0) {
+      this.walletAddress = getAddress(accounts[0]);
+      this.emit("accountChanged", this.galachainEthAlias);
+      this.emit("accountsChanged", accounts);
+    } else {
+      this.walletAddress = "";
+      this.emit("accountChanged", null);
+      this.emit("accountsChanged", null);
+    }
   }
 
   public async connect() {
     if (!this.provider) {
       throw new Error("Ethereum provider not found");
     }
+
     this.initializeListeners();
 
     try {
@@ -71,6 +80,14 @@ export class BrowserConnectClient extends WebSigner {
     } catch (error: unknown) {
       throw new Error((error as Error).message);
     }
+  }
+
+  public disconnect() {
+    if (this.isInitialized && window.ethereum) {
+      window.ethereum.removeListener("accountsChanged", this.onAccountsChanged);
+      this.isInitialized = false;
+    }
+    this.walletAddress = "";
   }
 
   public async sign<U extends ConstructorArgs<ChainCallDTO>>(
