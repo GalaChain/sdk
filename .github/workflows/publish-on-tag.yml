@@ -78,17 +78,6 @@ jobs:
           # Publish to NPM registry
           npm publish --access public
           cd ../
-      - name: publish-chain-ui
-        run: |
-          cd chain-ui
-          npm i
-          npm run build
-          # Publish to NPM registry
-          cd ./packages/galachain-ui
-          npm publish --access public
-          cd ../../packages/galachain-ui-vue
-          npm publish --access public
-          cd ../../../
 
   publish-pages:
     name: Publish Pages
@@ -104,7 +93,6 @@ jobs:
           npm run typedoc-chain-client
           npm run typedoc-chaincode
           npm run typedoc-chain-connect
-          npm run typedoc-chain-ui
           npm run typedoc-chain-test
           npm run replace-readme-docs
       - name: Install google-chrome
@@ -161,6 +149,10 @@ jobs:
         uses: docker/setup-qemu-action@v3
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
+      - name: Cache Docker images
+        uses: ScribeMD/docker-cache@0.5.0
+        with:
+          key: docker-${{ runner.os }}-${{ github.ref_name }}
       - name: Log in to the Container registry
         uses: docker/login-action@v3
         with:
