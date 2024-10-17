@@ -16,6 +16,7 @@ import { AllowanceType, TokenAllowance, TokenInstanceKey } from "@gala-chain/api
 import { BigNumber } from "bignumber.js";
 
 import { FetchBalancesParams, fetchBalances } from "../balances";
+import { resolveUserAlias } from "../services";
 import { GalaChainContext } from "../types";
 import { DeleteOneAllowanceParams, deleteOneAllowance } from "./deleteAllowances";
 
@@ -38,7 +39,7 @@ async function doesGrantorHaveToken(ctx: GalaChainContext, allowance: TokenAllow
   if (allowance.allowanceType === AllowanceType.Mint) return true;
 
   const balancesData: FetchBalancesParams = {
-    owner: allowance.grantedBy,
+    owner: await resolveUserAlias(ctx, allowance.grantedBy),
     collection: allowance.collection,
     category: allowance.category,
     type: allowance.type,

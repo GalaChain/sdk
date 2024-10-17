@@ -33,7 +33,13 @@ import {
 import { JSONSchema } from "class-validator-jsonschema";
 
 import { ConstructorArgs } from "../utils";
-import { BigNumberIsNotNegative, BigNumberIsPositive, BigNumberProperty, IsUserAlias } from "../validators";
+import {
+  BigNumberIsNotNegative,
+  BigNumberIsPositive,
+  BigNumberProperty,
+  IsUserAlias,
+  IsUserRef
+} from "../validators";
 import { TokenBalance } from "./TokenBalance";
 import { TokenClass, TokenClassKey } from "./TokenClass";
 import { TokenInstance, TokenInstanceKey } from "./TokenInstance";
@@ -362,7 +368,7 @@ export class FetchBalancesDto extends ChainCallDTO {
     description: "Person who owns the balance. If the value is missing, chaincode caller is used."
   })
   @IsOptional()
-  @IsUserAlias()
+  @IsUserRef()
   owner?: string;
 
   @JSONSchema({
@@ -406,7 +412,7 @@ export class FetchBalancesWithPaginationDto extends ChainCallDTO {
     description: "Person who owns the balance. If the value is missing, chaincode caller is used."
   })
   @IsOptional()
-  @IsUserAlias()
+  @IsUserRef()
   owner?: string;
 
   @JSONSchema({
@@ -503,10 +509,10 @@ export class TransferTokenDto extends SubmitCallDTO {
     description: "The current owner of tokens. If the value is missing, chaincode caller is used."
   })
   @IsOptional()
-  @IsUserAlias()
+  @IsUserRef()
   from?: string;
 
-  @IsUserAlias()
+  @IsUserRef()
   to: string;
 
   @JSONSchema({
