@@ -15,7 +15,6 @@
 import {
   ChainCallDTO,
   ChainObject,
-  GalaChainResponse,
   PK_INDEX_KEY,
   PublicKey,
   SigningScheme,

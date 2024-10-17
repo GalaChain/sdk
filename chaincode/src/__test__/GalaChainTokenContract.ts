@@ -102,6 +102,7 @@ import {
   refreshAllowances,
   releaseToken,
   requestMint,
+  resolveUserAlias,
   transferToken,
   unlockToken,
   unlockTokens,
@@ -243,8 +244,8 @@ export default class GalaChainTokenContract extends GalaContract {
     in: FetchBalancesDto,
     out: { arrayOf: TokenBalance }
   })
-  public FetchBalances(ctx: GalaChainContext, dto: FetchBalancesDto): Promise<TokenBalance[]> {
-    return fetchBalances(ctx, { ...dto, owner: dto.owner ?? ctx.callingUser });
+  public async FetchBalances(ctx: GalaChainContext, dto: FetchBalancesDto): Promise<TokenBalance[]> {
+    return fetchBalances(ctx, { ...dto, owner: await resolveUserAlias(ctx, dto.owner ?? ctx.callingUser) });
   }
 
   @GalaTransaction({

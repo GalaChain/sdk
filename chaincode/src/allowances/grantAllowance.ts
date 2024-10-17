@@ -36,6 +36,7 @@ import { instanceToPlain } from "class-transformer";
 import { fetchBalances } from "../balances";
 import { fetchKnownBurnCount } from "../burns/fetchBurns";
 import { fetchMintAllowanceSupply } from "../mint/fetchMintAllowanceSupply";
+import { resolveUserAlias } from "../services";
 import { fetchTokenInstance } from "../token";
 import {
   InvalidDecimalError,
@@ -52,7 +53,6 @@ import {
   putRangedChainObject
 } from "../utils";
 import {
-  BalanceNotFoundError,
   DuplicateAllowanceError,
   DuplicateUserError,
   GrantAllowanceFailedError,
@@ -75,7 +75,7 @@ async function grantAllowanceByPartialKey(
   expires: number
 ): Promise<TokenAllowance[]> {
   const tokenBalances = await fetchBalances(ctx, {
-    owner: ctx.callingUser,
+    owner: await resolveUserAlias(ctx, ctx.callingUser),
     ...tokenInstance
   });
 
@@ -568,7 +568,7 @@ export async function grantAllowance(
       // verify if the token exists in the balance
       const [balance]: (TokenBalance | undefined)[] = await fetchBalances(ctx, {
         ...instanceKey,
-        owner: tokenInstance.owner
+        owner: { alias: tokenInstance.owner }
       });
       const currentInstances = balance?.getNftInstanceIds() ?? [];
       if (!currentInstances.some((i) => i.eq(instanceKey.instance))) {

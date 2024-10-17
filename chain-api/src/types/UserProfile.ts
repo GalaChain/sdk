@@ -25,9 +25,15 @@ export enum UserRole {
   EVALUATE = "EVALUATE"
 }
 
+// TODO make it as tagged string for better type safety guarantees
+//  see: https://medium.com/@ethanresnick/advanced-typescript-tagged-types-improved-with-type-level-metadata-5072fc125fcf
+export interface HasUserAlias {
+  alias: string;
+}
+
 export type UserProfileBody = ConstructorArgs<UserProfile>;
 
-export class UserProfile extends ChainObject {
+export class UserProfile extends ChainObject implements HasUserAlias {
   static ADMIN_ROLES = [UserRole.CURATOR, UserRole.EVALUATE, UserRole.SUBMIT] as const;
   static DEFAULT_ROLES = [UserRole.EVALUATE, UserRole.SUBMIT] as const;
 
