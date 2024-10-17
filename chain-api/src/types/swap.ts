@@ -36,7 +36,7 @@ import {
   BigNumberIsPositive,
   BigNumberProperty,
   IsDifferentValue,
-  IsUserAlias
+  IsUserRef
 } from "../validators";
 import { ChainObject } from "./ChainObject";
 import { TokenInstanceQuantity } from "./TokenInstance";

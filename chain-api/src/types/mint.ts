@@ -18,7 +18,7 @@ import { ArrayMaxSize, ArrayNotEmpty, IsNotEmpty, IsOptional, ValidateNested } f
 import { JSONSchema } from "class-validator-jsonschema";
 
 import { ConstructorArgs } from "../utils";
-import { ArrayUniqueObjects, BigNumberIsNotNegative, BigNumberProperty, IsUserAlias } from "../validators";
+import { ArrayUniqueObjects, BigNumberIsNotNegative, BigNumberProperty, IsUserRef } from "../validators";
 import { TokenClassKey } from "./TokenClass";
 import { AllowanceKey, MintRequestDto } from "./common";
 import { ChainCallDTO, SubmitCallDTO } from "./dtos";

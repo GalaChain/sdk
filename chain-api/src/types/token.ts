@@ -33,7 +33,13 @@ import {
 import { JSONSchema } from "class-validator-jsonschema";
 
 import { ConstructorArgs } from "../utils";
-import { BigNumberIsNotNegative, BigNumberIsPositive, BigNumberProperty, IsUserAlias } from "../validators";
+import {
+  BigNumberIsNotNegative,
+  BigNumberIsPositive,
+  BigNumberProperty,
+  IsUserAlias,
+  IsUserRef
+} from "../validators";
 import { TokenBalance } from "./TokenBalance";
 import { TokenClass, TokenClassKey } from "./TokenClass";
 import { TokenInstance, TokenInstanceKey } from "./TokenInstance";

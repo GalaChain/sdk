@@ -36,7 +36,7 @@ import {
   BigNumberIsPositive,
   BigNumberProperty,
   EnumProperty,
-  IsUserAlias
+  IsUserRef
 } from "../validators";
 import { GrantAllowanceQuantity } from "./GrantAllowance";
 import { TokenAllowance } from "./TokenAllowance";

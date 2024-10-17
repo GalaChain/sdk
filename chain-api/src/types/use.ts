@@ -18,7 +18,7 @@ import { ArrayNotEmpty, IsNotEmpty, IsOptional, IsString, ValidateNested } from 
 import { JSONSchema } from "class-validator-jsonschema";
 
 import { ConstructorArgs } from "../utils";
-import { BigNumberIsNotNegative, BigNumberProperty, IsUserAlias } from "../validators";
+import { BigNumberIsNotNegative, BigNumberProperty, IsUserRef } from "../validators";
 import { TokenInstance, TokenInstanceKey } from "./TokenInstance";
 import { SubmitCallDTO } from "./dtos";
 

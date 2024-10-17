@@ -36,7 +36,8 @@ import {
   BigNumberIsNotNegative,
   BigNumberProperty,
   EnumProperty,
-  IsUserAlias
+  IsUserAlias,
+  IsUserRef
 } from "../validators";
 import { ChainObject } from "./ChainObject";
 import { FeeAuthorization } from "./FeeAuthorization";

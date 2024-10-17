@@ -22,7 +22,7 @@ import {
 
 import { signatures } from "../utils";
 
-enum UserRefValidationResult {
+export enum UserAliasValidationResult {
   VALID_USER_ALIAS,
   VALID_SYSTEM_USER,
   INVALID_ETH_USER_ALIAS,
@@ -30,16 +30,27 @@ enum UserRefValidationResult {
   INVALID_FORMAT
 }
 
+function isValid(result: UserAliasValidationResult) {
+  return (
+    result === UserAliasValidationResult.VALID_USER_ALIAS ||
+    result === UserAliasValidationResult.VALID_SYSTEM_USER
+  );
+}
+
 const customMessages = {
-  [UserRefValidationResult.INVALID_ETH_USER_ALIAS]:
+  [UserAliasValidationResult.INVALID_ETH_USER_ALIAS]:
     "User alias starting with 'eth|' must end with valid checksumed eth address.",
-  [UserRefValidationResult.INVALID_TON_USER_ALIAS]:
+  [UserAliasValidationResult.INVALID_TON_USER_ALIAS]:
     "User alias starting with 'ton|' must end with valid bounceable base64 TON address."
 };
 
 const genericMessage =
   "Expected string following the format of 'client|<user-id>', or 'eth|<checksumed-eth-addr>', " +
   "or 'ton|<chain:ton-address>', or valid system-level username.";
+
+export function isValidSystemUser(value: string): boolean {
+  return value === "EthereumBridge" || value === "TonBridge" || /^GalaChainBridge-\d+$/.test(value);
+}
 
 /**
  * @description
@@ -53,42 +64,42 @@ const genericMessage =
  */
 function validateUserAlias(value: unknown): UserRefValidationResult {
   if (typeof value !== "string" || value.length === 0) {
-    return UserRefValidationResult.INVALID_FORMAT;
+    return UserAliasValidationResult.INVALID_FORMAT;
   }
 
   const parts = value.split("|");
 
   if (parts.length === 1) {
-    if (parts[0] === "EthereumBridge" || parts[0] === "TonBridge" || /^GalaChainBridge-\d+$/.test(parts[0])) {
-      return UserRefValidationResult.VALID_SYSTEM_USER;
+    if (isValidSystemUser(parts[0])) {
+      return UserAliasValidationResult.VALID_SYSTEM_USER;
     } else {
-      return UserRefValidationResult.INVALID_FORMAT;
+      return UserAliasValidationResult.INVALID_FORMAT;
     }
   }
 
   if (parts.length === 2) {
     if ((parts[0] === "client" || parts[0] === "service") && parts[1].length > 0) {
-      return UserRefValidationResult.VALID_USER_ALIAS;
+      return UserAliasValidationResult.VALID_USER_ALIAS;
     }
 
     if (parts[0] === "eth") {
       if (signatures.isChecksumedEthAddress(parts[1])) {
-        return UserRefValidationResult.VALID_USER_ALIAS;
+        return UserAliasValidationResult.VALID_USER_ALIAS;
       } else {
-        return UserRefValidationResult.INVALID_ETH_USER_ALIAS;
+        return UserAliasValidationResult.INVALID_ETH_USER_ALIAS;
       }
     }
 
     if (parts[0] === "ton") {
       if (signatures.ton.isValidTonAddress(parts[1])) {
-        return UserRefValidationResult.VALID_USER_ALIAS;
+        return UserAliasValidationResult.VALID_USER_ALIAS;
       } else {
-        return UserRefValidationResult.INVALID_TON_USER_ALIAS;
+        return UserAliasValidationResult.INVALID_TON_USER_ALIAS;
       }
     }
   }
 
-  return UserRefValidationResult.INVALID_FORMAT;
+  return UserAliasValidationResult.INVALID_FORMAT;
 }
 
 @ValidatorConstraint({ async: false })
@@ -98,20 +109,13 @@ class IsUserAliasConstraint implements ValidatorConstraintInterface {
       return value.every((val) => this.validate(val, args));
     }
     const result = validateUserAlias(value);
-    return (
-      result === UserRefValidationResult.VALID_USER_ALIAS ||
-      result === UserRefValidationResult.VALID_SYSTEM_USER
-    );
+    return isValid(result);
   }
 
   defaultMessage(args: ValidationArguments): string {
     const value = args.value;
     if (Array.isArray(value)) {
-      const invalidValues = value.filter(
-        (val) =>
-          validateUserAlias(val) !== UserRefValidationResult.VALID_USER_ALIAS &&
-          validateUserAlias(val) !== UserRefValidationResult.VALID_SYSTEM_USER
-      );
+      const invalidValues = value.filter((val) => !isValid(validateUserAlias(val)));
       return `${args.property} property with values ${invalidValues} are not valid GalaChain user aliases. ${genericMessage}`;
     }
     const result = validateUserAlias(args.value);
