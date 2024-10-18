@@ -1,2 +1,3 @@
 export * from "./galaChainResponse";
-export * from "./token-api";
+export * from "./tokenApi";
+export * from "./publicKeyApi";
