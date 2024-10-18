@@ -162,7 +162,6 @@ export class TokenBalance extends ChainObject {
 
   @BigNumberIsNotNegative()
   @BigNumberProperty()
-  @Transform(({ value }) => BigNumber(value))
   private quantity: BigNumber;
 
   //
