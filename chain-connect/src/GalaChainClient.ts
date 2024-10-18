@@ -26,6 +26,8 @@ import { BrowserProvider, SigningKey, computeAddress, getAddress, getBytes, hash
 import { EventEmitter, Listener, MetaMaskEvents } from "./helpers";
 import { GalaChainResponseError, GalaChainResponseSuccess } from "./types";
 
+type NonArrayClassConstructor<T> = T extends Array<any> ? ClassConstructor<T[number]> : ClassConstructor<T>;
+
 export abstract class GalaChainProvider {
   abstract sign(method: string, dto: any): Promise<any>;
   async submit<T, U extends ChainCallDTO>({
@@ -43,7 +45,7 @@ export abstract class GalaChainProvider {
     sign?: boolean;
     headers?: object;
     requestConstructor?: ClassConstructor<U>;
-    responseConstructor?: ClassConstructor<T>;
+    responseConstructor?: NonArrayClassConstructor<T>;
   }): Promise<GalaChainResponseSuccess<T>> {
     // Throws error if class validation fails
     if (requestConstructor) {

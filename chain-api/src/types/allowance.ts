@@ -29,7 +29,6 @@ import {
 } from "class-validator";
 import { JSONSchema } from "class-validator-jsonschema";
 
-import { ConstructorArgs } from "../utils";
 import {
   ArrayUniqueObjects,
   BigNumberIsInteger,

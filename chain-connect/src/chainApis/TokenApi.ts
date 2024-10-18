@@ -29,6 +29,7 @@ import {
   HighThroughputMintTokenDto,
   LockTokenDto,
   LockTokensDto,
+  MintRequestDto,
   MintTokenDto,
   MintTokenWithAllowanceDto,
   RefreshAllowanceDto,
@@ -111,23 +112,23 @@ export class TokenApi {
   }
 
   public FetchTokenClasses(dto: FetchTokenClassesRequest) {
-    return this.connection.submit({
+    return this.connection.submit<Array<TokenClass>, FetchTokenClassesDto>({
       method: "FetchTokenClasses",
       payload: dto,
       url: this.chainCodeUrl,
       requestConstructor: FetchTokenClassesDto,
-      responseConstructor: Array<TokenClass>
+      responseConstructor: TokenClass
     });
   }
 
   public FetchTokenClassesWithSupply(dto: FetchTokenClassesRequest) {
-    return this.connection.submit({
+    return this.connection.submit<Array<TokenClass>, FetchTokenClassesDto>({
       method: "FetchTokenClassesWithSupply",
       payload: dto,
       sign: true,
       url: this.chainCodeUrl,
       requestConstructor: FetchTokenClassesDto,
-      responseConstructor: Array<TokenClass>
+      responseConstructor: TokenClass
     });
   }
 
@@ -143,24 +144,24 @@ export class TokenApi {
   }
 
   public GrantAllowance(dto: GrantAllowanceRequest) {
-    return this.connection.submit({
+    return this.connection.submit<Array<TokenAllowance>, GrantAllowanceDto>({
       method: "GrantAllowance",
       payload: dto,
       sign: true,
       url: this.chainCodeUrl,
       requestConstructor: GrantAllowanceDto,
-      responseConstructor: Array<TokenAllowance>
+      responseConstructor: TokenAllowance
     });
   }
 
   public RefreshAllowances(dto: RefreshAllowanceRequest) {
-    return this.connection.submit({
+    return this.connection.submit<Array<TokenAllowance>, RefreshAllowanceDto>({
       method: "RefreshAllowances",
       payload: dto,
       sign: true,
       url: this.chainCodeUrl,
       requestConstructor: RefreshAllowanceDto,
-      responseConstructor: Array<TokenAllowance>
+      responseConstructor: TokenAllowance
     });
   }
 
@@ -197,12 +198,12 @@ export class TokenApi {
   }
 
   public FetchBalances(dto: FetchBalancesRequest) {
-    return this.connection.submit({
+    return this.connection.submit<TokenBalance[], FetchBalancesDto>({
       method: "FetchBalances",
       payload: dto,
       url: this.chainCodeUrl,
       requestConstructor: FetchBalancesDto,
-      responseConstructor: Array<TokenBalance>
+      responseConstructor: TokenBalance
     });
   }
 
@@ -228,56 +229,56 @@ export class TokenApi {
   }
 
   public FulfillMint(dto: FulfillMintRequest) {
-    return this.connection.submit({
+    return this.connection.submit<Array<TokenInstanceKey>, FulfillMintDto>({
       method: "FulfillMint",
       payload: dto,
       sign: true,
       url: this.chainCodeUrl,
       requestConstructor: FulfillMintDto,
-      responseConstructor: Array<TokenInstanceKey>
+      responseConstructor: TokenInstanceKey
     });
   }
 
   public FetchMintRequests(dto: FetchMintRequestsRequest) {
-    return this.connection.submit({
+    return this.connection.submit<Array<MintRequest>, FetchMintRequestsDto>({
       method: "FetchMintRequests",
       payload: dto,
       url: this.chainCodeUrl,
       requestConstructor: FetchMintRequestsDto,
-      responseConstructor: Array<MintRequest>
+      responseConstructor: MintRequestDto
     });
   }
 
   public MintToken(dto: MintTokenRequest) {
-    return this.connection.submit({
+    return this.connection.submit<Array<TokenInstanceKey>, MintTokenDto>({
       method: "MintToken",
       payload: dto,
       sign: true,
       url: this.chainCodeUrl,
       requestConstructor: MintTokenDto,
-      responseConstructor: Array<TokenInstanceKey>
+      responseConstructor: TokenInstanceKey
     });
   }
 
   public MintTokenWithAllowance(dto: MintTokenWithAllowanceRequest) {
-    return this.connection.submit({
+    return this.connection.submit<Array<TokenInstanceKey>, MintTokenWithAllowanceDto>({
       method: "MintTokenWithAllowance",
       payload: dto,
       sign: true,
       url: this.chainCodeUrl,
       requestConstructor: MintTokenWithAllowanceDto,
-      responseConstructor: Array<TokenInstanceKey>
+      responseConstructor: TokenInstanceKey
     });
   }
 
   public BatchMintToken(dto: BatchMintTokenRequest) {
-    return this.connection.submit({
+    return this.connection.submit<Array<TokenInstanceKey>, BatchMintTokenDto>({
       method: "BatchMintToken",
       payload: dto,
       sign: true,
       url: this.chainCodeUrl,
       requestConstructor: BatchMintTokenDto,
-      responseConstructor: Array<TokenInstanceKey>
+      responseConstructor: TokenInstanceKey
     });
   }
 
@@ -315,13 +316,13 @@ export class TokenApi {
   }
 
   public LockTokens(dto: LockTokensRequest) {
-    return this.connection.submit({
+    return this.connection.submit<Array<TokenBalance>, LockTokensDto>({
       method: "LockTokens",
       payload: dto,
       sign: true,
       url: this.chainCodeUrl,
       requestConstructor: LockTokensDto,
-      responseConstructor: Array<TokenBalance>
+      responseConstructor: TokenBalance
     });
   }
 
@@ -337,45 +338,45 @@ export class TokenApi {
   }
 
   public UnlockTokens(dto: UnlockTokensRequest) {
-    return this.connection.submit({
+    return this.connection.submit<Array<TokenBalance>, UnlockTokensDto>({
       method: "UnlockTokens",
       payload: dto,
       sign: true,
       url: this.chainCodeUrl,
       requestConstructor: UnlockTokensDto,
-      responseConstructor: Array<TokenBalance>
+      responseConstructor: TokenBalance
     });
   }
 
   public TransferToken(dto: TransferTokenRequest) {
-    return this.connection.submit({
+    return this.connection.submit<Array<TokenBalance>, TransferTokenDto>({
       method: "TransferToken",
       payload: dto,
       sign: true,
       url: this.chainCodeUrl,
       requestConstructor: TransferTokenDto,
-      responseConstructor: Array<TokenBalance>
+      responseConstructor: TokenBalance
     });
   }
 
   public BurnTokens(dto: BurnTokensRequest) {
-    return this.connection.submit({
+    return this.connection.submit<Array<TokenBurn>, BurnTokensDto>({
       method: "BurnTokens",
       payload: dto,
       sign: true,
       url: this.chainCodeUrl,
       requestConstructor: BurnTokensDto,
-      responseConstructor: Array<TokenBurn>
+      responseConstructor: TokenBurn
     });
   }
 
   public FetchBurns(dto: FetchBurnsRequest) {
-    return this.connection.submit({
+    return this.connection.submit<Array<TokenBurn>, FetchBurnsDto>({
       method: "FetchBurns",
       payload: dto,
       url: this.chainCodeUrl,
       requestConstructor: FetchBurnsDto,
-      responseConstructor: Array<TokenBurn>
+      responseConstructor: TokenBurn
     });
   }
 }
