@@ -13,7 +13,7 @@
  * limitations under the License.
  */
 import { BigNumber } from "bignumber.js";
-import { Exclude, Type } from "class-transformer";
+import { Exclude, Transform, Type } from "class-transformer";
 import {
   IsDefined,
   IsInt,
@@ -27,7 +27,7 @@ import {
 } from "class-validator";
 import { JSONSchema } from "class-validator-jsonschema";
 
-import { ChainKey, ConstructorArgs, ValidationFailedError } from "../utils";
+import { ChainKey, ValidationFailedError } from "../utils";
 import {
   BigNumberArrayProperty,
   BigNumberIsNotNegative,
@@ -162,6 +162,7 @@ export class TokenBalance extends ChainObject {
 
   @BigNumberIsNotNegative()
   @BigNumberProperty()
+  @Transform(({ value }) => BigNumber(value))
   private quantity: BigNumber;
 
   //

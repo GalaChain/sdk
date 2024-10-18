@@ -13,7 +13,7 @@
  * limitations under the License.
  */
 import { BigNumber } from "bignumber.js";
-import { Exclude, instanceToInstance } from "class-transformer";
+import { Exclude, Transform, instanceToInstance } from "class-transformer";
 import {
   Equals,
   IsAlpha,
@@ -123,6 +123,7 @@ export class TokenClass extends ChainObject {
   @IsNotEmpty()
   @BigNumberIsPositive()
   @BigNumberProperty()
+  @Transform(({ value }) => BigNumber(value))
   public maxSupply: BigNumber;
 
   @IsBoolean()
@@ -131,6 +132,7 @@ export class TokenClass extends ChainObject {
   @IsNotEmpty()
   @BigNumberIsPositive()
   @BigNumberProperty({ allowInfinity: true })
+  @Transform(({ value }) => BigNumber(value))
   public maxCapacity: BigNumber;
 
   // IDs of authorities who can manage this token
@@ -172,13 +174,16 @@ export class TokenClass extends ChainObject {
 
   @BigNumberIsPositive()
   @BigNumberProperty()
+  @Transform(({ value }) => BigNumber(value))
   public totalBurned: BigNumber;
 
   @BigNumberProperty()
+  @Transform(({ value }) => BigNumber(value))
   public totalMintAllowance: BigNumber;
 
   @IsOptional()
   @BigNumberProperty()
+  @Transform(({ value }) => BigNumber(value))
   public knownMintAllowanceSupply?: BigNumber;
 
   /**
@@ -187,10 +192,12 @@ export class TokenClass extends ChainObject {
    * @deprecated 2023-05-30, replaced with knownMintSupply for high-throughput implementation.
    */
   @BigNumberProperty()
+  @Transform(({ value }) => BigNumber(value))
   public totalSupply: BigNumber;
 
   @IsOptional()
   @BigNumberProperty()
+  @Transform(({ value }) => BigNumber(value))
   public knownMintSupply?: BigNumber;
 
   @Exclude()

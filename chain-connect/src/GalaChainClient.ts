@@ -12,12 +12,19 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-import { ChainCallDTO, serialize, signatures } from "@gala-chain/api";
-import { instanceToPlain } from "class-transformer";
+import {
+  ChainCallDTO,
+  ClassConstructor,
+  NonFunctionProperties,
+  createValidDTO,
+  serialize,
+  signatures
+} from "@gala-chain/api";
+import { instanceToPlain, plainToInstance } from "class-transformer";
 import { BrowserProvider, SigningKey, computeAddress, getAddress, getBytes, hashMessage } from "ethers";
 
 import { EventEmitter, Listener, MetaMaskEvents } from "./helpers";
-import { GalaChainResponseError, GalaChainResponseSuccess } from "./types/GalaChainResponse";
+import { GalaChainResponseError, GalaChainResponseSuccess } from "./types";
 
 export abstract class GalaChainProvider {
   abstract sign(method: string, dto: any): Promise<any>;
@@ -26,15 +33,22 @@ export abstract class GalaChainProvider {
     method,
     payload,
     sign,
-    headers = {}
+    headers = {},
+    requestConstructor,
+    responseConstructor
   }: {
     url: string;
     method: string;
-    payload: U;
+    payload: NonFunctionProperties<U>;
     sign?: boolean;
     headers?: object;
+    requestConstructor?: ClassConstructor<U>;
+    responseConstructor?: ClassConstructor<T>;
   }): Promise<GalaChainResponseSuccess<T>> {
-    await payload.validateOrReject();
+    // Throws error if class validation fails
+    if (requestConstructor) {
+      await createValidDTO(requestConstructor, payload);
+    }
 
     let newPayload = instanceToPlain(payload);
 
@@ -47,7 +61,7 @@ export abstract class GalaChainProvider {
         payload.signature === null
       ) {
         try {
-          newPayload = await this.sign(method, instanceToPlain(payload));
+          newPayload = await this.sign(method, newPayload);
         } catch (error: unknown) {
           throw new Error((error as Error).message);
         }
@@ -77,7 +91,10 @@ export abstract class GalaChainProvider {
       if (data.error) {
         throw new GalaChainResponseError<T>(data);
       } else {
-        return new GalaChainResponseSuccess<T>(data, hash);
+        const transformedDataResponse = responseConstructor
+          ? plainToInstance(responseConstructor, data.Data)
+          : data.Data;
+        return new GalaChainResponseSuccess<T>({ ...data, Data: transformedDataResponse }, hash);
       }
     }
     throw new Error(`Unable to get data. Received response: ${JSON.stringify(response)}`);
