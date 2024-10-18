@@ -38,7 +38,6 @@ export interface TokenInstanceKeyProperties {
   additionalKey: string;
   instance: BigNumber;
 }
-export type TokenInstanceKeyBody = ConstructorArgs<TokenInstanceKey>;
 
 @JSONSchema({
   description: "Object representing the chain identifier of token instance."
