@@ -14,12 +14,24 @@
  */
 import BigNumber from "bignumber.js";
 import { Type } from "class-transformer";
-import { ArrayMaxSize, ArrayNotEmpty, IsNotEmpty, IsOptional, ValidateNested } from "class-validator";
+import {
+  ArrayMaxSize,
+  ArrayNotEmpty,
+  IsBoolean,
+  IsDefined,
+  IsNotEmpty,
+  IsNumber,
+  IsOptional,
+  IsString,
+  ValidateIf,
+  ValidateNested
+} from "class-validator";
 import { JSONSchema } from "class-validator-jsonschema";
 
 import { ConstructorArgs } from "../utils";
 import { ArrayUniqueObjects, BigNumberIsNotNegative, BigNumberProperty, IsUserAlias } from "../validators";
 import { TokenClassKey } from "./TokenClass";
+import { TokenMintConfiguration } from "./TokenMintConfiguration";
 import { AllowanceKey, MintRequestDto } from "./common";
 import { ChainCallDTO } from "./dtos";
 
@@ -338,4 +350,102 @@ export class PatchMintRequestDto extends ChainCallDTO {
   @IsNotEmpty()
   @BigNumberProperty()
   totalKnownMintsCount: BigNumber;
+}
+
+@JSONSchema({
+  description: "DTO that describes a TokenMintConfiguration chain object."
+})
+export class TokenMintConfigurationDto extends ChainCallDTO {
+  @JSONSchema({
+    description: "Token collection."
+  })
+  @IsNotEmpty()
+  collection: string;
+
+  @JSONSchema({
+    description: "Token category."
+  })
+  @IsNotEmpty()
+  category: string;
+
+  @JSONSchema({
+    description: "Token type."
+  })
+  @IsNotEmpty()
+  type: string;
+
+  @JSONSchema({
+    description: "Token additionalKey."
+  })
+  @IsDefined()
+  additionalKey: string;
+
+  @JSONSchema({
+    description: "Set `true` to enable burning a percentage of each quantity minted"
+  })
+  @IsOptional()
+  @IsBoolean()
+  postMintBurn?: boolean;
+}
+
+@JSONSchema({
+  description: "Query parameters for fetching a paginated results set of TokenMintConfiguration entries"
+})
+export class FetchTokenMintConfigurationsDto extends ChainCallDTO {
+  public static DEFAULT_LIMIT = 100;
+  public static MAX_LIMIT = 10000;
+
+  @JSONSchema({
+    description: "Token Class collection."
+  })
+  @IsOptional()
+  @IsNotEmpty()
+  collection: string;
+
+  @JSONSchema({
+    description: "Token Class category. Optional, but required if collection is provided."
+  })
+  @ValidateIf((c) => !!c.collection)
+  @IsNotEmpty()
+  category: string;
+
+  @JSONSchema({
+    description: "Token Class type. Optional, but required if category is provided."
+  })
+  @ValidateIf((c) => !!c.category)
+  @IsNotEmpty()
+  type: string;
+
+  @JSONSchema({
+    description: "Token Class additionalKey. Optional, but required if type is provided. "
+  })
+  @ValidateIf((c) => !!c.type)
+  @IsNotEmpty()
+  additionalKey: string;
+
+  @JSONSchema({
+    description: "Bookmark for paginated queries. Provide the empty string for the first page of results."
+  })
+  @IsString()
+  bookmark: string;
+
+  @JSONSchema({
+    description: "Page size used to limit the results returned. Default: 100. Max: 10000."
+  })
+  @IsOptional()
+  @IsNumber()
+  limit?: number;
+}
+
+@JSONSchema({
+  description: "DTO that includes a paginated results set of TokenMintConfiguration objects"
+})
+export class FetchTokenMintConfigurationsResponse extends ChainCallDTO {
+  @JSONSchema({
+    description: "Results set of TokenMintConfiguration entries."
+  })
+  results: TokenMintConfiguration[];
+
+  @IsString()
+  bookmark: string;
 }
