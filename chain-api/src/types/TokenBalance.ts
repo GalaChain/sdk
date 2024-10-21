@@ -13,7 +13,7 @@
  * limitations under the License.
  */
 import { BigNumber } from "bignumber.js";
-import { Exclude, Transform, Type } from "class-transformer";
+import { Exclude, Type } from "class-transformer";
 import {
   IsDefined,
   IsInt,
