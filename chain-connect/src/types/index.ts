@@ -12,6 +12,6 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-export * from "./galaChainResponse";
+export * from "./galaChain";
 export * from "./tokenApi";
 export * from "./publicKeyApi";
