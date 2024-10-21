@@ -27,7 +27,7 @@ import {
 } from "class-validator";
 import { JSONSchema } from "class-validator-jsonschema";
 
-import { ChainKey, ConstructorArgs, ValidationFailedError } from "../utils";
+import { ChainKey, ValidationFailedError } from "../utils";
 import {
   BigNumberArrayProperty,
   BigNumberIsNotNegative,
@@ -95,8 +95,6 @@ export class TokenNotInUseError extends ValidationFailedError {
     super(`Token instance ${tokenInstanceKey} is not in use`, { owner, tokenInstanceKey });
   }
 }
-
-export type TokenBalanceBody = ConstructorArgs<TokenBalance>;
 
 export class TokenBalance extends ChainObject {
   @Exclude()

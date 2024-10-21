@@ -24,17 +24,9 @@ import { instanceToPlain, plainToInstance } from "class-transformer";
 import { ethers } from "ethers";
 import { EventEmitter } from "events";
 
+import { createRandomHash, mockFetch } from "../test/test-utils";
 import { generateEIP712Types } from "./Utils";
 import { BrowserConnectClient, TrustWalletConnectClient } from "./customClients";
-
-global.fetch = jest.fn((url: string, options?: Record<string, unknown>) =>
-  Promise.resolve({
-    json: () => Promise.resolve({ Request: { url, options } }),
-    headers: {
-      get: () => ({ status: 1 })
-    }
-  })
-) as jest.Mock;
 
 // https://privatekeys.pw/key/1d3cc061492016bcd5e7ea2c31b1cf3dec584e07a38e21df7ef3049c6b224e70#addresses
 const sampleAddr = "0x3bb75c2Da3B669E253C338101420CC8dEBf0a777";
@@ -68,7 +60,7 @@ class EthereumMock extends EventEmitter {
 window.ethereum = new EthereumMock();
 
 describe("BrowserConnectClient", () => {
-  it("test full flow", async () => {
+  it("test full flow (success)", async () => {
     const dto: TransferTokenDto = await createValidDTO(TransferTokenDto, {
       quantity: new BigNumber("1"),
       to: "client|63580d94c574ad78b121c267",
@@ -86,6 +78,22 @@ describe("BrowserConnectClient", () => {
     const client = new BrowserConnectClient();
     await client.connect();
 
+    const mockResponse = {
+      Data: [
+        {
+          additionalKey: "none",
+          category: "Unit",
+          collection: "GALA",
+          owner: "string",
+          quantity: "1",
+          type: "none"
+        }
+      ],
+      Status: 1
+    };
+    const mockHash = createRandomHash();
+    mockFetch(mockResponse, { "x-transaction-id": mockHash });
+
     // send dto payload in send function
     const response = await client.submit({
       method: "TransferToken",
@@ -95,20 +103,111 @@ describe("BrowserConnectClient", () => {
     });
 
     expect(response).toEqual({
-      Hash: {
-        status: 1
-      },
-      Request: {
-        options: {
-          body: '{"domain":{"name":"GalaChain"},"prefix":"\\u0019Ethereum Signed Message:\\n261","quantity":"1","signature":"sampleSignature","to":"client|63580d94c574ad78b121c267","tokenInstance":{"additionalKey":"none","category":"Unit","collection":"GALA","instance":"0","type":"none"},"types":{"TransferToken":[{"name":"quantity","type":"string"},{"name":"to","type":"string"},{"name":"tokenInstance","type":"tokenInstance"},{"name":"uniqueKey","type":"string"}],"tokenInstance":[{"name":"additionalKey","type":"string"},{"name":"category","type":"string"},{"name":"collection","type":"string"},{"name":"instance","type":"string"},{"name":"type","type":"string"}]},"uniqueKey":"26d4122e-34c8-4639-baa6-4382b398e68e"}',
-          headers: {
-            "Content-Type": "application/json"
-          },
-          method: "POST"
-        },
-        url: "https://example.com/TransferToken"
-      }
+      Hash: mockHash,
+      Data: mockResponse.Data,
+      Status: mockResponse.Status
     });
+  });
+  it("test full flow (server error)", async () => {
+    const dto: TransferTokenDto = await createValidDTO(TransferTokenDto, {
+      quantity: new BigNumber("1"),
+      to: "client|63580d94c574ad78b121c267",
+      tokenInstance: plainToInstance(TokenInstanceKey, {
+        additionalKey: "none",
+        category: "Unit",
+        collection: "GALA",
+        instance: new BigNumber("0"),
+        type: "none"
+      }),
+      uniqueKey: "26d4122e-34c8-4639-baa6-4382b398e68e"
+    });
+
+    // call connect
+    const client = new BrowserConnectClient();
+    await client.connect();
+
+    const mockResponse = {
+      statusCode: 400,
+      message: "Unexpected token } in JSON at position 117",
+      error: "Bad Request"
+    };
+    mockFetch(mockResponse);
+
+    // send dto payload in send function
+    await client
+      .submit({
+        method: "TransferToken",
+        payload: dto,
+        sign: true,
+        url: "https://example.com"
+      })
+      .catch((error) => {
+        expect(error).toEqual({
+          Error: mockResponse.error,
+          Message: mockResponse.message,
+          ErrorCode: mockResponse.statusCode
+        });
+      });
+  });
+  it("test full flow (chain error)", async () => {
+    const dto: TransferTokenDto = await createValidDTO(TransferTokenDto, {
+      quantity: new BigNumber("1"),
+      to: "client|63580d94c574ad78b121c267",
+      tokenInstance: plainToInstance(TokenInstanceKey, {
+        additionalKey: "none",
+        category: "none",
+        collection: "none",
+        instance: new BigNumber("0"),
+        type: "none"
+      }),
+      uniqueKey: "26d4122e-34c8-4639-baa6-4382b398e68e"
+    });
+
+    // call connect
+    const client = new BrowserConnectClient();
+    await client.connect();
+
+    const mockResponse = {
+      message: "Token class not found: none$none$none$none",
+      dto: {
+        tokenClasses: [
+          {
+            additionalKey: "none",
+            category: "none",
+            collection: "none",
+            type: "none"
+          }
+        ]
+      },
+      method: "TransferToken",
+      transactionId: createRandomHash(),
+      error: {
+        Status: 0,
+        Message: "Token class not found: none$none$none$none",
+        ErrorPayload: {
+          tokenClassKey: "none$none$none$none"
+        },
+        ErrorCode: 404,
+        ErrorKey: "TOKEN_CLASS_NOT_FOUND"
+      }
+    };
+    mockFetch(mockResponse);
+
+    // send dto payload in send function
+    await client
+      .submit({
+        method: "TransferToken",
+        payload: dto,
+        sign: true,
+        url: "https://example.com"
+      })
+      .catch((error) => {
+        expect(error).toEqual({
+          Error: mockResponse.error.ErrorKey,
+          Message: mockResponse.message,
+          ErrorCode: mockResponse.error.ErrorCode
+        });
+      });
   });
 
   test("should log accounts changed", () => {
@@ -323,6 +422,22 @@ describe("TrustConnectClient", () => {
     const client = new TrustWalletConnectClient();
     await client.connect();
 
+    const mockResponse = {
+      Data: [
+        {
+          additionalKey: "none",
+          category: "Unit",
+          collection: "GALA",
+          owner: "string",
+          quantity: "1",
+          type: "none"
+        }
+      ],
+      Status: 1
+    };
+    const mockHash = createRandomHash();
+    mockFetch(mockResponse, { "x-transaction-id": mockHash });
+
     // send dto payload in send function
     const response = await client.submit({
       method: "TransferToken",
@@ -332,19 +447,9 @@ describe("TrustConnectClient", () => {
     });
 
     expect(response).toEqual({
-      Hash: {
-        status: 1
-      },
-      Request: {
-        options: {
-          body: '{"domain":{"name":"GalaChain"},"prefix":"\\u0019Ethereum Signed Message:\\n261","quantity":"1","signature":"sampleSignature","to":"client|63580d94c574ad78b121c267","tokenInstance":{"additionalKey":"none","category":"Unit","collection":"GALA","instance":"0","type":"none"},"types":{"TransferToken":[{"name":"quantity","type":"string"},{"name":"to","type":"string"},{"name":"tokenInstance","type":"tokenInstance"},{"name":"uniqueKey","type":"string"}],"tokenInstance":[{"name":"additionalKey","type":"string"},{"name":"category","type":"string"},{"name":"collection","type":"string"},{"name":"instance","type":"string"},{"name":"type","type":"string"}]},"uniqueKey":"26d4122e-34c8-4639-baa6-4382b398e68e"}',
-          headers: {
-            "Content-Type": "application/json"
-          },
-          method: "POST"
-        },
-        url: "https://example.com/TransferToken"
-      }
+      Hash: mockHash,
+      Data: mockResponse.Data,
+      Status: mockResponse.Status
     });
   });
 });
