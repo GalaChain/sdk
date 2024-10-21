@@ -14,7 +14,7 @@
  */
 import { RegisterUserDto, TokenInstanceKey, TransferTokenDto, createValidDTO } from "@gala-chain/api";
 import BigNumber from "bignumber.js";
-import { plainToInstance } from "class-transformer";
+import { instanceToPlain, plainToInstance } from "class-transformer";
 import { EventEmitter } from "events";
 
 import { createRandomHash, mockFetch } from "../test/test-utils";
@@ -92,7 +92,7 @@ describe("API tests", () => {
 
     const response = await tokenApi.TransferToken(dto);
 
-    expect(response).toEqual({
+    expect(instanceToPlain(response)).toEqual({
       Hash: mockHash,
       Data: mockResponse.Data,
       Status: mockResponse.Status
