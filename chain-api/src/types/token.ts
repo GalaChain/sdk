@@ -32,7 +32,6 @@ import {
 } from "class-validator";
 import { JSONSchema } from "class-validator-jsonschema";
 
-import { ConstructorArgs } from "../utils";
 import { BigNumberIsNotNegative, BigNumberIsPositive, BigNumberProperty, IsUserAlias } from "../validators";
 import { TokenBalance } from "./TokenBalance";
 import { TokenClass, TokenClassKey } from "./TokenClass";
@@ -105,8 +104,6 @@ export class FetchTokenClassesWithPaginationDto extends ChainCallDTO {
   @IsInt()
   limit?: number;
 }
-
-export type FetchTokenClassesResponseBody = ConstructorArgs<FetchTokenClassesResponse>;
 
 export class FetchTokenClassesResponse extends ChainCallDTO {
   @JSONSchema({ description: "List of Token Classes." })

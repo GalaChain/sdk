@@ -29,7 +29,7 @@ import { GalaChainResponseError, GalaChainResponseSuccess } from "./types";
 type NonArrayClassConstructor<T> = T extends Array<any> ? ClassConstructor<T[number]> : ClassConstructor<T>;
 
 export abstract class GalaChainProvider {
-  abstract sign(method: string, dto: any): Promise<any>;
+  abstract sign(method: string, dto: NonFunctionProperties<ChainCallDTO>): Promise<any>;
   async submit<T, U extends ChainCallDTO>({
     url,
     method,

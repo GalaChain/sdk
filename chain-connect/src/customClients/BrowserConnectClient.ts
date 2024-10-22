@@ -12,7 +12,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-import { ChainCallDTO, ConstructorArgs } from "@gala-chain/api";
+import { ChainCallDTO, NonFunctionProperties } from "@gala-chain/api";
 import { BrowserProvider, Eip1193Provider, getAddress } from "ethers";
 
 import { WebSigner } from "../GalaChainClient";
@@ -90,7 +90,7 @@ export class BrowserConnectClient extends WebSigner {
     this.walletAddress = "";
   }
 
-  public async sign<U extends ConstructorArgs<ChainCallDTO>>(
+  public async sign<U extends NonFunctionProperties<ChainCallDTO>>(
     method: string,
     payload: U
   ): Promise<U & { signature: string; prefix: string }> {

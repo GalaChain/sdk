@@ -25,7 +25,7 @@ import { ethers } from "ethers";
 import { EventEmitter } from "events";
 
 import { createRandomHash, mockFetch } from "../test/test-utils";
-import { generateEIP712Types } from "./Utils";
+import { generateEIP712Types } from "./utils";
 import { BrowserConnectClient, TrustWalletConnectClient } from "./customClients";
 
 // https://privatekeys.pw/key/1d3cc061492016bcd5e7ea2c31b1cf3dec584e07a38e21df7ef3049c6b224e70#addresses
