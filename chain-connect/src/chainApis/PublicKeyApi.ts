@@ -13,15 +13,23 @@
  * limitations under the License.
  */
 import {
+  DryRunDto,
   GetMyProfileDto,
   RegisterEthUserDto,
   RegisterUserDto,
   UpdatePublicKeyDto,
-  UserProfileBody
+  UserProfile
 } from "@gala-chain/api";
 import { plainToInstance } from "class-transformer";
 
 import { GalaChainProvider } from "../GalaChainClient";
+import {
+  DryRunRequest,
+  DryRunResult,
+  RegisterEthUserRequest,
+  RegisterUserRequest,
+  UpdatePublicKeyRequest
+} from "../types";
 
 export class PublicKeyApi {
   constructor(
@@ -30,8 +38,19 @@ export class PublicKeyApi {
   ) {}
 
   // PublicKey Chaincode calls:
+  public DryRun(dto: DryRunRequest) {
+    return this.connection.submit({
+      method: "DryRun",
+      payload: dto,
+      sign: false,
+      url: this.chainCodeUrl,
+      requestConstructor: DryRunDto,
+      responseConstructor: DryRunResult
+    });
+  }
+
   public GetMyProfile(message?: string, signature?: string) {
-    return this.connection.submit<UserProfileBody, { message?: string }>({
+    return this.connection.submit<UserProfile, GetMyProfileDto>({
       method: "GetMyProfile",
       payload: plainToInstance(GetMyProfileDto, {
         ...(message ? { message } : {}),
@@ -42,30 +61,33 @@ export class PublicKeyApi {
     });
   }
 
-  public RegisterUser(dto: RegisterUserDto) {
+  public RegisterUser(dto: RegisterUserRequest) {
     return this.connection.submit<string, RegisterUserDto>({
       method: "RegisterUser",
       payload: dto,
       sign: true,
-      url: this.chainCodeUrl
+      url: this.chainCodeUrl,
+      requestConstructor: RegisterUserDto
     });
   }
 
-  public RegisterEthUser(dto: RegisterEthUserDto) {
+  public RegisterEthUser(dto: RegisterEthUserRequest) {
     return this.connection.submit<string, RegisterEthUserDto>({
       method: "RegisterEthUser",
       payload: dto,
       sign: true,
-      url: this.chainCodeUrl
+      url: this.chainCodeUrl,
+      requestConstructor: RegisterEthUserDto
     });
   }
 
-  public UpdatePublicKey(dto: UpdatePublicKeyDto) {
+  public UpdatePublicKey(dto: UpdatePublicKeyRequest) {
     return this.connection.submit<void, UpdatePublicKeyDto>({
       method: "UpdatePublicKey",
       payload: dto,
       sign: true,
-      url: this.chainCodeUrl
+      url: this.chainCodeUrl,
+      requestConstructor: UpdatePublicKeyDto
     });
   }
 }

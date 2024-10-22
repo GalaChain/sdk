@@ -15,11 +15,8 @@
 import { IsNotEmpty, ValidateIf } from "class-validator";
 import { JSONSchema } from "class-validator-jsonschema";
 
-import { ConstructorArgs } from "../utils";
 import { IsUserAlias } from "../validators";
 import { ChainObject } from "./ChainObject";
-
-export type UserProfileBody = ConstructorArgs<UserProfile>;
 
 export class UserProfile extends ChainObject {
   @JSONSchema({

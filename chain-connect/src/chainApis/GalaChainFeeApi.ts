@@ -14,17 +14,22 @@
  */
 import {
   DryRunDto,
-  DryRunResultDto,
   FeeAuthorizationDto,
-  FeeAuthorizationResDto,
-  FeeProperties,
   FeePropertiesDto,
   FetchFeeAuthorizationsDto,
-  FetchFeeAuthorizationsResDto,
   FetchFeePropertiesDto
 } from "@gala-chain/api";
 
 import { GalaChainProvider } from "../GalaChainClient";
+import {
+  DryRunRequest,
+  DryRunResult,
+  FeeAuthorizationRequest,
+  FeeProperties,
+  FetchFeeAuthorizationsResponse,
+  FetchFeePropertiesRequest,
+  SetFeePropertiesRequest
+} from "../types";
 
 export class GalaChainFeeApi {
   constructor(
@@ -32,48 +37,58 @@ export class GalaChainFeeApi {
     private connection: GalaChainProvider
   ) {}
 
-  public AuthorizeFee(dto: FeeAuthorizationDto) {
-    return this.connection.submit<FeeAuthorizationResDto, FeeAuthorizationDto>({
+  public AuthorizeFee(dto: FeeAuthorizationRequest) {
+    return this.connection.submit({
       method: "AuthorizeFee",
       payload: dto,
       sign: true,
-      url: this.chainCodeUrl
+      url: this.chainCodeUrl,
+      requestConstructor: FeeAuthorizationDto,
+      responseConstructor: FetchFeeAuthorizationsResponse
     });
   }
 
-  public DryRun(dto: DryRunDto) {
-    return this.connection.submit<DryRunResultDto, DryRunDto>({
+  public DryRun(dto: DryRunRequest) {
+    return this.connection.submit({
       method: "DryRun",
       payload: dto,
       sign: false,
-      url: this.chainCodeUrl
+      url: this.chainCodeUrl,
+      requestConstructor: DryRunDto,
+      responseConstructor: DryRunResult
     });
   }
 
-  public FetchFeeAutorizations(dto: FetchFeeAuthorizationsDto) {
-    return this.connection.submit<FetchFeeAuthorizationsResDto, FetchFeeAuthorizationsDto>({
+  public FetchFeeAutorizations(dto: FetchFeeAuthorizationsResponse) {
+    return this.connection.submit({
       method: "DryRun",
       payload: dto,
       sign: false,
-      url: this.chainCodeUrl
+      url: this.chainCodeUrl,
+      requestConstructor: FetchFeeAuthorizationsDto,
+      responseConstructor: FetchFeeAuthorizationsResponse
     });
   }
 
-  public FetchFeeProperties(dto: FetchFeePropertiesDto) {
-    return this.connection.submit<FeeProperties, FetchFeePropertiesDto>({
+  public FetchFeeProperties(dto: FetchFeePropertiesRequest) {
+    return this.connection.submit({
       method: "FetchFeeProperties",
       payload: dto,
       sign: true,
-      url: this.chainCodeUrl
+      url: this.chainCodeUrl,
+      requestConstructor: FetchFeePropertiesDto,
+      responseConstructor: FeeProperties
     });
   }
 
-  public SetFeeProperties(dto: FeePropertiesDto) {
-    return this.connection.submit<FeeProperties, FeePropertiesDto>({
+  public SetFeeProperties(dto: SetFeePropertiesRequest) {
+    return this.connection.submit({
       method: "FetchFeeProperties",
       payload: dto,
       sign: false,
-      url: this.chainCodeUrl
+      url: this.chainCodeUrl,
+      requestConstructor: FeePropertiesDto,
+      responseConstructor: FeeProperties
     });
   }
 }

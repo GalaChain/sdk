@@ -12,9 +12,8 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-export * from "./customClients";
-export * from "./GalaChainClient";
-export * from "./utils/WalletUtils";
-export * from "./chainApis";
-export * from "./helpers";
-export * from "./types";
+import { DryRunDto, DryRunResultDto as DryRunResult, NonFunctionProperties } from "@gala-chain/api";
+
+type DryRunRequest = NonFunctionProperties<DryRunDto>;
+
+export { DryRunRequest, DryRunResult };
