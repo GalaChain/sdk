@@ -17,7 +17,6 @@ import {
   BurnTokensDto,
   CreateTokenClassDto,
   DeleteAllowancesDto,
-  DryRunDto,
   FetchAllowancesDto,
   FetchBalancesDto,
   FetchBurnsDto,
@@ -48,8 +47,6 @@ import {
   BurnTokensRequest,
   CreateTokenClassRequest,
   DeleteAllowancesRequest,
-  DryRunRequest,
-  DryRunResult,
   FetchAllowancesRequest,
   FetchAllowancesResponse,
   FetchBalancesRequest,
@@ -84,25 +81,14 @@ import {
   UpdateTokenClassRequest,
   UseTokenRequest
 } from "../types";
+import { GalaChainBaseApi } from "./GalaChainBaseApi";
 
-export class TokenApi {
-  constructor(
-    private chainCodeUrl: string,
-    private connection: GalaChainProvider
-  ) {}
-
-  // Token Chaincode Calls:
-  public DryRun(dto: DryRunRequest) {
-    return this.connection.submit({
-      method: "DryRun",
-      payload: dto,
-      sign: false,
-      url: this.chainCodeUrl,
-      requestConstructor: DryRunDto,
-      responseConstructor: DryRunResult
-    });
+export class TokenApi extends GalaChainBaseApi {
+  constructor(chainCodeUrl: string, connection: GalaChainProvider) {
+    super(chainCodeUrl, connection);
   }
 
+  // Token Chaincode Calls:
   public CreateTokenClass(dto: CreateTokenClassRequest) {
     return this.connection.submit({
       method: "CreateTokenClass",

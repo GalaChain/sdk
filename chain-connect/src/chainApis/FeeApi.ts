@@ -13,7 +13,6 @@
  * limitations under the License.
  */
 import {
-  DryRunDto,
   FeeAuthorizationDto,
   FeePropertiesDto,
   FetchFeeAuthorizationsDto,
@@ -22,20 +21,18 @@ import {
 
 import { GalaChainProvider } from "../GalaChainClient";
 import {
-  DryRunRequest,
-  DryRunResult,
   FeeAuthorizationRequest,
   FeeProperties,
   FetchFeeAuthorizationsResponse,
   FetchFeePropertiesRequest,
   SetFeePropertiesRequest
 } from "../types";
+import { GalaChainBaseApi } from "./GalaChainBaseApi";
 
-export class GalaChainFeeApi {
-  constructor(
-    private chainCodeUrl: string,
-    private connection: GalaChainProvider
-  ) {}
+export class FeeApi extends GalaChainBaseApi {
+  constructor(chainCodeUrl: string, connection: GalaChainProvider) {
+    super(chainCodeUrl, connection);
+  }
 
   public AuthorizeFee(dto: FeeAuthorizationRequest) {
     return this.connection.submit({
@@ -45,17 +42,6 @@ export class GalaChainFeeApi {
       url: this.chainCodeUrl,
       requestConstructor: FeeAuthorizationDto,
       responseConstructor: FetchFeeAuthorizationsResponse
-    });
-  }
-
-  public DryRun(dto: DryRunRequest) {
-    return this.connection.submit({
-      method: "DryRun",
-      payload: dto,
-      sign: false,
-      url: this.chainCodeUrl,
-      requestConstructor: DryRunDto,
-      responseConstructor: DryRunResult
     });
   }
 

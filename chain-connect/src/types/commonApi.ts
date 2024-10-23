@@ -12,8 +12,16 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-import { DryRunDto, DryRunResultDto as DryRunResult, NonFunctionProperties } from "@gala-chain/api";
+import {
+  DryRunDto,
+  DryRunResultDto as DryRunResult,
+  GetObjectDto,
+  GetObjectHistoryDto,
+  NonFunctionProperties
+} from "@gala-chain/api";
 
 type DryRunRequest = NonFunctionProperties<DryRunDto>;
+type GetObjectByKeyRequest = NonFunctionProperties<GetObjectDto>;
+type GetObjectHistoryRequest = NonFunctionProperties<GetObjectHistoryDto>;
 
-export { DryRunRequest, DryRunResult };
+export { DryRunRequest, DryRunResult, GetObjectByKeyRequest, GetObjectHistoryRequest };
