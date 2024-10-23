@@ -14,30 +14,40 @@
  */
 import {
   DryRunDto,
-  GetMyProfileDto,
-  RegisterEthUserDto,
-  RegisterUserDto,
-  UpdatePublicKeyDto,
-  UserProfile
+  FeeAuthorizationDto,
+  FeePropertiesDto,
+  FetchFeeAuthorizationsDto,
+  FetchFeePropertiesDto
 } from "@gala-chain/api";
-import { plainToInstance } from "class-transformer";
 
 import { GalaChainProvider } from "../GalaChainClient";
 import {
   DryRunRequest,
   DryRunResult,
-  RegisterEthUserRequest,
-  RegisterUserRequest,
-  UpdatePublicKeyRequest
+  FeeAuthorizationRequest,
+  FeeProperties,
+  FetchFeeAuthorizationsResponse,
+  FetchFeePropertiesRequest,
+  SetFeePropertiesRequest
 } from "../types";
 
-export class PublicKeyApi {
+export class GalaChainFeeApi {
   constructor(
     private chainCodeUrl: string,
     private connection: GalaChainProvider
   ) {}
 
-  // PublicKey Chaincode calls:
+  public AuthorizeFee(dto: FeeAuthorizationRequest) {
+    return this.connection.submit({
+      method: "AuthorizeFee",
+      payload: dto,
+      sign: true,
+      url: this.chainCodeUrl,
+      requestConstructor: FeeAuthorizationDto,
+      responseConstructor: FetchFeeAuthorizationsResponse
+    });
+  }
+
   public DryRun(dto: DryRunRequest) {
     return this.connection.submit({
       method: "DryRun",
@@ -49,45 +59,36 @@ export class PublicKeyApi {
     });
   }
 
-  public GetMyProfile(message?: string, signature?: string) {
-    return this.connection.submit<UserProfile, GetMyProfileDto>({
-      method: "GetMyProfile",
-      payload: plainToInstance(GetMyProfileDto, {
-        ...(message ? { message } : {}),
-        ...(signature ? { signature } : {})
-      }),
-      sign: true,
-      url: this.chainCodeUrl
+  public FetchFeeAutorizations(dto: FetchFeeAuthorizationsResponse) {
+    return this.connection.submit({
+      method: "DryRun",
+      payload: dto,
+      sign: false,
+      url: this.chainCodeUrl,
+      requestConstructor: FetchFeeAuthorizationsDto,
+      responseConstructor: FetchFeeAuthorizationsResponse
     });
   }
 
-  public RegisterUser(dto: RegisterUserRequest) {
-    return this.connection.submit<string, RegisterUserDto>({
-      method: "RegisterUser",
+  public FetchFeeProperties(dto: FetchFeePropertiesRequest) {
+    return this.connection.submit({
+      method: "FetchFeeProperties",
       payload: dto,
       sign: true,
       url: this.chainCodeUrl,
-      requestConstructor: RegisterUserDto
+      requestConstructor: FetchFeePropertiesDto,
+      responseConstructor: FeeProperties
     });
   }
 
-  public RegisterEthUser(dto: RegisterEthUserRequest) {
-    return this.connection.submit<string, RegisterEthUserDto>({
-      method: "RegisterEthUser",
+  public SetFeeProperties(dto: SetFeePropertiesRequest) {
+    return this.connection.submit({
+      method: "FetchFeeProperties",
       payload: dto,
-      sign: true,
+      sign: false,
       url: this.chainCodeUrl,
-      requestConstructor: RegisterEthUserDto
-    });
-  }
-
-  public UpdatePublicKey(dto: UpdatePublicKeyRequest) {
-    return this.connection.submit<void, UpdatePublicKeyDto>({
-      method: "UpdatePublicKey",
-      payload: dto,
-      sign: true,
-      url: this.chainCodeUrl,
-      requestConstructor: UpdatePublicKeyDto
+      requestConstructor: FeePropertiesDto,
+      responseConstructor: FeeProperties
     });
   }
 }

@@ -12,8 +12,8 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-export * from "./commonApi";
-export * from "./galaChain";
-export * from "./galaChainFeeApi";
-export * from "./tokenApi";
-export * from "./publicKeyApi";
+import { DryRunDto, DryRunResultDto as DryRunResult, NonFunctionProperties } from "@gala-chain/api";
+
+type DryRunRequest = NonFunctionProperties<DryRunDto>;
+
+export { DryRunRequest, DryRunResult };

@@ -17,7 +17,6 @@ import { IsNotEmpty, IsOptional, ValidationError, validate } from "class-validat
 import { JSONSchema } from "class-validator-jsonschema";
 
 import {
-  ConstructorArgs,
   SigningScheme,
   ValidationFailedError,
   deserialize,

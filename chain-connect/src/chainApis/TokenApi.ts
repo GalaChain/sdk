@@ -17,6 +17,7 @@ import {
   BurnTokensDto,
   CreateTokenClassDto,
   DeleteAllowancesDto,
+  DryRunDto,
   FetchAllowancesDto,
   FetchBalancesDto,
   FetchBurnsDto,
@@ -47,6 +48,8 @@ import {
   BurnTokensRequest,
   CreateTokenClassRequest,
   DeleteAllowancesRequest,
+  DryRunRequest,
+  DryRunResult,
   FetchAllowancesRequest,
   FetchAllowancesResponse,
   FetchBalancesRequest,
@@ -89,6 +92,17 @@ export class TokenApi {
   ) {}
 
   // Token Chaincode Calls:
+  public DryRun(dto: DryRunRequest) {
+    return this.connection.submit({
+      method: "DryRun",
+      payload: dto,
+      sign: false,
+      url: this.chainCodeUrl,
+      requestConstructor: DryRunDto,
+      responseConstructor: DryRunResult
+    });
+  }
+
   public CreateTokenClass(dto: CreateTokenClassRequest) {
     return this.connection.submit({
       method: "CreateTokenClass",

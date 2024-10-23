@@ -17,7 +17,7 @@ import BigNumber from "bignumber.js";
 import { instanceToPlain, plainToInstance } from "class-transformer";
 import { ethers } from "ethers";
 
-import { generateEIP712Types } from "./Utils";
+import { generateEIP712Types } from "./CommonUtils";
 
 describe("EIP-712 Signing", () => {
   it("should correctly generate EIP-712 types and values and sign the data for single types", async () => {
