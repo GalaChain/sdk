@@ -13,7 +13,6 @@
  * limitations under the License.
  */
 import {
-  DryRunDto,
   GetMyProfileDto,
   RegisterEthUserDto,
   RegisterUserDto,
@@ -23,32 +22,15 @@ import {
 import { plainToInstance } from "class-transformer";
 
 import { GalaChainProvider } from "../GalaChainClient";
-import {
-  DryRunRequest,
-  DryRunResult,
-  RegisterEthUserRequest,
-  RegisterUserRequest,
-  UpdatePublicKeyRequest
-} from "../types";
+import { RegisterEthUserRequest, RegisterUserRequest, UpdatePublicKeyRequest } from "../types";
+import { GalaChainBaseApi } from "./GalaChainBaseApi";
 
-export class PublicKeyApi {
-  constructor(
-    private chainCodeUrl: string,
-    private connection: GalaChainProvider
-  ) {}
-
-  // PublicKey Chaincode calls:
-  public DryRun(dto: DryRunRequest) {
-    return this.connection.submit({
-      method: "DryRun",
-      payload: dto,
-      sign: false,
-      url: this.chainCodeUrl,
-      requestConstructor: DryRunDto,
-      responseConstructor: DryRunResult
-    });
+export class PublicKeyApi extends GalaChainBaseApi {
+  constructor(chainCodeUrl: string, connection: GalaChainProvider) {
+    super(chainCodeUrl, connection);
   }
 
+  // PublicKey Chaincode calls:
   public GetMyProfile(message?: string, signature?: string) {
     return this.connection.submit<UserProfile, GetMyProfileDto>({
       method: "GetMyProfile",
