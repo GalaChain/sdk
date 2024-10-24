@@ -14,6 +14,6 @@
  */
 export * from "./commonApi";
 export * from "./galaChain";
-export * from "./galaChainFeeApi";
+export * from "./feeApi";
 export * from "./tokenApi";
 export * from "./publicKeyApi";
