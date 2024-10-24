@@ -27,7 +27,7 @@ export class GalaChainBaseApi {
     await createValidDTO(DryRunDto ,dto);
     const stringifiedDto = {
       ...dto,
-      dto: JSON.stringify(dto)
+      dto: JSON.stringify(dto.dto)
     }
     return this.connection.submit({
       method: "DryRun",
