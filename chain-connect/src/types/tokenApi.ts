@@ -14,6 +14,9 @@
  */
 import {
   BatchMintTokenDto,
+  BigNumberArrayProperty,
+  BigNumberIsNotNegative,
+  BigNumberProperty,
   BurnTokensDto,
   CreateTokenClassDto,
   DeleteAllowancesDto,
@@ -33,6 +36,7 @@ import {
   GrantAllowanceDto,
   HighThroughputMintTokenDto,
   FulfillMintDto as HighThroughputMintTokenResponse,
+  IsUserAlias,
   LockTokenDto,
   LockTokensDto,
   MintRequestDto,
@@ -42,10 +46,11 @@ import {
   RefreshAllowanceDto,
   ReleaseTokenDto,
   TokenAllowance,
-  TokenBalance,
+  TokenBalance as TokenBalanceDto,
   TokenBurn,
   TokenClass,
   TokenClassKey,
+  TokenHold,
   TokenInstanceKey,
   TransferTokenDto,
   UnlockTokenDto,
@@ -53,6 +58,9 @@ import {
   UpdateTokenClassDto,
   UseTokenDto
 } from "@gala-chain/api";
+import BigNumber from "bignumber.js";
+import { Type } from "class-transformer";
+import { IsDefined, IsNotEmpty, IsOptional, ValidateNested } from "class-validator";
 
 type BatchMintTokenRequest = NonFunctionProperties<BatchMintTokenDto>;
 type BurnTokensRequest = NonFunctionProperties<BurnTokensDto>;
@@ -81,6 +89,42 @@ type UnlockTokenRequest = NonFunctionProperties<UnlockTokenDto>;
 type UnlockTokensRequest = NonFunctionProperties<UnlockTokensDto>;
 type UpdateTokenClassRequest = NonFunctionProperties<UpdateTokenClassDto>;
 type UseTokenRequest = NonFunctionProperties<UseTokenDto>;
+
+// Unique case where we need to expose private properties but keep validations
+class TokenBalance implements NonFunctionProperties<TokenBalanceDto> {
+  @IsUserAlias()
+  owner: string;
+
+  @IsNotEmpty()
+  collection: string;
+
+  @IsNotEmpty()
+  category: string;
+
+  @IsNotEmpty()
+  type: string;
+
+  @IsDefined()
+  additionalKey: string;
+
+  @IsOptional()
+  @BigNumberArrayProperty()
+  instanceIds?: Array<BigNumber>;
+
+  @IsOptional()
+  @ValidateNested({ each: true })
+  @Type(() => TokenHold)
+  lockedHolds?: Array<TokenHold>;
+
+  @IsOptional()
+  @ValidateNested({ each: true })
+  @Type(() => TokenHold)
+  inUseHolds?: Array<TokenHold>;
+
+  @BigNumberIsNotNegative()
+  @BigNumberProperty()
+  quantity: BigNumber;
+}
 
 export {
   BatchMintTokenRequest,
@@ -115,6 +159,7 @@ export {
   TokenBurn,
   TokenClass,
   TokenClassKey,
+  TokenHold,
   TokenInstanceKey,
   TransferTokenRequest,
   UnlockTokenRequest,

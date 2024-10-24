@@ -12,7 +12,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-import { createValidDTO, DryRunDto, GetObjectDto, GetObjectHistoryDto } from "@gala-chain/api";
+import { DryRunDto, GetObjectDto, GetObjectHistoryDto, createValidDTO } from "@gala-chain/api";
 
 import { GalaChainProvider } from "../GalaChainClient";
 import { DryRunRequest, DryRunResult, GetObjectByKeyRequest, GetObjectHistoryRequest } from "../types";
@@ -24,11 +24,11 @@ export class GalaChainBaseApi {
   ) {}
 
   public async DryRun(dto: DryRunRequest) {
-    await createValidDTO(DryRunDto ,dto);
+    await createValidDTO(DryRunDto, dto);
     const stringifiedDto = {
       ...dto,
       dto: JSON.stringify(dto.dto)
-    }
+    };
     return this.connection.submit({
       method: "DryRun",
       payload: stringifiedDto,

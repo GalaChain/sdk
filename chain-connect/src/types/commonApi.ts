@@ -19,6 +19,7 @@ import {
   GetObjectHistoryDto,
   NonFunctionProperties
 } from "@gala-chain/api";
+
 import { PublicProperties } from "./utils";
 
 type DryRunRequest = PublicProperties<NonFunctionProperties<DryRunDto>>;
