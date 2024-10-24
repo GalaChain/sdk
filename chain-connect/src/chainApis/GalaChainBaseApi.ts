@@ -38,7 +38,7 @@ export class GalaChainBaseApi {
     });
   }
 
-  public GetObjectByKey<T extends Record<string, unknown>>(dto: GetObjectByKeyRequest) {
+  public GetObjectByKey<T = Record<string, unknown>>(dto: GetObjectByKeyRequest) {
     return this.connection.submit<T, GetObjectDto>({
       method: "GetObjectByKey",
       payload: dto,
@@ -48,7 +48,7 @@ export class GalaChainBaseApi {
     });
   }
 
-  public GetObjectHistory<T extends Record<string, unknown>>(dto: GetObjectHistoryRequest) {
+  public GetObjectHistory<T = Record<string, unknown>>(dto: GetObjectHistoryRequest) {
     return this.connection.submit<T, GetObjectHistoryDto>({
       method: "GetObjectHistory",
       payload: dto,
