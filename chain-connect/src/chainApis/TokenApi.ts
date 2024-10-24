@@ -19,6 +19,7 @@ import {
   DeleteAllowancesDto,
   FetchAllowancesDto,
   FetchBalancesDto,
+  FetchBalancesWithPaginationDto,
   FetchBurnsDto,
   FetchMintRequestsDto,
   FetchTokenClassesDto,
@@ -50,6 +51,7 @@ import {
   FetchAllowancesRequest,
   FetchAllowancesResponse,
   FetchBalancesRequest,
+  FetchBalancesWithPaginationRequest,
   FetchBalancesWithTokenMetadataResponse,
   FetchBurnsRequest,
   FetchMintRequestsRequest,
@@ -207,12 +209,12 @@ export class TokenApi extends GalaChainBaseApi {
     });
   }
 
-  public FetchBalancesWithTokenMetadata(dto: FetchBalancesRequest) {
+  public FetchBalancesWithTokenMetadata(dto: FetchBalancesWithPaginationRequest) {
     return this.connection.submit({
       method: "FetchBalancesWithTokenMetadata",
       payload: dto,
       url: this.chainCodeUrl,
-      requestConstructor: FetchBalancesDto,
+      requestConstructor: FetchBalancesWithPaginationDto,
       responseConstructor: FetchBalancesWithTokenMetadataResponse
     });
   }
