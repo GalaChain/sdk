@@ -12,10 +12,12 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+import { serialize } from "@gala-chain/api";
 import { SigningKey, computeAddress, ethers, hashMessage } from "ethers";
 
 import { CustomClient } from "../GalaChainClient";
 import { calculatePersonalSignPrefix } from "../helpers";
+import { SigningType } from "../types";
 import { generateEIP712Types } from "../utils";
 
 export class SigningClient extends CustomClient {
@@ -39,18 +41,25 @@ export class SigningClient extends CustomClient {
 
   public async sign<U extends object>(
     method: string,
-    payload: U
-  ): Promise<U & { signature: string; prefix: string }> {
+    payload: U,
+    signingType: SigningType = SigningType.SIGN_TYPED_DATA
+  ): Promise<U & { signature: string; prefix?: string }> {
     try {
-      const domain = { name: "GalaChain" };
-      const types = generateEIP712Types(method, payload);
-
       const prefix = calculatePersonalSignPrefix(payload);
       const prefixedPayload = { ...payload, prefix };
 
-      const signature = await this.wallet.signTypedData(domain, types, prefixedPayload);
+      if (signingType === SigningType.SIGN_TYPED_DATA) {
+        const domain = { name: "GalaChain" };
+        const types = generateEIP712Types(method, payload);
 
-      return { ...prefixedPayload, signature, types, domain };
+        const signature = await this.wallet.signTypedData(domain, types, prefixedPayload);
+        return { ...prefixedPayload, signature, types, domain };
+      } else if (signingType === SigningType.PERSONAL_SIGN) {
+        const signature = await this.wallet.signMessage(serialize(prefixedPayload));
+        return { ...prefixedPayload, signature };
+      } else {
+        throw new Error("Unsupported signing type");
+      }
     } catch (error: unknown) {
       throw new Error((error as Error).message);
     }

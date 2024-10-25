@@ -24,12 +24,12 @@ import { instanceToPlain, plainToInstance } from "class-transformer";
 import { BrowserProvider, SigningKey, computeAddress, getAddress, getBytes, hashMessage } from "ethers";
 
 import { EventEmitter, Listener, MetaMaskEvents } from "./helpers";
-import { GalaChainResponseError, GalaChainResponseSuccess } from "./types";
+import { GalaChainResponseError, GalaChainResponseSuccess, SigningType } from "./types";
 
 type NonArrayClassConstructor<T> = T extends Array<any> ? ClassConstructor<T[number]> : ClassConstructor<T>;
 
 export abstract class GalaChainProvider {
-  abstract sign(method: string, dto: NonFunctionProperties<ChainCallDTO>): Promise<any>;
+  abstract sign<T extends object>(method: string, dto: T, signingType?: SigningType): Promise<any>;
   async submit<T, U extends ChainCallDTO>({
     url,
     method,
@@ -37,7 +37,8 @@ export abstract class GalaChainProvider {
     sign,
     headers = {},
     requestConstructor,
-    responseConstructor
+    responseConstructor,
+    signingType
   }: {
     url: string;
     method: string;
@@ -46,6 +47,7 @@ export abstract class GalaChainProvider {
     headers?: object;
     requestConstructor?: ClassConstructor<U>;
     responseConstructor?: NonArrayClassConstructor<T>;
+    signingType?: SigningType;
   }): Promise<GalaChainResponseSuccess<T>> {
     // Throws error if class validation fails
     if (requestConstructor) {
@@ -63,7 +65,7 @@ export abstract class GalaChainProvider {
         payload.signature === null
       ) {
         try {
-          newPayload = await this.sign(method, newPayload);
+          newPayload = await this.sign(method, newPayload, signingType);
         } catch (error: unknown) {
           throw new Error((error as Error).message);
         }
