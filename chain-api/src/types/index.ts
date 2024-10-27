@@ -63,6 +63,7 @@ export * from "./OraclePriceCrossRateAssertion";
 export * from "./swap";
 export * from "./TokenMintAllowance";
 export * from "./TokenMintAllowanceRequest";
+export * from "./TokenMintConfiguration"
 export * from "./TokenMintFulfillment";
 export * from "./TokenMintRequest";
 export * from "./TokenBurnCounter";

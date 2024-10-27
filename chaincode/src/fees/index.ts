@@ -36,3 +36,4 @@ export * from "./settleFeePaymentReceipts";
 export * from "./splitFeeBurnAndTransfer";
 export * from "./writeChannelPaymentReceipt";
 export * from "./writeUserPaymentReceipt";
+export * from "./userExemptFromFees";
