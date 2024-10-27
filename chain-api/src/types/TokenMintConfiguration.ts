@@ -16,6 +16,7 @@ import { IsBoolean, IsDefined, IsNotEmpty, IsOptional } from "class-validator";
 
 import { ChainKey } from "../utils";
 import { ChainObject } from "./ChainObject";
+import { IsBigNumber } from "../validators";
 
 /**
  * @description
@@ -70,4 +71,22 @@ export class TokenMintConfiguration extends ChainObject {
   @IsOptional()
   @IsBoolean()
   public postMintBurn?: boolean;
+
+  /**
+   * @description
+   *
+   * (optional) set a quantity to configure a specific
+   * token class to lock some amount of
+   * minted quantity post-mint.
+   *
+   * @remarks
+   *
+   * Use in conjucntion with `FeeCodeDefintion` chain objects
+   * and Fee Exit Gates to set specific amounts and/or percentages
+   * to be burned.
+   *
+   */
+  @IsOptional()
+  @IsBigNumber()
+  public postMintLock?: string;
 }

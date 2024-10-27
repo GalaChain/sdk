@@ -342,36 +342,43 @@ description: "DTO that describes a TokenMintConfiguration chain object."
 })
 
 export class TokenMintConfigurationDto extends ChainCallDTO {
-@JSONSchema({
-  description: "Token collection."
-})
-@IsNotEmpty()
-collection: string;
+  @JSONSchema({
+    description: "Token collection."
+  })
+  @IsNotEmpty()
+  collection: string;
 
-@JSONSchema({
-  description: "Token category."
-})
-@IsNotEmpty()
-category: string;
+  @JSONSchema({
+    description: "Token category."
+  })
+  @IsNotEmpty()
+  category: string;
 
-@JSONSchema({
-  description: "Token type."
-})
-@IsNotEmpty()
-type: string;
+  @JSONSchema({
+    description: "Token type."
+  })
+  @IsNotEmpty()
+  type: string;
 
-@JSONSchema({
-  description: "Token additionalKey."
-})
-@IsDefined()
-additionalKey: string;
+  @JSONSchema({
+    description: "Token additionalKey."
+  })
+  @IsDefined()
+  additionalKey: string;
 
-@JSONSchema({
-  description: "Set `true` to enable burning a percentage of each quantity minted"
-})
-@IsOptional()
-@IsBoolean()
-postMintBurn?: boolean;
+  @JSONSchema({
+    description: "Set `true` to enable burning a percentage of each quantity minted"
+  })
+  @IsOptional()
+  @IsBoolean()
+  postMintBurn?: boolean;
+
+  @JSONSchema({
+    description: "Set `true` to enable locking a percentage of each quantity minted"
+  })
+  @IsOptional()
+  @IsBoolean()
+  postMintLock?: boolean;
 }
 
 @JSONSchema({
