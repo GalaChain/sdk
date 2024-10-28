@@ -29,7 +29,6 @@ import {
 } from "class-validator";
 import { JSONSchema } from "class-validator-jsonschema";
 
-import { ConstructorArgs } from "../utils";
 import {
   ArrayUniqueObjects,
   BigNumberIsInteger,
@@ -191,8 +190,6 @@ export class FetchAllowancesLegacyDto extends ChainCallDTO {
   @IsNotEmpty()
   bookmark?: string;
 }
-
-export type FetchAllowancesBody = ConstructorArgs<FetchAllowancesResponse>;
 
 export class FetchAllowancesResponse extends ChainCallDTO {
   @JSONSchema({ description: "List of allowances." })

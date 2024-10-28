@@ -12,7 +12,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-export * from "./FeeApi";
-export * from "./GalaChainBaseApi";
-export * from "./PublicKeyApi";
-export * from "./TokenApi";
+export enum SigningType {
+  PERSONAL_SIGN = "personalSign",
+  SIGN_TYPED_DATA = "signTypedData"
+}

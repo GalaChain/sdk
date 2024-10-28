@@ -12,7 +12,26 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-export * from "./FeeApi";
-export * from "./GalaChainBaseApi";
-export * from "./PublicKeyApi";
-export * from "./TokenApi";
+import {
+  ChainCallDTO,
+  DryRunDto,
+  DryRunResultDto as DryRunResult,
+  GetObjectDto,
+  GetObjectHistoryDto,
+  NonFunctionProperties
+} from "@gala-chain/api";
+
+import { PublicProperties } from "./utils";
+
+type DryRunRequest = PublicProperties<NonFunctionProperties<DryRunDto>>;
+type GetObjectByKeyRequest = PublicProperties<NonFunctionProperties<GetObjectDto>>;
+type GetObjectHistoryRequest = PublicProperties<NonFunctionProperties<GetObjectHistoryDto>>;
+
+export {
+  DryRunRequest,
+  DryRunResult,
+  GetObjectByKeyRequest,
+  GetObjectHistoryRequest,
+  ChainCallDTO,
+  NonFunctionProperties
+};

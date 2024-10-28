@@ -12,7 +12,9 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-export * from "./FeeApi";
-export * from "./GalaChainBaseApi";
-export * from "./PublicKeyApi";
-export * from "./TokenApi";
+export * from "./commonApi";
+export * from "./galaChain";
+export * from "./feeApi";
+export * from "./tokenApi";
+export * from "./publicKeyApi";
+export * from "./signing";

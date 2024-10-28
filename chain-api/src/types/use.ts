@@ -17,7 +17,6 @@ import { Type } from "class-transformer";
 import { ArrayNotEmpty, IsNotEmpty, IsOptional, IsString, ValidateNested } from "class-validator";
 import { JSONSchema } from "class-validator-jsonschema";
 
-import { ConstructorArgs } from "../utils";
 import { BigNumberIsNotNegative, BigNumberProperty, IsUserAlias } from "../validators";
 import { TokenInstance, TokenInstanceKey } from "./TokenInstance";
 import { ChainCallDTO } from "./dtos";

@@ -12,7 +12,23 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-export * from "./FeeApi";
-export * from "./GalaChainBaseApi";
-export * from "./PublicKeyApi";
-export * from "./TokenApi";
+import {
+  FeeAuthorizationDto,
+  FeeProperties,
+  FeePropertiesDto,
+  FeeAuthorizationResDto as FetchFeeAuthorizationsResponse,
+  FetchFeePropertiesDto,
+  NonFunctionProperties
+} from "@gala-chain/api";
+
+type FeeAuthorizationRequest = NonFunctionProperties<FeeAuthorizationDto>;
+type FetchFeePropertiesRequest = NonFunctionProperties<FetchFeePropertiesDto>;
+type SetFeePropertiesRequest = NonFunctionProperties<FeePropertiesDto>;
+
+export {
+  FeeAuthorizationRequest,
+  FetchFeePropertiesRequest,
+  SetFeePropertiesRequest,
+  FeeProperties,
+  FetchFeeAuthorizationsResponse
+};

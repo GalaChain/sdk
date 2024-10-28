@@ -28,7 +28,6 @@ import {
 } from "class-validator";
 import { JSONSchema } from "class-validator-jsonschema";
 
-import { ConstructorArgs } from "../utils";
 import { ArrayUniqueObjects, BigNumberIsNotNegative, BigNumberProperty, IsUserAlias } from "../validators";
 import { TokenClassKey } from "./TokenClass";
 import { TokenMintConfiguration } from "./TokenMintConfiguration";
@@ -254,8 +253,6 @@ export class FetchTokenSupplyDto extends ChainCallDTO {
   @IsNotEmpty()
   additionalKey: string;
 }
-
-export type FetchTokenSupplyResponseBody = ConstructorArgs<FetchTokenSupplyDto>;
 
 @JSONSchema({
   description: "Fetch MintRequest or MintAllowanceRequest objects off chain and return the supply."

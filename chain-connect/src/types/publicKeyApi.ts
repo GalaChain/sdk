@@ -12,7 +12,15 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-export * from "./FeeApi";
-export * from "./GalaChainBaseApi";
-export * from "./PublicKeyApi";
-export * from "./TokenApi";
+import {
+  NonFunctionProperties,
+  RegisterEthUserDto,
+  RegisterUserDto,
+  UpdatePublicKeyDto
+} from "@gala-chain/api";
+
+type RegisterUserRequest = NonFunctionProperties<RegisterUserDto>;
+type RegisterEthUserRequest = NonFunctionProperties<RegisterEthUserDto>;
+type UpdatePublicKeyRequest = NonFunctionProperties<UpdatePublicKeyDto>;
+
+export { RegisterUserRequest, RegisterEthUserRequest, UpdatePublicKeyRequest };
