@@ -30,7 +30,7 @@ type NonArrayClassConstructor<T> = T extends Array<any> ? ClassConstructor<T[num
 
 export abstract class GalaChainProvider {
   abstract sign<T extends object>(method: string, dto: T, signingType?: SigningType): Promise<any>;
-  async submit<T, U extends ChainCallDTO>({
+  async submit<T, U extends object>({
     url,
     method,
     payload,
@@ -45,7 +45,7 @@ export abstract class GalaChainProvider {
     payload: NonFunctionProperties<U>;
     sign?: boolean;
     headers?: object;
-    requestConstructor?: ClassConstructor<U>;
+    requestConstructor?: ClassConstructor<ChainCallDTO>;
     responseConstructor?: NonArrayClassConstructor<T>;
     signingType?: SigningType;
   }): Promise<GalaChainResponseSuccess<T>> {
