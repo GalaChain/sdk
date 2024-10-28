@@ -30,6 +30,7 @@ export interface IMintConfiguration {
   type: string;
   additionalKey: string;
   postMintBurn?: boolean;
+  postMintLock?: boolean;
 }
 
 const curatorOrgMsp = process.env.CURATOR_ORG_MSP ?? "CuratorOrg";
@@ -38,7 +39,7 @@ export async function saveTokenMintConfiguration(
   ctx: GalaChainContext,
   data: IMintConfiguration
 ): Promise<TokenMintConfiguration> {
-  const { collection, category, type, additionalKey, postMintBurn } = data;
+  const { collection, category, type, additionalKey, postMintBurn, postMintLock } = data;
 
   const existingConfiguration = await getObjectByKey(
     ctx,
@@ -79,7 +80,8 @@ export async function saveTokenMintConfiguration(
     category,
     type,
     additionalKey,
-    postMintBurn
+    postMintBurn,
+    postMintLock
   });
 
   await putChainObject(ctx, newConfiguration);

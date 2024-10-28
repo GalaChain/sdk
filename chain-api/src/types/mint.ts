@@ -383,6 +383,13 @@ export class TokenMintConfigurationDto extends ChainCallDTO {
   @IsOptional()
   @IsBoolean()
   postMintBurn?: boolean;
+
+  @JSONSchema({
+    description: "Set `true` to enable locking a percentage of each quantity minted"
+  })
+  @IsOptional()
+  @IsBoolean()
+  postMintLock?: boolean;
 }
 
 @JSONSchema({
