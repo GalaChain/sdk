@@ -29,7 +29,11 @@ import { GalaChainResponseError, GalaChainResponseSuccess, SigningType } from ".
 type NonArrayClassConstructor<T> = T extends Array<any> ? ClassConstructor<T[number]> : ClassConstructor<T>;
 
 export abstract class GalaChainProvider {
-  abstract sign<T extends object>(method: string, dto: T, signingType?: SigningType): Promise<any>;
+  abstract sign<T extends object>(
+    method: string,
+    dto: T,
+    signingType?: SigningType
+  ): Promise<T & { signature: string; prefix?: string }>;
   async submit<T, U extends object>({
     url,
     method,

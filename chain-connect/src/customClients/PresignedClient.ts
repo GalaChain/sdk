@@ -24,8 +24,8 @@ import { GalaChainProvider } from "../GalaChainClient";
 
 export class PresignedClient extends GalaChainProvider {
   public async sign<U extends object>(
-    method: string,
-    payload: U
+    _method: string,
+    _payload: U
   ): Promise<U & { signature: string; prefix: string }> {
     throw new NotImplementedError("Signing not supported for this provider!");
   }

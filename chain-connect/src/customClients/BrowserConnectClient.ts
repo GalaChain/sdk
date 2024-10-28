@@ -90,10 +90,10 @@ export class BrowserConnectClient extends WebSigner {
     this.walletAddress = "";
   }
 
-  public async sign<U extends NonFunctionProperties<ChainCallDTO>>(
+  public async sign<T extends object>(
     method: string,
-    payload: U
-  ): Promise<U & { signature: string; prefix: string }> {
+    payload: T
+  ): Promise<T & { signature: string; prefix: string }> {
     if (!this.provider) {
       throw new Error("Ethereum provider not found");
     }
