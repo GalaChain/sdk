@@ -13,9 +13,11 @@
  * limitations under the License.
  */
 import { BrowserProvider, Eip1193Provider, getAddress } from "ethers";
+import { serialize } from "v8";
 
 import { WebSigner } from "../GalaChainClient";
 import { ExtendedEip1193Provider } from "../helpers";
+import { SigningType } from "../types";
 import { generateEIP712Types } from "../utils";
 
 declare global {
@@ -91,7 +93,8 @@ export class BrowserConnectClient extends WebSigner {
 
   public async sign<T extends object>(
     method: string,
-    payload: T
+    payload: T,
+    signingType: SigningType = SigningType.SIGN_TYPED_DATA
   ): Promise<T & { signature: string; prefix: string }> {
     if (!this.provider) {
       throw new Error("Ethereum provider not found");
@@ -108,9 +111,15 @@ export class BrowserConnectClient extends WebSigner {
       const prefixedPayload = { ...payload, prefix };
 
       const signer = await this.provider.getSigner();
-      const signature = await signer.signTypedData(domain, types, prefixedPayload);
-
-      return { ...prefixedPayload, signature, types, domain };
+      if (signingType === SigningType.SIGN_TYPED_DATA) {
+        const signature = await signer.signTypedData(domain, types, prefixedPayload);
+        return { ...prefixedPayload, signature, types, domain };
+      } else if (signingType === SigningType.PERSONAL_SIGN) {
+        const signature = await signer.signMessage(serialize(prefixedPayload));
+        return { ...prefixedPayload, signature };
+      } else {
+        throw new Error("Unsupported signing type");
+      }
     } catch (error: unknown) {
       throw new Error((error as Error).message);
     }
