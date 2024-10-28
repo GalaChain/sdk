@@ -385,7 +385,7 @@ describe("BrowserConnectClient", () => {
     const client = new BrowserConnectClient();
     await client.connect();
     client.disconnect();
-    expect(client.walletAddress).toBe("");
+    expect(client.ethereumAddress).toBe("");
   });
 
   it("should attach listeners when connecting after disconnecting", async () => {

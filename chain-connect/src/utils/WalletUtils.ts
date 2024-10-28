@@ -14,11 +14,13 @@
  */
 import { ethers } from "ethers";
 
+import { ethereumToGalaChainAddress } from "./CommonUtils";
+
 export class WalletUtils {
   static createRandom() {
     const wallet = ethers.Wallet.createRandom();
     return {
-      galachainAddress: `eth|${wallet.address.replace("0x", "")}`,
+      galachainAddress: ethereumToGalaChainAddress(wallet.address),
       privateKey: wallet.privateKey,
       publicKey: wallet.publicKey,
       ethAddress: wallet.address,

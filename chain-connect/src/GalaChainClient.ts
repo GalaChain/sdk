@@ -25,6 +25,7 @@ import { BrowserProvider, SigningKey, computeAddress, getAddress, getBytes, hash
 
 import { EventEmitter, Listener, MetaMaskEvents } from "./helpers";
 import { GalaChainResponseError, GalaChainResponseSuccess, SigningType } from "./types";
+import { ethereumToGalaChainAddress, galaChainToEthereumAddress } from "./utils";
 
 type NonArrayClassConstructor<T> = T extends Array<any> ? ClassConstructor<T[number]> : ClassConstructor<T>;
 
@@ -111,7 +112,8 @@ export abstract class GalaChainProvider {
 
 export abstract class CustomClient extends GalaChainProvider {
   abstract getPublicKey(): Promise<{ publicKey: string; recoveredAddress: string }>;
-  abstract walletAddress: string;
+  abstract ethereumAddress: string;
+  abstract galaChainAddress: string;
 
   public calculatePersonalSignPrefix(payload: object): string {
     const payloadLength = signatures.getPayloadToSign(payload).length;
@@ -126,21 +128,22 @@ export abstract class CustomClient extends GalaChainProvider {
     return this.calculatePersonalSignPrefix(newPayload);
   }
 }
+
 export abstract class WebSigner extends CustomClient {
   protected address: string;
   protected provider: BrowserProvider | undefined;
   abstract connect(): Promise<string>;
 
-  set walletAddress(val: string) {
-    this.address = val ? getAddress(`0x${val.replace(/0x|eth\|/, "")}`) : "";
+  set ethereumAddress(val: string) {
+    this.address = galaChainToEthereumAddress(val);
   }
 
-  get walletAddress(): string {
+  get ethereumAddress(): string {
     return this.address;
   }
 
-  get galachainEthAlias() {
-    return this.address.replace("0x", "eth|");
+  get galaChainAddress() {
+    return ethereumToGalaChainAddress(this.address);
   }
 
   private eventEmitter = new EventEmitter<MetaMaskEvents>();

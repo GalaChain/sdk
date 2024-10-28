@@ -12,7 +12,6 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-import { ChainCallDTO, NonFunctionProperties } from "@gala-chain/api";
 import { BrowserProvider, Eip1193Provider, getAddress } from "ethers";
 
 import { WebSigner } from "../GalaChainClient";
@@ -56,11 +55,11 @@ export class BrowserConnectClient extends WebSigner {
 
   protected onAccountsChanged(accounts: string[]) {
     if (accounts.length > 0) {
-      this.walletAddress = getAddress(accounts[0]);
-      this.emit("accountChanged", this.galachainEthAlias);
+      this.ethereumAddress = getAddress(accounts[0]);
+      this.emit("accountChanged", this.galaChainAddress);
       this.emit("accountsChanged", accounts);
     } else {
-      this.walletAddress = "";
+      this.ethereumAddress = "";
       this.emit("accountChanged", null);
       this.emit("accountsChanged", null);
     }
@@ -75,8 +74,8 @@ export class BrowserConnectClient extends WebSigner {
 
     try {
       const accounts = (await this.provider.send("eth_requestAccounts", [])) as string[];
-      this.walletAddress = getAddress(accounts[0]);
-      return this.galachainEthAlias;
+      this.ethereumAddress = getAddress(accounts[0]);
+      return this.galaChainAddress;
     } catch (error: unknown) {
       throw new Error((error as Error).message);
     }
@@ -87,7 +86,7 @@ export class BrowserConnectClient extends WebSigner {
       window.ethereum.removeListener("accountsChanged", this.onAccountsChanged);
       this.isInitialized = false;
     }
-    this.walletAddress = "";
+    this.ethereumAddress = "";
   }
 
   public async sign<T extends object>(

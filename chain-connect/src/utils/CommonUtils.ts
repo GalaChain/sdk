@@ -12,6 +12,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+import { getAddress } from "ethers";
 
 type EIP712Types = Record<string, Array<{ name: string; type: string }>>;
 type EIP712Value = Record<string, unknown>;
@@ -86,4 +87,12 @@ export function generateEIP712Value<T>(params: T): EIP712Value {
   });
 
   return value;
+}
+
+export function galaChainToEthereumAddress(galaAddress: string) {
+  return galaAddress ? getAddress(`0x${galaAddress.replace(/0x|eth\|/, "")}`) : "";
+}
+
+export function ethereumToGalaChainAddress(ethereumAddress: string) {
+  return ethereumAddress?.replace("0x", "eth|") ?? "";
 }

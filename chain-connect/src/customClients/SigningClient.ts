@@ -18,12 +18,17 @@ import { SigningKey, computeAddress, ethers, hashMessage } from "ethers";
 import { CustomClient } from "../GalaChainClient";
 import { calculatePersonalSignPrefix } from "../helpers";
 import { SigningType } from "../types";
-import { generateEIP712Types } from "../utils";
+import { ethereumToGalaChainAddress, generateEIP712Types } from "../utils";
 
 export class SigningClient extends CustomClient {
-  get walletAddress(): string {
+  get ethereumAddress(): string {
     return this.wallet.address;
   }
+
+  get galaChainAddress() {
+    return ethereumToGalaChainAddress(this.wallet.address);
+  }
+
   async getPublicKey(): Promise<{ publicKey: string; recoveredAddress: string }> {
     const message = "I <3 GalaChain";
     const signedMessage = await this.wallet.signMessage(message);
