@@ -12,7 +12,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-import { DryRunDto, GetObjectDto, GetObjectHistoryDto } from "@gala-chain/api";
+import { DryRunDto, GetObjectDto, GetObjectHistoryDto, createValidDTO } from "@gala-chain/api";
 
 import { GalaChainProvider } from "../GalaChainClient";
 import { DryRunRequest, DryRunResult, GetObjectByKeyRequest, GetObjectHistoryRequest } from "../types";
@@ -23,19 +23,23 @@ export class GalaChainBaseApi {
     protected connection: GalaChainProvider
   ) {}
 
-  public DryRun(dto: DryRunRequest) {
+  public async DryRun(dto: DryRunRequest) {
+    await createValidDTO(DryRunDto, dto);
+    const stringifiedDto = {
+      ...dto,
+      dto: JSON.stringify(dto.dto)
+    };
     return this.connection.submit({
       method: "DryRun",
-      payload: dto,
+      payload: stringifiedDto,
       sign: false,
       url: this.chainCodeUrl,
-      requestConstructor: DryRunDto,
       responseConstructor: DryRunResult
     });
   }
 
-  public GetObjectByKey(dto: GetObjectByKeyRequest) {
-    return this.connection.submit<Record<string, unknown>, GetObjectDto>({
+  public GetObjectByKey<T = Record<string, unknown>>(dto: GetObjectByKeyRequest) {
+    return this.connection.submit<T, GetObjectDto>({
       method: "GetObjectByKey",
       payload: dto,
       sign: false,
@@ -44,8 +48,8 @@ export class GalaChainBaseApi {
     });
   }
 
-  public GetObjectHistory(dto: GetObjectHistoryRequest) {
-    return this.connection.submit<Record<string, unknown>, GetObjectHistoryDto>({
+  public GetObjectHistory<T = Record<string, unknown>>(dto: GetObjectHistoryRequest) {
+    return this.connection.submit<T, GetObjectHistoryDto>({
       method: "GetObjectHistory",
       payload: dto,
       sign: false,

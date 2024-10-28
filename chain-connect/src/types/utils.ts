@@ -12,9 +12,6 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-export * from "./commonApi";
-export * from "./galaChain";
-export * from "./feeApi";
-export * from "./tokenApi";
-export * from "./publicKeyApi";
-export * from "./signing";
+export type PublicProperties<T> = {
+  -readonly [K in keyof T]: T[K]; // Remove readonly
+};
