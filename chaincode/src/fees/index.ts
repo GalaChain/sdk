@@ -17,6 +17,8 @@ export * from "./authorizeFee";
 export * from "./creditFeeBalance";
 export * from "./defineFeeSchedule";
 export * from "./defineFeeSplitFormula";
+export * from "./exitGateImplementations";
+export * from "./extendedFeeGateProcessing";
 export * from "./feeGateImplementations";
 export * from "./fetchFeeAuthorizations";
 export * from "./fetchFeeBalances";

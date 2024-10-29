@@ -34,6 +34,7 @@ import BigNumber from "bignumber.js";
 import { burnTokens } from "../burns";
 import { GalaChainContext } from "../types";
 import { getObjectByKey, getObjectsByPartialCompositeKey } from "../utils";
+import { userExemptFromFees } from "./userExemptFromFees";
 
 export interface IMintExtendedProcessing {
   tokenClass: TokenClassKey;
@@ -60,6 +61,12 @@ export async function mintProcessingBurn(ctx: GalaChainContext, data: IMintExten
   const { collection, category, type, additionalKey } = tokenClass;
 
   if (feeCode === undefined) {
+    return;
+  }
+
+  const exemption = await userExemptFromFees(ctx, { user: owner, feeCode: feeCode });
+
+  if (exemption) {
     return;
   }
 

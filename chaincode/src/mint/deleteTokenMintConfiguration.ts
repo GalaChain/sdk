@@ -26,7 +26,7 @@ export interface IDeleteMintConfiguration {
 
 const curatorOrgMsp = process.env.CURATOR_ORG_MSP ?? "CuratorOrg";
 
-export async function deleteOracleDefinition(ctx: GalaChainContext, data: IDeleteMintConfiguration) {
+export async function deleteTokenMintConfiguration(ctx: GalaChainContext, data: IDeleteMintConfiguration) {
   const { collection, category, type, additionalKey } = data;
 
   const configuration = await getObjectByKey(

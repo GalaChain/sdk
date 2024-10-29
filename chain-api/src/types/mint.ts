@@ -30,7 +30,7 @@ import { JSONSchema } from "class-validator-jsonschema";
 
 import { ArrayUniqueObjects, BigNumberIsNotNegative, BigNumberProperty, IsUserAlias } from "../validators";
 import { TokenClassKey } from "./TokenClass";
-import { TokenMintConfiguration } from "./TokenMintConfiguration";
+import { PostMintLockConfiguration, TokenMintConfiguration } from "./TokenMintConfiguration";
 import { AllowanceKey, MintRequestDto } from "./common";
 import { ChainCallDTO } from "./dtos";
 
@@ -389,7 +389,7 @@ export class TokenMintConfigurationDto extends ChainCallDTO {
   })
   @IsOptional()
   @IsBoolean()
-  postMintLock?: boolean;
+  postMintLock?: PostMintLockConfiguration;
 }
 
 @JSONSchema({
