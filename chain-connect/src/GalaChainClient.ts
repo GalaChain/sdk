@@ -12,22 +12,18 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-import {
-  ChainCallDTO,
-  ClassConstructor,
-  NonFunctionProperties,
-  createValidDTO,
-  serialize,
-  signatures
-} from "@gala-chain/api";
+import { ChainCallDTO, ClassConstructor, createValidDTO, serialize, signatures } from "@gala-chain/api";
 import { instanceToPlain, plainToInstance } from "class-transformer";
-import { BrowserProvider, SigningKey, computeAddress, getAddress, getBytes, hashMessage } from "ethers";
+import { BrowserProvider, SigningKey, computeAddress, getBytes, hashMessage } from "ethers";
 
 import { EventEmitter, Listener, MetaMaskEvents } from "./helpers";
 import { GalaChainResponseError, GalaChainResponseSuccess, SigningType } from "./types";
+import { ConstructorArgs } from "./types/utils";
 import { ethereumToGalaChainAddress, galaChainToEthereumAddress } from "./utils";
 
-type NonArrayClassConstructor<T> = T extends Array<any> ? ClassConstructor<T[number]> : ClassConstructor<T>;
+type NonArrayClassConstructor<T> = T extends Array<unknown>
+  ? ClassConstructor<T[number]>
+  : ClassConstructor<T>;
 
 export abstract class GalaChainProvider {
   abstract sign<T extends object>(
@@ -47,7 +43,7 @@ export abstract class GalaChainProvider {
   }: {
     url: string;
     method: string;
-    payload: NonFunctionProperties<U>;
+    payload: ConstructorArgs<U>;
     sign?: boolean;
     headers?: object;
     requestConstructor?: ClassConstructor<ChainCallDTO>;
@@ -97,7 +93,7 @@ export abstract class GalaChainProvider {
       } catch (error) {
         throw new Error("Invalid JSON response");
       }
-      if (data.error) {
+      if (!response.ok || data.error) {
         throw new GalaChainResponseError<T>(data);
       } else {
         const transformedDataResponse = responseConstructor
