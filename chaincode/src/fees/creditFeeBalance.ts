@@ -29,6 +29,29 @@ import { ensureIsAuthenticatedBy } from "../contracts";
 import { GalaChainContext } from "../types";
 import { getObjectByKey, putChainObject } from "../utils";
 
+/**
+ * @description
+ *
+ * For Cross-Channel Fees. Executed by an authorized channel identity.
+ * This action records a pending authorization of $GALA to cover
+ * in-channel fees. The pending balance represent a previously-burned
+ * quantity of $GALA authorized on GalaChain's asset channel.
+ *
+ * This method is intended to be executed on secondary/external channels,
+ * where users do not hold a $GALA balance within the channel's on-chain
+ * World State. An authoriative channel identity is expected to
+ * call this method, effectively verifying the burn from the asset channel
+ * and asserting that validation on-chain within the secondary channel.
+ *
+ * This is the second phase in the two phase cross-channel flow. The
+ * first phase is executed by an end user identity on GalaChain's asset
+ * channel, using the `AuthorizeFee` method defined
+ * on the `GalaChainFeeContract`.
+ *
+ * @param ctx
+ * @param dto
+ * @returns
+ */
 export async function creditFeeBalance(
   ctx: GalaChainContext,
   dto: FeeVerificationDto

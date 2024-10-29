@@ -15,7 +15,6 @@
 import { IsNotEmpty, IsString, ValidateIf } from "class-validator";
 import { JSONSchema } from "class-validator-jsonschema";
 
-import { ConstructorArgs } from "../utils";
 import { IsUserAlias } from "../validators";
 import { ChainObject } from "./ChainObject";
 import { UserAlias } from "./UserAlias";
@@ -26,7 +25,11 @@ export enum UserRole {
   EVALUATE = "EVALUATE"
 }
 
-export type UserProfileBody = ConstructorArgs<UserProfile>;
+export enum UserRole {
+  CURATOR = "CURATOR",
+  SUBMIT = "SUBMIT",
+  EVALUATE = "EVALUATE"
+}
 
 export class UserProfile extends ChainObject {
   static ADMIN_ROLES = [UserRole.CURATOR, UserRole.EVALUATE, UserRole.SUBMIT] as const;

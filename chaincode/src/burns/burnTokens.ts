@@ -52,6 +52,26 @@ export interface BurnsTokensParams {
   preValidated?: boolean;
 }
 
+/**
+ * @description
+ *
+ * Burn a quantity of tokens described by one or more `TokenInstanceKey`s
+ * belonging to a single owner.
+ *
+ * @remarks
+ *
+ * The optional `preValidated?` boolean is intended for use internally by
+ * other chaincode contract methods that have already validated
+ * identities, allowances, and authorization to burn.
+ *
+ * For example, a
+ * burning bridge may need to burn tokens while executing `bridgeTokenOut`
+ * actions.
+ *
+ * @param ctx
+ * @param param1
+ * @returns
+ */
 export async function burnTokens(
   ctx: GalaChainContext,
   {
@@ -175,6 +195,8 @@ export async function burnTokens(
 }
 
 /**
+ * @description
+ *
  * Iterate through the provided array of `BurnTokenQuantity` objects, identifying any
  * duplicates by `tokenInstanceKey`. If more than one `BurnTokenQuantity` exist for a
  * given `tokenInstanceKey` combination, sum them together. The output array should have
@@ -209,6 +231,8 @@ export function aggregateBurnQuantities(requests: BurnTokenQuantity[]): BurnToke
 }
 
 /**
+ * @description
+ *
  * If the `TokenBurn` can be read, increment the quantity.
  * Otherwise, create a new `TokenBurn` with the quantity set to the provided value.
  *
@@ -257,6 +281,8 @@ export async function incrementOrCreateTokenBurnForTx(
 }
 
 /**
+ * @description
+ *
  * If the `TokenBurnCounter` can be read, increment the quantity.
  * Otherwise, create a new `TokenBurnCounter` with the quantity set to the provided value.
  *

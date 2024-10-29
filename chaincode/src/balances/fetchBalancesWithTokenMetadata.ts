@@ -38,6 +38,28 @@ export interface FetchBalancesWithTokenMetadataParams {
   limit?: number;
 }
 
+/**
+ * @description
+ *
+ * Using the provided parameters, this function will first
+ * query TokenBalance entries from on-chain World State.
+ *
+ * Next, for each `TokenBalance`, the corresponding `TokenClass`
+ * will be fetched from the ledger.
+ *
+ * The `TokenBalance` and corresponding `TokenClass` for each
+ * result will be combined into a results set, yielding a
+ * response defined by the `FetchBalancesWithTokenMetadataResponse`
+ * DTO class.
+ *
+ * This method supports pagination. For large results sets,
+ * use the `bookmark` and `limit` parameters for subsequent
+ * calls.
+ *
+ * @param ctx
+ * @param data
+ * @returns Promise<FetchBalancesWithTokenMetadataResponse>
+ */
 export async function fetchBalancesWithTokenMetadata(
   ctx: GalaChainContext,
   data: FetchBalancesWithTokenMetadataParams

@@ -29,7 +29,6 @@ import {
 } from "class-validator";
 import { JSONSchema } from "class-validator-jsonschema";
 
-import { ConstructorArgs } from "../utils";
 import { BigNumberIsInteger, BigNumberIsNotNegative, BigNumberProperty, IsUserRef } from "../validators";
 import { BurnTokenQuantity } from "./BurnTokenQuantity";
 import { TokenBurnCounter } from "./TokenBurnCounter";
@@ -207,8 +206,6 @@ export class FetchBurnCountersWithPaginationDto extends ChainCallDTO {
   @IsInt()
   limit?: number;
 }
-
-export type FetchBurnCountersBody = ConstructorArgs<FetchBurnCountersResponse>;
 
 export class FetchBurnCountersResponse extends ChainCallDTO {
   @JSONSchema({ description: "List of token burn counters." })

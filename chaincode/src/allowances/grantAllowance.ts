@@ -53,6 +53,7 @@ import {
   putRangedChainObject
 } from "../utils";
 import {
+  BalanceNotFoundError,
   DuplicateAllowanceError,
   DuplicateUserError,
   GrantAllowanceFailedError,

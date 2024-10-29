@@ -24,6 +24,22 @@ import {
 import { GalaChainContext } from "../types";
 import { getObjectByKey } from "../utils";
 
+/**
+ * @description
+ *
+ * Query a single `TokenBalance` from on-chain World State
+ * belonging to the provided `owner` for the specified
+ * `tokenClassKey` argument.
+ *
+ * If the `TokenBalance` does not yet exist on-chain, a
+ * new `TokenBalance` class instance will be instantiated
+ * and returned.
+ *
+ * @param ctx
+ * @param owner
+ * @param tokenClassKey
+ * @returns Promise<TokenBalance>
+ */
 export async function fetchOrCreateBalance(
   ctx: GalaChainContext,
   owner: UserAlias,

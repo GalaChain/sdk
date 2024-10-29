@@ -12,6 +12,7 @@ docs/chain-api-docs
 docs/chain-client-docs
 docs/chain-test-docs
 docs/chaincode-docs
+docs/chain-connect-docs
 
 # dependencies
 node_modules

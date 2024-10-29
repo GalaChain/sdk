@@ -26,6 +26,24 @@ export interface FetchBalancesParams {
   owner: UserAlias;
 }
 
+/**
+ * @description
+ *
+ * Query balances from on-chain World State using the provided parameters.
+ * This function does not support pagination.
+ *
+ * Also see the `TokenBalance` definition, where its `ChainKey` properties
+ * are defined.
+ *
+ * The `@ChainKeys` that make up the World State composite key are ordered,
+ * and cannot be skipped when making partial composite key queries.
+ * Be advised that broad queries can lead
+ * to performance issues for large result sets.
+ *
+ * @param ctx
+ * @param data
+ * @returns Promise<TokenBalance[]>
+ */
 export async function fetchBalances(
   ctx: GalaChainContext,
   data: FetchBalancesParams

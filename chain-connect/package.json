@@ -5,7 +5,11 @@
     "@gala-chain/api": "2.0.0-alpha1",
     "ethers": "^6.12.1",
     "tslib": "^2.3.0",
-    "class-transformer": "0.5.1"
+    "bignumber.js": "9.1.2",
+    "class-validator": "0.14.0"
+  },
+  "peerDependencies": {
+    "class-transformer": "*"
   },
   "overrides": {
     "ethers": {

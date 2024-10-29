@@ -12,20 +12,20 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-import { RegisterUserParams, TransferTokenParams } from "@gala-chain/api";
+import {
+  RegisterUserDto,
+  TokenInstanceKey,
+  TransferTokenDto,
+  createValidDTO,
+  createValidSubmitDTO
+} from "@gala-chain/api";
+import BigNumber from "bignumber.js";
+import { instanceToPlain, plainToInstance } from "class-transformer";
 import { EventEmitter } from "events";
 
+import { createRandomHash, mockFetch } from "../test/test-utils";
 import { PublicKeyApi, TokenApi } from "./chainApis";
-import { MetamaskConnectClient } from "./customClients";
-
-global.fetch = jest.fn((url: string, options?: Record<string, unknown>) =>
-  Promise.resolve({
-    json: () => Promise.resolve({ Request: { url, options } }),
-    headers: {
-      get: () => ({ status: 1 })
-    }
-  })
-) as jest.Mock;
+import { BrowserConnectClient } from "./customClients";
 
 // https://privatekeys.pw/key/1d3cc061492016bcd5e7ea2c31b1cf3dec584e07a38e21df7ef3049c6b224e70#addresses
 const sampleAddr = "0x3bb75c2Da3B669E253C338101420CC8dEBf0a777";
@@ -60,122 +60,118 @@ window.ethereum = new EthereumMock();
 
 describe("API tests", () => {
   it("test transfer", async () => {
-    const dto: TransferTokenParams = {
-      quantity: "1",
+    const dto: TransferTokenDto = await createValidDTO(TransferTokenDto, {
+      quantity: new BigNumber("1"),
       to: "client|63580d94c574ad78b121c267",
-      tokenInstance: {
+      tokenInstance: plainToInstance(TokenInstanceKey, {
         additionalKey: "none",
         category: "Unit",
         collection: "GALA",
-        instance: "0",
+        instance: new BigNumber("0"),
         type: "none"
-      },
+      }),
       uniqueKey: "26d4122e-34c8-4639-baa6-4382b398e68e"
-    };
+    });
 
     // call connect
-    const connection = new MetamaskConnectClient();
+    const connection = new BrowserConnectClient();
     await connection.connect();
 
     const tokenApi = new TokenApi("https://example.com", connection);
+
     // send dto payload in send function
+    const mockResponse = {
+      Data: [
+        {
+          additionalKey: "none",
+          category: "Unit",
+          collection: "GALA",
+          owner: "string",
+          quantity: "1",
+          type: "none"
+        }
+      ],
+      Status: 1
+    };
+    const mockHash = createRandomHash();
+    mockFetch(mockResponse, { "x-transaction-id": mockHash });
+
     const response = await tokenApi.TransferToken(dto);
 
-    expect(response).toEqual({
-      Hash: {
-        status: 1
-      },
-      Request: {
-        options: {
-          body: '{"domain":{"name":"GalaChain"},"prefix":"\\u0019Ethereum Signed Message:\\n261","quantity":"1","signature":"sampleSignature","to":"client|63580d94c574ad78b121c267","tokenInstance":{"additionalKey":"none","category":"Unit","collection":"GALA","instance":"0","type":"none"},"types":{"TransferToken":[{"name":"quantity","type":"string"},{"name":"to","type":"string"},{"name":"tokenInstance","type":"tokenInstance"},{"name":"uniqueKey","type":"string"}],"tokenInstance":[{"name":"additionalKey","type":"string"},{"name":"category","type":"string"},{"name":"collection","type":"string"},{"name":"instance","type":"string"},{"name":"type","type":"string"}]},"uniqueKey":"26d4122e-34c8-4639-baa6-4382b398e68e"}',
-          headers: {
-            "Content-Type": "application/json"
-          },
-          method: "POST"
-        },
-        url: "https://example.com/TransferToken"
-      }
+    expect(instanceToPlain(response)).toEqual({
+      Hash: mockHash,
+      Data: mockResponse.Data,
+      Status: mockResponse.Status
     });
   });
   it("test register", async () => {
-    const dto: RegisterUserParams = {
+    const dto: RegisterUserDto = await createValidSubmitDTO(RegisterUserDto, {
       publicKey: "3",
-      user: "4",
-      uniqueKey: "26d4122e-34c8-4639-baa6-4382b398e68e"
-    };
+      user: "client|4"
+    });
 
     // call connect
-    const connection = new MetamaskConnectClient();
+    const connection = new BrowserConnectClient();
     await connection.connect();
 
     const publicKeyApi = new PublicKeyApi("https://example.com", connection);
+
     // send dto payload in send function
+    const mockResponse = {
+      Data: "test",
+      Status: 1
+    };
+    const mockHash = createRandomHash();
+    mockFetch(mockResponse, { "x-transaction-id": mockHash });
     const response = await publicKeyApi.RegisterUser(dto);
 
     expect(response).toEqual({
-      Hash: {
-        status: 1
-      },
-      Request: {
-        options: {
-          body: '{"domain":{"name":"GalaChain"},"prefix":"\\u0019Ethereum Signed Message:\\n126","publicKey":"3","signature":"sampleSignature","types":{"RegisterUser":[{"name":"publicKey","type":"string"},{"name":"user","type":"string"},{"name":"uniqueKey","type":"string"}]},"uniqueKey":"26d4122e-34c8-4639-baa6-4382b398e68e","user":"4"}',
-          headers: {
-            "Content-Type": "application/json"
-          },
-          method: "POST"
-        },
-        url: "https://example.com/RegisterUser"
-      }
+      Hash: mockHash,
+      Data: mockResponse.Data,
+      Status: mockResponse.Status
     });
   });
   it("test both using same connection", async () => {
-    const dto: RegisterUserParams = {
+    const dto: RegisterUserDto = await createValidSubmitDTO(RegisterUserDto, {
       publicKey: "3",
-      user: "4",
-      uniqueKey: "26d4122e-34c8-4639-baa6-4382b398e68e"
-    };
+      user: "client|4"
+    });
 
     // call connect
-    const connection = new MetamaskConnectClient();
+    const connection = new BrowserConnectClient();
     await connection.connect();
 
     const tokenApi = new PublicKeyApi("https://example.com", connection);
+
+    const mockResponse = {
+      Data: "test",
+      Status: 1
+    };
+    const mockHash = createRandomHash();
+    mockFetch(mockResponse, { "x-transaction-id": mockHash });
     let response = await tokenApi.RegisterUser(dto);
 
     expect(response).toEqual({
-      Hash: {
-        status: 1
-      },
-      Request: {
-        options: {
-          body: '{"domain":{"name":"GalaChain"},"prefix":"\\u0019Ethereum Signed Message:\\n126","publicKey":"3","signature":"sampleSignature","types":{"RegisterUser":[{"name":"publicKey","type":"string"},{"name":"user","type":"string"},{"name":"uniqueKey","type":"string"}]},"uniqueKey":"26d4122e-34c8-4639-baa6-4382b398e68e","user":"4"}',
-          headers: {
-            "Content-Type": "application/json"
-          },
-          method: "POST"
-        },
-        url: "https://example.com/RegisterUser"
-      }
+      Hash: mockHash,
+      Data: mockResponse.Data,
+      Status: mockResponse.Status
     });
 
     const publicKeyApi = new PublicKeyApi("https://example.com", connection);
+
     // send dto payload in send function
+    const mockResponse2 = {
+      Data: "test2",
+      Status: 1
+    };
+    const mockHash2 = createRandomHash();
+    mockFetch(mockResponse2, { "x-transaction-id": mockHash2 });
     response = await publicKeyApi.RegisterUser(dto);
 
     expect(response).toEqual({
-      Hash: {
-        status: 1
-      },
-      Request: {
-        options: {
-          body: '{"domain":{"name":"GalaChain"},"prefix":"\\u0019Ethereum Signed Message:\\n126","publicKey":"3","signature":"sampleSignature","types":{"RegisterUser":[{"name":"publicKey","type":"string"},{"name":"user","type":"string"},{"name":"uniqueKey","type":"string"}]},"uniqueKey":"26d4122e-34c8-4639-baa6-4382b398e68e","user":"4"}',
-          headers: {
-            "Content-Type": "application/json"
-          },
-          method: "POST"
-        },
-        url: "https://example.com/RegisterUser"
-      }
+      Hash: mockHash2,
+      Data: mockResponse2.Data,
+      Status: mockResponse2.Status
     });
   });
 });

@@ -244,8 +244,6 @@ export class FetchTokenSupplyDto extends ChainCallDTO {
   additionalKey: string;
 }
 
-export type FetchTokenSupplyResponseBody = ConstructorArgs<FetchTokenSupplyDto>;
-
 @JSONSchema({
   description: "Fetch MintRequest or MintAllowanceRequest objects off chain and return the supply."
 })

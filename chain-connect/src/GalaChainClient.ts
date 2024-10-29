@@ -12,28 +12,52 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-import { ChainCallDTO, serialize, signatures } from "@gala-chain/api";
-import { instanceToPlain } from "class-transformer";
+import {
+  ChainCallDTO,
+  ClassConstructor,
+  NonFunctionProperties,
+  createValidDTO,
+  serialize,
+  signatures
+} from "@gala-chain/api";
+import { instanceToPlain, plainToInstance } from "class-transformer";
 import { BrowserProvider, SigningKey, computeAddress, getAddress, getBytes, hashMessage } from "ethers";
 
 import { EventEmitter, Listener, MetaMaskEvents } from "./helpers";
+import { GalaChainResponseError, GalaChainResponseSuccess, SigningType } from "./types";
+import { ethereumToGalaChainAddress, galaChainToEthereumAddress } from "./utils";
+
+type NonArrayClassConstructor<T> = T extends Array<any> ? ClassConstructor<T[number]> : ClassConstructor<T>;
 
 export abstract class GalaChainProvider {
-  abstract sign(method: string, dto: any): Promise<any>;
-  async submit<T, U>({
+  abstract sign<T extends object>(
+    method: string,
+    dto: T,
+    signingType?: SigningType
+  ): Promise<T & { signature: string; prefix?: string }>;
+  async submit<T, U extends object>({
     url,
     method,
     payload,
-    sign = false,
-    headers = {}
+    sign,
+    headers = {},
+    requestConstructor,
+    responseConstructor,
+    signingType
   }: {
     url: string;
     method: string;
-    payload: ChainCallDTO;
+    payload: NonFunctionProperties<U>;
     sign?: boolean;
     headers?: object;
-  }): Promise<{ data: T; hash: string; status: number; message?: string }> {
-    await payload.validateOrReject();
+    requestConstructor?: ClassConstructor<ChainCallDTO>;
+    responseConstructor?: NonArrayClassConstructor<T>;
+    signingType?: SigningType;
+  }): Promise<GalaChainResponseSuccess<T>> {
+    // Throws error if class validation fails
+    if (requestConstructor) {
+      await createValidDTO(requestConstructor, payload);
+    }
 
     let newPayload = instanceToPlain(payload);
 
@@ -46,7 +70,7 @@ export abstract class GalaChainProvider {
         payload.signature === null
       ) {
         try {
-          newPayload = await this.sign(method, instanceToPlain(payload));
+          newPayload = await this.sign(method, newPayload, signingType);
         } catch (error: unknown) {
           throw new Error((error as Error).message);
         }
@@ -63,26 +87,33 @@ export abstract class GalaChainProvider {
       }
     });
 
-    const id = response.headers.get("x-transaction-id");
+    const hash = response.headers.get("x-transaction-id") ?? undefined;
 
     // Check if the content-length is not zero and try to parse JSON
     if (response.headers.get("content-length") !== "0") {
+      let data: any;
       try {
-        const data = await response.json();
-        if (data.error) {
-          return Promise.reject(data.message ? new Error(data.message) : data.error);
-        }
-        return Promise.resolve(id ? { Hash: id, ...data } : data);
+        data = await response.json();
       } catch (error) {
-        return Promise.reject("Invalid JSON response");
+        throw new Error("Invalid JSON response");
+      }
+      if (data.error) {
+        throw new GalaChainResponseError<T>(data);
+      } else {
+        const transformedDataResponse = responseConstructor
+          ? plainToInstance(responseConstructor, data.Data)
+          : data.Data;
+        return new GalaChainResponseSuccess<T>({ ...data, Data: transformedDataResponse }, hash);
       }
     }
     throw new Error(`Unable to get data. Received response: ${JSON.stringify(response)}`);
   }
 }
+
 export abstract class CustomClient extends GalaChainProvider {
   abstract getPublicKey(): Promise<{ publicKey: string; recoveredAddress: string }>;
-  abstract walletAddress: string;
+  abstract ethereumAddress: string;
+  abstract galaChainAddress: string;
 
   public calculatePersonalSignPrefix(payload: object): string {
     const payloadLength = signatures.getPayloadToSign(payload).length;
@@ -97,21 +128,22 @@ export abstract class CustomClient extends GalaChainProvider {
     return this.calculatePersonalSignPrefix(newPayload);
   }
 }
+
 export abstract class WebSigner extends CustomClient {
   protected address: string;
   protected provider: BrowserProvider | undefined;
   abstract connect(): Promise<string>;
 
-  set walletAddress(val: string) {
-    this.address = val ? getAddress(`0x${val.replace(/0x|eth\|/, "")}`) : "";
+  set ethereumAddress(val: string) {
+    this.address = galaChainToEthereumAddress(val);
   }
 
-  get walletAddress(): string {
+  get ethereumAddress(): string {
     return this.address;
   }
 
-  get galachainEthAlias() {
-    return this.address.replace("0x", "eth|");
+  get galaChainAddress() {
+    return ethereumToGalaChainAddress(this.address);
   }
 
   private eventEmitter = new EventEmitter<MetaMaskEvents>();

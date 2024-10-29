@@ -24,7 +24,7 @@ import {
 import { BigNumber } from "bignumber.js";
 
 import { grantAllowance } from "../allowances";
-import { GalaChainContext } from "../types/GalaChainContext";
+import { GalaChainContext } from "../types";
 import { mintToken } from "./mintToken";
 
 export interface MintTokenWithAllowanceParams {
