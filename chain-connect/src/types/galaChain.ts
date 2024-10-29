@@ -38,7 +38,7 @@ export class GalaChainResponseError<T> {
   public readonly ErrorCode: number;
 
   constructor(data: GalaChainError<T>) {
-    if (typeof data.error === "string") {
+    if (typeof data.error === "string" || !data.error) {
       this.Error = data.error;
       this.Message = data.message;
       this.ErrorCode = data.statusCode ?? 500;
