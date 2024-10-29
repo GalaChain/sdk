@@ -268,8 +268,6 @@ export class DryRunResultDto extends ChainCallDTO {
   public deletes: Record<string, true>;
 }
 
-export type RegisterUserParams = ConstructorArgs<RegisterUserDto>;
-
 @JSONSchema({
   description: `Dto for secure method to save public keys for legacy users. Method is called and signed by Curators`
 })
@@ -285,8 +283,6 @@ export class RegisterUserDto extends SubmitCallDTO {
   publicKey: string;
 }
 
-export type RegisterEthUserParams = ConstructorArgs<RegisterEthUserDto>;
-
 @JSONSchema({
   description: `Dto for secure method to save public keys for Eth users. Method is called and signed by Curators`
 })
@@ -296,8 +292,6 @@ export class RegisterEthUserDto extends SubmitCallDTO {
   publicKey: string;
 }
 
-export type RegisterTonUserParams = ConstructorArgs<RegisterTonUserDto>;
-
 @JSONSchema({
   description: `Dto for secure method to save public keys for TON users. Method is called and signed by Curators`
 })
@@ -306,8 +300,6 @@ export class RegisterTonUserDto extends SubmitCallDTO {
   @IsNotEmpty()
   publicKey: string;
 }
-
-export type UpdatePublicKeyParams = ConstructorArgs<UpdatePublicKeyDto>;
 
 export class UpdatePublicKeyDto extends SubmitCallDTO {
   @JSONSchema({
@@ -319,8 +311,6 @@ export class UpdatePublicKeyDto extends SubmitCallDTO {
   publicKey: string;
 }
 
-export type UpdateUserRolesParams = ConstructorArgs<UpdateUserRolesDto>;
-
 export class UpdateUserRolesDto extends SubmitCallDTO {
   @IsUserAlias()
   user: string;
@@ -329,8 +319,6 @@ export class UpdateUserRolesDto extends SubmitCallDTO {
   @IsNotEmpty()
   roles: string[];
 }
-
-export type GetPublicKeyParams = ConstructorArgs<GetPublicKeyDto>;
 
 export class GetPublicKeyDto extends ChainCallDTO {
   @JSONSchema({
@@ -341,7 +329,6 @@ export class GetPublicKeyDto extends ChainCallDTO {
   user?: string;
 }
 
-export type GetMyProfileParams = ConstructorArgs<GetMyProfileDto>;
 export class GetMyProfileDto extends ChainCallDTO {
   // make signature required
   @IsNotEmpty()
