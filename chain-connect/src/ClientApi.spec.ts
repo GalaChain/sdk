@@ -12,7 +12,13 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-import { RegisterUserDto, TokenInstanceKey, TransferTokenDto, createValidDTO } from "@gala-chain/api";
+import {
+  RegisterUserDto,
+  TokenInstanceKey,
+  TransferTokenDto,
+  createValidDTO,
+  createValidSubmitDTO
+} from "@gala-chain/api";
 import BigNumber from "bignumber.js";
 import { instanceToPlain, plainToInstance } from "class-transformer";
 import { EventEmitter } from "events";
@@ -99,7 +105,7 @@ describe("API tests", () => {
     });
   });
   it("test register", async () => {
-    const dto: RegisterUserDto = await createValidDTO(RegisterUserDto, {
+    const dto: RegisterUserDto = await createValidSubmitDTO(RegisterUserDto, {
       publicKey: "3",
       user: "client|4"
     });
@@ -126,7 +132,7 @@ describe("API tests", () => {
     });
   });
   it("test both using same connection", async () => {
-    const dto: RegisterUserDto = await createValidDTO(RegisterUserDto, {
+    const dto: RegisterUserDto = await createValidSubmitDTO(RegisterUserDto, {
       publicKey: "3",
       user: "client|4"
     });

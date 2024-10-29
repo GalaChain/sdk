@@ -24,8 +24,6 @@ export enum UserRole {
   EVALUATE = "EVALUATE"
 }
 
-export type UserProfileBody = ConstructorArgs<UserProfile>;
-
 export class UserProfile extends ChainObject {
   static ADMIN_ROLES = [UserRole.CURATOR, UserRole.EVALUATE, UserRole.SUBMIT] as const;
   static DEFAULT_ROLES = [UserRole.EVALUATE, UserRole.SUBMIT] as const;
