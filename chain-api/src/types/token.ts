@@ -38,8 +38,6 @@ import { TokenClass, TokenClassKey } from "./TokenClass";
 import { TokenInstance, TokenInstanceKey } from "./TokenInstance";
 import { ChainCallDTO, SubmitCallDTO } from "./dtos";
 
-export type FetchTokenClassesParams = ConstructorArgs<FetchTokenClassesDto>;
-
 @JSONSchema({
   description: "Contains list of objects representing token classes to fetch."
 })
@@ -49,8 +47,6 @@ export class FetchTokenClassesDto extends ChainCallDTO {
   @ArrayNotEmpty()
   tokenClasses: Array<TokenClassKey>;
 }
-
-export type FetchTokenClassesWithPaginationParams = ConstructorArgs<FetchTokenClassesWithPaginationDto>;
 
 @JSONSchema({
   description:
@@ -121,8 +117,6 @@ export class FetchTokenClassesResponse extends ChainCallDTO {
   nextPageBookmark?: string;
 }
 
-export type FetchTokenInstancesParams = ConstructorArgs<FetchTokenInstancesDto>;
-
 @JSONSchema({
   description: "Contains list of objects representing token instances to fetch."
 })
@@ -132,8 +126,6 @@ export class FetchTokenInstancesDto extends ChainCallDTO {
   @ArrayNotEmpty()
   tokenInstances: Array<TokenInstanceKey>;
 }
-
-export type CreateTokenClassParams = ConstructorArgs<CreateTokenClassDto>;
 
 @JSONSchema({
   description:
@@ -271,8 +263,6 @@ export class CreateTokenClassDto extends SubmitCallDTO {
   authorities?: string[];
 }
 
-export type UpdateTokenClassParams = ConstructorArgs<UpdateTokenClassDto>;
-
 export class UpdateTokenClassDto extends SubmitCallDTO {
   /* todo: should these fields be update-able? probably not, unless in exceptional circumstances.
            these are more complicted, as they track properties with second order effects.
@@ -350,7 +340,6 @@ export class UpdateTokenClassDto extends SubmitCallDTO {
   overwriteAuthorities?: boolean;
 }
 
-export type FetchBalancesParams = ConstructorArgs<FetchBalancesDto>;
 @JSONSchema({
   description: "Contains parameters for fetching balances. Each parameter is optional."
 })
@@ -389,8 +378,6 @@ export class FetchBalancesDto extends ChainCallDTO {
   @IsOptional()
   additionalKey?: string;
 }
-
-export type FetchBalancesWithPaginationParams = ConstructorArgs<FetchBalancesWithPaginationDto>;
 
 @JSONSchema({
   description: "Contains parameters for fetching balances. Each parameter is optional."
@@ -453,8 +440,6 @@ export class FetchBalancesWithPaginationDto extends ChainCallDTO {
   limit?: number;
 }
 
-export type TokenBalanceWithMetadataParams = ConstructorArgs<TokenBalanceWithMetadata>;
-
 @JSONSchema({
   description: "Response DTO containing a TokenBalance and the balance's corresponding TokenClass."
 })
@@ -486,8 +471,6 @@ export class FetchBalancesWithTokenMetadataResponse extends ChainCallDTO {
   @IsString()
   nextPageBookmark?: string;
 }
-
-export type TransferTokenParams = ConstructorArgs<TransferTokenDto>;
 
 @JSONSchema({
   description:
