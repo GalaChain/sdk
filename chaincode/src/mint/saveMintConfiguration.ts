@@ -30,6 +30,7 @@ export interface IMintConfiguration {
   category: string;
   type: string;
   additionalKey: string;
+  preMintBurn?: boolean;
   postMintBurn?: boolean;
   postMintLock?: PostMintLockConfiguration;
 }
@@ -40,7 +41,7 @@ export async function saveTokenMintConfiguration(
   ctx: GalaChainContext,
   data: IMintConfiguration
 ): Promise<TokenMintConfiguration> {
-  const { collection, category, type, additionalKey, postMintBurn, postMintLock } = data;
+  const { collection, category, type, additionalKey, preMintBurn, postMintBurn, postMintLock } = data;
 
   const existingTokenClass = await getObjectByKey(
     ctx,
@@ -63,6 +64,7 @@ export async function saveTokenMintConfiguration(
     category,
     type,
     additionalKey,
+    preMintBurn,
     postMintBurn
   });
 

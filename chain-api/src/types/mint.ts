@@ -378,6 +378,15 @@ export class TokenMintConfigurationDto extends ChainCallDTO {
   additionalKey: string;
 
   @JSONSchema({
+    description:
+      "Set `true` to require a burn equal to a percentage of the quantity to-be-minted " +
+      "prior to executing the mint action."
+  })
+  @IsOptional()
+  @IsBoolean()
+  preMintBurn?: boolean;
+
+  @JSONSchema({
     description: "Set `true` to enable burning a percentage of each quantity minted"
   })
   @IsOptional()
