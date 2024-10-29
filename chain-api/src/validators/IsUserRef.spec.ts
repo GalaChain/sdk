@@ -12,18 +12,18 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-import { ChainCallDTO, createValidDTO } from "../types";
+import { ChainCallDTO, UserRef, createValidDTO } from "../types";
 import { generateSchema } from "../utils";
 import { IsUserRef } from "./IsUserRef";
 
 class TestDto extends ChainCallDTO {
   @IsUserRef()
-  user: string;
+  user: UserRef;
 }
 
 class TestArrayDto extends ChainCallDTO {
   @IsUserRef({ each: true })
-  users: string[];
+  users: UserRef[];
 }
 
 const validEthAddress = "0abB6F637a51eb26665e0DeBc5CE8A84e1fa8AC3";
@@ -45,7 +45,7 @@ test.each<[string, string]>([
   ["valid bridge (GalaChain)", `GalaChainBridge-42`]
 ])("%s", async (label, input) => {
   // Given
-  const plain = { user: input };
+  const plain = { user: input as UserRef };
 
   // When
   const validated = await createValidDTO(TestDto, plain);
@@ -70,7 +70,7 @@ test.each<[string, string, string]>([
   ["invalid bridge (GalaChain)", "GalaChainBridge-A", genericErrorMessage]
 ])("%s", async (label, input, expectedError) => {
   // Given
-  const plain = { user: input };
+  const plain = { user: input as UserRef };
 
   // When
   const failed = createValidDTO(TestDto, plain);
@@ -82,10 +82,16 @@ test.each<[string, string, string]>([
 it("should validate array of user refs", async () => {
   // Given
   const validPlain = {
-    users: ["client|123", validEthAddress, `EthereumBridge`, `GalaChainBridge-42`, `ton|${validTonAddress}`]
+    users: [
+      "client|123",
+      validEthAddress,
+      `EthereumBridge`,
+      `GalaChainBridge-42`,
+      `ton|${validTonAddress}`
+    ] as UserRef[]
   };
 
-  const invalidPlain = { users: ["client|123", `eth|${invalidChecksumEth}`, "EthereumBridge"] };
+  const invalidPlain = { users: ["client|123", `eth|${invalidChecksumEth}`, "EthereumBridge"] as UserRef[] };
 
   // When
   const valid = await createValidDTO(TestArrayDto, validPlain);

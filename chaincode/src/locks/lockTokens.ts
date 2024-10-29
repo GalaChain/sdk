@@ -19,7 +19,8 @@ import {
   TokenBalance,
   TokenClassKey,
   TokenHold,
-  TokenInstanceKey
+  TokenInstanceKey,
+  UserAlias
 } from "@gala-chain/api";
 import { BigNumber } from "bignumber.js";
 
@@ -33,12 +34,12 @@ import { InvalidExpirationError, NftInvalidQuantityLockError } from "./LockError
 export interface TokenQuantity {
   tokenInstanceKey: TokenInstanceKey;
   quantity: BigNumber;
-  owner?: string;
+  owner?: UserAlias;
 }
 
 export interface LockTokenParams {
-  owner: string | undefined;
-  lockAuthority: string | undefined;
+  owner: UserAlias | undefined;
+  lockAuthority: UserAlias | undefined;
   tokenInstanceKey: TokenInstanceKey;
   quantity: BigNumber;
   allowancesToUse: string[];
@@ -142,7 +143,7 @@ export interface LockTokensParams {
   tokenInstances: TokenQuantity[];
   allowancesToUse: string[];
   name: string | undefined;
-  lockAuthority: string | undefined;
+  lockAuthority: UserAlias | undefined;
   expires: number;
   verifyAuthorizedOnBehalf: (c: TokenClassKey) => Promise<AuthorizedOnBehalf | undefined>;
 }

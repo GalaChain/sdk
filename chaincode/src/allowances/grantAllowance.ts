@@ -568,7 +568,7 @@ export async function grantAllowance(
       // verify if the token exists in the balance
       const [balance]: (TokenBalance | undefined)[] = await fetchBalances(ctx, {
         ...instanceKey,
-        owner: { alias: tokenInstance.owner }
+        owner: tokenInstance.owner
       });
       const currentInstances = balance?.getNftInstanceIds() ?? [];
       if (!currentInstances.some((i) => i.eq(instanceKey.instance))) {

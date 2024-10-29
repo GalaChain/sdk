@@ -20,7 +20,8 @@ import {
   registerDecorator
 } from "class-validator";
 
-import { signatures } from "../utils";
+import { UserRef } from "../types";
+import { ValidationFailedError, signatures } from "../utils";
 import { UserAliasValidationResult, validateUserAlias } from "./IsUserAlias";
 
 export enum UserRefValidationResult {
@@ -75,6 +76,14 @@ export function validateUserRef(value: unknown): UserRefValidationResult {
   }
 
   return UserRefValidationResult.INVALID_FORMAT;
+}
+
+export function asValidUserRef(value: unknown): UserRef {
+  const result = validateUserRef(value);
+  if (!isValid(result)) {
+    throw new ValidationFailedError(`Invalid user ref: ${value}`);
+  }
+  return value as UserRef;
 }
 
 @ValidatorConstraint({ async: false })

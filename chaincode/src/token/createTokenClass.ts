@@ -12,7 +12,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-import { TokenClass, TokenClassKey, TokenInstance, createValidChainObject } from "@gala-chain/api";
+import { TokenClass, TokenClassKey, TokenInstance, UserAlias, createValidChainObject } from "@gala-chain/api";
 import BigNumber from "bignumber.js";
 
 import { GalaChainContext } from "../types";
@@ -37,7 +37,7 @@ export interface CreateTokenClassParams {
   totalMintAllowance: BigNumber;
   totalSupply: BigNumber;
   totalBurned: BigNumber;
-  authorities: string[];
+  authorities: UserAlias[];
 }
 
 export async function createTokenClass(

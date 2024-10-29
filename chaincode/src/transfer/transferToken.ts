@@ -12,20 +12,25 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-import { AllowanceType, AuthorizedOnBehalf, TokenBalance, TokenInstanceKey } from "@gala-chain/api";
+import {
+  AllowanceType,
+  AuthorizedOnBehalf,
+  TokenBalance,
+  TokenInstanceKey,
+  UserAlias
+} from "@gala-chain/api";
 import BigNumber from "bignumber.js";
 
 import { verifyAndUseAllowances } from "../allowances";
 import { fetchOrCreateBalance } from "../balances";
-import { InvalidDecimalError, fetchTokenInstance } from "../token";
-import { fetchTokenClass } from "../token/fetchTokenClasses";
+import { InvalidDecimalError, fetchTokenClass, fetchTokenInstance } from "../token";
 import { GalaChainContext } from "../types";
 import { putChainObject } from "../utils";
 import { SameSenderAndRecipientError } from "./TransferError";
 
 export interface TransferTokenParams {
-  from: string;
-  to: string;
+  from: UserAlias;
+  to: UserAlias;
   tokenInstanceKey: TokenInstanceKey;
   quantity: BigNumber;
   allowancesToUse: string[];

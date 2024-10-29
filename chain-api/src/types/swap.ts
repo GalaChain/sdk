@@ -41,6 +41,7 @@ import {
 import { ChainObject } from "./ChainObject";
 import { TokenInstanceQuantity } from "./TokenInstance";
 import { TokenSwapRequest } from "./TokenSwapRequest";
+import { UserRef } from "./UserAlias";
 import { ChainCallDTO } from "./dtos";
 
 @JSONSchema({
@@ -58,7 +59,7 @@ export class RequestTokenSwapDto extends ChainCallDTO {
   })
   @IsOptional()
   @IsUserRef()
-  public offeredBy?: string;
+  public offeredBy?: UserRef;
 
   @JSONSchema({
     description: "User who probably has tokens the requester wants."
@@ -72,7 +73,7 @@ export class RequestTokenSwapDto extends ChainCallDTO {
   @IsOptional()
   @IsNotEmpty()
   @IsUserRef()
-  public offeredTo?: string;
+  public offeredTo?: UserRef;
 
   @JSONSchema({
     description: "A list of offered token instances."
@@ -162,7 +163,7 @@ export class FillTokenSwapDto extends ChainCallDTO {
   })
   @IsOptional()
   @IsUserRef()
-  public filledBy?: string;
+  public filledBy?: UserRef;
 
   @JSONSchema({
     description:
@@ -293,7 +294,7 @@ export class FetchTokenSwapsByUserDto extends ChainCallDTO {
 
   @IsOptional()
   @IsUserRef()
-  public user?: string;
+  public user?: UserRef;
 
   @JSONSchema({
     description: "Page bookmark. If it is undefined, then the first page is returned."

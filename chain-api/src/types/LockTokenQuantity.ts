@@ -19,6 +19,7 @@ import { JSONSchema } from "class-validator-jsonschema";
 
 import { BigNumberIsNotNegative, BigNumberProperty, IsUserAlias } from "../validators";
 import { TokenInstanceKey } from "./TokenInstance";
+import { UserAlias } from "./UserAlias";
 
 export class LockTokenQuantity {
   @ValidateNested()
@@ -35,5 +36,5 @@ export class LockTokenQuantity {
   })
   @IsOptional()
   @IsUserAlias() // TODO??
-  owner?: string;
+  owner?: UserAlias;
 }

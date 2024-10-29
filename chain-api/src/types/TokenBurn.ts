@@ -19,6 +19,7 @@ import { IsDefined, IsInt, IsNotEmpty, IsPositive } from "class-validator";
 import { ChainKey, ConstructorArgs } from "../utils";
 import { BigNumberIsInteger, BigNumberIsNotNegative, BigNumberProperty, IsUserAlias } from "../validators";
 import { ChainObject } from "./ChainObject";
+import { UserAlias } from "./UserAlias";
 
 export type TokenBurnBody = ConstructorArgs<TokenBurn>;
 
@@ -28,7 +29,7 @@ export class TokenBurn extends ChainObject {
 
   @ChainKey({ position: 0 })
   @IsUserAlias()
-  public burnedBy: string;
+  public burnedBy: UserAlias;
 
   @ChainKey({ position: 1 })
   @IsNotEmpty()

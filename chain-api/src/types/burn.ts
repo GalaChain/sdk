@@ -34,6 +34,7 @@ import { BigNumberIsInteger, BigNumberIsNotNegative, BigNumberProperty, IsUserRe
 import { BurnTokenQuantity } from "./BurnTokenQuantity";
 import { TokenBurnCounter } from "./TokenBurnCounter";
 import { TokenInstance } from "./TokenInstance";
+import { UserRef } from "./UserAlias";
 import { ChainCallDTO, SubmitCallDTO } from "./dtos";
 import { BatchMintTokenDto } from "./mint";
 
@@ -45,7 +46,7 @@ export class FetchBurnsDto extends ChainCallDTO {
     description: "The user who burned the token."
   })
   @IsUserRef()
-  burnedBy: string;
+  burnedBy: UserRef;
 
   @JSONSchema({
     description: "Token collection. Optional, but required if category is provided."
@@ -111,7 +112,7 @@ export class BurnTokensDto extends SubmitCallDTO {
   })
   @IsOptional()
   @IsUserRef()
-  owner?: string;
+  owner?: UserRef;
 }
 
 @JSONSchema({
@@ -141,7 +142,7 @@ export class BurnAndMintDto extends ChainCallDTO {
       "The burnDto signature will be validated against this user's public key on chain."
   })
   @IsUserRef()
-  burnOwner: string;
+  burnOwner: UserRef;
 
   @JSONSchema({
     description: "DTOs of tokens to mint."
@@ -257,7 +258,7 @@ export class TokenBurnCounterCompositeKeyDto extends ChainCallDTO {
     description: "burnedBy user."
   })
   @IsUserRef()
-  burnedBy: string;
+  burnedBy: UserRef;
 
   @JSONSchema({
     description: "Token instance."

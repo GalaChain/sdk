@@ -18,6 +18,7 @@ import { JSONSchema } from "class-validator-jsonschema";
 import { ConstructorArgs } from "../utils";
 import { IsUserAlias } from "../validators";
 import { ChainObject } from "./ChainObject";
+import { UserAlias } from "./UserAlias";
 
 export enum UserRole {
   CURATOR = "CURATOR",
@@ -25,15 +26,9 @@ export enum UserRole {
   EVALUATE = "EVALUATE"
 }
 
-// TODO make it as tagged string for better type safety guarantees
-//  see: https://medium.com/@ethanresnick/advanced-typescript-tagged-types-improved-with-type-level-metadata-5072fc125fcf
-export interface HasUserAlias {
-  alias: string;
-}
-
 export type UserProfileBody = ConstructorArgs<UserProfile>;
 
-export class UserProfile extends ChainObject implements HasUserAlias {
+export class UserProfile extends ChainObject {
   static ADMIN_ROLES = [UserRole.CURATOR, UserRole.EVALUATE, UserRole.SUBMIT] as const;
   static DEFAULT_ROLES = [UserRole.EVALUATE, UserRole.SUBMIT] as const;
 
@@ -43,7 +38,7 @@ export class UserProfile extends ChainObject implements HasUserAlias {
       "It may have the following format: client|<id>, eth|<checksumed-eth-addr>, or ton|<ton-bounceable-addr>."
   })
   @IsUserAlias()
-  alias: string;
+  alias: UserAlias;
 
   @JSONSchema({
     description: `Eth address of the user.`

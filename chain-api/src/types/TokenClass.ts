@@ -30,6 +30,7 @@ import { JSONSchema } from "class-validator-jsonschema";
 import { ChainKey, ConstructorArgs } from "../utils";
 import { BigNumberIsPositive, BigNumberProperty, IsUserAlias } from "../validators";
 import { ChainObject } from "./ChainObject";
+import { UserAlias, UserRef } from "./UserAlias";
 import { GC_NETWORK_ID } from "./contract";
 import { ChainCallDTO } from "./dtos";
 
@@ -135,7 +136,7 @@ export class TokenClass extends ChainObject {
 
   // IDs of authorities who can manage this token
   @IsUserAlias({ each: true })
-  public authorities: Array<string>;
+  public authorities: UserAlias[];
 
   /// ///////////////////////////////////////////////////
   // Permissioned Properties (Authorities can directly modify)
@@ -249,7 +250,7 @@ interface ToUpdate {
   metadataAddress?: string;
   rarity?: string;
   image?: string;
-  authorities?: string[];
+  authorities?: UserAlias[];
   overwriteAuthorities?: boolean;
 }
 

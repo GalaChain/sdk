@@ -12,12 +12,17 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-import { TokenBalance, TokenInstanceKey, ValidationFailedError } from "@gala-chain/api";
+import {
+  RuntimeError,
+  TokenBalance,
+  TokenInstanceKey,
+  UserAlias,
+  ValidationFailedError
+} from "@gala-chain/api";
 import BigNumber from "bignumber.js";
 
 import { fetchOrCreateBalance } from "../balances";
-import { fetchTokenInstance } from "../token";
-import { fetchTokenClass } from "../token/fetchTokenClasses";
+import { fetchTokenClass, fetchTokenInstance } from "../token";
 import { GalaChainContext } from "../types";
 import { putChainObject } from "../utils";
 import { UnlockForbiddenUserError } from "./LockError";
@@ -26,7 +31,7 @@ export interface UnlockTokenParams {
   tokenInstanceKey: TokenInstanceKey;
   name: string | undefined;
   quantity: BigNumber | undefined;
-  owner?: string | undefined;
+  owner?: UserAlias | undefined;
 }
 
 export async function unlockToken(
@@ -37,11 +42,18 @@ export async function unlockToken(
     return unlockFungibleToken(ctx, { tokenInstanceKey, name, quantity, owner });
   }
 
-  // owner is always present for NFT instances
   const tokenInstance = await fetchTokenInstance(ctx, tokenInstanceKey);
-  owner = tokenInstance.owner as string;
 
-  const balance = await fetchOrCreateBalance(ctx, owner, tokenInstanceKey.getTokenClassKey());
+  // owner is always present for NFT instances - throwing to detect potential issues
+  if (tokenInstance.owner === undefined) {
+    throw new RuntimeError(`Token instance ${tokenInstanceKey.toStringKey()} has no owner`);
+  }
+
+  if (owner !== undefined && tokenInstance.owner !== owner) {
+    throw new UnlockForbiddenUserError(owner, tokenInstanceKey.toStringKey());
+  }
+
+  const balance = await fetchOrCreateBalance(ctx, tokenInstance.owner, tokenInstanceKey.getTokenClassKey());
   const applicableHold = balance.findLockedHold(tokenInstanceKey.instance, name, ctx.txUnixTime);
 
   // determine if user is authorized to unlock

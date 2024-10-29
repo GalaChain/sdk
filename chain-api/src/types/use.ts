@@ -17,9 +17,9 @@ import { Type } from "class-transformer";
 import { ArrayNotEmpty, IsNotEmpty, IsOptional, IsString, ValidateNested } from "class-validator";
 import { JSONSchema } from "class-validator-jsonschema";
 
-import { ConstructorArgs } from "../utils";
 import { BigNumberIsNotNegative, BigNumberProperty, IsUserRef } from "../validators";
 import { TokenInstance, TokenInstanceKey } from "./TokenInstance";
+import { UserRef } from "./UserAlias";
 import { SubmitCallDTO } from "./dtos";
 
 @JSONSchema({
@@ -44,13 +44,13 @@ export class UseTokenDto extends SubmitCallDTO {
   })
   @IsOptional()
   @IsUserRef()
-  owner?: string;
+  owner?: UserRef;
 
   @JSONSchema({
     description: "The user who is going to use token."
   })
   @IsUserRef()
-  inUseBy: string;
+  inUseBy: UserRef;
 
   @JSONSchema({
     description:

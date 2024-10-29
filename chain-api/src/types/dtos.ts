@@ -27,6 +27,7 @@ import {
   signatures
 } from "../utils";
 import { IsUserAlias, IsUserRef, StringEnumProperty } from "../validators";
+import { UserAlias, UserRef } from "./UserAlias";
 import { GalaChainResponse } from "./contract";
 
 type Base<T, BaseT> = T extends BaseT ? T : never;
@@ -279,7 +280,7 @@ export class RegisterUserDto extends SubmitCallDTO {
     description: `Id of user to save public key for.`
   })
   @IsUserAlias()
-  user: string;
+  user: UserAlias;
 
   @JSONSchema({ description: "Public secp256k1 key (compact or non-compact, hex or base64)." })
   @IsNotEmpty()
@@ -324,7 +325,7 @@ export type UpdateUserRolesParams = ConstructorArgs<UpdateUserRolesDto>;
 
 export class UpdateUserRolesDto extends SubmitCallDTO {
   @IsUserRef()
-  user: string;
+  user: UserRef;
 
   @JSONSchema({ description: "New set of roles for the user that will replace the old ones." })
   @IsNotEmpty()
@@ -339,7 +340,7 @@ export class GetPublicKeyDto extends ChainCallDTO {
   })
   @IsOptional()
   @IsUserRef()
-  user?: string;
+  user?: UserRef;
 }
 
 export type GetMyProfileParams = ConstructorArgs<GetMyProfileDto>;

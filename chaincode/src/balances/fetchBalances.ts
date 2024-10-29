@@ -12,7 +12,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-import { ChainError, ErrorCode, HasUserAlias, TokenBalance } from "@gala-chain/api";
+import { ChainError, ErrorCode, TokenBalance, UserAlias } from "@gala-chain/api";
 
 import { GalaChainContext } from "../types";
 import { getObjectsByPartialCompositeKey, takeUntilUndefined } from "../utils";
@@ -23,7 +23,7 @@ export interface FetchBalancesParams {
   category?: string;
   type?: string;
   additionalKey?: string;
-  owner: HasUserAlias;
+  owner: UserAlias;
 }
 
 export async function fetchBalances(
@@ -31,7 +31,7 @@ export async function fetchBalances(
   data: FetchBalancesParams
 ): Promise<TokenBalance[]> {
   const queryParams: Array<string> = takeUntilUndefined(
-    data.owner.alias,
+    data.owner,
     data.collection,
     data.category,
     data.type,
@@ -44,7 +44,7 @@ export async function fetchBalances(
     queryParams,
     TokenBalance
   ).catch((e) => {
-    throw ChainError.map(e, ErrorCode.NOT_FOUND, new BalanceNotFoundError(data.owner.alias));
+    throw ChainError.map(e, ErrorCode.NOT_FOUND, new BalanceNotFoundError(data.owner));
   });
   return results;
 }

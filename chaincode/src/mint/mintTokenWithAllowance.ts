@@ -18,6 +18,7 @@ import {
   TokenClassKey,
   TokenInstanceKey,
   TokenInstanceQueryKey,
+  UserAlias,
   createValidDTO
 } from "@gala-chain/api";
 import { BigNumber } from "bignumber.js";
@@ -29,15 +30,15 @@ import { mintToken } from "./mintToken";
 export interface MintTokenWithAllowanceParams {
   tokenClassKey: TokenClassKey;
   tokenInstance: BigNumber;
-  owner: string;
+  owner: UserAlias;
   quantity: BigNumber;
 }
 
 export async function mintTokenWithAllowance(
   ctx: GalaChainContext,
-  dto: MintTokenWithAllowanceParams
+  params: MintTokenWithAllowanceParams
 ): Promise<Array<TokenInstanceKey>> {
-  const { tokenClassKey, tokenInstance, quantity, owner } = dto;
+  const { tokenClassKey, tokenInstance, quantity, owner } = params;
 
   const response = await grantAllowance(ctx, {
     tokenInstance: await createValidDTO(TokenInstanceQueryKey, { ...tokenClassKey, instance: tokenInstance }),
@@ -49,7 +50,7 @@ export async function mintTokenWithAllowance(
 
   const tokenInstanceArray = await mintToken(ctx, {
     tokenClassKey: tokenClassKey,
-    owner: owner,
+    owner,
     applicableAllowanceKey: await createValidDTO(AllowanceKey, response[0]),
     quantity,
     authorizedOnBehalf: undefined

@@ -20,7 +20,8 @@ import {
   registerDecorator
 } from "class-validator";
 
-import { signatures } from "../utils";
+import { UserAlias } from "../types";
+import { ValidationFailedError, signatures } from "../utils";
 
 export enum UserAliasValidationResult {
   VALID_USER_ALIAS,
@@ -62,7 +63,7 @@ export function isValidSystemUser(value: string): boolean {
  * @param value
  * @returns UserRefValidationResult
  */
-function validateUserAlias(value: unknown): UserRefValidationResult {
+export function validateUserAlias(value: unknown): UserAliasValidationResult {
   if (typeof value !== "string" || value.length === 0) {
     return UserAliasValidationResult.INVALID_FORMAT;
   }

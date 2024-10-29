@@ -41,6 +41,7 @@ import {
 import { GrantAllowanceQuantity } from "./GrantAllowance";
 import { TokenAllowance } from "./TokenAllowance";
 import { TokenInstance, TokenInstanceKey, TokenInstanceQueryKey } from "./TokenInstance";
+import { UserRef } from "./UserAlias";
 import { AllowanceKey, AllowanceType, MintRequestDto } from "./common";
 import { ChainCallDTO, SubmitCallDTO } from "./dtos";
 
@@ -55,7 +56,7 @@ export class FetchAllowancesDto extends ChainCallDTO {
     description: "A user who can use an allowance."
   })
   @IsUserRef()
-  grantedTo: string;
+  grantedTo: UserRef;
 
   @JSONSchema({
     description: "Token collection. Optional, but required if category is provided."
@@ -101,7 +102,7 @@ export class FetchAllowancesDto extends ChainCallDTO {
   })
   @IsOptional()
   @IsUserRef()
-  grantedBy?: string;
+  grantedBy?: UserRef;
 
   @JSONSchema({
     description: "Page bookmark. If it is undefined, then the first page is returned."
@@ -136,7 +137,7 @@ export class FetchAllowancesLegacyDto extends ChainCallDTO {
     description: "A user who can use an allowance."
   })
   @IsUserRef()
-  grantedTo: string;
+  grantedTo: UserRef;
 
   @JSONSchema({
     description: "Token collection. Optional, but required if category is provided."
@@ -182,7 +183,7 @@ export class FetchAllowancesLegacyDto extends ChainCallDTO {
   })
   @IsOptional()
   @IsUserRef()
-  grantedBy?: string;
+  grantedBy?: UserRef;
 
   @JSONSchema({
     description: "Page bookmark. If it is undefined, then the first page is returned."
@@ -214,14 +215,14 @@ export class DeleteAllowancesDto extends SubmitCallDTO {
     description: "A user who can use an allowance."
   })
   @IsUserRef()
-  grantedTo: string;
+  grantedTo: UserRef;
 
   @JSONSchema({
     description: "User who granted allowances."
   })
   @IsOptional()
   @IsUserRef()
-  grantedBy?: string;
+  grantedBy?: UserRef;
 
   @JSONSchema({
     description: "Token collection. Optional, but required if category is provided."
@@ -396,7 +397,7 @@ export class FullAllowanceCheckDto extends ChainCallDTO {
   })
   @IsOptional()
   @IsUserRef()
-  owner?: string;
+  owner?: UserRef;
 
   @JSONSchema({
     description:
@@ -404,7 +405,7 @@ export class FullAllowanceCheckDto extends ChainCallDTO {
   })
   @IsOptional()
   @IsUserRef()
-  grantedTo?: string;
+  grantedTo?: UserRef;
 
   @JSONSchema({
     description: "Token collection. Optional."

@@ -12,18 +12,18 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-import { ChainCallDTO, createValidDTO } from "../types";
+import { ChainCallDTO, UserAlias, createValidDTO } from "../types";
 import { generateSchema } from "../utils";
 import { IsUserAlias } from "./IsUserAlias";
 
 class TestDto extends ChainCallDTO {
   @IsUserAlias()
-  user: string;
+  user: UserAlias;
 }
 
 class TestArrayDto extends ChainCallDTO {
   @IsUserAlias({ each: true })
-  users: string[];
+  users: UserAlias[];
 }
 
 const validEthAddress = "0abB6F637a51eb26665e0DeBc5CE8A84e1fa8AC3";
@@ -43,7 +43,7 @@ test.each<[string, string, string]>([
   ["valid bridge (GalaChain)", `GalaChainBridge-42`, `GalaChainBridge-42`]
 ])("%s", async (label, input, expected) => {
   // Given
-  const plain = { user: input };
+  const plain = { user: input as UserAlias };
 
   // When
   const validated = await createValidDTO(TestDto, plain);
@@ -65,7 +65,7 @@ test.each<[string, string, string]>([
   ["invalid bridge (GalaChain)", "GalaChainBridge-A", "Expected string following the format"]
 ])("%s", async (label, input, expectedError) => {
   // Given
-  const plain = { user: input };
+  const plain = { user: input as UserAlias };
 
   // When
   const failed = createValidDTO(TestDto, plain);
@@ -83,10 +83,12 @@ it("should validate array of user aliases", async () => {
       `EthereumBridge`,
       `GalaChainBridge-42`,
       `ton|${validTonAddress}`
-    ]
+    ] as UserAlias[]
   };
 
-  const invalidPlain = { users: ["client|123", `eth|${invalidChecksumEth}`, "EthereumBridge"] };
+  const invalidPlain = {
+    users: ["client|123", `eth|${invalidChecksumEth}`, "EthereumBridge"] as UserAlias[]
+  };
 
   // When
   const valid = await createValidDTO(TestArrayDto, validPlain);

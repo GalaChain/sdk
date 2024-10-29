@@ -43,6 +43,7 @@ import {
 import { TokenBalance } from "./TokenBalance";
 import { TokenClass, TokenClassKey } from "./TokenClass";
 import { TokenInstance, TokenInstanceKey } from "./TokenInstance";
+import { UserAlias, UserRef } from "./UserAlias";
 import { ChainCallDTO, SubmitCallDTO } from "./dtos";
 
 export type FetchTokenClassesParams = ConstructorArgs<FetchTokenClassesDto>;
@@ -347,7 +348,7 @@ export class UpdateTokenClassDto extends SubmitCallDTO {
   @IsUserAlias({ each: true })
   @IsOptional()
   @ArrayNotEmpty()
-  authorities?: string[];
+  authorities?: UserAlias[];
 
   @JSONSchema({
     description:
@@ -369,7 +370,7 @@ export class FetchBalancesDto extends ChainCallDTO {
   })
   @IsOptional()
   @IsUserRef()
-  owner?: string;
+  owner?: UserRef;
 
   @JSONSchema({
     description: "Token collection. Optional, but required if category is provided."
@@ -413,7 +414,7 @@ export class FetchBalancesWithPaginationDto extends ChainCallDTO {
   })
   @IsOptional()
   @IsUserRef()
-  owner?: string;
+  owner?: UserRef;
 
   @JSONSchema({
     description: "Token collection. Optional, but required if category is provided."
@@ -510,10 +511,10 @@ export class TransferTokenDto extends SubmitCallDTO {
   })
   @IsOptional()
   @IsUserRef()
-  from?: string;
+  from?: UserRef;
 
   @IsUserRef()
-  to: string;
+  to: UserRef;
 
   @JSONSchema({
     description:

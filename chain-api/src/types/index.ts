@@ -68,3 +68,4 @@ export * from "./TokenMintAllowanceRequest";
 export * from "./TokenMintFulfillment";
 export * from "./TokenMintRequest";
 export * from "./TokenBurnCounter";
+export * from "./UserAlias";

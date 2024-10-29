@@ -20,6 +20,7 @@ import { JSONSchema } from "class-validator-jsonschema";
 import { ConstructorArgs } from "../utils";
 import { ArrayUniqueObjects, BigNumberIsNotNegative, BigNumberProperty, IsUserRef } from "../validators";
 import { TokenClassKey } from "./TokenClass";
+import { UserRef } from "./UserAlias";
 import { AllowanceKey, MintRequestDto } from "./common";
 import { ChainCallDTO, SubmitCallDTO } from "./dtos";
 
@@ -44,7 +45,7 @@ export class MintTokenDto extends SubmitCallDTO {
   })
   @IsOptional()
   @IsUserRef()
-  owner?: string;
+  owner?: UserRef;
 
   @JSONSchema({
     description: "How many units of Fungible/NonFungible Token will be minted."
@@ -79,7 +80,7 @@ export class MintTokenWithAllowanceDto extends SubmitCallDTO {
   })
   @IsOptional()
   @IsUserRef()
-  owner?: string;
+  owner?: UserRef;
 
   @JSONSchema({
     description: "Instance of token to be minted"
@@ -113,7 +114,7 @@ export class BatchMintTokenDto extends SubmitCallDTO {
   @Type(() => MintTokenDto)
   @ArrayNotEmpty()
   @ArrayMaxSize(BatchMintTokenDto.MAX_ARR_SIZE)
-  mintDtos: Array<MintTokenDto>;
+  mintDtos: MintTokenDto[];
 }
 
 /**
@@ -148,7 +149,7 @@ export class HighThroughputMintTokenDto extends SubmitCallDTO {
   })
   @IsOptional()
   @IsUserRef()
-  owner?: string;
+  owner?: UserRef;
 
   @JSONSchema({
     description: "How many units of fungible token of how many NFTs are going to be minted."

@@ -38,6 +38,7 @@ import {
 import { ChainObject, ObjectValidationFailedError } from "./ChainObject";
 import { TokenClassKey, TokenClassKeyProperties } from "./TokenClass";
 import { TokenInstance, TokenInstanceKey } from "./TokenInstance";
+import { UserAlias } from "./UserAlias";
 
 export class TokenNotInBalanceError extends ValidationFailedError {
   constructor(owner: string, tokenClass: TokenClassKeyProperties, instanceId: BigNumber) {
@@ -104,7 +105,7 @@ export class TokenBalance extends ChainObject {
 
   @ChainKey({ position: 0 })
   @IsUserAlias()
-  public readonly owner: string;
+  public readonly owner: UserAlias;
 
   @ChainKey({ position: 1 })
   @IsNotEmpty()
@@ -123,7 +124,7 @@ export class TokenBalance extends ChainObject {
   public readonly additionalKey: string;
 
   constructor(params?: {
-    owner: string;
+    owner: UserAlias;
     collection: string;
     category: string;
     type: string;
@@ -559,7 +560,7 @@ export class TokenHold {
   public static readonly DEFAULT_EXPIRES = 0;
 
   @IsUserAlias()
-  public readonly createdBy: string;
+  public readonly createdBy: UserAlias;
 
   @IsNotEmpty()
   @BigNumberIsPositive()
@@ -590,16 +591,16 @@ export class TokenHold {
   })
   @IsOptional()
   @IsUserAlias()
-  lockAuthority?: string;
+  lockAuthority?: UserAlias;
 
   public constructor(params?: {
-    createdBy: string;
+    createdBy: UserAlias;
     instanceId: BigNumber;
     quantity: BigNumber;
     created: number;
     expires?: number;
     name?: string;
-    lockAuthority?: string;
+    lockAuthority?: UserAlias;
   }) {
     if (params) {
       this.createdBy = params.createdBy;
@@ -617,13 +618,13 @@ export class TokenHold {
   }
 
   public static async createValid(params: {
-    createdBy: string;
+    createdBy: UserAlias;
     instanceId: BigNumber;
     quantity: BigNumber;
     created: number;
     expires: number | undefined;
     name: string | undefined;
-    lockAuthority: string | undefined;
+    lockAuthority: UserAlias | undefined;
   }): Promise<TokenHold> {
     const hold = new TokenHold({ ...params });
 

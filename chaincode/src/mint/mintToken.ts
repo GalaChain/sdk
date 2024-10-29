@@ -23,7 +23,8 @@ import {
   TokenClassKeyProperties,
   TokenInstance,
   TokenInstanceKey,
-  TokenMintFulfillment
+  TokenMintFulfillment,
+  UserAlias
 } from "@gala-chain/api";
 import { ChainCallDTO, ChainObject } from "@gala-chain/api";
 import { BigNumber } from "bignumber.js";
@@ -38,7 +39,7 @@ import { writeMintRequest } from "./requestMint";
 
 export interface MintTokenParams {
   tokenClassKey: TokenClassKey;
-  owner: string;
+  owner: UserAlias;
   quantity: BigNumber;
   authorizedOnBehalf: AuthorizedOnBehalf | undefined;
   applicableAllowanceKey?: AllowanceKey | undefined;
@@ -243,8 +244,8 @@ export async function mintToken(
 
 export interface UpdateTokenSupplyParams {
   tokenClassKey: TokenClassKeyProperties;
-  callingUser: string;
-  owner: string;
+  callingUser: UserAlias;
+  owner: UserAlias;
   quantity: BigNumber;
   allowanceKey?: AllowanceKey | undefined;
   knownTotalSupply?: BigNumber | undefined;

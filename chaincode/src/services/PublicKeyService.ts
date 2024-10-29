@@ -20,6 +20,7 @@ import {
   SigningScheme,
   UP_INDEX_KEY,
   UnauthorizedError,
+  UserAlias,
   UserProfile,
   normalizePublicKey,
   signatures
@@ -68,7 +69,7 @@ export class PublicKeyService {
   public static async putUserProfile(
     ctx: GalaChainContext,
     address: string,
-    userAlias: string,
+    userAlias: UserAlias,
     signing: SigningScheme
   ): Promise<void> {
     const key = PublicKeyService.getUserProfileKey(ctx, address);
@@ -122,7 +123,7 @@ export class PublicKeyService {
           `Thus, the public key from env will be used.`;
         ctx.logging.getLogger().warn(message);
 
-        const alias = process.env.DEV_ADMIN_USER_ID ?? `eth|${adminEthAddress}`;
+        const alias = (process.env.DEV_ADMIN_USER_ID ?? `eth|${adminEthAddress}`) as UserAlias;
 
         if (!alias.startsWith("eth|") && !alias.startsWith("client|")) {
           const message = `Invalid alias for user: ${alias} with public key: ${process.env.DEV_ADMIN_PUBLIC_KEY}`;
@@ -195,7 +196,7 @@ export class PublicKeyService {
     ctx: GalaChainContext,
     providedPkHex: string,
     ethAddress: string,
-    userAlias: string,
+    userAlias: UserAlias,
     signing: SigningScheme
   ): Promise<string> {
     const currPublicKey = await PublicKeyService.getPublicKey(ctx, userAlias);

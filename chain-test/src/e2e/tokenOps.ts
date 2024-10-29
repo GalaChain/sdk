@@ -24,6 +24,7 @@ import {
   TokenInstance,
   TokenInstanceKey,
   TransferTokenDto,
+  asValidUserRef,
   createValidDTO,
   createValidSubmitDTO
 } from "@gala-chain/api";
@@ -59,8 +60,8 @@ export async function createTransferDto(
   });
 
   return createValidSubmitDTO(TransferTokenDto, {
-    from: opts.from,
-    to: opts.to,
+    from: asValidUserRef(opts.from),
+    to: asValidUserRef(opts.to),
     tokenInstance,
     quantity: new BigNumber(1)
   });
@@ -72,8 +73,8 @@ export async function fetchNFTInstances(
   owner: string
 ): Promise<string[]> {
   const dto = await createValidDTO(FetchBalancesDto, {
-    owner,
-    ...instanceToPlain(nftClassKey)
+    ...instanceToPlain(nftClassKey),
+    owner: asValidUserRef(owner)
   });
 
   const resp = await client.evaluateTransaction("FetchBalances", dto, TokenBalance);
