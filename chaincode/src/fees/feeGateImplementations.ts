@@ -37,6 +37,9 @@ import {
   OraclePriceAssertion,
   RequestTokenBridgeOutDto,
   TerminateTokenSwapDto,
+  TokenClassKey,
+  TokenInstanceKey,
+  TokenMintConfiguration,
   TransferTokenDto,
   UnauthorizedError,
   ValidationFailedError
@@ -48,6 +51,7 @@ import { authorize } from "../contracts";
 import { KnownOracles } from "../oracle";
 import { GalaChainContext, createValidChainObject } from "../types";
 import { getObjectByKey, putChainObject } from "../utils";
+import { mintProcessingBurn } from "./extendedFeeGateProcessing";
 import { galaFeeGate, writeUsageAndCalculateFeeAmount } from "./galaFeeGate";
 import { payFeeFromCrossChannelAuthorization } from "./payFeeFromCrossChannelAuthorization";
 import { payFeeImmediatelyFromBalance } from "./payFeeImmediatelyFromBalance";
@@ -93,6 +97,13 @@ export async function batchMintTokenFeeGate(ctx: GalaChainContext, dto: BatchMin
       // regardless of who executes the method
       // activeUser: owner
     });
+  }
+
+  for (const mintDto of dto.mintDtos) {
+    const { tokenClass, quantity } = mintDto;
+    const owner = mintDto.owner ?? ctx.callingUser;
+
+    await mintPreProcessing(ctx, { tokenClass, owner, quantity });
   }
 
   return Promise.resolve();
@@ -166,6 +177,11 @@ export async function highThroughputMintAllowanceFulfillFeeGate(
 }
 
 export async function mintTokenFeeGate(ctx: GalaChainContext, dto: MintTokenDto) {
+  const { tokenClass, quantity } = dto;
+  const owner = dto.owner ?? ctx.callingUser;
+
+  await mintPreProcessing(ctx, { tokenClass, owner, quantity });
+
   return galaFeeGate(ctx, {
     feeCode: FeeGateCodes.MintToken
     // v1 fees requires only callingUser identities pay fees
@@ -176,6 +192,11 @@ export async function mintTokenFeeGate(ctx: GalaChainContext, dto: MintTokenDto)
 }
 
 export async function mintTokenWithAllowanceFeeGate(ctx: GalaChainContext, dto: MintTokenWithAllowanceDto) {
+  const { tokenClass, quantity } = dto;
+  const owner = dto.owner ?? ctx.callingUser;
+
+  await mintPreProcessing(ctx, { tokenClass, owner, quantity });
+
   return galaFeeGate(ctx, {
     feeCode: FeeGateCodes.MintTokenWithAllowance
     // v1 fees requires only callingUser identities pay fees
@@ -377,4 +398,45 @@ export async function simpleFeeGate(ctx: GalaChainContext, dto: ChainCallDTO) {
     feeCode: FeeGateCodes.SimpleFee,
     quantity: hardcodedPromotionalFee
   });
+}
+
+export interface IMintPreProcessing {
+  tokenClass: TokenClassKey;
+  owner: string;
+  quantity: BigNumber;
+  feeCode?: FeeGateCodes | undefined;
+}
+
+export async function mintPreProcessing(ctx: GalaChainContext, data: IMintPreProcessing) {
+  const { tokenClass } = data;
+  const { collection, category, type, additionalKey } = tokenClass;
+
+  const mintConfiguration: TokenMintConfiguration | undefined = await getObjectByKey(
+    ctx,
+    TokenMintConfiguration,
+    TokenMintConfiguration.getCompositeKeyFromParts(TokenMintConfiguration.INDEX_KEY, [
+      collection,
+      category,
+      type,
+      additionalKey
+    ])
+  ).catch((e) => {
+    const chainError = ChainError.from(e);
+    if (chainError.matches(ErrorCode.NOT_FOUND)) {
+      return undefined;
+    } else {
+      throw chainError;
+    }
+  });
+
+  if (!mintConfiguration) {
+    return;
+  }
+
+  if (mintConfiguration.preMintBurn) {
+    await mintProcessingBurn(ctx, {
+      ...data,
+      tokens: []
+    });
+  }
 }

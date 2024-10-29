@@ -15,6 +15,7 @@
 import {
   ChainError,
   ErrorCode,
+  PostMintLockConfiguration,
   TokenClass,
   TokenMintConfiguration,
   UnauthorizedError
@@ -30,7 +31,7 @@ export interface IMintConfiguration {
   type: string;
   additionalKey: string;
   postMintBurn?: boolean;
-  postMintLock?: boolean;
+  postMintLock?: PostMintLockConfiguration;
 }
 
 const curatorOrgMsp = process.env.CURATOR_ORG_MSP ?? "CuratorOrg";
@@ -40,24 +41,6 @@ export async function saveTokenMintConfiguration(
   data: IMintConfiguration
 ): Promise<TokenMintConfiguration> {
   const { collection, category, type, additionalKey, postMintBurn, postMintLock } = data;
-
-  const existingConfiguration = await getObjectByKey(
-    ctx,
-    TokenMintConfiguration,
-    TokenMintConfiguration.getCompositeKeyFromParts(TokenMintConfiguration.INDEX_KEY, [
-      collection,
-      category,
-      type,
-      additionalKey
-    ])
-  ).catch((e) => {
-    const chainError = ChainError.from(e);
-    if (chainError.matches(ErrorCode.NOT_FOUND)) {
-      return undefined;
-    } else {
-      throw chainError;
-    }
-  });
 
   const existingTokenClass = await getObjectByKey(
     ctx,
@@ -80,9 +63,14 @@ export async function saveTokenMintConfiguration(
     category,
     type,
     additionalKey,
-    postMintBurn,
-    postMintLock
+    postMintBurn
   });
+
+  if (postMintLock !== undefined) {
+    await postMintLock.validateOrReject();
+
+    newConfiguration.postMintLock = postMintLock;
+  }
 
   await putChainObject(ctx, newConfiguration);
 

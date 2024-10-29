@@ -16,25 +16,24 @@ import {
   BatchMintTokenDto,
   ChainError,
   ErrorCode,
-  FeeAccelerationRateType,
-  FeeCodeDefinition,
   FeeGateCodes,
-  FulfillMintDto,
   GalaChainResponse,
   MintTokenDto,
   MintTokenWithAllowanceDto,
+  PostMintLockConfiguration,
   TokenClass,
   TokenClassKey,
+  TokenInstance,
   TokenInstanceKey,
-  TokenMintConfiguration
+  TokenMintConfiguration,
+  createValidDTO
 } from "@gala-chain/api";
 import BigNumber from "bignumber.js";
 
-import { burnTokens } from "../burns";
+import { lockTokens } from "../locks";
 import { GalaChainContext } from "../types";
-import { getObjectByKey, getObjectsByPartialCompositeKey } from "../utils";
-import { extractUniqueOwnersFromRequests } from "./feeGateImplementations";
-import { lockToken, lockTokens } from "../locks";
+import { getObjectByKey } from "../utils";
+import { mintProcessingBurn } from "./extendedFeeGateProcessing";
 
 export interface IMintPostProcessing {
   tokenClass: TokenClassKey;
@@ -70,154 +69,79 @@ export async function mintPostProcessing(ctx: GalaChainContext, data: IMintPostP
     return;
   }
 
-  // Assumptions: 
+  // Assumptions:
   // - both of these can be true on a single mint operation
   // - if both are true calculate the mint, lock amounts independently
   // - if both are true we should validate that the two % add up to <= 100% (TODO) or possibly lock whatever remainder post-burn? :/
 
   if (mintConfiguration.postMintBurn) {
-    await mintPostProcessingBurn(ctx, data);
+    await mintProcessingBurn(ctx, data);
   }
 
-  if (mintConfiguration.postMintLock) {
-    await mintPostProcessingLock(ctx, data);
+  if (mintConfiguration.postMintLock !== undefined) {
+    await mintPostProcessingLock(ctx, {
+      ...data,
+      lockConfiguration: mintConfiguration.postMintLock
+    });
   }
 }
 
-export async function mintPostProcessingBurn(ctx: GalaChainContext, data: IMintPostProcessing) {
-  const { tokenClass, tokens, owner, quantity, feeCode } = data;
+export interface IMintPostProcessingLock {
+  tokenClass: TokenClassKey;
+  tokens: TokenInstanceKey[];
+  owner: string;
+  quantity: BigNumber;
+  lockConfiguration: PostMintLockConfiguration;
+}
+
+export async function mintPostProcessingLock(ctx: GalaChainContext, data: IMintPostProcessingLock) {
+  const { tokenClass, tokens, owner, quantity, lockConfiguration } = data;
   const { collection, category, type, additionalKey } = tokenClass;
 
-  if (feeCode === undefined) {
-    return;
-  }
-
-  const tokenClassEntry: TokenClass | undefined = await getObjectByKey(
+  const tokenClassEntry: TokenClass = await getObjectByKey(
     ctx,
     TokenClass,
     TokenClass.getCompositeKeyFromParts(TokenClass.INDEX_KEY, [collection, category, type, additionalKey])
-  ).catch((e) => {
-    const chainError = ChainError.from(e);
-    if (chainError.matches(ErrorCode.NOT_FOUND)) {
-      return undefined;
-    } else {
-      throw chainError;
-    }
-  });
-
-  // only support burn-on-mint postprocessing for fungibles, initially.
-  // One could implement this for NFTs by slicing a trailing subset of the
-  // array of TokenInstanceKeys equal in length to the percentage and
-  // burning those individual instances,
-  // if one were so inclined.
-  if (tokenClassEntry === undefined || tokenClassEntry?.isNonFungible || tokens.length !== 1) {
-    ctx.logger.info(
-      `mintPostProcessingBurn called for NFT token. feeCode ${feeCode} and ` +
-        `TokenMintConfiguration for TokenClass ` +
-        `${[collection, category, type, additionalKey].join("|")} defined, howerver ` +
-        `mintPostProcessingBurn does not yet support NFT post-mint burns.`
-    );
-
-    return;
-  }
-
-  const token: TokenInstanceKey = tokens[0];
-
-  const feeCodeDefinitions: FeeCodeDefinition[] = await getObjectsByPartialCompositeKey(
-    ctx,
-    FeeCodeDefinition.INDEX_KEY,
-    [feeCode],
-    FeeCodeDefinition
   );
 
-  const postMintBurnFeeDefinitions: FeeCodeDefinition[] = feeCodeDefinitions.filter((d) => {
-    return d.feeAccelerationRateType === FeeAccelerationRateType.Custom;
-  });
+  const { lockName, lockAuthority, expirationModifier, lockPercentage } = lockConfiguration;
 
-  const postMintBurnDefinition: FeeCodeDefinition | undefined = postMintBurnFeeDefinitions.pop();
+  const mintQuantityToLock = quantity.times(lockPercentage).integerValue(BigNumber.ROUND_DOWN);
 
-  if (postMintBurnDefinition === undefined) {
-    return;
-  }
-
-  const mintQuantityToBurn = quantity
-    .times(postMintBurnDefinition.feeAccelerationRate)
-    .integerValue(BigNumber.ROUND_DOWN);
-
-  await burnTokens(ctx, {
-    owner,
-    toBurn: [{ tokenInstanceKey: token, quantity: mintQuantityToBurn }],
-    preValidated: true
-  });
-}
-
-export async function mintPostProcessingLock(ctx: GalaChainContext, data: IMintPostProcessing) {
-  const { tokenClass, tokens, owner, quantity, feeCode } = data;
-  const { collection, category, type, additionalKey } = tokenClass;
-
-  if (feeCode === undefined) {
-    return;
-  }
-
-  const tokenClassEntry: TokenClass | undefined = await getObjectByKey(
-    ctx,
-    TokenClass,
-    TokenClass.getCompositeKeyFromParts(TokenClass.INDEX_KEY, [collection, category, type, additionalKey])
-  ).catch((e) => {
-    const chainError = ChainError.from(e);
-    if (chainError.matches(ErrorCode.NOT_FOUND)) {
-      return undefined;
-    } else {
-      throw chainError;
-    }
-  });
+  const verifyAuthorizedOnBehalf = async (c: TokenClassKey) => undefined;
 
   // only support lock-on-mint postprocessing for fungibles, initially.
   // we would need to know a specific instance to lock for NFTs
-  if (tokenClassEntry === undefined || tokenClassEntry?.isNonFungible || tokens.length !== 1) {
+  if (tokenClassEntry.isNonFungible) {
     ctx.logger.info(
-      `mintPostProcessingLock called for NFT token. feeCode ${feeCode} and ` +
-        `TokenMintConfiguration for TokenClass ` +
-        `${[collection, category, type, additionalKey].join("|")} defined, however ` +
+      `mintPostProcessingLock called for NFT token(s) [${tokens.length}] ` +
+        `minted for owner ${owner}. TokenMintConfiguration for TokenClass ` +
+        `${[collection, category, type, additionalKey].join("|")} with ` +
+        `postMintLock configuration defined, however ` +
         `mintPostProcessingLock does not yet support NFT post-mint locks.`
     );
 
     return;
-  }
+  } else {
+    const instance = TokenInstance.FUNGIBLE_TOKEN_INSTANCE;
 
-  const token: TokenInstanceKey = tokens[0];
+    const token: TokenInstanceKey = await createValidDTO(TokenInstanceKey, {
+      collection,
+      category,
+      type,
+      additionalKey,
+      instance
+    });
 
-  const feeCodeDefinitions: FeeCodeDefinition[] = await getObjectsByPartialCompositeKey(
-    ctx,
-    FeeCodeDefinition.INDEX_KEY,
-    [feeCode],
-    FeeCodeDefinition
-  );
-
-  const postMintLockFeeDefinitions: FeeCodeDefinition[] = feeCodeDefinitions.filter((d) => {
-    return d.feeAccelerationRateType === FeeAccelerationRateType.Custom;
-  });
-
-  const postMintLockDefinition: FeeCodeDefinition | undefined = postMintLockFeeDefinitions.pop();
-
-  if (postMintLockDefinition === undefined) {
-    return;
-  }
-
-  const mintQuantityToLock = quantity
-    .times(postMintLockDefinition.feeAccelerationRate) // using feeAccelerationRate for % to lock
-    .integerValue(BigNumber.ROUND_DOWN);
-
-  // TODO: need to figure out where values come from (feeDefinition/mintconfiguration?) (name, authority, expiration)
-  const verifyAuthorizedOnBehalf = async (c: TokenClassKey) => undefined
-  await lockTokens(ctx, {
-      tokenInstances: [{tokenInstanceKey: token, quantity: mintQuantityToLock}],
+    await lockTokens(ctx, {
+      tokenInstances: [{ tokenInstanceKey: token, quantity: mintQuantityToLock }],
       allowancesToUse: [],
-      name: `MINT_LOCK_${ctx.txUnixTime}`, // maybe comes from definition?
-      lockAuthority: "client|MINT_LOCK_AUTHORITY", // should come from definition or configuration
-      expires: ctx.txUnixTime + 2592000000, // 30 days, should come from definition or configuration
+      name: `${lockName}_${ctx.stub.getTxID()}`,
+      lockAuthority: lockAuthority,
+      expires: ctx.txUnixTime + expirationModifier,
       verifyAuthorizedOnBehalf
-  });
+    });
+  }
 }
 
 export async function mintTokenExitGate(
@@ -234,4 +158,40 @@ export async function mintTokenExitGate(
   }
 
   await mintPostProcessing(ctx, { tokenClass, owner, tokens, quantity });
+}
+
+export async function mintTokenWithAllowanceExitGate(
+  ctx: GalaChainContext,
+  dto: MintTokenWithAllowanceDto,
+  response: GalaChainResponse<TokenInstanceKey[]>
+): Promise<void> {
+  const { tokenClass, quantity } = dto;
+  const owner = dto.owner ?? ctx.callingUser;
+  const tokens: TokenInstanceKey[] | undefined = response.Data;
+
+  if (tokens === undefined || tokens.length < 1) {
+    return;
+  }
+
+  await mintPostProcessing(ctx, { tokenClass, owner, tokens, quantity });
+}
+
+export async function batchMintTokenExitGate(
+  ctx: GalaChainContext,
+  dto: BatchMintTokenDto,
+  response: GalaChainResponse<TokenInstanceKey[]>
+): Promise<void> {
+  for (const mintDto of dto.mintDtos) {
+    const { tokenClass, quantity } = mintDto;
+    const owner = mintDto.owner ?? ctx.callingUser;
+    // todo: batchMintToken currently returns a singular array of TokenInstanceKeys,
+    // and they are not ordered in a way that corresponds to the incoming mintDto.
+    // passing in the specific NFT instances minted per mintDto would require
+    // re-mapping the minted instances in the response to the input mintDtos.
+    // rework this if/when post mint processing of NFTs is added -
+    // for now, just passing in an empty array as placeholder.
+    const tokens: TokenInstanceKey[] = [];
+
+    await mintPostProcessing(ctx, { tokenClass, owner, tokens, quantity });
+  }
 }

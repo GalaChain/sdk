@@ -12,11 +12,86 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-import { IsBoolean, IsDefined, IsNotEmpty, IsOptional } from "class-validator";
+import { Type } from "class-transformer";
+import {
+  IsBoolean,
+  IsDefined,
+  IsInt,
+  IsNotEmpty,
+  IsNumber,
+  IsOptional,
+  Max,
+  Min,
+  ValidateNested
+} from "class-validator";
 
 import { ChainKey } from "../utils";
+import { IsUserAlias } from "../validators";
 import { ChainObject } from "./ChainObject";
-import { IsBigNumber } from "../validators";
+
+/**
+ * @description
+ *
+ * Configure properties that may be used in conjunction with
+ * a `TokenMintConfiguration` to lock some percentage of
+ * tokens minted as a post-mint action.
+ *
+ */
+export class PostMintLockConfiguration extends ChainObject {
+  /**
+   * @description
+   *
+   * This property will be used to create the `name` property
+   * of the `TokenHold` created on the user's balance.
+   *
+   */
+  @IsNotEmpty()
+  lockName: string;
+
+  /**
+   * @description
+   *
+   * This property will be used to create the `lockAuthority`
+   * property of the `TokenHold` created on the user's balance.
+   *
+   */
+  @IsNotEmpty()
+  @IsUserAlias()
+  lockAuthority: string;
+
+  /**
+   * @description
+   *
+   * This value will be used to set the `expires` property of
+   * the `TokenHold` property created on the user's balance.
+   *
+   * It will be added to the GalaChainContext.txUnixTime value
+   * which, at the time of this writing (Oct 2024), is
+   * represented in milliseconds.
+   *
+   * @example
+   *
+   * 2592000000 = 30 days (1000 * 60 * 60 * 24 * 30)
+   */
+  @IsNumber()
+  @IsInt()
+  expirationModifier: number;
+
+  /**
+   * @description
+   *
+   * Set the percentage of tokens that should be locked,
+   * post-mint.
+   *
+   * @example
+   *
+   * 0.25 = 25%
+   */
+  @IsNumber()
+  @Min(0)
+  @Max(1)
+  lockPercentage: number;
+}
 
 /**
  * @description
@@ -59,6 +134,24 @@ export class TokenMintConfiguration extends ChainObject {
    *
    * (optional) set as `true` to configure a specific
    * token class to potentially burn some amount of
+   * the quantity to-be-minted prior to executing
+   * the mint.
+   *
+   * @remarks
+   *
+   * Use in conjunction with `FeeCodeDefinition` chain objects
+   * and Fee Gates to set specific amounts and/or percentages
+   * to be burned.
+   */
+  @IsOptional()
+  @IsBoolean()
+  public preMintBurn?: boolean;
+
+  /**
+   * @description
+   *
+   * (optional) set as `true` to configure a specific
+   * token class to potentially burn some amount of
    * minted quantity post-mint.
    *
    * @remarks
@@ -87,6 +180,7 @@ export class TokenMintConfiguration extends ChainObject {
    *
    */
   @IsOptional()
-  @IsBigNumber()
-  public postMintLock?: string;
+  @ValidateNested()
+  @Type(() => PostMintLockConfiguration)
+  public postMintLock?: PostMintLockConfiguration;
 }
