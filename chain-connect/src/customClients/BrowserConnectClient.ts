@@ -15,7 +15,7 @@
 import { BrowserProvider, Eip1193Provider, getAddress } from "ethers";
 import { serialize } from "v8";
 
-import { WebSigner } from "../GalaChainClient";
+import { GalaChainProviderOptions, WebSigner } from "../GalaChainClient";
 import { ExtendedEip1193Provider } from "../helpers";
 import { SigningType } from "../types";
 import { generateEIP712Types } from "../utils";
@@ -29,8 +29,8 @@ declare global {
 export class BrowserConnectClient extends WebSigner {
   protected isInitialized = false;
 
-  constructor(provider?: Eip1193Provider) {
-    super();
+  constructor(provider?: Eip1193Provider, options?: GalaChainProviderOptions) {
+    super(options);
     this.address = "";
     this.onAccountsChanged = this.onAccountsChanged.bind(this);
     if (provider) {

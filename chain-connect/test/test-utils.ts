@@ -12,9 +12,10 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-export const mockFetch = (body: Record<string, unknown>, headers?: Record<string, string>) => {
+export const mockFetch = (body: Record<string, unknown>, headers?: Record<string, string>, ok = true) => {
   global.fetch = jest.fn((_url: string, _options?: Record<string, unknown>) =>
     Promise.resolve({
+      ok,
       json: () => Promise.resolve(body),
       headers: {
         get: (key: string) => headers?.[key]

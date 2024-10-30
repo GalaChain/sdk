@@ -131,7 +131,7 @@ describe("BrowserConnectClient", () => {
       message: "Unexpected token } in JSON at position 117",
       error: "Bad Request"
     };
-    mockFetch(mockResponse);
+    mockFetch(mockResponse, {}, false);
 
     // send dto payload in send function
     await client
