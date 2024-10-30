@@ -95,7 +95,7 @@ export async function mintProcessingBurn(ctx: GalaChainContext, data: IMintExten
 
   const mintQuantityToBurn = quantity
     .times(postMintBurnDefinition.feeAccelerationRate)
-    .integerValue(BigNumber.ROUND_DOWN);
+    .decimalPlaces(tokenClassEntry.decimals, BigNumber.ROUND_DOWN);
 
   // Only support burn-on-mint postprocessing for fungibles, initially.
   // One could implement this for NFTs by slicing a trailing subset of the

@@ -87,11 +87,12 @@ export async function batchFillTokenSwapFeeGate(ctx: GalaChainContext, dto: Batc
 }
 
 export async function batchMintTokenFeeGate(ctx: GalaChainContext, dto: BatchMintTokenDto) {
+  const feeCode = FeeGateCodes.BatchMintToken;
   const owners: string[] = extractUniqueOwnersFromRequests(ctx, dto.mintDtos);
 
   for (const owner of owners) {
     await galaFeeGate(ctx, {
-      feeCode: FeeGateCodes.BatchMintToken
+      feeCode
       // v1 fees requires only callingUser identities pay fees
       // uncomment below to require benefiting / initiating user to pay,
       // regardless of who executes the method
@@ -103,7 +104,7 @@ export async function batchMintTokenFeeGate(ctx: GalaChainContext, dto: BatchMin
     const { tokenClass, quantity } = mintDto;
     const owner = mintDto.owner ?? ctx.callingUser;
 
-    await mintPreProcessing(ctx, { tokenClass, owner, quantity });
+    await mintPreProcessing(ctx, { feeCode, tokenClass, owner, quantity });
   }
 
   return Promise.resolve();
@@ -177,13 +178,14 @@ export async function highThroughputMintAllowanceFulfillFeeGate(
 }
 
 export async function mintTokenFeeGate(ctx: GalaChainContext, dto: MintTokenDto) {
+  const feeCode = FeeGateCodes.MintToken;
   const { tokenClass, quantity } = dto;
   const owner = dto.owner ?? ctx.callingUser;
 
-  await mintPreProcessing(ctx, { tokenClass, owner, quantity });
+  await mintPreProcessing(ctx, { feeCode, tokenClass, owner, quantity });
 
   return galaFeeGate(ctx, {
-    feeCode: FeeGateCodes.MintToken
+    feeCode
     // v1 fees requires only callingUser identities pay fees
     // uncomment below to require benefiting / initiating user to pay,
     // regardless of who executes the method

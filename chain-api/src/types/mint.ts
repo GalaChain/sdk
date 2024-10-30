@@ -397,7 +397,8 @@ export class TokenMintConfigurationDto extends ChainCallDTO {
     description: "Set `true` to enable locking a percentage of each quantity minted"
   })
   @IsOptional()
-  @IsBoolean()
+  @ValidateNested()
+  @Type(() => PostMintLockConfiguration)
   postMintLock?: PostMintLockConfiguration;
 }
 
