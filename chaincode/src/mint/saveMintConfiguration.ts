@@ -13,6 +13,7 @@
  * limitations under the License.
  */
 import {
+  BurnToMintConfiguration,
   ChainError,
   ErrorCode,
   PostMintLockConfiguration,
@@ -30,8 +31,8 @@ export interface IMintConfiguration {
   category: string;
   type: string;
   additionalKey: string;
-  preMintBurn?: boolean;
-  postMintBurn?: boolean;
+  preMintBurn?: BurnToMintConfiguration;
+  postMintBurn?: BurnToMintConfiguration;
   postMintLock?: PostMintLockConfiguration;
 }
 
@@ -73,6 +74,8 @@ export async function saveTokenMintConfiguration(
 
     newConfiguration.postMintLock = postMintLock;
   }
+
+  newConfiguration.validatePostProcessingTotals();
 
   await putChainObject(ctx, newConfiguration);
 

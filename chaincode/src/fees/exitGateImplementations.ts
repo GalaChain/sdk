@@ -33,7 +33,7 @@ import BigNumber from "bignumber.js";
 import { lockTokens } from "../locks";
 import { GalaChainContext } from "../types";
 import { getObjectByKey } from "../utils";
-import { mintProcessingBurn } from "./extendedFeeGateProcessing";
+import { burnToMintProcessing } from "./extendedFeeGateProcessing";
 
 export interface IMintPostProcessing {
   tokenClass: TokenClassKey;
@@ -69,24 +69,22 @@ export async function mintPostProcessing(ctx: GalaChainContext, data: IMintPostP
     return;
   }
 
-  // Assumptions:
-  // - both of these can be true on a single mint operation
-  // - if both are true calculate the mint, lock amounts independently
-  // - if both are true we should validate that the two % add up to <= 100% (TODO) or possibly lock whatever remainder post-burn? :/
-
-  if (mintConfiguration.postMintBurn) {
-    await mintProcessingBurn(ctx, data);
+  if (mintConfiguration.postMintBurn !== undefined) {
+    await burnToMintProcessing(ctx, {
+      ...data,
+      burnConfiguration: mintConfiguration.postMintBurn
+    });
   }
 
   if (mintConfiguration.postMintLock !== undefined) {
-    await mintPostProcessingLock(ctx, {
+    await lockOnMintProcessing(ctx, {
       ...data,
       lockConfiguration: mintConfiguration.postMintLock
     });
   }
 }
 
-export interface IMintPostProcessingLock {
+export interface ILockOnMintProcessing {
   tokenClass: TokenClassKey;
   tokens: TokenInstanceKey[];
   owner: string;
@@ -94,7 +92,7 @@ export interface IMintPostProcessingLock {
   lockConfiguration: PostMintLockConfiguration;
 }
 
-export async function mintPostProcessingLock(ctx: GalaChainContext, data: IMintPostProcessingLock) {
+export async function lockOnMintProcessing(ctx: GalaChainContext, data: ILockOnMintProcessing) {
   const { tokenClass, tokens, owner, quantity, lockConfiguration } = data;
   const { collection, category, type, additionalKey } = tokenClass;
 
@@ -114,11 +112,11 @@ export async function mintPostProcessingLock(ctx: GalaChainContext, data: IMintP
   // we would need to know a specific instance to lock for NFTs
   if (tokenClassEntry.isNonFungible) {
     ctx.logger.info(
-      `mintPostProcessingLock called for NFT token(s) [${tokens.length}] ` +
+      `lockOnMintProcessing called for NFT token(s) [${tokens.length}] ` +
         `minted for owner ${owner}. TokenMintConfiguration for TokenClass ` +
         `${[collection, category, type, additionalKey].join("|")} with ` +
         `postMintLock configuration defined, however ` +
-        `mintPostProcessingLock does not yet support NFT post-mint locks.`
+        `lockOnMintProcessing does not yet support NFT post-mint locks.`
     );
 
     return;

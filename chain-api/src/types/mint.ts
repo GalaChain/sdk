@@ -30,7 +30,11 @@ import { JSONSchema } from "class-validator-jsonschema";
 
 import { ArrayUniqueObjects, BigNumberIsNotNegative, BigNumberProperty, IsUserAlias } from "../validators";
 import { TokenClassKey } from "./TokenClass";
-import { PostMintLockConfiguration, TokenMintConfiguration } from "./TokenMintConfiguration";
+import {
+  BurnToMintConfiguration,
+  PostMintLockConfiguration,
+  TokenMintConfiguration
+} from "./TokenMintConfiguration";
 import { AllowanceKey, MintRequestDto } from "./common";
 import { ChainCallDTO } from "./dtos";
 
@@ -379,22 +383,28 @@ export class TokenMintConfigurationDto extends ChainCallDTO {
 
   @JSONSchema({
     description:
-      "Set `true` to require a burn equal to a percentage of the quantity to-be-minted " +
-      "prior to executing the mint action."
+      "(optional) Specify a `BurnToMintConfiguration` to require a burn equal to a " +
+      "percentage of the quantity to-be-minted prior to executing the mint action."
   })
   @IsOptional()
-  @IsBoolean()
-  preMintBurn?: boolean;
+  @ValidateNested()
+  @Type(() => BurnToMintConfiguration)
+  preMintBurn?: BurnToMintConfiguration;
 
   @JSONSchema({
-    description: "Set `true` to enable burning a percentage of each quantity minted"
+    description:
+      "(optional) Specify a `BurnToMintConfiguration` to enable burning a " +
+      "percentage of each quantity minted"
   })
   @IsOptional()
-  @IsBoolean()
-  postMintBurn?: boolean;
+  @ValidateNested()
+  @Type(() => BurnToMintConfiguration)
+  postMintBurn?: BurnToMintConfiguration;
 
   @JSONSchema({
-    description: "Set `true` to enable locking a percentage of each quantity minted"
+    description:
+      "(optional) Specify a `PostMintLockConfiguration` to enable " +
+      "locking a percentage of each quantity minted"
   })
   @IsOptional()
   @ValidateNested()

@@ -12,7 +12,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-import { Type } from "class-transformer";
+import { Exclude, Type } from "class-transformer";
 import {
   IsBoolean,
   IsDefined,
@@ -25,7 +25,7 @@ import {
   ValidateNested
 } from "class-validator";
 
-import { ChainKey } from "../utils";
+import { ChainKey, ValidationFailedError } from "../utils";
 import { IsUserAlias } from "../validators";
 import { ChainObject } from "./ChainObject";
 
@@ -96,6 +96,31 @@ export class PostMintLockConfiguration extends ChainObject {
 /**
  * @description
  *
+ * Configure properties that may be used in conjunction with
+ * a `TokenMintConfiguration` to specify a pre-mint or post-mint
+ * burn of the token quantity being minted as part of the
+ * mint action.
+ */
+export class BurnToMintConfiguration extends ChainObject {
+  /**
+   * @description
+   *
+   * Percentage of tokens to be burned in conjunction with each
+   * mint action, expressed as a value between 0 and 1.
+   *
+   * @example
+   *
+   * 0.25 = 25%
+   */
+  @IsNumber()
+  @Min(0)
+  @Max(1)
+  burnPercentage: number;
+}
+
+/**
+ * @description
+ *
  * Configure mint configurations for specific token classes.
  * The chain key properties are expected to match a token
  * class.
@@ -132,38 +157,29 @@ export class TokenMintConfiguration extends ChainObject {
   /**
    * @description
    *
-   * (optional) set as `true` to configure a specific
+   * (optional) specify a `BurnToMintConfiguration` to configure a specific
    * token class to potentially burn some amount of
    * the quantity to-be-minted prior to executing
    * the mint.
    *
-   * @remarks
-   *
-   * Use in conjunction with `FeeCodeDefinition` chain objects
-   * and Fee Gates to set specific amounts and/or percentages
-   * to be burned.
    */
   @IsOptional()
-  @IsBoolean()
-  public preMintBurn?: boolean;
+  @ValidateNested()
+  @Type(() => BurnToMintConfiguration)
+  public preMintBurn?: BurnToMintConfiguration;
 
   /**
    * @description
    *
-   * (optional) set as `true` to configure a specific
+   * (optional) specify a `BurnToMintConfiguration` to configure a specific
    * token class to potentially burn some amount of
    * minted quantity post-mint.
    *
-   * @remarks
-   *
-   * Use in conjucntion with `FeeCodeDefintion` chain objects
-   * and Fee Exit Gates to set specific amounts and/or percentages
-   * to be burned.
-   *
    */
   @IsOptional()
-  @IsBoolean()
-  public postMintBurn?: boolean;
+  @ValidateNested()
+  @Type(() => BurnToMintConfiguration)
+  public postMintBurn?: BurnToMintConfiguration;
 
   /**
    * @description
@@ -183,4 +199,21 @@ export class TokenMintConfiguration extends ChainObject {
   @ValidateNested()
   @Type(() => PostMintLockConfiguration)
   public postMintLock?: PostMintLockConfiguration;
+
+  @Exclude()
+  public validatePostProcessingTotals() {
+    const burnPercentage: number | undefined = this.postMintBurn?.burnPercentage;
+    const lockPercentage: number | undefined = this.postMintLock?.lockPercentage;
+
+    if (burnPercentage !== undefined) {
+      const remainderPostBurn = 1 - burnPercentage;
+
+      if (lockPercentage !== undefined && lockPercentage > remainderPostBurn) {
+        throw new ValidationFailedError(
+          `TokenMintConfiguration specified a combined post-processing total ` +
+            `greater than 1 (100%): lockPercentage: ${lockPercentage}, burnPercentage: ${burnPercentage}`
+        );
+      }
+    }
+  }
 }

@@ -51,7 +51,7 @@ import { authorize } from "../contracts";
 import { KnownOracles } from "../oracle";
 import { GalaChainContext, createValidChainObject } from "../types";
 import { getObjectByKey, putChainObject } from "../utils";
-import { mintProcessingBurn } from "./extendedFeeGateProcessing";
+import { burnToMintProcessing } from "./extendedFeeGateProcessing";
 import { galaFeeGate, writeUsageAndCalculateFeeAmount } from "./galaFeeGate";
 import { payFeeFromCrossChannelAuthorization } from "./payFeeFromCrossChannelAuthorization";
 import { payFeeImmediatelyFromBalance } from "./payFeeImmediatelyFromBalance";
@@ -435,9 +435,10 @@ export async function mintPreProcessing(ctx: GalaChainContext, data: IMintPrePro
     return;
   }
 
-  if (mintConfiguration.preMintBurn) {
-    await mintProcessingBurn(ctx, {
+  if (mintConfiguration.preMintBurn !== undefined) {
+    await burnToMintProcessing(ctx, {
       ...data,
+      burnConfiguration: mintConfiguration.preMintBurn,
       tokens: []
     });
   }

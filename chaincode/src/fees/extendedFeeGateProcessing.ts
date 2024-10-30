@@ -20,6 +20,7 @@
  * entrance or exit fee gates.
  */
 import {
+  BurnToMintConfiguration,
   FeeAccelerationRateType,
   FeeCodeDefinition,
   FeeGateCodes,
@@ -27,6 +28,7 @@ import {
   TokenClassKey,
   TokenInstance,
   TokenInstanceKey,
+  TokenMintConfiguration,
   createValidDTO
 } from "@gala-chain/api";
 import BigNumber from "bignumber.js";
@@ -36,12 +38,13 @@ import { GalaChainContext } from "../types";
 import { getObjectByKey, getObjectsByPartialCompositeKey } from "../utils";
 import { userExemptFromFees } from "./userExemptFromFees";
 
-export interface IMintExtendedProcessing {
+export interface IBurnToMintProcessing {
   tokenClass: TokenClassKey;
   tokens: TokenInstanceKey[];
   owner: string;
   quantity: BigNumber;
   feeCode?: FeeGateCodes | undefined;
+  burnConfiguration: BurnToMintConfiguration;
 }
 
 /**
@@ -56,18 +59,18 @@ export interface IMintExtendedProcessing {
  * @param data
  * @returns
  */
-export async function mintProcessingBurn(ctx: GalaChainContext, data: IMintExtendedProcessing) {
-  const { tokenClass, tokens, owner, quantity, feeCode } = data;
+export async function burnToMintProcessing(ctx: GalaChainContext, data: IBurnToMintProcessing) {
+  const { tokenClass, tokens, owner, quantity, feeCode, burnConfiguration } = data;
   const { collection, category, type, additionalKey } = tokenClass;
 
-  if (feeCode === undefined) {
-    return;
-  }
+  const burnPercentage = burnConfiguration.burnPercentage;
 
-  const exemption = await userExemptFromFees(ctx, { user: owner, feeCode: feeCode });
+  if (feeCode) {
+    const exemption = await userExemptFromFees(ctx, { user: owner, feeCode: feeCode });
 
-  if (exemption) {
-    return;
+    if (exemption) {
+      return;
+    }
   }
 
   const tokenClassEntry: TokenClass = await getObjectByKey(
@@ -76,25 +79,8 @@ export async function mintProcessingBurn(ctx: GalaChainContext, data: IMintExten
     TokenClass.getCompositeKeyFromParts(TokenClass.INDEX_KEY, [collection, category, type, additionalKey])
   );
 
-  const feeCodeDefinitions: FeeCodeDefinition[] = await getObjectsByPartialCompositeKey(
-    ctx,
-    FeeCodeDefinition.INDEX_KEY,
-    [feeCode],
-    FeeCodeDefinition
-  );
-
-  const postMintBurnFeeDefinitions: FeeCodeDefinition[] = feeCodeDefinitions.filter((d) => {
-    return d.feeAccelerationRateType === FeeAccelerationRateType.Custom;
-  });
-
-  const postMintBurnDefinition: FeeCodeDefinition | undefined = postMintBurnFeeDefinitions.pop();
-
-  if (postMintBurnDefinition === undefined) {
-    return;
-  }
-
   const mintQuantityToBurn = quantity
-    .times(postMintBurnDefinition.feeAccelerationRate)
+    .times(burnPercentage)
     .decimalPlaces(tokenClassEntry.decimals, BigNumber.ROUND_DOWN);
 
   // Only support burn-on-mint postprocessing for fungibles, initially.
@@ -104,10 +90,10 @@ export async function mintProcessingBurn(ctx: GalaChainContext, data: IMintExten
   // if one were so inclined.
   if (tokenClassEntry.isNonFungible) {
     ctx.logger.info(
-      `mintProcessingBurn called for NFT token with tokens array of length ${tokens.length}. ` +
+      `burnToMintProcessing called for NFT token with tokens array of length ${tokens.length}. ` +
         `feeCode ${feeCode} and TokenMintConfiguration for TokenClass ` +
         `${[collection, category, type, additionalKey].join("|")} defined, however ` +
-        `mintProcessingBurn does not yet support NFT post-mint or pre-mint burns.`
+        `burnToMintProcessing does not yet support NFT post-mint or pre-mint burns.`
     );
 
     return;
