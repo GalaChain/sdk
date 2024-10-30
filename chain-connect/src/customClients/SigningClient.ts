@@ -15,7 +15,7 @@
 import { serialize } from "@gala-chain/api";
 import { SigningKey, computeAddress, ethers, hashMessage } from "ethers";
 
-import { CustomClient } from "../GalaChainClient";
+import { CustomClient, GalaChainProviderOptions } from "../GalaChainClient";
 import { calculatePersonalSignPrefix } from "../helpers";
 import { SigningType } from "../types";
 import { ethereumToGalaChainAddress, generateEIP712Types } from "../utils";
@@ -39,15 +39,15 @@ export class SigningClient extends CustomClient {
 
   private wallet: ethers.Wallet;
 
-  constructor(privateKey: string) {
-    super();
+  constructor(privateKey: string, options?: GalaChainProviderOptions) {
+    super(options);
     this.wallet = new ethers.Wallet(privateKey);
   }
 
   public async sign<U extends object>(
     method: string,
     payload: U,
-    signingType: SigningType = SigningType.SIGN_TYPED_DATA
+    signingType: SigningType = this.options?.signingType ?? SigningType.SIGN_TYPED_DATA
   ): Promise<U & { signature: string; prefix?: string }> {
     try {
       const prefix = calculatePersonalSignPrefix(payload);

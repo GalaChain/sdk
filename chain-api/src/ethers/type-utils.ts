@@ -12,24 +12,6 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-import BigNumber from "bignumber.js";
-
-import { NonFunctionProperties } from "../types";
-
-type NonFunctionPropertiesAndReplaceRecursive<T, From, To> = {
-  [K in keyof NonFunctionProperties<T>]: NonFunctionProperties<T>[K] extends From | undefined
-    ? Exclude<NonFunctionProperties<T>[K], From> extends undefined
-      ? To | undefined
-      : To
-    : NonFunctionProperties<T>[K] extends From
-      ? To
-      : NonFunctionProperties<T>[K] extends object
-        ? NonFunctionPropertiesAndReplaceRecursive<NonFunctionProperties<T>[K], From, To>
-        : NonFunctionProperties<T>[K];
-};
-
-export type ConstructorArgs<T> = NonFunctionPropertiesAndReplaceRecursive<T, BigNumber, string>;
-
 /**
  * The following types are from ethers maths.ts
  */

@@ -12,15 +12,12 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-import {
-  NonFunctionProperties,
-  RegisterEthUserDto,
-  RegisterUserDto,
-  UpdatePublicKeyDto
-} from "@gala-chain/api";
+import { RegisterEthUserDto, RegisterUserDto, UpdatePublicKeyDto } from "@gala-chain/api";
 
-type RegisterUserRequest = NonFunctionProperties<RegisterUserDto>;
-type RegisterEthUserRequest = NonFunctionProperties<RegisterEthUserDto>;
-type UpdatePublicKeyRequest = NonFunctionProperties<UpdatePublicKeyDto>;
+import { ConstructorArgs } from "./utils";
+
+type RegisterUserRequest = ConstructorArgs<RegisterUserDto>;
+type RegisterEthUserRequest = ConstructorArgs<RegisterEthUserDto>;
+type UpdatePublicKeyRequest = ConstructorArgs<UpdatePublicKeyDto>;
 
 export { RegisterUserRequest, RegisterEthUserRequest, UpdatePublicKeyRequest };

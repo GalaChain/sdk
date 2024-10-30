@@ -21,11 +21,11 @@ import {
   NonFunctionProperties
 } from "@gala-chain/api";
 
-import { PublicProperties } from "./utils";
+import { ConstructorArgs, PublicProperties } from "./utils";
 
-type DryRunRequest = PublicProperties<NonFunctionProperties<DryRunDto>>;
-type GetObjectByKeyRequest = PublicProperties<NonFunctionProperties<GetObjectDto>>;
-type GetObjectHistoryRequest = PublicProperties<NonFunctionProperties<GetObjectHistoryDto>>;
+type DryRunRequest = PublicProperties<ConstructorArgs<DryRunDto>>;
+type GetObjectByKeyRequest = PublicProperties<ConstructorArgs<GetObjectDto>>;
+type GetObjectHistoryRequest = PublicProperties<ConstructorArgs<GetObjectHistoryDto>>;
 
 export {
   DryRunRequest,
