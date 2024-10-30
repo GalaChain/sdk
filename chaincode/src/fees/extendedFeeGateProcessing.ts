@@ -24,6 +24,7 @@ import {
   FeeAccelerationRateType,
   FeeCodeDefinition,
   FeeGateCodes,
+  PaymentRequiredError,
   TokenClass,
   TokenClassKey,
   TokenInstance,
@@ -112,6 +113,11 @@ export async function burnToMintProcessing(ctx: GalaChainContext, data: IBurnToM
       owner,
       toBurn: [{ tokenInstanceKey: token, quantity: mintQuantityToBurn }],
       preValidated: true
+    }).catch((e) => {
+      throw new PaymentRequiredError(
+        `burnToMintProcessing failure for ${token.toStringKey()}: ${e.message}`,
+        { paymentToken: token, paymentQuantity: mintQuantityToBurn }
+      );
     });
   }
 }

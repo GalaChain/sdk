@@ -35,6 +35,7 @@ import {
   OracleBridgeFeeAssertionDto,
   OracleDefinition,
   OraclePriceAssertion,
+  PaymentRequiredError,
   RequestTokenBridgeOutDto,
   TerminateTokenSwapDto,
   TokenClassKey,
@@ -100,11 +101,26 @@ export async function batchMintTokenFeeGate(ctx: GalaChainContext, dto: BatchMin
     });
   }
 
+  const batchPayments: PaymentRequiredError[] = [];
+
   for (const mintDto of dto.mintDtos) {
     const { tokenClass, quantity } = mintDto;
     const owner = mintDto.owner ?? ctx.callingUser;
 
-    await mintPreProcessing(ctx, { feeCode, tokenClass, owner, quantity });
+    await combinedMintFees(ctx, { feeCode, tokenClass, owner, quantity }).catch((e) => {
+      if (e instanceof ChainError && e.code === ErrorCode.PAYMENT_REQUIRED) {
+        batchPayments.push(e);
+      } else {
+        throw e;
+      }
+    });
+  }
+
+  if (batchPayments.length > 0) {
+    throw new PaymentRequiredError(
+      `batchMintToken failed with ${batchPayments.length} payment required errors`,
+      { payments: batchPayments }
+    );
   }
 
   return Promise.resolve();
@@ -126,10 +142,11 @@ export async function highThroughputMintRequestFeeGate(
   ctx: GalaChainContext,
   dto: HighThroughputMintTokenDto
 ) {
-  return galaFeeGate(ctx, {
-    feeCode: FeeGateCodes.HighThroughputMintRequest,
-    activeUser: dto.owner ?? ctx.callingUser
-  });
+  const { tokenClass, quantity } = dto;
+  const owner = dto.owner ?? ctx.callingUser;
+  const feeCode = FeeGateCodes.HighThroughputMintRequest;
+
+  await combinedMintFees(ctx, { feeCode, tokenClass, owner, quantity });
 }
 
 export async function highThroughputMintFulfillFeeGate(ctx: GalaChainContext, dto: FulfillMintDto) {
@@ -182,30 +199,15 @@ export async function mintTokenFeeGate(ctx: GalaChainContext, dto: MintTokenDto)
   const { tokenClass, quantity } = dto;
   const owner = dto.owner ?? ctx.callingUser;
 
-  await mintPreProcessing(ctx, { feeCode, tokenClass, owner, quantity });
-
-  return galaFeeGate(ctx, {
-    feeCode
-    // v1 fees requires only callingUser identities pay fees
-    // uncomment below to require benefiting / initiating user to pay,
-    // regardless of who executes the method
-    // activeUser: dto.owner ?? ctx.callingUser
-  });
+  await combinedMintFees(ctx, { feeCode, tokenClass, owner, quantity });
 }
 
 export async function mintTokenWithAllowanceFeeGate(ctx: GalaChainContext, dto: MintTokenWithAllowanceDto) {
   const { tokenClass, quantity } = dto;
   const owner = dto.owner ?? ctx.callingUser;
+  const feeCode = FeeGateCodes.MintTokenWithAllowance;
 
-  await mintPreProcessing(ctx, { tokenClass, owner, quantity });
-
-  return galaFeeGate(ctx, {
-    feeCode: FeeGateCodes.MintTokenWithAllowance
-    // v1 fees requires only callingUser identities pay fees
-    // uncomment below to require benefiting / initiating user to pay,
-    // regardless of who executes the method
-    // activeUser: dto.owner ?? ctx.callingUser
-  });
+  await combinedMintFees(ctx, { feeCode, tokenClass, owner, quantity });
 }
 
 export async function requestTokenBridgeOutFeeGate(ctx: GalaChainContext, dto: RequestTokenBridgeOutDto) {
@@ -440,6 +442,45 @@ export async function mintPreProcessing(ctx: GalaChainContext, data: IMintPrePro
       ...data,
       burnConfiguration: mintConfiguration.preMintBurn,
       tokens: []
+    });
+  }
+}
+
+export interface ICombinedMintFees {
+  feeCode: FeeGateCodes;
+  tokenClass: TokenClassKey;
+  quantity: BigNumber;
+  owner: string;
+}
+
+export async function combinedMintFees(ctx: GalaChainContext, data: ICombinedMintFees): Promise<void> {
+  const paymentErrors: PaymentRequiredError[] = [];
+
+  await mintPreProcessing(ctx, data).catch((e) => {
+    if (e instanceof ChainError && e.code === ErrorCode.PAYMENT_REQUIRED) {
+      paymentErrors.push(e);
+    } else {
+      throw e;
+    }
+  });
+
+  await galaFeeGate(ctx, {
+    feeCode: data.feeCode
+    // v1 fees requires only callingUser identities pay fees
+    // uncomment below to require benefiting / initiating user to pay,
+    // regardless of who executes the method
+    // activeUser: dto.owner ?? ctx.callingUser
+  }).catch((e) => {
+    if (e instanceof ChainError && e.code === ErrorCode.PAYMENT_REQUIRED) {
+      paymentErrors.push(e);
+    } else {
+      throw e;
+    }
+  });
+
+  if (paymentErrors.length > 0) {
+    throw new PaymentRequiredError(`Payment required: ${paymentErrors.length} fee payments to resolve`, {
+      payments: paymentErrors
     });
   }
 }
