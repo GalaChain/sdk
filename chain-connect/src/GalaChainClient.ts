@@ -25,7 +25,26 @@ type NonArrayClassConstructor<T> = T extends Array<unknown>
   ? ClassConstructor<T[number]>
   : ClassConstructor<T>;
 
+export interface GalaChainProviderOptions {
+  signingType?: SigningType;
+  legacyCredentials?: {
+    identityLookupKey: string;
+    userEncryptionKey: string;
+  };
+}
+
 export abstract class GalaChainProvider {
+  private legacyCredentials: Record<string, string>;
+
+  constructor(protected options?: GalaChainProviderOptions) {
+    if (options?.legacyCredentials) {
+      this.legacyCredentials = {
+        "X-Identity-Lookup-Key": options.legacyCredentials.identityLookupKey,
+        "X-User-Encryption-Key": options.legacyCredentials.userEncryptionKey
+      };
+    }
+  }
+
   abstract sign<T extends object>(
     method: string,
     dto: T,
@@ -39,13 +58,13 @@ export abstract class GalaChainProvider {
     headers = {},
     requestConstructor,
     responseConstructor,
-    signingType
+    signingType = this.options?.signingType ?? SigningType.SIGN_TYPED_DATA
   }: {
     url: string;
     method: string;
     payload: ConstructorArgs<U>;
     sign?: boolean;
-    headers?: object;
+    headers?: Record<string, string>;
     requestConstructor?: ClassConstructor<ChainCallDTO>;
     responseConstructor?: NonArrayClassConstructor<T>;
     signingType?: SigningType;
@@ -79,6 +98,7 @@ export abstract class GalaChainProvider {
       body: serialize(newPayload),
       headers: {
         "Content-Type": "application/json",
+        ...this.legacyCredentials,
         ...headers
       }
     });
@@ -107,6 +127,10 @@ export abstract class GalaChainProvider {
 }
 
 export abstract class CustomClient extends GalaChainProvider {
+  constructor(options?: GalaChainProviderOptions) {
+    super(options);
+  }
+
   abstract getPublicKey(): Promise<{ publicKey: string; recoveredAddress: string }>;
   abstract ethereumAddress: string;
   abstract galaChainAddress: string;
@@ -128,6 +152,11 @@ export abstract class CustomClient extends GalaChainProvider {
 export abstract class WebSigner extends CustomClient {
   protected address: string;
   protected provider: BrowserProvider | undefined;
+
+  constructor(options?: GalaChainProviderOptions) {
+    super(options);
+  }
+
   abstract connect(): Promise<string>;
 
   set ethereumAddress(val: string) {
