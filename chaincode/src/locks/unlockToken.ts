@@ -31,7 +31,7 @@ export interface UnlockTokenParams {
   tokenInstanceKey: TokenInstanceKey;
   name: string | undefined;
   quantity: BigNumber | undefined;
-  owner?: UserAlias | undefined;
+  owner: UserAlias | undefined;
 }
 
 export async function unlockToken(
@@ -47,10 +47,6 @@ export async function unlockToken(
   // owner is always present for NFT instances - throwing to detect potential issues
   if (tokenInstance.owner === undefined) {
     throw new RuntimeError(`Token instance ${tokenInstanceKey.toStringKey()} has no owner`);
-  }
-
-  if (owner !== undefined && tokenInstance.owner !== owner) {
-    throw new UnlockForbiddenUserError(owner, tokenInstanceKey.toStringKey());
   }
 
   const balance = await fetchOrCreateBalance(ctx, tokenInstance.owner, tokenInstanceKey.getTokenClassKey());
