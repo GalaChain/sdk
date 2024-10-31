@@ -32,17 +32,11 @@ import {
 } from "class-validator";
 import { JSONSchema } from "class-validator-jsonschema";
 
-import {
-  BigNumberIsNotNegative,
-  BigNumberIsPositive,
-  BigNumberProperty,
-  IsUserAlias,
-  IsUserRef
-} from "../validators";
+import { BigNumberIsNotNegative, BigNumberIsPositive, BigNumberProperty, IsUserRef } from "../validators";
 import { TokenBalance } from "./TokenBalance";
 import { TokenClass, TokenClassKey } from "./TokenClass";
 import { TokenInstance, TokenInstanceKey } from "./TokenInstance";
-import { UserAlias, UserRef } from "./UserAlias";
+import { UserRef } from "./UserAlias";
 import { ChainCallDTO, SubmitCallDTO } from "./dtos";
 
 @JSONSchema({
@@ -332,10 +326,10 @@ export class UpdateTokenClassDto extends SubmitCallDTO {
       "Only token authorities can give mint allowances. " +
       "By default the calling user becomes a single token authority. "
   })
-  @IsUserAlias({ each: true })
+  @IsUserRef({ each: true })
   @IsOptional()
   @ArrayNotEmpty()
-  authorities?: UserAlias[];
+  authorities?: UserRef[];
 
   @JSONSchema({
     description:

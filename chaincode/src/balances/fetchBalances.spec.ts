@@ -1,4 +1,4 @@
-import { FetchBalancesDto, TokenBalance, createValidDTO } from "@gala-chain/api";
+import { FetchBalancesDto, TokenBalance, asValidUserRef, createValidDTO } from "@gala-chain/api";
 import { currency, fixture, transactionSuccess, users } from "@gala-chain/test";
 import BigNumber from "bignumber.js";
 
@@ -46,10 +46,12 @@ it("should fetch balances by any user ref", async () => {
 
   const { contract, ctx } = fixture(GalaChainTokenContract).registeredUsers(user).savedState(balance);
 
-  const dto1 = await createValidDTO(FetchBalancesDto, { owner: user.identityKey });
-  const dto2 = await createValidDTO(FetchBalancesDto, { owner: user.ethAddress });
-  const dto3 = await createValidDTO(FetchBalancesDto, { owner: user.ethAddress.toLowerCase() });
-  const dto4 = await createValidDTO(FetchBalancesDto, { owner: `0x${user.ethAddress}` });
+  const dto1 = await createValidDTO(FetchBalancesDto, { owner: asValidUserRef(user.identityKey) });
+  const dto2 = await createValidDTO(FetchBalancesDto, { owner: asValidUserRef(user.ethAddress) });
+  const dto3 = await createValidDTO(FetchBalancesDto, {
+    owner: asValidUserRef(user.ethAddress.toLowerCase())
+  });
+  const dto4 = await createValidDTO(FetchBalancesDto, { owner: asValidUserRef(`0x${user.ethAddress}`) });
 
   // When
   const result1 = await contract.FetchBalances(ctx, dto1);

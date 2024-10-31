@@ -154,8 +154,11 @@ export default class GalaChainTokenContract extends GalaContract {
     out: TokenClassKey,
     allowedOrgs: ["CuratorOrg"]
   })
-  public UpdateTokenClass(ctx: GalaChainContext, dto: UpdateTokenClassDto): Promise<TokenClassKey> {
-    return updateTokenClass(ctx, dto);
+  public async UpdateTokenClass(ctx: GalaChainContext, dto: UpdateTokenClassDto): Promise<TokenClassKey> {
+    const authorities = dto.authorities
+      ? await Promise.all(dto.authorities.map((a) => resolveUserAlias(ctx, a)))
+      : undefined;
+    return updateTokenClass(ctx, { ...dto, authorities });
   }
 
   @GalaTransaction({
