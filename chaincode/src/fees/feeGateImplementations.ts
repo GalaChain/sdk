@@ -35,6 +35,7 @@ import {
   OracleBridgeFeeAssertionDto,
   OracleDefinition,
   OraclePriceAssertion,
+  OraclePriceCrossRateAssertion,
   PaymentRequiredError,
   RequestTokenBridgeOutDto,
   TerminateTokenSwapDto,
@@ -333,6 +334,7 @@ export async function requestTokenBridgeOutFeeGate(ctx: GalaChainContext, dto: R
 
   const {
     galaExchangeRate,
+    galaExchangeCrossRate,
     galaDecimals,
     bridgeToken,
     bridgeTokenIsNonFungible,
@@ -360,10 +362,20 @@ export async function requestTokenBridgeOutFeeGate(ctx: GalaChainContext, dto: R
     timestamp
   });
 
-  bridgeFeeAssertionRecord.galaExchangeRate = await createValidChainObject(OraclePriceAssertion, {
-    ...galaExchangeRate,
-    txid
-  });
+  if (galaExchangeRate !== undefined) {
+    bridgeFeeAssertionRecord.galaExchangeRate = await createValidChainObject(OraclePriceAssertion, {
+      ...galaExchangeRate,
+      txid
+    });
+  } else if (galaExchangeCrossRate !== undefined) {
+    bridgeFeeAssertionRecord.galaExchangeCrossRate = await createValidChainObject(
+      OraclePriceCrossRateAssertion,
+      {
+        ...galaExchangeCrossRate,
+        txid
+      }
+    );
+  }
 
   await putChainObject(ctx, bridgeFeeAssertionRecord);
 }

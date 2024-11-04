@@ -137,15 +137,29 @@ export class OraclePriceAssertionDto extends ChainCallDTO {
   public identity: string;
 
   @JSONSchema({
-    description: "First currency in the described currency pair. Unit of exchange."
+    description:
+      "First currency in the described currency pair. Unit of exchange. " +
+      "Optional, but required if externalBaseToken is not provided."
   })
+  @ValidateIf((assertion) => !!assertion.externalBaseToken)
   @ValidateNested()
   @Type(() => TokenInstanceKey)
-  baseToken: TokenInstanceKey;
+  baseToken?: TokenInstanceKey;
 
   @JSONSchema({
     description:
-      "Second token/currency in the pair. Token/Currency in which the baseToken is quoted. Optional, but required if externalQuoteToken is not provided."
+      "External token representing the first currency in the described currency pair. " +
+      "Unit of exchange. Optional, but required if baseToken is not provided."
+  })
+  @ValidateIf((assertion) => !!assertion.baseToken)
+  @ValidateNested()
+  @Type(() => ExternalToken)
+  externalBaseToken?: ExternalToken;
+
+  @JSONSchema({
+    description:
+      "Second token/currency in the pair. Token/Currency in which the baseToken is quoted. " +
+      "Optional, but required if externalQuoteToken is not provided."
   })
   @ValidateIf((o) => !!o.externalQuoteToken)
   @ValidateNested()
@@ -235,40 +249,72 @@ export class OraclePriceCrossRateAssertionDto extends ChainCallDTO {
   @Type(() => OraclePriceAssertionDto)
   quoteTokenCrossRate: OraclePriceAssertionDto;
 
-  // todo: consider supporting external tokens here as well
   @JSONSchema({
     description:
-      "Comparative token used to price both the base and quote tokens in order to calculate an exchange cross-rate."
+      "Comparative token used to price both the base and quote tokens in order to " +
+      "calculate an exchange cross-rate. Optional, but required if externalCrossRateToken is " +
+      "not provided."
   })
+  @ValidateIf((assertion) => !!assertion.externalCrossRateToken)
   @ValidateNested()
   @Type(() => TokenInstanceKey)
-  crossRateToken: TokenInstanceKey;
+  crossRateToken?: TokenInstanceKey;
 
-  // todo: maybe we don't require this to be set, we just always calculate it
-  // arguably this is duplication, or maybe unnecessary validation steps
-  // maybe calculate it and write it in the chain data structure, but don't specify it in the DTO
-  // @JSONSchema({
-  //   description: "Cross rate for baseToken and quoteToken, calculated from the crossRateToken exchange rates."
-  // })
-  // @BigNumberProperty()
-  // crossRate: BigNumber;
+  @JSONSchema({
+    description:
+      "Comparative token used to price both the base and quote tokens in order to " +
+      "calculate an exchange cross-rate. Optional, but required if crossRateToken is not provided."
+  })
+  @ValidateIf((assertion) => !!assertion.crossRateToken)
+  @ValidateNested()
+  @Type(() => ExternalToken)
+  externalCrossRateToken?: ExternalToken;
+
+  @JSONSchema({
+    description: "Cross rate for baseToken and quoteToken, calculated from the crossRateToken exchange rates."
+  })
+  @BigNumberProperty()
+  crossRate: BigNumber;
 
   @Exclude()
   public validateCrossRateTokenKeys() {
+    const crossRateToken: TokenInstanceKey | undefined = this.crossRateToken;
     const baseTokenCrossRateToken: TokenInstanceKey | undefined = this.baseTokenCrossRate.quoteToken;
     const quoteTokenCrossRateToken: TokenInstanceKey | undefined = this.quoteTokenCrossRate.quoteToken;
 
-    if (baseTokenCrossRateToken === undefined || quoteTokenCrossRateToken === undefined) {
-      throw new NotImplementedError(
-        `External token support is not yet implemented for cross rate exchange assertions`
-      );
-    }
+    const externalCrossRateToken: ExternalToken | undefined = this.externalCrossRateToken;
+    const baseTokenExternalCrossRateToken: ExternalToken | undefined =
+      this.baseTokenCrossRate.externalQuoteToken;
+    const quoteTokenExternalCrossRateToken: ExternalToken | undefined =
+      this.quoteTokenCrossRate.externalQuoteToken;
 
-    if (baseTokenCrossRateToken.toStringKey() !== quoteTokenCrossRateToken.toStringKey()) {
+    if (crossRateToken === undefined && externalCrossRateToken === undefined) {
+      throw new ValidationFailedError(
+        `Neither crossRateToken nor externalCrossRateToken defined on OraclePriceCrossRateAssertionDto, both undefined`
+      );
+    } else if (
+      crossRateToken !== undefined &&
+      (baseTokenCrossRateToken === undefined ||
+        quoteTokenCrossRateToken === undefined ||
+        crossRateToken.toStringKey() !== baseTokenCrossRateToken?.toStringKey() ||
+        crossRateToken.toStringKey() !== quoteTokenCrossRateToken?.toStringKey())
+    ) {
       throw new ValidationFailedError(
         `Cross rate validation failed: ` +
-          `baseToken cross-quoted in ${baseTokenCrossRateToken.toStringKey()} but ` +
-          `quoteToken cross-quoted in ${quoteTokenCrossRateToken.toStringKey()}`
+          `baseToken cross-quoted in ${baseTokenCrossRateToken?.toStringKey()} but ` +
+          `quoteToken cross-quoted in ${quoteTokenCrossRateToken?.toStringKey()}`
+      );
+    } else if (
+      externalCrossRateToken !== undefined &&
+      (baseTokenExternalCrossRateToken === undefined ||
+        quoteTokenExternalCrossRateToken === undefined ||
+        externalCrossRateToken.symbol !== baseTokenExternalCrossRateToken.symbol ||
+        externalCrossRateToken.symbol !== quoteTokenExternalCrossRateToken.symbol)
+    ) {
+      throw new ValidationFailedError(
+        `Cross rate validation failed: ` +
+          `baseToken cross-quoted in ${baseTokenExternalCrossRateToken?.symbol} but ` +
+          `quoteToken cross-quoted in ${quoteTokenExternalCrossRateToken?.symbol}`
       );
     }
   }
@@ -284,16 +330,17 @@ export class OraclePriceCrossRateAssertionDto extends ChainCallDTO {
 
     return calculatedCrossRate;
   }
-  // @Exclude()
-  // public validateCrossRate() {
-  //   const calculatedCrossRate = this.calculateCrossRate();
 
-  //   if (!this.crossRate.isEqualTo(calculatedCrossRate)) {
-  //     throw new ValidationFailedError(
-  //       `Asserted cross rate (${this.crossRate} is not equal to calculated cross rate)`
-  //     )
-  //   }
-  // }
+  @Exclude()
+  public validateCrossRate() {
+    const calculatedCrossRate = this.calculateCrossRate();
+
+    if (!this.crossRate.isEqualTo(calculatedCrossRate)) {
+      throw new ValidationFailedError(
+        `Asserted cross rate (${this.crossRate} is not equal to calculated cross rate)`
+      );
+    }
+  }
 }
 
 export class FetchOraclePriceCrossRateAssertionsResponse extends ChainCallDTO {
@@ -327,9 +374,18 @@ export class OracleBridgeFeeAssertionDto extends ChainCallDTO {
   @JSONSchema({
     description: "Exchange Rate Price Assertion used to calculate Gas Fee"
   })
+  @ValidateIf((assertion) => !!assertion.galaExchangeCrossRate)
   @ValidateNested()
   @Type(() => OraclePriceAssertionDto)
   public galaExchangeRate: OraclePriceAssertionDto;
+
+  @JSONSchema({
+    description: "Cross-Rate Exchange Rate used to calculate Gas Fee"
+  })
+  @ValidateIf((assertion) => !!assertion.galaExchangeRate)
+  @ValidateNested()
+  @Type(() => OraclePriceCrossRateAssertion)
+  public galaExchangeCrossRate?: OraclePriceCrossRateAssertion;
 
   @JSONSchema({
     description:

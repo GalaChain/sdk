@@ -14,13 +14,14 @@
  */
 import BigNumber from "bignumber.js";
 import { Type } from "class-transformer";
-import { IsBoolean, IsNotEmpty, IsNumber, Max, Min, ValidateNested } from "class-validator";
+import { IsBoolean, IsNotEmpty, IsNumber, Max, Min, ValidateIf, ValidateNested } from "class-validator";
 import { JSONSchema } from "class-validator-jsonschema";
 
 import { ChainKey } from "../utils";
 import { BigNumberProperty } from "../validators";
 import { ChainObject } from "./ChainObject";
 import { OraclePriceAssertion } from "./OraclePriceAssertion";
+import { OraclePriceCrossRateAssertion } from "./OraclePriceCrossRateAssertion";
 import { TokenClassKey } from "./TokenClass";
 
 @JSONSchema({
@@ -49,9 +50,18 @@ export class OracleBridgeFeeAssertion extends ChainObject {
   @JSONSchema({
     description: "Exchange Rate Price Assertion used to calculate Gas Fee"
   })
+  @ValidateIf((assertion) => !!assertion.galaExchangeCrossRate)
   @ValidateNested()
   @Type(() => OraclePriceAssertion)
-  public galaExchangeRate: OraclePriceAssertion;
+  public galaExchangeRate?: OraclePriceAssertion;
+
+  @JSONSchema({
+    description: "Cross-Rate Exchange Rate used to calculate Gas Fee"
+  })
+  @ValidateIf((assertion) => !!assertion.galaExchangeRate)
+  @ValidateNested()
+  @Type(() => OraclePriceCrossRateAssertion)
+  public galaExchangeCrossRate?: OraclePriceCrossRateAssertion;
 
   @JSONSchema({
     description:
@@ -64,7 +74,7 @@ export class OracleBridgeFeeAssertion extends ChainObject {
 
   @JSONSchema({
     description:
-      "The token requested to bridge. Token Class used to query the estimated " + "transaction fee units."
+      "The token requested to bridge. Token Class used to query the estimated transaction fee units."
   })
   @ValidateNested()
   @Type(() => TokenClassKey)
@@ -85,7 +95,7 @@ export class OracleBridgeFeeAssertion extends ChainObject {
   public estimatedTxFeeUnitsTotal: BigNumber;
 
   @JSONSchema({
-    description: "Estimated price per unit of gas, as retrieved approximately " + "at the time of assertion."
+    description: "Estimated price per unit of gas, as retrieved approximately at the time of assertion."
   })
   @BigNumberProperty()
   public estimatedPricePerTxFeeUnit: BigNumber;
