@@ -30,7 +30,8 @@ import { JSONSchema } from "class-validator-jsonschema";
 import { ChainKey } from "../utils";
 import { BigNumberIsPositive, BigNumberProperty, IsUserAlias } from "../validators";
 import { ChainObject } from "./ChainObject";
-import { UserAlias, UserRef } from "./UserAlias";
+import { UserAlias } from "./UserAlias";
+import { UserRef } from "./UserRef";
 import { GC_NETWORK_ID } from "./contract";
 import { ChainCallDTO } from "./dtos";
 

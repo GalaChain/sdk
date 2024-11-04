@@ -445,10 +445,15 @@ export default class GalaChainTokenContract extends GalaContract {
     out: { arrayOf: TokenBalance }
   })
   public async LockTokens(ctx: GalaChainContext, dto: LockTokensDto): Promise<TokenBalance[]> {
-    // const verifyAuthorizedOnBehalf = (c: TokenClassKey) => bridgeTypeUser(ctx, dto.lockAuthority, c);
+    const lockAuthority = dto.lockAuthority ? await resolveUserAlias(ctx, dto.lockAuthority) : undefined;
+    const tokenInstances = dto.tokenInstances.map(async (d) => ({
+      tokenInstanceKey: d.tokenInstanceKey,
+      quantity: d.quantity,
+      owner: d.owner ? await resolveUserAlias(ctx, d.owner) : undefined
+    }));
     return lockTokens(ctx, {
-      lockAuthority: dto.lockAuthority ? await resolveUserAlias(ctx, dto.lockAuthority) : undefined,
-      tokenInstances: dto.tokenInstances,
+      lockAuthority,
+      tokenInstances: await Promise.all(tokenInstances),
       allowancesToUse: dto.useAllowances ?? [],
       name: dto.name,
       expires: dto.expires ?? 0,
@@ -477,7 +482,7 @@ export default class GalaChainTokenContract extends GalaContract {
     const params = dto.tokenInstances.map(async (d) => ({
       tokenInstanceKey: d.tokenInstanceKey,
       quantity: d.quantity,
-      owner: d.owner ?? ctx.callingUser,
+      owner: d.owner ? await resolveUserAlias(ctx, d.owner) : ctx.callingUser,
       name: dto.name,
       forSwap: false
     }));

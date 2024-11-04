@@ -40,7 +40,7 @@ import {
 import { GrantAllowanceQuantity } from "./GrantAllowance";
 import { TokenAllowance } from "./TokenAllowance";
 import { TokenInstance, TokenInstanceKey, TokenInstanceQueryKey } from "./TokenInstance";
-import { UserRef } from "./UserAlias";
+import { UserRef } from "./UserRef";
 import { AllowanceKey, AllowanceType, MintRequestDto } from "./common";
 import { ChainCallDTO, SubmitCallDTO } from "./dtos";
 

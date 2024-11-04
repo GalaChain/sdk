@@ -47,7 +47,8 @@ import { FeeAccelerationRateType, FeeCodeDefinition } from "./FeeCodeDefinition"
 import { FeeCodeTransferPercentage } from "./FeeCodeSplitFormula";
 import { FeePendingBalance } from "./FeePendingBalance";
 import { FeeThresholdUses } from "./FeeThresholdUses";
-import { UserAlias, UserRef } from "./UserAlias";
+import { UserAlias } from "./UserAlias";
+import { UserRef } from "./UserRef";
 import { ChainCallDTO, SubmitCallDTO } from "./dtos";
 
 @JSONSchema({

@@ -139,8 +139,14 @@ export async function lockToken(
   return balance;
 }
 
+export interface TokenQuantityParams {
+  tokenInstanceKey: TokenInstanceKey;
+  quantity: BigNumber;
+  owner: UserAlias | undefined;
+}
+
 export interface LockTokensParams {
-  tokenInstances: TokenQuantity[];
+  tokenInstances: TokenQuantityParams[];
   allowancesToUse: string[];
   name: string | undefined;
   lockAuthority: UserAlias | undefined;

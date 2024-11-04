@@ -20,8 +20,7 @@ import {
   registerDecorator
 } from "class-validator";
 
-import { UserRef } from "../types";
-import { ValidationFailedError, signatures } from "../utils";
+import { signatures } from "../utils";
 import { UserAliasValidationResult, validateUserAlias } from "./IsUserAlias";
 
 export enum UserRefValidationResult {
@@ -33,7 +32,7 @@ export enum UserRefValidationResult {
   INVALID_FORMAT
 }
 
-function isValid(result: UserRefValidationResult) {
+export function meansValidUserRef(result: UserRefValidationResult) {
   return (
     result === UserRefValidationResult.VALID_USER_ALIAS ||
     result === UserRefValidationResult.VALID_SYSTEM_USER ||
@@ -47,17 +46,6 @@ const userAliasValidationResultMapping = {
   [UserAliasValidationResult.INVALID_ETH_USER_ALIAS]: UserRefValidationResult.INVALID_ETH_USER_ALIAS,
   [UserAliasValidationResult.INVALID_TON_USER_ALIAS]: UserRefValidationResult.INVALID_TON_USER_ALIAS
 };
-
-const customMessages = {
-  [UserRefValidationResult.INVALID_ETH_USER_ALIAS]:
-    "User ref starting with 'eth|' must end with valid checksumed eth address.",
-  [UserRefValidationResult.INVALID_TON_USER_ALIAS]:
-    "User ref starting with 'ton|' must end with valid bounceable base64 TON address."
-};
-
-const genericMessage =
-  "Expected a valid user alias ('client|<user-id>', or 'eth|<checksumed-eth-addr>', " +
-  "or 'ton|<chain:ton-address>', or valid system-level username), or valid Ethereum address.";
 
 export function validateUserRef(value: unknown): UserRefValidationResult {
   if (typeof value !== "string" || value.length === 0) {
@@ -78,13 +66,16 @@ export function validateUserRef(value: unknown): UserRefValidationResult {
   return UserRefValidationResult.INVALID_FORMAT;
 }
 
-export function asValidUserRef(value: unknown): UserRef {
-  const result = validateUserRef(value);
-  if (!isValid(result)) {
-    throw new ValidationFailedError(`Invalid user ref: ${value}`);
-  }
-  return value as UserRef;
-}
+const customMessages = {
+  [UserRefValidationResult.INVALID_ETH_USER_ALIAS]:
+    "User ref starting with 'eth|' must end with valid checksumed eth address.",
+  [UserRefValidationResult.INVALID_TON_USER_ALIAS]:
+    "User ref starting with 'ton|' must end with valid bounceable base64 TON address."
+};
+
+const genericMessage =
+  "Expected a valid user alias ('client|<user-id>', or 'eth|<checksumed-eth-addr>', " +
+  "or 'ton|<chain:ton-address>', or valid system-level username), or valid Ethereum address.";
 
 @ValidatorConstraint({ async: false })
 class IsUserRefConstraint implements ValidatorConstraintInterface {
@@ -93,13 +84,13 @@ class IsUserRefConstraint implements ValidatorConstraintInterface {
       return value.every((val) => this.validate(val, args));
     }
     const result = validateUserRef(value);
-    return isValid(result);
+    return meansValidUserRef(result);
   }
 
   defaultMessage(args: ValidationArguments): string {
     const value = args.value;
     if (Array.isArray(value)) {
-      const invalidValues = value.filter((val) => !isValid(validateUserRef(val)));
+      const invalidValues = value.filter((val) => !meansValidUserRef(validateUserRef(val)));
       return `${args.property} property with values ${invalidValues} are not valid GalaChain user ref. ${genericMessage}`;
     }
     const result = validateUserRef(args.value);

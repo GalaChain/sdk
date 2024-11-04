@@ -19,7 +19,7 @@ import { JSONSchema } from "class-validator-jsonschema";
 
 import { BigNumberIsNotNegative, BigNumberProperty, IsUserRef } from "../validators";
 import { TokenInstance, TokenInstanceKey } from "./TokenInstance";
-import { UserRef } from "./UserAlias";
+import { UserRef } from "./UserRef";
 import { SubmitCallDTO } from "./dtos";
 
 @JSONSchema({

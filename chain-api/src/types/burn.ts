@@ -33,7 +33,7 @@ import { BigNumberIsInteger, BigNumberIsNotNegative, BigNumberProperty, IsUserRe
 import { BurnTokenQuantity } from "./BurnTokenQuantity";
 import { TokenBurnCounter } from "./TokenBurnCounter";
 import { TokenInstance } from "./TokenInstance";
-import { UserRef } from "./UserAlias";
+import { UserRef } from "./UserRef";
 import { ChainCallDTO, SubmitCallDTO } from "./dtos";
 import { BatchMintTokenDto } from "./mint";
 

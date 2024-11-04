@@ -16,6 +16,7 @@ import {
   UserAlias,
   UserRefValidationResult,
   ValidationFailedError,
+  asValidUserAlias,
   signatures,
   validateUserRef
 } from "@gala-chain/api";
@@ -27,15 +28,16 @@ export async function resolveUserAlias(ctx: GalaChainContext, userRef: string): 
   const res = validateUserRef(userRef);
 
   if (res === UserRefValidationResult.VALID_USER_ALIAS || res === UserRefValidationResult.VALID_SYSTEM_USER) {
-    return userRef as UserAlias; // this is the only function that can safely cast to UserAlias
+    return userRef as UserAlias;
   }
 
   if (res === UserRefValidationResult.VALID_ETH_ADDRESS) {
     const ethAddress = signatures.normalizeEthAddress(userRef);
     const userProfile = await PublicKeyService.getUserProfile(ctx, ethAddress);
-    const actualAlias = userProfile?.alias ?? `eth|${ethAddress}`;
-    return actualAlias as UserAlias; // this is the only function that can safely cast to UserAlias
+    const actualAlias = userProfile?.alias ?? asValidUserAlias(`eth|${ethAddress}`);
+    return actualAlias as UserAlias;
   }
 
-  throw new ValidationFailedError(`Invalid user reference: ${userRef}`, { userRef });
+  const key = UserRefValidationResult[res];
+  throw new ValidationFailedError(`Invalid user reference (${key}): ${userRef}`, { userRef });
 }

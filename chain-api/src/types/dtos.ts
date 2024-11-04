@@ -26,7 +26,8 @@ import {
   signatures
 } from "../utils";
 import { IsUserAlias, IsUserRef, StringEnumProperty } from "../validators";
-import { UserAlias, UserRef } from "./UserAlias";
+import { UserAlias } from "./UserAlias";
+import { UserRef } from "./UserRef";
 import { GalaChainResponse } from "./contract";
 
 type Base<T, BaseT> = T extends BaseT ? T : never;

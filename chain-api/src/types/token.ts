@@ -36,7 +36,7 @@ import { BigNumberIsNotNegative, BigNumberIsPositive, BigNumberProperty, IsUserR
 import { TokenBalance } from "./TokenBalance";
 import { TokenClass, TokenClassKey } from "./TokenClass";
 import { TokenInstance, TokenInstanceKey } from "./TokenInstance";
-import { UserRef } from "./UserAlias";
+import { UserRef } from "./UserRef";
 import { ChainCallDTO, SubmitCallDTO } from "./dtos";
 
 @JSONSchema({

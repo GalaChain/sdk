@@ -20,8 +20,7 @@ import {
   registerDecorator
 } from "class-validator";
 
-import { UserAlias } from "../types";
-import { ValidationFailedError, signatures } from "../utils";
+import { signatures } from "../utils";
 
 export enum UserAliasValidationResult {
   VALID_USER_ALIAS,
@@ -31,23 +30,12 @@ export enum UserAliasValidationResult {
   INVALID_FORMAT
 }
 
-function isValid(result: UserAliasValidationResult) {
+export function meansValidUserAlias(result: UserAliasValidationResult) {
   return (
     result === UserAliasValidationResult.VALID_USER_ALIAS ||
     result === UserAliasValidationResult.VALID_SYSTEM_USER
   );
 }
-
-const customMessages = {
-  [UserAliasValidationResult.INVALID_ETH_USER_ALIAS]:
-    "User alias starting with 'eth|' must end with valid checksumed eth address.",
-  [UserAliasValidationResult.INVALID_TON_USER_ALIAS]:
-    "User alias starting with 'ton|' must end with valid bounceable base64 TON address."
-};
-
-const genericMessage =
-  "Expected string following the format of 'client|<user-id>', or 'eth|<checksumed-eth-addr>', " +
-  "or 'ton|<chain:ton-address>', or valid system-level username.";
 
 export function isValidSystemUser(value: string): boolean {
   return value === "EthereumBridge" || value === "TonBridge" || /^GalaChainBridge-\d+$/.test(value);
@@ -103,6 +91,17 @@ export function validateUserAlias(value: unknown): UserAliasValidationResult {
   return UserAliasValidationResult.INVALID_FORMAT;
 }
 
+const customMessages = {
+  [UserAliasValidationResult.INVALID_ETH_USER_ALIAS]:
+    "User alias starting with 'eth|' must end with valid checksumed eth address.",
+  [UserAliasValidationResult.INVALID_TON_USER_ALIAS]:
+    "User alias starting with 'ton|' must end with valid bounceable base64 TON address."
+};
+
+const genericMessage =
+  "Expected string following the format of 'client|<user-id>', or 'eth|<checksumed-eth-addr>', " +
+  "or 'ton|<chain:ton-address>', or valid system-level username.";
+
 @ValidatorConstraint({ async: false })
 class IsUserAliasConstraint implements ValidatorConstraintInterface {
   validate(value: unknown, args: ValidationArguments): boolean {
@@ -110,13 +109,13 @@ class IsUserAliasConstraint implements ValidatorConstraintInterface {
       return value.every((val) => this.validate(val, args));
     }
     const result = validateUserAlias(value);
-    return isValid(result);
+    return meansValidUserAlias(result);
   }
 
   defaultMessage(args: ValidationArguments): string {
     const value = args.value;
     if (Array.isArray(value)) {
-      const invalidValues = value.filter((val) => !isValid(validateUserAlias(val)));
+      const invalidValues = value.filter((val) => !meansValidUserAlias(validateUserAlias(val)));
       return `${args.property} property with values ${invalidValues} are not valid GalaChain user aliases. ${genericMessage}`;
     }
     const result = validateUserAlias(args.value);

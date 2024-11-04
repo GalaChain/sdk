@@ -84,7 +84,7 @@ export interface RequestBatchMintParams {
 
 export async function requestMintBatch(
   ctx: GalaChainContext,
-  params: RequestBatchMintParams // TODO
+  params: RequestBatchMintParams
 ): Promise<FulfillMintDto> {
   const minted: Array<MintRequestDto> = [];
   const errors: Array<string> = [];

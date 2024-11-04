@@ -42,7 +42,7 @@ export enum AllowanceType {
   description: "Key fields that identity an existing TokenAllowance."
 })
 export class AllowanceKey extends ChainCallDTO {
-  @IsUserAlias() // TODO??
+  @IsUserAlias()
   public grantedTo: UserAlias;
 
   @IsNotEmpty()
@@ -66,7 +66,7 @@ export class AllowanceKey extends ChainCallDTO {
   @EnumProperty(AllowanceType)
   public allowanceType: AllowanceType;
 
-  @IsUserAlias() // TODO???
+  @IsUserAlias()
   public grantedBy: UserAlias;
 
   @IsPositive()

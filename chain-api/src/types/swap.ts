@@ -41,7 +41,7 @@ import {
 import { ChainObject } from "./ChainObject";
 import { TokenInstanceQuantity } from "./TokenInstance";
 import { TokenSwapRequest } from "./TokenSwapRequest";
-import { UserRef } from "./UserAlias";
+import { UserRef } from "./UserRef";
 import { ChainCallDTO } from "./dtos";
 
 @JSONSchema({

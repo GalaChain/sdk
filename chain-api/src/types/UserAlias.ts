@@ -12,19 +12,8 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
-/**
- * @description
- *
- * Type for user alias. Technically it is a string, but it has an additional
- * marker (tag) to distinguish it from other strings at compilation level,
- * and mark it was actually validated as user ref. Also any user alias is valid
- * user ref as well.
- *
- * You may use `asValidUserRef` function to validate any string as user ref and return
- * it as `UserRef` type.
- */
-export type UserRef = string & ({ __userRef__: void } | { __userAlias__: void });
+import { ValidationFailedError } from "../utils";
+import { UserAliasValidationResult, meansValidUserAlias, validateUserAlias } from "../validators";
 
 /**
  * @description
@@ -37,3 +26,12 @@ export type UserRef = string & ({ __userRef__: void } | { __userAlias__: void })
  * function to get the user alias.
  */
 export type UserAlias = string & { __userAlias__: void };
+
+export function asValidUserAlias(value: unknown): UserAlias {
+  const result = validateUserAlias(value);
+  if (!meansValidUserAlias(result)) {
+    const key = UserAliasValidationResult[result];
+    throw new ValidationFailedError(`Invalid user alias (${key}): ${value}`);
+  }
+  return value as UserAlias;
+}
