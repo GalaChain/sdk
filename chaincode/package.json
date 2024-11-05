@@ -34,7 +34,6 @@
     "class-transformer": "*",
     "class-validator": "*",
     "class-validator-jsonschema": "*",
-    "dd-trace": "*",
     "elliptic": "*",
     "json-stringify-deterministic": "*"
   },
@@ -42,7 +41,6 @@
     "@types/elliptic": "*",
     "@types/node": "18.11.9",
     "@types/setimmediate": "^1.0.2",
-    "dd-trace": "^4.20.0",
     "git-branch-is": "^4.0.0",
     "madge": "^5.0.1",
     "nodemon": "^3.0.1",
