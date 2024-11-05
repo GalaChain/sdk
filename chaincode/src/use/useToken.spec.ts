@@ -38,7 +38,7 @@ describe("UseToken", () => {
       type: nftInstanceKey.type,
       additionalKey: nftInstanceKey.additionalKey
     });
-    nftTokenBalance.ensureCanAddInstance(nftInstanceKey.instance).add();
+    nftTokenBalance.addInstance(nftInstanceKey.instance);
 
     const { ctx, contract, getWrites } = fixture(GalaChainTokenContract)
       .registeredUsers(users.testUser1)
@@ -61,7 +61,7 @@ describe("UseToken", () => {
     });
 
     const expectedBalance = nftTokenBalance.copy();
-    expectedBalance.ensureCanUseInstance(expectedHold, ctx.txUnixTime).use();
+    expectedBalance.useInstance(expectedHold, ctx.txUnixTime);
 
     // When
     const response = await contract.UseToken(ctx, dto);

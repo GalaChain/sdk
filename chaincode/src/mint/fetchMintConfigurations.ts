@@ -19,9 +19,8 @@ import {
   ValidationFailedError,
   createValidDTO
 } from "@gala-chain/api";
-import { plainToInstance } from "class-transformer";
 
-import { GalaChainContext, createValidChainObject } from "../types";
+import { GalaChainContext } from "../types";
 import { getObjectsByPartialCompositeKeyWithPagination, takeUntilUndefined } from "../utils";
 
 export interface IFetchTokenMintConfigurations {

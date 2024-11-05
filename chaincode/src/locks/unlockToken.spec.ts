@@ -31,7 +31,7 @@ describe("UnlockToken", () => {
 
     const balanceWithLockedHold = balanceNoLockedHolds.copy();
     balanceWithLockedHold
-      .ensureCanLockInstance(
+      .lockInstance(
         new TokenHold({
           createdBy: users.testUser1.identityKey,
           instanceId: nftInstance.instance,
@@ -41,7 +41,7 @@ describe("UnlockToken", () => {
         }),
         1
       )
-      .lock();
+      ;
 
     const { ctx, contract, getWrites } = fixture(GalaChainTokenContract)
       .registeredUsers(users.testUser1)
@@ -70,7 +70,7 @@ describe("UnlockToken", () => {
 
     const balanceWithLockedHold = balanceNoLockedHolds.copy();
     balanceWithLockedHold
-      .ensureCanLockInstance(
+      .lockInstance(
         new TokenHold({
           createdBy: users.testUser1.identityKey,
           instanceId: nftInstance.instance,
@@ -80,7 +80,7 @@ describe("UnlockToken", () => {
         }),
         1
       )
-      .lock();
+      ;
 
     const { ctx, contract, getWrites } = fixture(GalaChainTokenContract)
       .registeredUsers(users.admin)
@@ -116,7 +116,7 @@ describe("UnlockToken", () => {
 
     const balanceWithLockedHold = balanceNoLockedHolds.copy();
     balanceWithLockedHold
-      .ensureCanLockInstance(
+      .lockInstance(
         new TokenHold({
           createdBy: users.testUser1.identityKey,
           instanceId: nftInstance.instance,
@@ -127,7 +127,7 @@ describe("UnlockToken", () => {
         }),
         1
       )
-      .lock();
+      ;
 
     const { ctx, contract, getWrites } = fixture(GalaChainTokenContract)
       .registeredUsers(users.admin)
@@ -157,7 +157,7 @@ describe("UnlockToken", () => {
 
     const balanceWithLockedHold = balanceNoLockedHolds.copy();
     balanceWithLockedHold
-      .ensureCanLockQuantity(
+      .lockQuantity(
         new TokenHold({
           createdBy: users.testUser1.identityKey,
           lockAuthority: users.testUser1.identityKey,
@@ -168,7 +168,7 @@ describe("UnlockToken", () => {
           name: testLockedHoldName
         })
       )
-      .lock();
+      ;
 
     const { ctx, contract, getWrites } = fixture(GalaChainTokenContract)
       .registeredUsers(users.admin)
@@ -207,7 +207,7 @@ describe("UnlockToken", () => {
     const ownerBalance = nft.tokenBalance();
     expect(ownerBalance.getNftInstanceIds()).toContainEqual(nftInstance.instance);
     ownerBalance
-      .ensureCanLockInstance(
+      .lockInstance(
         new TokenHold({
           createdBy: users.testUser1.identityKey,
           instanceId: nftInstance.instance,
@@ -217,7 +217,7 @@ describe("UnlockToken", () => {
         }),
         1
       )
-      .lock();
+      ;
 
     const { ctx, contract, getWrites } = fixture(GalaChainTokenContract)
       .registeredUsers(users.attacker)

@@ -60,7 +60,7 @@ export async function releaseToken(
     return balance;
   }
 
-  balance.ensureCanReleaseInstance(applicableHold.instanceId, undefined, ctx.txUnixTime).release();
+  balance.releaseInstance(applicableHold.instanceId, undefined, ctx.txUnixTime);
 
   await putChainObject(ctx, balance);
 

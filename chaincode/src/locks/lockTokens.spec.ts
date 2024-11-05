@@ -42,7 +42,7 @@ describe("LockTokens", () => {
 
     const balanceWithHold = balance.copy();
     balanceWithHold
-      .ensureCanLockInstance(
+      .lockInstance(
         new TokenHold({
           createdBy: users.testUser1.identityKey,
           instanceId: nftInstance.instance,
@@ -53,7 +53,7 @@ describe("LockTokens", () => {
         }),
         1
       )
-      .lock();
+      ;
 
     // When
     const response = await contract.LockToken(ctx, dto);
