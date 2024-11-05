@@ -41,19 +41,17 @@ describe("LockTokens", () => {
       .savedState(nftClass, nftInstance, balance);
 
     const balanceWithHold = balance.copy();
-    balanceWithHold
-      .lockInstance(
-        new TokenHold({
-          createdBy: users.testUser1.identityKey,
-          instanceId: nftInstance.instance,
-          quantity: new BigNumber("1"),
-          created: ctx.txUnixTime,
-          lockAuthority: users.testUser1.identityKey,
-          expires: 0
-        }),
-        1
-      )
-      ;
+    balanceWithHold.lockInstance(
+      new TokenHold({
+        createdBy: users.testUser1.identityKey,
+        instanceId: nftInstance.instance,
+        quantity: new BigNumber("1"),
+        created: ctx.txUnixTime,
+        lockAuthority: users.testUser1.identityKey,
+        expires: 0
+      }),
+      1
+    );
 
     // When
     const response = await contract.LockToken(ctx, dto);

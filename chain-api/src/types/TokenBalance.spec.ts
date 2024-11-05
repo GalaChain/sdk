@@ -196,8 +196,7 @@ describe("fungible", () => {
 
     const tokenClassKey = TokenClassKey.toStringKey({ ...balance });
     // When
-    const error = () =>
-      balance.unlockQuantity(lockedTotal, Date.now(), nameForUnlockAttempt);
+    const error = () => balance.unlockQuantity(lockedTotal, Date.now(), nameForUnlockAttempt);
 
     // Then
     expect(error).toThrow(
