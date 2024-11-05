@@ -368,10 +368,22 @@ export async function requestTokenBridgeOutFeeGate(ctx: GalaChainContext, dto: R
       txid
     });
   } else if (galaExchangeCrossRate !== undefined) {
+    const baseTokenCrossRate: OraclePriceAssertion = await createValidChainObject(OraclePriceAssertion, {
+      ...galaExchangeCrossRate.baseTokenCrossRate,
+      txid
+    });
+
+    const quoteTokenCrossRate: OraclePriceAssertion = await createValidChainObject(OraclePriceAssertion, {
+      ...galaExchangeCrossRate.quoteTokenCrossRate,
+      txid
+    });
+
     bridgeFeeAssertionRecord.galaExchangeCrossRate = await createValidChainObject(
       OraclePriceCrossRateAssertion,
       {
         ...galaExchangeCrossRate,
+        baseTokenCrossRate,
+        quoteTokenCrossRate,
         txid
       }
     );

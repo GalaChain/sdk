@@ -374,18 +374,20 @@ export class OracleBridgeFeeAssertionDto extends ChainCallDTO {
   @JSONSchema({
     description: "Exchange Rate Price Assertion used to calculate Gas Fee"
   })
+  @IsOptional()
   @ValidateIf((assertion) => !!assertion.galaExchangeCrossRate)
   @ValidateNested()
   @Type(() => OraclePriceAssertionDto)
-  public galaExchangeRate: OraclePriceAssertionDto;
+  public galaExchangeRate?: OraclePriceAssertionDto;
 
   @JSONSchema({
     description: "Cross-Rate Exchange Rate used to calculate Gas Fee"
   })
+  @IsOptional()
   @ValidateIf((assertion) => !!assertion.galaExchangeRate)
   @ValidateNested()
-  @Type(() => OraclePriceCrossRateAssertion)
-  public galaExchangeCrossRate?: OraclePriceCrossRateAssertion;
+  @Type(() => OraclePriceCrossRateAssertionDto)
+  public galaExchangeCrossRate?: OraclePriceCrossRateAssertionDto;
 
   @JSONSchema({
     description:
