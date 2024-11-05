@@ -76,7 +76,7 @@ export class GalaChainContext extends Context {
     return this.callingUserRolesValue;
   }
 
-  set callingUserData(d: { alias?: string; ethAddress?: string; tonAddress?: string; roles: string[] }) {
+  set callingUserData(d: { alias?: string; ethAddress?: string; tonAddress?: string; roles: string[], signedByKeys: string[], pubKeyCount: number }) {
     if (this.callingUserValue !== undefined) {
       throw new Error("Calling user already set to " + this.callingUserValue);
     }

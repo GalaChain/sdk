@@ -57,6 +57,11 @@ export class UserProfile extends ChainObject {
   })
   @IsString({ each: true })
   roles: string[];
+
+  @JSONSchema({
+    description: `Number of public keys associated with the user.`
+  })
+  public pubKeyCount?: number; // TODO
 }
 
 export const UP_INDEX_KEY = "GCUP";

@@ -49,6 +49,7 @@ export async function ensureRoleIsAllowed(ctx: GalaChainContext, allowedRoles: s
 
 export async function authorize(
   ctx: GalaChainContext,
+  quorum: { signedByKeys: string[]; pubKeyCount: number } | undefined,
   options: { allowedOrgs?: string[]; allowedRoles?: string[]; quorum?: number } = {}
 ) {
   if (options.allowedOrgs) {
@@ -57,5 +58,13 @@ export async function authorize(
 
   if (options.allowedRoles) {
     await ensureRoleIsAllowed(ctx, options.allowedRoles);
+  }
+
+  const requiredQuorum = Math.min(options.quorum ?? 1, quorum?.pubKeyCount ?? 1);
+
+  if (!quorum?.signedByKeys.length || quorum.signedByKeys.length < requiredQuorum) {
+    throw new UnauthorizedError(
+      `Not enough signatures. Required ${requiredQuorum}, got ${quorum?.signedByKeys?.length}`
+    );
   }
 }

@@ -13,7 +13,7 @@
  * limitations under the License.
  */
 import { Type, instanceToInstance, plainToInstance } from "class-transformer";
-import { IsNotEmpty, IsOptional, ValidationError, validate } from "class-validator";
+import { IsNotEmpty, IsOptional, ValidationError, validate, ValidateNested } from "class-validator";
 import { JSONSchema } from "class-validator-jsonschema";
 import crypto from "crypto";
 
@@ -115,6 +115,51 @@ export interface TraceContext {
   traceId: string;
 }
 
+export class SignatureDto {
+  @JSONSchema({
+    description:
+      "Signature of the DTO signed with caller's private key to be verified with user's public key saved on chain. " +
+      "The 'signature' field is optional for DTO, but is required for a transaction to be executed on chain. \n" +
+      "Please consult [GalaChain SDK documentation](https://github.com/GalaChain/sdk/blob/main/docs/authorization.md#signature-based-authorization) on how to create signatures."
+  })
+  @IsOptional()
+  @IsNotEmpty()
+  public signature: string;
+
+  @JSONSchema({
+    description:
+      "Prefix for Metamask transaction signatures. " +
+      "Necessary to format payloads correctly to recover publicKey from web3 signatures."
+  })
+  @IsOptional()
+  @IsNotEmpty()
+  public prefix?: string;
+
+  @JSONSchema({
+    description: "Address of the user who signed the DTO. Typically Ethereum or TON address."
+  })
+  @IsOptional()
+  @IsNotEmpty()
+  public signerAddress?: string;
+
+  @JSONSchema({
+    description: "Public key of the user who signed the DTO."
+  })
+  @IsOptional()
+  @IsNotEmpty()
+  public signerPublicKey?: string;
+
+  @JSONSchema({
+    description:
+      `Signing scheme used for the signature. ` +
+      `"${SigningScheme.ETH}" for Ethereum, and "${SigningScheme.TON}" for The Open Network are supported. ` +
+      `Default: "${SigningScheme.ETH}".`
+  })
+  @IsOptional()
+  @StringEnumProperty(SigningScheme)
+  public signing?: SigningScheme;
+}
+
 /**
  * @description
  *
@@ -191,6 +236,14 @@ export class ChainCallDTO {
   @IsOptional()
   @StringEnumProperty(SigningScheme)
   public signing?: SigningScheme;
+
+  @JSONSchema({
+    description: "Array of signatures for multi-signature transactions."
+  })
+  @IsOptional()
+  @Type(() => SignatureDto)
+  @ValidateNested({ each: true })
+  public signatures?: SignatureDto[];
 
   validate(): Promise<ValidationError[]> {
     return validate(this);

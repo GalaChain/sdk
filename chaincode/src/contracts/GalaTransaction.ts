@@ -169,18 +169,22 @@ function GalaTransaction<T extends ChainCallDTO>(
           ? undefined
           : await parseValidDTO<T>(dtoClass, dtoPlain as string | Record<string, unknown>);
 
+        let quorum: { signedByKeys: string[]; pubKeyCount: number } | undefined = undefined;
+
         // Authenticate the user
         if (ctx.isDryRun) {
           // Do not authenticate in dry run mode
         } else if (options?.verifySignature || dto?.signature !== undefined) {
-          ctx.callingUserData = await authenticate(ctx, dto);
+          const authenticateResult = await authenticate(ctx, dto);
+          ctx.callingUserData = authenticateResult;
+          quorum = { signedByKeys: authenticateResult.signedByKeys, pubKeyCount: authenticateResult.pubKeyCount };
         } else {
           // it means a request where authorization is not required. Intentionally misses alias field
           ctx.callingUserData = { roles: [UserRole.EVALUATE] };
         }
 
         // Authorize the user
-        await authorize(ctx, options);
+        await authorize(ctx, quorum, options);
 
         // Prevent the same transaction from being submitted multiple times
         if (options.enforceUniqueKey) {
