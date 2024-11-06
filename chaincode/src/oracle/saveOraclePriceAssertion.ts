@@ -54,14 +54,28 @@ export async function saveOraclePriceAssertion(ctx: GalaChainContext, dto: Oracl
 
   await ensureIsAuthenticatedBy(ctx, dto, identity);
 
-  const { oracle, baseToken, quoteToken, exchangeRate, source, sourceUrl, timestamp } = dto;
+  const {
+    oracle,
+    baseToken,
+    externalBaseToken,
+    quoteToken,
+    externalQuoteToken,
+    exchangeRate,
+    source,
+    sourceUrl,
+    timestamp
+  } = dto;
+
   const txid = ctx.stub.getTxID();
+
   const priceAssertion = plainToInstance(OraclePriceAssertion, {
     oracle,
     identity,
     txid,
     baseToken,
+    externalBaseToken,
     quoteToken,
+    externalQuoteToken,
     exchangeRate,
     source,
     sourceUrl,

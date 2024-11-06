@@ -26,7 +26,7 @@ import { TokenInstanceKey } from "./TokenInstance";
   description:
     "External token/currency definition. Use to specify an external currency that does not have a TokenClass defined on GalaChain."
 })
-export class ExternalToken {
+export class ExternalToken extends ChainObject {
   @JSONSchema({
     description: `Name of the external currency, e.g. "Ethereum"`
   })
@@ -62,13 +62,25 @@ export class OraclePriceAssertion extends ChainObject {
   @JSONSchema({
     description: "First currency in the described currency pair. Unit of exchange."
   })
+  @ValidateIf((assertion) => !!assertion.externalBaseToken)
   @ValidateNested()
   @Type(() => TokenInstanceKey)
-  baseToken: TokenInstanceKey;
+  baseToken?: TokenInstanceKey;
 
   @JSONSchema({
     description:
-      "Second token/currency in the pair. Token/Currency in which the baseToken is quoted. Optional, but required if externalQuoteToken is not provided."
+      "External token representing the first currency in the described currency pair. " +
+      "Unit of exchange. Optional, but required if baseToken is not provided."
+  })
+  @ValidateIf((assertion) => !!assertion.baseToken)
+  @ValidateNested()
+  @Type(() => ExternalToken)
+  externalBaseToken?: ExternalToken;
+
+  @JSONSchema({
+    description:
+      "Second token/currency in the pair. Token/Currency in which the baseToken is quoted. " +
+      "Optional, but required if externalQuoteToken is not provided."
   })
   @ValidateIf((o) => !o.externalQuoteToken)
   @ValidateNested()
@@ -77,7 +89,8 @@ export class OraclePriceAssertion extends ChainObject {
 
   @JSONSchema({
     description:
-      "Second token/currency in the pair. Token/Currency in which the baseToken is quoted. Optional, but required if quoteToken is not provided."
+      "Second token/currency in the pair. Token/Currency in which the baseToken is quoted. " +
+      "Optional, but required if quoteToken is not provided."
   })
   @ValidateIf((o) => !o.quoteToken)
   @ValidateNested()

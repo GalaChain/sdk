@@ -17,13 +17,14 @@ import {
   FeeProperties,
   FeePropertiesDto,
   FeeAuthorizationResDto as FetchFeeAuthorizationsResponse,
-  FetchFeePropertiesDto,
-  NonFunctionProperties
+  FetchFeePropertiesDto
 } from "@gala-chain/api";
 
-type FeeAuthorizationRequest = NonFunctionProperties<FeeAuthorizationDto>;
-type FetchFeePropertiesRequest = NonFunctionProperties<FetchFeePropertiesDto>;
-type SetFeePropertiesRequest = NonFunctionProperties<FeePropertiesDto>;
+import { ConstructorArgs } from "./utils";
+
+type FeeAuthorizationRequest = ConstructorArgs<FeeAuthorizationDto>;
+type FetchFeePropertiesRequest = ConstructorArgs<FetchFeePropertiesDto>;
+type SetFeePropertiesRequest = ConstructorArgs<FeePropertiesDto>;
 
 export {
   FeeAuthorizationRequest,

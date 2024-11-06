@@ -42,7 +42,6 @@ import {
   MintRequestDto,
   MintTokenDto,
   MintTokenWithAllowanceDto,
-  NonFunctionProperties,
   RefreshAllowanceDto,
   ReleaseTokenDto,
   TokenAllowance,
@@ -65,36 +64,38 @@ import BigNumber from "bignumber.js";
 import { Type } from "class-transformer";
 import { IsDefined, IsNotEmpty, IsOptional, ValidateNested } from "class-validator";
 
-type BatchMintTokenRequest = NonFunctionProperties<BatchMintTokenDto>;
-type BurnTokensRequest = NonFunctionProperties<BurnTokensDto>;
-type CreateTokenClassRequest = NonFunctionProperties<CreateTokenClassDto>;
-type DeleteAllowancesRequest = NonFunctionProperties<DeleteAllowancesDto>;
-type FetchAllowancesRequest = NonFunctionProperties<FetchAllowancesDto>;
-type FetchBalancesRequest = NonFunctionProperties<FetchBalancesDto>;
-type FetchBalancesWithPaginationRequest = NonFunctionProperties<FetchBalancesWithPaginationDto>;
-type FetchBurnsRequest = NonFunctionProperties<FetchBurnsDto>;
-type FetchMintRequestsRequest = NonFunctionProperties<FetchMintRequestsDto>;
-type FetchTokenClassesRequest = NonFunctionProperties<FetchTokenClassesDto>;
-type FetchTokenClassesWithPaginationRequest = NonFunctionProperties<FetchTokenClassesWithPaginationDto>;
-type FulfillMintRequest = NonFunctionProperties<FulfillMintDto>;
-type FullAllowanceCheckRequest = NonFunctionProperties<FullAllowanceCheckDto>;
-type GrantAllowanceRequest = NonFunctionProperties<GrantAllowanceDto>;
-type HighThroughputMintTokenRequest = NonFunctionProperties<HighThroughputMintTokenDto>;
-type LockTokenRequest = NonFunctionProperties<LockTokenDto>;
-type LockTokensRequest = NonFunctionProperties<LockTokensDto>;
-type MintRequest = NonFunctionProperties<MintRequestDto>;
-type MintTokenRequest = NonFunctionProperties<MintTokenDto>;
-type MintTokenWithAllowanceRequest = NonFunctionProperties<MintTokenWithAllowanceDto>;
-type RefreshAllowanceRequest = NonFunctionProperties<RefreshAllowanceDto>;
-type ReleaseTokenRequest = NonFunctionProperties<ReleaseTokenDto>;
-type TransferTokenRequest = NonFunctionProperties<TransferTokenDto>;
-type UnlockTokenRequest = NonFunctionProperties<UnlockTokenDto>;
-type UnlockTokensRequest = NonFunctionProperties<UnlockTokensDto>;
-type UpdateTokenClassRequest = NonFunctionProperties<UpdateTokenClassDto>;
-type UseTokenRequest = NonFunctionProperties<UseTokenDto>;
+import { ConstructorArgs } from "./utils";
+
+type BatchMintTokenRequest = ConstructorArgs<BatchMintTokenDto>;
+type BurnTokensRequest = ConstructorArgs<BurnTokensDto>;
+type CreateTokenClassRequest = ConstructorArgs<CreateTokenClassDto>;
+type DeleteAllowancesRequest = ConstructorArgs<DeleteAllowancesDto>;
+type FetchAllowancesRequest = ConstructorArgs<FetchAllowancesDto>;
+type FetchBalancesRequest = ConstructorArgs<FetchBalancesDto>;
+type FetchBalancesWithPaginationRequest = ConstructorArgs<FetchBalancesWithPaginationDto>;
+type FetchBurnsRequest = ConstructorArgs<FetchBurnsDto>;
+type FetchMintRequestsRequest = ConstructorArgs<FetchMintRequestsDto>;
+type FetchTokenClassesRequest = ConstructorArgs<FetchTokenClassesDto>;
+type FetchTokenClassesWithPaginationRequest = ConstructorArgs<FetchTokenClassesWithPaginationDto>;
+type FulfillMintRequest = ConstructorArgs<FulfillMintDto>;
+type FullAllowanceCheckRequest = ConstructorArgs<FullAllowanceCheckDto>;
+type GrantAllowanceRequest = ConstructorArgs<GrantAllowanceDto>;
+type HighThroughputMintTokenRequest = ConstructorArgs<HighThroughputMintTokenDto>;
+type LockTokenRequest = ConstructorArgs<LockTokenDto>;
+type LockTokensRequest = ConstructorArgs<LockTokensDto>;
+type MintRequest = ConstructorArgs<MintRequestDto>;
+type MintTokenRequest = ConstructorArgs<MintTokenDto>;
+type MintTokenWithAllowanceRequest = ConstructorArgs<MintTokenWithAllowanceDto>;
+type RefreshAllowanceRequest = ConstructorArgs<RefreshAllowanceDto>;
+type ReleaseTokenRequest = ConstructorArgs<ReleaseTokenDto>;
+type TransferTokenRequest = ConstructorArgs<TransferTokenDto>;
+type UnlockTokenRequest = ConstructorArgs<UnlockTokenDto>;
+type UnlockTokensRequest = ConstructorArgs<UnlockTokensDto>;
+type UpdateTokenClassRequest = ConstructorArgs<UpdateTokenClassDto>;
+type UseTokenRequest = ConstructorArgs<UseTokenDto>;
 
 // Unique case where we need to expose private properties but keep validations
-class TokenBalance implements NonFunctionProperties<TokenBalanceDto> {
+class TokenBalance implements ConstructorArgs<TokenBalanceDto> {
   @IsUserAlias()
   owner: UserAlias;
 

@@ -12,11 +12,13 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-import { IsNotEmpty } from "class-validator";
+import { Type } from "class-transformer";
+import { IsNotEmpty, ValidateNested } from "class-validator";
 import { JSONSchema } from "class-validator-jsonschema";
 
 import { ChainKey } from "../utils";
 import { ChainObject } from "./ChainObject";
+import { OraclePriceAssertion } from "./OraclePriceAssertion";
 
 export class OraclePriceCrossRateAssertion extends ChainObject {
   public static INDEX_KEY = "GCOC"; // GalaChain Oracle Cross-rate
@@ -42,12 +44,14 @@ export class OraclePriceCrossRateAssertion extends ChainObject {
   @JSONSchema({
     description: "Chain key referencing the saved baseToken price assertion"
   })
-  @IsNotEmpty()
-  public baseTokenPriceAssertionKey: string;
+  @ValidateNested()
+  @Type(() => OraclePriceAssertion)
+  public baseTokenCrossRate: OraclePriceAssertion;
 
   @JSONSchema({
     description: "Chain key referencing the saved quote token price assertion"
   })
-  @IsNotEmpty()
-  public quoteTokenPriceAssertionKey: string;
+  @ValidateNested()
+  @Type(() => OraclePriceAssertion)
+  public quoteTokenCrossRate: OraclePriceAssertion;
 }

@@ -25,6 +25,12 @@ export enum UserRole {
   EVALUATE = "EVALUATE"
 }
 
+export enum UserRole {
+  CURATOR = "CURATOR",
+  SUBMIT = "SUBMIT",
+  EVALUATE = "EVALUATE"
+}
+
 export class UserProfile extends ChainObject {
   static ADMIN_ROLES = [UserRole.CURATOR, UserRole.EVALUATE, UserRole.SUBMIT] as const;
   static DEFAULT_ROLES = [UserRole.EVALUATE, UserRole.SUBMIT] as const;

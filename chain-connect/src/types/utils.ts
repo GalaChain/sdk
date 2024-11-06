@@ -12,6 +12,16 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+import { NonFunctionProperties } from "@gala-chain/api";
+
 export type PublicProperties<T> = {
   -readonly [K in keyof T]: T[K]; // Remove readonly
 };
+
+type NonFunctionPropertiesAndReplaceRecursive<T> = {
+  [K in keyof NonFunctionProperties<T>]: NonFunctionProperties<T>[K] extends object
+    ? NonFunctionPropertiesAndReplaceRecursive<NonFunctionProperties<T>[K]>
+    : NonFunctionProperties<T>[K];
+};
+
+export type ConstructorArgs<T> = NonFunctionPropertiesAndReplaceRecursive<T>;
