@@ -132,7 +132,7 @@ export async function lockOnMintProcessing(ctx: GalaChainContext, data: ILockOnM
     });
 
     await lockTokens(ctx, {
-      tokenInstances: [{ tokenInstanceKey: token, quantity: mintQuantityToLock }],
+      tokenInstances: [{ tokenInstanceKey: token, quantity: mintQuantityToLock, owner }],
       allowancesToUse: [],
       name: `${lockName}_${ctx.stub.getTxID()}`,
       lockAuthority: lockAuthority,
