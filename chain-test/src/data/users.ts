@@ -12,11 +12,11 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-import { UserProfile } from "@gala-chain/api";
+import { UserAlias, UserProfile } from "@gala-chain/api";
 import { ChainUser } from "@gala-chain/client";
 
 export interface ChainUserWithRoles {
-  identityKey: string;
+  identityKey: UserAlias;
   ethAddress: string;
   publicKey: string;
   privateKey: string;

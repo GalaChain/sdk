@@ -18,6 +18,7 @@ import { IsDefined, IsNotEmpty } from "class-validator";
 import { ChainKey } from "../utils";
 import { BigNumberProperty, IsUserAlias } from "../validators";
 import { ChainObject } from "./ChainObject";
+import { UserAlias } from "./UserAlias";
 
 // Replaces singular TokenClass property totalMintAllowance
 // Ledger entry specifying a totalQuantity of a new Mint GiveAllowance req
@@ -46,11 +47,11 @@ export class TokenMintAllowance extends ChainObject {
 
   @ChainKey({ position: 5 })
   @IsUserAlias()
-  public grantedBy: string;
+  public grantedBy: UserAlias;
 
   @ChainKey({ position: 6 })
   @IsUserAlias()
-  public grantedTo: string;
+  public grantedTo: UserAlias;
 
   @ChainKey({ position: 7 })
   @IsNotEmpty()

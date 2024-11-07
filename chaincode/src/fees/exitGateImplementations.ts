@@ -13,24 +13,23 @@
  * limitations under the License.
  */
 import {
-  BatchMintTokenDto,
   ChainError,
   ErrorCode,
   FeeGateCodes,
   GalaChainResponse,
-  MintTokenDto,
-  MintTokenWithAllowanceDto,
   PostMintLockConfiguration,
   TokenClass,
   TokenClassKey,
   TokenInstance,
   TokenInstanceKey,
   TokenMintConfiguration,
+  UserAlias,
   createValidDTO
 } from "@gala-chain/api";
 import BigNumber from "bignumber.js";
 
 import { lockTokens } from "../locks";
+import { MintTokenParams, MintTokenWithAllowanceParams } from "../mint";
 import { GalaChainContext } from "../types";
 import { getObjectByKey } from "../utils";
 import { burnToMintProcessing } from "./extendedFeeGateProcessing";
@@ -38,7 +37,7 @@ import { burnToMintProcessing } from "./extendedFeeGateProcessing";
 export interface IMintPostProcessing {
   tokenClass: TokenClassKey;
   tokens: TokenInstanceKey[];
-  owner: string;
+  owner: UserAlias;
   quantity: BigNumber;
   feeCode?: FeeGateCodes | undefined;
 }
@@ -87,7 +86,7 @@ export async function mintPostProcessing(ctx: GalaChainContext, data: IMintPostP
 export interface ILockOnMintProcessing {
   tokenClass: TokenClassKey;
   tokens: TokenInstanceKey[];
-  owner: string;
+  owner: UserAlias;
   quantity: BigNumber;
   lockConfiguration: PostMintLockConfiguration;
 }
@@ -144,11 +143,12 @@ export async function lockOnMintProcessing(ctx: GalaChainContext, data: ILockOnM
 
 export async function mintTokenExitGate(
   ctx: GalaChainContext,
-  dto: MintTokenDto,
+  dto: MintTokenParams,
   response: GalaChainResponse<TokenInstanceKey[]>
 ): Promise<void> {
-  const { tokenClass, quantity } = dto;
   const owner = dto.owner ?? ctx.callingUser;
+  const tokenClass = dto.tokenClassKey;
+  const quantity = dto.quantity;
   const tokens: TokenInstanceKey[] | undefined = response.Data;
 
   if (tokens === undefined || tokens.length < 1) {
@@ -160,11 +160,12 @@ export async function mintTokenExitGate(
 
 export async function mintTokenWithAllowanceExitGate(
   ctx: GalaChainContext,
-  dto: MintTokenWithAllowanceDto,
+  dto: MintTokenWithAllowanceParams,
   response: GalaChainResponse<TokenInstanceKey[]>
 ): Promise<void> {
-  const { tokenClass, quantity } = dto;
   const owner = dto.owner ?? ctx.callingUser;
+  const tokenClass = dto.tokenClassKey;
+  const quantity = dto.quantity;
   const tokens: TokenInstanceKey[] | undefined = response.Data;
 
   if (tokens === undefined || tokens.length < 1) {
@@ -176,12 +177,14 @@ export async function mintTokenWithAllowanceExitGate(
 
 export async function batchMintTokenExitGate(
   ctx: GalaChainContext,
-  dto: BatchMintTokenDto,
+  paramsArr: MintTokenParams[],
   response: GalaChainResponse<TokenInstanceKey[]>
 ): Promise<void> {
-  for (const mintDto of dto.mintDtos) {
-    const { tokenClass, quantity } = mintDto;
+  for (const mintDto of paramsArr) {
     const owner = mintDto.owner ?? ctx.callingUser;
+    const tokenClass = mintDto.tokenClassKey;
+    const quantity = mintDto.quantity;
+
     // todo: batchMintToken currently returns a singular array of TokenInstanceKeys,
     // and they are not ordered in a way that corresponds to the incoming mintDto.
     // passing in the specific NFT instances minted per mintDto would require

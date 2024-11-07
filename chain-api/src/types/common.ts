@@ -24,6 +24,7 @@ import {
   EnumProperty,
   IsUserAlias
 } from "../validators";
+import { UserAlias } from "./UserAlias";
 import { ChainCallDTO } from "./dtos";
 
 export enum AllowanceType {
@@ -42,7 +43,7 @@ export enum AllowanceType {
 })
 export class AllowanceKey extends ChainCallDTO {
   @IsUserAlias()
-  public grantedTo: string;
+  public grantedTo: UserAlias;
 
   @IsNotEmpty()
   public collection: string;
@@ -66,7 +67,7 @@ export class AllowanceKey extends ChainCallDTO {
   public allowanceType: AllowanceType;
 
   @IsUserAlias()
-  public grantedBy: string;
+  public grantedBy: UserAlias;
 
   @IsPositive()
   @IsInt()
@@ -111,8 +112,8 @@ export class MintRequestDto {
     description: "The owner of minted tokens. If the value is missing, chaincode caller is used."
   })
   @IsOptional()
-  @IsUserAlias()
-  owner?: string;
+  @IsUserAlias() // TODO ???
+  owner?: UserAlias;
 
   @JSONSchema({
     description: "(Optional). Specify the TokenAllowance on chain to use for this mint."

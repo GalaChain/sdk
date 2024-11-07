@@ -70,3 +70,5 @@ export * from "./TokenMintConfiguration";
 export * from "./TokenMintFulfillment";
 export * from "./TokenMintRequest";
 export * from "./TokenBurnCounter";
+export * from "./UserAlias";
+export * from "./UserRef";
