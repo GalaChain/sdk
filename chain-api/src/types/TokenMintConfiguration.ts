@@ -14,7 +14,6 @@
  */
 import { Exclude, Type } from "class-transformer";
 import {
-  IsBoolean,
   IsDefined,
   IsInt,
   IsNotEmpty,
@@ -28,6 +27,7 @@ import {
 import { ChainKey, ValidationFailedError } from "../utils";
 import { IsUserAlias } from "../validators";
 import { ChainObject } from "./ChainObject";
+import { UserAlias } from "./UserAlias";
 
 /**
  * @description
@@ -57,7 +57,7 @@ export class PostMintLockConfiguration extends ChainObject {
    */
   @IsNotEmpty()
   @IsUserAlias()
-  lockAuthority: string;
+  lockAuthority: UserAlias;
 
   /**
    * @description

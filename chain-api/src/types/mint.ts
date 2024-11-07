@@ -17,7 +17,6 @@ import { Type } from "class-transformer";
 import {
   ArrayMaxSize,
   ArrayNotEmpty,
-  IsBoolean,
   IsDefined,
   IsNotEmpty,
   IsNumber,
@@ -30,12 +29,12 @@ import { JSONSchema } from "class-validator-jsonschema";
 
 import { ArrayUniqueObjects, BigNumberIsNotNegative, BigNumberProperty, IsUserRef } from "../validators";
 import { TokenClassKey } from "./TokenClass";
-import { UserRef } from "./UserRef";
 import {
   BurnToMintConfiguration,
   PostMintLockConfiguration,
   TokenMintConfiguration
 } from "./TokenMintConfiguration";
+import { UserRef } from "./UserRef";
 import { AllowanceKey, MintRequestDto } from "./common";
 import { ChainCallDTO, SubmitCallDTO } from "./dtos";
 
