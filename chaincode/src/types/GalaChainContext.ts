@@ -12,7 +12,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-import { UnauthorizedError, UserRole } from "@gala-chain/api";
+import { UnauthorizedError, UserAlias, UserRole } from "@gala-chain/api";
 import { Context } from "fabric-contract-api";
 import { ChaincodeStub, Timestamp } from "fabric-shim";
 
@@ -28,7 +28,7 @@ function getTxUnixTime(ctx: Context): number {
 
 export class GalaChainContext extends Context {
   stub: GalaChainStub;
-  private callingUserValue?: string;
+  private callingUserValue?: UserAlias;
   private callingUserEthAddressValue?: string;
   private callingUserTonAddressValue?: string;
   private callingUserRolesValue?: string[];
@@ -43,7 +43,7 @@ export class GalaChainContext extends Context {
     return this.loggerInstance;
   }
 
-  get callingUser(): string {
+  get callingUser(): UserAlias {
     if (this.callingUserValue === undefined) {
       const message =
         "No calling user set. " +
@@ -76,7 +76,7 @@ export class GalaChainContext extends Context {
     return this.callingUserRolesValue;
   }
 
-  set callingUserData(d: { alias?: string; ethAddress?: string; tonAddress?: string; roles: string[] }) {
+  set callingUserData(d: { alias?: UserAlias; ethAddress?: string; tonAddress?: string; roles: string[] }) {
     if (this.callingUserValue !== undefined) {
       throw new Error("Calling user already set to " + this.callingUserValue);
     }
@@ -101,7 +101,7 @@ export class GalaChainContext extends Context {
   }
 
   public setDryRunOnBehalfOf(d: {
-    alias: string;
+    alias: UserAlias;
     ethAddress?: string;
     tonAddress?: string;
     roles: string[];

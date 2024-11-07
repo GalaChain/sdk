@@ -25,6 +25,7 @@ import {
   IsUserAlias
 } from "../validators";
 import { ChainObject } from "./ChainObject";
+import { UserAlias } from "./UserAlias";
 import { AllowanceType } from "./common";
 
 // A Token Claim is the other side of an allowance
@@ -46,7 +47,7 @@ export class TokenClaim extends ChainObject {
   // This is the owner of the allowance, not the token
   @ChainKey({ position: 0 })
   @IsUserAlias()
-  public ownerKey: string;
+  public ownerKey: UserAlias;
 
   @ChainKey({ position: 1 })
   @IsNotEmpty()
@@ -77,7 +78,7 @@ export class TokenClaim extends ChainObject {
   // This is the person making the claim
   @ChainKey({ position: 7 })
   @IsUserAlias()
-  public issuerKey: string;
+  public issuerKey: UserAlias;
 
   @ChainKey({ position: 8 })
   @IsPositive()

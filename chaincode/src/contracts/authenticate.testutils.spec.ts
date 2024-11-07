@@ -22,7 +22,9 @@ import {
   RegisterTonUserDto,
   RegisterUserDto,
   SigningScheme,
+  UserAlias,
   UserProfile,
+  UserRef,
   createValidDTO,
   createValidSubmitDTO,
   signatures
@@ -32,21 +34,21 @@ import { instanceToInstance } from "class-transformer";
 import { randomUUID } from "crypto";
 
 export interface User {
-  alias: string;
+  alias: UserAlias;
   privateKey: string;
   publicKey: string;
   ethAddress: string;
 }
 
 export interface TonUser {
-  alias: string;
+  alias: UserAlias;
   privateKey: string;
   publicKey: string;
   tonAddress: string;
 }
 
 export async function createUser(): Promise<User> {
-  const name = "client|user-" + randomUUID();
+  const name = ("client|user-" + randomUUID()) as UserAlias;
   const { privateKey, publicKey } = signatures.genKeyPair();
   const ethAddress = signatures.getEthAddress(publicKey);
   return { alias: name, privateKey, publicKey, ethAddress };
@@ -66,7 +68,7 @@ export async function createTonUser(): Promise<TonUser> {
   const privateKey = Buffer.from(pair.secretKey).toString("base64");
   const publicKey = Buffer.from(pair.publicKey).toString("base64");
   const tonAddress = signatures.ton.getTonAddress(pair.publicKey);
-  const alias = `ton|${tonAddress}`;
+  const alias = `ton|${tonAddress}` as UserAlias;
   return { alias, privateKey, publicKey, tonAddress };
 }
 
@@ -108,9 +110,9 @@ export function createTonSignedDto(unsigned: ChainCallDTO, privateKey: string) {
 
 export async function getPublicKey(
   chaincode: TestChaincode,
-  userAlias: string
+  userRef: UserRef
 ): Promise<GalaChainResponse<PublicKey>> {
-  const dto = await createValidDTO<GetPublicKeyDto>(GetPublicKeyDto, { user: userAlias });
+  const dto = await createValidDTO<GetPublicKeyDto>(GetPublicKeyDto, { user: userRef });
   return chaincode.invoke("PublicKeyContract:GetPublicKey", dto);
 }
 

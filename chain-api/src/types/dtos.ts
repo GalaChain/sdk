@@ -25,7 +25,9 @@ import {
   serialize,
   signatures
 } from "../utils";
-import { IsUserAlias, StringEnumProperty } from "../validators";
+import { IsUserAlias, IsUserRef, StringEnumProperty } from "../validators";
+import { UserAlias } from "./UserAlias";
+import { UserRef } from "./UserRef";
 import { GalaChainResponse } from "./contract";
 
 type Base<T, BaseT> = T extends BaseT ? T : never;
@@ -417,7 +419,7 @@ export class RegisterUserDto extends SubmitCallDTO {
     description: `Id of user to save public key for.`
   })
   @IsUserAlias()
-  user: string;
+  user: UserAlias;
 
   /**
    * @description Public secp256k1 key (compact or non-compact, hex or base64).
@@ -481,8 +483,8 @@ export class GetPublicKeyDto extends ChainCallDTO {
     description: `Id of a public key holder. Optional field, by default caller's public key is returned.`
   })
   @IsOptional()
-  @IsUserAlias()
-  user?: string;
+  @IsUserRef()
+  user?: UserRef;
 }
 
 export class GetMyProfileDto extends ChainCallDTO {

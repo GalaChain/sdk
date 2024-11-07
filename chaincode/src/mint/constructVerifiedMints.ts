@@ -31,7 +31,7 @@ export async function constructVerifiedMints(
   tokenClass: TokenClass,
   instanceCounter: BigNumber
 ): Promise<[TokenInstance[], TokenBalance]> {
-  const callingUser: string = ctx.callingUser;
+  const callingUser = ctx.callingUser;
   const owner = dto.owner ?? callingUser;
   const { collection, category, type, additionalKey } = dto;
   const tokenClassKey = await TokenClass.buildClassKeyObject({ collection, category, type, additionalKey });

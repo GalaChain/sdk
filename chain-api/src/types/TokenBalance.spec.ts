@@ -3,6 +3,7 @@ import BigNumber from "bignumber.js";
 import { TokenBalance, TokenHold } from "./TokenBalance";
 import { TokenClassKey } from "./TokenClass";
 import { TokenInstance } from "./TokenInstance";
+import { UserAlias } from "./UserAlias";
 
 /*
  * Copyright (c) Gala Games Inc. All rights reserved.
@@ -25,13 +26,13 @@ function emptyBalance() {
     category: "test-category",
     type: "test-type",
     additionalKey: "test-additional-key",
-    owner: "user1"
+    owner: "client|user1" as UserAlias
   });
 }
 
 function createHold(instance: BigNumber, expires: number, quantity?: BigNumber, name?: string) {
   return new TokenHold({
-    createdBy: "user1",
+    createdBy: "client|user1" as UserAlias,
     instanceId: instance,
     quantity: quantity ?? new BigNumber(1),
     created: 1,

@@ -21,6 +21,7 @@ import {
   TokenLockedError,
   TokenNotInBalanceError,
   TransferTokenDto,
+  UserAlias,
   createValidChainObject,
   createValidSubmitDTO
 } from "@gala-chain/api";
@@ -400,7 +401,7 @@ describe("TransferToken", () => {
     const tokenBalance = currency.tokenBalance((b) => ({ ...b, owner: users.testUser2.identityKey }));
 
     const transferAllowance = await createValidChainObject(TokenAllowance, {
-      grantedTo: "TonBridge",
+      grantedTo: "TonBridge" as UserAlias,
       grantedBy: users.tokenHolder.identityKey,
       ...currencyInstanceKey,
       instance: currencyInstance.instance,
@@ -453,7 +454,7 @@ describe("TransferToken", () => {
     const tokenBalance = currency.tokenBalance((b) => ({ ...b, owner: users.testUser2.identityKey }));
 
     const transferAllowance = await createValidChainObject(TokenAllowance, {
-      grantedTo: "EthereumBridge",
+      grantedTo: "EthereumBridge" as UserAlias,
       grantedBy: users.tokenHolder.identityKey,
       ...currencyInstanceKey,
       instance: currencyInstance.instance,

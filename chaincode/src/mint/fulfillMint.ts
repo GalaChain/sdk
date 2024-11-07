@@ -49,7 +49,7 @@ import {
 } from "../utils";
 import { constructVerifiedMints } from "./constructVerifiedMints";
 import { indexMintRequests } from "./indexMintRequests";
-import { validateMintRequest } from "./validateMintRequest";
+import { ValidateMintRequestParams, validateMintRequest } from "./validateMintRequest";
 
 export async function mintRequestsByTimeRange(
   ctx: GalaChainContext,
@@ -260,21 +260,21 @@ export async function fulfillMintRequest(
       } else {
         const mintFulfillmentEntry: TokenMintFulfillment = req.fulfill(req.quantity);
 
-        const mintDto: MintTokenDto = await createValidSubmitDTO(MintTokenDto, {
+        const mintReqParams: ValidateMintRequestParams = {
           tokenClass: plainToInstance(TokenClassKey, { collection, category, type, additionalKey }),
           owner: req.owner,
           quantity: req.quantity,
-          allowanceKey: req.allowanceKey
-        });
+          allowanceKey: req.allowanceKey,
+          authorizedOnBehalf: undefined
+        };
 
         // todo: bridging support. refactor FulfillMint and/or validateMintRequest
         // functionality to replace the hard-coded `undefined`
         // below with bridgeUserType handling.
         const applicableAllowances: TokenAllowance[] = await validateMintRequest(
           ctx,
-          mintDto,
-          tokenClass,
-          undefined
+          mintReqParams,
+          tokenClass
         );
 
         const actionDescription =

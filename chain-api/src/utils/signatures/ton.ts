@@ -63,7 +63,7 @@ function isValidTonAddress(address: string): boolean {
 }
 
 function splitDataIntoCells(data: Buffer) {
-  const { beginCell, Cell } = importTonOrReject().ton;
+  const { beginCell } = importTonOrReject().ton;
 
   const buffer = Buffer.from(data);
   const cellSizeLimit = 127; // 127 bytes (127 * 8 = 1016 bits, within the 1023 bits limit)

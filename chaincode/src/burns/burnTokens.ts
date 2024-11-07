@@ -23,6 +23,7 @@ import {
   TokenBurnCounter,
   TokenClass,
   TokenInstanceKey,
+  UserAlias,
   ValidationFailedError,
   createValidChainObject,
   createValidRangedChainObject
@@ -46,7 +47,7 @@ import { InsufficientBurnAllowanceError, UseAllowancesFailedError } from "./Burn
 import { fetchKnownBurnCount } from "./fetchBurns";
 
 export interface BurnsTokensParams {
-  owner: string;
+  owner: UserAlias;
   toBurn: BurnTokenQuantity[];
   preValidated?: boolean;
 }
@@ -244,7 +245,7 @@ export function aggregateBurnQuantities(requests: BurnTokenQuantity[]): BurnToke
  */
 export async function incrementOrCreateTokenBurnForTx(
   ctx: GalaChainContext,
-  burnedBy: string,
+  burnedBy: UserAlias,
   { collection, category, type, additionalKey, instance }: TokenInstanceKey,
   quantity: BigNumber
 ): Promise<TokenBurn> {
@@ -294,7 +295,7 @@ export async function incrementOrCreateTokenBurnForTx(
  */
 export async function incrementOrCreateTokenBurnCounterForTx(
   ctx: GalaChainContext,
-  burnedBy: string,
+  burnedBy: UserAlias,
   { collection, category, type, additionalKey, instance }: TokenInstanceKey,
   quantity: BigNumber
 ): Promise<TokenBurnCounter> {
