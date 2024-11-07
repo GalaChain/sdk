@@ -129,6 +129,15 @@ Additionally, we added a utility method for creating a unique key, which can be 
 const uniqueKey = createUniqueKey();
 ```
 
+#### Unification of TokenBalance class API
+
+We unified the API of the `TokenBalance` class, which is used for storing the token balances in the chain state.
+Previously, the methods of `TokenBalance` class separated validation and mutation of the balance, which led to verbose syntax (e.g. `balance.ensureCanAddInstance(...).add()`).
+Now, the methods are unified, and the validation is done in the relevant methods (e.g. `balance.addInstance(...)`).
+This way we prefer clean code over SRP (Single Responsibility Principle) in this case, and we unify the api with different classes that are used for the chain state.
+
+The change impacts chaincode code only.
+
 #### Bidirectional aliases and strong validation for user related fields
 
 Starting from version `2.0.0` we enforce strong validation for user related fields in the DTOs, and chain objects.

@@ -78,7 +78,7 @@ export async function unlockToken(
     return balance;
   }
 
-  balance.ensureCanUnlockInstance(applicableHold.instanceId, name, ctx.txUnixTime).unlock();
+  balance.unlockInstance(applicableHold.instanceId, name, ctx.txUnixTime);
 
   await putChainObject(ctx, balance);
 
@@ -110,7 +110,7 @@ export async function unlockFungibleToken(
 
   const balance = await fetchOrCreateBalance(ctx, owner, tokenInstanceKey.getTokenClassKey());
 
-  balance.ensureCanUnlockQuantity(quantityToUnlock, ctx.txUnixTime, name, lockAuthority).unlock();
+  balance.unlockQuantity(quantityToUnlock, ctx.txUnixTime, name, lockAuthority);
 
   await putChainObject(ctx, balance);
 

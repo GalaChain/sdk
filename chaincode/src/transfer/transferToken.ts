@@ -82,11 +82,11 @@ export async function transferToken(
   const toPersonBalance = await fetchOrCreateBalance(ctx, to, tokenInstanceKey);
 
   if (tokenInstance.isNonFungible) {
-    fromPersonBalance.ensureCanRemoveInstance(tokenInstance.instance, ctx.txUnixTime).remove();
-    toPersonBalance.ensureCanAddInstance(tokenInstance.instance).add();
+    fromPersonBalance.removeInstance(tokenInstance.instance, ctx.txUnixTime);
+    toPersonBalance.addInstance(tokenInstance.instance);
   } else {
-    fromPersonBalance.ensureCanSubtractQuantity(quantity, ctx.txUnixTime).subtract();
-    toPersonBalance.ensureCanAddQuantity(quantity).add();
+    fromPersonBalance.subtractQuantity(quantity, ctx.txUnixTime);
+    toPersonBalance.addQuantity(quantity);
   }
 
   await putChainObject(ctx, fromPersonBalance);

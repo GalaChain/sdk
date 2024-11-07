@@ -129,9 +129,9 @@ export async function lockToken(
   });
 
   if (tokenInstanceKey.isFungible()) {
-    balance.ensureCanLockQuantity(hold).lock();
+    balance.lockQuantity(hold);
   } else {
-    balance.ensureCanLockInstance(hold, ctx.txUnixTime).lock();
+    balance.lockInstance(hold, ctx.txUnixTime);
   }
 
   await putChainObject(ctx, balance);

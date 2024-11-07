@@ -191,7 +191,7 @@ export async function mintToken(
       mintedNFTs.push(nftInfo);
 
       // update balance
-      userBalance.ensureCanAddInstance(nftInfo.instance).add();
+      userBalance.addInstance(nftInfo.instance);
     }
 
     // save instances
@@ -220,7 +220,7 @@ export async function mintToken(
     // Update the balance of the target user, or create it.
     const userBalance = await fetchOrCreateBalance(ctx, owner, tokenClassKey);
 
-    userBalance.ensureCanAddQuantity(quantity).add();
+    userBalance.addQuantity(quantity);
 
     // Write the balance to the chain
     await putChainObject(ctx, userBalance);

@@ -77,14 +77,14 @@ export async function constructVerifiedMints(
     }
 
     instanceIds.forEach((instanceId) => {
-      userBalance.ensureCanAddInstance(instanceId).add();
+      userBalance.addInstance(instanceId);
     });
 
     return [mintedNFTs, userBalance];
   } else {
     const userBalance = await fetchOrCreateBalance(ctx, owner, tokenClassKey);
 
-    userBalance.ensureCanAddQuantity(quantity).add();
+    userBalance.addQuantity(quantity);
 
     const fungibleReturnInstance = await createValidChainObject(TokenInstance, {
       collection,

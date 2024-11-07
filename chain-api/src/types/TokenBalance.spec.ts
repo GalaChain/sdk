@@ -47,7 +47,7 @@ describe("fungible", () => {
     const balance = emptyBalance();
 
     // When
-    balance.ensureCanAddQuantity(new BigNumber(1)).add();
+    balance.addQuantity(new BigNumber(1));
 
     // Then
     expect(balance.getQuantityTotal()).toEqual(new BigNumber(1));
@@ -56,10 +56,10 @@ describe("fungible", () => {
   it("should fail to add quantity if balance contains NFT instances", () => {
     // Given
     const balance = emptyBalance();
-    balance.ensureCanAddInstance(new BigNumber(1)).add();
+    balance.addInstance(new BigNumber(1));
 
     // When
-    const error = () => balance.ensureCanAddQuantity(new BigNumber(1));
+    const error = () => balance.addQuantity(new BigNumber(1));
 
     // Then
     expect(error).toThrow("Attempted to perform FT-specific operation on balance containing NFT instances");
@@ -70,7 +70,7 @@ describe("fungible", () => {
     const balance = emptyBalance();
 
     // When
-    const error = () => balance.ensureCanAddQuantity(new BigNumber(-1));
+    const error = () => balance.addQuantity(new BigNumber(-1));
 
     // Then
     expect(error).toThrow("FT quantity must be positive");
@@ -81,8 +81,8 @@ describe("fungible", () => {
     const balance = emptyBalance();
 
     // When
-    balance.ensureCanAddQuantity(new BigNumber(1)).add();
-    balance.ensureCanSubtractQuantity(new BigNumber(1), Date.now()).subtract();
+    balance.addQuantity(new BigNumber(1));
+    balance.subtractQuantity(new BigNumber(1), Date.now());
 
     // Then
     expect(balance.getQuantityTotal()).toEqual(new BigNumber(0));
@@ -93,7 +93,7 @@ describe("fungible", () => {
     const balance = emptyBalance();
 
     // When
-    const error = () => balance.ensureCanSubtractQuantity(new BigNumber(1), Date.now());
+    const error = () => balance.subtractQuantity(new BigNumber(1), Date.now());
 
     // Then
     expect(error).toThrow("Insufficient balance");
@@ -102,10 +102,10 @@ describe("fungible", () => {
   it("should fail to subtract quantity if balance contains NFT instances", () => {
     // Given
     const balance = emptyBalance();
-    balance.ensureCanAddInstance(new BigNumber(1)).add();
+    balance.addInstance(new BigNumber(1));
 
     // When
-    const error = () => balance.ensureCanSubtractQuantity(new BigNumber(1), Date.now());
+    const error = () => balance.subtractQuantity(new BigNumber(1), Date.now());
 
     // Then
     expect(error).toThrow("Attempted to perform FT-specific operation on balance containing NFT instances");
@@ -116,7 +116,7 @@ describe("fungible", () => {
     const balance = emptyBalance();
 
     // When
-    const error = () => balance.ensureCanSubtractQuantity(new BigNumber(-1), Date.now());
+    const error = () => balance.subtractQuantity(new BigNumber(-1), Date.now());
 
     // Then
     expect(error).toThrow("FT quantity must be positive");
@@ -127,11 +127,11 @@ describe("fungible", () => {
     const balance = emptyBalance();
     const hold = createHold(TokenInstance.FUNGIBLE_TOKEN_INSTANCE, 0, new BigNumber(10));
 
-    balance.ensureCanAddQuantity(new BigNumber(10)).add();
-    balance.ensureCanLockQuantity(hold).lock();
+    balance.addQuantity(new BigNumber(10));
+    balance.lockQuantity(hold);
 
     // When
-    const error = () => balance.ensureCanSubtractQuantity(new BigNumber(1), Date.now());
+    const error = () => balance.subtractQuantity(new BigNumber(1), Date.now());
 
     // Then
     expect(error).toThrow("Insufficient balance");
@@ -146,11 +146,11 @@ describe("fungible", () => {
     const balance = emptyBalance();
     const hold = createHold(TokenInstance.FUNGIBLE_TOKEN_INSTANCE, 0, lockedTotal);
 
-    balance.ensureCanAddQuantity(initialTotal).add();
-    balance.ensureCanLockQuantity(hold).lock();
+    balance.addQuantity(initialTotal);
+    balance.lockQuantity(hold);
 
     // When
-    balance.ensureCanSubtractQuantity(subtractTotal, Date.now()).subtract();
+    balance.subtractQuantity(subtractTotal, Date.now());
 
     // Then
     expect(balance.getQuantityTotal()).toEqual(initialTotal.minus(subtractTotal));
@@ -169,12 +169,12 @@ describe("fungible", () => {
     const balance = emptyBalance();
     const hold = createHold(TokenInstance.FUNGIBLE_TOKEN_INSTANCE, 0, lockedTotal);
 
-    balance.ensureCanAddQuantity(initialTotal).add();
-    balance.ensureCanLockQuantity(hold).lock();
+    balance.addQuantity(initialTotal);
+    balance.lockQuantity(hold);
 
     // When
-    balance.ensureCanUnlockQuantity(lockedTotal, Date.now()).unlock();
-    balance.ensureCanSubtractQuantity(subtractTotal, Date.now()).subtract();
+    balance.unlockQuantity(lockedTotal, Date.now());
+    balance.subtractQuantity(subtractTotal, Date.now());
 
     // Then
     expect(balance.getQuantityTotal()).toEqual(initialTotal.minus(subtractTotal));
@@ -192,13 +192,12 @@ describe("fungible", () => {
     const nameForUnlockAttempt = undefined;
     const hold = createHold(TokenInstance.FUNGIBLE_TOKEN_INSTANCE, 0, lockedTotal, nameForHold);
 
-    balance.ensureCanAddQuantity(initialTotal).add();
-    balance.ensureCanLockQuantity(hold).lock();
+    balance.addQuantity(initialTotal);
+    balance.lockQuantity(hold);
 
     const tokenClassKey = TokenClassKey.toStringKey({ ...balance });
     // When
-    const error = () =>
-      balance.ensureCanUnlockQuantity(lockedTotal, Date.now(), nameForUnlockAttempt).unlock();
+    const error = () => balance.unlockQuantity(lockedTotal, Date.now(), nameForUnlockAttempt);
 
     // Then
     expect(error).toThrow(
@@ -238,15 +237,15 @@ describe("fungible", () => {
       )
     ];
 
-    balance.ensureCanAddQuantity(initialTotal).add();
+    balance.addQuantity(initialTotal);
 
     holds.forEach((hold) => {
-      balance.ensureCanLockQuantity(hold).lock();
+      balance.lockQuantity(hold);
     });
 
     const lockedTotal = quantityLockedPerHold.times(holds.length);
     // When
-    balance.ensureCanUnlockQuantity(quantityLockedPerHold, Date.now()).unlock();
+    balance.unlockQuantity(quantityLockedPerHold, Date.now());
     const unexpiredLockedHolds = balance.getUnexpiredLockedHolds(Date.now());
 
     // Then
@@ -268,10 +267,10 @@ describe("fungible", () => {
       createHold(TokenInstance.FUNGIBLE_TOKEN_INSTANCE, 0, quantityLockedPerHold, undefined)
     ];
 
-    balance.ensureCanAddQuantity(initialTotal).add();
+    balance.addQuantity(initialTotal);
 
     holds.forEach((hold) => {
-      balance.ensureCanLockQuantity(hold).lock();
+      balance.lockQuantity(hold);
     });
 
     const expectedTotalLockedInitially = quantityLockedPerHold.times(holds.length);
@@ -280,7 +279,7 @@ describe("fungible", () => {
     const expectedHoldsRemainingOnBalance = quantityToUnlock.dividedToIntegerBy(quantityLockedPerHold);
 
     // When
-    balance.ensureCanUnlockQuantity(quantityToUnlock, Date.now()).unlock();
+    balance.unlockQuantity(quantityToUnlock, Date.now());
     const remainingLockedQuantity = balance.getLockedQuantityTotal(Date.now());
     const unexpiredLockedHolds = balance.getUnexpiredLockedHolds(Date.now());
 
@@ -297,8 +296,8 @@ describe("non-fungible", () => {
     const balance = emptyBalance();
 
     // When
-    balance.ensureCanAddInstance(new BigNumber(1)).add();
-    balance.ensureCanAddInstance(new BigNumber(2)).add();
+    balance.addInstance(new BigNumber(1));
+    balance.addInstance(new BigNumber(2));
 
     // Then
     expect(balance.getNftInstanceCount()).toEqual(2);
@@ -309,9 +308,9 @@ describe("non-fungible", () => {
     const balance = emptyBalance();
 
     // When
-    balance.ensureCanAddInstance(new BigNumber(1)).add();
+    balance.addInstance(new BigNumber(1));
 
-    const error = () => balance.ensureCanAddInstance(new BigNumber(1));
+    const error = () => balance.addInstance(new BigNumber(1));
 
     // Then
     expect(error).toThrow("already exists in balance");
@@ -322,11 +321,11 @@ describe("non-fungible", () => {
     const balance = emptyBalance();
 
     // When
-    balance.ensureCanAddInstance(new BigNumber(1)).add();
+    balance.addInstance(new BigNumber(1));
 
-    const errorZero = () => balance.ensureCanAddInstance(new BigNumber(0));
-    const errorNegative = () => balance.ensureCanAddInstance(new BigNumber(0));
-    const errorDecimal = () => balance.ensureCanAddInstance(new BigNumber(0));
+    const errorZero = () => balance.addInstance(new BigNumber(0));
+    const errorNegative = () => balance.addInstance(new BigNumber(0));
+    const errorDecimal = () => balance.addInstance(new BigNumber(0));
 
     // Then
     expect(errorZero).toThrow("Instance ID must be positive integer");
@@ -339,8 +338,8 @@ describe("non-fungible", () => {
     const balance = emptyBalance();
 
     // When
-    balance.ensureCanAddInstance(new BigNumber(1)).add();
-    balance.ensureCanRemoveInstance(new BigNumber(1), Date.now()).remove();
+    balance.addInstance(new BigNumber(1));
+    balance.removeInstance(new BigNumber(1), Date.now());
 
     // Then
     expect(balance.getNftInstanceCount()).toEqual(0);
@@ -351,7 +350,7 @@ describe("non-fungible", () => {
     const balance = emptyBalance();
 
     // When
-    const error = () => balance.ensureCanRemoveInstance(new BigNumber(1), Date.now());
+    const error = () => balance.removeInstance(new BigNumber(1), Date.now());
 
     // Then
     expect(error).toThrow("not found in balance");
@@ -363,9 +362,9 @@ describe("non-fungible", () => {
     const balance = emptyBalance();
 
     // When
-    balance.ensureCanAddInstance(new BigNumber(1)).add();
-    balance.ensureCanLockInstance(unexpiredHold, Date.now()).lock();
-    const error = () => balance.ensureCanRemoveInstance(new BigNumber(1), Date.now());
+    balance.addInstance(new BigNumber(1));
+    balance.lockInstance(unexpiredHold, Date.now());
+    const error = () => balance.removeInstance(new BigNumber(1), Date.now());
 
     // Then
     expect(error).toThrow("is locked");
@@ -377,9 +376,9 @@ describe("non-fungible", () => {
     const balance = emptyBalance();
 
     // When
-    balance.ensureCanAddInstance(new BigNumber(1)).add();
-    balance.ensureCanUseInstance(unexpiredHold, Date.now()).use();
-    const error = () => balance.ensureCanRemoveInstance(new BigNumber(1), Date.now());
+    balance.addInstance(new BigNumber(1));
+    balance.useInstance(unexpiredHold, Date.now());
+    const error = () => balance.removeInstance(new BigNumber(1), Date.now());
 
     // Then
     expect(error).toThrow("is in use");
@@ -391,8 +390,8 @@ describe("non-fungible", () => {
     const balance = emptyBalance();
 
     // When
-    balance.ensureCanAddInstance(new BigNumber(1)).add();
-    balance.ensureCanLockInstance(unexpiredHold, Date.now()).lock();
+    balance.addInstance(new BigNumber(1));
+    balance.lockInstance(unexpiredHold, Date.now());
 
     // Then
     expect(balance).toEqual(
@@ -408,8 +407,8 @@ describe("non-fungible", () => {
     const balance = emptyBalance();
 
     // When
-    balance.ensureCanAddInstance(new BigNumber(1)).add();
-    balance.ensureCanUseInstance(unexpiredHold, Date.now()).use();
+    balance.addInstance(new BigNumber(1));
+    balance.useInstance(unexpiredHold, Date.now());
 
     // Then
     expect(balance).toEqual(
@@ -425,8 +424,8 @@ describe("non-fungible", () => {
     const balance = emptyBalance();
 
     // When
-    balance.ensureCanAddQuantity(new BigNumber(0)).add();
-    const error = () => balance.ensureCanLockInstance(unexpiredHold, Date.now()).lock();
+    balance.addQuantity(new BigNumber(0));
+    const error = () => balance.lockInstance(unexpiredHold, Date.now());
 
     // Then
     expect(error).toThrow("Instance ID must be positive integer");
@@ -438,8 +437,8 @@ describe("non-fungible", () => {
     const balance = emptyBalance();
 
     // When
-    balance.ensureCanAddQuantity(new BigNumber(0)).add();
-    const error = () => balance.ensureCanUseInstance(unexpiredHold, Date.now()).use();
+    balance.addQuantity(new BigNumber(0));
+    const error = () => balance.useInstance(unexpiredHold, Date.now());
 
     // Then
     expect(error).toThrow("Instance ID must be positive integer");
@@ -451,7 +450,7 @@ describe("non-fungible", () => {
     const balance = emptyBalance();
 
     // When
-    const error = () => balance.ensureCanLockInstance(unexpiredHold, Date.now()).lock();
+    const error = () => balance.lockInstance(unexpiredHold, Date.now());
 
     // Then
     expect(error).toThrow("not found in balance");
@@ -463,7 +462,7 @@ describe("non-fungible", () => {
     const balance = emptyBalance();
 
     // When
-    const error = () => balance.ensureCanUseInstance(unexpiredHold, Date.now()).use();
+    const error = () => balance.useInstance(unexpiredHold, Date.now());
 
     // Then
     expect(error).toThrow("not found in balance");
@@ -475,9 +474,9 @@ describe("non-fungible", () => {
     const balance = emptyBalance();
 
     // When
-    balance.ensureCanAddInstance(new BigNumber(1)).add();
-    balance.ensureCanUseInstance(unexpiredHold, Date.now()).use();
-    const error = () => balance.ensureCanLockInstance(unexpiredHold, Date.now()).lock();
+    balance.addInstance(new BigNumber(1));
+    balance.useInstance(unexpiredHold, Date.now());
+    const error = () => balance.lockInstance(unexpiredHold, Date.now());
 
     // Then
     expect(error).toThrow("is in use");
@@ -489,9 +488,9 @@ describe("non-fungible", () => {
     const balance = emptyBalance();
 
     // When
-    balance.ensureCanAddInstance(new BigNumber(1)).add();
-    balance.ensureCanUseInstance(unexpiredHold, Date.now()).use();
-    const error = () => balance.ensureCanUseInstance(unexpiredHold, Date.now()).use();
+    balance.addInstance(new BigNumber(1));
+    balance.useInstance(unexpiredHold, Date.now());
+    const error = () => balance.useInstance(unexpiredHold, Date.now());
 
     // Then
     expect(error).toThrow("is in use");
@@ -503,9 +502,9 @@ describe("non-fungible", () => {
     const balance = emptyBalance();
 
     // When
-    balance.ensureCanAddInstance(new BigNumber(1)).add();
-    balance.ensureCanLockInstance(unexpiredHold, Date.now()).lock();
-    const error = () => balance.ensureCanLockInstance(unexpiredHold, Date.now()).lock();
+    balance.addInstance(new BigNumber(1));
+    balance.lockInstance(unexpiredHold, Date.now());
+    const error = () => balance.lockInstance(unexpiredHold, Date.now());
 
     // Then
     expect(error).toThrow("is locked");
@@ -517,9 +516,9 @@ describe("non-fungible", () => {
     const balance = emptyBalance();
 
     // When
-    balance.ensureCanAddInstance(new BigNumber(1)).add();
-    balance.ensureCanLockInstance(unexpiredHold, Date.now()).lock();
-    const error = () => balance.ensureCanUseInstance(unexpiredHold, Date.now()).use();
+    balance.addInstance(new BigNumber(1));
+    balance.lockInstance(unexpiredHold, Date.now());
+    const error = () => balance.useInstance(unexpiredHold, Date.now());
 
     // Then
     expect(error).toThrow("is locked");
@@ -531,9 +530,9 @@ describe("non-fungible", () => {
     const balance = emptyBalance();
 
     // When
-    balance.ensureCanAddInstance(new BigNumber(1)).add();
-    balance.ensureCanLockInstance(unexpiredHold, Date.now()).lock();
-    balance.ensureCanUnlockInstance(new BigNumber(1), undefined, Date.now()).unlock();
+    balance.addInstance(new BigNumber(1));
+    balance.lockInstance(unexpiredHold, Date.now());
+    balance.unlockInstance(new BigNumber(1), undefined, Date.now());
 
     // Then
     expect(balance).toEqual(
@@ -548,8 +547,8 @@ describe("non-fungible", () => {
     const balance = emptyBalance();
 
     // When
-    balance.ensureCanAddInstance(new BigNumber(1)).add();
-    const error = () => balance.ensureCanUnlockInstance(new BigNumber(1), undefined, Date.now());
+    balance.addInstance(new BigNumber(1));
+    const error = () => balance.unlockInstance(new BigNumber(1), undefined, Date.now());
 
     // Then
     expect(error).toThrow("is not locked");
@@ -561,9 +560,9 @@ describe("non-fungible", () => {
     const balance = emptyBalance();
 
     // When
-    balance.ensureCanAddInstance(new BigNumber(1)).add();
-    balance.ensureCanUseInstance(unexpiredHold, Date.now()).use();
-    balance.ensureCanReleaseInstance(new BigNumber(1), undefined, Date.now()).release();
+    balance.addInstance(new BigNumber(1));
+    balance.useInstance(unexpiredHold, Date.now());
+    balance.releaseInstance(new BigNumber(1), undefined, Date.now());
 
     // Then
     expect(balance).toEqual(
@@ -578,8 +577,8 @@ describe("non-fungible", () => {
     const balance = emptyBalance();
 
     // When
-    balance.ensureCanAddInstance(new BigNumber(1)).add();
-    const error = () => balance.ensureCanReleaseInstance(new BigNumber(1), undefined, Date.now());
+    balance.addInstance(new BigNumber(1));
+    const error = () => balance.releaseInstance(new BigNumber(1), undefined, Date.now());
 
     // Then
     expect(error).toThrow("is not in use");
@@ -591,8 +590,8 @@ describe("non-fungible", () => {
     const balance = emptyBalance();
 
     // When
-    balance.ensureCanAddInstance(new BigNumber(1)).add();
-    balance.ensureCanLockInstance(unexpiredHold, Date.now()).lock();
+    balance.addInstance(new BigNumber(1));
+    balance.lockInstance(unexpiredHold, Date.now());
 
     const foundHold = balance.findLockedHold(new BigNumber(1), undefined, Date.now());
 
@@ -606,8 +605,8 @@ describe("non-fungible", () => {
     const balance = emptyBalance();
 
     // When
-    balance.ensureCanAddInstance(new BigNumber(1)).add();
-    balance.ensureCanUseInstance(unexpiredHold, Date.now()).use();
+    balance.addInstance(new BigNumber(1));
+    balance.useInstance(unexpiredHold, Date.now());
 
     const foundHold = balance.findInUseHold(new BigNumber(1), Date.now());
 
@@ -620,7 +619,7 @@ describe("non-fungible", () => {
     const balance = emptyBalance();
 
     // When
-    balance.ensureCanAddInstance(new BigNumber(1)).add();
+    balance.addInstance(new BigNumber(1));
 
     const containsNft = balance.containsAnyNftInstanceId();
 
@@ -633,7 +632,7 @@ describe("non-fungible", () => {
     const balance = emptyBalance();
 
     // When
-    balance.ensureCanAddInstance(new BigNumber(1)).add();
+    balance.addInstance(new BigNumber(1));
 
     const isSpendable = balance.isInstanceSpendable(new BigNumber(1), Date.now());
 
@@ -658,8 +657,8 @@ describe("non-fungible", () => {
     const balance = emptyBalance();
 
     // When
-    balance.ensureCanAddInstance(new BigNumber(1)).add();
-    balance.ensureCanLockInstance(unexpiredHold, Date.now()).lock();
+    balance.addInstance(new BigNumber(1));
+    balance.lockInstance(unexpiredHold, Date.now());
 
     const notInBalance = balance.isInstanceSpendable(new BigNumber(1), Date.now());
 
@@ -673,8 +672,8 @@ describe("non-fungible", () => {
     const balance = emptyBalance();
 
     // When
-    balance.ensureCanAddInstance(new BigNumber(1)).add();
-    balance.ensureCanUseInstance(unexpiredHold, Date.now()).use();
+    balance.addInstance(new BigNumber(1));
+    balance.useInstance(unexpiredHold, Date.now());
 
     const notInBalance = balance.isInstanceSpendable(new BigNumber(1), Date.now());
 
@@ -687,8 +686,8 @@ describe("non-fungible", () => {
     const balance = emptyBalance();
 
     // When
-    balance.ensureCanAddInstance(new BigNumber(1)).add();
-    balance.ensureCanAddInstance(new BigNumber(2)).add();
+    balance.addInstance(new BigNumber(1));
+    balance.addInstance(new BigNumber(2));
 
     const instanceIds = balance.getNftInstanceIds();
 
@@ -702,10 +701,10 @@ describe("non-fungible", () => {
     const hold7 = createHold(new BigNumber(7), 99);
 
     const balance = emptyBalance();
-    balance.ensureCanAddInstance(new BigNumber(6)).add();
-    balance.ensureCanAddInstance(new BigNumber(7)).add();
-    balance.ensureCanLockInstance(hold6, Date.now()).lock();
-    balance.ensureCanUseInstance(hold7, Date.now()).use();
+    balance.addInstance(new BigNumber(6));
+    balance.addInstance(new BigNumber(7));
+    balance.lockInstance(hold6, Date.now());
+    balance.useInstance(hold7, Date.now());
 
     expect(balance).toEqual(
       expect.objectContaining({

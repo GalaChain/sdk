@@ -49,7 +49,7 @@ describe("TransferToken", () => {
       expires: 0
     });
     const tokenBalance = nft.tokenBalance();
-    tokenBalance.ensureCanLockInstance(expectedHold, Date.now()).lock();
+    tokenBalance.lockInstance(expectedHold, Date.now());
 
     const { ctx, contract, getWrites } = fixture(GalaChainTokenContract)
       .registeredUsers(users.testUser1, users.testUser2)
@@ -90,7 +90,7 @@ describe("TransferToken", () => {
     });
 
     const tokenBalance = nft.tokenBalance();
-    tokenBalance.ensureCanLockInstance(expectedHold, Date.now()).lock();
+    tokenBalance.lockInstance(expectedHold, Date.now());
     expect(tokenBalance.owner).toEqual(expectedHold.createdBy);
 
     const { ctx, contract, getWrites } = fixture(GalaChainTokenContract)
@@ -349,7 +349,7 @@ describe("TransferToken", () => {
     const nftInstanceKey = nft.tokenInstance1Key();
     const nftClass = nft.tokenClass();
     const tokenBalance = nft.tokenBalance();
-    tokenBalance.ensureCanRemoveInstance(nftInstance.instance, 1).remove();
+    tokenBalance.removeInstance(nftInstance.instance, 1);
     const transferAllowance = await createValidChainObject(TokenAllowance, {
       grantedTo: users.testUser2.identityKey,
       grantedBy: users.testUser1.identityKey,
@@ -416,7 +416,7 @@ describe("TransferToken", () => {
     const transferAllowanceId = transferAllowance.getCompositeKey();
 
     const ownerBalance = new TokenBalance({ owner: users.tokenHolder.identityKey, ...currencyInstanceKey });
-    ownerBalance.ensureCanAddQuantity(new BigNumber("50000")).add();
+    ownerBalance.addQuantity(new BigNumber("50000"));
 
     const { ctx, contract, getWrites } = fixture(GalaChainTokenContract)
       .registeredUsers(users.tokenHolder, users.attacker)
@@ -468,7 +468,7 @@ describe("TransferToken", () => {
     });
 
     const ownerBalance = new TokenBalance({ owner: users.tokenHolder.identityKey, ...currencyInstanceKey });
-    ownerBalance.ensureCanAddQuantity(new BigNumber("100000")).add();
+    ownerBalance.addQuantity(new BigNumber("100000"));
 
     const { ctx, contract, getWrites } = fixture(GalaChainTokenContract)
       .registeredUsers(users.tokenHolder)

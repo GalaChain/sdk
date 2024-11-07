@@ -52,7 +52,7 @@ describe("GrantAllowance", () => {
       owner: users.testUser2.identityKey,
       ...nftClassKey
     });
-    nftBalance.ensureCanAddInstance(new BigNumber("1")).add();
+    nftBalance.addInstance(new BigNumber("1"));
 
     const { ctx, contract, getWrites } = fixture(GalaChainTokenContract)
       .registeredUsers(users.testUser2)
@@ -119,7 +119,7 @@ describe("GrantAllowance", () => {
     );
 
     const currencyBalance = new TokenBalance({ owner: users.testUser2.identityKey, ...currencyClassKey });
-    currencyBalance.ensureCanAddQuantity(new BigNumber("1000")).add();
+    currencyBalance.addQuantity(new BigNumber("1000"));
 
     const { ctx, contract, getWrites } = fixture(GalaChainTokenContract)
       .registeredUsers(users.testUser2)
@@ -155,7 +155,7 @@ describe("GrantAllowance", () => {
     );
 
     const currencyBalance = new TokenBalance({ owner: users.testUser2.identityKey, ...currencyClassKey });
-    currencyBalance.ensureCanAddQuantity(new BigNumber("1000")).add();
+    currencyBalance.addQuantity(new BigNumber("1000"));
 
     const { ctx, contract, getWrites } = fixture(GalaChainTokenContract)
       .registeredUsers(users.testUser2)
@@ -195,7 +195,7 @@ describe("GrantAllowance", () => {
     );
 
     const currencyBalance = new TokenBalance({ owner: users.testUser2.identityKey, ...currencyClassKey });
-    currencyBalance.ensureCanAddQuantity(new BigNumber("1000")).add();
+    currencyBalance.addQuantity(new BigNumber("1000"));
 
     const { ctx, contract, getWrites } = fixture(GalaChainTokenContract)
       .registeredUsers(users.testUser2)
@@ -283,7 +283,7 @@ describe("GrantAllowance", () => {
     );
 
     const currencyBalance = new TokenBalance({ owner: users.testUser2.identityKey, ...currencyClassKey });
-    currencyBalance.ensureCanAddQuantity(new BigNumber("1000")).add();
+    currencyBalance.addQuantity(new BigNumber("1000"));
 
     const { ctx, getWrites } = fixture(GalaChainTokenContract)
       .registeredUsers(users.testUser2)
@@ -332,10 +332,10 @@ describe("GrantAllowance", () => {
       owner: users.testUser2.identityKey,
       ...currencyClassKey
     });
-    currencyBalance.ensureCanAddQuantity(new BigNumber("1000")).add();
+    currencyBalance.addQuantity(new BigNumber("1000"));
 
     const nftBalance = new TokenBalance({ owner: users.testUser2.identityKey, ...nftClassKey });
-    nftBalance.ensureCanAddInstance(new BigNumber("1")).add();
+    nftBalance.addInstance(new BigNumber("1"));
 
     const { ctx, contract, getWrites } = fixture(GalaChainTokenContract)
       .registeredUsers(users.testUser2)
@@ -444,7 +444,7 @@ describe("GrantAllowance", () => {
     const nftInstanceQueryKey = await createValidDTO(TokenInstanceQueryKey, nft.tokenInstance1KeyPlain());
 
     const nftBalance = new TokenBalance({ owner: users.testUser2.identityKey, ...nftClassKey });
-    nftBalance.ensureCanAddInstance(new BigNumber("1")).add();
+    nftBalance.addInstance(new BigNumber("1"));
 
     const existingAllowance = await createValidChainObject(TokenAllowance, {
       grantedTo: users.testUser1.identityKey,

@@ -99,7 +99,7 @@ describe("MintToken", () => {
     });
 
     const expectedBalance = new TokenBalance({ ...currencyClass, owner: users.testUser1.identityKey });
-    expectedBalance.ensureCanAddQuantity(mintQty).add();
+    expectedBalance.addQuantity(mintQty);
 
     const expectedAllowance = await createValidChainObject(TokenAllowance, {
       ...tokenAllowance,
@@ -153,8 +153,8 @@ describe("MintToken", () => {
     });
 
     const expectedBalance = new TokenBalance({ ...nftClass, owner: users.testUser1.identityKey });
-    expectedBalance.ensureCanAddInstance(new BigNumber("1")).add();
-    expectedBalance.ensureCanAddInstance(new BigNumber("2")).add();
+    expectedBalance.addInstance(new BigNumber("1"));
+    expectedBalance.addInstance(new BigNumber("2"));
 
     const expectedAllowance = await createValidChainObject(TokenAllowance, {
       ...tokenAllowance,
@@ -334,8 +334,8 @@ describe("MintToken", () => {
     });
 
     const expectedBalance = new TokenBalance({ ...nftClass, owner: users.testUser1.identityKey });
-    expectedBalance.ensureCanAddInstance(new BigNumber("1")).add();
-    expectedBalance.ensureCanAddInstance(new BigNumber("2")).add();
+    expectedBalance.addInstance(new BigNumber("1"));
+    expectedBalance.addInstance(new BigNumber("2"));
 
     const expectedAllowance = await createValidChainObject(TokenAllowance, {
       ...tokenAllowance,

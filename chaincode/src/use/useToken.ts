@@ -93,7 +93,7 @@ export async function useToken(
     lockAuthority: undefined
   });
 
-  balance.ensureCanUseInstance(hold, ctx.txUnixTime).use();
+  balance.useInstance(hold, ctx.txUnixTime);
 
   await putChainObject(ctx, balance);
 

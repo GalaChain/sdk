@@ -179,7 +179,7 @@ describe("FulfillMint", () => {
     }).signed(users.admin.privateKey);
 
     const expectedBalance = new TokenBalance({ ...currency.tokenBalance() });
-    expectedBalance.ensureCanAddQuantity(mintQty).add();
+    expectedBalance.addQuantity(mintQty);
 
     const expectedAllowance = await createValidChainObject(TokenAllowance, {
       ...tokenAllowance,
@@ -363,8 +363,8 @@ describe("FulfillMint", () => {
     });
 
     const expectedBalance = new TokenBalance({ ...nftInstance, owner: users.testUser1.identityKey });
-    expectedBalance.ensureCanAddInstance(expectedStartingInstance.plus("1")).add();
-    expectedBalance.ensureCanAddInstance(expectedStartingInstance.plus("2")).add();
+    expectedBalance.addInstance(expectedStartingInstance.plus("1"));
+    expectedBalance.addInstance(expectedStartingInstance.plus("2"));
 
     // When
     const response = await contract.FulfillMint(ctx, dto);
