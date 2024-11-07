@@ -24,6 +24,7 @@ import {
   SigningScheme,
   UpdatePublicKeyDto,
   UpdateUserRolesDto,
+  UserAlias,
   UserProfile,
   UserRole,
   createValidDTO,
@@ -75,7 +76,7 @@ describe("RegisterUser", () => {
   it("should register user", async () => {
     // Given
     const chaincode = new TestChaincode([PublicKeyContract]);
-    const dto = await createValidSubmitDTO(RegisterUserDto, { user: "client|user1", publicKey });
+    const dto = await createValidSubmitDTO(RegisterUserDto, { user: "client|user1" as UserAlias, publicKey });
     const signedDto = dto.signed(process.env.DEV_ADMIN_PRIVATE_KEY as string);
 
     // When
@@ -124,7 +125,7 @@ describe("RegisterUser", () => {
 
     const registerDto = await createValidSubmitDTO(RegisterUserDto, {
       publicKey: user.publicKey,
-      user: "client|new_user"
+      user: "client|new_user" as UserAlias
     });
     const signedRegisterDto = registerDto.signed(process.env.DEV_ADMIN_PRIVATE_KEY as string);
 
@@ -222,7 +223,7 @@ describe("RegisterUser", () => {
     // Given
     const pkHex = signatures.getNonCompactHexPublicKey(publicKey);
     const ethAddress = signatures.getEthAddress(pkHex);
-    const alias = `eth|${ethAddress}`;
+    const alias = `eth|${ethAddress}` as UserAlias;
 
     const chaincode = new TestChaincode([PublicKeyContract]);
     const dto = await createValidSubmitDTO<RegisterEthUserDto>(RegisterEthUserDto, { publicKey });
@@ -254,7 +255,7 @@ describe("RegisterUser", () => {
     const tonKeyPair = await signatures.ton.genKeyPair();
     const publicKey = Buffer.from(tonKeyPair.publicKey).toString("base64");
     const address = signatures.ton.getTonAddress(tonKeyPair.publicKey);
-    const alias = `ton|${address}`;
+    const alias = `ton|${address}` as UserAlias;
 
     const chaincode = new TestChaincode([PublicKeyContract]);
     const dto = await createValidSubmitDTO<RegisterTonUserDto>(RegisterTonUserDto, { publicKey });
@@ -349,7 +350,7 @@ describe("UpdatePublicKey", () => {
     // new User Register under old public key
     // Given
     const dto = await createValidSubmitDTO<RegisterUserDto>(RegisterUserDto, {
-      user: "client|newUser",
+      user: "client|newUser" as UserAlias,
       publicKey: oldPublicKey
     });
     const signedDto = dto.signed(process.env.DEV_ADMIN_PRIVATE_KEY as string);

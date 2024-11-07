@@ -17,6 +17,7 @@ import { JSONSchema } from "class-validator-jsonschema";
 
 import { IsUserAlias } from "../validators";
 import { ChainObject } from "./ChainObject";
+import { UserAlias } from "./UserAlias";
 
 export enum UserRole {
   CURATOR = "CURATOR",
@@ -34,7 +35,7 @@ export class UserProfile extends ChainObject {
       "It may have the following format: client|<id>, eth|<checksumed-eth-addr>, or ton|<ton-bounceable-addr>."
   })
   @IsUserAlias()
-  alias: string;
+  alias: UserAlias;
 
   @JSONSchema({
     description: `Eth address of the user.`

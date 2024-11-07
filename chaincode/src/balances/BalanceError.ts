@@ -12,10 +12,10 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-import { NotFoundError } from "@gala-chain/api";
+import { NotFoundError, UserAlias } from "@gala-chain/api";
 
 export class BalanceNotFoundError extends NotFoundError {
-  constructor(user: string) {
+  constructor(user: UserAlias) {
     super(`No balance found for user id ${user}`, { user });
   }
 }

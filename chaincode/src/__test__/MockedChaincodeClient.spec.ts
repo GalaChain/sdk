@@ -18,6 +18,7 @@ import {
   PublicKey,
   RegisterEthUserDto,
   SigningScheme,
+  UserAlias,
   createValidChainObject,
   createValidDTO,
   createValidSubmitDTO,
@@ -106,7 +107,7 @@ it("should not change the state for evaluateTransaction", async () => {
   const client = createClient(chaincodeDir);
 
   const otherUser = signatures.genKeyPair();
-  const otherUserAlias = `eth|${signatures.getEthAddress(otherUser.publicKey)}`;
+  const otherUserAlias = `eth|${signatures.getEthAddress(otherUser.publicKey)}` as UserAlias;
 
   const registerDto = await createValidSubmitDTO(RegisterEthUserDto, { publicKey: otherUser.publicKey });
   registerDto.sign(admin.privateKey);

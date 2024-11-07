@@ -36,11 +36,12 @@ import {
   BigNumberIsPositive,
   BigNumberProperty,
   IsDifferentValue,
-  IsUserAlias
+  IsUserRef
 } from "../validators";
 import { ChainObject } from "./ChainObject";
 import { TokenInstanceQuantity } from "./TokenInstance";
 import { TokenSwapRequest } from "./TokenSwapRequest";
+import { UserRef } from "./UserRef";
 import { ChainCallDTO } from "./dtos";
 
 @JSONSchema({
@@ -57,8 +58,8 @@ export class RequestTokenSwapDto extends ChainCallDTO {
       "Optional field, by default set to chaincode calling user."
   })
   @IsOptional()
-  @IsUserAlias()
-  public offeredBy?: string;
+  @IsUserRef()
+  public offeredBy?: UserRef;
 
   @JSONSchema({
     description: "User who probably has tokens the requester wants."
@@ -71,8 +72,8 @@ export class RequestTokenSwapDto extends ChainCallDTO {
   })
   @IsOptional()
   @IsNotEmpty()
-  @IsUserAlias()
-  public offeredTo?: string;
+  @IsUserRef()
+  public offeredTo?: UserRef;
 
   @JSONSchema({
     description: "A list of offered token instances."
@@ -161,8 +162,8 @@ export class FillTokenSwapDto extends ChainCallDTO {
       "Optional field, by default set to chaincode calling user."
   })
   @IsOptional()
-  @IsUserAlias()
-  public filledBy?: string;
+  @IsUserRef()
+  public filledBy?: UserRef;
 
   @JSONSchema({
     description:
@@ -292,8 +293,8 @@ export class FetchTokenSwapsByUserDto extends ChainCallDTO {
   static readonly DEFAULT_LIMIT = 1000;
 
   @IsOptional()
-  @IsUserAlias()
-  public user?: string;
+  @IsUserRef()
+  public user?: UserRef;
 
   @JSONSchema({
     description: "Page bookmark. If it is undefined, then the first page is returned."

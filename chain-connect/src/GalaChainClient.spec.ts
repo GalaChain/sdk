@@ -16,6 +16,7 @@ import {
   LockTokenDto,
   TokenInstanceKey,
   TransferTokenDto,
+  asValidUserRef,
   createValidDTO,
   createValidSubmitDTO,
   signatures
@@ -64,7 +65,7 @@ describe("BrowserConnectClient", () => {
   it("test full flow (success)", async () => {
     const dto: TransferTokenDto = await createValidDTO(TransferTokenDto, {
       quantity: new BigNumber("1"),
-      to: "client|63580d94c574ad78b121c267",
+      to: asValidUserRef("client|63580d94c574ad78b121c267"),
       tokenInstance: plainToInstance(TokenInstanceKey, {
         additionalKey: "none",
         category: "Unit",
@@ -112,7 +113,7 @@ describe("BrowserConnectClient", () => {
   it("test full flow (server error)", async () => {
     const dto: TransferTokenDto = await createValidDTO(TransferTokenDto, {
       quantity: new BigNumber("1"),
-      to: "client|63580d94c574ad78b121c267",
+      to: asValidUserRef("client|63580d94c574ad78b121c267"),
       tokenInstance: plainToInstance(TokenInstanceKey, {
         additionalKey: "none",
         category: "Unit",
@@ -153,7 +154,7 @@ describe("BrowserConnectClient", () => {
   it("test full flow (chain error)", async () => {
     const dto: TransferTokenDto = await createValidDTO(TransferTokenDto, {
       quantity: new BigNumber("1"),
-      to: "client|63580d94c574ad78b121c267",
+      to: asValidUserRef("client|63580d94c574ad78b121c267"),
       tokenInstance: plainToInstance(TokenInstanceKey, {
         additionalKey: "none",
         category: "none",
@@ -408,7 +409,7 @@ describe("TrustConnectClient", () => {
     window.ethereum.isTrust = true;
     const dto: TransferTokenDto = await createValidDTO(TransferTokenDto, {
       quantity: new BigNumber("1"),
-      to: "client|63580d94c574ad78b121c267",
+      to: asValidUserRef("client|63580d94c574ad78b121c267"),
       tokenInstance: plainToInstance(TokenInstanceKey, {
         additionalKey: "none",
         category: "Unit",

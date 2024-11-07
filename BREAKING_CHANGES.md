@@ -129,6 +129,22 @@ Additionally, we added a utility method for creating a unique key, which can be 
 const uniqueKey = createUniqueKey();
 ```
 
+#### Bidirectional aliases and strong validation for user related fields
+
+Starting from version `2.0.0` we enforce strong validation for user related fields in the DTOs, and chain objects.
+There are two types of user related fields:
+- User alias (`UserAlias`), which is a unique identifier of the user, and is used in objects saved on chain and in the majority of methods.
+  Chain user has a single unique alias (like `client|abc`, or `eth|<checksumed-addr>`).
+- User reference (`UserRef`), which is a reference to the user object, and is used in the DTOs.
+  User reference unambiguously identifies the user, but a single user can have multiple references (for instance all `client|abc`, checksumed eth address, and lower-cased eth address can refer to the same user).
+
+Respectively, we have two new validation/serialization decorators: `@IsUserAlias` and `@IsUserRef`, and functions for casting and validation: `asValidUserAlias`, and `asValidUserRef`.
+
+`UserRef` can be resolved to `UserAlias` using the `resolveUserAlias` function.
+This is useful when for instance you have and ethereum address, and you want to resolve it to the user alias of the registered user.
+
+Prior to version `2.0.0` user related fields were string fields with no additional validation.
+This change affects mostly the DTOs, and the chain objects that have user related fields, and the methods that use them.
 
 ### Other Breaking Changes
 - TBD

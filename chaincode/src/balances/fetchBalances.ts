@@ -12,11 +12,10 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-import { ChainError, ErrorCode, TokenBalance } from "@gala-chain/api";
+import { ChainError, ErrorCode, TokenBalance, UserAlias } from "@gala-chain/api";
 
 import { GalaChainContext } from "../types";
-import { getObjectsByPartialCompositeKey } from "../utils";
-import { takeUntilUndefined } from "../utils";
+import { getObjectsByPartialCompositeKey, takeUntilUndefined } from "../utils";
 import { BalanceNotFoundError } from "./BalanceError";
 
 export interface FetchBalancesParams {
@@ -24,7 +23,7 @@ export interface FetchBalancesParams {
   category?: string;
   type?: string;
   additionalKey?: string;
-  owner: string;
+  owner: UserAlias;
 }
 
 /**

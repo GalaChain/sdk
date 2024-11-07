@@ -17,11 +17,13 @@ import { PublicKeyService } from "./PublicKeyService";
 import { UniqueTransaction } from "./UniqueTransaction";
 import { UniqueTransactionConflictError } from "./UniqueTransactionError";
 import { UniqueTransactionService } from "./UniqueTransactionService";
+import { resolveUserAlias } from "./resolveUserAlias";
 
 export {
   PublicKeyService,
   UniqueTransaction,
   UniqueTransactionService,
   UniqueTransactionConflictError,
-  PkInvalidSignatureError
+  PkInvalidSignatureError,
+  resolveUserAlias
 };

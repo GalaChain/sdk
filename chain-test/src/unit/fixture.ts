@@ -18,6 +18,7 @@ import {
   ClassConstructor,
   GalaChainResponse,
   RangedChainObject,
+  UserAlias,
   signatures
 } from "@gala-chain/api";
 import { Context, Contract } from "fabric-contract-api";
@@ -63,12 +64,17 @@ type GalaChainStub = ChaincodeStub & {
 type TestGalaChainContext = Context & {
   readonly stub: GalaChainStub;
   readonly logger: GalaLoggerInstance;
-  set callingUserData(d: { alias?: string; ethAddress?: string; tonAddress?: string; roles: string[] });
-  get callingUser(): string;
+  set callingUserData(d: { alias?: UserAlias; ethAddress?: string; tonAddress?: string; roles: string[] });
+  get callingUser(): UserAlias;
   get callingUserEthAddress(): string;
   get callingUserRoles(): string[];
   get callingUserTonAddress(): string;
-  setDryRunOnBehalfOf(d: { alias: string; ethAddress?: string; tonAddress?: string; roles: string[] }): void;
+  setDryRunOnBehalfOf(d: {
+    alias: UserAlias;
+    ethAddress?: string;
+    tonAddress?: string;
+    roles: string[];
+  }): void;
   isDryRun: boolean;
   get txUnixTime(): number;
   setChaincodeStub(stub: ChaincodeStub): void;
@@ -153,7 +159,7 @@ class Fixture<Ctx extends TestGalaChainContext, T extends GalaContract<Ctx>> {
   }
 
   callingUser(
-    user: ChainUserWithRoles | { alias: string; ethAddress?: string; tonAddress?: string; roles: string[] }
+    user: ChainUserWithRoles | { alias: UserAlias; ethAddress?: string; tonAddress?: string; roles: string[] }
   ): Fixture<Ctx, T> {
     if ("identityKey" in user) {
       this.ctx.callingUserData = {

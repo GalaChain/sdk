@@ -16,6 +16,8 @@ import {
   RegisterUserDto,
   TokenInstanceKey,
   TransferTokenDto,
+  UserAlias,
+  asValidUserRef,
   createValidDTO,
   createValidSubmitDTO
 } from "@gala-chain/api";
@@ -62,7 +64,7 @@ describe("API tests", () => {
   it("test transfer", async () => {
     const dto: TransferTokenDto = await createValidDTO(TransferTokenDto, {
       quantity: new BigNumber("1"),
-      to: "client|63580d94c574ad78b121c267",
+      to: asValidUserRef("client|63580d94c574ad78b121c267"),
       tokenInstance: plainToInstance(TokenInstanceKey, {
         additionalKey: "none",
         category: "Unit",
@@ -107,7 +109,7 @@ describe("API tests", () => {
   it("test register", async () => {
     const dto: RegisterUserDto = await createValidSubmitDTO(RegisterUserDto, {
       publicKey: "3",
-      user: "client|4"
+      user: "client|4" as UserAlias
     });
 
     // call connect
@@ -134,7 +136,7 @@ describe("API tests", () => {
   it("test both using same connection", async () => {
     const dto: RegisterUserDto = await createValidSubmitDTO(RegisterUserDto, {
       publicKey: "3",
-      user: "client|4"
+      user: "client|4" as UserAlias
     });
 
     // call connect
