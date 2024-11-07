@@ -22,7 +22,7 @@ it("should fetch balances by user alias", async () => {
   // Given
   const user = users.testUser1;
   const balance = new TokenBalance({ ...currency.tokenClassKey(), owner: user.identityKey });
-  balance.ensureCanAddQuantity(new BigNumber(1000)).add();
+  balance.addQuantity(new BigNumber(1000));
 
   const { contract, ctx } = fixture(GalaChainTokenContract).registeredUsers(user).savedState(balance);
 
@@ -39,7 +39,7 @@ it("should fetch balances by empty signed dto", async () => {
   // Given
   const user = users.testUser1;
   const balance = new TokenBalance({ ...currency.tokenClassKey(), owner: user.identityKey });
-  balance.ensureCanAddQuantity(new BigNumber(1000)).add();
+  balance.addQuantity(new BigNumber(1000));
 
   const { contract, ctx } = fixture(GalaChainTokenContract).registeredUsers(user).savedState(balance);
 
@@ -56,7 +56,7 @@ it("should fetch balances by any user ref", async () => {
   // Given
   const user = users.testUser1;
   const balance = new TokenBalance({ ...currency.tokenClassKey(), owner: user.identityKey });
-  balance.ensureCanAddQuantity(new BigNumber(1000)).add();
+  balance.addQuantity(new BigNumber(1000));
 
   const { contract, ctx } = fixture(GalaChainTokenContract).registeredUsers(user).savedState(balance);
 
