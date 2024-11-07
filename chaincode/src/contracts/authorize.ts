@@ -49,7 +49,7 @@ export async function ensureRoleIsAllowed(ctx: GalaChainContext, allowedRoles: s
 
 export async function authorize(
   ctx: GalaChainContext,
-  options: { allowedOrgs?: string[]; allowedRoles?: string[] } = {}
+  options: { allowedOrgs?: string[]; allowedRoles?: string[]; quorum?: number } = {}
 ) {
   if (options.allowedOrgs) {
     ensureOrganizationIsAllowed(ctx, options.allowedOrgs);

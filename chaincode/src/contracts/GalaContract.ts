@@ -31,7 +31,6 @@ import { GalaChainContext, GalaChainStub } from "../types";
 import { getObjectHistory, getPlainObjectByKey } from "../utils";
 import { getApiMethods } from "./GalaContractApi";
 import { EVALUATE, GalaTransaction } from "./GalaTransaction";
-import { trace } from "./tracing";
 
 export abstract class GalaContract extends Contract {
   /**
@@ -56,34 +55,26 @@ export abstract class GalaContract extends Contract {
   }
 
   public async beforeTransaction(ctx: GalaChainContext): Promise<void> {
-    await trace("before", ctx, () => super.beforeTransaction(ctx));
+    await super.beforeTransaction(ctx);
   }
 
   // eslint-disable-next-line @typescript-eslint/ban-types
   public async aroundTransaction(ctx: GalaChainContext, fn: Function, parameters: unknown): Promise<void> {
     // note: Fabric uses Promise<void> type, but actually it returns transaction result
-    return await trace("around", ctx, () => super.aroundTransaction(ctx, fn, parameters));
+    return super.aroundTransaction(ctx, fn, parameters);
   }
 
   public async afterTransaction(ctx: GalaChainContext, result: unknown): Promise<void> {
-    await trace("after", ctx, async () => {
-      await super.afterTransaction(ctx, result);
+    await super.afterTransaction(ctx, result);
 
-      // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
-      if (
-        typeof result === "object" &&
-        result?.["Status"] === GalaChainResponseType.Success &&
-        !ctx.isDryRun
-      ) {
-        await (ctx.stub as unknown as GalaChainStub).flushWrites();
-      }
+    // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
+    if (typeof result === "object" && result?.["Status"] === GalaChainResponseType.Success && !ctx.isDryRun) {
+      await (ctx.stub as unknown as GalaChainStub).flushWrites();
+    }
 
-      ctx?.logger?.logTimeline(
-        "End Transaction",
-        ctx.stub.getFunctionAndParameters()?.fcn ?? this.getName(),
-        [{ chaincodeResult: result }]
-      );
-    });
+    ctx?.logger?.logTimeline("End Transaction", ctx.stub.getFunctionAndParameters()?.fcn ?? this.getName(), [
+      { chaincodeResult: result }
+    ]);
   }
 
   @GalaTransaction({

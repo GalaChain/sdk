@@ -12,69 +12,12 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-import { TraceContext, UnauthorizedError, UserAlias, UserRole } from "@gala-chain/api";
+import { UnauthorizedError, UserAlias, UserRole } from "@gala-chain/api";
 import { Context } from "fabric-contract-api";
 import { ChaincodeStub, Timestamp } from "fabric-shim";
-import { SpanContext } from "opentracing";
 
 import { GalaChainStub, createGalaChainStub } from "./GalaChainStub";
 import { GalaLoggerInstance, GalaLoggerInstanceImpl } from "./GalaLoggerInstance";
-
-// note this is different from SpanContext from opentracing standard
-export function createDDCompatibleSpanContext({ spanId, traceId }: TraceContext, name: string): SpanContext {
-  // eslint-disable-next-line @typescript-eslint/no-var-requires
-  const DatadogSpanContext = require("dd-trace/packages/dd-trace/src/opentracing/span_context");
-
-  // eslint-disable-next-line @typescript-eslint/no-var-requires
-  const id = require("dd-trace/packages/dd-trace/src/id") as (value: string, radix: number) => object;
-
-  return new DatadogSpanContext({ traceId: id(traceId, 10), spanId: id(spanId, 10), name }) as SpanContext;
-}
-
-export function traceContextFromDtoString(s: string): TraceContext | undefined {
-  try {
-    const { trace } = JSON.parse(s) as { trace?: { spanId: string; traceId: string } };
-    if (typeof trace?.traceId === "string" && typeof trace?.spanId === "string") {
-      return trace;
-    } else {
-      return undefined;
-    }
-  } catch (e) {
-    return undefined;
-  }
-}
-
-export function traceContextFromTransientData(
-  transientMap: Map<string, Uint8Array>
-): TraceContext | undefined {
-  try {
-    const str = transientMap.get("spanContext")?.toString();
-
-    if (str === undefined) {
-      return undefined;
-    }
-
-    const { traceId, spanId } = JSON.parse(str);
-
-    if (typeof traceId !== "string" || typeof spanId !== "string") {
-      return undefined;
-    } else {
-      return { spanId, traceId };
-    }
-  } catch (e) {
-    return undefined;
-  }
-}
-
-export function getParentSpanContext(stub: ChaincodeStub): SpanContext | undefined {
-  try {
-    const { fcn, params } = stub.getFunctionAndParameters();
-    const t = traceContextFromDtoString(params[0]) ?? traceContextFromTransientData(stub.getTransient());
-    return t === undefined ? undefined : createDDCompatibleSpanContext(t, fcn);
-  } catch (e) {
-    return undefined;
-  }
-}
 
 function getTxUnixTime(ctx: Context): number {
   const txTimestamp: Timestamp = ctx.stub.getTxTimestamp();
@@ -85,7 +28,6 @@ function getTxUnixTime(ctx: Context): number {
 
 export class GalaChainContext extends Context {
   stub: GalaChainStub;
-  span?: SpanContext;
   private callingUserValue?: UserAlias;
   private callingUserEthAddressValue?: string;
   private callingUserTonAddressValue?: string;
@@ -184,7 +126,5 @@ export class GalaChainContext extends Context {
     // @ts-ignore - missing typings for `setChaincodeStub` in `fabric-contract-api`
     // eslint-disable-next-line @typescript-eslint/ban-ts-comment
     super.setChaincodeStub(galaChainStub);
-    // set parent context
-    this.span = getParentSpanContext(stub);
   }
 }

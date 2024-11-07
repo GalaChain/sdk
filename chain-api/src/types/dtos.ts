@@ -112,11 +112,6 @@ export function createValidSubmitDTO<T extends SubmitCallDTO>(
   } as unknown as NonFunctionProperties<T>);
 }
 
-export interface TraceContext {
-  spanId: string;
-  traceId: string;
-}
-
 /**
  * @description
  *
@@ -134,9 +129,6 @@ export interface TraceContext {
  * or in the OpenAPI documentation served alongside GalaChain's API endpoints.
  */
 export class ChainCallDTO {
-  public trace?: TraceContext;
-  public static readonly ENCODING = "base64";
-
   @JSONSchema({
     description:
       "Unique key of the DTO. It is used to prevent double execution of the same transaction on chain. " +

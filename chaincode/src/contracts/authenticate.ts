@@ -80,7 +80,7 @@ class UserNotRegisteredError extends ValidationFailedError {
 export async function authenticate(
   ctx: GalaChainContext,
   dto: ChainCallDTO | undefined
-): Promise<{ alias: string; ethAddress?: string }> {
+): Promise<{ alias: string; ethAddress?: string; tonAddress?: string; roles: string[] }> {
   if (!dto || dto.signature === undefined) {
     throw new MissingSignatureError();
   }
