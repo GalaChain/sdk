@@ -17,7 +17,6 @@ import { Type } from "class-transformer";
 import {
   ArrayMaxSize,
   ArrayNotEmpty,
-  IsBoolean,
   IsDefined,
   IsNotEmpty,
   IsNumber,
@@ -28,13 +27,14 @@ import {
 } from "class-validator";
 import { JSONSchema } from "class-validator-jsonschema";
 
-import { ArrayUniqueObjects, BigNumberIsNotNegative, BigNumberProperty, IsUserAlias } from "../validators";
+import { ArrayUniqueObjects, BigNumberIsNotNegative, BigNumberProperty, IsUserRef } from "../validators";
 import { TokenClassKey } from "./TokenClass";
 import {
   BurnToMintConfiguration,
   PostMintLockConfiguration,
   TokenMintConfiguration
 } from "./TokenMintConfiguration";
+import { UserRef } from "./UserRef";
 import { AllowanceKey, MintRequestDto } from "./common";
 import { ChainCallDTO, SubmitCallDTO } from "./dtos";
 
@@ -58,8 +58,8 @@ export class MintTokenDto extends SubmitCallDTO {
     description: "The owner of minted tokens. If the value is missing, chaincode caller is used."
   })
   @IsOptional()
-  @IsUserAlias()
-  owner?: string;
+  @IsUserRef()
+  owner?: UserRef;
 
   @JSONSchema({
     description: "How many units of Fungible/NonFungible Token will be minted."
@@ -93,8 +93,8 @@ export class MintTokenWithAllowanceDto extends SubmitCallDTO {
     description: "The owner of minted tokens. If the value is missing, chaincode caller is used."
   })
   @IsOptional()
-  @IsUserAlias()
-  owner?: string;
+  @IsUserRef()
+  owner?: UserRef;
 
   @JSONSchema({
     description: "Instance of token to be minted"
@@ -128,7 +128,7 @@ export class BatchMintTokenDto extends SubmitCallDTO {
   @Type(() => MintTokenDto)
   @ArrayNotEmpty()
   @ArrayMaxSize(BatchMintTokenDto.MAX_ARR_SIZE)
-  mintDtos: Array<MintTokenDto>;
+  mintDtos: MintTokenDto[];
 }
 
 /**
@@ -162,8 +162,8 @@ export class HighThroughputMintTokenDto extends SubmitCallDTO {
     description: "The owner of minted tokens. If the value is missing, chaincode caller is used."
   })
   @IsOptional()
-  @IsUserAlias()
-  owner?: string;
+  @IsUserRef()
+  owner?: UserRef;
 
   @JSONSchema({
     description: "How many units of fungible token of how many NFTs are going to be minted."

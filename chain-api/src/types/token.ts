@@ -32,10 +32,11 @@ import {
 } from "class-validator";
 import { JSONSchema } from "class-validator-jsonschema";
 
-import { BigNumberIsNotNegative, BigNumberIsPositive, BigNumberProperty, IsUserAlias } from "../validators";
+import { BigNumberIsNotNegative, BigNumberIsPositive, BigNumberProperty, IsUserRef } from "../validators";
 import { TokenBalance } from "./TokenBalance";
 import { TokenClass, TokenClassKey } from "./TokenClass";
 import { TokenInstance, TokenInstanceKey } from "./TokenInstance";
+import { UserRef } from "./UserRef";
 import { ChainCallDTO, SubmitCallDTO } from "./dtos";
 
 @JSONSchema({
@@ -325,10 +326,10 @@ export class UpdateTokenClassDto extends SubmitCallDTO {
       "Only token authorities can give mint allowances. " +
       "By default the calling user becomes a single token authority. "
   })
-  @IsUserAlias({ each: true })
+  @IsUserRef({ each: true })
   @IsOptional()
   @ArrayNotEmpty()
-  authorities?: string[];
+  authorities?: UserRef[];
 
   @JSONSchema({
     description:
@@ -348,8 +349,8 @@ export class FetchBalancesDto extends ChainCallDTO {
     description: "Person who owns the balance. If the value is missing, chaincode caller is used."
   })
   @IsOptional()
-  @IsUserAlias()
-  owner?: string;
+  @IsUserRef()
+  owner?: UserRef;
 
   @JSONSchema({
     description: "Token collection. Optional, but required if category is provided."
@@ -390,8 +391,8 @@ export class FetchBalancesWithPaginationDto extends ChainCallDTO {
     description: "Person who owns the balance. If the value is missing, chaincode caller is used."
   })
   @IsOptional()
-  @IsUserAlias()
-  owner?: string;
+  @IsUserRef()
+  owner?: UserRef;
 
   @JSONSchema({
     description: "Token collection. Optional, but required if category is provided."
@@ -481,11 +482,11 @@ export class TransferTokenDto extends SubmitCallDTO {
     description: "The current owner of tokens. If the value is missing, chaincode caller is used."
   })
   @IsOptional()
-  @IsUserAlias()
-  from?: string;
+  @IsUserRef()
+  from?: UserRef;
 
-  @IsUserAlias()
-  to: string;
+  @IsUserRef()
+  to: UserRef;
 
   @JSONSchema({
     description:

@@ -20,6 +20,7 @@ import { ChainKey } from "../utils";
 import { BigNumberIsInteger, BigNumberIsPositive, BigNumberProperty, IsUserAlias } from "../validators";
 import { ChainObject } from "./ChainObject";
 import { TokenInstanceQuantity } from "./TokenInstance";
+import { UserAlias } from "./UserAlias";
 
 export class TokenSwapRequest extends ChainObject {
   @ChainKey({ position: 0 })
@@ -45,10 +46,10 @@ export class TokenSwapRequest extends ChainObject {
 
   @IsOptional()
   @IsUserAlias()
-  public offeredTo?: string;
+  public offeredTo?: UserAlias;
 
   @IsUserAlias()
-  public offeredBy: string;
+  public offeredBy: UserAlias;
 
   @IsNotEmpty() // i.e. not null/undefined, it can be an empty array
   public fillIds: Array<string>;

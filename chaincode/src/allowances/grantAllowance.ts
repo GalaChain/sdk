@@ -36,6 +36,7 @@ import { instanceToPlain } from "class-transformer";
 import { fetchBalances } from "../balances";
 import { fetchKnownBurnCount } from "../burns/fetchBurns";
 import { fetchMintAllowanceSupply } from "../mint/fetchMintAllowanceSupply";
+import { resolveUserAlias } from "../services";
 import { fetchTokenInstance } from "../token";
 import {
   InvalidDecimalError,
@@ -75,7 +76,7 @@ async function grantAllowanceByPartialKey(
   expires: number
 ): Promise<TokenAllowance[]> {
   const tokenBalances = await fetchBalances(ctx, {
-    owner: ctx.callingUser,
+    owner: await resolveUserAlias(ctx, ctx.callingUser),
     ...tokenInstance
   });
 

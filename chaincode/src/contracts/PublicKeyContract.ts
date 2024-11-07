@@ -25,6 +25,7 @@ import {
   SigningScheme,
   UpdatePublicKeyDto,
   UpdateUserRolesDto,
+  UserAlias,
   UserProfile,
   UserRole,
   ValidationFailedError,
@@ -108,7 +109,7 @@ export class PublicKeyContract extends GalaContract {
   public async RegisterEthUser(ctx: GalaChainContext, dto: RegisterEthUserDto): Promise<string> {
     const providedPkHex = signatures.getNonCompactHexPublicKey(dto.publicKey);
     const ethAddress = signatures.getEthAddress(providedPkHex);
-    const userAlias = `eth|${ethAddress}`;
+    const userAlias = `eth|${ethAddress}` as UserAlias;
 
     return PublicKeyService.registerUser(ctx, providedPkHex, ethAddress, userAlias, SigningScheme.ETH);
   }
@@ -122,7 +123,7 @@ export class PublicKeyContract extends GalaContract {
   public async RegisterTonUser(ctx: GalaChainContext, dto: RegisterTonUserDto): Promise<string> {
     const publicKey = dto.publicKey;
     const address = signatures.ton.getTonAddress(Buffer.from(publicKey, "base64"));
-    const userAlias = `ton|${address}`;
+    const userAlias = `ton|${address}` as UserAlias;
 
     return PublicKeyService.registerUser(ctx, publicKey, address, userAlias, SigningScheme.TON);
   }

@@ -17,6 +17,7 @@ import {
   TokenClass,
   TokenClassKey,
   UpdateTokenClassDto,
+  UserAlias,
   createValidChainObject,
   createValidSubmitDTO
 } from "@gala-chain/api";
@@ -132,7 +133,7 @@ function defaultUpdate() {
     image: "http://app.gala.games/UPDATED-image-url",
     symbol: "UPDATEDAUTOTESTCOIN",
     rarity: "Updateable",
-    authorities: [users.admin.identityKey, "client|new-admin"]
+    authorities: [users.admin.identityKey, "client|new-admin"] as UserAlias[]
   };
 }
 

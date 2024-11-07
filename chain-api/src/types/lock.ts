@@ -26,9 +26,10 @@ import {
 } from "class-validator";
 import { JSONSchema } from "class-validator-jsonschema";
 
-import { BigNumberIsNotNegative, BigNumberIsPositive, BigNumberProperty, IsUserAlias } from "../validators";
+import { BigNumberIsNotNegative, BigNumberIsPositive, BigNumberProperty, IsUserRef } from "../validators";
 import { LockTokenQuantity } from "./LockTokenQuantity";
 import { TokenInstance, TokenInstanceKey } from "./TokenInstance";
+import { UserRef } from "./UserRef";
 import { SubmitCallDTO } from "./dtos";
 
 @JSONSchema({
@@ -39,8 +40,8 @@ export class LockTokenDto extends SubmitCallDTO {
     description: "The current owner of tokens. If the value is missing, chaincode caller is used."
   })
   @IsOptional()
-  @IsUserAlias()
-  owner?: string;
+  @IsUserRef()
+  owner?: UserRef;
 
   @JSONSchema({
     description:
@@ -49,8 +50,8 @@ export class LockTokenDto extends SubmitCallDTO {
       "in all cases token authority can unlock token."
   })
   @IsOptional()
-  @IsUserAlias()
-  lockAuthority?: string;
+  @IsUserRef()
+  lockAuthority?: UserRef;
 
   @JSONSchema({
     description:
@@ -89,8 +90,8 @@ export class LockTokensDto extends SubmitCallDTO {
       "in all cases token authority can unlock token."
   })
   @IsOptional()
-  @IsUserAlias()
-  lockAuthority?: string;
+  @IsUserRef()
+  lockAuthority?: UserRef;
 
   @JSONSchema({
     description:
@@ -153,8 +154,8 @@ export class UnlockTokenDto extends SubmitCallDTO {
     description: "Optional. Owner of the token. Calling User by default. Usable by Token Authorities only."
   })
   @IsOptional()
-  @IsUserAlias()
-  owner?: string;
+  @IsUserRef()
+  owner?: UserRef;
 
   @JSONSchema({
     description:

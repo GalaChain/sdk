@@ -16,6 +16,7 @@ import BigNumber from "bignumber.js";
 import { plainToInstance } from "class-transformer";
 
 import { TokenClass } from "./TokenClass";
+import { UserAlias } from "./UserAlias";
 
 const existingToken = plainToInstance(TokenClass, {
   network: "GC",
@@ -37,7 +38,7 @@ const existingToken = plainToInstance(TokenClass, {
   totalSupply: new BigNumber("50000000000"),
   totalMintAllowance: new BigNumber("50000000000"),
   image: "https://app.gala.games/_nuxt/img/gala-logo_horizontal_white.8b0409c.png",
-  authorities: ["client|old-admin"]
+  authorities: ["client|old-admin" as UserAlias]
 });
 
 it("should update properties that are allowed to be updated", async () => {
@@ -62,7 +63,7 @@ it("should update properties that are allowed to be updated", async () => {
     totalSupply: new BigNumber("998"),
     totalMintAllowance: new BigNumber("997"),
     image: "https://app.gala.games/_nuxt/img/updated-gala-logo_horizontal_white.8b0409c.png",
-    authorities: ["client|new-admin"]
+    authorities: ["client|new-admin" as UserAlias]
   };
 
   // When
@@ -85,7 +86,7 @@ it("should update properties that are allowed to be updated", async () => {
 it("should allow to override authorities", async () => {
   // Given
   const update = {
-    authorities: ["client|new-admin"],
+    authorities: ["client|new-admin" as UserAlias],
     overwriteAuthorities: true
   };
 
