@@ -302,7 +302,7 @@ export async function getLogs(params: {
   };
 
   const signature = await generateSignature(requestParams, params.privateKey);
-  
+
   const servicePortalURL = ServicePortal.GET_LOGS_URL;
 
   try {

@@ -12,8 +12,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
-import { jest } from '@jest/globals';
+import { jest } from "@jest/globals";
 
 const chalk = {
   green: jest.fn((str: string) => str),
