@@ -12,17 +12,15 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+import { jest } from "@jest/globals";
 
-const GC_API_URL = process.env.GC_API_URL ?? "https://gateway-testnet.galachain.com/cli/";
-export const defaultFabloRoot = "./test-network";
-export const ExpectedImageArchitecture = "linux/amd64";
-
-export const ServicePortal = {
-  GET_TEST_DEPLOYMENT_URL: GC_API_URL + "api/test-deployment",
-  GET_DEPLOYMENT_URL: GC_API_URL + "api/deployment",
-  DEPLOY_TEST_URL: GC_API_URL + "api/test-deploy",
-  DEPLOY_URL: GC_API_URL + "api/deploy",
-  AUTH_X_GC_KEY: "x-gc-authorization",
-  GET_LOGS_URL: GC_API_URL + "api/chaincode/logs",
-  STREAM_LOGS_URL: GC_API_URL + "api/chaincode/logs/stream"
+const chalk = {
+  green: jest.fn((str: string) => str),
+  yellow: jest.fn((str: string) => str),
+  red: jest.fn((str: string) => str),
+  blue: jest.fn((str: string) => str),
+  gray: jest.fn((str: string) => str),
+  white: jest.fn((str: string) => str)
 };
+
+export default chalk;
