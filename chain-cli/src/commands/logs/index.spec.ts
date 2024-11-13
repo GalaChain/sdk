@@ -14,13 +14,18 @@
  */
 import chalk from "chalk";
 
-import { BadRequestError, FetchLogsError, UnauthorizedError } from "../../errors";
+import { FetchLogsError, UnauthorizedError } from "../../errors";
 import { LogEntry } from "../../galachain-utils";
 import * as utils from "../../galachain-utils";
 import Log from "./index";
 
 jest.mock("../../__mocks__/chalk");
 jest.mock("../../galachain-utils");
+jest.setTimeout(10000);
+
+const consts = {
+  developerPrivateKey: "bf2168e0e2238b9d879847987f556a093040a2cab07983a20919ac33103d0d00"
+};
 
 describe("Logs Command", () => {
   beforeEach(() => {
@@ -40,7 +45,7 @@ describe("Logs Command", () => {
     ];
 
     jest.spyOn(utils, "getLogs").mockResolvedValue(mockLogs);
-    jest.spyOn(utils, "getPrivateKey").mockResolvedValue("dummy_private_key");
+    jest.spyOn(utils, "getPrivateKey").mockResolvedValue(consts.developerPrivateKey);
 
     const logSpy = jest.spyOn(Log.prototype, "log").mockImplementation(() => {});
 
@@ -58,7 +63,7 @@ describe("Logs Command", () => {
   it("should handle UnauthorizedError correctly", async () => {
     const errorMessage = "Unauthorized access";
     jest.spyOn(utils, "getLogs").mockRejectedValue(new UnauthorizedError(errorMessage));
-    jest.spyOn(utils, "getPrivateKey").mockResolvedValue("dummy_private_key");
+    jest.spyOn(utils, "getPrivateKey").mockResolvedValue(consts.developerPrivateKey);
 
     await expect(Log.run([])).rejects.toThrow(`Failed to fetch logs: ${errorMessage}`);
   });
@@ -66,13 +71,13 @@ describe("Logs Command", () => {
   it("should handle FetchLogsError correctly", async () => {
     const errorMessage = "Failed to fetch logs";
     jest.spyOn(utils, "getLogs").mockRejectedValue(new FetchLogsError(errorMessage));
-    jest.spyOn(utils, "getPrivateKey").mockResolvedValue("dummy_private_key");
+    jest.spyOn(utils, "getPrivateKey").mockResolvedValue(consts.developerPrivateKey);
 
     await expect(Log.run([])).rejects.toThrow(`Failed to fetch logs: ${errorMessage}`);
   });
 
   it("should handle invalid time input", async () => {
-    jest.spyOn(utils, "getPrivateKey").mockResolvedValue("dummy_private_key");
+    jest.spyOn(utils, "getPrivateKey").mockResolvedValue(consts.developerPrivateKey);
 
     await expect(Log.run(["--startTime=5x"])).rejects.toThrow(
       "Invalid time input '5x'. Expected ISO8601 date or shorthand like '5m', '1h', '2d'."
@@ -80,7 +85,7 @@ describe("Logs Command", () => {
   });
 
   it("should handle empty logs gracefully", async () => {
-    jest.spyOn(utils, "getPrivateKey").mockResolvedValue("dummy_private_key");
+    jest.spyOn(utils, "getPrivateKey").mockResolvedValue(consts.developerPrivateKey);
     jest.spyOn(utils, "getLogs").mockResolvedValue([]);
 
     const logSpy = jest.spyOn(Log.prototype, "log").mockImplementation(() => {});
