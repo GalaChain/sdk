@@ -20,6 +20,7 @@ import {
   ChainError,
   ChainId,
   ChainObject,
+  ChainsWithBridgeFeeSupport,
   ErrorCode,
   FeeAccelerationRateType,
   FeeCodeDefinition,
@@ -215,8 +216,9 @@ export async function requestTokenBridgeOutFeeGate(ctx: GalaChainContext, dto: R
   const { destinationChainId } = dto;
 
   // Dynamic, gas based fees are intended for bridging outside of GalaChain
-  // In the future this list could include Solana, or other external Chains
-  if (destinationChainId !== ChainId.Ethereum) {
+  // Different external chain may have differing methods of calculating transaction fees
+  // Supported chains are currently defined in @gala-chain/api
+  if (!ChainsWithBridgeFeeSupport.includes(destinationChainId)) {
     return;
   }
 
