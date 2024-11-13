@@ -17,16 +17,21 @@ import { getPayloadToSign } from "./getPayloadToSign";
 
 // verify if TON is supported
 function importTonOrReject() {
-  // eslint-disable-next-line @typescript-eslint/no-var-requires
-  const ton = require("@ton/ton");
-  if (!ton) {
-    throw new NotImplementedError("TON is not supported. Missing library @ton/ton");
+  // Using a dynamic variable names plus try...catch to prevent some bundlers (like Webpack)
+  // from eagerly bundling these modules if they are optional.
+  let ton, crypto;
+  try {
+    // eslint-disable-next-line @typescript-eslint/no-var-requires
+    ton = require("@ton/ton");
+  } catch (e) {
+    throw new Error("TON is not supported. Missing library @ton/ton");
   }
 
-  // eslint-disable-next-line @typescript-eslint/no-var-requires
-  const crypto = require("@ton/crypto");
-  if (!crypto) {
-    throw new NotImplementedError("TON is not supported. Missing library @ton/crypto");
+  try {
+    // eslint-disable-next-line @typescript-eslint/no-var-requires
+    crypto = require("@ton/crypto");
+  } catch (e) {
+    throw new Error("TON is not supported. Missing library @ton/crypto");
   }
 
   return { ton, crypto };
