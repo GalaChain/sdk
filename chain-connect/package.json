@@ -1,8 +1,8 @@
 {
   "name": "@gala-chain/connect",
-  "version": "1.5.5",
+  "version": "1.5.6",
   "dependencies": {
-    "@gala-chain/api": "1.5.5",
+    "@gala-chain/api": "1.5.6",
     "ethers": "^6.12.1",
     "tslib": "^2.3.0",
     "bignumber.js": "9.1.2",
@@ -32,5 +32,9 @@
     "prepublishOnly": "npm i && npm run clean && npm run build && npm run lint && npm run madge",
     "format": "prettier --config ../.prettierrc 'src/**/*.ts' --write",
     "test": "jest"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/GalaChain/sdk.git"
   }
 }
