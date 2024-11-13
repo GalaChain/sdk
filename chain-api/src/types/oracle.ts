@@ -319,14 +319,44 @@ export class OraclePriceCrossRateAssertionDto extends ChainCallDTO {
     }
   }
 
+  /**
+   * @description
+   *
+   * Calculate the cross-rate using the instantiated instance's
+   * base and quote token exchange rates.
+   *
+   * Requires valid cross-rate token keys: For our purposes we expect the
+   * base exchange rate and the quote exchange rate to use a common
+   * quote token to faciliate the cross-rate calculation.
+   *
+   * @remarks
+   *
+   * The quote token exchange rate is inverted to yield a cross-rate
+   * exchange of "$n of quote token per 1 base token."
+   *
+   * @example
+   *
+   * Quote GALA in TON using hypothetical exchange rates:
+   *
+   * GALA is quoted in USD at $0.025 USD per GALA (quoteTokenCrossRate).
+   *
+   * TON is quoted in USD at $5.50 USD per TON. (baseTokenCrossRate).
+   *
+   * The GALA cross-rate is inverted, yielding 40 GALA per 1 USD.
+   *
+   * Multiply USD/TON x GALA/USD to yield a cross-rate of 220 GALA per 1 TON.
+   *
+   */
   @Exclude()
   public calculateCrossRate() {
     this.validateCrossRateTokenKeys();
 
     const quoteTokenCrossRate = this.quoteTokenCrossRate.exchangeRate;
+    const invertedQuoteTokenCrossRate = new BigNumber("1").dividedBy(quoteTokenCrossRate);
+
     const baseTokenCrossRate = this.baseTokenCrossRate.exchangeRate;
 
-    const calculatedCrossRate = quoteTokenCrossRate.dividedBy(baseTokenCrossRate);
+    const calculatedCrossRate = baseTokenCrossRate.times(invertedQuoteTokenCrossRate);
 
     return calculatedCrossRate;
   }
@@ -337,7 +367,8 @@ export class OraclePriceCrossRateAssertionDto extends ChainCallDTO {
 
     if (!this.crossRate.isEqualTo(calculatedCrossRate)) {
       throw new ValidationFailedError(
-        `Asserted cross rate (${this.crossRate} is not equal to calculated cross rate)`
+        `Asserted cross rate (${this.crossRate.toNumber()} is not equal to ` +
+          `the calculated cross rate: ${calculatedCrossRate.toNumber()})`
       );
     }
   }
