@@ -31,7 +31,8 @@ export function calculatePersonalSignPrefix(payload: object): string {
 }
 
 export interface ExtendedEip1193Provider extends Eip1193Provider {
-  on(event: "accountsChanged", handler: (accounts: string[]) => void): void;
+  on(event: "accountsChanged", handler: Listener<string[]>): void;
+  removeListener(event: "accountsChanged", handler: Listener<string[]>): void;
   providers?: Array<any>;
   isTrust?: boolean;
 }

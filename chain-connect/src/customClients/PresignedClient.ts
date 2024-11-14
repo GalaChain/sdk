@@ -14,19 +14,18 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-import { NotImplementedError } from "@gala-chain/api";
-
-import { GalaChainProvider } from "../GalaChainClient";
+import { GalaChainProvider, GalaChainProviderOptions } from "../GalaChainClient";
 
 /**
  * Use this provider when you simply want to forward presigned requests, or requests that do not require a signature
  */
 
 export class PresignedClient extends GalaChainProvider {
-  public async sign<U extends object>(
-    method: string,
-    payload: U
-  ): Promise<U & { signature: string; prefix: string }> {
-    throw new NotImplementedError("Signing not supported for this provider!");
+  constructor(options?: GalaChainProviderOptions) {
+    super(options);
+  }
+
+  public async sign<U extends object>(_method: string, payload: U & { signature: string; prefix?: string }) {
+    return payload;
   }
 }

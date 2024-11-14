@@ -22,5 +22,7 @@ export const ServicePortal = {
   GET_DEPLOYMENT_URL: GC_API_URL + "api/deployment",
   DEPLOY_TEST_URL: GC_API_URL + "api/test-deploy",
   DEPLOY_URL: GC_API_URL + "api/deploy",
-  AUTH_X_GC_KEY: "x-gc-authorization"
+  AUTH_X_GC_KEY: "x-gc-authorization",
+  GET_LOGS_URL: GC_API_URL + "api/chaincode/logs",
+  STREAM_LOGS_URL: GC_API_URL + "api/chaincode/logs/stream"
 };

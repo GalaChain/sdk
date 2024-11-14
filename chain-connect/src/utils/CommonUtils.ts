@@ -12,6 +12,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+import { getAddress } from "ethers";
 
 type EIP712Types = Record<string, Array<{ name: string; type: string }>>;
 type EIP712Value = Record<string, unknown>;
@@ -23,8 +24,8 @@ export function generateEIP712Types<T>(typeName: string, params: T): EIP712Types
   function addField(name: string, fieldValue: unknown, parentTypeName: string, onlyGetType = false) {
     if (Array.isArray(fieldValue)) {
       //Take the type of the first element
-      addField(name, fieldValue[0], parentTypeName, true);
-      if (!onlyGetType) types[parentTypeName].push({ name, type: name + "[]" });
+      const type = addField(name, fieldValue[0], parentTypeName, true);
+      if (!onlyGetType) types[parentTypeName].push({ name, type: (type ?? name) + "[]" });
     } else if (typeof fieldValue === "object" && fieldValue !== null) {
       if (types[name]) {
         throw new Error("Name collisions not yet supported");
@@ -49,7 +50,11 @@ export function generateEIP712Types<T>(typeName: string, params: T): EIP712Types
         default:
           throw new Error(`Unsupported type, ${typeof fieldValue}, value: ${fieldValue}`);
       }
-      if (!onlyGetType) types[parentTypeName].push({ name, type: eipType });
+      if (onlyGetType) {
+        return eipType;
+      } else {
+        types[parentTypeName].push({ name, type: eipType });
+      }
     }
   }
 
@@ -82,4 +87,12 @@ export function generateEIP712Value<T>(params: T): EIP712Value {
   });
 
   return value;
+}
+
+export function galaChainToEthereumAddress(galaAddress: string) {
+  return galaAddress ? getAddress(`0x${galaAddress.replace(/0x|eth\|/, "")}`) : "";
+}
+
+export function ethereumToGalaChainAddress(ethereumAddress: string) {
+  return ethereumAddress?.replace("0x", "eth|") ?? "";
 }

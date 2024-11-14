@@ -21,9 +21,11 @@ import fs, { promises as fsPromises } from "fs";
 import { nanoid } from "nanoid";
 import path from "path";
 import process from "process";
+import { Readable } from "stream";
 
 import { ExpectedImageArchitecture, ServicePortal } from "./consts";
 import { GetChaincodeDeploymentDto, PostDeployChaincodeDto } from "./dto";
+import { BadRequestError, UnauthorizedError } from "./errors";
 import { execSync } from "./exec-sync";
 import { parseStringOrFileKey } from "./utils";
 
@@ -42,6 +44,12 @@ export interface Config {
   channel: string;
   chaincode: string;
   tag?: string;
+}
+
+export interface LogEntry {
+  message: string;
+  timestamp: string;
+  status: string;
 }
 
 export async function writeConfigFile(config: Config) {
@@ -276,4 +284,95 @@ async function generateSignature(obj: object, privateKey: string): Promise<strin
   const keyBuffer = signatures.normalizePrivateKey(privateKeyValue);
 
   return signatures.getSignature(obj, keyBuffer);
+}
+
+export async function getLogs(params: {
+  privateKey: string;
+  startTime?: string;
+  endTime?: string;
+  limit?: number;
+  filter?: string;
+}): Promise<LogEntry[]> {
+  const requestParams = {
+    operationId: nanoid(),
+    ...(params.startTime && { startTime: params.startTime }),
+    ...(params.endTime && { endTime: params.endTime }),
+    ...(params.limit && { limit: params.limit.toString() }),
+    ...(params.filter && { filter: params.filter })
+  };
+
+  const signature = await generateSignature(requestParams, params.privateKey);
+
+  const servicePortalURL = ServicePortal.GET_LOGS_URL;
+
+  try {
+    const response = await axios.get(servicePortalURL, {
+      headers: {
+        [ServicePortal.AUTH_X_GC_KEY]: signature
+      },
+      params: requestParams
+    });
+
+    if (response.status !== 200) {
+      throw new Error(`Service Portal responded with status ${response.status}`);
+    }
+
+    return response.data;
+  } catch (error: any) {
+    const status = error.response?.status;
+    const message = error.response?.data?.message;
+
+    if (status === 403) {
+      throw new UnauthorizedError(`Unauthorized'.`);
+    } else if (status === 400) {
+      throw new BadRequestError(`Bad request: ${message || error.message}`);
+    } else {
+      throw new Error(`Failed to fetch logs: ${message || error.message}`);
+    }
+  }
+}
+
+export async function streamLogs(
+  params: {
+    privateKey: string;
+    filter?: string;
+  },
+  onData: (data: string) => void
+): Promise<void> {
+  const requestParams = {
+    operationId: nanoid(),
+    ...(params.filter && { filter: params.filter })
+  };
+
+  const signature = await generateSignature(requestParams, params.privateKey);
+
+  const servicePortalURL = ServicePortal.STREAM_LOGS_URL;
+
+  try {
+    const response = await axios.get(servicePortalURL, {
+      headers: {
+        [ServicePortal.AUTH_X_GC_KEY]: signature,
+        Accept: "text/event-stream"
+      },
+      params: requestParams,
+      responseType: "stream"
+    });
+
+    const stream = response.data as Readable;
+
+    stream.on("data", (chunk) => {
+      const data = chunk.toString();
+      onData(data);
+    });
+
+    stream.on("end", () => {
+      console.log("Stream ended");
+    });
+
+    stream.on("error", (error) => {
+      throw error;
+    });
+  } catch (error: any) {
+    throw new Error(`Failed to stream logs: ${error.response?.data?.message || error.message}`);
+  }
 }

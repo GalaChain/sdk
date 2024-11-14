@@ -12,12 +12,13 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-import { ChainCallDTO, ConstructorArgs } from "@gala-chain/api";
+import { serialize } from "@gala-chain/api";
 import { BrowserProvider, Eip1193Provider, getAddress } from "ethers";
 
-import { WebSigner } from "../GalaChainClient";
-import { generateEIP712Types } from "../Utils";
+import { GalaChainProviderOptions, WebSigner } from "../GalaChainClient";
 import { ExtendedEip1193Provider } from "../helpers";
+import { SigningType } from "../types";
+import { generateEIP712Types } from "../utils";
 
 declare global {
   interface Window {
@@ -26,9 +27,12 @@ declare global {
 }
 
 export class BrowserConnectClient extends WebSigner {
-  constructor(provider?: Eip1193Provider) {
-    super();
+  protected isInitialized = false;
+
+  constructor(provider?: Eip1193Provider, options?: GalaChainProviderOptions) {
+    super(options);
     this.address = "";
+    this.onAccountsChanged = this.onAccountsChanged.bind(this);
     if (provider) {
       this.provider = new BrowserProvider(provider);
     } else if (window.ethereum) {
@@ -45,38 +49,53 @@ export class BrowserConnectClient extends WebSigner {
     if (!window.ethereum) {
       return;
     }
-    window.ethereum.on("accountsChanged", (accounts: string[]) => {
-      if (accounts.length > 0) {
-        this.walletAddress = getAddress(accounts[0]);
-        this.emit("accountChanged", this.galachainEthAlias);
-        this.emit("accountsChanged", accounts);
-      } else {
-        this.walletAddress = "";
-        this.emit("accountChanged", null);
-        this.emit("accountsChanged", null);
-      }
-    });
+    if (!this.isInitialized) {
+      window.ethereum.on("accountsChanged", this.onAccountsChanged);
+      this.isInitialized = true;
+    }
+  }
+
+  protected onAccountsChanged(accounts: string[]) {
+    if (accounts.length > 0) {
+      this.ethereumAddress = getAddress(accounts[0]);
+      this.emit("accountChanged", this.galaChainAddress);
+      this.emit("accountsChanged", accounts);
+    } else {
+      this.ethereumAddress = "";
+      this.emit("accountChanged", null);
+      this.emit("accountsChanged", null);
+    }
   }
 
   public async connect() {
     if (!this.provider) {
       throw new Error("Ethereum provider not found");
     }
+
     this.initializeListeners();
 
     try {
       const accounts = (await this.provider.send("eth_requestAccounts", [])) as string[];
-      this.walletAddress = getAddress(accounts[0]);
-      return this.galachainEthAlias;
+      this.ethereumAddress = getAddress(accounts[0]);
+      return this.galaChainAddress;
     } catch (error: unknown) {
       throw new Error((error as Error).message);
     }
   }
 
-  public async sign<U extends ConstructorArgs<ChainCallDTO>>(
+  public disconnect() {
+    if (this.isInitialized && window.ethereum) {
+      window.ethereum.removeListener("accountsChanged", this.onAccountsChanged);
+      this.isInitialized = false;
+    }
+    this.ethereumAddress = "";
+  }
+
+  public async sign<T extends object>(
     method: string,
-    payload: U
-  ): Promise<U & { signature: string; prefix: string }> {
+    payload: T,
+    signingType: SigningType = SigningType.SIGN_TYPED_DATA
+  ): Promise<T & { signature: string; prefix: string }> {
     if (!this.provider) {
       throw new Error("Ethereum provider not found");
     }
@@ -92,9 +111,15 @@ export class BrowserConnectClient extends WebSigner {
       const prefixedPayload = { ...payload, prefix };
 
       const signer = await this.provider.getSigner();
-      const signature = await signer.signTypedData(domain, types, prefixedPayload);
-
-      return { ...prefixedPayload, signature, types, domain };
+      if (signingType === SigningType.SIGN_TYPED_DATA) {
+        const signature = await signer.signTypedData(domain, types, prefixedPayload);
+        return { ...prefixedPayload, signature, types, domain };
+      } else if (signingType === SigningType.PERSONAL_SIGN) {
+        const signature = await signer.signMessage(serialize(prefixedPayload));
+        return { ...prefixedPayload, signature };
+      } else {
+        throw new Error("Unsupported signing type");
+      }
     } catch (error: unknown) {
       throw new Error((error as Error).message);
     }

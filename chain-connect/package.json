@@ -1,10 +1,12 @@
 {
   "name": "@gala-chain/connect",
-  "version": "1.4.11",
+  "version": "1.5.7",
   "dependencies": {
-    "@gala-chain/api": "1.4.11",
+    "@gala-chain/api": "1.5.7",
     "ethers": "^6.12.1",
-    "tslib": "^2.3.0"
+    "tslib": "^2.3.0",
+    "bignumber.js": "9.1.2",
+    "class-validator": "0.14.0"
   },
   "peerDependencies": {
     "class-transformer": "*"
@@ -30,5 +32,9 @@
     "prepublishOnly": "npm i && npm run clean && npm run build && npm run lint && npm run madge",
     "format": "prettier --config ../.prettierrc 'src/**/*.ts' --write",
     "test": "jest"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/GalaChain/sdk.git"
   }
 }
