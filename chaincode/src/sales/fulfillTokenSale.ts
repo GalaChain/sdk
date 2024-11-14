@@ -116,7 +116,7 @@ export async function fulfillTokenSale(
     );
   }
 
-  // Check if the swap has started
+  // Check if the sale has started
   if (tokenSale.start && tokenSale.start !== 0 && tokenSale.start >= ctx.txUnixTime) {
     chainValidationErrors.push(`Token sale has not started. tokenSaleId ${tokenSaleId}`);
   }
@@ -129,7 +129,7 @@ export async function fulfillTokenSale(
   // We have established that the sale is still valid.
   // Now we need to ensure that the user has sufficient balances to pay costs
 
-  // Ensure there are still enough mint allowances to fufill the sale, its possible the owner can use allowances outside of the sale
+  // Ensure there are still enough mint allowances to fulfill the sale, its possible the owner can use allowances outside of the sale
   const applicableAllowances: TokenAllowance[] = [];
   for (let index = 0; index < tokenSale.selling.length; index++) {
     const tokenSaleQuantity = tokenSale.selling[index];
@@ -140,9 +140,11 @@ export async function fulfillTokenSale(
       );
     } else {
       const quantityNeeded = tokenSaleQuantity.quantity.multipliedBy(quantity);
-      if (!allowance.quantity.minus(allowance.quantitySpent ?? 0).isGreaterThanOrEqualTo(quantityNeeded)) {
+      if (allowance.quantity.minus(allowance.quantitySpent ?? 0).isLessThan(quantityNeeded)) {
         chainValidationErrors.push(
-          `Insufficient allowance ${quantityNeeded} for ${tokenSaleQuantity.tokenClassKey.toStringKey()} on sale ${tokenSaleId}`
+          `Insufficient allowance ${
+            allowance.quantity
+          }, needed: ${quantityNeeded} for ${tokenSaleQuantity.tokenClassKey.toStringKey()} on sale ${tokenSaleId}`
         );
       } else {
         applicableAllowances.push(allowance);
@@ -242,10 +244,10 @@ export async function fulfillTokenSale(
     }
     tokenSale.fulfillmentIds.push(newTokenSaleFulfillmentId);
 
-    // Put the new swap fill
+    // Put the new sale fullfillment
     await putChainObject(ctx, newTokenSaleFulfillment);
 
-    // Put the updated swap request
+    // Put the updated tokenSale
     await putChainObject(ctx, tokenSale);
 
     return newTokenSaleFulfillment;
