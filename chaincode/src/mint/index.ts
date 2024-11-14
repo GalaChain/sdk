@@ -12,6 +12,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+import { MintTokenFailedError } from "./MintError";
 import {
   MintOperationParams,
   batchMintToken,
@@ -61,5 +62,6 @@ export {
   fetchMintAllowanceSupplyForToken,
   fetchTokenClassesWithSupply,
   mintTokenWithAllowance,
-  MintTokenWithAllowanceParams
+  MintTokenWithAllowanceParams,
+  MintTokenFailedError
 };
