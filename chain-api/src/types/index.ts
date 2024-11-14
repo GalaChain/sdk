@@ -60,7 +60,6 @@ export * from "./OracleBridgeFeeAssertion";
 export * from "./OracleDefinition";
 export * from "./OraclePriceAssertion";
 export * from "./OraclePriceCrossRateAssertion";
-export * from "./sale";
 export * from "./swap";
 export * from "./TokenMintAllowance";
 export * from "./TokenMintAllowanceRequest";

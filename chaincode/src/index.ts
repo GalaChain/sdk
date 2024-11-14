@@ -21,7 +21,6 @@ export * from "./fees";
 export * from "./locks";
 export * from "./mint";
 export * from "./oracle";
-export * from "./sales";
 export * from "./services";
 export * from "./token";
 export * from "./types";

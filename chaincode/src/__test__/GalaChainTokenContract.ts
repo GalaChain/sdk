@@ -17,7 +17,6 @@ import {
   BatchMintTokenDto,
   BurnTokensDto,
   CreateTokenClassDto,
-  CreateTokenSaleDto,
   DeleteAllowancesDto,
   FeeAuthorizationResDto,
   FeeCodeDefinition,
@@ -41,11 +40,7 @@ import {
   FetchTokenClassesDto,
   FetchTokenClassesResponse,
   FetchTokenClassesWithPaginationDto,
-  FetchTokenSaleByIdDto,
-  FetchTokenSalesWithPaginationDto,
-  FetchTokenSalesWithPaginationResponse,
   FulfillMintDto,
-  FulfillTokenSaleDto,
   FullAllowanceCheckDto,
   FullAllowanceCheckResDto,
   GalaChainResponse,
@@ -58,15 +53,12 @@ import {
   MintTokenWithAllowanceDto,
   RefreshAllowancesDto,
   ReleaseTokenDto,
-  RemoveTokenSaleDto,
   TokenAllowance,
   TokenBalance,
   TokenBurn,
   TokenClass,
   TokenClassKey,
   TokenInstanceKey,
-  TokenSale,
-  TokenSaleFulfillment,
   TransferTokenDto,
   UnlockTokenDto,
   UnlockTokensDto,
@@ -85,7 +77,6 @@ import {
   batchMintToken,
   burnTokens,
   createTokenClass,
-  createTokenSale,
   creditFeeBalance,
   defineFeeSchedule,
   defineFeeSplitFormula,
@@ -99,10 +90,7 @@ import {
   fetchFeeThresholdUsesWithPagination,
   fetchTokenClasses,
   fetchTokenClassesWithPagination,
-  fetchTokenSaleById,
-  fetchTokenSalesWithPagination,
   fulfillMintRequest,
-  fulfillTokenSale,
   fullAllowanceCheck,
   grantAllowance,
   lockToken,
@@ -112,7 +100,6 @@ import {
   mintTokenWithAllowance,
   refreshAllowances,
   releaseToken,
-  removeTokenSale,
   requestMint,
   transferToken,
   unlockToken,
@@ -642,71 +629,5 @@ export default class GalaChainTokenContract extends GalaContract {
         limit: dto.limit
       })
     );
-  }
-
-  @GalaTransaction({
-    type: SUBMIT,
-    in: CreateTokenSaleDto,
-    out: TokenSale,
-    verifySignature: true,
-    enforceUniqueKey: true
-  })
-  public async CreateTokenSale(
-    ctx: GalaChainContext,
-    dto: CreateTokenSaleDto
-  ): Promise<GalaChainResponse<TokenSale>> {
-    return GalaChainResponse.Wrap(createTokenSale(ctx, dto));
-  }
-
-  @GalaTransaction({
-    type: EVALUATE,
-    in: FetchTokenSaleByIdDto,
-    out: TokenSale
-  })
-  public async FetchTokenSaleById(
-    ctx: GalaChainContext,
-    dto: FetchTokenSaleByIdDto
-  ): Promise<GalaChainResponse<TokenSale>> {
-    return GalaChainResponse.Wrap(fetchTokenSaleById(ctx, dto.tokenSaleId));
-  }
-
-  @GalaTransaction({
-    type: EVALUATE,
-    in: FetchTokenClassesWithPaginationDto,
-    out: FetchTokenSalesWithPaginationResponse
-  })
-  public async FetchTokenSalesWithPagination(
-    ctx: GalaChainContext,
-    dto: FetchTokenSalesWithPaginationDto
-  ): Promise<GalaChainResponse<FetchTokenSalesWithPaginationResponse>> {
-    return GalaChainResponse.Wrap(fetchTokenSalesWithPagination(ctx, dto));
-  }
-
-  @GalaTransaction({
-    type: SUBMIT,
-    in: FulfillTokenSaleDto,
-    out: TokenSaleFulfillment,
-    verifySignature: true,
-    enforceUniqueKey: true
-  })
-  public async FulfillTokenSale(
-    ctx: GalaChainContext,
-    dto: FulfillTokenSaleDto
-  ): Promise<GalaChainResponse<TokenSaleFulfillment>> {
-    return GalaChainResponse.Wrap(fulfillTokenSale(ctx, dto));
-  }
-
-  @GalaTransaction({
-    type: SUBMIT,
-    in: RemoveTokenSaleDto,
-    out: TokenSale,
-    allowedOrgs: ["CuratorOrg"],
-    verifySignature: true
-  })
-  public async RemoveTokenSale(
-    ctx: GalaChainContext,
-    dto: RemoveTokenSaleDto
-  ): Promise<GalaChainResponse<TokenSale>> {
-    return GalaChainResponse.Wrap(removeTokenSale(ctx, dto.tokenSaleId));
   }
 }
