@@ -2,15 +2,13 @@
 
 set -eu
 
+current_dir="$(cd "$(dirname "$0")" && pwd)"
 command="$1"
 test_network_dir="${2:-$(pwd)}"
 api_config="${3:-"$(pwd)/api-config.json"}"
-
-current_dir="$(cd "$(dirname "$0")" && pwd)"
 host=${LOCALHOST_NAME:-localhost}
 
 export API_CONFIG=$api_config
-export CHAINCODES_BASE_DIR=$test_network_dir
 
 printHeadline() {
   bold=$'\e[1m'
@@ -56,7 +54,7 @@ if [ "$command" = "up" ]; then
   checkApiConfigFile
 
   echo "Starting ops-api instances..."
-  cd "$current_dir" && docker compose --env-file "$test_network_dir/fablo-target/fabric-docker/.env" up -d
+  (cd "$current_dir" && docker compose --env-file ../fablo-target/fabric-docker/.env up -d)
 
   # Verify all instances
   verifyOpsInstance 3000 "curator"
@@ -69,8 +67,8 @@ if [ "$command" = "up" ]; then
   echo "  ops-api users:   http://$host:3200/docs"
 
 elif [ "$command" = "down" ]; then
-  echo "Downing ops-api instances..."
-  cd "$current_dir" && docker compose --env-file "$test_network_dir/fablo-target/fabric-docker/.env" down -t 1
+  echo "Downing ops-api instances... .. $current_dir"
+  (cd "$current_dir" && docker compose --env-file ../fablo-target/fabric-docker/.env down -t 1)
 else
   printHeadline "Invalid command. Valid commands are <up|down>" "\360\237\233\221"
   echo "Example:"

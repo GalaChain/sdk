@@ -20,7 +20,7 @@ import { readFileSync, writeFileSync } from "fs";
 import path from "path";
 
 import BaseCommand from "../../base-command";
-import { getCPPs, getCPPsBrowserApi } from "../../connection-profile";
+import { getCPPs } from "../../connection-profile";
 import { defaultFabloRoot } from "../../consts";
 import { execSync, execSyncStdio } from "../../exec-sync";
 import { saveApiConfig } from "../../galachain-utils";
@@ -267,7 +267,6 @@ function updatedFabloConfigWithEntry(
 
 function customValidation(flags: any): void {
   const { channel, channelType, chaincodeName, chaincodeDir, envConfig } = flags;
-  console.log(flags);
 
   /*
     Check if the flags does not have special characters like &, |, ;, :, etc. Only -, _ and . and are allowed
@@ -286,8 +285,6 @@ function customValidation(flags: any): void {
         if (flag.length > maxLength) {
           throw new Error(`Error: Flag ${flag} is too long. Maximum length is ${maxLength} characters.`);
         }
-        console.log(flag);
-        console.log(specialChars.test(flag));
         if (specialChars.test(flag)) {
           throw new Error(`Error: Flag ${flag} contains special characters. Only - and _ are allowed.`);
         }
@@ -395,20 +392,9 @@ function saveConnectionProfiles(
   const cryptoConfigRoot = path.resolve(fabloRoot, "fablo-target/fabric-config/crypto-config");
 
   // Generate connection profiles for all services
-  const cpps = getCPPs(cryptoConfigRoot, channelNames, localhostName, !isWatchMode, true, !isWatchMode);
-
-  // Save connection profiles for ops-api and e2e tests
-  const cppDir = path.resolve(fabloRoot, "connection-profiles");
-  execSync(`mkdir -p "${cppDir}"`);
-
-  const cppPath = (org: string) => path.resolve(cppDir, `cpp-${org}.json`);
-  writeFileSync(cppPath("curator"), JSON.stringify(cpps.curator, undefined, 2));
-  writeFileSync(cppPath("partner"), JSON.stringify(cpps.partner, undefined, 2));
-  writeFileSync(cppPath("users"), JSON.stringify(cpps.users, undefined, 2));
-
-  // Generate and save browser-api specific connection profiles
-  const cppsBrowser = getCPPsBrowserApi(
-    cryptoConfigRoot,
+  const cppsLocal = getCPPs(cryptoConfigRoot, channelNames, localhostName, !isWatchMode, true, !isWatchMode);
+  const cppsDocker = getCPPs(
+    "/crypto-config",
     channelNames,
     localhostName,
     !isWatchMode,
@@ -416,14 +402,20 @@ function saveConnectionProfiles(
     !isWatchMode
   );
 
-  const cppDirBrowser = path.resolve(fabloRoot, "connection-profiles-browser");
-  execSync(`mkdir -p "${cppDirBrowser}"`);
+  // Save connection profiles for ops-api and e2e tests
+  const cppLocalDir = path.resolve(fabloRoot, "connection-profiles");
+  execSync(`mkdir -p "${cppLocalDir}"`);
 
-  if (isWatchMode) {
-    const cppPathBrowser = (org: string) => path.resolve(cppDirBrowser, `cpp-${org}.json`);
-    writeFileSync(cppPathBrowser("curator"), JSON.stringify(cppsBrowser.curator, undefined, 2));
-  } else {
-    const sourceCppDirBrowser = path.resolve(".", `${defaultFabloRoot}/browser-api/connection-profiles`);
-    execSync(`cp "${sourceCppDirBrowser}/cpp-curator.json" "${cppDirBrowser}/"`);
-  }
+  const cppPath = (org: string) => path.resolve(cppLocalDir, `cpp-${org}.json`);
+  writeFileSync(cppPath("curator"), JSON.stringify(cppsLocal.curator, undefined, 2));
+  writeFileSync(cppPath("partner"), JSON.stringify(cppsLocal.partner, undefined, 2));
+  writeFileSync(cppPath("users"), JSON.stringify(cppsLocal.users, undefined, 2));
+
+  const cppDockerDir = path.resolve(fabloRoot, "connection-profiles-docker");
+  execSync(`mkdir -p "${cppDockerDir}"`);
+
+  const cppDockerPath = (org: string) => path.resolve(cppDockerDir, `cpp-${org}.json`);
+  writeFileSync(cppDockerPath("curator"), JSON.stringify(cppsDocker.curator, undefined, 2));
+  writeFileSync(cppDockerPath("partner"), JSON.stringify(cppsDocker.partner, undefined, 2));
+  writeFileSync(cppDockerPath("users"), JSON.stringify(cppsDocker.users, undefined, 2));
 }

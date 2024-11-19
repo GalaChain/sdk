@@ -11,7 +11,7 @@ services:
     # image version.
     image: ghcr.io/galachain/operation-api:1.0.0
     volumes:
-      - ./connection-profiles:/connection-profiles
+      - $CHAINCODES_BASE_DIR/connection-profiles-docker:/connection-profiles
       - $CHAINCODES_BASE_DIR/fablo-target/fabric-config/crypto-config:/crypto-config
       - $API_CONFIG:/usr/src/app/resources/sample-api-config.json
     networks:
