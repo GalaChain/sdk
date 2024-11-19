@@ -1,0 +1,40 @@
+{
+  "name": "test-network-PartnerOrg1",
+  "version": "1.0.0",
+  "client": {
+    "organization": "PartnerOrg1"
+  },
+  "organizations": {
+    "PartnerOrg1": {
+      "mspid": "PartnerOrg1",
+      "peers": [
+        "peer0.partner1.local"
+      ],
+      "certificateAuthorities": [
+        "ca.partner1.local"
+      ]
+    }
+  },
+  "peers": {
+    "peer0.partner1.local": {
+      "url": "grpcs://peer0.partner1.local:7061",
+      "tlsCACerts": {
+        "path": "/crypto-config/peerOrganizations/partner1.local/peers/peer0.partner1.local/tls/ca.crt"
+      },
+      "grpcOptions": {
+      }
+    }
+  },
+  "certificateAuthorities": {
+    "ca.partner1.local": {
+      "url": "https://ca.partner1.local:7054",
+      "caName": "ca.partner1.local",
+      "tlsCACerts": {
+        "path": "/crypto-config/peerOrganizations/partner1.local/peers/peer0.partner1.local/tls/ca.crt"
+      },
+      "httpOptions": {
+        "verify": false
+      }
+    }
+  }
+}

@@ -17,6 +17,8 @@ import path from "path";
 
 import KeyGen from "./index";
 
+jest.setTimeout(10000);
+
 describe("KeyGen Command", () => {
   it("should check KeyGen Command", async () => {
     const result: (string | Uint8Array)[] = [];

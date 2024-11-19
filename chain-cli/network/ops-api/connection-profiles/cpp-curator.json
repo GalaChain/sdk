@@ -1,0 +1,41 @@
+{
+  "name": "test-network-CuratorOrg",
+  "version": "1.0.0",
+  "client": {
+    "organization": "CuratorOrg"
+  },
+  "organizations": {
+    "CuratorOrg": {
+      "mspid": "CuratorOrg",
+      "peers": [
+        "peer0.curator.local"
+      ],
+      "certificateAuthorities": [
+        "ca.curator.local"
+      ]
+    }
+  },
+  "peers": {
+    "peer0.curator.local": {
+      "url": "grpcs://peer0.curator.local:7041",
+      "tlsCACerts": {
+        "path": "/crypto-config/peerOrganizations/curator.local/peers/peer0.curator.local/tls/ca.crt"
+      },
+      "grpcOptions": {
+        "ssl-target-name-override": "peer0.curator.local"
+      }
+    }
+  },
+  "certificateAuthorities": {
+    "ca.curator.local": {
+      "url": "https://ca.curator.local:7054",
+      "caName": "ca.curator.local",
+      "tlsCACerts": {
+        "path": "/crypto-config/peerOrganizations/curator.local/peers/peer0.curator.local/tls/ca.crt"
+      },
+      "httpOptions": {
+        "verify": false
+      }
+    }
+  }
+}

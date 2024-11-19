@@ -23,7 +23,7 @@ import BaseCommand from "../../base-command";
 import { getCPPs, getCPPsBrowserApi } from "../../connection-profile";
 import { defaultFabloRoot } from "../../consts";
 import { execSync, execSyncStdio } from "../../exec-sync";
-import { overwriteApiConfig } from "../../galachain-utils";
+import { saveApiConfig } from "../../galachain-utils";
 
 const defaultChaincodeDir = ".";
 
@@ -37,7 +37,7 @@ export interface SingleArg {
 export default class NetworkUp extends BaseCommand<typeof NetworkUp> {
   static override aliases = ["network:up"];
 
-  static override description = "Start the chaincode in dev-mode and browser-api.";
+  static override description = "Start the chaincode, browser-api, and ops-api (in non-watch mode).";
 
   static override examples = [
     "galachain network:up -C=product-channel -t=curator -n=basic-product -d=./ --envConfig=./.dev-env --watch",
@@ -91,7 +91,8 @@ export default class NetworkUp extends BaseCommand<typeof NetworkUp> {
     }),
     contracts: Flags.string({
       char: "o",
-      description: "Contract names in a JSON format."
+      description: "Contract names in a JSON format.",
+      multiple: true
     })
   };
 
@@ -99,13 +100,14 @@ export default class NetworkUp extends BaseCommand<typeof NetworkUp> {
     const { flags } = await this.parse(NetworkUp);
     customValidation(flags);
 
-    if (flags.contracts) {
-      // This feature supports only a single channel
-      console.log("Overwriting api-config.json with contracts: " + flags.contracts);
-      await overwriteApiConfig(flags.contracts, flags.channel[0], flags.chaincodeName[0]);
-    }
-
     const fabloRoot = path.resolve(flags.fabloRoot);
+    const apiConfigPath = path.resolve(fabloRoot, "api-config.json");
+
+    // Generate API config content
+    if (flags.contracts) {
+      console.log("Processing api-config.json with contracts: " + flags.contracts);
+      await saveApiConfig(fabloRoot, flags.contracts, flags.channel, flags.chaincodeName);
+    }
 
     const localhostName = process.env.LOCALHOST_NAME ?? "localhost";
     console.log("Network root directory:", fabloRoot);
@@ -132,7 +134,7 @@ export default class NetworkUp extends BaseCommand<typeof NetworkUp> {
       )
       .execute("up");
 
-    startBrowserApi(fabloRoot);
+    startNetworkServices(fabloRoot, flags.watch, apiConfigPath);
 
     if (flags.watch) {
       startChaincodeInWatchMode(fabloRoot, singleArgs);
@@ -140,14 +142,45 @@ export default class NetworkUp extends BaseCommand<typeof NetworkUp> {
   }
 }
 
-function startBrowserApi(fabloRoot: string): void {
-  const commands = [
-    `cd "${fabloRoot}/browser-api"`,
-    "./browser-api-compose.sh up",
-    "./browser-api-compose.sh success-message"
-  ];
+function startNetworkServices(fabloRoot: string, isWatchMode: boolean, apiConfigPath: string): void {
+  try {
+    // Start browser-api
+    startBrowserApi(fabloRoot);
 
-  execSyncStdio(commands.join(" && "));
+    // Start ops-api only in non-watch mode
+    if (!isWatchMode) {
+      startOpsApi(fabloRoot, apiConfigPath);
+    }
+  } catch (error) {
+    console.error("Failed to start network services:", error);
+    throw error;
+  }
+}
+
+function startBrowserApi(fabloRoot: string): void {
+  try {
+    const commands = [
+      `cd "${fabloRoot}/browser-api"`,
+      "./browser-api-compose.sh up",
+      "./browser-api-compose.sh success-message"
+    ];
+
+    execSyncStdio(commands.join(" && "));
+  } catch (error) {
+    console.error("Failed to start browser-api:", error);
+    throw error;
+  }
+}
+
+function startOpsApi(fabloRoot: string, apiConfigPath: string): void {
+  try {
+    const commands = [`cd "${fabloRoot}/ops-api"`, `./ops-api.sh up "${fabloRoot}" "${apiConfigPath}"`];
+
+    execSyncStdio(commands.join(" && "));
+  } catch (error) {
+    console.error("Failed to start ops-api:", error);
+    throw error;
+  }
 }
 
 function startChaincodeInWatchMode(fabloRoot: string, args: SingleArg[]): void {
@@ -345,7 +378,12 @@ function reduce(args: any): SingleArg[] {
 
 function copyNetworkScriptsTo(targetPath: string): void {
   const sourceScriptsDir = path.resolve(require.resolve("."), "../../../network");
-  execSync(`mkdir -p "${targetPath}" && cd "${targetPath}" && cp -R "${sourceScriptsDir}"/* ./ && ls -lh`);
+  try {
+    execSync(`mkdir -p "${targetPath}" && cd "${targetPath}" && cp -R "${sourceScriptsDir}"/* ./ && ls -lh`);
+  } catch (error) {
+    console.error("Failed to copy network scripts:", error);
+    throw error;
+  }
 }
 
 function saveConnectionProfiles(
@@ -354,10 +392,12 @@ function saveConnectionProfiles(
   channelNames: string[],
   localhostName: string
 ): void {
-  // e2e tests
   const cryptoConfigRoot = path.resolve(fabloRoot, "fablo-target/fabric-config/crypto-config");
+
+  // Generate connection profiles for all services
   const cpps = getCPPs(cryptoConfigRoot, channelNames, localhostName, !isWatchMode, true, !isWatchMode);
 
+  // Save connection profiles for ops-api and e2e tests
   const cppDir = path.resolve(fabloRoot, "connection-profiles");
   execSync(`mkdir -p "${cppDir}"`);
 
@@ -366,7 +406,7 @@ function saveConnectionProfiles(
   writeFileSync(cppPath("partner"), JSON.stringify(cpps.partner, undefined, 2));
   writeFileSync(cppPath("users"), JSON.stringify(cpps.users, undefined, 2));
 
-  // browser-api
+  // Generate and save browser-api specific connection profiles
   const cppsBrowser = getCPPsBrowserApi(
     cryptoConfigRoot,
     channelNames,
@@ -379,7 +419,6 @@ function saveConnectionProfiles(
   const cppDirBrowser = path.resolve(fabloRoot, "connection-profiles-browser");
   execSync(`mkdir -p "${cppDirBrowser}"`);
 
-  // Browser-api needs the generated connection profile when running in watch mode and the harded coded one when running in non-watch mode
   if (isWatchMode) {
     const cppPathBrowser = (org: string) => path.resolve(cppDirBrowser, `cpp-${org}.json`);
     writeFileSync(cppPathBrowser("curator"), JSON.stringify(cppsBrowser.curator, undefined, 2));

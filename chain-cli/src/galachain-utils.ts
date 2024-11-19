@@ -211,41 +211,51 @@ export async function getPrivateKey(keysFromArg: string | undefined) {
   );
 }
 
-export async function overwriteApiConfig(contracts: string, channel: string, chaincodeName: string) {
-  const contractsJson = JSON.parse(contracts);
+export async function saveApiConfig(
+  dir: string,
+  contracts: string[],
+  channel: string[],
+  chaincodeName: string[]
+) {
+  if (contracts.length !== channel.length || contracts.length !== chaincodeName.length) {
+    throw new Error("Invalid arguments: contracts, channel and chaincodeName must have the same length");
+  }
 
-  let contractJson = "";
-  contractsJson.forEach((contract: { contractName: string }) => {
-    // It converts CamelCase to kebab-case
-    const pathFragment = contract.contractName
-      .replace(/([A-Z])/g, "-$1")
-      .toLowerCase()
-      .replace(/^-/, "");
+  const apiConfig = {
+    channels: channel.map((channel, index) =>
+      getApiConfigForChannel(channel, chaincodeName[index], contracts[index])
+    )
+  };
 
-    contractJson =
-      contractJson +
-      `{ 
-          "pathFragment": "${pathFragment}", 
-          "chaincodeName": "${chaincodeName}", 
-          "contractName": "${contract.contractName}" 
-        },`;
-  });
-  // remove the last comma
-  contractJson = contractJson.slice(0, -1);
+  // Ensure directory exists
+  if (!fs.existsSync(dir)) {
+    fs.mkdirSync(dir, { recursive: true });
+  }
 
-  // write a new api-config.json file and overwrite the old one
-  const apiConfigPath = path.resolve(".", "api-config.json");
-  const apiConfigJson = `{
-        "channels": [
-          {
-            "pathFragment": "product",
-            "channelName": "${channel}",
-            "asLocalHost": true,
-            "contracts": [${contractJson}]
-          }
-        ]
-      }`;
-  fs.writeFileSync(apiConfigPath, JSON.stringify(JSON.parse(apiConfigJson), null, 2));
+  // Write a new api-config.json file and overwrite the old one
+  const apiConfigPath = path.resolve(dir, "api-config.json");
+  fs.writeFileSync(apiConfigPath, JSON.stringify(apiConfig, null, 2));
+}
+
+function getApiConfigForChannel(channel: string, chaincodeName: string, contracts: string) {
+  const contractNamesArr = JSON.parse(contracts) as { contractName: string }[];
+
+  if (!contractNamesArr || !Array.isArray(contractNamesArr)) {
+    throw new Error(`Invalid contracts JSON: ${contracts}`);
+  }
+
+  const contractsArr = contractNamesArr.map(({ contractName }) => ({
+    contractName,
+    chaincodeName,
+    pathFragment: contractName
+  }));
+
+  return {
+    pathFragment: channel.replace("-channel", ""),
+    channelName: channel,
+    asLocalHost: true,
+    contracts: contractsArr
+  };
 }
 
 function getDefaultDevPrivateKeyFile(): string | undefined {
