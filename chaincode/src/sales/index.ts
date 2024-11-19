@@ -12,19 +12,16 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+import { createTokenSale } from "./createTokenSale";
+import { fetchTokenSaleById } from "./fetchTokenSaleById";
+import { fetchTokenSalesWithPagination } from "./fetchTokenSalesWithPagination";
+import { fulfillTokenSale } from "./fulfillTokenSale";
+import { removeTokenSale } from "./removeTokenSale";
 
-export * from "./allowances";
-export * from "./balances";
-export * from "./burns";
-export * from "./contracts";
-export * from "./fees";
-export * from "./locks";
-export * from "./mint";
-export * from "./oracle";
-export * from "./sales";
-export * from "./services";
-export * from "./token";
-export * from "./types";
-export * from "./utils";
-export * from "./use";
-export * from "./transfer";
+export {
+  createTokenSale,
+  fetchTokenSaleById,
+  fetchTokenSalesWithPagination,
+  fulfillTokenSale,
+  removeTokenSale
+};
