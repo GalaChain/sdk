@@ -15,7 +15,6 @@
 import {
   ChainError,
   ExpectedTokenSale,
-  FulfillTokenSaleDto,
   TokenAllowance,
   TokenClassKey,
   TokenInstanceKey,
@@ -23,7 +22,9 @@ import {
   TokenSaleDtoValidationError,
   TokenSaleFulfillment,
   TokenSaleMintAllowance,
-  TokenSaleQuantity
+  TokenSaleQuantity,
+  UserAlias,
+  createValidChainObject
 } from "@gala-chain/api";
 import { BigNumber } from "bignumber.js";
 import { plainToInstance } from "class-transformer";
@@ -32,13 +33,20 @@ import { fetchOrCreateBalance } from "../balances";
 import { MintTokenFailedError, mintToken } from "../mint";
 import { fetchTokenClasses } from "../token/fetchTokenClasses";
 import { TransferTokenFailedError, transferToken } from "../transfer";
-import { GalaChainContext, createValidChainObject } from "../types";
+import { GalaChainContext } from "../types";
 import {
   getObjectByKey,
   getObjectsByPartialCompositeKey,
   putChainObject,
   takeUntilUndefined
 } from "../utils";
+
+interface FullfillTokenSaleParams {
+  tokenSaleId: string;
+  expectedTokenSale?: ExpectedTokenSale;
+  fulfilledBy: UserAlias | undefined;
+  quantity: BigNumber;
+}
 
 async function getTokenSaleAllowanceForToken(
   ctx: GalaChainContext,
@@ -66,7 +74,7 @@ async function getTokenSaleAllowanceForToken(
 
 export async function fulfillTokenSale(
   ctx: GalaChainContext,
-  dto: FulfillTokenSaleDto
+  dto: FullfillTokenSaleParams
 ): Promise<TokenSaleFulfillment> {
   const fulfilledBy = dto.fulfilledBy ?? ctx.callingUser;
   const { tokenSaleId, quantity, expectedTokenSale } = dto;

@@ -57,7 +57,9 @@ describe("authorization", () => {
     const f = () => authFixture(["Submit", "no org constraint", "no roles constraint", "no sig verif"]);
 
     // Then
-    expect(f).toThrow("SUBMIT transaction must have either verifySignature or allowedOrgs defined");
+    expect(f).toThrow(
+      "SUBMIT transaction 'GetCallingUser' must have either verifySignature or allowedOrgs defined"
+    );
   });
 
   it("should authorize by organization for evaluate method", async () => {

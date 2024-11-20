@@ -83,6 +83,7 @@ import {
   GalaContract,
   GalaTransaction,
   Submit,
+  UnsignedEvaluate,
   batchMintToken,
   burnTokens,
   createTokenClass,
@@ -174,8 +175,7 @@ export default class GalaChainTokenContract extends GalaContract {
     return updateTokenClass(ctx, { ...dto, authorities });
   }
 
-  @GalaTransaction({
-    type: EVALUATE,
+  @UnsignedEvaluate({
     in: FetchTokenClassesDto,
     out: { arrayOf: TokenClass }
   })
@@ -183,8 +183,7 @@ export default class GalaChainTokenContract extends GalaContract {
     return fetchTokenClasses(ctx, dto.tokenClasses);
   }
 
-  @GalaTransaction({
-    type: EVALUATE,
+  @UnsignedEvaluate({
     in: FetchTokenClassesWithPaginationDto,
     out: FetchTokenClassesResponse
   })
@@ -217,8 +216,7 @@ export default class GalaChainTokenContract extends GalaContract {
     return refreshAllowances(ctx, dto.allowances);
   }
 
-  @GalaTransaction({
-    type: EVALUATE,
+  @UnsignedEvaluate({
     in: FullAllowanceCheckDto,
     out: FullAllowanceCheckResDto
   })
@@ -237,8 +235,7 @@ export default class GalaChainTokenContract extends GalaContract {
     });
   }
 
-  @GalaTransaction({
-    type: EVALUATE,
+  @UnsignedEvaluate({
     in: FetchAllowancesDto,
     out: FetchAllowancesResponse
   })
@@ -257,8 +254,7 @@ export default class GalaChainTokenContract extends GalaContract {
     return deleteAllowances(ctx, dto);
   }
 
-  @GalaTransaction({
-    type: EVALUATE,
+  @UnsignedEvaluate({
     in: FetchBalancesDto,
     out: { arrayOf: TokenBalance }
   })
@@ -266,8 +262,7 @@ export default class GalaChainTokenContract extends GalaContract {
     return fetchBalances(ctx, { ...dto, owner: await resolveUserAlias(ctx, dto.owner ?? ctx.callingUser) });
   }
 
-  @GalaTransaction({
-    type: EVALUATE,
+  @UnsignedEvaluate({
     in: FetchBalancesDto,
     out: { arrayOf: TokenBalance }
   })
@@ -343,8 +338,7 @@ export default class GalaChainTokenContract extends GalaContract {
     );
   }
 
-  @GalaTransaction({
-    type: EVALUATE,
+  @UnsignedEvaluate({
     in: FetchMintRequestsDto,
     out: { arrayOf: MintRequestDto }
   })
@@ -528,8 +522,7 @@ export default class GalaChainTokenContract extends GalaContract {
     });
   }
 
-  @GalaTransaction({
-    type: EVALUATE,
+  @UnsignedEvaluate({
     in: FetchBurnsDto,
     out: { arrayOf: TokenBurn }
   })
@@ -573,8 +566,7 @@ export default class GalaChainTokenContract extends GalaContract {
     return GalaChainResponse.Wrap(creditFeeBalance(ctx, dto));
   }
 
-  @GalaTransaction({
-    type: EVALUATE,
+  @UnsignedEvaluate({
     in: FetchFeeScheduleDto,
     out: FetchFeeScheduleResDto
   })
@@ -585,8 +577,7 @@ export default class GalaChainTokenContract extends GalaContract {
     return GalaChainResponse.Wrap(fetchFeeSchedule(ctx, dto));
   }
 
-  @GalaTransaction({
-    type: EVALUATE,
+  @UnsignedEvaluate({
     in: FetchFeeThresholdUsesDto,
     out: FeeThresholdUses
   })
@@ -602,8 +593,7 @@ export default class GalaChainTokenContract extends GalaContract {
     );
   }
 
-  @GalaTransaction({
-    type: EVALUATE,
+  @UnsignedEvaluate({
     in: FetchFeeThresholdUsesWithPaginationDto,
     out: FetchFeeThresholdUsesWithPaginationResponse
   })
@@ -620,22 +610,27 @@ export default class GalaChainTokenContract extends GalaContract {
     );
   }
 
-  @GalaTransaction({
-    type: SUBMIT,
+  @Submit({
     in: CreateTokenSaleDto,
-    out: TokenSale,
-    verifySignature: true,
-    enforceUniqueKey: true
+    out: TokenSale
   })
   public async CreateTokenSale(
     ctx: GalaChainContext,
     dto: CreateTokenSaleDto
   ): Promise<GalaChainResponse<TokenSale>> {
-    return GalaChainResponse.Wrap(createTokenSale(ctx, dto));
+    return GalaChainResponse.Wrap(
+      createTokenSale(ctx, {
+        selling: dto.selling,
+        cost: dto.cost,
+        owner: dto.owner ? await resolveUserAlias(ctx, dto.owner) : undefined,
+        quantity: dto.quantity,
+        start: dto.start,
+        end: dto.end
+      })
+    );
   }
 
-  @GalaTransaction({
-    type: EVALUATE,
+  @UnsignedEvaluate({
     in: FetchTokenSaleByIdDto,
     out: TokenSale
   })
@@ -646,8 +641,7 @@ export default class GalaChainTokenContract extends GalaContract {
     return GalaChainResponse.Wrap(fetchTokenSaleById(ctx, dto.tokenSaleId));
   }
 
-  @GalaTransaction({
-    type: EVALUATE,
+  @UnsignedEvaluate({
     in: FetchTokenClassesWithPaginationDto,
     out: FetchTokenSalesWithPaginationResponse
   })
@@ -658,26 +652,28 @@ export default class GalaChainTokenContract extends GalaContract {
     return GalaChainResponse.Wrap(fetchTokenSalesWithPagination(ctx, dto));
   }
 
-  @GalaTransaction({
-    type: SUBMIT,
+  @Submit({
     in: FulfillTokenSaleDto,
-    out: TokenSaleFulfillment,
-    verifySignature: true,
-    enforceUniqueKey: true
+    out: TokenSaleFulfillment
   })
   public async FulfillTokenSale(
     ctx: GalaChainContext,
     dto: FulfillTokenSaleDto
   ): Promise<GalaChainResponse<TokenSaleFulfillment>> {
-    return GalaChainResponse.Wrap(fulfillTokenSale(ctx, dto));
+    return GalaChainResponse.Wrap(
+      fulfillTokenSale(ctx, {
+        tokenSaleId: dto.tokenSaleId,
+        expectedTokenSale: dto.expectedTokenSale,
+        fulfilledBy: dto.fulfilledBy ? await resolveUserAlias(ctx, dto.fulfilledBy) : undefined,
+        quantity: dto.quantity
+      })
+    );
   }
 
-  @GalaTransaction({
-    type: SUBMIT,
+  @Submit({
     in: RemoveTokenSaleDto,
     out: TokenSale,
-    allowedOrgs: ["CuratorOrg"],
-    verifySignature: true
+    allowedOrgs: ["CuratorOrg"]
   })
   public async RemoveTokenSale(
     ctx: GalaChainContext,
