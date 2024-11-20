@@ -21,9 +21,9 @@ import {
   TokenSaleQuantity,
   TokenSaleTokenCost,
   TokenSaleTokenSold,
-  createValidDTO
+  createValidSubmitDTO
 } from "@gala-chain/api";
-import { currency, fixture, nft, transactionError, users, writesMap } from "@gala-chain/test";
+import { currency, fixture, nft, users, writesMap } from "@gala-chain/test";
 import BigNumber from "bignumber.js";
 import { plainToInstance } from "class-transformer";
 
@@ -43,12 +43,12 @@ describe("CreateTokenSale", () => {
 
     const nftSalePrice = new BigNumber("1000000");
 
-    const { ctx, contract, writes } = fixture(GalaChainTokenContract)
-      .callingUser(users.testAdminId)
+    const { ctx, contract, getWrites } = fixture(GalaChainTokenContract)
+      .registeredUsers(users.admin)
       .savedState(currencyClass, nftClass, tokenAllowance, nfttokenBalance);
 
-    const dto: CreateTokenSaleDto = await createValidDTO(CreateTokenSaleDto, {
-      owner: users.testAdminId,
+    const dto: CreateTokenSaleDto = await createValidSubmitDTO(CreateTokenSaleDto, {
+      owner: users.admin.identityKey,
       selling: [
         plainToInstance(TokenSaleQuantity, {
           tokenClassKey: nftClassKey,
@@ -65,7 +65,7 @@ describe("CreateTokenSale", () => {
       start: ctx.txUnixTime + 2000,
       end: 0,
       uniqueKey: "blah1"
-    });
+    }).signed(users.admin.privateKey);
 
     const expectedSale: TokenSale = plainToInstance(TokenSale, {
       created: ctx.txUnixTime,
@@ -83,7 +83,7 @@ describe("CreateTokenSale", () => {
           quantity: nftSalePrice
         }
       ],
-      owner: users.testAdminId,
+      owner: users.admin.identityKey,
       start: ctx.txUnixTime + 2000,
       end: 0,
       fulfillmentIds: [],
@@ -108,7 +108,7 @@ describe("CreateTokenSale", () => {
     });
 
     const expectedSaleOwner = plainToInstance(TokenSaleOwner, {
-      owner: users.testAdminId,
+      owner: users.admin.identityKey,
       tokenSaleId: tokenSaleId
     });
 
@@ -117,7 +117,7 @@ describe("CreateTokenSale", () => {
 
     // Then
     expect(response).toEqual(GalaChainResponse.Success(expectedSale));
-    expect(writes).toEqual(
+    expect(getWrites()).toEqual(
       expect.objectContaining(
         writesMap(expectedSale, expectedTokenCost, expectedSaleOwner, expectedTokenForSale)
       )
@@ -137,12 +137,12 @@ describe("CreateTokenSale", () => {
 
     const nftSalePrice = new BigNumber("1000000");
 
-    const { ctx, contract, writes } = fixture(GalaChainTokenContract)
-      .callingUser(users.testAdminId)
+    const { ctx, contract, getWrites } = fixture(GalaChainTokenContract)
+      .registeredUsers(users.admin)
       .savedState(currencyClass, nftClass, tokenAllowance, nfttokenBalance);
 
-    const dto: CreateTokenSaleDto = await createValidDTO(CreateTokenSaleDto, {
-      owner: users.testAdminId,
+    const dto: CreateTokenSaleDto = await createValidSubmitDTO(CreateTokenSaleDto, {
+      owner: users.admin.identityKey,
       selling: [
         plainToInstance(TokenSaleQuantity, {
           tokenClassKey: nftClassKey,
@@ -159,7 +159,7 @@ describe("CreateTokenSale", () => {
       start: ctx.txUnixTime + 2000,
       end: 1,
       uniqueKey: "blah1"
-    });
+    }).signed(users.admin.privateKey);
 
     // When
     const response = await contract.CreateTokenSale(ctx, dto).catch((e) => e);
@@ -172,6 +172,6 @@ describe("CreateTokenSale", () => {
         ])
       )
     );
-    expect(writes).toEqual(writesMap());
+    expect(getWrites()).toEqual(writesMap());
   });
 });

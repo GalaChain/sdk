@@ -110,40 +110,45 @@ function Evaluate<T extends ChainCallDTO>(options: GalaEvaluateOptions<T>): Gala
   return GalaTransaction({ ...options, type: EVALUATE, verifySignature: true });
 }
 
+function UnsignedEvaluate<T extends ChainCallDTO>(
+  options: GalaEvaluateOptions<T>
+): GalaTransactionDecoratorFunction {
+  return GalaTransaction({ ...options, type: EVALUATE });
+}
+
 function GalaTransaction<T extends ChainCallDTO>(
   options: GalaTransactionOptions<T>
 ): GalaTransactionDecoratorFunction {
-  // Register the DTO class to be passed
-  if (options.in !== undefined) {
-    DTOObject()(options.in);
-  }
-
-  if (options.type === SUBMIT && !options.verifySignature && !options.allowedOrgs?.length) {
-    const message = `SUBMIT transaction must have either verifySignature or allowedOrgs defined`;
-    throw new NotImplementedError(message);
-  }
-
-  if (options.allowedRoles !== undefined && options.allowedOrgs !== undefined) {
-    const message = `allowedRoles and allowedOrgs cannot be defined at the same time`;
-    throw new NotImplementedError(message);
-  }
-
-  options.allowedRoles = options.allowedRoles ?? [
-    options.type === SUBMIT ? UserRole.SUBMIT : UserRole.EVALUATE
-  ];
-
-  if (options.type === SUBMIT && !options.enforceUniqueKey) {
-    const message = `SUBMIT transaction must have enforceUniqueKey defined`;
-    throw new NotImplementedError(message);
-  }
-
-  if (options.type === EVALUATE && options.enforceUniqueKey) {
-    const message = `EVALUATE transaction cannot have enforceUniqueKey defined`;
-    throw new NotImplementedError(message);
-  }
-
-  // An actual decorator
   return (target, propertyKey, descriptor): void => {
+    // Register the DTO class to be passed
+    if (options.in !== undefined) {
+      DTOObject()(options.in);
+    }
+
+    if (options.type === SUBMIT && !options.verifySignature && !options.allowedOrgs?.length) {
+      const message = `SUBMIT transaction '${propertyKey}' must have either verifySignature or allowedOrgs defined`;
+      throw new NotImplementedError(message);
+    }
+
+    if (options.allowedRoles !== undefined && options.allowedOrgs !== undefined) {
+      const message = `Transaction '${propertyKey}': allowedRoles and allowedOrgs cannot be defined at the same time`;
+      throw new NotImplementedError(message);
+    }
+
+    options.allowedRoles = options.allowedRoles ?? [
+      options.type === SUBMIT ? UserRole.SUBMIT : UserRole.EVALUATE
+    ];
+
+    if (options.type === SUBMIT && !options.enforceUniqueKey) {
+      const message = `SUBMIT transaction '${propertyKey}' must have enforceUniqueKey defined`;
+      throw new NotImplementedError(message);
+    }
+
+    if (options.type === EVALUATE && options.enforceUniqueKey) {
+      const message = `EVALUATE transaction '${propertyKey}' cannot have enforceUniqueKey defined`;
+      throw new NotImplementedError(message);
+    }
+
     // Takes the method to wrap
     const method = descriptor.value;
     const className = target.constructor?.name ?? "UnknownContractClass";
@@ -265,4 +270,4 @@ function GalaTransaction<T extends ChainCallDTO>(
   };
 }
 
-export { Submit, Evaluate, SUBMIT, EVALUATE, GalaTransaction };
+export { Submit, Evaluate, UnsignedEvaluate, SUBMIT, EVALUATE, GalaTransaction };
