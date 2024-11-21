@@ -17,7 +17,7 @@ import path from "path";
 
 import KeyGen from "./index";
 
-jest.setTimeout(10000);
+jest.setTimeout(10 * 1000);
 
 describe("KeyGen Command", () => {
   it("should check KeyGen Command", async () => {

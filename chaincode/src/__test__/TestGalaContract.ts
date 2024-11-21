@@ -14,20 +14,26 @@
  */
 // eslint-disable-next-line @typescript-eslint/ban-ts-comment
 // @ts-ignore
-import { ChainCallDTO, ChainKey, ChainObject, GalaChainResponse } from "@gala-chain/api";
-import { NotImplementedError } from "@gala-chain/api";
+import {
+  ChainCallDTO,
+  ChainKey,
+  ChainObject,
+  GalaChainResponse,
+  NotImplementedError,
+  SubmitCallDTO,
+  createValidChainObject,
+  randomUniqueKey
+} from "@gala-chain/api";
 import { Exclude } from "class-transformer";
 import { IsPositive } from "class-validator";
 import { Transaction } from "fabric-contract-api";
 
 import { version } from "../../package.json";
-import { EVALUATE, GalaContract, GalaTransaction, SUBMIT } from "../contracts";
-import { GalaChainContext, createValidChainObject } from "../types";
+import { EVALUATE, GalaContract, GalaTransaction, Submit } from "../contracts";
+import { GalaChainContext } from "../types";
 import { getObjectsByPartialCompositeKey, putChainObject } from "../utils/state";
 
-const curatorOrgMsp = process.env.CURATOR_ORG_MSP ?? "CuratorOrg";
-
-export class SuperheroDto extends ChainCallDTO {
+export class SuperheroDto extends SubmitCallDTO {
   public name: string;
 
   @IsPositive()
@@ -37,6 +43,7 @@ export class SuperheroDto extends ChainCallDTO {
     const dto = new SuperheroDto();
     dto.name = name;
     dto.age = age;
+    dto.uniqueKey = randomUniqueKey();
 
     return dto;
   }
@@ -100,10 +107,9 @@ export default class TestGalaContract extends GalaContract {
     return GalaChainResponse.Success(undefined);
   }
 
-  @GalaTransaction({
-    type: SUBMIT,
+  @Submit({
     in: SuperheroDto,
-    allowedOrgs: [curatorOrgMsp]
+    allowedOrgs: ["CuratorOrg"]
   })
   public async CreateSuperhero(ctx: GalaChainContext, dto: SuperheroDto): Promise<GalaChainResponse<void>> {
     ctx.logger.info(`Creating superhero ${dto.name}`);

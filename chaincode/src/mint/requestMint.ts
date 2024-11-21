@@ -16,28 +16,40 @@ import {
   AllowanceKey,
   AuthorizedOnBehalf,
   BatchMintTokenDto,
+  BigNumberIsNotNegative,
+  BigNumberProperty,
   FulfillMintDto,
   HighThroughputMintTokenDto,
+  IsUserRef,
   MintRequestDto,
   TokenClass,
+  TokenClassKey,
   TokenClassKeyProperties,
   TokenMintRequest,
-  TokenMintStatus
+  TokenMintStatus,
+  UserAlias,
+  createValidSubmitDTO
 } from "@gala-chain/api";
 import BigNumber from "bignumber.js";
-import { plainToInstance } from "class-transformer";
+import { Type, plainToInstance } from "class-transformer";
+import { IsNotEmpty, IsOptional } from "class-validator";
+import { JSONSchema } from "class-validator-jsonschema";
 
-import { GalaChainContext } from "../types/GalaChainContext";
+import { GalaChainContext } from "../types";
 import { getObjectByKey, inverseEpoch, inverseTime, putRangedChainObject } from "../utils";
 import { fetchMintSupply } from "./fetchMintSupply";
 import { validateMintRequest } from "./validateMintRequest";
 
-export async function requestMint(
-  ctx: GalaChainContext,
-  dto: HighThroughputMintTokenDto,
-  authorizedOnBehalf: AuthorizedOnBehalf | undefined
-): Promise<FulfillMintDto> {
-  const mintRequest: TokenMintRequest = await submitMintRequest(ctx, dto, authorizedOnBehalf);
+export interface RequestMintParams {
+  tokenClass: TokenClassKeyProperties;
+  owner: UserAlias | undefined;
+  quantity: BigNumber;
+  allowanceKey: AllowanceKey | undefined;
+  authorizedOnBehalf: AuthorizedOnBehalf | undefined;
+}
+
+export async function requestMint(ctx: GalaChainContext, params: RequestMintParams): Promise<FulfillMintDto> {
+  const mintRequest: TokenMintRequest = await submitMintRequest(ctx, params);
 
   // simplified object for data transfer over the wire
   const mintRequestDto = new MintRequestDto();
@@ -49,30 +61,42 @@ export async function requestMint(
   mintRequestDto.totalKnownMintsCount = mintRequest.totalKnownMintsCount;
   mintRequestDto.owner = mintRequest.owner;
   mintRequestDto.id = mintRequest.requestId();
-  mintRequestDto.allowanceKey = dto.allowanceKey;
+  mintRequestDto.allowanceKey = params.allowanceKey;
 
   const resDto = new FulfillMintDto();
   resDto.requests = [mintRequestDto];
+  resDto.uniqueKey = mintRequest.requestId();
 
   return resDto;
 }
 
+export interface MintTokenParams {
+  tokenClass: TokenClassKey;
+  owner: UserAlias | undefined;
+  quantity: BigNumber;
+  allowanceKey: AllowanceKey | undefined;
+}
+
+export interface RequestBatchMintParams {
+  mints: MintTokenParams[];
+  authorizedOnBehalf: AuthorizedOnBehalf | undefined;
+}
+
 export async function requestMintBatch(
   ctx: GalaChainContext,
-  dto: BatchMintTokenDto,
-  authorizedOnBehalf: AuthorizedOnBehalf | undefined
+  params: RequestBatchMintParams
 ): Promise<FulfillMintDto> {
   const minted: Array<MintRequestDto> = [];
   const errors: Array<string> = [];
 
   // mints sequentially; fails all mints if at least one operation fails
-  for (let i = 0; i < dto.mintDtos.length; i += 1) {
-    const mintDto = dto.mintDtos[i];
+  for (let i = 0; i < params.mints.length; i += 1) {
+    const mintParams = { ...params.mints[i], authorizedOnBehalf: params.authorizedOnBehalf };
     try {
-      const mintRequest = await submitMintRequest(ctx, mintDto, authorizedOnBehalf);
+      const mintRequest = await submitMintRequest(ctx, mintParams);
 
       const mintRequestDto = plainToInstance(MintRequestDto, mintRequest);
-      mintRequestDto.allowanceKey = mintDto.allowanceKey;
+      mintRequestDto.allowanceKey = mintParams.allowanceKey;
 
       minted.push(mintRequestDto);
     } catch (e) {
@@ -83,7 +107,7 @@ export async function requestMintBatch(
   if (errors.length > 0) {
     throw new Error(`No token was minted. Errors: ${errors.join("; ")}.`);
   } else {
-    const resDto = plainToInstance(FulfillMintDto, {
+    const resDto = await createValidSubmitDTO(FulfillMintDto, {
       requests: minted
     });
 
@@ -93,15 +117,14 @@ export async function requestMintBatch(
 
 export async function submitMintRequest(
   ctx: GalaChainContext,
-  dto: HighThroughputMintTokenDto,
-  authorizedOnBehalf: AuthorizedOnBehalf | undefined
+  params: RequestMintParams
 ): Promise<TokenMintRequest> {
-  if (!dto) throw new Error("dto undefined");
-  const callingUser: string = ctx.callingUser;
-  const owner = dto.owner ?? callingUser;
-  const tokenClassKey = dto.tokenClass;
-  const quantity = dto.quantity;
-  const allowanceKey = dto.allowanceKey;
+  if (!params) throw new Error("dto undefined");
+  const callingUser: UserAlias = ctx.callingUser;
+  const owner = params.owner ?? callingUser;
+  const tokenClassKey = params.tokenClass;
+  const quantity = params.quantity;
+  const allowanceKey = params.allowanceKey;
 
   const tokenClass = await getObjectByKey(
     ctx,
@@ -111,7 +134,7 @@ export async function submitMintRequest(
 
   if (!tokenClass) throw new Error("missing tokenclass");
 
-  await validateMintRequest(ctx, dto, tokenClass, authorizedOnBehalf).catch((e) => {
+  await validateMintRequest(ctx, params, tokenClass).catch((e) => {
     throw new Error(`ValidateMintRequest failure: ${e.message}`);
   });
 
@@ -128,8 +151,8 @@ export async function submitMintRequest(
 
 export interface WriteMintRequestParams {
   tokenClassKey: TokenClassKeyProperties;
-  callingUser: string;
-  owner: string;
+  callingUser: UserAlias;
+  owner: UserAlias;
   quantity: BigNumber;
   allowanceKey?: AllowanceKey | undefined;
   knownTotalSupply?: BigNumber | undefined;

@@ -47,7 +47,7 @@ IGYQH8J4+PICOoEcHZAuaQYh53DHSONgC1/A45aWNoE/AiAfnoxXiiD2f1MdiKx4
 neOrBgBGMDzq2aBbdX5EeQZbAw==
 -----END CERTIFICATE-----`);
 
-function x509Identity(caUser: string, mspId: string): ClientIdentity {
+export function x509Identity(caUser: string, mspId: string): ClientIdentity {
   const userInCert = caUser.replace("client|", "");
   const id = `x509::/OU=client/CN=${userInCert}::/C=US/ST=California/L=San Francisco/O=curator.local/CN=ca.curator.local`;
 
@@ -60,7 +60,10 @@ function x509Identity(caUser: string, mspId: string): ClientIdentity {
     },
     getMSPID: () => mspId,
     getID: () => id,
-    getIDBytes: () => sampleIdBytes
+    getIDBytes: () => sampleIdBytes,
+    // @ts-expect-error TS2353
+    idBytes: sampleIdBytes,
+    mspid: mspId
   };
 }
 
@@ -114,8 +117,12 @@ export class TestChaincodeStub extends ChaincodeStub {
     return x509Identity(caUser, mspId);
   }
 
-  mockState(key: string, value: string): void {
+  public mockState(key: string, value: string): void {
     this.state[key] = value;
+  }
+
+  public mockCreator(mspId: string, caUser: string): void {
+    this.creator = x509Identity(caUser, mspId);
   }
 
   putState: (key: string, value: Uint8Array) => Promise<void> = (key, value) => {
@@ -135,7 +142,6 @@ export class TestChaincodeStub extends ChaincodeStub {
 
   getState: (key: string) => Promise<Uint8Array> = (key) => {
     const response = this.state[key] ?? "";
-
     return Promise.resolve(Buffer.from(response));
   };
 

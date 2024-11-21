@@ -57,3 +57,9 @@ export class PkInvalidSignatureError extends UnauthorizedError {
     super(message, { user });
   }
 }
+
+export class UserProfileNotFoundError extends NotFoundError {
+  constructor(user: string) {
+    super(`UserProfile not found for user alias ${user}`, { user });
+  }
+}

@@ -17,7 +17,6 @@ import { Type } from "class-transformer";
 import {
   ArrayMaxSize,
   ArrayNotEmpty,
-  IsBoolean,
   IsDefined,
   IsNotEmpty,
   IsNumber,
@@ -28,22 +27,23 @@ import {
 } from "class-validator";
 import { JSONSchema } from "class-validator-jsonschema";
 
-import { ArrayUniqueObjects, BigNumberIsNotNegative, BigNumberProperty, IsUserAlias } from "../validators";
+import { ArrayUniqueObjects, BigNumberIsNotNegative, BigNumberProperty, IsUserRef } from "../validators";
 import { TokenClassKey } from "./TokenClass";
 import {
   BurnToMintConfiguration,
   PostMintLockConfiguration,
   TokenMintConfiguration
 } from "./TokenMintConfiguration";
+import { UserRef } from "./UserRef";
 import { AllowanceKey, MintRequestDto } from "./common";
-import { ChainCallDTO } from "./dtos";
+import { ChainCallDTO, SubmitCallDTO } from "./dtos";
 
 @JSONSchema({
   description:
     "Describes an action to mint a token. " +
     `For NFTs you can mint up to ${MintTokenDto.MAX_NFT_MINT_SIZE} tokens.`
 })
-export class MintTokenDto extends ChainCallDTO {
+export class MintTokenDto extends SubmitCallDTO {
   static MAX_NFT_MINT_SIZE = 1000;
 
   @JSONSchema({
@@ -58,8 +58,8 @@ export class MintTokenDto extends ChainCallDTO {
     description: "The owner of minted tokens. If the value is missing, chaincode caller is used."
   })
   @IsOptional()
-  @IsUserAlias()
-  owner?: string;
+  @IsUserRef()
+  owner?: UserRef;
 
   @JSONSchema({
     description: "How many units of Fungible/NonFungible Token will be minted."
@@ -80,7 +80,7 @@ export class MintTokenDto extends ChainCallDTO {
     "Describes an action to grant allowance to self and mint token to owner in single transaction. " +
     "This action will fail is the calling user lacks the authority to grant MINT allowances."
 })
-export class MintTokenWithAllowanceDto extends ChainCallDTO {
+export class MintTokenWithAllowanceDto extends SubmitCallDTO {
   @JSONSchema({
     description: "Token class of token to be minted."
   })
@@ -93,8 +93,8 @@ export class MintTokenWithAllowanceDto extends ChainCallDTO {
     description: "The owner of minted tokens. If the value is missing, chaincode caller is used."
   })
   @IsOptional()
-  @IsUserAlias()
-  owner?: string;
+  @IsUserRef()
+  owner?: UserRef;
 
   @JSONSchema({
     description: "Instance of token to be minted"
@@ -118,7 +118,7 @@ export class MintTokenWithAllowanceDto extends ChainCallDTO {
     "Describes an action to transferToken a token. " +
     `For NFTs you can mint up to ${MintTokenDto.MAX_NFT_MINT_SIZE} tokens.`
 })
-export class BatchMintTokenDto extends ChainCallDTO {
+export class BatchMintTokenDto extends SubmitCallDTO {
   static MAX_ARR_SIZE = 1000;
 
   @JSONSchema({
@@ -128,7 +128,7 @@ export class BatchMintTokenDto extends ChainCallDTO {
   @Type(() => MintTokenDto)
   @ArrayNotEmpty()
   @ArrayMaxSize(BatchMintTokenDto.MAX_ARR_SIZE)
-  mintDtos: Array<MintTokenDto>;
+  mintDtos: MintTokenDto[];
 }
 
 /**
@@ -141,7 +141,7 @@ export class BatchMintTokenDto extends ChainCallDTO {
     "Experimental: Describes an action to mint a token. High-throughput implementation. " +
     "DTO properties backwards-compatible with prior MintTokenDto,"
 })
-export class HighThroughputMintTokenDto extends ChainCallDTO {
+export class HighThroughputMintTokenDto extends SubmitCallDTO {
   // todo: remove all these duplicated properties
   // it seems something about our @GalaTransaction decorator does not pass through
   // parent properties. Leaving this class empty with just the `extends MintTokenDto`
@@ -162,8 +162,8 @@ export class HighThroughputMintTokenDto extends ChainCallDTO {
     description: "The owner of minted tokens. If the value is missing, chaincode caller is used."
   })
   @IsOptional()
-  @IsUserAlias()
-  owner?: string;
+  @IsUserRef()
+  owner?: UserRef;
 
   @JSONSchema({
     description: "How many units of fungible token of how many NFTs are going to be minted."
@@ -183,7 +183,7 @@ export class HighThroughputMintTokenDto extends ChainCallDTO {
   description:
     "Experimental: After submitting request to RequestMintAllowance, follow up with FulfillMintAllowance."
 })
-export class FulfillMintDto extends ChainCallDTO {
+export class FulfillMintDto extends SubmitCallDTO {
   static MAX_ARR_SIZE = 1000;
 
   @ValidateNested({ each: true })

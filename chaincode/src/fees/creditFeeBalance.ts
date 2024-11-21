@@ -25,7 +25,7 @@ import {
 import BigNumber from "bignumber.js";
 import { plainToClass as plainToInstance } from "class-transformer";
 
-import { ensureIsAuthorizedBy } from "../contracts";
+import { ensureIsAuthenticatedBy } from "../contracts";
 import { GalaChainContext } from "../types";
 import { getObjectByKey, putChainObject } from "../utils";
 
@@ -60,7 +60,7 @@ export async function creditFeeBalance(
 
   const authzDto: FeeAuthorizationDto = ChainCallDTO.deserialize(FeeAuthorizationDto, authorization);
 
-  await ensureIsAuthorizedBy(ctx, authzDto, authzDto.authority);
+  await ensureIsAuthenticatedBy(ctx, authzDto, authzDto.authority);
 
   if (authority !== authzDto.authority) {
     throw new UnauthorizedError(

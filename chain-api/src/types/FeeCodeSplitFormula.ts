@@ -21,6 +21,7 @@ import { ChainKey } from "../utils";
 import { ValidationFailedError } from "../utils";
 import { BigNumberIsPositive, IsBigNumber, IsUserAlias } from "../validators";
 import { ChainObject } from "./ChainObject";
+import { UserAlias } from "./UserAlias";
 
 @JSONSchema({
   description: "Define an address/identity to which a percentage of Fees should be transferred."
@@ -32,7 +33,7 @@ export class FeeCodeTransferPercentage extends ChainObject {
       "portion of the fee should be transferred."
   })
   @IsUserAlias()
-  transferToUser: string;
+  transferToUser: UserAlias;
 
   @JSONSchema({
     description:
@@ -48,7 +49,7 @@ export class FeeCodeTransferPercentage extends ChainObject {
 
 export class FeeCodeTransferQuantity extends ChainObject {
   @IsNotEmpty()
-  transferToUser: string;
+  transferToUser: UserAlias;
 
   @IsNumber()
   @Min(0)

@@ -12,7 +12,13 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-import { GalaChainResponseType, RegisterEthUserDto, RegisterUserDto, createValidDTO } from "@gala-chain/api";
+import {
+  GalaChainResponseType,
+  RegisterEthUserDto,
+  RegisterUserDto,
+  createValidSubmitDTO,
+  signatures
+} from "@gala-chain/api";
 import {
   ChainClient,
   ChainUser,
@@ -170,10 +176,23 @@ function isUserConfig(user: ChainUser | unknown): user is ChainUser {
   );
 }
 
+function getAdminKeyFromPath(keyPath: string) {
+  try {
+    return fs.readFileSync(keyPath, "utf-8").toString();
+  } catch (e) {
+    return undefined;
+  }
+}
+
 function getAdminUser() {
-  const privateKey =
-    process.env.DEV_ADMIN_PRIVATE_KEY ??
-    fs.readFileSync(path.resolve(networkRoot(), "dev-admin-key/dev-admin.priv.hex.txt"), "utf-8").toString();
+  const defaultKeyPath = path.resolve(networkRoot(), "dev-admin-key/dev-admin.priv.hex.txt");
+  const privateKey = process.env.DEV_ADMIN_PRIVATE_KEY ?? getAdminKeyFromPath(defaultKeyPath);
+
+  if (privateKey === undefined) {
+    throw new Error(
+      `Admin private key not found in ${defaultKeyPath} or environment variable DEV_ADMIN_PRIVATE_KEY`
+    );
+  }
 
   return new ChainUser({ name: "admin", privateKey });
 }
@@ -185,13 +204,16 @@ async function createRegisteredUser(
   const user = ChainUser.withRandomKeys(userAlias);
 
   if (userAlias === undefined) {
-    const dto = await createValidDTO(RegisterEthUserDto, { publicKey: user.publicKey });
+    const dto = await createValidSubmitDTO(RegisterEthUserDto, { publicKey: user.publicKey });
     const response = await client.RegisterEthUser(dto.signed(client.privateKey));
     if (response.Status !== GalaChainResponseType.Success) {
       throw new Error(`Failed to register eth user: ${response.Message}`);
     }
   } else {
-    const dto = await createValidDTO(RegisterUserDto, { user: user.identityKey, publicKey: user.publicKey });
+    const dto = await createValidSubmitDTO(RegisterUserDto, {
+      user: user.identityKey,
+      publicKey: user.publicKey
+    });
     const response = await client.RegisterUser(dto.signed(client.privateKey));
     if (response.Status !== GalaChainResponseType.Success) {
       throw new Error(`Failed to register user: ${response.Message}`);

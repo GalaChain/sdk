@@ -15,6 +15,7 @@
 import { Type, instanceToInstance, plainToInstance } from "class-transformer";
 import { IsNotEmpty, IsOptional, ValidationError, validate } from "class-validator";
 import { JSONSchema } from "class-validator-jsonschema";
+import crypto from "crypto";
 
 import {
   SigningScheme,
@@ -24,7 +25,9 @@ import {
   serialize,
   signatures
 } from "../utils";
-import { IsUserAlias, StringEnumProperty } from "../validators";
+import { IsUserAlias, IsUserRef, StringEnumProperty } from "../validators";
+import { UserAlias } from "./UserAlias";
+import { UserRef } from "./UserRef";
 import { GalaChainResponse } from "./contract";
 
 type Base<T, BaseT> = T extends BaseT ? T : never;
@@ -73,37 +76,40 @@ type NonFunctionPropertyNames<T> = { [K in keyof T]: T[K] extends Function ? nev
 
 export type NonFunctionProperties<T> = Pick<T, NonFunctionPropertyNames<T>>;
 
+export function randomUniqueKey(): string {
+  return crypto.randomBytes(32).toString("base64");
+}
+
 /**
- * Creates valid DTO object from provided plain object. Throws exception in case of validation errors.
+ * Creates valid DTO object from provided plain object.
+ * Throws exception in case of validation errors.
  */
-export const createValidDTO = async <T extends ChainCallDTO>(
+export function createValidDTO<T extends ChainCallDTO>(
   constructor: ClassConstructor<T>,
   plain: NonFunctionProperties<T>
-): Promise<T> => {
+): Promise<T> & { signed(privateKey: string): Promise<T> } {
   const instance = plainToInstance(constructor, plain) as T;
-  await validateDTO(instance);
-  return instance;
-};
+  const response = validateDTO(instance);
+
+  // @ts-expect-error adding new method in runtime
+  response.signed = (k: string) => response.then((r) => r.signed(k));
+
+  return response as Promise<T> & { signed(privateKey: string): Promise<T> };
+}
 
 /**
- * Creates valid signed DTO object from provided plain object. Throws exception in case of validation errors.
- *
- * @deprecated Use `(await createValidDTO(...)).signed(...)` instead
+ * Creates valid submit DTO object from provided plain object.
+ * Throws exception in case of validation errors.
+ * If the uniqueKey is not provided, it generates a random one: 32 random bytes in base64.
  */
-export const createAndSignValidDTO = async <T extends ChainCallDTO>(
+export function createValidSubmitDTO<T extends SubmitCallDTO>(
   constructor: ClassConstructor<T>,
-  plain: NonFunctionProperties<T>,
-  privateKey: string
-): Promise<T> => {
-  const instance = plainToInstance(constructor, plain) as T;
-  instance.sign(privateKey);
-  await validateDTO(instance);
-  return instance;
-};
-
-export interface TraceContext {
-  spanId: string;
-  traceId: string;
+  plain: Omit<NonFunctionProperties<T>, "uniqueKey"> & { uniqueKey?: string }
+): Promise<T> & { signed(privateKey: string): Promise<T> } {
+  return createValidDTO<T>(constructor, {
+    ...plain,
+    uniqueKey: plain?.uniqueKey ?? randomUniqueKey()
+  } as unknown as NonFunctionProperties<T>);
 }
 
 /**
@@ -123,9 +129,6 @@ export interface TraceContext {
  * or in the OpenAPI documentation served alongside GalaChain's API endpoints.
  */
 export class ChainCallDTO {
-  public trace?: TraceContext;
-  public static readonly ENCODING = "base64";
-
   @JSONSchema({
     description:
       "Unique key of the DTO. It is used to prevent double execution of the same transaction on chain. " +
@@ -266,6 +269,12 @@ export class ChainCallDTO {
   }
 }
 
+// It just makes uniqueKey required
+export class SubmitCallDTO extends ChainCallDTO {
+  @IsNotEmpty()
+  public uniqueKey: string;
+}
+
 /**
  * @description
  *
@@ -399,7 +408,7 @@ export class DryRunResultDto extends ChainCallDTO {
 @JSONSchema({
   description: `Dto for secure method to save public keys for legacy users. Method is called and signed by Curators`
 })
-export class RegisterUserDto extends ChainCallDTO {
+export class RegisterUserDto extends SubmitCallDTO {
   /**
    * @description
    *
@@ -410,7 +419,7 @@ export class RegisterUserDto extends ChainCallDTO {
     description: `Id of user to save public key for.`
   })
   @IsUserAlias()
-  user: string;
+  user: UserAlias;
 
   /**
    * @description Public secp256k1 key (compact or non-compact, hex or base64).
@@ -429,7 +438,7 @@ export class RegisterUserDto extends ChainCallDTO {
 @JSONSchema({
   description: `Dto for secure method to save public keys for Eth users. Method is called and signed by Curators`
 })
-export class RegisterEthUserDto extends ChainCallDTO {
+export class RegisterEthUserDto extends SubmitCallDTO {
   @JSONSchema({ description: "Public secp256k1 key (compact or non-compact, hex or base64)." })
   @IsNotEmpty()
   publicKey: string;
@@ -444,12 +453,13 @@ export class RegisterEthUserDto extends ChainCallDTO {
 @JSONSchema({
   description: `Dto for secure method to save public keys for TON users. Method is called and signed by Curators`
 })
-export class RegisterTonUserDto extends ChainCallDTO {
+export class RegisterTonUserDto extends SubmitCallDTO {
   @JSONSchema({ description: "TON user public key (Ed25519 in base64)." })
   @IsNotEmpty()
   publicKey: string;
 }
-export class UpdatePublicKeyDto extends ChainCallDTO {
+
+export class UpdatePublicKeyDto extends SubmitCallDTO {
   @JSONSchema({
     description:
       "For users with ETH signing scheme it is public secp256k1 key (compact or non-compact, hex or base64). " +
@@ -459,13 +469,22 @@ export class UpdatePublicKeyDto extends ChainCallDTO {
   publicKey: string;
 }
 
+export class UpdateUserRolesDto extends SubmitCallDTO {
+  @IsUserAlias()
+  user: string;
+
+  @JSONSchema({ description: "New set of roles for the user that will replace the old ones." })
+  @IsNotEmpty()
+  roles: string[];
+}
+
 export class GetPublicKeyDto extends ChainCallDTO {
   @JSONSchema({
     description: `Id of a public key holder. Optional field, by default caller's public key is returned.`
   })
   @IsOptional()
-  @IsUserAlias()
-  user?: string;
+  @IsUserRef()
+  user?: UserRef;
 }
 
 export class GetMyProfileDto extends ChainCallDTO {

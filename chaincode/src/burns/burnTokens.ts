@@ -23,7 +23,10 @@ import {
   TokenBurnCounter,
   TokenClass,
   TokenInstanceKey,
-  ValidationFailedError
+  UserAlias,
+  ValidationFailedError,
+  createValidChainObject,
+  createValidRangedChainObject
 } from "@gala-chain/api";
 import { BigNumber } from "bignumber.js";
 import { instanceToInstance, plainToInstance } from "class-transformer";
@@ -31,7 +34,7 @@ import { instanceToInstance, plainToInstance } from "class-transformer";
 import { checkAllowances, fetchAllowances, useAllowances } from "../allowances";
 import { fetchOrCreateBalance } from "../balances";
 import { InvalidDecimalError, fetchTokenInstance } from "../token";
-import { GalaChainContext, createValidChainObject } from "../types";
+import { GalaChainContext } from "../types";
 import {
   getObjectByKey,
   getRangedObjectByKey,
@@ -44,7 +47,7 @@ import { InsufficientBurnAllowanceError, UseAllowancesFailedError } from "./Burn
 import { fetchKnownBurnCount } from "./fetchBurns";
 
 export interface BurnsTokensParams {
-  owner: string;
+  owner: UserAlias;
   toBurn: BurnTokenQuantity[];
   preValidated?: boolean;
 }
@@ -162,9 +165,9 @@ export async function burnTokens(
     const userBalance = await fetchOrCreateBalance(ctx, owner, tokenInstanceClassKey);
 
     if (tokenInstance.isNonFungible) {
-      userBalance.ensureCanRemoveInstance(tokenInstance.instance, ctx.txUnixTime).remove();
+      userBalance.removeInstance(tokenInstance.instance, ctx.txUnixTime);
     } else {
-      userBalance.ensureCanSubtractQuantity(tokenQuantity.quantity, ctx.txUnixTime).subtract();
+      userBalance.subtractQuantity(tokenQuantity.quantity, ctx.txUnixTime);
     }
 
     const newBurn = await incrementOrCreateTokenBurnForTx(
@@ -242,7 +245,7 @@ export function aggregateBurnQuantities(requests: BurnTokenQuantity[]): BurnToke
  */
 export async function incrementOrCreateTokenBurnForTx(
   ctx: GalaChainContext,
-  burnedBy: string,
+  burnedBy: UserAlias,
   { collection, category, type, additionalKey, instance }: TokenInstanceKey,
   quantity: BigNumber
 ): Promise<TokenBurn> {
@@ -292,7 +295,7 @@ export async function incrementOrCreateTokenBurnForTx(
  */
 export async function incrementOrCreateTokenBurnCounterForTx(
   ctx: GalaChainContext,
-  burnedBy: string,
+  burnedBy: UserAlias,
   { collection, category, type, additionalKey, instance }: TokenInstanceKey,
   quantity: BigNumber
 ): Promise<TokenBurnCounter> {
@@ -316,7 +319,7 @@ export async function incrementOrCreateTokenBurnCounterForTx(
     additionalKey
   });
 
-  const burnCounter = await createValidChainObject(TokenBurnCounter, {
+  const burnCounter = await createValidRangedChainObject(TokenBurnCounter, {
     collection,
     category,
     type,

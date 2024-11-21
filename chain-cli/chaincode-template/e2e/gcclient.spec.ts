@@ -17,6 +17,7 @@ import {
   GetMyProfileDto,
   RegisterUserDto,
   UserProfile,
+  randomUniqueKey,
   signatures
 } from "@gala-chain/api";
 import {
@@ -31,6 +32,7 @@ import {
 } from "@gala-chain/client";
 import * as fs from "fs";
 import * as path from "path";
+import process from "process";
 
 /*
  * The test is to show how to use chaincode client without test utilities.
@@ -39,7 +41,13 @@ import * as path from "path";
 
 jest.setTimeout(30000);
 
-describe("Chaincode client (PartnerOrg1)", () => {
+// CURATORORG_MOCKED_CHAINCODE_DIR env set means we are executing tests for a mocked chaincode
+// with no actually running Hyperledger Fabric network. It means client will not connect to the network
+// with forConnectionProfile method.
+const describeIfNonMockedChaincode =
+  process.env.CURATORORG_MOCKED_CHAINCODE_DIR === undefined ? describe : describe.skip;
+
+describeIfNonMockedChaincode("Chaincode client (PartnerOrg1)", () => {
   let client: ChainClient & CustomAPI;
 
   beforeAll(() => {
@@ -76,7 +84,7 @@ describe("Chaincode client (PartnerOrg1)", () => {
   });
 });
 
-describe("Chaincode client (CuratorOrg)", () => {
+describeIfNonMockedChaincode("Chaincode client (CuratorOrg)", () => {
   let client: ChainClient & CustomAPI & PublicKeyContractAPI;
 
   beforeAll(() => {
@@ -110,6 +118,7 @@ describe("Chaincode client (CuratorOrg)", () => {
 
     const dto = new RegisterUserDto();
     dto.publicKey = newUser.publicKey;
+    dto.uniqueKey = randomUniqueKey();
     dto.sign(getAdminPrivateKey(), false);
 
     // When

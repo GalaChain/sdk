@@ -56,7 +56,9 @@ import {
   UnlockTokenDto,
   UnlockTokensDto,
   UpdateTokenClassDto,
-  UseTokenDto
+  UseTokenDto,
+  UserAlias,
+  UserRef
 } from "@gala-chain/api";
 import BigNumber from "bignumber.js";
 import { Type } from "class-transformer";
@@ -95,7 +97,7 @@ type UseTokenRequest = ConstructorArgs<UseTokenDto>;
 // Unique case where we need to expose private properties but keep validations
 class TokenBalance implements ConstructorArgs<TokenBalanceDto> {
   @IsUserAlias()
-  owner: string;
+  owner: UserAlias;
 
   @IsNotEmpty()
   collection: string;

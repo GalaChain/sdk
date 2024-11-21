@@ -12,7 +12,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-import { LockTokenDto, LockTokensDto, TokenInstanceKey, createValidDTO } from "@gala-chain/api";
+import { LockTokenDto, LockTokensDto, TokenInstanceKey, createValidSubmitDTO } from "@gala-chain/api";
 import BigNumber from "bignumber.js";
 import { instanceToPlain, plainToInstance } from "class-transformer";
 import { ethers } from "ethers";
@@ -21,7 +21,7 @@ import { generateEIP712Types } from "./CommonUtils";
 
 describe("EIP-712 Signing", () => {
   it("should correctly generate EIP-712 types and values and sign the data for single types", async () => {
-    const dto: LockTokenDto = await createValidDTO(LockTokenDto, {
+    const dto: LockTokenDto = await createValidSubmitDTO(LockTokenDto, {
       quantity: new BigNumber("1"),
       tokenInstance: plainToInstance(TokenInstanceKey, {
         collection: "GALA",
@@ -39,7 +39,8 @@ describe("EIP-712 Signing", () => {
     const expectedTypes = {
       LockTokenRequest: [
         { name: "quantity", type: "string" },
-        { name: "tokenInstance", type: "tokenInstance" }
+        { name: "tokenInstance", type: "tokenInstance" },
+        { name: "uniqueKey", type: "string" }
       ],
       tokenInstance: [
         { name: "collection", type: "string" },
@@ -69,7 +70,7 @@ describe("EIP-712 Signing", () => {
     expect(signature).toMatch(/^0x[a-fA-F0-9]{130}$/); // Simple regex to match the format of a signature
   });
   it("should correctly generate EIP-712 types and values and sign the data for arrays", async () => {
-    const dto: LockTokensDto = await createValidDTO(LockTokensDto, {
+    const dto: LockTokensDto = await createValidSubmitDTO(LockTokensDto, {
       tokenInstances: [
         {
           quantity: new BigNumber("1"),
@@ -89,7 +90,10 @@ describe("EIP-712 Signing", () => {
     const types = generateEIP712Types("LockTokensRequest", params);
 
     const expectedTypes = {
-      LockTokensRequest: [{ name: "tokenInstances", type: "tokenInstances[]" }],
+      LockTokensRequest: [
+        { name: "tokenInstances", type: "tokenInstances[]" },
+        { name: "uniqueKey", type: "string" }
+      ],
       tokenInstances: [
         { name: "quantity", type: "string" },
         { name: "tokenInstanceKey", type: "tokenInstanceKey" }
@@ -122,7 +126,7 @@ describe("EIP-712 Signing", () => {
     expect(signature).toMatch(/^0x[a-fA-F0-9]{130}$/); // Simple regex to match the format of a signature
   });
   it("should correctly generate EIP-712 types and values and sign the data for arrays with multiple values", async () => {
-    const dto: LockTokensDto = await createValidDTO(LockTokensDto, {
+    const dto: LockTokensDto = await createValidSubmitDTO(LockTokensDto, {
       tokenInstances: [
         {
           quantity: new BigNumber("1"),
@@ -152,7 +156,10 @@ describe("EIP-712 Signing", () => {
     const types = generateEIP712Types("LockTokensRequest", params);
 
     const expectedTypes = {
-      LockTokensRequest: [{ name: "tokenInstances", type: "tokenInstances[]" }],
+      LockTokensRequest: [
+        { name: "tokenInstances", type: "tokenInstances[]" },
+        { name: "uniqueKey", type: "string" }
+      ],
       tokenInstances: [
         { name: "quantity", type: "string" },
         { name: "tokenInstanceKey", type: "tokenInstanceKey" }

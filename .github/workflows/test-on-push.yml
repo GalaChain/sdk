@@ -41,10 +41,10 @@ jobs:
           key: docker-${{ runner.os }}-${{ github.ref_name }}
       - name: Prefetch Fabric Docker layers
         run: |
-            cd chain-cli/network
-            curl -Lf https://github.com/hyperledger-labs/fablo/releases/download/1.2.0/fablo.sh -o ./fablo && chmod +x ./fablo
-            ./fablo generate fablo-config-default.json
-            docker compose -f fablo-target/fabric-docker/docker-compose.yaml pull
+          cd chain-cli/network
+          curl -Lf https://github.com/hyperledger-labs/fablo/releases/download/2.0.0/fablo.sh -o ./fablo && chmod +x ./fablo
+          ./fablo generate fablo-config-default.json
+          docker compose -f fablo-target/fabric-docker/docker-compose.yaml pull
 
   template-ci:
     name: Chaincode template CI
@@ -136,7 +136,6 @@ jobs:
     runs-on: ubuntu-latest
     needs: [ci, ensure-docker-cache]
     env:
-      GALA_CLIENT_DEV_MODE: "false"
       CURATORORG_OPS_API_URL: "http://localhost:8801"
     steps:
       - name: Checkout
@@ -170,12 +169,47 @@ jobs:
         run: |
           (cd ./project-test && ../npm-pack-and-replace.sh --skipConfirmation)
           npm i --prefix ./project-test
-      - name: Remove nvm file to avoid Fablo calling it and raising nvm issue with npm_config_prefix env
-        run: rm ~/.nvm/nvm.sh
       - name: Run network in non-watch mode
         run: npm run network:up --prefix ./project-test
       - name: Run E2E tests
         run: npm run test:e2e --prefix ./project-test
+
+  template-e2e-mocked:
+    name: Chaincode template E2E (Mocked client)
+    runs-on: ubuntu-latest
+    needs: [ci]
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Install tools
+        run: |
+          git --version
+          node --version
+          npm --version
+          jq --version
+          yq --version
+          bash --version
+          docker version
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 18
+      - name: Install local CLI
+        run: .github/scripts/install-local-cli.sh
+      - name: Create test project
+        run: galachain init ./project-test
+      - name: Install dependencies
+        run: |
+          (cd ./project-test && ../npm-pack-and-replace.sh --skipConfirmation)
+          npm i --prefix ./project-test
+      - name: Build test project
+        run: npm run build --prefix ./project-test
+      - name: Install dependencies
+        run: |
+          (cd ./project-test && ../npm-pack-and-replace.sh --skipConfirmation)
+          npm i --prefix ./project-test
+      - name: Run E2E tests on mocked client
+        run: npm run test:e2e-mocked --prefix ./project-test
 
   template-image-check:
     name: Chaincode template image check

@@ -18,6 +18,7 @@ import { IsNotEmpty, IsString } from "class-validator";
 import { ChainKey } from "../utils";
 import { BigNumberIsInteger, BigNumberIsNotNegative, BigNumberProperty, IsUserAlias } from "../validators";
 import { ChainObject } from "./ChainObject";
+import { UserAlias } from "./UserAlias";
 
 export class FeeThresholdUses extends ChainObject {
   public static INDEX_KEY = "GCFTU";
@@ -29,7 +30,7 @@ export class FeeThresholdUses extends ChainObject {
 
   @ChainKey({ position: 1 })
   @IsUserAlias()
-  public user: string;
+  public user: UserAlias;
 
   @BigNumberIsNotNegative()
   @BigNumberIsInteger()

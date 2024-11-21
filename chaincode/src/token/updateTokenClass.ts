@@ -12,7 +12,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-import { TokenClass, TokenClassKey } from "@gala-chain/api";
+import { TokenClass, TokenClassKey, UserAlias } from "@gala-chain/api";
 
 import { GalaChainContext } from "../types";
 import { getObjectByKey, putChainObject } from "../utils/state";
@@ -26,8 +26,8 @@ export interface UpdateTokenClassParams {
   contractAddress?: string;
   metadataAddress?: string;
   rarity?: string;
-  authorities?: string[];
-  overwriteAuthorities?: boolean;
+  authorities?: UserAlias[];
+  overwriteAuthorities?: boolean; // TODO not used
 }
 
 export async function updateTokenClass(

@@ -19,6 +19,7 @@ import { ChainKey } from "../utils";
 import { BigNumberIsNotNegative, BigNumberProperty, EnumProperty, IsUserAlias } from "../validators";
 import { ChainObject } from "./ChainObject";
 import { FeeReceiptStatus } from "./FeeReceiptStatus";
+import { UserAlias } from "./UserAlias";
 
 export class FeeBalanceCreditReceipt extends ChainObject {
   public static INDEX_KEY = "GCCR"; // CR = Credit Receipt
@@ -52,7 +53,7 @@ export class FeeBalanceCreditReceipt extends ChainObject {
 
   @ChainKey({ position: 6 })
   @IsUserAlias()
-  public creditToUser: string;
+  public creditToUser: UserAlias;
 
   @ChainKey({ position: 7 })
   @IsNotEmpty()

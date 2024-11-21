@@ -12,10 +12,15 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-import { GalaChainResponse, TokenBalance, TokenHold, UseTokenDto, createValidDTO } from "@gala-chain/api";
+import {
+  GalaChainResponse,
+  TokenBalance,
+  TokenHold,
+  UseTokenDto,
+  createValidSubmitDTO
+} from "@gala-chain/api";
 import { fixture, nft, users, writesMap } from "@gala-chain/test";
 import BigNumber from "bignumber.js";
-import { plainToInstance } from "class-transformer";
 
 import GalaChainTokenContract from "../__test__/GalaChainTokenContract";
 
@@ -26,45 +31,43 @@ describe("UseToken", () => {
     const nftInstanceKey = nft.tokenInstance1Key();
     const nftClass = nft.tokenClass();
 
-    const nftTokenBalancePlain = {
-      owner: users.testUser1Id,
+    const nftTokenBalance = new TokenBalance({
+      owner: users.testUser1.identityKey,
       collection: nftInstanceKey.collection,
       category: nftInstanceKey.category,
       type: nftInstanceKey.type,
-      additionalKey: nftInstanceKey.additionalKey,
-      instanceIds: [new BigNumber(nftInstanceKey.instance)],
-      lockedHolds: [],
-      inUseHolds: [],
-      quantity: new BigNumber("1")
-    };
+      additionalKey: nftInstanceKey.additionalKey
+    });
+    nftTokenBalance.addInstance(nftInstanceKey.instance);
 
-    const expectedBalance = plainToInstance(TokenBalance, nftTokenBalancePlain);
+    const { ctx, contract, getWrites } = fixture(GalaChainTokenContract)
+      .registeredUsers(users.testUser1)
+      .savedState(nftClass, nftInstance, nftTokenBalance);
 
-    const { ctx, contract, writes } = fixture(GalaChainTokenContract)
-      .callingUser(users.testUser1Id)
-      .savedState(nftClass, nftInstance, expectedBalance);
-
-    const dto: UseTokenDto = await createValidDTO(UseTokenDto, {
-      owner: users.testUser1Id,
-      inUseBy: users.testUser1Id,
+    const dto: UseTokenDto = await createValidSubmitDTO(UseTokenDto, {
+      owner: users.testUser1.identityKey,
+      inUseBy: users.testUser1.identityKey,
       tokenInstance: nftInstanceKey,
       quantity: new BigNumber("1")
     });
+    dto.sign(users.testUser1.privateKey);
 
     const expectedHold = new TokenHold({
-      createdBy: users.testUser1Id,
+      createdBy: users.testUser1.identityKey,
       instanceId: nftInstanceKey.instance,
       quantity: new BigNumber("1"),
       created: ctx.txUnixTime,
       expires: 0
     });
 
+    const expectedBalance = nftTokenBalance.copy();
+    expectedBalance.useInstance(expectedHold, ctx.txUnixTime);
+
     // When
     const response = await contract.UseToken(ctx, dto);
 
     // Then
-    const balanceWithHold = plainToInstance(TokenBalance, { ...expectedBalance, inUseHolds: [expectedHold] });
-    expect(response).toEqual(GalaChainResponse.Success(balanceWithHold));
-    expect(writes).toEqual(writesMap(balanceWithHold));
+    expect(response).toEqual(GalaChainResponse.Success(expectedBalance));
+    expect(getWrites()).toEqual(writesMap(expectedBalance));
   });
 });
