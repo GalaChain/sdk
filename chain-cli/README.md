@@ -20,7 +20,7 @@ $ npm install -g @gala-chain/cli
 $ galachain COMMAND
 running command...
 $ galachain (--version)
-@gala-chain/cli/1.5.7 linux-x64 node-v18.20.4
+@gala-chain/cli/1.5.8 linux-x64 node-v18.20.4
 $ galachain --help [COMMAND]
 USAGE
   $ galachain COMMAND
@@ -40,6 +40,7 @@ USAGE
 * [`galachain info [DEVELOPERPRIVATEKEY]`](#galachain-info-developerprivatekey)
 * [`galachain init PATH`](#galachain-init-path)
 * [`galachain keygen FILE`](#galachain-keygen-file)
+* [`galachain logs`](#galachain-logs)
 * [`galachain network-prune`](#galachain-network-prune)
 * [`galachain network-up`](#galachain-network-up)
 * [`galachain network:prune`](#galachain-networkprune)
@@ -329,6 +330,31 @@ DESCRIPTION
 
 EXAMPLES
   $ galachain keygen data/user1
+```
+
+## `galachain logs`
+
+```
+USAGE
+  $ galachain logs [--json] [--log-level debug|info|warn|error] [-k <value>] [-s <value>] [-e <value>] [-l
+    <value>] [-f <value>] [--follow]
+
+FLAGS
+  -e, --endTime=<value>              [default: now] End time for logs. Accepts ISO8601 format or shorthand (e.g., now,
+                                     0).
+  -f, --filter=<value>               Filter for logs (e.g., error, info, warn, debug).
+  -k, --developerPrivateKey=<value>  Private key to sign the data. It can be a file path or a key string. If not
+                                     provided, the private key will be read from the environment variable
+                                     DEV_PRIVATE_KEY.
+  -l, --limit=<value>                Maximum number of log entries to fetch.
+  -s, --startTime=<value>            Start time for logs. Accepts ISO8601 format or shorthand (e.g.,
+                                     2023-01-01T00:00:00Z, 5m, 1h, 2d).
+      --follow                       Specify if logs should be streamed.
+
+GLOBAL FLAGS
+  --json                Format output as json.
+  --log-level=<option>  Specify level for logging.
+                        <options: debug|info|warn|error>
 ```
 
 ## `galachain network-prune`
