@@ -180,7 +180,7 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
         with:
-          ref: ${{ github.ref_name.startsWith('v1.') && 'main-v1' || 'main' }}
+          ref: ${{ startsWith(github.ref_name, 'v1.') && 'main-v1' || 'main' }}
       - name: Set up Node.js
         uses: actions/setup-node@v4
         with:
@@ -197,7 +197,7 @@ jobs:
           echo "VERSION=$VERSION" >> $GITHUB_ENV
       - name: Create a new branch
         run: |
-          TARGET_BRANCH="${{ github.ref_name.startsWith('v1.') && 'main-v1' || 'main' }}"
+          TARGET_BRANCH="${{ startsWith(github.ref_name, 'v1.') && 'main-v1' || 'main' }}"
           BRANCH_NAME="bump-version-to-$VERSION"
           git checkout -b $BRANCH_NAME $TARGET_BRANCH
           echo "BRANCH_NAME=$BRANCH_NAME" >> $GITHUB_ENV
