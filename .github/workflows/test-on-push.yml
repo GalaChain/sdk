@@ -169,6 +169,7 @@ jobs:
         run: |
           (cd ./project-test && ../npm-pack-and-replace.sh --skipConfirmation)
           npm i --prefix ./project-test
+          npm build --prefix ./project-test
       - name: Run network in non-watch mode
         run: npm run network:up --prefix ./project-test
       - name: Run E2E tests
