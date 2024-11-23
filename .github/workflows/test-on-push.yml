@@ -166,10 +166,7 @@ jobs:
       - name: Create test project
         run: galachain init ./project-test
       - name: Install dependencies
-        run: |
-          (cd ./project-test && ../npm-pack-and-replace.sh --skipConfirmation)
-          npm i --prefix ./project-test
-          npm build --prefix ./project-test
+        run: (cd ./project-test && ../npm-pack-and-replace.sh --skipConfirmation && npm run build)
       - name: Run network in non-watch mode
         run: npm run network:up --prefix ./project-test
       - name: Run E2E tests
