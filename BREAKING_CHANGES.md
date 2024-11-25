@@ -161,9 +161,6 @@ This is useful when, for instance, you have an ethereum address, and you want to
 Prior to version `2.0.0`, user related fields were string fields with no additional validation.
 This change primarily affects the DTOs, the chain objects that have user related fields, and the methods that use them.
 
-### Other Breaking Changes
-- TBD
-
 ## Template: Version A.B.C
 
 <i>Repeat the structure for each major release, documenting the breaking changes specific to that version. Update this document on each PR that makes breaking changes.</i>
