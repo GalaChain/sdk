@@ -47,7 +47,7 @@ verifyOpsInstance() {
   local org=$2
   local max_attempts=30
   local attempt=1
-  local endpoint="http://$host:$port/status"
+  local endpoint="http://$host:$port/api/status"
 
   echo "Verifying ops-api $org instance at $endpoint..."
 
@@ -55,12 +55,13 @@ verifyOpsInstance() {
     # Store the curl response and http code in variables
     local response
     local http_code
-    response=$(curl -s -w "\n%{http_code}" "$endpoint" 2>/dev/null)
+    # Add --connect-timeout to avoid hanging
+    response=$(curl -s --connect-timeout 1 -w "\n%{http_code}" "$endpoint" 2>/dev/null || echo -e "\n000")
     http_code=$(echo "$response" | tail -n1)  # Get last line (status code)
     response=$(echo "$response" | sed \$d)     # Get all but last line (response body)
     
     # Check if curl succeeded and response contains valid JSON
-    if [ $? -eq 0 ] && [ "$http_code" = "200" ] && [ -n "$response" ]; then
+    if [ "$http_code" = "200" ] && [ -n "$response" ]; then
       # Check if response doesn't contain "contractVersion":"?.?.?" and empty contracts array
       if ! echo "$response" | grep -q '"contractVersion":"?.?.?"' && \
          ! echo "$response" | grep -q '"contracts":\[\]'; then
