@@ -19,8 +19,8 @@ import { UserAliasValidationResult, meansValidUserAlias, validateUserAlias } fro
  * @description
  *
  * Type for user alias. Technically it is a string, but it has an additional
- * marker (tag) to distinguish it from other strings at compilation level,
- * and mark it was actually validated as user alias.
+ * marker (tag) to distinguish it from other strings at the compilation level,
+ * and mark that it was actually validated as a user alias.
  *
  * You should not cast any string to this type, but instead use `resolveUserAlias`
  * function to get the user alias.

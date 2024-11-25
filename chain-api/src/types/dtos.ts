@@ -15,13 +15,13 @@
 import { Type, instanceToInstance, plainToInstance } from "class-transformer";
 import { IsNotEmpty, IsOptional, ValidationError, validate } from "class-validator";
 import { JSONSchema } from "class-validator-jsonschema";
-import crypto from "crypto";
 
 import {
   SigningScheme,
   ValidationFailedError,
   deserialize,
   getValidationErrorMessages,
+  randomUniqueKey,
   serialize,
   signatures
 } from "../utils";
@@ -75,10 +75,6 @@ export const parseValidDTO = async <T extends ChainCallDTO>(
 type NonFunctionPropertyNames<T> = { [K in keyof T]: T[K] extends Function ? never : K }[keyof T];
 
 export type NonFunctionProperties<T> = Pick<T, NonFunctionPropertyNames<T>>;
-
-export function randomUniqueKey(): string {
-  return crypto.randomBytes(32).toString("base64");
-}
 
 /**
  * Creates valid DTO object from provided plain object.
