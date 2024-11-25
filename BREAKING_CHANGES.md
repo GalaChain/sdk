@@ -14,7 +14,7 @@ If you have any questions or need further assistance, please refer to the GalaCh
 The version contains various breaking changes in terms of how authorization is handled, how transactions are signed, and how the API is structured.
 However, it is backward compatible with the previous version in terms of the current chaincode state.
 The changes are mostly related to the way the SDK is used and how the chaincode is structured.
-If you have current production chain, you don't need to update the data, but you may need to update the code to be compatible with the new version.
+If you have a current production chain: You don't need to update the data, but you may need to update the code to be compatible with the new version.
 The only exception is the authorization, which requires a migration of the roles from `allowedOrgs` to `allowedRoles`, and setting up the roles for some user profiles.
 
 ### Removal of Deprecated Features
@@ -30,21 +30,23 @@ We no longer support writing to the chain without a signature.
 
 Please, ensure that all methods that update the chain are signed (`@GalaTransaction` has `verifySignature: true` property, or `@Submit`, or `@Evaluate` is used, which enforce signature verification).
 
-Additionally, we deprecated `allowedOrgs` property in decorator in favor of `allowedRoles` only, and encourage users to migrate to the new approach.
-As a backward compatibility measure, we still support `allowedOrgs` for now, but we don't allow to combine `allowedOrgs` and `allowedRoles` in the same decorator.
+Additionally, we deprecated the `allowedOrgs` property in the transaction decorators in favor of `allowedRoles`.
+We encourage users to migrate to the new approach.
+As a backward compatibility measure, we still support `allowedOrgs` for now, but we don't allow combining both `allowedOrgs` and `allowedRoles` within the same decorator.
 
 The migration steps from `allowedOrgs` to `allowedRoles` are as follows:
 1. Verify which users should have access to the method, and what roles they should have.
-   For instance, if you have a curator-like organization for privileged access, like `allowedOrgs: ["CuratorOrg"]`, you may want to designate a `CURATOR` role and assign it to the users.
+   For instance, if you have a curator-like organization for privileged access, like `allowedOrgs: ["CuratorOrg"]`, you may want to designate a `CURATOR` role and assign it to the applicable users.
 2. Assign roles to the users, using the `PublicKeyContract:UpdateUserRoles` method.
    You need to provide the full list of roles for the user, as the method replaces the existing roles with the new ones.
 3. Ensure that your custom client code for user registration assigns the correct roles.
    Registration methods from the `PublicKeyContract` assign `EVALUATE` and `SUBMIT` as default roles, but you may want additional ones.
 4. Update the contract method decorators to use `allowedRoles` instead of `allowedOrgs`.
 
-Probably for most users you won't need to do anything, as the default roles are `EVALUATE` and `SUBMIT`, which are sufficient for calling methods with no `allowedRoles` specified.
+For most users, you probably won't need to do anything, as the default roles are `EVALUATE` and `SUBMIT`.
+These roles alone are sufficient for calling methods with no `allowedRoles` specified.
 
-You may want to consult our acceptance test for migration from `allowedOrgs` to `allowedRoles` for more details, see [PublicKeyContract.migration.spec.ts](chaincode/src/contracts/PublicKeyContract.migration.spec.ts).
+You may want to consult our acceptance test for migration from `allowedOrgs` to `allowedRoles`. For more details, see [PublicKeyContract.migration.spec.ts](chaincode/src/contracts/PublicKeyContract.migration.spec.ts).
 
 #### Dropping support for legacy authentication
 
@@ -100,24 +102,26 @@ In the previous flow we were using `callingUser` to set the user, and the user w
 In the new flow we use `registeredUsers` to save relevant `UserProfile` objects in the mocked chain state, and the user is authenticated on the basis of the signature.
 This is why in the code for the new version we use `signed` to sign the DTO with the user's private key.
 
-The `callingUser()` function is still supported, but it should be used for low-level stuff, when you don't call contract methods directly.
+The `callingUser()` function is still supported, but it should be reserved for low-level stuff, when you don't call contract methods directly.
 The parameter it takes is the user's object, as opposed to the alias, which was used previously.
-It is done on purpose to allow you to detect if you need to update the code for the new version.
+It is done this way on purpose to allow you to detect if you need to update the code for the new version.
 
-Additionally, `writes` property was changed to `allWrites`, and we recommend to use a new `getWrites()` function, which returns the writes in the form of a dictionary, but skips low-level writes that are not relevant for the test.
-By default, it skips the keys of `UniqueTransaction` objects, which are used for enforcing the `uniqueKey` field in the DTOs.
-This behavior can be altered by providing custom `skipKeysStartingWith: string[]` parameter.
+Additionally, the `writes` property was changed to `allWrites`, and we recommend developers use a new `getWrites()` function.
+It returns the writes in the form of a dictionary, but skips low-level writes that are not relevant for the test.
+By default, `getWrites()` skips the keys of `UniqueTransaction` objects, which are used for enforcing the `uniqueKey` field in the DTOs.
+This behavior can be altered by providing custom `skipKeysStartingWith: string[]` parameters.
 
 #### Enforcing dto.uniqueKey for each submit transactions
 
 Starting from version `2.0.0` we enforce the `uniqueKey` field in each DTO that is used in `@Submit` or `@GalaTransaction({ type: SUBMIT })` methods.
-This was done to prevent duplicate transactions from being submitted to the chain, and from the replay attacks.
-Once you submit a DTO with missing `uniqueKey`, the SDK will throw a validation error.
-Once you submit a DTO with a `uniqueKey` that was already used, the SDK will throw a conflict error.
+This prevents duplicate transactions from being submitted to the chain, and protects against replay attacks.
+Any time you submit a DTO with a missing `uniqueKey`, the SDK will throw a validation error.
+When you submit a DTO with a `uniqueKey` that was already used, the SDK will throw a conflict error.
 
-It is recommended to use `@Submit` decorator for all transactions that update the chain, as it enforces the signature verification, and the `uniqueKey` field in the DTOs by enforcing `SubmitCallDTO` as parent DTO class.
+It is recommended to use the `@Submit` decorator for all transactions that update the chain, as it enforces both the signature verification and the `uniqueKey` field in the DTOs. This is accomplished by enforcing `SubmitCallDTO` as the parent DTO class.
 
-In order to make the creation of the `uniqueKey` easier, we added additional method for creating DTOs with `uniqueKey`, aside from the `createValidDTO` method and with similar syntax:
+In order to make the creation of the `uniqueKey` easier, we added an additional method, aside from `createValidDTO`, for instantiating DTOs with `uniqueKey` properties.
+The new method (`createValidSubmitDTO`) uses a similar syntax:
 
 ```typescript
 const dto = await createValidSubmitDTO(DtoClass, { ... }).signed(...);
@@ -129,31 +133,33 @@ Additionally, we added a utility method for creating a unique key, which can be 
 const uniqueKey = createUniqueKey();
 ```
 
+Note that both `createValidSubmitDTO` and `createUniqueKey` make use of `node:crypto` under the hood, which may not be supported in some environments.
+
 #### Unification of TokenBalance class API
 
 We unified the API of the `TokenBalance` class, which is used for storing the token balances in the chain state.
 Previously, the methods of `TokenBalance` class separated validation and mutation of the balance, which led to verbose syntax (e.g. `balance.ensureCanAddInstance(...).add()`).
 Now, the methods are unified, and the validation is done in the relevant methods (e.g. `balance.addInstance(...)`).
-This way we prefer clean code over SRP (Single Responsibility Principle) in this case, and we unify the api with different classes that are used for the chain state.
+In this way, we prefer clean code over SRP (Single Responsibility Principle) and we unify the API with different classes that are used for the chain state.
 
 The change impacts chaincode code only.
 
 #### Bidirectional aliases and strong validation for user related fields
 
-Starting from version `2.0.0` we enforce strong validation for user related fields in the DTOs, and chain objects.
+Starting from version `2.0.0` we enforce strong validation for user related fields in the DTOs and chain objects.
 There are two types of user related fields:
-- User alias (`UserAlias`), which is a unique identifier of the user, and is used in objects saved on chain and in the majority of methods.
-  Chain user has a single unique alias (like `client|abc`, or `eth|<checksumed-addr>`).
-- User reference (`UserRef`), which is a reference to the user object, and is used in the DTOs.
-  User reference unambiguously identifies the user, but a single user can have multiple references (for instance all `client|abc`, checksumed eth address, and lower-cased eth address can refer to the same user).
+- User alias (`UserAlias`): A unique identifier for each user that is stored in objects saved on chain and processed within the majority of methods.
+  Each chain user has a single unique alias (like `client|abc` or `eth|<checksumed-addr>`).
+- User reference (`UserRef`): A reference to the user object, used in the DTOs.
+  A user reference unambiguously identifies the user, but a single user can have multiple references (for instance `client|abc`, checksumed eth address, and lower-cased eth address can all refer to the same user).
 
 Respectively, we have two new validation/serialization decorators: `@IsUserAlias` and `@IsUserRef`, and functions for casting and validation: `asValidUserAlias`, and `asValidUserRef`.
 
 `UserRef` can be resolved to `UserAlias` using the `resolveUserAlias` function.
-This is useful when for instance you have and ethereum address, and you want to resolve it to the user alias of the registered user.
+This is useful when, for instance, you have an ethereum address, and you want to resolve it to the user alias of the registered user.
 
-Prior to version `2.0.0` user related fields were string fields with no additional validation.
-This change affects mostly the DTOs, and the chain objects that have user related fields, and the methods that use them.
+Prior to version `2.0.0`, user related fields were string fields with no additional validation.
+This change primarily affects the DTOs, the chain objects that have user related fields, and the methods that use them.
 
 ### Other Breaking Changes
 - TBD
