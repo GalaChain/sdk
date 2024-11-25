@@ -16,8 +16,7 @@ import {
   GalaChainResponseType,
   RegisterEthUserDto,
   RegisterUserDto,
-  createValidSubmitDTO,
-  signatures
+  createValidSubmitDTO
 } from "@gala-chain/api";
 import {
   ChainClient,
