@@ -52,10 +52,24 @@ verifyOpsInstance() {
   echo "Verifying ops-api $org instance at $endpoint..."
 
   while [ $attempt -le $max_attempts ]; do
-    if curl -s "$endpoint" > /dev/null 2>&1; then
-      echo -e "  [\033[32msuccess\033[0m]: ops-api $org is ready"
-      return 0
+    # Store the curl response and http code in variables
+    local response
+    local http_code
+    response=$(curl -s -w "\n%{http_code}" "$endpoint" 2>/dev/null)
+    http_code=$(echo "$response" | tail -n1)  # Get last line (status code)
+    response=$(echo "$response" | sed \$d)     # Get all but last line (response body)
+    
+    # Check if curl succeeded and response contains valid JSON
+    if [ $? -eq 0 ] && [ "$http_code" = "200" ] && [ -n "$response" ]; then
+      # Check if response doesn't contain "contractVersion":"?.?.?" and empty contracts array
+      if ! echo "$response" | grep -q '"contractVersion":"?.?.?"' && \
+         ! echo "$response" | grep -q '"contracts":\[\]'; then
+        echo "$response"
+        echo -e "  [\033[32msuccess\033[0m]: ops-api $org is ready"
+        return 0
+      fi
     fi
+    
     echo -e "  [\033[33mpending\033[0m]: attempt $attempt/$max_attempts"
     sleep 2
     attempt=$((attempt + 1))
@@ -84,8 +98,12 @@ if [ "$command" = "up" ]; then
 elif [ "$command" = "down" ]; then
   echo "Downing ops-api instances... .. $current_dir"
   (cd "$current_dir" && docker compose --env-file ../fablo-target/fabric-docker/.env down -t 1)
+elif [ "$command" = "verify" ]; then
+  verifyOpsInstance 3000 "curator"
+  verifyOpsInstance 3100 "partner"
+  verifyOpsInstance 3200 "users"
 else
-  printHeadline "Invalid command. Valid commands are <up|down>" "\360\237\233\221"
+  printHeadline "Invalid command. Valid commands are <up|down|verify>" "\360\237\233\221"
   echo "Example:"
   echo "  sh ops-api.sh up <test_network_dir> <api_config_file_path>"
   echo "  sh ops-api.sh down"
