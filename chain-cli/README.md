@@ -20,7 +20,7 @@ $ npm install -g @gala-chain/cli
 $ galachain COMMAND
 running command...
 $ galachain (--version)
-@gala-chain/cli/2.0.0 linux-x64 node-v18.20.5
+@gala-chain/cli/2.0.1 linux-x64 node-v18.20.5
 $ galachain --help [COMMAND]
 USAGE
   $ galachain COMMAND
@@ -386,12 +386,12 @@ EXAMPLES
 
 ## `galachain network-up`
 
-Start the chaincode in dev-mode and browser-api.
+Start the chaincode, browser-api, and ops-api (in non-watch mode).
 
 ```
 USAGE
   $ galachain network-up -C <value>... -t curator|partner... -n <value>... [--json] [--log-level
-    debug|info|warn|error] [-d <value>...] [-r <value>] [-e <value>] [-w] [-o <value>]
+    debug|info|warn|error] [-d <value>...] [-r <value>] [-e <value>] [-w] [-o <value>...]
 
 FLAGS
   -C, --channel=<value>...        (required) Channel name.
@@ -399,7 +399,7 @@ FLAGS
                                   is used.
   -e, --envConfig=<value>         Path to .env file to be used for chaincodes.
   -n, --chaincodeName=<value>...  (required) Chaincode name.
-  -o, --contracts=<value>         Contract names in a JSON format.
+  -o, --contracts=<value>...      Contract names in a JSON format.
   -r, --fabloRoot=<value>         [default: ./test-network] Root directory of target network. Should not be the same as
                                   chaincodeDir and should not be a child of chaincodeDir. By default './test-network' is
                                   used.
@@ -414,7 +414,7 @@ GLOBAL FLAGS
                         <options: debug|info|warn|error>
 
 DESCRIPTION
-  Start the chaincode in dev-mode and browser-api.
+  Start the chaincode, browser-api, and ops-api (in non-watch mode).
 
 ALIASES
   $ galachain network:up
@@ -454,12 +454,12 @@ EXAMPLES
 
 ## `galachain network:up`
 
-Start the chaincode in dev-mode and browser-api.
+Start the chaincode, browser-api, and ops-api (in non-watch mode).
 
 ```
 USAGE
   $ galachain network:up -C <value>... -t curator|partner... -n <value>... [--json] [--log-level
-    debug|info|warn|error] [-d <value>...] [-r <value>] [-e <value>] [-w] [-o <value>]
+    debug|info|warn|error] [-d <value>...] [-r <value>] [-e <value>] [-w] [-o <value>...]
 
 FLAGS
   -C, --channel=<value>...        (required) Channel name.
@@ -467,7 +467,7 @@ FLAGS
                                   is used.
   -e, --envConfig=<value>         Path to .env file to be used for chaincodes.
   -n, --chaincodeName=<value>...  (required) Chaincode name.
-  -o, --contracts=<value>         Contract names in a JSON format.
+  -o, --contracts=<value>...      Contract names in a JSON format.
   -r, --fabloRoot=<value>         [default: ./test-network] Root directory of target network. Should not be the same as
                                   chaincodeDir and should not be a child of chaincodeDir. By default './test-network' is
                                   used.
@@ -482,7 +482,7 @@ GLOBAL FLAGS
                         <options: debug|info|warn|error>
 
 DESCRIPTION
-  Start the chaincode in dev-mode and browser-api.
+  Start the chaincode, browser-api, and ops-api (in non-watch mode).
 
 ALIASES
   $ galachain network:up
