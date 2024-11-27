@@ -33,10 +33,10 @@ import {
 import BigNumber from "bignumber.js";
 
 import { lockTokens } from "../locks";
+import { resolveUserAlias } from "../services";
 import { GalaChainContext } from "../types";
 import { getObjectByKey } from "../utils";
 import { burnToMintProcessing } from "./extendedFeeGateProcessing";
-import { resolveUserAlias } from "../services";
 
 export interface IMintPostProcessing {
   tokenClass: TokenClassKey;
