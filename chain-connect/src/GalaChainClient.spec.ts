@@ -16,7 +16,9 @@ import {
   LockTokenDto,
   TokenInstanceKey,
   TransferTokenDto,
+  asValidUserRef,
   createValidDTO,
+  createValidSubmitDTO,
   signatures
 } from "@gala-chain/api";
 import BigNumber from "bignumber.js";
@@ -63,7 +65,7 @@ describe("BrowserConnectClient", () => {
   it("test full flow (success)", async () => {
     const dto: TransferTokenDto = await createValidDTO(TransferTokenDto, {
       quantity: new BigNumber("1"),
-      to: "client|63580d94c574ad78b121c267",
+      to: asValidUserRef("client|63580d94c574ad78b121c267"),
       tokenInstance: plainToInstance(TokenInstanceKey, {
         additionalKey: "none",
         category: "Unit",
@@ -111,7 +113,7 @@ describe("BrowserConnectClient", () => {
   it("test full flow (server error)", async () => {
     const dto: TransferTokenDto = await createValidDTO(TransferTokenDto, {
       quantity: new BigNumber("1"),
-      to: "client|63580d94c574ad78b121c267",
+      to: asValidUserRef("client|63580d94c574ad78b121c267"),
       tokenInstance: plainToInstance(TokenInstanceKey, {
         additionalKey: "none",
         category: "Unit",
@@ -152,7 +154,7 @@ describe("BrowserConnectClient", () => {
   it("test full flow (chain error)", async () => {
     const dto: TransferTokenDto = await createValidDTO(TransferTokenDto, {
       quantity: new BigNumber("1"),
-      to: "client|63580d94c574ad78b121c267",
+      to: asValidUserRef("client|63580d94c574ad78b121c267"),
       tokenInstance: plainToInstance(TokenInstanceKey, {
         additionalKey: "none",
         category: "none",
@@ -226,7 +228,7 @@ describe("BrowserConnectClient", () => {
   });
 
   it("should properly recover signature", async () => {
-    const dto: LockTokenDto = await createValidDTO(LockTokenDto, {
+    const dto: LockTokenDto = await createValidSubmitDTO(LockTokenDto, {
       quantity: new BigNumber("1"),
       tokenInstance: plainToInstance(TokenInstanceKey, {
         collection: "GALA",
@@ -259,7 +261,7 @@ describe("BrowserConnectClient", () => {
     expect(ethAddress).toBe("e737c4D3072DA526f3566999e0434EAD423d06ec");
   });
   it("should properly recover signature", async () => {
-    const params: LockTokenDto = await createValidDTO(LockTokenDto, {
+    const params: LockTokenDto = await createValidSubmitDTO(LockTokenDto, {
       quantity: new BigNumber("1"),
       tokenInstance: plainToInstance(TokenInstanceKey, {
         collection: "GALA",
@@ -288,7 +290,7 @@ describe("BrowserConnectClient", () => {
     expect(ethAddress).toBe("e737c4D3072DA526f3566999e0434EAD423d06ec");
   });
   it("should properly recover signature for typed signing", async () => {
-    const dto: LockTokenDto = await createValidDTO(LockTokenDto, {
+    const dto: LockTokenDto = await createValidSubmitDTO(LockTokenDto, {
       quantity: new BigNumber("1"),
       tokenInstance: plainToInstance(TokenInstanceKey, {
         collection: "GALA",
@@ -320,7 +322,7 @@ describe("BrowserConnectClient", () => {
     expect(publicKey).toBe("0xe737c4D3072DA526f3566999e0434EAD423d06ec");
   });
   it("should properly recover signature for typed signing using signature utils", async () => {
-    const dto: LockTokenDto = await createValidDTO(LockTokenDto, {
+    const dto: LockTokenDto = await createValidSubmitDTO(LockTokenDto, {
       quantity: new BigNumber("1"),
       tokenInstance: plainToInstance(TokenInstanceKey, {
         collection: "GALA",
@@ -407,7 +409,7 @@ describe("TrustConnectClient", () => {
     window.ethereum.isTrust = true;
     const dto: TransferTokenDto = await createValidDTO(TransferTokenDto, {
       quantity: new BigNumber("1"),
-      to: "client|63580d94c574ad78b121c267",
+      to: asValidUserRef("client|63580d94c574ad78b121c267"),
       tokenInstance: plainToInstance(TokenInstanceKey, {
         additionalKey: "none",
         category: "Unit",

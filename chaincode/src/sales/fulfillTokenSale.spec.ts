@@ -23,7 +23,8 @@ import {
   TokenSaleDtoValidationError,
   TokenSaleFulfillment,
   TokenSaleMintAllowance,
-  createValidDTO
+  createValidDTO,
+  createValidSubmitDTO
 } from "@gala-chain/api";
 import { currency, fixture, nft, users, writesMap } from "@gala-chain/test";
 import BigNumber from "bignumber.js";
@@ -41,7 +42,7 @@ describe("FulfillTokenSale", () => {
     const tokenBalance = plainToInstance(TokenBalance, {
       ...currency.tokenBalance(),
       quantity: nftSalePrice,
-      owner: users.testUser2Id
+      owner: users.testUser2.identityKey
     });
 
     const nftInstance = nft.tokenInstance1();
@@ -67,7 +68,7 @@ describe("FulfillTokenSale", () => {
           quantity: nftSalePrice
         }
       ],
-      owner: users.testAdminId,
+      owner: users.admin.identityKey,
       start: 1,
       end: 0,
       fulfillmentIds: [],
@@ -83,8 +84,8 @@ describe("FulfillTokenSale", () => {
     });
     givenSaleMintAllowance.allowanceObjectKey = tokenMintAllowance.getCompositeKey();
 
-    const { ctx, contract, writes } = fixture(GalaChainTokenContract)
-      .callingUser(users.testUser2Id)
+    const { ctx, contract, getWrites } = fixture(GalaChainTokenContract)
+      .registeredUsers(users.testUser2)
       .savedState(
         nftClass,
         currencyClass,
@@ -97,15 +98,15 @@ describe("FulfillTokenSale", () => {
       );
 
     const dto: FulfillTokenSaleDto = await createValidDTO(FulfillTokenSaleDto, {
-      fulfilledBy: users.testUser2Id,
+      fulfilledBy: users.testUser2.identityKey,
       quantity: new BigNumber(1),
       tokenSaleId: givenSale.tokenSaleId,
       uniqueKey: "blah2"
-    });
+    }).signed(users.testUser2.privateKey);
 
     const expectedTokenSaleFulfillment: TokenSaleFulfillment = plainToInstance(TokenSaleFulfillment, {
       tokenSaleId: givenSale.tokenSaleId,
-      fulfilledBy: users.testUser2Id,
+      fulfilledBy: users.testUser2.identityKey,
       quantity: new BigNumber(1),
       created: ctx.txUnixTime
     });
@@ -121,7 +122,7 @@ describe("FulfillTokenSale", () => {
 
     // Then
     expect(response).toEqual(GalaChainResponse.Success(expectedTokenSaleFulfillment));
-    expect(writes).toEqual(
+    expect(getWrites()).toEqual(
       expect.objectContaining(
         writesMap(
           plainToInstance(TokenAllowance, {
@@ -131,10 +132,10 @@ describe("FulfillTokenSale", () => {
             expires: ctx.txUnixTime
           }),
           plainToInstance(TokenBalance, { ...tokenBalance, quantity: new BigNumber(0) }),
-          plainToInstance(TokenBalance, { ...nftTokenBalance, owner: users.testUser2Id }),
-          plainToInstance(TokenBalance, { ...tokenBalance, owner: users.testAdminId }),
+          plainToInstance(TokenBalance, { ...nftTokenBalance, owner: users.testUser2.identityKey }),
+          plainToInstance(TokenBalance, { ...tokenBalance, owner: users.admin.identityKey }),
           plainToInstance(TokenClass, { ...nftClass, totalSupply: new BigNumber(1) }),
-          plainToInstance(TokenInstance, { ...nftInstance, owner: users.testUser2Id }),
+          plainToInstance(TokenInstance, { ...nftInstance, owner: users.testUser2.identityKey }),
           expectedTokenSaleFulfillment,
           expectedTokenSale
         )
@@ -151,7 +152,7 @@ describe("FulfillTokenSale", () => {
     const tokenBalance = plainToInstance(TokenBalance, {
       ...currency.tokenBalance(),
       quantity: nftSalePrice,
-      owner: users.testUser2Id
+      owner: users.testUser2.identityKey
     });
 
     const nftClass = nft.tokenClass();
@@ -175,7 +176,7 @@ describe("FulfillTokenSale", () => {
           quantity: nftSalePrice
         }
       ],
-      owner: users.testAdminId,
+      owner: users.admin.identityKey,
       start: 1,
       end: 0,
       fulfillmentIds: [],
@@ -191,8 +192,8 @@ describe("FulfillTokenSale", () => {
     });
     givenSaleMintAllowance.allowanceObjectKey = tokenMintAllowance.getCompositeKey();
 
-    const { ctx, contract, writes } = fixture(GalaChainTokenContract)
-      .callingUser(users.testUser1Id)
+    const { ctx, contract, getWrites } = fixture(GalaChainTokenContract)
+      .registeredUsers(users.testUser1)
       .savedState(
         nftClass,
         currencyClass,
@@ -205,11 +206,11 @@ describe("FulfillTokenSale", () => {
       );
 
     const dto: FulfillTokenSaleDto = await createValidDTO(FulfillTokenSaleDto, {
-      fulfilledBy: users.testUser2Id,
+      fulfilledBy: users.testUser2.identityKey,
       quantity: new BigNumber(1),
       tokenSaleId: givenSale.tokenSaleId,
       uniqueKey: "blah2"
-    });
+    }).signed(users.testUser1.privateKey);
 
     // When
     const response = await contract.FulfillTokenSale(ctx, dto);
@@ -222,7 +223,7 @@ describe("FulfillTokenSale", () => {
         ])
       )
     );
-    expect(writes).toEqual(writesMap());
+    expect(getWrites()).toEqual(writesMap());
   });
 
   it("should fail if sale hasn't started", async () => {
@@ -234,7 +235,7 @@ describe("FulfillTokenSale", () => {
     const tokenBalance = plainToInstance(TokenBalance, {
       ...currency.tokenBalance(),
       quantity: nftSalePrice,
-      owner: users.testUser2Id
+      owner: users.testUser2.identityKey
     });
 
     const nftClass = nft.tokenClass();
@@ -258,7 +259,7 @@ describe("FulfillTokenSale", () => {
           quantity: nftSalePrice
         }
       ],
-      owner: users.testAdminId,
+      owner: users.admin.identityKey,
       start: Date.now() + 4000,
       end: 0,
       fulfillmentIds: [],
@@ -274,8 +275,8 @@ describe("FulfillTokenSale", () => {
     });
     givenSaleMintAllowance.allowanceObjectKey = tokenMintAllowance.getCompositeKey();
 
-    const { ctx, contract, writes } = fixture(GalaChainTokenContract)
-      .callingUser(users.testUser2Id)
+    const { ctx, contract, getWrites } = fixture(GalaChainTokenContract)
+      .registeredUsers(users.testUser2)
       .savedState(
         nftClass,
         currencyClass,
@@ -288,11 +289,11 @@ describe("FulfillTokenSale", () => {
       );
 
     const dto: FulfillTokenSaleDto = await createValidDTO(FulfillTokenSaleDto, {
-      fulfilledBy: users.testUser2Id,
+      fulfilledBy: users.testUser2.identityKey,
       quantity: new BigNumber(1),
       tokenSaleId: givenSale.tokenSaleId,
       uniqueKey: "blah2"
-    });
+    }).signed(users.testUser2.privateKey);
 
     // When
     const response = await contract.FulfillTokenSale(ctx, dto);
@@ -305,7 +306,7 @@ describe("FulfillTokenSale", () => {
         ])
       )
     );
-    expect(writes).toEqual(writesMap());
+    expect(getWrites()).toEqual(writesMap());
   });
 
   it("should fail if sale has ended", async () => {
@@ -317,7 +318,7 @@ describe("FulfillTokenSale", () => {
     const tokenBalance = plainToInstance(TokenBalance, {
       ...currency.tokenBalance(),
       quantity: nftSalePrice,
-      owner: users.testUser2Id
+      owner: users.testUser2.identityKey
     });
 
     const nftClass = nft.tokenClass();
@@ -341,7 +342,7 @@ describe("FulfillTokenSale", () => {
           quantity: nftSalePrice
         }
       ],
-      owner: users.testAdminId,
+      owner: users.admin.identityKey,
       start: 1,
       end: 2,
       fulfillmentIds: [],
@@ -357,8 +358,8 @@ describe("FulfillTokenSale", () => {
     });
     givenSaleMintAllowance.allowanceObjectKey = tokenMintAllowance.getCompositeKey();
 
-    const { ctx, contract, writes } = fixture(GalaChainTokenContract)
-      .callingUser(users.testUser2Id)
+    const { ctx, contract, getWrites } = fixture(GalaChainTokenContract)
+      .registeredUsers(users.testUser2)
       .savedState(
         nftClass,
         currencyClass,
@@ -370,12 +371,12 @@ describe("FulfillTokenSale", () => {
         tokenMintAllowance
       );
 
-    const dto: FulfillTokenSaleDto = await createValidDTO(FulfillTokenSaleDto, {
-      fulfilledBy: users.testUser2Id,
+    const dto: FulfillTokenSaleDto = await createValidSubmitDTO(FulfillTokenSaleDto, {
+      fulfilledBy: users.testUser2.identityKey,
       quantity: new BigNumber(1),
       tokenSaleId: givenSale.tokenSaleId,
       uniqueKey: "blah2"
-    });
+    }).signed(users.testUser2.privateKey);
 
     // When
     const response = await contract.FulfillTokenSale(ctx, dto);
@@ -388,7 +389,7 @@ describe("FulfillTokenSale", () => {
         ])
       )
     );
-    expect(writes).toEqual(writesMap());
+    expect(getWrites()).toEqual(writesMap());
   });
 
   it("should fail if full sale quantity is fulfilled already", async () => {
@@ -400,7 +401,7 @@ describe("FulfillTokenSale", () => {
     const tokenBalance = plainToInstance(TokenBalance, {
       ...currency.tokenBalance(),
       quantity: nftSalePrice,
-      owner: users.testUser2Id
+      owner: users.testUser2.identityKey
     });
 
     const nftClass = nft.tokenClass();
@@ -424,7 +425,7 @@ describe("FulfillTokenSale", () => {
           quantity: nftSalePrice
         }
       ],
-      owner: users.testAdminId,
+      owner: users.admin.identityKey,
       start: 1,
       end: 0,
       fulfillmentIds: [],
@@ -440,8 +441,8 @@ describe("FulfillTokenSale", () => {
     });
     givenSaleMintAllowance.allowanceObjectKey = tokenMintAllowance.getCompositeKey();
 
-    const { ctx, contract, writes } = fixture(GalaChainTokenContract)
-      .callingUser(users.testUser2Id)
+    const { ctx, contract, getWrites } = fixture(GalaChainTokenContract)
+      .registeredUsers(users.testUser2)
       .savedState(
         nftClass,
         currencyClass,
@@ -453,12 +454,12 @@ describe("FulfillTokenSale", () => {
         tokenMintAllowance
       );
 
-    const dto: FulfillTokenSaleDto = await createValidDTO(FulfillTokenSaleDto, {
-      fulfilledBy: users.testUser2Id,
+    const dto: FulfillTokenSaleDto = await createValidSubmitDTO(FulfillTokenSaleDto, {
+      fulfilledBy: users.testUser2.identityKey,
       quantity: new BigNumber(1),
       tokenSaleId: givenSale.tokenSaleId,
       uniqueKey: "blah2"
-    });
+    }).signed(users.testUser2.privateKey);
 
     // When
     const response = await contract.FulfillTokenSale(ctx, dto);
@@ -472,7 +473,7 @@ describe("FulfillTokenSale", () => {
         ])
       )
     );
-    expect(writes).toEqual(writesMap());
+    expect(getWrites()).toEqual(writesMap());
   });
 
   it("should fail if fullfillment quantity is more than remaining quantity", async () => {
@@ -484,7 +485,7 @@ describe("FulfillTokenSale", () => {
     const tokenBalance = plainToInstance(TokenBalance, {
       ...currency.tokenBalance(),
       quantity: nftSalePrice,
-      owner: users.testUser2Id
+      owner: users.testUser2.identityKey
     });
 
     const nftClass = nft.tokenClass();
@@ -508,7 +509,7 @@ describe("FulfillTokenSale", () => {
           quantity: nftSalePrice
         }
       ],
-      owner: users.testAdminId,
+      owner: users.admin.identityKey,
       start: 1,
       end: 0,
       fulfillmentIds: [],
@@ -524,8 +525,8 @@ describe("FulfillTokenSale", () => {
     });
     givenSaleMintAllowance.allowanceObjectKey = tokenMintAllowance.getCompositeKey();
 
-    const { ctx, contract, writes } = fixture(GalaChainTokenContract)
-      .callingUser(users.testUser2Id)
+    const { ctx, contract, getWrites } = fixture(GalaChainTokenContract)
+      .registeredUsers(users.testUser2)
       .savedState(
         nftClass,
         currencyClass,
@@ -537,12 +538,12 @@ describe("FulfillTokenSale", () => {
         tokenMintAllowance
       );
 
-    const dto: FulfillTokenSaleDto = await createValidDTO(FulfillTokenSaleDto, {
-      fulfilledBy: users.testUser2Id,
+    const dto: FulfillTokenSaleDto = await createValidSubmitDTO(FulfillTokenSaleDto, {
+      fulfilledBy: users.testUser2.identityKey,
       quantity: new BigNumber(2),
       tokenSaleId: givenSale.tokenSaleId,
       uniqueKey: "blah2"
-    });
+    }).signed(users.testUser2.privateKey);
 
     // When
     const response = await contract.FulfillTokenSale(ctx, dto);
@@ -555,7 +556,7 @@ describe("FulfillTokenSale", () => {
         ])
       )
     );
-    expect(writes).toEqual(writesMap());
+    expect(getWrites()).toEqual(writesMap());
   });
 
   it("should fail if fullfillment quantity is zero", async () => {
@@ -567,7 +568,7 @@ describe("FulfillTokenSale", () => {
     const tokenBalance = plainToInstance(TokenBalance, {
       ...currency.tokenBalance(),
       quantity: nftSalePrice,
-      owner: users.testUser2Id
+      owner: users.testUser2.identityKey
     });
 
     const nftClass = nft.tokenClass();
@@ -591,7 +592,7 @@ describe("FulfillTokenSale", () => {
           quantity: nftSalePrice
         }
       ],
-      owner: users.testAdminId,
+      owner: users.admin.identityKey,
       start: 1,
       end: 0,
       fulfillmentIds: [],
@@ -607,8 +608,8 @@ describe("FulfillTokenSale", () => {
     });
     givenSaleMintAllowance.allowanceObjectKey = tokenMintAllowance.getCompositeKey();
 
-    const { ctx, contract, writes } = fixture(GalaChainTokenContract)
-      .callingUser(users.testUser2Id)
+    const { ctx, contract, getWrites } = fixture(GalaChainTokenContract)
+      .registeredUsers(users.testUser2)
       .savedState(
         nftClass,
         currencyClass,
@@ -620,12 +621,12 @@ describe("FulfillTokenSale", () => {
         tokenMintAllowance
       );
 
-    const dto: FulfillTokenSaleDto = await createValidDTO(FulfillTokenSaleDto, {
-      fulfilledBy: users.testUser2Id,
+    const dto: FulfillTokenSaleDto = await createValidSubmitDTO(FulfillTokenSaleDto, {
+      fulfilledBy: users.testUser2.identityKey,
       quantity: new BigNumber(0),
       tokenSaleId: givenSale.tokenSaleId,
       uniqueKey: "blah2"
-    });
+    }).signed(users.testUser2.privateKey);
 
     // When
     const response = await contract.FulfillTokenSale(ctx, dto);
@@ -638,7 +639,7 @@ describe("FulfillTokenSale", () => {
         ])
       )
     );
-    expect(writes).toEqual(writesMap());
+    expect(getWrites()).toEqual(writesMap());
   });
 
   it("should fail if insufficient mint allowance", async () => {
@@ -650,7 +651,7 @@ describe("FulfillTokenSale", () => {
     const tokenBalance = plainToInstance(TokenBalance, {
       ...currency.tokenBalance(),
       quantity: nftSalePrice.multipliedBy(2),
-      owner: users.testUser2Id
+      owner: users.testUser2.identityKey
     });
 
     const nftClass = nft.tokenClass();
@@ -674,7 +675,7 @@ describe("FulfillTokenSale", () => {
           quantity: nftSalePrice
         }
       ],
-      owner: users.testAdminId,
+      owner: users.admin.identityKey,
       start: 1,
       end: 0,
       fulfillmentIds: [],
@@ -690,8 +691,8 @@ describe("FulfillTokenSale", () => {
     });
     givenSaleMintAllowance.allowanceObjectKey = tokenMintAllowance.getCompositeKey();
 
-    const { ctx, contract, writes } = fixture(GalaChainTokenContract)
-      .callingUser(users.testUser2Id)
+    const { ctx, contract, getWrites } = fixture(GalaChainTokenContract)
+      .registeredUsers(users.testUser2)
       .savedState(
         nftClass,
         currencyClass,
@@ -703,12 +704,12 @@ describe("FulfillTokenSale", () => {
         tokenMintAllowance
       );
 
-    const dto: FulfillTokenSaleDto = await createValidDTO(FulfillTokenSaleDto, {
-      fulfilledBy: users.testUser2Id,
+    const dto: FulfillTokenSaleDto = await createValidSubmitDTO(FulfillTokenSaleDto, {
+      fulfilledBy: users.testUser2.identityKey,
       quantity: new BigNumber(2),
       tokenSaleId: givenSale.tokenSaleId,
       uniqueKey: "blah2"
-    });
+    }).signed(users.testUser2.privateKey);
 
     // When
     const response = await contract.FulfillTokenSale(ctx, dto);
@@ -721,6 +722,6 @@ describe("FulfillTokenSale", () => {
         ])
       )
     );
-    expect(writes).toEqual(writesMap());
+    expect(getWrites()).toEqual(writesMap());
   });
 });

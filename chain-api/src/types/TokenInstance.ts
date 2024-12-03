@@ -13,7 +13,7 @@
  * limitations under the License.
  */
 import { BigNumber } from "bignumber.js";
-import { Exclude, Type, classToPlain as instanceToPlain } from "class-transformer";
+import { Type, classToPlain as instanceToPlain } from "class-transformer";
 import {
   IsBoolean,
   IsDefined,
@@ -29,6 +29,7 @@ import { ChainKey } from "../utils";
 import { BigNumberIsInteger, BigNumberIsNotNegative, BigNumberProperty, IsUserAlias } from "../validators";
 import { ChainObject } from "./ChainObject";
 import { TokenClass, TokenClassKey, TokenClassKeyProperties } from "./TokenClass";
+import { UserAlias } from "./UserAlias";
 import { ChainCallDTO } from "./dtos";
 
 export interface TokenInstanceKeyProperties {
@@ -260,19 +261,27 @@ export class TokenInstance extends ChainObject {
 
   @ValidateIf((i) => i.isNonFungible === true)
   @IsUserAlias()
-  public owner?: string;
+  public owner?: UserAlias;
 
   public static INDEX_KEY = "GCTI2";
 
   public static FUNGIBLE_TOKEN_INSTANCE = new BigNumber(0);
 
   // This returns the unique identifying string used in the composite key for querying HLF
-  @Exclude()
   public GetCompositeKeyString(): string {
     return TokenInstance.CreateCompositeKey(this);
   }
 
-  @Exclude()
+  public instanceKeyObj(): TokenInstanceKey {
+    const tik = new TokenInstanceKey();
+    tik.collection = this.collection;
+    tik.category = this.category;
+    tik.type = this.type;
+    tik.additionalKey = this.additionalKey;
+    tik.instance = this.instance;
+    return tik;
+  }
+
   public static GetFungibleInstanceFromClass(token: TokenClassKeyProperties): string {
     const { MIN_UNICODE_RUNE_VALUE } = ChainObject;
     const { collection, category, type, additionalKey } = token;
@@ -283,7 +292,6 @@ export class TokenInstance extends ChainObject {
   }
 
   // This returns the unique identifying string used in the composite key for querying HLF
-  @Exclude()
   public static CreateCompositeKey(token: TokenInstanceKeyProperties): string {
     const { MIN_UNICODE_RUNE_VALUE } = ChainObject;
     const { collection, category, type, additionalKey, instance } = instanceToPlain(token);
@@ -293,7 +301,6 @@ export class TokenInstance extends ChainObject {
 
   // This parses a string into the key that can be used to query HLF
   // This looks to be built to only handle the key to be composed of two parts and seperated by a |
-  @Exclude()
   public static GetCompositeKeyFromString(tokenCid: string): string {
     const idParts = tokenCid.split(ChainObject.ID_SPLIT_CHAR);
 
@@ -305,7 +312,6 @@ export class TokenInstance extends ChainObject {
     }
   }
 
-  @Exclude()
   public static buildInstanceKeyList(
     token: TokenInstanceKeyProperties
   ): [collection: string, category: string, type: string, additionalKey: string, instance: string] {
@@ -313,7 +319,6 @@ export class TokenInstance extends ChainObject {
     return [collection, category, type, additionalKey, instance.toString()];
   }
 
-  @Exclude()
   public static async buildInstanceKeyObject(token: TokenInstanceKeyProperties): Promise<TokenInstanceKey> {
     const tokenInstanceKey = new TokenInstanceKey();
 

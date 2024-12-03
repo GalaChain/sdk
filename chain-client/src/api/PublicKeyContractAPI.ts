@@ -20,7 +20,8 @@ import {
   RegisterEthUserDto,
   RegisterUserDto,
   UpdatePublicKeyDto,
-  UserProfile
+  UserProfile,
+  asValidUserRef
 } from "@gala-chain/api";
 
 import { ChainClient } from "../generic";
@@ -40,7 +41,7 @@ export const publicKeyContractAPI = (client: ChainClient): PublicKeyContractAPI 
   GetPublicKey(user?: string | GetPublicKeyDto) {
     if (typeof user === "string") {
       const dto = new GetPublicKeyDto();
-      dto.user = user;
+      dto.user = asValidUserRef(user);
       return client.evaluateTransaction("GetPublicKey", dto, PublicKey);
     } else {
       return client.evaluateTransaction("GetPublicKey", user ?? new GetPublicKeyDto(), PublicKey);

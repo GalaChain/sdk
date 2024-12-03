@@ -73,6 +73,7 @@ import {
   GalaContract,
   GalaTransaction,
   SUBMIT,
+  Submit,
   batchMintToken,
   burnTokens,
   createTokenClass,
@@ -100,6 +101,7 @@ import {
   refreshAllowances,
   releaseToken,
   requestMint,
+  resolveUserAlias,
   transferToken,
   unlockToken,
   unlockTokens,
@@ -111,21 +113,18 @@ import { Info } from "fabric-contract-api";
 
 import { version } from "../../package.json";
 
-const curatorOrgMsp = process.env.CURATOR_ORG_MSP ?? "CuratorOrg";
-
 @Info({ title: "GalaChainToken", description: "Contract for managing GalaChain tokens" })
 export default class GalaChainTokenContract extends GalaContract {
   constructor() {
     super("GalaChainToken", version);
   }
-  @GalaTransaction({
-    type: SUBMIT,
+
+  @Submit({
     in: CreateTokenClassDto,
     out: TokenClassKey,
-    allowedOrgs: [curatorOrgMsp],
-    verifySignature: true
+    allowedOrgs: ["CuratorOrg"]
   })
-  public CreateTokenClass(ctx: GalaChainContext, dto: CreateTokenClassDto): Promise<TokenClassKey> {
+  public async CreateTokenClass(ctx: GalaChainContext, dto: CreateTokenClassDto): Promise<TokenClassKey> {
     return createTokenClass(ctx, {
       network: dto.network ?? CreateTokenClassDto.DEFAULT_NETWORK,
       tokenClass: dto.tokenClass,
@@ -143,19 +142,22 @@ export default class GalaChainTokenContract extends GalaContract {
       totalMintAllowance: dto.totalMintAllowance ?? CreateTokenClassDto.INITIAL_MINT_ALLOWANCE,
       totalSupply: dto.totalSupply ?? CreateTokenClassDto.INITIAL_TOTAL_SUPPLY,
       totalBurned: dto.totalBurned ?? CreateTokenClassDto.INITIAL_TOTAL_BURNED,
-      authorities: dto.authorities ?? [ctx.callingUser]
+      authorities: await Promise.all(
+        (dto.authorities ?? [ctx.callingUser]).map((a) => resolveUserAlias(ctx, a))
+      )
     });
   }
 
-  @GalaTransaction({
-    type: SUBMIT,
+  @Submit({
     in: UpdateTokenClassDto,
     out: TokenClassKey,
-    allowedOrgs: [curatorOrgMsp],
-    verifySignature: true
+    allowedOrgs: ["CuratorOrg"]
   })
-  public UpdateTokenClass(ctx: GalaChainContext, dto: UpdateTokenClassDto): Promise<TokenClassKey> {
-    return updateTokenClass(ctx, dto);
+  public async UpdateTokenClass(ctx: GalaChainContext, dto: UpdateTokenClassDto): Promise<TokenClassKey> {
+    const authorities = dto.authorities
+      ? await Promise.all(dto.authorities.map((a) => resolveUserAlias(ctx, a)))
+      : undefined;
+    return updateTokenClass(ctx, { ...dto, authorities });
   }
 
   @GalaTransaction({
@@ -179,11 +181,9 @@ export default class GalaChainTokenContract extends GalaContract {
     return fetchTokenClassesWithPagination(ctx, dto);
   }
 
-  @GalaTransaction({
-    type: SUBMIT,
+  @Submit({
     in: GrantAllowanceDto,
-    out: { arrayOf: TokenAllowance },
-    verifySignature: true
+    out: { arrayOf: TokenAllowance }
   })
   public GrantAllowance(ctx: GalaChainContext, dto: GrantAllowanceDto): Promise<TokenAllowance[]> {
     return grantAllowance(ctx, {
@@ -195,11 +195,9 @@ export default class GalaChainTokenContract extends GalaContract {
     });
   }
 
-  @GalaTransaction({
-    type: SUBMIT,
+  @Submit({
     in: RefreshAllowancesDto,
-    out: { arrayOf: TokenAllowance },
-    verifySignature: true
+    out: { arrayOf: TokenAllowance }
   })
   public RefreshAllowances(ctx: GalaChainContext, dto: RefreshAllowancesDto): Promise<TokenAllowance[]> {
     return refreshAllowances(ctx, dto.allowances);
@@ -237,11 +235,9 @@ export default class GalaChainTokenContract extends GalaContract {
     });
   }
 
-  @GalaTransaction({
-    type: SUBMIT,
+  @Submit({
     in: DeleteAllowancesDto,
-    out: "number",
-    verifySignature: true
+    out: "number"
   })
   public DeleteAllowances(ctx: GalaChainContext, dto: DeleteAllowancesDto): Promise<number> {
     return deleteAllowances(ctx, dto);
@@ -252,8 +248,8 @@ export default class GalaChainTokenContract extends GalaContract {
     in: FetchBalancesDto,
     out: { arrayOf: TokenBalance }
   })
-  public FetchBalances(ctx: GalaChainContext, dto: FetchBalancesDto): Promise<TokenBalance[]> {
-    return fetchBalances(ctx, { ...dto, owner: dto.owner ?? ctx.callingUser });
+  public async FetchBalances(ctx: GalaChainContext, dto: FetchBalancesDto): Promise<TokenBalance[]> {
+    return fetchBalances(ctx, { ...dto, owner: await resolveUserAlias(ctx, dto.owner ?? ctx.callingUser) });
   }
 
   @GalaTransaction({
@@ -261,28 +257,37 @@ export default class GalaChainTokenContract extends GalaContract {
     in: FetchBalancesDto,
     out: { arrayOf: TokenBalance }
   })
-  public FetchBalancesWithTokenMetadata(
+  public async FetchBalancesWithTokenMetadata(
     ctx: GalaChainContext,
     dto: FetchBalancesDto
   ): Promise<FetchBalancesWithTokenMetadataResponse> {
-    return fetchBalancesWithTokenMetadata(ctx, { ...dto, owner: dto.owner ?? ctx.callingUser });
+    return fetchBalancesWithTokenMetadata(ctx, {
+      ...dto,
+      owner: await resolveUserAlias(ctx, dto.owner ?? ctx.callingUser)
+    });
   }
 
-  @GalaTransaction({
-    type: SUBMIT,
+  @Submit({
     in: HighThroughputMintTokenDto,
-    out: FulfillMintDto,
-    verifySignature: true
+    out: FulfillMintDto
   })
   public async RequestMint(ctx: GalaChainContext, dto: HighThroughputMintTokenDto): Promise<FulfillMintDto> {
-    return requestMint(ctx, dto, undefined);
+    return requestMint(ctx, {
+      tokenClass: dto.tokenClass,
+      owner: await resolveUserAlias(ctx, dto.owner ?? ctx.callingUser),
+      quantity: dto.quantity,
+      allowanceKey: dto.allowanceKey,
+      authorizedOnBehalf: undefined
+    });
   }
 
   @GalaTransaction({
     type: SUBMIT,
     in: FulfillMintDto,
     out: { arrayOf: TokenInstanceKey },
-    allowedOrgs: [curatorOrgMsp]
+    allowedOrgs: ["CuratorOrg"],
+    enforceUniqueKey: true
+    // no signature verification
   })
   public async FulfillMint(ctx: GalaChainContext, dto: FulfillMintDto): Promise<TokenInstanceKey[]> {
     return fulfillMintRequest(ctx, dto);
@@ -295,11 +300,9 @@ export default class GalaChainTokenContract extends GalaContract {
    *
    * @decorator `@GalaTransaction(GalaTransactionOptions<HighThroughputMintTokenDto>)`
    */
-  @GalaTransaction({
-    type: SUBMIT,
+  @Submit({
     in: HighThroughputMintTokenDto,
     out: { arrayOf: TokenInstanceKey },
-    verifySignature: true,
     sequence: [
       {
         methodName: "RequestMint",
@@ -349,30 +352,24 @@ export default class GalaChainTokenContract extends GalaContract {
    * Mint a new instance of an existing TokenClass.
    *
    * @deprecated 2022-12-12, replaced with high-throughput implementation.
-   *
-   * @decorator `@GalaTransaction(GalaTransactionOptions<MintTokenDto>)`
    */
-  @GalaTransaction({
-    type: SUBMIT,
+  @Submit({
     in: MintTokenDto,
-    out: { arrayOf: TokenInstanceKey },
-    verifySignature: true
+    out: { arrayOf: TokenInstanceKey }
   })
   public async MintToken(ctx: GalaChainContext, dto: MintTokenDto): Promise<TokenInstanceKey[]> {
     return mintToken(ctx, {
       tokenClassKey: dto.tokenClass,
-      owner: dto.owner ?? ctx.callingUser,
+      owner: await resolveUserAlias(ctx, dto.owner ?? ctx.callingUser),
       quantity: dto.quantity,
       authorizedOnBehalf: undefined,
       applicableAllowanceKey: dto.allowanceKey
     });
   }
 
-  @GalaTransaction({
-    type: SUBMIT,
+  @Submit({
     in: MintTokenWithAllowanceDto,
-    out: { arrayOf: TokenInstanceKey },
-    verifySignature: true
+    out: { arrayOf: TokenInstanceKey }
   })
   public async MintTokenWithAllowance(
     ctx: GalaChainContext,
@@ -381,37 +378,33 @@ export default class GalaChainTokenContract extends GalaContract {
     return mintTokenWithAllowance(ctx, {
       tokenClassKey: dto.tokenClass,
       tokenInstance: dto.tokenInstance,
-      owner: dto.owner ?? ctx.callingUser,
+      owner: await resolveUserAlias(ctx, dto.owner ?? ctx.callingUser),
       quantity: dto.quantity
     });
   }
 
-  @GalaTransaction({
-    type: SUBMIT,
+  @Submit({
     in: BatchMintTokenDto,
-    out: { arrayOf: TokenInstanceKey },
-    verifySignature: true
+    out: { arrayOf: TokenInstanceKey }
   })
   public async BatchMintToken(ctx: GalaChainContext, dto: BatchMintTokenDto): Promise<TokenInstanceKey[]> {
     const params = dto.mintDtos.map(async (d) => ({
       tokenClassKey: d.tokenClass,
-      owner: d.owner ?? ctx.callingUser,
+      owner: await resolveUserAlias(ctx, d.owner ?? ctx.callingUser),
       quantity: d.quantity,
       authorizedOnBehalf: undefined
     }));
     return batchMintToken(ctx, await Promise.all(params));
   }
 
-  @GalaTransaction({
-    type: SUBMIT,
+  @Submit({
     in: UseTokenDto,
-    out: TokenBalance,
-    verifySignature: true
+    out: TokenBalance
   })
   public async UseToken(ctx: GalaChainContext, dto: UseTokenDto): Promise<TokenBalance> {
     return useToken(ctx, {
-      owner: dto.owner ?? ctx.callingUser,
-      inUseBy: dto.inUseBy,
+      owner: await resolveUserAlias(ctx, dto.owner ?? ctx.callingUser),
+      inUseBy: await resolveUserAlias(ctx, dto.inUseBy),
       tokenInstanceKey: dto.tokenInstance,
       quantity: dto.quantity,
       allowancesToUse: dto.useAllowances ?? [],
@@ -419,11 +412,9 @@ export default class GalaChainTokenContract extends GalaContract {
     });
   }
 
-  @GalaTransaction({
-    type: SUBMIT,
+  @Submit({
     in: ReleaseTokenDto,
-    out: TokenBalance,
-    verifySignature: true
+    out: TokenBalance
   })
   public ReleaseToken(ctx: GalaChainContext, dto: ReleaseTokenDto): Promise<TokenBalance> {
     return releaseToken(ctx, {
@@ -431,16 +422,14 @@ export default class GalaChainTokenContract extends GalaContract {
     });
   }
 
-  @GalaTransaction({
-    type: SUBMIT,
+  @Submit({
     in: LockTokenDto,
-    out: TokenBalance,
-    verifySignature: true
+    out: TokenBalance
   })
-  public LockToken(ctx: GalaChainContext, dto: LockTokenDto): Promise<TokenBalance> {
+  public async LockToken(ctx: GalaChainContext, dto: LockTokenDto): Promise<TokenBalance> {
     return lockToken(ctx, {
-      owner: dto.owner ?? ctx.callingUser,
-      lockAuthority: dto.lockAuthority,
+      owner: await resolveUserAlias(ctx, dto.owner ?? ctx.callingUser),
+      lockAuthority: dto.lockAuthority ? await resolveUserAlias(ctx, dto.lockAuthority) : undefined,
       tokenInstanceKey: dto.tokenInstance,
       quantity: dto.quantity,
       allowancesToUse: dto.useAllowances ?? [],
@@ -450,17 +439,20 @@ export default class GalaChainTokenContract extends GalaContract {
     });
   }
 
-  @GalaTransaction({
-    type: SUBMIT,
+  @Submit({
     in: LockTokensDto,
-    out: { arrayOf: TokenBalance },
-    verifySignature: true
+    out: { arrayOf: TokenBalance }
   })
-  public LockTokens(ctx: GalaChainContext, dto: LockTokensDto): Promise<TokenBalance[]> {
-    // const verifyAuthorizedOnBehalf = (c: TokenClassKey) => bridgeTypeUser(ctx, dto.lockAuthority, c);
+  public async LockTokens(ctx: GalaChainContext, dto: LockTokensDto): Promise<TokenBalance[]> {
+    const lockAuthority = dto.lockAuthority ? await resolveUserAlias(ctx, dto.lockAuthority) : undefined;
+    const tokenInstances = dto.tokenInstances.map(async (d) => ({
+      tokenInstanceKey: d.tokenInstanceKey,
+      quantity: d.quantity,
+      owner: d.owner ? await resolveUserAlias(ctx, d.owner) : undefined
+    }));
     return lockTokens(ctx, {
-      lockAuthority: dto.lockAuthority,
-      tokenInstances: dto.tokenInstances,
+      lockAuthority,
+      tokenInstances: await Promise.all(tokenInstances),
       allowancesToUse: dto.useAllowances ?? [],
       name: dto.name,
       expires: dto.expires ?? 0,
@@ -468,47 +460,42 @@ export default class GalaChainTokenContract extends GalaContract {
     });
   }
 
-  @GalaTransaction({
-    type: SUBMIT,
+  @Submit({
     in: UnlockTokenDto,
-    out: TokenBalance,
-    verifySignature: true
+    out: TokenBalance
   })
   public async UnlockToken(ctx: GalaChainContext, dto: UnlockTokenDto): Promise<TokenBalance> {
     return unlockToken(ctx, {
       tokenInstanceKey: dto.tokenInstance,
       name: dto.lockedHoldName ?? undefined,
-      quantity: dto.quantity
+      quantity: dto.quantity,
+      owner: await resolveUserAlias(ctx, dto.owner ?? ctx.callingUser)
     });
   }
 
-  @GalaTransaction({
-    type: SUBMIT,
+  @Submit({
     in: UnlockTokensDto,
-    out: { arrayOf: TokenBalance },
-    verifySignature: true
+    out: { arrayOf: TokenBalance }
   })
   public async UnlockTokens(ctx: GalaChainContext, dto: UnlockTokensDto): Promise<TokenBalance[]> {
     const params = dto.tokenInstances.map(async (d) => ({
       tokenInstanceKey: d.tokenInstanceKey,
       quantity: d.quantity,
-      owner: d.owner ?? ctx.callingUser,
+      owner: d.owner ? await resolveUserAlias(ctx, d.owner) : ctx.callingUser,
       name: dto.name,
       forSwap: false
     }));
     return unlockTokens(ctx, await Promise.all(params));
   }
 
-  @GalaTransaction({
-    type: SUBMIT,
+  @Submit({
     in: TransferTokenDto,
-    out: { arrayOf: TokenBalance },
-    verifySignature: true
+    out: { arrayOf: TokenBalance }
   })
   public async TransferToken(ctx: GalaChainContext, dto: TransferTokenDto): Promise<TokenBalance[]> {
     return transferToken(ctx, {
-      from: dto.from ?? ctx.callingUser,
-      to: dto.to,
+      from: await resolveUserAlias(ctx, dto.from ?? ctx.callingUser),
+      to: await resolveUserAlias(ctx, dto.to),
       tokenInstanceKey: dto.tokenInstance,
       quantity: dto.quantity,
       allowancesToUse: dto.useAllowances ?? [],
@@ -516,15 +503,13 @@ export default class GalaChainTokenContract extends GalaContract {
     });
   }
 
-  @GalaTransaction({
-    type: SUBMIT,
+  @Submit({
     in: BurnTokensDto,
-    out: { arrayOf: TokenBurn },
-    verifySignature: true
+    out: { arrayOf: TokenBurn }
   })
-  public BurnTokens(ctx: GalaChainContext, dto: BurnTokensDto): Promise<TokenBurn[]> {
+  public async BurnTokens(ctx: GalaChainContext, dto: BurnTokensDto): Promise<TokenBurn[]> {
     return burnTokens(ctx, {
-      owner: dto.owner ?? ctx.callingUser,
+      owner: await resolveUserAlias(ctx, dto.owner ?? ctx.callingUser),
       toBurn: dto.tokenInstances
     });
   }
@@ -538,11 +523,9 @@ export default class GalaChainTokenContract extends GalaContract {
     return fetchBurns(ctx, dto);
   }
 
-  @GalaTransaction({
-    type: SUBMIT,
+  @Submit({
     in: FeeCodeDefinitionDto,
     out: FeeCodeDefinition,
-    verifySignature: true,
     allowedOrgs: ["CuratorOrg"]
   })
   public async DefineFeeSchedule(
@@ -552,11 +535,9 @@ export default class GalaChainTokenContract extends GalaContract {
     return GalaChainResponse.Wrap(defineFeeSchedule(ctx, dto));
   }
 
-  @GalaTransaction({
-    type: SUBMIT,
+  @Submit({
     in: FeeCodeSplitFormulaDto,
     out: FeeCodeSplitFormula,
-    verifySignature: true,
     allowedOrgs: ["CuratorOrg"]
   })
   public async DefineFeeSplitFormula(
@@ -566,13 +547,10 @@ export default class GalaChainTokenContract extends GalaContract {
     return GalaChainResponse.Wrap(defineFeeSplitFormula(ctx, dto));
   }
 
-  @GalaTransaction({
-    type: SUBMIT,
+  @Submit({
     in: FeeVerificationDto,
     out: FeeAuthorizationResDto,
-    verifySignature: true,
-    allowedOrgs: ["CuratorOrg"],
-    enforceUniqueKey: true
+    allowedOrgs: ["CuratorOrg"]
   })
   public async CreditFeeBalance(
     ctx: GalaChainContext,

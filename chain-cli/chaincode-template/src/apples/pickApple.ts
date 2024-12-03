@@ -18,7 +18,7 @@ import { AppleTree } from "./AppleTree";
 import { PickAppleDto } from "./dtos";
 
 export async function pickApple(ctx: GalaChainContext, dto: PickAppleDto) {
-  const keyParts = [dto.PlantedBy, dto.variety, dto.index.toString()];
+  const keyParts = [dto.plantedBy, dto.variety, dto.index.toString()];
   const key = ctx.stub.createCompositeKey(AppleTree.INDEX_KEY, keyParts);
   const tree = await getObjectByKey(ctx, AppleTree, key);
 

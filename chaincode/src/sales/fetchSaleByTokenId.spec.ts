@@ -12,7 +12,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-import { FetchTokenSaleByIdDto, GalaChainResponse, TokenSale } from "@gala-chain/api";
+import { FetchTokenSaleByIdDto, GalaChainResponse, TokenSale, createValidDTO } from "@gala-chain/api";
 import { currency, fixture, nft, transactionError, users, writesMap } from "@gala-chain/test";
 import BigNumber from "bignumber.js";
 import { plainToInstance } from "class-transformer";
@@ -44,7 +44,7 @@ describe("FetchTokenSale", () => {
           quantity: nftSalePrice
         }
       ],
-      owner: users.testAdminId,
+      owner: users.admin.identityKey,
       start: 1,
       end: 0,
       fulfillmentIds: [],
@@ -53,19 +53,21 @@ describe("FetchTokenSale", () => {
     });
     givenSale.tokenSaleId = givenSale.getCompositeKey();
 
-    const { ctx, contract, writes } = fixture(GalaChainTokenContract)
-      .callingUser(users.testUser2Id)
+    const { ctx, contract, getWrites } = fixture(GalaChainTokenContract)
+      .registeredUsers(users.testUser2)
       .savedState(nftClass, currencyClass, givenSale);
 
     // When
-    const response = await contract.FetchTokenSaleById(
-      ctx,
-      plainToInstance(FetchTokenSaleByIdDto, { tokenSaleId: givenSale.tokenSaleId })
-    );
+    const dto = await createValidDTO(FetchTokenSaleByIdDto, {
+      tokenSaleId: givenSale.tokenSaleId,
+      uniqueKey: "blah1"
+    }).signed(users.testUser2.privateKey);
+
+    const response = await contract.FetchTokenSaleById(ctx, dto);
 
     // Then
     expect(response).toEqual(GalaChainResponse.Success(givenSale));
-    expect(writes).toEqual(writesMap());
+    expect(getWrites()).toEqual(writesMap());
   });
 
   it("should fail to fetch TokenSale if id does not exist", async () => {
@@ -92,7 +94,7 @@ describe("FetchTokenSale", () => {
           quantity: nftSalePrice
         }
       ],
-      owner: users.testAdminId,
+      owner: users.admin.identityKey,
       start: 1,
       end: 0,
       fulfillmentIds: [],
@@ -101,19 +103,22 @@ describe("FetchTokenSale", () => {
     });
     givenSale.tokenSaleId = givenSale.getCompositeKey();
 
-    const { ctx, contract, writes } = fixture(GalaChainTokenContract)
-      .callingUser(users.testUser2Id)
+    const { ctx, contract, getWrites } = fixture(GalaChainTokenContract)
+      .registeredUsers(users.testUser2)
       .savedState(nftClass, currencyClass);
 
     // When
-    const response = await contract
-      .FetchTokenSaleById(ctx, plainToInstance(FetchTokenSaleByIdDto, { tokenSaleId: givenSale.tokenSaleId }))
-      .catch((e) => e);
+    const dto = await createValidDTO(FetchTokenSaleByIdDto, {
+      tokenSaleId: givenSale.tokenSaleId,
+      uniqueKey: "blah2"
+    }).signed(users.testUser2.privateKey);
+
+    const response = await contract.FetchTokenSaleById(ctx, dto).catch((e) => e);
 
     // Then
     expect(response).toEqual(
       GalaChainResponse.Error({ message: `Token sale with tokenSaleId ${givenSale.tokenSaleId} not found.` })
     );
-    expect(writes).toEqual(writesMap());
+    expect(getWrites()).toEqual(writesMap());
   });
 });

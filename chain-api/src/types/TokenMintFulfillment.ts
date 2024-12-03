@@ -18,6 +18,7 @@ import { IsDefined, IsNotEmpty } from "class-validator";
 import { ChainKey } from "../utils";
 import { BigNumberIsNotNegative, BigNumberProperty, IsUserAlias } from "../validators";
 import { ChainObject } from "./ChainObject";
+import { UserAlias } from "./UserAlias";
 import { TokenMintStatus } from "./common";
 
 export class TokenMintFulfillment extends ChainObject {
@@ -40,14 +41,14 @@ export class TokenMintFulfillment extends ChainObject {
 
   @ChainKey({ position: 4 })
   @IsUserAlias()
-  public requestor: string;
+  public requestor: UserAlias;
 
   @ChainKey({ position: 5 })
   @IsNotEmpty()
   public requestCreated: number;
 
   @IsUserAlias()
-  public owner: string;
+  public owner: UserAlias;
 
   @IsNotEmpty()
   @BigNumberIsNotNegative()

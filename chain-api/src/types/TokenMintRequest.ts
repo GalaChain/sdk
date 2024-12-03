@@ -21,6 +21,7 @@ import { BigNumberIsNotNegative, BigNumberProperty, IsUserAlias } from "../valid
 import { ChainObject } from "./ChainObject";
 import { RangedChainObject } from "./RangedChainObject";
 import { TokenMintFulfillment } from "./TokenMintFulfillment";
+import { UserAlias } from "./UserAlias";
 import { AllowanceKey, TokenMintStatus } from "./common";
 
 export class TokenMintRequest extends RangedChainObject {
@@ -49,14 +50,14 @@ export class TokenMintRequest extends RangedChainObject {
 
   @ChainKey({ position: 5 })
   @IsUserAlias()
-  public owner: string;
+  public owner: UserAlias;
 
   @IsNotEmpty()
   @BigNumberProperty()
   public totalKnownMintsCount: BigNumber;
 
   @IsUserAlias()
-  public requestor: string;
+  public requestor: UserAlias;
 
   @IsNotEmpty()
   public created: number;

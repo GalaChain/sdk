@@ -46,16 +46,22 @@ export default class NetworkPrune extends BaseCommand<typeof NetworkPrune> {
     }
 
     await Fablo.directory(fabloRoot)
-      .then(() => downBrowserApi(fabloRoot))
+      .then(() => downNetworkServices(fabloRoot))
       .execute("prune");
   }
 }
 
-function downBrowserApi(fabloRoot: string): void {
+function downNetworkServices(fabloRoot: string): void {
   try {
+    // Down ops-api
+    execSyncStdio(`cd "${fabloRoot}/ops-api" && ./ops-api.sh down`);
+  } catch (e) {
+    console.warn(e);
+  }
+  try {
+    // Down browser-api
     execSyncStdio(`cd "${fabloRoot}/browser-api" && ./browser-api-compose.sh down`);
   } catch (e) {
-    // just console.warn. Ignore because command cannot stop Fablo network
     console.warn(e);
   }
 }

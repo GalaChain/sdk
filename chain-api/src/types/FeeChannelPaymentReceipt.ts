@@ -19,6 +19,7 @@ import { ChainKey } from "../utils";
 import { BigNumberIsNotNegative, BigNumberProperty, EnumProperty, IsUserAlias } from "../validators";
 import { ChainObject } from "./ChainObject";
 import { FeeReceiptStatus } from "./FeeReceiptStatus";
+import { UserAlias } from "./UserAlias";
 
 // Channel receipt. Indexed time-first, lookup by distribution period.
 export class FeeChannelPaymentReceipt extends ChainObject {
@@ -43,7 +44,7 @@ export class FeeChannelPaymentReceipt extends ChainObject {
 
   @ChainKey({ position: 4 })
   @IsUserAlias()
-  public paidByUser: string;
+  public paidByUser: UserAlias;
 
   // todo: consider adding hours and minutes
   // to the index as additional chain keys

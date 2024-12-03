@@ -13,7 +13,7 @@
  * limitations under the License.
  */
 import BigNumber from "bignumber.js";
-import { classToPlain as instanceToPlain, plainToClass as plainToInstance } from "class-transformer";
+import { instanceToPlain, plainToInstance } from "class-transformer";
 import { ArrayMinSize, ArrayNotEmpty, IsString } from "class-validator";
 import { ec as EC } from "elliptic";
 

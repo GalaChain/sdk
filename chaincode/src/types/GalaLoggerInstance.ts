@@ -12,9 +12,6 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-import tracer from "dd-trace";
-import formats from "dd-trace/ext/formats";
-
 import { IContextDetails, ILoggerCommons, IProcessDetails, ITimeLogData } from "@gala-chain/api";
 import { Context } from "fabric-contract-api";
 import { nanoid } from "nanoid";
@@ -208,11 +205,6 @@ export class GalaLoggerInstanceImpl implements GalaLoggerInstance {
       typeof msg === "string"
         ? { timestamp, level, message: `${this.prefix} ${msg}` }
         : { timestamp, ...msg, level, message: msg["message"] };
-
-    const spanContext = tracer.scope().active()?.context();
-    if (spanContext) {
-      tracer.inject(spanContext, formats.LOG, record);
-    }
 
     this.instance.log(record);
   }

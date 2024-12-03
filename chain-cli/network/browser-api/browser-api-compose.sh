@@ -22,18 +22,26 @@ current_script="$(basename "$0")"
 command="$1"
 host=${LOCALHOST_NAME:-localhost}
 
+# Add shared functions with ops-api script
+printHeadline() {
+  bold=$'\e[1m'
+  end=$'\e[0m'
+  TEXT=$1
+  EMOJI=$2
+  printf "${bold}============ %b %s %b ==============${end}\n" "$EMOJI" "$TEXT" "$EMOJI"
+}
+
 if [ "$command" = "up" ]; then
-  echo "Starting Fablo instances..."
+  echo "Starting Chain Browser instances..."
   (cd "$current_dir" && docker compose --env-file ../fablo-target/fabric-docker/.env up -d)
 elif [ "$command" = "success-message" ]; then
-  echo ""
-  echo "The test network is ready! You can now use the following URLs to access it:"
+  printHeadline "The Chain Browser is ready! You can now use the following URLs:" "\360\237\237\242"
   echo "  block browser:   http://$host:3010/blocks"
   echo "  state browser:   http://$host:3010/graphiql"
 elif [ "$command" = "down" ]; then
-  echo "Downing Fablo instances..."
+  echo "Downing Chain Browser instances..."
   (cd "$current_dir" && docker compose --env-file ../fablo-target/fabric-docker/.env down -t 1)
-  else
+else
   echo "Invalid command. Usage: $current_script <up|down>"
   exit 0
 fi

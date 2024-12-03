@@ -19,6 +19,7 @@ import { ChainKey } from "../utils";
 import { BigNumberIsNotNegative, BigNumberProperty, EnumProperty, IsUserAlias } from "../validators";
 import { ChainObject } from "./ChainObject";
 import { FeeReceiptStatus } from "./FeeReceiptStatus";
+import { UserAlias } from "./UserAlias";
 
 // Customer receipt. Indexed owner-first, look up payments by user.
 export class FeeUserPaymentReceipt extends ChainObject {
@@ -26,7 +27,7 @@ export class FeeUserPaymentReceipt extends ChainObject {
 
   @ChainKey({ position: 0 })
   @IsUserAlias()
-  public paidByUser: string;
+  public paidByUser: UserAlias;
 
   @ChainKey({ position: 1 })
   @IsNotEmpty()

@@ -4,7 +4,9 @@
     "rootDir": ".",
     "outDir": "lib",
     "declarationDir": "lib",
-    "composite": true
+    "composite": true,
+    "declarationMap": true,
+    "sourceMap": true
   },
   "files": [],
   "include": ["**/*", "package.json"],

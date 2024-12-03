@@ -30,16 +30,24 @@ import {
 } from "class-validator";
 import { JSONSchema } from "class-validator-jsonschema";
 
-import { ChainKey, DefaultError, ValidationFailedError } from "../utils";
-import { BigNumberIsInteger, BigNumberIsPositive, BigNumberProperty, IsUserAlias } from "../validators";
+import { ChainKey, ValidationFailedError } from "../utils";
+import {
+  BigNumberIsInteger,
+  BigNumberIsPositive,
+  BigNumberProperty,
+  IsUserAlias,
+  IsUserRef
+} from "../validators";
 import { ChainObject } from "./ChainObject";
 import { TokenClassKey } from "./TokenClass";
-import { ChainCallDTO } from "./dtos";
+import { UserAlias } from "./UserAlias";
+import { UserRef } from "./UserRef";
+import { ChainCallDTO, SubmitCallDTO } from "./dtos";
 
 @JSONSchema({
   description: "Defines a sale token with quantity of tokens to be received"
 })
-export class TokenSaleQuantity extends ChainCallDTO {
+export class TokenSaleQuantity {
   @JSONSchema({
     description: "Token class key of the token to be sold."
   })
@@ -105,7 +113,7 @@ export class TokenSale extends ChainObject {
     description: "User who created the sale"
   })
   @IsUserAlias()
-  public owner: string;
+  public owner: UserAlias;
 
   @JSONSchema({
     description: "Ids of each sale fullfillment"
@@ -210,7 +218,7 @@ export class TokenSaleOwner extends ChainObject {
 
   @ChainKey({ position: 0 })
   @IsUserAlias()
-  public owner: string;
+  public owner: UserAlias;
 
   @ChainKey({ position: 1 })
   @IsNotEmpty()
@@ -259,7 +267,7 @@ export class TokenSaleFulfillment extends ChainObject {
 
   @ChainKey({ position: 1 })
   @IsUserAlias()
-  public fulfilledBy: string;
+  public fulfilledBy: UserAlias;
 
   @ChainKey({ position: 2 })
   @IsPositive()
@@ -277,7 +285,7 @@ export class TokenSaleFulfillment extends ChainObject {
     "Defines a swap request to be created, i.e. a request when a requester " +
     "offers some tokens to another user in exchange of another tokens."
 })
-export class CreateTokenSaleDto extends ChainCallDTO {
+export class CreateTokenSaleDto extends SubmitCallDTO {
   static DEFAULT_END = 0;
   static DEFAULT_START = 0;
 
@@ -287,8 +295,8 @@ export class CreateTokenSaleDto extends ChainCallDTO {
       "Optional field, by default set to chaincode calling user."
   })
   @IsOptional()
-  @IsUserAlias()
-  public owner?: string;
+  @IsUserRef()
+  public owner?: UserRef;
 
   @JSONSchema({
     description: "A list of offered tokens to be sold."
@@ -337,7 +345,7 @@ export class CreateTokenSaleDto extends ChainCallDTO {
 @JSONSchema({
   description: "Defines an expected token swap trade, i.e. offered and wanted tokens."
 })
-export class ExpectedTokenSale extends ChainCallDTO {
+export class ExpectedTokenSale {
   @JSONSchema({
     description:
       "A list of purchasable token classes and quantities. The order of this array must match the order of the TokenSale stored on chain."
@@ -362,7 +370,7 @@ export class ExpectedTokenSale extends ChainCallDTO {
 @JSONSchema({
   description: "Defines a swap fill object, i.e. a response of another user for a swap request."
 })
-export class FulfillTokenSaleDto extends ChainCallDTO {
+export class FulfillTokenSaleDto extends SubmitCallDTO {
   @JSONSchema({
     description: "Token sale ID to be filled"
   })
@@ -383,7 +391,7 @@ export class FulfillTokenSaleDto extends ChainCallDTO {
   })
   @IsOptional()
   @IsUserAlias()
-  public fulfilledBy?: string;
+  public fulfilledBy?: UserRef;
 
   @JSONSchema({
     description: "The quantity of items to be purchased "
@@ -394,7 +402,7 @@ export class FulfillTokenSaleDto extends ChainCallDTO {
   public quantity: BigNumber;
 }
 
-export class RemoveTokenSaleDto extends ChainCallDTO {
+export class RemoveTokenSaleDto extends SubmitCallDTO {
   @JSONSchema({
     description: "Token sale ID to be removed."
   })
@@ -414,8 +422,8 @@ export class FetchTokenSalesWithPaginationDto extends ChainCallDTO {
     description: "(optional). User alias of the creating user."
   })
   @IsOptional()
-  @IsUserAlias()
-  public owner?: string;
+  @IsUserRef()
+  public owner?: UserRef;
 
   @JSONSchema({
     description: "Page bookmark. If it is undefined, then the first page is returned."

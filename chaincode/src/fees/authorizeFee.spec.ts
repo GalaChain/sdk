@@ -23,7 +23,7 @@ import {
   TokenInstance,
   createValidDTO
 } from "@gala-chain/api";
-import { currency, fixture, users } from "@gala-chain/test";
+import { currency, fixture, randomUser, users } from "@gala-chain/test";
 import BigNumber from "bignumber.js";
 import { plainToInstance } from "class-transformer";
 import { randomUUID } from "crypto";
@@ -50,18 +50,15 @@ describe("authorizeFee", () => {
       instance
     });
 
-    const { ctx, contract, callingChainUser } = fixture<GalaChainContext, GalaChainFeeContract>(
-      GalaChainFeeContract
-    )
-      .callingUser(users.testUser1Id)
-      .savedState(feeProperties, currencyInstance, currencyClass, userBalance)
-      .savedRangeState([]);
+    const { ctx, contract } = fixture(GalaChainFeeContract)
+      .registeredUsers(users.testUser1)
+      .savedState(feeProperties, currencyInstance, currencyClass, userBalance);
 
     const dto = await createValidDTO(FeeAuthorizationDto, {
-      authority: users.testUser1Id,
+      authority: users.testUser1.identityKey,
       quantity: authorizedFeeQuantity,
       uniqueKey: randomUUID()
-    });
+    }).signed(users.testUser1.privateKey);
 
     // When
     const response = await contract.AuthorizeFee(ctx, dto);
@@ -70,7 +67,7 @@ describe("authorizeFee", () => {
     const { year, month, day } = txUnixTimeToDateIndexKeys(ctx.txUnixTime);
     const txId = ctx.stub.getTxID();
     const feeAuthorizationKey = FeeAuthorization.getStringKeyFromParts([
-      users.testUser1Id,
+      users.testUser1.identityKey,
       year,
       month,
       day,
@@ -79,7 +76,7 @@ describe("authorizeFee", () => {
     const resDto = plainToInstance(FeeAuthorizationResDto, {
       authority: dto.authority,
       quantity: dto.quantity,
-      authorization: dto.signed(callingChainUser.privateKey, false).serialize(),
+      authorization: dto.signed(users.testUser1.privateKey, false).serialize(),
       feeAuthorizationKey: feeAuthorizationKey,
       created: ctx.txUnixTime,
       txId: txId

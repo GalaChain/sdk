@@ -21,8 +21,10 @@ import {
   TokenSaleDtoValidationError,
   TokenSaleMintAllowance,
   TokenSaleOwner,
+  TokenSaleQuantity,
   TokenSaleTokenCost,
   TokenSaleTokenSold,
+  UserAlias,
   createValidDTO
 } from "@gala-chain/api";
 import { BigNumber } from "bignumber.js";
@@ -32,6 +34,15 @@ import { grantAllowance } from "../allowances/grantAllowance";
 import { fetchTokenClasses } from "../token/fetchTokenClasses";
 import { GalaChainContext } from "../types";
 import { getObjectByKey, putChainObject } from "../utils";
+
+interface CreateTokenSaleParams {
+  selling: Array<TokenSaleQuantity>;
+  cost: Array<TokenSaleQuantity>;
+  owner: UserAlias | undefined;
+  quantity: BigNumber;
+  start: number | undefined;
+  end: number | undefined;
+}
 
 function validateTokenSaleQuantity(quantity: BigNumber, tokenClass: TokenClass): Array<string> {
   const validationResults: Array<string> = [];
@@ -50,7 +61,7 @@ function validateTokenSaleQuantity(quantity: BigNumber, tokenClass: TokenClass):
 
 export async function createTokenSale(
   ctx: GalaChainContext,
-  { selling, cost, owner, quantity, start, end }: CreateTokenSaleDto
+  { selling, cost, owner, quantity, start, end }: CreateTokenSaleParams
 ): Promise<TokenSale> {
   const newSale = new TokenSale();
   newSale.owner = owner ?? ctx.callingUser;
@@ -209,7 +220,7 @@ export async function createTokenSale(
   }
 
   // Grant mint allowances for sale items to be used during fulfillment
-  Promise.all(
+  await Promise.all(
     newSale.selling.map(async (tokenSaleQuantity) => {
       const tokenInstanceQueryKey = await createValidDTO(TokenInstanceQueryKey, {
         ...tokenSaleQuantity.tokenClassKey,

@@ -12,7 +12,14 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-import { ChainError, ErrorCode, NonFunctionProperties, TokenBalance, TokenClassKey } from "@gala-chain/api";
+import {
+  ChainError,
+  ErrorCode,
+  NonFunctionProperties,
+  TokenBalance,
+  TokenClassKey,
+  UserAlias
+} from "@gala-chain/api";
 
 import { GalaChainContext } from "../types";
 import { getObjectByKey } from "../utils";
@@ -35,7 +42,7 @@ import { getObjectByKey } from "../utils";
  */
 export async function fetchOrCreateBalance(
   ctx: GalaChainContext,
-  owner: string,
+  owner: UserAlias,
   tokenClassKey: NonFunctionProperties<TokenClassKey>
 ): Promise<TokenBalance> {
   const emptyBalance = new TokenBalance({ owner, ...tokenClassKey });

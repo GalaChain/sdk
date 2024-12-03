@@ -26,7 +26,7 @@ import { transferToken } from "../transfer";
 import { GalaChainContext } from "../types";
 import { getObjectByKey } from "../utils";
 
-export interface splitFeeBurnAndTransferParams {
+export interface SplitFeeBurnAndTransferParams {
   feeCode: string;
   quantity: BigNumber;
   galaCurrencyKey: TokenInstanceKey;
@@ -35,7 +35,7 @@ export interface splitFeeBurnAndTransferParams {
 
 export async function splitFeeImmediatelyWithBurnAndTransfer(
   ctx: GalaChainContext,
-  data: splitFeeBurnAndTransferParams
+  data: SplitFeeBurnAndTransferParams
 ): Promise<void> {
   const payingUser = ctx.callingUser;
   const { feeCode, galaCurrencyKey, splitFormula } = data;

@@ -1,0 +1,68 @@
+version: "2.2"
+
+networks:
+  basic:
+
+services:
+  ops-api-curator: &ops-api-defaults
+    # Passed as defaults, because it contains some common part to be provided
+    # for all ops api instances. Mainly build/image tags, because you may want
+    # to easily switch image source between build and image, or change the
+    # image version.
+    image: ghcr.io/galachain/operation-api:1.0.0
+    volumes:
+      - $CHAINCODES_BASE_DIR/connection-profiles-docker:/connection-profiles
+      - $CHAINCODES_BASE_DIR/fablo-target/fabric-config/crypto-config:/crypto-config
+      - $API_CONFIG:/usr/src/app/resources/sample-api-config.json
+    networks:
+      - basic
+    # End of the common part. All subsequent instances should provide their own
+    # values for the keys below
+    container_name: ops-api-curator
+    ports:
+      - "3000:3000"
+    environment:
+      - CONNECTION_PROFILE_PATH=/connection-profiles/cpp-curator.json
+      - API_CONFIG_PATH=/usr/src/app/resources/sample-api-config.json
+      - API_REFRESH_INTERVAL=EVERY_10_SECONDS
+      - REGISTRAR_USER_ID=${CURATORORG_CA_ADMIN_NAME}
+      - REGISTRAR_USER_PASSWD=${CURATORORG_CA_ADMIN_PASSWORD}
+      - CHAINCODE_CLIENT_USER_ID=${CURATORORG_CA_ADMIN_NAME}
+      - CHAINCODE_CLIENT_USER_PASSWD=${CURATORORG_CA_ADMIN_PASSWORD}
+      - MSP_ID=CuratorOrg
+      - CA_HOST_NAME=ca.curator.local
+      - ADMIN_PUBLIC_KEY=${ADMIN_PUBLIC_KEY}
+
+  ops-api-partner:
+    <<: *ops-api-defaults
+    container_name: ops-api-partner
+    ports:
+      - "3100:3000"
+    environment:
+      - CONNECTION_PROFILE_PATH=/connection-profiles/cpp-partner.json
+      - API_CONFIG_PATH=/usr/src/app/resources/sample-api-config.json
+      - API_REFRESH_INTERVAL=EVERY_10_SECONDS
+      - REGISTRAR_USER_ID=${PARTNERORG1_CA_ADMIN_NAME}
+      - REGISTRAR_USER_PASSWD=${PARTNERORG1_CA_ADMIN_PASSWORD}
+      - CHAINCODE_CLIENT_USER_ID=${PARTNERORG1_CA_ADMIN_NAME}
+      - CHAINCODE_CLIENT_USER_PASSWD=${PARTNERORG1_CA_ADMIN_PASSWORD}
+      - MSP_ID=PartnerOrg1
+      - CA_HOST_NAME=ca.partner1.local
+      - ADMIN_PUBLIC_KEY=${ADMIN_PUBLIC_KEY}
+
+  ops-api-users:
+    <<: *ops-api-defaults
+    container_name: ops-api-users
+    ports:
+      - "3200:3000"
+    environment:
+      - CONNECTION_PROFILE_PATH=/connection-profiles/cpp-users.json
+      - API_CONFIG_PATH=/usr/src/app/resources/sample-api-config.json
+      - API_REFRESH_INTERVAL=EVERY_10_SECONDS
+      - REGISTRAR_USER_ID=${USERSORG1_CA_ADMIN_NAME}
+      - REGISTRAR_USER_PASSWD=${USERSORG1_CA_ADMIN_PASSWORD}
+      - CHAINCODE_CLIENT_USER_ID=${USERSORG1_CA_ADMIN_NAME}
+      - CHAINCODE_CLIENT_USER_PASSWD=${USERSORG1_CA_ADMIN_PASSWORD}
+      - MSP_ID=UsersOrg1
+      - CA_HOST_NAME=ca.users1.local
+      - ADMIN_PUBLIC_KEY=${ADMIN_PUBLIC_KEY}

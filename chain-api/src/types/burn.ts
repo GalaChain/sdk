@@ -29,11 +29,12 @@ import {
 } from "class-validator";
 import { JSONSchema } from "class-validator-jsonschema";
 
-import { BigNumberIsInteger, BigNumberIsNotNegative, BigNumberProperty, IsUserAlias } from "../validators";
+import { BigNumberIsInteger, BigNumberIsNotNegative, BigNumberProperty, IsUserRef } from "../validators";
 import { BurnTokenQuantity } from "./BurnTokenQuantity";
 import { TokenBurnCounter } from "./TokenBurnCounter";
 import { TokenInstance } from "./TokenInstance";
-import { ChainCallDTO } from "./dtos";
+import { UserRef } from "./UserRef";
+import { ChainCallDTO, SubmitCallDTO } from "./dtos";
 import { BatchMintTokenDto } from "./mint";
 
 @JSONSchema({
@@ -43,8 +44,8 @@ export class FetchBurnsDto extends ChainCallDTO {
   @JSONSchema({
     description: "The user who burned the token."
   })
-  @IsUserAlias()
-  burnedBy: string;
+  @IsUserRef()
+  burnedBy: UserRef;
 
   @JSONSchema({
     description: "Token collection. Optional, but required if category is provided."
@@ -93,7 +94,7 @@ export class FetchBurnsDto extends ChainCallDTO {
 @JSONSchema({
   description: "Defines burns to be created."
 })
-export class BurnTokensDto extends ChainCallDTO {
+export class BurnTokensDto extends SubmitCallDTO {
   @JSONSchema({
     description:
       "Array of token instances of token to be burned. In case of fungible tokens, tokenInstance.instance field " +
@@ -109,8 +110,8 @@ export class BurnTokensDto extends ChainCallDTO {
       "Owner of the tokens to be burned. If not provided, the calling user is assumed to be the owner."
   })
   @IsOptional()
-  @IsUserAlias()
-  owner?: string;
+  @IsUserRef()
+  owner?: UserRef;
 }
 
 @JSONSchema({
@@ -139,8 +140,8 @@ export class BurnAndMintDto extends ChainCallDTO {
       "User ID of the identity that owns the tokens to be burned. " +
       "The burnDto signature will be validated against this user's public key on chain."
   })
-  @IsUserAlias()
-  burnOwner: string;
+  @IsUserRef()
+  burnOwner: UserRef;
 
   @JSONSchema({
     description: "DTOs of tokens to mint."
@@ -253,8 +254,8 @@ export class TokenBurnCounterCompositeKeyDto extends ChainCallDTO {
   @JSONSchema({
     description: "burnedBy user."
   })
-  @IsUserAlias()
-  burnedBy: string;
+  @IsUserRef()
+  burnedBy: UserRef;
 
   @JSONSchema({
     description: "Token instance."

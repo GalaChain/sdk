@@ -13,21 +13,26 @@
  * limitations under the License.
  */
 
-/*
- * Creates valid chain object. Throws error in case of failure
- */
-import { ChainObject, ClassConstructor, NonFunctionProperties, RangedChainObject } from "@gala-chain/api";
+let crypto: typeof import("node:crypto") | undefined;
 
-export async function createValidChainObject<T extends ChainObject | RangedChainObject>(
-  constructor: ClassConstructor<T>,
-  plain: NonFunctionProperties<T>
-): Promise<T> {
-  const obj = new constructor();
-  Object.entries(plain).forEach(([k, v]) => {
-    obj[k] = v;
-  });
+Promise.resolve().then(async () => {
+  try {
+    crypto = (await import("node:crypto")).default;
+  } catch (err) {
+    console.error("Node.js crypto support is disabled!");
+  }
+});
 
-  await obj.validateOrReject();
+export function randomUniqueKey(): string {
+  // Try Node.js crypto first
+  if (crypto) {
+    return crypto.randomBytes(32).toString("base64");
+  }
 
-  return obj;
+  // Fallback to Web Crypto API
+  if (typeof globalThis !== "undefined" && globalThis.crypto) {
+    return globalThis.crypto.randomUUID();
+  }
+
+  throw new Error("No cryptographically secure random number generator available");
 }

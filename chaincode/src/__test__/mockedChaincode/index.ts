@@ -12,19 +12,16 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-import tracer from "dd-trace";
+import "dotenv/config";
 
-import { Context } from "fabric-contract-api";
+import { GalaContract, PublicKeyContract } from "../../contracts/";
+import { GalaJSONSerializer } from "../../utils";
 
-import { GalaChainContext } from "../types";
+export const contracts: { new (): GalaContract }[] = [PublicKeyContract];
 
-type TraceType = "before" | "around" | "after";
-
-function traceName(ctx: Context, type: TraceType): string {
-  const method = ctx.stub.getFunctionAndParameters().fcn;
-  return `${method}:${type}`;
-}
-
-export function trace<R>(type: TraceType, ctx: GalaChainContext, fn: () => R) {
-  return tracer.trace(traceName(ctx, type), { childOf: ctx.span }, fn);
-}
+export const serializers = {
+  transaction: "galaJsonSerializer",
+  serializers: {
+    galaJsonSerializer: GalaJSONSerializer
+  }
+};

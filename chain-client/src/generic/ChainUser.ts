@@ -12,7 +12,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-import { signatures } from "@gala-chain/api";
+import { UserAlias, signatures } from "@gala-chain/api";
 
 /**
  * Represents a user configuration object, containing all the information
@@ -23,7 +23,7 @@ import { signatures } from "@gala-chain/api";
 export class ChainUser {
   public readonly prefix: string;
   public readonly name: string;
-  public readonly identityKey: string;
+  public readonly identityKey: UserAlias;
   public readonly ethAddress: string;
   public readonly privateKey: string;
   public readonly publicKey: string;
@@ -52,7 +52,7 @@ export class ChainUser {
       this.name = config.name.replace("client|", "");
     }
 
-    this.identityKey = `${this.prefix}|${this.name}`;
+    this.identityKey = `${this.prefix}|${this.name}` as UserAlias; // safe to cast it
   }
 
   /**

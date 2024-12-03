@@ -14,8 +14,6 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-// Import tracing to ensure this is the first in the application
-import "./tracer";
 
 // Import and run standard fabric-chaincode-node cli
 import "fabric-shim/cli";

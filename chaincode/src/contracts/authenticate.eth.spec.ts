@@ -12,13 +12,17 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-import { ChainCallDTO, RegisterUserDto, createValidDTO, signatures } from "@gala-chain/api";
-import { transactionSuccess } from "@gala-chain/test";
-import { instanceToInstance, instanceToPlain, plainToClass } from "class-transformer";
-import { randomUUID } from "crypto";
+import { ChainCallDTO, UserProfile, signatures } from "@gala-chain/api";
+import { TestChaincode, transactionSuccess } from "@gala-chain/test";
+import { instanceToPlain, plainToClass } from "class-transformer";
 
-import TestChaincode from "../__test__/TestChaincode";
 import { PublicKeyContract } from "./PublicKeyContract";
+import {
+  createDerSignedDto,
+  createRegisteredUser,
+  createSignedDto,
+  createUser
+} from "./authenticate.testutils.spec";
 
 /**
  * Tests below cover a wide range of scenarios for GetMyProfile method, and in
@@ -44,8 +48,12 @@ const invalid___ = labeled<Signature>("invalid signature")((srcDto, privK) => {
 
 // Public key can be either present or not
 type PublicKey = (dto: ChainCallDTO, u: User) => void;
+const otherPK = signatures.genKeyPair().publicKey;
+const otherAdd = signatures.getEthAddress(otherPK);
 const signerKey = labeled<PublicKey>("signer key")((dto, u) => (dto.signerPublicKey = u.publicKey));
+const _wrongKey = labeled<PublicKey>("wrong signer key")((dto) => (dto.signerPublicKey = otherPK));
 const signerAdd = labeled<PublicKey>("signer address")((dto, u) => (dto.signerAddress = u.ethAddress));
+const _wrongAdd = labeled<PublicKey>("wrong signer address")((dto) => (dto.signerAddress = otherAdd));
 const _________ = labeled<PublicKey>("raw dto")(() => ({}));
 
 // User can be registered or not
@@ -58,7 +66,8 @@ const Success = labeled<Expectation>("Success")((response, user) => {
   expect(response).toEqual(
     transactionSuccess({
       alias: user.alias,
-      ethAddress: user.ethAddress
+      ethAddress: user.ethAddress,
+      roles: UserProfile.DEFAULT_ROLES
     })
   );
 });
@@ -72,21 +81,27 @@ test.each([
   [__valid___, _________, ___registered, Success],
   [__valid___, _________, notRegistered, Error("USER_NOT_REGISTERED")],
   [__valid___, signerKey, ___registered, Error("REDUNDANT_SIGNER_PUBLIC_KEY")],
+  [__valid___, _wrongKey, ___registered, Error("PUBLIC_KEY_MISMATCH")],
   [__valid___, signerKey, notRegistered, Error("REDUNDANT_SIGNER_PUBLIC_KEY")],
+  [__valid___, _wrongKey, ___registered, Error("PUBLIC_KEY_MISMATCH")],
   [__valid___, signerAdd, ___registered, Error("REDUNDANT_SIGNER_ADDRESS")],
+  [__valid___, _wrongAdd, ___registered, Error("ADDRESS_MISMATCH")],
   [__valid___, signerAdd, notRegistered, Error("REDUNDANT_SIGNER_ADDRESS")],
-  [__validDER, _________, ___registered, Error("UNAUTHORIZED")], // we don't support legacy here
-  [__validDER, _________, notRegistered, Error("USER_NOT_REGISTERED")],
+  [__valid___, _wrongAdd, notRegistered, Error("ADDRESS_MISMATCH")],
+  [__validDER, _________, ___registered, Error("MISSING_SIGNER")],
+  [__validDER, _________, notRegistered, Error("MISSING_SIGNER")],
   [__validDER, signerKey, ___registered, Success],
+  [__validDER, _wrongKey, ___registered, Error("PK_INVALID_SIGNATURE")],
   [__validDER, signerKey, notRegistered, Error("USER_NOT_REGISTERED")],
   [__validDER, signerAdd, ___registered, Success],
+  [__validDER, _wrongAdd, ___registered, Error("USER_NOT_REGISTERED")],
   [__validDER, signerAdd, notRegistered, Error("USER_NOT_REGISTERED")],
   [invalid___, _________, ___registered, Error("USER_NOT_REGISTERED")], // tries to get other user's profile
   [invalid___, _________, notRegistered, Error("USER_NOT_REGISTERED")],
-  [invalid___, signerKey, ___registered, Error("REDUNDANT_SIGNER_PUBLIC_KEY")],
-  [invalid___, signerKey, notRegistered, Error("REDUNDANT_SIGNER_PUBLIC_KEY")],
-  [invalid___, signerAdd, ___registered, Error("REDUNDANT_SIGNER_ADDRESS")],
-  [invalid___, signerAdd, notRegistered, Error("REDUNDANT_SIGNER_ADDRESS")]
+  [invalid___, signerKey, ___registered, Error("PUBLIC_KEY_MISMATCH")],
+  [invalid___, signerKey, notRegistered, Error("PUBLIC_KEY_MISMATCH")],
+  [invalid___, signerAdd, ___registered, Error("ADDRESS_MISMATCH")],
+  [invalid___, signerAdd, notRegistered, Error("ADDRESS_MISMATCH")]
 ])(
   "(sig: %s, dto: %s, user: %s) => %s",
   async (
@@ -117,38 +132,6 @@ interface User {
   privateKey: string;
   publicKey: string;
   ethAddress: string;
-}
-
-async function createUser(): Promise<User> {
-  const name = "client|user-" + randomUUID();
-  const privateKey = "a2e0b584004a7dd3f6257078b38b4271cb39c7a3ecba4f2a2c541ef44a940922";
-  const publicKey =
-    "04215291d9d04aad96832bffe808acdc1d985b4b547c8b16f841e14e8fbfb11284d5a5a5c71d95bd520b90403abff8fe7ccf793e755baf69672ab6cf25b60fc942";
-  const ethAddress = "a2a29d98b18C28EF5764f3944F01eEE1A54a668d";
-  return { alias: name, privateKey, publicKey, ethAddress };
-}
-
-async function createRegisteredUser(chaincode: TestChaincode): Promise<User> {
-  const { alias, privateKey, publicKey, ethAddress } = await createUser();
-  const dto = await createValidDTO(RegisterUserDto, { user: alias, publicKey });
-  const signedDto = dto.signed(process.env.DEV_ADMIN_PRIVATE_KEY as string);
-  const response = await chaincode.invoke("PublicKeyContract:RegisterUser", signedDto);
-  expect(response).toEqual(transactionSuccess());
-  return { alias: alias, privateKey, publicKey, ethAddress };
-}
-
-function createSignedDto(unsigned: ChainCallDTO, privateKey: string) {
-  const dto = instanceToInstance(unsigned);
-  dto.signature = signatures.getSignature(dto, Buffer.from(privateKey, "hex"));
-  expect(dto.signature).toHaveLength(130);
-  return dto;
-}
-
-function createDerSignedDto(unsigned: ChainCallDTO, privateKey: string) {
-  const dto = instanceToInstance(unsigned);
-  dto.signature = signatures.getDERSignature(dto, Buffer.from(privateKey, "hex"));
-  expect([140, 142, 144]).toContain(dto.signature.length);
-  return dto;
 }
 
 // this is a hack to make pretty display of test cases

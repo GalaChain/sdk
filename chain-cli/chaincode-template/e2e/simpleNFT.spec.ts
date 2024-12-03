@@ -23,7 +23,8 @@ import {
   TokenClassKey,
   TokenInstance,
   TokenInstanceKey,
-  createValidDTO
+  createValidDTO,
+  createValidSubmitDTO
 } from "@gala-chain/api";
 import { ChainUser } from "@gala-chain/client";
 import {
@@ -63,7 +64,7 @@ describe("Simple NFT scenario", () => {
 
   it("Curator should create NFT Class", async () => {
     // Given
-    const galaTokenDto: CreateTokenClassDto = await createValidDTO<CreateTokenClassDto>(CreateTokenClassDto, {
+    const galaTokenDto: CreateTokenClassDto = await createValidSubmitDTO(CreateTokenClassDto, {
       decimals: 0,
       tokenClass: nftClassKey,
       name: nftClassKey.collection,
@@ -87,7 +88,7 @@ describe("Simple NFT scenario", () => {
 
   it("Curator should grant users minting allowance for NFT", async () => {
     // Given
-    const galaAllowanceDto = await createValidDTO<GrantAllowanceDto>(GrantAllowanceDto, {
+    const galaAllowanceDto = await createValidSubmitDTO(GrantAllowanceDto, {
       tokenInstance: TokenInstanceKey.nftKey(nftClassKey, TokenInstance.FUNGIBLE_TOKEN_INSTANCE).toQueryKey(),
       allowanceType: AllowanceType.Mint,
       quantities: [
@@ -121,13 +122,13 @@ describe("Simple NFT scenario", () => {
 
   it("Users should mint NFT", async () => {
     // Given
-    const user1MintDto = await createValidDTO<MintTokenDto>(MintTokenDto, {
+    const user1MintDto = await createValidSubmitDTO(MintTokenDto, {
       owner: user1.identityKey,
       tokenClass: nftClassKey,
       quantity: new BigNumber(1)
     });
 
-    const user2MintDto = await createValidDTO<MintTokenDto>(MintTokenDto, {
+    const user2MintDto = await createValidSubmitDTO(MintTokenDto, {
       owner: user2.identityKey,
       tokenClass: nftClassKey,
       quantity: new BigNumber(1)

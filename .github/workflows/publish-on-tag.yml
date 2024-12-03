@@ -180,7 +180,7 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
         with:
-          ref: "main"
+          ref: ${{ startsWith(github.ref_name, 'v1.') && 'main-v1' || 'main' }}
       - name: Set up Node.js
         uses: actions/setup-node@v4
         with:
@@ -197,9 +197,11 @@ jobs:
           echo "VERSION=$VERSION" >> $GITHUB_ENV
       - name: Create a new branch
         run: |
+          TARGET_BRANCH="${{ startsWith(github.ref_name, 'v1.') && 'main-v1' || 'main' }}"
           BRANCH_NAME="bump-version-to-$VERSION"
-          git checkout -b $BRANCH_NAME main
+          git checkout -b $BRANCH_NAME $TARGET_BRANCH
           echo "BRANCH_NAME=$BRANCH_NAME" >> $GITHUB_ENV
+          echo "TARGET_BRANCH=$TARGET_BRANCH" >> $GITHUB_ENV
       - name: Bump version and commit changes
         run: |
           ./unifyVersions.js $VERSION
@@ -209,7 +211,7 @@ jobs:
       - name: Create Pull Request
         env:
           GH_TOKEN: ${{ secrets.RELEASE_BOT_TOKEN }}
-        run: gh pr create --title "Bump Version to $VERSION" --body "Bump Version to $VERSION" --label "bump-version-pr" --head "bump-version-to-$VERSION" --base main
+        run: gh pr create --title "Bump Version to $VERSION" --body "Bump Version to $VERSION" --label "bump-version-pr" --head "bump-version-to-$VERSION" --base ${{ env.TARGET_BRANCH }}
 
   notify-tag:
     needs: [publish, publish-cli-image]

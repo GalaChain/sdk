@@ -20,6 +20,7 @@ import {
   TokenBalance,
   TokenBalanceWithMetadata,
   TokenClass,
+  UserAlias,
   createValidDTO
 } from "@gala-chain/api";
 
@@ -32,7 +33,7 @@ export interface FetchBalancesWithTokenMetadataParams {
   category?: string;
   type?: string;
   additionalKey?: string;
-  owner: string;
+  owner: UserAlias;
   bookmark?: string;
   limit?: number;
 }

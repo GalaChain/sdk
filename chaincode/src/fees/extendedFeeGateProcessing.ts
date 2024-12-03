@@ -21,28 +21,26 @@
  */
 import {
   BurnToMintConfiguration,
-  FeeAccelerationRateType,
-  FeeCodeDefinition,
   FeeGateCodes,
   PaymentRequiredError,
   TokenClass,
   TokenClassKey,
   TokenInstance,
   TokenInstanceKey,
-  TokenMintConfiguration,
+  UserAlias,
   createValidDTO
 } from "@gala-chain/api";
 import BigNumber from "bignumber.js";
 
 import { burnTokens } from "../burns";
 import { GalaChainContext } from "../types";
-import { getObjectByKey, getObjectsByPartialCompositeKey } from "../utils";
+import { getObjectByKey } from "../utils";
 import { userExemptFromFees } from "./userExemptFromFees";
 
 export interface IBurnToMintProcessing {
   tokenClass: TokenClassKey;
   tokens: TokenInstanceKey[];
-  owner: string;
+  owner: UserAlias;
   quantity: BigNumber;
   feeCode?: FeeGateCodes | undefined;
   burnConfiguration: BurnToMintConfiguration;

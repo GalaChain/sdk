@@ -24,7 +24,10 @@ import {
   RegisterUserDto,
   SigningScheme,
   UpdatePublicKeyDto,
+  UpdateUserRolesDto,
+  UserAlias,
   UserProfile,
+  UserRole,
   ValidationFailedError,
   signatures
 } from "@gala-chain/api";
@@ -63,10 +66,7 @@ export class PublicKeyContract extends GalaContract {
       "Returns profile for the calling user. " +
       "Since the profile contains also eth address of the user, this method is supported only for signature based authentication."
   })
-  public async GetMyProfile(
-    ctx: GalaChainContext,
-    dto: GetMyProfileDto
-  ): Promise<GalaChainResponse<UserProfile>> {
+  public async GetMyProfile(ctx: GalaChainContext, dto: GetMyProfileDto): Promise<UserProfile> {
     // will throw error for legacy auth if the addr is missing
     const address = dto.signing === SigningScheme.TON ? ctx.callingUserTonAddress : ctx.callingUserEthAddress;
     const profile = await PublicKeyService.getUserProfile(ctx, address);
@@ -78,7 +78,7 @@ export class PublicKeyContract extends GalaContract {
       });
     }
 
-    return GalaChainResponse.Success(profile);
+    return profile;
   }
 
   @Submit({
@@ -87,7 +87,7 @@ export class PublicKeyContract extends GalaContract {
     description: "Registers a new user on chain under provided user alias.",
     allowedOrgs: [curatorOrgMsp]
   })
-  public async RegisterUser(ctx: GalaChainContext, dto: RegisterUserDto): Promise<GalaChainResponse<string>> {
+  public async RegisterUser(ctx: GalaChainContext, dto: RegisterUserDto): Promise<string> {
     if (!dto.user.startsWith("client|")) {
       const message = `User alias should start with 'client|', but got: ${dto.user}`;
       throw new ValidationFailedError(message);
@@ -106,13 +106,10 @@ export class PublicKeyContract extends GalaContract {
     description: "Registers a new user on chain under alias derived from eth address.",
     allowedOrgs: [curatorOrgMsp]
   })
-  public async RegisterEthUser(
-    ctx: GalaChainContext,
-    dto: RegisterEthUserDto
-  ): Promise<GalaChainResponse<string>> {
+  public async RegisterEthUser(ctx: GalaChainContext, dto: RegisterEthUserDto): Promise<string> {
     const providedPkHex = signatures.getNonCompactHexPublicKey(dto.publicKey);
     const ethAddress = signatures.getEthAddress(providedPkHex);
-    const userAlias = `eth|${ethAddress}`;
+    const userAlias = `eth|${ethAddress}` as UserAlias;
 
     return PublicKeyService.registerUser(ctx, providedPkHex, ethAddress, userAlias, SigningScheme.ETH);
   }
@@ -123,30 +120,31 @@ export class PublicKeyContract extends GalaContract {
     description: "Registers a new user on chain under alias derived from TON address.",
     allowedOrgs: [curatorOrgMsp]
   })
-  public async RegisterTonUser(
-    ctx: GalaChainContext,
-    dto: RegisterTonUserDto
-  ): Promise<GalaChainResponse<string>> {
+  public async RegisterTonUser(ctx: GalaChainContext, dto: RegisterTonUserDto): Promise<string> {
     const publicKey = dto.publicKey;
     const address = signatures.ton.getTonAddress(Buffer.from(publicKey, "base64"));
-    const userAlias = `ton|${address}`;
+    const userAlias = `ton|${address}` as UserAlias;
 
     return PublicKeyService.registerUser(ctx, publicKey, address, userAlias, SigningScheme.TON);
+  }
+
+  @Submit({
+    in: UpdateUserRolesDto,
+    description: "Updates roles for the user with alias provided in DTO.",
+    allowedRoles: [UserRole.CURATOR]
+  })
+  public async UpdateUserRoles(ctx: GalaChainContext, dto: UpdateUserRolesDto): Promise<void> {
+    await PublicKeyService.updateUserRoles(ctx, dto.user, dto.roles);
   }
 
   @Submit({
     in: UpdatePublicKeyDto,
     description: "Updates public key for the calling user."
   })
-  public async UpdatePublicKey(
-    ctx: GalaChainContext,
-    dto: UpdatePublicKeyDto
-  ): Promise<GalaChainResponse<void>> {
+  public async UpdatePublicKey(ctx: GalaChainContext, dto: UpdatePublicKeyDto): Promise<void> {
     const signing = dto.signing ?? SigningScheme.ETH;
     const address = PublicKeyService.getUserAddress(dto.publicKey, signing);
     await PublicKeyService.updatePublicKey(ctx, dto.publicKey, address, signing);
-
-    return GalaChainResponse.Success(undefined);
   }
 
   @GalaTransaction({
@@ -155,10 +153,7 @@ export class PublicKeyContract extends GalaContract {
     out: PublicKey,
     description: "Returns public key for the user"
   })
-  public async GetPublicKey(
-    ctx: GalaChainContext,
-    dto: GetPublicKeyDto
-  ): Promise<GalaChainResponse<PublicKey>> {
+  public async GetPublicKey(ctx: GalaChainContext, dto: GetPublicKeyDto): Promise<PublicKey> {
     const user = dto.user ?? ctx.callingUser;
     const publicKey = await PublicKeyService.getPublicKey(ctx, user);
 
@@ -166,7 +161,7 @@ export class PublicKeyContract extends GalaContract {
       throw new PkNotFoundError(user);
     }
 
-    return GalaChainResponse.Success(publicKey);
+    return publicKey;
   }
 
   @Evaluate({
@@ -179,8 +174,7 @@ export class PublicKeyContract extends GalaContract {
     ctx: GalaChainContext,
     // eslint-disable-next-line @typescript-eslint/no-unused-vars
     dto: ChainCallDTO
-  ): Promise<GalaChainResponse<void>> {
+  ): Promise<void> {
     // do nothing - verification is handled by @GalaTransaction decorator
-    return GalaChainResponse.Success(undefined);
   }
 }

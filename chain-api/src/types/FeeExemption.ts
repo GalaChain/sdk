@@ -17,13 +17,14 @@ import { ArrayUnique, IsOptional } from "class-validator";
 import { ChainKey } from "../utils";
 import { IsUserAlias } from "../validators";
 import { ChainObject } from "./ChainObject";
+import { UserAlias } from "./UserAlias";
 
 export class FeeExemption extends ChainObject {
   public static INDEX_KEY = "GCFE"; // GalaChain Fee Exemption
 
   @ChainKey({ position: 0 })
   @IsUserAlias()
-  public user: string;
+  public user: UserAlias;
 
   @IsOptional()
   @ArrayUnique()

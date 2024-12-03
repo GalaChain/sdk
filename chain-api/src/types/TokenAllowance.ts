@@ -26,6 +26,7 @@ import {
   IsUserAlias
 } from "../validators";
 import { ChainObject } from "./ChainObject";
+import { UserAlias } from "./UserAlias";
 import { AllowanceType } from "./common";
 
 export class TokenAllowance extends ChainObject {
@@ -34,7 +35,7 @@ export class TokenAllowance extends ChainObject {
 
   @ChainKey({ position: 0 })
   @IsUserAlias()
-  public grantedTo: string;
+  public grantedTo: UserAlias;
 
   @ChainKey({ position: 1 })
   @IsNotEmpty()
@@ -66,7 +67,7 @@ export class TokenAllowance extends ChainObject {
   // This would make it hard to find all allowances issued out...
   @ChainKey({ position: 7 })
   @IsUserAlias()
-  public grantedBy: string;
+  public grantedBy: UserAlias;
 
   @ChainKey({ position: 8 })
   @IsPositive()

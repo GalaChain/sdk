@@ -19,7 +19,8 @@ import {
   TokenBurn,
   TokenClassKey,
   TokenInstanceKey,
-  createValidDTO
+  createValidDTO,
+  createValidSubmitDTO
 } from "@gala-chain/api";
 import { ChainUser } from "@gala-chain/client";
 import {
@@ -30,7 +31,7 @@ import {
   transactionSuccess
 } from "@gala-chain/test";
 import BigNumber from "bignumber.js";
-import { instanceToPlain, plainToClass as plainToInstance } from "class-transformer";
+import { instanceToPlain, plainToInstance } from "class-transformer";
 
 jest.setTimeout(30000);
 
@@ -63,7 +64,7 @@ describe("NFT Burn scenario", () => {
 
   it("User should burn tokens", async () => {
     // Given
-    const burnTokensDto = await createValidDTO<BurnTokensDto>(BurnTokensDto, {
+    const burnTokensDto = await createValidSubmitDTO(BurnTokensDto, {
       tokenInstances: [
         {
           tokenInstanceKey: TokenInstanceKey.nftKey(nftClassKey, 1),

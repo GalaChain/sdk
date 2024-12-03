@@ -20,6 +20,7 @@ import { ChainKey } from "../utils";
 import { BigNumberIsInteger, BigNumberIsNotNegative, BigNumberProperty, IsUserAlias } from "../validators";
 import { ChainObject } from "./ChainObject";
 import { RangedChainObject } from "./RangedChainObject";
+import { UserAlias } from "./UserAlias";
 
 export class TokenBurnCounter extends RangedChainObject {
   public static INDEX_KEY = "GCTBRC";
@@ -46,7 +47,7 @@ export class TokenBurnCounter extends RangedChainObject {
 
   @ChainKey({ position: 5 })
   @IsUserAlias()
-  public burnedBy: string;
+  public burnedBy: UserAlias;
 
   @ChainKey({ position: 6 })
   @IsNotEmpty()

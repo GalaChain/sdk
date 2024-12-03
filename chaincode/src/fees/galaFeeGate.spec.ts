@@ -20,7 +20,8 @@ import {
   FeeReceiptStatus,
   FeeThresholdUses,
   FeeUserPaymentReceipt,
-  PaymentRequiredError
+  PaymentRequiredError,
+  createValidChainObject
 } from "@gala-chain/api";
 import { fixture, users, writesMap } from "@gala-chain/test";
 import BigNumber from "bignumber.js";
@@ -63,15 +64,15 @@ describe("feeGate", () => {
 
   it("should proceed when existing usage is below the fee threshold", async () => {
     // Given
-    const userThresholdUses = plainToInstance(FeeThresholdUses, {
+    const userThresholdUses = await createValidChainObject(FeeThresholdUses, {
       feeCode: feeCode1,
-      user: users.testUser1Id,
+      user: users.testUser1.identityKey,
       cumulativeUses: feeThreshold.minus("2"),
       cumulativeFeeQuantity: new BigNumber("0")
     });
 
-    const { ctx, writes } = fixture<GalaChainContext, GalaChainTokenContract>(GalaChainTokenContract)
-      .callingUser(users.testUser1Id)
+    const { ctx, getWrites } = fixture<GalaChainContext, GalaChainTokenContract>(GalaChainTokenContract)
+      .callingUser(users.testUser1)
       .savedState(feeCodeDefinition1, userThresholdUses);
 
     const expectedUsageWrite = instanceToInstance(userThresholdUses);
@@ -84,25 +85,25 @@ describe("feeGate", () => {
 
     // Then
     expect(result).toEqual(undefined);
-    expect(writes).toEqual(writesMap(expectedUsageWrite));
+    expect(getWrites()).toEqual(writesMap(expectedUsageWrite));
   });
 
   it("should deduct fees from the user balance when usage meets or exceeds a fee threshold", async () => {
     // Given
-    const userThresholdUses = plainToInstance(FeeThresholdUses, {
+    const userThresholdUses = await createValidChainObject(FeeThresholdUses, {
       feeCode: feeCode1,
-      user: users.testUser1Id,
+      user: users.testUser1.identityKey,
       cumulativeUses: new BigNumber(feeThreshold),
       cumulativeFeeQuantity: new BigNumber("0")
     });
 
-    const userPendingBalance = plainToInstance(FeePendingBalance, {
-      owner: users.testUser1Id,
+    const userPendingBalance = await createValidChainObject(FeePendingBalance, {
+      owner: users.testUser1.identityKey,
       quantity: new BigNumber("1000")
     });
 
-    const { ctx, writes } = fixture<GalaChainContext, GalaChainTokenContract>(GalaChainTokenContract)
-      .callingUser(users.testUser1Id)
+    const { ctx, getWrites } = fixture<GalaChainContext, GalaChainTokenContract>(GalaChainTokenContract)
+      .callingUser(users.testUser1)
       .savedState(feeCodeDefinition1, userThresholdUses, userPendingBalance);
 
     const expectedUsageWrite = instanceToInstance(userThresholdUses);
@@ -111,16 +112,16 @@ describe("feeGate", () => {
       feeCodeDefinition1.baseQuantity
     );
 
-    const expectedBalanceWrite = instanceToInstance(userPendingBalance);
+    const expectedBalanceWrite = userPendingBalance.copy();
     expectedBalanceWrite.quantity = userPendingBalance.quantity.minus(feeCodeDefinition1.baseQuantity);
 
     const { year, month, day } = txUnixTimeToDateIndexKeys(ctx.txUnixTime);
 
-    const expectedChannelPaymentReceipt = plainToInstance(FeeChannelPaymentReceipt, {
+    const expectedChannelPaymentReceipt = await createValidChainObject(FeeChannelPaymentReceipt, {
       year,
       month,
       day,
-      paidByUser: users.testUser1Id,
+      paidByUser: users.testUser1.identityKey,
       txId: ctx.stub.getTxID(),
       feeCode: feeCode1,
       quantity: feeCodeDefinition1.baseQuantity,
@@ -131,7 +132,7 @@ describe("feeGate", () => {
       year,
       month,
       day,
-      paidByUser: users.testUser1Id,
+      paidByUser: users.testUser1.identityKey,
       txId: ctx.stub.getTxID(),
       feeCode: feeCode1,
       quantity: feeCodeDefinition1.baseQuantity,
@@ -145,7 +146,7 @@ describe("feeGate", () => {
 
     // Then
     expect(result).toEqual(undefined);
-    expect(writes).toEqual(
+    expect(getWrites()).toEqual(
       writesMap(
         expectedBalanceWrite,
         expectedChannelPaymentReceipt,
@@ -162,20 +163,20 @@ describe("feeGate", () => {
       .minus(feeCodeDefinition1.feeThresholdUses)
       .times(feeCodeDefinition1.baseQuantity);
 
-    const userThresholdUses = plainToInstance(FeeThresholdUses, {
+    const userThresholdUses = await createValidChainObject(FeeThresholdUses, {
       feeCode: feeCode1,
-      user: users.testUser1Id,
+      user: users.testUser1.identityKey,
       cumulativeUses: cumulativeUses,
       cumulativeFeeQuantity: cumulativePaid
     });
 
-    const userPendingBalance = plainToInstance(FeePendingBalance, {
-      owner: users.testUser1Id,
+    const userPendingBalance = await createValidChainObject(FeePendingBalance, {
+      owner: users.testUser1.identityKey,
       quantity: new BigNumber("1000")
     });
 
-    const { ctx, writes } = fixture<GalaChainContext, GalaChainTokenContract>(GalaChainTokenContract)
-      .callingUser(users.testUser1Id)
+    const { ctx, getWrites } = fixture<GalaChainContext, GalaChainTokenContract>(GalaChainTokenContract)
+      .callingUser(users.testUser1)
       .savedState(feeCodeDefinition1, feeCodeDefinition2, userThresholdUses, userPendingBalance);
 
     const expectedUsageWrite = instanceToInstance(userThresholdUses);
@@ -193,7 +194,7 @@ describe("feeGate", () => {
       year,
       month,
       day,
-      paidByUser: users.testUser1Id,
+      paidByUser: users.testUser1.identityKey,
       txId: ctx.stub.getTxID(),
       feeCode: feeCode1,
       quantity: feeCodeDefinition2.baseQuantity,
@@ -204,7 +205,7 @@ describe("feeGate", () => {
       year,
       month,
       day,
-      paidByUser: users.testUser1Id,
+      paidByUser: users.testUser1.identityKey,
       txId: ctx.stub.getTxID(),
       feeCode: feeCode1,
       quantity: feeCodeDefinition2.baseQuantity,
@@ -218,7 +219,7 @@ describe("feeGate", () => {
 
     // Then
     expect(result).toEqual(undefined);
-    expect(writes).toEqual(
+    expect(getWrites()).toEqual(
       writesMap(
         expectedBalanceWrite,
         expectedChannelPaymentReceipt,
@@ -230,15 +231,15 @@ describe("feeGate", () => {
 
   it("should charge Multiplicative fee amount", async () => {
     // Given
-    const userThresholdUses = plainToInstance(FeeThresholdUses, {
+    const userThresholdUses = await createValidChainObject(FeeThresholdUses, {
       feeCode: feeCode1,
-      user: users.testUser1Id,
+      user: users.testUser1.identityKey,
       cumulativeUses: new BigNumber("3"),
       cumulativeFeeQuantity: new BigNumber("0")
     });
 
-    const userPendingBalance = plainToInstance(FeePendingBalance, {
-      owner: users.testUser1Id,
+    const userPendingBalance = await createValidChainObject(FeePendingBalance, {
+      owner: users.testUser1.identityKey,
       quantity: new BigNumber("10000")
     });
 
@@ -248,8 +249,8 @@ describe("feeGate", () => {
       feeCodeDefinition3.feeAccelerationRate.multipliedBy(userThresholdUses.cumulativeUses.plus("1"))
     );
 
-    const { ctx, writes } = fixture<GalaChainContext, GalaChainTokenContract>(GalaChainTokenContract)
-      .callingUser(users.testUser1Id)
+    const { ctx, getWrites } = fixture<GalaChainContext, GalaChainTokenContract>(GalaChainTokenContract)
+      .callingUser(users.testUser1)
       .savedState(feeCodeDefinition3, userThresholdUses, userPendingBalance);
 
     const expectedUsageWrite = instanceToInstance(userThresholdUses);
@@ -265,7 +266,7 @@ describe("feeGate", () => {
       year,
       month,
       day,
-      paidByUser: users.testUser1Id,
+      paidByUser: users.testUser1.identityKey,
       txId: ctx.stub.getTxID(),
       feeCode: feeCode1,
       quantity: expectedFeeAmount,
@@ -276,7 +277,7 @@ describe("feeGate", () => {
       year,
       month,
       day,
-      paidByUser: users.testUser1Id,
+      paidByUser: users.testUser1.identityKey,
       txId: ctx.stub.getTxID(),
       feeCode: feeCode1,
       quantity: expectedFeeAmount,
@@ -290,7 +291,7 @@ describe("feeGate", () => {
 
     // Then
     expect(result).toEqual(undefined);
-    expect(writes).toEqual(
+    expect(getWrites()).toEqual(
       writesMap(
         expectedBalanceWrite,
         expectedChannelPaymentReceipt,
@@ -304,15 +305,15 @@ describe("feeGate", () => {
     // Given
     feeCodeDefinition3.feeAccelerationRateType = FeeAccelerationRateType.Exponential;
 
-    const userThresholdUses = plainToInstance(FeeThresholdUses, {
+    const userThresholdUses = await createValidChainObject(FeeThresholdUses, {
       feeCode: feeCode1,
-      user: users.testUser1Id,
+      user: users.testUser1.identityKey,
       cumulativeUses: new BigNumber("3"),
       cumulativeFeeQuantity: new BigNumber("0")
     });
 
-    const userPendingBalance = plainToInstance(FeePendingBalance, {
-      owner: users.testUser1Id,
+    const userPendingBalance = await createValidChainObject(FeePendingBalance, {
+      owner: users.testUser1.identityKey,
       quantity: new BigNumber("10000")
     });
 
@@ -325,8 +326,8 @@ describe("feeGate", () => {
       )
     );
 
-    const { ctx, writes } = fixture<GalaChainContext, GalaChainTokenContract>(GalaChainTokenContract)
-      .callingUser(users.testUser1Id)
+    const { ctx, getWrites } = fixture<GalaChainContext, GalaChainTokenContract>(GalaChainTokenContract)
+      .callingUser(users.testUser1)
       .savedState(feeCodeDefinition3, userThresholdUses, userPendingBalance);
 
     const expectedUsageWrite = instanceToInstance(userThresholdUses);
@@ -342,7 +343,7 @@ describe("feeGate", () => {
       year,
       month,
       day,
-      paidByUser: users.testUser1Id,
+      paidByUser: users.testUser1.identityKey,
       txId: ctx.stub.getTxID(),
       feeCode: feeCode1,
       quantity: expectedFeeAmount,
@@ -353,7 +354,7 @@ describe("feeGate", () => {
       year,
       month,
       day,
-      paidByUser: users.testUser1Id,
+      paidByUser: users.testUser1.identityKey,
       txId: ctx.stub.getTxID(),
       feeCode: feeCode1,
       quantity: expectedFeeAmount,
@@ -367,7 +368,7 @@ describe("feeGate", () => {
 
     // Then
     expect(result).toEqual(undefined);
-    expect(writes).toEqual(
+    expect(getWrites()).toEqual(
       writesMap(
         expectedBalanceWrite,
         expectedChannelPaymentReceipt,
@@ -381,15 +382,15 @@ describe("feeGate", () => {
     // Given
     feeCodeDefinition3.feeAccelerationRateType = FeeAccelerationRateType.Logarithmic;
 
-    const userThresholdUses = plainToInstance(FeeThresholdUses, {
+    const userThresholdUses = await createValidChainObject(FeeThresholdUses, {
       feeCode: feeCode1,
-      user: users.testUser1Id,
+      user: users.testUser1.identityKey,
       cumulativeUses: new BigNumber("3"),
       cumulativeFeeQuantity: new BigNumber("0")
     });
 
-    const userPendingBalance = plainToInstance(FeePendingBalance, {
-      owner: users.testUser1Id,
+    const userPendingBalance = await createValidChainObject(FeePendingBalance, {
+      owner: users.testUser1.identityKey,
       quantity: new BigNumber("10000")
     });
 
@@ -406,8 +407,8 @@ describe("feeGate", () => {
       )
       .decimalPlaces(FeeCodeDefinition.DECIMAL_PRECISION);
 
-    const { ctx, writes } = fixture<GalaChainContext, GalaChainTokenContract>(GalaChainTokenContract)
-      .callingUser(users.testUser1Id)
+    const { ctx, getWrites } = fixture<GalaChainContext, GalaChainTokenContract>(GalaChainTokenContract)
+      .callingUser(users.testUser1)
       .savedState(feeCodeDefinition3, userThresholdUses, userPendingBalance);
 
     const expectedUsageWrite = instanceToInstance(userThresholdUses);
@@ -423,7 +424,7 @@ describe("feeGate", () => {
       year,
       month,
       day,
-      paidByUser: users.testUser1Id,
+      paidByUser: users.testUser1.identityKey,
       txId: ctx.stub.getTxID(),
       feeCode: feeCode1,
       quantity: expectedFeeAmount,
@@ -434,7 +435,7 @@ describe("feeGate", () => {
       year,
       month,
       day,
-      paidByUser: users.testUser1Id,
+      paidByUser: users.testUser1.identityKey,
       txId: ctx.stub.getTxID(),
       feeCode: feeCode1,
       quantity: expectedFeeAmount,
@@ -448,7 +449,7 @@ describe("feeGate", () => {
 
     // Then
     expect(result).toEqual(undefined);
-    expect(writes).toEqual(
+    expect(getWrites()).toEqual(
       writesMap(
         expectedBalanceWrite,
         expectedChannelPaymentReceipt,
@@ -465,21 +466,21 @@ describe("feeGate", () => {
       .minus(feeCodeDefinition1.feeThresholdUses)
       .times(feeCodeDefinition1.baseQuantity);
 
-    const userThresholdUses = plainToInstance(FeeThresholdUses, {
+    const userThresholdUses = await createValidChainObject(FeeThresholdUses, {
       feeCode: feeCode1,
-      user: users.testUser1Id,
+      user: users.testUser1.identityKey,
       cumulativeUses: cumulativeUses,
       cumulativeFeeQuantity: cumulativePaid
     });
 
-    const { ctx, writes } = fixture<GalaChainContext, GalaChainTokenContract>(GalaChainTokenContract)
-      .callingUser(users.testUser1Id)
+    const { ctx, getWrites } = fixture<GalaChainContext, GalaChainTokenContract>(GalaChainTokenContract)
+      .callingUser(users.testUser1)
       .savedState(feeCodeDefinition1, feeCodeDefinition2, userThresholdUses);
 
     const expectedErrorMessage =
       `Payment Required: Transaction requires fee of ` +
       `${feeCodeDefinition2.baseQuantity.toString()}. ` +
-      `FeePendingBalance not found on chain for user: ${users.testUser1Id}`;
+      `FeePendingBalance not found on chain for user: ${users.testUser1.identityKey}`;
 
     // When
     const result = await galaFeeGate(ctx, { feeCode: feeCode1 }).catch((e) => e);
@@ -490,7 +491,7 @@ describe("feeGate", () => {
         paymentRequired: feeCodeDefinition2.baseQuantity.toString()
       })
     );
-    expect(writes).toEqual({});
+    expect(getWrites()).toEqual({});
   });
 
   it("should fail the transaction if pending balance is less than required fees", async () => {
@@ -500,20 +501,20 @@ describe("feeGate", () => {
       .minus(feeCodeDefinition1.feeThresholdUses)
       .times(feeCodeDefinition1.baseQuantity);
 
-    const userThresholdUses = plainToInstance(FeeThresholdUses, {
+    const userThresholdUses = await createValidChainObject(FeeThresholdUses, {
       feeCode: feeCode1,
-      user: users.testUser1Id,
+      user: users.testUser1.identityKey,
       cumulativeUses: cumulativeUses,
       cumulativeFeeQuantity: cumulativePaid
     });
 
-    const userPendingBalance = plainToInstance(FeePendingBalance, {
-      owner: users.testUser1Id,
+    const userPendingBalance = await createValidChainObject(FeePendingBalance, {
+      owner: users.testUser1.identityKey,
       quantity: new BigNumber(feeCodeDefinition2.baseQuantity).minus("1")
     });
 
-    const { ctx, writes } = fixture<GalaChainContext, GalaChainTokenContract>(GalaChainTokenContract)
-      .callingUser(users.testUser1Id)
+    const { ctx, getWrites } = fixture<GalaChainContext, GalaChainTokenContract>(GalaChainTokenContract)
+      .callingUser(users.testUser1)
       .savedState(feeCodeDefinition1, feeCodeDefinition2, userThresholdUses, userPendingBalance);
 
     const expectedErrorMessage =
@@ -530,7 +531,7 @@ describe("feeGate", () => {
         payload: new BigNumber(feeCodeDefinition2.baseQuantity).minus("1").toString()
       })
     );
-    expect(writes).toEqual({});
+    expect(getWrites()).toEqual({});
   });
 
   it("should not prevent user actions if FeeCodeDefinitions are not on chain", async () => {
@@ -540,20 +541,20 @@ describe("feeGate", () => {
       .minus(feeCodeDefinition1.feeThresholdUses)
       .times(feeCodeDefinition1.baseQuantity);
 
-    const userThresholdUses = plainToInstance(FeeThresholdUses, {
+    const userThresholdUses = await createValidChainObject(FeeThresholdUses, {
       feeCode: feeCode1,
-      user: users.testUser1Id,
+      user: users.testUser1.identityKey,
       cumulativeUses: cumulativeUses,
       cumulativeFeeQuantity: cumulativePaid
     });
 
-    const userPendingBalance = plainToInstance(FeePendingBalance, {
-      owner: users.testUser1Id,
+    const userPendingBalance = await createValidChainObject(FeePendingBalance, {
+      owner: users.testUser1.identityKey,
       quantity: new BigNumber(feeCodeDefinition2.baseQuantity).minus("1")
     });
 
-    const { ctx, writes } = fixture<GalaChainContext, GalaChainTokenContract>(GalaChainTokenContract)
-      .callingUser(users.testUser1Id)
+    const { ctx, getWrites } = fixture<GalaChainContext, GalaChainTokenContract>(GalaChainTokenContract)
+      .callingUser(users.testUser1)
       .savedState(userThresholdUses, userPendingBalance);
 
     const expectedUsageWrite = instanceToInstance(userThresholdUses);
@@ -566,6 +567,6 @@ describe("feeGate", () => {
 
     // Then
     expect(result).toEqual(undefined);
-    expect(writes).toEqual(writesMap(expectedUsageWrite));
+    expect(getWrites()).toEqual(writesMap(expectedUsageWrite));
   });
 });

@@ -23,7 +23,8 @@ import {
   TokenClassKeyProperties,
   TokenInstance,
   TokenInstanceKey,
-  TokenMintFulfillment
+  TokenMintFulfillment,
+  UserAlias
 } from "@gala-chain/api";
 import { ChainCallDTO, ChainObject } from "@gala-chain/api";
 import { BigNumber } from "bignumber.js";
@@ -38,7 +39,7 @@ import { writeMintRequest } from "./requestMint";
 
 export interface MintTokenParams {
   tokenClassKey: TokenClassKey;
-  owner: string;
+  owner: UserAlias;
   quantity: BigNumber;
   authorizedOnBehalf: AuthorizedOnBehalf | undefined;
   applicableAllowanceKey?: AllowanceKey | undefined;
@@ -190,7 +191,7 @@ export async function mintToken(
       mintedNFTs.push(nftInfo);
 
       // update balance
-      userBalance.ensureCanAddInstance(nftInfo.instance).add();
+      userBalance.addInstance(nftInfo.instance);
     }
 
     // save instances
@@ -219,7 +220,7 @@ export async function mintToken(
     // Update the balance of the target user, or create it.
     const userBalance = await fetchOrCreateBalance(ctx, owner, tokenClassKey);
 
-    userBalance.ensureCanAddQuantity(quantity).add();
+    userBalance.addQuantity(quantity);
 
     // Write the balance to the chain
     await putChainObject(ctx, userBalance);
@@ -243,8 +244,8 @@ export async function mintToken(
 
 export interface UpdateTokenSupplyParams {
   tokenClassKey: TokenClassKeyProperties;
-  callingUser: string;
-  owner: string;
+  callingUser: UserAlias;
+  owner: UserAlias;
   quantity: BigNumber;
   allowanceKey?: AllowanceKey | undefined;
   knownTotalSupply?: BigNumber | undefined;

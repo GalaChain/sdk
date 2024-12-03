@@ -21,6 +21,7 @@ import { ChainObject } from "./ChainObject";
 import { RangedChainObject } from "./RangedChainObject";
 import { TokenAllowance } from "./TokenAllowance";
 import { TokenMintAllowance } from "./TokenMintAllowance";
+import { UserAlias } from "./UserAlias";
 import { AllowanceType, TokenMintStatus } from "./common";
 
 export class TokenMintAllowanceRequest extends RangedChainObject {
@@ -48,7 +49,7 @@ export class TokenMintAllowanceRequest extends RangedChainObject {
 
   @ChainKey({ position: 5 })
   @IsUserAlias()
-  public grantedTo: string;
+  public grantedTo: UserAlias;
 
   @IsNotEmpty()
   @BigNumberProperty()
@@ -58,7 +59,7 @@ export class TokenMintAllowanceRequest extends RangedChainObject {
   public created: number;
 
   @IsUserAlias()
-  public grantedBy: string;
+  public grantedBy: UserAlias;
 
   @IsNotEmpty()
   @BigNumberIsNotNegative()
