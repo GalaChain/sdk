@@ -93,7 +93,7 @@ export async function mintPostProcessing(ctx: GalaChainContext, data: IMintPostP
 export interface ILockOnMintProcessing {
   tokenClass: TokenClassKey;
   tokens: TokenInstanceKey[];
-  owner: string;
+  owner: UserRef;
   quantity: BigNumber;
   lockConfiguration: PostMintLockConfiguration;
 }
