@@ -85,6 +85,7 @@ export async function mintPostProcessing(ctx: GalaChainContext, data: IMintPostP
   if (mintConfiguration.postMintLock !== undefined) {
     await lockOnMintProcessing(ctx, {
       ...data,
+      owner: ownerAlias,
       lockConfiguration: mintConfiguration.postMintLock
     });
   }
@@ -93,7 +94,7 @@ export async function mintPostProcessing(ctx: GalaChainContext, data: IMintPostP
 export interface ILockOnMintProcessing {
   tokenClass: TokenClassKey;
   tokens: TokenInstanceKey[];
-  owner: UserRef;
+  owner: UserAlias;
   quantity: BigNumber;
   lockConfiguration: PostMintLockConfiguration;
 }
@@ -139,10 +140,8 @@ export async function lockOnMintProcessing(ctx: GalaChainContext, data: ILockOnM
       instance
     });
 
-    const ownerAlias = await resolveUserAlias(ctx, owner);
-
     await lockTokens(ctx, {
-      tokenInstances: [{ tokenInstanceKey: token, quantity: mintQuantityToLock, owner: ownerAlias }],
+      tokenInstances: [{ tokenInstanceKey: token, quantity: mintQuantityToLock, owner: owner }],
       allowancesToUse: [],
       name: `${lockName}_${ctx.stub.getTxID()}`,
       lockAuthority: lockAuthority,
