@@ -467,11 +467,18 @@ export class TokenBalance extends ChainObject {
     return { lock };
   }
 
-  private isMatchingHold(hold: TokenHold, name?: string, lockAuthority?: string): boolean {
+  private isCallingUserAuthorized(
+    hold: TokenHold,
+    name?: string,
+    callingUser?: string,
+    isTokenAuthority?: boolean
+  ): boolean {
     return (
-      (hold.name === name || (hold.name === undefined && name === undefined)) &&
-      (hold.lockAuthority === lockAuthority ||
-        (hold.lockAuthority === undefined && lockAuthority === undefined))
+      hold.name === name &&
+      (isTokenAuthority ||
+        callingUser === hold.lockAuthority ||
+        (hold.lockAuthority === undefined && callingUser === this.owner) ||
+        (hold.lockAuthority === undefined && callingUser === hold.createdBy))
     );
   }
 
@@ -479,7 +486,8 @@ export class TokenBalance extends ChainObject {
     quantity: BigNumber,
     currentTime: number,
     name?: string,
-    lockAuthority?: string
+    callingUser?: string,
+    isTokenAuthority?: boolean
   ): { unlock(): void } {
     const unexpiredLockedHolds = this.getUnexpiredLockedHoldsSortedByAscendingExpiration(currentTime);
 
@@ -488,7 +496,7 @@ export class TokenBalance extends ChainObject {
 
     for (const hold of unexpiredLockedHolds) {
       // if neither the authority nor the name match, just leave this hold alone
-      if (!this.isMatchingHold(hold, name, lockAuthority)) {
+      if (!this.isCallingUserAuthorized(hold, name, callingUser, isTokenAuthority)) {
         updated.push(hold);
         continue;
       }

@@ -29,14 +29,21 @@ function emptyBalance() {
   });
 }
 
-function createHold(instance: BigNumber, expires: number, quantity?: BigNumber, name?: string) {
+function createHold(
+  instance: BigNumber,
+  expires: number,
+  quantity?: BigNumber,
+  name?: string,
+  lockAuthority?: string
+) {
   return new TokenHold({
     createdBy: "user1",
     instanceId: instance,
     quantity: quantity ?? new BigNumber(1),
     created: 1,
     expires: expires,
-    name: name
+    name: name,
+    lockAuthority: lockAuthority
   });
 }
 
@@ -287,6 +294,89 @@ describe("fungible", () => {
     expect(totalLockedInitially.toNumber()).toEqual(expectedTotalLockedInitially.toNumber());
     expect(remainingLockedQuantity.toNumber()).toEqual(expectedQuantityToRemainLocked.toNumber());
     expect(unexpiredLockedHolds.length).toBe(expectedHoldsRemainingOnBalance.toNumber());
+  });
+
+  it("should permit identity defined as a lockAuthority to unlock", () => {
+    // Given
+    const balance = emptyBalance();
+    const testQuantity = new BigNumber(10);
+    const hold = createHold(
+      TokenInstance.FUNGIBLE_TOKEN_INSTANCE,
+      0,
+      testQuantity,
+      undefined,
+      "client|admin"
+    );
+
+    balance.ensureCanAddQuantity(testQuantity).add();
+    balance.ensureCanLockQuantity(hold).lock();
+
+    // When
+    const quantityLockedBeforeUnlock = balance.getLockedQuantityTotal(Date.now());
+
+    balance.ensureCanUnlockQuantity(testQuantity, Date.now(), undefined, "client|admin").unlock();
+
+    const quantityLockedAfterUnlock = balance.getLockedQuantityTotal(Date.now());
+
+    // Then
+    expect(quantityLockedBeforeUnlock).toEqual(new BigNumber(10));
+    expect(quantityLockedAfterUnlock).toEqual(new BigNumber(0));
+  });
+
+  it("should prevent owner from unlocking if a lockAuthority is defined", () => {
+    // Given
+    const balance = emptyBalance();
+    const hold = createHold(
+      TokenInstance.FUNGIBLE_TOKEN_INSTANCE,
+      0,
+      new BigNumber(10),
+      undefined,
+      "client|admin"
+    );
+
+    balance.ensureCanAddQuantity(new BigNumber(10)).add();
+    balance.ensureCanLockQuantity(hold).lock();
+
+    // When
+    const error = () =>
+      balance.ensureCanUnlockQuantity(new BigNumber(10), Date.now(), undefined, balance.owner);
+
+    const tokenClassKey = TokenClassKey.toStringKey({ ...balance });
+
+    // Then
+    expect(error).toThrow(
+      `Failed to unlock quantity 10 of Fungible token ${tokenClassKey} ` + `for TokenHold.name = undefined.`
+    );
+  });
+
+  it("should let a token authority unlock regardless of lockAuthority definition", () => {
+    // Given
+    const balance = emptyBalance();
+    const testQuantity = new BigNumber(10);
+    const hold = createHold(
+      TokenInstance.FUNGIBLE_TOKEN_INSTANCE,
+      0,
+      testQuantity,
+      undefined,
+      "client|admin"
+    );
+
+    balance.ensureCanAddQuantity(testQuantity).add();
+    balance.ensureCanLockQuantity(hold).lock();
+
+    const isTokenAuthority = true;
+    // When
+    const quantityLockedBeforeUnlock = balance.getLockedQuantityTotal(Date.now());
+
+    balance
+      .ensureCanUnlockQuantity(testQuantity, Date.now(), undefined, undefined, isTokenAuthority)
+      .unlock();
+
+    const quantityLockedAfterUnlock = balance.getLockedQuantityTotal(Date.now());
+
+    // Then
+    expect(quantityLockedBeforeUnlock).toEqual(new BigNumber(10));
+    expect(quantityLockedAfterUnlock).toEqual(new BigNumber(0));
   });
 });
 
