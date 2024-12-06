@@ -104,7 +104,9 @@ export async function lockOnMintProcessing(ctx: GalaChainContext, data: ILockOnM
 
   const { lockName, lockAuthority, expirationModifier, lockPercentage } = lockConfiguration;
 
-  const mintQuantityToLock = quantity.times(lockPercentage).integerValue(BigNumber.ROUND_DOWN);
+  const mintQuantityToLock = quantity
+    .times(lockPercentage)
+    .decimalPlaces(tokenClassEntry.decimals, BigNumber.ROUND_DOWN);
 
   const verifyAuthorizedOnBehalf = async (c: TokenClassKey) => undefined;
 
