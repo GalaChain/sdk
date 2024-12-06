@@ -467,7 +467,7 @@ export class TokenBalance extends ChainObject {
     return { lock };
   }
 
-  private isMatchingHold(
+  private isCallingUserAuthorized(
     hold: TokenHold,
     name?: string,
     callingUser?: string,
@@ -496,7 +496,7 @@ export class TokenBalance extends ChainObject {
 
     for (const hold of unexpiredLockedHolds) {
       // if neither the authority nor the name match, just leave this hold alone
-      if (!this.isMatchingHold(hold, name, callingUser, isTokenAuthority)) {
+      if (!this.isCallingUserAuthorized(hold, name, callingUser, isTokenAuthority)) {
         updated.push(hold);
         continue;
       }
