@@ -460,10 +460,6 @@ export async function mintPreProcessing(ctx: GalaChainContext, data: IMintPrePro
       tokens: []
     });
   }
-
-  if (mintConfiguration.additionalFee !== undefined) {
-    return mintConfiguration.additionalFee.flatFee;
-  }
 }
 
 export interface ICombinedMintFees {
