@@ -450,7 +450,7 @@ export async function mintPreProcessing(ctx: GalaChainContext, data: IMintPrePro
   });
 
   if (!mintConfiguration) {
-    return undefined;
+    return;
   }
 
   if (mintConfiguration.preMintBurn !== undefined) {
@@ -464,8 +464,6 @@ export async function mintPreProcessing(ctx: GalaChainContext, data: IMintPrePro
   if (mintConfiguration.additionalFee !== undefined) {
     return mintConfiguration.additionalFee.flatFee;
   }
-
-  return undefined;
 }
 
 export interface ICombinedMintFees {

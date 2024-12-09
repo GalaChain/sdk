@@ -23,7 +23,6 @@ import {
 } from "@gala-chain/api";
 import BigNumber from "bignumber.js";
 import { plainToInstance } from "class-transformer";
-import { add } from "winston";
 
 import { GalaChainContext } from "../types";
 import { getObjectByKey, getObjectsByPartialCompositeKey, putChainObject } from "../utils";
