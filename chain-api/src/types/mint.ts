@@ -32,6 +32,7 @@ import { ArrayUniqueObjects, BigNumberIsNotNegative, BigNumberProperty, IsUserAl
 import { TokenClassKey } from "./TokenClass";
 import {
   BurnToMintConfiguration,
+  MintFeeConfiguration,
   PostMintLockConfiguration,
   TokenMintConfiguration
 } from "./TokenMintConfiguration";
@@ -410,6 +411,16 @@ export class TokenMintConfigurationDto extends ChainCallDTO {
   @ValidateNested()
   @Type(() => PostMintLockConfiguration)
   postMintLock?: PostMintLockConfiguration;
+
+  @JSONSchema({
+    description:
+      "(optional) Specify a `MintFeeConfiguration` to define " +
+      "additional properties that affect $GALA `MintToken` fees"
+  })
+  @IsOptional()
+  @ValidateNested()
+  @Type(() => MintFeeConfiguration)
+  additionalFee?: MintFeeConfiguration;
 }
 
 @JSONSchema({
