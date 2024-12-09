@@ -23,6 +23,7 @@ import {
 } from "@gala-chain/api";
 import BigNumber from "bignumber.js";
 import { plainToInstance } from "class-transformer";
+import { add } from "winston";
 
 import { GalaChainContext } from "../types";
 import { getObjectByKey, getObjectsByPartialCompositeKey, putChainObject } from "../utils";
@@ -32,6 +33,7 @@ import { payFeeImmediatelyFromBalance } from "./payFeeImmediatelyFromBalance";
 export interface GalaFeeGateParams {
   feeCode: string;
   activeUser?: string | undefined;
+  additionalFee?: BigNumber | undefined;
 }
 
 /**
@@ -125,14 +127,19 @@ export async function writeUsageAndCalculateFeeAmount(
     userFeeThresholdUses
   );
 
-  const currentCumulativeFees = userFeeThresholdUses.cumulativeFeeQuantity.plus(feeAmount);
+  const additionalFee: BigNumber = data.additionalFee ?? new BigNumber("0");
+  const usageFeePlusAnyAdditionalFees = feeAmount.plus(additionalFee);
+
+  const currentCumulativeFees = userFeeThresholdUses.cumulativeFeeQuantity.plus(
+    usageFeePlusAnyAdditionalFees
+  );
 
   userFeeThresholdUses.cumulativeUses = cumulativeUses;
   userFeeThresholdUses.cumulativeFeeQuantity = currentCumulativeFees;
 
   await putChainObject(ctx, userFeeThresholdUses);
 
-  return { feeAmount, feeCodeDefinitions, cumulativeUses };
+  return { feeAmount: usageFeePlusAnyAdditionalFees, feeCodeDefinitions, cumulativeUses };
 }
 
 export interface cumulativeUsesAndFeeAmount {

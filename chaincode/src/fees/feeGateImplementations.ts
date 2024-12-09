@@ -48,7 +48,7 @@ import BigNumber from "bignumber.js";
 import { plainToInstance } from "class-transformer";
 
 import { authenticate } from "../contracts";
-import { MintTokenParams, MintTokenWithAllowanceParams } from "../mint";
+import { MintTokenParams, MintTokenWithAllowanceParams, fetchTokenMintConfiguration } from "../mint";
 import { KnownOracles } from "../oracle";
 import { GalaChainContext } from "../types";
 import { getObjectByKey, putChainObject } from "../utils";
@@ -442,26 +442,15 @@ export async function mintPreProcessing(ctx: GalaChainContext, data: IMintPrePro
   const { tokenClass } = data;
   const { collection, category, type, additionalKey } = tokenClass;
 
-  const mintConfiguration: TokenMintConfiguration | undefined = await getObjectByKey(
-    ctx,
-    TokenMintConfiguration,
-    TokenMintConfiguration.getCompositeKeyFromParts(TokenMintConfiguration.INDEX_KEY, [
-      collection,
-      category,
-      type,
-      additionalKey
-    ])
-  ).catch((e) => {
-    const chainError = ChainError.from(e);
-    if (chainError.matches(ErrorCode.NOT_FOUND)) {
-      return undefined;
-    } else {
-      throw chainError;
-    }
+  const mintConfiguration: TokenMintConfiguration | undefined = await fetchTokenMintConfiguration(ctx, {
+    collection,
+    category,
+    type,
+    additionalKey
   });
 
   if (!mintConfiguration) {
-    return;
+    return undefined;
   }
 
   if (mintConfiguration.preMintBurn !== undefined) {
@@ -471,6 +460,12 @@ export async function mintPreProcessing(ctx: GalaChainContext, data: IMintPrePro
       tokens: []
     });
   }
+
+  if (mintConfiguration.additionalFee !== undefined) {
+    return mintConfiguration.additionalFee.flatFee;
+  }
+
+  return undefined;
 }
 
 export interface ICombinedMintFees {
@@ -491,12 +486,23 @@ export async function combinedMintFees(ctx: GalaChainContext, data: ICombinedMin
     }
   });
 
+  const { collection, category, type, additionalKey } = data.tokenClass;
+  const mintConfiguration: TokenMintConfiguration | undefined = await fetchTokenMintConfiguration(ctx, {
+    collection,
+    category,
+    type,
+    additionalKey
+  });
+
+  const additionalFeeInGala: BigNumber | undefined = mintConfiguration?.additionalFee?.flatFee;
+
   await galaFeeGate(ctx, {
-    feeCode: data.feeCode
+    feeCode: data.feeCode,
     // v1 fees requires only callingUser identities pay fees
     // uncomment below to require benefiting / initiating user to pay,
     // regardless of who executes the method
-    // activeUser: dto.owner ?? ctx.callingUser
+    // activeUser: dto.owner ?? ctx.callingUser,
+    additionalFee: additionalFeeInGala
   }).catch((e) => {
     if (e instanceof ChainError && e.code === ErrorCode.PAYMENT_REQUIRED) {
       paymentErrors.push(e);
