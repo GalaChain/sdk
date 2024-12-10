@@ -16,6 +16,7 @@ import {
   BurnToMintConfiguration,
   ChainError,
   ErrorCode,
+  MintFeeConfiguration,
   PostMintLockConfiguration,
   TokenClass,
   TokenMintConfiguration,
@@ -34,6 +35,7 @@ export interface IMintConfiguration {
   preMintBurn?: BurnToMintConfiguration;
   postMintBurn?: BurnToMintConfiguration;
   postMintLock?: PostMintLockConfiguration;
+  additionalFee?: MintFeeConfiguration;
 }
 
 const curatorOrgMsp = process.env.CURATOR_ORG_MSP ?? "CuratorOrg";
@@ -42,7 +44,16 @@ export async function saveTokenMintConfiguration(
   ctx: GalaChainContext,
   data: IMintConfiguration
 ): Promise<TokenMintConfiguration> {
-  const { collection, category, type, additionalKey, preMintBurn, postMintBurn, postMintLock } = data;
+  const {
+    collection,
+    category,
+    type,
+    additionalKey,
+    preMintBurn,
+    postMintBurn,
+    postMintLock,
+    additionalFee
+  } = data;
 
   const existingTokenClass = await getObjectByKey(
     ctx,
@@ -76,6 +87,12 @@ export async function saveTokenMintConfiguration(
   }
 
   newConfiguration.validatePostProcessingTotals();
+
+  if (additionalFee !== undefined) {
+    await additionalFee.validateOrReject();
+
+    newConfiguration.additionalFee = additionalFee;
+  }
 
   await putChainObject(ctx, newConfiguration);
 

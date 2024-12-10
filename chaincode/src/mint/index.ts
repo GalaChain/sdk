@@ -22,6 +22,7 @@ import {
 import { constructVerifiedMints } from "./constructVerifiedMints";
 import { deleteTokenMintConfiguration } from "./deleteTokenMintConfiguration";
 import { fetchMintAllowanceSupply, fetchMintAllowanceSupplyForToken } from "./fetchMintAllowanceSupply";
+import { fetchTokenMintConfiguration } from "./fetchMintConfiguration";
 import { fetchTokenMintConfigurations } from "./fetchMintConfigurations";
 import { fetchMintSupply } from "./fetchMintSupply";
 import { fetchTokenClassesWithSupply } from "./fetchTokenClassWithSupply";
@@ -57,6 +58,7 @@ export {
   saveTokenMintConfiguration,
   validateMintRequest,
   fetchMintAllowanceSupply,
+  fetchTokenMintConfiguration,
   fetchTokenMintConfigurations,
   fetchMintSupply,
   fetchMintAllowanceSupplyForToken,
