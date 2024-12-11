@@ -213,13 +213,7 @@ export default class Log extends BaseCommand<typeof Log> {
     }
 
     const date = new Date(timestamp);
-    const formattedTime = date.toLocaleTimeString("en-US", {
-      hour12: false,
-      hour: "2-digit",
-      minute: "2-digit",
-      second: "2-digit",
-      fractionalSecondDigits: 3
-    });
+    const formattedTime = date.toISOString().slice(11, -1);
 
     this.log(`${chalk.gray(formattedTime)} ${levelColor(levelPadded)} ${message}`);
   }
