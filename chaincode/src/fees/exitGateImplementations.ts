@@ -13,10 +13,13 @@
  * limitations under the License.
  */
 import {
+  BatchMintTokenDto,
   ChainError,
   ErrorCode,
   FeeGateCodes,
   GalaChainResponse,
+  MintTokenDto,
+  MintTokenWithAllowanceDto,
   PostMintLockConfiguration,
   TokenClass,
   TokenClassKey,
@@ -24,12 +27,13 @@ import {
   TokenInstanceKey,
   TokenMintConfiguration,
   UserAlias,
+  UserRef,
   createValidDTO
 } from "@gala-chain/api";
 import BigNumber from "bignumber.js";
 
 import { lockTokens } from "../locks";
-import { MintTokenParams, MintTokenWithAllowanceParams } from "../mint";
+import { resolveUserAlias } from "../services";
 import { GalaChainContext } from "../types";
 import { getObjectByKey } from "../utils";
 import { burnToMintProcessing } from "./extendedFeeGateProcessing";
@@ -37,7 +41,7 @@ import { burnToMintProcessing } from "./extendedFeeGateProcessing";
 export interface IMintPostProcessing {
   tokenClass: TokenClassKey;
   tokens: TokenInstanceKey[];
-  owner: UserAlias;
+  owner: UserRef;
   quantity: BigNumber;
   feeCode?: FeeGateCodes | undefined;
 }
@@ -68,9 +72,12 @@ export async function mintPostProcessing(ctx: GalaChainContext, data: IMintPostP
     return;
   }
 
+  const ownerAlias = await resolveUserAlias(ctx, owner);
+
   if (mintConfiguration.postMintBurn !== undefined) {
     await burnToMintProcessing(ctx, {
       ...data,
+      owner: ownerAlias,
       burnConfiguration: mintConfiguration.postMintBurn
     });
   }
@@ -78,6 +85,7 @@ export async function mintPostProcessing(ctx: GalaChainContext, data: IMintPostP
   if (mintConfiguration.postMintLock !== undefined) {
     await lockOnMintProcessing(ctx, {
       ...data,
+      owner: ownerAlias,
       lockConfiguration: mintConfiguration.postMintLock
     });
   }
@@ -103,7 +111,9 @@ export async function lockOnMintProcessing(ctx: GalaChainContext, data: ILockOnM
 
   const { lockName, lockAuthority, expirationModifier, lockPercentage } = lockConfiguration;
 
-  const mintQuantityToLock = quantity.times(lockPercentage).integerValue(BigNumber.ROUND_DOWN);
+  const mintQuantityToLock = quantity
+    .times(lockPercentage)
+    .decimalPlaces(tokenClassEntry.decimals, BigNumber.ROUND_DOWN);
 
   const verifyAuthorizedOnBehalf = async (c: TokenClassKey) => undefined;
 
@@ -131,7 +141,7 @@ export async function lockOnMintProcessing(ctx: GalaChainContext, data: ILockOnM
     });
 
     await lockTokens(ctx, {
-      tokenInstances: [{ tokenInstanceKey: token, quantity: mintQuantityToLock, owner }],
+      tokenInstances: [{ tokenInstanceKey: token, quantity: mintQuantityToLock, owner: owner }],
       allowancesToUse: [],
       name: `${lockName}_${ctx.stub.getTxID()}`,
       lockAuthority: lockAuthority,
@@ -143,12 +153,11 @@ export async function lockOnMintProcessing(ctx: GalaChainContext, data: ILockOnM
 
 export async function mintTokenExitGate(
   ctx: GalaChainContext,
-  dto: MintTokenParams,
+  dto: MintTokenDto,
   response: GalaChainResponse<TokenInstanceKey[]>
 ): Promise<void> {
+  const { tokenClass, quantity } = dto;
   const owner = dto.owner ?? ctx.callingUser;
-  const tokenClass = dto.tokenClassKey;
-  const quantity = dto.quantity;
   const tokens: TokenInstanceKey[] | undefined = response.Data;
 
   if (tokens === undefined || tokens.length < 1) {
@@ -160,12 +169,11 @@ export async function mintTokenExitGate(
 
 export async function mintTokenWithAllowanceExitGate(
   ctx: GalaChainContext,
-  dto: MintTokenWithAllowanceParams,
+  dto: MintTokenWithAllowanceDto,
   response: GalaChainResponse<TokenInstanceKey[]>
 ): Promise<void> {
+  const { tokenClass, quantity } = dto;
   const owner = dto.owner ?? ctx.callingUser;
-  const tokenClass = dto.tokenClassKey;
-  const quantity = dto.quantity;
   const tokens: TokenInstanceKey[] | undefined = response.Data;
 
   if (tokens === undefined || tokens.length < 1) {
@@ -177,14 +185,12 @@ export async function mintTokenWithAllowanceExitGate(
 
 export async function batchMintTokenExitGate(
   ctx: GalaChainContext,
-  paramsArr: MintTokenParams[],
+  dto: BatchMintTokenDto,
   response: GalaChainResponse<TokenInstanceKey[]>
 ): Promise<void> {
-  for (const mintDto of paramsArr) {
+  for (const mintDto of dto.mintDtos) {
+    const { tokenClass, quantity } = mintDto;
     const owner = mintDto.owner ?? ctx.callingUser;
-    const tokenClass = mintDto.tokenClassKey;
-    const quantity = mintDto.quantity;
-
     // todo: batchMintToken currently returns a singular array of TokenInstanceKeys,
     // and they are not ordered in a way that corresponds to the incoming mintDto.
     // passing in the specific NFT instances minted per mintDto would require
