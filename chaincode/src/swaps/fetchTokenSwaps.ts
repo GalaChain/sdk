@@ -12,20 +12,24 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+import { TokenSwapRequest } from "@gala-chain/api";
 
-export * from "./allowances";
-export * from "./balances";
-export * from "./burns";
-export * from "./contracts";
-export * from "./fees";
-export * from "./locks";
-export * from "./mint";
-export * from "./oracle";
-export * from "./sales";
-export * from "./services";
-export * from "./swaps";
-export * from "./token";
-export * from "./types";
-export * from "./utils";
-export * from "./use";
-export * from "./transfer";
+import { GalaChainContext } from "../types";
+import { getObjectsByPartialCompositeKey, takeUntilUndefined } from "../utils";
+
+export async function fetchTokenSwaps(
+  ctx: GalaChainContext,
+  created: number | undefined
+): Promise<TokenSwapRequest[]> {
+  const createdKey = created && isFinite(created) ? `${created}` : undefined;
+  const queryParams = takeUntilUndefined(createdKey);
+
+  const results = await getObjectsByPartialCompositeKey(
+    ctx,
+    TokenSwapRequest.INDEX_KEY,
+    queryParams,
+    TokenSwapRequest
+  );
+
+  return results;
+}

@@ -12,20 +12,22 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+import { TokenSwapRequest } from "@gala-chain/api";
 
-export * from "./allowances";
-export * from "./balances";
-export * from "./burns";
-export * from "./contracts";
-export * from "./fees";
-export * from "./locks";
-export * from "./mint";
-export * from "./oracle";
-export * from "./sales";
-export * from "./services";
-export * from "./swaps";
-export * from "./token";
-export * from "./types";
-export * from "./utils";
-export * from "./use";
-export * from "./transfer";
+import { GalaChainContext } from "../types";
+import { getObjectByKey } from "../utils";
+
+export async function fetchTokenSwapByRequestId(
+  ctx: GalaChainContext,
+  swapRequestId: string
+): Promise<TokenSwapRequest> {
+  let tokenSwap: TokenSwapRequest;
+
+  try {
+    tokenSwap = await getObjectByKey(ctx, TokenSwapRequest, swapRequestId);
+  } catch (error) {
+    throw new Error(`Token swap with swapRequestId ${swapRequestId} not found.`);
+  }
+
+  return tokenSwap;
+}
