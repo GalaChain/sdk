@@ -428,7 +428,7 @@ export class TokenBalance extends ChainObject {
   private isCallingUserAuthorized(
     hold: TokenHold,
     name?: string,
-    callingUser?: string,
+    callingUser?: UserAlias,
     isTokenAuthority?: boolean
   ): boolean {
     return (
