@@ -300,7 +300,7 @@ describe("fungible", () => {
     // Given
     const balance = emptyBalance();
     const testQuantity = new BigNumber(10);
-    const lockAuthority = "client|admin";
+    const lockAuthority = asValidUserAlias("client|admin");
     const hold = createHold(TokenInstance.FUNGIBLE_TOKEN_INSTANCE, 0, testQuantity, undefined, lockAuthority);
 
     balance.addQuantity(testQuantity);
