@@ -1,6 +1,11 @@
 name: SDK Version bump
 on:
   workflow_dispatch:
+    inputs:
+      target_branch:
+        description: 'Target branch (main or main-v*)'
+        required: true
+        default: 'main'
 jobs:
   bump-version:
     name: Bump SDK Version
@@ -9,7 +14,7 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
         with:
-          ref: "main"
+          ref: ${{ inputs.target_branch }}
       - name: Set up Node.js
         uses: actions/setup-node@v4
         with:
@@ -27,7 +32,7 @@ jobs:
       - name: Create a new branch
         run: |
           BRANCH_NAME="bump-version-to-$VERSION"
-          git checkout -b $BRANCH_NAME main
+          git checkout -b $BRANCH_NAME ${{ inputs.target_branch }}
           echo "BRANCH_NAME=$BRANCH_NAME" >> $GITHUB_ENV
       - name: Bump version and commit changes
         run: |
@@ -38,4 +43,4 @@ jobs:
       - name: Create Pull Request
         env:
           GH_TOKEN: ${{ secrets.RELEASE_BOT_TOKEN }}
-        run: gh pr create --title "Bump Version to $VERSION" --body "Bump Version to $VERSION" --label "bump-version-pr" --head "bump-version-to-$VERSION" --base main
+        run: gh pr create --title "Bump Version to $VERSION" --body "Bump Version to $VERSION" --label "bump-version-pr" --head "bump-version-to-$VERSION" --base ${{ inputs.target_branch }}
