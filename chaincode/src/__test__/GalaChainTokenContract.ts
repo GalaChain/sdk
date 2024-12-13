@@ -15,12 +15,17 @@
 import {
   AcceptLoanOfferDto,
   AllowanceType,
+  BatchFillTokenSwapDto,
   BatchMintTokenDto,
   BurnTokensDto,
+  CleanTokenSwapsDto,
+  CleanTokenSwapsResponse,
   CloseLoanDto,
   CreateTokenClassDto,
   CreateTokenSaleDto,
   DeleteAllowancesDto,
+  EnsureTokenSwapIndexingDto,
+  EnsureTokenSwapIndexingResponse,
   FeeAuthorizationResDto,
   FeeCodeDefinition,
   FeeCodeDefinitionDto,
@@ -48,10 +53,17 @@ import {
   FetchTokenSaleByIdDto,
   FetchTokenSalesWithPaginationDto,
   FetchTokenSalesWithPaginationResponse,
+  FetchTokenSwapByRequestIdDto,
+  FetchTokenSwapsByInstanceDto,
+  FetchTokenSwapsByUserDto,
+  FetchTokenSwapsDto,
+  FetchTokenSwapsWithPaginationResponse,
+  FillTokenSwapDto,
   FulfillMintDto,
   FulfillTokenSaleDto,
   FullAllowanceCheckDto,
   FullAllowanceCheckResDto,
+  GalaChainResponse,
   GrantAllowanceDto,
   HighThroughputMintTokenDto,
   Loan,
@@ -66,6 +78,8 @@ import {
   RefreshAllowancesDto,
   ReleaseTokenDto,
   RemoveTokenSaleDto,
+  RequestTokenSwapDto,
+  TerminateTokenSwapDto,
   TokenAllowance,
   TokenBalance,
   TokenBurn,
@@ -74,11 +88,14 @@ import {
   TokenInstanceKey,
   TokenSale,
   TokenSaleFulfillment,
+  TokenSwapFill,
+  TokenSwapRequest,
   TransferTokenDto,
   UnlockTokenDto,
   UnlockTokensDto,
   UpdateTokenClassDto,
   UseTokenDto,
+  asValidUserAlias,
   generateResponseSchema,
   generateSchema
 } from "@gala-chain/api";
@@ -91,6 +108,7 @@ import {
   GalaTransaction,
   Submit,
   UnsignedEvaluate,
+  batchFillTokenSwapFeeGate,
   batchMintToken,
   burnTokens,
   createTokenClass,
@@ -113,6 +131,8 @@ import {
   fulfillMintRequest,
   fulfillTokenSale,
   fullAllowanceCheck,
+  galaSwapFillFeeGate,
+  galaSwapRequestFeeGate,
   grantAllowance,
   lockToken,
   lockTokens,
@@ -124,6 +144,7 @@ import {
   removeTokenSale,
   requestMint,
   resolveUserAlias,
+  terminateTokenSwapFeeGate,
   transferToken,
   unlockToken,
   unlockTokens,
@@ -135,6 +156,20 @@ import {
 import { version } from "../../package.json";
 import { EVALUATE, Evaluate, SUBMIT } from "../contracts";
 import { acceptLoanOffer, closeLoan, fetchLoanOffers, fetchLoans, offerLoan } from "../loans";
+import {
+  batchFillTokenSwaps,
+  ensureTokenSwapIndexing,
+  fetchTokenSwapByRequestId,
+  fetchTokenSwaps,
+  fetchTokenSwapsByInstanceOffered,
+  fetchTokenSwapsByInstanceWanted,
+  fetchTokenSwapsOfferedByUser,
+  fetchTokenSwapsOfferedToUser,
+  fillTokenSwap,
+  requestTokenSwap,
+  terminateTokenSwap
+} from "../swaps";
+import { cleanTokenSwaps } from "../swaps/cleanExpiredSwaps";
 
 @Info({ title: "GalaChainToken", description: "Contract for managing GalaChain tokens" })
 export default class GalaChainTokenContract extends GalaContract {
@@ -701,7 +736,7 @@ export default class GalaChainTokenContract extends GalaContract {
     });
   }
 
-  @Evaluate({
+  @UnsignedEvaluate({
     in: FetchLoanOffersDto,
     out: { arrayOf: LoanOffer }
   })
@@ -713,7 +748,7 @@ export default class GalaChainTokenContract extends GalaContract {
     });
   }
 
-  @Evaluate({
+  @UnsignedEvaluate({
     in: FetchLoansDto,
     out: { arrayOf: Loan }
   })
@@ -734,5 +769,143 @@ export default class GalaChainTokenContract extends GalaContract {
       loanKey: dto.loan,
       closingStatus: dto.status
     });
+  }
+
+  @Submit({
+    in: RequestTokenSwapDto,
+    out: TokenSwapRequest
+  })
+  public RequestTokenSwap(ctx: GalaChainContext, dto: RequestTokenSwapDto): Promise<TokenSwapRequest> {
+    return requestTokenSwap(ctx, {
+      offeredBy: dto.offeredBy ?? ctx.callingUser,
+      offeredTo: dto.offeredTo,
+      offered: dto.offered,
+      wanted: dto.wanted,
+      uses: dto.uses,
+      expires: dto.expires ?? RequestTokenSwapDto.DEFAULT_EXPIRES
+    });
+  }
+
+  @Submit({
+    in: FillTokenSwapDto,
+    out: TokenSwapFill
+  })
+  public FillTokenSwap(ctx: GalaChainContext, dto: FillTokenSwapDto): Promise<TokenSwapFill> {
+    return fillTokenSwap(ctx, {
+      filledBy: asValidUserAlias(dto.filledBy ?? ctx.callingUser),
+      uses: dto.uses ?? FillTokenSwapDto.DEFAULT_USES,
+      swapRequestId: dto.swapRequestId,
+      expectedTokenSwap: dto.expectedTokenSwap
+    });
+  }
+
+  @Submit({
+    in: BatchFillTokenSwapDto,
+    out: { arrayOf: TokenSwapFill }
+  })
+  public async BatchFillTokenSwap(
+    ctx: GalaChainContext,
+    dto: BatchFillTokenSwapDto
+  ): Promise<TokenSwapFill[]> {
+    const params = dto.swapDtos.map((d) => ({
+      swapRequestId: d.swapRequestId,
+      filledBy: asValidUserAlias(d.filledBy ?? ctx.callingUser),
+      uses: d.uses ?? FillTokenSwapDto.DEFAULT_USES,
+      expectedTokenSwap: d.expectedTokenSwap
+    }));
+
+    return batchFillTokenSwaps(ctx, params);
+  }
+
+  @Submit({
+    in: TerminateTokenSwapDto,
+    out: TokenSwapRequest
+  })
+  public TerminateTokenSwap(ctx: GalaChainContext, dto: TerminateTokenSwapDto): Promise<TokenSwapRequest> {
+    return terminateTokenSwap(ctx, dto.swapRequestId);
+  }
+
+  @UnsignedEvaluate({
+    in: FetchTokenSwapsDto,
+    out: { arrayOf: TokenSwapRequest }
+  })
+  public FetchTokenSwaps(ctx: GalaChainContext, dto: FetchTokenSwapsDto): Promise<TokenSwapRequest[]> {
+    return fetchTokenSwaps(ctx, dto.created);
+  }
+
+  @UnsignedEvaluate({
+    in: FetchTokenSwapByRequestIdDto,
+    out: TokenSwapRequest
+  })
+  public FetchTokenSwapByRequestId(
+    ctx: GalaChainContext,
+    dto: FetchTokenSwapByRequestIdDto
+  ): Promise<TokenSwapRequest> {
+    return fetchTokenSwapByRequestId(ctx, dto.swapRequestId);
+  }
+
+  @UnsignedEvaluate({
+    in: FetchTokenSwapsByInstanceDto,
+    out: FetchTokenSwapsWithPaginationResponse
+  })
+  public FetchTokenSwapsByInstanceOffered(
+    ctx: GalaChainContext,
+    dto: FetchTokenSwapsByInstanceDto
+  ): Promise<FetchTokenSwapsWithPaginationResponse> {
+    return fetchTokenSwapsByInstanceOffered(ctx, dto);
+  }
+
+  @UnsignedEvaluate({
+    in: FetchTokenSwapsByInstanceDto,
+    out: FetchTokenSwapsWithPaginationResponse
+  })
+  public FetchTokenSwapsByInstanceWanted(
+    ctx: GalaChainContext,
+    dto: FetchTokenSwapsByInstanceDto
+  ): Promise<FetchTokenSwapsWithPaginationResponse> {
+    return fetchTokenSwapsByInstanceWanted(ctx, dto);
+  }
+
+  @UnsignedEvaluate({
+    in: FetchTokenSwapsByUserDto,
+    out: FetchTokenSwapsWithPaginationResponse
+  })
+  public FetchTokenSwapsOfferedByUser(
+    ctx: GalaChainContext,
+    dto: FetchTokenSwapsByUserDto
+  ): Promise<FetchTokenSwapsWithPaginationResponse> {
+    return fetchTokenSwapsOfferedByUser(ctx, { ...dto, user: dto.user ?? ctx.callingUser });
+  }
+
+  @UnsignedEvaluate({
+    in: FetchTokenSwapsByUserDto,
+    out: FetchTokenSwapsWithPaginationResponse
+  })
+  public FetchTokenSwapsOfferedToUser(
+    ctx: GalaChainContext,
+    dto: FetchTokenSwapsByUserDto
+  ): Promise<FetchTokenSwapsWithPaginationResponse> {
+    return fetchTokenSwapsOfferedToUser(ctx, { ...dto, user: dto.user ?? ctx.callingUser });
+  }
+
+  @UnsignedEvaluate({
+    in: EnsureTokenSwapIndexingDto,
+    out: EnsureTokenSwapIndexingResponse,
+    allowedOrgs: ["CuratorOrg"]
+  })
+  public EnsureTokenSwapIndexing(
+    ctx: GalaChainContext,
+    dto: EnsureTokenSwapIndexingDto
+  ): Promise<EnsureTokenSwapIndexingResponse> {
+    return ensureTokenSwapIndexing(ctx, { swapRequestIds: dto.swapRequestIds });
+  }
+
+  @Submit({
+    in: CleanTokenSwapsDto,
+    out: CleanTokenSwapsResponse,
+    allowedOrgs: ["CuratorOrg"]
+  })
+  public CleanTokenSwaps(ctx: GalaChainContext, dto: CleanTokenSwapsDto): Promise<CleanTokenSwapsResponse> {
+    return cleanTokenSwaps(ctx, dto);
   }
 }
