@@ -444,7 +444,7 @@ export class TokenBalance extends ChainObject {
     quantity: BigNumber,
     currentTime: number,
     name?: string,
-    callingUser?: string,
+    callingUser?: UserAlias,
     isTokenAuthority?: boolean
   ): void {
     const unexpiredLockedHolds = this.getUnexpiredLockedHoldsSortedByAscendingExpiration(currentTime);
