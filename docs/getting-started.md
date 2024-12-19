@@ -4,7 +4,7 @@ To write application chaincode for GalaChain, a prospective developer will want 
 
 A broad understanding of working with the command line, backend web application development, and asynchronous programming will also be useful for all chaincode developers.
 
-We aim to be beginner-friendly. Additional documentation and onboarding resources are forth coming, and community assistance is available in the [GalaChain Discord Server](https://discord.gg/A27kPPxcCt). We are a small team and this is an ambitious project. 
+We aim to be beginner-friendly. Additional documentation and onboarding resources are forth coming, and community assistance is available in the [GalaChain Discord Server](https://discord.gg/galachain). We are a small team and this is an ambitious project. 
 
 GalaChain runs on [Hyperledger Fabric](https://www.lfdecentralizedtrust.org/projects/fabric). 
 
