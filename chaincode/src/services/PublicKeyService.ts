@@ -22,6 +22,7 @@ import {
   UnauthorizedError,
   UserAlias,
   UserProfile,
+  asValidUserAlias,
   normalizePublicKey,
   signatures
 } from "@gala-chain/api";
@@ -140,6 +141,16 @@ export class PublicKeyService {
     }
 
     return undefined;
+  }
+
+  public static getDefaultUserProfile(publicKey: string, signing: SigningScheme): UserProfile {
+    const address = this.getUserAddress(publicKey, signing);
+    const profile = new UserProfile();
+    profile.alias = asValidUserAlias(`${signing.toLowerCase()}|${address}`);
+    profile.ethAddress = signing === SigningScheme.ETH ? address : undefined;
+    profile.tonAddress = signing === SigningScheme.TON ? address : undefined;
+    profile.roles = Array.from(UserProfile.DEFAULT_ROLES);
+    return profile;
   }
 
   public static async getPublicKey(ctx: Context, userId: string): Promise<PublicKey | undefined> {

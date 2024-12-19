@@ -12,7 +12,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-import { UnauthorizedError, UserAlias, UserRole } from "@gala-chain/api";
+import { UnauthorizedError, UserAlias, UserProfile, UserRole } from "@gala-chain/api";
 import { Context } from "fabric-contract-api";
 import { ChaincodeStub, Timestamp } from "fabric-shim";
 
@@ -74,6 +74,15 @@ export class GalaChainContext extends Context {
       throw new UnauthorizedError(`No roles known for user ${this.callingUserValue}`);
     }
     return this.callingUserRolesValue;
+  }
+
+  get callingUserProfile(): UserProfile {
+    const profile = new UserProfile();
+    profile.alias = this.callingUser;
+    profile.ethAddress = this.callingUserEthAddressValue;
+    profile.tonAddress = this.callingUserTonAddressValue;
+    profile.roles = this.callingUserRoles;
+    return profile;
   }
 
   set callingUserData(d: { alias?: UserAlias; ethAddress?: string; tonAddress?: string; roles: string[] }) {

@@ -71,6 +71,24 @@ const Success = labeled<Expectation>("Success")((response, user) => {
     })
   );
 });
+const SuccessNoCustomAlias = labeled<Expectation>("SuccessNoCustomAlias")((response, user) => {
+  expect(response).toEqual(
+    transactionSuccess({
+      alias: `eth|${user.ethAddress}`,
+      ethAddress: user.ethAddress,
+      roles: UserProfile.DEFAULT_ROLES
+    })
+  );
+});
+const SuccessUnknownKey = labeled<Expectation>("SuccessUnknownKey")((response, user) => {
+  expect(response).toEqual(
+    transactionSuccess({
+      alias: expect.stringMatching(/^eth\|[a-fA-F0-9]{40}$/),
+      ethAddress: expect.stringMatching(/^[a-fA-F0-9]{40}$/),
+      roles: UserProfile.DEFAULT_ROLES
+    })
+  );
+});
 
 const Error: (errorKey: string) => Expectation = (errorKey) =>
   labeled<Expectation>(errorKey)((response) => {
@@ -79,7 +97,7 @@ const Error: (errorKey: string) => Expectation = (errorKey) =>
 
 test.each([
   [__valid___, _________, ___registered, Success],
-  [__valid___, _________, notRegistered, Error("USER_NOT_REGISTERED")],
+  [__valid___, _________, notRegistered, SuccessNoCustomAlias],
   [__valid___, signerKey, ___registered, Error("REDUNDANT_SIGNER_PUBLIC_KEY")],
   [__valid___, _wrongKey, ___registered, Error("PUBLIC_KEY_MISMATCH")],
   [__valid___, signerKey, notRegistered, Error("REDUNDANT_SIGNER_PUBLIC_KEY")],
@@ -92,12 +110,12 @@ test.each([
   [__validDER, _________, notRegistered, Error("MISSING_SIGNER")],
   [__validDER, signerKey, ___registered, Success],
   [__validDER, _wrongKey, ___registered, Error("PK_INVALID_SIGNATURE")],
-  [__validDER, signerKey, notRegistered, Error("USER_NOT_REGISTERED")],
+  [__validDER, signerKey, notRegistered, SuccessNoCustomAlias],
   [__validDER, signerAdd, ___registered, Success],
   [__validDER, _wrongAdd, ___registered, Error("USER_NOT_REGISTERED")],
   [__validDER, signerAdd, notRegistered, Error("USER_NOT_REGISTERED")],
-  [invalid___, _________, ___registered, Error("USER_NOT_REGISTERED")], // tries to get other user's profile
-  [invalid___, _________, notRegistered, Error("USER_NOT_REGISTERED")],
+  [invalid___, _________, ___registered, SuccessUnknownKey], // it's just recovered to a different key
+  [invalid___, _________, notRegistered, SuccessUnknownKey], // it's just recovered to a different key
   [invalid___, signerKey, ___registered, Error("PUBLIC_KEY_MISMATCH")],
   [invalid___, signerKey, notRegistered, Error("PUBLIC_KEY_MISMATCH")],
   [invalid___, signerAdd, ___registered, Error("ADDRESS_MISMATCH")],
