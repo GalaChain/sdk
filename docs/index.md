@@ -1,7 +1,7 @@
 # GalaChain SDK
 
 Welcome to developing with GalaChain!
-GalaChain is a layer 1 blockchain designed to be the foundation of Web3 Gaming, Entertainment and more.
+GalaChain is a Layer 1 (L1) Blockchain designed to be the foundation of Web3 Gaming, Entertainment and more.
 
 ## Features
 
@@ -31,7 +31,3 @@ Read more about [GalaChain](galachain.md).
 - [`chain-client`](chain-client-docs/exports.md) - GalaChain client library
 - [`chain-test`](chain-test-docs/exports.md) - Unit testing and integration testing for GalaChain
 - [`chaincode` framework](chaincode-docs/exports.md) - Framework for building chaincodes on GalaChain
-
-## Documentation in PDF format
-
-- [PDF file](./pdf/sdk-documentation.pdf)
