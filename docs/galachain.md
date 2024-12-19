@@ -16,12 +16,10 @@ We're building a foundation for Web3 Gaming, Entertainment, and beyond.
 
 The core technology at the foundation of GalaChain is [Hyperledger Fabric](https://www.lfdecentralizedtrust.org/projects/fabric).
 
-We have built infrastructure and code to add capabilities to easily onboard games and users.
-Now it's very straightforward to write contracts using typescript.
+We have built infrastructure and written code to add capabilities to easily onboard games and users.
+Now it's very straightforward to write contracts using [TypeScript](https://www.typescriptlang.org/).
 
-We've also created a Token contract that can be implemented in any channel.
-
-This immediately gives the channel access to native Token operations such as transfer, mint, allowances, swapping, lending, and more.
+We've also created a Token contract that can be implemented in any channel. This contract immediately gives the channel access to native Token operations such as transfer, mint, allowances, swapping, lending, and more.
 
 Read more about the integration of GalaChain with Hyperledger Fabric in this [2024 blog post](https://www.lfdecentralizedtrust.org/blog/galachain-leveraging-hyperledger-fabric-to-create-the-ultimate-entertainment-blockchain) published with the [LF Decentralized Trust](https://www.lfdecentralizedtrust.org/).
 
