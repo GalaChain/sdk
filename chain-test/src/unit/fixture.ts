@@ -19,6 +19,7 @@ import {
   GalaChainResponse,
   RangedChainObject,
   UserAlias,
+  UserProfile,
   signatures
 } from "@gala-chain/api";
 import { Context, Contract } from "fabric-contract-api";
@@ -67,8 +68,9 @@ type TestGalaChainContext = Context & {
   set callingUserData(d: { alias?: UserAlias; ethAddress?: string; tonAddress?: string; roles: string[] });
   get callingUser(): UserAlias;
   get callingUserEthAddress(): string;
-  get callingUserRoles(): string[];
   get callingUserTonAddress(): string;
+  get callingUserRoles(): string[];
+  get callingUserProfile(): UserProfile;
   setDryRunOnBehalfOf(d: {
     alias: UserAlias;
     ethAddress?: string;
