@@ -151,8 +151,11 @@ See the [RBAC section](#next-role-based-access-control-rbac) for more informatio
 
 ### User registration
 
-Gala chain does not allow anonymous users to access the chaincode.
-In order to access the chaincode, the user must be registered with the chaincode.
+GalaChain allows anonymous users to access the chaincode, once the DTO is signed with the user's private key, and the public key can be recovered from the signature.
+In this case, the user's alias will be `eth|<eth-addr>` or `ton|<ton-addr>`, and the user's roles will have default `EVALUATE` and `SUBMIT` roles.
+
+Registration is required only if you want to use the custom alias for the user in the chaincode, or if you want to provide custom roles for the user.
+
 There are two methods to register a user:
 
 1. `RegisterUser` method in the `PublicKeyContract`.
