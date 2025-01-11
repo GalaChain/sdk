@@ -109,7 +109,7 @@ describe("public key", () => {
   });
 
   it("should tolerate private key beginning with 0x", () => {
-    const keyWithPrefix = '0x0000000000000000000000000000000000000000000000000000000000000001';
+    const keyWithPrefix = "0x0000000000000000000000000000000000000000000000000000000000000001";
     const ketWithoutPrefix = keyWithPrefix.slice(2);
 
     const publicKeyWithPrefix = signatures.getPublicKey(keyWithPrefix);
