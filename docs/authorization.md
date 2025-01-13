@@ -165,10 +165,8 @@ All methods require the user to provide their public key (secp256k1 for Ethereum
 The only difference between these methods is that only `RegisterUser` allows to specify the `alias` parameter.
 For `RegisterEthUser` and `RegisterTonUser` methods, the alias is set to `eth|<eth-addr>` or `ton|<ton-addr>` respectively.
 
-Access to register methods is restricted on the organization level and on the role level.
-They can be called either:
-* by the organization that is specified in the chaincode as `CURATOR_ORG_MSP` environment variable can access these methods (it's `CuratorOrg` by default),
-* by the user with the `CURATOR` role.
+Access to register methods is restricted on the organization level.
+They can be called only by the organization that is specified in the chaincode as `CURATOR_ORG_MSP` environment variable can access these methods (it's `CuratorOrg` by default).
 
 See the [Organization based authorization](#organization-based-authorization) section, or the [Role Based Access Control (RBAC)](#role-based-access-control-rbac) section for more information.
 
@@ -176,7 +174,17 @@ See the [Organization based authorization](#organization-based-authorization) se
 
 You may allow anonymous users to access the chaincode in one of the following ways:
 * setting the `ALLOW_NON_REGISTERED_USERS` environment variable to `true` for the chaincode container,
-* setting the `allowNonRegisteredUsers` property in the contract's `config` property to `true`.
+* setting the `allowNonRegisteredUsers` property in the contract's `config` property to `true`, as shown in the example below:
+
+```typescript
+class MyContract extends GalaContract {
+  constructor() {
+    super("MyContract", version, {
+      allowNonRegisteredUsers: true
+    });
+  }
+}
+```
 
 It is useful especially when you expect a large number of users to access the chaincode, and you don't want to register all of them.
 
