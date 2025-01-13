@@ -26,15 +26,39 @@ function getTxUnixTime(ctx: Context): number {
   return Math.floor(txUnixTime);
 }
 
+export interface GalaChainContextConfig {
+  readonly adminPublicKey?: string;
+  readonly allowNonRegisteredUsers?: boolean;
+}
+
+class GalaChainContextConfigImpl implements GalaChainContextConfig {
+  constructor(private readonly config: GalaChainContextConfig) {}
+
+  get adminPublicKey(): string | undefined {
+    return this.config.adminPublicKey ?? process.env.DEV_ADMIN_PUBLIC_KEY;
+  }
+
+  get allowNonRegisteredUsers(): boolean | undefined {
+    return this.config.allowNonRegisteredUsers ?? process.env.ALLOW_NON_REGISTERED_USERS === "true";
+  }
+}
+
 export class GalaChainContext extends Context {
   stub: GalaChainStub;
   private callingUserValue?: UserAlias;
   private callingUserEthAddressValue?: string;
   private callingUserTonAddressValue?: string;
   private callingUserRolesValue?: string[];
-  public isDryRun = false;
   private txUnixTimeValue?: number;
   private loggerInstance?: GalaLoggerInstance;
+
+  public isDryRun = false;
+  public config: GalaChainContextConfig;
+
+  constructor(config: GalaChainContextConfig) {
+    super();
+    this.config = new GalaChainContextConfigImpl(config);
+  }
 
   get logger(): GalaLoggerInstance {
     if (this.loggerInstance === undefined) {

@@ -104,7 +104,7 @@ export async function authenticate(
         throw new RedundantSignerAddressError(ethAddress, dto.signerAddress);
       }
     }
-    return await getUserProfileOrDefault(ctx, recoveredPkHex, dto.signing ?? SigningScheme.ETH); // new flow only
+    return await getUserProfile(ctx, recoveredPkHex, dto.signing ?? SigningScheme.ETH); // new flow only
   } else if (dto.signerAddress !== undefined) {
     if (dto.signerPublicKey !== undefined) {
       throw new RedundantSignerPublicKeyError(dto.signerAddress, dto.signerPublicKey);
@@ -123,13 +123,13 @@ export async function authenticate(
       throw new PkInvalidSignatureError(address);
     }
 
-    return await getUserProfileOrDefault(ctx, dto.signerPublicKey, dto.signing ?? SigningScheme.ETH); // new flow only
+    return await getUserProfile(ctx, dto.signerPublicKey, dto.signing ?? SigningScheme.ETH); // new flow only
   } else {
     throw new MissingSignerError(dto.signature);
   }
 }
 
-async function getUserProfileOrDefault(
+async function getUserProfile(
   ctx: GalaChainContext,
   publicKey: string,
   signing: SigningScheme
@@ -138,7 +138,11 @@ async function getUserProfileOrDefault(
   const profile = await PublicKeyService.getUserProfile(ctx, address);
 
   if (profile === undefined) {
-    return PublicKeyService.getDefaultUserProfile(publicKey, signing);
+    if (ctx.config.allowNonRegisteredUsers) {
+      return PublicKeyService.getDefaultUserProfile(publicKey, signing);
+    } else {
+      throw new UserNotRegisteredError(address);
+    }
   }
 
   return profile;

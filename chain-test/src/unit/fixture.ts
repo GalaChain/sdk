@@ -62,21 +62,29 @@ type GalaChainStub = ChaincodeStub & {
   getDeletes(): Record<string, true>;
 };
 
+interface CallingUserData {
+  alias?: UserAlias;
+  ethAddress?: string;
+  tonAddress?: string;
+  roles: string[];
+}
+
+interface GalaChainContextConfig {
+  readonly adminPublicKey?: string;
+  readonly allowNonRegisteredUsers?: boolean;
+}
+
 type TestGalaChainContext = Context & {
   readonly stub: GalaChainStub;
   readonly logger: GalaLoggerInstance;
-  set callingUserData(d: { alias?: UserAlias; ethAddress?: string; tonAddress?: string; roles: string[] });
+  set callingUserData(d: CallingUserData);
   get callingUser(): UserAlias;
   get callingUserEthAddress(): string;
   get callingUserTonAddress(): string;
   get callingUserRoles(): string[];
   get callingUserProfile(): UserProfile;
-  setDryRunOnBehalfOf(d: {
-    alias: UserAlias;
-    ethAddress?: string;
-    tonAddress?: string;
-    roles: string[];
-  }): void;
+  get config(): GalaChainContextConfig;
+  setDryRunOnBehalfOf(d: CallingUserData): void;
   isDryRun: boolean;
   get txUnixTime(): number;
   setChaincodeStub(stub: ChaincodeStub): void;

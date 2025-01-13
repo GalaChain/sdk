@@ -27,7 +27,7 @@ import {
 import { Contract } from "fabric-contract-api";
 
 import { PublicKeyService } from "../services";
-import { GalaChainContext, GalaChainStub } from "../types";
+import { GalaChainContext, GalaChainContextConfig, GalaChainStub } from "../types";
 import { getObjectHistory, getPlainObjectByKey } from "../utils";
 import { getApiMethods } from "./GalaContractApi";
 import { EVALUATE, GalaTransaction } from "./GalaTransaction";
@@ -41,7 +41,8 @@ export abstract class GalaContract extends Contract {
    */
   constructor(
     name: string,
-    private readonly version: string
+    private readonly version: string,
+    private readonly config: GalaChainContextConfig = {}
   ) {
     super(name);
   }
@@ -51,7 +52,7 @@ export abstract class GalaContract extends Contract {
   }
 
   public createContext(): GalaChainContext {
-    return new GalaChainContext();
+    return new GalaChainContext(this.config);
   }
 
   public async beforeTransaction(ctx: GalaChainContext): Promise<void> {

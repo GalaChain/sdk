@@ -75,7 +75,7 @@ test.each([
   [__valid, _________, ___registered, Error("MISSING_SIGNER")],
   [__valid, _________, notRegistered, Error("MISSING_SIGNER")],
   [__valid, signerKey, ___registered, Success],
-  [__valid, signerKey, notRegistered, Success],
+  [__valid, signerKey, notRegistered, Error("USER_NOT_REGISTERED")],
   [__valid, signerAdd, ___registered, Success],
   [__valid, signerAdd, notRegistered, Error("USER_NOT_REGISTERED")],
   [invalid, _________, ___registered, Error("MISSING_SIGNER")],
