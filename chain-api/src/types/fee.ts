@@ -827,7 +827,7 @@ export class FetchFeeThresholdUsesWithPaginationResponse extends ChainCallDTO {
     "Take an action on a set of provided chain keys, acquired from a fetch response. " +
     "E.g. ResetFeeThresholds, SettleFeePaymentReceipts, etc."
 })
-export class ChainKeysDto extends ChainCallDTO {
+export class ChainKeysDto extends SubmitCallDTO {
   @JSONSchema({
     description: "A list of composite keys to pass to getObjectsByKeys method."
   })
@@ -924,7 +924,7 @@ export class SettleFeePaymentReceiptsResponse extends ChainCallDTO {
 @JSONSchema({
   description: "Define a FeeExemption for a specific user."
 })
-export class FeeExemptionDto extends ChainCallDTO {
+export class FeeExemptionDto extends SubmitCallDTO {
   @JSONSchema({
     description: "The user / identity that should be exempt from fees."
   })

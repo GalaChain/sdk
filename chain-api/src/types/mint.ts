@@ -279,7 +279,7 @@ export class FetchTokenSupplyResponse extends ChainCallDTO {
     "such that ongoing high throughput mints/mint allowances are migrated " +
     "to a correct running total."
 })
-export class PatchMintAllowanceRequestDto extends ChainCallDTO {
+export class PatchMintAllowanceRequestDto extends SubmitCallDTO {
   @JSONSchema({
     description: "Token collection."
   })
@@ -321,7 +321,7 @@ export class PatchMintAllowanceRequestDto extends ChainCallDTO {
     "such that ongoing high throughput mints/mint allowances are migrated " +
     "to a correct running total."
 })
-export class PatchMintRequestDto extends ChainCallDTO {
+export class PatchMintRequestDto extends SubmitCallDTO {
   @JSONSchema({
     description: "Token collection."
   })
@@ -357,7 +357,7 @@ export class PatchMintRequestDto extends ChainCallDTO {
 @JSONSchema({
   description: "DTO that describes a TokenMintConfiguration chain object."
 })
-export class TokenMintConfigurationDto extends ChainCallDTO {
+export class TokenMintConfigurationDto extends SubmitCallDTO {
   @JSONSchema({
     description: "Token collection."
   })
@@ -483,4 +483,18 @@ export class FetchTokenMintConfigurationsResponse extends ChainCallDTO {
 
   @IsString()
   bookmark: string;
+}
+
+export class DeleteTokenMintConfigurationDto extends SubmitCallDTO {
+  @IsNotEmpty()
+  public collection: string;
+
+  @IsNotEmpty()
+  public category: string;
+
+  @IsNotEmpty()
+  public type: string;
+
+  @IsDefined()
+  public additionalKey: string;
 }

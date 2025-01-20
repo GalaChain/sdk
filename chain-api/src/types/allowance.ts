@@ -318,7 +318,7 @@ export class GrantAllowanceDto extends SubmitCallDTO {
     "DTO properties backwards-compatible with prior GrantAllowanceDto, with the " +
     "exception that this implementation only supports AllowanceType.Mint."
 })
-export class HighThroughputGrantAllowanceDto extends ChainCallDTO {
+export class HighThroughputGrantAllowanceDto extends SubmitCallDTO {
   // todo: remove all these duplicated properties
   // it seems something about our @GalaTransaction decorator does not pass through
   // parent properties. Leaving this class empty with just the `extends GrantAllowanceDto`
@@ -371,7 +371,7 @@ export class HighThroughputGrantAllowanceDto extends ChainCallDTO {
   description:
     "Experimental: After submitting request to RequestMintAllowance, follow up with FulfillMintAllowance."
 })
-export class FulfillMintAllowanceDto extends ChainCallDTO {
+export class FulfillMintAllowanceDto extends SubmitCallDTO {
   static MAX_ARR_SIZE = 1000;
 
   @ValidateNested({ each: true })
