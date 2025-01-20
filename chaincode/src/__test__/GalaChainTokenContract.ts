@@ -63,7 +63,6 @@ import {
   FulfillTokenSaleDto,
   FullAllowanceCheckDto,
   FullAllowanceCheckResDto,
-  GalaChainResponse,
   GrantAllowanceDto,
   HighThroughputMintTokenDto,
   Loan,
@@ -108,7 +107,6 @@ import {
   GalaTransaction,
   Submit,
   UnsignedEvaluate,
-  batchFillTokenSwapFeeGate,
   batchMintToken,
   burnTokens,
   createTokenClass,
@@ -131,8 +129,6 @@ import {
   fulfillMintRequest,
   fulfillTokenSale,
   fullAllowanceCheck,
-  galaSwapFillFeeGate,
-  galaSwapRequestFeeGate,
   grantAllowance,
   lockToken,
   lockTokens,
@@ -144,7 +140,6 @@ import {
   removeTokenSale,
   requestMint,
   resolveUserAlias,
-  terminateTokenSwapFeeGate,
   transferToken,
   unlockToken,
   unlockTokens,
@@ -154,7 +149,7 @@ import {
 // eslint-disable-next-line @typescript-eslint/ban-ts-comment
 // @ts-ignore
 import { version } from "../../package.json";
-import { EVALUATE, Evaluate, SUBMIT } from "../contracts";
+import { SUBMIT } from "../contracts";
 import { acceptLoanOffer, closeLoan, fetchLoanOffers, fetchLoans, offerLoan } from "../loans";
 import {
   batchFillTokenSwaps,
@@ -263,13 +258,13 @@ export default class GalaChainTokenContract extends GalaContract {
     in: FullAllowanceCheckDto,
     out: FullAllowanceCheckResDto
   })
-  public FullAllowanceCheck(
+  public async FullAllowanceCheck(
     ctx: GalaChainContext,
     dto: FullAllowanceCheckDto
   ): Promise<FullAllowanceCheckResDto> {
     return fullAllowanceCheck(ctx, {
-      owner: dto.owner ?? ctx.callingUser,
-      grantedTo: dto.grantedTo ?? ctx.callingUser,
+      owner: dto.owner ? await resolveUserAlias(ctx, dto.owner) : ctx.callingUser,
+      grantedTo: dto.grantedTo ? await resolveUserAlias(ctx, dto.grantedTo) : ctx.callingUser,
       allowanceType: dto.allowanceType ?? AllowanceType.Use,
       collection: dto.collection,
       category: dto.category,
@@ -775,10 +770,10 @@ export default class GalaChainTokenContract extends GalaContract {
     in: RequestTokenSwapDto,
     out: TokenSwapRequest
   })
-  public RequestTokenSwap(ctx: GalaChainContext, dto: RequestTokenSwapDto): Promise<TokenSwapRequest> {
+  public async RequestTokenSwap(ctx: GalaChainContext, dto: RequestTokenSwapDto): Promise<TokenSwapRequest> {
     return requestTokenSwap(ctx, {
-      offeredBy: dto.offeredBy ?? ctx.callingUser,
-      offeredTo: dto.offeredTo,
+      offeredBy: dto.offeredBy ? await resolveUserAlias(ctx, dto.offeredBy) : ctx.callingUser,
+      offeredTo: dto.offeredTo ? await resolveUserAlias(ctx, dto.offeredTo) : undefined,
       offered: dto.offered,
       wanted: dto.wanted,
       uses: dto.uses,
