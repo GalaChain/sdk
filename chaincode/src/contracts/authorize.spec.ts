@@ -229,7 +229,7 @@ describe("authorization", () => {
 
     const user = {
       ...ChainUser.withRandomKeys(customUser.alias),
-      roles: customUser.roles
+      roles: customUser.roles ?? [...UserProfile.DEFAULT_ROLES]
     };
 
     const ContractClass = TestContractClass(type, verifySignature, allowedOrgs, allowedRoles);

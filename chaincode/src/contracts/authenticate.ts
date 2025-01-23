@@ -18,6 +18,7 @@ import {
   PublicKey,
   SigningScheme,
   UserProfile,
+  UserProfileWithRoles,
   ValidationFailedError,
   signatures
 } from "@gala-chain/api";
@@ -133,7 +134,7 @@ async function getUserProfile(
   ctx: GalaChainContext,
   publicKey: string,
   signing: SigningScheme
-): Promise<UserProfile> {
+): Promise<UserProfileWithRoles> {
   const address = PublicKeyService.getUserAddress(publicKey, signing);
   const profile = await PublicKeyService.getUserProfile(ctx, address);
 
@@ -147,7 +148,7 @@ async function getUserProfile(
 async function getUserProfileAndPublicKey(
   ctx: GalaChainContext,
   address
-): Promise<{ profile: UserProfile; publicKey: PublicKey }> {
+): Promise<{ profile: UserProfileWithRoles; publicKey: PublicKey }> {
   const profile = await PublicKeyService.getUserProfile(ctx, address);
 
   if (profile === undefined) {
