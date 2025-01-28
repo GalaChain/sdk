@@ -72,7 +72,7 @@ describe("oracle.ts", () => {
       timestamp: 0
     });
 
-    const mockAssertionDto = await createValidDTO(OraclePriceCrossRateAssertionDto, {
+    const mockAssertionDto = await createValidSubmitDTO(OraclePriceCrossRateAssertionDto, {
       oracle: mockOracle,
       identity: mockOracleIdentity,
       baseTokenCrossRate: tonUsdPriceAssertion,

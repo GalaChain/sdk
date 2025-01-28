@@ -23,6 +23,7 @@ import {
   Primitive,
   RuntimeError,
   SubmitCallDTO,
+  UserProfile,
   UserRole,
   generateResponseSchema,
   generateSchema,
@@ -119,7 +120,7 @@ function Evaluate<In extends ChainCallDTO, Out>(
 }
 
 function UnsignedEvaluate<In extends ChainCallDTO, Out>(
-  options: GalaEvaluateOptions<In, Out>
+  options: CommonTransactionOptions<In, Out>
 ): GalaTransactionDecoratorFunction {
   return GalaTransaction({ ...options, type: EVALUATE });
 }
@@ -188,8 +189,11 @@ function GalaTransaction<In extends ChainCallDTO, Out>(
         } else if (options?.verifySignature || dto?.signature !== undefined) {
           ctx.callingUserData = await authenticate(ctx, dto);
         } else {
-          // it means a request where authorization is not required. Intentionally misses alias field
-          ctx.callingUserData = { roles: [UserRole.EVALUATE] };
+          // it means a request where authorization is not required. If there is org-based authorization,
+          // default roles are applied. If not, then only evaluate is possible. Alias is intentionally
+          // missing.
+          const roles = !options.allowedOrgs?.length ? [UserRole.EVALUATE] : [...UserProfile.DEFAULT_ROLES];
+          ctx.callingUserData = { roles };
         }
 
         // Authorize the user

@@ -18,7 +18,6 @@ import {
   AuthorizedOnBehalf,
   ChainCallDTO,
   ChainObject,
-  HighThroughputMintTokenDto,
   TokenAllowance,
   TokenClass,
   TokenClassKeyProperties,

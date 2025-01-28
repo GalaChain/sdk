@@ -221,7 +221,7 @@ export class FetchOraclePriceAssertionsResponse extends ChainCallDTO {
 @JSONSchema({
   description: "Cross Rate Exchange price assertion. E.g. compare $GALA to $ETH via price in $USD for each."
 })
-export class OraclePriceCrossRateAssertionDto extends ChainCallDTO {
+export class OraclePriceCrossRateAssertionDto extends SubmitCallDTO {
   @JSONSchema({
     description: "Name of the oracle defined on chain."
   })
@@ -401,7 +401,7 @@ export class DeleteOracleDefinitionDto extends SubmitCallDTO {
 @JSONSchema({
   description: "Response with signed bridging fee data."
 })
-export class OracleBridgeFeeAssertionDto extends ChainCallDTO {
+export class OracleBridgeFeeAssertionDto extends SubmitCallDTO {
   @JSONSchema({
     description: "Exchange Rate Price Assertion used to calculate Gas Fee"
   })
