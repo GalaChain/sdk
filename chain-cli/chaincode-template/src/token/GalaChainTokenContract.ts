@@ -17,6 +17,7 @@ import {
   BatchMintTokenDto,
   BurnTokensDto,
   CreateTokenClassDto,
+  CreateVestingTokenDto,
   DeleteAllowancesDto,
   FeeAuthorizationResDto,
   FeeCodeDefinition,
@@ -64,6 +65,7 @@ import {
   UnlockTokensDto,
   UpdateTokenClassDto,
   UseTokenDto,
+  VestingToken,
   generateResponseSchema,
   generateSchema
 } from "@gala-chain/api";
@@ -626,5 +628,37 @@ export default class GalaChainTokenContract extends GalaContract {
         limit: dto.limit
       })
     );
+  }
+
+  @GalaTransaction({
+    type: SUBMIT,
+    in: CreateVestingTokenDto,
+    out: VestingToken,
+    allowedOrgs: [curatorOrgMsp],
+    verifySignature: true
+  })
+  public CreateVestingToken(ctx: GalaChainContext, dto: CreateVestingTokenDto): Promise<VestingToken> {
+    return this.createVestingToken(ctx, {
+      network: dto.network ?? CreateTokenClassDto.DEFAULT_NETWORK,
+      tokenClass: dto.tokenClass,
+      isNonFungible: false, // remove from dto?
+      decimals: dto.decimals ?? CreateTokenClassDto.DEFAULT_DECIMALS,
+      name: dto.name,
+      symbol: dto.symbol,
+      description: dto.description,
+      rarity: dto.rarity,
+      image: dto.image,
+      metadataAddress: dto.metadataAddress,
+      contractAddress: dto.contractAddress,
+      maxSupply: dto.maxSupply ?? CreateTokenClassDto.DEFAULT_MAX_SUPPLY,
+      maxCapacity: dto.maxCapacity ?? CreateTokenClassDto.DEFAULT_MAX_CAPACITY,
+      totalMintAllowance: dto.totalMintAllowance ?? CreateTokenClassDto.INITIAL_MINT_ALLOWANCE,
+      totalSupply: dto.totalSupply ?? CreateTokenClassDto.INITIAL_TOTAL_SUPPLY,
+      totalBurned: dto.totalBurned ?? CreateTokenClassDto.INITIAL_TOTAL_BURNED,
+      authorities: dto.authorities ?? [ctx.callingUser],
+      startDate: dto.startDate,
+      vestingName: dto.vestingName,
+      allocations: dto.allocations,
+    });
   }
 }
