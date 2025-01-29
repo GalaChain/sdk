@@ -638,7 +638,7 @@ export default class GalaChainTokenContract extends GalaContract {
     verifySignature: true
   })
   public CreateVestingToken(ctx: GalaChainContext, dto: CreateVestingTokenDto): Promise<VestingToken> {
-    return this.createVestingToken(ctx, {
+    return createVestingToken(ctx, {
       network: dto.network ?? CreateTokenClassDto.DEFAULT_NETWORK,
       tokenClass: dto.tokenClass,
       isNonFungible: false, // remove from dto?
