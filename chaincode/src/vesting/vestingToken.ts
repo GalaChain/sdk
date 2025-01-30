@@ -12,7 +12,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-import { Allocation, TokenBalance, TokenClass, TokenClassKey, TokenInstance, TokenInstanceKey, VestingToken, VestingTokenInfo } from "@gala-chain/api";
+import { Allocation, ChainObject, TokenBalance, TokenClass, TokenClassKey, TokenInstance, TokenInstanceKey, VestingToken, VestingTokenInfo } from "@gala-chain/api";
 import BigNumber from "bignumber.js";
 
 import { GalaChainContext } from "../types";
@@ -55,7 +55,13 @@ export async function fetchVestingToken(
     params: FetchVestingTokenParams
 ): Promise<VestingTokenInfo> {
     // Get the VestingToken object
-    const vestingToken = await getObjectByKey(ctx, VestingToken, TokenClass.buildTokenClassCompositeKey(params.tokenClass))
+    const vestingTokenKey = ChainObject.getCompositeKeyFromParts(VestingToken.INDEX_KEY, [
+        params.tokenClass.collection,
+        params.tokenClass.category,
+        params.tokenClass.type,
+        params.tokenClass.additionalKey
+    ])
+    const vestingToken = await getObjectByKey(ctx, VestingToken, vestingTokenKey)
 
     let vestingTokenInfo = new VestingTokenInfo();
     vestingTokenInfo.vestingToken = vestingToken;
@@ -74,14 +80,6 @@ export async function fetchVestingToken(
         });
       
         const allocationBalance = await getObjectByKey(ctx, TokenBalance, balanceKey.getCompositeKey())
-    
-        // const allocationBalance = await fetchBalances(ctx, {
-        //     collection: vestingToken.collection,
-        //     category: vestingToken.category,
-        //     type: vestingToken.type,
-        //     additionalKey: vestingToken.additionalKey,
-        //     owner: allocation.owner
-        // })
 
         vestingTokenInfo.allocationBalances.push(allocationBalance)
     }
@@ -123,7 +121,6 @@ export async function createVestingToken(
         //calculate lock amount per day using vesting period
         let perLockQuantity: BigNumber;
 
-        // TODO: Round to decimal limit
         perLockQuantity = ((new BigNumber(allocation.quantity))
             .dividedBy(new BigNumber(allocation.vestingDays)))
             .decimalPlaces(params.decimals);

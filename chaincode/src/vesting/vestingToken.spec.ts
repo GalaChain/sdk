@@ -101,7 +101,7 @@ describe("VestingToken", () => {
 
     // When
     const response = await contract.CreateVestingToken(ctx, vestingTokenDto);
-
+    
     // Then
     // VestingToken (basic vesting token info)
     expect(response).toEqual(transactionSuccess());
@@ -183,12 +183,28 @@ describe("VestingToken", () => {
 
   test("Fetch Vesting Token Info", async () => {
     // Given
+    let vestingTokenClassKey = new TokenClassKey
+    vestingTokenClassKey.collection = randomize("TEST");
+    vestingTokenClassKey.category = "Unit";
+    vestingTokenClassKey.type = "none";
+    vestingTokenClassKey.additionalKey = "none";
+
+    let vestingToken = new VestingToken();
+    vestingToken.collection = vestingTokenClassKey.collection
+    vestingToken.category = "Unit";
+    vestingToken.type = "none";
+    vestingToken.additionalKey = "none";
+    vestingToken.allocations = [];
+    vestingToken.startDate = 123;
+    vestingToken.vestingName = "SuperTokenTGE"
+
+
     const fetchVestingTokenInfoDto: FetchVestingTokenInfoDto = await createValidDTO(FetchVestingTokenInfoDto, {
-      tokenClasses: tokenClassKey
+      tokenClasses: vestingTokenClassKey
     });
 
-    const { ctx, contract, writes } = fixture(GalaChainTokenContract)
-      .callingUser(users.testAdminId)
+    const { ctx, contract } = fixture(GalaChainTokenContract)
+      .savedState(vestingToken);
 
     // When
     const response = await contract.FetchVestingTokens(ctx, fetchVestingTokenInfoDto);
