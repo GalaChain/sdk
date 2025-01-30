@@ -16,7 +16,7 @@ import {
   AllowanceType,
   CreateTokenClassDto,
   CreateVestingTokenDto,
-  FetchVestingTokensDto,
+  FetchVestingTokenInfoDto,
   TokenAllowance,
   TokenBalance,
   TokenClaim,
@@ -181,19 +181,19 @@ describe("VestingToken", () => {
     );
   });
 
-  // test("Fetch Vesting Token Info", async () => {
-  //   // Given
-  //   const fetchVestingTokenInfoDto: FetchVestingTokenInfoDto = await createValidDTO(FetchVestingTokenDto, {
-  //     tokenClasses: tokenClassKey
-  //   });
+  test("Fetch Vesting Token Info", async () => {
+    // Given
+    const fetchVestingTokenInfoDto: FetchVestingTokenInfoDto = await createValidDTO(FetchVestingTokenInfoDto, {
+      tokenClasses: tokenClassKey
+    });
 
-  //   const { ctx, contract, writes } = fixture(GalaChainTokenContract)
-  //     .callingUser(users.testAdminId)
+    const { ctx, contract, writes } = fixture(GalaChainTokenContract)
+      .callingUser(users.testAdminId)
 
-  //   // When
-  //   const response = await contract.FetchVestingToken(ctx, fetchVestingTokenInfoDto);
+    // When
+    const response = await contract.FetchVestingTokens(ctx, fetchVestingTokenInfoDto);
 
-  //   // Then
-  //   expect(response).toEqual(transactionSuccess());
-  // });
+    // Then
+    expect(response).toEqual(transactionSuccess());
+  });
 });
