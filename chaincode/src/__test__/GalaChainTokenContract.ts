@@ -90,6 +90,7 @@ import {
   burnTokens,
   createTokenClass,
   createTokenSale,
+  createVestingToken,
   creditFeeBalance,
   defineFeeSchedule,
   defineFeeSplitFormula,
@@ -105,6 +106,7 @@ import {
   fetchTokenClassesWithPagination,
   fetchTokenSaleById,
   fetchTokenSalesWithPagination,
+  fetchVestingToken,
   fulfillMintRequest,
   fulfillTokenSale,
   fullAllowanceCheck,
@@ -122,9 +124,7 @@ import {
   unlockToken,
   unlockTokens,
   updateTokenClass,
-  useToken,
-  createVestingToken,
-  fetchVestingToken
+  useToken
 } from "../";
 // eslint-disable-next-line @typescript-eslint/ban-ts-comment
 // @ts-ignore
@@ -744,7 +744,7 @@ export default class GalaChainTokenContract extends GalaContract {
       authorities: dto.tokenClass.authorities ?? [ctx.callingUser],
       startDate: dto.startDate,
       vestingName: dto.vestingName,
-      allocations: dto.allocations,
+      allocations: dto.allocations
     });
   }
 
@@ -753,7 +753,10 @@ export default class GalaChainTokenContract extends GalaContract {
     in: FetchVestingTokenDto,
     out: VestingTokenInfo
   })
-  public async FetchVestingTokens(ctx: GalaChainContext, dto: FetchVestingTokenDto): Promise<VestingTokenInfo> {
+  public async FetchVestingTokens(
+    ctx: GalaChainContext,
+    dto: FetchVestingTokenDto
+  ): Promise<VestingTokenInfo> {
     return fetchVestingToken(ctx, {
       tokenClass: dto.tokenClasses
     });

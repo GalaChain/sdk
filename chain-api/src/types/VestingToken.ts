@@ -12,19 +12,27 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+import BigNumber from "bignumber.js";
+import { Exclude, Type } from "class-transformer";
+import {
+  ArrayMinSize,
+  ArrayUnique,
+  IsDefined,
+  IsInt,
+  IsNotEmpty,
+  IsString,
+  Min,
+  ValidateNested
+} from "class-validator";
 import { JSONSchema } from "class-validator-jsonschema";
 
+import { ChainKey } from "../utils";
+import { BigNumberIsNotNegative, BigNumberProperty, IsUserAlias } from "../validators";
+import { ChainObject } from "./ChainObject";
+import { TokenBalance } from "./TokenBalance";
 import { TokenClassKey } from "./TokenClass";
 import { ChainCallDTO } from "./dtos";
 import { CreateTokenClassDto } from "./token";
-import BigNumber from "bignumber.js";
-import { Exclude, Type } from "class-transformer";
-import { ArrayMinSize, ArrayUnique, IsDefined, IsInt, IsNotEmpty, IsString, Min, ValidateNested } from "class-validator";
-import { BigNumberIsNotNegative, BigNumberProperty, IsUserAlias } from "../validators";
-
-import { ChainKey } from "../utils";
-import { ChainObject } from "./ChainObject";
-import { TokenBalance } from "./TokenBalance";
 
 export class Allocation {
   @IsString()
@@ -82,9 +90,9 @@ export class VestingToken extends ChainObject {
 
 // Combines the base VestingToken data with balances for allocations
 export class VestingTokenInfo {
-  vestingToken: VestingToken
+  vestingToken: VestingToken;
 
-  allocationBalances: Array<TokenBalance>
+  allocationBalances: Array<TokenBalance>;
 }
 
 @JSONSchema({
@@ -120,8 +128,7 @@ export class FetchVestingTokenDto extends ChainCallDTO {
 }
 
 @JSONSchema({
-  description:
-    "Contains properties of vesting token to be created."
+  description: "Contains properties of vesting token to be created."
 })
 export class CreateVestingTokenDto extends ChainCallDTO {
   @JSONSchema({
@@ -133,15 +140,13 @@ export class CreateVestingTokenDto extends ChainCallDTO {
   tokenClass: CreateTokenClassDto;
 
   @JSONSchema({
-    description:
-      "Name for the token holds. This name will be applied to all token holds created."
+    description: "Name for the token holds. This name will be applied to all token holds created."
   })
   @IsString()
   vestingName: string;
 
   @JSONSchema({
-    description:
-      "Start date timestamp. Cliff and vesting calculations will use this as the starting point."
+    description: "Start date timestamp. Cliff and vesting calculations will use this as the starting point."
   })
   @Min(0)
   @IsInt()

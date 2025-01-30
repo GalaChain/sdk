@@ -68,8 +68,7 @@ describe("VestingToken", () => {
     createTokenClassDto.isNonFungible = currency.tokenClass().isNonFungible;
     createTokenClassDto.authorities = currency.tokenClass().authorities;
 
-    const { ctx, contract, writes } = fixture(GalaChainTokenContract)
-      .callingUser(users.testAdminId)
+    const { ctx, contract, writes } = fixture(GalaChainTokenContract).callingUser(users.testAdminId);
 
     const vestingTokenDto: CreateVestingTokenDto = await createValidDTO(CreateVestingTokenDto, {
       tokenClass: createTokenClassDto,
@@ -96,22 +95,23 @@ describe("VestingToken", () => {
           quantity: new BigNumber(850),
           cliff: 0,
           vestingDays: 0
-        }]
+        }
+      ]
     });
 
     // When
     const response = await contract.CreateVestingToken(ctx, vestingTokenDto);
-    
+
     // Then
     // VestingToken (basic vesting token info)
     expect(response).toEqual(transactionSuccess());
-    
+
     // Should have
     // New Token class with supply=max
     // A balance for each allocation with locks
     // VestingToken object
-    const allocation1 = vestingTokenDto.allocations[0]
-    const allocation2 = vestingTokenDto.allocations[1]
+    const allocation1 = vestingTokenDto.allocations[0];
+    const allocation2 = vestingTokenDto.allocations[1];
 
     expect(writes).toMatchObject(
       writesMap(
@@ -120,15 +120,17 @@ describe("VestingToken", () => {
           ...tokenClassKey,
           owner: users.testUser1Id,
           quantity: allocation1.quantity,
-          lockedHolds: [plainToInstance(TokenHold, {
-            created: ctx.txUnixTime,
-            createdBy: users.testUser1Id,
-            expires: vestingTokenDto.startDate + 1000 * 24 * 60 * 60 * (allocation1.cliff),
-            instanceId: 0,
-            lockAuthority: users.testAdminId,
-            name: "SuperTokenTGE-allocation1-0",
-            quantity: 100
-          })]
+          lockedHolds: [
+            plainToInstance(TokenHold, {
+              created: ctx.txUnixTime,
+              createdBy: users.testUser1Id,
+              expires: vestingTokenDto.startDate + 1000 * 24 * 60 * 60 * allocation1.cliff,
+              instanceId: 0,
+              lockAuthority: users.testAdminId,
+              name: "SuperTokenTGE-allocation1-0",
+              quantity: 100
+            })
+          ]
         }),
         plainToInstance(TokenBalance, {
           ...currency.tokenBalance(),
@@ -139,7 +141,7 @@ describe("VestingToken", () => {
             plainToInstance(TokenHold, {
               created: ctx.txUnixTime,
               createdBy: users.testUser2Id,
-              expires: vestingTokenDto.startDate + 1000 * 24 * 60 * 60 * (allocation2.cliff),
+              expires: vestingTokenDto.startDate + 1000 * 24 * 60 * 60 * allocation2.cliff,
               instanceId: 0,
               lockAuthority: users.testAdminId,
               name: "SuperTokenTGE-allocation2-0",
@@ -183,28 +185,29 @@ describe("VestingToken", () => {
 
   test("Fetch Vesting Token Info", async () => {
     // Given
-    let vestingTokenClassKey = new TokenClassKey
+    const vestingTokenClassKey = new TokenClassKey();
     vestingTokenClassKey.collection = randomize("TEST");
     vestingTokenClassKey.category = "Unit";
     vestingTokenClassKey.type = "none";
     vestingTokenClassKey.additionalKey = "none";
 
-    let vestingToken = new VestingToken();
-    vestingToken.collection = vestingTokenClassKey.collection
+    const vestingToken = new VestingToken();
+    vestingToken.collection = vestingTokenClassKey.collection;
     vestingToken.category = "Unit";
     vestingToken.type = "none";
     vestingToken.additionalKey = "none";
     vestingToken.allocations = [];
     vestingToken.startDate = 123;
-    vestingToken.vestingName = "SuperTokenTGE"
+    vestingToken.vestingName = "SuperTokenTGE";
 
+    const fetchVestingTokenInfoDto: FetchVestingTokenInfoDto = await createValidDTO(
+      FetchVestingTokenInfoDto,
+      {
+        tokenClasses: vestingTokenClassKey
+      }
+    );
 
-    const fetchVestingTokenInfoDto: FetchVestingTokenInfoDto = await createValidDTO(FetchVestingTokenInfoDto, {
-      tokenClasses: vestingTokenClassKey
-    });
-
-    const { ctx, contract } = fixture(GalaChainTokenContract)
-      .savedState(vestingToken);
+    const { ctx, contract } = fixture(GalaChainTokenContract).savedState(vestingToken);
 
     // When
     const response = await contract.FetchVestingTokens(ctx, fetchVestingTokenInfoDto);
