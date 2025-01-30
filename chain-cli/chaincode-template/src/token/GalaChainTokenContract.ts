@@ -41,6 +41,7 @@ import {
   FetchTokenClassesDto,
   FetchTokenClassesResponse,
   FetchTokenClassesWithPaginationDto,
+  VestingTokenInfo,
   FulfillMintDto,
   FullAllowanceCheckDto,
   FullAllowanceCheckResDto,
@@ -630,35 +631,45 @@ export default class GalaChainTokenContract extends GalaContract {
     );
   }
 
-  @GalaTransaction({
-    type: SUBMIT,
-    in: CreateVestingTokenDto,
-    out: VestingToken,
-    allowedOrgs: [curatorOrgMsp],
-    verifySignature: true
-  })
-  public CreateVestingToken(ctx: GalaChainContext, dto: CreateVestingTokenDto): Promise<VestingToken> {
-    return createVestingToken(ctx, {
-      network: dto.network ?? CreateTokenClassDto.DEFAULT_NETWORK,
-      tokenClass: dto.tokenClass,
-      isNonFungible: false, // remove from dto?
-      decimals: dto.decimals ?? CreateTokenClassDto.DEFAULT_DECIMALS,
-      name: dto.name,
-      symbol: dto.symbol,
-      description: dto.description,
-      rarity: dto.rarity,
-      image: dto.image,
-      metadataAddress: dto.metadataAddress,
-      contractAddress: dto.contractAddress,
-      maxSupply: dto.maxSupply ?? CreateTokenClassDto.DEFAULT_MAX_SUPPLY,
-      maxCapacity: dto.maxCapacity ?? CreateTokenClassDto.DEFAULT_MAX_CAPACITY,
-      totalMintAllowance: dto.totalMintAllowance ?? CreateTokenClassDto.INITIAL_MINT_ALLOWANCE,
-      totalSupply: dto.totalSupply ?? CreateTokenClassDto.INITIAL_TOTAL_SUPPLY,
-      totalBurned: dto.totalBurned ?? CreateTokenClassDto.INITIAL_TOTAL_BURNED,
-      authorities: dto.authorities ?? [ctx.callingUser],
-      startDate: dto.startDate,
-      vestingName: dto.vestingName,
-      allocations: dto.allocations,
-    });
-  }
+  // @GalaTransaction({
+  //   type: SUBMIT,
+  //   in: CreateVestingTokenDto,
+  //   out: VestingToken,
+  //   verifySignature: true
+  // })
+  // public CreateVestingToken(ctx: GalaChainContext, dto: CreateVestingTokenDto): Promise<VestingToken> {
+  //   return createVestingToken(ctx, {
+  //     network: dto.tokenClass.network ?? CreateTokenClassDto.DEFAULT_NETWORK,
+  //     tokenClass: dto.tokenClass.tokenClass,
+  //     isNonFungible: false, // remove from dto?
+  //     decimals: dto.tokenClass.decimals ?? CreateTokenClassDto.DEFAULT_DECIMALS,
+  //     name: dto.tokenClass.name,
+  //     symbol: dto.tokenClass.symbol,
+  //     description: dto.tokenClass.description,
+  //     rarity: dto.tokenClass.rarity,
+  //     image: dto.tokenClass.image,
+  //     metadataAddress: dto.tokenClass.metadataAddress,
+  //     contractAddress: dto.tokenClass.contractAddress,
+  //     maxSupply: dto.tokenClass.maxSupply ?? CreateTokenClassDto.DEFAULT_MAX_SUPPLY,
+  //     maxCapacity: dto.tokenClass.maxCapacity ?? CreateTokenClassDto.DEFAULT_MAX_CAPACITY,
+  //     totalMintAllowance: dto.tokenClass.totalMintAllowance ?? CreateTokenClassDto.INITIAL_MINT_ALLOWANCE,
+  //     totalSupply: dto.tokenClass.totalSupply ?? CreateTokenClassDto.INITIAL_TOTAL_SUPPLY,
+  //     totalBurned: dto.tokenClass.totalBurned ?? CreateTokenClassDto.INITIAL_TOTAL_BURNED,
+  //     authorities: dto.tokenClass.authorities ?? [ctx.callingUser],
+  //     startDate: dto.startDate,
+  //     vestingName: dto.vestingName,
+  //     allocations: dto.allocations,
+  //   });
+  // }
+
+  // @GalaTransaction({
+  //   type: EVALUATE,
+  //   in: FetchVestingTokenDto,
+  //   out: VestingTokenInfo
+  // })
+  // public async FetchVestingTokens(ctx: GalaChainContext, dto: FetchVestingTokenDto): Promise<VestingTokenInfo> {
+  //   return fetchVestingToken(ctx, {
+  //     tokenClass: dto.tokenClasses
+  //   });
+  // }
 }

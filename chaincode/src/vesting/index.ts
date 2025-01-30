@@ -12,12 +12,4 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-import { VestingToken } from "./VestingToken";
-import { TokenBalance } from "./TokenBalance";
-
-// Combines the base VestingToken data with balances for allocations
-export class VestingTokenInfo {
-  vestingToken: VestingToken
-
-  allocationBalances: Array<TokenBalance>
-}
+export * from "./vestingToken";

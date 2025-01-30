@@ -12,21 +12,16 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-import { Allocation, MintTokenWithAllowanceDto, TokenBalance, TokenClass, TokenClassKey, TokenInstance, TokenInstanceKey } from "@gala-chain/api";
+import { Allocation, TokenBalance, TokenClass, TokenClassKey, TokenInstance, TokenInstanceKey, VestingToken, VestingTokenInfo } from "@gala-chain/api";
 import BigNumber from "bignumber.js";
 
-
-import { GalaChainContext, createValidChainObject } from "../types";
-import { getObjectByKey, objectExists, putChainObject } from "../utils";
-import { NftDecimalError } from "./TokenError";
-import { TokenAlreadyExistsError } from "./TokenError";
-import { createTokenClass, CreateTokenClassParams, TokenClassNotFoundError } from "../token";
-import { mintToken, mintTokenWithAllowance, MintTokenWithAllowanceParams } from "../mint";
+import { GalaChainContext } from "../types";
+import { getObjectByKey, putChainObject } from "../utils";
+import { createTokenClass, CreateTokenClassParams } from "../token";
+import { mintTokenWithAllowance, MintTokenWithAllowanceParams } from "../mint";
 import { lockToken } from "../locks";
-import { VestingToken } from "chain-api/src/types/VestingToken";
 import { plainToInstance } from "class-transformer";
 import { fetchBalances } from "../balances";
-import { VestingTokenInfo } from "chain-api/src/types/VestingTokenInfo";
 
 export interface CreateVestingTokenParams {
   network: string;
@@ -70,19 +65,25 @@ export async function fetchVestingToken(
     for(let i=0; i< allocationCount;i++) {
         const allocation = vestingToken.allocations[i];
 
-        const allocationBalance = await fetchBalances(ctx, {
+        const balanceKey = new TokenBalance({ 
             collection: vestingToken.collection,
             category: vestingToken.category,
             type: vestingToken.type,
             additionalKey: vestingToken.additionalKey,
-            owner: allocation.owner
-        })
+            owner: allocation.owner 
+        });
+      
+        const allocationBalance = await getObjectByKey(ctx, TokenBalance, balanceKey.getCompositeKey())
+    
+        // const allocationBalance = await fetchBalances(ctx, {
+        //     collection: vestingToken.collection,
+        //     category: vestingToken.category,
+        //     type: vestingToken.type,
+        //     additionalKey: vestingToken.additionalKey,
+        //     owner: allocation.owner
+        // })
 
-        if(allocationBalance.length !== 1){
-            // throw some kind of error, this is weird
-        }
-
-        vestingTokenInfo.allocationBalances.push(allocationBalance[0])
+        vestingTokenInfo.allocationBalances.push(allocationBalance)
     }
 
     return vestingTokenInfo;
@@ -99,10 +100,11 @@ export async function createVestingToken(
         ...params
     }
     const tokenClassResponse = await createTokenClass(ctx, tokenClassParams)
+    console.log("callinguser", ctx.callingUser)
 
     const tokenInstanceKey = plainToInstance(TokenInstanceKey, {
         ...params.tokenClass,
-        instance: "0"
+        instance: TokenInstance.FUNGIBLE_TOKEN_INSTANCE
       })
 
     const allocationCount = params.allocations.length;
@@ -123,21 +125,28 @@ export async function createVestingToken(
 
         // TODO: Round to decimal limit
         perLockQuantity = ((new BigNumber(allocation.quantity))
-            .dividedBy(new BigNumber(allocation.vestingPeriod)))
+            .dividedBy(new BigNumber(allocation.vestingDays)))
             .decimalPlaces(params.decimals);
 
         //first lock expires on startDate + cliff (verify this is right)
         let expiration = params.startDate + daysToMilliseconds(allocation.cliff);
 
         // Calculate total amount that will be locked based on perLockQuantity
-        const totalToLock = perLockQuantity.multipliedBy(allocation.vestingPeriod);
+        const totalToLock = perLockQuantity.multipliedBy(allocation.vestingDays);
         let remainingQuantity = allocation.quantity;
 
-        for(let i=0;i<allocation.vestingPeriod;i++) {
+        for(let i=0;i<allocation.vestingDays;i++) {
             // For the last iteration, use remaining quantity instead of perLockQuantity
-            const currentLockQuantity = i === allocation.vestingPeriod - 1 
+            const currentLockQuantity = i === allocation.vestingDays - 1 
                 ? remainingQuantity 
                 : perLockQuantity;
+
+            const verifyAuthorizedOnBehalf = async () => {
+                return {
+                    callingOnBehalf: allocation.owner,
+                    callingUser: ctx.callingUser
+                }
+            }
 
             const lockResponse = await lockToken(ctx, {
                 owner: allocation.owner,
@@ -147,7 +156,7 @@ export async function createVestingToken(
                 allowancesToUse: [],
                 name: `${params.vestingName}-${allocation.name}-${i}`,
                 expires: expiration + daysToMilliseconds(i),
-                verifyAuthorizedOnBehalf: async () => undefined
+                verifyAuthorizedOnBehalf
             });
             
             remainingQuantity = remainingQuantity.minus(currentLockQuantity);
