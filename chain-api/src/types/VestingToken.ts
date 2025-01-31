@@ -96,7 +96,7 @@ export class VestingTokenInfo {
   @IsNotEmpty()
   vestingToken: VestingToken;
 
-  @ValidateNested({ each: true})
+  @ValidateNested({ each: true })
   @Type(() => TokenBalance)
   @ArrayNotEmpty()
   allocationBalances: Array<TokenBalance>;
