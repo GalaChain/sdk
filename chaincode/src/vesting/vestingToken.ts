@@ -75,6 +75,7 @@ export async function fetchVestingToken(
 
   const vestingTokenInfo = new VestingTokenInfo();
   vestingTokenInfo.vestingToken = vestingToken;
+  vestingTokenInfo.allocationBalances = new Array<TokenBalance>();
 
   // Loop through allocations and use them to fetch balances.
   const allocationCount = vestingToken.allocations.length;

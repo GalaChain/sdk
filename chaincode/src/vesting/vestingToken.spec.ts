@@ -16,7 +16,7 @@ import {
   AllowanceType,
   CreateTokenClassDto,
   CreateVestingTokenDto,
-  FetchVestingTokenInfoDto,
+  FetchVestingTokenDto,
   TokenAllowance,
   TokenBalance,
   TokenClaim,
@@ -200,17 +200,14 @@ describe("VestingToken", () => {
     vestingToken.startDate = 123;
     vestingToken.vestingName = "SuperTokenTGE";
 
-    const fetchVestingTokenInfoDto: FetchVestingTokenInfoDto = await createValidDTO(
-      FetchVestingTokenInfoDto,
-      {
-        tokenClasses: vestingTokenClassKey
-      }
-    );
+    const fetchVestingTokenDto: FetchVestingTokenDto = await createValidDTO(FetchVestingTokenDto, {
+      tokenClasses: vestingTokenClassKey
+    });
 
     const { ctx, contract } = fixture(GalaChainTokenContract).savedState(vestingToken);
 
     // When
-    const response = await contract.FetchVestingTokens(ctx, fetchVestingTokenInfoDto);
+    const response = await contract.FetchVestingTokens(ctx, fetchVestingTokenDto);
 
     // Then
     expect(response).toEqual(transactionSuccess());

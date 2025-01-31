@@ -16,6 +16,7 @@ import BigNumber from "bignumber.js";
 import { Exclude, Type } from "class-transformer";
 import {
   ArrayMinSize,
+  ArrayNotEmpty,
   ArrayUnique,
   IsDefined,
   IsInt,
@@ -90,33 +91,19 @@ export class VestingToken extends ChainObject {
 
 // Combines the base VestingToken data with balances for allocations
 export class VestingTokenInfo {
+  @ValidateNested()
+  @Type(() => VestingToken)
+  @IsNotEmpty()
   vestingToken: VestingToken;
 
+  @ValidateNested({ each: true})
+  @Type(() => TokenBalance)
+  @ArrayNotEmpty()
   allocationBalances: Array<TokenBalance>;
 }
 
 @JSONSchema({
   description: "Fetch vesting info including balances of allocations"
-})
-export class FetchVestingTokenInfoDto extends ChainCallDTO {
-  @JSONSchema({
-    description: "The Vested Token Class to be Fetched."
-  })
-  @ValidateNested()
-  @Type(() => TokenClassKey)
-  @IsNotEmpty()
-  tokenClasses: TokenClassKey;
-}
-
-export class FetchVestingTokenInfoResponse extends ChainCallDTO {
-  @JSONSchema({ description: "Vesting Token Info." })
-  @ValidateNested()
-  @Type(() => VestingToken)
-  vestingTokenInfo: VestingTokenInfo;
-}
-
-@JSONSchema({
-  description: "Contains list of objects representing vesting tokens to fetch."
 })
 export class FetchVestingTokenDto extends ChainCallDTO {
   @JSONSchema({
