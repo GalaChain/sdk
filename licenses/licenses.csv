@@ -163,7 +163,7 @@
 "@babel/types@7.17.0","@babel/types","7.17.0","https://github.com/babel/babel","Babel Types is a Lodash-esque utility library for AST nodes","MIT"
 "@babel/types@7.25.4","@babel/types","7.25.4","https://github.com/babel/babel","Babel Types is a Lodash-esque utility library for AST nodes","MIT"
 "@bcoe/v8-coverage@0.2.3","@bcoe/v8-coverage","0.2.3","https://github.com/demurgos/v8-coverage","Helper functions for V8 coverage files.","MIT"
-"@colors/colors@1.6.0","@colors/colors","1.6.0","https://github.com/DABH/colors.js","get colors in your node.js console","MIT"
+"@colors/colors@1.5.9","@colors/colors","1.6.0","https://github.com/DABH/colors.js","get colors in your node.js console","MIT"
 "@cspotcode/source-map-support@0.8.1","@cspotcode/source-map-support","0.8.1","https://github.com/cspotcode/node-source-map-support","Fixes stack traces for files with source maps","MIT"
 "@dabh/diagnostics@2.0.3","@dabh/diagnostics","2.0.3","https://github.com/3rd-Eden/diagnostics","Tools for debugging your node.js modules and event loop","MIT"
 "@datadog/native-appsec@7.0.0","@datadog/native-appsec","7.0.0","https://github.com/DataDog/dd-native-appsec-js","Node.js bindings for libddwaf","Apache-2.0"
