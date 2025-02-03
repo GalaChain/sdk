@@ -128,7 +128,7 @@ jobs:
       - name: Push a new version of the docs
         run: |
           git stash
-          git fetch origin $PAGES_BRANCH && git -b checkout $PAGES_BRANCH origin/$PAGES_BRANCH || git checkout $PAGES_BRANCH || echo "Pages branch not deployed yet."
+          git fetch origin $PAGES_BRANCH && git checkout -b $PAGES_BRANCH origin/$PAGES_BRANCH || git checkout $PAGES_BRANCH || echo "Pages branch not deployed yet."
           git checkout $GITHUB_SHA
           mike deploy --rebase --prefix docs -r $HTTPS_REMOTE -p -b $PAGES_BRANCH -u ${GITHUB_REF#refs/tags/} latest
           mike set-default --rebase --prefix docs -r $HTTPS_REMOTE -p -b $PAGES_BRANCH latest
