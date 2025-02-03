@@ -27,7 +27,8 @@ import {
   TokenInstanceKey,
   TokenMintFulfillment,
   TokenMintRequest,
-  UserAlias
+  UserAlias,
+  ValidationFailedError
 } from "@gala-chain/api";
 import BigNumber from "bignumber.js";
 import { plainToInstance } from "class-transformer";
@@ -125,6 +126,35 @@ export async function mintRequestsByTimeKeys(
 export interface FulfillMintRequestParams {
   requests: MintRequestDto[];
   callingUser: UserAlias;
+}
+
+function validateMintRequestDtoMatchesOriginal(
+  mintRequestDto: MintRequestDto,
+  originalRequest: TokenMintRequest
+): void {
+  const fieldsToVerify = [
+    ["owner", mintRequestDto.owner, originalRequest.owner],
+    ["collection", mintRequestDto.collection, originalRequest.collection],
+    ["category", mintRequestDto.category, originalRequest.category],
+    ["type", mintRequestDto.type, originalRequest.type],
+    ["additionalKey", mintRequestDto.additionalKey, originalRequest.additionalKey],
+    ["timeKey", mintRequestDto.timeKey, originalRequest.timeKey],
+    [
+      "totalKnownMintsCount",
+      mintRequestDto.totalKnownMintsCount?.toFixed(),
+      originalRequest.totalKnownMintsCount?.toFixed()
+    ]
+  ];
+
+  for (const [field, dtoValue, reqValue] of fieldsToVerify) {
+    if (dtoValue !== reqValue) {
+      const message = `${field} mismatch: MintRequestDto ${field} ${dtoValue} does not match TokenMintRequest ${field} ${reqValue}`;
+      throw new ValidationFailedError(message, {
+        dto: mintRequestDto,
+        originalRequest
+      });
+    }
+  }
 }
 
 export async function fulfillMintRequest(
@@ -235,6 +265,12 @@ export async function fulfillMintRequest(
         runningQuantityCheckTotal = runningQuantityCheckTotal.plus(req.quantity);
         instanceCounter = instanceCounter.plus(req.quantity);
         continue;
+      }
+
+      // Add validation that the request matches the original mint request
+      const mintRequestDto = requests.find((r) => r.id === req.id);
+      if (mintRequestDto) {
+        validateMintRequestDtoMatchesOriginal(mintRequestDto, req);
       }
 
       let mintableQty = false;

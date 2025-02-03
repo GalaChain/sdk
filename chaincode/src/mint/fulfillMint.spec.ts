@@ -31,7 +31,7 @@ import {
   createValidRangedChainObject,
   createValidSubmitDTO
 } from "@gala-chain/api";
-import { currency, fixture, nft, users, writesMap } from "@gala-chain/test";
+import { currency, fixture, nft, transactionErrorMessageContains, users, writesMap } from "@gala-chain/test";
 import BigNumber from "bignumber.js";
 import { plainToInstance } from "class-transformer";
 
@@ -439,6 +439,103 @@ describe("FulfillMint", () => {
         new Error(`Quantity: ${decimalQuantity} has more than ${currencyClass.decimals} decimal places.`)
       )
     );
+    expect(getWrites()).toEqual({});
+  });
+
+  it("prevents attackers from tampering with mint request", async () => {
+    // Given
+    const nftInstance = nft.tokenInstance1();
+    const nftInstanceKey = nft.tokenInstance1Key();
+    const nftClass = nft.tokenClass();
+    const mintQty = new BigNumber("2");
+    const tokenAllowance = nft.tokenMintAllowance();
+
+    const { collection, category, type, additionalKey } = nftClass;
+
+    const testFixture = fixture(GalaChainTokenContract)
+      .registeredUsers(users.attacker)
+      .caClientIdentity("admin", "CuratorOrg");
+    const { ctx, contract, getWrites } = testFixture;
+
+    const tokenClaim = await createValidChainObject(TokenClaim, {
+      ...nftInstanceKey,
+      ownerKey: users.admin.identityKey,
+      issuerKey: users.admin.identityKey,
+      instance: new BigNumber("0"),
+      action: 4,
+      quantity: mintQty,
+      allowanceCreated: 1,
+      claimSequence: new BigNumber("1"),
+      created: ctx.txUnixTime
+    });
+
+    const epochKey = inverseEpoch(ctx, 0);
+    const timeKey = inverseTime(ctx, 0);
+
+    const mintRequest = await createValidRangedChainObject(TokenMintRequest, {
+      id: "-", // will be set later
+      collection,
+      category,
+      type,
+      additionalKey,
+      timeKey,
+      totalKnownMintsCount: new BigNumber("0"),
+      requestor: users.admin.identityKey,
+      owner: users.testUser1.identityKey,
+      created: ctx.txUnixTime,
+      quantity: mintQty,
+      state: TokenMintStatus.Unknown,
+      epoch: epochKey
+    });
+
+    mintRequest.id = mintRequest.requestId();
+
+    const tokenBurnCounter = await createValidRangedChainObject(TokenBurnCounter, {
+      referenceId: "-", // will be set later
+      collection,
+      category,
+      type,
+      additionalKey,
+      timeKey,
+      totalKnownBurnsCount: new BigNumber("0"),
+      instance: nftInstance.instance,
+      burnedBy: users.testUser2.identityKey,
+      created: ctx.txUnixTime,
+      quantity: new BigNumber("1"),
+      epoch: epochKey
+    });
+
+    tokenBurnCounter.referenceId = tokenBurnCounter.referencedBurnId();
+
+    const dto = await createValidSubmitDTO(FulfillMintDto, {
+      requests: [
+        plainToInstance(MintRequestDto, {
+          collection,
+          category,
+          type,
+          additionalKey,
+          timeKey,
+          totalKnownMintsCount: new BigNumber("0"),
+          id: mintRequest.requestId(),
+          owner: users.attacker.identityKey // <- tampered here. code expects users.testUser1Id
+        })
+      ]
+    });
+
+    testFixture
+      .savedState(nftClass, nftInstance, tokenAllowance, tokenClaim)
+      .savedRangeState([mintRequest, tokenBurnCounter]);
+
+    // When
+    const response = await contract.FulfillMint(ctx, dto);
+
+    // Then
+    expect(response).toEqual(
+      transactionErrorMessageContains(
+        `owner mismatch: MintRequestDto owner ${users.attacker.identityKey} does not match TokenMintRequest owner ${users.testUser1.identityKey}`
+      )
+    );
+
     expect(getWrites()).toEqual({});
   });
 });
