@@ -233,6 +233,16 @@ export class ChainCallDTO {
   }
 
   public sign(privateKey: string, useDer = false): void {
+    if (useDer) {
+      if (this.signing === SigningScheme.TON) {
+        throw new ValidationFailedError("TON signing scheme does not support DER signatures");
+      } else {
+        if (this.signerPublicKey === undefined && this.signerAddress === undefined) {
+          this.signerPublicKey = signatures.getPublicKey(privateKey);
+        }
+      }
+    }
+
     if (this.signing === SigningScheme.TON) {
       const keyBuffer = Buffer.from(privateKey, "base64");
       this.signature = signatures.ton.getSignature(this, keyBuffer, this.prefix).toString("base64");

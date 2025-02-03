@@ -14,7 +14,6 @@
  */
 import {
   ChainCallDTO,
-  GalaChainResponse,
   GetMyProfileDto,
   GetPublicKeyDto,
   NotFoundError,

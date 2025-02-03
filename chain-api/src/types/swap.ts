@@ -154,6 +154,7 @@ export class FillTokenSwapDto extends SubmitCallDTO {
   })
   @IsOptional()
   @ValidateNested()
+  @Type(() => ExpectedTokenSwap)
   public expectedTokenSwap?: ExpectedTokenSwap;
 
   @JSONSchema({

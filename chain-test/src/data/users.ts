@@ -20,7 +20,7 @@ export interface ChainUserWithRoles {
   ethAddress: string;
   publicKey: string;
   privateKey: string;
-  roles: string[] | undefined;
+  roles: string[];
 }
 
 export function randomUser(
