@@ -17,10 +17,8 @@ import {
   ChainCallDTO,
   ChainError,
   ChainObject,
-  FulfillMintDto,
   GalaChainResponse,
   MintRequestDto,
-  MintTokenDto,
   RuntimeError,
   TokenAllowance,
   TokenClass,
@@ -29,7 +27,7 @@ import {
   TokenInstanceKey,
   TokenMintFulfillment,
   TokenMintRequest,
-  createValidSubmitDTO
+  UserAlias
 } from "@gala-chain/api";
 import BigNumber from "bignumber.js";
 import { plainToInstance } from "class-transformer";
@@ -124,11 +122,15 @@ export async function mintRequestsByTimeKeys(
   return requestEntries;
 }
 
+export interface FulfillMintRequestParams {
+  requests: MintRequestDto[];
+  callingUser: UserAlias;
+}
+
 export async function fulfillMintRequest(
   ctx: GalaChainContext,
-  dto: FulfillMintDto
+  { requests, callingUser }: FulfillMintRequestParams
 ): Promise<Array<TokenInstanceKey>> {
-  const requests = dto.requests;
   const requestIds = requests.map((r) => r.id);
 
   const reqIdx: Record<string, MintRequestDto[]> = indexMintRequests(requests);
@@ -265,7 +267,10 @@ export async function fulfillMintRequest(
           owner: req.owner,
           quantity: req.quantity,
           allowanceKey: req.allowanceKey,
-          authorizedOnBehalf: undefined
+          authorizedOnBehalf: {
+            callingOnBehalf: callingUser,
+            callingUser: callingUser
+          }
         };
 
         // todo: bridging support. refactor FulfillMint and/or validateMintRequest
@@ -303,7 +308,8 @@ export async function fulfillMintRequest(
             ctx,
             mintFulfillmentEntry,
             tokenClass,
-            instanceCounter
+            instanceCounter,
+            callingUser
           );
 
           const returnKeys: Array<TokenInstanceKey> = [];
@@ -334,7 +340,7 @@ export async function fulfillMintRequest(
 
   await Promise.all(successful.map((mintFulfillment) => putChainObject(ctx, mintFulfillment)));
 
-  if (resultInstanceKeys.length < dto.requests.length) {
+  if (resultInstanceKeys.length < requests.length) {
     throw new Error(
       JSON.stringify({
         success: resultInstanceKeys,

@@ -149,7 +149,7 @@ import {
 // eslint-disable-next-line @typescript-eslint/ban-ts-comment
 // @ts-ignore
 import { version } from "../../package.json";
-import { SUBMIT } from "../contracts";
+import { SUBMIT, getCaIdentityAlias } from "../contracts";
 import { acceptLoanOffer, closeLoan, fetchLoanOffers, fetchLoans, offerLoan } from "../loans";
 import {
   batchFillTokenSwaps,
@@ -337,7 +337,7 @@ export default class GalaChainTokenContract extends GalaContract {
     // no signature verification
   })
   public async FulfillMint(ctx: GalaChainContext, dto: FulfillMintDto): Promise<TokenInstanceKey[]> {
-    return fulfillMintRequest(ctx, dto);
+    return fulfillMintRequest(ctx, { requests: dto.requests, callingUser: getCaIdentityAlias(ctx) });
   }
 
   /**

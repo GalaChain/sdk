@@ -17,7 +17,7 @@ import { plainToInstance } from "class-transformer";
 
 import { ExternalToken } from "./OraclePriceAssertion";
 import { TokenInstanceKey } from "./TokenInstance";
-import { createValidDTO, createValidSubmitDTO } from "./dtos";
+import { createValidSubmitDTO } from "./dtos";
 import { OraclePriceAssertionDto, OraclePriceCrossRateAssertionDto } from "./oracle";
 
 describe("oracle.ts", () => {

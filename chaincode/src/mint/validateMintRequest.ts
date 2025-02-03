@@ -44,12 +44,11 @@ export async function validateMintRequest(
   params: ValidateMintRequestParams,
   tokenClass: TokenClass
 ): Promise<TokenAllowance[]> {
-  const callingUser: string = ctx.callingUser;
-  const owner = params.owner ?? callingUser;
+  const owner = params.owner ?? ctx.callingUser;
   const tokenClassKey = params.tokenClass;
   const quantity = params.quantity;
 
-  const callingOnBehalf: string = params.authorizedOnBehalf?.callingOnBehalf ?? callingUser;
+  const callingOnBehalf: string = params.authorizedOnBehalf?.callingOnBehalf ?? ctx.callingUser;
 
   const decimalPlaces = quantity.decimalPlaces() ?? 0;
   if (decimalPlaces > tokenClass.decimals) {
@@ -123,7 +122,7 @@ export async function validateMintRequest(
 
   if (totalAllowance.isLessThan(quantity)) {
     throw new Error(
-      `${callingUser} does not have sufficient allowances ${totalAllowance.toString()} to ${actionDescription}`
+      `${callingOnBehalf} does not have sufficient allowances ${totalAllowance.toString()} to ${actionDescription}`
     );
   }
 
