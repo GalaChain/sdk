@@ -99,10 +99,13 @@ jobs:
         run: |
           wget https://dl.google.com/linux/direct/google-chrome-stable_current_amd64.deb
           sudo dpkg -i google-chrome*.deb
-      - name: Install python3 and pip
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: Install system dependencies
         run: |
-          sudo apt-get install -y python3
-          sudo apt-get install -y python3-pip python3-pillow python3-cffi python3-brotli gcc musl-dev python3-dev
+          sudo apt-get install -y gcc musl-dev
       - name: Setup Node.js
         uses: actions/setup-node@v3
       - name: Install mermaid-cli
@@ -125,7 +128,7 @@ jobs:
       - name: Push a new version of the docs
         run: |
           git stash
-          git fetch origin $PAGES_BRANCH && git -b checkout $PAGES_BRANCH origin/$PAGES_BRANCH || git checkout $PAGES_BRANCH || echo "Pages branch not deployed yet."
+          git fetch origin $PAGES_BRANCH && git checkout -b $PAGES_BRANCH origin/$PAGES_BRANCH || git checkout $PAGES_BRANCH || echo "Pages branch not deployed yet."
           git checkout $GITHUB_SHA
           mike deploy --rebase --prefix docs -r $HTTPS_REMOTE -p -b $PAGES_BRANCH -u ${GITHUB_REF#refs/tags/} latest
           mike set-default --rebase --prefix docs -r $HTTPS_REMOTE -p -b $PAGES_BRANCH latest
