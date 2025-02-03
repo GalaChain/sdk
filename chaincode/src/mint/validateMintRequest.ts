@@ -42,13 +42,14 @@ export interface ValidateMintRequestParams {
 export async function validateMintRequest(
   ctx: GalaChainContext,
   params: ValidateMintRequestParams,
-  tokenClass: TokenClass
+  tokenClass: TokenClass,
+  callingUser: UserAlias
 ): Promise<TokenAllowance[]> {
-  const owner = params.owner ?? ctx.callingUser;
+  const owner = params.owner ?? callingUser;
   const tokenClassKey = params.tokenClass;
   const quantity = params.quantity;
 
-  const callingOnBehalf: string = params.authorizedOnBehalf?.callingOnBehalf ?? ctx.callingUser;
+  const callingOnBehalf: string = params.authorizedOnBehalf?.callingOnBehalf ?? callingUser;
 
   const decimalPlaces = quantity.decimalPlaces() ?? 0;
   if (decimalPlaces > tokenClass.decimals) {

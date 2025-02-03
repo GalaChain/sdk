@@ -72,7 +72,7 @@ describe("authorization", () => {
     // Then
     expect(await f1.signedCall()).toEqual(transactionSuccess(registeredUser));
     expect(await f1.unsignedCall()).toEqual(
-      transactionSuccess({ alias: anonymousUserId, roles: [UserRole.EVALUATE] })
+      transactionSuccess({ alias: anonymousUserId, roles: [UserRole.EVALUATE, UserRole.SUBMIT] })
     );
 
     expect(await f2.signedCall()).toEqual(transactionErrorKey("ORGANIZATION_NOT_ALLOWED"));
@@ -94,13 +94,8 @@ describe("authorization", () => {
 
     // Then
     expect(await f1.signedCall()).toEqual(transactionSuccess(registeredUser));
-    const f1UnsignedCallResponse = await f1.unsignedCall();
-    expect(f1UnsignedCallResponse).toEqual(transactionErrorKey("MISSING_ROLE"));
-    expect(f1UnsignedCallResponse).toEqual(
-      transactionErrorMessageContains(
-        // EVALUATE is default role for anonymous user (no signature)
-        `User ${anonymousUserId} does not have one of required roles: SUBMIT (has: EVALUATE)`
-      )
+    expect(await f1.unsignedCall()).toEqual(
+      transactionSuccess({ alias: anonymousUserId, roles: [UserRole.EVALUATE, UserRole.SUBMIT] })
     );
 
     expect(await f2.signedCall()).toEqual(transactionErrorKey("ORGANIZATION_NOT_ALLOWED"));

@@ -132,7 +132,7 @@ export async function submitMintRequest(
 
   if (!tokenClass) throw new Error("missing tokenclass");
 
-  await validateMintRequest(ctx, params, tokenClass).catch((e) => {
+  await validateMintRequest(ctx, params, tokenClass, callingUser).catch((e) => {
     throw new Error(`ValidateMintRequest failure: ${e.message}`);
   });
 

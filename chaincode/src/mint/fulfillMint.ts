@@ -267,10 +267,7 @@ export async function fulfillMintRequest(
           owner: req.owner,
           quantity: req.quantity,
           allowanceKey: req.allowanceKey,
-          authorizedOnBehalf: {
-            callingOnBehalf: callingUser,
-            callingUser: callingUser
-          }
+          authorizedOnBehalf: undefined
         };
 
         // todo: bridging support. refactor FulfillMint and/or validateMintRequest
@@ -279,7 +276,8 @@ export async function fulfillMintRequest(
         const applicableAllowances: TokenAllowance[] = await validateMintRequest(
           ctx,
           mintReqParams,
-          tokenClass
+          tokenClass,
+          callingUser
         );
 
         const actionDescription =
