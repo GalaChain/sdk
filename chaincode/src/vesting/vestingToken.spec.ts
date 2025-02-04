@@ -26,7 +26,8 @@ import {
   TokenInstance,
   TokenMintAllowance,
   VestingToken,
-  createValidDTO
+  createValidDTO,
+  createValidSubmitDTO
 } from "@gala-chain/api";
 import { currency, fixture, randomize, transactionSuccess, users, writesMap } from "@gala-chain/test";
 import BigNumber from "bignumber.js";
@@ -68,36 +69,38 @@ describe("VestingToken", () => {
     createTokenClassDto.isNonFungible = currency.tokenClass().isNonFungible;
     createTokenClassDto.authorities = currency.tokenClass().authorities;
 
-    const { ctx, contract, writes } = fixture(GalaChainTokenContract).callingUser(users.testAdminId);
+    const { ctx, contract, getWrites } = fixture(GalaChainTokenContract)
+      .caClientIdentity("client|admin", "CuratorOrg")
+      .registeredUsers(users.admin);
 
-    const vestingTokenDto: CreateVestingTokenDto = await createValidDTO(CreateVestingTokenDto, {
+    const vestingTokenDto: CreateVestingTokenDto = await createValidSubmitDTO(CreateVestingTokenDto, {
       tokenClass: createTokenClassDto,
       startDate: ctx.txUnixTime + 1000 * 60,
       vestingName: "SuperTokenTGE",
       allocations: [
         {
           name: "allocation1",
-          owner: users.testUser1Id,
+          owner: users.testUser1.identityKey,
           quantity: new BigNumber(100),
           cliff: 90,
           vestingDays: 1
         },
         {
           name: "allocation2",
-          owner: users.testUser2Id,
+          owner: users.testUser2.identityKey,
           quantity: new BigNumber(50),
           cliff: 1,
           vestingDays: 2
         },
         {
           name: "allocation3",
-          owner: users.testAdminId,
+          owner: users.admin.identityKey,
           quantity: new BigNumber(850),
           cliff: 0,
           vestingDays: 0
         }
       ]
-    });
+    }).signed(users.admin.privateKey);
 
     // When
     const response = await contract.CreateVestingToken(ctx, vestingTokenDto);
@@ -113,20 +116,20 @@ describe("VestingToken", () => {
     const allocation1 = vestingTokenDto.allocations[0];
     const allocation2 = vestingTokenDto.allocations[1];
 
-    expect(writes).toMatchObject(
+    expect(getWrites()).toMatchObject(
       writesMap(
         plainToInstance(TokenBalance, {
           ...currency.tokenBalance(),
           ...tokenClassKey,
-          owner: users.testUser1Id,
+          owner: users.testUser1.identityKey,
           quantity: allocation1.quantity,
           lockedHolds: [
             plainToInstance(TokenHold, {
               created: ctx.txUnixTime,
-              createdBy: users.testUser1Id,
+              createdBy: users.testUser1.identityKey,
               expires: vestingTokenDto.startDate + 1000 * 24 * 60 * 60 * allocation1.cliff,
               instanceId: 0,
-              lockAuthority: users.testAdminId,
+              lockAuthority: users.admin.identityKey,
               name: "SuperTokenTGE-allocation1-0",
               quantity: 100
             })
@@ -135,24 +138,24 @@ describe("VestingToken", () => {
         plainToInstance(TokenBalance, {
           ...currency.tokenBalance(),
           ...tokenClassKey,
-          owner: users.testUser2Id,
+          owner: users.testUser2.identityKey,
           quantity: new BigNumber("50"),
           lockedHolds: [
             plainToInstance(TokenHold, {
               created: ctx.txUnixTime,
-              createdBy: users.testUser2Id,
+              createdBy: users.testUser2.identityKey,
               expires: vestingTokenDto.startDate + 1000 * 24 * 60 * 60 * allocation2.cliff,
               instanceId: 0,
-              lockAuthority: users.testAdminId,
+              lockAuthority: users.admin.identityKey,
               name: "SuperTokenTGE-allocation2-0",
               quantity: 25
             }),
             plainToInstance(TokenHold, {
               created: ctx.txUnixTime,
-              createdBy: users.testUser2Id,
+              createdBy: users.testUser2.identityKey,
               expires: vestingTokenDto.startDate + 1000 * 24 * 60 * 60 * (allocation2.cliff + 1),
               instanceId: 0,
-              lockAuthority: users.testAdminId,
+              lockAuthority: users.admin.identityKey,
               name: "SuperTokenTGE-allocation2-1",
               quantity: 25
             })
@@ -161,7 +164,7 @@ describe("VestingToken", () => {
         plainToInstance(TokenBalance, {
           ...currency.tokenBalance(),
           ...tokenClassKey,
-          owner: users.testAdminId,
+          owner: users.admin.identityKey,
           quantity: new BigNumber("850")
         }),
         plainToInstance(TokenClass, {

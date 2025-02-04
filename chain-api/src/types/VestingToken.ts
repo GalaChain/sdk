@@ -32,6 +32,7 @@ import { BigNumberIsNotNegative, BigNumberProperty, IsUserAlias } from "../valid
 import { ChainObject } from "./ChainObject";
 import { TokenBalance } from "./TokenBalance";
 import { TokenClassKey } from "./TokenClass";
+import { UserAlias } from "./UserAlias";
 import { ChainCallDTO, SubmitCallDTO } from "./dtos";
 import { CreateTokenClassDto } from "./token";
 
@@ -40,7 +41,7 @@ export class Allocation {
   name: string;
 
   @IsUserAlias()
-  owner: string;
+  owner: UserAlias;
 
   @BigNumberIsNotNegative()
   @BigNumberProperty()

@@ -20,6 +20,7 @@ import {
   TokenClassKey,
   TokenInstance,
   TokenInstanceKey,
+  UserAlias,
   VestingToken,
   VestingTokenInfo
 } from "@gala-chain/api";
@@ -50,7 +51,7 @@ export interface CreateVestingTokenParams {
   totalMintAllowance: BigNumber;
   totalSupply: BigNumber;
   totalBurned: BigNumber;
-  authorities: string[];
+  authorities: UserAlias[];
   startDate: number;
   vestingName: string;
   allocations: Allocation[];
