@@ -78,6 +78,7 @@ import {
   GalaTransaction,
   SUBMIT,
   Submit,
+  UnsignedEvaluate,
   batchMintToken,
   burnTokens,
   createTokenClass,
@@ -131,6 +132,10 @@ export default class GalaChainTokenContract extends GalaContract {
     allowedOrgs: ["CuratorOrg"]
   })
   public async CreateTokenClass(ctx: GalaChainContext, dto: CreateTokenClassDto): Promise<TokenClassKey> {
+    const authorities = dto.authorities
+      ? await Promise.all(dto.authorities.map((a) => resolveUserAlias(ctx, a)))
+      : [ctx.callingUser];
+
     return createTokenClass(ctx, {
       network: dto.network ?? CreateTokenClassDto.DEFAULT_NETWORK,
       tokenClass: dto.tokenClass,
@@ -148,9 +153,7 @@ export default class GalaChainTokenContract extends GalaContract {
       totalMintAllowance: dto.totalMintAllowance ?? CreateTokenClassDto.INITIAL_MINT_ALLOWANCE,
       totalSupply: dto.totalSupply ?? CreateTokenClassDto.INITIAL_TOTAL_SUPPLY,
       totalBurned: dto.totalBurned ?? CreateTokenClassDto.INITIAL_TOTAL_BURNED,
-      authorities: await Promise.all(
-        (dto.authorities ?? [ctx.callingUser]).map((a) => resolveUserAlias(ctx, a))
-      )
+      authorities
     });
   }
 
@@ -615,13 +618,16 @@ export default class GalaChainTokenContract extends GalaContract {
     );
   }
 
-  @GalaTransaction({
-    type: SUBMIT,
+  @Submit({
     in: CreateVestingTokenDto,
     out: VestingToken,
-    verifySignature: true
+    allowedOrgs: ["CuratorOrg"]
   })
-  public CreateVestingToken(ctx: GalaChainContext, dto: CreateVestingTokenDto): Promise<VestingToken> {
+  public async CreateVestingToken(ctx: GalaChainContext, dto: CreateVestingTokenDto): Promise<VestingToken> {
+    const authorities = dto.tokenClass.authorities
+      ? await Promise.all(dto.tokenClass.authorities.map((a) => resolveUserAlias(ctx, a)))
+      : [ctx.callingUser];
+
     return createVestingToken(ctx, {
       network: dto.tokenClass.network ?? CreateTokenClassDto.DEFAULT_NETWORK,
       tokenClass: dto.tokenClass.tokenClass,
@@ -639,15 +645,14 @@ export default class GalaChainTokenContract extends GalaContract {
       totalMintAllowance: dto.tokenClass.totalMintAllowance ?? CreateTokenClassDto.INITIAL_MINT_ALLOWANCE,
       totalSupply: dto.tokenClass.totalSupply ?? CreateTokenClassDto.INITIAL_TOTAL_SUPPLY,
       totalBurned: dto.tokenClass.totalBurned ?? CreateTokenClassDto.INITIAL_TOTAL_BURNED,
-      authorities: dto.tokenClass.authorities ?? [ctx.callingUser],
+      authorities,
       startDate: dto.startDate,
       vestingName: dto.vestingName,
       allocations: dto.allocations
     });
   }
 
-  @GalaTransaction({
-    type: EVALUATE,
+  @UnsignedEvaluate({
     in: FetchVestingTokenDto,
     out: VestingTokenInfo
   })
