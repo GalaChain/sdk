@@ -40,6 +40,21 @@ const customMessages = {
 const genericMessage =
   "Expected string following the format of 'client|<user-id>', or 'eth|<checksumed-eth-addr>', " +
   "or 'ton|<chain:ton-address>', or valid system-level username.";
+export function meansValidUserAlias(result: UserRefValidationResult) {
+  return (
+    result === UserRefValidationResult.VALID_USER_ALIAS ||
+    result === UserRefValidationResult.VALID_SYSTEM_USER
+  );
+}
+
+export function isValidSystemUser(value: string): boolean {
+  return (
+    value === "EthereumBridge" ||
+    value === "TonBridge" ||
+    value === "SolanaBridge" ||
+    /^GalaChainBridge-\d+$/.test(value)
+  );
+}
 
 /**
  * @description
