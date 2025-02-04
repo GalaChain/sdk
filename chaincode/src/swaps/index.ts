@@ -13,6 +13,7 @@
  * limitations under the License.
  */
 import { batchFillTokenSwaps } from "./batchFillTokenSwaps";
+import { cleanTokenSwaps } from "./cleanExpiredSwaps";
 import { ensureTokenSwapIndexing } from "./ensureTokenSwapIndexing";
 import { fetchTokenSwapByRequestId } from "./fetchTokenSwapByRequestId";
 import { fetchTokenSwaps } from "./fetchTokenSwaps";
@@ -36,5 +37,6 @@ export {
   fetchTokenSwapsOfferedToUser,
   fillTokenSwap,
   requestTokenSwap,
-  terminateTokenSwap
+  terminateTokenSwap,
+  cleanTokenSwaps
 };

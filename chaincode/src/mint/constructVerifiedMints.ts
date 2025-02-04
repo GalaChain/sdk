@@ -18,6 +18,7 @@ import {
   TokenClass,
   TokenInstance,
   TokenMintFulfillment,
+  UserAlias,
   createValidChainObject
 } from "@gala-chain/api";
 import BigNumber from "bignumber.js";
@@ -29,9 +30,9 @@ export async function constructVerifiedMints(
   ctx: GalaChainContext,
   dto: TokenMintFulfillment,
   tokenClass: TokenClass,
-  instanceCounter: BigNumber
+  instanceCounter: BigNumber,
+  callingUser: UserAlias
 ): Promise<[TokenInstance[], TokenBalance]> {
-  const callingUser = ctx.callingUser;
   const owner = dto.owner ?? callingUser;
   const { collection, category, type, additionalKey } = dto;
   const tokenClassKey = await TokenClass.buildClassKeyObject({ collection, category, type, additionalKey });

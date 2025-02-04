@@ -165,7 +165,7 @@ class Fixture<Ctx extends TestGalaChainContext, T extends GalaContract<Ctx>> {
       this.ctx.callingUserData = {
         alias: user.identityKey,
         ethAddress: user.ethAddress,
-        roles: user.roles ?? []
+        roles: user.roles
       };
       return this;
     }

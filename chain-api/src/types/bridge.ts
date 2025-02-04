@@ -20,13 +20,13 @@ import { JSONSchema } from "class-validator-jsonschema";
 import { BigNumberIsPositive, BigNumberProperty, EnumProperty } from "../validators";
 import { ChainId } from "./ChainId";
 import { TokenInstance, TokenInstanceKey } from "./TokenInstance";
-import { ChainCallDTO } from "./dtos";
+import { SubmitCallDTO } from "./dtos";
 import { OracleBridgeFeeAssertionDto } from "./oracle";
 
 @JSONSchema({
   description: "Contains properties of bridge request, i.e. a request to bridge token out from GalaChain."
 })
-export class RequestTokenBridgeOutDto extends ChainCallDTO {
+export class RequestTokenBridgeOutDto extends SubmitCallDTO {
   @JSONSchema({
     description: "The type of the bridge."
   })

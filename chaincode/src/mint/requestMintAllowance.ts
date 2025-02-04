@@ -39,6 +39,7 @@ export interface InternalGrantAllowanceData {
   quantities: Array<GrantAllowanceQuantity>;
   uses: BigNumber;
   expires?: number;
+  uniqueKey: string;
 }
 
 export async function requestMintAllowance(
@@ -125,6 +126,7 @@ export async function requestMintAllowance(
 
   const res = new FulfillMintAllowanceDto();
   res.requests = successfulRequests;
+  res.uniqueKey = `${dto.uniqueKey}-fulfill`;
 
   return res;
 }

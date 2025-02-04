@@ -551,12 +551,12 @@ describe("GetMyProfile", () => {
     const dto1 = new GetMyProfileDto();
     dto1.signing = SigningScheme.TON;
     dto1.signerPublicKey = user.publicKey;
-    dto1.sign(user.privateKey, true);
+    dto1.sign(user.privateKey);
 
     const dto2 = new GetMyProfileDto();
     dto2.signing = SigningScheme.TON;
     dto2.signerAddress = user.tonAddress;
-    dto2.sign(user.privateKey, true);
+    dto2.sign(user.privateKey);
 
     // When
     const resp1 = await chaincode.invoke("PublicKeyContract:GetMyProfile", dto1);

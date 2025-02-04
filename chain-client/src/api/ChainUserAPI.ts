@@ -12,11 +12,13 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+import { UserAlias } from "@gala-chain/api";
+
 import { ChainClient, ChainUser } from "../generic";
 
 export interface ChainUserAPI {
   privateKey: string;
-  identityKey: string;
+  identityKey: UserAlias;
   publicKey: string;
   ethAddress: string;
 }

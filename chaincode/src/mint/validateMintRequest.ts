@@ -18,7 +18,6 @@ import {
   AuthorizedOnBehalf,
   ChainCallDTO,
   ChainObject,
-  HighThroughputMintTokenDto,
   TokenAllowance,
   TokenClass,
   TokenClassKeyProperties,
@@ -43,9 +42,9 @@ export interface ValidateMintRequestParams {
 export async function validateMintRequest(
   ctx: GalaChainContext,
   params: ValidateMintRequestParams,
-  tokenClass: TokenClass
+  tokenClass: TokenClass,
+  callingUser: UserAlias
 ): Promise<TokenAllowance[]> {
-  const callingUser: string = ctx.callingUser;
   const owner = params.owner ?? callingUser;
   const tokenClassKey = params.tokenClass;
   const quantity = params.quantity;
@@ -124,7 +123,7 @@ export async function validateMintRequest(
 
   if (totalAllowance.isLessThan(quantity)) {
     throw new Error(
-      `${callingUser} does not have sufficient allowances ${totalAllowance.toString()} to ${actionDescription}`
+      `${callingOnBehalf} does not have sufficient allowances ${totalAllowance.toString()} to ${actionDescription}`
     );
   }
 
