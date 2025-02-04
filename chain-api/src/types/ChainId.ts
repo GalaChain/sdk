@@ -24,7 +24,8 @@
  */
 export enum ChainId {
   Ethereum = 2,
-  TON = 1001
+  TON = 1001,
+  Solana = 1002
 }
 
 /**
