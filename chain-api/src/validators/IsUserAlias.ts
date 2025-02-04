@@ -40,21 +40,6 @@ const customMessages = {
 const genericMessage =
   "Expected string following the format of 'client|<user-id>', or 'eth|<checksumed-eth-addr>', " +
   "or 'ton|<chain:ton-address>', or valid system-level username.";
-export function meansValidUserAlias(result: UserRefValidationResult) {
-  return (
-    result === UserRefValidationResult.VALID_USER_ALIAS ||
-    result === UserRefValidationResult.VALID_SYSTEM_USER
-  );
-}
-
-export function isValidSystemUser(value: string): boolean {
-  return (
-    value === "EthereumBridge" ||
-    value === "TonBridge" ||
-    value === "SolanaBridge" ||
-    /^GalaChainBridge-\d+$/.test(value)
-  );
-}
 
 /**
  * @description
@@ -74,7 +59,12 @@ function validateUserAlias(value: unknown): UserRefValidationResult {
   const parts = value.split("|");
 
   if (parts.length === 1) {
-    if (parts[0] === "EthereumBridge" || parts[0] === "TonBridge" || /^GalaChainBridge-\d+$/.test(parts[0])) {
+    if (
+      parts[0] === "EthereumBridge" ||
+      parts[0] === "TonBridge" ||
+      parts[0] === "SolanaBridge" ||
+      /^GalaChainBridge-\d+$/.test(parts[0])
+    ) {
       return UserRefValidationResult.VALID_SYSTEM_USER;
     } else {
       return UserRefValidationResult.INVALID_FORMAT;
