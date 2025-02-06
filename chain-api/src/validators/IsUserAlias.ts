@@ -38,7 +38,12 @@ export function meansValidUserAlias(result: UserAliasValidationResult) {
 }
 
 export function isValidSystemUser(value: string): boolean {
-  return value === "EthereumBridge" || value === "TonBridge" || /^GalaChainBridge-\d+$/.test(value);
+  return (
+    value === "EthereumBridge" ||
+    value === "TonBridge" ||
+    value === "SolanaBridge" ||
+    /^GalaChainBridge-\d+$/.test(value)
+  );
 }
 
 /**

@@ -382,6 +382,7 @@ export class FulfillTokenSaleDto extends SubmitCallDTO {
   })
   @IsOptional()
   @ValidateNested()
+  @Type(() => ExpectedTokenSale)
   public expectedTokenSale?: ExpectedTokenSale;
 
   @JSONSchema({

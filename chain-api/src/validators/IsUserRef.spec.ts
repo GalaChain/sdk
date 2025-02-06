@@ -42,6 +42,7 @@ test.each<[string, string]>([
   ["valid ton alias", `ton|${validTonAddress}`],
   ["valid bridge (eth)", `EthereumBridge`],
   ["valid bridge (ton)", `TonBridge`],
+  ["valid bridge (solana)", `SolanaBridge`],
   ["valid bridge (GalaChain)", `GalaChainBridge-42`]
 ])("%s", async (label, input) => {
   // Given
