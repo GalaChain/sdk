@@ -124,11 +124,12 @@ describe("VestingToken", () => {
             plainToInstance(TokenHold, {
               created: ctx.txUnixTime,
               createdBy: users.testUser1Id,
-              expires: vestingTokenDto.startDate + 1000 * 24 * 60 * 60 * allocation1.cliff,
+              expires: vestingTokenDto.startDate + 1000 * 24 * 60 * 60 * (allocation1.cliff + 1),
               instanceId: 0,
               lockAuthority: users.testAdminId,
               name: "SuperTokenTGE-allocation1-0",
-              quantity: 100
+              quantity: 100,
+              starts: vestingTokenDto.startDate + 1000 * 24 * 60 * 60 * allocation1.cliff
             })
           ]
         }),
@@ -141,20 +142,12 @@ describe("VestingToken", () => {
             plainToInstance(TokenHold, {
               created: ctx.txUnixTime,
               createdBy: users.testUser2Id,
-              expires: vestingTokenDto.startDate + 1000 * 24 * 60 * 60 * allocation2.cliff,
+              expires: vestingTokenDto.startDate + 1000 * 24 * 60 * 60 * (allocation2.cliff + 2),
               instanceId: 0,
               lockAuthority: users.testAdminId,
               name: "SuperTokenTGE-allocation2-0",
-              quantity: 25
-            }),
-            plainToInstance(TokenHold, {
-              created: ctx.txUnixTime,
-              createdBy: users.testUser2Id,
-              expires: vestingTokenDto.startDate + 1000 * 24 * 60 * 60 * (allocation2.cliff + 1),
-              instanceId: 0,
-              lockAuthority: users.testAdminId,
-              name: "SuperTokenTGE-allocation2-1",
-              quantity: 25
+              quantity: 25,
+              starts: vestingTokenDto.startDate + 1000 * 24 * 60 * 60 * allocation2.cliff
             })
           ]
         }),

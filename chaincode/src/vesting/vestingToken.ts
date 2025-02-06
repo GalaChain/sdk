@@ -104,6 +104,7 @@ export async function createVestingToken(
 ): Promise<VestingToken> {
   // TODO validations
   // allocations add up to total supply/max cap
+  // start date is in the future and before expiration
 
   const tokenClassParams: CreateTokenClassParams = {
     ...params
@@ -129,42 +130,27 @@ export async function createVestingToken(
     };
     const mintResponse = await mintTokenWithAllowance(ctx, mintParams);
 
-    //calculate lock amount per day using vesting period
-    const perLockQuantity = new BigNumber(allocation.quantity)
-      .dividedBy(new BigNumber(allocation.vestingDays))
-      .decimalPlaces(params.decimals);
-
-    //first lock expires on startDate + cliff (verify this is right)
+    //first lock period vests on startDate + cliff (verify this is right)
     const expiration = params.startDate + daysToMilliseconds(allocation.cliff);
 
-    // Calculate total amount that will be locked based on perLockQuantity
-    const totalToLock = perLockQuantity.multipliedBy(allocation.vestingDays);
-    let remainingQuantity = allocation.quantity;
-
-    for (let i = 0; i < allocation.vestingDays; i++) {
-      // For the last iteration, use remaining quantity instead of perLockQuantity
-      const currentLockQuantity = i === allocation.vestingDays - 1 ? remainingQuantity : perLockQuantity;
-
-      const verifyAuthorizedOnBehalf = async () => {
-        return {
-          callingOnBehalf: allocation.owner,
-          callingUser: ctx.callingUser
-        };
+    const verifyAuthorizedOnBehalf = async () => {
+      return {
+        callingOnBehalf: allocation.owner,
+        callingUser: ctx.callingUser
       };
+    };
 
-      const lockResponse = await lockToken(ctx, {
-        owner: allocation.owner,
-        lockAuthority: ctx.callingUser,
-        tokenInstanceKey,
-        quantity: currentLockQuantity,
-        allowancesToUse: [],
-        name: `${params.vestingName}-${allocation.name}-${i}`,
-        expires: expiration + daysToMilliseconds(i),
-        verifyAuthorizedOnBehalf
-      });
-
-      remainingQuantity = remainingQuantity.minus(currentLockQuantity);
-    }
+    const lockResponse = await lockToken(ctx, {
+      owner: allocation.owner,
+      lockAuthority: ctx.callingUser,
+      tokenInstanceKey,
+      quantity: allocation.quantity,
+      allowancesToUse: [],
+      name: `${params.vestingName}-${allocation.name}-${i}`,
+      expires: expiration + daysToMilliseconds(i),
+      verifyAuthorizedOnBehalf,
+      starts: params.startDate + daysToMilliseconds(allocation.cliff)
+    });
   }
 
   // construct and save VestingToken object

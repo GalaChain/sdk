@@ -495,6 +495,12 @@ export class TokenBalance extends ChainObject {
     let remainingQuantityToUnlock = quantity;
 
     for (const hold of unexpiredLockedHolds) {
+      // don't try to unlock vesting holds
+      if (hold.starts !== undefined) {
+        updated.push(hold);
+        continue;
+      }
+
       // if neither the authority nor the name match, just leave this hold alone
       if (!this.isCallingUserAuthorized(hold, name, callingUser, isTokenAuthority)) {
         updated.push(hold);
@@ -535,10 +541,18 @@ export class TokenBalance extends ChainObject {
   }
 
   private getCurrentLockedQuantity(currentTime: number): BigNumber {
-    return this.getUnexpiredLockedHolds(currentTime).reduce(
+    const unexpiredHolds = this.getUnexpiredLockedHolds(currentTime)
+
+    const totalNonVestingLockedQuantity = unexpiredHolds.filter(h => h.starts === undefined).reduce(
       (sum, h) => sum.plus(h.quantity),
       new BigNumber(0)
     );
+    const totalVestingLockedQuantity = unexpiredHolds.filter(h => h.starts !== undefined).reduce(
+      (sum, h) => sum.plus(TokenHold.getLockedVestingQuantity(h, currentTime)),
+      new BigNumber(0)
+    );
+
+    return totalNonVestingLockedQuantity.plus(totalVestingLockedQuantity);
   }
 
   private ensureContainsNoNftInstances(): void {
@@ -598,6 +612,10 @@ export class TokenHold {
   @IsUserAlias()
   lockAuthority?: string;
 
+  @Min(0)
+  @IsInt()
+  public readonly starts?: number;
+
   public constructor(params?: {
     createdBy: string;
     instanceId: BigNumber;
@@ -606,6 +624,7 @@ export class TokenHold {
     expires?: number;
     name?: string;
     lockAuthority?: string;
+    starts?: number;
   }) {
     if (params) {
       this.createdBy = params.createdBy;
@@ -619,6 +638,9 @@ export class TokenHold {
       if (params.lockAuthority) {
         this.lockAuthority = params.lockAuthority;
       }
+      if (params.starts) {
+        this.starts = params.starts;
+      }
     }
   }
 
@@ -630,6 +652,7 @@ export class TokenHold {
     expires: number | undefined;
     name: string | undefined;
     lockAuthority: string | undefined;
+    starts: number | undefined;
   }): Promise<TokenHold> {
     const hold = new TokenHold({ ...params });
 
@@ -660,5 +683,25 @@ export class TokenHold {
     } else {
       return -1;
     }
+  }
+
+  // For vesting holds, this returns the quantity that is currently locked by vesting
+  public static getLockedVestingQuantity(hold: TokenHold, currentTime: number): BigNumber {
+    if (hold.starts === undefined) {
+      return new BigNumber(0);
+    }
+    // if the current time is before the vesting starts, the full quantity is locked (cliff)
+    const timeSinceStart = currentTime - hold.starts;
+    if (timeSinceStart < 0) {
+      return hold.quantity;
+    }
+    // if the current time is after the vesting expires, the full quantity is unlocked
+    if (timeSinceStart > hold.expires - hold.starts) {
+      return new BigNumber(0);
+    }
+    // if the current time is between the vesting starts and expires, the quantity is partially unlocked
+    const perPeriodQuantity = hold.quantity.div(hold.expires - hold.starts);
+    const vestedQuantity = perPeriodQuantity.times(timeSinceStart);
+    return hold.quantity.minus(vestedQuantity);
   }
 }

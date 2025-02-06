@@ -44,6 +44,7 @@ export interface LockTokenParams {
   allowancesToUse: string[];
   expires: number;
   name: string | undefined;
+  starts: number | undefined;
   verifyAuthorizedOnBehalf: (c: TokenClassKey) => Promise<AuthorizedOnBehalf | undefined>;
 }
 
@@ -57,6 +58,7 @@ export async function lockToken(
     allowancesToUse,
     name,
     expires,
+    starts,
     verifyAuthorizedOnBehalf
   }: LockTokenParams
 ): Promise<TokenBalance> {
@@ -124,7 +126,8 @@ export async function lockToken(
     created: ctx.txUnixTime,
     expires: expires,
     name: name,
-    lockAuthority
+    lockAuthority,
+    starts
   });
 
   if (tokenInstanceKey.isFungible()) {
@@ -169,6 +172,7 @@ export async function lockTokens(
       allowancesToUse,
       name,
       expires,
+      starts: undefined, // don't allow vesting locks on batch locking
       verifyAuthorizedOnBehalf: verifyAuthorizedOnBehalf
     });
     responses.push(updatedBalance);
