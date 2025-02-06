@@ -467,6 +467,7 @@ export default class GalaChainTokenContract extends GalaContract {
       allowancesToUse: dto.useAllowances ?? [],
       name: undefined,
       expires: 0,
+      starts: dto.starts,
       verifyAuthorizedOnBehalf: async () => undefined
     });
   }

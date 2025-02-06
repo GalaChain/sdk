@@ -44,7 +44,7 @@ export interface LockTokenParams {
   allowancesToUse: string[];
   expires: number;
   name: string | undefined;
-  starts: number | undefined;
+  starts?: number | undefined;
   verifyAuthorizedOnBehalf: (c: TokenClassKey) => Promise<AuthorizedOnBehalf | undefined>;
 }
 

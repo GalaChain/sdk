@@ -106,12 +106,13 @@ describe("VestingToken", () => {
     // VestingToken (basic vesting token info)
     expect(response).toEqual(transactionSuccess());
 
-    // Should have
+    // Should have:
     // New Token class with supply=max
     // A balance for each allocation with locks
     // VestingToken object
     const allocation1 = vestingTokenDto.allocations[0];
     const allocation2 = vestingTokenDto.allocations[1];
+    const allocation3 = vestingTokenDto.allocations[2];
 
     expect(writes).toMatchObject(
       writesMap(
@@ -124,11 +125,11 @@ describe("VestingToken", () => {
             plainToInstance(TokenHold, {
               created: ctx.txUnixTime,
               createdBy: users.testUser1Id,
-              expires: vestingTokenDto.startDate + 1000 * 24 * 60 * 60 * (allocation1.cliff + 1),
+              expires: vestingTokenDto.startDate + 1000 * 24 * 60 * 60 * (allocation1.cliff +  + allocation1.vestingDays),
               instanceId: 0,
               lockAuthority: users.testAdminId,
-              name: "SuperTokenTGE-allocation1-0",
-              quantity: 100,
+              name: "SuperTokenTGE-allocation1",
+              quantity: allocation1.quantity,
               starts: vestingTokenDto.startDate + 1000 * 24 * 60 * 60 * allocation1.cliff
             })
           ]
@@ -137,16 +138,16 @@ describe("VestingToken", () => {
           ...currency.tokenBalance(),
           ...tokenClassKey,
           owner: users.testUser2Id,
-          quantity: new BigNumber("50"),
+          quantity: allocation2.quantity,
           lockedHolds: [
             plainToInstance(TokenHold, {
               created: ctx.txUnixTime,
               createdBy: users.testUser2Id,
-              expires: vestingTokenDto.startDate + 1000 * 24 * 60 * 60 * (allocation2.cliff + 2),
+              expires: vestingTokenDto.startDate + 1000 * 24 * 60 * 60 * (allocation2.cliff + allocation2.vestingDays),
               instanceId: 0,
               lockAuthority: users.testAdminId,
-              name: "SuperTokenTGE-allocation2-0",
-              quantity: 25,
+              name: "SuperTokenTGE-allocation2",
+              quantity: allocation2.quantity,
               starts: vestingTokenDto.startDate + 1000 * 24 * 60 * 60 * allocation2.cliff
             })
           ]
@@ -155,7 +156,19 @@ describe("VestingToken", () => {
           ...currency.tokenBalance(),
           ...tokenClassKey,
           owner: users.testAdminId,
-          quantity: new BigNumber("850")
+          quantity: allocation3.quantity,
+          lockedHolds: [
+            plainToInstance(TokenHold, {
+              created: ctx.txUnixTime,
+              createdBy: users.testAdminId,
+              expires: vestingTokenDto.startDate,
+              instanceId: 0,
+              lockAuthority: users.testAdminId,
+              name: "SuperTokenTGE-allocation3",
+              quantity: allocation3.quantity,
+              starts: vestingTokenDto.startDate
+            })
+          ]
         }),
         plainToInstance(TokenClass, {
           ...currency.tokenClass(),

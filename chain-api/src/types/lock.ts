@@ -76,6 +76,15 @@ export class LockTokenDto extends ChainCallDTO {
   @IsOptional()
   @ArrayNotEmpty()
   useAllowances?: Array<string>;
+
+  @JSONSchema({
+    description:
+      "Starts timestamp. For Vesting Locks, this specifies the beginning of the vesting period."
+  })
+  @Min(0)
+  @IsInt()
+  @IsOptional()
+  public starts?: number | undefined;
 }
 
 @JSONSchema({

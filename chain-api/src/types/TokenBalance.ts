@@ -164,6 +164,15 @@ export class TokenBalance extends ChainObject {
   @BigNumberProperty()
   private quantity: BigNumber;
 
+  @JSONSchema({
+    description:
+      "Starts timestamp. For Vesting Locks, this specifies the beginning of the vesting period."
+  })
+  @Min(0)
+  @IsInt()
+  @IsOptional()
+  public starts?: number | undefined;
+
   //
   // NFT
   //
@@ -614,7 +623,8 @@ export class TokenHold {
 
   @Min(0)
   @IsInt()
-  public readonly starts?: number;
+  @IsOptional()
+  public readonly starts?: number | undefined;
 
   public constructor(params?: {
     createdBy: string;
@@ -624,7 +634,7 @@ export class TokenHold {
     expires?: number;
     name?: string;
     lockAuthority?: string;
-    starts?: number;
+    starts?: number | undefined;
   }) {
     if (params) {
       this.createdBy = params.createdBy;
@@ -652,7 +662,7 @@ export class TokenHold {
     expires: number | undefined;
     name: string | undefined;
     lockAuthority: string | undefined;
-    starts: number | undefined;
+    starts?: number | undefined;
   }): Promise<TokenHold> {
     const hold = new TokenHold({ ...params });
 
