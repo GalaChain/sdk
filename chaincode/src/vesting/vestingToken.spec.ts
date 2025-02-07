@@ -13,22 +13,17 @@
  * limitations under the License.
  */
 import {
-  AllowanceType,
   CreateTokenClassDto,
   CreateVestingTokenDto,
   FetchVestingTokenDto,
-  TokenAllowance,
   TokenBalance,
-  TokenClaim,
   TokenClass,
   TokenClassKey,
   TokenHold,
-  TokenInstance,
-  TokenMintAllowance,
   VestingToken,
   createValidDTO
 } from "@gala-chain/api";
-import { currency, fixture, randomize, transactionSuccess, users, writesMap } from "@gala-chain/test";
+import { currency, fixture, randomize, transactionError, transactionSuccess, users, writesMap } from "@gala-chain/test";
 import BigNumber from "bignumber.js";
 import { plainToInstance } from "class-transformer";
 
@@ -308,5 +303,70 @@ describe("Token Hold Helpers", () => {
     // sending in the token decimals to the method and having that handle it?
     // it could still happen with high enough decimals (e.g. 16 in this case)
     // expect(vestedLockedHold.getLockedVestingQuantity(currentTime)).toEqual(new BigNumber(750));
+  });
+  test("Create Vesting Token Allocation Error", async () => {
+    // Given
+    const createTokenClassDto = new CreateTokenClassDto();
+    const tokenClassKey = new TokenClassKey();
+    tokenClassKey.collection = randomize("TEST");
+    tokenClassKey.category = "Unit";
+    tokenClassKey.type = "none";
+    tokenClassKey.additionalKey = "none";
+
+    // Gross - probably a lot of defaults/optionals I could leave off
+    createTokenClassDto.network = currency.tokenClass().network;
+    createTokenClassDto.decimals = currency.tokenClass().decimals;
+    createTokenClassDto.maxCapacity = new BigNumber(1000);
+    createTokenClassDto.maxSupply = new BigNumber(1000);
+    createTokenClassDto.tokenClass = tokenClassKey;
+    createTokenClassDto.name = currency.tokenClass().name;
+    createTokenClassDto.symbol = currency.tokenClass().symbol;
+    createTokenClassDto.description = currency.tokenClass().description;
+    createTokenClassDto.totalMintAllowance = currency.tokenClass().totalMintAllowance;
+    createTokenClassDto.totalBurned = currency.tokenClass().totalBurned;
+    createTokenClassDto.contractAddress = currency.tokenClass().contractAddress;
+    createTokenClassDto.metadataAddress = currency.tokenClass().metadataAddress;
+    createTokenClassDto.rarity = currency.tokenClass().rarity;
+    createTokenClassDto.image = currency.tokenClass().image;
+    createTokenClassDto.isNonFungible = currency.tokenClass().isNonFungible;
+    createTokenClassDto.authorities = currency.tokenClass().authorities;
+
+    const { ctx, contract, writes } = fixture(GalaChainTokenContract).callingUser(users.testAdminId);
+
+    const vestingTokenDto: CreateVestingTokenDto = await createValidDTO(CreateVestingTokenDto, {
+      tokenClass: createTokenClassDto,
+      startDate: ctx.txUnixTime + 1000 * 60,
+      vestingName: "SuperTokenTGE",
+      allocations: [
+        {
+          name: "allocation1",
+          owner: users.testUser1Id,
+          quantity: new BigNumber(101),
+          cliff: 90,
+          vestingDays: 1
+        },
+        {
+          name: "allocation2",
+          owner: users.testUser2Id,
+          quantity: new BigNumber(50),
+          cliff: 1,
+          vestingDays: 2
+        },
+        {
+          name: "allocation3",
+          owner: users.testAdminId,
+          quantity: new BigNumber(850),
+          cliff: 0,
+          vestingDays: 0
+        }
+      ]
+    });
+
+    // When
+    const response = await contract.CreateVestingToken(ctx, vestingTokenDto);
+
+    // Then
+    // Allocation total error
+    expect(response).toEqual(transactionError("Vesting Allocation total is not equal to token Max Supply"));
   });
 });

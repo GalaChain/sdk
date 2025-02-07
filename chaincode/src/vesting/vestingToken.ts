@@ -32,6 +32,7 @@ import { MintTokenWithAllowanceParams, mintTokenWithAllowance } from "../mint";
 import { CreateTokenClassParams, createTokenClass } from "../token";
 import { GalaChainContext } from "../types";
 import { getObjectByKey, putChainObject } from "../utils";
+import { VestingAllocationError } from "./VestingError";
 
 export interface CreateVestingTokenParams {
   network: string;
@@ -103,8 +104,12 @@ export async function createVestingToken(
   params: CreateVestingTokenParams
 ): Promise<VestingToken> {
   // TODO validations
+
   // allocations add up to total supply/max cap
-  // start date is in the future and before expiration
+  const allocationTotal = params.allocations.reduce((sum, allocation) => sum.plus(allocation.quantity), new BigNumber(0));
+  if (!allocationTotal.isEqualTo(params.maxSupply)) {
+    throw new VestingAllocationError(params.maxSupply, allocationTotal)
+  }
 
   const tokenClassParams: CreateTokenClassParams = {
     ...params
@@ -131,12 +136,15 @@ export async function createVestingToken(
     const mintResponse = await mintTokenWithAllowance(ctx, mintParams);
 
     let vestingPeriodStart = params.startDate;
-    let expires = params.startDate;
+    let expires =  vestingPeriodStart;
     //first lock period vests on startDate + cliff (verify this is right)
     if (allocation.cliff !== 0) {
       vestingPeriodStart += daysToMilliseconds(allocation.cliff);
       expires = vestingPeriodStart + daysToMilliseconds(allocation.vestingDays);
     }
+
+    // if after calculating expiration it turns out that it expires before now, set to now
+    expires =  Math.max(expires, ctx.txUnixTime);
 
     const verifyAuthorizedOnBehalf = async () => {
       return {
