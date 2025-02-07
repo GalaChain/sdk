@@ -125,7 +125,9 @@ describe("VestingToken", () => {
             plainToInstance(TokenHold, {
               created: ctx.txUnixTime,
               createdBy: users.testUser1Id,
-              expires: vestingTokenDto.startDate + 1000 * 24 * 60 * 60 * (allocation1.cliff +  + allocation1.vestingDays),
+              expires:
+                vestingTokenDto.startDate +
+                1000 * 24 * 60 * 60 * (allocation1.cliff + allocation1.vestingDays),
               instanceId: 0,
               lockAuthority: users.testAdminId,
               name: "SuperTokenTGE-allocation1",
@@ -143,7 +145,9 @@ describe("VestingToken", () => {
             plainToInstance(TokenHold, {
               created: ctx.txUnixTime,
               createdBy: users.testUser2Id,
-              expires: vestingTokenDto.startDate + 1000 * 24 * 60 * 60 * (allocation2.cliff + allocation2.vestingDays),
+              expires:
+                vestingTokenDto.startDate +
+                1000 * 24 * 60 * 60 * (allocation2.cliff + allocation2.vestingDays),
               instanceId: 0,
               lockAuthority: users.testAdminId,
               name: "SuperTokenTGE-allocation2",
@@ -221,68 +225,70 @@ describe("VestingToken", () => {
 });
 
 describe("Token Hold Helpers", () => {
-  const newBalance = () => new TokenBalance({
-    owner: "user",
-    collection: "test",
-    category: "test",
-    type: "test",
-    additionalKey: "test"
-  });
+  const newBalance = () =>
+    new TokenBalance({
+      owner: "user",
+      collection: "test",
+      category: "test",
+      type: "test",
+      additionalKey: "test"
+    });
 
-  const newLockedHold = (vestingPeriodStart: number | undefined, expires: number | undefined = undefined) => new TokenHold({
-    createdBy: "me",
-    instanceId: new BigNumber(0),
-    quantity: new BigNumber(1000),
-    created: 10,
-    expires: expires ?? 100,
-    name: "test hold",
-    lockAuthority: "me",
-    vestingPeriodStart: vestingPeriodStart
-  });
+  const newLockedHold = (vestingPeriodStart: number | undefined, expires: number | undefined = undefined) =>
+    new TokenHold({
+      createdBy: "me",
+      instanceId: new BigNumber(0),
+      quantity: new BigNumber(1000),
+      created: 10,
+      expires: expires ?? 100,
+      name: "test hold",
+      lockAuthority: "me",
+      vestingPeriodStart: vestingPeriodStart
+    });
 
   test("isVestingHold returns true when vestingStartPeriod not undefined", () => {
-    let vestedLockedHold = newLockedHold(25);
+    const vestedLockedHold = newLockedHold(25);
 
     expect(vestedLockedHold.isVestingHold()).toEqual(true);
 
-    let unVestedLockedHold = newLockedHold(undefined);
+    const unVestedLockedHold = newLockedHold(undefined);
     expect(unVestedLockedHold.isVestingHold()).toEqual(false);
   });
 
   test("isVestingStarted returns true when vestingStartPeriod defined and current time > vestingStartPeriod", () => {
-    let currentTime = 30
+    const currentTime = 30;
 
-    let unVestedLockedHold = newLockedHold(undefined);
+    const unVestedLockedHold = newLockedHold(undefined);
     expect(unVestedLockedHold.isVestingStarted(currentTime)).toEqual(false);
 
-    let vestedLockedHold = newLockedHold(25);
+    const vestedLockedHold = newLockedHold(25);
     expect(vestedLockedHold.isVestingStarted(currentTime)).toEqual(true);
     expect(vestedLockedHold.isVestingStarted(currentTime + 100)).toEqual(true);
   });
 
   test("timeSinceStart returns correct value when vestingStartPeriod defined and current time > vestingStartPeriod", () => {
-    let currentTime = 30
+    const currentTime = 30;
 
-    let unVestedLockedHold = newLockedHold(undefined);
+    const unVestedLockedHold = newLockedHold(undefined);
     expect(unVestedLockedHold.timeSinceStart(currentTime)).toEqual(0);
 
-    let vestedLockedHold = newLockedHold(25);
+    const vestedLockedHold = newLockedHold(25);
     expect(vestedLockedHold.timeSinceStart(currentTime)).toEqual(5);
     expect(vestedLockedHold.timeSinceStart(currentTime + 100)).toEqual(105);
   });
 
   test("totalTimeOfVestingPeriod returns true when vestingStartPeriod defined and current time > vestingStartPeriod", () => {
-    let unVestedLockedHold = newLockedHold(undefined);
+    const unVestedLockedHold = newLockedHold(undefined);
     expect(unVestedLockedHold.totalTimeOfVestingPeriod()).toEqual(0);
 
-    let vestedLockedHold = newLockedHold(25);
+    const vestedLockedHold = newLockedHold(25);
     expect(vestedLockedHold.totalTimeOfVestingPeriod()).toEqual(75);
   });
 
   test("getLockedVestingQuantity", () => {
-    let currentTime = 80
+    let currentTime = 80;
 
-    let unVestedLockedHold = newLockedHold(undefined);
+    const unVestedLockedHold = newLockedHold(undefined);
     expect(unVestedLockedHold.getLockedVestingQuantity(currentTime)).toEqual(new BigNumber(0));
 
     // 1000 / 50 = 20 per period (day)
@@ -294,14 +300,13 @@ describe("Token Hold Helpers", () => {
     // 1000 / 4 = 250 per period (day)
     // (CT + 3 days) - CT = 3 periods (day)
     // 3 * 250 = 750
-    const oneDay = 1000 * 60 * 60 * 24
-    currentTime = 1738939680
+    const oneDay = 1000 * 60 * 60 * 24;
+    currentTime = 1738939680;
     // starts one day before current time, expires three days after
-    vestedLockedHold = newLockedHold(currentTime - oneDay, currentTime + (3 * oneDay));
+    vestedLockedHold = newLockedHold(currentTime - oneDay, currentTime + 3 * oneDay);
     // result is 749.999999999999872 I could round this and say it's good, but want to think about maybe
     // sending in the token decimals to the method and having that handle it?
     // it could still happen with high enough decimals (e.g. 16 in this case)
     // expect(vestedLockedHold.getLockedVestingQuantity(currentTime)).toEqual(new BigNumber(750));
-
   });
-})
+});

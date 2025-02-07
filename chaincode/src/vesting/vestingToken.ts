@@ -133,7 +133,7 @@ export async function createVestingToken(
     let vestingPeriodStart = params.startDate;
     let expires = params.startDate;
     //first lock period vests on startDate + cliff (verify this is right)
-    if(allocation.cliff !== 0) {
+    if (allocation.cliff !== 0) {
       vestingPeriodStart += daysToMilliseconds(allocation.cliff);
       expires = vestingPeriodStart + daysToMilliseconds(allocation.vestingDays);
     }

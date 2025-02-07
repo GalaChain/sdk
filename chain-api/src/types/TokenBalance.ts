@@ -550,16 +550,14 @@ export class TokenBalance extends ChainObject {
   }
 
   private getCurrentLockedQuantity(currentTime: number): BigNumber {
-    const unexpiredHolds = this.getUnexpiredLockedHolds(currentTime)
+    const unexpiredHolds = this.getUnexpiredLockedHolds(currentTime);
 
-    const totalNonVestingLockedQuantity = unexpiredHolds.filter(h => !h.isVestingHold()).reduce(
-      (sum, h) => sum.plus(h.quantity),
-      new BigNumber(0)
-    );
-    const totalVestingLockedQuantity = unexpiredHolds.filter(h => h.isVestingHold()).reduce(
-      (sum, h) => sum.plus(h.getLockedVestingQuantity(currentTime)),
-      new BigNumber(0)
-    );
+    const totalNonVestingLockedQuantity = unexpiredHolds
+      .filter((h) => !h.isVestingHold())
+      .reduce((sum, h) => sum.plus(h.quantity), new BigNumber(0));
+    const totalVestingLockedQuantity = unexpiredHolds
+      .filter((h) => h.isVestingHold())
+      .reduce((sum, h) => sum.plus(h.getLockedVestingQuantity(currentTime)), new BigNumber(0));
 
     return totalNonVestingLockedQuantity.plus(totalVestingLockedQuantity);
   }
@@ -683,7 +681,7 @@ export class TokenHold {
   }
 
   public isVestingHold(): boolean {
-    return this.vestingPeriodStart !== undefined
+    return this.vestingPeriodStart !== undefined;
   }
 
   public isVestingStarted(currentTime: number): boolean {
@@ -691,11 +689,11 @@ export class TokenHold {
   }
 
   public timeSinceStart(currentTime: number): number {
-    return this.vestingPeriodStart !== undefined ? currentTime - this.vestingPeriodStart : 0
+    return this.vestingPeriodStart !== undefined ? currentTime - this.vestingPeriodStart : 0;
   }
 
   public totalTimeOfVestingPeriod(): number {
-    return this.vestingPeriodStart !== undefined ? this.expires - this.vestingPeriodStart : 0
+    return this.vestingPeriodStart !== undefined ? this.expires - this.vestingPeriodStart : 0;
   }
 
   // For vesting holds, this returns the quantity that is currently locked by vesting
