@@ -166,12 +166,12 @@ export class TokenBalance extends ChainObject {
 
   @JSONSchema({
     description:
-      "Starts timestamp. For Vesting Locks, this specifies the beginning of the vesting period."
+      "vestingPeriodStart timestamp. For Vesting Locks, this specifies the beginning of the vesting period."
   })
   @Min(0)
   @IsInt()
   @IsOptional()
-  public starts?: number | undefined;
+  public vestingPeriodStart?: number | undefined;
 
   //
   // NFT
@@ -505,7 +505,7 @@ export class TokenBalance extends ChainObject {
 
     for (const hold of unexpiredLockedHolds) {
       // don't try to unlock vesting holds
-      if (hold.starts !== undefined) {
+      if (hold.vestingPeriodStart !== undefined) {
         updated.push(hold);
         continue;
       }
@@ -552,11 +552,11 @@ export class TokenBalance extends ChainObject {
   private getCurrentLockedQuantity(currentTime: number): BigNumber {
     const unexpiredHolds = this.getUnexpiredLockedHolds(currentTime)
 
-    const totalNonVestingLockedQuantity = unexpiredHolds.filter(h => h.starts === undefined).reduce(
+    const totalNonVestingLockedQuantity = unexpiredHolds.filter(h => h.vestingPeriodStart === undefined).reduce(
       (sum, h) => sum.plus(h.quantity),
       new BigNumber(0)
     );
-    const totalVestingLockedQuantity = unexpiredHolds.filter(h => h.starts !== undefined).reduce(
+    const totalVestingLockedQuantity = unexpiredHolds.filter(h => h.vestingPeriodStart !== undefined).reduce(
       (sum, h) => sum.plus(TokenHold.getLockedVestingQuantity(h, currentTime)),
       new BigNumber(0)
     );
@@ -624,7 +624,7 @@ export class TokenHold {
   @Min(0)
   @IsInt()
   @IsOptional()
-  public readonly starts?: number | undefined;
+  public readonly vestingPeriodStart?: number | undefined;
 
   public constructor(params?: {
     createdBy: string;
@@ -634,7 +634,7 @@ export class TokenHold {
     expires?: number;
     name?: string;
     lockAuthority?: string;
-    starts?: number | undefined;
+    vestingPeriodStart?: number | undefined;
   }) {
     if (params) {
       this.createdBy = params.createdBy;
@@ -648,8 +648,8 @@ export class TokenHold {
       if (params.lockAuthority) {
         this.lockAuthority = params.lockAuthority;
       }
-      if (params.starts) {
-        this.starts = params.starts;
+      if (params.vestingPeriodStart) {
+        this.vestingPeriodStart = params.vestingPeriodStart;
       }
     }
   }
@@ -662,7 +662,7 @@ export class TokenHold {
     expires: number | undefined;
     name: string | undefined;
     lockAuthority: string | undefined;
-    starts?: number | undefined;
+    vestingPeriodStart?: number | undefined;
   }): Promise<TokenHold> {
     const hold = new TokenHold({ ...params });
 
@@ -697,20 +697,20 @@ export class TokenHold {
 
   // For vesting holds, this returns the quantity that is currently locked by vesting
   public static getLockedVestingQuantity(hold: TokenHold, currentTime: number): BigNumber {
-    if (hold.starts === undefined) {
+    if (hold.vestingPeriodStart === undefined) {
       return new BigNumber(0);
     }
-    // if the current time is before the vesting starts, the full quantity is locked (cliff)
-    const timeSinceStart = currentTime - hold.starts;
+    // if the current time is before the vesting vestingPeriodStart, the full quantity is locked (cliff)
+    const timeSinceStart = currentTime - hold.vestingPeriodStart;
     if (timeSinceStart < 0) {
       return hold.quantity;
     }
     // if the current time is after the vesting expires, the full quantity is unlocked
-    if (timeSinceStart > hold.expires - hold.starts) {
+    if (timeSinceStart > hold.expires - hold.vestingPeriodStart) {
       return new BigNumber(0);
     }
-    // if the current time is between the vesting starts and expires, the quantity is partially unlocked
-    const perPeriodQuantity = hold.quantity.div(hold.expires - hold.starts);
+    // if the current time is between the vesting vestingPeriodStart and expires, the quantity is partially unlocked
+    const perPeriodQuantity = hold.quantity.div(hold.expires - hold.vestingPeriodStart);
     const vestedQuantity = perPeriodQuantity.times(timeSinceStart);
     return hold.quantity.minus(vestedQuantity);
   }

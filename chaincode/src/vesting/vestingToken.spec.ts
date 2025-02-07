@@ -130,7 +130,7 @@ describe("VestingToken", () => {
               lockAuthority: users.testAdminId,
               name: "SuperTokenTGE-allocation1",
               quantity: allocation1.quantity,
-              starts: vestingTokenDto.startDate + 1000 * 24 * 60 * 60 * allocation1.cliff
+              vestingPeriodStart: vestingTokenDto.startDate + 1000 * 24 * 60 * 60 * allocation1.cliff
             })
           ]
         }),
@@ -148,7 +148,7 @@ describe("VestingToken", () => {
               lockAuthority: users.testAdminId,
               name: "SuperTokenTGE-allocation2",
               quantity: allocation2.quantity,
-              starts: vestingTokenDto.startDate + 1000 * 24 * 60 * 60 * allocation2.cliff
+              vestingPeriodStart: vestingTokenDto.startDate + 1000 * 24 * 60 * 60 * allocation2.cliff
             })
           ]
         }),
@@ -166,7 +166,7 @@ describe("VestingToken", () => {
               lockAuthority: users.testAdminId,
               name: "SuperTokenTGE-allocation3",
               quantity: allocation3.quantity,
-              starts: vestingTokenDto.startDate
+              vestingPeriodStart: vestingTokenDto.startDate
             })
           ]
         }),

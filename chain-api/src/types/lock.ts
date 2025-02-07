@@ -79,12 +79,12 @@ export class LockTokenDto extends ChainCallDTO {
 
   @JSONSchema({
     description:
-      "Starts timestamp. For Vesting Locks, this specifies the beginning of the vesting period."
+      "vestingPeriodStart timestamp. For Vesting Locks, this specifies the beginning of the vesting period."
   })
   @Min(0)
   @IsInt()
   @IsOptional()
-  public starts?: number | undefined;
+  public vestingPeriodStart?: number | undefined;
 }
 
 @JSONSchema({

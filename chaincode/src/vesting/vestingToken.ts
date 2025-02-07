@@ -130,12 +130,12 @@ export async function createVestingToken(
     };
     const mintResponse = await mintTokenWithAllowance(ctx, mintParams);
 
-    let starts = params.startDate;
+    let vestingPeriodStart = params.startDate;
     let expires = params.startDate;
     //first lock period vests on startDate + cliff (verify this is right)
     if(allocation.cliff !== 0) {
-      starts += daysToMilliseconds(allocation.cliff);
-      expires = starts + daysToMilliseconds(allocation.vestingDays);
+      vestingPeriodStart += daysToMilliseconds(allocation.cliff);
+      expires = vestingPeriodStart + daysToMilliseconds(allocation.vestingDays);
     }
 
     const verifyAuthorizedOnBehalf = async () => {
@@ -154,7 +154,7 @@ export async function createVestingToken(
       name: `${params.vestingName}-${allocation.name}`,
       expires,
       verifyAuthorizedOnBehalf,
-      starts
+      vestingPeriodStart
     });
   }
 
