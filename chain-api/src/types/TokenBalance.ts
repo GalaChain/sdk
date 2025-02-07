@@ -505,7 +505,7 @@ export class TokenBalance extends ChainObject {
 
     for (const hold of unexpiredLockedHolds) {
       // don't try to unlock vesting holds
-      if (hold.vestingPeriodStart !== undefined) {
+      if (hold.isVestingHold()) {
         updated.push(hold);
         continue;
       }
@@ -552,12 +552,12 @@ export class TokenBalance extends ChainObject {
   private getCurrentLockedQuantity(currentTime: number): BigNumber {
     const unexpiredHolds = this.getUnexpiredLockedHolds(currentTime)
 
-    const totalNonVestingLockedQuantity = unexpiredHolds.filter(h => h.vestingPeriodStart === undefined).reduce(
+    const totalNonVestingLockedQuantity = unexpiredHolds.filter(h => !h.isVestingHold()).reduce(
       (sum, h) => sum.plus(h.quantity),
       new BigNumber(0)
     );
-    const totalVestingLockedQuantity = unexpiredHolds.filter(h => h.vestingPeriodStart !== undefined).reduce(
-      (sum, h) => sum.plus(TokenHold.getLockedVestingQuantity(h, currentTime)),
+    const totalVestingLockedQuantity = unexpiredHolds.filter(h => h.isVestingHold()).reduce(
+      (sum, h) => sum.plus(h.getLockedVestingQuantity(currentTime)),
       new BigNumber(0)
     );
 
@@ -682,6 +682,45 @@ export class TokenHold {
     return this.expires !== 0 && currentTime > this.expires;
   }
 
+  public isVestingHold(): boolean {
+    return this.vestingPeriodStart !== undefined
+  }
+
+  public isVestingStarted(currentTime: number): boolean {
+    return this.vestingPeriodStart !== undefined && currentTime >= this.vestingPeriodStart;
+  }
+
+  public timeSinceStart(currentTime: number): number {
+    return this.vestingPeriodStart !== undefined ? currentTime - this.vestingPeriodStart : 0
+  }
+
+  public totalTimeOfVestingPeriod(): number {
+    return this.vestingPeriodStart !== undefined ? this.expires - this.vestingPeriodStart : 0
+  }
+
+  // For vesting holds, this returns the quantity that is currently locked by vesting
+  public getLockedVestingQuantity(currentTime: number): BigNumber {
+    if (!this.isVestingHold()) {
+      return new BigNumber(0);
+    }
+
+    // if the current time is before the vesting vestingPeriodStart, the full quantity is locked (cliff)
+    const timeSinceStart = this.timeSinceStart(currentTime);
+    if (timeSinceStart < 0) {
+      return this.quantity;
+    }
+
+    // if the current time is after the vesting expires, the full quantity is unlocked
+    if (currentTime > this.expires) {
+      return new BigNumber(0);
+    }
+
+    // if the current time is between the vesting vestingPeriodStart and expires, the quantity is partially unlocked
+    const perPeriodQuantity = this.quantity.div(this.totalTimeOfVestingPeriod());
+    const vestedQuantity = perPeriodQuantity.times(timeSinceStart);
+    return this.quantity.minus(vestedQuantity);
+  }
+
   // sort holds in order of ascending expiration, 0 = no expiration date
   public static sortByAscendingExpiration(a: TokenHold, b: TokenHold) {
     if (b.expires === 0 && a.expires === 0) {
@@ -693,25 +732,5 @@ export class TokenHold {
     } else {
       return -1;
     }
-  }
-
-  // For vesting holds, this returns the quantity that is currently locked by vesting
-  public static getLockedVestingQuantity(hold: TokenHold, currentTime: number): BigNumber {
-    if (hold.vestingPeriodStart === undefined) {
-      return new BigNumber(0);
-    }
-    // if the current time is before the vesting vestingPeriodStart, the full quantity is locked (cliff)
-    const timeSinceStart = currentTime - hold.vestingPeriodStart;
-    if (timeSinceStart < 0) {
-      return hold.quantity;
-    }
-    // if the current time is after the vesting expires, the full quantity is unlocked
-    if (timeSinceStart > hold.expires - hold.vestingPeriodStart) {
-      return new BigNumber(0);
-    }
-    // if the current time is between the vesting vestingPeriodStart and expires, the quantity is partially unlocked
-    const perPeriodQuantity = hold.quantity.div(hold.expires - hold.vestingPeriodStart);
-    const vestedQuantity = perPeriodQuantity.times(timeSinceStart);
-    return hold.quantity.minus(vestedQuantity);
   }
 }
