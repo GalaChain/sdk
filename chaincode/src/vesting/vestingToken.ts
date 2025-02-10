@@ -106,9 +106,12 @@ export async function createVestingToken(
   // TODO validations
 
   // allocations add up to total supply/max cap
-  const allocationTotal = params.allocations.reduce((sum, allocation) => sum.plus(allocation.quantity), new BigNumber(0));
+  const allocationTotal = params.allocations.reduce(
+    (sum, allocation) => sum.plus(allocation.quantity),
+    new BigNumber(0)
+  );
   if (!allocationTotal.isEqualTo(params.maxSupply)) {
-    throw new VestingAllocationError(params.maxSupply, allocationTotal)
+    throw new VestingAllocationError(params.maxSupply, allocationTotal);
   }
 
   const tokenClassParams: CreateTokenClassParams = {
@@ -136,7 +139,7 @@ export async function createVestingToken(
     const mintResponse = await mintTokenWithAllowance(ctx, mintParams);
 
     let vestingPeriodStart = params.startDate;
-    let expires =  vestingPeriodStart;
+    let expires = vestingPeriodStart;
     //first lock period vests on startDate + cliff (verify this is right)
     if (allocation.cliff !== 0) {
       vestingPeriodStart += daysToMilliseconds(allocation.cliff);
@@ -144,7 +147,7 @@ export async function createVestingToken(
     }
 
     // if after calculating expiration it turns out that it expires before now, set to now
-    expires =  Math.max(expires, ctx.txUnixTime);
+    expires = Math.max(expires, ctx.txUnixTime);
 
     const verifyAuthorizedOnBehalf = async () => {
       return {

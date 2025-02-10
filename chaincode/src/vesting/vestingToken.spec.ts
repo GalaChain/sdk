@@ -23,7 +23,15 @@ import {
   VestingToken,
   createValidDTO
 } from "@gala-chain/api";
-import { currency, fixture, randomize, transactionError, transactionSuccess, users, writesMap } from "@gala-chain/test";
+import {
+  currency,
+  fixture,
+  randomize,
+  transactionError,
+  transactionSuccess,
+  users,
+  writesMap
+} from "@gala-chain/test";
 import BigNumber from "bignumber.js";
 import { plainToInstance } from "class-transformer";
 

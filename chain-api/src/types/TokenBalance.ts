@@ -685,15 +685,15 @@ export class TokenHold {
   }
 
   public isVestingStarted(currentTime: number): boolean {
-    return this.vestingPeriodStart !== undefined && currentTime >= this.vestingPeriodStart;
+    return this.isVestingHold() && currentTime >= this.vestingPeriodStart!;
   }
 
   public timeSinceStart(currentTime: number): number {
-    return this.vestingPeriodStart !== undefined ? currentTime - this.vestingPeriodStart : 0;
+    return this.isVestingHold() ? currentTime - this.vestingPeriodStart! : 0;
   }
 
   public totalTimeOfVestingPeriod(): number {
-    return this.vestingPeriodStart !== undefined ? this.expires - this.vestingPeriodStart : 0;
+    return this.isVestingHold() ? this.expires - this.vestingPeriodStart! : 0;
   }
 
   // For vesting holds, this returns the quantity that is currently locked by vesting
