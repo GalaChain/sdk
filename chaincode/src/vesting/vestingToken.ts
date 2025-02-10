@@ -32,6 +32,7 @@ import { MintTokenWithAllowanceParams, mintTokenWithAllowance } from "../mint";
 import { CreateTokenClassParams, createTokenClass } from "../token";
 import { GalaChainContext } from "../types";
 import { getObjectByKey, putChainObject } from "../utils";
+import { VestingAllocationError } from "./VestingError";
 
 export interface CreateVestingTokenParams {
   network: string;
@@ -103,7 +104,15 @@ export async function createVestingToken(
   params: CreateVestingTokenParams
 ): Promise<VestingToken> {
   // TODO validations
+
   // allocations add up to total supply/max cap
+  const allocationTotal = params.allocations.reduce(
+    (sum, allocation) => sum.plus(allocation.quantity),
+    new BigNumber(0)
+  );
+  if (!allocationTotal.isEqualTo(params.maxSupply)) {
+    throw new VestingAllocationError(params.maxSupply, allocationTotal);
+  }
 
   const tokenClassParams: CreateTokenClassParams = {
     ...params
@@ -129,42 +138,35 @@ export async function createVestingToken(
     };
     const mintResponse = await mintTokenWithAllowance(ctx, mintParams);
 
-    //calculate lock amount per day using vesting period
-    const perLockQuantity = new BigNumber(allocation.quantity)
-      .dividedBy(new BigNumber(allocation.vestingDays))
-      .decimalPlaces(params.decimals);
-
-    //first lock expires on startDate + cliff (verify this is right)
-    const expiration = params.startDate + daysToMilliseconds(allocation.cliff);
-
-    // Calculate total amount that will be locked based on perLockQuantity
-    const totalToLock = perLockQuantity.multipliedBy(allocation.vestingDays);
-    let remainingQuantity = allocation.quantity;
-
-    for (let i = 0; i < allocation.vestingDays; i++) {
-      // For the last iteration, use remaining quantity instead of perLockQuantity
-      const currentLockQuantity = i === allocation.vestingDays - 1 ? remainingQuantity : perLockQuantity;
-
-      const verifyAuthorizedOnBehalf = async () => {
-        return {
-          callingOnBehalf: allocation.owner,
-          callingUser: ctx.callingUser
-        };
-      };
-
-      const lockResponse = await lockToken(ctx, {
-        owner: allocation.owner,
-        lockAuthority: ctx.callingUser,
-        tokenInstanceKey,
-        quantity: currentLockQuantity,
-        allowancesToUse: [],
-        name: `${params.vestingName}-${allocation.name}-${i}`,
-        expires: expiration + daysToMilliseconds(i),
-        verifyAuthorizedOnBehalf
-      });
-
-      remainingQuantity = remainingQuantity.minus(currentLockQuantity);
+    let vestingPeriodStart = params.startDate;
+    let expires = vestingPeriodStart;
+    //first lock period vests on startDate + cliff (verify this is right)
+    if (allocation.cliff !== 0) {
+      vestingPeriodStart += daysToMilliseconds(allocation.cliff);
+      expires = vestingPeriodStart + daysToMilliseconds(allocation.vestingDays);
     }
+
+    // if after calculating expiration it turns out that it expires before now, set to now
+    expires = Math.max(expires, ctx.txUnixTime);
+
+    const verifyAuthorizedOnBehalf = async () => {
+      return {
+        callingOnBehalf: allocation.owner,
+        callingUser: ctx.callingUser
+      };
+    };
+
+    const lockResponse = await lockToken(ctx, {
+      owner: allocation.owner,
+      lockAuthority: ctx.callingUser,
+      tokenInstanceKey,
+      quantity: allocation.quantity,
+      allowancesToUse: [],
+      name: `${params.vestingName}-${allocation.name}`,
+      expires,
+      verifyAuthorizedOnBehalf,
+      vestingPeriodStart
+    });
   }
 
   // construct and save VestingToken object
