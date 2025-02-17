@@ -20,11 +20,15 @@ import { GalaContract, GalaJSONSerializer } from "@gala-chain/chaincode";
 import { AppleContract } from "./apples";
 import { GalaChainTokenContract } from "./token";
 import { PublicKeyContract } from "./pk";
+import { LaunchPadContract } from "./launchpad";
+import { DexV3Contract } from "./v3";
 
 export const contracts: { new (): GalaContract }[] = [
   PublicKeyContract,
   GalaChainTokenContract,
-  AppleContract
+  AppleContract,
+  LaunchPadContract,
+  DexV3Contract
 ];
 
 export const serializers = {

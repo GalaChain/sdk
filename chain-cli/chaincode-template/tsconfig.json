@@ -8,7 +8,7 @@
     "declarationMap": true,
     "sourceMap": true
   },
-  "files": [],
+  "files": ["src/launchpad/LaunchPadContract.ts"],
   "include": ["**/*", "package.json"],
   "exclude": ["lib", "**/*spec.ts", "src/__mocks__", "src/__test__"],
   "references": [
