@@ -33,7 +33,6 @@ if (customCommand === "get-contract-names") {
     .filter((name: string) => name !== undefined)
     .sort()
     .map((contractName: string) => ({ contractName }));
-  console.log(JSON.stringify(response));
 
   process.exit(0);
 }

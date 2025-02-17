@@ -18,6 +18,8 @@ export * from "./PublicKeyContract";
 export * from "./GalaContract";
 export * from "./GalaContractApi";
 export * from "./GalaTransaction";
+export * from "./LaunchPadContract";
+export * from "./DexV3Contract";
 export { ensureOrganizationIsAllowed } from "./authorize";
 export { OrganizationNotAllowedError } from "./authorize";
 export { getCaIdentityAlias } from "./getCaIdentityAlias";

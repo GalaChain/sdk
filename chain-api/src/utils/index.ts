@@ -22,6 +22,7 @@ export * from "./chain-decorators";
 export * from "./error";
 export * from "../ethers/type-utils";
 export * from "./randomUniqueKey";
+export * from "./uniswap";
 
 export {
   deserialize,

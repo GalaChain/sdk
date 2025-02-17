@@ -1,3 +1,3 @@
-import { LaunchPadContract } from "./LaunchPadContract";
+import { LaunchPadContract } from "@gala-chain/chaincode";
 
 export { LaunchPadContract };

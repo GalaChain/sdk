@@ -13,38 +13,32 @@
  * limitations under the License.
  */
 import {
+  CreateSaleResponse,
+  CreateTokenClassDto,
+  CreateTokenSaleDTO,
+  ExactTokenAmountDto,
   FetchBalancesDto,
-  FetchBalancesWithPaginationDto,
+  FetchSaleDto,
   GalaChainResponse,
+  GetPoolDto,
+  LaunchPadSale,
   MintTokenWithAllowanceDto,
+  NativeTokenAmountDto,
+  Pool,
+  PreMintCalculationDto,
+  SaleStatus,
+  SwapDto,
   TokenBalance,
+  TokenClassKey,
   TokenInstanceKey,
+  TradeResponse,
   TransferTokenDto
 } from "@gala-chain/api";
-import { TokenClassKey } from "@gala-chain/api";
-import { CreateTokenClassDto } from "@gala-chain/api";
 import { ChainClient, ChainUser, CommonContractAPI, commonContractAPI } from "@gala-chain/client";
-import { AdminChainClients, transactionError } from "@gala-chain/test";
-import { TestClients } from "@gala-chain/test";
+import { AdminChainClients, TestClients, transactionError } from "@gala-chain/test";
 import { BigNumber } from "bignumber.js";
 
-import { LaunchPadSale } from "../src/launchpad/LaunchPadSale";
-import { saleStatus } from "../src/launchpad/constants";
-import { INITIAL_PLATFORM_FEE_ADDRESS } from "../src/launchpad/constants";
-import {
-  createSaleResponse,
-  createTokenSaleDTO,
-  exactTokenAmountDto,
-  fetchSaleDto,
-  nativeTokenAmountDto,
-  preMintCalculationDto,
-  tradeResponse
-} from "../src/launchpad/dtos";
-import { FetchBalancesWithPaginationResponse } from "../src/token/dtos";
-import { GetPoolDto, SwapDto } from "../src/v3/dtos";
-import { Pool } from "../src/v3/pool";
-import { calNativeTokensInTest } from "./testHelper";
-import { Console } from "console";
+import { calNativeTokensInTest } from "./launchpadTestHelper";
 
 jest.setTimeout(100000);
 
@@ -117,7 +111,7 @@ describe("LaunchPadContract", () => {
     tokenName: string,
     tokenSymbol: string
   ) {
-    const createLaunchPadSaleDTO = new createTokenSaleDTO();
+    const createLaunchPadSaleDTO = new CreateTokenSaleDTO();
     createLaunchPadSaleDTO.tokenName = tokenName;
     createLaunchPadSaleDTO.tokenSymbol = tokenSymbol;
     createLaunchPadSaleDTO.tokenDescription = `${tokenName} sale description`;
@@ -204,7 +198,7 @@ describe("LaunchPadContract", () => {
 
   describe("Create Sale ", () => {
     test("Create Sale Test", async () => {
-      const createLaunchPadSaleDTO = new createTokenSaleDTO();
+      const createLaunchPadSaleDTO = new CreateTokenSaleDTO();
       createLaunchPadSaleDTO.tokenName = "Assett";
       createLaunchPadSaleDTO.tokenSymbol = "ART";
       createLaunchPadSaleDTO.tokenDescription = "created for sale";
@@ -234,7 +228,7 @@ describe("LaunchPadContract", () => {
     });
 
     test("It should revert if token name is not given", async () => {
-      const createLaunchPadSaleDTO = new createTokenSaleDTO();
+      const createLaunchPadSaleDTO = new CreateTokenSaleDTO();
       createLaunchPadSaleDTO.tokenName = "";
       createLaunchPadSaleDTO.tokenSymbol = "saleEight";
       createLaunchPadSaleDTO.tokenDescription = "created for sale";
@@ -249,7 +243,7 @@ describe("LaunchPadContract", () => {
     });
 
     test("It should revert if token symbol is not given", async () => {
-      const createLaunchPadSaleDTO = new createTokenSaleDTO();
+      const createLaunchPadSaleDTO = new CreateTokenSaleDTO();
       createLaunchPadSaleDTO.tokenName = "Asset8";
       createLaunchPadSaleDTO.tokenSymbol = "";
       createLaunchPadSaleDTO.tokenDescription = "created for sale";
@@ -264,7 +258,7 @@ describe("LaunchPadContract", () => {
     });
 
     test("It should revert in token description is empty", async () => {
-      const createLaunchPadSaleDTO = new createTokenSaleDTO();
+      const createLaunchPadSaleDTO = new CreateTokenSaleDTO();
       createLaunchPadSaleDTO.tokenName = "Asset8";
       createLaunchPadSaleDTO.tokenSymbol = "saleEight";
       createLaunchPadSaleDTO.tokenDescription = "";
@@ -279,7 +273,7 @@ describe("LaunchPadContract", () => {
     });
 
     test("Sale cannot be created without social link", async () => {
-      const createLaunchPadSaleDTO = new createTokenSaleDTO();
+      const createLaunchPadSaleDTO = new CreateTokenSaleDTO();
       createLaunchPadSaleDTO.tokenName = "Asset31";
       createLaunchPadSaleDTO.tokenSymbol = "saleThirtyOne";
       createLaunchPadSaleDTO.tokenDescription = "test token description1";
@@ -292,7 +286,7 @@ describe("LaunchPadContract", () => {
       expect(response.Message).toEqual("Token sale creation requires atleast one social link.");
     });
     test("Same sale cannot be created with same user", async () => {
-      const createLaunchPadSaleDTO = new createTokenSaleDTO();
+      const createLaunchPadSaleDTO = new CreateTokenSaleDTO();
       createLaunchPadSaleDTO.tokenName = "Asset8";
       createLaunchPadSaleDTO.tokenSymbol = "saleEight";
       createLaunchPadSaleDTO.tokenDescription = "test token description1";
@@ -303,7 +297,7 @@ describe("LaunchPadContract", () => {
       createLaunchPadSaleDTO.sign(user.privateKey);
       const response = await client.LaunchPad.CreateSale(createLaunchPadSaleDTO);
 
-      const createLaunchPadSale2DTO = new createTokenSaleDTO();
+      const createLaunchPadSale2DTO = new CreateTokenSaleDTO();
       createLaunchPadSale2DTO.tokenName = "Asset8";
       createLaunchPadSale2DTO.tokenSymbol = "saleEight";
       createLaunchPadSale2DTO.tokenDescription = "test token description2";
@@ -347,7 +341,7 @@ describe("LaunchPadContract", () => {
       const galaBalanceBeforeBuy = (fetchGalaBalanceRes?.Data?.[0] as any).quantity;
 
       //Creating New Sale
-      const createLaunchPadSaleDTO = new createTokenSaleDTO();
+      const createLaunchPadSaleDTO = new CreateTokenSaleDTO();
       createLaunchPadSaleDTO.tokenName = "Asset7";
       createLaunchPadSaleDTO.tokenSymbol = "saleSeven";
       createLaunchPadSaleDTO.tokenDescription = "created for sale";
@@ -402,7 +396,7 @@ describe("LaunchPadContract", () => {
 
     const galaBalanceBeforeBuy = (fetchGalaBalanceRes?.Data?.[0] as any).quantity;
 
-    const buyWithExactDTO = new exactTokenAmountDto();
+    const buyWithExactDTO = new ExactTokenAmountDto();
     buyWithExactDTO.vaultAddress = vaultAddress;
     buyWithExactDTO.tokenAmount = new BigNumber("9999999");
 
@@ -423,7 +417,7 @@ describe("LaunchPadContract", () => {
 
     balanceDiff = roundToDecimal(balanceDiff, 8);
 
-    const buyWithNativeDTO = new nativeTokenAmountDto();
+    const buyWithNativeDTO = new NativeTokenAmountDto();
     buyWithNativeDTO.vaultAddress = vaultAddress;
     buyWithNativeDTO.nativeTokenAmount = new BigNumber(balanceDiff);
 
@@ -435,7 +429,7 @@ describe("LaunchPadContract", () => {
 
     const totalSupply = 10000000;
 
-    const fetchSaleDetailsDTO = new fetchSaleDto();
+    const fetchSaleDetailsDTO = new FetchSaleDto();
     fetchSaleDetailsDTO.vaultAddress = vaultAddress;
 
     const fetchSaleDetailsRes = await client.LaunchPad.FetchSale(fetchSaleDetailsDTO);
@@ -461,7 +455,7 @@ describe("LaunchPadContract", () => {
     const fetchGalaBalanceRes = await client1.token.FetchBalances(FetchGalaBalanceDto);
     const balanceBeforeBuy = (fetchGalaBalanceRes?.Data?.[0] as any).quantity;
 
-    const buyExactTokenDTO = new exactTokenAmountDto();
+    const buyExactTokenDTO = new ExactTokenAmountDto();
     buyExactTokenDTO.vaultAddress = vaultAddress;
     buyExactTokenDTO.tokenAmount = new BigNumber("1");
 
@@ -483,7 +477,7 @@ describe("LaunchPadContract", () => {
       const sale = await createSale(client, user, "Asset13", "saleThirteen");
       vaultAddress = sale.Data?.vaultAddress;
 
-      const buyWithNativeDTO = new nativeTokenAmountDto();
+      const buyWithNativeDTO = new NativeTokenAmountDto();
       buyWithNativeDTO.vaultAddress = vaultAddress;
       buyWithNativeDTO.nativeTokenAmount = new BigNumber("31.27520343");
 
@@ -524,7 +518,7 @@ describe("LaunchPadContract", () => {
 
       //Fetch tokens sold from sale
 
-      const fetchSaleDetailDTO = new fetchSaleDto();
+      const fetchSaleDetailDTO = new FetchSaleDto();
       fetchSaleDetailDTO.vaultAddress = vaultAddress;
 
       const fetchSaleRes = await client.LaunchPad.FetchSale(fetchSaleDetailDTO);
@@ -540,7 +534,7 @@ describe("LaunchPadContract", () => {
       const sale = await createSale(client, user, "Asset14", "saleFourteen");
       vaultAddress = sale.Data?.vaultAddress;
 
-      const buyWithExactDTO = new exactTokenAmountDto();
+      const buyWithExactDTO = new ExactTokenAmountDto();
       buyWithExactDTO.vaultAddress = vaultAddress;
       buyWithExactDTO.tokenAmount = new BigNumber("2000000");
 
@@ -565,7 +559,7 @@ describe("LaunchPadContract", () => {
 
       //Fetch Sale
 
-      const fetchSaleDetailDTO = new fetchSaleDto();
+      const fetchSaleDetailDTO = new FetchSaleDto();
       fetchSaleDetailDTO.vaultAddress = vaultAddress;
 
       const fetchSaleRes = await client.LaunchPad.FetchSale(fetchSaleDetailDTO);
@@ -581,7 +575,7 @@ describe("LaunchPadContract", () => {
       const sale = await createSale(client, user, "Asset16", "saleSixteen");
       vaultAddress = sale.Data?.vaultAddress;
 
-      const buyWithNativeDTO = new nativeTokenAmountDto();
+      const buyWithNativeDTO = new NativeTokenAmountDto();
       buyWithNativeDTO.vaultAddress = vaultAddress;
       buyWithNativeDTO.nativeTokenAmount = new BigNumber("31.27520343");
 
@@ -603,7 +597,7 @@ describe("LaunchPadContract", () => {
 
       //Sell With Native
 
-      const sellWithNativeDTO = new nativeTokenAmountDto();
+      const sellWithNativeDTO = new NativeTokenAmountDto();
       sellWithNativeDTO.vaultAddress = vaultAddress;
       sellWithNativeDTO.nativeTokenAmount = new BigNumber("31.27520343");
 
@@ -622,7 +616,7 @@ describe("LaunchPadContract", () => {
 
       //Fetch Sale
 
-      const fetchSaleDTO = new fetchSaleDto();
+      const fetchSaleDTO = new FetchSaleDto();
       fetchSaleDTO.vaultAddress = vaultAddress;
 
       const fetchSaleRes = await client.LaunchPad.FetchSale(fetchSaleDTO);
@@ -649,7 +643,7 @@ describe("LaunchPadContract", () => {
       const sale = await createSale(client, user, "Asset20", "saleTwenty");
       vaultAddress = sale.Data?.vaultAddress;
 
-      const buyWithExactDTO = new exactTokenAmountDto();
+      const buyWithExactDTO = new ExactTokenAmountDto();
       buyWithExactDTO.vaultAddress = vaultAddress;
       buyWithExactDTO.tokenAmount = new BigNumber("2000000");
 
@@ -668,7 +662,7 @@ describe("LaunchPadContract", () => {
       const fetchBalanceRes = await client1.token.FetchBalances(tokenBalanceDTO);
       const tokenbalanceOfUserAfterBuy = (fetchBalanceRes?.Data?.[0] as any).quantity;
 
-      const sellExactTokenDTO = new exactTokenAmountDto();
+      const sellExactTokenDTO = new ExactTokenAmountDto();
       sellExactTokenDTO.vaultAddress = vaultAddress;
       sellExactTokenDTO.tokenAmount = new BigNumber("5000");
 
@@ -705,7 +699,7 @@ describe("LaunchPadContract", () => {
 
         const amountOutMeme = new BigNumber(tokens);
 
-        const initialfetchSaleDto = new fetchSaleDto();
+        const initialfetchSaleDto = new FetchSaleDto();
         initialfetchSaleDto.vaultAddress = vaultAddress;
 
         const initialFetchSaleDetails = await client.LaunchPad.FetchSale(initialfetchSaleDto);
@@ -713,7 +707,7 @@ describe("LaunchPadContract", () => {
         sellingTokenQuantity = Number(initialFetchSaleDetails.Data?.sellingTokenQuantity);
         currentSupply = totalSupply - sellingTokenQuantity;
 
-        const buyExactDto = new exactTokenAmountDto();
+        const buyExactDto = new ExactTokenAmountDto();
         buyExactDto.vaultAddress = vaultAddress;
         buyExactDto.tokenAmount = new BigNumber(amountOutMeme); // 1000000
 
@@ -722,7 +716,7 @@ describe("LaunchPadContract", () => {
         // Declare calculatedAmountNumber at the beginning
 
         // Calculating Current Supply
-        const fetchSaleDTO = new fetchSaleDto();
+        const fetchSaleDTO = new FetchSaleDto();
         fetchSaleDTO.vaultAddress = vaultAddress;
 
         const fetchSaleDetails = await client.LaunchPad.FetchSale(fetchSaleDTO);
@@ -749,7 +743,7 @@ describe("LaunchPadContract", () => {
 
         const TokenBalance = (fetchBalanceRes?.Data?.[0] as any).quantity;
 
-        const buyExactDTO = new exactTokenAmountDto();
+        const buyExactDTO = new ExactTokenAmountDto();
         buyExactDTO.vaultAddress = vaultAddress;
         buyExactDTO.tokenAmount = amountOutMeme;
 
@@ -770,19 +764,14 @@ describe("LaunchPadContract", () => {
 
         const balanceDiffBuy = TokenBalance - TokenBalanceAfter;
 
-        //  if(i !== 10 || (tokens%1000000)== 0)
-        //{
-
         expect(balanceDiffBuy).toBeCloseTo(Number(calculatedAmount.Data));
 
         const expectedSellingQuantity = totalSupply - (currentSupply + Number(amountOutMeme));
         // Validate sellingTokenQuantity equals totalSupply - (currentSupply + amountOutMeme)
         expect(updatedSellingTokenQuantity).toEqual(expectedSellingQuantity);
 
-        //return
-
         //**Sell Tokens Test**
-        const sellExactTokenDTO = new exactTokenAmountDto();
+        const sellExactTokenDTO = new ExactTokenAmountDto();
         sellExactTokenDTO.vaultAddress = vaultAddress;
         sellExactTokenDTO.tokenAmount = amountOutMeme;
 
@@ -808,7 +797,7 @@ describe("LaunchPadContract", () => {
 
         //Fetch sale details
 
-        const fetchSaleDetailsDTO = new fetchSaleDto();
+        const fetchSaleDetailsDTO = new FetchSaleDto();
 
         fetchSaleDetailsDTO.vaultAddress = vaultAddress;
 
@@ -819,15 +808,6 @@ describe("LaunchPadContract", () => {
         const CurrentSupplyAfterSell = totalSupply - sellingTokenQuantityAfterSell;
 
         expect(currentSupply).toEqual(CurrentSupplyAfterSell);
-
-        //  else {
-
-        //    expect(balanceDiffBuy).toBeCloseTo(Number("1129679.89")) ;
-
-        //    console.log("updated Selling token quantity " , updatedSellingTokenQuantity);
-        //    expect(updatedSellingTokenQuantity).toEqual(1); //Last token left in vault to sell
-
-        // }
       }
     });
 
@@ -859,15 +839,15 @@ describe("LaunchPadContract", () => {
 
         const nativeTokensIn = nativeCoins;
 
-        const nativeTokenAmountDTO = new nativeTokenAmountDto();
-        nativeTokenAmountDTO.vaultAddress = vaultAddress;
-        nativeTokenAmountDTO.nativeTokenAmount = new BigNumber(nativeTokensIn);
+        const NativeTokenAmountDTO = new NativeTokenAmountDto();
+        NativeTokenAmountDTO.vaultAddress = vaultAddress;
+        NativeTokenAmountDTO.nativeTokenAmount = new BigNumber(nativeTokensIn);
 
-        const calculatedReturns = await client.LaunchPad.CallMemeTokenOut(nativeTokenAmountDTO);
+        const calculatedReturns = await client.LaunchPad.CallMemeTokenOut(NativeTokenAmountDTO);
 
-        nativeTokenAmountDTO.sign(user1.privateKey);
+        NativeTokenAmountDTO.sign(user1.privateKey);
 
-        const buyWithNativeRes = await client.LaunchPad.BuyWithNative(nativeTokenAmountDTO);
+        const buyWithNativeRes = await client.LaunchPad.BuyWithNative(NativeTokenAmountDTO);
 
         //Fetch User's Token Balance
         const FetchBalanceDto = new FetchBalancesDto();
@@ -882,13 +862,13 @@ describe("LaunchPadContract", () => {
 
         expect(Number(calculatedReturns.Data)).toBeCloseTo(Number(balanceOfUser));
 
-        const callWithNativeTokenDTO = new exactTokenAmountDto();
+        const callWithNativeTokenDTO = new ExactTokenAmountDto();
         callWithNativeTokenDTO.vaultAddress = vaultAddress;
         callWithNativeTokenDTO.tokenAmount = new BigNumber(balanceOfUser);
 
         const callNativeTokensOutVal = await client.LaunchPad.CallNativeTokenOut(callWithNativeTokenDTO);
 
-        const callMemeTokensInDTO = new nativeTokenAmountDto();
+        const callMemeTokensInDTO = new NativeTokenAmountDto();
         callMemeTokensInDTO.vaultAddress = vaultAddress;
         callMemeTokensInDTO.nativeTokenAmount = new BigNumber(callNativeTokensOutVal.Data ?? "0");
 
@@ -905,7 +885,7 @@ describe("LaunchPadContract", () => {
 
         //Fetch Total tokens sold from sale
 
-        const fetchSaleDetailsDto = new fetchSaleDto();
+        const fetchSaleDetailsDto = new FetchSaleDto();
         fetchSaleDetailsDto.vaultAddress = vaultAddress;
 
         const fetchsaleRes = await client.LaunchPad.FetchSale(fetchSaleDetailsDto);
@@ -940,7 +920,7 @@ describe("LaunchPadContract", () => {
 
         const nativeTokensIn = nativeCoins;
 
-        const callMemeTokensOutDTO = new nativeTokenAmountDto();
+        const callMemeTokensOutDTO = new NativeTokenAmountDto();
         callMemeTokensOutDTO.vaultAddress = vaultAddress;
         callMemeTokensOutDTO.nativeTokenAmount = new BigNumber(nativeTokensIn);
 
@@ -964,7 +944,7 @@ describe("LaunchPadContract", () => {
 
         expect(Number(calculatedReturn.Data)).toBeCloseTo(Number(balanceOfUser));
 
-        const calNativeTokensOutDTO = new exactTokenAmountDto();
+        const calNativeTokensOutDTO = new ExactTokenAmountDto();
         calNativeTokensOutDTO.vaultAddress = vaultAddress;
         calNativeTokensOutDTO.tokenAmount = new BigNumber(calculatedReturn.Data ?? "0");
 
@@ -984,7 +964,7 @@ describe("LaunchPadContract", () => {
 
         //Sell Tokens
 
-        const sellExactTokensDTO = new exactTokenAmountDto();
+        const sellExactTokensDTO = new ExactTokenAmountDto();
         sellExactTokensDTO.vaultAddress = vaultAddress;
         sellExactTokensDTO.tokenAmount = new BigNumber(calculatedReturn.Data ?? "0");
 
@@ -1001,7 +981,7 @@ describe("LaunchPadContract", () => {
 
         //Total tokens sold should be back to the previous state (after sell)
 
-        const fetchSaleDetailsDto = new fetchSaleDto();
+        const fetchSaleDetailsDto = new FetchSaleDto();
         fetchSaleDetailsDto.vaultAddress = vaultAddress;
 
         const fetchSaleDetailsRes = await client.LaunchPad.FetchSale(fetchSaleDetailsDto);
@@ -1025,7 +1005,6 @@ describe("LaunchPadContract", () => {
       for (let i = 1; i <= 10; i++) {
         let tokens = tokensToBuyAndSell * i;
 
-        //comment this if you want to test till complete supply
         // if buy till 9999999
         if (i === 10) {
           tokens = 999999;
@@ -1033,13 +1012,13 @@ describe("LaunchPadContract", () => {
 
         const amountOutMeme = new BigNumber(tokens);
 
-        const callNativeTokenInDTO = new exactTokenAmountDto();
+        const callNativeTokenInDTO = new ExactTokenAmountDto();
         callNativeTokenInDTO.vaultAddress = vaultAddress;
         callNativeTokenInDTO.tokenAmount = amountOutMeme;
 
         const calculatedAmountOfNativeCoins = await client.LaunchPad.CallNativeTokenIn(callNativeTokenInDTO);
 
-        const fetchSaleDetailsDTO = new fetchSaleDto();
+        const fetchSaleDetailsDTO = new FetchSaleDto();
         fetchSaleDetailsDTO.vaultAddress = vaultAddress;
 
         const fetchSaleDetailsRes = await client.LaunchPad.FetchSale(fetchSaleDetailsDTO);
@@ -1063,7 +1042,7 @@ describe("LaunchPadContract", () => {
 
         //Buy Tokens
 
-        const buyExactTokenDTO = new exactTokenAmountDto();
+        const buyExactTokenDTO = new ExactTokenAmountDto();
         buyExactTokenDTO.vaultAddress = vaultAddress;
         buyExactTokenDTO.tokenAmount = new BigNumber(amountOutMeme);
 
@@ -1091,7 +1070,7 @@ describe("LaunchPadContract", () => {
 
         expect(Number(totalTokensSoldAfterBuy)).toBeCloseTo(Number(updatedSupply));
 
-        const sellExpectedDTO = new exactTokenAmountDto();
+        const sellExpectedDTO = new ExactTokenAmountDto();
         sellExpectedDTO.vaultAddress = vaultAddress;
         sellExpectedDTO.tokenAmount = new BigNumber(amountOutMeme);
 
@@ -1102,7 +1081,7 @@ describe("LaunchPadContract", () => {
 
         const balanceBeforeSell = (fetchGalaBalanceBeforeSell?.Data?.[0] as any).quantity;
 
-        const callMemeOutValDTO = new nativeTokenAmountDto();
+        const callMemeOutValDTO = new NativeTokenAmountDto();
         callMemeOutValDTO.vaultAddress = vaultAddress;
         callMemeOutValDTO.nativeTokenAmount = new BigNumber(calculatedAmountOfNativeCoins.Data ?? "0");
 
@@ -1111,7 +1090,7 @@ describe("LaunchPadContract", () => {
 
         //Selling
 
-        const sellWithNativeDTO = new nativeTokenAmountDto();
+        const sellWithNativeDTO = new NativeTokenAmountDto();
         sellWithNativeDTO.vaultAddress = vaultAddress;
         sellWithNativeDTO.nativeTokenAmount = new BigNumber(calculatedAmountOfNativeCoins.Data ?? "0");
 
@@ -1134,7 +1113,7 @@ describe("LaunchPadContract", () => {
       const sale = await createSale(client, user, "Asset22", "saleTwentyTwo");
       vaultAddress = sale.Data?.vaultAddress;
 
-      const buyWithNativeDTO = new nativeTokenAmountDto();
+      const buyWithNativeDTO = new NativeTokenAmountDto();
       buyWithNativeDTO.vaultAddress = vaultAddress;
       buyWithNativeDTO.nativeTokenAmount = new BigNumber("100");
 
@@ -1157,7 +1136,7 @@ describe("LaunchPadContract", () => {
       const sale = await createSale(client, user, "Asset23", "saleTwentyThree");
       vaultAddress = sale.Data?.vaultAddress;
 
-      const buyWithExactDTO = new exactTokenAmountDto();
+      const buyWithExactDTO = new ExactTokenAmountDto();
       buyWithExactDTO.vaultAddress = vaultAddress;
       buyWithExactDTO.tokenAmount = new BigNumber("2000000");
 
@@ -1181,7 +1160,7 @@ describe("LaunchPadContract", () => {
       const sale = await createSale(client, user, "Asset32", "saleThirtyTwo");
       vaultAddress = sale.Data?.vaultAddress;
 
-      const buyWithNativeDTO = new nativeTokenAmountDto();
+      const buyWithNativeDTO = new NativeTokenAmountDto();
       buyWithNativeDTO.vaultAddress = vaultAddress;
       buyWithNativeDTO.nativeTokenAmount = new BigNumber("100");
 
@@ -1190,7 +1169,7 @@ describe("LaunchPadContract", () => {
 
       //Sell With Native
 
-      const sellWithNativeDTO = new nativeTokenAmountDto();
+      const sellWithNativeDTO = new NativeTokenAmountDto();
       sellWithNativeDTO.vaultAddress = vaultAddress;
       sellWithNativeDTO.nativeTokenAmount = new BigNumber("50");
 
@@ -1214,7 +1193,7 @@ describe("LaunchPadContract", () => {
       const sale = await createSale(client, user, "Asset26", "saleTwentySix");
       vaultAddress = sale.Data?.vaultAddress;
 
-      const buyWithExactDTO = new exactTokenAmountDto();
+      const buyWithExactDTO = new ExactTokenAmountDto();
       buyWithExactDTO.vaultAddress = vaultAddress;
       buyWithExactDTO.tokenAmount = new BigNumber("2000000");
 
@@ -1224,7 +1203,7 @@ describe("LaunchPadContract", () => {
 
       //  Sell With Exact tokens
 
-      const sellWithExactDTO = new exactTokenAmountDto();
+      const sellWithExactDTO = new ExactTokenAmountDto();
       sellWithExactDTO.vaultAddress = vaultAddress;
       sellWithExactDTO.tokenAmount = new BigNumber("500");
 
@@ -1251,7 +1230,7 @@ describe("LaunchPadContract", () => {
       const sale = await createSale(client, user, "Asset17", "saleSeventeen");
       vaultAddress = sale.Data?.vaultAddress;
 
-      const BuyExactToken = new exactTokenAmountDto();
+      const BuyExactToken = new ExactTokenAmountDto();
       BuyExactToken.vaultAddress = vaultAddress;
       BuyExactToken.tokenAmount = new BigNumber("9999999");
       BuyExactToken.expectedNativeToken = new BigNumber("1700000");
@@ -1259,7 +1238,7 @@ describe("LaunchPadContract", () => {
       BuyExactToken.sign(user1.privateKey);
       const buyres = await client.LaunchPad.BuyExactToken(BuyExactToken);
 
-      const BuyExactToken1 = new exactTokenAmountDto();
+      const BuyExactToken1 = new ExactTokenAmountDto();
       BuyExactToken1.vaultAddress = vaultAddress;
       BuyExactToken1.tokenAmount = new BigNumber("2");
       BuyExactToken1.expectedNativeToken = new BigNumber("1700000");
@@ -1267,12 +1246,12 @@ describe("LaunchPadContract", () => {
       BuyExactToken1.sign(user2.privateKey);
       const buyres1 = await client.LaunchPad.BuyExactToken(BuyExactToken1);
 
-      const fetchSaleDetails = new fetchSaleDto();
+      const fetchSaleDetails = new FetchSaleDto();
       fetchSaleDetails.vaultAddress = vaultAddress;
 
       const fetchSaleStatus = await client.LaunchPad.FetchSale(fetchSaleDetails);
 
-      expect(fetchSaleStatus.Data?.saleStatus).toBe(saleStatus.END);
+      expect(fetchSaleStatus.Data?.SaleStatus).toBe(SaleStatus.END);
     });
 
     test("Finalise Sale  @Native Gala equivalent to MARKET_CAP ", async () => {
@@ -1281,7 +1260,7 @@ describe("LaunchPadContract", () => {
       const sale = await createSale(client, user, "Asset18", "saleEighteen");
       vaultAddress = vaultAddress = sale.Data?.vaultAddress;
 
-      const buyWithNativeDTO = new nativeTokenAmountDto();
+      const buyWithNativeDTO = new NativeTokenAmountDto();
 
       buyWithNativeDTO.vaultAddress = vaultAddress;
       buyWithNativeDTO.nativeTokenAmount = new BigNumber("1640984");
@@ -1290,7 +1269,7 @@ describe("LaunchPadContract", () => {
 
       const buyRes = await client.LaunchPad.BuyWithNative(buyWithNativeDTO);
 
-      const buyWithNativeDTO1 = new nativeTokenAmountDto();
+      const buyWithNativeDTO1 = new NativeTokenAmountDto();
       buyWithNativeDTO1.vaultAddress = vaultAddress;
       buyWithNativeDTO1.nativeTokenAmount = new BigNumber("50");
 
@@ -1298,20 +1277,18 @@ describe("LaunchPadContract", () => {
 
       const buyres1 = await client.LaunchPad.BuyWithNative(buyWithNativeDTO1);
 
-      const fetchSaleDetails = new fetchSaleDto();
+      const fetchSaleDetails = new FetchSaleDto();
       fetchSaleDetails.vaultAddress = vaultAddress;
 
       const fetchSaleStatus = await client.LaunchPad.FetchSale(fetchSaleDetails);
 
-      expect(fetchSaleStatus.Data?.saleStatus).toBe(saleStatus.END);
+      expect(fetchSaleStatus.Data?.SaleStatus).toBe(SaleStatus.END);
     });
-
-   
 
     test("Pool Gets created after finalization", async () => {
       const sale = await createSale(client, user3, "Asset29", "saleTwentyNine");
       vaultAddress = sale.Data?.vaultAddress;
-      const buyWithNativeDTO = new nativeTokenAmountDto();
+      const buyWithNativeDTO = new NativeTokenAmountDto();
 
       buyWithNativeDTO.vaultAddress = vaultAddress;
       buyWithNativeDTO.nativeTokenAmount = new BigNumber("1640986");
@@ -1333,7 +1310,7 @@ describe("LaunchPadContract", () => {
       token1classKey.additionalKey = user3.identityKey.replace(/\|/, ":");
 
       //Fetch sale status
-      const fetchSaleDetailsDTO = new fetchSaleDto();
+      const fetchSaleDetailsDTO = new FetchSaleDto();
       fetchSaleDetailsDTO.vaultAddress = vaultAddress;
 
       const saleStatus1 = await client.LaunchPad.FetchSale(fetchSaleDetailsDTO);
@@ -1348,7 +1325,7 @@ describe("LaunchPadContract", () => {
     test("User will not be able to buy when the sale end", async () => {
       const sale = await createSale(client, user3, "Asset30", "saleThity");
       vaultAddress = sale.Data?.vaultAddress;
-      const buyWithNativeDTO = new nativeTokenAmountDto();
+      const buyWithNativeDTO = new NativeTokenAmountDto();
 
       buyWithNativeDTO.vaultAddress = vaultAddress;
       buyWithNativeDTO.nativeTokenAmount = new BigNumber("1640986");
@@ -1359,7 +1336,7 @@ describe("LaunchPadContract", () => {
 
       // Buy after sale ends
 
-      const buyWithNative1DTO = new nativeTokenAmountDto();
+      const buyWithNative1DTO = new NativeTokenAmountDto();
 
       buyWithNative1DTO.vaultAddress = vaultAddress;
       buyWithNative1DTO.nativeTokenAmount = new BigNumber("10");
@@ -1379,7 +1356,7 @@ describe("LaunchPadContract", () => {
 
       //Creating 100000 Supply
 
-      const buyExactTokenDTO = new exactTokenAmountDto();
+      const buyExactTokenDTO = new ExactTokenAmountDto();
       buyExactTokenDTO.vaultAddress = vaultAddress;
       buyExactTokenDTO.tokenAmount = new BigNumber("100000");
 
@@ -1387,7 +1364,7 @@ describe("LaunchPadContract", () => {
       const buyExactTokenRes = await client.LaunchPad.BuyExactToken(buyExactTokenDTO);
 
       //Call Native Tokens out
-      const exactAmountDTO = new exactTokenAmountDto();
+      const exactAmountDTO = new ExactTokenAmountDto();
       exactAmountDTO.vaultAddress = vaultAddress;
       exactAmountDTO.tokenAmount = new BigNumber("100");
       exactAmountDTO.sign(user2.privateKey);
@@ -1397,7 +1374,7 @@ describe("LaunchPadContract", () => {
       expect(Number(res.Data)).toEqual(0.0018547);
 
       //Cal Meme Tokens in
-      const nativeAmountDTO = new nativeTokenAmountDto();
+      const nativeAmountDTO = new NativeTokenAmountDto();
       nativeAmountDTO.vaultAddress = vaultAddress;
       nativeAmountDTO.nativeTokenAmount = new BigNumber("20");
 
@@ -1407,7 +1384,7 @@ describe("LaunchPadContract", () => {
       expect(Number(res1.Data)).toEqual(100000.00024139816);
 
       // Meme Tokens out
-      const nativeAmount1DTO = new nativeTokenAmountDto();
+      const nativeAmount1DTO = new NativeTokenAmountDto();
       nativeAmount1DTO.vaultAddress = vaultAddress;
       nativeAmount1DTO.nativeTokenAmount = new BigNumber("50");
 
@@ -1418,7 +1395,7 @@ describe("LaunchPadContract", () => {
       expect(Number(res2.Data)).toEqual(698232.67504198138631);
 
       //Cal Native tokens in
-      const exactAmount1DTO = new exactTokenAmountDto();
+      const exactAmount1DTO = new ExactTokenAmountDto();
       exactAmount1DTO.vaultAddress = vaultAddress;
       exactAmount1DTO.tokenAmount = new BigNumber("30");
 
@@ -1430,7 +1407,7 @@ describe("LaunchPadContract", () => {
     });
 
     test("Calculate memes tokens out for preminting", async () => {
-      const nativeAmountDTO = new preMintCalculationDto();
+      const nativeAmountDTO = new PreMintCalculationDto();
       nativeAmountDTO.nativeTokenAmount = new BigNumber("50");
       nativeAmountDTO.sign(user2.privateKey);
 
@@ -1442,54 +1419,54 @@ describe("LaunchPadContract", () => {
 });
 
 interface LaunchPadContractAPI {
-  CreateSale(dto: createTokenSaleDTO): Promise<GalaChainResponse<createSaleResponse>>;
-  BuyExactToken(dto: exactTokenAmountDto): Promise<GalaChainResponse<tradeResponse>>;
-  SellToken(dto: exactTokenAmountDto): Promise<GalaChainResponse<tradeResponse>>;
-  BuyWithNative(dto: nativeTokenAmountDto): Promise<GalaChainResponse<tradeResponse>>;
-  SellWithNative(dto: nativeTokenAmountDto): Promise<GalaChainResponse<tradeResponse>>;
-  CallNativeTokenIn(dto: exactTokenAmountDto): Promise<GalaChainResponse<BigNumber>>;
-  CallMemeTokenOut(dto: nativeTokenAmountDto): Promise<GalaChainResponse<BigNumber>>;
-  CallNativeTokenOut(dto: exactTokenAmountDto): Promise<GalaChainResponse<BigNumber>>;
-  CallMemeTokenIn(dto: nativeTokenAmountDto): Promise<GalaChainResponse<BigNumber>>;
-  CalculatePreMintTokens(dto: preMintCalculationDto): Promise<GalaChainResponse<BigNumber>>;
-  FetchSale(dto: fetchSaleDto): Promise<GalaChainResponse<LaunchPadSale>>;
+  CreateSale(dto: CreateTokenSaleDTO): Promise<GalaChainResponse<CreateSaleResponse>>;
+  BuyExactToken(dto: ExactTokenAmountDto): Promise<GalaChainResponse<TradeResponse>>;
+  SellToken(dto: ExactTokenAmountDto): Promise<GalaChainResponse<TradeResponse>>;
+  BuyWithNative(dto: NativeTokenAmountDto): Promise<GalaChainResponse<TradeResponse>>;
+  SellWithNative(dto: NativeTokenAmountDto): Promise<GalaChainResponse<TradeResponse>>;
+  CallNativeTokenIn(dto: ExactTokenAmountDto): Promise<GalaChainResponse<BigNumber>>;
+  CallMemeTokenOut(dto: NativeTokenAmountDto): Promise<GalaChainResponse<BigNumber>>;
+  CallNativeTokenOut(dto: ExactTokenAmountDto): Promise<GalaChainResponse<BigNumber>>;
+  CallMemeTokenIn(dto: NativeTokenAmountDto): Promise<GalaChainResponse<BigNumber>>;
+  CalculatePreMintTokens(dto: PreMintCalculationDto): Promise<GalaChainResponse<BigNumber>>;
+  FetchSale(dto: FetchSaleDto): Promise<GalaChainResponse<LaunchPadSale>>;
 }
 
 function LaunchPadContractAPI(client: ChainClient): LaunchPadContractAPI & CommonContractAPI {
   return {
     ...commonContractAPI(client),
 
-    CreateSale(dto: createTokenSaleDTO) {
-      return client.submitTransaction("CreateSale", dto) as Promise<GalaChainResponse<createSaleResponse>>;
+    CreateSale(dto: CreateTokenSaleDTO) {
+      return client.submitTransaction("CreateSale", dto) as Promise<GalaChainResponse<CreateSaleResponse>>;
     },
-    BuyExactToken(dto: exactTokenAmountDto) {
-      return client.submitTransaction("BuyExactToken", dto) as Promise<GalaChainResponse<tradeResponse>>;
+    BuyExactToken(dto: ExactTokenAmountDto) {
+      return client.submitTransaction("BuyExactToken", dto) as Promise<GalaChainResponse<TradeResponse>>;
     },
-    SellToken(dto: exactTokenAmountDto) {
-      return client.submitTransaction("SellExactToken", dto) as Promise<GalaChainResponse<tradeResponse>>;
+    SellToken(dto: ExactTokenAmountDto) {
+      return client.submitTransaction("SellExactToken", dto) as Promise<GalaChainResponse<TradeResponse>>;
     },
-    BuyWithNative(dto: nativeTokenAmountDto) {
-      return client.submitTransaction("BuyWithNative", dto) as Promise<GalaChainResponse<tradeResponse>>;
+    BuyWithNative(dto: NativeTokenAmountDto) {
+      return client.submitTransaction("BuyWithNative", dto) as Promise<GalaChainResponse<TradeResponse>>;
     },
-    SellWithNative(dto: nativeTokenAmountDto) {
-      return client.submitTransaction("SellWithNative", dto) as Promise<GalaChainResponse<tradeResponse>>;
+    SellWithNative(dto: NativeTokenAmountDto) {
+      return client.submitTransaction("SellWithNative", dto) as Promise<GalaChainResponse<TradeResponse>>;
     },
-    CallNativeTokenIn(dto: exactTokenAmountDto) {
+    CallNativeTokenIn(dto: ExactTokenAmountDto) {
       return client.submitTransaction("CallNativeTokenIn", dto) as Promise<GalaChainResponse<BigNumber>>;
     },
-    CallMemeTokenOut(dto: nativeTokenAmountDto) {
+    CallMemeTokenOut(dto: NativeTokenAmountDto) {
       return client.submitTransaction("CallMemeTokenOut", dto) as Promise<GalaChainResponse<BigNumber>>;
     },
-    CallNativeTokenOut(dto: exactTokenAmountDto) {
+    CallNativeTokenOut(dto: ExactTokenAmountDto) {
       return client.submitTransaction("CallNativeTokenOut", dto) as Promise<GalaChainResponse<BigNumber>>;
     },
-    CallMemeTokenIn(dto: nativeTokenAmountDto) {
+    CallMemeTokenIn(dto: NativeTokenAmountDto) {
       return client.submitTransaction("CallMemeTokenIn", dto) as Promise<GalaChainResponse<BigNumber>>;
     },
-    CalculatePreMintTokens(dto: preMintCalculationDto) {
+    CalculatePreMintTokens(dto: PreMintCalculationDto) {
       return client.submitTransaction("CalculatePreMintTokens", dto) as Promise<GalaChainResponse<BigNumber>>;
     },
-    FetchSale(dto: fetchSaleDto) {
+    FetchSale(dto: FetchSaleDto) {
       return client.evaluateTransaction("FetchSaleDetails", dto) as Promise<GalaChainResponse<LaunchPadSale>>;
     }
   };
@@ -1501,9 +1478,6 @@ interface GalaTokenContractAPI {
   MintTokenWithAllowance(dto: MintTokenWithAllowanceDto): Promise<GalaChainResponse<TokenInstanceKey[]>>;
   TransferToken(dto: TransferTokenDto): Promise<GalaChainResponse<TokenBalance[]>>;
   FetchBalances(dto: FetchBalancesDto): Promise<GalaChainResponse<TokenBalance[]>>;
-  FetchBalancesWithPagination(
-    dto: FetchBalancesWithPaginationDto
-  ): Promise<GalaChainResponse<FetchBalancesWithPaginationResponse>>;
 }
 
 function GalaTokenContractAPI(client: ChainClient): GalaTokenContractAPI & CommonContractAPI {
@@ -1526,11 +1500,6 @@ function GalaTokenContractAPI(client: ChainClient): GalaTokenContractAPI & Commo
     },
     FetchBalances(dto: FetchBalancesDto) {
       return client.submitTransaction("FetchBalances", dto) as Promise<GalaChainResponse<TokenBalance[]>>;
-    },
-    FetchBalancesWithPagination(dto: FetchBalancesWithPaginationDto) {
-      return client.submitTransaction("FetchBalancesWithPagination", dto) as Promise<
-        GalaChainResponse<FetchBalancesWithPaginationResponse>
-      >;
     }
   };
 }
