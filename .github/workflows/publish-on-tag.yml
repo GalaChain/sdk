@@ -23,19 +23,28 @@ jobs:
           node-version: 18
       - name: Install Dependencies
         run: npm i
-      - name: Set up version
+      - name: Set up version and tag
         run: |
           # Extract package name and version
           NPM_PACKAGE_NAME=$(node -p "require('./package.json').name")
           NPM_PACKAGE_VERSION=$(node -p "require('./package.json').version")
+          # Set NPM_DIST_TAG based on version
+          if [[ $NPM_PACKAGE_VERSION == 2.* ]]; then
+            echo "NPM_DIST_TAG=latest" >> $GITHUB_ENV
+          elif [[ $NPM_PACKAGE_VERSION == 1.* ]]; then
+            echo "NPM_DIST_TAG=v1-latest" >> $GITHUB_ENV
+          else
+            echo "Error: Version must start with 1.* or 2.*"
+            exit 1
+          fi
           echo "//registry.npmjs.org/:_authToken=${{ secrets.NODE_AUTH_TOKEN }}" > .npmrc
       - name: publish-chain-api
         run: |
           cd chain-api
           npm i
           npm run build
-          # Publish to NPM registry
-          npm publish --access public
+          # Publish to NPM registry with appropriate tag
+          npm publish --access public --tag ${{ env.NPM_DIST_TAG }}
           cd ../
 
       - name: publish-chain-test
