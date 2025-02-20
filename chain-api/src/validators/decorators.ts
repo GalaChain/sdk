@@ -232,3 +232,22 @@ export function BigNumberIsInteger(validationOptions?: ValidationOptions) {
     });
   };
 }
+
+export function IsNonZeroBigNumber(validationOptions?: ValidationOptions) {
+  return function (object: Object, propertyName: string) {
+    registerDecorator({
+      name: "isNonZeroBigNumber",
+      target: object.constructor,
+      propertyName: propertyName,
+      options: validationOptions,
+      validator: {
+        validate(value: any) {
+          return value instanceof BigNumber && !value.isZero();
+        },
+        defaultMessage(args: ValidationArguments) {
+          return `${args.property} must be a BigNumber and cannot be zero.`;
+        }
+      }
+    });
+  };
+}

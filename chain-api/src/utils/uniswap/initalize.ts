@@ -12,24 +12,14 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-import deserialize from "./deserialize";
-import { Primitive, generateResponseSchema, generateSchema } from "./generate-schema";
-import { getValidationErrorMessages } from "./getValidationErrorMessages";
-import serialize from "./serialize";
-import signatures, { SigningScheme } from "./signatures";
+import BigNumber from "bignumber.js";
 
-export * from "./chain-decorators";
-export * from "./error";
-export * from "../ethers/type-utils";
-export * from "./uniswap"
+declare module "bignumber.js" {
+  interface BigNumber {
+    f18(): BigNumber;
+  }
+}
 
-export {
-  deserialize,
-  serialize,
-  generateSchema,
-  generateResponseSchema,
-  getValidationErrorMessages,
-  Primitive,
-  signatures,
-  SigningScheme
+BigNumber.prototype.f18 = function (round: BigNumber.RoundingMode = BigNumber.ROUND_DOWN): BigNumber {
+  return new BigNumber(this.toFixed(18, round));
 };
