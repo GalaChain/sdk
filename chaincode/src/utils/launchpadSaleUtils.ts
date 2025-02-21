@@ -12,7 +12,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-import { ChainError, ErrorCode, PlatformFeeConfig, SaleStatus } from "@gala-chain/api";
+import { ChainError, ErrorCode, LaunchpadSale, PlatformFeeConfig, SaleStatus } from "@gala-chain/api";
 import { DefaultError, NotFoundError } from "@gala-chain/api";
 import Decimal from "decimal.js";
 
@@ -22,9 +22,9 @@ import { getObjectByKey } from "./state";
 export async function fetchAndValidateSale(
   ctx: GalaChainContext,
   vaultAddress: string
-): Promise<LaunchPadSale> {
-  const key = ctx.stub.createCompositeKey(LaunchPadSale.INDEX_KEY, [vaultAddress]);
-  const sale = await getObjectByKey(ctx, LaunchPadSale, key).catch((e) => {
+): Promise<LaunchpadSale> {
+  const key = ctx.stub.createCompositeKey(LaunchpadSale.INDEX_KEY, [vaultAddress]);
+  const sale = await getObjectByKey(ctx, LaunchpadSale, key).catch((e) => {
     const chainError = ChainError.from(e);
     if (chainError.matches(ErrorCode.NOT_FOUND)) {
       return undefined;
