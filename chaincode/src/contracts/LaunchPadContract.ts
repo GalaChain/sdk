@@ -17,12 +17,12 @@ import {
   ConfigurePlatformFeeAddressDto,
   CreateSaleResponse,
   CreateTokenSaleDTO,
-  ExactTokenAmountDto,
+  ExactTokenQuantityDto,
   FetchSaleDto,
   FinalizeTokenAllocationDto,
-  LaunchPadFinalizeAllocation,
-  LaunchPadSale,
-  NativeTokenAmountDto,
+  LaunchpadFinalizeFeeAllocation,
+  LaunchpadSale,
+  NativeTokenQuantityDto,
   PlatformFeeConfig,
   PreMintCalculationDto,
   TradeResponse
@@ -37,9 +37,7 @@ import {
   callMemeTokenOut,
   callNativeTokenIn,
   callNativeTokenOut,
-  configurePlatformFeeAddress,
   createSale,
-  fetchPlatformAddressConfig,
   fetchSaleDetails,
   finalizeTokenAllocation,
   sellExactToken,
@@ -48,10 +46,11 @@ import {
 import { GalaChainContext } from "../types";
 import { GalaContract } from "./GalaContract";
 import { EVALUATE, Evaluate, GalaTransaction, Submit } from "./GalaTransaction";
+import { configurePlatformFeeAddress, fetchPlatformAddressConfig } from "./platformfee";
 
-export class LaunchPadContract extends GalaContract {
+export class LaunchpadContract extends GalaContract {
   constructor() {
-    super("LaunchPad", version);
+    super("Launchpad", version);
   }
 
   @Submit({
@@ -65,41 +64,41 @@ export class LaunchPadContract extends GalaContract {
   @GalaTransaction({
     type: EVALUATE,
     in: FetchSaleDto,
-    out: LaunchPadSale
+    out: LaunchpadSale
   })
-  public async FetchSaleDetails(ctx: GalaChainContext, dto: FetchSaleDto): Promise<LaunchPadSale> {
+  public async FetchSaleDetails(ctx: GalaChainContext, dto: FetchSaleDto): Promise<LaunchpadSale> {
     return fetchSaleDetails(ctx, dto);
   }
 
   @Submit({
-    in: ExactTokenAmountDto,
+    in: ExactTokenQuantityDto,
     out: TradeResponse
   })
-  public async BuyExactToken(ctx: GalaChainContext, dto: ExactTokenAmountDto): Promise<TradeResponse> {
+  public async BuyExactToken(ctx: GalaChainContext, dto: ExactTokenQuantityDto): Promise<TradeResponse> {
     return buyExactToken(ctx, dto);
   }
 
   @Submit({
-    in: ExactTokenAmountDto,
+    in: ExactTokenQuantityDto,
     out: TradeResponse
   })
-  public async SellExactToken(ctx: GalaChainContext, dto: ExactTokenAmountDto): Promise<TradeResponse> {
+  public async SellExactToken(ctx: GalaChainContext, dto: ExactTokenQuantityDto): Promise<TradeResponse> {
     return sellExactToken(ctx, dto);
   }
 
   @Submit({
-    in: NativeTokenAmountDto,
+    in: NativeTokenQuantityDto,
     out: TradeResponse
   })
-  public async BuyWithNative(ctx: GalaChainContext, dto: NativeTokenAmountDto): Promise<TradeResponse> {
+  public async BuyWithNative(ctx: GalaChainContext, dto: NativeTokenQuantityDto): Promise<TradeResponse> {
     return buyWithNative(ctx, dto);
   }
 
   @Submit({
-    in: NativeTokenAmountDto,
+    in: NativeTokenQuantityDto,
     out: TradeResponse
   })
-  public async SellWithNative(ctx: GalaChainContext, dto: NativeTokenAmountDto): Promise<TradeResponse> {
+  public async SellWithNative(ctx: GalaChainContext, dto: NativeTokenQuantityDto): Promise<TradeResponse> {
     return sellWithNative(ctx, dto);
   }
 
@@ -117,49 +116,49 @@ export class LaunchPadContract extends GalaContract {
 
   @Submit({
     in: FinalizeTokenAllocationDto,
-    out: LaunchPadFinalizeAllocation,
+    out: LaunchpadFinalizeFeeAllocation,
     allowedOrgs: ["CuratorOrg"]
   })
   public async FinalizeTokenAllocation(
     ctx: GalaChainContext,
     dto: FinalizeTokenAllocationDto
-  ): Promise<LaunchPadFinalizeAllocation> {
+  ): Promise<LaunchpadFinalizeFeeAllocation> {
     return finalizeTokenAllocation(ctx, dto);
   }
 
   @GalaTransaction({
     type: EVALUATE,
-    in: ExactTokenAmountDto,
+    in: ExactTokenQuantityDto,
     out: String
   })
-  public async CallNativeTokenIn(ctx: GalaChainContext, dto: ExactTokenAmountDto): Promise<String> {
+  public async CallNativeTokenIn(ctx: GalaChainContext, dto: ExactTokenQuantityDto): Promise<String> {
     return callNativeTokenIn(ctx, dto);
   }
 
   @GalaTransaction({
     type: EVALUATE,
-    in: NativeTokenAmountDto,
+    in: NativeTokenQuantityDto,
     out: String
   })
-  public async CallMemeTokenOut(ctx: GalaChainContext, dto: NativeTokenAmountDto): Promise<String> {
+  public async CallMemeTokenOut(ctx: GalaChainContext, dto: NativeTokenQuantityDto): Promise<String> {
     return callMemeTokenOut(ctx, dto);
   }
 
   @GalaTransaction({
     type: EVALUATE,
-    in: ExactTokenAmountDto,
+    in: ExactTokenQuantityDto,
     out: String
   })
-  public async CallNativeTokenOut(ctx: GalaChainContext, dto: ExactTokenAmountDto): Promise<String> {
+  public async CallNativeTokenOut(ctx: GalaChainContext, dto: ExactTokenQuantityDto): Promise<String> {
     return callNativeTokenOut(ctx, dto);
   }
 
   @GalaTransaction({
     type: EVALUATE,
-    in: NativeTokenAmountDto,
+    in: NativeTokenQuantityDto,
     out: String
   })
-  public async CallMemeTokenIn(ctx: GalaChainContext, dto: NativeTokenAmountDto): Promise<String> {
+  public async CallMemeTokenIn(ctx: GalaChainContext, dto: NativeTokenQuantityDto): Promise<String> {
     return callMemeTokenIn(ctx, dto);
   }
 
@@ -173,11 +172,14 @@ export class LaunchPadContract extends GalaContract {
   }
 
   @Evaluate({
-    out: PlatformFeeConfig,
     in: ChainCallDTO,
+    out: PlatformFeeConfig,
     allowedOrgs: ["CuratorOrg"]
   })
-  public async FetchPlatformAddressConfig(ctx: GalaChainContext, dto: ChainCallDTO): Promise<PlatformFeeConfig> {
+  public async FetchPlatformAddressConfig(
+    ctx: GalaChainContext,
+    dto: ChainCallDTO
+  ): Promise<PlatformFeeConfig> {
     return fetchPlatformAddressConfig(ctx);
   }
 }

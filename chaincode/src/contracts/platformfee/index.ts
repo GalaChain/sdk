@@ -12,11 +12,5 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-export * from "./addLiquidity";
-export * from "./burn";
-export * from "./burnEstimate";
-export * from "./collect";
-export * from "./createPool";
-export * from "./getFunctions";
-export * from "./quoteFuncs";
-export * from "./swap";
+export * from "./configurePlatformFeeAddress";
+export * from "./fetchPlatformAdressConfig";

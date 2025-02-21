@@ -13,14 +13,14 @@
  * limitations under the License.
  */
 import BigNumber from "bignumber.js";
-import { Bitmap, TickDataObj } from "chain-api/src/types/dexDtos";
+import { Bitmap, TickDataObj } from "chain-api/src/types/DexDtos";
 
 import { DefaultError } from "../error";
 import { leastSignificantBit, mostSignificantBit } from "./bitMath.helper";
 
 /**
  *
- *  @notice Calculates sqrt(1.0001^tick) * 2^96
+ *  @notice Calculates sqrt(1.0001^tick)
  *  @param tick The input tick for the above formula
  *  @return sqrtPrice A Bignumber representing the sqrt of the ratio of the two assets (token1/token0)
  *  at the given tick
@@ -100,13 +100,13 @@ export function updateTick(
   return flipped;
 }
 
-function position(tick:number) :[word : number, position : number] {
+function position(tick: number): [word: number, position: number] {
   let wordPos = Math.floor(tick / 256); // Equivalent to tick >> 8
   let bitPos = tick % 256; // Equivalent to tick % 256
 
   if (bitPos < 0) bitPos += 256; // Ensure it's always positive like uint8
 
-  return  [wordPos, bitPos ];
+  return [wordPos, bitPos];
 }
 
 /**
@@ -322,4 +322,3 @@ export function spaceTick(tick: number, tickSpacing: number): number {
   if (tickSpacing === 0) throw new Error("Tickspacing cannot be zero");
   return Math.floor(tick / tickSpacing) * tickSpacing;
 }
-

@@ -20,8 +20,8 @@ import {
   UnauthorizedError
 } from "@gala-chain/api";
 
-import { GalaChainContext } from "../types";
-import { getObjectByKey, putChainObject } from "../utils";
+import { GalaChainContext } from "../../types";
+import { getObjectByKey, putChainObject } from "../../utils";
 
 export async function configurePlatformFeeAddress(
   ctx: GalaChainContext,
@@ -65,5 +65,6 @@ export async function configurePlatformFeeAddress(
   }
 
   await putChainObject(ctx, platformFeeAddress);
+
   return platformFeeAddress;
 }

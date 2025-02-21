@@ -18,6 +18,7 @@ import {
   ConflictError,
   Pool,
   UserBalanceResponseDto,
+  UserPosition,
   formatBigNumber,
   getLiquidityForAmounts,
   tickToSqrtPrice
@@ -36,7 +37,6 @@ import {
   validateTokenOrder,
   virtualAddress
 } from "../utils";
-import { UserPosition } from "./userpositions";
 
 /**
  * @dev Function to add Liqudity to v3 pool. The addLiquidity function facilitates the addition of liquidity to a Uniswap V3 pool within the GalaChain ecosystem. It takes in the blockchain context, liquidity parameters, and an optional launchpad address, then executes the necessary operations to deposit assets into the specified liquidity pool.

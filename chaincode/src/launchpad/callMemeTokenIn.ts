@@ -12,12 +12,12 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-import { GalaChainContext } from "@gala-chain/chaincode";
+import { NativeTokenQuantityDto } from "@gala-chain/api";
 import { BigNumber } from "bignumber.js";
 import Decimal from "decimal.js";
 
+import { GalaChainContext } from "../types";
 import { fetchAndValidateSale, getBondingConstants } from "../utils";
-import { NativeTokenAmountDto } from "@gala-chain/api";
 
 BigNumber.config({
   ROUNDING_MODE: BigNumber.ROUND_UP
@@ -44,12 +44,12 @@ BigNumber.config({
 
 export async function callMemeTokenIn(
   ctx: GalaChainContext,
-  sellTokenDTO: NativeTokenAmountDto
+  sellTokenDTO: NativeTokenQuantityDto
 ): Promise<string> {
   const sale = await fetchAndValidateSale(ctx, sellTokenDTO.vaultAddress);
 
   const totalTokensSold = new Decimal(sale.fetchTokensSold()); // current tokens sold / x
-  let nativeTokens = new Decimal(sellTokenDTO.nativeTokenAmount.toString()); // native tokens used to buy / y
+  let nativeTokens = new Decimal(sellTokenDTO.nativeTokenQuantity.toString()); // native tokens used to buy / y
   const basePrice = new Decimal(sale.fetchBasePrice()); // base price / a
   const { exponentFactor, euler, decimals } = getBondingConstants();
 

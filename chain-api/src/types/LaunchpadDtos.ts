@@ -13,13 +13,13 @@
  * limitations under the License.
  */
 import BigNumber from "bignumber.js";
+import { Type } from "class-transformer";
 import { IsNotEmpty, IsNumber, IsOptional, IsString, Max, Min } from "class-validator";
 
 import { BigNumberProperty } from "../validators";
 import { IsNonZeroBigNumber } from "../validators";
 import { TokenBalance } from "./TokenBalance";
 import { ChainCallDTO } from "./dtos";
-import { Type } from "class-transformer";
 
 export class CreateTokenSaleDTO extends ChainCallDTO {
   @IsString()
@@ -36,11 +36,19 @@ export class CreateTokenSaleDTO extends ChainCallDTO {
 
   @IsString()
   @IsNotEmpty()
+  public tokenCollection: string;
+
+  @IsString()
+  @IsNotEmpty()
+  public tokenCategory: string;
+
+  @IsString()
+  @IsNotEmpty()
   public tokenImage: string;
 
   @BigNumberProperty()
   @IsNotEmpty()
-  public preBuyAmount: BigNumber;
+  public preBuyQuantity: BigNumber;
 
   @IsString()
   @IsOptional()
@@ -55,89 +63,136 @@ export class CreateTokenSaleDTO extends ChainCallDTO {
   public twitterUrl?: string;
 
   constructor(
-    tokenName: string = "",
-    tokenSymbol: string = "",
-    tokenDescription: string = "",
-    tokenImage: string = "",
-    preBuyAmount: BigNumber = new BigNumber(0)
+    tokenName: string,
+    tokenSymbol: string,
+    tokenDescription: string,
+    tokenImage: string,
+    preBuyQuantity: BigNumber,
+    tokenCollection: string,
+    tokenCategory: string
   ) {
     super();
     this.tokenName = tokenName;
     this.tokenSymbol = tokenSymbol;
     this.tokenDescription = tokenDescription;
     this.tokenImage = tokenImage;
-    this.preBuyAmount = preBuyAmount;
+    this.preBuyQuantity = preBuyQuantity;
+    this.tokenCollection = tokenCollection;
+    this.tokenCategory = tokenCategory;
   }
 }
 
 export class CreateSaleResponse {
-  image: string;
-  tokenName: string;
-  symbol: string;
-  description: string;
-  websiteUrl?: string;
-  telegramUrl?: string;
-  twitterUrl?: string;
-  initialBuyAmount: string;
-  vaultAddress: string;
-  creatorAddress: string;
+  @IsNotEmpty()
+  public image: string;
+
+  @IsNotEmpty()
+  public tokenName: string;
+
+  @IsNotEmpty()
+  public symbol: string;
+
+  @IsNotEmpty()
+  public description: string;
+
+  @IsOptional()
+  public websiteUrl?: string;
+
+  @IsOptional()
+  public telegramUrl?: string;
+
+  @IsOptional()
+  public twitterUrl?: string;
+
+  @IsNotEmpty()
+  public initialBuyQuantity: string;
+
+  @IsNotEmpty()
+  public vaultAddress: string;
+
+  @IsNotEmpty()
+  public creatorAddress: string;
+
+  @IsNotEmpty()
+  public collection: string;
+
+  @IsNotEmpty()
+  public category: string;
 }
 
-export class ExactTokenAmountDto extends ChainCallDTO {
+export class ExactTokenQuantityDto extends ChainCallDTO {
   @IsString()
   @IsNotEmpty()
   public vaultAddress: string;
 
   @BigNumberProperty()
-  @IsNonZeroBigNumber({ message: "tokenAmount cannot be zero" })
+  @IsNonZeroBigNumber({ message: "tokenQuantity cannot be zero" })
   @IsNotEmpty()
-  public tokenAmount: BigNumber;
+  public tokenQuantity: BigNumber;
 
   @BigNumberProperty()
   @IsOptional()
   public expectedNativeToken?: BigNumber;
+  tokenAmount: BigNumber;
 
-  constructor(vaultAddress: string = "", tokenAmount: BigNumber = new BigNumber(0)) {
+  constructor(vaultAddress: string = "", tokenQuantity: BigNumber = new BigNumber(0)) {
     super();
     this.vaultAddress = vaultAddress;
-    this.tokenAmount = tokenAmount;
+    this.tokenQuantity = tokenQuantity;
   }
 }
 
-export class NativeTokenAmountDto extends ChainCallDTO {
+export class NativeTokenQuantityDto extends ChainCallDTO {
   @IsString()
   @IsNotEmpty()
   public vaultAddress: string;
 
   @BigNumberProperty()
-  @IsNonZeroBigNumber({ message: "nativeTokenAmount cannot be zero" })
+  @IsNonZeroBigNumber({ message: "nativeTokenQuanity cannot be zero" })
   @IsNotEmpty()
-  public nativeTokenAmount: BigNumber;
+  public nativeTokenQuantity: BigNumber;
 
   @BigNumberProperty()
   @IsOptional()
   public expectedToken?: BigNumber;
 
-  constructor(vaultAddress: string = "", nativeTokenAmount: BigNumber = new BigNumber(0)) {
+  constructor(vaultAddress: string = "", nativeTokenQuantity: BigNumber = new BigNumber(0)) {
     super();
     this.vaultAddress = vaultAddress;
-    this.nativeTokenAmount = nativeTokenAmount;
+    this.nativeTokenQuantity = nativeTokenQuantity;
   }
 }
 
 export class TradeResponse {
+  @IsOptional()
   public tokenBalance?: TokenBalance;
+
+  @IsOptional()
   public nativeTokenBalance?: TokenBalance;
 
-  public tokenAmount?: string;
+  @IsOptional()
+  public tokenQuantity?: string;
+
+  @IsOptional()
   public nativeTokenAmount?: string;
 
-  inputAmount: string;
-  outputAmount: string;
-  tokenName: string;
-  tradeType: string;
-  vaultAddress: string;
-  userAddress: string;
+  @IsNotEmpty()
+  public inputQuantity: string;
+
+  @IsNotEmpty()
+  public outputQuantity: string;
+
+  @IsNotEmpty()
+  public tokenName: string;
+
+  @IsNotEmpty()
+  public tradeType: string;
+
+  @IsNotEmpty()
+  public vaultAddress: string;
+
+  @IsNotEmpty()
+  public userAddress: string;
 }
 
 export class FetchSaleDto extends ChainCallDTO {
@@ -154,11 +209,11 @@ export class PreMintCalculationDto extends ChainCallDTO {
   @BigNumberProperty()
   @IsNonZeroBigNumber()
   @IsNotEmpty()
-  public nativeTokenAmount: BigNumber;
+  public nativeTokenQuantity: BigNumber;
 
-  constructor(nativeTokenAmount: BigNumber = new BigNumber(0)) {
+  constructor(nativeTokenQuantity: BigNumber = new BigNumber(0)) {
     super();
-    this.nativeTokenAmount = nativeTokenAmount;
+    this.nativeTokenQuantity = nativeTokenQuantity;
   }
 }
 
@@ -190,9 +245,4 @@ export class CollectFeeAddressDto extends ChainCallDTO {
   @IsNotEmpty()
   @IsString()
   public platformFeeCollectAddress: string;
-}
-
-export class WithdrawLaunchpadFeeResponse {
-  public recepientBalance: TokenBalance;
-  public receivedTokenAmount: string;
 }

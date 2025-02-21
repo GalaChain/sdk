@@ -16,7 +16,7 @@ import { BigNumber } from "bignumber.js";
 import Decimal from "decimal.js";
 
 import { getBondingConstants } from "../utils";
-import { LaunchPadSale, PreMintCalculationDto } from "@gala-chain/api";
+import { LaunchpadSale, PreMintCalculationDto } from "@gala-chain/api";
 
 BigNumber.config({
   ROUNDING_MODE: BigNumber.ROUND_UP
@@ -38,8 +38,8 @@ BigNumber.config({
  */
 export async function calculatePreMintTokens(buyTokenDTO: PreMintCalculationDto): Promise<string> {
   const totalTokensSold = new Decimal(0); // current tokens sold / x
-  const nativeTokens = new Decimal(buyTokenDTO.nativeTokenAmount.toString()); // native tokens used to buy / y
-  const basePrice = new Decimal(LaunchPadSale.BASE_PRICE); // base price / a
+  const nativeTokens = new Decimal(buyTokenDTO.nativeTokenQuantity.toString()); // native tokens used to buy / y
+  const basePrice = new Decimal(LaunchpadSale.BASE_PRICE); // base price / a
   const { exponentFactor, euler, decimals } = getBondingConstants();
 
   const constant = nativeTokens.mul(exponentFactor).div(basePrice);

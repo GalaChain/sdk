@@ -19,11 +19,11 @@ import { JSONSchema } from "class-validator-jsonschema";
 import { ChainObject } from "./ChainObject";
 
 @JSONSchema({
-  description: "Defines the platform fee and owner allocation percentages on launchpad sales."
+  description: "Defines the platform fee and owner allocation percentages."
 })
-export class LaunchPadFinalizeAllocation extends ChainObject {
+export class LaunchpadFinalizeFeeAllocation extends ChainObject {
   @Exclude()
-  static INDEX_KEY = "PLATFORM_PERCENTAGE_ALLOCATION";
+  static INDEX_KEY = "GCLFFA"; //GalaChain Launchpad Final fee Allocatoin
 
   @IsNumber()
   @Min(0)

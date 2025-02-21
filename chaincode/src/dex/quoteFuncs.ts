@@ -18,6 +18,18 @@ import BigNumber from "bignumber.js";
 import { GalaChainContext } from "../types";
 import { getObjectByKey, validateTokenOrder } from "../utils";
 
+/**
+ * @dev The quoteExactAmount function calculates the required amount of the other token for a swap or liquidity addition in a Uniswap V3 pool within the GalaChain ecosystem.
+ * @param ctx GalaChainContext – The execution context providing access to the GalaChain environment.
+ * @param dto QuoteExactAmountDto – A data transfer object containing:
+  - Input token details – Specifies which token and amount are being provided.
+  - Trade direction – Determines whether the quote is for token0 → token1 or token1 → token0.
+  -  Pool state parameters – Includes information such as current tick and fee tier
+ * @returns Promise<{ amount0: string; amount1: string; sqrtPriceLimit: string }> – A response object containing:
+  - amount0 – The calculated amount of token0 required for the trade.
+  - amount1 – The calculated amount of token1 required for the trade.
+  - sqrtPriceLimit – The square root price limit after the swap or liquidity operation.
+ */
 export async function quoteExactAmount(
   ctx: GalaChainContext,
   dto: QuoteExactAmountDto

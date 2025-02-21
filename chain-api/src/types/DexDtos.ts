@@ -13,12 +13,12 @@
  * limitations under the License.
  */
 import BigNumber from "bignumber.js";
-import { IsNotEmpty, IsNumber, IsOptional, IsString, Min } from "class-validator";
+import { IsBoolean, IsNotEmpty, IsNumber, IsOptional, IsString, Max, Min } from "class-validator";
 
 import { BigNumberProperty } from "../validators";
+import { PositionInPool } from "./DexTypes";
 import { TokenBalance } from "./TokenBalance";
 import { TokenClassKey } from "./TokenClass";
-import { PositionInPool } from "./dexTypes";
 import { ChainCallDTO } from "./dtos";
 
 export class CreatePoolDto extends ChainCallDTO {
@@ -31,7 +31,8 @@ export class CreatePoolDto extends ChainCallDTO {
   @BigNumberProperty()
   @IsNotEmpty()
   public initialSqrtPrice: BigNumber;
-
+  @Min(0, { message: "Value cannot less than zero" })
+  @Max(1, { message: "Value cannot greater than one" })
   @IsNumber()
   protocolFee: number;
 
@@ -56,15 +57,15 @@ export class PositionDto extends ChainCallDTO {
   public token0: TokenClassKey;
   @IsNotEmpty()
   public token1: TokenClassKey;
-  @IsNotEmpty()
+  @IsNumber()
   public fee: number;
-  @IsNotEmpty()
+  @IsOptional()
   public owner: string;
   @IsNotEmpty()
   public tickLower: number;
   @IsNotEmpty()
   public tickUpper: number;
-  @IsNotEmpty()
+  @IsOptional()
   @BigNumberProperty()
   public liquidity: BigNumber;
 
@@ -124,7 +125,6 @@ export class SwapDto extends ChainCallDTO {
   public token1: TokenClassKey;
   @IsNotEmpty()
   public fee: number;
-  public recipient: string;
   @IsNotEmpty()
   public zeroForOne: boolean;
 
@@ -148,7 +148,6 @@ export class SwapDto extends ChainCallDTO {
     token0: TokenClassKey,
     token1: TokenClassKey,
     fee: number,
-    recipient: string,
     amount: BigNumber,
     zeroForOne: boolean,
     sqrtPriceLimit: BigNumber
@@ -160,12 +159,10 @@ export class SwapDto extends ChainCallDTO {
     this.amount = amount;
     this.zeroForOne = zeroForOne;
     this.sqrtPriceLimit = sqrtPriceLimit;
-    this.recipient = recipient;
   }
 }
 
 export class BurnDto extends ChainCallDTO {
-  public recipient: string;
   @IsNotEmpty()
   public tickLower: number;
   @IsNotEmpty()
@@ -184,13 +181,11 @@ export class BurnDto extends ChainCallDTO {
     token0: TokenClassKey,
     token1: TokenClassKey,
     fee: number,
-    recipient: string,
     amount: BigNumber,
     tickLower: number,
     tickUpper: number
   ) {
     super();
-    this.recipient = recipient;
     this.tickLower = tickLower;
     this.tickUpper = tickUpper;
     this.amount = amount;
@@ -304,11 +299,23 @@ export class UserPositionDTO extends ChainCallDTO {
 }
 
 export class PositionDataDTO extends ChainCallDTO {
+  @IsNotEmpty()
+  @IsString()
   owner: string;
+  @IsNotEmpty()
+  @IsString()
   liquidity: string;
+  @IsNotEmpty()
+  @IsString()
   feeGrowthInside0Last: string;
+  @IsString()
+  @IsNotEmpty()
   feeGrowthInside1Last: string;
+  @IsNotEmpty()
+  @IsString()
   tokensOwed0: string;
+  @IsNotEmpty()
+  @IsString()
   tokensOwed1: string;
 }
 
@@ -351,7 +358,9 @@ export class ExpectedTokenDTO extends ChainCallDTO {
 }
 
 export class UserBalanceResponseDto extends ChainCallDTO {
+  @IsNotEmpty()
   public token0Balance: TokenBalance;
+  @IsNotEmpty()
   public token1Balance: TokenBalance;
 
   constructor(token0Balance: TokenBalance, token1Balance: TokenBalance) {
@@ -445,13 +454,21 @@ export class AddLiquidityDTO extends ChainCallDTO {
 }
 
 export class SwapResponseDto extends ChainCallDTO {
+  @IsNotEmpty()
   public token0: string;
+  @IsNotEmpty()
   public token0ImageUrl: string;
+  @IsNotEmpty()
   public token1: string;
+  @IsNotEmpty()
   public token1ImageUrl: string;
+  @IsNotEmpty()
   public amount0: string;
+  @IsNotEmpty()
   public amount1: string;
+  @IsNotEmpty()
   public userAddress: string;
+  @IsNotEmpty()
   public timeStamp: number;
 
   constructor(
@@ -486,8 +503,15 @@ export class AddLiquidityResponseDTO {
   }
 }
 
+export class PositionsObject {
+  [key: string]: IPosition[];
+}
+
 export class GetUserPositionResponse {
+  @IsNotEmpty()
   positions: PositionsObject;
+  @IsNotEmpty()
+  @IsNumber()
   totalCount: number;
 
   constructor(positions: PositionsObject, totalCount: number) {
@@ -497,19 +521,46 @@ export class GetUserPositionResponse {
 }
 
 export class PositionData {
+  @IsOptional()
+  @IsString()
   owner: string;
+
+  @IsOptional()
+  @IsString()
   liquidity: string;
+
+  @IsOptional()
+  @IsString()
   feeGrowthInside0Last: string;
+
+  @IsOptional()
+  @IsString()
   feeGrowthInside1Last: string;
+
+  @IsOptional()
+  @IsString()
   tokensOwed0: string;
+
+  @IsOptional()
+  @IsString()
   tokensOwed1: string;
 }
 
 export class TickData {
+  @IsOptional()
+  @IsString()
   liquidityGross: string;
+  @IsOptional()
+  @IsBoolean()
   initialised: boolean;
+  @IsOptional()
+  @IsString()
   liquidityNet: string;
+  @IsOptional()
+  @IsString()
   feeGrowthOutside0: string;
+  @IsOptional()
+  @IsString()
   feeGrowthOutside1: string;
 }
 
@@ -565,12 +616,8 @@ export class SetProtocolFeeDTO extends ChainCallDTO {
   }
 }
 
-export interface IPosition {
+interface IPosition {
   tickLower: number;
   tickUpper: number;
   liquidity: string;
-}
-
-export class PositionsObject {
-  [key: string]: IPosition[];
 }

@@ -14,11 +14,12 @@
  */
 import BigNumber from "bignumber.js";
 
-import { PositionData, Positions } from "../../types/dexDtos";
+import { PositionData, Positions } from "../../types/DexDtos";
 import { DefaultError } from "../error";
 import { requirePosititve } from "./format.helper";
 
 /**
+ *
  *@notice Updates the positions for a pool
  * @param positions The mapping containing all user positions
  * @param owner The address of the position owner

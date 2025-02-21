@@ -41,6 +41,7 @@ import {
   updateTick
 } from "@gala-chain/api";
 import { genKey, validateTokenOrder } from "@gala-chain/chaincode";
+import "@gala-chain/api/utils/dex/initalize"
 import BigNumber from "bignumber.js";
 
 import { ETH_ClassKey, USDC_ClassKey } from "./tokens";

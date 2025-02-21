@@ -14,6 +14,13 @@
  */
 import BigNumber from "bignumber.js";
 
+export type TokenInstanceKeyData = {
+  collection: string;
+  category: string;
+  type: string;
+  additionalKey: string;
+};
+
 export type SwapState = {
   // the amount remaining to be swapped in/out of the input/output asset
   amountSpecifiedRemaining: BigNumber;

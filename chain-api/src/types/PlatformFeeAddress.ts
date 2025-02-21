@@ -14,16 +14,16 @@
  */
 import { Exclude } from "class-transformer";
 import { ArrayNotEmpty, IsNotEmpty, IsString } from "class-validator";
+import { JSONSchema } from "class-validator-jsonschema";
 
 import { ChainObject } from "./ChainObject";
-import { JSONSchema } from "class-validator-jsonschema";
 
 @JSONSchema({
   description: "Defines the platform fee address and authorized owners for modification."
 })
 export class PlatformFeeConfig extends ChainObject {
   @Exclude()
-  public static INDEX_KEY = "GCDPFC";
+  public static INDEX_KEY = "GCDPFC"; // GalaChain Platform Fee Configuration
 
   @IsNotEmpty()
   @IsString()

@@ -15,7 +15,9 @@
 import {
   CollectProtocolFeesDTO,
   ConflictError,
+  NotFoundError,
   Pool,
+  UnauthorizedError,
   formatBigNumber,
   formatBigNumberDecimals
 } from "@gala-chain/api";
@@ -27,6 +29,7 @@ import { transferToken } from "../transfer";
 import { GalaChainContext } from "../types";
 import {
   convertToTokenInstanceKey,
+  fetchPlatformFeeAddress,
   genKey,
   getObjectByKey,
   putChainObject,
@@ -42,7 +45,18 @@ import {
    - Recipient address (where the collected protocol fees will be sent).
  * @returns [tokenAmount0, tokenAmount1]
  */
-export async function collectProtocolFees(ctx: GalaChainContext, dto: CollectProtocolFeesDTO) {
+export async function collectProtocolFees(
+  ctx: GalaChainContext,
+  dto: CollectProtocolFeesDTO
+): Promise<BigNumber[]> {
+  const platformFeeAddress = await fetchPlatformFeeAddress(ctx);
+  if (!platformFeeAddress) {
+    throw new NotFoundError(
+      "Protocol fee configuration has yet to be defined. Platform fee configuration is not defined."
+    );
+  } else if (!platformFeeAddress.authorities.includes(ctx.callingUser)) {
+    throw new UnauthorizedError(`CallingUser ${ctx.callingUser} is not authorized to create or update`);
+  }
   formatBigNumberDecimals(dto);
   const [token0, token1] = validateTokenOrder(dto.token0, dto.token1);
 

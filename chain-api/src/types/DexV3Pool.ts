@@ -43,15 +43,15 @@ import {
 import { BigNumberProperty } from "../validators";
 import { ChainObject } from "./ChainObject";
 import { TokenClassKey } from "./TokenClass";
-import { Bitmap, PositionData, Positions, TickData, TickDataObj } from "./dexDtos";
-import { StepComputations, SwapState } from "./dexTypes";
+import { Bitmap, PositionData, Positions, TickData, TickDataObj } from "./DexDtos";
+import { StepComputations, SwapState } from "./DexTypes";
 
 JSONSchema({
-  description: "Uniswap V3 pool chain object with the core contract functionality."
+  description: "Dex V3 pool chain object with the core contract functionality."
 });
 export class Pool extends ChainObject {
   @Exclude()
-  static INDEX_KEY = "GCUP"; //GalaChain Uniswap Pool
+  static INDEX_KEY = "GCDVP"; //GalaChain Dex V3 Pool
 
   @ChainKey({ position: 0 })
   @IsString()

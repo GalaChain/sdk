@@ -17,8 +17,8 @@ import {
   BurnTokenQuantity,
   CreatePoolDto,
   ExpectedTokenDTO,
-  LaunchPadFinalizeAllocation,
-  LaunchPadSale,
+  LaunchpadFinalizeFeeAllocation,
+  LaunchpadSale,
 } from "@gala-chain/api";
 import BigNumber from "bignumber.js";
 import Decimal from "decimal.js";
@@ -32,9 +32,9 @@ import { generateKeyFromClassKey, sortString } from "./dexUtils";
 import { fetchPlatformFeeAddress, getBondingConstants } from "./launchpadSaleUtils";
 import { getObjectByKey, putChainObject } from "./state";
 
-export async function finalizeSale(ctx: GalaChainContext, sale: LaunchPadSale): Promise<void> {
-  const key = ctx.stub.createCompositeKey(LaunchPadFinalizeAllocation.INDEX_KEY, []);
-  let feeAllocation = await getObjectByKey(ctx, LaunchPadFinalizeAllocation, key).catch(() => undefined);
+export async function finalizeSale(ctx: GalaChainContext, sale: LaunchpadSale): Promise<void> {
+  const key = ctx.stub.createCompositeKey(LaunchpadFinalizeFeeAllocation.INDEX_KEY, []);
+  let feeAllocation = await getObjectByKey(ctx, LaunchpadFinalizeFeeAllocation, key).catch(() => undefined);
 
   const platformFeeAddressConfiguration = await fetchPlatformFeeAddress(ctx);
   if (!platformFeeAddressConfiguration) {
@@ -132,7 +132,7 @@ export async function finalizeSale(ctx: GalaChainContext, sale: LaunchPadSale): 
   await putChainObject(ctx, sale);
 }
 
-function convertFinalPriceToSqrtPrice(sale: LaunchPadSale, isChanged: boolean): BigNumber {
+function convertFinalPriceToSqrtPrice(sale: LaunchpadSale, isChanged: boolean): BigNumber {
   const totalTokensSold = new Decimal(sale.fetchTokensSold());
   const basePrice = new Decimal(sale.fetchBasePrice());
   const { exponentFactor, euler, decimals } = getBondingConstants();

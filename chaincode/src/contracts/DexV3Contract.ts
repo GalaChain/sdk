@@ -16,14 +16,17 @@ import {
   AddLiquidityDTO,
   AddLiquidityResponseDTO,
   BurnDto,
+  ChainCallDTO,
   CollectDTO,
   CollectProtocolFeesDTO,
+  ConfigurePlatformFeeAddressDto,
   CreatePoolDto,
   ExpectedTokenDTO,
   GetPoolDto,
   GetPositionDto,
   GetUserPositionResponse,
   GetUserPositionsDto,
+  PlatformFeeConfig,
   Pool,
   PositionDataDTO,
   QuoteExactAmountDto,
@@ -32,7 +35,6 @@ import {
   SwapDto,
   SwapResponseDto,
   UserBalanceResponseDto,
-  UserPositionDTO
 } from "@gala-chain/api";
 
 import { version } from "../../package.json";
@@ -42,20 +44,21 @@ import {
   collect,
   createPool,
   getAddLiquidityEstimation,
+  getLiquidity,
   getPoolData,
+  getPositions,
   getRemoveLiquidityEstimation,
+  getSlot0,
   getUserPositions,
-  liquidity,
-  positions,
   quoteExactAmount,
-  slot0,
   swap
 } from "../dex";
 import { collectProtocolFees } from "../dex/collectProtocolFee";
 import { setProtocolFee } from "../dex/setProtocolFee";
 import { GalaChainContext } from "../types";
 import { GalaContract } from "./GalaContract";
-import { EVALUATE, GalaTransaction, Submit } from "./GalaTransaction";
+import { EVALUATE, Evaluate, GalaTransaction, Submit } from "./GalaTransaction";
+import { configurePlatformFeeAddress, fetchPlatformAddressConfig } from "./platformfee";
 
 export class DexV3Contract extends GalaContract {
   constructor() {
@@ -63,10 +66,11 @@ export class DexV3Contract extends GalaContract {
   }
 
   @Submit({
-    in: CreatePoolDto
+    in: CreatePoolDto,
+    out: Pool
   })
-  public async CreatePool(ctx: GalaChainContext, dto: CreatePoolDto) {
-    await createPool(ctx, dto);
+  public async CreatePool(ctx: GalaChainContext, dto: CreatePoolDto): Promise<Pool> {
+    return await createPool(ctx, dto);
   }
 
   @Submit({
@@ -98,8 +102,8 @@ export class DexV3Contract extends GalaContract {
     in: GetPoolDto,
     out: Slot0Dto
   })
-  public async Slot0(ctx: GalaChainContext, dto: GetPoolDto): Promise<Slot0Dto> {
-    return await slot0(ctx, dto);
+  public async GetSlot0(ctx: GalaChainContext, dto: GetPoolDto): Promise<Slot0Dto> {
+    return await getSlot0(ctx, dto);
   }
 
   @GalaTransaction({
@@ -107,8 +111,8 @@ export class DexV3Contract extends GalaContract {
     in: GetPoolDto,
     out: String
   })
-  public async Liquidity(ctx: GalaChainContext, dto: GetPoolDto): Promise<String> {
-    return await liquidity(ctx, dto);
+  public async GetLiquidity(ctx: GalaChainContext, dto: GetPoolDto): Promise<String> {
+    return await getLiquidity(ctx, dto);
   }
 
   @GalaTransaction({
@@ -116,8 +120,8 @@ export class DexV3Contract extends GalaContract {
     in: GetPositionDto,
     out: PositionDataDTO
   })
-  public async Positions(ctx: GalaChainContext, dto: GetPositionDto): Promise<PositionDataDTO> {
-    return await positions(ctx, dto);
+  public async GetPositions(ctx: GalaChainContext, dto: GetPositionDto): Promise<PositionDataDTO> {
+    return await getPositions(ctx, dto);
   }
 
   @GalaTransaction({
@@ -125,7 +129,7 @@ export class DexV3Contract extends GalaContract {
     in: GetUserPositionsDto,
     out: GetUserPositionResponse
   })
-  public async UserPositions(
+  public async GetUserPositions(
     ctx: GalaChainContext,
     dto: GetUserPositionsDto
   ): Promise<GetUserPositionResponse> {
@@ -137,7 +141,7 @@ export class DexV3Contract extends GalaContract {
     in: ExpectedTokenDTO,
     out: Array<String>
   })
-  public async AddLiquidityEstimation(ctx: GalaChainContext, dto: ExpectedTokenDTO): Promise<String[]> {
+  public async GetAddLiquidityEstimation(ctx: GalaChainContext, dto: ExpectedTokenDTO): Promise<String[]> {
     return await getAddLiquidityEstimation(ctx, dto);
   }
 
@@ -168,7 +172,7 @@ export class DexV3Contract extends GalaContract {
     in: BurnDto,
     out: Array<String[]>
   })
-  public async RemoveLiquidityEstimation(ctx: GalaChainContext, dto: BurnDto): Promise<String[]> {
+  public async GetRemoveLiquidityEstimation(ctx: GalaChainContext, dto: BurnDto): Promise<String[]> {
     return await getRemoveLiquidityEstimation(ctx, dto);
   }
 
@@ -181,16 +185,42 @@ export class DexV3Contract extends GalaContract {
   }
 
   @Submit({
-    in: CollectProtocolFeesDTO
+    in: CollectProtocolFeesDTO,
+    out: Array<String[]>
   })
   public async CollectProtocolFees(ctx: GalaChainContext, dto: CollectProtocolFeesDTO) {
     return await collectProtocolFees(ctx, dto);
   }
 
   @Submit({
-    in: SetProtocolFeeDTO
+    in: SetProtocolFeeDTO,
+    out: Number
   })
   public async SetProtocolFee(ctx: GalaChainContext, dto: SetProtocolFeeDTO) {
     return await setProtocolFee(ctx, dto);
+  }
+
+  @Evaluate({
+    in: ChainCallDTO,
+    out: PlatformFeeConfig,
+    allowedOrgs: ["CuratorOrg"]
+  })
+  public async FetchPlatformAddressConfig(
+    ctx: GalaChainContext,
+    dto: ChainCallDTO
+  ): Promise<PlatformFeeConfig> {
+    return fetchPlatformAddressConfig(ctx);
+  }
+
+  @Submit({
+    in: ConfigurePlatformFeeAddressDto,
+    out: PlatformFeeConfig,
+    allowedOrgs: ["CuratorOrg"]
+  })
+  public async ConfigurePlatformFeeAddress(
+    ctx: GalaChainContext,
+    dto: ConfigurePlatformFeeAddressDto
+  ): Promise<PlatformFeeConfig> {
+    return configurePlatformFeeAddress(ctx, dto);
   }
 }

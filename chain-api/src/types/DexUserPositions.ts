@@ -12,15 +12,18 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-import { ChainKey, ChainObject, PositionsObject } from "@gala-chain/api";
 import BigNumber from "bignumber.js";
 import { Exclude } from "class-transformer";
 import { IsString } from "class-validator";
 import { JSONSchema } from "class-validator-jsonschema";
 
+import { ChainKey } from "../utils";
+import { ChainObject } from "./ChainObject";
+import { PositionsObject } from "./DexDtos";
+
 JSONSchema({
   description: "Stores all the positions that the user has made in all the uniswap v3 pools."
-})
+});
 export class UserPosition extends ChainObject {
   @Exclude()
   static INDEX_KEY = "POSITIONS";

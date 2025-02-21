@@ -12,7 +12,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-import { DefaultError, NativeTokenAmountDto, TradeResponse } from "@gala-chain/api";
+import { DefaultError, NativeTokenQuantityDto, TradeResponse } from "@gala-chain/api";
 import { GalaChainContext, fetchTokenClass, putChainObject, transferToken } from "@gala-chain/chaincode";
 import { BigNumber } from "bignumber.js";
 
@@ -44,13 +44,13 @@ BigNumber.config({
  */
 export async function sellWithNative(
   ctx: GalaChainContext,
-  sellTokenDTO: NativeTokenAmountDto
+  sellTokenDTO: NativeTokenQuantityDto
 ): Promise<TradeResponse> {
   const sale = await fetchAndValidateSale(ctx, sellTokenDTO.vaultAddress);
 
   const nativeTokensLeftInVault = new BigNumber(sale.nativeTokenQuantity);
-  if (nativeTokensLeftInVault.comparedTo(sellTokenDTO.nativeTokenAmount) < 0) {
-    sellTokenDTO.nativeTokenAmount = nativeTokensLeftInVault;
+  if (nativeTokensLeftInVault.comparedTo(sellTokenDTO.nativeTokenQuantity) < 0) {
+    sellTokenDTO.nativeTokenQuantity = nativeTokensLeftInVault;
   }
   const tokensToSell = new BigNumber(await callMemeTokenIn(ctx, sellTokenDTO));
   const nativeToken = sale.fetchNativeTokenInstanceKey();
@@ -74,7 +74,7 @@ export async function sellWithNative(
     from: sellTokenDTO.vaultAddress,
     to: ctx.callingUser,
     tokenInstanceKey: nativeToken,
-    quantity: sellTokenDTO.nativeTokenAmount,
+    quantity: sellTokenDTO.nativeTokenQuantity,
     allowancesToUse: [],
     authorizedOnBehalf: {
       callingOnBehalf: sellTokenDTO.vaultAddress,
@@ -82,13 +82,13 @@ export async function sellWithNative(
     }
   });
 
-  sale.sellToken(tokensToSell, sellTokenDTO.nativeTokenAmount);
+  sale.sellToken(tokensToSell, sellTokenDTO.nativeTokenQuantity);
   await putChainObject(ctx, sale);
 
   const token = await fetchTokenClass(ctx, sale.sellingToken);
   return {
-    inputAmount: tokensToSell.toString(),
-    outputAmount: sellTokenDTO.nativeTokenAmount.toString(),
+    inputQuantity: tokensToSell.toString(),
+    outputQuantity: sellTokenDTO.nativeTokenQuantity.toString(),
     tokenName: token.name,
     tradeType: "Sell",
     vaultAddress: sellTokenDTO.vaultAddress,

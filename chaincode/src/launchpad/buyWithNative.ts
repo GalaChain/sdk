@@ -12,19 +12,15 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-import { DefaultError, LaunchPadSale } from "@gala-chain/api";
-import { ExactTokenAmountDto, NativeTokenAmountDto, TradeResponse } from "@gala-chain/api";
-import {
-  GalaChainContext,
-  fetchTokenClass,
-  putChainObject,
-  transferToken
-} from "@gala-chain/chaincode";
+import { DefaultError, ExactTokenQuantityDto, LaunchpadSale, NativeTokenQuantityDto, TradeResponse } from "@gala-chain/api";
 import { BigNumber } from "bignumber.js";
 
-import { fetchAndValidateSale, finalizeSale } from "../utils";
+import { fetchAndValidateSale, finalizeSale, putChainObject } from "../utils";
 import { callMemeTokenOut } from "./callMemeTokenOut";
 import { callNativeTokenIn } from "./callNativeTokenIn";
+import { GalaChainContext } from "../types";
+import { transferToken } from "../transfer";
+import { fetchTokenClass } from "../token";
 
 BigNumber.config({
   ROUNDING_MODE: BigNumber.ROUND_UP
@@ -50,7 +46,7 @@ BigNumber.config({
  */
 export async function buyWithNative(
   ctx: GalaChainContext,
-  buyTokenDTO: NativeTokenAmountDto
+  buyTokenDTO: NativeTokenQuantityDto
 ): Promise<TradeResponse> {
   let isSaleFinalised = false;
   const sale = await fetchAndValidateSale(ctx, buyTokenDTO.vaultAddress);
@@ -62,17 +58,19 @@ export async function buyWithNative(
 
   if (tokensLeftInVault.comparedTo(tokensToBuy) <= 0) {
     tokensToBuy = tokensLeftInVault;
-    const nativeTokensrequiredToBuyDto = new ExactTokenAmountDto();
+    const nativeTokensrequiredToBuyDto = new ExactTokenQuantityDto();
     nativeTokensrequiredToBuyDto.vaultAddress = buyTokenDTO.vaultAddress;
-    nativeTokensrequiredToBuyDto.tokenAmount = tokensToBuy;
-    buyTokenDTO.nativeTokenAmount = new BigNumber(await callNativeTokenIn(ctx, nativeTokensrequiredToBuyDto));
+    nativeTokensrequiredToBuyDto.tokenQuantity = tokensToBuy;
+    buyTokenDTO.nativeTokenQuantity = new BigNumber(
+      await callNativeTokenIn(ctx, nativeTokensrequiredToBuyDto)
+    );
     isSaleFinalised = true;
   }
 
   if (
-    buyTokenDTO.nativeTokenAmount
+    buyTokenDTO.nativeTokenQuantity
       .plus(new BigNumber(sale.nativeTokenQuantity))
-      .gte(new BigNumber(LaunchPadSale.MARKET_CAP))
+      .gte(new BigNumber(LaunchpadSale.MARKET_CAP))
   )
     isSaleFinalised = true;
 
@@ -86,7 +84,7 @@ export async function buyWithNative(
     from: ctx.callingUser,
     to: buyTokenDTO.vaultAddress,
     tokenInstanceKey: nativeToken,
-    quantity: buyTokenDTO.nativeTokenAmount,
+    quantity: buyTokenDTO.nativeTokenQuantity,
     allowancesToUse: [],
     authorizedOnBehalf: undefined
   });
@@ -103,7 +101,7 @@ export async function buyWithNative(
     }
   });
 
-  sale.buyToken(tokensToBuy, buyTokenDTO.nativeTokenAmount);
+  sale.buyToken(tokensToBuy, buyTokenDTO.nativeTokenQuantity);
   await putChainObject(ctx, sale);
 
   if (isSaleFinalised) {
@@ -113,8 +111,8 @@ export async function buyWithNative(
 
   const token = await fetchTokenClass(ctx, sale.sellingToken);
   return {
-    inputAmount: buyTokenDTO.nativeTokenAmount.toString(),
-    outputAmount: tokensToBuy.toString(),
+    inputQuantity: buyTokenDTO.nativeTokenQuantity.toString(),
+    outputQuantity: tokensToBuy.toString(),
     tokenName: token.name,
     tradeType: "Buy",
     vaultAddress: buyTokenDTO.vaultAddress,

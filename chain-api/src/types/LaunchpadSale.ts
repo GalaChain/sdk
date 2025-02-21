@@ -32,9 +32,9 @@ export enum SaleStatus {
 @JSONSchema({
   description: "Represents a launchpad sale, defining token quantities, pricing, and sale operations."
 })
-export class LaunchPadSale extends ChainObject {
+export class LaunchpadSale extends ChainObject {
   @Exclude()
-  static INDEX_KEY = "LAUNCHPAD";
+  static INDEX_KEY = "GCLPS"; //GalaChain LaunchPad Sale
 
   @ChainKey({ position: 0 })
   @IsString()
@@ -81,7 +81,17 @@ export class LaunchPadSale extends ChainObject {
   @IsNotEmpty()
   public euler: BigNumber;
 
+  @JSONSchema({
+    description:
+      "The market cap has been calculated using the bonding curve equations to approximate a specific final price."
+  })
   public static MARKET_CAP = "1640985.8441726";
+
+  @JSONSchema({
+    description:
+      "This base price has been calculated using the bonding curve equations to ensure that a MARKET_CAP amount of " +
+      "native tokens will correspond to 10 million native tokens."
+  })
   public static BASE_PRICE = "16506671506650";
 
   constructor(vaultAddress: string, sellingToken: TokenInstanceKey, saleOwner: string) {
@@ -93,7 +103,7 @@ export class LaunchPadSale extends ChainObject {
     this.sellingToken = sellingToken;
     this.sellingTokenQuantity = "1e+7";
 
-    this.basePrice = new BigNumber(LaunchPadSale.BASE_PRICE);
+    this.basePrice = new BigNumber(LaunchpadSale.BASE_PRICE);
     this.exponentFactor = new BigNumber("1166069000000");
     this.maxSupply = new BigNumber("1e+7");
     this.euler = new BigNumber("2.7182818284590452353602874713527");

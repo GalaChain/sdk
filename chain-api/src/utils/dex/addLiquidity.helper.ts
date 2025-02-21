@@ -83,16 +83,6 @@ export function getAmountsForLiquidity(
   return [amount0, amount1];
 }
 
-/**
- * Calculates the maximum liquidity that can be utilized given the available amounts of token0 and token1.
- *
- * @param sqrtRatio - The current square root price ratio.
- * @param sqrtRatioA - The lower bound square root price ratio.
- * @param sqrtRatioB - The upper bound square root price ratio.
- * @param amount0 - The available amount of token0.
- * @param amount1 - The available amount of token1.
- * @returns The computed liquidity value.
- */
 export function getLiquidityForAmounts(
   sqrtRatio: BigNumber,
   sqrtRatioA: BigNumber,

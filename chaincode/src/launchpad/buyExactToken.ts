@@ -12,11 +12,13 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-import { DefaultError, ExactTokenAmountDto, LaunchPadSale, TradeResponse } from "@gala-chain/api";
-import { GalaChainContext, fetchTokenClass, putChainObject, transferToken } from "@gala-chain/chaincode";
+import { DefaultError, ExactTokenQuantityDto, LaunchpadSale, TradeResponse } from "@gala-chain/api";
 import { BigNumber } from "bignumber.js";
 
-import { fetchAndValidateSale, finalizeSale } from "../utils";
+import { fetchTokenClass } from "../token";
+import { transferToken } from "../transfer";
+import { GalaChainContext } from "../types";
+import { fetchAndValidateSale, finalizeSale, putChainObject } from "../utils";
 import { callNativeTokenIn } from "./callNativeTokenIn";
 
 BigNumber.config({
@@ -41,7 +43,7 @@ BigNumber.config({
  */
 export async function buyExactToken(
   ctx: GalaChainContext,
-  buyTokenDTO: ExactTokenAmountDto
+  buyTokenDTO: ExactTokenQuantityDto
 ): Promise<TradeResponse> {
   let isSaleFinalised = false;
 
@@ -55,8 +57,8 @@ export async function buyExactToken(
   const memeToken = sale.fetchSellingTokenInstanceKey();
 
   // If the requested token amount exceeds what's available, adjust it and recalculate native tokens needed
-  if (tokenLeftInVault.lte(buyTokenDTO.tokenAmount)) {
-    buyTokenDTO.tokenAmount = tokenLeftInVault;
+  if (tokenLeftInVault.lte(buyTokenDTO.tokenQuantity)) {
+    buyTokenDTO.tokenQuantity = tokenLeftInVault;
     nativeTokensToBuy = new BigNumber(await callNativeTokenIn(ctx, buyTokenDTO));
     isSaleFinalised = true;
   }
@@ -65,7 +67,7 @@ export async function buyExactToken(
   if (
     nativeTokensToBuy
       .plus(new BigNumber(sale.nativeTokenQuantity))
-      .gte(new BigNumber(LaunchPadSale.MARKET_CAP))
+      .gte(new BigNumber(LaunchpadSale.MARKET_CAP))
   ) {
     isSaleFinalised = true;
   }
@@ -92,7 +94,7 @@ export async function buyExactToken(
     from: buyTokenDTO.vaultAddress,
     to: ctx.callingUser,
     tokenInstanceKey: memeToken,
-    quantity: buyTokenDTO.tokenAmount,
+    quantity: buyTokenDTO.tokenQuantity,
     allowancesToUse: [],
     authorizedOnBehalf: {
       callingOnBehalf: buyTokenDTO.vaultAddress,
@@ -101,7 +103,7 @@ export async function buyExactToken(
   });
 
   // Update the sale record with the purchased token details
-  sale.buyToken(buyTokenDTO.tokenAmount, nativeTokensToBuy);
+  sale.buyToken(buyTokenDTO.tokenQuantity, nativeTokensToBuy);
   await putChainObject(ctx, sale);
 
   // If the sale is finalized, create a V3 pool and add liquidity
@@ -112,8 +114,8 @@ export async function buyExactToken(
   // Return the updated balance response
   const token = await fetchTokenClass(ctx, sale.sellingToken);
   return {
-    inputAmount: nativeTokensToBuy.toString(),
-    outputAmount: buyTokenDTO.tokenAmount.toString(),
+    inputQuantity: nativeTokensToBuy.toString(),
+    outputQuantity: buyTokenDTO.tokenQuantity.toString(),
     tokenName: token.name,
     tradeType: "Buy",
     vaultAddress: buyTokenDTO.vaultAddress,

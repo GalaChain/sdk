@@ -52,14 +52,12 @@ export function computeSwapStep(
   //define direction
   let zeroForOne = sqrtPriceCurrent.isGreaterThanOrEqualTo(sqrtPriceTarget);
   let exactInput = amountRemaining.isGreaterThanOrEqualTo(0);
-
   if (exactInput) {
     let amountRemainingLessFee = amountRemaining.times(FEE_PIPS - fee).dividedBy(FEE_PIPS);
 
     amountIn = zeroForOne
       ? getAmount0Delta(sqrtPriceTarget, sqrtPriceCurrent, liquidity)
       : getAmount1Delta(sqrtPriceCurrent, sqrtPriceTarget, liquidity);
-
     if (amountRemainingLessFee.isGreaterThanOrEqualTo(amountIn)) sqrtPriceNext = sqrtPriceTarget;
     else
       sqrtPriceNext = getNextSqrtPriceFromInput(

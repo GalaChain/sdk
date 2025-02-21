@@ -14,7 +14,6 @@
  */
 import { ChainError, ErrorCode, PlatformFeeConfig, SaleStatus } from "@gala-chain/api";
 import { DefaultError, NotFoundError } from "@gala-chain/api";
-import { LaunchPadSale } from "@gala-chain/api";
 import Decimal from "decimal.js";
 
 import { GalaChainContext } from "../types/GalaChainContext";

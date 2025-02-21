@@ -12,11 +12,11 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-import { ExactTokenAmountDto } from "@gala-chain/api";
-import { GalaChainContext } from "@gala-chain/chaincode";
+import { ExactTokenQuantityDto } from "@gala-chain/api";
 import { BigNumber } from "bignumber.js";
 import Decimal from "decimal.js";
 
+import { GalaChainContext } from "../types";
 import { fetchAndValidateSale, getBondingConstants } from "../utils";
 
 BigNumber.config({
@@ -41,12 +41,12 @@ BigNumber.config({
  */
 export async function callNativeTokenIn(
   ctx: GalaChainContext,
-  buyTokenDTO: ExactTokenAmountDto
+  buyTokenDTO: ExactTokenQuantityDto
 ): Promise<string> {
   const sale = await fetchAndValidateSale(ctx, buyTokenDTO.vaultAddress);
 
   const totalTokensSold = new Decimal(sale.fetchTokensSold()); // 1e18 / x
-  let tokensToBuy = new Decimal(buyTokenDTO.tokenAmount.toString()); // 0.5e18 / dx
+  let tokensToBuy = new Decimal(buyTokenDTO.tokenQuantity.toString()); // 0.5e18 / dx
   const basePrice = new Decimal(sale.fetchBasePrice()); // base price / a
   const { exponentFactor, euler, decimals } = getBondingConstants();
 

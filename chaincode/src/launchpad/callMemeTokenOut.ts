@@ -12,11 +12,11 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-import { LaunchPadSale, NativeTokenAmountDto } from "@gala-chain/api";
-import { GalaChainContext } from "@gala-chain/chaincode";
+import { LaunchpadSale, NativeTokenQuantityDto } from "@gala-chain/api";
 import { BigNumber } from "bignumber.js";
 import Decimal from "decimal.js";
 
+import { GalaChainContext } from "../types";
 import { fetchAndValidateSale, getBondingConstants } from "../utils";
 
 BigNumber.config({
@@ -41,16 +41,18 @@ BigNumber.config({
  */
 export async function callMemeTokenOut(
   ctx: GalaChainContext,
-  buyTokenDTO: NativeTokenAmountDto
+  buyTokenDTO: NativeTokenQuantityDto
 ): Promise<string> {
   const sale = await fetchAndValidateSale(ctx, buyTokenDTO.vaultAddress);
   const totalTokensSold = new Decimal(sale.fetchTokensSold()); // current tokens sold / x
-  let nativeTokens = new Decimal(buyTokenDTO.nativeTokenAmount.toString()); // native tokens used to buy / y
+  let nativeTokens = new Decimal(buyTokenDTO.nativeTokenQuantity.toString()); // native tokens used to buy / y
   const basePrice = new Decimal(sale.fetchBasePrice()); // base price / a
   const { exponentFactor, euler, decimals } = getBondingConstants();
 
-  if (nativeTokens.add(new Decimal(sale.nativeTokenQuantity)).greaterThan(new Decimal(LaunchPadSale.MARKET_CAP))) {
-    nativeTokens = new Decimal(LaunchPadSale.MARKET_CAP).minus(new Decimal(sale.nativeTokenQuantity));
+  if (
+    nativeTokens.add(new Decimal(sale.nativeTokenQuantity)).greaterThan(new Decimal(LaunchpadSale.MARKET_CAP))
+  ) {
+    nativeTokens = new Decimal(LaunchpadSale.MARKET_CAP).minus(new Decimal(sale.nativeTokenQuantity));
   }
 
   const constant = nativeTokens.mul(exponentFactor).div(basePrice);
@@ -69,7 +71,7 @@ export async function callMemeTokenOut(
   let roundedResult = result.toDecimalPlaces(18, Decimal.ROUND_DOWN);
 
   if (roundedResult.add(totalTokensSold).greaterThan(new Decimal("1e+7"))) {
-    roundedResult = new Decimal("1e+7").minus(new Decimal(totalTokensSold))
+    roundedResult = new Decimal("1e+7").minus(new Decimal(totalTokensSold));
   }
   return roundedResult.toString();
 }

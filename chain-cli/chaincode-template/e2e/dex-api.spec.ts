@@ -35,7 +35,10 @@ import {
   TokenClassKey,
   TokenInstanceKey,
   feeAmountTickSpacing,
-  sqrtPriceToTick
+  sqrtPriceToTick,
+  ConfigurePlatformFeeAddressDto,
+  SetProtocolFeeDTO,
+  PlatformFeeConfig
 } from "@gala-chain/api";
 import { ChainClient, ChainUser, CommonContractAPI, commonContractAPI } from "@gala-chain/client";
 import { AdminChainClients, TestClients, transactionSuccess } from "@gala-chain/test";
@@ -51,7 +54,7 @@ const spacedTicksFromPrice = (pa: number, pb: number, tickSpacing: number) => {
     Math.floor(sqrtPriceToTick(new BigNumber(Math.sqrt(pb))) / tickSpacing) * tickSpacing
   ];
 };
-describe("DEx v3 Testing", () => {
+describe("Dex v3 Testing", () => {
   const contractConfig = {
     dexV3Contract: {
       channel: "product-channel",
@@ -74,7 +77,6 @@ describe("DEx v3 Testing", () => {
     client = await TestClients.createForAdmin(contractConfig);
     user = await client.createRegisteredUser();
   });
-
   afterAll(async () => {
     await client.disconnect();
   });
@@ -168,7 +170,6 @@ describe("DEx v3 Testing", () => {
       }
     });
   });
-
   /**
    * Let say we are creating a pair of ETH and USDT with token0 as ETH
    * with initial price as 1 ETH = 2000 USDT with fee 500
@@ -416,15 +417,9 @@ describe("DEx v3 Testing", () => {
     test("should estimate swap", async () => {
       const amountToSwap = new BigNumber(2),
         sqrtPriceLimit = new BigNumber(5);
-      let dto = new SwapDto(
-        ETH_ClassKey,
-        USDT_ClassKey,
-        fee,
-        user.identityKey,
-        amountToSwap,
-        true,
-        sqrtPriceLimit
-      ).signed(user.privateKey);
+      let dto = new SwapDto(ETH_ClassKey, USDT_ClassKey, fee, amountToSwap, true, sqrtPriceLimit).signed(
+        user.privateKey
+      );
       let expectSwapRes = await client.dexV3Contract.quoteExactAmount(dto);
       const result = expectSwapRes.Data;
       expect(result[0]).toBe("2");
@@ -435,15 +430,9 @@ describe("DEx v3 Testing", () => {
     test("should estimate swap for exact out", async () => {
       const amountToSwap = new BigNumber("-0.003"),
         sqrtPriceLimit = new BigNumber(5000);
-      let dto = new SwapDto(
-        ETH_ClassKey,
-        USDT_ClassKey,
-        fee,
-        user.identityKey,
-        amountToSwap,
-        false,
-        sqrtPriceLimit
-      ).signed(user.privateKey);
+      let dto = new SwapDto(ETH_ClassKey, USDT_ClassKey, fee, amountToSwap, false, sqrtPriceLimit).signed(
+        user.privateKey
+      );
       const quoteExactResponse = await client.dexV3Contract.quoteExactAmount(dto);
       expect(quoteExactResponse.Data).toMatchObject([
         "-0.003",
@@ -465,15 +454,9 @@ describe("DEx v3 Testing", () => {
       const amountToSwap = new BigNumber(2),
         sqrtPriceLimit = new BigNumber(5);
 
-      let dto = new SwapDto(
-        ETH_ClassKey,
-        USDT_ClassKey,
-        fee,
-        user.identityKey,
-        amountToSwap,
-        true,
-        sqrtPriceLimit
-      ).signed(user.privateKey);
+      let dto = new SwapDto(ETH_ClassKey, USDT_ClassKey, fee, amountToSwap, true, sqrtPriceLimit).signed(
+        user.privateKey
+      );
       const swapRes = await client.dexV3Contract.swap(dto);
       expect(swapRes).toMatchObject({
         Status: 1,
@@ -592,7 +575,6 @@ describe("DEx v3 Testing", () => {
         ETH_ClassKey,
         USDT_ClassKey,
         fee,
-        user.identityKey,
         new BigNumber("92271.497628802094407217"),
         ta,
         tb
@@ -981,15 +963,9 @@ describe("DEx v3 Testing", () => {
       const amountToSwap = new BigNumber(0.2),
         sqrtPriceLimit = new BigNumber(5);
 
-      let dto = new SwapDto(
-        ETH_ClassKey,
-        USDT_ClassKey,
-        fee,
-        user.identityKey,
-        amountToSwap,
-        true,
-        sqrtPriceLimit
-      ).signed(user.privateKey);
+      let dto = new SwapDto(ETH_ClassKey, USDT_ClassKey, fee, amountToSwap, true, sqrtPriceLimit).signed(
+        user.privateKey
+      );
 
       const swapRes = await client.dexV3Contract.swap(dto);
       expect(swapRes).toMatchObject({
@@ -1045,7 +1021,6 @@ describe("DEx v3 Testing", () => {
         ETH_ClassKey,
         USDT_ClassKey,
         fee,
-        user.identityKey,
         new BigNumber("26675.915083949831428038"),
         ta,
         tb
@@ -1571,7 +1546,6 @@ describe("DEx v3 Testing", () => {
         ETH_ClassKey,
         USDT_ClassKey,
         fee,
-        user.identityKey,
         new BigNumber(50),
         true,
         new BigNumber(40)
@@ -1670,15 +1644,9 @@ describe("DEx v3 Testing", () => {
     test("should estimate swap", async () => {
       const amountToSwap = new BigNumber(2),
         sqrtPriceLimit = new BigNumber(5);
-      let dto = new SwapDto(
-        ETH_ClassKey,
-        USDC_ClassKey,
-        fee,
-        user.identityKey,
-        amountToSwap,
-        true,
-        sqrtPriceLimit
-      ).signed(user.privateKey);
+      let dto = new SwapDto(ETH_ClassKey, USDC_ClassKey, fee, amountToSwap, true, sqrtPriceLimit).signed(
+        user.privateKey
+      );
       let expectSwapRes = await client.dexV3Contract.quoteExactAmount(dto);
       const result = expectSwapRes.Data;
       expect(result[0]).toBe("2");
@@ -1689,15 +1657,9 @@ describe("DEx v3 Testing", () => {
     test("should estimate swap for exact out", async () => {
       const amountToSwap = new BigNumber("-0.003"),
         sqrtPriceLimit = new BigNumber(5000);
-      let dto = new SwapDto(
-        ETH_ClassKey,
-        USDC_ClassKey,
-        fee,
-        user.identityKey,
-        amountToSwap,
-        false,
-        sqrtPriceLimit
-      ).signed(user.privateKey);
+      let dto = new SwapDto(ETH_ClassKey, USDC_ClassKey, fee, amountToSwap, false, sqrtPriceLimit).signed(
+        user.privateKey
+      );
       const quoteExactResponse = await client.dexV3Contract.quoteExactAmount(dto);
       expect(quoteExactResponse.Data).toMatchObject([
         "-0.003",
@@ -1711,15 +1673,9 @@ describe("DEx v3 Testing", () => {
       const amountToSwap = new BigNumber(2),
         sqrtPriceLimit = new BigNumber(5);
 
-      let dto = new SwapDto(
-        ETH_ClassKey,
-        USDC_ClassKey,
-        fee,
-        user.identityKey,
-        amountToSwap,
-        true,
-        sqrtPriceLimit
-      ).signed(user.privateKey);
+      let dto = new SwapDto(ETH_ClassKey, USDC_ClassKey, fee, amountToSwap, true, sqrtPriceLimit).signed(
+        user.privateKey
+      );
       const swapRes = await client.dexV3Contract.swap(dto);
       expect(swapRes).toMatchObject({
         Status: 1,
@@ -1749,14 +1705,62 @@ describe("DEx v3 Testing", () => {
     });
 
     test("collect protocol fees", async () => {
-      const balanceBefore = await checkBalanceOfuser(user.identityKey);
       const dto = new CollectProtocolFeesDTO(ETH_ClassKey, USDC_ClassKey, fee, user.identityKey).signed(
         user.privateKey
       );
       const collectResponse = await client.dexV3Contract.collectProtocolFees(dto);
-      const balanceAfter = await checkBalanceOfuser(user.identityKey);
+      expect(collectResponse.Message).toBe(
+        "Protocol fee configuration has yet to be defined. Platform fee configuration is not defined."
+      );
     });
+
     let newProtocolFee = 0.3;
+    test("Change protocol fees", async () => {
+      const poolData = new GetPoolDto(ETH_ClassKey, USDC_ClassKey, fee).signed(user.privateKey);
+      const dto = new SetProtocolFeeDTO(ETH_ClassKey, USDC_ClassKey, fee, newProtocolFee).signed(
+        user.privateKey
+      );
+      const setFeeResponse = await client.dexV3Contract.setProtocolFee(dto);
+      const getData = await client.dexV3Contract.getPoolData(poolData);
+      // fee collected after swap
+      expect(setFeeResponse.Message).toBe(
+        "Protocol fee configuration has yet to be defined. Platform fee configuration is not defined."
+      );
+      expect(getData.Data.protocolFees).toBe(protocolFees);
+    });
+
+    describe("Configure and fetch Platform fee", () => {
+      test("It will revert if none of the input field are present", async () => {
+        const configPlatformFeeAddressDTO = new ConfigurePlatformFeeAddressDto();
+        configPlatformFeeAddressDTO.newPlatformFeeAddress = "";
+        configPlatformFeeAddressDTO.newAuthorities = [];
+
+        configPlatformFeeAddressDTO.sign(user.privateKey);
+        const configRes = await client.dexV3Contract.ConfigurePlatformFeeAddress(configPlatformFeeAddressDTO);
+
+        expect(configRes.Status).toEqual(0);
+        expect(configRes.Message).toEqual("None of the input fields are present.");
+      });
+
+      test("Platform Fee Address can be changed", async () => {
+        const configPlatformFeeAddressDTO = new ConfigurePlatformFeeAddressDto();
+        configPlatformFeeAddressDTO.newPlatformFeeAddress = user.identityKey;
+
+        configPlatformFeeAddressDTO.sign(user.privateKey);
+
+        const configRes = await client.dexV3Contract.ConfigurePlatformFeeAddress(configPlatformFeeAddressDTO);
+
+        expect(configRes.Status).toEqual(1);
+        expect(configRes.Data?.feeAddress).toEqual(user.identityKey);
+      });
+    });
+    test("collect protocol fees", async () => {
+      const dto = new CollectProtocolFeesDTO(ETH_ClassKey, USDC_ClassKey, fee, user.identityKey).signed(
+        user.privateKey
+      );
+      const collectResponse = await client.dexV3Contract.collectProtocolFees(dto);
+    });
+
     test("Change protocol fees", async () => {
       const poolData = new GetPoolDto(ETH_ClassKey, USDC_ClassKey, fee).signed(user.privateKey);
       const dto = new SetProtocolFeeDTO(ETH_ClassKey, USDC_ClassKey, fee, newProtocolFee).signed(
@@ -1845,6 +1849,9 @@ interface DexV3ContractAPI {
   collect(dto: CollectDTO): Promise<GalaChainResponse<string[]>>;
   collectProtocolFees(dto: CollectProtocolFeesDTO): Promise<GalaChainResponse<string[]>>;
   setProtocolFee(dto: SetProtocolFeeDTO): Promise<GalaChainResponse<string[]>>;
+  ConfigurePlatformFeeAddress(
+    dto: ConfigurePlatformFeeAddressDto
+  ): Promise<GalaChainResponse<PlatformFeeConfig>>;
 }
 
 function dexV3ContractAPI(client: ChainClient): DexV3ContractAPI & CommonContractAPI {
@@ -1867,7 +1874,7 @@ function dexV3ContractAPI(client: ChainClient): DexV3ContractAPI & CommonContrac
       return client.submitTransaction("RemoveLiquidity", dto) as Promise<GalaChainResponse<void>>;
     },
     burnEstimate(dto: BurnDto) {
-      return client.submitTransaction("RemoveLiquidityEstimation", dto) as Promise<
+      return client.submitTransaction("GetRemoveLiquidityEstimation", dto) as Promise<
         GalaChainResponse<string[]>
       >;
     },
@@ -1875,19 +1882,19 @@ function dexV3ContractAPI(client: ChainClient): DexV3ContractAPI & CommonContrac
       return client.submitTransaction("GetPool", dto) as Promise<GalaChainResponse<string>>;
     },
     slot0(dto: GetPoolDto) {
-      return client.submitTransaction("Slot0", dto) as Promise<GalaChainResponse<string>>;
+      return client.submitTransaction("GetSlot0", dto) as Promise<GalaChainResponse<string>>;
     },
     liquidity(dto: GetPoolDto) {
-      return client.submitTransaction("Liquidity", dto) as Promise<GalaChainResponse<string>>;
+      return client.submitTransaction("GetLiquidity", dto) as Promise<GalaChainResponse<string>>;
     },
     positions(dto: GetPositionDto) {
-      return client.submitTransaction("Positions", dto) as Promise<GalaChainResponse<string>>;
+      return client.submitTransaction("GetPositions", dto) as Promise<GalaChainResponse<string>>;
     },
     getUserPositions(dto: GetUserPositionsDto) {
-      return client.submitTransaction("UserPositions", dto) as Promise<GalaChainResponse<string>>;
+      return client.submitTransaction("GetUserPositions", dto) as Promise<GalaChainResponse<string>>;
     },
     getAddLiquidityEstimation(dto: ExpectedTokenDTO) {
-      return client.submitTransaction("AddLiquidityEstimation", dto) as Promise<GalaChainResponse<any>>;
+      return client.submitTransaction("GetAddLiquidityEstimation", dto) as Promise<GalaChainResponse<any>>;
     },
     quoteExactAmount(dto: QuoteExactAmountDto) {
       return client.submitTransaction("QuoteExactAmount", dto) as Promise<GalaChainResponse<any>>;
@@ -1903,6 +1910,11 @@ function dexV3ContractAPI(client: ChainClient): DexV3ContractAPI & CommonContrac
     },
     setProtocolFee(dto: SetProtocolFeeDTO) {
       return client.submitTransaction("SetProtocolFee", dto) as Promise<GalaChainResponse<any>>;
+    },
+    ConfigurePlatformFeeAddress(dto: ConfigurePlatformFeeAddressDto) {
+      return client.submitTransaction("ConfigurePlatformFeeAddress", dto) as Promise<
+        GalaChainResponse<PlatformFeeConfig>
+      >;
     }
   };
 }

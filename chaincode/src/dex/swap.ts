@@ -28,7 +28,21 @@ import {
   virtualAddress
 } from "../utils";
 
-export async function swap(ctx: GalaChainContext, dto: SwapDto) {
+/**
+ * @dev The swap function executes a token swap in a Uniswap V3-like liquidity pool within the GalaChain ecosystem.
+ * @param ctx GalaChainContext – The execution context providing access to the GalaChain environment.
+ * @param dto SwapDto – A data transfer object containing:
+  - tokenIn – The input token being swapped.
+  - amountIn – The amount of tokenIn provided for the swap.
+  - amountInMaximum – The amount of tokenIn provided for the swap.
+  - tokenOut – The token the user wants to receive.
+  - amountOutMinimum- This amount token user want to receive Minimum;
+  - zeroForOne - Boolean value for swap direction
+  - Pool Identiers – Identifier for the liquidity pool facilitating the swap.
+  - sqrtPriceLimit – The square root price limit to protect against excessive price impact.
+ * @returns 
+ */
+export async function swap(ctx: GalaChainContext, dto: SwapDto): Promise<SwapResponseDto> {
   const [token0, token1] = validateTokenOrder(dto.token0, dto.token1);
   let zeroForOne = dto.zeroForOne;
   let sqrtPriceLimit = dto.sqrtPriceLimit;

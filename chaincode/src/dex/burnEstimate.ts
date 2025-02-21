@@ -23,7 +23,7 @@ import { getObjectByKey, validateTokenOrder } from "../utils";
  * @param dto BurnDto – A data transfer object containing details of the liquidity position to be removed, including pool information, token amounts, and position ID.
  * @returns array with estimated value recieved after burning the positions
  */
-export async function getRemoveLiquidityEstimation(ctx: GalaChainContext, dto: BurnDto) {
+export async function getRemoveLiquidityEstimation(ctx: GalaChainContext, dto: BurnDto): Promise<String[]> {
   const [token0, token1] = validateTokenOrder(dto.token0, dto.token1);
 
   const key = ctx.stub.createCompositeKey(Pool.INDEX_KEY, [token0, token1, dto.fee.toString()]);
@@ -34,7 +34,7 @@ export async function getRemoveLiquidityEstimation(ctx: GalaChainContext, dto: B
 
   let tickLower = parseInt(dto.tickLower.toString()),
     tickUpper = parseInt(dto.tickUpper.toString());
-  const amounts = pool.burn(dto.recipient, tickLower, tickUpper, dto.amount.f18());
+  const amounts = pool.burn(ctx.callingUser, tickLower, tickUpper, dto.amount.f18());
 
   return formatBigNumber(amounts);
 }

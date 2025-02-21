@@ -12,7 +12,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-import { CollectDTO, ConflictError, Pool, UserBalanceResponseDto } from "@gala-chain/api";
+import { CollectDTO, ConflictError, Pool, UserBalanceResponseDto, UserPosition } from "@gala-chain/api";
 import BigNumber from "bignumber.js";
 
 import { fetchOrCreateBalance } from "../balances";
@@ -27,7 +27,6 @@ import {
   validateTokenOrder,
   virtualAddress
 } from "../utils";
-import { UserPosition } from "./userpositions";
 
 /**
  * @dev The collect function allows a user to claim and withdraw accrued fee tokens from a specific liquidity position in a Uniswap V3 pool within the GalaChain ecosystem. It retrieves earned fees based on the user's position details and transfers them to the user's account.
@@ -36,7 +35,7 @@ import { UserPosition } from "./userpositions";
 
  * @returns UserBalanceResponseDto
  */
-export async function collect(ctx: GalaChainContext, dto: CollectDTO) {
+export async function collect(ctx: GalaChainContext, dto: CollectDTO): Promise<UserBalanceResponseDto> {
   const [token0, token1] = validateTokenOrder(dto.token0, dto.token1);
   const key = ctx.stub.createCompositeKey(Pool.INDEX_KEY, [token0, token1, dto.fee.toString()]);
   const pool = await getObjectByKey(ctx, Pool, key);

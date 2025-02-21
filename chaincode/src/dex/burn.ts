@@ -17,6 +17,7 @@ import {
   ConflictError,
   Pool,
   UserBalanceResponseDto,
+  UserPosition,
   formatBigNumberDecimals
 } from "@gala-chain/api";
 import BigNumber from "bignumber.js";
@@ -33,7 +34,6 @@ import {
   validateTokenOrder,
   virtualAddress
 } from "../utils";
-import { UserPosition } from "./userpositions";
 
 /**
  * @dev The burn function is responsible for removing liquidity from a Uniswap V3 pool within the GalaChain ecosystem. It executes the necessary operations to burn the liquidity position and transfer the corresponding tokens back to the user.
@@ -63,7 +63,7 @@ export async function burn(ctx: GalaChainContext, dto: BurnDto) {
     tickUpper = parseInt(dto.tickUpper.toString());
   userPosition.removeLiquidity(poolAddrKey, tickLower, tickUpper, dto.amount.f18());
 
-  const amounts = pool.burn(dto.recipient, tickLower, tickUpper, dto.amount.f18());
+  const amounts = pool.burn(owner, tickLower, tickUpper, dto.amount.f18());
   const userPositionKey = `${owner}_${tickLower}_${tickUpper}`;
 
   const position = pool.positions[userPositionKey];

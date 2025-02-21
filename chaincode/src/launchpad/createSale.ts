@@ -17,17 +17,12 @@ import {
   CreateSaleResponse,
   CreateTokenSaleDTO,
   DefaultError,
-  LaunchPadSale,
-  NativeTokenAmountDto,
+  LaunchpadSale,
+  NativeTokenQuantityDto,
   TokenInstanceKey,
 } from "@gala-chain/api";
-import {
-  GalaChainContext,
-  getObjectByKey,
-  mintTokenWithAllowance,
-  putChainObject
-} from "@gala-chain/chaincode";
-import { createTokenClass } from "@gala-chain/chaincode";
+
+import { GalaChainContext, createTokenClass, getObjectByKey, mintTokenWithAllowance, putChainObject } from "@gala-chain/chaincode";
 import { BigNumber } from "bignumber.js";
 
 import { buyWithNative } from "./buyWithNative";
@@ -37,14 +32,14 @@ BigNumber.config({
 });
 
 /**
- * Creates a new token sale (LaunchPad) in the GalaChain environment.
+ * Creates a new token sale (Launchpad) in the GalaChain environment.
  *
  * This function validates input parameters, creates a token class, mints an initial supply
- * of tokens, and initializes the LaunchPad sale object. If a pre-buy amount is specified,
+ * of tokens, and initializes the Launchpad sale object. If a pre-buy amount is specified,
  * it simulates a token purchase using native tokens.
  *
  * @param ctx - The context object providing access to the GalaChain environment.
- * @param launchPadDetails - An object containing details for the token sale, including:
+ * @param launchpadDetails - An object containing details for the token sale, including:
  *   - `tokenName`: The name of the token being created.
  *   - `tokenSymbol`: The symbol for the token.
  *   - `tokenDescription`: A description of the token.
@@ -60,44 +55,42 @@ BigNumber.config({
  */
 export async function createSale(
   ctx: GalaChainContext,
-  launchPadDetails: CreateTokenSaleDTO
+  launchpadDetails: CreateTokenSaleDTO
 ): Promise<CreateSaleResponse> {
   // Validate input parameters
-  if (!launchPadDetails.websiteUrl && !launchPadDetails.telegramUrl && !launchPadDetails.twitterUrl) {
+
+  if (!launchpadDetails.websiteUrl && !launchpadDetails.telegramUrl && !launchpadDetails.twitterUrl) {
     throw new DefaultError("Token sale creation requires atleast one social link.");
   }
 
-  launchPadDetails.tokenSymbol = launchPadDetails.tokenSymbol.toUpperCase();
+  launchpadDetails.tokenSymbol = launchpadDetails.tokenSymbol.toUpperCase();
 
   // Define the token class key
   const tokenInstanceKey = new TokenInstanceKey();
-  tokenInstanceKey.collection = "Token";
-  tokenInstanceKey.category = "Unit";
-  tokenInstanceKey.type = `${launchPadDetails.tokenSymbol}`;
+  tokenInstanceKey.collection = `${launchpadDetails.tokenCollection}`;
+  tokenInstanceKey.category = `${launchpadDetails.tokenCategory}`;
+  tokenInstanceKey.type = `${launchpadDetails.tokenSymbol}`;
   tokenInstanceKey.additionalKey = `${ctx.callingUser.replace(/\|/, ":")}`;
   tokenInstanceKey.instance = new BigNumber(0);
 
   // Validate uniqueness of sale and token
   const vaultAddress = `service|${tokenInstanceKey.getTokenClassKey().toStringKey()}$launchpad`;
-  const key = ctx.stub.createCompositeKey(LaunchPadSale.INDEX_KEY, [vaultAddress]);
-  const sale = await getObjectByKey(ctx, LaunchPadSale, key).catch(() => undefined);
+  const key = ctx.stub.createCompositeKey(LaunchpadSale.INDEX_KEY, [vaultAddress]);
+  const sale = await getObjectByKey(ctx, LaunchpadSale, key).catch(() => undefined);
   if (sale) {
-    throw new DefaultError("This token and a sale associtated with it already exists");
+    throw new DefaultError("This token and a sale associated with it already exists");
   }
 
   // Call createTokenClass
-  const responseKey = await createTokenClass(ctx, {
+  await createTokenClass(ctx, {
     network: "GC",
     tokenClass: tokenInstanceKey.getTokenClassKey(),
     isNonFungible: false,
     decimals: 18,
-    name: launchPadDetails.tokenName,
-    symbol: launchPadDetails.tokenSymbol,
-    description: launchPadDetails.tokenDescription,
-    rarity: "abc",
-    image: launchPadDetails.tokenImage,
-    metadataAddress: "",
-    contractAddress: "",
+    name: launchpadDetails.tokenName,
+    symbol: launchpadDetails.tokenSymbol,
+    description: launchpadDetails.tokenDescription,
+    image: launchpadDetails.tokenImage,
     maxSupply: new BigNumber("2e+7"),
     maxCapacity: new BigNumber("2e+7"),
     totalMintAllowance: new BigNumber(0),
@@ -106,10 +99,6 @@ export async function createSale(
     authorities: [vaultAddress, ctx.callingUser]
   });
 
-  if (!responseKey) {
-    throw new DefaultError("Token class creation failed. No response key returned.");
-  }
-
   await mintTokenWithAllowance(ctx, {
     tokenClassKey: tokenInstanceKey.getTokenClassKey(),
     tokenInstance: new BigNumber(0),
@@ -117,29 +106,31 @@ export async function createSale(
     quantity: new BigNumber("2e+7")
   });
 
-  // Create the LaunchPadSale object
-  const launchPad = new LaunchPadSale(vaultAddress, tokenInstanceKey, ctx.callingUser);
+  // Create the LaunchpadSale object
+  const launchpad = new LaunchpadSale(vaultAddress, tokenInstanceKey, ctx.callingUser);
 
-  await putChainObject(ctx, launchPad);
+  await putChainObject(ctx, launchpad);
 
-  if (launchPadDetails.preBuyAmount.comparedTo(0)) {
-    const nativeTokenDto = new NativeTokenAmountDto();
-    nativeTokenDto.nativeTokenAmount = launchPadDetails.preBuyAmount;
-    nativeTokenDto.vaultAddress = launchPad.vaultAddress;
+  if (launchpadDetails.preBuyQuantity.comparedTo(0)) {
+    const nativeTokenDto = new NativeTokenQuantityDto();
+    nativeTokenDto.nativeTokenQuantity = launchpadDetails.preBuyQuantity;
+    nativeTokenDto.vaultAddress = launchpad.vaultAddress;
     await buyWithNative(ctx, nativeTokenDto);
   }
 
   // Return the response object
   return {
-    image: launchPadDetails.tokenImage,
-    tokenName: launchPadDetails.tokenName,
-    symbol: launchPadDetails.tokenSymbol,
-    description: launchPadDetails.tokenDescription,
-    websiteUrl: launchPadDetails.websiteUrl ? launchPadDetails.websiteUrl : "",
-    telegramUrl: launchPadDetails.telegramUrl ? launchPadDetails.telegramUrl : "",
-    twitterUrl: launchPadDetails.twitterUrl ? launchPadDetails.twitterUrl : "",
-    initialBuyAmount: launchPadDetails.preBuyAmount.toString(),
+    image: launchpadDetails.tokenImage,
+    tokenName: launchpadDetails.tokenName,
+    symbol: launchpadDetails.tokenSymbol,
+    description: launchpadDetails.tokenDescription,
+    websiteUrl: launchpadDetails.websiteUrl ? launchpadDetails.websiteUrl : "",
+    telegramUrl: launchpadDetails.telegramUrl ? launchpadDetails.telegramUrl : "",
+    twitterUrl: launchpadDetails.twitterUrl ? launchpadDetails.twitterUrl : "",
+    initialBuyQuantity: launchpadDetails.preBuyQuantity.toString(),
     vaultAddress: vaultAddress,
-    creatorAddress: ctx.callingUser
+    creatorAddress: ctx.callingUser,
+    collection: launchpadDetails.tokenCollection,
+    category: launchpadDetails.tokenCategory
   };
 }

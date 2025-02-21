@@ -20,20 +20,20 @@ import {
   GetUserPositionResponse,
   GetUserPositionsDto,
   Pool,
+  PositionsObject,
   Slot0Dto,
   TokenClassKey,
   TokenInstanceKey,
+  UserPosition,
   formatBigNumber,
   positionInfoDto,
   sqrtPriceToTick
 } from "@gala-chain/api";
 import BigNumber from "bignumber.js";
-import { PositionsObject } from "chain-api/src/types/dexDtos";
 
 import { fetchTokenClass } from "../token";
 import { GalaChainContext } from "../types";
 import { genKeyWithPipe, generateKeyFromClassKey, getObjectByKey, validateTokenOrder } from "../utils";
-import { UserPosition } from "./userpositions";
 
 /**
  * @dev The getPoolData function retrieves and returns all publicly available state information of a Uniswap V3 pool within the GalaChain ecosystem. It provides insights into the pool's tick map, liquidity positions, and other essential details.
@@ -59,7 +59,7 @@ export async function getPoolData(ctx: GalaChainContext, dto: GetPoolDto): Promi
     - Pool identifiers – Class keys or token details needed to fetch the pool data.
    * @returns Slot0Dto
    */
-export async function slot0(ctx: GalaChainContext, dto: GetPoolDto): Promise<Slot0Dto> {
+export async function getSlot0(ctx: GalaChainContext, dto: GetPoolDto): Promise<Slot0Dto> {
   const pool = await getPoolData(ctx, dto);
   if (!pool) throw new DefaultError("No pool for these tokens and fee exists");
   return new Slot0Dto(
@@ -76,7 +76,7 @@ export async function slot0(ctx: GalaChainContext, dto: GetPoolDto): Promise<Slo
     - Pool identifiers – Class keys or token details required to identify the pool.
    * @returns string
    */
-export async function liquidity(ctx: GalaChainContext, dto: GetPoolDto): Promise<string> {
+export async function getLiquidity(ctx: GalaChainContext, dto: GetPoolDto): Promise<string> {
   const pool = await getPoolData(ctx, dto);
   if (!pool) throw new DefaultError("No pool for these tokens and fee exists");
   return pool.liquidity.toString();
@@ -90,7 +90,7 @@ export async function liquidity(ctx: GalaChainContext, dto: GetPoolDto): Promise
    - Positions identifier - lower tick, upper tick.
    * @returns positionInfoDto
    */
-export async function positions(ctx: GalaChainContext, dto: GetPositionDto): Promise<positionInfoDto> {
+export async function getPositions(ctx: GalaChainContext, dto: GetPositionDto): Promise<positionInfoDto> {
   const pool = await getPoolData(ctx, dto);
   let key = genKeyWithPipe(dto.owner, dto.tickLower.toString(), dto.tickUpper.toString());
   if (!pool) throw new DefaultError("No pool for these tokens and fee exists");
@@ -122,7 +122,10 @@ export async function getUserPositions(
     ctx,
     paginatedPositions ? paginatedPositions : userPositions.positions
   );
-  const count = Object.values(userPositions.positions as PositionsObject).reduce((sum, arr) => sum + arr.length, 0);
+  const count = Object.values(userPositions.positions as PositionsObject).reduce(
+    (sum, arr) => sum + arr.length,
+    0
+  );
   const response: GetUserPositionResponse = { positions: metaDataPositions, totalCount: count };
   return response;
 }
@@ -184,7 +187,10 @@ export async function getAddLiquidityEstimation(
  * @param positions All user positions
  * @returns Modified user Positions by adding few properites like img, symbol etc.
  */
-async function addMetaDataToPositions(ctx: GalaChainContext, positions: PositionsObject) {
+async function addMetaDataToPositions(
+  ctx: GalaChainContext,
+  positions: PositionsObject
+): Promise<PositionsObject> {
   for (let [key, value] of Object.entries(positions)) {
     const poolKeys = key.split("_");
 

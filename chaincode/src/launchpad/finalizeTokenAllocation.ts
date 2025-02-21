@@ -14,7 +14,7 @@
  */
 import {
   FinalizeTokenAllocationDto,
-  LaunchPadFinalizeAllocation,
+  LaunchpadFinalizeFeeAllocation,
   NotFoundError,
   UnauthorizedError
 } from "@gala-chain/api";
@@ -25,7 +25,7 @@ import { fetchPlatformFeeAddress, getObjectByKey, putChainObject } from "../util
 export async function finalizeTokenAllocation(
   ctx: GalaChainContext,
   dto: FinalizeTokenAllocationDto
-): Promise<LaunchPadFinalizeAllocation> {
+): Promise<LaunchpadFinalizeFeeAllocation> {
   const platformFeeAddress = await fetchPlatformFeeAddress(ctx);
   if (!platformFeeAddress) {
     throw new NotFoundError(
@@ -35,11 +35,11 @@ export async function finalizeTokenAllocation(
     throw new UnauthorizedError(`CallingUser ${ctx.callingUser} is not authorized to create or update`);
   }
 
-  const key = ctx.stub.createCompositeKey(LaunchPadFinalizeAllocation.INDEX_KEY, []);
-  let feeAllocation = await getObjectByKey(ctx, LaunchPadFinalizeAllocation, key).catch(() => undefined);
+  const key = ctx.stub.createCompositeKey(LaunchpadFinalizeFeeAllocation.INDEX_KEY, []);
+  let feeAllocation = await getObjectByKey(ctx, LaunchpadFinalizeFeeAllocation, key).catch(() => undefined);
 
   if (!feeAllocation) {
-    feeAllocation = new LaunchPadFinalizeAllocation(dto.platformFeePercentage, dto.ownerFeePercentage);
+    feeAllocation = new LaunchpadFinalizeFeeAllocation(dto.platformFeePercentage, dto.ownerFeePercentage);
   } else {
     feeAllocation.setAllocation(dto.platformFeePercentage, dto.ownerFeePercentage);
   }

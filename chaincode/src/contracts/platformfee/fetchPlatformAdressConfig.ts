@@ -14,8 +14,8 @@
  */
 import { NotFoundError, PlatformFeeConfig, UnauthorizedError } from "@gala-chain/api";
 
-import { GalaChainContext } from "../types";
-import { fetchPlatformFeeAddress } from "../utils";
+import { GalaChainContext } from "../../types";
+import { fetchPlatformFeeAddress } from "../../utils";
 
 export async function fetchPlatformAddressConfig(ctx: GalaChainContext): Promise<PlatformFeeConfig> {
   const curatorOrgMsp = process.env.CURATOR_ORG_MSP ?? "CuratorOrg";

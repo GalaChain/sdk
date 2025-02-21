@@ -12,11 +12,13 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-import { DefaultError, ExactTokenAmountDto, NativeTokenAmountDto, TradeResponse } from "@gala-chain/api";
-import { GalaChainContext, fetchTokenClass, putChainObject, transferToken } from "@gala-chain/chaincode";
+import { DefaultError, ExactTokenQuantityDto, NativeTokenQuantityDto, TradeResponse } from "@gala-chain/api";
 import { BigNumber } from "bignumber.js";
 
-import { fetchAndValidateSale } from "../utils";
+import { fetchTokenClass } from "../token";
+import { transferToken } from "../transfer";
+import { GalaChainContext } from "../types";
+import { fetchAndValidateSale, putChainObject } from "../utils";
 import { callMemeTokenIn } from "./callMemeTokenIn";
 import { callNativeTokenOut } from "./callNativeTokenOut";
 
@@ -44,7 +46,7 @@ BigNumber.config({
  */
 export async function sellExactToken(
   ctx: GalaChainContext,
-  sellTokenDTO: ExactTokenAmountDto
+  sellTokenDTO: ExactTokenQuantityDto
 ): Promise<TradeResponse> {
   const sale = await fetchAndValidateSale(ctx, sellTokenDTO.vaultAddress);
 
@@ -55,10 +57,10 @@ export async function sellExactToken(
 
   if (nativeTokensLeftInVault.comparedTo(nativeTokensToProvide) < 0) {
     nativeTokensToProvide = nativeTokensLeftInVault;
-    const nativeTokensBeingSoldDto = new NativeTokenAmountDto();
+    const nativeTokensBeingSoldDto = new NativeTokenQuantityDto();
     nativeTokensBeingSoldDto.vaultAddress = sellTokenDTO.vaultAddress;
-    nativeTokensBeingSoldDto.nativeTokenAmount = nativeTokensToProvide;
-    sellTokenDTO.tokenAmount = new BigNumber(await callMemeTokenIn(ctx, nativeTokensBeingSoldDto));
+    nativeTokensBeingSoldDto.nativeTokenQuantity = nativeTokensToProvide;
+    sellTokenDTO.tokenQuantity = new BigNumber(await callMemeTokenIn(ctx, nativeTokensBeingSoldDto));
   }
 
   if (
@@ -74,7 +76,7 @@ export async function sellExactToken(
     from: ctx.callingUser,
     to: sellTokenDTO.vaultAddress,
     tokenInstanceKey: memeToken,
-    quantity: sellTokenDTO.tokenAmount,
+    quantity: sellTokenDTO.tokenQuantity,
     allowancesToUse: [],
     authorizedOnBehalf: undefined
   });
@@ -91,13 +93,13 @@ export async function sellExactToken(
     }
   });
 
-  sale.sellToken(sellTokenDTO.tokenAmount, nativeTokensToProvide);
+  sale.sellToken(sellTokenDTO.tokenQuantity, nativeTokensToProvide);
   await putChainObject(ctx, sale);
 
   const token = await fetchTokenClass(ctx, sale.sellingToken);
   return {
-    inputAmount: sellTokenDTO.tokenAmount.toString(),
-    outputAmount: nativeTokensToProvide.toString(),
+    inputQuantity: sellTokenDTO.tokenQuantity.toString(),
+    outputQuantity: nativeTokensToProvide.toString(),
     tokenName: token.name,
     tradeType: "Sell",
     vaultAddress: sellTokenDTO.vaultAddress,
