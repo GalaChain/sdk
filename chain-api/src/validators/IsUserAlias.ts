@@ -72,7 +72,7 @@ export function validateUserAlias(value: unknown): UserAliasValidationResult {
     }
 
     if (parts[0] === "eth") {
-      if (signatures.isChecksumedEthAddress(parts[1])) {
+      if (signatures.isChecksumedEthAddress(parts[1]) && !parts[1].startsWith("0x")) {
         return UserAliasValidationResult.VALID_USER_ALIAS;
       } else {
         return UserAliasValidationResult.INVALID_ETH_USER_ALIAS;
@@ -93,7 +93,7 @@ export function validateUserAlias(value: unknown): UserAliasValidationResult {
 
 const customMessages = {
   [UserAliasValidationResult.INVALID_ETH_USER_ALIAS]:
-    "User alias starting with 'eth|' must end with valid checksumed eth address.",
+    "User alias starting with 'eth|' must end with valid checksumed eth address without 0x prefix.",
   [UserAliasValidationResult.INVALID_TON_USER_ALIAS]:
     "User alias starting with 'ton|' must end with valid bounceable base64 TON address."
 };
