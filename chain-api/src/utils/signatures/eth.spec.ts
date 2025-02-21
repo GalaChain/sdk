@@ -172,24 +172,48 @@ describe("signatures", () => {
     expect(actualSignature).toEqual(derSignature);
   });
 
-  it("should normalize signature", async () => {
+  it("should parse signature", async () => {
     // When
-    const normalized = signatures.parseSecp256k1Signature(signature);
+    const parsed = signatures.parseSecp256k1Signature(signature);
 
     // Then
-    expect(normalized).toEqual({
+    expect(parsed).toEqual({
       r: new BN("b7244d62671319583ea8f30c8ef3b343cf28e7b7bd56e32b21a5920752dc95b9", "hex"),
       s: new BN("4a9d202b2919581bcf776f0637462cb67170828ddbcc1ea63505f6a211f9ac5b", "hex"),
       recoveryParam: 0
     });
   });
 
-  it("should normalize DER signature", async () => {
+  it("should parse DER signature", async () => {
     // When
-    const normalized = signatures.parseSecp256k1Signature(derSignature);
+    const parsed = signatures.parseSecp256k1Signature(derSignature);
 
     // Then
-    expect(normalized).toEqual({
+    expect(parsed).toEqual({
+      r: new BN("b7244d62671319583ea8f30c8ef3b343cf28e7b7bd56e32b21a5920752dc95b9", "hex"),
+      s: new BN("4a9d202b2919581bcf776f0637462cb67170828ddbcc1ea63505f6a211f9ac5b", "hex"),
+      recoveryParam: undefined
+    });
+  });
+
+  it("should parse uppercase signature", async () => {
+    // When
+    const parsed = signatures.parseSecp256k1Signature(signature.toUpperCase());
+
+    // Then
+    expect(parsed).toEqual({
+      r: new BN("b7244d62671319583ea8f30c8ef3b343cf28e7b7bd56e32b21a5920752dc95b9", "hex"),
+      s: new BN("4a9d202b2919581bcf776f0637462cb67170828ddbcc1ea63505f6a211f9ac5b", "hex"),
+      recoveryParam: 0
+    });
+  });
+
+  it("should parse uppercase DER signature", async () => {
+    // When
+    const parsed = signatures.parseSecp256k1Signature(derSignature.toUpperCase());
+
+    // Then
+    expect(parsed).toEqual({
       r: new BN("b7244d62671319583ea8f30c8ef3b343cf28e7b7bd56e32b21a5920752dc95b9", "hex"),
       s: new BN("4a9d202b2919581bcf776f0637462cb67170828ddbcc1ea63505f6a211f9ac5b", "hex"),
       recoveryParam: undefined
