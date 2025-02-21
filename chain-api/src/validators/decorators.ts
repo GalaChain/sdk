@@ -234,14 +234,14 @@ export function BigNumberIsInteger(validationOptions?: ValidationOptions) {
 }
 
 export function IsNonZeroBigNumber(validationOptions?: ValidationOptions) {
-  return function (object: Object, propertyName: string) {
+  return function (object: object, propertyName: string) {
     registerDecorator({
       name: "isNonZeroBigNumber",
       target: object.constructor,
       propertyName: propertyName,
       options: validationOptions,
       validator: {
-        validate(value: any) {
+        validate(value: unknown) {
           return value instanceof BigNumber && !value.isZero();
         },
         defaultMessage(args: ValidationArguments) {

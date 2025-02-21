@@ -523,7 +523,6 @@ export class Pool extends ChainObject {
     const tickCurrent = sqrtPriceToTick(this.sqrtPrice);
     let liquidity: BigNumber;
     let res: BigNumber[];
-    amount = amount;
     if (BigNumber(amount).isZero()) throw new Error("You cannot add zero liqudity");
     if (tickCurrent >= tickLower && tickCurrent < tickUpper) {
       liquidity = isToken0

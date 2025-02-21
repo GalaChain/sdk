@@ -12,17 +12,15 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-import {
-  BigNumberProperty,
-  ChainKey,
-  ChainObject,
-  StringEnumProperty,
-  TokenInstanceKey
-} from "@gala-chain/api";
 import BigNumber from "bignumber.js";
 import { Exclude, Type } from "class-transformer";
 import { IsNotEmpty, IsString } from "class-validator";
 import { JSONSchema } from "class-validator-jsonschema";
+
+import { ChainKey } from "../utils";
+import { BigNumberProperty, StringEnumProperty } from "../validators";
+import { ChainObject } from "./ChainObject";
+import { TokenInstanceKey } from "./TokenInstance";
 
 export enum SaleStatus {
   ONGOING = "Ongoing",

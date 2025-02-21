@@ -13,8 +13,8 @@
  * limitations under the License.
  */
 import BigNumber from "bignumber.js";
-import { Bitmap, TickDataObj } from "chain-api/src/types/DexDtos";
 
+import { Bitmap, TickDataObj } from "../../types/DexDtos";
 import { DefaultError } from "../error";
 import { leastSignificantBit, mostSignificantBit } from "./bitMath.helper";
 

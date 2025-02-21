@@ -13,8 +13,10 @@
  * limitations under the License.
  */
 import { FetchSaleDto, LaunchpadSale, NotFoundError } from "@gala-chain/api";
-import { GalaChainContext, getObjectByKey } from "@gala-chain/chaincode";
 import { BigNumber } from "bignumber.js";
+
+import { GalaChainContext } from "../types";
+import { getObjectByKey } from "../utils";
 
 BigNumber.config({
   ROUNDING_MODE: BigNumber.ROUND_UP
