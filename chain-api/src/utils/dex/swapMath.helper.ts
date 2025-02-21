@@ -50,10 +50,10 @@ export function computeSwapStep(
     feeAmount: BigNumber;
 
   //define direction
-  let zeroForOne = sqrtPriceCurrent.isGreaterThanOrEqualTo(sqrtPriceTarget);
-  let exactInput = amountRemaining.isGreaterThanOrEqualTo(0);
+  const zeroForOne = sqrtPriceCurrent.isGreaterThanOrEqualTo(sqrtPriceTarget);
+  const exactInput = amountRemaining.isGreaterThanOrEqualTo(0);
   if (exactInput) {
-    let amountRemainingLessFee = amountRemaining.times(FEE_PIPS - fee).dividedBy(FEE_PIPS);
+    const amountRemainingLessFee = amountRemaining.times(FEE_PIPS - fee).dividedBy(FEE_PIPS);
 
     amountIn = zeroForOne
       ? getAmount0Delta(sqrtPriceTarget, sqrtPriceCurrent, liquidity)
@@ -81,7 +81,7 @@ export function computeSwapStep(
       );
   }
 
-  let max = sqrtPriceTarget.isEqualTo(sqrtPriceNext);
+  const max = sqrtPriceTarget.isEqualTo(sqrtPriceNext);
 
   //get amountIn and amountOut
   if (zeroForOne) {

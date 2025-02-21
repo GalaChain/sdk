@@ -17,8 +17,8 @@ import GalaJSONSerializer from "./GalaJSONSerializer";
 export * from "./state";
 export * from "./utils";
 export * from "./authorityOrgName";
-export * from "./dexUtils"
-export * from "./finaliseSale"
-export * from "./launchpadSaleUtils"
+export * from "./dexUtils";
+export * from "./finaliseSale";
+export * from "./launchpadSaleUtils";
 
 export { GalaJSONSerializer };

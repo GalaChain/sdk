@@ -40,8 +40,8 @@ import {
   tickToSqrtPrice,
   updateTick
 } from "@gala-chain/api";
+import "@gala-chain/api/utils/dex/initalize";
 import { genKey, validateTokenOrder } from "@gala-chain/chaincode";
-import "@gala-chain/api/utils/dex/initalize"
 import BigNumber from "bignumber.js";
 
 import { ETH_ClassKey, USDC_ClassKey } from "./tokens";
@@ -254,13 +254,13 @@ describe("genKey", () => {
 
 describe("updatePositions", () => {
   test("should initialize a new position if not existing", () => {
-    let positions = {};
-    let owner = "0x123";
-    let tickLower = -10;
-    let tickUpper = 10;
-    let liquidityDelta = new BigNumber(100);
-    let feeGrowthInside0 = new BigNumber(5);
-    let feeGrowthInside1 = new BigNumber(10);
+    const positions = {};
+    const owner = "0x123";
+    const tickLower = -10;
+    const tickUpper = 10;
+    const liquidityDelta = new BigNumber(100);
+    const feeGrowthInside0 = new BigNumber(5);
+    const feeGrowthInside1 = new BigNumber(10);
 
     updatePositions(
       positions as any,
@@ -272,19 +272,19 @@ describe("updatePositions", () => {
       feeGrowthInside1
     );
 
-    let key = `${owner}_${tickLower}_${tickUpper}`;
+    const key = `${owner}_${tickLower}_${tickUpper}`;
     expect(positions[key]).toBeTruthy();
     expect(positions[key].liquidity).toBe("100");
   });
 
   test("should update liquidity and fees for an existing position", () => {
-    let positions = {};
-    let owner = "0x123";
-    let tickLower = -10;
-    let tickUpper = 10;
-    let liquidityDelta = new BigNumber(100);
-    let feeGrowthInside0 = new BigNumber(5);
-    let feeGrowthInside1 = new BigNumber(10);
+    const positions = {};
+    const owner = "0x123";
+    const tickLower = -10;
+    const tickUpper = 10;
+    const liquidityDelta = new BigNumber(100);
+    const feeGrowthInside0 = new BigNumber(5);
+    const feeGrowthInside1 = new BigNumber(10);
 
     updatePositions(
       positions as any,
@@ -304,8 +304,8 @@ describe("updatePositions", () => {
       new BigNumber(8),
       new BigNumber(15)
     );
-    let key = `${owner}_${tickLower}_${tickUpper}`;
-    let position = positions[key];
+    const key = `${owner}_${tickLower}_${tickUpper}`;
+    const position = positions[key];
 
     expect(position.liquidity).toBe("150");
     expect(position.feeGrowthInside0Last).toBe("8");
@@ -313,13 +313,13 @@ describe("updatePositions", () => {
   });
 
   test("should throw error if decreasing liquidity below zero", () => {
-    let positions = {};
-    let owner = "0x123";
-    let tickLower = -10;
-    let tickUpper = 10;
-    let liquidityDelta = new BigNumber(100);
-    let feeGrowthInside0 = new BigNumber(5);
-    let feeGrowthInside1 = new BigNumber(10);
+    const positions = {};
+    const owner = "0x123";
+    const tickLower = -10;
+    const tickUpper = 10;
+    const liquidityDelta = new BigNumber(100);
+    const feeGrowthInside0 = new BigNumber(5);
+    const feeGrowthInside1 = new BigNumber(10);
 
     updatePositions(
       positions as any,
@@ -407,7 +407,7 @@ describe("getNextSqrtPriceFromInput old", () => {
     const liquidity = new BigNumber("500000");
     const amountIn = new BigNumber("10000");
     const result = getNextSqrtPriceFromInput(sqrtPrice, liquidity, amountIn, true);
-    expect(result.toFixed()).toBe("49.97501249375312343828"); 
+    expect(result.toFixed()).toBe("49.97501249375312343828");
   });
 
   test("should return correct next sqrt price when zeroForOne is false", () => {
@@ -415,8 +415,8 @@ describe("getNextSqrtPriceFromInput old", () => {
     const liquidity = new BigNumber("500000");
     const amountIn = new BigNumber("10000");
     const result = getNextSqrtPriceFromInput(sqrtPrice, liquidity, amountIn, false);
-    expect(result.toFixed()).toBe("100000.02"); 
-    });
+    expect(result.toFixed()).toBe("100000.02");
+  });
 });
 
 describe("getNextSqrtPriceFromInput", () => {
@@ -516,9 +516,9 @@ describe("getNextSqrtPriceFromOutput", () => {
 describe("computeSwapStep", () => {
   const sqrtPriceCurrent = new BigNumber("1000000");
   const sqrtPriceTarget = new BigNumber("12000000");
-  const liquidity = new BigNumber("5000000"); 
+  const liquidity = new BigNumber("5000000");
   const amountRemaining = new BigNumber("1000000");
-  const fee = 3000; 
+  const fee = 3000;
 
   test("Standard swap: Token0 to Token1", () => {
     const result = computeSwapStep(sqrtPriceCurrent, sqrtPriceTarget, liquidity, amountRemaining, fee);
@@ -807,16 +807,16 @@ describe("flipTick function", () => {
 
   test("should flip a tick when tick is spaced correctly", () => {
     flipTick(bitmap, 256, 1);
-    let word = 256 >> 8;
-    let pos = 256 % 256;
-    let mask = BigInt(1) << BigInt(pos);
+    const word = 256 >> 8;
+    const pos = 256 % 256;
+    const mask = BigInt(1) << BigInt(pos);
     expect(BigInt(bitmap[word])).toBe(mask);
   });
 
   test("should flip the tick back when called twice", () => {
     flipTick(bitmap, 256, 1);
     flipTick(bitmap, 256, 1);
-    let word = 256 >> 8;
+    const word = 256 >> 8;
     expect(BigInt(bitmap[word])).toBe(BigInt(0));
   });
 
@@ -833,12 +833,12 @@ describe("flipTick function", () => {
   test("should flip multiple ticks correctly", () => {
     flipTick(bitmap, 256, 1);
     flipTick(bitmap, 512, 1);
-    let word1 = 256 >> 8;
-    let word2 = 512 >> 8;
-    let pos1 = 256 % 256;
-    let pos2 = 512 % 256;
-    let mask1 = BigInt(1) << BigInt(pos1);
-    let mask2 = BigInt(1) << BigInt(pos2);
+    const word1 = 256 >> 8;
+    const word2 = 512 >> 8;
+    const pos1 = 256 % 256;
+    const pos2 = 512 % 256;
+    const mask1 = BigInt(1) << BigInt(pos1);
+    const mask2 = BigInt(1) << BigInt(pos2);
     expect(BigInt(bitmap[word1])).toBe(mask1);
     expect(BigInt(bitmap[word2])).toBe(mask2);
   });
@@ -858,16 +858,16 @@ describe("nextInitialisedTickWithInSameWord", () => {
     const bitmap: { [key: number]: string } = {};
     bitmap[0] = BigInt("0b1010").toString(); // 10
 
-    expect(nextInitialisedTickWithInSameWord(bitmap , 1, 1, false)).toEqual([3, true]);
-    expect(nextInitialisedTickWithInSameWord(bitmap , 2, 1, false)).toEqual([3, true]);
-    expect(nextInitialisedTickWithInSameWord(bitmap , 3, 1, false)).toEqual([255, false]);
+    expect(nextInitialisedTickWithInSameWord(bitmap, 1, 1, false)).toEqual([3, true]);
+    expect(nextInitialisedTickWithInSameWord(bitmap, 2, 1, false)).toEqual([3, true]);
+    expect(nextInitialisedTickWithInSameWord(bitmap, 3, 1, false)).toEqual([255, false]);
   });
 
   test("should handle negative ticks", () => {
     const bitmap: { [key: number]: string } = {};
     bitmap[-1] = BigInt("0b1000").toString(); // 8
 
-    expect(nextInitialisedTickWithInSameWord(bitmap , -3, 1, true)).toEqual([-253, true]);
+    expect(nextInitialisedTickWithInSameWord(bitmap, -3, 1, true)).toEqual([-253, true]);
     expect(nextInitialisedTickWithInSameWord(bitmap, -5, 1, true)).toEqual([-253, true]);
   });
 
@@ -880,13 +880,12 @@ describe("nextInitialisedTickWithInSameWord", () => {
 
   test("should handle large tick spacings", () => {
     const bitmap: { [key: number]: string } = {};
-    bitmap[0] = BigInt("0b100").toString(); 
+    bitmap[0] = BigInt("0b100").toString();
 
     expect(nextInitialisedTickWithInSameWord(bitmap, 512, 256, true)).toEqual([512, true]);
     expect(nextInitialisedTickWithInSameWord(bitmap, 256, 256, false)).toEqual([512, true]);
   });
 });
-
 
 describe("tickCross function", () => {
   test("Initializes tick data if it does not exist", () => {
@@ -895,7 +894,7 @@ describe("tickCross function", () => {
     const feeGrowthGlobal0 = new BigNumber(50);
     const feeGrowthGlobal1 = new BigNumber(100);
 
-    const result = tickCross(tick, tickData , feeGrowthGlobal0, feeGrowthGlobal1);
+    const result = tickCross(tick, tickData, feeGrowthGlobal0, feeGrowthGlobal1);
 
     expect(!!tickData[tick]).toBe(true);
     expect(tickData[tick]).toMatchObject({

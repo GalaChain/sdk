@@ -17,6 +17,7 @@ import {
   BurnDto,
   CollectDTO,
   CollectProtocolFeesDTO,
+  ConfigurePlatformFeeAddressDto,
   CreatePoolDto,
   CreateTokenClassDto,
   ExpectedTokenDTO,
@@ -28,17 +29,16 @@ import {
   GrantAllowanceDto,
   MintTokenDto,
   MintTokenWithAllowanceDto,
+  PlatformFeeConfig,
   QuoteExactAmountDto,
+  SetProtocolFeeDTO,
   SwapDto,
   TokenAllowance,
   TokenBalance,
   TokenClassKey,
   TokenInstanceKey,
   feeAmountTickSpacing,
-  sqrtPriceToTick,
-  ConfigurePlatformFeeAddressDto,
-  SetProtocolFeeDTO,
-  PlatformFeeConfig
+  sqrtPriceToTick
 } from "@gala-chain/api";
 import { ChainClient, ChainUser, CommonContractAPI, commonContractAPI } from "@gala-chain/client";
 import { AdminChainClients, TestClients, transactionSuccess } from "@gala-chain/test";
@@ -97,10 +97,10 @@ describe("Dex v3 Testing", () => {
       DECIMALS: 18,
       TOTAL_BURNED: new BigNumber(0)
     };
-    for (let TOKEN of Object.entries(TOKENS)) {
+    for (const TOKEN of Object.entries(TOKENS)) {
       test(`Create  ${TOKEN[0]} token`, async () => {
         const token = TOKEN[1];
-        let classKey = Object.assign(new TokenClassKey(), token.KEY);
+        const classKey = Object.assign(new TokenClassKey(), token.KEY);
         const tokenClassDto = Object.assign(new CreateTokenClassDto(), token);
         tokenClassDto.tokenClass = classKey;
         tokenClassDto.decimals = GENERAL.DECIMALS;
@@ -112,7 +112,7 @@ describe("Dex v3 Testing", () => {
         tokenClassDto.network = GENERAL.NETWORK;
         tokenClassDto.isNonFungible = GENERAL.IS_NON_FUNGIBLE;
         tokenClassDto.sign(user.privateKey);
-        let tokenCreationRes = await client.tokenContract.CreateToken(tokenClassDto);
+        const tokenCreationRes = await client.tokenContract.CreateToken(tokenClassDto);
         expect(tokenCreationRes).toMatchObject({
           Status: 1,
           Data: expect.objectContaining({
@@ -133,10 +133,10 @@ describe("Dex v3 Testing", () => {
       USES: new BigNumber(100000000),
       MINT_QUANTITY: new BigNumber(100000000)
     };
-    for (let TOKEN of Object.entries(TOKENS))
+    for (const TOKEN of Object.entries(TOKENS))
       test(`Mint ${TOKEN[0]} token`, async () => {
         const token = TOKEN[1];
-        let tokenClassKey = Object.assign(new TokenClassKey(), token.KEY);
+        const tokenClassKey = Object.assign(new TokenClassKey(), token.KEY);
         const dto = new MintTokenWithAllowanceDto();
         dto.tokenClass = tokenClassKey;
         dto.quantity = GENERAL.MINT_QUANTITY;
@@ -163,8 +163,8 @@ describe("Dex v3 Testing", () => {
       const fetchBalanceRes = await client.tokenContract.FetchBalances(fetchBalancesDto);
       const balancesData = fetchBalanceRes.Data;
       if (balancesData) {
-        for (let balance of balancesData) {
-          let balanceN = balance as any;
+        for (const balance of balancesData) {
+          const balanceN = balance as any;
           expect(balanceN.quantity).toEqual(GENERAL.MINT_QUANTITY.toString());
         }
       }
@@ -182,14 +182,18 @@ describe("Dex v3 Testing", () => {
     const tickSpacing = feeAmountTickSpacing[fee];
 
     test("Should create Pool with 0.05% fee", async () => {
-      let dto = new CreatePoolDto(ETH_ClassKey, USDT_ClassKey, fee, initialSqrtPrice).signed(user.privateKey);
-      let createPoolRes = await client.dexV3Contract.createPool(dto);
+      const dto = new CreatePoolDto(ETH_ClassKey, USDT_ClassKey, fee, initialSqrtPrice).signed(
+        user.privateKey
+      );
+      const createPoolRes = await client.dexV3Contract.createPool(dto);
       expect(createPoolRes).toStrictEqual(transactionSuccess());
     });
 
     test("Should create error create pool with 0.05% fee", async () => {
-      let dto = new CreatePoolDto(ETH_ClassKey, USDT_ClassKey, fee, initialSqrtPrice).signed(user.privateKey);
-      let createPoolRes = await client.dexV3Contract.createPool(dto);
+      const dto = new CreatePoolDto(ETH_ClassKey, USDT_ClassKey, fee, initialSqrtPrice).signed(
+        user.privateKey
+      );
+      const createPoolRes = await client.dexV3Contract.createPool(dto);
       expect(createPoolRes.Status).toEqual(0);
     });
 
@@ -225,7 +229,7 @@ describe("Dex v3 Testing", () => {
       const pa = 1980,
         pb = 2020;
       const [ta, tb] = spacedTicksFromPrice(pa, pb, tickSpacing);
-      let fee = 500;
+      const fee = 500;
       const dto = new ExpectedTokenDTO(
         ETH_ClassKey,
         USDT_ClassKey,
@@ -247,7 +251,7 @@ describe("Dex v3 Testing", () => {
       const pa = 2100,
         pb = 2200;
       const [ta, tb] = spacedTicksFromPrice(pa, pb, 10);
-      let fee = 500;
+      const fee = 500;
       const dto = new ExpectedTokenDTO(
         ETH_ClassKey,
         USDT_ClassKey,
@@ -289,7 +293,7 @@ describe("Dex v3 Testing", () => {
         liquidity = new BigNumber(data[2]);
       const [token0Slipped, token1Slipped] = slippedValue([token0, token1], slippage);
 
-      let dto = new AddLiquidityDTO(
+      const dto = new AddLiquidityDTO(
         ETH_ClassKey,
         USDT_ClassKey,
         fee,
@@ -358,7 +362,7 @@ describe("Dex v3 Testing", () => {
         token1 = new BigNumber(data[1]),
         liquidity = new BigNumber(data[2]);
       const [token0Slipped, token1Slipped] = slippedValue([token0, token1], slippage);
-      let dto = new AddLiquidityDTO(
+      const dto = new AddLiquidityDTO(
         ETH_ClassKey,
         USDT_ClassKey,
         fee,
@@ -397,7 +401,7 @@ describe("Dex v3 Testing", () => {
         liquidity = new BigNumber(data[2]);
       const [token0Slipped, token1Slipped] = slippedValue([token0, token1], slippage);
 
-      let dto = new AddLiquidityDTO(
+      const dto = new AddLiquidityDTO(
         ETH_ClassKey,
         USDT_ClassKey,
         fee,
@@ -417,10 +421,10 @@ describe("Dex v3 Testing", () => {
     test("should estimate swap", async () => {
       const amountToSwap = new BigNumber(2),
         sqrtPriceLimit = new BigNumber(5);
-      let dto = new SwapDto(ETH_ClassKey, USDT_ClassKey, fee, amountToSwap, true, sqrtPriceLimit).signed(
+      const dto = new SwapDto(ETH_ClassKey, USDT_ClassKey, fee, amountToSwap, true, sqrtPriceLimit).signed(
         user.privateKey
       );
-      let expectSwapRes = await client.dexV3Contract.quoteExactAmount(dto);
+      const expectSwapRes = await client.dexV3Contract.quoteExactAmount(dto);
       const result = expectSwapRes.Data;
       expect(result[0]).toBe("2");
       expect(result[1]).toBe("-3994.130334466043470346");
@@ -430,7 +434,7 @@ describe("Dex v3 Testing", () => {
     test("should estimate swap for exact out", async () => {
       const amountToSwap = new BigNumber("-0.003"),
         sqrtPriceLimit = new BigNumber(5000);
-      let dto = new SwapDto(ETH_ClassKey, USDT_ClassKey, fee, amountToSwap, false, sqrtPriceLimit).signed(
+      const dto = new SwapDto(ETH_ClassKey, USDT_ClassKey, fee, amountToSwap, false, sqrtPriceLimit).signed(
         user.privateKey
       );
       const quoteExactResponse = await client.dexV3Contract.quoteExactAmount(dto);
@@ -454,7 +458,7 @@ describe("Dex v3 Testing", () => {
       const amountToSwap = new BigNumber(2),
         sqrtPriceLimit = new BigNumber(5);
 
-      let dto = new SwapDto(ETH_ClassKey, USDT_ClassKey, fee, amountToSwap, true, sqrtPriceLimit).signed(
+      const dto = new SwapDto(ETH_ClassKey, USDT_ClassKey, fee, amountToSwap, true, sqrtPriceLimit).signed(
         user.privateKey
       );
       const swapRes = await client.dexV3Contract.swap(dto);
@@ -505,7 +509,7 @@ describe("Dex v3 Testing", () => {
         liquidity = new BigNumber(data[2]);
       const [token0Slipped, token1Slipped] = slippedValue([token0, token1], slippage);
 
-      let dto = new AddLiquidityDTO(
+      const dto = new AddLiquidityDTO(
         ETH_ClassKey,
         USDT_ClassKey,
         fee,
@@ -565,13 +569,13 @@ describe("Dex v3 Testing", () => {
     });
 
     test("RemoveLiquidity", async () => {
-      let fee = 500;
+      const fee = 500;
       const tickSpacing = feeAmountTickSpacing[fee];
       const pa = 1980,
         pb = 2020;
       const [ta, tb] = spacedTicksFromPrice(pa, pb, tickSpacing);
 
-      let dto = new BurnDto(
+      const dto = new BurnDto(
         ETH_ClassKey,
         USDT_ClassKey,
         fee,
@@ -639,14 +643,14 @@ describe("Dex v3 Testing", () => {
     });
 
     test("collect Tokens0 and token1", async () => {
-      let fee = 500;
+      const fee = 500;
 
       const tickSpacing = feeAmountTickSpacing[fee];
       const pa = 1980,
         pb = 2020;
       const [ta, tb] = spacedTicksFromPrice(pa, pb, tickSpacing);
 
-      let dto = new CollectDTO(
+      const dto = new CollectDTO(
         ETH_ClassKey,
         USDT_ClassKey,
         fee,
@@ -716,14 +720,18 @@ describe("Dex v3 Testing", () => {
       USDT = Object.assign(new TokenClassKey(), TOKENS.USDT.KEY).toStringKey();
 
     test("Should create Pool with 0.3% fee", async () => {
-      let dto = new CreatePoolDto(ETH_ClassKey, USDT_ClassKey, fee, initialSqrtPrice).signed(user.privateKey);
-      let createPoolRes = await client.dexV3Contract.createPool(dto);
+      const dto = new CreatePoolDto(ETH_ClassKey, USDT_ClassKey, fee, initialSqrtPrice).signed(
+        user.privateKey
+      );
+      const createPoolRes = await client.dexV3Contract.createPool(dto);
       expect(createPoolRes).toStrictEqual(transactionSuccess());
     });
 
     test("Should create error create pool with 0.03% fee", async () => {
-      let dto = new CreatePoolDto(ETH_ClassKey, USDT_ClassKey, fee, initialSqrtPrice).signed(user.privateKey);
-      let createPoolRes = await client.dexV3Contract.createPool(dto);
+      const dto = new CreatePoolDto(ETH_ClassKey, USDT_ClassKey, fee, initialSqrtPrice).signed(
+        user.privateKey
+      );
+      const createPoolRes = await client.dexV3Contract.createPool(dto);
       expect(createPoolRes.Status).toEqual(0);
     });
 
@@ -828,7 +836,7 @@ describe("Dex v3 Testing", () => {
         liquidity = new BigNumber(data[2]);
 
       const [token0Slipped, token1Slipped] = slippedValue([token0, token1], slippage);
-      let dto = new AddLiquidityDTO(
+      const dto = new AddLiquidityDTO(
         ETH_ClassKey,
         USDT_ClassKey,
         fee,
@@ -871,7 +879,7 @@ describe("Dex v3 Testing", () => {
         liquidity = new BigNumber(data[2]);
 
       const [token0Slipped, token1Slipped] = slippedValue([token0, token1], slippage);
-      let dto = new AddLiquidityDTO(
+      const dto = new AddLiquidityDTO(
         ETH_ClassKey,
         USDT_ClassKey,
         fee,
@@ -939,7 +947,7 @@ describe("Dex v3 Testing", () => {
         liquidity = new BigNumber(data[2]);
 
       const [token0Slipped, token1Slipped] = slippedValue([token0, token1], slippage);
-      let dto = new AddLiquidityDTO(
+      const dto = new AddLiquidityDTO(
         ETH_ClassKey,
         USDT_ClassKey,
         fee,
@@ -963,7 +971,7 @@ describe("Dex v3 Testing", () => {
       const amountToSwap = new BigNumber(0.2),
         sqrtPriceLimit = new BigNumber(5);
 
-      let dto = new SwapDto(ETH_ClassKey, USDT_ClassKey, fee, amountToSwap, true, sqrtPriceLimit).signed(
+      const dto = new SwapDto(ETH_ClassKey, USDT_ClassKey, fee, amountToSwap, true, sqrtPriceLimit).signed(
         user.privateKey
       );
 
@@ -1012,12 +1020,12 @@ describe("Dex v3 Testing", () => {
     });
 
     test("RemoveLiquidity", async () => {
-      let fee = 3000;
+      const fee = 3000;
       const tickSpacing = feeAmountTickSpacing[fee];
       const pa = 1980,
         pb = 2020;
       const [ta, tb] = spacedTicksFromPrice(pa, pb, tickSpacing);
-      let dto = new BurnDto(
+      const dto = new BurnDto(
         ETH_ClassKey,
         USDT_ClassKey,
         fee,
@@ -1030,7 +1038,7 @@ describe("Dex v3 Testing", () => {
       const fetchBalanceDto = new FetchBalancesDto();
       fetchBalanceDto.owner = poolVirtualAddress;
 
-      let burnRes = await client.dexV3Contract.burn(dto);
+      const burnRes = await client.dexV3Contract.burn(dto);
       expect(burnRes).toMatchObject({
         Status: 1,
         Data: {
@@ -1080,14 +1088,14 @@ describe("Dex v3 Testing", () => {
     });
 
     test("collect Tokens0 and token1", async () => {
-      let fee = 3000;
+      const fee = 3000;
 
       const tickSpacing = feeAmountTickSpacing[fee];
       const pa = 1980,
         pb = 2020;
       const [ta, tb] = spacedTicksFromPrice(pa, pb, tickSpacing);
 
-      let dto = new CollectDTO(
+      const dto = new CollectDTO(
         ETH_ClassKey,
         USDT_ClassKey,
         fee,
@@ -1139,7 +1147,9 @@ describe("Dex v3 Testing", () => {
     const fee = 10000,
       initialSqrtPrice = new BigNumber("44.72136");
     test("Create Pool with 1% fee", async () => {
-      let dto = new CreatePoolDto(ETH_ClassKey, USDT_ClassKey, fee, initialSqrtPrice).signed(user.privateKey);
+      const dto = new CreatePoolDto(ETH_ClassKey, USDT_ClassKey, fee, initialSqrtPrice).signed(
+        user.privateKey
+      );
 
       const createPoolRes = await client.dexV3Contract.createPool(dto);
       expect(createPoolRes).toStrictEqual(transactionSuccess());
@@ -1241,7 +1251,7 @@ describe("Dex v3 Testing", () => {
         liquidity = new BigNumber(data[2]);
 
       const [token0Slipped, token1Slipped] = slippedValue([token0, token1], slippage);
-      let dto = new AddLiquidityDTO(
+      const dto = new AddLiquidityDTO(
         ETH_ClassKey,
         USDT_ClassKey,
         fee,
@@ -1287,7 +1297,7 @@ describe("Dex v3 Testing", () => {
         liquidity = new BigNumber(data[2]);
 
       const [token0Slipped, token1Slipped] = slippedValue([token0, token1], slippage);
-      let dto = new AddLiquidityDTO(
+      const dto = new AddLiquidityDTO(
         ETH_ClassKey,
         USDT_ClassKey,
         fee,
@@ -1332,7 +1342,7 @@ describe("Dex v3 Testing", () => {
         liquidity = new BigNumber(data[2]);
 
       const [token0Slipped, token1Slipped] = slippedValue([token0, token1], slippage);
-      let dto = new AddLiquidityDTO(
+      const dto = new AddLiquidityDTO(
         ETH_ClassKey,
         USDT_ClassKey,
         fee,
@@ -1383,7 +1393,7 @@ describe("Dex v3 Testing", () => {
       const ta = Math.round(sqrtPriceToTick(new BigNumber(Math.sqrt(pa))) / 10) * 10,
         tb = Math.round(sqrtPriceToTick(new BigNumber(Math.sqrt(pb))) / 10) * 10;
 
-      let fee = 500;
+      const fee = 500;
       const dto = new ExpectedTokenDTO(
         ETH_ClassKey,
         USDT_ClassKey,
@@ -1406,7 +1416,7 @@ describe("Dex v3 Testing", () => {
       const pa = 2100,
         pb = 2200;
       const [ta, tb] = spacedTicksFromPrice(pa, pb, 10);
-      let fee = 500;
+      const fee = 500;
       const dto = new ExpectedTokenDTO(
         ETH_ClassKey,
         USDT_ClassKey,
@@ -1425,7 +1435,7 @@ describe("Dex v3 Testing", () => {
     });
 
     test("Add liquidity in range 1980 - 2020", async () => {
-      let fee = 500;
+      const fee = 500;
 
       const pa = 1980,
         pb = 2020;
@@ -1451,7 +1461,7 @@ describe("Dex v3 Testing", () => {
         liquidity = new BigNumber(data[2]);
 
       const [token0Slipped, token1Slipped] = slippedValue([token0, token1], slippage);
-      let dto = new AddLiquidityDTO(
+      const dto = new AddLiquidityDTO(
         ETH_ClassKey,
         USDT_ClassKey,
         fee,
@@ -1465,7 +1475,7 @@ describe("Dex v3 Testing", () => {
       await client.dexV3Contract.addLiquidity(dto);
     });
     test("Add liquidity in range 2100 - 2200", async () => {
-      let fee = 500;
+      const fee = 500;
 
       const pa = 1980,
         pb = 2020;
@@ -1491,7 +1501,7 @@ describe("Dex v3 Testing", () => {
         liquidity = new BigNumber(data[2]);
 
       const [token0Slipped, token1Slipped] = slippedValue([token0, token1], slippage);
-      let dto = new AddLiquidityDTO(
+      const dto = new AddLiquidityDTO(
         ETH_ClassKey,
         USDT_ClassKey,
         fee,
@@ -1520,7 +1530,7 @@ describe("Dex v3 Testing", () => {
     });
 
     test("Swaping case 1", async () => {
-      let fee = 500;
+      const fee = 500;
 
       /**
        * Estimate out was '50', '-99732.3746901'
@@ -1542,7 +1552,7 @@ describe("Dex v3 Testing", () => {
        * USDT: 133089.903384354411490329
        */
 
-      let dto = new SwapDto(
+      const dto = new SwapDto(
         ETH_ClassKey,
         USDT_ClassKey,
         fee,
@@ -1553,7 +1563,7 @@ describe("Dex v3 Testing", () => {
       await client.dexV3Contract.swap(dto);
     });
     test("Swaping case ultimate", async () => {
-      let fee = 500;
+      const fee = 500;
       const rawValues = [
         "0.00000000000000000000000001",
         "0.0000004",
@@ -1569,7 +1579,7 @@ describe("Dex v3 Testing", () => {
         [false, true],
         [true, true]
       ];
-      for (let value of values) {
+      for (const value of values) {
         for (let i = 0; i < arr.length; i++) {
           const amountToSwap = new BigNumber(`${arr[i][0] ? "-" : ""}${value}`);
           const dto = new QuoteExactAmountDto(
@@ -1592,10 +1602,10 @@ describe("Dex v3 Testing", () => {
     const protocolFees = 0.5;
 
     test("Should create Pool with 0.05% fee", async () => {
-      let dto = new CreatePoolDto(ETH_ClassKey, USDC_ClassKey, fee, initialSqrtPrice, protocolFees).signed(
+      const dto = new CreatePoolDto(ETH_ClassKey, USDC_ClassKey, fee, initialSqrtPrice, protocolFees).signed(
         user.privateKey
       );
-      let createPoolRes = await client.dexV3Contract.createPool(dto);
+      const createPoolRes = await client.dexV3Contract.createPool(dto);
       expect(createPoolRes).toStrictEqual(transactionSuccess());
     });
 
@@ -1624,7 +1634,7 @@ describe("Dex v3 Testing", () => {
         token1 = new BigNumber(data[1]),
         liquidity = new BigNumber(data[2]);
       const [token0Slipped, token1Slipped] = slippedValue([token0, token1], slippage);
-      let dto = new AddLiquidityDTO(
+      const dto = new AddLiquidityDTO(
         ETH_ClassKey,
         USDC_ClassKey,
         fee,
@@ -1644,10 +1654,10 @@ describe("Dex v3 Testing", () => {
     test("should estimate swap", async () => {
       const amountToSwap = new BigNumber(2),
         sqrtPriceLimit = new BigNumber(5);
-      let dto = new SwapDto(ETH_ClassKey, USDC_ClassKey, fee, amountToSwap, true, sqrtPriceLimit).signed(
+      const dto = new SwapDto(ETH_ClassKey, USDC_ClassKey, fee, amountToSwap, true, sqrtPriceLimit).signed(
         user.privateKey
       );
-      let expectSwapRes = await client.dexV3Contract.quoteExactAmount(dto);
+      const expectSwapRes = await client.dexV3Contract.quoteExactAmount(dto);
       const result = expectSwapRes.Data;
       expect(result[0]).toBe("2");
       expect(result[1]).toBe("-3994.130334466043470346");
@@ -1657,7 +1667,7 @@ describe("Dex v3 Testing", () => {
     test("should estimate swap for exact out", async () => {
       const amountToSwap = new BigNumber("-0.003"),
         sqrtPriceLimit = new BigNumber(5000);
-      let dto = new SwapDto(ETH_ClassKey, USDC_ClassKey, fee, amountToSwap, false, sqrtPriceLimit).signed(
+      const dto = new SwapDto(ETH_ClassKey, USDC_ClassKey, fee, amountToSwap, false, sqrtPriceLimit).signed(
         user.privateKey
       );
       const quoteExactResponse = await client.dexV3Contract.quoteExactAmount(dto);
@@ -1673,7 +1683,7 @@ describe("Dex v3 Testing", () => {
       const amountToSwap = new BigNumber(2),
         sqrtPriceLimit = new BigNumber(5);
 
-      let dto = new SwapDto(ETH_ClassKey, USDC_ClassKey, fee, amountToSwap, true, sqrtPriceLimit).signed(
+      const dto = new SwapDto(ETH_ClassKey, USDC_ClassKey, fee, amountToSwap, true, sqrtPriceLimit).signed(
         user.privateKey
       );
       const swapRes = await client.dexV3Contract.swap(dto);
@@ -1714,7 +1724,7 @@ describe("Dex v3 Testing", () => {
       );
     });
 
-    let newProtocolFee = 0.3;
+    const newProtocolFee = 0.3;
     test("Change protocol fees", async () => {
       const poolData = new GetPoolDto(ETH_ClassKey, USDC_ClassKey, fee).signed(user.privateKey);
       const dto = new SetProtocolFeeDTO(ETH_ClassKey, USDC_ClassKey, fee, newProtocolFee).signed(

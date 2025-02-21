@@ -66,12 +66,12 @@ export async function addLiquidity(ctx: GalaChainContext, dto: AddLiquidityDTO, 
   //get token amounts required for the desired liquidity
   const owner = ctx.callingUser;
 
-  let tickLower = parseInt(dto.tickLower.toString()),
+  const tickLower = parseInt(dto.tickLower.toString()),
     tickUpper = parseInt(dto.tickUpper.toString());
 
-  let amount0Desired = dto.amount0Desired.f18(),
+  const amount0Desired = dto.amount0Desired.f18(),
     amount1Desired = dto.amount1Desired.f18();
-  let amount0Min = dto.amount0Min.f18(),
+  const amount0Min = dto.amount0Min.f18(),
     amount1Min = dto.amount1Min.f18();
 
   const sqrtRatioA = tickToSqrtPrice(tickLower),

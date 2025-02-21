@@ -135,7 +135,7 @@ export class ExactTokenQuantityDto extends ChainCallDTO {
   public expectedNativeToken?: BigNumber;
   tokenAmount: BigNumber;
 
-  constructor(vaultAddress: string = "", tokenQuantity: BigNumber = new BigNumber(0)) {
+  constructor(vaultAddress = "", tokenQuantity: BigNumber = new BigNumber(0)) {
     super();
     this.vaultAddress = vaultAddress;
     this.tokenQuantity = tokenQuantity;
@@ -156,7 +156,7 @@ export class NativeTokenQuantityDto extends ChainCallDTO {
   @IsOptional()
   public expectedToken?: BigNumber;
 
-  constructor(vaultAddress: string = "", nativeTokenQuantity: BigNumber = new BigNumber(0)) {
+  constructor(vaultAddress = "", nativeTokenQuantity: BigNumber = new BigNumber(0)) {
     super();
     this.vaultAddress = vaultAddress;
     this.nativeTokenQuantity = nativeTokenQuantity;
@@ -199,7 +199,7 @@ export class FetchSaleDto extends ChainCallDTO {
   @IsString()
   @IsNotEmpty()
   public vaultAddress: string;
-  constructor(vaultAddress: string = "") {
+  constructor(vaultAddress = "") {
     super();
     this.vaultAddress = vaultAddress;
   }

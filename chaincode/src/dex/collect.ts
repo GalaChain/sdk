@@ -39,7 +39,7 @@ export async function collect(ctx: GalaChainContext, dto: CollectDTO): Promise<U
   const [token0, token1] = validateTokenOrder(dto.token0, dto.token1);
   const key = ctx.stub.createCompositeKey(Pool.INDEX_KEY, [token0, token1, dto.fee.toString()]);
   const pool = await getObjectByKey(ctx, Pool, key);
-  let [amount0Requested, amount1Requested] = [dto.amount0Requested.f18(), dto.amount1Requested.f18()];
+  const [amount0Requested, amount1Requested] = [dto.amount0Requested.f18(), dto.amount1Requested.f18()];
 
   //If pool does not exist
   if (pool == undefined) throw new ConflictError("Pool does not exist");
@@ -47,11 +47,11 @@ export async function collect(ctx: GalaChainContext, dto: CollectDTO): Promise<U
   const poolAddrKey = genKey(pool.token0, pool.token1, pool.fee.toString());
   const poolVirtualAddress = virtualAddress(poolAddrKey);
 
-  let tickLower = parseInt(dto.tickLower.toString()),
+  const tickLower = parseInt(dto.tickLower.toString()),
     tickUpper = parseInt(dto.tickUpper.toString());
 
   const userKey = ctx.stub.createCompositeKey(UserPosition.INDEX_KEY, [owner]);
-  let userPosition = await getObjectByKey(ctx, UserPosition, userKey).catch(() => undefined);
+  const userPosition = await getObjectByKey(ctx, UserPosition, userKey).catch(() => undefined);
   if (!userPosition) throw new ConflictError("user position doesnot exists does not exist");
 
   const amounts = pool.collect(owner, tickLower, tickUpper, amount0Requested, amount1Requested);

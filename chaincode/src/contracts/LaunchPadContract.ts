@@ -131,7 +131,7 @@ export class LaunchpadContract extends GalaContract {
     in: ExactTokenQuantityDto,
     out: String
   })
-  public async CallNativeTokenIn(ctx: GalaChainContext, dto: ExactTokenQuantityDto): Promise<String> {
+  public async CallNativeTokenIn(ctx: GalaChainContext, dto: ExactTokenQuantityDto): Promise<string> {
     return callNativeTokenIn(ctx, dto);
   }
 
@@ -140,7 +140,7 @@ export class LaunchpadContract extends GalaContract {
     in: NativeTokenQuantityDto,
     out: String
   })
-  public async CallMemeTokenOut(ctx: GalaChainContext, dto: NativeTokenQuantityDto): Promise<String> {
+  public async CallMemeTokenOut(ctx: GalaChainContext, dto: NativeTokenQuantityDto): Promise<string> {
     return callMemeTokenOut(ctx, dto);
   }
 
@@ -149,7 +149,7 @@ export class LaunchpadContract extends GalaContract {
     in: ExactTokenQuantityDto,
     out: String
   })
-  public async CallNativeTokenOut(ctx: GalaChainContext, dto: ExactTokenQuantityDto): Promise<String> {
+  public async CallNativeTokenOut(ctx: GalaChainContext, dto: ExactTokenQuantityDto): Promise<string> {
     return callNativeTokenOut(ctx, dto);
   }
 
@@ -158,7 +158,7 @@ export class LaunchpadContract extends GalaContract {
     in: NativeTokenQuantityDto,
     out: String
   })
-  public async CallMemeTokenIn(ctx: GalaChainContext, dto: NativeTokenQuantityDto): Promise<String> {
+  public async CallMemeTokenIn(ctx: GalaChainContext, dto: NativeTokenQuantityDto): Promise<string> {
     return callMemeTokenIn(ctx, dto);
   }
 
@@ -167,7 +167,7 @@ export class LaunchpadContract extends GalaContract {
     in: PreMintCalculationDto,
     out: String
   })
-  public async CalculatePreMintTokens(ctx: GalaChainContext, dto: PreMintCalculationDto): Promise<String> {
+  public async CalculatePreMintTokens(ctx: GalaChainContext, dto: PreMintCalculationDto): Promise<string> {
     return calculatePreMintTokens(dto);
   }
 

@@ -33,8 +33,8 @@ export const sortString = (arr: string[]) => {
  * @param idx Element1 to swap
  * @param idx2 Element2 to swap
  */
-export const swapAmounts = (arr: string[] | BigNumber[], idx: number = 0, idx2: number = 1) => {
-  let temp = arr[idx];
+export const swapAmounts = (arr: string[] | BigNumber[], idx = 0, idx2 = 1) => {
+  const temp = arr[idx];
   arr[idx] = arr[idx2];
   arr[idx2] = temp;
 };
@@ -77,7 +77,9 @@ export function validateTokenOrder(token0: TokenClassKey, token1: TokenClassKey)
     throw new Error("Token0 must be smaller");
   } else if (normalizedToken0.localeCompare(normalizedToken1) === 0) {
     throw new Error(
-      `Cannot create pool of same tokens. Token0 ${JSON.stringify(token0)} and Token1 ${JSON.stringify(token1)} must be different.`
+      `Cannot create pool of same tokens. Token0 ${JSON.stringify(token0)} and Token1 ${JSON.stringify(
+        token1
+      )} must be different.`
     );
   }
   return [normalizedToken0, normalizedToken1];

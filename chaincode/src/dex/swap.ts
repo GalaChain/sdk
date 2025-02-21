@@ -44,8 +44,8 @@ import {
  */
 export async function swap(ctx: GalaChainContext, dto: SwapDto): Promise<SwapResponseDto> {
   const [token0, token1] = validateTokenOrder(dto.token0, dto.token1);
-  let zeroForOne = dto.zeroForOne;
-  let sqrtPriceLimit = dto.sqrtPriceLimit;
+  const zeroForOne = dto.zeroForOne;
+  const sqrtPriceLimit = dto.sqrtPriceLimit;
 
   const key = ctx.stub.createCompositeKey(Pool.INDEX_KEY, [token0, token1, dto.fee.toString()]);
   const pool = await getObjectByKey(ctx, Pool, key);
@@ -53,7 +53,7 @@ export async function swap(ctx: GalaChainContext, dto: SwapDto): Promise<SwapRes
   //If pool does not exist
   if (pool == undefined) throw new ConflictError("Pool does not exist");
 
-  let amounts = pool.swap(zeroForOne, dto.amount, sqrtPriceLimit);
+  const amounts = pool.swap(zeroForOne, dto.amount, sqrtPriceLimit);
   const poolAddrKey = genKey(pool.token0, pool.token1, pool.fee.toString());
   const poolVirtualAddress = virtualAddress(poolAddrKey);
 

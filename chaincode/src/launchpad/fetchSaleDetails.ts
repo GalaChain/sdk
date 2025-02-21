@@ -22,17 +22,17 @@ BigNumber.config({
 
 /**
  * Fetches the details of a specific token sale (LaunchpadSale) using its sale address.
- * 
- * This function retrieves the sale object from the chain using a composite key derived 
+ *
+ * This function retrieves the sale object from the chain using a composite key derived
  * from the sale address. If the sale record is not found, an error is thrown.
- * 
+ *
  * @param ctx - The context object providing access to the GalaChain environment.
  * @param fetchSaleDTO - An object containing the sale address:
  *   - `vaultAddress`: The address of the sale to be fetched.
- * 
- * @returns A promise that resolves to a `LaunchpadSale` object containing details about 
+ *
+ * @returns A promise that resolves to a `LaunchpadSale` object containing details about
  *          the specified token sale.
- * 
+ *
  * @throws NotFoundError if no sale record is found for the provided sale address.
  */
 export async function fetchSaleDetails(
@@ -48,4 +48,3 @@ export async function fetchSaleDetails(
 
   return sale;
 }
-

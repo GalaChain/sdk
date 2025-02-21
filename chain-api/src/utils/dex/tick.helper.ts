@@ -72,8 +72,8 @@ export function updateTick(
       feeGrowthOutside1: new BigNumber(0).toString()
     };
 
-  let liquidityGrossBefore = new BigNumber(tickData[tick].liquidityGross);
-  let liquidityGrossAfter = new BigNumber(liquidityGrossBefore).plus(liquidityDelta);
+  const liquidityGrossBefore = new BigNumber(tickData[tick].liquidityGross);
+  const liquidityGrossAfter = new BigNumber(liquidityGrossBefore).plus(liquidityDelta);
 
   if (liquidityGrossAfter.isGreaterThan(maxLiquidity))
     throw new DefaultError("liquidity crossed max liquidity");
@@ -95,13 +95,13 @@ export function updateTick(
   }
 
   //either tick is turning on or off
-  let flipped = liquidityGrossBefore.isEqualTo(0) != liquidityGrossAfter.isEqualTo(0);
+  const flipped = liquidityGrossBefore.isEqualTo(0) != liquidityGrossAfter.isEqualTo(0);
 
   return flipped;
 }
 
 function position(tick: number): [word: number, position: number] {
-  let wordPos = Math.floor(tick / 256); // Equivalent to tick >> 8
+  const wordPos = Math.floor(tick / 256); // Equivalent to tick >> 8
   let bitPos = tick % 256; // Equivalent to tick % 256
 
   if (bitPos < 0) bitPos += 256; // Ensure it's always positive like uint8
@@ -120,14 +120,14 @@ export function flipTick(bitmap: Bitmap, tick: number, tickSpacing: number) {
     throw new Error("Tick is not spaced " + tick + " " + tickSpacing);
   }
   tick /= tickSpacing;
-  let [word, pos] = position(tick);
-  let mask = BigInt(1) << BigInt(pos);
+  const [word, pos] = position(tick);
+  const mask = BigInt(1) << BigInt(pos);
 
   //initialise the bitmask for word if required
   if (bitmap[word] == undefined) bitmap[word] = BigInt(0).toString();
 
-  let currentMask = BigInt(bitmap[word]);
-  let newMask = currentMask ^ mask;
+  const currentMask = BigInt(bitmap[word]);
+  const newMask = currentMask ^ mask;
 
   //update bitmask state
   bitmap[word] = newMask.toString();
@@ -152,33 +152,33 @@ export function nextInitialisedTickWithInSameWord(
   let compressed = Math.floor(tick / tickSpacing);
   if (tick < 0 && tick % tickSpacing != 0) compressed--;
   if (lte) {
-    let [word, pos] = position(compressed);
+    const [word, pos] = position(compressed);
 
     //initialise the bitmask for word if required
     if (bitmap[word] == undefined) bitmap[word] = BigInt(0).toString();
 
-    let bitmask = BigInt(bitmap[word]);
-    let mask = (BigInt(1) << BigInt(pos)) - BigInt(1) + (BigInt(1) << BigInt(pos));
-    let masked = bitmask & mask;
+    const bitmask = BigInt(bitmap[word]);
+    const mask = (BigInt(1) << BigInt(pos)) - BigInt(1) + (BigInt(1) << BigInt(pos));
+    const masked = bitmask & mask;
 
-    let newPos = mostSignificantBit(masked);
+    const newPos = mostSignificantBit(masked);
 
     const intialized = masked != BigInt(0);
-    let value = intialized ? compressed - (pos - newPos) : compressed - pos;
+    const value = intialized ? compressed - (pos - newPos) : compressed - pos;
     return [value * tickSpacing, intialized];
   } else {
     compressed = compressed + 1;
-    let [word, pos] = position(compressed);
+    const [word, pos] = position(compressed);
 
     //initialise the bitmask for word if required
     if (bitmap[word] == undefined) bitmap[word] = BigInt(0).toString();
 
-    let bitmask = BigInt(bitmap[word]);
-    let mask = ~((BigInt(1) << BigInt(pos)) - BigInt(1));
-    let masked = bitmask & mask;
+    const bitmask = BigInt(bitmap[word]);
+    const mask = ~((BigInt(1) << BigInt(pos)) - BigInt(1));
+    const masked = bitmask & mask;
 
     const intialized = masked != BigInt(0);
-    let newPos = leastSignificantBit(masked);
+    const newPos = leastSignificantBit(masked);
     const value = intialized ? compressed + newPos - pos : compressed + (2 ** 8 - 1 - pos);
     return [value * tickSpacing, intialized];
   }
@@ -259,8 +259,8 @@ export function getFeeGrowthInside(
     feeGrowthAbove1 = feeGrowthGlobal1.minus(new BigNumber(tickData[tickUpper].feeGrowthOutside1));
   }
 
-  let feeGrowthInside0 = feeGrowthGlobal0.minus(feeGrowthBelow0).minus(feeGrowthAbove0);
-  let feeGrowthInside1 = feeGrowthGlobal1.minus(feeGrowthBelow1).minus(feeGrowthAbove1);
+  const feeGrowthInside0 = feeGrowthGlobal0.minus(feeGrowthBelow0).minus(feeGrowthAbove0);
+  const feeGrowthInside1 = feeGrowthGlobal1.minus(feeGrowthBelow1).minus(feeGrowthAbove1);
 
   return [feeGrowthInside0, feeGrowthInside1];
 }
@@ -287,9 +287,9 @@ export function checkTicks(tickLower: number, tickUpper: number) {
  *  @return The max liquidity per tick
  */
 export function tickSpacingToMaxLiquidityPerTick(tickSpacing: number): BigNumber {
-  let minTick = Math.ceil((-887272 / tickSpacing) * tickSpacing);
-  let maxTick = Math.floor((887272 / tickSpacing) * tickSpacing);
-  let numTicks = (maxTick - minTick) / tickSpacing + 1;
+  const minTick = Math.ceil((-887272 / tickSpacing) * tickSpacing);
+  const maxTick = Math.floor((887272 / tickSpacing) * tickSpacing);
+  const numTicks = (maxTick - minTick) / tickSpacing + 1;
   return new BigNumber(2).pow(128).minus(1).dividedBy(numTicks);
 }
 /**

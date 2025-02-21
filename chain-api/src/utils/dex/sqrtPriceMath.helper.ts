@@ -32,7 +32,7 @@ export function getAmount0Delta(
   sqrtPriceB: BigNumber,
   liquidity: BigNumber
 ): BigNumber {
-  let [lowerPrice, higherPrice] = sqrtPriceA.isLessThan(sqrtPriceB)
+  const [lowerPrice, higherPrice] = sqrtPriceA.isLessThan(sqrtPriceB)
     ? [sqrtPriceA, sqrtPriceB]
     : [sqrtPriceB, sqrtPriceA];
 
@@ -54,7 +54,7 @@ export function getAmount1Delta(
   sqrtPriceUpper: BigNumber,
   liquidityDelta: BigNumber
 ): BigNumber {
-  let [lowerPrice, higherPrice] = sqrtPriceLower.isLessThan(sqrtPriceUpper)
+  const [lowerPrice, higherPrice] = sqrtPriceLower.isLessThan(sqrtPriceUpper)
     ? [sqrtPriceLower, sqrtPriceUpper]
     : [sqrtPriceUpper, sqrtPriceLower];
 

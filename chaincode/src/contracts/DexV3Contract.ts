@@ -34,7 +34,7 @@ import {
   Slot0Dto,
   SwapDto,
   SwapResponseDto,
-  UserBalanceResponseDto,
+  UserBalanceResponseDto
 } from "@gala-chain/api";
 
 import { version } from "../../package.json";
@@ -111,7 +111,7 @@ export class DexV3Contract extends GalaContract {
     in: GetPoolDto,
     out: String
   })
-  public async GetLiquidity(ctx: GalaChainContext, dto: GetPoolDto): Promise<String> {
+  public async GetLiquidity(ctx: GalaChainContext, dto: GetPoolDto): Promise<string> {
     return await getLiquidity(ctx, dto);
   }
 
@@ -139,16 +139,16 @@ export class DexV3Contract extends GalaContract {
   @GalaTransaction({
     type: EVALUATE,
     in: ExpectedTokenDTO,
-    out: Array<String>
+    out: Array<string>
   })
-  public async GetAddLiquidityEstimation(ctx: GalaChainContext, dto: ExpectedTokenDTO): Promise<String[]> {
+  public async GetAddLiquidityEstimation(ctx: GalaChainContext, dto: ExpectedTokenDTO): Promise<string[]> {
     return await getAddLiquidityEstimation(ctx, dto);
   }
 
   @GalaTransaction({
     type: EVALUATE,
     in: QuoteExactAmountDto,
-    out: Array<String>
+    out: Array<string>
   })
   public async QuoteExactAmount(ctx: GalaChainContext, dto: QuoteExactAmountDto) {
     return await quoteExactAmount(ctx, dto);
@@ -170,9 +170,9 @@ export class DexV3Contract extends GalaContract {
   @GalaTransaction({
     type: EVALUATE,
     in: BurnDto,
-    out: Array<String[]>
+    out: Array<string[]>
   })
-  public async GetRemoveLiquidityEstimation(ctx: GalaChainContext, dto: BurnDto): Promise<String[]> {
+  public async GetRemoveLiquidityEstimation(ctx: GalaChainContext, dto: BurnDto): Promise<string[]> {
     return await getRemoveLiquidityEstimation(ctx, dto);
   }
 
@@ -186,7 +186,7 @@ export class DexV3Contract extends GalaContract {
 
   @Submit({
     in: CollectProtocolFeesDTO,
-    out: Array<String[]>
+    out: Array<string[]>
   })
   public async CollectProtocolFees(ctx: GalaChainContext, dto: CollectProtocolFeesDTO) {
     return await collectProtocolFees(ctx, dto);

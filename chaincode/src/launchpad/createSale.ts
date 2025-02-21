@@ -13,18 +13,17 @@
  * limitations under the License.
  */
 import {
-
   CreateSaleResponse,
   CreateTokenSaleDTO,
   DefaultError,
   LaunchpadSale,
   NativeTokenQuantityDto,
-  TokenInstanceKey,
+  TokenInstanceKey
 } from "@gala-chain/api";
-
-import { GalaChainContext, createTokenClass, getObjectByKey, mintTokenWithAllowance, putChainObject } from "@gala-chain/chaincode";
 import { BigNumber } from "bignumber.js";
 
+import { mintTokenWithAllowance } from "../mint/index";
+import { createTokenClass } from "../token/index";
 import { buyWithNative } from "./buyWithNative";
 
 BigNumber.config({

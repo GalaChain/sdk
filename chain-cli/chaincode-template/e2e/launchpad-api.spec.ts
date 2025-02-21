@@ -171,14 +171,14 @@ describe("LaunchpadContract", () => {
     // Creating Gala Dummy token for Buying
     // Minting 100,000,000GALA  to user1
 
-    let classKey = new TokenClassKey();
+    const classKey = new TokenClassKey();
 
     classKey.collection = "GALA";
     classKey.category = "Unit";
     classKey.type = "none";
     classKey.additionalKey = "none";
 
-    let tokenClassDto = new CreateTokenClassDto();
+    const tokenClassDto = new CreateTokenClassDto();
 
     tokenClassDto.tokenClass = classKey;
     tokenClassDto.name = "GALA";
@@ -196,9 +196,9 @@ describe("LaunchpadContract", () => {
 
     tokenClassDto.sign(user1.privateKey);
 
-    let res2 = await client1.token.CreateToken(tokenClassDto);
+    const res2 = await client1.token.CreateToken(tokenClassDto);
 
-    let mintDTO = new MintTokenWithAllowanceDto();
+    const mintDTO = new MintTokenWithAllowanceDto();
 
     mintDTO.tokenClass = classKey;
     mintDTO.quantity = new BigNumber("3e+7");
@@ -207,9 +207,9 @@ describe("LaunchpadContract", () => {
 
     mintDTO.sign(user1.privateKey);
 
-    let response = await client1.token.MintTokenWithAllowance(mintDTO);
+    const response = await client1.token.MintTokenWithAllowance(mintDTO);
 
-    let tokenIntance = new TokenInstanceKey();
+    const tokenIntance = new TokenInstanceKey();
     tokenIntance.collection = "GALA";
     tokenIntance.category = "Unit";
     tokenIntance.type = "none";
@@ -875,7 +875,7 @@ describe("LaunchpadContract", () => {
 
       vaultAddress = sale.Data?.vaultAddress;
 
-      let arr: string[] = [
+      const arr: string[] = [
         "31.27520343",
         "100.3731319",
         "322.1326962",
@@ -956,7 +956,7 @@ describe("LaunchpadContract", () => {
       const sale = await createSale(client, user, "Asset5", "saleFive");
       vaultAddress = sale.Data?.vaultAddress;
 
-      let arr: string[] = [
+      const arr: string[] = [
         "31.27520343",
         "100.3731319",
         "322.1326962",
@@ -1054,8 +1054,8 @@ describe("LaunchpadContract", () => {
       vaultAddress = vaultAddress = sale.Data?.vaultAddress;
 
       const tokensToBuyAndSell = 1000000;
-      let sellingTokenQuantity = totalSupply;
-      let currentSupply = 0;
+      const sellingTokenQuantity = totalSupply;
+      const currentSupply = 0;
 
       for (let i = 1; i <= 10; i++) {
         let tokens = tokensToBuyAndSell * i;

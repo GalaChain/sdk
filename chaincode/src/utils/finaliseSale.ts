@@ -18,7 +18,7 @@ import {
   CreatePoolDto,
   ExpectedTokenDTO,
   LaunchpadFinalizeFeeAllocation,
-  LaunchpadSale,
+  LaunchpadSale
 } from "@gala-chain/api";
 import BigNumber from "bignumber.js";
 import Decimal from "decimal.js";
@@ -34,7 +34,7 @@ import { getObjectByKey, putChainObject } from "./state";
 
 export async function finalizeSale(ctx: GalaChainContext, sale: LaunchpadSale): Promise<void> {
   const key = ctx.stub.createCompositeKey(LaunchpadFinalizeFeeAllocation.INDEX_KEY, []);
-  let feeAllocation = await getObjectByKey(ctx, LaunchpadFinalizeFeeAllocation, key).catch(() => undefined);
+  const feeAllocation = await getObjectByKey(ctx, LaunchpadFinalizeFeeAllocation, key).catch(() => undefined);
 
   const platformFeeAddressConfiguration = await fetchPlatformFeeAddress(ctx);
   if (!platformFeeAddressConfiguration) {
@@ -76,8 +76,8 @@ export async function finalizeSale(ctx: GalaChainContext, sale: LaunchpadSale): 
     }
   });
 
-  let sellingTokenClassKey = sale.fetchSellingTokenInstanceKey().getTokenClassKey();
-  let nativeTokenClassKey = sale.fetchNativeTokenInstanceKey().getTokenClassKey();
+  const sellingTokenClassKey = sale.fetchSellingTokenInstanceKey().getTokenClassKey();
+  const nativeTokenClassKey = sale.fetchNativeTokenInstanceKey().getTokenClassKey();
 
   const { isChanged } = sortString([sellingTokenClassKey, nativeTokenClassKey].map(generateKeyFromClassKey));
 

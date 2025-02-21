@@ -42,13 +42,13 @@ export async function quoteExactAmount(
   const pool = await getObjectByKey(ctx, Pool, key);
   if (pool == undefined) throw new ConflictError("Pool does not exist");
 
-  let currentSqrtPrice = pool.sqrtPrice;
+  const currentSqrtPrice = pool.sqrtPrice;
   const amounts = pool.swap(
     zeroForOne,
     dto.amount.f18(),
     zeroForOne ? new BigNumber("0.000000000000000000054212147") : new BigNumber("18446050999999999999")
   );
-  let newSqrtPrice = pool.sqrtPrice;
+  const newSqrtPrice = pool.sqrtPrice;
 
   return formatBigNumber([...amounts, currentSqrtPrice, newSqrtPrice]);
 }

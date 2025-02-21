@@ -42,9 +42,9 @@ import {
 } from "../utils";
 import { BigNumberProperty } from "../validators";
 import { ChainObject } from "./ChainObject";
-import { TokenClassKey } from "./TokenClass";
 import { Bitmap, PositionData, Positions, TickData, TickDataObj } from "./DexDtos";
 import { StepComputations, SwapState } from "./DexTypes";
+import { TokenClassKey } from "./TokenClass";
 
 JSONSchema({
   description: "Dex V3 pool chain object with the core contract functionality."
@@ -128,7 +128,7 @@ export class Pool extends ChainObject {
     token1ClassKey: TokenClassKey,
     fee: number,
     initialSqrtPrice: BigNumber,
-    protocolFees: number = 0
+    protocolFees = 0
   ) {
     super();
     this.token0 = token0;
@@ -173,9 +173,9 @@ export class Pool extends ChainObject {
     liquidityDelta: BigNumber
   ): BigNumber[] {
     //tick to Price
-    let sqrtPriceLower = tickToSqrtPrice(tickLower);
-    let sqrtPriceUpper = tickToSqrtPrice(tickUpper);
-    let tickCurrent = sqrtPriceToTick(this.sqrtPrice);
+    const sqrtPriceLower = tickToSqrtPrice(tickLower);
+    const sqrtPriceUpper = tickToSqrtPrice(tickUpper);
+    const tickCurrent = sqrtPriceToTick(this.sqrtPrice);
 
     // Common checks for valid tick input
     checkTicks(tickLower, tickUpper);
@@ -221,7 +221,7 @@ export class Pool extends ChainObject {
   ) {
     if (!liquidityDelta.isEqualTo(0)) {
       //update ticks
-      let flippedLower = updateTick(
+      const flippedLower = updateTick(
         this.tickData,
         tickLower,
         tickCurrent,
@@ -231,7 +231,7 @@ export class Pool extends ChainObject {
         this.feeGrowthGlobal1,
         this.maxLiquidityPerTick
       );
-      let flippedUpper = updateTick(
+      const flippedUpper = updateTick(
         this.tickData,
         tickUpper,
         tickCurrent,
@@ -248,7 +248,7 @@ export class Pool extends ChainObject {
     }
 
     //calculate fee growth inside the range
-    let [feeGrowthInside0, feeGrowthInside1] = getFeeGrowthInside(
+    const [feeGrowthInside0, feeGrowthInside1] = getFeeGrowthInside(
       this.tickData,
       tickLower,
       tickUpper,
@@ -281,7 +281,7 @@ export class Pool extends ChainObject {
   public mint(recipient: string, tickLower: number, tickUpper: number, liquidity: BigNumber): BigNumber[] {
     if (liquidity.isEqualTo(0)) throw new DefaultError("Invalid Liquidity");
 
-    let [amount0Req, amount1Req] = this._modifyPosition(recipient, tickLower, tickUpper, liquidity);
+    const [amount0Req, amount1Req] = this._modifyPosition(recipient, tickLower, tickUpper, liquidity);
 
     return [amount0Req, amount1Req];
   }
@@ -321,13 +321,13 @@ export class Pool extends ChainObject {
         throw new DefaultError("SPL");
     }
 
-    let slot0 = {
+    const slot0 = {
       sqrtPrice: new BigNumber(this.sqrtPrice),
       tick: sqrtPriceToTick(this.sqrtPrice),
       liquidity: new BigNumber(this.liquidity)
     };
 
-    let state: SwapState = {
+    const state: SwapState = {
       amountSpecifiedRemaining: amountSpecified,
       amountCalculated: new BigNumber(0),
       sqrtPrice: new BigNumber(this.sqrtPrice),
@@ -337,11 +337,11 @@ export class Pool extends ChainObject {
       protocolFee: new BigNumber(0)
     };
 
-    let exactInput = amountSpecified.isGreaterThan(0);
+    const exactInput = amountSpecified.isGreaterThan(0);
 
     //swap till the amount specified for the swap is completely exhausted
     while (!state.amountSpecifiedRemaining.isEqualTo(0) && !state.sqrtPrice.isEqualTo(sqrtPriceLimit)) {
-      let step: StepComputations = {
+      const step: StepComputations = {
         sqrtPriceStart: state.sqrtPrice,
         tickNext: 0,
         sqrtPriceNext: BigNumber(0),
@@ -433,11 +433,11 @@ export class Pool extends ChainObject {
         this.protocolFeesToken1 = this.protocolFeesToken1.plus(state.protocolFee);
     }
 
-    let amount0: BigNumber =
+    const amount0: BigNumber =
       zeroForOne == exactInput
         ? new BigNumber(amountSpecified).minus(state.amountSpecifiedRemaining)
         : state.amountCalculated;
-    let amount1: BigNumber =
+    const amount1: BigNumber =
       zeroForOne == exactInput
         ? new BigNumber(state.amountCalculated)
         : new BigNumber(amountSpecified).minus(state.amountSpecifiedRemaining);
@@ -461,7 +461,7 @@ export class Pool extends ChainObject {
     amount0 = amount0.abs();
     amount1 = amount1.abs();
 
-    let key = `${owner}_${tickLower}_${tickUpper}`;
+    const key = `${owner}_${tickLower}_${tickUpper}`;
 
     if (this.positions[key] == undefined) throw new DefaultError("Invalid position");
 
@@ -518,9 +518,9 @@ export class Pool extends ChainObject {
     tickUpper: number,
     isToken0: boolean
   ): [amount0: string, amount1: string, liquidity: string] {
-    let sqrtPriceLower = tickToSqrtPrice(tickLower);
-    let sqrtPriceUpper = tickToSqrtPrice(tickUpper);
-    let tickCurrent = sqrtPriceToTick(this.sqrtPrice);
+    const sqrtPriceLower = tickToSqrtPrice(tickLower);
+    const sqrtPriceUpper = tickToSqrtPrice(tickUpper);
+    const tickCurrent = sqrtPriceToTick(this.sqrtPrice);
     let liquidity: BigNumber;
     let res: BigNumber[];
     amount = amount;

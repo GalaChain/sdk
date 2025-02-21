@@ -21,7 +21,7 @@ import signatures, { SigningScheme } from "./signatures";
 export * from "./chain-decorators";
 export * from "./error";
 export * from "../ethers/type-utils";
-export * from "./dex"
+export * from "./dex";
 
 export {
   deserialize,

@@ -12,11 +12,11 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+import { LaunchpadSale, PreMintCalculationDto } from "@gala-chain/api";
 import { BigNumber } from "bignumber.js";
 import Decimal from "decimal.js";
 
 import { getBondingConstants } from "../utils";
-import { LaunchpadSale, PreMintCalculationDto } from "@gala-chain/api";
 
 BigNumber.config({
   ROUNDING_MODE: BigNumber.ROUND_UP

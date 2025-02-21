@@ -53,7 +53,7 @@ export function getBondingConstants() {
 export async function fetchPlatformFeeAddress(ctx: GalaChainContext): Promise<PlatformFeeConfig | undefined> {
   const key = ctx.stub.createCompositeKey(PlatformFeeConfig.INDEX_KEY, []);
 
-  let platformFeeAddress = await getObjectByKey(ctx, PlatformFeeConfig, key).catch((e) => {
+  const platformFeeAddress = await getObjectByKey(ctx, PlatformFeeConfig, key).catch((e) => {
     const chainError = ChainError.from(e);
     if (chainError.matches(ErrorCode.NOT_FOUND)) {
       return undefined;

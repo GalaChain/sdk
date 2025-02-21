@@ -32,9 +32,11 @@ export function calMemeTokensOutTest(totalSupply: number, amount: number): strin
 export function calNativeTokensInTest(totalSupply, amount) {
   const totalSupplyF = new Decimal(totalSupply).div(SCALE);
   const amountF = new Decimal(amount).div(SCALE);
-  const result = A.times(Decimal.exp(B.times(totalSupplyF.plus(amountF))).minus(Decimal.exp(B.times(totalSupplyF))))
-  .div(B)
-  .times(SCALE);
+  const result = A.times(
+    Decimal.exp(B.times(totalSupplyF.plus(amountF))).minus(Decimal.exp(B.times(totalSupplyF)))
+  )
+    .div(B)
+    .times(SCALE);
   const roundedResult = result.toDecimalPlaces(8, Decimal.ROUND_UP);
 
   return roundedResult;

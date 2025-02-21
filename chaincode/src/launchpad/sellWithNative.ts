@@ -13,9 +13,10 @@
  * limitations under the License.
  */
 import { DefaultError, NativeTokenQuantityDto, TradeResponse } from "@gala-chain/api";
-import { GalaChainContext, fetchTokenClass, putChainObject, transferToken } from "@gala-chain/chaincode";
 import { BigNumber } from "bignumber.js";
 
+import { fetchTokenClass } from "../token/index";
+import { transferToken } from "../transfer/index";
 import { fetchAndValidateSale } from "../utils";
 import { callMemeTokenIn } from "./callMemeTokenIn";
 

@@ -39,7 +39,7 @@ export function updatePositions(
   feeGrowthInside0: BigNumber,
   feeGrowthInside1: BigNumber
 ) {
-  let key = `${owner}_${tickLower}_${tickUpper}`;
+  const key = `${owner}_${tickLower}_${tickUpper}`;
 
   if (positions[key] == undefined) {
     positions[key] = new PositionData();
@@ -50,7 +50,7 @@ export function updatePositions(
     positions[key].tokensOwed0 = new BigNumber(0).toString();
     positions[key].tokensOwed1 = new BigNumber(0).toString();
   }
-  let positionData = positions[key];
+  const positionData = positions[key];
 
   let liquidityNext: BigNumber;
   if (liquidityDelta.isEqualTo(0)) {
@@ -62,10 +62,10 @@ export function updatePositions(
   }
 
   // Calculate accumulated fees
-  let tokensOwed0 = feeGrowthInside0
+  const tokensOwed0 = feeGrowthInside0
     .minus(new BigNumber(positionData.feeGrowthInside0Last))
     .times(new BigNumber(positionData.liquidity));
-  let tokensOwed1 = feeGrowthInside1
+  const tokensOwed1 = feeGrowthInside1
     .minus(new BigNumber(positionData.feeGrowthInside1Last))
     .times(new BigNumber(positionData.liquidity));
 

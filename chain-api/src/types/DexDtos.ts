@@ -41,7 +41,7 @@ export class CreatePoolDto extends ChainCallDTO {
     token1: TokenClassKey,
     fee: number,
     initialSqrtPrice: BigNumber,
-    protocolFee: number = 0
+    protocolFee = 0
   ) {
     super();
     this.token0 = token0;
@@ -286,7 +286,7 @@ export class GetUserPositionsDto extends ChainCallDTO {
   @IsOptional()
   public limit: number;
 
-  constructor(user: string, page: number = 1, limit: number = 10) {
+  constructor(user: string, page = 1, limit = 10) {
     super();
     this.user = user;
     this.page = page;

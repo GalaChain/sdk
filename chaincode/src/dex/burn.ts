@@ -56,10 +56,10 @@ export async function burn(ctx: GalaChainContext, dto: BurnDto) {
   const userKey = ctx.stub.createCompositeKey(UserPosition.INDEX_KEY, [owner]);
   const poolAddrKey = genKey(pool.token0, pool.token1, pool.fee.toString());
   const poolVirtualAddress = virtualAddress(poolAddrKey);
-  let userPosition = await getObjectByKey(ctx, UserPosition, userKey).catch(() => undefined);
+  const userPosition = await getObjectByKey(ctx, UserPosition, userKey).catch(() => undefined);
   if (!userPosition) throw new ConflictError("User position does not exist");
 
-  let tickLower = parseInt(dto.tickLower.toString()),
+  const tickLower = parseInt(dto.tickLower.toString()),
     tickUpper = parseInt(dto.tickUpper.toString());
   userPosition.removeLiquidity(poolAddrKey, tickLower, tickUpper, dto.amount.f18());
 

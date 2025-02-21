@@ -12,15 +12,21 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-import { DefaultError, ExactTokenQuantityDto, LaunchpadSale, NativeTokenQuantityDto, TradeResponse } from "@gala-chain/api";
+import {
+  DefaultError,
+  ExactTokenQuantityDto,
+  LaunchpadSale,
+  NativeTokenQuantityDto,
+  TradeResponse
+} from "@gala-chain/api";
 import { BigNumber } from "bignumber.js";
 
+import { fetchTokenClass } from "../token";
+import { transferToken } from "../transfer";
+import { GalaChainContext } from "../types";
 import { fetchAndValidateSale, finalizeSale, putChainObject } from "../utils";
 import { callMemeTokenOut } from "./callMemeTokenOut";
 import { callNativeTokenIn } from "./callNativeTokenIn";
-import { GalaChainContext } from "../types";
-import { transferToken } from "../transfer";
-import { fetchTokenClass } from "../token";
 
 BigNumber.config({
   ROUNDING_MODE: BigNumber.ROUND_UP

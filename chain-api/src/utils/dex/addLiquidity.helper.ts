@@ -35,7 +35,7 @@ import { getAmount0Delta, getAmount1Delta } from "./sqrtPriceMath.helper";
 
 export function liquidity0(amount: BigNumber, sqrtPriceA: BigNumber, sqrtPriceB: BigNumber): BigNumber {
   if (sqrtPriceA.gt(sqrtPriceB)) {
-    let temp = sqrtPriceB;
+    const temp = sqrtPriceB;
     sqrtPriceB = sqrtPriceA;
     sqrtPriceA = temp;
   }
@@ -53,7 +53,7 @@ export function liquidity0(amount: BigNumber, sqrtPriceA: BigNumber, sqrtPriceB:
  */
 export function liquidity1(amount: BigNumber, sqrtPriceA: BigNumber, sqrtPriceB: BigNumber): BigNumber {
   if (sqrtPriceA.gt(sqrtPriceB)) {
-    let temp = sqrtPriceB;
+    const temp = sqrtPriceB;
     sqrtPriceB = sqrtPriceA;
     sqrtPriceA = temp;
   }

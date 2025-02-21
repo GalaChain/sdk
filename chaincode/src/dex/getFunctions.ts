@@ -92,7 +92,7 @@ export async function getLiquidity(ctx: GalaChainContext, dto: GetPoolDto): Prom
    */
 export async function getPositions(ctx: GalaChainContext, dto: GetPositionDto): Promise<positionInfoDto> {
   const pool = await getPoolData(ctx, dto);
-  let key = genKeyWithPipe(dto.owner, dto.tickLower.toString(), dto.tickUpper.toString());
+  const key = genKeyWithPipe(dto.owner, dto.tickLower.toString(), dto.tickUpper.toString());
   if (!pool) throw new DefaultError("No pool for these tokens and fee exists");
   return formatBigNumber(pool.positions[key]);
 }
@@ -165,13 +165,13 @@ export function paginateLiquidityData(data: PositionsObject, page: number, limit
 export async function getAddLiquidityEstimation(
   ctx: GalaChainContext,
   dto: ExpectedTokenDTO
-): Promise<String[]> {
+): Promise<string[]> {
   const [token0, token1] = [dto.token0, dto.token1].map(generateKeyFromClassKey);
   if (token0.localeCompare(token1) > 0) {
     throw new Error("Token0 must be smaller");
   }
-  let zeroForOne = dto.zeroForOne;
-  let tickLower = parseInt(dto.tickLower.toString()),
+  const zeroForOne = dto.zeroForOne;
+  const tickLower = parseInt(dto.tickLower.toString()),
     tickUpper = parseInt(dto.tickUpper.toString());
   const getPool = new GetPoolDto(dto.token0, dto.token1, dto.fee);
   const pool = await getPoolData(ctx, getPool);
@@ -191,7 +191,7 @@ async function addMetaDataToPositions(
   ctx: GalaChainContext,
   positions: PositionsObject
 ): Promise<PositionsObject> {
-  for (let [key, value] of Object.entries(positions)) {
+  for (const [key, value] of Object.entries(positions)) {
     const poolKeys = key.split("_");
 
     const poolToken0ClassKey = new TokenClassKey();
