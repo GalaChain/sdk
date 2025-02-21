@@ -7,7 +7,7 @@
     "composite": true
   },
   "files": [],
-  "include": ["**/*", "package.json", "../chain-api/src/types/DexUserPositions.ts"],
+  "include": ["**/*", "package.json"],
   "exclude": ["lib", "**/*spec.ts", "src/__mocks__", "src/__test__"],
   "references": [
     {
