@@ -24,7 +24,8 @@
  */
 export enum ChainId {
   Ethereum = 2,
-  TON = 1001
+  TON = 1001,
+  Solana = 1002
 }
 
 /**
@@ -40,4 +41,4 @@ export enum ChainId {
  * and the `requestTokenBridgeOutFeeGate` implementation in the
  * `gala-chain/chaincode` package.
  */
-export const ChainsWithBridgeFeeSupport: ChainId[] = [ChainId.Ethereum, ChainId.TON];
+export const ChainsWithBridgeFeeSupport: ChainId[] = [ChainId.Ethereum, ChainId.TON, ChainId.Solana];
