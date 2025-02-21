@@ -24,6 +24,8 @@ import { BigNumber } from "bignumber.js";
 
 import { mintTokenWithAllowance } from "../mint/index";
 import { createTokenClass } from "../token/index";
+import { GalaChainContext } from "../types";
+import { getObjectByKey, putChainObject } from "../utils";
 import { buyWithNative } from "./buyWithNative";
 
 BigNumber.config({

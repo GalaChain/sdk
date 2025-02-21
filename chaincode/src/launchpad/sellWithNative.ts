@@ -17,7 +17,8 @@ import { BigNumber } from "bignumber.js";
 
 import { fetchTokenClass } from "../token/index";
 import { transferToken } from "../transfer/index";
-import { fetchAndValidateSale } from "../utils";
+import { GalaChainContext } from "../types";
+import { fetchAndValidateSale, putChainObject } from "../utils";
 import { callMemeTokenIn } from "./callMemeTokenIn";
 
 BigNumber.config({

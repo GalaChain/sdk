@@ -164,8 +164,8 @@ describe("Dex v3 Testing", () => {
       const balancesData = fetchBalanceRes.Data;
       if (balancesData) {
         for (const balance of balancesData) {
-          const balanceN = balance as any;
-          expect(balanceN.quantity).toEqual(GENERAL.MINT_QUANTITY.toString());
+          const balanceN = balance;
+          expect(balanceN.getQuantityTotal()).toEqual(GENERAL.MINT_QUANTITY.toString());
         }
       }
     });
