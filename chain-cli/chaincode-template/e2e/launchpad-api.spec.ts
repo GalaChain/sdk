@@ -38,7 +38,6 @@ import {
   TokenInstanceKey,
   TradeCalculationResDto,
   TradeResDto,
-  TradeResponse,
   TransferTokenDto
 } from "@gala-chain/api";
 import {

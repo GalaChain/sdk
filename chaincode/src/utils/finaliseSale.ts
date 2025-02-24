@@ -16,7 +16,7 @@ import {
   AddLiquidityDTO,
   BurnTokenQuantity,
   CreatePoolDto,
-  ExpectedTokenDTO,
+  GetAddLiquidityEstimationDto,
   LaunchpadFinalizeFeeAllocation,
   LaunchpadSale
 } from "@gala-chain/api";
@@ -91,7 +91,7 @@ export async function finalizeSale(ctx: GalaChainContext, sale: LaunchpadSale): 
 
   await createPool(ctx, poolDTO);
 
-  const expectedTokenDTO = new ExpectedTokenDTO(
+  const expectedTokenDTO = new GetAddLiquidityEstimationDto(
     isChanged ? nativeTokenClassKey : sellingTokenClassKey,
     isChanged ? sellingTokenClassKey : nativeTokenClassKey,
     3000,
@@ -108,10 +108,10 @@ export async function finalizeSale(ctx: GalaChainContext, sale: LaunchpadSale): 
     3000,
     -887220,
     887220,
-    new BigNumber(liquidity[0].toString()),
-    new BigNumber(liquidity[1].toString()),
-    new BigNumber(liquidity[0].toString()).times(0.9999999),
-    new BigNumber(liquidity[1].toString()).times(0.9999999)
+    new BigNumber(liquidity.amount0.toString()),
+    new BigNumber(liquidity.amount1.toString()),
+    new BigNumber(liquidity.amount0.toString()).times(0.9999999),
+    new BigNumber(liquidity.amount1.toString()).times(0.9999999)
   );
 
   await addLiquidity(ctx, positionDto, sale.vaultAddress);

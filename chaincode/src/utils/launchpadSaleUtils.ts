@@ -35,7 +35,8 @@ export async function fetchAndValidateSale(
 
   if (sale === undefined) {
     throw new NotFoundError("Sale record not found.");
-  } else if (sale.saleStatus === SaleStatus.END) {
+  }
+  if (sale.saleStatus === SaleStatus.END) {
     throw new DefaultError("This sale has already ended.");
   }
 
