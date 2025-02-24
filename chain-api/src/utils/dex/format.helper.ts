@@ -12,24 +12,14 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-import deserialize from "./deserialize";
-import { Primitive, generateResponseSchema, generateSchema } from "./generate-schema";
-import { getValidationErrorMessages } from "./getValidationErrorMessages";
-import serialize from "./serialize";
-import signatures, { SigningScheme } from "./signatures";
+import BigNumber from "bignumber.js";
 
-export * from "./chain-decorators";
-export * from "./error";
-export * from "../ethers/type-utils";
-export * from "./dex";
-
-export {
-  deserialize,
-  serialize,
-  generateSchema,
-  generateResponseSchema,
-  getValidationErrorMessages,
-  Primitive,
-  signatures,
-  SigningScheme
+export const requirePosititve = (...params) => {
+  for (const positive of params) {
+    if (positive instanceof BigNumber) {
+      if (positive.lt(new BigNumber(0))) {
+        throw new Error("Uint Out of Bounds error :Uint");
+      }
+    }
+  }
 };
