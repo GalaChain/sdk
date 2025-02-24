@@ -13,7 +13,6 @@
  * limitations under the License.
  */
 export * from "./addLiquidity.helper";
-export * from "./bignumber.helper";
 export * from "./bitMath.helper";
 export * from "./format.helper";
 export * from "./initalize";

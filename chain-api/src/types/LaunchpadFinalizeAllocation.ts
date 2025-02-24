@@ -23,7 +23,7 @@ import { ChainObject } from "./ChainObject";
 })
 export class LaunchpadFinalizeFeeAllocation extends ChainObject {
   @Exclude()
-  static INDEX_KEY = "GCLFFA"; //GalaChain Launchpad Final fee Allocatoin
+  static INDEX_KEY = "GCLFFA"; //GalaChain Launchpad Final Fee Allocatoin
 
   @IsNumber()
   @Min(0)

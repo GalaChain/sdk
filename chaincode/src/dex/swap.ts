@@ -12,7 +12,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-import { ConflictError, DefaultError, Pool, SwapDto, SwapResponseDto } from "@gala-chain/api";
+import { ConflictError, DefaultError, Pool, SwapDto, SwapResDto } from "@gala-chain/api";
 import BigNumber from "bignumber.js";
 
 import { fetchOrCreateBalance } from "../balances";
@@ -42,7 +42,7 @@ import {
   - sqrtPriceLimit – The square root price limit to protect against excessive price impact.
  * @returns 
  */
-export async function swap(ctx: GalaChainContext, dto: SwapDto): Promise<SwapResponseDto> {
+export async function swap(ctx: GalaChainContext, dto: SwapDto): Promise<SwapResDto> {
   const [token0, token1] = validateTokenOrder(dto.token0, dto.token1);
   const zeroForOne = dto.zeroForOne;
   const sqrtPriceLimit = dto.sqrtPriceLimit;
@@ -103,7 +103,7 @@ export async function swap(ctx: GalaChainContext, dto: SwapDto): Promise<SwapRes
     }
   }
 
-  const response = new SwapResponseDto(
+  const response = new SwapResDto(
     tokenClasses[0].symbol,
     tokenClasses[0].image,
     tokenClasses[1].symbol,

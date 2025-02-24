@@ -14,12 +14,11 @@
  */
 import {
   AddLiquidityDTO,
-  AddLiquidityResponseDTO,
+  AddLiquidityResDto,
   ConflictError,
   Pool,
-  UserBalanceResponseDto,
+  UserBalanceResDto,
   UserPosition,
-  formatBigNumber,
   getLiquidityForAmounts,
   tickToSqrtPrice
 } from "@gala-chain/api";
@@ -43,9 +42,13 @@ import {
  * @param ctx GalaChainContext – The execution context that provides access to the GalaChain environment.
  * @param dto AddLiquidityDTO – A data transfer object containing liquidity details such as token amounts, pool parameters, and fee tiers.
  * @param launchpadAddress string – (Optional) The address of a launchpad contract if liquidity is being added via a specific launchpad mechanism.
- * @returns AddLiquidityResponseDTO
+ * @returns AddLiquidityResDto
  */
-export async function addLiquidity(ctx: GalaChainContext, dto: AddLiquidityDTO, launchpadAddress?: string) {
+export async function addLiquidity(
+  ctx: GalaChainContext,
+  dto: AddLiquidityDTO,
+  launchpadAddress?: string
+): Promise<AddLiquidityResDto> {
   const [token0, token1] = validateTokenOrder(dto.token0, dto.token1);
 
   const key = ctx.stub.createCompositeKey(Pool.INDEX_KEY, [token0, token1, dto.fee.toString()]);
@@ -155,10 +158,7 @@ export async function addLiquidity(ctx: GalaChainContext, dto: AddLiquidityDTO, 
 
   const liquidityProviderToken0Balance = await fetchOrCreateBalance(ctx, ctx.callingUser, token0InstanceKey);
   const liquidityProviderToken1Balance = await fetchOrCreateBalance(ctx, ctx.callingUser, token1InstanceKey);
-  const userBalances = new UserBalanceResponseDto(
-    liquidityProviderToken0Balance,
-    liquidityProviderToken1Balance
-  );
-  const response = new AddLiquidityResponseDTO(userBalances, formatBigNumber([amount0, amount1]));
+  const userBalances = new UserBalanceResDto(liquidityProviderToken0Balance, liquidityProviderToken1Balance);
+  const response = new AddLiquidityResDto(userBalances, [amount0, amount1]);
   return response;
 }

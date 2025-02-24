@@ -25,7 +25,6 @@ import {
   computeSwapStep,
   feeAmountTickSpacing,
   flipTick,
-  formatBigNumber,
   getAmount0Delta,
   getAmount1Delta,
   getFeeGrowthInside,
@@ -46,9 +45,9 @@ import { Bitmap, PositionData, Positions, TickData, TickDataObj } from "./DexDto
 import { StepComputations, SwapState } from "./DexTypes";
 import { TokenClassKey } from "./TokenClass";
 
-JSONSchema({
-  description: "Dex V3 pool chain object with the core contract functionality."
-});
+@JSONSchema({
+  description: "Uniswap V3 pool chain object with the core contract functionality."
+})
 export class Pool extends ChainObject {
   @Exclude()
   static INDEX_KEY = "GCDVP"; //GalaChain Dex V3 Pool
@@ -137,11 +136,8 @@ export class Pool extends ChainObject {
     this.token1ClassKey = token1ClassKey;
     this.fee = fee;
     this.positions = {};
-    //  ||  new Map<string, PositionData>();
     this.bitmap = {};
-    // new Map<number, string>();
     this.tickData = {};
-    // new Map<number, TickData>();
     this.sqrtPrice = initialSqrtPrice;
     this.liquidity = new BigNumber(0);
     this.feeGrowthGlobal0 = new BigNumber(0);
@@ -377,7 +373,6 @@ export class Pool extends ChainObject {
         state.amountSpecifiedRemaining,
         this.fee
       );
-
       if (exactInput) {
         state.amountSpecifiedRemaining = state.amountSpecifiedRemaining.minus(
           step.amountIn.plus(step.feeAmount)
@@ -517,7 +512,7 @@ export class Pool extends ChainObject {
     tickLower: number,
     tickUpper: number,
     isToken0: boolean
-  ): [amount0: string, amount1: string, liquidity: string] {
+  ): BigNumber[] {
     const sqrtPriceLower = tickToSqrtPrice(tickLower);
     const sqrtPriceUpper = tickToSqrtPrice(tickUpper);
     const tickCurrent = sqrtPriceToTick(this.sqrtPrice);
@@ -544,7 +539,7 @@ export class Pool extends ChainObject {
       }
       res = [new BigNumber(0), amount, liquidity1(amount, sqrtPriceLower, sqrtPriceUpper)];
     }
-    return formatBigNumber(res);
+    return res;
   }
 
   /**

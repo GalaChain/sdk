@@ -12,7 +12,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-import { BurnDto, ConflictError, Pool, formatBigNumber } from "@gala-chain/api";
+import { BurnDto, ConflictError, GetRemoveLiqEstimationResDto, Pool } from "@gala-chain/api";
 
 import { GalaChainContext } from "../types";
 import { getObjectByKey, validateTokenOrder } from "../utils";
@@ -23,7 +23,10 @@ import { getObjectByKey, validateTokenOrder } from "../utils";
  * @param dto BurnDto – A data transfer object containing details of the liquidity position to be removed, including pool information, token amounts, and position ID.
  * @returns array with estimated value recieved after burning the positions
  */
-export async function getRemoveLiquidityEstimation(ctx: GalaChainContext, dto: BurnDto): Promise<string[]> {
+export async function getRemoveLiquidityEstimation(
+  ctx: GalaChainContext,
+  dto: BurnDto
+): Promise<GetRemoveLiqEstimationResDto> {
   const [token0, token1] = validateTokenOrder(dto.token0, dto.token1);
 
   const key = ctx.stub.createCompositeKey(Pool.INDEX_KEY, [token0, token1, dto.fee.toString()]);
@@ -36,5 +39,5 @@ export async function getRemoveLiquidityEstimation(ctx: GalaChainContext, dto: B
     tickUpper = parseInt(dto.tickUpper.toString());
   const amounts = pool.burn(ctx.callingUser, tickLower, tickUpper, dto.amount.f18());
 
-  return formatBigNumber(amounts);
+  return new GetRemoveLiqEstimationResDto(amounts[0], amounts[1]);
 }

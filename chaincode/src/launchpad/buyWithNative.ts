@@ -17,7 +17,7 @@ import {
   ExactTokenQuantityDto,
   LaunchpadSale,
   NativeTokenQuantityDto,
-  TradeResponse
+  TradeResDto
 } from "@gala-chain/api";
 import { BigNumber } from "bignumber.js";
 
@@ -44,7 +44,7 @@ BigNumber.config({
  * @param buyTokenDTO - The data transfer object containing the sale address,
  *                      native token amount to spend, and optional expected token amount.
  *
- * @returns A promise that resolves to a `TradeResponse` containing the updated
+ * @returns A promise that resolves to a `TradeResDto` containing the updated
  *          balances of the purchased token and the native token for the buyer.
  *
  * @throws DefaultError if the expected tokens to be received are less than the
@@ -53,7 +53,7 @@ BigNumber.config({
 export async function buyWithNative(
   ctx: GalaChainContext,
   buyTokenDTO: NativeTokenQuantityDto
-): Promise<TradeResponse> {
+): Promise<TradeResDto> {
   let isSaleFinalised = false;
   const sale = await fetchAndValidateSale(ctx, buyTokenDTO.vaultAddress);
   const tokensLeftInVault = new BigNumber(sale.sellingTokenQuantity);
@@ -111,7 +111,6 @@ export async function buyWithNative(
   await putChainObject(ctx, sale);
 
   if (isSaleFinalised) {
-    // todo: function to create v3 pool and add liquidity
     await finalizeSale(ctx, sale);
   }
 

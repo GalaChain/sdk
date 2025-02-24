@@ -14,27 +14,33 @@
  */
 import {
   AddLiquidityDTO,
-  AddLiquidityResponseDTO,
+  AddLiquidityResDto,
   BurnDto,
   ChainCallDTO,
-  CollectDTO,
-  CollectProtocolFeesDTO,
+  CollectDto,
+  CollectProtocolFeesDto,
+  CollectProtocolFeesResDto,
   ConfigurePlatformFeeAddressDto,
   CreatePoolDto,
-  ExpectedTokenDTO,
+  GetAddLiquidityEstimationDto,
+  GetAddLiquidityEstimationResDto,
+  GetLiquidityResDto,
   GetPoolDto,
   GetPositionDto,
-  GetUserPositionResponse,
+  GetPositionResDto,
+  GetRemoveLiqEstimationResDto,
   GetUserPositionsDto,
+  GetUserPositionsResDto,
   PlatformFeeConfig,
   Pool,
-  PositionDataDTO,
   QuoteExactAmountDto,
-  SetProtocolFeeDTO,
-  Slot0Dto,
+  QuoteExactAmountResDto,
+  SetProtocolFeeDto,
+  SetProtocolFeeResDto,
+  Slot0ResDto,
   SwapDto,
-  SwapResponseDto,
-  UserBalanceResponseDto
+  SwapResDto,
+  UserBalanceResDto
 } from "@gala-chain/api";
 
 import { version } from "../../package.json";
@@ -75,82 +81,88 @@ export class DexV3Contract extends GalaContract {
 
   @Submit({
     in: AddLiquidityDTO,
-    out: AddLiquidityResponseDTO
+    out: AddLiquidityResDto
   })
-  public async AddLiquidity(ctx: GalaChainContext, dto: AddLiquidityDTO): Promise<AddLiquidityResponseDTO> {
+  public async AddLiquidity(ctx: GalaChainContext, dto: AddLiquidityDTO): Promise<AddLiquidityResDto> {
     return await addLiquidity(ctx, dto);
   }
 
   @Submit({
     in: SwapDto,
-    out: SwapResponseDto
+    out: SwapResDto
   })
-  public async Swap(ctx: GalaChainContext, dto: SwapDto): Promise<SwapResponseDto> {
+  public async Swap(ctx: GalaChainContext, dto: SwapDto): Promise<SwapResDto> {
     return await swap(ctx, dto);
   }
 
   @Submit({
     in: BurnDto,
-    out: UserBalanceResponseDto
+    out: UserBalanceResDto
   })
-  public async RemoveLiquidity(ctx: GalaChainContext, dto: BurnDto): Promise<UserBalanceResponseDto> {
+  public async RemoveLiquidity(ctx: GalaChainContext, dto: BurnDto): Promise<UserBalanceResDto> {
     return await burn(ctx, dto);
   }
 
   @GalaTransaction({
     type: EVALUATE,
     in: GetPoolDto,
-    out: Slot0Dto
+    out: Slot0ResDto
   })
-  public async GetSlot0(ctx: GalaChainContext, dto: GetPoolDto): Promise<Slot0Dto> {
+  public async GetSlot0(ctx: GalaChainContext, dto: GetPoolDto): Promise<Slot0ResDto> {
     return await getSlot0(ctx, dto);
   }
 
   @GalaTransaction({
     type: EVALUATE,
     in: GetPoolDto,
-    out: String
+    out: GetLiquidityResDto
   })
-  public async GetLiquidity(ctx: GalaChainContext, dto: GetPoolDto): Promise<string> {
+  public async GetLiquidity(ctx: GalaChainContext, dto: GetPoolDto): Promise<GetLiquidityResDto> {
     return await getLiquidity(ctx, dto);
   }
 
   @GalaTransaction({
     type: EVALUATE,
     in: GetPositionDto,
-    out: PositionDataDTO
+    out: GetPositionResDto
   })
-  public async GetPositions(ctx: GalaChainContext, dto: GetPositionDto): Promise<PositionDataDTO> {
+  public async GetPositions(ctx: GalaChainContext, dto: GetPositionDto): Promise<GetPositionResDto> {
     return await getPositions(ctx, dto);
   }
 
   @GalaTransaction({
     type: EVALUATE,
     in: GetUserPositionsDto,
-    out: GetUserPositionResponse
+    out: GetUserPositionsResDto
   })
   public async GetUserPositions(
     ctx: GalaChainContext,
     dto: GetUserPositionsDto
-  ): Promise<GetUserPositionResponse> {
+  ): Promise<GetUserPositionsResDto> {
     return await getUserPositions(ctx, dto);
   }
 
   @GalaTransaction({
     type: EVALUATE,
-    in: ExpectedTokenDTO,
-    out: Array<string>
+    in: GetAddLiquidityEstimationDto,
+    out: GetAddLiquidityEstimationResDto
   })
-  public async GetAddLiquidityEstimation(ctx: GalaChainContext, dto: ExpectedTokenDTO): Promise<string[]> {
+  public async GetAddLiquidityEstimation(
+    ctx: GalaChainContext,
+    dto: GetAddLiquidityEstimationDto
+  ): Promise<GetAddLiquidityEstimationResDto> {
     return await getAddLiquidityEstimation(ctx, dto);
   }
 
   @GalaTransaction({
     type: EVALUATE,
     in: QuoteExactAmountDto,
-    out: Array<string>
+    out: QuoteExactAmountResDto
   })
-  public async QuoteExactAmount(ctx: GalaChainContext, dto: QuoteExactAmountDto) {
+  public async QuoteExactAmount(
+    ctx: GalaChainContext,
+    dto: QuoteExactAmountDto
+  ): Promise<QuoteExactAmountResDto> {
     return await quoteExactAmount(ctx, dto);
   }
   @GalaTransaction({
@@ -170,33 +182,39 @@ export class DexV3Contract extends GalaContract {
   @GalaTransaction({
     type: EVALUATE,
     in: BurnDto,
-    out: Array<string[]>
+    out: GetRemoveLiqEstimationResDto
   })
-  public async GetRemoveLiquidityEstimation(ctx: GalaChainContext, dto: BurnDto): Promise<string[]> {
+  public async GetRemoveLiquidityEstimation(
+    ctx: GalaChainContext,
+    dto: BurnDto
+  ): Promise<GetRemoveLiqEstimationResDto> {
     return await getRemoveLiquidityEstimation(ctx, dto);
   }
 
   @Submit({
-    in: CollectDTO,
-    out: UserBalanceResponseDto
+    in: CollectDto,
+    out: UserBalanceResDto
   })
-  public async CollectFees(ctx: GalaChainContext, dto: CollectDTO): Promise<UserBalanceResponseDto> {
+  public async CollectFees(ctx: GalaChainContext, dto: CollectDto): Promise<UserBalanceResDto> {
     return await collect(ctx, dto);
   }
 
   @Submit({
-    in: CollectProtocolFeesDTO,
-    out: Array<string[]>
+    in: CollectProtocolFeesDto,
+    out: CollectProtocolFeesResDto
   })
-  public async CollectProtocolFees(ctx: GalaChainContext, dto: CollectProtocolFeesDTO) {
+  public async CollectProtocolFees(
+    ctx: GalaChainContext,
+    dto: CollectProtocolFeesDto
+  ): Promise<CollectProtocolFeesResDto> {
     return await collectProtocolFees(ctx, dto);
   }
 
   @Submit({
-    in: SetProtocolFeeDTO,
-    out: Number
+    in: SetProtocolFeeDto,
+    out: SetProtocolFeeResDto
   })
-  public async SetProtocolFee(ctx: GalaChainContext, dto: SetProtocolFeeDTO) {
+  public async SetProtocolFee(ctx: GalaChainContext, dto: SetProtocolFeeDto): Promise<SetProtocolFeeResDto> {
     return await setProtocolFee(ctx, dto);
   }
 
@@ -205,10 +223,7 @@ export class DexV3Contract extends GalaContract {
     out: PlatformFeeConfig,
     allowedOrgs: ["CuratorOrg"]
   })
-  public async FetchPlatformAddressConfig(
-    ctx: GalaChainContext,
-    dto: ChainCallDTO
-  ): Promise<PlatformFeeConfig> {
+  public async FetchPlatformAddressConfig(ctx: GalaChainContext): Promise<PlatformFeeConfig> {
     return fetchPlatformAddressConfig(ctx);
   }
 

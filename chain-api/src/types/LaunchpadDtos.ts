@@ -82,7 +82,7 @@ export class CreateTokenSaleDTO extends ChainCallDTO {
   }
 }
 
-export class CreateSaleResponse {
+export class CreateSaleResDto {
   @IsNotEmpty()
   public image: string;
 
@@ -163,7 +163,7 @@ export class NativeTokenQuantityDto extends ChainCallDTO {
   }
 }
 
-export class TradeResponse {
+export class TradeResDto {
   @IsOptional()
   public tokenBalance?: TokenBalance;
 
@@ -245,4 +245,10 @@ export class CollectFeeAddressDto extends ChainCallDTO {
   @IsNotEmpty()
   @IsString()
   public platformFeeCollectAddress: string;
+}
+
+export class TradeCalculationResDto {
+  @IsNotEmpty()
+  @IsString()
+  public calculatedQuantity: string;
 }

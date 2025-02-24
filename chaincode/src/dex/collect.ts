@@ -12,7 +12,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-import { CollectDTO, ConflictError, Pool, UserBalanceResponseDto, UserPosition } from "@gala-chain/api";
+import { CollectDto, ConflictError, Pool, UserBalanceResDto, UserPosition } from "@gala-chain/api";
 import BigNumber from "bignumber.js";
 
 import { fetchOrCreateBalance } from "../balances";
@@ -33,9 +33,9 @@ import {
  * @param ctx  GalaChainContext – The execution context providing access to the GalaChain environment.
  * @param dto Position details (pool information, tickUpper, tickLower).
 
- * @returns UserBalanceResponseDto
+ * @returns UserBalanceResDto
  */
-export async function collect(ctx: GalaChainContext, dto: CollectDTO): Promise<UserBalanceResponseDto> {
+export async function collect(ctx: GalaChainContext, dto: CollectDto): Promise<UserBalanceResDto> {
   const [token0, token1] = validateTokenOrder(dto.token0, dto.token1);
   const key = ctx.stub.createCompositeKey(Pool.INDEX_KEY, [token0, token1, dto.fee.toString()]);
   const pool = await getObjectByKey(ctx, Pool, key);
@@ -111,6 +111,6 @@ export async function collect(ctx: GalaChainContext, dto: CollectDTO): Promise<U
     ctx.callingUser,
     tokenInstanceKeys[1]
   );
-  const response = new UserBalanceResponseDto(liquidityProviderToken0Balance, liquidityProviderToken1Balance);
+  const response = new UserBalanceResDto(liquidityProviderToken0Balance, liquidityProviderToken1Balance);
   return response;
 }

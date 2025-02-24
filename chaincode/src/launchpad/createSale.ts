@@ -13,7 +13,7 @@
  * limitations under the License.
  */
 import {
-  CreateSaleResponse,
+  CreateSaleResDto,
   CreateTokenSaleDTO,
   DefaultError,
   LaunchpadSale,
@@ -47,7 +47,7 @@ BigNumber.config({
  *   - `tokenImage`: An optional image URL for the token.
  *   - `preBuyAmount`: The amount of native tokens to use for a pre-buy (optional).
  *
- * @returns A promise that resolves to a `CreateSaleResponse` object containing details about
+ * @returns A promise that resolves to a `CreateSaleResDto` object containing details about
  *          the created sale, including the vault address and token collection name.
  *
  * @throws DefaultError if:
@@ -57,7 +57,7 @@ BigNumber.config({
 export async function createSale(
   ctx: GalaChainContext,
   launchpadDetails: CreateTokenSaleDTO
-): Promise<CreateSaleResponse> {
+): Promise<CreateSaleResDto> {
   // Validate input parameters
 
   if (!launchpadDetails.websiteUrl && !launchpadDetails.telegramUrl && !launchpadDetails.twitterUrl) {

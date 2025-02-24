@@ -44,10 +44,10 @@ export async function callNativeTokenIn(
   buyTokenDTO: ExactTokenQuantityDto
 ): Promise<string> {
   const sale = await fetchAndValidateSale(ctx, buyTokenDTO.vaultAddress);
+  const totalTokensSold = new Decimal(sale.fetchTokensSold());
 
-  const totalTokensSold = new Decimal(sale.fetchTokensSold()); // 1e18 / x
-  let tokensToBuy = new Decimal(buyTokenDTO.tokenQuantity.toString()); // 0.5e18 / dx
-  const basePrice = new Decimal(sale.fetchBasePrice()); // base price / a
+  let tokensToBuy = new Decimal(buyTokenDTO.tokenQuantity.toString());
+  const basePrice = new Decimal(sale.fetchBasePrice());
   const { exponentFactor, euler, decimals } = getBondingConstants();
 
   if (tokensToBuy.add(totalTokensSold).greaterThan(new Decimal("1e+7"))) {
@@ -64,6 +64,5 @@ export async function callNativeTokenIn(
   const differenceOfExponentials = eResult1.minus(eResult2);
 
   const price = constantFactor.mul(differenceOfExponentials);
-  const roundedPrice = price.toDecimalPlaces(8, Decimal.ROUND_UP);
-  return roundedPrice.toString();
+  return price.toDecimalPlaces(8, Decimal.ROUND_UP).toString();
 }

@@ -46,12 +46,14 @@ export async function callNativeTokenOut(
 ): Promise<string> {
   const sale = await fetchAndValidateSale(ctx, sellTokenDTO.vaultAddress);
 
-  const totalTokensSold = new Decimal(sale.fetchTokensSold()); // 1e18 / x
-  let tokensToSell = new Decimal(sellTokenDTO.tokenQuantity.toString()); // 0.5e18 / dx
-  const basePrice = new Decimal(sale.fetchBasePrice()); // base price / a
+  const totalTokensSold = new Decimal(sale.fetchTokensSold());
+
+  let tokensToSell = new Decimal(sellTokenDTO.tokenQuantity.toString());
+  const basePrice = new Decimal(sale.fetchBasePrice());
   const { exponentFactor, euler, decimals } = getBondingConstants();
 
   let newTotalTokensSold = totalTokensSold.minus(tokensToSell);
+
   if (newTotalTokensSold.comparedTo(0) < 0) {
     tokensToSell = totalTokensSold;
     newTotalTokensSold = new Decimal(0);

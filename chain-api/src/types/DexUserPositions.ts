@@ -13,24 +13,27 @@
  * limitations under the License.
  */
 import BigNumber from "bignumber.js";
-import { Exclude } from "class-transformer";
-import { IsString } from "class-validator";
+import { Exclude, Type } from "class-transformer";
+import { IsString, ValidateNested } from "class-validator";
 import { JSONSchema } from "class-validator-jsonschema";
 
 import { ChainKey } from "../utils";
 import { ChainObject } from "./ChainObject";
 import { PositionsObject } from "./DexDtos";
 
-JSONSchema({
+@JSONSchema({
   description: "Stores all the positions that the user has made in all the uniswap v3 pools."
-});
+})
 export class UserPosition extends ChainObject {
   @Exclude()
-  static INDEX_KEY = "POSITIONS";
+  static INDEX_KEY = "GCULP"; //GalaChain User Liquidity Position
 
   @ChainKey({ position: 0 })
   @IsString()
   public readonly user: string;
+
+  @ValidateNested()
+  @Type(() => PositionsObject)
   public positions: PositionsObject;
 
   constructor(user: string) {

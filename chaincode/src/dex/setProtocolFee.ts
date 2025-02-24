@@ -16,9 +16,9 @@ import {
   ConflictError,
   NotFoundError,
   Pool,
-  SetProtocolFeeDTO,
-  UnauthorizedError,
-  formatBigNumberDecimals
+  SetProtocolFeeDto,
+  SetProtocolFeeResDto,
+  UnauthorizedError
 } from "@gala-chain/api";
 
 import { GalaChainContext } from "../types";
@@ -27,12 +27,15 @@ import { fetchPlatformFeeAddress, getObjectByKey, putChainObject, validateTokenO
 /**
  * @dev The setProtocolFee function updates the protocol fee percentage for a Uniswap V3 pool within the GalaChain ecosystem.
  * @param ctx GalaChainContext – The execution context providing access to the GalaChain environment.
- * @param dto SetProtocolFeeDTO – A data transfer object containing:
+ * @param dto SetProtocolFeeDto – A data transfer object containing:
   - Pool identifier – The specific pool where the protocol fee is being updated.
 - fee value – The new protocol fee percentage, ranging from 0 to 1 (0% to 100%).
  * @returns New fee for the pool
  */
-export async function setProtocolFee(ctx: GalaChainContext, dto: SetProtocolFeeDTO): Promise<number> {
+export async function setProtocolFee(
+  ctx: GalaChainContext,
+  dto: SetProtocolFeeDto
+): Promise<SetProtocolFeeResDto> {
   const platformFeeAddress = await fetchPlatformFeeAddress(ctx);
   if (!platformFeeAddress) {
     throw new NotFoundError(
@@ -41,7 +44,6 @@ export async function setProtocolFee(ctx: GalaChainContext, dto: SetProtocolFeeD
   } else if (!platformFeeAddress.authorities.includes(ctx.callingUser)) {
     throw new UnauthorizedError(`CallingUser ${ctx.callingUser} is not authorized to create or update`);
   }
-  formatBigNumberDecimals(dto);
   const [token0, token1] = validateTokenOrder(dto.token0, dto.token1);
   const key = ctx.stub.createCompositeKey(Pool.INDEX_KEY, [token0, token1, dto.fee.toString()]);
   const pool = await getObjectByKey(ctx, Pool, key);
@@ -49,5 +51,5 @@ export async function setProtocolFee(ctx: GalaChainContext, dto: SetProtocolFeeD
   if (pool == undefined) throw new ConflictError("Pool does not exist");
   const newFee = pool.configureProtocolFee(dto.protocolFee);
   await putChainObject(ctx, pool);
-  return newFee;
+  return new SetProtocolFeeResDto(newFee);
 }

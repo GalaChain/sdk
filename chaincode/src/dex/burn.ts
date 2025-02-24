@@ -12,14 +12,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-import {
-  BurnDto,
-  ConflictError,
-  Pool,
-  UserBalanceResponseDto,
-  UserPosition,
-  formatBigNumberDecimals
-} from "@gala-chain/api";
+import { BurnDto, ConflictError, Pool, UserBalanceResDto, UserPosition } from "@gala-chain/api";
 import BigNumber from "bignumber.js";
 
 import { fetchOrCreateBalance } from "../balances";
@@ -39,10 +32,9 @@ import {
  * @dev The burn function is responsible for removing liquidity from a Uniswap V3 pool within the GalaChain ecosystem. It executes the necessary operations to burn the liquidity position and transfer the corresponding tokens back to the user.
  * @param ctx GalaChainContext – The execution context that provides access to the GalaChain environment.
  * @param dto BurnDto – A data transfer object containing the details of the liquidity position to be burned, including the pool, and position ID.
- * @returns UserBalanceResponseDto
+ * @returns UserBalanceResDto
  */
-export async function burn(ctx: GalaChainContext, dto: BurnDto) {
-  formatBigNumberDecimals(dto);
+export async function burn(ctx: GalaChainContext, dto: BurnDto): Promise<UserBalanceResDto> {
   const [token0, token1] = validateTokenOrder(dto.token0, dto.token1);
 
   const key = ctx.stub.createCompositeKey(Pool.INDEX_KEY, [token0, token1, dto.fee.toString()]);
@@ -121,6 +113,6 @@ export async function burn(ctx: GalaChainContext, dto: BurnDto) {
     ctx.callingUser,
     tokenInstanceKeys[1]
   );
-  const response = new UserBalanceResponseDto(liquidityProviderToken0Balance, liquidityProviderToken1Balance);
+  const response = new UserBalanceResDto(liquidityProviderToken0Balance, liquidityProviderToken1Balance);
   return response;
 }

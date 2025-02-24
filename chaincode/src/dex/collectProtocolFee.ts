@@ -13,13 +13,12 @@
  * limitations under the License.
  */
 import {
-  CollectProtocolFeesDTO,
+  CollectProtocolFeesDto,
+  CollectProtocolFeesResDto,
   ConflictError,
   NotFoundError,
   Pool,
-  UnauthorizedError,
-  formatBigNumber,
-  formatBigNumberDecimals
+  UnauthorizedError
 } from "@gala-chain/api";
 import BigNumber from "bignumber.js";
 
@@ -40,15 +39,15 @@ import {
 /**
  * @dev The collectProtocolFees function enables the collection of protocol fees accumulated in a Uniswap V3 pool within the GalaChain ecosystem. It retrieves and transfers the protocol's share of the trading fees to the designated recipient.
  * @param ctx GalaChainContext – The execution context providing access to the GalaChain environment.
- * @param dto CollectProtocolFeesDTO – A data transfer object containing:
+ * @param dto CollectProtocolFeesDto – A data transfer object containing:
    - Pool details (identifying which Uniswap V3 pool the fees are collected from).
    - Recipient address (where the collected protocol fees will be sent).
  * @returns [tokenAmount0, tokenAmount1]
  */
 export async function collectProtocolFees(
   ctx: GalaChainContext,
-  dto: CollectProtocolFeesDTO
-): Promise<BigNumber[]> {
+  dto: CollectProtocolFeesDto
+): Promise<CollectProtocolFeesResDto> {
   const platformFeeAddress = await fetchPlatformFeeAddress(ctx);
   if (!platformFeeAddress) {
     throw new NotFoundError(
@@ -57,7 +56,6 @@ export async function collectProtocolFees(
   } else if (!platformFeeAddress.authorities.includes(ctx.callingUser)) {
     throw new UnauthorizedError(`CallingUser ${ctx.callingUser} is not authorized to create or update`);
   }
-  formatBigNumberDecimals(dto);
   const [token0, token1] = validateTokenOrder(dto.token0, dto.token1);
 
   const key = ctx.stub.createCompositeKey(Pool.INDEX_KEY, [token0, token1, dto.fee.toString()]);
@@ -103,5 +101,5 @@ export async function collectProtocolFees(
   }
 
   await putChainObject(ctx, pool);
-  return formatBigNumber(amounts);
+  return new CollectProtocolFeesResDto(amounts[0], amounts[1]);
 }

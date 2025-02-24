@@ -14,18 +14,20 @@
  */
 import {
   DefaultError,
-  ExpectedTokenDTO,
+  GetAddLiquidityEstimationDto,
+  GetAddLiquidityEstimationResDto,
+  GetLiquidityResDto,
   GetPoolDto,
   GetPositionDto,
-  GetUserPositionResponse,
   GetUserPositionsDto,
+  GetUserPositionsResDto,
+  IPosition,
   Pool,
   PositionsObject,
-  Slot0Dto,
+  Slot0ResDto,
   TokenClassKey,
   TokenInstanceKey,
   UserPosition,
-  formatBigNumber,
   positionInfoDto,
   sqrtPriceToTick
 } from "@gala-chain/api";
@@ -57,12 +59,12 @@ export async function getPoolData(ctx: GalaChainContext, dto: GetPoolDto): Promi
    * @param ctx GalaChainContext – The execution context providing access to the GalaChain environment.
    * @param dto GetPoolDto – A data transfer object containing:
     - Pool identifiers – Class keys or token details needed to fetch the pool data.
-   * @returns Slot0Dto
+   * @returns Slot0ResDto
    */
-export async function getSlot0(ctx: GalaChainContext, dto: GetPoolDto): Promise<Slot0Dto> {
+export async function getSlot0(ctx: GalaChainContext, dto: GetPoolDto): Promise<Slot0ResDto> {
   const pool = await getPoolData(ctx, dto);
   if (!pool) throw new DefaultError("No pool for these tokens and fee exists");
-  return new Slot0Dto(
+  return new Slot0ResDto(
     new BigNumber(pool.sqrtPrice),
     sqrtPriceToTick(pool.sqrtPrice),
     new BigNumber(pool.liquidity)
@@ -76,10 +78,10 @@ export async function getSlot0(ctx: GalaChainContext, dto: GetPoolDto): Promise<
     - Pool identifiers – Class keys or token details required to identify the pool.
    * @returns string
    */
-export async function getLiquidity(ctx: GalaChainContext, dto: GetPoolDto): Promise<string> {
+export async function getLiquidity(ctx: GalaChainContext, dto: GetPoolDto): Promise<GetLiquidityResDto> {
   const pool = await getPoolData(ctx, dto);
   if (!pool) throw new DefaultError("No pool for these tokens and fee exists");
-  return pool.liquidity.toString();
+  return new GetLiquidityResDto(pool.liquidity);
 }
 
 /**
@@ -94,7 +96,7 @@ export async function getPositions(ctx: GalaChainContext, dto: GetPositionDto): 
   const pool = await getPoolData(ctx, dto);
   const key = genKeyWithPipe(dto.owner, dto.tickLower.toString(), dto.tickUpper.toString());
   if (!pool) throw new DefaultError("No pool for these tokens and fee exists");
-  return formatBigNumber(pool.positions[key]);
+  return pool.positions[key];
 }
 
 /**
@@ -103,12 +105,12 @@ export async function getPositions(ctx: GalaChainContext, dto: GetPositionDto): 
    * @param ctx GalaChainContext – The execution context providing access to the GalaChain environment.
    * @param dto GetUserPositionsDto – A data transfer object containing:
     - User address – The identifier for the user whose positions are being queried.
-   * @returns GetUserPositionResponse
+   * @returns GetUserPositionsResDto
    */
 export async function getUserPositions(
   ctx: GalaChainContext,
   dto: GetUserPositionsDto
-): Promise<GetUserPositionResponse> {
+): Promise<GetUserPositionsResDto> {
   const userPositions = await getObjectByKey(
     ctx,
     UserPosition,
@@ -126,7 +128,7 @@ export async function getUserPositions(
     (sum, arr) => sum + arr.length,
     0
   );
-  const response: GetUserPositionResponse = { positions: metaDataPositions, totalCount: count };
+  const response: GetUserPositionsResDto = { positions: metaDataPositions, totalCount: count };
   return response;
 }
 /**
@@ -143,7 +145,7 @@ export function paginateLiquidityData(data: PositionsObject, page: number, limit
     .slice(startIndex, startIndex + limit)
     .reduce((acc, entry) => {
       const { pair, ...entryWithoutPair } = entry;
-      (acc[entry.pair] ||= []).push(entryWithoutPair);
+      (acc[pair] ||= []).push(entryWithoutPair);
       return acc;
     }, {} as PositionsObject);
 }
@@ -151,7 +153,7 @@ export function paginateLiquidityData(data: PositionsObject, page: number, limit
 /**
    * @dev The getAddLiquidityEstimation function estimates the required token amounts and liquidity when adding liquidity to a Uniswap V3 pool within the GalaChain ecosystem.
    * @param ctx GalaChainContext – The execution context providing access to the GalaChain environment.
-   * @param dto ExpectedTokenDTO – A data transfer object containing:
+   * @param dto GetAddLiquidityEstimationDto – A data transfer object containing:
       token0 – The first token of the pool.
       or
       token1 – The second token of the pool.
@@ -164,8 +166,8 @@ export function paginateLiquidityData(data: PositionsObject, page: number, limit
    */
 export async function getAddLiquidityEstimation(
   ctx: GalaChainContext,
-  dto: ExpectedTokenDTO
-): Promise<string[]> {
+  dto: GetAddLiquidityEstimationDto
+): Promise<GetAddLiquidityEstimationResDto> {
   const [token0, token1] = [dto.token0, dto.token1].map(generateKeyFromClassKey);
   if (token0.localeCompare(token1) > 0) {
     throw new Error("Token0 must be smaller");
@@ -178,7 +180,7 @@ export async function getAddLiquidityEstimation(
   if (!pool) throw new DefaultError("No pool for these tokens and fee exists");
   const amounts = pool.getAmountForLiquidity(dto.amount, tickLower, tickUpper, zeroForOne);
 
-  return formatBigNumber(amounts);
+  return new GetAddLiquidityEstimationResDto(amounts[0], amounts[1], amounts[2]);
 }
 
 /**
@@ -229,7 +231,7 @@ async function addMetaDataToPositions(
     const token0Data = await fetchTokenClass(ctx, tokenInstanceKeys[0]);
     const token1Data = await fetchTokenClass(ctx, tokenInstanceKeys[1]);
 
-    value.forEach((e: any) => {
+    value.forEach((e: IPosition) => {
       e.token0Img = token0Data.image;
       e.token1Img = token1Data.image;
       e.token0InstanceKey = tokenInstanceKeys[0];

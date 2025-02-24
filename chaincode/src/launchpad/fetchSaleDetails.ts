@@ -43,7 +43,8 @@ export async function fetchSaleDetails(
 ): Promise<LaunchpadSale> {
   const key = ctx.stub.createCompositeKey(LaunchpadSale.INDEX_KEY, [fetchSaleDTO.vaultAddress]);
 
-  const sale = await getObjectByKey(ctx, LaunchpadSale, key).catch(() => undefined);
+  const sale = await getObjectByKey(ctx, LaunchpadSale, key);
+
   if (sale === undefined) {
     throw new NotFoundError("Sale record not found.");
   }

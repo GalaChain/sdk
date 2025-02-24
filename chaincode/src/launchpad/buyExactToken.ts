@@ -12,7 +12,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-import { DefaultError, ExactTokenQuantityDto, LaunchpadSale, TradeResponse } from "@gala-chain/api";
+import { DefaultError, ExactTokenQuantityDto, LaunchpadSale, TradeResDto } from "@gala-chain/api";
 import { BigNumber } from "bignumber.js";
 
 import { fetchTokenClass } from "../token";
@@ -36,7 +36,7 @@ BigNumber.config({
  * @param buyTokenDTO - The data transfer object containing the sale address,
  *                      token amount to buy, and optional expected native token amount.
  *
- * @returns A promise that resolves to a `TradeResponse` containing the updated
+ * @returns A promise that resolves to a `TradeResDto` containing the updated
  *          balances of the purchased token and the native token for the buyer.
  *
  * @throws DefaultError if the expected native tokens are insufficient to complete the purchase.
@@ -44,7 +44,7 @@ BigNumber.config({
 export async function buyExactToken(
   ctx: GalaChainContext,
   buyTokenDTO: ExactTokenQuantityDto
-): Promise<TradeResponse> {
+): Promise<TradeResDto> {
   let isSaleFinalised = false;
 
   // Fetch and validate the sale based on the provided vault address

@@ -12,7 +12,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-import { ConflictError, Pool, QuoteExactAmountDto, formatBigNumber } from "@gala-chain/api";
+import { ConflictError, Pool, QuoteExactAmountDto, QuoteExactAmountResDto } from "@gala-chain/api";
 import BigNumber from "bignumber.js";
 
 import { GalaChainContext } from "../types";
@@ -33,7 +33,7 @@ import { getObjectByKey, validateTokenOrder } from "../utils";
 export async function quoteExactAmount(
   ctx: GalaChainContext,
   dto: QuoteExactAmountDto
-): Promise<[amount0: string, amount1: string, sqrtPriceLimit: string]> {
+): Promise<QuoteExactAmountResDto> {
   const [token0, token1] = validateTokenOrder(dto.token0, dto.token1);
 
   const zeroForOne = dto.zeroForOne;
@@ -49,6 +49,5 @@ export async function quoteExactAmount(
     zeroForOne ? new BigNumber("0.000000000000000000054212147") : new BigNumber("18446050999999999999")
   );
   const newSqrtPrice = pool.sqrtPrice;
-
-  return formatBigNumber([...amounts, currentSqrtPrice, newSqrtPrice]);
+  return new QuoteExactAmountResDto(amounts[0], amounts[1], currentSqrtPrice, newSqrtPrice);
 }

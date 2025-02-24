@@ -15,7 +15,7 @@
 import {
   ChainCallDTO,
   ConfigurePlatformFeeAddressDto,
-  CreateSaleResponse,
+  CreateSaleResDto,
   CreateTokenSaleDTO,
   ExactTokenQuantityDto,
   FetchSaleDto,
@@ -25,7 +25,8 @@ import {
   NativeTokenQuantityDto,
   PlatformFeeConfig,
   PreMintCalculationDto,
-  TradeResponse
+  TradeCalculationResDto,
+  TradeResDto
 } from "@gala-chain/api";
 
 import { version } from "../../package.json";
@@ -55,9 +56,9 @@ export class LaunchpadContract extends GalaContract {
 
   @Submit({
     in: CreateTokenSaleDTO,
-    out: CreateSaleResponse
+    out: CreateSaleResDto
   })
-  public async CreateSale(ctx: GalaChainContext, dto: CreateTokenSaleDTO): Promise<CreateSaleResponse> {
+  public async CreateSale(ctx: GalaChainContext, dto: CreateTokenSaleDTO): Promise<CreateSaleResDto> {
     return createSale(ctx, dto);
   }
 
@@ -72,33 +73,33 @@ export class LaunchpadContract extends GalaContract {
 
   @Submit({
     in: ExactTokenQuantityDto,
-    out: TradeResponse
+    out: TradeResDto
   })
-  public async BuyExactToken(ctx: GalaChainContext, dto: ExactTokenQuantityDto): Promise<TradeResponse> {
+  public async BuyExactToken(ctx: GalaChainContext, dto: ExactTokenQuantityDto): Promise<TradeResDto> {
     return buyExactToken(ctx, dto);
   }
 
   @Submit({
     in: ExactTokenQuantityDto,
-    out: TradeResponse
+    out: TradeResDto
   })
-  public async SellExactToken(ctx: GalaChainContext, dto: ExactTokenQuantityDto): Promise<TradeResponse> {
+  public async SellExactToken(ctx: GalaChainContext, dto: ExactTokenQuantityDto): Promise<TradeResDto> {
     return sellExactToken(ctx, dto);
   }
 
   @Submit({
     in: NativeTokenQuantityDto,
-    out: TradeResponse
+    out: TradeResDto
   })
-  public async BuyWithNative(ctx: GalaChainContext, dto: NativeTokenQuantityDto): Promise<TradeResponse> {
+  public async BuyWithNative(ctx: GalaChainContext, dto: NativeTokenQuantityDto): Promise<TradeResDto> {
     return buyWithNative(ctx, dto);
   }
 
   @Submit({
     in: NativeTokenQuantityDto,
-    out: TradeResponse
+    out: TradeResDto
   })
-  public async SellWithNative(ctx: GalaChainContext, dto: NativeTokenQuantityDto): Promise<TradeResponse> {
+  public async SellWithNative(ctx: GalaChainContext, dto: NativeTokenQuantityDto): Promise<TradeResDto> {
     return sellWithNative(ctx, dto);
   }
 
@@ -129,37 +130,49 @@ export class LaunchpadContract extends GalaContract {
   @GalaTransaction({
     type: EVALUATE,
     in: ExactTokenQuantityDto,
-    out: String
+    out: TradeCalculationResDto
   })
-  public async CallNativeTokenIn(ctx: GalaChainContext, dto: ExactTokenQuantityDto): Promise<string> {
-    return callNativeTokenIn(ctx, dto);
+  public async CallNativeTokenIn(
+    ctx: GalaChainContext,
+    dto: ExactTokenQuantityDto
+  ): Promise<TradeCalculationResDto> {
+    return { calculatedQuantity: await callNativeTokenIn(ctx, dto) };
   }
 
   @GalaTransaction({
     type: EVALUATE,
     in: NativeTokenQuantityDto,
-    out: String
+    out: TradeCalculationResDto
   })
-  public async CallMemeTokenOut(ctx: GalaChainContext, dto: NativeTokenQuantityDto): Promise<string> {
-    return callMemeTokenOut(ctx, dto);
+  public async CallMemeTokenOut(
+    ctx: GalaChainContext,
+    dto: NativeTokenQuantityDto
+  ): Promise<TradeCalculationResDto> {
+    return { calculatedQuantity: await callMemeTokenOut(ctx, dto) };
   }
 
   @GalaTransaction({
     type: EVALUATE,
     in: ExactTokenQuantityDto,
-    out: String
+    out: TradeCalculationResDto
   })
-  public async CallNativeTokenOut(ctx: GalaChainContext, dto: ExactTokenQuantityDto): Promise<string> {
-    return callNativeTokenOut(ctx, dto);
+  public async CallNativeTokenOut(
+    ctx: GalaChainContext,
+    dto: ExactTokenQuantityDto
+  ): Promise<TradeCalculationResDto> {
+    return { calculatedQuantity: await callNativeTokenOut(ctx, dto) };
   }
 
   @GalaTransaction({
     type: EVALUATE,
     in: NativeTokenQuantityDto,
-    out: String
+    out: TradeCalculationResDto
   })
-  public async CallMemeTokenIn(ctx: GalaChainContext, dto: NativeTokenQuantityDto): Promise<string> {
-    return callMemeTokenIn(ctx, dto);
+  public async CallMemeTokenIn(
+    ctx: GalaChainContext,
+    dto: NativeTokenQuantityDto
+  ): Promise<TradeCalculationResDto> {
+    return { calculatedQuantity: await callMemeTokenIn(ctx, dto) };
   }
 
   @GalaTransaction({
