@@ -57,7 +57,7 @@ import { ChainClient, ChainUser, CommonContractAPI, commonContractAPI } from "@g
 import { AdminChainClients, TestClients, transactionSuccess } from "@gala-chain/test";
 import BigNumber from "bignumber.js";
 
-import TOKENS, { ETH_ClassKey, USDC_ClassKey, USDT_ClassKey } from "./tokens";
+import TOKENS from "./tokens";
 
 jest.setTimeout(3000000);
 
@@ -85,8 +85,22 @@ describe("DEx v3 Testing", () => {
 
   let client: AdminChainClients<typeof contractConfig>;
   let user: ChainUser;
+  let ETH_ClassKey: TokenClassKey;
+  let USDT_ClassKey: TokenClassKey;
+  let USDC_ClassKey: TokenClassKey;
+  let BTC_ClassKey: TokenClassKey;
+  let BNB_ClassKey: TokenClassKey;
+  let SOL_ClassKey: TokenClassKey;
+  let MATIC_ClassKey: TokenClassKey;
 
   beforeAll(async () => {
+    ETH_ClassKey = Object.assign(new TokenClassKey(), TOKENS.ETH.KEY);
+    USDT_ClassKey = Object.assign(new TokenClassKey(), TOKENS.USDT.KEY);
+    USDC_ClassKey = Object.assign(new TokenClassKey(), TOKENS.USDC.KEY);
+    BTC_ClassKey = Object.assign(new TokenClassKey(), TOKENS.BTC.KEY);
+    BNB_ClassKey = Object.assign(new TokenClassKey(), TOKENS.BNB.KEY);
+    SOL_ClassKey = Object.assign(new TokenClassKey(), TOKENS.SOL.KEY);
+    MATIC_ClassKey = Object.assign(new TokenClassKey(), TOKENS.MATIC.KEY);
     client = await TestClients.createForAdmin(contractConfig);
     user = await client.createRegisteredUser();
   });

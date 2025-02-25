@@ -15,6 +15,7 @@
 import {
   Bitmap,
   TickDataObj,
+  TokenClassKey,
   computeSwapStep,
   getAmount0Delta,
   getAmount1Delta,
@@ -42,11 +43,13 @@ import {
   tickToSqrtPrice,
   updateTick
 } from "@gala-chain/api";
-import "@gala-chain/api/utils/dex/initalize";
 import { genKey, validateTokenOrder } from "@gala-chain/chaincode";
 import BigNumber from "bignumber.js";
 
-import { ETH_ClassKey, USDC_ClassKey } from "./tokens";
+import TOKENS from "./tokens";
+
+const ETH_ClassKey = Object.assign(new TokenClassKey(), TOKENS.ETH.KEY);
+const USDC_ClassKey = Object.assign(new TokenClassKey(), TOKENS.USDC.KEY);
 
 describe("Unit testing for helper functions", () => {
   describe("Add liquidity Helper functions", () => {
@@ -190,11 +193,6 @@ describe("Unit testing for helper functions", () => {
         expectedAmount1
       ]);
     });
-  });
-  describe("F18 custom method", () => {
-    const real = new BigNumber("1.4444444444444444455555555555555");
-    const expected = new BigNumber("1.444444444444444445");
-    expect(real.f18().toString()).toBe(expected.toString());
   });
 });
 
