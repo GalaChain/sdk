@@ -19,3 +19,4 @@ export * from "./GalaContract";
 export * from "./GalaContractApi";
 export * from "./GalaTransaction";
 export * from "./DexV3Contract";
+export * from "./LaunchpadContract";
