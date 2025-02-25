@@ -1952,7 +1952,9 @@ function dexV3ContractAPI(client: ChainClient): DexV3ContractAPI & CommonContrac
       return client.evaluateTransaction("GetSlot0", dto) as Promise<GalaChainResponse<Slot0ResDto>>;
     },
     getLiquidity(dto: GetPoolDto) {
-      return client.evaluateTransaction("GetLiquidity", dto) as Promise<GalaChainResponse<GetLiquidityResDto>>;
+      return client.evaluateTransaction("GetLiquidity", dto) as Promise<
+        GalaChainResponse<GetLiquidityResDto>
+      >;
     },
     getPositions(dto: GetPositionDto) {
       return client.evaluateTransaction("GetPositions", dto) as Promise<GalaChainResponse<GetPositionResDto>>;
