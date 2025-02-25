@@ -1882,7 +1882,7 @@ function tokenContractAPI(client: ChainClient): TokenContractAPI & CommonContrac
     },
 
     FetchBalances(dto: FetchBalancesDto) {
-      return client.submitTransaction("FetchBalances", dto) as Promise<GalaChainResponse<TokenBalance[]>>;
+      return client.evaluateTransaction("FetchBalances", dto) as Promise<GalaChainResponse<TokenBalance[]>>;
     },
     MintToken(dto: MintTokenDto) {
       return client.submitTransaction("MintToken", dto) as Promise<GalaChainResponse<TokenInstanceKey[]>>;
@@ -1930,7 +1930,7 @@ function dexV3ContractAPI(client: ChainClient): DexV3ContractAPI & CommonContrac
       return client.submitTransaction("CreatePool", dto) as Promise<GalaChainResponse<void>>;
     },
     getPoolData(dto: GetPoolDto) {
-      return client.submitTransaction("GetPoolData", dto) as Promise<GalaChainResponse<Pool>>;
+      return client.evaluateTransaction("GetPoolData", dto) as Promise<GalaChainResponse<Pool>>;
     },
     addLiquidity(dto: AddLiquidityDTO) {
       return client.submitTransaction("AddLiquidity", dto) as Promise<GalaChainResponse<AddLiquidityResDto>>;
@@ -1944,31 +1944,31 @@ function dexV3ContractAPI(client: ChainClient): DexV3ContractAPI & CommonContrac
       >;
     },
     burnEstimate(dto: BurnDto) {
-      return client.submitTransaction("GetRemoveLiquidityEstimation", dto) as Promise<
+      return client.evaluateTransaction("GetRemoveLiquidityEstimation", dto) as Promise<
         GalaChainResponse<GetRemoveLiqEstimationResDto>
       >;
     },
     getSlot0(dto: GetPoolDto) {
-      return client.submitTransaction("GetSlot0", dto) as Promise<GalaChainResponse<Slot0ResDto>>;
+      return client.evaluateTransaction("GetSlot0", dto) as Promise<GalaChainResponse<Slot0ResDto>>;
     },
     getLiquidity(dto: GetPoolDto) {
-      return client.submitTransaction("GetLiquidity", dto) as Promise<GalaChainResponse<GetLiquidityResDto>>;
+      return client.evaluateTransaction("GetLiquidity", dto) as Promise<GalaChainResponse<GetLiquidityResDto>>;
     },
     getPositions(dto: GetPositionDto) {
-      return client.submitTransaction("GetPositions", dto) as Promise<GalaChainResponse<GetPositionResDto>>;
+      return client.evaluateTransaction("GetPositions", dto) as Promise<GalaChainResponse<GetPositionResDto>>;
     },
     getUserPositions(dto: GetUserPositionsDto) {
-      return client.submitTransaction("GetUserPositions", dto) as Promise<
+      return client.evaluateTransaction("GetUserPositions", dto) as Promise<
         GalaChainResponse<GetUserPositionsResDto>
       >;
     },
     getAddLiquidityEstimation(dto: GetAddLiquidityEstimationDto) {
-      return client.submitTransaction("GetAddLiquidityEstimation", dto) as Promise<
+      return client.evaluateTransaction("GetAddLiquidityEstimation", dto) as Promise<
         GalaChainResponse<GetAddLiquidityEstimationResDto>
       >;
     },
     quoteExactAmount(dto: QuoteExactAmountDto) {
-      return client.submitTransaction("QuoteExactAmount", dto) as Promise<
+      return client.evaluateTransaction("QuoteExactAmount", dto) as Promise<
         GalaChainResponse<QuoteExactAmountResDto>
       >;
     },

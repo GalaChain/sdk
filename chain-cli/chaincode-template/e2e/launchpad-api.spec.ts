@@ -1798,27 +1798,29 @@ function LaunchpadContractAPI(client: ChainClient): LaunchpadContractAPI & Commo
       return client.submitTransaction("SellWithNative", dto) as Promise<GalaChainResponse<TradeResDto>>;
     },
     CallNativeTokenIn(dto: ExactTokenQuantityDto) {
-      return client.submitTransaction("CallNativeTokenIn", dto) as Promise<
+      return client.evaluateTransaction("CallNativeTokenIn", dto) as Promise<
         GalaChainResponse<TradeCalculationResDto>
       >;
     },
     CallMemeTokenOut(dto: NativeTokenQuantityDto) {
-      return client.submitTransaction("CallMemeTokenOut", dto) as Promise<
+      return client.evaluateTransaction("CallMemeTokenOut", dto) as Promise<
         GalaChainResponse<TradeCalculationResDto>
       >;
     },
     CallNativeTokenOut(dto: ExactTokenQuantityDto) {
-      return client.submitTransaction("CallNativeTokenOut", dto) as Promise<
+      return client.evaluateTransaction("CallNativeTokenOut", dto) as Promise<
         GalaChainResponse<TradeCalculationResDto>
       >;
     },
     CallMemeTokenIn(dto: NativeTokenQuantityDto) {
-      return client.submitTransaction("CallMemeTokenIn", dto) as Promise<
+      return client.evaluateTransaction("CallMemeTokenIn", dto) as Promise<
         GalaChainResponse<TradeCalculationResDto>
       >;
     },
     CalculatePreMintTokens(dto: PreMintCalculationDto) {
-      return client.submitTransaction("CalculatePreMintTokens", dto) as Promise<GalaChainResponse<BigNumber>>;
+      return client.evaluateTransaction("CalculatePreMintTokens", dto) as Promise<
+        GalaChainResponse<BigNumber>
+      >;
     },
     FetchSale(dto: FetchSaleDto) {
       return client.evaluateTransaction("FetchSaleDetails", dto) as Promise<GalaChainResponse<LaunchpadSale>>;
@@ -1868,14 +1870,13 @@ function GalaTokenContractAPI(client: ChainClient): GalaTokenContractAPI & Commo
       return client.submitTransaction("TransferToken", dto) as Promise<GalaChainResponse<TokenBalance[]>>;
     },
     FetchBalances(dto: FetchBalancesDto) {
-      return client.submitTransaction("FetchBalances", dto) as Promise<GalaChainResponse<TokenBalance[]>>;
+      return client.evaluateTransaction("FetchBalances", dto) as Promise<GalaChainResponse<TokenBalance[]>>;
     }
   };
 }
 
 interface DexV3ContractAPI {
   getPoolData(dto: GetPoolDto): Promise<GalaChainResponse<Pool>>;
-  Swap(dto: SwapDto): Promise<GalaChainResponse<void>>;
 }
 
 function dexV3ContractAPI(client: ChainClient): DexV3ContractAPI & CommonContractAPI {
@@ -1883,10 +1884,7 @@ function dexV3ContractAPI(client: ChainClient): DexV3ContractAPI & CommonContrac
     ...commonContractAPI(client),
 
     getPoolData(dto: GetPoolDto) {
-      return client.submitTransaction("GetPoolData", dto) as Promise<GalaChainResponse<Pool>>;
-    },
-    Swap(dto: SwapDto) {
-      return client.submitTransaction("Swap", dto) as Promise<GalaChainResponse<void>>;
+      return client.evaluateTransaction("GetPoolData", dto) as Promise<GalaChainResponse<Pool>>;
     }
   };
 }
