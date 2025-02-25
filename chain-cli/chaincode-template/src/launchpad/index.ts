@@ -12,24 +12,6 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-import deserialize from "./deserialize";
-import { Primitive, generateResponseSchema, generateSchema } from "./generate-schema";
-import { getValidationErrorMessages } from "./getValidationErrorMessages";
-import serialize from "./serialize";
-import signatures, { SigningScheme } from "./signatures";
+import { LaunchpadContract } from "@gala-chain/chaincode";
 
-export * from "./chain-decorators";
-export * from "./error";
-export * from "../ethers/type-utils";
-export * from "./dex";
-
-export {
-  deserialize,
-  serialize,
-  generateSchema,
-  generateResponseSchema,
-  getValidationErrorMessages,
-  Primitive,
-  signatures,
-  SigningScheme
-};
+export { LaunchpadContract };
