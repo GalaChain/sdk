@@ -360,8 +360,8 @@ export class Pool extends ChainObject {
       );
 
       //cap the tick in valid range i.e. -887272 < tick < 887272
-      if (step.tickNext < -887272) break;
-      if (step.tickNext > 887272) break;
+      if (step.tickNext < -887272) throw new Error("Pool lacks enough liquidity to perform this operation");
+      if (step.tickNext > 887272) throw new Error("Pool lacks enough liquidity to perform this operation");
 
       //price at next tick
       step.sqrtPriceNext = tickToSqrtPrice(step.tickNext);

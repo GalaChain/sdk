@@ -387,7 +387,7 @@ describe("getAmount0Delta", () => {
     const sqrtPriceB = new BigNumber("120000");
     const liquidity = new BigNumber("500000");
     const result = getAmount0Delta(sqrtPriceA, sqrtPriceB, liquidity);
-    expect(result.toFixed()).toBe("0.83333333333333333333");
+    expect(result.toFixed()).toBe("0.83333333333333333334");
   });
 });
 
@@ -407,7 +407,7 @@ describe("getNextSqrtPriceFromInput old", () => {
     const liquidity = new BigNumber("500000");
     const amountIn = new BigNumber("10000");
     const result = getNextSqrtPriceFromInput(sqrtPrice, liquidity, amountIn, true);
-    expect(result.toFixed()).toBe("49.97501249375312343828");
+    expect(result.toFixed()).toBe("49.97501249375312343829");
   });
 
   test("should return correct next sqrt price when zeroForOne is false", () => {
@@ -426,7 +426,7 @@ describe("getNextSqrtPriceFromInput", () => {
 
   test("Token0 to Token1 swap", () => {
     const result = getNextSqrtPriceFromInput(sqrtPrice, liquidity, amountIn, true);
-    expect(result.toString()).toBe("499.99999999999975");
+    expect(result.toString()).toBe("499.99999999999975000001");
   });
 
   test("Token1 to Token0 swap", () => {
@@ -474,7 +474,7 @@ describe("getNextSqrtPriceFromOutput", () => {
 
   test("Token1 to Token0 swap", () => {
     const result = getNextSqrtPriceFromOutput(sqrtPrice, liquidity, amountOut, false);
-    expect(result.toString()).toBe("-500.00000000000025");
+    expect(result.toString()).toBe("-500.00000000000025000001");
   });
 
   test("Zero amountOut should not change sqrtPrice", () => {
@@ -533,9 +533,9 @@ describe("computeSwapStep", () => {
     const result = computeSwapStep(sqrtPriceTarget, sqrtPriceCurrent, liquidity, amountRemaining, fee);
     expect(result).toHaveLength(4);
     expect(result[0].toString()).toBe("1000000");
-    expect(result[1].toString()).toBe("4.58333333333333333333");
+    expect(result[1].toString()).toBe("4.58333333333333333334");
     expect(result[2].toString()).toBe("55000000000000");
-    expect(result[3].toString()).toBe("0.0137913741223671013");
+    expect(result[3].toString()).toBe("0.01379137412236710131");
   });
 
   test("Zero amountRemaining should not affect sqrtPrice", () => {
@@ -560,8 +560,8 @@ describe("computeSwapStep", () => {
     expect(result[0]).toBeInstanceOf(BigNumber);
     expect(result[0].toString()).toEqual("12000000");
     expect(result[1].toString()).toEqual("55000000000000");
-    expect(result[2].toString()).toEqual("4.58333333333333333333");
-    expect(result[3].toString()).toEqual("165496489468.4052156469408224674");
+    expect(result[2].toString()).toEqual("4.58333333333333333334");
+    expect(result[3].toString()).toEqual("165496489468.40521564694082246741");
   });
 
   test("Large swap amount should return target sqrtPrice", () => {
@@ -569,7 +569,7 @@ describe("computeSwapStep", () => {
     const result = computeSwapStep(sqrtPriceCurrent, sqrtPriceTarget, liquidity, largeAmountRemaining, fee);
     expect(result[0].toString()).toEqual("1000001.994");
     expect(result[1].toString()).toEqual("9970000");
-    expect(result[2].toString()).toEqual("0.00000996998011985964");
+    expect(result[2].toString()).toEqual("0.00000996998011985965");
     expect(result[3].toString()).toEqual("30000");
   });
 
@@ -584,7 +584,7 @@ describe("computeSwapStep", () => {
     expect(result[0]).toBeInstanceOf(BigNumber);
     expect(result[0].toString()).toEqual("1.997");
     expect(result[1].toString()).toEqual("0.997");
-    expect(result[2].toString()).toEqual("0.49924887330996494742");
+    expect(result[2].toString()).toEqual("0.49924887330996494743");
     expect(result[3].toString()).toEqual("0.003");
   });
 

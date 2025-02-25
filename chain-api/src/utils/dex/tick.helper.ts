@@ -101,6 +101,7 @@ export function updateTick(
 }
 
 function position(tick: number): [word: number, position: number] {
+  tick = Math.floor(tick);
   const wordPos = Math.floor(tick / 256); // Equivalent to tick >> 8
   let bitPos = tick % 256; // Equivalent to tick % 256
   if (bitPos < 0) bitPos += 256; // Ensure it's always positive like uint8

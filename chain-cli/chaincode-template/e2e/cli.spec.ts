@@ -22,7 +22,9 @@ it("should expose contract names", async () => {
 
   const expectedContracts = [
     { contractName: "AppleContract" },
+    { contractName: "DexV3Contract" },
     { contractName: "GalaChainToken" },
+    { contractName: "Launchpad" },
     { contractName: "PublicKeyContract" }
   ];
 
