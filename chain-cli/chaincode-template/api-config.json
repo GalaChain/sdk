@@ -11,9 +11,19 @@
           "contractName": "AppleContract"
         },
         {
+          "pathFragment": "dex-v3-contract",
+          "chaincodeName": "basic-product",
+          "contractName": "DexV3Contract"
+        },
+        {
           "pathFragment": "gala-chain-token",
           "chaincodeName": "basic-product",
           "contractName": "GalaChainToken"
+        },
+        {
+          "pathFragment": "launchpad",
+          "chaincodeName": "basic-product",
+          "contractName": "Launchpad"
         },
         {
           "pathFragment": "public-key-contract",
