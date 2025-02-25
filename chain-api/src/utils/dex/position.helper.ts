@@ -14,8 +14,8 @@
  */
 import BigNumber from "bignumber.js";
 
-import { PositionData, Positions } from "../../types/DexDtos";
 import { DefaultError } from "../error";
+import { PositionData, Positions } from "./dexHelperDtos";
 import { requirePosititve } from "./format.helper";
 
 /**

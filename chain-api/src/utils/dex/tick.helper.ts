@@ -14,9 +14,9 @@
  */
 import BigNumber from "bignumber.js";
 
-import { Bitmap, TickDataObj } from "../../types/DexDtos";
 import { DefaultError } from "../error";
 import { leastSignificantBit, mostSignificantBit } from "./bitMath.helper";
+import { Bitmap, TickDataObj } from "./dexHelperDtos";
 
 /**
  *

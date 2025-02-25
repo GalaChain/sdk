@@ -18,9 +18,16 @@ import { IsNumber, IsString, ValidateNested } from "class-validator";
 import { JSONSchema } from "class-validator-jsonschema";
 
 import {
+  Bitmap,
   ChainKey,
   ConflictError,
   DefaultError,
+  PositionData,
+  Positions,
+  StepComputations,
+  SwapState,
+  TickData,
+  TickDataObj,
   checkTicks,
   computeSwapStep,
   feeAmountTickSpacing,
@@ -41,8 +48,6 @@ import {
 } from "../utils";
 import { BigNumberProperty } from "../validators";
 import { ChainObject } from "./ChainObject";
-import { Bitmap, PositionData, Positions, TickData, TickDataObj } from "./DexDtos";
-import { StepComputations, SwapState } from "./DexTypes";
 import { TokenClassKey } from "./TokenClass";
 
 @JSONSchema({

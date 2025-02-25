@@ -28,9 +28,9 @@ import { burnTokens } from "../burns";
 import { addLiquidity, createPool, getAddLiquidityEstimation } from "../dex";
 import { transferToken } from "../transfer";
 import { GalaChainContext } from "../types";
-import { generateKeyFromClassKey, sortString } from "./dexUtils";
-import { fetchPlatformFeeAddress, getBondingConstants } from "./launchpadSaleUtils";
-import { getObjectByKey, putChainObject } from "./state";
+import { generateKeyFromClassKey, sortString } from "../utils/dexUtils";
+import { fetchPlatformFeeAddress, getBondingConstants } from "../utils/launchpadSaleUtils";
+import { getObjectByKey, putChainObject } from "../utils/state";
 
 export async function finalizeSale(ctx: GalaChainContext, sale: LaunchpadSale): Promise<void> {
   const key = ctx.stub.createCompositeKey(LaunchpadFinalizeFeeAllocation.INDEX_KEY, []);

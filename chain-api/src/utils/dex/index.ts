@@ -20,3 +20,5 @@ export * from "./position.helper";
 export * from "./sqrtPriceMath.helper";
 export * from "./swapMath.helper";
 export * from "./tick.helper";
+export * from "./dexTypes";
+export * from "./dexHelperDtos";

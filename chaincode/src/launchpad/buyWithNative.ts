@@ -24,9 +24,10 @@ import { BigNumber } from "bignumber.js";
 import { fetchTokenClass } from "../token";
 import { transferToken } from "../transfer";
 import { GalaChainContext } from "../types";
-import { fetchAndValidateSale, finalizeSale, putChainObject } from "../utils";
+import { fetchAndValidateSale, putChainObject } from "../utils";
 import { callMemeTokenOut } from "./callMemeTokenOut";
 import { callNativeTokenIn } from "./callNativeTokenIn";
+import { finalizeSale } from "./finaliseSale";
 
 BigNumber.config({
   ROUNDING_MODE: BigNumber.ROUND_UP

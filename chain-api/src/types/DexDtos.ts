@@ -13,10 +13,10 @@
  * limitations under the License.
  */
 import BigNumber from "bignumber.js";
-import { IsBoolean, IsNotEmpty, IsNumber, IsOptional, IsString, Max, Min } from "class-validator";
+import { IsNotEmpty, IsNumber, IsOptional, IsString, Max, Min } from "class-validator";
 
+import { PositionInPool } from "../utils";
 import { BigNumberArrayProperty, BigNumberProperty } from "../validators";
-import { PositionInPool } from "./DexTypes";
 import { TokenBalance } from "./TokenBalance";
 import { TokenClassKey } from "./TokenClass";
 import { TokenInstanceKey } from "./TokenInstance";
@@ -529,62 +529,6 @@ export class GetUserPositionsResDto {
     this.positions = positions;
     this.totalCount = totalCount;
   }
-}
-
-export class PositionData {
-  @IsOptional()
-  @IsString()
-  owner: string;
-
-  @IsOptional()
-  @IsString()
-  liquidity: string;
-
-  @IsOptional()
-  @IsString()
-  feeGrowthInside0Last: string;
-
-  @IsOptional()
-  @IsString()
-  feeGrowthInside1Last: string;
-
-  @IsOptional()
-  @IsString()
-  tokensOwed0: string;
-
-  @IsOptional()
-  @IsString()
-  tokensOwed1: string;
-}
-
-export class TickData {
-  @IsOptional()
-  @IsString()
-  liquidityGross: string;
-  @IsOptional()
-  @IsBoolean()
-  initialised: boolean;
-  @IsOptional()
-  @IsString()
-  liquidityNet: string;
-  @IsOptional()
-  @IsString()
-  feeGrowthOutside0: string;
-  @IsOptional()
-  @IsString()
-  feeGrowthOutside1: string;
-}
-
-export class TickDataObj {
-  [key: string]: TickData;
-}
-
-export class Bitmap {
-  [key: number | string]: string;
-}
-
-export class Positions {
-  [key: string]: PositionData;
 }
 
 export class CollectProtocolFeesDto extends ChainCallDTO {
