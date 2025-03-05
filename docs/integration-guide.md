@@ -37,7 +37,7 @@ GalaChain is a Hyperledger Fabric-based blockchain platform with some key charac
 
 #### API Package
 - TypeScript classes and interfaces
-- DTO validation and signing
+- DTO (Data Transfer Object) validation and signing
 - NPM Package: https://www.npmjs.com/package/@gala-chain/api
 
 ## Common Operations
