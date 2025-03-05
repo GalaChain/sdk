@@ -13,7 +13,15 @@
  * limitations under the License.
  */
 import { Type, instanceToInstance, plainToInstance } from "class-transformer";
-import { IsNotEmpty, IsOptional, ValidationError, validate } from "class-validator";
+import {
+  IsArray,
+  IsNotEmpty,
+  IsOptional,
+  ValidateIf,
+  ValidateNested,
+  ValidationError,
+  validate
+} from "class-validator";
 import { JSONSchema } from "class-validator-jsonschema";
 
 import {
@@ -264,6 +272,22 @@ export class ChainCallDTO {
       return signatures.isValid(this.signature ?? "", this, publicKey);
     }
   }
+}
+
+export class BatchOperationDto extends ChainCallDTO {
+  @IsNotEmpty()
+  method: string;
+
+  @IsNotEmpty()
+  @ValidateNested()
+  @Type(() => ChainCallDTO)
+  dto: ChainCallDTO;
+}
+
+export class BatchDto extends ChainCallDTO {
+  @IsNotEmpty()
+  @Type(() => BatchOperationDto)
+  operations: BatchOperationDto[];
 }
 
 /**
