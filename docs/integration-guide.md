@@ -4,7 +4,7 @@
 
 GalaChain is a Hyperledger Fabric-based blockchain platform with some key characteristics:
 - Uses REST APIs instead of RPC endpoints (not EVM-based)
-- Fast transaction finality through authority nodes
+- Fast transaction finality with authoritative nodes
 - Supports both fungible and non-fungible tokens via a single Token Contract
 
 ## Core Components
@@ -23,7 +23,7 @@ GalaChain is a Hyperledger Fabric-based blockchain platform with some key charac
 
 #### Explorer API
 - Near real-time transaction data
-- Block validation
+- Block streaming via websocket
 - Search functionality
 - Documentation: https://explorer-api.galachain.com/docs/
 
@@ -90,7 +90,6 @@ async function transferTokens() {
   }
 }
 ```
-
 
 ## Common Use Cases
 
