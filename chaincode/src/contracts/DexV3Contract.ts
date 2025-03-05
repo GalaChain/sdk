@@ -20,8 +20,9 @@ import {
   CollectDto,
   CollectProtocolFeesDto,
   CollectProtocolFeesResDto,
-  ConfigurePlatformFeeAddressDto,
+  ConfigureDexFeeAddressDto,
   CreatePoolDto,
+  DexFeeConfig,
   GetAddLiquidityEstimationDto,
   GetAddLiquidityEstimationResDto,
   GetLiquidityResDto,
@@ -31,7 +32,6 @@ import {
   GetRemoveLiqEstimationResDto,
   GetUserPositionsDto,
   GetUserPositionsResDto,
-  PlatformFeeConfig,
   Pool,
   QuoteExactAmountDto,
   QuoteExactAmountResDto,
@@ -48,8 +48,11 @@ import {
   addLiquidity,
   burn,
   collect,
+  collectProtocolFees,
+  configureDexFeeAddress,
   createPool,
   getAddLiquidityEstimation,
+  getDexFeesConfigration,
   getLiquidity,
   getPoolData,
   getPositions,
@@ -59,12 +62,10 @@ import {
   quoteExactAmount,
   swap
 } from "../dex";
-import { collectProtocolFees } from "../dex/collectProtocolFee";
 import { setProtocolFee } from "../dex/setProtocolFee";
 import { GalaChainContext } from "../types";
 import { GalaContract } from "./GalaContract";
 import { EVALUATE, Evaluate, GalaTransaction, Submit } from "./GalaTransaction";
-import { configurePlatformFeeAddress, fetchPlatformAddressConfig } from "./platformfee";
 
 export class DexV3Contract extends GalaContract {
   constructor() {
@@ -195,13 +196,14 @@ export class DexV3Contract extends GalaContract {
     in: CollectDto,
     out: UserBalanceResDto
   })
-  public async CollectFees(ctx: GalaChainContext, dto: CollectDto): Promise<UserBalanceResDto> {
+  public async CollectPositionFees(ctx: GalaChainContext, dto: CollectDto): Promise<UserBalanceResDto> {
     return await collect(ctx, dto);
   }
 
   @Submit({
     in: CollectProtocolFeesDto,
-    out: CollectProtocolFeesResDto
+    out: CollectProtocolFeesResDto,
+    allowedOrgs: ["CuratorOrg"]
   })
   public async CollectProtocolFees(
     ctx: GalaChainContext,
@@ -212,7 +214,8 @@ export class DexV3Contract extends GalaContract {
 
   @Submit({
     in: SetProtocolFeeDto,
-    out: SetProtocolFeeResDto
+    out: SetProtocolFeeResDto,
+    allowedOrgs: ["CuratorOrg"]
   })
   public async SetProtocolFee(ctx: GalaChainContext, dto: SetProtocolFeeDto): Promise<SetProtocolFeeResDto> {
     return await setProtocolFee(ctx, dto);
@@ -220,22 +223,22 @@ export class DexV3Contract extends GalaContract {
 
   @Evaluate({
     in: ChainCallDTO,
-    out: PlatformFeeConfig,
+    out: DexFeeConfig,
     allowedOrgs: ["CuratorOrg"]
   })
-  public async FetchPlatformAddressConfig(ctx: GalaChainContext): Promise<PlatformFeeConfig> {
-    return fetchPlatformAddressConfig(ctx);
+  public async GetDexFeeConfigration(ctx: GalaChainContext, dto: ChainCallDTO): Promise<DexFeeConfig> {
+    return getDexFeesConfigration(ctx, dto);
   }
 
   @Submit({
-    in: ConfigurePlatformFeeAddressDto,
-    out: PlatformFeeConfig,
+    in: ConfigureDexFeeAddressDto,
+    out: DexFeeConfig,
     allowedOrgs: ["CuratorOrg"]
   })
-  public async ConfigurePlatformFeeAddress(
+  public async ConfigureDexFeeAddress(
     ctx: GalaChainContext,
-    dto: ConfigurePlatformFeeAddressDto
-  ): Promise<PlatformFeeConfig> {
-    return configurePlatformFeeAddress(ctx, dto);
+    dto: ConfigureDexFeeAddressDto
+  ): Promise<DexFeeConfig> {
+    return configureDexFeeAddress(ctx, dto);
   }
 }

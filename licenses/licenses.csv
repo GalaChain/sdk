@@ -598,7 +598,7 @@
 "debug@4.3.6","debug","4.3.6","https://github.com/debug-js/debug","Lightweight debugging utility for Node.js and the browser","MIT"
 "debuglog@1.0.1","debuglog","1.0.1","https://github.com/sam-github/node-debuglog","backport of util.debuglog from node v0.11","MIT"
 "decamelize@1.2.0","decamelize","1.2.0","https://github.com/sindresorhus/decamelize","Convert a camelized string into a lowercased one with a custom separator: unicornRainbow → unicorn_rainbow","MIT"
-"decimal.js@10.4.3","decimal.js","10.4.3","https://github.com/MikeMcl/decimal.js","An arbitrary-precision Decimal type for JavaScript.","MIT"
+"decimal.js@10.5.0","decimal.js","10.5.0","https://github.com/MikeMcl/decimal.js","An arbitrary-precision Decimal type for JavaScript.","MIT"
 "decompress-response@6.0.0","decompress-response","6.0.0","https://github.com/sindresorhus/decompress-response","Decompress a HTTP response if needed","MIT"
 "dedent@1.5.3","dedent","1.5.3","https://github.com/dmnd/dedent","A string tag that strips indentation from multi-line strings. ⬅️","MIT"
 "deep-extend@0.6.0","deep-extend","0.6.0","https://github.com/unclechu/node-deep-extend","Recursive object extending","MIT"

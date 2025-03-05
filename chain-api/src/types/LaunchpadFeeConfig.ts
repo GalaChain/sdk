@@ -21,9 +21,9 @@ import { ChainObject } from "./ChainObject";
 @JSONSchema({
   description: "Defines the platform fee address and authorized owners for modification."
 })
-export class PlatformFeeConfig extends ChainObject {
+export class LaunchpadFeeConfig extends ChainObject {
   @Exclude()
-  public static INDEX_KEY = "GCDPFC"; // GalaChain Platform Fee Configuration
+  public static INDEX_KEY = "GCLFC"; // GalaChain Launchpad Fee Configuration
 
   @IsNotEmpty()
   @IsString()

@@ -12,7 +12,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-import { ChainError, ErrorCode, LaunchpadSale, PlatformFeeConfig, SaleStatus } from "@gala-chain/api";
+import { ChainError, ErrorCode, LaunchpadFeeConfig, LaunchpadSale, SaleStatus } from "@gala-chain/api";
 import { DefaultError, NotFoundError } from "@gala-chain/api";
 import Decimal from "decimal.js";
 
@@ -36,6 +36,7 @@ export async function fetchAndValidateSale(
   if (sale === undefined) {
     throw new NotFoundError("Sale record not found.");
   }
+
   if (sale.saleStatus === SaleStatus.END) {
     throw new DefaultError("This sale has already ended.");
   }
@@ -51,10 +52,12 @@ export function getBondingConstants() {
   };
 }
 
-export async function fetchPlatformFeeAddress(ctx: GalaChainContext): Promise<PlatformFeeConfig | undefined> {
-  const key = ctx.stub.createCompositeKey(PlatformFeeConfig.INDEX_KEY, []);
+export async function fetchPlatformFeeAddress(
+  ctx: GalaChainContext
+): Promise<LaunchpadFeeConfig | undefined> {
+  const key = ctx.stub.createCompositeKey(LaunchpadFeeConfig.INDEX_KEY, []);
 
-  const platformFeeAddress = await getObjectByKey(ctx, PlatformFeeConfig, key).catch((e) => {
+  const platformFeeAddress = await getObjectByKey(ctx, LaunchpadFeeConfig, key).catch((e) => {
     const chainError = ChainError.from(e);
     if (chainError.matches(ErrorCode.NOT_FOUND)) {
       return undefined;

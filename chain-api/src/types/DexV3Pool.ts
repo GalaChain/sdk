@@ -57,6 +57,16 @@ export class Pool extends ChainObject {
   @Exclude()
   static INDEX_KEY = "GCDVP"; //GalaChain Dex V3 Pool
 
+  @JSONSchema({
+    description: "Min Tick for the pool"
+  })
+  public static MIN_TICK = -887272;
+
+  @JSONSchema({
+    description: "Max Tick for the pool"
+  })
+  public static MAX_TICK = 887272;
+
   @ChainKey({ position: 0 })
   @IsString()
   public readonly token0: string;
@@ -356,12 +366,13 @@ export class Pool extends ChainObject {
         this.bitmap,
         state.tick,
         this.tickSpacing,
-        zeroForOne
+        zeroForOne,
+        state.sqrtPrice
       );
 
-      //cap the tick in valid range i.e. -887272 < tick < 887272
-      if (step.tickNext < -887272) throw new Error("Pool lacks enough liquidity to perform this operation");
-      if (step.tickNext > 887272) throw new Error("Pool lacks enough liquidity to perform this operation");
+      //cap the tick in valid range i.e. MIN_TICK < tick < MAX_TICK
+      if (step.tickNext < Pool.MIN_TICK || step.tickNext > Pool.MAX_TICK)
+        throw new Error("Not enough liquidity available in pool");
 
       //price at next tick
       step.sqrtPriceNext = tickToSqrtPrice(step.tickNext);

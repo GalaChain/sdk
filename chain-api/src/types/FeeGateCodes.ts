@@ -30,5 +30,10 @@ export enum FeeGateCodes {
   MintTokenWithAllowance = "MintTokenWithAllowance",
   RequestTokenBridgeOut = "RequestTokenBridgeOut",
   TerminateTokenSwap = "TerminateTokenSwap",
-  SimpleFee = "SimpleFee"
+  SimpleFee = "SimpleFee",
+  CreatePool = "CreatePool",
+  AddLiquidity = "AddLiquidity",
+  Swap = "Swap",
+  RemoveLiquidity = "RemoveLiquidity",
+  CollectPositionFees = "CollectPositionFees"
 }

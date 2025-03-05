@@ -511,3 +511,23 @@ export async function combinedMintFees(ctx: GalaChainContext, data: ICombinedMin
     });
   }
 }
+
+export async function createPoolFeeGate(ctx: GalaChainContext, dto: ChainCallDTO) {
+  return galaFeeGate(ctx, { feeCode: FeeGateCodes.CreatePool });
+}
+
+export async function addLiquidityFeeGate(ctx: GalaChainContext, dto: ChainCallDTO) {
+  return galaFeeGate(ctx, { feeCode: FeeGateCodes.AddLiquidity });
+}
+
+export async function removeLiquidityFeeGate(ctx: GalaChainContext, dto: ChainCallDTO) {
+  return galaFeeGate(ctx, { feeCode: FeeGateCodes.RemoveLiquidity });
+}
+
+export async function swapFeeGate(ctx: GalaChainContext, dto: ChainCallDTO) {
+  return galaFeeGate(ctx, { feeCode: FeeGateCodes.Swap });
+}
+
+export async function collectPositionFeesFeeGate(ctx: GalaChainContext, dto: ChainCallDTO) {
+  return galaFeeGate(ctx, { feeCode: FeeGateCodes.CollectPositionFees });
+}
