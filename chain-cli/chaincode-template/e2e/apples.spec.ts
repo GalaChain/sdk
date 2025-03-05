@@ -12,9 +12,10 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-import { GalaChainResponse, GalaChainResponseType } from "@gala-chain/api";
+import { BatchDto, GalaChainResponse, GalaChainResponseType } from "@gala-chain/api";
 import { ChainClient, ChainUser, CommonContractAPI, commonContractAPI } from "@gala-chain/client";
 import { AdminChainClients, TestClients, transactionErrorKey, transactionSuccess } from "@gala-chain/test";
+import { plainToInstance } from "class-transformer";
 
 import {
   AppleTree,
@@ -39,10 +40,12 @@ describe("Apple trees", () => {
   };
   let client: AdminChainClients<typeof appleContractConfig>;
   let user: ChainUser;
+  let user2: ChainUser;
 
   beforeAll(async () => {
     client = await TestClients.createForAdmin(appleContractConfig);
     user = await client.createRegisteredUser();
+    user2 = await client.createRegisteredUser();
   });
 
   afterAll(async () => {
@@ -110,6 +113,32 @@ describe("Apple trees", () => {
         writes: { [saved.getCompositeKey()]: expect.any(String) },
         deletes: {}
       })
+    );
+  });
+
+  test("Support Batch operations", async () => {
+    // Given
+    const plant = new AppleTreeDto(Variety.HONEYCRISP, 10);
+    const pick = new PickAppleDto(user.identityKey, plant.variety, plant.index);
+
+    const batch = plainToInstance(BatchDto, {
+      operations: [
+        { method: "PickApple", dto: pick.signed(user.privateKey).serialize() },
+        { method: "PlantTree", dto: plant.signed(user.privateKey).serialize() },
+        { method: "PickApple", dto: pick.signed(user2.privateKey).serialize() }
+      ]
+    });
+
+    // When
+    const response = await client.apples.BatchSubmit(batch);
+
+    // Then
+    expect(response).toEqual(
+      transactionSuccess([
+        transactionErrorKey("OBJECT_NOT_FOUND"),
+        transactionSuccess(),
+        transactionErrorKey("NO_APPLES_LEFT")
+      ])
     );
   });
 });
