@@ -1,0 +1,241 @@
+/*
+ * Copyright (c) Gala Games Inc. All rights reserved.
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+import {
+  AddLiquidityDTO,
+  AddLiquidityResDto,
+  BurnDto,
+  ChainCallDTO,
+  CollectDto,
+  CollectProtocolFeesDto,
+  CollectProtocolFeesResDto,
+  ConfigurePlatformFeeAddressDto,
+  CreatePoolDto,
+  GetAddLiquidityEstimationDto,
+  GetAddLiquidityEstimationResDto,
+  GetLiquidityResDto,
+  GetPoolDto,
+  GetPositionDto,
+  GetPositionResDto,
+  GetRemoveLiqEstimationResDto,
+  GetUserPositionsDto,
+  GetUserPositionsResDto,
+  PlatformFeeConfig,
+  Pool,
+  QuoteExactAmountDto,
+  QuoteExactAmountResDto,
+  SetProtocolFeeDto,
+  SetProtocolFeeResDto,
+  Slot0ResDto,
+  SwapDto,
+  SwapResDto,
+  UserBalanceResDto
+} from "@gala-chain/api";
+
+import { version } from "../../package.json";
+import {
+  addLiquidity,
+  burn,
+  collect,
+  createPool,
+  getAddLiquidityEstimation,
+  getLiquidity,
+  getPoolData,
+  getPositions,
+  getRemoveLiquidityEstimation,
+  getSlot0,
+  getUserPositions,
+  quoteExactAmount,
+  swap
+} from "../dex";
+import { collectProtocolFees } from "../dex/collectProtocolFee";
+import { setProtocolFee } from "../dex/setProtocolFee";
+import { GalaChainContext } from "../types";
+import { GalaContract } from "./GalaContract";
+import { EVALUATE, Evaluate, GalaTransaction, Submit } from "./GalaTransaction";
+import { configurePlatformFeeAddress, fetchPlatformAddressConfig } from "./platformfee";
+
+export class DexV3Contract extends GalaContract {
+  constructor() {
+    super("DexV3Contract", version);
+  }
+
+  @Submit({
+    in: CreatePoolDto,
+    out: Pool
+  })
+  public async CreatePool(ctx: GalaChainContext, dto: CreatePoolDto): Promise<Pool> {
+    return await createPool(ctx, dto);
+  }
+
+  @Submit({
+    in: AddLiquidityDTO,
+    out: AddLiquidityResDto
+  })
+  public async AddLiquidity(ctx: GalaChainContext, dto: AddLiquidityDTO): Promise<AddLiquidityResDto> {
+    return await addLiquidity(ctx, dto);
+  }
+
+  @Submit({
+    in: SwapDto,
+    out: SwapResDto
+  })
+  public async Swap(ctx: GalaChainContext, dto: SwapDto): Promise<SwapResDto> {
+    return await swap(ctx, dto);
+  }
+
+  @Submit({
+    in: BurnDto,
+    out: UserBalanceResDto
+  })
+  public async RemoveLiquidity(ctx: GalaChainContext, dto: BurnDto): Promise<UserBalanceResDto> {
+    return await burn(ctx, dto);
+  }
+
+  @GalaTransaction({
+    type: EVALUATE,
+    in: GetPoolDto,
+    out: Slot0ResDto
+  })
+  public async GetSlot0(ctx: GalaChainContext, dto: GetPoolDto): Promise<Slot0ResDto> {
+    return await getSlot0(ctx, dto);
+  }
+
+  @GalaTransaction({
+    type: EVALUATE,
+    in: GetPoolDto,
+    out: GetLiquidityResDto
+  })
+  public async GetLiquidity(ctx: GalaChainContext, dto: GetPoolDto): Promise<GetLiquidityResDto> {
+    return await getLiquidity(ctx, dto);
+  }
+
+  @GalaTransaction({
+    type: EVALUATE,
+    in: GetPositionDto,
+    out: GetPositionResDto
+  })
+  public async GetPositions(ctx: GalaChainContext, dto: GetPositionDto): Promise<GetPositionResDto> {
+    return await getPositions(ctx, dto);
+  }
+
+  @GalaTransaction({
+    type: EVALUATE,
+    in: GetUserPositionsDto,
+    out: GetUserPositionsResDto
+  })
+  public async GetUserPositions(
+    ctx: GalaChainContext,
+    dto: GetUserPositionsDto
+  ): Promise<GetUserPositionsResDto> {
+    return await getUserPositions(ctx, dto);
+  }
+
+  @GalaTransaction({
+    type: EVALUATE,
+    in: GetAddLiquidityEstimationDto,
+    out: GetAddLiquidityEstimationResDto
+  })
+  public async GetAddLiquidityEstimation(
+    ctx: GalaChainContext,
+    dto: GetAddLiquidityEstimationDto
+  ): Promise<GetAddLiquidityEstimationResDto> {
+    return await getAddLiquidityEstimation(ctx, dto);
+  }
+
+  @GalaTransaction({
+    type: EVALUATE,
+    in: QuoteExactAmountDto,
+    out: QuoteExactAmountResDto
+  })
+  public async QuoteExactAmount(
+    ctx: GalaChainContext,
+    dto: QuoteExactAmountDto
+  ): Promise<QuoteExactAmountResDto> {
+    return await quoteExactAmount(ctx, dto);
+  }
+  @GalaTransaction({
+    type: EVALUATE,
+    in: GetPoolDto,
+    out: Pool
+  })
+  public async GetPoolData(ctx: GalaChainContext, dto: GetPoolDto): Promise<Pool> {
+    return (
+      (await getPoolData(ctx, dto)) ??
+      (() => {
+        throw new Error("Pool data not found");
+      })()
+    );
+  }
+
+  @GalaTransaction({
+    type: EVALUATE,
+    in: BurnDto,
+    out: GetRemoveLiqEstimationResDto
+  })
+  public async GetRemoveLiquidityEstimation(
+    ctx: GalaChainContext,
+    dto: BurnDto
+  ): Promise<GetRemoveLiqEstimationResDto> {
+    return await getRemoveLiquidityEstimation(ctx, dto);
+  }
+
+  @Submit({
+    in: CollectDto,
+    out: UserBalanceResDto
+  })
+  public async CollectFees(ctx: GalaChainContext, dto: CollectDto): Promise<UserBalanceResDto> {
+    return await collect(ctx, dto);
+  }
+
+  @Submit({
+    in: CollectProtocolFeesDto,
+    out: CollectProtocolFeesResDto
+  })
+  public async CollectProtocolFees(
+    ctx: GalaChainContext,
+    dto: CollectProtocolFeesDto
+  ): Promise<CollectProtocolFeesResDto> {
+    return await collectProtocolFees(ctx, dto);
+  }
+
+  @Submit({
+    in: SetProtocolFeeDto,
+    out: SetProtocolFeeResDto
+  })
+  public async SetProtocolFee(ctx: GalaChainContext, dto: SetProtocolFeeDto): Promise<SetProtocolFeeResDto> {
+    return await setProtocolFee(ctx, dto);
+  }
+
+  @Evaluate({
+    in: ChainCallDTO,
+    out: PlatformFeeConfig,
+    allowedOrgs: ["CuratorOrg"]
+  })
+  public async FetchPlatformAddressConfig(ctx: GalaChainContext): Promise<PlatformFeeConfig> {
+    return fetchPlatformAddressConfig(ctx);
+  }
+
+  @Submit({
+    in: ConfigurePlatformFeeAddressDto,
+    out: PlatformFeeConfig,
+    allowedOrgs: ["CuratorOrg"]
+  })
+  public async ConfigurePlatformFeeAddress(
+    ctx: GalaChainContext,
+    dto: ConfigurePlatformFeeAddressDto
+  ): Promise<PlatformFeeConfig> {
+    return configurePlatformFeeAddress(ctx, dto);
+  }
+}
