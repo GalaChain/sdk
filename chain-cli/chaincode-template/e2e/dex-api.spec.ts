@@ -2307,7 +2307,7 @@ function dexV3ContractAPI(client: ChainClient): DexV3ContractAPI & CommonContrac
       >;
     },
     getDexConfig(dto: ChainCallDTO) {
-      return client.submitTransaction("GetDexFeeConfigration", dto) as Promise<
+      return client.evaluateTransaction("GetDexFeeConfigration", dto) as Promise<
         GalaChainResponse<DexFeeConfig>
       >;
     }
