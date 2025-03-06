@@ -14,10 +14,10 @@
  */
 // eslint-disable-next-line @typescript-eslint/ban-ts-comment
 // @ts-ignore
-import { ChainCallDTO, ChainKey, ChainObject, GalaChainResponse } from "@gala-chain/api";
+import { ChainCallDTO, ChainKey, ChainObject, GalaChainResponse, NotFoundError } from "@gala-chain/api";
 import { NotImplementedError } from "@gala-chain/api";
 import { Exclude } from "class-transformer";
-import { IsPositive } from "class-validator";
+import { IsNotEmpty, IsPositive } from "class-validator";
 import { Transaction } from "fabric-contract-api";
 
 import { version } from "../../package.json";
@@ -57,6 +57,13 @@ export class Superhero extends ChainObject {
   public static readonly INDEX_KEY: string = "superhero";
 }
 
+export class KVDto extends ChainCallDTO {
+  @IsNotEmpty()
+  public key: string;
+
+  public value?: string;
+}
+
 export default class TestGalaContract extends GalaContract {
   constructor() {
     super("TestGalaContract", version);
@@ -84,6 +91,37 @@ export default class TestGalaContract extends GalaContract {
     } catch (e) {
       return GalaChainResponse.Error(e as Error);
     }
+  }
+
+  @GalaTransaction({
+    type: SUBMIT,
+    in: KVDto,
+    allowedOrgs: ["CuratorOrg"]
+  })
+  public async PutKv(ctx: GalaChainContext, dto: KVDto): Promise<void> {
+    await ctx.stub.putState(dto.key, Buffer.from(dto.value ?? "placeholder"));
+  }
+
+  @GalaTransaction({
+    type: EVALUATE,
+    in: KVDto
+  })
+  public async GetKv(ctx: GalaChainContext, dto: KVDto): Promise<string> {
+    const response = (await ctx.stub.getState(dto.key)).toString();
+    if (response === "") {
+      throw new NotFoundError(`Object ${dto.key} not found`);
+    }
+    return response;
+  }
+
+  @GalaTransaction({
+    type: SUBMIT,
+    in: KVDto,
+    allowedOrgs: ["CuratorOrg"]
+  })
+  public async ErrorAfterPutKv(ctx: GalaChainContext, dto: KVDto): Promise<void> {
+    await this.PutKv(ctx, dto);
+    throw new NotImplementedError("Some error after put was invoked");
   }
 
   @Transaction()

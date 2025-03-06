@@ -374,6 +374,7 @@ export class FulfillTokenSaleDto extends ChainCallDTO {
   })
   @IsOptional()
   @ValidateNested()
+  @Type(() => ExpectedTokenSale)
   public expectedTokenSale?: ExpectedTokenSale;
 
   @JSONSchema({
