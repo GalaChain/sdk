@@ -39,12 +39,7 @@ import {
   TradeResDto,
   TransferTokenDto
 } from "@gala-chain/api";
-import {
-  ChainClient,
-  ChainUser,
-  CommonContractAPI,
-  commonContractAPI,
-} from "@gala-chain/client";
+import { ChainClient, ChainUser, CommonContractAPI, commonContractAPI } from "@gala-chain/client";
 import {
   AdminChainClients,
   TestClients,
@@ -1802,7 +1797,9 @@ function LaunchpadContractAPI(client: ChainClient): LaunchpadContractAPI & Commo
       >;
     },
     CalculatePreMintTokens(dto: PreMintCalculationDto) {
-      return client.evaluateTransaction("CalculatePreMintTokens", dto) as Promise<GalaChainResponse<BigNumber>>;
+      return client.evaluateTransaction("CalculatePreMintTokens", dto) as Promise<
+        GalaChainResponse<BigNumber>
+      >;
     },
     FetchSale(dto: FetchSaleDto) {
       return client.evaluateTransaction("FetchSaleDetails", dto) as Promise<GalaChainResponse<LaunchpadSale>>;
