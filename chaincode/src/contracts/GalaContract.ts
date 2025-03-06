@@ -35,6 +35,15 @@ import { getApiMethod, getApiMethods } from "./GalaContractApi";
 import { EVALUATE, GalaTransaction, SUBMIT } from "./GalaTransaction";
 import { trace } from "./tracing";
 
+export class BatchWriteLimitExceededError extends ValidationFailedError {
+  constructor(writesLimit: number) {
+    super(
+      `Batch writes limit of ${writesLimit} keys exceeded. ` +
+        `This operation can be repeated with a smaller batch.`
+    );
+  }
+}
+
 export abstract class GalaContract extends Contract {
   /**
    * @param name Contract name
@@ -188,6 +197,12 @@ export abstract class GalaContract extends Contract {
       deletes: ctx.stub.getDeletes()
     };
 
+    const writesLimit = Math.min(
+      batchDto.writesLimit ?? BatchDto.WRITES_DEFAULT_LIMIT,
+      BatchDto.WRITES_HARD_LIMIT
+    );
+    let writesCount = Object.keys(ctx.stub.getWrites()).length;
+
     for (const op of batchDto.operations) {
       // 1. Reset the calling user, to allow each operation to perform the
       //    authorization.
@@ -196,6 +211,10 @@ export abstract class GalaContract extends Contract {
       // 2. Execute the operation. Collect both successful and failed responses.
       let response: GalaChainResponse<unknown>;
       try {
+        if (writesCount >= writesLimit) {
+          throw new BatchWriteLimitExceededError(writesLimit);
+        }
+
         const method = getApiMethod(this, op.method, (m) => m.isWrite && m.methodName !== "BatchSubmit");
         response = await this[method.methodName](ctx, op.dto);
       } catch (error) {
@@ -215,6 +234,7 @@ export abstract class GalaContract extends Contract {
       if (GalaChainResponse.isSuccess(response)) {
         aggregatedCache.writes = ctx.stub.getWrites();
         aggregatedCache.deletes = ctx.stub.getDeletes();
+        writesCount = Object.keys(aggregatedCache.writes).length;
       } else {
         ctx.stub.setWrites(aggregatedCache.writes);
         ctx.stub.setDeletes(aggregatedCache.deletes);

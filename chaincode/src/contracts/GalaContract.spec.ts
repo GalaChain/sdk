@@ -23,7 +23,12 @@ import {
   GetObjectDto,
   createValidDTO
 } from "@gala-chain/api";
-import { transactionError, transactionErrorMessageContains, transactionSuccess } from "@gala-chain/test";
+import {
+  transactionError,
+  transactionErrorKey,
+  transactionErrorMessageContains,
+  transactionSuccess
+} from "@gala-chain/test";
 import { instanceToPlain, plainToInstance } from "class-transformer";
 import { Context } from "fabric-contract-api";
 import { inspect } from "util";
@@ -415,6 +420,8 @@ describe("GalaContract.Batch", () => {
       ]
     });
 
+    await batchSubmit.validateOrReject();
+
     const expectedSubmitResponses = [
       transactionSuccess(),
       transactionErrorMessageContains("Some error after put was invoked"),
@@ -445,5 +452,47 @@ describe("GalaContract.Batch", () => {
     // Then
     expect(submitResp).toEqual(transactionSuccess(expectedSubmitResponses));
     expect(evaluateResp).toEqual(transactionSuccess(expectedEvaluateResponses));
+  });
+
+  it("should fail on writes limit exceeded", async () => {
+    // Given
+    const chaincode = new TestChaincode([TestGalaContract]);
+    const batchSubmit1 = plainToInstance(BatchDto, {
+      operations: [
+        { method: "PutKv", dto: { key: "test-key-1", value: "robot" } },
+        { method: "PutKv", dto: { key: "test-key-2", value: "zerg" } },
+        { method: "PutKv", dto: { key: "test-key-3", value: "human" } },
+        { method: "PutKv", dto: { key: "test-key-4", value: "alien" } },
+        { method: "PutKv", dto: { key: "test-key-5", value: "ai" } }
+      ],
+      writesLimit: 2
+    });
+
+    const batchSubmit2 = plainToInstance(BatchDto, {
+      operations: batchSubmit1.operations.slice(2),
+      writesLimit: 2
+    });
+
+    // When
+    const response1 = await chaincode.invoke("TestGalaContract:BatchSubmit", batchSubmit1.serialize());
+    const response2 = await chaincode.invoke("TestGalaContract:BatchSubmit", batchSubmit2.serialize());
+
+    // Then
+    expect(response1).toEqual(
+      transactionSuccess([
+        transactionSuccess(),
+        transactionSuccess(),
+        transactionErrorKey("BATCH_WRITE_LIMIT_EXCEEDED"),
+        transactionErrorKey("BATCH_WRITE_LIMIT_EXCEEDED"),
+        transactionErrorKey("BATCH_WRITE_LIMIT_EXCEEDED")
+      ])
+    );
+    expect(response2).toEqual(
+      transactionSuccess([
+        transactionSuccess(),
+        transactionSuccess(),
+        transactionErrorKey("BATCH_WRITE_LIMIT_EXCEEDED")
+      ])
+    );
   });
 });

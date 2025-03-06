@@ -123,9 +123,9 @@ describe("Apple trees", () => {
 
     const batch = plainToInstance(BatchDto, {
       operations: [
-        { method: "PickApple", dto: pick.signed(user.privateKey).serialize() },
-        { method: "PlantTree", dto: plant.signed(user.privateKey).serialize() },
-        { method: "PickApple", dto: pick.signed(user2.privateKey).serialize() }
+        { method: "PickApple", dto: pick.signed(user.privateKey) },
+        { method: "PlantTree", dto: plant.signed(user.privateKey) },
+        { method: "PickApple", dto: pick.signed(user2.privateKey) }
       ]
     });
 

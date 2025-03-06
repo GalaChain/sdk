@@ -14,10 +14,13 @@
  */
 import { Type, instanceToInstance, plainToInstance } from "class-transformer";
 import {
-  IsArray,
+  ArrayMaxSize,
+  ArrayMinSize,
   IsNotEmpty,
+  IsNumber,
   IsOptional,
-  ValidateIf,
+  Max,
+  Min,
   ValidateNested,
   ValidationError,
   validate
@@ -285,8 +288,30 @@ export class BatchOperationDto extends ChainCallDTO {
 }
 
 export class BatchDto extends ChainCallDTO {
+  public static readonly BATCH_SIZE_LIMIT: number = 1_000;
+  public static readonly WRITES_DEFAULT_LIMIT: number = 10_000;
+  public static readonly WRITES_HARD_LIMIT: number = 100_000;
+
+  @JSONSchema({
+    description:
+      "Soft limit of keys written to chain in a batch, excluding deletes. " +
+      "If the limit is exceeded, all subsequent operations in batch fail. " +
+      "Typically it is safe to repeat failed operations in the next batch. " +
+      `Default: ${BatchDto.WRITES_DEFAULT_LIMIT}. ` +
+      `Max: ${BatchDto.WRITES_HARD_LIMIT}.`
+  })
+  @IsOptional()
+  @IsNumber()
+  @Min(1)
+  @Max(BatchDto.WRITES_HARD_LIMIT)
+  @IsOptional()
+  writesLimit?: number;
+
   @IsNotEmpty()
   @Type(() => BatchOperationDto)
+  @ValidateNested({ each: true })
+  @ArrayMinSize(1)
+  @ArrayMaxSize(BatchDto.BATCH_SIZE_LIMIT)
   operations: BatchOperationDto[];
 }
 
