@@ -1352,7 +1352,7 @@ describe("DEx v3 Testing", () => {
                 liquidity: "0.436872924385936373",
                 tickLower: 74400,
                 tickUpper: 75480,
-                token0Img: "https://cryptologos.cc/logos/ethereum-eth-logo.png",
+                token0Img: "https://logosite.com/logos/ethereum-eth-logo.png",
                 token0InstanceKey: {
                   additionalKey: "ETH",
                   category: "new-category0",
@@ -1361,7 +1361,7 @@ describe("DEx v3 Testing", () => {
                   type: "new-type0"
                 },
                 token0Symbol: "ETH",
-                token1Img: "https://cryptologos.cc/logos/tether-usdt-logo.png",
+                token1Img: "https://logosite.com/logos/tether-usdt-logo.png",
                 token1InstanceKey: {
                   additionalKey: "USDT",
                   category: "new-category0",
@@ -1375,7 +1375,7 @@ describe("DEx v3 Testing", () => {
                 liquidity: "0",
                 tickLower: 75960,
                 tickUpper: 76080,
-                token0Img: "https://cryptologos.cc/logos/ethereum-eth-logo.png",
+                token0Img: "https://logosite.com/logos/ethereum-eth-logo.png",
                 token0InstanceKey: {
                   additionalKey: "ETH",
                   category: "new-category0",
@@ -1384,7 +1384,7 @@ describe("DEx v3 Testing", () => {
                   type: "new-type0"
                 },
                 token0Symbol: "ETH",
-                token1Img: "https://cryptologos.cc/logos/tether-usdt-logo.png",
+                token1Img: "https://logosite.com/logos/tether-usdt-logo.png",
                 token1InstanceKey: {
                   additionalKey: "USDT",
                   category: "new-category0",
@@ -1400,7 +1400,7 @@ describe("DEx v3 Testing", () => {
                 liquidity: "0.42495639238882534",
                 tickLower: 74390,
                 tickUpper: 75500,
-                token0Img: "https://cryptologos.cc/logos/ethereum-eth-logo.png",
+                token0Img: "https://logosite.com/logos/ethereum-eth-logo.png",
                 token0InstanceKey: {
                   additionalKey: "ETH",
                   category: "new-category0",
@@ -1409,7 +1409,7 @@ describe("DEx v3 Testing", () => {
                   type: "new-type0"
                 },
                 token0Symbol: "ETH",
-                token1Img: "https://cryptologos.cc/logos/tether-usdt-logo.png",
+                token1Img: "https://logosite.com/logos/tether-usdt-logo.png",
                 token1InstanceKey: {
                   additionalKey: "USDT",
                   category: "new-category0",
@@ -1423,7 +1423,7 @@ describe("DEx v3 Testing", () => {
                 liquidity: "2060.753664493334613554",
                 tickLower: 76510,
                 tickUpper: 76960,
-                token0Img: "https://cryptologos.cc/logos/ethereum-eth-logo.png",
+                token0Img: "https://logosite.com/logos/ethereum-eth-logo.png",
                 token0InstanceKey: {
                   additionalKey: "ETH",
                   category: "new-category0",
@@ -1432,7 +1432,7 @@ describe("DEx v3 Testing", () => {
                   type: "new-type0"
                 },
                 token0Symbol: "ETH",
-                token1Img: "https://cryptologos.cc/logos/tether-usdt-logo.png",
+                token1Img: "https://logosite.com/logos/tether-usdt-logo.png",
                 token1InstanceKey: {
                   additionalKey: "USDT",
                   category: "new-category0",
