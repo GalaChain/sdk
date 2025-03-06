@@ -32,7 +32,7 @@ enum UserRefValidationResult {
 
 const customMessages = {
   [UserRefValidationResult.INVALID_ETH_USER_ALIAS]:
-    "User alias starting with 'eth|' must end with valid checksumed eth address.",
+    "User alias starting with 'eth|' must end with valid checksumed eth address without 0x prefix.",
   [UserRefValidationResult.INVALID_TON_USER_ALIAS]:
     "User alias starting with 'ton|' must end with valid bounceable base64 TON address."
 };
@@ -77,7 +77,7 @@ function validateUserAlias(value: unknown): UserRefValidationResult {
     }
 
     if (parts[0] === "eth") {
-      if (signatures.isChecksumedEthAddress(parts[1])) {
+      if (signatures.isChecksumedEthAddress(parts[1]) && !parts[1].startsWith("0x")) {
         return UserRefValidationResult.VALID_USER_ALIAS;
       } else {
         return UserRefValidationResult.INVALID_ETH_USER_ALIAS;

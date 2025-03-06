@@ -20,7 +20,7 @@ const TOKENS = {
     symbol: "ETH",
     description:
       "Ethereum is a decentralized open-source blockchain system with smart contract functionality.",
-    image: "https://cryptologos.cc/logos/ethereum-eth-logo.png",
+    image: "https://logosite.com/logos/ethereum-eth-logo.png",
     KEY: {
       collection: "new-collection0",
       category: "new-category0",
@@ -33,7 +33,7 @@ const TOKENS = {
     symbol: "USDT",
     description:
       "Tether (USDT) is a stablecoin pegged to the US dollar, widely used for trading and transactions.",
-    image: "https://cryptologos.cc/logos/tether-usdt-logo.png",
+    image: "https://logosite.com/logos/tether-usdt-logo.png",
     KEY: {
       collection: "new-collection0",
       category: "new-category0",
@@ -45,7 +45,7 @@ const TOKENS = {
     name: "USD Coin",
     symbol: "USDC",
     description: "USD Coin (USDC) is a fully-backed stablecoin issued by regulated financial institutions.",
-    image: "https://cryptologos.cc/logos/usd-coin-usdc-logo.png",
+    image: "https://logosite.com/logos/usd-coin-usdc-logo.png",
     KEY: {
       collection: "new-collection0",
       category: "new-category0",
@@ -58,7 +58,7 @@ const TOKENS = {
     symbol: "BTC",
     description:
       "Bitcoin is the first decentralized digital currency, enabling peer-to-peer transactions worldwide.",
-    image: "https://cryptologos.cc/logos/bitcoin-btc-logo.png",
+    image: "https://logosite.com/logos/bitcoin-btc-logo.png",
     KEY: {
       collection: "new-collection0",
       category: "new-category0",
@@ -70,7 +70,7 @@ const TOKENS = {
     name: "Binance Coin",
     symbol: "BNB",
     description: "BNB is the native token of Binance, used for trading fee discounts and various utilities.",
-    image: "https://cryptologos.cc/logos/binance-coin-bnb-logo.png",
+    image: "https://logosite.com/logos/binance-coin-bnb-logo.png",
     KEY: {
       collection: "new-collection0",
       category: "new-category0",
@@ -83,7 +83,7 @@ const TOKENS = {
     symbol: "SOL",
     description:
       "Solana is a high-performance blockchain supporting smart contracts and decentralized applications.",
-    image: "https://cryptologos.cc/logos/solana-sol-logo.png",
+    image: "https://logosite.com/logos/solana-sol-logo.png",
     KEY: {
       collection: "new-collection0",
       category: "new-category0",
@@ -96,7 +96,7 @@ const TOKENS = {
     symbol: "MATIC",
     description:
       "Polygon is a layer-2 scaling solution that enhances Ethereum's scalability and transaction speed.",
-    image: "https://cryptologos.cc/logos/polygon-matic-logo.png",
+    image: "https://logosite.com/logos/polygon-matic-logo.png",
     KEY: {
       collection: "new-collection0",
       category: "new-category0",
