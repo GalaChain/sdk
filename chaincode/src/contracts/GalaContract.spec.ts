@@ -13,6 +13,7 @@
  * limitations under the License.
  */
 import {
+  BatchDto,
   ChainCallDTO,
   ChainObject,
   DefaultError,
@@ -24,8 +25,13 @@ import {
   createValidDTO,
   serialize
 } from "@gala-chain/api";
-import { TestChaincode, transactionError, transactionSuccess } from "@gala-chain/test";
-import { instanceToPlain } from "class-transformer";
+import {
+  transactionError,
+  transactionErrorKey,
+  transactionErrorMessageContains,
+  transactionSuccess
+} from "@gala-chain/test";
+import { instanceToPlain, plainToInstance } from "class-transformer";
 import { Context } from "fabric-contract-api";
 import { inspect } from "util";
 
@@ -379,7 +385,7 @@ describe("GalaContract.DryRun", () => {
       ErrorCode: 404,
       ErrorKey: "NOT_FOUND",
       Message:
-        "Method UnknownMethod not found. Available methods: CreateSuperhero, DryRun, GetChaincodeVersion, GetContractAPI, GetContractVersion, GetObjectByKey, GetObjectHistory, QuerySuperheroes"
+        "Method UnknownMethod is not available. Available methods: BatchEvaluate, BatchSubmit, CreateSuperhero, DryRun, ErrorAfterPutKv, GetChaincodeVersion, GetContractAPI, GetContractVersion, GetKv, GetObjectByKey, GetObjectHistory, PutKv, QuerySuperheroes"
     });
   });
 
@@ -400,5 +406,100 @@ describe("GalaContract.DryRun", () => {
       ErrorKey: "VALIDATION_FAILED",
       Message: "The dto should have no signature for dry run execution"
     });
+  });
+});
+
+describe("GalaContract.Batch", () => {
+  it("should support batch operations properly", async () => {
+    // Given
+    const chaincode = new TestChaincode([TestGalaContract]);
+
+    const [key1, value1] = ["test-key-1", "robot"];
+    const [key2, value2] = ["test-key-2", "zerg"];
+    const [key3, value3] = ["test-key-3", "human"];
+
+    const batchSubmit = plainToInstance(BatchDto, {
+      operations: [
+        { method: "PutKv", dto: { key: key1, value: value1 } },
+        { method: "ErrorAfterPutKv", dto: { key: key2, value: value2 } },
+        { method: "PutKv", dto: { key: key3, value: value3 } },
+        { method: "GetKv", dto: { key: key3 } }
+      ]
+    });
+
+    await batchSubmit.validateOrReject();
+
+    const expectedSubmitResponses = [
+      transactionSuccess(),
+      transactionErrorMessageContains("Some error after put was invoked"),
+      transactionSuccess(),
+      transactionErrorMessageContains("Method GetKv is not available")
+    ];
+
+    const batchEvaluate = plainToInstance(BatchDto, {
+      operations: [
+        { method: "GetKv", dto: { key: key1 } },
+        { method: "GetKv", dto: { key: key2 } },
+        { method: "GetKv", dto: { key: key3 } },
+        { method: "PutKv", dto: { key: key3, value: "altered" } }
+      ]
+    });
+
+    const expectedEvaluateResponses = [
+      transactionSuccess(value1),
+      transactionErrorMessageContains("Object test-key-2 not found"),
+      transactionSuccess(value3),
+      transactionErrorMessageContains("Method PutKv is not available")
+    ];
+
+    // When
+    const submitResp = await chaincode.invoke("TestGalaContract:BatchSubmit", batchSubmit.serialize());
+    const evaluateResp = await chaincode.invoke("TestGalaContract:BatchEvaluate", batchEvaluate.serialize());
+
+    // Then
+    expect(submitResp).toEqual(transactionSuccess(expectedSubmitResponses));
+    expect(evaluateResp).toEqual(transactionSuccess(expectedEvaluateResponses));
+  });
+
+  it("should fail on writes limit exceeded", async () => {
+    // Given
+    const chaincode = new TestChaincode([TestGalaContract]);
+    const batchSubmit1 = plainToInstance(BatchDto, {
+      operations: [
+        { method: "PutKv", dto: { key: "test-key-1", value: "robot" } },
+        { method: "PutKv", dto: { key: "test-key-2", value: "zerg" } },
+        { method: "PutKv", dto: { key: "test-key-3", value: "human" } },
+        { method: "PutKv", dto: { key: "test-key-4", value: "alien" } },
+        { method: "PutKv", dto: { key: "test-key-5", value: "ai" } }
+      ],
+      writesLimit: 2
+    });
+
+    const batchSubmit2 = plainToInstance(BatchDto, {
+      operations: batchSubmit1.operations.slice(2),
+      writesLimit: 2
+    });
+
+    // When
+    const response1 = await chaincode.invoke("TestGalaContract:BatchSubmit", batchSubmit1.serialize());
+    const response2 = await chaincode.invoke("TestGalaContract:BatchSubmit", batchSubmit2.serialize());
+
+    // Then
+    expect(response1).toEqual(
+      transactionSuccess([
+        transactionSuccess(),
+        transactionSuccess(),
+        transactionErrorKey("BATCH_WRITE_LIMIT_EXCEEDED"),
+        transactionErrorKey("BATCH_WRITE_LIMIT_EXCEEDED"),
+        transactionErrorKey("BATCH_WRITE_LIMIT_EXCEEDED")
+      ])
+    );
+    expect(response2).toEqual(
+      transactionSuccess([
+        transactionSuccess(),
+        transactionSuccess(),
+        transactionErrorKey("BATCH_WRITE_LIMIT_EXCEEDED")
+      ])
+    );
   });
 });
