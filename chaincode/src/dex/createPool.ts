@@ -12,7 +12,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-import { ConflictError, CreatePoolDto, Pool, feeAmountTickSpacing } from "@gala-chain/api";
+import { ConflictError, CreatePoolDto, DexFeeConfig, Pool, feeAmountTickSpacing } from "@gala-chain/api";
 
 import { fetchTokenClass } from "../token";
 import { GalaChainContext } from "../types";
@@ -40,6 +40,12 @@ export async function createPool(ctx: GalaChainContext, dto: CreatePoolDto): Pro
   if (!feeAmountTickSpacing[dto.fee]) {
     throw new Error("Fee is not valid it must be 500, 3000, 10000");
   }
+  const key = ctx.stub.createCompositeKey(DexFeeConfig.INDEX_KEY, []);
+  let protocolFee = 0.1; // default
+  const protocolFeeConfig = await getObjectByKey(ctx, DexFeeConfig, key).catch(() => null);
+  if (protocolFeeConfig) {
+    protocolFee = protocolFeeConfig.protocolFee;
+  }
 
   // Create pool
   const pool = new Pool(
@@ -49,7 +55,7 @@ export async function createPool(ctx: GalaChainContext, dto: CreatePoolDto): Pro
     dto.token1,
     dto.fee,
     dto.initialSqrtPrice.f18(),
-    dto.protocolFee
+    protocolFee
   );
 
   //create tokenInstanceKeys

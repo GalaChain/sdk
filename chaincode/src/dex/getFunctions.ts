@@ -13,7 +13,9 @@
  * limitations under the License.
  */
 import {
+  ChainCallDTO,
   DefaultError,
+  DexFeeConfig,
   GetAddLiquidityEstimationDto,
   GetAddLiquidityEstimationResDto,
   GetLiquidityResDto,
@@ -22,11 +24,13 @@ import {
   GetUserPositionsDto,
   GetUserPositionsResDto,
   IPosition,
+  NotFoundError,
   Pool,
   PositionsObject,
   Slot0ResDto,
   TokenClassKey,
   TokenInstanceKey,
+  UnauthorizedError,
   UserPosition,
   positionInfoDto,
   sqrtPriceToTick
@@ -35,7 +39,13 @@ import BigNumber from "bignumber.js";
 
 import { fetchTokenClass } from "../token";
 import { GalaChainContext } from "../types";
-import { genKeyWithPipe, generateKeyFromClassKey, getObjectByKey, validateTokenOrder } from "../utils";
+import {
+  fetchDexProtocolFeeConfig,
+  genKeyWithPipe,
+  generateKeyFromClassKey,
+  getObjectByKey,
+  validateTokenOrder
+} from "../utils";
 
 /**
  * @dev The getPoolData function retrieves and returns all publicly available state information of a Uniswap V3 pool within the GalaChain ecosystem. It provides insights into the pool's tick map, liquidity positions, and other essential details.
@@ -181,6 +191,35 @@ export async function getAddLiquidityEstimation(
   const amounts = pool.getAmountForLiquidity(dto.amount, tickLower, tickUpper, zeroForOne);
 
   return new GetAddLiquidityEstimationResDto(amounts[0], amounts[1], amounts[2]);
+}
+
+/**
+ *
+ * @param ctx GalaChainContext – The execution context providing access to the GalaChain environment.
+ * @param dto ChainCallDTO Empty call to verify signature
+ * @returns DexFeeConfig
+ */
+export async function getDexFeesConfigration(
+  ctx: GalaChainContext,
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  dto: ChainCallDTO
+): Promise<DexFeeConfig> {
+  const curatorOrgMsp = process.env.CURATOR_ORG_MSP ?? "CuratorOrg";
+
+  const dexConfig = await fetchDexProtocolFeeConfig(ctx);
+
+  if (ctx.clientIdentity.getMSPID() !== curatorOrgMsp) {
+    throw new UnauthorizedError(`CallingUser ${ctx.callingUser} is not authorized to create or update`);
+  }
+
+  if (!dexConfig) {
+    throw new NotFoundError(
+      "Platform fee configuration has yet to be defined. Platform fee configuration is not defined."
+    );
+  } else if (!dexConfig.authorities.includes(ctx.callingUser)) {
+    throw new UnauthorizedError(`CallingUser ${ctx.callingUser} is not authorized to create or update`);
+  }
+  return dexConfig;
 }
 
 /**

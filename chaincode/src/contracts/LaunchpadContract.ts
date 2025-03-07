@@ -14,16 +14,16 @@
  */
 import {
   ChainCallDTO,
-  ConfigurePlatformFeeAddressDto,
+  ConfigureLaunchpadFeeAddressDto,
   CreateSaleResDto,
   CreateTokenSaleDTO,
   ExactTokenQuantityDto,
   FetchSaleDto,
   FinalizeTokenAllocationDto,
+  LaunchpadFeeConfig,
   LaunchpadFinalizeFeeAllocation,
   LaunchpadSale,
   NativeTokenQuantityDto,
-  PlatformFeeConfig,
   PreMintCalculationDto,
   TradeCalculationResDto,
   TradeResDto
@@ -38,7 +38,9 @@ import {
   callMemeTokenOut,
   callNativeTokenIn,
   callNativeTokenOut,
+  configureLaunchpadFeeAddress,
   createSale,
+  fetchLaunchpadFeeConfig,
   fetchSaleDetails,
   finalizeTokenAllocation,
   sellExactToken,
@@ -47,7 +49,6 @@ import {
 import { GalaChainContext } from "../types";
 import { GalaContract } from "./GalaContract";
 import { EVALUATE, Evaluate, GalaTransaction, Submit } from "./GalaTransaction";
-import { configurePlatformFeeAddress, fetchPlatformAddressConfig } from "./platformfee";
 
 export class LaunchpadContract extends GalaContract {
   constructor() {
@@ -104,15 +105,15 @@ export class LaunchpadContract extends GalaContract {
   }
 
   @Submit({
-    in: ConfigurePlatformFeeAddressDto,
-    out: PlatformFeeConfig,
+    in: ConfigureLaunchpadFeeAddressDto,
+    out: LaunchpadFeeConfig,
     allowedOrgs: ["CuratorOrg"]
   })
-  public async ConfigurePlatformFeeAddress(
+  public async ConfigureLaunchpadFeeAddress(
     ctx: GalaChainContext,
-    dto: ConfigurePlatformFeeAddressDto
-  ): Promise<PlatformFeeConfig> {
-    return configurePlatformFeeAddress(ctx, dto);
+    dto: ConfigureLaunchpadFeeAddressDto
+  ): Promise<LaunchpadFeeConfig> {
+    return configureLaunchpadFeeAddress(ctx, dto);
   }
 
   @Submit({
@@ -186,13 +187,13 @@ export class LaunchpadContract extends GalaContract {
 
   @Evaluate({
     in: ChainCallDTO,
-    out: PlatformFeeConfig,
+    out: LaunchpadFeeConfig,
     allowedOrgs: ["CuratorOrg"]
   })
-  public async FetchPlatformAddressConfig(
+  public async FetchLaunchpadFeeConfig(
     ctx: GalaChainContext,
     dto: ChainCallDTO
-  ): Promise<PlatformFeeConfig> {
-    return fetchPlatformAddressConfig(ctx);
+  ): Promise<LaunchpadFeeConfig> {
+    return fetchLaunchpadFeeConfig(ctx);
   }
 }

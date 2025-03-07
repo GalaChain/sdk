@@ -38,7 +38,7 @@ import {
   - tokenOut – The token the user wants to receive.
   - amountOutMinimum- This amount token user want to receive Minimum;
   - zeroForOne - Boolean value for swap direction
-  - Pool Identiers – Identifier for the liquidity pool facilitating the swap.
+  - Pool Identifiers – Identifier for the liquidity pool facilitating the swap.
   - sqrtPriceLimit – The square root price limit to protect against excessive price impact.
  * @returns 
  */
