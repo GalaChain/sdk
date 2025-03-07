@@ -217,7 +217,7 @@ export class PreMintCalculationDto extends ChainCallDTO {
   }
 }
 
-export class ConfigurePlatformFeeAddressDto extends ChainCallDTO {
+export class ConfigureLaunchpadFeeAddressDto extends ChainCallDTO {
   @IsOptional()
   @IsString()
   public newPlatformFeeAddress?: string;

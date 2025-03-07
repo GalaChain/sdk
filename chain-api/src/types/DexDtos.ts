@@ -13,6 +13,7 @@
  * limitations under the License.
  */
 import BigNumber from "bignumber.js";
+import { Type } from "class-transformer";
 import { IsNotEmpty, IsNumber, IsOptional, IsString, Max, Min } from "class-validator";
 
 import { PositionInPool } from "../utils";
@@ -177,6 +178,8 @@ export class BurnDto extends ChainCallDTO {
   @BigNumberProperty()
   @IsNotEmpty()
   public amount: BigNumber;
+  @IsOptional()
+  public owner: string | null;
 
   constructor(
     token0: TokenClassKey,
@@ -184,7 +187,8 @@ export class BurnDto extends ChainCallDTO {
     fee: number,
     amount: BigNumber,
     tickLower: number,
-    tickUpper: number
+    tickUpper: number,
+    owner: string | null = null
   ) {
     super();
     this.tickLower = tickLower;
@@ -193,6 +197,7 @@ export class BurnDto extends ChainCallDTO {
     this.token0 = token0;
     this.token1 = token1;
     this.fee = fee;
+    this.owner = owner;
   }
 }
 
@@ -552,21 +557,12 @@ export class CollectProtocolFeesDto extends ChainCallDTO {
 }
 
 export class SetProtocolFeeDto extends ChainCallDTO {
-  @IsNotEmpty()
-  public token0: TokenClassKey;
-  @IsNotEmpty()
-  public token1: TokenClassKey;
-  @IsNotEmpty()
-  public fee: number;
   @IsNumber()
   @IsNotEmpty()
   public protocolFee: number;
 
-  constructor(token0: TokenClassKey, token1: TokenClassKey, fee: number, protocolFee: number) {
+  constructor(protocolFee: number) {
     super();
-    this.token0 = token0;
-    this.token1 = token1;
-    this.fee = fee;
     this.protocolFee = protocolFee;
   }
 }
@@ -660,7 +656,6 @@ export class GetRemoveLiqEstimationResDto extends ChainCallDTO {
 export class CollectProtocolFeesResDto extends ChainCallDTO {
   @IsNotEmpty()
   @BigNumberProperty()
-  u;
   public protocolFeesToken0: BigNumber;
   @IsNotEmpty()
   @BigNumberProperty()
@@ -675,9 +670,19 @@ export class CollectProtocolFeesResDto extends ChainCallDTO {
 export class SetProtocolFeeResDto extends ChainCallDTO {
   @IsNumber()
   @IsNotEmpty()
-  public fee: number;
+  public protocolFee: number;
   constructor(newFee: number) {
     super();
-    this.fee = newFee;
+    this.protocolFee = newFee;
   }
+}
+
+export class ConfigureDexFeeAddressDto extends ChainCallDTO {
+  @IsOptional()
+  @IsString()
+  public newDexFeeAddress?: string;
+
+  @IsOptional()
+  @Type(() => String)
+  public newAuthorities?: string[];
 }

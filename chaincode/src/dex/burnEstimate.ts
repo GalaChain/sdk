@@ -37,7 +37,7 @@ export async function getRemoveLiquidityEstimation(
 
   const tickLower = parseInt(dto.tickLower.toString()),
     tickUpper = parseInt(dto.tickUpper.toString());
-  const amounts = pool.burn(ctx.callingUser, tickLower, tickUpper, dto.amount.f18());
+  const amounts = pool.burn(dto.owner ?? ctx.callingUser, tickLower, tickUpper, dto.amount.f18());
 
   return new GetRemoveLiqEstimationResDto(amounts[0], amounts[1]);
 }

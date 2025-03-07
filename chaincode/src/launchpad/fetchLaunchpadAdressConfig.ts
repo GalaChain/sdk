@@ -12,12 +12,12 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-import { NotFoundError, PlatformFeeConfig, UnauthorizedError } from "@gala-chain/api";
+import { LaunchpadFeeConfig, NotFoundError, UnauthorizedError } from "@gala-chain/api";
 
-import { GalaChainContext } from "../../types";
-import { fetchPlatformFeeAddress } from "../../utils";
+import { GalaChainContext } from "../types";
+import { fetchPlatformFeeAddress } from "../utils";
 
-export async function fetchPlatformAddressConfig(ctx: GalaChainContext): Promise<PlatformFeeConfig> {
+export async function fetchLaunchpadFeeConfig(ctx: GalaChainContext): Promise<LaunchpadFeeConfig> {
   const curatorOrgMsp = process.env.CURATOR_ORG_MSP ?? "CuratorOrg";
 
   const platformFeeAddress = await fetchPlatformFeeAddress(ctx);

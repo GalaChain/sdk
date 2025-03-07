@@ -20,7 +20,7 @@ import { requirePosititve } from "./format.helper";
 
 /**
  *
- *@notice Updates the positions for a pool
+ * @notice Updates the positions for a pool
  * @param positions The mapping containing all user positions
  * @param owner The address of the position owner
  * @param tickLower The lower tick boundary of the position
@@ -40,6 +40,9 @@ export function updatePositions(
   feeGrowthInside1: BigNumber
 ) {
   const key = `${owner}_${tickLower}_${tickUpper}`;
+
+  if (liquidityDelta.lt(new BigNumber(0)) && positions[key] == undefined)
+    throw new Error(`Position does not exists for user ${owner} ${tickLower}-${tickUpper}`);
 
   if (positions[key] == undefined) {
     positions[key] = new PositionData();

@@ -13,16 +13,16 @@
  * limitations under the License.
  */
 import {
-  ConflictError,
+  ConfigureDexFeeAddressDto,
+  DexFeeConfig,
   NotFoundError,
-  Pool,
   SetProtocolFeeDto,
   SetProtocolFeeResDto,
   UnauthorizedError
 } from "@gala-chain/api";
 
 import { GalaChainContext } from "../types";
-import { fetchPlatformFeeAddress, getObjectByKey, putChainObject, validateTokenOrder } from "../utils";
+import { fetchDexProtocolFeeConfig, putChainObject } from "../utils";
 
 /**
  * @dev The setProtocolFee function updates the protocol fee percentage for a Uniswap V3 pool within the GalaChain ecosystem.
@@ -36,20 +36,46 @@ export async function setProtocolFee(
   ctx: GalaChainContext,
   dto: SetProtocolFeeDto
 ): Promise<SetProtocolFeeResDto> {
-  const platformFeeAddress = await fetchPlatformFeeAddress(ctx);
-  if (!platformFeeAddress) {
+  const protocolFeeConfig = await fetchDexProtocolFeeConfig(ctx);
+  if (!protocolFeeConfig) {
     throw new NotFoundError(
-      "Protocol fee configuration has yet to be defined. Platform fee configuration is not defined."
+      "Protocol fee configuration has yet to be defined. Dex fee configuration is not defined."
     );
-  } else if (!platformFeeAddress.authorities.includes(ctx.callingUser)) {
+  } else if (!protocolFeeConfig.authorities.includes(ctx.callingUser)) {
     throw new UnauthorizedError(`CallingUser ${ctx.callingUser} is not authorized to create or update`);
   }
-  const [token0, token1] = validateTokenOrder(dto.token0, dto.token1);
-  const key = ctx.stub.createCompositeKey(Pool.INDEX_KEY, [token0, token1, dto.fee.toString()]);
-  const pool = await getObjectByKey(ctx, Pool, key);
   //If pool does not exist
-  if (pool == undefined) throw new ConflictError("Pool does not exist");
-  const newFee = pool.configureProtocolFee(dto.protocolFee);
-  await putChainObject(ctx, pool);
-  return new SetProtocolFeeResDto(newFee);
+  protocolFeeConfig.protocolFee = dto.protocolFee;
+  await putChainObject(ctx, protocolFeeConfig);
+  return new SetProtocolFeeResDto(dto.protocolFee);
+}
+
+/**
+ *
+ * @param ctx
+ * @param dto
+ * @returns
+ */
+export async function configureDexFeeAddress(ctx: GalaChainContext, dto: ConfigureDexFeeAddressDto) {
+  if (!dto.newAuthorities?.length) {
+    throw new Error("At least one user should be defined to provide access");
+  }
+
+  const curatorOrgMsp = process.env.CURATOR_ORG_MSP ?? "CuratorOrg";
+
+  if (ctx.clientIdentity.getMSPID() !== curatorOrgMsp) {
+    throw new UnauthorizedError(`CallingUser ${ctx.callingUser} is not authorized to create or update`);
+  }
+  let protocolFeeConfig = await fetchDexProtocolFeeConfig(ctx);
+
+  if (!protocolFeeConfig) {
+    protocolFeeConfig = new DexFeeConfig(dto.newAuthorities ?? [ctx.callingUser]);
+  } else if (protocolFeeConfig && protocolFeeConfig.authorities.includes(ctx.callingUser)) {
+    protocolFeeConfig.addOrUpdateAuthorities(dto.newAuthorities ?? protocolFeeConfig.authorities);
+  } else {
+    throw new UnauthorizedError(`CallingUser ${ctx.callingUser} is not authorized to create or update`);
+  }
+
+  await putChainObject(ctx, protocolFeeConfig);
+  return protocolFeeConfig;
 }

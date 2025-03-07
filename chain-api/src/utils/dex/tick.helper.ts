@@ -18,6 +18,9 @@ import { DefaultError } from "../error";
 import { leastSignificantBit, mostSignificantBit } from "./bitMath.helper";
 import { Bitmap, TickDataObj } from "./dexHelperDtos";
 
+const MIN_TICK = -887272,
+  MAX_TICK = 887272;
+
 /**
  *
  *  @notice Calculates sqrt(1.0001^tick)
@@ -132,6 +135,16 @@ export function flipTick(bitmap: Bitmap, tick: number, tickSpacing: number) {
   bitmap[word] = newMask.toString();
 }
 
+function isTickInitialized(tick: number, tickSpacing: number, bitmap: Bitmap): boolean {
+  tick /= tickSpacing;
+  const [word, pos] = position(tick);
+  const mask = BigInt(1) << BigInt(pos);
+  if (bitmap[word] === undefined) return false;
+  const currentMask = BigInt(bitmap[word]);
+  const newMask = currentMask ^ mask;
+  return newMask == BigInt(0);
+}
+
 /**
  *
  *  @notice Returns the next initialized tick contained in the same word (or adjacent word) as the tick that is either
@@ -146,10 +159,20 @@ export function nextInitialisedTickWithInSameWord(
   bitmap: Bitmap,
   tick: number,
   tickSpacing: number,
-  lte: boolean
+  lte: boolean,
+  sqrtPrice: BigNumber
 ): [number, boolean] {
   let compressed = Math.floor(tick / tickSpacing);
   if (tick < 0 && tick % tickSpacing != 0) compressed--;
+  if (tick == sqrtPriceToTick(sqrtPrice)) {
+    const tickPrice = tickToSqrtPrice(tick);
+    if (lte && tickPrice.lt(sqrtPrice)) {
+      return [tick, isTickInitialized(tick, tickSpacing, bitmap)];
+    } else if (!lte && tickPrice.gt(sqrtPrice)) {
+      return [tick, isTickInitialized(tick, tickSpacing, bitmap)];
+    }
+  }
+
   if (lte) {
     const [word, pos] = position(compressed);
 
@@ -167,10 +190,8 @@ export function nextInitialisedTickWithInSameWord(
   } else {
     compressed = compressed + 1;
     const [word, pos] = position(compressed);
-
     //initialise the bitmask for word if required
     if (bitmap[word] == undefined) bitmap[word] = BigInt(0).toString();
-
     const bitmask = BigInt(bitmap[word]);
     const mask = ~((BigInt(1) << BigInt(pos)) - BigInt(1));
     const masked = bitmask & mask;
@@ -272,8 +293,8 @@ export function getFeeGrowthInside(
  */
 export function checkTicks(tickLower: number, tickUpper: number) {
   if (tickLower >= tickUpper) throw new DefaultError("TLU");
-  if (tickLower < -887272) throw new DefaultError("TLM");
-  if (tickUpper > 887272) throw new DefaultError("TUM");
+  if (tickLower < MIN_TICK) throw new DefaultError("TLM");
+  if (tickUpper > MAX_TICK) throw new DefaultError("TUM");
 }
 
 /**
@@ -285,8 +306,8 @@ export function checkTicks(tickLower: number, tickUpper: number) {
  *  @return The max liquidity per tick
  */
 export function tickSpacingToMaxLiquidityPerTick(tickSpacing: number): BigNumber {
-  const minTick = Math.ceil((-887272 / tickSpacing) * tickSpacing);
-  const maxTick = Math.floor((887272 / tickSpacing) * tickSpacing);
+  const minTick = Math.ceil((MIN_TICK / tickSpacing) * tickSpacing);
+  const maxTick = Math.floor((MAX_TICK / tickSpacing) * tickSpacing);
   const numTicks = (maxTick - minTick) / tickSpacing + 1;
   return new BigNumber(2).pow(128).minus(1).dividedBy(numTicks);
 }

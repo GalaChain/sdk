@@ -14,27 +14,27 @@
  */
 import {
   ChainError,
-  ConfigurePlatformFeeAddressDto,
+  ConfigureLaunchpadFeeAddressDto,
   ErrorCode,
-  PlatformFeeConfig,
+  LaunchpadFeeConfig,
   UnauthorizedError
 } from "@gala-chain/api";
 
-import { GalaChainContext } from "../../types";
-import { getObjectByKey, putChainObject } from "../../utils";
+import { GalaChainContext } from "../types";
+import { getObjectByKey, putChainObject } from "../utils";
 
-export async function configurePlatformFeeAddress(
+export async function configureLaunchpadFeeAddress(
   ctx: GalaChainContext,
-  dto: ConfigurePlatformFeeAddressDto
-): Promise<PlatformFeeConfig> {
+  dto: ConfigureLaunchpadFeeAddressDto
+): Promise<LaunchpadFeeConfig> {
   if (!dto.newPlatformFeeAddress && !dto.newAuthorities?.length) {
     throw new Error("None of the input fields are present.");
   }
 
   const curatorOrgMsp = process.env.CURATOR_ORG_MSP ?? "CuratorOrg";
 
-  const key = ctx.stub.createCompositeKey(PlatformFeeConfig.INDEX_KEY, []);
-  let platformFeeAddress = await getObjectByKey(ctx, PlatformFeeConfig, key).catch((e) => {
+  const key = ctx.stub.createCompositeKey(LaunchpadFeeConfig.INDEX_KEY, []);
+  let platformFeeAddress = await getObjectByKey(ctx, LaunchpadFeeConfig, key).catch((e) => {
     const chainError = ChainError.from(e);
     if (chainError.matches(ErrorCode.NOT_FOUND)) {
       return undefined;
@@ -51,7 +51,7 @@ export async function configurePlatformFeeAddress(
     if (!dto.newPlatformFeeAddress) {
       throw new Error("Must provide a platform fee address in the initial setup of the configuration.");
     }
-    platformFeeAddress = new PlatformFeeConfig(
+    platformFeeAddress = new LaunchpadFeeConfig(
       dto.newPlatformFeeAddress,
       dto.newAuthorities ?? [ctx.callingUser]
     );
