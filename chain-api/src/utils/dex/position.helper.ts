@@ -14,7 +14,7 @@
  */
 import BigNumber from "bignumber.js";
 
-import { DefaultError } from "../error";
+import { ConflictError, NotFoundError } from "../error";
 import { PositionData, Positions } from "./dexHelperDtos";
 import { requirePosititve } from "./format.helper";
 
@@ -42,7 +42,7 @@ export function updatePositions(
   const key = `${owner}_${tickLower}_${tickUpper}`;
 
   if (liquidityDelta.lt(new BigNumber(0)) && positions[key] == undefined)
-    throw new Error(`Position does not exists for user ${owner} ${tickLower}-${tickUpper}`);
+    throw new NotFoundError(`Position does not exists for user ${owner} ${tickLower}-${tickUpper}`);
 
   if (positions[key] == undefined) {
     positions[key] = new PositionData();
@@ -57,7 +57,7 @@ export function updatePositions(
 
   let liquidityNext: BigNumber;
   if (liquidityDelta.isEqualTo(0)) {
-    if (!new BigNumber(positionData.liquidity).isGreaterThan(0)) throw new DefaultError("NP");
+    if (!new BigNumber(positionData.liquidity).isGreaterThan(0)) throw new ConflictError("NP");
     liquidityNext = new BigNumber(positionData.liquidity);
   } else {
     liquidityNext = new BigNumber(positionData.liquidity).plus(liquidityDelta);

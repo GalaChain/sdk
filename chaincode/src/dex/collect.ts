@@ -12,7 +12,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-import { CollectDto, ConflictError, Pool, UserBalanceResDto, UserPosition } from "@gala-chain/api";
+import { CollectDto, ConflictError, NotFoundError, Pool, UserBalanceResDto, UserPosition } from "@gala-chain/api";
 import BigNumber from "bignumber.js";
 
 import { fetchOrCreateBalance } from "../balances";
@@ -52,7 +52,7 @@ export async function collect(ctx: GalaChainContext, dto: CollectDto): Promise<U
 
   const userKey = ctx.stub.createCompositeKey(UserPosition.INDEX_KEY, [owner]);
   const userPosition = await getObjectByKey(ctx, UserPosition, userKey).catch(() => undefined);
-  if (!userPosition) throw new ConflictError("user position doesnot exists does not exist");
+  if (!userPosition) throw new NotFoundError("user position does not exist");
 
   const amounts = pool.collect(owner, tickLower, tickUpper, amount0Requested, amount1Requested);
 

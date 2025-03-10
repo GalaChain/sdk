@@ -242,7 +242,7 @@ describe("DEx v3 Testing", () => {
 
       const result = await client.dexV3Contract.addLiquidity(dto);
 
-      expect(result.Message).toBe("TLM");
+      expect(result.Message).toBe("Lower Tick is less than Min Tick");
     });
     test("should throw error when tried adding liquidity above the max tick", async () => {
       const fee = 500;
@@ -261,7 +261,7 @@ describe("DEx v3 Testing", () => {
       ).signed(user.privateKey);
 
       const result = await client.dexV3Contract.addLiquidity(dto);
-      expect(result.Message).toBe("TUM");
+      expect(result.Message).toBe("Upper Tick is greater than Max Tick");
     });
     test("should throw error when  tick lower tick is greater than upper tick", async () => {
       const fee = 500;
@@ -280,7 +280,7 @@ describe("DEx v3 Testing", () => {
       ).signed(user.privateKey);
 
       const result = await client.dexV3Contract.addLiquidity(dto);
-      expect(result.Message).toBe("TLU");
+      expect(result.Message).toBe("Lower Tick is greater than Upper Tick");
     });
     test("should throw error when  ticks are not spaced", async () => {
       const fee = 500;
