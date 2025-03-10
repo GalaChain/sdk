@@ -14,7 +14,7 @@
  */
 import BigNumber from "bignumber.js";
 import { Type } from "class-transformer";
-import { IsNotEmpty, IsNumber, IsOptional, IsString, Max, Min } from "class-validator";
+import { IsNotEmpty, IsNumber, IsOptional, IsString, Max, Min, ValidateNested } from "class-validator";
 
 import { BigNumberProperty } from "../validators";
 import { IsNonZeroBigNumber } from "../validators";
@@ -47,7 +47,6 @@ export class CreateTokenSaleDTO extends ChainCallDTO {
   public tokenImage: string;
 
   @BigNumberProperty()
-  @IsNotEmpty()
   public preBuyQuantity: BigNumber;
 
   @IsString()
@@ -127,7 +126,6 @@ export class ExactTokenQuantityDto extends ChainCallDTO {
 
   @BigNumberProperty()
   @IsNonZeroBigNumber({ message: "tokenQuantity cannot be zero" })
-  @IsNotEmpty()
   public tokenQuantity: BigNumber;
 
   @BigNumberProperty()
@@ -149,7 +147,6 @@ export class NativeTokenQuantityDto extends ChainCallDTO {
 
   @BigNumberProperty()
   @IsNonZeroBigNumber({ message: "nativeTokenQuanity cannot be zero" })
-  @IsNotEmpty()
   public nativeTokenQuantity: BigNumber;
 
   @BigNumberProperty()
@@ -223,18 +220,17 @@ export class ConfigureLaunchpadFeeAddressDto extends ChainCallDTO {
   public newPlatformFeeAddress?: string;
 
   @IsOptional()
+  @ValidateNested({ each: true })
   @Type(() => String)
   public newAuthorities?: string[];
 }
 
 export class FinalizeTokenAllocationDto extends ChainCallDTO {
-  @IsNotEmpty()
   @IsNumber()
   @Min(0)
   @Max(1)
   public platformFeePercentage: number;
 
-  @IsNotEmpty()
   @IsNumber()
   @Min(0)
   @Max(1)

@@ -18,8 +18,8 @@ import {
   BurnDto,
   ChainCallDTO,
   CollectDto,
-  CollectProtocolFeesDto,
-  CollectProtocolFeesResDto,
+  CollectTradingFeesDto,
+  CollectTradingFeesResDto,
   ConfigureDexFeeAddressDto,
   CreatePoolDto,
   CreateTokenClassDto,
@@ -2229,7 +2229,7 @@ interface DexV3ContractAPI {
   getPoolData(dto: GetPoolDto): Promise<GalaChainResponse<Pool>>;
   burnEstimate(dto: BurnDto): Promise<GalaChainResponse<GetRemoveLiqEstimationResDto>>;
   collect(dto: CollectDto): Promise<GalaChainResponse<UserBalanceResDto>>;
-  collectProtocolFees(dto: CollectProtocolFeesDto): Promise<GalaChainResponse<CollectProtocolFeesResDto>>;
+  collectTradingFees(dto: CollectTradingFeesDto): Promise<GalaChainResponse<CollectTradingFeesResDto>>;
   setProtocolFee(dto: SetProtocolFeeDto): Promise<GalaChainResponse<SetProtocolFeeResDto>>;
   configureDexFeeAddress(dto: ConfigureDexFeeAddressDto): Promise<GalaChainResponse<DexFeeConfig>>;
   getDexConfig(dto: ChainCallDTO): Promise<GalaChainResponse<DexFeeConfig>>;
@@ -2291,9 +2291,9 @@ function dexV3ContractAPI(client: ChainClient): DexV3ContractAPI & CommonContrac
         GalaChainResponse<UserBalanceResDto>
       >;
     },
-    collectProtocolFees(dto: CollectProtocolFeesDto) {
-      return client.submitTransaction("CollectProtocolFees", dto) as Promise<
-        GalaChainResponse<CollectProtocolFeesResDto>
+    collectTradingFees(dto: CollectTradingFeesDto) {
+      return client.submitTransaction("CollectTradingFees", dto) as Promise<
+        GalaChainResponse<CollectTradingFeesResDto>
       >;
     },
     setProtocolFee(dto: SetProtocolFeeDto) {

@@ -12,8 +12,8 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-import { Exclude } from "class-transformer";
-import { ArrayNotEmpty, IsNumber, IsString, Max, Min } from "class-validator";
+import { Exclude, Type } from "class-transformer";
+import { ArrayNotEmpty, IsNumber, Max, Min, ValidateNested } from "class-validator";
 
 import { ChainObject } from "./ChainObject";
 
@@ -22,7 +22,8 @@ export class DexFeeConfig extends ChainObject {
   public static INDEX_KEY = "GCDPFC"; // GalaChain Dex Protocol Fee Configuration
 
   @ArrayNotEmpty()
-  @IsString({ each: true })
+  @ValidateNested({ each: true })
+  @Type(() => String)
   authorities: string[];
 
   @IsNumber()

@@ -24,6 +24,7 @@ export enum ErrorCode {
   FORBIDDEN = 403,
   NOT_FOUND = 404,
   CONFLICT = 409,
+  PRECONDITION_FAILED = 412,
   NO_LONGER_AVAILABLE = 410,
   DEFAULT_ERROR = 500,
   NOT_IMPLEMENTED = 501
@@ -252,3 +253,5 @@ export class DefaultError extends ChainError.withCode(ErrorCode.DEFAULT_ERROR) {
 export class RuntimeError extends ChainError.withCode(ErrorCode.DEFAULT_ERROR) {}
 
 export class NotImplementedError extends ChainError.withCode(ErrorCode.NOT_IMPLEMENTED) {}
+
+export class SlippageToleranceExceededError extends ChainError.withCode(ErrorCode.PRECONDITION_FAILED) {}

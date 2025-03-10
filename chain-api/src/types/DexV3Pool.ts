@@ -371,8 +371,9 @@ export class Pool extends ChainObject {
       );
 
       //cap the tick in valid range i.e. MIN_TICK < tick < MAX_TICK
-      if (step.tickNext < Pool.MIN_TICK || step.tickNext > Pool.MAX_TICK)
+      if (step.tickNext < Pool.MIN_TICK || step.tickNext > Pool.MAX_TICK) {
         throw new Error("Not enough liquidity available in pool");
+      }
 
       //price at next tick
       step.sqrtPriceNext = tickToSqrtPrice(step.tickNext);
@@ -574,7 +575,7 @@ export class Pool extends ChainObject {
    * @dev this will bring the state of protocolFeesTokens and reset them to 0
    * @returns [protocolFeeToken0,protocolFeesToken1]
    */
-  public collectProtocolFees() {
+  public collectTradingFees() {
     const protocolFeesToken0 = this.protocolFeesToken0,
       protocolFeesToken1 = this.protocolFeesToken1;
     this.protocolFeesToken0 = new BigNumber(0);

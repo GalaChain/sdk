@@ -31,6 +31,13 @@ import {
 
 import { version } from "../../package.json";
 import {
+  buyExactTokenFeeGate,
+  buyWithNativeFeeGate,
+  createSaleFeeGate,
+  sellExactTokenFeeGate,
+  sellWithNativeFeeGate
+} from "../fees";
+import {
   buyExactToken,
   buyWithNative,
   calculatePreMintTokens,
@@ -57,7 +64,8 @@ export class LaunchpadContract extends GalaContract {
 
   @Submit({
     in: CreateTokenSaleDTO,
-    out: CreateSaleResDto
+    out: CreateSaleResDto,
+    before: createSaleFeeGate
   })
   public async CreateSale(ctx: GalaChainContext, dto: CreateTokenSaleDTO): Promise<CreateSaleResDto> {
     return createSale(ctx, dto);
@@ -74,7 +82,8 @@ export class LaunchpadContract extends GalaContract {
 
   @Submit({
     in: ExactTokenQuantityDto,
-    out: TradeResDto
+    out: TradeResDto,
+    before: buyExactTokenFeeGate
   })
   public async BuyExactToken(ctx: GalaChainContext, dto: ExactTokenQuantityDto): Promise<TradeResDto> {
     return buyExactToken(ctx, dto);
@@ -82,7 +91,8 @@ export class LaunchpadContract extends GalaContract {
 
   @Submit({
     in: ExactTokenQuantityDto,
-    out: TradeResDto
+    out: TradeResDto,
+    before: sellExactTokenFeeGate
   })
   public async SellExactToken(ctx: GalaChainContext, dto: ExactTokenQuantityDto): Promise<TradeResDto> {
     return sellExactToken(ctx, dto);
@@ -90,7 +100,8 @@ export class LaunchpadContract extends GalaContract {
 
   @Submit({
     in: NativeTokenQuantityDto,
-    out: TradeResDto
+    out: TradeResDto,
+    before: buyWithNativeFeeGate
   })
   public async BuyWithNative(ctx: GalaChainContext, dto: NativeTokenQuantityDto): Promise<TradeResDto> {
     return buyWithNative(ctx, dto);
@@ -98,7 +109,8 @@ export class LaunchpadContract extends GalaContract {
 
   @Submit({
     in: NativeTokenQuantityDto,
-    out: TradeResDto
+    out: TradeResDto,
+    before: sellWithNativeFeeGate
   })
   public async SellWithNative(ctx: GalaChainContext, dto: NativeTokenQuantityDto): Promise<TradeResDto> {
     return sellWithNative(ctx, dto);
