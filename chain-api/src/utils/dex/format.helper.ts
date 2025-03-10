@@ -13,12 +13,13 @@
  * limitations under the License.
  */
 import BigNumber from "bignumber.js";
+import { ConflictError } from "../error";
 
 export const requirePosititve = (...params) => {
   for (const positive of params) {
     if (positive instanceof BigNumber) {
       if (positive.lt(new BigNumber(0))) {
-        throw new Error("Uint Out of Bounds error :Uint");
+        throw new ConflictError("Uint Out of Bounds error :Uint");
       }
     }
   }

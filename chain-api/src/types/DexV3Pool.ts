@@ -21,13 +21,15 @@ import {
   Bitmap,
   ChainKey,
   ConflictError,
-  DefaultError,
+  NotFoundError,
   PositionData,
   Positions,
+  SlippageToleranceExceededError,
   StepComputations,
   SwapState,
   TickData,
   TickDataObj,
+  ValidationFailedError,
   checkTicks,
   computeSwapStep,
   feeAmountTickSpacing,
@@ -161,7 +163,7 @@ export class Pool extends ChainObject {
     this.maxLiquidityPerTick = tickSpacingToMaxLiquidityPerTick(this.tickSpacing);
 
     if (this.protocolFees < 0 || this.protocolFees > 1) {
-      throw new Error("Protocol Fees out of bounds");
+      throw new ValidationFailedError("Protocol Fees out of bounds");
     }
     this.protocolFees = protocolFees;
     this.protocolFeesToken0 = new BigNumber(0);
@@ -290,7 +292,7 @@ export class Pool extends ChainObject {
    * @return amount1 The amount of token1 that was paid to mint the given amount of liquidity
    */
   public mint(recipient: string, tickLower: number, tickUpper: number, liquidity: BigNumber): BigNumber[] {
-    if (liquidity.isEqualTo(0)) throw new DefaultError("Invalid Liquidity");
+    if (liquidity.isEqualTo(0)) throw new ValidationFailedError("Invalid Liquidity");
 
     const [amount0Req, amount1Req] = this._modifyPosition(recipient, tickLower, tickUpper, liquidity);
 
@@ -312,7 +314,7 @@ export class Pool extends ChainObject {
     sqrtPriceLimit: BigNumber
   ): [amount0: BigNumber, amount1: BigNumber] {
     // Input amount to swap
-    if (amountSpecified.isEqualTo(0)) throw new DefaultError("Invalid specified amount");
+    if (amountSpecified.isEqualTo(0)) throw new ValidationFailedError("Invalid specified amount");
     //Check for the validity of sqrtPriceLimit
     if (zeroForOne) {
       if (
@@ -321,7 +323,7 @@ export class Pool extends ChainObject {
           sqrtPriceLimit.isGreaterThan(new BigNumber("0.000000000000000000054212146"))
         )
       )
-        throw new DefaultError("SPL");
+        throw new SlippageToleranceExceededError("SquarePriceLImit exceeds limit");
     } else {
       if (
         !(
@@ -329,7 +331,7 @@ export class Pool extends ChainObject {
           sqrtPriceLimit.isLessThan(new BigNumber("18446051000000000000"))
         )
       )
-        throw new DefaultError("SPL");
+        throw new SlippageToleranceExceededError("SquarePriceLImit exceeds limit");
     }
 
     const slot0 = {
@@ -372,7 +374,7 @@ export class Pool extends ChainObject {
 
       //cap the tick in valid range i.e. MIN_TICK < tick < MAX_TICK
       if (step.tickNext < Pool.MIN_TICK || step.tickNext > Pool.MAX_TICK) {
-        throw new Error("Not enough liquidity available in pool");
+        throw new ConflictError("Not enough liquidity available in pool");
       }
 
       //price at next tick
@@ -475,7 +477,7 @@ export class Pool extends ChainObject {
 
     const key = `${owner}_${tickLower}_${tickUpper}`;
 
-    if (this.positions[key] == undefined) throw new DefaultError("Invalid position");
+    if (this.positions[key] == undefined) throw new NotFoundError("Invalid position");
 
     return [amount0, amount1];
   }
@@ -535,7 +537,7 @@ export class Pool extends ChainObject {
     const tickCurrent = sqrtPriceToTick(this.sqrtPrice);
     let liquidity: BigNumber;
     let res: BigNumber[];
-    if (BigNumber(amount).isZero()) throw new Error("You cannot add zero liqudity");
+    if (BigNumber(amount).isZero()) throw new ValidationFailedError("You cannot add zero liqudity");
     if (tickCurrent >= tickLower && tickCurrent < tickUpper) {
       liquidity = isToken0
         ? liquidity0(amount, this.sqrtPrice, sqrtPriceUpper)
@@ -547,12 +549,12 @@ export class Pool extends ChainObject {
       ];
     } else if (tickCurrent < tickLower) {
       if (!isToken0) {
-        throw new Error("Wrong values");
+        throw new ValidationFailedError("Wrong values");
       }
       res = [amount, new BigNumber(0), liquidity0(amount, sqrtPriceLower, sqrtPriceUpper)];
     } else {
       if (isToken0) {
-        throw new Error("Wrong values");
+        throw new ValidationFailedError("Wrong values");
       }
       res = [new BigNumber(0), amount, liquidity1(amount, sqrtPriceLower, sqrtPriceUpper)];
     }
@@ -565,7 +567,7 @@ export class Pool extends ChainObject {
    */
   public configureProtocolFee(protocolFees: number) {
     if (this.protocolFees < 0 || this.protocolFees > 1) {
-      throw new Error("Protocol Fees out of bounds");
+      throw new ValidationFailedError("Protocol Fees out of bounds");
     }
     this.protocolFees = protocolFees;
     return this.protocolFees;

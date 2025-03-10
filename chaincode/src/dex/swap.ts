@@ -12,7 +12,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-import { ConflictError, DefaultError, Pool, SwapDto, SwapResDto } from "@gala-chain/api";
+import { ConflictError, Pool, SlippageToleranceExceededError, SwapDto, SwapResDto } from "@gala-chain/api";
 import BigNumber from "bignumber.js";
 
 import { fetchOrCreateBalance } from "../balances";
@@ -65,7 +65,7 @@ export async function swap(ctx: GalaChainContext, dto: SwapDto): Promise<SwapRes
 
   for (const [index, amount] of amounts.entries()) {
     if (amount.gt(0)) {
-      if (dto.amountInMaximum && amount.gt(dto.amountInMaximum)) throw new DefaultError("Slippage exceeded");
+      if (dto.amountInMaximum && amount.gt(dto.amountInMaximum)) throw new SlippageToleranceExceededError("Slippage exceeded");
 
       await transferToken(ctx, {
         from: ctx.callingUser,
@@ -78,7 +78,7 @@ export async function swap(ctx: GalaChainContext, dto: SwapDto): Promise<SwapRes
     }
     if (amount.lt(0)) {
       if (dto.amountOutMinimum && amount.gt(dto.amountOutMinimum))
-        throw new DefaultError("Slippage exceeded");
+        throw new SlippageToleranceExceededError("Slippage exceeded");
 
       const poolTokenBalance = await fetchOrCreateBalance(
         ctx,

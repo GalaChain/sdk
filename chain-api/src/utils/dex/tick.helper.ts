@@ -14,7 +14,7 @@
  */
 import BigNumber from "bignumber.js";
 
-import { DefaultError } from "../error";
+import { ValidationFailedError } from "../error";
 import { leastSignificantBit, mostSignificantBit } from "./bitMath.helper";
 import { Bitmap, TickDataObj } from "./dexHelperDtos";
 
@@ -79,7 +79,7 @@ export function updateTick(
   const liquidityGrossAfter = new BigNumber(liquidityGrossBefore).plus(liquidityDelta);
 
   if (liquidityGrossAfter.isGreaterThan(maxLiquidity))
-    throw new DefaultError("liquidity crossed max liquidity");
+    throw new ValidationFailedError("liquidity crossed max liquidity");
 
   //update liquidity gross and net
   tickData[tick].liquidityGross = liquidityGrossAfter.toString();
@@ -119,7 +119,7 @@ function position(tick: number): [word: number, position: number] {
  */
 export function flipTick(bitmap: Bitmap, tick: number, tickSpacing: number) {
   if (tick % tickSpacing != 0) {
-    throw new Error("Tick is not spaced " + tick + " " + tickSpacing);
+    throw new ValidationFailedError("Tick is not spaced " + tick + " " + tickSpacing);
   }
   tick /= tickSpacing;
   const [word, pos] = position(tick);
@@ -292,9 +292,9 @@ export function getFeeGrowthInside(
  *  @param tickUpper upper tick
  */
 export function checkTicks(tickLower: number, tickUpper: number) {
-  if (tickLower >= tickUpper) throw new DefaultError("TLU");
-  if (tickLower < MIN_TICK) throw new DefaultError("TLM");
-  if (tickUpper > MAX_TICK) throw new DefaultError("TUM");
+  if (tickLower >= tickUpper) throw new ValidationFailedError("Lower Tick is greater than Upper Tick");
+  if (tickLower < MIN_TICK) throw new ValidationFailedError("Lower Tick is less than Min Tick");
+  if (tickUpper > MAX_TICK) throw new ValidationFailedError("Upper Tick is greater than Max Tick");
 }
 
 /**
@@ -338,6 +338,6 @@ export function flipTickOrientation(tick: number): number {
  * @return spaced tick
  */
 export function spaceTick(tick: number, tickSpacing: number): number {
-  if (tickSpacing === 0) throw new Error("Tickspacing cannot be zero");
+  if (tickSpacing === 0) throw new ValidationFailedError("Tickspacing cannot be zero");
   return Math.floor(tick / tickSpacing) * tickSpacing;
 }

@@ -18,7 +18,8 @@ import {
   NotFoundError,
   SetProtocolFeeDto,
   SetProtocolFeeResDto,
-  UnauthorizedError
+  UnauthorizedError,
+  ValidationFailedError
 } from "@gala-chain/api";
 
 import { GalaChainContext } from "../types";
@@ -58,7 +59,7 @@ export async function setProtocolFee(
  */
 export async function configureDexFeeAddress(ctx: GalaChainContext, dto: ConfigureDexFeeAddressDto) {
   if (!dto.newAuthorities?.length) {
-    throw new Error("At least one user should be defined to provide access");
+    throw new ValidationFailedError("At least one user should be defined to provide access");
   }
 
   const curatorOrgMsp = process.env.CURATOR_ORG_MSP ?? "CuratorOrg";
