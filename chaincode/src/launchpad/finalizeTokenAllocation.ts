@@ -15,7 +15,7 @@
 import {
   FinalizeTokenAllocationDto,
   LaunchpadFinalizeFeeAllocation,
-  NotFoundError,
+  PreConditionFailedError,
   UnauthorizedError
 } from "@gala-chain/api";
 
@@ -28,7 +28,7 @@ export async function finalizeTokenAllocation(
 ): Promise<LaunchpadFinalizeFeeAllocation> {
   const platformFeeAddress = await fetchPlatformFeeAddress(ctx);
   if (!platformFeeAddress) {
-    throw new NotFoundError(
+    throw new PreConditionFailedError(
       "Platform fee configuration has yet to be defined. Platform fee configuration is not defined."
     );
   } else if (!platformFeeAddress.authorities.includes(ctx.callingUser)) {
