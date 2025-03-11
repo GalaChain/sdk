@@ -65,7 +65,9 @@ export async function swap(ctx: GalaChainContext, dto: SwapDto): Promise<SwapRes
 
   for (const [index, amount] of amounts.entries()) {
     if (amount.gt(0)) {
-      if (dto.amountInMaximum && amount.gt(dto.amountInMaximum)) throw new SlippageToleranceExceededError("Slippage exceeded");
+      if (dto.amountInMaximum && amount.gt(dto.amountInMaximum)) {
+        throw new SlippageToleranceExceededError("Slippage exceeded");
+      }
 
       await transferToken(ctx, {
         from: ctx.callingUser,
@@ -77,8 +79,9 @@ export async function swap(ctx: GalaChainContext, dto: SwapDto): Promise<SwapRes
       });
     }
     if (amount.lt(0)) {
-      if (dto.amountOutMinimum && amount.gt(dto.amountOutMinimum))
+      if (dto.amountOutMinimum && amount.gt(dto.amountOutMinimum)) {
         throw new SlippageToleranceExceededError("Slippage exceeded");
+      }
 
       const poolTokenBalance = await fetchOrCreateBalance(
         ctx,

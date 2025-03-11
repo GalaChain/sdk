@@ -12,7 +12,14 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-import { ConflictError, CreatePoolDto, DexFeeConfig, Pool, ValidationFailedError, feeAmountTickSpacing } from "@gala-chain/api";
+import {
+  ConflictError,
+  CreatePoolDto,
+  DexFeeConfig,
+  Pool,
+  ValidationFailedError,
+  feeAmountTickSpacing
+} from "@gala-chain/api";
 
 import { fetchTokenClass } from "../token";
 import { GalaChainContext } from "../types";
@@ -25,7 +32,7 @@ import { convertToTokenInstanceKey, generateKeyFromClassKey, getObjectByKey, put
     - Token details – The token class keys.
     - sqrtPrice – The initial square root price of the pool (used for setting up the starting price ratio).
     - Fee tier details – The swap fee tier applied to trades in the pool.
-    - Protocol fees – The percentage of fees collected by the protocol.
+  - Protocol fees – The percentage of fees collected by the protocol.
  */
 export async function createPool(ctx: GalaChainContext, dto: CreatePoolDto): Promise<Pool> {
   // sort the tokens in an order

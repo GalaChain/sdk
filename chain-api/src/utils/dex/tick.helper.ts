@@ -105,9 +105,12 @@ export function updateTick(
 
 function position(tick: number): [word: number, position: number] {
   tick = Math.floor(tick);
+
   const wordPos = Math.floor(tick / 256); // Equivalent to tick >> 8
+
   let bitPos = tick % 256; // Equivalent to tick % 256
   if (bitPos < 0) bitPos += 256; // Ensure it's always positive like uint8
+
   return [wordPos, bitPos];
 }
 
@@ -139,9 +142,12 @@ function isTickInitialized(tick: number, tickSpacing: number, bitmap: Bitmap): b
   tick /= tickSpacing;
   const [word, pos] = position(tick);
   const mask = BigInt(1) << BigInt(pos);
+
   if (bitmap[word] === undefined) return false;
+
   const currentMask = BigInt(bitmap[word]);
   const newMask = currentMask ^ mask;
+
   return newMask == BigInt(0);
 }
 
@@ -193,6 +199,7 @@ export function nextInitialisedTickWithInSameWord(
     //initialise the bitmask for word if required
     if (bitmap[word] == undefined) bitmap[word] = BigInt(0).toString();
     const bitmask = BigInt(bitmap[word]);
+
     const mask = ~((BigInt(1) << BigInt(pos)) - BigInt(1));
     const masked = bitmask & mask;
 
@@ -260,6 +267,7 @@ export function getFeeGrowthInside(
 ): BigNumber[] {
   //calculate fee growth below
   let feeGrowthBelow0: BigNumber, feeGrowthBelow1: BigNumber;
+
   if (tickCurrent >= tickLower) {
     feeGrowthBelow0 = new BigNumber(tickData[tickLower].feeGrowthOutside0);
     feeGrowthBelow1 = new BigNumber(tickData[tickLower].feeGrowthOutside1);
@@ -307,8 +315,11 @@ export function checkTicks(tickLower: number, tickUpper: number) {
  */
 export function tickSpacingToMaxLiquidityPerTick(tickSpacing: number): BigNumber {
   const minTick = Math.ceil((MIN_TICK / tickSpacing) * tickSpacing);
+
   const maxTick = Math.floor((MAX_TICK / tickSpacing) * tickSpacing);
+
   const numTicks = (maxTick - minTick) / tickSpacing + 1;
+
   return new BigNumber(2).pow(128).minus(1).dividedBy(numTicks);
 }
 /**

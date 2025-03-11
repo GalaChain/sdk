@@ -36,7 +36,7 @@ import {
   createSaleFeeGate,
   sellExactTokenFeeGate,
   sellWithNativeFeeGate
-} from "../fees";
+} from "../fees/dexLaunchpadFeeGate";
 import {
   buyExactToken,
   buyWithNative,

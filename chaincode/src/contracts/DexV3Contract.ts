@@ -61,16 +61,16 @@ import {
   getSlot0,
   getUserPositions,
   quoteExactAmount,
+  setProtocolFee,
   swap
 } from "../dex";
-import { setProtocolFee } from "../dex/setProtocolFee";
 import {
   addLiquidityFeeGate,
   collectPositionFeesFeeGate,
   createPoolFeeGate,
   removeLiquidityFeeGate,
   swapFeeGate
-} from "../fees";
+} from "../fees/dexLaunchpadFeeGate";
 import { GalaChainContext } from "../types";
 import { GalaContract } from "./GalaContract";
 import { EVALUATE, Evaluate, GalaTransaction, Submit } from "./GalaTransaction";

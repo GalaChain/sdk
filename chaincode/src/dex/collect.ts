@@ -12,7 +12,14 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-import { CollectDto, ConflictError, NotFoundError, Pool, UserBalanceResDto, UserPosition } from "@gala-chain/api";
+import {
+  CollectDto,
+  ConflictError,
+  NotFoundError,
+  Pool,
+  UserBalanceResDto,
+  UserPosition
+} from "@gala-chain/api";
 import BigNumber from "bignumber.js";
 
 import { fetchOrCreateBalance } from "../balances";

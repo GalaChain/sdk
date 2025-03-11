@@ -257,5 +257,3 @@ export class NotImplementedError extends ChainError.withCode(ErrorCode.NOT_IMPLE
 export class SlippageToleranceExceededError extends ChainError.withCode(ErrorCode.PRECONDITION_FAILED) {}
 
 export class PreConditionFailedError extends ChainError.withCode(ErrorCode.PRECONDITION_FAILED) {}
-
-
