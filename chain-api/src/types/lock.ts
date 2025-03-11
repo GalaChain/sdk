@@ -77,6 +77,15 @@ export class LockTokenDto extends SubmitCallDTO {
   @IsOptional()
   @ArrayNotEmpty()
   useAllowances?: Array<string>;
+
+  @JSONSchema({
+    description:
+      "vestingPeriodStart timestamp. For Vesting Locks, this specifies the beginning of the vesting period."
+  })
+  @Min(0)
+  @IsInt()
+  @IsOptional()
+  public vestingPeriodStart?: number | undefined;
 }
 
 @JSONSchema({

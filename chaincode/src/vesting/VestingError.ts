@@ -12,22 +12,11 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+import { ValidationFailedError } from "@gala-chain/api";
+import BigNumber from "bignumber.js";
 
-export * from "./allowances";
-export * from "./balances";
-export * from "./burns";
-export * from "./contracts";
-export * from "./fees";
-export * from "./loans";
-export * from "./locks";
-export * from "./mint";
-export * from "./oracle";
-export * from "./sales";
-export * from "./services";
-export * from "./swaps";
-export * from "./token";
-export * from "./types";
-export * from "./utils";
-export * from "./use";
-export * from "./transfer";
-export * from "./vesting";
+export class VestingAllocationError extends ValidationFailedError {
+  constructor(maxSupply: BigNumber, totalAllocations: BigNumber) {
+    super(`Vesting Allocation total is not equal to token Max Supply`, { maxSupply, totalAllocations });
+  }
+}

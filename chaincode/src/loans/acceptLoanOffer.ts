@@ -84,6 +84,7 @@ export async function acceptLoanOffer(
     allowancesToUse: [],
     expires: 0,
     name: undefined,
+    vestingPeriodStart: undefined,
     verifyAuthorizedOnBehalf: async () => undefined
   });
 

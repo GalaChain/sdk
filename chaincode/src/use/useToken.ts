@@ -90,7 +90,8 @@ export async function useToken(
     created: ctx.txUnixTime,
     expires: 0,
     name: undefined,
-    lockAuthority: undefined
+    lockAuthority: undefined,
+    vestingPeriodStart: undefined
   });
 
   balance.useInstance(hold, ctx.txUnixTime);
