@@ -447,6 +447,7 @@ export default class GalaChainTokenContract extends GalaContract {
       allowancesToUse: dto.useAllowances ?? [],
       name: undefined,
       expires: 0,
+      vestingPeriodStart: dto.vestingPeriodStart,
       verifyAuthorizedOnBehalf: async () => undefined
     });
   }
@@ -620,8 +621,7 @@ export default class GalaChainTokenContract extends GalaContract {
 
   @Submit({
     in: CreateVestingTokenDto,
-    out: VestingToken,
-    allowedOrgs: ["CuratorOrg"]
+    out: VestingToken
   })
   public async CreateVestingToken(ctx: GalaChainContext, dto: CreateVestingTokenDto): Promise<VestingToken> {
     const authorities = dto.tokenClass.authorities
