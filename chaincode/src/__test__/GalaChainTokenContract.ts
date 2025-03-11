@@ -23,6 +23,7 @@ import {
   CloseLoanDto,
   CreateTokenClassDto,
   CreateTokenSaleDto,
+  CreateVestingTokenDto,
   DeleteAllowancesDto,
   EnsureTokenSwapIndexingDto,
   EnsureTokenSwapIndexingResponse,
@@ -58,6 +59,7 @@ import {
   FetchTokenSwapsByUserDto,
   FetchTokenSwapsDto,
   FetchTokenSwapsWithPaginationResponse,
+  FetchVestingTokenDto,
   FillTokenSwapDto,
   FulfillMintDto,
   FulfillTokenSaleDto,
@@ -94,6 +96,9 @@ import {
   UnlockTokensDto,
   UpdateTokenClassDto,
   UseTokenDto,
+  UserAlias,
+  VestingToken,
+  VestingTokenInfo,
   asValidUserAlias,
   generateResponseSchema,
   generateSchema
@@ -111,6 +116,7 @@ import {
   burnTokens,
   createTokenClass,
   createTokenSale,
+  createVestingToken,
   creditFeeBalance,
   defineFeeSchedule,
   defineFeeSplitFormula,
@@ -126,6 +132,7 @@ import {
   fetchTokenClassesWithPagination,
   fetchTokenSaleById,
   fetchTokenSalesWithPagination,
+  fetchVestingToken,
   fulfillMintRequest,
   fulfillTokenSale,
   fullAllowanceCheck,
@@ -178,6 +185,11 @@ export default class GalaChainTokenContract extends GalaContract {
     allowedOrgs: ["CuratorOrg"]
   })
   public async CreateTokenClass(ctx: GalaChainContext, dto: CreateTokenClassDto): Promise<TokenClassKey> {
+    const authorities =
+      dto.authorities?.length !== undefined
+        ? await Promise.all(dto.authorities.map((a) => resolveUserAlias(ctx, a)))
+        : [ctx.callingUser];
+
     return createTokenClass(ctx, {
       network: dto.network ?? CreateTokenClassDto.DEFAULT_NETWORK,
       tokenClass: dto.tokenClass,
@@ -195,9 +207,7 @@ export default class GalaChainTokenContract extends GalaContract {
       totalMintAllowance: dto.totalMintAllowance ?? CreateTokenClassDto.INITIAL_MINT_ALLOWANCE,
       totalSupply: dto.totalSupply ?? CreateTokenClassDto.INITIAL_TOTAL_SUPPLY,
       totalBurned: dto.totalBurned ?? CreateTokenClassDto.INITIAL_TOTAL_BURNED,
-      authorities: await Promise.all(
-        (dto.authorities ?? [ctx.callingUser]).map((a) => resolveUserAlias(ctx, a))
-      )
+      authorities
     });
   }
 
@@ -481,6 +491,7 @@ export default class GalaChainTokenContract extends GalaContract {
       allowancesToUse: dto.useAllowances ?? [],
       name: undefined,
       expires: 0,
+      vestingPeriodStart: dto.vestingPeriodStart,
       verifyAuthorizedOnBehalf: async () => undefined
     });
   }
@@ -902,5 +913,53 @@ export default class GalaChainTokenContract extends GalaContract {
   })
   public CleanTokenSwaps(ctx: GalaChainContext, dto: CleanTokenSwapsDto): Promise<CleanTokenSwapsResponse> {
     return cleanTokenSwaps(ctx, dto);
+  }
+
+  @Submit({
+    in: CreateVestingTokenDto,
+    out: VestingToken,
+    allowedOrgs: ["CuratorOrg"]
+  })
+  public async CreateVestingToken(ctx: GalaChainContext, dto: CreateVestingTokenDto): Promise<VestingToken> {
+    const authorities =
+      dto.tokenClass.authorities?.length !== undefined
+        ? await Promise.all(dto.tokenClass.authorities.map((a) => resolveUserAlias(ctx, a)))
+        : [ctx.callingUser];
+
+    return createVestingToken(ctx, {
+      network: dto.tokenClass.network ?? CreateTokenClassDto.DEFAULT_NETWORK,
+      tokenClass: dto.tokenClass.tokenClass,
+      isNonFungible: false, // remove from dto?
+      decimals: dto.tokenClass.decimals ?? CreateTokenClassDto.DEFAULT_DECIMALS,
+      name: dto.tokenClass.name,
+      symbol: dto.tokenClass.symbol,
+      description: dto.tokenClass.description,
+      rarity: dto.tokenClass.rarity,
+      image: dto.tokenClass.image,
+      metadataAddress: dto.tokenClass.metadataAddress,
+      contractAddress: dto.tokenClass.contractAddress,
+      maxSupply: dto.tokenClass.maxSupply ?? CreateTokenClassDto.DEFAULT_MAX_SUPPLY,
+      maxCapacity: dto.tokenClass.maxCapacity ?? CreateTokenClassDto.DEFAULT_MAX_CAPACITY,
+      totalMintAllowance: dto.tokenClass.totalMintAllowance ?? CreateTokenClassDto.INITIAL_MINT_ALLOWANCE,
+      totalSupply: dto.tokenClass.totalSupply ?? CreateTokenClassDto.INITIAL_TOTAL_SUPPLY,
+      totalBurned: dto.tokenClass.totalBurned ?? CreateTokenClassDto.INITIAL_TOTAL_BURNED,
+      authorities,
+      startDate: dto.startDate,
+      vestingName: dto.vestingName,
+      allocations: dto.allocations
+    });
+  }
+
+  @UnsignedEvaluate({
+    in: FetchVestingTokenDto,
+    out: VestingTokenInfo
+  })
+  public async FetchVestingTokens(
+    ctx: GalaChainContext,
+    dto: FetchVestingTokenDto
+  ): Promise<VestingTokenInfo> {
+    return fetchVestingToken(ctx, {
+      tokenClass: dto.tokenClasses
+    });
   }
 }

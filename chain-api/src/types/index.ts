@@ -81,3 +81,4 @@ export * from "./TokenSwapRequestOfferedBy";
 export * from "./TokenSwapRequestOfferedTo";
 export * from "./UserAlias";
 export * from "./UserRef";
+export * from "./VestingToken";

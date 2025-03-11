@@ -276,6 +276,7 @@ export async function requestTokenSwap(
       allowancesToUse: [],
       expires: newSwap.expires,
       name: swapRequestId,
+      vestingPeriodStart: undefined,
       verifyAuthorizedOnBehalf: verifyAuthorizationForLock
     }).catch((e) => {
       const chainError = ChainError.from(e);
