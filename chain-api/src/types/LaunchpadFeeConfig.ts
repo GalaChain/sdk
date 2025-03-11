@@ -13,7 +13,7 @@
  * limitations under the License.
  */
 import { Exclude, Type } from "class-transformer";
-import { ArrayNotEmpty, IsNotEmpty, IsString, ValidateNested } from "class-validator";
+import { ArrayNotEmpty, IsNotEmpty, IsString } from "class-validator";
 import { JSONSchema } from "class-validator-jsonschema";
 
 import { ChainObject } from "./ChainObject";
@@ -30,7 +30,7 @@ export class LaunchpadFeeConfig extends ChainObject {
   feeAddress: string;
 
   @ArrayNotEmpty()
-  @ValidateNested({ each: true })
+  @IsString({ each: true })
   @Type(() => String)
   authorities: string[];
 

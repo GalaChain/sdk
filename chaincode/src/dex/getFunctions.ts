@@ -106,7 +106,13 @@ export async function getPositions(ctx: GalaChainContext, dto: GetPositionDto): 
   const pool = await getPoolData(ctx, dto);
   const key = genKeyWithPipe(dto.owner, dto.tickLower.toString(), dto.tickUpper.toString());
   if (!pool) throw new NotFoundError("No pool for these tokens and fee exists");
-  return pool.positions[key];
+  const position = pool.positions[key];
+  if (!position) throw new NotFoundError("No Position found");
+  const [tokensOwed0, tokensOwed1] = pool.getFeeCollectedEstimation(dto.owner, dto.tickLower, dto.tickUpper);
+
+  position.tokensOwed0 = new BigNumber(position.tokensOwed0).f18().plus(tokensOwed0.f18()).toString();
+  position.tokensOwed1 = new BigNumber(position.tokensOwed1).f18().plus(tokensOwed1.f18()).toString();
+  return position;
 }
 
 /**

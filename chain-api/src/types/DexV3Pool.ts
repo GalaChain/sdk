@@ -483,40 +483,6 @@ export class Pool extends ChainObject {
   }
 
   /**
-   * @notice It will Collect the fee accumulated on the user liquidity
-   * @param recipient this person will get whose accumulated tokens are to be collected
-   * @param tickLower The lower tick of the position for which to collect fee accumulated
-   * @param tickUpper The upper tick of the position for which to collect fee accumulated
-   * @param amount0Requested amount0 The amount of token0 sent to be collected by the recipient
-   * @param amount1Requested amount1 The amount of token1 sent to be collected by the recipient
-   * @returns
-   */
-  public collect(
-    recipient: string,
-    tickLower: number,
-    tickUpper: number,
-    amount0Requested: BigNumber,
-    amount1Requested: BigNumber
-  ): [amount0Requested: BigNumber, amount1Requested: BigNumber] {
-    const userPositionKey = `${recipient}_${tickLower}_${tickUpper}`;
-    const position = this.positions[userPositionKey];
-    if (
-      new BigNumber(position.tokensOwed0).lt(amount0Requested) ||
-      new BigNumber(position.tokensOwed1).lt(amount1Requested)
-    ) {
-      throw new ConflictError("Less balance accumulated");
-    }
-    this.positions[userPositionKey].tokensOwed0 = new BigNumber(this.positions[userPositionKey].tokensOwed0)
-      .minus(amount0Requested)
-      .toString();
-    this.positions[userPositionKey].tokensOwed1 = new BigNumber(this.positions[userPositionKey].tokensOwed1)
-      .minus(amount1Requested)
-      .toString();
-
-    return [amount0Requested, amount1Requested];
-  }
-
-  /**
    * @dev It will estimate the tokens required to add liquidity
    * @param amount Amount for which one wants estimation
    * @param tickLower The lower tick of the position for which to add liquidity
@@ -583,5 +549,85 @@ export class Pool extends ChainObject {
     this.protocolFeesToken0 = new BigNumber(0);
     this.protocolFeesToken1 = new BigNumber(0);
     return [protocolFeesToken0, protocolFeesToken1];
+  }
+  /**
+   *
+   * @param recipient this person will get whose accumulated tokens are to be collected
+   * @param tickLower The lower tick of the position for which to collect fee accumulated
+   * @param tickUpper The upper tick of the position for which to collect fee accumulated
+   * @param amount0Requested amount0 The amount of token0 sent to be collected by the recipient
+   * @param amount1Requested amount1 The amount of token1 sent to be collected by the recipient
+   * @returns
+   */
+  public collect(
+    recipient: string,
+    tickLower: number,
+    tickUpper: number,
+    amount0Requested: BigNumber,
+    amount1Requested: BigNumber
+  ) {
+    const owner = recipient;
+    const key = `${owner}_${tickLower}_${tickUpper}`;
+    const position = this.positions[key];
+    if (
+      new BigNumber(position.tokensOwed0).lt(amount0Requested) ||
+      new BigNumber(position.tokensOwed1).lt(amount1Requested)
+    ) {
+      const [tokensOwed0, tokensOwed1] = this.getFeeCollectedEstimation(recipient, tickLower, tickUpper);
+      if (tokensOwed0.isGreaterThan(0) || tokensOwed1.isGreaterThan(0)) {
+        position.tokensOwed0 = new BigNumber(position.tokensOwed0).plus(tokensOwed0).toString();
+        position.tokensOwed1 = new BigNumber(position.tokensOwed1).plus(tokensOwed1).toString();
+      }
+    }
+    if (
+      new BigNumber(position.tokensOwed0).lt(amount0Requested) ||
+      new BigNumber(position.tokensOwed1).lt(amount1Requested)
+    ) {
+      throw new ConflictError("Less balance accumulated");
+    }
+    this.positions[key].tokensOwed0 = new BigNumber(this.positions[key].tokensOwed0)
+      .minus(amount0Requested)
+      .toString();
+    this.positions[key].tokensOwed1 = new BigNumber(this.positions[key].tokensOwed1)
+      .minus(amount1Requested)
+      .toString();
+    return [amount0Requested, amount1Requested];
+  }
+
+  /**
+   * @dev it will give Estimation for the tokens collected due swaps  
+   * @param recipient this person will get whose accumulated tokens are to be collected
+   * @param tickLower The lower tick of the position for which to collect fee accumulated
+   * @param tickUpper The upper tick of the position for which to collect fee accumulated
+   * @returns 
+   */
+  public getFeeCollectedEstimation(recipient: string, tickLower: number, tickUpper: number) {
+    const tickCurrent = sqrtPriceToTick(this.sqrtPrice);
+    const [feeGrowthInside0, feeGrowthInside1] = getFeeGrowthInside(
+      this.tickData,
+      tickLower,
+      tickUpper,
+      tickCurrent,
+      this.feeGrowthGlobal0,
+      this.feeGrowthGlobal1
+    );
+    const owner = recipient;
+    const key = `${owner}_${tickLower}_${tickUpper}`;
+
+    const positionData = this.positions[key];
+    if (!positionData) throw new Error("Position not found");
+
+    // Calculate accumulated fees
+    const tokensOwed0 = feeGrowthInside0
+      .minus(new BigNumber(positionData.feeGrowthInside0Last))
+      .times(new BigNumber(positionData.liquidity));
+    const tokensOwed1 = feeGrowthInside1
+      .minus(new BigNumber(positionData.feeGrowthInside1Last))
+      .times(new BigNumber(positionData.liquidity));
+
+    positionData.feeGrowthInside0Last = feeGrowthInside0.toString();
+    positionData.feeGrowthInside1Last = feeGrowthInside1.toString();
+
+    return [tokensOwed0, tokensOwed1];
   }
 }

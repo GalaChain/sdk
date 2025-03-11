@@ -220,8 +220,7 @@ export class ConfigureLaunchpadFeeAddressDto extends ChainCallDTO {
   public newPlatformFeeAddress?: string;
 
   @IsOptional()
-  @ValidateNested({ each: true })
-  @Type(() => String)
+  @IsString({ each: true })
   public newAuthorities?: string[];
 }
 

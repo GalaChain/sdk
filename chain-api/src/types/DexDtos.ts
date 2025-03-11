@@ -13,8 +13,7 @@
  * limitations under the License.
  */
 import BigNumber from "bignumber.js";
-import { Type } from "class-transformer";
-import { IsNotEmpty, IsNumber, IsOptional, IsString, Max, Min, ValidateNested } from "class-validator";
+import { IsArray, IsNotEmpty, IsNumber, IsOptional, IsString, Max, Min } from "class-validator";
 
 import { PositionInPool } from "../utils";
 import { BigNumberArrayProperty, BigNumberProperty } from "../validators";
@@ -660,7 +659,7 @@ export class ConfigureDexFeeAddressDto extends ChainCallDTO {
   public newDexFeeAddress?: string;
 
   @IsOptional()
-  @ValidateNested({ each: true })
-  @Type(() => String)
+  @IsArray()
+  @IsString({each : true})
   public newAuthorities?: string[];
 }

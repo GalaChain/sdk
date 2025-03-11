@@ -737,11 +737,11 @@ describe("DEx v3 Testing", () => {
       ).signed(user.privateKey);
       const positionRes = await client.dexV3Contract.getPositions(getPositionDto);
       expect(positionRes.Data).toMatchObject({
-        feeGrowthInside0Last: "0",
+        feeGrowthInside0Last: "9.75382456261e-9",
         feeGrowthInside1Last: "0",
         liquidity: "92271.497628802094407217",
         owner: expect.stringMatching(/^eth\|[a-fA-F0-9]{40}$/),
-        tokensOwed0: "0",
+        tokensOwed0: "0.00090000000000062",
         tokensOwed1: "0"
       });
     });
@@ -850,7 +850,7 @@ describe("DEx v3 Testing", () => {
         feeGrowthInside1Last: "0",
         liquidity: "0",
         owner: expect.stringMatching(/^eth\|[a-fA-F0-9]{40}$/),
-        tokensOwed0: "0.00090000000000062024061972528225235637",
+        tokensOwed0: "0.00090000000000062",
         tokensOwed1: "0"
       });
     });
@@ -886,7 +886,7 @@ describe("DEx v3 Testing", () => {
         ETH_ClassKey,
         USDT_ClassKey,
         fee,
-        new BigNumber("0.00090000000000062024061972528225235637"),
+        new BigNumber("0.00090000000000062"),
         new BigNumber("0"),
         ta,
         tb
@@ -1254,11 +1254,11 @@ describe("DEx v3 Testing", () => {
       ).signed(user.privateKey);
       const position = await client.dexV3Contract.getPositions(getPositionDto);
       expect(position.Data).toMatchObject({
-        feeGrowthInside0Last: "0",
+        feeGrowthInside0Last: "2.024297941798e-8",
         feeGrowthInside1Last: "0",
         liquidity: "26675.915083949831428038",
         owner: expect.stringMatching(/^eth\|[a-fA-F0-9]{40}$/),
-        tokensOwed0: "0",
+        tokensOwed0: "0.000540000000000178",
         tokensOwed1: "0"
       });
     });
@@ -2037,16 +2037,14 @@ describe("DEx v3 Testing", () => {
 
         configPlatformFeeAddressDTO.sign(authorityUser.privateKey);
         const configRes = await client.dexV3Contract.configureDexFeeAddress(configPlatformFeeAddressDTO);
-
         expect(configRes.Status).toEqual(0);
         expect(configRes.Message).toEqual("At least one user should be defined to provide access");
       });
-      test("It will revert if none of the input field are present", async () => {
+      test("It should add address to authorities", async () => {
         const configPlatformFeeAddressDTO = new ConfigureDexFeeAddressDto();
         configPlatformFeeAddressDTO.newAuthorities = [authorityUser.identityKey];
 
-        configPlatformFeeAddressDTO.sign(authorityUser.privateKey);
-        const configRes = await client.dexV3Contract.configureDexFeeAddress(configPlatformFeeAddressDTO);
+        configPlatformFeeAddressDTO.sign(authorityUser.privateKey);        const configRes = await client.dexV3Contract.configureDexFeeAddress(configPlatformFeeAddressDTO);
         expect(configRes.Status).toEqual(1);
       });
     });

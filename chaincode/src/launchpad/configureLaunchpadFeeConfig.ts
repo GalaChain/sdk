@@ -45,7 +45,9 @@ export async function configureLaunchpadFeeAddress(
   });
 
   if (ctx.clientIdentity.getMSPID() !== curatorOrgMsp) {
-    throw new UnauthorizedError(`CallingUser ${ctx.callingUser} is not authorized to create or update`);
+    if (!platformFeeAddress || !platformFeeAddress.authorities.includes(ctx.callingUser)) {
+      throw new UnauthorizedError(`CallingUser ${ctx.callingUser} is not authorized to create or update`);
+    }
   }
 
   if (!platformFeeAddress) {
