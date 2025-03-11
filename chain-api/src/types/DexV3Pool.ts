@@ -595,11 +595,11 @@ export class Pool extends ChainObject {
   }
 
   /**
-   * @dev it will give Estimation for the tokens collected due swaps  
+   * @dev it will give Estimation for the tokens collected due swaps
    * @param recipient this person will get whose accumulated tokens are to be collected
    * @param tickLower The lower tick of the position for which to collect fee accumulated
    * @param tickUpper The upper tick of the position for which to collect fee accumulated
-   * @returns 
+   * @returns
    */
   public getFeeCollectedEstimation(recipient: string, tickLower: number, tickUpper: number) {
     const tickCurrent = sqrtPriceToTick(this.sqrtPrice);

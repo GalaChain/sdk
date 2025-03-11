@@ -2044,7 +2044,8 @@ describe("DEx v3 Testing", () => {
         const configPlatformFeeAddressDTO = new ConfigureDexFeeAddressDto();
         configPlatformFeeAddressDTO.newAuthorities = [authorityUser.identityKey];
 
-        configPlatformFeeAddressDTO.sign(authorityUser.privateKey);        const configRes = await client.dexV3Contract.configureDexFeeAddress(configPlatformFeeAddressDTO);
+        configPlatformFeeAddressDTO.sign(authorityUser.privateKey);
+        const configRes = await client.dexV3Contract.configureDexFeeAddress(configPlatformFeeAddressDTO);
         expect(configRes.Status).toEqual(1);
       });
     });

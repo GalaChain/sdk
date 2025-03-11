@@ -660,6 +660,6 @@ export class ConfigureDexFeeAddressDto extends ChainCallDTO {
 
   @IsOptional()
   @IsArray()
-  @IsString({each : true})
+  @IsString({ each: true })
   public newAuthorities?: string[];
 }
