@@ -65,6 +65,11 @@ export class PublicKeyService {
     await ctx.stub.putState(key, data);
   }
 
+  public static async deletePublicKey(ctx: GalaChainContext, alias: string): Promise<void> {
+    const key = PublicKeyService.getPublicKeyKey(ctx, alias);
+    await ctx.stub.deleteState(key);
+  }
+
   public static async putUserProfile(
     ctx: GalaChainContext,
     address: string,

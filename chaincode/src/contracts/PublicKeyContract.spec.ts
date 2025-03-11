@@ -17,18 +17,22 @@ import {
   GalaChainSuccessResponse,
   GetMyProfileDto,
   GetPublicKeyDto,
+  PublicKey,
   RegisterEthUserDto,
   RegisterTonUserDto,
   RegisterUserDto,
   SigningScheme,
   UpdatePublicKeyDto,
+  UserProfile,
   createValidDTO,
   signatures
 } from "@gala-chain/api";
+import { ChainUser } from "@gala-chain/client";
 import { transactionErrorMessageContains, transactionSuccess } from "@gala-chain/test";
 
 import TestChaincode from "../__test__/TestChaincode";
 import { PublicKeyService } from "../services";
+import { createValidChainObject } from "../types";
 import { PublicKeyContract } from "./PublicKeyContract";
 import {
   createDerSignedDto,
@@ -103,6 +107,46 @@ describe("RegisterUser", () => {
 
     // Then
     expect(registerResponse).toEqual(expect.objectContaining({ Status: 0, ErrorKey: "PROFILE_EXISTS" }));
+  });
+
+  it("should put UserProfile for existing eth user profile", async () => {
+    // Given
+    const user = ChainUser.withRandomKeys("client|user1");
+
+    const publicKey = await createValidChainObject(PublicKey, {
+      publicKey: signatures.normalizePublicKey(user.publicKey).toString("base64"),
+      signing: SigningScheme.ETH
+    });
+
+    const userProfile = await createValidChainObject(UserProfile, {
+      alias: `eth|${user.ethAddress}`,
+      ethAddress: user.ethAddress
+    });
+
+    const chaincode = new TestChaincode([PublicKeyContract], {
+      [`\u0000GCPK\u0000${user.identityKey}\u0000`]: publicKey.serialize(),
+      [`\u0000GCPK\u0000eth|${user.ethAddress}\u0000`]: publicKey.serialize(),
+      [`\u0000GCUP\u0000${user.ethAddress}\u0000`]: userProfile.serialize()
+    });
+
+    // When
+    const registerDto = await createValidDTO(RegisterUserDto, {
+      publicKey: user.publicKey,
+      user: user.identityKey
+    });
+    const signedRegisterDto = registerDto.signed(process.env.DEV_ADMIN_PRIVATE_KEY as string);
+    const registerResponse = await chaincode.invoke("PublicKeyContract:RegisterUser", signedRegisterDto);
+
+    // Then
+    const expectedUserProfile = await createValidChainObject(UserProfile, {
+      alias: user.identityKey,
+      ethAddress: user.ethAddress
+    });
+    expect(registerResponse).toEqual(transactionSuccess(user.identityKey));
+    expect(chaincode.state).toEqual({
+      [`\u0000GCPK\u0000${user.identityKey}\u0000`]: publicKey.serialize(),
+      [`\u0000GCUP\u0000${user.ethAddress}\u0000`]: expectedUserProfile.serialize()
+    });
   });
 
   it("should fail when registering a new user with the same publiKey/eth address as existing user", async () => {
