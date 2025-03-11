@@ -65,6 +65,11 @@ export class PublicKeyService {
     await ctx.stub.putState(key, data);
   }
 
+  public static async deletePublicKey(ctx: GalaChainContext, alias: string): Promise<void> {
+    const key = PublicKeyService.getPublicKeyKey(ctx, alias);
+    await ctx.stub.deleteState(key);
+  }
+
   public static async putUserProfile(
     ctx: GalaChainContext,
     address: string,
@@ -204,8 +209,13 @@ export class PublicKeyService {
 
     // If User Profile already exists on chain for this ethereum address, we should not allow registering the same user again
     const existingUserProfile = await PublicKeyService.getUserProfile(ctx, ethAddress);
+
     if (existingUserProfile !== undefined) {
-      throw new ProfileExistsError(ethAddress, existingUserProfile.alias);
+      if (existingUserProfile.alias === `eth|${ethAddress}`) {
+        await PublicKeyService.deletePublicKey(ctx, existingUserProfile.alias);
+      } else {
+        throw new ProfileExistsError(ethAddress, existingUserProfile.alias);
+      }
     }
 
     // supports legacy flow (required for backwards compatibility)
