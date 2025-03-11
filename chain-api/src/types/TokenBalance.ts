@@ -506,7 +506,7 @@ export class TokenBalance extends ChainObject {
   private getCurrentLockedQuantity(currentTime: number): BigNumber {
     return this.getUnexpiredLockedHolds(currentTime).reduce((sum, h) => {
       const toAdd = h.isVestingHold() ? h.getLockedVestingQuantity(currentTime) : h.quantity;
-      return sum.plus(h.quantity);
+      return sum.plus(toAdd);
     }, new BigNumber(0));
   }
 
