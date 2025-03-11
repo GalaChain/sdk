@@ -1054,16 +1054,16 @@ describe("getFeeGrowthInside", () => {
 
 describe("checkTicks", () => {
   test("throws error when tickLower is greater than or equal to tickUpper", () => {
-    expect(() => checkTicks(10, 10)).toThrow("TLU");
-    expect(() => checkTicks(20, 10)).toThrow("TLU");
+    expect(() => checkTicks(10, 10)).toThrow("Lower Tick is greater than Upper Tick");
+    expect(() => checkTicks(20, 10)).toThrow("Lower Tick is greater than Upper Tick");
   });
 
   test("throws error when tickLower is out of range", () => {
-    expect(() => checkTicks(-887273, 10)).toThrow("TLM");
+    expect(() => checkTicks(-887273, 10)).toThrow("Lower Tick is less than Min Tick");
   });
 
   test("throws error when tickUpper is out of range", () => {
-    expect(() => checkTicks(10, 887273)).toThrow("TUM");
+    expect(() => checkTicks(10, 887273)).toThrow("Upper Tick is greater than Max Tick");
   });
 
   test("does not throw error for valid tick range", () => {

@@ -13,8 +13,7 @@
  * limitations under the License.
  */
 import BigNumber from "bignumber.js";
-import { Type } from "class-transformer";
-import { IsNotEmpty, IsNumber, IsOptional, IsString, Max, Min } from "class-validator";
+import { IsArray, IsNotEmpty, IsNumber, IsOptional, IsString, Max, Min } from "class-validator";
 
 import { PositionInPool } from "../utils";
 import { BigNumberArrayProperty, BigNumberProperty } from "../validators";
@@ -31,7 +30,6 @@ export class CreatePoolDto extends ChainCallDTO {
   @IsNotEmpty()
   public fee: number;
   @BigNumberProperty()
-  @IsNotEmpty()
   public initialSqrtPrice: BigNumber;
   @Min(0, { message: "Value cannot less than zero" })
   @Max(1, { message: "Value cannot greater than one" })
@@ -101,7 +99,6 @@ export class QuoteExactAmountDto extends ChainCallDTO {
   @IsNotEmpty()
   public zeroForOne: boolean;
   @BigNumberProperty()
-  @IsNotEmpty()
   public amount: BigNumber;
 
   constructor(
@@ -131,11 +128,9 @@ export class SwapDto extends ChainCallDTO {
   public zeroForOne: boolean;
 
   @BigNumberProperty()
-  @IsNotEmpty()
   public sqrtPriceLimit: BigNumber;
 
   @BigNumberProperty()
-  @IsNotEmpty()
   public amount: BigNumber;
 
   @BigNumberProperty()
@@ -176,7 +171,6 @@ export class BurnDto extends ChainCallDTO {
   @IsNotEmpty()
   public fee: number;
   @BigNumberProperty()
-  @IsNotEmpty()
   public amount: BigNumber;
   @IsOptional()
   public owner: string | null;
@@ -218,12 +212,10 @@ export class GetPoolDto extends ChainCallDTO {
 }
 
 export class Slot0ResDto extends ChainCallDTO {
-  @IsNotEmpty()
   @BigNumberProperty()
   public sqrtPrice: BigNumber;
   @IsNotEmpty()
   public tick: number;
-  @IsNotEmpty()
   @BigNumberProperty()
   public liquidity: BigNumber;
 
@@ -336,7 +328,6 @@ export class GetPositionResDto {
 
 export class GetAddLiquidityEstimationDto extends ChainCallDTO {
   @BigNumberProperty()
-  @IsNotEmpty()
   public amount: BigNumber;
   @IsNotEmpty()
   public tickLower: number;
@@ -393,10 +384,8 @@ export class CollectDto extends ChainCallDTO {
   @IsNotEmpty()
   public fee: number;
   @BigNumberProperty()
-  @IsNotEmpty()
   public amount0Requested: BigNumber;
   @BigNumberProperty()
-  @IsNotEmpty()
   public amount1Requested: BigNumber;
   @IsNotEmpty()
   public tickLower: number;
@@ -526,7 +515,6 @@ export class PositionsObject {
 export class GetUserPositionsResDto {
   @IsNotEmpty()
   positions: PositionsObject;
-  @IsNotEmpty()
   @IsNumber()
   totalCount: number;
 
@@ -536,7 +524,7 @@ export class GetUserPositionsResDto {
   }
 }
 
-export class CollectProtocolFeesDto extends ChainCallDTO {
+export class CollectTradingFeesDto extends ChainCallDTO {
   @IsNotEmpty()
   public token0: TokenClassKey;
   @IsNotEmpty()
@@ -558,7 +546,6 @@ export class CollectProtocolFeesDto extends ChainCallDTO {
 
 export class SetProtocolFeeDto extends ChainCallDTO {
   @IsNumber()
-  @IsNotEmpty()
   public protocolFee: number;
 
   constructor(protocolFee: number) {
@@ -592,7 +579,6 @@ export interface IPosition {
 }
 
 export class GetLiquidityResDto extends ChainCallDTO {
-  @IsNotEmpty()
   @BigNumberProperty()
   public liquidity: BigNumber;
   constructor(liquidity: BigNumber) {
@@ -602,13 +588,10 @@ export class GetLiquidityResDto extends ChainCallDTO {
 }
 
 export class GetAddLiquidityEstimationResDto extends ChainCallDTO {
-  @IsNotEmpty()
   @BigNumberProperty()
   public amount0: BigNumber;
-  @IsNotEmpty()
   @BigNumberProperty()
   public amount1: BigNumber;
-  @IsNotEmpty()
   @BigNumberProperty()
   public liquidity: BigNumber;
   constructor(amount0: BigNumber, amount1: BigNumber, liquidity: BigNumber) {
@@ -620,16 +603,12 @@ export class GetAddLiquidityEstimationResDto extends ChainCallDTO {
 }
 
 export class QuoteExactAmountResDto extends ChainCallDTO {
-  @IsNotEmpty()
   @BigNumberProperty()
   public amount0: BigNumber;
-  @IsNotEmpty()
   @BigNumberProperty()
   public amount1: BigNumber;
-  @IsNotEmpty()
   @BigNumberProperty()
   public currentSqrtPrice: BigNumber;
-  @IsNotEmpty()
   @BigNumberProperty()
   public newSqrtPrice: BigNumber;
   constructor(amount0: BigNumber, amount1: BigNumber, currentSqrtPrice: BigNumber, newSqrtPrice: BigNumber) {
@@ -653,11 +632,9 @@ export class GetRemoveLiqEstimationResDto extends ChainCallDTO {
   }
 }
 
-export class CollectProtocolFeesResDto extends ChainCallDTO {
-  @IsNotEmpty()
+export class CollectTradingFeesResDto extends ChainCallDTO {
   @BigNumberProperty()
   public protocolFeesToken0: BigNumber;
-  @IsNotEmpty()
   @BigNumberProperty()
   public protocolFeesToken1: BigNumber;
   constructor(protocolFeesToken0: BigNumber, protocolFeesToken1: BigNumber) {
@@ -669,7 +646,6 @@ export class CollectProtocolFeesResDto extends ChainCallDTO {
 
 export class SetProtocolFeeResDto extends ChainCallDTO {
   @IsNumber()
-  @IsNotEmpty()
   public protocolFee: number;
   constructor(newFee: number) {
     super();
@@ -683,6 +659,7 @@ export class ConfigureDexFeeAddressDto extends ChainCallDTO {
   public newDexFeeAddress?: string;
 
   @IsOptional()
-  @Type(() => String)
+  @IsArray()
+  @IsString({each : true})
   public newAuthorities?: string[];
 }

@@ -13,11 +13,12 @@
  * limitations under the License.
  */
 import {
+  ConflictError,
   CreateSaleResDto,
   CreateTokenSaleDTO,
-  DefaultError,
   LaunchpadSale,
   NativeTokenQuantityDto,
+  PreConditionFailedError,
   TokenInstanceKey
 } from "@gala-chain/api";
 import { BigNumber } from "bignumber.js";
@@ -61,7 +62,7 @@ export async function createSale(
   // Validate input parameters
 
   if (!launchpadDetails.websiteUrl && !launchpadDetails.telegramUrl && !launchpadDetails.twitterUrl) {
-    throw new DefaultError("Token sale creation requires atleast one social link.");
+    throw new PreConditionFailedError("Token sale creation requires atleast one social link.");
   }
 
   launchpadDetails.tokenSymbol = launchpadDetails.tokenSymbol.toUpperCase();
@@ -79,7 +80,7 @@ export async function createSale(
   const key = ctx.stub.createCompositeKey(LaunchpadSale.INDEX_KEY, [vaultAddress]);
   const sale = await getObjectByKey(ctx, LaunchpadSale, key).catch(() => undefined);
   if (sale) {
-    throw new DefaultError("This token and a sale associated with it already exists");
+    throw new ConflictError("This token and a sale associated with it already exists");
   }
 
   // Call createTokenClass

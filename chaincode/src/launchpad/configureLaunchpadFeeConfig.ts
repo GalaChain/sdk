@@ -17,7 +17,8 @@ import {
   ConfigureLaunchpadFeeAddressDto,
   ErrorCode,
   LaunchpadFeeConfig,
-  UnauthorizedError
+  UnauthorizedError,
+  ValidationFailedError
 } from "@gala-chain/api";
 
 import { GalaChainContext } from "../types";
@@ -28,7 +29,7 @@ export async function configureLaunchpadFeeAddress(
   dto: ConfigureLaunchpadFeeAddressDto
 ): Promise<LaunchpadFeeConfig> {
   if (!dto.newPlatformFeeAddress && !dto.newAuthorities?.length) {
-    throw new Error("None of the input fields are present.");
+    throw new ValidationFailedError("None of the input fields are present.");
   }
 
   const curatorOrgMsp = process.env.CURATOR_ORG_MSP ?? "CuratorOrg";
@@ -44,12 +45,16 @@ export async function configureLaunchpadFeeAddress(
   });
 
   if (ctx.clientIdentity.getMSPID() !== curatorOrgMsp) {
-    throw new UnauthorizedError(`CallingUser ${ctx.callingUser} is not authorized to create or update`);
+    if (!platformFeeAddress || !platformFeeAddress.authorities.includes(ctx.callingUser)) {
+      throw new UnauthorizedError(`CallingUser ${ctx.callingUser} is not authorized to create or update`);
+    }
   }
 
   if (!platformFeeAddress) {
     if (!dto.newPlatformFeeAddress) {
-      throw new Error("Must provide a platform fee address in the initial setup of the configuration.");
+      throw new ValidationFailedError(
+        "Must provide a platform fee address in the initial setup of the configuration."
+      );
     }
     platformFeeAddress = new LaunchpadFeeConfig(
       dto.newPlatformFeeAddress,

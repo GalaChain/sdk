@@ -21,4 +21,4 @@ export * from "./getFunctions";
 export * from "./quoteFuncs";
 export * from "./swap";
 export * from "./setProtocolFee";
-export * from "./collectProtocolFee";
+export * from "./collectTradingFees";

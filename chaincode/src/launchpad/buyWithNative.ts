@@ -13,10 +13,10 @@
  * limitations under the License.
  */
 import {
-  DefaultError,
   ExactTokenQuantityDto,
   LaunchpadSale,
   NativeTokenQuantityDto,
+  SlippageToleranceExceededError,
   TradeResDto
 } from "@gala-chain/api";
 import { BigNumber } from "bignumber.js";
@@ -82,7 +82,7 @@ export async function buyWithNative(
     isSaleFinalised = true;
 
   if (buyTokenDTO.expectedToken && buyTokenDTO.expectedToken.comparedTo(tokensToBuy) > 0) {
-    throw new DefaultError(
+    throw new SlippageToleranceExceededError(
       "Tokens expected from this operation are more than the the actual amount that will be provided."
     );
   }

@@ -12,7 +12,14 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-import { ConflictError, CreatePoolDto, DexFeeConfig, Pool, feeAmountTickSpacing } from "@gala-chain/api";
+import {
+  ConflictError,
+  CreatePoolDto,
+  DexFeeConfig,
+  Pool,
+  ValidationFailedError,
+  feeAmountTickSpacing
+} from "@gala-chain/api";
 
 import { fetchTokenClass } from "../token";
 import { GalaChainContext } from "../types";
@@ -25,20 +32,20 @@ import { convertToTokenInstanceKey, generateKeyFromClassKey, getObjectByKey, put
     - Token details – The token class keys.
     - sqrtPrice – The initial square root price of the pool (used for setting up the starting price ratio).
     - Fee tier details – The swap fee tier applied to trades in the pool.
-    - Protocol fees – The percentage of fees collected by the protocol.
+  - Protocol fees – The percentage of fees collected by the protocol.
  */
 export async function createPool(ctx: GalaChainContext, dto: CreatePoolDto): Promise<Pool> {
   // sort the tokens in an order
   const [token0, token1] = [dto.token0, dto.token1].map(generateKeyFromClassKey);
   if (token0.localeCompare(token1) > 0) {
-    throw new Error("Token0 must be smaller");
+    throw new ValidationFailedError("Token0 must be smaller");
   } else if (token0.localeCompare(token1) === 0) {
-    throw new Error(
+    throw new ValidationFailedError(
       `Cannot create pool of same tokens. Token0 ${token0} and Token1 ${token1} must be different.`
     );
   }
   if (!feeAmountTickSpacing[dto.fee]) {
-    throw new Error("Fee is not valid it must be 500, 3000, 10000");
+    throw new ValidationFailedError("Fee is not valid it must be 500, 3000, 10000");
   }
   const key = ctx.stub.createCompositeKey(DexFeeConfig.INDEX_KEY, []);
   let protocolFee = 0.1; // default

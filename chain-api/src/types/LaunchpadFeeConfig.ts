@@ -12,7 +12,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-import { Exclude } from "class-transformer";
+import { Exclude, Type } from "class-transformer";
 import { ArrayNotEmpty, IsNotEmpty, IsString } from "class-validator";
 import { JSONSchema } from "class-validator-jsonschema";
 
@@ -31,6 +31,7 @@ export class LaunchpadFeeConfig extends ChainObject {
 
   @ArrayNotEmpty()
   @IsString({ each: true })
+  @Type(() => String)
   authorities: string[];
 
   constructor(feeAddress: string, authorities: string[]) {

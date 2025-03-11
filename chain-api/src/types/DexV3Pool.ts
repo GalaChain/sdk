@@ -21,13 +21,15 @@ import {
   Bitmap,
   ChainKey,
   ConflictError,
-  DefaultError,
+  NotFoundError,
   PositionData,
   Positions,
+  SlippageToleranceExceededError,
   StepComputations,
   SwapState,
   TickData,
   TickDataObj,
+  ValidationFailedError,
   checkTicks,
   computeSwapStep,
   feeAmountTickSpacing,
@@ -161,7 +163,7 @@ export class Pool extends ChainObject {
     this.maxLiquidityPerTick = tickSpacingToMaxLiquidityPerTick(this.tickSpacing);
 
     if (this.protocolFees < 0 || this.protocolFees > 1) {
-      throw new Error("Protocol Fees out of bounds");
+      throw new ValidationFailedError("Protocol Fees out of bounds");
     }
     this.protocolFees = protocolFees;
     this.protocolFeesToken0 = new BigNumber(0);
@@ -290,7 +292,7 @@ export class Pool extends ChainObject {
    * @return amount1 The amount of token1 that was paid to mint the given amount of liquidity
    */
   public mint(recipient: string, tickLower: number, tickUpper: number, liquidity: BigNumber): BigNumber[] {
-    if (liquidity.isEqualTo(0)) throw new DefaultError("Invalid Liquidity");
+    if (liquidity.isEqualTo(0)) throw new ValidationFailedError("Invalid Liquidity");
 
     const [amount0Req, amount1Req] = this._modifyPosition(recipient, tickLower, tickUpper, liquidity);
 
@@ -312,7 +314,7 @@ export class Pool extends ChainObject {
     sqrtPriceLimit: BigNumber
   ): [amount0: BigNumber, amount1: BigNumber] {
     // Input amount to swap
-    if (amountSpecified.isEqualTo(0)) throw new DefaultError("Invalid specified amount");
+    if (amountSpecified.isEqualTo(0)) throw new ValidationFailedError("Invalid specified amount");
     //Check for the validity of sqrtPriceLimit
     if (zeroForOne) {
       if (
@@ -321,7 +323,7 @@ export class Pool extends ChainObject {
           sqrtPriceLimit.isGreaterThan(new BigNumber("0.000000000000000000054212146"))
         )
       )
-        throw new DefaultError("SPL");
+        throw new SlippageToleranceExceededError("SquarePriceLImit exceeds limit");
     } else {
       if (
         !(
@@ -329,7 +331,7 @@ export class Pool extends ChainObject {
           sqrtPriceLimit.isLessThan(new BigNumber("18446051000000000000"))
         )
       )
-        throw new DefaultError("SPL");
+        throw new SlippageToleranceExceededError("SquarePriceLImit exceeds limit");
     }
 
     const slot0 = {
@@ -371,8 +373,9 @@ export class Pool extends ChainObject {
       );
 
       //cap the tick in valid range i.e. MIN_TICK < tick < MAX_TICK
-      if (step.tickNext < Pool.MIN_TICK || step.tickNext > Pool.MAX_TICK)
-        throw new Error("Not enough liquidity available in pool");
+      if (step.tickNext < Pool.MIN_TICK || step.tickNext > Pool.MAX_TICK) {
+        throw new ConflictError("Not enough liquidity available in pool");
+      }
 
       //price at next tick
       step.sqrtPriceNext = tickToSqrtPrice(step.tickNext);
@@ -474,43 +477,9 @@ export class Pool extends ChainObject {
 
     const key = `${owner}_${tickLower}_${tickUpper}`;
 
-    if (this.positions[key] == undefined) throw new DefaultError("Invalid position");
+    if (this.positions[key] == undefined) throw new NotFoundError("Invalid position");
 
     return [amount0, amount1];
-  }
-
-  /**
-   * @notice It will Collect the fee accumulated on the user liquidity
-   * @param recipient this person will get whose accumulated tokens are to be collected
-   * @param tickLower The lower tick of the position for which to collect fee accumulated
-   * @param tickUpper The upper tick of the position for which to collect fee accumulated
-   * @param amount0Requested amount0 The amount of token0 sent to be collected by the recipient
-   * @param amount1Requested amount1 The amount of token1 sent to be collected by the recipient
-   * @returns
-   */
-  public collect(
-    recipient: string,
-    tickLower: number,
-    tickUpper: number,
-    amount0Requested: BigNumber,
-    amount1Requested: BigNumber
-  ): [amount0Requested: BigNumber, amount1Requested: BigNumber] {
-    const userPositionKey = `${recipient}_${tickLower}_${tickUpper}`;
-    const position = this.positions[userPositionKey];
-    if (
-      new BigNumber(position.tokensOwed0).lt(amount0Requested) ||
-      new BigNumber(position.tokensOwed1).lt(amount1Requested)
-    ) {
-      throw new ConflictError("Less balance accumulated");
-    }
-    this.positions[userPositionKey].tokensOwed0 = new BigNumber(this.positions[userPositionKey].tokensOwed0)
-      .minus(amount0Requested)
-      .toString();
-    this.positions[userPositionKey].tokensOwed1 = new BigNumber(this.positions[userPositionKey].tokensOwed1)
-      .minus(amount1Requested)
-      .toString();
-
-    return [amount0Requested, amount1Requested];
   }
 
   /**
@@ -534,7 +503,7 @@ export class Pool extends ChainObject {
     const tickCurrent = sqrtPriceToTick(this.sqrtPrice);
     let liquidity: BigNumber;
     let res: BigNumber[];
-    if (BigNumber(amount).isZero()) throw new Error("You cannot add zero liqudity");
+    if (BigNumber(amount).isZero()) throw new ValidationFailedError("You cannot add zero liqudity");
     if (tickCurrent >= tickLower && tickCurrent < tickUpper) {
       liquidity = isToken0
         ? liquidity0(amount, this.sqrtPrice, sqrtPriceUpper)
@@ -546,12 +515,12 @@ export class Pool extends ChainObject {
       ];
     } else if (tickCurrent < tickLower) {
       if (!isToken0) {
-        throw new Error("Wrong values");
+        throw new ValidationFailedError("Wrong values");
       }
       res = [amount, new BigNumber(0), liquidity0(amount, sqrtPriceLower, sqrtPriceUpper)];
     } else {
       if (isToken0) {
-        throw new Error("Wrong values");
+        throw new ValidationFailedError("Wrong values");
       }
       res = [new BigNumber(0), amount, liquidity1(amount, sqrtPriceLower, sqrtPriceUpper)];
     }
@@ -564,7 +533,7 @@ export class Pool extends ChainObject {
    */
   public configureProtocolFee(protocolFees: number) {
     if (this.protocolFees < 0 || this.protocolFees > 1) {
-      throw new Error("Protocol Fees out of bounds");
+      throw new ValidationFailedError("Protocol Fees out of bounds");
     }
     this.protocolFees = protocolFees;
     return this.protocolFees;
@@ -574,11 +543,91 @@ export class Pool extends ChainObject {
    * @dev this will bring the state of protocolFeesTokens and reset them to 0
    * @returns [protocolFeeToken0,protocolFeesToken1]
    */
-  public collectProtocolFees() {
+  public collectTradingFees() {
     const protocolFeesToken0 = this.protocolFeesToken0,
       protocolFeesToken1 = this.protocolFeesToken1;
     this.protocolFeesToken0 = new BigNumber(0);
     this.protocolFeesToken1 = new BigNumber(0);
     return [protocolFeesToken0, protocolFeesToken1];
+  }
+  /**
+   *
+   * @param recipient this person will get whose accumulated tokens are to be collected
+   * @param tickLower The lower tick of the position for which to collect fee accumulated
+   * @param tickUpper The upper tick of the position for which to collect fee accumulated
+   * @param amount0Requested amount0 The amount of token0 sent to be collected by the recipient
+   * @param amount1Requested amount1 The amount of token1 sent to be collected by the recipient
+   * @returns
+   */
+  public collect(
+    recipient: string,
+    tickLower: number,
+    tickUpper: number,
+    amount0Requested: BigNumber,
+    amount1Requested: BigNumber
+  ) {
+    const owner = recipient;
+    const key = `${owner}_${tickLower}_${tickUpper}`;
+    const position = this.positions[key];
+    if (
+      new BigNumber(position.tokensOwed0).lt(amount0Requested) ||
+      new BigNumber(position.tokensOwed1).lt(amount1Requested)
+    ) {
+      const [tokensOwed0, tokensOwed1] = this.getFeeCollectedEstimation(recipient, tickLower, tickUpper);
+      if (tokensOwed0.isGreaterThan(0) || tokensOwed1.isGreaterThan(0)) {
+        position.tokensOwed0 = new BigNumber(position.tokensOwed0).plus(tokensOwed0).toString();
+        position.tokensOwed1 = new BigNumber(position.tokensOwed1).plus(tokensOwed1).toString();
+      }
+    }
+    if (
+      new BigNumber(position.tokensOwed0).lt(amount0Requested) ||
+      new BigNumber(position.tokensOwed1).lt(amount1Requested)
+    ) {
+      throw new ConflictError("Less balance accumulated");
+    }
+    this.positions[key].tokensOwed0 = new BigNumber(this.positions[key].tokensOwed0)
+      .minus(amount0Requested)
+      .toString();
+    this.positions[key].tokensOwed1 = new BigNumber(this.positions[key].tokensOwed1)
+      .minus(amount1Requested)
+      .toString();
+    return [amount0Requested, amount1Requested];
+  }
+
+  /**
+   * @dev it will give Estimation for the tokens collected due swaps  
+   * @param recipient this person will get whose accumulated tokens are to be collected
+   * @param tickLower The lower tick of the position for which to collect fee accumulated
+   * @param tickUpper The upper tick of the position for which to collect fee accumulated
+   * @returns 
+   */
+  public getFeeCollectedEstimation(recipient: string, tickLower: number, tickUpper: number) {
+    const tickCurrent = sqrtPriceToTick(this.sqrtPrice);
+    const [feeGrowthInside0, feeGrowthInside1] = getFeeGrowthInside(
+      this.tickData,
+      tickLower,
+      tickUpper,
+      tickCurrent,
+      this.feeGrowthGlobal0,
+      this.feeGrowthGlobal1
+    );
+    const owner = recipient;
+    const key = `${owner}_${tickLower}_${tickUpper}`;
+
+    const positionData = this.positions[key];
+    if (!positionData) throw new Error("Position not found");
+
+    // Calculate accumulated fees
+    const tokensOwed0 = feeGrowthInside0
+      .minus(new BigNumber(positionData.feeGrowthInside0Last))
+      .times(new BigNumber(positionData.liquidity));
+    const tokensOwed1 = feeGrowthInside1
+      .minus(new BigNumber(positionData.feeGrowthInside1Last))
+      .times(new BigNumber(positionData.liquidity));
+
+    positionData.feeGrowthInside0Last = feeGrowthInside0.toString();
+    positionData.feeGrowthInside1Last = feeGrowthInside1.toString();
+
+    return [tokensOwed0, tokensOwed1];
   }
 }

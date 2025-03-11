@@ -1125,7 +1125,7 @@ describe("LaunchpadContract", () => {
       );
     });
 
-    test("SellWithExactTokens || It should rever if Expected Gala tokens from this operation exceeds the actual amount that will be provided.", async () => {
+    test("SellWithExactTokens || It should revert if Expected Gala tokens from this operation exceeds the actual amount that will be provided.", async () => {
       const sale = await createSale(client, user, "Asset26", "saleTwentySix");
       if (!sale.Data) throw new Error();
       vaultAddress = sale.Data?.vaultAddress;
@@ -1154,9 +1154,9 @@ describe("LaunchpadContract", () => {
 
       sellWithExactDTO.sign(user1.privateKey);
 
-      const sellWithNativerRes = await client.Launchpad.SellExactToken(sellWithExactDTO);
+      const sellWithNativeRes = await client.Launchpad.SellExactToken(sellWithExactDTO);
 
-      expect(sellWithNativerRes.Message).toEqual(
+      expect(sellWithNativeRes.Message).toEqual(
         "Expected Gala tokens from this operation exceeds the actual amount that will be provided."
       );
     });
