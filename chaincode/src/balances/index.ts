@@ -12,7 +12,12 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-import { FetchBalancesParams, fetchBalances } from "./fetchBalances";
+import {
+  FetchBalancesParams,
+  FetchBalancesWithPaginationParams,
+  fetchBalances,
+  fetchBalancesWithPagination
+} from "./fetchBalances";
 import {
   FetchBalancesWithTokenMetadataParams,
   fetchBalancesWithTokenMetadata
@@ -23,6 +28,8 @@ export {
   fetchOrCreateBalance,
   fetchBalances,
   FetchBalancesParams,
+  fetchBalancesWithPagination,
+  FetchBalancesWithPaginationParams,
   fetchBalancesWithTokenMetadata,
   FetchBalancesWithTokenMetadataParams
 };

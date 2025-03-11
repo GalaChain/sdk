@@ -461,6 +461,18 @@ export class TokenBalanceWithMetadata extends ChainCallDTO {
   token: TokenClass;
 }
 
+export class FetchBalancesWithPaginationResponse extends ChainCallDTO {
+  @JSONSchema({ description: "List of balances with token metadata." })
+  @ValidateNested({ each: true })
+  @Type(() => TokenBalance)
+  results: TokenBalance[];
+
+  @JSONSchema({ description: "Next page bookmark." })
+  @IsOptional()
+  @IsString()
+  nextPageBookmark?: string;
+}
+
 export class FetchBalancesWithTokenMetadataResponse extends ChainCallDTO {
   @JSONSchema({ description: "List of balances with token metadata." })
   @ValidateNested({ each: true })
