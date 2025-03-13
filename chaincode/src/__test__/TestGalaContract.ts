@@ -19,17 +19,18 @@ import {
   ChainKey,
   ChainObject,
   GalaChainResponse,
+  NotFoundError,
   NotImplementedError,
   SubmitCallDTO,
   createValidChainObject,
   randomUniqueKey
 } from "@gala-chain/api";
 import { Exclude } from "class-transformer";
-import { IsPositive } from "class-validator";
+import { IsNotEmpty, IsPositive } from "class-validator";
 import { Transaction } from "fabric-contract-api";
 
 import { version } from "../../package.json";
-import { EVALUATE, GalaContract, GalaTransaction, Submit } from "../contracts";
+import { EVALUATE, GalaContract, GalaTransaction, SUBMIT, Submit, UnsignedEvaluate } from "../contracts";
 import { GalaChainContext } from "../types";
 import { getObjectsByPartialCompositeKey, putChainObject } from "../utils/state";
 
@@ -64,6 +65,13 @@ export class Superhero extends ChainObject {
   public static readonly INDEX_KEY: string = "superhero";
 }
 
+export class KVDto extends ChainCallDTO {
+  @IsNotEmpty()
+  public key: string;
+
+  public value?: string;
+}
+
 export default class TestGalaContract extends GalaContract {
   constructor() {
     super("TestGalaContract", version);
@@ -91,6 +99,38 @@ export default class TestGalaContract extends GalaContract {
     } catch (e) {
       return GalaChainResponse.Error(e as Error);
     }
+  }
+
+  @GalaTransaction({
+    type: SUBMIT,
+    in: KVDto,
+    enforceUniqueKey: true,
+    allowedOrgs: ["CuratorOrg"]
+  })
+  public async PutKv(ctx: GalaChainContext, dto: KVDto): Promise<void> {
+    await ctx.stub.putState(dto.key, Buffer.from(dto.value ?? "placeholder"));
+  }
+
+  @UnsignedEvaluate({
+    in: KVDto
+  })
+  public async GetKv(ctx: GalaChainContext, dto: KVDto): Promise<string> {
+    const response = (await ctx.stub.getState(dto.key)).toString();
+    if (response === "") {
+      throw new NotFoundError(`Object ${dto.key} not found`);
+    }
+    return response;
+  }
+
+  @GalaTransaction({
+    type: SUBMIT,
+    in: KVDto,
+    enforceUniqueKey: true,
+    allowedOrgs: ["CuratorOrg"]
+  })
+  public async ErrorAfterPutKv(ctx: GalaChainContext, dto: KVDto): Promise<void> {
+    await this.PutKv(ctx, dto);
+    throw new NotImplementedError("Some error after put was invoked");
   }
 
   @Transaction()

@@ -12,7 +12,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-import { MethodAPI, RuntimeError } from "@gala-chain/api";
+import { MethodAPI, NotFoundError, RuntimeError } from "@gala-chain/api";
 
 // singleton object containing the API
 const api: Record<string, MethodAPI[]> = {};
@@ -37,4 +37,26 @@ export function updateApi(target: Object, methodApi: MethodAPI): void {
 export function getApiMethods(target: Object): MethodAPI[] {
   const className = target.constructor?.name;
   return api?.[className] ?? [];
+}
+
+export function getApiMethod(
+  // eslint-disable-next-line @typescript-eslint/ban-types
+  target: Object,
+  methodName: string,
+  additionalFilter: (method: MethodAPI) => boolean = () => true
+): MethodAPI {
+  const apiMethods = getApiMethods(target).filter(additionalFilter);
+  const method = apiMethods.find(
+    (m) => (m.apiMethodName && m.apiMethodName === methodName) || m.methodName === methodName
+  );
+
+  if (method) {
+    return method;
+  }
+
+  // check if method exists
+  const availableMethods = apiMethods.map((m) => m.apiMethodName ?? m.methodName).sort();
+  throw new NotFoundError(
+    `Method ${methodName} is not available. Available methods: ${availableMethods.join(", ")}`
+  );
 }
