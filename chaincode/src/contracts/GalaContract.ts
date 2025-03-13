@@ -178,6 +178,7 @@ export abstract class GalaContract extends Contract {
     type: SUBMIT,
     in: BatchDto,
     out: "object",
+    enforceUniqueKey: true,
     description: "Submit a batch of transactions",
     allowedOrgs: [process.env.CURATOR_ORG_MSP ?? "CuratorOrg"]
   })

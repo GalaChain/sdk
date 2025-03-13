@@ -26,6 +26,7 @@ import {
   serialize
 } from "@gala-chain/api";
 import {
+  TestChaincode,
   transactionError,
   transactionErrorKey,
   transactionErrorMessageContains,
@@ -419,11 +420,12 @@ describe("GalaContract.Batch", () => {
     const [key3, value3] = ["test-key-3", "human"];
 
     const batchSubmit = plainToInstance(BatchDto, {
+      uniqueKey: "unique-key-batch",
       operations: [
-        { method: "PutKv", dto: { key: key1, value: value1 } },
-        { method: "ErrorAfterPutKv", dto: { key: key2, value: value2 } },
-        { method: "PutKv", dto: { key: key3, value: value3 } },
-        { method: "GetKv", dto: { key: key3 } }
+        { method: "PutKv", dto: { key: key1, value: value1, uniqueKey: "unique-key-1" } },
+        { method: "ErrorAfterPutKv", dto: { key: key2, value: value2, uniqueKey: "unique-key-2" } },
+        { method: "PutKv", dto: { key: key3, value: value3, uniqueKey: "unique-key-3" } },
+        { method: "GetKv", dto: { key: key3, uniqueKey: "unique-key-3" } }
       ]
     });
 
@@ -465,24 +467,30 @@ describe("GalaContract.Batch", () => {
     // Given
     const chaincode = new TestChaincode([TestGalaContract]);
     const batchSubmit1 = plainToInstance(BatchDto, {
+      uniqueKey: "unique-key-batch-1",
       operations: [
-        { method: "PutKv", dto: { key: "test-key-1", value: "robot" } },
-        { method: "PutKv", dto: { key: "test-key-2", value: "zerg" } },
-        { method: "PutKv", dto: { key: "test-key-3", value: "human" } },
-        { method: "PutKv", dto: { key: "test-key-4", value: "alien" } },
-        { method: "PutKv", dto: { key: "test-key-5", value: "ai" } }
+        { method: "PutKv", dto: { key: "test-key-1", value: "robot", uniqueKey: "unique-key-1" } },
+        { method: "PutKv", dto: { key: "test-key-2", value: "zerg", uniqueKey: "unique-key-2" } },
+        { method: "PutKv", dto: { key: "test-key-3", value: "human", uniqueKey: "unique-key-3" } },
+        { method: "PutKv", dto: { key: "test-key-4", value: "alien", uniqueKey: "unique-key-4" } },
+        { method: "PutKv", dto: { key: "test-key-5", value: "ai", uniqueKey: "unique-key-5" } }
       ],
-      writesLimit: 2
+      writesLimit: 4
     });
 
     const batchSubmit2 = plainToInstance(BatchDto, {
+      uniqueKey: "unique-key-batch-2",
       operations: batchSubmit1.operations.slice(2),
-      writesLimit: 2
+      writesLimit: 3
     });
 
     // When
     const response1 = await chaincode.invoke("TestGalaContract:BatchSubmit", batchSubmit1.serialize());
+    const savedKeys1 = Object.keys(chaincode.state).sort();
     const response2 = await chaincode.invoke("TestGalaContract:BatchSubmit", batchSubmit2.serialize());
+    const savedKeys2 = Object.keys(chaincode.state)
+      .filter((k) => !savedKeys1.includes(k))
+      .sort();
 
     // Then
     expect(response1).toEqual(
@@ -494,12 +502,56 @@ describe("GalaContract.Batch", () => {
         transactionErrorKey("BATCH_WRITE_LIMIT_EXCEEDED")
       ])
     );
+    expect(savedKeys1).toEqual([
+      expect.stringContaining("unique-key-1"),
+      expect.stringContaining("unique-key-2"),
+      expect.stringContaining("unique-key-batch-1"),
+      expect.stringContaining("test-key-1"),
+      expect.stringContaining("test-key-2")
+    ]);
+
     expect(response2).toEqual(
       transactionSuccess([
         transactionSuccess(),
-        transactionSuccess(),
+        transactionErrorKey("BATCH_WRITE_LIMIT_EXCEEDED"),
         transactionErrorKey("BATCH_WRITE_LIMIT_EXCEEDED")
       ])
     );
+    expect(savedKeys2).toEqual([
+      expect.stringContaining("unique-key-3"),
+      expect.stringContaining("unique-key-batch-2"),
+      expect.stringContaining("test-key-3")
+    ]);
+  });
+
+  it("should fail on duplicate unique keys", async () => {
+    // Given
+    const chaincode = new TestChaincode([TestGalaContract]);
+    const batchSubmit = plainToInstance(BatchDto, {
+      uniqueKey: "unique-key-1",
+      operations: [
+        { method: "PutKv", dto: { key: "test-key-1", value: "robot", uniqueKey: "unique-key-1" } },
+        { method: "PutKv", dto: { key: "test-key-2", value: "zerg", uniqueKey: "unique-key-2" } },
+        { method: "PutKv", dto: { key: "test-key-3", value: "human", uniqueKey: "unique-key-2" } }
+      ]
+    });
+
+    // When
+    const response = await chaincode.invoke("TestGalaContract:BatchSubmit", batchSubmit.serialize());
+    const savedKeys = Object.keys(chaincode.state).sort();
+
+    // Then
+    expect(response).toEqual(
+      transactionSuccess([
+        transactionErrorKey("UNIQUE_TRANSACTION_CONFLICT"),
+        transactionSuccess(),
+        transactionErrorKey("UNIQUE_TRANSACTION_CONFLICT")
+      ])
+    );
+    expect(savedKeys).toEqual([
+      expect.stringContaining("unique-key-1"),
+      expect.stringContaining("unique-key-2"),
+      expect.stringContaining("test-key-2")
+    ]);
   });
 });

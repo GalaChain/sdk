@@ -322,7 +322,6 @@ export class BatchDto extends ChainCallDTO {
   @IsOptional()
   writesLimit?: number;
 
-  @IsNotEmpty()
   @Type(() => BatchOperationDto)
   @ValidateNested({ each: true })
   @ArrayMinSize(1)

@@ -127,14 +127,16 @@ describe("Apple trees", () => {
 
   test("Support Batch operations", async () => {
     // Given
-    const plant = new AppleTreeDto(Variety.HONEYCRISP, 10);
-    const pick = new PickAppleDto(user.identityKey, plant.variety, plant.index);
+    const plant = new PlantAppleTreeDto(Variety.HONEYCRISP, 10, randomUniqueKey());
+    const pick1 = new PickAppleDto(user.identityKey, plant.variety, plant.index, randomUniqueKey());
+    const pick2 = new PickAppleDto(user.identityKey, plant.variety, plant.index, randomUniqueKey());
 
     const batch = plainToInstance(BatchDto, {
+      uniqueKey: randomUniqueKey(),
       operations: [
-        { method: "PickApple", dto: pick.signed(user.privateKey) },
+        { method: "PickApple", dto: pick1.signed(user.privateKey) },
         { method: "PlantTree", dto: plant.signed(user.privateKey) },
-        { method: "PickApple", dto: pick.signed(user2.privateKey) }
+        { method: "PickApple", dto: pick2.signed(user2.privateKey) }
       ]
     });
 

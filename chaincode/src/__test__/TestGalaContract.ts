@@ -19,6 +19,7 @@ import {
   ChainKey,
   ChainObject,
   GalaChainResponse,
+  NotFoundError,
   NotImplementedError,
   SubmitCallDTO,
   createValidChainObject,
@@ -29,7 +30,7 @@ import { IsNotEmpty, IsPositive } from "class-validator";
 import { Transaction } from "fabric-contract-api";
 
 import { version } from "../../package.json";
-import { EVALUATE, GalaContract, GalaTransaction, Submit } from "../contracts";
+import { EVALUATE, GalaContract, GalaTransaction, SUBMIT, Submit, UnsignedEvaluate } from "../contracts";
 import { GalaChainContext } from "../types";
 import { getObjectsByPartialCompositeKey, putChainObject } from "../utils/state";
 
@@ -103,14 +104,14 @@ export default class TestGalaContract extends GalaContract {
   @GalaTransaction({
     type: SUBMIT,
     in: KVDto,
+    enforceUniqueKey: true,
     allowedOrgs: ["CuratorOrg"]
   })
   public async PutKv(ctx: GalaChainContext, dto: KVDto): Promise<void> {
     await ctx.stub.putState(dto.key, Buffer.from(dto.value ?? "placeholder"));
   }
 
-  @GalaTransaction({
-    type: EVALUATE,
+  @UnsignedEvaluate({
     in: KVDto
   })
   public async GetKv(ctx: GalaChainContext, dto: KVDto): Promise<string> {
@@ -124,6 +125,7 @@ export default class TestGalaContract extends GalaContract {
   @GalaTransaction({
     type: SUBMIT,
     in: KVDto,
+    enforceUniqueKey: true,
     allowedOrgs: ["CuratorOrg"]
   })
   public async ErrorAfterPutKv(ctx: GalaChainContext, dto: KVDto): Promise<void> {
