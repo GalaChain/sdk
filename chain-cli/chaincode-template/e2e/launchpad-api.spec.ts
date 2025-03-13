@@ -1777,7 +1777,7 @@ function LaunchpadContractAPI(client: ChainClient): LaunchpadContractAPI & Commo
       return client.evaluateTransaction("CallNativeTokenIn", dto, TradeCalculationResDto);
     },
     CallMemeTokenOut(dto: NativeTokenQuantityDto) {
-      return client.evaluateTransaction("CallMemeTokenOut", dto,TradeCalculationResDto);
+      return client.evaluateTransaction("CallMemeTokenOut", dto, TradeCalculationResDto);
     },
     CallNativeTokenOut(dto: ExactTokenQuantityDto) {
       return client.evaluateTransaction("CallNativeTokenOut", dto, TradeCalculationResDto);
@@ -1786,19 +1786,31 @@ function LaunchpadContractAPI(client: ChainClient): LaunchpadContractAPI & Commo
       return client.evaluateTransaction("CallMemeTokenIn", dto, TradeCalculationResDto);
     },
     CalculatePreMintTokens(dto: PreMintCalculationDto) {
-      return client.evaluateTransaction<BigNumber>("CalculatePreMintTokens", dto,BigNumber); 
+      return client.evaluateTransaction<BigNumber>("CalculatePreMintTokens", dto, BigNumber);
     },
     FetchSale(dto: FetchSaleDto) {
-      return client.evaluateTransaction<LaunchpadSale>("FetchSaleDetails", dto, LaunchpadSale) 
+      return client.evaluateTransaction<LaunchpadSale>("FetchSaleDetails", dto, LaunchpadSale);
     },
     ConfigureLaunchpadFeeAddress(dto: ConfigureLaunchpadFeeAddressDto) {
-      return client.submitTransaction<LaunchpadFeeConfig>("ConfigureLaunchpadFeeAddress", dto,LaunchpadFeeConfig);
+      return client.submitTransaction<LaunchpadFeeConfig>(
+        "ConfigureLaunchpadFeeAddress",
+        dto,
+        LaunchpadFeeConfig
+      );
     },
     FinalizeTokenAllocation(dto: FinalizeTokenAllocationDto) {
-      return client.submitTransaction<LaunchpadFinalizeFeeAllocation>("FinalizeTokenAllocation", dto,LaunchpadFinalizeFeeAllocation);
+      return client.submitTransaction<LaunchpadFinalizeFeeAllocation>(
+        "FinalizeTokenAllocation",
+        dto,
+        LaunchpadFinalizeFeeAllocation
+      );
     },
     FetchLaunchpadFeeConfig(dto: ChainCallDTO) {
-      return client.evaluateTransaction<LaunchpadFeeConfig>("FetchLaunchpadFeeConfig", dto, LaunchpadFeeConfig) ;
+      return client.evaluateTransaction<LaunchpadFeeConfig>(
+        "FetchLaunchpadFeeConfig",
+        dto,
+        LaunchpadFeeConfig
+      );
     }
   };
 }
@@ -1838,7 +1850,7 @@ function dexV3ContractAPI(client: ChainClient): DexV3ContractAPI & CommonContrac
     ...commonContractAPI(client),
 
     getPoolData(dto: GetPoolDto) {
-      return client.evaluateTransaction<Pool>("GetPoolData", dto,Pool);
+      return client.evaluateTransaction<Pool>("GetPoolData", dto, Pool);
     }
   };
 }

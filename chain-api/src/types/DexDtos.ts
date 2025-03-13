@@ -22,10 +22,9 @@ import { TokenClassKey } from "./TokenClass";
 import { TokenInstanceKey } from "./TokenInstance";
 import { ChainCallDTO } from "./dtos";
 
-const f18 = (num: BigNumber,round: BigNumber.RoundingMode = BigNumber.ROUND_DOWN): BigNumber => {
-  return new BigNumber(num?.toFixed(18, round)??0) 
-}
-
+const f18 = (num: BigNumber, round: BigNumber.RoundingMode = BigNumber.ROUND_DOWN): BigNumber => {
+  return new BigNumber(num?.toFixed(18, round) ?? 0);
+};
 
 export class CreatePoolDto extends ChainCallDTO {
   @IsNotEmpty()
