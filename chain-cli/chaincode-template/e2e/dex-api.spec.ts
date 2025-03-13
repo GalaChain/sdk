@@ -180,11 +180,8 @@ describe("DEx v3 Testing", () => {
       const balancesData = fetchBalanceRes.Data;
       if (balancesData) {
         for (const balance of balancesData) {
-          balance.getQuantityTotal = function (): BigNumber {
-            return this.quantity;
-          };
           const balanceN = balance.getQuantityTotal();
-          expect(balanceN).toEqual(GENERAL.MINT_QUANTITY.toString());
+          expect(balanceN).toEqual(GENERAL.MINT_QUANTITY);
         }
       }
     });
@@ -2214,24 +2211,23 @@ function tokenContractAPI(client: ChainClient): TokenContractAPI & CommonContrac
     ...commonContractAPI(client),
 
     CreateToken(dto: CreateTokenClassDto) {
-      return client.submitTransaction("CreateTokenClass", dto) as Promise<GalaChainResponse<TokenClassKey>>;
+      return client.submitTransaction<TokenClassKey>("CreateTokenClass", dto, TokenClassKey);
     },
 
     FetchBalances(dto: FetchBalancesDto) {
-      return client.evaluateTransaction("FetchBalances", dto) as Promise<GalaChainResponse<TokenBalance[]>>;
+      return client.evaluateTransaction<TokenBalance[]>("FetchBalances", dto, TokenBalance);
     },
+
     MintToken(dto: MintTokenDto) {
-      return client.submitTransaction("MintToken", dto) as Promise<GalaChainResponse<TokenInstanceKey[]>>;
+      return client.submitTransaction<TokenInstanceKey[]>("MintToken", dto, TokenInstanceKey);
     },
 
     GrantAllowance(dto: GrantAllowanceDto) {
-      return client.submitTransaction("GrantAllowance", dto) as Promise<GalaChainResponse<TokenAllowance[]>>;
+      return client.submitTransaction<TokenAllowance[]>("GrantAllowance", dto, TokenAllowance);
     },
 
     MintTokenWithAllowance(dto: MintTokenWithAllowanceDto) {
-      return client.submitTransaction("MintTokenWithAllowance", dto) as Promise<
-        GalaChainResponse<TokenInstanceKey[]>
-      >;
+      return client.submitTransaction<TokenInstanceKey[]>("MintTokenWithAllowance", dto, TokenInstanceKey);
     }
   };
 }
