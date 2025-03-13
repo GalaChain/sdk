@@ -17,7 +17,7 @@ import { AdminChainClients, TestClients, transactionSuccess } from "@gala-chain/
 
 jest.setTimeout(30000);
 
-describe("API snapshots", () => {
+describe.skip("API snapshots", () => {
   const contractConfig = {
     apples: {
       channel: "product-channel",

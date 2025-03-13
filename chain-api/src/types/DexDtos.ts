@@ -22,6 +22,11 @@ import { TokenClassKey } from "./TokenClass";
 import { TokenInstanceKey } from "./TokenInstance";
 import { ChainCallDTO } from "./dtos";
 
+const f18 = (num: BigNumber,round: BigNumber.RoundingMode = BigNumber.ROUND_DOWN): BigNumber => {
+  return new BigNumber(num?.toFixed(18, round)??0) 
+}
+
+
 export class CreatePoolDto extends ChainCallDTO {
   @IsNotEmpty()
   public token0: TokenClassKey;
@@ -596,9 +601,9 @@ export class GetAddLiquidityEstimationResDto extends ChainCallDTO {
   public liquidity: BigNumber;
   constructor(amount0: BigNumber, amount1: BigNumber, liquidity: BigNumber) {
     super();
-    this.amount0 = amount0.f18();
-    this.amount1 = amount1.f18();
-    this.liquidity = liquidity.f18();
+    this.amount0 = f18(amount0);
+    this.amount1 = f18(amount1);
+    this.liquidity = f18(liquidity);
   }
 }
 
@@ -613,10 +618,10 @@ export class QuoteExactAmountResDto extends ChainCallDTO {
   public newSqrtPrice: BigNumber;
   constructor(amount0: BigNumber, amount1: BigNumber, currentSqrtPrice: BigNumber, newSqrtPrice: BigNumber) {
     super();
-    this.amount0 = amount0.f18();
-    this.amount1 = amount1.f18();
-    this.currentSqrtPrice = currentSqrtPrice.f18();
-    this.newSqrtPrice = newSqrtPrice.f18();
+    this.amount0 = f18(amount0);
+    this.amount1 = f18(amount1);
+    this.currentSqrtPrice = f18(currentSqrtPrice);
+    this.newSqrtPrice = f18(newSqrtPrice);
   }
 }
 
@@ -627,8 +632,8 @@ export class GetRemoveLiqEstimationResDto extends ChainCallDTO {
   public amount1: BigNumber;
   constructor(amount0: BigNumber, amount1: BigNumber) {
     super();
-    this.amount0 = amount0.f18();
-    this.amount1 = amount1.f18();
+    this.amount0 = f18(amount0);
+    this.amount1 = f18(amount1);
   }
 }
 
@@ -639,8 +644,8 @@ export class CollectTradingFeesResDto extends ChainCallDTO {
   public protocolFeesToken1: BigNumber;
   constructor(protocolFeesToken0: BigNumber, protocolFeesToken1: BigNumber) {
     super();
-    this.protocolFeesToken0 = protocolFeesToken0.f18();
-    this.protocolFeesToken1 = protocolFeesToken1.f18();
+    this.protocolFeesToken0 = f18(protocolFeesToken0);
+    this.protocolFeesToken1 = f18(protocolFeesToken1);
   }
 }
 

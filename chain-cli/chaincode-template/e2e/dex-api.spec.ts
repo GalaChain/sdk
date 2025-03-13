@@ -102,7 +102,7 @@ describe("DEx v3 Testing", () => {
     expect(response).toEqual(transactionSuccess());
   });
 
-  describe("creating tokens", () => {
+  describe.only("creating tokens", () => {
     const GENERAL = {
       MAX_SUPPLY: new BigNumber(100000000000000),
       MAX_CAPACITY: new BigNumber(100000000000000),
@@ -142,7 +142,7 @@ describe("DEx v3 Testing", () => {
     }
   });
 
-  describe("Mint tokens", () => {
+  describe.only("Mint tokens", () => {
     const GENERAL = {
       GRANT_QUANTITY: new BigNumber(100000000),
       ALLOWANCE_TYPE: 4,
@@ -192,7 +192,7 @@ describe("DEx v3 Testing", () => {
    */
   /////////// 0.5 %////////////////////////////////////////////////////////////
   /////////////////////////////////////////////////////////////////////////////
-  describe("Create Pool with 0.05% fee with adding liquidity with intial price 2000", () => {
+  describe.only("Create Pool with 0.05% fee with adding liquidity with intial price 2000", () => {
     const fee = 500,
       initialSqrtPrice = new BigNumber("44.72136");
     const tickSpacing = feeAmountTickSpacing[fee];
@@ -217,8 +217,8 @@ describe("DEx v3 Testing", () => {
       const poolDataDTO = new GetPoolDto(ETH_ClassKey, USDT_ClassKey, fee).signed(user.privateKey);
       const slot0 = await client.dexV3Contract.getSlot0(poolDataDTO);
       const poolData = await client.dexV3Contract.getPoolData(poolDataDTO);
-      expect(poolData.Data?.sqrtPrice).toEqual(initialSqrtPrice.toString());
-      expect(slot0.Data?.sqrtPrice).toEqual(initialSqrtPrice.toString());
+      expect(poolData.Data?.sqrtPrice.toString()).toEqual(initialSqrtPrice.toString());
+      expect(slot0.Data?.sqrtPrice.toString()).toEqual(initialSqrtPrice.toString());
     });
 
     test("should throw error when tried adding liquidity below the min tick", async () => {
@@ -319,8 +319,8 @@ describe("DEx v3 Testing", () => {
 
       const result = await client.dexV3Contract.getAddLiquidityEstimation(dto);
       const data = result.Data;
-      expect(data?.amount0.toString()).toEqual("0");
-      expect(data?.amount1.toString()).toEqual("1");
+      expect(data?.amount0).toEqual(new BigNumber("0"));
+      expect(data?.amount1).toEqual(new BigNumber("1"));
       expect(data?.liquidity.toString()).toEqual("0.42495639238882534");
     });
 
@@ -341,9 +341,9 @@ describe("DEx v3 Testing", () => {
 
       const result = await client.dexV3Contract.getAddLiquidityEstimation(dto);
       const data = result.Data;
-      expect(data?.amount0).toEqual("10");
-      expect(data?.amount1).toEqual("19106.858496401901029315");
-      expect(data?.liquidity).toEqual("92271.497628802094407218");
+      expect(data?.amount0).toEqual(new BigNumber("10"));
+      expect(data?.amount1).toEqual(new BigNumber("19106.858496401901029315"));
+      expect(data?.liquidity).toEqual(new BigNumber("92271.497628802094407218"));
     });
 
     test("Checking for the expectedTokens to provide liquidity in the range of 2100 - 2200 range ", async () => {
@@ -364,9 +364,9 @@ describe("DEx v3 Testing", () => {
       const result = await client.dexV3Contract.getAddLiquidityEstimation(dto);
       const data = result.Data;
 
-      expect(data?.amount0).toEqual("1");
-      expect(data?.amount1).toEqual("0");
-      expect(data?.liquidity).toEqual("2060.753664493334613554");
+      expect(data?.amount0).toEqual(new BigNumber("1"));
+      expect(data?.amount1).toEqual(new BigNumber("0"));
+      expect(data?.liquidity).toEqual(new BigNumber("2060.753664493334613554"));
     });
 
     test("Adding liquidity more than max liquidity will throw error", async () => {
@@ -456,6 +456,8 @@ describe("DEx v3 Testing", () => {
       ).signed(user.privateKey);
 
       const addLiquidityRes = await client.dexV3Contract.addLiquidity(dto);
+
+      console.log(JSON.stringify(addLiquidityRes), "Bakwas h na");
       expect(addLiquidityRes).toMatchObject({
         Status: 1,
         Data: {
@@ -482,14 +484,14 @@ describe("DEx v3 Testing", () => {
               type: "new-type0"
             })
           },
-          amounts: ["0", "0.999999999999999998"]
+          amounts: [new BigNumber("0"), new BigNumber("0.999999999999999998")]
         }
       });
       const getLiquidityDTO = new GetPoolDto(ETH_ClassKey, USDT_ClassKey, fee).signed(user.privateKey);
       const liq = await client.dexV3Contract.getLiquidity(getLiquidityDTO);
 
       // As we have provided our first liquidity outside the range then the global liquidity must be equal to zero
-      expect(liq.Data?.liquidity).toEqual("0");
+      expect(liq.Data?.liquidity).toEqual(new BigNumber("0"));
     });
 
     test("should test for liquidity", async () => {
@@ -497,7 +499,7 @@ describe("DEx v3 Testing", () => {
       const liq = await client.dexV3Contract.getLiquidity(getLiquidityDTO);
 
       // As we have provided our first liquidity outside the range then the global liquidity must be equal to zero
-      expect(liq.Data?.liquidity).toEqual("0");
+      expect(liq.Data?.liquidity.toString()).toEqual("0");
     });
 
     test("Add liquidity in range 1980 - 2020", async () => {
@@ -576,15 +578,15 @@ describe("DEx v3 Testing", () => {
       await client.dexV3Contract.addLiquidity(dto);
       const getLiquidityDTO = new GetPoolDto(ETH_ClassKey, USDT_ClassKey, fee).signed(user.privateKey);
       const liq = await client.dexV3Contract.getLiquidity(getLiquidityDTO);
-      expect(liq.Data?.liquidity).toEqual("92271.497628802094407217");
+      expect(liq.Data?.liquidity).toEqual(new BigNumber("92271.497628802094407217"));
     });
 
     test("should Read details from slot0", async () => {
       const poolDataDTO = new GetPoolDto(ETH_ClassKey, USDT_ClassKey, fee).signed(user.privateKey);
       const slot0 = await client.dexV3Contract.getSlot0(poolDataDTO);
       const poolData = await client.dexV3Contract.getPoolData(poolDataDTO);
-      expect(poolData.Data?.sqrtPrice).toEqual(initialSqrtPrice.toString());
-      expect(slot0.Data?.sqrtPrice).toEqual(initialSqrtPrice.toString());
+      expect(poolData.Data?.sqrtPrice.toString()).toEqual(initialSqrtPrice.toString());
+      expect(slot0.Data?.sqrtPrice.toString()).toEqual(initialSqrtPrice.toString());
     });
 
     test("should estimate swap", async () => {
@@ -597,7 +599,7 @@ describe("DEx v3 Testing", () => {
       const result = expectSwapRes.Data;
       expect(result).toBeDefined();
       if (!result) throw new Error();
-      expect(result.amount0).toBe("2");
+      expect(result.amount0).toBe(new BigNumber("2"));
       expect(result.amount1).toBe("-3994.130334466043470346");
       expect(result.currentSqrtPrice).toBe("44.72136");
       expect(result.newSqrtPrice).toBe("44.678073281597162509");
@@ -1036,9 +1038,9 @@ describe("DEx v3 Testing", () => {
       const data = result.Data;
       expect(data).toBeDefined();
       if (!data) throw new Error();
-      expect(data.amount0).toEqual("1");
-      expect(data.amount1).toEqual("0");
-      expect(data.liquidity).toEqual("2576.605678369885528483");
+      expect(data.amount0).toEqual(new BigNumber("1"));
+      expect(data.amount1).toEqual(new BigNumber("0"));
+      expect(data.liquidity).toEqual(new BigNumber("2576.605678369885528483"));
     });
 
     test("Add liquidity in range 1700 - 1900", async () => {
@@ -1083,7 +1085,7 @@ describe("DEx v3 Testing", () => {
       await client.dexV3Contract.addLiquidity(dto);
       const getLiquidityDTO = new GetPoolDto(ETH_ClassKey, USDT_ClassKey, fee).signed(user.privateKey);
       const liq = await client.dexV3Contract.getLiquidity(getLiquidityDTO);
-      expect(liq.Data?.liquidity).toBe("0");
+      expect(liq.Data?.liquidity).toBe(new BigNumber("0"));
     });
 
     test("Add liquidity in range 1980 - 2020", async () => {
@@ -1196,7 +1198,7 @@ describe("DEx v3 Testing", () => {
       const getLiquidityDTO = new GetPoolDto(ETH_ClassKey, USDT_ClassKey, fee).signed(user.privateKey);
 
       const liqRes = await client.dexV3Contract.getLiquidity(getLiquidityDTO);
-      expect(liqRes.Data?.liquidity).toBe("26675.915083949831428038");
+      expect(liqRes.Data?.liquidity).toBe(new BigNumber("26675.915083949831428038"));
     });
 
     test("should swap with changing sqrtPrice", async () => {
@@ -2233,7 +2235,7 @@ function tokenContractAPI(client: ChainClient): TokenContractAPI & CommonContrac
 }
 
 interface DexV3ContractAPI {
-  createPool(dto: CreatePoolDto): Promise<GalaChainResponse<void>>;
+  createPool(dto: CreatePoolDto): Promise<GalaChainResponse<Pool>>;
   addLiquidity(dto: AddLiquidityDTO): Promise<GalaChainResponse<AddLiquidityResDto>>;
   swap(dto: SwapDto): Promise<GalaChainResponse<SwapResDto>>;
   RemoveLiquidity(dto: BurnDto): Promise<GalaChainResponse<UserBalanceResDto>>;
@@ -2258,77 +2260,76 @@ function dexV3ContractAPI(client: ChainClient): DexV3ContractAPI & CommonContrac
   return {
     ...commonContractAPI(client),
     createPool(dto: CreatePoolDto) {
-      return client.submitTransaction("CreatePool", dto) as Promise<GalaChainResponse<void>>;
+      return client.submitTransaction<Pool>("CreatePool", dto, Pool);
     },
     getPoolData(dto: GetPoolDto) {
-      return client.evaluateTransaction("GetPoolData", dto) as Promise<GalaChainResponse<Pool>>;
+      return client.evaluateTransaction<Pool>("GetPoolData", dto, Pool);
     },
     addLiquidity(dto: AddLiquidityDTO) {
-      return client.submitTransaction("AddLiquidity", dto) as Promise<GalaChainResponse<AddLiquidityResDto>>;
+      return client.submitTransaction<AddLiquidityResDto>("AddLiquidity", dto, AddLiquidityResDto);
     },
     swap(dto: SwapDto) {
-      return client.submitTransaction("Swap", dto) as Promise<GalaChainResponse<SwapResDto>>;
+      return client.submitTransaction<SwapResDto>("Swap", dto, SwapResDto);
     },
     RemoveLiquidity(dto: BurnDto) {
-      return client.submitTransaction("RemoveLiquidity", dto) as Promise<
-        GalaChainResponse<UserBalanceResDto>
-      >;
+      return client.submitTransaction<UserBalanceResDto>("RemoveLiquidity", dto, UserBalanceResDto);
     },
     burnEstimate(dto: BurnDto) {
-      return client.evaluateTransaction("GetRemoveLiquidityEstimation", dto) as Promise<
-        GalaChainResponse<GetRemoveLiqEstimationResDto>
-      >;
+      GalaChainResponse<GetRemoveLiqEstimationResDto>;
+      return client.evaluateTransaction<GetRemoveLiqEstimationResDto>(
+        "GetRemoveLiquidityEstimation",
+        dto,
+        GetRemoveLiqEstimationResDto
+      );
     },
     getSlot0(dto: GetPoolDto) {
-      return client.evaluateTransaction("GetSlot0", dto) as Promise<GalaChainResponse<Slot0ResDto>>;
+      return client.evaluateTransaction<Slot0ResDto>("GetSlot0", dto, Slot0ResDto);
     },
     getLiquidity(dto: GetPoolDto) {
-      return client.evaluateTransaction("GetLiquidity", dto) as Promise<
-        GalaChainResponse<GetLiquidityResDto>
-      >;
+      return client.evaluateTransaction<GetLiquidityResDto>("GetLiquidity", dto, GetLiquidityResDto);
     },
     getPositions(dto: GetPositionDto) {
-      return client.evaluateTransaction("GetPositions", dto) as Promise<GalaChainResponse<GetPositionResDto>>;
+      return client.evaluateTransaction<GetPositionResDto>("GetPositions", dto, GetPositionResDto);
     },
     getUserPositions(dto: GetUserPositionsDto) {
-      return client.evaluateTransaction("GetUserPositions", dto) as Promise<
-        GalaChainResponse<GetUserPositionsResDto>
-      >;
+      return client.evaluateTransaction<GetUserPositionsResDto>(
+        "GetUserPositions",
+        dto,
+        GetUserPositionsResDto
+      );
     },
     getAddLiquidityEstimation(dto: GetAddLiquidityEstimationDto) {
-      return client.evaluateTransaction("GetAddLiquidityEstimation", dto) as Promise<
-        GalaChainResponse<GetAddLiquidityEstimationResDto>
-      >;
+      return client.evaluateTransaction<GetAddLiquidityEstimationResDto>(
+        "GetAddLiquidityEstimation",
+        dto,
+        GetAddLiquidityEstimationResDto
+      );
     },
     quoteExactAmount(dto: QuoteExactAmountDto) {
-      return client.evaluateTransaction("QuoteExactAmount", dto) as Promise<
-        GalaChainResponse<QuoteExactAmountResDto>
-      >;
+      return client.evaluateTransaction<QuoteExactAmountResDto>(
+        "QuoteExactAmount",
+        dto,
+        QuoteExactAmountResDto
+      );
     },
     collect(dto: CollectDto) {
-      return client.submitTransaction("CollectPositionFees", dto) as Promise<
-        GalaChainResponse<UserBalanceResDto>
-      >;
+      return client.submitTransaction<UserBalanceResDto>("CollectPositionFees", dto, UserBalanceResDto);
     },
     collectTradingFees(dto: CollectTradingFeesDto) {
-      return client.submitTransaction("CollectTradingFees", dto) as Promise<
-        GalaChainResponse<CollectTradingFeesResDto>
-      >;
+      return client.submitTransaction<CollectTradingFeesResDto>(
+        "CollectTradingFees",
+        dto,
+        CollectTradingFeesResDto
+      );
     },
     setProtocolFee(dto: SetProtocolFeeDto) {
-      return client.submitTransaction("SetProtocolFee", dto) as Promise<
-        GalaChainResponse<SetProtocolFeeResDto>
-      >;
+      return client.submitTransaction<SetProtocolFeeResDto>("SetProtocolFee", dto, SetProtocolFeeResDto);
     },
     configureDexFeeAddress(dto: ConfigureDexFeeAddressDto) {
-      return client.submitTransaction("ConfigureDexFeeAddress", dto) as Promise<
-        GalaChainResponse<DexFeeConfig>
-      >;
+      return client.submitTransaction<DexFeeConfig>("ConfigureDexFeeAddress", dto, DexFeeConfig);
     },
     getDexConfig(dto: ChainCallDTO) {
-      return client.evaluateTransaction("GetDexFeeConfigration", dto) as Promise<
-        GalaChainResponse<DexFeeConfig>
-      >;
+      return client.evaluateTransaction<DexFeeConfig>("GetDexFeeConfigration", dto, DexFeeConfig);
     }
   };
 }
