@@ -14,7 +14,7 @@
  */
 import BigNumber from "bignumber.js";
 
-import { DefaultError } from "../error";
+import { ConflictError } from "../error";
 
 /**
  * Gets the amount0 delta between two prices.
@@ -77,8 +77,8 @@ export function getNextSqrtPriceFromInput(
   amountIn: BigNumber,
   zeroForOne: boolean
 ): BigNumber {
-  if (sqrtPrice.isLessThanOrEqualTo(0)) throw new DefaultError("Invalid Price");
-  if (liquidity.isLessThanOrEqualTo(0)) throw new DefaultError("Invalid liquidity");
+  if (sqrtPrice.isLessThanOrEqualTo(0)) throw new ConflictError("Invalid Price");
+  if (liquidity.isLessThanOrEqualTo(0)) throw new ConflictError("Invalid liquidity");
 
   return zeroForOne
     ? getNextSqrtPriceFromAmount0(sqrtPrice, liquidity, amountIn, true)
@@ -101,8 +101,8 @@ export function getNextSqrtPriceFromOutput(
   amountOut: BigNumber,
   zeroForOne: boolean
 ): BigNumber {
-  if (sqrtPrice.isLessThanOrEqualTo(0)) throw new DefaultError("Invalid Price");
-  if (liquidity.isLessThanOrEqualTo(0)) throw new DefaultError("Invalid liquidity");
+  if (sqrtPrice.isLessThanOrEqualTo(0)) throw new ConflictError("Invalid Price");
+  if (liquidity.isLessThanOrEqualTo(0)) throw new ConflictError("Invalid liquidity");
 
   return zeroForOne
     ? getNextSqrtPriceFromAmount1(sqrtPrice, liquidity, amountOut, false)

@@ -18,7 +18,8 @@ import {
   CreatePoolDto,
   GetAddLiquidityEstimationDto,
   LaunchpadFinalizeFeeAllocation,
-  LaunchpadSale
+  LaunchpadSale,
+  PreConditionFailedError
 } from "@gala-chain/api";
 import BigNumber from "bignumber.js";
 import Decimal from "decimal.js";
@@ -38,7 +39,7 @@ export async function finalizeSale(ctx: GalaChainContext, sale: LaunchpadSale): 
 
   const platformFeeAddressConfiguration = await fetchPlatformFeeAddress(ctx);
   if (!platformFeeAddressConfiguration) {
-    throw new Error("Platform fee configuration is yet to be defined.");
+    throw new PreConditionFailedError("Platform fee configuration is yet to be defined.");
   }
 
   const platformFeePercentage = feeAllocation ? feeAllocation.platformFeePercentage : 0.1;

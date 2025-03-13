@@ -12,7 +12,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-import { DefaultError, NativeTokenQuantityDto, TradeResDto } from "@gala-chain/api";
+import { NativeTokenQuantityDto, SlippageToleranceExceededError, TradeResDto } from "@gala-chain/api";
 import { BigNumber } from "bignumber.js";
 
 import { fetchTokenClass } from "../token/index";
@@ -59,7 +59,7 @@ export async function sellWithNative(
   const memeToken = sale.fetchSellingTokenInstanceKey();
 
   if (sellTokenDTO.expectedToken && sellTokenDTO.expectedToken.comparedTo(tokensToSell) < 0) {
-    throw new DefaultError(
+    throw new SlippageToleranceExceededError(
       "Token amount expected to cost for this operation is less than the the actual amount required."
     );
   }

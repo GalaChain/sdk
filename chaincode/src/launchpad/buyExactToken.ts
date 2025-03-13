@@ -12,7 +12,12 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-import { DefaultError, ExactTokenQuantityDto, LaunchpadSale, TradeResDto } from "@gala-chain/api";
+import {
+  ExactTokenQuantityDto,
+  LaunchpadSale,
+  SlippageToleranceExceededError,
+  TradeResDto
+} from "@gala-chain/api";
 import { BigNumber } from "bignumber.js";
 
 import { fetchTokenClass } from "../token";
@@ -75,7 +80,7 @@ export async function buyExactToken(
 
   // Ensure the expected native token amount is not less than the actual amount required
   if (buyTokenDTO.expectedNativeToken && buyTokenDTO.expectedNativeToken.comparedTo(nativeTokensToBuy) < 0) {
-    throw new DefaultError(
+    throw new SlippageToleranceExceededError(
       "Gala tokens expected to perform this operation are less than the actual amount required."
     );
   }

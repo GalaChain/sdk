@@ -12,8 +12,11 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-import { TokenClassKey, TokenInstanceKey } from "@gala-chain/api";
+import { ChainError, DexFeeConfig, ErrorCode, TokenClassKey, TokenInstanceKey } from "@gala-chain/api";
 import BigNumber from "bignumber.js";
+
+import { GalaChainContext } from "../types";
+import { getObjectByKey } from "./state";
 
 /**
  *
@@ -91,4 +94,19 @@ export function genKey(...params: string[] | number[]): string {
 
 export function genKeyWithPipe(...params: string[] | number[]): string {
   return params.join("_");
+}
+
+export async function fetchDexProtocolFeeConfig(ctx: GalaChainContext): Promise<DexFeeConfig | undefined> {
+  const key = ctx.stub.createCompositeKey(DexFeeConfig.INDEX_KEY, []);
+
+  const dexConfig = await getObjectByKey(ctx, DexFeeConfig, key).catch((e) => {
+    const chainError = ChainError.from(e);
+    if (chainError.matches(ErrorCode.NOT_FOUND)) {
+      return undefined;
+    } else {
+      throw chainError;
+    }
+  });
+
+  return dexConfig;
 }

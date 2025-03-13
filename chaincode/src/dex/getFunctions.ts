@@ -13,7 +13,8 @@
  * limitations under the License.
  */
 import {
-  DefaultError,
+  ChainCallDTO,
+  DexFeeConfig,
   GetAddLiquidityEstimationDto,
   GetAddLiquidityEstimationResDto,
   GetLiquidityResDto,
@@ -22,12 +23,15 @@ import {
   GetUserPositionsDto,
   GetUserPositionsResDto,
   IPosition,
+  NotFoundError,
   Pool,
   PositionsObject,
   Slot0ResDto,
   TokenClassKey,
   TokenInstanceKey,
+  UnauthorizedError,
   UserPosition,
+  ValidationFailedError,
   positionInfoDto,
   sqrtPriceToTick
 } from "@gala-chain/api";
@@ -35,7 +39,13 @@ import BigNumber from "bignumber.js";
 
 import { fetchTokenClass } from "../token";
 import { GalaChainContext } from "../types";
-import { genKeyWithPipe, generateKeyFromClassKey, getObjectByKey, validateTokenOrder } from "../utils";
+import {
+  fetchDexProtocolFeeConfig,
+  genKeyWithPipe,
+  generateKeyFromClassKey,
+  getObjectByKey,
+  validateTokenOrder
+} from "../utils";
 
 /**
  * @dev The getPoolData function retrieves and returns all publicly available state information of a Uniswap V3 pool within the GalaChain ecosystem. It provides insights into the pool's tick map, liquidity positions, and other essential details.
@@ -63,7 +73,7 @@ export async function getPoolData(ctx: GalaChainContext, dto: GetPoolDto): Promi
    */
 export async function getSlot0(ctx: GalaChainContext, dto: GetPoolDto): Promise<Slot0ResDto> {
   const pool = await getPoolData(ctx, dto);
-  if (!pool) throw new DefaultError("No pool for these tokens and fee exists");
+  if (!pool) throw new NotFoundError("No pool for these tokens and fee exists");
   return new Slot0ResDto(
     new BigNumber(pool.sqrtPrice),
     sqrtPriceToTick(pool.sqrtPrice),
@@ -80,7 +90,7 @@ export async function getSlot0(ctx: GalaChainContext, dto: GetPoolDto): Promise<
    */
 export async function getLiquidity(ctx: GalaChainContext, dto: GetPoolDto): Promise<GetLiquidityResDto> {
   const pool = await getPoolData(ctx, dto);
-  if (!pool) throw new DefaultError("No pool for these tokens and fee exists");
+  if (!pool) throw new NotFoundError("No pool for these tokens and fee exists");
   return new GetLiquidityResDto(pool.liquidity);
 }
 
@@ -95,8 +105,14 @@ export async function getLiquidity(ctx: GalaChainContext, dto: GetPoolDto): Prom
 export async function getPositions(ctx: GalaChainContext, dto: GetPositionDto): Promise<positionInfoDto> {
   const pool = await getPoolData(ctx, dto);
   const key = genKeyWithPipe(dto.owner, dto.tickLower.toString(), dto.tickUpper.toString());
-  if (!pool) throw new DefaultError("No pool for these tokens and fee exists");
-  return pool.positions[key];
+  if (!pool) throw new NotFoundError("No pool for these tokens and fee exists");
+  const position = pool.positions[key];
+  if (!position) throw new NotFoundError("No Position found");
+  const [tokensOwed0, tokensOwed1] = pool.getFeeCollectedEstimation(dto.owner, dto.tickLower, dto.tickUpper);
+
+  position.tokensOwed0 = new BigNumber(position.tokensOwed0).f18().plus(tokensOwed0.f18()).toString();
+  position.tokensOwed1 = new BigNumber(position.tokensOwed1).f18().plus(tokensOwed1.f18()).toString();
+  return position;
 }
 
 /**
@@ -170,17 +186,46 @@ export async function getAddLiquidityEstimation(
 ): Promise<GetAddLiquidityEstimationResDto> {
   const [token0, token1] = [dto.token0, dto.token1].map(generateKeyFromClassKey);
   if (token0.localeCompare(token1) > 0) {
-    throw new Error("Token0 must be smaller");
+    throw new ValidationFailedError("Token0 must be smaller");
   }
   const zeroForOne = dto.zeroForOne;
   const tickLower = parseInt(dto.tickLower.toString()),
     tickUpper = parseInt(dto.tickUpper.toString());
   const getPool = new GetPoolDto(dto.token0, dto.token1, dto.fee);
   const pool = await getPoolData(ctx, getPool);
-  if (!pool) throw new DefaultError("No pool for these tokens and fee exists");
+  if (!pool) throw new NotFoundError("No pool for these tokens and fee exists");
   const amounts = pool.getAmountForLiquidity(dto.amount, tickLower, tickUpper, zeroForOne);
 
   return new GetAddLiquidityEstimationResDto(amounts[0], amounts[1], amounts[2]);
+}
+
+/**
+ *
+ * @param ctx GalaChainContext – The execution context providing access to the GalaChain environment.
+ * @param dto ChainCallDTO Empty call to verify signature
+ * @returns DexFeeConfig
+ */
+export async function getDexFeesConfigration(
+  ctx: GalaChainContext,
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  dto: ChainCallDTO
+): Promise<DexFeeConfig> {
+  const curatorOrgMsp = process.env.CURATOR_ORG_MSP ?? "CuratorOrg";
+
+  const dexConfig = await fetchDexProtocolFeeConfig(ctx);
+
+  if (ctx.clientIdentity.getMSPID() !== curatorOrgMsp) {
+    throw new UnauthorizedError(`CallingUser ${ctx.callingUser} is not authorized to create or update`);
+  }
+
+  if (!dexConfig) {
+    throw new NotFoundError(
+      "Platform fee configuration has yet to be defined. Platform fee configuration is not defined."
+    );
+  } else if (!dexConfig.authorities.includes(ctx.callingUser)) {
+    throw new UnauthorizedError(`CallingUser ${ctx.callingUser} is not authorized to create or update`);
+  }
+  return dexConfig;
 }
 
 /**

@@ -64,19 +64,15 @@ export class LaunchpadSale extends ChainObject {
   public saleOwner: string;
 
   @BigNumberProperty()
-  @IsNotEmpty()
   public basePrice: BigNumber;
 
   @BigNumberProperty()
-  @IsNotEmpty()
   public exponentFactor: BigNumber;
 
   @BigNumberProperty()
-  @IsNotEmpty()
   public maxSupply: BigNumber;
 
   @BigNumberProperty()
-  @IsNotEmpty()
   public euler: BigNumber;
 
   @JSONSchema({

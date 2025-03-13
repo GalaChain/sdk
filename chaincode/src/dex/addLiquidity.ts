@@ -15,8 +15,9 @@
 import {
   AddLiquidityDTO,
   AddLiquidityResDto,
-  ConflictError,
+  NotFoundError,
   Pool,
+  SlippageToleranceExceededError,
   UserBalanceResDto,
   UserPosition,
   getLiquidityForAmounts,
@@ -55,7 +56,7 @@ export async function addLiquidity(
   const pool = await getObjectByKey(ctx, Pool, key);
 
   //If pool does not exist
-  if (pool == undefined) throw new ConflictError("Pool does not exist");
+  if (pool == undefined) throw new NotFoundError("Pool does not exist");
   const currentSqrtPrice = pool.sqrtPrice;
 
   //create tokenInstanceKeys
@@ -96,7 +97,7 @@ export async function addLiquidity(
     amount0.gt(amount0Desired) ||
     amount1.gt(amount1Desired)
   ) {
-    throw new Error(
+    throw new SlippageToleranceExceededError(
       "Slippage check Failed, should be amount0: " +
         amount0Min.toString() +
         " <" +

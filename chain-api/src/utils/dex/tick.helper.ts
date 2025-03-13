@@ -14,9 +14,12 @@
  */
 import BigNumber from "bignumber.js";
 
-import { DefaultError } from "../error";
+import { ValidationFailedError } from "../error";
 import { leastSignificantBit, mostSignificantBit } from "./bitMath.helper";
 import { Bitmap, TickDataObj } from "./dexHelperDtos";
+
+const MIN_TICK = -887272,
+  MAX_TICK = 887272;
 
 /**
  *
@@ -76,7 +79,7 @@ export function updateTick(
   const liquidityGrossAfter = new BigNumber(liquidityGrossBefore).plus(liquidityDelta);
 
   if (liquidityGrossAfter.isGreaterThan(maxLiquidity))
-    throw new DefaultError("liquidity crossed max liquidity");
+    throw new ValidationFailedError("liquidity crossed max liquidity");
 
   //update liquidity gross and net
   tickData[tick].liquidityGross = liquidityGrossAfter.toString();
@@ -102,9 +105,12 @@ export function updateTick(
 
 function position(tick: number): [word: number, position: number] {
   tick = Math.floor(tick);
+
   const wordPos = Math.floor(tick / 256); // Equivalent to tick >> 8
+
   let bitPos = tick % 256; // Equivalent to tick % 256
   if (bitPos < 0) bitPos += 256; // Ensure it's always positive like uint8
+
   return [wordPos, bitPos];
 }
 
@@ -116,7 +122,7 @@ function position(tick: number): [word: number, position: number] {
  */
 export function flipTick(bitmap: Bitmap, tick: number, tickSpacing: number) {
   if (tick % tickSpacing != 0) {
-    throw new Error("Tick is not spaced " + tick + " " + tickSpacing);
+    throw new ValidationFailedError("Tick is not spaced " + tick + " " + tickSpacing);
   }
   tick /= tickSpacing;
   const [word, pos] = position(tick);
@@ -130,6 +136,19 @@ export function flipTick(bitmap: Bitmap, tick: number, tickSpacing: number) {
 
   //update bitmask state
   bitmap[word] = newMask.toString();
+}
+
+function isTickInitialized(tick: number, tickSpacing: number, bitmap: Bitmap): boolean {
+  tick /= tickSpacing;
+  const [word, pos] = position(tick);
+  const mask = BigInt(1) << BigInt(pos);
+
+  if (bitmap[word] === undefined) return false;
+
+  const currentMask = BigInt(bitmap[word]);
+  const newMask = currentMask ^ mask;
+
+  return newMask == BigInt(0);
 }
 
 /**
@@ -146,10 +165,20 @@ export function nextInitialisedTickWithInSameWord(
   bitmap: Bitmap,
   tick: number,
   tickSpacing: number,
-  lte: boolean
+  lte: boolean,
+  sqrtPrice: BigNumber
 ): [number, boolean] {
   let compressed = Math.floor(tick / tickSpacing);
   if (tick < 0 && tick % tickSpacing != 0) compressed--;
+  if (tick == sqrtPriceToTick(sqrtPrice)) {
+    const tickPrice = tickToSqrtPrice(tick);
+    if (lte && tickPrice.lt(sqrtPrice)) {
+      return [tick, isTickInitialized(tick, tickSpacing, bitmap)];
+    } else if (!lte && tickPrice.gt(sqrtPrice)) {
+      return [tick, isTickInitialized(tick, tickSpacing, bitmap)];
+    }
+  }
+
   if (lte) {
     const [word, pos] = position(compressed);
 
@@ -167,11 +196,10 @@ export function nextInitialisedTickWithInSameWord(
   } else {
     compressed = compressed + 1;
     const [word, pos] = position(compressed);
-
     //initialise the bitmask for word if required
     if (bitmap[word] == undefined) bitmap[word] = BigInt(0).toString();
-
     const bitmask = BigInt(bitmap[word]);
+
     const mask = ~((BigInt(1) << BigInt(pos)) - BigInt(1));
     const masked = bitmask & mask;
 
@@ -239,6 +267,7 @@ export function getFeeGrowthInside(
 ): BigNumber[] {
   //calculate fee growth below
   let feeGrowthBelow0: BigNumber, feeGrowthBelow1: BigNumber;
+
   if (tickCurrent >= tickLower) {
     feeGrowthBelow0 = new BigNumber(tickData[tickLower].feeGrowthOutside0);
     feeGrowthBelow1 = new BigNumber(tickData[tickLower].feeGrowthOutside1);
@@ -271,9 +300,9 @@ export function getFeeGrowthInside(
  *  @param tickUpper upper tick
  */
 export function checkTicks(tickLower: number, tickUpper: number) {
-  if (tickLower >= tickUpper) throw new DefaultError("TLU");
-  if (tickLower < -887272) throw new DefaultError("TLM");
-  if (tickUpper > 887272) throw new DefaultError("TUM");
+  if (tickLower >= tickUpper) throw new ValidationFailedError("Lower Tick is greater than Upper Tick");
+  if (tickLower < MIN_TICK) throw new ValidationFailedError("Lower Tick is less than Min Tick");
+  if (tickUpper > MAX_TICK) throw new ValidationFailedError("Upper Tick is greater than Max Tick");
 }
 
 /**
@@ -285,9 +314,12 @@ export function checkTicks(tickLower: number, tickUpper: number) {
  *  @return The max liquidity per tick
  */
 export function tickSpacingToMaxLiquidityPerTick(tickSpacing: number): BigNumber {
-  const minTick = Math.ceil((-887272 / tickSpacing) * tickSpacing);
-  const maxTick = Math.floor((887272 / tickSpacing) * tickSpacing);
+  const minTick = Math.ceil((MIN_TICK / tickSpacing) * tickSpacing);
+
+  const maxTick = Math.floor((MAX_TICK / tickSpacing) * tickSpacing);
+
   const numTicks = (maxTick - minTick) / tickSpacing + 1;
+
   return new BigNumber(2).pow(128).minus(1).dividedBy(numTicks);
 }
 /**
@@ -317,6 +349,6 @@ export function flipTickOrientation(tick: number): number {
  * @return spaced tick
  */
 export function spaceTick(tick: number, tickSpacing: number): number {
-  if (tickSpacing === 0) throw new Error("Tickspacing cannot be zero");
+  if (tickSpacing === 0) throw new ValidationFailedError("Tickspacing cannot be zero");
   return Math.floor(tick / tickSpacing) * tickSpacing;
 }
