@@ -102,7 +102,7 @@ describe("DEx v3 Testing", () => {
     expect(response).toEqual(transactionSuccess());
   });
 
-  describe.only("creating tokens", () => {
+  describe("creating tokens", () => {
     const GENERAL = {
       MAX_SUPPLY: new BigNumber(100000000000000),
       MAX_CAPACITY: new BigNumber(100000000000000),
@@ -142,7 +142,7 @@ describe("DEx v3 Testing", () => {
     }
   });
 
-  describe.only("Mint tokens", () => {
+  describe("Mint tokens", () => {
     const GENERAL = {
       GRANT_QUANTITY: new BigNumber(100000000),
       ALLOWANCE_TYPE: 4,
@@ -192,7 +192,7 @@ describe("DEx v3 Testing", () => {
    */
   /////////// 0.5 %////////////////////////////////////////////////////////////
   /////////////////////////////////////////////////////////////////////////////
-  describe.only("Create Pool with 0.05% fee with adding liquidity with intial price 2000", () => {
+  describe("Create Pool with 0.05% fee with adding liquidity with intial price 2000", () => {
     const fee = 500,
       initialSqrtPrice = new BigNumber("44.72136");
     const tickSpacing = feeAmountTickSpacing[fee];
@@ -456,8 +456,6 @@ describe("DEx v3 Testing", () => {
       ).signed(user.privateKey);
 
       const addLiquidityRes = await client.dexV3Contract.addLiquidity(dto);
-
-      console.log(JSON.stringify(addLiquidityRes), "Bakwas h na");
       expect(addLiquidityRes).toMatchObject({
         Status: 1,
         Data: {
@@ -599,10 +597,10 @@ describe("DEx v3 Testing", () => {
       const result = expectSwapRes.Data;
       expect(result).toBeDefined();
       if (!result) throw new Error();
-      expect(result.amount0).toBe(new BigNumber("2"));
-      expect(result.amount1).toBe("-3994.130334466043470346");
-      expect(result.currentSqrtPrice).toBe("44.72136");
-      expect(result.newSqrtPrice).toBe("44.678073281597162509");
+      expect(result.amount0.toString()).toBe("2");
+      expect(result.amount1.toString()).toBe("-3994.130334466043470346");
+      expect(result.currentSqrtPrice.toString()).toBe("44.72136");
+      expect(result.newSqrtPrice.toString()).toBe("44.678073281597162509");
     });
 
     test("should throw error in estimating swap while swap more than avaiable liquiidity", async () => {
@@ -623,10 +621,10 @@ describe("DEx v3 Testing", () => {
       );
       const quoteExactResponse = await client.dexV3Contract.quoteExactAmount(dto);
       expect(quoteExactResponse.Data).toMatchObject({
-        amount0: "-0.003",
-        amount1: "6.003010350022664756",
-        currentSqrtPrice: "44.72136",
-        newSqrtPrice: "44.721425025592940791"
+        amount0: new BigNumber("-0.003"),
+        amount1: new BigNumber("6.003010350022664756"),
+        currentSqrtPrice: new BigNumber("44.72136"),
+        newSqrtPrice: new BigNumber("44.721425025592940791")
       });
     });
 
@@ -670,7 +668,7 @@ describe("DEx v3 Testing", () => {
       const poolData = new GetPoolDto(ETH_ClassKey, USDT_ClassKey, fee).signed(user.privateKey);
       const getData = await client.dexV3Contract.getPoolData(poolData);
       // fee collected after swap
-      expect(getData.Data?.feeGrowthGlobal0).toBe("0.00000000975382456261");
+      expect(getData.Data?.feeGrowthGlobal0.toString()).toBe("9.75382456261e-9");
     });
 
     test("Add liquidity in range 1980 - 2020 after the price has been slipped", async () => {
@@ -718,8 +716,8 @@ describe("DEx v3 Testing", () => {
       // value slipped from 44.72136 to 44.67807328159716250969
       const getData = await client.dexV3Contract.getPoolData(poolData);
       // fee collected after swap
-      expect(getData.Data?.feeGrowthGlobal0).toBe("0.00000000975382456261");
-      expect(slot0.Data?.sqrtPrice).toEqual("44.67807328159716250969");
+      expect(getData.Data?.feeGrowthGlobal0.toString()).toBe("9.75382456261e-9");
+      expect(slot0.Data?.sqrtPrice.toString()).toEqual("44.67807328159716250969");
     });
 
     test("check the user position for token0Owed before the removal of liqudity", async () => {
@@ -969,7 +967,7 @@ describe("DEx v3 Testing", () => {
     test("should Read details from slot0", async () => {
       const poolDataDTO = new GetPoolDto(ETH_ClassKey, USDT_ClassKey, fee).signed(user.privateKey);
       const slot0 = await client.dexV3Contract.getSlot0(poolDataDTO);
-      expect(slot0.Data?.sqrtPrice).toEqual(initialSqrtPrice.toString());
+      expect(slot0.Data?.sqrtPrice.toString()).toEqual(initialSqrtPrice.toString());
     });
 
     test("Checking for the expectedTokens to provide liquidity in the range of 1700 - 1900 range", async () => {
@@ -991,9 +989,9 @@ describe("DEx v3 Testing", () => {
       const data = result.Data;
       expect(data).toBeDefined();
       if (!data) throw new Error();
-      expect(data.amount0).toEqual("0");
-      expect(data.amount1).toEqual("1");
-      expect(data.liquidity).toEqual("0.436872924385936373");
+      expect(data.amount0.toString()).toEqual("0");
+      expect(data.amount1.toString()).toEqual("1");
+      expect(data.liquidity.toString()).toEqual("0.436872924385936373");
     });
 
     test("Checking for the expectedTokens to provide liquidity in the range of 1980 - 2020 range", async () => {
@@ -1015,9 +1013,9 @@ describe("DEx v3 Testing", () => {
       const data = result.Data;
       expect(data).toBeDefined();
       if (!data) throw new Error();
-      expect(data.amount0).toEqual("1");
-      expect(data.amount1).toEqual("1573.331577716744383555");
-      expect(data.liquidity).toEqual("13337.957541974915714025");
+      expect(data.amount0.toString()).toEqual("1");
+      expect(data.amount1.toString()).toEqual("1573.331577716744383555");
+      expect(data.liquidity.toString()).toEqual("13337.957541974915714025");
     });
 
     test("Checking for the expectedTokens to provide liquidity in the range of 2100 - 2200 range ", async () => {
@@ -1085,7 +1083,7 @@ describe("DEx v3 Testing", () => {
       await client.dexV3Contract.addLiquidity(dto);
       const getLiquidityDTO = new GetPoolDto(ETH_ClassKey, USDT_ClassKey, fee).signed(user.privateKey);
       const liq = await client.dexV3Contract.getLiquidity(getLiquidityDTO);
-      expect(liq.Data?.liquidity).toBe(new BigNumber("0"));
+      expect(liq.Data?.liquidity).toEqual(new BigNumber("0"));
     });
 
     test("Add liquidity in range 1980 - 2020", async () => {
@@ -1150,7 +1148,7 @@ describe("DEx v3 Testing", () => {
               type: "new-type0"
             })
           },
-          amounts: ["1", "1573.331577716744383554"]
+          amounts: [new BigNumber("1"), new BigNumber("1573.331577716744383554")]
         }
       });
     });
@@ -1198,7 +1196,7 @@ describe("DEx v3 Testing", () => {
       const getLiquidityDTO = new GetPoolDto(ETH_ClassKey, USDT_ClassKey, fee).signed(user.privateKey);
 
       const liqRes = await client.dexV3Contract.getLiquidity(getLiquidityDTO);
-      expect(liqRes.Data?.liquidity).toBe(new BigNumber("26675.915083949831428038"));
+      expect(liqRes.Data?.liquidity.toString()).toBe("26675.915083949831428038");
     });
 
     test("should swap with changing sqrtPrice", async () => {
@@ -1235,8 +1233,7 @@ describe("DEx v3 Testing", () => {
       const getPoolDataRes = await client.dexV3Contract.getPoolData(poolData);
 
       // value slipped from 44.72136 to 44.70641518040332314986
-      expect(getPoolDataRes.Data?.sqrtPrice).toEqual("44.70641518040332314986");
-      expect(slot0.Data?.sqrtPrice).toEqual("44.70641518040332314986");
+      expect(getPoolDataRes.Data?.sqrtPrice.toString()).toEqual("44.70641518040332314986");
     });
 
     test("check the user position for token0Owed and token1Owed before the removal of liqudity", async () => {
@@ -1281,8 +1278,8 @@ describe("DEx v3 Testing", () => {
 
       if (data === undefined) throw new Error();
 
-      expect(data.amount0).toBe("2.199399999999999999");
-      expect(data.amount1).toBe("2747.996416927587744444");
+      expect(data.amount0.toString()).toBe("2.199399999999999999");
+      expect(data.amount1.toString()).toBe("2747.996416927587744444");
 
       dto.sign(user.privateKey);
       const burnRes = await client.dexV3Contract.RemoveLiquidity(dto);
@@ -1497,7 +1494,7 @@ describe("DEx v3 Testing", () => {
       expect(createPoolRes).toStrictEqual(transactionSuccess());
       const poolData = new GetPoolDto(ETH_ClassKey, USDT_ClassKey, fee).signed(user.privateKey);
       const slotDetails = await client.dexV3Contract.getSlot0(poolData);
-      expect(slotDetails.Data?.sqrtPrice).toEqual(initialSqrtPrice.toString());
+      expect(slotDetails.Data?.sqrtPrice.toString()).toEqual(initialSqrtPrice.toString());
     });
 
     test("Checking for the expectedTokens to provide liquidity in the range of 1600 - 1900 range ", async () => {
@@ -1517,9 +1514,9 @@ describe("DEx v3 Testing", () => {
       const data = result.Data;
       expect(data).toBeDefined();
       if (!data) throw new Error();
-      expect(data.amount0).toEqual("0");
-      expect(data.amount1).toEqual("1");
-      expect(data.liquidity).toEqual("0.299901408704333964");
+      expect(data.amount0.toString()).toEqual("0");
+      expect(data.amount1.toString()).toEqual("1");
+      expect(data.liquidity.toString()).toEqual("0.299901408704333964");
     });
 
     test("Checking for the expectedTokens to provide liquidity in the range of 1880 - 2220 range ", async () => {
@@ -1540,9 +1537,9 @@ describe("DEx v3 Testing", () => {
       const data = result.Data;
       expect(data).toBeDefined();
       if (!data) throw new Error();
-      expect(data.amount0).toEqual("1");
-      expect(data.amount1).toEqual("1253.169150694844108754");
-      expect(data.liquidity).toEqual("928.637339589079235191");
+      expect(data.amount0.toString()).toEqual("1");
+      expect(data.amount1.toString()).toEqual("1253.169150694844108754");
+      expect(data.liquidity.toString()).toEqual("928.637339589079235191");
     });
 
     test("Checking for the expectedTokens to provide liquidity in the range of 2000 - 2200 range ", async () => {
@@ -1564,9 +1561,9 @@ describe("DEx v3 Testing", () => {
       const data = result.Data;
       expect(data).toBeDefined();
       if (!data) throw new Error();
-      expect(data.amount0).toEqual("1");
-      expect(data.amount1).toEqual("0");
-      expect(data.liquidity).toEqual("1527.486971963149328921");
+      expect(data.amount0.toString()).toEqual("1");
+      expect(data.amount1.toString()).toEqual("0");
+      expect(data.liquidity.toString()).toEqual("1527.486971963149328921");
     });
 
     test("Add liquidity in range 1600 - 1900", async () => {
@@ -1608,7 +1605,7 @@ describe("DEx v3 Testing", () => {
       const getLiquidityDTO = new GetPoolDto(ETH_ClassKey, USDT_ClassKey, fee).signed(user.privateKey);
 
       const liq = await client.dexV3Contract.getLiquidity(getLiquidityDTO);
-      expect(liq.Data?.liquidity).toBe("0");
+      expect(liq.Data?.liquidity.toString()).toBe("0");
     });
 
     test("Add liquidity in range 1880 - 2220", async () => {
@@ -1650,7 +1647,7 @@ describe("DEx v3 Testing", () => {
       const getLiquidityDTO = new GetPoolDto(ETH_ClassKey, USDT_ClassKey, fee).signed(user.privateKey);
 
       const liq = await client.dexV3Contract.getLiquidity(getLiquidityDTO);
-      expect(liq.Data?.liquidity).toBe("928.637339589079235191");
+      expect(liq.Data?.liquidity.toString()).toBe("928.637339589079235191");
     });
 
     test("Add liquidity in range 2000 - 2200", async () => {
@@ -1697,7 +1694,7 @@ describe("DEx v3 Testing", () => {
       const getLiquidityDTO = new GetPoolDto(ETH_ClassKey, USDT_ClassKey, fee).signed(user.privateKey);
 
       const liq = await client.dexV3Contract.getLiquidity(getLiquidityDTO);
-      expect(liq.Data?.liquidity).toBe("928.637339589079235191");
+      expect(liq.Data?.liquidity.toString()).toBe("928.637339589079235191");
     });
 
     test("slot0 data", async () => {
@@ -1706,8 +1703,8 @@ describe("DEx v3 Testing", () => {
       // value slipped from 44.72136 to 44.67807328159716250969
       const getData = await client.dexV3Contract.getPoolData(poolData);
       // fee collected after swap
-      expect(getData.Data?.feeGrowthGlobal0).toBe("0");
-      expect(slot0.Data?.sqrtPrice).toEqual(initialSqrtPrice.toString());
+      expect(getData.Data?.feeGrowthGlobal0.toString()).toBe("0");
+      expect(slot0.Data?.sqrtPrice.toString()).toEqual(initialSqrtPrice.toString());
     });
 
     test("RemoveLiquidity", async () => {
@@ -1728,8 +1725,8 @@ describe("DEx v3 Testing", () => {
       const data = removeLiqEstimation.Data;
       if (data === undefined) throw new Error();
 
-      expect(data.amount0).toBe("1");
-      expect(data.amount1).toBe("1253.169150694844108753");
+      expect(data.amount0.toString()).toBe("1");
+      expect(data.amount1.toString()).toBe("1253.169150694844108753");
 
       dto.sign(user.privateKey);
       const burnRes = await client.dexV3Contract.RemoveLiquidity(dto);
@@ -1788,9 +1785,9 @@ describe("DEx v3 Testing", () => {
       const data = result.Data;
       expect(data).toBeDefined();
       if (!data) throw new Error();
-      expect(data.amount0).toEqual("0");
-      expect(data.amount1).toEqual("10");
-      expect(data.liquidity).toEqual("4.249563923888253405");
+      expect(data.amount0.toString()).toEqual("0");
+      expect(data.amount1.toString()).toEqual("10");
+      expect(data.liquidity.toString()).toEqual("4.249563923888253405");
     });
 
     test("Checking for the expectedTokens to provide liquidity in the range of 1980 - 2020 range", async () => {
@@ -1812,9 +1809,9 @@ describe("DEx v3 Testing", () => {
       const data = result.Data;
       expect(data).toBeDefined();
       if (!data) throw new Error();
-      expect(data.amount0).toEqual("100");
-      expect(data.amount1).toEqual("143060.356679853947733062");
-      expect(data.liquidity).toEqual("768993.229675823772064336");
+      expect(data.amount0.toString()).toEqual("100");
+      expect(data.amount1.toString()).toEqual("143060.356679853947733062");
+      expect(data.liquidity.toString()).toEqual("768993.229675823772064336");
     });
 
     test("Checking for the expectedTokens to provide liquidity in the range of 2100 - 2200 range ", async () => {
@@ -1835,9 +1832,9 @@ describe("DEx v3 Testing", () => {
       const data = result.Data;
       expect(data).toBeDefined();
       if (!data) throw new Error();
-      expect(data.amount0).toEqual("10");
-      expect(data.amount1).toEqual("0");
-      expect(data.liquidity).toEqual("20607.53664493334613554");
+      expect(data.amount0.toString()).toEqual("10");
+      expect(data.amount1.toString()).toEqual("0");
+      expect(data.liquidity.toString()).toEqual("20607.53664493334613554");
     });
 
     test("Add liquidity in range 1980 - 2020", async () => {
@@ -1881,7 +1878,7 @@ describe("DEx v3 Testing", () => {
       ).signed(user.privateKey);
       const addLiqRes = await client.dexV3Contract.addLiquidity(dto);
       expect(addLiqRes.Data).toMatchObject({
-        amounts: ["100", "143060.356679853947733061"],
+        amounts: [new BigNumber("100"), new BigNumber("143060.356679853947733061")],
         userBalanceDelta: {
           token0Balance: {
             additionalKey: "ETH",
@@ -1962,7 +1959,7 @@ describe("DEx v3 Testing", () => {
       const getLiquidityDTO = new GetPoolDto(ETH_ClassKey, USDT_ClassKey, fee).signed(user.privateKey);
 
       const liq = await client.dexV3Contract.getLiquidity(getLiquidityDTO);
-      expect(liq.Data?.liquidity).toBe("776683.161972582009784974");
+      expect(liq.Data?.liquidity.toString()).toBe("776683.161972582009784974");
     });
 
     test("Swaping case 1", async () => {
@@ -2017,8 +2014,8 @@ describe("DEx v3 Testing", () => {
       // value slipped from 44.72136 to 44.55000219957551475027
       const getData = await client.dexV3Contract.getPoolData(poolData);
       // fee collected after swap
-      expect(getData.Data?.feeGrowthGlobal0).toBe("0.00000003872316637615");
-      expect(slot0.Data?.sqrtPrice).toEqual("44.55000219957551475027");
+      expect(getData.Data?.feeGrowthGlobal0.toString()).toBe("3.872316637615e-8");
+      expect(slot0.Data?.sqrtPrice.toString()).toEqual("44.55000219957551475027");
     });
   });
 
@@ -2083,7 +2080,7 @@ describe("DEx v3 Testing", () => {
     test("should Read details from pool", async () => {
       const poolDataDTO = new GetPoolDto(ETH_ClassKey, USDC_ClassKey, fee).signed(user.privateKey);
       const pool = await client.dexV3Contract.getPoolData(poolDataDTO);
-      expect(pool.Data?.sqrtPrice).toEqual(initialSqrtPrice.toString());
+      expect(pool.Data?.sqrtPrice).toEqual(initialSqrtPrice);
     });
 
     test("Add liquidity in range 1980 - 2020", async () => {
@@ -2134,10 +2131,10 @@ describe("DEx v3 Testing", () => {
       const expectSwapRes = await client.dexV3Contract.quoteExactAmount(dto);
       const result = expectSwapRes.Data;
 
-      expect(result?.amount0).toBe("2");
-      expect(result?.amount1).toBe("-3994.130334466043470346");
-      expect(result?.currentSqrtPrice).toBe("44.72136");
-      expect(result?.newSqrtPrice).toBe("44.678073281597162509");
+      expect(result?.amount0).toEqual(new BigNumber("2"));
+      expect(result?.amount1).toEqual(new BigNumber("-3994.130334466043470346"));
+      expect(result?.currentSqrtPrice).toEqual(new BigNumber("44.72136"));
+      expect(result?.newSqrtPrice).toEqual(new BigNumber("44.678073281597162509"));
     });
 
     test("should estimate swap for exact out", async () => {
@@ -2148,10 +2145,10 @@ describe("DEx v3 Testing", () => {
       );
       const quoteExactResponse = await client.dexV3Contract.quoteExactAmount(dto);
       expect(quoteExactResponse.Data).toMatchObject({
-        amount0: "-0.003",
-        amount1: "6.003010350022664756",
-        currentSqrtPrice: "44.72136",
-        newSqrtPrice: "44.721425025592940791"
+        amount0: new BigNumber("-0.003"),
+        amount1: new BigNumber("6.003010350022664756"),
+        currentSqrtPrice: new BigNumber("44.72136"),
+        newSqrtPrice: new BigNumber("44.721425025592940791")
       });
     });
 
@@ -2186,8 +2183,8 @@ describe("DEx v3 Testing", () => {
       const poolData = new GetPoolDto(ETH_ClassKey, USDC_ClassKey, fee).signed(user.privateKey);
       const getData = await client.dexV3Contract.getPoolData(poolData);
       // fee collected after swap
-      expect(getData.Data?.feeGrowthGlobal0).toBe("0.00000000758630799314");
-      expect(getData.Data?.protocolFeesToken0).toBe("0.000300000000000000108");
+      expect(getData.Data?.feeGrowthGlobal0.toString()).toBe("7.58630799314e-9");
+      expect(getData.Data?.protocolFeesToken0.toString()).toBe("0.000300000000000000108");
     });
   });
 

@@ -39,7 +39,7 @@ import { instanceToPlain, plainToInstance } from "class-transformer";
 
 jest.setTimeout(30000);
 
-describe.skip("NFT lock scenario", () => {
+describe("NFT lock scenario", () => {
   let client: AdminChainClients;
   let user1: ChainUser;
   let user2: ChainUser;

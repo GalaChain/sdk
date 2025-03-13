@@ -126,7 +126,7 @@ describe("Chaincode client (CuratorOrg)", () => {
 });
 
 // The test requires running REST API server for GalaChain
-describe.skip("REST API client", () => {
+describe("REST API client", () => {
   let client: ChainClient & CustomAPI;
 
   beforeAll(() => {
