@@ -207,9 +207,12 @@ export interface Secp256k1Signature {
 }
 
 function secp256k1signatureFrom130HexString(hex: string): Secp256k1Signature {
-  const r = hex.slice(0, 64);
-  const s = hex.slice(64, 128);
-  const v = hex.slice(128, 130);
+  // some wallets return signatures in uppercase
+  const lowerCased = hex.toLowerCase();
+
+  const r = lowerCased.slice(0, 64);
+  const s = lowerCased.slice(64, 128);
+  const v = lowerCased.slice(128, 130);
 
   let recoveryParam: number | null = null;
 
@@ -225,7 +228,9 @@ function secp256k1signatureFrom130HexString(hex: string): Secp256k1Signature {
 }
 
 function secp256k1signatureFromDERHexString(hex: string): Secp256k1Signature {
-  const signature = new Signature(hex, "hex");
+  // some wallets return signatures in uppercase
+  const lowerCased = hex.toLowerCase();
+  const signature = new Signature(lowerCased, "hex");
   return { r: signature.r, s: signature.s, recoveryParam: undefined };
 }
 

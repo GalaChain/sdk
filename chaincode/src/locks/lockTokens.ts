@@ -46,6 +46,7 @@ export interface LockTokenParams {
   expires: number;
   name: string | undefined;
   verifyAuthorizedOnBehalf: (c: TokenClassKey) => Promise<AuthorizedOnBehalf | undefined>;
+  vestingPeriodStart: number | undefined;
 }
 
 export async function lockToken(
@@ -58,6 +59,7 @@ export async function lockToken(
     allowancesToUse,
     name,
     expires,
+    vestingPeriodStart,
     verifyAuthorizedOnBehalf
   }: LockTokenParams
 ): Promise<TokenBalance> {
@@ -121,11 +123,12 @@ export async function lockToken(
   const hold = await TokenHold.createValid({
     createdBy: callingOnBehalf,
     instanceId: tokenInstance.instance,
-    quantity: quantity,
+    quantity,
     created: ctx.txUnixTime,
-    expires: expires,
-    name: name,
-    lockAuthority
+    expires,
+    name,
+    lockAuthority,
+    vestingPeriodStart
   });
 
   if (tokenInstanceKey.isFungible()) {
@@ -176,7 +179,8 @@ export async function lockTokens(
       allowancesToUse,
       name,
       expires,
-      verifyAuthorizedOnBehalf: verifyAuthorizedOnBehalf
+      vestingPeriodStart: undefined, // don't allow vesting locks on batch locking
+      verifyAuthorizedOnBehalf
     });
     responses.push(updatedBalance);
   }
