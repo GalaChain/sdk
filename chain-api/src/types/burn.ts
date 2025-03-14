@@ -124,7 +124,7 @@ export class BurnTokensDto extends SubmitCallDTO {
     "Mints are executed under the identity of the calling user of this function. " +
     "All operations occur in the same transaction, meaning either all succeed or none are written to chain."
 })
-export class BurnAndMintDto extends ChainCallDTO {
+export class BurnAndMintDto extends SubmitCallDTO {
   static MAX_ARR_SIZE = 1000;
 
   @JSONSchema({

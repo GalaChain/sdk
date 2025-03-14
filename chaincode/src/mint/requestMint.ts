@@ -15,13 +15,9 @@
 import {
   AllowanceKey,
   AuthorizedOnBehalf,
-  BatchMintTokenDto,
-  BigNumberIsNotNegative,
-  BigNumberProperty,
   FulfillMintDto,
-  HighThroughputMintTokenDto,
-  IsUserRef,
   MintRequestDto,
+  TokenAllowance,
   TokenClass,
   TokenClassKey,
   TokenClassKeyProperties,
@@ -31,9 +27,7 @@ import {
   createValidSubmitDTO
 } from "@gala-chain/api";
 import BigNumber from "bignumber.js";
-import { Type, plainToInstance } from "class-transformer";
-import { IsNotEmpty, IsOptional } from "class-validator";
-import { JSONSchema } from "class-validator-jsonschema";
+import { plainToInstance } from "class-transformer";
 
 import { GalaChainContext } from "../types";
 import { getObjectByKey, inverseEpoch, inverseTime, putRangedChainObject } from "../utils";
@@ -70,33 +64,37 @@ export async function requestMint(ctx: GalaChainContext, params: RequestMintPara
   return resDto;
 }
 
-export interface MintTokenParams {
-  tokenClass: TokenClassKey;
-  owner: UserAlias | undefined;
+export interface MintOperationParams {
+  tokenClassKey: TokenClassKey;
+  owner: UserAlias;
   quantity: BigNumber;
-  allowanceKey: AllowanceKey | undefined;
-}
-
-export interface RequestBatchMintParams {
-  mints: MintTokenParams[];
   authorizedOnBehalf: AuthorizedOnBehalf | undefined;
+  applicableAllowances?: TokenAllowance[] | undefined;
+  knownTotalSupply?: BigNumber | undefined;
 }
 
 export async function requestMintBatch(
   ctx: GalaChainContext,
-  params: RequestBatchMintParams
+  ops: MintOperationParams[]
 ): Promise<FulfillMintDto> {
   const minted: Array<MintRequestDto> = [];
   const errors: Array<string> = [];
 
   // mints sequentially; fails all mints if at least one operation fails
-  for (let i = 0; i < params.mints.length; i += 1) {
-    const mintParams = { ...params.mints[i], authorizedOnBehalf: params.authorizedOnBehalf };
+  for (let i = 0; i < ops.length; i += 1) {
+    const mintDto = {
+      tokenClass: ops[i].tokenClassKey,
+      quantity: ops[i].quantity,
+      owner: ops[i].owner,
+      authorizedOnBehalf: ops[i].authorizedOnBehalf,
+      allowanceKey: undefined
+    };
+
     try {
-      const mintRequest = await submitMintRequest(ctx, mintParams);
+      const mintRequest = await submitMintRequest(ctx, mintDto);
 
       const mintRequestDto = plainToInstance(MintRequestDto, mintRequest);
-      mintRequestDto.allowanceKey = mintParams.allowanceKey;
+      mintRequestDto.id = mintRequest.requestId();
 
       minted.push(mintRequestDto);
     } catch (e) {
@@ -107,7 +105,7 @@ export async function requestMintBatch(
   if (errors.length > 0) {
     throw new Error(`No token was minted. Errors: ${errors.join("; ")}.`);
   } else {
-    const resDto = await createValidSubmitDTO(FulfillMintDto, {
+    const resDto = plainToInstance(FulfillMintDto, {
       requests: minted
     });
 
@@ -134,7 +132,7 @@ export async function submitMintRequest(
 
   if (!tokenClass) throw new Error("missing tokenclass");
 
-  await validateMintRequest(ctx, params, tokenClass).catch((e) => {
+  await validateMintRequest(ctx, params, tokenClass, callingUser).catch((e) => {
     throw new Error(`ValidateMintRequest failure: ${e.message}`);
   });
 

@@ -25,6 +25,7 @@ import {
   TokenSwapRequestInstanceWanted,
   TokenSwapRequestOfferedBy,
   TokenSwapRequestOfferedTo,
+  UserAlias,
   asValidUserAlias
 } from "@gala-chain/api";
 import { BigNumber } from "bignumber.js";
@@ -58,8 +59,8 @@ function validateTokenSwapQuantity(quantity: BigNumber, tokenClass: TokenClass):
 }
 
 interface RequestTokenSwapParams {
-  offeredBy: string;
-  offeredTo?: string;
+  offeredBy: UserAlias;
+  offeredTo?: UserAlias;
   offered: TokenInstanceQuantity[];
   wanted: TokenInstanceQuantity[];
   uses: BigNumber;
@@ -275,6 +276,7 @@ export async function requestTokenSwap(
       allowancesToUse: [],
       expires: newSwap.expires,
       name: swapRequestId,
+      vestingPeriodStart: undefined,
       verifyAuthorizedOnBehalf: verifyAuthorizationForLock
     }).catch((e) => {
       const chainError = ChainError.from(e);

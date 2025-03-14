@@ -12,15 +12,21 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-import { AllowanceType, FullAllowanceCheckResDto, TokenAllowance, TokenInstanceKey } from "@gala-chain/api";
+import {
+  AllowanceType,
+  FullAllowanceCheckResDto,
+  TokenAllowance,
+  TokenInstanceKey,
+  UserAlias
+} from "@gala-chain/api";
 import { TokenBalance } from "@gala-chain/api";
 
 import { GalaChainContext } from "../types";
 import { getObjectsByPartialCompositeKey, takeUntilUndefined } from "../utils";
 
 export interface FullAllowanceCheckParams {
-  owner: string;
-  grantedTo: string;
+  owner: UserAlias;
+  grantedTo: UserAlias;
   allowanceType: AllowanceType;
   collection?: string;
   category?: string;

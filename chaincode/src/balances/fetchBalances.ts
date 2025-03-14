@@ -12,10 +12,20 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-import { ChainError, ErrorCode, TokenBalance, UserAlias } from "@gala-chain/api";
+import {
+  ChainError,
+  ErrorCode,
+  FetchBalancesWithPaginationResponse,
+  TokenBalance,
+  UserAlias
+} from "@gala-chain/api";
 
 import { GalaChainContext } from "../types";
-import { getObjectsByPartialCompositeKey, takeUntilUndefined } from "../utils";
+import {
+  getObjectsByPartialCompositeKey,
+  getObjectsByPartialCompositeKeyWithPagination,
+  takeUntilUndefined
+} from "../utils";
 import { BalanceNotFoundError } from "./BalanceError";
 
 export interface FetchBalancesParams {
@@ -24,6 +34,11 @@ export interface FetchBalancesParams {
   type?: string;
   additionalKey?: string;
   owner: UserAlias;
+}
+
+export interface FetchBalancesWithPaginationParams extends FetchBalancesParams {
+  bookmark: string | undefined;
+  limit: number | undefined;
 }
 
 /**
@@ -65,4 +80,33 @@ export async function fetchBalances(
     throw ChainError.map(e, ErrorCode.NOT_FOUND, new BalanceNotFoundError(data.owner));
   });
   return results;
+}
+
+export async function fetchBalancesWithPagination(
+  ctx: GalaChainContext,
+  data: FetchBalancesWithPaginationParams
+): Promise<FetchBalancesWithPaginationResponse> {
+  const queryParams: Array<string> = takeUntilUndefined(
+    data.owner,
+    data.collection,
+    data.category,
+    data.type,
+    data.additionalKey
+  );
+
+  const results = await getObjectsByPartialCompositeKeyWithPagination(
+    ctx,
+    TokenBalance.INDEX_KEY,
+    queryParams,
+    TokenBalance,
+    data.bookmark,
+    data.limit
+  ).catch((e) => {
+    throw ChainError.map(e, ErrorCode.NOT_FOUND, new BalanceNotFoundError(data.owner));
+  });
+
+  const response: FetchBalancesWithPaginationResponse = new FetchBalancesWithPaginationResponse();
+  response.results = results.results;
+  response.nextPageBookmark = results.metadata.bookmark;
+  return response;
 }

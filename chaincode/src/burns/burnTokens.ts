@@ -100,7 +100,7 @@ export async function burnTokens(
 
     let applicableAllowanceResponse: TokenAllowance[] = [];
     // if user is not the owner, check allowances:
-    if (ctx.callingUser !== owner && !preValidated) {
+    if (!preValidated && ctx.callingUser !== owner) {
       // Get allowances
       const fetchAllowancesData = {
         grantedTo: ctx.callingUser,

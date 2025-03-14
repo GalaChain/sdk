@@ -23,6 +23,7 @@ import {
   CloseLoanDto,
   CreateTokenClassDto,
   CreateTokenSaleDto,
+  CreateVestingTokenDto,
   DeleteAllowancesDto,
   EnsureTokenSwapIndexingDto,
   EnsureTokenSwapIndexingResponse,
@@ -58,12 +59,12 @@ import {
   FetchTokenSwapsByUserDto,
   FetchTokenSwapsDto,
   FetchTokenSwapsWithPaginationResponse,
+  FetchVestingTokenDto,
   FillTokenSwapDto,
   FulfillMintDto,
   FulfillTokenSaleDto,
   FullAllowanceCheckDto,
   FullAllowanceCheckResDto,
-  GalaChainResponse,
   GrantAllowanceDto,
   HighThroughputMintTokenDto,
   Loan,
@@ -95,6 +96,9 @@ import {
   UnlockTokensDto,
   UpdateTokenClassDto,
   UseTokenDto,
+  UserAlias,
+  VestingToken,
+  VestingTokenInfo,
   asValidUserAlias,
   generateResponseSchema,
   generateSchema
@@ -108,11 +112,11 @@ import {
   GalaTransaction,
   Submit,
   UnsignedEvaluate,
-  batchFillTokenSwapFeeGate,
   batchMintToken,
   burnTokens,
   createTokenClass,
   createTokenSale,
+  createVestingToken,
   creditFeeBalance,
   defineFeeSchedule,
   defineFeeSplitFormula,
@@ -128,11 +132,10 @@ import {
   fetchTokenClassesWithPagination,
   fetchTokenSaleById,
   fetchTokenSalesWithPagination,
+  fetchVestingToken,
   fulfillMintRequest,
   fulfillTokenSale,
   fullAllowanceCheck,
-  galaSwapFillFeeGate,
-  galaSwapRequestFeeGate,
   grantAllowance,
   lockToken,
   lockTokens,
@@ -144,7 +147,6 @@ import {
   removeTokenSale,
   requestMint,
   resolveUserAlias,
-  terminateTokenSwapFeeGate,
   transferToken,
   unlockToken,
   unlockTokens,
@@ -154,7 +156,7 @@ import {
 // eslint-disable-next-line @typescript-eslint/ban-ts-comment
 // @ts-ignore
 import { version } from "../../package.json";
-import { EVALUATE, Evaluate, SUBMIT } from "../contracts";
+import { SUBMIT, getCaIdentityAlias } from "../contracts";
 import { acceptLoanOffer, closeLoan, fetchLoanOffers, fetchLoans, offerLoan } from "../loans";
 import {
   batchFillTokenSwaps,
@@ -183,6 +185,11 @@ export default class GalaChainTokenContract extends GalaContract {
     allowedOrgs: ["CuratorOrg"]
   })
   public async CreateTokenClass(ctx: GalaChainContext, dto: CreateTokenClassDto): Promise<TokenClassKey> {
+    const authorities =
+      dto.authorities?.length !== undefined
+        ? await Promise.all(dto.authorities.map((a) => resolveUserAlias(ctx, a)))
+        : [ctx.callingUser];
+
     return createTokenClass(ctx, {
       network: dto.network ?? CreateTokenClassDto.DEFAULT_NETWORK,
       tokenClass: dto.tokenClass,
@@ -200,9 +207,7 @@ export default class GalaChainTokenContract extends GalaContract {
       totalMintAllowance: dto.totalMintAllowance ?? CreateTokenClassDto.INITIAL_MINT_ALLOWANCE,
       totalSupply: dto.totalSupply ?? CreateTokenClassDto.INITIAL_TOTAL_SUPPLY,
       totalBurned: dto.totalBurned ?? CreateTokenClassDto.INITIAL_TOTAL_BURNED,
-      authorities: await Promise.all(
-        (dto.authorities ?? [ctx.callingUser]).map((a) => resolveUserAlias(ctx, a))
-      )
+      authorities
     });
   }
 
@@ -263,13 +268,13 @@ export default class GalaChainTokenContract extends GalaContract {
     in: FullAllowanceCheckDto,
     out: FullAllowanceCheckResDto
   })
-  public FullAllowanceCheck(
+  public async FullAllowanceCheck(
     ctx: GalaChainContext,
     dto: FullAllowanceCheckDto
   ): Promise<FullAllowanceCheckResDto> {
     return fullAllowanceCheck(ctx, {
-      owner: dto.owner ?? ctx.callingUser,
-      grantedTo: dto.grantedTo ?? ctx.callingUser,
+      owner: dto.owner ? await resolveUserAlias(ctx, dto.owner) : ctx.callingUser,
+      grantedTo: dto.grantedTo ? await resolveUserAlias(ctx, dto.grantedTo) : ctx.callingUser,
       allowanceType: dto.allowanceType ?? AllowanceType.Use,
       collection: dto.collection,
       category: dto.category,
@@ -342,7 +347,7 @@ export default class GalaChainTokenContract extends GalaContract {
     // no signature verification
   })
   public async FulfillMint(ctx: GalaChainContext, dto: FulfillMintDto): Promise<TokenInstanceKey[]> {
-    return fulfillMintRequest(ctx, dto);
+    return fulfillMintRequest(ctx, { requests: dto.requests, callingUser: getCaIdentityAlias(ctx) });
   }
 
   /**
@@ -486,6 +491,7 @@ export default class GalaChainTokenContract extends GalaContract {
       allowancesToUse: dto.useAllowances ?? [],
       name: undefined,
       expires: 0,
+      vestingPeriodStart: dto.vestingPeriodStart,
       verifyAuthorizedOnBehalf: async () => undefined
     });
   }
@@ -775,10 +781,10 @@ export default class GalaChainTokenContract extends GalaContract {
     in: RequestTokenSwapDto,
     out: TokenSwapRequest
   })
-  public RequestTokenSwap(ctx: GalaChainContext, dto: RequestTokenSwapDto): Promise<TokenSwapRequest> {
+  public async RequestTokenSwap(ctx: GalaChainContext, dto: RequestTokenSwapDto): Promise<TokenSwapRequest> {
     return requestTokenSwap(ctx, {
-      offeredBy: dto.offeredBy ?? ctx.callingUser,
-      offeredTo: dto.offeredTo,
+      offeredBy: dto.offeredBy ? await resolveUserAlias(ctx, dto.offeredBy) : ctx.callingUser,
+      offeredTo: dto.offeredTo ? await resolveUserAlias(ctx, dto.offeredTo) : undefined,
       offered: dto.offered,
       wanted: dto.wanted,
       uses: dto.uses,
@@ -907,5 +913,53 @@ export default class GalaChainTokenContract extends GalaContract {
   })
   public CleanTokenSwaps(ctx: GalaChainContext, dto: CleanTokenSwapsDto): Promise<CleanTokenSwapsResponse> {
     return cleanTokenSwaps(ctx, dto);
+  }
+
+  @Submit({
+    in: CreateVestingTokenDto,
+    out: VestingToken,
+    allowedOrgs: ["CuratorOrg"]
+  })
+  public async CreateVestingToken(ctx: GalaChainContext, dto: CreateVestingTokenDto): Promise<VestingToken> {
+    const authorities =
+      dto.tokenClass.authorities?.length !== undefined
+        ? await Promise.all(dto.tokenClass.authorities.map((a) => resolveUserAlias(ctx, a)))
+        : [ctx.callingUser];
+
+    return createVestingToken(ctx, {
+      network: dto.tokenClass.network ?? CreateTokenClassDto.DEFAULT_NETWORK,
+      tokenClass: dto.tokenClass.tokenClass,
+      isNonFungible: false, // remove from dto?
+      decimals: dto.tokenClass.decimals ?? CreateTokenClassDto.DEFAULT_DECIMALS,
+      name: dto.tokenClass.name,
+      symbol: dto.tokenClass.symbol,
+      description: dto.tokenClass.description,
+      rarity: dto.tokenClass.rarity,
+      image: dto.tokenClass.image,
+      metadataAddress: dto.tokenClass.metadataAddress,
+      contractAddress: dto.tokenClass.contractAddress,
+      maxSupply: dto.tokenClass.maxSupply ?? CreateTokenClassDto.DEFAULT_MAX_SUPPLY,
+      maxCapacity: dto.tokenClass.maxCapacity ?? CreateTokenClassDto.DEFAULT_MAX_CAPACITY,
+      totalMintAllowance: dto.tokenClass.totalMintAllowance ?? CreateTokenClassDto.INITIAL_MINT_ALLOWANCE,
+      totalSupply: dto.tokenClass.totalSupply ?? CreateTokenClassDto.INITIAL_TOTAL_SUPPLY,
+      totalBurned: dto.tokenClass.totalBurned ?? CreateTokenClassDto.INITIAL_TOTAL_BURNED,
+      authorities,
+      startDate: dto.startDate,
+      vestingName: dto.vestingName,
+      allocations: dto.allocations
+    });
+  }
+
+  @UnsignedEvaluate({
+    in: FetchVestingTokenDto,
+    out: VestingTokenInfo
+  })
+  public async FetchVestingTokens(
+    ctx: GalaChainContext,
+    dto: FetchVestingTokenDto
+  ): Promise<VestingTokenInfo> {
+    return fetchVestingToken(ctx, {
+      tokenClass: dto.tokenClasses
+    });
   }
 }

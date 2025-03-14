@@ -136,6 +136,8 @@ export default class NetworkUp extends BaseCommand<typeof NetworkUp> {
 
     startNetworkServices(fabloRoot, flags.watch, apiConfigPath);
 
+    printTestAdminCredentials(fabloRoot);
+
     if (flags.watch) {
       startChaincodeInWatchMode(fabloRoot, singleArgs);
     }
@@ -181,6 +183,15 @@ function startOpsApi(fabloRoot: string, apiConfigPath: string): void {
     console.error("Failed to start ops-api:", error);
     throw error;
   }
+}
+
+function printTestAdminCredentials(fabloRoot: string): void {
+  const commands = [
+    `cd "${fabloRoot}"`,
+    `echo "Dev admin private key which you can use for signing transactions:"`,
+    `echo "  $(cat dev-admin-key/dev-admin.priv.hex.txt)"`
+  ];
+  execSyncStdio(commands.join(" && "));
 }
 
 function startChaincodeInWatchMode(fabloRoot: string, args: SingleArg[]): void {
