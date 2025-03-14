@@ -139,7 +139,11 @@ async function getUserProfile(
   const profile = await PublicKeyService.getUserProfile(ctx, address);
 
   if (profile === undefined) {
-    throw new UserNotRegisteredError(address);
+    if (ctx.config.allowNonRegisteredUsers) {
+      return PublicKeyService.getDefaultUserProfile(publicKey, signing);
+    } else {
+      throw new UserNotRegisteredError(address);
+    }
   }
 
   return profile;
