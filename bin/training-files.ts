@@ -1,4 +1,3 @@
-
 /*
  * Copyright (c) Gala Games Inc. All rights reserved.
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -41,7 +40,9 @@ function getAllTypeScriptFiles(dir: string): string[] {
 // Function to create file header
 function createFileHeader(filePath: string): string {
   const relativePath = path.relative(sourceDir, filePath);
-  return `// ================================\n// File: ${relativePath}\n// Description: ${getFileDescription(relativePath)}\n// ================================\n\n`;
+  return `// ================================\n// File: ${relativePath}\n// Description: ${getFileDescription(
+    relativePath
+  )}\n// ================================\n\n`;
 }
 
 // Function to generate a basic description based on the file path
@@ -49,16 +50,14 @@ function getFileDescription(relativePath: string): string {
   const parts = relativePath.split("/");
   const fileName = parts[parts.length - 1];
   const dirContext = parts.slice(0, -1).join("/");
-  
+
   if (fileName === "index.ts") {
     return `Main exports for ${dirContext || "root"} module`;
   }
-  
+
   const nameWithoutExt = fileName.replace(/\.tsx?$/, "");
-  const words = nameWithoutExt
-    .split(/[-_]|(?=[A-Z])/)
-    .map(word => word.toLowerCase());
-  
+  const words = nameWithoutExt.split(/[-_]|(?=[A-Z])/).map((word) => word.toLowerCase());
+
   words[0] = words[0].charAt(0).toUpperCase() + words[0].slice(1);
   return `${words.join(" ")}`;
 }
@@ -73,7 +72,7 @@ try {
   for (const sourceDir of sources) {
     const files = getAllTypeScriptFiles(sourceDir);
     let combinedContent = "";
-  
+
     for (const file of files) {
       const header = createFileHeader(file);
       const content = fs.readFileSync(file, "utf8");
