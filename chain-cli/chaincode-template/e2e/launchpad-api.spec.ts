@@ -165,14 +165,11 @@ describe("LaunchpadContract", () => {
     fetchBalanceDto.type = type;
 
     const fetchBalanceRes = await client1.token.FetchBalances(fetchBalanceDto);
+
     const balanceData = fetchBalanceRes.Data;
     if (balanceData === undefined || balanceData.length === 0) {
       return new BigNumber(0);
     }
-
-    balanceData[0].getQuantityTotal = function (): BigNumber {
-      return this.quantity;
-    };
     const balanceValue = balanceData[0].getQuantityTotal();
 
     return new BigNumber(balanceValue);
@@ -1762,70 +1759,65 @@ function LaunchpadContractAPI(client: ChainClient): LaunchpadContractAPI & Commo
     ...commonContractAPI(client),
 
     CreateSale(dto: CreateTokenSaleDTO) {
-      return client.submitTransaction("CreateSale", dto) as Promise<GalaChainResponse<CreateSaleResDto>>;
+      return client.submitTransaction("CreateSale", dto, CreateSaleResDto);
     },
     BuyExactToken(dto: ExactTokenQuantityDto) {
-      return client.submitTransaction("BuyExactToken", dto) as Promise<GalaChainResponse<TradeResDto>>;
+      return client.submitTransaction("BuyExactToken", dto, TradeResDto);
     },
     SellExactToken(dto: ExactTokenQuantityDto) {
-      return client.submitTransaction("SellExactToken", dto) as Promise<GalaChainResponse<TradeResDto>>;
+      return client.submitTransaction("SellExactToken", dto, TradeResDto);
     },
     BuyWithNative(dto: NativeTokenQuantityDto) {
-      return client.submitTransaction("BuyWithNative", dto) as Promise<GalaChainResponse<TradeResDto>>;
+      return client.submitTransaction("BuyWithNative", dto, TradeResDto);
     },
     SellWithNative(dto: NativeTokenQuantityDto) {
-      return client.submitTransaction("SellWithNative", dto) as Promise<GalaChainResponse<TradeResDto>>;
+      return client.submitTransaction("SellWithNative", dto, TradeResDto);
     },
     CallNativeTokenIn(dto: ExactTokenQuantityDto) {
-      return client.evaluateTransaction("CallNativeTokenIn", dto) as Promise<
-        GalaChainResponse<TradeCalculationResDto>
-      >;
+      return client.evaluateTransaction("CallNativeTokenIn", dto, TradeCalculationResDto);
     },
     CallMemeTokenOut(dto: NativeTokenQuantityDto) {
-      return client.evaluateTransaction("CallMemeTokenOut", dto) as Promise<
-        GalaChainResponse<TradeCalculationResDto>
-      >;
+      return client.evaluateTransaction("CallMemeTokenOut", dto, TradeCalculationResDto);
     },
     CallNativeTokenOut(dto: ExactTokenQuantityDto) {
-      return client.evaluateTransaction("CallNativeTokenOut", dto) as Promise<
-        GalaChainResponse<TradeCalculationResDto>
-      >;
+      return client.evaluateTransaction("CallNativeTokenOut", dto, TradeCalculationResDto);
     },
     CallMemeTokenIn(dto: NativeTokenQuantityDto) {
-      return client.evaluateTransaction("CallMemeTokenIn", dto) as Promise<
-        GalaChainResponse<TradeCalculationResDto>
-      >;
+      return client.evaluateTransaction("CallMemeTokenIn", dto, TradeCalculationResDto);
     },
     CalculatePreMintTokens(dto: PreMintCalculationDto) {
-      return client.evaluateTransaction("CalculatePreMintTokens", dto) as Promise<
-        GalaChainResponse<BigNumber>
-      >;
+      return client.evaluateTransaction<BigNumber>("CalculatePreMintTokens", dto, BigNumber);
     },
     FetchSale(dto: FetchSaleDto) {
-      return client.evaluateTransaction("FetchSaleDetails", dto) as Promise<GalaChainResponse<LaunchpadSale>>;
+      return client.evaluateTransaction<LaunchpadSale>("FetchSaleDetails", dto, LaunchpadSale);
     },
     ConfigureLaunchpadFeeAddress(dto: ConfigureLaunchpadFeeAddressDto) {
-      return client.submitTransaction("ConfigureLaunchpadFeeAddress", dto) as Promise<
-        GalaChainResponse<LaunchpadFeeConfig>
-      >;
+      return client.submitTransaction<LaunchpadFeeConfig>(
+        "ConfigureLaunchpadFeeAddress",
+        dto,
+        LaunchpadFeeConfig
+      );
     },
     FinalizeTokenAllocation(dto: FinalizeTokenAllocationDto) {
-      return client.submitTransaction("FinalizeTokenAllocation", dto) as Promise<
-        GalaChainResponse<LaunchpadFinalizeFeeAllocation>
-      >;
+      return client.submitTransaction<LaunchpadFinalizeFeeAllocation>(
+        "FinalizeTokenAllocation",
+        dto,
+        LaunchpadFinalizeFeeAllocation
+      );
     },
     FetchLaunchpadFeeConfig(dto: ChainCallDTO) {
-      return client.evaluateTransaction("FetchLaunchpadFeeConfig", dto) as Promise<
-        GalaChainResponse<LaunchpadFeeConfig>
-      >;
+      return client.evaluateTransaction<LaunchpadFeeConfig>(
+        "FetchLaunchpadFeeConfig",
+        dto,
+        LaunchpadFeeConfig
+      );
     }
   };
 }
 
 interface GalaTokenContractAPI {
   CreateToken(dto: CreateTokenClassDto): Promise<GalaChainResponse<TokenClassKey>>;
-  DeleteToken(dto: TokenClassKey): Promise<GalaChainResponse<TokenClassKey>>;
-  MintTokenWithAllowance(dto: MintTokenWithAllowanceDto): Promise<GalaChainResponse<TokenInstanceKey[]>>;
+  MintTokenWithAllowance(dto: MintTokenWithAllowanceDto): Promise<GalaChainResponse<TokenInstanceKey>>;
   TransferToken(dto: TransferTokenDto): Promise<GalaChainResponse<TokenBalance[]>>;
   FetchBalances(dto: FetchBalancesDto): Promise<GalaChainResponse<TokenBalance[]>>;
 }
@@ -1835,21 +1827,16 @@ function GalaTokenContractAPI(client: ChainClient): GalaTokenContractAPI & Commo
     ...commonContractAPI(client),
 
     CreateToken(dto: CreateTokenClassDto) {
-      return client.submitTransaction("CreateTokenClass", dto) as Promise<GalaChainResponse<TokenClassKey>>;
-    },
-    DeleteToken(dto: TokenClassKey) {
-      return client.submitTransaction("DeleteTokenClass", dto) as Promise<GalaChainResponse<TokenClassKey>>;
+      return client.submitTransaction("CreateTokenClass", dto, TokenClassKey);
     },
     MintTokenWithAllowance(dto: MintTokenWithAllowanceDto) {
-      return client.submitTransaction("MintTokenWithAllowance", dto) as Promise<
-        GalaChainResponse<TokenInstanceKey[]>
-      >;
+      return client.submitTransaction("MintTokenWithAllowance", dto, TokenInstanceKey);
     },
     TransferToken(dto: TransferTokenDto) {
-      return client.submitTransaction("TransferToken", dto) as Promise<GalaChainResponse<TokenBalance[]>>;
+      return client.submitTransaction<TokenBalance[]>("TransferToken", dto, TokenBalance);
     },
     FetchBalances(dto: FetchBalancesDto) {
-      return client.evaluateTransaction("FetchBalances", dto) as Promise<GalaChainResponse<TokenBalance[]>>;
+      return client.evaluateTransaction<TokenBalance[]>("FetchBalances", dto, TokenBalance);
     }
   };
 }
@@ -1863,7 +1850,7 @@ function dexV3ContractAPI(client: ChainClient): DexV3ContractAPI & CommonContrac
     ...commonContractAPI(client),
 
     getPoolData(dto: GetPoolDto) {
-      return client.evaluateTransaction("GetPoolData", dto) as Promise<GalaChainResponse<Pool>>;
+      return client.evaluateTransaction<Pool>("GetPoolData", dto, Pool);
     }
   };
 }
