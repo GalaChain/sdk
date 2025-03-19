@@ -13,8 +13,8 @@
  * limitations under the License.
  */
 import {
-  CollectProtocolFeesDto,
-  CollectProtocolFeesResDto,
+  CollectTradingFeesDto,
+  CollectTradingFeesResDto,
   ConflictError,
   NotFoundError,
   Pool,
@@ -37,17 +37,17 @@ import {
 } from "../utils";
 
 /**
- * @dev The collectProtocolFees function enables the collection of protocol fees accumulated in a Uniswap V3 pool within the GalaChain ecosystem. It retrieves and transfers the protocol's share of the trading fees to the designated recipient.
+ * @dev The collectTradingFees function enables the collection of protocol fees accumulated in a Uniswap V3 pool within the GalaChain ecosystem. It retrieves and transfers the protocol's share of the trading fees to the designated recipient.
  * @param ctx GalaChainContext – The execution context providing access to the GalaChain environment.
- * @param dto CollectProtocolFeesDto – A data transfer object containing:
+ * @param dto CollectTradingFeesDto – A data transfer object containing:
    - Pool details (identifying which Uniswap V3 pool the fees are collected from).
    - Recipient address (where the collected protocol fees will be sent).
  * @returns [tokenAmount0, tokenAmount1]
  */
-export async function collectProtocolFees(
+export async function collectTradingFees(
   ctx: GalaChainContext,
-  dto: CollectProtocolFeesDto
-): Promise<CollectProtocolFeesResDto> {
+  dto: CollectTradingFeesDto
+): Promise<CollectTradingFeesResDto> {
   const platformFeeAddress = await fetchPlatformFeeAddress(ctx);
   if (!platformFeeAddress) {
     throw new NotFoundError(
@@ -66,7 +66,7 @@ export async function collectProtocolFees(
   const poolAddrKey = genKey(pool.token0, pool.token1, pool.fee.toString());
   const poolVirtualAddress = virtualAddress(poolAddrKey);
 
-  const amounts = pool.collectProtocolFees();
+  const amounts = pool.collectTradingFees();
 
   //create tokenInstanceKeys
   const tokenInstanceKeys = [pool.token0ClassKey, pool.token1ClassKey].map(convertToTokenInstanceKey);
@@ -101,5 +101,5 @@ export async function collectProtocolFees(
   }
 
   await putChainObject(ctx, pool);
-  return new CollectProtocolFeesResDto(amounts[0], amounts[1]);
+  return new CollectTradingFeesResDto(amounts[0], amounts[1]);
 }
