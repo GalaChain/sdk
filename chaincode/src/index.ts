@@ -13,6 +13,8 @@
  * limitations under the License.
  */
 
+import { verifyPackageConsistency } from "./verifyPackageConsistency";
+
 export * from "./allowances";
 export * from "./balances";
 export * from "./burns";
@@ -30,3 +32,5 @@ export * from "./use";
 export * from "./transfer";
 export * from "./vesting";
 export * from "./dex";
+
+verifyPackageConsistency();
