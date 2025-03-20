@@ -13,7 +13,7 @@
  * limitations under the License.
  */
 import BigNumber from "bignumber.js";
-import { IsNotEmpty, IsNumber, IsOptional, IsString, Max, Min } from "class-validator";
+import { IsArray, IsNotEmpty, IsNumber, IsOptional, IsString, Max, Min } from "class-validator";
 
 import { PositionInPool } from "../utils";
 import { BigNumberArrayProperty, BigNumberProperty } from "../validators";
@@ -21,6 +21,10 @@ import { TokenBalance } from "./TokenBalance";
 import { TokenClassKey } from "./TokenClass";
 import { TokenInstanceKey } from "./TokenInstance";
 import { ChainCallDTO } from "./dtos";
+
+const f18 = (num: BigNumber, round: BigNumber.RoundingMode = BigNumber.ROUND_DOWN): BigNumber => {
+  return new BigNumber(num?.toFixed(18, round) ?? 0);
+};
 
 export class CreatePoolDto extends ChainCallDTO {
   @IsNotEmpty()
@@ -30,7 +34,6 @@ export class CreatePoolDto extends ChainCallDTO {
   @IsNotEmpty()
   public fee: number;
   @BigNumberProperty()
-  @IsNotEmpty()
   public initialSqrtPrice: BigNumber;
   @Min(0, { message: "Value cannot less than zero" })
   @Max(1, { message: "Value cannot greater than one" })
@@ -100,7 +103,6 @@ export class QuoteExactAmountDto extends ChainCallDTO {
   @IsNotEmpty()
   public zeroForOne: boolean;
   @BigNumberProperty()
-  @IsNotEmpty()
   public amount: BigNumber;
 
   constructor(
@@ -130,11 +132,9 @@ export class SwapDto extends ChainCallDTO {
   public zeroForOne: boolean;
 
   @BigNumberProperty()
-  @IsNotEmpty()
   public sqrtPriceLimit: BigNumber;
 
   @BigNumberProperty()
-  @IsNotEmpty()
   public amount: BigNumber;
 
   @BigNumberProperty()
@@ -175,8 +175,9 @@ export class BurnDto extends ChainCallDTO {
   @IsNotEmpty()
   public fee: number;
   @BigNumberProperty()
-  @IsNotEmpty()
   public amount: BigNumber;
+  @IsOptional()
+  public owner: string | null;
 
   constructor(
     token0: TokenClassKey,
@@ -184,7 +185,8 @@ export class BurnDto extends ChainCallDTO {
     fee: number,
     amount: BigNumber,
     tickLower: number,
-    tickUpper: number
+    tickUpper: number,
+    owner: string | null = null
   ) {
     super();
     this.tickLower = tickLower;
@@ -193,6 +195,7 @@ export class BurnDto extends ChainCallDTO {
     this.token0 = token0;
     this.token1 = token1;
     this.fee = fee;
+    this.owner = owner;
   }
 }
 
@@ -213,12 +216,10 @@ export class GetPoolDto extends ChainCallDTO {
 }
 
 export class Slot0ResDto extends ChainCallDTO {
-  @IsNotEmpty()
   @BigNumberProperty()
   public sqrtPrice: BigNumber;
   @IsNotEmpty()
   public tick: number;
-  @IsNotEmpty()
   @BigNumberProperty()
   public liquidity: BigNumber;
 
@@ -331,7 +332,6 @@ export class GetPositionResDto {
 
 export class GetAddLiquidityEstimationDto extends ChainCallDTO {
   @BigNumberProperty()
-  @IsNotEmpty()
   public amount: BigNumber;
   @IsNotEmpty()
   public tickLower: number;
@@ -388,10 +388,8 @@ export class CollectDto extends ChainCallDTO {
   @IsNotEmpty()
   public fee: number;
   @BigNumberProperty()
-  @IsNotEmpty()
   public amount0Requested: BigNumber;
   @BigNumberProperty()
-  @IsNotEmpty()
   public amount1Requested: BigNumber;
   @IsNotEmpty()
   public tickLower: number;
@@ -521,7 +519,6 @@ export class PositionsObject {
 export class GetUserPositionsResDto {
   @IsNotEmpty()
   positions: PositionsObject;
-  @IsNotEmpty()
   @IsNumber()
   totalCount: number;
 
@@ -531,7 +528,7 @@ export class GetUserPositionsResDto {
   }
 }
 
-export class CollectProtocolFeesDto extends ChainCallDTO {
+export class CollectTradingFeesDto extends ChainCallDTO {
   @IsNotEmpty()
   public token0: TokenClassKey;
   @IsNotEmpty()
@@ -552,21 +549,11 @@ export class CollectProtocolFeesDto extends ChainCallDTO {
 }
 
 export class SetProtocolFeeDto extends ChainCallDTO {
-  @IsNotEmpty()
-  public token0: TokenClassKey;
-  @IsNotEmpty()
-  public token1: TokenClassKey;
-  @IsNotEmpty()
-  public fee: number;
   @IsNumber()
-  @IsNotEmpty()
   public protocolFee: number;
 
-  constructor(token0: TokenClassKey, token1: TokenClassKey, fee: number, protocolFee: number) {
+  constructor(protocolFee: number) {
     super();
-    this.token0 = token0;
-    this.token1 = token1;
-    this.fee = fee;
     this.protocolFee = protocolFee;
   }
 }
@@ -596,7 +583,6 @@ export interface IPosition {
 }
 
 export class GetLiquidityResDto extends ChainCallDTO {
-  @IsNotEmpty()
   @BigNumberProperty()
   public liquidity: BigNumber;
   constructor(liquidity: BigNumber) {
@@ -606,42 +592,35 @@ export class GetLiquidityResDto extends ChainCallDTO {
 }
 
 export class GetAddLiquidityEstimationResDto extends ChainCallDTO {
-  @IsNotEmpty()
   @BigNumberProperty()
   public amount0: BigNumber;
-  @IsNotEmpty()
   @BigNumberProperty()
   public amount1: BigNumber;
-  @IsNotEmpty()
   @BigNumberProperty()
   public liquidity: BigNumber;
   constructor(amount0: BigNumber, amount1: BigNumber, liquidity: BigNumber) {
     super();
-    this.amount0 = amount0.f18();
-    this.amount1 = amount1.f18();
-    this.liquidity = liquidity.f18();
+    this.amount0 = f18(amount0);
+    this.amount1 = f18(amount1);
+    this.liquidity = f18(liquidity);
   }
 }
 
 export class QuoteExactAmountResDto extends ChainCallDTO {
-  @IsNotEmpty()
   @BigNumberProperty()
   public amount0: BigNumber;
-  @IsNotEmpty()
   @BigNumberProperty()
   public amount1: BigNumber;
-  @IsNotEmpty()
   @BigNumberProperty()
   public currentSqrtPrice: BigNumber;
-  @IsNotEmpty()
   @BigNumberProperty()
   public newSqrtPrice: BigNumber;
   constructor(amount0: BigNumber, amount1: BigNumber, currentSqrtPrice: BigNumber, newSqrtPrice: BigNumber) {
     super();
-    this.amount0 = amount0.f18();
-    this.amount1 = amount1.f18();
-    this.currentSqrtPrice = currentSqrtPrice.f18();
-    this.newSqrtPrice = newSqrtPrice.f18();
+    this.amount0 = f18(amount0);
+    this.amount1 = f18(amount1);
+    this.currentSqrtPrice = f18(currentSqrtPrice);
+    this.newSqrtPrice = f18(newSqrtPrice);
   }
 }
 
@@ -652,32 +631,39 @@ export class GetRemoveLiqEstimationResDto extends ChainCallDTO {
   public amount1: BigNumber;
   constructor(amount0: BigNumber, amount1: BigNumber) {
     super();
-    this.amount0 = amount0.f18();
-    this.amount1 = amount1.f18();
+    this.amount0 = f18(amount0);
+    this.amount1 = f18(amount1);
   }
 }
 
-export class CollectProtocolFeesResDto extends ChainCallDTO {
-  @IsNotEmpty()
+export class CollectTradingFeesResDto extends ChainCallDTO {
   @BigNumberProperty()
-  u;
   public protocolFeesToken0: BigNumber;
-  @IsNotEmpty()
   @BigNumberProperty()
   public protocolFeesToken1: BigNumber;
   constructor(protocolFeesToken0: BigNumber, protocolFeesToken1: BigNumber) {
     super();
-    this.protocolFeesToken0 = protocolFeesToken0.f18();
-    this.protocolFeesToken1 = protocolFeesToken1.f18();
+    this.protocolFeesToken0 = f18(protocolFeesToken0);
+    this.protocolFeesToken1 = f18(protocolFeesToken1);
   }
 }
 
 export class SetProtocolFeeResDto extends ChainCallDTO {
   @IsNumber()
-  @IsNotEmpty()
-  public fee: number;
+  public protocolFee: number;
   constructor(newFee: number) {
     super();
-    this.fee = newFee;
+    this.protocolFee = newFee;
   }
+}
+
+export class ConfigureDexFeeAddressDto extends ChainCallDTO {
+  @IsOptional()
+  @IsString()
+  public newDexFeeAddress?: string;
+
+  @IsOptional()
+  @IsArray()
+  @IsString({ each: true })
+  public newAuthorities?: string[];
 }

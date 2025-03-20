@@ -12,7 +12,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-import { NativeTokenQuantityDto } from "@gala-chain/api";
+import { NativeTokenQuantityDto, ValidationFailedError } from "@gala-chain/api";
 import { BigNumber } from "bignumber.js";
 import Decimal from "decimal.js";
 
@@ -63,7 +63,7 @@ export async function callMemeTokenIn(
   const constantFactor = nativeTokens.mul(exponentFactor).div(basePrice);
 
   if (exp1.lte(constantFactor)) {
-    throw new Error("Cannot sell more tokens than have been bought in this sale.");
+    throw new ValidationFailedError("Cannot sell more tokens than have been bought in this sale.");
   }
 
   const adjustedExp = exp1.minus(constantFactor);

@@ -14,7 +14,7 @@
  */
 import {
   ChainCallDTO,
-  ConfigurePlatformFeeAddressDto,
+  ConfigureLaunchpadFeeAddressDto,
   CreateSaleResDto,
   CreateTokenClassDto,
   CreateTokenSaleDTO,
@@ -24,15 +24,14 @@ import {
   FinalizeTokenAllocationDto,
   GalaChainResponse,
   GetPoolDto,
+  LaunchpadFeeConfig,
   LaunchpadFinalizeFeeAllocation,
   LaunchpadSale,
   MintTokenWithAllowanceDto,
   NativeTokenQuantityDto,
-  PlatformFeeConfig,
   Pool,
   PreMintCalculationDto,
   SaleStatus,
-  SwapDto,
   TokenBalance,
   TokenClassKey,
   TokenInstanceKey,
@@ -40,13 +39,7 @@ import {
   TradeResDto,
   TransferTokenDto
 } from "@gala-chain/api";
-import {
-  ChainClient,
-  ChainUser,
-  CommonContractAPI,
-  commonContractAPI,
-  publicKeyContractAPI
-} from "@gala-chain/client";
+import { ChainClient, ChainUser, CommonContractAPI, commonContractAPI } from "@gala-chain/client";
 import {
   AdminChainClients,
   TestClients,
@@ -93,15 +86,6 @@ describe("LaunchpadContract", () => {
     }
   };
 
-  const PublicKeyContractConfig = {
-    Public: {
-      channel: "product-channel",
-      chaincode: "basic-product",
-      contract: "PublicKeyContract",
-      api: publicKeyContractAPI
-    }
-  };
-
   let client: AdminChainClients<typeof LaunchpadContractConfig>;
   let user: ChainUser;
 
@@ -112,7 +96,6 @@ describe("LaunchpadContract", () => {
   let client3: AdminChainClients<typeof DexV3ContractConfig>;
   let user3: ChainUser;
 
-  let client4: AdminChainClients<typeof PublicKeyContractConfig>;
   let user4: ChainUser;
   let user5: ChainUser;
 
@@ -130,17 +113,13 @@ describe("LaunchpadContract", () => {
 
     client3 = await TestClients.createForAdmin(DexV3ContractConfig);
     user3 = await client.createRegisteredUser();
-
-    client4 = await TestClients.createForAdmin(PublicKeyContractConfig);
-    user4 = await client4.createRegisteredUser();
-
+    user4 = await client.createRegisteredUser();
     user5 = await client.createRegisteredUser();
   });
   afterAll(async () => {
     await client.disconnect();
     await client1.disconnect();
     await client3.disconnect();
-    await client4.disconnect();
   });
 
   // Create sale helper function
@@ -186,15 +165,12 @@ describe("LaunchpadContract", () => {
     fetchBalanceDto.type = type;
 
     const fetchBalanceRes = await client1.token.FetchBalances(fetchBalanceDto);
-    const balaneData = fetchBalanceRes.Data;
-    if (balaneData === undefined || balaneData.length === 0) {
+
+    const balanceData = fetchBalanceRes.Data;
+    if (balanceData === undefined || balanceData.length === 0) {
       return new BigNumber(0);
     }
-
-    balaneData[0].getQuantityTotal = function (): BigNumber {
-      return this.quantity;
-    };
-    const balanceValue = balaneData[0].getQuantityTotal();
+    const balanceValue = balanceData[0].getQuantityTotal();
 
     return new BigNumber(balanceValue);
   }
@@ -239,7 +215,7 @@ describe("LaunchpadContract", () => {
 
     mintDTO.sign(user1.privateKey);
 
-    const user1Balance = await client1.token.MintTokenWithAllowance(mintDTO);
+    await client1.token.MintTokenWithAllowance(mintDTO);
 
     const FetchBalancesDTO = new FetchBalancesDto();
     FetchBalancesDTO.owner = user1.identityKey;
@@ -686,7 +662,7 @@ describe("LaunchpadContract", () => {
 
       sellExactTokenDTO.sign(user1.privateKey);
 
-      await client.Launchpad.SellToken(sellExactTokenDTO);
+      await client.Launchpad.SellExactToken(sellExactTokenDTO);
 
       const tokenBalanceAfter = await getTokenBalance(user1.identityKey, "UnitTest", "Test", "SALETWENTY");
       const balanceDiff = tokenBalanceBefore.minus(tokenBalanceAfter);
@@ -785,7 +761,7 @@ describe("LaunchpadContract", () => {
         //User Balance before sell
         const balanceBeforeSell = await getTokenBalance(user1.identityKey, "GALA", "Unit", "none");
 
-        await client.Launchpad.SellToken(sellExactTokenDTO);
+        await client.Launchpad.SellExactToken(sellExactTokenDTO);
 
         //User Balance after sell
         const balanceAfterSell = await getTokenBalance(user1.identityKey, "GALA", "Unit", "none");
@@ -947,7 +923,7 @@ describe("LaunchpadContract", () => {
 
       sellExactTokensDTO.sign(user1.privateKey);
 
-      await client.Launchpad.SellToken(sellExactTokensDTO);
+      await client.Launchpad.SellExactToken(sellExactTokensDTO);
 
       //Gala Balance After Sell
       const balanceAfterSell = await getTokenBalance(user1.identityKey, "GALA", "Unit", "none");
@@ -1175,9 +1151,9 @@ describe("LaunchpadContract", () => {
 
       sellWithExactDTO.sign(user1.privateKey);
 
-      const sellWithNativerRes = await client.Launchpad.SellToken(sellWithExactDTO);
+      const sellWithNativeRes = await client.Launchpad.SellExactToken(sellWithExactDTO);
 
-      expect(sellWithNativerRes.Message).toEqual(
+      expect(sellWithNativeRes.Message).toEqual(
         "Expected Gala tokens from this operation exceeds the actual amount that will be provided."
       );
     });
@@ -1206,36 +1182,36 @@ describe("LaunchpadContract", () => {
       expect(fetchSaleRes.Data?.saleStatus).toEqual(SaleStatus.ONGOING);
     });
     test("It will revert if none of the input field are present", async () => {
-      const configPlatformFeeAddressDTO = new ConfigurePlatformFeeAddressDto();
+      const configPlatformFeeAddressDTO = new ConfigureLaunchpadFeeAddressDto();
       configPlatformFeeAddressDTO.newPlatformFeeAddress = "";
       configPlatformFeeAddressDTO.newAuthorities = [];
 
       configPlatformFeeAddressDTO.sign(user3.privateKey);
-      const configRes = await client.Launchpad.ConfigurePlatformFeeAddress(configPlatformFeeAddressDTO);
+      const configRes = await client.Launchpad.ConfigureLaunchpadFeeAddress(configPlatformFeeAddressDTO);
 
       expect(configRes.Status).toEqual(0);
       expect(configRes.Message).toEqual("None of the input fields are present.");
     });
 
     test("Only Platform Fee Address can be changed", async () => {
-      const configPlatformFeeAddressDTO = new ConfigurePlatformFeeAddressDto();
+      const configPlatformFeeAddressDTO = new ConfigureLaunchpadFeeAddressDto();
       configPlatformFeeAddressDTO.newPlatformFeeAddress = user5.identityKey;
 
       configPlatformFeeAddressDTO.sign(user3.privateKey);
 
-      const configRes = await client.Launchpad.ConfigurePlatformFeeAddress(configPlatformFeeAddressDTO);
+      const configRes = await client.Launchpad.ConfigureLaunchpadFeeAddress(configPlatformFeeAddressDTO);
 
       expect(configRes.Status).toEqual(1);
       expect(configRes.Data?.feeAddress).toEqual(user5.identityKey);
     });
 
     test("Only New Authority Address can be changed/Added", async () => {
-      const configPlatformFeeAddressDTO = new ConfigurePlatformFeeAddressDto();
+      const configPlatformFeeAddressDTO = new ConfigureLaunchpadFeeAddressDto();
       configPlatformFeeAddressDTO.newAuthorities = [user2.identityKey, user1.identityKey];
       configPlatformFeeAddressDTO.newPlatformFeeAddress = user5.identityKey;
       configPlatformFeeAddressDTO.sign(user3.privateKey);
 
-      const configRes = await client.Launchpad.ConfigurePlatformFeeAddress(configPlatformFeeAddressDTO);
+      const configRes = await client.Launchpad.ConfigureLaunchpadFeeAddress(configPlatformFeeAddressDTO);
 
       expect(configRes.Status).toEqual(1);
       expect(configRes.Data?.feeAddress).toEqual(user5.identityKey);
@@ -1244,17 +1220,17 @@ describe("LaunchpadContract", () => {
       callingUserDto.sign(user1.privateKey);
 
       //Fetch Currenct Fee Address and Authorities
-      const fetchCurrentConfig = await client.Launchpad.FetchPlatformAddressConfig(callingUserDto);
+      const fetchCurrentConfig = await client.Launchpad.FetchLaunchpadFeeConfig(callingUserDto);
       expect(fetchCurrentConfig.Data?.authorities[0]).toEqual(user2.identityKey);
       expect(fetchCurrentConfig.Data?.authorities[1]).toEqual(user1.identityKey);
     });
 
     test("It will revert if non authority tries to update the addresss", async () => {
-      const configPlatformFeeAddressDTO = new ConfigurePlatformFeeAddressDto();
+      const configPlatformFeeAddressDTO = new ConfigureLaunchpadFeeAddressDto();
       configPlatformFeeAddressDTO.newAuthorities = [user.identityKey];
       configPlatformFeeAddressDTO.sign(user4.privateKey);
 
-      const configRes = await client.Launchpad.ConfigurePlatformFeeAddress(configPlatformFeeAddressDTO);
+      const configRes = await client.Launchpad.ConfigureLaunchpadFeeAddress(configPlatformFeeAddressDTO);
 
       expect(configRes.Status).toEqual(0);
       expect(configRes.Message).toEqual(
@@ -1272,14 +1248,14 @@ describe("LaunchpadContract", () => {
 
       const callingUserDto = new ChainCallDTO();
       callingUserDto.sign(user1.privateKey);
-      const getConfiguration = await client.Launchpad.FetchPlatformAddressConfig(callingUserDto);
+      await client.Launchpad.FetchLaunchpadFeeConfig(callingUserDto);
 
       const buyWithNativeDTO = new NativeTokenQuantityDto();
       buyWithNativeDTO.vaultAddress = vaultAddress;
       buyWithNativeDTO.nativeTokenQuantity = new BigNumber("1640986");
       buyWithNativeDTO.sign(user1.privateKey);
 
-      const buyRes1 = await client.Launchpad.BuyWithNative(buyWithNativeDTO);
+      await client.Launchpad.BuyWithNative(buyWithNativeDTO);
 
       //Fetch Sale Details
       const fetchSaleDetailsDTO = new FetchSaleDto();
@@ -1554,7 +1530,7 @@ describe("LaunchpadContract", () => {
 
       buyWithNativeDTO.sign(user1.privateKey);
 
-      const buyRes = await client.Launchpad.BuyWithNative(buyWithNativeDTO);
+      await client.Launchpad.BuyWithNative(buyWithNativeDTO);
 
       //Fetch Sale Details
       const fetchSaleDetailsDTO = new FetchSaleDto();
@@ -1760,7 +1736,7 @@ describe("LaunchpadContract", () => {
 interface LaunchpadContractAPI {
   CreateSale(dto: CreateTokenSaleDTO): Promise<GalaChainResponse<CreateSaleResDto>>;
   BuyExactToken(dto: ExactTokenQuantityDto): Promise<GalaChainResponse<TradeResDto>>;
-  SellToken(dto: ExactTokenQuantityDto): Promise<GalaChainResponse<TradeResDto>>;
+  SellExactToken(dto: ExactTokenQuantityDto): Promise<GalaChainResponse<TradeResDto>>;
   BuyWithNative(dto: NativeTokenQuantityDto): Promise<GalaChainResponse<TradeResDto>>;
   SellWithNative(dto: NativeTokenQuantityDto): Promise<GalaChainResponse<TradeResDto>>;
   CallNativeTokenIn(dto: ExactTokenQuantityDto): Promise<GalaChainResponse<TradeCalculationResDto>>;
@@ -1769,13 +1745,13 @@ interface LaunchpadContractAPI {
   CallMemeTokenIn(dto: NativeTokenQuantityDto): Promise<GalaChainResponse<TradeCalculationResDto>>;
   CalculatePreMintTokens(dto: PreMintCalculationDto): Promise<GalaChainResponse<BigNumber>>;
   FetchSale(dto: FetchSaleDto): Promise<GalaChainResponse<LaunchpadSale>>;
-  ConfigurePlatformFeeAddress(
-    dto: ConfigurePlatformFeeAddressDto
-  ): Promise<GalaChainResponse<PlatformFeeConfig>>;
+  ConfigureLaunchpadFeeAddress(
+    dto: ConfigureLaunchpadFeeAddressDto
+  ): Promise<GalaChainResponse<LaunchpadFeeConfig>>;
   FinalizeTokenAllocation(
     dto: FinalizeTokenAllocationDto
   ): Promise<GalaChainResponse<LaunchpadFinalizeFeeAllocation>>;
-  FetchPlatformAddressConfig(dto: ChainCallDTO): Promise<GalaChainResponse<PlatformFeeConfig>>;
+  FetchLaunchpadFeeConfig(dto: ChainCallDTO): Promise<GalaChainResponse<LaunchpadFeeConfig>>;
 }
 
 function LaunchpadContractAPI(client: ChainClient): LaunchpadContractAPI & CommonContractAPI {
@@ -1783,70 +1759,65 @@ function LaunchpadContractAPI(client: ChainClient): LaunchpadContractAPI & Commo
     ...commonContractAPI(client),
 
     CreateSale(dto: CreateTokenSaleDTO) {
-      return client.submitTransaction("CreateSale", dto) as Promise<GalaChainResponse<CreateSaleResDto>>;
+      return client.submitTransaction("CreateSale", dto, CreateSaleResDto);
     },
     BuyExactToken(dto: ExactTokenQuantityDto) {
-      return client.submitTransaction("BuyExactToken", dto) as Promise<GalaChainResponse<TradeResDto>>;
+      return client.submitTransaction("BuyExactToken", dto, TradeResDto);
     },
-    SellToken(dto: ExactTokenQuantityDto) {
-      return client.submitTransaction("SellExactToken", dto) as Promise<GalaChainResponse<TradeResDto>>;
+    SellExactToken(dto: ExactTokenQuantityDto) {
+      return client.submitTransaction("SellExactToken", dto, TradeResDto);
     },
     BuyWithNative(dto: NativeTokenQuantityDto) {
-      return client.submitTransaction("BuyWithNative", dto) as Promise<GalaChainResponse<TradeResDto>>;
+      return client.submitTransaction("BuyWithNative", dto, TradeResDto);
     },
     SellWithNative(dto: NativeTokenQuantityDto) {
-      return client.submitTransaction("SellWithNative", dto) as Promise<GalaChainResponse<TradeResDto>>;
+      return client.submitTransaction("SellWithNative", dto, TradeResDto);
     },
     CallNativeTokenIn(dto: ExactTokenQuantityDto) {
-      return client.evaluateTransaction("CallNativeTokenIn", dto) as Promise<
-        GalaChainResponse<TradeCalculationResDto>
-      >;
+      return client.evaluateTransaction("CallNativeTokenIn", dto, TradeCalculationResDto);
     },
     CallMemeTokenOut(dto: NativeTokenQuantityDto) {
-      return client.evaluateTransaction("CallMemeTokenOut", dto) as Promise<
-        GalaChainResponse<TradeCalculationResDto>
-      >;
+      return client.evaluateTransaction("CallMemeTokenOut", dto, TradeCalculationResDto);
     },
     CallNativeTokenOut(dto: ExactTokenQuantityDto) {
-      return client.evaluateTransaction("CallNativeTokenOut", dto) as Promise<
-        GalaChainResponse<TradeCalculationResDto>
-      >;
+      return client.evaluateTransaction("CallNativeTokenOut", dto, TradeCalculationResDto);
     },
     CallMemeTokenIn(dto: NativeTokenQuantityDto) {
-      return client.evaluateTransaction("CallMemeTokenIn", dto) as Promise<
-        GalaChainResponse<TradeCalculationResDto>
-      >;
+      return client.evaluateTransaction("CallMemeTokenIn", dto, TradeCalculationResDto);
     },
     CalculatePreMintTokens(dto: PreMintCalculationDto) {
-      return client.evaluateTransaction("CalculatePreMintTokens", dto) as Promise<
-        GalaChainResponse<BigNumber>
-      >;
+      return client.evaluateTransaction<BigNumber>("CalculatePreMintTokens", dto, BigNumber);
     },
     FetchSale(dto: FetchSaleDto) {
-      return client.evaluateTransaction("FetchSaleDetails", dto) as Promise<GalaChainResponse<LaunchpadSale>>;
+      return client.evaluateTransaction<LaunchpadSale>("FetchSaleDetails", dto, LaunchpadSale);
     },
-    ConfigurePlatformFeeAddress(dto: ConfigurePlatformFeeAddressDto) {
-      return client.submitTransaction("ConfigurePlatformFeeAddress", dto) as Promise<
-        GalaChainResponse<PlatformFeeConfig>
-      >;
+    ConfigureLaunchpadFeeAddress(dto: ConfigureLaunchpadFeeAddressDto) {
+      return client.submitTransaction<LaunchpadFeeConfig>(
+        "ConfigureLaunchpadFeeAddress",
+        dto,
+        LaunchpadFeeConfig
+      );
     },
     FinalizeTokenAllocation(dto: FinalizeTokenAllocationDto) {
-      return client.submitTransaction("FinalizeTokenAllocation", dto) as Promise<
-        GalaChainResponse<LaunchpadFinalizeFeeAllocation>
-      >;
+      return client.submitTransaction<LaunchpadFinalizeFeeAllocation>(
+        "FinalizeTokenAllocation",
+        dto,
+        LaunchpadFinalizeFeeAllocation
+      );
     },
-    FetchPlatformAddressConfig(dto: ChainCallDTO) {
-      return client.evaluateTransaction("FetchPlatformAddressConfig", dto) as Promise<
-        GalaChainResponse<PlatformFeeConfig>
-      >;
+    FetchLaunchpadFeeConfig(dto: ChainCallDTO) {
+      return client.evaluateTransaction<LaunchpadFeeConfig>(
+        "FetchLaunchpadFeeConfig",
+        dto,
+        LaunchpadFeeConfig
+      );
     }
   };
 }
 
 interface GalaTokenContractAPI {
   CreateToken(dto: CreateTokenClassDto): Promise<GalaChainResponse<TokenClassKey>>;
-  DeleteToken(dto: TokenClassKey): Promise<GalaChainResponse<TokenClassKey>>;
-  MintTokenWithAllowance(dto: MintTokenWithAllowanceDto): Promise<GalaChainResponse<TokenInstanceKey[]>>;
+  MintTokenWithAllowance(dto: MintTokenWithAllowanceDto): Promise<GalaChainResponse<TokenInstanceKey>>;
   TransferToken(dto: TransferTokenDto): Promise<GalaChainResponse<TokenBalance[]>>;
   FetchBalances(dto: FetchBalancesDto): Promise<GalaChainResponse<TokenBalance[]>>;
 }
@@ -1856,21 +1827,16 @@ function GalaTokenContractAPI(client: ChainClient): GalaTokenContractAPI & Commo
     ...commonContractAPI(client),
 
     CreateToken(dto: CreateTokenClassDto) {
-      return client.submitTransaction("CreateTokenClass", dto) as Promise<GalaChainResponse<TokenClassKey>>;
-    },
-    DeleteToken(dto: TokenClassKey) {
-      return client.submitTransaction("DeleteTokenClass", dto) as Promise<GalaChainResponse<TokenClassKey>>;
+      return client.submitTransaction("CreateTokenClass", dto, TokenClassKey);
     },
     MintTokenWithAllowance(dto: MintTokenWithAllowanceDto) {
-      return client.submitTransaction("MintTokenWithAllowance", dto) as Promise<
-        GalaChainResponse<TokenInstanceKey[]>
-      >;
+      return client.submitTransaction("MintTokenWithAllowance", dto, TokenInstanceKey);
     },
     TransferToken(dto: TransferTokenDto) {
-      return client.submitTransaction("TransferToken", dto) as Promise<GalaChainResponse<TokenBalance[]>>;
+      return client.submitTransaction<TokenBalance[]>("TransferToken", dto, TokenBalance);
     },
     FetchBalances(dto: FetchBalancesDto) {
-      return client.evaluateTransaction("FetchBalances", dto) as Promise<GalaChainResponse<TokenBalance[]>>;
+      return client.evaluateTransaction<TokenBalance[]>("FetchBalances", dto, TokenBalance);
     }
   };
 }
@@ -1884,7 +1850,7 @@ function dexV3ContractAPI(client: ChainClient): DexV3ContractAPI & CommonContrac
     ...commonContractAPI(client),
 
     getPoolData(dto: GetPoolDto) {
-      return client.evaluateTransaction("GetPoolData", dto) as Promise<GalaChainResponse<Pool>>;
+      return client.evaluateTransaction<Pool>("GetPoolData", dto, Pool);
     }
   };
 }

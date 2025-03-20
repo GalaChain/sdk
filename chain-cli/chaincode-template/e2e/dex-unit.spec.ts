@@ -849,41 +849,41 @@ describe("nextInitialisedTickWithInSameWord", () => {
     const bitmap: Bitmap = {};
     bitmap[0] = BigInt("0b1010").toString(); // 10
 
-    expect(nextInitialisedTickWithInSameWord(bitmap, 2, 1, true)).toEqual([1, true]);
-    expect(nextInitialisedTickWithInSameWord(bitmap, 4, 1, true)).toEqual([3, true]);
-    expect(nextInitialisedTickWithInSameWord(bitmap, 0, 1, true)).toEqual([0, false]);
+    expect(nextInitialisedTickWithInSameWord(bitmap, 2, 1, true, new BigNumber(0))).toEqual([1, true]);
+    expect(nextInitialisedTickWithInSameWord(bitmap, 4, 1, true, new BigNumber(0))).toEqual([3, true]);
+    expect(nextInitialisedTickWithInSameWord(bitmap, 0, 1, true, new BigNumber(0))).toEqual([0, false]);
   });
 
   test("should return the nearest initialized tick when lte=false", () => {
     const bitmap: Bitmap = {};
     bitmap[0] = BigInt("0b1010").toString(); // 10
 
-    expect(nextInitialisedTickWithInSameWord(bitmap, 1, 1, false)).toEqual([3, true]);
-    expect(nextInitialisedTickWithInSameWord(bitmap, 2, 1, false)).toEqual([3, true]);
-    expect(nextInitialisedTickWithInSameWord(bitmap, 3, 1, false)).toEqual([255, false]);
+    expect(nextInitialisedTickWithInSameWord(bitmap, 1, 1, false, new BigNumber(0))).toEqual([3, true]);
+    expect(nextInitialisedTickWithInSameWord(bitmap, 2, 1, false, new BigNumber(0))).toEqual([3, true]);
+    expect(nextInitialisedTickWithInSameWord(bitmap, 3, 1, false, new BigNumber(0))).toEqual([255, false]);
   });
 
   test("should handle negative ticks", () => {
     const bitmap: Bitmap = {};
     bitmap[-1] = BigInt("0b1000").toString(); // 8
 
-    expect(nextInitialisedTickWithInSameWord(bitmap, -3, 1, true)).toEqual([-253, true]);
-    expect(nextInitialisedTickWithInSameWord(bitmap, -5, 1, true)).toEqual([-253, true]);
+    expect(nextInitialisedTickWithInSameWord(bitmap, -3, 1, true, new BigNumber(0))).toEqual([-253, true]);
+    expect(nextInitialisedTickWithInSameWord(bitmap, -5, 1, true, new BigNumber(0))).toEqual([-253, true]);
   });
 
   test("should handle empty bitmaps", () => {
     const bitmap: Bitmap = {};
 
-    expect(nextInitialisedTickWithInSameWord(bitmap, 10, 1, true)).toEqual([0, false]);
-    expect(nextInitialisedTickWithInSameWord(bitmap, 10, 1, false)).toEqual([255, false]);
+    expect(nextInitialisedTickWithInSameWord(bitmap, 10, 1, true, new BigNumber(0))).toEqual([0, false]);
+    expect(nextInitialisedTickWithInSameWord(bitmap, 10, 1, false, new BigNumber(0))).toEqual([255, false]);
   });
 
   test("should handle large tick spacings", () => {
     const bitmap: Bitmap = {};
     bitmap[0] = BigInt("0b100").toString();
 
-    expect(nextInitialisedTickWithInSameWord(bitmap, 512, 256, true)).toEqual([512, true]);
-    expect(nextInitialisedTickWithInSameWord(bitmap, 256, 256, false)).toEqual([512, true]);
+    expect(nextInitialisedTickWithInSameWord(bitmap, 512, 256, true, new BigNumber(0))).toEqual([512, true]);
+    expect(nextInitialisedTickWithInSameWord(bitmap, 256, 256, false, new BigNumber(0))).toEqual([512, true]);
   });
 });
 
@@ -1054,16 +1054,16 @@ describe("getFeeGrowthInside", () => {
 
 describe("checkTicks", () => {
   test("throws error when tickLower is greater than or equal to tickUpper", () => {
-    expect(() => checkTicks(10, 10)).toThrow("TLU");
-    expect(() => checkTicks(20, 10)).toThrow("TLU");
+    expect(() => checkTicks(10, 10)).toThrow("Lower Tick is greater than Upper Tick");
+    expect(() => checkTicks(20, 10)).toThrow("Lower Tick is greater than Upper Tick");
   });
 
   test("throws error when tickLower is out of range", () => {
-    expect(() => checkTicks(-887273, 10)).toThrow("TLM");
+    expect(() => checkTicks(-887273, 10)).toThrow("Lower Tick is less than Min Tick");
   });
 
   test("throws error when tickUpper is out of range", () => {
-    expect(() => checkTicks(10, 887273)).toThrow("TUM");
+    expect(() => checkTicks(10, 887273)).toThrow("Upper Tick is greater than Max Tick");
   });
 
   test("does not throw error for valid tick range", () => {

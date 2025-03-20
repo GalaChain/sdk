@@ -14,22 +14,29 @@
  */
 import {
   ChainCallDTO,
-  ConfigurePlatformFeeAddressDto,
+  ConfigureLaunchpadFeeAddressDto,
   CreateSaleResDto,
   CreateTokenSaleDTO,
   ExactTokenQuantityDto,
   FetchSaleDto,
   FinalizeTokenAllocationDto,
+  LaunchpadFeeConfig,
   LaunchpadFinalizeFeeAllocation,
   LaunchpadSale,
   NativeTokenQuantityDto,
-  PlatformFeeConfig,
   PreMintCalculationDto,
   TradeCalculationResDto,
   TradeResDto
 } from "@gala-chain/api";
 
 import { version } from "../../package.json";
+import {
+  buyExactTokenFeeGate,
+  buyWithNativeFeeGate,
+  createSaleFeeGate,
+  sellExactTokenFeeGate,
+  sellWithNativeFeeGate
+} from "../fees/dexLaunchpadFeeGate";
 import {
   buyExactToken,
   buyWithNative,
@@ -38,7 +45,9 @@ import {
   callMemeTokenOut,
   callNativeTokenIn,
   callNativeTokenOut,
+  configureLaunchpadFeeAddress,
   createSale,
+  fetchLaunchpadFeeConfig,
   fetchSaleDetails,
   finalizeTokenAllocation,
   sellExactToken,
@@ -47,7 +56,6 @@ import {
 import { GalaChainContext } from "../types";
 import { GalaContract } from "./GalaContract";
 import { EVALUATE, Evaluate, GalaTransaction, Submit } from "./GalaTransaction";
-import { configurePlatformFeeAddress, fetchPlatformAddressConfig } from "./platformfee";
 
 export class LaunchpadContract extends GalaContract {
   constructor() {
@@ -56,7 +64,8 @@ export class LaunchpadContract extends GalaContract {
 
   @Submit({
     in: CreateTokenSaleDTO,
-    out: CreateSaleResDto
+    out: CreateSaleResDto,
+    before: createSaleFeeGate
   })
   public async CreateSale(ctx: GalaChainContext, dto: CreateTokenSaleDTO): Promise<CreateSaleResDto> {
     return createSale(ctx, dto);
@@ -73,7 +82,8 @@ export class LaunchpadContract extends GalaContract {
 
   @Submit({
     in: ExactTokenQuantityDto,
-    out: TradeResDto
+    out: TradeResDto,
+    before: buyExactTokenFeeGate
   })
   public async BuyExactToken(ctx: GalaChainContext, dto: ExactTokenQuantityDto): Promise<TradeResDto> {
     return buyExactToken(ctx, dto);
@@ -81,7 +91,8 @@ export class LaunchpadContract extends GalaContract {
 
   @Submit({
     in: ExactTokenQuantityDto,
-    out: TradeResDto
+    out: TradeResDto,
+    before: sellExactTokenFeeGate
   })
   public async SellExactToken(ctx: GalaChainContext, dto: ExactTokenQuantityDto): Promise<TradeResDto> {
     return sellExactToken(ctx, dto);
@@ -89,7 +100,8 @@ export class LaunchpadContract extends GalaContract {
 
   @Submit({
     in: NativeTokenQuantityDto,
-    out: TradeResDto
+    out: TradeResDto,
+    before: buyWithNativeFeeGate
   })
   public async BuyWithNative(ctx: GalaChainContext, dto: NativeTokenQuantityDto): Promise<TradeResDto> {
     return buyWithNative(ctx, dto);
@@ -97,22 +109,23 @@ export class LaunchpadContract extends GalaContract {
 
   @Submit({
     in: NativeTokenQuantityDto,
-    out: TradeResDto
+    out: TradeResDto,
+    before: sellWithNativeFeeGate
   })
   public async SellWithNative(ctx: GalaChainContext, dto: NativeTokenQuantityDto): Promise<TradeResDto> {
     return sellWithNative(ctx, dto);
   }
 
   @Submit({
-    in: ConfigurePlatformFeeAddressDto,
-    out: PlatformFeeConfig,
+    in: ConfigureLaunchpadFeeAddressDto,
+    out: LaunchpadFeeConfig,
     allowedOrgs: ["CuratorOrg"]
   })
-  public async ConfigurePlatformFeeAddress(
+  public async ConfigureLaunchpadFeeAddress(
     ctx: GalaChainContext,
-    dto: ConfigurePlatformFeeAddressDto
-  ): Promise<PlatformFeeConfig> {
-    return configurePlatformFeeAddress(ctx, dto);
+    dto: ConfigureLaunchpadFeeAddressDto
+  ): Promise<LaunchpadFeeConfig> {
+    return configureLaunchpadFeeAddress(ctx, dto);
   }
 
   @Submit({
@@ -186,13 +199,13 @@ export class LaunchpadContract extends GalaContract {
 
   @Evaluate({
     in: ChainCallDTO,
-    out: PlatformFeeConfig,
+    out: LaunchpadFeeConfig,
     allowedOrgs: ["CuratorOrg"]
   })
-  public async FetchPlatformAddressConfig(
+  public async FetchLaunchpadFeeConfig(
     ctx: GalaChainContext,
     dto: ChainCallDTO
-  ): Promise<PlatformFeeConfig> {
-    return fetchPlatformAddressConfig(ctx);
+  ): Promise<LaunchpadFeeConfig> {
+    return fetchLaunchpadFeeConfig(ctx);
   }
 }
