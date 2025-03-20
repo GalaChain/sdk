@@ -12,6 +12,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+import { verifyPackageConsistency } from "./verifyPackageConsistency";
 
 export * from "./allowances";
 export * from "./balances";
@@ -30,3 +31,5 @@ export * from "./use";
 export * from "./transfer";
 export * from "./vesting";
 export * from "./dex";
+
+verifyPackageConsistency();

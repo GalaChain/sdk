@@ -32,5 +32,9 @@ it("should expose contract names", async () => {
   const response = execSync(`node ${cliPath} get-contract-names`).toString().trim();
 
   // Then
-  expect(response).toEqual(JSON.stringify(expectedContracts));
+  const lastLine = response.split("\n").pop();
+  expect(lastLine).toEqual(JSON.stringify(expectedContracts));
+
+  // Optional check for grpc version conflicts
+  expect(response).toContain("No conflicting versions of @grpc/grpc-js detected.");
 });
