@@ -41,7 +41,7 @@ export class UniqueTransactionService {
       .then((ut) => {
         throw new UniqueTransactionConflictError(uniqueKey, ut.transactionId);
       })
-      .catch((e) => ChainError.ignore(e, ErrorCode.NOT_FOUND));
+      .catch((e) => ChainError.recover(e, ErrorCode.NOT_FOUND));
   }
 
   public static async ensureUniqueTransaction(ctx: GalaChainContext, uniqueKey: string): Promise<void> {

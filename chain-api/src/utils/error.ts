@@ -201,35 +201,54 @@ export abstract class ChainError extends Error implements OptionalChainErrorData
   }
 
   /**
-   * Maps ChainError to a specified return value by error code, or re-throws
-   * original error if no error code matches, or returns default chain error
-   * if a given parameter is not a ChainError instance.
+   * Recovers (mutes) ChainError to a specified return value or undefined.
    *
-   * Useful in rethrowing an error or mapping an error to another one in catch
-   * clauses or catch methods in promises.
+   * If the error is a ChainError and matches the error code, the error is
+   * recovered and the specified return value is returned. Otherwise, the error
+   * is re-thrown.
    *
-   * For instance when you want to get an object from chain, and ignore the
-   * NOT_FOUND error, but you don't want to mute other errors:
+   * For instance when you want to get an object from chain, and instead of
+   * throwing a NOT_FOUND error, you want to return undefined:
    *
    * ```ts
    * getObjectByKey(...)
-   *   .catch((e) => CommonChainError.map(e, ErrorCode.NOT_FOUND));
+   *   .catch((e) => CommonChainError.recover(e, ErrorCode.NOT_FOUND));
+   * ```
+   *
+   * If you want to return a default value instead of undefined, you can do:
+   *
+   * ```ts
+   * getObjectByKey(...)
+   *   .catch((e) => CommonChainError.recover(e, ErrorCode.NOT_FOUND, defaultValue));
    * ```
    *
    * @param e original error
    * @param key error code or error class to match
-   * @param returnValue value to be returned if error code matches
+   * @param defaultValue value to be returned if error code matches
+   */
+  public static recover<T = undefined>(
+    e: { message?: string } | ChainError,
+    key: ErrorCode | ClassConstructor<ChainError>,
+    defaultValue?: T
+  ): T {
+    if (ChainError.isChainError(e) && e.matches(key)) {
+      return defaultValue as T;
+    } else {
+      throw e;
+    }
+  }
+
+  /**
+   * Recovers (mutes) ChainError to a specified return value or undefined.
+   *
+   * @deprecated Use {@link ChainError.recover} instead.
    */
   public static ignore<T = undefined>(
     e: { message?: string } | ChainError,
     key: ErrorCode | ClassConstructor<ChainError>,
-    returnValue: T = undefined as T
+    defaultValue?: T
   ): T {
-    if (ChainError.isChainError(e) && e.matches(key)) {
-      return returnValue;
-    } else {
-      throw e;
-    }
+    return ChainError.recover(e, key, defaultValue);
   }
 }
 
