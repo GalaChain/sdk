@@ -179,20 +179,47 @@ See the [RBAC section](#next-role-based-access-control-rbac) for more informatio
 
 ### User registration
 
-Gala chain does not allow anonymous users to access the chaincode.
+By default, GalaChain does not allow anonymous users to access the chaincode.
 In order to access the chaincode, the user must be registered with the chaincode.
-There are two methods to register a user:
+This behaviour may be changed as described in the [Allowing non-registered users](#allowing-non-registered-users) section.
+
+There are three methods to register a user:
 
 1. `RegisterUser` method in the `PublicKeyContract`.
 2. `RegisterEthUser` method in the `PublicKeyContract`.
+3. `RegisterTonUser` method in the `PublicKeyContract`.
 
-Both methods require the user to provide their secp256k1 public key.
-The only difference between these two methods is that `RegisterEthUser` does not require the `alias` parameter, and it uses the Ethereum address (prefixed with `eth|`) as the user's alias.
+All methods require the user to provide their public key (secp256k1 for Ethereum, ed25519 for TON).
+The only difference between these methods is that only `RegisterUser` allows to specify the `alias` parameter.
+For `RegisterEthUser` and `RegisterTonUser` methods, the alias is set to `eth|<eth-addr>` or `ton|<ton-addr>` respectively.
 
-Access to `RegisterUser` and `RegisterEthUser` methods is restricted on the organization level.
-Only the organization that is specified in the chaincode as `CURATOR_ORG_MSP` environment variable can access these methods (it's `CuratorOrg` by default).
-Technically that means that the client application must use the `CA user` that is registered with the `CuratorOrg` organization to call these methods.
-See the [Organization based authorization](#organization-based-authorization) section for more information.
+Access to register methods is restricted on the organization level.
+They can be called only by the organization that is specified in the chaincode as `CURATOR_ORG_MSP` environment variable can access these methods (it's `CuratorOrg` by default).
+
+See the [Organization based authorization](#organization-based-authorization) section, or the [Role Based Access Control (RBAC)](#role-based-access-control-rbac) section for more information.
+
+#### Allowing non-registered users
+
+You may allow anonymous users to access the chaincode in one of the following ways:
+* setting the `ALLOW_NON_REGISTERED_USERS` environment variable to `true` for the chaincode container,
+* setting the `allowNonRegisteredUsers` property in the contract's `config` property to `true`, as shown in the example below:
+
+```typescript
+class MyContract extends GalaContract {
+  constructor() {
+    super("MyContract", version, {
+      allowNonRegisteredUsers: true
+    });
+  }
+}
+```
+
+It is useful especially when you expect a large number of users to access the chaincode, and you don't want to register all of them.
+
+If the non-registered users are allowed, the DTO needs to be signed with the user's private key, and the public key can be recovered from the signature.
+In this case, the user's alias will be `eth|<eth-addr>` or `ton|<ton-addr>`, and the user's roles will have default `EVALUATE` and `SUBMIT` roles.
+
+Registration is required only if you want to use the custom alias for the user in the chaincode, or if you want to provide custom roles for the user.
 
 ### Default admin user
 
