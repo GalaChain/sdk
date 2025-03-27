@@ -126,7 +126,7 @@ export class GalaChainContext extends Context {
     }
   }
 
-  resetCallingUserData() {
+  resetCallingUser() {
     this.callingUserValue = undefined;
     this.callingUserRolesValue = undefined;
     this.callingUserEthAddressValue = undefined;
@@ -144,12 +144,6 @@ export class GalaChainContext extends Context {
     this.callingUserEthAddressValue = d.ethAddress;
     this.callingUserTonAddressValue = d.tonAddress;
     this.isDryRun = true;
-  }
-
-  public resetCallingUser(): void {
-    this.callingUserValue = undefined;
-    this.callingUserEthAddressValue = undefined;
-    this.callingUserTonAddressValue = undefined;
   }
 
   get txUnixTime(): number {

@@ -86,12 +86,12 @@ type TestGalaChainContext = Context & {
   get callingUserTonAddress(): string;
   get callingUserRoles(): string[];
   get callingUserProfile(): UserProfile;
+  resetCallingUser(): void;
   get config(): GalaChainContextConfig;
   setDryRunOnBehalfOf(d: CallingUserData): void;
   isDryRun: boolean;
   get txUnixTime(): number;
   setChaincodeStub(stub: ChaincodeStub): void;
-  resetCallingUserData(): void;
 };
 
 type GalaContract<Ctx extends TestGalaChainContext> = Contract & {
@@ -129,7 +129,7 @@ class Fixture<Ctx extends TestGalaChainContext, T extends GalaContract<Ctx>> {
               ? await method.call(contractInstance, ctx, dto)
               : await method.call(contractInstance, ctx);
             await contractInstance.afterTransaction(ctx, result);
-            ctx.resetCallingUserData();
+            ctx.resetCallingUser();
             return result;
           };
         }
