@@ -13,6 +13,7 @@ docs/chain-client-docs
 docs/chain-test-docs
 docs/chaincode-docs
 docs/chain-connect-docs
+resources/chain*.txt
 
 # dependencies
 node_modules
