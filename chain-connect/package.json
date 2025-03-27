@@ -13,7 +13,7 @@
   },
   "overrides": {
     "ethers": {
-      "elliptic": "6.5.4"
+      "elliptic": "^6.6.1"
     }
   },
   "type": "commonjs",
