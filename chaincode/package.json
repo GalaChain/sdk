@@ -34,7 +34,7 @@
     "class-transformer": "*",
     "class-validator": "*",
     "class-validator-jsonschema": "*",
-    "elliptic": "*",
+    "elliptic": "^6.6.1",
     "json-stringify-deterministic": "*"
   },
   "devDependencies": {
