@@ -9,7 +9,7 @@
     "class-transformer": "0.5.1",
     "class-validator": "^0.14.0",
     "class-validator-jsonschema": "^5.0.0",
-    "elliptic": "^6.5.4",
+    "elliptic": "^6.6.1",
     "js-sha3": "^0.9.3",
     "json-stringify-deterministic": "^1.0.7",
     "openapi3-ts": "^3.2.0",
