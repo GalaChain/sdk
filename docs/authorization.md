@@ -17,6 +17,34 @@ The **end user** is the person who is using the client application, while the **
 
 In this document, if we refer to the **user**, we mean the **end user**.
 
+
+```mermaid
+sequenceDiagram
+    activate Client app
+    Client app->>Client app: Sign DTO<br>(user private key)
+    Client app->>GalaChain REST API: Execute transaction<br>(signed DTO)
+    activate GalaChain REST API 
+    GalaChain REST API->>Fabric CA: Enroll (CA user creds)
+    activate Fabric CA
+    Fabric CA-->>GalaChain REST API: CA user cert
+    deactivate Fabric CA
+    GalaChain REST API ->>Chaincode: Execute transaction<br>(CA user cert, signed DTO)
+    activate Chaincode
+      note over Chaincode: Organization based authorization
+      Chaincode->>Chaincode: Verify CA cert MSP
+      note over Chaincode: Signature based authorization
+      Chaincode->>Chaincode: Recover public key<br>(signed DTO)
+      Chaincode->>Chaincode: Get user profile<br>(user public key)
+      Chaincode->>Chaincode: Verify user roles<br>(user profile)
+    note over Chaincode: Actual transaction
+    Chaincode->>Chaincode: Execute transaction (DTO)
+    Chaincode-->>GalaChain REST API: Transaction response
+    deactivate Chaincode
+    GalaChain REST API-->>Client app: Transaction response
+    deactivate GalaChain REST API
+    deactivate Client app
+```
+
 ## Signature based authorization
 
 Signature-based authorization uses secp256k1 signatures to verify the identity of the end user.
