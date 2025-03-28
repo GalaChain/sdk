@@ -2186,6 +2186,41 @@ describe("DEx v3 Testing", () => {
       expect(getData.Data?.feeGrowthGlobal0.toString()).toBe("7.58630799314e-9");
       expect(getData.Data?.protocolFeesToken0.toString()).toBe("0.000300000000000000108");
     });
+
+    test("state changes after first swap with protocol fees", async () => {
+      const poolData = new GetPoolDto(ETH_ClassKey, USDC_ClassKey, fee).signed(user.privateKey);
+      const getData = await client.dexV3Contract.getPoolData(poolData);
+      // fee collected after swap
+      expect(getData.Data?.feeGrowthGlobal0.toString()).toBe("7.58630799314e-9");
+      expect(getData.Data?.protocolFeesToken0.toString()).toBe("0.000300000000000000108");
+    });
+
+    test("collect protocol fees", async () => {
+      const dto = new CollectTradingFeesDto(ETH_ClassKey, USDC_ClassKey, fee, user.identityKey).signed(
+        user.privateKey
+      );
+      const collectResponse = await client.dexV3Contract.collectTradingFees(dto);
+      expect(collectResponse.Status).toBe(0);
+      expect(collectResponse.ErrorKey).toBe("UNAUTHORIZED");
+    });
+    test("collect protocol fees by auth user", async () => {
+      const dto = new CollectTradingFeesDto(ETH_ClassKey, USDC_ClassKey, fee, user.identityKey).signed(
+        authorityUser.privateKey
+      );
+      const collectResponse = await client.dexV3Contract.collectTradingFees(dto);
+      expect(collectResponse.Data).toMatchObject({
+        protocolFeesToken0: new BigNumber("0.0003"),
+        protocolFeesToken1: new BigNumber("0")
+      });
+    });
+
+    test("state changes after first swap with protocol fees", async () => {
+      const poolData = new GetPoolDto(ETH_ClassKey, USDC_ClassKey, fee).signed(user.privateKey);
+      const getData = await client.dexV3Contract.getPoolData(poolData);
+      // fee collected after swap
+      expect(getData.Data?.feeGrowthGlobal0.toString()).toBe("7.58630799314e-9");
+      expect(getData.Data?.protocolFeesToken0.toString()).toBe("0");
+    });
   });
 
   async function checkBalanceOfPool(token0: string, token1: string, fee: number) {
