@@ -2203,6 +2203,7 @@ describe("DEx v3 Testing", () => {
       expect(collectResponse.Status).toBe(0);
       expect(collectResponse.ErrorKey).toBe("UNAUTHORIZED");
     });
+    
     test("collect protocol fees by auth user", async () => {
       const dto = new CollectTradingFeesDto(ETH_ClassKey, USDC_ClassKey, fee, user.identityKey).signed(
         authorityUser.privateKey
