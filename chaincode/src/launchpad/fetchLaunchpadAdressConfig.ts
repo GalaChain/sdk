@@ -15,12 +15,12 @@
 import { LaunchpadFeeConfig, NotFoundError, UnauthorizedError } from "@gala-chain/api";
 
 import { GalaChainContext } from "../types";
-import { fetchPlatformFeeAddress } from "../utils";
+import { fetchLaunchpadFeeAddress } from "../utils";
 
 export async function fetchLaunchpadFeeConfig(ctx: GalaChainContext): Promise<LaunchpadFeeConfig> {
   const curatorOrgMsp = process.env.CURATOR_ORG_MSP ?? "CuratorOrg";
 
-  const platformFeeAddress = await fetchPlatformFeeAddress(ctx);
+  const platformFeeAddress = await fetchLaunchpadFeeAddress(ctx);
 
   if (ctx.clientIdentity.getMSPID() !== curatorOrgMsp) {
     throw new UnauthorizedError(`CallingUser ${ctx.callingUser} is not authorized to create or update`);

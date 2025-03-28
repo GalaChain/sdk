@@ -30,14 +30,14 @@ import { addLiquidity, createPool, getAddLiquidityEstimation } from "../dex";
 import { transferToken } from "../transfer";
 import { GalaChainContext } from "../types";
 import { generateKeyFromClassKey, sortString } from "../utils/dexUtils";
-import { fetchPlatformFeeAddress, getBondingConstants } from "../utils/launchpadSaleUtils";
+import { fetchLaunchpadFeeAddress, getBondingConstants } from "../utils/launchpadSaleUtils";
 import { getObjectByKey, putChainObject } from "../utils/state";
 
 export async function finalizeSale(ctx: GalaChainContext, sale: LaunchpadSale): Promise<void> {
   const key = ctx.stub.createCompositeKey(LaunchpadFinalizeFeeAllocation.INDEX_KEY, []);
   const feeAllocation = await getObjectByKey(ctx, LaunchpadFinalizeFeeAllocation, key).catch(() => undefined);
 
-  const platformFeeAddressConfiguration = await fetchPlatformFeeAddress(ctx);
+  const platformFeeAddressConfiguration = await fetchLaunchpadFeeAddress(ctx);
   if (!platformFeeAddressConfiguration) {
     throw new PreConditionFailedError("Platform fee configuration is yet to be defined.");
   }

@@ -20,13 +20,13 @@ import {
 } from "@gala-chain/api";
 
 import { GalaChainContext } from "../types";
-import { fetchPlatformFeeAddress, getObjectByKey, putChainObject } from "../utils";
+import { fetchLaunchpadFeeAddress, getObjectByKey, putChainObject } from "../utils";
 
 export async function finalizeTokenAllocation(
   ctx: GalaChainContext,
   dto: FinalizeTokenAllocationDto
 ): Promise<LaunchpadFinalizeFeeAllocation> {
-  const platformFeeAddress = await fetchPlatformFeeAddress(ctx);
+  const platformFeeAddress = await fetchLaunchpadFeeAddress(ctx);
   if (!platformFeeAddress) {
     throw new PreConditionFailedError(
       "Platform fee configuration has yet to be defined. Platform fee configuration is not defined."

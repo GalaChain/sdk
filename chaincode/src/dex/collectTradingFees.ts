@@ -28,7 +28,7 @@ import { transferToken } from "../transfer";
 import { GalaChainContext } from "../types";
 import {
   convertToTokenInstanceKey,
-  fetchPlatformFeeAddress,
+  fetchDexProtocolFeeConfig,
   genKey,
   getObjectByKey,
   putChainObject,
@@ -48,7 +48,7 @@ export async function collectTradingFees(
   ctx: GalaChainContext,
   dto: CollectTradingFeesDto
 ): Promise<CollectTradingFeesResDto> {
-  const platformFeeAddress = await fetchPlatformFeeAddress(ctx);
+  const platformFeeAddress = await fetchDexProtocolFeeConfig(ctx);
   if (!platformFeeAddress) {
     throw new NotFoundError(
       "Protocol fee configuration has yet to be defined. Platform fee configuration is not defined."

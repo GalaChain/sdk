@@ -51,7 +51,7 @@ export function getBondingConstants() {
   };
 }
 
-export async function fetchPlatformFeeAddress(
+export async function fetchLaunchpadFeeAddress(
   ctx: GalaChainContext
 ): Promise<LaunchpadFeeConfig | undefined> {
   const key = ctx.stub.createCompositeKey(LaunchpadFeeConfig.INDEX_KEY, []);
