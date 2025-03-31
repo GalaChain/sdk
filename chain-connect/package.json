@@ -1,8 +1,8 @@
 {
   "name": "@gala-chain/connect",
-  "version": "1.8.1",
+  "version": "1.9.1",
   "dependencies": {
-    "@gala-chain/api": "1.8.1",
+    "@gala-chain/api": "1.9.1",
     "ethers": "^6.12.1",
     "tslib": "^2.3.0",
     "bignumber.js": "9.1.2",
@@ -13,7 +13,7 @@
   },
   "overrides": {
     "ethers": {
-      "elliptic": "6.5.4"
+      "elliptic": "^6.6.1"
     }
   },
   "type": "commonjs",
