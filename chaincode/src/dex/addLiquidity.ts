@@ -19,7 +19,6 @@ import {
   Pool,
   SlippageToleranceExceededError,
   UserBalanceResDto,
-  UserPosition,
   getLiquidityForAmounts,
   tickToSqrtPrice
 } from "@gala-chain/api";
@@ -29,14 +28,8 @@ import { fetchOrCreateBalance } from "../balances";
 import { fetchTokenClass } from "../token";
 import { transferToken } from "../transfer";
 import { GalaChainContext } from "../types";
-import {
-  convertToTokenInstanceKey,
-  genKey,
-  getObjectByKey,
-  putChainObject,
-  validateTokenOrder,
-  virtualAddress
-} from "../utils";
+import { convertToTokenInstanceKey, getObjectByKey, putChainObject, validateTokenOrder } from "../utils";
+import { assignPositionNft, checkUserPositionNft } from "./positionNft";
 
 /**
  * @dev Function to add Liqudity to v3 pool. The addLiquidity function facilitates the addition of liquidity to a Uniswap V3 pool within the GalaChain ecosystem. It takes in the blockchain context, liquidity parameters, and an optional launchpad address, then executes the necessary operations to deposit assets into the specified liquidity pool.
@@ -67,9 +60,6 @@ export async function addLiquidity(
   const token0Class = await fetchTokenClass(ctx, token0InstanceKey);
   const token1Class = await fetchTokenClass(ctx, token1InstanceKey);
 
-  //get token amounts required for the desired liquidity
-  const owner = ctx.callingUser;
-
   const tickLower = parseInt(dto.tickLower.toString()),
     tickUpper = parseInt(dto.tickUpper.toString());
 
@@ -88,7 +78,14 @@ export async function addLiquidity(
     amount0Desired,
     amount1Desired
   );
-  let [amount0, amount1] = pool.mint(owner, tickLower, tickUpper, liquidity.f18());
+
+  const poolAddrKey = pool.getPoolAddrKey();
+  const poolVirtualAddress = pool.getPoolVirtualAddress();
+  const positionNftId =
+    (await checkUserPositionNft(ctx, pool, dto.tickUpper.toString(), dto.tickLower.toString())) ??
+    (await assignPositionNft(ctx, poolAddrKey, poolVirtualAddress));
+
+  let [amount0, amount1] = pool.mint(positionNftId, tickLower, tickUpper, liquidity.f18());
   [amount0, amount1] = [amount0.f18(), amount1.f18()];
 
   if (
@@ -114,15 +111,6 @@ export async function addLiquidity(
         liquidity.toString()
     );
   }
-
-  const userKey = ctx.stub.createCompositeKey(UserPosition.INDEX_KEY, [owner]);
-  let userPostion = await getObjectByKey(ctx, UserPosition, userKey).catch(() => undefined);
-
-  const poolAddrKey = genKey(pool.token0, pool.token1, pool.fee.toString());
-  const poolVirtualAddress = virtualAddress(poolAddrKey);
-
-  if (userPostion === undefined) userPostion = new UserPosition(owner);
-  userPostion.updateOrCreate(poolAddrKey, tickLower, tickUpper, liquidity.f18());
 
   const liquidityProvider = launchpadAddress ? launchpadAddress : ctx.callingUser;
   if (amount0.isGreaterThan(0)) {
@@ -155,7 +143,6 @@ export async function addLiquidity(
   }
 
   await putChainObject(ctx, pool);
-  await putChainObject(ctx, userPostion);
 
   const liquidityProviderToken0Balance = await fetchOrCreateBalance(ctx, ctx.callingUser, token0InstanceKey);
   const liquidityProviderToken1Balance = await fetchOrCreateBalance(ctx, ctx.callingUser, token1InstanceKey);

@@ -70,7 +70,6 @@ export * from "./TokenMintRequest";
 export * from "./TokenBurnCounter";
 export * from "./VestingToken";
 export * from "./DexDtos";
-export * from "./DexUserPositions";
 export * from "./DexV3Pool";
 export * from "./DexFeeConfig";
 export * from "./LaunchpadDtos";

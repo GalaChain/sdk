@@ -32,21 +32,22 @@ import { requirePosititve } from "./format.helper";
  */
 export function updatePositions(
   positions: Positions,
-  owner: string,
+  nftId: string,
   tickLower: number,
   tickUpper: number,
   liquidityDelta: BigNumber,
   feeGrowthInside0: BigNumber,
   feeGrowthInside1: BigNumber
 ) {
-  const key = `${owner}_${tickLower}_${tickUpper}`;
+  const key = nftId;
 
   if (liquidityDelta.lt(new BigNumber(0)) && positions[key] == undefined)
-    throw new NotFoundError(`Position does not exists for user ${owner} ${tickLower}-${tickUpper}`);
+    throw new NotFoundError(`Position does not exists for nft ID ${nftId} ${tickLower}-${tickUpper}`);
 
   if (positions[key] == undefined) {
     positions[key] = new PositionData();
-    positions[key].owner = owner;
+    positions[key].tickUpper = tickUpper.toString();
+    positions[key].tickLower = tickLower.toString();
     positions[key].liquidity = new BigNumber(0).toString();
     positions[key].feeGrowthInside0Last = new BigNumber(0).toString();
     positions[key].feeGrowthInside1Last = new BigNumber(0).toString();

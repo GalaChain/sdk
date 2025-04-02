@@ -176,8 +176,8 @@ export class BurnDto extends ChainCallDTO {
   public fee: number;
   @BigNumberProperty()
   public amount: BigNumber;
-  @IsOptional()
-  public owner: string | null;
+  @IsNotEmpty()
+  public owner: string;
 
   constructor(
     token0: TokenClassKey,
@@ -186,7 +186,7 @@ export class BurnDto extends ChainCallDTO {
     amount: BigNumber,
     tickLower: number,
     tickUpper: number,
-    owner: string | null = null
+    owner: string
   ) {
     super();
     this.tickLower = tickLower;
@@ -268,6 +268,25 @@ export class GetPositionDto extends ChainCallDTO {
   }
 }
 
+export class GetPositionWithNftIdDto extends ChainCallDTO {
+  @IsNotEmpty()
+  public token0: TokenClassKey;
+  @IsNotEmpty()
+  public token1: TokenClassKey;
+  @IsNotEmpty()
+  public fee: number;
+  @IsNotEmpty()
+  public nftId: string;
+
+  constructor(token0: TokenClassKey, token1: TokenClassKey, fee: number, nftId: string) {
+    super();
+    this.token0 = token0;
+    this.token1 = token1;
+    this.fee = fee;
+    this.nftId = nftId;
+  }
+}
+
 export class positionInfoDto {
   @IsString()
   public owner: string;
@@ -310,22 +329,35 @@ export class UserPositionDTO extends ChainCallDTO {
 }
 
 export class GetPositionResDto {
-  @IsNotEmpty()
+  @IsOptional()
   @IsString()
-  owner: string;
-  @IsNotEmpty()
+  poolId: string;
+
+  @IsOptional()
+  @IsString()
+  tickUpper: string;
+
+  @IsOptional()
+  @IsString()
+  tickLower: string;
+
+  @IsOptional()
   @IsString()
   liquidity: string;
-  @IsNotEmpty()
+
+  @IsOptional()
   @IsString()
   feeGrowthInside0Last: string;
+
+  @IsOptional()
   @IsString()
-  @IsNotEmpty()
   feeGrowthInside1Last: string;
-  @IsNotEmpty()
+
+  @IsOptional()
   @IsString()
   tokensOwed0: string;
-  @IsNotEmpty()
+
+  @IsOptional()
   @IsString()
   tokensOwed1: string;
 }
@@ -559,9 +591,13 @@ export class SetProtocolFeeDto extends ChainCallDTO {
 }
 
 export interface IPosition {
-  tickLower: number;
-  tickUpper: number;
+  tickUpper: string;
+  tickLower: string;
   liquidity: string;
+  feeGrowthInside0Last: string;
+  feeGrowthInside1Last: string;
+  tokensOwed0: string;
+  tokensOwed1: string;
   token0Img?: string;
   token1Img?: string;
   token0InstanceKey?: TokenInstanceKey & {

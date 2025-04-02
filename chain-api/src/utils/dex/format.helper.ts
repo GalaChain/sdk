@@ -16,6 +16,15 @@ import BigNumber from "bignumber.js";
 
 import { ConflictError } from "../error";
 
+/**
+ *
+ * @param address address of pool in string
+ * @returns
+ */
+export const virtualAddress = (address: string) => {
+  return "service|" + address;
+};
+
 export const requirePosititve = (...params) => {
   for (const positive of params) {
     if (positive instanceof BigNumber) {
@@ -25,3 +34,7 @@ export const requirePosititve = (...params) => {
     }
   }
 };
+
+export function genKey(...params: string[] | number[]): string {
+  return params.join("_").replace(/\|/g, ":");
+}

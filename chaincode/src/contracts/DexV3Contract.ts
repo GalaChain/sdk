@@ -29,6 +29,7 @@ import {
   GetPoolDto,
   GetPositionDto,
   GetPositionResDto,
+  GetPositionWithNftIdDto,
   GetRemoveLiqEstimationResDto,
   GetUserPositionsDto,
   GetUserPositionsResDto,
@@ -56,6 +57,7 @@ import {
   getDexFeesConfigration,
   getLiquidity,
   getPoolData,
+  getPositionWithNftId,
   getPositions,
   getRemoveLiquidityEstimation,
   getSlot0,
@@ -141,6 +143,18 @@ export class DexV3Contract extends GalaContract {
   })
   public async GetPositions(ctx: GalaChainContext, dto: GetPositionDto): Promise<GetPositionResDto> {
     return await getPositions(ctx, dto);
+  }
+
+  @GalaTransaction({
+    type: EVALUATE,
+    in: GetPositionWithNftIdDto,
+    out: GetPositionResDto
+  })
+  public async GetPositionWithNftId(
+    ctx: GalaChainContext,
+    dto: GetPositionWithNftIdDto
+  ): Promise<GetPositionResDto> {
+    return await getPositionWithNftId(ctx, dto);
   }
 
   @GalaTransaction({

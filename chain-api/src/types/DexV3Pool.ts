@@ -34,6 +34,7 @@ import {
   computeSwapStep,
   feeAmountTickSpacing,
   flipTick,
+  genKey,
   getAmount0Delta,
   getAmount1Delta,
   getFeeGrowthInside,
@@ -46,7 +47,8 @@ import {
   tickSpacingToMaxLiquidityPerTick,
   tickToSqrtPrice,
   updatePositions,
-  updateTick
+  updateTick,
+  virtualAddress
 } from "../utils";
 import { BigNumberProperty } from "../validators";
 import { ChainObject } from "./ChainObject";
@@ -172,7 +174,7 @@ export class Pool extends ChainObject {
 
   /**
    * @dev Effect some changes to a position
-   * @param owner owner of the position
+   * @param nftId nftId that represents this position
    * @param tickLower lower tick of the position's tick range
    * @param tickUpper upper tick of the position's tick range
    * @param liquidityDelata The amount of liquidity to change in the position
@@ -180,7 +182,7 @@ export class Pool extends ChainObject {
    * @return amount1 the amount of token1 owed to the pool, negative if the pool should pay the recipient
    */
   private _modifyPosition(
-    owner: string,
+    nftId: string,
     tickLower: number,
     tickUpper: number,
     liquidityDelta: BigNumber
@@ -193,7 +195,7 @@ export class Pool extends ChainObject {
     // Common checks for valid tick input
     checkTicks(tickLower, tickUpper);
 
-    this._updatePosition(owner, tickLower, tickUpper, liquidityDelta, tickCurrent);
+    this._updatePosition(nftId, tickLower, tickUpper, liquidityDelta, tickCurrent);
 
     //amounts of tokens required to provided given liquidity
     let amount0Req = new BigNumber(0),
@@ -219,14 +221,14 @@ export class Pool extends ChainObject {
 
   /**
    * @dev Gets and updates a position with the given liquidity delta
-   * @param owner the owner of the position
+   * @param nftId nftId that represents this position
    * @param tickLower the lower tick of the position's tick range
    * @param tickUpper the upper tick of the position's tick range
    * @param tickCurrent the current tick
    */
 
   public _updatePosition(
-    owner: string,
+    nftId: string,
     tickLower: number,
     tickUpper: number,
     liquidityDelta: BigNumber,
@@ -273,7 +275,7 @@ export class Pool extends ChainObject {
     //add new or update position
     updatePositions(
       this.positions,
-      owner,
+      nftId,
       tickLower,
       tickUpper,
       liquidityDelta,
@@ -469,15 +471,13 @@ export class Pool extends ChainObject {
    * @return amount0 The amount of token0 sent to the recipient
    * @return amount1 The amount of token1 sent to the recipient
    */
-  public burn(owner: string, tickLower: number, tickUpper: number, amount: BigNumber): BigNumber[] {
-    let [amount0, amount1] = this._modifyPosition(owner, tickLower, tickUpper, amount.multipliedBy(-1));
+  public burn(nftId: string, tickLower: number, tickUpper: number, amount: BigNumber): BigNumber[] {
+    let [amount0, amount1] = this._modifyPosition(nftId, tickLower, tickUpper, amount.multipliedBy(-1));
 
     amount0 = amount0.abs();
     amount1 = amount1.abs();
 
-    const key = `${owner}_${tickLower}_${tickUpper}`;
-
-    if (this.positions[key] == undefined) throw new NotFoundError("Invalid position");
+    if (this.positions[nftId] == undefined) throw new NotFoundError("Invalid position");
 
     return [amount0, amount1];
   }
@@ -560,20 +560,18 @@ export class Pool extends ChainObject {
    * @returns
    */
   public collect(
-    recipient: string,
+    nftId: string,
     tickLower: number,
     tickUpper: number,
     amount0Requested: BigNumber,
     amount1Requested: BigNumber
   ) {
-    const owner = recipient;
-    const key = `${owner}_${tickLower}_${tickUpper}`;
-    const position = this.positions[key];
+    const position = this.positions[nftId];
     if (
       new BigNumber(position.tokensOwed0).lt(amount0Requested) ||
       new BigNumber(position.tokensOwed1).lt(amount1Requested)
     ) {
-      const [tokensOwed0, tokensOwed1] = this.getFeeCollectedEstimation(recipient, tickLower, tickUpper);
+      const [tokensOwed0, tokensOwed1] = this.getFeeCollectedEstimation(nftId, tickLower, tickUpper);
       if (tokensOwed0.isGreaterThan(0) || tokensOwed1.isGreaterThan(0)) {
         position.tokensOwed0 = new BigNumber(position.tokensOwed0).plus(tokensOwed0).toString();
         position.tokensOwed1 = new BigNumber(position.tokensOwed1).plus(tokensOwed1).toString();
@@ -585,10 +583,10 @@ export class Pool extends ChainObject {
     ) {
       throw new ConflictError("Less balance accumulated");
     }
-    this.positions[key].tokensOwed0 = new BigNumber(this.positions[key].tokensOwed0)
+    this.positions[nftId].tokensOwed0 = new BigNumber(this.positions[nftId].tokensOwed0)
       .minus(amount0Requested)
       .toString();
-    this.positions[key].tokensOwed1 = new BigNumber(this.positions[key].tokensOwed1)
+    this.positions[nftId].tokensOwed1 = new BigNumber(this.positions[nftId].tokensOwed1)
       .minus(amount1Requested)
       .toString();
     return [amount0Requested, amount1Requested];
@@ -601,7 +599,7 @@ export class Pool extends ChainObject {
    * @param tickUpper The upper tick of the position for which to collect fee accumulated
    * @returns
    */
-  public getFeeCollectedEstimation(recipient: string, tickLower: number, tickUpper: number) {
+  public getFeeCollectedEstimation(nftId: string, tickLower: number, tickUpper: number) {
     const tickCurrent = sqrtPriceToTick(this.sqrtPrice);
     const [feeGrowthInside0, feeGrowthInside1] = getFeeGrowthInside(
       this.tickData,
@@ -611,10 +609,8 @@ export class Pool extends ChainObject {
       this.feeGrowthGlobal0,
       this.feeGrowthGlobal1
     );
-    const owner = recipient;
-    const key = `${owner}_${tickLower}_${tickUpper}`;
 
-    const positionData = this.positions[key];
+    const positionData = this.positions[nftId];
     if (!positionData) throw new Error("Position not found");
 
     // Calculate accumulated fees
@@ -629,5 +625,21 @@ export class Pool extends ChainObject {
     positionData.feeGrowthInside1Last = feeGrowthInside1.toString();
 
     return [tokensOwed0, tokensOwed1];
+  }
+
+  /**
+   * @dev returns unique address key of this pool
+   * @returns poolAddrKey which uniquely identifies this pool
+   */
+  public getPoolAddrKey() {
+    return genKey(this.token0, this.token1, this.fee.toString());
+  }
+
+  /**
+   * @dev returns service address which holds the pool's liquidity
+   * @returns poolVirtualAddress
+   */
+  public getPoolVirtualAddress() {
+    return virtualAddress(this.getPoolAddrKey());
   }
 }

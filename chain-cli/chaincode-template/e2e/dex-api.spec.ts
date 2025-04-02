@@ -32,6 +32,7 @@ import {
   GetPoolDto,
   GetPositionDto,
   GetPositionResDto,
+  GetPositionWithNftIdDto,
   GetRemoveLiqEstimationResDto,
   GetUserPositionsDto,
   GetUserPositionsResDto,
@@ -50,6 +51,7 @@ import {
   TokenBalance,
   TokenClassKey,
   TokenInstanceKey,
+  TransferTokenDto,
   UserBalanceResDto,
   feeAmountTickSpacing,
   sqrtPriceToTick
@@ -579,6 +581,75 @@ describe("DEx v3 Testing", () => {
       expect(liq.Data?.liquidity).toEqual(new BigNumber("92271.497628802094407217"));
     });
 
+    test("It should provide NFT to the liquidity provider", async () => {
+      //Iterate through the loop to get the positions
+      const pa = 2100,
+        pb = 2200;
+      const [ta, tb] = spacedTicksFromPrice(pa, pb, tickSpacing);
+      const expectedTokenDTO = new GetAddLiquidityEstimationDto(
+        ETH_ClassKey,
+        USDT_ClassKey,
+        fee,
+        new BigNumber(1),
+        ta,
+        tb,
+        true
+      ).signed(user.privateKey);
+      const result = await client.dexV3Contract.getAddLiquidityEstimation(expectedTokenDTO);
+
+      const data = result.Data;
+
+      expect(data).toBeDefined();
+      if (!data) throw new Error();
+
+      const GetPoolDataDTO = new GetPoolDto(ETH_ClassKey, USDT_ClassKey, fee).signed(user.privateKey);
+      const getPoolData = await client.dexV3Contract.getPoolData(GetPoolDataDTO);
+      const poolDataInstance = getPoolData.Data;
+      if (!poolDataInstance) {
+        throw new Error("Pool Not found");
+      }
+
+      const fetchUsersBalancesDTO = new FetchBalancesDto();
+      fetchUsersBalancesDTO.owner = user.identityKey;
+
+      const fetchUsersBalances = await client.tokenContract.FetchBalances(fetchUsersBalancesDTO);
+      // Check whether the owner has NFTs
+      expect(fetchUsersBalances.Data).toEqual(
+        expect.arrayContaining([
+          expect.objectContaining({
+            category: "LiquidityPositions",
+            collection:
+              "new-collection0$new-category0$new-type0$ETH_new-collection0$new-category0$new-type0$USDT_500",
+            owner: user.identityKey,
+            type: "NFT"
+          })
+        ])
+      );
+
+      // Check whether the owner has an NFT for each of their position in the pool
+      const nft = fetchUsersBalances.Data?.slice(-1);
+      expect(nft?.[0]?.getNftInstanceCount()).toBe(3);
+    });
+
+    test("NFT should point to a position in the pool", async () => {
+      const getPositionWithNftIdDto = new GetPositionWithNftIdDto(ETH_ClassKey, USDT_ClassKey, fee, "1_1");
+      const getPositionWithNftIdRes =
+        await client.dexV3Contract.getPositionWithNftId(getPositionWithNftIdDto);
+      expect(getPositionWithNftIdRes).toMatchObject({
+        Status: 1,
+        Data: {
+          feeGrowthInside0Last: "0",
+          feeGrowthInside1Last: "0",
+          liquidity: "0.42495639238882534",
+          nftId: "1_1",
+          tickLower: "74390",
+          tickUpper: "75500",
+          tokensOwed0: "0",
+          tokensOwed1: "0"
+        }
+      });
+    });
+
     test("should Read details from slot0", async () => {
       const poolDataDTO = new GetPoolDto(ETH_ClassKey, USDT_ClassKey, fee).signed(user.privateKey);
       const slot0 = await client.dexV3Contract.getSlot0(poolDataDTO);
@@ -628,7 +699,7 @@ describe("DEx v3 Testing", () => {
       });
     });
 
-    test("should  throw error while estimating swap for buy", async () => {
+    test("should throw error while estimating swap for buy", async () => {
       const amountToSwap = new BigNumber("-0.00000000000000000000000001");
       const dto = new QuoteExactAmountDto(ETH_ClassKey, USDT_ClassKey, fee, amountToSwap, false).signed(
         user.privateKey
@@ -737,7 +808,6 @@ describe("DEx v3 Testing", () => {
         feeGrowthInside0Last: "9.75382456261e-9",
         feeGrowthInside1Last: "0",
         liquidity: "92271.497628802094407217",
-        owner: expect.stringMatching(/^eth\|[a-fA-F0-9]{40}$/),
         tokensOwed0: "0.00090000000000062",
         tokensOwed1: "0"
       });
@@ -829,6 +899,46 @@ describe("DEx v3 Testing", () => {
       expect(removeLiqEstimation.Message).toBe("Uint Out of Bounds error :Uint");
     });
 
+    test("Positions are transferred to new owner along with NFT", async () => {
+      const nftInstanceKey = new TokenInstanceKey();
+      nftInstanceKey.collection =
+        "new-collection0$new-category0$new-type0$ETH_new-collection0$new-category0$new-type0$USDT_500";
+      nftInstanceKey.category = "LiquidityPositions";
+      nftInstanceKey.type = "NFT";
+      nftInstanceKey.additionalKey = "1";
+      nftInstanceKey.instance = new BigNumber("1");
+
+      const transferNFTDto = new TransferTokenDto();
+      transferNFTDto.from = user.identityKey;
+      transferNFTDto.to = authorityUser.identityKey;
+      transferNFTDto.tokenInstance = nftInstanceKey;
+      transferNFTDto.quantity = new BigNumber("1");
+      transferNFTDto.sign(user.privateKey);
+
+      const transferNFTRes = await client.tokenContract.TransferToken(transferNFTDto);
+      expect(transferNFTRes).toStrictEqual(transactionSuccess());
+
+      const GetUserPositionsDTO = new GetUserPositionsDto(authorityUser.identityKey, 1, 1);
+      const getUser2position = await client.dexV3Contract.getUserPositions(GetUserPositionsDTO);
+
+      const positions = getUser2position.Data?.positions;
+
+      const positionArray =
+        positions?.[
+          "new-collection0$new-category0$new-type0$ETH_new-collection0$new-category0$new-type0$USDT_500"
+        ];
+
+      expect(positionArray).toMatchObject([
+        {
+          liquidity: "0.42495639238882534",
+          tickLower: "74390",
+          tickUpper: "75500",
+          token0Symbol: "ETH",
+          token1Symbol: "USDT"
+        }
+      ]);
+    });
+
     test("check the user position for token0Owed after the removal of liqudity", async () => {
       const pa = 1980,
         pb = 2020;
@@ -846,7 +956,6 @@ describe("DEx v3 Testing", () => {
         feeGrowthInside0Last: "9.75382456261e-9",
         feeGrowthInside1Last: "0",
         liquidity: "0",
-        owner: expect.stringMatching(/^eth\|[a-fA-F0-9]{40}$/),
         tokensOwed0: "0.00090000000000062",
         tokensOwed1: "0"
       });
@@ -932,6 +1041,61 @@ describe("DEx v3 Testing", () => {
       ).signed(user.privateKey);
       const position = await client.dexV3Contract.getPositions(getPositionDto);
       expect(position.Data).toBeUndefined();
+    });
+
+    test("It should burn NFT when all liquidity has been withdrawn and all the fees has been collected", async () => {
+      const fetchUsersBalancesDTO = new FetchBalancesDto();
+      fetchUsersBalancesDTO.owner = user.identityKey;
+
+      const fetchUsersBalances = await client.tokenContract.FetchBalances(fetchUsersBalancesDTO);
+      // Check whether the owner has NFTs
+      expect(fetchUsersBalances.Data).toEqual(
+        expect.arrayContaining([
+          expect.objectContaining({
+            category: "LiquidityPositions",
+            collection:
+              "new-collection0$new-category0$new-type0$ETH_new-collection0$new-category0$new-type0$USDT_500",
+            owner: user.identityKey,
+            type: "NFT"
+          })
+        ])
+      );
+
+      // Check whether the owner has an NFT for each of their position in the pool
+      const nft = fetchUsersBalances.Data?.slice(-1);
+      expect(nft?.[0]?.getNftInstanceIds()).not.toEqual(expect.arrayContaining([new BigNumber(2)]));
+    });
+
+    test("It should burn NFT when all liquidity has been withdrawn and no fees existed", async () => {
+      const tickSpacing = feeAmountTickSpacing[fee];
+      const pa = 2100,
+        pb = 2200;
+      const [ta, tb] = spacedTicksFromPrice(pa, pb, tickSpacing);
+
+      const dto = new BurnDto(
+        ETH_ClassKey,
+        USDT_ClassKey,
+        fee,
+        new BigNumber("2060.753664493334613554"),
+        ta,
+        tb,
+        user.identityKey
+      );
+      dto.sign(user.privateKey);
+      await client.dexV3Contract.RemoveLiquidity(dto);
+
+      const fetchUsersBalancesDTO = new FetchBalancesDto();
+      fetchUsersBalancesDTO.owner = user.identityKey;
+
+      const getPositionWithNftIdDto = new GetPositionWithNftIdDto(ETH_ClassKey, USDT_ClassKey, fee, "1_3");
+      const getPositionWithNftIdRes =
+        await client.dexV3Contract.getPositionWithNftId(getPositionWithNftIdDto);
+      expect(getPositionWithNftIdRes.Message).toEqual("No position with the nftId 1_3 found in this pool");
+
+      const fetchUsersBalances = await client.tokenContract.FetchBalances(fetchUsersBalancesDTO);
+      expect(fetchUsersBalances.Data?.[0]?.getNftInstanceIds()).not.toEqual(
+        expect.arrayContaining([new BigNumber(3)])
+      );
     });
   });
 
@@ -1253,7 +1417,6 @@ describe("DEx v3 Testing", () => {
         feeGrowthInside0Last: "2.024297941798e-8",
         feeGrowthInside1Last: "0",
         liquidity: "26675.915083949831428038",
-        owner: expect.stringMatching(/^eth\|[a-fA-F0-9]{40}$/),
         tokensOwed0: "0.000540000000000178",
         tokensOwed1: "0"
       });
@@ -1355,14 +1518,15 @@ describe("DEx v3 Testing", () => {
       const userPositions = await client.dexV3Contract.getUserPositions(getPositionsDto);
       expect(userPositions).toMatchObject({
         Status: 1,
-        Data: expect.objectContaining({
-          totalCount: 4,
-          positions: expect.objectContaining({
+        Data: {
+          positions: {
             "new-collection0$new-category0$new-type0$ETH_new-collection0$new-category0$new-type0$USDT_3000": [
               {
+                feeGrowthInside0Last: "0",
+                feeGrowthInside1Last: "0",
                 liquidity: "0.436872924385936373",
-                tickLower: 74400,
-                tickUpper: 75480,
+                tickLower: "74400",
+                tickUpper: "75480",
                 token0Img: "https://logosite.com/logos/ethereum-eth-logo.png",
                 token0InstanceKey: {
                   additionalKey: "ETH",
@@ -1380,12 +1544,16 @@ describe("DEx v3 Testing", () => {
                   instance: "0",
                   type: "new-type0"
                 },
-                token1Symbol: "USDT"
+                token1Symbol: "USDT",
+                tokensOwed0: "0",
+                tokensOwed1: "0"
               },
               {
+                feeGrowthInside0Last: "2.024297941798e-8",
+                feeGrowthInside1Last: "0",
                 liquidity: "0",
-                tickLower: 75960,
-                tickUpper: 76080,
+                tickLower: "75960",
+                tickUpper: "76080",
                 token0Img: "https://logosite.com/logos/ethereum-eth-logo.png",
                 token0InstanceKey: {
                   additionalKey: "ETH",
@@ -1403,59 +1571,14 @@ describe("DEx v3 Testing", () => {
                   instance: "0",
                   type: "new-type0"
                 },
-                token1Symbol: "USDT"
-              }
-            ],
-            "new-collection0$new-category0$new-type0$ETH_new-collection0$new-category0$new-type0$USDT_500": [
-              {
-                liquidity: "0.42495639238882534",
-                tickLower: 74390,
-                tickUpper: 75500,
-                token0Img: "https://logosite.com/logos/ethereum-eth-logo.png",
-                token0InstanceKey: {
-                  additionalKey: "ETH",
-                  category: "new-category0",
-                  collection: "new-collection0",
-                  instance: "0",
-                  type: "new-type0"
-                },
-                token0Symbol: "ETH",
-                token1Img: "https://logosite.com/logos/tether-usdt-logo.png",
-                token1InstanceKey: {
-                  additionalKey: "USDT",
-                  category: "new-category0",
-                  collection: "new-collection0",
-                  instance: "0",
-                  type: "new-type0"
-                },
-                token1Symbol: "USDT"
-              },
-              {
-                liquidity: "2060.753664493334613554",
-                tickLower: 76510,
-                tickUpper: 76960,
-                token0Img: "https://logosite.com/logos/ethereum-eth-logo.png",
-                token0InstanceKey: {
-                  additionalKey: "ETH",
-                  category: "new-category0",
-                  collection: "new-collection0",
-                  instance: "0",
-                  type: "new-type0"
-                },
-                token0Symbol: "ETH",
-                token1Img: "https://logosite.com/logos/tether-usdt-logo.png",
-                token1InstanceKey: {
-                  additionalKey: "USDT",
-                  category: "new-category0",
-                  collection: "new-collection0",
-                  instance: "0",
-                  type: "new-type0"
-                },
-                token1Symbol: "USDT"
+                token1Symbol: "USDT",
+                tokensOwed0: "0.00054000000000017866144066378549332324",
+                tokensOwed1: "0"
               }
             ]
-          })
-        })
+          },
+          totalCount: 2
+        }
       });
     });
 
@@ -1888,7 +2011,7 @@ describe("DEx v3 Testing", () => {
             instanceIds: [],
             lockedHolds: [],
             owner: expect.stringMatching(/^eth\|[a-fA-F0-9]{40}$/),
-            quantity: "99999897.99930000000000062",
+            quantity: "99999898.99930000000000062",
             type: "new-type0"
           },
           token1Balance: {
@@ -2239,6 +2362,7 @@ interface TokenContractAPI {
   GrantAllowance(dto: GrantAllowanceDto): Promise<GalaChainResponse<TokenAllowance[]>>;
   MintTokenWithAllowance(dto: MintTokenWithAllowanceDto): Promise<GalaChainResponse<TokenInstanceKey[]>>;
   FetchBalances(dto: FetchBalancesDto): Promise<GalaChainResponse<TokenBalance[]>>;
+  TransferToken(dto: TransferTokenDto): Promise<GalaChainResponse<TokenBalance[]>>;
 }
 
 function tokenContractAPI(client: ChainClient): TokenContractAPI & CommonContractAPI {
@@ -2263,6 +2387,10 @@ function tokenContractAPI(client: ChainClient): TokenContractAPI & CommonContrac
 
     MintTokenWithAllowance(dto: MintTokenWithAllowanceDto) {
       return client.submitTransaction<TokenInstanceKey[]>("MintTokenWithAllowance", dto, TokenInstanceKey);
+    },
+
+    TransferToken(dto: TransferTokenDto) {
+      return client.submitTransaction<TokenBalance[]>("TransferToken", dto, TokenBalance);
     }
   };
 }
@@ -2274,6 +2402,7 @@ interface DexV3ContractAPI {
   RemoveLiquidity(dto: BurnDto): Promise<GalaChainResponse<UserBalanceResDto>>;
   getLiquidity(dto: GetPoolDto): Promise<GalaChainResponse<GetLiquidityResDto>>;
   getPositions(dto: GetPositionDto): Promise<GalaChainResponse<GetPositionResDto>>;
+  getPositionWithNftId(dto: GetPositionWithNftIdDto): Promise<GalaChainResponse<GetPositionResDto>>;
   getSlot0(dto: GetPoolDto): Promise<GalaChainResponse<Slot0ResDto>>;
   getUserPositions(dto: GetUserPositionsDto): Promise<GalaChainResponse<GetUserPositionsResDto>>;
   getAddLiquidityEstimation(
@@ -2323,6 +2452,9 @@ function dexV3ContractAPI(client: ChainClient): DexV3ContractAPI & CommonContrac
     },
     getPositions(dto: GetPositionDto) {
       return client.evaluateTransaction<GetPositionResDto>("GetPositions", dto, GetPositionResDto);
+    },
+    getPositionWithNftId(dto: GetPositionWithNftIdDto) {
+      return client.evaluateTransaction<GetPositionResDto>("GetPositionWithNftId", dto, GetPositionResDto);
     },
     getUserPositions(dto: GetUserPositionsDto) {
       return client.evaluateTransaction<GetUserPositionsResDto>(

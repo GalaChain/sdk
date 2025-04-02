@@ -255,7 +255,7 @@ describe("genKey", () => {
 describe("updatePositions", () => {
   test("should initialize a new position if not existing", () => {
     const positions = {};
-    const owner = "0x123";
+    const nftId = "0x123";
     const tickLower = -10;
     const tickUpper = 10;
     const liquidityDelta = new BigNumber(100);
@@ -264,7 +264,7 @@ describe("updatePositions", () => {
 
     updatePositions(
       positions,
-      owner,
+      nftId,
       tickLower,
       tickUpper,
       liquidityDelta,
@@ -272,14 +272,13 @@ describe("updatePositions", () => {
       feeGrowthInside1
     );
 
-    const key = `${owner}_${tickLower}_${tickUpper}`;
-    expect(positions[key]).toBeTruthy();
-    expect(positions[key].liquidity).toBe("100");
+    expect(positions[nftId]).toBeTruthy();
+    expect(positions[nftId].liquidity).toBe("100");
   });
 
   test("should update liquidity and fees for an existing position", () => {
     const positions = {};
-    const owner = "0x123";
+    const nftId = "0x123";
     const tickLower = -10;
     const tickUpper = 10;
     const liquidityDelta = new BigNumber(100);
@@ -288,7 +287,7 @@ describe("updatePositions", () => {
 
     updatePositions(
       positions,
-      owner,
+      nftId,
       tickLower,
       tickUpper,
       liquidityDelta,
@@ -297,15 +296,14 @@ describe("updatePositions", () => {
     );
     updatePositions(
       positions,
-      owner,
+      nftId,
       tickLower,
       tickUpper,
       new BigNumber(50),
       new BigNumber(8),
       new BigNumber(15)
     );
-    const key = `${owner}_${tickLower}_${tickUpper}`;
-    const position = positions[key];
+    const position = positions[nftId];
 
     expect(position.liquidity).toBe("150");
     expect(position.feeGrowthInside0Last).toBe("8");
@@ -314,7 +312,7 @@ describe("updatePositions", () => {
 
   test("should throw error if decreasing liquidity below zero", () => {
     const positions = {};
-    const owner = "0x123";
+    const nftId = "0x123";
     const tickLower = -10;
     const tickUpper = 10;
     const liquidityDelta = new BigNumber(100);
@@ -323,7 +321,7 @@ describe("updatePositions", () => {
 
     updatePositions(
       positions,
-      owner,
+      nftId,
       tickLower,
       tickUpper,
       liquidityDelta,
@@ -333,7 +331,7 @@ describe("updatePositions", () => {
     expect(() => {
       updatePositions(
         positions,
-        owner,
+        nftId,
         tickLower,
         tickUpper,
         new BigNumber(-200),
