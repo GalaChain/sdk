@@ -17,8 +17,8 @@ import * as path from "path";
 
 // Configuration
 const sources = ["chain-api", "chain-cli", "chain-client", "chain-connect", "chain-test", "chaincode"];
-const sourceDir = path.resolve(__dirname, "../chain-api/src");
-const outputDir = path.resolve(__dirname, "../resources");
+const sourceDir = path.resolve(__dirname, "..", "..");
+const outputDir = path.resolve(__dirname, "..", "training-data");
 
 // Function to get all TypeScript files recursively
 function getAllTypeScriptFiles(dir: string): string[] {
