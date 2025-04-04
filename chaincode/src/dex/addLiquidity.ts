@@ -18,6 +18,7 @@ import {
   NotFoundError,
   Pool,
   SlippageToleranceExceededError,
+  TokenInstanceKey,
   UserBalanceResDto,
   getLiquidityForAmounts,
   tickToSqrtPrice
@@ -28,8 +29,8 @@ import { fetchOrCreateBalance } from "../balances";
 import { fetchTokenClass } from "../token";
 import { transferToken } from "../transfer";
 import { GalaChainContext } from "../types";
-import { convertToTokenInstanceKey, getObjectByKey, putChainObject, validateTokenOrder } from "../utils";
-import { assignPositionNft, checkUserPositionNft } from "./positionNft";
+import { getObjectByKey, putChainObject, validateTokenOrder } from "../utils";
+import { assignPositionNft, fetchUserPositionNftId } from "./positionNft";
 
 /**
  * @dev Function to add Liqudity to v3 pool. The addLiquidity function facilitates the addition of liquidity to a Uniswap V3 pool within the GalaChain ecosystem. It takes in the blockchain context, liquidity parameters, and an optional launchpad address, then executes the necessary operations to deposit assets into the specified liquidity pool.
@@ -53,8 +54,8 @@ export async function addLiquidity(
   const currentSqrtPrice = pool.sqrtPrice;
 
   //create tokenInstanceKeys
-  const token0InstanceKey = convertToTokenInstanceKey(pool.token0ClassKey);
-  const token1InstanceKey = convertToTokenInstanceKey(pool.token1ClassKey);
+  const token0InstanceKey = TokenInstanceKey.fungibleKey(pool.token0ClassKey);
+  const token1InstanceKey = TokenInstanceKey.fungibleKey(pool.token1ClassKey);
 
   //fetch token classes
   const token0Class = await fetchTokenClass(ctx, token0InstanceKey);
@@ -82,7 +83,7 @@ export async function addLiquidity(
   const poolAddrKey = pool.getPoolAddrKey();
   const poolVirtualAddress = pool.getPoolVirtualAddress();
   const positionNftId =
-    (await checkUserPositionNft(ctx, pool, dto.tickUpper.toString(), dto.tickLower.toString())) ??
+    (await fetchUserPositionNftId(ctx, pool, dto.tickUpper.toString(), dto.tickLower.toString())) ??
     (await assignPositionNft(ctx, poolAddrKey, poolVirtualAddress));
 
   let [amount0, amount1] = pool.mint(positionNftId, tickLower, tickUpper, liquidity.f18());

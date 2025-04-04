@@ -31,7 +31,7 @@ import { GalaChainContext } from "../types";
 import { genKey } from "../utils";
 
 const LIQUIDITY_TOKEN_CATEGORY = "LiquidityPositions";
-const LIQUIDITY_TOKEN_TYPE = "NFT";
+const LIQUIDITY_TOKEN_COLLECTION = "NFT";
 const MAX_SUPPLY = new BigNumber(MintTokenDto.MAX_NFT_MINT_SIZE);
 
 export const assignPositionNft = async (
@@ -45,7 +45,7 @@ export const assignPositionNft = async (
   if (!lastNft) {
     await generatePositionNftBatch(ctx, "1", poolAddrKey, poolVirtualAddress);
     nfts = await fetchPositionNfts(ctx, poolAddrKey, poolVirtualAddress);
-    lastNft = nfts.at(-1)!; // Recheck
+    lastNft = nfts.at(-1)!;
   } else if (lastNft.getNftInstanceIds().length === 1) {
     await generatePositionNftBatch(
       ctx,
@@ -60,9 +60,9 @@ export const assignPositionNft = async (
 
 const fetchPositionNfts = async (ctx: GalaChainContext, poolAddrKey: string, owner: string) => {
   return fetchBalances(ctx, {
-    collection: poolAddrKey,
+    collection: LIQUIDITY_TOKEN_COLLECTION,
     category: LIQUIDITY_TOKEN_CATEGORY,
-    type: LIQUIDITY_TOKEN_TYPE,
+    type: poolAddrKey,
     owner
   });
 };
@@ -74,14 +74,15 @@ const transferPositionNft = async (
   nft: TokenBalance
 ): Promise<string> => {
   const instanceId = nft.getNftInstanceIds()[0];
-  const tokenInstanceKey = new TokenInstanceKey();
-  Object.assign(tokenInstanceKey, {
-    collection: poolAddrKey,
-    category: LIQUIDITY_TOKEN_CATEGORY,
-    type: LIQUIDITY_TOKEN_TYPE,
-    additionalKey: nft.additionalKey,
-    instance: instanceId
-  });
+  const tokenInstanceKey = TokenInstanceKey.nftKey(
+    {
+      collection: LIQUIDITY_TOKEN_COLLECTION,
+      category: LIQUIDITY_TOKEN_CATEGORY,
+      type: poolAddrKey,
+      additionalKey: nft.additionalKey
+    },
+    instanceId
+  );
 
   await transferToken(ctx, {
     from,
@@ -95,7 +96,7 @@ const transferPositionNft = async (
     }
   });
 
-  return `${nft.additionalKey}_${instanceId.toString()}`;
+  return genKey(nft.additionalKey, instanceId.toString());
 };
 
 export const generatePositionNftBatch = async (
@@ -106,9 +107,9 @@ export const generatePositionNftBatch = async (
 ): Promise<void> => {
   const holder = poolVirtualAddress;
   const tokenClassKey = plainToInstance(TokenClassKey, {
-    collection: poolAddrKey,
+    collection: LIQUIDITY_TOKEN_COLLECTION,
     category: LIQUIDITY_TOKEN_CATEGORY,
-    type: LIQUIDITY_TOKEN_TYPE,
+    type: poolAddrKey,
     additionalKey: batchNumber
   });
 
@@ -121,7 +122,7 @@ export const generatePositionNftBatch = async (
     symbol: "DLP",
     description: "NFTs representing liquidity positions in a decentralized exchange",
     image: "https://static.gala.games/images/icons/units/gala.png",
-    maxSupply: MAX_SUPPLY,
+    maxSupply: MAX_SUPPLY, //Adjust these according to batch size, max supply and batch size must be equal
     maxCapacity: MAX_SUPPLY,
     totalMintAllowance: new BigNumber(0),
     totalSupply: new BigNumber(0),
@@ -134,11 +135,11 @@ export const generatePositionNftBatch = async (
     tokenClassKey,
     tokenInstance: new BigNumber(0),
     owner: holder,
-    quantity: MAX_SUPPLY
+    quantity: new BigNumber(3)
   });
 };
 
-export const checkUserPositionNft = async (
+export const fetchUserPositionNftId = async (
   ctx: GalaChainContext,
   pool: Pool,
   tickUpper: string,
@@ -158,7 +159,7 @@ export const checkUserPositionNft = async (
         pool.positions[nftId].tickUpper == tickUpper &&
         pool.positions[nftId].tickLower == tickLower
       ) {
-        return nftId; // This will properly return from checkUserPositionNft
+        return nftId; // This will properly return from fetchUserPositionNftId
       }
     }
   }
@@ -171,9 +172,9 @@ export const fetchPositionNftInstanceKey = async (
 ): Promise<TokenInstanceKey> => {
   const batchNumber = nftId.split("_")[0];
   const nft = await fetchBalances(ctx, {
-    collection: poolAddrKey,
+    collection: LIQUIDITY_TOKEN_COLLECTION,
     category: LIQUIDITY_TOKEN_CATEGORY,
-    type: LIQUIDITY_TOKEN_TYPE,
+    type: poolAddrKey,
     additionalKey: batchNumber,
     owner: ctx.callingUser
   });

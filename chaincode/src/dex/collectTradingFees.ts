@@ -18,6 +18,7 @@ import {
   ConflictError,
   NotFoundError,
   Pool,
+  TokenInstanceKey,
   UnauthorizedError
 } from "@gala-chain/api";
 import BigNumber from "bignumber.js";
@@ -27,7 +28,6 @@ import { fetchTokenClass } from "../token";
 import { transferToken } from "../transfer";
 import { GalaChainContext } from "../types";
 import {
-  convertToTokenInstanceKey,
   fetchDexProtocolFeeConfig,
   genKey,
   getObjectByKey,
@@ -69,7 +69,7 @@ export async function collectTradingFees(
   const amounts = pool.collectTradingFees();
 
   //create tokenInstanceKeys
-  const tokenInstanceKeys = [pool.token0ClassKey, pool.token1ClassKey].map(convertToTokenInstanceKey);
+  const tokenInstanceKeys = [pool.token0ClassKey, pool.token1ClassKey].map(TokenInstanceKey.fungibleKey);
 
   //fetch token classes
   const tokenClasses = await Promise.all(tokenInstanceKeys.map((key) => fetchTokenClass(ctx, key)));

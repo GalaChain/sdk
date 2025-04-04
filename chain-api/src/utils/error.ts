@@ -234,6 +234,8 @@ export abstract class ChainError extends Error implements OptionalChainErrorData
   }
 }
 
+export class BadRequestError extends ChainError.withCode(ErrorCode.VALIDATION_FAILED) {}
+
 export class ValidationFailedError extends ChainError.withCode(ErrorCode.VALIDATION_FAILED) {}
 
 export class UnauthorizedError extends ChainError.withCode(ErrorCode.UNAUTHORIZED) {}
