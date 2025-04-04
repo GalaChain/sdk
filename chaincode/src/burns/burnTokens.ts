@@ -275,7 +275,7 @@ export async function incrementOrCreateTokenBurnForTx(
       cachedBurn.quantity = cachedBurn.quantity.plus(quantity);
       return cachedBurn;
     })
-    .catch((e) => ChainError.ignore(e, ErrorCode.NOT_FOUND, newBurn));
+    .catch((e) => ChainError.recover(e, ErrorCode.NOT_FOUND, newBurn));
 
   return response;
 }
@@ -341,7 +341,7 @@ export async function incrementOrCreateTokenBurnCounterForTx(
       cachedBurnCounter.quantity = cachedBurnCounter.quantity.plus(quantity);
       return cachedBurnCounter;
     })
-    .catch((e) => ChainError.ignore(e, ErrorCode.NOT_FOUND, burnCounter));
+    .catch((e) => ChainError.recover(e, ErrorCode.NOT_FOUND, burnCounter));
 
   return response;
 }

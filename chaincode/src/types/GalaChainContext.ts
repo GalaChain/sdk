@@ -12,7 +12,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-import { UnauthorizedError, UserAlias, UserRole } from "@gala-chain/api";
+import { UnauthorizedError, UserAlias, UserProfile, UserRole } from "@gala-chain/api";
 import { Context } from "fabric-contract-api";
 import { ChaincodeStub, Timestamp } from "fabric-shim";
 
@@ -26,15 +26,39 @@ function getTxUnixTime(ctx: Context): number {
   return Math.floor(txUnixTime);
 }
 
+export interface GalaChainContextConfig {
+  readonly adminPublicKey?: string;
+  readonly allowNonRegisteredUsers?: boolean;
+}
+
+class GalaChainContextConfigImpl implements GalaChainContextConfig {
+  constructor(private readonly config: GalaChainContextConfig) {}
+
+  get adminPublicKey(): string | undefined {
+    return this.config.adminPublicKey ?? process.env.DEV_ADMIN_PUBLIC_KEY;
+  }
+
+  get allowNonRegisteredUsers(): boolean | undefined {
+    return this.config.allowNonRegisteredUsers ?? process.env.ALLOW_NON_REGISTERED_USERS === "true";
+  }
+}
+
 export class GalaChainContext extends Context {
   stub: GalaChainStub;
   private callingUserValue?: UserAlias;
   private callingUserEthAddressValue?: string;
   private callingUserTonAddressValue?: string;
   private callingUserRolesValue?: string[];
-  public isDryRun = false;
   private txUnixTimeValue?: number;
   private loggerInstance?: GalaLoggerInstance;
+
+  public isDryRun = false;
+  public config: GalaChainContextConfig;
+
+  constructor(config: GalaChainContextConfig) {
+    super();
+    this.config = new GalaChainContextConfigImpl(config);
+  }
 
   get logger(): GalaLoggerInstance {
     if (this.loggerInstance === undefined) {
@@ -76,6 +100,15 @@ export class GalaChainContext extends Context {
     return this.callingUserRolesValue;
   }
 
+  get callingUserProfile(): UserProfile {
+    const profile = new UserProfile();
+    profile.alias = this.callingUser;
+    profile.ethAddress = this.callingUserEthAddressValue;
+    profile.tonAddress = this.callingUserTonAddressValue;
+    profile.roles = this.callingUserRoles;
+    return profile;
+  }
+
   set callingUserData(d: { alias?: UserAlias; ethAddress?: string; tonAddress?: string; roles: string[] }) {
     if (this.callingUserValue !== undefined) {
       throw new Error("Calling user already set to " + this.callingUserValue);
@@ -93,7 +126,7 @@ export class GalaChainContext extends Context {
     }
   }
 
-  resetCallingUserData() {
+  resetCallingUser() {
     this.callingUserValue = undefined;
     this.callingUserRolesValue = undefined;
     this.callingUserEthAddressValue = undefined;

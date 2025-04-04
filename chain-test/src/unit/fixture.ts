@@ -19,6 +19,7 @@ import {
   GalaChainResponse,
   RangedChainObject,
   UserAlias,
+  UserProfile,
   signatures
 } from "@gala-chain/api";
 import { Context, Contract } from "fabric-contract-api";
@@ -56,29 +57,41 @@ type GalaChainStub = ChaincodeStub & {
   getCachedState(key: string): Promise<Uint8Array>;
   getCachedStateByPartialCompositeKey(objectType: string, attributes: string[]): FabricIterable<CachedKV>;
   flushWrites(): Promise<void>;
-  getReads(): Record<string, string>;
-  getWrites(): Record<string, string>;
+  getReads(): Record<string, Uint8Array>;
+  getWrites(): Record<string, Uint8Array>;
   getDeletes(): Record<string, true>;
+  setReads(reads: Record<string, Uint8Array>): void;
+  setWrites(writes: Record<string, Uint8Array>): void;
+  setDeletes(deletes: Record<string, true>): void;
 };
+
+interface CallingUserData {
+  alias?: UserAlias;
+  ethAddress?: string;
+  tonAddress?: string;
+  roles: string[];
+}
+
+interface GalaChainContextConfig {
+  readonly adminPublicKey?: string;
+  readonly allowNonRegisteredUsers?: boolean;
+}
 
 type TestGalaChainContext = Context & {
   readonly stub: GalaChainStub;
   readonly logger: GalaLoggerInstance;
-  set callingUserData(d: { alias?: UserAlias; ethAddress?: string; tonAddress?: string; roles: string[] });
+  set callingUserData(d: CallingUserData);
   get callingUser(): UserAlias;
   get callingUserEthAddress(): string;
-  get callingUserRoles(): string[];
   get callingUserTonAddress(): string;
-  setDryRunOnBehalfOf(d: {
-    alias: UserAlias;
-    ethAddress?: string;
-    tonAddress?: string;
-    roles: string[];
-  }): void;
+  get callingUserRoles(): string[];
+  get callingUserProfile(): UserProfile;
+  resetCallingUser(): void;
+  get config(): GalaChainContextConfig;
+  setDryRunOnBehalfOf(d: CallingUserData): void;
   isDryRun: boolean;
   get txUnixTime(): number;
   setChaincodeStub(stub: ChaincodeStub): void;
-  resetCallingUserData(): void;
 };
 
 type GalaContract<Ctx extends TestGalaChainContext> = Contract & {
@@ -116,7 +129,7 @@ class Fixture<Ctx extends TestGalaChainContext, T extends GalaContract<Ctx>> {
               ? await method.call(contractInstance, ctx, dto)
               : await method.call(contractInstance, ctx);
             await contractInstance.afterTransaction(ctx, result);
-            ctx.resetCallingUserData();
+            ctx.resetCallingUser();
             return result;
           };
         }

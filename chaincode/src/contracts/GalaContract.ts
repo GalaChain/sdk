@@ -13,9 +13,11 @@
  * limitations under the License.
  */
 import {
+  BatchDto,
   ContractAPI,
   DryRunDto,
   DryRunResultDto,
+  GalaChainResponse,
   GalaChainResponseType,
   GetObjectDto,
   GetObjectHistoryDto,
@@ -24,13 +26,22 @@ import {
   createValidDTO,
   signatures
 } from "@gala-chain/api";
-import { Contract } from "fabric-contract-api";
+import { Contract, Transaction } from "fabric-contract-api";
 
 import { PublicKeyService } from "../services";
-import { GalaChainContext, GalaChainStub } from "../types";
+import { GalaChainContext, GalaChainContextConfig, GalaChainStub } from "../types";
 import { getObjectHistory, getPlainObjectByKey } from "../utils";
-import { getApiMethods } from "./GalaContractApi";
-import { EVALUATE, GalaTransaction } from "./GalaTransaction";
+import { getApiMethod, getApiMethods } from "./GalaContractApi";
+import { EVALUATE, GalaTransaction, SUBMIT } from "./GalaTransaction";
+
+export class BatchWriteLimitExceededError extends ValidationFailedError {
+  constructor(writesLimit: number) {
+    super(
+      `Batch writes limit of ${writesLimit} keys exceeded. ` +
+        `This operation can be repeated with a smaller batch.`
+    );
+  }
+}
 
 export abstract class GalaContract extends Contract {
   /**
@@ -41,7 +52,8 @@ export abstract class GalaContract extends Contract {
    */
   constructor(
     name: string,
-    private readonly version: string
+    private readonly version: string,
+    private readonly config: GalaChainContextConfig = {}
   ) {
     super(name);
   }
@@ -51,7 +63,7 @@ export abstract class GalaContract extends Contract {
   }
 
   public createContext(): GalaChainContext {
-    return new GalaChainContext();
+    return new GalaChainContext(this.config);
   }
 
   public async beforeTransaction(ctx: GalaChainContext): Promise<void> {
@@ -132,23 +144,7 @@ export abstract class GalaContract extends Contract {
     out: DryRunResultDto
   })
   public async DryRun(ctx: GalaChainContext, dto: DryRunDto): Promise<DryRunResultDto> {
-    const methodNames = getApiMethods(this).reduce((map, m) => {
-      map.set(m.methodName, m.methodName);
-      if (m.apiMethodName) {
-        map.set(m.apiMethodName, m.methodName);
-      }
-      return map;
-    }, new Map<string, string>());
-
-    const methodName = methodNames.get(dto.method);
-
-    // check if method exists
-    if (!methodName) {
-      const availableMethods = Array.from(methodNames.keys()).sort();
-      throw new NotFoundError(
-        `Method ${dto.method} not found. Available methods: ${availableMethods.join(", ")}`
-      );
-    }
+    const method = getApiMethod(this, dto.method);
 
     // For dry run we don't use the regular authorization. We don't want users to provide signatures
     // to avoid replay attack in case if the method is eventually not executed, and someone in the middle
@@ -167,15 +163,109 @@ export abstract class GalaContract extends Contract {
     ctx.setDryRunOnBehalfOf(userProfile);
 
     // method needs to be executed first to populate reads, writes and deletes
-    const response = await this[methodName](ctx, dto.dto);
+    const response = await this[method.methodName](ctx, dto.dto);
 
     const gcStub = ctx.stub as unknown as GalaChainStub;
 
     return await createValidDTO(DryRunResultDto, {
       response,
-      writes: gcStub.getWrites(),
-      reads: gcStub.getReads(),
+      writes: Object.fromEntries(Object.entries(gcStub.getWrites()).map(([k, v]) => [k, v.toString()])),
+      reads: Object.fromEntries(Object.entries(gcStub.getReads()).map(([k, v]) => [k, v.toString()])),
       deletes: gcStub.getDeletes()
     });
+  }
+
+  @GalaTransaction({
+    type: SUBMIT,
+    in: BatchDto,
+    out: "object",
+    enforceUniqueKey: true,
+    description: "Submit a batch of transactions",
+    allowedOrgs: [process.env.CURATOR_ORG_MSP ?? "CuratorOrg"]
+  })
+  public async BatchSubmit(ctx: GalaChainContext, batchDto: BatchDto): Promise<GalaChainResponse<unknown>[]> {
+    const responses: GalaChainResponse<unknown>[] = [];
+    const aggregatedCache = {
+      writes: ctx.stub.getWrites(),
+      deletes: ctx.stub.getDeletes()
+    };
+
+    const writesLimit = Math.min(
+      batchDto.writesLimit ?? BatchDto.WRITES_DEFAULT_LIMIT,
+      BatchDto.WRITES_HARD_LIMIT
+    );
+    let writesCount = Object.keys(ctx.stub.getWrites()).length;
+
+    for (const op of batchDto.operations) {
+      // 1. Reset the calling user, to allow each operation to perform the
+      //    authorization.
+      ctx.resetCallingUser();
+
+      // 2. Execute the operation. Collect both successful and failed responses.
+      let response: GalaChainResponse<unknown>;
+      try {
+        if (writesCount >= writesLimit) {
+          throw new BatchWriteLimitExceededError(writesLimit);
+        }
+
+        const method = getApiMethod(this, op.method, (m) => m.isWrite && m.methodName !== "BatchSubmit");
+        response = await this[method.methodName](ctx, op.dto);
+      } catch (error) {
+        response = GalaChainResponse.Error(error);
+      }
+      responses.push(response);
+
+      // 3. Update the cache.
+      //
+      //    If the operation is successful, we keep the changes. Otherwise, we
+      //    restore the cache to the previous state to prevent from having
+      //    cached writes that come from failed transactions.
+      //
+      //    At the end, we override the cache with the state without cached
+      //    reads to keep the cache small.
+      //
+      if (GalaChainResponse.isSuccess(response)) {
+        aggregatedCache.writes = ctx.stub.getWrites();
+        aggregatedCache.deletes = ctx.stub.getDeletes();
+        writesCount = Object.keys(aggregatedCache.writes).length;
+      } else {
+        ctx.stub.setWrites(aggregatedCache.writes);
+        ctx.stub.setDeletes(aggregatedCache.deletes);
+      }
+      ctx.stub.setReads({});
+    }
+    return responses;
+  }
+
+  @GalaTransaction({
+    type: EVALUATE,
+    in: BatchDto,
+    out: "object",
+    description: "Evaluate a batch of transactions"
+  })
+  public async BatchEvaluate(
+    ctx: GalaChainContext,
+    batchDto: BatchDto
+  ): Promise<GalaChainResponse<unknown>[]> {
+    const responses: GalaChainResponse<unknown>[] = [];
+
+    for (const op of batchDto.operations) {
+      // 1. Reset the calling user, to allow each operation to perform the
+      //    authorization.
+      ctx.resetCallingUser();
+
+      // 2. Execute the operation. Collect both successful and failed responses.
+      let response: GalaChainResponse<unknown>;
+      try {
+        const method = getApiMethod(this, op.method, (m) => !m.isWrite && m.methodName !== "BatchEvaluate");
+        response = await this[method.methodName](ctx, op.dto);
+      } catch (error) {
+        response = GalaChainResponse.Error(error);
+      }
+      responses.push(response);
+
+      // 3. We don't need to update the cache.
+    }
+    return responses;
   }
 }

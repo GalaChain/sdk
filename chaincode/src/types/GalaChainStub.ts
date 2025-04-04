@@ -134,27 +134,29 @@ class StubCache {
     await Promise.all(putOps);
   }
 
-  getReads(): Record<string, string> {
-    return keysToUtfStrings(this.reads);
+  getReads(): Record<string, Uint8Array> {
+    return { ...this.reads };
   }
 
-  getWrites(): Record<string, string> {
-    return keysToUtfStrings(this.writes);
+  getWrites(): Record<string, Uint8Array> {
+    return { ...this.writes };
   }
 
   getDeletes(): Record<string, true> {
     return { ...this.deletes };
   }
-}
 
-function keysToUtfStrings(obj: Record<string, Uint8Array>): Record<string, string> {
-  return Object.entries(obj).reduce(
-    (acc, [key, value]) => {
-      acc[key] = value.toString();
-      return acc;
-    },
-    {} as Record<string, string>
-  );
+  setReads(reads: Record<string, Uint8Array>): void {
+    this.reads = { ...reads };
+  }
+
+  setWrites(writes: Record<string, Uint8Array>): void {
+    this.writes = { ...writes };
+  }
+
+  setDeletes(deletes: Record<string, true>): void {
+    this.deletes = { ...deletes };
+  }
 }
 
 export interface GalaChainStub extends ChaincodeStub {
@@ -164,11 +166,17 @@ export interface GalaChainStub extends ChaincodeStub {
 
   flushWrites(): Promise<void>;
 
-  getReads(): Record<string, string>;
+  getReads(): Record<string, Uint8Array>;
 
-  getWrites(): Record<string, string>;
+  getWrites(): Record<string, Uint8Array>;
 
   getDeletes(): Record<string, true>;
+
+  setReads(reads: Record<string, Uint8Array>): void;
+
+  setWrites(writes: Record<string, Uint8Array>): void;
+
+  setDeletes(deletes: Record<string, true>): void;
 }
 
 export const createGalaChainStub = (stub: ChaincodeStub): GalaChainStub => {
