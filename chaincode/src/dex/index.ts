@@ -22,3 +22,4 @@ export * from "./quoteFuncs";
 export * from "./swap";
 export * from "./setProtocolFee";
 export * from "./collectTradingFees";
+export * from "./setNftBatchLimit";

@@ -16,7 +16,13 @@ import BigNumber from "bignumber.js";
 import { IsArray, IsNotEmpty, IsNumber, IsOptional, IsString, Max, Min } from "class-validator";
 
 import { PositionInPool } from "../utils";
-import { BigNumberArrayProperty, BigNumberProperty } from "../validators";
+import {
+  BigNumberArrayProperty,
+  BigNumberIsInteger,
+  BigNumberIsPositive,
+  BigNumberProperty,
+  IsNonZeroBigNumber
+} from "../validators";
 import { TokenBalance } from "./TokenBalance";
 import { TokenClassKey } from "./TokenClass";
 import { TokenInstanceKey } from "./TokenInstance";
@@ -702,4 +708,12 @@ export class ConfigureDexFeeAddressDto extends ChainCallDTO {
   @IsArray()
   @IsString({ each: true })
   public newAuthorities?: string[];
+}
+
+export class NftBatchLimitDto extends ChainCallDTO {
+  @BigNumberProperty()
+  @BigNumberIsPositive()
+  @BigNumberIsInteger()
+  @IsNonZeroBigNumber()
+  newMaxSupply: BigNumber;
 }

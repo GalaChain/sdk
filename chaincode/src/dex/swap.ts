@@ -12,7 +12,16 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-import { ConflictError, Pool, SlippageToleranceExceededError, SwapDto, SwapResDto } from "@gala-chain/api";
+import {
+  ChainError,
+  ConflictError,
+  ErrorCode,
+  NotFoundError,
+  Pool,
+  SlippageToleranceExceededError,
+  SwapDto,
+  SwapResDto
+} from "@gala-chain/api";
 import BigNumber from "bignumber.js";
 
 import { fetchOrCreateBalance } from "../balances";
@@ -48,10 +57,14 @@ export async function swap(ctx: GalaChainContext, dto: SwapDto): Promise<SwapRes
   const sqrtPriceLimit = dto.sqrtPriceLimit;
 
   const key = ctx.stub.createCompositeKey(Pool.INDEX_KEY, [token0, token1, dto.fee.toString()]);
-  const pool = await getObjectByKey(ctx, Pool, key);
-
-  //If pool does not exist
-  if (pool == undefined) throw new ConflictError("Pool does not exist");
+  const pool = await getObjectByKey(ctx, Pool, key).catch((e) => {
+    const chainError = ChainError.from(e);
+    if (chainError.matches(ErrorCode.NOT_FOUND)) {
+      throw new NotFoundError("Pool does not exist");
+    } else {
+      throw chainError;
+    }
+  });
 
   const amounts = pool.swap(zeroForOne, dto.amount, sqrtPriceLimit);
   const poolAddrKey = genKey(pool.token0, pool.token1, pool.fee.toString());

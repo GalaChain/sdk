@@ -28,7 +28,7 @@ import { mintTokenWithAllowance } from "../mint";
 import { createTokenClass } from "../token";
 import { transferToken } from "../transfer";
 import { GalaChainContext } from "../types";
-import { genKey } from "../utils";
+import { genKey, parseNftId } from "../utils";
 
 const LIQUIDITY_TOKEN_CATEGORY = "LiquidityPositions";
 const LIQUIDITY_TOKEN_TYPE = "NFT";
@@ -45,7 +45,7 @@ export const assignPositionNft = async (
   if (!lastNft) {
     await generatePositionNftBatch(ctx, "1", poolAddrKey, poolVirtualAddress);
     nfts = await fetchPositionNfts(ctx, poolAddrKey, poolVirtualAddress);
-    lastNft = nfts.at(-1)!; // Recheck
+    lastNft = nfts.at(-1)!;
   } else if (lastNft.getNftInstanceIds().length === 1) {
     await generatePositionNftBatch(
       ctx,
@@ -169,7 +169,7 @@ export const fetchPositionNftInstanceKey = async (
   poolAddrKey: string,
   nftId: string
 ): Promise<TokenInstanceKey> => {
-  const batchNumber = nftId.split("_")[0];
+  const { instanceId, batchNumber } = parseNftId(nftId);
   const nft = await fetchBalances(ctx, {
     collection: poolAddrKey,
     category: LIQUIDITY_TOKEN_CATEGORY,
@@ -178,7 +178,7 @@ export const fetchPositionNftInstanceKey = async (
     owner: ctx.callingUser
   });
 
-  const instanceId = new BigNumber(nftId.split("_")[1]);
+  //const instanceId = new BigNumber(nftId.split("_")[1]);
   if (!nft[0].getNftInstanceIds().some((instance) => instance.isEqualTo(instanceId)))
     throw new NotFoundError("Cannot find this NFT");
 

@@ -12,7 +12,14 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-import { ChainError, DexFeeConfig, ErrorCode, TokenClassKey, TokenInstanceKey } from "@gala-chain/api";
+import {
+  ChainError,
+  DexFeeConfig,
+  ErrorCode,
+  TokenClassKey,
+  TokenInstanceKey,
+  ValidationFailedError
+} from "@gala-chain/api";
 import BigNumber from "bignumber.js";
 
 import { GalaChainContext } from "../types";
@@ -109,4 +116,15 @@ export async function fetchDexProtocolFeeConfig(ctx: GalaChainContext): Promise<
   });
 
   return dexConfig;
+}
+
+export function parseNftId(nftId: string): { batchNumber: string; instanceId: BigNumber } {
+  const parts = nftId.split("_");
+  if (parts.length !== 2) {
+    throw new ValidationFailedError("Invalid NFT ID format. Expected format: 'batchNumber_instanceId'.");
+  }
+  return {
+    batchNumber: parts[0],
+    instanceId: new BigNumber(parts[1])
+  };
 }

@@ -12,7 +12,14 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-import { NotFoundError, Pool, QuoteExactAmountDto, QuoteExactAmountResDto } from "@gala-chain/api";
+import {
+  ChainError,
+  ErrorCode,
+  NotFoundError,
+  Pool,
+  QuoteExactAmountDto,
+  QuoteExactAmountResDto
+} from "@gala-chain/api";
 import BigNumber from "bignumber.js";
 
 import { GalaChainContext } from "../types";
@@ -39,8 +46,14 @@ export async function quoteExactAmount(
   const zeroForOne = dto.zeroForOne;
 
   const key = ctx.stub.createCompositeKey(Pool.INDEX_KEY, [token0, token1, dto.fee.toString()]);
-  const pool = await getObjectByKey(ctx, Pool, key);
-  if (pool == undefined) throw new NotFoundError("Pool does not exist");
+  const pool = await getObjectByKey(ctx, Pool, key).catch((e) => {
+    const chainError = ChainError.from(e);
+    if (chainError.matches(ErrorCode.NOT_FOUND)) {
+      throw new NotFoundError("Pool does not exist");
+    } else {
+      throw chainError;
+    }
+  });
 
   const currentSqrtPrice = pool.sqrtPrice;
   const amounts = pool.swap(

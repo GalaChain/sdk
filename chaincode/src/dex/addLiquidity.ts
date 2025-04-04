@@ -15,6 +15,8 @@
 import {
   AddLiquidityDTO,
   AddLiquidityResDto,
+  ChainError,
+  ErrorCode,
   NotFoundError,
   Pool,
   SlippageToleranceExceededError,
@@ -46,10 +48,15 @@ export async function addLiquidity(
   const [token0, token1] = validateTokenOrder(dto.token0, dto.token1);
 
   const key = ctx.stub.createCompositeKey(Pool.INDEX_KEY, [token0, token1, dto.fee.toString()]);
-  const pool = await getObjectByKey(ctx, Pool, key);
+  const pool = await getObjectByKey(ctx, Pool, key).catch((e) => {
+    const chainError = ChainError.from(e);
+    if (chainError.matches(ErrorCode.NOT_FOUND)) {
+      throw new NotFoundError("Pool does not exist");
+    } else {
+      throw chainError;
+    }
+  });
 
-  //If pool does not exist
-  if (pool == undefined) throw new NotFoundError("Pool does not exist");
   const currentSqrtPrice = pool.sqrtPrice;
 
   //create tokenInstanceKeys
