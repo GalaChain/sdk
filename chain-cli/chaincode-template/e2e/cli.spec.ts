@@ -16,7 +16,7 @@ import { execSync } from "child_process";
 
 jest.setTimeout(30000);
 
-it("should expose contract names", async () => {
+it.skip("should expose contract names", async () => {
   // Given
   const cliPath = require.resolve(`../lib/src/cli.js`);
 

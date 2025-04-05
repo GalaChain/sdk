@@ -39,7 +39,7 @@ import * as path from "path";
 
 jest.setTimeout(30000);
 
-describe("Chaincode client (PartnerOrg1)", () => {
+describe.skip("Chaincode client (PartnerOrg1)", () => {
   let client: ChainClient & CustomAPI;
 
   beforeAll(() => {

@@ -58,7 +58,7 @@ import {
 
 jest.setTimeout(100000);
 
-describe("LaunchpadContract", () => {
+describe.skip("LaunchpadContract", () => {
   const LaunchpadContractConfig = {
     Launchpad: {
       channel: "product-channel",

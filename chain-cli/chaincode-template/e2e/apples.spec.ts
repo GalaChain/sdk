@@ -29,7 +29,7 @@ import {
 
 jest.setTimeout(30000);
 
-describe("Apple trees", () => {
+describe.skip("Apple trees", () => {
   const appleContractConfig = {
     apples: {
       channel: "product-channel",

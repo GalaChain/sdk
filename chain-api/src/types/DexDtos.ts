@@ -13,6 +13,7 @@
  * limitations under the License.
  */
 import BigNumber from "bignumber.js";
+import { Type } from "class-transformer";
 import { IsArray, IsNotEmpty, IsNumber, IsOptional, IsString, Max, Min } from "class-validator";
 
 import { PositionInPool } from "../utils";
@@ -315,17 +316,18 @@ export class GetUserPositionsDto extends ChainCallDTO {
   public user: string;
 
   @Min(1, { message: "Value cannot be zero" })
-  @IsOptional()
-  public page: number;
-
-  @Min(1, { message: "Value cannot be zero" })
-  @IsOptional()
+  @Max(10, { message: "Page can have atmost 10 values" })
+  @IsNotEmpty()
   public limit: number;
 
-  constructor(user: string, page = 1, limit = 10) {
+  @IsNotEmpty()
+  @IsString()
+  public bookmark: string;
+
+  constructor(user: string, bookmark = "", limit = 10) {
     super();
     this.user = user;
-    this.page = page;
+    this.bookmark = bookmark;
     this.limit = limit;
   }
 }
@@ -556,13 +558,14 @@ export class PositionsObject {
 
 export class GetUserPositionsResDto {
   @IsNotEmpty()
-  positions: PositionsObject;
-  @IsNumber()
-  totalCount: number;
+  @Type(() => PositionsObject)
+  positions?: PositionsObject;
+  @IsString()
+  nextBookMark?: string;
 
-  constructor(positions: PositionsObject, totalCount: number) {
+  constructor(positions: PositionsObject, nextBookMark: string) {
     this.positions = positions;
-    this.totalCount = totalCount;
+    this.nextBookMark = nextBookMark;
   }
 }
 

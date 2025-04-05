@@ -20,6 +20,7 @@ import {
   ErrorCode,
   NotFoundError,
   Pool,
+  TokenInstanceKey,
   UserBalanceResDto
 } from "@gala-chain/api";
 import BigNumber from "bignumber.js";
@@ -29,8 +30,8 @@ import { burnTokens } from "../burns";
 import { fetchTokenClass } from "../token";
 import { transferToken } from "../transfer";
 import { GalaChainContext } from "../types";
-import { convertToTokenInstanceKey, getObjectByKey, putChainObject, validateTokenOrder } from "../utils";
-import { checkUserPositionNft, fetchPositionNftInstanceKey } from "./positionNft";
+import { getObjectByKey, putChainObject, validateTokenOrder } from "../utils";
+import { fetchPositionNftInstanceKey, fetchUserPositionNftId } from "./positionNft";
 
 /**
  * @dev The burn function is responsible for removing liquidity from a Uniswap V3 pool within the GalaChain ecosystem. It executes the necessary operations to burn the liquidity position and transfer the corresponding tokens back to the user.
@@ -54,7 +55,7 @@ export async function burn(ctx: GalaChainContext, dto: BurnDto): Promise<UserBal
   const poolAddrKey = pool.getPoolAddrKey();
   const poolVirtualAddress = pool.getPoolVirtualAddress();
 
-  const positionNftId = await checkUserPositionNft(
+  const positionNftId = await fetchUserPositionNftId(
     ctx,
     pool,
     dto.tickUpper.toString(),
@@ -88,7 +89,7 @@ export async function burn(ctx: GalaChainContext, dto: BurnDto): Promise<UserBal
   }
 
   //create tokenInstanceKeys
-  const tokenInstanceKeys = [pool.token0ClassKey, pool.token1ClassKey].map(convertToTokenInstanceKey);
+  const tokenInstanceKeys = [pool.token0ClassKey, pool.token1ClassKey].map(TokenInstanceKey.fungibleKey);
 
   //fetch token classes
   const tokenClasses = await Promise.all(tokenInstanceKeys.map((key) => fetchTokenClass(ctx, key)));

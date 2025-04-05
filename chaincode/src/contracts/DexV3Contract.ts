@@ -46,6 +46,7 @@ import {
   SwapResDto,
   UserBalanceResDto
 } from "@gala-chain/api";
+import { Returns } from "fabric-contract-api";
 
 import { version } from "../../package.json";
 import {
@@ -55,6 +56,7 @@ import {
   collectTradingFees,
   configureDexFeeAddress,
   createPool,
+  fetchBatchLimit,
   getAddLiquidityEstimation,
   getDexFeesConfigration,
   getLiquidity,
@@ -65,9 +67,9 @@ import {
   getSlot0,
   getUserPositions,
   quoteExactAmount,
-  setBatchLimit,
   setProtocolFee,
-  swap
+  swap,
+  configureNftBatchLimit
 } from "../dex";
 import {
   addLiquidityFeeGate,
@@ -195,6 +197,7 @@ export class DexV3Contract extends GalaContract {
   ): Promise<QuoteExactAmountResDto> {
     return await quoteExactAmount(ctx, dto);
   }
+
   @GalaTransaction({
     type: EVALUATE,
     in: GetPoolDto,
@@ -278,6 +281,16 @@ export class DexV3Contract extends GalaContract {
     allowedOrgs: ["CuratorOrg"]
   })
   public async ConfigureNftBatchLimit(ctx: GalaChainContext, dto: NftBatchLimitDto): Promise<NftBatchLimit> {
-    return setBatchLimit(ctx, dto);
+    return configureNftBatchLimit(ctx, dto);
+  }
+
+  @GalaTransaction({
+    type: EVALUATE,
+    in: ChainCallDTO,
+    out: NftBatchLimit,
+    allowedOrgs: ["CuratorOrg"]
+  })
+  public async FetchBatchLimit(ctx: GalaChainContext, dto: ChainCallDTO): Promise<NftBatchLimit> {
+    return fetchBatchLimit(ctx); 
   }
 }

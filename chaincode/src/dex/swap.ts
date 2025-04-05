@@ -14,13 +14,13 @@
  */
 import {
   ChainError,
-  ConflictError,
   ErrorCode,
   NotFoundError,
   Pool,
   SlippageToleranceExceededError,
   SwapDto,
-  SwapResDto
+  SwapResDto,
+  TokenInstanceKey
 } from "@gala-chain/api";
 import BigNumber from "bignumber.js";
 
@@ -28,14 +28,7 @@ import { fetchOrCreateBalance } from "../balances";
 import { fetchTokenClass } from "../token";
 import { transferToken } from "../transfer";
 import { GalaChainContext } from "../types";
-import {
-  convertToTokenInstanceKey,
-  genKey,
-  getObjectByKey,
-  putChainObject,
-  validateTokenOrder,
-  virtualAddress
-} from "../utils";
+import { genKey, getObjectByKey, putChainObject, validateTokenOrder, virtualAddress } from "../utils";
 
 /**
  * @dev The swap function executes a token swap in a Uniswap V3-like liquidity pool within the GalaChain ecosystem.
@@ -71,7 +64,7 @@ export async function swap(ctx: GalaChainContext, dto: SwapDto): Promise<SwapRes
   const poolVirtualAddress = virtualAddress(poolAddrKey);
 
   //create tokenInstanceKeys
-  const tokenInstanceKeys = [pool.token0ClassKey, pool.token1ClassKey].map(convertToTokenInstanceKey);
+  const tokenInstanceKeys = [pool.token0ClassKey, pool.token1ClassKey].map(TokenInstanceKey.fungibleKey);
 
   //fetch token classes
   const tokenClasses = await Promise.all(tokenInstanceKeys.map((key) => fetchTokenClass(ctx, key)));

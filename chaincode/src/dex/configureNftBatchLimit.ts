@@ -26,7 +26,7 @@ import BigNumber from "bignumber.js";
 
 import { GalaChainContext } from "../types";
 
-export async function setBatchLimit(ctx: GalaChainContext, dto: NftBatchLimitDto): Promise<NftBatchLimit> {
+export async function configureNftBatchLimit(ctx: GalaChainContext, dto: NftBatchLimitDto): Promise<NftBatchLimit> {
   const curatorOrgMsp = process.env.CURATOR_ORG_MSP ?? "CuratorOrg";
 
   if (ctx.clientIdentity.getMSPID() !== curatorOrgMsp) {
@@ -37,14 +37,14 @@ export async function setBatchLimit(ctx: GalaChainContext, dto: NftBatchLimitDto
   let nftBatchLimit = await getObjectByKey(ctx, NftBatchLimit, key).catch((e) => {
     const chainError = ChainError.from(e);
     if (chainError.matches(ErrorCode.NOT_FOUND)) {
-      throw new NotFoundError("Pool does not exist");
+      return undefined
     } else {
       throw chainError;
     }
   });
 
   if (!nftBatchLimit) {
-    nftBatchLimit = new NftBatchLimit(new BigNumber(100));
+    nftBatchLimit = new NftBatchLimit(dto.newMaxSupply);
   } else {
     nftBatchLimit.setMaxSupply(dto.newMaxSupply);
   }

@@ -70,16 +70,6 @@ export const generateKeyFromClassKey = (obj: TokenClassKey) => {
   return Object.assign(new TokenClassKey(), obj).toStringKey().replace(/\|/g, ":") || "";
 };
 
-export function convertToTokenInstanceKey(tokenClassKey: TokenClassKey): TokenInstanceKey {
-  return Object.assign(new TokenInstanceKey(), {
-    collection: tokenClassKey.collection,
-    category: tokenClassKey.category,
-    type: tokenClassKey.type,
-    additionalKey: tokenClassKey.additionalKey,
-    instance: new BigNumber(0)
-  });
-}
-
 export function validateTokenOrder(token0: TokenClassKey, token1: TokenClassKey) {
   const [normalizedToken0, normalizedToken1] = [token0, token1].map(generateKeyFromClassKey);
 
@@ -127,4 +117,13 @@ export function parseNftId(nftId: string): { batchNumber: string; instanceId: Bi
     batchNumber: parts[0],
     instanceId: new BigNumber(parts[1])
   };
+}
+
+export function genBookMark(...params: string[] | number[]): string {
+  return params.join("#");
+}
+
+export function splitBookmark(bookmark: string) {
+  const [chainBookmark = "", localBookmark = "0"] = bookmark.split("#");
+  return { chainBookmark, localBookmark };
 }

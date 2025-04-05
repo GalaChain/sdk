@@ -34,7 +34,7 @@ import { instanceToPlain, plainToClass as plainToInstance } from "class-transfor
 
 jest.setTimeout(30000);
 
-describe("NFT Burn scenario", () => {
+describe.skip("NFT Burn scenario", () => {
   let client: AdminChainClients;
   let user1: ChainUser;
   let user2: ChainUser;

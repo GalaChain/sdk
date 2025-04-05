@@ -24,7 +24,7 @@ import {
 
 import { GalaChainContext } from "../types";
 import { getObjectByKey, validateTokenOrder } from "../utils";
-import { checkUserPositionNft } from "./positionNft";
+import { fetchUserPositionNftId } from "./positionNft";
 
 /**
  * @dev The getRemoveLiquidityEstimation function estimates the amount of tokens a user will receive when removing liquidity from a Uniswap V3 pool within the GalaChain ecosystem. It calculates the expected token amounts based on the user's liquidity position and market conditions.
@@ -48,7 +48,7 @@ export async function getRemoveLiquidityEstimation(
     }
   });
 
-  const positionNftId = await checkUserPositionNft(
+  const positionNftId = await fetchUserPositionNftId(
     ctx,
     pool,
     dto.tickUpper.toString(),

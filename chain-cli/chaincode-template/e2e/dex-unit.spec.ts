@@ -48,8 +48,8 @@ import BigNumber from "bignumber.js";
 
 import TOKENS from "./tokens";
 
-const ETH_ClassKey = Object.assign(new TokenClassKey(), TOKENS.ETH.KEY);
-const USDC_ClassKey = Object.assign(new TokenClassKey(), TOKENS.USDC.KEY);
+const ethClasskey = Object.assign(new TokenClassKey(), TOKENS.ETH.KEY);
+const usdcClasskey = Object.assign(new TokenClassKey(), TOKENS.USDC.KEY);
 
 describe.skip("Unit testing for helper functions", () => {
   describe("Add liquidity Helper functions", () => {
@@ -335,13 +335,13 @@ describe("leastSignificantBit", () => {
 });
 describe("validateTokenOrder", () => {
   test("should return string keys for the sorted tokens", () => {
-    expect(validateTokenOrder(ETH_ClassKey, USDC_ClassKey)).toMatchObject([
-      ETH_ClassKey.toStringKey(),
-      USDC_ClassKey.toStringKey()
+    expect(validateTokenOrder(ethClasskey, usdcClasskey)).toMatchObject([
+      ethClasskey.toStringKey(),
+      usdcClasskey.toStringKey()
     ]);
   });
   test("should throw error string for the un-sorted tokens", () => {
-    expect(() => validateTokenOrder(USDC_ClassKey, ETH_ClassKey)).toThrow("Token0 must be smaller");
+    expect(() => validateTokenOrder(usdcClasskey, ethClasskey)).toThrow("Token0 must be smaller");
   });
 });
 describe("genKey", () => {

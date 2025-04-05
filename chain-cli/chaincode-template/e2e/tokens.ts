@@ -106,12 +106,12 @@ const TOKENS = {
   }
 };
 
-export const ETH_ClassKey = Object.assign(new TokenClassKey(), TOKENS.ETH.KEY);
-export const USDT_ClassKey = Object.assign(new TokenClassKey(), TOKENS.USDT.KEY);
-export const USDC_ClassKey = Object.assign(new TokenClassKey(), TOKENS.USDC.KEY);
-export const BTC_ClassKey = Object.assign(new TokenClassKey(), TOKENS.BTC.KEY);
-export const BNB_ClassKey = Object.assign(new TokenClassKey(), TOKENS.BNB.KEY);
-export const SOL_ClassKey = Object.assign(new TokenClassKey(), TOKENS.SOL.KEY);
-export const MATIC_ClassKey = Object.assign(new TokenClassKey(), TOKENS.MATIC.KEY);
+export const ethClassKey= Object.assign(new TokenClassKey(), TOKENS.ETH.KEY);
+export const usdtClassKey = Object.assign(new TokenClassKey(), TOKENS.USDT.KEY);
+export const usdcClassKey = Object.assign(new TokenClassKey(), TOKENS.USDC.KEY);
+export const btcClassKey = Object.assign(new TokenClassKey(), TOKENS.BTC.KEY);
+export const bnbClassKey = Object.assign(new TokenClassKey(), TOKENS.BNB.KEY);
+export const solClassKey = Object.assign(new TokenClassKey(), TOKENS.SOL.KEY);
+export const maticClassKey = Object.assign(new TokenClassKey(), TOKENS.MATIC.KEY);
 
 export default TOKENS;
