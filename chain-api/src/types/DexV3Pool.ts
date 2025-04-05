@@ -41,14 +41,14 @@ import {
   liquidity0,
   liquidity1,
   nextInitialisedTickWithInSameWord,
+  poolIdentityKey,
   requirePosititve,
   sqrtPriceToTick,
   tickCross,
   tickSpacingToMaxLiquidityPerTick,
   tickToSqrtPrice,
   updatePositions,
-  updateTick,
-  poolIdentityKey
+  updateTick
 } from "../utils";
 import { BigNumberProperty } from "../validators";
 import { ChainObject } from "./ChainObject";

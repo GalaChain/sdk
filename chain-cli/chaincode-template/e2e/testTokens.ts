@@ -106,7 +106,7 @@ const testTokens = {
   }
 };
 
-export const ethClassKey= Object.assign(new TokenClassKey(), testTokens.ETH.KEY);
+export const ethClassKey = Object.assign(new TokenClassKey(), testTokens.ETH.KEY);
 export const usdtClassKey = Object.assign(new TokenClassKey(), testTokens.USDT.KEY);
 export const usdcClassKey = Object.assign(new TokenClassKey(), testTokens.USDC.KEY);
 export const btcClassKey = Object.assign(new TokenClassKey(), testTokens.BTC.KEY);

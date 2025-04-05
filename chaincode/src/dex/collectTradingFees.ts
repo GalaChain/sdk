@@ -29,12 +29,7 @@ import { fetchOrCreateBalance } from "../balances";
 import { fetchTokenClass } from "../token";
 import { transferToken } from "../transfer";
 import { GalaChainContext } from "../types";
-import {
-  fetchDexProtocolFeeConfig,
-  getObjectByKey,
-  putChainObject,
-  validateTokenOrder,
-} from "../utils";
+import { fetchDexProtocolFeeConfig, getObjectByKey, putChainObject, validateTokenOrder } from "../utils";
 
 /**
  * @dev The collectTradingFees function enables the collection of protocol fees accumulated in a Uniswap V3 pool within the GalaChain ecosystem. It retrieves and transfers the protocol's share of the trading fees to the designated recipient.

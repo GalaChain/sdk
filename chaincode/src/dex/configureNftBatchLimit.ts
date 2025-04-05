@@ -13,10 +13,9 @@
  * limitations under the License.
  */
 import { ChainError, ErrorCode, NftBatchLimit, NftBatchLimitDto, UnauthorizedError } from "@gala-chain/api";
-import { putChainObject } from "@gala-chain/chaincode";
-import { getObjectByKey } from "@gala-chain/chaincode";
 
 import { GalaChainContext } from "../types";
+import { getObjectByKey, putChainObject } from "../utils";
 
 /**
  * @description Updates and sets the maximum supply limit for Liquidity NFT batches.
