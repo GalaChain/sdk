@@ -32,6 +32,7 @@ import { createTokenClass } from "../token";
 import { transferToken } from "../transfer";
 import { GalaChainContext } from "../types";
 import { genKey, getObjectByKey, parseNftId } from "../utils";
+import { fetchNftBatchLimit } from "./fetchNftBatchLimit";
 
 const LIQUIDITY_TOKEN_CATEGORY = "LiquidityPositions";
 const LIQUIDITY_TOKEN_COLLECTION = "NFT";
@@ -73,13 +74,13 @@ export async function assignPositionNft(
 }
 
 /**
- * @dev Function to fetch position NFTs for a given pool. The fetchPositionNfts function retrieves 
+ * @dev Function to fetch position NFTs for a given pool. The fetchPositionNfts function retrieves
  *      all NFTs associated with a specified pool and owner by querying the blockchain ledger.
- * 
+ *
  * @param ctx GalaChainContext – The execution context that provides access to the GalaChain environment.
  * @param poolAddrKey string – The unique key identifying the NFT pool.
  * @param owner string – The address of the owner whose NFTs are being retrieved.
- * 
+ *
  * @returns Promise<TokenBalance[]> – A promise resolving to the list of NFTs associated with the specified pool and owner.
  */
 
@@ -93,14 +94,14 @@ async function fetchPositionNfts(ctx: GalaChainContext, poolAddrKey: string, own
 }
 
 /**
- * @dev Function to transfer a position NFT. The transferPositionNft function facilitates the 
+ * @dev Function to transfer a position NFT. The transferPositionNft function facilitates the
  *      transfer of a specified NFT instance from one owner to another.
- * 
+ *
  * @param ctx GalaChainContext – The execution context that provides access to the GalaChain environment.
  * @param poolAddrKey string – The unique key identifying the NFT pool.
  * @param from string – The address of the current owner transferring the NFT.
  * @param nft TokenBalance – The NFT token balance containing the instance to be transferred.
- * 
+ *
  * @returns Promise<string> – A promise resolving to the generated key of the transferred NFT instance.
  */
 async function transferPositionNft(
@@ -136,14 +137,14 @@ async function transferPositionNft(
 }
 
 /**
- * @dev Function to generate a batch of position NFTs. The generatePositionNftBatch function 
+ * @dev Function to generate a batch of position NFTs. The generatePositionNftBatch function
  *      creates a new batch of NFTs representing liquidity positions
- * 
+ *
  * @param ctx GalaChainContext – The execution context that provides access to the GalaChain environment.
  * @param batchNumber string – The identifier for the NFT batch being generated.
  * @param poolAddrKey string – The unique key identifying the NFT pool.
  * @param poolAlias string – The virtual address associated with the liquidity pool.
- * 
+ *
  * @returns Promise<void> – A promise that resolves once the NFT batch has been created and minted.
  */
 
@@ -162,7 +163,9 @@ export async function generatePositionNftBatch(
   });
 
   // Fetch NFT batch configuration
-  const nftBatchLimit = await getObjectByKey(ctx, NftBatchLimit, NftBatchLimit.INDEX_KEY).catch((e) => {
+  const key = ctx.stub.createCompositeKey(NftBatchLimit.INDEX_KEY, []);
+
+  const nftBatchLimit = await getObjectByKey(ctx, NftBatchLimit, key).catch((e) => {
     const chainError = ChainError.from(e);
     if (chainError.matches(ErrorCode.NOT_FOUND)) {
       return undefined;
@@ -207,17 +210,17 @@ export async function generatePositionNftBatch(
 }
 
 /**
- * @dev Function to fetch the NFT ID of a user's liquidity position. The fetchUserPositionNftId 
- *      function retrieves the NFT instance associated with a specific liquidity position in a pool, 
+ * @dev Function to fetch the NFT ID of a user's liquidity position. The fetchUserPositionNftId
+ *      function retrieves the NFT instance associated with a specific liquidity position in a pool,
  *      based on tick values.
- * 
+ *
  * @param ctx GalaChainContext – The execution context that provides access to the GalaChain environment.
  * @param pool Pool – The pool object containing liquidity positions.
  * @param tickUpper string – The upper tick value of the liquidity position.
  * @param tickLower string – The lower tick value of the liquidity position.
- * @param owner string (Optional) – The address of the owner whose position NFT is being retrieved. 
+ * @param owner string (Optional) – The address of the owner whose position NFT is being retrieved.
  *                                 Defaults to the calling user if not provided.
- * 
+ *
  * @returns Promise<string | undefined> – The NFT ID if a matching position is found, otherwise undefined.
  */
 
@@ -249,13 +252,13 @@ export async function fetchUserPositionNftId(
 
 /**
  * @dev Function to fetch the token instance key of a position NFT.
- * 
+ *
  * @param ctx GalaChainContext – The execution context that provides access to the GalaChain environment.
  * @param poolAddrKey string – The unique key identifying the NFT pool.
  * @param nftId string – The identifier of the NFT instance.
- * 
+ *
  * @returns Promise<TokenInstanceKey> – A promise resolving to the instance key of the specified NFT.
- * 
+ *
  * @throws NotFoundError – If the specified NFT instance cannot be found.
  */
 export async function fetchPositionNftInstanceKey(

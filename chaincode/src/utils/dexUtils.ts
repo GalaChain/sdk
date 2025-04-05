@@ -23,12 +23,12 @@ import { getObjectByKey } from "./state";
  * @param arr It will sort array for string
  * @returns It will return modified array with sorted according to lexiographical order
  */
-export const sortString = (arr: string[]) => {
+export function sortString(arr: string[]) {
   const sortedArr = [...arr].sort((a, b) => a.localeCompare(b));
   const isChanged = !arr.every((val, index) => val === sortedArr[index]);
 
   return { sortedArr, isChanged };
-};
+}
 
 /**
  *
@@ -36,11 +36,11 @@ export const sortString = (arr: string[]) => {
  * @param idx Element1 to swap
  * @param idx2 Element2 to swap
  */
-export const swapAmounts = (arr: string[] | BigNumber[], idx = 0, idx2 = 1) => {
+export function swapAmounts(arr: string[] | BigNumber[], idx = 0, idx2 = 1) {
   const temp = arr[idx];
   arr[idx] = arr[idx2];
   arr[idx2] = temp;
-};
+}
 
 /**
  * @dev it will round down the Bignumber to 18 decimals
@@ -48,13 +48,23 @@ export const swapAmounts = (arr: string[] | BigNumber[], idx = 0, idx2 = 1) => {
  * @param round
  * @returns
  */
-export const f18 = (BN: BigNumber, round: BigNumber.RoundingMode = BigNumber.ROUND_DOWN): BigNumber =>
-  new BigNumber(BN.toFixed(18, round));
+export function f18(BN: BigNumber, round: BigNumber.RoundingMode = BigNumber.ROUND_DOWN): BigNumber {
+  return new BigNumber(BN.toFixed(18, round));
+}
 
-export const generateKeyFromClassKey = (obj: TokenClassKey) => {
-  return Object.assign(new TokenClassKey(), obj).toStringKey().replace(/\|/g, ":") || "";
-};
+export function generateKeyFromClassKey(obj: TokenClassKey) {
+  return obj.toStringKey().replace(/\|/g, ":") || "";
+}
 
+/**
+ * Validates the order of two TokenClassKey instances.
+ * Ensures token0 is lexicographically smaller than token1 and that both are distinct.
+ *
+ * @param token0 First token
+ * @param token1 Second token
+ * @returns A tuple of normalized and sorted token keys
+ * @throws Error if tokens are the same or in the wrong order
+ */
 export function validateTokenOrder(token0: TokenClassKey, token1: TokenClassKey) {
   const [normalizedToken0, normalizedToken1] = [token0, token1].map(generateKeyFromClassKey);
 
@@ -70,14 +80,14 @@ export function validateTokenOrder(token0: TokenClassKey, token1: TokenClassKey)
   return [normalizedToken0, normalizedToken1];
 }
 
-export function genKey(...params: string[] | number[]): string {
-  return params.join("_").replace(/\|/g, ":");
-}
-
-export function genKeyWithPipe(...params: string[] | number[]): string {
-  return params.join("_");
-}
-
+/**
+ * Fetches the Dex protocol fee configuration from the chain context.
+ * Returns undefined if the config is not found.
+ *
+ * @param ctx GalaChain context containing the chain stub
+ * @returns A Promise resolving to the DexFeeConfig or undefined
+ * @throws ChainError if an unexpected error occurs during retrieval
+ */
 export async function fetchDexProtocolFeeConfig(ctx: GalaChainContext): Promise<DexFeeConfig | undefined> {
   const key = ctx.stub.createCompositeKey(DexFeeConfig.INDEX_KEY, []);
 
@@ -93,15 +103,13 @@ export async function fetchDexProtocolFeeConfig(ctx: GalaChainContext): Promise<
   return dexConfig;
 }
 
-export function genBookMark(...params: string[] | number[]): string {
-  return params.join("#");
-}
-
-export function splitBookmark(bookmark = "") {
-  const [chainBookmark = "", localBookmark = "0"] = bookmark.split("#");
-  return { chainBookmark, localBookmark };
-}
-
+/**
+ * Parses an NFT ID string into its batch number and instance ID components.
+ *
+ * @param nftId The NFT ID in the format 'batchNumber_instanceId'
+ * @returns An object containing the batchNumber and instanceId as BigNumber
+ * @throws ValidationFailedError if the input format is invalid
+ */
 export function parseNftId(nftId: string): { batchNumber: string; instanceId: BigNumber } {
   const parts = nftId.split("_");
   if (parts.length !== 2) {
@@ -111,4 +119,21 @@ export function parseNftId(nftId: string): { batchNumber: string; instanceId: Bi
     batchNumber: parts[0],
     instanceId: new BigNumber(parts[1])
   };
+}
+
+export function genKey(...params: string[] | number[]): string {
+  return params.join("_").replace(/\|/g, ":");
+}
+
+export function genKeyWithPipe(...params: string[] | number[]): string {
+  return params.join("_");
+}
+
+export function genBookMark(...params: string[] | number[]): string {
+  return params.join("#");
+}
+
+export function splitBookmark(bookmark = "") {
+  const [chainBookmark = "", localBookmark = "0"] = bookmark.split("#");
+  return { chainBookmark, localBookmark };
 }
