@@ -15,8 +15,10 @@
 import {
   BadRequestError,
   ChainCallDTO,
+  ChainError,
   DefaultError,
   DexFeeConfig,
+  ErrorCode,
   GetAddLiquidityEstimationDto,
   GetAddLiquidityEstimationResDto,
   GetLiquidityResDto,
@@ -66,7 +68,14 @@ export async function getPoolData(ctx: GalaChainContext, dto: GetPoolDto): Promi
     ctx,
     Pool,
     ctx.stub.createCompositeKey(Pool.INDEX_KEY, [token0, token1, dto.fee.toString()])
-  ).catch(() => undefined);
+  ).catch((e) => {
+    const chainError = ChainError.from(e);
+    if (chainError.matches(ErrorCode.NOT_FOUND)) {
+      return undefined;
+    } else {
+      throw chainError;
+    }
+  });
   return pool;
 }
 
@@ -170,6 +179,16 @@ export async function getPositionWithNftId(
   return position;
 }
 
+/**
+ * @dev Function to retrieve a pool from its address key. The getPoolFromAddressKey function
+ *      parses the pool address key, extracts token details, and fetches the corresponding
+ *      pool data from the blockchain.
+ *
+ * @param ctx GalaChainContext – The execution context that provides access to the GalaChain environment.
+ * @param poolAddrKey string – The unique address key representing the liquidity pool.
+ *
+ * @returns Promise<Pool> – A promise resolving to the pool object.
+ */
 export async function getPoolFromAddressKey(ctx: GalaChainContext, poolAddrKey: string): Promise<Pool> {
   const [token0StringKey, token1StringKey, fee] = poolAddrKey.split("_");
   const token0 = new TokenClassKey();

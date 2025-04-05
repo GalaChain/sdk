@@ -15,6 +15,8 @@
 import {
   AddLiquidityDTO,
   AddLiquidityResDto,
+  ChainError,
+  ErrorCode,
   NotFoundError,
   Pool,
   SlippageToleranceExceededError,
@@ -47,10 +49,15 @@ export async function addLiquidity(
   const [token0, token1] = validateTokenOrder(dto.token0, dto.token1);
 
   const key = ctx.stub.createCompositeKey(Pool.INDEX_KEY, [token0, token1, dto.fee.toString()]);
-  const pool = await getObjectByKey(ctx, Pool, key);
+  const pool = await getObjectByKey(ctx, Pool, key).catch((e) => {
+    const chainError = ChainError.from(e);
+    if (chainError.matches(ErrorCode.NOT_FOUND)) {
+      throw new NotFoundError("Pool does not exist");
+    } else {
+      throw chainError;
+    }
+  });
 
-  //If pool does not exist
-  if (pool == undefined) throw new NotFoundError("Pool does not exist");
   const currentSqrtPrice = pool.sqrtPrice;
 
   //create tokenInstanceKeys
@@ -81,10 +88,10 @@ export async function addLiquidity(
   );
 
   const poolAddrKey = pool.getPoolAddrKey();
-  const poolVirtualAddress = pool.getPoolVirtualAddress();
+  const poolAlias = pool.getPoolAlias();
   const positionNftId =
     (await fetchUserPositionNftId(ctx, pool, dto.tickUpper.toString(), dto.tickLower.toString())) ??
-    (await assignPositionNft(ctx, poolAddrKey, poolVirtualAddress));
+    (await assignPositionNft(ctx, poolAddrKey, poolAlias));
 
   let [amount0, amount1] = pool.mint(positionNftId, tickLower, tickUpper, liquidity.f18());
   [amount0, amount1] = [amount0.f18(), amount1.f18()];
@@ -118,7 +125,7 @@ export async function addLiquidity(
     // transfer token0
     await transferToken(ctx, {
       from: liquidityProvider,
-      to: poolVirtualAddress,
+      to: poolAlias,
       tokenInstanceKey: token0InstanceKey,
       quantity: new BigNumber(amount0).decimalPlaces(token0Class.decimals, BigNumber.ROUND_DOWN),
       allowancesToUse: [],
@@ -132,7 +139,7 @@ export async function addLiquidity(
     // transfer token1
     await transferToken(ctx, {
       from: liquidityProvider,
-      to: poolVirtualAddress,
+      to: poolAlias,
       tokenInstanceKey: token1InstanceKey,
       quantity: new BigNumber(amount1).decimalPlaces(token1Class.decimals, BigNumber.ROUND_DOWN),
       allowancesToUse: [],

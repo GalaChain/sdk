@@ -12,7 +12,15 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-import { BurnDto, ConflictError, GetRemoveLiqEstimationResDto, NotFoundError, Pool } from "@gala-chain/api";
+import {
+  BurnDto,
+  ChainError,
+  ConflictError,
+  ErrorCode,
+  GetRemoveLiqEstimationResDto,
+  NotFoundError,
+  Pool
+} from "@gala-chain/api";
 
 import { GalaChainContext } from "../types";
 import { getObjectByKey, validateTokenOrder } from "../utils";
@@ -31,10 +39,14 @@ export async function getRemoveLiquidityEstimation(
   const [token0, token1] = validateTokenOrder(dto.token0, dto.token1);
 
   const key = ctx.stub.createCompositeKey(Pool.INDEX_KEY, [token0, token1, dto.fee.toString()]);
-  const pool = await getObjectByKey(ctx, Pool, key);
-
-  //If pool does not exist
-  if (pool == undefined) throw new ConflictError("Pool does not exist");
+  const pool = await getObjectByKey(ctx, Pool, key).catch((e) => {
+    const chainError = ChainError.from(e);
+    if (chainError.matches(ErrorCode.NOT_FOUND)) {
+      throw new ConflictError("Pool does not exist");
+    } else {
+      throw chainError;
+    }
+  });
 
   const positionNftId = await fetchUserPositionNftId(
     ctx,

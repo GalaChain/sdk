@@ -13,9 +13,11 @@
  * limitations under the License.
  */
 import {
+  ChainError,
   ConflictError,
   CreatePoolDto,
   DexFeeConfig,
+  ErrorCode,
   Pool,
   TokenInstanceKey,
   ValidationFailedError,
@@ -51,7 +53,14 @@ export async function createPool(ctx: GalaChainContext, dto: CreatePoolDto): Pro
   }
   const key = ctx.stub.createCompositeKey(DexFeeConfig.INDEX_KEY, []);
   let protocolFee = 0.1; // default
-  const protocolFeeConfig = await getObjectByKey(ctx, DexFeeConfig, key).catch(() => null);
+  const protocolFeeConfig = await getObjectByKey(ctx, DexFeeConfig, key).catch((e) => {
+    const chainError = ChainError.from(e);
+    if (chainError.matches(ErrorCode.NOT_FOUND)) {
+      return undefined;
+    } else {
+      throw chainError;
+    }
+  });
   if (protocolFeeConfig) {
     protocolFee = protocolFeeConfig.protocolFee;
   }
@@ -83,7 +92,7 @@ export async function createPool(ctx: GalaChainContext, dto: CreatePoolDto): Pro
   if (existingPool !== undefined)
     throw new ConflictError("Pool already exists", existingPool.toPlainObject());
 
-  await generatePositionNftBatch(ctx, "1", pool.getPoolAddrKey(), pool.getPoolVirtualAddress());
+  await generatePositionNftBatch(ctx, "1", pool.getPoolAddrKey(), pool.getPoolAlias());
   await putChainObject(ctx, pool);
   return pool;
 }

@@ -13,7 +13,9 @@
  * limitations under the License.
  */
 import {
-  ConflictError,
+  ChainError,
+  ErrorCode,
+  NotFoundError,
   Pool,
   SlippageToleranceExceededError,
   SwapDto,
@@ -26,7 +28,7 @@ import { fetchOrCreateBalance } from "../balances";
 import { fetchTokenClass } from "../token";
 import { transferToken } from "../transfer";
 import { GalaChainContext } from "../types";
-import { genKey, getObjectByKey, putChainObject, validateTokenOrder, virtualAddress } from "../utils";
+import { genKey, getObjectByKey, putChainObject, validateTokenOrder } from "../utils";
 
 /**
  * @dev The swap function executes a token swap in a Uniswap V3-like liquidity pool within the GalaChain ecosystem.
@@ -48,14 +50,17 @@ export async function swap(ctx: GalaChainContext, dto: SwapDto): Promise<SwapRes
   const sqrtPriceLimit = dto.sqrtPriceLimit;
 
   const key = ctx.stub.createCompositeKey(Pool.INDEX_KEY, [token0, token1, dto.fee.toString()]);
-  const pool = await getObjectByKey(ctx, Pool, key);
-
-  //If pool does not exist
-  if (pool == undefined) throw new ConflictError("Pool does not exist");
+  const pool = await getObjectByKey(ctx, Pool, key).catch((e) => {
+    const chainError = ChainError.from(e);
+    if (chainError.matches(ErrorCode.NOT_FOUND)) {
+      throw new NotFoundError("Pool does not exist");
+    } else {
+      throw chainError;
+    }
+  });
 
   const amounts = pool.swap(zeroForOne, dto.amount, sqrtPriceLimit);
-  const poolAddrKey = genKey(pool.token0, pool.token1, pool.fee.toString());
-  const poolVirtualAddress = virtualAddress(poolAddrKey);
+  const poolAlias = pool.getPoolAlias();
 
   //create tokenInstanceKeys
   const tokenInstanceKeys = [pool.token0ClassKey, pool.token1ClassKey].map(TokenInstanceKey.fungibleKey);
@@ -71,7 +76,7 @@ export async function swap(ctx: GalaChainContext, dto: SwapDto): Promise<SwapRes
 
       await transferToken(ctx, {
         from: ctx.callingUser,
-        to: poolVirtualAddress,
+        to: poolAlias,
         tokenInstanceKey: tokenInstanceKeys[index],
         quantity: new BigNumber(amount.toFixed(tokenClasses[index].decimals)),
         allowancesToUse: [],
@@ -85,7 +90,7 @@ export async function swap(ctx: GalaChainContext, dto: SwapDto): Promise<SwapRes
 
       const poolTokenBalance = await fetchOrCreateBalance(
         ctx,
-        poolVirtualAddress,
+        poolAlias,
         tokenInstanceKeys[index].getTokenClassKey()
       );
       const roundedAmount = BigNumber.min(
@@ -93,14 +98,14 @@ export async function swap(ctx: GalaChainContext, dto: SwapDto): Promise<SwapRes
         poolTokenBalance.getQuantityTotal()
       );
       await transferToken(ctx, {
-        from: poolVirtualAddress,
+        from: poolAlias,
         to: ctx.callingUser,
         tokenInstanceKey: tokenInstanceKeys[index],
         quantity: roundedAmount,
         allowancesToUse: [],
         authorizedOnBehalf: {
-          callingOnBehalf: poolVirtualAddress,
-          callingUser: poolVirtualAddress
+          callingOnBehalf: poolAlias,
+          callingUser: poolAlias
         }
       });
     }

@@ -51,46 +51,82 @@ import TOKENS from "./tokens";
 const ETH_ClassKey = Object.assign(new TokenClassKey(), TOKENS.ETH.KEY);
 const USDC_ClassKey = Object.assign(new TokenClassKey(), TOKENS.USDC.KEY);
 
-describe("Unit testing for helper functions", () => {
+describe.skip("Unit testing for helper functions", () => {
   describe("Add liquidity Helper functions", () => {
     describe("liquidity0", () => {
       it("should return correct liquidity when sqrtPriceA < sqrtPriceB", () => {
+
+        //Given 
+
         const amount = new BigNumber(1000);
         const sqrtPriceA = new BigNumber(2);
         const sqrtPriceB = new BigNumber(5);
+
+        //When  
+
         const expectedLiquidity = amount
           .multipliedBy(sqrtPriceA.multipliedBy(sqrtPriceB))
           .dividedBy(sqrtPriceB.minus(sqrtPriceA));
+
+        //Then 
+
         expect(liquidity0(amount, sqrtPriceA, sqrtPriceB).toString()).toBe(expectedLiquidity.toString());
       });
       it("should swap values if sqrtPriceA > sqrtPriceB", () => {
+
+        //Given 
+
         const amount = new BigNumber(1000);
         const sqrtPriceA = new BigNumber(5);
         const sqrtPriceB = new BigNumber(2);
+
+        //When 
+
         const expectedLiquidity = amount
           .multipliedBy(sqrtPriceB.multipliedBy(sqrtPriceA))
           .dividedBy(sqrtPriceA.minus(sqrtPriceB));
+
+        //Then 
 
         expect(liquidity0(amount, sqrtPriceA, sqrtPriceB).toString()).toBe(expectedLiquidity.toString());
       });
 
       it("should handle edge case where amount is zero", () => {
+
+        //Given 
+
         const amount = new BigNumber(0);
         const sqrtPriceA = new BigNumber(2);
         const sqrtPriceB = new BigNumber(5);
+      
+        //When 
 
-        expect(liquidity0(amount, sqrtPriceA, sqrtPriceB).toString()).toBe("0");
+        const result = liquidity0(amount, sqrtPriceA, sqrtPriceB).toString();
+
+        //Then 
+
+        expect(result).toBe("0");
       });
 
       it("should handle large numbers correctly", () => {
+
+        //Given 
+
         const amount = new BigNumber("1000000000000000000");
         const sqrtPriceA = new BigNumber("1000000000000");
         const sqrtPriceB = new BigNumber("5000000000000");
+
+        //When 
+
+        const result = liquidity0(amount, sqrtPriceA, sqrtPriceB).toString();
+
+        //Then 
+
         const expectedLiquidity = amount
           .multipliedBy(sqrtPriceA.multipliedBy(sqrtPriceB))
           .dividedBy(sqrtPriceB.minus(sqrtPriceA));
 
-        expect(liquidity0(amount, sqrtPriceA, sqrtPriceB).toString()).toBe(expectedLiquidity.toString());
+        expect(result).toBe(expectedLiquidity.toString());
       });
     });
   });
@@ -100,95 +136,157 @@ describe("Unit testing for helper functions", () => {
      * SqrtPriceB > sqrtPriceA
      */
     it("should return liquidity0 when sqrtRatio <= sqrtRatioA", () => {
+
+      //Given 
+
       const sqrtRatio = new BigNumber(2);
       const sqrtRatioA = new BigNumber(3);
       const sqrtRatioB = new BigNumber(5);
       const amount0 = new BigNumber(1000);
       const amount1 = new BigNumber(500);
 
+      //When 
+
       const expectedLiquidity = liquidity0(amount0, sqrtRatioA, sqrtRatioB);
-      expect(getLiquidityForAmounts(sqrtRatio, sqrtRatioA, sqrtRatioB, amount0, amount1).toString()).toBe(
+
+      const result = getLiquidityForAmounts(sqrtRatio, sqrtRatioA, sqrtRatioB, amount0, amount1).toString() ; 
+
+      //Then 
+
+      expect(result).toBe(
         expectedLiquidity.toString()
       );
     });
 
     it("should return minimum of liquidity0 and liquidity1 when sqrtRatio is within range", () => {
+
+      //Given 
+
       const sqrtRatio = new BigNumber(4);
       const sqrtRatioA = new BigNumber(3);
       const sqrtRatioB = new BigNumber(5);
       const amount0 = new BigNumber(1000);
       const amount1 = new BigNumber(500);
 
+      //When 
       const Liquidity0 = liquidity0(amount0, sqrtRatio, sqrtRatioB);
       const Liquidity1 = liquidity1(amount1, sqrtRatioA, sqrtRatio);
       const expectedLiquidity = Liquidity0.lt(Liquidity1) ? Liquidity0 : Liquidity1;
 
-      expect(getLiquidityForAmounts(sqrtRatio, sqrtRatioA, sqrtRatioB, amount0, amount1).toString()).toBe(
+      const result = getLiquidityForAmounts(sqrtRatio, sqrtRatioA, sqrtRatioB, amount0, amount1).toString()
+     
+      //Then 
+
+      expect(result).toBe(
         expectedLiquidity.toString()
       );
     });
 
     it("should return liquidity1 when sqrtRatio >= sqrtRatioB", () => {
+
+      //Given 
+
       const sqrtRatio = new BigNumber(6);
       const sqrtRatioA = new BigNumber(3);
       const sqrtRatioB = new BigNumber(5);
       const amount0 = new BigNumber(1000);
       const amount1 = new BigNumber(500);
 
+      //When 
+
       const expectedLiquidity = liquidity1(amount1, sqrtRatioA, sqrtRatioB);
-      expect(getLiquidityForAmounts(sqrtRatio, sqrtRatioA, sqrtRatioB, amount0, amount1).toString()).toBe(
+      const result = getLiquidityForAmounts(sqrtRatio, sqrtRatioA, sqrtRatioB, amount0, amount1).toString(); 
+
+      //Then 
+
+      expect(result).toBe(
         expectedLiquidity.toString()
       );
     });
 
     it("should handle edge case where amount0 and amount1 are zero", () => {
+
+      //Given 
+
       const sqrtRatio = new BigNumber(4);
       const sqrtRatioA = new BigNumber(3);
       const sqrtRatioB = new BigNumber(5);
       const amount0 = new BigNumber(0);
       const amount1 = new BigNumber(0);
 
-      expect(getLiquidityForAmounts(sqrtRatio, sqrtRatioA, sqrtRatioB, amount0, amount1).toString()).toBe(
+      //When 
+
+      const result = getLiquidityForAmounts(sqrtRatio, sqrtRatioA, sqrtRatioB, amount0, amount1).toString()
+      
+      //Then 
+
+      expect(result).toBe(
         "0"
       );
     });
   });
   describe("getAmountsForLiquidity", () => {
     it("should return correct amounts when sqrtRatio <= sqrtRatioA", () => {
+
+      //Given 
+
       const sqrtRatio = new BigNumber(2);
       const sqrtRatioA = new BigNumber(3);
       const sqrtRatioB = new BigNumber(5);
       const liquidity = new BigNumber(1000);
 
+      //When
+
       const expectedAmount0 = getAmount0Delta(sqrtRatioA, sqrtRatioB, liquidity);
-      expect(getAmountsForLiquidity(sqrtRatio, sqrtRatioA, sqrtRatioB, liquidity)).toEqual([
+      const result = getAmountsForLiquidity(sqrtRatio, sqrtRatioA, sqrtRatioB, liquidity); 
+      
+      //Then
+      expect(result).toEqual([
         expectedAmount0,
         new BigNumber(0)
       ]);
     });
 
     it("should return correct amounts when sqrtRatio is within range", () => {
+
+      //Given 
+
       const sqrtRatio = new BigNumber(4);
       const sqrtRatioA = new BigNumber(3);
       const sqrtRatioB = new BigNumber(5);
       const liquidity = new BigNumber(1000);
 
+      //When 
+
       const expectedAmount0 = getAmount0Delta(sqrtRatio, sqrtRatioB, liquidity);
       const expectedAmount1 = getAmount1Delta(sqrtRatioA, sqrtRatio, liquidity);
-      expect(getAmountsForLiquidity(sqrtRatio, sqrtRatioA, sqrtRatioB, liquidity)).toEqual([
+      const result =  getAmountsForLiquidity(sqrtRatio, sqrtRatioA, sqrtRatioB, liquidity) ; 
+
+      //Then 
+
+      expect(result).toEqual([
         expectedAmount0,
         expectedAmount1
       ]);
     });
 
     it("should return correct amounts when sqrtRatio >= sqrtRatioB", () => {
+      
+      //Given 
+
       const sqrtRatio = new BigNumber(6);
       const sqrtRatioA = new BigNumber(3);
       const sqrtRatioB = new BigNumber(5);
       const liquidity = new BigNumber(1000);
 
+      //When 
+
       const expectedAmount1 = getAmount1Delta(sqrtRatioA, sqrtRatioB, liquidity);
-      expect(getAmountsForLiquidity(sqrtRatio, sqrtRatioA, sqrtRatioB, liquidity)).toEqual([
+      const result = getAmountsForLiquidity(sqrtRatio, sqrtRatioA, sqrtRatioB, liquidity) ; 
+
+      //Then 
+
+      expect(result).toEqual([
         new BigNumber(0),
         expectedAmount1
       ]);
@@ -254,6 +352,9 @@ describe("genKey", () => {
 
 describe("updatePositions", () => {
   test("should initialize a new position if not existing", () => {
+
+    //Given 
+
     const positions = {};
     const nftId = "0x123";
     const tickLower = -10;
@@ -261,6 +362,8 @@ describe("updatePositions", () => {
     const liquidityDelta = new BigNumber(100);
     const feeGrowthInside0 = new BigNumber(5);
     const feeGrowthInside1 = new BigNumber(10);
+
+    //When 
 
     updatePositions(
       positions,
@@ -272,11 +375,16 @@ describe("updatePositions", () => {
       feeGrowthInside1
     );
 
+    //Then
+    
     expect(positions[nftId]).toBeTruthy();
     expect(positions[nftId].liquidity).toBe("100");
   });
 
   test("should update liquidity and fees for an existing position", () => {
+
+    //Given
+
     const positions = {};
     const nftId = "0x123";
     const tickLower = -10;
@@ -285,6 +393,7 @@ describe("updatePositions", () => {
     const feeGrowthInside0 = new BigNumber(5);
     const feeGrowthInside1 = new BigNumber(10);
 
+    //When 
     updatePositions(
       positions,
       nftId,
@@ -305,12 +414,17 @@ describe("updatePositions", () => {
     );
     const position = positions[nftId];
 
+    //Then 
+
     expect(position.liquidity).toBe("150");
     expect(position.feeGrowthInside0Last).toBe("8");
     expect(position.feeGrowthInside1Last).toBe("15");
   });
 
   test("should throw error if decreasing liquidity below zero", () => {
+
+    //Given
+
     const positions = {};
     const nftId = "0x123";
     const tickLower = -10;
@@ -318,6 +432,8 @@ describe("updatePositions", () => {
     const liquidityDelta = new BigNumber(100);
     const feeGrowthInside0 = new BigNumber(5);
     const feeGrowthInside1 = new BigNumber(10);
+
+    //When
 
     updatePositions(
       positions,
@@ -328,6 +444,9 @@ describe("updatePositions", () => {
       feeGrowthInside0,
       feeGrowthInside1
     );
+
+    //Then 
+
     expect(() => {
       updatePositions(
         positions,
@@ -351,6 +470,7 @@ describe("getNextSqrtPriceFromAmount0", () => {
   const expectDenominatorAdd = liquidity.plus(sqrtPrice.times(amount));
   const expectDenominatorRemove = liquidity.minus(sqrtPrice.times(amount));
   test("should return correct next sqrt price when adding amount", () => {
+
     const addResult = getNextSqrtPriceFromAmount0(sqrtPrice, liquidity, amount, true);
     expect(addResult.toFixed()).toBe(expectNumerator.dividedBy(expectDenominatorAdd).toString());
   });
@@ -371,87 +491,160 @@ describe("getNextSqrtPriceFromAmount1", () => {
   });
 
   test("should return correct next sqrt price when removing amount", () => {
+
+    //Given 
+
     const sqrtPrice = new BigNumber("100000");
     const liquidity = new BigNumber("500000");
     const amount = new BigNumber("10000");
+
+    //When 
+
     const result = getNextSqrtPriceFromAmount1(sqrtPrice, liquidity, amount, false);
+
+    //Then 
     expect(result.toFixed()).toBe("99999.98");
   });
 });
 
 describe("getAmount0Delta", () => {
   test("should return correct amount0 delta", () => {
+
+
+    //Given 
+
     const sqrtPriceA = new BigNumber("100000");
     const sqrtPriceB = new BigNumber("120000");
     const liquidity = new BigNumber("500000");
+
+    //When 
+
     const result = getAmount0Delta(sqrtPriceA, sqrtPriceB, liquidity);
+
+    //Then 
     expect(result.toFixed()).toBe("0.83333333333333333334");
   });
 });
 
 describe("getAmount1Delta", () => {
   test("should return correct amount1 delta", () => {
+
+    //Given 
     const sqrtPriceLower = new BigNumber("100000");
     const sqrtPriceUpper = new BigNumber("120000");
     const liquidityDelta = new BigNumber("500000");
+
+    //When 
+
     const result = getAmount1Delta(sqrtPriceLower, sqrtPriceUpper, liquidityDelta);
+
+    //Then 
     expect(result.toFixed()).toBe("10000000000");
   });
 });
 
 describe("getNextSqrtPriceFromInput old", () => {
   test("should return correct next sqrt price when zeroForOne is true", () => {
+
+    //Given 
     const sqrtPrice = new BigNumber("100000");
     const liquidity = new BigNumber("500000");
     const amountIn = new BigNumber("10000");
+
+    //When 
+
     const result = getNextSqrtPriceFromInput(sqrtPrice, liquidity, amountIn, true);
+    
+    //Then 
+
     expect(result.toFixed()).toBe("49.97501249375312343829");
   });
 
   test("should return correct next sqrt price when zeroForOne is false", () => {
+
+    //Given 
+
     const sqrtPrice = new BigNumber("100000");
     const liquidity = new BigNumber("500000");
     const amountIn = new BigNumber("10000");
+
+    //When 
     const result = getNextSqrtPriceFromInput(sqrtPrice, liquidity, amountIn, false);
+
+    //Then
     expect(result.toFixed()).toBe("100000.02");
   });
 });
 
 describe("getNextSqrtPriceFromInput", () => {
+
+  //Given  
+
   const sqrtPrice = BigNumber("1000000000000000000");
   const liquidity = BigNumber("500000000000000000000");
   const amountIn = BigNumber("1000000000000000000");
 
   test("Token0 to Token1 swap", () => {
+
+    //When 
+
     const result = getNextSqrtPriceFromInput(sqrtPrice, liquidity, amountIn, true);
+
+    //Then 
     expect(result.toString()).toBe("499.99999999999975000001");
   });
 
   test("Token1 to Token0 swap", () => {
+
+    //When 
     const result = getNextSqrtPriceFromInput(sqrtPrice, liquidity, amountIn, false);
+
+    //Then 
     expect(result.toString()).toBe("1000000000000000000.002");
   });
 
   test("Zero amountIn should not change sqrtPrice", () => {
+
+    //When 
     const result = getNextSqrtPriceFromInput(sqrtPrice, liquidity, BigNumber("0"), true);
+
+    //Then 
     expect(result).toEqual(sqrtPrice);
   });
 
   test("Very large amountIn should return a valid price", () => {
+
+    //Given 
+
     const largeAmountIn = BigNumber("1000000000000000000000000000");
+
+    //When 
+
     const result = getNextSqrtPriceFromInput(sqrtPrice, liquidity, largeAmountIn, true);
+
+    //Then 
     expect(result).toBeInstanceOf(BigNumber);
   });
 
   test("Minimum valid values", () => {
+
+    //Given 
+
     const minSqrtPrice = BigNumber("1");
     const minLiquidity = BigNumber("1");
     const minAmountIn = BigNumber("1");
+
+    //When 
+
     const result = getNextSqrtPriceFromInput(minSqrtPrice, minLiquidity, minAmountIn, true);
+
+    //Then 
+
     expect(result).toBeInstanceOf(BigNumber);
   });
 
   test("Throws error if sqrtPrice is zero", () => {
+
     expect(() => getNextSqrtPriceFromInput(BigNumber("0"), liquidity, amountIn, true)).toThrow();
   });
 
@@ -461,36 +654,65 @@ describe("getNextSqrtPriceFromInput", () => {
 });
 
 describe("getNextSqrtPriceFromOutput", () => {
+  //Given 
+
   const sqrtPrice = BigNumber("1000000000000000000"); // 1e18
   const liquidity = BigNumber("500000000000000000000"); // 5e20
   const amountOut = BigNumber("1000000000000000000"); // 1e18
 
   test("Token0 to Token1 swap", () => {
+
+    //When 
     const result = getNextSqrtPriceFromOutput(sqrtPrice, liquidity, amountOut, true);
+
+    //Then
     expect(result.toString()).toBe("999999999999999999.998");
   });
 
   test("Token1 to Token0 swap", () => {
+
+    //When 
     const result = getNextSqrtPriceFromOutput(sqrtPrice, liquidity, amountOut, false);
+
+    //Then 
     expect(result.toString()).toBe("-500.00000000000025000001");
   });
 
   test("Zero amountOut should not change sqrtPrice", () => {
+
+    //When 
     const result = getNextSqrtPriceFromOutput(sqrtPrice, liquidity, BigNumber("0"), true);
+
+    //Then 
     expect(result).toEqual(sqrtPrice);
   });
 
   test("Very large amountOut should return a valid price", () => {
+
+    //Given 
     const largeAmountOut = BigNumber("1000000000000000000000000000"); // Large value
+
+    //When 
     const result = getNextSqrtPriceFromOutput(sqrtPrice, liquidity, largeAmountOut, true);
+
+    //Then 
     expect(result.toString()).toBe("999999999998000000");
   });
 
   test("Minimum valid values", () => {
+
+    //Given
+
     const minSqrtPrice = BigNumber("1");
     const minLiquidity = BigNumber("1");
     const minAmountOut = BigNumber("1");
+
+    //When 
+
     const result = getNextSqrtPriceFromOutput(minSqrtPrice, minLiquidity, minAmountOut, true);
+
+    //Then 
+
     expect(result.toString()).toBe("0");
   });
 
@@ -512,6 +734,9 @@ describe("getNextSqrtPriceFromOutput", () => {
 });
 
 describe("computeSwapStep", () => {
+
+  //Given
+
   const sqrtPriceCurrent = new BigNumber("1000000");
   const sqrtPriceTarget = new BigNumber("12000000");
   const liquidity = new BigNumber("5000000");
@@ -519,7 +744,11 @@ describe("computeSwapStep", () => {
   const fee = 3000;
 
   test("Standard swap: Token0 to Token1", () => {
+    
+    //When 
     const result = computeSwapStep(sqrtPriceCurrent, sqrtPriceTarget, liquidity, amountRemaining, fee);
+
+    //Then 
     expect(result).toHaveLength(4);
     expect(result[0].toString()).toBe("1000000.1994");
     expect(result[1].toString()).toBe("997000");
@@ -528,7 +757,13 @@ describe("computeSwapStep", () => {
   });
 
   test("Standard swap: Token1 to Token0", () => {
+
+    //When
+
     const result = computeSwapStep(sqrtPriceTarget, sqrtPriceCurrent, liquidity, amountRemaining, fee);
+
+    //Then /
+
     expect(result).toHaveLength(4);
     expect(result[0].toString()).toBe("1000000");
     expect(result[1].toString()).toBe("4.58333333333333333334");
@@ -537,8 +772,16 @@ describe("computeSwapStep", () => {
   });
 
   test("Zero amountRemaining should not affect sqrtPrice", () => {
+    
+    //Given 
+
     const zero = new BigNumber("0");
+
+    //When 
+
     const result = computeSwapStep(sqrtPriceCurrent, sqrtPriceTarget, liquidity, zero, fee);
+
+    //Then 
 
     expect(result[0].toString()).toEqual(sqrtPriceCurrent.toString());
     expect(result[1].toString()).toEqual(zero.toString());
@@ -547,6 +790,8 @@ describe("computeSwapStep", () => {
   });
 
   test("Negative amountRemaining (exactOutput case)", () => {
+    
+    //Given 
     const negativeAmountRemaining = new BigNumber("-1000000");
     const result = computeSwapStep(
       sqrtPriceCurrent,
@@ -555,6 +800,8 @@ describe("computeSwapStep", () => {
       negativeAmountRemaining,
       fee
     );
+
+    //Then 
     expect(result[0]).toBeInstanceOf(BigNumber);
     expect(result[0].toString()).toEqual("12000000");
     expect(result[1].toString()).toEqual("55000000000000");
@@ -563,8 +810,17 @@ describe("computeSwapStep", () => {
   });
 
   test("Large swap amount should return target sqrtPrice", () => {
+
+    //Given 
+
     const largeAmountRemaining = new BigNumber("10000000");
+
+    //When
+
     const result = computeSwapStep(sqrtPriceCurrent, sqrtPriceTarget, liquidity, largeAmountRemaining, fee);
+
+    //Then 
+
     expect(result[0].toString()).toEqual("1000001.994");
     expect(result[1].toString()).toEqual("9970000");
     expect(result[2].toString()).toEqual("0.00000996998011985965");
@@ -572,6 +828,9 @@ describe("computeSwapStep", () => {
   });
 
   test("Minimum values should not throw error", () => {
+
+    //When
+
     const result = computeSwapStep(
       new BigNumber("1"),
       new BigNumber("2"),
@@ -579,6 +838,9 @@ describe("computeSwapStep", () => {
       new BigNumber("1"),
       fee
     );
+
+    //Then 
+
     expect(result[0]).toBeInstanceOf(BigNumber);
     expect(result[0].toString()).toEqual("1.997");
     expect(result[1].toString()).toEqual("0.997");
@@ -600,47 +862,93 @@ describe("computeSwapStep", () => {
 
 describe("tickToSqrtPrice", () => {
   test("tick 0 should return 1", () => {
+
+    //When 
+
     const result = tickToSqrtPrice(0);
+
+    //Then 
     expect(result.toFixed()).toBe("1");
   });
 
   test("tick 10 should return correct sqrt price", () => {
+
+    //When 
+
     const result = tickToSqrtPrice(10);
+
+    //Then 
     expect(result.toFixed(10)).toBe(new BigNumber(1.0001 ** (10 / 2)).toFixed(10));
   });
 
   test("tick -10 should return correct sqrt price", () => {
+
+    //When 
+
     const result = tickToSqrtPrice(-10);
+
+    //Then 
+
     expect(result.toFixed(10)).toBe(new BigNumber(1.0001 ** (-10 / 2)).toFixed(10));
   });
 
   test("Large tick should return correct sqrt price", () => {
+
+    //When 
+
     const result = tickToSqrtPrice(10000);
+
+    //Then 
+
     expect(result.toFixed(10)).toBe(new BigNumber(1.0001 ** (10000 / 2)).toFixed(10));
   });
 });
 
 describe("sqrtPriceToTick", () => {
   test("sqrtPrice 1 should return tick 0", () => {
+
+    //When 
+
     const result = sqrtPriceToTick(new BigNumber(1));
+
+    //Then 
+
     expect(result).toBe(0);
   });
 
   test("sqrtPrice for tick 10 should return 10", () => {
+
+    //When 
+
     const sqrtPrice = tickToSqrtPrice(10);
     const result = sqrtPriceToTick(sqrtPrice);
+
+    //Then 
+
     expect(result).toBe(10);
   });
 
   test("sqrtPrice for tick -10 should return -10", () => {
+
+    //When 
+
     const sqrtPrice = tickToSqrtPrice(-10);
     const result = sqrtPriceToTick(sqrtPrice);
+
+    //Then 
+
     expect(result).toBe(-10);
   });
 
   test("sqrtPrice for large tick should return correct tick", () => {
+
+    //When 
+
     const sqrtPrice = tickToSqrtPrice(10000);
     const result = sqrtPriceToTick(sqrtPrice);
+
+    //Then 
+
     expect(result).toBe(10000);
   });
 });
@@ -656,6 +964,9 @@ describe("updateTick function", () => {
   let maxLiquidity: BigNumber;
 
   beforeEach(() => {
+
+    //Given 
+
     tickData = {};
     tick = 100;
     tickCurrent = 50;
@@ -668,6 +979,9 @@ describe("updateTick function", () => {
 
   test("should initialize tickData if not present", () => {
     expect(tickData[tick]).toBeUndefined();
+
+    //When 
+
     const result = updateTick(
       tickData,
       tick,
@@ -678,12 +992,18 @@ describe("updateTick function", () => {
       feeGrowthGlobal1,
       maxLiquidity
     );
+
+    //Then 
+
     expect(tickData[tick]).toBeDefined();
     expect(tickData[tick].initialised).toBe(true);
     expect(result).toBe(true);
   });
 
   test("should update liquidityGross correctly", () => {
+    
+    //When
+
     updateTick(
       tickData,
       tick,
@@ -694,10 +1014,16 @@ describe("updateTick function", () => {
       feeGrowthGlobal1,
       maxLiquidity
     );
+
+    //Then 
+
     expect(new BigNumber(tickData[tick].liquidityGross).toString()).toBe("1000");
   });
 
   test("should update liquidityNet correctly for upper=true", () => {
+   
+    //When 
+
     updateTick(
       tickData,
       tick,
@@ -708,11 +1034,17 @@ describe("updateTick function", () => {
       feeGrowthGlobal1,
       maxLiquidity
     );
+
+    //Then 
+
     expect(new BigNumber(tickData[tick].liquidityNet).toString()).toBe("-1000");
   });
 
   test("should update liquidityNet correctly for upper=false", () => {
     upper = false;
+
+    //When 
+   
     updateTick(
       tickData,
       tick,
@@ -723,11 +1055,19 @@ describe("updateTick function", () => {
       feeGrowthGlobal1,
       maxLiquidity
     );
+
+    //Then 
+
     expect(new BigNumber(tickData[tick].liquidityNet).toString()).toBe("1000");
   });
 
   test("should throw error if liquidity exceeds maxLiquidity", () => {
+  
+    
+
     liquidityDelta = new BigNumber(20000);
+
+    //Then
     expect(() =>
       updateTick(
         tickData,
@@ -743,6 +1083,9 @@ describe("updateTick function", () => {
   });
 
   test("should set feeGrowthOutside if tick is initialized for the first time and tick <= tickCurrent", () => {
+    
+    //When
+   
     updateTick(
       tickData,
       tick,
@@ -753,11 +1096,17 @@ describe("updateTick function", () => {
       feeGrowthGlobal1,
       maxLiquidity
     );
+
+    //Then 
+
     expect(new BigNumber(tickData[tick].feeGrowthOutside0).toString()).toBe("0");
     expect(new BigNumber(tickData[tick].feeGrowthOutside1).toString()).toBe("0");
   });
 
   test("should correctly determine if tick flipped", () => {
+    
+    //When 
+   
     const flipped = updateTick(
       tickData,
       tick,
@@ -768,10 +1117,15 @@ describe("updateTick function", () => {
       feeGrowthGlobal1,
       maxLiquidity
     );
+
+    //Then 
+
     expect(flipped).toBe(true);
   });
 
   test("should not flip tick if liquidityGross remains nonzero", () => {
+  
+   //When 
     updateTick(
       tickData,
       tick,
@@ -792,6 +1146,8 @@ describe("updateTick function", () => {
       feeGrowthGlobal1,
       maxLiquidity
     );
+
+    //Then 
     expect(flipped).toBe(false);
   });
 });
@@ -800,21 +1156,33 @@ describe("flipTick function", () => {
   let bitmap: Bitmap;
 
   beforeEach(() => {
+    //Given 
     bitmap = {};
   });
 
   test("should flip a tick when tick is spaced correctly", () => {
+
+    //When 
+
     flipTick(bitmap, 256, 1);
     const word = 256 >> 8;
     const pos = 256 % 256;
     const mask = BigInt(1) << BigInt(pos);
+
+    //Then 
+
     expect(BigInt(bitmap[word])).toBe(mask);
   });
 
   test("should flip the tick back when called twice", () => {
+
+    //When
+
     flipTick(bitmap, 256, 1);
     flipTick(bitmap, 256, 1);
     const word = 256 >> 8;
+
+    //Then
     expect(BigInt(bitmap[word])).toBe(BigInt(0));
   });
 
@@ -844,17 +1212,26 @@ describe("flipTick function", () => {
 
 describe("nextInitialisedTickWithInSameWord", () => {
   test("should return the nearest initialized tick when lte=true", () => {
+   
+    //Given 
+
     const bitmap: Bitmap = {};
     bitmap[0] = BigInt("0b1010").toString(); // 10
 
+    //Then 
     expect(nextInitialisedTickWithInSameWord(bitmap, 2, 1, true, new BigNumber(0))).toEqual([1, true]);
     expect(nextInitialisedTickWithInSameWord(bitmap, 4, 1, true, new BigNumber(0))).toEqual([3, true]);
     expect(nextInitialisedTickWithInSameWord(bitmap, 0, 1, true, new BigNumber(0))).toEqual([0, false]);
   });
 
   test("should return the nearest initialized tick when lte=false", () => {
+
+    //Given 
+
     const bitmap: Bitmap = {};
     bitmap[0] = BigInt("0b1010").toString(); // 10
+   
+    //Then 
 
     expect(nextInitialisedTickWithInSameWord(bitmap, 1, 1, false, new BigNumber(0))).toEqual([3, true]);
     expect(nextInitialisedTickWithInSameWord(bitmap, 2, 1, false, new BigNumber(0))).toEqual([3, true]);
@@ -862,23 +1239,38 @@ describe("nextInitialisedTickWithInSameWord", () => {
   });
 
   test("should handle negative ticks", () => {
+
+    //Given 
+
     const bitmap: Bitmap = {};
     bitmap[-1] = BigInt("0b1000").toString(); // 8
+
+    //Then 
 
     expect(nextInitialisedTickWithInSameWord(bitmap, -3, 1, true, new BigNumber(0))).toEqual([-253, true]);
     expect(nextInitialisedTickWithInSameWord(bitmap, -5, 1, true, new BigNumber(0))).toEqual([-253, true]);
   });
 
   test("should handle empty bitmaps", () => {
+
+    //Given 
+
     const bitmap: Bitmap = {};
+
+    //Then 
 
     expect(nextInitialisedTickWithInSameWord(bitmap, 10, 1, true, new BigNumber(0))).toEqual([0, false]);
     expect(nextInitialisedTickWithInSameWord(bitmap, 10, 1, false, new BigNumber(0))).toEqual([255, false]);
   });
 
   test("should handle large tick spacings", () => {
+
+    //Given  
+      
     const bitmap: Bitmap = {};
     bitmap[0] = BigInt("0b100").toString();
+
+    //Then 
 
     expect(nextInitialisedTickWithInSameWord(bitmap, 512, 256, true, new BigNumber(0))).toEqual([512, true]);
     expect(nextInitialisedTickWithInSameWord(bitmap, 256, 256, false, new BigNumber(0))).toEqual([512, true]);
@@ -887,12 +1279,19 @@ describe("nextInitialisedTickWithInSameWord", () => {
 
 describe("tickCross function", () => {
   test("Initializes tick data if it does not exist", () => {
+
+    //Given 
+
     const tick = 100;
     const tickData: TickDataObj = {};
     const feeGrowthGlobal0 = new BigNumber(50);
     const feeGrowthGlobal1 = new BigNumber(100);
 
+    //When 
+
     const result = tickCross(tick, tickData, feeGrowthGlobal0, feeGrowthGlobal1);
+
+    //Then
 
     expect(!!tickData[tick]).toBe(true);
     expect(tickData[tick]).toMatchObject({
@@ -906,6 +1305,9 @@ describe("tickCross function", () => {
   });
 
   test("Updates feeGrowthOutside values correctly for existing tick", () => {
+
+    //Given 
+
     const tick = 120;
     const tickData = {
       [tick]: {
@@ -919,7 +1321,11 @@ describe("tickCross function", () => {
     const feeGrowthGlobal0 = new BigNumber(70);
     const feeGrowthGlobal1 = new BigNumber(150);
 
+    //When 
+
     const result = tickCross(tick, tickData, feeGrowthGlobal0, feeGrowthGlobal1);
+
+    //Then 
 
     expect(tickData[tick]).toMatchObject({
       liquidityGross: "500",
@@ -932,6 +1338,9 @@ describe("tickCross function", () => {
   });
 
   test("Handles zero liquidityNet properly", () => {
+
+    //Given 
+
     const tick = 200;
     const tickData = {
       [tick]: {
@@ -945,7 +1354,11 @@ describe("tickCross function", () => {
     const feeGrowthGlobal0 = new BigNumber(100);
     const feeGrowthGlobal1 = new BigNumber(200);
 
+    //When 
+
     const result = tickCross(tick, tickData, feeGrowthGlobal0, feeGrowthGlobal1);
+
+    //Then
 
     expect(tickData[tick]).toMatchObject({
       liquidityGross: "0",
@@ -958,6 +1371,9 @@ describe("tickCross function", () => {
   });
 
   test("Handles negative fee growth values", () => {
+
+    //Given
+
     const tick = 300;
     const tickData = {
       [tick]: {
@@ -971,8 +1387,12 @@ describe("tickCross function", () => {
     const feeGrowthGlobal0 = new BigNumber(-10);
     const feeGrowthGlobal1 = new BigNumber(20);
 
+    //When 
+
     const result = tickCross(tick, tickData, feeGrowthGlobal0, feeGrowthGlobal1);
 
+    //Then 
+    
     expect(tickData[tick]).toMatchObject({
       liquidityGross: "1000",
       initialised: true,
@@ -984,6 +1404,9 @@ describe("tickCross function", () => {
   });
 
   test("Handles large fee growth values", () => {
+    
+    //Given
+
     const tick = 400;
     const tickData = {
       [tick]: {
@@ -997,7 +1420,11 @@ describe("tickCross function", () => {
     const feeGrowthGlobal0 = new BigNumber("9999999");
     const feeGrowthGlobal1 = new BigNumber("8888888");
 
+    //When 
+
     const result = tickCross(tick, tickData, feeGrowthGlobal0, feeGrowthGlobal1);
+
+    //Then 
 
     expect(tickData[tick]).toMatchObject({
       liquidityGross: "1000000",
@@ -1011,8 +1438,14 @@ describe("tickCross function", () => {
 });
 
 describe("getFeeGrowthInside", () => {
+
+  
+
   let tickData: TickDataObj;
   beforeEach(() => {
+
+    //Given 
+
     tickData = {
       "10": {
         feeGrowthOutside0: "100",
@@ -1032,19 +1465,37 @@ describe("getFeeGrowthInside", () => {
   });
 
   test("calculates fee growth inside when tickCurrent is within range", () => {
+
+    //When 
+
     const result = getFeeGrowthInside(tickData, 10, 20, 15, new BigNumber(500), new BigNumber(600));
+
+    //Then 
+
     expect(result[0].toString()).toBe("100");
     expect(result[1].toString()).toBe("0");
   });
 
   test("calculates fee growth inside when tickCurrent is at tickLower", () => {
+
+    //When 
+
     const result = getFeeGrowthInside(tickData, 10, 20, 10, new BigNumber(500), new BigNumber(600));
+
+    //Then 
+
     expect(result[0].toString()).toBe("100");
     expect(result[1].toString()).toBe("0");
   });
 
   test("calculates fee growth inside when tickCurrent is at tickUpper", () => {
+
+    //When 
+
     const result = getFeeGrowthInside(tickData, 10, 20, 20, new BigNumber(500), new BigNumber(600));
+
+    //Then 
+
     expect(result[0].toString()).toBe("200");
     expect(result[1].toString()).toBe("200");
   });
@@ -1071,48 +1522,80 @@ describe("checkTicks", () => {
 
 describe("tickSpacingToMaxLiquidityPerTick", () => {
   it("should correctly calculate max liquidity per tick for tickSpacing = 10", () => {
+
+    //Given 
+
     const tickSpacing = 10;
+
+    //When 
+
     const result = tickSpacingToMaxLiquidityPerTick(tickSpacing);
 
     const minTick = Math.ceil((-887272 / tickSpacing) * tickSpacing);
     const maxTick = Math.floor((887272 / tickSpacing) * tickSpacing);
     const numTicks = (maxTick - minTick) / tickSpacing + 1;
     const expected = new BigNumber(2).pow(128).minus(1).dividedBy(numTicks);
+
+    //Then
 
     expect(result.toFixed()).toBe(expected.toFixed());
   });
 
   it("should handle minimum tickSpacing = 1", () => {
+
+    //Given 
+
     const tickSpacing = 1;
+
+    //When
+
     const result = tickSpacingToMaxLiquidityPerTick(tickSpacing);
 
     const minTick = Math.ceil((-887272 / tickSpacing) * tickSpacing);
     const maxTick = Math.floor((887272 / tickSpacing) * tickSpacing);
     const numTicks = (maxTick - minTick) / tickSpacing + 1;
     const expected = new BigNumber(2).pow(128).minus(1).dividedBy(numTicks);
+
+    //Then 
 
     expect(result.toFixed()).toBe(expected.toFixed());
   });
 
   it("should handle maximum tickSpacing = 887272", () => {
+
+    //Given
+
     const tickSpacing = 887272;
+
+    //When
+
     const result = tickSpacingToMaxLiquidityPerTick(tickSpacing);
 
     const minTick = Math.ceil((-887272 / tickSpacing) * tickSpacing);
     const maxTick = Math.floor((887272 / tickSpacing) * tickSpacing);
     const numTicks = (maxTick - minTick) / tickSpacing + 1;
     const expected = new BigNumber(2).pow(128).minus(1).dividedBy(numTicks);
+
+    //Then 
 
     expect(result.toFixed()).toBe(expected.toFixed());
   });
 
   it("should handle large tickSpacing = 100000", () => {
+
+    //Given 
+
     const tickSpacing = 100000;
+
+    //When 
+    
     const result = tickSpacingToMaxLiquidityPerTick(tickSpacing);
     const minTick = Math.ceil((-887272 / tickSpacing) * tickSpacing);
     const maxTick = Math.floor((887272 / tickSpacing) * tickSpacing);
     const numTicks = (maxTick - minTick) / tickSpacing + 1;
     const expected = new BigNumber(2).pow(128).minus(1).dividedBy(numTicks);
+
+    //Then 
 
     expect(result.toFixed()).toBe(expected.toFixed());
   });

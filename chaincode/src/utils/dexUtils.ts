@@ -12,7 +12,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-import { ChainError, DexFeeConfig, ErrorCode, TokenClassKey } from "@gala-chain/api";
+import { ChainError, DexFeeConfig, ErrorCode, TokenClassKey, ValidationFailedError } from "@gala-chain/api";
 import BigNumber from "bignumber.js";
 
 import { GalaChainContext } from "../types";
@@ -40,14 +40,6 @@ export const swapAmounts = (arr: string[] | BigNumber[], idx = 0, idx2 = 1) => {
   const temp = arr[idx];
   arr[idx] = arr[idx2];
   arr[idx2] = temp;
-};
-/**
- *
- * @param address address of pool in string
- * @returns
- */
-export const virtualAddress = (address: string) => {
-  return "service|" + address;
 };
 
 /**
@@ -105,7 +97,18 @@ export function genBookMark(...params: string[] | number[]): string {
   return params.join("#");
 }
 
-export function splitBookmark(bookmark: string) {
+export function splitBookmark(bookmark = "") {
   const [chainBookmark = "", localBookmark = "0"] = bookmark.split("#");
   return { chainBookmark, localBookmark };
+}
+
+export function parseNftId(nftId: string): { batchNumber: string; instanceId: BigNumber } {
+  const parts = nftId.split("_");
+  if (parts.length !== 2) {
+    throw new ValidationFailedError("Invalid NFT ID format. Expected format: 'batchNumber_instanceId'.");
+  }
+  return {
+    batchNumber: parts[0],
+    instanceId: new BigNumber(parts[1])
+  };
 }

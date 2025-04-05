@@ -14,8 +14,10 @@
  */
 import {
   BurnTokenQuantity,
+  ChainError,
   CollectDto,
   ConflictError,
+  ErrorCode,
   NotFoundError,
   Pool,
   TokenInstanceKey,
@@ -41,14 +43,18 @@ import { fetchPositionNftInstanceKey, fetchUserPositionNftId } from "./positionN
 export async function collect(ctx: GalaChainContext, dto: CollectDto): Promise<UserBalanceResDto> {
   const [token0, token1] = validateTokenOrder(dto.token0, dto.token1);
   const key = ctx.stub.createCompositeKey(Pool.INDEX_KEY, [token0, token1, dto.fee.toString()]);
-  const pool = await getObjectByKey(ctx, Pool, key);
+  const pool = await getObjectByKey(ctx, Pool, key).catch((e) => {
+    const chainError = ChainError.from(e);
+    if (chainError.matches(ErrorCode.NOT_FOUND)) {
+      throw new ConflictError("Pool does not exist");
+    } else {
+      throw chainError;
+    }
+  });
   const [amount0Requested, amount1Requested] = [dto.amount0Requested.f18(), dto.amount1Requested.f18()];
 
-  //If pool does not exist
-  if (pool == undefined) throw new ConflictError("Pool does not exist");
-
   const poolAddrKey = pool.getPoolAddrKey();
-  const poolVirtualAddress = pool.getPoolVirtualAddress();
+  const poolAlias = pool.getPoolAlias();
   const positionNftId = await fetchUserPositionNftId(
     ctx,
     pool,
@@ -92,7 +98,7 @@ export async function collect(ctx: GalaChainContext, dto: CollectDto): Promise<U
     if (amount.gt(0)) {
       const poolTokenBalance = await fetchOrCreateBalance(
         ctx,
-        poolVirtualAddress,
+        poolAlias,
         tokenInstanceKeys[index].getTokenClassKey()
       );
       const roundedAmount = BigNumber.min(
@@ -101,14 +107,14 @@ export async function collect(ctx: GalaChainContext, dto: CollectDto): Promise<U
       );
 
       await transferToken(ctx, {
-        from: poolVirtualAddress,
+        from: poolAlias,
         to: ctx.callingUser,
         tokenInstanceKey: tokenInstanceKeys[index],
         quantity: roundedAmount,
         allowancesToUse: [],
         authorizedOnBehalf: {
-          callingOnBehalf: poolVirtualAddress,
-          callingUser: poolVirtualAddress
+          callingOnBehalf: poolAlias,
+          callingUser: poolAlias
         }
       });
     }

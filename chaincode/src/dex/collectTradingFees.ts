@@ -13,9 +13,11 @@
  * limitations under the License.
  */
 import {
+  ChainError,
   CollectTradingFeesDto,
   CollectTradingFeesResDto,
   ConflictError,
+  ErrorCode,
   NotFoundError,
   Pool,
   TokenInstanceKey,
@@ -29,11 +31,9 @@ import { transferToken } from "../transfer";
 import { GalaChainContext } from "../types";
 import {
   fetchDexProtocolFeeConfig,
-  genKey,
   getObjectByKey,
   putChainObject,
   validateTokenOrder,
-  virtualAddress
 } from "../utils";
 
 /**
@@ -59,13 +59,16 @@ export async function collectTradingFees(
   const [token0, token1] = validateTokenOrder(dto.token0, dto.token1);
 
   const key = ctx.stub.createCompositeKey(Pool.INDEX_KEY, [token0, token1, dto.fee.toString()]);
-  const pool = await getObjectByKey(ctx, Pool, key);
+  const pool = await getObjectByKey(ctx, Pool, key).catch((e) => {
+    const chainError = ChainError.from(e);
+    if (chainError.matches(ErrorCode.NOT_FOUND)) {
+      throw new ConflictError("Pool does not exist");
+    } else {
+      throw chainError;
+    }
+  });
 
-  //If pool does not exist
-  if (pool == undefined) throw new ConflictError("Pool does not exist");
-  const poolAddrKey = genKey(pool.token0, pool.token1, pool.fee.toString());
-  const poolVirtualAddress = virtualAddress(poolAddrKey);
-
+  const poolAlias = pool.getPoolAlias();
   const amounts = pool.collectTradingFees();
 
   //create tokenInstanceKeys
@@ -78,7 +81,7 @@ export async function collectTradingFees(
     if (amount.gt(0)) {
       const poolTokenBalance = await fetchOrCreateBalance(
         ctx,
-        poolVirtualAddress,
+        poolAlias,
         tokenInstanceKeys[index].getTokenClassKey()
       );
       const roundedAmount = BigNumber.min(
@@ -87,14 +90,14 @@ export async function collectTradingFees(
       );
 
       await transferToken(ctx, {
-        from: poolVirtualAddress,
+        from: poolAlias,
         to: dto.recepient,
         tokenInstanceKey: tokenInstanceKeys[index],
         quantity: roundedAmount,
         allowancesToUse: [],
         authorizedOnBehalf: {
-          callingOnBehalf: poolVirtualAddress,
-          callingUser: poolVirtualAddress
+          callingOnBehalf: poolAlias,
+          callingUser: poolAlias
         }
       });
     }

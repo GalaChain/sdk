@@ -45,7 +45,7 @@ import { ChainCallDTO } from "./dtos";
     `For NFTs you can mint up to ${MintTokenDto.MAX_NFT_MINT_SIZE} tokens.`
 })
 export class MintTokenDto extends ChainCallDTO {
-  static MAX_NFT_MINT_SIZE = 1000;
+  static MAX_NFT_MINT_SIZE = 3;
 
   @JSONSchema({
     description: "Token class of token to be minted."

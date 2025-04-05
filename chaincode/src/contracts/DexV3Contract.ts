@@ -33,6 +33,8 @@ import {
   GetRemoveLiqEstimationResDto,
   GetUserPositionsDto,
   GetUserPositionsResDto,
+  NftBatchLimit,
+  NftBatchLimitDto,
   NotFoundError,
   Pool,
   QuoteExactAmountDto,
@@ -63,6 +65,7 @@ import {
   getSlot0,
   getUserPositions,
   quoteExactAmount,
+  setBatchLimit,
   setProtocolFee,
   swap
 } from "../dex";
@@ -267,5 +270,14 @@ export class DexV3Contract extends GalaContract {
     dto: ConfigureDexFeeAddressDto
   ): Promise<DexFeeConfig> {
     return configureDexFeeAddress(ctx, dto);
+  }
+
+  @Submit({
+    in: NftBatchLimitDto,
+    out: NftBatchLimit,
+    allowedOrgs: ["CuratorOrg"]
+  })
+  public async ConfigureNftBatchLimit(ctx: GalaChainContext, dto: NftBatchLimitDto): Promise<NftBatchLimit> {
+    return setBatchLimit(ctx, dto);
   }
 }

@@ -48,7 +48,7 @@ import {
   tickToSqrtPrice,
   updatePositions,
   updateTick,
-  virtualAddress
+  poolIdentityKey
 } from "../utils";
 import { BigNumberProperty } from "../validators";
 import { ChainObject } from "./ChainObject";
@@ -637,9 +637,9 @@ export class Pool extends ChainObject {
 
   /**
    * @dev returns service address which holds the pool's liquidity
-   * @returns poolVirtualAddress
+   * @returns poolAlias
    */
-  public getPoolVirtualAddress() {
-    return virtualAddress(this.getPoolAddrKey());
+  public getPoolAlias() {
+    return poolIdentityKey(this.getPoolAddrKey());
   }
 }

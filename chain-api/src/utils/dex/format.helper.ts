@@ -18,14 +18,14 @@ import { ConflictError } from "../error";
 
 /**
  *
- * @param address address of pool in string
+ * @param poolId address of pool in string
  * @returns
  */
-export const virtualAddress = (address: string) => {
-  return "service|" + address;
-};
+export function poolIdentityKey(poolId: string) {
+  return `service|pool_${poolId}`;
+}
 
-export const requirePosititve = (...params) => {
+export function requirePosititve(...params) {
   for (const positive of params) {
     if (positive instanceof BigNumber) {
       if (positive.lt(new BigNumber(0))) {
@@ -33,7 +33,7 @@ export const requirePosititve = (...params) => {
       }
     }
   }
-};
+}
 
 export function genKey(...params: string[] | number[]): string {
   return params.join("_").replace(/\|/g, ":");
