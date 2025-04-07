@@ -41,7 +41,7 @@ BigNumber.config({
  * @param ctx - The context object providing access to the GalaChain environment.
  * @param sellTokenDTO - An object containing the sale details:
  *   - `vaultAddress`: The address of the sale.
- *   - `tokenAmount`: The exact amount of tokens to sell.
+ *   - `tokenQuantity`: The exact amount of tokens to sell.
  *   - `expectedNativeToken` (optional): The expected amount of native tokens in return.
  *
  * @returns A promise that resolves to a `TradeResDto` object containing the updated

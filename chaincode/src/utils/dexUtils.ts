@@ -52,9 +52,9 @@ export function f18(BN: BigNumber, round: BigNumber.RoundingMode = BigNumber.ROU
   return new BigNumber(BN.toFixed(18, round));
 }
 
-export const generateKeyFromClassKey = (obj: TokenClassKey) => {
-  return Object.assign(new TokenClassKey(), obj).toStringKey().replace(/\|/g, ":") || "";
-};
+export function generateKeyFromClassKey(obj: TokenClassKey) {
+  return obj.toStringKey().replace(/\|/g, ":") || "";
+}
 
 /**
  * Validates the order of two TokenClassKey instances.

@@ -14,7 +14,16 @@
  */
 import BigNumber from "bignumber.js";
 import { Type } from "class-transformer";
-import { IsArray, IsNotEmpty, IsNumber, IsOptional, IsString, Max, Min } from "class-validator";
+import {
+  IsArray,
+  IsNotEmpty,
+  IsNumber,
+  IsOptional,
+  IsString,
+  Max,
+  Min,
+  ValidateNested
+} from "class-validator";
 
 import { PositionInPool } from "../utils";
 import {
@@ -22,7 +31,8 @@ import {
   BigNumberIsInteger,
   BigNumberIsPositive,
   BigNumberProperty,
-  IsNonZeroBigNumber
+  IsNonZeroBigNumber,
+  IsUserAlias
 } from "../validators";
 import { TokenBalance } from "./TokenBalance";
 import { TokenClassKey } from "./TokenClass";
@@ -35,13 +45,22 @@ const f18 = (num: BigNumber, round: BigNumber.RoundingMode = BigNumber.ROUND_DOW
 
 export class CreatePoolDto extends ChainCallDTO {
   @IsNotEmpty()
+  @ValidateNested()
+  @Type(() => TokenClassKey)
   public token0: TokenClassKey;
+
   @IsNotEmpty()
+  @ValidateNested()
+  @Type(() => TokenClassKey)
   public token1: TokenClassKey;
+
   @IsNotEmpty()
+  @IsNumber()
   public fee: number;
+
   @BigNumberProperty()
   public initialSqrtPrice: BigNumber;
+
   @Min(0, { message: "Value cannot less than zero" })
   @Max(1, { message: "Value cannot greater than one" })
   @IsNumber()
@@ -65,17 +84,30 @@ export class CreatePoolDto extends ChainCallDTO {
 
 export class PositionDto extends ChainCallDTO {
   @IsNotEmpty()
+  @ValidateNested()
+  @Type(() => TokenClassKey)
   public token0: TokenClassKey;
+
   @IsNotEmpty()
+  @ValidateNested()
+  @Type(() => TokenClassKey)
   public token1: TokenClassKey;
+
   @IsNumber()
   public fee: number;
+
   @IsOptional()
-  public owner: string;
+  @IsUserAlias()
+  public owner?: string;
+
   @IsNotEmpty()
+  @IsNumber()
   public tickLower: number;
+
   @IsNotEmpty()
+  @IsNumber()
   public tickUpper: number;
+
   @IsOptional()
   @BigNumberProperty()
   public liquidity: BigNumber;
@@ -102,13 +134,22 @@ export class PositionDto extends ChainCallDTO {
 
 export class QuoteExactAmountDto extends ChainCallDTO {
   @IsNotEmpty()
+  @ValidateNested()
+  @Type(() => TokenClassKey)
   public token0: TokenClassKey;
+
   @IsNotEmpty()
+  @ValidateNested()
+  @Type(() => TokenClassKey)
   public token1: TokenClassKey;
+
   @IsNotEmpty()
+  @IsNumber()
   public fee: number;
+
   @IsNotEmpty()
   public zeroForOne: boolean;
+
   @BigNumberProperty()
   public amount: BigNumber;
 
@@ -130,11 +171,19 @@ export class QuoteExactAmountDto extends ChainCallDTO {
 
 export class SwapDto extends ChainCallDTO {
   @IsNotEmpty()
+  @ValidateNested()
+  @Type(() => TokenClassKey)
   public token0: TokenClassKey;
+
   @IsNotEmpty()
+  @ValidateNested()
+  @Type(() => TokenClassKey)
   public token1: TokenClassKey;
+
   @IsNotEmpty()
+  @IsNumber()
   public fee: number;
+
   @IsNotEmpty()
   public zeroForOne: boolean;
 
@@ -144,12 +193,12 @@ export class SwapDto extends ChainCallDTO {
   @BigNumberProperty()
   public amount: BigNumber;
 
-  @BigNumberProperty()
   @IsOptional()
+  @BigNumberProperty()
   public amountInMaximum: BigNumber;
 
-  @BigNumberProperty()
   @IsOptional()
+  @BigNumberProperty()
   public amountOutMinimum: BigNumber;
 
   constructor(
@@ -172,18 +221,32 @@ export class SwapDto extends ChainCallDTO {
 
 export class BurnDto extends ChainCallDTO {
   @IsNotEmpty()
+  @IsNumber()
   public tickLower: number;
+
   @IsNotEmpty()
+  @IsNumber()
   public tickUpper: number;
+
   @IsNotEmpty()
+  @ValidateNested()
+  @Type(() => TokenClassKey)
   public token0: TokenClassKey;
+
   @IsNotEmpty()
+  @ValidateNested()
+  @Type(() => TokenClassKey)
   public token1: TokenClassKey;
+
   @IsNotEmpty()
+  @IsNumber()
   public fee: number;
+
   @BigNumberProperty()
   public amount: BigNumber;
+
   @IsNotEmpty()
+  @IsUserAlias()
   public owner: string;
 
   constructor(
@@ -208,10 +271,17 @@ export class BurnDto extends ChainCallDTO {
 
 export class GetPoolDto extends ChainCallDTO {
   @IsNotEmpty()
+  @ValidateNested()
+  @Type(() => TokenClassKey)
   public token0: TokenClassKey;
+
   @IsNotEmpty()
+  @ValidateNested()
+  @Type(() => TokenClassKey)
   public token1: TokenClassKey;
+
   @IsNotEmpty()
+  @IsNumber()
   public fee: number;
 
   constructor(token0: TokenClassKey, token1: TokenClassKey, fee: number) {
@@ -225,8 +295,11 @@ export class GetPoolDto extends ChainCallDTO {
 export class Slot0ResDto extends ChainCallDTO {
   @BigNumberProperty()
   public sqrtPrice: BigNumber;
+
   @IsNotEmpty()
+  @IsNumber()
   public tick: number;
+
   @BigNumberProperty()
   public liquidity: BigNumber;
 
@@ -240,21 +313,35 @@ export class Slot0ResDto extends ChainCallDTO {
 
 export class GetPoolDataDTO extends ChainCallDTO {
   @IsNotEmpty()
+  @IsString()
   public address: string;
 }
 
 export class GetPositionDto extends ChainCallDTO {
   @IsNotEmpty()
+  @ValidateNested()
+  @Type(() => TokenClassKey)
   public token0: TokenClassKey;
+
   @IsNotEmpty()
+  @ValidateNested()
+  @Type(() => TokenClassKey)
   public token1: TokenClassKey;
+
   @IsNotEmpty()
+  @IsNumber()
   public fee: number;
+
   @IsNotEmpty()
+  @IsUserAlias()
   public owner: string;
+
   @IsNotEmpty()
+  @IsNumber()
   public tickLower: number;
+
   @IsNotEmpty()
+  @IsNumber()
   public tickUpper: number;
 
   constructor(
@@ -277,12 +364,21 @@ export class GetPositionDto extends ChainCallDTO {
 
 export class GetPositionWithNftIdDto extends ChainCallDTO {
   @IsNotEmpty()
+  @ValidateNested()
+  @Type(() => TokenClassKey)
   public token0: TokenClassKey;
+
   @IsNotEmpty()
+  @ValidateNested()
+  @Type(() => TokenClassKey)
   public token1: TokenClassKey;
+
   @IsNotEmpty()
+  @IsNumber()
   public fee: number;
+
   @IsNotEmpty()
+  @IsString()
   public nftId: string;
 
   constructor(token0: TokenClassKey, token1: TokenClassKey, fee: number, nftId: string) {
@@ -292,23 +388,6 @@ export class GetPositionWithNftIdDto extends ChainCallDTO {
     this.fee = fee;
     this.nftId = nftId;
   }
-}
-
-export class positionInfoDto {
-  @IsString()
-  public owner: string;
-  @IsString()
-  public liquidity: string;
-  @IsString()
-  public feeGrowthInside0Last: string;
-  @IsString()
-  public feeGrowthInside1Last: string;
-  @IsString()
-  // fees owed to the position owner in token0/token1
-  @IsString()
-  public tokensOwed0: string;
-  @IsString()
-  public tokensOwed1: string;
 }
 
 export class GetUserPositionsDto extends ChainCallDTO {
@@ -374,17 +453,28 @@ export class GetAddLiquidityEstimationDto extends ChainCallDTO {
   @BigNumberProperty()
   public amount: BigNumber;
   @IsNotEmpty()
+  @IsNumber()
   public tickLower: number;
+
   @IsNotEmpty()
+  @IsNumber()
   public tickUpper: number;
+
   @IsNotEmpty()
   public zeroForOne: boolean;
 
   @IsNotEmpty()
+  @ValidateNested()
+  @Type(() => TokenClassKey)
   public token0: TokenClassKey;
+
   @IsNotEmpty()
+  @ValidateNested()
+  @Type(() => TokenClassKey)
   public token1: TokenClassKey;
+
   @IsNotEmpty()
+  @IsNumber()
   public fee: number;
 
   constructor(
@@ -422,18 +512,31 @@ export class UserBalanceResDto extends ChainCallDTO {
 
 export class CollectDto extends ChainCallDTO {
   @IsNotEmpty()
+  @ValidateNested()
+  @Type(() => TokenClassKey)
   public token0: TokenClassKey;
+
   @IsNotEmpty()
+  @ValidateNested()
+  @Type(() => TokenClassKey)
   public token1: TokenClassKey;
+
   @IsNotEmpty()
+  @IsNumber()
   public fee: number;
+
   @BigNumberProperty()
   public amount0Requested: BigNumber;
+
   @BigNumberProperty()
   public amount1Requested: BigNumber;
+
   @IsNotEmpty()
+  @IsNumber()
   public tickLower: number;
+
   @IsNotEmpty()
+  @IsNumber()
   public tickUpper: number;
 
   constructor(
@@ -458,22 +561,36 @@ export class CollectDto extends ChainCallDTO {
 
 export class AddLiquidityDTO extends ChainCallDTO {
   @IsNotEmpty()
+  @ValidateNested()
+  @Type(() => TokenClassKey)
   public readonly token0: TokenClassKey;
+
   @IsNotEmpty()
+  @ValidateNested()
+  @Type(() => TokenClassKey)
   public readonly token1: TokenClassKey;
+
   @IsNotEmpty()
+  @IsNumber()
   public readonly fee: number;
+
   @IsNotEmpty()
+  @IsNumber()
   public readonly tickLower: number;
+
   @IsNotEmpty()
+  @IsNumber()
   public readonly tickUpper: number;
 
   @BigNumberProperty()
   public amount0Desired: BigNumber;
+
   @BigNumberProperty()
   public amount1Desired: BigNumber;
+
   @BigNumberProperty()
   public amount0Min: BigNumber;
+
   @BigNumberProperty()
   public amount1Min: BigNumber;
 
@@ -571,10 +688,17 @@ export class GetUserPositionsResDto {
 
 export class CollectTradingFeesDto extends ChainCallDTO {
   @IsNotEmpty()
+  @ValidateNested()
+  @Type(() => TokenClassKey)
   public token0: TokenClassKey;
+
   @IsNotEmpty()
+  @ValidateNested()
+  @Type(() => TokenClassKey)
   public token1: TokenClassKey;
+
   @IsNotEmpty()
+  @IsNumber()
   public fee: number;
   @IsString()
   @IsNotEmpty()

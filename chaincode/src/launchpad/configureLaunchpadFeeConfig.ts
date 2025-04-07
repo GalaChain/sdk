@@ -28,7 +28,7 @@ export async function configureLaunchpadFeeAddress(
   ctx: GalaChainContext,
   dto: ConfigureLaunchpadFeeAddressDto
 ): Promise<LaunchpadFeeConfig> {
-  if (!dto.newPlatformFeeAddress && !dto.newAuthorities?.length) {
+  if (!dto.newLaunchpadFeeAddress && !dto.newAuthorities?.length) {
     throw new ValidationFailedError("None of the input fields are present.");
   }
 
@@ -51,18 +51,18 @@ export async function configureLaunchpadFeeAddress(
   }
 
   if (!platformFeeAddress) {
-    if (!dto.newPlatformFeeAddress) {
+    if (!dto.newLaunchpadFeeAddress) {
       throw new ValidationFailedError(
         "Must provide a platform fee address in the initial setup of the configuration."
       );
     }
     platformFeeAddress = new LaunchpadFeeConfig(
-      dto.newPlatformFeeAddress,
+      dto.newLaunchpadFeeAddress,
       dto.newAuthorities ?? [ctx.callingUser]
     );
   } else if (platformFeeAddress && platformFeeAddress.authorities.includes(ctx.callingUser)) {
     platformFeeAddress.setNewFeeAddress(
-      dto.newPlatformFeeAddress ?? platformFeeAddress.feeAddress,
+      dto.newLaunchpadFeeAddress ?? platformFeeAddress.feeAddress,
       dto.newAuthorities ?? platformFeeAddress.authorities
     );
   } else {

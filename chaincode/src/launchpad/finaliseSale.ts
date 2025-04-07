@@ -44,7 +44,7 @@ export async function finalizeSale(ctx: GalaChainContext, sale: LaunchpadSale): 
 
   const platformFeeAddressConfiguration = await fetchLaunchpadFeeAddress(ctx);
   if (!platformFeeAddressConfiguration) {
-    throw new PreConditionFailedError("Platform fee configuration is yet to be defined.");
+    throw new PreConditionFailedError("Launchpad fee configuration is yet to be defined.");
   }
 
   const platformFeePercentage = feeAllocation ? feeAllocation.platformFeePercentage : 0.1;

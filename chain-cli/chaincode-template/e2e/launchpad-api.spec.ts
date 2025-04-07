@@ -1309,7 +1309,7 @@ describe("LaunchpadContract", () => {
 
       const buyWithExactDTO = new ExactTokenQuantityDto();
       buyWithExactDTO.vaultAddress = vaultAddress;
-      buyWithExactDTO.tokenAmount = new BigNumber("2000000");
+      buyWithExactDTO.tokenQuantity = new BigNumber("2000000");
 
       buyWithExactDTO.sign(user1.privateKey);
 
@@ -1375,7 +1375,7 @@ describe("LaunchpadContract", () => {
       //Given
 
       const configPlatformFeeAddressDTO = new ConfigureLaunchpadFeeAddressDto();
-      configPlatformFeeAddressDTO.newPlatformFeeAddress = "";
+      configPlatformFeeAddressDTO.newLaunchpadFeeAddress = "";
       configPlatformFeeAddressDTO.newAuthorities = [];
 
       configPlatformFeeAddressDTO.sign(user3.privateKey);
@@ -1394,7 +1394,7 @@ describe("LaunchpadContract", () => {
       //Given
 
       const configPlatformFeeAddressDTO = new ConfigureLaunchpadFeeAddressDto();
-      configPlatformFeeAddressDTO.newPlatformFeeAddress = user5.identityKey;
+      configPlatformFeeAddressDTO.newLaunchpadFeeAddress = user5.identityKey;
 
       configPlatformFeeAddressDTO.sign(user3.privateKey);
 
@@ -1413,7 +1413,7 @@ describe("LaunchpadContract", () => {
 
       const configPlatformFeeAddressDTO = new ConfigureLaunchpadFeeAddressDto();
       configPlatformFeeAddressDTO.newAuthorities = [user2.identityKey, user1.identityKey];
-      configPlatformFeeAddressDTO.newPlatformFeeAddress = user5.identityKey;
+      configPlatformFeeAddressDTO.newLaunchpadFeeAddress = user5.identityKey;
       configPlatformFeeAddressDTO.sign(user3.privateKey);
 
       //When

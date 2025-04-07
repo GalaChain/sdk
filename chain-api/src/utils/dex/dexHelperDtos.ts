@@ -68,15 +68,19 @@ export class TickData {
   @IsOptional()
   @IsString()
   liquidityGross: string;
+
   @IsOptional()
   @IsBoolean()
   initialised: boolean;
+
   @IsOptional()
   @IsString()
   liquidityNet: string;
+
   @IsOptional()
   @IsString()
   feeGrowthOutside0: string;
+  
   @IsOptional()
   @IsString()
   feeGrowthOutside1: string;

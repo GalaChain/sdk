@@ -48,16 +48,16 @@ export class CreateTokenSaleDTO extends ChainCallDTO {
   @BigNumberProperty()
   public preBuyQuantity: BigNumber;
 
-  @IsString()
   @IsOptional()
+  @IsString()
   public websiteUrl?: string;
 
-  @IsString()
   @IsOptional()
+  @IsString()
   public telegramUrl?: string;
 
-  @IsString()
   @IsOptional()
+  @IsString()
   public twitterUrl?: string;
 
   constructor(
@@ -127,10 +127,9 @@ export class ExactTokenQuantityDto extends ChainCallDTO {
   @IsNonZeroBigNumber({ message: "tokenQuantity cannot be zero" })
   public tokenQuantity: BigNumber;
 
-  @BigNumberProperty()
   @IsOptional()
+  @BigNumberProperty()
   public expectedNativeToken?: BigNumber;
-  tokenAmount: BigNumber;
 
   constructor(vaultAddress = "", tokenQuantity: BigNumber = new BigNumber(0)) {
     super();
@@ -195,6 +194,7 @@ export class FetchSaleDto extends ChainCallDTO {
   @IsString()
   @IsNotEmpty()
   public vaultAddress: string;
+
   constructor(vaultAddress = "") {
     super();
     this.vaultAddress = vaultAddress;
@@ -216,7 +216,7 @@ export class PreMintCalculationDto extends ChainCallDTO {
 export class ConfigureLaunchpadFeeAddressDto extends ChainCallDTO {
   @IsOptional()
   @IsString()
-  public newPlatformFeeAddress?: string;
+  public newLaunchpadFeeAddress?: string;
 
   @IsOptional()
   @IsString({ each: true })

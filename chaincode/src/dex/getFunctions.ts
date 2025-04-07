@@ -115,7 +115,7 @@ export async function getLiquidity(ctx: GalaChainContext, dto: GetPoolDto): Prom
    * @param dto GetPositionDto - A data transfer object containing:
    - Pool identifiers – Class keys or token details required to identify the pool.
    - Positions identifier - lower tick, upper tick.
-   * @returns positionInfoDto
+   * @returns PositionData
    */
 export async function getPositions(ctx: GalaChainContext, dto: GetPositionDto): Promise<PositionData> {
   const pool = await getPoolData(ctx, dto);
@@ -152,7 +152,7 @@ export async function getPositions(ctx: GalaChainContext, dto: GetPositionDto): 
    * @param dto GetPositionDto - A data transfer object containing:
    - Pool identifiers – Class keys or token details required to identify the pool.
    - NFT identifier - unique NFT that identifies a position in a pool
-   * @returns positionInfoDto
+   * @returns PositionData
    */
 export async function getPositionWithNftId(
   ctx: GalaChainContext,
