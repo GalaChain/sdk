@@ -1359,7 +1359,7 @@ describe("LaunchpadContract", () => {
       //When
 
       const buyRes = await client.Launchpad.BuyWithNative(buyWithNativeDTO);
-      expect(buyRes.Message).toEqual("Platform fee configuration is yet to be defined.");
+      expect(buyRes.Message).toEqual("Launchpad fee configuration is yet to be defined.");
 
       //Fetch Sale Details
       const fetchSaleDetailsDTO = new FetchSaleDto();
