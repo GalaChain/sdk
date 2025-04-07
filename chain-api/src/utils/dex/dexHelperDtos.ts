@@ -80,7 +80,7 @@ export class TickData {
   @IsOptional()
   @IsString()
   feeGrowthOutside0: string;
-  
+
   @IsOptional()
   @IsString()
   feeGrowthOutside1: string;
