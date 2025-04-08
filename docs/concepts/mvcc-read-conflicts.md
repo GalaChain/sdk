@@ -4,6 +4,8 @@
 
 MVCC_READ_CONFLICT errors in Hyperledger Fabric occur during transaction validation when multiple transactions attempt to modify the same state concurrently. These errors are a consequence of Fabric's Multi-Version Concurrency Control (MVCC) system, which ensures that changes applied to the ledger remain consistent across the network.
 
+A similar error, `PHANTOM_READ_CONFLICT` occurs when the MVCC conflict occurs within the results set of a range query, versus from a direct key lookup. 
+
 In the context of GalaChain SDK (built on Hyperledger Fabric), these errors can become particularly problematic in high-throughput applications where assets are frequently updated.
 
 ## How MVCC Works in GalaChain

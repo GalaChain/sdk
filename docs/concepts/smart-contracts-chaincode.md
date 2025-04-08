@@ -196,3 +196,4 @@ When implementing new chaincode:
 4. Implement contract methods with proper decorators
 5. Add comprehensive unit tests
 6. Document all public interfaces
+7. Remember: It's very hard to migrate data once it is saved on chain. Invest in your designs and data modeling up front to avoid this problem!

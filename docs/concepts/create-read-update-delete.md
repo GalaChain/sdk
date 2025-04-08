@@ -11,6 +11,8 @@ The `putChainObject` function handles both creation and updates of chain objects
 ```typescript
 // Define a chain object
 class GameMove extends ChainObject {
+  public static INDEX_KEY: "Sample0001";
+  
   @ChainKey(0)
   gameId: string;
 
@@ -89,9 +91,11 @@ GalaChain implements a transactional cache through the `GalaChainStub` class. Th
 
 1. **Read Consistency**: Once an object is read within a transaction, subsequent reads return the same value unless explicitly modified.
 
-2. **Write Atomicity**: All changes are queued and only written to the World State when the transaction successfully completes.
+2. **Performance**: Frequently accessed objects are cached to reduce ledger reads.
 
-3. **Performance**: Frequently accessed objects are cached to reduce ledger reads.
+3. **Write Atomicity**: All changes are queued and only written to the World State when the transaction successfully completes. However, changes written are maintained within the cache. 
+
+4. **Composable Functionality**  Within a single transaction execution, caching gets and puts  improves on Hyperledger Fabric's default behavior. GalaChain's stub cache ensures that subsequent reads to previously-written objects exected within a single transaction will pull the expected, previously-modified version. By working with the GalaChain SDK's provided get/put methods, complex functionality can be composed by sequentially executing various library functions (burn-and-mint, token swaps, etc.). 
 
 Example of how the cache works:
 

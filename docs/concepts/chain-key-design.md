@@ -14,6 +14,8 @@ Chain Keys are ordered collections of property values that together form a uniqu
 import { ChainObject, ChainKey } from '@galachain/sdk';
 
 export class PlayerInventoryItem extends ChainObject {
+  public static INDEX_KEY = "EGPII"; // e.g. PII
+  
   @ChainKey({ position: 0 }) // The broadest category (always start with 0)
   public playerType: string;
   
@@ -34,6 +36,19 @@ export class PlayerInventoryItem extends ChainObject {
 
 ## Key Design Principles
 
+### 0. Index Keys defined on Classes group ledger entries (rows) by Class
+
+The `INDEX_KEY` should be defined on each class that extends `ChainObject`. Each 
+class **must** have a unique key that differentiates it from other classes. 
+
+This key will 
+prefix the composite key of all instances of a given class and ensure they are arranged in 
+an adjacent keyspace within the World State Ledger index, facilitating range queries. 
+
+Convention prefixes `INDEX_KEY` values in the GalaChain SDK with "GC" for "GalaChain", generally followed by 2-4 additional capital letters based on the TypeScript class name. 
+
+For custom packages, chaincode, and smart contracts consider prefixing all your `INDEX_KEY` strings with a specific prefix based on your project, and following a similar convention to keep index keys unique. 
+
 ### 1. Order of Specificity
 
 Chain keys must be arranged from least specific (broadest) to most specific:
@@ -44,6 +59,7 @@ General → Specific → More Specific → Most Specific
 
 **Good Example:**
 ```typescript
+INDEX_KEY = "EGABC";
 @ChainKey({ position: 1 }) public seasonId: string;    // More specific
 @ChainKey({ position: 2 }) public playerId: string;    // Even more specific
 @ChainKey({ position: 3 }) public assetId: string;     // Most specific
@@ -51,6 +67,7 @@ General → Specific → More Specific → Most Specific
 
 **Poor Example:**
 ```typescript
+INDEX_KEY = "a";
 // Don't do this - ordering from specific to general
 @ChainKey({ position: 0 }) public assetId: string;     // Too specific first
 @ChainKey({ position: 1 }) public playerId: string;
@@ -134,20 +151,33 @@ For time-series data or events:
 ```typescript
 export class GameEvent extends ChainObject {
   @ChainKey({ position: 0 }) public eventType: string;
-  @ChainKey({ position: 1 }) public year: number;
-  @ChainKey({ position: 2 }) public month: number;
-  @ChainKey({ position: 3 }) public day: number;
+  @IsString()
+  @Length(4)
+  @ChainKey({ position: 1 }) public year: string;
+  @IsString()
+  @Length(2)
+  @ChainKey({ position: 2 }) public month: string;
+  @IsString()
+  @Length(2)
+  @ChainKey({ position: 3 }) public day: string;
   @ChainKey({ position: 4 }) public eventId: string;
   
   // Event data
   public data: any;
 }
+```
 
+Chain keys are always serialized to a string when generating composite keys, 
+so when working with numeric fields like dates, expect a string of a specific 
+length related to the number of digits you require. To support lexigraphic sorting, 
+be sure to pad the start of the value with "0". 
+
+```typescript
 // Query all login events from October 2023
 const octoberLogins = await ctx.store.query(GameEvent, {
   eventType: 'login',
-  year: 2023,
-  month: 10
+  year: '2023',
+  month: '10'
 });
 ```
 
@@ -193,9 +223,12 @@ const childItems = await ctx.store.query(NestedItem, {
    ```
    
    
-2. **Assigning Mutable properties as Chain Key Values**: Avoid using properties that change as chain keys. Changing a chain key would effectively represent a new entity.
+2. **Assigning Mutable properties as Chain Key Values**: Avoid using properties that change as chain keys. Changing a chain key would effectively represent a new entity. If you need to change one of the key properties of a given entry in the ledger, be sure to delete the old object.
 
-4. **Using Non-Deterministic Values**: Timestamps or random values make poor chain keys. However, placing values like these at the end of a sequence of chain keys can be a useful strategy to ensure data integrity and prevent collisions.
+3. **Ensure uniqueness, avoid accidental key collisions**: The `putChainObject` can overwrite existing objects when a key already exists. Ensuring uniqueness of individual entries of a 
+class can be aided by assigning a timestamp or transaction id as the final ChainKey value. Be sure not to use `Date.now()`, as this value can vary across peers and chaincode simulations. Use `ctx.txUnixTime` or `ctx.stub.getTxID()` which guarantee the same value across peers. 
+
+4. **Using Non-Deterministic Values**: To emphasize the previous point: Chaincode execution **must** be deterministic and arrive at the same outcome across multiple simulations on disparate peers. Timestamps generated based on a peer's clock (e.g. Date.now()) or random values are not supported in chaincode execution and attempting to generate them during chaincode exeuction will lead to conflicting results and failed transactions. To introduce a non-deterministic value into chaincode execution, a trusted oracle should be used to generate randomness in a cryptographically secure manner, and that input would need to be provided as a trusted (signed) value alongside other transaction inputs. This topic is outside the scope of the current document on chain key design. 
 
 ## Performance Considerations
 

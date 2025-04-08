@@ -13,7 +13,7 @@ In GalaChain, users can be identified in multiple ways:
 1. **User Alias**: A unique identifier in the format `scheme|value`
    ```typescript
    // Examples
-   "eth|0x123...def"  // Ethereum address
+   "eth|0x123...def"  // Ethereum address (with crc, some chars upper-case)
    "client|admin"       // Legacy client user
    ```
 
@@ -101,10 +101,15 @@ User information is stored in profiles that contain:
 ```typescript
 interface UserProfile {
   alias: UserAlias;        // Primary identifier
-  ethAddress?: string;     // Optional Ethereum address
+  ethAddress?: string;     // Ethereum address, provide either eth or ton address
+  tonAddress?: string;     // TON address, provide either eth or ton address
   roles: string[];         // Assigned roles
-  publicKey: string;       // Current public key
   // ... other fields
+}
+
+interface PublicKey {
+  publicKey: string;
+  public signing?: SigningScheme; // "ETH" or "TON"
 }
 ```
 
