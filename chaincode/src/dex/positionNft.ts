@@ -11,11 +11,12 @@
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  * See the License for the specific language governing permissions and
  * limitations under the License.
- */import {
+ */
+import {
   ChainError,
+  DexNftBatchLimit,
   ErrorCode,
   MintTokenDto,
-  DexNftBatchLimit,
   NotFoundError,
   Pool,
   TokenBalance,
@@ -46,7 +47,7 @@ const LIQUIDITY_TOKEN_COLLECTION = "NFT";
  * @param poolAlias string – The virtual address associated with the pool.
  *
  * @returns string – The transaction result of transferring the assigned NFT.
- */export async function assignPositionNft(
+ */ export async function assignPositionNft(
   ctx: GalaChainContext,
   poolAddrKey: string,
   poolAlias: string
@@ -99,7 +100,7 @@ async function fetchPositionNfts(ctx: GalaChainContext, poolAddrKey: string, own
  * @param nft TokenBalance – The NFT token balance containing the instance to be transferred.
  *
  * @returns Promise<string> – A promise resolving to the generated key of the transferred NFT instance.
- */async function transferPositionNft(
+ */ async function transferPositionNft(
   ctx: GalaChainContext,
   poolAddrKey: string,
   from: string,
@@ -253,7 +254,7 @@ export async function fetchUserPositionNftId(
  * @returns Promise<TokenInstanceKey> – A promise resolving to the instance key of the specified NFT.
  *
  * @throws NotFoundError – If the specified NFT instance cannot be found.
- */export async function fetchPositionNftInstanceKey(
+ */ export async function fetchPositionNftInstanceKey(
   ctx: GalaChainContext,
   poolAddrKey: string,
   nftId: string

@@ -272,7 +272,7 @@ export class DexV3Contract extends GalaContract {
   ): Promise<DexFeeConfig> {
     return configureDexFeeAddress(ctx, dto);
   }
-  
+
   @Submit({
     in: DexNftBatchLimitDto,
     out: DexNftBatchLimit,
