@@ -71,6 +71,7 @@ export * from "./TokenBurnCounter";
 export * from "./VestingToken";
 export * from "./DexDtos";
 export * from "./DexV3Pool";
+export * from "./DexNftBatchLimit";
 export * from "./DexFeeConfig";
 export * from "./LaunchpadDtos";
 export * from "./LaunchpadFinalizeAllocation";

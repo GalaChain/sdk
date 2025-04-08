@@ -42,7 +42,7 @@ export function updatePositions(
   const key = nftId;
 
   if (liquidityDelta.lt(new BigNumber(0)) && positions[key] == undefined)
-    throw new NotFoundError(`Position does not exists for nft ID ${nftId} ${tickLower}-${tickUpper}`);
+    throw new NotFoundError(`No position corresponding to the nft ID ${nftId} exists in this pool`);
 
   if (positions[key] == undefined) {
     positions[key] = new PositionData();

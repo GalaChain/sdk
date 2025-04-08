@@ -28,7 +28,7 @@ import { fetchTokenClass } from "../token";
 import { transferToken } from "../transfer";
 import { GalaChainContext } from "../types";
 import { convertToTokenInstanceKey, getObjectByKey, putChainObject, validateTokenOrder } from "../utils";
-import { checkUserPositionNft, fetchPositionNftInstanceKey } from "./positionNft";
+import { fetchPositionNftInstanceKey, fetchUserPositionNftId } from "./positionNft";
 
 /**
  * @dev The collect function allows a user to claim and withdraw accrued fee tokens from a specific liquidity position in a Uniswap V3 pool within the GalaChain ecosystem. It retrieves earned fees based on the user's position details and transfers them to the user's account.
@@ -47,8 +47,8 @@ export async function collect(ctx: GalaChainContext, dto: CollectDto): Promise<U
   if (pool == undefined) throw new ConflictError("Pool does not exist");
 
   const poolAddrKey = pool.getPoolAddrKey();
-  const poolVirtualAddress = pool.getPoolVirtualAddress();
-  const positionNftId = await checkUserPositionNft(
+  const poolVirtualAddress = pool.getPoolAlias();
+  const positionNftId = await fetchUserPositionNftId(
     ctx,
     pool,
     dto.tickUpper.toString(),

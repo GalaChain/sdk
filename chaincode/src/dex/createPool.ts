@@ -82,7 +82,7 @@ export async function createPool(ctx: GalaChainContext, dto: CreatePoolDto): Pro
   if (existingPool !== undefined)
     throw new ConflictError("Pool already exists", existingPool.toPlainObject());
 
-  await generatePositionNftBatch(ctx, "1", pool.getPoolAddrKey(), pool.getPoolVirtualAddress());
+  await generatePositionNftBatch(ctx, "1", pool.getPoolAddrKey(), pool.getPoolAlias());
   await putChainObject(ctx, pool);
   return pool;
 }

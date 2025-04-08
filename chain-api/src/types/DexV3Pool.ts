@@ -639,7 +639,7 @@ export class Pool extends ChainObject {
    * @dev returns service address which holds the pool's liquidity
    * @returns poolVirtualAddress
    */
-  public getPoolVirtualAddress() {
+  public getPoolAlias() {
     return virtualAddress(this.getPoolAddrKey());
   }
 }

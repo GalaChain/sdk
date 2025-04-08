@@ -34,20 +34,23 @@ import {
   TokenInstanceKey,
   UnauthorizedError,
   ValidationFailedError,
+  genKey,
   sqrtPriceToTick
 } from "@gala-chain/api";
 import BigNumber from "bignumber.js";
 
-import { fetchBalances } from "../balances";
+import { fetchBalancesWithTokenMetadata } from "../balances";
 import { fetchTokenClass } from "../token";
 import { GalaChainContext } from "../types";
 import {
   fetchDexProtocolFeeConfig,
+  genBookMark,
   generateKeyFromClassKey,
   getObjectByKey,
+  splitBookmark,
   validateTokenOrder
 } from "../utils";
-import { checkUserPositionNft } from "./positionNft";
+import { fetchUserPositionNftId } from "./positionNft";
 
 /**
  * @dev The getPoolData function retrieves and returns all publicly available state information of a Uniswap V3 pool within the GalaChain ecosystem. It provides insights into the pool's tick map, liquidity positions, and other essential details.
@@ -102,13 +105,13 @@ export async function getLiquidity(ctx: GalaChainContext, dto: GetPoolDto): Prom
    * @param dto GetPositionDto - A data transfer object containing:
    - Pool identifiers – Class keys or token details required to identify the pool.
    - Positions identifier - lower tick, upper tick.
-   * @returns positionInfoDto
+   * @returns PositionData
    */
 export async function getPositions(ctx: GalaChainContext, dto: GetPositionDto): Promise<PositionData> {
   const pool = await getPoolData(ctx, dto);
   if (!pool) throw new DefaultError("No pool for these tokens and fee exists");
 
-  const positionNftId = await checkUserPositionNft(
+  const positionNftId = await fetchUserPositionNftId(
     ctx,
     pool,
     dto.tickUpper.toString(),
@@ -134,12 +137,12 @@ export async function getPositions(ctx: GalaChainContext, dto: GetPositionDto): 
 }
 
 /**
-   * @dev The positions function retrieves details of a specific liquidity position within a Uniswap V3 pool on the GalaChain ecosystem. It provides insights into the user's position, including token amounts, fees, and other state variables.
+   * @dev The positions function retrieves details of a specific liquidity position within the Dex pool on the GalaChain ecosystem. It provides insights into the user's position, including token amounts, fees, and other state variables.
    * @param ctx GalaChainContext – The execution context providing access to the GalaChain environment.
    * @param dto GetPositionDto - A data transfer object containing:
    - Pool identifiers – Class keys or token details required to identify the pool.
    - NFT identifier - unique NFT that identifies a position in a pool
-   * @returns positionInfoDto
+   * @returns PositionData
    */
 export async function getPositionWithNftId(
   ctx: GalaChainContext,
@@ -148,8 +151,8 @@ export async function getPositionWithNftId(
   const pool = await getPoolData(ctx, dto);
   if (!pool) throw new DefaultError("No pool for these tokens and fee exists");
 
-  // Each pool has a unique Nft ID that points to a position in it. Multiple pools may
-  // have the same Nft Id that point to seperate position in them
+  // Each pool has a unique NFT ID that refers to a position within that pool.
+  // Multiple pools can have the same NFT ID, each pointing to a different position in their respective pools.
   const positionNftId = dto.nftId;
 
   const position = pool.positions[positionNftId];
@@ -189,46 +192,68 @@ export async function getUserPositions(
   ctx: GalaChainContext,
   dto: GetUserPositionsDto
 ): Promise<GetUserPositionsResDto> {
-  const userBalances = await fetchBalances(ctx, { owner: dto.user });
+  const { chainBookmark, localBookmark } = splitBookmark(dto.bookmark);
 
-  const userNfts = userBalances.filter(
-    ({ category, type }) => category === "LiquidityPositions" && type === "NFT"
-  );
-
-  let positionsToSkip = (dto.page - 1) * dto.limit;
+  let currentPageBookmark = chainBookmark;
+  let positionsToSkip = Number(localBookmark);
   let nftsRequired = dto.limit;
-  let totalCount = 0;
+  let newLocalBookmark = positionsToSkip + nftsRequired;
+  let isLastIteration = false;
   const userPositions: PositionsObject = {};
 
-  for (const nftBatch of userNfts) {
-    const batchCount = nftBatch.getNftInstanceCount();
-    totalCount += batchCount;
+  do {
+    const userNfts = await fetchBalancesWithTokenMetadata(ctx, {
+      collection: "NFT",
+      category: "LiquidityPositions",
+      owner: dto.user,
+      limit: dto.limit,
+      bookmark: currentPageBookmark
+    });
+    newLocalBookmark = positionsToSkip + nftsRequired;
 
-    if (positionsToSkip >= batchCount) {
-      positionsToSkip -= batchCount;
+    const allNfts = userNfts.results.flatMap(({ balance }) => {
+      return balance.getNftInstanceIds().map((nftInstanceId) => ({
+        poolAddrKey: balance.type,
+        nftInstanceId,
+        additionalKey: balance.additionalKey
+      }));
+    });
+
+    if (positionsToSkip >= allNfts.length) {
+      positionsToSkip -= allNfts.length;
+      currentPageBookmark = userNfts.nextPageBookmark ?? "";
       continue;
     }
 
-    if (nftsRequired === 0) continue;
+    const selectedNft = allNfts.slice(positionsToSkip);
+    positionsToSkip = 0;
 
-    const poolAddrKey = nftBatch.collection;
-    const pool = await getPoolFromAddressKey(ctx, poolAddrKey);
-    const nftInstanceIds = nftBatch.getNftInstanceIds().slice(positionsToSkip);
-
-    userPositions[poolAddrKey] = userPositions[poolAddrKey] || [];
-
-    for (const nftInstanceId of nftInstanceIds) {
-      if (nftsRequired === 0) break;
-      const nftId = `${nftBatch.additionalKey}_${nftInstanceId}`;
-      userPositions[poolAddrKey].push(pool.positions[nftId]);
+    for (const [nftIndex, nft] of selectedNft.entries()) {
+      const pool = await getPoolFromAddressKey(ctx, nft.poolAddrKey);
+      userPositions[nft.poolAddrKey] = userPositions[nft.poolAddrKey] || [];
+      const nftId = genKey(nft.additionalKey, nft.nftInstanceId.toString());
+      userPositions[nft.poolAddrKey].push(pool.positions[nftId]);
       nftsRequired--;
+      isLastIteration = nftIndex === selectedNft.length - 1;
+      if (nftsRequired === 0) break;
     }
 
-    positionsToSkip = 0;
+    currentPageBookmark = isLastIteration ? userNfts.nextPageBookmark ?? "" : currentPageBookmark;
+  } while (nftsRequired && currentPageBookmark);
+
+  if (positionsToSkip) {
+    throw new ValidationFailedError("Invalid bookmark");
   }
 
-  const userPositionWithMetadata = await addMetaDataToPositions(ctx, userPositions);
-  return new GetUserPositionsResDto(userPositionWithMetadata, totalCount);
+  const newBookmark =
+    !currentPageBookmark && isLastIteration
+      ? ""
+      : genBookMark(currentPageBookmark, isLastIteration ? "" : newLocalBookmark.toString());
+
+  const userPositionWithMetadata = userPositions
+    ? await addMetaDataToPositions(ctx, userPositions)
+    : userPositions;
+  return new GetUserPositionsResDto(userPositionWithMetadata, newBookmark);
 }
 
 /**

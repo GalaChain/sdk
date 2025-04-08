@@ -13,7 +13,7 @@
  * limitations under the License.
  */
 import BigNumber from "bignumber.js";
-import { IsNotEmpty, IsNumber, IsOptional, IsString, Max, Min } from "class-validator";
+import { IsNotEmpty, IsNumber, IsOptional, IsString, Max, Min, ValidateNested } from "class-validator";
 
 import { BigNumberProperty } from "../validators";
 import { IsNonZeroBigNumber } from "../validators";

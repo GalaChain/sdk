@@ -12,11 +12,11 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-import { BurnDto, ConflictError, GetRemoveLiqEstimationResDto, NotFoundError, Pool } from "@gala-chain/api";
+import { BurnDto, GetRemoveLiqEstimationResDto, NotFoundError, Pool } from "@gala-chain/api";
 
 import { GalaChainContext } from "../types";
 import { getObjectByKey, validateTokenOrder } from "../utils";
-import { checkUserPositionNft } from "./positionNft";
+import { fetchUserPositionNftId } from "./positionNft";
 
 /**
  * @dev The getRemoveLiquidityEstimation function estimates the amount of tokens a user will receive when removing liquidity from a Uniswap V3 pool within the GalaChain ecosystem. It calculates the expected token amounts based on the user's liquidity position and market conditions.
@@ -34,9 +34,9 @@ export async function getRemoveLiquidityEstimation(
   const pool = await getObjectByKey(ctx, Pool, key);
 
   //If pool does not exist
-  if (pool == undefined) throw new ConflictError("Pool does not exist");
+  if (pool == undefined) throw new NotFoundError("Pool does not exist");
 
-  const positionNftId = await checkUserPositionNft(
+  const positionNftId = await fetchUserPositionNftId(
     ctx,
     pool,
     dto.tickUpper.toString(),

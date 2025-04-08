@@ -12,7 +12,14 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-import { ChainError, DexFeeConfig, ErrorCode, TokenClassKey, TokenInstanceKey } from "@gala-chain/api";
+import {
+  ChainError,
+  DexFeeConfig,
+  ErrorCode,
+  TokenClassKey,
+  TokenInstanceKey,
+  ValidationFailedError
+} from "@gala-chain/api";
 import BigNumber from "bignumber.js";
 
 import { GalaChainContext } from "../types";
@@ -94,6 +101,33 @@ export function genKey(...params: string[] | number[]): string {
 
 export function genKeyWithPipe(...params: string[] | number[]): string {
   return params.join("_");
+}
+
+export function genBookMark(...params: string[] | number[]): string {
+  return params.join("#");
+}
+
+export function splitBookmark(bookmark = "") {
+  const [chainBookmark = "", localBookmark = "0"] = bookmark.split("#");
+  return { chainBookmark, localBookmark };
+}
+
+/**
+ * Parses an NFT ID string into its batch number and instance ID components.
+ *
+ * @param nftId The NFT ID in the format 'batchNumber_instanceId'
+ * @returns An object containing the batchNumber and instanceId as BigNumber
+ * @throws ValidationFailedError if the input format is invalid
+ */
+export function parseNftId(nftId: string): { batchNumber: string; instanceId: BigNumber } {
+  const parts = nftId.split("_");
+  if (parts.length !== 2) {
+    throw new ValidationFailedError("Invalid NFT ID format. Expected format: 'batchNumber_instanceId'.");
+  }
+  return {
+    batchNumber: parts[0],
+    instanceId: new BigNumber(parts[1])
+  };
 }
 
 export async function fetchDexProtocolFeeConfig(ctx: GalaChainContext): Promise<DexFeeConfig | undefined> {

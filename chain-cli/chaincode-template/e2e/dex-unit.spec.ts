@@ -255,7 +255,7 @@ describe("genKey", () => {
 describe("updatePositions", () => {
   test("should initialize a new position if not existing", () => {
     const positions = {};
-    const nftId = "0x123";
+    const nftId = "1_1";
     const tickLower = -10;
     const tickUpper = 10;
     const liquidityDelta = new BigNumber(100);
@@ -278,7 +278,7 @@ describe("updatePositions", () => {
 
   test("should update liquidity and fees for an existing position", () => {
     const positions = {};
-    const nftId = "0x123";
+    const nftId = "1_1";
     const tickLower = -10;
     const tickUpper = 10;
     const liquidityDelta = new BigNumber(100);
@@ -312,7 +312,7 @@ describe("updatePositions", () => {
 
   test("should throw error if decreasing liquidity below zero", () => {
     const positions = {};
-    const nftId = "0x123";
+    const nftId = "1_1";
     const tickLower = -10;
     const tickUpper = 10;
     const liquidityDelta = new BigNumber(100);
