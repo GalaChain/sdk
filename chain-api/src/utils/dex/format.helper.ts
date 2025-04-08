@@ -18,11 +18,11 @@ import { ConflictError } from "../error";
 
 /**
  *
- * @param address address of pool in string
+ * @param poolId poolId of pool in string
  * @returns
  */
-export const virtualAddress = (address: string) => {
-  return "service|" + address;
+export const genPoolAlias = (poolId: string) => {
+  return `service|pool_${poolId}`;
 };
 
 export const requirePosititve = (...params) => {

@@ -35,6 +35,7 @@ import {
   feeAmountTickSpacing,
   flipTick,
   genKey,
+  genPoolAlias,
   getAmount0Delta,
   getAmount1Delta,
   getFeeGrowthInside,
@@ -47,8 +48,7 @@ import {
   tickSpacingToMaxLiquidityPerTick,
   tickToSqrtPrice,
   updatePositions,
-  updateTick,
-  virtualAddress
+  updateTick
 } from "../utils";
 import { BigNumberProperty } from "../validators";
 import { ChainObject } from "./ChainObject";
@@ -640,6 +640,6 @@ export class Pool extends ChainObject {
    * @returns poolVirtualAddress
    */
   public getPoolAlias() {
-    return virtualAddress(this.getPoolAddrKey());
+    return genPoolAlias(this.getPoolAddrKey());
   }
 }
