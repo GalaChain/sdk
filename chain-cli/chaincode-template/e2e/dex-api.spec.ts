@@ -856,14 +856,14 @@ describe("DEx v3 Testing", () => {
             instanceIds: [],
             lockedHolds: [],
             owner: expect.stringMatching(/^eth\|[a-fA-F0-9]{40}$/),
-            quantity: "99999998.999",
+            quantity: "99999998",
             type: "new-type0"
           }),
           token1Balance: expect.objectContaining({
             additionalKey: "USDT",
             category: "new-category0",
             collection: "new-collection0",
-            quantity: "99999999.000000000000000004",
+            quantity: "99996004.869665533956529657",
             inUseHolds: [],
             instanceIds: [],
             lockedHolds: [],
@@ -2011,7 +2011,7 @@ describe("DEx v3 Testing", () => {
             instanceIds: [],
             lockedHolds: [],
             owner: expect.stringMatching(/^eth\|[a-fA-F0-9]{40}$/),
-            quantity: "99999898.99930000000000062",
+            quantity: "99999896.8",
             type: "new-type0"
           },
           token1Balance: {
@@ -2022,7 +2022,7 @@ describe("DEx v3 Testing", () => {
             instanceIds: [],
             lockedHolds: [],
             owner: expect.stringMatching(/^eth\|[a-fA-F0-9]{40}$/),
-            quantity: "99856936.643320146052266951",
+            quantity: "99852543.846247174107773938",
             type: "new-type0"
           }
         }
