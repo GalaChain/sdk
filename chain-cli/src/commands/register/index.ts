@@ -14,13 +14,9 @@
  */
 import { Args, Flags, ux } from "@oclif/core";
 
-import { ChaincodeInfoDto } from "chain-cli/src/dto";
-
 import BaseCommand from "../../base-command";
 import {
-  deployChaincode,
   getChaincodeDefinition,
-  getChaincodeImageInfo,
   getDeploymentResponse,
   getDeveloperPublicKeys,
   getPrivateKey,

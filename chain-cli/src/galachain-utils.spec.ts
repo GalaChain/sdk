@@ -129,8 +129,8 @@ describe("deployChaincode", () => {
     ];
 
     // When
-    expect(async () => await deployChaincode({ privateKey, imageTag, chaincode: "aaa", contracts })).rejects.toThrowError(
-      `Service Portal respond with status 401`
-    );
+    expect(
+      async () => await deployChaincode({ privateKey, imageTag, chaincode: "aaa", contracts })
+    ).rejects.toThrowError(`Service Portal respond with status 401`);
   });
 });
