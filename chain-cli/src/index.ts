@@ -13,8 +13,13 @@
  * limitations under the License.
  */
 
+
+// dotenv works with `node`
+// command works with `npx`
+// (cd ~/IdeaProjects/gh-sdk2/chain-cli && npm run build) && node ~/IdeaProjects/gh-sdk2/chain-cli -- info   
+
 export { run } from "@oclif/core";
 export { CaConfig, OrgConfig, PeerConfig } from "./connection-profile";
-export { GetChaincodeDeploymentDto, PostChaincodeDto, PostDeployChaincodeDto, ChaincodeInfoDto } from "./dto";
+export { GetChaincodeDeploymentDto, PostChaincodeDto, DeployChaincodeDto as PostDeployChaincodeDto, ChaincodeInfoDto } from "./dto";
 export * from "./exec-sync";
 export * from "./galachain-utils";

@@ -24,7 +24,6 @@ jest.mock("axios");
 
 describe("getDeploymentResponse", () => {
   const privateKey = "bf2168e0e2238b9d879847987f556a093040a2cab07983a20919ac33103d0d00";
-  const isTestnet = true;
 
   beforeEach(() => {
     jest.clearAllMocks();
@@ -40,7 +39,7 @@ describe("getDeploymentResponse", () => {
     });
 
     // When
-    const response = await getDeploymentResponse({ privateKey, isTestnet });
+    const response = await getDeploymentResponse({ privateKey, chaincodeName: "aaa" });
 
     // Then
     expect(response.status).toEqual("CH_CREATED");
@@ -53,16 +52,20 @@ describe("getDeploymentResponse", () => {
     });
 
     // When
-    expect(async () => await getDeploymentResponse({ privateKey, isTestnet })).rejects.toThrowError(
-      `Service Portal respond with status 401`
-    );
+    expect(
+      async () => await getDeploymentResponse({ privateKey, chaincodeName: "aaa" })
+    ).rejects.toThrowError(`Service Portal respond with status 401`);
   });
 });
 
 describe("deployChaincode", () => {
   const privateKey = "bf2168e0e2238b9d879847987f556a093040a2cab07983a20919ac33103d0d00";
-  const isTestnet = true;
   const imageTag = "registry.image.name:latest";
+  const contracts = [
+    { contractName: "AppleContract" },
+    { contractName: "GalaChainToken" },
+    { contractName: "PublicKeyContract" }
+  ];
 
   beforeEach(() => {
     jest.clearAllMocks();
@@ -77,16 +80,8 @@ describe("deployChaincode", () => {
       }
     });
 
-    jest
-      .spyOn(require("child_process"), "execSync")
-      .mockImplementationOnce(() => `[{"Architecture":"amd64","Os":"linux"}]`)
-      .mockImplementationOnce(
-        () =>
-          '[{"contractName":"AppleContract"},{"contractName":"GalaChainToken"},{"contractName":"PublicKeyContract"}]'
-      );
-
     // When
-    const response = await deployChaincode({ privateKey, isTestnet, imageTag });
+    const response = await deployChaincode({ privateKey, imageTag, chaincode: "aaa", contracts });
 
     // Then
     expect(response.status).toEqual("CH_CREATED");
@@ -103,20 +98,17 @@ describe("deployChaincode", () => {
 
     process.env = { ...process.env, DEV_PRIVATE_KEY: undefined };
 
-    jest
-      .spyOn(require("child_process"), "execSync")
-      .mockImplementationOnce(() => `[{"Architecture":"amd64","Os":"linux"}]`)
-      .mockImplementationOnce(
-        () =>
-          '[{"contractName":"AppleContract"},{"contractName":"GalaChainToken"},{"contractName":"PublicKeyContract"}]'
-      );
-
     jest.spyOn(ux, "prompt").mockResolvedValueOnce(privateKey);
 
     const postDeployChaincodePrivateKey = {
-      privateKey: await getPrivateKey(undefined),
-      isTestnet,
-      imageTag
+      privateKey: await getPrivateKey(undefined, "aaa"),
+      imageTag,
+      chaincode: "aaa",
+      contracts: [
+        { contractName: "AppleContract" },
+        { contractName: "GalaChainToken" },
+        { contractName: "PublicKeyContract" }
+      ]
     };
     // When
     const response = await deployChaincode(postDeployChaincodePrivateKey);
@@ -130,17 +122,14 @@ describe("deployChaincode", () => {
     axios.post = jest.fn().mockResolvedValue({
       status: 401
     });
-
-    jest
-      .spyOn(require("child_process"), "execSync")
-      .mockImplementationOnce(() => `[{"Architecture":"amd64","Os":"linux"}]`)
-      .mockImplementationOnce(
-        () =>
-          '[{"contractName":"AppleContract"},{"contractName":"GalaChainToken"},{"contractName":"PublicKeyContract"}]'
-      );
+    const contracts = [
+      { contractName: "AppleContract" },
+      { contractName: "GalaChainToken" },
+      { contractName: "PublicKeyContract" }
+    ];
 
     // When
-    expect(async () => await deployChaincode({ privateKey, isTestnet, imageTag })).rejects.toThrowError(
+    expect(async () => await deployChaincode({ privateKey, imageTag, chaincode: "aaa", contracts })).rejects.toThrowError(
       `Service Portal respond with status 401`
     );
   });
