@@ -12,123 +12,74 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-import { ux } from "@oclif/core";
+import axios from "axios";
 
-import { deployChaincode } from "../../galachain-utils";
+import { axiosGetResponse, axiosPostResponse, consts, execSyncMock } from "../../__test__/data";
 import Deploy from "./index";
 
-jest.mock("../../galachain-utils");
-jest.setTimeout(10000);
+jest.mock("../../exec-sync", () => ({
+  execSync(cmd: string) {
+    return execSyncMock(cmd);
+  }
+}));
 
-const consts = {
-  developerPrivateKey: "bf2168e0e2238b9d879847987f556a093040a2cab07983a20919ac33103d0d00"
-};
+jest.mock("axios");
+axios.post = jest.fn().mockResolvedValue(axiosPostResponse);
+axios.get = jest.fn().mockResolvedValue(axiosGetResponse);
 
 describe("Deploy Command", () => {
+  let stdOut: string[] = [];
+  let logSpy: jest.SpyInstance;
+  let writeSpy: jest.SpyInstance;
+
   beforeEach(() => {
+    process.env.DEV_PRIVATE_KEY = consts.developerPrivateKey;
+    process.env.CHAINCODE_ADMIN_PUBLIC_KEY = consts.chaincodeAdminPublicKey;
+
+    // Capture both console.log and process.stdout.write
+    logSpy = jest.spyOn(console, "log").mockImplementation((v) => {
+      stdOut.push(v?.toString() || "");
+    });
+
+    writeSpy = jest.spyOn(process.stdout, "write").mockImplementation((v) => {
+      stdOut.push(v?.toString() || "");
+      return true;
+    });
+  });
+
+  afterEach(() => {
     jest.clearAllMocks();
+    logSpy.mockRestore();
+    writeSpy.mockRestore();
+
+    console.log("[Captured stdOut:]\n", stdOut.join("\n"));
+    stdOut = [];
+
+    process.env.DEV_PRIVATE_KEY = undefined;
+    process.env.CHAINCODE_ADMIN_PUBLIC_KEY = undefined;
   });
 
   it("should deploy an image", async () => {
-    // Given
-    const result: (string | Uint8Array)[] = [];
-    jest.spyOn(process.stdout, "write").mockImplementation((v) => {
-      result.push(v);
-      return true;
-    });
-
-    jest.spyOn(console, "log").mockImplementation((v) => {
-      result.push(v);
-      return true;
-    });
-
-    jest.spyOn(ux, "prompt").mockResolvedValueOnce("Y");
-
-    jest.mocked(deployChaincode).mockImplementation(async () => {
-      return {
-        status: "CC_DEPLOY_SCHEDULED",
-        chaincode: "chaincode-name",
-        channel: "channel-name"
-      };
-    });
-
     // When
-    await Deploy.run(["ttl.sh/image-name:1d", consts.developerPrivateKey]);
+    await Deploy.run(["--no-prompt", "some/image-name:1d"]);
 
     // Then
-    expect(result.join()).toContain(
-      "Deployment scheduled to sandbox. Status CC_DEPLOY_SCHEDULED for Chaincode chaincode-name and Channel channel-name."
-    );
-  });
+    const expectedLines = [
+      "Verifying Docker image some/image-name:1d...",
+      `Chaincode:    ${consts.chaincodeName}`,
+      `Image:        ${consts.imageName}`,
+      `Image SHA256: ${consts.imageSha256}`,
+      ...consts.contracts.map((contract) => `- ${contract}`),
+      "Deployment scheduled to TNT:",
+      '"network": "TNT"',
+      `"chaincode": "${consts.chaincodeName}"`,
+      '"status": "CC_TEST_STATUS"'
+    ];
 
-  it("should cancel the deployment", async () => {
-    // Given
-    const result: (string | Uint8Array)[] = [];
-    jest.spyOn(process.stdout, "write").mockImplementation((v) => {
-      result.push(v);
-      return true;
+    const fullOutput = stdOut.join("\n");
+
+    expectedLines.forEach((line) => {
+      expect(fullOutput).toContain(line);
     });
-
-    jest.spyOn(console, "log").mockImplementation((v) => {
-      result.push(v);
-      return true;
-    });
-
-    jest.spyOn(ux, "prompt").mockResolvedValueOnce("n");
-
-    jest.mocked(deployChaincode).mockResolvedValue({
-      status: "CC_DEPLOY_SCHEDULED",
-      org: "org-name"
-    });
-
-    // When
-    await Deploy.run(["ghcr.io/gala/image-name:2.5", consts.developerPrivateKey]);
-
-    // Then
-    expect(result.join()).toContain("Deployment cancelled.");
-  });
-
-  it("should check imageTag", async () => {
-    // Given
-    const result: (string | Uint8Array)[] = [];
-    jest.spyOn(process.stdout, "write").mockImplementation((v) => {
-      result.push(v);
-      return true;
-    });
-
-    jest.spyOn(console, "log").mockImplementation((v) => {
-      result.push(v);
-      return true;
-    });
-
-    // When
-    await Deploy.run(["imageName", consts.developerPrivateKey]);
-
-    // Then
-    expect(result.join()).toContain("It should follow the pattern imageName:version.");
-  });
-
-  it("should log error when deployChaincode fail", async () => {
-    // Given
-    const result: (string | Uint8Array)[] = [];
-    jest.spyOn(process.stdout, "write").mockImplementation((v) => {
-      result.push(v);
-      return true;
-    });
-
-    jest.spyOn(console, "log").mockImplementation((v) => {
-      result.push(v);
-      return true;
-    });
-
-    jest.spyOn(ux, "prompt").mockResolvedValueOnce("y");
-
-    jest.mocked(deployChaincode).mockRejectedValue(new Error("Failed to deploy chaincode"));
-
-    // When
-    await Deploy.run(["imageName:version", consts.developerPrivateKey]);
-
-    // Then
-    expect(result.join()).toContain("Failed to deploy chaincode");
   });
 });

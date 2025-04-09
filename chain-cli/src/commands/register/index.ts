@@ -35,6 +35,9 @@ export default class Register extends BaseCommand<typeof Register> {
   static override flags = {
     mnt: Flags.boolean({
       description: "Get info from MNT network instead of TNT (not supported yet)."
+    }),
+    "no-prompt": Flags.boolean({
+      description: "Do not prompt for confirmation."
     })
   };
 
@@ -68,21 +71,21 @@ export default class Register extends BaseCommand<typeof Register> {
       const developerPublicKeysList = developersPublicKeys.map((d) => `    ${d}`).join("\n");
       this.log(`  Developer public keys:\n${developerPublicKeysList}\n`);
 
-      const prompt = `Are you sure you want to register the chaincode on TNT? (y/n)`;
-      if (!(await ux.confirm(prompt))) {
-        this.log("Registration cancelled.");
-        return;
+      if (!flags["no-prompt"]) {
+        const prompt = `Are you sure you want to register the chaincode on TNT? (y/n)`;
+        if (!(await ux.confirm(prompt))) {
+          this.log("Registration cancelled.");
+          return;
+        }
       }
 
       const developerPrivateKey = await getPrivateKey(args.developerPrivateKey, chaincode.name);
 
-      const response = await registerChaincode({
+      await registerChaincode({
         privateKey: developerPrivateKey,
         adminPublicKey: chaincode.adminPublicKey,
         developersPublicKeys
       });
-
-      console.log(response);
 
       this.log(`Chaincode ${chaincode.name} has been registered:`);
 

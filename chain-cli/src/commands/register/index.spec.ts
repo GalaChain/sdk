@@ -14,10 +14,27 @@
  */
 import axios from "axios";
 
-import { axiosGetResponse, consts } from "../../__test__/data";
-import Info from "./index";
+import { axiosGetResponse, axiosPostResponse, consts, execSyncMock } from "../../__test__/data";
+import Register from "./index";
+
+jest.mock("fs", () => ({
+  ...jest.requireActual("fs"),
+  readdirSync: jest.fn().mockReturnValue(["gc-dev-key.pub"]),
+  readFileSync: jest
+    .fn()
+    .mockReturnValue(
+      "04815c06dda6a0e8e9753a67aa638c2aa02e01f7b1d06b8ae5b7570c49f8d8cb894f6f8fda3beed896d1ea70ab54ad069e19d8fdbf7125f9fc23ee6109e2ac38ec\n"
+    )
+}));
+
+jest.mock("../../exec-sync", () => ({
+  execSync(cmd: string) {
+    return execSyncMock(cmd);
+  }
+}));
 
 jest.mock("axios");
+axios.post = jest.fn().mockResolvedValue(axiosPostResponse);
 axios.get = jest.fn().mockResolvedValue(axiosGetResponse);
 
 let stdOut: string[] = [];
@@ -51,12 +68,20 @@ afterEach(() => {
   process.env.CHAINCODE_ADMIN_PUBLIC_KEY = undefined;
 });
 
-it("should get chaincode info", async () => {
+it("should register a chaincode", async () => {
   // When
-  await Info.run([]);
+  await Register.run(["--no-prompt"]);
 
   // Then
   const expectedLines = [
+    "Registering chaincode on GalaChain TNT network...",
+    `Chaincode name:`,
+    consts.chaincodeName,
+    `Chaincode admin public key:`,
+    consts.chaincodeAdminPublicKey,
+    `Developer public keys:`,
+    consts.developerPublicKey,
+    `Chaincode ${consts.chaincodeName} has been registered:`,
     '"network": "TNT"',
     `"chaincode": "${consts.chaincodeName}"`,
     '"status": "CC_TEST_STATUS"'

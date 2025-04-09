@@ -267,7 +267,7 @@ export function checkCliVersion() {
   }
 }
 
-export async function getChaincodeDefinition(): Promise<{ name: string; adminPublicKey: string }> {
+function getAdminPublicKeyFromDefaultPath(): string {
   const adminPublicKeyPath = path.join(
     process.cwd(),
     DEFAULT_PUBLIC_KEYS_DIR,
@@ -281,7 +281,11 @@ export async function getChaincodeDefinition(): Promise<{ name: string; adminPub
     );
   }
 
-  const adminPublicKey = fs.readFileSync(adminPublicKeyPath, "utf8").trim();
+  return fs.readFileSync(adminPublicKeyPath, "utf8").trim();
+}
+
+export async function getChaincodeDefinition(): Promise<{ name: string; adminPublicKey: string }> {
+  const adminPublicKey = process.env.CHAINCODE_ADMIN_PUBLIC_KEY ?? getAdminPublicKeyFromDefaultPath();
   const name = "gc-" + signatures.getEthAddress(adminPublicKey).toLowerCase();
 
   return { name, adminPublicKey };

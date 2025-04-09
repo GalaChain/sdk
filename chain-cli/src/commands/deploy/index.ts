@@ -36,6 +36,9 @@ export default class Deploy extends BaseCommand<typeof Deploy> {
   static override flags = {
     mnt: Flags.boolean({
       description: "Get info from MNT network instead of TNT (not supported yet)."
+    }),
+    "no-prompt": Flags.boolean({
+      description: "Do not prompt for confirmation."
     })
   };
 
@@ -85,10 +88,12 @@ export default class Deploy extends BaseCommand<typeof Deploy> {
       const nameList = contracts.map((c) => `\n   - ${c.contractName}`).join("");
       this.log(`  Contracts: ${nameList}\n`);
 
-      const prompt = `Are you sure you want to deploy the chaincode ${chaincode.name} to TNT? (y/n)`;
-      if (!(await ux.confirm(prompt))) {
-        this.log("Deployment cancelled.");
-        return;
+      if (!flags["no-prompt"]) {
+        const prompt = `Are you sure you want to deploy the chaincode ${chaincode.name} to TNT? (y/n)`;
+        if (!(await ux.confirm(prompt))) {
+          this.log("Deployment cancelled.");
+          return;
+        }
       }
 
       await deployChaincode({
