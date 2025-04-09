@@ -51,16 +51,16 @@ Use GalaChain’s **WebSocket service** or **Explorer API**:
 * **WebSocket API**: [https://explorer-api.galachain.com](https://explorer-api.galachain.com)  
 * **REST API for transactions**: [https://explorer-api.galachain.com/docs](https://explorer-api.galachain.com/docs)
 
-### How do we verify deposits?**  
+### How do we verify deposits?  
 You need to **scan blocks** for **TransferToken transactions** associated with your deposit addresses. A successful `TransferToken` transaction will contain the acting `TokenBalance` chain entries in its Read / Write Set. Every `TokenBalance` chain entry includes an `owner` property in Chain Key position 0 that identifies the wallet address that owns the deposit. You can also use the `FetchBalances` HTTP query (see below) to query for specific balances directly. E.g. [https://explorer.galachain.com/details/asset-channel/8039619?tx=715beb375021f9fb5760b9aa7e33e74c220f01888e572b375919ee938e48f48d](https://explorer.galachain.com/details/asset-channel/8039619?tx=715beb375021f9fb5760b9aa7e33e74c220f01888e572b375919ee938e48f48d) , expand all on the raw block, ctrl-F for `/GCTB/` (the `INDEX_KEY` for the `TokenBalance` class.
 
-### Is there a rate limit on API calls?**  
+### Is there a rate limit on API calls?
 Yes, the API is **limited to 20 requests per minute**. Custom rate limits can be discussed.
 
 ### How do we retrieve balances?
 Use the **FetchBalances API**: [https://gateway-mainnet.galachain.com/api/asset/token-contract/FetchBalances](https://gateway-mainnet.galachain.com/api/asset/token-contract/FetchBalances)
 
-### Does GalaChain provide transaction IDs (txIDs)?**  
+### Does GalaChain provide transaction IDs (txIDs)?
 Yes, GalaChain transactions are each assigned a unique transaction ID. Each block can contain many transactions. Each transaction can contain many reads and writes. Because GalaChain is built on Hyperledger Fabric, more technical details can be found in their documentation: [https://hyperledger-fabric.readthedocs.io/en/release-2.4/txflow.html](https://hyperledger-fabric.readthedocs.io/en/release-2.4/txflow.html) , [https://hyperledger-fabric.readthedocs.io/en/release-2.4/readwrite.html](https://hyperledger-fabric.readthedocs.io/en/release-2.4/readwrite.html) 
 
 ## Smart Contract & Chaincode Development
@@ -82,7 +82,7 @@ Yes, GalaChain supports smart contracts that are significantly more flexible and
 ### What programming languages can be used to write GalaChain smart contracts?
 **TypeScript** is the primary language for writing **chaincode**.
 
-### How do we sign transactions on GalaChain?**  
+### How do we sign transactions on GalaChain?
 Transactions use **secp256k1 signatures**, compatible with **Ethereum signing mechanisms**.
 
 ### Is there an example of using the GalaChain SDK? 
