@@ -417,8 +417,6 @@ export async function getLogs(params: {
       });
 
     return response.data;
-
-    return response.data;
   } catch (error: any) {
     const status = error.response?.status;
     const message = error.response?.data?.message;
