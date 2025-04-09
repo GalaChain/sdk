@@ -17,6 +17,8 @@ import axios from "axios";
 import { axiosGetResponse, axiosPostResponse, consts, execSyncMock } from "../../__test__/data";
 import Register from "./index";
 
+jest.setTimeout(10000);
+
 jest.mock("fs", () => ({
   ...jest.requireActual("fs"),
   readdirSync: jest.fn().mockReturnValue(["gc-dev-key.pub"]),

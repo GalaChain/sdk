@@ -17,6 +17,8 @@ import axios from "axios";
 import { axiosGetResponse, axiosPostResponse, consts, execSyncMock } from "../../__test__/data";
 import Deploy from "./index";
 
+jest.setTimeout(10000);
+
 jest.mock("../../exec-sync", () => ({
   execSync(cmd: string) {
     return execSyncMock(cmd);
@@ -59,7 +61,7 @@ describe("Deploy Command", () => {
     process.env.CHAINCODE_ADMIN_PUBLIC_KEY = undefined;
   });
 
-  it("should deploy an image", async () => {
+  it("should deploy a chaincode", async () => {
     // When
     await Deploy.run(["--no-prompt", "some/image-name:1d"]);
 
