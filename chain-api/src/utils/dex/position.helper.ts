@@ -39,22 +39,20 @@ export function updatePositions(
   feeGrowthInside0: BigNumber,
   feeGrowthInside1: BigNumber
 ) {
-  const key = nftId;
-
-  if (liquidityDelta.lt(new BigNumber(0)) && positions[key] == undefined)
+  if (liquidityDelta.lt(new BigNumber(0)) && positions[nftId] == undefined)
     throw new NotFoundError(`No position corresponding to the nft ID ${nftId} exists in this pool`);
 
-  if (positions[key] == undefined) {
-    positions[key] = new PositionData();
-    positions[key].tickUpper = tickUpper.toString();
-    positions[key].tickLower = tickLower.toString();
-    positions[key].liquidity = new BigNumber(0).toString();
-    positions[key].feeGrowthInside0Last = new BigNumber(0).toString();
-    positions[key].feeGrowthInside1Last = new BigNumber(0).toString();
-    positions[key].tokensOwed0 = new BigNumber(0).toString();
-    positions[key].tokensOwed1 = new BigNumber(0).toString();
+  if (positions[nftId] == undefined) {
+    positions[nftId] = new PositionData();
+    positions[nftId].tickUpper = tickUpper.toString();
+    positions[nftId].tickLower = tickLower.toString();
+    positions[nftId].liquidity = new BigNumber(0).toString();
+    positions[nftId].feeGrowthInside0Last = new BigNumber(0).toString();
+    positions[nftId].feeGrowthInside1Last = new BigNumber(0).toString();
+    positions[nftId].tokensOwed0 = new BigNumber(0).toString();
+    positions[nftId].tokensOwed1 = new BigNumber(0).toString();
   }
-  const positionData = positions[key];
+  const positionData = positions[nftId];
 
   let liquidityNext: BigNumber;
   if (liquidityDelta.isEqualTo(0)) {

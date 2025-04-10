@@ -622,7 +622,7 @@ describe("DEx v3 Testing", () => {
             category: "LiquidityPositions",
             type: "new-collection0$new-category0$new-type0$ETH_new-collection0$new-category0$new-type0$USDT_500",
             owner: user.identityKey,
-            collection: "NFT"
+            collection: "DexNFT"
           })
         ])
       );
@@ -905,7 +905,7 @@ describe("DEx v3 Testing", () => {
       nftInstanceKey.type =
         "new-collection0$new-category0$new-type0$ETH_new-collection0$new-category0$new-type0$USDT_500";
       nftInstanceKey.category = "LiquidityPositions";
-      nftInstanceKey.collection = "NFT";
+      nftInstanceKey.collection = "DexNFT";
       nftInstanceKey.additionalKey = "1";
       nftInstanceKey.instance = new BigNumber("1");
 
@@ -1056,7 +1056,7 @@ describe("DEx v3 Testing", () => {
             category: "LiquidityPositions",
             type: "new-collection0$new-category0$new-type0$ETH_new-collection0$new-category0$new-type0$USDT_500",
             owner: user.identityKey,
-            collection: "NFT"
+            collection: "DexNFT"
           })
         ])
       );

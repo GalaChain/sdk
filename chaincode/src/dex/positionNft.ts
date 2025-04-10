@@ -14,7 +14,6 @@
  */
 import {
   ChainError,
-  DexNftBatchLimit,
   ErrorCode,
   MintTokenDto,
   NotFoundError,
@@ -25,16 +24,18 @@ import {
 } from "@gala-chain/api";
 import BigNumber from "bignumber.js";
 import { plainToInstance } from "class-transformer";
+import { keccak256, toUtf8Bytes } from "ethers";
 
 import { fetchBalances } from "../balances";
 import { mintTokenWithAllowance } from "../mint";
 import { createTokenClass } from "../token";
 import { transferToken } from "../transfer";
 import { GalaChainContext } from "../types";
-import { genKey, getObjectByKey, parseNftId } from "../utils";
+import { genKey, parseNftId } from "../utils";
+import { fetchDexNftBatchLimit } from "./fetchDexNftBatchLimit";
 
+const LIQUIDITY_TOKEN_COLLECTION = "DexNFT";
 const LIQUIDITY_TOKEN_CATEGORY = "LiquidityPositions";
-const LIQUIDITY_TOKEN_COLLECTION = "NFT";
 
 /**
  * @dev Function to assign an NFT position within a specified pool. The assignPositionNft function
@@ -158,9 +159,7 @@ export async function generatePositionNftBatch(
   });
 
   // Fetch NFT batch configuration
-  const key = ctx.stub.createCompositeKey(DexNftBatchLimit.INDEX_KEY, []);
-
-  const nftBatchLimit = await getObjectByKey(ctx, DexNftBatchLimit, key).catch((e) => {
+  const nftBatchLimit = await fetchDexNftBatchLimit(ctx).catch((e) => {
     const chainError = ChainError.from(e);
     if (chainError.matches(ErrorCode.NOT_FOUND)) {
       return undefined;
@@ -170,14 +169,16 @@ export async function generatePositionNftBatch(
   });
 
   const maxNftLimit = nftBatchLimit?.maxSupply ?? new BigNumber(100);
+  const uniqueSymbol = (keccak256(toUtf8Bytes(poolAddrKey)).match(/[a-zA-Z]/g) || []).slice(0, 8).join("");
+
   await createTokenClass(ctx, {
     network: "GC",
     tokenClass: tokenClassKey,
     isNonFungible: true,
     decimals: 0,
-    name: "Dex Liquidity Positions",
-    symbol: "DLP",
-    description: "NFTs representing liquidity positions in a decentralized exchange",
+    name: `Dex Liquidity Positions for ${poolAddrKey}`,
+    symbol: uniqueSymbol,
+    description: `NFTs representing liquidity positions in the dex pool with Id ${poolAddrKey}`,
     image: "https://static.gala.games/images/icons/units/gala.png",
     maxSupply: maxNftLimit,
     maxCapacity: maxNftLimit,
@@ -187,17 +188,14 @@ export async function generatePositionNftBatch(
     authorities: [holder, ctx.callingUser]
   });
 
-  // Mint batch limit number of NFTs in each batch
-  for (
-    let batch = 0;
-    maxNftLimit.dividedToIntegerBy(MintTokenDto.MAX_NFT_MINT_SIZE).isGreaterThanOrEqualTo(batch);
-    batch++
-  ) {
+  // Mint maxNftLimit limit number of NFTs in each batch
+  const totalMintCalls = maxNftLimit.dividedToIntegerBy(MintTokenDto.MAX_NFT_MINT_SIZE);
+  for (let mintStep = 0; totalMintCalls.isGreaterThanOrEqualTo(mintStep); mintStep++) {
     await mintTokenWithAllowance(ctx, {
       tokenClassKey,
       tokenInstance: new BigNumber(0),
       owner: holder,
-      quantity: maxNftLimit.dividedToIntegerBy(1000).isEqualTo(batch)
+      quantity: totalMintCalls.isEqualTo(mintStep)
         ? maxNftLimit.modulo(MintTokenDto.MAX_NFT_MINT_SIZE)
         : new BigNumber(MintTokenDto.MAX_NFT_MINT_SIZE)
     });

@@ -611,7 +611,7 @@ export class Pool extends ChainObject {
     );
 
     const positionData = this.positions[nftId];
-    if (!positionData) throw new Error("Position not found");
+    if (!positionData) throw new NotFoundError("Position not found");
 
     // Calculate accumulated fees
     const tokensOwed0 = feeGrowthInside0

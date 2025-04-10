@@ -84,9 +84,9 @@ export function validateTokenOrder(token0: TokenClassKey, token1: TokenClassKey)
   const [normalizedToken0, normalizedToken1] = [token0, token1].map(generateKeyFromClassKey);
 
   if (normalizedToken0.localeCompare(normalizedToken1) > 0) {
-    throw new Error("Token0 must be smaller");
+    throw new ValidationFailedError("Token0 must be smaller");
   } else if (normalizedToken0.localeCompare(normalizedToken1) === 0) {
-    throw new Error(
+    throw new ValidationFailedError(
       `Cannot create pool of same tokens. Token0 ${JSON.stringify(token0)} and Token1 ${JSON.stringify(
         token1
       )} must be different.`
@@ -99,16 +99,12 @@ export function genKey(...params: string[] | number[]): string {
   return params.join("_").replace(/\|/g, ":");
 }
 
-export function genKeyWithPipe(...params: string[] | number[]): string {
-  return params.join("_");
-}
-
 export function genBookMark(...params: string[] | number[]): string {
-  return params.join("#");
+  return params.join("|");
 }
 
 export function splitBookmark(bookmark = "") {
-  const [chainBookmark = "", localBookmark = "0"] = bookmark.split("#");
+  const [chainBookmark = "", localBookmark = "0"] = bookmark.split("|");
   return { chainBookmark, localBookmark };
 }
 

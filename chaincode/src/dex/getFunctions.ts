@@ -14,7 +14,6 @@
  */
 import {
   ChainCallDTO,
-  DefaultError,
   DexFeeConfig,
   GetAddLiquidityEstimationDto,
   GetAddLiquidityEstimationResDto,
@@ -109,7 +108,7 @@ export async function getLiquidity(ctx: GalaChainContext, dto: GetPoolDto): Prom
    */
 export async function getPositions(ctx: GalaChainContext, dto: GetPositionDto): Promise<PositionData> {
   const pool = await getPoolData(ctx, dto);
-  if (!pool) throw new DefaultError("No pool for these tokens and fee exists");
+  if (!pool) throw new NotFoundError("No pool for these tokens and fee exists");
 
   const positionNftId = await fetchUserPositionNftId(
     ctx,
@@ -119,11 +118,14 @@ export async function getPositions(ctx: GalaChainContext, dto: GetPositionDto): 
     dto.owner
   );
 
-  if (!positionNftId)
+  if (!positionNftId) {
     throw new NotFoundError(`User doesn't hold any positions with this tick range in this pool`);
+  }
 
   const position = pool.positions[positionNftId];
-  if (!position) throw new NotFoundError(`No position with the nftId ${positionNftId} found in this pool`);
+  if (!position) {
+    throw new NotFoundError(`No position with the nftId ${positionNftId} found in this pool`);
+  }
 
   const [tokensOwed0, tokensOwed1] = pool.getFeeCollectedEstimation(
     positionNftId,
@@ -149,7 +151,7 @@ export async function getPositionWithNftId(
   dto: GetPositionWithNftIdDto
 ): Promise<PositionData> {
   const pool = await getPoolData(ctx, dto);
-  if (!pool) throw new DefaultError("No pool for these tokens and fee exists");
+  if (!pool) throw new NotFoundError("No pool for these tokens and fee exists");
 
   // Each pool has a unique NFT ID that refers to a position within that pool.
   // Multiple pools can have the same NFT ID, each pointing to a different position in their respective pools.
@@ -172,9 +174,15 @@ export async function getPositionWithNftId(
 export async function getPoolFromAddressKey(ctx: GalaChainContext, poolAddrKey: string): Promise<Pool> {
   const [token0StringKey, token1StringKey, fee] = poolAddrKey.split("_");
   const token0 = new TokenClassKey();
-  [token0.collection, token0.category, token0.type, token0.additionalKey] = token0StringKey.split("$");
+  [token0.collection, token0.category, token0.type, token0.additionalKey] = token0StringKey
+    .replace(/\$\$/g, "$|")
+    .split("$")
+    .map((str) => str.replace(/\|/g, "$"));
   const token1 = new TokenClassKey();
-  [token1.collection, token1.category, token1.type, token1.additionalKey] = token1StringKey.split("$");
+  [token1.collection, token1.category, token1.type, token1.additionalKey] = token1StringKey
+    .replace(/\$\$/g, "$|")
+    .split("$")
+    .map((str) => str.replace(/\|/g, "$"));
   const pool = await getPoolData(ctx, new GetPoolDto(token0, token1, parseInt(fee)));
   if (!pool) throw new NotFoundError("Pool not found");
   return pool;
@@ -203,7 +211,7 @@ export async function getUserPositions(
 
   do {
     const userNfts = await fetchBalancesWithTokenMetadata(ctx, {
-      collection: "NFT",
+      collection: "DexNFT",
       category: "LiquidityPositions",
       owner: dto.user,
       limit: dto.limit,
