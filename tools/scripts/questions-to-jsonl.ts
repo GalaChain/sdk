@@ -19,9 +19,10 @@ const sourceDir = path.resolve(__dirname, "..", "..");
 const questionsDir = path.resolve(sourceDir, "docs", "questions");
 const chatmlDir = path.resolve(__dirname, "..", "training-data", "chatml");
 
-const systemRoleContent = "You are a GalaChain SDK expert assistant, helping developers write " + 
-  "chaincode, use the development environment, and integrate with GalaChain. " + 
-  "You provide accurate, concise guidance based on the official " + 
+const systemRoleContent =
+  "You are a GalaChain SDK expert assistant, helping developers write " +
+  "chaincode, use the development environment, and integrate with GalaChain. " +
+  "You provide accurate, concise guidance based on the official " +
   " SDK documentation and best practices.";
 
 interface Message {
@@ -99,7 +100,7 @@ async function processMarkdownToJsonl(outputFilePath: string): Promise<void> {
 
     // Get all markdown files
     const files = await fs.readdir(questionsDir);
-    const markdownFiles = files.filter(file => file.endsWith(".md"));
+    const markdownFiles = files.filter((file) => file.endsWith(".md"));
 
     // Process each file and collect entries
     const entries: ChatEntry[] = [];
@@ -112,7 +113,7 @@ async function processMarkdownToJsonl(outputFilePath: string): Promise<void> {
     }
 
     // Write entries to JSONL file
-    const jsonlContent = entries.map(entry => JSON.stringify(entry)).join("\n");
+    const jsonlContent = entries.map((entry) => JSON.stringify(entry)).join("\n");
     await fs.writeFile(outputFilePath, jsonlContent + "\n", "utf-8");
 
     console.log(`Successfully processed ${entries.length} files to ${outputFilePath}`);
@@ -124,8 +125,7 @@ async function processMarkdownToJsonl(outputFilePath: string): Promise<void> {
 
 // Execute the script
 const outputFilePath = path.join(chatmlDir, "questions.jsonl");
-processMarkdownToJsonl(outputFilePath)
-  .catch(error => {
-    console.error("Script failed:", error);
-    process.exit(1);
-  });
+processMarkdownToJsonl(outputFilePath).catch((error) => {
+  console.error("Script failed:", error);
+  process.exit(1);
+});
