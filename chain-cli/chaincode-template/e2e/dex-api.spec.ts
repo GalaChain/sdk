@@ -1358,7 +1358,7 @@ describe("DEx v3 Testing", () => {
         Data: expect.objectContaining({
           totalCount: 4,
           positions: expect.objectContaining({
-            "new-collection0$new-category0$new-type0$ETH_new-collection0$new-category0$new-type0$USDT_3000": [
+            "new-collection0$new-category0$new-type0$ETH$new-collection0$new-category0$new-type0$USDT$3000": [
               {
                 liquidity: "0.436872924385936373",
                 tickLower: 74400,
@@ -1406,7 +1406,7 @@ describe("DEx v3 Testing", () => {
                 token1Symbol: "USDT"
               }
             ],
-            "new-collection0$new-category0$new-type0$ETH_new-collection0$new-category0$new-type0$USDT_500": [
+            "new-collection0$new-category0$new-type0$ETH$new-collection0$new-category0$new-type0$USDT$500": [
               {
                 liquidity: "0.42495639238882534",
                 tickLower: 74390,
