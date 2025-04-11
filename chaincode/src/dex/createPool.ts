@@ -24,6 +24,7 @@ import {
 import { fetchTokenClass } from "../token";
 import { GalaChainContext } from "../types";
 import { convertToTokenInstanceKey, generateKeyFromClassKey, getObjectByKey, putChainObject } from "../utils";
+import { generatePositionNftBatch } from "./positionNft";
 
 /**
  * @dev The createPool function initializes a new Uniswap V3 liquidity pool within the GalaChain ecosystem. It sets up the pool with the specified token pair, initial price, fee structure, and protocol fee settings.
@@ -81,6 +82,7 @@ export async function createPool(ctx: GalaChainContext, dto: CreatePoolDto): Pro
   if (existingPool !== undefined)
     throw new ConflictError("Pool already exists", existingPool.toPlainObject());
 
+  await generatePositionNftBatch(ctx, "1", pool.getPoolAddrKey(), pool.getPoolAlias());
   await putChainObject(ctx, pool);
   return pool;
 }
