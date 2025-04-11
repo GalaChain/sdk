@@ -247,8 +247,8 @@ describe("validateTokenOrder", () => {
   });
 });
 describe("genKey", () => {
-  test("should concatenate parameters with '_'", () => {
-    expect(genKey("1", "2", "3", "4")).toBe("1_2_3_4");
+  test("should concatenate parameters with '$'", () => {
+    expect(genKey("1", "2", "3", "4")).toBe("1$2$3$4");
   });
 });
 

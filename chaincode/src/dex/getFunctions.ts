@@ -239,26 +239,25 @@ async function addMetaDataToPositions(
   positions: PositionsObject
 ): Promise<PositionsObject> {
   for (const [key, value] of Object.entries(positions)) {
-    const poolKeys = key.split("_");
+    const token0 = new TokenClassKey();
+    const token1 = new TokenClassKey();
+    let fee: string;
+    [
+      token0.collection,
+      token0.category,
+      token0.type,
+      token0.additionalKey,
+      token1.collection,
+      token1.category,
+      token1.type,
+      token1.additionalKey,
+      fee
+    ] = key
+      .replace(/\$\$/g, "$|")
+      .split("$")
+      .map((str) => str.replace(/\|/g, "$"));
 
-    const poolToken0ClassKey = new TokenClassKey();
-    const token0ClassKeyString = poolKeys[0].split("$");
-    poolToken0ClassKey.collection = token0ClassKeyString[0];
-    poolToken0ClassKey.category = token0ClassKeyString[1];
-    poolToken0ClassKey.type = token0ClassKeyString[2];
-    poolToken0ClassKey.additionalKey = token0ClassKeyString[3];
-
-    const poolToken1ClassKey = new TokenClassKey();
-    const token1ClassKeyString = poolKeys[1].split("$");
-    poolToken1ClassKey.collection = token1ClassKeyString[0];
-    poolToken1ClassKey.category = token1ClassKeyString[1];
-    poolToken1ClassKey.type = token1ClassKeyString[2];
-    poolToken1ClassKey.additionalKey = token1ClassKeyString[3];
-
-    const pool = await getPoolData(
-      ctx,
-      new GetPoolDto(poolToken0ClassKey, poolToken1ClassKey, Number(poolKeys[2]))
-    );
+    const pool = await getPoolData(ctx, new GetPoolDto(token0, token1, parseInt(fee)));
     if (!pool) {
       continue;
     }

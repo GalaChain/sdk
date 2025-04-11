@@ -89,7 +89,7 @@ export function validateTokenOrder(token0: TokenClassKey, token1: TokenClassKey)
 }
 
 export function genKey(...params: string[] | number[]): string {
-  return params.join("_").replace(/\|/g, ":");
+  return params.join("$").replace(/\|/g, ":");
 }
 
 export function genKeyWithPipe(...params: string[] | number[]): string {
