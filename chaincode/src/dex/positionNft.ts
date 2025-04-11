@@ -24,7 +24,7 @@ import {
 } from "@gala-chain/api";
 import BigNumber from "bignumber.js";
 import { plainToInstance } from "class-transformer";
-import { keccak256, toUtf8Bytes } from "ethers";
+import { keccak256 } from "js-sha3";
 
 import { fetchBalances } from "../balances";
 import { mintTokenWithAllowance } from "../mint";
@@ -169,7 +169,10 @@ export async function generatePositionNftBatch(
   });
 
   const maxNftLimit = nftBatchLimit?.maxSupply ?? new BigNumber(100);
-  const uniqueSymbol = (keccak256(toUtf8Bytes(poolAddrKey)).match(/[a-zA-Z]/g) || []).slice(0, 8).join("");
+  const uniqueSymbol = Buffer.from(keccak256.array(poolAddrKey))
+    .toString("base64")
+    .replace(/[^a-zA-Z]/g, "")
+    .slice(0, 8);
 
   await createTokenClass(ctx, {
     network: "GC",

@@ -96,7 +96,7 @@ export function validateTokenOrder(token0: TokenClassKey, token1: TokenClassKey)
 }
 
 export function genKey(...params: string[] | number[]): string {
-  return params.join("_").replace(/\|/g, ":");
+  return params.join("$").replace(/\|/g, ":");
 }
 
 export function genBookMark(...params: string[] | number[]): string {
@@ -116,9 +116,9 @@ export function splitBookmark(bookmark = "") {
  * @throws ValidationFailedError if the input format is invalid
  */
 export function parseNftId(nftId: string): { batchNumber: string; instanceId: BigNumber } {
-  const parts = nftId.split("_");
+  const parts = nftId.split("$");
   if (parts.length !== 2) {
-    throw new ValidationFailedError("Invalid NFT ID format. Expected format: 'batchNumber_instanceId'.");
+    throw new ValidationFailedError("Invalid NFT ID format. Expected format: 'batchNumber$instanceId'.");
   }
   return {
     batchNumber: parts[0],

@@ -14,7 +14,9 @@
  */
 import {
   ChainCallDTO,
+  ChainError,
   DexFeeConfig,
+  ErrorCode,
   GetAddLiquidityEstimationDto,
   GetAddLiquidityEstimationResDto,
   GetLiquidityResDto,
@@ -64,7 +66,14 @@ export async function getPoolData(ctx: GalaChainContext, dto: GetPoolDto): Promi
     ctx,
     Pool,
     ctx.stub.createCompositeKey(Pool.INDEX_KEY, [token0, token1, dto.fee.toString()])
-  ).catch(() => undefined);
+  ).catch((e) => {
+    const chainError = ChainError.from(e);
+    if (chainError.matches(ErrorCode.NOT_FOUND)) {
+      return undefined;
+    } else {
+      throw chainError;
+    }
+  });
   return pool;
 }
 
@@ -172,14 +181,20 @@ export async function getPositionWithNftId(
 }
 
 export async function getPoolFromAddressKey(ctx: GalaChainContext, poolAddrKey: string): Promise<Pool> {
-  const [token0StringKey, token1StringKey, fee] = poolAddrKey.split("_");
   const token0 = new TokenClassKey();
-  [token0.collection, token0.category, token0.type, token0.additionalKey] = token0StringKey
-    .replace(/\$\$/g, "$|")
-    .split("$")
-    .map((str) => str.replace(/\|/g, "$"));
   const token1 = new TokenClassKey();
-  [token1.collection, token1.category, token1.type, token1.additionalKey] = token1StringKey
+  let fee: string;
+  [
+    token0.collection,
+    token0.category,
+    token0.type,
+    token0.additionalKey,
+    token1.collection,
+    token1.category,
+    token1.type,
+    token1.additionalKey,
+    fee
+  ] = poolAddrKey
     .replace(/\$\$/g, "$|")
     .split("$")
     .map((str) => str.replace(/\|/g, "$"));
