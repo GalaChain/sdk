@@ -25,7 +25,7 @@ export class Bitmap {
 export class PositionData {
   @IsOptional()
   @IsString()
-  poolId: string;
+  poolAddrKey: string;
 
   @IsOptional()
   @IsString()

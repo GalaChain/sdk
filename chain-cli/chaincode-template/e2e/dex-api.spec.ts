@@ -620,7 +620,7 @@ describe("DEx v3 Testing", () => {
         expect.arrayContaining([
           expect.objectContaining({
             category: "LiquidityPositions",
-            type: "new-collection0$new-category0$new-type0$ETH_new-collection0$new-category0$new-type0$USDT_500",
+            type: "new-collection0$new-category0$new-type0$ETH$new-collection0$new-category0$new-type0$USDT$500",
             owner: user.identityKey,
             collection: "DexNFT"
           })
@@ -633,7 +633,7 @@ describe("DEx v3 Testing", () => {
     });
 
     test("NFT should point to a position in the pool", async () => {
-      const getPositionWithNftIdDto = new GetPositionWithNftIdDto(ETH_ClassKey, USDT_ClassKey, fee, "1_1");
+      const getPositionWithNftIdDto = new GetPositionWithNftIdDto(ETH_ClassKey, USDT_ClassKey, fee, "1$1");
       const getPositionWithNftIdRes =
         await client.dexV3Contract.getPositionWithNftId(getPositionWithNftIdDto);
       expect(getPositionWithNftIdRes).toMatchObject({
@@ -642,7 +642,7 @@ describe("DEx v3 Testing", () => {
           feeGrowthInside0Last: "0",
           feeGrowthInside1Last: "0",
           liquidity: "0.42495639238882534",
-          nftId: "1_1",
+          nftId: "1$1",
           tickLower: "74390",
           tickUpper: "75500",
           tokensOwed0: "0",
@@ -903,7 +903,7 @@ describe("DEx v3 Testing", () => {
     test("Positions are transferred to new owner along with NFT", async () => {
       const nftInstanceKey = new TokenInstanceKey();
       nftInstanceKey.type =
-        "new-collection0$new-category0$new-type0$ETH_new-collection0$new-category0$new-type0$USDT_500";
+        "new-collection0$new-category0$new-type0$ETH$new-collection0$new-category0$new-type0$USDT$500";
       nftInstanceKey.category = "LiquidityPositions";
       nftInstanceKey.collection = "DexNFT";
       nftInstanceKey.additionalKey = "1";
@@ -926,7 +926,7 @@ describe("DEx v3 Testing", () => {
 
       const positionArray =
         positions?.[
-          "new-collection0$new-category0$new-type0$ETH_new-collection0$new-category0$new-type0$USDT_500"
+          "new-collection0$new-category0$new-type0$ETH$new-collection0$new-category0$new-type0$USDT$500"
         ];
 
       expect(positionArray).toMatchObject([
@@ -1054,7 +1054,7 @@ describe("DEx v3 Testing", () => {
         expect.arrayContaining([
           expect.objectContaining({
             category: "LiquidityPositions",
-            type: "new-collection0$new-category0$new-type0$ETH_new-collection0$new-category0$new-type0$USDT_500",
+            type: "new-collection0$new-category0$new-type0$ETH$new-collection0$new-category0$new-type0$USDT$500",
             owner: user.identityKey,
             collection: "DexNFT"
           })
@@ -1520,7 +1520,7 @@ describe("DEx v3 Testing", () => {
         Status: 1,
         Data: {
           positions: {
-            "new-collection0$new-category0$new-type0$ETH_new-collection0$new-category0$new-type0$USDT_3000": [
+            "new-collection0$new-category0$new-type0$ETH$new-collection0$new-category0$new-type0$USDT$3000": [
               {
                 feeGrowthInside0Last: "0",
                 feeGrowthInside1Last: "0",

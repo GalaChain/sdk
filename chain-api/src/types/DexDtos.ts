@@ -337,7 +337,7 @@ export class UserPositionDTO extends ChainCallDTO {
 export class GetPositionResDto {
   @IsOptional()
   @IsString()
-  poolId: string;
+  poolAddrKey: string;
 
   @IsOptional()
   @IsString()

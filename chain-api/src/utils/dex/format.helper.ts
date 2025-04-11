@@ -18,11 +18,11 @@ import { ConflictError } from "../error";
 
 /**
  *
- * @param poolId poolId of pool in string
+ * @param poolAddrKey poolAddrKey of pool in string
  * @returns
  */
-export const genPoolAlias = (poolId: string) => {
-  return `service|pool_${poolId}`;
+export const genPoolAlias = (poolAddrKey: string) => {
+  return `service|pool_${poolAddrKey}`;
 };
 
 export const requirePosititve = (...params) => {
@@ -36,5 +36,5 @@ export const requirePosititve = (...params) => {
 };
 
 export function genKey(...params: string[] | number[]): string {
-  return params.join("_").replace(/\|/g, ":");
+  return params.join("$").replace(/\|/g, ":");
 }
