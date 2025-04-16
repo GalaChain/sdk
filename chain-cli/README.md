@@ -20,7 +20,7 @@ $ npm install -g @gala-chain/cli
 $ galachain COMMAND
 running command...
 $ galachain (--version)
-@gala-chain/cli/2.1.1 linux-x64 node-v18.20.7
+@gala-chain/cli/2.2.0 linux-x64 node-v18.20.7
 $ galachain --help [COMMAND]
 USAGE
   $ galachain COMMAND
@@ -54,6 +54,7 @@ Schedules deployment of published chaincode Docker image to GalaChain TNT networ
 ```
 USAGE
   $ galachain deploy IMAGETAG [DEVELOPERPRIVATEKEY] [--json] [--log-level debug|info|warn|error] [--mnt]
+    [--no-prompt]
 
 ARGUMENTS
   IMAGETAG             Image tag to deploy. It should follow the pattern imageName:version.
@@ -63,7 +64,8 @@ ARGUMENTS
                        ask for it in a prompt.
 
 FLAGS
-  --mnt  Get info from MNT network instead of TNT (not supported yet).
+  --mnt        Get info from MNT network instead of TNT (not supported yet).
+  --no-prompt  Do not prompt for confirmation.
 
 GLOBAL FLAGS
   --json                Format output as json.
@@ -506,7 +508,7 @@ Registers chaincode on GalaChain TNT network.
 
 ```
 USAGE
-  $ galachain register [DEVELOPERPRIVATEKEY] [--json] [--log-level debug|info|warn|error] [--mnt]
+  $ galachain register [DEVELOPERPRIVATEKEY] [--json] [--log-level debug|info|warn|error] [--mnt] [--no-prompt]
 
 ARGUMENTS
   DEVELOPERPRIVATEKEY  Developer's private key to sign the request. It could be a file or a string. If not provided as
@@ -515,7 +517,8 @@ ARGUMENTS
                        ask for it in a prompt.
 
 FLAGS
-  --mnt  Get info from MNT network instead of TNT (not supported yet).
+  --mnt        Get info from MNT network instead of TNT (not supported yet).
+  --no-prompt  Do not prompt for confirmation.
 
 GLOBAL FLAGS
   --json                Format output as json.
