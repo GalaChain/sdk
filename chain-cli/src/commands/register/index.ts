@@ -16,21 +16,20 @@ import { Args, Flags, ux } from "@oclif/core";
 
 import BaseCommand from "../../base-command";
 import {
-  deployChaincode,
   getChaincodeDefinition,
-  getChaincodeImageInfo,
   getDeploymentResponse,
-  getPrivateKey
+  getDeveloperPublicKeys,
+  getPrivateKey,
+  registerChaincode
 } from "../../galachain-utils";
 
-export default class Deploy extends BaseCommand<typeof Deploy> {
-  static override description =
-    "Schedules deployment of published chaincode Docker image to GalaChain TNT network.";
+export default class Register extends BaseCommand<typeof Register> {
+  static override description = "Registers chaincode on GalaChain TNT network.";
 
   static override examples = [
-    "galachain deploy registry.image.name:latest",
-    "galachain deploy registry.image.name:latest ./dev-private-key",
-    "galachain deploy registry.image.name:latest c0fb1924408d936fb7cd0c86695885df4f66861621b5c8660df3924c4d09dd79"
+    "galachain register",
+    "galachain register ./dev-private-key",
+    "galachain register c0fb1924408d936fb7cd0c86695885df4f66861621b5c8660df3924c4d09dd79"
   ];
 
   static override flags = {
@@ -43,11 +42,6 @@ export default class Deploy extends BaseCommand<typeof Deploy> {
   };
 
   static override args = {
-    imageTag: Args.string({
-      char: "i",
-      description: "Image tag to deploy. It should follow the pattern imageName:version.",
-      required: true
-    }),
     developerPrivateKey: Args.string({
       char: "k",
       description:
@@ -60,50 +54,40 @@ export default class Deploy extends BaseCommand<typeof Deploy> {
   };
 
   async run(): Promise<void> {
-    const { args, flags } = await this.parse(Deploy);
-
-    const imageTag = args.imageTag;
-    // eslint-disable-next-line
-    const imageTagRegex = /^[a-zA-Z0-9\.?][+\/?a-zA-Z0-9_.-]+\:.{0,127}$/;
-    if (!imageTagRegex.test(imageTag)) {
-      this.log(`The image tag ${imageTag} is not valid. It should follow the pattern imageName:version.`);
-      return;
-    }
-
-    const chaincode = await getChaincodeDefinition();
-    const developerPrivateKey = await getPrivateKey(args.developerPrivateKey, chaincode.name);
+    const { args, flags } = await this.parse(Register);
 
     try {
-      this.log(`Verifying Docker image ${imageTag}...`);
-      const { contracts, imageSha256 } = getChaincodeImageInfo(imageTag);
+      this.log("Registering chaincode on GalaChain TNT network...\n");
 
-      if (contracts.length === 0) {
-        throw new Error("No contracts found in the Docker image.");
+      const chaincode = await getChaincodeDefinition();
+      this.log(`  Chaincode name:\n    ${chaincode.name}`);
+      this.log(`  Chaincode admin public key:\n    ${chaincode.adminPublicKey}`);
+
+      const developersPublicKeys = await getDeveloperPublicKeys();
+      if (developersPublicKeys.length === 0) {
+        throw new Error("No developer public keys found.");
       }
 
-      this.log(`\n  Chaincode:    ${chaincode.name}`);
-      this.log(`  Image:        ${imageTag}`);
-      this.log(`  Image SHA256: ${imageSha256}`);
-
-      const nameList = contracts.map((c) => `\n   - ${c.contractName}`).join("");
-      this.log(`  Contracts: ${nameList}\n`);
+      const developerPublicKeysList = developersPublicKeys.map((d) => `    ${d}`).join("\n");
+      this.log(`  Developer public keys:\n${developerPublicKeysList}\n`);
 
       if (!flags["no-prompt"]) {
-        const prompt = `Are you sure you want to deploy the chaincode ${chaincode.name} to TNT? (y/n)`;
+        const prompt = `Are you sure you want to register the chaincode on TNT? (y/n)`;
         if (!(await ux.confirm(prompt))) {
-          this.log("Deployment cancelled.");
+          this.log("Registration cancelled.");
           return;
         }
       }
 
-      await deployChaincode({
+      const developerPrivateKey = await getPrivateKey(args.developerPrivateKey, chaincode.name);
+
+      await registerChaincode({
         privateKey: developerPrivateKey,
-        imageTag,
-        chaincode: chaincode.name,
-        contracts
+        adminPublicKey: chaincode.adminPublicKey,
+        developersPublicKeys
       });
 
-      this.log(`Deployment scheduled to TNT:`);
+      this.log(`Chaincode ${chaincode.name} has been registered:`);
 
       const chainCodeInfo = await getDeploymentResponse({
         privateKey: developerPrivateKey,

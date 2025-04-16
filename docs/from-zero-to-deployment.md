@@ -91,21 +91,13 @@ docker push $TAG
 Docker image should be publicly accessible, as GalaChain network will download it during the deployment.
 
 
-## 5. Connect your chaincode with GalaChain network
+## 5. Register the chaincode
 
-Since this is an early access feature, the ability to deploy to the testnet requires GalaChain approval.
-We require the following data to approve your registration:
-- Docker image tag (without the version, or `:latest` part; the image needs to be publicly available),
-- Chaincode admin public key (the content of `keys/gc-admin-key.pub` file),
-- Developer public keys (the content of `keys/gc-dev-key.pub` files of all developers who want to deploy the chaincode).
-
-The channel admin public key is used as a public key of the channel admin (the initial, single user on the chain with admin permissions).
-Developer public keys are used to sign deploy requests in CLI.
-
-After the approval, call the following command to verify you registration:
+You need to register your chaincode before you make any deployments.
+To do so, just call:
 
 ```
-galachain info
+galachain register
 ```
 
 You should get a JSON response with your chaincode information.
@@ -120,9 +112,9 @@ To deploy the chaincode, you need to call the following command:
 galachain deploy <image-tag>
 ```
 
-Replace `<image-tag>` with the Docker image tag you provided, plus the version (e.g. `my-registry/my-gc-chaincode:1.0.0`).
+Replace `<image-tag>` with the Docker image tag, plus the version (e.g. `my-registry/my-gc-chaincode:1.0.0`).
 
-The command will deploy the chaincode to the GalaChain network.
+The command will deploy the chaincode to the GalaChain TNT network.
 The deployment process may take a while, as the network needs to download the chaincode image and start it.
 
 You can verify the deployment status with `galachain info` command.
