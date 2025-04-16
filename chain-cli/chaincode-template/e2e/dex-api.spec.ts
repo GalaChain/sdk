@@ -16,6 +16,7 @@ import {
   AddLiquidityDTO,
   AddLiquidityResDto,
   BurnDto,
+  BurnEstimateDto,
   ChainCallDTO,
   CollectDto,
   CollectTradingFeesDto,
@@ -55,7 +56,12 @@ import {
   sqrtPriceToTick
 } from "@gala-chain/api";
 import { ChainClient, ChainUser, CommonContractAPI, commonContractAPI } from "@gala-chain/client";
-import { AdminChainClients, TestClients, transactionSuccess } from "@gala-chain/test";
+import {
+  AdminChainClients,
+  TestClients,
+  transactionErrorMessageContains,
+  transactionSuccess
+} from "@gala-chain/test";
 import BigNumber from "bignumber.js";
 
 import TOKENS, { ETH_ClassKey, USDC_ClassKey, USDT_ClassKey } from "./tokens";
@@ -707,7 +713,7 @@ describe("DEx v3 Testing", () => {
 
       const liquidityRes = await client.dexV3Contract.addLiquidity(dto);
       expect(liquidityRes.ErrorCode).toBe(412);
-      expect(liquidityRes.Message).toContain("Slippage check Failed");
+      expect(liquidityRes.Message).toContain("Slippage check failed");
     });
 
     test("slot0 data", async () => {
@@ -752,13 +758,38 @@ describe("DEx v3 Testing", () => {
       });
     });
 
+    test("Remove liquidity should throw an error if slippage check fails", async () => {
+      // Given
+      const tickSpacing = feeAmountTickSpacing[fee];
+      const pa = 1980,
+        pb = 2020;
+      const [ta, tb] = spacedTicksFromPrice(pa, pb, tickSpacing);
+
+      const burndto = new BurnDto(
+        ETH_ClassKey,
+        USDT_ClassKey,
+        fee,
+        new BigNumber("92271.497628802094407217"),
+        ta,
+        tb,
+        new BigNumber("12"),
+        new BigNumber("15113")
+      ).signed(user.privateKey);
+
+      // When
+      const burnRes = await client.dexV3Contract.RemoveLiquidity(burndto);
+
+      // Then
+      expect(burnRes).toEqual(transactionErrorMessageContains("Slippage check failed"));
+    });
+
     test("Remove liquidity", async () => {
       const tickSpacing = feeAmountTickSpacing[fee];
       const pa = 1980,
         pb = 2020;
       const [ta, tb] = spacedTicksFromPrice(pa, pb, tickSpacing);
 
-      const dto = new BurnDto(
+      const estimateDto = new BurnEstimateDto(
         ETH_ClassKey,
         USDT_ClassKey,
         fee,
@@ -767,7 +798,18 @@ describe("DEx v3 Testing", () => {
         tb,
         user.identityKey
       );
-      const removeLiqEstimation = await client.dexV3Contract.burnEstimate(dto);
+      const dto = new BurnDto(
+        ETH_ClassKey,
+        USDT_ClassKey,
+        fee,
+        new BigNumber("92271.497628802094407217"),
+        ta,
+        tb,
+        new BigNumber("11.998999999999999999"),
+        new BigNumber("15112.728161935857558968")
+      );
+
+      const removeLiqEstimation = await client.dexV3Contract.burnEstimate(estimateDto);
       const data = removeLiqEstimation.Data;
       if (data === undefined) throw new Error();
       expect(data.amount0.toString()).toBe("11.998999999999999999");
@@ -816,7 +858,7 @@ describe("DEx v3 Testing", () => {
         pb = 2020;
       const [ta, tb] = spacedTicksFromPrice(pa, pb, tickSpacing);
 
-      const dto = new BurnDto(
+      const dto = new BurnEstimateDto(
         ETH_ClassKey,
         USDT_ClassKey,
         fee,
@@ -1263,7 +1305,7 @@ describe("DEx v3 Testing", () => {
       const pa = 1980,
         pb = 2020;
       const [ta, tb] = spacedTicksFromPrice(pa, pb, tickSpacing);
-      const dto = new BurnDto(
+      const estimateDto = new BurnEstimateDto(
         ETH_ClassKey,
         USDT_ClassKey,
         fee,
@@ -1273,7 +1315,17 @@ describe("DEx v3 Testing", () => {
         user.identityKey
       );
 
-      const removeLiqEstimation = await client.dexV3Contract.burnEstimate(dto);
+      const dto = new BurnDto(
+        ETH_ClassKey,
+        USDT_ClassKey,
+        fee,
+        new BigNumber("26675.915083949831428038"),
+        ta,
+        tb,
+        new BigNumber("2.0"),
+        new BigNumber("2747.8")
+      );
+      const removeLiqEstimation = await client.dexV3Contract.burnEstimate(estimateDto);
       const data = removeLiqEstimation.Data;
 
       if (data === undefined) throw new Error();
@@ -1711,7 +1763,7 @@ describe("DEx v3 Testing", () => {
       const pa = 1880,
         pb = 2220;
       const [ta, tb] = spacedTicksFromPrice(pa, pb, tickSpacing);
-      const dto = new BurnDto(
+      const estimateDto = new BurnEstimateDto(
         ETH_ClassKey,
         USDT_ClassKey,
         fee,
@@ -1720,8 +1772,18 @@ describe("DEx v3 Testing", () => {
         tb,
         user.identityKey
       );
+      const dto = new BurnDto(
+        ETH_ClassKey,
+        USDT_ClassKey,
+        fee,
+        new BigNumber("928.637339589079235191"),
+        ta,
+        tb,
+        new BigNumber("1"),
+        new BigNumber("1253.169150694844108753")
+      );
 
-      const removeLiqEstimation = await client.dexV3Contract.burnEstimate(dto);
+      const removeLiqEstimation = await client.dexV3Contract.burnEstimate(estimateDto);
       const data = removeLiqEstimation.Data;
       if (data === undefined) throw new Error();
 
@@ -2281,7 +2343,7 @@ interface DexV3ContractAPI {
   ): Promise<GalaChainResponse<GetAddLiquidityEstimationResDto>>;
   quoteExactAmount(dto: QuoteExactAmountDto): Promise<GalaChainResponse<QuoteExactAmountResDto>>;
   getPoolData(dto: GetPoolDto): Promise<GalaChainResponse<Pool>>;
-  burnEstimate(dto: BurnDto): Promise<GalaChainResponse<GetRemoveLiqEstimationResDto>>;
+  burnEstimate(dto: BurnEstimateDto): Promise<GalaChainResponse<GetRemoveLiqEstimationResDto>>;
   collect(dto: CollectDto): Promise<GalaChainResponse<UserBalanceResDto>>;
   collectTradingFees(dto: CollectTradingFeesDto): Promise<GalaChainResponse<CollectTradingFeesResDto>>;
   setProtocolFee(dto: SetProtocolFeeDto): Promise<GalaChainResponse<SetProtocolFeeResDto>>;
@@ -2307,7 +2369,7 @@ function dexV3ContractAPI(client: ChainClient): DexV3ContractAPI & CommonContrac
     RemoveLiquidity(dto: BurnDto) {
       return client.submitTransaction<UserBalanceResDto>("RemoveLiquidity", dto, UserBalanceResDto);
     },
-    burnEstimate(dto: BurnDto) {
+    burnEstimate(dto: BurnEstimateDto) {
       GalaChainResponse<GetRemoveLiqEstimationResDto>;
       return client.evaluateTransaction<GetRemoveLiqEstimationResDto>(
         "GetRemoveLiquidityEstimation",

@@ -27,6 +27,7 @@ import { fetchTokenClass } from "../token";
 import { transferToken } from "../transfer";
 import { GalaChainContext } from "../types";
 import {
+  areTicksValid,
   convertToTokenInstanceKey,
   genKey,
   getObjectByKey,
@@ -43,6 +44,7 @@ import {
  * @returns UserBalanceResDto
  */
 export async function collect(ctx: GalaChainContext, dto: CollectDto): Promise<UserBalanceResDto> {
+  areTicksValid(dto.tickLower, dto.tickUpper);
   const [token0, token1] = validateTokenOrder(dto.token0, dto.token1);
   const key = ctx.stub.createCompositeKey(Pool.INDEX_KEY, [token0, token1, dto.fee.toString()]);
   const pool = await getObjectByKey(ctx, Pool, key);

@@ -68,7 +68,7 @@ export async function addLiquidity(
   const token1Class = await fetchTokenClass(ctx, token1InstanceKey);
 
   //get token amounts required for the desired liquidity
-  const owner = ctx.callingUser;
+  const liquidityProvider = launchpadAddress ?? ctx.callingUser;
 
   const tickLower = parseInt(dto.tickLower.toString()),
     tickUpper = parseInt(dto.tickUpper.toString());
@@ -88,43 +88,24 @@ export async function addLiquidity(
     amount0Desired,
     amount1Desired
   );
-  let [amount0, amount1] = pool.mint(owner, tickLower, tickUpper, liquidity.f18());
+  let [amount0, amount1] = pool.mint(liquidityProvider, tickLower, tickUpper, liquidity.f18());
   [amount0, amount1] = [amount0.f18(), amount1.f18()];
 
-  if (
-    amount0.lt(amount0Min) ||
-    amount1.lt(amount1Min) ||
-    amount0.gt(amount0Desired) ||
-    amount1.gt(amount1Desired)
-  ) {
+  if (amount0.lt(amount0Min) || amount1.lt(amount1Min)) {
     throw new SlippageToleranceExceededError(
-      "Slippage check Failed, should be amount0: " +
-        amount0Min.toString() +
-        " <" +
-        amount0.toString() +
-        " <= " +
-        amount0Desired.toString() +
-        " amount1: " +
-        amount1Min.toString() +
-        " < " +
-        amount1.toString() +
-        " <= " +
-        amount1Desired.toString() +
-        " liquidity: " +
-        liquidity.toString()
+      `Slippage check failed: amount0: ${amount0Min.toString()} <= ${amount0.toString()}, amount1: ${amount1Min.toString()} <= ${amount1.toString()}, liquidity: ${liquidity.toString()}`
     );
   }
 
-  const userKey = ctx.stub.createCompositeKey(UserPosition.INDEX_KEY, [owner]);
+  const userKey = ctx.stub.createCompositeKey(UserPosition.INDEX_KEY, [liquidityProvider]);
   let userPostion = await getObjectByKey(ctx, UserPosition, userKey).catch(() => undefined);
 
   const poolAddrKey = genKey(pool.token0, pool.token1, pool.fee.toString());
   const poolVirtualAddress = virtualAddress(poolAddrKey);
 
-  if (userPostion === undefined) userPostion = new UserPosition(owner);
+  if (userPostion === undefined) userPostion = new UserPosition(liquidityProvider);
   userPostion.updateOrCreate(poolAddrKey, tickLower, tickUpper, liquidity.f18());
 
-  const liquidityProvider = launchpadAddress ? launchpadAddress : ctx.callingUser;
   if (amount0.isGreaterThan(0)) {
     // transfer token0
     await transferToken(ctx, {

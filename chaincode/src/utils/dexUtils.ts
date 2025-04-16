@@ -12,7 +12,14 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-import { ChainError, DexFeeConfig, ErrorCode, TokenClassKey, TokenInstanceKey } from "@gala-chain/api";
+import {
+  ChainError,
+  DexFeeConfig,
+  ErrorCode,
+  PreConditionFailedError,
+  TokenClassKey,
+  TokenInstanceKey
+} from "@gala-chain/api";
 import BigNumber from "bignumber.js";
 
 import { GalaChainContext } from "../types";
@@ -109,4 +116,14 @@ export async function fetchDexProtocolFeeConfig(ctx: GalaChainContext): Promise<
   });
 
   return dexConfig;
+}
+
+/**
+ * @dev it will check whether tickLower is smaller than tickUpper in input
+ * @param tickLower
+ * @param tickUpper
+ * @throw error if condition is invalid
+ */
+export function areTicksValid(tickLower: number, tickUpper: number) {
+  if (tickLower > tickUpper) throw new PreConditionFailedError("Invalid tick range");
 }

@@ -50,6 +50,7 @@ import {
 } from "../utils";
 import { BigNumberProperty } from "../validators";
 import { ChainObject } from "./ChainObject";
+import { DexFeePercentageTypes } from "./DexDtos";
 import { TokenClassKey } from "./TokenClass";
 
 @JSONSchema({
@@ -79,7 +80,7 @@ export class Pool extends ChainObject {
 
   @ChainKey({ position: 2 })
   @IsNumber()
-  public readonly fee: number;
+  public readonly fee: DexFeePercentageTypes;
 
   @ValidateNested()
   @Type(() => TokenClassKey)
@@ -142,7 +143,7 @@ export class Pool extends ChainObject {
     token1: string,
     token0ClassKey: TokenClassKey,
     token1ClassKey: TokenClassKey,
-    fee: number,
+    fee: DexFeePercentageTypes,
     initialSqrtPrice: BigNumber,
     protocolFees = 0
   ) {

@@ -168,6 +168,27 @@ export function BigNumberIsPositive(validationOptions?: ValidationOptions) {
   };
 }
 
+export function BigNumberIsNegative(validationOptions?: ValidationOptions) {
+  return function (object: object, propertyName: string) {
+    IsBigNumber(validationOptions)(object, propertyName);
+    registerDecorator({
+      name: "BigNumberIsNegative",
+      target: object.constructor,
+      propertyName,
+      options: validationOptions,
+      validator: {
+        validate(value: unknown) {
+          return validateBigNumberOrIgnore(value, (b) => b.isNegative());
+        },
+        defaultMessage(args: ValidationArguments) {
+          // here you can provide default error message if validation failed
+          return `${args.property} must be negative but is ${args.value?.toString() ?? args.value}`;
+        }
+      }
+    });
+  };
+}
+
 export function BigNumberIsNotInfinity(validationOptions?: ValidationOptions) {
   return function (object: object, propertyName: string) {
     IsBigNumber(validationOptions)(object, propertyName);

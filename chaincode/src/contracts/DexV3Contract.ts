@@ -16,6 +16,7 @@ import {
   AddLiquidityDTO,
   AddLiquidityResDto,
   BurnDto,
+  BurnEstimateDto,
   ChainCallDTO,
   CollectDto,
   CollectTradingFeesDto,
@@ -194,12 +195,12 @@ export class DexV3Contract extends GalaContract {
 
   @GalaTransaction({
     type: EVALUATE,
-    in: BurnDto,
+    in: BurnEstimateDto,
     out: GetRemoveLiqEstimationResDto
   })
   public async GetRemoveLiquidityEstimation(
     ctx: GalaChainContext,
-    dto: BurnDto
+    dto: BurnEstimateDto
   ): Promise<GetRemoveLiqEstimationResDto> {
     return await getRemoveLiquidityEstimation(ctx, dto);
   }
