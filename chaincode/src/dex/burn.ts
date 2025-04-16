@@ -65,7 +65,7 @@ export async function burn(ctx: GalaChainContext, dto: BurnDto): Promise<UserBal
   userPosition.removeLiquidity(poolAddrKey, tickLower, tickUpper, dto.amount.f18());
 
   const amounts = pool.burn(owner, tickLower, tickUpper, dto.amount.f18());
-  if ((amounts[0].lt(dto.amount0Min) || amounts[1].lt(dto.amount1Min))) {
+  if (amounts[0].lt(dto.amount0Min) || amounts[1].lt(dto.amount1Min)) {
     throw new SlippageToleranceExceededError(
       `Slippage check failed: amount0: ${dto.amount0Min.toString()} <= ${amounts[0].toString()}, amount1: ${dto.amount1Min.toString()} <= ${amounts[1].toString()}`
     );
