@@ -12,8 +12,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-import { ChainCallDTO, GalaChainResponse, Inferred } from "@gala-chain/api";
-
+import { ChainCallDTO, GalaChainResponse, Inferred } from "../../types";
 import { ChainClientBuilder } from "./ChainClientBuilder";
 import { ContractConfig } from "./ContractConfig";
 

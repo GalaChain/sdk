@@ -12,10 +12,18 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-import { ChainCallDTO, GalaChainResponse, Inferred, serialize } from "@gala-chain/api";
+import {
+  ChainCallDTO,
+  ChainClient,
+  ClassType,
+  ContractConfig,
+  GalaChainResponse,
+  Inferred,
+  isClassType,
+  serialize
+} from "@gala-chain/api";
 import { Contract, Gateway, Network } from "fabric-network";
 
-import { ChainClient, ClassType, ContractConfig, isClassType } from "../generic";
 import { HFClientBuilder } from "./HFClientBuilder";
 
 export class HFClient extends ChainClient {

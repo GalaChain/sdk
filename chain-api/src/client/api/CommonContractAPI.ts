@@ -22,8 +22,7 @@ import {
   GetObjectDto,
   GetObjectHistoryDto,
   createValidDTO
-} from "@gala-chain/api";
-
+} from "../../types";
 import { ChainClient } from "../generic";
 
 export interface CommonContractAPI extends Record<string, unknown> {

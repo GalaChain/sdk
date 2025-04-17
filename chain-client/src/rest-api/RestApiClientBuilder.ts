@@ -12,10 +12,17 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-import { ChainCallDTO, GalaChainResponse, Inferred } from "@gala-chain/api";
+import {
+  ChainCallDTO,
+  ChainClient,
+  ChainClientBuilder,
+  ClassType,
+  ContractConfig,
+  GalaChainResponse,
+  Inferred
+} from "@gala-chain/api";
 import axios from "axios";
 
-import { ChainClient, ChainClientBuilder, ClassType, ContractConfig } from "../generic";
 import { FabloRestClient } from "./FabloRestClient";
 import {
   RestApiAdminCredentials,

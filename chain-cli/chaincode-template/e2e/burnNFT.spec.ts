@@ -14,6 +14,7 @@
  */
 import {
   BurnTokensDto,
+  ChainUser,
   FetchBalancesDto,
   TokenBalance,
   TokenBurn,
@@ -22,7 +23,6 @@ import {
   createValidDTO,
   createValidSubmitDTO
 } from "@gala-chain/api";
-import { ChainUser } from "@gala-chain/client";
 import {
   AdminChainClients,
   TestClients,

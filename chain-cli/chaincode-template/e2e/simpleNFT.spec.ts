@@ -14,6 +14,7 @@
  */
 import {
   AllowanceType,
+  ChainUser,
   CreateTokenClassDto,
   FetchBalancesDto,
   GrantAllowanceDto,
@@ -26,7 +27,6 @@ import {
   createValidDTO,
   createValidSubmitDTO
 } from "@gala-chain/api";
-import { ChainUser } from "@gala-chain/client";
 import {
   AdminChainClients,
   TestClients,

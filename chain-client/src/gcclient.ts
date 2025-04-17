@@ -12,7 +12,9 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-import { ChainClientBuilder, loadJson } from "./generic";
+import { ChainClientBuilder } from "@gala-chain/api";
+
+import { loadJson } from "./generic";
 import { HFClientBuilder } from "./hf";
 import { RestApiClientBuilder, loadRestApiConfig } from "./rest-api";
 

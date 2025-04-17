@@ -12,8 +12,16 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-import { BatchDto, GalaChainResponse, GalaChainResponseType, randomUniqueKey } from "@gala-chain/api";
-import { ChainClient, ChainUser, CommonContractAPI, commonContractAPI } from "@gala-chain/client";
+import {
+  BatchDto,
+  ChainClient,
+  ChainUser,
+  CommonContractAPI,
+  GalaChainResponse,
+  GalaChainResponseType,
+  commonContractAPI,
+  randomUniqueKey
+} from "@gala-chain/api";
 import { AdminChainClients, TestClients, transactionErrorKey, transactionSuccess } from "@gala-chain/test";
 import { plainToInstance } from "class-transformer";
 

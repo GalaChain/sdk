@@ -20,6 +20,7 @@ export class AppleContract extends GalaContract {
 ```
 
 Let's create tests for the following scenarios:
+
 1. `AppleContract` should allow to plant a tree.
 2. `AppleContract` should fail to plant a tree if tree already exists.
 3. `AppleContract` should allow to pick an apple.
@@ -34,12 +35,13 @@ It validates the contract's behavior during the tree planting process.
 
 ```typescript
 import { fixture, transactionSuccess, writesMap } from "@gala-chain/test";
+
 import { AppleTree, AppleTreeDto, Variety } from "../apples";
 import { AppleContract } from "./AppleContract";
 
 it("should allow to plant a tree", async () => {
   // Given
-  const {contract, ctx, writes} = fixture(AppleContract);
+  const { contract, ctx, writes } = fixture(AppleContract);
   const dto = new AppleTreeDto(Variety.GALA, 1);
   const expectedTree = new AppleTree(ctx.callingUser, dto.variety, dto.index, ctx.txUnixTime);
 
@@ -54,6 +56,7 @@ it("should allow to plant a tree", async () => {
 
 In this test, we set up the initial environment using the `fixture` utility from `@gala-chain/test`.
 The `fixture` contains:
+
 - `contract` -- instance of the `AppleContract` class,
 - `ctx` -- test chaincode context,
 - `writes` -- object capturing changes to the blockchain state.
@@ -72,8 +75,9 @@ In this test case, we aim to verify the behavior of the AppleContract when attem
 In our case a tree is considered to exist if it has the same `variety` and `index` as is planted by the same user.
 
 ```typescript
+import { ChainUser } from "@gala-chain/api";
 import { fixture, transactionErrorMessageContains } from "@gala-chain/test";
-import { ChainUser } from "@gala-chain/client";
+
 import { AppleTree, AppleTreeDto, Variety } from "../apples";
 import { AppleContract } from "./AppleContract";
 
@@ -81,7 +85,7 @@ it("should fail to plant a tree if tree already exists", async () => {
   // Given
   const user = ChainUser.withRandomKeys();
 
-  const {contract, ctx, writes} = fixture(AppleContract)
+  const { contract, ctx, writes } = fixture(AppleContract)
     .callingUser(user)
     .savedState(new AppleTree(user.identityKey, Variety.GOLDEN_DELICIOUS, 1, 0));
 
@@ -111,6 +115,7 @@ In this test case, we aim to verify the behavior of the `AppleContract` when att
 ```typescript
 import { fixture, transactionSuccess, writesMap } from "@gala-chain/test";
 import { plainToInstance } from "class-transformer";
+
 import { AppleTree, PickAppleDto, Variety } from "../apples";
 import { AppleContract } from "./AppleContract";
 
@@ -118,8 +123,8 @@ it("should allow to pick apples", async () => {
   // Given
   const twoYearsAgo = new Date(new Date().getTime() - 1000 * 60 * 60 * 24 * 365 * 2).getTime();
   const existingTree = new AppleTree("client|some-user", Variety.GALA, 1, twoYearsAgo);
-  const {contract, ctx, writes} = fixture(AppleContract).savedState(existingTree);
- 
+  const { contract, ctx, writes } = fixture(AppleContract).savedState(existingTree);
+
   const dto = new PickAppleDto(existingTree.plantedBy, existingTree.variety, existingTree.index);
 
   // When
@@ -127,10 +132,14 @@ it("should allow to pick apples", async () => {
 
   // Then
   expect(response).toEqual(transactionSuccess());
-  expect(writes).toEqual(writesMap(plainToInstance(AppleTree, {
-    ...existingTree,
-    applesPicked: existingTree.applesPicked.plus(1)
-  })));
+  expect(writes).toEqual(
+    writesMap(
+      plainToInstance(AppleTree, {
+        ...existingTree,
+        applesPicked: existingTree.applesPicked.plus(1)
+      })
+    )
+  );
 });
 ```
 
@@ -145,13 +154,14 @@ During validation, we assert that the response from picking an apple is successf
 However, the `ctx` parameter is tied to the contract, and you must provide any contract class, such as `AppleContract` or any class that extends `GalaContract` from the `@gala-chain/chaincode` package.
 
 ```typescript
-import { ChainUser } from "@gala-chain/client";
-import { fixture, writesMap } from "@gala-chain/test";
 import { GalaContract } from "@gala-chain/chaincode";
-import { AppleTreeDto, AppleTreesDto } from "./dtos";
-import { Variety } from "./types";
+import { ChainUser } from "@gala-chain/api";
+import { fixture, writesMap } from "@gala-chain/test";
+
 import { AppleTree } from "./AppleTree";
+import { AppleTreeDto, AppleTreesDto } from "./dtos";
 import { plantTrees } from "./plantTrees";
+import { Variety } from "./types";
 
 class TestContract extends GalaContract {
   constructor() {
@@ -163,14 +173,13 @@ it("should allow to plant trees", async () => {
   // Given
   const user = ChainUser.withRandomKeys();
 
-  const {ctx, writes} = fixture(TestContract).callingUser(user);
+  const { ctx, writes } = fixture(TestContract).callingUser(user);
 
-  const dto = new AppleTreesDto([
-    new AppleTreeDto(Variety.GALA, 1),
-    new AppleTreeDto(Variety.MCINTOSH, 2),
-  ]);
+  const dto = new AppleTreesDto([new AppleTreeDto(Variety.GALA, 1), new AppleTreeDto(Variety.MCINTOSH, 2)]);
 
-  const expectedTrees = dto.trees.map(t => new AppleTree(user.identityKey, t.variety, t.index, ctx.txUnixTime));
+  const expectedTrees = dto.trees.map(
+    (t) => new AppleTree(user.identityKey, t.variety, t.index, ctx.txUnixTime)
+  );
 
   // When
   const response = await plantTrees(ctx, dto);
@@ -186,7 +195,6 @@ it("should allow to plant trees", async () => {
 Using `fixture` for regular functions is useful when you want to test the behavior of the function without the need to call the contract method.
 However, if you want to verify writes, you need to explicitly call `contract.afterTransaction` or `ctx.stub.flushWrites` method.
 This is required, because all writes actually are added to internal cache, and are executed after the contract method is successfully executed.
-
 
 ### Additional notes
 
@@ -219,6 +227,7 @@ export class AppleContract extends GalaContract {
 ```
 
 Let's write tests for the following scenarios:
+
 1. Plant a bunch of trees
 2. Fetch GALA trees planted by a user
 3. Fail to pick a GOLDEN_DELICIOUS apple because tree is too young
@@ -244,8 +253,8 @@ Here is an example of the test setup:
 
 ```typescript
 import { AdminChainClients, TestClients, transactionErrorKey, transactionSuccess, } from "@gala-chain/test";
-import { GalaChainResponse } from "@gala-chain/api";
-import { ChainClient, ChainUser } from "@gala-chain/client";
+import { ChainUser, GalaChainResponse } from "@gala-chain/api";
+import { ChainClient } from "@gala-chain/client";
 import { AppleTreeDto, AppleTreesDto, FetchTreesDto, PagedTreesDto, PickAppleDto, Variety } from "../src/apples";
 
 describe("Apple trees", () => {
@@ -333,21 +342,20 @@ And it allows you to use type-safe calls, defined in the API, like `client.apple
 #### Test 1. Plant a bunch of trees
 
 ```typescript
-  test("Plant a bunch of trees", async () => {
-    // Given
-    const dto = new AppleTreesDto([
-      new AppleTreeDto(Variety.GALA, 1),
-      new AppleTreeDto(Variety.GOLDEN_DELICIOUS, 2),
-      new AppleTreeDto(Variety.GALA, 3),
-    ])
-      .signed(user.privateKey, false);
-  
-    // When
-    const response = await client.apples.PlantTrees(dto);
-  
-    // Then
-    expect(response).toEqual(transactionSuccess());
-  });
+test("Plant a bunch of trees", async () => {
+  // Given
+  const dto = new AppleTreesDto([
+    new AppleTreeDto(Variety.GALA, 1),
+    new AppleTreeDto(Variety.GOLDEN_DELICIOUS, 2),
+    new AppleTreeDto(Variety.GALA, 3)
+  ]).signed(user.privateKey, false);
+
+  // When
+  const response = await client.apples.PlantTrees(dto);
+
+  // Then
+  expect(response).toEqual(transactionSuccess());
+});
 ```
 
 In this test case, we create a DTO with three trees to plant.
@@ -362,23 +370,24 @@ We will use them in the next test.
 #### Test 2. Fetch GALA trees planted by a user
 
 ```typescript
-  test("Fetch GALA trees planted by a user", async () => {
-    // Given
-    const dto = new FetchTreesDto(user.identityKey, Variety.GALA)
-      .signed(user.privateKey, false);
+test("Fetch GALA trees planted by a user", async () => {
+  // Given
+  const dto = new FetchTreesDto(user.identityKey, Variety.GALA).signed(user.privateKey, false);
 
-    // When
-    const response = await client.apples.FetchTrees(dto);
+  // When
+  const response = await client.apples.FetchTrees(dto);
 
-    // Then
-    expect(response).toEqual(transactionSuccess({
+  // Then
+  expect(response).toEqual(
+    transactionSuccess({
       trees: [
-        expect.objectContaining({plantedBy: user.identityKey, variety: Variety.GALA, index: 1}),
-        expect.objectContaining({plantedBy: user.identityKey, variety: Variety.GALA, index: 3})
+        expect.objectContaining({ plantedBy: user.identityKey, variety: Variety.GALA, index: 1 }),
+        expect.objectContaining({ plantedBy: user.identityKey, variety: Variety.GALA, index: 3 })
       ],
       bookmark: ""
-    }))
-  })
+    })
+  );
+});
 ```
 
 In the previous test, we planted three trees, two of them are GALA.
@@ -389,17 +398,16 @@ The response contains two trees, planted by the user, and the bookmark for fetch
 #### Test 3. Fail to pick a GOLDEN_DELICIOUS apple because tree is too young
 
 ```typescript
-  test("Fail to pick a GOLDEN_DELICIOUS apple because tree is too young", async () => {
-    // Given
-    const dto = new PickAppleDto(user.identityKey, Variety.GOLDEN_DELICIOUS, 2)
-      .signed(user.privateKey, false);
-  
-    // When
-    const response = await client.apples.PickApple(dto);
-  
-    // Then
-    expect(response).toEqual(transactionErrorKey("NO_APPLES_LEFT"));
-  });
+test("Fail to pick a GOLDEN_DELICIOUS apple because tree is too young", async () => {
+  // Given
+  const dto = new PickAppleDto(user.identityKey, Variety.GOLDEN_DELICIOUS, 2).signed(user.privateKey, false);
+
+  // When
+  const response = await client.apples.PickApple(dto);
+
+  // Then
+  expect(response).toEqual(transactionErrorKey("NO_APPLES_LEFT"));
+});
 ```
 
 In this test case, we try to pick an apple from the tree that was planted in the first test.
