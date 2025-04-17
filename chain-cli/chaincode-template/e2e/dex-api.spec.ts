@@ -274,7 +274,7 @@ describe("DEx v3 Testing", () => {
       const result = await client.dexV3Contract.addLiquidity(dto);
       expect(result).toEqual(
         transactionErrorMessageContains(
-          "DTO validation failed: (1) min: tickUpper must not be greater than 887272"
+          "DTO validation failed: (1) max: tickUpper must not be greater than 887272"
         )
       );
     });
