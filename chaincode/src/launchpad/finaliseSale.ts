@@ -26,7 +26,7 @@ import Decimal from "decimal.js";
 
 import { fetchOrCreateBalance } from "../balances";
 import { burnTokens } from "../burns";
-import { addLiquidity, createPool, getAddLiquidityEstimation } from "../dex";
+import { addLiquidity, createPool, getAddLiquidityEstimation, getPoolData } from "../dex";
 import { transferToken } from "../transfer";
 import { GalaChainContext } from "../types";
 import { generateKeyFromClassKey, sortString } from "../utils/dexUtils";
@@ -90,7 +90,10 @@ export async function finalizeSale(ctx: GalaChainContext, sale: LaunchpadSale): 
     finalPrice
   );
 
-  await createPool(ctx, poolDTO);
+  const pool = await getPoolData(ctx, poolDTO);
+  if (!pool) {
+    await createPool(ctx, poolDTO);
+  }
 
   const expectedTokenDTO = new GetAddLiquidityEstimationDto(
     isChanged ? nativeTokenClassKey : sellingTokenClassKey,
@@ -101,7 +104,7 @@ export async function finalizeSale(ctx: GalaChainContext, sale: LaunchpadSale): 
     887220,
     isChanged ? true : false
   );
-  const liquidity = await getAddLiquidityEstimation(ctx, expectedTokenDTO);
+  const addLiquidityEstimate = await getAddLiquidityEstimation(ctx, expectedTokenDTO);
 
   const positionDto = new AddLiquidityDTO(
     isChanged ? nativeTokenClassKey : sellingTokenClassKey,
@@ -109,10 +112,10 @@ export async function finalizeSale(ctx: GalaChainContext, sale: LaunchpadSale): 
     3000,
     -887220,
     887220,
-    new BigNumber(liquidity.amount0.toString()),
-    new BigNumber(liquidity.amount1.toString()),
-    new BigNumber(liquidity.amount0.toString()).times(0.9999999),
-    new BigNumber(liquidity.amount1.toString()).times(0.9999999)
+    new BigNumber(addLiquidityEstimate.amount0.toString()),
+    new BigNumber(addLiquidityEstimate.amount1.toString()),
+    new BigNumber(addLiquidityEstimate.amount0.toString()).times(0.9999999),
+    new BigNumber(addLiquidityEstimate.amount1.toString()).times(0.9999999)
   );
 
   await addLiquidity(ctx, positionDto, sale.vaultAddress);

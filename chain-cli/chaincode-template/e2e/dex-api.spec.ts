@@ -228,6 +228,7 @@ describe("DEx v3 Testing", () => {
     });
 
     test("should throw error when tried adding liquidity below the min tick", async () => {
+      // Given
       const fee = 500;
       const ta = -887280,
         tb = 324340;
@@ -243,9 +244,15 @@ describe("DEx v3 Testing", () => {
         new BigNumber(1)
       ).signed(user.privateKey);
 
+      // When
       const result = await client.dexV3Contract.addLiquidity(dto);
 
-      expect(result.Message).toBe("Lower Tick is less than Min Tick");
+      // Then
+      expect(result).toEqual(
+        transactionErrorMessageContains(
+          "DTO validation failed: (1) min: tickLower must not be less than -887272"
+        )
+      );
     });
 
     test("should throw error when tried adding liquidity above the max tick", async () => {
@@ -265,10 +272,14 @@ describe("DEx v3 Testing", () => {
       ).signed(user.privateKey);
 
       const result = await client.dexV3Contract.addLiquidity(dto);
-      expect(result.Message).toBe("Upper Tick is greater than Max Tick");
+      expect(result).toEqual(
+        transactionErrorMessageContains(
+          "DTO validation failed: (1) min: tickUpper must not be greater than 887272"
+        )
+      );
     });
 
-    test("should throw error when  tick lower tick is greater than upper tick", async () => {
+    test("should throw error when  tick lower is greater than upper tick", async () => {
       const fee = 500;
       const ta = 887280,
         tb = -324340;
@@ -285,7 +296,11 @@ describe("DEx v3 Testing", () => {
       ).signed(user.privateKey);
 
       const result = await client.dexV3Contract.addLiquidity(dto);
-      expect(result.Message).toBe("Lower Tick is greater than Upper Tick");
+      expect(result).toEqual(
+        transactionErrorMessageContains(
+          "DTO validation failed: (1) isLessThan: tickLower must be less than tickUpper"
+        )
+      );
     });
 
     test("should throw error when  ticks are not spaced", async () => {

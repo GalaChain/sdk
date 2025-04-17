@@ -117,13 +117,3 @@ export async function fetchDexProtocolFeeConfig(ctx: GalaChainContext): Promise<
 
   return dexConfig;
 }
-
-/**
- * @dev it will check whether tickLower is smaller than tickUpper in input
- * @param tickLower
- * @param tickUpper
- * @throw error if condition is invalid
- */
-export function areTicksValid(tickLower: number, tickUpper: number) {
-  if (tickLower > tickUpper) throw new PreConditionFailedError("Invalid tick range");
-}

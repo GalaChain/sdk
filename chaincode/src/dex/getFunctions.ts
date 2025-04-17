@@ -14,7 +14,9 @@
  */
 import {
   ChainCallDTO,
+  ChainError,
   DexFeeConfig,
+  ErrorCode,
   GetAddLiquidityEstimationDto,
   GetAddLiquidityEstimationResDto,
   GetLiquidityResDto,
@@ -40,7 +42,6 @@ import BigNumber from "bignumber.js";
 import { fetchTokenClass } from "../token";
 import { GalaChainContext } from "../types";
 import {
-  areTicksValid,
   fetchDexProtocolFeeConfig,
   genKeyWithPipe,
   generateKeyFromClassKey,
@@ -61,7 +62,14 @@ export async function getPoolData(ctx: GalaChainContext, dto: GetPoolDto): Promi
     ctx,
     Pool,
     ctx.stub.createCompositeKey(Pool.INDEX_KEY, [token0, token1, dto.fee.toString()])
-  ).catch(() => undefined);
+  ).catch((e) => {
+    const chainError = ChainError.from(e);
+    if (chainError.matches(ErrorCode.NOT_FOUND)) {
+      return undefined;
+    } else {
+      throw chainError;
+    }
+  });
   return pool;
 }
 
@@ -104,7 +112,6 @@ export async function getLiquidity(ctx: GalaChainContext, dto: GetPoolDto): Prom
    * @returns positionInfoDto
    */
 export async function getPositions(ctx: GalaChainContext, dto: GetPositionDto): Promise<positionInfoDto> {
-  areTicksValid(dto.tickLower, dto.tickUpper);
   const pool = await getPoolData(ctx, dto);
   const key = genKeyWithPipe(dto.owner, dto.tickLower.toString(), dto.tickUpper.toString());
   if (!pool) throw new NotFoundError("No pool for these tokens and fee exists");
@@ -186,7 +193,6 @@ export async function getAddLiquidityEstimation(
   ctx: GalaChainContext,
   dto: GetAddLiquidityEstimationDto
 ): Promise<GetAddLiquidityEstimationResDto> {
-  areTicksValid(dto.tickLower, dto.tickUpper);
   const [token0, token1] = [dto.token0, dto.token1].map(generateKeyFromClassKey);
   if (token0.localeCompare(token1) > 0) {
     throw new ValidationFailedError("Token0 must be smaller");

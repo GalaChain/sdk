@@ -15,7 +15,7 @@
 import { BurnEstimateDto, GetRemoveLiqEstimationResDto, NotFoundError, Pool } from "@gala-chain/api";
 
 import { GalaChainContext } from "../types";
-import { areTicksValid, getObjectByKey, validateTokenOrder } from "../utils";
+import { getObjectByKey, validateTokenOrder } from "../utils";
 
 /**
  * @dev The getRemoveLiquidityEstimation function estimates the amount of tokens a user will receive when removing liquidity from a Uniswap V3 pool within the GalaChain ecosystem. It calculates the expected token amounts based on the user's liquidity position and market conditions.
@@ -27,7 +27,6 @@ export async function getRemoveLiquidityEstimation(
   ctx: GalaChainContext,
   dto: BurnEstimateDto
 ): Promise<GetRemoveLiqEstimationResDto> {
-  areTicksValid(dto.tickLower, dto.tickUpper);
   const [token0, token1] = validateTokenOrder(dto.token0, dto.token1);
 
   const key = ctx.stub.createCompositeKey(Pool.INDEX_KEY, [token0, token1, dto.fee.toString()]);

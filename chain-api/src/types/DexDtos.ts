@@ -32,7 +32,8 @@ import {
   BigNumberIsPositive,
   BigNumberProperty,
   EnumProperty,
-  IsBigNumber
+  IsBigNumber,
+  IsLessThan
 } from "../validators";
 import { TokenBalance } from "./TokenBalance";
 import { TokenClassKey } from "./TokenClass";
@@ -95,12 +96,13 @@ export class PositionDto extends ChainCallDTO {
   public owner: string;
   @IsNotEmpty()
   @IsInt()
-  @Min(MIN_TICK)
-  public tickLower: number;
-  @IsNotEmpty()
-  @IsInt()
   @Max(MAX_TICK)
   public tickUpper: number;
+  @IsNotEmpty()
+  @IsInt()
+  @Min(MIN_TICK)
+  @IsLessThan("tickUpper")
+  public tickLower: number;
   @IsOptional()
   @IsBigNumber()
   @BigNumberProperty()
@@ -209,12 +211,13 @@ export class SwapDto extends ChainCallDTO {
 export class BurnDto extends ChainCallDTO {
   @IsNotEmpty()
   @IsInt()
-  @Min(MIN_TICK)
-  public tickLower: number;
-  @IsNotEmpty()
-  @IsInt()
   @Max(MAX_TICK)
   public tickUpper: number;
+  @IsNotEmpty()
+  @IsInt()
+  @Min(MIN_TICK)
+  @IsLessThan("tickUpper")
+  public tickLower: number;
   @IsNotEmpty()
   public token0: TokenClassKey;
   @IsNotEmpty()
@@ -307,12 +310,13 @@ export class GetPositionDto extends ChainCallDTO {
   public owner: string;
   @IsNotEmpty()
   @IsInt()
-  @Min(MIN_TICK)
-  public tickLower: number;
-  @IsNotEmpty()
-  @IsInt()
   @Max(MAX_TICK)
   public tickUpper: number;
+  @IsNotEmpty()
+  @IsInt()
+  @Min(MIN_TICK)
+  @IsLessThan("tickUpper")
+  public tickLower: number;
 
   constructor(
     token0: TokenClassKey,
@@ -400,12 +404,13 @@ export class GetAddLiquidityEstimationDto extends ChainCallDTO {
   public amount: BigNumber;
   @IsNotEmpty()
   @IsInt()
-  @Min(MIN_TICK)
-  public tickLower: number;
-  @IsNotEmpty()
-  @IsInt()
   @Max(MAX_TICK)
   public tickUpper: number;
+  @IsNotEmpty()
+  @IsInt()
+  @Min(MIN_TICK)
+  @IsLessThan("tickUpper")
+  public tickLower: number;
   @IsNotEmpty()
   @IsBoolean()
   public zeroForOne: boolean;
@@ -467,12 +472,13 @@ export class CollectDto extends ChainCallDTO {
   public amount1Requested: BigNumber;
   @IsNotEmpty()
   @IsInt()
-  @Min(MIN_TICK)
-  public tickLower: number;
-  @IsNotEmpty()
-  @IsInt()
   @Max(MAX_TICK)
   public tickUpper: number;
+  @IsNotEmpty()
+  @IsInt()
+  @Min(MIN_TICK)
+  @IsLessThan("tickUpper")
+  public tickLower: number;
 
   constructor(
     token0: TokenClassKey,
@@ -502,9 +508,14 @@ export class AddLiquidityDTO extends ChainCallDTO {
   @IsNotEmpty()
   public readonly fee: number;
   @IsNotEmpty()
-  public readonly tickLower: number;
-  @IsNotEmpty()
+  @IsInt()
+  @Max(MAX_TICK)
   public readonly tickUpper: number;
+  @IsNotEmpty()
+  @IsInt()
+  @Min(MIN_TICK)
+  @IsLessThan("tickUpper")
+  public readonly tickLower: number;
 
   @IsBigNumber()
   @BigNumberProperty()
@@ -771,12 +782,13 @@ export class ConfigureDexFeeAddressDto extends ChainCallDTO {
 export class BurnEstimateDto extends ChainCallDTO {
   @IsNotEmpty()
   @IsInt()
-  @Min(MIN_TICK)
-  public tickLower: number;
-  @IsNotEmpty()
-  @IsInt()
   @Max(MAX_TICK)
   public tickUpper: number;
+  @IsNotEmpty()
+  @IsInt()
+  @Min(MIN_TICK)
+  @IsLessThan("tickUpper")
+  public tickLower: number;
   @IsNotEmpty()
   public token0: TokenClassKey;
   @IsNotEmpty()
