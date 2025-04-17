@@ -13,23 +13,19 @@
  * limitations under the License.
  */
 import {
-  GalaChainResponse,
-  GetMyProfileDto,
-  RegisterUserDto,
-  UserProfile,
-  randomUniqueKey,
-  signatures
-} from "@gala-chain/api";
-import {
   ChainClient,
   ChainUser,
   ContractConfig,
-  HFClientConfig,
+  GalaChainResponse,
+  GetMyProfileDto,
   PublicKeyContractAPI,
-  RestApiClientConfig,
-  gcclient,
-  publicKeyContractAPI
-} from "@gala-chain/client";
+  RegisterUserDto,
+  UserProfile,
+  publicKeyContractAPI,
+  randomUniqueKey,
+  signatures
+} from "@gala-chain/api";
+import { HFClientConfig, RestApiClientConfig, gcclient } from "@gala-chain/client";
 import * as fs from "fs";
 import * as path from "path";
 import process from "process";

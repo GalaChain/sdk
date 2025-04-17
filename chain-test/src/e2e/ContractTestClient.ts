@@ -19,12 +19,10 @@ import {
   ChainUserAPI,
   CommonContractAPI,
   ContractConfig,
-  HFClientConfig,
-  RestApiClientConfig,
   buildChainUserAPI,
-  commonContractAPI,
-  gcclient
-} from "@gala-chain/client";
+  commonContractAPI
+} from "@gala-chain/api";
+import { HFClientConfig, RestApiClientConfig, gcclient } from "@gala-chain/client";
 import { jest } from "@jest/globals";
 import * as path from "path";
 
