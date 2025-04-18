@@ -80,71 +80,125 @@ export async function finalizeSale(ctx: GalaChainContext, sale: LaunchpadSale): 
   const sellingTokenClassKey = sale.fetchSellingTokenInstanceKey().getTokenClassKey();
   const nativeTokenClassKey = sale.fetchNativeTokenInstanceKey().getTokenClassKey();
 
-  const { isChanged } = sortString([sellingTokenClassKey, nativeTokenClassKey].map(generateKeyFromClassKey));
-
-  const finalPrice = convertFinalPriceToSqrtPrice(sale, isChanged);
-  const poolDTO = new CreatePoolDto(
-    isChanged ? nativeTokenClassKey : sellingTokenClassKey,
-    isChanged ? sellingTokenClassKey : nativeTokenClassKey,
-    3000,
-    finalPrice
+  const { isChanged: areTokensSorted } = sortString(
+    [sellingTokenClassKey, nativeTokenClassKey].map(generateKeyFromClassKey)
   );
 
-  const pool = await getPoolData(ctx, poolDTO);
+  const { sqrtPrice, finalPrice } = calculateFinalLaunchpadPrice(sale, areTokensSorted);
+  const poolDTO = new CreatePoolDto(
+    areTokensSorted ? nativeTokenClassKey : sellingTokenClassKey,
+    areTokensSorted ? sellingTokenClassKey : nativeTokenClassKey,
+    3000,
+    sqrtPrice
+  );
+
+  // Check if a pool for this token already exists
+  let pool = await getPoolData(ctx, poolDTO);
   if (!pool) {
-    await createPool(ctx, poolDTO);
+    pool = await createPool(ctx, poolDTO);
   }
 
+  // Proceed normally if price in the pool is within an acceptable range
+  const priceCloseEnough = sqrtPrice.minus(pool.sqrtPrice).abs().lte(sqrtPrice.multipliedBy(0.05));
+  const expectedNativeTokenRequired = new BigNumber(sale.nativeTokenQuantity).times(
+    liquidityAllocationPercentage
+  );
+  const isPriceGreaterThanExpected = pool.sqrtPrice.isGreaterThan(sqrtPrice);
+  const expectedSaleTokenRequired = expectedNativeTokenRequired.times(finalPrice);
+
+  // Determine token amounts and token ordering
+  const token0 = areTokensSorted ? nativeTokenClassKey : sellingTokenClassKey;
+  const token1 = areTokensSorted ? sellingTokenClassKey : nativeTokenClassKey;
+
+  const liquidityAmount = priceCloseEnough
+    ? expectedNativeTokenRequired
+    : isPriceGreaterThanExpected
+      ? expectedSaleTokenRequired
+      : expectedNativeTokenRequired;
+
+  const zeroForOne = priceCloseEnough
+    ? areTokensSorted
+    : isPriceGreaterThanExpected
+      ? !areTokensSorted
+      : areTokensSorted;
+
   const expectedTokenDTO = new GetAddLiquidityEstimationDto(
-    isChanged ? nativeTokenClassKey : sellingTokenClassKey,
-    isChanged ? sellingTokenClassKey : nativeTokenClassKey,
+    token0,
+    token1,
     3000,
-    new BigNumber(sale.nativeTokenQuantity).times(liquidityAllocationPercentage),
+    liquidityAmount,
     -887220,
     887220,
-    isChanged ? true : false
+    zeroForOne
   );
+
   const addLiquidityEstimate = await getAddLiquidityEstimation(ctx, expectedTokenDTO);
 
+  const amount0 = new BigNumber(addLiquidityEstimate.amount0.toString());
+  const amount1 = new BigNumber(addLiquidityEstimate.amount1.toString());
+
   const positionDto = new AddLiquidityDTO(
-    isChanged ? nativeTokenClassKey : sellingTokenClassKey,
-    isChanged ? sellingTokenClassKey : nativeTokenClassKey,
+    token0,
+    token1,
     3000,
     -887220,
     887220,
-    new BigNumber(addLiquidityEstimate.amount0.toString()),
-    new BigNumber(addLiquidityEstimate.amount1.toString()),
-    new BigNumber(addLiquidityEstimate.amount0.toString()).times(0.9999999),
-    new BigNumber(addLiquidityEstimate.amount1.toString()).times(0.9999999)
+    amount0,
+    amount1,
+    amount0.times(0.9999999),
+    amount1.times(0.9999999)
   );
 
   await addLiquidity(ctx, positionDto, sale.vaultAddress);
 
+  // Burn any extra meme tokens
   const sellingTokenToBurn = await fetchOrCreateBalance(ctx, sale.vaultAddress, memeToken);
-  const burnTokenQuantity = new BurnTokenQuantity();
-  burnTokenQuantity.tokenInstanceKey = memeToken;
-  burnTokenQuantity.quantity = sellingTokenToBurn.getQuantityTotal();
+  const burnSellingTokenQuantity = new BurnTokenQuantity();
+  burnSellingTokenQuantity.tokenInstanceKey = memeToken;
+  burnSellingTokenQuantity.quantity = sellingTokenToBurn.getQuantityTotal();
 
   await burnTokens(ctx, {
     owner: sale.vaultAddress,
-    toBurn: [burnTokenQuantity],
+    toBurn: [burnSellingTokenQuantity],
     preValidated: true
   });
+
+  // Burn any extra GALA
+  const nativeTokenToBurn = await fetchOrCreateBalance(ctx, sale.vaultAddress, nativeToken);
+  const burnNativeTokenQuantity = new BurnTokenQuantity();
+  burnNativeTokenQuantity.tokenInstanceKey = nativeToken;
+  burnNativeTokenQuantity.quantity = nativeTokenToBurn.getQuantityTotal();
+
+  if (burnNativeTokenQuantity.quantity) {
+    await burnTokens(ctx, {
+      owner: sale.vaultAddress,
+      toBurn: [burnNativeTokenQuantity],
+      preValidated: true
+    });
+  }
 
   // update sale status
   sale.finalizeSale();
   await putChainObject(ctx, sale);
 }
 
-function convertFinalPriceToSqrtPrice(sale: LaunchpadSale, isChanged: boolean): BigNumber {
+function calculateFinalLaunchpadPrice(
+  sale: LaunchpadSale,
+  areTokensSorted: boolean
+): { sqrtPrice: BigNumber; finalPrice: BigNumber } {
   const totalTokensSold = new Decimal(sale.fetchTokensSold());
   const basePrice = new Decimal(sale.fetchBasePrice());
   const { exponentFactor, euler, decimals } = getBondingConstants();
 
   const exponent = exponentFactor.mul(totalTokensSold).div(decimals);
   const multiplicand = euler.pow(exponent);
-  const price = multiplicand.mul(basePrice).div(decimals);
-  const sqrtPrice = isChanged ? new Decimal(1).dividedBy(price).pow("0.5") : price.pow("0.5");
+  const finalPriceDecimal = multiplicand.mul(basePrice).div(decimals);
 
-  return new BigNumber(sqrtPrice.toString());
+  const priceDecimal = areTokensSorted ? new Decimal(1).dividedBy(finalPriceDecimal) : finalPriceDecimal;
+  const sqrtPriceDecimal = priceDecimal.pow("0.5");
+
+  return {
+    finalPrice: new BigNumber(new Decimal(1).dividedBy(finalPriceDecimal).toString()),
+    sqrtPrice: new BigNumber(sqrtPriceDecimal.toString())
+  };
 }
