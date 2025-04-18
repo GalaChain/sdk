@@ -168,6 +168,27 @@ export function BigNumberIsPositive(validationOptions?: ValidationOptions) {
   };
 }
 
+export function BigNumberIsNegative(validationOptions?: ValidationOptions) {
+  return function (object: object, propertyName: string) {
+    IsBigNumber(validationOptions)(object, propertyName);
+    registerDecorator({
+      name: "BigNumberIsNegative",
+      target: object.constructor,
+      propertyName,
+      options: validationOptions,
+      validator: {
+        validate(value: unknown) {
+          return validateBigNumberOrIgnore(value, (b) => b.isNegative());
+        },
+        defaultMessage(args: ValidationArguments) {
+          // here you can provide default error message if validation failed
+          return `${args.property} must be negative but is ${args.value?.toString() ?? args.value}`;
+        }
+      }
+    });
+  };
+}
+
 export function BigNumberIsNotInfinity(validationOptions?: ValidationOptions) {
   return function (object: object, propertyName: string) {
     IsBigNumber(validationOptions)(object, propertyName);
@@ -246,6 +267,29 @@ export function IsNonZeroBigNumber(validationOptions?: ValidationOptions) {
         },
         defaultMessage(args: ValidationArguments) {
           return `${args.property} must be a BigNumber and cannot be zero.`;
+        }
+      }
+    });
+  };
+}
+
+export function IsLessThan(property: string, validationOptions?: ValidationOptions) {
+  return function (object: object, propertyName: string) {
+    registerDecorator({
+      name: "isLessThan",
+      target: object.constructor,
+      propertyName: propertyName,
+      constraints: [property],
+      options: validationOptions,
+      validator: {
+        validate(value: any, args: ValidationArguments) {
+          const [relatedPropertyName] = args.constraints;
+          const relatedValue = (args.object as any)[relatedPropertyName];
+          return typeof value === "number" && typeof relatedValue === "number" && value < relatedValue;
+        },
+        defaultMessage(args: ValidationArguments) {
+          const [relatedPropertyName] = args.constraints;
+          return `${args.property} must be less than ${relatedPropertyName}`;
         }
       }
     });

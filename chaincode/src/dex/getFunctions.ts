@@ -14,7 +14,9 @@
  */
 import {
   ChainCallDTO,
+  ChainError,
   DexFeeConfig,
+  ErrorCode,
   GetAddLiquidityEstimationDto,
   GetAddLiquidityEstimationResDto,
   GetLiquidityResDto,
@@ -60,7 +62,14 @@ export async function getPoolData(ctx: GalaChainContext, dto: GetPoolDto): Promi
     ctx,
     Pool,
     ctx.stub.createCompositeKey(Pool.INDEX_KEY, [token0, token1, dto.fee.toString()])
-  ).catch(() => undefined);
+  ).catch((e) => {
+    const chainError = ChainError.from(e);
+    if (chainError.matches(ErrorCode.NOT_FOUND)) {
+      return undefined;
+    } else {
+      throw chainError;
+    }
+  });
   return pool;
 }
 

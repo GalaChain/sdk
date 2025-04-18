@@ -15,6 +15,7 @@
 import {
   ChainCallDTO,
   ConfigureLaunchpadFeeAddressDto,
+  CreatePoolDto,
   CreateSaleResDto,
   CreateTokenClassDto,
   CreateTokenSaleDTO,
@@ -1407,6 +1408,53 @@ describe("LaunchpadContract", () => {
       expect(Number(tokenLeftInVaultVal)).toEqual(0);
     });
 
+    test("Finalization of sale should handle pre existing pools edge case", async () => {
+      // Given
+      const fee = 3000,
+        initialSqrtPrice = new BigNumber("44.72136");
+
+      const sale = await createSale(client, user, "Asset28", "saleTwentyEight");
+      if (!sale.Data) throw new Error();
+      vaultAddress = vaultAddress = sale.Data?.vaultAddress;
+
+      const galaclassKey = new TokenClassKey();
+      galaclassKey.collection = "GALA";
+      galaclassKey.category = "Unit";
+      galaclassKey.type = "none";
+      galaclassKey.additionalKey = "none";
+
+      const classKey = new TokenClassKey();
+
+      classKey.collection = "UnitTest";
+      classKey.category = "Test";
+      classKey.type = "SALETWENTYEIGHT";
+      classKey.additionalKey = `${user.identityKey.replace(/\|/, ":")}`;
+
+      const dto = new CreatePoolDto(galaclassKey, classKey, fee, initialSqrtPrice).signed(user.privateKey);
+      const createPoolRes = await client3.dexV3Contract.createPool(dto);
+      expect(createPoolRes).toStrictEqual(transactionSuccess());
+
+      const callingUserDto = new ChainCallDTO();
+      callingUserDto.sign(user1.privateKey);
+      await client.Launchpad.FetchLaunchpadFeeConfig(callingUserDto);
+
+      const buyWithNativeDTO = new NativeTokenQuantityDto();
+      buyWithNativeDTO.vaultAddress = vaultAddress;
+      buyWithNativeDTO.nativeTokenQuantity = new BigNumber("1640986");
+      buyWithNativeDTO.sign(user1.privateKey);
+
+      // When
+      const buyRes = await client.Launchpad.BuyWithNative(buyWithNativeDTO);
+      expect(buyRes).toStrictEqual(transactionSuccess());
+
+      // Then
+      const fetchSaleDetailsDTO = new FetchSaleDto();
+      fetchSaleDetailsDTO.vaultAddress = vaultAddress;
+      const fetchSaleRes = await client.Launchpad.FetchSale(fetchSaleDetailsDTO);
+
+      expect(fetchSaleRes.Data?.saleStatus).toEqual(SaleStatus.END);
+    });
+
     test("Pool Gets created after finalization", async () => {
       const sale = await createSale(client, user3, "Asset29", "saleTwentyNine");
       if (!sale.Data) throw new Error();
@@ -1842,13 +1890,16 @@ function GalaTokenContractAPI(client: ChainClient): GalaTokenContractAPI & Commo
 }
 
 interface DexV3ContractAPI {
+  createPool(dto: CreatePoolDto): Promise<GalaChainResponse<Pool>>;
   getPoolData(dto: GetPoolDto): Promise<GalaChainResponse<Pool>>;
 }
 
 function dexV3ContractAPI(client: ChainClient): DexV3ContractAPI & CommonContractAPI {
   return {
     ...commonContractAPI(client),
-
+    createPool(dto: CreatePoolDto) {
+      return client.submitTransaction<Pool>("CreatePool", dto, Pool);
+    },
     getPoolData(dto: GetPoolDto) {
       return client.evaluateTransaction<Pool>("GetPoolData", dto, Pool);
     }

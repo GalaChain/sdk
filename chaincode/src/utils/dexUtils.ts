@@ -12,7 +12,14 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-import { ChainError, DexFeeConfig, ErrorCode, TokenClassKey, TokenInstanceKey } from "@gala-chain/api";
+import {
+  ChainError,
+  DexFeeConfig,
+  ErrorCode,
+  PreConditionFailedError,
+  TokenClassKey,
+  TokenInstanceKey
+} from "@gala-chain/api";
 import BigNumber from "bignumber.js";
 
 import { GalaChainContext } from "../types";
