@@ -16,7 +16,6 @@ import {
   ChainCallDTO,
   GetMyProfileDto,
   GetPublicKeyDto,
-  NotFoundError,
   PublicKey,
   RegisterEthUserDto,
   RegisterTonUserDto,
@@ -69,18 +68,7 @@ export class PublicKeyContract extends GalaContract {
       "Since the profile contains also eth address of the user, this method is supported only for signature based authentication."
   })
   public async GetMyProfile(ctx: GalaChainContext, dto: GetMyProfileDto): Promise<UserProfile> {
-    // will throw error for legacy auth if the addr is missing
-    const address = dto.signing === SigningScheme.TON ? ctx.callingUserTonAddress : ctx.callingUserEthAddress;
-    const profile = await PublicKeyService.getUserProfile(ctx, address);
-
-    if (profile === undefined) {
-      throw new NotFoundError(`UserProfile not found for ${ctx.callingUser}`, {
-        signature: dto.signature,
-        user: ctx.callingUser
-      });
-    }
-
-    return profile;
+    return ctx.callingUserProfile;
   }
 
   @Submit({
