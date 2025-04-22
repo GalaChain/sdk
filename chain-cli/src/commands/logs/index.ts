@@ -18,7 +18,7 @@ import chalk from "chalk";
 
 import BaseCommand from "../../base-command";
 import { BadRequestError, FetchLogsError, UnauthorizedError } from "../../errors";
-import { LogEntry, getLogs, getPrivateKey, streamLogs } from "../../galachain-utils";
+import { LogEntry, getChaincodeDefinition, getLogs, getPrivateKey, streamLogs } from "../../galachain-utils";
 
 interface LogQueryParams {
   privateKey: string;
@@ -83,7 +83,8 @@ export default class Log extends BaseCommand<typeof Log> {
       );
     }
 
-    const developerPrivateKey = await getPrivateKey(flags.developerPrivateKey);
+    const chaincode = await getChaincodeDefinition();
+    const developerPrivateKey = await getPrivateKey(flags.developerPrivateKey, chaincode.name);
 
     const commonParams: LogQueryParams = {
       privateKey: developerPrivateKey,
