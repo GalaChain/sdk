@@ -1,113 +1,159 @@
 # Chaincode deployment
 
-Chaincode is published as a Docker image to GalaChain repository.
-Once the image is published, it can be deployed to GalaChain testnet or sandbox.
-In order to publish and deploy chaincode, you need to contact GalaChain support and add provide your secp256k1 public key.
+GalaChain supports TNT as a Testnet for your chaincodes. Once deployed, your chaincode will be exposed to the public through the Gateway at [https://gateway-testnet.galachain.com/docs/](https://gateway-testnet.galachain.com/docs/). Registering and deploying chaincodes is available to anyone.
 
-## The process
+## The anatomy of a chaincode from the deployment perspective
 
-1. **Build and publish chaincode Docker image.**
+When you initialize a chaincode with `@gala-chain/cli`, it creates a chaincode directory which includes:
+- The `keys` directory - containing public keys required for calling our managed infrastructure. Typically two files: `gc-admin-key.pub` and `gc-dev-key.pub`.
+- The `Dockerfile` that should be used to build the chaincode Docker image.
 
-    Sample for DockerHub (It uses the [ttl.sh](https://github.com/replicatedhq/ttl.sh) to make it available for 1 day):
+Additionally, the `init` command creates private keys for the chaincode admin and developer in your home directory at `~/.gc-keys/<chaincode-name>` (`gc-admin-key` and `gc-dev-key`), where `<chaincode-name>` consists of a `gc-` prefix and ETH address calculated from the chaincode admin public key.
 
-    ````shell
-    docker build --push -t ttl.sh/<IMAGE_NAME>:1d .
-    ````
+All of this is important for managing the chaincode deployment.
 
-    Provide us the image name (everything before the `:` character of full docker tag). In the sample above it is the content of `ttl.sh/<IMAGE_NAME>`.
+## Registering the chaincode
 
-2. **Provide to GalaChain support chaincode information and public keys.**
-
-    The keys are automatically generated when you initialize the project using `galachain init`, so you can find these keys in `keys/gc-admin-key.pub` and `keys/gc-dev-key.pub`.
-
-    > Note: The developer key should be shared with all team members who want to deploy the chaincode.
-
-    If you can't find the keys, you can generate them using the following commands:
-
-    ```shell
-    galachain keygen gc-admin-key
-    galachain keygen gc-dev-key
-    ```
-
-3. **Deploy the chaincode to testnet or sandbox:**
-    ```shell
-    galachain deploy <docker-image-tag> <path-to>/gc-dev-key
-    ```
-
-    > Note: you need to provide docker image name and also the version part. If you used the `ttl.sh` example, the `docker-image-tag` should be something like `ttl.sh/<IMAGE_NAME>:1d`.
-
-4. **Fetch information about the chaincode and deployments:**
-    ```shell
-    galachain info <path-to>/gc-dev-key
-    ```
-
-    Once the status is `CC_DEPLOYED` you can visit the Swagger webpage: [https://gateway-testnet.galachain.com/docs/](https://gateway-testnet.galachain.com/docs/). You can find your chaincode (`gc-<eth-addr>`). If the version is still unknown (and you see `v?.?.?`), it means you may need to wait a couple of minutes till the chaincode is ready.
-
-    Once it is ready, you can use the webpage to call chaincodes. It's good to start `PublicKeyContract/GetPublicKey` with empty object as request body. It should return the admin public key you provided before.
-
-5. **Call the deployed chaincode**
-
-    You can use any REST API client (like `axios` to call your chaincodes). Remember in most cases you will need to sign the DTO with either the `gc-admin-key` or any key of registered user.
-   
-    We highly recommend to use the `@gala-chain/api` library for handling DTOs and signing. For instance, you can register a user by calling `/api/.../...-PublicKeyContract/RegisterEthUser` and providing the following [`RegisterEthUser`](https://galahackathon.com/latest/chain-api-docs/classes/RegisterEthUserDto/) as payload:
-
-    ```typescript
-    const dto = new RegisterEthUser();
-    dto.publicKey = <newUserPublicKey>;
-    dto.sign(<gc-admin-key>);
-    const payloadString = dto.serialize();
-    ```
-    
-    In the current version of the library, local environment exposes slightly different endpoints than the production environment.
-    `gcclient` and `@gala-chain/client` packages are compatible with the local environment only.
-    For calling the production environment, you should consult the Swagger documentation at [https://gateway-testnet.galachain.com/docs/](https://gateway-testnet.galachain.com/docs/), and use generic REST API client.
-
-## Reference
-
-GalaChain CLI calls some local command and accesses ServicePortal REST API to accomplish certain tasks.
-Each REST request body to ServicePortal (1) is signed using our default GalaChain signature type (secp256k1, non-DER), and (2) contains unique request id.
-Both signing and creating the ID is managed by GalaChain CLI.
-
-### Fetching information about chaincode and deployments
+You can check if your chaincode is registered by running the following command from the chaincode directory:
 
 ```
 galachain info
 ```
 
-This command will display:
+This command:
+1. Uses your admin public key to determine the chaincode name (requires the `./keys/gc-admin-key.pub` file)
+2. Determines the developer private key to sign the request (by default uses developer private key from `~/.gc-keys/<chaincode-name>` directory, but there are also other options to provide it)
+3. Signs the request with the developer private key and calls the TNT Gateway to get the chaincode deployment information
 
-* Org, channel, chaincode names.
-* Status of the chaincode deployment.
-
-```mermaid
-sequenceDiagram
-    Developer ->>+ GalaChain CLI: info
-    GalaChain CLI ->>+ ServicePortal: api/deployment
-    ServicePortal -->>- GalaChain CLI: sandbox + testnet info
-    GalaChain CLI -->>- Developer: info (org, ch, cc, imageName, status)
-```
-
-### Deploying the chaincode
-
-Deploying to GalaChain testnet:
+On the first call, since your chaincode is not registered yet, you will get an unauthorized error. Example:
 
 ```
-galachain test-deploy <docker-image-tag> <path-to>/gc-dev-key
+Error: [401] Cannot authorize access to chaincode on network TNT.
+
+  Operation ID:         EHpFVcHpaBejni2yzQ2WX
+  Chaincode:            gc-ab4a643F9f26d933c1bE9Dd8f5057f0F5c820f25
+  Developer public key: 04b70f2b896dff49d2da338a3b021dc28aafa5e34712fc59948d64ecc354bb671a940d652763a16b91e208f4b244cc0842d82ac4863b8a7c562808f52a0908e670
+
+It usually means that the chaincode is not registered on TNT, or you are using 
+the wrong developer key for signing. If you are sure that the chaincode is 
+registered on TNT, please check your developer key. Otherwise, you can register 
+the chaincode with `galachain register` command (requires @gala-chain/cli 
+version 2.2.0 or higher).
 ```
 
-Deploying to GalaChain sandbox:
+You will get the same error if you try to deploy non-registered chaincode.
+
+To **register a chaincode**, run the following command:
 
 ```
-galachain deploy <docker-image-tag> <path-to>/gc-dev-key
+galachain register
 ```
 
-This command schedules deployment of published chaincode Docker image to GalaChain testnet or sandbox.
-In order to get the information about the current status of deployments, you need to use `galachain info` command.
+The command uses the chaincode admin public key to determine the chaincode name and uses all files that match the pattern `./keys/gc-dev*-key*.pub` as developer public keys. This way you can provide multiple developers during registration by including files like `gc-dev2-key.pub` or `gc-dev-key2.pub` as additional developer key files. It is safe to keep developer public keys in version control.
 
-```mermaid
-sequenceDiagram
-    Developer ->>+ GalaChain CLI: deploy (tag)
-    GalaChain CLI ->>+ ServicePortal: api/deploy { imageTag, contracts }
-    ServicePortal -->>- GalaChain CLI: scheduled
-    GalaChain CLI -->>- Developer: scheduled
+The CLI register command serves the following prompt to confirm the registration:
+
+```
+Registering chaincode on GalaChain TNT network...
+
+  Chaincode name:
+    gc-ab4a643f9f26d933c1be9dd8f5057f0f5c820f25
+  Chaincode admin public key:
+    0461b7b6df010ec529d3ed393f9991fabfe94e8167de43519746309ecddd0007135bdba4f73cf49c22e8086ff1b7305eb889f7286d58e2e57f06c050b4e2b288af
+  Developer public keys:
+    04b70f2b896dff49d2da338a3b021dc28aafa5e34712fc59948d64ecc354bb671a940d652763a16b91e208f4b244cc0842d82ac4863b8a7c562808f52a0908e670
+
+Are you sure you want to register the chaincode on TNT? (y/n): y
+```
+
+And once you confirm it will display the information about the registered chaincode:
+
+```
+Chaincode gc-ab4a643f9f26d933c1be9dd8f5057f0f5c820f25 has been registered:
+{
+  "channel": "testnet01",
+  "chaincode": "gc-ab4a643f9f26d933c1be9dd8f5057f0f5c820f25",
+  "imageName": null,
+  "status": "CH_CREATED",
+  "adminPublicKey": "0461b7b6df010ec529d3ed393f9991fabfe94e8167de43519746309ecddd0007135bdba4f73cf49c22e8086ff1b7305eb889f7286d58e2e57f06c050b4e2b288af",
+  "lastUpdated": "2025-04-08T13:50:16.881Z",
+  "developersPublicKeys": [
+    "04b70f2b896dff49d2da338a3b021dc28aafa5e34712fc59948d64ecc354bb671a940d652763a16b91e208f4b244cc0842d82ac4863b8a7c562808f52a0908e670"
+  ]
+}
+```
+
+After that step you are able to deploy the chaincode.
+
+
+## Preparing the chaincode Docker image
+
+To deploy a chaincode to TNT, you need to build and publish a chaincode Docker image.
+
+The image should be built with the `Dockerfile` provided by the `galachain init` command. This ensures the image has the proper format and can be used as a chaincode. The CLI performs initial validation of the image before deployment to prevent deploying an incorrect image.
+
+The image needs to be publicly available so GalaChain services can access and deploy it. We do not recommend using temporary Docker image registries (like [ttl.sh](ttl.sh)), as they may not allow redeployment if needed.
+
+The Docker image must be built for the `linux/amd64` architecture.
+
+
+## Deploying the chaincode
+
+To deploy the chaincode, run the following command:
+
+```
+galachain deploy <your-docker-image:tag>
+```
+
+The CLI will verify the Docker image locally, and produce a similar prompt for confirmation:
+
+```
+Verifying Docker image registry.gitlab.com/dzikowski.online/galachain-sample:1.0.24...
+
+  Chaincode:    gc-ab4a643f9f26d933c1be9dd8f5057f0f5c820f25
+  Image:        registry.gitlab.com/dzikowski.online/galachain-sample:1.0.24
+  Image SHA256: sha256:af0b2b5acde1fe5dc5cd49cc65d6734be8648fda3688525e69da4d6479effe66
+  Contracts: 
+   - AppleContract
+   - GalaChainToken
+   - PublicKeyContract
+
+Are you sure you want to deploy the chaincode gc-ab4a643f9f26d933c1be9dd8f5057f0f5c820f25 to TNT? (y/n): y
+```
+
+If you are working on Apple M processor, you may also see a warning: _The requested image's platform (linux/amd64) does not match the detected host platform (linux/arm64/v8) and no specific platform was requested_, but this is just a result of performing local validation of the image, and you can ignore it.
+
+Once you confirm the deployment, you will receive a response similar to:
+
+```
+Deployment scheduled to TNT:
+{
+  "network": "TNT",
+  "channel": "testnet01",
+  "chaincode": "gc-ab4a643f9f26d933c1be9dd8f5057f0f5c820f25",
+  "adminPublicKey": "0461b7b6df010ec529d3ed393f9991fabfe94e8167de43519746309ecddd0007135bdba4f73cf49c22e8086ff1b7305eb889f7286d58e2e57f06c050b4e2b288af",
+  "developersPublicKeys": [
+    "04b70f2b896dff49d2da338a3b021dc28aafa5e34712fc59948d64ecc354bb671a940d652763a16b91e208f4b244cc0842d82ac4863b8a7c562808f52a0908e670"
+  ],
+  "imageName": null,
+  "sequence": 1,
+  "status": "CC_DEPLOY_SCHEDULED",
+  "lastUpdated": "2025-04-08T16:30:03.757Z"
+}
+```
+
+Your chaincode will typically be available on GalaChain Gateway within 1-5 minutes. You can verify its status using the `galachain info` command.
+
+
+## Call the deployed chaincode
+
+You can use any REST API client (like `axios`, `fetch`, or `undici`) to call your chaincodes. Remember that in most cases you will need to sign the DTO with either the `gc-admin-key` or any registered user's key.
+
+We highly recommend using the `@gala-chain/api` library for handling DTOs and signing. For instance, you can register a user by calling `/api/.../...-PublicKeyContract/RegisterEthUser` and providing the following [`RegisterEthUser`](https://galahackathon.com/latest/chain-api-docs/classes/RegisterEthUserDto/) as payload:
+
+```typescript
+const dto = new RegisterEthUser();
+dto.publicKey = <newUserPublicKey>;
+dto.sign(<gc-admin-key>);
+const payloadString = dto.serialize();
 ```

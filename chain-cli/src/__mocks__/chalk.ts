@@ -20,7 +20,8 @@ const chalk = {
   red: jest.fn((str: string) => str),
   blue: jest.fn((str: string) => str),
   gray: jest.fn((str: string) => str),
-  white: jest.fn((str: string) => str)
+  white: jest.fn((str: string) => str),
+  cyan: jest.fn((str: string) => str)
 };
 
 export default chalk;
