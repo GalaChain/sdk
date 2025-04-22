@@ -15,6 +15,11 @@
 
 export { run } from "@oclif/core";
 export { CaConfig, OrgConfig, PeerConfig } from "./connection-profile";
-export { GetChaincodeDeploymentDto, PostChaincodeDto, PostDeployChaincodeDto, ChaincodeInfoDto } from "./dto";
+export {
+  GetChaincodeDeploymentDto,
+  PostChaincodeDto,
+  DeployChaincodeDto as PostDeployChaincodeDto,
+  ChaincodeInfoDto
+} from "./dto";
 export * from "./exec-sync";
 export * from "./galachain-utils";

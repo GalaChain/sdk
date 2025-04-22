@@ -14,18 +14,14 @@
  */
 import chalk from "chalk";
 
+import { consts } from "../../__test__/data";
 import { FetchLogsError, UnauthorizedError } from "../../errors";
 import { LogEntry } from "../../galachain-utils";
 import * as utils from "../../galachain-utils";
 import Log from "./index";
 
-jest.mock("../../__mocks__/chalk");
 jest.mock("../../galachain-utils");
 jest.setTimeout(10000);
-
-const consts = {
-  developerPrivateKey: "bf2168e0e2238b9d879847987f556a093040a2cab07983a20919ac33103d0d00"
-};
 
 describe("Logs Command", () => {
   beforeEach(() => {
@@ -46,6 +42,10 @@ describe("Logs Command", () => {
 
     jest.spyOn(utils, "getLogs").mockResolvedValue(mockLogs);
     jest.spyOn(utils, "getPrivateKey").mockResolvedValue(consts.developerPrivateKey);
+    jest.spyOn(utils, "getChaincodeDefinition").mockResolvedValue({
+      name: consts.chaincodeName,
+      adminPublicKey: consts.chaincodeAdminPublicKey
+    });
 
     const logSpy = jest.spyOn(Log.prototype, "log").mockImplementation(() => {});
 
