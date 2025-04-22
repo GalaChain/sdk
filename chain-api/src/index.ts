@@ -12,7 +12,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
+export * from "./client";
 export * from "./types";
 export * from "./utils";
 export * from "./validators";

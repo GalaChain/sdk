@@ -12,8 +12,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-import { GalaChainResponse } from "@gala-chain/api";
-import { ChainClient, commonContractAPI, publicKeyContractAPI } from "@gala-chain/client";
+import { ChainClient, GalaChainResponse, commonContractAPI, publicKeyContractAPI } from "@gala-chain/api";
 
 import { TestClients } from "./TestClients";
 import { createChainClient } from "./createChainClient";

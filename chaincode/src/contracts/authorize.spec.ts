@@ -12,8 +12,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-import { ChainCallDTO, UserProfile, UserRole } from "@gala-chain/api";
-import { ChainUser } from "@gala-chain/client";
+import { ChainCallDTO, ChainUser, UserProfile, UserRole } from "@gala-chain/api";
 import {
   fixture,
   transactionErrorKey,
