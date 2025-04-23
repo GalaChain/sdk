@@ -25,7 +25,6 @@ import {
   UpdateUserRolesDto,
   UserAlias,
   UserProfile,
-  UserRole,
   ValidationFailedError,
   signatures
 } from "@gala-chain/api";
@@ -36,6 +35,7 @@ import { PkNotFoundError } from "../services/PublicKeyError";
 import { GalaChainContext } from "../types";
 import { GalaContract } from "./GalaContract";
 import { EVALUATE, Evaluate, GalaTransaction, Submit } from "./GalaTransaction";
+import { requireCuratorAuth } from "./authorize";
 
 let version = "0.0.0";
 
@@ -46,11 +46,6 @@ try {
   // eslint-disable-next-line @typescript-eslint/no-var-requires
   version = require("../../package.json").version;
 }
-
-const curatorOrgMsp = process.env.CURATOR_ORG_MSP ?? "CuratorOrg";
-
-const requireCuratorAuth =
-  process.env.USE_RBAC === "true" ? { allowedRoles: [UserRole.CURATOR] } : { allowedOrgs: [curatorOrgMsp] };
 
 @Info({
   title: "PublicKeyContract",
