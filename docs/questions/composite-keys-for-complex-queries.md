@@ -13,7 +13,7 @@ Composite keys in GalaChain enable efficient querying by combining multiple fiel
 ```typescript
 export class TokenBalance extends ChainObject {
   @Exclude()
-  public static readonly INDEX_KEY = 'TOKEN_BALANCE';
+  public static readonly INDEX_KEY = 'GCTB';
 
   @ChainKey({ position: 0 })
   @IsUserAlias()
