@@ -13,6 +13,9 @@
  * limitations under the License.
  */
 
+// use role-based access control (RBAC) for tests.
+process.env.USE_RBAC = "true";
+
 export default {
   displayName: "chaincode-template",
   testEnvironment: "node",

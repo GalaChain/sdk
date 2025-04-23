@@ -25,7 +25,6 @@ import {
   UpdateUserRolesDto,
   UserAlias,
   UserProfile,
-  UserRole,
   ValidationFailedError,
   signatures
 } from "@gala-chain/api";
@@ -36,6 +35,7 @@ import { PkNotFoundError } from "../services/PublicKeyError";
 import { GalaChainContext } from "../types";
 import { GalaContract } from "./GalaContract";
 import { EVALUATE, Evaluate, GalaTransaction, Submit } from "./GalaTransaction";
+import { requireCuratorAuth } from "./authorize";
 
 let version = "0.0.0";
 
@@ -46,8 +46,6 @@ try {
   // eslint-disable-next-line @typescript-eslint/no-var-requires
   version = require("../../package.json").version;
 }
-
-const curatorOrgMsp = process.env.CURATOR_ORG_MSP ?? "CuratorOrg";
 
 @Info({
   title: "PublicKeyContract",
@@ -72,7 +70,7 @@ export class PublicKeyContract extends GalaContract {
     in: RegisterUserDto,
     out: "string",
     description: "Registers a new user on chain under provided user alias.",
-    allowedOrgs: [curatorOrgMsp]
+    ...requireCuratorAuth
   })
   public async RegisterUser(ctx: GalaChainContext, dto: RegisterUserDto): Promise<string> {
     if (!dto.user.startsWith("client|")) {
@@ -91,7 +89,7 @@ export class PublicKeyContract extends GalaContract {
     in: RegisterEthUserDto,
     out: "string",
     description: "Registers a new user on chain under alias derived from eth address.",
-    allowedOrgs: [curatorOrgMsp]
+    ...requireCuratorAuth
   })
   public async RegisterEthUser(ctx: GalaChainContext, dto: RegisterEthUserDto): Promise<string> {
     const providedPkHex = signatures.getNonCompactHexPublicKey(dto.publicKey);
@@ -105,7 +103,7 @@ export class PublicKeyContract extends GalaContract {
     in: RegisterTonUserDto,
     out: "string",
     description: "Registers a new user on chain under alias derived from TON address.",
-    allowedOrgs: [curatorOrgMsp]
+    ...requireCuratorAuth
   })
   public async RegisterTonUser(ctx: GalaChainContext, dto: RegisterTonUserDto): Promise<string> {
     const publicKey = dto.publicKey;
@@ -118,7 +116,7 @@ export class PublicKeyContract extends GalaContract {
   @Submit({
     in: UpdateUserRolesDto,
     description: "Updates roles for the user with alias provided in DTO.",
-    allowedRoles: [UserRole.CURATOR]
+    ...requireCuratorAuth
   })
   public async UpdateUserRoles(ctx: GalaChainContext, dto: UpdateUserRolesDto): Promise<void> {
     await PublicKeyService.updateUserRoles(ctx, dto.user, dto.roles);

@@ -30,9 +30,17 @@ import { IsNotEmpty, IsPositive } from "class-validator";
 import { Transaction } from "fabric-contract-api";
 
 import { version } from "../../package.json";
-import { EVALUATE, GalaContract, GalaTransaction, SUBMIT, Submit, UnsignedEvaluate } from "../contracts";
+import {
+  EVALUATE,
+  GalaContract,
+  GalaTransaction,
+  SUBMIT,
+  Submit,
+  UnsignedEvaluate,
+  requireCuratorAuth
+} from "../contracts";
 import { GalaChainContext } from "../types";
-import { getObjectsByPartialCompositeKey, putChainObject } from "../utils/state";
+import { getObjectsByPartialCompositeKey, putChainObject } from "../utils";
 
 export class SuperheroDto extends SubmitCallDTO {
   public name: string;
@@ -149,7 +157,7 @@ export default class TestGalaContract extends GalaContract {
 
   @Submit({
     in: SuperheroDto,
-    allowedOrgs: ["CuratorOrg"]
+    ...requireCuratorAuth
   })
   public async CreateSuperhero(ctx: GalaChainContext, dto: SuperheroDto): Promise<GalaChainResponse<void>> {
     ctx.logger.info(`Creating superhero ${dto.name}`);

@@ -34,6 +34,7 @@ import {
   authorizeFee,
   fetchFeeAuthorizations,
   fetchGalaFeeProperties,
+  requireCuratorAuth,
   setGalaFeeProperties
 } from "../";
 // eslint-disable-next-line @typescript-eslint/ban-ts-comment
@@ -93,7 +94,7 @@ export class GalaChainFeeContract extends GalaContract {
     in: FeePropertiesDto,
     out: FeeProperties,
     verifySignature: true,
-    allowedOrgs: ["CuratorOrg"],
+    ...requireCuratorAuth,
     enforceUniqueKey: true
   })
   public async SetFeeProperties(

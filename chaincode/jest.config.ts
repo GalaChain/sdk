@@ -32,6 +32,9 @@ process.env.DEV_ADMIN_PRIVATE_KEY = "88698cb1145865953be1a6dafd9646c3dd4c0ec3955
 process.env.DEV_ADMIN_PUBLIC_KEY =
   "048e1adb2489bdd6f387da77315a8902be3a7a06bc10bedbd099cdfc5a59a74a4c0e14c1bebc8e38e9f0e18a466e1e603b8faab4d4d354afbb57d979f2b16886db";
 
+// by default in tests we use role based auth
+process.env.USE_RBAC = "true";
+
 // Force less information in logs.
 // We want this, because while running tests from command line Fabric produces
 // a lot of logs, and it's hard to see the actual test output.
