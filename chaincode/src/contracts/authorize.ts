@@ -16,7 +16,7 @@ import { ForbiddenError, UnauthorizedError, UserRole } from "@gala-chain/api";
 
 import { GalaChainContext } from "../types";
 
-class MissingRoleError extends UnauthorizedError {
+export class MissingRoleError extends UnauthorizedError {
   constructor(callingUser: string, callingUserRoles: string[] | undefined, allowedRoles: string[]) {
     const message =
       `User ${callingUser} does not have one of required roles: ` +
