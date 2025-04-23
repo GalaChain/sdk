@@ -98,3 +98,4 @@ Best practices:
 - Keep key parts short to minimize storage overhead
 - Consider index size impact when designing composite keys
 - Document the composite key structure in class comments
+- Only use primitive types (e.g. string) as parts of the key. The only advanced types we currently support as part of a composite key is `BigNumber` from the `bignumber.js` library.
