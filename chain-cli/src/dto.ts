@@ -15,6 +15,7 @@
 
 export interface GetChaincodeDeploymentDto {
   operationId: string;
+  chaincode: string;
 }
 
 export interface PostChaincodeDto {
@@ -24,20 +25,27 @@ export interface PostChaincodeDto {
   operationId: string;
 }
 
-export interface PostDeployChaincodeDto {
+export interface DeployChaincodeDto {
   operationId: string;
   imageTag: string;
+  chaincode: string;
   contracts: { contractName: string }[];
 }
 
+export interface RegisterChaincodeDto {
+  operationId: string;
+  channelAdminPublicKey: string;
+  publicKeys: string[];
+}
+
 export interface ChaincodeInfoDto {
-  org: string;
+  network: string;
   channel: string;
   chaincode: string;
   imageName: string;
+  sequence: number;
   status: string;
-  lastOperationId: string;
   adminPublicKey: string;
-  isTestnet: boolean;
   lastUpdated: string;
+  developersPublicKeys: string[];
 }

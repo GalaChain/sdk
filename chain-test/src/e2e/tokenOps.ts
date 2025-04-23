@@ -14,6 +14,9 @@
  */
 import {
   AllowanceType,
+  ChainClient,
+  ChainUser,
+  ChainUserAPI,
   CreateTokenClassDto,
   FetchBalancesDto,
   GrantAllowanceDto,
@@ -28,7 +31,6 @@ import {
   createValidDTO,
   createValidSubmitDTO
 } from "@gala-chain/api";
-import { ChainClient, ChainUser, ChainUserAPI } from "@gala-chain/client";
 import { expect } from "@jest/globals";
 import BigNumber from "bignumber.js";
 import { instanceToPlain } from "class-transformer";

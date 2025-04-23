@@ -108,6 +108,7 @@ import {
   refreshAllowances,
   releaseToken,
   requestMint,
+  requireCuratorAuth,
   resolveUserAlias,
   transferToken,
   unlockToken,
@@ -129,7 +130,7 @@ export default class GalaChainTokenContract extends GalaContract {
   @Submit({
     in: CreateTokenClassDto,
     out: TokenClassKey,
-    allowedOrgs: ["CuratorOrg"]
+    ...requireCuratorAuth
   })
   public async CreateTokenClass(ctx: GalaChainContext, dto: CreateTokenClassDto): Promise<TokenClassKey> {
     const authorities = dto.authorities
@@ -160,7 +161,7 @@ export default class GalaChainTokenContract extends GalaContract {
   @Submit({
     in: UpdateTokenClassDto,
     out: TokenClassKey,
-    allowedOrgs: ["CuratorOrg"]
+    ...requireCuratorAuth
   })
   public async UpdateTokenClass(ctx: GalaChainContext, dto: UpdateTokenClassDto): Promise<TokenClassKey> {
     const authorities = dto.authorities
@@ -539,7 +540,7 @@ export default class GalaChainTokenContract extends GalaContract {
   @Submit({
     in: FeeCodeDefinitionDto,
     out: FeeCodeDefinition,
-    allowedOrgs: ["CuratorOrg"]
+    ...requireCuratorAuth
   })
   public async DefineFeeSchedule(
     ctx: GalaChainContext,
@@ -551,7 +552,7 @@ export default class GalaChainTokenContract extends GalaContract {
   @Submit({
     in: FeeCodeSplitFormulaDto,
     out: FeeCodeSplitFormula,
-    allowedOrgs: ["CuratorOrg"]
+    ...requireCuratorAuth
   })
   public async DefineFeeSplitFormula(
     ctx: GalaChainContext,
@@ -563,7 +564,7 @@ export default class GalaChainTokenContract extends GalaContract {
   @Submit({
     in: FeeVerificationDto,
     out: FeeAuthorizationResDto,
-    allowedOrgs: ["CuratorOrg"]
+    ...requireCuratorAuth
   })
   public async CreditFeeBalance(
     ctx: GalaChainContext,

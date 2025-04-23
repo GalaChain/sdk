@@ -156,7 +156,7 @@ import {
 // eslint-disable-next-line @typescript-eslint/ban-ts-comment
 // @ts-ignore
 import { version } from "../../package.json";
-import { SUBMIT, getCaIdentityAlias } from "../contracts";
+import { SUBMIT, getCaIdentityAlias, requireCuratorAuth } from "../contracts";
 import { acceptLoanOffer, closeLoan, fetchLoanOffers, fetchLoans, offerLoan } from "../loans";
 import {
   batchFillTokenSwaps,
@@ -182,7 +182,7 @@ export default class GalaChainTokenContract extends GalaContract {
   @Submit({
     in: CreateTokenClassDto,
     out: TokenClassKey,
-    allowedOrgs: ["CuratorOrg"]
+    ...requireCuratorAuth
   })
   public async CreateTokenClass(ctx: GalaChainContext, dto: CreateTokenClassDto): Promise<TokenClassKey> {
     const authorities =
@@ -214,7 +214,7 @@ export default class GalaChainTokenContract extends GalaContract {
   @Submit({
     in: UpdateTokenClassDto,
     out: TokenClassKey,
-    allowedOrgs: ["CuratorOrg"]
+    ...requireCuratorAuth
   })
   public async UpdateTokenClass(ctx: GalaChainContext, dto: UpdateTokenClassDto): Promise<TokenClassKey> {
     const authorities = dto.authorities
@@ -582,7 +582,7 @@ export default class GalaChainTokenContract extends GalaContract {
   @Submit({
     in: FeeCodeDefinitionDto,
     out: FeeCodeDefinition,
-    allowedOrgs: ["CuratorOrg"]
+    ...requireCuratorAuth
   })
   public async DefineFeeSchedule(
     ctx: GalaChainContext,
@@ -594,7 +594,7 @@ export default class GalaChainTokenContract extends GalaContract {
   @Submit({
     in: FeeCodeSplitFormulaDto,
     out: FeeCodeSplitFormula,
-    allowedOrgs: ["CuratorOrg"]
+    ...requireCuratorAuth
   })
   public async DefineFeeSplitFormula(
     ctx: GalaChainContext,
@@ -606,7 +606,7 @@ export default class GalaChainTokenContract extends GalaContract {
   @Submit({
     in: FeeVerificationDto,
     out: FeeAuthorizationResDto,
-    allowedOrgs: ["CuratorOrg"]
+    ...requireCuratorAuth
   })
   public async CreditFeeBalance(
     ctx: GalaChainContext,
@@ -708,7 +708,7 @@ export default class GalaChainTokenContract extends GalaContract {
   @Submit({
     in: RemoveTokenSaleDto,
     out: TokenSale,
-    allowedOrgs: ["CuratorOrg"]
+    ...requireCuratorAuth
   })
   public async RemoveTokenSale(ctx: GalaChainContext, dto: RemoveTokenSaleDto): Promise<TokenSale> {
     return removeTokenSale(ctx, dto.tokenSaleId);
@@ -897,7 +897,7 @@ export default class GalaChainTokenContract extends GalaContract {
   @UnsignedEvaluate({
     in: EnsureTokenSwapIndexingDto,
     out: EnsureTokenSwapIndexingResponse,
-    allowedOrgs: ["CuratorOrg"]
+    ...requireCuratorAuth
   })
   public EnsureTokenSwapIndexing(
     ctx: GalaChainContext,
@@ -909,7 +909,7 @@ export default class GalaChainTokenContract extends GalaContract {
   @Submit({
     in: CleanTokenSwapsDto,
     out: CleanTokenSwapsResponse,
-    allowedOrgs: ["CuratorOrg"]
+    ...requireCuratorAuth
   })
   public CleanTokenSwaps(ctx: GalaChainContext, dto: CleanTokenSwapsDto): Promise<CleanTokenSwapsResponse> {
     return cleanTokenSwaps(ctx, dto);
@@ -918,7 +918,7 @@ export default class GalaChainTokenContract extends GalaContract {
   @Submit({
     in: CreateVestingTokenDto,
     out: VestingToken,
-    allowedOrgs: ["CuratorOrg"]
+    ...requireCuratorAuth
   })
   public async CreateVestingToken(ctx: GalaChainContext, dto: CreateVestingTokenDto): Promise<VestingToken> {
     const authorities =

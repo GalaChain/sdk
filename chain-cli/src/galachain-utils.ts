@@ -16,7 +16,7 @@ import { ux } from "@oclif/core";
 
 import { signatures } from "@gala-chain/api";
 import * as secp from "@noble/secp256k1";
-import axios from "axios";
+import axios, { AxiosError } from "axios";
 import fs, { promises as fsPromises } from "fs";
 import { nanoid } from "nanoid";
 import path from "path";
@@ -24,7 +24,7 @@ import process from "process";
 import { Readable } from "stream";
 
 import { ExpectedImageArchitecture, ServicePortal } from "./consts";
-import { GetChaincodeDeploymentDto, PostDeployChaincodeDto } from "./dto";
+import { ChaincodeInfoDto, DeployChaincodeDto, GetChaincodeDeploymentDto, RegisterChaincodeDto } from "./dto";
 import { BadRequestError, UnauthorizedError } from "./errors";
 import { execSync } from "./exec-sync";
 import { parseStringOrFileKey } from "./utils";
@@ -81,85 +81,150 @@ export async function readDockerfile(): Promise<string> {
   }
 }
 
-export async function getDeploymentResponse(params: { privateKey: string; isTestnet: boolean }) {
+export async function getDeploymentResponse(params: {
+  privateKey: string;
+  chaincodeName: string;
+}): Promise<ChaincodeInfoDto> {
   const getChaincodeDeploymentDto: GetChaincodeDeploymentDto = {
-    operationId: nanoid()
+    operationId: nanoid(),
+    chaincode: params.chaincodeName
   };
 
   const signature = await generateSignature(getChaincodeDeploymentDto, params.privateKey);
 
-  const ServicePortalURL = params.isTestnet
-    ? ServicePortal.GET_TEST_DEPLOYMENT_URL
-    : ServicePortal.GET_DEPLOYMENT_URL;
-  const response = await axios.get(ServicePortalURL, {
-    headers: {
-      [ServicePortal.AUTH_X_GC_KEY]: signature
-    },
-    params: getChaincodeDeploymentDto
-  });
+  const servicePortalURL = ServicePortal.GET_DEPLOYMENT_URL;
 
-  if (response.status !== 200) {
-    throw new Error(`Service Portal respond with status ${response.status}`);
+  const response = await axios
+    .get(servicePortalURL, {
+      headers: {
+        [ServicePortal.AUTH_X_GC_KEY]: signature
+      },
+      params: getChaincodeDeploymentDto
+    })
+    .catch((error) => {
+      throw new Error(axiosErrorMessage(error));
+    });
+
+  const d = response.data;
+
+  return {
+    network: d.network,
+    channel: d.channel,
+    chaincode: d.chaincode,
+    adminPublicKey: d.adminPublicKey,
+    developersPublicKeys: d.developersPublicKeys,
+    imageName: d.imageName,
+    sequence: d.sequence,
+    status: d.status,
+    lastUpdated: d.lastUpdated
+  };
+}
+
+export function getChaincodeImageInfo(imageTag: string): {
+  contracts: { contractName: string }[];
+  imageArchitecture: string;
+  imageSha256: string;
+} {
+  const inspectCommand = `docker inspect ${imageTag}`;
+  let dockerJson;
+  try {
+    const dockerImageInspect = execSync(inspectCommand);
+    dockerJson = JSON.parse(dockerImageInspect);
+  } catch (e) {
+    throw new Error(`Invalid output of 'docker inspect' command:\n\n  ${inspectCommand}\n\nError: ${e}`);
   }
+
+  const imageArchitecture = dockerJson?.[0]?.Os + "/" + dockerJson?.[0]?.Architecture;
+  const imageSha256 = dockerJson?.[0]?.Id;
+
+  if (imageArchitecture !== ExpectedImageArchitecture) {
+    throw new Error(
+      `Unsupported architecture ${imageArchitecture} of Docker image ${imageTag}, ` +
+        `expected ${ExpectedImageArchitecture}.`
+    );
+  }
+
+  const getContractNamesCommand = `docker run --rm ${imageTag} lib/src/cli.js get-contract-names | tail -n 1`;
+  let response = "<command-not-executed-yet>";
+
+  try {
+    response = execSync(getContractNamesCommand);
+    const json = JSON.parse(response);
+    if (!Array.isArray(json)) {
+      throw new Error(
+        `Output of the following command is not an array:\n\n  ${getContractNamesCommand}\n\n` +
+          `Got the following response:\n\n  ${response}`
+      );
+    }
+    json.forEach((n) => {
+      if (typeof n?.contractName !== "string") {
+        throw new Error(
+          `Output of the following command is not an array of objects with 'contractName' string:\n\n  ${getContractNamesCommand}\n\n` +
+            `Missing 'contractName' for element ${n}. The output of the command is:\n\n  ${response}`
+        );
+      }
+    });
+
+    const contracts = (json as { contractName: string }[]).map(({ contractName }) => ({ contractName }));
+    return { contracts, imageArchitecture, imageSha256 };
+  } catch (e) {
+    throw new Error(
+      `There was an error while executing the following command:\n\n  ${getContractNamesCommand}\n\n` +
+        `Error: ${e?.message}. The output is:\n\n  ${response}`
+    );
+  }
+}
+
+export async function deployChaincode(params: {
+  privateKey: string;
+  imageTag: string;
+  chaincode: string;
+  contracts: { contractName: string }[];
+}) {
+  const dto: DeployChaincodeDto = {
+    operationId: nanoid(),
+    imageTag: params.imageTag,
+    chaincode: params.chaincode,
+    contracts: params.contracts
+  };
+
+  const signature = await generateSignature(dto, params.privateKey);
+
+  const response = await axios
+    .post(ServicePortal.DEPLOY_URL, dto, {
+      headers: {
+        [ServicePortal.AUTH_X_GC_KEY]: signature
+      }
+    })
+    .catch((error) => {
+      throw new Error(axiosErrorMessage(error));
+    });
 
   return response.data;
 }
 
-function getContractNames(imageTag: string): { contractName: string }[] {
-  const dockerImageInspect = execSync(`docker inspect --format=json ${imageTag}`);
-  let dockerJson;
-  try {
-    dockerJson = JSON.parse(dockerImageInspect);
-  } catch (e) {
-    throw new Error(`Invalid docker image inspect output: ${dockerImageInspect} - Error ${e}`);
-  }
-
-  const imageArchitecture = dockerJson[0].Os + "/" + dockerJson[0].Architecture;
-
-  if (imageArchitecture !== ExpectedImageArchitecture) {
-    throw new Error(`Unsupported architecture ${imageArchitecture}, expected ${ExpectedImageArchitecture}`);
-  }
-
-  const command = `docker run --rm ${imageTag} lib/src/cli.js get-contract-names | tail -n 1`;
-  let response = "<failed>";
-
-  try {
-    response = execSync(command);
-    const json = JSON.parse(response);
-    if (!Array.isArray(json)) {
-      throw new Error("Is not array");
-    }
-    json.forEach((n) => {
-      if (typeof n?.contractName !== "string") {
-        throw new Error("Not all elements contain 'contractName' string");
-      }
-    });
-
-    return (json as { contractName: string }[]).map(({ contractName }) => ({ contractName }));
-  } catch (e) {
-    throw new Error(`Invalid contract names config (${e?.message}): ${response}`);
-  }
-}
-
-export async function deployChaincode(params: { privateKey: string; isTestnet: boolean; imageTag: string }) {
-  const chainCodeDto: PostDeployChaincodeDto = {
+export async function registerChaincode(params: {
+  privateKey: string;
+  adminPublicKey: string;
+  developersPublicKeys: string[];
+}) {
+  const dto: RegisterChaincodeDto = {
     operationId: nanoid(),
-    imageTag: params.imageTag,
-    contracts: getContractNames(params.imageTag)
+    channelAdminPublicKey: params.adminPublicKey,
+    publicKeys: params.developersPublicKeys
   };
 
-  const signature = await generateSignature(chainCodeDto, params.privateKey);
+  const signature = await generateSignature(dto, params.privateKey);
 
-  const ServicePortalURL = params.isTestnet ? ServicePortal.DEPLOY_TEST_URL : ServicePortal.DEPLOY_URL;
-  const response = await axios.post(ServicePortalURL, chainCodeDto, {
-    headers: {
-      [ServicePortal.AUTH_X_GC_KEY]: signature
-    }
-  });
-
-  if (response.status !== 201) {
-    throw new Error(`Service Portal respond with status ${response.status}`);
-  }
+  const response = await axios
+    .post(ServicePortal.REGISTER_URL, dto, {
+      headers: {
+        [ServicePortal.AUTH_X_GC_KEY]: signature
+      }
+    })
+    .catch((error) => {
+      throw new Error(axiosErrorMessage(error));
+    });
 
   return response.data;
 }
@@ -202,11 +267,44 @@ export function checkCliVersion() {
   }
 }
 
-export async function getPrivateKey(keysFromArg: string | undefined) {
+function getAdminPublicKeyFromDefaultPath(): string {
+  const adminPublicKeyPath = path.join(
+    process.cwd(),
+    DEFAULT_PUBLIC_KEYS_DIR,
+    `${DEFAULT_ADMIN_PRIVATE_KEY_NAME}.pub`
+  );
+
+  if (!fs.existsSync(adminPublicKeyPath)) {
+    throw new Error(
+      `Missing required chaincode admin public key file: ${adminPublicKeyPath}. ` +
+        `Please ensure the file exists and is readable. You may keep it in version control.`
+    );
+  }
+
+  return fs.readFileSync(adminPublicKeyPath, "utf8").trim();
+}
+
+export async function getChaincodeDefinition(): Promise<{ name: string; adminPublicKey: string }> {
+  const adminPublicKey = process.env.CHAINCODE_ADMIN_PUBLIC_KEY ?? getAdminPublicKeyFromDefaultPath();
+  const name = "gc-" + signatures.getEthAddress(adminPublicKey).toLowerCase();
+
+  return { name, adminPublicKey };
+}
+
+export async function getDeveloperPublicKeys(): Promise<string[]> {
+  const keysPath = path.join(process.cwd(), DEFAULT_PUBLIC_KEYS_DIR);
+  const keys = fs.readdirSync(keysPath);
+  return keys
+    .filter((key) => key.match(/gc-dev.*-key.*\.pub/))
+    .map((key) => fs.readFileSync(path.join(keysPath, key), "utf8").trim())
+    .sort();
+}
+
+export async function getPrivateKey(keysFromArg: string | undefined, chaincodeName: string) {
   return (
     keysFromArg ??
     process.env.DEV_PRIVATE_KEY ??
-    (await getDefaultDevPrivateKeyFile()) ??
+    (await getDefaultDevPrivateKeyFile(chaincodeName)) ??
     (await getPrivateKeyPrompt())
   );
 }
@@ -258,24 +356,15 @@ function getApiConfigForChannel(channel: string, chaincodeName: string, contract
   };
 }
 
-function getDefaultDevPrivateKeyFile(): string | undefined {
+function getDefaultDevPrivateKeyFile(chaincodeName: string): string | undefined {
   try {
-    const defaultAdminPublicKeyPath = path.join(
-      process.cwd(),
-      DEFAULT_PUBLIC_KEYS_DIR,
-      `${DEFAULT_DEV_PRIVATE_KEY_NAME}.pub`
-    );
-    const defaultAdminPublicKey = fs.readFileSync(defaultAdminPublicKeyPath, "utf8");
-    const chaincodeName = "gc-" + signatures.getEthAddress(defaultAdminPublicKey);
-
     const defaultDevPrivateKeyPath = path.join(
       os.homedir(),
       DEFAULT_PRIVATE_KEYS_DIR,
       chaincodeName,
       DEFAULT_DEV_PRIVATE_KEY_NAME
     );
-
-    return fs.readFileSync(defaultDevPrivateKeyPath, "utf8");
+    return fs.readFileSync(defaultDevPrivateKeyPath, "utf8").trim();
   } catch (e) {
     console.error(`Error reading file: ${e}`);
     return undefined;
@@ -316,16 +405,16 @@ export async function getLogs(params: {
   const servicePortalURL = ServicePortal.GET_LOGS_URL;
 
   try {
-    const response = await axios.get(servicePortalURL, {
-      headers: {
-        [ServicePortal.AUTH_X_GC_KEY]: signature
-      },
-      params: requestParams
-    });
-
-    if (response.status !== 200) {
-      throw new Error(`Service Portal responded with status ${response.status}`);
-    }
+    const response = await axios
+      .get(servicePortalURL, {
+        headers: {
+          [ServicePortal.AUTH_X_GC_KEY]: signature
+        },
+        params: requestParams
+      })
+      .catch((error) => {
+        throw new Error(axiosErrorMessage(error));
+      });
 
     return response.data;
   } catch (error: any) {
@@ -385,4 +474,10 @@ export async function streamLogs(
   } catch (error: any) {
     throw new Error(`Failed to stream logs: ${error.response?.data?.message || error.message}`);
   }
+}
+
+function axiosErrorMessage(error: AxiosError<{ message: string }>) {
+  const status = error?.response?.status ?? "unknown";
+  const message = error?.response?.data?.message ?? "unknown";
+  return `[${status}] ${message}`;
 }
