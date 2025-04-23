@@ -34,7 +34,7 @@ async function handleBurnOperation(ctx: GalaChainContext, params: {
 
   } catch (error) {
     // Handle specific burn errors
-    if (error instanceof InsufficientBalanceError) {
+    if (ChainError.matches(InsufficientBalanceError)) {
       // User doesn't have enough tokens to burn
       const { owner, spendableQuantity, quantity, tokenInstanceKey } = error.payload;
       // Handle insufficient balance...
