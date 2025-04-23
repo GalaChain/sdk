@@ -22,8 +22,7 @@ import {
   UpdatePublicKeyDto,
   UserProfile,
   asValidUserRef
-} from "@gala-chain/api";
-
+} from "../../types";
 import { ChainClient } from "../generic";
 import { CommonContractAPI, commonContractAPI } from "./CommonContractAPI";
 

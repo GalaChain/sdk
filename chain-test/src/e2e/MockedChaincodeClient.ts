@@ -12,8 +12,17 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-import { ChainCallDTO, ClassConstructor, GalaChainResponse, Inferred, serialize } from "@gala-chain/api";
-import { ChainClient, ChainClientBuilder, ClassType, ContractConfig } from "@gala-chain/client";
+import {
+  ChainCallDTO,
+  ChainClient,
+  ChainClientBuilder,
+  ClassConstructor,
+  ClassType,
+  ContractConfig,
+  GalaChainResponse,
+  Inferred,
+  serialize
+} from "@gala-chain/api";
 import { Contract } from "fabric-contract-api";
 import path from "path";
 

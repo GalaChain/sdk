@@ -12,10 +12,20 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-import { ChainCallDTO, ContractAPI, GalaChainResponse, Inferred, serialize } from "@gala-chain/api";
+import {
+  ChainCallDTO,
+  ChainClient,
+  ChainClientBuilder,
+  ClassType,
+  ContractAPI,
+  ContractConfig,
+  GalaChainResponse,
+  Inferred,
+  isClassType,
+  serialize
+} from "@gala-chain/api";
 import axios from "axios";
 
-import { ChainClient, ChainClientBuilder, ClassType, ContractConfig, isClassType } from "../generic";
 import { RestApiAdminCredentials, SetContractApiParams, globalRestApiConfig } from "./GlobalRestApiConfig";
 import { catchAxiosError } from "./catchAxiosError";
 import { RestApiConfig } from "./loadRestApiConfig";
