@@ -51,4 +51,6 @@ class GameContract extends Contract {
    - Reduced world state database load
    - Automatic cache management
 
-Note: The stub cache is specifically designed for transaction-level caching. For cross-transaction data access patterns, consider implementing appropriate data structures and query patterns in your chaincode.
+Note: The stub cache is specifically designed for transaction-level caching. This is different from Fabric's default behavior and is not supported by default in the Hyperledger Fabric framework.
+
+For cross-transaction data access patterns, consider implementing appropriate data structures and query patterns in your chaincode.

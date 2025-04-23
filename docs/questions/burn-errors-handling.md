@@ -34,27 +34,27 @@ async function handleBurnOperation(ctx: GalaChainContext, params: {
 
   } catch (error) {
     // Handle specific burn errors
-    if (error instanceof InsufficientBalanceError) {
+    if (ChainError.matches(InsufficientBalanceError)) {
       // User doesn't have enough tokens to burn
       const { owner, spendableQuantity, quantity, tokenInstanceKey } = error.payload;
       // Handle insufficient balance...
 
-    } else if (error instanceof NftMultipleBurnNotAllowedError) {
+    } else if (ChainError.matches(NftMultipleBurnNotAllowedError)) {
       // Attempted to burn multiple instances of an NFT
       const { tokenInstanceKey } = error.payload;
       // Handle NFT burn error...
 
-    } else if (error instanceof InsufficientBurnAllowanceError) {
+    } else if (ChainError.matches(InsufficientBurnAllowanceError)) {
       // User doesn't have sufficient burn allowance
       const { user, allowedQuantity, quantity, tokenInstanceKey } = error.payload;
       // Handle insufficient allowance...
 
-    } else if (error instanceof UseAllowancesFailedError) {
+    } else if (ChainError.matches(UseAllowancesFailedError)) {
       // Failed to use burn allowances
       const { quantity, tokenInstanceKey, owner } = error.payload;
       // Handle allowance usage error...
 
-    } else if (error instanceof BurnTokensFailedError) {
+    } else if (ChainError.matches(BurnTokensFailedError)) {
       // General burn operation failure
       // Handle general burn error...
 
@@ -101,5 +101,6 @@ Key Points:
 - Errors are strongly typed for better handling
 - Error messages are standardized
 - Error handling preserves transaction atomicity
+- Errors are mapped to proper HTTP status code responses in REST API
 
 Note: All operations in GalaChain must be executed sequentially to ensure deterministic behavior. Never use Promise.all or other parallel execution methods, as they can lead to non-deterministic results across multiple chaincode executions.

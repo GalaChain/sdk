@@ -13,7 +13,7 @@ In GalaChain, chaincode operations are inherently asynchronous. Here's how to wo
 ```typescript
 class GameContract extends Contract {
   @Submit()
-  async processGameAction(
+  async ProcessGameAction(
     ctx: GalaChainContext,
     params: { gameId: string }
   ): Promise<void> {

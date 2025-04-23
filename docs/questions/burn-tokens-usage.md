@@ -17,6 +17,9 @@ import { TokenBurn } from '@gala-chain/api';
 
 // TokenBurn class structure
 export class TokenBurn extends ChainObject {
+  @Exclude()
+  public static INDEX_KEY = "GCTBR";
+
   @ChainKey({ position: 0 })
   public burnedBy: UserAlias;  // Who performed the burn
 

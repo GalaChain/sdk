@@ -28,7 +28,7 @@ async function batchBurnTokens(ctx: GalaChainContext, params: {
 }) {
   // Create array of burn quantities
   const toBurn: BurnTokenQuantity[] = params.burns.map(burn => ({
-    tokenInstanceKey: new TokenInstanceKey({
+    tokenInstanceKey: plainToInstance(TokenInstanceKey, {
       collection: burn.collection,
       category: burn.category,
       type: burn.type,
