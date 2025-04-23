@@ -59,12 +59,11 @@ const nftBurn: BurnTokenQuantity = {
 
 // For fungible tokens - quantity can be any positive number
 const fungibleBurn: BurnTokenQuantity = {
-  tokenInstanceKey: new TokenInstanceKey({
+  tokenInstanceKey: TokenInstanceKey.fungibleKey({
     collection: 'game-currency',
     category: 'coins',
     type: 'gold',
-    additionalKey: '',
-    instance: '0'  // Usually '0' for fungibles
+    additionalKey: ''
   }),
   quantity: new BigNumber(1000)
 };
