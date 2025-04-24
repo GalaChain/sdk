@@ -18,7 +18,10 @@ import {
   Pool,
   SlippageToleranceExceededError,
   UserBalanceResDto,
-  UserPosition
+  UserPosition,
+  liquidity0,
+  liquidity1,
+  tickToSqrtPrice
 } from "@gala-chain/api";
 import BigNumber from "bignumber.js";
 
@@ -62,7 +65,51 @@ export async function burn(ctx: GalaChainContext, dto: BurnDto): Promise<UserBal
     tickUpper = parseInt(dto.tickUpper.toString());
   userPosition.removeLiquidity(poolAddrKey, tickLower, tickUpper, dto.amount.f18());
 
-  const amounts = pool.burn(owner, tickLower, tickUpper, dto.amount.f18());
+  //create tokenInstanceKeys
+  const tokenInstanceKeys = [pool.token0ClassKey, pool.token1ClassKey].map(convertToTokenInstanceKey);
+
+  //fetch token classes
+  const tokenClasses = await Promise.all(tokenInstanceKeys.map((key) => fetchTokenClass(ctx, key)));
+  let amountToBurn = dto.amount.f18();
+  const amountsEstimated = pool.burnEstimate(amountToBurn, tickLower, tickUpper);
+  const sqrtPriceA = tickToSqrtPrice(tickLower),
+    sqrtPriceB = tickToSqrtPrice(tickUpper);
+  const sqrtPrice = pool.sqrtPrice;
+
+  for (const [index, amount] of amountsEstimated.entries()) {
+    if (amount.gt(0)) {
+      const poolTokenBalance = await fetchOrCreateBalance(
+        ctx,
+        poolVirtualAddress,
+        tokenInstanceKeys[index].getTokenClassKey()
+      );
+      const roundedAmount = BigNumber.min(
+        new BigNumber(amount.toFixed(tokenClasses[index].decimals)).abs(),
+        poolTokenBalance.getQuantityTotal()
+      );
+
+      // Check whether pool has enough liquidity to perform this operation and adjust accordingly
+      if (!roundedAmount.eq(new BigNumber(amount.toFixed(tokenClasses[index].decimals)).abs())) {
+        let maximumBurnableLiquidity: BigNumber;
+        if (index === 0) {
+          maximumBurnableLiquidity = liquidity0(
+            roundedAmount,
+            sqrtPrice.gt(sqrtPriceA) ? sqrtPrice : sqrtPriceA,
+            sqrtPriceB
+          );
+        } else {
+          maximumBurnableLiquidity = liquidity1(
+            roundedAmount,
+            sqrtPriceA,
+            sqrtPrice.lt(sqrtPriceB) ? sqrtPrice : sqrtPriceB
+          );
+        }
+        amountToBurn = BigNumber.min(amountToBurn, maximumBurnableLiquidity);
+      }
+    }
+  }
+
+  const amounts = pool.burn(owner, tickLower, tickUpper, amountToBurn);
   if (amounts[0].lt(dto.amount0Min) || amounts[1].lt(dto.amount1Min)) {
     throw new SlippageToleranceExceededError(
       `Slippage check failed: amount0: ${dto.amount0Min.toString()} <= ${amounts[0].toString()}, amount1: ${dto.amount1Min.toString()} <= ${amounts[1].toString()}`
@@ -80,12 +127,6 @@ export async function burn(ctx: GalaChainContext, dto: BurnDto): Promise<UserBal
     delete pool.positions[userPositionKey];
     userPosition.deletePosition(poolAddrKey, tickLower, tickUpper);
   }
-
-  //create tokenInstanceKeys
-  const tokenInstanceKeys = [pool.token0ClassKey, pool.token1ClassKey].map(convertToTokenInstanceKey);
-
-  //fetch token classes
-  const tokenClasses = await Promise.all(tokenInstanceKeys.map((key) => fetchTokenClass(ctx, key)));
 
   for (const [index, amount] of amounts.entries()) {
     if (amount.gt(0)) {

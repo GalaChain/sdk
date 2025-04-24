@@ -88,6 +88,13 @@ export async function swap(ctx: GalaChainContext, dto: SwapDto): Promise<SwapRes
         poolVirtualAddress,
         tokenInstanceKeys[index].getTokenClassKey()
       );
+      if (
+        new BigNumber(amount.toFixed(tokenClasses[index].decimals))
+          .abs()
+          .gt(poolTokenBalance.getQuantityTotal())
+      ) {
+        throw new ConflictError("Not enough liquidity available in pool");
+      }
       const roundedAmount = BigNumber.min(
         new BigNumber(amount.toFixed(tokenClasses[index].decimals)).abs(),
         poolTokenBalance.getQuantityTotal()

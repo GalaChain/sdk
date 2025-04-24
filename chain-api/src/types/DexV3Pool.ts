@@ -631,4 +631,33 @@ export class Pool extends ChainObject {
 
     return [tokensOwed0, tokensOwed1];
   }
+
+  public burnEstimate(
+    liquidityDelta: BigNumber,
+    tickLower: number,
+    tickUpper: number
+  ): [amount0Req: BigNumber, amount1Req: BigNumber] {
+    const sqrtPriceLower = tickToSqrtPrice(tickLower);
+    const sqrtPriceUpper = tickToSqrtPrice(tickUpper);
+
+    let amount0Req: BigNumber = new BigNumber(0),
+      amount1Req: BigNumber = new BigNumber(0);
+
+    if (!liquidityDelta.isEqualTo(0)) {
+      //current tick is below the desired range
+      if (this.sqrtPrice.isLessThan(sqrtPriceLower))
+        amount0Req = getAmount0Delta(sqrtPriceLower, sqrtPriceUpper, liquidityDelta);
+      //current tick is in the desired range
+      else if (this.sqrtPrice.isLessThan(sqrtPriceUpper)) {
+        amount0Req = getAmount0Delta(this.sqrtPrice, sqrtPriceUpper, liquidityDelta);
+        amount1Req = getAmount1Delta(sqrtPriceLower, this.sqrtPrice, liquidityDelta);
+        //liquidity is added to the active liquidity
+        this.liquidity = this.liquidity.plus(liquidityDelta);
+        requirePosititve(this.liquidity);
+      }
+      //current tick is above the desired range
+      else amount1Req = getAmount1Delta(sqrtPriceLower, sqrtPriceUpper, liquidityDelta);
+    }
+    return [amount0Req, amount1Req];
+  }
 }
