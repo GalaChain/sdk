@@ -651,9 +651,6 @@ export class Pool extends ChainObject {
       else if (this.sqrtPrice.isLessThan(sqrtPriceUpper)) {
         amount0Req = getAmount0Delta(this.sqrtPrice, sqrtPriceUpper, liquidityDelta);
         amount1Req = getAmount1Delta(sqrtPriceLower, this.sqrtPrice, liquidityDelta);
-        //liquidity is added to the active liquidity
-        this.liquidity = this.liquidity.plus(liquidityDelta);
-        requirePosititve(this.liquidity);
       }
       //current tick is above the desired range
       else amount1Req = getAmount1Delta(sqrtPriceLower, sqrtPriceUpper, liquidityDelta);
