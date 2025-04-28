@@ -112,6 +112,26 @@ export class TokenInstanceKey extends ChainCallDTO {
   public isFungible(): boolean {
     return TokenInstance.isFungible(this.instance);
   }
+
+  public toB58EncodedString(): string {
+    // combine the collection, category, type, additionalKey, and instance and encode as base58
+    const keyList = TokenInstance.buildInstanceKeyList(this);
+    const stringKey = ChainObject.getStringKeyFromParts(keyList);
+    return ChainObject.encodeToBase58(stringKey);
+  }
+
+  public static fromB58EncodedString(base58String: string): TokenInstanceKey {
+    const stringKey = ChainObject.decodeFromBase58(base58String);
+    const parts = ChainObject.getPartsFromStringKey(stringKey);
+    const tokenInstanceKey = new TokenInstanceKey();
+    tokenInstanceKey.collection = parts[0];
+    tokenInstanceKey.category = parts[1];
+    tokenInstanceKey.type = parts[2];
+    tokenInstanceKey.additionalKey = parts[3];
+    tokenInstanceKey.instance = new BigNumber(parts[4]);
+
+    return tokenInstanceKey;
+  }
 }
 
 export class TokenInstanceQuantity extends ChainCallDTO {

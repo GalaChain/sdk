@@ -14,7 +14,7 @@
  */
 import BigNumber from "bignumber.js";
 
-import { TokenInstance } from "./TokenInstance";
+import { TokenInstance, TokenInstanceKey } from "./TokenInstance";
 
 it("should get proper value for long instance key", async () => {
   // Given
@@ -47,4 +47,23 @@ it("should get proper value for long instance key", async () => {
 
   // Then
   expect([key1, key2]).toEqual([expectedKey1Parts.join(""), expectedKey2Parts.join("")]);
+});
+
+it("should encode and decode token instance key from base58 encoded string", async () => {
+  // Given
+  const instance = new TokenInstanceKey();
+  instance.collection = "Test";
+  instance.category = "Very";
+  instance.type = "Large";  
+  instance.additionalKey = "Instance";
+  instance.instance = new BigNumber(1);
+
+
+  const base58EncodedString = instance.toB58EncodedString();
+
+  // When
+  const decodedInstance = TokenInstanceKey.fromB58EncodedString(base58EncodedString);
+
+  // Then
+  expect(decodedInstance).toEqual(instance);
 });
