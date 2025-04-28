@@ -66,3 +66,21 @@ it("should encode and decode token instance key from base58 encoded string", asy
   // Then
   expect(decodedInstance).toEqual(instance);
 });
+
+it("should encode and decode successfully with $ in keys", async () => {
+  // Given
+  const instance = new TokenInstanceKey();
+  instance.collection = "$Test";
+  instance.category = "Ve$ry";
+  instance.type = "La$rge$";
+  instance.additionalKey = "Ins$tance$";
+  instance.instance = new BigNumber(1);
+
+  const base58EncodedString = instance.toB58EncodedString();
+
+  // When
+  const decodedInstance = TokenInstanceKey.fromB58EncodedString(base58EncodedString);
+
+  // Then
+  expect(decodedInstance).toEqual(instance);
+});
