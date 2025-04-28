@@ -126,8 +126,12 @@ export abstract class ChainObject {
     return `${parts.join(ChainObject.ID_SPLIT_CHAR)}`;
   }
 
-  public static getPartsFromStringKey(stringKey: string): string[] {
-    return stringKey.split(ChainObject.ID_SPLIT_CHAR);
+  public static getEncodableStringKeyFromParts(parts: string[]): string {
+    return `${parts.join(ChainObject.MIN_UNICODE_RUNE_VALUE)}`;
+  }
+
+  public static getPartsFromEncodableStringKey(stringKey: string): string[] {
+    return stringKey.split(ChainObject.MIN_UNICODE_RUNE_VALUE);
   }
 
   public static encodeToBase58(stringKey: string): string {
