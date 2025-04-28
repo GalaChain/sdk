@@ -54,10 +54,9 @@ it("should encode and decode token instance key from base58 encoded string", asy
   const instance = new TokenInstanceKey();
   instance.collection = "Test";
   instance.category = "Very";
-  instance.type = "Large";  
+  instance.type = "Large";
   instance.additionalKey = "Instance";
   instance.instance = new BigNumber(1);
-
 
   const base58EncodedString = instance.toB58EncodedString();
 

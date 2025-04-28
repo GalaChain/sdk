@@ -12,10 +12,11 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+import bs58 from "bs58";
 import { instanceToPlain } from "class-transformer";
 import { ValidationError, validate } from "class-validator";
 import "reflect-metadata";
-import bs58 from "bs58";
+
 import {
   ChainKeyMetadata,
   ValidationFailedError,
@@ -136,6 +137,6 @@ export abstract class ChainObject {
 
   public static decodeFromBase58(base58String: string): string {
     const decoded = bs58.decode(base58String);
-    return Buffer.from(decoded).toString('utf8');
+    return Buffer.from(decoded).toString("utf8");
   }
 }
