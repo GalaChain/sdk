@@ -28,7 +28,7 @@ import { keccak256 } from "js-sha3";
 
 import { fetchBalances } from "../balances";
 import { mintTokenWithAllowance } from "../mint";
-import { createTokenClass } from "../token";
+import { createTokenClass, updateTokenClass } from "../token";
 import { transferToken } from "../transfer";
 import { GalaChainContext } from "../types";
 import { genKey, parseNftId } from "../utils";
@@ -203,6 +203,12 @@ export async function generatePositionNftBatch(
         : new BigNumber(MintTokenDto.MAX_NFT_MINT_SIZE)
     });
   }
+
+  //Update token class to remove the calling user as an authority in the NFT token class
+  await updateTokenClass(ctx, {
+    tokenClass: tokenClassKey,
+    authorities: [holder]
+  });
 }
 
 /**

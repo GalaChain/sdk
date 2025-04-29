@@ -64,9 +64,9 @@ export async function collect(ctx: GalaChainContext, dto: CollectDto): Promise<U
 
   const position = pool.positions[positionNftId];
   const deleteUserPos =
-    new BigNumber(position.tokensOwed0).f18().isZero() &&
-    new BigNumber(position.tokensOwed1).f18().isZero() &&
-    new BigNumber(position.liquidity).f18().isZero();
+    new BigNumber(position.tokensOwed0).f18().isLessThan(new BigNumber("0.00000001")) &&
+    new BigNumber(position.tokensOwed1).f18().isLessThan(new BigNumber("0.00000001")) &&
+    new BigNumber(position.liquidity).f18().isLessThan(new BigNumber("0.00000001"));
 
   if (deleteUserPos) {
     delete pool.positions[positionNftId];
@@ -75,8 +75,7 @@ export async function collect(ctx: GalaChainContext, dto: CollectDto): Promise<U
     burnTokenQuantity.quantity = new BigNumber(1);
     await burnTokens(ctx, {
       owner: ctx.callingUser,
-      toBurn: [burnTokenQuantity],
-      preValidated: true
+      toBurn: [burnTokenQuantity]
     });
   }
   await putChainObject(ctx, pool);
