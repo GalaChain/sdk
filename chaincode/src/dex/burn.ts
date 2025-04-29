@@ -76,7 +76,7 @@ export async function burn(ctx: GalaChainContext, dto: BurnDto): Promise<UserBal
     burnTokenQuantity.quantity = new BigNumber(1);
     await burnTokens(ctx, {
       owner: ctx.callingUser,
-      toBurn: [burnTokenQuantity],
+      toBurn: [burnTokenQuantity]
     });
   }
 
