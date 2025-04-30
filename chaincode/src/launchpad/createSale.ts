@@ -133,6 +133,7 @@ export async function createSale(
     vaultAddress: vaultAddress,
     creatorAddress: ctx.callingUser,
     collection: launchpadDetails.tokenCollection,
-    category: launchpadDetails.tokenCategory
+    category: launchpadDetails.tokenCategory,
+    functionName: "CreateSale"
   };
 }

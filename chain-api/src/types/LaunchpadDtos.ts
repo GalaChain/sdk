@@ -117,6 +117,9 @@ export class CreateSaleResDto {
 
   @IsNotEmpty()
   public category: string;
+
+  @IsNotEmpty()
+  public functionName: string;
 }
 
 export class ExactTokenQuantityDto extends ChainCallDTO {
@@ -190,6 +193,12 @@ export class TradeResDto {
 
   @IsNotEmpty()
   public userAddress: string;
+
+  @IsNotEmpty()
+  public isFinalized: Boolean;
+
+  @IsNotEmpty()
+  public functionName: string;
 }
 
 export class FetchSaleDto extends ChainCallDTO {

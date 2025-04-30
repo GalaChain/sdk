@@ -94,6 +94,8 @@ export async function sellWithNative(
     tokenName: token.name,
     tradeType: "Sell",
     vaultAddress: sellTokenDTO.vaultAddress,
-    userAddress: ctx.callingUser
+    userAddress: ctx.callingUser,
+    isFinalized: false,
+    functionName: "SellWithNative"
   };
 }
