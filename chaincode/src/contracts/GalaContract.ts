@@ -26,7 +26,7 @@ import {
   createValidDTO,
   signatures
 } from "@gala-chain/api";
-import { Contract, Transaction } from "fabric-contract-api";
+import { Contract } from "fabric-contract-api";
 
 import { PublicKeyService } from "../services";
 import { GalaChainContext, GalaChainContextConfig, GalaChainStub } from "../types";
@@ -115,6 +115,10 @@ export abstract class GalaContract extends Contract {
   })
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
   public async GetContractAPI(ctx: GalaChainContext): Promise<ContractAPI> {
+    return this.getContractAPI();
+  }
+
+  public getContractAPI(): ContractAPI {
     const methods = getApiMethods(this);
     const contractName = this.getName();
     return { contractName, methods, contractVersion: this.version };
