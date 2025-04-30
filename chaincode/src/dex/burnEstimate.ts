@@ -16,6 +16,7 @@ import { BurnDto, GetRemoveLiqEstimationResDto, NotFoundError, Pool } from "@gal
 
 import { GalaChainContext } from "../types";
 import { getObjectByKey, validateTokenOrder } from "../utils";
+import { fetchUserPositionNftId } from "./positionNft";
 
 /**
  * @dev The getRemoveLiquidityEstimation function estimates the amount of tokens a user will receive when removing liquidity from a Uniswap V3 pool within the GalaChain ecosystem. It calculates the expected token amounts based on the user's liquidity position and market conditions.
@@ -35,9 +36,21 @@ export async function getRemoveLiquidityEstimation(
   //If pool does not exist
   if (pool == undefined) throw new NotFoundError("Pool does not exist");
 
+  const positionNftId = await fetchUserPositionNftId(
+    ctx,
+    pool,
+    dto.tickUpper.toString(),
+    dto.tickLower.toString(),
+    dto.owner
+  );
+
+  if (!positionNftId)
+    throw new NotFoundError(`User doesn't hold any positions with this tick range in this pool`);
+
   const tickLower = parseInt(dto.tickLower.toString()),
     tickUpper = parseInt(dto.tickUpper.toString());
-  const amounts = pool.burn(dto.owner ?? ctx.callingUser, tickLower, tickUpper, dto.amount.f18());
+
+  const amounts = pool.burn(positionNftId, tickLower, tickUpper, dto.amount.f18());
 
   return new GetRemoveLiqEstimationResDto(amounts[0], amounts[1]);
 }

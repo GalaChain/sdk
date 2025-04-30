@@ -24,7 +24,7 @@ import {
 import { BigNumber } from "bignumber.js";
 
 import { mintTokenWithAllowance } from "../mint/index";
-import { createTokenClass } from "../token/index";
+import { createTokenClass, updateTokenClass } from "../token/index";
 import { GalaChainContext } from "../types";
 import { getObjectByKey, putChainObject } from "../utils";
 import { buyWithNative } from "./buyWithNative";
@@ -101,6 +101,7 @@ export async function createSale(
     authorities: [vaultAddress, ctx.callingUser]
   });
 
+  // Mint tokens using the calling user's allowance
   await mintTokenWithAllowance(ctx, {
     tokenClassKey: tokenInstanceKey.getTokenClassKey(),
     tokenInstance: new BigNumber(0),
@@ -108,12 +109,18 @@ export async function createSale(
     quantity: new BigNumber("2e+7")
   });
 
+  //Update token class to remove the calling user as an authority in the token class
+  await updateTokenClass(ctx, {
+    tokenClass: tokenInstanceKey.getTokenClassKey(),
+    authorities: [vaultAddress]
+  });
+
   // Create the LaunchpadSale object
   const launchpad = new LaunchpadSale(vaultAddress, tokenInstanceKey, ctx.callingUser);
 
   await putChainObject(ctx, launchpad);
 
-  if (launchpadDetails.preBuyQuantity.comparedTo(0)) {
+  if (launchpadDetails.preBuyQuantity.isGreaterThan(0)) {
     const nativeTokenDto = new NativeTokenQuantityDto();
     nativeTokenDto.nativeTokenQuantity = launchpadDetails.preBuyQuantity;
     nativeTokenDto.vaultAddress = launchpad.vaultAddress;
