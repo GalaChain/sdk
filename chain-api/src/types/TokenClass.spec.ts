@@ -97,38 +97,38 @@ it("should allow to override authorities", async () => {
     ...existingToken.toPlainObject(),
     authorities: ["client|new-admin"]
   });
+});
 
-  it("should encode and decode token class key from base58 encoded string", async () => {
-    // Given
-    const classKey = new TokenClassKey();
-    classKey.collection = "Test";
-    classKey.category = "Class";
-    classKey.type = "Key";
-    classKey.additionalKey = "None";
+it("should encode and decode token class key from base58 encoded string", async () => {
+  // Given
+  const classKey = new TokenClassKey();
+  classKey.collection = "Test";
+  classKey.category = "Class";
+  classKey.type = "Key";
+  classKey.additionalKey = "None";
 
-    const base58EncodedString = classKey.toB58EncodedString();
+  const base58EncodedString = classKey.toB58EncodedString();
 
-    // When
-    const decodedClassKey = TokenClassKey.fromB58EncodedString(base58EncodedString);
+  // When
+  const decodedClassKey = TokenClassKey.fromB58EncodedString(base58EncodedString);
 
-    // Then
-    expect(decodedClassKey).toEqual(classKey);
-  });
+  // Then
+  expect(decodedClassKey).toEqual(classKey);
+});
 
-  it("should encode and decode successfully with $ in keys", async () => {
-    // Given
-    const classKey = new TokenClassKey();
-    classKey.collection = "$Test";
-    classKey.category = "Cl$ass";
-    classKey.type = "Key$";
-    classKey.additionalKey = "$No$ne$";
+it("should encode and decode successfully with $ in keys", async () => {
+  // Given
+  const classKey = new TokenClassKey();
+  classKey.collection = "$Test";
+  classKey.category = "Cl$ass";
+  classKey.type = "Key$";
+  classKey.additionalKey = "$No$ne$";
 
-    const base58EncodedString = classKey.toB58EncodedString();
+  const base58EncodedString = classKey.toB58EncodedString();
 
-    // When
-    const decodedClassKey = TokenClassKey.fromB58EncodedString(base58EncodedString);
+  // When
+  const decodedClassKey = TokenClassKey.fromB58EncodedString(base58EncodedString);
 
-    // Then
-    expect(decodedClassKey).toEqual(classKey);
-  });
+  // Then
+  expect(decodedClassKey).toEqual(classKey);
 });
