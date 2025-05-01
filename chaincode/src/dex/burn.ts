@@ -12,21 +12,23 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-import { BurnDto, ConflictError, Pool, UserBalanceResDto, UserPosition } from "@gala-chain/api";
+import {
+  BurnDto,
+  BurnTokenQuantity,
+  ConflictError,
+  NotFoundError,
+  Pool,
+  UserBalanceResDto
+} from "@gala-chain/api";
 import BigNumber from "bignumber.js";
 
 import { fetchOrCreateBalance } from "../balances";
+import { burnTokens } from "../burns";
 import { fetchTokenClass } from "../token";
 import { transferToken } from "../transfer";
 import { GalaChainContext } from "../types";
-import {
-  convertToTokenInstanceKey,
-  genKey,
-  getObjectByKey,
-  putChainObject,
-  validateTokenOrder,
-  virtualAddress
-} from "../utils";
+import { convertToTokenInstanceKey, getObjectByKey, putChainObject, validateTokenOrder } from "../utils";
+import { fetchPositionNftInstanceKey, fetchUserPositionNftId } from "./positionNft";
 
 /**
  * @dev The burn function is responsible for removing liquidity from a Uniswap V3 pool within the GalaChain ecosystem. It executes the necessary operations to burn the liquidity position and transfer the corresponding tokens back to the user.
@@ -43,30 +45,39 @@ export async function burn(ctx: GalaChainContext, dto: BurnDto): Promise<UserBal
   //If pool does not exist
   if (pool == undefined) throw new ConflictError("Pool does not exist");
 
-  const owner = ctx.callingUser;
+  const poolAddrKey = pool.getPoolAddrKey();
+  const poolVirtualAddress = pool.getPoolAlias();
 
-  const userKey = ctx.stub.createCompositeKey(UserPosition.INDEX_KEY, [owner]);
-  const poolAddrKey = genKey(pool.token0, pool.token1, pool.fee.toString());
-  const poolVirtualAddress = virtualAddress(poolAddrKey);
-  const userPosition = await getObjectByKey(ctx, UserPosition, userKey).catch(() => undefined);
-  if (!userPosition) throw new ConflictError("User position does not exist");
+  const positionNftId = await fetchUserPositionNftId(
+    ctx,
+    pool,
+    dto.tickUpper.toString(),
+    dto.tickLower.toString()
+  );
+
+  if (!positionNftId)
+    throw new NotFoundError(`User doesn't hold any positions with this tick range in this pool`);
 
   const tickLower = parseInt(dto.tickLower.toString()),
     tickUpper = parseInt(dto.tickUpper.toString());
-  userPosition.removeLiquidity(poolAddrKey, tickLower, tickUpper, dto.amount.f18());
 
-  const amounts = pool.burn(owner, tickLower, tickUpper, dto.amount.f18());
-  const userPositionKey = `${owner}_${tickLower}_${tickUpper}`;
+  const amounts = pool.burn(positionNftId, tickLower, tickUpper, dto.amount.f18());
 
-  const position = pool.positions[userPositionKey];
+  const position = pool.positions[positionNftId];
   const deleteUserPos =
-    new BigNumber(position.tokensOwed0).f18().isZero() &&
-    new BigNumber(position.tokensOwed1).f18().isZero() &&
-    new BigNumber(position.liquidity).f18().isZero();
+    new BigNumber(position.tokensOwed0).f18().isLessThan(new BigNumber("0.00000001")) &&
+    new BigNumber(position.tokensOwed1).f18().isLessThan(new BigNumber("0.00000001")) &&
+    new BigNumber(position.liquidity).f18().isLessThan(new BigNumber("0.00000001"));
 
   if (deleteUserPos) {
-    delete pool.positions[userPositionKey];
-    userPosition.deletePosition(poolAddrKey, tickLower, tickUpper);
+    delete pool.positions[positionNftId];
+    const burnTokenQuantity = new BurnTokenQuantity();
+    burnTokenQuantity.tokenInstanceKey = await fetchPositionNftInstanceKey(ctx, poolAddrKey, positionNftId);
+    burnTokenQuantity.quantity = new BigNumber(1);
+    await burnTokens(ctx, {
+      owner: ctx.callingUser,
+      toBurn: [burnTokenQuantity]
+    });
   }
 
   //create tokenInstanceKeys
@@ -100,7 +111,6 @@ export async function burn(ctx: GalaChainContext, dto: BurnDto): Promise<UserBal
       });
     }
   }
-  await putChainObject(ctx, userPosition);
   await putChainObject(ctx, pool);
 
   const liquidityProviderToken0Balance = await fetchOrCreateBalance(

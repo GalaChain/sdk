@@ -25,7 +25,15 @@ export class Bitmap {
 export class PositionData {
   @IsOptional()
   @IsString()
-  owner: string;
+  poolAddrKey: string;
+
+  @IsOptional()
+  @IsString()
+  tickUpper: string;
+
+  @IsOptional()
+  @IsString()
+  tickLower: string;
 
   @IsOptional()
   @IsString()
@@ -46,6 +54,10 @@ export class PositionData {
   @IsOptional()
   @IsString()
   tokensOwed1: string;
+
+  @IsOptional()
+  @IsString()
+  nftId: string;
 }
 
 export class Positions {
