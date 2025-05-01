@@ -829,8 +829,8 @@ export class BurnEstimateDto extends ChainCallDTO {
   @BigNumberProperty()
   @BigNumberIsPositive()
   public amount: BigNumber;
-  @IsOptional()
-  public owner: string | null;
+  @IsNotEmpty()
+  public owner: string;
 
   constructor(
     token0: TokenClassKey,

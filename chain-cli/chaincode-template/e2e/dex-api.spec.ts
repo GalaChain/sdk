@@ -1136,7 +1136,8 @@ describe("DEx v3 Testing", () => {
         new BigNumber("2060.753664493334613554"),
         ta,
         tb,
-        user.identityKey
+        new BigNumber(0),
+        new BigNumber(0)
       );
       dto.sign(user.privateKey);
       await client.dexV3Contract.RemoveLiquidity(dto);
