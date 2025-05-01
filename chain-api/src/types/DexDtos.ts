@@ -13,6 +13,7 @@
  * limitations under the License.
  */
 import BigNumber from "bignumber.js";
+import { Type } from "class-transformer";
 import {
   IsArray,
   IsBoolean,
@@ -22,18 +23,21 @@ import {
   IsOptional,
   IsString,
   Max,
-  Min
+  Min,
+  ValidateNested
 } from "class-validator";
 
 import { PositionInPool } from "../utils";
 import {
   BigNumberArrayProperty,
+  BigNumberIsInteger,
   BigNumberIsNegative,
   BigNumberIsPositive,
   BigNumberProperty,
   EnumProperty,
   IsBigNumber,
-  IsLessThan
+  IsLessThan,
+  IsNonZeroBigNumber
 } from "../validators";
 import { TokenBalance } from "./TokenBalance";
 import { TokenClassKey } from "./TokenClass";
@@ -336,21 +340,29 @@ export class GetPositionDto extends ChainCallDTO {
   }
 }
 
-export class positionInfoDto {
+export class GetPositionWithNftIdDto extends ChainCallDTO {
+  @IsNotEmpty()
+  @ValidateNested()
+  @Type(() => TokenClassKey)
+  public token0: TokenClassKey;
+  @IsNotEmpty()
+  @ValidateNested()
+  @Type(() => TokenClassKey)
+  public token1: TokenClassKey;
+  @IsNotEmpty()
+  @IsNumber()
+  public fee: number;
+  @IsNotEmpty()
   @IsString()
-  public owner: string;
-  @IsString()
-  public liquidity: string;
-  @IsString()
-  public feeGrowthInside0Last: string;
-  @IsString()
-  public feeGrowthInside1Last: string;
-  @IsString()
-  // fees owed to the position owner in token0/token1
-  @IsString()
-  public tokensOwed0: string;
-  @IsString()
-  public tokensOwed1: string;
+  public nftId: string;
+
+  constructor(token0: TokenClassKey, token1: TokenClassKey, fee: number, nftId: string) {
+    super();
+    this.token0 = token0;
+    this.token1 = token1;
+    this.fee = fee;
+    this.nftId = nftId;
+  }
 }
 
 export class GetUserPositionsDto extends ChainCallDTO {
@@ -358,17 +370,18 @@ export class GetUserPositionsDto extends ChainCallDTO {
   public user: string;
 
   @Min(1, { message: "Value cannot be zero" })
-  @IsOptional()
-  public page: number;
-
-  @Min(1, { message: "Value cannot be zero" })
-  @IsOptional()
+  @Max(10, { message: "Page can have atmost 10 values" })
+  @IsNotEmpty()
   public limit: number;
 
-  constructor(user: string, page = 1, limit = 10) {
+  @IsOptional()
+  @IsString()
+  public bookmark?: string;
+
+  constructor(user: string, bookmark?: string, limit = 10) {
     super();
     this.user = user;
-    this.page = page;
+    this.bookmark = bookmark;
     this.limit = limit;
   }
 }
@@ -378,22 +391,35 @@ export class UserPositionDTO extends ChainCallDTO {
 }
 
 export class GetPositionResDto {
-  @IsNotEmpty()
+  @IsOptional()
   @IsString()
-  owner: string;
-  @IsNotEmpty()
+  poolAddrKey: string;
+
+  @IsOptional()
+  @IsString()
+  tickUpper: string;
+
+  @IsOptional()
+  @IsString()
+  tickLower: string;
+
+  @IsOptional()
   @IsString()
   liquidity: string;
-  @IsNotEmpty()
+
+  @IsOptional()
   @IsString()
   feeGrowthInside0Last: string;
+
+  @IsOptional()
   @IsString()
-  @IsNotEmpty()
   feeGrowthInside1Last: string;
-  @IsNotEmpty()
+
+  @IsOptional()
   @IsString()
   tokensOwed0: string;
-  @IsNotEmpty()
+
+  @IsOptional()
   @IsString()
   tokensOwed1: string;
 }
@@ -616,12 +642,12 @@ export class PositionsObject {
 export class GetUserPositionsResDto {
   @IsNotEmpty()
   positions: PositionsObject;
-  @IsNumber()
-  totalCount: number;
+  @IsString()
+  nextBookMark?: string;
 
-  constructor(positions: PositionsObject, totalCount: number) {
+  constructor(positions: PositionsObject, nextBookMark: string) {
     this.positions = positions;
-    this.totalCount = totalCount;
+    this.nextBookMark = nextBookMark;
   }
 }
 
@@ -656,9 +682,13 @@ export class SetProtocolFeeDto extends ChainCallDTO {
 }
 
 export interface IPosition {
-  tickLower: number;
-  tickUpper: number;
+  tickUpper: string;
+  tickLower: string;
   liquidity: string;
+  feeGrowthInside0Last: string;
+  feeGrowthInside1Last: string;
+  tokensOwed0: string;
+  tokensOwed1: string;
   token0Img?: string;
   token1Img?: string;
   token0InstanceKey?: TokenInstanceKey & {
@@ -820,4 +850,12 @@ export class BurnEstimateDto extends ChainCallDTO {
     this.fee = fee;
     this.owner = owner;
   }
+}
+
+export class DexNftBatchLimitDto extends ChainCallDTO {
+  @BigNumberProperty()
+  @BigNumberIsPositive()
+  @BigNumberIsInteger()
+  @IsNonZeroBigNumber()
+  newMaxSupply: BigNumber;
 }

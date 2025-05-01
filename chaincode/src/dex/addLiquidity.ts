@@ -19,7 +19,6 @@ import {
   Pool,
   SlippageToleranceExceededError,
   UserBalanceResDto,
-  UserPosition,
   getLiquidityForAmounts,
   tickToSqrtPrice
 } from "@gala-chain/api";
@@ -29,14 +28,8 @@ import { fetchOrCreateBalance } from "../balances";
 import { fetchTokenClass } from "../token";
 import { transferToken } from "../transfer";
 import { GalaChainContext } from "../types";
-import {
-  convertToTokenInstanceKey,
-  genKey,
-  getObjectByKey,
-  putChainObject,
-  validateTokenOrder,
-  virtualAddress
-} from "../utils";
+import { convertToTokenInstanceKey, getObjectByKey, putChainObject, validateTokenOrder } from "../utils";
+import { assignPositionNft, fetchUserPositionNftId } from "./positionNft";
 
 /**
  * @dev Function to add Liqudity to v3 pool. The addLiquidity function facilitates the addition of liquidity to a Uniswap V3 pool within the GalaChain ecosystem. It takes in the blockchain context, liquidity parameters, and an optional launchpad address, then executes the necessary operations to deposit assets into the specified liquidity pool.
@@ -88,7 +81,14 @@ export async function addLiquidity(
     amount0Desired,
     amount1Desired
   );
-  let [amount0, amount1] = pool.mint(liquidityProvider, tickLower, tickUpper, liquidity.f18());
+
+  const poolAddrKey = pool.getPoolAddrKey();
+  const poolVirtualAddress = pool.getPoolAlias();
+  const positionNftId =
+    (await fetchUserPositionNftId(ctx, pool, dto.tickUpper.toString(), dto.tickLower.toString())) ??
+    (await assignPositionNft(ctx, poolAddrKey, poolVirtualAddress));
+
+  let [amount0, amount1] = pool.mint(positionNftId, tickLower, tickUpper, liquidity.f18());
   [amount0, amount1] = [amount0.f18(), amount1.f18()];
 
   if (amount0.lt(amount0Min) || amount1.lt(amount1Min)) {
@@ -96,15 +96,6 @@ export async function addLiquidity(
       `Slippage check failed: amount0: ${amount0Min.toString()} <= ${amount0.toString()}, amount1: ${amount1Min.toString()} <= ${amount1.toString()}, liquidity: ${liquidity.toString()}`
     );
   }
-
-  const userKey = ctx.stub.createCompositeKey(UserPosition.INDEX_KEY, [liquidityProvider]);
-  let userPostion = await getObjectByKey(ctx, UserPosition, userKey).catch(() => undefined);
-
-  const poolAddrKey = genKey(pool.token0, pool.token1, pool.fee.toString());
-  const poolVirtualAddress = virtualAddress(poolAddrKey);
-
-  if (userPostion === undefined) userPostion = new UserPosition(liquidityProvider);
-  userPostion.updateOrCreate(poolAddrKey, tickLower, tickUpper, liquidity.f18());
 
   if (amount0.isGreaterThan(0)) {
     // transfer token0
@@ -136,7 +127,6 @@ export async function addLiquidity(
   }
 
   await putChainObject(ctx, pool);
-  await putChainObject(ctx, userPostion);
 
   const liquidityProviderToken0Balance = await fetchOrCreateBalance(ctx, ctx.callingUser, token0InstanceKey);
   const liquidityProviderToken1Balance = await fetchOrCreateBalance(ctx, ctx.callingUser, token1InstanceKey);

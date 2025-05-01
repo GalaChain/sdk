@@ -22,32 +22,36 @@ import {
   GetLiquidityResDto,
   GetPoolDto,
   GetPositionDto,
+  GetPositionWithNftIdDto,
   GetUserPositionsDto,
   GetUserPositionsResDto,
   IPosition,
   NotFoundError,
   Pool,
+  PositionData,
   PositionsObject,
   Slot0ResDto,
   TokenClassKey,
   TokenInstanceKey,
   UnauthorizedError,
-  UserPosition,
   ValidationFailedError,
-  positionInfoDto,
+  genKey,
   sqrtPriceToTick
 } from "@gala-chain/api";
 import BigNumber from "bignumber.js";
 
+import { fetchBalancesWithTokenMetadata } from "../balances";
 import { fetchTokenClass } from "../token";
 import { GalaChainContext } from "../types";
 import {
   fetchDexProtocolFeeConfig,
-  genKeyWithPipe,
+  genBookMark,
   generateKeyFromClassKey,
   getObjectByKey,
+  splitBookmark,
   validateTokenOrder
 } from "../utils";
+import { fetchUserPositionNftId } from "./positionNft";
 
 /**
  * @dev The getPoolData function retrieves and returns all publicly available state information of a Uniswap V3 pool within the GalaChain ecosystem. It provides insights into the pool's tick map, liquidity positions, and other essential details.
@@ -109,19 +113,94 @@ export async function getLiquidity(ctx: GalaChainContext, dto: GetPoolDto): Prom
    * @param dto GetPositionDto - A data transfer object containing:
    - Pool identifiers – Class keys or token details required to identify the pool.
    - Positions identifier - lower tick, upper tick.
-   * @returns positionInfoDto
+   * @returns PositionData
    */
-export async function getPositions(ctx: GalaChainContext, dto: GetPositionDto): Promise<positionInfoDto> {
+export async function getPositions(ctx: GalaChainContext, dto: GetPositionDto): Promise<PositionData> {
   const pool = await getPoolData(ctx, dto);
-  const key = genKeyWithPipe(dto.owner, dto.tickLower.toString(), dto.tickUpper.toString());
   if (!pool) throw new NotFoundError("No pool for these tokens and fee exists");
-  const position = pool.positions[key];
-  if (!position) throw new NotFoundError("No Position found");
-  const [tokensOwed0, tokensOwed1] = pool.getFeeCollectedEstimation(dto.owner, dto.tickLower, dto.tickUpper);
 
+  const positionNftId = await fetchUserPositionNftId(
+    ctx,
+    pool,
+    dto.tickUpper.toString(),
+    dto.tickLower.toString(),
+    dto.owner
+  );
+
+  if (!positionNftId) {
+    throw new NotFoundError(`User doesn't hold any positions with this tick range in this pool`);
+  }
+
+  const position = pool.positions[positionNftId];
+  if (!position) {
+    throw new NotFoundError(`No position with the nftId ${positionNftId} found in this pool`);
+  }
+
+  const [tokensOwed0, tokensOwed1] = pool.getFeeCollectedEstimation(
+    positionNftId,
+    dto.tickLower,
+    dto.tickUpper
+  );
   position.tokensOwed0 = new BigNumber(position.tokensOwed0).f18().plus(tokensOwed0.f18()).toString();
   position.tokensOwed1 = new BigNumber(position.tokensOwed1).f18().plus(tokensOwed1.f18()).toString();
+  position.nftId = positionNftId;
   return position;
+}
+
+/**
+   * @dev The positions function retrieves details of a specific liquidity position within the Dex pool on the GalaChain ecosystem. It provides insights into the user's position, including token amounts, fees, and other state variables.
+   * @param ctx GalaChainContext – The execution context providing access to the GalaChain environment.
+   * @param dto GetPositionDto - A data transfer object containing:
+   - Pool identifiers – Class keys or token details required to identify the pool.
+   - NFT identifier - unique NFT that identifies a position in a pool
+   * @returns PositionData
+   */
+export async function getPositionWithNftId(
+  ctx: GalaChainContext,
+  dto: GetPositionWithNftIdDto
+): Promise<PositionData> {
+  const pool = await getPoolData(ctx, dto);
+  if (!pool) throw new NotFoundError("No pool for these tokens and fee exists");
+
+  // Each pool has a unique NFT ID that refers to a position within that pool.
+  // Multiple pools can have the same NFT ID, each pointing to a different position in their respective pools.
+  const positionNftId = dto.nftId;
+
+  const position = pool.positions[positionNftId];
+  if (!position) throw new NotFoundError(`No position with the nftId ${positionNftId} found in this pool`);
+
+  const [tokensOwed0, tokensOwed1] = pool.getFeeCollectedEstimation(
+    positionNftId,
+    Number(position.tickLower),
+    Number(position.tickUpper)
+  );
+  position.tokensOwed0 = new BigNumber(position.tokensOwed0).f18().plus(tokensOwed0.f18()).toString();
+  position.tokensOwed1 = new BigNumber(position.tokensOwed1).f18().plus(tokensOwed1.f18()).toString();
+  position.nftId = positionNftId;
+  return position;
+}
+
+export async function getPoolFromAddressKey(ctx: GalaChainContext, poolAddrKey: string): Promise<Pool> {
+  const token0 = new TokenClassKey();
+  const token1 = new TokenClassKey();
+  let fee: string;
+  [
+    token0.collection,
+    token0.category,
+    token0.type,
+    token0.additionalKey,
+    token1.collection,
+    token1.category,
+    token1.type,
+    token1.additionalKey,
+    fee
+  ] = poolAddrKey
+    .replace(/\$\$/g, "$|")
+    .split("$")
+    .map((str) => str.replace(/\|/g, "$"));
+  const pool = await getPoolData(ctx, new GetPoolDto(token0, token1, parseInt(fee)));
+  if (!pool) throw new NotFoundError("Pool not found");
+  return pool;
 }
 
 /**
@@ -136,43 +215,68 @@ export async function getUserPositions(
   ctx: GalaChainContext,
   dto: GetUserPositionsDto
 ): Promise<GetUserPositionsResDto> {
-  const userPositions = await getObjectByKey(
-    ctx,
-    UserPosition,
-    ctx.stub.createCompositeKey(UserPosition.INDEX_KEY, [dto.user])
-  );
-  let paginatedPositions: PositionsObject = {};
-  if (dto.page && dto.limit) {
-    paginatedPositions = paginateLiquidityData(userPositions.positions, dto.page, dto.limit);
+  const { chainBookmark, localBookmark } = splitBookmark(dto.bookmark);
+
+  let currentPageBookmark = chainBookmark;
+  let positionsToSkip = Number(localBookmark);
+  let nftsRequired = dto.limit;
+  let newLocalBookmark = positionsToSkip + nftsRequired;
+  let isLastIteration = false;
+  const userPositions: PositionsObject = {};
+
+  do {
+    const userNfts = await fetchBalancesWithTokenMetadata(ctx, {
+      collection: "DexNFT",
+      category: "LiquidityPositions",
+      owner: dto.user,
+      limit: dto.limit,
+      bookmark: currentPageBookmark
+    });
+    newLocalBookmark = positionsToSkip + nftsRequired;
+
+    const allNfts = userNfts.results.flatMap(({ balance }) => {
+      return balance.getNftInstanceIds().map((nftInstanceId) => ({
+        poolAddrKey: balance.type,
+        nftInstanceId,
+        additionalKey: balance.additionalKey
+      }));
+    });
+
+    if (positionsToSkip >= allNfts.length) {
+      positionsToSkip -= allNfts.length;
+      currentPageBookmark = userNfts.nextPageBookmark ?? "";
+      continue;
+    }
+
+    const selectedNft = allNfts.slice(positionsToSkip);
+    positionsToSkip = 0;
+
+    for (const [nftIndex, nft] of selectedNft.entries()) {
+      const pool = await getPoolFromAddressKey(ctx, nft.poolAddrKey);
+      userPositions[nft.poolAddrKey] = userPositions[nft.poolAddrKey] || [];
+      const nftId = genKey(nft.additionalKey, nft.nftInstanceId.toString());
+      userPositions[nft.poolAddrKey].push(pool.positions[nftId]);
+      nftsRequired--;
+      isLastIteration = nftIndex === selectedNft.length - 1;
+      if (nftsRequired === 0) break;
+    }
+
+    currentPageBookmark = isLastIteration ? userNfts.nextPageBookmark ?? "" : currentPageBookmark;
+  } while (nftsRequired && currentPageBookmark);
+
+  if (positionsToSkip) {
+    throw new ValidationFailedError("Invalid bookmark");
   }
-  const metaDataPositions = await addMetaDataToPositions(
-    ctx,
-    paginatedPositions ? paginatedPositions : userPositions.positions
-  );
-  const count = Object.values(userPositions.positions as PositionsObject).reduce(
-    (sum, arr) => sum + arr.length,
-    0
-  );
-  const response: GetUserPositionsResDto = { positions: metaDataPositions, totalCount: count };
-  return response;
-}
-/**
- * @dev The paginateLiquidityData function implements pagination for a list of liquidity positions, allowing users to retrieve position data in smaller, manageable chunks.
- * @param data PositionsObject – The complete dataset containing all liquidity positions.
- * @param page number – The current page number (1-based index).
- * @param limit number – The number of records to return per page.
- * @returns PositionsObject
- */
-export function paginateLiquidityData(data: PositionsObject, page: number, limit: number): PositionsObject {
-  const startIndex = (page - 1) * limit;
-  return Object.entries(data)
-    .flatMap(([pair, entries]) => entries.map((entry) => ({ ...entry, pair })))
-    .slice(startIndex, startIndex + limit)
-    .reduce((acc, entry) => {
-      const { pair, ...entryWithoutPair } = entry;
-      (acc[pair] ||= []).push(entryWithoutPair);
-      return acc;
-    }, {} as PositionsObject);
+
+  const newBookmark =
+    !currentPageBookmark && isLastIteration
+      ? ""
+      : genBookMark(currentPageBookmark, isLastIteration ? "" : newLocalBookmark.toString());
+
+  const userPositionWithMetadata = userPositions
+    ? await addMetaDataToPositions(ctx, userPositions)
+    : userPositions;
+  return new GetUserPositionsResDto(userPositionWithMetadata, newBookmark);
 }
 
 /**
@@ -248,29 +352,7 @@ async function addMetaDataToPositions(
   positions: PositionsObject
 ): Promise<PositionsObject> {
   for (const [key, value] of Object.entries(positions)) {
-    const poolKeys = key.split("_");
-
-    const poolToken0ClassKey = new TokenClassKey();
-    const token0ClassKeyString = poolKeys[0].split("$");
-    poolToken0ClassKey.collection = token0ClassKeyString[0];
-    poolToken0ClassKey.category = token0ClassKeyString[1];
-    poolToken0ClassKey.type = token0ClassKeyString[2];
-    poolToken0ClassKey.additionalKey = token0ClassKeyString[3];
-
-    const poolToken1ClassKey = new TokenClassKey();
-    const token1ClassKeyString = poolKeys[1].split("$");
-    poolToken1ClassKey.collection = token1ClassKeyString[0];
-    poolToken1ClassKey.category = token1ClassKeyString[1];
-    poolToken1ClassKey.type = token1ClassKeyString[2];
-    poolToken1ClassKey.additionalKey = token1ClassKeyString[3];
-
-    const pool = await getPoolData(
-      ctx,
-      new GetPoolDto(poolToken0ClassKey, poolToken1ClassKey, Number(poolKeys[2]))
-    );
-    if (!pool) {
-      continue;
-    }
+    const pool = await getPoolFromAddressKey(ctx, key);
     const tokenInstanceKeys = [pool.token0ClassKey, pool.token1ClassKey].map(
       ({ collection, category, type, additionalKey }) =>
         Object.assign(new TokenInstanceKey(), {
