@@ -13,8 +13,7 @@
  * limitations under the License.
  */
 import BigNumber from "bignumber.js";
-import { Type } from "class-transformer";
-import { IsNotEmpty, IsNumber, IsOptional, IsString, Max, Min, ValidateNested } from "class-validator";
+import { IsBoolean, IsNotEmpty, IsNumber, IsOptional, IsString, Max, Min } from "class-validator";
 
 import { BigNumberProperty } from "../validators";
 import { IsNonZeroBigNumber } from "../validators";
@@ -195,7 +194,8 @@ export class TradeResDto {
   public userAddress: string;
 
   @IsNotEmpty()
-  public isFinalized: Boolean;
+  @IsBoolean()
+  public isFinalized: boolean;
 
   @IsNotEmpty()
   public functionName: string;
