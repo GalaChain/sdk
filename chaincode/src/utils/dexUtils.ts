@@ -12,7 +12,14 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-import { ChainError, DexFeeConfig, ErrorCode, TokenClassKey, TokenInstanceKey } from "@gala-chain/api";
+import {
+  ChainError,
+  DexFeeConfig,
+  ErrorCode,
+  TokenClassKey,
+  TokenInstanceKey,
+  ValidationFailedError
+} from "@gala-chain/api";
 import BigNumber from "bignumber.js";
 
 import { GalaChainContext } from "../types";
@@ -77,9 +84,9 @@ export function validateTokenOrder(token0: TokenClassKey, token1: TokenClassKey)
   const [normalizedToken0, normalizedToken1] = [token0, token1].map(generateKeyFromClassKey);
 
   if (normalizedToken0.localeCompare(normalizedToken1) > 0) {
-    throw new Error("Token0 must be smaller");
+    throw new ValidationFailedError("Token0 must be smaller");
   } else if (normalizedToken0.localeCompare(normalizedToken1) === 0) {
-    throw new Error(
+    throw new ValidationFailedError(
       `Cannot create pool of same tokens. Token0 ${JSON.stringify(token0)} and Token1 ${JSON.stringify(
         token1
       )} must be different.`
@@ -89,11 +96,34 @@ export function validateTokenOrder(token0: TokenClassKey, token1: TokenClassKey)
 }
 
 export function genKey(...params: string[] | number[]): string {
-  return params.join("_").replace(/\|/g, ":");
+  return params.join("$").replace(/\|/g, ":");
 }
 
-export function genKeyWithPipe(...params: string[] | number[]): string {
-  return params.join("_");
+export function genBookMark(...params: string[] | number[]): string {
+  return params.join("|");
+}
+
+export function splitBookmark(bookmark = "") {
+  const [chainBookmark = "", localBookmark = "0"] = bookmark.split("|");
+  return { chainBookmark, localBookmark };
+}
+
+/**
+ * Parses an NFT ID string into its batch number and instance ID components.
+ *
+ * @param nftId The NFT ID in the format 'batchNumber_instanceId'
+ * @returns An object containing the batchNumber and instanceId as BigNumber
+ * @throws ValidationFailedError if the input format is invalid
+ */
+export function parseNftId(nftId: string): { batchNumber: string; instanceId: BigNumber } {
+  const parts = nftId.split("$");
+  if (parts.length !== 2) {
+    throw new ValidationFailedError("Invalid NFT ID format. Expected format: 'batchNumber$instanceId'.");
+  }
+  return {
+    batchNumber: parts[0],
+    instanceId: new BigNumber(parts[1])
+  };
 }
 
 export async function fetchDexProtocolFeeConfig(ctx: GalaChainContext): Promise<DexFeeConfig | undefined> {
