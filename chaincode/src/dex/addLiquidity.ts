@@ -60,6 +60,9 @@ export async function addLiquidity(
   const token0Class = await fetchTokenClass(ctx, token0InstanceKey);
   const token1Class = await fetchTokenClass(ctx, token1InstanceKey);
 
+  //get token amounts required for the desired liquidity
+  const liquidityProvider = launchpadAddress ?? ctx.callingUser;
+
   const tickLower = parseInt(dto.tickLower.toString()),
     tickUpper = parseInt(dto.tickUpper.toString());
 
@@ -88,31 +91,12 @@ export async function addLiquidity(
   let [amount0, amount1] = pool.mint(positionNftId, tickLower, tickUpper, liquidity.f18());
   [amount0, amount1] = [amount0.f18(), amount1.f18()];
 
-  if (
-    amount0.lt(amount0Min) ||
-    amount1.lt(amount1Min) ||
-    amount0.gt(amount0Desired) ||
-    amount1.gt(amount1Desired)
-  ) {
+  if (amount0.lt(amount0Min) || amount1.lt(amount1Min)) {
     throw new SlippageToleranceExceededError(
-      "Slippage check Failed, should be amount0: " +
-        amount0Min.toString() +
-        " <" +
-        amount0.toString() +
-        " <= " +
-        amount0Desired.toString() +
-        " amount1: " +
-        amount1Min.toString() +
-        " < " +
-        amount1.toString() +
-        " <= " +
-        amount1Desired.toString() +
-        " liquidity: " +
-        liquidity.toString()
+      `Slippage check failed: amount0: ${amount0Min.toString()} <= ${amount0.toString()}, amount1: ${amount1Min.toString()} <= ${amount1.toString()}, liquidity: ${liquidity.toString()}`
     );
   }
 
-  const liquidityProvider = launchpadAddress ? launchpadAddress : ctx.callingUser;
   if (amount0.isGreaterThan(0)) {
     // transfer token0
     await transferToken(ctx, {
