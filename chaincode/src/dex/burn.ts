@@ -19,7 +19,10 @@ import {
   NotFoundError,
   Pool,
   SlippageToleranceExceededError,
-  UserBalanceResDto
+  UserBalanceResDto,
+  liquidity0,
+  liquidity1,
+  tickToSqrtPrice
 } from "@gala-chain/api";
 import BigNumber from "bignumber.js";
 
@@ -62,6 +65,50 @@ export async function burn(ctx: GalaChainContext, dto: BurnDto): Promise<UserBal
   const tickLower = parseInt(dto.tickLower.toString()),
     tickUpper = parseInt(dto.tickUpper.toString());
 
+  //create tokenInstanceKeys
+  const tokenInstanceKeys = [pool.token0ClassKey, pool.token1ClassKey].map(convertToTokenInstanceKey);
+
+  //fetch token classes
+  const tokenClasses = await Promise.all(tokenInstanceKeys.map((key) => fetchTokenClass(ctx, key)));
+  let amountToBurn = dto.amount.f18();
+  const amountsEstimated = pool.burnEstimate(amountToBurn, tickLower, tickUpper);
+  const sqrtPriceA = tickToSqrtPrice(tickLower),
+    sqrtPriceB = tickToSqrtPrice(tickUpper);
+  const sqrtPrice = pool.sqrtPrice;
+
+  for (const [index, amount] of amountsEstimated.entries()) {
+    if (amount.gt(0)) {
+      const poolTokenBalance = await fetchOrCreateBalance(
+        ctx,
+        poolVirtualAddress,
+        tokenInstanceKeys[index].getTokenClassKey()
+      );
+      const roundedAmount = BigNumber.min(
+        new BigNumber(amount.toFixed(tokenClasses[index].decimals)).abs(),
+        poolTokenBalance.getQuantityTotal()
+      );
+
+      // Check whether pool has enough liquidity to perform this operation and adjust accordingly
+      if (!roundedAmount.eq(new BigNumber(amount.toFixed(tokenClasses[index].decimals)).abs())) {
+        let maximumBurnableLiquidity: BigNumber;
+        if (index === 0) {
+          maximumBurnableLiquidity = liquidity0(
+            roundedAmount,
+            sqrtPrice.gt(sqrtPriceA) ? sqrtPrice : sqrtPriceA,
+            sqrtPriceB
+          );
+        } else {
+          maximumBurnableLiquidity = liquidity1(
+            roundedAmount,
+            sqrtPriceA,
+            sqrtPrice.lt(sqrtPriceB) ? sqrtPrice : sqrtPriceB
+          );
+        }
+        amountToBurn = BigNumber.min(amountToBurn, maximumBurnableLiquidity);
+      }
+    }
+  }
+
   const amounts = pool.burn(positionNftId, tickLower, tickUpper, dto.amount.f18());
   if (amounts[0].lt(dto.amount0Min) || amounts[1].lt(dto.amount1Min)) {
     throw new SlippageToleranceExceededError(
@@ -85,12 +132,6 @@ export async function burn(ctx: GalaChainContext, dto: BurnDto): Promise<UserBal
       toBurn: [burnTokenQuantity]
     });
   }
-
-  //create tokenInstanceKeys
-  const tokenInstanceKeys = [pool.token0ClassKey, pool.token1ClassKey].map(convertToTokenInstanceKey);
-
-  //fetch token classes
-  const tokenClasses = await Promise.all(tokenInstanceKeys.map((key) => fetchTokenClass(ctx, key)));
 
   for (const [index, amount] of amounts.entries()) {
     if (amount.gt(0)) {

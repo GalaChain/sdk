@@ -643,4 +643,41 @@ export class Pool extends ChainObject {
   public getPoolAlias() {
     return genPoolAlias(this.getPoolAddrKey());
   }
+
+  /**
+   * Estimates the amount of token0 and token1 required to burn a given liquidity amount
+   * within a specified tick range.
+   *
+   * @param liquidityDelta - The amount of liquidity to be removed (burned).
+   * @param tickLower - The lower tick boundary of the burn range.
+   * @param tickUpper - The upper tick boundary of the burn range.
+   * @returns A tuple containing:
+   *  - amount0Req: The estimated amount of token0 to be burned.
+   *  - amount1Req: The estimated amount of token1 to be burned.
+   */
+  public burnEstimate(
+    liquidityDelta: BigNumber,
+    tickLower: number,
+    tickUpper: number
+  ): [amount0Req: BigNumber, amount1Req: BigNumber] {
+    const sqrtPriceLower = tickToSqrtPrice(tickLower);
+    const sqrtPriceUpper = tickToSqrtPrice(tickUpper);
+
+    let amount0Req: BigNumber = new BigNumber(0),
+      amount1Req: BigNumber = new BigNumber(0);
+
+    if (!liquidityDelta.isEqualTo(0)) {
+      //current tick is below the desired range
+      if (this.sqrtPrice.isLessThan(sqrtPriceLower))
+        amount0Req = getAmount0Delta(sqrtPriceLower, sqrtPriceUpper, liquidityDelta);
+      //current tick is in the desired range
+      else if (this.sqrtPrice.isLessThan(sqrtPriceUpper)) {
+        amount0Req = getAmount0Delta(this.sqrtPrice, sqrtPriceUpper, liquidityDelta);
+        amount1Req = getAmount1Delta(sqrtPriceLower, this.sqrtPrice, liquidityDelta);
+      }
+      //current tick is above the desired range
+      else amount1Req = getAmount1Delta(sqrtPriceLower, sqrtPriceUpper, liquidityDelta);
+    }
+    return [amount0Req, amount1Req];
+  }
 }
