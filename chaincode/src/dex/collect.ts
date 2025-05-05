@@ -41,10 +41,6 @@ export async function collect(ctx: GalaChainContext, dto: CollectDto): Promise<U
   const [token0, token1] = validateTokenOrder(dto.token0, dto.token1);
   const key = ctx.stub.createCompositeKey(Pool.INDEX_KEY, [token0, token1, dto.fee.toString()]);
   const pool = await getObjectByKey(ctx, Pool, key);
-  const [amount0Requested, amount1Requested] = [dto.amount0Requested.f18(), dto.amount1Requested.f18()];
-
-  //If pool does not exist
-  if (pool == undefined) throw new ConflictError("Pool does not exist");
 
   const poolAddrKey = pool.getPoolAddrKey();
   const poolVirtualAddress = pool.getPoolAlias();
@@ -56,6 +52,28 @@ export async function collect(ctx: GalaChainContext, dto: CollectDto): Promise<U
   );
   if (!positionNftId)
     throw new NotFoundError(`User doesn't hold any positions with this tick range in this pool`);
+
+  //create tokenInstanceKeys
+  const tokenInstanceKeys = [pool.token0ClassKey, pool.token1ClassKey].map(convertToTokenInstanceKey);
+
+  //fetch token classes
+  const tokenClasses = await Promise.all(tokenInstanceKeys.map((key) => fetchTokenClass(ctx, key)));
+
+  const poolToken0Balance = await fetchOrCreateBalance(
+    ctx,
+    poolVirtualAddress,
+    tokenInstanceKeys[0].getTokenClassKey()
+  );
+  const poolToken1Balance = await fetchOrCreateBalance(
+    ctx,
+    poolVirtualAddress,
+    tokenInstanceKeys[1].getTokenClassKey()
+  );
+
+  const [amount0Requested, amount1Requested] = [
+    BigNumber.min(dto.amount0Requested.f18(), poolToken0Balance.getQuantityTotal()),
+    BigNumber.min(dto.amount1Requested.f18(), poolToken1Balance.getQuantityTotal())
+  ];
 
   const tickLower = parseInt(dto.tickLower.toString()),
     tickUpper = parseInt(dto.tickUpper.toString());
@@ -80,29 +98,13 @@ export async function collect(ctx: GalaChainContext, dto: CollectDto): Promise<U
   }
   await putChainObject(ctx, pool);
 
-  //create tokenInstanceKeys
-  const tokenInstanceKeys = [pool.token0ClassKey, pool.token1ClassKey].map(convertToTokenInstanceKey);
-
-  //fetch token classes
-  const tokenClasses = await Promise.all(tokenInstanceKeys.map((key) => fetchTokenClass(ctx, key)));
-
   for (const [index, amount] of amounts.entries()) {
     if (amount.gt(0)) {
-      const poolTokenBalance = await fetchOrCreateBalance(
-        ctx,
-        poolVirtualAddress,
-        tokenInstanceKeys[index].getTokenClassKey()
-      );
-      const roundedAmount = BigNumber.min(
-        new BigNumber(amount.toFixed(tokenClasses[index].decimals)).abs(),
-        poolTokenBalance.getQuantityTotal()
-      );
-
       await transferToken(ctx, {
         from: poolVirtualAddress,
         to: ctx.callingUser,
         tokenInstanceKey: tokenInstanceKeys[index],
-        quantity: roundedAmount,
+        quantity: new BigNumber(amount.toFixed(tokenClasses[index].decimals)).abs(),
         allowancesToUse: [],
         authorizedOnBehalf: {
           callingOnBehalf: poolVirtualAddress,

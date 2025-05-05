@@ -12,10 +12,11 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-import { ArrayNotEmpty } from "class-validator";
+import BigNumber from "bignumber.js";
+import { ArrayNotEmpty, validate } from "class-validator";
 
 import { ChainCallDTO } from "../types";
-import { ArrayUniqueObjects } from "./decorators";
+import { ArrayUniqueObjects, BigNumberIsNegative } from "./decorators";
 
 describe("ArrayUniqueObject", () => {
   it("validation should give errors when two users have the same id", async () => {
@@ -86,5 +87,45 @@ describe("ArrayUniqueObject", () => {
 
     // Then
     expect(output.length).toEqual(0);
+  });
+});
+
+describe("BigNumberIsNegative", () => {
+  it("should return error if BigNumber is positive", async () => {
+    // Given
+    class MockDto extends ChainCallDTO {
+      @BigNumberIsNegative()
+      amount: BigNumber;
+    }
+    const dto = new MockDto();
+    dto.amount = new BigNumber(5);
+
+    // When
+    const result = await validate(dto);
+
+    // Then
+    expect(result).toEqual([
+      expect.objectContaining({
+        constraints: expect.objectContaining({
+          BigNumberIsNegative: "amount must be negative but is 5"
+        })
+      })
+    ]);
+  });
+
+  it("should pass validation for negative BigNumber", async () => {
+    // Given
+    class MockDto extends ChainCallDTO {
+      @BigNumberIsNegative()
+      amount: BigNumber;
+    }
+    const dto = new MockDto();
+    dto.amount = new BigNumber(-10);
+
+    // When
+    const result = await validate(dto);
+
+    // then
+    expect(result.length).toBe(0);
   });
 });
