@@ -272,6 +272,8 @@ describe("LaunchpadContract", () => {
         Data: expect.objectContaining({
           creatorAddress: user.identityKey,
           description: "created for sale",
+          functionName: "CreateSale",
+          isFinalized: false,
           image: "www.test.com",
           initialBuyQuantity: "0",
           symbol: "ART",
@@ -281,7 +283,8 @@ describe("LaunchpadContract", () => {
           vaultAddress: `service|UnitTest$none$ART$eth:${user.name}$launchpad`,
           websiteUrl: "abc.com",
           collection: "UnitTest",
-          category: "none"
+          category: "none",
+          tokenStringKey: `UnitTest$none$ART$eth:${user.name}`
         }),
         Status: 1
       });

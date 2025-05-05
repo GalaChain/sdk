@@ -103,11 +103,13 @@ export async function sellExactToken(
 
   const token = await fetchTokenClass(ctx, sale.sellingToken);
   return {
-    inputQuantity: sellTokenDTO.tokenQuantity.toString(),
-    outputQuantity: nativeTokensToProvide.toString(),
+    inputQuantity: sellTokenDTO.tokenQuantity.toFixed(),
+    outputQuantity: nativeTokensToProvide.toFixed(),
     tokenName: token.name,
     tradeType: "Sell",
     vaultAddress: sellTokenDTO.vaultAddress,
-    userAddress: ctx.callingUser
+    userAddress: ctx.callingUser,
+    isFinalized: false,
+    functionName: "SellExactToken"
   };
 }

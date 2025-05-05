@@ -117,11 +117,13 @@ export async function buyWithNative(
 
   const token = await fetchTokenClass(ctx, sale.sellingToken);
   return {
-    inputQuantity: buyTokenDTO.nativeTokenQuantity.toString(),
-    outputQuantity: tokensToBuy.toString(),
+    inputQuantity: buyTokenDTO.nativeTokenQuantity.toFixed(),
+    outputQuantity: tokensToBuy.toFixed(),
     tokenName: token.name,
     tradeType: "Buy",
     vaultAddress: buyTokenDTO.vaultAddress,
-    userAddress: ctx.callingUser
+    userAddress: ctx.callingUser,
+    isFinalized: isSaleFinalised,
+    functionName: "BuyWithNative"
   };
 }

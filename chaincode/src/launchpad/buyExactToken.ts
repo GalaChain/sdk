@@ -120,11 +120,13 @@ export async function buyExactToken(
   // Return the updated balance response
   const token = await fetchTokenClass(ctx, sale.sellingToken);
   return {
-    inputQuantity: nativeTokensToBuy.toString(),
-    outputQuantity: buyTokenDTO.tokenQuantity.toString(),
+    inputQuantity: nativeTokensToBuy.toFixed(),
+    outputQuantity: buyTokenDTO.tokenQuantity.toFixed(),
     tokenName: token.name,
     tradeType: "Buy",
     vaultAddress: buyTokenDTO.vaultAddress,
-    userAddress: ctx.callingUser
+    userAddress: ctx.callingUser,
+    isFinalized: isSaleFinalised,
+    functionName: "BuyExactToken"
   };
 }

@@ -64,5 +64,5 @@ export async function callNativeTokenIn(
   const differenceOfExponentials = eResult1.minus(eResult2);
 
   const price = constantFactor.mul(differenceOfExponentials);
-  return price.toDecimalPlaces(8, Decimal.ROUND_UP).toString();
+  return price.toDecimalPlaces(8, Decimal.ROUND_UP).toFixed();
 }
