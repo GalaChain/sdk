@@ -73,5 +73,5 @@ export async function callMemeTokenOut(
   if (roundedResult.add(totalTokensSold).greaterThan(new Decimal("1e+7"))) {
     roundedResult = new Decimal("1e+7").minus(new Decimal(totalTokensSold));
   }
-  return roundedResult.toString();
+  return roundedResult.toFixed();
 }

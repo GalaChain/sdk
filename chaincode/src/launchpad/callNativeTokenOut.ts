@@ -70,5 +70,5 @@ export async function callNativeTokenOut(
   const price = constantFactor.mul(differenceOfExponentials);
   const roundedPrice = price.toDecimalPlaces(8, Decimal.ROUND_DOWN);
 
-  return roundedPrice.toString();
+  return roundedPrice.toFixed();
 }
