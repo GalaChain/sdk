@@ -45,17 +45,30 @@ import {
   Slot0ResDto,
   SwapDto,
   SwapResDto,
-  UserBalanceResDto
+  UserBalanceResDto,
+  generateResponseSchema,
+  generateSchema
 } from "@gala-chain/api";
+import { plainToClass } from "class-transformer";
+import { Info } from "fabric-contract-api";
 
-import { version } from "../../package.json";
 import {
+  Evaluate,
+  GalaChainContext,
+  GalaContract,
+  GalaTransaction,
+  Submit,
   addLiquidity,
+  addLiquidityFeeGate,
   burn,
   collect,
+  collectPositionFeesFeeGate,
   collectTradingFees,
   configureDexFeeAddress,
+  configureDexNftBatchLimit,
   createPool,
+  createPoolFeeGate,
+  fetchDexNftBatchLimit,
   getAddLiquidityEstimation,
   getDexFeesConfigration,
   getLiquidity,
@@ -66,21 +79,17 @@ import {
   getSlot0,
   getUserPositions,
   quoteExactAmount,
-  setProtocolFee,
-  swap
-} from "../dex";
-import { configureDexNftBatchLimit } from "../dex/configureDexNftBatchLimit";
-import { fetchDexNftBatchLimit } from "../dex/fetchDexNftBatchLimit";
-import {
-  addLiquidityFeeGate,
-  collectPositionFeesFeeGate,
-  createPoolFeeGate,
   removeLiquidityFeeGate,
+  setProtocolFee,
+  swap,
   swapFeeGate
-} from "../fees";
-import { GalaChainContext } from "../types";
-import { GalaContract } from "./GalaContract";
-import { EVALUATE, Evaluate, GalaTransaction, Submit } from "./GalaTransaction";
+} from "../";
+// eslint-disable-next-line @typescript-eslint/ban-ts-comment
+// @ts-ignore
+import { version } from "../../package.json";
+import { EVALUATE, SUBMIT } from "../contracts";
+
+const curatorOrgMsp = process.env.CURATOR_ORG_MSP ?? "CuratorOrg";
 
 export class DexV3Contract extends GalaContract {
   constructor() {

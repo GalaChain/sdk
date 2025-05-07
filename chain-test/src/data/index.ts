@@ -13,7 +13,8 @@
  * limitations under the License.
  */
 import currency from "./currency";
+import dex from "./dex";
 import nft from "./nft";
 import users from "./users";
 
-export { currency, nft, users };
+export { currency, dex, nft, users };
