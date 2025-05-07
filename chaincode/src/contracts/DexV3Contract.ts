@@ -77,7 +77,7 @@ import {
   createPoolFeeGate,
   removeLiquidityFeeGate,
   swapFeeGate
-} from "../fees";
+} from "../fees/dexLaunchpadFeeGate";
 import { GalaChainContext } from "../types";
 import { GalaContract } from "./GalaContract";
 import { EVALUATE, Evaluate, GalaTransaction, Submit } from "./GalaTransaction";
