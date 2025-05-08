@@ -32,12 +32,12 @@
   },
   "peerDependencies": {
     "bignumber.js": "*",
-    "class-transformer": "*",
-    "class-validator": "*",
-    "class-validator-jsonschema": "*",
+    "class-transformer": "0.5.1",
+    "class-validator": "0.14.2",
+    "class-validator-jsonschema": "5.0.2",
     "dd-trace": "*",
     "elliptic": "*",
-    "json-stringify-deterministic": "*"
+    "json-stringify-deterministic": "1.0.12"
   },
   "devDependencies": {
     "@types/elliptic": "*",
@@ -47,7 +47,7 @@
     "git-branch-is": "^4.0.0",
     "madge": "^5.0.1",
     "nodemon": "^3.0.1",
-    "nyc": "^14.1.1",
+    "nyc": "^17.1.0",
     "rimraf": "^3.0.2",
     "setimmediate": "^1.0.5"
   }
