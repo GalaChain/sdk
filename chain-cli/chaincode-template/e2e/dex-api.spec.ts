@@ -18,6 +18,7 @@ import {
   BurnDto,
   BurnEstimateDto,
   ChainCallDTO,
+  ChainObject,
   CollectDto,
   CollectTradingFeesDto,
   CollectTradingFeesResDto,
@@ -52,10 +53,12 @@ import {
   SwapResDto,
   TokenAllowance,
   TokenBalance,
+  TokenClass,
   TokenClassKey,
   TokenInstanceKey,
   TransferTokenDto,
   UserBalanceResDto,
+  createValidDTO,
   feeAmountTickSpacing,
   sqrtPriceToTick
 } from "@gala-chain/api";
@@ -67,6 +70,7 @@ import {
   transactionSuccess
 } from "@gala-chain/test";
 import BigNumber from "bignumber.js";
+import { plainToInstance } from "class-transformer";
 
 import TOKENS, { ETH_ClassKey, SOL_ClassKey, USDC_ClassKey, USDT_ClassKey } from "./tokens";
 
@@ -150,6 +154,75 @@ describe("DEx v3 Testing", () => {
         });
       });
     }
+  });
+
+  describe.only("Reproduce validation error", () => {
+    test.only("createPool", async () => {
+      // Given
+      const token0string =
+        '{"name":"none","type":"none","image":"https://app.gala.games/_nuxt/img/gala-logo_horizontal_white.8b0409c.png","symbol":"none","network":"GC","category":"Unit","decimals":8,"maxSupply":"100000000","collection":"SILK","authorities":["client|SILK_DISTRIBUTOR","client|ops-admin"],"description":"GALA","maxCapacity":"Infinity","totalBurned":"0","totalSupply":"72150184.71075018","additionalKey":"none","isNonFungible":false,"totalMintAllowance":"0"}';
+      const token0 = ChainObject.deserialize(TokenClass, token0string);
+
+      const createToken0Dto = await createValidDTO(CreateTokenClassDto, {
+        ...token0,
+        tokenClass: plainToInstance(TokenClassKey, token0)
+      });
+
+      const createToken0Response = await client.tokenContract.CreateToken(
+        createToken0Dto.signed(user.privateKey)
+      );
+      if (createToken0Response?.ErrorKey !== "TOKEN_ALREADY_EXISTS") {
+        expect(createToken0Response).toEqual(transactionSuccess());
+      }
+
+      const token1string =
+        '{"name":"naturz","type":"NTFD","image":"https://defi-lpad-assets.defi.gala.com/uploads/naturz/1745832236386.jpeg","symbol":"NTFD","network":"GC","category":"Unit","decimals":18,"maxSupply":"20000000","collection":"Token","authorities":["service|Token$Unit$NTFD$eth:Bd78bf3036F4AC11E1D78D7826E7244fe906fB8a$launchpad","eth|Bd78bf3036F4AC11E1D78D7826E7244fe906fB8a"],"description":"pencul brand","maxCapacity":"20000000","totalBurned":"0","totalSupply":"20000000","additionalKey":"eth:Bd78bf3036F4AC11E1D78D7826E7244fe906fB8a","isNonFungible":false,"totalMintAllowance":"0"}';
+      const token1 = ChainObject.deserialize(TokenClass, token1string);
+
+      const createToken1Dto = await createValidDTO(CreateTokenClassDto, {
+        ...token1,
+        tokenClass: plainToInstance(TokenClassKey, token1)
+      });
+
+      const createToken1Response = await client.tokenContract.CreateToken(
+        createToken1Dto.signed(user.privateKey)
+      );
+      if (createToken1Response?.ErrorKey !== "TOKEN_ALREADY_EXISTS") {
+        expect(createToken1Response).toEqual(transactionSuccess());
+      }
+
+      // https://int-query-api-chain-platform-stage-chain-platform-eks.stage.galachain.com/asset-channel/transactions/d9f74a390a855d14c2d61ade8040d3d83e6d27399caec4c82be239cc9a817156
+      // - the error occurs, because CreatePoolDto does not have default constructor (with no params), please add it
+      // @ts-ignore
+      const dto: CreatePoolDto = await createValidDTO(CreatePoolDto, {
+        token0: plainToInstance(TokenClassKey, {
+          collection: "SILK",
+          category: "Unit",
+          type: "none",
+          additionalKey: "none"
+        }),
+        token1: plainToInstance(TokenClassKey, {
+          collection: "Token",
+          category: "Unit",
+          type: "NTFD",
+          additionalKey: "eth:Bd78bf3036F4AC11E1D78D7826E7244fe906fB8a"
+        }),
+        fee: 3000,
+        initialSqrtPrice: new BigNumber("1"),
+        protocolFee: 0,
+        trace: {
+          traceId: "7773910289814375826",
+          spanId: "7980122668364790621"
+        }
+      });
+      dto.sign(user.privateKey);
+
+      // When
+      const response = await client.dexV3Contract.createPool(dto.signed(user.privateKey));
+
+      // Then
+      expect(response).toEqual(transactionSuccess());
+    });
   });
 
   describe("Mint tokens", () => {
