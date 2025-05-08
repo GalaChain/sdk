@@ -92,16 +92,10 @@ export class Pool extends ChainObject {
   @Type(() => TokenClassKey)
   public readonly token1ClassKey: TokenClassKey;
 
-  @ValidateNested()
-  @Type(() => PositionData)
   public positions: Positions;
 
-  @ValidateNested()
-  @Type(() => Bitmap)
   public bitmap: Bitmap;
 
-  @ValidateNested()
-  @Type(() => TickData)
   public tickData: TickDataObj;
 
   @BigNumberProperty()
