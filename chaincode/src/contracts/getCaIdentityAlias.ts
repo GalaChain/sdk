@@ -36,7 +36,7 @@ export function getCaIdentityAlias(ctx: Context): UserAlias {
     !clientAccountID.includes(CNPrefix) ||
     !clientAccountID.includes(CNSuffix)
   ) {
-    throw new Error("Invalid client account ID format");
+    throw new Error(`Invalid client account ID format: ${clientAccountID}`);
   }
 
   const orgStartIndex = clientAccountID.indexOf(OUPrefix) + OUPrefix.length;
