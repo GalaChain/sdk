@@ -119,6 +119,14 @@ export class CreateSaleResDto {
 
   @IsNotEmpty()
   public functionName: string;
+
+  @IsNotEmpty()
+  @IsBoolean()
+  public isFinalized: boolean;
+
+  @IsString()
+  @IsNotEmpty()
+  public tokenStringKey: string;
 }
 
 export class ExactTokenQuantityDto extends ChainCallDTO {

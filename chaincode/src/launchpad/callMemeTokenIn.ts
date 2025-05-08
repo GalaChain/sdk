@@ -71,5 +71,5 @@ export async function callMemeTokenIn(
   const tokensSent = totalTokensSold.minus(lnAdjustedExp.mul(decimals).div(exponentFactor));
   const roundedTokenSent = tokensSent.toDecimalPlaces(18, Decimal.ROUND_UP);
 
-  return roundedTokenSent.toString();
+  return roundedTokenSent.toFixed();
 }

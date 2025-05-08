@@ -59,6 +59,7 @@ export async function createSale(
   ctx: GalaChainContext,
   launchpadDetails: CreateTokenSaleDTO
 ): Promise<CreateSaleResDto> {
+  let isSaleFinalised = false;
   // Validate input parameters
 
   if (!launchpadDetails.websiteUrl && !launchpadDetails.telegramUrl && !launchpadDetails.twitterUrl) {
@@ -124,7 +125,8 @@ export async function createSale(
     const nativeTokenDto = new NativeTokenQuantityDto();
     nativeTokenDto.nativeTokenQuantity = launchpadDetails.preBuyQuantity;
     nativeTokenDto.vaultAddress = launchpad.vaultAddress;
-    await buyWithNative(ctx, nativeTokenDto);
+    const tradeStatus = await buyWithNative(ctx, nativeTokenDto);
+    isSaleFinalised = tradeStatus.isFinalized;
   }
 
   // Return the response object
@@ -136,11 +138,13 @@ export async function createSale(
     websiteUrl: launchpadDetails.websiteUrl ? launchpadDetails.websiteUrl : "",
     telegramUrl: launchpadDetails.telegramUrl ? launchpadDetails.telegramUrl : "",
     twitterUrl: launchpadDetails.twitterUrl ? launchpadDetails.twitterUrl : "",
-    initialBuyQuantity: launchpadDetails.preBuyQuantity.toString(),
+    initialBuyQuantity: launchpadDetails.preBuyQuantity.toFixed(),
     vaultAddress: vaultAddress,
     creatorAddress: ctx.callingUser,
     collection: launchpadDetails.tokenCollection,
     category: launchpadDetails.tokenCategory,
-    functionName: "CreateSale"
+    functionName: "CreateSale",
+    isFinalized: isSaleFinalised,
+    tokenStringKey: tokenInstanceKey.getTokenClassKey().toStringKey()
   };
 }

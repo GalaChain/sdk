@@ -89,8 +89,8 @@ export async function sellWithNative(
 
   const token = await fetchTokenClass(ctx, sale.sellingToken);
   return {
-    inputQuantity: tokensToSell.toString(),
-    outputQuantity: sellTokenDTO.nativeTokenQuantity.toString(),
+    inputQuantity: tokensToSell.toFixed(),
+    outputQuantity: sellTokenDTO.nativeTokenQuantity.toFixed(),
     tokenName: token.name,
     tradeType: "Sell",
     vaultAddress: sellTokenDTO.vaultAddress,
