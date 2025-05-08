@@ -60,7 +60,7 @@ import { TokenClassKey } from "./TokenClass";
 })
 export class Pool extends ChainObject {
   @Exclude()
-  static INDEX_KEY = "GCDVP"; //GalaChain Dex V3 Pool
+  static INDEX_KEY = "GCDP"; //GalaChain Dex Pool
 
   @JSONSchema({
     description: "Min Tick for the pool"
