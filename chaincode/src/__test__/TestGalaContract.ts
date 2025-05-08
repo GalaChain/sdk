@@ -25,8 +25,8 @@ import {
   createValidChainObject,
   randomUniqueKey
 } from "@gala-chain/api";
-import { Exclude } from "class-transformer";
-import { IsNotEmpty, IsPositive } from "class-validator";
+import { Exclude, Type } from "class-transformer";
+import { IsArray, IsNotEmpty, IsPositive, IsString, ValidateNested } from "class-validator";
 import { Transaction } from "fabric-contract-api";
 
 import { version } from "../../package.json";
@@ -60,13 +60,18 @@ export class SuperheroDto extends SubmitCallDTO {
 
 export class SuperheroQueryDto extends ChainCallDTO {
   // this is used to check if chaincode uses cache
+  @IsArray()
+  @ValidateNested({ each: true })
+  @Type(() => SuperheroDto)
   public saveBeforeReturn: SuperheroDto[];
 }
 
 export class Superhero extends ChainObject {
+  @IsString()
   @ChainKey({ position: 0 })
   public name: string;
 
+  @IsPositive()
   public age: number;
 
   @Exclude()
@@ -143,7 +148,7 @@ export default class TestGalaContract extends GalaContract {
 
   @Transaction()
   public async IncrementTwiceWrong(ctx: GalaChainContext, key: string): Promise<GalaChainResponse<void>> {
-    const getOrZero = async (): Promise<number> => +(await ctx.stub.getState(key)).toString() ?? 0;
+    const getOrZero = async (): Promise<number> => +(await ctx.stub.getState(key)).toString();
     const incrementedFirstTime = (await getOrZero()) + 1;
     await ctx.stub.putState(key, Buffer.from(incrementedFirstTime.toString()));
 
