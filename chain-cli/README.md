@@ -400,7 +400,8 @@ Start the chaincode, browser-api, and ops-api (in non-watch mode).
 ```
 USAGE
   $ galachain network-up -C <value>... -t curator|partner... -n <value>... [--json] [--log-level
-    debug|info|warn|error] [-d <value>...] [-r <value>] [-e <value>] [-w] [-o <value>...]
+    debug|info|warn|error] [-d <value>...] [-r <value>] [-e <value>] [-w] [-o <value>...] [--no-rest-api]
+    [--no-chain-browser]
 
 FLAGS
   -C, --channel=<value>...        (required) Channel name.
@@ -416,6 +417,8 @@ FLAGS
                                   chaincode managed by CuratorOrg or PartnerOrg.
                                   <options: curator|partner>
   -w, --watch                     Enable watch mode (live chaincode reload).
+      --no-chain-browser          Do not start GalaChain Browser.
+      --no-rest-api               Do not start GalaChain REST API services.
 
 GLOBAL FLAGS
   --json                Format output as json.
@@ -468,7 +471,8 @@ Start the chaincode, browser-api, and ops-api (in non-watch mode).
 ```
 USAGE
   $ galachain network:up -C <value>... -t curator|partner... -n <value>... [--json] [--log-level
-    debug|info|warn|error] [-d <value>...] [-r <value>] [-e <value>] [-w] [-o <value>...]
+    debug|info|warn|error] [-d <value>...] [-r <value>] [-e <value>] [-w] [-o <value>...] [--no-rest-api]
+    [--no-chain-browser]
 
 FLAGS
   -C, --channel=<value>...        (required) Channel name.
@@ -484,6 +488,8 @@ FLAGS
                                   chaincode managed by CuratorOrg or PartnerOrg.
                                   <options: curator|partner>
   -w, --watch                     Enable watch mode (live chaincode reload).
+      --no-chain-browser          Do not start GalaChain Browser.
+      --no-rest-api               Do not start GalaChain REST API services.
 
 GLOBAL FLAGS
   --json                Format output as json.
