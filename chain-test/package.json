@@ -12,7 +12,7 @@
   "peerDependencies": {
     "@gala-chain/api": "1.9.4",
     "bignumber.js": "*",
-    "class-transformer": "*",
+    "class-transformer": "0.5.1",
     "elliptic": "*",
     "fabric-contract-api": "*",
     "fabric-shim": "*",

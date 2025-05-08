@@ -6,10 +6,10 @@
     "ethers": "^6.12.1",
     "tslib": "^2.3.0",
     "bignumber.js": "9.1.2",
-    "class-validator": "0.14.0"
+    "class-validator": "0.14.2"
   },
   "peerDependencies": {
-    "class-transformer": "*"
+    "class-transformer": "0.5.1"
   },
   "overrides": {
     "ethers": {

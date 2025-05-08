@@ -496,7 +496,7 @@ describe("DEx v3 Testing", () => {
               inUseHolds: [],
               instanceIds: [],
               lockedHolds: [],
-              owner: `${user.identityKey}`,
+              owner: user.identityKey,
               quantity: new BigNumber("100000000"),
               type: "new-type0"
             },
@@ -507,7 +507,7 @@ describe("DEx v3 Testing", () => {
               inUseHolds: [],
               instanceIds: [],
               lockedHolds: [],
-              owner: `${user.identityKey}`,
+              owner: user.identityKey,
               type: "new-type0"
             }
           },
@@ -916,7 +916,7 @@ describe("DEx v3 Testing", () => {
             inUseHolds: [],
             instanceIds: [],
             lockedHolds: [],
-            owner: `${user.identityKey}`,
+            owner: user.identityKey,
             quantity: new BigNumber("99999998.999"),
             type: "new-type0"
           },
@@ -928,7 +928,7 @@ describe("DEx v3 Testing", () => {
             inUseHolds: [],
             instanceIds: [],
             lockedHolds: [],
-            owner: `${user.identityKey}`,
+            owner: user.identityKey,
             type: "new-type0"
           }
         }
@@ -1070,7 +1070,7 @@ describe("DEx v3 Testing", () => {
             inUseHolds: [],
             instanceIds: [],
             lockedHolds: [],
-            owner: `${user.identityKey}`,
+            owner: user.identityKey,
             type: "new-type0"
           }),
           token1Balance: expect.objectContaining({
@@ -1080,7 +1080,7 @@ describe("DEx v3 Testing", () => {
             inUseHolds: [],
             instanceIds: [],
             lockedHolds: [],
-            owner: `${user.identityKey}`,
+            owner: user.identityKey,
             type: "new-type0"
           })
         }
@@ -1360,7 +1360,7 @@ describe("DEx v3 Testing", () => {
               inUseHolds: [],
               instanceIds: [],
               lockedHolds: [],
-              owner: `${user.identityKey}`,
+              owner: user.identityKey,
               type: "new-type0"
             }),
             token1Balance: expect.objectContaining({
@@ -1370,7 +1370,7 @@ describe("DEx v3 Testing", () => {
               inUseHolds: [],
               instanceIds: [],
               lockedHolds: [],
-              owner: `${user.identityKey}`,
+              owner: user.identityKey,
               type: "new-type0"
             })
           },
@@ -1528,7 +1528,7 @@ describe("DEx v3 Testing", () => {
             inUseHolds: [],
             instanceIds: [],
             lockedHolds: [],
-            owner: `${user.identityKey}`,
+            owner: user.identityKey,
             type: "new-type0"
           }),
           token1Balance: expect.objectContaining({
@@ -1538,7 +1538,7 @@ describe("DEx v3 Testing", () => {
             inUseHolds: [],
             instanceIds: [],
             lockedHolds: [],
-            owner: `${user.identityKey}`,
+            owner: user.identityKey,
             type: "new-type0"
           })
         }
@@ -1945,7 +1945,7 @@ describe("DEx v3 Testing", () => {
             inUseHolds: [],
             instanceIds: [],
             lockedHolds: [],
-            owner: `${user.identityKey}`,
+            owner: user.identityKey,
             type: "new-type0"
           }),
           token1Balance: expect.objectContaining({
@@ -1955,7 +1955,7 @@ describe("DEx v3 Testing", () => {
             inUseHolds: [],
             instanceIds: [],
             lockedHolds: [],
-            owner: `${user.identityKey}`,
+            owner: user.identityKey,
             type: "new-type0"
           })
         }
@@ -2092,7 +2092,7 @@ describe("DEx v3 Testing", () => {
             inUseHolds: [],
             instanceIds: [],
             lockedHolds: [],
-            owner: `${user.identityKey}`,
+            owner: user.identityKey,
             quantity: new BigNumber("99999898.99930000000000062"),
             type: "new-type0"
           },
@@ -2103,7 +2103,7 @@ describe("DEx v3 Testing", () => {
             inUseHolds: [],
             instanceIds: [],
             lockedHolds: [],
-            owner: `${user.identityKey}`,
+            owner: user.identityKey,
             quantity: new BigNumber("99856936.643320146052266951"),
             type: "new-type0"
           }
