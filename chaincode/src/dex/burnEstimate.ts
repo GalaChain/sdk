@@ -12,14 +12,16 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-import { BurnEstimateDto, GetRemoveLiqEstimationResDto, NotFoundError, Pool } from "@gala-chain/api";
+import { BurnEstimateDto, GetRemoveLiqEstimationResDto, Pool } from "@gala-chain/api";
 
 import { GalaChainContext } from "../types";
-import { getObjectByKey, validateTokenOrder } from "../utils";
-import { fetchUserPositionNftId } from "./positionNft";
+import { getObjectByKey } from "../utils";
+import { getTokenDecimalsFromPool, roundTokenAmount, validateTokenOrder } from "./dexUtils";
+import { fetchUserPositionInTickRange } from "./position.helper";
+import { fetchOrCreateTickDataPair } from "./tickData.helper";
 
 /**
- * @dev The getRemoveLiquidityEstimation function estimates the amount of tokens a user will receive when removing liquidity from a Uniswap V3 pool within the GalaChain ecosystem. It calculates the expected token amounts based on the user's liquidity position and market conditions.
+ * @dev The getRemoveLiquidityEstimation function estimates the amount of tokens a user will receive when removing liquidity from a Decentralized exchange pool within the GalaChain ecosystem. It calculates the expected token amounts based on the user's liquidity position and market conditions.
  * @param ctx GalaChainContext – The execution context providing access to the GalaChain environment.
  * @param dto BurnEstimateDto – A data transfer object containing details of the liquidity position to be removed, including pool information, token amounts, and position ID.
  * @returns array with estimated value recieved after burning the positions
@@ -33,24 +35,30 @@ export async function getRemoveLiquidityEstimation(
   const key = ctx.stub.createCompositeKey(Pool.INDEX_KEY, [token0, token1, dto.fee.toString()]);
   const pool = await getObjectByKey(ctx, Pool, key);
 
-  //If pool does not exist
-  if (pool == undefined) throw new NotFoundError("Pool does not exist");
-
-  const positionNftId = await fetchUserPositionNftId(
+  const poolHash = pool.genPoolHash();
+  const position = await fetchUserPositionInTickRange(
     ctx,
-    pool,
-    dto.tickUpper.toString(),
-    dto.tickLower.toString(),
+    pool.genPoolHash(),
+    dto.tickUpper,
+    dto.tickLower,
     dto.owner
   );
-
-  if (!positionNftId)
-    throw new NotFoundError(`User doesn't hold any positions with this tick range in this pool`);
 
   const tickLower = parseInt(dto.tickLower.toString()),
     tickUpper = parseInt(dto.tickUpper.toString());
 
-  const amounts = pool.burn(positionNftId, tickLower, tickUpper, dto.amount.f18());
+  const { tickUpperData, tickLowerData } = await fetchOrCreateTickDataPair(
+    ctx,
+    poolHash,
+    tickLower,
+    tickUpper
+  );
+  const amounts = pool.burn(position, tickLowerData, tickUpperData, dto.amount.f18());
 
-  return new GetRemoveLiqEstimationResDto(amounts[0], amounts[1]);
+  const [token0Decimal, token1Decimal] = await getTokenDecimalsFromPool(ctx, pool);
+
+  return new GetRemoveLiqEstimationResDto(
+    amounts[0].toFixed(token0Decimal),
+    amounts[1].toFixed(token1Decimal)
+  );
 }

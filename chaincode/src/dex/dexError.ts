@@ -12,11 +12,14 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-import GalaJSONSerializer from "./GalaJSONSerializer";
+import { ValidationFailedError } from "@gala-chain/api";
 
-export * from "./state";
-export * from "./utils";
-export * from "./authorityOrgName";
-export * from "./launchpadSaleUtils";
+export class NegativeAmountError extends ValidationFailedError {
+  tokenIndex: number;
+  amount: string;
 
-export { GalaJSONSerializer };
+  constructor(tokenIndex: number, amount: string) {
+    const token = tokenIndex === 0 ? "token0" : "token1";
+    super(`Estimated amount for ${token} is negative: ${amount}`);
+  }
+}

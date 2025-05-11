@@ -15,9 +15,9 @@
 import {
   CollectTradingFeesDto,
   CollectTradingFeesResDto,
-  ConflictError,
   NotFoundError,
   Pool,
+  TokenInstanceKey,
   UnauthorizedError
 } from "@gala-chain/api";
 import BigNumber from "bignumber.js";
@@ -26,21 +26,14 @@ import { fetchOrCreateBalance } from "../balances";
 import { fetchTokenClass } from "../token";
 import { transferToken } from "../transfer";
 import { GalaChainContext } from "../types";
-import {
-  convertToTokenInstanceKey,
-  fetchDexProtocolFeeConfig,
-  genKey,
-  getObjectByKey,
-  putChainObject,
-  validateTokenOrder,
-  virtualAddress
-} from "../utils";
+import { getObjectByKey, putChainObject } from "../utils";
+import { fetchDexProtocolFeeConfig, validateTokenOrder } from "./dexUtils";
 
 /**
- * @dev The collectTradingFees function enables the collection of protocol fees accumulated in a Uniswap V3 pool within the GalaChain ecosystem. It retrieves and transfers the protocol's share of the trading fees to the designated recipient.
+ * @dev The collectTradingFees function enables the collection of protocol fees accumulated in a Decentralized exchange pool within the GalaChain ecosystem. It retrieves and transfers the protocol's share of the trading fees to the designated recipient.
  * @param ctx GalaChainContext – The execution context providing access to the GalaChain environment.
  * @param dto CollectTradingFeesDto – A data transfer object containing:
-   - Pool details (identifying which Uniswap V3 pool the fees are collected from).
+   - Pool details (identifying which Decentralized exchange pool the fees are collected from).
    - Recipient address (where the collected protocol fees will be sent).
  * @returns [tokenAmount0, tokenAmount1]
  */
@@ -61,15 +54,12 @@ export async function collectTradingFees(
   const key = ctx.stub.createCompositeKey(Pool.INDEX_KEY, [token0, token1, dto.fee.toString()]);
   const pool = await getObjectByKey(ctx, Pool, key);
 
-  //If pool does not exist
-  if (pool == undefined) throw new ConflictError("Pool does not exist");
-  const poolAddrKey = genKey(pool.token0, pool.token1, pool.fee.toString());
-  const poolVirtualAddress = virtualAddress(poolAddrKey);
+  const poolAlias = pool.getPoolAlias();
 
   const amounts = pool.collectTradingFees();
 
   //create tokenInstanceKeys
-  const tokenInstanceKeys = [pool.token0ClassKey, pool.token1ClassKey].map(convertToTokenInstanceKey);
+  const tokenInstanceKeys = [pool.token0ClassKey, pool.token1ClassKey].map(TokenInstanceKey.fungibleKey);
 
   //fetch token classes
   const tokenClasses = await Promise.all(tokenInstanceKeys.map((key) => fetchTokenClass(ctx, key)));
@@ -78,7 +68,7 @@ export async function collectTradingFees(
     if (amount.gt(0)) {
       const poolTokenBalance = await fetchOrCreateBalance(
         ctx,
-        poolVirtualAddress,
+        poolAlias,
         tokenInstanceKeys[index].getTokenClassKey()
       );
       const roundedAmount = BigNumber.min(
@@ -87,14 +77,14 @@ export async function collectTradingFees(
       );
 
       await transferToken(ctx, {
-        from: poolVirtualAddress,
+        from: poolAlias,
         to: dto.recepient,
         tokenInstanceKey: tokenInstanceKeys[index],
         quantity: roundedAmount,
         allowancesToUse: [],
         authorizedOnBehalf: {
-          callingOnBehalf: poolVirtualAddress,
-          callingUser: poolVirtualAddress
+          callingOnBehalf: poolAlias,
+          callingUser: poolAlias
         }
       });
     }

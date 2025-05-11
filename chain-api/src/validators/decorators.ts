@@ -295,3 +295,26 @@ export function IsLessThan(property: string, validationOptions?: ValidationOptio
     });
   };
 }
+
+export function IsStringRecord(validationOptions?: ValidationOptions) {
+  return function (object: object, propertyName: string) {
+    registerDecorator({
+      name: "isStringRecord",
+      target: object.constructor,
+      propertyName,
+      options: validationOptions,
+      validator: {
+        validate(value: any, args: ValidationArguments) {
+          if (typeof value !== "object" || value === null || Array.isArray(value)) return false;
+
+          return Object.entries(value).every(
+            ([key, val]) => typeof key === "string" && typeof val === "string"
+          );
+        },
+        defaultMessage(args: ValidationArguments) {
+          return `${args.property} must be a Record<string, string>`;
+        }
+      }
+    });
+  };
+}

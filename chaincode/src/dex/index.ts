@@ -22,3 +22,8 @@ export * from "./quoteFuncs";
 export * from "./swap";
 export * from "./setProtocolFee";
 export * from "./collectTradingFees";
+export * from "./getPosition";
+export * from "./getUserPositions";
+export * from "./dexError";
+export * from "./transferDexPosition";
+export * from "./dexUtils";

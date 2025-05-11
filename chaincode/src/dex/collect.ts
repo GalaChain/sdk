@@ -12,61 +12,50 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-import {
-  BurnTokenQuantity,
-  CollectDto,
-  ConflictError,
-  NotFoundError,
-  Pool,
-  UserBalanceResDto
-} from "@gala-chain/api";
+import { CollectDto, NotFoundError, Pool, TokenInstanceKey, UserBalanceResDto } from "@gala-chain/api";
 import BigNumber from "bignumber.js";
 
 import { fetchOrCreateBalance } from "../balances";
-import { burnTokens } from "../burns";
-import { fetchTokenClass } from "../token";
 import { transferToken } from "../transfer";
 import { GalaChainContext } from "../types";
-import { convertToTokenInstanceKey, getObjectByKey, putChainObject, validateTokenOrder } from "../utils";
-import { fetchPositionNftInstanceKey, fetchUserPositionNftId } from "./positionNft";
+import { getObjectByKey, putChainObject } from "../utils";
+import { NegativeAmountError } from "./dexError";
+import { getTokenDecimalsFromPool, roundTokenAmount, validateTokenOrder } from "./dexUtils";
+import { fetchUserPositionInTickRange } from "./position.helper";
+import { removePositionIfEmpty } from "./removePositionIfEmpty";
+import { fetchOrCreateTickDataPair } from "./tickData.helper";
 
 /**
- * @dev The collect function allows a user to claim and withdraw accrued fee tokens from a specific liquidity position in a Uniswap V3 pool within the GalaChain ecosystem. It retrieves earned fees based on the user's position details and transfers them to the user's account.
+ * @dev The collect function allows a user to claim and withdraw accrued fee tokens from a specific liquidity position in a Decentralized exchange pool within the GalaChain ecosystem. It retrieves earned fees based on the user's position details and transfers them to the user's account.
  * @param ctx  GalaChainContext – The execution context providing access to the GalaChain environment.
  * @param dto Position details (pool information, tickUpper, tickLower).
 
  * @returns UserBalanceResDto
  */
 export async function collect(ctx: GalaChainContext, dto: CollectDto): Promise<UserBalanceResDto> {
+  // Validate token order and fetch pool and positions
   const [token0, token1] = validateTokenOrder(dto.token0, dto.token1);
   const key = ctx.stub.createCompositeKey(Pool.INDEX_KEY, [token0, token1, dto.fee.toString()]);
   const pool = await getObjectByKey(ctx, Pool, key);
 
-  const poolAddrKey = pool.getPoolAddrKey();
-  const poolVirtualAddress = pool.getPoolAlias();
-  const positionNftId = await fetchUserPositionNftId(
-    ctx,
-    pool,
-    dto.tickUpper.toString(),
-    dto.tickLower.toString()
-  );
-  if (!positionNftId)
-    throw new NotFoundError(`User doesn't hold any positions with this tick range in this pool`);
+  const poolHash = pool.genPoolHash();
+  const poolAlias = pool.getPoolAlias();
+  const position = await fetchUserPositionInTickRange(ctx, poolHash, dto.tickUpper, dto.tickLower);
+  if (!position) throw new NotFoundError(`User doesn't hold any positions with this tick range in this pool`);
 
-  //create tokenInstanceKeys
-  const tokenInstanceKeys = [pool.token0ClassKey, pool.token1ClassKey].map(convertToTokenInstanceKey);
+  // Create token instance keys and fetch token decimals
+  const tokenInstanceKeys = [pool.token0ClassKey, pool.token1ClassKey].map(TokenInstanceKey.fungibleKey);
+  const tokenDecimals = await getTokenDecimalsFromPool(ctx, pool);
 
-  //fetch token classes
-  const tokenClasses = await Promise.all(tokenInstanceKeys.map((key) => fetchTokenClass(ctx, key)));
-
+  // Adjust tokens being payed out to the position holder based on the pool's token balances
   const poolToken0Balance = await fetchOrCreateBalance(
     ctx,
-    poolVirtualAddress,
+    poolAlias,
     tokenInstanceKeys[0].getTokenClassKey()
   );
   const poolToken1Balance = await fetchOrCreateBalance(
     ctx,
-    poolVirtualAddress,
+    poolAlias,
     tokenInstanceKeys[1].getTokenClassKey()
   );
 
@@ -78,41 +67,42 @@ export async function collect(ctx: GalaChainContext, dto: CollectDto): Promise<U
   const tickLower = parseInt(dto.tickLower.toString()),
     tickUpper = parseInt(dto.tickUpper.toString());
 
-  const amounts = pool.collect(positionNftId, tickLower, tickUpper, amount0Requested, amount1Requested);
+  // Fetch tick data for positions upper and lower tick and receive the amounts that need to be payed out
+  const { tickUpperData, tickLowerData } = await fetchOrCreateTickDataPair(
+    ctx,
+    poolHash,
+    tickLower,
+    tickUpper
+  );
+  const amounts = pool.collect(position, tickLowerData, tickUpperData, amount0Requested, amount1Requested);
 
-  const position = pool.positions[positionNftId];
-  const deleteUserPos =
-    new BigNumber(position.tokensOwed0).f18().isLessThan(new BigNumber("0.00000001")) &&
-    new BigNumber(position.tokensOwed1).f18().isLessThan(new BigNumber("0.00000001")) &&
-    new BigNumber(position.liquidity).f18().isLessThan(new BigNumber("0.00000001"));
+  // Remove position if empty and save updated pool
+  await removePositionIfEmpty(ctx, poolHash, position);
 
-  if (deleteUserPos) {
-    delete pool.positions[positionNftId];
-    const burnTokenQuantity = new BurnTokenQuantity();
-    burnTokenQuantity.tokenInstanceKey = await fetchPositionNftInstanceKey(ctx, poolAddrKey, positionNftId);
-    burnTokenQuantity.quantity = new BigNumber(1);
-    await burnTokens(ctx, {
-      owner: ctx.callingUser,
-      toBurn: [burnTokenQuantity]
+  // Round down the tokens and transfer the tokens to position holder
+  for (const [index, amount] of amounts.entries()) {
+    if (amount.lt(0)) {
+      throw new NegativeAmountError(index, amount.toString());
+    }
+    const roundedAmount = roundTokenAmount(amount, tokenDecimals[index]);
+
+    await transferToken(ctx, {
+      from: poolAlias,
+      to: ctx.callingUser,
+      tokenInstanceKey: tokenInstanceKeys[index],
+      quantity: roundedAmount,
+      allowancesToUse: [],
+      authorizedOnBehalf: {
+        callingOnBehalf: poolAlias,
+        callingUser: poolAlias
+      }
     });
   }
-  await putChainObject(ctx, pool);
 
-  for (const [index, amount] of amounts.entries()) {
-    if (amount.gt(0)) {
-      await transferToken(ctx, {
-        from: poolVirtualAddress,
-        to: ctx.callingUser,
-        tokenInstanceKey: tokenInstanceKeys[index],
-        quantity: new BigNumber(amount.toFixed(tokenClasses[index].decimals)).abs(),
-        allowancesToUse: [],
-        authorizedOnBehalf: {
-          callingOnBehalf: poolVirtualAddress,
-          callingUser: poolVirtualAddress
-        }
-      });
-    }
-  }
+  await putChainObject(ctx, pool);
+  await putChainObject(ctx, position);
+
+  // Return position holder's new token balances
   const liquidityProviderToken0Balance = await fetchOrCreateBalance(
     ctx,
     ctx.callingUser,

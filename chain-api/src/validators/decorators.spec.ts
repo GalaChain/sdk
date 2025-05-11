@@ -16,7 +16,7 @@ import BigNumber from "bignumber.js";
 import { ArrayNotEmpty, validate } from "class-validator";
 
 import { ChainCallDTO } from "../types";
-import { ArrayUniqueObjects, BigNumberIsNegative } from "./decorators";
+import { ArrayUniqueObjects, BigNumberIsNegative, IsStringRecord } from "./decorators";
 
 describe("ArrayUniqueObject", () => {
   it("validation should give errors when two users have the same id", async () => {
@@ -127,5 +127,78 @@ describe("BigNumberIsNegative", () => {
 
     // then
     expect(result.length).toBe(0);
+  });
+});
+
+describe("IsStringRecord validator", () => {
+  class MockDto {
+    @IsStringRecord()
+    data!: any;
+  }
+
+  it("should pass for a valid non-empty Record<string, string>", async () => {
+    // Given
+    const dto = new MockDto();
+    dto.data = {
+      key1: "value1",
+      key2: "value2"
+    };
+
+    // When
+    const errors = await validate(dto);
+
+    // Then
+    expect(errors.length).toBe(0);
+  });
+
+  it("should pass for an empty object", async () => {
+    // Given
+    const dto = new MockDto();
+    dto.data = {};
+
+    // When
+    const errors = await validate(dto);
+
+    // Then
+    expect(errors.length).toBe(0);
+  });
+
+  it("should fail if any value is not a string", async () => {
+    // Given
+    const dto = new MockDto();
+    dto.data = {
+      key1: "value1",
+      key2: 123
+    };
+
+    // When
+    const errors = await validate(dto);
+
+    // Then
+    expect(errors.length).toBeGreaterThan(0);
+  });
+
+  it("should fail if input is null", async () => {
+    // Given
+    const dto = new MockDto();
+    dto.data = null;
+
+    // When
+    const errors = await validate(dto);
+
+    // Then
+    expect(errors.length).toBeGreaterThan(0);
+  });
+
+  it("should fail if input is an array", async () => {
+    // Given
+    const dto = new MockDto();
+    dto.data = ["a", "b"];
+
+    // When
+    const errors = await validate(dto);
+
+    // Then
+    expect(errors.length).toBeGreaterThan(0);
   });
 });

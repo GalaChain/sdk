@@ -14,9 +14,9 @@
  */
 import BigNumber from "bignumber.js";
 
+import { TickData } from "../../types/TickData";
 import { ValidationFailedError } from "../error";
 import { leastSignificantBit, mostSignificantBit } from "./bitMath.helper";
-import { Bitmap, TickDataObj } from "./dexHelperDtos";
 
 const MIN_TICK = -887272,
   MAX_TICK = 887272;
@@ -43,66 +43,11 @@ export function sqrtPriceToTick(sqrtPrice: BigNumber): number {
 }
 
 /**
+ * Calculates the word and bit position for a given tick in a bitmap.
  *
- * @notice Updates a tick and returns true if the tick was flipped from initialized to uninitialized, or vice versa
- *  @param tickData The mapping containing all tick information for initialized ticks
- *  @param tick The tick that will be updated
- *  @param tickCurrent The current tick
- *  @param liquidityDelta A new amount of liquidity to be added (subtracted) when tick is crossed from left to right (right to left)
- *  @param upper true for updating a position's upper tick, or false for updating a position's lower tick
- *  @param feeGrowthGlobal0 The all-time global fee growth, per unit of liquidity, in token0
- *  @param feeGrowthGlobal1 The all-time global fee growth, per unit of liquidity, in token1
- *  @param maxLiquidity The maximum liquidity allocation for a single tick
- *  @return flipped Whether the tick was flipped from initialized to uninitialized, or vice versa
+ * @param tick - The tick index.
+ * @returns A tuple of [word index, bit position within the word].
  */
-export function updateTick(
-  tickData: TickDataObj,
-  tick: number,
-  tickCurrent: number,
-  liquidityDelta: BigNumber,
-  upper: boolean,
-  feeGrowthGlobal0: BigNumber,
-  feeGrowthGlobal1: BigNumber,
-  maxLiquidity: BigNumber
-): boolean {
-  //initialise tickData for the required tick
-  if (tickData[tick] == undefined)
-    tickData[tick] = {
-      liquidityGross: new BigNumber(0).toString(),
-      initialised: false,
-      liquidityNet: new BigNumber(0).toString(),
-      feeGrowthOutside0: new BigNumber(0).toString(),
-      feeGrowthOutside1: new BigNumber(0).toString()
-    };
-
-  const liquidityGrossBefore = new BigNumber(tickData[tick].liquidityGross);
-  const liquidityGrossAfter = new BigNumber(liquidityGrossBefore).plus(liquidityDelta);
-
-  if (liquidityGrossAfter.isGreaterThan(maxLiquidity))
-    throw new ValidationFailedError("liquidity crossed max liquidity");
-
-  //update liquidity gross and net
-  tickData[tick].liquidityGross = liquidityGrossAfter.toString();
-  tickData[tick].liquidityNet = upper
-    ? new BigNumber(tickData[tick].liquidityNet).minus(liquidityDelta).toString()
-    : new BigNumber(tickData[tick].liquidityNet).plus(liquidityDelta).toString();
-
-  //tick is initialised for the first time
-  if (liquidityGrossBefore.isEqualTo(0)) {
-    if (tick <= tickCurrent) {
-      tickData[tick].feeGrowthOutside0 = feeGrowthGlobal0.toString();
-      tickData[tick].feeGrowthOutside1 = feeGrowthGlobal1.toString();
-    }
-    tickData[tick].initialised = true;
-    return true;
-  }
-
-  //either tick is turning on or off
-  const flipped = liquidityGrossBefore.isEqualTo(0) != liquidityGrossAfter.isEqualTo(0);
-
-  return flipped;
-}
-
 function position(tick: number): [word: number, position: number] {
   tick = Math.floor(tick);
 
@@ -120,7 +65,7 @@ function position(tick: number): [word: number, position: number] {
  *  @param bitmap The mapping in which to flip the tick
  *  @param tick The tick to flip
  */
-export function flipTick(bitmap: Bitmap, tick: number, tickSpacing: number) {
+export function flipTick(bitmap: Record<string, string>, tick: number, tickSpacing: number) {
   if (tick % tickSpacing != 0) {
     throw new ValidationFailedError("Tick is not spaced " + tick + " " + tickSpacing);
   }
@@ -138,7 +83,7 @@ export function flipTick(bitmap: Bitmap, tick: number, tickSpacing: number) {
   bitmap[word] = newMask.toString();
 }
 
-function isTickInitialized(tick: number, tickSpacing: number, bitmap: Bitmap): boolean {
+function isTickInitialized(tick: number, tickSpacing: number, bitmap: Record<string, string>): boolean {
   tick /= tickSpacing;
   const [word, pos] = position(tick);
   const mask = BigInt(1) << BigInt(pos);
@@ -162,7 +107,7 @@ function isTickInitialized(tick: number, tickSpacing: number, bitmap: Bitmap): b
  *  @return initialized Whether the next tick is initialized, as the function only searches within up to 256 ticks
  */
 export function nextInitialisedTickWithInSameWord(
-  bitmap: Bitmap,
+  bitmap: Record<string, string>,
   tick: number,
   tickSpacing: number,
   lte: boolean,
@@ -212,45 +157,9 @@ export function nextInitialisedTickWithInSameWord(
 
 /**
  *
- *  @notice Transitions to next tick as needed by price movement
- *  @param tick The destination tick of the transition
- *  @param tickData The mapping containing all tick information for initialized ticks
- *  @param feeGrowthGlobal0 The all-time global fee growth, per unit of liquidity, in token0
- *  @param feeGrowthGlobal1 The all-time global fee growth, per unit of liquidity, in token1
- *  @return liquidityNet The amount of liquidity added (subtracted) when tick is crossed from left to right (right to left)
- */
-export function tickCross(
-  tick: number,
-  tickData: TickDataObj,
-  feeGrowthGlobal0: BigNumber,
-  feeGrowthGlobal1: BigNumber
-): BigNumber {
-  //initialise tickData for the required tick
-  if (tickData[tick] == undefined)
-    tickData[tick] = {
-      liquidityGross: new BigNumber(0).toString(),
-      initialised: false,
-      liquidityNet: new BigNumber(0).toString(),
-      feeGrowthOutside0: new BigNumber(0).toString(),
-      feeGrowthOutside1: new BigNumber(0).toString()
-    };
-
-  tickData[tick].feeGrowthOutside0 = feeGrowthGlobal0
-    .minus(new BigNumber(tickData[tick].feeGrowthOutside0))
-    .toString();
-  tickData[tick].feeGrowthOutside1 = feeGrowthGlobal1
-    .minus(new BigNumber(tickData[tick].feeGrowthOutside1))
-    .toString();
-
-  return new BigNumber(tickData[tick].liquidityNet);
-}
-
-/**
- *
  *  @notice Retrieves fee growth data
- *  @param tickData The mapping containing all tick information for initialized ticks
- *  @param tickLower The lower tick boundary of the position
- *  @param tickUpper The upper tick boundary of the position
+ *  @param tickLowerData The tick data of lower tick boundary of the position
+ *  @param tickUpperData The tick data of upper tick boundary of the position
  *  @param tickCurrent The current tick
  *  @param feeGrowthGlobal0 The all-time global fee growth, per unit of liquidity, in token0
  *  @param feeGrowthGlobal1 The all-time global fee growth, per unit of liquidity, in token1
@@ -258,34 +167,37 @@ export function tickCross(
  *  @return feeGrowthInside1 The all-time fee growth in token1, per unit of liquidity, inside the position's tick boundaries
  */
 export function getFeeGrowthInside(
-  tickData: TickDataObj,
-  tickLower: number,
-  tickUpper: number,
+  tickLowerData: TickData,
+  tickUpperData: TickData,
   tickCurrent: number,
   feeGrowthGlobal0: BigNumber,
   feeGrowthGlobal1: BigNumber
 ): BigNumber[] {
+  const tickLower = tickLowerData.tick;
+  const tickUpper = tickUpperData.tick;
+
   //calculate fee growth below
   let feeGrowthBelow0: BigNumber, feeGrowthBelow1: BigNumber;
 
   if (tickCurrent >= tickLower) {
-    feeGrowthBelow0 = new BigNumber(tickData[tickLower].feeGrowthOutside0);
-    feeGrowthBelow1 = new BigNumber(tickData[tickLower].feeGrowthOutside1);
+    feeGrowthBelow0 = tickLowerData.feeGrowthOutside0;
+    feeGrowthBelow1 = tickLowerData.feeGrowthOutside1;
   } else {
-    feeGrowthBelow0 = feeGrowthGlobal0.minus(new BigNumber(tickData[tickLower].feeGrowthOutside0));
-    feeGrowthBelow1 = feeGrowthGlobal1.minus(new BigNumber(tickData[tickLower].feeGrowthOutside1));
+    feeGrowthBelow0 = feeGrowthGlobal0.minus(tickLowerData.feeGrowthOutside0);
+    feeGrowthBelow1 = feeGrowthGlobal1.minus(tickLowerData.feeGrowthOutside1);
   }
 
   //calculate fee growth above
   let feeGrowthAbove0: BigNumber, feeGrowthAbove1: BigNumber;
   if (tickCurrent < tickUpper) {
-    feeGrowthAbove0 = new BigNumber(tickData[tickUpper].feeGrowthOutside0);
-    feeGrowthAbove1 = new BigNumber(tickData[tickUpper].feeGrowthOutside1);
+    feeGrowthAbove0 = tickUpperData.feeGrowthOutside0;
+    feeGrowthAbove1 = tickUpperData.feeGrowthOutside1;
   } else {
-    feeGrowthAbove0 = feeGrowthGlobal0.minus(new BigNumber(tickData[tickUpper].feeGrowthOutside0));
-    feeGrowthAbove1 = feeGrowthGlobal1.minus(new BigNumber(tickData[tickUpper].feeGrowthOutside1));
+    feeGrowthAbove0 = feeGrowthGlobal0.minus(tickUpperData.feeGrowthOutside0);
+    feeGrowthAbove1 = feeGrowthGlobal1.minus(tickUpperData.feeGrowthOutside1);
   }
 
+  // Calculate fee growth inside tick range
   const feeGrowthInside0 = feeGrowthGlobal0.minus(feeGrowthBelow0).minus(feeGrowthAbove0);
   const feeGrowthInside1 = feeGrowthGlobal1.minus(feeGrowthBelow1).minus(feeGrowthAbove1);
 

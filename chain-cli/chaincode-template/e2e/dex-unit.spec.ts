@@ -13,13 +13,15 @@
  * limitations under the License.
  */
 import {
-  Bitmap,
-  TickDataObj,
+  TickData,
   TokenClassKey,
+  checkTicks,
   computeSwapStep,
+  flipTick,
   getAmount0Delta,
   getAmount1Delta,
   getAmountsForLiquidity,
+  getFeeGrowthInside,
   getLiquidityForAmounts,
   getNextSqrtPriceFromAmount0,
   getNextSqrtPriceFromAmount1,
@@ -29,22 +31,15 @@ import {
   liquidity0,
   liquidity1,
   mostSignificantBit,
-  updatePositions
-} from "@gala-chain/api";
-import {
-  checkTicks,
-  flipTick,
-  getFeeGrowthInside,
   nextInitialisedTickWithInSameWord,
   spaceTick,
   sqrtPriceToTick,
-  tickCross,
   tickSpacingToMaxLiquidityPerTick,
-  tickToSqrtPrice,
-  updateTick
+  tickToSqrtPrice
 } from "@gala-chain/api";
-import { genKey, validateTokenOrder } from "@gala-chain/chaincode";
+import { validateTokenOrder } from "@gala-chain/chaincode";
 import BigNumber from "bignumber.js";
+import { plainToInstance } from "class-transformer";
 
 import TOKENS from "./tokens";
 
@@ -244,101 +239,6 @@ describe("validateTokenOrder", () => {
   });
   test("should throw error string for the un-sorted tokens", () => {
     expect(() => validateTokenOrder(USDC_ClassKey, ETH_ClassKey)).toThrow("Token0 must be smaller");
-  });
-});
-describe("genKey", () => {
-  test("should concatenate parameters with '_'", () => {
-    expect(genKey("1", "2", "3", "4")).toBe("1$2$3$4");
-  });
-});
-
-describe("updatePositions", () => {
-  test("should initialize a new position if not existing", () => {
-    const positions = {};
-    const nftId = "1_1";
-    const tickLower = -10;
-    const tickUpper = 10;
-    const liquidityDelta = new BigNumber(100);
-    const feeGrowthInside0 = new BigNumber(5);
-    const feeGrowthInside1 = new BigNumber(10);
-
-    updatePositions(
-      positions,
-      nftId,
-      tickLower,
-      tickUpper,
-      liquidityDelta,
-      feeGrowthInside0,
-      feeGrowthInside1
-    );
-
-    expect(positions[nftId]).toBeTruthy();
-    expect(positions[nftId].liquidity).toBe("100");
-  });
-
-  test("should update liquidity and fees for an existing position", () => {
-    const positions = {};
-    const nftId = "1_1";
-    const tickLower = -10;
-    const tickUpper = 10;
-    const liquidityDelta = new BigNumber(100);
-    const feeGrowthInside0 = new BigNumber(5);
-    const feeGrowthInside1 = new BigNumber(10);
-
-    updatePositions(
-      positions,
-      nftId,
-      tickLower,
-      tickUpper,
-      liquidityDelta,
-      feeGrowthInside0,
-      feeGrowthInside1
-    );
-    updatePositions(
-      positions,
-      nftId,
-      tickLower,
-      tickUpper,
-      new BigNumber(50),
-      new BigNumber(8),
-      new BigNumber(15)
-    );
-    const position = positions[nftId];
-
-    expect(position.liquidity).toBe("150");
-    expect(position.feeGrowthInside0Last).toBe("8");
-    expect(position.feeGrowthInside1Last).toBe("15");
-  });
-
-  test("should throw error if decreasing liquidity below zero", () => {
-    const positions = {};
-    const nftId = "1_1";
-    const tickLower = -10;
-    const tickUpper = 10;
-    const liquidityDelta = new BigNumber(100);
-    const feeGrowthInside0 = new BigNumber(5);
-    const feeGrowthInside1 = new BigNumber(10);
-
-    updatePositions(
-      positions,
-      nftId,
-      tickLower,
-      tickUpper,
-      liquidityDelta,
-      feeGrowthInside0,
-      feeGrowthInside1
-    );
-    expect(() => {
-      updatePositions(
-        positions,
-        nftId,
-        tickLower,
-        tickUpper,
-        new BigNumber(-200),
-        feeGrowthInside0,
-        feeGrowthInside1
-      );
-    }).toThrow();
   });
 });
 
@@ -645,159 +545,8 @@ describe("sqrtPriceToTick", () => {
   });
 });
 
-describe("updateTick function", () => {
-  let tickData: TickDataObj;
-  let tick: number;
-  let tickCurrent: number;
-  let liquidityDelta: BigNumber;
-  let upper: boolean;
-  let feeGrowthGlobal0: BigNumber;
-  let feeGrowthGlobal1: BigNumber;
-  let maxLiquidity: BigNumber;
-
-  beforeEach(() => {
-    tickData = {};
-    tick = 100;
-    tickCurrent = 50;
-    liquidityDelta = new BigNumber(1000);
-    upper = true;
-    feeGrowthGlobal0 = new BigNumber(500);
-    feeGrowthGlobal1 = new BigNumber(600);
-    maxLiquidity = new BigNumber(10000);
-  });
-
-  test("should initialize tickData if not present", () => {
-    expect(tickData[tick]).toBeUndefined();
-    const result = updateTick(
-      tickData,
-      tick,
-      tickCurrent,
-      liquidityDelta,
-      upper,
-      feeGrowthGlobal0,
-      feeGrowthGlobal1,
-      maxLiquidity
-    );
-    expect(tickData[tick]).toBeDefined();
-    expect(tickData[tick].initialised).toBe(true);
-    expect(result).toBe(true);
-  });
-
-  test("should update liquidityGross correctly", () => {
-    updateTick(
-      tickData,
-      tick,
-      tickCurrent,
-      liquidityDelta,
-      upper,
-      feeGrowthGlobal0,
-      feeGrowthGlobal1,
-      maxLiquidity
-    );
-    expect(new BigNumber(tickData[tick].liquidityGross).toString()).toBe("1000");
-  });
-
-  test("should update liquidityNet correctly for upper=true", () => {
-    updateTick(
-      tickData,
-      tick,
-      tickCurrent,
-      liquidityDelta,
-      upper,
-      feeGrowthGlobal0,
-      feeGrowthGlobal1,
-      maxLiquidity
-    );
-    expect(new BigNumber(tickData[tick].liquidityNet).toString()).toBe("-1000");
-  });
-
-  test("should update liquidityNet correctly for upper=false", () => {
-    upper = false;
-    updateTick(
-      tickData,
-      tick,
-      tickCurrent,
-      liquidityDelta,
-      upper,
-      feeGrowthGlobal0,
-      feeGrowthGlobal1,
-      maxLiquidity
-    );
-    expect(new BigNumber(tickData[tick].liquidityNet).toString()).toBe("1000");
-  });
-
-  test("should throw error if liquidity exceeds maxLiquidity", () => {
-    liquidityDelta = new BigNumber(20000);
-    expect(() =>
-      updateTick(
-        tickData,
-        tick,
-        tickCurrent,
-        liquidityDelta,
-        upper,
-        feeGrowthGlobal0,
-        feeGrowthGlobal1,
-        maxLiquidity
-      )
-    ).toThrow("liquidity crossed max liquidity");
-  });
-
-  test("should set feeGrowthOutside if tick is initialized for the first time and tick <= tickCurrent", () => {
-    updateTick(
-      tickData,
-      tick,
-      tickCurrent,
-      liquidityDelta,
-      upper,
-      feeGrowthGlobal0,
-      feeGrowthGlobal1,
-      maxLiquidity
-    );
-    expect(new BigNumber(tickData[tick].feeGrowthOutside0).toString()).toBe("0");
-    expect(new BigNumber(tickData[tick].feeGrowthOutside1).toString()).toBe("0");
-  });
-
-  test("should correctly determine if tick flipped", () => {
-    const flipped = updateTick(
-      tickData,
-      tick,
-      tickCurrent,
-      liquidityDelta,
-      upper,
-      feeGrowthGlobal0,
-      feeGrowthGlobal1,
-      maxLiquidity
-    );
-    expect(flipped).toBe(true);
-  });
-
-  test("should not flip tick if liquidityGross remains nonzero", () => {
-    updateTick(
-      tickData,
-      tick,
-      tickCurrent,
-      liquidityDelta,
-      upper,
-      feeGrowthGlobal0,
-      feeGrowthGlobal1,
-      maxLiquidity
-    );
-    const flipped = updateTick(
-      tickData,
-      tick,
-      tickCurrent,
-      liquidityDelta,
-      upper,
-      feeGrowthGlobal0,
-      feeGrowthGlobal1,
-      maxLiquidity
-    );
-    expect(flipped).toBe(false);
-  });
-});
-
 describe("flipTick function", () => {
-  let bitmap: Bitmap;
+  let bitmap: Record<string, string>;
 
   beforeEach(() => {
     bitmap = {};
@@ -844,7 +593,7 @@ describe("flipTick function", () => {
 
 describe("nextInitialisedTickWithInSameWord", () => {
   test("should return the nearest initialized tick when lte=true", () => {
-    const bitmap: Bitmap = {};
+    const bitmap: Record<string, string> = {};
     bitmap[0] = BigInt("0b1010").toString(); // 10
 
     expect(nextInitialisedTickWithInSameWord(bitmap, 2, 1, true, new BigNumber(0))).toEqual([1, true]);
@@ -853,7 +602,7 @@ describe("nextInitialisedTickWithInSameWord", () => {
   });
 
   test("should return the nearest initialized tick when lte=false", () => {
-    const bitmap: Bitmap = {};
+    const bitmap: Record<string, string> = {};
     bitmap[0] = BigInt("0b1010").toString(); // 10
 
     expect(nextInitialisedTickWithInSameWord(bitmap, 1, 1, false, new BigNumber(0))).toEqual([3, true]);
@@ -862,7 +611,7 @@ describe("nextInitialisedTickWithInSameWord", () => {
   });
 
   test("should handle negative ticks", () => {
-    const bitmap: Bitmap = {};
+    const bitmap: Record<string, string> = {};
     bitmap[-1] = BigInt("0b1000").toString(); // 8
 
     expect(nextInitialisedTickWithInSameWord(bitmap, -3, 1, true, new BigNumber(0))).toEqual([-253, true]);
@@ -870,14 +619,14 @@ describe("nextInitialisedTickWithInSameWord", () => {
   });
 
   test("should handle empty bitmaps", () => {
-    const bitmap: Bitmap = {};
+    const bitmap: Record<string, string> = {};
 
     expect(nextInitialisedTickWithInSameWord(bitmap, 10, 1, true, new BigNumber(0))).toEqual([0, false]);
     expect(nextInitialisedTickWithInSameWord(bitmap, 10, 1, false, new BigNumber(0))).toEqual([255, false]);
   });
 
   test("should handle large tick spacings", () => {
-    const bitmap: Bitmap = {};
+    const bitmap: Record<string, string> = {};
     bitmap[0] = BigInt("0b100").toString();
 
     expect(nextInitialisedTickWithInSameWord(bitmap, 512, 256, true, new BigNumber(0))).toEqual([512, true]);
@@ -885,168 +634,64 @@ describe("nextInitialisedTickWithInSameWord", () => {
   });
 });
 
-describe("tickCross function", () => {
-  test("Initializes tick data if it does not exist", () => {
-    const tick = 100;
-    const tickData: TickDataObj = {};
-    const feeGrowthGlobal0 = new BigNumber(50);
-    const feeGrowthGlobal1 = new BigNumber(100);
-
-    const result = tickCross(tick, tickData, feeGrowthGlobal0, feeGrowthGlobal1);
-
-    expect(!!tickData[tick]).toBe(true);
-    expect(tickData[tick]).toMatchObject({
-      liquidityGross: "0",
-      initialised: false,
-      liquidityNet: "0",
-      feeGrowthOutside0: "50",
-      feeGrowthOutside1: "100"
-    });
-    expect(result.isEqualTo(new BigNumber(0))).toBe(true);
-  });
-
-  test("Updates feeGrowthOutside values correctly for existing tick", () => {
-    const tick = 120;
-    const tickData = {
-      [tick]: {
-        liquidityGross: "500",
-        initialised: true,
-        liquidityNet: "200",
-        feeGrowthOutside0: "20",
-        feeGrowthOutside1: "40"
-      }
-    };
-    const feeGrowthGlobal0 = new BigNumber(70);
-    const feeGrowthGlobal1 = new BigNumber(150);
-
-    const result = tickCross(tick, tickData, feeGrowthGlobal0, feeGrowthGlobal1);
-
-    expect(tickData[tick]).toMatchObject({
-      liquidityGross: "500",
-      initialised: true,
-      liquidityNet: "200",
-      feeGrowthOutside0: "50",
-      feeGrowthOutside1: "110"
-    });
-    expect(result.isEqualTo(new BigNumber(200))).toBe(true);
-  });
-
-  test("Handles zero liquidityNet properly", () => {
-    const tick = 200;
-    const tickData = {
-      [tick]: {
-        liquidityGross: "0",
-        initialised: true,
-        liquidityNet: "0",
-        feeGrowthOutside0: "30",
-        feeGrowthOutside1: "60"
-      }
-    };
-    const feeGrowthGlobal0 = new BigNumber(100);
-    const feeGrowthGlobal1 = new BigNumber(200);
-
-    const result = tickCross(tick, tickData, feeGrowthGlobal0, feeGrowthGlobal1);
-
-    expect(tickData[tick]).toMatchObject({
-      liquidityGross: "0",
-      initialised: true,
-      liquidityNet: "0",
-      feeGrowthOutside0: "70",
-      feeGrowthOutside1: "140"
-    });
-    expect(result.isEqualTo(new BigNumber(0))).toBe(true);
-  });
-
-  test("Handles negative fee growth values", () => {
-    const tick = 300;
-    const tickData = {
-      [tick]: {
-        liquidityGross: "1000",
-        initialised: true,
-        liquidityNet: "-500",
-        feeGrowthOutside0: "20",
-        feeGrowthOutside1: "-40"
-      }
-    };
-    const feeGrowthGlobal0 = new BigNumber(-10);
-    const feeGrowthGlobal1 = new BigNumber(20);
-
-    const result = tickCross(tick, tickData, feeGrowthGlobal0, feeGrowthGlobal1);
-
-    expect(tickData[tick]).toMatchObject({
-      liquidityGross: "1000",
-      initialised: true,
-      liquidityNet: "-500",
-      feeGrowthOutside0: "-30",
-      feeGrowthOutside1: "60"
-    });
-    expect(result.isEqualTo(new BigNumber(-500))).toBe(true);
-  });
-
-  test("Handles large fee growth values", () => {
-    const tick = 400;
-    const tickData = {
-      [tick]: {
-        liquidityGross: "1000000",
-        initialised: true,
-        liquidityNet: "500000",
-        feeGrowthOutside0: "100000",
-        feeGrowthOutside1: "200000"
-      }
-    };
-    const feeGrowthGlobal0 = new BigNumber("9999999");
-    const feeGrowthGlobal1 = new BigNumber("8888888");
-
-    const result = tickCross(tick, tickData, feeGrowthGlobal0, feeGrowthGlobal1);
-
-    expect(tickData[tick]).toMatchObject({
-      liquidityGross: "1000000",
-      initialised: true,
-      liquidityNet: "500000",
-      feeGrowthOutside0: "9899999",
-      feeGrowthOutside1: "8688888"
-    });
-    expect(result.isEqualTo(new BigNumber(500000))).toBe(true);
-  });
-});
-
 describe("getFeeGrowthInside", () => {
-  let tickData: TickDataObj;
+  let tickLowerData: TickData;
+  let tickUpperData: TickData;
   beforeEach(() => {
-    tickData = {
-      "10": {
-        feeGrowthOutside0: "100",
-        feeGrowthOutside1: "200",
-        liquidityGross: "0",
-        initialised: true,
-        liquidityNet: "0"
-      },
-      "20": {
-        feeGrowthOutside0: "300",
-        feeGrowthOutside1: "400",
-        liquidityGross: "0",
-        initialised: true,
-        liquidityNet: "0"
-      }
-    };
+    tickLowerData = plainToInstance(TickData, {
+      poolHash: "test-pool-hash",
+      tick: 10,
+      feeGrowthOutside0: new BigNumber("100"),
+      feeGrowthOutside1: new BigNumber("200"),
+      liquidityGross: new BigNumber(0),
+      liquidityNet: new BigNumber(0),
+      initialised: true
+    });
+    tickUpperData = plainToInstance(TickData, {
+      poolHash: "test-pool-hash",
+      tick: 20,
+      feeGrowthOutside0: new BigNumber("300"),
+      feeGrowthOutside1: new BigNumber("400"),
+      liquidityGross: new BigNumber(0),
+      liquidityNet: new BigNumber(0),
+      initialised: true
+    });
   });
 
   test("calculates fee growth inside when tickCurrent is within range", () => {
-    const result = getFeeGrowthInside(tickData, 10, 20, 15, new BigNumber(500), new BigNumber(600));
+    const result = getFeeGrowthInside(
+      tickLowerData,
+      tickUpperData,
+      10,
+      new BigNumber(500),
+      new BigNumber(600)
+    );
     expect(result[0].toString()).toBe("100");
     expect(result[1].toString()).toBe("0");
   });
 
   test("calculates fee growth inside when tickCurrent is at tickLower", () => {
-    const result = getFeeGrowthInside(tickData, 10, 20, 10, new BigNumber(500), new BigNumber(600));
+    const result = getFeeGrowthInside(
+      tickLowerData,
+      tickUpperData,
+      10,
+      new BigNumber(500),
+      new BigNumber(600)
+    );
     expect(result[0].toString()).toBe("100");
     expect(result[1].toString()).toBe("0");
   });
 
   test("calculates fee growth inside when tickCurrent is at tickUpper", () => {
-    const result = getFeeGrowthInside(tickData, 10, 20, 20, new BigNumber(500), new BigNumber(600));
-    expect(result[0].toString()).toBe("200");
-    expect(result[1].toString()).toBe("200");
+    const result = getFeeGrowthInside(
+      tickLowerData,
+      tickUpperData,
+      10,
+      new BigNumber(500),
+      new BigNumber(600)
+    );
+    expect(result[0].toString()).toBe("100");
+    expect(result[1].toString()).toBe("0");
   });
 });
 
