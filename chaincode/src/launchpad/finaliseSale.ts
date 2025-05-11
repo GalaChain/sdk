@@ -147,6 +147,7 @@ export async function finalizeSale(ctx: GalaChainContext, sale: LaunchpadSale): 
     amount0.times(0.9999999),
     amount1.times(0.9999999)
   );
+  positionDto.uniqueKey = sale.vaultAddress;
 
   await addLiquidity(ctx, positionDto, sale.vaultAddress);
 
