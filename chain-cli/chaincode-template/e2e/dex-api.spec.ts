@@ -2296,7 +2296,6 @@ interface DexV3ContractAPI {
   RemoveLiquidity(dto: BurnDto): Promise<GalaChainResponse<UserBalanceResDto>>;
   getLiquidity(dto: GetPoolDto): Promise<GalaChainResponse<GetLiquidityResDto>>;
   getPositions(dto: GetPositionDto): Promise<GalaChainResponse<GetPositionResDto>>;
-  // getPositionWithNftId(dto: GetPositionWithNftIdDto): Promise<GalaChainResponse<GetPositionResDto>>;
   getSlot0(dto: GetPoolDto): Promise<GalaChainResponse<Slot0ResDto>>;
   getUserPositions(dto: GetUserPositionsDto): Promise<GalaChainResponse<GetUserPositionsResDto>>;
   getAddLiquidityEstimation(
@@ -2348,9 +2347,6 @@ function dexV3ContractAPI(client: ChainClient): DexV3ContractAPI & CommonContrac
     getPositions(dto: GetPositionDto) {
       return client.evaluateTransaction<GetPositionResDto>("GetPositions", dto, GetPositionResDto);
     },
-    // getPositionWithNftId(dto: GetPositionWithNftIdDto) {
-    //   return client.evaluateTransaction<GetPositionResDto>("GetPositionWithNftId", dto, GetPositionResDto);
-    // },
     getUserPositions(dto: GetUserPositionsDto) {
       return client.evaluateTransaction<GetUserPositionsResDto>(
         "GetUserPositions",

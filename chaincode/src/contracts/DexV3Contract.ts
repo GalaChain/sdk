@@ -33,6 +33,7 @@ import {
   GetPositionDto,
   GetRemoveLiqEstimationResDto,
   GetUserPositionsDto,
+  GetUserPositionsResDto,
   NotFoundError,
   Pool,
   QuoteExactAmountDto,
@@ -138,13 +139,15 @@ export class DexV3Contract extends GalaContract {
     return await getLiquidity(ctx, dto);
   }
 
-  //ToDo: Update the outputs
   @GalaTransaction({
     type: EVALUATE,
-    in: GetUserPositionsDto
-    // out: GetUserPositionsResDto
+    in: GetUserPositionsDto,
+    out: GetUserPositionsResDto
   })
-  public async GetUserPositions(ctx: GalaChainContext, dto: GetUserPositionsDto): Promise<any> {
+  public async GetUserPositions(
+    ctx: GalaChainContext,
+    dto: GetUserPositionsDto
+  ): Promise<GetUserPositionsResDto> {
     return await getUserPositions(ctx, dto);
   }
 
