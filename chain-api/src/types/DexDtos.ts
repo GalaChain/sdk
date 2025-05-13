@@ -662,7 +662,7 @@ export class AddLiquidityResDto extends ChainCallDTO {
   userBalanceDelta: UserBalanceResDto;
 
   @IsArray()
-  @IsString({ each: true }) 
+  @IsString({ each: true })
   amounts: string[];
 
   constructor(userBalanceDelta: UserBalanceResDto, amounts: string[]) {

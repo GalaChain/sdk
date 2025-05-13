@@ -23,7 +23,7 @@ export * from "./swap";
 export * from "./setProtocolFee";
 export * from "./collectTradingFees";
 export * from "./getPosition";
-export * from "./getPositionById"
+export * from "./getPositionById";
 export * from "./getUserPositions";
 export * from "./dexError";
 export * from "./transferDexPosition";
