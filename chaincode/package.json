@@ -28,6 +28,7 @@
     "fabric-contract-api": "2.5.6",
     "fabric-shim": "2.5.6",
     "nanoid": "^3.3.6",
+    "opentracing": "^0.14.7",
     "winston": "^3.8.2"
   },
   "peerDependencies": {
@@ -43,7 +44,7 @@
     "@types/elliptic": "*",
     "@types/node": "18.11.9",
     "@types/setimmediate": "^1.0.2",
-    "dd-trace": "^4.20.0",
+    "dd-trace": "^4.55.0",
     "git-branch-is": "^4.0.0",
     "madge": "^5.0.1",
     "nodemon": "^3.0.1",

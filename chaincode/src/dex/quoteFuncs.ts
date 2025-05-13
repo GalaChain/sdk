@@ -12,11 +12,21 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-import { NotFoundError, Pool, QuoteExactAmountDto, QuoteExactAmountResDto } from "@gala-chain/api";
+import {
+  NotFoundError,
+  Pool,
+  QuoteExactAmountDto,
+  QuoteExactAmountResDto,
+  SwapState,
+  ValidationFailedError,
+  sqrtPriceToTick
+} from "@gala-chain/api";
 import BigNumber from "bignumber.js";
 
 import { GalaChainContext } from "../types";
-import { getObjectByKey, validateTokenOrder } from "../utils";
+import { getObjectByKey } from "../utils";
+import { getTokenDecimalsFromPool, roundTokenAmount, validateTokenOrder } from "./dexUtils";
+import { processSwapSteps } from "./swap.helper";
 
 /**
  * @dev The quoteExactAmount function calculates the required amount of the other token for a swap or liquidity addition in a Uniswap V3 pool within the GalaChain ecosystem.
@@ -34,20 +44,57 @@ export async function quoteExactAmount(
   ctx: GalaChainContext,
   dto: QuoteExactAmountDto
 ): Promise<QuoteExactAmountResDto> {
+  // Ensure tokens are ordered consistently
   const [token0, token1] = validateTokenOrder(dto.token0, dto.token1);
 
   const zeroForOne = dto.zeroForOne;
 
+  // Generate pool key from tokens and fee tier
   const key = ctx.stub.createCompositeKey(Pool.INDEX_KEY, [token0, token1, dto.fee.toString()]);
   const pool = await getObjectByKey(ctx, Pool, key);
   if (pool == undefined) throw new NotFoundError("Pool does not exist");
 
+  // Define square root price limit as the maximum possible value in trade direction for estimation purposes
+  const sqrtPriceLimit = zeroForOne
+    ? new BigNumber("0.000000000000000000054212147")
+    : new BigNumber("18446050999999999999");
+
   const currentSqrtPrice = pool.sqrtPrice;
-  const amounts = pool.swap(
-    zeroForOne,
-    dto.amount.f18(),
-    zeroForOne ? new BigNumber("0.000000000000000000054212147") : new BigNumber("18446050999999999999")
-  );
+
+  const amountSpecified = dto.amount.f18();
+  if (amountSpecified.isEqualTo(0)) {
+    throw new ValidationFailedError("Invalid specified amount");
+  }
+
+  // Prepare slot0 state from the pool (current price, tick, liquidity)
+  const slot0 = {
+    sqrtPrice: new BigNumber(pool.sqrtPrice),
+    tick: sqrtPriceToTick(pool.sqrtPrice),
+    liquidity: new BigNumber(pool.liquidity)
+  };
+
+  // Initialize swap state for computation
+  const state: SwapState = {
+    amountSpecifiedRemaining: amountSpecified,
+    amountCalculated: new BigNumber(0),
+    sqrtPrice: new BigNumber(pool.sqrtPrice),
+    tick: slot0.tick,
+    liquidity: new BigNumber(slot0.liquidity),
+    feeGrowthGlobalX: zeroForOne ? pool.feeGrowthGlobal0 : pool.feeGrowthGlobal1,
+    protocolFee: new BigNumber(0)
+  };
+
+  // Determine if it's exact input (positive amount) or exact output (negative)
+  const exactInput = amountSpecified.isGreaterThan(0);
+
+  // Swap steps until input amount is consumed or price limit hit and apply to pool state
+  await processSwapSteps(ctx, state, pool, sqrtPriceLimit, exactInput, zeroForOne);
+  const [amount0, amount1] = pool.swap(zeroForOne, state, amountSpecified);
+  const [token0Decimal, token1Decimal] = await getTokenDecimalsFromPool(ctx, pool);
+  const roundedToken0Amount = roundTokenAmount(amount0, token0Decimal);
+  const roundedToken1Amount = roundTokenAmount(amount1, token1Decimal);
+
+  // Return quote response including price movement
   const newSqrtPrice = pool.sqrtPrice;
-  return new QuoteExactAmountResDto(amounts[0], amounts[1], currentSqrtPrice, newSqrtPrice);
+  return new QuoteExactAmountResDto(roundedToken0Amount, roundedToken1Amount, currentSqrtPrice, newSqrtPrice);
 }

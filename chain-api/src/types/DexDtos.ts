@@ -15,6 +15,7 @@
 import BigNumber from "bignumber.js";
 import { Type } from "class-transformer";
 import {
+  ArrayMinSize,
   IsArray,
   IsBoolean,
   IsInt,
@@ -24,28 +25,24 @@ import {
   IsString,
   Max,
   Min,
+  ValidateIf,
   ValidateNested
 } from "class-validator";
 
 import { PositionInPool } from "../utils";
 import {
-  BigNumberArrayProperty,
-  BigNumberIsInteger,
   BigNumberIsNegative,
   BigNumberIsPositive,
   BigNumberProperty,
   EnumProperty,
   IsBigNumber,
   IsLessThan,
-  IsNonZeroBigNumber
+  IsUserAlias
 } from "../validators";
+import { TickData } from "./TickData";
 import { TokenBalance } from "./TokenBalance";
 import { TokenClassKey } from "./TokenClass";
-import { TokenInstanceKey } from "./TokenInstance";
 import { ChainCallDTO } from "./dtos";
-
-const MIN_TICK = -887272,
-  MAX_TICK = 887272;
 
 const f18 = (num: BigNumber, round: BigNumber.RoundingMode = BigNumber.ROUND_DOWN): BigNumber => {
   return new BigNumber(num?.toFixed(18, round) ?? 0);
@@ -115,12 +112,12 @@ export class PositionDto extends ChainCallDTO {
 
   @IsNotEmpty()
   @IsInt()
-  @Max(MAX_TICK)
+  @Max(TickData.MAX_TICK)
   public tickUpper: number;
 
   @IsNotEmpty()
   @IsInt()
-  @Min(MIN_TICK)
+  @Min(TickData.MIN_TICK)
   @IsLessThan("tickUpper")
   public tickLower: number;
 
@@ -211,7 +208,6 @@ export class SwapDto extends ChainCallDTO {
   @IsOptional()
   public amountInMaximum?: BigNumber;
 
-  @IsBigNumber()
   @BigNumberProperty()
   @BigNumberIsNegative()
   @IsOptional()
@@ -238,12 +234,12 @@ export class SwapDto extends ChainCallDTO {
 export class BurnDto extends ChainCallDTO {
   @IsNotEmpty()
   @IsInt()
-  @Max(MAX_TICK)
+  @Max(TickData.MAX_TICK)
   public tickUpper: number;
 
   @IsNotEmpty()
   @IsInt()
-  @Min(MIN_TICK)
+  @Min(TickData.MIN_TICK)
   @IsLessThan("tickUpper")
   public tickLower: number;
 
@@ -322,7 +318,6 @@ export class Slot0ResDto extends ChainCallDTO {
   public sqrtPrice: BigNumber;
 
   @IsNotEmpty()
-  @IsNumber()
   @IsInt()
   public tick: number;
 
@@ -340,6 +335,7 @@ export class Slot0ResDto extends ChainCallDTO {
 
 export class GetPoolDataDTO extends ChainCallDTO {
   @IsNotEmpty()
+  @IsString()
   public address: string;
 }
 
@@ -362,12 +358,12 @@ export class GetPositionDto extends ChainCallDTO {
 
   @IsNotEmpty()
   @IsInt()
-  @Max(MAX_TICK)
+  @Max(TickData.MAX_TICK)
   public tickUpper: number;
 
   @IsNotEmpty()
   @IsInt()
-  @Min(MIN_TICK)
+  @Min(TickData.MIN_TICK)
   @IsLessThan("tickUpper")
   public tickLower: number;
 
@@ -375,9 +371,9 @@ export class GetPositionDto extends ChainCallDTO {
     token0: TokenClassKey,
     token1: TokenClassKey,
     fee: DexFeePercentageTypes,
-    owner: string,
     tickLower: number,
-    tickUpper: number
+    tickUpper: number,
+    owner: string
   ) {
     super();
     this.token0 = token0;
@@ -389,38 +385,12 @@ export class GetPositionDto extends ChainCallDTO {
   }
 }
 
-export class GetPositionWithNftIdDto extends ChainCallDTO {
-  @IsNotEmpty()
-  @ValidateNested()
-  @Type(() => TokenClassKey)
-  public token0: TokenClassKey;
-
-  @IsNotEmpty()
-  @ValidateNested()
-  @Type(() => TokenClassKey)
-  public token1: TokenClassKey;
-
-  @IsNotEmpty()
-  @IsNumber()
-  public fee: number;
-
-  @IsNotEmpty()
-  @IsString()
-  public nftId: string;
-
-  constructor(token0: TokenClassKey, token1: TokenClassKey, fee: number, nftId: string) {
-    super();
-    this.token0 = token0;
-    this.token1 = token1;
-    this.fee = fee;
-    this.nftId = nftId;
-  }
-}
-
 export class GetUserPositionsDto extends ChainCallDTO {
   @IsNotEmpty()
+  @IsUserAlias()
   public user: string;
 
+  @IsInt()
   @Min(1, { message: "Value cannot be zero" })
   @Max(10, { message: "Page can have atmost 10 values" })
   @IsNotEmpty()
@@ -442,53 +412,22 @@ export class UserPositionDTO extends ChainCallDTO {
   positions: PositionInPool;
 }
 
-export class GetPositionResDto extends ChainCallDTO {
-  @IsOptional()
-  @IsString()
-  poolAddrKey: string;
-
-  @IsOptional()
-  @IsString()
-  tickUpper: string;
-
-  @IsOptional()
-  @IsString()
-  tickLower: string;
-
-  @IsOptional()
-  @IsString()
-  liquidity: string;
-
-  @IsOptional()
-  @IsString()
-  feeGrowthInside0Last: string;
-
-  @IsOptional()
-  @IsString()
-  feeGrowthInside1Last: string;
-
-  @IsOptional()
-  @IsString()
-  tokensOwed0: string;
-
-  @IsOptional()
-  @IsString()
-  tokensOwed1: string;
-}
-
 export class GetAddLiquidityEstimationDto extends ChainCallDTO {
-  @IsBigNumber()
+  @BigNumberIsPositive()
   @BigNumberProperty()
   public amount: BigNumber;
+
   @IsNotEmpty()
   @IsInt()
-  @Max(MAX_TICK)
+  @Max(TickData.MAX_TICK)
   public tickUpper: number;
+
   @IsNotEmpty()
   @IsInt()
-  @Min(MIN_TICK)
+  @Min(TickData.MIN_TICK)
   @IsLessThan("tickUpper")
   public tickLower: number;
+
   @IsNotEmpty()
   @IsBoolean()
   public zeroForOne: boolean;
@@ -568,12 +507,12 @@ export class CollectDto extends ChainCallDTO {
 
   @IsNotEmpty()
   @IsInt()
-  @Max(MAX_TICK)
+  @Max(TickData.MAX_TICK)
   public tickUpper: number;
 
   @IsNotEmpty()
   @IsInt()
-  @Min(MIN_TICK)
+  @Min(TickData.MIN_TICK)
   @IsLessThan("tickUpper")
   public tickLower: number;
 
@@ -613,12 +552,12 @@ export class AddLiquidityDTO extends ChainCallDTO {
 
   @IsNotEmpty()
   @IsInt()
-  @Max(MAX_TICK)
+  @Max(TickData.MAX_TICK)
   public readonly tickUpper: number;
 
   @IsNotEmpty()
   @IsInt()
-  @Min(MIN_TICK)
+  @Min(TickData.MIN_TICK)
   @IsLessThan("tickUpper")
   public readonly tickLower: number;
 
@@ -722,31 +661,27 @@ export class AddLiquidityResDto extends ChainCallDTO {
   @Type(() => UserBalanceResDto)
   userBalanceDelta: UserBalanceResDto;
 
-  @BigNumberArrayProperty()
-  amounts: BigNumber[];
+  @IsArray()
+  @IsString({ each: true })
+  amounts: string[];
 
-  constructor(userBalanceDelta: UserBalanceResDto, amounts: BigNumber[]) {
+  constructor(userBalanceDelta: UserBalanceResDto, amounts: string[]) {
     super();
     this.userBalanceDelta = userBalanceDelta;
     this.amounts = amounts;
   }
 }
 
-export class PositionsObject {
-  [key: string]: IPosition[];
-}
-
 export class GetUserPositionsResDto extends ChainCallDTO {
   @IsNotEmpty()
-  @ValidateNested()
-  @Type(() => PositionsObject)
-  positions: PositionsObject;
+  @ArrayMinSize(0)
+  positions: IPosition[];
 
   @IsOptional()
   @IsString()
   nextBookMark?: string;
 
-  constructor(positions: PositionsObject, nextBookMark: string) {
+  constructor(positions: IPosition[], nextBookMark: string) {
     super();
     this.positions = positions;
     this.nextBookMark = nextBookMark;
@@ -767,8 +702,8 @@ export class CollectTradingFeesDto extends ChainCallDTO {
   @EnumProperty(DexFeePercentageTypes)
   public fee: DexFeePercentageTypes;
 
-  @IsString()
   @IsNotEmpty()
+  @IsUserAlias()
   public recepient: string;
 
   constructor(token0: TokenClassKey, token1: TokenClassKey, fee: DexFeePercentageTypes, recepient: string) {
@@ -791,29 +726,14 @@ export class SetProtocolFeeDto extends ChainCallDTO {
 }
 
 export interface IPosition {
-  tickUpper: string;
-  tickLower: string;
+  tickUpper: number;
+  tickLower: number;
   liquidity: string;
-  feeGrowthInside0Last: string;
-  feeGrowthInside1Last: string;
-  tokensOwed0: string;
-  tokensOwed1: string;
+  positionId: string;
   token0Img?: string;
   token1Img?: string;
-  token0InstanceKey?: TokenInstanceKey & {
-    collection: string;
-    category: string;
-    type: string;
-    additionalKey: string;
-    instance: BigNumber;
-  };
-  token1InstanceKey?: TokenInstanceKey & {
-    collection: string;
-    category: string;
-    type: string;
-    additionalKey: string;
-    instance: BigNumber;
-  };
+  token0ClassKey?: TokenClassKey;
+  token1ClassKey?: TokenClassKey;
   token0Symbol?: string;
   token1Symbol?: string;
 }
@@ -877,18 +797,16 @@ export class QuoteExactAmountResDto extends ChainCallDTO {
 }
 
 export class GetRemoveLiqEstimationResDto extends ChainCallDTO {
-  @IsBigNumber()
-  @BigNumberProperty()
-  public amount0: BigNumber;
+  @IsString()
+  public amount0: string;
 
-  @IsBigNumber()
-  @BigNumberProperty()
-  public amount1: BigNumber;
+  @IsString()
+  public amount1: string;
 
-  constructor(amount0: BigNumber, amount1: BigNumber) {
+  constructor(amount0: string, amount1: string) {
     super();
-    this.amount0 = f18(amount0);
-    this.amount1 = f18(amount1);
+    this.amount0 = amount0;
+    this.amount1 = amount1;
   }
 }
 
@@ -918,8 +836,8 @@ export class SetProtocolFeeResDto extends ChainCallDTO {
 }
 
 export class ConfigureDexFeeAddressDto extends ChainCallDTO {
-  @IsOptional()
-  @IsString()
+  @ValidateIf((e) => e.newDexFeeAddress !== undefined)
+  @IsUserAlias()
   public newDexFeeAddress?: string;
 
   @IsOptional()
@@ -931,12 +849,12 @@ export class ConfigureDexFeeAddressDto extends ChainCallDTO {
 export class BurnEstimateDto extends ChainCallDTO {
   @IsNotEmpty()
   @IsInt()
-  @Max(MAX_TICK)
+  @Max(TickData.MAX_TICK)
   public tickUpper: number;
 
   @IsNotEmpty()
   @IsInt()
-  @Min(MIN_TICK)
+  @Min(TickData.MIN_TICK)
   @IsLessThan("tickUpper")
   public tickLower: number;
 
@@ -958,6 +876,7 @@ export class BurnEstimateDto extends ChainCallDTO {
   public amount: BigNumber;
 
   @IsNotEmpty()
+  @IsUserAlias()
   public owner: string;
 
   constructor(
@@ -980,10 +899,43 @@ export class BurnEstimateDto extends ChainCallDTO {
   }
 }
 
-export class DexNftBatchLimitDto extends ChainCallDTO {
-  @BigNumberIsPositive()
-  @BigNumberProperty()
-  @BigNumberIsInteger()
-  @IsNonZeroBigNumber()
-  newMaxSupply: BigNumber;
+export class TransferDexPositionDto extends ChainCallDTO {
+  @IsNotEmpty()
+  @IsUserAlias()
+  public toAddress: string;
+
+  @IsNotEmpty()
+  @ValidateNested()
+  @Type(() => TokenClassKey)
+  public token0: TokenClassKey;
+
+  @IsNotEmpty()
+  @ValidateNested()
+  @Type(() => TokenClassKey)
+  public token1: TokenClassKey;
+
+  @EnumProperty(DexFeePercentageTypes)
+  public fee: DexFeePercentageTypes;
+
+  @IsNotEmpty()
+  public positionId: string;
+}
+
+export class GetPositionByIdDto extends ChainCallDTO {
+  @IsNotEmpty()
+  @IsString()
+  poolHash: string;
+
+  @IsInt()
+  @Max(TickData.MAX_TICK)
+  tickUpper: number;
+
+  @IsInt()
+  @Min(TickData.MIN_TICK)
+  @IsLessThan("tickUpper")
+  tickLower: number;
+
+  @IsNotEmpty()
+  @IsString()
+  public positionId: string;
 }
