@@ -17,7 +17,7 @@ import { Exclude, Type } from "class-transformer";
 import { IsInt, IsNotEmpty, IsString, Max, Min, ValidateNested } from "class-validator";
 import { JSONSchema } from "class-validator-jsonschema";
 
-import { ChainKey, ConflictError, requirePosititve } from "../utils";
+import { ChainKey, requirePosititve } from "../utils";
 import { BigNumberIsNotNegative, BigNumberProperty, EnumProperty, IsLessThan } from "../validators";
 import { ChainObject } from "./ChainObject";
 import { DexFeePercentageTypes } from "./DexDtos";
@@ -49,7 +49,7 @@ export class DexPositionData extends ChainObject {
   @IsLessThan("tickUpper")
   tickLower: number;
 
-  @ChainKey({ position: 4 })
+  @ChainKey({ position: 3 })
   @IsNotEmpty()
   @IsString()
   positionId: string;

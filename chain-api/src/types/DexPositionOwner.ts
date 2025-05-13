@@ -17,7 +17,7 @@ import { IsNotEmpty, IsString } from "class-validator";
 import { JSONSchema } from "class-validator-jsonschema";
 
 import { ChainKey } from "../utils";
-import { IsUserAlias } from "../validators";
+import { IsStringArrayRecord, IsUserAlias } from "../validators";
 import { ChainObject } from "./ChainObject";
 
 @JSONSchema({
@@ -43,6 +43,7 @@ export class DexPositionOwner extends ChainObject {
   @JSONSchema({
     description: `A tick range mapping that maps a tick range (eg. 10-20) to a unique position ID for this pool`
   })
+  @IsStringArrayRecord()
   tickRangeMap: Record<string, string[]>;
 
   /**

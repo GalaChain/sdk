@@ -89,11 +89,6 @@ export async function getUserPositions(
         positionInfo.positionId
       );
       userPositions.push(position);
-      // const pool = await getPoolFromAddressKey(ctx, nft.poolHash);
-      // userPositions[nft.poolHash] = userPositions[nft.poolHash] || [];
-      // const nftId = genNftId(nft.additionalKey, nft.nftInstanceId.toString());
-      // const { tickLower, tickUpper, liquidity } = await fetchDexPosition(ctx, pool, nftId);
-      // userPositions[nft.poolHash].push({ tickLower, tickUpper, liquidity: liquidity.toString() });
       positionsRequired--;
       isLastIteration = positionInfoIndex === selectedPositionId.length - 1;
       if (positionsRequired === 0) break;
@@ -139,6 +134,7 @@ async function addMetaDataToUserPositions(
       tickUpper: position.tickUpper,
       tickLower: position.tickLower,
       liquidity: position.liquidity.toFixed(),
+      positionId: position.positionId,
       token0Img: token0Class.image,
       token1Img: token1Class.image,
       token0ClassKey: position.token0ClassKey,

@@ -15,6 +15,7 @@
 import BigNumber from "bignumber.js";
 import { Type } from "class-transformer";
 import {
+  ArrayMinSize,
   IsArray,
   IsBoolean,
   IsInt,
@@ -41,7 +42,6 @@ import {
 import { TickData } from "./TickData";
 import { TokenBalance } from "./TokenBalance";
 import { TokenClassKey } from "./TokenClass";
-import { TokenInstanceKey } from "./TokenInstance";
 import { ChainCallDTO } from "./dtos";
 
 const f18 = (num: BigNumber, round: BigNumber.RoundingMode = BigNumber.ROUND_DOWN): BigNumber => {
@@ -412,40 +412,6 @@ export class UserPositionDTO extends ChainCallDTO {
   positions: PositionInPool;
 }
 
-export class GetPositionResDto extends ChainCallDTO {
-  @IsOptional()
-  @IsString()
-  poolAddrKey: string;
-
-  @IsOptional()
-  @IsString()
-  tickUpper: string;
-
-  @IsOptional()
-  @IsString()
-  tickLower: string;
-
-  @IsOptional()
-  @IsString()
-  liquidity: string;
-
-  @IsOptional()
-  @IsString()
-  feeGrowthInside0Last: string;
-
-  @IsOptional()
-  @IsString()
-  feeGrowthInside1Last: string;
-
-  @IsOptional()
-  @IsString()
-  tokensOwed0: string;
-
-  @IsOptional()
-  @IsString()
-  tokensOwed1: string;
-}
-
 export class GetAddLiquidityEstimationDto extends ChainCallDTO {
   @BigNumberIsPositive()
   @BigNumberProperty()
@@ -695,6 +661,8 @@ export class AddLiquidityResDto extends ChainCallDTO {
   @Type(() => UserBalanceResDto)
   userBalanceDelta: UserBalanceResDto;
 
+  @IsArray()
+  @IsString({ each: true }) 
   amounts: string[];
 
   constructor(userBalanceDelta: UserBalanceResDto, amounts: string[]) {
@@ -706,6 +674,7 @@ export class AddLiquidityResDto extends ChainCallDTO {
 
 export class GetUserPositionsResDto extends ChainCallDTO {
   @IsNotEmpty()
+  @ArrayMinSize(0)
   positions: IPosition[];
 
   @IsOptional()
@@ -760,6 +729,7 @@ export interface IPosition {
   tickUpper: number;
   tickLower: number;
   liquidity: string;
+  positionId: string;
   token0Img?: string;
   token1Img?: string;
   token0ClassKey?: TokenClassKey;
@@ -931,6 +901,7 @@ export class BurnEstimateDto extends ChainCallDTO {
 
 export class TransferDexPositionDto extends ChainCallDTO {
   @IsNotEmpty()
+  @IsUserAlias()
   public toAddress: string;
 
   @IsNotEmpty()
@@ -950,31 +921,21 @@ export class TransferDexPositionDto extends ChainCallDTO {
   public positionId: string;
 }
 
-export class TransferPositionDto extends ChainCallDTO {
+export class GetPositionByIdDto extends ChainCallDTO {
   @IsNotEmpty()
-  public toAddress: string;
+  @IsString()
+  poolHash: string;
 
-  @IsNotEmpty()
-  @ValidateNested()
-  @Type(() => TokenClassKey)
-  public token0: TokenClassKey;
-
-  @IsNotEmpty()
-  @ValidateNested()
-  @Type(() => TokenClassKey)
-  public token1: TokenClassKey;
-
-  @IsNotEmpty()
   @IsInt()
   @Max(TickData.MAX_TICK)
-  public tickUpper: number;
+  tickUpper: number;
 
-  @IsNotEmpty()
   @IsInt()
   @Min(TickData.MIN_TICK)
   @IsLessThan("tickUpper")
-  public tickLower: number;
+  tickLower: number;
 
-  @EnumProperty(DexFeePercentageTypes)
-  public fee: DexFeePercentageTypes;
+  @IsNotEmpty()
+  @IsString()
+  public positionId: string;
 }

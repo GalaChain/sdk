@@ -318,3 +318,29 @@ export function IsStringRecord(validationOptions?: ValidationOptions) {
     });
   };
 }
+
+export function IsStringArrayRecord(validationOptions?: ValidationOptions) {
+  return function (object: object, propertyName: string) {
+    registerDecorator({
+      name: "isStringArrayRecord",
+      target: object.constructor,
+      propertyName,
+      options: validationOptions,
+      validator: {
+        validate(value: any, args: ValidationArguments) {
+          if (typeof value !== "object" || value === null || Array.isArray(value)) {
+            return false;
+          }
+
+          return Object.entries(value).every(
+            ([key, val]) =>
+              typeof key === "string" && Array.isArray(val) && val.every((item) => typeof item === "string")
+          );
+        },
+        defaultMessage(args: ValidationArguments) {
+          return `${args.property} must be a Record<string, string[]>`;
+        }
+      }
+    });
+  };
+}

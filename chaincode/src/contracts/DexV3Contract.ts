@@ -30,6 +30,7 @@ import {
   GetAddLiquidityEstimationResDto,
   GetLiquidityResDto,
   GetPoolDto,
+  GetPositionByIdDto,
   GetPositionDto,
   GetRemoveLiqEstimationResDto,
   GetUserPositionsDto,
@@ -44,7 +45,6 @@ import {
   SwapDto,
   SwapResDto,
   TransferDexPositionDto,
-  TransferPositionDto,
   UserBalanceResDto
 } from "@gala-chain/api";
 
@@ -61,6 +61,7 @@ import {
   getLiquidity,
   getPoolData,
   getPosition,
+  getPositionById,
   getRemoveLiquidityEstimation,
   getSlot0,
   getUserPositions,
@@ -252,7 +253,7 @@ export class DexV3Contract extends GalaContract {
   }
 
   @Submit({
-    in: TransferPositionDto,
+    in: TransferDexPositionDto,
     out: DexPositionOwner
   })
   public async TransferDexPosition(
@@ -269,5 +270,14 @@ export class DexV3Contract extends GalaContract {
   })
   public async GetPositions(ctx: GalaChainContext, dto: GetPositionDto): Promise<DexPositionData> {
     return await getPosition(ctx, dto);
+  }
+
+  @GalaTransaction({
+    type: EVALUATE,
+    in: GetPositionByIdDto,
+    out: DexPositionData
+  })
+  public async GetPositionByID(ctx: GalaChainContext, dto: GetPositionByIdDto): Promise<DexPositionData> {
+    return getPositionById(ctx, dto);
   }
 }
