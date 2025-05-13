@@ -27,16 +27,10 @@ import Decimal from "decimal.js";
 import { fetchOrCreateBalance } from "../balances";
 import { burnTokens } from "../burns";
 import { addLiquidity, createPool, getAddLiquidityEstimation, getPoolData } from "../dex";
+import { generateKeyFromClassKey, sortString } from "../dex/dexUtils";
 import { transferToken } from "../transfer";
 import { GalaChainContext } from "../types";
-import {
-  fetchLaunchpadFeeAddress,
-  generateKeyFromClassKey,
-  getBondingConstants,
-  getObjectByKey,
-  putChainObject,
-  sortString
-} from "../utils";
+import { fetchLaunchpadFeeAddress, getBondingConstants, getObjectByKey, putChainObject } from "../utils";
 
 export async function finalizeSale(ctx: GalaChainContext, sale: LaunchpadSale): Promise<void> {
   const key = ctx.stub.createCompositeKey(LaunchpadFinalizeFeeAllocation.INDEX_KEY, []);
@@ -153,6 +147,7 @@ export async function finalizeSale(ctx: GalaChainContext, sale: LaunchpadSale): 
     amount0.times(0.9999999),
     amount1.times(0.9999999)
   );
+  positionDto.uniqueKey = sale.vaultAddress;
 
   await addLiquidity(ctx, positionDto, sale.vaultAddress);
 

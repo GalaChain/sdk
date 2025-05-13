@@ -17,17 +17,17 @@ import {
   CreatePoolDto,
   DexFeeConfig,
   Pool,
-  ValidationFailedError,
-  feeAmountTickSpacing
+  TokenInstanceKey,
+  ValidationFailedError
 } from "@gala-chain/api";
 
 import { fetchTokenClass } from "../token";
 import { GalaChainContext } from "../types";
-import { convertToTokenInstanceKey, generateKeyFromClassKey, getObjectByKey, putChainObject } from "../utils";
-import { generatePositionNftBatch } from "./positionNft";
+import { getObjectByKey, putChainObject } from "../utils";
+import { generateKeyFromClassKey } from "./dexUtils";
 
 /**
- * @dev The createPool function initializes a new Uniswap V3 liquidity pool within the GalaChain ecosystem. It sets up the pool with the specified token pair, initial price, fee structure, and protocol fee settings.
+ * @dev The createPool function initializes a new Decentralized exchange liquidity pool within the GalaChain ecosystem. It sets up the pool with the specified token pair, initial price, fee structure, and protocol fee settings.
  * @param ctx GalaChainContext – The execution context providing access to the GalaChain environment.
  * @param dto CreatePoolDto – A data transfer object containing:
     - Token details – The token class keys.
@@ -45,9 +45,7 @@ export async function createPool(ctx: GalaChainContext, dto: CreatePoolDto): Pro
       `Cannot create pool of same tokens. Token0 ${token0} and Token1 ${token1} must be different.`
     );
   }
-  if (!feeAmountTickSpacing[dto.fee]) {
-    throw new ValidationFailedError("Fee is not valid it must be 500, 3000, 10000");
-  }
+
   const key = ctx.stub.createCompositeKey(DexFeeConfig.INDEX_KEY, []);
   let protocolFee = 0.1; // default
   const protocolFeeConfig = await getObjectByKey(ctx, DexFeeConfig, key).catch(() => null);
@@ -67,22 +65,18 @@ export async function createPool(ctx: GalaChainContext, dto: CreatePoolDto): Pro
   );
 
   //create tokenInstanceKeys
-  const token0InstanceKey = convertToTokenInstanceKey(pool.token0ClassKey);
-  const token1InstanceKey = convertToTokenInstanceKey(pool.token1ClassKey);
+  const token0InstanceKey = TokenInstanceKey.fungibleKey(pool.token0ClassKey);
+  const token1InstanceKey = TokenInstanceKey.fungibleKey(pool.token1ClassKey);
 
   //check if the tokens are valid or not
-  const token0Class = await fetchTokenClass(ctx, token0InstanceKey);
-  if (token0Class == undefined) throw new ConflictError("Invalid token 0");
-
-  const token1Class = await fetchTokenClass(ctx, token1InstanceKey);
-  if (token1Class == undefined) throw new ConflictError("Invalid token 1");
+  await fetchTokenClass(ctx, token0InstanceKey);
+  await fetchTokenClass(ctx, token1InstanceKey);
 
   //Check if the pool already exists
   const existingPool = await getObjectByKey(ctx, Pool, pool.getCompositeKey()).catch(() => undefined);
   if (existingPool !== undefined)
     throw new ConflictError("Pool already exists", existingPool.toPlainObject());
 
-  await generatePositionNftBatch(ctx, "1", pool.getPoolAddrKey(), pool.getPoolAlias());
   await putChainObject(ctx, pool);
   return pool;
 }

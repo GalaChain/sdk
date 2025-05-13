@@ -15,15 +15,19 @@
 import {
   ChainError,
   DexFeeConfig,
+  DexPositionData,
+  DexPositionOwner,
   ErrorCode,
+  Pool,
   TokenClassKey,
   TokenInstanceKey,
   ValidationFailedError
 } from "@gala-chain/api";
 import BigNumber from "bignumber.js";
 
+import { fetchTokenClass } from "../token";
 import { GalaChainContext } from "../types";
-import { getObjectByKey } from "./state";
+import { getObjectByKey } from "../utils/state";
 
 /**
  *
@@ -48,14 +52,6 @@ export const swapAmounts = (arr: string[] | BigNumber[], idx = 0, idx2 = 1) => {
   arr[idx] = arr[idx2];
   arr[idx2] = temp;
 };
-/**
- *
- * @param address address of pool in string
- * @returns
- */
-export const virtualAddress = (address: string) => {
-  return "service|" + address;
-};
 
 /**
  * @dev it will round down the Bignumber to 18 decimals
@@ -66,18 +62,8 @@ export const virtualAddress = (address: string) => {
 export const f18 = (BN: BigNumber, round: BigNumber.RoundingMode = BigNumber.ROUND_DOWN): BigNumber =>
   new BigNumber(BN.toFixed(18, round));
 
-export const generateKeyFromClassKey = (obj: TokenClassKey) => {
+export function generateKeyFromClassKey(obj: TokenClassKey) {
   return Object.assign(new TokenClassKey(), obj).toStringKey().replace(/\|/g, ":") || "";
-};
-
-export function convertToTokenInstanceKey(tokenClassKey: TokenClassKey): TokenInstanceKey {
-  return Object.assign(new TokenInstanceKey(), {
-    collection: tokenClassKey.collection,
-    category: tokenClassKey.category,
-    type: tokenClassKey.type,
-    additionalKey: tokenClassKey.additionalKey,
-    instance: new BigNumber(0)
-  });
 }
 
 export function validateTokenOrder(token0: TokenClassKey, token1: TokenClassKey) {
@@ -95,10 +81,6 @@ export function validateTokenOrder(token0: TokenClassKey, token1: TokenClassKey)
   return [normalizedToken0, normalizedToken1];
 }
 
-export function genKey(...params: string[] | number[]): string {
-  return params.join("$").replace(/\|/g, ":");
-}
-
 export function genBookMark(...params: string[] | number[]): string {
   return params.join("|");
 }
@@ -106,6 +88,26 @@ export function genBookMark(...params: string[] | number[]): string {
 export function splitBookmark(bookmark = "") {
   const [chainBookmark = "", localBookmark = "0"] = bookmark.split("|");
   return { chainBookmark, localBookmark };
+}
+
+/**
+ * Generates a tick range string in the format "lower-upper".
+ */
+export function genTickRange(tickLower: number, tickUpper: number): string {
+  return [tickLower, tickUpper].join("-");
+}
+
+/**
+ * Parses a tick range string and returns the lower and upper ticks as numbers.
+ */
+export function parseTickRange(tickRange: string): { tickLower: number; tickUpper: number } {
+  const [tickLower, tickUpper] = tickRange.split("-").map(Number);
+
+  if (isNaN(tickLower) || isNaN(tickUpper)) {
+    throw new Error(`Invalid tick range format: ${tickRange}`);
+  }
+
+  return { tickLower, tickUpper };
 }
 
 /**
@@ -139,4 +141,73 @@ export async function fetchDexProtocolFeeConfig(ctx: GalaChainContext): Promise<
   });
 
   return dexConfig;
+}
+
+/**
+ * Fetches the DexPositionData for a given pool and NFT ID.
+ *
+ * @param ctx - The GalaChain context used to access the blockchain state.
+ * @param pool - The pool object used to generate the pool hash.
+ * @param nftId - The NFT ID used to identify the position.
+ * @param throwIfNotFound - Optional flag; if true, throws an error when the position is not found.
+ * @returns A DexPositionData object if found, or undefined if not found (unless throwIfNotFound is true).
+ */
+export async function fetchDexPosition(
+  ctx: GalaChainContext,
+  pool: Pool,
+  nftId: string
+): Promise<DexPositionData> {
+  const poolHash = pool.genPoolHash();
+  const position = await getObjectByKey(
+    ctx,
+    DexPositionData,
+    ctx.stub.createCompositeKey(DexPositionData.INDEX_KEY, [poolHash, nftId])
+  );
+
+  return position;
+}
+
+/**
+ * Retrieves the user position object for a given holder and pool.
+ *
+ * @param ctx - GalaChain context object.
+ * @param positionHolder - The user's address or ID.
+ * @param poolHash - Identifier for the pool.
+ * @returns A Promise resolving to the user's DexPositionOwner object.
+ */
+export async function getUserPositionIds(
+  ctx: GalaChainContext,
+  positionHolder: string,
+  poolHash: string
+): Promise<DexPositionOwner> {
+  const compositeKey = ctx.stub.createCompositeKey(DexPositionOwner.INDEX_KEY, [positionHolder, poolHash]);
+  return getObjectByKey(ctx, DexPositionOwner, compositeKey);
+}
+
+/**
+ * Retrieves the decimals for token0 and token1 from a given pool.
+ *
+ * @param ctx - GalaChain context object.
+ * @param pool - The Pool object containing token class keys.
+ * @returns A Promise resolving to a tuple of [token0Decimals, token1Decimals].
+ */
+export async function getTokenDecimalsFromPool(ctx: GalaChainContext, pool: Pool): Promise<[number, number]> {
+  const token0Key = TokenInstanceKey.fungibleKey(pool.token0ClassKey);
+  const token1Key = TokenInstanceKey.fungibleKey(pool.token1ClassKey);
+
+  const token0Class = await fetchTokenClass(ctx, token0Key);
+  const token1Class = await fetchTokenClass(ctx, token1Key);
+
+  return [token0Class.decimals, token1Class.decimals];
+}
+
+/**
+ * Rounds a raw token amount to the token class's decimal precision.
+ *
+ * @param amount - The token amount as a string or BigNumber.
+ * @param decimals - The number of decimals to round to (from token class).
+ * @returns A BigNumber rounded down to the specified decimals.
+ */
+export function roundTokenAmount(amount: string | BigNumber, decimals: number): BigNumber {
+  return new BigNumber(amount).decimalPlaces(decimals, BigNumber.ROUND_DOWN);
 }
