@@ -48,7 +48,7 @@ import { TokenClassKey } from "./TokenClass";
 })
 export class Pool extends ChainObject {
   @Exclude()
-  static INDEX_KEY = "GCDP"; //GalaChain Dex Pool
+  static INDEX_KEY = "GCDEXP"; //GalaChain Decentralised Exchange Pool
 
   @ChainKey({ position: 0 })
   @IsString()

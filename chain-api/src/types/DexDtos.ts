@@ -726,6 +726,7 @@ export class SetProtocolFeeDto extends ChainCallDTO {
 }
 
 export interface IPosition {
+  poolHash: string;
   tickUpper: number;
   tickLower: number;
   liquidity: string;
@@ -734,6 +735,7 @@ export interface IPosition {
   token1Img?: string;
   token0ClassKey?: TokenClassKey;
   token1ClassKey?: TokenClassKey;
+  fee?: DexFeePercentageTypes;
   token0Symbol?: string;
   token1Symbol?: string;
 }

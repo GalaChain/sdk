@@ -131,6 +131,7 @@ async function addMetaDataToUserPositions(
     const token1Class = await fetchTokenClass(ctx, token1Key);
 
     userPositionWithMetadata.push({
+      poolHash: position.poolHash,
       tickUpper: position.tickUpper,
       tickLower: position.tickLower,
       liquidity: position.liquidity.toFixed(),
@@ -139,6 +140,7 @@ async function addMetaDataToUserPositions(
       token1Img: token1Class.image,
       token0ClassKey: position.token0ClassKey,
       token1ClassKey: position.token1ClassKey,
+      fee: position.fee,
       token0Symbol: token0Class.symbol,
       token1Symbol: token1Class.symbol
     });
