@@ -13,6 +13,7 @@
  * limitations under the License.
  */
 import {
+  ConflictError,
   Pool,
   SlippageToleranceExceededError,
   SwapDto,
@@ -135,10 +136,11 @@ export async function swap(ctx: GalaChainContext, dto: SwapDto): Promise<SwapRes
         poolAlias,
         tokenInstanceKeys[index].getTokenClassKey()
       );
-      const roundedAmount = BigNumber.min(
-        new BigNumber(amount.toFixed(tokenClasses[index].decimals)).abs(),
-        poolTokenBalance.getQuantityTotal()
-      );
+      const roundedAmount = new BigNumber(amount.toFixed(tokenClasses[index].decimals)).abs();
+      if (poolTokenBalance.getQuantityTotal().isGreaterThan(roundedAmount)) {
+        throw new ConflictError("Not enough liquidity available in pool");
+      }
+
       await transferToken(ctx, {
         from: poolAlias,
         to: ctx.callingUser,
