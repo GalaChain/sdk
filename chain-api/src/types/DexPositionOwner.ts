@@ -28,7 +28,7 @@ import { ChainObject } from "./ChainObject";
 })
 export class DexPositionOwner extends ChainObject {
   @Exclude()
-  static INDEX_KEY = "GCDPO"; //GalaChain Dex Position Owner
+  static INDEX_KEY = "GCDEXPO"; //GalaChain Decentralised Exchange Position Owner
 
   @ChainKey({ position: 0 })
   @IsNotEmpty()
@@ -41,7 +41,7 @@ export class DexPositionOwner extends ChainObject {
   poolHash: string;
 
   @JSONSchema({
-    description: `A tick range mapping that maps a tick range (eg. 10-20) to a unique position ID for this pool`
+    description: `A tick range mapping that maps a tick range (eg. 10:20) to a unique position ID for this pool`
   })
   @IsStringArrayRecord()
   tickRangeMap: Record<string, string[]>;
@@ -60,7 +60,7 @@ export class DexPositionOwner extends ChainObject {
 
   /**
    * Adds or updates a position ID for the specified tick range.
-   * @param tickRange - Tick range string to map (e.g., "10-20").
+   * @param tickRange - Tick range string to map (e.g., "10:20").
    * @param positionId - ID of the position to associate.
    */
   addPosition(tickRange: string, positionId: string): void {

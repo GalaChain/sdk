@@ -91,41 +91,23 @@ export function splitBookmark(bookmark = "") {
 }
 
 /**
- * Generates a tick range string in the format "lower-upper".
+ * Generates a tick range string in the format "lower:upper".
  */
 export function genTickRange(tickLower: number, tickUpper: number): string {
-  return [tickLower, tickUpper].join("-");
+  return [tickLower, tickUpper].join(":");
 }
 
 /**
  * Parses a tick range string and returns the lower and upper ticks as numbers.
  */
 export function parseTickRange(tickRange: string): { tickLower: number; tickUpper: number } {
-  const [tickLower, tickUpper] = tickRange.split("-").map(Number);
+  const [tickLower, tickUpper] = tickRange.split(":").map(Number);
 
   if (isNaN(tickLower) || isNaN(tickUpper)) {
     throw new Error(`Invalid tick range format: ${tickRange}`);
   }
 
   return { tickLower, tickUpper };
-}
-
-/**
- * Parses an NFT ID string into its batch number and instance ID components.
- *
- * @param nftId The NFT ID in the format 'batchNumber_instanceId'
- * @returns An object containing the batchNumber and instanceId as BigNumber
- * @throws ValidationFailedError if the input format is invalid
- */
-export function parseNftId(nftId: string): { batchNumber: string; instanceId: BigNumber } {
-  const parts = nftId.split("$");
-  if (parts.length !== 2) {
-    throw new ValidationFailedError("Invalid NFT ID format. Expected format: 'batchNumber$instanceId'.");
-  }
-  return {
-    batchNumber: parts[0],
-    instanceId: new BigNumber(parts[1])
-  };
 }
 
 export async function fetchDexProtocolFeeConfig(ctx: GalaChainContext): Promise<DexFeeConfig | undefined> {
@@ -141,30 +123,6 @@ export async function fetchDexProtocolFeeConfig(ctx: GalaChainContext): Promise<
   });
 
   return dexConfig;
-}
-
-/**
- * Fetches the DexPositionData for a given pool and NFT ID.
- *
- * @param ctx - The GalaChain context used to access the blockchain state.
- * @param pool - The pool object used to generate the pool hash.
- * @param nftId - The NFT ID used to identify the position.
- * @param throwIfNotFound - Optional flag; if true, throws an error when the position is not found.
- * @returns A DexPositionData object if found, or undefined if not found (unless throwIfNotFound is true).
- */
-export async function fetchDexPosition(
-  ctx: GalaChainContext,
-  pool: Pool,
-  nftId: string
-): Promise<DexPositionData> {
-  const poolHash = pool.genPoolHash();
-  const position = await getObjectByKey(
-    ctx,
-    DexPositionData,
-    ctx.stub.createCompositeKey(DexPositionData.INDEX_KEY, [poolHash, nftId])
-  );
-
-  return position;
 }
 
 /**

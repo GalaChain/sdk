@@ -72,24 +72,17 @@ export class CreatePoolDto extends ChainCallDTO {
   @BigNumberProperty()
   public initialSqrtPrice: BigNumber;
 
-  @Min(0, { message: "Value cannot less than zero" })
-  @Max(1, { message: "Value cannot greater than one" })
-  @IsNumber()
-  protocolFee: number;
-
   constructor(
     token0: TokenClassKey,
     token1: TokenClassKey,
     fee: DexFeePercentageTypes,
-    initialSqrtPrice: BigNumber,
-    protocolFee = 0
+    initialSqrtPrice: BigNumber
   ) {
     super();
     this.token0 = token0;
     this.token1 = token1;
     this.fee = fee;
     this.initialSqrtPrice = initialSqrtPrice;
-    this.protocolFee = protocolFee;
   }
 }
 
