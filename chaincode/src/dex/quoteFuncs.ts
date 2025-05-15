@@ -99,12 +99,12 @@ export async function quoteExactAmount(
   // Check whether pool has enough liquidity to carry out this operation
   if (roundedToken0Amount.isNegative()) {
     const poolTokenBalance = await fetchOrCreateBalance(ctx, pool.getPoolAlias(), pool.token0ClassKey);
-    if (poolTokenBalance.getQuantityTotal().isGreaterThan(roundedToken0Amount.abs())) {
+    if (poolTokenBalance.getQuantityTotal().isLessThan(roundedToken0Amount.abs())) {
       throw new ConflictError("Not enough liquidity available in pool");
     }
   } else {
     const poolTokenBalance = await fetchOrCreateBalance(ctx, pool.getPoolAlias(), pool.token1ClassKey);
-    if (poolTokenBalance.getQuantityTotal().isGreaterThan(roundedToken1Amount.abs())) {
+    if (poolTokenBalance.getQuantityTotal().isLessThan(roundedToken1Amount.abs())) {
       throw new ConflictError("Not enough liquidity available in pool");
     }
   }

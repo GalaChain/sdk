@@ -137,7 +137,7 @@ export async function swap(ctx: GalaChainContext, dto: SwapDto): Promise<SwapRes
         tokenInstanceKeys[index].getTokenClassKey()
       );
       const roundedAmount = new BigNumber(amount.toFixed(tokenClasses[index].decimals)).abs();
-      if (poolTokenBalance.getQuantityTotal().isGreaterThan(roundedAmount)) {
+      if (poolTokenBalance.getQuantityTotal().isLessThan(roundedAmount)) {
         throw new ConflictError("Not enough liquidity available in pool");
       }
 
