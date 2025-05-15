@@ -934,3 +934,14 @@ export class GetPositionByIdDto extends ChainCallDTO {
   @IsString()
   public positionId: string;
 }
+
+export class GetTickDataDto extends ChainCallDTO {
+  @IsNotEmpty()
+  @IsString()
+  public readonly poolHash: string;
+
+  @IsInt()
+  @Max(TickData.MAX_TICK)
+  @Min(TickData.MIN_TICK)
+  public readonly tick: number;
+}
