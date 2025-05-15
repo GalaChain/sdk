@@ -13,6 +13,7 @@
  * limitations under the License.
  */
 import {
+  ConflictError,
   NotFoundError,
   Pool,
   QuoteExactAmountDto,
@@ -23,6 +24,7 @@ import {
 } from "@gala-chain/api";
 import BigNumber from "bignumber.js";
 
+import { fetchOrCreateBalance } from "../balances";
 import { GalaChainContext } from "../types";
 import { getObjectByKey } from "../utils";
 import { getTokenDecimalsFromPool, roundTokenAmount, validateTokenOrder } from "./dexUtils";
@@ -93,6 +95,19 @@ export async function quoteExactAmount(
   const [token0Decimal, token1Decimal] = await getTokenDecimalsFromPool(ctx, pool);
   const roundedToken0Amount = roundTokenAmount(amount0, token0Decimal);
   const roundedToken1Amount = roundTokenAmount(amount1, token1Decimal);
+
+  // Check whether pool has enough liquidity to carry out this operation
+  if (roundedToken0Amount.isNegative()) {
+    const poolTokenBalance = await fetchOrCreateBalance(ctx, pool.getPoolAlias(), pool.token0ClassKey);
+    if (poolTokenBalance.getQuantityTotal().isLessThan(roundedToken0Amount.abs())) {
+      throw new ConflictError("Not enough liquidity available in pool");
+    }
+  } else {
+    const poolTokenBalance = await fetchOrCreateBalance(ctx, pool.getPoolAlias(), pool.token1ClassKey);
+    if (poolTokenBalance.getQuantityTotal().isLessThan(roundedToken1Amount.abs())) {
+      throw new ConflictError("Not enough liquidity available in pool");
+    }
+  }
 
   // Return quote response including price movement
   const newSqrtPrice = pool.sqrtPrice;

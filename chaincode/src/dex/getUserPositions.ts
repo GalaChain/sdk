@@ -40,16 +40,17 @@ export async function getUserPositions(
   ctx: GalaChainContext,
   dto: GetUserPositionsDto
 ): Promise<GetUserPositionsResDto> {
-  const { chainBookmark, localBookmark } = splitBookmark(dto.bookmark);
+  const { chainBookmark, localBookmark } = splitBookmark(dto.bookmark); // Split global and local bookmark
 
   let currentPageBookmark = chainBookmark;
-  let positionsToSkip = Number(localBookmark);
-  let positionsRequired = dto.limit;
+  let positionsToSkip = Number(localBookmark); // Track how many positions to skip from current page
+  let positionsRequired = dto.limit; // Total number of positions needed
   let newLocalBookmark = positionsToSkip + positionsRequired;
   let isLastIteration = false;
   const userPositions: DexPositionData[] = [];
 
   do {
+    // Fetch user position ownership data with pagination
     const userPositionInfo = await getObjectsByPartialCompositeKeyWithPagination(
       ctx,
       DexPositionOwner.INDEX_KEY,
@@ -60,6 +61,7 @@ export async function getUserPositions(
     );
     newLocalBookmark = positionsToSkip + positionsRequired;
 
+    // Flatten position ownership data into a list of pool/tick/position triplets
     const positionInfoList = userPositionInfo.results.flatMap((owner) =>
       Object.entries(owner.tickRangeMap).flatMap(([tickRange, positionIds]) =>
         positionIds.map((positionId) => ({
@@ -70,15 +72,23 @@ export async function getUserPositions(
       )
     );
 
+    // Return early if user has no positions
+    if (positionInfoList.length === 0) {
+      return new GetUserPositionsResDto([], "");
+    }
+
+    // If the number of skipped positions exceeds current page, move to next page
     if (positionsToSkip >= positionInfoList.length) {
       positionsToSkip -= positionInfoList.length;
       currentPageBookmark = userPositionInfo.metadata.bookmark ?? "";
       continue;
     }
 
+    // Slice off positions that were present in the last page and start fetching the rest
     const selectedPositionId = positionInfoList.slice(positionsToSkip);
     positionsToSkip = 0;
 
+    // Fetch position data for each selected position
     for (const [positionInfoIndex, positionInfo] of selectedPositionId.entries()) {
       const { tickLower, tickUpper } = parseTickRange(positionInfo.tickRange);
       const position = await getDexPosition(
@@ -94,29 +104,31 @@ export async function getUserPositions(
       if (positionsRequired === 0) break;
     }
 
+    // Only update bookmark if the last position on this page was processed
     currentPageBookmark = isLastIteration ? userPositionInfo.metadata.bookmark ?? "" : currentPageBookmark;
-  } while (positionsRequired && currentPageBookmark);
+  } while (positionsRequired && currentPageBookmark); // Repeat while more positions are needed and more pages exist
 
+  // If we still have positions to skip but ran out of data, the bookmark was invalid
   if (positionsToSkip) {
     throw new ValidationFailedError("Invalid bookmark");
   }
 
+  // Generate new bookmark for pagination
   const newBookmark =
     !currentPageBookmark && isLastIteration
       ? ""
       : genBookMark(currentPageBookmark, isLastIteration ? "" : newLocalBookmark.toString());
 
+  // Add token metadata to response
   const userPositionWithMetadata = userPositions
     ? await addMetaDataToUserPositions(ctx, userPositions)
     : userPositions;
+
   return new GetUserPositionsResDto(userPositionWithMetadata, newBookmark);
 }
 
 /**
- *
- * @param ctx GalaChainContext – The execution context providing access to the GalaChain environment.
- * @param positions All user positions
- * @returns Modified user Positions by adding few properites like img, symbol etc.
+ * Adds token metadata (image, symbol, etc.) to each user position.
  */
 async function addMetaDataToUserPositions(
   ctx: GalaChainContext,
@@ -124,12 +136,15 @@ async function addMetaDataToUserPositions(
 ): Promise<IPosition[]> {
   const userPositionWithMetadata: IPosition[] = [];
   for (const position of positions) {
+    // Construct keys to fetch token metadata
     const token0Key = TokenInstanceKey.fungibleKey(position.token0ClassKey);
     const token1Key = TokenInstanceKey.fungibleKey(position.token1ClassKey);
 
+    // Fetch token metadata from chain
     const token0Class = await fetchTokenClass(ctx, token0Key);
     const token1Class = await fetchTokenClass(ctx, token1Key);
 
+    // Add metadata fields to position object
     userPositionWithMetadata.push({
       poolHash: position.poolHash,
       tickUpper: position.tickUpper,

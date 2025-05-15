@@ -2273,7 +2273,7 @@ describe("DEx v3 Testing", () => {
             owner: user1.identityKey,
             poolHash: "0e51fd1ce8cd999462d866c5d9d8fef5cdd8d23b5c64c0057295c4c599b60afc",
             tickRangeMap: {
-              "75920-76110": [positionID]
+              "75920:76110": [positionID]
             }
           }
         });
