@@ -70,6 +70,11 @@ export async function getUserPositions(
       )
     );
 
+    // Return empty object if user doesn't have any positions
+    if (positionInfoList.length === 0) {
+      return new GetUserPositionsResDto([], "");
+    }
+
     if (positionsToSkip >= positionInfoList.length) {
       positionsToSkip -= positionInfoList.length;
       currentPageBookmark = userPositionInfo.metadata.bookmark ?? "";
