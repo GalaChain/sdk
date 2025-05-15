@@ -12,7 +12,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-import { ChainError, ErrorCode, TickData } from "@gala-chain/api";
+import { ChainError, ErrorCode, GetTickDataDto, TickData } from "@gala-chain/api";
 import BigNumber from "bignumber.js";
 
 import { GalaChainContext } from "../types";
@@ -28,12 +28,12 @@ import { getObjectByKey, putChainObject } from "../utils";
  * @param tickUpper - Upper tick boundary
  * @returns An object containing tickLowerData and tickUpperData
  */
-export const fetchOrCreateTickDataPair = async (
+export async function fetchOrCreateTickDataPair(
   ctx: GalaChainContext,
   poolHash: string,
   tickLower: number,
   tickUpper: number
-): Promise<{ tickUpperData: TickData; tickLowerData: TickData }> => {
+): Promise<{ tickUpperData: TickData; tickLowerData: TickData }> {
   // Try to get tickUpper from chain; fallback to default if not found
   const tickUpperKey = ctx.stub.createCompositeKey(TickData.INDEX_KEY, [poolHash, tickUpper.toString()]);
   const tickUpperData = await getObjectByKey(ctx, TickData, tickUpperKey).catch((e) => {
@@ -57,7 +57,7 @@ export const fetchOrCreateTickDataPair = async (
   });
 
   return { tickUpperData, tickLowerData };
-};
+}
 
 /**
  * Fetches an existing tick from the chain or creates it if not found, then crosses the tick.
@@ -69,13 +69,13 @@ export const fetchOrCreateTickDataPair = async (
  * @param feeGrowthGlobal1 - Global fee growth for token 1.
  * @returns The net change in liquidity after crossing the tick.
  */
-export const fetchOrCreateAndCrossTick = async (
+export async function fetchOrCreateAndCrossTick(
   ctx: GalaChainContext,
   poolHash: string,
   tick: number,
   feeGrowthGlobal0: BigNumber,
   feeGrowthGlobal1: BigNumber
-): Promise<BigNumber> => {
+): Promise<BigNumber> {
   // Try to get tickLower from chain; fallback to default if not found
   const tickKey = ctx.stub.createCompositeKey(TickData.INDEX_KEY, [poolHash, tick.toString()]);
   const tickData = await getObjectByKey(ctx, TickData, tickKey).catch((e) => {
@@ -92,4 +92,10 @@ export const fetchOrCreateAndCrossTick = async (
   await putChainObject(ctx, tickData);
 
   return liquidityNet;
-};
+}
+
+export async function getTickData(ctx: GalaChainContext, dto: GetTickDataDto): Promise<TickData> {
+  const tickKey = ctx.stub.createCompositeKey(TickData.INDEX_KEY, [dto.poolHash, dto.tick.toString()]);
+  const tickData = await getObjectByKey(ctx, TickData, tickKey);
+  return tickData;
+}

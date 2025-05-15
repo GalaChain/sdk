@@ -33,6 +33,7 @@ import {
   GetPositionByIdDto,
   GetPositionDto,
   GetRemoveLiqEstimationResDto,
+  GetTickDataDto,
   GetUserPositionsDto,
   GetUserPositionsResDto,
   NotFoundError,
@@ -44,6 +45,7 @@ import {
   Slot0ResDto,
   SwapDto,
   SwapResDto,
+  TickData,
   TransferDexPositionDto,
   UserBalanceResDto
 } from "@gala-chain/api";
@@ -70,6 +72,7 @@ import {
   swap,
   transferDexPosition
 } from "../dex";
+import { getTickData } from "../dex/tickData.helper";
 import {
   addLiquidityFeeGate,
   collectPositionFeesFeeGate,
@@ -279,5 +282,14 @@ export class DexV3Contract extends GalaContract {
   })
   public async GetPositionByID(ctx: GalaChainContext, dto: GetPositionByIdDto): Promise<DexPositionData> {
     return getPositionById(ctx, dto);
+  }
+
+  @GalaTransaction({
+    type: EVALUATE,
+    in: GetTickDataDto,
+    out: TickData
+  })
+  public async GetTickData(ctx: GalaChainContext, dto: GetTickDataDto): Promise<TickData> {
+    return getTickData(ctx, dto);
   }
 }

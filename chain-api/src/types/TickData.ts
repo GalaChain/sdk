@@ -137,8 +137,8 @@ export class TickData extends ChainObject {
    * @returns The net liquidity after updating fee growth values.
    */
   tickCross(feeGrowthGlobal0: BigNumber, feeGrowthGlobal1: BigNumber): BigNumber {
-    this.feeGrowthOutside0 = feeGrowthGlobal0.minus(new BigNumber(this.feeGrowthOutside0));
-    this.feeGrowthOutside1 = feeGrowthGlobal1.minus(new BigNumber(this.feeGrowthOutside1));
+    this.feeGrowthOutside0 = feeGrowthGlobal0.minus(this.feeGrowthOutside0);
+    this.feeGrowthOutside1 = feeGrowthGlobal1.minus(this.feeGrowthOutside1);
 
     return new BigNumber(this.liquidityNet);
   }
