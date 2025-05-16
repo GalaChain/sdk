@@ -13,7 +13,7 @@
  * limitations under the License.
  */
 import { NotImplementedError } from "@gala-chain/api";
-import { ChaincodeStub } from "fabric-shim";
+import { ChaincodeResponse, ChaincodeStub } from "fabric-shim";
 
 import { CachedKV, FabricIterable, fabricIterable, filter, prepend } from "./FabricIterable";
 
@@ -37,6 +37,8 @@ class StubCache {
   private reads: Record<string, Uint8Array> = {};
 
   private deletes: Record<string, true> = {};
+
+  private invokeChaincodeCalls: Record<string, string[]> = {};
 
   constructor(private readonly stub: ChaincodeStub) {}
 
@@ -102,6 +104,24 @@ class StubCache {
     return Promise.resolve();
   }
 
+  /**
+   * This method is used to invoke other chaincode. It is not allowed to invoke the same chaincode
+   * more than once within the same transaction, because we are not able to support cache for the
+   * invoked chaincode.
+   */
+  async invokeChaincode(chaincodeName: string, args: string[], channel: string): Promise<ChaincodeResponse> {
+    const key = `${channel}/${chaincodeName}`;
+    const prevCall = this.invokeChaincodeCalls[key];
+
+    if (prevCall) {
+      throw new DuplicateInvokeChaincodeError(chaincodeName, prevCall, channel);
+    }
+
+    this.invokeChaincodeCalls[key] = args;
+
+    return await this.stub.invokeChaincode(chaincodeName, args, channel);
+  }
+
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
   setStateValidationParameter(key: string, ep: Uint8Array): Promise<void> {
     throw new NotImplementedError("setStateValidationParameter is not supported");
@@ -156,6 +176,13 @@ class StubCache {
 
   setDeletes(deletes: Record<string, true>): void {
     this.deletes = { ...deletes };
+  }
+}
+
+export class DuplicateInvokeChaincodeError extends NotImplementedError {
+  constructor(chaincodeName: string, args: string[], channel: string) {
+    const msg = `Chaincode ${chaincodeName} on channel ${channel} was already invoked in the transaction (method: ${args[0]})`;
+    super(msg, { chaincodeName, args, channel });
   }
 }
 

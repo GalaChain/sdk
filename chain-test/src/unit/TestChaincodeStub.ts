@@ -12,7 +12,13 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-import { ClientIdentity, ChaincodeStub as FChaincodeStub, Iterators, StateQueryResponse } from "fabric-shim";
+import {
+  ChaincodeResponse,
+  ClientIdentity,
+  ChaincodeStub as FChaincodeStub,
+  Iterators,
+  StateQueryResponse
+} from "fabric-shim";
 import Long from "long";
 import { nanoid } from "nanoid";
 
@@ -200,5 +206,13 @@ export class TestChaincodeStub extends ChaincodeStub {
     const iterator = asyncIterator(kvs);
     const filtered = filter((obj) => obj.key >= start && obj.key < end, iterator);
     return fabricIterable<Iterators.KV>(filtered);
+  }
+
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  async invokeChaincode(chaincodeName: string, args: string[], channel: string): Promise<ChaincodeResponse> {
+    return {
+      status: 200,
+      message: "This is a test success response"
+    };
   }
 }

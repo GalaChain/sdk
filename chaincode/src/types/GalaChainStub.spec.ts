@@ -17,92 +17,93 @@ import { TestChaincodeStub } from "@gala-chain/test";
 import { Buffer } from "buffer";
 
 import { CachedKV, FabricIterable } from "./FabricIterable";
-import { createGalaChainStub } from "./GalaChainStub";
+import { DuplicateInvokeChaincodeError, createGalaChainStub } from "./GalaChainStub";
 
 const setupTest = (initialState: Record<string, Uint8Array> = {}) => {
   const state = { ...initialState }; // shallow copy
 
   /* eslint-disable  @typescript-eslint/ban-ts-comment */
   // @ts-ignore
-  const testChaincodeStub = new TestChaincodeStub([], state);
-  testChaincodeStub.putState = jest.fn(testChaincodeStub.putState);
-  testChaincodeStub.getState = jest.fn(testChaincodeStub.getState);
-  testChaincodeStub.deleteState = jest.fn(testChaincodeStub.deleteState);
-  testChaincodeStub.getStateByPartialCompositeKey = jest.fn(testChaincodeStub.getStateByPartialCompositeKey);
+  const internalStub = new TestChaincodeStub([], state);
+  internalStub.putState = jest.fn(internalStub.putState);
+  internalStub.getState = jest.fn(internalStub.getState);
+  internalStub.deleteState = jest.fn(internalStub.deleteState);
+  internalStub.getStateByPartialCompositeKey = jest.fn(internalStub.getStateByPartialCompositeKey);
+  internalStub.invokeChaincode = jest.fn(internalStub.invokeChaincode);
 
-  const cachedWrites = createGalaChainStub(testChaincodeStub);
+  const gcStub = createGalaChainStub(internalStub);
 
-  return { testChaincodeStub: testChaincodeStub, cachedWrites: cachedWrites };
+  return { internalStub, gcStub };
 };
 
 describe("updates/flush", () => {
   it("should call putState on flushWrites only", async () => {
     // Given
-    const { testChaincodeStub, cachedWrites } = setupTest();
+    const { internalStub, gcStub } = setupTest();
     const [key, value] = ["name", Buffer.from("Willy Wonka")];
 
     // When
-    await cachedWrites.putState(key, value);
+    await gcStub.putState(key, value);
 
     // Then
-    expect(testChaincodeStub.putState).not.toBeCalled();
+    expect(internalStub.putState).not.toBeCalled();
 
     // When
-    await cachedWrites.flushWrites();
+    await gcStub.flushWrites();
 
     // Then
-    expect(testChaincodeStub.putState).toBeCalledWith(key, value);
+    expect(internalStub.putState).toBeCalledWith(key, value);
   });
 
   it("should call deleteState on flushWrites only", async () => {
     // Given
-    const { testChaincodeStub, cachedWrites } = setupTest();
+    const { internalStub, gcStub } = setupTest();
     const key = "age";
 
     // When
-    await cachedWrites.deleteState(key);
+    await gcStub.deleteState(key);
 
     // Then
-    expect(testChaincodeStub.deleteState).not.toBeCalled();
+    expect(internalStub.deleteState).not.toBeCalled();
 
     // When
-    await cachedWrites.flushWrites();
+    await gcStub.flushWrites();
 
     // Then
-    expect(testChaincodeStub.deleteState).toBeCalledWith(key);
+    expect(internalStub.deleteState).toBeCalledWith(key);
   });
 
   it("should not duplicate puts and deletes", async () => {
     // Given
-    const { testChaincodeStub, cachedWrites } = setupTest();
+    const { internalStub, gcStub } = setupTest();
     const [key1, value1] = ["player1", Buffer.from("Willy Wonka")];
     const [key2, value2] = ["player2", Buffer.from("Bruce Wayne")];
     const [key3, value3] = ["player3", Buffer.from("Jack Sparrow")];
     const key4 = "player4";
 
     // When - put and delete
-    await cachedWrites.putState(key1, value1);
-    await cachedWrites.deleteState(key1);
+    await gcStub.putState(key1, value1);
+    await gcStub.deleteState(key1);
 
     // When - delete and put
-    await cachedWrites.deleteState(key2);
-    await cachedWrites.putState(key2, value2);
+    await gcStub.deleteState(key2);
+    await gcStub.putState(key2, value2);
 
     // When - just put or delete
-    await cachedWrites.putState(key3, value3);
-    await cachedWrites.deleteState(key4);
+    await gcStub.putState(key3, value3);
+    await gcStub.deleteState(key4);
 
     // When - flush
-    await cachedWrites.flushWrites();
+    await gcStub.flushWrites();
 
     // Then
-    expect(testChaincodeStub.putState).toBeCalledWith(key2, value2);
-    expect(testChaincodeStub.putState).toBeCalledWith(key3, value3);
-    expect(testChaincodeStub.putState).toBeCalledTimes(2);
+    expect(internalStub.putState).toBeCalledWith(key2, value2);
+    expect(internalStub.putState).toBeCalledWith(key3, value3);
+    expect(internalStub.putState).toBeCalledTimes(2);
 
-    expect(testChaincodeStub.deleteState).toBeCalledWith(key1);
-    expect(testChaincodeStub.deleteState).toBeCalledWith(key4);
-    expect(testChaincodeStub.deleteState).toBeCalledTimes(2);
+    expect(internalStub.deleteState).toBeCalledWith(key1);
+    expect(internalStub.deleteState).toBeCalledWith(key4);
+    expect(internalStub.deleteState).toBeCalledTimes(2);
   });
 });
 
@@ -115,100 +116,100 @@ describe("cached reads", () => {
 
   it("should read value only once", async () => {
     // Given
-    const { testChaincodeStub, cachedWrites } = setupTestWithInitialState();
+    const { internalStub, gcStub } = setupTestWithInitialState();
 
     // When
-    const result1 = await cachedWrites.getCachedState(key);
-    const result2 = await cachedWrites.getCachedState(key);
+    const result1 = await gcStub.getCachedState(key);
+    const result2 = await gcStub.getCachedState(key);
 
     // Then
     expect(result1).toEqual(initialValue);
     expect(result2).toEqual(initialValue);
-    expect(testChaincodeStub.getState).toBeCalledTimes(1);
+    expect(internalStub.getState).toBeCalledTimes(1);
   });
 
   it("should read updated value", async () => {
     // Given
-    const { testChaincodeStub, cachedWrites } = setupTestWithInitialState();
-    await cachedWrites.putState(key, updatedValue);
+    const { internalStub, gcStub } = setupTestWithInitialState();
+    await gcStub.putState(key, updatedValue);
 
     // When
-    const result = await cachedWrites.getCachedState(key);
+    const result = await gcStub.getCachedState(key);
 
     // Then
     expect(result).toEqual(updatedValue);
-    expect(testChaincodeStub.getState).not.toBeCalled();
+    expect(internalStub.getState).not.toBeCalled();
   });
 
   it("should read deleted value", async () => {
     // Given
-    const { testChaincodeStub, cachedWrites } = setupTestWithInitialState();
-    await cachedWrites.deleteState(key);
+    const { internalStub, gcStub } = setupTestWithInitialState();
+    await gcStub.deleteState(key);
 
     // When
-    const result = await cachedWrites.getCachedState(key);
+    const result = await gcStub.getCachedState(key);
 
     // Then
     expect(result).toEqual(new Uint8Array());
-    expect(testChaincodeStub.getState).not.toBeCalled();
+    expect(internalStub.getState).not.toBeCalled();
   });
 
   it("should handle delete -> update -> read", async () => {
     // Given
-    const { testChaincodeStub, cachedWrites } = setupTestWithInitialState();
-    await cachedWrites.deleteState(key);
-    await cachedWrites.putState(key, updatedValue);
+    const { internalStub, gcStub } = setupTestWithInitialState();
+    await gcStub.deleteState(key);
+    await gcStub.putState(key, updatedValue);
 
     // When
-    const result = await cachedWrites.getCachedState(key);
+    const result = await gcStub.getCachedState(key);
 
     // Then
     expect(result).toEqual(updatedValue);
-    expect(testChaincodeStub.getState).not.toBeCalled();
+    expect(internalStub.getState).not.toBeCalled();
   });
 
   it("should handle update -> delete -> read", async () => {
     // Given
-    const { testChaincodeStub, cachedWrites } = setupTestWithInitialState();
-    await cachedWrites.putState(key, updatedValue);
-    await cachedWrites.deleteState(key);
+    const { internalStub, gcStub } = setupTestWithInitialState();
+    await gcStub.putState(key, updatedValue);
+    await gcStub.deleteState(key);
 
     // When
-    const result = await cachedWrites.getCachedState(key);
+    const result = await gcStub.getCachedState(key);
 
     // Then
     expect(result).toEqual(new Uint8Array());
-    expect(testChaincodeStub.getState).not.toBeCalled();
+    expect(internalStub.getState).not.toBeCalled();
   });
 
   it("should handle read -> update -> read", async () => {
     // Given
-    const { testChaincodeStub, cachedWrites } = setupTestWithInitialState();
-    const result1 = await cachedWrites.getCachedState(key);
-    await cachedWrites.putState(key, updatedValue);
+    const { internalStub, gcStub } = setupTestWithInitialState();
+    const result1 = await gcStub.getCachedState(key);
+    await gcStub.putState(key, updatedValue);
 
     // When
-    const result2 = await cachedWrites.getCachedState(key);
+    const result2 = await gcStub.getCachedState(key);
 
     // Then
     expect(result1).toEqual(initialValue);
     expect(result2).toEqual(updatedValue);
-    expect(testChaincodeStub.getState).toBeCalledTimes(1);
+    expect(internalStub.getState).toBeCalledTimes(1);
   });
 
   it("should handle read -> delete -> read", async () => {
     // Given
-    const { testChaincodeStub, cachedWrites } = setupTestWithInitialState();
-    const result1 = await cachedWrites.getCachedState(key);
-    await cachedWrites.deleteState(key);
+    const { internalStub, gcStub } = setupTestWithInitialState();
+    const result1 = await gcStub.getCachedState(key);
+    await gcStub.deleteState(key);
 
     // When
-    const result2 = await cachedWrites.getCachedState(key);
+    const result2 = await gcStub.getCachedState(key);
 
     // Then
     expect(result1).toEqual(initialValue);
     expect(result2).toEqual(new Uint8Array());
-    expect(testChaincodeStub.getState).toBeCalledTimes(1);
+    expect(internalStub.getState).toBeCalledTimes(1);
   });
 });
 
@@ -255,10 +256,10 @@ describe("cached range queries", () => {
     };
 
     const getCachedStateByPartialCompositeKey = (objectType: string, attrs: string[]) =>
-      getAllResults(setup.cachedWrites.getCachedStateByPartialCompositeKey(objectType, attrs));
+      getAllResults(setup.gcStub.getCachedStateByPartialCompositeKey(objectType, attrs));
 
     const getStateByPartialCompositeKey = (objectType: string, attrs: string[]) =>
-      getAllResults(setup.cachedWrites.getStateByPartialCompositeKey(objectType, attrs));
+      getAllResults(setup.gcStub.getStateByPartialCompositeKey(objectType, attrs));
 
     return {
       ...setup,
@@ -279,13 +280,13 @@ describe("cached range queries", () => {
     // Then
     expect(result1).toEqual(expectedResult);
     expect(result2).toEqual(expectedResult);
-    expect(test.testChaincodeStub.getStateByPartialCompositeKey).toBeCalledTimes(2);
+    expect(test.internalStub.getStateByPartialCompositeKey).toBeCalledTimes(2);
   });
 
   it("should read added value", async () => {
     // Given
     const test = setupTestWithInitialState();
-    await test.cachedWrites.putState(journalist2.key, journalist2.value);
+    await test.gcStub.putState(journalist2.key, journalist2.value);
 
     // When
     const resultRaw = await test.getStateByPartialCompositeKey(people, journalists);
@@ -303,7 +304,7 @@ describe("cached range queries", () => {
     // Given
     const test = setupTestWithInitialState();
     const updatedScientist = { key: scientist2.key, value: Buffer.from("Dr No") };
-    await test.cachedWrites.putState(updatedScientist.key, updatedScientist.value);
+    await test.gcStub.putState(updatedScientist.key, updatedScientist.value);
 
     // When
     const resultRaw = await test.getStateByPartialCompositeKey(people, scientists);
@@ -320,7 +321,7 @@ describe("cached range queries", () => {
   it("should skip deleted value", async () => {
     // Given
     const test = setupTestWithInitialState();
-    await test.cachedWrites.deleteState(scientist1.key);
+    await test.gcStub.deleteState(scientist1.key);
 
     // When
     const resultRaw = await test.getStateByPartialCompositeKey(people, scientists);
@@ -335,8 +336,8 @@ describe("cached range queries", () => {
     // Given
     const test = setupTestWithInitialState();
     const updatedScientist = { key: scientist2.key, value: Buffer.from("Dr No") };
-    await test.cachedWrites.deleteState(updatedScientist.key);
-    await test.cachedWrites.putState(updatedScientist.key, updatedScientist.value);
+    await test.gcStub.deleteState(updatedScientist.key);
+    await test.gcStub.putState(updatedScientist.key, updatedScientist.value);
 
     // When
     const resultRaw = await test.getStateByPartialCompositeKey(people, scientists);
@@ -354,8 +355,8 @@ describe("cached range queries", () => {
     // Given
     const test = setupTestWithInitialState();
     const updatedScientist = { key: scientist2.key, value: Buffer.from("Dr No") };
-    await test.cachedWrites.putState(updatedScientist.key, updatedScientist.value);
-    await test.cachedWrites.deleteState(updatedScientist.key);
+    await test.gcStub.putState(updatedScientist.key, updatedScientist.value);
+    await test.gcStub.deleteState(updatedScientist.key);
 
     // When
     const resultRaw = await test.getStateByPartialCompositeKey(people, scientists);
@@ -364,5 +365,35 @@ describe("cached range queries", () => {
     // Then
     expect(resultRaw).toEqual([expect.objectContaining(scientist1), expect.objectContaining(scientist2)]);
     expect(resultCashed).toEqual([expect.objectContaining(scientist1)]);
+  });
+});
+
+describe("invokeChaincode", () => {
+  const successInvoke = expect.objectContaining({
+    status: 200
+  });
+
+  it("should allow to invoke other chaincode only once", async () => {
+    // Given
+    const { internalStub, gcStub } = setupTest();
+    const args = ["Contract:Method", "{}"];
+
+    // When
+    const calls = [
+      await gcStub.invokeChaincode("chaincode-1", args, "channel-A"), // ok
+      await gcStub.invokeChaincode("chaincode-2", args, "channel-A"), // ok
+      await gcStub.invokeChaincode("chaincode-1", args, "channel-A").catch((e) => e),
+      await gcStub.invokeChaincode("chaincode-1", args, "channel-B") // ok
+    ];
+
+    // Then
+    expect(calls).toEqual([
+      successInvoke,
+      successInvoke,
+      new DuplicateInvokeChaincodeError("chaincode-1", args, "channel-A"),
+      successInvoke
+    ]);
+
+    expect(internalStub.invokeChaincode).toHaveBeenCalledTimes(3);
   });
 });
