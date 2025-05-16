@@ -135,11 +135,23 @@ class StubCache {
   }
 
   getReads(): Record<string, Uint8Array> {
-    return { ...this.reads };
+    const reads = {};
+
+    for (const [key, value] of Object.entries(this.reads)) {
+      reads[key] = Buffer.from(value.toString());
+    }
+
+    return reads;
   }
 
   getWrites(): Record<string, Uint8Array> {
-    return { ...this.writes };
+    const writes = {};
+
+    for (const [key, value] of Object.entries(this.writes)) {
+      writes[key] = Buffer.from(value.toString());
+    }
+
+    return writes;
   }
 
   getDeletes(): Record<string, true> {
@@ -147,15 +159,38 @@ class StubCache {
   }
 
   setReads(reads: Record<string, Uint8Array>): void {
-    this.reads = { ...reads };
+    for (const key of Object.keys(this.reads)) {
+      delete this.reads[key];
+    }
+
+    for (const key of Object.keys(reads)) {
+      this.reads[key] = reads[key];
+    }
   }
 
   setWrites(writes: Record<string, Uint8Array>): void {
-    this.writes = { ...writes };
+    // assignment on this private class property,
+    // e.g. this.writes = { ...writes },
+    // will silently fail.
+    for (const key of Object.keys(this.writes)) {
+      delete this.writes[key];
+    }
+
+    // deleting all prior keys, and then re-assigning all new key/values
+    // fully updates the existing object with the new object references.
+    for (const key of Object.keys(writes)) {
+      this.writes[key] = writes[key];
+    }
   }
 
   setDeletes(deletes: Record<string, true>): void {
-    this.deletes = { ...deletes };
+    for (const key of Object.keys(this.deletes)) {
+      delete this.deletes[key];
+    }
+
+    for (const key of Object.keys(deletes)) {
+      this.deletes[key] = deletes[key];
+    }
   }
 }
 

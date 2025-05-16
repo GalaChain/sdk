@@ -201,7 +201,7 @@ export abstract class GalaContract extends Contract {
       batchDto.writesLimit ?? BatchDto.WRITES_DEFAULT_LIMIT,
       BatchDto.WRITES_HARD_LIMIT
     );
-    let writesCount = Object.keys(ctx.stub.getWrites()).length;
+    let writesCount = Object.keys(aggregatedCache.writes).length;
 
     for (const op of batchDto.operations) {
       // 1. Reset the calling user, to allow each operation to perform the
