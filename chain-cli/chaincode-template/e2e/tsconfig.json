@@ -3,6 +3,8 @@
   "compilerOptions": {
     "rootDir": ".",
     "noEmit": true,
-    "strictNullChecks": false
+    "strictNullChecks": false,
+    "sourceMap": true,
+    "inlineSourceMap": false,
   }
 }

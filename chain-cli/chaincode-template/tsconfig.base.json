@@ -20,7 +20,9 @@
     "composite": true,
     "skipLibCheck": true,
     "noPropertyAccessFromIndexSignature": false,
-    "strictPropertyInitialization": false
+    "strictPropertyInitialization": false,
+    "inlineSourceMap": true,
+    "inlineSources": true
   },
   "exclude": ["node_modules"],
   "include": [

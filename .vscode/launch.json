@@ -1,0 +1,23 @@
+{
+    // Use IntelliSense to learn about possible attributes.
+    // Hover to view descriptions of existing attributes.
+    // For more information, visit: https://go.microsoft.com/fwlink/?linkid=830387
+    "version": "0.2.0",
+    "configurations": [
+        {
+            "type": "node",
+            "request": "launch",
+            "name": "Debug Watch Launchpad E2E Tests",
+            "runtimeExecutable": "npm",
+            "runtimeArgs": ["run", "test:e2e:launchpad:watch"],
+            "console": "integratedTerminal",
+            "internalConsoleOptions": "neverOpen",
+            "cwd": "${workspaceFolder}/chain-cli/chaincode-template",
+            "skipFiles": [
+                "<node_internals>/**",
+                "**/node_modules/dd-trace/**",
+                "**/node_modules/@nestjs/**"
+            ]
+        }
+    ]
+}
