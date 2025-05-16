@@ -32,13 +32,15 @@ import {
   NativeTokenQuantityDto,
   Pool,
   PreMintCalculationDto,
+  RegisterEthUserDto,
   SaleStatus,
   TokenBalance,
   TokenClassKey,
   TokenInstanceKey,
   TradeCalculationResDto,
   TradeResDto,
-  TransferTokenDto
+  TransferTokenDto,
+  signatures
 } from "@gala-chain/api";
 import { ChainClient, ChainUser, CommonContractAPI, commonContractAPI } from "@gala-chain/client";
 import {
@@ -56,6 +58,9 @@ import {
   calNativeTokensInTest,
   calNativeTokensOutTest
 } from "./launchpadTestHelper";
+
+const GALA_AUTHORITY_PRIVATE_KEY = "0x0000000000000000000000000000000000000000000000000000000000000001";
+const GALA_AUTHORITY_ADDRESS = "eth|7E5F4552091A69125d5DfCb7b8C2659029395Bdf";
 
 jest.setTimeout(100000);
 
@@ -117,6 +122,7 @@ describe("LaunchpadContract", () => {
     user4 = await client.createRegisteredUser();
     user5 = await client.createRegisteredUser();
   });
+
   afterAll(async () => {
     await client.disconnect();
     await client1.disconnect();
@@ -180,6 +186,14 @@ describe("LaunchpadContract", () => {
     // Creating Gala Dummy token for Buying
     // Minting 100,000,000GALA  to user1
 
+    const registerGalaAuthorityDto = new RegisterEthUserDto();
+    registerGalaAuthorityDto.publicKey = signatures.getPublicKey(
+      GALA_AUTHORITY_PRIVATE_KEY.replace("0x", "")
+    );
+    registerGalaAuthorityDto.sign(user1.privateKey);
+
+    await client1.pk.RegisterEthUser(registerGalaAuthorityDto);
+
     const classKey = new TokenClassKey();
 
     classKey.collection = "GALA";
@@ -195,13 +209,14 @@ describe("LaunchpadContract", () => {
     tokenClassDto.description = "TEST TEST";
     tokenClassDto.image = "www.resolveUserAlias.com";
     tokenClassDto.decimals = 8;
-    tokenClassDto.maxSupply = new BigNumber("3e+7");
-    tokenClassDto.maxCapacity = new BigNumber("3e+7");
+    tokenClassDto.maxSupply = new BigNumber("3e+20");
+    tokenClassDto.maxCapacity = new BigNumber("3e+20");
     tokenClassDto.totalMintAllowance = new BigNumber(0);
     tokenClassDto.totalSupply = new BigNumber(0);
     tokenClassDto.totalBurned = new BigNumber(0);
     tokenClassDto.network = "GC";
     tokenClassDto.isNonFungible = false;
+    tokenClassDto.authorities = [GALA_AUTHORITY_ADDRESS];
 
     tokenClassDto.sign(user1.privateKey);
 
@@ -214,9 +229,10 @@ describe("LaunchpadContract", () => {
     mintDTO.owner = user1.identityKey;
     mintDTO.tokenInstance = new BigNumber(0);
 
-    mintDTO.sign(user1.privateKey);
+    mintDTO.sign(GALA_AUTHORITY_PRIVATE_KEY);
 
-    await client1.token.MintTokenWithAllowance(mintDTO);
+    const mintTokenResponse = await client1.token.MintTokenWithAllowance(mintDTO);
+    expect(mintTokenResponse.Status).toBe(1);
 
     const FetchBalancesDTO = new FetchBalancesDto();
     FetchBalancesDTO.owner = user1.identityKey;
@@ -238,7 +254,8 @@ describe("LaunchpadContract", () => {
     transferTokenDto.quantity = new BigNumber("5e+6");
     transferTokenDto.sign(user1.privateKey);
 
-    await client1.token.TransferToken(transferTokenDto);
+    const transferResponse1 = await client1.token.TransferToken(transferTokenDto);
+    expect(transferResponse1.Status).toBe(1);
 
     //Transferring Gala to user
     const transferTokenUserDto = new TransferTokenDto();
@@ -248,7 +265,8 @@ describe("LaunchpadContract", () => {
     transferTokenUserDto.quantity = new BigNumber("2e+6");
     transferTokenUserDto.sign(user1.privateKey);
 
-    await client1.token.TransferToken(transferTokenUserDto);
+    const transferResponse2 = await client1.token.TransferToken(transferTokenUserDto);
+    expect(transferResponse2.Status).toBe(1);
   });
 
   describe("Create Sale ", () => {
