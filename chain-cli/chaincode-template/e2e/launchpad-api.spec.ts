@@ -60,7 +60,6 @@ import {
 } from "./launchpadTestHelper";
 
 const GALA_AUTHORITY_PRIVATE_KEY = "0x0000000000000000000000000000000000000000000000000000000000000001";
-const GALA_AUTHORITY_ADDRESS = "eth|7E5F4552091A69125d5DfCb7b8C2659029395Bdf";
 
 jest.setTimeout(100000);
 
@@ -191,6 +190,7 @@ describe("LaunchpadContract", () => {
       GALA_AUTHORITY_PRIVATE_KEY.replace("0x", "")
     );
     registerGalaAuthorityDto.sign(user1.privateKey);
+    const galaAuthorityAddress = `eth|${signatures.getEthAddress(registerGalaAuthorityDto.publicKey)}`;
 
     await client1.pk.RegisterEthUser(registerGalaAuthorityDto);
 
@@ -216,7 +216,7 @@ describe("LaunchpadContract", () => {
     tokenClassDto.totalBurned = new BigNumber(0);
     tokenClassDto.network = "GC";
     tokenClassDto.isNonFungible = false;
-    tokenClassDto.authorities = [GALA_AUTHORITY_ADDRESS];
+    tokenClassDto.authorities = [galaAuthorityAddress];
 
     tokenClassDto.sign(user1.privateKey);
 
