@@ -344,3 +344,32 @@ export function IsStringArrayRecord(validationOptions?: ValidationOptions) {
     });
   };
 }
+
+export function BigNumberMax(maxValue: BigNumber.Value, options?: ValidationOptions) {
+  const max = new BigNumber(maxValue);
+
+  return function (object: object, propertyName: string) {
+    registerDecorator({
+      name: "BigNumberMax",
+      target: object.constructor,
+      propertyName,
+      options,
+      constraints: [max],
+      validator: {
+        validate(value: unknown): boolean {
+          try {
+            const bn = new BigNumber(value as BigNumber.Value);
+            return bn.isLessThanOrEqualTo(max);
+          } catch {
+            return false;
+          }
+        },
+
+        defaultMessage(args: ValidationArguments): string {
+          const [maxConstraint] = args.constraints as [BigNumber];
+          return `${args.property} must be ≤ ${maxConstraint.toFixed()}`;
+        }
+      }
+    });
+  };
+}

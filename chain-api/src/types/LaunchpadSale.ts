@@ -14,12 +14,13 @@
  */
 import BigNumber from "bignumber.js";
 import { Exclude, Type } from "class-transformer";
-import { IsNotEmpty, IsString } from "class-validator";
+import { IsNotEmpty, IsOptional, IsString, ValidateNested } from "class-validator";
 import { JSONSchema } from "class-validator-jsonschema";
 
 import { ChainKey } from "../utils";
 import { BigNumberProperty, StringEnumProperty } from "../validators";
 import { ChainObject } from "./ChainObject";
+import { ReverseBondingCurveConfigurationChainObject } from "./LaunchpadDtos";
 import { TokenInstanceKey } from "./TokenInstance";
 
 export enum SaleStatus {
@@ -75,6 +76,11 @@ export class LaunchpadSale extends ChainObject {
   @BigNumberProperty()
   public euler: BigNumber;
 
+  @IsOptional()
+  @ValidateNested()
+  @Type(() => ReverseBondingCurveConfigurationChainObject)
+  public reverseBondingCurveConfiguration?: ReverseBondingCurveConfigurationChainObject;
+
   @JSONSchema({
     description:
       "The market cap has been calculated using the bonding curve equations to approximate a specific final price."
@@ -88,7 +94,12 @@ export class LaunchpadSale extends ChainObject {
   })
   public static BASE_PRICE = "16506671506650";
 
-  constructor(vaultAddress: string, sellingToken: TokenInstanceKey, saleOwner: string) {
+  constructor(
+    vaultAddress: string,
+    sellingToken: TokenInstanceKey,
+    reverseBondingCurveConfiguration: ReverseBondingCurveConfigurationChainObject | undefined,
+    saleOwner: string
+  ) {
     super();
 
     this.vaultAddress = vaultAddress;
@@ -112,6 +123,7 @@ export class LaunchpadSale extends ChainObject {
 
     this.nativeToken = nativeTokenInstance;
     this.nativeTokenQuantity = "0";
+    this.reverseBondingCurveConfiguration = reverseBondingCurveConfiguration;
   }
 
   public buyToken(sellingTokenAmount: BigNumber, nativeTokenAmount: BigNumber) {
@@ -132,6 +144,15 @@ export class LaunchpadSale extends ChainObject {
     const tokenLeftInVault = new BigNumber(this.sellingTokenQuantity);
     const tokensSold = new BigNumber(this.maxSupply).minus(tokenLeftInVault);
     return tokensSold.toString();
+  }
+
+  // Returns the portion of the max supply that is circulating (that is, not in the vault)
+  // This is a value between 0 and 1. If a quarter of the max supply is circulating, this
+  // will return 0.25
+  public fetchCirculatingSupplyProportional() {
+    const tokenLeftInVault = new BigNumber(this.sellingTokenQuantity);
+    const graduationProgress = tokenLeftInVault.dividedBy(this.maxSupply);
+    return graduationProgress;
   }
 
   public fetchNativeTokensInVault() {

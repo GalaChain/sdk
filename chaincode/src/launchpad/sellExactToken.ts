@@ -26,6 +26,7 @@ import { GalaChainContext } from "../types";
 import { fetchAndValidateSale, putChainObject } from "../utils";
 import { callMemeTokenIn } from "./callMemeTokenIn";
 import { callNativeTokenOut } from "./callNativeTokenOut";
+import { payReverseBondingCurveFee } from "./fees";
 
 BigNumber.config({
   ROUNDING_MODE: BigNumber.ROUND_UP
@@ -76,6 +77,10 @@ export async function sellExactToken(
       "Expected Gala tokens from this operation exceeds the actual amount that will be provided."
     );
   }
+
+  // The fee must be paid BEFORE the sale can happen.
+  // That means you cannot pay the fee using proceeds from the sale.
+  await payReverseBondingCurveFee(ctx, sale, nativeTokensToProvide);
 
   await transferToken(ctx, {
     from: ctx.callingUser,
