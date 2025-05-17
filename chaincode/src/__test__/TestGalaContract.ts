@@ -69,6 +69,19 @@ export class KVDto extends ChainCallDTO {
   public value?: string;
 }
 
+export class NestedKVDto extends ChainCallDTO {
+  @IsNotEmpty()
+  public key: string;
+
+  public text?: string;
+
+  public map?: Record<string, unknown>;
+
+  public counter?: number;
+
+  public array?: Array<unknown>;
+}
+
 export default class TestGalaContract extends GalaContract {
   constructor() {
     super("TestGalaContract", version);
@@ -174,5 +187,88 @@ export default class TestGalaContract extends GalaContract {
     );
 
     return getObjectsByPartialCompositeKey(ctx, Superhero.INDEX_KEY, [], Superhero);
+  }
+
+  @GalaTransaction({
+    type: SUBMIT,
+    in: NestedKVDto,
+    allowedOrgs: ["CuratorOrg"]
+  })
+  public async PutNestedKv(ctx: GalaChainContext, dto: NestedKVDto): Promise<void> {
+    const value = JSON.stringify(dto);
+    await ctx.stub.putState(dto.key, Buffer.from(value));
+  }
+
+  @GalaTransaction({
+    type: EVALUATE,
+    in: NestedKVDto
+  })
+  public async GetNestedKv(ctx: GalaChainContext, dto: NestedKVDto): Promise<unknown> {
+    const response = (await ctx.stub.getState(dto.key)).toString();
+    if (response === "") {
+      throw new NotFoundError(`Object ${dto.key} not found`);
+    }
+    return JSON.parse(response);
+  }
+
+  @GalaTransaction({
+    type: SUBMIT,
+    in: NestedKVDto,
+    allowedOrgs: ["CuratorOrg"]
+  })
+  public async ErrorAfterPutNestedKv(ctx: GalaChainContext, dto: NestedKVDto): Promise<void> {
+    const value = JSON.stringify(dto);
+    await ctx.stub.putState(dto.key, Buffer.from(value));
+
+    throw new NotImplementedError("Some error after put was invoked");
+  }
+
+  @GalaTransaction({
+    type: SUBMIT,
+    in: NestedKVDto,
+    allowedOrgs: ["CuratorOrg"]
+  })
+  public async GetSetPutNestedKv(ctx: GalaChainContext, dto: NestedKVDto): Promise<unknown> {
+    const response = (await ctx.stub.getCachedState(dto.key)).toString();
+    if (response === "") {
+      const value = JSON.stringify(dto);
+      await ctx.stub.putState(dto.key, Buffer.from(value));
+      return dto;
+    }
+
+    let previous: NestedKVDto;
+
+    try {
+      previous = JSON.parse(response);
+    } catch (e) {
+      throw new Error(`Failed to parse previous value: ${response} -- ${e}`);
+    }
+
+    const updated = { ...previous };
+
+    if (dto.text) {
+      updated.text = dto.text;
+    }
+
+    if (dto.map) {
+      updated.map = updated.map ? { ...updated.map, ...dto.map } : { ...dto.map };
+    }
+
+    if (dto.counter) {
+      updated.counter = updated.counter ? updated.counter + dto.counter : dto.counter;
+    }
+
+    if (dto.array) {
+      updated.array = updated.array ? [...updated.array, ...dto.array] : [...dto.array];
+    }
+
+    try {
+      const value = JSON.stringify(updated);
+      await ctx.stub.putState(dto.key, Buffer.from(value));
+    } catch (e) {
+      throw new Error(`Failed to stringify and save updated dto: ${e}`);
+    }
+
+    return updated;
   }
 }
