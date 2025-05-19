@@ -52,6 +52,16 @@ export function generateKeyFromClassKey(obj: TokenClassKey) {
   return Object.assign(new TokenClassKey(), obj).toStringKey().replace(/\|/g, ":") || "";
 }
 
+/**
+ * Validates and normalizes the order of two tokens for pool creation.
+ *
+ * Ensures that token0 is lexicographically smaller than token1 and that both tokens are different.
+ *
+ * @param token0 - The first token's class key.
+ * @param token1 - The second token's class key.
+ * @throws ValidationFailedError if tokens are the same or in the wrong order.
+ * @returns A tuple containing the normalized token0 and token1 keys.
+ */
 export function validateTokenOrder(token0: TokenClassKey, token1: TokenClassKey) {
   const [normalizedToken0, normalizedToken1] = [token0, token1].map(generateKeyFromClassKey);
 
@@ -96,6 +106,12 @@ export function parseTickRange(tickRange: string): { tickLower: number; tickUppe
   return { tickLower, tickUpper };
 }
 
+/**
+ * Retrieves the global DEX protocol fee configuration.
+ *
+ * @param ctx - GalaChain context object.
+ * @returns A Promise resolving to the DexFeeConfig object if found, or undefined if not set.
+ */
 export async function fetchDexProtocolFeeConfig(ctx: GalaChainContext): Promise<DexFeeConfig | undefined> {
   const key = ctx.stub.createCompositeKey(DexFeeConfig.INDEX_KEY, []);
 
