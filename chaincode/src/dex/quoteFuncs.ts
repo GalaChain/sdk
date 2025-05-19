@@ -31,7 +31,7 @@ import { getTokenDecimalsFromPool, roundTokenAmount, validateTokenOrder } from "
 import { processSwapSteps } from "./swap.helper";
 
 /**
- * @dev The quoteExactAmount function calculates the required amount of the other token for a swap or liquidity addition in a Uniswap V3 pool within the GalaChain ecosystem.
+ * @dev The quoteExactAmount function calculates the required amount of the other token for a swap or liquidity addition in a Dex pool within the GalaChain ecosystem.
  * @param ctx GalaChainContext – The execution context providing access to the GalaChain environment.
  * @param dto QuoteExactAmountDto – A data transfer object containing:
   - Input token details – Specifies which token and amount are being provided.

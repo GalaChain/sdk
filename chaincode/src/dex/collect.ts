@@ -40,7 +40,13 @@ export async function collect(ctx: GalaChainContext, dto: CollectDto): Promise<U
 
   const poolHash = pool.genPoolHash();
   const poolAlias = pool.getPoolAlias();
-  const position = await fetchUserPositionInTickRange(ctx, poolHash, dto.tickUpper, dto.tickLower);
+  const position = await fetchUserPositionInTickRange(
+    ctx,
+    poolHash,
+    dto.tickUpper,
+    dto.tickLower,
+    dto.positionId
+  );
   if (!position) throw new NotFoundError(`User doesn't hold any positions with this tick range in this pool`);
 
   // Create token instance keys and fetch token decimals
