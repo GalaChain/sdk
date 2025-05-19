@@ -25,7 +25,6 @@ import {
   IsString,
   Max,
   Min,
-  ValidateIf,
   ValidateNested
 } from "class-validator";
 
@@ -261,6 +260,10 @@ export class BurnDto extends ChainCallDTO {
   @BigNumberProperty()
   public amount1Min: BigNumber;
 
+  @IsOptional()
+  @IsString()
+  public positionId?: string;
+
   constructor(
     token0: TokenClassKey,
     token1: TokenClassKey,
@@ -269,7 +272,8 @@ export class BurnDto extends ChainCallDTO {
     tickLower: number,
     tickUpper: number,
     amount0Min: BigNumber,
-    amount1Min: BigNumber
+    amount1Min: BigNumber,
+    positionId: string | undefined
   ) {
     super();
     this.tickLower = tickLower;
@@ -280,6 +284,7 @@ export class BurnDto extends ChainCallDTO {
     this.fee = fee;
     this.amount0Min = amount0Min;
     this.amount1Min = amount1Min;
+    this.positionId = positionId;
   }
 }
 
@@ -360,13 +365,18 @@ export class GetPositionDto extends ChainCallDTO {
   @IsLessThan("tickUpper")
   public tickLower: number;
 
+  @IsOptional()
+  @IsString()
+  public positionId?: string;
+
   constructor(
     token0: TokenClassKey,
     token1: TokenClassKey,
     fee: DexFeePercentageTypes,
     tickLower: number,
     tickUpper: number,
-    owner: string
+    owner: string,
+    positionId: string | undefined
   ) {
     super();
     this.token0 = token0;
@@ -375,6 +385,7 @@ export class GetPositionDto extends ChainCallDTO {
     this.owner = owner;
     this.tickLower = tickLower;
     this.tickUpper = tickUpper;
+    this.positionId = positionId;
   }
 }
 
@@ -509,6 +520,10 @@ export class CollectDto extends ChainCallDTO {
   @IsLessThan("tickUpper")
   public tickLower: number;
 
+  @IsOptional()
+  @IsString()
+  public positionId?: string;
+
   constructor(
     token0: TokenClassKey,
     token1: TokenClassKey,
@@ -516,7 +531,8 @@ export class CollectDto extends ChainCallDTO {
     amount0Requested: BigNumber,
     amount1Requested: BigNumber,
     tickLower: number,
-    tickUpper: number
+    tickUpper: number,
+    positionId: string | undefined
   ) {
     super();
     this.token0 = token0;
@@ -526,6 +542,7 @@ export class CollectDto extends ChainCallDTO {
     this.amount1Requested = amount1Requested;
     this.tickLower = tickLower;
     this.tickUpper = tickUpper;
+    this.positionId = positionId;
   }
 }
 
@@ -570,6 +587,10 @@ export class AddLiquidityDTO extends ChainCallDTO {
   @BigNumberProperty()
   public amount1Min: BigNumber;
 
+  @IsOptional()
+  @IsString()
+  public positionId?: string;
+
   constructor(
     token0: TokenClassKey,
     token1: TokenClassKey,
@@ -579,7 +600,8 @@ export class AddLiquidityDTO extends ChainCallDTO {
     amount0Desired: BigNumber,
     amount1Desired: BigNumber,
     amount0Min: BigNumber,
-    amount1Min: BigNumber
+    amount1Min: BigNumber,
+    positionId: string | undefined
   ) {
     super();
     this.token0 = token0;
@@ -591,6 +613,7 @@ export class AddLiquidityDTO extends ChainCallDTO {
     this.amount1Desired = amount1Desired;
     this.amount0Min = amount0Min;
     this.amount1Min = amount1Min;
+    this.positionId = positionId;
   }
 }
 
@@ -831,7 +854,7 @@ export class SetProtocolFeeResDto extends ChainCallDTO {
 }
 
 export class ConfigureDexFeeAddressDto extends ChainCallDTO {
-  @ValidateIf((e) => e.newDexFeeAddress !== undefined)
+  @IsOptional()
   @IsUserAlias()
   public newDexFeeAddress?: string;
 
@@ -874,6 +897,10 @@ export class BurnEstimateDto extends ChainCallDTO {
   @IsUserAlias()
   public owner: string;
 
+  @IsOptional()
+  @IsString()
+  positionId?: string;
+
   constructor(
     token0: TokenClassKey,
     token1: TokenClassKey,
@@ -881,7 +908,8 @@ export class BurnEstimateDto extends ChainCallDTO {
     amount: BigNumber,
     tickLower: number,
     tickUpper: number,
-    owner: string
+    owner: string,
+    positionId: string | undefined
   ) {
     super();
     this.tickLower = tickLower;
@@ -891,6 +919,7 @@ export class BurnEstimateDto extends ChainCallDTO {
     this.token1 = token1;
     this.fee = fee;
     this.owner = owner;
+    this.positionId = positionId;
   }
 }
 

@@ -43,12 +43,11 @@ export async function fetchOrCreateDexPosition(
   tickUpper: number,
   tickLower: number,
   uniqueKey: string,
-  owner?: string
+  positionId?: string
 ): Promise<DexPositionData> {
   const poolHash = pool.genPoolHash();
-  const positionHolder = owner ?? ctx.callingUser;
   const tickRange = genTickRange(tickLower, tickUpper);
-  const emptyUserPosition = new DexPositionOwner(positionHolder, poolHash);
+  const emptyUserPosition = new DexPositionOwner(ctx.callingUser, poolHash);
 
   // Fetch or initialize positionHolder's DEX position owner record
   const fetchedUserPosition = await getObjectByKey(
@@ -59,9 +58,19 @@ export async function fetchOrCreateDexPosition(
 
   await fetchedUserPosition.validateOrReject();
 
-  // Check if position already exists for the tick range and create a new one if it doesn't
-  let positionId = fetchedUserPosition.getPositionId(tickRange);
+  // Check if the position Id provided is valid or try to fetch one in given tick range
+  if (positionId) {
+    const actualTickRange = fetchedUserPosition.getTickRangeByPositionId(positionId);
+    if (actualTickRange !== tickRange) {
+      throw new NotFoundError(
+        `Cannot find any position with the id ${positionId} in the tick range ${tickRange} that belongs to ${ctx.callingUser} in this pool.`
+      );
+    }
+  } else {
+    positionId = fetchedUserPosition.getPositionId(tickRange);
+  }
 
+  // Create a new position if none exists
   if (!positionId) {
     positionId = keccak256(uniqueKey);
     fetchedUserPosition.addPosition(tickRange, positionId);
@@ -98,6 +107,7 @@ export async function fetchUserPositionInTickRange(
   poolHash: string,
   tickUpper: number,
   tickLower: number,
+  positionId?: string,
   owner?: string
 ): Promise<DexPositionData> {
   // Fetch user positions
@@ -105,10 +115,19 @@ export async function fetchUserPositionInTickRange(
   const tickRange = genTickRange(tickLower, tickUpper);
   const userPositions = await getUserPositionIds(ctx, positionHolder, poolHash);
 
-  // Check if user holds any position for this tick range
-  const positionId = userPositions.getPositionId(tickRange);
-  if (!positionId) {
-    throw new NotFoundError(`User doesnt holds any position for the tick range ${tickRange} in this pool.`);
+  // Check if the position Id provided is valid or try to fetch one in given tick range
+  if (positionId) {
+    const actualTickRange = userPositions.getTickRangeByPositionId(positionId);
+    if (actualTickRange !== tickRange) {
+      throw new NotFoundError(
+        `Cannot find any position with the id ${positionId} in the tick range ${tickRange} that belongs to ${positionHolder} in this pool.`
+      );
+    }
+  } else {
+    positionId = userPositions.getPositionId(tickRange);
+    if (!positionId) {
+      throw new NotFoundError(`User doesnt holds any position for the tick range ${tickRange} in this pool.`);
+    }
   }
 
   // Fetch and return position data
