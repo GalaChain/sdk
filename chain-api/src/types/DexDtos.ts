@@ -273,7 +273,7 @@ export class BurnDto extends ChainCallDTO {
     tickUpper: number,
     amount0Min: BigNumber,
     amount1Min: BigNumber,
-    positionId?: string
+    positionId: string | undefined
   ) {
     super();
     this.tickLower = tickLower;
@@ -376,7 +376,7 @@ export class GetPositionDto extends ChainCallDTO {
     tickLower: number,
     tickUpper: number,
     owner: string,
-    positionId?: string
+    positionId: string | undefined
   ) {
     super();
     this.token0 = token0;
@@ -532,7 +532,7 @@ export class CollectDto extends ChainCallDTO {
     amount1Requested: BigNumber,
     tickLower: number,
     tickUpper: number,
-    positionId?: string
+    positionId: string | undefined
   ) {
     super();
     this.token0 = token0;
@@ -601,7 +601,7 @@ export class AddLiquidityDTO extends ChainCallDTO {
     amount1Desired: BigNumber,
     amount0Min: BigNumber,
     amount1Min: BigNumber,
-    positionId?: string
+    positionId: string | undefined
   ) {
     super();
     this.token0 = token0;
@@ -909,7 +909,7 @@ export class BurnEstimateDto extends ChainCallDTO {
     tickLower: number,
     tickUpper: number,
     owner: string,
-    positionId?: string
+    positionId: string | undefined
   ) {
     super();
     this.tickLower = tickLower;
