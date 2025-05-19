@@ -264,7 +264,8 @@ describe("DEx v3 Testing", () => {
         new BigNumber(1),
         new BigNumber(1),
         new BigNumber(1),
-        new BigNumber(1)
+        new BigNumber(1),
+        undefined
       );
       dto.uniqueKey = randomUUID();
       dto.sign(user.privateKey);
@@ -293,7 +294,8 @@ describe("DEx v3 Testing", () => {
         new BigNumber(1),
         new BigNumber(1),
         new BigNumber(1),
-        new BigNumber(1)
+        new BigNumber(1),
+        undefined
       );
       dto.uniqueKey = randomUUID();
       dto.sign(user.privateKey);
@@ -319,7 +321,8 @@ describe("DEx v3 Testing", () => {
         new BigNumber(1),
         new BigNumber(1),
         new BigNumber(1),
-        new BigNumber(1)
+        new BigNumber(1),
+        undefined
       );
       dto.uniqueKey = randomUUID();
       dto.sign(user.privateKey);
@@ -344,7 +347,8 @@ describe("DEx v3 Testing", () => {
         new BigNumber(1),
         new BigNumber(1),
         new BigNumber(1),
-        new BigNumber(1)
+        new BigNumber(1),
+        undefined
       );
       dto.uniqueKey = randomUUID();
       dto.sign(user.privateKey);
@@ -438,7 +442,8 @@ describe("DEx v3 Testing", () => {
         token0,
         token1,
         token0Slipped,
-        token1Slipped
+        token1Slipped,
+        undefined
       );
       dto.uniqueKey = randomUUID();
       dto.sign(user.privateKey);
@@ -465,7 +470,8 @@ describe("DEx v3 Testing", () => {
         token0,
         token1,
         token0Slipped,
-        token1Slipped
+        token1Slipped,
+        undefined
       );
       dto.uniqueKey = randomUUID();
       dto.sign(user.privateKey);
@@ -507,7 +513,8 @@ describe("DEx v3 Testing", () => {
         token0,
         token1,
         token0Slipped,
-        token1Slipped
+        token1Slipped,
+        undefined
       );
       dto.uniqueKey = randomUUID();
       dto.sign(user.privateKey);
@@ -588,7 +595,8 @@ describe("DEx v3 Testing", () => {
         token0,
         token1,
         token0Slipped,
-        token1Slipped
+        token1Slipped,
+        undefined
       );
       dto.uniqueKey = randomUUID();
       dto.sign(user.privateKey);
@@ -631,7 +639,8 @@ describe("DEx v3 Testing", () => {
         token0,
         token1,
         token0Slipped,
-        token1Slipped
+        token1Slipped,
+        undefined
       );
       dto.uniqueKey = randomUUID();
       dto.sign(user.privateKey);
@@ -767,7 +776,8 @@ describe("DEx v3 Testing", () => {
         token0,
         token1,
         token0Slipped,
-        token1Slipped
+        token1Slipped,
+        undefined
       );
       dto.uniqueKey = randomUUID();
       dto.sign(user.privateKey);
@@ -799,7 +809,8 @@ describe("DEx v3 Testing", () => {
         fee,
         ta,
         tb,
-        user.identityKey
+        user.identityKey,
+        undefined
       ).signed(user.privateKey);
       const positionRes = await client.dexV3Contract.getPositions(getPositionDto);
       if (!positionRes.Data) {
@@ -838,7 +849,8 @@ describe("DEx v3 Testing", () => {
         ta,
         tb,
         new BigNumber("12"),
-        new BigNumber("15113")
+        new BigNumber("15113"),
+        undefined
       ).signed(user.privateKey);
 
       // When
@@ -865,7 +877,8 @@ describe("DEx v3 Testing", () => {
         new BigNumber("92271.497628802094407217"),
         ta,
         tb,
-        user.identityKey
+        user.identityKey,
+        undefined
       );
       const dto = new BurnDto(
         ETH_ClassKey,
@@ -875,7 +888,8 @@ describe("DEx v3 Testing", () => {
         ta,
         tb,
         new BigNumber("0"),
-        new BigNumber("0")
+        new BigNumber("0"),
+        undefined
       );
 
       const removeLiqEstimation = await client.dexV3Contract.burnEstimate(estimateDto);
@@ -934,7 +948,8 @@ describe("DEx v3 Testing", () => {
         new BigNumber("92271.497628802094407217"),
         ta,
         tb,
-        user.identityKey
+        user.identityKey,
+        undefined
       );
       const removeLiqEstimation = await client.dexV3Contract.burnEstimate(dto);
       expect(removeLiqEstimation.Message).toBe("Uint Out of Bounds error :Uint");
@@ -950,7 +965,8 @@ describe("DEx v3 Testing", () => {
         fee,
         ta,
         tb,
-        user.identityKey
+        user.identityKey,
+        undefined
       ).signed(user.privateKey);
       const positionRes = await client.dexV3Contract.getPositions(getPositionDto);
       expect(positionRes.Data).toMatchObject({
@@ -975,7 +991,8 @@ describe("DEx v3 Testing", () => {
         new BigNumber("0.001"),
         new BigNumber("0"),
         ta,
-        tb
+        tb,
+        undefined
       ).signed(user.privateKey);
       const collectRes = await client.dexV3Contract.collect(dto);
       expect(collectRes.Message).toBe("Less balance accumulated");
@@ -996,7 +1013,8 @@ describe("DEx v3 Testing", () => {
         new BigNumber("0.00090000000000062"),
         new BigNumber("0"),
         ta,
-        tb
+        tb,
+        undefined
       ).signed(user.privateKey);
       const collectRes = await client.dexV3Contract.collect(dto);
       expect(collectRes).toMatchObject({
@@ -1038,7 +1056,8 @@ describe("DEx v3 Testing", () => {
         fee,
         ta,
         tb,
-        user.identityKey
+        user.identityKey,
+        undefined
       ).signed(user.privateKey);
       const position = await client.dexV3Contract.getPositions(getPositionDto);
       expect(position.Data).toBeUndefined();
@@ -1194,7 +1213,8 @@ describe("DEx v3 Testing", () => {
         token0,
         token1,
         token0Slipped,
-        token1Slipped
+        token1Slipped,
+        undefined
       );
       dto.uniqueKey = randomUUID();
       dto.sign(user.privateKey);
@@ -1240,7 +1260,8 @@ describe("DEx v3 Testing", () => {
         token0,
         token1,
         token0Slipped,
-        token1Slipped
+        token1Slipped,
+        undefined
       );
       dto.uniqueKey = randomUUID();
       dto.sign(user.privateKey);
@@ -1310,7 +1331,8 @@ describe("DEx v3 Testing", () => {
         token0,
         token1,
         token0Slipped,
-        token1Slipped
+        token1Slipped,
+        undefined
       );
       dto.uniqueKey = randomUUID();
       dto.sign(user.privateKey);
@@ -1369,7 +1391,8 @@ describe("DEx v3 Testing", () => {
         fee,
         ta,
         tb,
-        user.identityKey
+        user.identityKey,
+        undefined
       ).signed(user.privateKey);
       const position = await client.dexV3Contract.getPositions(getPositionDto);
       if (!position.Data) {
@@ -1395,7 +1418,8 @@ describe("DEx v3 Testing", () => {
         new BigNumber("26675.915083949831428038"),
         ta,
         tb,
-        user.identityKey
+        user.identityKey,
+        undefined
       );
 
       const dto = new BurnDto(
@@ -1406,7 +1430,8 @@ describe("DEx v3 Testing", () => {
         ta,
         tb,
         new BigNumber("2.0"),
-        new BigNumber("2747.8")
+        new BigNumber("2747.8"),
+        undefined
       );
       const removeLiqEstimation = await client.dexV3Contract.burnEstimate(estimateDto);
       const data = removeLiqEstimation.Data;
@@ -1461,7 +1486,8 @@ describe("DEx v3 Testing", () => {
         fee,
         ta,
         tb,
-        user.identityKey
+        user.identityKey,
+        undefined
       ).signed(user.privateKey);
       const position = await client.dexV3Contract.getPositions(getPositionDto);
       expect(position.Data).toBeUndefined();
@@ -1596,7 +1622,8 @@ describe("DEx v3 Testing", () => {
         token0,
         token1,
         token0Slipped,
-        token1Slipped
+        token1Slipped,
+        undefined
       );
       dto.uniqueKey = randomUUID();
       dto.sign(user.privateKey);
@@ -1640,7 +1667,8 @@ describe("DEx v3 Testing", () => {
         token0,
         token1,
         token0Slipped,
-        token1Slipped
+        token1Slipped,
+        undefined
       );
       dto.uniqueKey = randomUUID();
       dto.sign(user.privateKey);
@@ -1687,7 +1715,8 @@ describe("DEx v3 Testing", () => {
         token0,
         token1,
         token0Slipped,
-        token1Slipped
+        token1Slipped,
+        undefined
       );
       dto.uniqueKey = randomUUID();
       dto.sign(user.privateKey);
@@ -1721,8 +1750,8 @@ describe("DEx v3 Testing", () => {
         new BigNumber("928.637339589079235191"),
         ta,
         tb,
-
-        user.identityKey
+        user.identityKey,
+        undefined
       );
       const dto = new BurnDto(
         ETH_ClassKey,
@@ -1732,7 +1761,8 @@ describe("DEx v3 Testing", () => {
         ta,
         tb,
         new BigNumber("1.000000000000000000"),
-        new BigNumber("1253.169150694844108753")
+        new BigNumber("1253.169150694844108753"),
+        undefined
       );
 
       const removeLiqEstimation = await client.dexV3Contract.burnEstimate(estimateDto);
@@ -1889,7 +1919,8 @@ describe("DEx v3 Testing", () => {
         token0,
         token1,
         token0Slipped,
-        token1Slipped
+        token1Slipped,
+        undefined
       );
       dto.uniqueKey = randomUUID();
       dto.sign(user.privateKey);
@@ -1959,7 +1990,8 @@ describe("DEx v3 Testing", () => {
         token0,
         token1,
         token0Slipped,
-        token1Slipped
+        token1Slipped,
+        undefined
       );
       dto.uniqueKey = randomUUID();
       dto.sign(user.privateKey);
@@ -2138,7 +2170,8 @@ describe("DEx v3 Testing", () => {
         token0,
         token1,
         token0Slipped,
-        token1Slipped
+        token1Slipped,
+        undefined
       );
       dto.uniqueKey = randomUUID();
       dto.sign(user.privateKey);
@@ -2252,7 +2285,15 @@ describe("DEx v3 Testing", () => {
     describe("Perform seperate operations on positions within the same tick range in the same pool", () => {
       let transferredPositionId: string;
       it("Liquidity provider should be able to transfer their position to another user", async () => {
-        const dto = new GetPositionDto(ETH_ClassKey, USDC_ClassKey, 500, 75920, 76110, user.identityKey);
+        const dto = new GetPositionDto(
+          ETH_ClassKey,
+          USDC_ClassKey,
+          500,
+          75920,
+          76110,
+          user.identityKey,
+          undefined
+        );
 
         const getSingleUserPosition = await client.dexV3Contract.getPositions(dto);
         const positionID = getSingleUserPosition.Data?.positionId;
@@ -2310,7 +2351,8 @@ describe("DEx v3 Testing", () => {
           token0,
           token1,
           token0Slipped,
-          token1Slipped
+          token1Slipped,
+          undefined
         );
         dto.uniqueKey = randomUUID();
         dto.sign(user.privateKey);
@@ -2322,7 +2364,8 @@ describe("DEx v3 Testing", () => {
           500,
           75920,
           76110,
-          user.identityKey
+          user.identityKey,
+          undefined
         );
 
         const getSingleUserPosition = await client.dexV3Contract.getPositions(getPositionDto);
@@ -2514,7 +2557,8 @@ describe("DEx v3 Testing", () => {
           500,
           75920,
           76110,
-          user.identityKey
+          user.identityKey,
+          undefined
         );
         const getSingleUserPosition = await client.dexV3Contract.getPositions(getPositionDto);
         expect(getSingleUserPosition.ErrorKey).toEqual("NOT_FOUND");
