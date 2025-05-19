@@ -46,8 +46,8 @@ export async function getPosition(ctx: GalaChainContext, dto: GetPositionDto): P
     pool.genPoolHash(),
     dto.tickUpper,
     dto.tickLower,
-    dto.owner,
-    dto.positionId
+    dto.positionId,
+    dto.owner
   );
 
   // Estimate and update tokens owed for this position
