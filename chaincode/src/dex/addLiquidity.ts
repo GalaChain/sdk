@@ -80,7 +80,14 @@ export async function addLiquidity(
   const poolHash = pool.genPoolHash();
   const poolAlias = pool.getPoolAlias();
   if (!dto.uniqueKey) throw new PreConditionFailedError("Unique key is required for this function.");
-  const position = await fetchOrCreateDexPosition(ctx, pool, tickUpper, tickLower, dto.uniqueKey);
+  const position = await fetchOrCreateDexPosition(
+    ctx,
+    pool,
+    tickUpper,
+    tickLower,
+    dto.uniqueKey,
+    dto.positionId
+  );
   const { tickUpperData, tickLowerData } = await fetchOrCreateTickDataPair(
     ctx,
     poolHash,

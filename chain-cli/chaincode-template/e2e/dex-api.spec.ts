@@ -2249,8 +2249,9 @@ describe("DEx v3 Testing", () => {
       expect(getData.Data?.protocolFeesToken0.toString()).toBe("0");
     });
 
-    describe("Transfer User Position", () => {
-      it("Liquidity provider should be able to transfer his position to another user", async () => {
+    describe("Perform seperate operations on positions within the same tick range in the same pool", () => {
+      let transferredPositionId: string;
+      it("Liquidity provider should be able to transfer their position to another user", async () => {
         const dto = new GetPositionDto(ETH_ClassKey, USDC_ClassKey, 500, 75920, 76110, user.identityKey);
 
         const getSingleUserPosition = await client.dexV3Contract.getPositions(dto);
@@ -2279,7 +2280,134 @@ describe("DEx v3 Testing", () => {
         });
       });
 
-      it("It will revery if Liquidity Provider is not the owner of the transferred position", async () => {
+      it("Should create another position in the same tick range and transfer it as well", async () => {
+        const pa = 1980,
+          pb = 2020;
+        const [ta, tb] = spacedTicksFromPrice(pa, pb, tickSpacing);
+        const expectedTokenDTO = new GetAddLiquidityEstimationDto(
+          ETH_ClassKey,
+          USDC_ClassKey,
+          fee,
+          new BigNumber(10),
+          ta,
+          tb,
+          true
+        ).signed(user.privateKey);
+        const slippage = 0.5;
+        const result = await client.dexV3Contract.getAddLiquidityEstimation(expectedTokenDTO);
+        const data = result.Data;
+        expect(data).toBeDefined();
+        if (!data) throw new Error();
+        const token0 = new BigNumber(data.amount0),
+          token1 = new BigNumber(data.amount1);
+        const [token0Slipped, token1Slipped] = slippedValue([token0, token1], slippage);
+        const dto = new AddLiquidityDTO(
+          ETH_ClassKey,
+          USDC_ClassKey,
+          fee,
+          ta,
+          tb,
+          token0,
+          token1,
+          token0Slipped,
+          token1Slipped
+        );
+        dto.uniqueKey = randomUUID();
+        dto.sign(user.privateKey);
+        await client.dexV3Contract.addLiquidity(dto);
+
+        const getPositionDto = new GetPositionDto(
+          ETH_ClassKey,
+          USDC_ClassKey,
+          500,
+          75920,
+          76110,
+          user.identityKey
+        );
+
+        const getSingleUserPosition = await client.dexV3Contract.getPositions(getPositionDto);
+        if (!getSingleUserPosition.Data) throw new Error();
+        transferredPositionId = getSingleUserPosition.Data?.positionId;
+
+        const transferDTO = new TransferDexPositionDto();
+        transferDTO.toAddress = user1.identityKey;
+        transferDTO.token0 = ETH_ClassKey;
+        transferDTO.token1 = USDC_ClassKey;
+        transferDTO.fee = 500;
+        transferDTO.positionId = transferredPositionId;
+        transferDTO.sign(user.privateKey);
+
+        await client.dexV3Contract.transferDexPosition(transferDTO);
+      });
+
+      it("Add liquidity to a specific position using its ID", async () => {
+        const mintEthDto = new MintTokenWithAllowanceDto();
+        mintEthDto.tokenClass = ETH_ClassKey;
+        mintEthDto.quantity = new BigNumber(100000);
+        mintEthDto.owner = user1.identityKey;
+        mintEthDto.tokenInstance = new BigNumber(0);
+        mintEthDto.sign(user.privateKey);
+        await client.tokenContract.MintTokenWithAllowance(mintEthDto);
+
+        const mintUSDCDto = new MintTokenWithAllowanceDto();
+        mintUSDCDto.tokenClass = USDC_ClassKey;
+        mintUSDCDto.quantity = new BigNumber(100000);
+        mintUSDCDto.owner = user1.identityKey;
+        mintUSDCDto.tokenInstance = new BigNumber(0);
+        mintUSDCDto.sign(user.privateKey);
+        await client.tokenContract.MintTokenWithAllowance(mintUSDCDto);
+
+        const getPositionsDto = new GetUserPositionsDto(user1.identityKey).signed(user1.privateKey);
+        const positionBefore = await client.dexV3Contract.getUserPositions(getPositionsDto);
+
+        const pa = 1980,
+          pb = 2020;
+        const [ta, tb] = spacedTicksFromPrice(pa, pb, tickSpacing);
+        const expectedTokenDTO = new GetAddLiquidityEstimationDto(
+          ETH_ClassKey,
+          USDC_ClassKey,
+          fee,
+          new BigNumber(10),
+          ta,
+          tb,
+          true
+        ).signed(user1.privateKey);
+        const slippage = 0.5;
+        const result = await client.dexV3Contract.getAddLiquidityEstimation(expectedTokenDTO);
+        const data = result.Data;
+        expect(data).toBeDefined();
+        if (!data) throw new Error();
+        const token0 = new BigNumber(data.amount0),
+          token1 = new BigNumber(data.amount1),
+          liqudityToBeAdded = new BigNumber(data.liquidity);
+        const [token0Slipped, token1Slipped] = slippedValue([token0, token1], slippage);
+        const dto = new AddLiquidityDTO(
+          ETH_ClassKey,
+          USDC_ClassKey,
+          fee,
+          ta,
+          tb,
+          token0,
+          token1,
+          token0Slipped,
+          token1Slipped,
+          transferredPositionId
+        );
+        dto.uniqueKey = randomUUID();
+        dto.sign(user1.privateKey);
+        await client.dexV3Contract.addLiquidity(dto);
+
+        const getPositionsAfterDto = new GetUserPositionsDto(user1.identityKey).signed(user1.privateKey);
+        const positionsAfter = await client.dexV3Contract.getUserPositions(getPositionsAfterDto);
+
+        const before = new BigNumber(positionBefore.Data?.positions[1].liquidity ?? 0);
+        const after = new BigNumber(positionsAfter.Data?.positions[1].liquidity ?? 0);
+        const actualChange = after.minus(before);
+        const epsilon = new BigNumber("1e-10");
+        expect(actualChange.minus(liqudityToBeAdded).abs().lte(epsilon)).toBe(true);
+      });
+
+      it("It will revert if Liquidity Provider is not the owner of the transferred position", async () => {
         const transferDTO = new TransferDexPositionDto();
         transferDTO.toAddress = user1.identityKey;
         transferDTO.token0 = ETH_ClassKey;
@@ -2295,7 +2423,49 @@ describe("DEx v3 Testing", () => {
         );
       });
 
-      it("Liquidity provider can transfer position to another user, and the new owner can burn the position", async () => {
+      it("Should accumulate fees for both the positions within the same tick range if a swap happens in it", async () => {
+        // Given
+        const amountToSwap = new BigNumber(2),
+          sqrtPriceLimit = new BigNumber(5);
+
+        const dto = new SwapDto(ETH_ClassKey, USDC_ClassKey, fee, amountToSwap, true, sqrtPriceLimit).signed(
+          user.privateKey
+        );
+
+        // When
+        await client.dexV3Contract.swap(dto);
+
+        const getPositionsAfterDto = new GetUserPositionsDto(user1.identityKey).signed(user1.privateKey);
+        const positionsAfter = await client.dexV3Contract.getUserPositions(getPositionsAfterDto);
+
+        // Then
+        const getPosition0Dto = new GetPositionDto(
+          ETH_ClassKey,
+          USDC_ClassKey,
+          500,
+          75920,
+          76110,
+          user1.identityKey,
+          positionsAfter.Data?.positions[0].positionId
+        );
+        const getUserPosition0 = await client.dexV3Contract.getPositions(getPosition0Dto);
+
+        const getPosition1Dto = new GetPositionDto(
+          ETH_ClassKey,
+          USDC_ClassKey,
+          500,
+          75920,
+          76110,
+          user1.identityKey,
+          positionsAfter.Data?.positions[1].positionId
+        );
+        const getUserPosition1 = await client.dexV3Contract.getPositions(getPosition1Dto);
+
+        expect(getUserPosition0.Data?.tokensOwed0.toString()).toBe("0.00096248632769835");
+        expect(getUserPosition1.Data?.tokensOwed0.toString()).toBe("0.000437513672302643");
+      });
+
+      it("Should allow the owner to burn liquidity from a chosen position", async () => {
         const dto = new BurnDto(
           ETH_ClassKey,
           USDC_ClassKey,
@@ -2304,7 +2474,8 @@ describe("DEx v3 Testing", () => {
           75920,
           76110,
           new BigNumber("0"),
-          new BigNumber("0")
+          new BigNumber("0"),
+          transferredPositionId
         ).signed(user1.privateKey);
 
         const removeLiqRes = await client.dexV3Contract.RemoveLiquidity(dto);
@@ -2322,7 +2493,7 @@ describe("DEx v3 Testing", () => {
           instanceIds: [],
           lockedHolds: [],
           owner: user1.identityKey,
-          quantity: "0.000910281096096374",
+          quantity: "99990.000967146995377497",
           type: "new-type0"
         });
 
@@ -2334,7 +2505,7 @@ describe("DEx v3 Testing", () => {
           instanceIds: [],
           lockedHolds: [],
           owner: user1.identityKey,
-          quantity: "1.146498104529837567",
+          quantity: "87406.043310125077541592",
           type: "new-type0"
         });
         const getPositionDto = new GetPositionDto(
@@ -2349,114 +2520,27 @@ describe("DEx v3 Testing", () => {
         expect(getSingleUserPosition.ErrorKey).toEqual("NOT_FOUND");
       });
 
-      it("All collected fee will be transferred to the new owner", async () => {
-        const colletPositionFeeBeforeDto = new CollectDto(
-          ETH_ClassKey,
-          USDT_ClassKey,
-          500,
-          new BigNumber("0.5"),
-          new BigNumber("0"),
-          75910,
-          76110
-        ).signed(user2.privateKey);
-        const collectPositionResBefore = await client.dexV3Contract.collect(colletPositionFeeBeforeDto);
-
-        expect(collectPositionResBefore.ErrorKey).toEqual("OBJECT_NOT_FOUND");
-
-        const dto4 = new GetPositionDto(ETH_ClassKey, USDT_ClassKey, 500, 75910, 76110, user.identityKey);
-        const getSingleUserPosition4 = await client.dexV3Contract.getPositions(dto4);
-
-        const positionID = getSingleUserPosition4.Data?.positionId;
-
-        const transferDTO = new TransferDexPositionDto();
-        transferDTO.toAddress = user2.identityKey;
-        transferDTO.token0 = ETH_ClassKey;
-        transferDTO.token1 = USDT_ClassKey;
-        transferDTO.fee = 500;
-        transferDTO.positionId = positionID || "";
-        transferDTO.sign(user.privateKey);
-
-        await client.dexV3Contract.transferDexPosition(transferDTO);
-
+      it("Should be able to collect fees from a specific position", async () => {
+        // Given
         const colletPositionFeeAfterDto = new CollectDto(
           ETH_ClassKey,
-          USDT_ClassKey,
+          USDC_ClassKey,
           500,
-          new BigNumber("0.02"),
+          new BigNumber("0.000437513672302643"),
           new BigNumber("0"),
-          75910,
-          76110
-        ).signed(user2.privateKey);
+          75920,
+          76110,
+          transferredPositionId
+        ).signed(user1.privateKey);
 
+        // When
         const collectPositionFeeAfterRes = await client.dexV3Contract.collect(colletPositionFeeAfterDto);
+        const token0Collected = collectPositionFeeAfterRes.Data?.token0Balance.getQuantityTotal().toString();
+        const token1Collected = collectPositionFeeAfterRes.Data?.token1Balance.getQuantityTotal().toString();
 
-        const token0 = JSON.parse(JSON.stringify(collectPositionFeeAfterRes.Data?.token0Balance));
-        const token1 = JSON.parse(JSON.stringify(collectPositionFeeAfterRes.Data?.token1Balance));
-
-        expect(token0).toMatchObject({
-          additionalKey: "ETH",
-          category: "new-category0",
-          collection: "new-collection0",
-          inUseHolds: [],
-          instanceIds: [],
-          lockedHolds: [],
-          owner: user2.identityKey,
-          quantity: "0.02",
-          type: "new-type0"
-        });
-
-        expect(token1).toMatchObject({
-          additionalKey: "USDT",
-          category: "new-category0",
-          collection: "new-collection0",
-          inUseHolds: [],
-          instanceIds: [],
-          lockedHolds: [],
-          owner: user2.identityKey,
-          quantity: "0",
-          type: "new-type0"
-        });
-      });
-    });
-
-    describe("Get user position by ID", () => {
-      it("It should be able to fetch the user's position by the provided position ID", async () => {
-        const dto = new GetPositionDto(ETH_ClassKey, USDT_ClassKey, 500, 74390, 75500, user.identityKey);
-
-        const getSingleUserPosition = await client.dexV3Contract.getPositions(dto);
-
-        const positionID = getSingleUserPosition.Data?.positionId;
-        const poolHash = getSingleUserPosition.Data?.poolHash;
-        const tickUpper = getSingleUserPosition.Data?.tickUpper;
-        const tickLower = getSingleUserPosition.Data?.tickLower;
-
-        const getPositionByIdDTO = new GetPositionByIdDto();
-        getPositionByIdDTO.positionId = positionID || "";
-        getPositionByIdDTO.poolHash = poolHash || "";
-        getPositionByIdDTO.tickUpper = tickUpper || 0;
-        getPositionByIdDTO.tickLower = tickLower || 0;
-
-        const getPositionByIdRes = await client.dexV3Contract.getPositionById(getPositionByIdDTO);
-
-        expect(getPositionByIdRes.Data).toMatchObject({
-          poolHash: poolHash,
-          positionId: positionID,
-          tickUpper: 75500,
-          tickLower: 74390,
-          fee: 500,
-          token0ClassKey: {
-            additionalKey: "ETH",
-            category: "new-category0",
-            collection: "new-collection0",
-            type: "new-type0"
-          },
-          token1ClassKey: {
-            additionalKey: "USDT",
-            category: "new-category0",
-            collection: "new-collection0",
-            type: "new-type0"
-          }
-        });
+        // Then
+        expect(token0Collected).toBe("99990.00140466066768014");
+        expect(token1Collected).toBe("87406.043310125077541592");
       });
     });
   });

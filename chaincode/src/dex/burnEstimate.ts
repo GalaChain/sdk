@@ -16,7 +16,7 @@ import { BurnEstimateDto, GetRemoveLiqEstimationResDto, Pool } from "@gala-chain
 
 import { GalaChainContext } from "../types";
 import { getObjectByKey } from "../utils";
-import { getTokenDecimalsFromPool, roundTokenAmount, validateTokenOrder } from "./dexUtils";
+import { getTokenDecimalsFromPool, validateTokenOrder } from "./dexUtils";
 import { fetchUserPositionInTickRange } from "./position.helper";
 import { fetchOrCreateTickDataPair } from "./tickData.helper";
 
@@ -41,6 +41,7 @@ export async function getRemoveLiquidityEstimation(
     pool.genPoolHash(),
     dto.tickUpper,
     dto.tickLower,
+    dto.positionId,
     dto.owner
   );
 

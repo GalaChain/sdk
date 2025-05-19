@@ -15,12 +15,10 @@
 import {
   ChainError,
   DexFeeConfig,
-  DexPositionData,
   DexPositionOwner,
   ErrorCode,
   Pool,
   TokenClassKey,
-  TokenInstanceKey,
   ValidationFailedError
 } from "@gala-chain/api";
 import BigNumber from "bignumber.js";
@@ -39,18 +37,6 @@ export const sortString = (arr: string[]) => {
   const isChanged = !arr.every((val, index) => val === sortedArr[index]);
 
   return { sortedArr, isChanged };
-};
-
-/**
- *
- * @param arr Array Element
- * @param idx Element1 to swap
- * @param idx2 Element2 to swap
- */
-export const swapAmounts = (arr: string[] | BigNumber[], idx = 0, idx2 = 1) => {
-  const temp = arr[idx];
-  arr[idx] = arr[idx2];
-  arr[idx2] = temp;
 };
 
 /**
@@ -150,11 +136,8 @@ export async function getUserPositionIds(
  * @returns A Promise resolving to a tuple of [token0Decimals, token1Decimals].
  */
 export async function getTokenDecimalsFromPool(ctx: GalaChainContext, pool: Pool): Promise<[number, number]> {
-  const token0Key = TokenInstanceKey.fungibleKey(pool.token0ClassKey);
-  const token1Key = TokenInstanceKey.fungibleKey(pool.token1ClassKey);
-
-  const token0Class = await fetchTokenClass(ctx, token0Key);
-  const token1Class = await fetchTokenClass(ctx, token1Key);
+  const token0Class = await fetchTokenClass(ctx, pool.token0ClassKey);
+  const token1Class = await fetchTokenClass(ctx, pool.token1ClassKey);
 
   return [token0Class.decimals, token1Class.decimals];
 }
