@@ -46,6 +46,7 @@ export async function getPosition(ctx: GalaChainContext, dto: GetPositionDto): P
     pool.genPoolHash(),
     dto.tickUpper,
     dto.tickLower,
+    dto.positionId,
     dto.owner
   );
 

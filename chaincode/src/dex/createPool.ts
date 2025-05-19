@@ -54,15 +54,7 @@ export async function createPool(ctx: GalaChainContext, dto: CreatePoolDto): Pro
   }
 
   // Create pool
-  const pool = new Pool(
-    token0,
-    token1,
-    dto.token0,
-    dto.token1,
-    dto.fee,
-    dto.initialSqrtPrice.f18(),
-    protocolFee
-  );
+  const pool = new Pool(token0, token1, dto.token0, dto.token1, dto.fee, dto.initialSqrtPrice, protocolFee);
 
   //create tokenInstanceKeys
   const token0InstanceKey = TokenInstanceKey.fungibleKey(pool.token0ClassKey);

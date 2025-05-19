@@ -34,7 +34,7 @@ import { roundTokenAmount, validateTokenOrder } from "./dexUtils";
 import { processSwapSteps } from "./swap.helper";
 
 /**
- * @dev The swap function executes a token swap in a Uniswap V3-like liquidity pool within the GalaChain ecosystem.
+ * @dev The swap function executes a token swap in a Dex liquidity pool within the GalaChain ecosystem.
  * @param ctx GalaChainContext – The execution context providing access to the GalaChain environment.
  * @param dto SwapDto – A data transfer object containing:
   - tokenIn – The input token being swapped.
