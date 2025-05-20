@@ -2094,7 +2094,9 @@ describe("DEx v3 Testing", () => {
         configPlatformFeeAddressDTO.sign(authorityUser.privateKey);
         const configRes = await client.dexV3Contract.configureDexFeeAddress(configPlatformFeeAddressDTO);
         expect(configRes.Status).toEqual(0);
-        expect(configRes.Message).toEqual("At least one user should be defined to provide access");
+        expect(configRes.Message).toEqual(
+          "DTO validation failed: (1) arrayMinSize: At least one user should be defined to provide access"
+        );
       });
       test("It should add address to authorities", async () => {
         const configPlatformFeeAddressDTO = new ConfigureDexFeeAddressDto();
