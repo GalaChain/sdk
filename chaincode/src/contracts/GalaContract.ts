@@ -192,23 +192,19 @@ export abstract class GalaContract extends Contract {
   })
   public async BatchSubmit(ctx: GalaChainContext, batchDto: BatchDto): Promise<GalaChainResponse<unknown>[]> {
     const responses: GalaChainResponse<unknown>[] = [];
-    const aggregatedCache = {
-      writes: ctx.stub.getWrites(),
-      deletes: ctx.stub.getDeletes()
-    };
 
-    const writesLimit = Math.min(
-      batchDto.writesLimit ?? BatchDto.WRITES_DEFAULT_LIMIT,
-      BatchDto.WRITES_HARD_LIMIT
-    );
-    let writesCount = Object.keys(aggregatedCache.writes).length;
+    const softWritesLimit = batchDto.writesLimit ?? BatchDto.WRITES_DEFAULT_LIMIT;
+    const writesLimit = Math.min(softWritesLimit, BatchDto.WRITES_HARD_LIMIT);
+    let writesCount = ctx.stub.getWritesCount();
 
     for (const op of batchDto.operations) {
-      // 1. Reset the calling user, to allow each operation to perform the
-      //    authorization.
-      ctx.resetCallingUser();
+      // Use sandboxed context to avoid flushes of writes and deletes, and populate
+      // the stub with current writes and deletes.
+      const sandboxCtx = ctx.createReadOnlyContext();
+      sandboxCtx.stub.setWrites(ctx.stub.getWrites());
+      sandboxCtx.stub.setDeletes(ctx.stub.getDeletes());
 
-      // 2. Execute the operation. Collect both successful and failed responses.
+      // Execute the operation. Collect both successful and failed responses.
       let response: GalaChainResponse<unknown>;
       try {
         if (writesCount >= writesLimit) {
@@ -216,30 +212,19 @@ export abstract class GalaContract extends Contract {
         }
 
         const method = getApiMethod(this, op.method, (m) => m.isWrite && m.methodName !== "BatchSubmit");
-        response = await this[method.methodName](ctx, op.dto);
+        response = await this[method.methodName](sandboxCtx, op.dto);
       } catch (error) {
         response = GalaChainResponse.Error(error);
       }
       responses.push(response);
 
-      // 3. Update the cache.
-      //
-      //    If the operation is successful, we keep the changes. Otherwise, we
-      //    restore the cache to the previous state to prevent from having
-      //    cached writes that come from failed transactions.
-      //
-      //    At the end, we override the cache with the state without cached
-      //    reads to keep the cache small.
-      //
+      // Update the current context with the writes and deletes if the operation
+      // is successful.
       if (GalaChainResponse.isSuccess(response)) {
-        aggregatedCache.writes = ctx.stub.getWrites();
-        aggregatedCache.deletes = ctx.stub.getDeletes();
-        writesCount = Object.keys(aggregatedCache.writes).length;
-      } else {
-        ctx.stub.setWrites(aggregatedCache.writes);
-        ctx.stub.setDeletes(aggregatedCache.deletes);
+        ctx.stub.setWrites(sandboxCtx.stub.getWrites());
+        ctx.stub.setDeletes(sandboxCtx.stub.getDeletes());
+        writesCount = ctx.stub.getWritesCount();
       }
-      ctx.stub.setReads({});
     }
     return responses;
   }
@@ -257,21 +242,18 @@ export abstract class GalaContract extends Contract {
     const responses: GalaChainResponse<unknown>[] = [];
 
     for (const op of batchDto.operations) {
-      // 1. Reset the calling user, to allow each operation to perform the
-      //    authorization.
-      ctx.resetCallingUser();
+      // Create a new context for each operation
+      const sandboxCtx = ctx.createReadOnlyContext();
 
-      // 2. Execute the operation. Collect both successful and failed responses.
+      // Execute the operation. Collect both successful and failed responses.
       let response: GalaChainResponse<unknown>;
       try {
         const method = getApiMethod(this, op.method, (m) => !m.isWrite && m.methodName !== "BatchEvaluate");
-        response = await this[method.methodName](ctx, op.dto);
+        response = await this[method.methodName](sandboxCtx, op.dto);
       } catch (error) {
         response = GalaChainResponse.Error(error);
       }
       responses.push(response);
-
-      // 3. We don't need to update the cache.
     }
     return responses;
   }

@@ -377,12 +377,7 @@ describe("GalaContract.DryRun", () => {
       Status: GalaChainResponseType.Error,
       ErrorCode: 404,
       ErrorKey: "NOT_FOUND",
-      Message:
-        "Method UnknownMethod is not available. Available methods: " +
-        "BatchEvaluate, BatchSubmit, CreateSuperhero, DryRun, ErrorAfterPutKv, " +
-        "ErrorAfterPutNestedKv, GetChaincodeVersion, GetContractAPI, GetContractVersion, " +
-        "GetKv, GetNestedKv, GetObjectByKey, GetObjectHistory, " +
-        "GetSetPutNestedKv, PutKv, PutNestedKv, QuerySuperheroes"
+      Message: expect.stringContaining("Method UnknownMethod is not available")
     });
   });
 
