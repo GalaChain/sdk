@@ -541,4 +541,32 @@ describe("GalaContract.Batch", () => {
       ])
     );
   });
+
+  it("should reset writes occurring during unterminated async operation", async () => {
+    // Given
+    const chaincode = new TestChaincode([TestGalaContract]);
+    const batchSubmit = plainToInstance(BatchDto, {
+      operations: [
+        { method: "UnterminatedAsyncErrorOp", dto: { key: "test-key-1", text: "robot" } },
+        { method: "DelayedOp", dto: { key: "test-key-1", text: "human" } }
+      ],
+      writesLimit: 1000
+    });
+
+    // When
+    const response = await chaincode.invoke("TestGalaContract:BatchSubmit", batchSubmit.serialize());
+
+    // Then
+    expect(response).toEqual(
+      transactionSuccess([
+        transactionErrorMessageContains("Async operation was not awaited"),
+        transactionSuccess()
+      ])
+    );
+
+    // the check below fails - it's "robot"
+    expect(chaincode.state).toEqual({
+      "test-key-1": "human"
+    });
+  });
 });
