@@ -54,13 +54,13 @@ export async function setProtocolFee(
 
 /**
  * Configures or updates the authorities for the DEX fee address configuration.
- * 
+ *
  * @param ctx - GalaChain execution context containing identity and ledger access.
  * @param dto - Data transfer object containing the new authorities.
  * @returns The updated or newly created DexFeeConfig.
- * 
+ *
  * @throws ValidationFailedError - If no authorities are provided.
- * @throws UnauthorizedError - If the calling user is not from the CuratorOrg MSP 
+ * @throws UnauthorizedError - If the calling user is not from the CuratorOrg MSP
  *                             or is not an authorized authority.
  */
 export async function configureDexFeeAddress(ctx: GalaChainContext, dto: ConfigureDexFeeAddressDto) {
