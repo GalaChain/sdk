@@ -12,7 +12,14 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-import { CollectDto, NotFoundError, Pool, TokenInstanceKey, UserBalanceResDto } from "@gala-chain/api";
+import {
+  CollectDto,
+  DexOperationResDto,
+  NotFoundError,
+  Pool,
+  TokenInstanceKey,
+  UserBalanceResDto
+} from "@gala-chain/api";
 import BigNumber from "bignumber.js";
 
 import { fetchOrCreateBalance } from "../balances";
@@ -30,9 +37,9 @@ import { fetchOrCreateTickDataPair } from "./tickData.helper";
  * @param ctx  GalaChainContext – The execution context providing access to the GalaChain environment.
  * @param dto Position details (pool information, tickUpper, tickLower).
 
- * @returns UserBalanceResDto
+ * @returns DexOperationResDto
  */
-export async function collect(ctx: GalaChainContext, dto: CollectDto): Promise<UserBalanceResDto> {
+export async function collect(ctx: GalaChainContext, dto: CollectDto): Promise<DexOperationResDto> {
   // Validate token order and fetch pool and positions
   const [token0, token1] = validateTokenOrder(dto.token0, dto.token1);
   const key = ctx.stub.createCompositeKey(Pool.INDEX_KEY, [token0, token1, dto.fee.toString()]);
@@ -86,17 +93,26 @@ export async function collect(ctx: GalaChainContext, dto: CollectDto): Promise<U
   await removePositionIfEmpty(ctx, poolHash, position);
 
   // Round down the tokens and transfer the tokens to position holder
+  const roundedToken0Amount = BigNumber.min(
+    roundTokenAmount(amounts[0], tokenDecimals[0]),
+    poolToken0Balance.getQuantityTotal()
+  );
+
+  const roundedToken1Amount = BigNumber.min(
+    roundTokenAmount(amounts[1], tokenDecimals[1]),
+    poolToken1Balance.getQuantityTotal()
+  );
+
   for (const [index, amount] of amounts.entries()) {
     if (amount.lt(0)) {
       throw new NegativeAmountError(index, amount.toString());
     }
-    const roundedAmount = roundTokenAmount(amount, tokenDecimals[index]);
 
     await transferToken(ctx, {
       from: poolAlias,
       to: ctx.callingUser,
       tokenInstanceKey: tokenInstanceKeys[index],
-      quantity: roundedAmount,
+      quantity: index === 0 ? roundedToken0Amount : roundedToken1Amount,
       allowancesToUse: [],
       authorizedOnBehalf: {
         callingOnBehalf: poolAlias,
@@ -119,6 +135,13 @@ export async function collect(ctx: GalaChainContext, dto: CollectDto): Promise<U
     ctx.callingUser,
     tokenInstanceKeys[1]
   );
-  const response = new UserBalanceResDto(liquidityProviderToken0Balance, liquidityProviderToken1Balance);
-  return response;
+  const userBalances = new UserBalanceResDto(liquidityProviderToken0Balance, liquidityProviderToken1Balance);
+
+  return new DexOperationResDto(
+    userBalances,
+    [roundedToken0Amount.toFixed(), roundedToken1Amount.toFixed()],
+    poolHash,
+    poolAlias,
+    pool.fee
+  );
 }

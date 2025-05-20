@@ -362,7 +362,7 @@ export class Pool extends ChainObject {
    * @dev this will bring the state of protocolFeesTokens and reset them to 0
    * @returns [protocolFeeToken0,protocolFeesToken1]
    */
-  public collectTradingFees() {
+  public collectProtocolFees() {
     const protocolFeesToken0 = this.protocolFeesToken0,
       protocolFeesToken1 = this.protocolFeesToken1;
     this.protocolFeesToken0 = new BigNumber(0);
