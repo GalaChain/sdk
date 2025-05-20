@@ -650,6 +650,17 @@ export class SwapResDto extends ChainCallDTO {
   @IsNumber()
   public timeStamp: number;
 
+  @IsNotEmpty()
+  @IsString()
+  poolHash: string;
+
+  @IsNotEmpty()
+  @IsUserAlias()
+  poolAlias: string;
+
+  @EnumProperty(DexFeePercentageTypes)
+  poolFee: DexFeePercentageTypes;
+
   constructor(
     token0: string,
     token0ImageUrl: string,
@@ -658,6 +669,9 @@ export class SwapResDto extends ChainCallDTO {
     amount0: string,
     amount1: string,
     userAddress: string,
+    poolHash: string,
+    poolAlias: string,
+    poolFee: DexFeePercentageTypes,
     timeStamp: number
   ) {
     super();
@@ -668,23 +682,10 @@ export class SwapResDto extends ChainCallDTO {
     this.amount0 = amount0;
     this.amount1 = amount1;
     this.userAddress = userAddress;
+    this.poolHash = poolHash;
+    this.poolAlias = poolAlias;
+    this.poolFee = poolFee;
     this.timeStamp = timeStamp;
-  }
-}
-
-export class AddLiquidityResDto extends ChainCallDTO {
-  @ValidateNested()
-  @Type(() => UserBalanceResDto)
-  userBalanceDelta: UserBalanceResDto;
-
-  @IsArray()
-  @IsString({ each: true })
-  amounts: string[];
-
-  constructor(userBalanceDelta: UserBalanceResDto, amounts: string[]) {
-    super();
-    this.userBalanceDelta = userBalanceDelta;
-    this.amounts = amounts;
   }
 }
 
@@ -704,7 +705,7 @@ export class GetUserPositionsResDto extends ChainCallDTO {
   }
 }
 
-export class CollectTradingFeesDto extends ChainCallDTO {
+export class CollectProtocolFeesDto extends ChainCallDTO {
   @IsNotEmpty()
   @ValidateNested()
   @Type(() => TokenClassKey)
@@ -828,7 +829,7 @@ export class GetRemoveLiqEstimationResDto extends ChainCallDTO {
   }
 }
 
-export class CollectTradingFeesResDto extends ChainCallDTO {
+export class CollectProtocolFeesResDto extends ChainCallDTO {
   @IsBigNumber()
   @BigNumberProperty()
   public protocolFeesToken0: BigNumber;
@@ -973,4 +974,40 @@ export class GetTickDataDto extends ChainCallDTO {
   @Max(TickData.MAX_TICK)
   @Min(TickData.MIN_TICK)
   public readonly tick: number;
+}
+
+export class DexOperationResDto extends ChainCallDTO {
+  @ValidateNested()
+  @Type(() => UserBalanceResDto)
+  userBalanceDelta: UserBalanceResDto;
+
+  @IsArray()
+  @IsString({ each: true })
+  amounts: string[];
+
+  @IsNotEmpty()
+  @IsString()
+  poolHash: string;
+
+  @IsNotEmpty()
+  @IsUserAlias()
+  poolAlias: string;
+
+  @EnumProperty(DexFeePercentageTypes)
+  poolFee: DexFeePercentageTypes;
+
+  constructor(
+    userBalanceDelta: UserBalanceResDto,
+    amounts: string[],
+    poolHash: string,
+    poolAlias: string,
+    poolFee: DexFeePercentageTypes
+  ) {
+    super();
+    this.userBalanceDelta = userBalanceDelta;
+    this.amounts = amounts;
+    this.poolHash = poolHash;
+    this.poolAlias = poolAlias;
+    this.poolFee = poolFee;
+  }
 }

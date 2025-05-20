@@ -21,7 +21,7 @@ export * from "./getFunctions";
 export * from "./quoteFuncs";
 export * from "./swap";
 export * from "./setProtocolFee";
-export * from "./collectTradingFees";
+export * from "./collectProtocolFees";
 export * from "./getPosition";
 export * from "./getPositionById";
 export * from "./getUserPositions";

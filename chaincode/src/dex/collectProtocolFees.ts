@@ -13,8 +13,8 @@
  * limitations under the License.
  */
 import {
-  CollectTradingFeesDto,
-  CollectTradingFeesResDto,
+  CollectProtocolFeesDto,
+  CollectProtocolFeesResDto,
   NotFoundError,
   Pool,
   TokenInstanceKey,
@@ -30,17 +30,17 @@ import { getObjectByKey, putChainObject } from "../utils";
 import { fetchDexProtocolFeeConfig, validateTokenOrder } from "./dexUtils";
 
 /**
- * @dev The collectTradingFees function enables the collection of protocol fees accumulated in a Decentralized exchange pool within the GalaChain ecosystem. It retrieves and transfers the protocol's share of the trading fees to the designated recipient.
+ * @dev The collectProtocolFees function enables the collection of protocol fees accumulated in a Decentralized exchange pool within the GalaChain ecosystem. It retrieves and transfers the protocol's share of the trading fees to the designated recipient.
  * @param ctx GalaChainContext – The execution context providing access to the GalaChain environment.
- * @param dto CollectTradingFeesDto – A data transfer object containing:
+ * @param dto CollectProtocolFeesDto – A data transfer object containing:
    - Pool details (identifying which Decentralized exchange pool the fees are collected from).
    - Recipient address (where the collected protocol fees will be sent).
  * @returns [tokenAmount0, tokenAmount1]
  */
-export async function collectTradingFees(
+export async function collectProtocolFees(
   ctx: GalaChainContext,
-  dto: CollectTradingFeesDto
-): Promise<CollectTradingFeesResDto> {
+  dto: CollectProtocolFeesDto
+): Promise<CollectProtocolFeesResDto> {
   const platformFeeAddress = await fetchDexProtocolFeeConfig(ctx);
   if (!platformFeeAddress) {
     throw new NotFoundError(
@@ -56,7 +56,7 @@ export async function collectTradingFees(
 
   const poolAlias = pool.getPoolAlias();
 
-  const amounts = pool.collectTradingFees();
+  const amounts = pool.collectProtocolFees();
 
   //create tokenInstanceKeys
   const tokenInstanceKeys = [pool.token0ClassKey, pool.token1ClassKey].map(TokenInstanceKey.fungibleKey);
@@ -91,5 +91,5 @@ export async function collectTradingFees(
   }
 
   await putChainObject(ctx, pool);
-  return new CollectTradingFeesResDto(amounts[0], amounts[1]);
+  return new CollectProtocolFeesResDto(amounts[0], amounts[1]);
 }

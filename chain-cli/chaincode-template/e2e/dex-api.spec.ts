@@ -14,17 +14,17 @@
  */
 import {
   AddLiquidityDTO,
-  AddLiquidityResDto,
   BurnDto,
   BurnEstimateDto,
   ChainCallDTO,
   CollectDto,
-  CollectTradingFeesDto,
-  CollectTradingFeesResDto,
+  CollectProtocolFeesDto,
+  CollectProtocolFeesResDto,
   ConfigureDexFeeAddressDto,
   CreatePoolDto,
   CreateTokenClassDto,
   DexFeeConfig,
+  DexOperationResDto,
   DexPositionData,
   DexPositionOwner,
   FetchBalancesDto,
@@ -55,7 +55,6 @@ import {
   TokenInstanceKey,
   TransferDexPositionDto,
   TransferTokenDto,
-  UserBalanceResDto,
   feeAmountTickSpacing,
   sqrtPriceToTick
 } from "@gala-chain/api";
@@ -902,27 +901,29 @@ describe("DEx v3 Testing", () => {
       expect(burnRes).toMatchObject({
         Status: 1,
         Data: {
-          token0Balance: {
-            additionalKey: "ETH",
-            category: "new-category0",
-            collection: "new-collection0",
-            inUseHolds: [],
-            instanceIds: [],
-            lockedHolds: [],
-            owner: user.identityKey,
-            quantity: new BigNumber("99999998.998999999999999999"),
-            type: "new-type0"
-          },
-          token1Balance: {
-            additionalKey: "USDT",
-            category: "new-category0",
-            collection: "new-collection0",
-            quantity: new BigNumber("99999999.000000000000000003"),
-            inUseHolds: [],
-            instanceIds: [],
-            lockedHolds: [],
-            owner: user.identityKey,
-            type: "new-type0"
+          userBalanceDelta: {
+            token0Balance: {
+              additionalKey: "ETH",
+              category: "new-category0",
+              collection: "new-collection0",
+              inUseHolds: [],
+              instanceIds: [],
+              lockedHolds: [],
+              owner: user.identityKey,
+              quantity: new BigNumber("99999998.998999999999999999"),
+              type: "new-type0"
+            },
+            token1Balance: {
+              additionalKey: "USDT",
+              category: "new-category0",
+              collection: "new-collection0",
+              quantity: new BigNumber("99999999.000000000000000003"),
+              inUseHolds: [],
+              instanceIds: [],
+              lockedHolds: [],
+              owner: user.identityKey,
+              type: "new-type0"
+            }
           }
         }
       });
@@ -1020,26 +1021,30 @@ describe("DEx v3 Testing", () => {
       expect(collectRes).toMatchObject({
         Status: 1,
         Data: {
-          token0Balance: expect.objectContaining({
-            additionalKey: "ETH",
-            category: "new-category0",
-            collection: "new-collection0",
-            inUseHolds: [],
-            instanceIds: [],
-            lockedHolds: [],
-            owner: user.identityKey,
-            type: "new-type0"
-          }),
-          token1Balance: expect.objectContaining({
-            additionalKey: "USDT",
-            category: "new-category0",
-            collection: "new-collection0",
-            inUseHolds: [],
-            instanceIds: [],
-            lockedHolds: [],
-            owner: user.identityKey,
-            type: "new-type0"
-          })
+          userBalanceDelta: {
+            token0Balance: expect.objectContaining({
+              additionalKey: "ETH",
+              category: "new-category0",
+              collection: "new-collection0",
+              inUseHolds: [],
+              instanceIds: [],
+              lockedHolds: [],
+              owner: user.identityKey,
+              quantity: new BigNumber("99999998.999900000000000619"),
+              type: "new-type0"
+            }),
+            token1Balance: expect.objectContaining({
+              additionalKey: "USDT",
+              category: "new-category0",
+              collection: "new-collection0",
+              inUseHolds: [],
+              instanceIds: [],
+              lockedHolds: [],
+              owner: user.identityKey,
+              quantity: new BigNumber("99999999.000000000000000003"),
+              type: "new-type0"
+            })
+          }
         }
       });
       const getPositionsDto = new GetUserPositionsDto(user.identityKey).signed(user.privateKey);
@@ -1407,7 +1412,7 @@ describe("DEx v3 Testing", () => {
       expect(data.tokensOwed1.toFixed()).toBe("0");
     });
 
-    test("RemoveLiquidity", async () => {
+    test("Remove Liquidity", async () => {
       const pa = 1980,
         pb = 2020;
       const [ta, tb] = spacedTicksFromPrice(pa, pb, tickSpacing);
@@ -1446,26 +1451,28 @@ describe("DEx v3 Testing", () => {
       expect(burnRes).toMatchObject({
         Status: 1,
         Data: {
-          token0Balance: expect.objectContaining({
-            additionalKey: "ETH",
-            category: "new-category0",
-            collection: "new-collection0",
-            inUseHolds: [],
-            instanceIds: [],
-            lockedHolds: [],
-            owner: user.identityKey,
-            type: "new-type0"
-          }),
-          token1Balance: expect.objectContaining({
-            additionalKey: "USDT",
-            category: "new-category0",
-            collection: "new-collection0",
-            inUseHolds: [],
-            instanceIds: [],
-            lockedHolds: [],
-            owner: user.identityKey,
-            type: "new-type0"
-          })
+          userBalanceDelta: {
+            token0Balance: expect.objectContaining({
+              additionalKey: "ETH",
+              category: "new-category0",
+              collection: "new-collection0",
+              inUseHolds: [],
+              instanceIds: [],
+              lockedHolds: [],
+              owner: user.identityKey,
+              type: "new-type0"
+            }),
+            token1Balance: expect.objectContaining({
+              additionalKey: "USDT",
+              category: "new-category0",
+              collection: "new-collection0",
+              inUseHolds: [],
+              instanceIds: [],
+              lockedHolds: [],
+              owner: user.identityKey,
+              type: "new-type0"
+            })
+          }
         }
       });
       const getPositionsDto = new GetUserPositionsDto(user.identityKey).signed(user.privateKey);
@@ -1739,7 +1746,7 @@ describe("DEx v3 Testing", () => {
       expect(slot0.Data?.sqrtPrice.toString()).toEqual(initialSqrtPrice.toString());
     });
 
-    test("RemoveLiquidity", async () => {
+    test("Remove Liquidity", async () => {
       const pa = 1880,
         pb = 2220;
       const [ta, tb] = spacedTicksFromPrice(pa, pb, tickSpacing);
@@ -1777,26 +1784,28 @@ describe("DEx v3 Testing", () => {
       expect(burnRes).toMatchObject({
         Status: 1,
         Data: {
-          token0Balance: expect.objectContaining({
-            additionalKey: "ETH",
-            category: "new-category0",
-            collection: "new-collection0",
-            inUseHolds: [],
-            instanceIds: [],
-            lockedHolds: [],
-            owner: user.identityKey,
-            type: "new-type0"
-          }),
-          token1Balance: expect.objectContaining({
-            additionalKey: "USDT",
-            category: "new-category0",
-            collection: "new-collection0",
-            inUseHolds: [],
-            instanceIds: [],
-            lockedHolds: [],
-            owner: user.identityKey,
-            type: "new-type0"
-          })
+          userBalanceDelta: {
+            token0Balance: expect.objectContaining({
+              additionalKey: "ETH",
+              category: "new-category0",
+              collection: "new-collection0",
+              inUseHolds: [],
+              instanceIds: [],
+              lockedHolds: [],
+              owner: user.identityKey,
+              type: "new-type0"
+            }),
+            token1Balance: expect.objectContaining({
+              additionalKey: "USDT",
+              category: "new-category0",
+              collection: "new-collection0",
+              inUseHolds: [],
+              instanceIds: [],
+              lockedHolds: [],
+              owner: user.identityKey,
+              type: "new-type0"
+            })
+          }
         }
       });
       const getPositionsDto = new GetUserPositionsDto(user.identityKey).signed(user.privateKey);
@@ -2255,19 +2264,19 @@ describe("DEx v3 Testing", () => {
     });
 
     test("collect protocol fees", async () => {
-      const dto = new CollectTradingFeesDto(ETH_ClassKey, USDC_ClassKey, fee, user.identityKey).signed(
+      const dto = new CollectProtocolFeesDto(ETH_ClassKey, USDC_ClassKey, fee, user.identityKey).signed(
         user.privateKey
       );
-      const collectResponse = await client.dexV3Contract.collectTradingFees(dto);
+      const collectResponse = await client.dexV3Contract.collectProtocolFees(dto);
       expect(collectResponse.Status).toBe(0);
       expect(collectResponse.ErrorKey).toBe("UNAUTHORIZED");
     });
 
     test("collect protocol fees by auth user", async () => {
-      const dto = new CollectTradingFeesDto(ETH_ClassKey, USDC_ClassKey, fee, user.identityKey).signed(
+      const dto = new CollectProtocolFeesDto(ETH_ClassKey, USDC_ClassKey, fee, user.identityKey).signed(
         authorityUser.privateKey
       );
-      const collectResponse = await client.dexV3Contract.collectTradingFees(dto);
+      const collectResponse = await client.dexV3Contract.collectProtocolFees(dto);
       expect(collectResponse.Data).toMatchObject({
         protocolFeesToken0: new BigNumber("0.0003"),
         protocolFeesToken1: new BigNumber("0")
@@ -2525,8 +2534,8 @@ describe("DEx v3 Testing", () => {
 
         expect(removeLiqRes).toEqual(transactionSuccess());
 
-        const token0 = JSON.parse(JSON.stringify(removeLiqRes.Data?.token0Balance));
-        const token1 = JSON.parse(JSON.stringify(removeLiqRes.Data?.token1Balance));
+        const token0 = JSON.parse(JSON.stringify(removeLiqRes.Data?.userBalanceDelta.token0Balance));
+        const token1 = JSON.parse(JSON.stringify(removeLiqRes.Data?.userBalanceDelta.token1Balance));
 
         expect(token0).toMatchObject({
           additionalKey: "ETH",
@@ -2579,8 +2588,12 @@ describe("DEx v3 Testing", () => {
 
         // When
         const collectPositionFeeAfterRes = await client.dexV3Contract.collect(colletPositionFeeAfterDto);
-        const token0Collected = collectPositionFeeAfterRes.Data?.token0Balance.getQuantityTotal().toString();
-        const token1Collected = collectPositionFeeAfterRes.Data?.token1Balance.getQuantityTotal().toString();
+        const token0Collected = collectPositionFeeAfterRes.Data?.userBalanceDelta.token0Balance
+          .getQuantityTotal()
+          .toString();
+        const token1Collected = collectPositionFeeAfterRes.Data?.userBalanceDelta.token1Balance
+          .getQuantityTotal()
+          .toString();
 
         // Then
         expect(token0Collected).toBe("99990.00140466066768014");
@@ -2639,9 +2652,9 @@ function tokenContractAPI(client: ChainClient): TokenContractAPI & CommonContrac
 
 interface DexV3ContractAPI {
   createPool(dto: CreatePoolDto): Promise<GalaChainResponse<Pool>>;
-  addLiquidity(dto: AddLiquidityDTO): Promise<GalaChainResponse<AddLiquidityResDto>>;
+  addLiquidity(dto: AddLiquidityDTO): Promise<GalaChainResponse<DexOperationResDto>>;
   swap(dto: SwapDto): Promise<GalaChainResponse<SwapResDto>>;
-  RemoveLiquidity(dto: BurnDto): Promise<GalaChainResponse<UserBalanceResDto>>;
+  RemoveLiquidity(dto: BurnDto): Promise<GalaChainResponse<DexOperationResDto>>;
   getLiquidity(dto: GetPoolDto): Promise<GalaChainResponse<GetLiquidityResDto>>;
   getPositions(dto: GetPositionDto): Promise<GalaChainResponse<DexPositionData>>;
   getPositionById(dto: GetPositionByIdDto): Promise<GalaChainResponse<DexPositionData>>;
@@ -2653,8 +2666,8 @@ interface DexV3ContractAPI {
   quoteExactAmount(dto: QuoteExactAmountDto): Promise<GalaChainResponse<QuoteExactAmountResDto>>;
   getPoolData(dto: GetPoolDto): Promise<GalaChainResponse<Pool>>;
   burnEstimate(dto: BurnEstimateDto): Promise<GalaChainResponse<GetRemoveLiqEstimationResDto>>;
-  collect(dto: CollectDto): Promise<GalaChainResponse<UserBalanceResDto>>;
-  collectTradingFees(dto: CollectTradingFeesDto): Promise<GalaChainResponse<CollectTradingFeesResDto>>;
+  collect(dto: CollectDto): Promise<GalaChainResponse<DexOperationResDto>>;
+  collectProtocolFees(dto: CollectProtocolFeesDto): Promise<GalaChainResponse<CollectProtocolFeesResDto>>;
   setProtocolFee(dto: SetProtocolFeeDto): Promise<GalaChainResponse<SetProtocolFeeResDto>>;
   configureDexFeeAddress(dto: ConfigureDexFeeAddressDto): Promise<GalaChainResponse<DexFeeConfig>>;
   getDexConfig(dto: ChainCallDTO): Promise<GalaChainResponse<DexFeeConfig>>;
@@ -2671,13 +2684,13 @@ function dexV3ContractAPI(client: ChainClient): DexV3ContractAPI & CommonContrac
       return client.evaluateTransaction<Pool>("GetPoolData", dto, Pool);
     },
     addLiquidity(dto: AddLiquidityDTO) {
-      return client.submitTransaction<AddLiquidityResDto>("AddLiquidity", dto, AddLiquidityResDto);
+      return client.submitTransaction<DexOperationResDto>("AddLiquidity", dto, DexOperationResDto);
     },
     swap(dto: SwapDto) {
       return client.submitTransaction<SwapResDto>("Swap", dto, SwapResDto);
     },
     RemoveLiquidity(dto: BurnDto) {
-      return client.submitTransaction<UserBalanceResDto>("RemoveLiquidity", dto, UserBalanceResDto);
+      return client.submitTransaction<DexOperationResDto>("RemoveLiquidity", dto, DexOperationResDto);
     },
     burnEstimate(dto: BurnEstimateDto) {
       GalaChainResponse<GetRemoveLiqEstimationResDto>;
@@ -2721,13 +2734,13 @@ function dexV3ContractAPI(client: ChainClient): DexV3ContractAPI & CommonContrac
       );
     },
     collect(dto: CollectDto) {
-      return client.submitTransaction<UserBalanceResDto>("CollectPositionFees", dto, UserBalanceResDto);
+      return client.submitTransaction<DexOperationResDto>("CollectPositionFees", dto, DexOperationResDto);
     },
-    collectTradingFees(dto: CollectTradingFeesDto) {
-      return client.submitTransaction<CollectTradingFeesResDto>(
-        "CollectTradingFees",
+    collectProtocolFees(dto: CollectProtocolFeesDto) {
+      return client.submitTransaction<CollectProtocolFeesResDto>(
+        "CollectProtocolFees",
         dto,
-        CollectTradingFeesResDto
+        CollectProtocolFeesResDto
       );
     },
     setProtocolFee(dto: SetProtocolFeeDto) {
