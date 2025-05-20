@@ -135,23 +135,11 @@ class StubCache {
   }
 
   getReads(): Record<string, Uint8Array> {
-    const reads = {};
-
-    for (const [key, value] of Object.entries(this.reads)) {
-      reads[key] = Buffer.from(value.toString());
-    }
-
-    return reads;
+    return { ...this.reads };
   }
 
   getWrites(): Record<string, Uint8Array> {
-    const writes = {};
-
-    for (const [key, value] of Object.entries(this.writes)) {
-      writes[key] = Buffer.from(value.toString());
-    }
-
-    return writes;
+    return { ...this.writes };
   }
 
   getDeletes(): Record<string, true> {
@@ -159,38 +147,15 @@ class StubCache {
   }
 
   setReads(reads: Record<string, Uint8Array>): void {
-    for (const key of Object.keys(this.reads)) {
-      delete this.reads[key];
-    }
-
-    for (const key of Object.keys(reads)) {
-      this.reads[key] = reads[key];
-    }
+    this.reads = { ...reads };
   }
 
   setWrites(writes: Record<string, Uint8Array>): void {
-    // assignment on this private class property,
-    // e.g. this.writes = { ...writes },
-    // will silently fail.
-    for (const key of Object.keys(this.writes)) {
-      delete this.writes[key];
-    }
-
-    // deleting all prior keys, and then re-assigning all new key/values
-    // fully updates the existing object with the new object references.
-    for (const key of Object.keys(writes)) {
-      this.writes[key] = writes[key];
-    }
+    this.writes = { ...writes };
   }
 
   setDeletes(deletes: Record<string, true>): void {
-    for (const key of Object.keys(this.deletes)) {
-      delete this.deletes[key];
-    }
-
-    for (const key of Object.keys(deletes)) {
-      this.deletes[key] = deletes[key];
-    }
+    this.deletes = { ...deletes };
   }
 }
 
@@ -222,6 +187,18 @@ export const createGalaChainStub = (stub: ChaincodeStub): GalaChainStub => {
       // eslint-disable-next-line @typescript-eslint/ban-ts-comment
       // @ts-ignore
       return name in cachedWrites ? cachedWrites[name] : target[name];
+    },
+    set: function (target: GalaChainStub, name: string | symbol, value: unknown): boolean {
+      if (name in cachedWrites) {
+        // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+        // @ts-ignore
+        cachedWrites[name] = value;
+        return true;
+      }
+      // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+      // @ts-ignore
+      target[name] = value;
+      return true;
     }
   };
 
