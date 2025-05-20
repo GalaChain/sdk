@@ -1,8 +1,8 @@
 {
   "name": "@gala-chain/connect",
-  "version": "1.9.10",
+  "version": "1.9.12",
   "dependencies": {
-    "@gala-chain/api": "1.9.10",
+    "@gala-chain/api": "1.9.12",
     "ethers": "^6.12.1",
     "tslib": "^2.3.0",
     "bignumber.js": "9.1.2",

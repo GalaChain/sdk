@@ -50,7 +50,13 @@ export async function burn(ctx: GalaChainContext, dto: BurnDto): Promise<UserBal
 
   const poolAlias = pool.getPoolAlias();
   const poolHash = pool.genPoolHash();
-  const position = await fetchUserPositionInTickRange(ctx, poolHash, dto.tickUpper, dto.tickLower);
+  const position = await fetchUserPositionInTickRange(
+    ctx,
+    poolHash,
+    dto.tickUpper,
+    dto.tickLower,
+    dto.positionId
+  );
 
   if (!position)
     throw new NotFoundError(`User doesn't hold any positions with this tick rangeData in thisData pool`);
@@ -78,7 +84,7 @@ export async function burn(ctx: GalaChainContext, dto: BurnDto): Promise<UserBal
     const poolTokenBalance = await fetchOrCreateBalance(ctx, poolAlias, tokenInstanceKeys[index]);
     const roundedAmount = roundTokenAmount(amount, tokenDecimals[index]);
 
-    if (!roundedAmount.isGreaterThan(poolTokenBalance.getQuantityTotal())) {
+    if (roundedAmount.isGreaterThan(poolTokenBalance.getQuantityTotal())) {
       let maximumBurnableLiquidity: BigNumber;
       if (index === 0) {
         maximumBurnableLiquidity = liquidity0(
@@ -104,7 +110,7 @@ export async function burn(ctx: GalaChainContext, dto: BurnDto): Promise<UserBal
     tickLower,
     tickUpper
   );
-  const amounts = pool.burn(position, tickLowerData, tickUpperData, dto.amount.f18());
+  const amounts = pool.burn(position, tickLowerData, tickUpperData, amountToBurn);
 
   if (amounts[0].lt(dto.amount0Min) || amounts[1].lt(dto.amount1Min)) {
     throw new SlippageToleranceExceededError(
