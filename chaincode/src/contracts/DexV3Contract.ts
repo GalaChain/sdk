@@ -14,16 +14,16 @@
  */
 import {
   AddLiquidityDTO,
-  AddLiquidityResDto,
   BurnDto,
   BurnEstimateDto,
   ChainCallDTO,
   CollectDto,
-  CollectTradingFeesDto,
-  CollectTradingFeesResDto,
+  CollectProtocolFeesDto,
+  CollectProtocolFeesResDto,
   ConfigureDexFeeAddressDto,
   CreatePoolDto,
   DexFeeConfig,
+  DexOperationResDto,
   DexPositionData,
   DexPositionOwner,
   GetAddLiquidityEstimationDto,
@@ -46,8 +46,7 @@ import {
   SwapDto,
   SwapResDto,
   TickData,
-  TransferDexPositionDto,
-  UserBalanceResDto
+  TransferDexPositionDto
 } from "@gala-chain/api";
 
 import { version } from "../../package.json";
@@ -55,7 +54,7 @@ import {
   addLiquidity,
   burn,
   collect,
-  collectTradingFees,
+  collectProtocolFees,
   configureDexFeeAddress,
   createPool,
   getAddLiquidityEstimation,
@@ -100,10 +99,10 @@ export class DexV3Contract extends GalaContract {
 
   @Submit({
     in: AddLiquidityDTO,
-    out: AddLiquidityResDto,
+    out: DexOperationResDto,
     before: addLiquidityFeeGate
   })
-  public async AddLiquidity(ctx: GalaChainContext, dto: AddLiquidityDTO): Promise<AddLiquidityResDto> {
+  public async AddLiquidity(ctx: GalaChainContext, dto: AddLiquidityDTO): Promise<DexOperationResDto> {
     return await addLiquidity(ctx, dto);
   }
 
@@ -118,10 +117,10 @@ export class DexV3Contract extends GalaContract {
 
   @Submit({
     in: BurnDto,
-    out: UserBalanceResDto,
+    out: DexOperationResDto,
     before: removeLiquidityFeeGate
   })
-  public async RemoveLiquidity(ctx: GalaChainContext, dto: BurnDto): Promise<UserBalanceResDto> {
+  public async RemoveLiquidity(ctx: GalaChainContext, dto: BurnDto): Promise<DexOperationResDto> {
     return await burn(ctx, dto);
   }
 
@@ -206,23 +205,23 @@ export class DexV3Contract extends GalaContract {
 
   @Submit({
     in: CollectDto,
-    out: UserBalanceResDto,
+    out: DexOperationResDto,
     before: collectPositionFeesFeeGate
   })
-  public async CollectPositionFees(ctx: GalaChainContext, dto: CollectDto): Promise<UserBalanceResDto> {
+  public async CollectPositionFees(ctx: GalaChainContext, dto: CollectDto): Promise<DexOperationResDto> {
     return await collect(ctx, dto);
   }
 
   @Submit({
-    in: CollectTradingFeesDto,
-    out: CollectTradingFeesResDto,
+    in: CollectProtocolFeesDto,
+    out: CollectProtocolFeesResDto,
     allowedOrgs: ["CuratorOrg"]
   })
-  public async CollectTradingFees(
+  public async CollectProtocolFees(
     ctx: GalaChainContext,
-    dto: CollectTradingFeesDto
-  ): Promise<CollectTradingFeesResDto> {
-    return await collectTradingFees(ctx, dto);
+    dto: CollectProtocolFeesDto
+  ): Promise<CollectProtocolFeesResDto> {
+    return await collectProtocolFees(ctx, dto);
   }
 
   @Submit({

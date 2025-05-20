@@ -14,6 +14,7 @@
  */
 import {
   BurnDto,
+  DexOperationResDto,
   NotFoundError,
   Pool,
   SlippageToleranceExceededError,
@@ -39,9 +40,9 @@ import { fetchOrCreateTickDataPair } from "./tickData.helper";
  * @dev The burn function is responsible for removing liquidity from a Decentralized exchange pool within the GalaChain ecosystem. It executes the necessary operations to burn the liquidity position and transfer the corresponding tokens back to the user.
  * @param ctx GalaChainContext – The execution context that provides access to the GalaChain environment.
  * @param dto BurnDto – A data transfer object containing the details of the liquidity position to be burned, including the pool, and position ID.
- * @returns UserBalanceResDto
+ * @returns DexOperationResDto
  */
-export async function burn(ctx: GalaChainContext, dto: BurnDto): Promise<UserBalanceResDto> {
+export async function burn(ctx: GalaChainContext, dto: BurnDto): Promise<DexOperationResDto> {
   // Fetch pool and user position
   const [token0, token1] = validateTokenOrder(dto.token0, dto.token1);
 
@@ -65,7 +66,8 @@ export async function burn(ctx: GalaChainContext, dto: BurnDto): Promise<UserBal
     tickUpper = parseInt(dto.tickUpper.toString());
 
   //Create tokenInstanceKeys
-  const tokenInstanceKeys = [pool.token0ClassKey, pool.token1ClassKey].map(TokenInstanceKey.fungibleKey);
+  const token0InstanceKey = TokenInstanceKey.fungibleKey(pool.token0ClassKey);
+  const token1InstanceKey = TokenInstanceKey.fungibleKey(pool.token1ClassKey);
   const tokenDecimals = await getTokenDecimalsFromPool(ctx, pool);
 
   // Estimate how much liquidity can actually be burned based on current pool balances and prices
@@ -75,16 +77,22 @@ export async function burn(ctx: GalaChainContext, dto: BurnDto): Promise<UserBal
     sqrtPriceB = tickToSqrtPrice(tickUpper);
   const sqrtPrice = pool.sqrtPrice;
 
+  const poolToken0Balance = await fetchOrCreateBalance(ctx, poolAlias, token0InstanceKey);
+  const poolToken1Balance = await fetchOrCreateBalance(ctx, poolAlias, token1InstanceKey);
+
   // Adjust burn amount if pool lacks sufficient liquidity
   for (const [index, amount] of amountsEstimated.entries()) {
     if (amount.lt(0)) {
       throw new NegativeAmountError(index, amount.toString());
     }
 
-    const poolTokenBalance = await fetchOrCreateBalance(ctx, poolAlias, tokenInstanceKeys[index]);
     const roundedAmount = roundTokenAmount(amount, tokenDecimals[index]);
 
-    if (roundedAmount.isGreaterThan(poolTokenBalance.getQuantityTotal())) {
+    if (
+      roundedAmount.isGreaterThan(
+        index === 0 ? poolToken0Balance.getQuantityTotal() : poolToken1Balance.getQuantityTotal()
+      )
+    ) {
       let maximumBurnableLiquidity: BigNumber;
       if (index === 0) {
         maximumBurnableLiquidity = liquidity0(
@@ -126,30 +134,40 @@ export async function burn(ctx: GalaChainContext, dto: BurnDto): Promise<UserBal
 
   await removePositionIfEmpty(ctx, poolHash, position);
 
-  // Transfer tokens to positon holder
-  for (const [index, amount] of amounts.entries()) {
-    const poolTokenBalance = await fetchOrCreateBalance(
-      ctx,
-      poolAlias,
-      tokenInstanceKeys[index].getTokenClassKey()
-    );
-    const roundedAmount = BigNumber.min(
-      roundTokenAmount(amount, tokenDecimals[index]),
-      poolTokenBalance.getQuantityTotal()
-    );
+  const roundedToken0Amount = BigNumber.min(
+    roundTokenAmount(amounts[0], tokenDecimals[0]),
+    poolToken0Balance.getQuantityTotal()
+  );
 
-    await transferToken(ctx, {
-      from: poolAlias,
-      to: ctx.callingUser,
-      tokenInstanceKey: tokenInstanceKeys[index],
-      quantity: roundedAmount,
-      allowancesToUse: [],
-      authorizedOnBehalf: {
-        callingOnBehalf: poolAlias,
-        callingUser: poolAlias
-      }
-    });
-  }
+  const roundedToken1Amount = BigNumber.min(
+    roundTokenAmount(amounts[1], tokenDecimals[1]),
+    poolToken1Balance.getQuantityTotal()
+  );
+
+  // Transfer tokens to positon holder
+  await transferToken(ctx, {
+    from: poolAlias,
+    to: ctx.callingUser,
+    tokenInstanceKey: token0InstanceKey,
+    quantity: roundedToken0Amount,
+    allowancesToUse: [],
+    authorizedOnBehalf: {
+      callingOnBehalf: poolAlias,
+      callingUser: poolAlias
+    }
+  });
+
+  await transferToken(ctx, {
+    from: poolAlias,
+    to: ctx.callingUser,
+    tokenInstanceKey: token1InstanceKey,
+    quantity: roundedToken1Amount,
+    allowancesToUse: [],
+    authorizedOnBehalf: {
+      callingOnBehalf: poolAlias,
+      callingUser: poolAlias
+    }
+  });
 
   await putChainObject(ctx, pool);
   await putChainObject(ctx, position);
@@ -157,16 +175,15 @@ export async function burn(ctx: GalaChainContext, dto: BurnDto): Promise<UserBal
   await putChainObject(ctx, tickLowerData);
 
   // Return position holder's new token balances
-  const liquidityProviderToken0Balance = await fetchOrCreateBalance(
-    ctx,
-    ctx.callingUser,
-    tokenInstanceKeys[0]
+  const liquidityProviderToken0Balance = await fetchOrCreateBalance(ctx, ctx.callingUser, token0InstanceKey);
+  const liquidityProviderToken1Balance = await fetchOrCreateBalance(ctx, ctx.callingUser, token1InstanceKey);
+  const userBalances = new UserBalanceResDto(liquidityProviderToken0Balance, liquidityProviderToken1Balance);
+
+  return new DexOperationResDto(
+    userBalances,
+    [roundedToken0Amount.toFixed(), roundedToken1Amount.toFixed()],
+    poolHash,
+    poolAlias,
+    pool.fee
   );
-  const liquidityProviderToken1Balance = await fetchOrCreateBalance(
-    ctx,
-    ctx.callingUser,
-    tokenInstanceKeys[1]
-  );
-  const response = new UserBalanceResDto(liquidityProviderToken0Balance, liquidityProviderToken1Balance);
-  return response;
 }

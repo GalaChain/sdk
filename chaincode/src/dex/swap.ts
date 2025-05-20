@@ -163,6 +163,9 @@ export async function swap(ctx: GalaChainContext, dto: SwapDto): Promise<SwapRes
     amounts[0].toFixed(tokenClasses[0].decimals),
     amounts[1].toFixed(tokenClasses[1].decimals),
     ctx.callingUser,
+    pool.genPoolHash(),
+    poolAlias,
+    pool.fee,
     ctx.txUnixTime
   );
 
