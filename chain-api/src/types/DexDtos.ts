@@ -855,14 +855,10 @@ export class SetProtocolFeeResDto extends ChainCallDTO {
 }
 
 export class ConfigureDexFeeAddressDto extends ChainCallDTO {
-  @IsOptional()
-  @IsUserAlias()
-  public newDexFeeAddress?: string;
-
-  @IsOptional()
   @IsArray()
+  @ArrayMinSize(1, { message: "At least one user should be defined to provide access" })
   @IsString({ each: true })
-  public newAuthorities?: string[];
+  public newAuthorities: string[];
 }
 
 export class BurnEstimateDto extends ChainCallDTO {
