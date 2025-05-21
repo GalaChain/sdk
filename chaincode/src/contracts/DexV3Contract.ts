@@ -22,6 +22,7 @@ import {
   CollectProtocolFeesResDto,
   ConfigureDexFeeAddressDto,
   CreatePoolDto,
+  CreatePoolResDto,
   DexFeeConfig,
   DexOperationResDto,
   DexPositionData,
@@ -90,10 +91,10 @@ export class DexV3Contract extends GalaContract {
 
   @Submit({
     in: CreatePoolDto,
-    out: Pool,
+    out: CreatePoolResDto,
     before: createPoolFeeGate
   })
-  public async CreatePool(ctx: GalaChainContext, dto: CreatePoolDto): Promise<Pool> {
+  public async CreatePool(ctx: GalaChainContext, dto: CreatePoolDto): Promise<CreatePoolResDto> {
     return await createPool(ctx, dto);
   }
 
