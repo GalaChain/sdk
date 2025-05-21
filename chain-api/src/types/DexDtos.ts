@@ -31,6 +31,7 @@ import {
 import { PositionInPool } from "../utils";
 import {
   BigNumberIsNegative,
+  BigNumberIsNotNegative,
   BigNumberIsPositive,
   BigNumberProperty,
   EnumProperty,
@@ -319,15 +320,20 @@ export class Slot0ResDto extends ChainCallDTO {
   @IsInt()
   public tick: number;
 
-  @BigNumberIsPositive()
+  @BigNumberIsNotNegative()
   @BigNumberProperty()
   public liquidity: BigNumber;
 
-  constructor(sqrtPrice: BigNumber, tick: number, liquidity: BigNumber) {
+  @BigNumberIsNotNegative()
+  @BigNumberProperty()
+  public grossPoolLiquidity: BigNumber;
+
+  constructor(sqrtPrice: BigNumber, tick: number, liquidity: BigNumber, grossPoolLiquidity: BigNumber) {
     super();
     this.sqrtPrice = sqrtPrice;
     this.tick = tick;
     this.liquidity = liquidity;
+    this.grossPoolLiquidity = grossPoolLiquidity;
   }
 }
 
@@ -1005,5 +1011,43 @@ export class DexOperationResDto extends ChainCallDTO {
     this.poolHash = poolHash;
     this.poolAlias = poolAlias;
     this.poolFee = poolFee;
+  }
+}
+
+export class CreatePoolResDto extends ChainCallDTO {
+  @IsNotEmpty()
+  @ValidateNested()
+  @Type(() => TokenClassKey)
+  public token0: TokenClassKey;
+
+  @IsNotEmpty()
+  @ValidateNested()
+  @Type(() => TokenClassKey)
+  public token1: TokenClassKey;
+
+  @EnumProperty(DexFeePercentageTypes)
+  poolFee: DexFeePercentageTypes;
+
+  @IsNotEmpty()
+  @IsString()
+  poolHash: string;
+
+  @IsNotEmpty()
+  @IsUserAlias()
+  poolAlias: string;
+
+  constructor(
+    token0: TokenClassKey,
+    token1: TokenClassKey,
+    poolFee: DexFeePercentageTypes,
+    poolHash: string,
+    poolAlias: string
+  ) {
+    super();
+    this.token0 = token0;
+    this.token1 = token1;
+    this.poolFee = poolFee;
+    this.poolHash = poolHash;
+    this.poolAlias = poolAlias;
   }
 }

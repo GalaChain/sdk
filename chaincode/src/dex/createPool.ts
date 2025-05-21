@@ -15,9 +15,9 @@
 import {
   ConflictError,
   CreatePoolDto,
+  CreatePoolResDto,
   DexFeeConfig,
   Pool,
-  TokenInstanceKey,
   ValidationFailedError
 } from "@gala-chain/api";
 
@@ -35,7 +35,7 @@ import { generateKeyFromClassKey } from "./dexUtils";
     - Fee tier details – The swap fee tier applied to trades in the pool.
   - Protocol fees – The percentage of fees collected by the protocol.
  */
-export async function createPool(ctx: GalaChainContext, dto: CreatePoolDto): Promise<Pool> {
+export async function createPool(ctx: GalaChainContext, dto: CreatePoolDto): Promise<CreatePoolResDto> {
   // sort the tokens in an order
   const [token0, token1] = [dto.token0, dto.token1].map(generateKeyFromClassKey);
   if (token0.localeCompare(token1) > 0) {
@@ -56,13 +56,9 @@ export async function createPool(ctx: GalaChainContext, dto: CreatePoolDto): Pro
   // Create pool
   const pool = new Pool(token0, token1, dto.token0, dto.token1, dto.fee, dto.initialSqrtPrice, protocolFee);
 
-  //create tokenInstanceKeys
-  const token0InstanceKey = TokenInstanceKey.fungibleKey(pool.token0ClassKey);
-  const token1InstanceKey = TokenInstanceKey.fungibleKey(pool.token1ClassKey);
-
   //check if the tokens are valid or not
-  await fetchTokenClass(ctx, token0InstanceKey);
-  await fetchTokenClass(ctx, token1InstanceKey);
+  await fetchTokenClass(ctx, pool.token0ClassKey);
+  await fetchTokenClass(ctx, pool.token1ClassKey);
 
   //Check if the pool already exists
   const existingPool = await getObjectByKey(ctx, Pool, pool.getCompositeKey()).catch(() => undefined);
@@ -70,5 +66,11 @@ export async function createPool(ctx: GalaChainContext, dto: CreatePoolDto): Pro
     throw new ConflictError("Pool already exists", existingPool.toPlainObject());
 
   await putChainObject(ctx, pool);
-  return pool;
+  return new CreatePoolResDto(
+    pool.token0ClassKey,
+    pool.token1ClassKey,
+    pool.fee,
+    pool.genPoolHash(),
+    pool.getPoolAlias()
+  );
 }
