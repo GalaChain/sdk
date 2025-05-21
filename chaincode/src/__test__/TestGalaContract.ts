@@ -208,10 +208,12 @@ export default class TestGalaContract extends GalaContract {
   @GalaTransaction({
     type: SUBMIT,
     in: NestedKVDto,
+    enforceUniqueKey: true,
     allowedOrgs: ["CuratorOrg"]
   })
   public async PutNestedKv(ctx: GalaChainContext, dto: NestedKVDto): Promise<void> {
-    const value = JSON.stringify(dto);
+    const { uniqueKey, ...rest } = dto;
+    const value = JSON.stringify(rest);
     await ctx.stub.putState(dto.key, Buffer.from(value));
   }
 
@@ -230,6 +232,7 @@ export default class TestGalaContract extends GalaContract {
   @GalaTransaction({
     type: SUBMIT,
     in: NestedKVDto,
+    enforceUniqueKey: true,
     allowedOrgs: ["CuratorOrg"]
   })
   public async ErrorAfterPutNestedKv(ctx: GalaChainContext, dto: NestedKVDto): Promise<void> {
@@ -242,14 +245,16 @@ export default class TestGalaContract extends GalaContract {
   @GalaTransaction({
     type: SUBMIT,
     in: NestedKVDto,
+    enforceUniqueKey: true,
     allowedOrgs: ["CuratorOrg"]
   })
   public async GetSetPutNestedKv(ctx: GalaChainContext, dto: NestedKVDto): Promise<unknown> {
     const response = (await ctx.stub.getCachedState(dto.key)).toString();
     if (response === "") {
-      const value = JSON.stringify(dto);
+      const { uniqueKey, ...rest } = dto;
+      const value = JSON.stringify(rest);
       await ctx.stub.putState(dto.key, Buffer.from(value));
-      return dto;
+      return rest;
     }
 
     let previous: NestedKVDto;
