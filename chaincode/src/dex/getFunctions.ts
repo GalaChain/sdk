@@ -71,7 +71,8 @@ export async function getSlot0(ctx: GalaChainContext, dto: GetPoolDto): Promise<
   return new Slot0ResDto(
     new BigNumber(pool.sqrtPrice),
     sqrtPriceToTick(pool.sqrtPrice),
-    new BigNumber(pool.liquidity)
+    new BigNumber(pool.liquidity),
+    new BigNumber(pool.grossPoolLiquidity)
   );
 }
 

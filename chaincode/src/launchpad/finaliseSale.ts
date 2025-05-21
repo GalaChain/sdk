@@ -26,7 +26,7 @@ import Decimal from "decimal.js";
 
 import { fetchOrCreateBalance } from "../balances";
 import { burnTokens } from "../burns";
-import { addLiquidity, createPool, getAddLiquidityEstimation, getPoolData } from "../dex";
+import { addLiquidity, createPool, getAddLiquidityEstimation, getPoolData, getSlot0 } from "../dex";
 import { generateKeyFromClassKey, sortString } from "../dex/dexUtils";
 import { transferToken } from "../transfer";
 import { GalaChainContext } from "../types";
@@ -92,17 +92,18 @@ export async function finalizeSale(ctx: GalaChainContext, sale: LaunchpadSale): 
   );
 
   // Check if a pool for this token already exists
-  let pool = await getPoolData(ctx, poolDTO);
+  const pool = await getPoolData(ctx, poolDTO);
   if (!pool) {
-    pool = await createPool(ctx, poolDTO);
+    await createPool(ctx, poolDTO);
   }
+  const poolInfo = await getSlot0(ctx, poolDTO);
 
   // Proceed normally if price in the pool is within an acceptable range
-  const priceCloseEnough = sqrtPrice.minus(pool.sqrtPrice).abs().lte(sqrtPrice.multipliedBy(0.05));
+  const priceCloseEnough = sqrtPrice.minus(poolInfo.sqrtPrice).abs().lte(sqrtPrice.multipliedBy(0.05));
   const expectedNativeTokenRequired = new BigNumber(sale.nativeTokenQuantity).times(
     liquidityAllocationPercentage
   );
-  const isPriceGreaterThanExpected = pool.sqrtPrice.isGreaterThan(sqrtPrice);
+  const isPriceGreaterThanExpected = poolInfo.sqrtPrice.isGreaterThan(sqrtPrice);
   const expectedSaleTokenRequired = expectedNativeTokenRequired.times(finalPrice);
 
   // Determine token amounts and token ordering
