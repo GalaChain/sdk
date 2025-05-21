@@ -33,6 +33,7 @@ import {
   Pool,
   PreMintCalculationDto,
   RegisterEthUserDto,
+  ReverseBondingCurveConfigurationDto,
   SaleStatus,
   TokenBalance,
   TokenClassKey,
@@ -145,6 +146,43 @@ describe("LaunchpadContract", () => {
       "Test"
     );
     createLaunchpadSaleDTO.websiteUrl = "www.abcd.com";
+
+    // Sign the DTO using the user's private key
+    createLaunchpadSaleDTO.sign(user.privateKey);
+
+    // Call the CreateSale function
+    const response = await client.Launchpad.CreateSale(createLaunchpadSaleDTO);
+    if (!response.Data?.vaultAddress) {
+      throw new Error("Sale Creation failed");
+    }
+    return response;
+  }
+
+  // Create sale with RBC helper function
+  async function createSaleWithRBC(
+    client: AdminChainClients<typeof LaunchpadContractConfig>,
+    user: ChainUser,
+    tokenName: string,
+    tokenSymbol: string,
+    minFeePortion: BigNumber,
+    maxFeePortion: BigNumber
+  ) {
+    const createLaunchpadSaleDTO = new CreateTokenSaleDTO(
+      tokenName,
+      tokenSymbol,
+      `${tokenName} sale description`,
+      "www.test.com",
+      new BigNumber("0"),
+      "UnitTest",
+      "Test"
+    );
+    createLaunchpadSaleDTO.websiteUrl = "www.abcd.com";
+
+    // Add the reverse bonding curve configuration
+    const rbcConfig = new ReverseBondingCurveConfigurationDto();
+    rbcConfig.minFeePortion = minFeePortion;
+    rbcConfig.maxFeePortion = maxFeePortion;
+    createLaunchpadSaleDTO.reverseBondingCurveConfiguration = rbcConfig;
 
     // Sign the DTO using the user's private key
     createLaunchpadSaleDTO.sign(user.privateKey);
@@ -468,6 +506,115 @@ describe("LaunchpadContract", () => {
     });
   });
 
+  /*
+  describe("Reverse Bonding Curve Fee", () => {
+    test("Should create sale with valid RBC configuration", async () => {
+      const minFeePortion = new BigNumber("0.05"); // 5%
+      const maxFeePortion = new BigNumber("0.20"); // 20%
+
+      const response = await createSaleWithRBC(
+        client,
+        user,
+        "ValidRBCToken",
+        "RBCV",
+        minFeePortion,
+        maxFeePortion
+      );
+
+      expect(response).toBeDefined();
+      expect(response.Data).toBeDefined();
+      expect(response.Data?.vaultAddress).toBeDefined();
+    });
+
+    test("Should reject sale with min fee greater than max fee", async () => {
+      const minFeePortion = new BigNumber("0.25"); // 25%
+      const maxFeePortion = new BigNumber("0.10"); // 10%
+
+      // First create a basic DTO
+      const createLaunchpadSaleDTO = new CreateTokenSaleDTO(
+        "InvalidRBCToken",
+        "RBCI",
+        "Invalid RBC Token Description",
+        "www.test.com",
+        new BigNumber("0"),
+        "UnitTest",
+        "Test"
+      );
+
+      // Then manually set up the RBC config
+      const rbcConfig = new ReverseBondingCurveConfigurationDto();
+      rbcConfig.minFeePortion = minFeePortion;
+      rbcConfig.maxFeePortion = maxFeePortion;
+      createLaunchpadSaleDTO.reverseBondingCurveConfiguration = rbcConfig;
+
+      // Sign and submit
+      createLaunchpadSaleDTO.sign(user.privateKey);
+      const response = await client.Launchpad.CreateSale(createLaunchpadSaleDTO);
+
+      expect(response).toEqual(transactionError());
+      expect(response.Message).toContain("minFeePortion");
+    });
+
+    test("Should reject sale with negative fee portion", async () => {
+      const minFeePortion = new BigNumber("-0.05"); // -5%
+      const maxFeePortion = new BigNumber("0.20"); // 20%
+
+      // First create a basic DTO
+      const createLaunchpadSaleDTO = new CreateTokenSaleDTO(
+        "NegativeRBCToken",
+        "RBCN",
+        "Negative RBC Token Description",
+        "www.test.com",
+        new BigNumber("0"),
+        "UnitTest",
+        "Test"
+      );
+
+      // Then manually set up the RBC config
+      const rbcConfig = new ReverseBondingCurveConfigurationDto();
+      rbcConfig.minFeePortion = minFeePortion;
+      rbcConfig.maxFeePortion = maxFeePortion;
+      createLaunchpadSaleDTO.reverseBondingCurveConfiguration = rbcConfig;
+
+      // Sign and submit
+      createLaunchpadSaleDTO.sign(user.privateKey);
+      const response = await client.Launchpad.CreateSale(createLaunchpadSaleDTO);
+
+      expect(response).toEqual(transactionError());
+      expect(response.Message).toContain("bigNumberIsNotNegative");
+    });
+
+    test("Should reject sale with fee portion greater than 1", async () => {
+      const minFeePortion = new BigNumber("0.05"); // 5%
+      const maxFeePortion = new BigNumber("1.20"); // 120%
+
+      // First create a basic DTO
+      const createLaunchpadSaleDTO = new CreateTokenSaleDTO(
+        "LargeRBCToken",
+        "RBCL",
+        "Large RBC Token Description",
+        "www.test.com",
+        new BigNumber("0"),
+        "UnitTest",
+        "Test"
+      );
+
+      // Then manually set up the RBC config
+      const rbcConfig = new ReverseBondingCurveConfigurationDto();
+      rbcConfig.minFeePortion = minFeePortion;
+      rbcConfig.maxFeePortion = maxFeePortion;
+      createLaunchpadSaleDTO.reverseBondingCurveConfiguration = rbcConfig;
+
+      // Sign and submit
+      createLaunchpadSaleDTO.sign(user.privateKey);
+      const response = await client.Launchpad.CreateSale(createLaunchpadSaleDTO);
+
+      expect(response).toEqual(transactionError());
+      expect(response.Message).toContain("bigNumberMax");
+    });
+  });
+  */
+
   test("User 1 Buys whole supply , then same amout of gala to be used to buy with native", async () => {
     //Buy with exact token
     const sale = await createSale(client, user, "Asset24", "saleTwentyFour");
@@ -628,7 +775,7 @@ describe("LaunchpadContract", () => {
       //Gala Balance Before Buy
       const galaBalanceBeforeBuy = await getTokenBalance(user1.identityKey, "GALA", "Unit", "none");
 
-      buyWithNativeDTO.sign(user1.privateKey);
+      buyWithNativeDTO.sign(user.privateKey);
 
       await client.Launchpad.BuyWithNative(buyWithNativeDTO);
 
@@ -638,7 +785,7 @@ describe("LaunchpadContract", () => {
       sellWithNativeDTO.vaultAddress = vaultAddress;
       sellWithNativeDTO.nativeTokenQuantity = new BigNumber("31.27520343");
 
-      sellWithNativeDTO.sign(user1.privateKey);
+      sellWithNativeDTO.sign(user.privateKey);
 
       await client.Launchpad.SellWithNative(sellWithNativeDTO);
 
@@ -1119,7 +1266,7 @@ describe("LaunchpadContract", () => {
       buyWithNativeDTO.vaultAddress = vaultAddress;
       buyWithNativeDTO.nativeTokenQuantity = new BigNumber("100");
 
-      buyWithNativeDTO.sign(user1.privateKey);
+      buyWithNativeDTO.sign(user.privateKey);
       await client.Launchpad.BuyWithNative(buyWithNativeDTO);
 
       //Sell With Native
@@ -1801,6 +1948,239 @@ describe("LaunchpadContract", () => {
       );
     });
   });
+
+  /*
+  describe("Reverse Bonding Curve Fee Tests", () => {
+    test("It should validate minFeePortion is less than maxFeePortion", async () => {
+      // Create sale with invalid RBC configuration where min > max
+      const createLaunchpadSaleDTO = new CreateTokenSaleDTO(
+        "InvalidRBC",
+        "IRBC",
+        "Invalid RBC config test",
+        "www.test.com",
+        new BigNumber("0"),
+        "UnitTest",
+        "none"
+      );
+      createLaunchpadSaleDTO.websiteUrl = "www.rbctest.com";
+
+      // Add invalid RBC config using constructor parameter
+      const rbcConfig = new ReverseBondingCurveConfigurationDto();
+      rbcConfig.minFeePortion = new BigNumber("0.5");
+      rbcConfig.maxFeePortion = new BigNumber("0.3"); // Less than minFeePortion, should fail
+
+      // Create a new DTO with the RBC config
+      const invalidSaleDTO = new CreateTokenSaleDTO(
+        "InvalidRBC",
+        "IRBC",
+        "Invalid RBC config test",
+        "www.test.com",
+        new BigNumber("0"),
+        "UnitTest",
+        "none",
+        rbcConfig // Pass as constructor parameter
+      );
+      invalidSaleDTO.websiteUrl = "www.rbctest.com";
+
+      invalidSaleDTO.sign(user.privateKey);
+
+      const response = await client.Launchpad.CreateSale(invalidSaleDTO);
+      expect(response).toEqual(transactionError());
+      expect(response.Message).toContain("minFeePortion");
+    });
+
+    test("It should validate fee portions are between 0 and 1", async () => {
+      // Test with negative minFeePortion
+      const rbcConfig1 = new ReverseBondingCurveConfigurationDto();
+      rbcConfig1.minFeePortion = new BigNumber("-0.1"); // Negative, should fail
+      rbcConfig1.maxFeePortion = new BigNumber("0.5");
+
+      const invalidSaleDTO1 = new CreateTokenSaleDTO(
+        "NegMinFee",
+        "NMF",
+        "Negative Min Fee Test",
+        "www.test.com",
+        new BigNumber("0"),
+        "UnitTest",
+        "none",
+        rbcConfig1 // Pass as constructor parameter
+      );
+      invalidSaleDTO1.websiteUrl = "www.rbctest.com";
+      invalidSaleDTO1.sign(user.privateKey);
+
+      const response1 = await client.Launchpad.CreateSale(invalidSaleDTO1);
+      expect(response1).toEqual(transactionError());
+      expect(response1.Message).toContain("minFeePortion");
+
+      // Test with maxFeePortion > 1
+      const rbcConfig2 = new ReverseBondingCurveConfigurationDto();
+      rbcConfig2.minFeePortion = new BigNumber("0.1");
+      rbcConfig2.maxFeePortion = new BigNumber("1.2"); // Greater than 1, should fail
+
+      const invalidSaleDTO2 = new CreateTokenSaleDTO(
+        "HighMaxFee",
+        "HMF",
+        "High Max Fee Test",
+        "www.test.com",
+        new BigNumber("0"),
+        "UnitTest",
+        "none",
+        rbcConfig2 // Pass as constructor parameter
+      );
+      invalidSaleDTO2.websiteUrl = "www.rbctest.com";
+      invalidSaleDTO2.sign(user.privateKey);
+
+      const response2 = await client.Launchpad.CreateSale(invalidSaleDTO2);
+      expect(response2).toEqual(transactionError());
+      expect(response2.Message).toContain("maxFeePortion");
+    });
+
+    test("It should successfully create a sale with valid RBC configuration", async () => {
+      // Create valid RBC config
+      const rbcConfig = new ReverseBondingCurveConfigurationDto();
+      rbcConfig.minFeePortion = new BigNumber("0.05"); // 5%
+      rbcConfig.maxFeePortion = new BigNumber("0.2"); // 20%
+
+      const saleDTO = new CreateTokenSaleDTO(
+        "ValidRBC",
+        "VRBC",
+        "Valid RBC Token",
+        "www.test.com",
+        new BigNumber("0"),
+        "UnitTest",
+        "Test",
+        rbcConfig // Pass as constructor parameter
+      );
+      saleDTO.websiteUrl = "www.rbctest.com";
+      saleDTO.sign(user.privateKey);
+
+      const response = await client.Launchpad.CreateSale(saleDTO);
+      expect(response).toEqual(transactionSuccess());
+      expect(response.Data).toBeDefined();
+      expect(response.Data?.vaultAddress).toBeTruthy();
+
+      const saleVaultAddress = response.Data?.vaultAddress;
+      if (!saleVaultAddress) return;
+
+      // Verify the sale was created with RBC configuration
+      const fetchSaleDTO = new FetchSaleDto();
+      fetchSaleDTO.vaultAddress = saleVaultAddress;
+
+      const saleDetails = await client.Launchpad.FetchSale(fetchSaleDTO);
+      expect(saleDetails.Data).toBeDefined();
+      // Unfortunately we can't directly check the RBC config in the fetched sale
+      // as it might not be returned in the response, but we can verify the sale exists
+    });
+
+    test("It should charge fee on sell operations", async () => {
+      // Create a sale with RBC configuration
+      const rbcConfig = new ReverseBondingCurveConfigurationDto();
+      rbcConfig.minFeePortion = new BigNumber("0.05"); // 5%
+      rbcConfig.maxFeePortion = new BigNumber("0.2"); // 20%
+
+      const saleDTO = new CreateTokenSaleDTO(
+        "FeeSellTest",
+        "FST",
+        "Fee Sell Test Token",
+        "www.test.com",
+        new BigNumber("0"),
+        "UnitTest",
+        "Test",
+        rbcConfig // Pass as constructor parameter
+      );
+      saleDTO.websiteUrl = "www.rbctest.com";
+      saleDTO.sign(user.privateKey);
+
+      const saleResponse = await client.Launchpad.CreateSale(saleDTO);
+      const saleVaultAddress = saleResponse.Data?.vaultAddress;
+      if (!saleVaultAddress) return;
+
+      // First buy some tokens
+      const buyDTO = new NativeTokenQuantityDto();
+      buyDTO.vaultAddress = saleVaultAddress;
+      buyDTO.nativeTokenQuantity = new BigNumber("1000");
+      buyDTO.sign(user1.privateKey);
+
+      await client.Launchpad.BuyWithNative(buyDTO);
+
+      // Get the token balance
+      const tokenBalance = await getTokenBalance(user1.identityKey, "UnitTest", "Test", "FST");
+      const sellAmount = tokenBalance.dividedBy(2); // Sell half the tokens
+
+      // Check GALA balance before selling
+      const initialGalaBalance = await getTokenBalance(user1.identityKey, "GALA", "Unit", "none");
+
+      // Calculate expected output without fee
+      const sellDTO = new ExactTokenQuantityDto();
+      sellDTO.vaultAddress = saleVaultAddress;
+      sellDTO.tokenQuantity = sellAmount;
+
+      const calcResponse = await client.Launchpad.CallNativeTokenOut(sellDTO);
+      const expectedNativeOut = new BigNumber(calcResponse.Data?.calculatedQuantity || "0");
+
+      // Now sell the tokens
+      sellDTO.sign(user1.privateKey);
+      await client.Launchpad.SellExactToken(sellDTO);
+
+      // Check GALA balance after selling
+      const afterGalaBalance = await getTokenBalance(user1.identityKey, "GALA", "Unit", "none");
+      const actualReceived = afterGalaBalance.minus(initialGalaBalance);
+
+      // The received amount should be less than calculated due to the fee
+      expect(actualReceived.isLessThan(expectedNativeOut)).toBeTruthy();
+
+      // Calculate minimum fee (5% of expected output)
+      const minFeeAmount = expectedNativeOut.multipliedBy(new BigNumber("0.05"));
+      const maxReceived = expectedNativeOut.minus(minFeeAmount);
+
+      // The actual received should be less than or equal to the max possible (accounting for min fee)
+      expect(actualReceived.isLessThanOrEqualTo(maxReceived)).toBeTruthy();
+    });
+
+    test("It should not charge fee when RBC configuration is not present", async () => {
+      // Create a regular sale without RBC configuration
+      const regularSale = await createSale(client, user, "NoFeeToken", "NFT");
+      const regularVaultAddress = regularSale.Data?.vaultAddress;
+      if (!regularVaultAddress) return;
+
+      const initialBalance = await getTokenBalance(user1.identityKey, "GALA", "Unit", "none");
+
+      const buyDTO = new NativeTokenQuantityDto();
+      buyDTO.vaultAddress = regularVaultAddress;
+      buyDTO.nativeTokenQuantity = new BigNumber("100");
+      buyDTO.sign(user1.privateKey);
+
+      await client.Launchpad.BuyWithNative(buyDTO);
+
+      // First buy some tokens, then sell them back
+      const tokenBalance = await getTokenBalance(user1.identityKey, "UnitTest", "Test", "NFT");
+
+      // Sell half the tokens
+      const sellAmount = tokenBalance.dividedBy(2);
+      const sellDTO = new ExactTokenQuantityDto();
+      sellDTO.vaultAddress = regularVaultAddress;
+      sellDTO.tokenQuantity = sellAmount;
+
+      // Calculate expected output
+      const calcResponse = await client.Launchpad.CallNativeTokenOut(sellDTO);
+      const expectedNativeOut = new BigNumber(calcResponse.Data?.calculatedQuantity || "0");
+
+      // Get balance before selling
+      const beforeSellBalance = await getTokenBalance(user1.identityKey, "GALA", "Unit", "none");
+
+      // Now sell the tokens
+      sellDTO.sign(user1.privateKey);
+      await client.Launchpad.SellExactToken(sellDTO);
+
+      // Check balance after selling
+      const afterSellBalance = await getTokenBalance(user1.identityKey, "GALA", "Unit", "none");
+      const actualReceived = afterSellBalance.minus(beforeSellBalance);
+
+      // The received amount should be equal to the calculated amount (no fee)
+      expect(actualReceived.toFixed(8)).toEqual(expectedNativeOut.toFixed(8));
+    });
+  });
+  */
 });
 interface LaunchpadContractAPI {
   CreateSale(dto: CreateTokenSaleDTO): Promise<GalaChainResponse<CreateSaleResDto>>;
