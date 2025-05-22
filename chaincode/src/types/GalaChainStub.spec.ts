@@ -124,7 +124,7 @@ describe("updates/flush", () => {
     const txId = cachedWrites.getTxID();
 
     // Then
-    expect(txId).toMatch(/^[a-zA-Z0-9_]+\|42$/);
+    expect(txId).toMatch(/^[a-zA-Z0-9_-]+\|42$/);
   });
 });
 
