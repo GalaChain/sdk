@@ -12,6 +12,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+import assert from "assert";
 import {
   ChainCallDTO,
   ConfigureLaunchpadFeeAddressDto,
@@ -219,10 +220,7 @@ describe("LaunchpadContract", () => {
     return new BigNumber(balanceValue);
   }
 
-  test("Creating Test Gala for Test", async () => {
-    // Creating Gala Dummy token for Buying
-    // Minting 100,000,000GALA  to user1
-
+  async function createGala() {
     const registerGalaAuthorityDto = new RegisterEthUserDto();
     registerGalaAuthorityDto.publicKey = signatures.getPublicKey(
       GALA_AUTHORITY_PRIVATE_KEY.replace("0x", "")
@@ -278,17 +276,17 @@ describe("LaunchpadContract", () => {
     FetchBalancesDTO.category = "Unit";
     FetchBalancesDTO.type = "none";
 
-    const tokenIntance = new TokenInstanceKey();
-    tokenIntance.collection = "GALA";
-    tokenIntance.category = "Unit";
-    tokenIntance.type = "none";
-    tokenIntance.additionalKey = "none";
-    tokenIntance.instance = new BigNumber(0);
+    const tokenInstance = new TokenInstanceKey();
+    tokenInstance.collection = "GALA";
+    tokenInstance.category = "Unit";
+    tokenInstance.type = "none";
+    tokenInstance.additionalKey = "none";
+    tokenInstance.instance = new BigNumber(0);
 
     const transferTokenDto = new TransferTokenDto();
     transferTokenDto.from = user1.identityKey;
     transferTokenDto.to = user2.identityKey;
-    transferTokenDto.tokenInstance = tokenIntance;
+    transferTokenDto.tokenInstance = tokenInstance;
     transferTokenDto.quantity = new BigNumber("5e+6");
     transferTokenDto.sign(user1.privateKey);
 
@@ -299,12 +297,19 @@ describe("LaunchpadContract", () => {
     const transferTokenUserDto = new TransferTokenDto();
     transferTokenUserDto.from = user1.identityKey;
     transferTokenUserDto.to = user.identityKey;
-    transferTokenUserDto.tokenInstance = tokenIntance;
+    transferTokenUserDto.tokenInstance = tokenInstance;
     transferTokenUserDto.quantity = new BigNumber("2e+6");
     transferTokenUserDto.sign(user1.privateKey);
 
     const transferResponse2 = await client1.token.TransferToken(transferTokenUserDto);
     expect(transferResponse2.Status).toBe(1);
+  }
+
+  test("Creating Test Gala for Test", async () => {
+    // Creating Gala Dummy token for Buying
+    // Minting 100,000,000GALA  to user1
+
+    await createGala();
   });
 
   describe("Create Sale ", () => {
@@ -1949,7 +1954,6 @@ describe("LaunchpadContract", () => {
     });
   });
 
-  /*
   describe("Reverse Bonding Curve Fee Tests", () => {
     test("It should validate minFeePortion is less than maxFeePortion", async () => {
       // Create sale with invalid RBC configuration where min > max
@@ -2073,6 +2077,8 @@ describe("LaunchpadContract", () => {
     });
 
     test("It should charge fee on sell operations", async () => {
+      await createGala();
+
       // Create a sale with RBC configuration
       const rbcConfig = new ReverseBondingCurveConfigurationDto();
       rbcConfig.minFeePortion = new BigNumber("0.05"); // 5%
@@ -2093,7 +2099,7 @@ describe("LaunchpadContract", () => {
 
       const saleResponse = await client.Launchpad.CreateSale(saleDTO);
       const saleVaultAddress = saleResponse.Data?.vaultAddress;
-      if (!saleVaultAddress) return;
+      assert(saleVaultAddress, "Sale vault address is undefined");
 
       // First buy some tokens
       const buyDTO = new NativeTokenQuantityDto();
@@ -2101,7 +2107,8 @@ describe("LaunchpadContract", () => {
       buyDTO.nativeTokenQuantity = new BigNumber("1000");
       buyDTO.sign(user1.privateKey);
 
-      await client.Launchpad.BuyWithNative(buyDTO);
+      const buyResponse = await client.Launchpad.BuyWithNative(buyDTO);
+      expect(buyResponse).toEqual(transactionSuccess());
 
       // Get the token balance
       const tokenBalance = await getTokenBalance(user1.identityKey, "UnitTest", "Test", "FST");
@@ -2180,7 +2187,6 @@ describe("LaunchpadContract", () => {
       expect(actualReceived.toFixed(8)).toEqual(expectedNativeOut.toFixed(8));
     });
   });
-  */
 });
 interface LaunchpadContractAPI {
   CreateSale(dto: CreateTokenSaleDTO): Promise<GalaChainResponse<CreateSaleResDto>>;

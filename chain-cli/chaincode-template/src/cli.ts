@@ -39,3 +39,5 @@ if (customCommand === "get-contract-names") {
 
   process.exit(0);
 }
+
+
