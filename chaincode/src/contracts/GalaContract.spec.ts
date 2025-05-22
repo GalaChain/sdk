@@ -26,13 +26,7 @@ import {
   UserProfile,
   createValidDTO,
   signatures
-  PublicKey,
-  SigningScheme,
-  UserProfile,
-  createValidDTO,
-  signatures
 } from "@gala-chain/api";
-import { ChainUser } from "@gala-chain/client";
 import { ChainUser } from "@gala-chain/client";
 import {
   transactionError,
@@ -47,8 +41,6 @@ import { inspect } from "util";
 import TestChaincode from "../__test__/TestChaincode";
 import TestGalaContract, { Superhero, SuperheroDto, SuperheroQueryDto } from "../__test__/TestGalaContract";
 import { GalaChainContext, createValidChainObject } from "../types";
-import { PublicKeyContract } from "./PublicKeyContract";
-import { PublicKeyContract } from "./PublicKeyContract";
 
 /*
  * Test below verifies that the base class of TestGalaContract (i.e. GalaContract) provides stub to

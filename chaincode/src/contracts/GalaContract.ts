@@ -26,7 +26,7 @@ import {
   createValidDTO,
   signatures
 } from "@gala-chain/api";
-import { Contract, Transaction } from "fabric-contract-api";
+import { Contract } from "fabric-contract-api";
 
 import { PublicKeyService } from "../services";
 import { GalaChainContext, GalaChainStub } from "../types";
@@ -192,10 +192,6 @@ export abstract class GalaContract extends Contract {
   })
   public async BatchSubmit(ctx: GalaChainContext, batchDto: BatchDto): Promise<GalaChainResponse<unknown>[]> {
     const responses: GalaChainResponse<unknown>[] = [];
-
-    const softWritesLimit = batchDto.writesLimit ?? BatchDto.WRITES_DEFAULT_LIMIT;
-    const writesLimit = Math.min(softWritesLimit, BatchDto.WRITES_HARD_LIMIT);
-    let writesCount = ctx.stub.getWritesCount();
 
     const softWritesLimit = batchDto.writesLimit ?? BatchDto.WRITES_DEFAULT_LIMIT;
     const writesLimit = Math.min(softWritesLimit, BatchDto.WRITES_HARD_LIMIT);

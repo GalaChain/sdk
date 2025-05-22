@@ -165,10 +165,6 @@ class StubCache {
     return Object.keys(this.writes).length;
   }
 
-  getWritesCount(): number {
-    return Object.keys(this.writes).length;
-  }
-
   getDeletes(): Record<string, true> {
     return { ...this.deletes };
   }
