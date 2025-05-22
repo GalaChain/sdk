@@ -1927,7 +1927,7 @@ describe("LaunchpadContract", () => {
 
     test("It should successfully create a sale with valid RBC configuration", async () => {
       await createGala();
-      
+
       const rbcConfig = new ReverseBondingCurveConfigurationDto();
       rbcConfig.minFeePortion = new BigNumber("0.05"); // 5%
       rbcConfig.maxFeePortion = new BigNumber("0.2"); // 20%

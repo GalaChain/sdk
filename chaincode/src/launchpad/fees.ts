@@ -1,10 +1,10 @@
-import { FeeReceiptStatus, LaunchpadSale, SlippageToleranceExceededError } from "@gala-chain/api";
+import { FeeReceiptStatus, LaunchpadFeeConfig, LaunchpadSale, SlippageToleranceExceededError } from "@gala-chain/api";
 import BigNumber from "bignumber.js";
 
-import { burnTokens } from "../burns";
 import { writeChannelPaymentReceipt, writeUserPaymentReceipt } from "../fees";
 import { GalaChainContext } from "../types";
-import { txUnixTimeToDateIndexKeys } from "../utils";
+import { getObjectByKey, txUnixTimeToDateIndexKeys } from "../utils";
+import { transferToken } from "../transfer";
 
 const REVERSE_BONDING_CURVE_FEE_ALPHA = new BigNumber("0.5"); // 50% of the amount of native token to be received
 const REVERSE_BONDING_CURVE_FEE_CODE = "LaunchpadReverseBondingCurveFee";
@@ -48,6 +48,8 @@ export async function payReverseBondingCurveFee(
     throw new SlippageToleranceExceededError("Fee exceeds maximum acceptable amount");
   }
 
+  const launchpadConfigKey = ctx.stub.createCompositeKey(LaunchpadFeeConfig.INDEX_KEY, []);
+  const launchpadConfig = await getObjectByKey(ctx, LaunchpadFeeConfig, launchpadConfigKey);
   const nativeToken = sale.fetchNativeTokenInstanceKey();
   const { year, month, day } = txUnixTimeToDateIndexKeys(ctx.txUnixTime);
   const txId = ctx.stub.getTxID();
@@ -73,15 +75,13 @@ export async function payReverseBondingCurveFee(
       quantity: feeAmount,
       status: FeeReceiptStatus.Settled
     }),
-    /* TODO: This should be a transfer of some sort - Need to clarify with Sergey where the fee should go */
-    burnTokens(ctx, {
-      owner: ctx.callingUser,
-      toBurn: [
-        {
-          tokenInstanceKey: nativeToken,
-          quantity: feeAmount
-        }
-      ]
+    transferToken(ctx, {
+      to: launchpadConfig.feeAddress,
+      from: ctx.callingUser,
+      tokenInstanceKey: nativeToken,
+      quantity: feeAmount,
+      allowancesToUse: [],
+      authorizedOnBehalf: undefined
     })
   ]);
 }
