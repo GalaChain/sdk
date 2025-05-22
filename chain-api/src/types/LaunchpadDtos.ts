@@ -188,6 +188,12 @@ export class CreateSaleResDto {
   public tokenStringKey: string;
 }
 
+export class TokenExtraFeesDto {
+  @BigNumberProperty()
+  @IsOptional()
+  public maxAcceptableReverseBondingCurveFee?: BigNumber;
+}
+
 export class ExactTokenQuantityDto extends ChainCallDTO {
   @IsString()
   @IsNotEmpty()
@@ -201,9 +207,10 @@ export class ExactTokenQuantityDto extends ChainCallDTO {
   @IsOptional()
   public expectedNativeToken?: BigNumber;
 
-  @BigNumberProperty()
+  @ValidateNested()
+  @Type(() => TokenExtraFeesDto)
   @IsOptional()
-  public maxAcceptableFee?: BigNumber;
+  public extraFees?: TokenExtraFeesDto;
 
   constructor(vaultAddress = "", tokenQuantity: BigNumber = new BigNumber(0)) {
     super();
@@ -225,9 +232,10 @@ export class NativeTokenQuantityDto extends ChainCallDTO {
   @IsOptional()
   public expectedToken?: BigNumber;
 
-  @BigNumberProperty()
+  @ValidateNested()
+  @Type(() => TokenExtraFeesDto)
   @IsOptional()
-  public maxAcceptableFee?: BigNumber;
+  public extraFees?: TokenExtraFeesDto;
 
   constructor(vaultAddress = "", nativeTokenQuantity: BigNumber = new BigNumber(0)) {
     super();

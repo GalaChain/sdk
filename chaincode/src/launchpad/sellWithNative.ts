@@ -69,7 +69,12 @@ export async function sellWithNative(
 
   // The fee must be paid BEFORE the sale can happen.
   // That means you cannot pay the fee using proceeds from the sale.
-  await payReverseBondingCurveFee(ctx, sale, sellTokenDTO.nativeTokenQuantity, sellTokenDTO.maxAcceptableFee);
+  await payReverseBondingCurveFee(
+    ctx,
+    sale,
+    sellTokenDTO.nativeTokenQuantity,
+    sellTokenDTO.extraFees?.maxAcceptableReverseBondingCurveFee
+  );
 
   await transferToken(ctx, {
     from: ctx.callingUser,
