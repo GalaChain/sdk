@@ -2052,7 +2052,7 @@ describe("LaunchpadContract", () => {
       expect(actualReceived.toFixed(8)).toEqual(expectedNativeOut.toFixed(8));
     });
 
-    test.only("It should fail when fee exceeds maxAcceptableReverseBondingCurveFee in SellExactToken", async () => {
+    test("It should fail when fee exceeds maxAcceptableReverseBondingCurveFee in SellExactToken", async () => {
       await createGala();
 
       const rbcConfig = new ReverseBondingCurveConfigurationDto();
@@ -2102,7 +2102,7 @@ describe("LaunchpadContract", () => {
       expect(sellResponse.Message).toContain("Fee exceeds maximum acceptable amount");
     });
 
-    test.only("It should succeed when fee is below maxAcceptableReverseBondingCurveFee in SellWithNative", async () => {
+    test("It should succeed when fee is below maxAcceptableReverseBondingCurveFee in SellWithNative", async () => {
       await createGala();
 
       const rbcConfig = new ReverseBondingCurveConfigurationDto();
