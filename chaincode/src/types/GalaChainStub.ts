@@ -44,7 +44,7 @@ class StubCache {
     private readonly index: number | undefined
   ) {}
 
-  getTxId(): string {
+  getTxID(): string {
     if (typeof this.index === "number") {
       return this.stub.getTxID() + `|${this.index}`;
     }
@@ -179,6 +179,8 @@ class StubCache {
 }
 
 export interface GalaChainStub extends ChaincodeStub {
+  getTxID(): string;
+
   getCachedState(key: string): Promise<Uint8Array>;
 
   getCachedStateByPartialCompositeKey(objectType: string, attributes: string[]): FabricIterable<CachedKV>;

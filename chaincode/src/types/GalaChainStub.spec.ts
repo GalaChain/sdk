@@ -28,7 +28,7 @@ const setupTest = (initialState: Record<string, string> = {}) => {
   testChaincodeStub.deleteState = jest.fn(testChaincodeStub.deleteState);
   testChaincodeStub.getStateByPartialCompositeKey = jest.fn(testChaincodeStub.getStateByPartialCompositeKey);
 
-  const cachedWrites = createGalaChainStub(testChaincodeStub, false);
+  const cachedWrites = createGalaChainStub(testChaincodeStub, false, undefined);
 
   return { testChaincodeStub: testChaincodeStub, cachedWrites: cachedWrites };
 };
@@ -103,16 +103,28 @@ describe("updates/flush", () => {
     expect(testChaincodeStub.deleteState).toBeCalledTimes(2);
   });
 
-  it("should not flush writes in dry run mode", async () => {
+  it("should not flush writes in read-only mode", async () => {
     // Given
-    const isDryRun = true;
-    const cachedWrites = createGalaChainStub(new TestChaincodeStub([], {}, {}), isDryRun);
+    const isReadOnly = true;
+    const cachedWrites = createGalaChainStub(new TestChaincodeStub([], {}, {}), isReadOnly, undefined);
 
     // When
     const flushOp = cachedWrites.flushWrites();
 
     // Then
     expect(flushOp).rejects.toThrow("Cannot flush writes in read-only mode");
+  });
+
+  it("should suffix txId with index", async () => {
+    // Given
+    const index = 42;
+    const cachedWrites = createGalaChainStub(new TestChaincodeStub([], {}, {}), false, index);
+
+    // When
+    const txId = cachedWrites.getTxID();
+
+    // Then
+    expect(txId).toMatch(/^[a-zA-Z0-9_]+\|42$/);
   });
 });
 
