@@ -143,6 +143,10 @@ class StubCache {
       throw new NotImplementedError("Cannot flush writes in read-only mode");
     }
 
+    if (this.isReadOnly) {
+      throw new NotImplementedError("Cannot flush writes in read-only mode");
+    }
+
     const deleteOps = Object.keys(this.deletes).map((key) => this.stub.deleteState(key));
     const putOps = Object.entries(this.writes).map(([key, value]) => this.stub.putState(key, value));
     await Promise.all(deleteOps);
@@ -155,6 +159,10 @@ class StubCache {
 
   getWrites(): Record<string, Uint8Array> {
     return { ...this.writes };
+  }
+
+  getWritesCount(): number {
+    return Object.keys(this.writes).length;
   }
 
   getWritesCount(): number {
@@ -190,6 +198,8 @@ export interface GalaChainStub extends ChaincodeStub {
   getReads(): Record<string, Uint8Array>;
 
   getWrites(): Record<string, Uint8Array>;
+
+  getWritesCount(): number;
 
   getWritesCount(): number;
 

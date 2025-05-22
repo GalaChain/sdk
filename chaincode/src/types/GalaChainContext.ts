@@ -102,7 +102,6 @@ export class GalaChainContext extends Context {
 
   get callingUser(): string {
     if (this.callingUserValue === undefined) {
-      this.logger.error(new Error().stack ?? "No calling user set");
       throw new UnauthorizedError("No calling user set");
     }
     return this.callingUserValue;

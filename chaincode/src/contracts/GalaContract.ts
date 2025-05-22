@@ -197,6 +197,10 @@ export abstract class GalaContract extends Contract {
     const writesLimit = Math.min(softWritesLimit, BatchDto.WRITES_HARD_LIMIT);
     let writesCount = ctx.stub.getWritesCount();
 
+    const softWritesLimit = batchDto.writesLimit ?? BatchDto.WRITES_DEFAULT_LIMIT;
+    const writesLimit = Math.min(softWritesLimit, BatchDto.WRITES_HARD_LIMIT);
+    let writesCount = ctx.stub.getWritesCount();
+
     for (const [index, op] of batchDto.operations.entries()) {
       // Use sandboxed context to avoid flushes of writes and deletes, and populate
       // the stub with current writes and deletes.
@@ -204,6 +208,7 @@ export abstract class GalaContract extends Contract {
       sandboxCtx.stub.setWrites(ctx.stub.getWrites());
       sandboxCtx.stub.setDeletes(ctx.stub.getDeletes());
 
+      // Execute the operation. Collect both successful and failed responses.
       // Execute the operation. Collect both successful and failed responses.
       let response: GalaChainResponse<unknown>;
       try {
@@ -213,6 +218,7 @@ export abstract class GalaContract extends Contract {
 
         const method = getApiMethod(this, op.method, (m) => m.isWrite && m.methodName !== "BatchSubmit");
         response = await this[method.methodName](sandboxCtx, op.dto);
+        response = await this[method.methodName](sandboxCtx, op.dto);
       } catch (error) {
         response = GalaChainResponse.Error(error);
       }
@@ -220,7 +226,12 @@ export abstract class GalaContract extends Contract {
 
       // Update the current context with the writes and deletes if the operation
       // is successful.
+      // Update the current context with the writes and deletes if the operation
+      // is successful.
       if (GalaChainResponse.isSuccess(response)) {
+        ctx.stub.setWrites(sandboxCtx.stub.getWrites());
+        ctx.stub.setDeletes(sandboxCtx.stub.getDeletes());
+        writesCount = ctx.stub.getWritesCount();
         ctx.stub.setWrites(sandboxCtx.stub.getWrites());
         ctx.stub.setDeletes(sandboxCtx.stub.getDeletes());
         writesCount = ctx.stub.getWritesCount();
@@ -246,9 +257,11 @@ export abstract class GalaContract extends Contract {
       const sandboxCtx = ctx.createReadOnlyContext(index);
 
       // Execute the operation. Collect both successful and failed responses.
+      // Execute the operation. Collect both successful and failed responses.
       let response: GalaChainResponse<unknown>;
       try {
         const method = getApiMethod(this, op.method, (m) => !m.isWrite && m.methodName !== "BatchEvaluate");
+        response = await this[method.methodName](sandboxCtx, op.dto);
         response = await this[method.methodName](sandboxCtx, op.dto);
       } catch (error) {
         response = GalaChainResponse.Error(error);

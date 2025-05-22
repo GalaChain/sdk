@@ -62,6 +62,7 @@ type GalaChainStub = ChaincodeStub & {
   getReads(): Record<string, Uint8Array>;
   getWrites(): Record<string, Uint8Array>;
   getWritesCount(): number;
+  getWritesCount(): number;
   getDeletes(): Record<string, true>;
   setReads(reads: Record<string, Uint8Array>): void;
   setWrites(writes: Record<string, Uint8Array>): void;

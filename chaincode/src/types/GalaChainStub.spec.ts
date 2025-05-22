@@ -20,8 +20,10 @@ import { CachedKV, FabricIterable } from "./FabricIterable";
 import { createGalaChainStub } from "./GalaChainStub";
 
 const setupTest = (initialState: Record<string, string> = {}) => {
+const setupTest = (initialState: Record<string, string> = {}) => {
   const state = { ...initialState }; // shallow copy
 
+  const testChaincodeStub = new TestChaincodeStub([], state, undefined);
   const testChaincodeStub = new TestChaincodeStub([], state, undefined);
   testChaincodeStub.putState = jest.fn(testChaincodeStub.putState);
   testChaincodeStub.getState = jest.fn(testChaincodeStub.getState);
