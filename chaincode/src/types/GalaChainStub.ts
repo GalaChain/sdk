@@ -197,8 +197,6 @@ export interface GalaChainStub extends ChaincodeStub {
 
   getWritesCount(): number;
 
-  getWritesCount(): number;
-
   getDeletes(): Record<string, true>;
 
   setReads(reads: Record<string, Uint8Array>): void;
