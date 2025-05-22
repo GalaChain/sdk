@@ -1194,7 +1194,7 @@ describe("LaunchpadContract", () => {
 
       const buyWithExactDTO = new ExactTokenQuantityDto();
       buyWithExactDTO.vaultAddress = vaultAddress;
-      buyWithExactDTO.tokenAmount = new BigNumber("2000000");
+      buyWithExactDTO.expectedNativeToken = new BigNumber("2000000");
 
       buyWithExactDTO.sign(user1.privateKey);
 
@@ -1926,6 +1926,8 @@ describe("LaunchpadContract", () => {
     });
 
     test("It should successfully create a sale with valid RBC configuration", async () => {
+      await createGala();
+      
       const rbcConfig = new ReverseBondingCurveConfigurationDto();
       rbcConfig.minFeePortion = new BigNumber("0.05"); // 5%
       rbcConfig.maxFeePortion = new BigNumber("0.2"); // 20%
@@ -2016,6 +2018,8 @@ describe("LaunchpadContract", () => {
     });
 
     test("It should not charge fee when RBC configuration is not present", async () => {
+      await createGala();
+
       const regularSale = await createSale(client, user, "NoFeeToken", "NFT");
       const regularVaultAddress = regularSale.Data?.vaultAddress;
       if (!regularVaultAddress) return;
@@ -2046,6 +2050,105 @@ describe("LaunchpadContract", () => {
       const actualReceived = afterSellBalance.minus(beforeSellBalance);
 
       expect(actualReceived.toFixed(8)).toEqual(expectedNativeOut.toFixed(8));
+    });
+
+    test.only("It should fail when fee exceeds maxAcceptableReverseBondingCurveFee in SellExactToken", async () => {
+      await createGala();
+
+      const rbcConfig = new ReverseBondingCurveConfigurationDto();
+      rbcConfig.minFeePortion = new BigNumber("0");
+      rbcConfig.maxFeePortion = new BigNumber("0.5");
+
+      const saleDTO = new CreateTokenSaleDTO(
+        "MaxFeeTestA",
+        "MFTA",
+        "Max Fee Test Token",
+        "www.test.com",
+        new BigNumber("0"),
+        "UnitTest",
+        "Test",
+        rbcConfig
+      );
+
+      saleDTO.websiteUrl = "www.rbctest.com";
+      saleDTO.sign(user.privateKey);
+
+      const saleResponse = await client.Launchpad.CreateSale(saleDTO);
+      expect(saleResponse).toEqual(transactionSuccess());
+      const saleVaultAddress = saleResponse.Data?.vaultAddress;
+      assert(saleVaultAddress, "Sale vault address is undefined");
+
+      const buyDTO = new NativeTokenQuantityDto();
+      buyDTO.vaultAddress = saleVaultAddress;
+      buyDTO.nativeTokenQuantity = new BigNumber("1000");
+      buyDTO.sign(user1.privateKey);
+      await client.Launchpad.BuyWithNative(buyDTO);
+
+      const sellAmount = new BigNumber("10000");
+
+      const sellDTO = new ExactTokenQuantityDto();
+      sellDTO.vaultAddress = saleVaultAddress;
+      sellDTO.tokenQuantity = sellAmount;
+
+      sellDTO.extraFees = {
+        maxAcceptableReverseBondingCurveFee: new BigNumber("0.1")
+      };
+
+      sellDTO.sign(user1.privateKey);
+
+      // This should fail because the actual fee will be higher than our limit
+      const sellResponse = await client.Launchpad.SellExactToken(sellDTO);
+      expect(sellResponse).toEqual(transactionError());
+      expect(sellResponse.Message).toContain("Fee exceeds maximum acceptable amount");
+    });
+
+    test.only("It should succeed when fee is below maxAcceptableReverseBondingCurveFee in SellWithNative", async () => {
+      await createGala();
+
+      const rbcConfig = new ReverseBondingCurveConfigurationDto();
+      rbcConfig.minFeePortion = new BigNumber("0");
+      rbcConfig.maxFeePortion = new BigNumber("0.50");
+
+      const saleDTO = new CreateTokenSaleDTO(
+        "MaxFeeTestB",
+        "MFTB",
+        "Max Fee Test Token 2",
+        "www.test.com",
+        new BigNumber("0"),
+        "UnitTest",
+        "Test",
+        rbcConfig
+      );
+      saleDTO.websiteUrl = "www.rbctest.com";
+      saleDTO.sign(user.privateKey);
+
+      const saleResponse = await client.Launchpad.CreateSale(saleDTO);
+      expect(saleResponse).toEqual(transactionSuccess());
+      const saleVaultAddress = saleResponse.Data?.vaultAddress;
+      assert(saleVaultAddress, "Sale vault address is undefined");
+
+      // Buy tokens first to populate the sale
+      const buyDTO = new NativeTokenQuantityDto();
+      buyDTO.vaultAddress = saleVaultAddress;
+      buyDTO.nativeTokenQuantity = new BigNumber("10");
+      buyDTO.sign(user1.privateKey);
+      await client.Launchpad.BuyWithNative(buyDTO);
+
+      // Create sell with native DTO with acceptable fee cap
+      const sellDTO = new NativeTokenQuantityDto();
+      sellDTO.vaultAddress = saleVaultAddress;
+      sellDTO.nativeTokenQuantity = new BigNumber("5");
+
+      // Set a reasonable max fee that should be accepted
+      sellDTO.extraFees = {
+        maxAcceptableReverseBondingCurveFee: new BigNumber("1") // Allow up to 1 GALA as fee
+      };
+
+      sellDTO.sign(user1.privateKey);
+
+      // This should succeed as the fee is within limits
+      const sellResponse = await client.Launchpad.SellWithNative(sellDTO);
+      expect(sellResponse).toEqual(transactionSuccess());
     });
   });
 });
