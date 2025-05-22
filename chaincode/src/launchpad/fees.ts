@@ -15,21 +15,24 @@ export async function payReverseBondingCurveFee(
   sale: LaunchpadSale,
   nativeTokensToReceive: BigNumber
 ) {
-  if (!sale.reverseBondingCurveConfiguration) {
+  if (
+    !sale.reverseBondingCurveConfiguration ||
+    sale.reverseBondingCurveConfiguration.maxFeePortion.isZero()
+  ) {
     return; // No fee
   }
 
   const nativeToken = sale.fetchNativeTokenInstanceKey();
-  const minFee = nativeTokensToReceive.multipliedBy(sale.reverseBondingCurveConfiguration.minFeePortion);
-  const maxFee = nativeTokensToReceive.multipliedBy(sale.reverseBondingCurveConfiguration.maxFeePortion);
+  const { minFeePortion, maxFeePortion } = sale.reverseBondingCurveConfiguration;
+  const feePortionDiff = maxFeePortion.minus(minFeePortion);
+  const adjustedAlpha = REVERSE_BONDING_CURVE_FEE_ALPHA.multipliedBy(feePortionDiff);
+  const feePortion = minFeePortion.plus(adjustedAlpha);
+  const circulatingSupplyProportional = sale.fetchCirculatingSupplyProportional();
 
-  const feeAmountUncoerced = sale
-    .fetchCirculatingSupplyProportional()
-    .multipliedBy(REVERSE_BONDING_CURVE_FEE_ALPHA)
+  const feeAmount = circulatingSupplyProportional
+    .multipliedBy(feePortion)
     .multipliedBy(nativeTokensToReceive)
     .decimalPlaces(NATIVE_TOKEN_DECIMALS, BigNumber.ROUND_UP);
-
-  const feeAmount = BigNumber.max(minFee, BigNumber.min(maxFee, feeAmountUncoerced));
 
   const { year, month, day } = txUnixTimeToDateIndexKeys(ctx.txUnixTime);
   const txId = ctx.stub.getTxID();

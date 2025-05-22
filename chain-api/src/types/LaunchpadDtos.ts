@@ -25,7 +25,12 @@ import {
   ValidateNested
 } from "class-validator";
 
-import { BigNumberIsNotNegative, BigNumberLessThanOrEqualOther, BigNumberMax, BigNumberProperty, IsLessThan } from "../validators";
+import {
+  BigNumberIsNotNegative,
+  BigNumberLessThanOrEqualOther,
+  BigNumberMax,
+  BigNumberProperty
+} from "../validators";
 import { IsNonZeroBigNumber } from "../validators";
 import { ChainObject } from "./ChainObject";
 import { TokenBalance } from "./TokenBalance";
@@ -34,13 +39,13 @@ import { ChainCallDTO } from "./dtos";
 export class ReverseBondingCurveConfigurationChainObject extends ChainObject {
   @BigNumberProperty()
   @BigNumberIsNotNegative()
-  @BigNumberMax("1")
+  @BigNumberMax("0.5")
   @BigNumberLessThanOrEqualOther("maxFeePortion")
   minFeePortion: BigNumber;
 
   @BigNumberProperty()
   @BigNumberIsNotNegative()
-  @BigNumberMax("1")
+  @BigNumberMax("0.5")
   maxFeePortion: BigNumber;
 
   constructor(minFeePortion: BigNumber, maxFeePortion: BigNumber) {
@@ -53,13 +58,13 @@ export class ReverseBondingCurveConfigurationChainObject extends ChainObject {
 export class ReverseBondingCurveConfigurationDto extends ChainCallDTO {
   @BigNumberProperty()
   @BigNumberIsNotNegative()
-  @BigNumberMax("1")
+  @BigNumberMax("0.5")
   @BigNumberLessThanOrEqualOther("maxFeePortion")
   minFeePortion: BigNumber;
 
   @BigNumberProperty()
   @BigNumberIsNotNegative()
-  @BigNumberMax("1")
+  @BigNumberMax("0.5")
   maxFeePortion: BigNumber;
 
   toChainObject(): ReverseBondingCurveConfigurationChainObject {

@@ -151,7 +151,7 @@ export class LaunchpadSale extends ChainObject {
   // will return 0.25
   public fetchCirculatingSupplyProportional() {
     const tokenLeftInVault = new BigNumber(this.sellingTokenQuantity);
-    const graduationProgress = tokenLeftInVault.dividedBy(this.maxSupply);
+    const graduationProgress = BigNumber(1).minus(tokenLeftInVault.dividedBy(this.maxSupply));
     return graduationProgress;
   }
 
