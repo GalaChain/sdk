@@ -10,19 +10,14 @@ const REVERSE_BONDING_CURVE_FEE_ALPHA = new BigNumber("0.5"); // 50% of the amou
 const REVERSE_BONDING_CURVE_FEE_CODE = "LaunchpadReverseBondingCurveFee";
 const NATIVE_TOKEN_DECIMALS = 8;
 
-export async function payReverseBondingCurveFee(
-  ctx: GalaChainContext,
-  sale: LaunchpadSale,
-  nativeTokensToReceive: BigNumber
-) {
+export function calculateReverseBondingCurveFee(sale: LaunchpadSale, nativeTokensToReceive: BigNumber) {
   if (
     !sale.reverseBondingCurveConfiguration ||
     sale.reverseBondingCurveConfiguration.maxFeePortion.isZero()
   ) {
-    return; // No fee
+    return BigNumber(0);
   }
 
-  const nativeToken = sale.fetchNativeTokenInstanceKey();
   const { minFeePortion, maxFeePortion } = sale.reverseBondingCurveConfiguration;
   const feePortionDiff = maxFeePortion.minus(minFeePortion);
   const adjustedAlpha = REVERSE_BONDING_CURVE_FEE_ALPHA.multipliedBy(feePortionDiff);
@@ -34,6 +29,21 @@ export async function payReverseBondingCurveFee(
     .multipliedBy(nativeTokensToReceive)
     .decimalPlaces(NATIVE_TOKEN_DECIMALS, BigNumber.ROUND_UP);
 
+  return feeAmount;
+}
+
+export async function payReverseBondingCurveFee(
+  ctx: GalaChainContext,
+  sale: LaunchpadSale,
+  nativeTokensToReceive: BigNumber
+) {
+  const feeAmount = await calculateReverseBondingCurveFee(sale, nativeTokensToReceive);
+
+  if (!feeAmount.isZero()) {
+    return; // No fee
+  }
+
+  const nativeToken = sale.fetchNativeTokenInstanceKey();
   const { year, month, day } = txUnixTimeToDateIndexKeys(ctx.txUnixTime);
   const txId = ctx.stub.getTxID();
 

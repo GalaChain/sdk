@@ -12,7 +12,6 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-import assert from "assert";
 import {
   ChainCallDTO,
   ConfigureLaunchpadFeeAddressDto,
@@ -52,6 +51,7 @@ import {
   transactionErrorMessageContains,
   transactionSuccess
 } from "@gala-chain/test";
+import assert from "assert";
 import { BigNumber } from "bignumber.js";
 
 import {

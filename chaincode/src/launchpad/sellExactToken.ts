@@ -56,7 +56,8 @@ export async function sellExactToken(
 ): Promise<TradeResDto> {
   const sale = await fetchAndValidateSale(ctx, sellTokenDTO.vaultAddress);
 
-  let nativeTokensToProvide = new BigNumber(await callNativeTokenOut(ctx, sellTokenDTO));
+  const callNativeTokenOutResult = await callNativeTokenOut(ctx, sellTokenDTO);
+  let nativeTokensToProvide = new BigNumber(callNativeTokenOutResult.calculatedQuantity);
   const nativeTokensLeftInVault = new BigNumber(sale.nativeTokenQuantity);
   const nativeToken = sale.fetchNativeTokenInstanceKey();
   const memeToken = sale.fetchSellingTokenInstanceKey();
@@ -66,7 +67,8 @@ export async function sellExactToken(
     const nativeTokensBeingSoldDto = new NativeTokenQuantityDto();
     nativeTokensBeingSoldDto.vaultAddress = sellTokenDTO.vaultAddress;
     nativeTokensBeingSoldDto.nativeTokenQuantity = nativeTokensToProvide;
-    sellTokenDTO.tokenQuantity = new BigNumber(await callMemeTokenIn(ctx, nativeTokensBeingSoldDto));
+    const callMemeTokenInResult = await callMemeTokenIn(ctx, nativeTokensBeingSoldDto);
+    sellTokenDTO.tokenQuantity = new BigNumber(callMemeTokenInResult.calculatedQuantity);
   }
 
   if (

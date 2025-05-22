@@ -318,8 +318,18 @@ export class CollectFeeAddressDto extends ChainCallDTO {
   public platformFeeCollectAddress: string;
 }
 
+export class TradeCalculationResFeesDto {
+  @IsNotEmpty()
+  @IsString()
+  reverseBondingCurve: string;
+}
+
 export class TradeCalculationResDto {
   @IsNotEmpty()
   @IsString()
   public calculatedQuantity: string;
+
+  @ValidateNested({ each: true })
+  @Type(() => TradeCalculationResFeesDto)
+  public extraFees: TradeCalculationResFeesDto;
 }

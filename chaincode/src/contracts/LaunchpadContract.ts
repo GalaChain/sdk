@@ -149,7 +149,7 @@ export class LaunchpadContract extends GalaContract {
     ctx: GalaChainContext,
     dto: ExactTokenQuantityDto
   ): Promise<TradeCalculationResDto> {
-    return { calculatedQuantity: await callNativeTokenIn(ctx, dto) };
+    return callNativeTokenIn(ctx, dto);
   }
 
   @GalaTransaction({
@@ -161,7 +161,7 @@ export class LaunchpadContract extends GalaContract {
     ctx: GalaChainContext,
     dto: NativeTokenQuantityDto
   ): Promise<TradeCalculationResDto> {
-    return { calculatedQuantity: await callMemeTokenOut(ctx, dto) };
+    return callMemeTokenOut(ctx, dto);
   }
 
   @GalaTransaction({
@@ -173,7 +173,7 @@ export class LaunchpadContract extends GalaContract {
     ctx: GalaChainContext,
     dto: ExactTokenQuantityDto
   ): Promise<TradeCalculationResDto> {
-    return { calculatedQuantity: await callNativeTokenOut(ctx, dto) };
+    return callNativeTokenOut(ctx, dto);
   }
 
   @GalaTransaction({
@@ -185,7 +185,7 @@ export class LaunchpadContract extends GalaContract {
     ctx: GalaChainContext,
     dto: NativeTokenQuantityDto
   ): Promise<TradeCalculationResDto> {
-    return { calculatedQuantity: await callMemeTokenIn(ctx, dto) };
+    return callMemeTokenIn(ctx, dto);
   }
 
   @GalaTransaction({

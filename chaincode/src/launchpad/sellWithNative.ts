@@ -55,7 +55,9 @@ export async function sellWithNative(
   if (nativeTokensLeftInVault.comparedTo(sellTokenDTO.nativeTokenQuantity) < 0) {
     sellTokenDTO.nativeTokenQuantity = nativeTokensLeftInVault;
   }
-  const tokensToSell = new BigNumber(await callMemeTokenIn(ctx, sellTokenDTO));
+
+  const callMemeTokenInResult = await callMemeTokenIn(ctx, sellTokenDTO);
+  const tokensToSell = new BigNumber(callMemeTokenInResult.calculatedQuantity);
   const nativeToken = sale.fetchNativeTokenInstanceKey();
   const memeToken = sale.fetchSellingTokenInstanceKey();
 
