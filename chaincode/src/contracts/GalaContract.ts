@@ -205,7 +205,6 @@ export abstract class GalaContract extends Contract {
       sandboxCtx.stub.setDeletes(ctx.stub.getDeletes());
 
       // Execute the operation. Collect both successful and failed responses.
-      // Execute the operation. Collect both successful and failed responses.
       let response: GalaChainResponse<unknown>;
       try {
         if (writesCount >= writesLimit) {
