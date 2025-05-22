@@ -102,6 +102,7 @@ export class GalaChainContext extends Context {
 
   get callingUser(): string {
     if (this.callingUserValue === undefined) {
+      this.logger.error(new Error().stack ?? "No calling user set");
       throw new UnauthorizedError("No calling user set");
     }
     return this.callingUserValue;
@@ -143,12 +144,6 @@ export class GalaChainContext extends Context {
     this.isDryRun = true;
   }
 
-  public resetCallingUser(): void {
-    this.callingUserValue = undefined;
-    this.callingUserEthAddressValue = undefined;
-    this.callingUserTonAddressValue = undefined;
-  }
-
   get txUnixTime(): number {
     if (this.txUnixTimeValue === undefined) {
       this.txUnixTimeValue = getTxUnixTime(this);
@@ -156,8 +151,19 @@ export class GalaChainContext extends Context {
     return this.txUnixTimeValue;
   }
 
+  /**
+   * @returns a new, empty context that uses the same chaincode stub as
+   * the current context, but with dry run set (disables writes and deletes).
+   */
+  public createReadOnlyContext(): GalaChainContext {
+    const ctx = new GalaChainContext();
+    ctx.clientIdentity = this.clientIdentity;
+    ctx.setChaincodeStub(createGalaChainStub(this.stub, true));
+    return ctx;
+  }
+
   setChaincodeStub(stub: ChaincodeStub) {
-    const galaChainStub = createGalaChainStub(stub);
+    const galaChainStub = createGalaChainStub(stub, this.isDryRun);
     // eslint-disable-next-line @typescript-eslint/ban-ts-comment
     // @ts-ignore - missing typings for `setChaincodeStub` in `fabric-contract-api`
     // eslint-disable-next-line @typescript-eslint/ban-ts-comment

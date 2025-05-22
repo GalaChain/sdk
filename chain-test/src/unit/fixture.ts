@@ -60,6 +60,7 @@ type GalaChainStub = ChaincodeStub & {
   flushWrites(): Promise<void>;
   getReads(): Record<string, Uint8Array>;
   getWrites(): Record<string, Uint8Array>;
+  getWritesCount(): number;
   getDeletes(): Record<string, true>;
   setReads(reads: Record<string, Uint8Array>): void;
   setWrites(writes: Record<string, Uint8Array>): void;
@@ -74,7 +75,7 @@ type TestGalaChainContext = Context & {
   get callingUserEthAddress(): string;
   get callingUserTonAddress(): string;
   setDryRunOnBehalfOf(d: { alias: string; ethAddress: string | undefined }): void;
-  resetCallingUser(): void;
+  createReadOnlyContext(): TestGalaChainContext;
   isDryRun: boolean;
   get txUnixTime(): number;
   setChaincodeStub(stub: ChaincodeStub): void;
