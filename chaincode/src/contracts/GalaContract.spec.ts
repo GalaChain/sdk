@@ -41,7 +41,6 @@ import { inspect } from "util";
 import TestChaincode from "../__test__/TestChaincode";
 import TestGalaContract, { Superhero, SuperheroDto, SuperheroQueryDto } from "../__test__/TestGalaContract";
 import { GalaChainContext, createValidChainObject } from "../types";
-import { PublicKeyContract } from "./PublicKeyContract";
 
 /*
  * Test below verifies that the base class of TestGalaContract (i.e. GalaContract) provides stub to
@@ -601,12 +600,12 @@ describe("GalaContract.Batch", () => {
       transactionSuccess([
         transactionSuccess({
           callingUser: user1.identityKey,
-          txId: expect.any(String),
+          txId: expect.stringMatching(/^[a-zA-Z0-9_-]+|0$/),
           txUnixTime: expect.any(Number)
         }),
         transactionSuccess({
           callingUser: user2.identityKey,
-          txId: firstOperationResponse.txId,
+          txId: firstOperationResponse.txId.replace("|0", "|1"),
           txUnixTime: firstOperationResponse.txUnixTime
         })
       ])

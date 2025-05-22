@@ -40,8 +40,16 @@ class StubCache {
 
   constructor(
     private readonly stub: ChaincodeStub,
-    private readonly isReadOnly: boolean
+    private readonly isReadOnly: boolean,
+    private readonly index: number | undefined
   ) {}
+
+  getTxID(): string {
+    if (typeof this.index === "number") {
+      return this.stub.getTxID() + `|${this.index}`;
+    }
+    return this.stub.getTxID();
+  }
 
   async getCachedState(key: string): Promise<Uint8Array> {
     if (key in this.deletes) {
@@ -135,6 +143,10 @@ class StubCache {
       throw new NotImplementedError("Cannot flush writes in read-only mode");
     }
 
+    if (this.isReadOnly) {
+      throw new NotImplementedError("Cannot flush writes in read-only mode");
+    }
+
     const deleteOps = Object.keys(this.deletes).map((key) => this.stub.deleteState(key));
     const putOps = Object.entries(this.writes).map(([key, value]) => this.stub.putState(key, value));
     await Promise.all(deleteOps);
@@ -171,6 +183,8 @@ class StubCache {
 }
 
 export interface GalaChainStub extends ChaincodeStub {
+  getTxID(): string;
+
   getCachedState(key: string): Promise<Uint8Array>;
 
   getCachedStateByPartialCompositeKey(objectType: string, attributes: string[]): FabricIterable<CachedKV>;
@@ -192,8 +206,12 @@ export interface GalaChainStub extends ChaincodeStub {
   setDeletes(deletes: Record<string, true>): void;
 }
 
-export const createGalaChainStub = (stub: ChaincodeStub, isReadOnly: boolean): GalaChainStub => {
-  const cachedWrites = new StubCache(stub, isReadOnly);
+export const createGalaChainStub = (
+  stub: ChaincodeStub,
+  isReadOnly: boolean,
+  index: number | undefined
+): GalaChainStub => {
+  const cachedWrites = new StubCache(stub, isReadOnly, index);
 
   const proxyHandler = {
     get: function (target: GalaChainStub, name: string | symbol): unknown {
