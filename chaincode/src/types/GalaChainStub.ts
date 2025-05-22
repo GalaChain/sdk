@@ -214,6 +214,18 @@ export const createGalaChainStub = (stub: ChaincodeStub): GalaChainStub => {
       // eslint-disable-next-line @typescript-eslint/ban-ts-comment
       // @ts-ignore
       return name in cachedWrites ? cachedWrites[name] : target[name];
+    },
+    set: function (target: GalaChainStub, name: string | symbol, value: unknown): boolean {
+      if (name in cachedWrites) {
+        // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+        // @ts-ignore
+        cachedWrites[name] = value;
+        return true;
+      }
+      // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+      // @ts-ignore
+      target[name] = value;
+      return true;
     }
   };
 

@@ -386,7 +386,11 @@ describe("GalaContract.DryRun", () => {
       ErrorCode: 404,
       ErrorKey: "NOT_FOUND",
       Message:
-        "Method UnknownMethod is not available. Available methods: BatchEvaluate, BatchSubmit, CreateSuperhero, DryRun, ErrorAfterPutKv, GetChaincodeVersion, GetContractAPI, GetContractVersion, GetKv, GetObjectByKey, GetObjectHistory, PutKv, QuerySuperheroes"
+        "Method UnknownMethod is not available. Available methods: " +
+        "BatchEvaluate, BatchSubmit, CreateSuperhero, DryRun, ErrorAfterPutKv, " +
+        "ErrorAfterPutNestedKv, GetChaincodeVersion, GetContractAPI, GetContractVersion, " +
+        "GetKv, GetNestedKv, GetObjectByKey, GetObjectHistory, " +
+        "GetSetPutNestedKv, PutKv, PutNestedKv, QuerySuperheroes"
     });
   });
 
@@ -553,5 +557,67 @@ describe("GalaContract.Batch", () => {
       expect.stringContaining("unique-key-2"),
       expect.stringContaining("test-key-2")
     ]);
+  });
+
+  it("should reset writes occurring during failed transactions", async () => {
+    // Given
+    const chaincode = new TestChaincode([TestGalaContract]);
+    const batchSubmit1 = plainToInstance(BatchDto, {
+      operations: [
+        {
+          method: "PutNestedKv",
+          dto: { key: "test-key-1", array: ["robot"], uniqueKey: "unique-key-1-1" }
+        },
+        {
+          method: "ErrorAfterPutNestedKv",
+          dto: { key: "test-key-1", array: ["robot", "zerg"], uniqueKey: "unique-key-1-2" }
+        },
+        {
+          method: "GetSetPutNestedKv",
+          dto: { key: "test-key-1", array: ["human"], uniqueKey: "unique-key-1-3" }
+        }
+      ],
+      uniqueKey: "unique-key-batch-1",
+      writesLimit: 1000
+    });
+
+    const batchSubmit2 = plainToInstance(BatchDto, {
+      operations: [
+        {
+          method: "PutNestedKv",
+          dto: { key: "test-key-2", array: ["robot"], uniqueKey: "unique-key-2-1" }
+        },
+        {
+          method: "GetSetPutNestedKv",
+          dto: { key: "test-key-2", array: ["zerg"], uniqueKey: "unique-key-2-2" }
+        },
+        {
+          method: "GetSetPutNestedKv",
+          dto: { key: "test-key-2", array: ["human"], uniqueKey: "unique-key-2-3" }
+        }
+      ],
+      uniqueKey: "unique-key-batch-2",
+      writesLimit: 1000
+    });
+
+    // When
+    const response1 = await chaincode.invoke("TestGalaContract:BatchSubmit", batchSubmit1.serialize());
+    const response2 = await chaincode.invoke("TestGalaContract:BatchSubmit", batchSubmit2.serialize());
+
+    // Then
+    expect(response1).toEqual(
+      transactionSuccess([
+        transactionSuccess(),
+        transactionErrorMessageContains("Some error after put was invoked"),
+        transactionSuccess({ key: "test-key-1", array: ["robot", "human"] })
+      ])
+    );
+    expect(response2).toEqual(
+      transactionSuccess([
+        transactionSuccess(),
+        transactionSuccess({ key: "test-key-2", array: ["robot", "zerg"] }),
+        transactionSuccess({ key: "test-key-2", array: ["robot", "zerg", "human"] })
+      ])
+    );
   });
 });
