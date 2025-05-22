@@ -40,8 +40,16 @@ class StubCache {
 
   constructor(
     private readonly stub: ChaincodeStub,
-    private readonly isReadOnly: boolean
+    private readonly isReadOnly: boolean,
+    private readonly index: number | undefined
   ) {}
+
+  getTxId(): string {
+    if (typeof this.index === "number") {
+      return this.stub.getTxID() + `|${this.index}`;
+    }
+    return this.stub.getTxID();
+  }
 
   async getCachedState(key: string): Promise<Uint8Array> {
     if (key in this.deletes) {
@@ -192,8 +200,12 @@ export interface GalaChainStub extends ChaincodeStub {
   setDeletes(deletes: Record<string, true>): void;
 }
 
-export const createGalaChainStub = (stub: ChaincodeStub, isReadOnly: boolean): GalaChainStub => {
-  const cachedWrites = new StubCache(stub, isReadOnly);
+export const createGalaChainStub = (
+  stub: ChaincodeStub,
+  isReadOnly: boolean,
+  index: number | undefined
+): GalaChainStub => {
+  const cachedWrites = new StubCache(stub, isReadOnly, index);
 
   const proxyHandler = {
     get: function (target: GalaChainStub, name: string | symbol): unknown {

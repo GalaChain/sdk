@@ -601,12 +601,12 @@ describe("GalaContract.Batch", () => {
       transactionSuccess([
         transactionSuccess({
           callingUser: user1.identityKey,
-          txId: expect.any(String),
+          txId: expect.stringMatching(/^[a-zA-Z0-9_]+|0$/),
           txUnixTime: expect.any(Number)
         }),
         transactionSuccess({
           callingUser: user2.identityKey,
-          txId: firstOperationResponse.txId,
+          txId: firstOperationResponse.txId.replace("|0", "|1"),
           txUnixTime: firstOperationResponse.txUnixTime
         })
       ])

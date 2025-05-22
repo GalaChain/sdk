@@ -197,10 +197,10 @@ export abstract class GalaContract extends Contract {
     const writesLimit = Math.min(softWritesLimit, BatchDto.WRITES_HARD_LIMIT);
     let writesCount = ctx.stub.getWritesCount();
 
-    for (const op of batchDto.operations) {
+    for (const [index, op] of batchDto.operations.entries()) {
       // Use sandboxed context to avoid flushes of writes and deletes, and populate
       // the stub with current writes and deletes.
-      const sandboxCtx = ctx.createReadOnlyContext();
+      const sandboxCtx = ctx.createReadOnlyContext(index);
       sandboxCtx.stub.setWrites(ctx.stub.getWrites());
       sandboxCtx.stub.setDeletes(ctx.stub.getDeletes());
 
@@ -241,9 +241,9 @@ export abstract class GalaContract extends Contract {
   ): Promise<GalaChainResponse<unknown>[]> {
     const responses: GalaChainResponse<unknown>[] = [];
 
-    for (const op of batchDto.operations) {
+    for (const [index, op] of batchDto.operations.entries()) {
       // Create a new context for each operation
-      const sandboxCtx = ctx.createReadOnlyContext();
+      const sandboxCtx = ctx.createReadOnlyContext(index);
 
       // Execute the operation. Collect both successful and failed responses.
       let response: GalaChainResponse<unknown>;

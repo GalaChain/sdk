@@ -155,15 +155,15 @@ export class GalaChainContext extends Context {
    * @returns a new, empty context that uses the same chaincode stub as
    * the current context, but with dry run set (disables writes and deletes).
    */
-  public createReadOnlyContext(): GalaChainContext {
+  public createReadOnlyContext(index: number | undefined): GalaChainContext {
     const ctx = new GalaChainContext();
     ctx.clientIdentity = this.clientIdentity;
-    ctx.setChaincodeStub(createGalaChainStub(this.stub, true));
+    ctx.setChaincodeStub(createGalaChainStub(this.stub, true, index));
     return ctx;
   }
 
   setChaincodeStub(stub: ChaincodeStub) {
-    const galaChainStub = createGalaChainStub(stub, this.isDryRun);
+    const galaChainStub = createGalaChainStub(stub, this.isDryRun, undefined);
     // eslint-disable-next-line @typescript-eslint/ban-ts-comment
     // @ts-ignore - missing typings for `setChaincodeStub` in `fabric-contract-api`
     // eslint-disable-next-line @typescript-eslint/ban-ts-comment
