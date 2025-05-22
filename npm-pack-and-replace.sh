@@ -52,7 +52,8 @@ replace_in_pwd_package_json() {
   # pack the package
   pushd "$path"
   npm run build
-  tar_file="$(npm pack --pack-destination="$current_dir" | tail -n 1)"
+  pack_out=$(npm pack --pack-destination="$current_dir")
+  tar_file=$(tail -n 1 <<<"$pack_out")
   popd
 
   # update package json with reference to the file
