@@ -112,7 +112,7 @@ describe("updates/flush", () => {
     const flushOp = cachedWrites.flushWrites();
 
     // Then
-    expect(flushOp).rejects.toThrow("Cannot flush writes in dry run mode");
+    expect(flushOp).rejects.toThrow("Cannot flush writes in read-only mode");
   });
 });
 
