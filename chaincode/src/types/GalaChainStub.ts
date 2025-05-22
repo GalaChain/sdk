@@ -40,7 +40,7 @@ class StubCache {
 
   constructor(
     private readonly stub: ChaincodeStub,
-    private readonly isDryRun: boolean
+    private readonly isReadOnly: boolean
   ) {}
 
   async getCachedState(key: string): Promise<Uint8Array> {
@@ -131,8 +131,8 @@ class StubCache {
   }
 
   async flushWrites(): Promise<void> {
-    if (this.isDryRun) {
-      throw new NotImplementedError("Cannot flush writes in dry run mode");
+    if (this.isReadOnly) {
+      throw new NotImplementedError("Cannot flush writes in read-only mode");
     }
 
     const deleteOps = Object.keys(this.deletes).map((key) => this.stub.deleteState(key));
@@ -192,8 +192,8 @@ export interface GalaChainStub extends ChaincodeStub {
   setDeletes(deletes: Record<string, true>): void;
 }
 
-export const createGalaChainStub = (stub: ChaincodeStub, isDryRun: boolean): GalaChainStub => {
-  const cachedWrites = new StubCache(stub, isDryRun);
+export const createGalaChainStub = (stub: ChaincodeStub, isReadOnly: boolean): GalaChainStub => {
+  const cachedWrites = new StubCache(stub, isReadOnly);
 
   const proxyHandler = {
     get: function (target: GalaChainStub, name: string | symbol): unknown {

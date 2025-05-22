@@ -297,4 +297,18 @@ export default class TestGalaContract extends GalaContract {
     await new Promise((resolve) => setTimeout(() => resolve(undefined), 50));
     return result;
   }
+
+  @GalaTransaction({
+    type: SUBMIT,
+    in: ChainCallDTO,
+    enforceUniqueKey: true,
+    allowedOrgs: ["CuratorOrg"]
+  })
+  public async GetCtxData(ctx: GalaChainContext, dto: ChainCallDTO): Promise<unknown> {
+    return {
+      callingUser: ctx.callingUser,
+      txId: ctx.stub.getTxID(),
+      txUnixTime: ctx.txUnixTime
+    };
+  }
 }

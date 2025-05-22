@@ -21,8 +21,13 @@ import {
   GalaChainResponse,
   GalaChainResponseType,
   GetObjectDto,
-  createValidDTO
+  PublicKey,
+  SigningScheme,
+  UserProfile,
+  createValidDTO,
+  signatures
 } from "@gala-chain/api";
+import { ChainUser } from "@gala-chain/client";
 import {
   transactionError,
   transactionErrorKey,
@@ -36,6 +41,7 @@ import { inspect } from "util";
 import TestChaincode from "../__test__/TestChaincode";
 import TestGalaContract, { Superhero, SuperheroDto, SuperheroQueryDto } from "../__test__/TestGalaContract";
 import { GalaChainContext, createValidChainObject } from "../types";
+import { PublicKeyContract } from "./PublicKeyContract";
 
 /*
  * Test below verifies that the base class of TestGalaContract (i.e. GalaContract) provides stub to
@@ -564,4 +570,67 @@ describe("GalaContract.Batch", () => {
       "test-key-1": "human"
     });
   });
+
+  it("should get proper ctx data for transactions in batch", async () => {
+    // Given
+    const { user: user1, state: state1 } = await generateUser("user1");
+    const { user: user2, state: state2 } = await generateUser();
+
+    const signedDto = (u: ChainUser, uniqueKey: string) =>
+      plainToInstance(ChainCallDTO, { uniqueKey }).signed(u.privateKey);
+
+    const chaincode = new TestChaincode([TestGalaContract], { ...state1, ...state2 });
+
+    const batchSubmit = plainToInstance(BatchDto, {
+      operations: [
+        { method: "GetCtxData", dto: signedDto(user1, "test-key-1") },
+        { method: "GetCtxData", dto: signedDto(user2, "test-key-2") }
+      ]
+    });
+
+    // When
+    const response = await chaincode.invoke<GalaChainResponse<GalaChainResponse<unknown>[]>>(
+      "TestGalaContract:BatchSubmit",
+      batchSubmit.serialize()
+    );
+
+    // Then
+    const firstOperationResponse = response?.Data?.[0]?.Data as { txUnixTime: number; txId: string };
+
+    expect(response).toEqual(
+      transactionSuccess([
+        transactionSuccess({
+          callingUser: user1.identityKey,
+          txId: expect.any(String),
+          txUnixTime: expect.any(Number)
+        }),
+        transactionSuccess({
+          callingUser: user2.identityKey,
+          txId: firstOperationResponse.txId,
+          txUnixTime: firstOperationResponse.txUnixTime
+        })
+      ])
+    );
+  });
 });
+
+async function generateUser(name?: string) {
+  const user = ChainUser.withRandomKeys(name);
+
+  const publicKey = await createValidChainObject(PublicKey, {
+    publicKey: signatures.normalizePublicKey(user.publicKey).toString("base64"),
+    signing: SigningScheme.ETH
+  });
+
+  const userProfile = await createValidChainObject(UserProfile, {
+    alias: user.identityKey,
+    ethAddress: user.ethAddress
+  });
+
+  const state = {
+    [`\u0000GCPK\u0000${user.identityKey}\u0000`]: publicKey.serialize(),
+    [`\u0000GCUP\u0000${user.ethAddress}\u0000`]: userProfile.serialize()
+  };
+
+  return { user, state };
+}
