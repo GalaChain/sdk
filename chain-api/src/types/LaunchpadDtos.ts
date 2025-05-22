@@ -200,7 +200,10 @@ export class ExactTokenQuantityDto extends ChainCallDTO {
   @BigNumberProperty()
   @IsOptional()
   public expectedNativeToken?: BigNumber;
-  tokenAmount: BigNumber;
+
+  @BigNumberProperty()
+  @IsOptional()
+  public maxAcceptableFee?: BigNumber;
 
   constructor(vaultAddress = "", tokenQuantity: BigNumber = new BigNumber(0)) {
     super();
@@ -221,6 +224,10 @@ export class NativeTokenQuantityDto extends ChainCallDTO {
   @BigNumberProperty()
   @IsOptional()
   public expectedToken?: BigNumber;
+
+  @BigNumberProperty()
+  @IsOptional()
+  public maxAcceptableFee?: BigNumber;
 
   constructor(vaultAddress = "", nativeTokenQuantity: BigNumber = new BigNumber(0)) {
     super();

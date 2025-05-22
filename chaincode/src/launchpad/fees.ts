@@ -1,4 +1,4 @@
-import { FeeReceiptStatus, LaunchpadSale } from "@gala-chain/api";
+import { FeeReceiptStatus, LaunchpadSale, SlippageToleranceExceededError } from "@gala-chain/api";
 import BigNumber from "bignumber.js";
 
 import { burnTokens } from "../burns";
@@ -35,12 +35,17 @@ export function calculateReverseBondingCurveFee(sale: LaunchpadSale, nativeToken
 export async function payReverseBondingCurveFee(
   ctx: GalaChainContext,
   sale: LaunchpadSale,
-  nativeTokensToReceive: BigNumber
+  nativeTokensToReceive: BigNumber,
+  maxAcceptableFee?: BigNumber
 ) {
   const feeAmount = await calculateReverseBondingCurveFee(sale, nativeTokensToReceive);
 
   if (feeAmount.isZero()) {
     return; // No fee
+  }
+
+  if (maxAcceptableFee && feeAmount.isGreaterThan(maxAcceptableFee)) {
+    throw new SlippageToleranceExceededError("Fee exceeds maximum acceptable amount");
   }
 
   const nativeToken = sale.fetchNativeTokenInstanceKey();
