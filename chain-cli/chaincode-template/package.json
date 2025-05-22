@@ -1,6 +1,6 @@
 {
   "name": "@galachain/product",
-  "version": "1.9.13",
+  "version": "1.9.14",
   "description": "Product Chaincode",
   "main": "lib/src/index.js",
   "types": "lib/src/index.d.ts",
@@ -23,17 +23,17 @@
     "update-snapshot": "jest --updateSnapshot"
   },
   "dependencies": {
-    "@gala-chain/api": "1.9.13",
-    "@gala-chain/chaincode": "1.9.13",
+    "@gala-chain/api": "1.9.14",
+    "@gala-chain/chaincode": "1.9.14",
     "@grpc/grpc-js": "1.10.10",
     "dotenv": "^16.0.1",
     "fabric-contract-api": "2.5.6",
     "fabric-shim": "2.5.6"
   },
   "devDependencies": {
-    "@gala-chain/cli": "1.9.13",
-    "@gala-chain/client": "1.9.13",
-    "@gala-chain/test": "1.9.13",
+    "@gala-chain/cli": "1.9.14",
+    "@gala-chain/client": "1.9.14",
+    "@gala-chain/test": "1.9.14",
     "@trivago/prettier-plugin-sort-imports": "^4.3.0",
     "@types/jest": "^29.5.12",
     "@types/node": "18.11.9",
