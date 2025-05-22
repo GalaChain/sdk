@@ -39,7 +39,7 @@ export async function payReverseBondingCurveFee(
 ) {
   const feeAmount = await calculateReverseBondingCurveFee(sale, nativeTokensToReceive);
 
-  if (!feeAmount.isZero()) {
+  if (feeAmount.isZero()) {
     return; // No fee
   }
 

@@ -1994,7 +1994,7 @@ describe("LaunchpadContract", () => {
 
       const tokenBalance = await getTokenBalance(user1.identityKey, "UnitTest", "Test", "FST");
       expect(tokenBalance.toString()).toEqual("2000000.0000782183679");
-      const sellAmount = new BigNumber("1000000"); // Sell half the tokens
+      const sellAmount = new BigNumber("1000000");
 
       const initialGalaBalance = await getTokenBalance(user1.identityKey, "GALA", "Unit", "none");
 
