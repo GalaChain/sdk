@@ -26,7 +26,6 @@ import { transferToken } from "../transfer/transferToken";
 import { GalaChainContext } from "../types";
 import { getObjectByKey, txUnixTimeToDateIndexKeys } from "../utils";
 
-const REVERSE_BONDING_CURVE_FEE_ALPHA = new BigNumber("0.5"); // 50% of the amount of native token to be received
 const REVERSE_BONDING_CURVE_FEE_CODE = "LaunchpadReverseBondingCurveFee";
 const NATIVE_TOKEN_DECIMALS = 8;
 
@@ -38,11 +37,11 @@ export function calculateReverseBondingCurveFee(sale: LaunchpadSale, nativeToken
     return BigNumber(0);
   }
 
+  const circulatingSupplyProportional = sale.fetchCirculatingSupplyProportional();
   const { minFeePortion, maxFeePortion } = sale.reverseBondingCurveConfiguration;
   const feePortionDiff = maxFeePortion.minus(minFeePortion);
-  const adjustedAlpha = REVERSE_BONDING_CURVE_FEE_ALPHA.multipliedBy(feePortionDiff);
-  const feePortion = minFeePortion.plus(adjustedAlpha);
-  const circulatingSupplyProportional = sale.fetchCirculatingSupplyProportional();
+  const portionAboveBaseline = circulatingSupplyProportional.multipliedBy(feePortionDiff);
+  const feePortion = minFeePortion.plus(portionAboveBaseline);
 
   const feeAmount = circulatingSupplyProportional
     .multipliedBy(feePortion)
