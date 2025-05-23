@@ -2168,7 +2168,8 @@ describe("LaunchpadContract", () => {
       sellDTO.tokenQuantity = sellAmount;
 
       const calcResponse = await client.Launchpad.CallNativeTokenOut(sellDTO);
-      const feeExpected = BigNumber(calcResponse.Data!.extraFees.reverseBondingCurve);
+      assert(calcResponse.Data, "Calculation response is undefined");
+      const feeExpected = BigNumber(calcResponse.Data.extraFees.reverseBondingCurve);
       const expectedNativeOutWithoutFees = new BigNumber(calcResponse.Data?.calculatedQuantity || "0");
 
       sellDTO.sign(user1.privateKey);
