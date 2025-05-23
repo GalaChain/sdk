@@ -23,7 +23,11 @@ import { ChainObject } from "./ChainObject";
 
 export class TickData extends ChainObject {
   @Exclude()
+<<<<<<< Updated upstream
   static INDEX_KEY = "GCDXTD"; //GalaChain Decentralised Exchange Tick Data
+=======
+  static INDEX_KEY = "GCDEXCHLTD"; //GalaChain Decentralised EXCHange Liqudity Tick Data
+>>>>>>> Stashed changes
 
   @JSONSchema({
     description: "Minimum tick value allowed for the pool"
