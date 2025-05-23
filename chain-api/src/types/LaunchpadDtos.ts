@@ -13,12 +13,64 @@
  * limitations under the License.
  */
 import BigNumber from "bignumber.js";
-import { IsBoolean, IsNotEmpty, IsNumber, IsOptional, IsString, Max, Min } from "class-validator";
+import { Type } from "class-transformer";
+import {
+  IsBoolean,
+  IsNotEmpty,
+  IsNumber,
+  IsOptional,
+  IsString,
+  Max,
+  Min,
+  ValidateNested
+} from "class-validator";
 
-import { BigNumberProperty } from "../validators";
+import {
+  BigNumberIsNotNegative,
+  BigNumberLessThanOrEqualOther,
+  BigNumberMax,
+  BigNumberProperty
+} from "../validators";
 import { IsNonZeroBigNumber } from "../validators";
+import { ChainObject } from "./ChainObject";
 import { TokenBalance } from "./TokenBalance";
 import { ChainCallDTO } from "./dtos";
+
+export class ReverseBondingCurveConfigurationChainObject extends ChainObject {
+  @BigNumberProperty()
+  @BigNumberIsNotNegative()
+  @BigNumberMax("0.5")
+  @BigNumberLessThanOrEqualOther("maxFeePortion")
+  minFeePortion: BigNumber;
+
+  @BigNumberProperty()
+  @BigNumberIsNotNegative()
+  @BigNumberMax("0.5")
+  maxFeePortion: BigNumber;
+
+  constructor(minFeePortion: BigNumber, maxFeePortion: BigNumber) {
+    super();
+    this.minFeePortion = minFeePortion;
+    this.maxFeePortion = maxFeePortion;
+  }
+}
+
+export class ReverseBondingCurveConfigurationDto extends ChainCallDTO {
+  @BigNumberProperty()
+  @BigNumberIsNotNegative()
+  @BigNumberMax("0.5")
+  @BigNumberLessThanOrEqualOther("maxFeePortion")
+  minFeePortion: BigNumber;
+
+  @BigNumberProperty()
+  @BigNumberIsNotNegative()
+  @BigNumberMax("0.5")
+  maxFeePortion: BigNumber;
+
+  toChainObject(): ReverseBondingCurveConfigurationChainObject {
+    return new ReverseBondingCurveConfigurationChainObject(this.minFeePortion, this.maxFeePortion);
+  }
+}
 
 export class CreateTokenSaleDTO extends ChainCallDTO {
   @IsString()
@@ -60,6 +112,11 @@ export class CreateTokenSaleDTO extends ChainCallDTO {
   @IsOptional()
   public twitterUrl?: string;
 
+  @IsOptional()
+  @ValidateNested()
+  @Type(() => ReverseBondingCurveConfigurationDto)
+  public reverseBondingCurveConfiguration?: ReverseBondingCurveConfigurationDto;
+
   constructor(
     tokenName: string,
     tokenSymbol: string,
@@ -67,7 +124,8 @@ export class CreateTokenSaleDTO extends ChainCallDTO {
     tokenImage: string,
     preBuyQuantity: BigNumber,
     tokenCollection: string,
-    tokenCategory: string
+    tokenCategory: string,
+    reverseBondingCurveConfiguration?: ReverseBondingCurveConfigurationDto
   ) {
     super();
     this.tokenName = tokenName;
@@ -77,6 +135,7 @@ export class CreateTokenSaleDTO extends ChainCallDTO {
     this.preBuyQuantity = preBuyQuantity;
     this.tokenCollection = tokenCollection;
     this.tokenCategory = tokenCategory;
+    this.reverseBondingCurveConfiguration = reverseBondingCurveConfiguration;
   }
 }
 
@@ -129,6 +188,12 @@ export class CreateSaleResDto {
   public tokenStringKey: string;
 }
 
+export class TokenExtraFeesDto {
+  @BigNumberProperty()
+  @IsOptional()
+  public maxAcceptableReverseBondingCurveFee?: BigNumber;
+}
+
 export class ExactTokenQuantityDto extends ChainCallDTO {
   @IsString()
   @IsNotEmpty()
@@ -141,7 +206,11 @@ export class ExactTokenQuantityDto extends ChainCallDTO {
   @BigNumberProperty()
   @IsOptional()
   public expectedNativeToken?: BigNumber;
-  tokenAmount: BigNumber;
+
+  @ValidateNested()
+  @Type(() => TokenExtraFeesDto)
+  @IsOptional()
+  public extraFees?: TokenExtraFeesDto;
 
   constructor(vaultAddress = "", tokenQuantity: BigNumber = new BigNumber(0)) {
     super();
@@ -162,6 +231,11 @@ export class NativeTokenQuantityDto extends ChainCallDTO {
   @BigNumberProperty()
   @IsOptional()
   public expectedToken?: BigNumber;
+
+  @ValidateNested()
+  @Type(() => TokenExtraFeesDto)
+  @IsOptional()
+  public extraFees?: TokenExtraFeesDto;
 
   constructor(vaultAddress = "", nativeTokenQuantity: BigNumber = new BigNumber(0)) {
     super();
@@ -259,8 +333,18 @@ export class CollectFeeAddressDto extends ChainCallDTO {
   public platformFeeCollectAddress: string;
 }
 
+export class TradeCalculationResFeesDto {
+  @IsNotEmpty()
+  @IsString()
+  reverseBondingCurve: string;
+}
+
 export class TradeCalculationResDto {
   @IsNotEmpty()
   @IsString()
   public calculatedQuantity: string;
+
+  @ValidateNested({ each: true })
+  @Type(() => TradeCalculationResFeesDto)
+  public extraFees: TradeCalculationResFeesDto;
 }

@@ -58,14 +58,16 @@ export async function buyExactToken(
   const tokenLeftInVault = new BigNumber(sale.sellingTokenQuantity);
 
   // Calculate the required amount of native tokens to buy the specified token amount
-  let nativeTokensToBuy = new BigNumber(await callNativeTokenIn(ctx, buyTokenDTO));
+  const callNativeTokenInResult1 = await callNativeTokenIn(ctx, buyTokenDTO);
+  let nativeTokensToBuy = new BigNumber(callNativeTokenInResult1.calculatedQuantity);
   const nativeToken = sale.fetchNativeTokenInstanceKey();
   const memeToken = sale.fetchSellingTokenInstanceKey();
 
   // If the requested token amount exceeds what's available, adjust it and recalculate native tokens needed
   if (tokenLeftInVault.lte(buyTokenDTO.tokenQuantity)) {
     buyTokenDTO.tokenQuantity = tokenLeftInVault;
-    nativeTokensToBuy = new BigNumber(await callNativeTokenIn(ctx, buyTokenDTO));
+    const callNativeTokenInResult2 = await callNativeTokenIn(ctx, buyTokenDTO);
+    nativeTokensToBuy = new BigNumber(callNativeTokenInResult2.calculatedQuantity);
     isSaleFinalised = true;
   }
 

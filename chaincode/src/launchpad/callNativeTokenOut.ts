@@ -12,43 +12,22 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-import { ExactTokenQuantityDto } from "@gala-chain/api";
+import { ExactTokenQuantityDto, LaunchpadSale } from "@gala-chain/api";
 import { BigNumber } from "bignumber.js";
 import Decimal from "decimal.js";
 
 import { GalaChainContext } from "../types";
 import { fetchAndValidateSale, getBondingConstants } from "../utils";
+import { calculateReverseBondingCurveFee } from "./fees";
 
 BigNumber.config({
   ROUNDING_MODE: BigNumber.ROUND_UP
 });
 
-/**
- * Calculates the amount of native tokens a user would receive when selling
- * a specified amount of tokens based on a bonding curve mechanism.
- *
- * This function retrieves the sale details and applies the bonding curve formula
- * to determine the value in native tokens for the given token amount.
- *
- * @param ctx - The context object providing access to the GalaChain environment.
- * @param sellTokenDTO - The data transfer object containing the sale address
- *                       and the exact amount of tokens to be sold.
- *
- * @returns A promise that resolves to a string representing the calculated amount of
- *          native tokens to be received, rounded down to 8 decimal places.
- *
- * @throws DefaultError if the calculated new total tokens sold is less than zero
- *                      or if the input amount is invalid.
- */
-export async function callNativeTokenOut(
-  ctx: GalaChainContext,
-  sellTokenDTO: ExactTokenQuantityDto
-): Promise<string> {
-  const sale = await fetchAndValidateSale(ctx, sellTokenDTO.vaultAddress);
-
+function calculateNativeTokensReceived(sale: LaunchpadSale, tokensToSellBn: BigNumber) {
   const totalTokensSold = new Decimal(sale.fetchTokensSold());
 
-  let tokensToSell = new Decimal(sellTokenDTO.tokenQuantity.toString());
+  let tokensToSell = new Decimal(tokensToSellBn.toString());
   const basePrice = new Decimal(sale.fetchBasePrice());
   const { exponentFactor, euler, decimals } = getBondingConstants();
 
@@ -71,4 +50,32 @@ export async function callNativeTokenOut(
   const roundedPrice = price.toDecimalPlaces(8, Decimal.ROUND_DOWN);
 
   return roundedPrice.toFixed();
+}
+
+/**
+ * Calculates the amount of native tokens a user would receive when selling
+ * a specified amount of tokens based on a bonding curve mechanism.
+ *
+ * This function retrieves the sale details and applies the bonding curve formula
+ * to determine the value in native tokens for the given token amount.
+ *
+ * @param ctx - The context object providing access to the GalaChain environment.
+ * @param sellTokenDTO - The data transfer object containing the sale address
+ *                       and the exact amount of tokens to be sold.
+ *
+ * @returns A promise that resolves to a string representing the calculated amount of
+ *          native tokens to be received, rounded down to 8 decimal places.
+ *
+ * @throws DefaultError if the calculated new total tokens sold is less than zero
+ *                      or if the input amount is invalid.
+ */
+export async function callNativeTokenOut(ctx: GalaChainContext, sellTokenDTO: ExactTokenQuantityDto) {
+  const sale = await fetchAndValidateSale(ctx, sellTokenDTO.vaultAddress);
+  const nativeTokensReceived = calculateNativeTokensReceived(sale, sellTokenDTO.tokenQuantity);
+  return {
+    calculatedQuantity: nativeTokensReceived,
+    extraFees: {
+      reverseBondingCurve: calculateReverseBondingCurveFee(sale, BigNumber(nativeTokensReceived)).toString()
+    }
+  };
 }

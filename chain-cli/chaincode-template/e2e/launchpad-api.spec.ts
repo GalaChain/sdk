@@ -33,6 +33,7 @@ import {
   Pool,
   PreMintCalculationDto,
   RegisterEthUserDto,
+  ReverseBondingCurveConfigurationDto,
   SaleStatus,
   TokenBalance,
   TokenClassKey,
@@ -50,6 +51,7 @@ import {
   transactionErrorMessageContains,
   transactionSuccess
 } from "@gala-chain/test";
+import assert from "assert";
 import { BigNumber } from "bignumber.js";
 
 import {
@@ -181,10 +183,7 @@ describe("LaunchpadContract", () => {
     return new BigNumber(balanceValue);
   }
 
-  test("Creating Test Gala for Test", async () => {
-    // Creating Gala Dummy token for Buying
-    // Minting 100,000,000GALA  to user1
-
+  async function createGala() {
     const registerGalaAuthorityDto = new RegisterEthUserDto();
     registerGalaAuthorityDto.publicKey = signatures.getPublicKey(
       GALA_AUTHORITY_PRIVATE_KEY.replace("0x", "")
@@ -240,17 +239,17 @@ describe("LaunchpadContract", () => {
     FetchBalancesDTO.category = "Unit";
     FetchBalancesDTO.type = "none";
 
-    const tokenIntance = new TokenInstanceKey();
-    tokenIntance.collection = "GALA";
-    tokenIntance.category = "Unit";
-    tokenIntance.type = "none";
-    tokenIntance.additionalKey = "none";
-    tokenIntance.instance = new BigNumber(0);
+    const tokenInstance = new TokenInstanceKey();
+    tokenInstance.collection = "GALA";
+    tokenInstance.category = "Unit";
+    tokenInstance.type = "none";
+    tokenInstance.additionalKey = "none";
+    tokenInstance.instance = new BigNumber(0);
 
     const transferTokenDto = new TransferTokenDto();
     transferTokenDto.from = user1.identityKey;
     transferTokenDto.to = user2.identityKey;
-    transferTokenDto.tokenInstance = tokenIntance;
+    transferTokenDto.tokenInstance = tokenInstance;
     transferTokenDto.quantity = new BigNumber("5e+6");
     transferTokenDto.sign(user1.privateKey);
 
@@ -261,12 +260,19 @@ describe("LaunchpadContract", () => {
     const transferTokenUserDto = new TransferTokenDto();
     transferTokenUserDto.from = user1.identityKey;
     transferTokenUserDto.to = user.identityKey;
-    transferTokenUserDto.tokenInstance = tokenIntance;
+    transferTokenUserDto.tokenInstance = tokenInstance;
     transferTokenUserDto.quantity = new BigNumber("2e+6");
     transferTokenUserDto.sign(user1.privateKey);
 
     const transferResponse2 = await client1.token.TransferToken(transferTokenUserDto);
     expect(transferResponse2.Status).toBe(1);
+  }
+
+  test("Creating Test Gala for Test", async () => {
+    // Creating Gala Dummy token for Buying
+    // Minting 100,000,000GALA  to user1
+
+    await createGala();
   });
 
   describe("Create Sale ", () => {
@@ -628,7 +634,7 @@ describe("LaunchpadContract", () => {
       //Gala Balance Before Buy
       const galaBalanceBeforeBuy = await getTokenBalance(user1.identityKey, "GALA", "Unit", "none");
 
-      buyWithNativeDTO.sign(user1.privateKey);
+      buyWithNativeDTO.sign(user.privateKey);
 
       await client.Launchpad.BuyWithNative(buyWithNativeDTO);
 
@@ -638,7 +644,7 @@ describe("LaunchpadContract", () => {
       sellWithNativeDTO.vaultAddress = vaultAddress;
       sellWithNativeDTO.nativeTokenQuantity = new BigNumber("31.27520343");
 
-      sellWithNativeDTO.sign(user1.privateKey);
+      sellWithNativeDTO.sign(user.privateKey);
 
       await client.Launchpad.SellWithNative(sellWithNativeDTO);
 
@@ -1119,7 +1125,7 @@ describe("LaunchpadContract", () => {
       buyWithNativeDTO.vaultAddress = vaultAddress;
       buyWithNativeDTO.nativeTokenQuantity = new BigNumber("100");
 
-      buyWithNativeDTO.sign(user1.privateKey);
+      buyWithNativeDTO.sign(user.privateKey);
       await client.Launchpad.BuyWithNative(buyWithNativeDTO);
 
       //Sell With Native
@@ -1151,7 +1157,7 @@ describe("LaunchpadContract", () => {
 
       const buyWithExactDTO = new ExactTokenQuantityDto();
       buyWithExactDTO.vaultAddress = vaultAddress;
-      buyWithExactDTO.tokenAmount = new BigNumber("2000000");
+      buyWithExactDTO.expectedNativeToken = new BigNumber("2000000");
 
       buyWithExactDTO.sign(user1.privateKey);
 
@@ -1798,6 +1804,386 @@ describe("LaunchpadContract", () => {
 
       expect(new BigNumber(preMintVal.Data).toFixed()).toEqual(
         new BigNumber("1295968.3836584872964").toFixed()
+      );
+    });
+  });
+
+  describe("Reverse Bonding Curve Fee Tests", () => {
+    test("It should validate minFeePortion is less than maxFeePortion", async () => {
+      const createLaunchpadSaleDTO = new CreateTokenSaleDTO(
+        "InvalidRBC",
+        "IRBC",
+        "Invalid RBC config test",
+        "www.test.com",
+        new BigNumber("0"),
+        "UnitTest",
+        "none"
+      );
+      createLaunchpadSaleDTO.websiteUrl = "www.rbctest.com";
+
+      const rbcConfig = new ReverseBondingCurveConfigurationDto();
+      rbcConfig.minFeePortion = new BigNumber("0.5");
+      rbcConfig.maxFeePortion = new BigNumber("0.3");
+
+      const invalidSaleDTO = new CreateTokenSaleDTO(
+        "InvalidRBC",
+        "IRBC",
+        "Invalid RBC config test",
+        "www.test.com",
+        new BigNumber("0"),
+        "UnitTest",
+        "none",
+        rbcConfig
+      );
+      invalidSaleDTO.websiteUrl = "www.rbctest.com";
+      invalidSaleDTO.sign(user.privateKey);
+
+      const response = await client.Launchpad.CreateSale(invalidSaleDTO);
+      expect(response).toEqual(transactionError());
+      expect(response.Message).toContain("minFeePortion");
+    });
+
+    test("It should validate fee portions are between 0 and 1", async () => {
+      const rbcConfig1 = new ReverseBondingCurveConfigurationDto();
+      rbcConfig1.minFeePortion = new BigNumber("-0.1");
+      rbcConfig1.maxFeePortion = new BigNumber("0.5");
+
+      const invalidSaleDTO1 = new CreateTokenSaleDTO(
+        "NegMinFee",
+        "NMF",
+        "Negative Min Fee Test",
+        "www.test.com",
+        new BigNumber("0"),
+        "UnitTest",
+        "none",
+        rbcConfig1
+      );
+      invalidSaleDTO1.websiteUrl = "www.rbctest.com";
+      invalidSaleDTO1.sign(user.privateKey);
+
+      const response1 = await client.Launchpad.CreateSale(invalidSaleDTO1);
+      expect(response1).toEqual(transactionError());
+      expect(response1.Message).toContain("minFeePortion");
+
+      const rbcConfig2 = new ReverseBondingCurveConfigurationDto();
+      rbcConfig2.minFeePortion = new BigNumber("0.1");
+      rbcConfig2.maxFeePortion = new BigNumber("0.8");
+
+      const invalidSaleDTO2 = new CreateTokenSaleDTO(
+        "HighMaxFee",
+        "HMF",
+        "High Max Fee Test",
+        "www.test.com",
+        new BigNumber("0"),
+        "UnitTest",
+        "none",
+        rbcConfig2
+      );
+      invalidSaleDTO2.websiteUrl = "www.rbctest.com";
+      invalidSaleDTO2.sign(user.privateKey);
+
+      const response2 = await client.Launchpad.CreateSale(invalidSaleDTO2);
+      expect(response2).toEqual(transactionError());
+      expect(response2.Message).toContain("maxFeePortion");
+    });
+
+    test("It should successfully create a sale with valid RBC configuration", async () => {
+      await createGala();
+
+      const rbcConfig = new ReverseBondingCurveConfigurationDto();
+      rbcConfig.minFeePortion = new BigNumber("0.05"); // 5%
+      rbcConfig.maxFeePortion = new BigNumber("0.2"); // 20%
+
+      const saleDTO = new CreateTokenSaleDTO(
+        "ValidRBC",
+        "VRBC",
+        "Valid RBC Token",
+        "www.test.com",
+        new BigNumber("0"),
+        "UnitTest",
+        "Test",
+        rbcConfig
+      );
+      saleDTO.websiteUrl = "www.rbctest.com";
+      saleDTO.sign(user.privateKey);
+
+      const response = await client.Launchpad.CreateSale(saleDTO);
+      expect(response).toEqual(transactionSuccess());
+      expect(response.Data).toBeDefined();
+      expect(response.Data?.vaultAddress).toBeTruthy();
+
+      const saleVaultAddress = response.Data?.vaultAddress;
+      if (!saleVaultAddress) return;
+
+      const fetchSaleDTO = new FetchSaleDto();
+      fetchSaleDTO.vaultAddress = saleVaultAddress;
+
+      const saleDetails = await client.Launchpad.FetchSale(fetchSaleDTO);
+      expect(saleDetails.Data).toBeDefined();
+    });
+
+    test("It should charge the right fee on sell operations", async () => {
+      await createGala();
+
+      const rbcConfig = new ReverseBondingCurveConfigurationDto();
+      rbcConfig.minFeePortion = new BigNumber("0"); // 0%
+      rbcConfig.maxFeePortion = new BigNumber("0.5"); // 50%
+
+      const saleDTO = new CreateTokenSaleDTO(
+        "FeeSellTest",
+        "FST",
+        "Fee Sell Test Token",
+        "www.test.com",
+        new BigNumber("0"),
+        "UnitTest",
+        "Test",
+        rbcConfig
+      );
+
+      saleDTO.websiteUrl = "www.rbctest.com";
+      saleDTO.sign(user.privateKey);
+
+      const saleResponse = await client.Launchpad.CreateSale(saleDTO);
+      expect(saleResponse).toEqual(transactionSuccess());
+      const saleVaultAddress = saleResponse.Data?.vaultAddress;
+      assert(saleVaultAddress, "Sale vault address is undefined");
+
+      const buyDTO = new NativeTokenQuantityDto();
+      buyDTO.vaultAddress = saleVaultAddress;
+      buyDTO.nativeTokenQuantity = new BigNumber("131.64833533"); // Should give us almost exactly 2000000 tokens. There's a small rounding error
+      buyDTO.sign(user1.privateKey);
+
+      const buyResponse = await client.Launchpad.BuyWithNative(buyDTO);
+      expect(buyResponse).toEqual(transactionSuccess());
+
+      const tokenBalance = await getTokenBalance(user1.identityKey, "UnitTest", "Test", "FST");
+      expect(tokenBalance.toString()).toEqual("2000000.0000782183679");
+      const sellAmount = new BigNumber("1000000");
+
+      const initialGalaBalance = await getTokenBalance(user1.identityKey, "GALA", "Unit", "none");
+
+      const sellDTO = new ExactTokenQuantityDto();
+      sellDTO.vaultAddress = saleVaultAddress;
+      sellDTO.tokenQuantity = sellAmount;
+
+      const calcResponse = await client.Launchpad.CallNativeTokenOut(sellDTO);
+      const expectedNativeOut = new BigNumber(calcResponse.Data?.calculatedQuantity || "0");
+
+      sellDTO.sign(user1.privateKey);
+      await client.Launchpad.SellExactToken(sellDTO);
+
+      const afterGalaBalance = await getTokenBalance(user1.identityKey, "GALA", "Unit", "none");
+      const actualReceived = afterGalaBalance.minus(initialGalaBalance);
+      const difference = expectedNativeOut.minus(actualReceived);
+
+      expect(difference.toString()).toEqual("10.03731319");
+    });
+
+    test("It should not charge fee when RBC configuration is not present", async () => {
+      await createGala();
+
+      const regularSale = await createSale(client, user, "NoFeeToken", "NFT");
+      const regularVaultAddress = regularSale.Data?.vaultAddress;
+      if (!regularVaultAddress) return;
+
+      const buyDTO = new NativeTokenQuantityDto();
+      buyDTO.vaultAddress = regularVaultAddress;
+      buyDTO.nativeTokenQuantity = new BigNumber("100");
+      buyDTO.sign(user1.privateKey);
+
+      await client.Launchpad.BuyWithNative(buyDTO);
+
+      const tokenBalance = await getTokenBalance(user1.identityKey, "UnitTest", "Test", "NFT");
+
+      const sellAmount = tokenBalance.dividedBy(2);
+      const sellDTO = new ExactTokenQuantityDto();
+      sellDTO.vaultAddress = regularVaultAddress;
+      sellDTO.tokenQuantity = sellAmount;
+
+      const calcResponse = await client.Launchpad.CallNativeTokenOut(sellDTO);
+      const expectedNativeOut = new BigNumber(calcResponse.Data?.calculatedQuantity || "0");
+
+      const beforeSellBalance = await getTokenBalance(user1.identityKey, "GALA", "Unit", "none");
+
+      sellDTO.sign(user1.privateKey);
+      await client.Launchpad.SellExactToken(sellDTO);
+
+      const afterSellBalance = await getTokenBalance(user1.identityKey, "GALA", "Unit", "none");
+      const actualReceived = afterSellBalance.minus(beforeSellBalance);
+
+      expect(actualReceived.toFixed(8)).toEqual(expectedNativeOut.toFixed(8));
+    });
+
+    test("It should fail when fee exceeds maxAcceptableReverseBondingCurveFee in SellExactToken", async () => {
+      await createGala();
+
+      const rbcConfig = new ReverseBondingCurveConfigurationDto();
+      rbcConfig.minFeePortion = new BigNumber("0");
+      rbcConfig.maxFeePortion = new BigNumber("0.5");
+
+      const saleDTO = new CreateTokenSaleDTO(
+        "MaxFeeTestA",
+        "MFTA",
+        "Max Fee Test Token",
+        "www.test.com",
+        new BigNumber("0"),
+        "UnitTest",
+        "Test",
+        rbcConfig
+      );
+
+      saleDTO.websiteUrl = "www.rbctest.com";
+      saleDTO.sign(user.privateKey);
+
+      const saleResponse = await client.Launchpad.CreateSale(saleDTO);
+      expect(saleResponse).toEqual(transactionSuccess());
+      const saleVaultAddress = saleResponse.Data?.vaultAddress;
+      assert(saleVaultAddress, "Sale vault address is undefined");
+
+      const buyDTO = new NativeTokenQuantityDto();
+      buyDTO.vaultAddress = saleVaultAddress;
+      buyDTO.nativeTokenQuantity = new BigNumber("1000");
+      buyDTO.sign(user1.privateKey);
+      await client.Launchpad.BuyWithNative(buyDTO);
+
+      const sellAmount = new BigNumber("10000");
+
+      const sellDTO = new ExactTokenQuantityDto();
+      sellDTO.vaultAddress = saleVaultAddress;
+      sellDTO.tokenQuantity = sellAmount;
+
+      sellDTO.extraFees = {
+        maxAcceptableReverseBondingCurveFee: new BigNumber("0.1")
+      };
+
+      sellDTO.sign(user1.privateKey);
+
+      // This should fail because the actual fee will be higher than our limit
+      const sellResponse = await client.Launchpad.SellExactToken(sellDTO);
+      expect(sellResponse).toEqual(transactionError());
+      expect(sellResponse.Message).toContain("Fee exceeds maximum acceptable amount");
+    });
+
+    test("It should succeed when fee is below maxAcceptableReverseBondingCurveFee in SellWithNative", async () => {
+      await createGala();
+
+      const rbcConfig = new ReverseBondingCurveConfigurationDto();
+      rbcConfig.minFeePortion = new BigNumber("0");
+      rbcConfig.maxFeePortion = new BigNumber("0.50");
+
+      const saleDTO = new CreateTokenSaleDTO(
+        "MaxFeeTestB",
+        "MFTB",
+        "Max Fee Test Token 2",
+        "www.test.com",
+        new BigNumber("0"),
+        "UnitTest",
+        "Test",
+        rbcConfig
+      );
+      saleDTO.websiteUrl = "www.rbctest.com";
+      saleDTO.sign(user.privateKey);
+
+      const saleResponse = await client.Launchpad.CreateSale(saleDTO);
+      expect(saleResponse).toEqual(transactionSuccess());
+      const saleVaultAddress = saleResponse.Data?.vaultAddress;
+      assert(saleVaultAddress, "Sale vault address is undefined");
+
+      // Buy tokens first to populate the sale
+      const buyDTO = new NativeTokenQuantityDto();
+      buyDTO.vaultAddress = saleVaultAddress;
+      buyDTO.nativeTokenQuantity = new BigNumber("10");
+      buyDTO.sign(user1.privateKey);
+      await client.Launchpad.BuyWithNative(buyDTO);
+
+      // Create sell with native DTO with acceptable fee cap
+      const sellDTO = new NativeTokenQuantityDto();
+      sellDTO.vaultAddress = saleVaultAddress;
+      sellDTO.nativeTokenQuantity = new BigNumber("5");
+
+      // Set a reasonable max fee that should be accepted
+      sellDTO.extraFees = {
+        maxAcceptableReverseBondingCurveFee: new BigNumber("1") // Allow up to 1 GALA as fee
+      };
+
+      sellDTO.sign(user1.privateKey);
+
+      // This should succeed as the fee is within limits
+      const sellResponse = await client.Launchpad.SellWithNative(sellDTO);
+      expect(sellResponse).toEqual(transactionSuccess());
+    });
+
+    // Skipped due to issues with user3 sometimes being a curator and other times not being one.
+    test.skip("RBC fees should be sent to the configured fee address", async () => {
+      await createGala();
+
+      const feeRecipient = user4.identityKey;
+      const configPlatformFeeAddressDTO = new ConfigureLaunchpadFeeAddressDto();
+      configPlatformFeeAddressDTO.newPlatformFeeAddress = feeRecipient;
+      configPlatformFeeAddressDTO.sign(user3.privateKey);
+
+      const configResponse = await client.Launchpad.ConfigureLaunchpadFeeAddress(configPlatformFeeAddressDTO);
+      expect(configResponse).toEqual(transactionSuccess());
+      expect(configResponse.Data?.feeAddress).toEqual(feeRecipient);
+
+      const initialFeeAddressBalance = await getTokenBalance(feeRecipient, "GALA", "Unit", "none");
+
+      const rbcConfig = new ReverseBondingCurveConfigurationDto();
+      rbcConfig.minFeePortion = new BigNumber("0");
+      rbcConfig.maxFeePortion = new BigNumber("0.5");
+
+      const saleDTO = new CreateTokenSaleDTO(
+        "FeeAddressTest",
+        "FAT",
+        "Fee Address Test Token",
+        "www.test.com",
+        new BigNumber("0"),
+        "UnitTest",
+        "Test",
+        rbcConfig
+      );
+      saleDTO.websiteUrl = "www.rbctest.com";
+      saleDTO.sign(user.privateKey);
+
+      const saleResponse = await client.Launchpad.CreateSale(saleDTO);
+      expect(saleResponse).toEqual(transactionSuccess());
+      const saleVaultAddress = saleResponse.Data?.vaultAddress;
+      assert(saleVaultAddress, "Sale vault address is undefined");
+
+      const buyDTO = new NativeTokenQuantityDto();
+      buyDTO.vaultAddress = saleVaultAddress;
+      buyDTO.nativeTokenQuantity = new BigNumber("500");
+      buyDTO.sign(user1.privateKey);
+
+      const buyResponse = await client.Launchpad.BuyWithNative(buyDTO);
+      expect(buyResponse).toEqual(transactionSuccess());
+
+      const tokenBalance = await getTokenBalance(user1.identityKey, "UnitTest", "Test", "FAT");
+      const sellAmount = tokenBalance.dividedBy(2);
+
+      const initialSellerBalance = await getTokenBalance(user1.identityKey, "GALA", "Unit", "none");
+
+      const sellDTO = new ExactTokenQuantityDto();
+      sellDTO.vaultAddress = saleVaultAddress;
+      sellDTO.tokenQuantity = sellAmount;
+
+      const calcResponse = await client.Launchpad.CallNativeTokenOut(sellDTO);
+      assert(calcResponse.Data, "Calculation response is undefined");
+      const feeExpected = BigNumber(calcResponse.Data.extraFees.reverseBondingCurve);
+      const expectedNativeOutWithoutFees = new BigNumber(calcResponse.Data?.calculatedQuantity || "0");
+
+      sellDTO.sign(user1.privateKey);
+      await client.Launchpad.SellExactToken(sellDTO);
+
+      const finalSellerBalance = await getTokenBalance(user1.identityKey, "GALA", "Unit", "none");
+      const actualReceivedBySeller = finalSellerBalance.minus(initialSellerBalance);
+
+      const finalFeeAddressBalance = await getTokenBalance(feeRecipient, "GALA", "Unit", "none");
+      const feeReceived = finalFeeAddressBalance.minus(initialFeeAddressBalance);
+
+      expect(feeReceived.toString()).toEqual(feeExpected.toString());
+      expect(actualReceivedBySeller.toString()).toEqual(
+        expectedNativeOutWithoutFees.minus(feeExpected).toString()
       );
     });
   });

@@ -39,10 +39,7 @@ BigNumber.config({
  *
  * @throws Error if the calculation results in an invalid state.
  */
-export async function callMemeTokenOut(
-  ctx: GalaChainContext,
-  buyTokenDTO: NativeTokenQuantityDto
-): Promise<string> {
+export async function callMemeTokenOut(ctx: GalaChainContext, buyTokenDTO: NativeTokenQuantityDto) {
   const sale = await fetchAndValidateSale(ctx, buyTokenDTO.vaultAddress);
   const totalTokensSold = new Decimal(sale.fetchTokensSold()); // current tokens sold / x
   let nativeTokens = new Decimal(buyTokenDTO.nativeTokenQuantity.toString()); // native tokens used to buy / y
@@ -73,5 +70,11 @@ export async function callMemeTokenOut(
   if (roundedResult.add(totalTokensSold).greaterThan(new Decimal("1e+7"))) {
     roundedResult = new Decimal("1e+7").minus(new Decimal(totalTokensSold));
   }
-  return roundedResult.toFixed();
+
+  return {
+    calculatedQuantity: roundedResult.toFixed(),
+    extraFees: {
+      reverseBondingCurve: "0"
+    }
+  };
 }
