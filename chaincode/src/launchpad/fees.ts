@@ -1,10 +1,15 @@
-import { FeeReceiptStatus, LaunchpadFeeConfig, LaunchpadSale, SlippageToleranceExceededError } from "@gala-chain/api";
+import {
+  FeeReceiptStatus,
+  LaunchpadFeeConfig,
+  LaunchpadSale,
+  SlippageToleranceExceededError
+} from "@gala-chain/api";
 import BigNumber from "bignumber.js";
 
 import { writeChannelPaymentReceipt, writeUserPaymentReceipt } from "../fees";
+import { transferToken } from "../transfer";
 import { GalaChainContext } from "../types";
 import { getObjectByKey, txUnixTimeToDateIndexKeys } from "../utils";
-import { transferToken } from "../transfer";
 
 const REVERSE_BONDING_CURVE_FEE_ALPHA = new BigNumber("0.5"); // 50% of the amount of native token to be received
 const REVERSE_BONDING_CURVE_FEE_CODE = "LaunchpadReverseBondingCurveFee";
