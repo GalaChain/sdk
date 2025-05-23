@@ -2217,7 +2217,9 @@ describe("LaunchpadContract", () => {
       const feeReceived = finalFeeAddressBalance.minus(initialFeeAddressBalance);
 
       expect(feeReceived.toString()).toEqual(feeExpected.toString());
-      expect(actualReceivedBySeller.toString()).toEqual(expectedNativeOutWithoutFees.minus(feeExpected).toString());
+      expect(actualReceivedBySeller.toString()).toEqual(
+        expectedNativeOutWithoutFees.minus(feeExpected).toString()
+      );
     });
   });
 });
