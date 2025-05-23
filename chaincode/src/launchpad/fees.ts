@@ -20,7 +20,8 @@ import {
 } from "@gala-chain/api";
 import BigNumber from "bignumber.js";
 
-import { writeChannelPaymentReceipt, writeUserPaymentReceipt } from "../fees";
+import { writeChannelPaymentReceipt } from "../fees/writeChannelPaymentReceipt";
+import { writeUserPaymentReceipt } from "../fees/writeUserPaymentReceipt";
 import { transferToken } from "../transfer";
 import { GalaChainContext } from "../types";
 import { getObjectByKey, txUnixTimeToDateIndexKeys } from "../utils";
