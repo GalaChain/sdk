@@ -43,9 +43,8 @@ export function calculateReverseBondingCurveFee(sale: LaunchpadSale, nativeToken
   const portionAboveBaseline = circulatingSupplyProportional.multipliedBy(feePortionDiff);
   const feePortion = minFeePortion.plus(portionAboveBaseline);
 
-  const feeAmount = circulatingSupplyProportional
+  const feeAmount = nativeTokensToReceive
     .multipliedBy(feePortion)
-    .multipliedBy(nativeTokensToReceive)
     .decimalPlaces(NATIVE_TOKEN_DECIMALS, BigNumber.ROUND_UP);
 
   return feeAmount;

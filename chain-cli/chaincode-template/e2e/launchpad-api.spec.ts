@@ -1976,7 +1976,7 @@ describe("LaunchpadContract", () => {
       const actualReceived = afterGalaBalance.minus(initialGalaBalance);
       const difference = expectedNativeOut.minus(actualReceived);
 
-      expect(difference.toString()).toEqual("2.00746264");
+      expect(difference.toString()).toEqual("10.03731319");
     });
 
     test("It should not charge fee when RBC configuration is not present", async () => {
