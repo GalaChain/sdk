@@ -74,34 +74,34 @@ export async function payReverseBondingCurveFee(
   const { year, month, day } = txUnixTimeToDateIndexKeys(ctx.txUnixTime);
   const txId = ctx.stub.getTxID();
 
-  await Promise.all([
-    writeChannelPaymentReceipt(ctx, {
-      year,
-      month,
-      day,
-      feeCode: REVERSE_BONDING_CURVE_FEE_CODE,
-      paidByUser: ctx.callingUser,
-      txId,
-      quantity: feeAmount,
-      status: FeeReceiptStatus.Settled
-    }),
-    writeUserPaymentReceipt(ctx, {
-      paidByUser: ctx.callingUser,
-      year,
-      month,
-      day,
-      feeCode: REVERSE_BONDING_CURVE_FEE_CODE,
-      txId,
-      quantity: feeAmount,
-      status: FeeReceiptStatus.Settled
-    }),
-    transferToken(ctx, {
-      to: launchpadConfig.feeAddress,
-      from: ctx.callingUser,
-      tokenInstanceKey: nativeToken,
-      quantity: feeAmount,
-      allowancesToUse: [],
-      authorizedOnBehalf: undefined
-    })
-  ]);
+  await writeChannelPaymentReceipt(ctx, {
+    year,
+    month,
+    day,
+    feeCode: REVERSE_BONDING_CURVE_FEE_CODE,
+    paidByUser: ctx.callingUser,
+    txId,
+    quantity: feeAmount,
+    status: FeeReceiptStatus.Settled
+  });
+
+  await writeUserPaymentReceipt(ctx, {
+    paidByUser: ctx.callingUser,
+    year,
+    month,
+    day,
+    feeCode: REVERSE_BONDING_CURVE_FEE_CODE,
+    txId,
+    quantity: feeAmount,
+    status: FeeReceiptStatus.Settled
+  });
+
+  await transferToken(ctx, {
+    to: launchpadConfig.feeAddress,
+    from: ctx.callingUser,
+    tokenInstanceKey: nativeToken,
+    quantity: feeAmount,
+    allowancesToUse: [],
+    authorizedOnBehalf: undefined
+  });
 }
