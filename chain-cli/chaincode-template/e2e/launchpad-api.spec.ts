@@ -159,43 +159,6 @@ describe("LaunchpadContract", () => {
     return response;
   }
 
-  // Create sale with RBC helper function
-  async function createSaleWithRBC(
-    client: AdminChainClients<typeof LaunchpadContractConfig>,
-    user: ChainUser,
-    tokenName: string,
-    tokenSymbol: string,
-    minFeePortion: BigNumber,
-    maxFeePortion: BigNumber
-  ) {
-    const createLaunchpadSaleDTO = new CreateTokenSaleDTO(
-      tokenName,
-      tokenSymbol,
-      `${tokenName} sale description`,
-      "www.test.com",
-      new BigNumber("0"),
-      "UnitTest",
-      "Test"
-    );
-    createLaunchpadSaleDTO.websiteUrl = "www.abcd.com";
-
-    // Add the reverse bonding curve configuration
-    const rbcConfig = new ReverseBondingCurveConfigurationDto();
-    rbcConfig.minFeePortion = minFeePortion;
-    rbcConfig.maxFeePortion = maxFeePortion;
-    createLaunchpadSaleDTO.reverseBondingCurveConfiguration = rbcConfig;
-
-    // Sign the DTO using the user's private key
-    createLaunchpadSaleDTO.sign(user.privateKey);
-
-    // Call the CreateSale function
-    const response = await client.Launchpad.CreateSale(createLaunchpadSaleDTO);
-    if (!response.Data?.vaultAddress) {
-      throw new Error("Sale Creation failed");
-    }
-    return response;
-  }
-
   // Get Balance Helper function
   async function getTokenBalance(
     owner: string,
