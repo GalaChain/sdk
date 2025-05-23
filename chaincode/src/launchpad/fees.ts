@@ -22,7 +22,7 @@ import BigNumber from "bignumber.js";
 
 import { writeChannelPaymentReceipt } from "../fees/writeChannelPaymentReceipt";
 import { writeUserPaymentReceipt } from "../fees/writeUserPaymentReceipt";
-import { transferToken } from "../transfer";
+import { transferToken } from "../transfer/transferToken";
 import { GalaChainContext } from "../types";
 import { getObjectByKey, txUnixTimeToDateIndexKeys } from "../utils";
 
