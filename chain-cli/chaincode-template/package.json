@@ -23,8 +23,8 @@
     "update-snapshot": "jest --updateSnapshot"
   },
   "dependencies": {
-    "@gala-chain/api": "file:gala-chain-api-1.9.14.tgz",
-    "@gala-chain/chaincode": "file:gala-chain-chaincode-1.9.14.tgz",
+    "@gala-chain/api": "1.9.14",
+    "@gala-chain/chaincode": "1.9.14",
     "@grpc/grpc-js": "1.10.10",
     "dotenv": "^16.0.1",
     "fabric-contract-api": "2.5.6",
