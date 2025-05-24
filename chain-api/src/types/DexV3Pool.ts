@@ -50,7 +50,6 @@ export class Pool extends ChainObject {
   @Exclude()
   static INDEX_KEY = "GCDEXCHLP"; //GalaChain Decentralised EXCHange Liquidity Pool
 
-
   @ChainKey({ position: 0 })
   @IsString()
   public readonly token0: string;
