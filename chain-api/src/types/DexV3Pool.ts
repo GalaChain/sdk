@@ -36,7 +36,7 @@ import {
   tickSpacingToMaxLiquidityPerTick,
   tickToSqrtPrice
 } from "../utils";
-import { BigNumberProperty, EnumProperty, IsStringRecord } from "../validators";
+import { BigNumberIsNotNegative, BigNumberProperty, EnumProperty, IsStringRecord } from "../validators";
 import { ChainObject } from "./ChainObject";
 import { DexFeePercentageTypes } from "./DexDtos";
 import { DexPositionData } from "./DexPositionData";
@@ -48,11 +48,8 @@ import { TokenClassKey } from "./TokenClass";
 })
 export class Pool extends ChainObject {
   @Exclude()
-<<<<<<< Updated upstream
-  static INDEX_KEY = "GCDXP"; //GalaChain Decentralised Exchange Pool
-=======
   static INDEX_KEY = "GCDEXCHLP"; //GalaChain Decentralised EXCHange Liquidity Pool
->>>>>>> Stashed changes
+
 
   @ChainKey({ position: 0 })
   @IsString()
@@ -86,6 +83,10 @@ export class Pool extends ChainObject {
 
   @BigNumberProperty()
   public liquidity: BigNumber;
+
+  @BigNumberIsNotNegative()
+  @BigNumberProperty()
+  public grossPoolLiquidity: BigNumber;
 
   @BigNumberProperty()
   public feeGrowthGlobal0: BigNumber;
@@ -136,6 +137,7 @@ export class Pool extends ChainObject {
 
     this.sqrtPrice = initialSqrtPrice;
     this.liquidity = new BigNumber(0);
+    this.grossPoolLiquidity = new BigNumber(0);
     this.feeGrowthGlobal0 = new BigNumber(0);
     this.feeGrowthGlobal1 = new BigNumber(0);
     this.tickSpacing = feeAmountTickSpacing[fee];
@@ -194,6 +196,9 @@ export class Pool extends ChainObject {
         amount1Req = getAmount1Delta(sqrtPriceLower, this.sqrtPrice, liquidityDelta);
         //liquidity is added to the active liquidity
         this.liquidity = this.liquidity.plus(liquidityDelta);
+        this.grossPoolLiquidity = this.grossPoolLiquidity.plus(
+          liquidityDelta.multipliedBy(Math.abs(tickUpper - tickLower))
+        );
         requirePosititve(this.liquidity);
       }
       //current tick is above the desired range

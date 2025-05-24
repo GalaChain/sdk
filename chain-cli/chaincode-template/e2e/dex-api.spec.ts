@@ -22,6 +22,7 @@ import {
   CollectProtocolFeesResDto,
   ConfigureDexFeeAddressDto,
   CreatePoolDto,
+  CreatePoolResDto,
   CreateTokenClassDto,
   DexFeeConfig,
   DexOperationResDto,
@@ -2653,7 +2654,7 @@ function tokenContractAPI(client: ChainClient): TokenContractAPI & CommonContrac
 }
 
 interface DexV3ContractAPI {
-  createPool(dto: CreatePoolDto): Promise<GalaChainResponse<Pool>>;
+  createPool(dto: CreatePoolDto): Promise<GalaChainResponse<CreatePoolResDto>>;
   addLiquidity(dto: AddLiquidityDTO): Promise<GalaChainResponse<DexOperationResDto>>;
   swap(dto: SwapDto): Promise<GalaChainResponse<SwapResDto>>;
   RemoveLiquidity(dto: BurnDto): Promise<GalaChainResponse<DexOperationResDto>>;
@@ -2680,7 +2681,7 @@ function dexV3ContractAPI(client: ChainClient): DexV3ContractAPI & CommonContrac
   return {
     ...commonContractAPI(client),
     createPool(dto: CreatePoolDto) {
-      return client.submitTransaction<Pool>("CreatePool", dto, Pool);
+      return client.submitTransaction<CreatePoolResDto>("CreatePool", dto, CreatePoolResDto);
     },
     getPoolData(dto: GetPoolDto) {
       return client.evaluateTransaction<Pool>("GetPoolData", dto, Pool);

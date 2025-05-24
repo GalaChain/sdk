@@ -55,11 +55,14 @@ interface GalaLoggerInstance {
 }
 
 type GalaChainStub = ChaincodeStub & {
+  getTxID(): string;
   getCachedState(key: string): Promise<Uint8Array>;
   getCachedStateByPartialCompositeKey(objectType: string, attributes: string[]): FabricIterable<CachedKV>;
   flushWrites(): Promise<void>;
   getReads(): Record<string, Uint8Array>;
   getWrites(): Record<string, Uint8Array>;
+  getWritesCount(): number;
+  getWritesCount(): number;
   getDeletes(): Record<string, true>;
   setReads(reads: Record<string, Uint8Array>): void;
   setWrites(writes: Record<string, Uint8Array>): void;
@@ -74,7 +77,7 @@ type TestGalaChainContext = Context & {
   get callingUserEthAddress(): string;
   get callingUserTonAddress(): string;
   setDryRunOnBehalfOf(d: { alias: string; ethAddress: string | undefined }): void;
-  resetCallingUser(): void;
+  createReadOnlyContext(index: number | undefined): TestGalaChainContext;
   isDryRun: boolean;
   get txUnixTime(): number;
   setChaincodeStub(stub: ChaincodeStub): void;
