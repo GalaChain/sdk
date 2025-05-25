@@ -48,7 +48,7 @@ import { TokenClassKey } from "./TokenClass";
 })
 export class Pool extends ChainObject {
   @Exclude()
-  static INDEX_KEY = "GCDEXCHP"; //GalaChain Decentralised EXCHange Pool
+  static INDEX_KEY = "GCDEXCHLP"; //GalaChain Decentralised EXCHange Liquidity Pool
 
   @ChainKey({ position: 0 })
   @IsString()
@@ -183,6 +183,9 @@ export class Pool extends ChainObject {
       amount1Req = new BigNumber(0);
 
     if (!liquidityDelta.isEqualTo(0)) {
+      this.grossPoolLiquidity = this.grossPoolLiquidity.plus(
+        liquidityDelta.multipliedBy(Math.abs(tickUpper - tickLower))
+      );
       //current tick is below the desired range
       if (this.sqrtPrice.isLessThan(sqrtPriceLower))
         amount0Req = getAmount0Delta(sqrtPriceLower, sqrtPriceUpper, liquidityDelta);
