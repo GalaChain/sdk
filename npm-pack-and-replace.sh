@@ -50,7 +50,11 @@ replace_in_pwd_package_json() {
   echo "Packing and replacing $package..."
 
   # pack the package
-  tar_file="$( (cd "$path" && npm run build && npm pack --pack-destination="$current_dir") | tail -n 1)"
+  pushd "$path"
+  npm run build
+  pack_out=$(npm pack --pack-destination="$current_dir")
+  tar_file=$(tail -n 1 <<<"$pack_out")
+  popd
 
   # update package json with reference to the file
   current_package_json="$(cat "$current_package_json_path")"
