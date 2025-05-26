@@ -40,7 +40,18 @@ class StubCache {
 
   private invokeChaincodeCalls: Record<string, string[]> = {};
 
-  constructor(private readonly stub: ChaincodeStub) {}
+  constructor(
+    private readonly stub: ChaincodeStub,
+    private readonly isReadOnly: boolean,
+    private readonly index: number | undefined
+  ) {}
+
+  getTxID(): string {
+    if (typeof this.index === "number") {
+      return this.stub.getTxID() + `|${this.index}`;
+    }
+    return this.stub.getTxID();
+  }
 
   async getCachedState(key: string): Promise<Uint8Array> {
     if (key in this.deletes) {
@@ -148,6 +159,10 @@ class StubCache {
   }
 
   async flushWrites(): Promise<void> {
+    if (this.isReadOnly) {
+      throw new NotImplementedError("Cannot flush writes in read-only mode");
+    }
+
     const deleteOps = Object.keys(this.deletes).map((key) => this.stub.deleteState(key));
     const putOps = Object.entries(this.writes).map(([key, value]) => this.stub.putState(key, value));
     await Promise.all(deleteOps);
@@ -160,6 +175,10 @@ class StubCache {
 
   getWrites(): Record<string, Uint8Array> {
     return { ...this.writes };
+  }
+
+  getWritesCount(): number {
+    return Object.keys(this.writes).length;
   }
 
   getDeletes(): Record<string, true> {
@@ -187,6 +206,8 @@ export class DuplicateInvokeChaincodeError extends NotImplementedError {
 }
 
 export interface GalaChainStub extends ChaincodeStub {
+  getTxID(): string;
+
   getCachedState(key: string): Promise<Uint8Array>;
 
   getCachedStateByPartialCompositeKey(objectType: string, attributes: string[]): FabricIterable<CachedKV>;
@@ -197,6 +218,8 @@ export interface GalaChainStub extends ChaincodeStub {
 
   getWrites(): Record<string, Uint8Array>;
 
+  getWritesCount(): number;
+
   getDeletes(): Record<string, true>;
 
   setReads(reads: Record<string, Uint8Array>): void;
@@ -206,8 +229,12 @@ export interface GalaChainStub extends ChaincodeStub {
   setDeletes(deletes: Record<string, true>): void;
 }
 
-export const createGalaChainStub = (stub: ChaincodeStub): GalaChainStub => {
-  const cachedWrites = new StubCache(stub);
+export const createGalaChainStub = (
+  stub: ChaincodeStub,
+  isReadOnly: boolean,
+  index: number | undefined
+): GalaChainStub => {
+  const cachedWrites = new StubCache(stub, isReadOnly, index);
 
   const proxyHandler = {
     get: function (target: GalaChainStub, name: string | symbol): unknown {

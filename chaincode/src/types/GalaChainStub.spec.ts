@@ -19,19 +19,19 @@ import { Buffer } from "buffer";
 import { CachedKV, FabricIterable } from "./FabricIterable";
 import { DuplicateInvokeChaincodeError, createGalaChainStub } from "./GalaChainStub";
 
-const setupTest = (initialState: Record<string, Uint8Array> = {}) => {
+const setupTest = (initialState: Record<string, string> = {}) => {
   const state = { ...initialState }; // shallow copy
 
   /* eslint-disable  @typescript-eslint/ban-ts-comment */
   // @ts-ignore
-  const internalStub = new TestChaincodeStub([], state);
+  const internalStub = new TestChaincodeStub([], state, undefined);
   internalStub.putState = jest.fn(internalStub.putState);
   internalStub.getState = jest.fn(internalStub.getState);
   internalStub.deleteState = jest.fn(internalStub.deleteState);
   internalStub.getStateByPartialCompositeKey = jest.fn(internalStub.getStateByPartialCompositeKey);
   internalStub.invokeChaincode = jest.fn(internalStub.invokeChaincode);
 
-  const gcStub = createGalaChainStub(internalStub);
+  const gcStub = createGalaChainStub(internalStub, false, undefined);
 
   return { internalStub, gcStub };
 };
@@ -105,6 +105,30 @@ describe("updates/flush", () => {
     expect(internalStub.deleteState).toBeCalledWith(key4);
     expect(internalStub.deleteState).toBeCalledTimes(2);
   });
+
+  it("should not flush writes in read-only mode", async () => {
+    // Given
+    const isReadOnly = true;
+    const cachedWrites = createGalaChainStub(new TestChaincodeStub([], {}, {}), isReadOnly, undefined);
+
+    // When
+    const flushOp = cachedWrites.flushWrites();
+
+    // Then
+    expect(flushOp).rejects.toThrow("Cannot flush writes in read-only mode");
+  });
+
+  it("should suffix txId with index", async () => {
+    // Given
+    const index = 42;
+    const cachedWrites = createGalaChainStub(new TestChaincodeStub([], {}, {}), false, index);
+
+    // When
+    const txId = cachedWrites.getTxID();
+
+    // Then
+    expect(txId).toMatch(/^[a-zA-Z0-9_-]+\|42$/);
+  });
 });
 
 describe("cached reads", () => {
@@ -112,7 +136,7 @@ describe("cached reads", () => {
   const initialValue = Buffer.from("Kate Dibiasky");
   const updatedValue = Buffer.from("Randall Mindy");
 
-  const setupTestWithInitialState = () => setupTest({ [key]: initialValue });
+  const setupTestWithInitialState = () => setupTest({ [key]: initialValue.toString() });
 
   it("should read value only once", async () => {
     // Given
@@ -240,9 +264,9 @@ describe("cached range queries", () => {
 
   const setupTestWithInitialState = () => {
     const setup = setupTest({
-      [scientist1.key]: scientist1.value,
-      [scientist2.key]: scientist2.value,
-      [journalist1.key]: journalist1.value
+      [scientist1.key]: scientist1.value.toString(),
+      [scientist2.key]: scientist2.value.toString(),
+      [journalist1.key]: journalist1.value.toString()
     });
 
     const getAllResults = async (iterator: FabricIterable<CachedKV>): Promise<Array<CachedKV>> => {
