@@ -292,4 +292,44 @@ export default class TestGalaContract extends GalaContract {
 
     return updated;
   }
+
+  @GalaTransaction({
+    type: SUBMIT,
+    in: NestedKVDto,
+    allowedOrgs: ["CuratorOrg"]
+  })
+  public async UnterminatedAsyncErrorOp(ctx: GalaChainContext, dto: NestedKVDto): Promise<void> {
+    // using 25ms delay to be sure that the operation will be called after
+    // the transaction is committed, but before the DelayedOp
+    setTimeout(() => ctx.stub.putState(dto.key, Buffer.from(dto.text ?? "")), 25);
+    throw new Error("Async operation was not awaited");
+  }
+
+  @GalaTransaction({
+    type: SUBMIT,
+    in: NestedKVDto,
+    allowedOrgs: ["CuratorOrg"]
+  })
+  public async DelayedOp(ctx: GalaChainContext, dto: NestedKVDto): Promise<unknown> {
+    // using 50ms delay to be sure that the actual state change is applied before
+    // the UnterminatedAsyncErrorOp is finished, but the wait is enough to see
+    // the potential effect of the state change by UnterminatedAsyncErrorOp
+    const result = await ctx.stub.putState(dto.key, Buffer.from(dto.text ?? ""));
+    await new Promise((resolve) => setTimeout(() => resolve(undefined), 50));
+    return result;
+  }
+
+  @GalaTransaction({
+    type: SUBMIT,
+    in: ChainCallDTO,
+    enforceUniqueKey: true,
+    allowedOrgs: ["CuratorOrg"]
+  })
+  public async GetCtxData(ctx: GalaChainContext, dto: ChainCallDTO): Promise<unknown> {
+    return {
+      callingUser: ctx.callingUser,
+      txId: ctx.stub.getTxID(),
+      txUnixTime: ctx.txUnixTime
+    };
+  }
 }

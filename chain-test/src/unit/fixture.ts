@@ -54,11 +54,14 @@ interface GalaLoggerInstance {
 }
 
 type GalaChainStub = ChaincodeStub & {
+  getTxID(): string;
   getCachedState(key: string): Promise<Uint8Array>;
   getCachedStateByPartialCompositeKey(objectType: string, attributes: string[]): FabricIterable<CachedKV>;
   flushWrites(): Promise<void>;
   getReads(): Record<string, Uint8Array>;
   getWrites(): Record<string, Uint8Array>;
+  getWritesCount(): number;
+  getWritesCount(): number;
   getDeletes(): Record<string, true>;
   setReads(reads: Record<string, Uint8Array>): void;
   setWrites(writes: Record<string, Uint8Array>): void;
@@ -84,11 +87,20 @@ type TestGalaChainContext = Context & {
   get callingUser(): UserAlias;
   get callingUserEthAddress(): string;
   get callingUserTonAddress(): string;
+<<<<<<< HEAD
   get callingUserRoles(): string[];
   get callingUserProfile(): UserProfile;
   resetCallingUser(): void;
   get config(): GalaChainContextConfig;
   setDryRunOnBehalfOf(d: CallingUserData): void;
+=======
+  setDryRunOnBehalfOf(d: { alias: string; ethAddress: string | undefined }): void;
+<<<<<<< HEAD
+  createReadOnlyContext(): TestGalaChainContext;
+>>>>>>> cfe814e (Feat: Sandboxed stub in batch operations (#583))
+=======
+  createReadOnlyContext(index: number | undefined): TestGalaChainContext;
+>>>>>>> dd9c19d (Feat: Add txId index suffix for transactions in batch (#587))
   isDryRun: boolean;
   get txUnixTime(): number;
   setChaincodeStub(stub: ChaincodeStub): void;

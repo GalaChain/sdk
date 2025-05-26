@@ -69,12 +69,20 @@ export class GalaChainContext extends Context {
 
   get callingUser(): UserAlias {
     if (this.callingUserValue === undefined) {
+<<<<<<< HEAD
+<<<<<<< HEAD
       const message =
         "No calling user set. " +
         "It usually means that chaincode tried to get ctx.callingUser for unauthorized call (no DTO signature).";
       const error = new UnauthorizedError(message);
       console.error(error);
       throw new UnauthorizedError(message);
+=======
+      this.logger.error(new Error().stack ?? "No calling user set");
+=======
+>>>>>>> dd9c19d (Feat: Add txId index suffix for transactions in batch (#587))
+      throw new UnauthorizedError("No calling user set");
+>>>>>>> cfe814e (Feat: Sandboxed stub in batch operations (#583))
     }
     return this.callingUserValue;
   }
@@ -153,8 +161,19 @@ export class GalaChainContext extends Context {
     return this.txUnixTimeValue;
   }
 
+  /**
+   * @returns a new, empty context that uses the same chaincode stub as
+   * the current context, but with dry run set (disables writes and deletes).
+   */
+  public createReadOnlyContext(index: number | undefined): GalaChainContext {
+    const ctx = new GalaChainContext();
+    ctx.clientIdentity = this.clientIdentity;
+    ctx.setChaincodeStub(createGalaChainStub(this.stub, true, index));
+    return ctx;
+  }
+
   setChaincodeStub(stub: ChaincodeStub) {
-    const galaChainStub = createGalaChainStub(stub);
+    const galaChainStub = createGalaChainStub(stub, this.isDryRun, undefined);
     // eslint-disable-next-line @typescript-eslint/ban-ts-comment
     // @ts-ignore - missing typings for `setChaincodeStub` in `fabric-contract-api`
     // eslint-disable-next-line @typescript-eslint/ban-ts-comment
