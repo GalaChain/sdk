@@ -22,7 +22,6 @@ import { DuplicateInvokeChaincodeError, createGalaChainStub } from "./GalaChainS
 const setupTest = (initialState: Record<string, string> = {}) => {
   const state = { ...initialState }; // shallow copy
 
-<<<<<<< HEAD
   /* eslint-disable  @typescript-eslint/ban-ts-comment */
   // @ts-ignore
   const internalStub = new TestChaincodeStub([], state, undefined);
