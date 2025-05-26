@@ -17,7 +17,6 @@ import {
   ForbiddenError,
   PublicKey,
   SigningScheme,
-  UserProfile,
   UserProfileWithRoles,
   ValidationFailedError,
   signatures

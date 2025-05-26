@@ -96,7 +96,6 @@ import {
   UnlockTokensDto,
   UpdateTokenClassDto,
   UseTokenDto,
-  UserAlias,
   VestingToken,
   VestingTokenInfo,
   asValidUserAlias,
