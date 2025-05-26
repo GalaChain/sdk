@@ -13,7 +13,18 @@
  * limitations under the License.
  */
 import { Type, instanceToInstance, plainToInstance } from "class-transformer";
-import { IsNotEmpty, IsOptional, ValidationError, validate } from "class-validator";
+import {
+  ArrayMaxSize,
+  ArrayMinSize,
+  IsNotEmpty,
+  IsNumber,
+  IsOptional,
+  Max,
+  Min,
+  ValidateNested,
+  ValidationError,
+  validate
+} from "class-validator";
 import { JSONSchema } from "class-validator-jsonschema";
 
 import {
@@ -233,6 +244,16 @@ export class ChainCallDTO {
   }
 
   public sign(privateKey: string, useDer = false): void {
+    if (useDer) {
+      if (this.signing === SigningScheme.TON) {
+        throw new ValidationFailedError("TON signing scheme does not support DER signatures");
+      } else {
+        if (this.signerPublicKey === undefined && this.signerAddress === undefined) {
+          this.signerPublicKey = signatures.getPublicKey(privateKey);
+        }
+      }
+    }
+
     if (this.signing === SigningScheme.TON) {
       const keyBuffer = Buffer.from(privateKey, "base64");
       this.signature = signatures.ton.getSignature(this, keyBuffer, this.prefix).toString("base64");
@@ -269,6 +290,43 @@ export class ChainCallDTO {
 export class SubmitCallDTO extends ChainCallDTO {
   @IsNotEmpty()
   public uniqueKey: string;
+}
+
+export class BatchOperationDto extends ChainCallDTO {
+  @IsNotEmpty()
+  method: string;
+
+  @IsNotEmpty()
+  @ValidateNested()
+  @Type(() => ChainCallDTO)
+  dto: ChainCallDTO;
+}
+
+export class BatchDto extends ChainCallDTO {
+  public static readonly BATCH_SIZE_LIMIT: number = 1_000;
+  public static readonly WRITES_DEFAULT_LIMIT: number = 10_000;
+  public static readonly WRITES_HARD_LIMIT: number = 100_000;
+
+  @JSONSchema({
+    description:
+      "Soft limit of keys written to chain in a batch, excluding deletes. " +
+      "If the limit is exceeded, all subsequent operations in batch fail. " +
+      "Typically it is safe to repeat failed operations in the next batch. " +
+      `Default: ${BatchDto.WRITES_DEFAULT_LIMIT}. ` +
+      `Max: ${BatchDto.WRITES_HARD_LIMIT}.`
+  })
+  @IsOptional()
+  @IsNumber()
+  @Min(1)
+  @Max(BatchDto.WRITES_HARD_LIMIT)
+  @IsOptional()
+  writesLimit?: number;
+
+  @Type(() => BatchOperationDto)
+  @ValidateNested({ each: true })
+  @ArrayMinSize(1)
+  @ArrayMaxSize(BatchDto.BATCH_SIZE_LIMIT)
+  operations: BatchOperationDto[];
 }
 
 /**

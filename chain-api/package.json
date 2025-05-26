@@ -1,17 +1,17 @@
 {
   "name": "@gala-chain/api",
-  "version": "2.0.1",
+  "version": "2.3.0",
   "description": "Common types, DTOs (Data Transfer Objects), APIs, signatures, and utils for GalaChain.",
   "license": "Apache-2.0",
   "dependencies": {
     "bignumber.js": "^9.0.2",
     "bn.js": "5.2.1",
     "class-transformer": "0.5.1",
-    "class-validator": "^0.14.0",
-    "class-validator-jsonschema": "^5.0.0",
-    "elliptic": "^6.5.4",
+    "class-validator": "0.14.2",
+    "class-validator-jsonschema": "5.0.2",
+    "elliptic": "^6.6.1",
     "js-sha3": "^0.9.3",
-    "json-stringify-deterministic": "^1.0.7",
+    "json-stringify-deterministic": "1.0.12",
     "openapi3-ts": "^3.2.0",
     "reflect-metadata": "^0.1.13",
     "tslib": "^2.6.2"

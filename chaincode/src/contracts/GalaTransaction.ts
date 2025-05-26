@@ -23,6 +23,7 @@ import {
   Primitive,
   RuntimeError,
   SubmitCallDTO,
+  UserProfile,
   UserRole,
   generateResponseSchema,
   generateSchema,
@@ -61,63 +62,71 @@ type GalaTransactionDecoratorFunction = (
   descriptor: TypedPropertyDescriptor<Function>
 ) => void;
 
-type OutType = ClassConstructor<unknown> | Primitive;
-type OutArrType = { arrayOf: OutType };
+type OutType<T> = ClassConstructor<T> | Primitive;
+type OutArrType<T> = { arrayOf: OutType<T> };
 
-export type GalaTransactionBeforeFn = (ctx: GalaChainContext, dto: ChainCallDTO) => Promise<void>;
-
-export type GalaTransactionAfterFn = (
+export type GalaTransactionBeforeFn<In extends ChainCallDTO> = (
   ctx: GalaChainContext,
-  dto: ChainCallDTO,
-  result: GalaChainResponse<unknown>
+  dto: In
+) => Promise<void>;
+
+export type GalaTransactionAfterFn<In extends ChainCallDTO, Out> = (
+  ctx: GalaChainContext,
+  dto: In,
+  result: GalaChainResponse<Out>
 ) => Promise<unknown>;
 
-export interface CommonTransactionOptions<T extends ChainCallDTO> {
+export interface CommonTransactionOptions<In extends ChainCallDTO, Out> {
   deprecated?: true;
   description?: string;
-  in?: ClassConstructor<Inferred<T>>;
-  out?: OutType | OutArrType;
+  in?: ClassConstructor<Inferred<In>>;
+  out?: OutType<Out> | OutArrType<Out>;
   /** @deprecated */
   allowedOrgs?: string[];
   allowedRoles?: string[];
   apiMethodName?: string;
   sequence?: MethodAPI[];
-  before?: GalaTransactionBeforeFn;
-  after?: GalaTransactionAfterFn;
+  before?: GalaTransactionBeforeFn<In>;
+  after?: GalaTransactionAfterFn<In, Out | Out[]>;
 }
 
-export interface GalaTransactionOptions<T extends ChainCallDTO> extends CommonTransactionOptions<T> {
+export interface GalaTransactionOptions<In extends ChainCallDTO, Out>
+  extends CommonTransactionOptions<In, Out> {
   type: GalaTransactionType;
   verifySignature?: true;
   enforceUniqueKey?: true;
 }
 
-export type GalaSubmitOptions<T extends SubmitCallDTO> = CommonTransactionOptions<T>;
+export type GalaSubmitOptions<In extends SubmitCallDTO, Out> = CommonTransactionOptions<In, Out>;
 
-export interface GalaEvaluateOptions<T extends ChainCallDTO> extends CommonTransactionOptions<T> {
+export interface GalaEvaluateOptions<In extends ChainCallDTO, Out> extends CommonTransactionOptions<In, Out> {
   verifySignature?: true;
 }
 
-function isArrayOut(x: OutType | OutArrType | undefined): x is OutArrType {
+function isArrayOut<Out>(x: OutType<Out> | OutArrType<Out> | undefined): x is OutArrType<Out> {
   return typeof x === "object" && "arrayOf" in x;
 }
 
-function Submit<T extends SubmitCallDTO>(options: GalaSubmitOptions<T>): GalaTransactionDecoratorFunction {
+function Submit<In extends SubmitCallDTO, Out>(
+  options: GalaSubmitOptions<In, Out>
+): GalaTransactionDecoratorFunction {
   return GalaTransaction({ ...options, type: SUBMIT, verifySignature: true, enforceUniqueKey: true });
 }
 
-function Evaluate<T extends ChainCallDTO>(options: GalaEvaluateOptions<T>): GalaTransactionDecoratorFunction {
+function Evaluate<In extends ChainCallDTO, Out>(
+  options: GalaEvaluateOptions<In, Out>
+): GalaTransactionDecoratorFunction {
   return GalaTransaction({ ...options, type: EVALUATE, verifySignature: true });
 }
 
-function UnsignedEvaluate<T extends ChainCallDTO>(
-  options: GalaEvaluateOptions<T>
+function UnsignedEvaluate<In extends ChainCallDTO, Out>(
+  options: CommonTransactionOptions<In, Out>
 ): GalaTransactionDecoratorFunction {
   return GalaTransaction({ ...options, type: EVALUATE });
 }
 
-function GalaTransaction<T extends ChainCallDTO>(
-  options: GalaTransactionOptions<T>
+function GalaTransaction<In extends ChainCallDTO, Out>(
+  options: GalaTransactionOptions<In, Out>
 ): GalaTransactionDecoratorFunction {
   return (target, propertyKey, descriptor): void => {
     // Register the DTO class to be passed
@@ -169,10 +178,10 @@ function GalaTransaction<T extends ChainCallDTO>(
         ctx?.logger?.logTimeline("Begin Transaction", loggingContext, metadata);
 
         // Parse & validate - may throw an exception
-        const dtoClass = options.in ?? (ChainCallDTO as unknown as ClassConstructor<Inferred<T>>);
+        const dtoClass = options.in ?? (ChainCallDTO as unknown as ClassConstructor<Inferred<In>>);
         const dto = !dtoPlain
           ? undefined
-          : await parseValidDTO<T>(dtoClass, dtoPlain as string | Record<string, unknown>);
+          : await parseValidDTO<In>(dtoClass, dtoPlain as string | Record<string, unknown>);
 
         // Authenticate the user
         if (ctx.isDryRun) {
@@ -180,8 +189,11 @@ function GalaTransaction<T extends ChainCallDTO>(
         } else if (options?.verifySignature || dto?.signature !== undefined) {
           ctx.callingUserData = await authenticate(ctx, dto);
         } else {
-          // it means a request where authorization is not required. Intentionally misses alias field
-          ctx.callingUserData = { roles: [UserRole.EVALUATE] };
+          // it means a request where authorization is not required. If there is org-based authorization,
+          // default roles are applied. If not, then only evaluate is possible. Alias is intentionally
+          // missing.
+          const roles = !options.allowedOrgs?.length ? [UserRole.EVALUATE] : [...UserProfile.DEFAULT_ROLES];
+          ctx.callingUserData = { roles };
         }
 
         // Authorize the user
@@ -192,11 +204,12 @@ function GalaTransaction<T extends ChainCallDTO>(
           if (dto?.uniqueKey) {
             await UniqueTransactionService.ensureUniqueTransaction(ctx, dto.uniqueKey);
           } else {
-            throw new RuntimeError("Missing uniqueKey in transaction dto");
+            const message = `Missing uniqueKey in transaction dto for method '${method.name}'`;
+            throw new RuntimeError(message);
           }
         }
 
-        const argArray: [GalaChainContext, T] | [GalaChainContext] = dto ? [ctx, dto] : [ctx];
+        const argArray: [GalaChainContext, In] | [GalaChainContext] = dto ? [ctx, dto] : [ctx];
 
         if (options?.before !== undefined) {
           await options?.before?.apply(this, argArray);

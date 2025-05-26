@@ -93,6 +93,12 @@ export default class NetworkUp extends BaseCommand<typeof NetworkUp> {
       char: "o",
       description: "Contract names in a JSON format.",
       multiple: true
+    }),
+    "no-rest-api": Flags.boolean({
+      description: "Do not start GalaChain REST API services."
+    }),
+    "no-chain-browser": Flags.boolean({
+      description: "Do not start GalaChain Browser."
     })
   };
 
@@ -134,7 +140,9 @@ export default class NetworkUp extends BaseCommand<typeof NetworkUp> {
       )
       .execute("up");
 
-    startNetworkServices(fabloRoot, flags.watch, apiConfigPath);
+    startNetworkServices(fabloRoot, flags, apiConfigPath);
+
+    printTestAdminCredentials(fabloRoot);
 
     if (flags.watch) {
       startChaincodeInWatchMode(fabloRoot, singleArgs);
@@ -142,13 +150,21 @@ export default class NetworkUp extends BaseCommand<typeof NetworkUp> {
   }
 }
 
-function startNetworkServices(fabloRoot: string, isWatchMode: boolean, apiConfigPath: string): void {
-  try {
-    // Start browser-api
-    startBrowserApi(fabloRoot);
+interface NetworkServicesFlags {
+  watch: boolean;
+  "no-rest-api": boolean;
+  "no-chain-browser": boolean;
+}
 
-    // Start ops-api only in non-watch mode
-    if (!isWatchMode) {
+function startNetworkServices(fabloRoot: string, flags: NetworkServicesFlags, apiConfigPath: string): void {
+  try {
+    // Start browser-api only if not disabled by flags
+    if (!flags["no-chain-browser"]) {
+      startBrowserApi(fabloRoot);
+    }
+
+    // Start ops-api only in non-watch mode, and if not disabled by flags
+    if (!flags.watch && !flags["no-rest-api"]) {
       startOpsApi(fabloRoot, apiConfigPath);
     }
   } catch (error) {
@@ -181,6 +197,15 @@ function startOpsApi(fabloRoot: string, apiConfigPath: string): void {
     console.error("Failed to start ops-api:", error);
     throw error;
   }
+}
+
+function printTestAdminCredentials(fabloRoot: string): void {
+  const commands = [
+    `cd "${fabloRoot}"`,
+    `echo "Dev admin private key which you can use for signing transactions:"`,
+    `echo "  $(cat dev-admin-key/dev-admin.priv.hex.txt)"`
+  ];
+  execSyncStdio(commands.join(" && "));
 }
 
 function startChaincodeInWatchMode(fabloRoot: string, args: SingleArg[]): void {

@@ -12,15 +12,11 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-import { ChainClient, ChainUser } from "../generic";
+import { ValidationFailedError } from "@gala-chain/api";
+import BigNumber from "bignumber.js";
 
-export interface ChainUserAPI {
-  privateKey: string;
-  identityKey: string;
-  publicKey: string;
-  ethAddress: string;
-}
-
-export function buildChainUserAPI(user: ChainUser): (c: ChainClient) => ChainUserAPI {
-  return (): ChainUserAPI => user;
+export class VestingAllocationError extends ValidationFailedError {
+  constructor(maxSupply: BigNumber, totalAllocations: BigNumber) {
+    super(`Vesting Allocation total is not equal to token Max Supply`, { maxSupply, totalAllocations });
+  }
 }

@@ -13,6 +13,7 @@ docs/chain-client-docs
 docs/chain-test-docs
 docs/chaincode-docs
 docs/chain-connect-docs
+tools/training-data/chain*.txt
 
 # dependencies
 node_modules
@@ -29,11 +30,10 @@ node_modules
 
 # IDE - VSCode
 .vscode/*
-!.vscode/settings.json
+.vscode/settings.json
 !.vscode/tasks.json
 !.vscode/launch.json
 !.vscode/extensions.json
-
 # misc
 /.sass-cache
 /connect.lock

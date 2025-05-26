@@ -29,19 +29,19 @@ import {
 } from "class-validator";
 import { JSONSchema } from "class-validator-jsonschema";
 
-import { NotImplementedError, ValidationFailedError } from "../utils";
+import { ValidationFailedError } from "../utils";
 import { BigNumberProperty } from "../validators";
 import { OracleDefinition } from "./OracleDefinition";
 import { ExternalToken, OraclePriceAssertion } from "./OraclePriceAssertion";
 import { OraclePriceCrossRateAssertion } from "./OraclePriceCrossRateAssertion";
 import { TokenClassKey } from "./TokenClass";
 import { TokenInstanceKey } from "./TokenInstance";
-import { ChainCallDTO } from "./dtos";
+import { ChainCallDTO, SubmitCallDTO } from "./dtos";
 
 @JSONSchema({
   description: "Save an Oracle definition on chain"
 })
-export class OracleDefinitionDto extends ChainCallDTO {
+export class OracleDefinitionDto extends SubmitCallDTO {
   @JSONSchema({
     description: "Name of the oracle. Unique chain key."
   })
@@ -123,7 +123,7 @@ export class FetchOracleDefinitionsResponse extends ChainCallDTO {
 @JSONSchema({
   description: "Price data for exchanging two tokens/currenices signed by an Authoritative Oracle"
 })
-export class OraclePriceAssertionDto extends ChainCallDTO {
+export class OraclePriceAssertionDto extends SubmitCallDTO {
   @JSONSchema({
     description: "Name of the oracle defined on chain."
   })
@@ -221,7 +221,7 @@ export class FetchOraclePriceAssertionsResponse extends ChainCallDTO {
 @JSONSchema({
   description: "Cross Rate Exchange price assertion. E.g. compare $GALA to $ETH via price in $USD for each."
 })
-export class OraclePriceCrossRateAssertionDto extends ChainCallDTO {
+export class OraclePriceCrossRateAssertionDto extends SubmitCallDTO {
   @JSONSchema({
     description: "Name of the oracle defined on chain."
   })
@@ -386,14 +386,14 @@ export class FetchOraclePriceCrossRateAssertionsResponse extends ChainCallDTO {
   bookmark?: string;
 }
 
-export class DeleteOracleAssertionsDto extends ChainCallDTO {
+export class DeleteOracleAssertionsDto extends SubmitCallDTO {
   public static MAX_LIMIT = 1000;
 
   @ArrayNotEmpty()
   chainKeys: string[];
 }
 
-export class DeleteOracleDefinitionDto extends ChainCallDTO {
+export class DeleteOracleDefinitionDto extends SubmitCallDTO {
   @IsNotEmpty()
   name: string;
 }
@@ -401,7 +401,7 @@ export class DeleteOracleDefinitionDto extends ChainCallDTO {
 @JSONSchema({
   description: "Response with signed bridging fee data."
 })
-export class OracleBridgeFeeAssertionDto extends ChainCallDTO {
+export class OracleBridgeFeeAssertionDto extends SubmitCallDTO {
   @JSONSchema({
     description: "Exchange Rate Price Assertion used to calculate Gas Fee"
   })

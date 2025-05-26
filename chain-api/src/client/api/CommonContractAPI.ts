@@ -13,6 +13,7 @@
  * limitations under the License.
  */
 import {
+  BatchDto,
   ChainCallDTO,
   ContractAPI,
   DryRunDto,
@@ -21,8 +22,7 @@ import {
   GetObjectDto,
   GetObjectHistoryDto,
   createValidDTO
-} from "@gala-chain/api";
-
+} from "../../types";
 import { ChainClient } from "../generic";
 
 export interface CommonContractAPI extends Record<string, unknown> {
@@ -35,6 +35,8 @@ export interface CommonContractAPI extends Record<string, unknown> {
     callerPublicKey: string,
     dto: ChainCallDTO
   ): Promise<GalaChainResponse<DryRunResultDto>>;
+  BatchSubmit(batch: BatchDto): Promise<GalaChainResponse<GalaChainResponse<unknown>[]>>;
+  BatchEvaluate(batch: BatchDto): Promise<GalaChainResponse<GalaChainResponse<unknown>[]>>;
 }
 
 export const commonContractAPI = (client: ChainClient): CommonContractAPI => ({
@@ -68,5 +70,15 @@ export const commonContractAPI = (client: ChainClient): CommonContractAPI => ({
     const dryRunDto = await createValidDTO(DryRunDto, { method, callerPublicKey, dto });
     const resp = await client.evaluateTransaction("DryRun", dryRunDto);
     return resp as GalaChainResponse<DryRunResultDto>;
+  },
+
+  async BatchSubmit(batch: BatchDto): Promise<GalaChainResponse<GalaChainResponse<unknown>[]>> {
+    const resp = await client.submitTransaction("BatchSubmit", batch);
+    return resp as GalaChainResponse<GalaChainResponse<unknown>[]>;
+  },
+
+  async BatchEvaluate(batch: BatchDto): Promise<GalaChainResponse<GalaChainResponse<unknown>[]>> {
+    const resp = await client.evaluateTransaction("BatchEvaluate", batch);
+    return resp as GalaChainResponse<GalaChainResponse<unknown>[]>;
   }
 });

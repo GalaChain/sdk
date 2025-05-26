@@ -14,69 +14,57 @@
  */
 import axios from "axios";
 
+import { axiosGetResponse, consts } from "../../__test__/data";
 import Info from "./index";
 
-const fakePrivateKey = "bf2168e0e2238b9d879847987f556a093040a2cab07983a20919ac33103d0d00";
-
 jest.mock("axios");
+axios.get = jest.fn().mockResolvedValue(axiosGetResponse);
 
-describe("ChainInfo Command", () => {
-  beforeEach(() => {
-    jest.clearAllMocks();
+let stdOut: string[] = [];
+let logSpy: jest.SpyInstance;
+let writeSpy: jest.SpyInstance;
+
+beforeEach(() => {
+  process.env.DEV_PRIVATE_KEY = consts.developerPrivateKey;
+  process.env.CHAINCODE_ADMIN_PUBLIC_KEY = consts.chaincodeAdminPublicKey;
+
+  // Capture both console.log and process.stdout.write
+  logSpy = jest.spyOn(console, "log").mockImplementation((v) => {
+    stdOut.push(v?.toString() || "");
   });
 
-  it("should check if it gets info from a chaincode", async () => {
-    // Given
-    axios.get = jest.fn().mockResolvedValue({
-      status: 200,
-      data: {
-        status: "CH_CREATED",
-        lastOperationId: "operation-id"
-      }
-    });
-
-    const result: (string | Uint8Array)[] = [];
-    jest.spyOn(process.stdout, "write").mockImplementation((v) => {
-      result.push(v);
-      return true;
-    });
-
-    // When
-    await Info.run([fakePrivateKey]);
-
-    // Then
-    expect(result.join()).toContain(`CH_CREATED`);
-    expect(result.join()).toContain(`operation-id`);
+  writeSpy = jest.spyOn(process.stdout, "write").mockImplementation((v) => {
+    stdOut.push(v?.toString() || "");
+    return true;
   });
+});
 
-  it("should get private key from local environment", async () => {
-    // Given
-    axios.get = jest.fn().mockResolvedValue({
-      status: 200,
-      data: {
-        status: "CH_CREATED",
-        lastOperationId: "operation-id"
-      }
-    });
+afterEach(() => {
+  jest.clearAllMocks();
+  logSpy.mockRestore();
+  writeSpy.mockRestore();
 
-    const result: (string | Uint8Array)[] = [];
-    jest.spyOn(process.stdout, "write").mockImplementation((v) => {
-      result.push(v);
-      return true;
-    });
+  console.log("[Captured stdOut:]\n", stdOut.join("\n"));
+  stdOut = [];
 
-    jest.spyOn(console, "log").mockImplementation((v) => {
-      result.push(v);
-      return true;
-    });
+  process.env.DEV_PRIVATE_KEY = undefined;
+  process.env.CHAINCODE_ADMIN_PUBLIC_KEY = undefined;
+});
 
-    process.env = { ...process.env, DEV_PRIVATE_KEY: fakePrivateKey };
+it("should get chaincode info", async () => {
+  // When
+  await Info.run([]);
 
-    // When
-    await Info.run();
+  // Then
+  const expectedLines = [
+    '"network": "TNT"',
+    `"chaincode": "${consts.chaincodeName}"`,
+    '"status": "CC_TEST_STATUS"'
+  ];
 
-    // Then
-    expect(result.join()).toContain(`CH_CREATED`);
-    expect(result.join()).toContain(`operation-id`);
+  const fullOutput = stdOut.join("\n");
+
+  expectedLines.forEach((line) => {
+    expect(fullOutput).toContain(line);
   });
 });

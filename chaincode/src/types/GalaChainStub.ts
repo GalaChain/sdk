@@ -13,7 +13,7 @@
  * limitations under the License.
  */
 import { NotImplementedError } from "@gala-chain/api";
-import { ChaincodeStub } from "fabric-shim";
+import { ChaincodeResponse, ChaincodeStub } from "fabric-shim";
 
 import { CachedKV, FabricIterable, fabricIterable, filter, prepend } from "./FabricIterable";
 
@@ -37,6 +37,8 @@ class StubCache {
   private reads: Record<string, Uint8Array> = {};
 
   private deletes: Record<string, true> = {};
+
+  private invokeChaincodeCalls: Record<string, string[]> = {};
 
   constructor(private readonly stub: ChaincodeStub) {}
 
@@ -102,6 +104,24 @@ class StubCache {
     return Promise.resolve();
   }
 
+  /**
+   * This method is used to invoke other chaincode. It is not allowed to invoke the same chaincode
+   * more than once within the same transaction, because we are not able to support cache for the
+   * invoked chaincode.
+   */
+  async invokeChaincode(chaincodeName: string, args: string[], channel: string): Promise<ChaincodeResponse> {
+    const key = `${channel}/${chaincodeName}`;
+    const prevCall = this.invokeChaincodeCalls[key];
+
+    if (prevCall) {
+      throw new DuplicateInvokeChaincodeError(chaincodeName, prevCall, channel);
+    }
+
+    this.invokeChaincodeCalls[key] = args;
+
+    return await this.stub.invokeChaincode(chaincodeName, args, channel);
+  }
+
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
   setStateValidationParameter(key: string, ep: Uint8Array): Promise<void> {
     throw new NotImplementedError("setStateValidationParameter is not supported");
@@ -134,27 +154,36 @@ class StubCache {
     await Promise.all(putOps);
   }
 
-  getReads(): Record<string, string> {
-    return keysToUtfStrings(this.reads);
+  getReads(): Record<string, Uint8Array> {
+    return { ...this.reads };
   }
 
-  getWrites(): Record<string, string> {
-    return keysToUtfStrings(this.writes);
+  getWrites(): Record<string, Uint8Array> {
+    return { ...this.writes };
   }
 
   getDeletes(): Record<string, true> {
     return { ...this.deletes };
   }
+
+  setReads(reads: Record<string, Uint8Array>): void {
+    this.reads = { ...reads };
+  }
+
+  setWrites(writes: Record<string, Uint8Array>): void {
+    this.writes = { ...writes };
+  }
+
+  setDeletes(deletes: Record<string, true>): void {
+    this.deletes = { ...deletes };
+  }
 }
 
-function keysToUtfStrings(obj: Record<string, Uint8Array>): Record<string, string> {
-  return Object.entries(obj).reduce(
-    (acc, [key, value]) => {
-      acc[key] = value.toString();
-      return acc;
-    },
-    {} as Record<string, string>
-  );
+export class DuplicateInvokeChaincodeError extends NotImplementedError {
+  constructor(chaincodeName: string, args: string[], channel: string) {
+    const msg = `Chaincode ${chaincodeName} on channel ${channel} was already invoked in the transaction (method: ${args[0]})`;
+    super(msg, { chaincodeName, args, channel });
+  }
 }
 
 export interface GalaChainStub extends ChaincodeStub {
@@ -164,11 +193,17 @@ export interface GalaChainStub extends ChaincodeStub {
 
   flushWrites(): Promise<void>;
 
-  getReads(): Record<string, string>;
+  getReads(): Record<string, Uint8Array>;
 
-  getWrites(): Record<string, string>;
+  getWrites(): Record<string, Uint8Array>;
 
   getDeletes(): Record<string, true>;
+
+  setReads(reads: Record<string, Uint8Array>): void;
+
+  setWrites(writes: Record<string, Uint8Array>): void;
+
+  setDeletes(deletes: Record<string, true>): void;
 }
 
 export const createGalaChainStub = (stub: ChaincodeStub): GalaChainStub => {
@@ -179,6 +214,18 @@ export const createGalaChainStub = (stub: ChaincodeStub): GalaChainStub => {
       // eslint-disable-next-line @typescript-eslint/ban-ts-comment
       // @ts-ignore
       return name in cachedWrites ? cachedWrites[name] : target[name];
+    },
+    set: function (target: GalaChainStub, name: string | symbol, value: unknown): boolean {
+      if (name in cachedWrites) {
+        // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+        // @ts-ignore
+        cachedWrites[name] = value;
+        return true;
+      }
+      // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+      // @ts-ignore
+      target[name] = value;
+      return true;
     }
   };
 

@@ -50,8 +50,8 @@ if (optionalVersion) {
   console.log("Applying version from command line:", optionalVersion);
 
   // just a sanity check
-  if (!optionalVersion.startsWith("2.0.")) {
-    console.error("Version must start with '2.0.'");
+  if (!optionalVersion.startsWith("2.")) {
+    console.error("Version must start with '2.'");
     process.exit(1);
   }
   packages.forEach(({ packageJson, packageJsonPath }) => {
@@ -112,6 +112,17 @@ Object.keys(chaincodeTemplatePackageLock.packages)
   .forEach((key) => {
     delete chaincodeTemplatePackageLock.packages[key];
   });
+
+packages.forEach(({ packageJson }) => {
+  const dependencies = chaincodeTemplatePackageLock.packages?.[""]?.dependencies;
+  const devDependencies = chaincodeTemplatePackageLock.packages?.[""]?.devDependencies;
+  if (typeof dependencies?.[packageJson.name] === "string") {
+    dependencies[packageJson.name] = versionToApply;
+  }
+  if (typeof devDependencies?.[packageJson.name] === "string") {
+    devDependencies[packageJson.name] = versionToApply;
+  }
+});
 
 console.log(` - saving changes in '${chaincodeTemplatePackageLockPath}'`);
 fs.writeFileSync(

@@ -13,21 +13,19 @@
  * limitations under the License.
  */
 import {
-  GalaChainResponseType,
-  RegisterEthUserDto,
-  RegisterUserDto,
-  createValidSubmitDTO
-} from "@gala-chain/api";
-import {
   ChainClient,
   ChainUser,
   ChainUserAPI,
   CommonContractAPI,
   ContractConfig,
+  GalaChainResponseType,
   PublicKeyContractAPI,
+  RegisterEthUserDto,
+  RegisterUserDto,
   commonContractAPI,
+  createValidSubmitDTO,
   publicKeyContractAPI
-} from "@gala-chain/client";
+} from "@gala-chain/api";
 import * as fs from "fs";
 import * as path from "path";
 

@@ -20,7 +20,7 @@ $ npm install -g @gala-chain/cli
 $ galachain COMMAND
 running command...
 $ galachain (--version)
-@gala-chain/cli/2.0.1 linux-x64 node-v18.20.5
+@gala-chain/cli/2.3.0 linux-x64 node-v18.20.8
 $ galachain --help [COMMAND]
 USAGE
   $ galachain COMMAND
@@ -45,20 +45,27 @@ USAGE
 * [`galachain network-up`](#galachain-network-up)
 * [`galachain network:prune`](#galachain-networkprune)
 * [`galachain network:up`](#galachain-networkup)
-* [`galachain test-deploy IMAGETAG [DEVELOPERPRIVATEKEY]`](#galachain-test-deploy-imagetag-developerprivatekey)
+* [`galachain register [DEVELOPERPRIVATEKEY]`](#galachain-register-developerprivatekey)
 
 ## `galachain deploy IMAGETAG [DEVELOPERPRIVATEKEY]`
 
-Schedules deployment of published chaincode Docker image to GalaChain sandbox.
+Schedules deployment of published chaincode Docker image to GalaChain TNT network.
 
 ```
 USAGE
-  $ galachain deploy IMAGETAG [DEVELOPERPRIVATEKEY] [--json] [--log-level debug|info|warn|error]
+  $ galachain deploy IMAGETAG [DEVELOPERPRIVATEKEY] [--json] [--log-level debug|info|warn|error] [--mnt]
+    [--no-prompt]
 
 ARGUMENTS
   IMAGETAG             Image tag to deploy. It should follow the pattern imageName:version.
-  DEVELOPERPRIVATEKEY  Optional private key to sign the data. It could be a file or a string. If not provided, the
-                       private key will be read from the environment variable DEV_PRIVATE_KEY.
+  DEVELOPERPRIVATEKEY  Developer's private key to sign the request. It could be a file or a string. If not provided as
+                       an argument, the command will try to read the private key from the environment variable
+                       DEV_PRIVATE_KEY, or from the default location (~/.gc-keys/<chaincode-name>/gc-dev-key), or will
+                       ask for it in a prompt.
+
+FLAGS
+  --mnt        Get info from MNT network instead of TNT (not supported yet).
+  --no-prompt  Do not prompt for confirmation.
 
 GLOBAL FLAGS
   --json                Format output as json.
@@ -66,7 +73,7 @@ GLOBAL FLAGS
                         <options: debug|info|warn|error>
 
 DESCRIPTION
-  Schedules deployment of published chaincode Docker image to GalaChain sandbox.
+  Schedules deployment of published chaincode Docker image to GalaChain TNT network.
 
 EXAMPLES
   $ galachain deploy registry.image.name:latest
@@ -260,14 +267,16 @@ Get ChainCode information.
 
 ```
 USAGE
-  $ galachain info [DEVELOPERPRIVATEKEY] [--json] [--log-level debug|info|warn|error] [--testnet]
+  $ galachain info [DEVELOPERPRIVATEKEY] [--json] [--log-level debug|info|warn|error] [--mnt]
 
 ARGUMENTS
-  DEVELOPERPRIVATEKEY  Optional private key to sign the data. It could be a file or a string. If not provided, the
-                       private key will be read from the environment variable DEV_PRIVATE_KEY.
+  DEVELOPERPRIVATEKEY  Developer's private key to sign the request. It could be a file or a string. If not provided as
+                       an argument, the command will try to read the private key from the environment variable
+                       DEV_PRIVATE_KEY, or from the default location (~/.gc-keys/<chaincode-name>/gc-dev-key), or will
+                       ask for it in a prompt.
 
 FLAGS
-  --testnet  Get info from testnet instead of sandbox.
+  --mnt  Get info from MNT network instead of TNT (not supported yet).
 
 GLOBAL FLAGS
   --json                Format output as json.
@@ -280,7 +289,7 @@ DESCRIPTION
 EXAMPLES
   $ galachain info
 
-  $ galachain info ./dev-private-key --testnet
+  $ galachain info ./dev-private-key
 
   $ galachain info c0fb1924408d936fb7cd0c86695885df4f66861621b5c8660df3924c4d09dd79
 ```
@@ -391,7 +400,8 @@ Start the chaincode, browser-api, and ops-api (in non-watch mode).
 ```
 USAGE
   $ galachain network-up -C <value>... -t curator|partner... -n <value>... [--json] [--log-level
-    debug|info|warn|error] [-d <value>...] [-r <value>] [-e <value>] [-w] [-o <value>...]
+    debug|info|warn|error] [-d <value>...] [-r <value>] [-e <value>] [-w] [-o <value>...] [--no-rest-api]
+    [--no-chain-browser]
 
 FLAGS
   -C, --channel=<value>...        (required) Channel name.
@@ -407,6 +417,8 @@ FLAGS
                                   chaincode managed by CuratorOrg or PartnerOrg.
                                   <options: curator|partner>
   -w, --watch                     Enable watch mode (live chaincode reload).
+      --no-chain-browser          Do not start GalaChain Browser.
+      --no-rest-api               Do not start GalaChain REST API services.
 
 GLOBAL FLAGS
   --json                Format output as json.
@@ -459,7 +471,8 @@ Start the chaincode, browser-api, and ops-api (in non-watch mode).
 ```
 USAGE
   $ galachain network:up -C <value>... -t curator|partner... -n <value>... [--json] [--log-level
-    debug|info|warn|error] [-d <value>...] [-r <value>] [-e <value>] [-w] [-o <value>...]
+    debug|info|warn|error] [-d <value>...] [-r <value>] [-e <value>] [-w] [-o <value>...] [--no-rest-api]
+    [--no-chain-browser]
 
 FLAGS
   -C, --channel=<value>...        (required) Channel name.
@@ -475,6 +488,8 @@ FLAGS
                                   chaincode managed by CuratorOrg or PartnerOrg.
                                   <options: curator|partner>
   -w, --watch                     Enable watch mode (live chaincode reload).
+      --no-chain-browser          Do not start GalaChain Browser.
+      --no-rest-api               Do not start GalaChain REST API services.
 
 GLOBAL FLAGS
   --json                Format output as json.
@@ -493,18 +508,23 @@ EXAMPLES
   $ galachain network:up -C=product-channel -t=curator -n=basic-product -d=./ --envConfig=./.dev-env
 ```
 
-## `galachain test-deploy IMAGETAG [DEVELOPERPRIVATEKEY]`
+## `galachain register [DEVELOPERPRIVATEKEY]`
 
-Schedules deployment of published chaincode Docker image to GalaChain testnet.
+Registers chaincode on GalaChain TNT network.
 
 ```
 USAGE
-  $ galachain test-deploy IMAGETAG [DEVELOPERPRIVATEKEY] [--json] [--log-level debug|info|warn|error]
+  $ galachain register [DEVELOPERPRIVATEKEY] [--json] [--log-level debug|info|warn|error] [--mnt] [--no-prompt]
 
 ARGUMENTS
-  IMAGETAG             Image tag to deploy. It should follow the pattern imageName:version.
-  DEVELOPERPRIVATEKEY  Optional private key to sign the data. It could be a file or a string. If not provided, the
-                       private key will be read from the environment variable DEV_PRIVATE_KEY.
+  DEVELOPERPRIVATEKEY  Developer's private key to sign the request. It could be a file or a string. If not provided as
+                       an argument, the command will try to read the private key from the environment variable
+                       DEV_PRIVATE_KEY, or from the default location (~/.gc-keys/<chaincode-name>/gc-dev-key), or will
+                       ask for it in a prompt.
+
+FLAGS
+  --mnt        Get info from MNT network instead of TNT (not supported yet).
+  --no-prompt  Do not prompt for confirmation.
 
 GLOBAL FLAGS
   --json                Format output as json.
@@ -512,13 +532,13 @@ GLOBAL FLAGS
                         <options: debug|info|warn|error>
 
 DESCRIPTION
-  Schedules deployment of published chaincode Docker image to GalaChain testnet.
+  Registers chaincode on GalaChain TNT network.
 
 EXAMPLES
-  $ galachain test-deploy registry.image.name:latest
+  $ galachain register
 
-  $ galachain test-deploy registry.image.name:latest ./private-key
+  $ galachain register ./dev-private-key
 
-  $ galachain test-deploy registry.image.name:latest c0fb1924408d936fb7cd0c86695885df4f66861621b5c8660df3924c4d09dd79
+  $ galachain register c0fb1924408d936fb7cd0c86695885df4f66861621b5c8660df3924c4d09dd79
 ```
 <!-- commandsstop -->

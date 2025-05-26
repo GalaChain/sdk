@@ -17,7 +17,7 @@ import { plainToInstance } from "class-transformer";
 
 import { ExternalToken } from "./OraclePriceAssertion";
 import { TokenInstanceKey } from "./TokenInstance";
-import { createValidDTO } from "./dtos";
+import { createValidSubmitDTO } from "./dtos";
 import { OraclePriceAssertionDto, OraclePriceCrossRateAssertionDto } from "./oracle";
 
 describe("oracle.ts", () => {
@@ -54,7 +54,7 @@ describe("oracle.ts", () => {
       }
     };
 
-    const tonUsdPriceAssertion = await createValidDTO(OraclePriceAssertionDto, {
+    const tonUsdPriceAssertion = await createValidSubmitDTO(OraclePriceAssertionDto, {
       oracle: mockOracle,
       identity: mockOracleIdentity,
       externalBaseToken: tonDetails,
@@ -63,7 +63,7 @@ describe("oracle.ts", () => {
       timestamp: 0
     });
 
-    const galaUsdPriceAssertion = await createValidDTO(OraclePriceAssertionDto, {
+    const galaUsdPriceAssertion = await createValidSubmitDTO(OraclePriceAssertionDto, {
       oracle: mockOracle,
       identity: mockOracleIdentity,
       baseToken: galaTokenInstanceKey,
@@ -72,7 +72,7 @@ describe("oracle.ts", () => {
       timestamp: 0
     });
 
-    const mockAssertionDto = await createValidDTO(OraclePriceCrossRateAssertionDto, {
+    const mockAssertionDto = await createValidSubmitDTO(OraclePriceCrossRateAssertionDto, {
       oracle: mockOracle,
       identity: mockOracleIdentity,
       baseTokenCrossRate: tonUsdPriceAssertion,

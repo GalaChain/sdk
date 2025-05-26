@@ -1,0 +1,259 @@
+---
+description: 
+globs: *.ts
+alwaysApply: false
+---
+---
+description: 
+globs: *.ts
+alwaysApply: false
+---
+# GalaChain Chaincode Development Standards
+
+## Context
+- Apply this rule to .ts files related to chaincode development
+
+## File Structure
+- Chaincode source files should be under the src directory.
+- Create a directory under src for the specific chaincode.
+- Chain Objects should be defined in the types.ts file or if there are a large enough number of them
+a types directory should be created and collections of related types should each have their own collection.ts files.
+- DTO classes should be in the dtos.ts file or if there are a large enough number of them
+a dtos directory should be created and collections of related dtos should each have their own collection.ts files.
+- Each chaincode should have at least one contract file whose name ends in "Contract.ts".
+- Specific chaincode methods should have a file that indicates the action. In some cases it is
+acceptable to have a methods file that contains multiple relevant methods that relate to the same
+chaincode object (e.g Create, Fetch, etc.).
+- Unit tests should be at the same level as their source code counterparts and are named the same as
+the source file with .spec.ts extension rather than .ts.
+- index.ts files should export relevant classes.
+
+## Examples
+
+### Chain Objects
+```typescript
+import { ChainObject } from "@gala-chain/api";
+
+export class SimpleProfile extends ChainObject {
+  @Exclude()
+  public static readonly INDEX_KEY = "GCSP";
+
+  @ChainKey({ position: 0 })
+  @IsString()
+  public readonly username: string;
+
+  @IsNumber()
+  public readonly createdOn: number;
+
+  @IsNumber()
+  public readonly createdBy: string;
+
+  @IsNumber()
+  public readonly level: number;
+  /* more fields here */
+
+  constructor(params?: {
+    username: string;
+    createdOn: number;
+    createdBy: string;
+    level: number;
+  }) {
+    super();
+    if (params) {
+      this.username = params.username;
+      this.createdOn = params.createdOn;
+      this.createdBy = params.createdBy;
+      this.level = params.level ?? 0;
+      /* additional constructor fields */
+    }
+  }
+
+  /* helper methods simplify object manipulation */
+  public getLevel(): number {
+    return this.level;
+  }
+
+  public levelUp(): number {
+    this.level += 1;
+    return this.level;
+  }
+}
+```
+
+### DTOs
+
+```typescript
+import { ChainCallDTO } from "@gala-chain/api";
+import { IsString, IsNotEmpty, IsOptional, IsInt, Min } from "class-validator";
+import { JSONSchema } from "class-validator-jsonschema";
+
+@JSONSchema({
+  description: "Contains parameters for fetching a profile."
+})
+export class FetchProfileDto extends ChainCallDTO {
+  @JSONSchema({
+    description: "Profile Username"
+  })
+  @IsNotEmpty()
+  @IsString()
+  username: string;
+}
+
+@JSONSchema({
+  description: "Contains parameters for creating a profile."
+})
+export class CreateProfileDto extends ChainCallDTO {
+  @JSONSchema({
+    description: "Profile Username"
+  })
+  @IsNotEmpty()
+  @IsString()
+  username: string;
+
+  @JSONSchema({
+    description: "Profile Starting Level"
+  })
+  @IsOptional()
+  @Min(0)
+  @IsInt()
+  level?: number;
+}
+```
+
+### Chaincode Methods
+
+```typescript
+import { GalaChainContext, putChainObject, getObjectByKey, takeUntilUndefined } from "@gala-chain/chaincode";
+import { ConflictError } from "@gala-chain/api";
+
+export interface FetchProfileParams {
+  username: string;
+}
+
+/**
+ * @description
+ *
+ * Query a profile from on-chain World State using the provided parameters.
+ * This function does not support pagination.
+ *
+ * Also see the `SimpleProfile` definition, where its `ChainKey` properties
+ * are defined.
+ *
+ * The `@ChainKeys` that make up the World State composite key are ordered,
+ * and cannot be skipped when making partial composite key queries.
+ * Be advised that broad queries can lead
+ * to performance issues for large result sets.
+ *
+ * @param ctx
+ * @param data
+ * @returns Promise<SimpleProfile>
+ */
+export async function fetchProfile(
+  ctx: GalaChainContext,
+  data: FetchProfileParams
+): Promise<SimpleProfile> {
+  const queryParams: Array<string> = takeUntilUndefined(
+    data.username
+  );
+
+  const compositeKey = ChainObject.getCompositeKeyFromParts(SimpleProfile.INDEX_KEY, queryParams);
+  const profile: SimpleProfile = await getObjectByKey(ctx, SimpleProfile, compositeKey);
+
+  return profile;
+
+/* For partial key queries (assumes multiple chain key fields for an object):
+  const results = await getObjectsByCompositeKey(
+    ctx,
+    SimpleProfile.INDEX_KEY,
+    queryParams,
+    SimpleProfile
+  ).catch((e) => {
+    throw ChainError.map(e, ErrorCode.NOT_FOUND, new ProfileNotFoundError(data.owner));
+  });
+  return results;
+*/
+}
+
+export interface CreateProfileParams {
+  username: string;
+  level?: number;
+}
+
+/**
+ * @description
+ *
+ * Create a profile in on-chain World State using the provided parameters.
+ *
+ * Also see the `SimpleProfile` definition, where its `ChainKey` properties
+ * are defined.
+ *
+ * @param ctx
+ * @param data
+ * @returns Promise<SimpleProfile>
+ */
+export async function createProfile(
+  ctx: GalaChainContext,
+  data: CreateProfileParams
+): Promise<SimpleProfile> {
+  let profile = new SimpleProfile(
+    data.username, 
+    ctx.txUnixTime, 
+    ctx.callingUser, 
+    data.level
+  );
+
+  const existingProfile = await getObjectByKey(ctx, SimpleProfile, profile.getCompositeKey()).catch(() => undefined);
+
+  // check to see if the profile already exists
+  if (existingProfile !== undefined) {
+    throw new ConflictError("Profile already exists on chain", existingProfile.toPlainObject());
+  }
+
+  await putChainObject(ctx, profile);
+
+  return profile;
+```
+
+### Contracts
+```typescript
+import { Evaluate, GalaChainContext, GalaContract, Submit } from "@gala-chain/chaincode";
+
+import { version } from "../../package.json";
+import { FetchProfileDto, CreateProfileDto } from "./dtos";
+import { fetchProfile } from "./fetchProfile";
+import { createProfile } from "./createProfile";
+
+export class ProfileContract extends GalaContract {
+  constructor() {
+    super("ProfileContract", version);
+  }
+
+  @Submit({
+    in: CreateProfileDto,
+    out: SimpleProfile
+  })
+  public async CreateProfile(ctx: GalaChainContext, dto: CreateProfileDto): 
+  ): Promise<SimpleProfile> {
+    return createProfile(ctx, {
+        username: dto.username,
+        level: dto.level
+    });
+  }
+
+  @Evaluate({
+    in: FetchProfileDto,
+    out: SimpleProfile
+  })
+  public async FetchProfile(ctx: GalaChainContext, dto: FetchProfileDto): 
+  ): Promise<SimpleProfile> {
+    return fetchProfileDto(ctx, {
+        username: dto.username
+    });
+  }
+}
+```
+
+## Best Practices
+- Chain Keys should be ordered from general to specific to facilitate partial key queries
+- Avoid creating data objects that are likely to be updated by more than one user/action at a time
+- Use number type for date fields and expect unix timestamps

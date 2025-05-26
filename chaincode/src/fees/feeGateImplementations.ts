@@ -14,6 +14,7 @@
  */
 import {
   BatchFillTokenSwapDto,
+  BatchMintTokenDto,
   BurnTokensDto,
   ChainCallDTO,
   ChainError,
@@ -28,6 +29,9 @@ import {
   FulfillMintAllowanceDto,
   FulfillMintDto,
   HighThroughputGrantAllowanceDto,
+  HighThroughputMintTokenDto,
+  MintTokenDto,
+  MintTokenWithAllowanceDto,
   OracleBridgeFeeAssertion,
   OracleBridgeFeeAssertionDto,
   OracleDefinition,
@@ -37,6 +41,7 @@ import {
   RequestTokenBridgeOutDto,
   TerminateTokenSwapDto,
   TokenClassKey,
+  TokenInstanceKey,
   TokenMintConfiguration,
   TransferTokenDto,
   UnauthorizedError,
@@ -48,8 +53,9 @@ import BigNumber from "bignumber.js";
 import { plainToInstance } from "class-transformer";
 
 import { authenticate } from "../contracts";
-import { MintTokenParams, MintTokenWithAllowanceParams, fetchTokenMintConfiguration } from "../mint";
+import { fetchTokenMintConfiguration } from "../mint";
 import { KnownOracles } from "../oracle";
+import { resolveUserAlias } from "../services/resolveUserAlias";
 import { GalaChainContext } from "../types";
 import { getObjectByKey, putChainObject } from "../utils";
 import { burnToMintProcessing } from "./extendedFeeGateProcessing";
@@ -87,9 +93,9 @@ export async function batchFillTokenSwapFeeGate(ctx: GalaChainContext, dto: Batc
   return galaFeeGate(ctx, { feeCode: FeeGateCodes.BatchFillTokenSwap });
 }
 
-export async function batchMintTokenFeeGate(ctx: GalaChainContext, paramsArr: MintTokenParams[]) {
+export async function batchMintTokenFeeGate(ctx: GalaChainContext, dto: BatchMintTokenDto) {
   const feeCode = FeeGateCodes.BatchMintToken;
-  const owners: string[] = extractUniqueOwnersFromRequests(ctx, paramsArr);
+  const owners: string[] = extractUniqueOwnersFromRequests(ctx, dto.mintDtos);
 
   for (const owner of owners) {
     await galaFeeGate(ctx, {
@@ -103,9 +109,9 @@ export async function batchMintTokenFeeGate(ctx: GalaChainContext, paramsArr: Mi
 
   const batchPayments: PaymentRequiredError[] = [];
 
-  for (const mintDto of paramsArr) {
-    const owner = mintDto.owner ?? ctx.callingUser;
-    const tokenClass = mintDto.tokenClassKey;
+  for (const mintDto of dto.mintDtos) {
+    const owner = mintDto.owner ? await resolveUserAlias(ctx, mintDto.owner) : ctx.callingUser;
+    const tokenClass = mintDto.tokenClass;
     const quantity = mintDto.quantity;
 
     await combinedMintFees(ctx, { feeCode, tokenClass, owner, quantity }).catch((e) => {
@@ -139,11 +145,14 @@ export async function terminateTokenSwapFeeGate(ctx: GalaChainContext, dto: Term
   return galaFeeGate(ctx, { feeCode: FeeGateCodes.TerminateTokenSwap });
 }
 
-export async function highThroughputMintRequestFeeGate(ctx: GalaChainContext, dto: MintTokenParams) {
-  const owner = dto.owner ?? ctx.callingUser;
+export async function highThroughputMintRequestFeeGate(
+  ctx: GalaChainContext,
+  dto: HighThroughputMintTokenDto
+) {
+  const owner = dto.owner ? await resolveUserAlias(ctx, dto.owner) : ctx.callingUser;
   const feeCode = FeeGateCodes.HighThroughputMintRequest;
 
-  await combinedMintFees(ctx, { feeCode, tokenClass: dto.tokenClassKey, owner, quantity: dto.quantity });
+  await combinedMintFees(ctx, { feeCode, tokenClass: dto.tokenClass, owner, quantity: dto.quantity });
 }
 
 export async function highThroughputMintFulfillFeeGate(ctx: GalaChainContext, dto: FulfillMintDto) {
@@ -191,29 +200,39 @@ export async function highThroughputMintAllowanceFulfillFeeGate(
   return Promise.resolve();
 }
 
-export async function mintTokenFeeGate(ctx: GalaChainContext, dto: MintTokenParams) {
+export async function mintTokenFeeGate(ctx: GalaChainContext, dto: MintTokenDto) {
   const feeCode = FeeGateCodes.MintToken;
-  const owner = dto.owner ?? ctx.callingUser;
+  const owner = dto.owner ? await resolveUserAlias(ctx, dto.owner) : ctx.callingUser;
 
-  await combinedMintFees(ctx, { feeCode, tokenClass: dto.tokenClassKey, owner, quantity: dto.quantity });
+  await combinedMintFees(ctx, { feeCode, tokenClass: dto.tokenClass, owner, quantity: dto.quantity });
 }
 
 export async function mintTokenWithAllowanceFeeGate(
   ctx: GalaChainContext,
-  params: MintTokenWithAllowanceParams
+  params: MintTokenWithAllowanceDto
 ) {
-  const owner = params.owner ?? ctx.callingUser;
+  const owner = params.owner ? await resolveUserAlias(ctx, params.owner) : ctx.callingUser;
   const feeCode = FeeGateCodes.MintTokenWithAllowance;
 
   await combinedMintFees(ctx, {
     feeCode,
-    tokenClass: params.tokenClassKey,
+    tokenClass: params.tokenClass,
     owner,
     quantity: params.quantity
   });
 }
 
-export async function requestTokenBridgeOutFeeGate(ctx: GalaChainContext, dto: RequestTokenBridgeOutDto) {
+export interface RequestTokenBridgeOutFeeGateParams {
+  destinationChainId: number;
+  tokenInstance: TokenInstanceKey;
+  quantity: BigNumber;
+  destinationChainTxFee?: OracleBridgeFeeAssertionDto;
+}
+
+export async function requestTokenBridgeOutFeeGate(
+  ctx: GalaChainContext,
+  dto: RequestTokenBridgeOutFeeGateParams
+) {
   const { destinationChainId } = dto;
 
   // Dynamic, gas based fees are intended for bridging outside of GalaChain

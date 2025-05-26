@@ -12,7 +12,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-import { IsNotEmpty, IsString, ValidateIf } from "class-validator";
+import { IsNotEmpty, IsOptional, IsString, ValidateIf } from "class-validator";
 import { JSONSchema } from "class-validator-jsonschema";
 
 import { IsUserAlias } from "../validators";
@@ -56,8 +56,11 @@ export class UserProfile extends ChainObject {
       .sort()
       .join(", ")}, but you can use arbitrary strings to define your own roles.`
   })
+  @IsOptional()
   @IsString({ each: true })
-  roles: string[];
+  roles?: string[];
 }
 
 export const UP_INDEX_KEY = "GCUP";
+
+export type UserProfileWithRoles = UserProfile & { roles: string[] };

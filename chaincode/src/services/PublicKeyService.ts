@@ -22,6 +22,8 @@ import {
   UnauthorizedError,
   UserAlias,
   UserProfile,
+  UserProfileWithRoles,
+  asValidUserAlias,
   normalizePublicKey,
   signatures
 } from "@gala-chain/api";
@@ -97,7 +99,10 @@ export class PublicKeyService {
       : signatures.getEthAddress(signatures.getNonCompactHexPublicKey(publicKey));
   }
 
-  public static async getUserProfile(ctx: Context, address: string): Promise<UserProfile | undefined> {
+  public static async getUserProfile(
+    ctx: Context,
+    address: string
+  ): Promise<UserProfileWithRoles | undefined> {
     const key = PublicKeyService.getUserProfileKey(ctx, address);
     const data = await ctx.stub.getState(key);
 
@@ -108,7 +113,7 @@ export class PublicKeyService {
         userProfile.roles = Array.from(UserProfile.DEFAULT_ROLES);
       }
 
-      return userProfile;
+      return userProfile as UserProfileWithRoles;
     }
 
     // check if we want the profile of the admin
@@ -135,11 +140,21 @@ export class PublicKeyService {
         adminProfile.alias = alias;
         adminProfile.roles = Array.from(UserProfile.ADMIN_ROLES);
 
-        return adminProfile;
+        return adminProfile as UserProfileWithRoles;
       }
     }
 
     return undefined;
+  }
+
+  public static getDefaultUserProfile(publicKey: string, signing: SigningScheme): UserProfileWithRoles {
+    const address = this.getUserAddress(publicKey, signing);
+    const profile = new UserProfile();
+    profile.alias = asValidUserAlias(`${signing.toLowerCase()}|${address}`);
+    profile.ethAddress = signing === SigningScheme.ETH ? address : undefined;
+    profile.tonAddress = signing === SigningScheme.TON ? address : undefined;
+    profile.roles = Array.from(UserProfile.DEFAULT_ROLES);
+    return profile as UserProfileWithRoles;
   }
 
   public static async getPublicKey(ctx: Context, userId: string): Promise<PublicKey | undefined> {

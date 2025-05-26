@@ -12,11 +12,11 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-import { ForbiddenError, UnauthorizedError } from "@gala-chain/api";
+import { ForbiddenError, UnauthorizedError, UserRole } from "@gala-chain/api";
 
 import { GalaChainContext } from "../types";
 
-class MissingRoleError extends UnauthorizedError {
+export class MissingRoleError extends UnauthorizedError {
   constructor(callingUser: string, callingUserRoles: string[] | undefined, allowedRoles: string[]) {
     const message =
       `User ${callingUser} does not have one of required roles: ` +
@@ -24,6 +24,14 @@ class MissingRoleError extends UnauthorizedError {
     super(message, { callingUser, callingUserRoles, allowedRoles });
   }
 }
+
+export const curatorOrgMsp = process.env.CURATOR_ORG_MSP ?? "CuratorOrg";
+
+export const useRoleBasedAuth = process.env.USE_RBAC === "true";
+
+export const requireCuratorAuth = useRoleBasedAuth
+  ? { allowedRoles: [UserRole.CURATOR] }
+  : { allowedOrgs: [curatorOrgMsp] };
 
 export class OrganizationNotAllowedError extends ForbiddenError {}
 

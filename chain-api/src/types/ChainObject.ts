@@ -69,7 +69,7 @@ export abstract class ChainObject {
     return instanceToPlain(this);
   }
 
-  public copy(): typeof this {
+  public copy(): this {
     // @ts-expect-error type conversion
     return ChainObject.deserialize<typeof this>(this.constructor, this.toPlainObject());
   }
