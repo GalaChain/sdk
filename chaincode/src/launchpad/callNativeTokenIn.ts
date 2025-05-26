@@ -39,10 +39,7 @@ BigNumber.config({
  *
  * @throws Error if the calculation encounters an invalid state or data.
  */
-export async function callNativeTokenIn(
-  ctx: GalaChainContext,
-  buyTokenDTO: ExactTokenQuantityDto
-): Promise<string> {
+export async function callNativeTokenIn(ctx: GalaChainContext, buyTokenDTO: ExactTokenQuantityDto) {
   const sale = await fetchAndValidateSale(ctx, buyTokenDTO.vaultAddress);
   const totalTokensSold = new Decimal(sale.fetchTokensSold());
 
@@ -64,5 +61,11 @@ export async function callNativeTokenIn(
   const differenceOfExponentials = eResult1.minus(eResult2);
 
   const price = constantFactor.mul(differenceOfExponentials);
-  return price.toDecimalPlaces(8, Decimal.ROUND_UP).toFixed();
+
+  return {
+    calculatedQuantity: price.toDecimalPlaces(8, Decimal.ROUND_UP).toFixed(),
+    extraFees: {
+      reverseBondingCurve: "0"
+    }
+  };
 }
