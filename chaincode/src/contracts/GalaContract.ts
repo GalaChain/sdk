@@ -189,18 +189,9 @@ export abstract class GalaContract extends Contract {
   })
   public async BatchSubmit(ctx: GalaChainContext, batchDto: BatchDto): Promise<GalaChainResponse<unknown>[]> {
     const responses: GalaChainResponse<unknown>[] = [];
-
-<<<<<<< HEAD
-    const writesLimit = Math.min(
-      batchDto.writesLimit ?? BatchDto.WRITES_DEFAULT_LIMIT,
-      BatchDto.WRITES_HARD_LIMIT
-    );
-    let writesCount = Object.keys(ctx.stub.getWrites()).length;
-=======
     const softWritesLimit = batchDto.writesLimit ?? BatchDto.WRITES_DEFAULT_LIMIT;
     const writesLimit = Math.min(softWritesLimit, BatchDto.WRITES_HARD_LIMIT);
     let writesCount = ctx.stub.getWritesCount();
->>>>>>> cfe814e (Feat: Sandboxed stub in batch operations (#583))
 
     for (const [index, op] of batchDto.operations.entries()) {
       // Use sandboxed context to avoid flushes of writes and deletes, and populate

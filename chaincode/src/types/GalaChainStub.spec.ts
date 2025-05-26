@@ -25,7 +25,7 @@ const setupTest = (initialState: Record<string, string> = {}) => {
 <<<<<<< HEAD
   /* eslint-disable  @typescript-eslint/ban-ts-comment */
   // @ts-ignore
-  const internalStub = new TestChaincodeStub([], state);
+  const internalStub = new TestChaincodeStub([], state, undefined);
   internalStub.putState = jest.fn(internalStub.putState);
   internalStub.getState = jest.fn(internalStub.getState);
   internalStub.deleteState = jest.fn(internalStub.deleteState);
@@ -33,19 +33,6 @@ const setupTest = (initialState: Record<string, string> = {}) => {
   internalStub.invokeChaincode = jest.fn(internalStub.invokeChaincode);
 
   const gcStub = createGalaChainStub(internalStub);
-=======
-  const testChaincodeStub = new TestChaincodeStub([], state, undefined);
-  testChaincodeStub.putState = jest.fn(testChaincodeStub.putState);
-  testChaincodeStub.getState = jest.fn(testChaincodeStub.getState);
-  testChaincodeStub.deleteState = jest.fn(testChaincodeStub.deleteState);
-  testChaincodeStub.getStateByPartialCompositeKey = jest.fn(testChaincodeStub.getStateByPartialCompositeKey);
-
-<<<<<<< HEAD
-  const cachedWrites = createGalaChainStub(testChaincodeStub, false);
->>>>>>> cfe814e (Feat: Sandboxed stub in batch operations (#583))
-=======
-  const cachedWrites = createGalaChainStub(testChaincodeStub, false, undefined);
->>>>>>> dd9c19d (Feat: Add txId index suffix for transactions in batch (#587))
 
   return { internalStub, gcStub };
 };

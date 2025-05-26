@@ -21,17 +21,13 @@ import {
   GalaChainResponse,
   GalaChainResponseType,
   GetObjectDto,
-<<<<<<< HEAD
-  createValidChainObject,
-  createValidDTO,
-  serialize
-=======
   PublicKey,
   SigningScheme,
   UserProfile,
+  createValidChainObject,
   createValidDTO,
+  serialize,
   signatures
->>>>>>> cfe814e (Feat: Sandboxed stub in batch operations (#583))
 } from "@gala-chain/api";
 import { ChainUser } from "@gala-chain/client";
 import {
@@ -46,15 +42,8 @@ import { Context } from "fabric-contract-api";
 import { inspect } from "util";
 
 import TestGalaContract, { Superhero, SuperheroDto, SuperheroQueryDto } from "../__test__/TestGalaContract";
-<<<<<<< HEAD
-import { GalaChainContext } from "../types";
-=======
 import { GalaChainContext, createValidChainObject } from "../types";
-<<<<<<< HEAD
 import { PublicKeyContract } from "./PublicKeyContract";
->>>>>>> cfe814e (Feat: Sandboxed stub in batch operations (#583))
-=======
->>>>>>> dd9c19d (Feat: Add txId index suffix for transactions in batch (#587))
 
 /*
  * Test below verifies that the base class of TestGalaContract (i.e. GalaContract) provides stub to

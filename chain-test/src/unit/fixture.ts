@@ -86,20 +86,12 @@ type TestGalaChainContext = Context & {
   get callingUser(): UserAlias;
   get callingUserEthAddress(): string;
   get callingUserTonAddress(): string;
-<<<<<<< HEAD
   get callingUserRoles(): string[];
   get callingUserProfile(): UserProfile;
   resetCallingUser(): void;
   get config(): GalaChainContextConfig;
   setDryRunOnBehalfOf(d: CallingUserData): void;
-=======
-  setDryRunOnBehalfOf(d: { alias: string; ethAddress: string | undefined }): void;
-<<<<<<< HEAD
-  createReadOnlyContext(): TestGalaChainContext;
->>>>>>> cfe814e (Feat: Sandboxed stub in batch operations (#583))
-=======
   createReadOnlyContext(index: number | undefined): TestGalaChainContext;
->>>>>>> dd9c19d (Feat: Add txId index suffix for transactions in batch (#587))
   isDryRun: boolean;
   get txUnixTime(): number;
   setChaincodeStub(stub: ChaincodeStub): void;

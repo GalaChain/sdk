@@ -41,14 +41,11 @@ class StubCache {
 <<<<<<< HEAD
   private invokeChaincodeCalls: Record<string, string[]> = {};
 
-  constructor(private readonly stub: ChaincodeStub) {}
-=======
   constructor(
     private readonly stub: ChaincodeStub,
     private readonly isReadOnly: boolean,
     private readonly index: number | undefined
   ) {}
->>>>>>> cfe814e (Feat: Sandboxed stub in batch operations (#583))
 
   getTxID(): string {
     if (typeof this.index === "number") {
@@ -163,10 +160,6 @@ class StubCache {
   }
 
   async flushWrites(): Promise<void> {
-    if (this.isReadOnly) {
-      throw new NotImplementedError("Cannot flush writes in read-only mode");
-    }
-
     if (this.isReadOnly) {
       throw new NotImplementedError("Cannot flush writes in read-only mode");
     }
