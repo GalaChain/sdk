@@ -38,7 +38,6 @@ class StubCache {
 
   private deletes: Record<string, true> = {};
 
-<<<<<<< HEAD
   private invokeChaincodeCalls: Record<string, string[]> = {};
 
   constructor(
