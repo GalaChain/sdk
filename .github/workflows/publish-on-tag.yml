@@ -223,7 +223,7 @@ jobs:
       - name: Create Pull Request
         env:
           GH_TOKEN: ${{ secrets.RELEASE_BOT_TOKEN }}
-        run: gh pr create --title "Bump Version to $VERSION" --body "Bump Version to $VERSION" --label "bump-version-pr" --head "bump-version-to-$VERSION" --base ${{ env.TARGET_BRANCH }}
+        run: gh pr create --title "Bump version to $VERSION" --body "Bump version to $VERSION" --label "bump-version-pr" --head "bump-version-to-$VERSION" --base ${{ env.TARGET_BRANCH }}
 
   notify-tag:
     needs: [publish, publish-cli-image]

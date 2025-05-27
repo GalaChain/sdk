@@ -58,7 +58,8 @@ export async function buyWithNative(
   let isSaleFinalised = false;
   const sale = await fetchAndValidateSale(ctx, buyTokenDTO.vaultAddress);
   const tokensLeftInVault = new BigNumber(sale.sellingTokenQuantity);
-  let tokensToBuy = new BigNumber(await callMemeTokenOut(ctx, buyTokenDTO));
+  const callMemeTokenOutResult = await callMemeTokenOut(ctx, buyTokenDTO);
+  let tokensToBuy = new BigNumber(callMemeTokenOutResult.calculatedQuantity);
 
   const nativeToken = sale.fetchNativeTokenInstanceKey();
   const memeToken = sale.fetchSellingTokenInstanceKey();
@@ -68,9 +69,8 @@ export async function buyWithNative(
     const nativeTokensrequiredToBuyDto = new ExactTokenQuantityDto();
     nativeTokensrequiredToBuyDto.vaultAddress = buyTokenDTO.vaultAddress;
     nativeTokensrequiredToBuyDto.tokenQuantity = tokensToBuy;
-    buyTokenDTO.nativeTokenQuantity = new BigNumber(
-      await callNativeTokenIn(ctx, nativeTokensrequiredToBuyDto)
-    );
+    const callNativeTokenInResult = await callNativeTokenIn(ctx, nativeTokensrequiredToBuyDto);
+    buyTokenDTO.nativeTokenQuantity = new BigNumber(callNativeTokenInResult.calculatedQuantity);
     isSaleFinalised = true;
   }
 
