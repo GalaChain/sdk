@@ -204,7 +204,8 @@ function GalaTransaction<In extends ChainCallDTO, Out>(
           if (dto?.uniqueKey) {
             await UniqueTransactionService.ensureUniqueTransaction(ctx, dto.uniqueKey);
           } else {
-            throw new RuntimeError("Missing uniqueKey in transaction dto");
+            const message = `Missing uniqueKey in transaction dto for method '${method.name}'`;
+            throw new RuntimeError(message);
           }
         }
 

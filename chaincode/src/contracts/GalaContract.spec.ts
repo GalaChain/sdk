@@ -16,14 +16,19 @@ import {
   BatchDto,
   ChainCallDTO,
   ChainObject,
+  ChainUser,
   DefaultError,
   DryRunDto,
   GalaChainResponse,
   GalaChainResponseType,
   GetObjectDto,
+  PublicKey,
+  SigningScheme,
+  UserProfile,
   createValidChainObject,
   createValidDTO,
-  serialize
+  serialize,
+  signatures
 } from "@gala-chain/api";
 import {
   TestChaincode,
@@ -385,8 +390,7 @@ describe("GalaContract.DryRun", () => {
       Status: GalaChainResponseType.Error,
       ErrorCode: 404,
       ErrorKey: "NOT_FOUND",
-      Message:
-        "Method UnknownMethod is not available. Available methods: BatchEvaluate, BatchSubmit, CreateSuperhero, DryRun, ErrorAfterPutKv, GetChaincodeVersion, GetContractAPI, GetContractVersion, GetKv, GetObjectByKey, GetObjectHistory, PutKv, QuerySuperheroes"
+      Message: expect.stringContaining("Method UnknownMethod is not available")
     });
   });
 
@@ -554,4 +558,164 @@ describe("GalaContract.Batch", () => {
       expect.stringContaining("test-key-2")
     ]);
   });
+
+  it("should reset writes occurring during failed transactions", async () => {
+    // Given
+    const chaincode = new TestChaincode([TestGalaContract]);
+    const batchSubmit1 = plainToInstance(BatchDto, {
+      operations: [
+        {
+          method: "PutNestedKv",
+          dto: { key: "test-key-1", array: ["robot"], uniqueKey: "unique-key-1-1" }
+        },
+        {
+          method: "ErrorAfterPutNestedKv",
+          dto: { key: "test-key-1", array: ["robot", "zerg"], uniqueKey: "unique-key-1-2" }
+        },
+        {
+          method: "GetSetPutNestedKv",
+          dto: { key: "test-key-1", array: ["human"], uniqueKey: "unique-key-1-3" }
+        }
+      ],
+      uniqueKey: "unique-key-batch-1",
+      writesLimit: 1000
+    });
+
+    const batchSubmit2 = plainToInstance(BatchDto, {
+      operations: [
+        {
+          method: "PutNestedKv",
+          dto: { key: "test-key-2", array: ["robot"], uniqueKey: "unique-key-2-1" }
+        },
+        {
+          method: "GetSetPutNestedKv",
+          dto: { key: "test-key-2", array: ["zerg"], uniqueKey: "unique-key-2-2" }
+        },
+        {
+          method: "GetSetPutNestedKv",
+          dto: { key: "test-key-2", array: ["human"], uniqueKey: "unique-key-2-3" }
+        }
+      ],
+      uniqueKey: "unique-key-batch-2",
+      writesLimit: 1000
+    });
+
+    // When
+    const response1 = await chaincode.invoke("TestGalaContract:BatchSubmit", batchSubmit1.serialize());
+    const response2 = await chaincode.invoke("TestGalaContract:BatchSubmit", batchSubmit2.serialize());
+
+    // Then
+    expect(response1).toEqual(
+      transactionSuccess([
+        transactionSuccess(),
+        transactionErrorMessageContains("Some error after put was invoked"),
+        transactionSuccess({ key: "test-key-1", array: ["robot", "human"] })
+      ])
+    );
+    expect(response2).toEqual(
+      transactionSuccess([
+        transactionSuccess(),
+        transactionSuccess({ key: "test-key-2", array: ["robot", "zerg"] }),
+        transactionSuccess({ key: "test-key-2", array: ["robot", "zerg", "human"] })
+      ])
+    );
+  });
+
+  it("should reset writes occurring during unterminated async operation", async () => {
+    // Given
+    const chaincode = new TestChaincode([TestGalaContract]);
+    const batchSubmit = plainToInstance(BatchDto, {
+      operations: [
+        {
+          method: "UnterminatedAsyncErrorOp",
+          dto: { key: "test-key-1", text: "robot", uniqueKey: "unique-key-1" }
+        },
+        {
+          method: "DelayedOp",
+          dto: { key: "test-key-1", text: "human", uniqueKey: "unique-key-2" }
+        }
+      ],
+      uniqueKey: "unique-key-batch-1",
+      writesLimit: 1000
+    });
+
+    // When
+    const response = await chaincode.invoke("TestGalaContract:BatchSubmit", batchSubmit.serialize());
+
+    // Then
+    expect(response).toEqual(
+      transactionSuccess([
+        transactionErrorMessageContains("Async operation was not awaited"),
+        transactionSuccess()
+      ])
+    );
+
+    expect(chaincode.state).toMatchObject({
+      "test-key-1": "human"
+    });
+  });
+
+  it("should get proper ctx data for transactions in batch", async () => {
+    // Given
+    const { user: user1, state: state1 } = await generateUser("user1");
+    const { user: user2, state: state2 } = await generateUser();
+
+    const signedDto = (u: ChainUser, uniqueKey: string) =>
+      plainToInstance(ChainCallDTO, { uniqueKey }).signed(u.privateKey);
+
+    const chaincode = new TestChaincode([TestGalaContract], { ...state1, ...state2 });
+
+    const batchSubmit = plainToInstance(BatchDto, {
+      operations: [
+        { method: "GetCtxData", dto: signedDto(user1, "test-key-1") },
+        { method: "GetCtxData", dto: signedDto(user2, "test-key-2") }
+      ],
+      uniqueKey: "unique-key-batch-1"
+    });
+
+    // When
+    const response = await chaincode.invoke<GalaChainResponse<GalaChainResponse<unknown>[]>>(
+      "TestGalaContract:BatchSubmit",
+      batchSubmit.serialize()
+    );
+
+    // Then
+    const firstOperationResponse = response?.Data?.[0]?.Data as { txUnixTime: number; txId: string };
+
+    expect(response).toEqual(
+      transactionSuccess([
+        transactionSuccess({
+          callingUser: user1.identityKey,
+          txId: expect.stringMatching(/^[a-zA-Z0-9_-]+|0$/),
+          txUnixTime: expect.any(Number)
+        }),
+        transactionSuccess({
+          callingUser: user2.identityKey,
+          txId: firstOperationResponse?.txId?.replace("|0", "|1"),
+          txUnixTime: firstOperationResponse?.txUnixTime
+        })
+      ])
+    );
+  });
 });
+
+async function generateUser(name?: string) {
+  const user = ChainUser.withRandomKeys(name);
+
+  const publicKey = await createValidChainObject(PublicKey, {
+    publicKey: signatures.normalizePublicKey(user.publicKey).toString("base64"),
+    signing: SigningScheme.ETH
+  });
+
+  const userProfile = await createValidChainObject(UserProfile, {
+    alias: user.identityKey,
+    ethAddress: user.ethAddress
+  });
+
+  const state = {
+    [`\u0000GCPK\u0000${user.identityKey}\u0000`]: publicKey.serialize(),
+    [`\u0000GCUP\u0000${user.ethAddress}\u0000`]: userProfile.serialize()
+  };
+
+  return { user, state };
+}

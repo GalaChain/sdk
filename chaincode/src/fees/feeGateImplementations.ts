@@ -18,7 +18,6 @@ import {
   BurnTokensDto,
   ChainCallDTO,
   ChainError,
-  ChainId,
   ChainObject,
   ChainsWithBridgeFeeSupport,
   ErrorCode,

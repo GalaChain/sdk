@@ -16,24 +16,49 @@
  */
 
 // Import and run standard fabric-chaincode-node cli
+import type { ContractAPI } from "@gala-chain/api";
+import type { GalaContract } from "@gala-chain/chaincode";
 import "fabric-shim/cli";
+import fs from "fs";
 
 const [, , customCommand] = process.argv;
 if (customCommand === "get-contract-names") {
-  // importing contracts would produce a lot of noise, so we set the log level to error
-  process.env.CORE_CHAINCODE_LOGGING_LEVEL = "error";
-  process.env.LOG_LEVEL = "error";
+  printContractNames();
+  process.exit(0);
+}
 
-  const { contracts } = require("./index");
-  const response = (contracts ?? [])
-    .filter((c: any) => typeof c === "function")
-    .map((Cls) => new Cls())
-    .filter((c: { getName?: string }) => typeof c.getName === "function")
+if (customCommand === "get-contract-api") {
+  saveContractAPI("/tmp/contract-api.json");
+  process.exit(0);
+}
+
+function getContractInstances(): GalaContract[] {
+    // importing contracts would produce a lot of noise, so we set the log level to error
+    process.env.CORE_CHAINCODE_LOGGING_LEVEL = "error";
+    process.env.LOG_LEVEL = "error";
+
+    const { contracts } = require("./index");
+    return (contracts ?? [])
+      .filter((c: any) => typeof c === "function")
+      .map((Cls) => new Cls())
+      .filter((c: GalaContract) => typeof c.getName === "function");
+}
+
+function printContractNames() {
+  const response = getContractInstances()
     .map((c) => c.getName())
     .filter((name: string) => name !== undefined)
     .sort()
     .map((contractName: string) => ({ contractName }));
+  
   console.log(JSON.stringify(response));
+}
 
-  process.exit(0);
+function saveContractAPI(path: string) {
+  const response = getContractInstances()
+    .map((c) => c.getContractAPI())
+    .filter((api: ContractAPI) => api !== undefined)
+    .sort((a, b) => a.contractName.localeCompare(b.contractName));
+  
+  fs.writeFileSync(path, JSON.stringify(response));
 }

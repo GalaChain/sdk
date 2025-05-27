@@ -25,8 +25,8 @@ import {
   createValidChainObject,
   randomUniqueKey
 } from "@gala-chain/api";
-import { Exclude } from "class-transformer";
-import { IsNotEmpty, IsPositive } from "class-validator";
+import { Exclude, Type } from "class-transformer";
+import { IsArray, IsNotEmpty, IsPositive, IsString, ValidateNested } from "class-validator";
 import { Transaction } from "fabric-contract-api";
 
 import { version } from "../../package.json";
@@ -60,13 +60,18 @@ export class SuperheroDto extends SubmitCallDTO {
 
 export class SuperheroQueryDto extends ChainCallDTO {
   // this is used to check if chaincode uses cache
+  @IsArray()
+  @ValidateNested({ each: true })
+  @Type(() => SuperheroDto)
   public saveBeforeReturn: SuperheroDto[];
 }
 
 export class Superhero extends ChainObject {
+  @IsString()
   @ChainKey({ position: 0 })
   public name: string;
 
+  @IsPositive()
   public age: number;
 
   @Exclude()
@@ -78,6 +83,19 @@ export class KVDto extends ChainCallDTO {
   public key: string;
 
   public value?: string;
+}
+
+export class NestedKVDto extends ChainCallDTO {
+  @IsNotEmpty()
+  public key: string;
+
+  public text?: string;
+
+  public map?: Record<string, unknown>;
+
+  public counter?: number;
+
+  public array?: Array<unknown>;
 }
 
 export default class TestGalaContract extends GalaContract {
@@ -143,7 +161,7 @@ export default class TestGalaContract extends GalaContract {
 
   @Transaction()
   public async IncrementTwiceWrong(ctx: GalaChainContext, key: string): Promise<GalaChainResponse<void>> {
-    const getOrZero = async (): Promise<number> => +(await ctx.stub.getState(key)).toString() ?? 0;
+    const getOrZero = async (): Promise<number> => +(await ctx.stub.getState(key)).toString();
     const incrementedFirstTime = (await getOrZero()) + 1;
     await ctx.stub.putState(key, Buffer.from(incrementedFirstTime.toString()));
 
@@ -185,5 +203,135 @@ export default class TestGalaContract extends GalaContract {
     );
 
     return getObjectsByPartialCompositeKey(ctx, Superhero.INDEX_KEY, [], Superhero);
+  }
+
+  @GalaTransaction({
+    type: SUBMIT,
+    in: NestedKVDto,
+    enforceUniqueKey: true,
+    allowedOrgs: ["CuratorOrg"]
+  })
+  public async PutNestedKv(ctx: GalaChainContext, dto: NestedKVDto): Promise<void> {
+    const { uniqueKey, ...rest } = dto;
+    const value = JSON.stringify(rest);
+    await ctx.stub.putState(dto.key, Buffer.from(value));
+  }
+
+  @GalaTransaction({
+    type: EVALUATE,
+    in: NestedKVDto
+  })
+  public async GetNestedKv(ctx: GalaChainContext, dto: NestedKVDto): Promise<unknown> {
+    const response = (await ctx.stub.getState(dto.key)).toString();
+    if (response === "") {
+      throw new NotFoundError(`Object ${dto.key} not found`);
+    }
+    return JSON.parse(response);
+  }
+
+  @GalaTransaction({
+    type: SUBMIT,
+    in: NestedKVDto,
+    enforceUniqueKey: true,
+    allowedOrgs: ["CuratorOrg"]
+  })
+  public async ErrorAfterPutNestedKv(ctx: GalaChainContext, dto: NestedKVDto): Promise<void> {
+    const value = JSON.stringify(dto);
+    await ctx.stub.putState(dto.key, Buffer.from(value));
+
+    throw new NotImplementedError("Some error after put was invoked");
+  }
+
+  @GalaTransaction({
+    type: SUBMIT,
+    in: NestedKVDto,
+    enforceUniqueKey: true,
+    allowedOrgs: ["CuratorOrg"]
+  })
+  public async GetSetPutNestedKv(ctx: GalaChainContext, dto: NestedKVDto): Promise<unknown> {
+    const response = (await ctx.stub.getCachedState(dto.key)).toString();
+    if (response === "") {
+      const { uniqueKey, ...rest } = dto;
+      const value = JSON.stringify(rest);
+      await ctx.stub.putState(dto.key, Buffer.from(value));
+      return rest;
+    }
+
+    let previous: NestedKVDto;
+
+    try {
+      previous = JSON.parse(response);
+    } catch (e) {
+      throw new Error(`Failed to parse previous value: ${response} -- ${e}`);
+    }
+
+    const updated = { ...previous };
+
+    if (dto.text) {
+      updated.text = dto.text;
+    }
+
+    if (dto.map) {
+      updated.map = updated.map ? { ...updated.map, ...dto.map } : { ...dto.map };
+    }
+
+    if (dto.counter) {
+      updated.counter = updated.counter ? updated.counter + dto.counter : dto.counter;
+    }
+
+    if (dto.array) {
+      updated.array = updated.array ? [...updated.array, ...dto.array] : [...dto.array];
+    }
+
+    try {
+      const value = JSON.stringify(updated);
+      await ctx.stub.putState(dto.key, Buffer.from(value));
+    } catch (e) {
+      throw new Error(`Failed to stringify and save updated dto: ${e}`);
+    }
+
+    return updated;
+  }
+
+  @GalaTransaction({
+    type: SUBMIT,
+    in: NestedKVDto,
+    enforceUniqueKey: true,
+    allowedOrgs: ["CuratorOrg"]
+  })
+  public async UnterminatedAsyncErrorOp(ctx: GalaChainContext, dto: NestedKVDto): Promise<void> {
+    // using 25ms delay to be sure that the operation will be called after
+    // the transaction is committed, but before the DelayedOp
+    setTimeout(() => ctx.stub.putState(dto.key, Buffer.from(dto.text ?? "")), 25);
+    throw new Error("Async operation was not awaited");
+  }
+
+  @GalaTransaction({
+    type: SUBMIT,
+    in: NestedKVDto,
+    enforceUniqueKey: true,
+    allowedOrgs: ["CuratorOrg"]
+  })
+  public async DelayedOp(ctx: GalaChainContext, dto: NestedKVDto): Promise<unknown> {
+    // using 50ms delay to be sure that the actual state change is applied before
+    // the UnterminatedAsyncErrorOp is finished, but the wait is enough to see
+    // the potential effect of the state change by UnterminatedAsyncErrorOp
+    const result = await ctx.stub.putState(dto.key, Buffer.from(dto.text ?? ""));
+    await new Promise((resolve) => setTimeout(() => resolve(undefined), 50));
+    return result;
+  }
+
+  @GalaTransaction({
+    type: SUBMIT,
+    in: ChainCallDTO,
+    enforceUniqueKey: true,
+    allowedOrgs: ["CuratorOrg"]
+  })
+  public async GetCtxData(ctx: GalaChainContext, dto: ChainCallDTO): Promise<unknown> {
+    return {
+      callingUser: ctx.callingUser,
+      txId: ctx.stub.getTxID(),
+      txUnixTime: ctx.txUnixTime
+    };
   }
 }

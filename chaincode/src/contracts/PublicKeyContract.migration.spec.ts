@@ -19,7 +19,6 @@ import {
   RegisterEthUserDto,
   SubmitCallDTO,
   UpdateUserRolesDto,
-  UserProfile,
   UserProfileWithRoles,
   UserRole,
   createValidSubmitDTO

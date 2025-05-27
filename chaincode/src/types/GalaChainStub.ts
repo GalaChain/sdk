@@ -13,7 +13,7 @@
  * limitations under the License.
  */
 import { NotImplementedError } from "@gala-chain/api";
-import { ChaincodeStub } from "fabric-shim";
+import { ChaincodeResponse, ChaincodeStub } from "fabric-shim";
 
 import { CachedKV, FabricIterable, fabricIterable, filter, prepend } from "./FabricIterable";
 
@@ -38,7 +38,20 @@ class StubCache {
 
   private deletes: Record<string, true> = {};
 
-  constructor(private readonly stub: ChaincodeStub) {}
+  private invokeChaincodeCalls: Record<string, string[]> = {};
+
+  constructor(
+    private readonly stub: ChaincodeStub,
+    private readonly isReadOnly: boolean,
+    private readonly index: number | undefined
+  ) {}
+
+  getTxID(): string {
+    if (typeof this.index === "number") {
+      return this.stub.getTxID() + `|${this.index}`;
+    }
+    return this.stub.getTxID();
+  }
 
   async getCachedState(key: string): Promise<Uint8Array> {
     if (key in this.deletes) {
@@ -102,6 +115,25 @@ class StubCache {
     return Promise.resolve();
   }
 
+  /**
+   * This method is used to invoke other chaincode. It is not allowed to invoke the same chaincode
+   * more than once within the same transaction, because we are not able to support cache for the
+   * invoked chaincode.
+   */
+  async invokeChaincode(chaincodeName: string, args: string[], channel: string): Promise<ChaincodeResponse> {
+    const key = `${channel}/${chaincodeName}`;
+    const prevCall = this.invokeChaincodeCalls[key];
+
+    if (prevCall) {
+      const effectiveChannel = channel === "" ? this.stub.getChannelID() : channel;
+      throw new DuplicateInvokeChaincodeError(chaincodeName, prevCall, effectiveChannel);
+    }
+
+    this.invokeChaincodeCalls[key] = args;
+
+    return await this.stub.invokeChaincode(chaincodeName, args, channel);
+  }
+
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
   setStateValidationParameter(key: string, ep: Uint8Array): Promise<void> {
     throw new NotImplementedError("setStateValidationParameter is not supported");
@@ -128,6 +160,10 @@ class StubCache {
   }
 
   async flushWrites(): Promise<void> {
+    if (this.isReadOnly) {
+      throw new NotImplementedError("Cannot flush writes in read-only mode");
+    }
+
     const deleteOps = Object.keys(this.deletes).map((key) => this.stub.deleteState(key));
     const putOps = Object.entries(this.writes).map(([key, value]) => this.stub.putState(key, value));
     await Promise.all(deleteOps);
@@ -140,6 +176,10 @@ class StubCache {
 
   getWrites(): Record<string, Uint8Array> {
     return { ...this.writes };
+  }
+
+  getWritesCount(): number {
+    return Object.keys(this.writes).length;
   }
 
   getDeletes(): Record<string, true> {
@@ -159,7 +199,16 @@ class StubCache {
   }
 }
 
+export class DuplicateInvokeChaincodeError extends NotImplementedError {
+  constructor(chaincodeName: string, args: string[], channel: string) {
+    const msg = `Chaincode ${chaincodeName} on channel ${channel} was already invoked in the transaction (method: ${args[0]})`;
+    super(msg, { chaincodeName, args, channel });
+  }
+}
+
 export interface GalaChainStub extends ChaincodeStub {
+  getTxID(): string;
+
   getCachedState(key: string): Promise<Uint8Array>;
 
   getCachedStateByPartialCompositeKey(objectType: string, attributes: string[]): FabricIterable<CachedKV>;
@@ -170,6 +219,8 @@ export interface GalaChainStub extends ChaincodeStub {
 
   getWrites(): Record<string, Uint8Array>;
 
+  getWritesCount(): number;
+
   getDeletes(): Record<string, true>;
 
   setReads(reads: Record<string, Uint8Array>): void;
@@ -179,14 +230,30 @@ export interface GalaChainStub extends ChaincodeStub {
   setDeletes(deletes: Record<string, true>): void;
 }
 
-export const createGalaChainStub = (stub: ChaincodeStub): GalaChainStub => {
-  const cachedWrites = new StubCache(stub);
+export const createGalaChainStub = (
+  stub: ChaincodeStub,
+  isReadOnly: boolean,
+  index: number | undefined
+): GalaChainStub => {
+  const cachedWrites = new StubCache(stub, isReadOnly, index);
 
   const proxyHandler = {
     get: function (target: GalaChainStub, name: string | symbol): unknown {
       // eslint-disable-next-line @typescript-eslint/ban-ts-comment
       // @ts-ignore
       return name in cachedWrites ? cachedWrites[name] : target[name];
+    },
+    set: function (target: GalaChainStub, name: string | symbol, value: unknown): boolean {
+      if (name in cachedWrites) {
+        // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+        // @ts-ignore
+        cachedWrites[name] = value;
+        return true;
+      }
+      // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+      // @ts-ignore
+      target[name] = value;
+      return true;
     }
   };
 
