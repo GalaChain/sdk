@@ -125,7 +125,8 @@ class StubCache {
     const prevCall = this.invokeChaincodeCalls[key];
 
     if (prevCall) {
-      throw new DuplicateInvokeChaincodeError(chaincodeName, prevCall, channel);
+      const effectiveChannel = channel === "" ? this.stub.getChannelID() : channel;
+      throw new DuplicateInvokeChaincodeError(chaincodeName, prevCall, effectiveChannel);
     }
 
     this.invokeChaincodeCalls[key] = args;
