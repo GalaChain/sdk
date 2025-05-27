@@ -14,16 +14,16 @@
  */
 import {
   CreatePoolDto,
+  CreatePoolResDto,
   DexFeeConfig,
   DexFeePercentageTypes,
-  DexNftBatchLimit,
+  FeeThresholdUses,
   GalaChainResponse,
   Pool,
   TokenBalance,
   TokenClass,
   TokenClassKey,
-  TokenInstance,
-  createValidDTO
+  TokenInstance
 } from "@gala-chain/api";
 import { currency, dex, fixture, users, writesMap } from "@gala-chain/test";
 import BigNumber from "bignumber.js";
@@ -31,6 +31,7 @@ import { plainToInstance } from "class-transformer";
 
 import { DexV3Contract } from "../__test__/DexV3Contract";
 import { GalaChainContext } from "../types";
+import { generateKeyFromClassKey } from "./dexUtils";
 
 describe("createPool", () => {
   it("should create a new liquidity pool and save it on-chain", async () => {
@@ -46,7 +47,7 @@ describe("createPool", () => {
 
     const dexFeeConfig: DexFeeConfig = new DexFeeConfig([users.testAdminId], 2);
 
-    const { ctx, contract, callingChainUser } = fixture<GalaChainContext, DexV3Contract>(DexV3Contract)
+    const { ctx, contract } = fixture<GalaChainContext, DexV3Contract>(DexV3Contract)
       .callingUser(users.testUser1Id)
       .savedState(
         currencyInstance,
@@ -63,18 +64,18 @@ describe("createPool", () => {
       dexClassKey,
       currencyClassKey,
       DexFeePercentageTypes.FEE_1_PERCENT,
-      new BigNumber("1"),
-      1
+      new BigNumber("1")
     );
 
-    const expectedResponse = new Pool(
-      dexClassKey.toStringKey(),
-      currencyClassKey.toStringKey(),
+    const [token0, token1] = [dto.token0, dto.token1].map(generateKeyFromClassKey);
+    const expectedPool = new Pool(token0, token1, dto.token0, dto.token1, dto.fee, dto.initialSqrtPrice, 0);
+
+    const expectedResponse = new CreatePoolResDto(
       dexClassKey,
       currencyClassKey,
       DexFeePercentageTypes.FEE_1_PERCENT,
-      new BigNumber("1"),
-      dexFeeConfig.protocolFee
+      expectedPool.genPoolHash(),
+      expectedPool.getPoolAlias()
     );
 
     // When
@@ -84,7 +85,7 @@ describe("createPool", () => {
     expect(response).toEqual(GalaChainResponse.Success(expectedResponse));
   });
 
-  it("should create a new liquidity pool and save it on-chain", async () => {
+  it("should create a new liquidity pool using a configured protocol fee", async () => {
     const token0Properties = {
       collection: "GALA",
       category: "Unit",
@@ -104,11 +105,10 @@ describe("createPool", () => {
     const dexClassKey: TokenClassKey = plainToInstance(TokenClassKey, token1Properties);
 
     const dexFeeConfig: DexFeeConfig = new DexFeeConfig([users.testAdminId], 2);
-    const dexNftBatch: DexNftBatchLimit = new DexNftBatchLimit(new BigNumber("0"));
 
     const { ctx, contract, writes } = fixture<GalaChainContext, DexV3Contract>(DexV3Contract)
       .callingUser(users.testUser1Id)
-      .savedState(currencyClass, dexFeeConfig, dexNftBatch, dexClass)
+      .savedState(currencyClass, dexFeeConfig, dexClass)
       .savedRangeState([]);
 
     const dto = new CreatePoolDto(
@@ -118,7 +118,14 @@ describe("createPool", () => {
       new BigNumber("1")
     );
 
-    const expectedResponse = new Pool(
+    const expectedFeeThresholdUses = plainToInstance(FeeThresholdUses, {
+      feeCode: "CreatePool",
+      user: users.testUser1Id,
+      cumulativeUses: new BigNumber("1"),
+      cumulativeFeeQuantity: new BigNumber("0")
+    });
+
+    const expectedPool = new Pool(
       currencyClassKey.toStringKey(),
       dexClassKey.toStringKey(),
       currencyClassKey,
@@ -128,12 +135,19 @@ describe("createPool", () => {
       dexFeeConfig.protocolFee
     );
 
+    const expectedResponse = new CreatePoolResDto(
+      currencyClassKey,
+      dexClassKey,
+      DexFeePercentageTypes.FEE_0_05_PERCENT,
+      expectedPool.genPoolHash(),
+      expectedPool.getPoolAlias()
+    );
+
     // When
     const response = await contract.CreatePool(ctx, dto);
 
     // Then
     expect(response).toEqual(GalaChainResponse.Success(expectedResponse));
-    // todo: verify some expected writes with writesMap
-    // expect(writes).toEqual([]);
+    expect(writes).toEqual(writesMap(expectedFeeThresholdUses, expectedPool));
   });
 });

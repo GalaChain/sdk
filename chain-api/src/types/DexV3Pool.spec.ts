@@ -15,9 +15,10 @@
 import { BigNumber } from "bignumber.js";
 import { plainToInstance } from "class-transformer";
 
-import { Bitmap, PositionData, Positions, TickData, TickDataObj } from "../utils";
 import { DexFeePercentageTypes } from "./DexDtos";
+import { DexPositionData } from "./DexPositionData";
 import { Pool } from "./DexV3Pool";
+import { TickData } from "./TickData";
 import { TokenClassKey } from "./TokenClass";
 
 const tokenClass0Properties = {
@@ -94,39 +95,11 @@ describe("DexV3Pool", () => {
     const fee = DexFeePercentageTypes.FEE_1_PERCENT;
     const initialSqrtPrice = new BigNumber("1");
 
-    const position1 = plainToInstance(PositionData, {
-      poolAddrKey: "test poolAddrKey",
-      tickUpper: "test tickUpper",
-      tickLower: "test tickLower",
-      liquidity: "test liquidity",
-      feeGrowthInside0Last: "test feeGrowthInside0Last",
-      feeGrowthInside1Last: "test feeGrowthInside1Last",
-      tokensOwed0: "test tokensOwed0",
-      tokensOwed1: "test tokensOwed1",
-      nftId: "test nftId"
-    });
-
-    const positions: Positions = {
-      [position1.nftId]: position1
-    };
-
-    const bitmap = plainToInstance(Bitmap, { 1: "test 1", test: "test 2" });
-
-    const tickData1 = plainToInstance(TickData, {
-      liquidityGross: "test liquidityGross",
-      initialised: true,
-      liquidityNet: "test liquidityNet",
-      feeGrowthOutside0: "test feeGrowthOutside0",
-      feeGrowthOutside1: "test feeGrowthOutside1"
-    });
-
-    const tickDataIdx = plainToInstance(TickDataObj, { test: tickData1 });
+    const bitmap: Record<string, string> = { 1: "test 1", test: "test 2" };
 
     const pool = new Pool(token0, token1, token0ClassKey, token1ClassKey, fee, initialSqrtPrice);
 
-    pool.positions = positions;
     pool.bitmap = bitmap;
-    pool.tickData = tickDataIdx;
     pool.liquidity = new BigNumber("1");
     pool.feeGrowthGlobal0 = new BigNumber("1");
     pool.feeGrowthGlobal1 = new BigNumber("1");
@@ -152,70 +125,51 @@ describe("DexV3Pool", () => {
     const fee = DexFeePercentageTypes.FEE_1_PERCENT;
     const initialSqrtPrice = new BigNumber("1");
 
-    const position1 = plainToInstance(PositionData, {
-      poolAddrKey: "test poolAddrKey",
-      tickUpper: "100",
-      tickLower: "1",
-      liquidity: "100000",
-      feeGrowthInside0Last: "test feeGrowthInside0Last",
-      feeGrowthInside1Last: "test feeGrowthInside1Last",
-      tokensOwed0: "test tokensOwed0",
-      tokensOwed1: "test tokensOwed1",
-      nftId: "test nftId"
-    });
-
-    const positions: Positions = {
-      [position1.nftId]: position1
-    };
-
-    const bitmap = plainToInstance(Bitmap, { 1: "test 1", test: "test 2" });
+    const position1 = new DexPositionData(
+      "test poolHash",
+      "test position id",
+      100,
+      1,
+      token0ClassKey,
+      token1ClassKey,
+      fee
+    );
 
     const tickData1 = plainToInstance(TickData, {
-      liquidityGross: "test liquidityGross",
+      poolHash: "test poolHash",
+      tick: 1,
+      liquidityGross: new BigNumber("100"),
       initialised: true,
-      liquidityNet: "test liquidityNet",
-      feeGrowthOutside0: "test feeGrowthOutside0",
-      feeGrowthOutside1: "test feeGrowthOutside1"
+      liquidityNet: new BigNumber("100"),
+      feeGrowthOutside0: new BigNumber("1"),
+      feeGrowthOutside1: new BigNumber("1")
     });
 
-    const tickDataIdx = plainToInstance(TickDataObj, { test: tickData1 });
+    const tickData2 = plainToInstance(TickData, {
+      ...tickData1,
+      tick: 2
+    });
 
     const pool = new Pool(token0, token1, token0ClassKey, token1ClassKey, fee, initialSqrtPrice);
 
-    pool.positions = { ...positions };
     pool.bitmap = { ...{ "1": "1" } };
-    pool.tickData = { ...tickDataIdx };
     pool.liquidity = new BigNumber("1000000");
     pool.feeGrowthGlobal0 = new BigNumber("1");
     pool.feeGrowthGlobal1 = new BigNumber("1");
     pool.maxLiquidityPerTick = new BigNumber("100000");
-    pool.tickSpacing = 1;
     pool.protocolFees = 1;
     pool.protocolFeesToken0 = new BigNumber("1");
     pool.protocolFeesToken1 = new BigNumber("1");
 
     // When
-    const [amount0, amount1] = pool.mint(
-      position1.nftId,
-      parseInt(position1.tickLower.toString()),
-      parseInt(position1.tickUpper.toString()),
-      new BigNumber("1").f18()
-    );
-
-    const [newPosition1, newPosition2] = pool.mint(
-      "new position nft id",
-      10,
-      2000,
-      new BigNumber("1000").f18()
-    );
+    const [amount0, amount1] = pool.mint(position1, tickData1, tickData2, new BigNumber("1").f18());
 
     const validationResult = await pool.validate();
+
     // Then
     expect(pool).toBeDefined();
     expect(amount0).toBeDefined();
     expect(amount1).toBeDefined();
-    expect(newPosition1).toBeDefined();
-    expect(newPosition2).toBeDefined();
     expect(validationResult).toEqual([]);
   });
 });
