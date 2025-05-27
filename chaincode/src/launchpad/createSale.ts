@@ -117,7 +117,12 @@ export async function createSale(
   });
 
   // Create the LaunchpadSale object
-  const launchpad = new LaunchpadSale(vaultAddress, tokenInstanceKey, ctx.callingUser);
+  const launchpad = new LaunchpadSale(
+    vaultAddress,
+    tokenInstanceKey,
+    launchpadDetails.reverseBondingCurveConfiguration?.toChainObject(),
+    ctx.callingUser
+  );
 
   await putChainObject(ctx, launchpad);
 

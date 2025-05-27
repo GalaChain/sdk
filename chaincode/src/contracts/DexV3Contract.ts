@@ -14,26 +14,27 @@
  */
 import {
   AddLiquidityDTO,
-  AddLiquidityResDto,
   BurnDto,
   BurnEstimateDto,
   ChainCallDTO,
   CollectDto,
-  CollectTradingFeesDto,
-  CollectTradingFeesResDto,
+  CollectProtocolFeesDto,
+  CollectProtocolFeesResDto,
   ConfigureDexFeeAddressDto,
   CreatePoolDto,
+  CreatePoolResDto,
   DexFeeConfig,
-  DexNftBatchLimit,
-  DexNftBatchLimitDto,
+  DexOperationResDto,
+  DexPositionData,
+  DexPositionOwner,
   GetAddLiquidityEstimationDto,
   GetAddLiquidityEstimationResDto,
   GetLiquidityResDto,
   GetPoolDto,
+  GetPositionByIdDto,
   GetPositionDto,
-  GetPositionResDto,
-  GetPositionWithNftIdDto,
   GetRemoveLiqEstimationResDto,
+  GetTickDataDto,
   GetUserPositionsDto,
   GetUserPositionsResDto,
   NotFoundError,
@@ -45,7 +46,8 @@ import {
   Slot0ResDto,
   SwapDto,
   SwapResDto,
-  UserBalanceResDto
+  TickData,
+  TransferDexPositionDto
 } from "@gala-chain/api";
 
 import { version } from "../../package.json";
@@ -53,24 +55,24 @@ import {
   addLiquidity,
   burn,
   collect,
-  collectTradingFees,
+  collectProtocolFees,
   configureDexFeeAddress,
   createPool,
   getAddLiquidityEstimation,
   getDexFeesConfigration,
   getLiquidity,
   getPoolData,
-  getPositionWithNftId,
-  getPositions,
+  getPosition,
+  getPositionById,
   getRemoveLiquidityEstimation,
   getSlot0,
   getUserPositions,
   quoteExactAmount,
   setProtocolFee,
-  swap
+  swap,
+  transferDexPosition
 } from "../dex";
-import { configureDexNftBatchLimit } from "../dex/configureDexNftBatchLimit";
-import { fetchDexNftBatchLimit } from "../dex/fetchDexNftBatchLimit";
+import { getTickData } from "../dex/tickData.helper";
 import {
   addLiquidityFeeGate,
   collectPositionFeesFeeGate,
@@ -89,19 +91,19 @@ export class DexV3Contract extends GalaContract {
 
   @Submit({
     in: CreatePoolDto,
-    out: Pool,
+    out: CreatePoolResDto,
     before: createPoolFeeGate
   })
-  public async CreatePool(ctx: GalaChainContext, dto: CreatePoolDto): Promise<Pool> {
+  public async CreatePool(ctx: GalaChainContext, dto: CreatePoolDto): Promise<CreatePoolResDto> {
     return await createPool(ctx, dto);
   }
 
   @Submit({
     in: AddLiquidityDTO,
-    out: AddLiquidityResDto,
+    out: DexOperationResDto,
     before: addLiquidityFeeGate
   })
-  public async AddLiquidity(ctx: GalaChainContext, dto: AddLiquidityDTO): Promise<AddLiquidityResDto> {
+  public async AddLiquidity(ctx: GalaChainContext, dto: AddLiquidityDTO): Promise<DexOperationResDto> {
     return await addLiquidity(ctx, dto);
   }
 
@@ -116,10 +118,10 @@ export class DexV3Contract extends GalaContract {
 
   @Submit({
     in: BurnDto,
-    out: UserBalanceResDto,
+    out: DexOperationResDto,
     before: removeLiquidityFeeGate
   })
-  public async RemoveLiquidity(ctx: GalaChainContext, dto: BurnDto): Promise<UserBalanceResDto> {
+  public async RemoveLiquidity(ctx: GalaChainContext, dto: BurnDto): Promise<DexOperationResDto> {
     return await burn(ctx, dto);
   }
 
@@ -139,27 +141,6 @@ export class DexV3Contract extends GalaContract {
   })
   public async GetLiquidity(ctx: GalaChainContext, dto: GetPoolDto): Promise<GetLiquidityResDto> {
     return await getLiquidity(ctx, dto);
-  }
-
-  @GalaTransaction({
-    type: EVALUATE,
-    in: GetPositionDto,
-    out: GetPositionResDto
-  })
-  public async GetPositions(ctx: GalaChainContext, dto: GetPositionDto): Promise<GetPositionResDto> {
-    return await getPositions(ctx, dto);
-  }
-
-  @GalaTransaction({
-    type: EVALUATE,
-    in: GetPositionWithNftIdDto,
-    out: GetPositionResDto
-  })
-  public async GetPositionWithNftId(
-    ctx: GalaChainContext,
-    dto: GetPositionWithNftIdDto
-  ): Promise<GetPositionResDto> {
-    return await getPositionWithNftId(ctx, dto);
   }
 
   @GalaTransaction({
@@ -225,23 +206,23 @@ export class DexV3Contract extends GalaContract {
 
   @Submit({
     in: CollectDto,
-    out: UserBalanceResDto,
+    out: DexOperationResDto,
     before: collectPositionFeesFeeGate
   })
-  public async CollectPositionFees(ctx: GalaChainContext, dto: CollectDto): Promise<UserBalanceResDto> {
+  public async CollectPositionFees(ctx: GalaChainContext, dto: CollectDto): Promise<DexOperationResDto> {
     return await collect(ctx, dto);
   }
 
   @Submit({
-    in: CollectTradingFeesDto,
-    out: CollectTradingFeesResDto,
+    in: CollectProtocolFeesDto,
+    out: CollectProtocolFeesResDto,
     allowedOrgs: ["CuratorOrg"]
   })
-  public async CollectTradingFees(
+  public async CollectProtocolFees(
     ctx: GalaChainContext,
-    dto: CollectTradingFeesDto
-  ): Promise<CollectTradingFeesResDto> {
-    return await collectTradingFees(ctx, dto);
+    dto: CollectProtocolFeesDto
+  ): Promise<CollectProtocolFeesResDto> {
+    return await collectProtocolFees(ctx, dto);
   }
 
   @Submit({
@@ -275,23 +256,40 @@ export class DexV3Contract extends GalaContract {
   }
 
   @Submit({
-    in: DexNftBatchLimitDto,
-    out: DexNftBatchLimit,
-    allowedOrgs: ["CuratorOrg"]
+    in: TransferDexPositionDto,
+    out: DexPositionOwner
   })
-  public async ConfigureDexNftBatchLimit(
+  public async TransferDexPosition(
     ctx: GalaChainContext,
-    dto: DexNftBatchLimitDto
-  ): Promise<DexNftBatchLimit> {
-    return configureDexNftBatchLimit(ctx, dto);
+    dto: TransferDexPositionDto
+  ): Promise<DexPositionOwner> {
+    return transferDexPosition(ctx, dto);
   }
 
-  @Evaluate({
-    in: ChainCallDTO,
-    out: DexNftBatchLimit,
-    allowedOrgs: ["CuratorOrg"]
+  @GalaTransaction({
+    type: EVALUATE,
+    in: GetPositionDto,
+    out: DexPositionData
   })
-  public async FetchDexNftBatchLimit(ctx: GalaChainContext, dto: ChainCallDTO): Promise<DexNftBatchLimit> {
-    return fetchDexNftBatchLimit(ctx);
+  public async GetPositions(ctx: GalaChainContext, dto: GetPositionDto): Promise<DexPositionData> {
+    return await getPosition(ctx, dto);
+  }
+
+  @GalaTransaction({
+    type: EVALUATE,
+    in: GetPositionByIdDto,
+    out: DexPositionData
+  })
+  public async GetPositionByID(ctx: GalaChainContext, dto: GetPositionByIdDto): Promise<DexPositionData> {
+    return getPositionById(ctx, dto);
+  }
+
+  @GalaTransaction({
+    type: EVALUATE,
+    in: GetTickDataDto,
+    out: TickData
+  })
+  public async GetTickData(ctx: GalaChainContext, dto: GetTickDataDto): Promise<TickData> {
+    return getTickData(ctx, dto);
   }
 }

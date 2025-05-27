@@ -295,3 +295,108 @@ export function IsLessThan(property: string, validationOptions?: ValidationOptio
     });
   };
 }
+
+export function IsStringRecord(validationOptions?: ValidationOptions) {
+  return function (object: object, propertyName: string) {
+    registerDecorator({
+      name: "isStringRecord",
+      target: object.constructor,
+      propertyName,
+      options: validationOptions,
+      validator: {
+        validate(value: any, args: ValidationArguments) {
+          if (typeof value !== "object" || value === null || Array.isArray(value)) return false;
+
+          return Object.entries(value).every(
+            ([key, val]) => typeof key === "string" && typeof val === "string"
+          );
+        },
+        defaultMessage(args: ValidationArguments) {
+          return `${args.property} must be a Record<string, string>`;
+        }
+      }
+    });
+  };
+}
+
+export function IsStringArrayRecord(validationOptions?: ValidationOptions) {
+  return function (object: object, propertyName: string) {
+    registerDecorator({
+      name: "isStringArrayRecord",
+      target: object.constructor,
+      propertyName,
+      options: validationOptions,
+      validator: {
+        validate(value: any, args: ValidationArguments) {
+          if (typeof value !== "object" || value === null || Array.isArray(value)) {
+            return false;
+          }
+
+          return Object.entries(value).every(
+            ([key, val]) =>
+              typeof key === "string" && Array.isArray(val) && val.every((item) => typeof item === "string")
+          );
+        },
+        defaultMessage(args: ValidationArguments) {
+          return `${args.property} must be a Record<string, string[]>`;
+        }
+      }
+    });
+  };
+}
+
+export function BigNumberMax(maxValue: BigNumber.Value, options?: ValidationOptions) {
+  const max = new BigNumber(maxValue);
+
+  return function (object: object, propertyName: string) {
+    registerDecorator({
+      name: "BigNumberMax",
+      target: object.constructor,
+      propertyName,
+      options,
+      constraints: [max],
+      validator: {
+        validate(value: unknown): boolean {
+          try {
+            const bn = new BigNumber(value as BigNumber.Value);
+            return bn.isLessThanOrEqualTo(max);
+          } catch {
+            return false;
+          }
+        },
+
+        defaultMessage(args: ValidationArguments): string {
+          const [maxConstraint] = args.constraints as [BigNumber];
+          return `${args.property} must be ≤ ${maxConstraint.toFixed()}`;
+        }
+      }
+    });
+  };
+}
+
+export function BigNumberLessThanOrEqualOther(property: string, validationOptions?: ValidationOptions) {
+  return function (object: object, propertyName: string) {
+    registerDecorator({
+      name: "BigNumberLessThanOrEqualOther",
+      target: object.constructor,
+      propertyName: propertyName,
+      constraints: [property],
+      options: validationOptions,
+      validator: {
+        validate(value: any, args: ValidationArguments) {
+          const [relatedPropertyName] = args.constraints;
+          const relatedValue = (args.object as any)[relatedPropertyName];
+          if (!(value instanceof BigNumber) || !(relatedValue instanceof BigNumber)) {
+            return false;
+          }
+
+          return value.isLessThanOrEqualTo(relatedValue);
+        },
+        defaultMessage(args: ValidationArguments) {
+          const [relatedPropertyName] = args.constraints;
+          return `${args.property} must be less than or equal to ${relatedPropertyName}`;
+        }
+      }
+    });
+  };
+}

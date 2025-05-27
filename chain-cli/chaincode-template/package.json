@@ -1,6 +1,6 @@
 {
   "name": "@galachain/product",
-  "version": "1.9.3",
+  "version": "1.10.1",
   "description": "Product Chaincode",
   "main": "lib/src/index.js",
   "types": "lib/src/index.d.ts",
@@ -19,20 +19,21 @@
     "network:recreate": "npm run network:prune && rm -rf ./test-network && npm run network:start",
     "test": "jest",
     "test:e2e": "jest --config=e2e/jest.config.js --runInBand",
+    "test:e2e:launchpad:watch": "jest --watch --config=e2e/jest.config.js --runInBand -t LaunchpadContract --detectOpenHandles",
     "update-snapshot": "jest --updateSnapshot"
   },
   "dependencies": {
-    "@gala-chain/api": "1.9.3",
-    "@gala-chain/chaincode": "1.9.3",
+    "@gala-chain/api": "1.10.1",
+    "@gala-chain/chaincode": "1.10.1",
     "@grpc/grpc-js": "1.10.10",
     "dotenv": "^16.0.1",
     "fabric-contract-api": "2.5.6",
     "fabric-shim": "2.5.6"
   },
   "devDependencies": {
-    "@gala-chain/cli": "1.9.3",
-    "@gala-chain/client": "1.9.3",
-    "@gala-chain/test": "1.9.3",
+    "@gala-chain/cli": "1.10.1",
+    "@gala-chain/client": "1.10.1",
+    "@gala-chain/test": "1.10.1",
     "@trivago/prettier-plugin-sort-imports": "^4.3.0",
     "@types/jest": "^29.5.12",
     "@types/node": "18.11.9",

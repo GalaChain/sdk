@@ -30,7 +30,7 @@ export class DexFeeConfig extends ChainObject {
   @Max(1)
   public protocolFee: number;
 
-  constructor(authorities: string[], protocolFee = 0) {
+  constructor(authorities: string[], protocolFee = 0.1) {
     super();
     this.authorities = authorities;
     this.protocolFee = protocolFee;

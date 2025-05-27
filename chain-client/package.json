@@ -1,6 +1,6 @@
 {
   "name": "@gala-chain/client",
-  "version": "1.9.3",
+  "version": "1.10.1",
   "description": "GalaChain client library",
   "license": "Apache-2.0",
   "scripts": {
@@ -21,13 +21,13 @@
     "lib"
   ],
   "dependencies": {
-    "@gala-chain/api": "1.9.3",
+    "@gala-chain/api": "1.10.1",
     "axios": "^1.6.0",
     "jsonschema": "^1.4.1",
     "tslib": "^2.6.2"
   },
   "peerDependencies": {
-    "class-validator": "*",
+    "class-validator": "0.14.2",
     "fabric-ca-client": "*",
     "fabric-network": "*"
   },
