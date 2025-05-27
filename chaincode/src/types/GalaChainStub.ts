@@ -119,6 +119,9 @@ class StubCache {
    * This method is used to invoke other chaincode. It is not allowed to invoke the same chaincode
    * more than once within the same transaction, because we are not able to support cache for the
    * invoked chaincode.
+   *
+   * The only exception is DryRun, which is allowed to be called multiple times, if no other
+   * methods on the same chaincode are called before it.
    */
   async invokeChaincode(chaincodeName: string, args: string[], channel: string): Promise<ChaincodeResponse> {
     const key = `${channel}/${chaincodeName}`;
@@ -129,7 +132,10 @@ class StubCache {
       throw new DuplicateInvokeChaincodeError(chaincodeName, prevCall, effectiveChannel);
     }
 
-    this.invokeChaincodeCalls[key] = args;
+    const isDryRun = args?.[0].endsWith(":DryRun");
+    if (!isDryRun) {
+      this.invokeChaincodeCalls[key] = args;
+    }
 
     return await this.stub.invokeChaincode(chaincodeName, args, channel);
   }

@@ -420,4 +420,31 @@ describe("invokeChaincode", () => {
 
     expect(internalStub.invokeChaincode).toHaveBeenCalledTimes(3);
   });
+
+  it("should allow to call DryRun before the actual invocation", async () => {
+    // Given
+    const { internalStub, gcStub } = setupTest();
+    const args = ["Contract:Method", "{}"];
+    const dryRunArgs = ["Contract:DryRun", "{}"];
+
+    // When
+    const calls = [
+      await gcStub.invokeChaincode("chaincode-1", dryRunArgs, "channel-A"), // ok
+      await gcStub.invokeChaincode("chaincode-1", dryRunArgs, "channel-A"), // ok
+      await gcStub.invokeChaincode("chaincode-1", args, "channel-A"), // ok
+      await gcStub.invokeChaincode("chaincode-1", dryRunArgs, "channel-A").catch((e) => e),
+      await gcStub.invokeChaincode("chaincode-1", args, "channel-A").catch((e) => e)
+    ];
+
+    // Then
+    expect(calls).toEqual([
+      successInvoke,
+      successInvoke,
+      successInvoke,
+      new DuplicateInvokeChaincodeError("chaincode-1", args, "channel-A"),
+      new DuplicateInvokeChaincodeError("chaincode-1", args, "channel-A")
+    ]);
+
+    expect(internalStub.invokeChaincode).toHaveBeenCalledTimes(3);
+  });
 });
