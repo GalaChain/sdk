@@ -140,6 +140,9 @@ export async function swap(ctx: GalaChainContext, dto: SwapDto): Promise<SwapRes
       if (poolTokenBalance.getQuantityTotal().isLessThan(roundedAmount)) {
         throw new ConflictError("Not enough liquidity available in pool");
       }
+      if (roundedAmount.isZero()) {
+        throw new ConflictError(`Tokens to be traded cannot be zero.`);
+      }
 
       await transferToken(ctx, {
         from: poolAlias,

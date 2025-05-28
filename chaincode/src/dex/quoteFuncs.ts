@@ -109,6 +109,12 @@ export async function quoteExactAmount(
     }
   }
 
+  if (roundedToken0Amount.isZero() || roundedToken1Amount.isZero()) {
+    throw new ConflictError(
+      `Tokens to be traded cannot be zero but are token0: ${roundedToken0Amount.toFixed()} and token1: ${roundedToken1Amount.toFixed()}`
+    );
+  }
+
   // Return quote response including price movement
   const newSqrtPrice = pool.sqrtPrice;
   return new QuoteExactAmountResDto(roundedToken0Amount, roundedToken1Amount, currentSqrtPrice, newSqrtPrice);
