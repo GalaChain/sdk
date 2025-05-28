@@ -998,12 +998,17 @@ export class DexOperationResDto extends ChainCallDTO {
   @EnumProperty(DexFeePercentageTypes)
   poolFee: DexFeePercentageTypes;
 
+  @IsNotEmpty()
+  @IsUserAlias()
+  userAddress: string;
+
   constructor(
     userBalanceDelta: UserBalanceResDto,
     amounts: string[],
     poolHash: string,
     poolAlias: string,
-    poolFee: DexFeePercentageTypes
+    poolFee: DexFeePercentageTypes,
+    userAddress: string
   ) {
     super();
     this.userBalanceDelta = userBalanceDelta;
@@ -1011,6 +1016,7 @@ export class DexOperationResDto extends ChainCallDTO {
     this.poolHash = poolHash;
     this.poolAlias = poolAlias;
     this.poolFee = poolFee;
+    this.userAddress = userAddress;
   }
 }
 
