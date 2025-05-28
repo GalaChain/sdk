@@ -1911,6 +1911,8 @@ describe("LaunchpadContract", () => {
       expect(response).toEqual(transactionSuccess());
       expect(response.Data).toBeDefined();
       expect(response.Data?.vaultAddress).toBeTruthy();
+      expect(response.Data?.reverseBondingCurveConfiguration?.minFeePortion).toEqual(rbcConfig.minFeePortion);
+      expect(response.Data?.reverseBondingCurveConfiguration?.maxFeePortion).toEqual(rbcConfig.maxFeePortion);
 
       const saleVaultAddress = response.Data?.vaultAddress;
       if (!saleVaultAddress) return;

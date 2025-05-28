@@ -28,7 +28,7 @@ import { ChainObject } from "./ChainObject";
 })
 export class DexPositionOwner extends ChainObject {
   @Exclude()
-  static INDEX_KEY = "GCDEXCLPO"; //GalaChain Decentralised EXCHange Liquidity Position Owner
+  static INDEX_KEY = "GCDXCLPO"; //GalaChain Decentralised Exchange Liquidity Position Owner
 
   @ChainKey({ position: 0 })
   @IsNotEmpty()

@@ -153,6 +153,7 @@ export async function addLiquidity(
     [roundedToken0Amount.toFixed(), roundedToken1Amount.toFixed()],
     poolHash,
     poolAlias,
-    pool.fee
+    pool.fee,
+    ctx.callingUser
   );
 }
