@@ -150,6 +150,7 @@ export async function createSale(
     category: launchpadDetails.tokenCategory,
     functionName: "CreateSale",
     isFinalized: isSaleFinalised,
-    tokenStringKey: tokenInstanceKey.getTokenClassKey().toStringKey()
-  };
+    tokenStringKey: tokenInstanceKey.getTokenClassKey().toStringKey(),
+    reverseBondingCurveConfiguration: launchpadDetails.reverseBondingCurveConfiguration
+  } satisfies CreateSaleResDto;
 }
