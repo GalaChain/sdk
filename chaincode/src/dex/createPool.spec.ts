@@ -29,7 +29,7 @@ import { currency, dex, fixture, users, writesMap } from "@gala-chain/test";
 import BigNumber from "bignumber.js";
 import { plainToInstance } from "class-transformer";
 
-import { DexV3Contract } from "../__test__/DexV3Contract";
+import { DexV3Contract } from "../contracts/DexV3Contract";
 import { GalaChainContext } from "../types";
 import { generateKeyFromClassKey } from "./dexUtils";
 

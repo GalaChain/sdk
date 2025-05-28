@@ -36,22 +36,6 @@ const tokenClass1Properties = {
 };
 
 describe("DexV3Pool", () => {
-  it("should create a pool", () => {
-    // Given
-    const token0 = "some token key";
-    const token1 = "token1 string key";
-    const token0ClassKey = new TokenClassKey();
-    const token1ClassKey = new TokenClassKey();
-    const fee = DexFeePercentageTypes.FEE_1_PERCENT;
-    const initialSqrtPrice = new BigNumber("1");
-
-    // When
-    const pool = new Pool(token0, token1, token0ClassKey, token1ClassKey, fee, initialSqrtPrice);
-
-    // Then
-    expect(pool).toBeDefined();
-  });
-
   it("should fail to validate the pool when token class keys are missing proerpties", async () => {
     // Given
     const token0 = "some token key";
@@ -65,7 +49,6 @@ describe("DexV3Pool", () => {
     const pool = new Pool(token0, token1, token0ClassKey, token1ClassKey, fee, initialSqrtPrice);
     const validationResult = await pool.validate();
     // Then
-    expect(pool).toBeDefined();
     expect(validationResult.length).toBeGreaterThan(0);
   });
 
@@ -82,7 +65,6 @@ describe("DexV3Pool", () => {
     const pool = new Pool(token0, token1, token0ClassKey, token1ClassKey, fee, initialSqrtPrice);
     const validationResult = await pool.validate();
     // Then
-    expect(pool).toBeDefined();
     expect(validationResult).toEqual([]);
   });
 
@@ -112,7 +94,6 @@ describe("DexV3Pool", () => {
     // When
     const validationResult = await pool.validate();
     // Then
-    expect(pool).toBeDefined();
     expect(validationResult).toEqual([]);
   });
 
@@ -167,9 +148,8 @@ describe("DexV3Pool", () => {
     const validationResult = await pool.validate();
 
     // Then
-    expect(pool).toBeDefined();
-    expect(amount0).toBeDefined();
-    expect(amount1).toBeDefined();
     expect(validationResult).toEqual([]);
+    expect(amount0).toEqual(new BigNumber("0.00004999375068752344"));
+    expect(amount1).toEqual(new BigNumber("0"));
   });
 });
