@@ -184,6 +184,7 @@ export async function burn(ctx: GalaChainContext, dto: BurnDto): Promise<DexOper
     [roundedToken0Amount.toFixed(), roundedToken1Amount.toFixed()],
     poolHash,
     poolAlias,
-    pool.fee
+    pool.fee,
+    ctx.callingUser
   );
 }

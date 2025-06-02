@@ -186,6 +186,11 @@ export class CreateSaleResDto {
   @IsString()
   @IsNotEmpty()
   public tokenStringKey: string;
+
+  @IsOptional()
+  @ValidateNested()
+  @Type(() => ReverseBondingCurveConfigurationDto)
+  public reverseBondingCurveConfiguration?: ReverseBondingCurveConfigurationDto;
 }
 
 export class TokenExtraFeesDto {

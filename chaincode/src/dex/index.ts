@@ -25,6 +25,7 @@ export * from "./collectProtocolFees";
 export * from "./getPosition";
 export * from "./getPositionById";
 export * from "./getUserPositions";
+export * from "./tickData.helper";
 export * from "./dexError";
 export * from "./transferDexPosition";
 export * from "./dexUtils";
