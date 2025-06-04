@@ -14,14 +14,18 @@
  */
 import {
   BatchDto,
+  ChainError,
   ContractAPI,
   DryRunDto,
   DryRunResultDto,
+  ErrorCode,
+  GalaChainErrorResponse,
   GalaChainResponse,
   GalaChainResponseType,
   GetObjectDto,
   GetObjectHistoryDto,
   NotFoundError,
+  RuntimeError,
   ValidationFailedError,
   createValidDTO,
   signatures
@@ -40,6 +44,16 @@ export class BatchWriteLimitExceededError extends ValidationFailedError {
       `Batch writes limit of ${writesLimit} keys exceeded. ` +
         `This operation can be repeated with a smaller batch.`
     );
+  }
+}
+
+export class BatchPartialSuccessRequiredError extends ChainError {
+  public readonly code: ErrorCode;
+
+  constructor(index: number, error: GalaChainErrorResponse<unknown>) {
+    const message = `Batch operation with index ${index} failed with error: ${error.ErrorKey}: ${error.Message}`;
+    super(message, { index, error });
+    this.code = error.ErrorCode;
   }
 }
 
@@ -221,7 +235,13 @@ export abstract class GalaContract extends Contract {
         ctx.stub.setDeletes(sandboxCtx.stub.getDeletes());
         writesCount = ctx.stub.getWritesCount();
       }
+
+      // Store the first error if it's the first error we encounter.
+      if (batchDto.noPartialSuccess && GalaChainResponse.isError(response)) {
+        throw new BatchPartialSuccessRequiredError(index, response);
+      }
     }
+
     return responses;
   }
 
