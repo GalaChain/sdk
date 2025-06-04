@@ -467,6 +467,31 @@ describe("GalaContract.Batch", () => {
     expect(evaluateResp).toEqual(transactionSuccess(expectedEvaluateResponses));
   });
 
+  it("should support batch operations with no partial success", async () => {
+    // Given
+    const chaincode = new TestChaincode([TestGalaContract]);
+    const batchSubmit = plainToInstance(BatchDto, {
+      uniqueKey: "unique-key-batch",
+      operations: [
+        { method: "PutKv", dto: { key: "test-key-1", value: "robot", uniqueKey: "unique-key-1" } },
+        { method: "PutKv", dto: { key: "test-key-2", value: "zerg", uniqueKey: "unique-key-1" } },
+        { method: "PutKv", dto: { key: "test-key-3", value: "human", uniqueKey: "unique-key-3" } }
+      ],
+      noPartialSuccess: true
+    });
+
+    // When
+    const response = await chaincode.invoke("TestGalaContract:BatchSubmit", batchSubmit.serialize());
+
+    // Then
+    expect(response).toEqual(transactionErrorKey("BATCH_PARTIAL_SUCCESS_REQUIRED"));
+    expect(response).toEqual(
+      transactionErrorMessageContains(
+        "Batch operation with index 1 failed with error: UNIQUE_TRANSACTION_CONFLICT: Unique transaction key unique-key-1 is already saved"
+      )
+    );
+  });
+
   it("should fail on writes limit exceeded", async () => {
     // Given
     const chaincode = new TestChaincode([TestGalaContract]);

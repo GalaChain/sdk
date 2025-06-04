@@ -322,6 +322,15 @@ export class BatchDto extends ChainCallDTO {
   @IsOptional()
   writesLimit?: number;
 
+  @JSONSchema({
+    description:
+      "If true, the batch will fail if any of the operations fail. " +
+      "If false, the batch will continue even if some of the operations fail. " +
+      "Default: false."
+  })
+  @IsOptional()
+  noPartialSuccess?: boolean;
+
   @Type(() => BatchOperationDto)
   @ValidateNested({ each: true })
   @ArrayMinSize(1)
