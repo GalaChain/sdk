@@ -230,11 +230,24 @@ function GalaTransaction<In extends ChainCallDTO, Out>(
 
         return normalizedResult;
       } catch (err) {
+        const chainError = ChainError.from(err);
+
         if (ctx.logger) {
-          ChainError.from(err).logWarn(ctx.logger);
+          chainError.logWarn(ctx.logger);
           ctx.logger.logTimeline("Failed Transaction", loggingContext, [dtoPlain], err);
           ctx.logger.debug(err.message);
           ctx.logger.debug(err.stack);
+        }
+
+        // if external chaincode call succeeded, but the remaining part of the
+        // chaincode failed, we need to throw an error to prevent from the state
+        // being updated by the external chaincode. There seems to be no other
+        // way to rollback the state changes.
+        if (ctx.stub.externalChaincodeWasInvoked) {
+          const message =
+            "External chaincode call succeeded, but the remaining part of the chaincode failed with: " +
+            `${chainError.key}: ${chainError.message}`;
+          throw new RuntimeError(message);
         }
 
         // Note: since it does not end with an exception, failed transactions are also saved

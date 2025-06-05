@@ -447,4 +447,17 @@ describe("invokeChaincode", () => {
 
     expect(internalStub.invokeChaincode).toHaveBeenCalledTimes(3);
   });
+
+  it("should record external chaincode invocation", async () => {
+    // Given
+    const { gcStub } = setupTest();
+    const args = ["Contract:Method", "{}"];
+    expect(gcStub.externalChaincodeWasInvoked).toBe(false);
+
+    // When
+    await gcStub.invokeChaincode("chaincode-1", args, "channel-A");
+
+    // Then
+    expect(gcStub.externalChaincodeWasInvoked).toBe(true);
+  });
 });

@@ -140,6 +140,10 @@ class StubCache {
     return await this.stub.invokeChaincode(chaincodeName, args, channel);
   }
 
+  get externalChaincodeWasInvoked(): boolean {
+    return Object.keys(this.invokeChaincodeCalls).length > 0;
+  }
+
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
   setStateValidationParameter(key: string, ep: Uint8Array): Promise<void> {
     throw new NotImplementedError("setStateValidationParameter is not supported");
@@ -234,6 +238,10 @@ export interface GalaChainStub extends ChaincodeStub {
   setWrites(writes: Record<string, Uint8Array>): void;
 
   setDeletes(deletes: Record<string, true>): void;
+
+  invokeChaincode(chaincodeName: string, args: string[], channel: string): Promise<ChaincodeResponse>;
+
+  get externalChaincodeWasInvoked(): boolean;
 }
 
 export const createGalaChainStub = (
