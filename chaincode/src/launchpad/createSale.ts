@@ -29,10 +29,6 @@ import { GalaChainContext } from "../types";
 import { getObjectByKey, putChainObject } from "../utils";
 import { buyWithNative } from "./buyWithNative";
 
-BigNumber.config({
-  ROUNDING_MODE: BigNumber.ROUND_UP
-});
-
 /**
  * Creates a new token sale (Launchpad) in the GalaChain environment.
  *

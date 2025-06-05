@@ -13,14 +13,9 @@
  * limitations under the License.
  */
 import { LaunchpadSale, PreMintCalculationDto } from "@gala-chain/api";
-import { BigNumber } from "bignumber.js";
 import Decimal from "decimal.js";
 
 import { getBondingConstants } from "../utils";
-
-BigNumber.config({
-  ROUNDING_MODE: BigNumber.ROUND_UP
-});
 
 /**
  * Calculates the number of tokens that can be purchased using a specified amount
