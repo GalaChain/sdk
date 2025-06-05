@@ -20,10 +20,6 @@ import { GalaChainContext } from "../types";
 import { fetchAndValidateSale, getBondingConstants } from "../utils";
 import { calculateReverseBondingCurveFee } from "./fees";
 
-BigNumber.config({
-  ROUNDING_MODE: BigNumber.ROUND_UP
-});
-
 function calculateMemeTokensRequired(sale: LaunchpadSale, requestedNativeTokenQuantity: BigNumber) {
   const totalTokensSold = new Decimal(sale.fetchTokensSold()); // current tokens sold / x
   let nativeTokens = new Decimal(requestedNativeTokenQuantity.toString()); // native tokens used to buy / y

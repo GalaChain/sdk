@@ -13,15 +13,10 @@
  * limitations under the License.
  */
 import { ExactTokenQuantityDto } from "@gala-chain/api";
-import { BigNumber } from "bignumber.js";
 import Decimal from "decimal.js";
 
 import { GalaChainContext } from "../types";
 import { fetchAndValidateSale, getBondingConstants } from "../utils";
-
-BigNumber.config({
-  ROUNDING_MODE: BigNumber.ROUND_UP
-});
 
 /**
  * Calculates the amount of native tokens required to purchase a specified amount

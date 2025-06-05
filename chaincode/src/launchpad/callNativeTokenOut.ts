@@ -20,10 +20,6 @@ import { GalaChainContext } from "../types";
 import { fetchAndValidateSale, getBondingConstants } from "../utils";
 import { calculateReverseBondingCurveFee } from "./fees";
 
-BigNumber.config({
-  ROUNDING_MODE: BigNumber.ROUND_UP
-});
-
 function calculateNativeTokensReceived(sale: LaunchpadSale, tokensToSellBn: BigNumber) {
   const totalTokensSold = new Decimal(sale.fetchTokensSold());
 
