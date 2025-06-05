@@ -104,7 +104,7 @@ describe("createPool", () => {
     const dexClass: TokenClass = plainToInstance(TokenClass, token1Properties);
     const dexClassKey: TokenClassKey = plainToInstance(TokenClassKey, token1Properties);
 
-    const dexFeeConfig: DexFeeConfig = new DexFeeConfig([users.testAdminId], 2);
+    const dexFeeConfig: DexFeeConfig = new DexFeeConfig([users.testAdminId], 0.1);
 
     const { ctx, contract, writes } = fixture<GalaChainContext, DexV3Contract>(DexV3Contract)
       .callingUser(users.testUser1Id)
