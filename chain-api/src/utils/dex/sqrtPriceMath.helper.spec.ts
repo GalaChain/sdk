@@ -61,10 +61,11 @@ describe("getNextSqrtPriceFromInput", () => {
     const liquidity = new BigNumber(100);
     const amountIn = new BigNumber(10);
 
-    expect(() =>
-    // When
-    getNextSqrtPriceFromInput(price, liquidity, amountIn, true)
-    // Then
+    expect(
+      () =>
+        // When
+        getNextSqrtPriceFromInput(price, liquidity, amountIn, true)
+      // Then
     ).toThrow(ConflictError);
   });
 
@@ -74,10 +75,11 @@ describe("getNextSqrtPriceFromInput", () => {
     const liquidity = new BigNumber(0);
     const amountIn = new BigNumber(10);
 
-    expect(() =>
-    // When
-    getNextSqrtPriceFromInput(price, liquidity, amountIn, true)
-    // Then
+    expect(
+      () =>
+        // When
+        getNextSqrtPriceFromInput(price, liquidity, amountIn, true)
+      // Then
     ).toThrow(ConflictError);
   });
 
@@ -115,10 +117,11 @@ describe("getNextSqrtPriceFromOutput", () => {
     const liquidity = new BigNumber(100);
     const amountOut = new BigNumber(10);
 
-    expect(() =>
-    // When
-    getNextSqrtPriceFromOutput(price, liquidity, amountOut, true)
-    // Then
+    expect(
+      () =>
+        // When
+        getNextSqrtPriceFromOutput(price, liquidity, amountOut, true)
+      // Then
     ).toThrow(ConflictError);
   });
 
@@ -128,10 +131,11 @@ describe("getNextSqrtPriceFromOutput", () => {
     const liquidity = new BigNumber(0);
     const amountOut = new BigNumber(10);
 
-    expect(() =>
-    // When
-    getNextSqrtPriceFromOutput(price, liquidity, amountOut, true)
-    // Then
+    expect(
+      () =>
+        // When
+        getNextSqrtPriceFromOutput(price, liquidity, amountOut, true)
+      // Then
     ).toThrow(ConflictError);
   });
 

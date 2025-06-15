@@ -13,8 +13,8 @@
  * limitations under the License.
  */
 import BigNumber from "bignumber.js";
-import { TickData } from "chain-api/src/types";
 
+import { TickData } from "../../types/TickData";
 import {
   checkTicks,
   feeAmountTickSpacing,

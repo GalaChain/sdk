@@ -116,7 +116,7 @@ describe("computeSwapStep", () => {
     const sqrtPriceTarget = new BigNumber(1.5);
     const amountRemaining = new BigNumber(-25);
 
-    (getAmount1Delta as jest.Mock).mockReturnValue(new BigNumber(40)); 
+    (getAmount1Delta as jest.Mock).mockReturnValue(new BigNumber(40));
     (getNextSqrtPriceFromOutput as jest.Mock).mockReturnValue(new BigNumber(1.6));
     (getAmount0Delta as jest.Mock).mockReturnValue(new BigNumber(30));
 
