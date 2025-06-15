@@ -28,9 +28,8 @@ const tokenClass0Properties = {
   type: "Zero",
   additionalKey: "none"
 };
-
 const tokenClass1Properties = {
-  collection: "TEST",git
+  collection: "TEST",
   category: "Token",
   type: "One",
   additionalKey: "none"
