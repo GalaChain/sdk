@@ -20,7 +20,7 @@ import { DexFeePercentageTypes } from "./DexDtos";
 import { DexPositionData } from "./DexPositionData";
 import { Pool } from "./DexV3Pool";
 import { TickData } from "./TickData";
-import { TokenClass, TokenClassKey } from "./TokenClass";
+import { TokenClassKey } from "./TokenClass";
 
 const tokenClass0Properties = {
   collection: "TEST",
@@ -30,7 +30,7 @@ const tokenClass0Properties = {
 };
 
 const tokenClass1Properties = {
-  collection: "TEST",
+  collection: "TEST",git
   category: "Token",
   type: "One",
   additionalKey: "none"
@@ -78,7 +78,7 @@ describe("DexV3Pool", () => {
     });
   });
 
-  it("should fail to validate the pool when token class keys are missing proerpties", async () => {
+  it("should fail to validate the pool when token class keys are missing properties", async () => {
     // Given
     const token0 = "some token key";
     const token1 = "token1 string key";
@@ -87,28 +87,8 @@ describe("DexV3Pool", () => {
     const fee = DexFeePercentageTypes.FEE_1_PERCENT;
     const initialSqrtPrice = new BigNumber("1");
 
-    const ETIMEClass = await TokenClass.buildClassKeyObject({
-      additionalKey: "none",
-      category: "Unit",
-      collection: "ETIME",
-      type: "none"
-    });
-    const GALACLass = await TokenClass.buildClassKeyObject({
-      additionalKey: "none",
-      category: "Unit",
-      collection: "ETIME",
-      type: "none"
-    });
-
     // When
-    const pool = new Pool(
-      ETIMEClass.toStringKey(),
-      GALACLass.toStringKey(),
-      ETIMEClass,
-      GALACLass,
-      10000,
-      initialSqrtPrice
-    );
+    const pool = new Pool(token0, token1, token0ClassKey, token1ClassKey, fee, initialSqrtPrice);
     const validationResult = await pool.validate();
     // Then
     expect(validationResult.length).toBeGreaterThan(0);
