@@ -58,11 +58,9 @@ export class DexPositionData extends ChainObject {
   @BigNumberProperty()
   liquidity: BigNumber;
 
-  @BigNumberIsNotNegative()
   @BigNumberProperty()
   feeGrowthInside0Last: BigNumber;
 
-  @BigNumberIsNotNegative()
   @BigNumberProperty()
   feeGrowthInside1Last: BigNumber;
 

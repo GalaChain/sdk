@@ -45,7 +45,7 @@ describe("createPool", () => {
     const dexClassKey: TokenClassKey = dex.tokenClassKey();
     const dexBalance: TokenBalance = dex.tokenBalance();
 
-    const dexFeeConfig: DexFeeConfig = new DexFeeConfig([users.testAdminId], 2);
+    const dexFeeConfig: DexFeeConfig = new DexFeeConfig([users.testAdminId], 0.1);
 
     const { ctx, contract } = fixture<GalaChainContext, DexV3Contract>(DexV3Contract)
       .callingUser(users.testUser1Id)
@@ -68,7 +68,7 @@ describe("createPool", () => {
     );
 
     const [token0, token1] = [dto.token0, dto.token1].map(generateKeyFromClassKey);
-    const expectedPool = new Pool(token0, token1, dto.token0, dto.token1, dto.fee, dto.initialSqrtPrice, 0);
+    const expectedPool = new Pool(token0, token1, dto.token0, dto.token1, dto.fee, dto.initialSqrtPrice, 0.1);
 
     const expectedResponse = new CreatePoolResDto(
       dexClassKey,
@@ -104,7 +104,7 @@ describe("createPool", () => {
     const dexClass: TokenClass = plainToInstance(TokenClass, token1Properties);
     const dexClassKey: TokenClassKey = plainToInstance(TokenClassKey, token1Properties);
 
-    const dexFeeConfig: DexFeeConfig = new DexFeeConfig([users.testAdminId], 2);
+    const dexFeeConfig: DexFeeConfig = new DexFeeConfig([users.testAdminId], 0.1);
 
     const { ctx, contract, writes } = fixture<GalaChainContext, DexV3Contract>(DexV3Contract)
       .callingUser(users.testUser1Id)
