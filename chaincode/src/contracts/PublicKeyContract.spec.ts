@@ -315,7 +315,7 @@ describe("UpdatePublicKey", () => {
     expect(verifyResponse).toEqual(transactionSuccess());
   });
 
-  it("should allow new user to save under old public key after update", async () => {
+  it("should prevent new user from reusing old public key after update", async () => {
     // Given
     const { chaincode, user } = await setup();
     const oldPublicKey = user.publicKey;
@@ -347,7 +347,8 @@ describe("UpdatePublicKey", () => {
     const verifyResponse = await chaincode.invoke("PublicKeyContract:VerifySignature", signedWithNewKey);
     expect(verifyResponse).toEqual(transactionSuccess());
 
-    // new User Register under old public key
+    // Case 1: new User Register under old public key
+
     // Given
     const dto = await createValidSubmitDTO<RegisterUserDto>(RegisterUserDto, {
       user: "client|newUser" as UserAlias,
@@ -359,14 +360,22 @@ describe("UpdatePublicKey", () => {
     const response = await chaincode.invoke("PublicKeyContract:RegisterUser", signedDto);
 
     // Then
-    expect(response).toEqual(transactionSuccess());
+    expect(response).toEqual(transactionErrorKey("PROFILE_EXISTS"));
+    expect(response).toEqual(transactionErrorMessageContains("user client|invalidated"));
+    expect(await getPublicKey(chaincode, dto.user)).toEqual(transactionErrorKey("PK_NOT_FOUND"));
 
-    expect(await getPublicKey(chaincode, dto.user)).toEqual(
-      transactionSuccess({
-        publicKey: PublicKeyService.normalizePublicKey(oldPublicKey),
-        signing: SigningScheme.ETH
-      })
-    );
+    // Case 2: UpdatePublicKey under old public key
+
+    // Given
+    const updateDto2 = await createValidSubmitDTO(UpdatePublicKeyDto, { publicKey: oldPublicKey });
+    const signedUpdateDto2 = updateDto2.signed(process.env.DEV_ADMIN_PRIVATE_KEY as string);
+
+    // When
+    const response2 = await chaincode.invoke("PublicKeyContract:UpdatePublicKey", signedUpdateDto2);
+
+    // Then
+    expect(response2).toEqual(transactionErrorKey("PROFILE_EXISTS"));
+    expect(response2).toEqual(transactionErrorMessageContains("user client|invalidated"));
   });
 
   it("should update TON public key", async () => {
