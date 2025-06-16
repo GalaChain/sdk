@@ -23,7 +23,7 @@ import {
   signatures
 } from "@gala-chain/api";
 import { Context, Contract } from "fabric-contract-api";
-import { ChaincodeStub } from "fabric-shim";
+import { ChaincodeResponse, ChaincodeStub } from "fabric-shim";
 import Logger from "fabric-shim/lib/logger";
 
 import { ChainUserWithRoles } from "../data/users";
@@ -65,6 +65,8 @@ type GalaChainStub = ChaincodeStub & {
   setReads(reads: Record<string, Uint8Array>): void;
   setWrites(writes: Record<string, Uint8Array>): void;
   setDeletes(deletes: Record<string, true>): void;
+  invokeChaincode(chaincodeName: string, args: string[], channel: string): Promise<ChaincodeResponse>;
+  get externalChaincodeWasInvoked(): boolean;
 };
 
 interface CallingUserData {
