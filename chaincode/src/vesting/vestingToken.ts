@@ -119,7 +119,6 @@ export async function createVestingToken(
     ...params
   };
   const tokenClassResponse = await createTokenClass(ctx, tokenClassParams);
-  console.log("callinguser", ctx.callingUser);
 
   const tokenInstanceKey = plainToInstance(TokenInstanceKey, {
     ...params.tokenClass,
