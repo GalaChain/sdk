@@ -15,6 +15,7 @@
 import { BigNumber } from "bignumber.js";
 import { plainToInstance } from "class-transformer";
 
+import { f18 } from "../utils/dex/f18";
 import { DexFeePercentageTypes } from "./DexDtos";
 import { DexPositionData } from "./DexPositionData";
 import { Pool } from "./DexV3Pool";
@@ -143,7 +144,7 @@ describe("DexV3Pool", () => {
     pool.protocolFeesToken1 = new BigNumber("1");
 
     // When
-    const [amount0, amount1] = pool.mint(position1, tickData1, tickData2, new BigNumber("1").f18());
+    const [amount0, amount1] = pool.mint(position1, tickData1, tickData2, f18(new BigNumber("1")));
 
     const validationResult = await pool.validate();
 
