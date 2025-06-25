@@ -67,6 +67,9 @@ type GalaChainStub = ChaincodeStub & {
   setDeletes(deletes: Record<string, true>): void;
   invokeChaincode(chaincodeName: string, args: string[], channel: string): Promise<ChaincodeResponse>;
   get externalChaincodeWasInvoked(): boolean;
+  setTxPrivateData(data: string): Promise<void>;
+  getTxPrivateData(): Promise<string | undefined>;
+  clearTxPrivateData(): Promise<void>;
 };
 
 interface CallingUserData {

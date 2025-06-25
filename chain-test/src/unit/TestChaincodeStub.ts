@@ -83,6 +83,7 @@ export class TestChaincodeStub extends ChaincodeStub {
   private static epoch = 0;
   public readonly state: Record<string, string>;
   public readonly writes: Record<string, string>;
+  public txPrivateData: string | undefined;
 
   constructor(
     args: string[],
@@ -214,5 +215,18 @@ export class TestChaincodeStub extends ChaincodeStub {
       status: 200,
       message: "This is a test success response"
     };
+  }
+
+  // Private data methods required by GalaChainStub interface
+  async setTxPrivateData(data: string): Promise<void> {
+    this.txPrivateData = data;
+  }
+
+  async getTxPrivateData(): Promise<string | undefined> {
+    return this.txPrivateData;
+  }
+
+  async clearTxPrivateData(): Promise<void> {
+    this.txPrivateData = undefined;
   }
 }

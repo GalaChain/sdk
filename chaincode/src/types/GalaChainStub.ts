@@ -40,6 +40,8 @@ class StubCache {
 
   private invokeChaincodeCalls: Record<string, string[]> = {};
 
+  private privateDataWasSet = false;
+
   constructor(
     private readonly stub: ChaincodeStub,
     private readonly isReadOnly: boolean,
@@ -132,16 +134,43 @@ class StubCache {
       throw new DuplicateInvokeChaincodeError(chaincodeName, prevCall, effectiveChannel);
     }
 
+    // if we are calling DryRun, we don't need to record the call
     const isDryRun = args?.[0].endsWith(":DryRun");
-    if (!isDryRun) {
-      this.invokeChaincodeCalls[key] = args;
+    if (isDryRun) {
+      return await this.stub.invokeChaincode(chaincodeName, args, channel);
     }
+
+    this.invokeChaincodeCalls[key] = args;
 
     return await this.stub.invokeChaincode(chaincodeName, args, channel);
   }
 
   get externalChaincodeWasInvoked(): boolean {
     return Object.keys(this.invokeChaincodeCalls).length > 0;
+  }
+
+  async setTxPrivateData(data: string): Promise<void> {
+    const implicitCollection = `_implicit_org_${this.stub.getMspID()}`;
+    const txId = this.stub.getTxID();
+    await this.stub.putPrivateData(implicitCollection, txId, Buffer.from(data));
+    this.privateDataWasSet = true;
+  }
+
+  async getTxPrivateData(): Promise<string | undefined> {
+    const implicitCollection = `_implicit_org_${this.stub.getMspID()}`;
+    const txId = this.stub.getTxID();
+    const proof = await this.stub.getPrivateData(implicitCollection, txId);
+    return proof?.length > 0 ? proof.toString() : undefined;
+  }
+
+  async clearTxPrivateData(): Promise<void> {
+    if (!this.privateDataWasSet) {
+      return;
+    }
+
+    const implicitCollection = `_implicit_org_${this.stub.getMspID()}`;
+    const txId = this.stub.getTxID();
+    await this.stub.deletePrivateData(implicitCollection, txId);
   }
 
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
@@ -242,6 +271,12 @@ export interface GalaChainStub extends ChaincodeStub {
   invokeChaincode(chaincodeName: string, args: string[], channel: string): Promise<ChaincodeResponse>;
 
   get externalChaincodeWasInvoked(): boolean;
+
+  setTxPrivateData(data: string): Promise<void>;
+
+  getTxPrivateData(): Promise<string | undefined>;
+
+  clearTxPrivateData(): Promise<void>;
 }
 
 export const createGalaChainStub = (
