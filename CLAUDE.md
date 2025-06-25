@@ -90,7 +90,45 @@ The chaincode package is organized by business domains:
 ### Testing Chaincode
 - Use `TestChaincode` and `TestChaincodeStub` for unit tests
 - Use `ContractTestClient` for integration testing
+- Use `TestClients` for full e2e testing scenarios
 - All business logic should be testable independently of Fabric
+
+#### @gala-chain/test Module Overview
+The `chain-test` package provides comprehensive testing utilities for GalaChain development:
+
+**Unit Testing Infrastructure:**
+- `TestChaincode` - In-memory chaincode execution for unit tests
+- `TestChaincodeStub` - Mock Hyperledger Fabric stub with state management
+- `TestClients` - Factory for creating test clients with different configurations
+- `MockedChaincodeClient` - Fully mocked chaincode client for isolated testing
+
+**Test Data Factories:**
+- `currency` - Pre-configured test data for fungible tokens
+- `nft` - Pre-configured test data for non-fungible tokens  
+- `users` - Standard test user accounts and identities
+- Custom test data utilities and helpers
+
+**Integration Testing Support:**
+- `ContractTestClient` - Creates clients for different organizations (Curator, Users, Partner)
+- Supports multiple connection types: Hyperledger Fabric, REST API, or mocked
+- Automatic environment configuration with fallback defaults
+
+**Common Usage Patterns:**
+```typescript
+// Unit testing with TestChaincode
+const testChaincode = new TestChaincode([MyContract]);
+const result = await testChaincode.invoke("MyMethod", dto);
+
+// E2E testing with TestClients
+const clients = await TestClients.createForAdmin();
+const user = await clients.createRegisteredUser();
+const response = await clients.assets.CreateTokenClass(dto);
+
+// Integration testing with custom configuration
+const customClients = await TestClients.create({
+  myContract: { channel: "ch", chaincode: "cc", contract: "MyContract", api: myAPI }
+});
+```
 
 ### Error Handling
 - Extend appropriate error classes (ChainError, ValidationFailedError, etc.)

@@ -14,6 +14,11 @@
  */
 import { ChainObject, RangedChainObject } from "@gala-chain/api";
 
+/**
+ * Union type representing different types of blockchain write operations.
+ *
+ * Supports writing ChainObjects, RangedChainObjects, deletions, and raw key-value pairs.
+ */
 export type WriteRecord =
   | ChainObject
   | RangedChainObject
@@ -32,6 +37,27 @@ function isKV(record: WriteRecord): record is { key: string; value: string } {
   return typeof record["key"] === "string" && typeof record["value"] === "string";
 }
 
+/**
+ * Converts write records into a key-value map suitable for blockchain state.
+ *
+ * Handles different record types appropriately:
+ * - ChainObjects: Uses composite key and serialization
+ * - RangedChainObjects: Uses ranged key and serialization
+ * - Deletions: Maps to empty string value
+ * - Key-value pairs: Uses as-is
+ *
+ * @param records - Array of write records to convert
+ * @returns Object mapping blockchain keys to their string values
+ *
+ * @example
+ * ```typescript
+ * const writes = writesMap(
+ *   tokenClass,  // ChainObject
+ *   { key: "custom-key", value: "custom-value" },
+ *   { key: "deleted-key", isDelete: true }
+ * );
+ * ```
+ */
 export function writesMap(...records: WriteRecord[]): Record<string, string> {
   return records.reduce(
     (acc, record) => {

@@ -28,9 +28,34 @@ import * as path from "path";
 
 import { MockedChaincodeClientBuilder } from "./MockedChaincodeClient";
 
+/**
+ * Test client factory for creating GalaChain contract test clients.
+ *
+ * Provides utilities for creating test clients connected to different organizations
+ * (Curator, Users, Partner) with support for multiple connection types:
+ * - Hyperledger Fabric direct connection
+ * - REST API connection
+ * - Mocked chaincode connection for unit testing
+ *
+ * @example
+ * ```typescript
+ * // Create curator client
+ * const curatorClient = ContractTestClient.createForCurator(user, contractConfig);
+ *
+ * // Create user client
+ * const userClient = ContractTestClient.createForUser(user, contractConfig);
+ * ```
+ */
+
 // use this timeout in each test that uses ContractTestClient
 jest.setTimeout(60 * 1000);
 
+/**
+ * Gets the network root path from environment variables.
+ *
+ * @returns Path to the GalaChain network root directory
+ * @throws Error if GALA_NETWORK_ROOT_PATH environment variable is not set
+ */
 export function networkRoot() {
   if (process.env.GALA_NETWORK_ROOT_PATH === undefined) {
     throw new Error("Missing GALA_NETWORK_ROOT_PATH env variable");
@@ -38,11 +63,24 @@ export function networkRoot() {
   return process.env.GALA_NETWORK_ROOT_PATH;
 }
 
+/**
+ * Gets the default operations API configuration file path.
+ *
+ * @returns Path to the default api-config.json file
+ * @internal
+ */
 function defaultOpsApiConfigPath() {
   // by default project root is a parent of network root
   return path.resolve(networkRoot(), "..", "api-config.json");
 }
 
+/**
+ * Gets the default connection profile path for a given organization.
+ *
+ * @param orgKey - Organization key (curator, users, or partner)
+ * @returns Path to the connection profile JSON file
+ * @internal
+ */
 function defaultConnectionProfilePath(orgKey: "curator" | "users" | "partner"): string {
   return path.resolve(networkRoot(), `connection-profiles/cpp-${orgKey}.json`);
 }
@@ -80,6 +118,10 @@ const defaultParams = {
   }
 };
 
+/**
+ * Configuration parameters for test client creation.
+ * All parameters are optional and will use defaults based on organization.
+ */
 interface TestClientParams {
   orgMsp?: string;
   adminId?: string;
@@ -90,18 +132,48 @@ interface TestClientParams {
   mockedChaincodeDir?: string;
 }
 
+/**
+ * Test client parameters specifically for REST API connections.
+ * Extends base parameters with required apiUrl.
+ */
 type TestClientParamsForApi = TestClientParams & { apiUrl: string };
 
+/**
+ * Type guard to check if parameters include API URL for REST API connection.
+ *
+ * @param p - Test client parameters to check
+ * @returns True if apiUrl is defined
+ * @internal
+ */
 function isApiUrlDefined(p: TestClientParams): p is TestClientParamsForApi {
   return p.apiUrl !== undefined;
 }
 
+/**
+ * Test client parameters specifically for mocked chaincode connections.
+ * Extends base parameters with required mockedChaincodeDir.
+ */
 type TestClientParamsForDir = TestClientParams & { mockedChaincodeDir: string };
 
+/**
+ * Type guard to check if parameters include chaincode directory for mocked connection.
+ *
+ * @param p - Test client parameters to check
+ * @returns True if mockedChaincodeDir is defined
+ * @internal
+ */
 function isChaincodeDirDefined(p: TestClientParams): p is TestClientParamsForDir {
   return p.mockedChaincodeDir !== undefined;
 }
 
+/**
+ * Builds Hyperledger Fabric client configuration from test client parameters.
+ *
+ * @param params - Test client parameters
+ * @returns HF client configuration
+ * @throws Error if required parameters are missing and no defaults available
+ * @internal
+ */
 function buildHFParams(params: TestClientParams): HFClientConfig {
   if (params.orgMsp === undefined) {
     throw new Error("Missing orgMsp in params");
@@ -128,6 +200,13 @@ function buildHFParams(params: TestClientParams): HFClientConfig {
   };
 }
 
+/**
+ * Builds REST API client configuration from test client parameters.
+ *
+ * @param params - Test client parameters with API URL
+ * @returns REST API client configuration
+ * @internal
+ */
 function buildRestApiParams(params: TestClientParamsForApi): RestApiClientConfig {
   return {
     orgMsp: params.orgMsp ?? "CuratorOrg",
@@ -138,6 +217,18 @@ function buildRestApiParams(params: TestClientParamsForApi): RestApiClientConfig
   };
 }
 
+/**
+ * Gets the appropriate chain client builder based on provided parameters.
+ *
+ * Determines connection type based on available parameters:
+ * - If mockedChaincodeDir is provided, returns MockedChaincodeClientBuilder
+ * - If apiUrl is provided, returns REST API client builder
+ * - Otherwise, returns Hyperledger Fabric client builder
+ *
+ * @param params - Test client parameters
+ * @returns Appropriate chain client builder
+ * @internal
+ */
 function getBuilder(params: TestClientParams): ChainClientBuilder {
   if (isChaincodeDirDefined(params)) {
     return new MockedChaincodeClientBuilder(params);
@@ -150,6 +241,13 @@ function getBuilder(params: TestClientParams): ChainClientBuilder {
   }
 }
 
+/**
+ * Creates a test client for the Curator organization.
+ *
+ * @param user - Chain user to authenticate as
+ * @param contract - Contract configuration to connect to
+ * @returns Chain client with common contract and user APIs
+ */
 function createForCurator(
   user: ChainUser,
   contract: ContractConfig
@@ -163,6 +261,13 @@ function createForCurator(
     .extendAPI(buildChainUserAPI(user));
 }
 
+/**
+ * Creates a test client for the Users organization.
+ *
+ * @param user - Chain user to authenticate as
+ * @param contract - Contract configuration to connect to
+ * @returns Chain client with common contract and user APIs
+ */
 function createForUser(
   user: ChainUser,
   contract: ContractConfig
@@ -176,6 +281,13 @@ function createForUser(
     .extendAPI(buildChainUserAPI(user));
 }
 
+/**
+ * Creates a test client for the Partner organization.
+ *
+ * @param user - Chain user to authenticate as
+ * @param contract - Contract configuration to connect to
+ * @returns Chain client with common contract and user APIs
+ */
 function createForPartner(
   user: ChainUser,
   contract: ContractConfig
@@ -189,6 +301,26 @@ function createForPartner(
     .extendAPI(buildChainUserAPI(user));
 }
 
+/**
+ * Factory object for creating contract test clients for different organizations.
+ *
+ * Provides methods to create test clients connected to Curator, Users, or Partner
+ * organizations with appropriate defaults and configuration.
+ *
+ * @example
+ * ```typescript
+ * import { ContractTestClient } from "@gala-chain/test";
+ *
+ * // Create curator client for admin operations
+ * const curatorClient = ContractTestClient.createForCurator(adminUser, contractConfig);
+ *
+ * // Create user client for regular user operations
+ * const userClient = ContractTestClient.createForUser(testUser, contractConfig);
+ *
+ * // Get builder for custom configuration
+ * const customBuilder = ContractTestClient.getBuilder(customParams);
+ * ```
+ */
 export const ContractTestClient = {
   createForCurator: createForCurator,
   createForUser: createForUser,
