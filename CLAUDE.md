@@ -28,6 +28,7 @@ This is a monorepo managed with Nx. Use these commands for development:
 Each package has its own commands. Key patterns:
 - `cd <package-dir> && npm run build` - Build individual package
 - `cd <package-dir> && npm test` - Test individual package
+- `cd <package-dir> && npm lint|fix|madge` - Code quality checks commands for individual package
 - `cd <package-dir> && npm run prepublishOnly` - Full package validation
 
 ### CLI Development
