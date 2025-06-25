@@ -29,7 +29,7 @@ export interface ChainUserWithRoles {
 /**
  * Creates a random user with specified roles for testing.
  *
- * @param string - Optional user alias/identifier. If not provided, generates random identifier
+ * @param string - Optional user alias/identifier. If not provided, generates `eth|<addr>` identifier
  * @param roles - Array of role strings, defaults to DEFAULT_ROLES
  * @returns ChainUserWithRoles with cryptographic keys and role assignments
  *

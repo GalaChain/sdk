@@ -117,6 +117,12 @@ The `chain-test` package provides comprehensive testing utilities for GalaChain 
 
 **Common Usage Patterns:**
 ```typescript
+// Unit testing with fixture
+const { ctx, contract, getWrites } = fixture(MyContract)
+  .registeredUsers(user1, user1)
+  .savedState(obj1, obj2);
+const result = await contract. MyMethod(ctx, dto);
+
 // Unit testing with TestChaincode
 const testChaincode = new TestChaincode([MyContract]);
 const result = await testChaincode.invoke("MyMethod", dto);
@@ -141,7 +147,7 @@ const customClients = await TestClients.create({
 
 ### Chaincode Entry Points
 - `chaincode/src/contracts/GalaContract.ts` - Base contract class
-- `chaincode/src/contracts/PublicKeyContract.ts` - Public key management
+- `chaincode/src/contracts/PublicKeyContract.ts` - User profiles, roles, registration and public key management
 - Individual functional contracts extend GalaContract
 
 ### API Definitions

@@ -27,7 +27,17 @@ import { ContractTestClient } from "./ContractTestClient";
  * @returns Chain client with user API capabilities
  *
  * @example
- * ```typescript\n * const client = createChainClient(testUser, {\n *   channel: \"product-channel\",\n *   chaincode: \"basic-product\", \n *   contract: \"GalaChainToken\"\n * });\n * \n * // Use client for transactions\n * await client.submitTransaction(\"CreateTokenClass\", dto);\n * ```\n */
+ * ```typescript
+ * const client = createChainClient(testUser, { 
+ *   channel: "product-channel",
+ *   chaincode: "basic-product", 
+ *   contract: "GalaChainToken"
+ * });
+ * 
+ * // Use client for transactions
+ * await client.submitTransaction("CreateTokenClass", dto);
+ * ```
+ */
 export function createChainClient(user: ChainUser, contract: ContractConfig): ChainClient & ChainUserAPI {
   return ContractTestClient.createForCurator(user, contract);
 }
