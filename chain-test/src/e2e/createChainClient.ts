@@ -28,12 +28,12 @@ import { ContractTestClient } from "./ContractTestClient";
  *
  * @example
  * ```typescript
- * const client = createChainClient(testUser, { 
+ * const client = createChainClient(testUser, {
  *   channel: "product-channel",
- *   chaincode: "basic-product", 
+ *   chaincode: "basic-product",
  *   contract: "GalaChainToken"
  * });
- * 
+ *
  * // Use client for transactions
  * await client.submitTransaction("CreateTokenClass", dto);
  * ```
