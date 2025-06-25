@@ -21,7 +21,8 @@ This is a monorepo managed with Nx. Use these commands for development:
 - `npm run lint` - Lint all packages
 - `npm run fix` - Auto-fix linting issues
 - `nx run-many -t lint` - Alternative lint command
-- `nx run-many -t madge` - Check for circular dependencies
+- `npm run madge` - Check for circular dependencies
+- `nx run-many -t madge` - Alternative command for circular dependencies check
 
 ### Individual Package Commands
 Each package has its own commands. Key patterns:
