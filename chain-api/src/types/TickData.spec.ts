@@ -142,7 +142,7 @@ describe("TickData", () => {
     expect(tickData.liquidityGross.toString()).toBe("1500");
   });
 
-  it("tickCross should subtract outside from global and return liquidityNet", () => {
+  test("tickCross should subtract outside from global and return liquidityNet", () => {
     // Given
     tickData.liquidityNet = new BigNumber(777);
     tickData.feeGrowthOutside0 = new BigNumber(3);

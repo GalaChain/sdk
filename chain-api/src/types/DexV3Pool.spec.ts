@@ -93,7 +93,7 @@ describe("DexV3Pool", () => {
     expect(validationResult.length).toBeGreaterThan(0);
   });
 
-  test("should validate the pool when token class keys contain all properties", async () => {
+  it("should validate the pool when token class keys contain all properties", async () => {
     // Given
     const token0 = "some token key";
     const token1 = "token1 string key";
@@ -109,7 +109,7 @@ describe("DexV3Pool", () => {
     expect(validationResult).toEqual([]);
   });
 
-  test("should validate the pool with more complex properties", async () => {
+  it("should validate the pool with more complex properties", async () => {
     // Given
     const token0 = "some token key";
     const token1 = "token1 string key";
@@ -138,7 +138,7 @@ describe("DexV3Pool", () => {
     expect(validationResult).toEqual([]);
   });
 
-  test("should fail validation if fee is invalid", async () => {
+  it("should fail validation if fee is invalid", async () => {
     // Given
     const token0 = "some token key";
     const token1 = "token1 string key";
@@ -255,7 +255,7 @@ describe("DexV3Pool", () => {
     expect(liquidity.isEqualTo(new BigNumber("333850.24970973552810742589")));
   });
 
-  it("getAmountForLiquidity: should return only token1 and liquidity when current tick is above range", () => {
+  test("getAmountForLiquidity: should return only token1 and liquidity when current tick is above range", () => {
     // Given
     const amount = new BigNumber(10);
     const tickLower = -60;
@@ -270,7 +270,7 @@ describe("DexV3Pool", () => {
     expect(liquidity.isEqualTo(new BigNumber("5010.25916704397590249112")));
   });
 
-  it("getAmountForLiquidity: should throw error when token0 is provided but current tick is above range", () => {
+  test("getAmountForLiquidity: should throw error when token0 is provided but current tick is above range", () => {
     // Given
     const amount = new BigNumber(10);
     const tickLower = -60;
@@ -283,7 +283,7 @@ describe("DexV3Pool", () => {
     }).toThrow(new ConflictError("Wrong values"));
   });
 
-  it("getAmountForLiquidity: should throw error when amount is zero", () => {
+  test("getAmountForLiquidity: should throw error when amount is zero", () => {
     // Given
     const amount = new BigNumber(0);
     const tickLower = -60;
@@ -296,7 +296,7 @@ describe("DexV3Pool", () => {
     }).toThrow(new ConflictError("You cannot add zero liqudity"));
   });
 
-  it("configureProtocolFee: should set protocol fee when given a valid value", () => {
+  test("configureProtocolFee: should set protocol fee when given a valid value", () => {
     // When
     const result = pool.configureProtocolFee(0.1);
 
@@ -305,7 +305,7 @@ describe("DexV3Pool", () => {
     expect(pool.protocolFees).toBe(0.1);
   });
 
-  it("configureProtocolFee: should throw an error when setting protocol fee to a negative value", () => {
+  test("configureProtocolFee: should throw an error when setting protocol fee to a negative value", () => {
     // When
     expect(() => {
       pool.configureProtocolFee(-0.1);
@@ -313,7 +313,7 @@ describe("DexV3Pool", () => {
     }).toThrow("Protocol Fees out of bounds");
   });
 
-  it("collectProtocolFees: should return and reset protocol fees when collectProtocolFees is called", () => {
+  test("collectProtocolFees: should return and reset protocol fees when collectProtocolFees is called", () => {
     // Given
     pool.protocolFeesToken0 = new BigNumber(100);
     pool.protocolFeesToken1 = new BigNumber(200);
@@ -328,7 +328,7 @@ describe("DexV3Pool", () => {
     expect(pool.protocolFeesToken1.isZero()).toBe(true);
   });
 
-  it("collect: should deduct requested amounts from tokensOwed if sufficient balance", () => {
+  test("collect: should deduct requested amounts from tokensOwed if sufficient balance", () => {
     // Given
     positionData.tokensOwed0 = new BigNumber(100);
     positionData.tokensOwed1 = new BigNumber(200);
@@ -349,7 +349,7 @@ describe("DexV3Pool", () => {
     expect(positionData.tokensOwed1.isEqualTo(100)).toBe(true);
   });
 
-  it("collect: should update position tokens owed from fee estimation if more fees have accumulated", () => {
+  test("collect: should update position tokens owed from fee estimation if more fees have accumulated", () => {
     // Given
     positionData.tokensOwed0 = new BigNumber(10);
     positionData.tokensOwed1 = new BigNumber(10);
@@ -372,7 +372,7 @@ describe("DexV3Pool", () => {
     expect(positionData.tokensOwed1.isEqualTo(60)).toBe(true); // 10 + 100 - 50
   });
 
-  it("collect: should throw ConflictError if after estimation tokens owed are still insufficient", () => {
+  test("collect: should throw ConflictError if after estimation tokens owed are still insufficient", () => {
     // Given
     positionData.tokensOwed0 = new BigNumber(10);
     positionData.tokensOwed1 = new BigNumber(10);
@@ -386,7 +386,7 @@ describe("DexV3Pool", () => {
     ).toThrow(new ConflictError("Less balance accumulated"));
   });
 
-  it("getFeeCollectedEstimation: should compute correct tokens owed and update feeGrowthInside values", () => {
+  test("getFeeCollectedEstimation: should compute correct tokens owed and update feeGrowthInside values", () => {
     // Given
     pool.sqrtPrice = tickToSqrtPrice(30);
     pool.feeGrowthGlobal0 = new BigNumber("1000");
@@ -416,7 +416,7 @@ describe("DexV3Pool", () => {
     expect(positionData.feeGrowthInside1Last.toString()).toBe("800");
   });
 
-  it("getFeeCollectedEstimation: should return zero if fee growth has not increased", () => {
+  test("getFeeCollectedEstimation: should return zero if fee growth has not increased", () => {
     // Given
     pool.sqrtPrice = tickToSqrtPrice(30);
     pool.feeGrowthGlobal0 = new BigNumber("1000");
@@ -446,7 +446,7 @@ describe("DexV3Pool", () => {
     expect(positionData.feeGrowthInside1Last.toString()).toBe("800");
   });
 
-  it("burnEstimate: should estimate only amount0 when current tick is below the range", () => {
+  test("burnEstimate: should estimate only amount0 when current tick is below the range", () => {
     // Given
     const tickLower = 100;
     const tickUpper = 200;
@@ -462,7 +462,7 @@ describe("DexV3Pool", () => {
     expect(amount1.isZero()).toBe(true);
   });
 
-  it("burnEstimate: should estimate both amount0 and amount1 when current tick is inside range", () => {
+  test("burnEstimate: should estimate both amount0 and amount1 when current tick is inside range", () => {
     // Given
     const tickLower = 100;
     const tickUpper = 200;
@@ -478,7 +478,7 @@ describe("DexV3Pool", () => {
     expect(amount1.isEqualTo("2.5155480236664")).toBe(true);
   });
 
-  it("burnEstimate: should estimate only amount1 when current tick is above the range", () => {
+  test("burnEstimate: should estimate only amount1 when current tick is above the range", () => {
     // Given
     const tickLower = 100;
     const tickUpper = 200;
@@ -494,7 +494,7 @@ describe("DexV3Pool", () => {
     expect(amount1.isEqualTo("5.0373924698248")).toBe(true);
   });
 
-  it("swap: should update state and return correct amounts for zeroForOne exact input", () => {
+  test("swap: should update state and return correct amounts for zeroForOne exact input", () => {
     // Given
     const state: SwapState = {
       amountSpecifiedRemaining: new BigNumber("5"),

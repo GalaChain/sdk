@@ -58,7 +58,7 @@ describe("DexPositionData", () => {
     );
   });
 
-  test("should initialize with correct default values", () => {
+  it("should initialize with correct default values", () => {
     // Then
     expect(position.liquidity.isEqualTo(0)).toBe(true);
     expect(position.feeGrowthInside0Last.isEqualTo(0)).toBe(true);
@@ -69,7 +69,7 @@ describe("DexPositionData", () => {
     expect(position.tickLower).toBe(tickLower);
   });
 
-  test("should update liquidity and fee tracking correctly when liquidity delta is positive", () => {
+  it("should update liquidity and fee tracking correctly when liquidity delta is positive", () => {
     // Given
     const liquidityDelta = new BigNumber("1000");
     const newFeeGrowth0 = new BigNumber("0.01");
@@ -86,7 +86,7 @@ describe("DexPositionData", () => {
     expect(position.feeGrowthInside1Last.isEqualTo(newFeeGrowth1)).toBe(true);
   });
 
-  test("should accumulate tokens owed when fee growth increases without changing liquidity", () => {
+  it("should accumulate tokens owed when fee growth increases without changing liquidity", () => {
     // Given
     const liquidityDelta = new BigNumber("1000");
     const feeGrowth0a = new BigNumber("0.01");
@@ -107,7 +107,7 @@ describe("DexPositionData", () => {
     expect(position.tokensOwed1.isEqualTo(expectedOwed1)).toBe(true);
   });
 
-  test("should throw if resulting liquidity is negative", () => {
+  it("should throw if resulting liquidity is negative", () => {
     // Given
     const liquidityDelta = new BigNumber("-1");
 
@@ -117,7 +117,7 @@ describe("DexPositionData", () => {
     );
   });
 
-  test("should not update tokens owed if deltas are zero", () => {
+  it("should not update tokens owed if deltas are zero", () => {
     // Given
     const liquidityDelta = new BigNumber("1000");
     const feeGrowth = new BigNumber("0.01");
@@ -132,7 +132,7 @@ describe("DexPositionData", () => {
     expect(position.tokensOwed1.isEqualTo(0)).toBe(true);
   });
 
-  test("should handle multiple updates correctly", () => {
+  it("should handle multiple updates correctly", () => {
     // Given
     position.updatePosition(new BigNumber("1000"), new BigNumber("0.01"), new BigNumber("0.01"));
     position.updatePosition(new BigNumber(0), new BigNumber("0.02"), new BigNumber("0.015"));
