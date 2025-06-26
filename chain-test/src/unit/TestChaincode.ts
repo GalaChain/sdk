@@ -18,6 +18,11 @@ import { Context, Contract } from "fabric-contract-api";
 import GalaJSONSerializer from "./GalaJSONSerializer";
 import { ChaincodeStubClassType, TestChaincodeStub } from "./TestChaincodeStub";
 
+/**
+ * Interface for Hyperledger Fabric's ChaincodeFromContract class.
+ * This is used internally to create chaincode instances from contract classes.
+ * @internal
+ */
 interface ChaincodeFromContractClassType {
   // eslint-disable-next-line  @typescript-eslint/no-misused-new
   new (
@@ -44,11 +49,49 @@ const serializers = {
   }
 };
 
+/**
+ * Standard response type for chaincode invocations.
+ * Can be either a single object or an array of objects.
+ */
 type InvokeResponse = Record<string, unknown> | Array<Record<string, unknown>>;
 
+/**
+ * Test harness for Hyperledger Fabric chaincode contracts.
+ *
+ * Provides a testing environment that simulates blockchain interactions without requiring
+ * a full Fabric network. Supports transaction invocation, state management, and user identity simulation.
+ *
+ * @example
+ * ```typescript
+ * // Create test chaincode with contract classes
+ * const testChaincode = new TestChaincode([MyContract, TokenContract]);
+ *
+ * // Set calling user context
+ * testChaincode.setCallingUser("client|alice");
+ *
+ * // Invoke contract methods
+ * const result = await testChaincode.invoke("CreateTokenClass", tokenClassDto);
+ *
+ * // Query contract methods (read-only)
+ * const balance = await testChaincode.query("FetchBalance", balanceDto);
+ *
+ * // Access contract instances for direct testing
+ * const contractInstance = testChaincode.getContractInstance(MyContract);
+ * ```
+ */
 export class TestChaincode {
   private readonly chaincode: ChaincodeFromContractClassType;
 
+  /**
+   * Creates a new test chaincode instance.
+   *
+   * @param contracts - Array of contract classes to include in the chaincode
+   * @param state - Initial blockchain state as a key-value map
+   * @param writes - Storage for tracking state writes during tests
+   * @param callingUser - Default calling user in format "prefix|userId" (e.g., "client|alice")
+   * @param callingUserMsp - MSP (Membership Service Provider) ID for the calling user
+   * @param callHistory - Array to track method invocation history for testing
+   */
   public constructor(
     contracts: ClassConstructor<Contract>[],
     public readonly state: Record<string, string> = {},
@@ -90,16 +133,38 @@ export class TestChaincode {
     this.chaincode = new ChaincodeFromContract(contractsWrapped, serializers, {}, "gala-chain-test", "0.0.1");
   }
 
+  /**
+   * Sets the calling user for subsequent chaincode invocations.
+   *
+   * @param user - User identifier in format "prefix|userId" (e.g., "client|alice", "curator|admin")
+   * @returns This TestChaincode instance for method chaining
+   */
   public setCallingUser(user: string): TestChaincode {
     this.callingUser = user;
     return this;
   }
 
+  /**
+   * Sets the MSP (Membership Service Provider) for the calling user.
+   *
+   * @param msp - MSP ID (e.g., "CuratorOrg", "UserOrg")
+   * @returns This TestChaincode instance for method chaining
+   */
   public setCallingUserMsp(msp: string): TestChaincode {
     this.callingUserMsp = msp;
     return this;
   }
 
+  /**
+   * Invokes a chaincode method with write capabilities (submit transaction).
+   * Changes made during invocation are persisted to the state.
+   *
+   * @template T - Expected return type of the invocation
+   * @param method - Name of the contract method to invoke
+   * @param args - Arguments to pass to the method (strings or serializable objects)
+   * @returns Promise resolving to the method's return value
+   * @throws Error if the invocation fails
+   */
   public async invoke<T = InvokeResponse>(
     method: string,
     ...args: (string | { serialize: () => string })[]
@@ -118,6 +183,16 @@ export class TestChaincode {
     }
   }
 
+  /**
+   * Queries a chaincode method with read-only access (evaluate transaction).
+   * Changes made during query are not persisted to the state.
+   *
+   * @template T - Expected return type of the query
+   * @param method - Name of the contract method to query
+   * @param args - Arguments to pass to the method (strings or serializable objects)
+   * @returns Promise resolving to the method's return value
+   * @throws Error if the query fails
+   */
   public async query<T = InvokeResponse>(
     method: string,
     ...args: (string | { serialize: () => string })[]
@@ -137,6 +212,15 @@ export class TestChaincode {
     }
   }
 
+  /**
+   * Gets a direct reference to a contract instance for low-level testing.
+   * Useful for accessing contract internals or calling methods directly.
+   *
+   * @template T - Type of the contract class
+   * @param contractClass - Constructor function of the contract class
+   * @returns The contract instance
+   * @throws NotImplementedError if the contract class is not found in the chaincode
+   */
   public getContractInstance<T extends Contract>(
     // eslint-disable-next-line @typescript-eslint/ban-types
     contractClass: { new (...args: unknown[]): T } & Function
