@@ -31,7 +31,7 @@ import { TokenClassKey } from "./TokenClass";
 })
 export class DexPositionData extends ChainObject {
   @Exclude()
-  static INDEX_KEY = "GCDXCHLPD"; //GalaChain Decentralised Exchange Liqudiity Position Data
+  static INDEX_KEY = "GCDXCHLPDA"; //GalaChain Decentralised Exchange Liqudiity Position Data
 
   @ChainKey({ position: 0 })
   @IsNotEmpty()
