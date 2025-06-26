@@ -26,8 +26,8 @@ import {
 import BigNumber from "bignumber.js";
 
 import { GalaChainContext } from "../types";
-import { fetchOrCreateAndCrossTick } from "./tickData.helper";
 import { f18 } from "./dexUtils";
+import { fetchOrCreateAndCrossTick } from "./tickData.helper";
 
 export async function processSwapSteps(
   ctx: GalaChainContext,

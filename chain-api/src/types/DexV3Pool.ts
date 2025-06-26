@@ -221,7 +221,8 @@ export class Pool extends ChainObject {
   ) {
     const tickLower = tickLowerData.tick;
     const tickUpper = tickUpperData.tick;
-    let flippedLower = false, flippedUpper=false;
+    let flippedLower = false,
+      flippedUpper = false;
     if (!liquidityDelta.isEqualTo(0)) {
       //update ticks
       flippedLower = tickLowerData.updateTick(
@@ -257,11 +258,11 @@ export class Pool extends ChainObject {
 
     //Update position
     position.updatePosition(liquidityDelta, feeGrowthInside0, feeGrowthInside1);
-    if(liquidityDelta.lt(0)) {
-      if(flippedLower) {
+    if (liquidityDelta.lt(0)) {
+      if (flippedLower) {
         tickLowerData.clear();
-      } 
-      if(flippedUpper) {
+      }
+      if (flippedUpper) {
         tickUpperData.clear();
       }
     }
