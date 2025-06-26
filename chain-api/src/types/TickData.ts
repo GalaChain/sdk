@@ -121,7 +121,6 @@ export class TickData extends ChainObject {
         this.feeGrowthOutside1 = feeGrowthGlobal1;
       }
       this.initialised = true;
-      return true;
     }
 
     // Return true if tick flipped from initialized to uninitialized or vice versa
@@ -141,5 +140,15 @@ export class TickData extends ChainObject {
     this.feeGrowthOutside1 = feeGrowthGlobal1.minus(this.feeGrowthOutside1);
 
     return new BigNumber(this.liquidityNet);
+  }
+  /**
+   * Reset TickData to Default
+   */
+  clear() {
+    this.liquidityGross = new BigNumber(0);
+    this.initialised = false;
+    this.liquidityNet = new BigNumber(0);
+    this.feeGrowthOutside0 = new BigNumber(0);
+    this.feeGrowthOutside1 = new BigNumber(0);
   }
 }

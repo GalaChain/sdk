@@ -27,6 +27,7 @@ import BigNumber from "bignumber.js";
 
 import { GalaChainContext } from "../types";
 import { fetchOrCreateAndCrossTick } from "./tickData.helper";
+import { f18 } from "./dexUtils";
 
 export async function processSwapSteps(
   ctx: GalaChainContext,
@@ -38,7 +39,7 @@ export async function processSwapSteps(
 ): Promise<SwapState> {
   while (
     // Continue while there's amount left to swap and price hasn't hit the limit
-    !state.amountSpecifiedRemaining.isEqualTo(0) &&
+    !f18(state.amountSpecifiedRemaining).isEqualTo(0) &&
     !state.sqrtPrice.isEqualTo(sqrtPriceLimit)
   ) {
     // Initialize step state

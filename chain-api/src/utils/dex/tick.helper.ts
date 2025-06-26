@@ -49,9 +49,9 @@ export function sqrtPriceToTick(sqrtPrice: BigNumber): number {
  * @returns A tuple of [word index, bit position within the word].
  */
 function position(tick: number): [word: number, position: number] {
-  tick = Math.floor(tick);
+  tick = Math.trunc(tick);
 
-  const wordPos = Math.floor(tick / 256); // Equivalent to tick >> 8
+  const wordPos = Math.trunc(tick / 256); // Equivalent to tick >> 8
 
   let bitPos = tick % 256; // Equivalent to tick % 256
   if (bitPos < 0) bitPos += 256; // Ensure it's always positive like uint8
@@ -113,7 +113,7 @@ export function nextInitialisedTickWithInSameWord(
   lte: boolean,
   sqrtPrice: BigNumber
 ): [number, boolean] {
-  let compressed = Math.floor(tick / tickSpacing);
+  let compressed = Math.trunc(tick / tickSpacing);
   if (tick < 0 && tick % tickSpacing != 0) compressed--;
   if (tick == sqrtPriceToTick(sqrtPrice)) {
     const tickPrice = tickToSqrtPrice(tick);
@@ -262,5 +262,5 @@ export function flipTickOrientation(tick: number): number {
  */
 export function spaceTick(tick: number, tickSpacing: number): number {
   if (tickSpacing === 0) throw new ValidationFailedError("Tickspacing cannot be zero");
-  return Math.floor(tick / tickSpacing) * tickSpacing;
+  return Math.trunc(tick / tickSpacing) * tickSpacing;
 }

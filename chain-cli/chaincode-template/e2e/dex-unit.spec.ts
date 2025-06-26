@@ -614,8 +614,8 @@ describe("nextInitialisedTickWithInSameWord", () => {
     const bitmap: Record<string, string> = {};
     bitmap[-1] = BigInt("0b1000").toString(); // 8
 
-    expect(nextInitialisedTickWithInSameWord(bitmap, -3, 1, true, new BigNumber(0))).toEqual([-253, true]);
-    expect(nextInitialisedTickWithInSameWord(bitmap, -5, 1, true, new BigNumber(0))).toEqual([-253, true]);
+    expect(nextInitialisedTickWithInSameWord(bitmap, -3, 1, true, new BigNumber(0))).toEqual([-256, false]);
+    expect(nextInitialisedTickWithInSameWord(bitmap, -5, 1, true, new BigNumber(0))).toEqual([-256, false]);
   });
 
   test("should handle empty bitmaps", () => {
@@ -774,8 +774,8 @@ describe("spaceTick", () => {
   });
 
   it("should correctly space negative ticks", () => {
-    expect(spaceTick(-95, 10)).toBe(-100);
-    expect(spaceTick(-101, 10)).toBe(-110);
+    expect(spaceTick(-95, 10)).toBe(-90);
+    expect(spaceTick(-101, 10)).toBe(-100);
   });
 
   it("should handle large tick values", () => {
