@@ -12,7 +12,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-import { BurnEstimateDto, GetRemoveLiqEstimationResDto, Pool } from "@gala-chain/api";
+import { BurnEstimateDto, GetRemoveLiqEstimationResDto, Pool, f18 } from "@gala-chain/api";
 
 import { GalaChainContext } from "../types";
 import { getObjectByKey } from "../utils";
@@ -54,7 +54,7 @@ export async function getRemoveLiquidityEstimation(
     tickLower,
     tickUpper
   );
-  const amounts = pool.burn(position, tickLowerData, tickUpperData, dto.amount.f18());
+  const amounts = pool.burn(position, tickLowerData, tickUpperData, f18(dto.amount));
 
   const [token0Decimal, token1Decimal] = await getTokenDecimalsFromPool(ctx, pool);
 
