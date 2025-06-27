@@ -14,7 +14,10 @@
  */
 import {
   AddLiquidityDTO,
+  AuthorizeBatchSubmitterDto,
   BatchDto,
+  BatchSubmitAuthorizations,
+  BatchSubmitAuthorizationsResDto,
   BurnDto,
   BurnEstimateDto,
   ChainCallDTO,
@@ -24,10 +27,12 @@ import {
   ConfigureDexFeeAddressDto,
   CreatePoolDto,
   CreatePoolResDto,
+  DeauthorizeBatchSubmitterDto,
   DexFeeConfig,
   DexOperationResDto,
   DexPositionData,
   DexPositionOwner,
+  FetchBatchSubmitAuthorizationsDto,
   GalaChainResponse,
   GetAddLiquidityEstimationDto,
   GetAddLiquidityEstimationResDto,
@@ -50,6 +55,7 @@ import {
   SwapResDto,
   TickData,
   TransferDexPositionDto,
+  UnauthorizedError,
   ValidationFailedError
 } from "@gala-chain/api";
 
@@ -84,32 +90,38 @@ import {
   swapFeeGate
 } from "../fees/dexLaunchpadFeeGate";
 import { GalaChainContext } from "../types";
-import { GalaContract } from "./GalaContract";
+import { GalaContract, BatchWriteLimitExceededError } from "./GalaContract";
 import { getApiMethod } from "./GalaContractApi";
-import { EVALUATE, Evaluate, GalaTransaction, Submit } from "./GalaTransaction";
-
-export class BatchWriteLimitExceededError extends ValidationFailedError {
-  constructor(writesLimit: number) {
-    super(
-      `Batch writes limit of ${writesLimit} keys exceeded. ` +
-        `This operation can be repeated with a smaller batch.`
-    );
-  }
-}
+import { EVALUATE, SUBMIT, Evaluate, GalaTransaction, Submit } from "./GalaTransaction";
+import { 
+  fetchBatchSubmitAuthorizations,
+  authorizeBatchSubmitter,
+  deauthorizeBatchSubmitter,
+  getBatchSubmitAuthorizations
+} from "../dex/batchSubmitAuthorizations";
 
 export class DexV3Contract extends GalaContract {
   constructor() {
     super("DexV3Contract", version);
   }
 
-  @Submit({
+  @GalaTransaction({
+    type: SUBMIT,
     in: BatchDto,
     out: "object",
     description: "Submit a batch of transactions",
-    allowedOrgs: [process.env.CURATOR_ORG_MSP ?? "CuratorOrg"]
+    allowedOrgs: [process.env.CURATOR_ORG_MSP ?? "CuratorOrg"],
+    verifySignature: true
   })
   public async BatchSubmit(ctx: GalaChainContext, batchDto: BatchDto): Promise<GalaChainResponse<unknown>[]> {
-    // validate that the calling user is allowed to submit a batch
+    // Check if the calling user is authorized to submit batches
+    const batchAuthorizations = await fetchBatchSubmitAuthorizations(ctx);
+    if (!batchAuthorizations.isAuthorized(ctx.callingUser)) {
+      throw new UnauthorizedError(
+        `CallingUser ${ctx.callingUser} is not authorized to submit batches. ` +
+        `Authorized users: ${batchAuthorizations.getAuthorizedAuthorities().join(", ")}`
+      );
+    }
 
     const responses: GalaChainResponse<unknown>[] = [];
 
@@ -351,5 +363,41 @@ export class DexV3Contract extends GalaContract {
   })
   public async GetTickData(ctx: GalaChainContext, dto: GetTickDataDto): Promise<TickData> {
     return getTickData(ctx, dto);
+  }
+
+  @Submit({
+    in: AuthorizeBatchSubmitterDto,
+    out: BatchSubmitAuthorizationsResDto,
+    allowedOrgs: [process.env.CURATOR_ORG_MSP ?? "CuratorOrg"]
+  })
+  public async AuthorizeBatchSubmitter(
+    ctx: GalaChainContext,
+    dto: AuthorizeBatchSubmitterDto
+  ): Promise<BatchSubmitAuthorizationsResDto> {
+    return await authorizeBatchSubmitter(ctx, dto);
+  }
+
+  @Submit({
+    in: DeauthorizeBatchSubmitterDto,
+    out: BatchSubmitAuthorizationsResDto,
+    allowedOrgs: [process.env.CURATOR_ORG_MSP ?? "CuratorOrg"]
+  })
+  public async DeauthorizeBatchSubmitter(
+    ctx: GalaChainContext,
+    dto: DeauthorizeBatchSubmitterDto
+  ): Promise<BatchSubmitAuthorizationsResDto> {
+    return await deauthorizeBatchSubmitter(ctx, dto);
+  }
+
+  @GalaTransaction({
+    type: EVALUATE,
+    in: FetchBatchSubmitAuthorizationsDto,
+    out: BatchSubmitAuthorizationsResDto
+  })
+  public async GetBatchSubmitAuthorizations(
+    ctx: GalaChainContext,
+    dto: FetchBatchSubmitAuthorizationsDto
+  ): Promise<BatchSubmitAuthorizationsResDto> {
+    return await getBatchSubmitAuthorizations(ctx, dto);
   }
 }
