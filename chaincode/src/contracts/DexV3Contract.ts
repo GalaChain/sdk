@@ -14,6 +14,7 @@
  */
 import {
   AddLiquidityDTO,
+  BatchDto,
   BurnDto,
   BurnEstimateDto,
   ChainCallDTO,
@@ -27,6 +28,7 @@ import {
   DexOperationResDto,
   DexPositionData,
   DexPositionOwner,
+  GalaChainResponse,
   GetAddLiquidityEstimationDto,
   GetAddLiquidityEstimationResDto,
   GetLiquidityResDto,
@@ -47,7 +49,8 @@ import {
   SwapDto,
   SwapResDto,
   TickData,
-  TransferDexPositionDto
+  TransferDexPositionDto,
+  ValidationFailedError
 } from "@gala-chain/api";
 
 import { version } from "../../package.json";
@@ -82,11 +85,68 @@ import {
 } from "../fees/dexLaunchpadFeeGate";
 import { GalaChainContext } from "../types";
 import { GalaContract } from "./GalaContract";
+import { getApiMethod } from "./GalaContractApi";
 import { EVALUATE, Evaluate, GalaTransaction, Submit } from "./GalaTransaction";
+
+export class BatchWriteLimitExceededError extends ValidationFailedError {
+  constructor(writesLimit: number) {
+    super(
+      `Batch writes limit of ${writesLimit} keys exceeded. ` +
+        `This operation can be repeated with a smaller batch.`
+    );
+  }
+}
 
 export class DexV3Contract extends GalaContract {
   constructor() {
     super("DexV3Contract", version);
+  }
+
+  @Submit({
+    in: BatchDto,
+    out: "object",
+    description: "Submit a batch of transactions",
+    allowedOrgs: [process.env.CURATOR_ORG_MSP ?? "CuratorOrg"]
+  })
+  public async BatchSubmit(ctx: GalaChainContext, batchDto: BatchDto): Promise<GalaChainResponse<unknown>[]> {
+    // validate that the calling user is allowed to submit a batch
+
+    const responses: GalaChainResponse<unknown>[] = [];
+
+    const softWritesLimit = batchDto.writesLimit ?? BatchDto.WRITES_DEFAULT_LIMIT;
+    const writesLimit = Math.min(softWritesLimit, BatchDto.WRITES_HARD_LIMIT);
+    let writesCount = ctx.stub.getWritesCount();
+
+    for (const [index, op] of batchDto.operations.entries()) {
+      // Use sandboxed context to avoid flushes of writes and deletes, and populate
+      // the stub with current writes and deletes.
+      const sandboxCtx = ctx.createReadOnlyContext(index);
+      sandboxCtx.stub.setWrites(ctx.stub.getWrites());
+      sandboxCtx.stub.setDeletes(ctx.stub.getDeletes());
+
+      // Execute the operation. Collect both successful and failed responses.
+      let response: GalaChainResponse<unknown>;
+      try {
+        if (writesCount >= writesLimit) {
+          throw new BatchWriteLimitExceededError(writesLimit);
+        }
+
+        const method = getApiMethod(this, op.method, (m) => m.isWrite && m.methodName !== "BatchSubmit");
+        response = await this[method.methodName](sandboxCtx, op.dto);
+      } catch (error) {
+        response = GalaChainResponse.Error(error);
+      }
+      responses.push(response);
+
+      // Update the current context with the writes and deletes if the operation
+      // is successful.
+      if (GalaChainResponse.isSuccess(response)) {
+        ctx.stub.setWrites(sandboxCtx.stub.getWrites());
+        ctx.stub.setDeletes(sandboxCtx.stub.getDeletes());
+        writesCount = ctx.stub.getWritesCount();
+      }
+    }
+    return responses;
   }
 
   @Submit({
