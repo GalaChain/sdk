@@ -41,7 +41,7 @@ export class BatchSubmitAuthorizations extends ChainObject {
   }
 
   public removeAuthority(authority: string) {
-    this.authorities = this.authorities.filter(auth => auth !== authority);
+    this.authorities = this.authorities.filter((auth) => auth !== authority);
   }
 
   public isAuthorized(authority: string): boolean {
@@ -51,4 +51,4 @@ export class BatchSubmitAuthorizations extends ChainObject {
   public getAuthorizedAuthorities(): string[] {
     return [...this.authorities];
   }
-} 
+}

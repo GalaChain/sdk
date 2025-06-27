@@ -12,8 +12,8 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-import { JSONSchema } from "class-validator-jsonschema";
 import { ArrayNotEmpty, IsOptional, IsString } from "class-validator";
+import { JSONSchema } from "class-validator-jsonschema";
 
 import { ChainCallDTO } from "./dtos";
 
@@ -56,4 +56,4 @@ export class BatchSubmitAuthorizationsResDto extends ChainCallDTO {
   })
   @IsString({ each: true })
   authorities: string[];
-} 
+}
