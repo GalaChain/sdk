@@ -12,7 +12,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-import { DexPositionData } from "@gala-chain/api";
+import { DexPositionData, f18 } from "@gala-chain/api";
 import BigNumber from "bignumber.js";
 
 import { GalaChainContext } from "../types";
@@ -36,9 +36,9 @@ export async function removePositionIfEmpty(
 
   // Check if given position needs to be deleted
   const deleteUserPos =
-    new BigNumber(position.tokensOwed0).f18().isLessThan(new BigNumber("0.00000001")) &&
-    new BigNumber(position.tokensOwed1).f18().isLessThan(new BigNumber("0.00000001")) &&
-    new BigNumber(position.liquidity).f18().isLessThan(new BigNumber("0.00000001"));
+    f18(position.tokensOwed0).isLessThan(new BigNumber("0.00000001")) &&
+    f18(position.tokensOwed1).isLessThan(new BigNumber("0.00000001")) &&
+    f18(position.liquidity).isLessThan(new BigNumber("0.00000001"));
 
   // Remove position
   if (deleteUserPos) {

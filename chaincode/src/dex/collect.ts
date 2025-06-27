@@ -18,7 +18,8 @@ import {
   NotFoundError,
   Pool,
   TokenInstanceKey,
-  UserBalanceResDto
+  UserBalanceResDto,
+  f18
 } from "@gala-chain/api";
 import BigNumber from "bignumber.js";
 
@@ -73,8 +74,8 @@ export async function collect(ctx: GalaChainContext, dto: CollectDto): Promise<D
   );
 
   const [amount0Requested, amount1Requested] = [
-    BigNumber.min(dto.amount0Requested.f18(), poolToken0Balance.getQuantityTotal()),
-    BigNumber.min(dto.amount1Requested.f18(), poolToken1Balance.getQuantityTotal())
+    BigNumber.min(f18(dto.amount0Requested), poolToken0Balance.getQuantityTotal()),
+    BigNumber.min(f18(dto.amount1Requested), poolToken1Balance.getQuantityTotal())
   ];
 
   const tickLower = parseInt(dto.tickLower.toString()),

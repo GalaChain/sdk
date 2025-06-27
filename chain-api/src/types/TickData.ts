@@ -69,7 +69,6 @@ export class TickData extends ChainObject {
     this.poolHash = poolHash;
     this.tick = tick;
     this.liquidityGross = new BigNumber(0);
-
     this.initialised = false;
     this.liquidityNet = new BigNumber(0);
     this.feeGrowthOutside0 = new BigNumber(0);

@@ -20,6 +20,7 @@ import {
   SlippageToleranceExceededError,
   TokenInstanceKey,
   UserBalanceResDto,
+  f18,
   getLiquidityForAmounts,
   tickToSqrtPrice
 } from "@gala-chain/api";
@@ -60,10 +61,10 @@ export async function addLiquidity(
     tickUpper = parseInt(dto.tickUpper.toString());
 
   //calculate token amounts required for the desired liquidity
-  const amount0Desired = dto.amount0Desired.f18(),
-    amount1Desired = dto.amount1Desired.f18();
-  const amount0Min = dto.amount0Min.f18(),
-    amount1Min = dto.amount1Min.f18();
+  const amount0Desired = f18(dto.amount0Desired);
+  const amount1Desired = f18(dto.amount1Desired);
+  const amount0Min = f18(dto.amount0Min);
+  const amount1Min = f18(dto.amount1Min);
 
   const sqrtRatioA = tickToSqrtPrice(tickLower),
     sqrtRatioB = tickToSqrtPrice(tickUpper);
@@ -95,7 +96,7 @@ export async function addLiquidity(
     tickUpper
   );
 
-  const [amount0, amount1] = pool.mint(position, tickLowerData, tickUpperData, liquidity.f18());
+  const [amount0, amount1] = pool.mint(position, tickLowerData, tickUpperData, f18(liquidity));
 
   // Verify whether the amounts are valid
   if (amount0.lt(amount0Min) || amount1.lt(amount1Min)) {
