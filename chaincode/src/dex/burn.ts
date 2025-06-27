@@ -20,6 +20,7 @@ import {
   SlippageToleranceExceededError,
   TokenInstanceKey,
   UserBalanceResDto,
+  f18,
   liquidity0,
   liquidity1,
   tickToSqrtPrice
@@ -71,7 +72,7 @@ export async function burn(ctx: GalaChainContext, dto: BurnDto): Promise<DexOper
   const tokenDecimals = await getTokenDecimalsFromPool(ctx, pool);
 
   // Estimate how much liquidity can actually be burned based on current pool balances and prices
-  let amountToBurn = dto.amount.f18();
+  let amountToBurn = f18(dto.amount);
   const amountsEstimated = pool.burnEstimate(amountToBurn, tickLower, tickUpper);
   const sqrtPriceA = tickToSqrtPrice(tickLower),
     sqrtPriceB = tickToSqrtPrice(tickUpper);
