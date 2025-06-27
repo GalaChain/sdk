@@ -81,6 +81,12 @@ import {
   swap,
   transferDexPosition
 } from "../dex";
+import {
+  authorizeBatchSubmitter,
+  deauthorizeBatchSubmitter,
+  fetchBatchSubmitAuthorizations,
+  getBatchSubmitAuthorizations
+} from "../dex/batchSubmitAuthorizations";
 import { getTickData } from "../dex/tickData.helper";
 import {
   addLiquidityFeeGate,
@@ -90,15 +96,9 @@ import {
   swapFeeGate
 } from "../fees/dexLaunchpadFeeGate";
 import { GalaChainContext } from "../types";
-import { GalaContract, BatchWriteLimitExceededError } from "./GalaContract";
+import { BatchWriteLimitExceededError, GalaContract } from "./GalaContract";
 import { getApiMethod } from "./GalaContractApi";
-import { EVALUATE, SUBMIT, Evaluate, GalaTransaction, Submit } from "./GalaTransaction";
-import { 
-  fetchBatchSubmitAuthorizations,
-  authorizeBatchSubmitter,
-  deauthorizeBatchSubmitter,
-  getBatchSubmitAuthorizations
-} from "../dex/batchSubmitAuthorizations";
+import { EVALUATE, Evaluate, GalaTransaction, SUBMIT, Submit } from "./GalaTransaction";
 
 export class DexV3Contract extends GalaContract {
   constructor() {
@@ -119,7 +119,7 @@ export class DexV3Contract extends GalaContract {
     if (!batchAuthorizations.isAuthorized(ctx.callingUser)) {
       throw new UnauthorizedError(
         `CallingUser ${ctx.callingUser} is not authorized to submit batches. ` +
-        `Authorized users: ${batchAuthorizations.getAuthorizedAuthorities().join(", ")}`
+          `Authorized users: ${batchAuthorizations.getAuthorizedAuthorities().join(", ")}`
       );
     }
 
