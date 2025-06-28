@@ -16,8 +16,8 @@ import {
   AddLiquidityDTO,
   AuthorizeBatchSubmitterDto,
   BatchDto,
-  BatchSubmitAuthorizations,
-  BatchSubmitAuthorizationsResDto,
+  BatchSubmitAuthorities,
+  BatchSubmitAuthoritiesResDto,
   BurnDto,
   BurnEstimateDto,
   ChainCallDTO,
@@ -32,7 +32,7 @@ import {
   DexOperationResDto,
   DexPositionData,
   DexPositionOwner,
-  FetchBatchSubmitAuthorizationsDto,
+  FetchBatchSubmitAuthoritiesDto,
   GalaChainResponse,
   GetAddLiquidityEstimationDto,
   GetAddLiquidityEstimationResDto,
@@ -84,8 +84,8 @@ import {
 import {
   authorizeBatchSubmitter,
   deauthorizeBatchSubmitter,
-  fetchBatchSubmitAuthorizations,
-  getBatchSubmitAuthorizations
+  fetchBatchSubmitAuthorities,
+  getBatchSubmitAuthorities
 } from "../dex/batchSubmitAuthorizations";
 import { getTickData } from "../dex/tickData.helper";
 import {
@@ -115,11 +115,11 @@ export class DexV3Contract extends GalaContract {
   })
   public async BatchSubmit(ctx: GalaChainContext, batchDto: BatchDto): Promise<GalaChainResponse<unknown>[]> {
     // Check if the calling user is authorized to submit batches
-    const batchAuthorizations = await fetchBatchSubmitAuthorizations(ctx);
-    if (!batchAuthorizations.isAuthorized(ctx.callingUser)) {
+    const batchAuthorities = await fetchBatchSubmitAuthorities(ctx);
+    if (!batchAuthorities.isAuthorized(ctx.callingUser)) {
       throw new UnauthorizedError(
         `CallingUser ${ctx.callingUser} is not authorized to submit batches. ` +
-          `Authorized users: ${batchAuthorizations.getAuthorizedAuthorities().join(", ")}`
+          `Authorized users: ${batchAuthorities.getAuthorities().join(", ")}`
       );
     }
 
@@ -367,37 +367,37 @@ export class DexV3Contract extends GalaContract {
 
   @Submit({
     in: AuthorizeBatchSubmitterDto,
-    out: BatchSubmitAuthorizationsResDto,
+    out: BatchSubmitAuthoritiesResDto,
     allowedOrgs: [process.env.CURATOR_ORG_MSP ?? "CuratorOrg"]
   })
   public async AuthorizeBatchSubmitter(
     ctx: GalaChainContext,
     dto: AuthorizeBatchSubmitterDto
-  ): Promise<BatchSubmitAuthorizationsResDto> {
+  ): Promise<BatchSubmitAuthoritiesResDto> {
     return await authorizeBatchSubmitter(ctx, dto);
   }
 
   @Submit({
     in: DeauthorizeBatchSubmitterDto,
-    out: BatchSubmitAuthorizationsResDto,
+    out: BatchSubmitAuthoritiesResDto,
     allowedOrgs: [process.env.CURATOR_ORG_MSP ?? "CuratorOrg"]
   })
   public async DeauthorizeBatchSubmitter(
     ctx: GalaChainContext,
     dto: DeauthorizeBatchSubmitterDto
-  ): Promise<BatchSubmitAuthorizationsResDto> {
+  ): Promise<BatchSubmitAuthoritiesResDto> {
     return await deauthorizeBatchSubmitter(ctx, dto);
   }
 
   @GalaTransaction({
     type: EVALUATE,
-    in: FetchBatchSubmitAuthorizationsDto,
-    out: BatchSubmitAuthorizationsResDto
+    in: FetchBatchSubmitAuthoritiesDto,
+    out: BatchSubmitAuthoritiesResDto
   })
-  public async GetBatchSubmitAuthorizations(
+  public async GetBatchSubmitAuthorities(
     ctx: GalaChainContext,
-    dto: FetchBatchSubmitAuthorizationsDto
-  ): Promise<BatchSubmitAuthorizationsResDto> {
-    return await getBatchSubmitAuthorizations(ctx, dto);
+    dto: FetchBatchSubmitAuthoritiesDto
+  ): Promise<BatchSubmitAuthoritiesResDto> {
+    return await getBatchSubmitAuthorities(ctx, dto);
   }
 }

@@ -12,7 +12,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-import { ArrayNotEmpty, IsOptional, IsString } from "class-validator";
+import { ArrayNotEmpty, IsString } from "class-validator";
 import { JSONSchema } from "class-validator-jsonschema";
 
 import { ChainCallDTO } from "./dtos";
@@ -26,7 +26,7 @@ export class AuthorizeBatchSubmitterDto extends ChainCallDTO {
   })
   @IsString()
   @ArrayNotEmpty()
-  authorizers: string[];
+  authorities: string[];
 }
 
 @JSONSchema({
@@ -37,20 +37,20 @@ export class DeauthorizeBatchSubmitterDto extends ChainCallDTO {
     description: "User to deauthorize from BatchSubmit operations"
   })
   @IsString()
-  authorizer: string;
+  authority: string;
 }
 
 @JSONSchema({
-  description: "DTO for fetching batch submit authorizations"
+  description: "DTO for fetching batch submit authorities"
 })
-export class FetchBatchSubmitAuthorizationsDto extends ChainCallDTO {
-  // No additional fields needed for fetching all authorizations
+export class FetchBatchSubmitAuthoritiesDto extends ChainCallDTO {
+  // No additional fields needed for fetching all authorities
 }
 
 @JSONSchema({
-  description: "Response DTO for batch submit authorizations"
+  description: "Response DTO for batch submit authorities"
 })
-export class BatchSubmitAuthorizationsResDto extends ChainCallDTO {
+export class BatchSubmitAuthoritiesResDto extends ChainCallDTO {
   @JSONSchema({
     description: "List of authorized users for BatchSubmit operations"
   })

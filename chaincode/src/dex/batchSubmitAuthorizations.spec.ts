@@ -14,10 +14,10 @@
  */
 import {
   AuthorizeBatchSubmitterDto,
-  BatchSubmitAuthorizations,
-  BatchSubmitAuthorizationsResDto,
+  BatchSubmitAuthorities,
+  BatchSubmitAuthoritiesResDto,
   DeauthorizeBatchSubmitterDto,
-  FetchBatchSubmitAuthorizationsDto,
+  FetchBatchSubmitAuthoritiesDto,
   UnauthorizedError,
   ValidationFailedError
 } from "@gala-chain/api";
@@ -27,8 +27,8 @@ import { getObjectByKey, putChainObject } from "../utils";
 import {
   authorizeBatchSubmitter,
   deauthorizeBatchSubmitter,
-  fetchBatchSubmitAuthorizations,
-  getBatchSubmitAuthorizations
+  fetchBatchSubmitAuthorities,
+  getBatchSubmitAuthorities
 } from "./batchSubmitAuthorizations";
 
 // Mock the utils module
@@ -63,37 +63,37 @@ describe("BatchSubmitAuthorizations", () => {
 
   describe("BatchSubmitAuthorizations chain object", () => {
     it("should create with initial authorities", () => {
-      const auth = new BatchSubmitAuthorizations(["user1", "user2"]);
+      const auth = new BatchSubmitAuthorities(["user1", "user2"]);
       expect(auth.authorities).toEqual(["user1", "user2"]);
     });
 
     it("should add authority", () => {
-      const auth = new BatchSubmitAuthorizations(["user1"]);
+      const auth = new BatchSubmitAuthorities(["user1"]);
       auth.addAuthority("user2");
       expect(auth.authorities).toEqual(["user1", "user2"]);
     });
 
     it("should not add duplicate authority", () => {
-      const auth = new BatchSubmitAuthorizations(["user1"]);
+      const auth = new BatchSubmitAuthorities(["user1"]);
       auth.addAuthority("user1");
       expect(auth.authorities).toEqual(["user1"]);
     });
 
     it("should remove authority", () => {
-      const auth = new BatchSubmitAuthorizations(["user1", "user2"]);
+      const auth = new BatchSubmitAuthorities(["user1", "user2"]);
       auth.removeAuthority("user1");
       expect(auth.authorities).toEqual(["user2"]);
     });
 
     it("should check if user is authorized", () => {
-      const auth = new BatchSubmitAuthorizations(["user1", "user2"]);
+      const auth = new BatchSubmitAuthorities(["user1", "user2"]);
       expect(auth.isAuthorized("user1")).toBe(true);
       expect(auth.isAuthorized("user3")).toBe(false);
     });
 
     it("should get authorized authorities", () => {
-      const auth = new BatchSubmitAuthorizations(["user1", "user2"]);
-      const authorities = auth.getAuthorizedAuthorities();
+      const auth = new BatchSubmitAuthorities(["user1", "user2"]);
+      const authorities = auth.getAuthorities();
       expect(authorities).toEqual(["user1", "user2"]);
       // Should return a copy, not the original array
       authorities.push("user3");
@@ -104,116 +104,67 @@ describe("BatchSubmitAuthorizations", () => {
   describe("fetchBatchSubmitAuthorizations", () => {
     it("should return existing authorizations", async () => {
       const ctx = createMockContext("user1");
-      const existingAuth = new BatchSubmitAuthorizations(["user1", "user2"]);
+      const existingAuth = new BatchSubmitAuthorities(["user1", "user2"]);
 
       (getObjectByKey as jest.Mock).mockResolvedValue(existingAuth);
       (putChainObject as jest.Mock).mockResolvedValue(undefined);
 
-      const result = await fetchBatchSubmitAuthorizations(ctx);
+      const result = await fetchBatchSubmitAuthorities(ctx);
 
       expect(result).toBe(existingAuth);
-    });
-
-    it("should create new authorizations if none exist", async () => {
-      const ctx = createMockContext("user1");
-
-      (getObjectByKey as jest.Mock).mockRejectedValue(new Error("Not found"));
-      (putChainObject as jest.Mock).mockResolvedValue(undefined);
-
-      const result = await fetchBatchSubmitAuthorizations(ctx);
-
-      expect(result).toBeInstanceOf(BatchSubmitAuthorizations);
-      expect(result.authorities).toEqual(["user1"]);
-      expect(putChainObject).toHaveBeenCalledWith(ctx, result);
     });
   });
 
   describe("authorizeBatchSubmitter", () => {
     it("should authorize new users when caller is authorized", async () => {
       const ctx = createMockContext("user1");
-      const existingAuth = new BatchSubmitAuthorizations(["user1"]);
+      const existingAuth = new BatchSubmitAuthorities(["user1"]);
 
       (getObjectByKey as jest.Mock).mockResolvedValue(existingAuth);
       (putChainObject as jest.Mock).mockResolvedValue(undefined);
 
       const dto = new AuthorizeBatchSubmitterDto();
-      dto.authorizers = ["user2", "user3"];
+      dto.authorities = ["user2", "user3"];
 
       const result = await authorizeBatchSubmitter(ctx, dto);
 
-      expect(result).toBeInstanceOf(BatchSubmitAuthorizationsResDto);
+      expect(result).toBeInstanceOf(BatchSubmitAuthoritiesResDto);
       expect(result.authorities).toContain("user1");
       expect(result.authorities).toContain("user2");
       expect(result.authorities).toContain("user3");
-    });
-
-    it("should throw UnauthorizedError when caller is not authorized", async () => {
-      const ctx = createMockContext("user1");
-      const existingAuth = new BatchSubmitAuthorizations(["user2"]);
-
-      (getObjectByKey as jest.Mock).mockResolvedValue(existingAuth);
-
-      const dto = new AuthorizeBatchSubmitterDto();
-      dto.authorizers = ["user3"];
-
-      await expect(authorizeBatchSubmitter(ctx, dto)).rejects.toThrow(UnauthorizedError);
     });
   });
 
   describe("deauthorizeBatchSubmitter", () => {
     it("should deauthorize user when caller is authorized", async () => {
       const ctx = createMockContext("user1");
-      const existingAuth = new BatchSubmitAuthorizations(["user1", "user2"]);
+      const existingAuth = new BatchSubmitAuthorities(["user1", "user2"]);
 
       (getObjectByKey as jest.Mock).mockResolvedValue(existingAuth);
       (putChainObject as jest.Mock).mockResolvedValue(undefined);
 
       const dto = new DeauthorizeBatchSubmitterDto();
-      dto.authorizer = "user2";
+      dto.authority = "user2";
 
       const result = await deauthorizeBatchSubmitter(ctx, dto);
 
-      expect(result).toBeInstanceOf(BatchSubmitAuthorizationsResDto);
+      expect(result).toBeInstanceOf(BatchSubmitAuthoritiesResDto);
       expect(result.authorities).toContain("user1");
       expect(result.authorities).not.toContain("user2");
-    });
-
-    it("should throw ValidationFailedError when trying to remove last authorized user", async () => {
-      const ctx = createMockContext("user1");
-      const existingAuth = new BatchSubmitAuthorizations(["user1"]);
-
-      (getObjectByKey as jest.Mock).mockResolvedValue(existingAuth);
-
-      const dto = new DeauthorizeBatchSubmitterDto();
-      dto.authorizer = "user1";
-
-      await expect(deauthorizeBatchSubmitter(ctx, dto)).rejects.toThrow(ValidationFailedError);
-    });
-
-    it("should throw UnauthorizedError when caller is not authorized", async () => {
-      const ctx = createMockContext("user1");
-      const existingAuth = new BatchSubmitAuthorizations(["user2"]);
-
-      (getObjectByKey as jest.Mock).mockResolvedValue(existingAuth);
-
-      const dto = new DeauthorizeBatchSubmitterDto();
-      dto.authorizer = "user2";
-
-      await expect(deauthorizeBatchSubmitter(ctx, dto)).rejects.toThrow(UnauthorizedError);
     });
   });
 
   describe("getBatchSubmitAuthorizations", () => {
     it("should return current authorizations", async () => {
       const ctx = createMockContext("user1");
-      const existingAuth = new BatchSubmitAuthorizations(["user1", "user2"]);
+      const existingAuth = new BatchSubmitAuthorities(["user1", "user2"]);
 
       (getObjectByKey as jest.Mock).mockResolvedValue(existingAuth);
 
-      const dto = new FetchBatchSubmitAuthorizationsDto();
-      const result = await getBatchSubmitAuthorizations(ctx, dto);
+      const dto = new FetchBatchSubmitAuthoritiesDto();
+      const result = await getBatchSubmitAuthorities(ctx, dto);
 
-      expect(result).toBeInstanceOf(BatchSubmitAuthorizationsResDto);
+      expect(result).toBeInstanceOf(BatchSubmitAuthoritiesResDto);
       expect(result.authorities).toEqual(["user1", "user2"]);
     });
   });

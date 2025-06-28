@@ -17,9 +17,9 @@ import { ArrayNotEmpty, IsString } from "class-validator";
 
 import { ChainObject } from "./ChainObject";
 
-export class BatchSubmitAuthorizations extends ChainObject {
+export class BatchSubmitAuthorities extends ChainObject {
   @Exclude()
-  public static INDEX_KEY = "GCBSA"; // GalaChain Batch Submit Authorizations
+  public static INDEX_KEY = "GCBSA"; // GalaChain Batch Submit Authorities
 
   @ArrayNotEmpty()
   @IsString({ each: true })
@@ -48,7 +48,7 @@ export class BatchSubmitAuthorizations extends ChainObject {
     return this.authorities.includes(authority);
   }
 
-  public getAuthorizedAuthorities(): string[] {
+  public getAuthorities(): string[] {
     return [...this.authorities];
   }
 }

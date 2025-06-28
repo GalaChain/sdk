@@ -8,7 +8,7 @@ The batch submit authorization system allows fine-grained control over which use
 
 ## Chain Object
 
-### BatchSubmitAuthorizations
+### BatchSubmitAuthorities
 
 The `BatchSubmitAuthorizations` chain object stores the list of users authorized to perform batch submit operations.
 
@@ -27,7 +27,7 @@ The `BatchSubmitAuthorizations` chain object stores the list of users authorized
 Adds new users to the batch submit authorization list.
 
 **Parameters**:
-- `authorizers: string[]` - Array of user identifiers to authorize
+- `authorities: string[]` - Array of user identifiers to authorize
 
 **Returns**:
 - `BatchSubmitAuthorizationsResDto` - Updated list of authorized users
@@ -74,7 +74,7 @@ Retrieves the current list of authorized users.
 
 ```typescript
 const dto = new AuthorizeBatchSubmitterDto();
-dto.authorizers = ["user1", "user2"];
+dto.authorities = ["user1", "user2"];
 
 const result = await contract.AuthorizeBatchSubmitter(ctx, dto);
 console.log("Authorized users:", result.authorities);

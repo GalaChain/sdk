@@ -14,10 +14,10 @@
  */
 import {
   AuthorizeBatchSubmitterDto,
-  BatchSubmitAuthorizations,
-  BatchSubmitAuthorizationsResDto,
+  BatchSubmitAuthorities,
+  BatchSubmitAuthoritiesResDto,
   DeauthorizeBatchSubmitterDto,
-  FetchBatchSubmitAuthorizationsDto,
+  FetchBatchSubmitAuthoritiesDto,
   UnauthorizedError,
   ValidationFailedError
 } from "@gala-chain/api";
@@ -26,22 +26,12 @@ import { GalaChainContext } from "../types";
 import { getObjectByKey, putChainObject } from "../utils";
 
 /**
- * Fetches the batch submit authorizations from the chain.
- * Creates a new authorization object if none exists.
+ * Fetches the batch submit authorities from the chain.
  */
-export async function fetchBatchSubmitAuthorizations(
-  ctx: GalaChainContext
-): Promise<BatchSubmitAuthorizations> {
-  const key = ctx.stub.createCompositeKey(BatchSubmitAuthorizations.INDEX_KEY, []);
+export async function fetchBatchSubmitAuthorities(ctx: GalaChainContext): Promise<BatchSubmitAuthorities> {
+  const key = ctx.stub.createCompositeKey(BatchSubmitAuthorities.INDEX_KEY, []);
 
-  try {
-    return await getObjectByKey(ctx, BatchSubmitAuthorizations, key);
-  } catch (error) {
-    // If not found, create a new authorization object with the calling user as the first authority
-    const defaultAuthorizations = new BatchSubmitAuthorizations([ctx.callingUser]);
-    await putChainObject(ctx, defaultAuthorizations);
-    return defaultAuthorizations;
-  }
+  return await getObjectByKey(ctx, BatchSubmitAuthorities, key);
 }
 
 /**
@@ -51,68 +41,49 @@ export async function fetchBatchSubmitAuthorizations(
 export async function authorizeBatchSubmitter(
   ctx: GalaChainContext,
   dto: AuthorizeBatchSubmitterDto
-): Promise<BatchSubmitAuthorizationsResDto> {
-  const authorizations = await fetchBatchSubmitAuthorizations(ctx);
+): Promise<BatchSubmitAuthoritiesResDto> {
+  const authorities = await fetchBatchSubmitAuthorities(ctx);
 
-  if (!authorizations.isAuthorized(ctx.callingUser)) {
-    throw new UnauthorizedError(
-      `CallingUser ${ctx.callingUser} is not authorized to manage batch submit authorizations. ` +
-        `Authorized users: ${authorizations.getAuthorizedAuthorities().join(", ")}`
-    );
+  // Add new authorities
+  for (const authority of dto.authorities) {
+    authorities.addAuthority(authority);
   }
 
-  // Add new authorizers
-  for (const authorizer of dto.authorizers) {
-    authorizations.addAuthority(authorizer);
-  }
+  await putChainObject(ctx, authorities);
 
-  await putChainObject(ctx, authorizations);
-
-  const result = new BatchSubmitAuthorizationsResDto();
-  result.authorities = authorizations.getAuthorizedAuthorities();
+  const result = new BatchSubmitAuthoritiesResDto();
+  result.authorities = authorities.getAuthorities();
   return result;
 }
 
 /**
  * Deauthorizes a user from calling BatchSubmit operations.
- * Only existing authorized users can remove authorizations.
  */
 export async function deauthorizeBatchSubmitter(
   ctx: GalaChainContext,
   dto: DeauthorizeBatchSubmitterDto
-): Promise<BatchSubmitAuthorizationsResDto> {
-  const authorizations = await fetchBatchSubmitAuthorizations(ctx);
+): Promise<BatchSubmitAuthoritiesResDto> {
+  const authorities = await fetchBatchSubmitAuthorities(ctx);
 
-  if (!authorizations.isAuthorized(ctx.callingUser)) {
-    throw new UnauthorizedError(
-      `CallingUser ${ctx.callingUser} is not authorized to manage batch submit authorizations. ` +
-        `Authorized users: ${authorizations.getAuthorizedAuthorities().join(", ")}`
-    );
-  }
+  authorities.removeAuthority(dto.authority);
+  await putChainObject(ctx, authorities);
 
-  // Prevent removing the last authorized user
-  if (authorizations.authorities.length === 1 && authorizations.isAuthorized(dto.authorizer)) {
-    throw new ValidationFailedError("Cannot remove the last authorized user for batch submit operations");
-  }
-
-  authorizations.removeAuthority(dto.authorizer);
-  await putChainObject(ctx, authorizations);
-
-  const result = new BatchSubmitAuthorizationsResDto();
-  result.authorities = authorizations.getAuthorizedAuthorities();
+  const result = new BatchSubmitAuthoritiesResDto();
+  result.authorities = authorities.getAuthorities();
   return result;
 }
 
 /**
  * Fetches the current batch submit authorizations.
  */
-export async function getBatchSubmitAuthorizations(
+export async function getBatchSubmitAuthorities(
   ctx: GalaChainContext,
-  dto: FetchBatchSubmitAuthorizationsDto
-): Promise<BatchSubmitAuthorizationsResDto> {
-  const authorizations = await fetchBatchSubmitAuthorizations(ctx);
-  const result = new BatchSubmitAuthorizationsResDto();
-  result.authorities = authorizations.getAuthorizedAuthorities();
+  dto: FetchBatchSubmitAuthoritiesDto
+): Promise<BatchSubmitAuthoritiesResDto> {
+  const authorities = await fetchBatchSubmitAuthorities(ctx);
+  const result = new BatchSubmitAuthoritiesResDto();
+
+  result.authorities = authorities.getAuthorities();
   return result;
 }
 
@@ -120,6 +91,6 @@ export async function getBatchSubmitAuthorizations(
  * Checks if the calling user is authorized to perform batch submit operations.
  */
 export async function isAuthorizedForBatchSubmit(ctx: GalaChainContext): Promise<boolean> {
-  const authorizations = await fetchBatchSubmitAuthorizations(ctx);
-  return authorizations.isAuthorized(ctx.callingUser);
+  const authorities = await fetchBatchSubmitAuthorities(ctx);
+  return authorities.isAuthorized(ctx.callingUser);
 }

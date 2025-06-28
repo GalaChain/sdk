@@ -79,5 +79,5 @@ export * from "./LaunchpadDtos";
 export * from "./LaunchpadFinalizeAllocation";
 export * from "./LaunchpadFeeConfig";
 export * from "./LaunchpadSale";
-export * from "./BatchSubmitAuthorizations";
+export * from "./BatchSubmitAuthorities";
 export * from "./BatchSubmitDtos";
