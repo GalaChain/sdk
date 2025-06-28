@@ -29,3 +29,4 @@ export * from "./tickData.helper";
 export * from "./dexError";
 export * from "./transferDexPosition";
 export * from "./dexUtils";
+export * from "./batchSubmitAuthorizations";
