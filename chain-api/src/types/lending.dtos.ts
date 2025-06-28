@@ -34,9 +34,9 @@ import {
   IsDifferentValue,
   IsUserRef
 } from "../validators";
-import { FungibleLendingOffer, FungibleLoan, LendingLender, LendingStatus } from "./lending";
 import { TokenClassKey } from "./TokenClass";
 import { ChainCallDTO, SubmitCallDTO } from "./dtos";
+import { FungibleLendingOffer, FungibleLoan, LendingLender, LendingStatus } from "./lending";
 
 @JSONSchema({
   description:
@@ -55,8 +55,7 @@ export class CreateLendingOfferDto extends SubmitCallDTO {
   public lender?: string;
 
   @JSONSchema({
-    description:
-      "Principal token class being offered for lending."
+    description: "Principal token class being offered for lending."
   })
   @ValidateNested()
   @Type(() => TokenClassKey)
@@ -64,32 +63,28 @@ export class CreateLendingOfferDto extends SubmitCallDTO {
   public principalToken: TokenClassKey;
 
   @JSONSchema({
-    description:
-      "Quantity of principal tokens being offered for lending."
+    description: "Quantity of principal tokens being offered for lending."
   })
   @BigNumberIsPositive()
   @BigNumberProperty()
   public principalQuantity: BigNumber;
 
   @JSONSchema({
-    description:
-      "Annual interest rate as basis points (e.g., 500 = 5.00%)."
+    description: "Annual interest rate as basis points (e.g., 500 = 5.00%)."
   })
   @BigNumberIsNotNegative()
   @BigNumberProperty()
   public interestRate: BigNumber;
 
   @JSONSchema({
-    description:
-      "Loan duration in seconds."
+    description: "Loan duration in seconds."
   })
   @Min(1)
   @IsInt()
   public duration: number;
 
   @JSONSchema({
-    description:
-      "Required collateral token class."
+    description: "Required collateral token class."
   })
   @ValidateNested()
   @Type(() => TokenClassKey)
@@ -97,8 +92,7 @@ export class CreateLendingOfferDto extends SubmitCallDTO {
   public collateralToken: TokenClassKey;
 
   @JSONSchema({
-    description:
-      "Collateral ratio required (e.g., 1.5 = 150% collateralization)."
+    description: "Collateral ratio required (e.g., 1.5 = 150% collateralization)."
   })
   @BigNumberIsPositive()
   @BigNumberProperty()
@@ -162,8 +156,7 @@ export class LendingOfferResDto extends SubmitCallDTO {
 }
 
 @JSONSchema({
-  description:
-    "Accept a fungible token lending offer by providing the required collateral."
+  description: "Accept a fungible token lending offer by providing the required collateral."
 })
 export class AcceptLendingOfferDto extends SubmitCallDTO {
   @JSONSchema({
@@ -187,8 +180,7 @@ export class AcceptLendingOfferDto extends SubmitCallDTO {
 }
 
 @JSONSchema({
-  description:
-    "Repay a fungible token loan with principal plus accrued interest."
+  description: "Repay a fungible token loan with principal plus accrued interest."
 })
 export class RepayLoanDto extends SubmitCallDTO {
   @JSONSchema({
@@ -207,8 +199,7 @@ export class RepayLoanDto extends SubmitCallDTO {
 }
 
 @JSONSchema({
-  description:
-    "Liquidate an undercollateralized fungible token loan."
+  description: "Liquidate an undercollateralized fungible token loan."
 })
 export class LiquidateLoanDto extends SubmitCallDTO {
   @JSONSchema({
@@ -226,8 +217,7 @@ export class LiquidateLoanDto extends SubmitCallDTO {
 }
 
 @JSONSchema({
-  description:
-    "Cancel a lending offer, removing it from available offers."
+  description: "Cancel a lending offer, removing it from available offers."
 })
 export class CancelLendingOfferDto extends SubmitCallDTO {
   @JSONSchema({
@@ -238,8 +228,7 @@ export class CancelLendingOfferDto extends SubmitCallDTO {
 }
 
 @JSONSchema({
-  description:
-    "Fetch lending offers with optional filtering parameters."
+  description: "Fetch lending offers with optional filtering parameters."
 })
 export class FetchLendingOffersDto extends ChainCallDTO {
   @JSONSchema({
@@ -297,10 +286,9 @@ export class FetchLendingOffersDto extends ChainCallDTO {
 }
 
 @JSONSchema({
-  description:
-    "Fetch active loans with optional filtering parameters."
+  description: "Fetch active loans with optional filtering parameters."
 })
-export class FetchLoansDto extends ChainCallDTO {
+export class FetchLendingLoansDto extends ChainCallDTO {
   @IsOptional()
   @IsUserRef()
   lender?: string;
@@ -331,8 +319,7 @@ export class FetchLoansDto extends ChainCallDTO {
 }
 
 @JSONSchema({
-  description:
-    "Result of a successful loan repayment operation."
+  description: "Result of a successful loan repayment operation."
 })
 export class RepaymentResultDto extends SubmitCallDTO {
   @JSONSchema({
@@ -365,8 +352,7 @@ export class RepaymentResultDto extends SubmitCallDTO {
 }
 
 @JSONSchema({
-  description:
-    "Result of a successful loan liquidation operation."
+  description: "Result of a successful loan liquidation operation."
 })
 export class LiquidationResultDto extends SubmitCallDTO {
   @JSONSchema({

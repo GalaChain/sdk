@@ -12,12 +12,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-import {
-  ConflictError,
-  ForbiddenError,
-  NotFoundError,
-  ValidationFailedError
-} from "../utils";
+import { ConflictError, ForbiddenError, NotFoundError, ValidationFailedError } from "../utils";
 import { LendingStatus } from "./lending";
 
 export class InsufficientCollateralError extends ValidationFailedError {
@@ -82,7 +77,7 @@ export class LoanNotFoundError extends NotFoundError {
   }
 }
 
-export class LoanAlreadyClosedError extends ConflictError {
+export class LendingLoanAlreadyClosedError extends ConflictError {
   constructor(loanKey: string, status: string) {
     super(`Loan with id ${loanKey} has been ${status} and its status can no longer be changed.`, {
       loanKey,
@@ -191,18 +186,15 @@ export class InterestCalculationError extends ValidationFailedError {
 
 export class InvalidTokenClassError extends ValidationFailedError {
   constructor(tokenClass: string, operation: string, reason: string) {
-    super(
-      `Invalid token class ${tokenClass} for operation ${operation}. Reason: ${reason}`,
-      {
-        tokenClass,
-        operation,
-        reason
-      }
-    );
+    super(`Invalid token class ${tokenClass} for operation ${operation}. Reason: ${reason}`, {
+      tokenClass,
+      operation,
+      reason
+    });
   }
 }
 
-export class OfferBorrowerMismatchError extends ValidationFailedError {
+export class LendingOfferBorrowerMismatchError extends ValidationFailedError {
   constructor(borrower: string, offerBorrower: string, offerKey: string) {
     super(
       `AcceptLendingOffer: requested borrower (${borrower}) does not match offer borrower (${offerBorrower})`,
@@ -217,14 +209,11 @@ export class OfferBorrowerMismatchError extends ValidationFailedError {
 
 export class InvalidLendingParametersError extends ValidationFailedError {
   constructor(parameter: string, value: string, requirement: string) {
-    super(
-      `Invalid lending parameter: ${parameter} = ${value}. Requirement: ${requirement}`,
-      {
-        parameter,
-        value,
-        requirement
-      }
-    );
+    super(`Invalid lending parameter: ${parameter} = ${value}. Requirement: ${requirement}`, {
+      parameter,
+      value,
+      requirement
+    });
   }
 }
 
@@ -243,13 +232,10 @@ export class CollateralValuationError extends ValidationFailedError {
 
 export class PriceOracleError extends ValidationFailedError {
   constructor(tokenClass: string, operation: string, error: string) {
-    super(
-      `Price oracle error for token ${tokenClass} during ${operation}. Error: ${error}`,
-      {
-        tokenClass,
-        operation,
-        error
-      }
-    );
+    super(`Price oracle error for token ${tokenClass} during ${operation}. Error: ${error}`, {
+      tokenClass,
+      operation,
+      error
+    });
   }
 }

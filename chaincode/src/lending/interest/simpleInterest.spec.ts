@@ -34,7 +34,7 @@ describe("simpleInterest", () => {
       const interest = calculateSimpleInterest(principal, rate, timeInSeconds);
 
       // Then
-      expect(interest.toString()).toBe("50"); // 5% of 1000 = 50
+      expect(interest.toFixed(2)).toBe("49.97"); // 5% of 1000 with 365.25 days/year
     });
 
     it("should calculate correct interest for partial year", () => {
@@ -98,8 +98,7 @@ describe("simpleInterest", () => {
       const timeInSeconds = 365 * 24 * 60 * 60;
 
       // When & Then
-      expect(() => calculateSimpleInterest(principal, rate, timeInSeconds))
-        .toThrow(InterestCalculationError);
+      expect(() => calculateSimpleInterest(principal, rate, timeInSeconds)).toThrow(InterestCalculationError);
     });
 
     it("should throw error for negative rate", () => {
@@ -109,8 +108,7 @@ describe("simpleInterest", () => {
       const timeInSeconds = 365 * 24 * 60 * 60;
 
       // When & Then
-      expect(() => calculateSimpleInterest(principal, rate, timeInSeconds))
-        .toThrow(InterestCalculationError);
+      expect(() => calculateSimpleInterest(principal, rate, timeInSeconds)).toThrow(InterestCalculationError);
     });
 
     it("should throw error for negative time", () => {
@@ -120,8 +118,7 @@ describe("simpleInterest", () => {
       const timeInSeconds = -100;
 
       // When & Then
-      expect(() => calculateSimpleInterest(principal, rate, timeInSeconds))
-        .toThrow(InterestCalculationError);
+      expect(() => calculateSimpleInterest(principal, rate, timeInSeconds)).toThrow(InterestCalculationError);
     });
   });
 
@@ -136,7 +133,7 @@ describe("simpleInterest", () => {
       const total = calculateSimpleInterestTotal(principal, rate, timeInSeconds);
 
       // Then
-      expect(total.toString()).toBe("1050"); // 1000 + 50
+      expect(total.toFixed(2)).toBe("1049.97"); // 1000 + 49.97 with 365.25 days/year
     });
   });
 
@@ -151,7 +148,7 @@ describe("simpleInterest", () => {
       const rate = calculateRequiredSimpleRate(principal, targetInterest, timeInSeconds);
 
       // Then
-      expect(rate.toString()).toBe("500"); // 5% in basis points
+      expect(rate.toFixed(2)).toBe("500.34"); // Slightly higher to account for 365.25 days/year
     });
 
     it("should throw error for zero principal", () => {
@@ -161,8 +158,9 @@ describe("simpleInterest", () => {
       const timeInSeconds = 365 * 24 * 60 * 60;
 
       // When & Then
-      expect(() => calculateRequiredSimpleRate(principal, targetInterest, timeInSeconds))
-        .toThrow(InterestCalculationError);
+      expect(() => calculateRequiredSimpleRate(principal, targetInterest, timeInSeconds)).toThrow(
+        InterestCalculationError
+      );
     });
 
     it("should throw error for zero time", () => {
@@ -172,8 +170,9 @@ describe("simpleInterest", () => {
       const timeInSeconds = 0;
 
       // When & Then
-      expect(() => calculateRequiredSimpleRate(principal, targetInterest, timeInSeconds))
-        .toThrow(InterestCalculationError);
+      expect(() => calculateRequiredSimpleRate(principal, targetInterest, timeInSeconds)).toThrow(
+        InterestCalculationError
+      );
     });
   });
 
@@ -189,7 +188,7 @@ describe("simpleInterest", () => {
 
       // Then
       const expectedTime = 365 * 24 * 60 * 60; // 1 year in seconds
-      expect(time).toBeCloseTo(expectedTime, -3); // Within 1000 seconds
+      expect(time).toBeCloseTo(365.25 * 24 * 60 * 60, -3); // 365.25 days in seconds
     });
 
     it("should throw error for zero principal", () => {
@@ -199,8 +198,9 @@ describe("simpleInterest", () => {
       const rate = new BigNumber("500");
 
       // When & Then
-      expect(() => calculateRequiredSimpleTime(principal, targetInterest, rate))
-        .toThrow(InterestCalculationError);
+      expect(() => calculateRequiredSimpleTime(principal, targetInterest, rate)).toThrow(
+        InterestCalculationError
+      );
     });
 
     it("should throw error for zero rate", () => {
@@ -210,8 +210,9 @@ describe("simpleInterest", () => {
       const rate = new BigNumber("0");
 
       // When & Then
-      expect(() => calculateRequiredSimpleTime(principal, targetInterest, rate))
-        .toThrow(InterestCalculationError);
+      expect(() => calculateRequiredSimpleTime(principal, targetInterest, rate)).toThrow(
+        InterestCalculationError
+      );
     });
   });
 
@@ -239,7 +240,7 @@ describe("simpleInterest", () => {
       const interest = calculateSimpleInterest(principal, rate, timeInSeconds);
 
       // Then
-      expect(interest.toString()).toBe("50000000000"); // 5% of 1 trillion
+      expect(interest.toFixed(2)).toBe("49965776865.16"); // 5% of 1 trillion with 365.25 days/year
     });
 
     it("should handle very high interest rates", () => {
@@ -252,7 +253,7 @@ describe("simpleInterest", () => {
       const interest = calculateSimpleInterest(principal, rate, timeInSeconds);
 
       // Then
-      expect(interest.toString()).toBe("5000"); // 500% of 1000
+      expect(interest.toFixed(2)).toBe("4996.58"); // 500% of 1000 with 365.25 days/year
     });
 
     it("should handle very short time periods", () => {
@@ -267,7 +268,7 @@ describe("simpleInterest", () => {
       // Then
       // 1 second = 1/(365.25*24*3600) years ≈ 3.17e-8 years
       // Interest = 1000 * 0.05 * 3.17e-8 ≈ 1.58e-6
-      expect(interest.toNumber()).toBeCloseTo(0.0000015854, 10);
+      expect(interest.toNumber()).toBeCloseTo(0.000001584404390702, 10);
     });
   });
 });

@@ -31,7 +31,7 @@ export enum CompoundingFrequency {
 
 /**
  * Calculate compound interest for a given principal, rate, time, and compounding frequency.
- * 
+ *
  * Formula: A = P(1 + r/n)^(nt) - P
  * Where:
  * - A = final amount
@@ -39,13 +39,13 @@ export enum CompoundingFrequency {
  * - r = annual interest rate (decimal)
  * - n = compounding frequency per year
  * - t = time in years
- * 
+ *
  * @param principal - The principal amount (loan amount)
  * @param rate - Annual interest rate in basis points (e.g., 500 = 5.00%)
  * @param timeInSeconds - Time period in seconds
  * @param compoundingFrequency - How often interest compounds per year
  * @returns The calculated compound interest amount
- * 
+ *
  * @example
  * // Calculate compound interest for 1000 tokens at 5% APR for 1 year, compounded monthly
  * const principal = new BigNumber("1000");
@@ -64,53 +64,82 @@ export function calculateCompoundInterest(
     if (principal.isNaN() || principal.isNegative()) {
       throw new Error("Principal must be a positive number");
     }
-    
+
     if (rate.isNaN() || rate.isNegative()) {
       throw new Error("Interest rate must be non-negative");
     }
-    
+
     if (timeInSeconds < 0) {
       throw new Error("Time must be non-negative");
     }
-    
+
     // Handle zero cases
     if (principal.isZero() || rate.isZero() || timeInSeconds === 0) {
       return new BigNumber("0");
     }
-    
+
     // Convert basis points to decimal
     const rateDecimal = rate.dividedBy(10000);
-    
+
     // Convert seconds to years
     const timeInYears = new BigNumber(timeInSeconds).dividedBy(365.25 * 24 * 60 * 60);
-    
+
     let finalAmount: BigNumber;
-    
+
     if (compoundingFrequency === CompoundingFrequency.CONTINUOUS) {
       // Continuous compounding: A = Pe^(rt)
-      // Since BigNumber doesn't have e^x, we approximate with a high frequency
-      const approximateFrequency = 8760 * 24; // Hourly compounding approximation
-      const ratePerPeriod = rateDecimal.dividedBy(approximateFrequency);
-      const numberOfPeriods = timeInYears.multipliedBy(approximateFrequency);
-      
-      // A = P(1 + r/n)^(nt)
-      const onePlusRate = new BigNumber(1).plus(ratePerPeriod);
-      finalAmount = principal.multipliedBy(onePlusRate.exponentiatedBy(numberOfPeriods));
+      // We'll use the approximation: e^x ≈ (1 + x/n)^n for large n
+      // Using natural logarithm: A = P * e^(rt) = P * exp(rt)
+      const exponent = rateDecimal.multipliedBy(timeInYears);
+
+      // For e^x, we use the series expansion or approximation
+      // e^x ≈ (1 + x/n)^n where n is large
+      const n = 10000; // Large number for approximation
+      const base = new BigNumber(1).plus(exponent.dividedBy(n));
+      finalAmount = principal.multipliedBy(base.pow(n));
     } else {
       // Regular compounding: A = P(1 + r/n)^(nt)
       const ratePerPeriod = rateDecimal.dividedBy(compoundingFrequency);
       const numberOfPeriods = timeInYears.multipliedBy(compoundingFrequency);
-      
-      const onePlusRate = new BigNumber(1).plus(ratePerPeriod);
-      finalAmount = principal.multipliedBy(onePlusRate.exponentiatedBy(numberOfPeriods));
+
+      // Check if numberOfPeriods is an integer or close to one
+      const roundedPeriods = numberOfPeriods.integerValue(BigNumber.ROUND_HALF_UP);
+      const difference = numberOfPeriods.minus(roundedPeriods).abs();
+
+      if (difference.isLessThan(0.0001)) {
+        // Close enough to integer, use regular exponentiation
+        const onePlusRate = new BigNumber(1).plus(ratePerPeriod);
+        finalAmount = principal.multipliedBy(onePlusRate.pow(roundedPeriods));
+      } else {
+        // For non-integer periods, use logarithmic approach
+        // A = P * (1 + r/n)^(nt) = P * exp(nt * ln(1 + r/n))
+        const onePlusRate = new BigNumber(1).plus(ratePerPeriod);
+        // ln(1+x) ≈ x for small x, or use series expansion
+        let lnOnePlusRate: BigNumber;
+        if (ratePerPeriod.isLessThan(0.1)) {
+          // Use Taylor series: ln(1+x) ≈ x - x²/2 + x³/3 - ...
+          const x = ratePerPeriod;
+          const x2 = x.pow(2);
+          const x3 = x.pow(3);
+          lnOnePlusRate = x.minus(x2.dividedBy(2)).plus(x3.dividedBy(3));
+        } else {
+          // For larger rates, use built-in Math.log
+          lnOnePlusRate = new BigNumber(Math.log(onePlusRate.toNumber()));
+        }
+
+        const exponent = numberOfPeriods.multipliedBy(lnOnePlusRate);
+        // Use exp approximation: e^x ≈ (1 + x/n)^n
+        const n = 10000;
+        const base = new BigNumber(1).plus(exponent.dividedBy(n));
+        finalAmount = principal.multipliedBy(base.pow(n));
+      }
     }
-    
+
     // Interest = Final Amount - Principal
     const interest = finalAmount.minus(principal);
-    
+
     // Round to avoid floating point precision issues
     return interest.decimalPlaces(18, BigNumber.ROUND_HALF_UP);
-    
   } catch (error) {
     throw new InterestCalculationError(
       principal.toString(),
@@ -123,7 +152,7 @@ export function calculateCompoundInterest(
 
 /**
  * Calculate the total amount (principal + compound interest) owed.
- * 
+ *
  * @param principal - The principal amount
  * @param rate - Annual interest rate in basis points
  * @param timeInSeconds - Time period in seconds
@@ -143,7 +172,7 @@ export function calculateCompoundInterestTotal(
 /**
  * Calculate compound interest with continuous accrual from a starting balance.
  * This is useful for calculating interest on a loan that already has accrued interest.
- * 
+ *
  * @param currentBalance - Current balance (principal + previously accrued interest)
  * @param rate - Annual interest rate in basis points
  * @param timeInSeconds - Time period since last interest calculation
@@ -161,9 +190,9 @@ export function calculateAccruedInterest(
 
 /**
  * Calculate the effective annual rate (EAR) from a nominal rate and compounding frequency.
- * 
+ *
  * Formula: EAR = (1 + r/n)^n - 1
- * 
+ *
  * @param nominalRate - Nominal annual interest rate in basis points
  * @param compoundingFrequency - How often interest compounds per year
  * @returns The effective annual rate in basis points
@@ -176,9 +205,9 @@ export function calculateEffectiveAnnualRate(
     if (nominalRate.isZero()) {
       return new BigNumber("0");
     }
-    
+
     const rateDecimal = nominalRate.dividedBy(10000);
-    
+
     if (compoundingFrequency === CompoundingFrequency.CONTINUOUS) {
       // EAR = e^r - 1, approximated with very high frequency
       const approximateFrequency = 8760 * 24;
@@ -193,7 +222,6 @@ export function calculateEffectiveAnnualRate(
       const effectiveRate = onePlusRate.exponentiatedBy(compoundingFrequency).minus(1);
       return effectiveRate.multipliedBy(10000).decimalPlaces(2, BigNumber.ROUND_HALF_UP);
     }
-    
   } catch (error) {
     throw new InterestCalculationError(
       "unknown",
@@ -206,30 +234,27 @@ export function calculateEffectiveAnnualRate(
 
 /**
  * Calculate the time required for an investment to double with compound interest.
- * 
+ *
  * Formula: t = ln(2) / (n * ln(1 + r/n))
- * 
+ *
  * @param rate - Annual interest rate in basis points
  * @param compoundingFrequency - How often interest compounds per year
  * @returns The time in seconds required to double the investment
  */
-export function calculateDoublingTime(
-  rate: BigNumber,
-  compoundingFrequency: CompoundingFrequency
-): number {
+export function calculateDoublingTime(rate: BigNumber, compoundingFrequency: CompoundingFrequency): number {
   try {
     if (rate.isZero()) {
       return Infinity;
     }
-    
+
     const rateDecimal = rate.dividedBy(10000);
     const ratePerPeriod = rateDecimal.dividedBy(compoundingFrequency);
-    
+
     // t = ln(2) / (n * ln(1 + r/n))
     // Using approximation: ln(1+x) ≈ x for small x
-    const ln2 = 0.693147180559945309417; // Natural log of 2
+    const ln2 = new BigNumber("0.693147180559945309417"); // Natural log of 2
     const onePlusRate = new BigNumber(1).plus(ratePerPeriod);
-    
+
     // For small rates, ln(1+x) ≈ x, but for larger rates we need a better approximation
     // We'll use the series expansion: ln(1+x) ≈ x - x²/2 + x³/3 - ...
     let lnOnePlusRate: number;
@@ -240,12 +265,11 @@ export function calculateDoublingTime(
       // Use JavaScript's Math.log for larger rates
       lnOnePlusRate = Math.log(onePlusRate.toNumber());
     }
-    
-    const timeInYears = ln2 / (compoundingFrequency * lnOnePlusRate);
-    const timeInSeconds = timeInYears * 365.25 * 24 * 60 * 60;
-    
-    return Math.round(timeInSeconds);
-    
+
+    const timeInYears = ln2.dividedBy(new BigNumber(compoundingFrequency).multipliedBy(lnOnePlusRate));
+    const timeInSeconds = timeInYears.multipliedBy(365.25 * 24 * 60 * 60);
+
+    return Math.round(timeInSeconds.toNumber());
   } catch (error) {
     throw new InterestCalculationError(
       "unknown",

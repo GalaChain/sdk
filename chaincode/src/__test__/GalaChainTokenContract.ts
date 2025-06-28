@@ -18,9 +18,11 @@ import {
   BatchFillTokenSwapDto,
   BatchMintTokenDto,
   BurnTokensDto,
+  CancelLendingOfferDto,
   CleanTokenSwapsDto,
   CleanTokenSwapsResponse,
   CloseLoanDto,
+  CreateLendingOfferDto,
   CreateTokenClassDto,
   CreateTokenSaleDto,
   CreateVestingTokenDto,
@@ -45,6 +47,7 @@ import {
   FetchFeeThresholdUsesResDto,
   FetchFeeThresholdUsesWithPaginationDto,
   FetchFeeThresholdUsesWithPaginationResponse,
+  FetchLendingOffersDto,
   FetchLoanOffersDto,
   FetchLoansDto,
   FetchMintRequestsDto,
@@ -65,8 +68,10 @@ import {
   FulfillTokenSaleDto,
   FullAllowanceCheckDto,
   FullAllowanceCheckResDto,
+  FungibleLendingOffer,
   GrantAllowanceDto,
   HighThroughputMintTokenDto,
+  LendingOfferResDto,
   Loan,
   LoanOffer,
   LoanOfferResDto,
@@ -113,6 +118,8 @@ import {
   UnsignedEvaluate,
   batchMintToken,
   burnTokens,
+  cancelLendingOffer,
+  createLendingOffer,
   createTokenClass,
   createTokenSale,
   createVestingToken,
@@ -127,6 +134,7 @@ import {
   fetchFeeSchedule,
   fetchFeeThresholdUses,
   fetchFeeThresholdUsesWithPagination,
+  fetchLendingOffers,
   fetchTokenClasses,
   fetchTokenClassesWithPagination,
   fetchTokenSaleById,
@@ -773,6 +781,58 @@ export default class GalaChainTokenContract extends GalaContract {
     return closeLoan(ctx, {
       loanKey: dto.loan,
       closingStatus: dto.status
+    });
+  }
+
+  @Submit({
+    in: CreateLendingOfferDto,
+    out: { arrayOf: LendingOfferResDto }
+  })
+  public async CreateLendingOffer(
+    ctx: GalaChainContext,
+    dto: CreateLendingOfferDto
+  ): Promise<LendingOfferResDto[]> {
+    return createLendingOffer(ctx, {
+      lender: dto.lender ?? ctx.callingUser,
+      principalToken: dto.principalToken,
+      principalQuantity: dto.principalQuantity,
+      interestRate: dto.interestRate,
+      duration: dto.duration,
+      collateralToken: dto.collateralToken,
+      collateralRatio: dto.collateralRatio,
+      borrowers: dto.borrowers,
+      uses: dto.uses,
+      expires: dto.expires ?? CreateLendingOfferDto.DEFAULT_EXPIRES
+    });
+  }
+
+  @UnsignedEvaluate({
+    in: FetchLendingOffersDto,
+    out: { arrayOf: FungibleLendingOffer }
+  })
+  public async FetchLendingOffers(
+    ctx: GalaChainContext,
+    dto: FetchLendingOffersDto
+  ): Promise<FungibleLendingOffer[]> {
+    return fetchLendingOffers(ctx, {
+      lender: dto.lender,
+      principalToken: dto.principalToken,
+      borrower: dto.borrower,
+      status: dto.status
+    });
+  }
+
+  @Submit({
+    in: CancelLendingOfferDto,
+    out: FungibleLendingOffer
+  })
+  public async CancelLendingOffer(
+    ctx: GalaChainContext,
+    dto: CancelLendingOfferDto
+  ): Promise<FungibleLendingOffer> {
+    return cancelLendingOffer(ctx, {
+      offerKey: dto.offerKey,
+      callingUser: ctx.callingUser
     });
   }
 

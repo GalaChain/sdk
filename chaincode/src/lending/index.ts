@@ -13,6 +13,12 @@
  * limitations under the License.
  */
 
-export * from "./simpleInterest";
-export * from "./compoundInterest";
-export * from "./accrualEngine";
+// Core lending operations
+export * from "./core/createLendingOffer";
+export * from "./core/fetchLendingOffers";
+export * from "./core/cancelLendingOffer";
+
+// Interest calculation utilities
+export * from "./interest/simpleInterest";
+export * from "./interest/compoundInterest";
+export * from "./interest/accrualEngine";

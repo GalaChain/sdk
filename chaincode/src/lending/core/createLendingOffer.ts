@@ -23,11 +23,13 @@ import {
   LendingOfferLenderCallerMismatchError,
   LendingOfferResDto,
   LendingStatus,
+  TokenClass,
   TokenClassKey,
+  TokenInstanceQueryKey,
   asValidUserAlias
 } from "@gala-chain/api";
 import { BigNumber } from "bignumber.js";
-import { instanceToInstance, plainToInstance } from "class-transformer";
+import { plainToInstance } from "class-transformer";
 
 import { grantAllowance } from "../../allowances";
 import { fetchBalances } from "../../balances";
@@ -49,14 +51,14 @@ export interface CreateLendingOfferParams {
 
 /**
  * Create a new fungible token lending offer.
- * 
+ *
  * This function:
  * 1. Validates the lender has sufficient principal tokens
  * 2. Validates lending parameters (rates, duration, etc.)
  * 3. Locks the principal tokens for the offer
  * 4. Creates lending offer(s) for specific borrowers or open market
  * 5. Grants allowances for collateral management
- * 
+ *
  * @param ctx - GalaChain context for blockchain operations
  * @param params - Lending offer creation parameters
  * @returns Array of created lending offers with their lender tracking objects
@@ -106,7 +108,7 @@ export async function createLendingOffer(
   if (Array.isArray(borrowers) && borrowers.length > 0) {
     // Create specific offers for each borrower (P2P lending)
     targetUsers = borrowers;
-    
+
     for (let i = 0; i < borrowers.length; i++) {
       const offer = createOfferObject({
         lender,
@@ -122,7 +124,7 @@ export async function createLendingOffer(
         id: i,
         created: ctx.txUnixTime
       });
-      
+
       offers.push(offer);
     }
   } else {
@@ -140,26 +142,36 @@ export async function createLendingOffer(
       id: 0,
       created: ctx.txUnixTime
     });
-    
+
     offers.push(offer);
   }
 
   // Grant allowances for principal token locking
-  const allowanceQuantities = targetUsers.length > 0 
-    ? targetUsers.map(user => plainToInstance(GrantAllowanceQuantity, {
-        user,
-        quantity: new BigNumber("1") // Number of offers that can use this allowance
-      }))
-    : [plainToInstance(GrantAllowanceQuantity, {
-        user: lender, // Self-allowance for open market offers
-        quantity: uses
-      })];
+  const allowanceQuantities =
+    targetUsers.length > 0
+      ? targetUsers.map((user) =>
+          plainToInstance(GrantAllowanceQuantity, {
+            user,
+            quantity: new BigNumber("1") // Number of offers that can use this allowance
+          })
+        )
+      : [
+          plainToInstance(GrantAllowanceQuantity, {
+            user: lender, // Self-allowance for open market offers
+            quantity: uses
+          })
+        ];
+
+  // Create TokenInstanceQueryKey for fungible token
+  const tokenInstanceKey = new TokenInstanceQueryKey();
+  tokenInstanceKey.collection = principalToken.collection;
+  tokenInstanceKey.category = principalToken.category;
+  tokenInstanceKey.type = principalToken.type;
+  tokenInstanceKey.additionalKey = principalToken.additionalKey;
+  tokenInstanceKey.instance = new BigNumber("0"); // Fungible token instance
 
   await grantAllowance(ctx, {
-    tokenInstance: {
-      ...principalToken,
-      instance: new BigNumber("0") // Fungible token instance
-    },
+    tokenInstance: tokenInstanceKey,
     allowanceType: AllowanceType.Lock,
     quantities: allowanceQuantities,
     uses: uses.multipliedBy(targetUsers.length || 1),
@@ -187,7 +199,7 @@ export async function createLendingOffer(
     const responseDto = new LendingOfferResDto();
     responseDto.offer = offer;
     responseDto.lender = lenderTracker;
-    
+
     results.push(responseDto);
   }
 
@@ -195,7 +207,7 @@ export async function createLendingOffer(
   await Promise.all(chainWrites);
 
   ctx.logger.info(`Created ${offers.length} lending offer(s) for lender ${lender}`);
-  
+
   return results;
 }
 
@@ -217,7 +229,7 @@ function createOfferObject(params: {
   created: number;
 }): FungibleLendingOffer {
   const offer = new FungibleLendingOffer();
-  
+
   offer.principalToken = params.principalToken;
   offer.principalQuantity = params.principalQuantity;
   offer.lender = params.lender;
@@ -232,7 +244,7 @@ function createOfferObject(params: {
   offer.uses = params.uses;
   offer.usesSpent = new BigNumber("0");
   offer.expires = params.expires;
-  
+
   return offer;
 }
 
@@ -249,14 +261,7 @@ async function validateLendingParameters(params: {
   uses: BigNumber;
   expires: number;
 }): Promise<void> {
-  const {
-    principalQuantity,
-    interestRate,
-    duration,
-    collateralRatio,
-    uses,
-    expires
-  } = params;
+  const { principalQuantity, interestRate, duration, collateralRatio, uses, expires } = params;
 
   // Validate principal quantity
   if (principalQuantity.isLessThanOrEqualTo(0)) {
@@ -269,11 +274,7 @@ async function validateLendingParameters(params: {
 
   // Validate interest rate (allow zero for 0% loans)
   if (interestRate.isNegative()) {
-    throw new InvalidLendingParametersError(
-      "interestRate",
-      interestRate.toString(),
-      "Must be non-negative"
-    );
+    throw new InvalidLendingParametersError("interestRate", interestRate.toString(), "Must be non-negative");
   }
 
   // Validate duration
@@ -296,11 +297,7 @@ async function validateLendingParameters(params: {
 
   // Validate uses
   if (uses.isLessThanOrEqualTo(0) || !uses.isInteger()) {
-    throw new InvalidLendingParametersError(
-      "uses",
-      uses.toString(),
-      "Must be a positive integer"
-    );
+    throw new InvalidLendingParametersError("uses", uses.toString(), "Must be a positive integer");
   }
 
   // Validate expiration
@@ -366,7 +363,7 @@ async function validateLenderBalance(
 
   // For fungible tokens, sum all balances of this token class
   const totalBalance = balances.reduce(
-    (sum, balance) => sum.plus(balance.quantity),
+    (sum, balance) => sum.plus(balance.getQuantityTotal()),
     new BigNumber("0")
   );
 
@@ -389,16 +386,13 @@ async function validateTokenClasses(
   collateralToken: TokenClassKey
 ): Promise<void> {
   try {
-    // Import TokenClass from api to check token class properties
-    const { TokenClass } = await import("@gala-chain/api");
-    
     // Check principal token class
     const principalTokenClass = await getObjectByKey(
-      ctx, 
-      TokenClass, 
+      ctx,
+      TokenClass,
       TokenClass.buildTokenClassCompositeKey(principalToken)
     );
-    
+
     if (principalTokenClass.isNonFungible) {
       throw new InvalidTokenClassError(
         principalToken.toStringKey(),
@@ -413,7 +407,7 @@ async function validateTokenClasses(
       TokenClass,
       TokenClass.buildTokenClassCompositeKey(collateralToken)
     );
-    
+
     if (collateralTokenClass.isNonFungible) {
       throw new InvalidTokenClassError(
         collateralToken.toStringKey(),
@@ -421,12 +415,11 @@ async function validateTokenClasses(
         "Collateral token must be fungible (isNonFungible = false)"
       );
     }
-
   } catch (error) {
     if (error instanceof InvalidTokenClassError) {
       throw error;
     }
-    
+
     // If token class not found or other error
     throw new InvalidTokenClassError(
       "unknown",

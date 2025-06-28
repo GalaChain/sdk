@@ -12,12 +12,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-import {
-  FungibleLendingOffer,
-  LendingLender,
-  LendingStatus,
-  TokenClassKey
-} from "@gala-chain/api";
+import { FungibleLendingOffer, LendingLender, LendingStatus, TokenClassKey } from "@gala-chain/api";
 import { BigNumber } from "bignumber.js";
 
 import { GalaChainContext } from "../../types";
@@ -36,12 +31,12 @@ export interface FetchLendingOffersParams {
 
 /**
  * Fetch lending offers with optional filtering parameters.
- * 
+ *
  * This function supports multiple query strategies:
  * 1. Query by lender (most efficient)
  * 2. Query by token class properties
  * 3. Full scan with filtering (least efficient)
- * 
+ *
  * @param ctx - GalaChain context for blockchain operations
  * @param params - Filtering parameters for the query
  * @returns Array of lending offers matching the criteria
@@ -64,11 +59,8 @@ export async function fetchLendingOffers(
   if (lender) {
     // Most efficient: Query by lender using LendingLender index
     offers = await fetchOffersByLender(ctx, lender, status);
-  } else if (principalToken) {
-    // Moderately efficient: Query by principal token
-    offers = await fetchOffersByPrincipalToken(ctx, principalToken);
   } else {
-    // Least efficient: Full scan
+    // For now, use full scan for simplicity (TODO: optimize with proper indexing)
     offers = await fetchAllOffers(ctx);
   }
 
@@ -94,7 +86,7 @@ async function fetchOffersByLender(
 ): Promise<FungibleLendingOffer[]> {
   // Build query for LendingLender index
   const lenderQuery: string[] = [lender];
-  
+
   if (status !== undefined) {
     lenderQuery.push(status.toString());
   }
@@ -108,9 +100,7 @@ async function fetchOffersByLender(
   );
 
   // Fetch the actual offers
-  const offerPromises = lenders.map(lender => 
-    getObjectByKey(ctx, FungibleLendingOffer, lender.offer)
-  );
+  const offerPromises = lenders.map((lender) => getObjectByKey(ctx, FungibleLendingOffer, lender.offer));
 
   return Promise.all(offerPromises);
 }
@@ -142,12 +132,7 @@ async function fetchOffersByPrincipalToken(
  * Fetch all offers (full scan - use cautiously).
  */
 async function fetchAllOffers(ctx: GalaChainContext): Promise<FungibleLendingOffer[]> {
-  return getObjectsByPartialCompositeKey(
-    ctx,
-    FungibleLendingOffer.INDEX_KEY,
-    [],
-    FungibleLendingOffer
-  );
+  return getObjectsByPartialCompositeKey(ctx, FungibleLendingOffer.INDEX_KEY, [], FungibleLendingOffer);
 }
 
 /**
@@ -165,7 +150,7 @@ function filterOffers(
     maxDuration?: number;
   }
 ): FungibleLendingOffer[] {
-  return offers.filter(offer => {
+  return offers.filter((offer) => {
     // Principal token filter
     if (filters.principalToken && !tokenClassMatches(offer.principalToken, filters.principalToken)) {
       return false;
@@ -176,8 +161,8 @@ function filterOffers(
       return false;
     }
 
-    // Borrower filter (for specific borrower offers)
-    if (filters.borrower && offer.borrower && offer.borrower !== filters.borrower) {
+    // Borrower filter (only offers specifically for this borrower)
+    if (filters.borrower && offer.borrower !== filters.borrower) {
       return false;
     }
 
@@ -225,7 +210,7 @@ export async function fetchActiveLendingOffers(
   filters: FetchLendingOffersParams = {}
 ): Promise<FungibleLendingOffer[]> {
   const currentTime = ctx.txUnixTime;
-  
+
   // Get all offers matching basic filters
   const offers = await fetchLendingOffers(ctx, {
     ...filters,
@@ -233,7 +218,7 @@ export async function fetchActiveLendingOffers(
   });
 
   // Filter out expired offers and those with no remaining uses
-  return offers.filter(offer => {
+  return offers.filter((offer) => {
     // Check expiration
     if (offer.expires > 0 && offer.expires <= currentTime) {
       return false;
@@ -255,7 +240,7 @@ export async function fetchActiveLendingOffers(
 export async function fetchOffersForBorrower(
   ctx: GalaChainContext,
   borrower: string,
-  filters: Omit<FetchLendingOffersParams, 'borrower'> = {}
+  filters: Omit<FetchLendingOffersParams, "borrower"> = {}
 ): Promise<FungibleLendingOffer[]> {
   // Get open market offers
   const openOffers = await fetchActiveLendingOffers(ctx, {
@@ -271,8 +256,8 @@ export async function fetchOffersForBorrower(
 
   // Combine and deduplicate
   const allOffers = [...openOffers, ...specificOffers];
-  const uniqueOffers = allOffers.filter((offer, index) => 
-    allOffers.findIndex(o => o.getCompositeKey() === offer.getCompositeKey()) === index
+  const uniqueOffers = allOffers.filter(
+    (offer, index) => allOffers.findIndex((o) => o.getCompositeKey() === offer.getCompositeKey()) === index
   );
 
   return uniqueOffers;
@@ -288,12 +273,12 @@ export async function fetchOffersByBestRates(
   limit?: number
 ): Promise<FungibleLendingOffer[]> {
   const offers = await fetchActiveLendingOffers(ctx, filters);
-  
+
   // Sort by interest rate (ascending - best rates first)
   const sortedOffers = offers.sort((a, b) => {
     const comparison = a.interestRate.comparedTo(b.interestRate);
     if (comparison !== 0) return comparison;
-    
+
     // Secondary sort by duration (shorter first)
     return a.duration - b.duration;
   });
@@ -318,7 +303,7 @@ export async function getLendingMarketStats(
   averageDuration: number;
 }> {
   const offers = await fetchActiveLendingOffers(ctx, { principalToken });
-  
+
   if (offers.length === 0) {
     return {
       totalOffers: 0,
@@ -338,14 +323,16 @@ export async function getLendingMarketStats(
   );
 
   // Interest rate statistics
-  const interestRates = offers.map(offer => offer.interestRate).sort((a, b) => a.comparedTo(b));
-  const averageInterestRate = interestRates.reduce((sum, rate) => sum.plus(rate), new BigNumber("0"))
+  const interestRates = offers.map((offer) => offer.interestRate).sort((a, b) => a.comparedTo(b));
+  const averageInterestRate = interestRates
+    .reduce((sum, rate) => sum.plus(rate), new BigNumber("0"))
     .dividedBy(interestRates.length);
-  
+
   const medianIndex = Math.floor(interestRates.length / 2);
-  const medianInterestRate = interestRates.length % 2 === 0
-    ? interestRates[medianIndex - 1].plus(interestRates[medianIndex]).dividedBy(2)
-    : interestRates[medianIndex];
+  const medianInterestRate =
+    interestRates.length % 2 === 0
+      ? interestRates[medianIndex - 1].plus(interestRates[medianIndex]).dividedBy(2)
+      : interestRates[medianIndex];
 
   // Duration statistics
   const averageDuration = offers.reduce((sum, offer) => sum + offer.duration, 0) / offers.length;

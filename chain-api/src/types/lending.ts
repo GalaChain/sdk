@@ -14,14 +14,7 @@
  */
 import BigNumber from "bignumber.js";
 import { Exclude, Type } from "class-transformer";
-import {
-  IsDefined,
-  IsInt,
-  IsNotEmpty,
-  IsOptional,
-  Min,
-  ValidateNested
-} from "class-validator";
+import { IsDefined, IsInt, IsNotEmpty, IsOptional, Min, ValidateNested } from "class-validator";
 import { JSONSchema } from "class-validator-jsonschema";
 
 import { ChainKey } from "../utils";
@@ -263,8 +256,7 @@ export class FungibleLoan extends ChainObject {
 }
 
 @JSONSchema({
-  description:
-    "Agreement record linking lending offers to active loans for tracking and audit purposes."
+  description: "Agreement record linking lending offers to active loans for tracking and audit purposes."
 })
 export class LendingAgreement extends ChainObject {
   @ChainKey({ position: 0 })
@@ -294,8 +286,7 @@ export class LendingAgreement extends ChainObject {
 }
 
 @JSONSchema({
-  description:
-    "Lender tracking object for efficient queries of lending offers by lender identity."
+  description: "Lender tracking object for efficient queries of lending offers by lender identity."
 })
 export class LendingLender extends ChainObject {
   @JSONSchema({ description: "Client identity id for Lender that made the referenced offer." })

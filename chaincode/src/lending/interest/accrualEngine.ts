@@ -17,7 +17,12 @@ import { BigNumber } from "bignumber.js";
 
 import { GalaChainContext } from "../../types";
 import { putChainObject } from "../../utils";
-import { calculateAccruedInterest, CompoundingFrequency } from "./compoundInterest";
+import {
+  CompoundingFrequency,
+  calculateAccruedInterest,
+  calculateEffectiveAnnualRate
+} from "./compoundInterest";
+import { calculateSimpleInterest } from "./simpleInterest";
 
 /**
  * Configuration for interest accrual calculations.
@@ -25,13 +30,13 @@ import { calculateAccruedInterest, CompoundingFrequency } from "./compoundIntere
 export interface AccrualConfig {
   /** Default compounding frequency for new loans */
   defaultCompoundingFrequency: CompoundingFrequency;
-  
+
   /** Maximum time between interest updates (in seconds) before forced update */
   maxAccrualInterval: number;
-  
+
   /** Minimum interest amount worth updating (to avoid dust) */
   minAccrualThreshold: BigNumber;
-  
+
   /** Whether to use compound or simple interest */
   useCompoundInterest: boolean;
 }
@@ -52,16 +57,16 @@ export const DEFAULT_ACCRUAL_CONFIG: AccrualConfig = {
 export interface AccrualResult {
   /** Updated loan object with new interest */
   loan: FungibleLoan;
-  
+
   /** Amount of interest accrued in this update */
   interestAccrued: BigNumber;
-  
+
   /** New total debt (principal + all accrued interest) */
   totalDebt: BigNumber;
-  
+
   /** Time elapsed since last accrual (in seconds) */
   timeElapsed: number;
-  
+
   /** Whether the loan was actually updated on chain */
   wasUpdated: boolean;
 }
@@ -70,13 +75,13 @@ export interface AccrualResult {
  * Update interest accrual for a loan based on elapsed time since last update.
  * This function calculates and applies interest that has accrued since the last
  * interest calculation, updating the loan object accordingly.
- * 
+ *
  * @param ctx - GalaChain context for blockchain operations
  * @param loan - The loan to update interest for
  * @param currentTime - Current timestamp (defaults to ctx.txUnixTime)
  * @param config - Accrual configuration (defaults to DEFAULT_ACCRUAL_CONFIG)
  * @returns AccrualResult with updated loan and accrual details
- * 
+ *
  * @example
  * // Update interest for a loan
  * const result = await updateLoanInterest(ctx, loan);
@@ -91,18 +96,18 @@ export async function updateLoanInterest(
   try {
     const now = currentTime ?? ctx.txUnixTime;
     const timeElapsed = now - loan.lastInterestUpdate;
-    
+
     // Validate inputs
     if (timeElapsed < 0) {
       throw new Error("Current time cannot be before last interest update");
     }
-    
+
     // Calculate current balance (principal + previously accrued interest)
     const currentBalance = loan.principalAmount.plus(loan.interestAccrued);
-    
+
     // Calculate new interest for the elapsed time
     let newInterest: BigNumber;
-    
+
     if (config.useCompoundInterest) {
       // Use compound interest calculation
       newInterest = calculateAccruedInterest(
@@ -113,31 +118,29 @@ export async function updateLoanInterest(
       );
     } else {
       // Use simple interest on current balance
-      const { calculateSimpleInterest } = await import("./simpleInterest");
       newInterest = calculateSimpleInterest(currentBalance, loan.interestRate, timeElapsed);
     }
-    
+
     // Check if the interest is significant enough to update
-    const shouldUpdate = 
-      newInterest.isGreaterThan(config.minAccrualThreshold) ||
-      timeElapsed > config.maxAccrualInterval;
-    
+    const shouldUpdate =
+      newInterest.isGreaterThan(config.minAccrualThreshold) || timeElapsed > config.maxAccrualInterval;
+
     let updatedLoan = loan;
     let wasUpdated = false;
-    
+
     if (shouldUpdate) {
       // Update the loan with new interest
-      updatedLoan = { ...loan };
+      updatedLoan = Object.assign(Object.create(Object.getPrototypeOf(loan)), loan);
       updatedLoan.interestAccrued = loan.interestAccrued.plus(newInterest);
       updatedLoan.lastInterestUpdate = now;
-      
+
       // Save updated loan to chain
       await putChainObject(ctx, updatedLoan);
       wasUpdated = true;
     }
-    
+
     const totalDebt = updatedLoan.principalAmount.plus(updatedLoan.interestAccrued);
-    
+
     return {
       loan: updatedLoan,
       interestAccrued: newInterest,
@@ -145,7 +148,6 @@ export async function updateLoanInterest(
       timeElapsed,
       wasUpdated
     };
-    
   } catch (error) {
     throw new InterestCalculationError(
       loan.principalAmount.toString(),
@@ -159,7 +161,7 @@ export async function updateLoanInterest(
 /**
  * Calculate the current total debt for a loan without updating it on chain.
  * This is useful for read-only operations like health factor calculations.
- * 
+ *
  * @param loan - The loan to calculate debt for
  * @param currentTime - Current timestamp for calculation
  * @param config - Accrual configuration
@@ -172,15 +174,15 @@ export function calculateCurrentDebt(
 ): BigNumber {
   try {
     const timeElapsed = currentTime - loan.lastInterestUpdate;
-    
+
     if (timeElapsed <= 0) {
       return loan.principalAmount.plus(loan.interestAccrued);
     }
-    
+
     const currentBalance = loan.principalAmount.plus(loan.interestAccrued);
-    
+
     let additionalInterest: BigNumber;
-    
+
     if (config.useCompoundInterest) {
       additionalInterest = calculateAccruedInterest(
         currentBalance,
@@ -189,12 +191,10 @@ export function calculateCurrentDebt(
         config.defaultCompoundingFrequency
       );
     } else {
-      const { calculateSimpleInterest } = require("./simpleInterest");
       additionalInterest = calculateSimpleInterest(currentBalance, loan.interestRate, timeElapsed);
     }
-    
+
     return currentBalance.plus(additionalInterest);
-    
   } catch (error) {
     throw new InterestCalculationError(
       loan.principalAmount.toString(),
@@ -208,7 +208,7 @@ export function calculateCurrentDebt(
 /**
  * Calculate interest that would accrue over a future time period.
  * This is useful for estimating future payments or loan costs.
- * 
+ *
  * @param loan - The loan to project interest for
  * @param futureSeconds - Number of seconds in the future to project
  * @param config - Accrual configuration
@@ -222,9 +222,9 @@ export function projectFutureInterest(
   if (futureSeconds <= 0) {
     return new BigNumber("0");
   }
-  
+
   const currentBalance = loan.principalAmount.plus(loan.interestAccrued);
-  
+
   if (config.useCompoundInterest) {
     return calculateAccruedInterest(
       currentBalance,
@@ -233,7 +233,6 @@ export function projectFutureInterest(
       config.defaultCompoundingFrequency
     );
   } else {
-    const { calculateSimpleInterest } = require("./simpleInterest");
     return calculateSimpleInterest(currentBalance, loan.interestRate, futureSeconds);
   }
 }
@@ -241,7 +240,7 @@ export function projectFutureInterest(
 /**
  * Calculate the daily interest rate for a loan.
  * This is useful for UI displays and user education.
- * 
+ *
  * @param annualRateBasisPoints - Annual interest rate in basis points
  * @param compoundingFrequency - How often interest compounds
  * @returns Daily interest rate in basis points
@@ -253,22 +252,21 @@ export function calculateDailyRate(
   if (compoundingFrequency === CompoundingFrequency.DAILY) {
     return annualRateBasisPoints.dividedBy(365);
   }
-  
+
   // For other frequencies, calculate effective daily rate
-  const { calculateEffectiveAnnualRate } = require("./compoundInterest");
   const effectiveAnnualRate = calculateEffectiveAnnualRate(annualRateBasisPoints, compoundingFrequency);
-  
+
   // Convert effective annual rate to daily rate
   const dailyMultiplier = new BigNumber(1).plus(effectiveAnnualRate.dividedBy(10000));
   const dailyRate = dailyMultiplier.exponentiatedBy(new BigNumber(1).dividedBy(365)).minus(1);
-  
+
   return dailyRate.multipliedBy(10000).decimalPlaces(4, BigNumber.ROUND_HALF_UP);
 }
 
 /**
  * Batch update interest for multiple loans efficiently.
  * This is useful for periodic maintenance operations.
- * 
+ *
  * @param ctx - GalaChain context
  * @param loans - Array of loans to update
  * @param currentTime - Current timestamp
@@ -282,15 +280,19 @@ export async function batchUpdateInterest(
   config: AccrualConfig = DEFAULT_ACCRUAL_CONFIG
 ): Promise<AccrualResult[]> {
   const results: AccrualResult[] = [];
-  
+
   for (const loan of loans) {
     try {
       const result = await updateLoanInterest(ctx, loan, currentTime, config);
       results.push(result);
     } catch (error) {
       // Log error but continue with other loans
-      ctx.logger.error(`Failed to update interest for loan ${loan.getCompositeKey()}:`, error);
-      
+      ctx.logger.error(
+        `Failed to update interest for loan ${loan.getCompositeKey()}: ${
+          error instanceof Error ? error.message : error
+        }`
+      );
+
       // Create a failed result
       results.push({
         loan,
@@ -301,6 +303,6 @@ export async function batchUpdateInterest(
       });
     }
   }
-  
+
   return results;
 }

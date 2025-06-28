@@ -30,7 +30,7 @@ export interface CancelLendingOfferParams {
 
 /**
  * Cancel an existing lending offer.
- * 
+ *
  * This function:
  * 1. Retrieves the lending offer from the blockchain
  * 2. Validates the calling user is authorized to cancel
@@ -38,7 +38,7 @@ export interface CancelLendingOfferParams {
  * 4. Updates the offer status to cancelled
  * 5. Updates associated lender tracking objects
  * 6. Releases locked principal tokens (via allowance system)
- * 
+ *
  * @param ctx - GalaChain context for blockchain operations
  * @param params - Cancellation parameters
  * @returns The cancelled lending offer
@@ -49,32 +49,29 @@ export async function cancelLendingOffer(
 ): Promise<FungibleLendingOffer> {
   // Retrieve the lending offer
   const offer = await getObjectByKey(ctx, FungibleLendingOffer, offerKey);
-  
+
   // Validate authorization - only lender can cancel their offer
   if (callingUser !== offer.lender) {
-    throw new UnauthorizedLoanOperationError(
-      "cancel offer",
-      callingUser,
-      offerKey,
-      [offer.lender]
-    ).logError(ctx.logger);
+    throw new UnauthorizedLoanOperationError("cancel offer", callingUser, offerKey, [offer.lender]).logError(
+      ctx.logger
+    );
   }
-  
+
   // Validate offer can be cancelled
   validateOfferCanBeCancelled(offer);
-  
+
   // Update offer status
-  const updatedOffer = { ...offer };
+  const updatedOffer = Object.assign(Object.create(Object.getPrototypeOf(offer)), offer);
   updatedOffer.status = LendingStatus.OfferCancelled;
-  
+
   // Update lender tracking objects
   await updateLenderTrackingObjects(ctx, offer, LendingStatus.OfferCancelled);
-  
+
   // Save updated offer
   await putChainObject(ctx, updatedOffer);
-  
+
   ctx.logger.info(`Cancelled lending offer ${offerKey} by user ${callingUser}`);
-  
+
   return updatedOffer;
 }
 
@@ -82,19 +79,12 @@ export async function cancelLendingOffer(
  * Validate that an offer can be cancelled based on its current status.
  */
 function validateOfferCanBeCancelled(offer: FungibleLendingOffer): void {
-  const cancellableStatuses = [
-    LendingStatus.OfferOpen,
-    LendingStatus.OfferExpired
-  ];
-  
+  const cancellableStatuses = [LendingStatus.OfferOpen, LendingStatus.OfferExpired];
+
   if (!cancellableStatuses.includes(offer.status)) {
-    throw new LendingOfferNotAvailableError(
-      offer.status,
-      offer.getCompositeKey(),
-      "system"
-    );
+    throw new LendingOfferNotAvailableError(offer.status, offer.getCompositeKey(), "system");
   }
-  
+
   // Additional check: if offer has been partially used, it can still be cancelled
   // but we should note this in logs for audit purposes
   if (offer.usesSpent.isGreaterThan(0)) {
@@ -110,28 +100,26 @@ async function updateLenderTrackingObjects(
   offer: FungibleLendingOffer,
   newStatus: LendingStatus
 ): Promise<void> {
-  // Query for lender tracking objects by lender and offer
-  const lenderQuery = [offer.lender, offer.status.toString()];
-  
+  // Query for all lender tracking objects by this lender
+  const lenderQuery = [offer.lender];
+
   const lenderObjects = await getObjectsByPartialCompositeKey(
     ctx,
     LendingLender.INDEX_KEY,
     lenderQuery,
     LendingLender
   );
-  
+
   // Filter to find the specific lender objects for this offer
-  const relevantLenders = lenderObjects.filter(lender => 
-    lender.offer === offer.getCompositeKey()
-  );
-  
+  const relevantLenders = lenderObjects.filter((lender) => lender.offer === offer.getCompositeKey());
+
   // Update all relevant lender tracking objects
   const updatePromises = relevantLenders.map(async (lender) => {
-    const updatedLender = { ...lender };
+    const updatedLender = Object.assign(Object.create(Object.getPrototypeOf(lender)), lender);
     updatedLender.status = newStatus;
     await putChainObject(ctx, updatedLender);
   });
-  
+
   await Promise.all(updatePromises);
 }
 
@@ -149,7 +137,7 @@ export async function batchCancelLendingOffers(
 }> {
   const successful: FungibleLendingOffer[] = [];
   const failed: { offerKey: string; error: string }[] = [];
-  
+
   for (const offerKey of offerKeys) {
     try {
       const cancelledOffer = await cancelLendingOffer(ctx, { offerKey, callingUser });
@@ -159,16 +147,16 @@ export async function batchCancelLendingOffers(
         offerKey,
         error: error instanceof Error ? error.message : "Unknown error"
       });
-      
+
       // Log the error but continue with other offers
-      ctx.logger.error(`Failed to cancel offer ${offerKey}:`, error);
+      ctx.logger.error(
+        `Failed to cancel offer ${offerKey}: ${error instanceof Error ? error.message : error}`
+      );
     }
   }
-  
-  ctx.logger.info(
-    `Batch cancellation completed: ${successful.length} successful, ${failed.length} failed`
-  );
-  
+
+  ctx.logger.info(`Batch cancellation completed: ${successful.length} successful, ${failed.length} failed`);
+
   return { successful, failed };
 }
 
@@ -186,27 +174,22 @@ export async function cancelAllOffersForLender(
 }> {
   // Validate authorization
   if (callingUser !== lender) {
-    throw new UnauthorizedLoanOperationError(
-      "cancel all offers",
-      callingUser,
-      "all offers",
-      [lender]
-    );
+    throw new UnauthorizedLoanOperationError("cancel all offers", callingUser, "all offers", [lender]);
   }
-  
+
   // Query for all open offers by this lender
   const lenderQuery = [lender, LendingStatus.OfferOpen.toString()];
-  
+
   const lenderObjects = await getObjectsByPartialCompositeKey(
     ctx,
     LendingLender.INDEX_KEY,
     lenderQuery,
     LendingLender
   );
-  
+
   // Extract offer keys
-  const offerKeys = lenderObjects.map(lender => lender.offer);
-  
+  const offerKeys = lenderObjects.map((lender) => lender.offer);
+
   // Batch cancel all offers
   return batchCancelLendingOffers(ctx, offerKeys, callingUser);
 }
@@ -227,7 +210,7 @@ export async function cancelExpiredOffers(
   let processed = 0;
   let cancelled = 0;
   let errors = 0;
-  
+
   // Get all open offers
   const openOffers = await getObjectsByPartialCompositeKey(
     ctx,
@@ -235,39 +218,38 @@ export async function cancelExpiredOffers(
     [],
     FungibleLendingOffer
   );
-  
+
   // Filter for expired offers
-  const expiredOffers = openOffers.filter(offer => 
-    offer.status === LendingStatus.OfferOpen &&
-    offer.expires > 0 && 
-    offer.expires <= now
+  const expiredOffers = openOffers.filter(
+    (offer) => offer.status === LendingStatus.OfferOpen && offer.expires > 0 && offer.expires <= now
   );
-  
+
   for (const offer of expiredOffers) {
     processed++;
-    
+
     try {
       // Update offer status to expired (not cancelled, to distinguish)
-      const updatedOffer = { ...offer };
+      const updatedOffer = Object.assign(Object.create(Object.getPrototypeOf(offer)), offer);
       updatedOffer.status = LendingStatus.OfferExpired;
-      
+
       // Update lender tracking objects
       await updateLenderTrackingObjects(ctx, offer, LendingStatus.OfferExpired);
-      
+
       // Save updated offer
       await putChainObject(ctx, updatedOffer);
-      
+
       cancelled++;
-      
     } catch (error) {
       errors++;
-      ctx.logger.error(`Failed to expire offer ${offer.getCompositeKey()}:`, error);
+      ctx.logger.error(
+        `Failed to expire offer ${offer.getCompositeKey()}: ${error instanceof Error ? error.message : error}`
+      );
     }
   }
-  
+
   if (cancelled > 0) {
     ctx.logger.info(`Expired ${cancelled} offers out of ${processed} processed`);
   }
-  
+
   return { processed, cancelled, errors };
 }
