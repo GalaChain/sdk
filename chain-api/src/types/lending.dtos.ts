@@ -36,7 +36,13 @@ import {
 } from "../validators";
 import { TokenClassKey } from "./TokenClass";
 import { ChainCallDTO, SubmitCallDTO } from "./dtos";
-import { FungibleLendingOffer, FungibleLoan, LendingAgreement, LendingLender, LendingStatus } from "./lending";
+import {
+  FungibleLendingOffer,
+  FungibleLoan,
+  LendingAgreement,
+  LendingLender,
+  LendingStatus
+} from "./lending";
 
 @JSONSchema({
   description:

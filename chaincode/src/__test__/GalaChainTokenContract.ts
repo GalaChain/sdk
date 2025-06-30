@@ -76,6 +76,8 @@ import {
   HighThroughputMintTokenDto,
   LendingAgreement,
   LendingOfferResDto,
+  LiquidateLoanDto,
+  LiquidationResultDto,
   Loan,
   LoanOffer,
   LoanOfferResDto,
@@ -88,6 +90,8 @@ import {
   RefreshAllowancesDto,
   ReleaseTokenDto,
   RemoveTokenSaleDto,
+  RepayLoanDto,
+  RepaymentResultDto,
   RequestTokenSwapDto,
   TerminateTokenSwapDto,
   TokenAllowance,
@@ -149,6 +153,7 @@ import {
   fulfillTokenSale,
   fullAllowanceCheck,
   grantAllowance,
+  liquidateLoan,
   lockToken,
   lockTokens,
   mintRequestsByTimeRange,
@@ -157,6 +162,7 @@ import {
   refreshAllowances,
   releaseToken,
   removeTokenSale,
+  repayLoan,
   requestMint,
   resolveUserAlias,
   transferToken,
@@ -860,6 +866,47 @@ export default class GalaChainTokenContract extends GalaContract {
     resultDto.agreement = result.agreement;
     resultDto.collateralLocked = result.collateralLocked;
     resultDto.totalDebt = result.totalDebt;
+
+    return resultDto;
+  }
+
+  @Submit({
+    in: RepayLoanDto,
+    out: RepaymentResultDto
+  })
+  public async RepayLoan(ctx: GalaChainContext, dto: RepayLoanDto): Promise<RepaymentResultDto> {
+    const result = await repayLoan(ctx, {
+      loanKey: dto.loanKey,
+      repaymentAmount: dto.repaymentAmount,
+      borrower: ctx.callingUser
+    });
+
+    const resultDto = new RepaymentResultDto();
+    resultDto.loan = result.loan;
+    resultDto.principalRepaid = result.principalRepaid;
+    resultDto.interestRepaid = result.interestRepaid;
+    resultDto.collateralReturned = result.collateralReturned;
+
+    return resultDto;
+  }
+
+  @Submit({
+    in: LiquidateLoanDto,
+    out: LiquidationResultDto
+  })
+  public async LiquidateLoan(ctx: GalaChainContext, dto: LiquidateLoanDto): Promise<LiquidationResultDto> {
+    const result = await liquidateLoan(ctx, {
+      loanKey: dto.loanKey,
+      maxDebtRepayment: dto.maxDebtRepayment,
+      liquidator: ctx.callingUser
+    });
+
+    const resultDto = new LiquidationResultDto();
+    resultDto.loan = result.loan;
+    resultDto.debtRepaid = result.debtRepaid;
+    resultDto.collateralLiquidated = result.collateralLiquidated;
+    resultDto.liquidatorReward = result.liquidatorReward;
+    resultDto.collateralReturned = result.collateralReturned;
 
     return resultDto;
   }

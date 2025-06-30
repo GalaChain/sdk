@@ -320,4 +320,3 @@ export class LendingLender extends ChainObject {
   @Exclude()
   public static OBJECT_TYPE = "LendingLender";
 }
-
