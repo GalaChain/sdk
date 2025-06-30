@@ -212,7 +212,9 @@ export class SwapDto extends ChainCallDTO {
     fee: DexFeePercentageTypes,
     amount: BigNumber,
     zeroForOne: boolean,
-    sqrtPriceLimit: BigNumber
+    sqrtPriceLimit: BigNumber,
+    amountInMaximum?: BigNumber,
+    amountOutMinimum?: BigNumber
   ) {
     super();
     this.token0 = token0;
@@ -221,6 +223,8 @@ export class SwapDto extends ChainCallDTO {
     this.amount = amount;
     this.zeroForOne = zeroForOne;
     this.sqrtPriceLimit = sqrtPriceLimit;
+    this.amountInMaximum = amountInMaximum;
+    this.amountOutMinimum = amountOutMinimum;
   }
 }
 
@@ -740,10 +744,40 @@ export class CollectProtocolFeesDto extends ChainCallDTO {
 
 export class SetProtocolFeeDto extends ChainCallDTO {
   @IsNumber()
+  @Min(0)
+  @Max(1)
   public protocolFee: number;
 
   constructor(protocolFee: number) {
     super();
+    this.protocolFee = protocolFee;
+  }
+}
+
+export class ConfigurePoolDexFeeDto extends ChainCallDTO {
+  @IsNotEmpty()
+  @ValidateNested()
+  @Type(() => TokenClassKey)
+  public token0: TokenClassKey;
+
+  @IsNotEmpty()
+  @ValidateNested()
+  @Type(() => TokenClassKey)
+  public token1: TokenClassKey;
+
+  @EnumProperty(DexFeePercentageTypes)
+  public fee: DexFeePercentageTypes;
+
+  @IsNumber()
+  @Min(0)
+  @Max(1)
+  public protocolFee: number;
+
+  constructor(token0: TokenClassKey, token1: TokenClassKey, fee: DexFeePercentageTypes, protocolFee: number) {
+    super();
+    this.token0 = token0;
+    this.token1 = token1;
+    this.fee = fee;
     this.protocolFee = protocolFee;
   }
 }
@@ -852,6 +886,15 @@ export class CollectProtocolFeesResDto extends ChainCallDTO {
 }
 
 export class SetProtocolFeeResDto extends ChainCallDTO {
+  @IsNumber()
+  public protocolFee: number;
+  constructor(newFee: number) {
+    super();
+    this.protocolFee = newFee;
+  }
+}
+
+export class ConfigurePoolDexFeeResDto extends ChainCallDTO {
   @IsNumber()
   public protocolFee: number;
   constructor(newFee: number) {
