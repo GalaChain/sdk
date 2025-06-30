@@ -13,6 +13,8 @@
  * limitations under the License.
  */
 import {
+  AcceptLendingOfferDto,
+  AcceptLendingOfferResultDto,
   AcceptLoanOfferDto,
   AllowanceType,
   BatchFillTokenSwapDto,
@@ -69,8 +71,10 @@ import {
   FullAllowanceCheckDto,
   FullAllowanceCheckResDto,
   FungibleLendingOffer,
+  FungibleLoan,
   GrantAllowanceDto,
   HighThroughputMintTokenDto,
+  LendingAgreement,
   LendingOfferResDto,
   Loan,
   LoanOffer,
@@ -116,6 +120,7 @@ import {
   GalaTransaction,
   Submit,
   UnsignedEvaluate,
+  acceptLendingOffer,
   batchMintToken,
   burnTokens,
   cancelLendingOffer,
@@ -834,6 +839,29 @@ export default class GalaChainTokenContract extends GalaContract {
       offerKey: dto.offerKey,
       callingUser: ctx.callingUser
     });
+  }
+
+  @Submit({
+    in: AcceptLendingOfferDto,
+    out: AcceptLendingOfferResultDto
+  })
+  public async AcceptLendingOffer(
+    ctx: GalaChainContext,
+    dto: AcceptLendingOfferDto
+  ): Promise<AcceptLendingOfferResultDto> {
+    const result = await acceptLendingOffer(ctx, {
+      offer: dto.offer,
+      borrower: dto.borrower ?? ctx.callingUser,
+      collateralAmount: dto.collateralAmount
+    });
+
+    const resultDto = new AcceptLendingOfferResultDto();
+    resultDto.loan = result.loan;
+    resultDto.agreement = result.agreement;
+    resultDto.collateralLocked = result.collateralLocked;
+    resultDto.totalDebt = result.totalDebt;
+
+    return resultDto;
   }
 
   @Submit({

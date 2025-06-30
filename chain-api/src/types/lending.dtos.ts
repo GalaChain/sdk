@@ -36,7 +36,7 @@ import {
 } from "../validators";
 import { TokenClassKey } from "./TokenClass";
 import { ChainCallDTO, SubmitCallDTO } from "./dtos";
-import { FungibleLendingOffer, FungibleLoan, LendingLender, LendingStatus } from "./lending";
+import { FungibleLendingOffer, FungibleLoan, LendingAgreement, LendingLender, LendingStatus } from "./lending";
 
 @JSONSchema({
   description:
@@ -316,6 +316,39 @@ export class FetchLendingLoansDto extends ChainCallDTO {
   @Type(() => TokenClassKey)
   @IsOptional()
   collateralToken?: TokenClassKey;
+}
+
+@JSONSchema({
+  description: "Result of a successful loan acceptance operation."
+})
+export class AcceptLendingOfferResultDto extends SubmitCallDTO {
+  @JSONSchema({
+    description: "Created loan object."
+  })
+  @ValidateNested()
+  @Type(() => FungibleLoan)
+  loan: FungibleLoan;
+
+  @JSONSchema({
+    description: "Created lending agreement."
+  })
+  @ValidateNested()
+  @Type(() => LendingAgreement)
+  agreement: LendingAgreement;
+
+  @JSONSchema({
+    description: "Amount of collateral tokens locked."
+  })
+  @BigNumberIsPositive()
+  @BigNumberProperty()
+  collateralLocked: BigNumber;
+
+  @JSONSchema({
+    description: "Total debt (principal + accrued interest)."
+  })
+  @BigNumberIsPositive()
+  @BigNumberProperty()
+  totalDebt: BigNumber;
 }
 
 @JSONSchema({

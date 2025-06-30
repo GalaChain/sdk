@@ -17,6 +17,7 @@
 export * from "./core/createLendingOffer";
 export * from "./core/fetchLendingOffers";
 export * from "./core/cancelLendingOffer";
+export * from "./core/acceptLendingOffer";
 
 // Interest calculation utilities
 export * from "./interest/simpleInterest";

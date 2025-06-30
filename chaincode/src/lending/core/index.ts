@@ -16,3 +16,4 @@
 export * from "./createLendingOffer";
 export * from "./fetchLendingOffers";
 export * from "./cancelLendingOffer";
+export * from "./acceptLendingOffer";
