@@ -120,7 +120,7 @@ describe("BatchSubmitAuthorizations", () => {
     it("should authorize new users when caller is authorized", async () => {
       const ctx = createMockContext("user1");
       const existingAuth = new BatchSubmitAuthorities(["user1"]);
-      
+
       (getObjectByKey as jest.Mock).mockResolvedValue(existingAuth);
       (putChainObject as jest.Mock).mockResolvedValue(undefined);
 
@@ -137,7 +137,7 @@ describe("BatchSubmitAuthorizations", () => {
 
     it("should create new authorities object when none exists", async () => {
       const ctx = createMockContext("user1");
-      
+
       (getObjectByKey as jest.Mock).mockRejectedValue(new NotFoundError("Not found"));
       (putChainObject as jest.Mock).mockResolvedValue(undefined);
 

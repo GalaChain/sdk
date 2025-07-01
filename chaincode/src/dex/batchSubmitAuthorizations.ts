@@ -45,7 +45,7 @@ export async function authorizeBatchSubmitter(
   dto: AuthorizeBatchSubmitterDto
 ): Promise<BatchSubmitAuthoritiesResDto> {
   const key = ctx.stub.createCompositeKey(BatchSubmitAuthorities.INDEX_KEY, []);
-  let authorities = await getObjectByKey(ctx, BatchSubmitAuthorities, key).catch((e) => {
+  const authorities = await getObjectByKey(ctx, BatchSubmitAuthorities, key).catch((e) => {
     const chainError = ChainError.from(e);
     if (chainError.matches(ErrorCode.NOT_FOUND)) {
       return new BatchSubmitAuthorities([]);
