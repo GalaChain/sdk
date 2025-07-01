@@ -660,10 +660,18 @@ describe("DEx v3 Testing", () => {
 
     test("should estimate swap", async () => {
       const amountToSwap = new BigNumber(2),
-        sqrtPriceLimit = new BigNumber(5);
-      const dto = new SwapDto(ETH_ClassKey, USDT_ClassKey, fee, amountToSwap, true, sqrtPriceLimit).signed(
-        user.privateKey
-      );
+        sqrtPriceLimit = new BigNumber(5),
+        minAmountToSwap = new BigNumber(0);
+      const dto = new SwapDto(
+        ETH_ClassKey,
+        USDT_ClassKey,
+        fee,
+        amountToSwap,
+        true,
+        sqrtPriceLimit,
+        amountToSwap,
+        BigNumber(-0.000001)
+      ).signed(user.privateKey);
       const expectSwapRes = await client.dexV3Contract.quoteExactAmount(dto);
       const result = expectSwapRes.Data;
       expect(result).toBeDefined();
@@ -676,10 +684,18 @@ describe("DEx v3 Testing", () => {
 
     test("should throw error in estimating swap while swap more than avaiable liquiidity", async () => {
       const amountToSwap = new BigNumber("200000000000000000000000000"),
-        sqrtPriceLimit = new BigNumber(1);
-      const dto = new SwapDto(ETH_ClassKey, USDT_ClassKey, fee, amountToSwap, true, sqrtPriceLimit).signed(
-        user.privateKey
-      );
+        sqrtPriceLimit = new BigNumber(1),
+        minAmountToSwap = new BigNumber(0);
+      const dto = new SwapDto(
+        ETH_ClassKey,
+        USDT_ClassKey,
+        fee,
+        amountToSwap,
+        true,
+        sqrtPriceLimit,
+        BigNumber(0),
+        BigNumber(-0.000001)
+      ).signed(user.privateKey);
 
       const expectSwapRes = await client.dexV3Contract.quoteExactAmount(dto);
       expect(expectSwapRes.Message).toBe("Not enough liquidity available in pool");
@@ -688,9 +704,16 @@ describe("DEx v3 Testing", () => {
     test("should estimate swap for exact out", async () => {
       const amountToSwap = new BigNumber("-0.003"),
         sqrtPriceLimit = new BigNumber(5000);
-      const dto = new SwapDto(ETH_ClassKey, USDT_ClassKey, fee, amountToSwap, false, sqrtPriceLimit).signed(
-        user.privateKey
-      );
+      const dto = new SwapDto(
+        ETH_ClassKey,
+        USDT_ClassKey,
+        fee,
+        amountToSwap,
+        false,
+        sqrtPriceLimit,
+        BigNumber(0),
+        BigNumber(-0.000001)
+      ).signed(user.privateKey);
 
       const quoteExactResponse = await client.dexV3Contract.quoteExactAmount(dto);
       expect(quoteExactResponse.Data).toMatchObject({
@@ -713,10 +736,16 @@ describe("DEx v3 Testing", () => {
     test("should swap with changing sqrtPrice", async () => {
       const amountToSwap = new BigNumber(2),
         sqrtPriceLimit = new BigNumber(5);
-
-      const dto = new SwapDto(ETH_ClassKey, USDT_ClassKey, fee, amountToSwap, true, sqrtPriceLimit).signed(
-        user.privateKey
-      );
+      const dto = new SwapDto(
+        ETH_ClassKey,
+        USDT_ClassKey,
+        fee,
+        amountToSwap,
+        true,
+        sqrtPriceLimit,
+        amountToSwap,
+        BigNumber(-0.000001)
+      ).signed(user.privateKey);
 
       const swapRes = await client.dexV3Contract.swap(dto);
       expect(swapRes).toMatchObject({
@@ -1355,9 +1384,16 @@ describe("DEx v3 Testing", () => {
       const amountToSwap = new BigNumber(0.2),
         sqrtPriceLimit = new BigNumber(5);
 
-      const dto = new SwapDto(ETH_ClassKey, USDT_ClassKey, fee, amountToSwap, true, sqrtPriceLimit).signed(
-        user.privateKey
-      );
+      const dto = new SwapDto(
+        ETH_ClassKey,
+        USDT_ClassKey,
+        fee,
+        amountToSwap,
+        true,
+        sqrtPriceLimit,
+        amountToSwap,
+        BigNumber(-0.000001)
+      ).signed(user.privateKey);
 
       const swapRes = await client.dexV3Contract.swap(dto);
       expect(swapRes).toMatchObject({
@@ -2043,16 +2079,20 @@ describe("DEx v3 Testing", () => {
        * ETH : 161
        * USDT: 133089.903384354411490329
        */
-
+      const minAmountToSwap = new BigNumber(50);
       const dto = new SwapDto(
         ETH_ClassKey,
         USDT_ClassKey,
         fee,
         new BigNumber(50),
         true,
-        new BigNumber(40)
+        new BigNumber(40),
+        minAmountToSwap,
+        minAmountToSwap.multipliedBy(-1)
       ).signed(user.privateKey);
+
       const swapRes = await client.dexV3Contract.swap(dto);
+
       expect(swapRes.Data).toMatchObject({
         amount0: "50.000000000000000000",
         amount1: "-99470.652941823282562844",
@@ -2196,9 +2236,16 @@ describe("DEx v3 Testing", () => {
     test("should estimate swap", async () => {
       const amountToSwap = new BigNumber(2),
         sqrtPriceLimit = new BigNumber(5);
-      const dto = new SwapDto(ETH_ClassKey, USDC_ClassKey, fee, amountToSwap, true, sqrtPriceLimit).signed(
-        user.privateKey
-      );
+      const dto = new SwapDto(
+        ETH_ClassKey,
+        USDC_ClassKey,
+        fee,
+        amountToSwap,
+        true,
+        sqrtPriceLimit,
+        amountToSwap,
+        BigNumber(-0.000001)
+      ).signed(user.privateKey);
       const expectSwapRes = await client.dexV3Contract.quoteExactAmount(dto);
       const result = expectSwapRes.Data;
 
@@ -2210,10 +2257,18 @@ describe("DEx v3 Testing", () => {
 
     test("should estimate swap for exact out", async () => {
       const amountToSwap = new BigNumber("-0.003"),
-        sqrtPriceLimit = new BigNumber(5000);
-      const dto = new SwapDto(ETH_ClassKey, USDC_ClassKey, fee, amountToSwap, false, sqrtPriceLimit).signed(
-        user.privateKey
-      );
+        sqrtPriceLimit = new BigNumber(5000),
+        minAmountToSwap = new BigNumber(0);
+      const dto = new SwapDto(
+        ETH_ClassKey,
+        USDC_ClassKey,
+        fee,
+        amountToSwap,
+        false,
+        sqrtPriceLimit,
+        BigNumber(1),
+        BigNumber(-0.000001)
+      ).signed(user.privateKey);
       const quoteExactResponse = await client.dexV3Contract.quoteExactAmount(dto);
       expect(quoteExactResponse.Data).toMatchObject({
         amount0: new BigNumber("-0.003"),
@@ -2225,11 +2280,19 @@ describe("DEx v3 Testing", () => {
 
     test("should swap with changing sqrtPrice", async () => {
       const amountToSwap = new BigNumber(2),
-        sqrtPriceLimit = new BigNumber(5);
+        sqrtPriceLimit = new BigNumber(5),
+        minAmountToSwap = new BigNumber(0);
 
-      const dto = new SwapDto(ETH_ClassKey, USDC_ClassKey, fee, amountToSwap, true, sqrtPriceLimit).signed(
-        user.privateKey
-      );
+      const dto = new SwapDto(
+        ETH_ClassKey,
+        USDC_ClassKey,
+        fee,
+        amountToSwap,
+        true,
+        sqrtPriceLimit,
+        amountToSwap,
+        BigNumber(-0.000001)
+      ).signed(user.privateKey);
       const swapRes = await client.dexV3Contract.swap(dto);
       expect(swapRes).toMatchObject({
         Status: 1,
@@ -2482,10 +2545,16 @@ describe("DEx v3 Testing", () => {
         // Given
         const amountToSwap = new BigNumber(2),
           sqrtPriceLimit = new BigNumber(5);
-
-        const dto = new SwapDto(ETH_ClassKey, USDC_ClassKey, fee, amountToSwap, true, sqrtPriceLimit).signed(
-          user.privateKey
-        );
+        const dto = new SwapDto(
+          ETH_ClassKey,
+          USDC_ClassKey,
+          fee,
+          amountToSwap,
+          true,
+          sqrtPriceLimit,
+          amountToSwap,
+          BigNumber(-0.000001)
+        ).signed(user.privateKey);
 
         // When
         await client.dexV3Contract.swap(dto);
