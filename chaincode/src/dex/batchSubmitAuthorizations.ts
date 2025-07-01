@@ -16,7 +16,9 @@ import {
   AuthorizeBatchSubmitterDto,
   BatchSubmitAuthorities,
   BatchSubmitAuthoritiesResDto,
+  ChainError,
   DeauthorizeBatchSubmitterDto,
+  ErrorCode,
   FetchBatchSubmitAuthoritiesDto,
   UnauthorizedError,
   ValidationFailedError
@@ -42,7 +44,15 @@ export async function authorizeBatchSubmitter(
   ctx: GalaChainContext,
   dto: AuthorizeBatchSubmitterDto
 ): Promise<BatchSubmitAuthoritiesResDto> {
-  const authorities = await fetchBatchSubmitAuthorities(ctx);
+  const key = ctx.stub.createCompositeKey(BatchSubmitAuthorities.INDEX_KEY, []);
+  let authorities = await getObjectByKey(ctx, BatchSubmitAuthorities, key).catch((e) => {
+    const chainError = ChainError.from(e);
+    if (chainError.matches(ErrorCode.NOT_FOUND)) {
+      return new BatchSubmitAuthorities([]);
+    } else {
+      throw chainError;
+    }
+  });
 
   // Add new authorities
   for (const authority of dto.authorities) {
