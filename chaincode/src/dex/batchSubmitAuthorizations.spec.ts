@@ -18,6 +18,7 @@ import {
   BatchSubmitAuthoritiesResDto,
   DeauthorizeBatchSubmitterDto,
   FetchBatchSubmitAuthoritiesDto,
+  NotFoundError,
   UnauthorizedError,
   ValidationFailedError
 } from "@gala-chain/api";
@@ -132,6 +133,23 @@ describe("BatchSubmitAuthorizations", () => {
       expect(result.authorities).toContain("user1");
       expect(result.authorities).toContain("user2");
       expect(result.authorities).toContain("user3");
+    });
+
+    it("should create new authorities object when none exists", async () => {
+      const ctx = createMockContext("user1");
+
+      (getObjectByKey as jest.Mock).mockRejectedValue(new NotFoundError("Not found"));
+      (putChainObject as jest.Mock).mockResolvedValue(undefined);
+
+      const dto = new AuthorizeBatchSubmitterDto();
+      dto.authorities = ["user1", "user2"];
+
+      const result = await authorizeBatchSubmitter(ctx, dto);
+
+      expect(result).toBeInstanceOf(BatchSubmitAuthoritiesResDto);
+      expect(result.authorities).toContain("user1");
+      expect(result.authorities).toContain("user2");
+      expect(putChainObject).toHaveBeenCalled();
     });
   });
 
