@@ -188,7 +188,7 @@ describe("MATHEMATICS: Financial Conservation Laws", () => {
     });
 
     it("should preserve value during payment allocations", async () => {
-      // Given: Loan with pre-existing accrued interest
+      // Given: Loan with time-based interest calculation (let system calculate interest naturally)
       const startTime = 1000000;
       const loan = createTestLoan(
         users.testUser1.identityKey,
@@ -196,10 +196,9 @@ describe("MATHEMATICS: Financial Conservation Laws", () => {
         "800",
         "500", // 5% APR
         startTime,
-        "1200"
+        "1200", // Collateral
+        "1.5" // Health factor  
       );
-      // Set pre-accrued interest
-      loan.interestAccrued = new BigNumber("40");
 
       const goldTokenClass = currency.tokenClass((tc) => ({
         ...tc,
