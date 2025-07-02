@@ -51,4 +51,19 @@ describe("legacyClientAccountId", () => {
     };
     expect(() => legacyClientAccountId(ctx)).toThrow("Invalid client account ID format");
   });
+  test("should handle client account ID with O prefix", () => {
+    ctx.clientIdentity = {
+      getID: jest
+        .fn()
+        .mockReturnValue(
+          "x509::/O=Org1MSP123/OU=client/CN=Org1MSP123-client::/C=US/ST=California/L=San Francisco/O=Org1MSP123/OU=SIGN/CN=Org1MSP123-sign-ca"
+        ),
+      assertAttributeValue: jest.fn(),
+      getAttributeValue: jest.fn(),
+      getIDBytes: jest.fn(),
+      getMSPID: jest.fn()
+    };
+    const result = legacyClientAccountId(ctx);
+    expect(result).toBe("Org1MSP123|Org1MSP123-client");
+  });
 });
