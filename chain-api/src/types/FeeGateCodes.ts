@@ -36,6 +36,7 @@ export enum FeeGateCodes {
   Swap = "Swap",
   RemoveLiquidity = "RemoveLiquidity",
   CollectPositionFees = "CollectPositionFees",
+  TransferDexPosition = "TransferDexPosition",
   CreateSale = "CreateSale",
   BuyExactToken = "BuyExactToken",
   SellExactToken = "SellExactToken",

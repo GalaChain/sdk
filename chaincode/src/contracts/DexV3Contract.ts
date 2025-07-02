@@ -16,7 +16,6 @@ import {
   AddLiquidityDTO,
   AuthorizeBatchSubmitterDto,
   BatchDto,
-  BatchSubmitAuthorities,
   BatchSubmitAuthoritiesResDto,
   BurnDto,
   BurnEstimateDto,
@@ -25,6 +24,8 @@ import {
   CollectProtocolFeesDto,
   CollectProtocolFeesResDto,
   ConfigureDexFeeAddressDto,
+  ConfigurePoolDexFeeDto,
+  ConfigurePoolDexFeeResDto,
   CreatePoolDto,
   CreatePoolResDto,
   DeauthorizeBatchSubmitterDto,
@@ -55,8 +56,7 @@ import {
   SwapResDto,
   TickData,
   TransferDexPositionDto,
-  UnauthorizedError,
-  ValidationFailedError
+  UnauthorizedError
 } from "@gala-chain/api";
 
 import { version } from "../../package.json";
@@ -66,6 +66,7 @@ import {
   collect,
   collectProtocolFees,
   configureDexFeeAddress,
+  configurePoolDexFee,
   createPool,
   getAddLiquidityEstimation,
   getDexFeesConfigration,
@@ -93,7 +94,8 @@ import {
   collectPositionFeesFeeGate,
   createPoolFeeGate,
   removeLiquidityFeeGate,
-  swapFeeGate
+  swapFeeGate,
+  transferDexPositionFeeGate
 } from "../fees/dexLaunchpadFeeGate";
 import { GalaChainContext } from "../types";
 import { BatchWriteLimitExceededError, GalaContract } from "./GalaContract";
@@ -306,6 +308,18 @@ export class DexV3Contract extends GalaContract {
     return await setProtocolFee(ctx, dto);
   }
 
+  @Submit({
+    in: ConfigurePoolDexFeeDto,
+    out: ConfigurePoolDexFeeResDto,
+    allowedOrgs: ["CuratorOrg"]
+  })
+  public async ConfigurePoolDexFee(
+    ctx: GalaChainContext,
+    dto: ConfigurePoolDexFeeDto
+  ): Promise<ConfigurePoolDexFeeResDto> {
+    return await configurePoolDexFee(ctx, dto);
+  }
+
   @Evaluate({
     in: ChainCallDTO,
     out: DexFeeConfig,
@@ -329,7 +343,8 @@ export class DexV3Contract extends GalaContract {
 
   @Submit({
     in: TransferDexPositionDto,
-    out: DexPositionOwner
+    out: DexPositionOwner,
+    before: transferDexPositionFeeGate
   })
   public async TransferDexPosition(
     ctx: GalaChainContext,

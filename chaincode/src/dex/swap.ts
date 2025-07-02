@@ -127,7 +127,7 @@ export async function swap(ctx: GalaChainContext, dto: SwapDto): Promise<SwapRes
     if (amount.lt(0)) {
       if (dto.amountOutMinimum && amount.gt(dto.amountOutMinimum)) {
         throw new SlippageToleranceExceededError(
-          `Slippage tolerance exceeded: minimum received tokens (${dto.amountInMaximum}) is less than actual received amount (${amount}).`
+          `Slippage tolerance exceeded: minimum received tokens (${dto.amountOutMinimum}) is less than actual received amount (${amount}).`
         );
       }
 
