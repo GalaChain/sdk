@@ -14,10 +14,10 @@
  */
 import {
   AuthorizeBatchSubmitterDto,
-  LaunchpadBatchSubmitAuthorities,
   BatchSubmitAuthoritiesResDto,
   DeauthorizeBatchSubmitterDto,
   FetchBatchSubmitAuthoritiesDto,
+  LaunchpadBatchSubmitAuthorities,
   NotFoundError
 } from "@gala-chain/api";
 
