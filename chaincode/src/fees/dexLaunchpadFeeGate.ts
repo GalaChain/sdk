@@ -37,6 +37,10 @@ export async function collectPositionFeesFeeGate(ctx: GalaChainContext, dto: Cha
   return galaFeeGate(ctx, { feeCode: FeeGateCodes.CollectPositionFees });
 }
 
+export async function transferDexPositionFeeGate(ctx: GalaChainContext, dto: ChainCallDTO) {
+  return galaFeeGate(ctx, { feeCode: FeeGateCodes.TransferDexPosition });
+}
+
 export async function createSaleFeeGate(ctx: GalaChainContext, dto: ChainCallDTO) {
   return galaFeeGate(ctx, { feeCode: FeeGateCodes.CreateSale });
 }
