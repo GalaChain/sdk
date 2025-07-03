@@ -26,3 +26,4 @@ export * from "./finalizeTokenAllocation";
 export * from "./sellWithNative";
 export * from "./configureLaunchpadFeeConfig";
 export * from "./fetchLaunchpadAdressConfig";
+export * from "./launchpadBatchSubmitAuthorizations";
