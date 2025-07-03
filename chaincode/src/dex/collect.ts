@@ -30,8 +30,8 @@ import { getObjectByKey, putChainObject } from "../utils";
 import { NegativeAmountError } from "./dexError";
 import { getTokenDecimalsFromPool, roundTokenAmount, validateTokenOrder } from "./dexUtils";
 import { fetchUserPositionInTickRange } from "./position.helper";
-import { removePositionIfEmpty } from "./removePositionIfEmpty";
 import { fetchOrCreateTickDataPair } from "./tickData.helper";
+import { updateOrRemovePosition } from "./updateOrRemovePosition";
 
 /**
  * @dev The collect function allows a user to claim and withdraw accrued fee tokens from a specific liquidity position in a Decentralized exchange pool within the GalaChain ecosystem. It retrieves earned fees based on the user's position details and transfers them to the user's account.
@@ -90,9 +90,6 @@ export async function collect(ctx: GalaChainContext, dto: CollectDto): Promise<D
   );
   const amounts = pool.collect(position, tickLowerData, tickUpperData, amount0Requested, amount1Requested);
 
-  // Remove position if empty and save updated pool
-  await removePositionIfEmpty(ctx, poolHash, position);
-
   // Round down the tokens and transfer the tokens to position holder
   const roundedToken0Amount = BigNumber.min(
     roundTokenAmount(amounts[0], tokenDecimals[0]),
@@ -122,8 +119,9 @@ export async function collect(ctx: GalaChainContext, dto: CollectDto): Promise<D
     });
   }
 
+  // Remove or commit position based on whether its empty
+  await updateOrRemovePosition(ctx, poolHash, position);
   await putChainObject(ctx, pool);
-  await putChainObject(ctx, position);
 
   // Return position holder's new token balances
   const liquidityProviderToken0Balance = await fetchOrCreateBalance(
