@@ -23,34 +23,50 @@ const ID_SUB_SPLIT_CHAR = "|";
 export function legacyClientAccountId(ctx: Context): string {
   const clientAccountID = ctx.clientIdentity.getID();
 
-  const OUPrefix = "::/OU=";
-  const OUSuffix = "/";
   const CNPrefix = "/CN=";
   const CNSuffix = ":";
 
-  if (
-    !clientAccountID.includes(OUPrefix) ||
-    !clientAccountID.includes(OUSuffix) ||
-    !clientAccountID.includes(CNPrefix) ||
-    !clientAccountID.includes(CNSuffix)
-  ) {
-    throw new Error("Invalid client account ID format");
+  if (!clientAccountID.includes(CNPrefix) || !clientAccountID.includes(CNSuffix)) {
+    throw new Error(`Invalid client account ID format: ${clientAccountID}`);
   }
 
-  // eslint-disable-next-line
-  const clientAccountIDRegex = /^x509::\/OU\=(.+)\/CN=(.+)\:/;
-  if (!clientAccountIDRegex.test(clientAccountID)) {
-    throw new Error("Invalid client account ID format");
-  }
-
-  const orgStartIndex = clientAccountID.indexOf(OUPrefix) + OUPrefix.length;
-  const orgEndIndex = clientAccountID.indexOf(OUSuffix, orgStartIndex);
-
+  // Extract the name from CN
   const nameStartIndex = clientAccountID.indexOf(CNPrefix) + CNPrefix.length;
   const nameEndIndex = clientAccountID.indexOf(CNSuffix, nameStartIndex);
-
-  const org = clientAccountID.slice(orgStartIndex, orgEndIndex);
   const name = clientAccountID.slice(nameStartIndex, nameEndIndex);
+
+  // Validate that name is not empty
+  if (!name) {
+    throw new Error(`Invalid client account ID format: ${clientAccountID}`);
+  }
+
+  // Try to extract organization from OU= first (legacy format), then fall back to O=
+  let org = "";
+
+  // Check for /OU= format first (legacy format)
+  const OUPrefix = "::/OU=";
+  const OUSuffix = "/";
+  if (clientAccountID.includes(OUPrefix) && clientAccountID.includes(OUSuffix)) {
+    const orgStartIndex = clientAccountID.indexOf(OUPrefix) + OUPrefix.length;
+    const orgEndIndex = clientAccountID.indexOf(OUSuffix, orgStartIndex);
+    org = clientAccountID.slice(orgStartIndex, orgEndIndex);
+  }
+
+  // If no /OU= found or it's empty, try /O= format
+  if (!org) {
+    const OPrefix = "/O=";
+    if (clientAccountID.includes(OPrefix)) {
+      const orgStartIndex = clientAccountID.indexOf(OPrefix) + OPrefix.length;
+      const orgEndIndex = clientAccountID.indexOf("/", orgStartIndex);
+      if (orgEndIndex !== -1) {
+        org = clientAccountID.slice(orgStartIndex, orgEndIndex);
+      }
+    }
+  }
+
+  if (!org) {
+    throw new Error(`Invalid client account ID format - could not extract organization: ${clientAccountID}`);
+  }
 
   return `${org}${ID_SUB_SPLIT_CHAR}${name}`;
 }
