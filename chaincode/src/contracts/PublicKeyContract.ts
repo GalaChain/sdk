@@ -47,6 +47,9 @@ try {
 }
 
 const curatorOrgMsp = process.env.CURATOR_ORG_MSP ?? "CuratorOrg";
+const registrarOrgMsps = (process.env.REGISTRAR_ORG_MSPS?.split(",") ?? [curatorOrgMsp]).map((org) =>
+  org.trim()
+);
 
 @Info({
   title: "PublicKeyContract",
@@ -85,7 +88,7 @@ export class PublicKeyContract extends GalaContract {
     in: RegisterUserDto,
     out: "string",
     description: "Registers a new user on chain under provided user alias.",
-    allowedOrgs: [curatorOrgMsp]
+    allowedOrgs: registrarOrgMsps
   })
   public async RegisterUser(ctx: GalaChainContext, dto: RegisterUserDto): Promise<GalaChainResponse<string>> {
     if (!dto.user.startsWith("client|")) {
@@ -104,7 +107,7 @@ export class PublicKeyContract extends GalaContract {
     in: RegisterEthUserDto,
     out: "string",
     description: "Registers a new user on chain under alias derived from eth address.",
-    allowedOrgs: [curatorOrgMsp]
+    allowedOrgs: registrarOrgMsps
   })
   public async RegisterEthUser(
     ctx: GalaChainContext,
@@ -121,7 +124,7 @@ export class PublicKeyContract extends GalaContract {
     in: RegisterTonUserDto,
     out: "string",
     description: "Registers a new user on chain under alias derived from TON address.",
-    allowedOrgs: [curatorOrgMsp]
+    allowedOrgs: registrarOrgMsps
   })
   public async RegisterTonUser(
     ctx: GalaChainContext,
