@@ -14,6 +14,9 @@
  */
 import {
   AddLiquidityDTO,
+  AuthorizeBatchSubmitterDto,
+  BatchDto,
+  BatchSubmitAuthoritiesResDto,
   BurnDto,
   BurnEstimateDto,
   ChainCallDTO,
@@ -21,12 +24,17 @@ import {
   CollectProtocolFeesDto,
   CollectProtocolFeesResDto,
   ConfigureDexFeeAddressDto,
+  ConfigurePoolDexFeeDto,
+  ConfigurePoolDexFeeResDto,
   CreatePoolDto,
   CreatePoolResDto,
+  DeauthorizeBatchSubmitterDto,
   DexFeeConfig,
   DexOperationResDto,
   DexPositionData,
   DexPositionOwner,
+  FetchBatchSubmitAuthoritiesDto,
+  GalaChainResponse,
   GetAddLiquidityEstimationDto,
   GetAddLiquidityEstimationResDto,
   GetLiquidityResDto,
@@ -47,7 +55,8 @@ import {
   SwapDto,
   SwapResDto,
   TickData,
-  TransferDexPositionDto
+  TransferDexPositionDto,
+  UnauthorizedError
 } from "@gala-chain/api";
 
 import { version } from "../../package.json";
@@ -57,6 +66,7 @@ import {
   collect,
   collectProtocolFees,
   configureDexFeeAddress,
+  configurePoolDexFee,
   createPool,
   getAddLiquidityEstimation,
   getDexFeesConfigration,
@@ -72,21 +82,84 @@ import {
   swap,
   transferDexPosition
 } from "../dex";
+import {
+  authorizeBatchSubmitter,
+  deauthorizeBatchSubmitter,
+  fetchBatchSubmitAuthorities,
+  getBatchSubmitAuthorities
+} from "../dex/batchSubmitAuthorizations";
 import { getTickData } from "../dex/tickData.helper";
 import {
   addLiquidityFeeGate,
   collectPositionFeesFeeGate,
   createPoolFeeGate,
   removeLiquidityFeeGate,
-  swapFeeGate
+  swapFeeGate,
+  transferDexPositionFeeGate
 } from "../fees/dexLaunchpadFeeGate";
 import { GalaChainContext } from "../types";
-import { GalaContract } from "./GalaContract";
-import { EVALUATE, Evaluate, GalaTransaction, Submit } from "./GalaTransaction";
+import { BatchWriteLimitExceededError, GalaContract } from "./GalaContract";
+import { getApiMethod } from "./GalaContractApi";
+import { EVALUATE, Evaluate, GalaTransaction, SUBMIT, Submit } from "./GalaTransaction";
 
 export class DexV3Contract extends GalaContract {
   constructor() {
     super("DexV3Contract", version);
+  }
+
+  @GalaTransaction({
+    type: SUBMIT,
+    in: BatchDto,
+    out: "object",
+    description: "Submit a batch of transactions",
+    verifySignature: true
+  })
+  public async BatchSubmit(ctx: GalaChainContext, batchDto: BatchDto): Promise<GalaChainResponse<unknown>[]> {
+    // Check if the calling user is authorized to submit batches
+    const batchAuthorities = await fetchBatchSubmitAuthorities(ctx);
+    if (!batchAuthorities.isAuthorized(ctx.callingUser)) {
+      throw new UnauthorizedError(
+        `CallingUser ${ctx.callingUser} is not authorized to submit batches. ` +
+          `Authorized users: ${batchAuthorities.getAuthorities().join(", ")}`
+      );
+    }
+
+    const responses: GalaChainResponse<unknown>[] = [];
+
+    const softWritesLimit = batchDto.writesLimit ?? BatchDto.WRITES_DEFAULT_LIMIT;
+    const writesLimit = Math.min(softWritesLimit, BatchDto.WRITES_HARD_LIMIT);
+    let writesCount = ctx.stub.getWritesCount();
+
+    for (const [index, op] of batchDto.operations.entries()) {
+      // Use sandboxed context to avoid flushes of writes and deletes, and populate
+      // the stub with current writes and deletes.
+      const sandboxCtx = ctx.createReadOnlyContext(index);
+      sandboxCtx.stub.setWrites(ctx.stub.getWrites());
+      sandboxCtx.stub.setDeletes(ctx.stub.getDeletes());
+
+      // Execute the operation. Collect both successful and failed responses.
+      let response: GalaChainResponse<unknown>;
+      try {
+        if (writesCount >= writesLimit) {
+          throw new BatchWriteLimitExceededError(writesLimit);
+        }
+
+        const method = getApiMethod(this, op.method, (m) => m.isWrite && m.methodName !== "BatchSubmit");
+        response = await this[method.methodName](sandboxCtx, op.dto);
+      } catch (error) {
+        response = GalaChainResponse.Error(error);
+      }
+      responses.push(response);
+
+      // Update the current context with the writes and deletes if the operation
+      // is successful.
+      if (GalaChainResponse.isSuccess(response)) {
+        ctx.stub.setWrites(sandboxCtx.stub.getWrites());
+        ctx.stub.setDeletes(sandboxCtx.stub.getDeletes());
+        writesCount = ctx.stub.getWritesCount();
+      }
+    }
+    return responses;
   }
 
   @Submit({
@@ -234,6 +307,18 @@ export class DexV3Contract extends GalaContract {
     return await setProtocolFee(ctx, dto);
   }
 
+  @Submit({
+    in: ConfigurePoolDexFeeDto,
+    out: ConfigurePoolDexFeeResDto,
+    allowedOrgs: ["CuratorOrg"]
+  })
+  public async ConfigurePoolDexFee(
+    ctx: GalaChainContext,
+    dto: ConfigurePoolDexFeeDto
+  ): Promise<ConfigurePoolDexFeeResDto> {
+    return await configurePoolDexFee(ctx, dto);
+  }
+
   @Evaluate({
     in: ChainCallDTO,
     out: DexFeeConfig,
@@ -257,7 +342,8 @@ export class DexV3Contract extends GalaContract {
 
   @Submit({
     in: TransferDexPositionDto,
-    out: DexPositionOwner
+    out: DexPositionOwner,
+    before: transferDexPositionFeeGate
   })
   public async TransferDexPosition(
     ctx: GalaChainContext,
@@ -291,5 +377,41 @@ export class DexV3Contract extends GalaContract {
   })
   public async GetTickData(ctx: GalaChainContext, dto: GetTickDataDto): Promise<TickData> {
     return getTickData(ctx, dto);
+  }
+
+  @Submit({
+    in: AuthorizeBatchSubmitterDto,
+    out: BatchSubmitAuthoritiesResDto,
+    allowedOrgs: [process.env.CURATOR_ORG_MSP ?? "CuratorOrg"]
+  })
+  public async AuthorizeBatchSubmitter(
+    ctx: GalaChainContext,
+    dto: AuthorizeBatchSubmitterDto
+  ): Promise<BatchSubmitAuthoritiesResDto> {
+    return await authorizeBatchSubmitter(ctx, dto);
+  }
+
+  @Submit({
+    in: DeauthorizeBatchSubmitterDto,
+    out: BatchSubmitAuthoritiesResDto,
+    allowedOrgs: [process.env.CURATOR_ORG_MSP ?? "CuratorOrg"]
+  })
+  public async DeauthorizeBatchSubmitter(
+    ctx: GalaChainContext,
+    dto: DeauthorizeBatchSubmitterDto
+  ): Promise<BatchSubmitAuthoritiesResDto> {
+    return await deauthorizeBatchSubmitter(ctx, dto);
+  }
+
+  @GalaTransaction({
+    type: EVALUATE,
+    in: FetchBatchSubmitAuthoritiesDto,
+    out: BatchSubmitAuthoritiesResDto
+  })
+  public async GetBatchSubmitAuthorities(
+    ctx: GalaChainContext,
+    dto: FetchBatchSubmitAuthoritiesDto
+  ): Promise<BatchSubmitAuthoritiesResDto> {
+    return await getBatchSubmitAuthorities(ctx, dto);
   }
 }

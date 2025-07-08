@@ -20,6 +20,7 @@ import {
   QuoteExactAmountResDto,
   SwapState,
   ValidationFailedError,
+  f18,
   sqrtPriceToTick
 } from "@gala-chain/api";
 import BigNumber from "bignumber.js";
@@ -63,7 +64,7 @@ export async function quoteExactAmount(
 
   const currentSqrtPrice = pool.sqrtPrice;
 
-  const amountSpecified = dto.amount.f18();
+  const amountSpecified = f18(dto.amount);
   if (amountSpecified.isEqualTo(0)) {
     throw new ValidationFailedError("Invalid specified amount");
   }
