@@ -27,11 +27,15 @@ export class MissingRoleError extends UnauthorizedError {
 
 export const curatorOrgMsp = process.env.CURATOR_ORG_MSP ?? "CuratorOrg";
 
+export const registrarOrgMsps = (process.env.REGISTRAR_ORG_MSPS?.split(",") ?? [curatorOrgMsp]).map((org) =>
+  org.trim()
+);
+
 export const useRoleBasedAuth = process.env.USE_RBAC === "true";
 
 export const requireCuratorAuth = useRoleBasedAuth
   ? { allowedRoles: [UserRole.CURATOR] }
-  : { allowedOrgs: [curatorOrgMsp] };
+  : { allowedOrgs: registrarOrgMsps };
 
 export class OrganizationNotAllowedError extends ForbiddenError {}
 
