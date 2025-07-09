@@ -36,7 +36,7 @@ export const requireCuratorAuth = useRoleBasedAuth
 export const registrarOrgMsps = process.env.REGISTRAR_ORG_MSPS?.split(",").trim() ?? [curatorOrgMsp];
 
 export const requireRegistrarAuth = useRoleBasedAuth
-  ? { allowedRoles: [UserRole.CURATOR, UserRole.REGISTRAR] }
+  ? { allowedRoles: [UserRole.REGISTRAR] }
   : { allowedOrgs: registrarOrgMsps };
 
 export class OrganizationNotAllowedError extends ForbiddenError {}
