@@ -70,7 +70,7 @@ export class PublicKeyContract extends GalaContract {
     in: RegisterUserDto,
     out: "string",
     description: "Registers a new user on chain under provided user alias.",
-    ...requireCuratorAuth
+    ...requireRegistrarAuth
   })
   public async RegisterUser(ctx: GalaChainContext, dto: RegisterUserDto): Promise<string> {
     if (!dto.user.startsWith("client|")) {
