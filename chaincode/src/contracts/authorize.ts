@@ -27,15 +27,13 @@ export class MissingRoleError extends UnauthorizedError {
 
 export const useRoleBasedAuth = process.env.USE_RBAC === "true";
 
-export const curatorOrgMsp = process.env.CURATOR_ORG_MSP ?? "CuratorOrg";
+export const curatorOrgMsp = process.env.CURATOR_ORG_MSP?.trim() ?? "CuratorOrg";
 
 export const requireCuratorAuth = useRoleBasedAuth
   ? { allowedRoles: [UserRole.CURATOR] }
   : { allowedOrgs: [curatorOrgMsp] };
 
-export const registrarOrgMsps = (process.env.REGISTRAR_ORG_MSPS?.split(",") ?? [curatorOrgMsp]).map((org) =>
-  org.trim()
-);
+export const registrarOrgMsps = process.env.REGISTRAR_ORG_MSPS?.split(",").trim() ?? [curatorOrgMsp];
 
 export const requireRegistrarAuth = useRoleBasedAuth
   ? { allowedRoles: [UserRole.CURATOR, UserRole.REGISTRAR] }
