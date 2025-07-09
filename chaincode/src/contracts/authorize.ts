@@ -33,7 +33,8 @@ export const requireCuratorAuth = useRoleBasedAuth
   ? { allowedRoles: [UserRole.CURATOR] }
   : { allowedOrgs: [curatorOrgMsp] };
 
-export const registrarOrgMsps = process.env.REGISTRAR_ORG_MSPS?.split(",").map((o) => o.trim()) ?? [curatorOrgMsp];
+const registarOrgsFromEnv = process.env.REGISTRAR_ORG_MSPS?.split(",").map((o) => o.trim());
+export const registrarOrgMsps = registarOrgsFromEnv ?? [curatorOrgMsp];
 
 export const requireRegistrarAuth = useRoleBasedAuth
   ? { allowedRoles: [UserRole.REGISTRAR] }
