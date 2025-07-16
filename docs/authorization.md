@@ -279,3 +279,29 @@ By default, the `EVALUATE` and `SUBMIT` roles are assigned to the user when they
 You can assign additional roles to the user using the `PublicKeyContract:UpdateUserRoles` method. This method requires that the calling user either has the `CURATOR` role or is a CA user from a curator organization.
 
 There are some predefined roles (`EVALUATE`, `SUBMIT`, `CURATOR`). You can also define custom roles for more granular access control.
+
+## Authenticating a chaincode
+
+GalaChain also supports authorization by a chaincode which is used in cross-chaincode calls.
+You can configure your method to allow access from a custom chaincode in the following way:
+
+```typescript
+@GalaTransaction({
+    allowedChaincodes: ["trusted-chaincode"]
+})
+```
+
+In this case `trusted-chaincode` is a name of the another chaincode which is installed on the same channel and which is allowed to call the method.
+
+The process involving chaincode-based auth:
+1. `trusted-chaincode` creates a DTO with `signerAddress` set to `service|trusted-chaincode`.
+2. `trusted-chaincode` creates an in memory private key that will be used only within the scope of a single transaction.
+3. `trusted-chaincode` invokes `my-chaincode` providing as a parameter the DTO which is signed with the newly created private key.
+4. `my-chaincode` detects from the `signerAddress` field in the DTO that the call is made by `trusted-chaincode`.
+5. `my-chaincode` recovers public key from the DTO and signature.
+6. `my-chaincode` calls `trusted-chaincode` method: `PublicKeyContract:SignForTxId to sign a generated payload with the ephemeral key for a given transaction.
+7. `my-chaincode` recovers public key from the signature provided by `trusted-chaincode`.
+8. If both recovered public key match, it means the call is proven to be made by `trusted-chaincode`.
+9. `trusted-chaincode` removes ephemeral key after use.
+
+Once the chaincode becomes authorized, the `ctx.callingUser` becomes `service|trusted-chaincode` and the calling user roles are set to allowed roles for the given contract method.
