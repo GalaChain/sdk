@@ -99,11 +99,6 @@ export async function addLiquidity(
   const [amount0, amount1] = pool.mint(position, tickLowerData, tickUpperData, f18(liquidity));
 
   // Verify whether the amounts are valid
-  if (amount0.lt(amount0Min) || amount1.lt(amount1Min)) {
-    throw new SlippageToleranceExceededError(
-      `Slippage tolerance exceeded: expected minimums (amount0 ≥ ${dto.amount0Min.toString()}, amount1 ≥ ${dto.amount1Min.toString()}), but received (amount0 = ${amount0.toString()}, amount1 = ${amount1.toString()})`
-    );
-  }
   if (amount0.isLessThan(0)) {
     throw new NegativeAmountError(0, amount0.toString());
   }
@@ -112,8 +107,16 @@ export async function addLiquidity(
   }
 
   const [token0Decimal, token1Decimal] = await getTokenDecimalsFromPool(ctx, pool);
-  const roundedToken0Amount = roundTokenAmount(amount0, token0Decimal);
-  const roundedToken1Amount = roundTokenAmount(amount1, token1Decimal);
+  const roundedToken0Amount = roundTokenAmount(amount0, token0Decimal, true);
+  const roundedToken1Amount = roundTokenAmount(amount1, token1Decimal, true);
+
+  // Slippage checks
+  if (roundedToken0Amount.lt(amount0Min) || roundedToken1Amount.lt(amount1Min)) {
+    throw new SlippageToleranceExceededError(
+      `Slippage tolerance exceeded: expected minimums (amount0 ≥ ${dto.amount0Min.toString()}, amount1 ≥ ${dto.amount1Min.toString()}), but received (amount0 = ${amount0.toString()}, amount1 = ${amount1.toString()})`
+    );
+  }
+  
   // transfer token0
   await transferToken(ctx, {
     from: liquidityProvider,

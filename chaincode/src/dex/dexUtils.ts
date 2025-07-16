@@ -165,6 +165,10 @@ export async function getTokenDecimalsFromPool(ctx: GalaChainContext, pool: Pool
  * @param decimals - The number of decimals to round to (from token class).
  * @returns A BigNumber rounded down to the specified decimals.
  */
-export function roundTokenAmount(amount: string | BigNumber, decimals: number): BigNumber {
-  return new BigNumber(amount).decimalPlaces(decimals, BigNumber.ROUND_DOWN);
+export function roundTokenAmount(
+  amount: string | BigNumber,
+  decimals: number,
+  roundUp: boolean
+): BigNumber {
+  return new BigNumber(amount).decimalPlaces(decimals, roundUp ? BigNumber.ROUND_UP : BigNumber.ROUND_DOWN);
 }

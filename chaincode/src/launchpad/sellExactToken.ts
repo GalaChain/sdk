@@ -28,10 +28,6 @@ import { callMemeTokenIn } from "./callMemeTokenIn";
 import { callNativeTokenOut } from "./callNativeTokenOut";
 import { payReverseBondingCurveFee } from "./fees";
 
-BigNumber.config({
-  ROUNDING_MODE: BigNumber.ROUND_UP
-});
-
 /**
  * Executes the sale of an exact amount of tokens for native tokens (e.g., GALA).
  *

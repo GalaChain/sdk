@@ -72,7 +72,7 @@ export async function collectProtocolFees(
         tokenInstanceKeys[index].getTokenClassKey()
       );
       const roundedAmount = BigNumber.min(
-        new BigNumber(amount.toFixed(tokenClasses[index].decimals)).abs(),
+        new BigNumber(amount.toFixed(tokenClasses[index].decimals, BigNumber.ROUND_DOWN)).abs(),
         poolTokenBalance.getQuantityTotal()
       );
 
