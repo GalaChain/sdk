@@ -193,6 +193,13 @@ export class ChainCallDTO {
   @StringEnumProperty(SigningScheme)
   public signing?: SigningScheme;
 
+  @JSONSchema({
+    description: "Unit timestamp when the DTO expires. If the timestamp is in the past, the DTO is not valid."
+  })
+  @IsOptional()
+  @IsNumber()
+  public dtoExpiresAt?: number;
+
   validate(): Promise<ValidationError[]> {
     return validate(this);
   }

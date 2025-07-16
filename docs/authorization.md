@@ -62,6 +62,17 @@ The following fields are required in the transaction payload object:
 Both for Eth DER signature and TON signing scheme, instead of `signerPublicKey` field, you can use `signerAddress` field, which contains the user's checksumed Ethereum address or bounceable TON address respectively.
 The address will be used to get public key of a registered user and use it for signature verification.
 
+### DTO Expiration
+
+DTOs can include an optional `dtoExpiresAt` field to prevent replay attacks and ensure time-sensitive operations:
+
+```typescript
+const dto = await createValidDTO(MyDtoClass, {
+  myField: "myValue",
+  dtoExpiresAt: Date.now() + 300000 // Expires in 5 minutes
+}).signed(userPrivateKey);
+```
+
 ### Signing the transaction payload
 
 Client side it is recommended to use `@gala-chain/api`, or `@gala-chain/cli`, or `@gala-chain/connect` library to sign the transactions.

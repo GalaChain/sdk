@@ -16,6 +16,7 @@ import {
   ChainCallDTO,
   ChainError,
   ClassConstructor,
+  ExpiredError,
   GalaChainResponse,
   Inferred,
   MethodAPI,
@@ -84,6 +85,7 @@ export interface CommonTransactionOptions<In extends ChainCallDTO, Out> {
   /** @deprecated */
   allowedOrgs?: string[];
   allowedRoles?: string[];
+  allowedChaincodes?: string[];
   apiMethodName?: string;
   sequence?: MethodAPI[];
   before?: GalaTransactionBeforeFn<In>;
@@ -182,6 +184,11 @@ function GalaTransaction<In extends ChainCallDTO, Out>(
         const dto = !dtoPlain
           ? undefined
           : await parseValidDTO<In>(dtoClass, dtoPlain as string | Record<string, unknown>);
+
+        // Note using Date.now() instead of ctx.txUnixTime which is provided client-side.
+        if (dto?.dtoExpiresAt && dto.dtoExpiresAt < Date.now()) {
+          throw new ExpiredError(`DTO expired at ${new Date(dto.dtoExpiresAt).toISOString()}`);
+        }
 
         // Authenticate the user
         if (ctx.isDryRun) {

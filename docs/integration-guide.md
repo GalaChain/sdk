@@ -62,13 +62,16 @@ async function transferTokens() {
     tokenInstanceKey.additionalKey = "none";
     tokenInstanceKey.instance = new BigNumber(0);
 
-    // 2. Create and validate transfer DTO
+    // 2. Create and validate transfer DTO with expiration
+    // The dtoExpiresAt field prevents replay attacks by ensuring the transaction
+    // must be executed within a specified time window
     const transferTokenDto = await createValidDTO(TransferTokenDto, {
       from: "eth|abcd",
       to: "eth|dcba",
       tokenInstance: tokenInstanceKey,
       uniqueKey: "someuniquestring",
-      quantity: new BigNumber("1")
+      quantity: new BigNumber("1"),
+      dtoExpiresAt: Date.now() + 300000 // Expires in 5 minutes
     });
 
     // 3. Sign the DTO
