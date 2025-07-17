@@ -20,6 +20,7 @@ import {
   RegisterEthUserDto,
   RegisterTonUserDto,
   RegisterUserDto,
+  SignConfirmationDto,
   SigningScheme,
   UpdatePublicKeyDto,
   UpdateUserRolesDto,
@@ -32,9 +33,10 @@ import { Info } from "fabric-contract-api";
 
 import { PublicKeyService } from "../services";
 import { PkNotFoundError } from "../services/PublicKeyError";
+import { RequestConfirmationService } from "../services/RequestConfirmationService";
 import { GalaChainContext } from "../types";
 import { GalaContract } from "./GalaContract";
-import { EVALUATE, Evaluate, GalaTransaction, Submit } from "./GalaTransaction";
+import { EVALUATE, Evaluate, GalaTransaction, Submit, UnsignedEvaluate } from "./GalaTransaction";
 import { requireCuratorAuth } from "./authorize";
 
 let version = "0.0.0";
@@ -161,5 +163,14 @@ export class PublicKeyContract extends GalaContract {
     dto: ChainCallDTO
   ): Promise<void> {
     // do nothing - verification is handled by @GalaTransaction decorator
+  }
+
+  @UnsignedEvaluate({
+    in: SignConfirmationDto,
+    out: "string",
+    description: "Returns ephemeral signature for the given transaction id."
+  })
+  public async SignConfirmation(ctx: GalaChainContext, dto: SignConfirmationDto): Promise<string> {
+    return RequestConfirmationService.signConfirmation(dto).signature;
   }
 }

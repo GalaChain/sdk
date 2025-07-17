@@ -85,6 +85,7 @@ export interface CommonTransactionOptions<In extends ChainCallDTO, Out> {
   /** @deprecated */
   allowedOrgs?: string[];
   allowedRoles?: string[];
+  allowedChaincodes?: string[];
   apiMethodName?: string;
   sequence?: MethodAPI[];
   before?: GalaTransactionBeforeFn<In>;
