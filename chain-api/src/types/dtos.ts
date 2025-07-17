@@ -21,6 +21,7 @@ import {
   IsOptional,
   Max,
   Min,
+  MinLength,
   ValidateNested,
   ValidationError,
   validate
@@ -561,4 +562,10 @@ export class GetMyProfileDto extends ChainCallDTO {
   // make signature required
   @IsNotEmpty()
   signature: string;
+}
+
+export class SignConfirmationDto extends SubmitCallDTO {
+  @IsNotEmpty()
+  @MinLength(16)
+  nonce: string;
 }

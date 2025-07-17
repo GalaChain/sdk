@@ -16,11 +16,14 @@ import {
   ChainCallDTO,
   ForbiddenError,
   PublicKey,
+  SignConfirmationDto,
   SigningScheme,
   UserProfileWithRoles,
   ValidationFailedError,
+  createValidSubmitDTO,
   signatures
 } from "@gala-chain/api";
+import crypto from "crypto";
 
 import { PkInvalidSignatureError, PublicKeyService } from "../services";
 import { PkMissingError } from "../services/PublicKeyError";
@@ -71,6 +74,8 @@ class UserNotRegisteredError extends ValidationFailedError {
   }
 }
 
+class ChaincodeAuthorizationError extends ForbiddenError {}
+
 /**
  *
  * @param ctx
@@ -97,6 +102,11 @@ export async function authenticate(
       }
     }
     if (dto.signerAddress !== undefined) {
+      if (dto.signerAddress.startsWith("service|")) {
+        const chaincode = dto.signerAddress.slice(8);
+        return await authenticateAsChaincode(ctx, dto, chaincode, recoveredPkHex);
+      }
+
       const ethAddress = signatures.getEthAddress(recoveredPkHex);
       if (dto.signerAddress !== ethAddress) {
         throw new AddressMismatchError(ethAddress, dto.signerAddress);
@@ -193,4 +203,64 @@ export async function ensureIsAuthenticatedBy(
   }
 
   return user;
+}
+
+export async function authenticateAsChaincode(
+  ctx: GalaChainContext,
+  dto: ChainCallDTO,
+  chaincode: string,
+  recoveredPkHex: string
+): Promise<{ alias: string; ethAddress?: string; roles: string[] }> {
+  if (dto.uniqueKey === undefined || dto.uniqueKey.length < 16) {
+    const message = "Chaincode authorization must use uniqueKey with at least 16 characters";
+    throw new ChaincodeAuthorizationError(message);
+  }
+
+  if (chaincode.length < 3) {
+    const message = "Chaincode authorization failed, chaincode must be at least 3 characters";
+    throw new ChaincodeAuthorizationError(message);
+  }
+
+  const confirmDto = await createValidSubmitDTO(SignConfirmationDto, {
+    uniqueKey: dto.uniqueKey,
+    nonce: crypto.randomBytes(16).toString("base64")
+  });
+
+  const args = ["PublicKeyContract:SignConfirmation", confirmDto.serialize()];
+
+  const response = await ctx.stub.invokeChaincode(chaincode, args, "");
+
+  if (response.status !== 200) {
+    const message = "Chaincode authorization failed, got non-200 response";
+    throw new ChaincodeAuthorizationError(message);
+  }
+
+  if (response.payload === undefined) {
+    const message = "Chaincode authorization failed, got empty response";
+    throw new ChaincodeAuthorizationError(message);
+  }
+
+  const signedConfirmation = SignConfirmationDto.deserialize(
+    SignConfirmationDto,
+    response.payload.toString()
+  );
+
+  if (signedConfirmation.signature === undefined) {
+    const message = "Chaincode authorization failed, got empty signature on confirmation";
+    throw new ChaincodeAuthorizationError(message);
+  }
+
+  if (signedConfirmation.uniqueKey !== dto.uniqueKey) {
+    const message = "Chaincode authorization failed, got different uniqueKey on confirmation";
+    throw new ChaincodeAuthorizationError(message);
+  }
+
+  const recoveredKeyFromConfirmation = recoverPublicKey(signedConfirmation.signature, signedConfirmation);
+
+  if (recoveredKeyFromConfirmation !== recoveredPkHex) {
+    const message = "Chaincode authorization failed, got different public key on confirmation";
+    throw new ChaincodeAuthorizationError(message);
+  }
+
+  return { alias: `service|${chaincode}`, ethAddress: undefined, roles: [] };
 }
