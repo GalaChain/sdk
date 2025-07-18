@@ -21,6 +21,7 @@ import { UserAlias } from "./UserAlias";
 
 export enum UserRole {
   CURATOR = "CURATOR",
+  REGISTRAR = "REGISTRAR",
   SUBMIT = "SUBMIT",
   EVALUATE = "EVALUATE"
 }
