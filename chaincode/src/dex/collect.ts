@@ -120,7 +120,7 @@ export async function collect(ctx: GalaChainContext, dto: CollectDto): Promise<D
   }
 
   // Remove or commit position based on whether its empty
-  await updateOrRemovePosition(ctx, poolHash, position);
+  await updateOrRemovePosition(ctx, poolHash, position, tokenDecimals[0], tokenDecimals[1]);
   await putChainObject(ctx, pool);
 
   // Return position holder's new token balances
