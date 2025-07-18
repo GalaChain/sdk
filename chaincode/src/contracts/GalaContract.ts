@@ -93,6 +93,8 @@ export abstract class GalaContract extends Contract {
   public async afterTransaction(ctx: GalaChainContext, result: unknown): Promise<void> {
     await super.afterTransaction(ctx, result);
 
+    (ctx.stub as unknown as GalaChainStub).clearTxPrivateData();
+
     // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
     if (typeof result === "object" && result?.["Status"] === GalaChainResponseType.Success && !ctx.isDryRun) {
       await (ctx.stub as unknown as GalaChainStub).flushWrites();
