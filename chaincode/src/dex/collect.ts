@@ -92,12 +92,12 @@ export async function collect(ctx: GalaChainContext, dto: CollectDto): Promise<D
 
   // Round down the tokens and transfer the tokens to position holder
   const roundedToken0Amount = BigNumber.min(
-    roundTokenAmount(amounts[0], tokenDecimals[0]),
+    roundTokenAmount(amounts[0], tokenDecimals[0], false),
     poolToken0Balance.getQuantityTotal()
   );
 
   const roundedToken1Amount = BigNumber.min(
-    roundTokenAmount(amounts[1], tokenDecimals[1]),
+    roundTokenAmount(amounts[1], tokenDecimals[1], false),
     poolToken1Balance.getQuantityTotal()
   );
 
@@ -120,7 +120,7 @@ export async function collect(ctx: GalaChainContext, dto: CollectDto): Promise<D
   }
 
   // Remove or commit position based on whether its empty
-  await updateOrRemovePosition(ctx, poolHash, position);
+  await updateOrRemovePosition(ctx, poolHash, position, tokenDecimals[0], tokenDecimals[1]);
   await putChainObject(ctx, pool);
 
   // Return position holder's new token balances

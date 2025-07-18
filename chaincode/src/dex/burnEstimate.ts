@@ -13,6 +13,7 @@
  * limitations under the License.
  */
 import { BurnEstimateDto, GetRemoveLiqEstimationResDto, Pool, f18 } from "@gala-chain/api";
+import BigNumber from "bignumber.js";
 
 import { GalaChainContext } from "../types";
 import { getObjectByKey } from "../utils";
@@ -59,7 +60,7 @@ export async function getRemoveLiquidityEstimation(
   const [token0Decimal, token1Decimal] = await getTokenDecimalsFromPool(ctx, pool);
 
   return new GetRemoveLiqEstimationResDto(
-    amounts[0].toFixed(token0Decimal),
-    amounts[1].toFixed(token1Decimal)
+    amounts[0].toFixed(token0Decimal, BigNumber.ROUND_DOWN),
+    amounts[1].toFixed(token1Decimal, BigNumber.ROUND_DOWN)
   );
 }
