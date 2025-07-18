@@ -14,9 +14,23 @@
  */
 import { getAddress } from "ethers";
 
+/**
+ * Type definition for EIP-712 type structures.
+ */
 type EIP712Types = Record<string, Array<{ name: string; type: string }>>;
+
+/**
+ * Type definition for EIP-712 value structures.
+ */
 type EIP712Value = Record<string, unknown>;
 
+/**
+ * Generates EIP-712 type definitions from a given object structure.
+ * @template T - The type of the object to generate types for
+ * @param typeName - The name of the primary type
+ * @param params - The object to analyze for type generation
+ * @returns EIP-712 compatible type definitions
+ */
 export function generateEIP712Types<T>(typeName: string, params: T): EIP712Types {
   const types: EIP712Types = {};
   types[typeName] = [];
@@ -65,10 +79,21 @@ export function generateEIP712Types<T>(typeName: string, params: T): EIP712Types
   return types;
 }
 
+/**
+ * Capitalizes the first letter of a string.
+ * @param string - The string to capitalize
+ * @returns The string with the first letter capitalized
+ */
 export function capitalizeFirstLetter(string: string): string {
   return string.charAt(0).toUpperCase() + string.slice(1);
 }
 
+/**
+ * Generates EIP-712 value structures from a given object.
+ * @template T - The type of the object to generate values for
+ * @param params - The object to convert to EIP-712 format
+ * @returns EIP-712 compatible value structure
+ */
 export function generateEIP712Value<T>(params: T): EIP712Value {
   const value: EIP712Value = {};
 
@@ -89,10 +114,20 @@ export function generateEIP712Value<T>(params: T): EIP712Value {
   return value;
 }
 
+/**
+ * Converts a GalaChain address to an Ethereum address format.
+ * @param galaAddress - The GalaChain address to convert
+ * @returns The equivalent Ethereum address
+ */
 export function galaChainToEthereumAddress(galaAddress: string) {
   return galaAddress ? getAddress(`0x${galaAddress.replace(/0x|eth\|/, "")}`) : "";
 }
 
+/**
+ * Converts an Ethereum address to a GalaChain address format.
+ * @param ethereumAddress - The Ethereum address to convert
+ * @returns The equivalent GalaChain address
+ */
 export function ethereumToGalaChainAddress(ethereumAddress: string) {
   return ethereumAddress?.replace("0x", "eth|") ?? "";
 }

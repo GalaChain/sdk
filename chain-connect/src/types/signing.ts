@@ -12,7 +12,12 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+/**
+ * Enumeration of available signing methods for GalaChain transactions.
+ */
 export enum SigningType {
+  /** Personal message signing (eth_sign/personal_sign) */
   PERSONAL_SIGN = "personalSign",
+  /** Structured data signing (EIP-712 signTypedData) */
   SIGN_TYPED_DATA = "signTypedData"
 }

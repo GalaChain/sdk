@@ -17,12 +17,26 @@ import { DryRunDto, GetObjectDto, GetObjectHistoryDto, createValidDTO } from "@g
 import { GalaChainProvider } from "../GalaChainClient";
 import { DryRunRequest, DryRunResult, GetObjectByKeyRequest, GetObjectHistoryRequest } from "../types";
 
+/**
+ * Base API class providing common chaincode operations.
+ * Serves as the foundation for specific API implementations.
+ */
 export class GalaChainBaseApi {
+  /**
+   * Creates a new base API instance.
+   * @param chainCodeUrl - The URL of the chaincode service
+   * @param connection - The GalaChain provider for network communication
+   */
   constructor(
     protected chainCodeUrl: string,
     protected connection: GalaChainProvider
   ) {}
 
+  /**
+   * Performs a dry run of a chaincode operation without committing to the ledger.
+   * @param dto - The dry run request parameters
+   * @returns Promise resolving to the dry run results
+   */
   public async DryRun(dto: DryRunRequest) {
     await createValidDTO(DryRunDto, dto);
     const stringifiedDto = {
@@ -38,6 +52,12 @@ export class GalaChainBaseApi {
     });
   }
 
+  /**
+   * Retrieves an object from the blockchain by its key.
+   * @template T - The expected type of the retrieved object
+   * @param dto - The object key request parameters
+   * @returns Promise resolving to the retrieved object
+   */
   public GetObjectByKey<T = Record<string, unknown>>(dto: GetObjectByKeyRequest) {
     return this.connection.submit<T, GetObjectDto>({
       method: "GetObjectByKey",
@@ -48,6 +68,12 @@ export class GalaChainBaseApi {
     });
   }
 
+  /**
+   * Retrieves the history of changes for an object from the blockchain.
+   * @template T - The expected type of the historical objects
+   * @param dto - The object history request parameters
+   * @returns Promise resolving to the object's history
+   */
   public GetObjectHistory<T = Record<string, unknown>>(dto: GetObjectHistoryRequest) {
     return this.connection.submit<T, GetObjectHistoryDto>({
       method: "GetObjectHistory",
