@@ -77,6 +77,7 @@ export * from "./DexFeeConfig";
 export * from "./TickData";
 export * from "./LaunchpadDtos";
 export * from "./LaunchpadFinalizeAllocation";
+export * from "./LaunchpadBatchSubmitAuthorities";
 export * from "./LaunchpadFeeConfig";
 export * from "./LaunchpadSale";
 export * from "./BatchSubmitAuthorities";
