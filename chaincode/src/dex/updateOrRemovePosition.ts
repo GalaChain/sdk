@@ -12,12 +12,13 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-import { DexPositionData, f18 } from "@gala-chain/api";
+import { BurnEstimateDto, DexPositionData, f18 } from "@gala-chain/api";
 import BigNumber from "bignumber.js";
 
 import { GalaChainContext } from "../types";
 import { deleteChainObject, putChainObject } from "../utils";
-import { genTickRange, getUserPositionIds } from "./dexUtils";
+import { getRemoveLiquidityEstimation } from "./burnEstimate";
+import { genTickRange, getUserPositionIds, roundTokenAmount } from "./dexUtils";
 
 /**
  * Deletes a user's position in a specific tick range if it has negligible liquidity and tokens owed.
@@ -29,16 +30,37 @@ import { genTickRange, getUserPositionIds } from "./dexUtils";
 export async function updateOrRemovePosition(
   ctx: GalaChainContext,
   poolHash: string,
-  position: DexPositionData
+  position: DexPositionData,
+  token0Decimal: number,
+  token1Decimal: number
 ) {
   //  Fetch user positions
   const userPositions = await getUserPositionIds(ctx, ctx.callingUser, poolHash);
 
+  // Fetch the amount of tokens left in the position's liquidity
+  const burnEstimateDto = new BurnEstimateDto(
+    position.token0ClassKey,
+    position.token1ClassKey,
+    position.fee,
+    position.liquidity,
+    position.tickLower,
+    position.tickUpper,
+    ctx.callingUser,
+    position.positionId
+  );
+
+  const burnEstimateRes = await getRemoveLiquidityEstimation(ctx, burnEstimateDto);
+
   // Check if given position needs to be deleted
   const deleteUserPos =
-    f18(position.tokensOwed0).isLessThan(new BigNumber("0.00000001")) &&
-    f18(position.tokensOwed1).isLessThan(new BigNumber("0.00000001")) &&
-    f18(position.liquidity).isLessThan(new BigNumber("0.00000001"));
+    f18(roundTokenAmount(position.tokensOwed0, token0Decimal, false)).isLessThan(
+      new BigNumber("0.00000001")
+    ) &&
+    f18(roundTokenAmount(position.tokensOwed1, token1Decimal, false)).isLessThan(
+      new BigNumber("0.00000001")
+    ) &&
+    f18(new BigNumber(burnEstimateRes.amount0)).isLessThan(new BigNumber("0.00000001")) &&
+    f18(new BigNumber(burnEstimateRes.amount1)).isLessThan(new BigNumber("0.00000001"));
 
   // Remove position if empty and commit it if its not
   if (deleteUserPos) {

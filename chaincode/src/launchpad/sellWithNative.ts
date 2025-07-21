@@ -22,10 +22,6 @@ import { fetchAndValidateSale, putChainObject } from "../utils";
 import { callMemeTokenIn } from "./callMemeTokenIn";
 import { payReverseBondingCurveFee } from "./fees";
 
-BigNumber.config({
-  ROUNDING_MODE: BigNumber.ROUND_UP
-});
-
 /**
  * Executes a sale of tokens using native tokens (e.g., GALA) in exchange for the specified token amount.
  *

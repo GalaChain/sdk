@@ -94,8 +94,8 @@ export async function quoteExactAmount(
   await processSwapSteps(ctx, state, pool, sqrtPriceLimit, exactInput, zeroForOne);
   const [amount0, amount1] = pool.swap(zeroForOne, state, amountSpecified);
   const [token0Decimal, token1Decimal] = await getTokenDecimalsFromPool(ctx, pool);
-  const roundedToken0Amount = roundTokenAmount(amount0, token0Decimal);
-  const roundedToken1Amount = roundTokenAmount(amount1, token1Decimal);
+  const roundedToken0Amount = roundTokenAmount(amount0, token0Decimal, amount0.isPositive());
+  const roundedToken1Amount = roundTokenAmount(amount1, token1Decimal, amount1.isPositive());
 
   // Check whether pool has enough liquidity to carry out this operation
   if (roundedToken0Amount.isNegative()) {

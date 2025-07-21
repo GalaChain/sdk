@@ -119,7 +119,7 @@ export async function swap(ctx: GalaChainContext, dto: SwapDto): Promise<SwapRes
         from: ctx.callingUser,
         to: poolAlias,
         tokenInstanceKey: tokenInstanceKeys[index],
-        quantity: roundTokenAmount(amount, tokenClasses[index].decimals),
+        quantity: roundTokenAmount(amount, tokenClasses[index].decimals, amount.isPositive()),
         allowancesToUse: [],
         authorizedOnBehalf: undefined
       });

@@ -73,8 +73,8 @@ export async function getPosition(ctx: GalaChainContext, dto: GetPositionDto): P
   position.updatePosition(new BigNumber(0), feeGrowthInside0, feeGrowthInside1);
 
   const [token0Decimal, token1Decimal] = await getTokenDecimalsFromPool(ctx, pool);
-  position.tokensOwed0 = roundTokenAmount(position.tokensOwed0, token0Decimal);
-  position.tokensOwed1 = roundTokenAmount(position.tokensOwed1, token1Decimal);
+  position.tokensOwed0 = roundTokenAmount(position.tokensOwed0, token0Decimal, false);
+  position.tokensOwed1 = roundTokenAmount(position.tokensOwed1, token1Decimal, false);
 
   return position;
 }
