@@ -336,7 +336,7 @@ trusted-chaincode -> other-chaincode -> current-chaincode
 ```
 
 **Warning**: Do not provide the current chaincode ID in `allowedOriginChaincodes` property.
-It effectively means providing open access with not authorization for everyone who provides `service|<current-chaincode>` in `dto.signerAddress`.
+It effectively means providing open access with no authorization for everyone who provides `service|<current-chaincode>` in `dto.signerAddress`.
 
 ### Calling the external chaincode
 
