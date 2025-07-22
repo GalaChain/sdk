@@ -563,9 +563,3 @@ export class GetMyProfileDto extends ChainCallDTO {
   @IsNotEmpty()
   signature: string;
 }
-
-export class SignConfirmationDto extends SubmitCallDTO {
-  @IsNotEmpty()
-  @MinLength(16)
-  nonce: string;
-}

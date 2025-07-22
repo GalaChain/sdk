@@ -317,37 +317,34 @@ If no `allowedRoles` is specified, the system defaults to:
 ## Authenticating a chaincode
 
 GalaChain also supports authorization by a chaincode which is used in cross-chaincode calls.
-You can configure your method to allow access from a custom chaincode in the following way:
+For instance you can configure your method to allow access where the orgin (entrypoint) chaincode called by the client is `trusted-chaincode`:
 
 ```typescript
 @GalaTransaction({
-    allowedChaincodes: ["trusted-chaincode"]
+  allowedOriginChaincodes: ["trusted-chaincode"]
 })
 ```
 
-In this case `trusted-chaincode` is a name of the another chaincode which is installed on the same channel and which is allowed to call the method.
+In this case, when the origin chaincode is detected as a `trusted-chaincode` no signature-based authorization is performed, and the `ctx.callingUser` property becomes `service|trusted-chaincode`.
 
-The process involving chaincode-based auth:
-1. `trusted-chaincode` creates a DTO with `signerAddress` set to `service|trusted-chaincode`.
-2. `trusted-chaincode` signs the DTO with an ephemeral private key that will be used only within the scope of a single transaction.
-3. `trusted-chaincode` invokes `my-chaincode` providing as a parameter the signed DTO.
-4. `my-chaincode` detects from the `signerAddress` field in the DTO that the call is made by `trusted-chaincode`.
-5. `my-chaincode` recovers public key from the DTO and signature.
-6. `my-chaincode` calls `trusted-chaincode` method: `PublicKeyContract:SignConfirmation` to sign a generated payload with the ephemeral key for a given transaction.
-9. `trusted-chaincode` removes ephemeral key after signing the confirmation.
-7. `my-chaincode` recovers public key from the signature provided by `trusted-chaincode`.
-8. If both recovered public key match, it means the call is proven to be made by `trusted-chaincode`.
+Note `allowedOriginChaincodes` property contains **origin** chaincodes not a direct chaincode which calls the current chaincode.
+It means the config above supports both calls:
 
-Once the chaincode becomes authorized, the `ctx.callingUser` becomes `service|trusted-chaincode` and the role-based authorization and organization-based authorization are omitted.
+```
+trusted-chaincode -> current-chaincode
+trusted-chaincode -> other-chaincode -> current-chaincode
+```
+
+**Warning**: Do not provide the current chaincode ID in `allowedOriginChaincodes` property.
+It effectively means providing open access with not authorization for everyone who provides `service|<current-chaincode>` in `dto.signerAddress`.
 
 ### Calling the external chaincode
 
-If you want to call external chaincode and authorize your call as a chaincode, you need to:
-1. provide `service|${chaincodeName}` as a `signerAddress` field in the DTO,
-2. provide `uniqueKey` field in the DTO,
-3. Sign the DTO with the provided method that will generate and use ephemeral key: `RequestConfirmationService.signRequest(dto)`.
+If you want to call external chaincode and authorize your call as a chaincode:
+1. Provide `service|${chaincodeName}` as a `signerAddress` field in the DTO, where the `chaincodeName` is the entrypoint chaincode id, called by the user.
+2. Do not sign the DTO.
 
-Additionally the chaincode should expose `PublicKeyContract` with `SignConfirmation()` method marked as `@UnsignedEvaluate`.
+Remember to allow the chaincode in `allowedOriginChaincodes` transaction property in the target chaincode.
 
 ## Authentication and Authorization Flow
 
