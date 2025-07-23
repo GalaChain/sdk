@@ -21,6 +21,7 @@ import {
   IsOptional,
   Max,
   Min,
+  MinLength,
   ValidateNested,
   ValidationError,
   validate

@@ -182,11 +182,9 @@ Disabling signature based authorization is useful when you want to allow anonymo
 Chain side `ctx.callingUser` property will be populated with the user's alias, which is either `client|<custom-name>` or `eth|<eth-addr>` (if there is no custom name defined).
 Also, `ctx.callingUserEthAddress` will contain the user's Ethereum address, if the user is registered with the Ethereum address.
 If the TON signing scheme is used, `ctx.callingUserTonAddress` will contain the user's TON address.
+The `ctx.callingUserRoles` property will contain the user's assigned roles.
 
 This way it is possible to get the current user's properties in the chaincode and use them in the business logic.
-
-Additionally, we support role-based access control (RBAC) in the future, which will allow for more fine-grained control over who can access what resources.
-See the [RBAC section](#next-role-based-access-control-rbac) for more information.
 
 ### User registration
 
@@ -204,8 +202,13 @@ All methods require the user to provide their public key (secp256k1 for Ethereum
 The only difference between these methods is that only `RegisterUser` allows to specify the `alias` parameter.
 For `RegisterEthUser` and `RegisterTonUser` methods, the alias is set to `eth|<eth-addr>` or `ton|<ton-addr>` respectively.
 
-Access to register methods is restricted on the organization level.
-They can be called only by the organization that is specified in the chaincode as `CURATOR_ORG_MSP` environment variable can access these methods (it's `CuratorOrg` by default).
+Access to register methods is restricted based on the authentication mode configured:
+- **Role-based authorization (RBAC)**: Requires the `CURATOR` role
+- **Organization-based authorization**: Requires membership in the curator organization (default: `CuratorOrg`)
+
+The authentication mode is controlled by the `USE_RBAC` environment variable:
+- `USE_RBAC=true`: Uses role-based authentication
+- `USE_RBAC=false` or unset: Uses organization-based authentication
 
 See the [Organization based authorization](#organization-based-authorization) section, or the [Role Based Access Control (RBAC)](#role-based-access-control-rbac) section for more information.
 
@@ -266,9 +269,12 @@ You can restrict access to the contract method to a specific organizations by se
 For the `PublicKeyContract` chaincode, the `CURATOR_ORG_MSP` environment variable is used as the organization that is allowed to register users (default value is `CuratorOrg`).
 It is recommended to use the same variable for curator-level access to the chaincode methods.
 
+**Note**: The `allowedOrgs` property is deprecated and will be eventually removed from the chaincode definition.
+Instead, you should use the `allowedRoles` property to specify which **roles** can access the method.
+
 ## Role Based Access Control (RBAC)
 
-GalaChain SDK v2 introduced a Role Based Access Control (RBAC) system that will allow for more fine-grained control over who can access what resources.
+GalaChain SDK v2 introduced a Role Based Access Control (RBAC) system that provides fine-grained control over who can access what resources.
 
 The `allowedOrgs` property is deprecated and will be eventually removed from the chaincode definition.
 Instead, you should use the `allowedRoles` property to specify which **roles** can access the method.
@@ -279,3 +285,86 @@ By default, the `EVALUATE` and `SUBMIT` roles are assigned to the user when they
 You can assign additional roles to the user using the `PublicKeyContract:UpdateUserRoles` method. This method requires that the calling user either has the `CURATOR` role or is a CA user from a curator organization.
 
 There are some predefined roles (`EVALUATE`, `SUBMIT`, `CURATOR`). You can also define custom roles for more granular access control.
+
+### Default Role Assignment
+
+When users are registered, they are automatically assigned the following default roles:
+- `EVALUATE`: Allows querying the blockchain state
+- `SUBMIT`: Allows submitting transactions that modify state
+
+For admin users (when `DEV_ADMIN_PUBLIC_KEY` is set), the following admin roles are assigned:
+- `CURATOR`: Allows curator-level operations
+- `EVALUATE`: Allows querying the blockchain state  
+- `SUBMIT`: Allows submitting transactions that modify state
+
+### Using Roles in Contract Methods
+
+You can restrict access to contract methods using the `allowedRoles` property:
+
+```typescript
+@Submit({
+  allowedRoles: ["CURATOR", "ADMIN"]
+})
+async privilegedOperation(ctx: GalaChainContext, dto: OperationDto) {
+  // Only users with CURATOR or ADMIN role can execute this
+}
+```
+
+If no `allowedRoles` is specified, the system defaults to:
+- `SUBMIT` role for submit transactions
+- `EVALUATE` role for evaluate transactions
+
+## Authenticating a chaincode
+
+GalaChain also supports authorization by a chaincode which is used in cross-chaincode calls.
+For instance you can configure your method to allow access where the orgin (entrypoint) chaincode called by the client is `trusted-chaincode`:
+
+```typescript
+@GalaTransaction({
+  allowedOriginChaincodes: ["trusted-chaincode"]
+})
+```
+
+In this case, when the origin chaincode is detected as a `trusted-chaincode` no signature-based authorization is performed, and the `ctx.callingUser` property becomes `service|trusted-chaincode`.
+
+Note `allowedOriginChaincodes` property contains **origin** chaincodes not a direct chaincode which calls the current chaincode.
+It means the config above supports both calls:
+
+```
+trusted-chaincode -> current-chaincode
+trusted-chaincode -> other-chaincode -> current-chaincode
+```
+
+**Warning**: Do not provide the current chaincode ID in `allowedOriginChaincodes` property.
+It effectively means providing open access with no authorization for everyone who provides `service|<current-chaincode>` in `dto.signerAddress`.
+
+### Calling the external chaincode
+
+If you want to call external chaincode and authorize your call as a chaincode:
+1. Provide `service|${chaincodeName}` as a `signerAddress` field in the DTO, where the `chaincodeName` is the entrypoint chaincode id, called by the user.
+2. Do not sign the DTO.
+
+Remember to allow the chaincode in `allowedOriginChaincodes` transaction property in the target chaincode.
+
+## Authentication and Authorization Flow
+
+The authentication and authorization process follows this sequence:
+
+1. **DTO Parsing and Validation**: The incoming DTO is parsed and validated
+2. **DTO Expiration Check**: If `dtoExpiresAt` is set, the system checks if the DTO has expired
+3. **User Authentication**: 
+   - If `verifySignature` is enabled or a signature is present, the user is authenticated
+   - If no signature verification is required, default roles are assigned based on the authorization type
+4. **User Authorization**: The system checks if the authenticated user has the required roles, or organization membership, or is an allowed chaincode
+5. **Unique Key Enforcement**: For submit transactions, the system ensures the transaction has a unique key to prevent replay attacks
+6. **Transaction Execution**: The actual contract method is executed
+
+### Context Properties
+
+After successful authentication, the following context properties are available:
+
+- `ctx.callingUser`: The user's alias (e.g., `eth|0x123...def`, `client|admin`)
+- `ctx.callingUserEthAddress`: The user's Ethereum address (if available)
+- `ctx.callingUserTonAddress`: The user's TON address (if available)
+- `ctx.callingUserRoles`: Array of roles assigned to the user
+- `ctx.callingUserProfile`: Complete user profile object
