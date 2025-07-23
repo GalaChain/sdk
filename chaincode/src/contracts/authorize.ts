@@ -42,13 +42,21 @@ export class ChaincodeNotAllowedError extends ForbiddenError {
     super(message, { chaincode, allowedChaincodes });
   }
 }
-export const curatorOrgMsp = process.env.CURATOR_ORG_MSP ?? "CuratorOrg";
 
 export const useRoleBasedAuth = process.env.USE_RBAC === "true";
+
+export const curatorOrgMsp = process.env.CURATOR_ORG_MSP?.trim() ?? "CuratorOrg";
+
+const registarOrgsFromEnv = process.env.REGISTRAR_ORG_MSPS?.split(",").map((o) => o.trim());
+export const registrarOrgMsps = registarOrgsFromEnv ?? [curatorOrgMsp];
 
 export const requireCuratorAuth = useRoleBasedAuth
   ? { allowedRoles: [UserRole.CURATOR] }
   : { allowedOrgs: [curatorOrgMsp] };
+
+export const requireRegistrarAuth = useRoleBasedAuth
+  ? { allowedRoles: [UserRole.REGISTRAR] }
+  : { allowedOrgs: registrarOrgMsps };
 
 export function ensureOrganizationIsAllowed(ctx: GalaChainContext, allowedOrgsMSPs: string[] | undefined) {
   const userMsp: string = ctx.clientIdentity.getMSPID();

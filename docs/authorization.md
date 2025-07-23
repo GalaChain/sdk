@@ -202,15 +202,29 @@ All methods require the user to provide their public key (secp256k1 for Ethereum
 The only difference between these methods is that only `RegisterUser` allows to specify the `alias` parameter.
 For `RegisterEthUser` and `RegisterTonUser` methods, the alias is set to `eth|<eth-addr>` or `ton|<ton-addr>` respectively.
 
-Access to register methods is restricted based on the authentication mode configured:
-- **Role-based authorization (RBAC)**: Requires the `CURATOR` role
-- **Organization-based authorization**: Requires membership in the curator organization (default: `CuratorOrg`)
+Access to registration methods is now controlled as follows:
+- **Role-based authorization (RBAC)**: Requires the `REGISTRAR` role
+- **Organization-based authorization**: Requires membership in one of the registrar organizations (see [Registrar Organizations and REGISTRAR Role](#registrar-organizations-and-registrar-role))
 
 The authentication mode is controlled by the `USE_RBAC` environment variable:
 - `USE_RBAC=true`: Uses role-based authentication
 - `USE_RBAC=false` or unset: Uses organization-based authentication
 
-See the [Organization based authorization](#organization-based-authorization) section, or the [Role Based Access Control (RBAC)](#role-based-access-control-rbac) section for more information.
+#### Registrar Organizations and REGISTRAR Role
+
+- The set of allowed registrar organizations is controlled by the `REGISTRAR_ORG_MSPS` environment variable (comma-separated list of org MSPs). If not set, it defaults to the value of `CURATOR_ORG_MSP` (default: `CuratorOrg`).
+- In RBAC mode, the `REGISTRAR` role is required to register users. This is distinct from the `CURATOR` role, which may be used for other privileged operations.
+- In organization-based mode, any CA user from an org listed in `REGISTRAR_ORG_MSPS` can register users.
+
+**Example:**
+
+- To allow both `Org1MSP` and `Org2MSP` to register users, set:
+  ```
+  REGISTRAR_ORG_MSPS=Org1MSP,Org2MSP
+  ```
+- If `REGISTRAR_ORG_MSPS` is not set, only the org specified by `CURATOR_ORG_MSP` (default: `CuratorOrg`) can register users.
+
+See the [Registrar Organizations and REGISTRAR Role](#registrar-organizations-and-registrar-role) section for more details.
 
 #### Allowing non-registered users
 
@@ -266,8 +280,8 @@ You can restrict access to the contract method to a specific organizations by se
 })
 ```
 
-For the `PublicKeyContract` chaincode, the `CURATOR_ORG_MSP` environment variable is used as the organization that is allowed to register users (default value is `CuratorOrg`).
-It is recommended to use the same variable for curator-level access to the chaincode methods.
+For the `PublicKeyContract` registration methods, the set of allowed organizations is controlled by the `REGISTRAR_ORG_MSPS` environment variable (see [Registrar Organizations and REGISTRAR Role](#registrar-organizations-and-registrar-role)).
+If not set, it defaults to `CURATOR_ORG_MSP` (default: `CuratorOrg`).
 
 **Note**: The `allowedOrgs` property is deprecated and will be eventually removed from the chaincode definition.
 Instead, you should use the `allowedRoles` property to specify which **roles** can access the method.
@@ -284,7 +298,7 @@ The roles are assigned to the `UserProfile` object in the chain data.
 By default, the `EVALUATE` and `SUBMIT` roles are assigned to the user when they are registered.
 You can assign additional roles to the user using the `PublicKeyContract:UpdateUserRoles` method. This method requires that the calling user either has the `CURATOR` role or is a CA user from a curator organization.
 
-There are some predefined roles (`EVALUATE`, `SUBMIT`, `CURATOR`). You can also define custom roles for more granular access control.
+There are some predefined roles (`EVALUATE`, `SUBMIT`, `CURATOR`, `REGISTRAR`). You can also define custom roles for more granular access control.
 
 ### Default Role Assignment
 
@@ -297,16 +311,18 @@ For admin users (when `DEV_ADMIN_PUBLIC_KEY` is set), the following admin roles 
 - `EVALUATE`: Allows querying the blockchain state  
 - `SUBMIT`: Allows submitting transactions that modify state
 
+For registration methods, the `REGISTRAR` role is required if RBAC is enabled.
+
 ### Using Roles in Contract Methods
 
 You can restrict access to contract methods using the `allowedRoles` property:
 
 ```typescript
 @Submit({
-  allowedRoles: ["CURATOR", "ADMIN"]
+  allowedRoles: ["CURATOR", "REGISTRAR"]
 })
 async privilegedOperation(ctx: GalaChainContext, dto: OperationDto) {
-  // Only users with CURATOR or ADMIN role can execute this
+  // Only users with CURATOR, or REGISTRAR role can execute this
 }
 ```
 
