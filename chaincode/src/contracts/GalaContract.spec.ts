@@ -16,14 +16,19 @@ import {
   BatchDto,
   ChainCallDTO,
   ChainObject,
+  ChainUser,
   DefaultError,
   DryRunDto,
   GalaChainResponse,
   GalaChainResponseType,
   GetObjectDto,
+  PublicKey,
+  SigningScheme,
+  UserProfile,
   createValidChainObject,
   createValidDTO,
-  serialize
+  serialize,
+  signatures
 } from "@gala-chain/api";
 import {
   TestChaincode,
@@ -36,7 +41,12 @@ import { instanceToPlain, plainToInstance } from "class-transformer";
 import { Context } from "fabric-contract-api";
 import { inspect } from "util";
 
-import TestGalaContract, { Superhero, SuperheroDto, SuperheroQueryDto } from "../__test__/TestGalaContract";
+import TestGalaContract, {
+  KVDto,
+  Superhero,
+  SuperheroDto,
+  SuperheroQueryDto
+} from "../__test__/TestGalaContract";
 import { GalaChainContext } from "../types";
 
 /*
@@ -385,12 +395,7 @@ describe("GalaContract.DryRun", () => {
       Status: GalaChainResponseType.Error,
       ErrorCode: 404,
       ErrorKey: "NOT_FOUND",
-      Message:
-        "Method UnknownMethod is not available. Available methods: " +
-        "BatchEvaluate, BatchSubmit, CreateSuperhero, DryRun, ErrorAfterPutKv, " +
-        "ErrorAfterPutNestedKv, GetChaincodeVersion, GetContractAPI, GetContractVersion, " +
-        "GetKv, GetNestedKv, GetObjectByKey, GetObjectHistory, " +
-        "GetSetPutNestedKv, PutKv, PutNestedKv, QuerySuperheroes"
+      Message: expect.stringContaining("Method UnknownMethod is not available")
     });
   });
 
@@ -465,6 +470,31 @@ describe("GalaContract.Batch", () => {
     // Then
     expect(submitResp).toEqual(transactionSuccess(expectedSubmitResponses));
     expect(evaluateResp).toEqual(transactionSuccess(expectedEvaluateResponses));
+  });
+
+  it("should support batch operations with no partial success", async () => {
+    // Given
+    const chaincode = new TestChaincode([TestGalaContract]);
+    const batchSubmit = plainToInstance(BatchDto, {
+      uniqueKey: "unique-key-batch",
+      operations: [
+        { method: "PutKv", dto: { key: "test-key-1", value: "robot", uniqueKey: "unique-key-1" } },
+        { method: "PutKv", dto: { key: "test-key-2", value: "zerg", uniqueKey: "unique-key-1" } },
+        { method: "PutKv", dto: { key: "test-key-3", value: "human", uniqueKey: "unique-key-3" } }
+      ],
+      noPartialSuccess: true
+    });
+
+    // When
+    const response = await chaincode.invoke("TestGalaContract:BatchSubmit", batchSubmit.serialize());
+
+    // Then
+    expect(response).toEqual(transactionErrorKey("BATCH_PARTIAL_SUCCESS_REQUIRED"));
+    expect(response).toEqual(
+      transactionErrorMessageContains(
+        "Batch operation with index 1 failed with error: UNIQUE_TRANSACTION_CONFLICT: Unique transaction key unique-key-1 is already saved"
+      )
+    );
   });
 
   it("should fail on writes limit exceeded", async () => {
@@ -619,5 +649,130 @@ describe("GalaContract.Batch", () => {
         transactionSuccess({ key: "test-key-2", array: ["robot", "zerg", "human"] })
       ])
     );
+  });
+
+  it("should reset writes occurring during unterminated async operation", async () => {
+    // Given
+    const chaincode = new TestChaincode([TestGalaContract]);
+    const batchSubmit = plainToInstance(BatchDto, {
+      operations: [
+        {
+          method: "UnterminatedAsyncErrorOp",
+          dto: { key: "test-key-1", text: "robot", uniqueKey: "unique-key-1" }
+        },
+        {
+          method: "DelayedOp",
+          dto: { key: "test-key-1", text: "human", uniqueKey: "unique-key-2" }
+        }
+      ],
+      uniqueKey: "unique-key-batch-1",
+      writesLimit: 1000
+    });
+
+    // When
+    const response = await chaincode.invoke("TestGalaContract:BatchSubmit", batchSubmit.serialize());
+
+    // Then
+    expect(response).toEqual(
+      transactionSuccess([
+        transactionErrorMessageContains("Async operation was not awaited"),
+        transactionSuccess()
+      ])
+    );
+
+    expect(chaincode.state).toMatchObject({
+      "test-key-1": "human"
+    });
+  });
+
+  it("should get proper ctx data for transactions in batch", async () => {
+    // Given
+    const { user: user1, state: state1 } = await generateUser("user1");
+    const { user: user2, state: state2 } = await generateUser();
+
+    const signedDto = (u: ChainUser, uniqueKey: string) =>
+      plainToInstance(ChainCallDTO, { uniqueKey }).signed(u.privateKey);
+
+    const chaincode = new TestChaincode([TestGalaContract], { ...state1, ...state2 });
+
+    const batchSubmit = plainToInstance(BatchDto, {
+      operations: [
+        { method: "GetCtxData", dto: signedDto(user1, "test-key-1") },
+        { method: "GetCtxData", dto: signedDto(user2, "test-key-2") }
+      ],
+      uniqueKey: "unique-key-batch-1"
+    });
+
+    // When
+    const response = await chaincode.invoke<GalaChainResponse<GalaChainResponse<unknown>[]>>(
+      "TestGalaContract:BatchSubmit",
+      batchSubmit.serialize()
+    );
+
+    // Then
+    const firstOperationResponse = response?.Data?.[0]?.Data as { txUnixTime: number; txId: string };
+
+    expect(response).toEqual(
+      transactionSuccess([
+        transactionSuccess({
+          callingUser: user1.identityKey,
+          txId: expect.stringMatching(/^[a-zA-Z0-9_-]+|0$/),
+          txUnixTime: expect.any(Number)
+        }),
+        transactionSuccess({
+          callingUser: user2.identityKey,
+          txId: firstOperationResponse?.txId?.replace("|0", "|1"),
+          txUnixTime: firstOperationResponse?.txUnixTime
+        })
+      ])
+    );
+  });
+});
+
+async function generateUser(name?: string) {
+  const user = ChainUser.withRandomKeys(name);
+
+  const publicKey = await createValidChainObject(PublicKey, {
+    publicKey: signatures.normalizePublicKey(user.publicKey).toString("base64"),
+    signing: SigningScheme.ETH
+  });
+
+  const userProfile = await createValidChainObject(UserProfile, {
+    alias: user.identityKey,
+    ethAddress: user.ethAddress
+  });
+
+  const state = {
+    [`\u0000GCPK\u0000${user.identityKey}\u0000`]: publicKey.serialize(),
+    [`\u0000GCUP\u0000${user.ethAddress}\u0000`]: userProfile.serialize()
+  };
+
+  return { user, state };
+}
+
+describe("transaction expiration", () => {
+  it("should fail if dto expires at is in the past", async () => {
+    // Given
+    const chaincode = new TestChaincode([TestGalaContract]);
+    const dto1 = await createValidDTO(KVDto, {
+      dtoExpiresAt: Date.now() - 1000,
+      uniqueKey: "test-key-1",
+      key: "test-key-1"
+    });
+
+    const dto2 = await createValidDTO(KVDto, {
+      dtoExpiresAt: Date.now() + 1000,
+      uniqueKey: "test-key-2",
+      key: "test-key-2"
+    });
+
+    // When
+    const response1 = await chaincode.invoke("TestGalaContract:GetKv", dto1.serialize());
+    const response2 = await chaincode.invoke("TestGalaContract:GetKv", dto2.serialize());
+
+    // Then
+    expect(response1).toEqual(transactionErrorKey("EXPIRED"));
+    expect(response1).toEqual(transactionErrorMessageContains("DTO expired at"));
+    expect(response2).toEqual(transactionErrorKey("NOT_FOUND"));
   });
 });

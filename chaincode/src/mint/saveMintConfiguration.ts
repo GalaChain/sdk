@@ -14,8 +14,6 @@
  */
 import {
   BurnToMintConfiguration,
-  ChainError,
-  ErrorCode,
   MintFeeConfiguration,
   PostMintLockConfiguration,
   TokenClass,

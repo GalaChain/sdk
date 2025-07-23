@@ -16,6 +16,7 @@ import {
   ChainCallDTO,
   ChainError,
   ClassConstructor,
+  ExpiredError,
   GalaChainResponse,
   Inferred,
   MethodAPI,
@@ -84,6 +85,7 @@ export interface CommonTransactionOptions<In extends ChainCallDTO, Out> {
   /** @deprecated */
   allowedOrgs?: string[];
   allowedRoles?: string[];
+  allowedOriginChaincodes?: string[];
   apiMethodName?: string;
   sequence?: MethodAPI[];
   before?: GalaTransactionBeforeFn<In>;
@@ -183,6 +185,11 @@ function GalaTransaction<In extends ChainCallDTO, Out>(
           ? undefined
           : await parseValidDTO<In>(dtoClass, dtoPlain as string | Record<string, unknown>);
 
+        // Note using Date.now() instead of ctx.txUnixTime which is provided client-side.
+        if (dto?.dtoExpiresAt && dto.dtoExpiresAt < Date.now()) {
+          throw new ExpiredError(`DTO expired at ${new Date(dto.dtoExpiresAt).toISOString()}`);
+        }
+
         // Authenticate the user
         if (ctx.isDryRun) {
           // Do not authenticate in dry run mode
@@ -230,11 +237,24 @@ function GalaTransaction<In extends ChainCallDTO, Out>(
 
         return normalizedResult;
       } catch (err) {
+        const chainError = ChainError.from(err);
+
         if (ctx.logger) {
-          ChainError.from(err).logWarn(ctx.logger);
+          chainError.logWarn(ctx.logger);
           ctx.logger.logTimeline("Failed Transaction", loggingContext, [dtoPlain], err);
           ctx.logger.debug(err.message);
           ctx.logger.debug(err.stack);
+        }
+
+        // if external chaincode call succeeded, but the remaining part of the
+        // chaincode failed, we need to throw an error to prevent from the state
+        // being updated by the external chaincode. There seems to be no other
+        // way to rollback the state changes.
+        if (ctx.stub.externalChaincodeWasInvoked) {
+          const message =
+            "External chaincode call succeeded, but the remaining part of the chaincode failed with: " +
+            `${chainError.key}: ${chainError.message}`;
+          throw new RuntimeError(message);
         }
 
         // Note: since it does not end with an exception, failed transactions are also saved

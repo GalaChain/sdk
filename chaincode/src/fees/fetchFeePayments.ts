@@ -60,9 +60,7 @@ export async function fetchFeePayments(
     FeeChannelPaymentReceipt,
     data.bookmark,
     data.limit
-  ).catch((e) => {
-    throw ChainError.map(e, ErrorCode.NOT_FOUND, new NotFoundError(ctx.callingUser));
-  });
+  );
 
   const response = new FetchFeeChannelPaymentsResDto();
   response.results = lookup.results.map((result) => {

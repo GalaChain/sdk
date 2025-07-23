@@ -24,6 +24,7 @@ import {
   UserProfile,
   UserProfileWithRoles,
   asValidUserAlias,
+  createValidChainObject,
   normalizePublicKey,
   signatures
 } from "@gala-chain/api";
@@ -88,9 +89,16 @@ export class PublicKeyService {
     await ctx.stub.putState(key, data);
   }
 
-  public static async deleteUserProfile(ctx: GalaChainContext, ethAddress: string): Promise<void> {
-    const key = PublicKeyService.getUserProfileKey(ctx, ethAddress);
-    await ctx.stub.deleteState(key);
+  public static async invalidateUserProfile(ctx: GalaChainContext, address: string): Promise<void> {
+    const key = PublicKeyService.getUserProfileKey(ctx, address);
+    const userProfile = await createValidChainObject(UserProfile, {
+      alias: asValidUserAlias(`client|invalidated`),
+      ethAddress: "0000000000000000000000000000000000000000",
+      roles: []
+    });
+
+    const data = Buffer.from(userProfile.serialize());
+    await ctx.stub.putState(key, data);
   }
 
   public static getUserAddress(publicKey: string, signing: SigningScheme): string {
@@ -259,8 +267,14 @@ export class PublicKeyService {
 
     // Note: we don't throw an error if userProfile is undefined in order to support legacy users with unsaved profiles
     if (userProfile !== undefined) {
-      // remove old user profile
-      await PublicKeyService.deleteUserProfile(ctx, oldAddress);
+      // invalidate old user profile
+      await PublicKeyService.invalidateUserProfile(ctx, oldAddress);
+    }
+
+    // ensure no user profile exists under new address
+    const newUserProfile = await PublicKeyService.getUserProfile(ctx, newAddress);
+    if (newUserProfile !== undefined) {
+      throw new ProfileExistsError(newAddress, newUserProfile.alias);
     }
 
     // update Public Key, and add user profile under new eth address

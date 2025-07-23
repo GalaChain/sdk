@@ -21,6 +21,7 @@ import {
   IsOptional,
   Max,
   Min,
+  MinLength,
   ValidateNested,
   ValidationError,
   validate
@@ -193,6 +194,13 @@ export class ChainCallDTO {
   @StringEnumProperty(SigningScheme)
   public signing?: SigningScheme;
 
+  @JSONSchema({
+    description: "Unit timestamp when the DTO expires. If the timestamp is in the past, the DTO is not valid."
+  })
+  @IsOptional()
+  @IsNumber()
+  public dtoExpiresAt?: number;
+
   validate(): Promise<ValidationError[]> {
     return validate(this);
   }
@@ -321,6 +329,15 @@ export class BatchDto extends ChainCallDTO {
   @Max(BatchDto.WRITES_HARD_LIMIT)
   @IsOptional()
   writesLimit?: number;
+
+  @JSONSchema({
+    description:
+      "If true, the batch will fail if any of the operations fail. " +
+      "If false, the batch will continue even if some of the operations fail. " +
+      "Default: false."
+  })
+  @IsOptional()
+  noPartialSuccess?: boolean;
 
   @Type(() => BatchOperationDto)
   @ValidateNested({ each: true })
