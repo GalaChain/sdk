@@ -216,6 +216,8 @@ It defines some additional fields that are required for GalaChain to properly ha
   It is required for authorization when the transaction is signed with DER signature (see [Authentication and authorization](#authentication-and-authorization)).
 - `uniqueKey` - optional unique key of the transaction.
   It is required to prevent duplicate calls (see [Prevent duplicate calls](#prevent-duplicate-calls)).
+- `dtoExpiresAt` - optional expiration timestamp in milliseconds.
+  It is used to prevent replay attacks and enforce time-sensitive operations (see [Authentication and authorization](#dto-expiration)).
 - `trace` - optional tracing span of the transaction (see [Tracing support](#tracing-support)).
 
 Sample DTO class:
