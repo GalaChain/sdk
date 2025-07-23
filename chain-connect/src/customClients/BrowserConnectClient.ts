@@ -26,9 +26,19 @@ declare global {
   }
 }
 
+/**
+ * Browser-based client for connecting to wallets like MetaMask.
+ * Handles wallet connection, account management, and transaction signing.
+ */
 export class BrowserConnectClient extends WebSigner {
   protected isInitialized = false;
 
+  /**
+   * Creates a new browser connect client.
+   * @param provider - Optional EIP-1193 provider (defaults to window.ethereum)
+   * @param options - Configuration options for the provider
+   * @throws {Error} If no Ethereum provider is found
+   */
   constructor(provider?: Eip1193Provider, options?: GalaChainProviderOptions) {
     super(options);
     this.address = "";
@@ -55,6 +65,10 @@ export class BrowserConnectClient extends WebSigner {
     }
   }
 
+  /**
+   * Handles account changes from the wallet provider.
+   * @param accounts - Array of account addresses from the wallet
+   */
   protected onAccountsChanged(accounts: string[]) {
     if (accounts.length > 0) {
       this.ethereumAddress = getAddress(accounts[0]);
@@ -67,6 +81,11 @@ export class BrowserConnectClient extends WebSigner {
     }
   }
 
+  /**
+   * Connects to the wallet and requests account access.
+   * @returns Promise resolving to the connected GalaChain address
+   * @throws {Error} If no provider is found or connection fails
+   */
   public async connect() {
     if (!this.provider) {
       throw new Error("Ethereum provider not found");
@@ -83,6 +102,9 @@ export class BrowserConnectClient extends WebSigner {
     }
   }
 
+  /**
+   * Disconnects from the wallet and cleans up event listeners.
+   */
   public disconnect() {
     if (this.isInitialized && window.ethereum) {
       window.ethereum.removeListener("accountsChanged", this.onAccountsChanged);
@@ -91,6 +113,15 @@ export class BrowserConnectClient extends WebSigner {
     this.ethereumAddress = "";
   }
 
+  /**
+   * Signs a payload using the connected wallet.
+   * @template T - The type of the payload to sign
+   * @param method - The method name for EIP-712 signing
+   * @param payload - The data to sign
+   * @param signingType - The type of signing to use (defaults to signTypedData)
+   * @returns Promise resolving to the signed payload with signature
+   * @throws {Error} If no provider/account is connected or signing fails
+   */
   public async sign<T extends object>(
     method: string,
     payload: T,
