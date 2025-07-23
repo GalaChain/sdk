@@ -16,7 +16,14 @@ import { ethers } from "ethers";
 
 import { ethereumToGalaChainAddress } from "./CommonUtils";
 
+/**
+ * Utility class for wallet creation and registration operations.
+ */
 export class WalletUtils {
+  /**
+   * Creates a new random wallet with all necessary credentials.
+   * @returns Object containing wallet addresses, keys, and mnemonic
+   */
   static createRandom() {
     const wallet = ethers.Wallet.createRandom();
     return {
@@ -61,7 +68,7 @@ export class WalletUtils {
   }
 
   /**
-   * Registers a new wallet.
+   * Creates a new random wallet and registers it with the provided service.
    *
    * @param {string} uri - The URI to register the wallet.
    *
@@ -70,6 +77,7 @@ export class WalletUtils {
    * - For Stage: `https://stage-galaswap.gala.com/v1/CreateHeadlessWallet`
    * - For Prod: `https://api-galaswap.gala.com/v1/CreateHeadlessWallet`
    *
+   * @returns {Promise<object>} Promise resolving to the created wallet credentials
    */
   static async createAndRegisterRandomWallet(uri: string) {
     const wallet = WalletUtils.createRandom();

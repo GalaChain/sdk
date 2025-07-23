@@ -25,6 +25,28 @@ export class MissingRoleError extends UnauthorizedError {
   }
 }
 
+<<<<<<< HEAD
+=======
+export class OrganizationNotAllowedError extends ForbiddenError {
+  constructor(userMsp: string, allowedOrgsMSPs: string[]) {
+    const message =
+      `Members of organization ${userMsp} do not have sufficient permissions.` +
+      ` Required one of [${allowedOrgsMSPs?.join(", ")}].`;
+    super(message, { userMsp, allowedOrgsMSPs });
+  }
+}
+
+export class ChaincodeNotAllowedError extends ForbiddenError {
+  constructor(chaincode: string, allowedChaincodes: string[]) {
+    const message =
+      `Chaincode ${chaincode} is not allowed to access this method. ` +
+      `Required one of [${allowedChaincodes.join(", ")}].`;
+    super(message, { chaincode, allowedChaincodes });
+  }
+}
+export const curatorOrgMsp = process.env.CURATOR_ORG_MSP ?? "CuratorOrg";
+
+>>>>>>> origin/main
 export const useRoleBasedAuth = process.env.USE_RBAC === "true";
 
 export const curatorOrgMsp = process.env.CURATOR_ORG_MSP?.trim() ?? "CuratorOrg";
@@ -33,6 +55,7 @@ export const requireCuratorAuth = useRoleBasedAuth
   ? { allowedRoles: [UserRole.CURATOR] }
   : { allowedOrgs: [curatorOrgMsp] };
 
+<<<<<<< HEAD
 const registarOrgsFromEnv = process.env.REGISTRAR_ORG_MSPS?.split(",").map((o) => o.trim());
 export const registrarOrgMsps = registarOrgsFromEnv ?? [curatorOrgMsp];
 
@@ -42,15 +65,14 @@ export const requireRegistrarAuth = useRoleBasedAuth
 
 export class OrganizationNotAllowedError extends ForbiddenError {}
 
+=======
+>>>>>>> origin/main
 export function ensureOrganizationIsAllowed(ctx: GalaChainContext, allowedOrgsMSPs: string[] | undefined) {
   const userMsp: string = ctx.clientIdentity.getMSPID();
   const isAllowed = (allowedOrgsMSPs || []).some((o) => o === userMsp);
 
   if (!isAllowed) {
-    const message =
-      `Members of organization ${userMsp} do not have sufficient permissions.` +
-      ` Required one of [${allowedOrgsMSPs?.join(", ")}].`;
-    throw new OrganizationNotAllowedError(message, { userMsp });
+    throw new OrganizationNotAllowedError(userMsp, allowedOrgsMSPs ?? []);
   }
 }
 
@@ -62,10 +84,25 @@ export async function ensureRoleIsAllowed(ctx: GalaChainContext, allowedRoles: s
   }
 }
 
-export async function authorize(
-  ctx: GalaChainContext,
-  options: { allowedOrgs?: string[]; allowedRoles?: string[]; quorum?: number } = {}
-) {
+export function ensureChaincodeIsAllowed(chaincode: string, allowedChaincodes: string[]) {
+  if (!allowedChaincodes.includes(chaincode)) {
+    throw new ChaincodeNotAllowedError(chaincode, allowedChaincodes);
+  }
+}
+
+export interface AuthorizeOptions {
+  allowedOrgs?: string[];
+  allowedRoles?: string[];
+  allowedChaincodes?: string[];
+}
+
+export async function authorize(ctx: GalaChainContext, options: AuthorizeOptions) {
+  if (options.allowedChaincodes && ctx.callingUser.startsWith("service|")) {
+    const callingChaincode = ctx.callingUser.slice(8);
+    ensureChaincodeIsAllowed(callingChaincode, options.allowedChaincodes);
+    return;
+  }
+
   if (options.allowedOrgs) {
     ensureOrganizationIsAllowed(ctx, options.allowedOrgs);
   }

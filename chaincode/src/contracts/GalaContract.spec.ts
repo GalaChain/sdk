@@ -41,7 +41,12 @@ import { instanceToPlain, plainToInstance } from "class-transformer";
 import { Context } from "fabric-contract-api";
 import { inspect } from "util";
 
-import TestGalaContract, { Superhero, SuperheroDto, SuperheroQueryDto } from "../__test__/TestGalaContract";
+import TestGalaContract, {
+  KVDto,
+  Superhero,
+  SuperheroDto,
+  SuperheroQueryDto
+} from "../__test__/TestGalaContract";
 import { GalaChainContext } from "../types";
 
 /*
@@ -744,3 +749,30 @@ async function generateUser(name?: string) {
 
   return { user, state };
 }
+
+describe("transaction expiration", () => {
+  it("should fail if dto expires at is in the past", async () => {
+    // Given
+    const chaincode = new TestChaincode([TestGalaContract]);
+    const dto1 = await createValidDTO(KVDto, {
+      dtoExpiresAt: Date.now() - 1000,
+      uniqueKey: "test-key-1",
+      key: "test-key-1"
+    });
+
+    const dto2 = await createValidDTO(KVDto, {
+      dtoExpiresAt: Date.now() + 1000,
+      uniqueKey: "test-key-2",
+      key: "test-key-2"
+    });
+
+    // When
+    const response1 = await chaincode.invoke("TestGalaContract:GetKv", dto1.serialize());
+    const response2 = await chaincode.invoke("TestGalaContract:GetKv", dto2.serialize());
+
+    // Then
+    expect(response1).toEqual(transactionErrorKey("EXPIRED"));
+    expect(response1).toEqual(transactionErrorMessageContains("DTO expired at"));
+    expect(response2).toEqual(transactionErrorKey("NOT_FOUND"));
+  });
+});
