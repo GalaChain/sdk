@@ -10,7 +10,7 @@
         <meta name="author" content="Gala Games">
       
       
-        <link rel="canonical" href="https://github.com/GalaChain/sdk/v2.04/chaincode-deployment/">
+        <link rel="canonical" href="https://github.com/GalaChain/sdk/v2.4.0/chaincode-deployment/">
       
       
         <link rel="prev" href="../chaincode-testing/">
@@ -477,36 +477,37 @@
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
       
         <li class="md-nav__item">
-  <a href="#the-process" class="md-nav__link">
-    The process
+  <a href="#the-anatomy-of-a-chaincode-from-the-deployment-perspective" class="md-nav__link">
+    The anatomy of a chaincode from the deployment perspective
   </a>
   
 </li>
       
         <li class="md-nav__item">
-  <a href="#reference" class="md-nav__link">
-    Reference
-  </a>
-  
-    <nav class="md-nav" aria-label="Reference">
-      <ul class="md-nav__list">
-        
-          <li class="md-nav__item">
-  <a href="#fetching-information-about-chaincode-and-deployments" class="md-nav__link">
-    Fetching information about chaincode and deployments
+  <a href="#registering-the-chaincode" class="md-nav__link">
+    Registering the chaincode
   </a>
   
 </li>
-        
-          <li class="md-nav__item">
+      
+        <li class="md-nav__item">
+  <a href="#preparing-the-chaincode-docker-image" class="md-nav__link">
+    Preparing the chaincode Docker image
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
   <a href="#deploying-the-chaincode" class="md-nav__link">
     Deploying the chaincode
   </a>
   
 </li>
-        
-      </ul>
-    </nav>
+      
+        <li class="md-nav__item">
+  <a href="#call-the-deployed-chaincode" class="md-nav__link">
+    Call the deployed chaincode
+  </a>
   
 </li>
       
@@ -562,11 +563,49 @@
   
   
     <li class="md-nav__item">
+      <a href="../exchange-integration/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    GalaChain Exchange Integration FAQ
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+    <li class="md-nav__item">
       <a href="../high-throughput-minting/" class="md-nav__link">
         
   
   <span class="md-ellipsis">
     High-Throughput Minting
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../integration-guide/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    GalaChain Integration Guide
   </span>
   
 
@@ -590,10 +629,10 @@
         
         
         
-        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_14" >
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_16" >
         
           
-          <label class="md-nav__link" for="__nav_14" id="__nav_14_label" tabindex="0">
+          <label class="md-nav__link" for="__nav_16" id="__nav_16_label" tabindex="0">
             
   
   <span class="md-ellipsis">
@@ -604,8 +643,8 @@
             <span class="md-nav__icon md-icon"></span>
           </label>
         
-        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_14_label" aria-expanded="false">
-          <label class="md-nav__title" for="__nav_14">
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_16_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_16">
             <span class="md-nav__icon md-icon"></span>
             Chain api docs
           </label>
@@ -646,10 +685,10 @@
         
         
         
-        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_14_2" >
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_16_2" >
         
           
-          <label class="md-nav__link" for="__nav_14_2" id="__nav_14_2_label" tabindex="0">
+          <label class="md-nav__link" for="__nav_16_2" id="__nav_16_2_label" tabindex="0">
             
   
   <span class="md-ellipsis">
@@ -660,8 +699,8 @@
             <span class="md-nav__icon md-icon"></span>
           </label>
         
-        <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_14_2_label" aria-expanded="false">
-          <label class="md-nav__title" for="__nav_14_2">
+        <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_16_2_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_16_2">
             <span class="md-nav__icon md-icon"></span>
             Classes
           </label>
@@ -693,11 +732,51 @@
   
   
     <li class="md-nav__item">
+      <a href="../chain-api-docs/classes/Allocation/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Allocation
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+    <li class="md-nav__item">
       <a href="../chain-api-docs/classes/AllowanceKey/" class="md-nav__link">
         
   
   <span class="md-ellipsis">
     AllowanceKey
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../chain-api-docs/classes/BatchDto/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    BatchDto
   </span>
   
 
@@ -738,6 +817,26 @@
   
   <span class="md-ellipsis">
     BatchMintTokenDto
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../chain-api-docs/classes/BatchOperationDto/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    BatchOperationDto
   </span>
   
 
@@ -853,6 +952,46 @@
   
   
     <li class="md-nav__item">
+      <a href="../chain-api-docs/classes/ChainClient/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    ChainClient
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../chain-api-docs/classes/ChainClientBuilder/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    ChainClientBuilder
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+    <li class="md-nav__item">
       <a href="../chain-api-docs/classes/ChainError/" class="md-nav__link">
         
   
@@ -918,6 +1057,26 @@
   
   <span class="md-ellipsis">
     ChainObject
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../chain-api-docs/classes/ChainUser/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    ChainUser
   </span>
   
 
@@ -1038,6 +1197,26 @@
   
   <span class="md-ellipsis">
     CreateTokenSaleDto
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../chain-api-docs/classes/CreateVestingTokenDto/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    CreateVestingTokenDto
   </span>
   
 
@@ -1318,6 +1497,26 @@
   
   <span class="md-ellipsis">
     ExpectedTokenSwap
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../chain-api-docs/classes/ExpiredError/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    ExpiredError
   </span>
   
 
@@ -2858,6 +3057,26 @@
   
   <span class="md-ellipsis">
     FetchTokenSwapsWithPaginationResponse
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../chain-api-docs/classes/FetchVestingTokenDto/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    FetchVestingTokenDto
   </span>
   
 
@@ -5447,6 +5666,46 @@
 
               
             
+              
+                
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../chain-api-docs/classes/VestingToken/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    VestingToken
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../chain-api-docs/classes/VestingTokenInfo/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    VestingTokenInfo
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
           </ul>
         </nav>
       
@@ -5470,10 +5729,10 @@
         
         
         
-        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_14_3" >
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_16_3" >
         
           
-          <label class="md-nav__link" for="__nav_14_3" id="__nav_14_3_label" tabindex="0">
+          <label class="md-nav__link" for="__nav_16_3" id="__nav_16_3_label" tabindex="0">
             
   
   <span class="md-ellipsis">
@@ -5484,8 +5743,8 @@
             <span class="md-nav__icon md-icon"></span>
           </label>
         
-        <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_14_3_label" aria-expanded="false">
-          <label class="md-nav__title" for="__nav_14_3">
+        <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_16_3_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_16_3">
             <span class="md-nav__icon md-icon"></span>
             Enumerations
           </label>
@@ -5794,10 +6053,10 @@
         
         
         
-        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_14_4" >
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_16_4" >
         
           
-          <label class="md-nav__link" for="__nav_14_4" id="__nav_14_4_label" tabindex="0">
+          <label class="md-nav__link" for="__nav_16_4" id="__nav_16_4_label" tabindex="0">
             
   
   <span class="md-ellipsis">
@@ -5808,8 +6067,8 @@
             <span class="md-nav__icon md-icon"></span>
           </label>
         
-        <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_14_4_label" aria-expanded="false">
-          <label class="md-nav__title" for="__nav_14_4">
+        <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_16_4_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_16_4">
             <span class="md-nav__icon md-icon"></span>
             Functions
           </label>
@@ -6201,6 +6460,46 @@
   
   
     <li class="md-nav__item">
+      <a href="../chain-api-docs/functions/buildChainUserAPI/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    buildChainUserAPI
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../chain-api-docs/functions/commonContractAPI/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    commonContractAPI
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+    <li class="md-nav__item">
       <a href="../chain-api-docs/functions/createValidChainObject/" class="md-nav__link">
         
   
@@ -6361,6 +6660,26 @@
   
   
     <li class="md-nav__item">
+      <a href="../chain-api-docs/functions/isClassType/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    isClassType
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+    <li class="md-nav__item">
       <a href="../chain-api-docs/functions/isValidSystemUser/" class="md-nav__link">
         
   
@@ -6446,6 +6765,26 @@
   
   <span class="md-ellipsis">
     parseValidDTO
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../chain-api-docs/functions/publicKeyContractAPI/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    publicKeyContractAPI
   </span>
   
 
@@ -6578,10 +6917,10 @@
         
         
         
-        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_14_5" >
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_16_5" >
         
           
-          <label class="md-nav__link" for="__nav_14_5" id="__nav_14_5_label" tabindex="0">
+          <label class="md-nav__link" for="__nav_16_5" id="__nav_16_5_label" tabindex="0">
             
   
   <span class="md-ellipsis">
@@ -6592,8 +6931,8 @@
             <span class="md-nav__icon md-icon"></span>
           </label>
         
-        <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_14_5_label" aria-expanded="false">
-          <label class="md-nav__title" for="__nav_14_5">
+        <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_16_5_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_16_5">
             <span class="md-nav__icon md-icon"></span>
             Interfaces
           </label>
@@ -6665,6 +7004,26 @@
   
   
     <li class="md-nav__item">
+      <a href="../chain-api-docs/interfaces/ChainUserAPI/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    ChainUserAPI
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+    <li class="md-nav__item">
       <a href="../chain-api-docs/interfaces/ClassConstructor/" class="md-nav__link">
         
   
@@ -6685,11 +7044,51 @@
   
   
     <li class="md-nav__item">
+      <a href="../chain-api-docs/interfaces/CommonContractAPI/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    CommonContractAPI
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+    <li class="md-nav__item">
       <a href="../chain-api-docs/interfaces/ContractAPI/" class="md-nav__link">
         
   
   <span class="md-ellipsis">
     ContractAPI
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../chain-api-docs/interfaces/ContractConfig/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    ContractConfig
   </span>
   
 
@@ -6885,6 +7284,26 @@
   
   
     <li class="md-nav__item">
+      <a href="../chain-api-docs/interfaces/PublicKeyContractAPI/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    PublicKeyContractAPI
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+    <li class="md-nav__item">
       <a href="../chain-api-docs/interfaces/TokenClassKeyProperties/" class="md-nav__link">
         
   
@@ -6942,10 +7361,10 @@
         
         
         
-        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_14_6" >
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_16_6" >
         
           
-          <label class="md-nav__link" for="__nav_14_6" id="__nav_14_6_label" tabindex="0">
+          <label class="md-nav__link" for="__nav_16_6" id="__nav_16_6_label" tabindex="0">
             
   
   <span class="md-ellipsis">
@@ -6956,8 +7375,8 @@
             <span class="md-nav__icon md-icon"></span>
           </label>
         
-        <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_14_6_label" aria-expanded="false">
-          <label class="md-nav__title" for="__nav_14_6">
+        <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_16_6_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_16_6">
             <span class="md-nav__icon md-icon"></span>
             Type aliases
           </label>
@@ -6974,6 +7393,26 @@
   
   <span class="md-ellipsis">
     BigNumberish
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../chain-api-docs/type-aliases/ClassType/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    ClassType
   </span>
   
 
@@ -7146,10 +7585,10 @@
         
         
         
-        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_14_7" >
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_16_7" >
         
           
-          <label class="md-nav__link" for="__nav_14_7" id="__nav_14_7_label" tabindex="0">
+          <label class="md-nav__link" for="__nav_16_7" id="__nav_16_7_label" tabindex="0">
             
   
   <span class="md-ellipsis">
@@ -7160,8 +7599,8 @@
             <span class="md-nav__icon md-icon"></span>
           </label>
         
-        <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_14_7_label" aria-expanded="false">
-          <label class="md-nav__title" for="__nav_14_7">
+        <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_16_7_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_16_7">
             <span class="md-nav__icon md-icon"></span>
             Variables
           </label>
@@ -7297,10 +7736,10 @@
         
         
         
-        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_15" >
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_17" >
         
           
-          <label class="md-nav__link" for="__nav_15" id="__nav_15_label" tabindex="0">
+          <label class="md-nav__link" for="__nav_17" id="__nav_17_label" tabindex="0">
             
   
   <span class="md-ellipsis">
@@ -7311,8 +7750,8 @@
             <span class="md-nav__icon md-icon"></span>
           </label>
         
-        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_15_label" aria-expanded="false">
-          <label class="md-nav__title" for="__nav_15">
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_17_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_17">
             <span class="md-nav__icon md-icon"></span>
             Chain client docs
           </label>
@@ -7353,10 +7792,10 @@
         
         
         
-        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_15_2" >
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_17_2" >
         
           
-          <label class="md-nav__link" for="__nav_15_2" id="__nav_15_2_label" tabindex="0">
+          <label class="md-nav__link" for="__nav_17_2" id="__nav_17_2_label" tabindex="0">
             
   
   <span class="md-ellipsis">
@@ -7367,8 +7806,8 @@
             <span class="md-nav__icon md-icon"></span>
           </label>
         
-        <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_15_2_label" aria-expanded="false">
-          <label class="md-nav__title" for="__nav_15_2">
+        <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_17_2_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_17_2">
             <span class="md-nav__icon md-icon"></span>
             Classes
           </label>
@@ -7385,66 +7824,6 @@
   
   <span class="md-ellipsis">
     CAClient
-  </span>
-  
-
-      </a>
-    </li>
-  
-
-              
-            
-              
-                
-  
-  
-  
-    <li class="md-nav__item">
-      <a href="../chain-client-docs/classes/ChainClient/" class="md-nav__link">
-        
-  
-  <span class="md-ellipsis">
-    ChainClient
-  </span>
-  
-
-      </a>
-    </li>
-  
-
-              
-            
-              
-                
-  
-  
-  
-    <li class="md-nav__item">
-      <a href="../chain-client-docs/classes/ChainClientBuilder/" class="md-nav__link">
-        
-  
-  <span class="md-ellipsis">
-    ChainClientBuilder
-  </span>
-  
-
-      </a>
-    </li>
-  
-
-              
-            
-              
-                
-  
-  
-  
-    <li class="md-nav__item">
-      <a href="../chain-client-docs/classes/ChainUser/" class="md-nav__link">
-        
-  
-  <span class="md-ellipsis">
-    ChainUser
   </span>
   
 
@@ -7577,10 +7956,10 @@
         
         
         
-        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_15_3" >
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_17_3" >
         
           
-          <label class="md-nav__link" for="__nav_15_3" id="__nav_15_3_label" tabindex="0">
+          <label class="md-nav__link" for="__nav_17_3" id="__nav_17_3_label" tabindex="0">
             
   
   <span class="md-ellipsis">
@@ -7591,92 +7970,12 @@
             <span class="md-nav__icon md-icon"></span>
           </label>
         
-        <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_15_3_label" aria-expanded="false">
-          <label class="md-nav__title" for="__nav_15_3">
+        <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_17_3_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_17_3">
             <span class="md-nav__icon md-icon"></span>
             Functions
           </label>
           <ul class="md-nav__list" data-md-scrollfix>
-            
-              
-                
-  
-  
-  
-    <li class="md-nav__item">
-      <a href="../chain-client-docs/functions/buildChainUserAPI/" class="md-nav__link">
-        
-  
-  <span class="md-ellipsis">
-    buildChainUserAPI
-  </span>
-  
-
-      </a>
-    </li>
-  
-
-              
-            
-              
-                
-  
-  
-  
-    <li class="md-nav__item">
-      <a href="../chain-client-docs/functions/commonContractAPI/" class="md-nav__link">
-        
-  
-  <span class="md-ellipsis">
-    commonContractAPI
-  </span>
-  
-
-      </a>
-    </li>
-  
-
-              
-            
-              
-                
-  
-  
-  
-    <li class="md-nav__item">
-      <a href="../chain-client-docs/functions/isClassType/" class="md-nav__link">
-        
-  
-  <span class="md-ellipsis">
-    isClassType
-  </span>
-  
-
-      </a>
-    </li>
-  
-
-              
-            
-              
-                
-  
-  
-  
-    <li class="md-nav__item">
-      <a href="../chain-client-docs/functions/loadJson/" class="md-nav__link">
-        
-  
-  <span class="md-ellipsis">
-    loadJson
-  </span>
-  
-
-      </a>
-    </li>
-  
-
-              
             
               
                 
@@ -7689,26 +7988,6 @@
   
   <span class="md-ellipsis">
     loadRestApiConfig
-  </span>
-  
-
-      </a>
-    </li>
-  
-
-              
-            
-              
-                
-  
-  
-  
-    <li class="md-nav__item">
-      <a href="../chain-client-docs/functions/publicKeyContractAPI/" class="md-nav__link">
-        
-  
-  <span class="md-ellipsis">
-    publicKeyContractAPI
   </span>
   
 
@@ -7741,10 +8020,10 @@
         
         
         
-        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_15_4" >
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_17_4" >
         
           
-          <label class="md-nav__link" for="__nav_15_4" id="__nav_15_4_label" tabindex="0">
+          <label class="md-nav__link" for="__nav_17_4" id="__nav_17_4_label" tabindex="0">
             
   
   <span class="md-ellipsis">
@@ -7755,72 +8034,12 @@
             <span class="md-nav__icon md-icon"></span>
           </label>
         
-        <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_15_4_label" aria-expanded="false">
-          <label class="md-nav__title" for="__nav_15_4">
+        <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_17_4_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_17_4">
             <span class="md-nav__icon md-icon"></span>
             Interfaces
           </label>
           <ul class="md-nav__list" data-md-scrollfix>
-            
-              
-                
-  
-  
-  
-    <li class="md-nav__item">
-      <a href="../chain-client-docs/interfaces/ChainUserAPI/" class="md-nav__link">
-        
-  
-  <span class="md-ellipsis">
-    ChainUserAPI
-  </span>
-  
-
-      </a>
-    </li>
-  
-
-              
-            
-              
-                
-  
-  
-  
-    <li class="md-nav__item">
-      <a href="../chain-client-docs/interfaces/CommonContractAPI/" class="md-nav__link">
-        
-  
-  <span class="md-ellipsis">
-    CommonContractAPI
-  </span>
-  
-
-      </a>
-    </li>
-  
-
-              
-            
-              
-                
-  
-  
-  
-    <li class="md-nav__item">
-      <a href="../chain-client-docs/interfaces/ContractConfig/" class="md-nav__link">
-        
-  
-  <span class="md-ellipsis">
-    ContractConfig
-  </span>
-  
-
-      </a>
-    </li>
-  
-
-              
             
               
                 
@@ -7833,26 +8052,6 @@
   
   <span class="md-ellipsis">
     HFClientConfig
-  </span>
-  
-
-      </a>
-    </li>
-  
-
-              
-            
-              
-                
-  
-  
-  
-    <li class="md-nav__item">
-      <a href="../chain-client-docs/interfaces/PublicKeyContractAPI/" class="md-nav__link">
-        
-  
-  <span class="md-ellipsis">
-    PublicKeyContractAPI
   </span>
   
 
@@ -7905,74 +8104,10 @@
         
         
         
-        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_15_5" >
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_17_5" >
         
           
-          <label class="md-nav__link" for="__nav_15_5" id="__nav_15_5_label" tabindex="0">
-            
-  
-  <span class="md-ellipsis">
-    Type aliases
-  </span>
-  
-
-            <span class="md-nav__icon md-icon"></span>
-          </label>
-        
-        <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_15_5_label" aria-expanded="false">
-          <label class="md-nav__title" for="__nav_15_5">
-            <span class="md-nav__icon md-icon"></span>
-            Type aliases
-          </label>
-          <ul class="md-nav__list" data-md-scrollfix>
-            
-              
-                
-  
-  
-  
-    <li class="md-nav__item">
-      <a href="../chain-client-docs/type-aliases/ClassType/" class="md-nav__link">
-        
-  
-  <span class="md-ellipsis">
-    ClassType
-  </span>
-  
-
-      </a>
-    </li>
-  
-
-              
-            
-          </ul>
-        </nav>
-      
-    </li>
-  
-
-              
-            
-              
-                
-  
-  
-  
-    
-    
-    
-    
-    
-    <li class="md-nav__item md-nav__item--nested">
-      
-        
-        
-        
-        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_15_6" >
-        
-          
-          <label class="md-nav__link" for="__nav_15_6" id="__nav_15_6_label" tabindex="0">
+          <label class="md-nav__link" for="__nav_17_5" id="__nav_17_5_label" tabindex="0">
             
   
   <span class="md-ellipsis">
@@ -7983,8 +8118,8 @@
             <span class="md-nav__icon md-icon"></span>
           </label>
         
-        <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_15_6_label" aria-expanded="false">
-          <label class="md-nav__title" for="__nav_15_6">
+        <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_17_5_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_17_5">
             <span class="md-nav__icon md-icon"></span>
             Variables
           </label>
@@ -8040,10 +8175,10 @@
         
         
         
-        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_16" >
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_18" >
         
           
-          <label class="md-nav__link" for="__nav_16" id="__nav_16_label" tabindex="0">
+          <label class="md-nav__link" for="__nav_18" id="__nav_18_label" tabindex="0">
             
   
   <span class="md-ellipsis">
@@ -8054,8 +8189,8 @@
             <span class="md-nav__icon md-icon"></span>
           </label>
         
-        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_16_label" aria-expanded="false">
-          <label class="md-nav__title" for="__nav_16">
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_18_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_18">
             <span class="md-nav__icon md-icon"></span>
             Chain connect docs
           </label>
@@ -8096,10 +8231,10 @@
         
         
         
-        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_16_2" >
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_18_2" >
         
           
-          <label class="md-nav__link" for="__nav_16_2" id="__nav_16_2_label" tabindex="0">
+          <label class="md-nav__link" for="__nav_18_2" id="__nav_18_2_label" tabindex="0">
             
   
   <span class="md-ellipsis">
@@ -8110,8 +8245,8 @@
             <span class="md-nav__icon md-icon"></span>
           </label>
         
-        <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_16_2_label" aria-expanded="false">
-          <label class="md-nav__title" for="__nav_16_2">
+        <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_18_2_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_18_2">
             <span class="md-nav__icon md-icon"></span>
             Classes
           </label>
@@ -8780,10 +8915,10 @@
         
         
         
-        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_16_3" >
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_18_3" >
         
           
-          <label class="md-nav__link" for="__nav_16_3" id="__nav_16_3_label" tabindex="0">
+          <label class="md-nav__link" for="__nav_18_3" id="__nav_18_3_label" tabindex="0">
             
   
   <span class="md-ellipsis">
@@ -8794,8 +8929,8 @@
             <span class="md-nav__icon md-icon"></span>
           </label>
         
-        <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_16_3_label" aria-expanded="false">
-          <label class="md-nav__title" for="__nav_16_3">
+        <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_18_3_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_18_3">
             <span class="md-nav__icon md-icon"></span>
             Enumerations
           </label>
@@ -8844,10 +8979,10 @@
         
         
         
-        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_16_4" >
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_18_4" >
         
           
-          <label class="md-nav__link" for="__nav_16_4" id="__nav_16_4_label" tabindex="0">
+          <label class="md-nav__link" for="__nav_18_4" id="__nav_18_4_label" tabindex="0">
             
   
   <span class="md-ellipsis">
@@ -8858,8 +8993,8 @@
             <span class="md-nav__icon md-icon"></span>
           </label>
         
-        <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_16_4_label" aria-expanded="false">
-          <label class="md-nav__title" for="__nav_16_4">
+        <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_18_4_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_18_4">
             <span class="md-nav__icon md-icon"></span>
             Functions
           </label>
@@ -8928,10 +9063,10 @@
         
         
         
-        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_16_5" >
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_18_5" >
         
           
-          <label class="md-nav__link" for="__nav_16_5" id="__nav_16_5_label" tabindex="0">
+          <label class="md-nav__link" for="__nav_18_5" id="__nav_18_5_label" tabindex="0">
             
   
   <span class="md-ellipsis">
@@ -8942,8 +9077,8 @@
             <span class="md-nav__icon md-icon"></span>
           </label>
         
-        <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_16_5_label" aria-expanded="false">
-          <label class="md-nav__title" for="__nav_16_5">
+        <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_18_5_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_18_5">
             <span class="md-nav__icon md-icon"></span>
             Interfaces
           </label>
@@ -9032,10 +9167,10 @@
         
         
         
-        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_16_6" >
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_18_6" >
         
           
-          <label class="md-nav__link" for="__nav_16_6" id="__nav_16_6_label" tabindex="0">
+          <label class="md-nav__link" for="__nav_18_6" id="__nav_18_6_label" tabindex="0">
             
   
   <span class="md-ellipsis">
@@ -9046,8 +9181,8 @@
             <span class="md-nav__icon md-icon"></span>
           </label>
         
-        <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_16_6_label" aria-expanded="false">
-          <label class="md-nav__title" for="__nav_16_6">
+        <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_18_6_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_18_6">
             <span class="md-nav__icon md-icon"></span>
             Type aliases
           </label>
@@ -9863,10 +9998,10 @@
         
         
         
-        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_17" >
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_19" >
         
           
-          <label class="md-nav__link" for="__nav_17" id="__nav_17_label" tabindex="0">
+          <label class="md-nav__link" for="__nav_19" id="__nav_19_label" tabindex="0">
             
   
   <span class="md-ellipsis">
@@ -9877,8 +10012,8 @@
             <span class="md-nav__icon md-icon"></span>
           </label>
         
-        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_17_label" aria-expanded="false">
-          <label class="md-nav__title" for="__nav_17">
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_19_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_19">
             <span class="md-nav__icon md-icon"></span>
             Chain test docs
           </label>
@@ -9919,10 +10054,10 @@
         
         
         
-        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_17_2" >
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_19_2" >
         
           
-          <label class="md-nav__link" for="__nav_17_2" id="__nav_17_2_label" tabindex="0">
+          <label class="md-nav__link" for="__nav_19_2" id="__nav_19_2_label" tabindex="0">
             
   
   <span class="md-ellipsis">
@@ -9933,8 +10068,8 @@
             <span class="md-nav__icon md-icon"></span>
           </label>
         
-        <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_17_2_label" aria-expanded="false">
-          <label class="md-nav__title" for="__nav_17_2">
+        <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_19_2_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_19_2">
             <span class="md-nav__icon md-icon"></span>
             Classes
           </label>
@@ -10043,10 +10178,10 @@
         
         
         
-        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_17_3" >
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_19_3" >
         
           
-          <label class="md-nav__link" for="__nav_17_3" id="__nav_17_3_label" tabindex="0">
+          <label class="md-nav__link" for="__nav_19_3" id="__nav_19_3_label" tabindex="0">
             
   
   <span class="md-ellipsis">
@@ -10057,8 +10192,8 @@
             <span class="md-nav__icon md-icon"></span>
           </label>
         
-        <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_17_3_label" aria-expanded="false">
-          <label class="md-nav__title" for="__nav_17_3">
+        <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_19_3_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_19_3">
             <span class="md-nav__icon md-icon"></span>
             Functions
           </label>
@@ -10347,10 +10482,10 @@
         
         
         
-        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_17_4" >
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_19_4" >
         
           
-          <label class="md-nav__link" for="__nav_17_4" id="__nav_17_4_label" tabindex="0">
+          <label class="md-nav__link" for="__nav_19_4" id="__nav_19_4_label" tabindex="0">
             
   
   <span class="md-ellipsis">
@@ -10361,8 +10496,8 @@
             <span class="md-nav__icon md-icon"></span>
           </label>
         
-        <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_17_4_label" aria-expanded="false">
-          <label class="md-nav__title" for="__nav_17_4">
+        <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_19_4_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_19_4">
             <span class="md-nav__icon md-icon"></span>
             Interfaces
           </label>
@@ -10471,10 +10606,10 @@
         
         
         
-        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_17_5" >
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_19_5" >
         
           
-          <label class="md-nav__link" for="__nav_17_5" id="__nav_17_5_label" tabindex="0">
+          <label class="md-nav__link" for="__nav_19_5" id="__nav_19_5_label" tabindex="0">
             
   
   <span class="md-ellipsis">
@@ -10485,8 +10620,8 @@
             <span class="md-nav__icon md-icon"></span>
           </label>
         
-        <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_17_5_label" aria-expanded="false">
-          <label class="md-nav__title" for="__nav_17_5">
+        <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_19_5_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_19_5">
             <span class="md-nav__icon md-icon"></span>
             Type aliases
           </label>
@@ -10575,10 +10710,10 @@
         
         
         
-        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_17_6" >
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_19_6" >
         
           
-          <label class="md-nav__link" for="__nav_17_6" id="__nav_17_6_label" tabindex="0">
+          <label class="md-nav__link" for="__nav_19_6" id="__nav_19_6_label" tabindex="0">
             
   
   <span class="md-ellipsis">
@@ -10589,8 +10724,8 @@
             <span class="md-nav__icon md-icon"></span>
           </label>
         
-        <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_17_6_label" aria-expanded="false">
-          <label class="md-nav__title" for="__nav_17_6">
+        <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_19_6_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_19_6">
             <span class="md-nav__icon md-icon"></span>
             Variables
           </label>
@@ -10726,10 +10861,10 @@
         
         
         
-        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_18" >
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_20" >
         
           
-          <label class="md-nav__link" for="__nav_18" id="__nav_18_label" tabindex="0">
+          <label class="md-nav__link" for="__nav_20" id="__nav_20_label" tabindex="0">
             
   
   <span class="md-ellipsis">
@@ -10740,8 +10875,8 @@
             <span class="md-nav__icon md-icon"></span>
           </label>
         
-        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_18_label" aria-expanded="false">
-          <label class="md-nav__title" for="__nav_18">
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_20_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_20">
             <span class="md-nav__icon md-icon"></span>
             Chaincode docs
           </label>
@@ -10782,10 +10917,10 @@
         
         
         
-        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_18_2" >
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_20_2" >
         
           
-          <label class="md-nav__link" for="__nav_18_2" id="__nav_18_2_label" tabindex="0">
+          <label class="md-nav__link" for="__nav_20_2" id="__nav_20_2_label" tabindex="0">
             
   
   <span class="md-ellipsis">
@@ -10796,8 +10931,8 @@
             <span class="md-nav__icon md-icon"></span>
           </label>
         
-        <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_18_2_label" aria-expanded="false">
-          <label class="md-nav__title" for="__nav_18_2">
+        <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_20_2_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_20_2">
             <span class="md-nav__icon md-icon"></span>
             Classes
           </label>
@@ -10849,6 +10984,46 @@
   
   
     <li class="md-nav__item">
+      <a href="../chaincode-docs/classes/BatchPartialSuccessRequiredError/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    BatchPartialSuccessRequiredError
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../chaincode-docs/classes/BatchWriteLimitExceededError/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    BatchWriteLimitExceededError
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+    <li class="md-nav__item">
       <a href="../chaincode-docs/classes/BurnTokensFailedError/" class="md-nav__link">
         
   
@@ -10869,11 +11044,71 @@
   
   
     <li class="md-nav__item">
+      <a href="../chaincode-docs/classes/ChaincodeAuthorizationError/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    ChaincodeAuthorizationError
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../chaincode-docs/classes/ChaincodeNotAllowedError/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    ChaincodeNotAllowedError
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+    <li class="md-nav__item">
       <a href="../chaincode-docs/classes/DuplicateAllowanceError/" class="md-nav__link">
         
   
   <span class="md-ellipsis">
     DuplicateAllowanceError
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../chaincode-docs/classes/DuplicateInvokeChaincodeError/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    DuplicateInvokeChaincodeError
   </span>
   
 
@@ -11234,6 +11469,26 @@
   
   <span class="md-ellipsis">
     MissingLockError
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../chaincode-docs/classes/MissingRoleError/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    MissingRoleError
   </span>
   
 
@@ -11706,10 +11961,10 @@
         
         
         
-        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_18_3" >
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_20_3" >
         
           
-          <label class="md-nav__link" for="__nav_18_3" id="__nav_18_3_label" tabindex="0">
+          <label class="md-nav__link" for="__nav_20_3" id="__nav_20_3_label" tabindex="0">
             
   
   <span class="md-ellipsis">
@@ -11720,8 +11975,8 @@
             <span class="md-nav__icon md-icon"></span>
           </label>
         
-        <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_18_3_label" aria-expanded="false">
-          <label class="md-nav__title" for="__nav_18_3">
+        <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_20_3_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_20_3">
             <span class="md-nav__icon md-icon"></span>
             Enumerations
           </label>
@@ -11790,10 +12045,10 @@
         
         
         
-        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_18_4" >
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_20_4" >
         
           
-          <label class="md-nav__link" for="__nav_18_4" id="__nav_18_4_label" tabindex="0">
+          <label class="md-nav__link" for="__nav_20_4" id="__nav_20_4_label" tabindex="0">
             
   
   <span class="md-ellipsis">
@@ -11804,8 +12059,8 @@
             <span class="md-nav__icon md-icon"></span>
           </label>
         
-        <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_18_4_label" aria-expanded="false">
-          <label class="md-nav__title" for="__nav_18_4">
+        <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_20_4_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_20_4">
             <span class="md-nav__icon md-icon"></span>
             Functions
           </label>
@@ -11942,6 +12197,46 @@
   
   <span class="md-ellipsis">
     Authenticate
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../chaincode-docs/functions/authenticateAsOriginChaincode/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    authenticateAsOriginChaincode
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../chaincode-docs/functions/authorize/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Authorize
   </span>
   
 
@@ -12337,6 +12632,26 @@
   
   
     <li class="md-nav__item">
+      <a href="../chaincode-docs/functions/createVestingToken/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    createVestingToken
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+    <li class="md-nav__item">
       <a href="../chaincode-docs/functions/creditFeeBalance/" class="md-nav__link">
         
   
@@ -12497,6 +12812,26 @@
   
   
     <li class="md-nav__item">
+      <a href="../chaincode-docs/functions/ensureChaincodeIsAllowed/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    ensureChaincodeIsAllowed
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+    <li class="md-nav__item">
       <a href="../chaincode-docs/functions/ensureIsAuthenticatedBy/" class="md-nav__link">
         
   
@@ -12542,6 +12877,26 @@
   
   <span class="md-ellipsis">
     ensureQuantityCanBeMinted
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../chaincode-docs/functions/ensureRoleIsAllowed/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    ensureRoleIsAllowed
   </span>
   
 
@@ -13437,6 +13792,26 @@
   
   
     <li class="md-nav__item">
+      <a href="../chaincode-docs/functions/fetchVestingToken/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    fetchVestingToken
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+    <li class="md-nav__item">
       <a href="../chaincode-docs/functions/fillTokenSwap/" class="md-nav__link">
         
   
@@ -13642,6 +14017,26 @@
   
   <span class="md-ellipsis">
     generateInverseTimeKey
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../chaincode-docs/functions/getApiMethod/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    getApiMethod
   </span>
   
 
@@ -15214,10 +15609,10 @@
         
         
         
-        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_18_5" >
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_20_5" >
         
           
-          <label class="md-nav__link" for="__nav_18_5" id="__nav_18_5_label" tabindex="0">
+          <label class="md-nav__link" for="__nav_20_5" id="__nav_20_5_label" tabindex="0">
             
   
   <span class="md-ellipsis">
@@ -15228,8 +15623,8 @@
             <span class="md-nav__icon md-icon"></span>
           </label>
         
-        <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_18_5_label" aria-expanded="false">
-          <label class="md-nav__title" for="__nav_18_5">
+        <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_20_5_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_20_5">
             <span class="md-nav__icon md-icon"></span>
             Interfaces
           </label>
@@ -15246,6 +15641,26 @@
   
   <span class="md-ellipsis">
     AllowanceType
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../chaincode-docs/interfaces/AuthorizeOptions/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    AuthorizeOptions
   </span>
   
 
@@ -15326,6 +15741,26 @@
   
   <span class="md-ellipsis">
     CreateTokenClassParams
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../chaincode-docs/interfaces/CreateVestingTokenParams/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    CreateVestingTokenParams
   </span>
   
 
@@ -15661,11 +16096,51 @@
   
   
     <li class="md-nav__item">
+      <a href="../chaincode-docs/interfaces/FetchVestingTokenParams/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    FetchVestingTokenParams
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+    <li class="md-nav__item">
       <a href="../chaincode-docs/interfaces/FullAllowanceCheckParams/" class="md-nav__link">
         
   
   <span class="md-ellipsis">
     FullAllowanceCheckParams
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../chaincode-docs/interfaces/GalaChainContextConfig/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    GalaChainContextConfig
   </span>
   
 
@@ -16718,10 +17193,10 @@
         
         
         
-        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_18_6" >
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_20_6" >
         
           
-          <label class="md-nav__link" for="__nav_18_6" id="__nav_18_6_label" tabindex="0">
+          <label class="md-nav__link" for="__nav_20_6" id="__nav_20_6_label" tabindex="0">
             
   
   <span class="md-ellipsis">
@@ -16732,8 +17207,8 @@
             <span class="md-nav__icon md-icon"></span>
           </label>
         
-        <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_18_6_label" aria-expanded="false">
-          <label class="md-nav__title" for="__nav_18_6">
+        <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_20_6_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_20_6">
             <span class="md-nav__icon md-icon"></span>
             Type aliases
           </label>
@@ -16842,10 +17317,10 @@
         
         
         
-        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_18_7" >
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_20_7" >
         
           
-          <label class="md-nav__link" for="__nav_18_7" id="__nav_18_7_label" tabindex="0">
+          <label class="md-nav__link" for="__nav_20_7" id="__nav_20_7_label" tabindex="0">
             
   
   <span class="md-ellipsis">
@@ -16856,8 +17331,8 @@
             <span class="md-nav__icon md-icon"></span>
           </label>
         
-        <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_18_7_label" aria-expanded="false">
-          <label class="md-nav__title" for="__nav_18_7">
+        <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_20_7_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_20_7">
             <span class="md-nav__icon md-icon"></span>
             Variables
           </label>
@@ -16989,6 +17464,26 @@
   
   
     <li class="md-nav__item">
+      <a href="../chaincode-docs/variables/curatorOrgMsp/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    curatorOrgMsp
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+    <li class="md-nav__item">
       <a href="../chaincode-docs/variables/galaFeePropertiesIdentifier/" class="md-nav__link">
         
   
@@ -17083,9 +17578,252 @@
 
               
             
+              
+                
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../chaincode-docs/variables/registrarOrgMsps/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    registrarOrgMsps
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../chaincode-docs/variables/requireCuratorAuth/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    requireCuratorAuth
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../chaincode-docs/variables/requireRegistrarAuth/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    requireRegistrarAuth
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../chaincode-docs/variables/useRoleBasedAuth/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    useRoleBasedAuth
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
           </ul>
         </nav>
       
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+    
+    
+    
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_21" >
+        
+          
+          <label class="md-nav__link" for="__nav_21" id="__nav_21_label" tabindex="0">
+            
+  
+  <span class="md-ellipsis">
+    Concepts
+  </span>
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_21_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_21">
+            <span class="md-nav__icon md-icon"></span>
+            Concepts
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../concepts/chain-key-design/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Chain Key Design
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../concepts/create-read-update-delete/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Create, Read, Update, Delete
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../concepts/facts-not-objects/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Facts, Not Objects
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../concepts/identities-wallets-accounts/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Identity Management in GalaChain
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../concepts/mvcc-read-conflicts/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    MVCC_READ_CONFLICT Errors
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../concepts/smart-contracts-chaincode/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Smart Contracts and Chaincode
+  </span>
+  
+
+      </a>
     </li>
   
 
@@ -17117,89 +17855,114 @@
 
 
 <h1 id="chaincode-deployment">Chaincode deployment</h1>
-<p>Chaincode is published as a Docker image to GalaChain repository.
-Once the image is published, it can be deployed to GalaChain testnet or sandbox.
-In order to publish and deploy chaincode, you need to contact GalaChain support and add provide your secp256k1 public key.</p>
-<h2 id="the-process">The process</h2>
-<ol>
-<li>
-<p><strong>Build and publish chaincode Docker image.</strong></p>
-<p>Sample for DockerHub (It uses the <a href="https://github.com/replicatedhq/ttl.sh">ttl.sh</a> to make it available for 1 day):</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a>docker<span class="w"> </span>build<span class="w"> </span>--push<span class="w"> </span>-t<span class="w"> </span>ttl.sh/&lt;IMAGE_NAME&gt;:1d<span class="w"> </span>.
+<p>GalaChain supports TNT as a Testnet for your chaincodes. Once deployed, your chaincode will be exposed to the public through the Gateway at <a href="https://gateway-testnet.galachain.com/docs/">https://gateway-testnet.galachain.com/docs/</a>. Registering and deploying chaincodes is available to anyone.</p>
+<h2 id="the-anatomy-of-a-chaincode-from-the-deployment-perspective">The anatomy of a chaincode from the deployment perspective</h2>
+<p>When you initialize a chaincode with <code>@gala-chain/cli</code>, it creates a chaincode directory which includes:
+- The <code>keys</code> directory - containing public keys required for calling our managed infrastructure. Typically two files: <code>gc-admin-key.pub</code> and <code>gc-dev-key.pub</code>.
+- The <code>Dockerfile</code> that should be used to build the chaincode Docker image.</p>
+<p>Additionally, the <code>init</code> command creates private keys for the chaincode admin and developer in your home directory at <code>~/.gc-keys/&lt;chaincode-name&gt;</code> (<code>gc-admin-key</code> and <code>gc-dev-key</code>), where <code>&lt;chaincode-name&gt;</code> consists of a <code>gc-</code> prefix and ETH address calculated from the chaincode admin public key.</p>
+<p>All of this is important for managing the chaincode deployment.</p>
+<h2 id="registering-the-chaincode">Registering the chaincode</h2>
+<p>You can check if your chaincode is registered by running the following command from the chaincode directory:</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a>galachain info
 </code></pre></div>
-<p>Provide us the image name (everything before the <code>:</code> character of full docker tag). In the sample above it is the content of <code>ttl.sh/&lt;IMAGE_NAME&gt;</code>.</p>
-</li>
-<li>
-<p><strong>Provide to GalaChain support chaincode information and public keys.</strong></p>
-<p>The keys are automatically generated when you initialize the project using <code>galachain init</code>, so you can find these keys in <code>keys/gc-admin-key.pub</code> and <code>keys/gc-dev-key.pub</code>.</p>
-<blockquote>
-<p>Note: The developer key should be shared with all team members who want to deploy the chaincode.</p>
-</blockquote>
-<p>If you can't find the keys, you can generate them using the following commands:</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a>galachain<span class="w"> </span>keygen<span class="w"> </span>gc-admin-key
-<a id="__codelineno-1-2" name="__codelineno-1-2" href="#__codelineno-1-2"></a>galachain<span class="w"> </span>keygen<span class="w"> </span>gc-dev-key
+<p>This command:
+1. Uses your admin public key to determine the chaincode name (requires the <code>./keys/gc-admin-key.pub</code> file)
+2. Determines the developer private key to sign the request (by default uses developer private key from <code>~/.gc-keys/&lt;chaincode-name&gt;</code> directory, but there are also other options to provide it)
+3. Signs the request with the developer private key and calls the TNT Gateway to get the chaincode deployment information</p>
+<p>On the first call, since your chaincode is not registered yet, you will get an unauthorized error. Example:</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a>Error: [401] Cannot authorize access to chaincode on network TNT.
+<a id="__codelineno-1-2" name="__codelineno-1-2" href="#__codelineno-1-2"></a>
+<a id="__codelineno-1-3" name="__codelineno-1-3" href="#__codelineno-1-3"></a>  Operation ID:         EHpFVcHpaBejni2yzQ2WX
+<a id="__codelineno-1-4" name="__codelineno-1-4" href="#__codelineno-1-4"></a>  Chaincode:            gc-ab4a643F9f26d933c1bE9Dd8f5057f0F5c820f25
+<a id="__codelineno-1-5" name="__codelineno-1-5" href="#__codelineno-1-5"></a>  Developer public key: 04b70f2b896dff49d2da338a3b021dc28aafa5e34712fc59948d64ecc354bb671a940d652763a16b91e208f4b244cc0842d82ac4863b8a7c562808f52a0908e670
+<a id="__codelineno-1-6" name="__codelineno-1-6" href="#__codelineno-1-6"></a>
+<a id="__codelineno-1-7" name="__codelineno-1-7" href="#__codelineno-1-7"></a>It usually means that the chaincode is not registered on TNT, or you are using 
+<a id="__codelineno-1-8" name="__codelineno-1-8" href="#__codelineno-1-8"></a>the wrong developer key for signing. If you are sure that the chaincode is 
+<a id="__codelineno-1-9" name="__codelineno-1-9" href="#__codelineno-1-9"></a>registered on TNT, please check your developer key. Otherwise, you can register 
+<a id="__codelineno-1-10" name="__codelineno-1-10" href="#__codelineno-1-10"></a>the chaincode with `galachain register` command (requires @gala-chain/cli 
+<a id="__codelineno-1-11" name="__codelineno-1-11" href="#__codelineno-1-11"></a>version 2.2.0 or higher).
 </code></pre></div>
-</li>
-<li>
-<p><strong>Deploy the chaincode to testnet or sandbox:</strong>
-    <div class="highlight"><pre><span></span><code><a id="__codelineno-2-1" name="__codelineno-2-1" href="#__codelineno-2-1"></a>galachain<span class="w"> </span>deploy<span class="w"> </span>&lt;docker-image-tag&gt;<span class="w"> </span>&lt;path-to&gt;/gc-dev-key
-</code></pre></div></p>
-<blockquote>
-<p>Note: you need to provide docker image name and also the version part. If you used the <code>ttl.sh</code> example, the <code>docker-image-tag</code> should be something like <code>ttl.sh/&lt;IMAGE_NAME&gt;:1d</code>.</p>
-</blockquote>
-</li>
-<li>
-<p><strong>Fetch information about the chaincode and deployments:</strong>
-    <div class="highlight"><pre><span></span><code><a id="__codelineno-3-1" name="__codelineno-3-1" href="#__codelineno-3-1"></a>galachain<span class="w"> </span>info<span class="w"> </span>&lt;path-to&gt;/gc-dev-key
-</code></pre></div></p>
-<p>Once the status is <code>CC_DEPLOYED</code> you can visit the Swagger webpage: <a href="https://gateway-testnet.galachain.com/docs/">https://gateway-testnet.galachain.com/docs/</a>. You can find your chaincode (<code>gc-&lt;eth-addr&gt;</code>). If the version is still unknown (and you see <code>v?.?.?</code>), it means you may need to wait a couple of minutes till the chaincode is ready.</p>
-<p>Once it is ready, you can use the webpage to call chaincodes. It's good to start <code>PublicKeyContract/GetPublicKey</code> with empty object as request body. It should return the admin public key you provided before.</p>
-</li>
-<li>
-<p><strong>Call the deployed chaincode</strong></p>
-<p>You can use any REST API client (like <code>axios</code> to call your chaincodes). Remember in most cases you will need to sign the DTO with either the <code>gc-admin-key</code> or any key of registered user.</p>
-<p>We highly recommend to use the <code>@gala-chain/api</code> library for handling DTOs and signing. For instance, you can register a user by calling <code>/api/.../...-PublicKeyContract/RegisterEthUser</code> and providing the following <a href="https://galahackathon.com/latest/chain-api-docs/classes/RegisterEthUserDto/"><code>RegisterEthUser</code></a> as payload:</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-4-1" name="__codelineno-4-1" href="#__codelineno-4-1"></a><span class="kd">const</span><span class="w"> </span><span class="nx">dto</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="ow">new</span><span class="w"> </span><span class="nx">RegisterEthUser</span><span class="p">();</span>
-<a id="__codelineno-4-2" name="__codelineno-4-2" href="#__codelineno-4-2"></a><span class="nx">dto</span><span class="p">.</span><span class="nx">publicKey</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="o">&lt;</span><span class="nx">newUserPublicKey</span><span class="o">&gt;</span><span class="p">;</span>
-<a id="__codelineno-4-3" name="__codelineno-4-3" href="#__codelineno-4-3"></a><span class="nx">dto</span><span class="p">.</span><span class="nx">sign</span><span class="p">(</span><span class="o">&lt;</span><span class="nx">gc</span><span class="o">-</span><span class="nx">admin</span><span class="o">-</span><span class="nx">key</span><span class="o">&gt;</span><span class="p">);</span>
-<a id="__codelineno-4-4" name="__codelineno-4-4" href="#__codelineno-4-4"></a><span class="kd">const</span><span class="w"> </span><span class="nx">payloadString</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nx">dto</span><span class="p">.</span><span class="nx">serialize</span><span class="p">();</span>
+<p>You will get the same error if you try to deploy non-registered chaincode.</p>
+<p>To <strong>register a chaincode</strong>, run the following command:</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-2-1" name="__codelineno-2-1" href="#__codelineno-2-1"></a>galachain register
 </code></pre></div>
-<p>In the current version of the library, local environment exposes slightly different endpoints than the production environment.
-<code>gcclient</code> and <code>@gala-chain/client</code> packages are compatible with the local environment only.
-For calling the production environment, you should consult the Swagger documentation at <a href="https://gateway-testnet.galachain.com/docs/">https://gateway-testnet.galachain.com/docs/</a>, and use generic REST API client.</p>
-</li>
-</ol>
-<h2 id="reference">Reference</h2>
-<p>GalaChain CLI calls some local command and accesses ServicePortal REST API to accomplish certain tasks.
-Each REST request body to ServicePortal (1) is signed using our default GalaChain signature type (secp256k1, non-DER), and (2) contains unique request id.
-Both signing and creating the ID is managed by GalaChain CLI.</p>
-<h3 id="fetching-information-about-chaincode-and-deployments">Fetching information about chaincode and deployments</h3>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-5-1" name="__codelineno-5-1" href="#__codelineno-5-1"></a>galachain info
+<p>The command uses the chaincode admin public key to determine the chaincode name and uses all files that match the pattern <code>./keys/gc-dev*-key*.pub</code> as developer public keys. This way you can provide multiple developers during registration by including files like <code>gc-dev2-key.pub</code> or <code>gc-dev-key2.pub</code> as additional developer key files. It is safe to keep developer public keys in version control.</p>
+<p>The CLI register command serves the following prompt to confirm the registration:</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-3-1" name="__codelineno-3-1" href="#__codelineno-3-1"></a>Registering chaincode on GalaChain TNT network...
+<a id="__codelineno-3-2" name="__codelineno-3-2" href="#__codelineno-3-2"></a>
+<a id="__codelineno-3-3" name="__codelineno-3-3" href="#__codelineno-3-3"></a>  Chaincode name:
+<a id="__codelineno-3-4" name="__codelineno-3-4" href="#__codelineno-3-4"></a>    gc-ab4a643f9f26d933c1be9dd8f5057f0f5c820f25
+<a id="__codelineno-3-5" name="__codelineno-3-5" href="#__codelineno-3-5"></a>  Chaincode admin public key:
+<a id="__codelineno-3-6" name="__codelineno-3-6" href="#__codelineno-3-6"></a>    0461b7b6df010ec529d3ed393f9991fabfe94e8167de43519746309ecddd0007135bdba4f73cf49c22e8086ff1b7305eb889f7286d58e2e57f06c050b4e2b288af
+<a id="__codelineno-3-7" name="__codelineno-3-7" href="#__codelineno-3-7"></a>  Developer public keys:
+<a id="__codelineno-3-8" name="__codelineno-3-8" href="#__codelineno-3-8"></a>    04b70f2b896dff49d2da338a3b021dc28aafa5e34712fc59948d64ecc354bb671a940d652763a16b91e208f4b244cc0842d82ac4863b8a7c562808f52a0908e670
+<a id="__codelineno-3-9" name="__codelineno-3-9" href="#__codelineno-3-9"></a>
+<a id="__codelineno-3-10" name="__codelineno-3-10" href="#__codelineno-3-10"></a>Are you sure you want to register the chaincode on TNT? (y/n): y
 </code></pre></div>
-<p>This command will display:</p>
-<ul>
-<li>Org, channel, chaincode names.</li>
-<li>Status of the chaincode deployment.</li>
-</ul>
-<pre class="mermaid"><code>sequenceDiagram
-    Developer -&gt;&gt;+ GalaChain CLI: info
-    GalaChain CLI -&gt;&gt;+ ServicePortal: api/deployment
-    ServicePortal --&gt;&gt;- GalaChain CLI: sandbox + testnet info
-    GalaChain CLI --&gt;&gt;- Developer: info (org, ch, cc, imageName, status)</code></pre>
-<h3 id="deploying-the-chaincode">Deploying the chaincode</h3>
-<p>Deploying to GalaChain testnet:</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-6-1" name="__codelineno-6-1" href="#__codelineno-6-1"></a>galachain test-deploy &lt;docker-image-tag&gt; &lt;path-to&gt;/gc-dev-key
+<p>And once you confirm it will display the information about the registered chaincode:</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-4-1" name="__codelineno-4-1" href="#__codelineno-4-1"></a>Chaincode gc-ab4a643f9f26d933c1be9dd8f5057f0f5c820f25 has been registered:
+<a id="__codelineno-4-2" name="__codelineno-4-2" href="#__codelineno-4-2"></a>{
+<a id="__codelineno-4-3" name="__codelineno-4-3" href="#__codelineno-4-3"></a>  &quot;channel&quot;: &quot;testnet01&quot;,
+<a id="__codelineno-4-4" name="__codelineno-4-4" href="#__codelineno-4-4"></a>  &quot;chaincode&quot;: &quot;gc-ab4a643f9f26d933c1be9dd8f5057f0f5c820f25&quot;,
+<a id="__codelineno-4-5" name="__codelineno-4-5" href="#__codelineno-4-5"></a>  &quot;imageName&quot;: null,
+<a id="__codelineno-4-6" name="__codelineno-4-6" href="#__codelineno-4-6"></a>  &quot;status&quot;: &quot;CH_CREATED&quot;,
+<a id="__codelineno-4-7" name="__codelineno-4-7" href="#__codelineno-4-7"></a>  &quot;adminPublicKey&quot;: &quot;0461b7b6df010ec529d3ed393f9991fabfe94e8167de43519746309ecddd0007135bdba4f73cf49c22e8086ff1b7305eb889f7286d58e2e57f06c050b4e2b288af&quot;,
+<a id="__codelineno-4-8" name="__codelineno-4-8" href="#__codelineno-4-8"></a>  &quot;lastUpdated&quot;: &quot;2025-04-08T13:50:16.881Z&quot;,
+<a id="__codelineno-4-9" name="__codelineno-4-9" href="#__codelineno-4-9"></a>  &quot;developersPublicKeys&quot;: [
+<a id="__codelineno-4-10" name="__codelineno-4-10" href="#__codelineno-4-10"></a>    &quot;04b70f2b896dff49d2da338a3b021dc28aafa5e34712fc59948d64ecc354bb671a940d652763a16b91e208f4b244cc0842d82ac4863b8a7c562808f52a0908e670&quot;
+<a id="__codelineno-4-11" name="__codelineno-4-11" href="#__codelineno-4-11"></a>  ]
+<a id="__codelineno-4-12" name="__codelineno-4-12" href="#__codelineno-4-12"></a>}
 </code></pre></div>
-<p>Deploying to GalaChain sandbox:</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-7-1" name="__codelineno-7-1" href="#__codelineno-7-1"></a>galachain deploy &lt;docker-image-tag&gt; &lt;path-to&gt;/gc-dev-key
+<p>After that step you are able to deploy the chaincode.</p>
+<h2 id="preparing-the-chaincode-docker-image">Preparing the chaincode Docker image</h2>
+<p>To deploy a chaincode to TNT, you need to build and publish a chaincode Docker image.</p>
+<p>The image should be built with the <code>Dockerfile</code> provided by the <code>galachain init</code> command. This ensures the image has the proper format and can be used as a chaincode. The CLI performs initial validation of the image before deployment to prevent deploying an incorrect image.</p>
+<p>The image needs to be publicly available so GalaChain services can access and deploy it. We do not recommend using temporary Docker image registries (like <a href="ttl.sh">ttl.sh</a>), as they may not allow redeployment if needed.</p>
+<p>The Docker image must be built for the <code>linux/amd64</code> architecture.</p>
+<h2 id="deploying-the-chaincode">Deploying the chaincode</h2>
+<p>To deploy the chaincode, run the following command:</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-5-1" name="__codelineno-5-1" href="#__codelineno-5-1"></a>galachain deploy &lt;your-docker-image:tag&gt;
 </code></pre></div>
-<p>This command schedules deployment of published chaincode Docker image to GalaChain testnet or sandbox.
-In order to get the information about the current status of deployments, you need to use <code>galachain info</code> command.</p>
-<pre class="mermaid"><code>sequenceDiagram
-    Developer -&gt;&gt;+ GalaChain CLI: deploy (tag)
-    GalaChain CLI -&gt;&gt;+ ServicePortal: api/deploy { imageTag, contracts }
-    ServicePortal --&gt;&gt;- GalaChain CLI: scheduled
-    GalaChain CLI --&gt;&gt;- Developer: scheduled</code></pre>
+<p>The CLI will verify the Docker image locally, and produce a similar prompt for confirmation:</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-6-1" name="__codelineno-6-1" href="#__codelineno-6-1"></a>Verifying Docker image registry.gitlab.com/dzikowski.online/galachain-sample:1.0.24...
+<a id="__codelineno-6-2" name="__codelineno-6-2" href="#__codelineno-6-2"></a>
+<a id="__codelineno-6-3" name="__codelineno-6-3" href="#__codelineno-6-3"></a>  Chaincode:    gc-ab4a643f9f26d933c1be9dd8f5057f0f5c820f25
+<a id="__codelineno-6-4" name="__codelineno-6-4" href="#__codelineno-6-4"></a>  Image:        registry.gitlab.com/dzikowski.online/galachain-sample:1.0.24
+<a id="__codelineno-6-5" name="__codelineno-6-5" href="#__codelineno-6-5"></a>  Image SHA256: sha256:af0b2b5acde1fe5dc5cd49cc65d6734be8648fda3688525e69da4d6479effe66
+<a id="__codelineno-6-6" name="__codelineno-6-6" href="#__codelineno-6-6"></a>  Contracts: 
+<a id="__codelineno-6-7" name="__codelineno-6-7" href="#__codelineno-6-7"></a>   - AppleContract
+<a id="__codelineno-6-8" name="__codelineno-6-8" href="#__codelineno-6-8"></a>   - GalaChainToken
+<a id="__codelineno-6-9" name="__codelineno-6-9" href="#__codelineno-6-9"></a>   - PublicKeyContract
+<a id="__codelineno-6-10" name="__codelineno-6-10" href="#__codelineno-6-10"></a>
+<a id="__codelineno-6-11" name="__codelineno-6-11" href="#__codelineno-6-11"></a>Are you sure you want to deploy the chaincode gc-ab4a643f9f26d933c1be9dd8f5057f0f5c820f25 to TNT? (y/n): y
+</code></pre></div>
+<p>If you are working on Apple M processor, you may also see a warning: <em>The requested image's platform (linux/amd64) does not match the detected host platform (linux/arm64/v8) and no specific platform was requested</em>, but this is just a result of performing local validation of the image, and you can ignore it.</p>
+<p>Once you confirm the deployment, you will receive a response similar to:</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-7-1" name="__codelineno-7-1" href="#__codelineno-7-1"></a>Deployment scheduled to TNT:
+<a id="__codelineno-7-2" name="__codelineno-7-2" href="#__codelineno-7-2"></a>{
+<a id="__codelineno-7-3" name="__codelineno-7-3" href="#__codelineno-7-3"></a>  &quot;network&quot;: &quot;TNT&quot;,
+<a id="__codelineno-7-4" name="__codelineno-7-4" href="#__codelineno-7-4"></a>  &quot;channel&quot;: &quot;testnet01&quot;,
+<a id="__codelineno-7-5" name="__codelineno-7-5" href="#__codelineno-7-5"></a>  &quot;chaincode&quot;: &quot;gc-ab4a643f9f26d933c1be9dd8f5057f0f5c820f25&quot;,
+<a id="__codelineno-7-6" name="__codelineno-7-6" href="#__codelineno-7-6"></a>  &quot;adminPublicKey&quot;: &quot;0461b7b6df010ec529d3ed393f9991fabfe94e8167de43519746309ecddd0007135bdba4f73cf49c22e8086ff1b7305eb889f7286d58e2e57f06c050b4e2b288af&quot;,
+<a id="__codelineno-7-7" name="__codelineno-7-7" href="#__codelineno-7-7"></a>  &quot;developersPublicKeys&quot;: [
+<a id="__codelineno-7-8" name="__codelineno-7-8" href="#__codelineno-7-8"></a>    &quot;04b70f2b896dff49d2da338a3b021dc28aafa5e34712fc59948d64ecc354bb671a940d652763a16b91e208f4b244cc0842d82ac4863b8a7c562808f52a0908e670&quot;
+<a id="__codelineno-7-9" name="__codelineno-7-9" href="#__codelineno-7-9"></a>  ],
+<a id="__codelineno-7-10" name="__codelineno-7-10" href="#__codelineno-7-10"></a>  &quot;imageName&quot;: null,
+<a id="__codelineno-7-11" name="__codelineno-7-11" href="#__codelineno-7-11"></a>  &quot;sequence&quot;: 1,
+<a id="__codelineno-7-12" name="__codelineno-7-12" href="#__codelineno-7-12"></a>  &quot;status&quot;: &quot;CC_DEPLOY_SCHEDULED&quot;,
+<a id="__codelineno-7-13" name="__codelineno-7-13" href="#__codelineno-7-13"></a>  &quot;lastUpdated&quot;: &quot;2025-04-08T16:30:03.757Z&quot;
+<a id="__codelineno-7-14" name="__codelineno-7-14" href="#__codelineno-7-14"></a>}
+</code></pre></div>
+<p>Your chaincode will typically be available on GalaChain Gateway within 1-5 minutes. You can verify its status using the <code>galachain info</code> command.</p>
+<h2 id="call-the-deployed-chaincode">Call the deployed chaincode</h2>
+<p>You can use any REST API client (like <code>axios</code>, <code>fetch</code>, or <code>undici</code>) to call your chaincodes. Remember that in most cases you will need to sign the DTO with either the <code>gc-admin-key</code> or any registered user's key.</p>
+<p>We highly recommend using the <code>@gala-chain/api</code> library for handling DTOs and signing. For instance, you can register a user by calling <code>/api/.../...-PublicKeyContract/RegisterEthUser</code> and providing the following <a href="https://galahackathon.com/latest/chain-api-docs/classes/RegisterEthUserDto/"><code>RegisterEthUser</code></a> as payload:</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-8-1" name="__codelineno-8-1" href="#__codelineno-8-1"></a><span class="kd">const</span><span class="w"> </span><span class="nx">dto</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="ow">new</span><span class="w"> </span><span class="nx">RegisterEthUser</span><span class="p">();</span>
+<a id="__codelineno-8-2" name="__codelineno-8-2" href="#__codelineno-8-2"></a><span class="nx">dto</span><span class="p">.</span><span class="nx">publicKey</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="o">&lt;</span><span class="nx">newUserPublicKey</span><span class="o">&gt;</span><span class="p">;</span>
+<a id="__codelineno-8-3" name="__codelineno-8-3" href="#__codelineno-8-3"></a><span class="nx">dto</span><span class="p">.</span><span class="nx">sign</span><span class="p">(</span><span class="o">&lt;</span><span class="nx">gc</span><span class="o">-</span><span class="nx">admin</span><span class="o">-</span><span class="nx">key</span><span class="o">&gt;</span><span class="p">);</span>
+<a id="__codelineno-8-4" name="__codelineno-8-4" href="#__codelineno-8-4"></a><span class="kd">const</span><span class="w"> </span><span class="nx">payloadString</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nx">dto</span><span class="p">.</span><span class="nx">serialize</span><span class="p">();</span>
+</code></pre></div>
 
 
 
