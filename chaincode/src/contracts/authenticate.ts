@@ -232,7 +232,7 @@ export async function authenticateAsOriginChaincode(
   }
 
   // @ts-expect-error error in fabric types mapping
-  const proposalPayload = signedProposal.proposal.payload?.input?.array?.[0];
+  const proposalPayload = signedProposal.proposal.payload?.array?.[0];
 
   if (proposalPayload === undefined) {
     const message = "Chaincode authorization failed: got empty proposal payload in signed proposal.";
