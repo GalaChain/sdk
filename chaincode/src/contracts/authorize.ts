@@ -84,13 +84,13 @@ export function ensureChaincodeIsAllowed(chaincode: string, allowedChaincodes: s
 export interface AuthorizeOptions {
   allowedOrgs?: string[];
   allowedRoles?: string[];
-  allowedChaincodes?: string[];
+  allowedOriginChaincodes?: string[];
 }
 
 export async function authorize(ctx: GalaChainContext, options: AuthorizeOptions) {
-  if (options.allowedChaincodes && ctx.callingUser.startsWith("service|")) {
+  if (options.allowedOriginChaincodes && ctx.callingUser.startsWith("service|")) {
     const callingChaincode = ctx.callingUser.slice(8);
-    ensureChaincodeIsAllowed(callingChaincode, options.allowedChaincodes);
+    ensureChaincodeIsAllowed(callingChaincode, options.allowedOriginChaincodes);
     return;
   }
 
