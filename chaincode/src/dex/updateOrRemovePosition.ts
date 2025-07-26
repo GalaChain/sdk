@@ -67,7 +67,13 @@ export async function updateOrRemovePosition(
     const tickRange = genTickRange(position.tickLower, position.tickUpper);
     userPositions.removePosition(tickRange, position.positionId);
     await deleteChainObject(ctx, position);
-    await putChainObject(ctx, userPositions);
+
+    // Remove user position object if empty
+    if (Object.keys(userPositions.tickRangeMap).length > 0) {
+      await putChainObject(ctx, userPositions);
+    } else {
+      await deleteChainObject(ctx, userPositions);
+    }
   } else {
     await putChainObject(ctx, position);
   }
