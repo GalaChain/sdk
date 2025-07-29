@@ -57,7 +57,7 @@ export async function getUserPositions(
       [dto.user],
       DexPositionOwner,
       currentPageBookmark,
-      dto.limit
+      10
     );
     newLocalBookmark = positionsToSkip + positionsRequired;
 
@@ -72,9 +72,16 @@ export async function getUserPositions(
       )
     );
 
-    // Return early if user has no positions
     if (positionInfoList.length === 0) {
-      return new GetUserPositionsResDto([], "");
+      if (userPositionInfo.metadata.bookmark) {
+        // Skip empty user position objects
+        currentPageBookmark = userPositionInfo.metadata.bookmark;
+        continue;
+      }
+      // Return early if user has no positions
+      isLastIteration = true;
+      currentPageBookmark = "";
+      break;
     }
 
     // If the number of skipped positions exceeds current page, move to next page
@@ -120,9 +127,7 @@ export async function getUserPositions(
       : genBookMark(currentPageBookmark, isLastIteration ? "" : newLocalBookmark.toString());
 
   // Add token metadata to response
-  const userPositionWithMetadata = userPositions
-    ? await addMetaDataToUserPositions(ctx, userPositions)
-    : userPositions;
+  const userPositionWithMetadata = await addMetaDataToUserPositions(ctx, userPositions);
 
   return new GetUserPositionsResDto(userPositionWithMetadata, newBookmark);
 }
