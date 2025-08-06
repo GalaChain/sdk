@@ -100,14 +100,12 @@ describe("DEx v3 Testing", () => {
   let client: AdminChainClients<typeof contractConfig>;
   let user: ChainUser;
   let user1: ChainUser;
-  let user2: ChainUser;
   let authorityUser: ChainUser;
 
   beforeAll(async () => {
     client = await TestClients.createForAdmin(contractConfig);
     user = await client.createRegisteredUser();
     user1 = await client.createRegisteredUser();
-    user2 = await client.createRegisteredUser();
     authorityUser = await client.createRegisteredUser();
   });
   afterAll(async () => {
@@ -660,8 +658,7 @@ describe("DEx v3 Testing", () => {
 
     test("should estimate swap", async () => {
       const amountToSwap = new BigNumber(2),
-        sqrtPriceLimit = new BigNumber(5),
-        minAmountToSwap = new BigNumber(0);
+        sqrtPriceLimit = new BigNumber(5);
       const dto = new SwapDto(
         ETH_ClassKey,
         USDT_ClassKey,
@@ -684,8 +681,7 @@ describe("DEx v3 Testing", () => {
 
     test("should throw error in estimating swap while swap more than avaiable liquiidity", async () => {
       const amountToSwap = new BigNumber("200000000000000000000000000"),
-        sqrtPriceLimit = new BigNumber(1),
-        minAmountToSwap = new BigNumber(0);
+        sqrtPriceLimit = new BigNumber(1);
       const dto = new SwapDto(
         ETH_ClassKey,
         USDT_ClassKey,
@@ -2123,8 +2119,7 @@ describe("DEx v3 Testing", () => {
     const fee = 500,
       initialSqrtPrice = new BigNumber("44.72136");
     const tickSpacing = feeAmountTickSpacing[fee];
-    const protocolFees = 0.5,
-      newProtocolFee = 0.3;
+    const newProtocolFee = 0.3;
 
     describe("Configure and fetch Platform fee", () => {
       test("It will revert if none of the input field are present", async () => {
@@ -2256,8 +2251,7 @@ describe("DEx v3 Testing", () => {
 
     test("should estimate swap for exact out", async () => {
       const amountToSwap = new BigNumber("-0.003"),
-        sqrtPriceLimit = new BigNumber(5000),
-        minAmountToSwap = new BigNumber(0);
+        sqrtPriceLimit = new BigNumber(5000);
       const dto = new SwapDto(
         ETH_ClassKey,
         USDC_ClassKey,
@@ -2279,8 +2273,7 @@ describe("DEx v3 Testing", () => {
 
     test("should swap with changing sqrtPrice", async () => {
       const amountToSwap = new BigNumber(2),
-        sqrtPriceLimit = new BigNumber(5),
-        minAmountToSwap = new BigNumber(0);
+        sqrtPriceLimit = new BigNumber(5);
 
       const dto = new SwapDto(
         ETH_ClassKey,

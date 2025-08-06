@@ -168,3 +168,14 @@ export async function getTokenDecimalsFromPool(ctx: GalaChainContext, pool: Pool
 export function roundTokenAmount(amount: string | BigNumber, decimals: number, roundUp: boolean): BigNumber {
   return new BigNumber(amount).decimalPlaces(decimals, roundUp ? BigNumber.ROUND_UP : BigNumber.ROUND_DOWN);
 }
+
+
+
+/**
+ * @dev it will round down the Bignumber to 8 decimals
+ * @param BN
+ * @param round
+ * @returns
+ */
+export const f8 = (BN: BigNumber, round: BigNumber.RoundingMode = BigNumber.ROUND_DOWN): BigNumber =>
+  new BigNumber(BN.toFixed(18, round));
