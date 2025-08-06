@@ -176,4 +176,4 @@ export function roundTokenAmount(amount: string | BigNumber, decimals: number, r
  * @returns
  */
 export const f8 = (BN: BigNumber, round: BigNumber.RoundingMode = BigNumber.ROUND_DOWN): BigNumber =>
-  new BigNumber(BN.toFixed(18, round));
+  new BigNumber(BN.toFixed(8, round));
