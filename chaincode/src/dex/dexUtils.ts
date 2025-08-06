@@ -169,8 +169,6 @@ export function roundTokenAmount(amount: string | BigNumber, decimals: number, r
   return new BigNumber(amount).decimalPlaces(decimals, roundUp ? BigNumber.ROUND_UP : BigNumber.ROUND_DOWN);
 }
 
-
-
 /**
  * @dev it will round down the Bignumber to 8 decimals
  * @param BN
