@@ -322,4 +322,13 @@ export class TestChaincodeStub extends ChaincodeStub {
       message: "This is a test success response"
     };
   }
+
+  public startWriteBatch(): void {
+    // This is a mock, so we don't need to do anything here.
+  }
+
+  public async finishWriteBatch(): Promise<void> {
+    // This is a mock, so we don't need to do anything here.
+    return Promise.resolve();
+  }
 }
