@@ -94,7 +94,8 @@ function errorFunc(
   output: Array<number>,
   badCodepoint?: number
 ): number {
-  assertArgument(false, `invalid codepoint at offset ${offset}; ${reason}`, "bytes", bytes);
+  // @ts-ignore
+  return assertArgument(false, `invalid codepoint at offset ${offset}; ${reason}`, "bytes", bytes);
 }
 
 function ignoreFunc(
@@ -104,6 +105,7 @@ function ignoreFunc(
   output: Array<number>,
   badCodepoint?: number
 ): number {
+  // @ts-ignore
   // If there is an invalid prefix (including stray continuation), skip any additional continuation bytes
   if (reason === "BAD_PREFIX" || reason === "UNEXPECTED_CONTINUE") {
     let i = 0;

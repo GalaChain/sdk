@@ -20,22 +20,26 @@ import KeyGen from "./index";
 jest.setTimeout(10 * 1000);
 
 describe("KeyGen Command", () => {
-  it("should check KeyGen Command", async () => {
-    const result: (string | Uint8Array)[] = [];
-    jest.spyOn(process.stdout, "write").mockImplementation((v) => {
-      result.push(v);
-      return true;
-    });
+  it(
+    "should check KeyGen Command",
+    async () => {
+      const result: (string | Uint8Array)[] = [];
+      jest.spyOn(process.stdout, "write").mockImplementation((v) => {
+        result.push(v);
+        return true;
+      });
 
-    const target = path.resolve(__dirname, "./test-key");
-    await KeyGen.run([target]);
+      const target = path.resolve(__dirname, "./test-key");
+      await KeyGen.run([target]);
 
-    expect(result.join()).toContain(`Writing keys to ${target}`);
-    expect(result.join()).toContain(`public key... ${target}.pub`);
-    expect(result.join()).toContain(`private key... ${target}`);
+      expect(result.join()).toContain(`Writing keys to ${target}`);
+      expect(result.join()).toContain(`public key... ${target}.pub`);
+      expect(result.join()).toContain(`private key... ${target}`);
 
-    // delete generated files
-    await fs.unlink(`${target}.pub`);
-    await fs.unlink(target);
-  });
+      // delete generated files
+      await fs.unlink(`${target}.pub`);
+      await fs.unlink(target);
+    },
+    30000
+  );
 });

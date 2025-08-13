@@ -18,9 +18,11 @@ import { TypedDataEncoder } from "../../ethers/hash/typed-data";
 import serialize from "../serialize";
 
 // Type definitions
-type EIP712Domain = Record<string, any>;
-type EIP712Types = Record<string, any>;
-type EIP712Value = Record<string, any>;
+import { TypedDataField } from "../../ethers/hash/typed-data";
+
+type EIP712Domain = Record<string, unknown>;
+type EIP712Types = Record<string, Array<TypedDataField>>;
+type EIP712Value = Record<string, unknown>;
 
 interface EIP712Object {
   domain: EIP712Domain;

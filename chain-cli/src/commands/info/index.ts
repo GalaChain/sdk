@@ -15,7 +15,6 @@
 import { Args, Flags } from "@oclif/core";
 
 import BaseCommand from "../../base-command";
-import { ChaincodeInfoDto } from "../../dto";
 import { getChaincodeDefinition, getDeploymentResponse, getPrivateKey } from "../../galachain-utils";
 
 export default class Info extends BaseCommand<typeof Info> {
@@ -46,7 +45,7 @@ export default class Info extends BaseCommand<typeof Info> {
   };
 
   async run(): Promise<void> {
-    const { args, flags } = await this.parse(Info);
+    const { args } = await this.parse(Info);
 
     const chaincode = await getChaincodeDefinition();
     const developerPrivateKey = await getPrivateKey(args.developerPrivateKey, chaincode.name);

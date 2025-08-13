@@ -63,6 +63,8 @@ export class PublicKeyContract extends GalaContract {
       "Since the profile contains also eth address of the user, this method is supported only for signature based authentication."
   })
   public async GetMyProfile(ctx: GalaChainContext, dto: GetMyProfileDto): Promise<UserProfile> {
+    // dto is not used in this method, but it is required by the Evaluate decorator
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
     return ctx.callingUserProfile;
   }
 

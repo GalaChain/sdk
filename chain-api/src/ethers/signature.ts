@@ -193,7 +193,13 @@ export class Signature {
   /**
    *  Returns a representation that is compatible with ``JSON.stringify``.
    */
-  toJSON(): any {
+  toJSON(): {
+    _type: "signature";
+    networkV: null | string;
+    r: string;
+    s: string;
+    v: 27 | 28;
+  } {
     const networkV = this.networkV;
     return {
       _type: "signature",

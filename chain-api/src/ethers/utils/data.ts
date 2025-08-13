@@ -82,7 +82,7 @@ export function getBytesCopy(value: BytesLike, name?: string): Uint8Array {
  *  %%value%% is a valid [[DataHexString]] of %%length%% (if a //number//)
  *  bytes of data (e.g. ``0x1234`` is 2 bytes).
  */
-export function isHexString(value: any, length?: number | boolean): value is `0x${string}` {
+export function isHexString(value: unknown, length?: number | boolean): value is `0x${string}` {
   if (typeof value !== "string" || !value.match(/^0x[0-9A-Fa-f]*$/)) {
     return false;
   }
@@ -101,7 +101,7 @@ export function isHexString(value: any, length?: number | boolean): value is `0x
  *  Returns true if %%value%% is a valid representation of arbitrary
  *  data (i.e. a valid [[DataHexString]] or a Uint8Array).
  */
-export function isBytesLike(value: any): value is BytesLike {
+export function isBytesLike(value: unknown): value is BytesLike {
   return isHexString(value, true) || value instanceof Uint8Array;
 }
 

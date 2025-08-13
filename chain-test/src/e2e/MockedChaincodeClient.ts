@@ -284,6 +284,7 @@ export class MockedChaincodeClient extends ChainClient {
    * @returns New client instance for the specified user
    */
   forUser(userId: string, secret?: string | undefined): ChainClient {
+    // secret is ignored in mocked client
     return new MockedChaincodeClient(
       this.customBuilder,
       this.chaincode.then((c) => c.setCallingUser(`client|${userId}`)),

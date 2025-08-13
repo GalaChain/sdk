@@ -12,13 +12,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-import {
-  ChainError,
-  ErrorCode,
-  FeeAuthorization,
-  FetchFeeAuthorizationsResDto,
-  NotFoundError
-} from "@gala-chain/api";
+import { FeeAuthorization, FetchFeeAuthorizationsResDto } from "@gala-chain/api";
 
 import { GalaChainContext } from "../types";
 import { getObjectsByPartialCompositeKeyWithPagination, takeUntilUndefined } from "../utils";

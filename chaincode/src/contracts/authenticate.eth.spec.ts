@@ -84,6 +84,8 @@ const SuccessNoCustomAlias = labeled<Expectation>("SuccessNoCustomAlias")((respo
 });
 
 const SuccessUnknownKey = labeled<Expectation>("SuccessUnknownKey")((response, user) => {
+  // user is not used in this method, but it is required by the Expectation type
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   expect(response).toEqual(
     transactionSuccess({
       alias: expect.stringMatching(/^eth\|[a-fA-F0-9]{40}$/),

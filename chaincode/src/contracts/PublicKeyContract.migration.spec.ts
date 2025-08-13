@@ -37,11 +37,15 @@ const allowedRole = UserRole.CURATOR;
 class TestContract extends GalaContract {
   @Submit({ allowedOrgs: [allowedOrg] })
   public async V1(ctx: GalaChainContext, dto: ChainCallDTO): Promise<string> {
+    // dto is not used in this method, but it is required by the Submit decorator
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
     return `Hello ${ctx.callingUser}!`;
   }
 
   @Submit({ allowedRoles: [allowedRole] })
   public async V2(ctx: GalaChainContext, dto: ChainCallDTO): Promise<string> {
+    // dto is not used in this method, but it is required by the Submit decorator
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
     return `Hello ${ctx.callingUser}!`;
   }
 }

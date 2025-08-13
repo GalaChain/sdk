@@ -37,7 +37,6 @@ import {
   OraclePriceAssertion,
   OraclePriceCrossRateAssertion,
   PaymentRequiredError,
-  RequestTokenBridgeOutDto,
   TerminateTokenSwapDto,
   TokenClassKey,
   TokenInstanceKey,
@@ -88,7 +87,12 @@ export function extractUniqueUsersFromRequests(ctx: GalaChainContext, requests: 
   return Array.from(new Set(users));
 }
 
-export async function batchFillTokenSwapFeeGate(ctx: GalaChainContext, dto: BatchFillTokenSwapDto) {
+export async function batchFillTokenSwapFeeGate(
+  ctx: GalaChainContext,
+  dto: BatchFillTokenSwapDto
+): Promise<void> {
+  // dto is not used in this method, but it is required by the fee gate
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   return galaFeeGate(ctx, { feeCode: FeeGateCodes.BatchFillTokenSwap });
 }
 
@@ -140,7 +144,12 @@ export async function burnTokensFeeGate(ctx: GalaChainContext, dto: BurnTokensDt
   });
 }
 
-export async function terminateTokenSwapFeeGate(ctx: GalaChainContext, dto: TerminateTokenSwapDto) {
+export async function terminateTokenSwapFeeGate(
+  ctx: GalaChainContext,
+  dto: TerminateTokenSwapDto
+): Promise<void> {
+  // dto is not used in this method, but it is required by the fee gate
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   return galaFeeGate(ctx, { feeCode: FeeGateCodes.TerminateTokenSwap });
 }
 
@@ -413,7 +422,9 @@ export async function requestTokenBridgeOutFeeGate(
   await putChainObject(ctx, bridgeFeeAssertionRecord);
 }
 
-export async function transferTokenFeeGate(ctx: GalaChainContext, dto: TransferTokenDto) {
+export async function transferTokenFeeGate(ctx: GalaChainContext, dto: TransferTokenDto): Promise<void> {
+  // dto is not used in this method, but it is required by the fee gate
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   return galaFeeGate(ctx, {
     feeCode: FeeGateCodes.TransferToken
     // v1 fees requires only callingUser identities pay fees
@@ -423,11 +434,15 @@ export async function transferTokenFeeGate(ctx: GalaChainContext, dto: TransferT
   });
 }
 
-export async function galaSwapRequestFeeGate(ctx: GalaChainContext, dto: ChainCallDTO) {
+export async function galaSwapRequestFeeGate(ctx: GalaChainContext, dto: ChainCallDTO): Promise<void> {
+  // dto is not used in this method, but it is required by the fee gate
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   return galaFeeGate(ctx, { feeCode: FeeGateCodes.SwapTokenRequest });
 }
 
-export async function galaSwapFillFeeGate(ctx: GalaChainContext, dto: FillTokenSwapDto) {
+export async function galaSwapFillFeeGate(ctx: GalaChainContext, dto: FillTokenSwapDto): Promise<void> {
+  // dto is not used in this method, but it is required by the fee gate
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   return galaFeeGate(ctx, { feeCode: FeeGateCodes.SwapTokenFill });
 }
 
@@ -437,7 +452,9 @@ export async function galaSwapBatchFillFeeGate(ctx: GalaChainContext, dto: Batch
   }
 }
 
-export async function simpleFeeGate(ctx: GalaChainContext, dto: ChainCallDTO) {
+export async function simpleFeeGate(ctx: GalaChainContext, dto: ChainCallDTO): Promise<void> {
+  // dto is not used in this method, but it is required by the fee gate
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   // example quick implementation fee gate
   // no need to write FeeCodeDefinitions or lookup FeeCodeDefinition objects to calc amount
   // tradeoff is its not flexible to update or modify, and won't record usage

@@ -13,6 +13,7 @@
  * limitations under the License.
  */
 export const mockFetch = (body: Record<string, unknown>, headers?: Record<string, string>, ok = true) => {
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   global.fetch = jest.fn((_url: string, _options?: Record<string, unknown>) =>
     Promise.resolve({
       ok,

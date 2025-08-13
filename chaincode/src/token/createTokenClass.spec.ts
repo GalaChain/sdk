@@ -49,7 +49,7 @@ it("should CreateTokenClass", async () => {
 
   const expectedInstance = currency.tokenInstance();
   const expectedClass = currency.tokenClass((defaults) => {
-    const { tokenClass, signature, uniqueKey, ...fromDto } = dto;
+    const { tokenClass, ...fromDto } = dto;
     const authorities = dto.authorities as UserAlias[];
     const missingInDto = { contractAddress: undefined, metadataAddress: undefined, rarity: undefined };
     return { ...defaults, ...fromDto, authorities, ...missingInDto, ...tokenClass };

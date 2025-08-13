@@ -77,9 +77,13 @@ export function x509Identity(caUser: string, mspId: string): ClientIdentity {
 
   return {
     assertAttributeValue(attrValue: string): boolean {
+      // This is a mock implementation, so we don't need to use the parameter.
+      // eslint-disable-next-line @typescript-eslint/no-unused-vars
       throw new Error("Method 'assertAttributeValue' not implemented.");
     },
     getAttributeValue(attrName: string): string | null {
+      // This is a mock implementation, so we don't need to use the parameter.
+      // eslint-disable-next-line @typescript-eslint/no-unused-vars
       throw new Error("Method 'getAttributeValue' not implemented.");
     },
     getMSPID: () => mspId,

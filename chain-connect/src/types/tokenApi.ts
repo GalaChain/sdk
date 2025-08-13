@@ -57,8 +57,7 @@ import {
   UnlockTokensDto,
   UpdateTokenClassDto,
   UseTokenDto,
-  UserAlias,
-  UserRef
+  UserAlias
 } from "@gala-chain/api";
 import BigNumber from "bignumber.js";
 import { Type } from "class-transformer";

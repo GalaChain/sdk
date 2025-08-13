@@ -114,8 +114,13 @@ export function getBigInt(value: BigNumberish, name?: string): bigint {
           return -BigInt(value.substring(1));
         }
         return BigInt(value);
-      } catch (e: any) {
-        assertArgument(false, `invalid BigNumberish string: ${e.message}`, name || "value", value);
+      } catch (e: unknown) {
+        assertArgument(
+          false,
+          `invalid BigNumberish string: ${e instanceof Error ? e.message : e}`,
+          name || "value",
+          value
+        );
       }
   }
   assertArgument(false, "invalid BigNumberish value", name || "value", value);
@@ -173,8 +178,13 @@ export function getNumber(value: BigNumberish, name?: string): number {
           throw new Error("empty string");
         }
         return getNumber(BigInt(value), name);
-      } catch (e: any) {
-        assertArgument(false, `invalid numeric string: ${e.message}`, name || "value", value);
+      } catch (e: unknown) {
+        assertArgument(
+          false,
+          `invalid numeric string: ${e instanceof Error ? e.message : e}`,
+          name || "value",
+          value
+        );
       }
   }
   assertArgument(false, "invalid numeric value", name || "value", value);

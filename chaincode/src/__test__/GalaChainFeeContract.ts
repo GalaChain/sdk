@@ -86,6 +86,8 @@ export class GalaChainFeeContract extends GalaContract {
     ctx: GalaChainContext,
     dto: FetchFeePropertiesDto
   ): Promise<GalaChainResponse<FeeProperties | ChainError>> {
+    // dto is not used in this method, but it is required by the GalaTransaction decorator
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
     return GalaChainResponse.Wrap(fetchGalaFeeProperties(ctx));
   }
 

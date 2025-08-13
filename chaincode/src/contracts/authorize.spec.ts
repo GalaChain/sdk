@@ -256,12 +256,14 @@ describe("authorization", () => {
       }
 
       public async GetCallingUser(ctx: GalaChainContext, dto: ChainCallDTO): Promise<unknown> {
+        // dto is not used in this method, but it is required by the GalaTransaction decorator
+        // eslint-disable-next-line @typescript-eslint/no-unused-vars
         try {
           return {
-            alias: await (async () => ctx.callingUser)().catch((e) => "anonymous"),
+            alias: await (async () => ctx.callingUser)().catch(() => "anonymous"),
             roles: ctx.callingUserRoles
           };
-        } catch (e) {
+        } catch (e: unknown) {
           return undefined;
         }
       }

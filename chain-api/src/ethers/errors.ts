@@ -446,7 +446,11 @@ export function isError<K extends ErrorCode, T extends CodedEthersError<K>>(erro
  *  required properties. The error message will also include the %%message%%,
  *  ethers version, %%code%% and all additional properties, serialized.
  */
-export function makeError<K extends ErrorCode, T>(message: string, code: K, info?: ErrorInfo<T>): T {
+export function makeError<K extends ErrorCode, T>(
+  message: string,
+  code: K,
+  info?: ErrorInfo<T>
+): T {
   const shortMessage = message;
 
   {
