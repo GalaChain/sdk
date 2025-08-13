@@ -21,6 +21,7 @@ import {
   ValidationFailedError,
   signatures
 } from "@gala-chain/api";
+import * as protos from "fabric-protos";
 
 import { PkInvalidSignatureError, PublicKeyService } from "../services";
 import { PkMissingError } from "../services/PublicKeyError";
@@ -35,33 +36,45 @@ class MissingSignatureError extends ValidationFailedError {
 class RedundantSignerPublicKeyError extends ValidationFailedError {
   constructor(recovered: string, inDto: string) {
     super(
-      "Public key is redundant, when it can be recovered from signature, or when the address is provided.",
-      { recovered, inDto }
+      "Public key is redundant when it can be recovered from the signature, or when the address is provided.",
+      {
+        recovered,
+        inDto
+      }
     );
   }
 }
 
 class PublicKeyMismatchError extends ValidationFailedError {
   constructor(recovered: string, inDto: string) {
-    super("Public key recovered from signature is different than provided in dto.", { recovered, inDto });
+    super("Public key recovered from signature is different from the one provided in dto.", {
+      recovered,
+      inDto
+    });
   }
 }
 
 class RedundantSignerAddressError extends ValidationFailedError {
   constructor(recovered: string, inDto: string) {
-    super("Signer address redundant, when it can be recovered from signature.", { recovered, inDto });
+    super("Signer address is redundant when it can be recovered from the signature.", {
+      recovered,
+      inDto
+    });
   }
 }
 
 class AddressMismatchError extends ValidationFailedError {
   constructor(recovered: string, inDto: string) {
-    super("Signer address recovered from signature is different than provided in dto.", { recovered, inDto });
+    super("Signer address recovered from signature is different from the one provided in dto.", {
+      recovered,
+      inDto
+    });
   }
 }
 
 class MissingSignerError extends ValidationFailedError {
   constructor(signature: string) {
-    super(`Missing signerPublicKey or signerAddress field in dto. Signature: ${signature}`, { signature });
+    super(`Missing signerPublicKey or signerAddress field in dto. Signature: ${signature}.`, { signature });
   }
 }
 
@@ -70,6 +83,8 @@ class UserNotRegisteredError extends ValidationFailedError {
     super(`User ${userId} is not registered.`, { userId });
   }
 }
+
+export class ChaincodeAuthorizationError extends ForbiddenError {}
 
 /**
  *
@@ -82,6 +97,11 @@ export async function authenticate(
   dto: ChainCallDTO | undefined
 ): Promise<{ alias: string; ethAddress?: string; tonAddress?: string; roles: string[] }> {
   if (!dto || dto.signature === undefined) {
+    if (dto?.signerAddress?.startsWith("service|")) {
+      const chaincode = dto.signerAddress.slice(8);
+      return await authenticateAsOriginChaincode(ctx, dto, chaincode);
+    }
+
     throw new MissingSignatureError();
   }
 
@@ -187,10 +207,51 @@ export async function ensureIsAuthenticatedBy(
   const user = await authenticate(ctx, dto);
 
   if (user.alias !== expectedAlias) {
-    throw new ForbiddenError(`Dto is authenticated by ${user.alias}, and not by ${expectedAlias}`, {
+    throw new ForbiddenError(`Dto is authenticated by ${user.alias}, not by ${expectedAlias}.`, {
       authorized: user
     });
   }
 
   return user;
+}
+
+/**
+ * Authenticate as chaincode on the basis of the chaincodeId from the signed
+ * proposal. This is a reliable way to authenticate as chaincode, because the
+ * signed proposal is passed by a peer to the chaincode and can't be faked.
+ */
+export async function authenticateAsOriginChaincode(
+  ctx: GalaChainContext,
+  dto: ChainCallDTO,
+  chaincode: string
+): Promise<{ alias: string; ethAddress?: string; roles: string[] }> {
+  const signedProposal = ctx.stub.getSignedProposal();
+  if (signedProposal === undefined) {
+    const message = "Chaincode authorization failed: got empty signed proposal.";
+    throw new ChaincodeAuthorizationError(message);
+  }
+
+  // @ts-expect-error error in fabric types mapping
+  const proposalPayload = signedProposal.proposal.payload?.array?.[0];
+
+  if (proposalPayload === undefined) {
+    const message = "Chaincode authorization failed: got empty proposal payload in signed proposal.";
+    throw new ChaincodeAuthorizationError(message);
+  }
+
+  const decodedProposal = protos.protos.ChaincodeProposalPayload.decode(proposalPayload);
+  const invocationSpec = protos.protos.ChaincodeInvocationSpec.decode(decodedProposal.input);
+  const chaincodeId = invocationSpec.chaincode_spec?.chaincode_id?.name;
+
+  if (chaincodeId === undefined) {
+    const message = "Chaincode authorization failed: got empty chaincodeId in signed proposal.";
+    throw new ChaincodeAuthorizationError(message);
+  }
+
+  if (chaincodeId !== chaincode) {
+    const message = `Chaincode authorization failed. Got DTO with signerAddress: ${dto.signerAddress}, but signed proposal has chaincodeId: ${chaincodeId}.`;
+    throw new ChaincodeAuthorizationError(message);
+  }
+
+  return { alias: `service|${chaincode}`, ethAddress: undefined, roles: [] };
 }

@@ -21,6 +21,7 @@ import {
   IsOptional,
   Max,
   Min,
+  MinLength,
   ValidateNested,
   ValidationError,
   validate
@@ -192,6 +193,13 @@ export class ChainCallDTO {
   @IsOptional()
   @StringEnumProperty(SigningScheme)
   public signing?: SigningScheme;
+
+  @JSONSchema({
+    description: "Unit timestamp when the DTO expires. If the timestamp is in the past, the DTO is not valid."
+  })
+  @IsOptional()
+  @IsNumber()
+  public dtoExpiresAt?: number;
 
   validate(): Promise<ValidationError[]> {
     return validate(this);
@@ -400,8 +408,9 @@ export class DryRunDto extends ChainCallDTO {
    *
    * The identity used for the transaction simulation.
    */
+  @IsOptional()
   @IsNotEmpty()
-  public readonly callerPublicKey: string;
+  public readonly callerPublicKey?: string;
 
   /**
    * @description

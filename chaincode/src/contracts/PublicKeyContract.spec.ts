@@ -593,7 +593,9 @@ describe("UpdateUserRoles", () => {
     const adminProfileResp = await getMyProfile(chaincode, adminPrivateKey);
     expect(adminProfileResp).toEqual(
       transactionSuccess(
-        expect.objectContaining({ roles: [UserRole.CURATOR, UserRole.EVALUATE, UserRole.SUBMIT] })
+        expect.objectContaining({
+          roles: [UserRole.CURATOR, UserRole.EVALUATE, UserRole.REGISTRAR, UserRole.SUBMIT]
+        })
       )
     );
 
@@ -601,18 +603,18 @@ describe("UpdateUserRoles", () => {
     const user1 = await createRegisteredUser(chaincode);
     const user2 = await createRegisteredUser(chaincode);
 
-    function setCuratorRole(user: string, signerPrivateKey: string) {
-      return updateUserRoles(chaincode, user, [UserRole.CURATOR], signerPrivateKey);
+    function setRegistrarRole(user: string, signerPrivateKey: string) {
+      return updateUserRoles(chaincode, user, [UserRole.REGISTRAR], signerPrivateKey);
     }
 
     // When
-    const notAllowedByUser1 = await setCuratorRole(user2.alias, user1.privateKey);
-    const allowedByAdmin = await setCuratorRole(user1.alias, adminPrivateKey);
-    const allowedByUser1 = await setCuratorRole(user2.alias, user1.privateKey);
+    const notAllowedByUser1 = await setRegistrarRole(user2.alias, user1.privateKey);
+    const allowedByAdmin = await setRegistrarRole(user1.alias, adminPrivateKey);
+    const allowedByUser1 = await setRegistrarRole(user2.alias, user1.privateKey);
 
     // Then
     expect(notAllowedByUser1).toEqual(
-      transactionErrorMessageContains("does not have one of required roles: CURATOR")
+      transactionErrorMessageContains("does not have one of required roles: REGISTRAR")
     );
     expect(allowedByAdmin).toEqual(transactionSuccess());
     expect(allowedByUser1).toEqual(transactionSuccess());

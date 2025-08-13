@@ -144,6 +144,11 @@ const expectedTestDtoSchema = {
       description: "0 - Yes, 1 - No",
       enum: [0, 1],
       type: "number"
+    },
+    dtoExpiresAt: {
+      description:
+        "Unit timestamp when the DTO expires. If the timestamp is in the past, the DTO is not valid.",
+      type: "number"
     }
   },
   type: "object",
