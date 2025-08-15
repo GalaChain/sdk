@@ -174,10 +174,14 @@ class StubCache {
       throw new NotImplementedError("Cannot flush writes in read-only mode");
     }
 
+    this.startWriteBatch();
+
     const deleteOps = Object.keys(this.deletes).map((key) => this.stub.deleteState(key));
     const putOps = Object.entries(this.writes).map(([key, value]) => this.stub.putState(key, value));
     await Promise.all(deleteOps);
     await Promise.all(putOps);
+
+    await this.finishWriteBatch();
   }
 
   getReads(): Record<string, Uint8Array> {
@@ -207,6 +211,20 @@ class StubCache {
   setDeletes(deletes: Record<string, true>): void {
     this.deletes = { ...deletes };
   }
+
+  startWriteBatch(): void {
+    const stub = this.stub as unknown as { handler: { startWriteBatch: () => void } };
+    if (stub.handler && typeof stub.handler.startWriteBatch === "function") {
+      stub.handler.startWriteBatch();
+    }
+  }
+
+  async finishWriteBatch(): Promise<void> {
+    const stub = this.stub as unknown as { handler: { finishWriteBatch: () => Promise<void> } };
+    if (stub.handler && typeof stub.handler.finishWriteBatch === "function") {
+      await stub.handler.finishWriteBatch();
+    }
+  }
 }
 
 export class DuplicateInvokeChaincodeError extends NotImplementedError {
@@ -224,6 +242,10 @@ export interface GalaChainStub extends ChaincodeStub {
   getCachedStateByPartialCompositeKey(objectType: string, attributes: string[]): FabricIterable<CachedKV>;
 
   flushWrites(): Promise<void>;
+
+  startWriteBatch(): void;
+
+  finishWriteBatch(): Promise<void>;
 
   getReads(): Record<string, Uint8Array>;
 

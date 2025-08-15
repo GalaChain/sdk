@@ -68,6 +68,8 @@ type GalaChainStub = ChaincodeStub & {
   getCachedState(key: string): Promise<Uint8Array>;
   getCachedStateByPartialCompositeKey(objectType: string, attributes: string[]): FabricIterable<CachedKV>;
   flushWrites(): Promise<void>;
+  startWriteBatch(): void;
+  finishWriteBatch(): Promise<void>;
   getReads(): Record<string, Uint8Array>;
   getWrites(): Record<string, Uint8Array>;
   getWritesCount(): number;
