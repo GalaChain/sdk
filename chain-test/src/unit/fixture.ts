@@ -141,11 +141,12 @@ const defaultCaClientIdentity = x509Identity("test", "TestOrg");
  * @internal
  */
 type Wrapped<Contract> = {
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   [K in keyof Contract]: Contract[K] extends (...args: infer A) => Promise<GalaChainResponse<infer R>>
     ? Contract[K] // If it already returns Promise<GalaChainResponse<R>>, keep it as is.
     : Contract[K] extends (...args: infer A) => Promise<infer R>
-      ? (...args: A) => Promise<GalaChainResponse<R>> // Otherwise, transform Promise<R> to Promise<GalaChainResponse<R>>.
-      : Contract[K]; // Keep non-Promise methods as is.
+    ? (...args: A) => Promise<GalaChainResponse<R>> // Otherwise, transform Promise<R> to Promise<GalaChainResponse<R>>.
+    : Contract[K]; // Keep non-Promise methods as is.
 };
 
 /**

@@ -46,7 +46,7 @@ export interface ExtendedEip1193Provider extends Eip1193Provider {
   /** Removes a listener for account change events */
   removeListener(event: "accountsChanged", handler: Listener<string[]>): void;
   /** Array of available providers (for multi-wallet scenarios) */
-  providers?: Array<any>;
+  providers?: Array<unknown>;
   /** Flag indicating if this is a Trust Wallet provider */
   isTrust?: boolean;
 }

@@ -13,7 +13,7 @@
  * limitations under the License.
  */
 import { FetchTokenSaleByIdDto, GalaChainResponse, TokenSale, createValidDTO } from "@gala-chain/api";
-import { currency, fixture, nft, transactionError, users, writesMap } from "@gala-chain/test";
+import { currency, fixture, nft, users, writesMap } from "@gala-chain/test";
 import BigNumber from "bignumber.js";
 import { plainToInstance } from "class-transformer";
 

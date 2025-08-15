@@ -417,16 +417,22 @@ export async function getLogs(params: {
       });
 
     return response.data;
-  } catch (error: any) {
-    const status = error.response?.status;
-    const message = error.response?.data?.message;
+  } catch (error: unknown) {
+    if (axios.isAxiosError(error)) {
+      const status = error.response?.status;
+      const message = error.response?.data?.message;
 
-    if (status === 403) {
-      throw new UnauthorizedError(`Unauthorized'.`);
-    } else if (status === 400) {
-      throw new BadRequestError(`Bad request: ${message || error.message}`);
+      if (status === 403) {
+        throw new UnauthorizedError(`Unauthorized'.`);
+      } else if (status === 400) {
+        throw new BadRequestError(`Bad request: ${message || error.message}`);
+      } else {
+        throw new Error(`Failed to fetch logs: ${message || error.message}`);
+      }
+    } else if (error instanceof Error) {
+      throw new Error(`Failed to fetch logs: ${error.message}`);
     } else {
-      throw new Error(`Failed to fetch logs: ${message || error.message}`);
+      throw new Error(`Failed to fetch logs: ${error}`);
     }
   }
 }
@@ -471,8 +477,14 @@ export async function streamLogs(
     stream.on("error", (error) => {
       throw error;
     });
-  } catch (error: any) {
-    throw new Error(`Failed to stream logs: ${error.response?.data?.message || error.message}`);
+  } catch (error: unknown) {
+    if (axios.isAxiosError(error) && error.response?.data?.message) {
+      throw new Error(`Failed to stream logs: ${error.response.data.message}`);
+    } else if (error instanceof Error) {
+      throw new Error(`Failed to stream logs: ${error.message}`);
+    } else {
+      throw new Error(`Failed to stream logs: ${error}`);
+    }
   }
 }
 

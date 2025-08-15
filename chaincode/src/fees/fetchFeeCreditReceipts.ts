@@ -13,12 +13,9 @@
  * limitations under the License.
  */
 import {
-  ChainError,
-  ErrorCode,
   FeeBalanceCreditReceipt,
   FeeCreditReceiptKeyValueResult,
-  FetchFeeCreditReceiptsResponse,
-  NotFoundError
+  FetchFeeCreditReceiptsResDto
 } from "@gala-chain/api";
 import { plainToInstance } from "class-transformer";
 
@@ -69,7 +66,7 @@ export interface FetchFeeCreditReceiptsParams {
 export async function fetchFeeCreditReceipts(
   ctx: GalaChainContext,
   data: FetchFeeCreditReceiptsParams
-): Promise<FetchFeeCreditReceiptsResponse> {
+): Promise<FetchFeeCreditReceiptsResDto> {
   const queryParams: Array<string> = takeUntilUndefined(
     data.year,
     data.month,
@@ -90,7 +87,7 @@ export async function fetchFeeCreditReceipts(
     data.limit
   );
 
-  const response = new FetchFeeCreditReceiptsResponse();
+  const response = new FetchFeeCreditReceiptsResDto();
   response.results = lookup.results.map((result) => {
     return plainToInstance(FeeCreditReceiptKeyValueResult, {
       key: result.getCompositeKey(),

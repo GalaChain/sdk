@@ -212,7 +212,7 @@ export default class TestGalaContract extends GalaContract {
     allowedOrgs: ["CuratorOrg"]
   })
   public async PutNestedKv(ctx: GalaChainContext, dto: NestedKVDto): Promise<void> {
-    const { uniqueKey, ...rest } = dto;
+    const { ...rest } = dto;
     const value = JSON.stringify(rest);
     await ctx.stub.putState(dto.key, Buffer.from(value));
   }
@@ -251,7 +251,7 @@ export default class TestGalaContract extends GalaContract {
   public async GetSetPutNestedKv(ctx: GalaChainContext, dto: NestedKVDto): Promise<unknown> {
     const response = (await ctx.stub.getCachedState(dto.key)).toString();
     if (response === "") {
-      const { uniqueKey, ...rest } = dto;
+      const { ...rest } = dto;
       const value = JSON.stringify(rest);
       await ctx.stub.putState(dto.key, Buffer.from(value));
       return rest;
@@ -328,6 +328,8 @@ export default class TestGalaContract extends GalaContract {
     allowedOrgs: ["CuratorOrg"]
   })
   public async GetCtxData(ctx: GalaChainContext, dto: ChainCallDTO): Promise<unknown> {
+    // dto is not used in this method, but it is required by the GalaTransaction decorator
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
     return {
       callingUser: ctx.callingUser,
       txId: ctx.stub.getTxID(),

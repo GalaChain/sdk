@@ -639,7 +639,11 @@ describe("GalaContract.Batch", () => {
       transactionSuccess([
         transactionSuccess(),
         transactionErrorMessageContains("Some error after put was invoked"),
-        transactionSuccess({ key: "test-key-1", array: ["robot", "human"] })
+        transactionSuccess({
+          key: "test-key-1",
+          array: ["robot", "human"],
+          uniqueKey: "unique-key-1-3"
+        })
       ])
     );
     expect(response2).toEqual(

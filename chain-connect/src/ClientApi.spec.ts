@@ -33,7 +33,8 @@ import { BrowserConnectClient } from "./customClients";
 const sampleAddr = "0x3bb75c2Da3B669E253C338101420CC8dEBf0a777";
 
 class EthereumMock extends EventEmitter {
-  send(method: string, params?: Array<any> | Record<string, any>): Promise<any> {
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  send(method: string, params?: Array<unknown> | Record<string, unknown>): Promise<unknown> {
     if (method === "eth_requestAccounts") {
       return Promise.resolve([sampleAddr]);
     } else if (method === "eth_accounts") {
@@ -44,7 +45,10 @@ class EthereumMock extends EventEmitter {
       throw new Error(`Method not mocked: ${method}`);
     }
   }
-  request(request: { method: string; params?: Array<any> | Record<string, any> }): Promise<any> {
+  request(request: {
+    method: string;
+    params?: Array<unknown> | Record<string, unknown>;
+  }): Promise<unknown> {
     if (request.method === "eth_requestAccounts") {
       return Promise.resolve([sampleAddr]);
     } else if (request.method === "eth_accounts") {

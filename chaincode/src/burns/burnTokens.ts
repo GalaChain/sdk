@@ -257,14 +257,6 @@ export async function incrementOrCreateTokenBurnForTx(
   { collection, category, type, additionalKey, instance }: TokenInstanceKey,
   quantity: BigNumber
 ): Promise<TokenBurn> {
-  const instanceKey: TokenInstanceKey = plainToInstance(TokenInstanceKey, {
-    collection,
-    category,
-    type,
-    additionalKey,
-    instance
-  });
-
   const newBurn = await createValidChainObject(TokenBurn, {
     burnedBy,
     collection,

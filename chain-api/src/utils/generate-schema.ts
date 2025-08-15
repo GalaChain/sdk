@@ -39,20 +39,20 @@ function customTargetConstructorToSchema(classType: ClassConstructor) {
         };
         return schemaObj;
       },
-      ["IsUserAliasConstraint"]: (meta) => {
-        return {
+      ["IsUserAliasConstraint"]: (meta) =>
+        // @ts-ignore
+        ({
           type: "string",
           description:
             "Allowed value is string following the format of 'client|<user-id>', or 'eth|<checksumed-eth-addr>', or valid system-level username."
-        };
-      },
-      ["IsUserRefConstraint"]: (meta) => {
-        return {
+        }),
+      ["IsUserRefConstraint"]: (meta) =>
+        // @ts-ignore
+        ({
           type: "string",
           description:
             "Allowed value is a user alias ('client|<user-id>', or 'eth|<checksumed-eth-addr>', or 'ton|<chain:ton-address>', or valid system-level username), or valid Ethereum address."
-        };
-      }
+        })
     },
     classTransformerMetadataStorage: defaultMetadataStorage
   });

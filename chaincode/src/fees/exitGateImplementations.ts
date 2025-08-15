@@ -47,7 +47,7 @@ export interface IMintPostProcessing {
 }
 
 export async function mintPostProcessing(ctx: GalaChainContext, data: IMintPostProcessing) {
-  const { tokenClass, tokens, owner, quantity, feeCode } = data;
+  const { tokenClass, owner } = data;
   const { collection, category, type, additionalKey } = tokenClass;
 
   const mintConfiguration: TokenMintConfiguration | undefined = await getObjectByKey(
@@ -115,7 +115,11 @@ export async function lockOnMintProcessing(ctx: GalaChainContext, data: ILockOnM
     .times(lockPercentage)
     .decimalPlaces(tokenClassEntry.decimals, BigNumber.ROUND_DOWN);
 
-  const verifyAuthorizedOnBehalf = async (c: TokenClassKey) => undefined;
+  const verifyAuthorizedOnBehalf = async (c: TokenClassKey) => {
+    // c is not used in this method, but it is required by the lockTokens function
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
+    return undefined;
+  };
 
   // only support lock-on-mint postprocessing for fungibles, initially.
   // we would need to know a specific instance to lock for NFTs
@@ -188,6 +192,8 @@ export async function batchMintTokenExitGate(
   dto: BatchMintTokenDto,
   response: GalaChainResponse<TokenInstanceKey[]>
 ): Promise<void> {
+  // response is not used in this method, but it is required by the exit gate
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   for (const mintDto of dto.mintDtos) {
     const { tokenClass, quantity } = mintDto;
     const owner = mintDto.owner ?? ctx.callingUser;

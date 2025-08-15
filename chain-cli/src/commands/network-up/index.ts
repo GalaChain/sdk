@@ -290,7 +290,16 @@ function updatedFabloConfigWithEntry(
   return updated;
 }
 
-function customValidation(flags: any): void {
+interface CustomValidationFlags {
+  channel: string[];
+  channelType: ("curator" | "partner")[];
+  chaincodeName: string[];
+  chaincodeDir: string[];
+  envConfig?: string;
+  watch: boolean;
+}
+
+function customValidation(flags: CustomValidationFlags): void {
   const { channel, channelType, chaincodeName, chaincodeDir, envConfig } = flags;
 
   /*
@@ -372,7 +381,7 @@ function customValidation(flags: any): void {
     (channel, chaincodeName) pairs should be unique
   */
   channel
-    .map((ch: any, i: string | number) => `(${ch}, ${chaincodeName[i]})`)
+    .map((ch: string, i: number) => `(${ch}, ${chaincodeName[i]})`)
     .forEach((pair: string, i: number, arr: string[]) => {
       if (arr.filter((p) => p === pair).length > 1) {
         throw new Error(`Error: Found non-unique channel-chaincode pair: ${pair}`);
@@ -389,9 +398,16 @@ function customValidation(flags: any): void {
   }
 }
 
-function reduce(args: any): SingleArg[] {
-  return args.chaincodeName.map((chaincodeName: unknown, i: number) => ({
-    chaincodeName,
+interface ReduceArgs {
+  chaincodeName: string[];
+  chaincodeDir?: string[];
+  channel: string[];
+  channelType: ("curator" | "partner")[];
+}
+
+function reduce(args: ReduceArgs): SingleArg[] {
+  return args.chaincodeName.map((chaincodeName: string, i: number) => ({
+    chaincodeName: chaincodeName,
     chaincodeDir: args.chaincodeDir?.[i],
     channel: args.channel[i],
     channelType: args.channelType[i]
