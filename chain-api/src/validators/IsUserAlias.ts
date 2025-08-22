@@ -20,6 +20,7 @@ import {
   registerDecorator
 } from "class-validator";
 
+import { UserAlias } from "../types";
 import { signatures } from "../utils";
 
 export enum UserAliasValidationResult {
@@ -94,6 +95,11 @@ export function validateUserAlias(value: unknown): UserAliasValidationResult {
   }
 
   return UserAliasValidationResult.INVALID_FORMAT;
+}
+
+export function isValidUserAlias(value: unknown): value is UserAlias {
+  const result = validateUserAlias(value);
+  return meansValidUserAlias(result);
 }
 
 const customMessages = {

@@ -45,6 +45,29 @@ sequenceDiagram
     deactivate Client app
 ```
 
+## Authentication and Authorization Flow
+
+The authentication and authorization process follows this sequence:
+
+1. **DTO Parsing and Validation**: The incoming DTO is parsed and validated
+2. **DTO Expiration Check**: If `dtoExpiresAt` is set, the system checks if the DTO has expired
+3. **User Authentication**:
+   - If `verifySignature` is enabled or a signature is present, the user is authenticated
+   - If no signature verification is required, default roles are assigned based on the authorization type
+4. **User Authorization**: The system checks if the authenticated user has the required roles, or organization membership, or is an allowed chaincode
+5. **Unique Key Enforcement**: For submit transactions, the system ensures the transaction has a unique key to prevent replay attacks
+6. **Transaction Execution**: The actual contract method is executed
+
+### Context Properties
+
+After successful authentication, the following context properties are available:
+
+- `ctx.callingUser`: The user's alias (e.g., `eth|0x123...def`, `client|admin`)
+- `ctx.callingUserEthAddress`: The user's Ethereum address (if available)
+- `ctx.callingUserTonAddress`: The user's TON address (if available)
+- `ctx.callingUserRoles`: Array of roles assigned to the user
+- `ctx.callingUserProfile`: Complete user profile object
+
 ## Signature based authorization
 
 Signature-based authorization uses secp256k1 signatures to verify the identity of the end user.
@@ -190,7 +213,7 @@ This way it is possible to get the current user's properties in the chaincode an
 
 By default, GalaChain does not allow anonymous users to access the chaincode.
 In order to access the chaincode, the user must be registered with the chaincode.
-This behaviour may be changed as described in the [Allowing non-registered users](#allowing-non-registered-users) section.
+This behaviour may be changed as described in the [Optional User Registration](#optional-user-registration) section.
 
 There are three methods to register a user:
 
@@ -202,38 +225,29 @@ All methods require the user to provide their public key (secp256k1 for Ethereum
 The only difference between these methods is that only `RegisterUser` allows to specify the `alias` parameter.
 For `RegisterEthUser` and `RegisterTonUser` methods, the alias is set to `eth|<eth-addr>` or `ton|<ton-addr>` respectively.
 
-Access to register methods is restricted based on the authentication mode configured:
-- **Role-based authorization (RBAC)**: Requires the `CURATOR` role
-- **Organization-based authorization**: Requires membership in the curator organization (default: `CuratorOrg`)
+Access to registration methods is now controlled as follows:
+- **Role-based authorization (RBAC)**: Requires the `REGISTRAR` role
+- **Organization-based authorization**: Requires membership in one of the registrar organizations (see [Registrar Organizations and REGISTRAR Role](#registrar-organizations-and-registrar-role))
 
 The authentication mode is controlled by the `USE_RBAC` environment variable:
 - `USE_RBAC=true`: Uses role-based authentication
 - `USE_RBAC=false` or unset: Uses organization-based authentication
 
-See the [Organization based authorization](#organization-based-authorization) section, or the [Role Based Access Control (RBAC)](#role-based-access-control-rbac) section for more information.
+#### Registrar Organizations and REGISTRAR Role
 
-#### Allowing non-registered users
+- The set of allowed registrar organizations is controlled by the `REGISTRAR_ORG_MSPS` environment variable (comma-separated list of org MSPs). If not set, it defaults to the value of `CURATOR_ORG_MSP` (default: `CuratorOrg`).
+- In RBAC mode, the `REGISTRAR` role is required to register users. This is distinct from the `CURATOR` role, which may be used for other privileged operations.
+- In organization-based mode, any CA user from an org listed in `REGISTRAR_ORG_MSPS` can register users.
 
-You may allow anonymous users to access the chaincode in one of the following ways:
-* setting the `ALLOW_NON_REGISTERED_USERS` environment variable to `true` for the chaincode container,
-* setting the `allowNonRegisteredUsers` property in the contract's `config` property to `true`, as shown in the example below:
+**Example:**
 
-```typescript
-class MyContract extends GalaContract {
-  constructor() {
-    super("MyContract", version, {
-      allowNonRegisteredUsers: true
-    });
-  }
-}
-```
+- To allow both `Org1MSP` and `Org2MSP` to register users, set:
+  ```
+  REGISTRAR_ORG_MSPS=Org1MSP,Org2MSP
+  ```
+- If `REGISTRAR_ORG_MSPS` is not set, only the org specified by `CURATOR_ORG_MSP` (default: `CuratorOrg`) can register users.
 
-It is useful especially when you expect a large number of users to access the chaincode, and you don't want to register all of them.
-
-If the non-registered users are allowed, the DTO needs to be signed with the user's private key, and the public key can be recovered from the signature.
-In this case, the user's alias will be `eth|<eth-addr>` or `ton|<ton-addr>`, and the user's roles will have default `EVALUATE` and `SUBMIT` roles.
-
-Registration is required only if you want to use the custom alias for the user in the chaincode, or if you want to provide custom roles for the user.
+See the [Registrar Organizations and REGISTRAR Role](#registrar-organizations-and-registrar-role) section for more details.
 
 ### Default admin user
 
@@ -242,7 +256,19 @@ It is provided by two environment variables:
 * `DEV_ADMIN_PUBLIC_KEY` - it contains the admin user public key (sample: `88698cb1145865953be1a6dafd9646c3dd4c0ec3955b35d89676242129636a0b`).
 * `DEV_ADMIN_USER_ID` - it contains the admin user alias (sample: `client|admin`; this variable is optional),
 
-If the user profile is not found in the chain data, and the public key recovered from the signature is the same as the admin user public key (`DEV_ADMIN_PUBLIC_KEY`), the admin user is set as the calling user.
+Alternatively, you can provide a custom admin public key in the contract's configuration:
+
+```typescript
+class MyContract extends GalaContract {
+  constructor() {
+    super("MyContract", version, {
+      adminPublicKey: "88698cb1145865953be1a6dafd9646c3dd4c0ec3955b35d89676242129636a0b"
+    });
+  }
+}
+```
+
+If the user profile is not found in the chain data, and the public key recovered from the signature is the same as the admin user public key, the admin user is set as the calling user.
 Additionally, if the admin user alias is specified (`DEV_ADMIN_USER_ID`), it is used as the calling user alias.
 Otherwise, the default admin user alias is  `eth|<eth-addr-from-public-key>`.
 
@@ -266,8 +292,8 @@ You can restrict access to the contract method to a specific organizations by se
 })
 ```
 
-For the `PublicKeyContract` chaincode, the `CURATOR_ORG_MSP` environment variable is used as the organization that is allowed to register users (default value is `CuratorOrg`).
-It is recommended to use the same variable for curator-level access to the chaincode methods.
+For the `PublicKeyContract` registration methods, the set of allowed organizations is controlled by the `REGISTRAR_ORG_MSPS` environment variable (see [Registrar Organizations and REGISTRAR Role](#registrar-organizations-and-registrar-role)).
+If not set, it defaults to `CURATOR_ORG_MSP` (default: `CuratorOrg`).
 
 **Note**: The `allowedOrgs` property is deprecated and will be eventually removed from the chaincode definition.
 Instead, you should use the `allowedRoles` property to specify which **roles** can access the method.
@@ -284,7 +310,7 @@ The roles are assigned to the `UserProfile` object in the chain data.
 By default, the `EVALUATE` and `SUBMIT` roles are assigned to the user when they are registered.
 You can assign additional roles to the user using the `PublicKeyContract:UpdateUserRoles` method. This method requires that the calling user either has the `CURATOR` role or is a CA user from a curator organization.
 
-There are some predefined roles (`EVALUATE`, `SUBMIT`, `CURATOR`). You can also define custom roles for more granular access control.
+There are some predefined roles (`EVALUATE`, `SUBMIT`, `CURATOR`, `REGISTRAR`). You can also define custom roles for more granular access control.
 
 ### Default Role Assignment
 
@@ -297,16 +323,18 @@ For admin users (when `DEV_ADMIN_PUBLIC_KEY` is set), the following admin roles 
 - `EVALUATE`: Allows querying the blockchain state  
 - `SUBMIT`: Allows submitting transactions that modify state
 
+For registration methods, the `REGISTRAR` role is required if RBAC is enabled.
+
 ### Using Roles in Contract Methods
 
 You can restrict access to contract methods using the `allowedRoles` property:
 
 ```typescript
 @Submit({
-  allowedRoles: ["CURATOR", "ADMIN"]
+  allowedRoles: ["CURATOR", "REGISTRAR"]
 })
 async privilegedOperation(ctx: GalaChainContext, dto: OperationDto) {
-  // Only users with CURATOR or ADMIN role can execute this
+  // Only users with CURATOR, or REGISTRAR role can execute this
 }
 ```
 
@@ -346,25 +374,30 @@ If you want to call external chaincode and authorize your call as a chaincode:
 
 Remember to allow the chaincode in `allowedOriginChaincodes` transaction property in the target chaincode.
 
-## Authentication and Authorization Flow
+## Optional User Registration
 
-The authentication and authorization process follows this sequence:
+By default, GalaChain requires every user to be registered before they can interact with the chaincode. However, in scenarios with a large number of users, you might want to make user registration optional.
 
-1. **DTO Parsing and Validation**: The incoming DTO is parsed and validated
-2. **DTO Expiration Check**: If `dtoExpiresAt` is set, the system checks if the DTO has expired
-3. **User Authentication**: 
-   - If `verifySignature` is enabled or a signature is present, the user is authenticated
-   - If no signature verification is required, default roles are assigned based on the authorization type
-4. **User Authorization**: The system checks if the authenticated user has the required roles, or organization membership, or is an allowed chaincode
-5. **Unique Key Enforcement**: For submit transactions, the system ensures the transaction has a unique key to prevent replay attacks
-6. **Transaction Execution**: The actual contract method is executed
+You can allow non-registered users to access the chaincode in one of two ways:
 
-### Context Properties
+1.  **Environment Variable**: Set the `ALLOW_NON_REGISTERED_USERS` environment variable to `true` for the chaincode container.
 
-After successful authentication, the following context properties are available:
+    ```bash
+    ALLOW_NON_REGISTERED_USERS=true
+    ```
 
-- `ctx.callingUser`: The user's alias (e.g., `eth|0x123...def`, `client|admin`)
-- `ctx.callingUserEthAddress`: The user's Ethereum address (if available)
-- `ctx.callingUserTonAddress`: The user's TON address (if available)
-- `ctx.callingUserRoles`: Array of roles assigned to the user
-- `ctx.callingUserProfile`: Complete user profile object
+2.  **Contract Configuration**: Set the `allowNonRegisteredUsers` property to `true` in your contract's configuration.
+
+    ```typescript
+    class MyContract extends GalaContract {
+      constructor() {
+        super("MyContract", version, {
+          allowNonRegisteredUsers: true
+        });
+      }
+    }
+    ```
+
+When non-registered users are allowed, they still need to sign the DTO with their private key. The public key is recovered from the signature. In this case, the user's alias will be `eth|<eth-addr>` or `ton|<ton-addr>`, and they will be granted default `EVALUATE` and `SUBMIT` roles.
+
+Registration remains necessary if you need to assign custom aliases or roles to users.

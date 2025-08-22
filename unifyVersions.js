@@ -112,6 +112,11 @@ Object.keys(chaincodeTemplatePackageLock.packages)
   .forEach((key) => {
     delete chaincodeTemplatePackageLock.packages[key];
   });
+Object.keys(chaincodeTemplatePackageLock.dependencies)
+  .filter((key) => key.startsWith("@gala-chain/"))
+  .forEach((key) => {
+    delete chaincodeTemplatePackageLock.dependencies[key];
+  });
 
 packages.forEach(({ packageJson }) => {
   const dependencies = chaincodeTemplatePackageLock.packages?.[""]?.dependencies;

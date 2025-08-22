@@ -25,9 +25,10 @@ import {
   GetObjectDto,
   GetObjectHistoryDto,
   NotFoundError,
-  RuntimeError,
+  UserProfile,
   ValidationFailedError,
   createValidDTO,
+  isValidUserAlias,
   signatures
 } from "@gala-chain/api";
 import { Contract } from "fabric-contract-api";
@@ -171,14 +172,32 @@ export abstract class GalaContract extends Contract {
       throw new ValidationFailedError("The dto should have no signature for dry run execution");
     }
 
-    const ethAddr = signatures.getEthAddress(signatures.getNonCompactHexPublicKey(dto.callerPublicKey));
-    const userProfile = await PublicKeyService.getUserProfile(ctx, ethAddr);
+    // If the caller public key is provided, we use it to set the dry run on behalf of the user.
+    if (dto.callerPublicKey) {
+      const ethAddr = signatures.getEthAddress(signatures.getNonCompactHexPublicKey(dto.callerPublicKey));
+      const userProfile = await PublicKeyService.getUserProfile(ctx, ethAddr);
 
-    if (!userProfile) {
-      throw new NotFoundError(`User profile for ${ethAddr} not found`);
+      if (!userProfile) {
+        throw new NotFoundError(`User profile for ${ethAddr} not found`);
+      }
+
+      ctx.setDryRunOnBehalfOf(userProfile);
     }
 
-    ctx.setDryRunOnBehalfOf(userProfile);
+    // If the signer address is provided, we use it to set the dry run on behalf of the user.
+    // Initially we don't fetch the actual registered user to get actual roles, but we use the default roles.
+    // That might be a future improvement.
+    else if (dto.signerAddress && isValidUserAlias(dto.signerAddress)) {
+      ctx.setDryRunOnBehalfOf({
+        alias: dto.signerAddress,
+        roles: [...UserProfile.DEFAULT_ROLES]
+      });
+    }
+
+    // If neither callerPublicKey nor signerAddress is provided, we throw an error.
+    else {
+      throw new ValidationFailedError("Either callerPublicKey or signerAddress must be provided");
+    }
 
     // method needs to be executed first to populate reads, writes and deletes
     const response = await this[method.methodName](ctx, dto.dto);

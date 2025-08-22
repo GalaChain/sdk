@@ -42,13 +42,21 @@ export class ChaincodeNotAllowedError extends ForbiddenError {
     super(message, { chaincode, allowedChaincodes });
   }
 }
-export const curatorOrgMsp = process.env.CURATOR_ORG_MSP ?? "CuratorOrg";
 
 export const useRoleBasedAuth = process.env.USE_RBAC === "true";
+
+export const curatorOrgMsp = process.env.CURATOR_ORG_MSP?.trim() ?? "CuratorOrg";
+
+const registarOrgsFromEnv = process.env.REGISTRAR_ORG_MSPS?.split(",").map((o) => o.trim());
+export const registrarOrgMsps = registarOrgsFromEnv ?? [curatorOrgMsp];
 
 export const requireCuratorAuth = useRoleBasedAuth
   ? { allowedRoles: [UserRole.CURATOR] }
   : { allowedOrgs: [curatorOrgMsp] };
+
+export const requireRegistrarAuth = useRoleBasedAuth
+  ? { allowedRoles: [UserRole.REGISTRAR] }
+  : { allowedOrgs: registrarOrgMsps };
 
 export function ensureOrganizationIsAllowed(ctx: GalaChainContext, allowedOrgsMSPs: string[] | undefined) {
   const userMsp: string = ctx.clientIdentity.getMSPID();
@@ -76,13 +84,13 @@ export function ensureChaincodeIsAllowed(chaincode: string, allowedChaincodes: s
 export interface AuthorizeOptions {
   allowedOrgs?: string[];
   allowedRoles?: string[];
-  allowedChaincodes?: string[];
+  allowedOriginChaincodes?: string[];
 }
 
 export async function authorize(ctx: GalaChainContext, options: AuthorizeOptions) {
-  if (options.allowedChaincodes && ctx.callingUser.startsWith("service|")) {
+  if (options.allowedOriginChaincodes && ctx.callingUser.startsWith("service|")) {
     const callingChaincode = ctx.callingUser.slice(8);
-    ensureChaincodeIsAllowed(callingChaincode, options.allowedChaincodes);
+    ensureChaincodeIsAllowed(callingChaincode, options.allowedOriginChaincodes);
     return;
   }
 

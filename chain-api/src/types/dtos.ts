@@ -408,8 +408,9 @@ export class DryRunDto extends ChainCallDTO {
    *
    * The identity used for the transaction simulation.
    */
+  @IsOptional()
   @IsNotEmpty()
-  public readonly callerPublicKey: string;
+  public readonly callerPublicKey?: string;
 
   /**
    * @description
