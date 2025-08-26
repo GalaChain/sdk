@@ -64,16 +64,18 @@ GalaChain supports configurable decimal precision for token operations. The numb
 - Uses BigNumber.js for accurate calculations
 - Prevents floating-point precision errors
 
-### 2. Rollback and Recovery
+### 2. Transaction Atomicity
 
-GalaChain implements robust rollback mechanisms:
+GalaChain SDK provides **guaranteed transaction atomicity** - when a transaction fails, **NO state changes are saved** to the ledger. This is implemented through multiple layers of protection built on top of Hyperledger Fabric's native transaction isolation.
 
 #### Transaction Rollback
-When a transaction fails partway through execution, GalaChain automatically reverses all the state changes that occurred during that transaction. This ensures the blockchain remains in a consistent state even when operations encounter errors.
+When a transaction fails through execution, no state changes are saved to the ledger.
 
-#### State Rollback
-- **Automatic Rollback**: Failed transactions automatically revert all state changes
-- **Recovery**: Failed nodes can recover from checkpoint and replay transactions
+#### Fabric-Level Protection
+- Hyperledger Fabric provides built-in transaction atomicity
+- Each transaction executes in isolation with its own read/write set
+- Failed transactions are automatically rolled back by the Fabric runtime
+
 
 ### 3. Finalization
 
