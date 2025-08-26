@@ -476,6 +476,7 @@ For assistance with joining the GalaChain network or technical support:
 ### Additional Resources
 
 For additional information, refer to:
+- [ChainLaunch Documentation](https://docs.chainlaunch.dev)
 - [Chaincode Development](chaincode-development.md)
 - [Chaincode Deployment](chaincode-deployment.md)
 - [Authorization](authorization.md)
