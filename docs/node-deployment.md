@@ -161,15 +161,33 @@ ChainLaunch is a tool that allows you to deploy a node in a few steps. First, yo
 
 #### Installation
 
-ChainLaunch is available for multiple operating systems including macOS and Linux. Download the appropriate version for your platform from the official releases page.
+Install ChainLaunch using the official installation script:
+
+```bash
+curl -fsSL https://chainlaunch.dev/install.sh | bash
+```
+
+Verify the installation by checking the ChainLaunch version:
+
+```bash
+chainlaunch version
+```
+
+This command will automatically detect your operating system and install the appropriate ChainLaunch version for macOS, Linux, and other supported platforms.
 
 #### Starting the Server
 
 Set up basic configuration and start the ChainLaunch server with your chosen credentials and port settings.
 
+```bash
+export CHAINLAUNCH_USER=admin
+export CHAINLAUNCH_PASSWORD=mysecretpassword
+chainlaunch serve --port=8100 --db=./chainlaunch.db --data=./data
+```
+
 #### Accessing the Web Interface
 
-After starting the server, access the web interface through your browser using the configured port and login credentials.
+After starting the server, access the web interface through your browser using the configured port and login credentials. You can access the web interface at http://localhost:8100.
 
 ### Step-by-Step Node Deployment
 
