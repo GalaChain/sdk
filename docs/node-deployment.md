@@ -75,32 +75,36 @@ const humanReadable = balance.dividedBy(10 ** 8); // 1.0
 - Uses BigNumber.js for accurate calculations
 - Prevents floating-point precision errors
 
-### 2. Rollback and Recovery
+### 2. Transaction Atomicity
 
-GalaChain implements robust rollback mechanisms:
+GalaChain SDK provides **guaranteed transaction atomicity** - when a transaction fails, **NO state changes are saved** to the ledger. This is implemented through multiple layers of protection built on top of Hyperledger Fabric's native transaction isolation.
 
-#### Transaction Rollback
-```typescript
-@Submit({
-  in: TransferDto
-})
-public async Transfer(ctx: GalaChainContext, dto: TransferDto): Promise<void> {
-  try {
-    // Perform transfer operations
-    await this.debitAccount(ctx, dto.from, dto.amount);
-    await this.creditAccount(ctx, dto.to, dto.amount);
-    
-    // If any operation fails, the entire transaction rolls back
-  } catch (error) {
-    // Transaction automatically rolls back on error
-    throw new TransferError(`Transfer failed: ${error.message}`);
-  }
-}
-```
+#### Fabric-Level Protection
+- Hyperledger Fabric provides built-in transaction atomicity
+- Each transaction executes in isolation with its own read/write set
+- Failed transactions are automatically rolled back by the Fabric runtime
 
-#### State Rollback
-- **Automatic Rollback**: Failed transactions automatically revert all state changes
-- **Recovery**: Failed nodes can recover from checkpoint and replay transactions
+#### SDK-Level State Caching
+The `GalaChainStub` class implements a sophisticated caching mechanism. Its main purpose is to keep the state clean when the transaction fails. This class caches all write operations and allows the `@GalaTransaction` call `flushWrites` method after the successful transaction. Changes are saved only when the transaction succeeds.
+
+**Key Features:**
+- All `putState()` calls are cached in memory, not written immediately
+- All `deleteState()` calls are cached in memory
+- State changes are only visible within the current transaction context
+- External reads see the previous state until transaction commits
+
+#### Transaction Lifecycle Control
+The `@GalaTransaction` and `@Sumbit` decorators manage the complete transaction lifecycle.
+If the transaction ends with an error, no changes are saved, which prevents from the inconsistent state.
+
+#### Error Handling and Rollback
+When a contract method throws an error:
+
+* no state changes are saved to the ledger;
+* the error is logged;
+* the error is automatically handled, so the response is always a `GalaChainResponse` object;
+* the transaction is saved on the ledger in transaction history (for audit purposes).
+
 
 ### 3. Finalization
 
