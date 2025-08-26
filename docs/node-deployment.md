@@ -38,8 +38,8 @@ GalaChain is built on Hyperledger Fabric and operates with the following network
 GalaChain can use **Raft consensus** and **BFT consensus** for ordering service, which provides:
 
 - **Finality**: Blocks are final once committed
-- **Fault Tolerance**: Network continues operating with up to 1/3 of nodes offline
-- **Performance**: Optimized for high-throughput gaming applications
+- **Fault Tolerance**: Network continues operating with up to 1/3 of nodes offline in Raft and 2/3 in BFT
+- **Performance**: Optimized for high-throughput applications
 
 ### Block Structure
 
@@ -52,25 +52,14 @@ Each block contains:
 
 ### 1. Decimal Precision
 
-GalaChain supports configurable decimal precision for token operations:
+GalaChain supports configurable decimal precision for token operations. The number of decimals is set per token class:
 
-```typescript
-// Token class with 18 decimal places (standard for ERC-20 compatibility)
-export class TokenClass {
-  decimals: number = 8;
-  symbol: string;
-  name: string;
-}
-
-// Balance calculations use BigNumber for precision
-import { BigNumber } from "bignumber.js";
-
-const balance = new BigNumber("1000000000000000000"); // 1 token with 18 decimals
-const humanReadable = balance.dividedBy(10 ** 8); // 1.0
-```
+- **Fungible tokens (e.g., GALA):** Typically use 8 decimal places.
+- **NFTs (non-fungible tokens):** Use 0 decimals (no fractional ownership).
+- **Other tokens:** Can be configured as needed.
 
 **Key Points**:
-- Default precision: 18 decimal places
+- Default precision: 8 decimal places
 - Configurable per token class
 - Uses BigNumber.js for accurate calculations
 - Prevents floating-point precision errors
@@ -80,23 +69,7 @@ const humanReadable = balance.dividedBy(10 ** 8); // 1.0
 GalaChain implements robust rollback mechanisms:
 
 #### Transaction Rollback
-```typescript
-@Submit({
-  in: TransferDto
-})
-public async Transfer(ctx: GalaChainContext, dto: TransferDto): Promise<void> {
-  try {
-    // Perform transfer operations
-    await this.debitAccount(ctx, dto.from, dto.amount);
-    await this.creditAccount(ctx, dto.to, dto.amount);
-    
-    // If any operation fails, the entire transaction rolls back
-  } catch (error) {
-    // Transaction automatically rolls back on error
-    throw new TransferError(`Transfer failed: ${error.message}`);
-  }
-}
-```
+When a transaction fails partway through execution, GalaChain automatically reverses all the state changes that occurred during that transaction. This ensures the blockchain remains in a consistent state even when operations encounter errors.
 
 #### State Rollback
 - **Automatic Rollback**: Failed transactions automatically revert all state changes
@@ -112,211 +85,69 @@ GalaChain provides strong finality guarantees:
 - **Deterministic State**: All nodes reach the same state after processing blocks
 
 #### Transaction Finality
-```typescript
-// Transaction is final once included in a committed block
-@Submit({
-  in: MintTokenDto
-})
-public async MintToken(ctx: GalaChainContext, dto: MintTokenDto): Promise<TokenInstanceKey[]> {
-  // Transaction is final when this method completes successfully
-  const tokens = await mintTokens(ctx, dto);
-  
-  // State changes are immediately visible to subsequent transactions
-  return tokens;
-}
-```
+Once a transaction is included in a committed block, it becomes final and immutable. The state changes from that transaction are immediately visible to all subsequent transactions, ensuring a consistent and predictable execution environment.
 
 ### 4. Expiration Time
 
-GalaChain implements configurable expiration mechanisms:
+GalaChain implements optional expiration for DTOs to prevent replay attacks and ensure time-sensitive operations:
 
-#### Transaction Expiration
-```typescript
-// DTO with expiration time
-export class ExpiringOperationDto extends ChainCallDTO {
-  @IsString()
-  operationId: string;
-  
-  @IsNumber()
-  expiresAt: number; // Unix timestamp in milliseconds
-}
+#### DTO Expiration
+Data transfer objects can include an optional expiration timestamp to prevent replay attacks and ensure time-sensitive operations complete within a specific timeframe.
 
-// Contract method that checks expiration
-@Submit({
-  in: ExpiringOperationDto
-})
-public async ExecuteOperation(ctx: GalaChainContext, dto: ExpiringOperationDto): Promise<void> {
-  const txTimestamp = ctx.stub.getTxTimestamp();
-  const currentTime = txTimestamp.seconds.toNumber() * 1000; // Convert to milliseconds
-  if (currentTime > dto.expiresAt) {
-    throw new ExpirationError("Operation has expired");
-  }
-  
-  // Execute operation
-  await performOperation(ctx, dto);
-}
-```
+#### Automatic Expiration Check
+The GalaChain platform automatically validates expiration times during transaction processing:
 
-#### Token Expiration
-```typescript
-// Token with expiration
-export class ExpiringToken {
-  @IsString()
-  tokenId: string;
-  
-  @IsNumber()
-  expiresAt: number; // Unix timestamp in milliseconds
-  
-  isExpired(currentTime: number): boolean {
-    return currentTime > this.expiresAt;
-  }
-}
-```
+1. **Parsing Phase**: Transaction data is parsed and validated
+2. **Expiration Check**: If an expiration time is specified, the system compares it with the current blockchain timestamp
+3. **Rejection**: If the transaction has expired, it is rejected before execution
 
-### 5. Gas Mechanism
+This expiration check happens automatically as part of the standard transaction flow.
 
-GalaChain uses a fee-based system instead of traditional gas:
+#### Best Practices
+- **Set reasonable expiration times**: 5-15 minutes for most operations
+- **Use for sensitive operations**: Transfers, approvals, and administrative actions
+- **Client-side responsibility**: Clients should set appropriate expiration times
+- **Automatic enforcement**: The blockchain automatically rejects expired DTOs
 
-#### Fee Structure
-```typescript
-// Fee configuration
-export class FeeConfig {
-  @IsNumber()
-  baseFee: number; // Base fee per transaction
-  
-  @IsNumber()
-  dataFee: number; // Fee per KB of data
-  
-  @IsNumber()
-  computeFee: number; // Fee for compute-intensive operations
-}
+### 6. Gas Mechanism
 
-// Fee calculation
-export function calculateFee(operation: Operation, config: FeeConfig): number {
-  let fee = config.baseFee;
-  
-  // Add data fee
-  const dataSize = JSON.stringify(operation).length / 1024; // KB
-  fee += dataSize * config.dataFee;
-  
-  // Add compute fee for complex operations
-  if (operation.isComputeIntensive) {
-    fee += config.computeFee;
-  }
-  
-  return fee;
-}
-```
+GalaChain uses a fee-based system instead of traditional gas to compensate network participants and manage resource usage.
 
 #### Fee Collection
 - **Automatic Deduction**: Fees are automatically deducted from user accounts
 - **Fee Distribution**: Fees are distributed to network participants
 - **Dynamic Pricing**: Fees can be adjusted based on network load
 
-### 6. Replay Protection
+### 7. Replay Protection
 
-GalaChain implements multiple layers of replay protection:
+GalaChain implements comprehensive replay protection through multiple layers of security to prevent unauthorized transaction repetition:
 
-#### Nonce-based Protection
-```typescript
-import { ChainObject, ChainKey, getObjectByKey, putChainObject, ChainCallDTO } from "@gala-chain/chaincode";
-import { IsString, IsNumber } from "class-validator";
+#### Signature-Based Protection
+Every write transaction must be signed by the caller's private key, which provides the primary layer of replay protection by cryptographically verifying the transaction originator.
 
-// DTO with nonce for replay protection
-export class ReplayProtectedDto extends ChainCallDTO {
-  @IsString()
-  operationId: string;
-  
-  @IsNumber()
-  nonce: number; // Unique sequence number
-  
-  @IsString()
-  signature: string; // Digital signature
-}
+#### Unique Key Enforcement
+For write transactions, data transfer objects must include a unique key to prevent double spending and replay attacks. This ensures that each transaction can only be executed once.
 
-// Nonce record for storing used nonces
-export class NonceRecord extends ChainObject {
-  static INDEX_KEY = "GCNONC";
-  
-  @ChainKey({ position: 0 })
-  @IsString()
-  public readonly operationId: string;
-  
-  @ChainKey({ position: 1 })
-  @IsNumber()
-  public readonly nonce: number;
-  
-  constructor(operationId: string, nonce: number) {
-    super();
-    this.operationId = operationId;
-    this.nonce = nonce;
-  }
-}
+#### Multi-Layer Protection Strategy
+GalaChain employs multiple layers of replay protection:
 
-// Helper function to get the last used nonce
-async function getLastNonce(ctx: GalaChainContext, operationId: string): Promise<number> {
-  try {
-    const nonceKey = NonceRecord.getCompositeKeyFromParts(NonceRecord.INDEX_KEY, [operationId]);
-    const lastNonceRecord = await getObjectByKey(ctx, NonceRecord, nonceKey);
-    return lastNonceRecord.nonce;
-  } catch (error) {
-    // If no nonce record exists, return 0
-    return 0;
-  }
-}
+1. **Cryptographic Signatures**: Every write operation requires a valid signature from the caller's private key
+2. **Unique Key Enforcement**: Write transactions must have unique keys to prevent double submission
+3. **Optional Expiration**: Transactions can include expiration times for time-sensitive operations
+4. **Blockchain Finality**: Once committed, transactions cannot be replayed due to blockchain immutability
 
-// Contract method that validates nonce
-@Submit({
-  in: ReplayProtectedDto
-})
-public async ExecuteOperation(ctx: GalaChainContext, dto: ReplayProtectedDto): Promise<void> {
-  // Check if nonce has been used
-  const lastNonce = await getLastNonce(ctx, dto.operationId);
-  if (dto.nonce <= lastNonce) {
-    throw new ReplayError("Nonce already used");
-  }
-  
-  // Store the new nonce to prevent replay
-  const nonceRecord = new NonceRecord(dto.operationId, dto.nonce);
-  await putChainObject(ctx, nonceRecord);
-  
-  // Execute operation
-  await performOperation(ctx, dto);
-}
-```
+#### Automatic Protection Flow
+The protection mechanisms work together automatically in this order:
+1. **Authentication**: Transaction signature is verified
+2. **Expiration**: Expiration time is checked if specified
+3. **Unique Key**: Prevents double execution of the same transaction
+4. **Business Logic**: The actual operation is executed
 
-#### Timestamp-based Protection
-```typescript
-// DTO with timestamp for replay protection
-export class TimestampProtectedDto extends ChainCallDTO {
-  @IsString()
-  operationId: string;
-  
-  @IsNumber()
-  timestamp: number; // Unix timestamp in milliseconds
-  
-  @IsString()
-  signature: string;
-}
-
-// Contract method that validates timestamp
-@Submit({
-  in: TimestampProtectedDto
-})
-public async ExecuteOperation(ctx: GalaChainContext, dto: TimestampProtectedDto): Promise<void> {
-  const txTimestamp = ctx.stub.getTxTimestamp();
-  const currentTime = txTimestamp.seconds.toNumber() * 1000; // Convert to milliseconds
-  const timeDiff = Math.abs(currentTime - dto.timestamp);
-  
-  // Reject if timestamp is too old (e.g., 5 minutes)
-  if (timeDiff > 5 * 60 * 1000) {
-    throw new ReplayError("Timestamp too old");
-  }
-  
-  // Execute operation
-  await performOperation(ctx, dto);
-}
-```
+#### Best Practices
+- **Always use unique keys for write operations**: Include timestamps, operation IDs, or other unique identifiers
+- **Sign all write transactions**: Use the provided SDK methods for automatic signing
+- **Set expiration for sensitive operations**: Use `dtoExpiresAt` for transfers and administrative actions
+- **Generate unique keys client-side**: Ensure keys are truly unique across all potential users
 
 ## Node deployment
 
@@ -328,67 +159,58 @@ ChainLaunch is a tool that allows you to deploy a node in a few steps. First, yo
 
 #### Installation
 
-**For macOS (Apple Silicon)**
-```bash
-export CHAINLAUNCH_VERSION=v0.0.2
-export CHAINLAUNCH_URL="https://github.com/LF-Decentralized-Trust-labs/chainlaunch/releases/download/${CHAINLAUNCH_VERSION}/chainlaunch-darwin-arm64"
-curl -L -O ${CHAINLAUNCH_URL}
-chmod +x chainlaunch-darwin-arm64
-sudo mv chainlaunch-darwin-arm64 /usr/local/bin/chainlaunch
-```
-
-**For Linux**
-```bash
-export CHAINLAUNCH_VERSION=v0.0.2
-export CHAINLAUNCH_URL="https://github.com/LF-Decentralized-Trust-labs/chainlaunch/releases/download/${CHAINLAUNCH_VERSION}/chainlaunch-linux-amd64"
-curl -L -O ${CHAINLAUNCH_URL}
-chmod +x chainlaunch-linux-amd64
-sudo mv chainlaunch-linux-amd64 /usr/local/bin/chainlaunch
-```
+ChainLaunch is available for multiple operating systems including macOS and Linux. Download the appropriate version for your platform from the official releases page.
 
 #### Starting the Server
 
-Set up basic configuration and start the ChainLaunch server:
-
-```bash
-# Set required environment variables
-export CHAINLAUNCH_USER=admin
-export CHAINLAUNCH_PASSWORD=mysecretpassword
-
-# Start the server
-chainlaunch serve --port=8100 --db=./chainlaunch.db
-```
+Set up basic configuration and start the ChainLaunch server with your chosen credentials and port settings.
 
 #### Accessing the Web Interface
 
-After starting the server, access the web interface at:
-```
-http://localhost:8100
-```
+After starting the server, access the web interface through your browser using the configured port and login credentials.
 
-Login with the default credentials: `admin/mysecretpassword`
+### Step-by-Step Node Deployment
 
-### Adding Organizations and Nodes
-
-Once ChainLaunch is running, you can add organizations and deploy nodes through the web interface:
+Once ChainLaunch is running, follow these steps to deploy and configure your GalaChain node:
 
 #### 1. Add an Organization
 
 Navigate to the **Organizations** section in the ChainLaunch web interface to create a new organization with your MSP details.
 
-- For detailed instructions, see the official documentation:  
+- For detailed instructions, see the official documentation:
   [How to create an organization](https://docs.chainlaunch.dev/fabric/create-org)
 
 #### 2. Deploy a Node
 
 After creating your organization, you can deploy nodes using the plugin deployment system.
 
-- For step-by-step guidance, refer to:  
+- For step-by-step guidance, refer to:
   [How to create nodes](https://docs.chainlaunch.dev/fabric/create-nodes-fabric)
 
+#### 3. Provide information to the GalaChain team
 
+After creating your organization, you need to provide the following information to the GalaChain team:
 
-### ChainLaunch Plugin Deployment
+- **MSP ID**: The MSP ID for your organization
+- **MSP Sign CA Certificate**: The MSP TLS CA certificate for your organization
+- **MSP TLS CA Certificate**: The MSP TLS CA certificate for your organization
+
+#### 4. Join the GalaChain Network
+
+Once your node is deployed and your organization has been added to the network, you need to join the GalaChain network:
+
+**Contact the GalaChain team** with the following information to obtain network access credentials:
+
+**Required Information to Provide:**
+- **Orderer URL**: The endpoint URL for the GalaChain network orderer
+- **Channel Name**: The specific channel name you wish to join on the GalaChain network
+
+**Important**: Network access requires approval from the GalaChain team. Contact them through the official channels to begin the onboarding process with the orderer URL and channel name.
+
+#### 5. Deploy the ChainLaunch Plugin
+
+After successfully joining the network, deploy the ChainLaunch plugin to enable REST API communication with your GalaChain network.
+
 
 The following plugin configuration allows you to deploy a Hyperledger Fabric API plugin that provides a REST API interface to interact with your GalaChain network:
 
@@ -622,13 +444,16 @@ The rest of the parameters are:
 - key: The key to use for the node
 - apiConfig: The path to the API configuration file
 
+### Contact Information
 
+For assistance with joining the GalaChain network or technical support:
 
-### Support Resources
+- **Email**: Contact the GalaChain team through official channels for network access requests
+- **Documentation**: [GalaChain Documentation](https://docs.galachain.com)
+- **Community Forum**: [Community Forum](https://community.galachain.com)
+- **GitHub Issues**: [GitHub Issues](https://github.com/galachain/galachain-sdk/issues)
 
-- [GalaChain Documentation](https://docs.galachain.com)
-- [Community Forum](https://community.galachain.com)
-- [GitHub Issues](https://github.com/galachain/galachain-sdk/issues)
+### Additional Resources
 
 For additional information, refer to:
 - [Chaincode Development](chaincode-development.md)
