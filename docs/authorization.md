@@ -3,6 +3,8 @@
 GalaChain uses two layers of authorization and authentication to ensure that only authorized users can access the system.
 The first level, exposed to the client, is based on secp256k1 signatures and private/public key authorization for the Ethereum signing scheme, and eddsa signatures for the TON signing scheme.
 The second level uses native Hyperledger Fabric CA users and organizations MSPs.
+The first level, exposed to the client, is based on secp256k1 signatures and private/public key authorization for the Ethereum signing scheme, and eddsa signatures for the TON signing scheme.
+The second level uses native Hyperledger Fabric CA users and organizations MSPs.
 
 ## How it works
 
@@ -70,6 +72,9 @@ After successful authentication, the following context properties are available:
 
 ## Signature based authorization
 
+Signature-based authorization uses secp256k1 signatures to verify the identity of the end user.
+By default, it uses the same algorithm as Ethereum (keccak256 + secp256k1), but the TON (The Open Network) signing scheme is also supported.
+All payloads that should be authorized by the TON signing scheme must have the `signing` field set to `TON`.
 Signature-based authorization uses secp256k1 signatures to verify the identity of the end user.
 By default, it uses the same algorithm as Ethereum (keccak256 + secp256k1), but the TON (The Open Network) signing scheme is also supported.
 All payloads that should be authorized by the TON signing scheme must have the `signing` field set to `TON`.

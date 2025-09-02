@@ -190,11 +190,16 @@ function GalaTransaction<In extends ChainCallDTO, Out>(
           throw new ExpiredError(`DTO expired at ${new Date(dto.dtoExpiresAt).toISOString()}`);
         }
 
+        let quorum: { signedByKeys: string[]; pubKeyCount: number } | undefined = undefined;
+
+
         // Authenticate the user
         if (ctx.isDryRun) {
           // Do not authenticate in dry run mode
         } else if (options?.verifySignature || dto?.signature !== undefined) {
-          ctx.callingUserData = await authenticate(ctx, dto);
+          const authenticateResult = await authenticate(ctx, dto);
+          ctx.callingUserData = authenticateResult;
+          quorum = { signedByKeys: authenticateResult.signedByKeys, pubKeyCount: authenticateResult.pubKeyCount };
         } else {
           // it means a request where authorization is not required. If there is org-based authorization,
           // default roles are applied. If not, then only evaluate is possible. Alias is intentionally

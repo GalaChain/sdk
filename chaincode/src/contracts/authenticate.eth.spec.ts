@@ -62,7 +62,6 @@ const ___registered = labeled<UserRegistered>("user registered")((ch) => createR
 const notRegistered = labeled<UserRegistered>("user not registered")(() => createUser());
 
 type Expectation = (response: unknown, user: User) => void;
-
 const Success = labeled<Expectation>("Success")((response, user) => {
   expect(response).toEqual(
     transactionSuccess({
@@ -199,3 +198,4 @@ function labeled<F>(label: string): (fn: F) => F & { toString: () => string } {
   // @ts-ignore
   return (fn) => Object.assign(fn, { toString: () => label });
 }
+

@@ -17,11 +17,10 @@ import {
   ForbiddenError,
   PublicKey,
   SigningScheme,
-  UserProfileWithRoles,
+  UserProfile,
   ValidationFailedError,
   signatures
 } from "@gala-chain/api";
-import * as protos from "fabric-protos";
 
 import { PkInvalidSignatureError, PublicKeyService } from "../services";
 import { PkMissingError } from "../services/PublicKeyError";
@@ -36,45 +35,33 @@ class MissingSignatureError extends ValidationFailedError {
 class RedundantSignerPublicKeyError extends ValidationFailedError {
   constructor(recovered: string, inDto: string) {
     super(
-      "Public key is redundant when it can be recovered from the signature, or when the address is provided.",
-      {
-        recovered,
-        inDto
-      }
+      "Public key is redundant, when it can be recovered from signature, or when the address is provided.",
+      { recovered, inDto }
     );
   }
 }
 
 class PublicKeyMismatchError extends ValidationFailedError {
   constructor(recovered: string, inDto: string) {
-    super("Public key recovered from signature is different from the one provided in dto.", {
-      recovered,
-      inDto
-    });
+    super("Public key recovered from signature is different than provided in dto.", { recovered, inDto });
   }
 }
 
 class RedundantSignerAddressError extends ValidationFailedError {
   constructor(recovered: string, inDto: string) {
-    super("Signer address is redundant when it can be recovered from the signature.", {
-      recovered,
-      inDto
-    });
+    super("Signer address redundant, when it can be recovered from signature.", { recovered, inDto });
   }
 }
 
 class AddressMismatchError extends ValidationFailedError {
   constructor(recovered: string, inDto: string) {
-    super("Signer address recovered from signature is different from the one provided in dto.", {
-      recovered,
-      inDto
-    });
+    super("Signer address recovered from signature is different than provided in dto.", { recovered, inDto });
   }
 }
 
 class MissingSignerError extends ValidationFailedError {
   constructor(signature: string) {
-    super(`Missing signerPublicKey or signerAddress field in dto. Signature: ${signature}.`, { signature });
+    super(`Missing signerPublicKey or signerAddress field in dto. Signature: ${signature}`, { signature });
   }
 }
 
@@ -84,7 +71,14 @@ class UserNotRegisteredError extends ValidationFailedError {
   }
 }
 
-export class ChaincodeAuthorizationError extends ForbiddenError {}
+export interface AuthenticationResult {
+  alias: string;
+  ethAddress?: string;
+  tonAddress?: string;
+  roles: string[];
+  signedByKeys: string[];
+  pubKeyCount: number;
+}
 
 /**
  *
@@ -95,57 +89,142 @@ export class ChaincodeAuthorizationError extends ForbiddenError {}
 export async function authenticate(
   ctx: GalaChainContext,
   dto: ChainCallDTO | undefined
-): Promise<{ alias: string; ethAddress?: string; tonAddress?: string; roles: string[] }> {
-  if (!dto || dto.signature === undefined) {
-    if (dto?.signerAddress?.startsWith("service|")) {
-      const chaincode = dto.signerAddress.slice(8);
-      return await authenticateAsOriginChaincode(ctx, dto, chaincode);
-    }
+): Promise<AuthenticationResult> {
+  const hasSingleSignature = dto?.signature !== undefined;
+  const hasMultipleSignatures = !!dto?.signatures?.length;
 
+  if (hasSingleSignature && hasMultipleSignatures) {
+    throw new ValidationFailedError("Both signature string and signatures array are present in the dto.");
+  }
+
+  if (!hasSingleSignature && !hasMultipleSignatures) {
     throw new MissingSignatureError();
   }
 
-  const recoveredPkHex = recoverPublicKey(dto.signature, dto, dto.prefix ?? "");
+  if (hasSingleSignature) {
+    return authenticateSingle(ctx, dto, {
+      signature: dto.signature as string,
+      prefix: dto.prefix,
+      signing: dto.signing,
+      signerPublicKey: dto.signerPublicKey,
+      signerAddress: dto.signerAddress
+    });
+  }
+
+  // note: intentionally not using Promise.all here
+  const authenticatedUsers: AuthenticationResult[] = [];
+  for (const signature of dto.signatures ?? []) {
+    authenticatedUsers.push(await authenticateSingle(ctx, dto, signature));
+  }
+
+  const uniqueUsers = new Set(authenticatedUsers.map((user) => user.alias));
+
+  if (uniqueUsers.size !== 1) {
+    const aliases = Array.from(uniqueUsers).join(", ");
+    throw new ValidationFailedError(`Multiple users authenticated in the dto: ${aliases}`);
+  }
+
+  const signedByKeys = authenticatedUsers.map((user) => user.signedByKeys).flat();
+
+  const duplicateKeys = signedByKeys.filter((key, index, self) => self.indexOf(key) !== index);
+
+  if (duplicateKeys.length) {
+    throw new ValidationFailedError(
+      `Duplicate public keys recovered in the dto: ${duplicateKeys.join(", ")}`
+    );
+  }
+
+  return {
+    alias: authenticatedUsers[0].alias,
+    ethAddress: authenticatedUsers[0].ethAddress,
+    tonAddress: authenticatedUsers[0].tonAddress,
+    roles: authenticatedUsers[0].roles,
+    signedByKeys,
+    pubKeyCount: authenticatedUsers[0].pubKeyCount
+  };
+}
+
+interface AuthParams {
+  signature: string;
+  signerPublicKey?: string;
+  signerAddress?: string;
+  signing?: SigningScheme;
+  prefix?: string;
+}
+
+export async function authenticateSingle(
+  ctx: GalaChainContext,
+  dto: ChainCallDTO,
+  auth: AuthParams
+): Promise<AuthenticationResult> {
+  const recoveredPkHex = recoverPublicKey(auth.signature, dto, auth.prefix ?? "");
 
   if (recoveredPkHex !== undefined) {
-    if (dto.signerPublicKey !== undefined) {
-      const hexKey = signatures.getNonCompactHexPublicKey(dto.signerPublicKey);
+    if (auth.signerPublicKey !== undefined) {
+      const hexKey = signatures.getNonCompactHexPublicKey(auth.signerPublicKey);
       if (recoveredPkHex !== hexKey) {
         throw new PublicKeyMismatchError(recoveredPkHex, hexKey);
       } else {
-        throw new RedundantSignerPublicKeyError(recoveredPkHex, dto.signerPublicKey);
+        throw new RedundantSignerPublicKeyError(recoveredPkHex, auth.signerPublicKey);
       }
     }
-    if (dto.signerAddress !== undefined) {
+    if (auth.signerAddress !== undefined) {
       const ethAddress = signatures.getEthAddress(recoveredPkHex);
-      if (dto.signerAddress !== ethAddress) {
-        throw new AddressMismatchError(ethAddress, dto.signerAddress);
+      if (auth.signerAddress !== ethAddress) {
+        throw new AddressMismatchError(ethAddress, auth.signerAddress);
       } else {
-        throw new RedundantSignerAddressError(ethAddress, dto.signerAddress);
+        throw new RedundantSignerAddressError(ethAddress, auth.signerAddress);
       }
     }
-    return await getUserProfile(ctx, recoveredPkHex, dto.signing ?? SigningScheme.ETH); // new flow only
-  } else if (dto.signerAddress !== undefined) {
-    if (dto.signerPublicKey !== undefined) {
-      throw new RedundantSignerPublicKeyError(dto.signerAddress, dto.signerPublicKey);
+    const profile = await getUserProfile(ctx, recoveredPkHex, auth.signing ?? SigningScheme.ETH); // new flow only
+    return {
+      alias: profile.alias,
+      ethAddress: profile.ethAddress,
+      tonAddress: profile.tonAddress,
+      roles: profile.roles,
+      signedByKeys: [recoveredPkHex],
+      pubKeyCount: profile.pubKeyCount ?? 1 // legacy profiles do not have this field
+    };
+  } else if (auth.signerAddress !== undefined) {
+    if (auth.signerPublicKey !== undefined) {
+      throw new RedundantSignerPublicKeyError(auth.signerAddress, auth.signerPublicKey);
     }
 
-    const { profile, publicKey } = await getUserProfileAndPublicKey(ctx, dto.signerAddress);
+    const { profile, publicKey } = await getUserProfileAndPublicKey(ctx, auth.signerAddress);
 
     if (!dto.isSignatureValid(publicKey.publicKey)) {
       throw new PkInvalidSignatureError(profile.alias);
     }
 
-    return profile;
-  } else if (dto.signerPublicKey !== undefined) {
-    if (!dto.isSignatureValid(dto.signerPublicKey)) {
-      const address = PublicKeyService.getUserAddress(dto.signerPublicKey, dto.signing ?? SigningScheme.ETH);
+    return {
+      alias: profile.alias,
+      ethAddress: profile.ethAddress,
+      tonAddress: profile.tonAddress,
+      roles: profile.roles,
+      signedByKeys: [signatures.getNonCompactHexPublicKey(publicKey.publicKey)],
+      pubKeyCount: profile.pubKeyCount ?? 1 // legacy profiles do not have this field
+    };
+  } else if (auth.signerPublicKey !== undefined) {
+    if (!dto.isSignatureValid(auth.signerPublicKey)) {
+      const address = PublicKeyService.getUserAddress(
+        auth.signerPublicKey,
+        auth.signing ?? SigningScheme.ETH
+      );
       throw new PkInvalidSignatureError(address);
     }
 
-    return await getUserProfile(ctx, dto.signerPublicKey, dto.signing ?? SigningScheme.ETH); // new flow only
+    const profile = await getUserProfile(ctx, auth.signerPublicKey, auth.signing ?? SigningScheme.ETH); // new flow only
+
+    return {
+      alias: profile.alias,
+      ethAddress: profile.ethAddress,
+      tonAddress: profile.tonAddress,
+      roles: profile.roles,
+      signedByKeys: [signatures.getNonCompactHexPublicKey(auth.signerPublicKey)],
+      pubKeyCount: profile.pubKeyCount ?? 1 // legacy profiles do not have this field
+    };
   } else {
-    throw new MissingSignerError(dto.signature);
+    throw new MissingSignerError(auth.signature);
   }
 }
 
@@ -153,16 +232,12 @@ async function getUserProfile(
   ctx: GalaChainContext,
   publicKey: string,
   signing: SigningScheme
-): Promise<UserProfileWithRoles> {
+): Promise<UserProfile> {
   const address = PublicKeyService.getUserAddress(publicKey, signing);
   const profile = await PublicKeyService.getUserProfile(ctx, address);
 
   if (profile === undefined) {
-    if (ctx.config.allowNonRegisteredUsers) {
-      return PublicKeyService.getDefaultUserProfile(publicKey, signing);
-    } else {
-      throw new UserNotRegisteredError(address);
-    }
+    throw new UserNotRegisteredError(address);
   }
 
   return profile;
@@ -171,7 +246,7 @@ async function getUserProfile(
 async function getUserProfileAndPublicKey(
   ctx: GalaChainContext,
   address
-): Promise<{ profile: UserProfileWithRoles; publicKey: PublicKey }> {
+): Promise<{ profile: UserProfile; publicKey: PublicKey }> {
   const profile = await PublicKeyService.getUserProfile(ctx, address);
 
   if (profile === undefined) {
@@ -207,51 +282,10 @@ export async function ensureIsAuthenticatedBy(
   const user = await authenticate(ctx, dto);
 
   if (user.alias !== expectedAlias) {
-    throw new ForbiddenError(`Dto is authenticated by ${user.alias}, not by ${expectedAlias}.`, {
+    throw new ForbiddenError(`Dto is authenticated by ${user.alias}, and not by ${expectedAlias}`, {
       authorized: user
     });
   }
 
   return user;
-}
-
-/**
- * Authenticate as chaincode on the basis of the chaincodeId from the signed
- * proposal. This is a reliable way to authenticate as chaincode, because the
- * signed proposal is passed by a peer to the chaincode and can't be faked.
- */
-export async function authenticateAsOriginChaincode(
-  ctx: GalaChainContext,
-  dto: ChainCallDTO,
-  chaincode: string
-): Promise<{ alias: string; ethAddress?: string; roles: string[] }> {
-  const signedProposal = ctx.stub.getSignedProposal();
-  if (signedProposal === undefined) {
-    const message = "Chaincode authorization failed: got empty signed proposal.";
-    throw new ChaincodeAuthorizationError(message);
-  }
-
-  // @ts-expect-error error in fabric types mapping
-  const proposalPayload = signedProposal.proposal.payload?.array?.[0];
-
-  if (proposalPayload === undefined) {
-    const message = "Chaincode authorization failed: got empty proposal payload in signed proposal.";
-    throw new ChaincodeAuthorizationError(message);
-  }
-
-  const decodedProposal = protos.protos.ChaincodeProposalPayload.decode(proposalPayload);
-  const invocationSpec = protos.protos.ChaincodeInvocationSpec.decode(decodedProposal.input);
-  const chaincodeId = invocationSpec.chaincode_spec?.chaincode_id?.name;
-
-  if (chaincodeId === undefined) {
-    const message = "Chaincode authorization failed: got empty chaincodeId in signed proposal.";
-    throw new ChaincodeAuthorizationError(message);
-  }
-
-  if (chaincodeId !== chaincode) {
-    const message = `Chaincode authorization failed. Got DTO with signerAddress: ${dto.signerAddress}, but signed proposal has chaincodeId: ${chaincodeId}.`;
-    throw new ChaincodeAuthorizationError(message);
-  }
-
-  return { alias: `service|${chaincode}`, ethAddress: undefined, roles: [] };
 }

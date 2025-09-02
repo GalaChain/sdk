@@ -25,6 +25,7 @@ import {
   UpdateUserRolesDto,
   UserAlias,
   UserProfile,
+  UserRole,
   ValidationFailedError,
   signatures
 } from "@gala-chain/api";
