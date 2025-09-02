@@ -15,13 +15,16 @@
 import {
   ChainCallDTO,
   ChainObject,
-  GalaChainResponse,
   PK_INDEX_KEY,
   PublicKey,
   SigningScheme,
   UP_INDEX_KEY,
   UnauthorizedError,
+  UserAlias,
   UserProfile,
+  UserProfileWithRoles,
+  asValidUserAlias,
+  createValidChainObject,
   normalizePublicKey,
   signatures
 } from "@gala-chain/api";
@@ -69,7 +72,7 @@ export class PublicKeyService {
   public static async putUserProfile(
     ctx: GalaChainContext,
     address: string,
-    userAlias: string,
+    userAlias: UserAlias,
     signing: SigningScheme
   ): Promise<void> {
     const key = PublicKeyService.getUserProfileKey(ctx, address);
@@ -86,9 +89,16 @@ export class PublicKeyService {
     await ctx.stub.putState(key, data);
   }
 
-  public static async deleteUserProfile(ctx: GalaChainContext, ethAddress: string): Promise<void> {
-    const key = PublicKeyService.getUserProfileKey(ctx, ethAddress);
-    await ctx.stub.deleteState(key);
+  public static async invalidateUserProfile(ctx: GalaChainContext, address: string): Promise<void> {
+    const key = PublicKeyService.getUserProfileKey(ctx, address);
+    const userProfile = await createValidChainObject(UserProfile, {
+      alias: asValidUserAlias(`client|invalidated`),
+      ethAddress: "0000000000000000000000000000000000000000",
+      roles: []
+    });
+
+    const data = Buffer.from(userProfile.serialize());
+    await ctx.stub.putState(key, data);
   }
 
   public static getUserAddress(publicKey: string, signing: SigningScheme): string {
@@ -97,7 +107,10 @@ export class PublicKeyService {
       : signatures.getEthAddress(signatures.getNonCompactHexPublicKey(publicKey));
   }
 
-  public static async getUserProfile(ctx: Context, address: string): Promise<UserProfile | undefined> {
+  public static async getUserProfile(
+    ctx: Context,
+    address: string
+  ): Promise<UserProfileWithRoles | undefined> {
     const key = PublicKeyService.getUserProfileKey(ctx, address);
     const data = await ctx.stub.getState(key);
 
@@ -108,7 +121,7 @@ export class PublicKeyService {
         userProfile.roles = Array.from(UserProfile.DEFAULT_ROLES);
       }
 
-      return userProfile;
+      return userProfile as UserProfileWithRoles;
     }
 
     // check if we want the profile of the admin
@@ -123,7 +136,7 @@ export class PublicKeyService {
           `Thus, the public key from env will be used.`;
         ctx.logging.getLogger().warn(message);
 
-        const alias = process.env.DEV_ADMIN_USER_ID ?? `eth|${adminEthAddress}`;
+        const alias = (process.env.DEV_ADMIN_USER_ID ?? `eth|${adminEthAddress}`) as UserAlias;
 
         if (!alias.startsWith("eth|") && !alias.startsWith("client|")) {
           const message = `Invalid alias for user: ${alias} with public key: ${process.env.DEV_ADMIN_PUBLIC_KEY}`;
@@ -135,11 +148,21 @@ export class PublicKeyService {
         adminProfile.alias = alias;
         adminProfile.roles = Array.from(UserProfile.ADMIN_ROLES);
 
-        return adminProfile;
+        return adminProfile as UserProfileWithRoles;
       }
     }
 
     return undefined;
+  }
+
+  public static getDefaultUserProfile(publicKey: string, signing: SigningScheme): UserProfileWithRoles {
+    const address = this.getUserAddress(publicKey, signing);
+    const profile = new UserProfile();
+    profile.alias = asValidUserAlias(`${signing.toLowerCase()}|${address}`);
+    profile.ethAddress = signing === SigningScheme.ETH ? address : undefined;
+    profile.tonAddress = signing === SigningScheme.TON ? address : undefined;
+    profile.roles = Array.from(UserProfile.DEFAULT_ROLES);
+    return profile as UserProfileWithRoles;
   }
 
   public static async getPublicKey(ctx: Context, userId: string): Promise<PublicKey | undefined> {
@@ -196,7 +219,7 @@ export class PublicKeyService {
     ctx: GalaChainContext,
     providedPkHex: string,
     ethAddress: string,
-    userAlias: string,
+    userAlias: UserAlias,
     signing: SigningScheme
   ): Promise<string> {
     const currPublicKey = await PublicKeyService.getPublicKey(ctx, userAlias);
@@ -244,8 +267,14 @@ export class PublicKeyService {
 
     // Note: we don't throw an error if userProfile is undefined in order to support legacy users with unsaved profiles
     if (userProfile !== undefined) {
-      // remove old user profile
-      await PublicKeyService.deleteUserProfile(ctx, oldAddress);
+      // invalidate old user profile
+      await PublicKeyService.invalidateUserProfile(ctx, oldAddress);
+    }
+
+    // ensure no user profile exists under new address
+    const newUserProfile = await PublicKeyService.getUserProfile(ctx, newAddress);
+    if (newUserProfile !== undefined) {
+      throw new ProfileExistsError(newAddress, newUserProfile.alias);
     }
 
     // update Public Key, and add user profile under new eth address

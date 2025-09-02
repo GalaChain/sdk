@@ -85,7 +85,16 @@ import {
 } from "../types";
 import { GalaChainBaseApi } from "./GalaChainBaseApi";
 
+/**
+ * API client for token-related operations on the GalaChain network.
+ * Provides methods for token lifecycle management including creation, minting, transfers, and burns.
+ */
 export class TokenApi extends GalaChainBaseApi {
+  /**
+   * Creates a new TokenApi instance.
+   * @param chainCodeUrl - The URL of the token chaincode service
+   * @param connection - The GalaChain provider for network communication
+   */
   constructor(chainCodeUrl: string, connection: GalaChainProvider) {
     super(chainCodeUrl, connection);
   }

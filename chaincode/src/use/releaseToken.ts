@@ -12,7 +12,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-import { NotImplementedError, TokenBalance, TokenInstanceKey } from "@gala-chain/api";
+import { NotImplementedError, RuntimeError, TokenBalance, TokenInstanceKey } from "@gala-chain/api";
 
 import { fetchOrCreateBalance } from "../balances";
 import { fetchTokenInstance } from "../token";
@@ -35,9 +35,13 @@ export async function releaseToken(
     });
   }
 
-  // owner is always present for NFT instances
   const tokenInstance = await fetchTokenInstance(ctx, tokenInstanceKey);
-  const owner = tokenInstance.owner as string;
+  const owner = tokenInstance.owner;
+
+  // owner is always present for NFT instances - throwing to detect potential issues
+  if (owner === undefined) {
+    throw new RuntimeError(`Token instance ${tokenInstanceKey.toStringKey()} has no owner`);
+  }
 
   const balance = await fetchOrCreateBalance(ctx, owner, tokenInstanceKey.getTokenClassKey());
   const applicableHold = balance.findInUseHold(tokenInstanceKey.instance, ctx.txUnixTime);

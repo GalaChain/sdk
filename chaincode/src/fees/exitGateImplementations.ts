@@ -26,11 +26,14 @@ import {
   TokenInstance,
   TokenInstanceKey,
   TokenMintConfiguration,
+  UserAlias,
+  UserRef,
   createValidDTO
 } from "@gala-chain/api";
 import BigNumber from "bignumber.js";
 
 import { lockTokens } from "../locks";
+import { resolveUserAlias } from "../services";
 import { GalaChainContext } from "../types";
 import { getObjectByKey } from "../utils";
 import { burnToMintProcessing } from "./extendedFeeGateProcessing";
@@ -38,7 +41,7 @@ import { burnToMintProcessing } from "./extendedFeeGateProcessing";
 export interface IMintPostProcessing {
   tokenClass: TokenClassKey;
   tokens: TokenInstanceKey[];
-  owner: string;
+  owner: UserRef;
   quantity: BigNumber;
   feeCode?: FeeGateCodes | undefined;
 }
@@ -69,9 +72,12 @@ export async function mintPostProcessing(ctx: GalaChainContext, data: IMintPostP
     return;
   }
 
+  const ownerAlias = await resolveUserAlias(ctx, owner);
+
   if (mintConfiguration.postMintBurn !== undefined) {
     await burnToMintProcessing(ctx, {
       ...data,
+      owner: ownerAlias,
       burnConfiguration: mintConfiguration.postMintBurn
     });
   }
@@ -79,6 +85,7 @@ export async function mintPostProcessing(ctx: GalaChainContext, data: IMintPostP
   if (mintConfiguration.postMintLock !== undefined) {
     await lockOnMintProcessing(ctx, {
       ...data,
+      owner: ownerAlias,
       lockConfiguration: mintConfiguration.postMintLock
     });
   }
@@ -87,7 +94,7 @@ export async function mintPostProcessing(ctx: GalaChainContext, data: IMintPostP
 export interface ILockOnMintProcessing {
   tokenClass: TokenClassKey;
   tokens: TokenInstanceKey[];
-  owner: string;
+  owner: UserAlias;
   quantity: BigNumber;
   lockConfiguration: PostMintLockConfiguration;
 }
@@ -104,7 +111,9 @@ export async function lockOnMintProcessing(ctx: GalaChainContext, data: ILockOnM
 
   const { lockName, lockAuthority, expirationModifier, lockPercentage } = lockConfiguration;
 
-  const mintQuantityToLock = quantity.times(lockPercentage).integerValue(BigNumber.ROUND_DOWN);
+  const mintQuantityToLock = quantity
+    .times(lockPercentage)
+    .decimalPlaces(tokenClassEntry.decimals, BigNumber.ROUND_DOWN);
 
   const verifyAuthorizedOnBehalf = async (c: TokenClassKey) => undefined;
 
@@ -132,7 +141,7 @@ export async function lockOnMintProcessing(ctx: GalaChainContext, data: ILockOnM
     });
 
     await lockTokens(ctx, {
-      tokenInstances: [{ tokenInstanceKey: token, quantity: mintQuantityToLock }],
+      tokenInstances: [{ tokenInstanceKey: token, quantity: mintQuantityToLock, owner: owner }],
       allowancesToUse: [],
       name: `${lockName}_${ctx.stub.getTxID()}`,
       lockAuthority: lockAuthority,

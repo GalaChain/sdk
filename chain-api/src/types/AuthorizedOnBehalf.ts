@@ -12,8 +12,9 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+import { UserAlias } from "./UserAlias";
 
 export interface AuthorizedOnBehalf {
-  callingOnBehalf: string;
-  callingUser: string;
+  callingOnBehalf: UserAlias;
+  callingUser: UserAlias;
 }

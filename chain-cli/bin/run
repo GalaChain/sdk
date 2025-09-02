@@ -15,6 +15,8 @@
  * limitations under the License.
  */
 
-const oclif = require('@oclif/core')
+const dotenv = require("dotenv");
+dotenv.config();
 
-oclif.run().then(require('@oclif/core/flush')).catch(require('@oclif/core/handle'))
+const oclif = require("@oclif/core");
+oclif.run().then(require("@oclif/core/flush")).catch(require("@oclif/core/handle"));

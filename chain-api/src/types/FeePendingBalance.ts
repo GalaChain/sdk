@@ -18,13 +18,14 @@ import { IsNotEmpty } from "class-validator";
 import { ChainKey } from "../utils";
 import { BigNumberIsNotNegative, BigNumberProperty, IsUserAlias } from "../validators";
 import { ChainObject } from "./ChainObject";
+import { UserAlias } from "./UserAlias";
 
 export class FeePendingBalance extends ChainObject {
   public static INDEX_KEY = "GCFB";
 
   @ChainKey({ position: 0 })
   @IsUserAlias()
-  public owner: string;
+  public owner: UserAlias;
 
   @IsNotEmpty()
   @BigNumberIsNotNegative()

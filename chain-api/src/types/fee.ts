@@ -36,7 +36,8 @@ import {
   BigNumberIsNotNegative,
   BigNumberProperty,
   EnumProperty,
-  IsUserAlias
+  IsUserAlias,
+  IsUserRef
 } from "../validators";
 import { ChainObject } from "./ChainObject";
 import { FeeAuthorization } from "./FeeAuthorization";
@@ -46,6 +47,8 @@ import { FeeAccelerationRateType, FeeCodeDefinition } from "./FeeCodeDefinition"
 import { FeeCodeTransferPercentage } from "./FeeCodeSplitFormula";
 import { FeePendingBalance } from "./FeePendingBalance";
 import { FeeThresholdUses } from "./FeeThresholdUses";
+import { UserAlias } from "./UserAlias";
+import { UserRef } from "./UserRef";
 import { ChainCallDTO, SubmitCallDTO } from "./dtos";
 
 @JSONSchema({
@@ -99,8 +102,8 @@ export class FeeAuthorizationDto extends SubmitCallDTO {
   @JSONSchema({
     description: "A user authorizing a GalaChainFee payment."
   })
-  @IsUserAlias()
-  authority: string;
+  @IsUserRef()
+  authority: UserRef;
 
   @JSONSchema({
     description: "Token Quantity authorized with this fee."
@@ -126,7 +129,7 @@ export class FeeAuthorizationResDto extends ChainCallDTO {
     description: "The user that authorized the GalaChainFee payment."
   })
   @IsUserAlias()
-  authority: string;
+  authority: UserAlias;
 
   @JSONSchema({
     description: "Unix Timestamp of fee authorization chain object creation."
@@ -166,8 +169,8 @@ export class FetchFeeAuthorizationsDto extends ChainCallDTO {
     description: "Owner of the token burned to authorize a fee balance credit on another channel."
   })
   @IsOptional()
-  @IsUserAlias()
-  authority?: string;
+  @IsUserRef()
+  authority?: UserRef;
 
   @JSONSchema({
     description:
@@ -311,8 +314,8 @@ export class FetchFeeChannelPaymentsDto extends ChainCallDTO {
     description: "Owner of the token burned to authorize a fee balance credit on another channel."
   })
   @IsOptional()
-  @IsUserAlias()
-  paidByUser?: string;
+  @IsUserRef()
+  paidByUser?: UserRef;
 
   @JSONSchema({
     description: "Transaction ID where authorization was written. Chain key used for specific querying."
@@ -421,8 +424,8 @@ export class FetchFeeCreditReceiptsDto extends ChainCallDTO {
     description: "Receipt issued to user."
   })
   @IsOptional()
-  @IsUserAlias()
-  creditToUser?: string;
+  @IsUserRef()
+  creditToUser?: UserRef;
 
   @JSONSchema({
     description: "Transaction ID where receipt was written. Chain key used for specific querying."
@@ -506,8 +509,8 @@ export class FetchFeeScheduleResDto extends ChainCallDTO {
 export class FetchFeePendingBalancesDto extends ChainCallDTO {
   @JSONSchema({ description: "(optional) Limit results to a single owner." })
   @IsOptional()
-  @IsUserAlias()
-  owner?: string;
+  @IsUserRef()
+  owner?: UserRef;
 
   @JSONSchema({
     description:
@@ -577,8 +580,8 @@ export class FeeBalanceSettlementDto extends ChainCallDTO {
     description: "Limit query/action to a single user. (optional)"
   })
   @IsOptional()
-  @IsUserAlias()
-  owner?: string;
+  @IsUserRef()
+  owner?: UserRef;
 }
 
 @JSONSchema({
@@ -688,8 +691,8 @@ export class FeeVerificationDto extends SubmitCallDTO {
       "The user authorizing a GalaChainFee payment. Expected to be the same user " +
       "which signed the DTO provided in the `authorization` property."
   })
-  @IsUserAlias()
-  authority: string;
+  @IsUserRef()
+  authority: UserRef;
 
   @JSONSchema({
     description: "Unix Timestamp of fee authorization chain object creation."
@@ -732,8 +735,8 @@ export class FetchFeeThresholdUsesDto extends ChainCallDTO {
 
   @JSONSchema({ description: "user who paid this fee." })
   @IsString()
-  @IsUserAlias()
-  public user: string;
+  @IsUserRef()
+  public user: UserRef;
 }
 
 @JSONSchema({
@@ -749,8 +752,8 @@ export class FetchFeeThresholdUsesResDto extends ChainCallDTO {
 
   @JSONSchema({ description: "user who paid this fee." })
   @IsString()
-  @IsUserAlias()
-  public user: string;
+  @IsUserRef()
+  public user: UserRef;
 
   @JSONSchema({ description: "total cumulative uses of this fee." })
   @IsNotEmpty()
@@ -824,7 +827,7 @@ export class FetchFeeThresholdUsesWithPaginationResponse extends ChainCallDTO {
     "Take an action on a set of provided chain keys, acquired from a fetch response. " +
     "E.g. ResetFeeThresholds, SettleFeePaymentReceipts, etc."
 })
-export class ChainKeysDto extends ChainCallDTO {
+export class ChainKeysDto extends SubmitCallDTO {
   @JSONSchema({
     description: "A list of composite keys to pass to getObjectsByKeys method."
   })
@@ -921,13 +924,13 @@ export class SettleFeePaymentReceiptsResponse extends ChainCallDTO {
 @JSONSchema({
   description: "Define a FeeExemption for a specific user."
 })
-export class FeeExemptionDto extends ChainCallDTO {
+export class FeeExemptionDto extends SubmitCallDTO {
   @JSONSchema({
     description: "The user / identity that should be exempt from fees."
   })
   @IsString()
-  @IsUserAlias()
-  user: string;
+  @IsUserRef()
+  user: UserRef;
 
   @JSONSchema({
     description: "(Optional). If provided, the user's exemption will be limited to the provided fee codes."

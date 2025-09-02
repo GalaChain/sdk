@@ -13,7 +13,19 @@
  * limitations under the License.
  */
 import { Type, instanceToInstance, plainToInstance } from "class-transformer";
-import { IsNotEmpty, IsOptional, ValidationError, validate, ValidateNested } from "class-validator";
+import {
+  ArrayMaxSize,
+  ArrayMinSize,
+  IsNotEmpty,
+  IsNumber,
+  IsOptional,
+  Max,
+  Min,
+  MinLength,
+  ValidateNested,
+  ValidationError,
+  validate
+} from "class-validator";
 import { JSONSchema } from "class-validator-jsonschema";
 import crypto from "crypto";
 
@@ -22,10 +34,13 @@ import {
   ValidationFailedError,
   deserialize,
   getValidationErrorMessages,
+  randomUniqueKey,
   serialize,
   signatures
 } from "../utils";
-import { IsUserAlias, StringEnumProperty } from "../validators";
+import { IsUserAlias, IsUserRef, StringEnumProperty } from "../validators";
+import { UserAlias } from "./UserAlias";
+import { UserRef } from "./UserRef";
 import { GalaChainResponse } from "./contract";
 
 type Base<T, BaseT> = T extends BaseT ? T : never;
@@ -230,6 +245,13 @@ export class ChainCallDTO {
   public signing?: SigningScheme;
 
   @JSONSchema({
+    description: "Unit timestamp when the DTO expires. If the timestamp is in the past, the DTO is not valid."
+  })
+  @IsOptional()
+  @IsNumber()
+  public dtoExpiresAt?: number;
+
+  @JSONSchema({
     description: "Array of signatures for multi-signature transactions."
   })
   @IsOptional()
@@ -288,6 +310,16 @@ export class ChainCallDTO {
   }
 
   public sign(privateKey: string, useDer = false): void {
+    if (useDer) {
+      if (this.signing === SigningScheme.TON) {
+        throw new ValidationFailedError("TON signing scheme does not support DER signatures");
+      } else {
+        if (this.signerPublicKey === undefined && this.signerAddress === undefined) {
+          this.signerPublicKey = signatures.getPublicKey(privateKey);
+        }
+      }
+    }
+
     if (this.signing === SigningScheme.TON) {
       const keyBuffer = Buffer.from(privateKey, "base64");
       this.signature = signatures.ton.getSignature(this, keyBuffer, this.prefix).toString("base64");
@@ -324,6 +356,52 @@ export class ChainCallDTO {
 export class SubmitCallDTO extends ChainCallDTO {
   @IsNotEmpty()
   public uniqueKey: string;
+}
+
+export class BatchOperationDto extends ChainCallDTO {
+  @IsNotEmpty()
+  method: string;
+
+  @IsNotEmpty()
+  @ValidateNested()
+  @Type(() => ChainCallDTO)
+  dto: ChainCallDTO;
+}
+
+export class BatchDto extends ChainCallDTO {
+  public static readonly BATCH_SIZE_LIMIT: number = 1_000;
+  public static readonly WRITES_DEFAULT_LIMIT: number = 10_000;
+  public static readonly WRITES_HARD_LIMIT: number = 100_000;
+
+  @JSONSchema({
+    description:
+      "Soft limit of keys written to chain in a batch, excluding deletes. " +
+      "If the limit is exceeded, all subsequent operations in batch fail. " +
+      "Typically it is safe to repeat failed operations in the next batch. " +
+      `Default: ${BatchDto.WRITES_DEFAULT_LIMIT}. ` +
+      `Max: ${BatchDto.WRITES_HARD_LIMIT}.`
+  })
+  @IsOptional()
+  @IsNumber()
+  @Min(1)
+  @Max(BatchDto.WRITES_HARD_LIMIT)
+  @IsOptional()
+  writesLimit?: number;
+
+  @JSONSchema({
+    description:
+      "If true, the batch will fail if any of the operations fail. " +
+      "If false, the batch will continue even if some of the operations fail. " +
+      "Default: false."
+  })
+  @IsOptional()
+  noPartialSuccess?: boolean;
+
+  @Type(() => BatchOperationDto)
+  @ValidateNested({ each: true })
+  @ArrayMinSize(1)
+  @ArrayMaxSize(BatchDto.BATCH_SIZE_LIMIT)
+  operations: BatchOperationDto[];
 }
 
 /**
@@ -388,8 +466,9 @@ export class DryRunDto extends ChainCallDTO {
    *
    * The identity used for the transaction simulation.
    */
+  @IsOptional()
   @IsNotEmpty()
-  public readonly callerPublicKey: string;
+  public readonly callerPublicKey?: string;
 
   /**
    * @description
@@ -470,7 +549,7 @@ export class RegisterUserDto extends SubmitCallDTO {
     description: `Id of user to save public key for.`
   })
   @IsUserAlias()
-  user: string;
+  user: UserAlias;
 
   /**
    * @description Public secp256k1 key (compact or non-compact, hex or base64).
@@ -534,8 +613,8 @@ export class GetPublicKeyDto extends ChainCallDTO {
     description: `Id of a public key holder. Optional field, by default caller's public key is returned.`
   })
   @IsOptional()
-  @IsUserAlias()
-  user?: string;
+  @IsUserRef()
+  user?: UserRef;
 }
 
 export class GetMyProfileDto extends ChainCallDTO {

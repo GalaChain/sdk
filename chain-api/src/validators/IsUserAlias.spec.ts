@@ -12,18 +12,18 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-import { ChainCallDTO, createValidDTO } from "../types";
+import { ChainCallDTO, UserAlias, createValidDTO } from "../types";
 import { generateSchema } from "../utils";
 import { IsUserAlias } from "./IsUserAlias";
 
 class TestDto extends ChainCallDTO {
   @IsUserAlias()
-  user: string;
+  user: UserAlias;
 }
 
 class TestArrayDto extends ChainCallDTO {
   @IsUserAlias({ each: true })
-  users: string[];
+  users: UserAlias[];
 }
 
 const validEthAddress = "0abB6F637a51eb26665e0DeBc5CE8A84e1fa8AC3";
@@ -40,10 +40,11 @@ test.each<[string, string, string]>([
   ["valid ton alias", `ton|${validTonAddress}`, `ton|${validTonAddress}`],
   ["valid bridge (eth)", `EthereumBridge`, `EthereumBridge`],
   ["valid bridge (ton)", `TonBridge`, `TonBridge`],
+  ["valid bridge (solana)", `SolanaBridge`, `SolanaBridge`],
   ["valid bridge (GalaChain)", `GalaChainBridge-42`, `GalaChainBridge-42`]
 ])("%s", async (label, input, expected) => {
   // Given
-  const plain = { user: input };
+  const plain = { user: input as UserAlias };
 
   // When
   const validated = await createValidDTO(TestDto, plain);
@@ -56,6 +57,7 @@ test.each<[string, string, string]>([
   ["invalid client alias (multiple |)", "client|123|45", "Expected string following the format"],
   ["invalid client alias (empty id)", "client|", "Expected string following the format"],
   ["invalid eth alias (lower-cased eth)", `eth|${lowerCasedEth}`, "'eth|' must end with valid checksumed"],
+  ["invalid eth alias (0x prefix)", `eth|0x${validEthAddress}`, "'eth|' must end with valid checksumed"],
   ["invalid eth alias (invalid eth)", "eth|123", "'eth|' must end with valid checksumed"],
   ["invalid value (pure eth addr)", validEthAddress, "Expected string following the format"],
   ["invalid ton alias (invalid checksum)", `ton|${invalidTon}`, "'ton|' must end with valid bounceable"],
@@ -65,7 +67,7 @@ test.each<[string, string, string]>([
   ["invalid bridge (GalaChain)", "GalaChainBridge-A", "Expected string following the format"]
 ])("%s", async (label, input, expectedError) => {
   // Given
-  const plain = { user: input };
+  const plain = { user: input as UserAlias };
 
   // When
   const failed = createValidDTO(TestDto, plain);
@@ -83,10 +85,12 @@ it("should validate array of user aliases", async () => {
       `EthereumBridge`,
       `GalaChainBridge-42`,
       `ton|${validTonAddress}`
-    ]
+    ] as UserAlias[]
   };
 
-  const invalidPlain = { users: ["client|123", `eth|${invalidChecksumEth}`, "EthereumBridge"] };
+  const invalidPlain = {
+    users: ["client|123", `eth|${invalidChecksumEth}`, "EthereumBridge"] as UserAlias[]
+  };
 
   // When
   const valid = await createValidDTO(TestArrayDto, validPlain);

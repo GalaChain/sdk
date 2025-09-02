@@ -17,13 +17,15 @@ import {
   TokenClass,
   TokenClassKey,
   UpdateTokenClassDto,
+  UserAlias,
+  UserRole,
   createValidChainObject,
   createValidSubmitDTO
 } from "@gala-chain/api";
-import { currency, fixture, users, writesMap } from "@gala-chain/test";
+import { currency, fixture, randomUser, users, writesMap } from "@gala-chain/test";
 
 import GalaChainTokenContract from "../__test__/GalaChainTokenContract";
-import { OrganizationNotAllowedError } from "../contracts";
+import { MissingRoleError } from "../contracts";
 import { NotATokenAuthorityError, TokenClassNotFoundError } from "./TokenError";
 
 it("should update token class", async () => {
@@ -58,11 +60,10 @@ it("should fail if callingUser is not token authority", async () => {
   // Given
   const savedTokenClass = currency.tokenClass();
   const savedTokenClassKey = await savedTokenClass.getKey();
-  const callingUser = users.testUser1;
+  const callingUser = randomUser("client|calling-user", [UserRole.CURATOR]);
   expect(savedTokenClass.authorities).not.toContain(callingUser.identityKey);
 
   const { ctx, contract, getWrites } = fixture(GalaChainTokenContract)
-    .caClientIdentity("curator", "CuratorOrg")
     .registeredUsers(callingUser)
     .savedState(savedTokenClass);
 
@@ -80,17 +81,18 @@ it("should fail if callingUser is not token authority", async () => {
   expect(getWrites()).toEqual({});
 });
 
-it("should fail if CA client is not a member of CuratorOrg", async () => {
+it("should fail if CA client is not authorized as curator", async () => {
   // Given
   const savedTokenClass = currency.tokenClass();
   const savedTokenClassKey = await savedTokenClass.getKey();
+  const callingUser = users.testUser1;
+  expect(callingUser.roles).not.toContain(UserRole.CURATOR);
 
   const { ctx, contract, getWrites } = fixture(GalaChainTokenContract)
-    .caClientIdentity("non-curator", "NonCuratorOrg")
-    .registeredUsers(users.admin)
+    .registeredUsers(callingUser)
     .savedState(savedTokenClass);
 
-  const dto: UpdateTokenClassDto = await defaultUpdateDto(savedTokenClassKey).signed(users.admin.privateKey);
+  const dto: UpdateTokenClassDto = await defaultUpdateDto(savedTokenClassKey).signed(callingUser.privateKey);
 
   // When
   const response = await contract.UpdateTokenClass(ctx, dto);
@@ -98,10 +100,7 @@ it("should fail if CA client is not a member of CuratorOrg", async () => {
   // Then
   expect(response).toEqual(
     GalaChainResponse.Error(
-      new OrganizationNotAllowedError(
-        "Members of organization NonCuratorOrg do not have sufficient permissions. Required one of [CuratorOrg].",
-        { userMsp: "NonCuratorOrg" }
-      )
+      new MissingRoleError(callingUser.identityKey, callingUser.roles, [UserRole.CURATOR])
     )
   );
 
@@ -132,7 +131,7 @@ function defaultUpdate() {
     image: "http://app.gala.games/UPDATED-image-url",
     symbol: "UPDATEDAUTOTESTCOIN",
     rarity: "Updateable",
-    authorities: [users.admin.identityKey, "client|new-admin"]
+    authorities: [users.admin.identityKey, "client|new-admin"] as UserAlias[]
   };
 }
 

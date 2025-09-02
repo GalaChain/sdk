@@ -17,10 +17,10 @@ import BigNumber from "bignumber.js";
 
 import { GalaChainContext } from "../types";
 import {
-  blockTimeout,
   getObjectsByPartialCompositeKey,
   inverseKeyLength,
   inverseTime,
+  lookbackTimeOffset,
   lookbackTxCount,
   takeUntilUndefined
 } from "../utils";
@@ -90,8 +90,9 @@ export interface FetchBurnCounterParams {
  *
  * Execute a `getStateByRange` query of `TokenBurnCounter` entries.
  *
- * The start key will be offset by the configured `blockTimeout`
- * environment variable, using an inverted time stamp.
+ * The start key will be offset by the configured `lookbackTimeOffset`
+ * (derived from the `blockTimeout`) environment variable, using an inverted
+ * time stamp.
  *
  * New entries are expected to be composed with a simple key
  * generated based on the inversion of the current `ctx.txUnixTime`.
@@ -114,7 +115,7 @@ export async function fetchKnownBurnCount(
   ctx: GalaChainContext,
   token: FetchBurnCounterParams
 ): Promise<BigNumber> {
-  const startTimeOffset = inverseTime(ctx, blockTimeout);
+  const startTimeOffset = inverseTime(ctx, lookbackTimeOffset);
   const keyLen = inverseKeyLength;
 
   const startKey = [

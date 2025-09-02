@@ -27,11 +27,34 @@ import BigNumber from "bignumber.js";
 import users from "./users";
 import { createInstanceFn, createPlainFn } from "./utils";
 
+/**
+ * Test data factory for GalaChain currency-related objects.
+ *
+ * Provides pre-configured test objects for token classes, allowances, balances,
+ * and other currency-related blockchain entities. Uses environment variables
+ * for configuration flexibility in different test environments.
+ *
+ * @example
+ * ```typescript
+ * import currency from "@gala-chain/test";
+ *
+ * // Use plain objects for DTOs
+ * const tokenClass = currency.tokenClassPlain();
+ *
+ * // Use class instances for testing chaincode
+ * const tokenBalance = currency.tokenBalance();
+ * ```
+ */
+
 process.env.GALA_TOKEN_CLASS_COLLECTION = process.env.GALA_TOKEN_CLASS_COLLECTION ?? "TEST";
 process.env.GALA_TOKEN_CLASS_CATEGORY = process.env.GALA_TOKEN_CLASS_CATEGORY ?? "Currency";
 process.env.GALA_TOKEN_CLASS_TYPE = process.env.GALA_TOKEN_CLASS_TYPE ?? "TEST";
 process.env.GALA_TOKEN_CLASS_ADDITIONAL_KEY = process.env.GALA_TOKEN_CLASS_ADDITIONAL_KEY ?? "none";
 
+/**
+ * Creates a plain token class key object for testing.
+ * Uses environment variables for configuration flexibility.
+ */
 const tokenClassKeyPlain = createPlainFn({
   collection: process.env.GALA_TOKEN_CLASS_COLLECTION,
   category: process.env.GALA_TOKEN_CLASS_CATEGORY,
@@ -39,6 +62,10 @@ const tokenClassKeyPlain = createPlainFn({
   additionalKey: process.env.GALA_TOKEN_CLASS_ADDITIONAL_KEY
 });
 
+/**
+ * Creates a plain token class object with default test values.
+ * Includes standard properties for automated test currency.
+ */
 const tokenClassPlain = createPlainFn({
   ...tokenClassKeyPlain(),
   description: "Generated via automated test suite.",
@@ -56,6 +83,12 @@ const tokenClassPlain = createPlainFn({
   authorities: [users.admin.identityKey]
 });
 
+/**
+ * Creates a plain token allowance object for testing.
+ *
+ * @param txUnixTime - Unix timestamp for the allowance creation time
+ * @returns Plain object representing a token allowance
+ */
 const tokenAllowancePlain = (txUnixTime: number) => ({
   ...tokenClassKeyPlain(),
   allowanceType: 4,
@@ -70,6 +103,13 @@ const tokenAllowancePlain = (txUnixTime: number) => ({
   usesSpent: new BigNumber(0)
 });
 
+/**
+ * Creates a plain token burn allowance object for testing.
+ * Grants burn permission from testUser1 to testUser2.
+ *
+ * @param txUnixTime - Unix timestamp for the allowance creation time
+ * @returns Plain object representing a burn allowance
+ */
 const tokenBurnAllowancePlain = (txUnixTime: number) => ({
   ...tokenClassKeyPlain(),
   allowanceType: 6,
@@ -84,6 +124,12 @@ const tokenBurnAllowancePlain = (txUnixTime: number) => ({
   usesSpent: new BigNumber(0)
 });
 
+/**
+ * Creates a plain token burn allowance object from testUser3 to testUser2.
+ *
+ * @param txUnixTime - Unix timestamp for the allowance creation time
+ * @returns Plain object representing a burn allowance from user3
+ */
 const tokenBurnAllowanceUser3Plain = (txUnixTime: number) => ({
   ...tokenClassKeyPlain(),
   allowanceType: 6,
@@ -98,6 +144,13 @@ const tokenBurnAllowanceUser3Plain = (txUnixTime: number) => ({
   usesSpent: new BigNumber(0)
 });
 
+/**
+ * Creates a plain token mint allowance object for testing.
+ * Grants mint permission from testUser1 to testUser2.
+ *
+ * @param txUnixTime - Unix timestamp for the allowance creation time
+ * @returns Plain object representing a mint allowance
+ */
 const tokenMintAllowancePlain = (txUnixTime: number) => ({
   ...tokenClassKeyPlain(),
   allowanceType: 4,
@@ -112,16 +165,28 @@ const tokenMintAllowancePlain = (txUnixTime: number) => ({
   usesSpent: new BigNumber(0)
 });
 
+/**
+ * Creates a plain token instance key object for testing.
+ * Uses instance 0 for fungible tokens.
+ */
 const tokenInstanceKeyPlain = createPlainFn({
   ...tokenClassKeyPlain(),
   instance: new BigNumber(0)
 });
 
+/**
+ * Creates a plain token instance object for testing.
+ * Configured as a fungible token instance.
+ */
 const tokenInstancePlain = createPlainFn({
   ...tokenInstanceKeyPlain(),
   isNonFungible: false
 });
 
+/**
+ * Creates a plain token balance object for testing.
+ * Assigns balance to testUser1 with default quantity of 1000.
+ */
 const tokenBalancePlain = createPlainFn({
   ...tokenClassKeyPlain(),
   owner: users.testUser1.identityKey,
@@ -131,6 +196,12 @@ const tokenBalancePlain = createPlainFn({
   quantity: new BigNumber("1000")
 });
 
+/**
+ * Creates a plain token burn record object for testing.
+ *
+ * @param txUnixTime - Unix timestamp for the burn transaction
+ * @returns Plain object representing a token burn
+ */
 const tokenBurnPlain = (txUnixTime: number) => ({
   ...tokenInstanceKeyPlain(),
   burnedBy: users.testUser1.identityKey,
@@ -138,6 +209,16 @@ const tokenBurnPlain = (txUnixTime: number) => ({
   quantity: new BigNumber(1)
 });
 
+/**
+ * Creates a plain token burn counter object for testing.
+ * Extends burn record with additional metadata for tracking.
+ *
+ * @param txUnixTime - Unix timestamp for the burn transaction
+ * @param timeKey - Time-based key for the burn counter
+ * @param epoch - Epoch identifier for the burn
+ * @param totalKnownBurnsCount - Total count of known burns
+ * @returns Plain object representing a token burn counter
+ */
 const tokenBurnCounterPlain = (
   txUnixTime: number,
   timeKey: string,
@@ -150,6 +231,23 @@ const tokenBurnCounterPlain = (
   totalKnownBurnsCount
 });
 
+/**
+ * Test data factory object containing all currency-related test utilities.
+ * Provides both plain objects (for DTOs) and class instances (for chaincode testing).
+ *
+ * Each property comes in two forms:
+ * - `*Plain` functions return plain JavaScript objects
+ * - Regular properties return class instances
+ *
+ * @example
+ * ```typescript
+ * // Get plain object for DTO creation
+ * const plainTokenClass = currency.tokenClassPlain();
+ *
+ * // Get class instance for chaincode testing
+ * const tokenClassInstance = currency.tokenClass();
+ * ```
+ */
 export default {
   tokenClassKeyPlain,
   tokenClassKey: createInstanceFn(TokenClassKey, tokenClassKeyPlain()),

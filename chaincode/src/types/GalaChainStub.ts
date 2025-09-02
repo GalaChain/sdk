@@ -13,7 +13,7 @@
  * limitations under the License.
  */
 import { NotImplementedError } from "@gala-chain/api";
-import { ChaincodeStub } from "fabric-shim";
+import { ChaincodeResponse, ChaincodeStub } from "fabric-shim";
 
 import { CachedKV, FabricIterable, fabricIterable, filter, prepend } from "./FabricIterable";
 
@@ -38,7 +38,20 @@ class StubCache {
 
   private deletes: Record<string, true> = {};
 
-  constructor(private readonly stub: ChaincodeStub) {}
+  private invokeChaincodeCalls: Record<string, string[]> = {};
+
+  constructor(
+    private readonly stub: ChaincodeStub,
+    private readonly isReadOnly: boolean,
+    private readonly index: number | undefined
+  ) {}
+
+  getTxID(): string {
+    if (typeof this.index === "number") {
+      return this.stub.getTxID() + `|${this.index}`;
+    }
+    return this.stub.getTxID();
+  }
 
   async getCachedState(key: string): Promise<Uint8Array> {
     if (key in this.deletes) {
@@ -102,6 +115,35 @@ class StubCache {
     return Promise.resolve();
   }
 
+  /**
+   * This method is used to invoke other chaincode. It is not allowed to invoke the same chaincode
+   * more than once within the same transaction, because we are not able to support cache for the
+   * invoked chaincode.
+   *
+   * The only exception is DryRun, which is allowed to be called multiple times, if no other
+   * methods on the same chaincode are called before it.
+   */
+  async invokeChaincode(chaincodeName: string, args: string[], channel: string): Promise<ChaincodeResponse> {
+    const key = `${channel}/${chaincodeName}`;
+    const prevCall = this.invokeChaincodeCalls[key];
+
+    if (prevCall) {
+      const effectiveChannel = channel === "" ? this.stub.getChannelID() : channel;
+      throw new DuplicateInvokeChaincodeError(chaincodeName, prevCall, effectiveChannel);
+    }
+
+    const isDryRun = args?.[0].endsWith(":DryRun");
+    if (!isDryRun) {
+      this.invokeChaincodeCalls[key] = args;
+    }
+
+    return await this.stub.invokeChaincode(chaincodeName, args, channel);
+  }
+
+  get externalChaincodeWasInvoked(): boolean {
+    return Object.keys(this.invokeChaincodeCalls).length > 0;
+  }
+
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
   setStateValidationParameter(key: string, ep: Uint8Array): Promise<void> {
     throw new NotImplementedError("setStateValidationParameter is not supported");
@@ -128,57 +170,104 @@ class StubCache {
   }
 
   async flushWrites(): Promise<void> {
+    if (this.isReadOnly) {
+      throw new NotImplementedError("Cannot flush writes in read-only mode");
+    }
+
     const deleteOps = Object.keys(this.deletes).map((key) => this.stub.deleteState(key));
     const putOps = Object.entries(this.writes).map(([key, value]) => this.stub.putState(key, value));
     await Promise.all(deleteOps);
     await Promise.all(putOps);
   }
 
-  getReads(): Record<string, string> {
-    return keysToUtfStrings(this.reads);
+  getReads(): Record<string, Uint8Array> {
+    return { ...this.reads };
   }
 
-  getWrites(): Record<string, string> {
-    return keysToUtfStrings(this.writes);
+  getWrites(): Record<string, Uint8Array> {
+    return { ...this.writes };
+  }
+
+  getWritesCount(): number {
+    return Object.keys(this.writes).length;
   }
 
   getDeletes(): Record<string, true> {
     return { ...this.deletes };
   }
+
+  setReads(reads: Record<string, Uint8Array>): void {
+    this.reads = { ...reads };
+  }
+
+  setWrites(writes: Record<string, Uint8Array>): void {
+    this.writes = { ...writes };
+  }
+
+  setDeletes(deletes: Record<string, true>): void {
+    this.deletes = { ...deletes };
+  }
 }
 
-function keysToUtfStrings(obj: Record<string, Uint8Array>): Record<string, string> {
-  return Object.entries(obj).reduce(
-    (acc, [key, value]) => {
-      acc[key] = value.toString();
-      return acc;
-    },
-    {} as Record<string, string>
-  );
+export class DuplicateInvokeChaincodeError extends NotImplementedError {
+  constructor(chaincodeName: string, args: string[], channel: string) {
+    const msg = `Chaincode ${chaincodeName} on channel ${channel} was already invoked in the transaction (method: ${args[0]})`;
+    super(msg, { chaincodeName, args, channel });
+  }
 }
 
 export interface GalaChainStub extends ChaincodeStub {
+  getTxID(): string;
+
   getCachedState(key: string): Promise<Uint8Array>;
 
   getCachedStateByPartialCompositeKey(objectType: string, attributes: string[]): FabricIterable<CachedKV>;
 
   flushWrites(): Promise<void>;
 
-  getReads(): Record<string, string>;
+  getReads(): Record<string, Uint8Array>;
 
-  getWrites(): Record<string, string>;
+  getWrites(): Record<string, Uint8Array>;
+
+  getWritesCount(): number;
 
   getDeletes(): Record<string, true>;
+
+  setReads(reads: Record<string, Uint8Array>): void;
+
+  setWrites(writes: Record<string, Uint8Array>): void;
+
+  setDeletes(deletes: Record<string, true>): void;
+
+  invokeChaincode(chaincodeName: string, args: string[], channel: string): Promise<ChaincodeResponse>;
+
+  get externalChaincodeWasInvoked(): boolean;
 }
 
-export const createGalaChainStub = (stub: ChaincodeStub): GalaChainStub => {
-  const cachedWrites = new StubCache(stub);
+export const createGalaChainStub = (
+  stub: ChaincodeStub,
+  isReadOnly: boolean,
+  index: number | undefined
+): GalaChainStub => {
+  const cachedWrites = new StubCache(stub, isReadOnly, index);
 
   const proxyHandler = {
     get: function (target: GalaChainStub, name: string | symbol): unknown {
       // eslint-disable-next-line @typescript-eslint/ban-ts-comment
       // @ts-ignore
       return name in cachedWrites ? cachedWrites[name] : target[name];
+    },
+    set: function (target: GalaChainStub, name: string | symbol, value: unknown): boolean {
+      if (name in cachedWrites) {
+        // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+        // @ts-ignore
+        cachedWrites[name] = value;
+        return true;
+      }
+      // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+      // @ts-ignore
+      target[name] = value;
+      return true;
     }
   };
 

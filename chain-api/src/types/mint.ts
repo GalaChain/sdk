@@ -17,7 +17,6 @@ import { Type } from "class-transformer";
 import {
   ArrayMaxSize,
   ArrayNotEmpty,
-  IsBoolean,
   IsDefined,
   IsNotEmpty,
   IsNumber,
@@ -28,13 +27,15 @@ import {
 } from "class-validator";
 import { JSONSchema } from "class-validator-jsonschema";
 
-import { ArrayUniqueObjects, BigNumberIsNotNegative, BigNumberProperty, IsUserAlias } from "../validators";
+import { ArrayUniqueObjects, BigNumberIsNotNegative, BigNumberProperty, IsUserRef } from "../validators";
 import { TokenClassKey } from "./TokenClass";
 import {
   BurnToMintConfiguration,
+  MintFeeConfiguration,
   PostMintLockConfiguration,
   TokenMintConfiguration
 } from "./TokenMintConfiguration";
+import { UserRef } from "./UserRef";
 import { AllowanceKey, MintRequestDto } from "./common";
 import { ChainCallDTO, SubmitCallDTO } from "./dtos";
 
@@ -58,8 +59,8 @@ export class MintTokenDto extends SubmitCallDTO {
     description: "The owner of minted tokens. If the value is missing, chaincode caller is used."
   })
   @IsOptional()
-  @IsUserAlias()
-  owner?: string;
+  @IsUserRef()
+  owner?: UserRef;
 
   @JSONSchema({
     description: "How many units of Fungible/NonFungible Token will be minted."
@@ -93,8 +94,8 @@ export class MintTokenWithAllowanceDto extends SubmitCallDTO {
     description: "The owner of minted tokens. If the value is missing, chaincode caller is used."
   })
   @IsOptional()
-  @IsUserAlias()
-  owner?: string;
+  @IsUserRef()
+  owner?: UserRef;
 
   @JSONSchema({
     description: "Instance of token to be minted"
@@ -128,7 +129,7 @@ export class BatchMintTokenDto extends SubmitCallDTO {
   @Type(() => MintTokenDto)
   @ArrayNotEmpty()
   @ArrayMaxSize(BatchMintTokenDto.MAX_ARR_SIZE)
-  mintDtos: Array<MintTokenDto>;
+  mintDtos: MintTokenDto[];
 }
 
 /**
@@ -162,8 +163,8 @@ export class HighThroughputMintTokenDto extends SubmitCallDTO {
     description: "The owner of minted tokens. If the value is missing, chaincode caller is used."
   })
   @IsOptional()
-  @IsUserAlias()
-  owner?: string;
+  @IsUserRef()
+  owner?: UserRef;
 
   @JSONSchema({
     description: "How many units of fungible token of how many NFTs are going to be minted."
@@ -278,7 +279,7 @@ export class FetchTokenSupplyResponse extends ChainCallDTO {
     "such that ongoing high throughput mints/mint allowances are migrated " +
     "to a correct running total."
 })
-export class PatchMintAllowanceRequestDto extends ChainCallDTO {
+export class PatchMintAllowanceRequestDto extends SubmitCallDTO {
   @JSONSchema({
     description: "Token collection."
   })
@@ -320,7 +321,7 @@ export class PatchMintAllowanceRequestDto extends ChainCallDTO {
     "such that ongoing high throughput mints/mint allowances are migrated " +
     "to a correct running total."
 })
-export class PatchMintRequestDto extends ChainCallDTO {
+export class PatchMintRequestDto extends SubmitCallDTO {
   @JSONSchema({
     description: "Token collection."
   })
@@ -356,7 +357,7 @@ export class PatchMintRequestDto extends ChainCallDTO {
 @JSONSchema({
   description: "DTO that describes a TokenMintConfiguration chain object."
 })
-export class TokenMintConfigurationDto extends ChainCallDTO {
+export class TokenMintConfigurationDto extends SubmitCallDTO {
   @JSONSchema({
     description: "Token collection."
   })
@@ -410,6 +411,16 @@ export class TokenMintConfigurationDto extends ChainCallDTO {
   @ValidateNested()
   @Type(() => PostMintLockConfiguration)
   postMintLock?: PostMintLockConfiguration;
+
+  @JSONSchema({
+    description:
+      "(optional) Specify a `MintFeeConfiguration` to define " +
+      "additional properties that affect $GALA `MintToken` fees"
+  })
+  @IsOptional()
+  @ValidateNested()
+  @Type(() => MintFeeConfiguration)
+  additionalFee?: MintFeeConfiguration;
 }
 
 @JSONSchema({
@@ -472,4 +483,18 @@ export class FetchTokenMintConfigurationsResponse extends ChainCallDTO {
 
   @IsString()
   bookmark: string;
+}
+
+export class DeleteTokenMintConfigurationDto extends SubmitCallDTO {
+  @IsNotEmpty()
+  public collection: string;
+
+  @IsNotEmpty()
+  public category: string;
+
+  @IsNotEmpty()
+  public type: string;
+
+  @IsDefined()
+  public additionalKey: string;
 }

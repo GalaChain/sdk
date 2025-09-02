@@ -12,11 +12,18 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-import { GalaChainResponse } from "@gala-chain/api";
-import { ChainClient, commonContractAPI, publicKeyContractAPI } from "@gala-chain/client";
+import { ChainClient, GalaChainResponse, commonContractAPI, publicKeyContractAPI } from "@gala-chain/api";
 
 import { TestClients } from "./TestClients";
 import { createChainClient } from "./createChainClient";
+
+/**
+ * Test suite for TestClients factory functionality.
+ *
+ * Verifies that TestClients can create properly configured chain clients
+ * with default and custom configurations, and that the resulting clients
+ * have the expected API methods available.
+ */
 
 jest.mock("./createChainClient");
 

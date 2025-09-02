@@ -14,6 +14,26 @@
  */
 import { Iterators } from "fabric-shim";
 
+/**
+ * Utilities for creating and manipulating async iterators compatible with Hyperledger Fabric.
+ *
+ * These functions provide testing infrastructure for blockchain state queries and iterations,
+ * allowing mock implementations of Fabric's iterator interfaces for unit testing.
+ */
+
+/**
+ * Creates an AsyncIterator from an array for testing purposes.
+ *
+ * @template T - Type of elements in the array
+ * @param arr - Array to convert to async iterator
+ * @returns AsyncIterator that yields array elements sequentially
+ *
+ * @example
+ * ```typescript
+ * const iterator = asyncIterator([1, 2, 3]);
+ * const first = await iterator.next(); // { value: 1, done: false }
+ * ```
+ */
 export const asyncIterator = <T>(arr: T[]): AsyncIterator<T> => {
   let nextIndex = 0;
 
@@ -37,6 +57,20 @@ export const asyncIterator = <T>(arr: T[]): AsyncIterator<T> => {
   };
 };
 
+/**
+ * Filters an AsyncIterator based on a predicate function.
+ *
+ * @template T - Type of elements being filtered
+ * @param include - Predicate function that returns true for elements to include
+ * @param iterator - Source AsyncIterator to filter
+ * @returns Filtered AsyncIterator containing only elements that pass the predicate
+ *
+ * @example
+ * ```typescript
+ * const sourceIterator = asyncIterator([1, 2, 3, 4]);
+ * const evenNumbers = filter(n => n % 2 === 0, sourceIterator);
+ * ```
+ */
 export const filter = <T>(include: (_: T) => boolean, iterator: AsyncIterator<T>): AsyncIterator<T> => {
   const filteredIterator = {
     next: async (): Promise<IteratorResult<T>> => {
@@ -53,6 +87,21 @@ export const filter = <T>(include: (_: T) => boolean, iterator: AsyncIterator<T>
   return filteredIterator;
 };
 
+/**
+ * Prepends array elements to the beginning of an AsyncIterator.
+ *
+ * @template T - Type of elements being prepended
+ * @param arr - Array of elements to prepend
+ * @param iterator - AsyncIterator to append after the array elements
+ * @returns Combined AsyncIterator that yields array elements first, then iterator elements
+ *
+ * @example
+ * ```typescript
+ * const baseIterator = asyncIterator([3, 4]);
+ * const combined = prepend([1, 2], baseIterator);
+ * // Yields: 1, 2, 3, 4
+ * ```
+ */
 export const prepend = <T>(arr: T[], iterator: AsyncIterator<T>): AsyncIterator<T> => {
   const arrIterator = asyncIterator(arr);
   let isArrIteratorDone = false;
@@ -76,15 +125,52 @@ export const prepend = <T>(arr: T[], iterator: AsyncIterator<T>): AsyncIterator<
   };
 };
 
+/**
+ * Type representing a Fabric-compatible iterable that combines Promise and AsyncIterable interfaces.
+ *
+ * This type matches Hyperledger Fabric's iterator pattern where iterators are both
+ * Promises (for compatibility) and AsyncIterables (for modern async iteration).
+ *
+ * @template T - Type of elements yielded by the iterator
+ */
 export type FabricIterable<T> = Promise<Iterators.CommonIterator<T>> & AsyncIterable<T>;
 
-// the only difference between Iterators.KV is that here "namespace" is optional
+/**
+ * Interface for cached key-value pairs used in testing.
+ *
+ * Similar to Hyperledger Fabric's Iterators.KV but with optional namespace
+ * to provide more flexibility in test scenarios.
+ *
+ * @interface CachedKV
+ */
 export interface CachedKV {
   key: string;
   value: Uint8Array;
   namespace?: string;
 }
 
+/**
+ * Creates a FabricIterable from an AsyncIterator for testing blockchain queries.
+ *
+ * Wraps an AsyncIterator to provide the Promise and AsyncIterable interfaces
+ * expected by Hyperledger Fabric's iterator patterns.
+ *
+ * @template T - Type of elements in the iterator
+ * @param iterator - Source AsyncIterator to wrap
+ * @returns FabricIterable compatible with Fabric's iterator interfaces
+ *
+ * @example
+ * ```typescript
+ * const sourceData = [{ key: "key1", value: Buffer.from("value1") }];
+ * const iterator = asyncIterator(sourceData);
+ * const fabricIterator = fabricIterable(iterator);
+ *
+ * // Use with for-await-of
+ * for await (const item of fabricIterator) {
+ *   console.log(item.key, item.value);
+ * }
+ * ```
+ */
 export const fabricIterable = <T>(iterator: AsyncIterator<T>): FabricIterable<T> => {
   const stateQueryIterator: Iterators.CommonIterator<T> = {
     close: (): Promise<void> => Promise.resolve(), // do nothing,

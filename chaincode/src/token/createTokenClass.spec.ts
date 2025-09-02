@@ -12,7 +12,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-import { CreateTokenClassDto, GalaChainResponse, createValidSubmitDTO } from "@gala-chain/api";
+import { CreateTokenClassDto, GalaChainResponse, UserAlias, createValidSubmitDTO } from "@gala-chain/api";
 import { currency, fixture, users, writesMap } from "@gala-chain/test";
 import BigNumber from "bignumber.js";
 
@@ -50,8 +50,9 @@ it("should CreateTokenClass", async () => {
   const expectedInstance = currency.tokenInstance();
   const expectedClass = currency.tokenClass((defaults) => {
     const { tokenClass, signature, uniqueKey, ...fromDto } = dto;
+    const authorities = dto.authorities as UserAlias[];
     const missingInDto = { contractAddress: undefined, metadataAddress: undefined, rarity: undefined };
-    return { ...defaults, ...fromDto, ...missingInDto, ...tokenClass };
+    return { ...defaults, ...fromDto, authorities, ...missingInDto, ...tokenClass };
   });
   expect(getWrites()).toEqual(writesMap(expectedInstance, expectedClass));
 });

@@ -12,9 +12,9 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+import BigNumber from "bignumber.js";
 import { Exclude, Type } from "class-transformer";
 import {
-  IsBoolean,
   IsDefined,
   IsInt,
   IsNotEmpty,
@@ -26,8 +26,9 @@ import {
 } from "class-validator";
 
 import { ChainKey, ValidationFailedError } from "../utils";
-import { IsUserAlias } from "../validators";
+import { BigNumberIsPositive, BigNumberProperty, IsUserAlias } from "../validators";
 import { ChainObject } from "./ChainObject";
+import { UserAlias } from "./UserAlias";
 
 /**
  * @description
@@ -57,7 +58,7 @@ export class PostMintLockConfiguration extends ChainObject {
    */
   @IsNotEmpty()
   @IsUserAlias()
-  lockAuthority: string;
+  lockAuthority: UserAlias;
 
   /**
    * @description
@@ -116,6 +117,33 @@ export class BurnToMintConfiguration extends ChainObject {
   @Min(0)
   @Max(1)
   burnPercentage: number;
+}
+
+/**
+ * @description
+ *
+ * Configure additional fees specific to the token being minted.
+ * These fees will be charged in addition to any base fee
+ * globally configured for mint-specific contract methods using the
+ * `MintToken` `feeCode`.
+ */
+export class MintFeeConfiguration extends ChainObject {
+  /**
+   * @description
+   *
+   * Specify a flat fee to charge in addition to standard or
+   * global usage-based fees configured for the `MintToken`
+   * feeCode. This amount will be added to other fees.
+   *
+   * @example
+   *
+   * If the `MintToken` `feeCode` specifies a rate of 1 $GALA, setting this property
+   * to 99 would incur a total fee of 100 $GALA.
+   */
+  @IsOptional()
+  @BigNumberProperty()
+  @BigNumberIsPositive()
+  flatFee: BigNumber;
 }
 
 /**
@@ -199,6 +227,17 @@ export class TokenMintConfiguration extends ChainObject {
   @ValidateNested()
   @Type(() => PostMintLockConfiguration)
   public postMintLock?: PostMintLockConfiguration;
+
+  /**
+   * @description
+   *
+   * (optional) configure how GalaChain Fees (paid in $GALA) are handled
+   * when minting the configured TokenClass.
+   */
+  @IsOptional()
+  @ValidateNested()
+  @Type(() => MintFeeConfiguration)
+  public additionalFee?: MintFeeConfiguration;
 
   @Exclude()
   public validatePostProcessingTotals() {

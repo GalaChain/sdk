@@ -13,34 +13,43 @@
  * limitations under the License.
  */
 import {
+  AllowanceKey,
   AllowanceType,
   AuthorizedOnBehalf,
   ChainCallDTO,
   ChainObject,
-  HighThroughputMintTokenDto,
   TokenAllowance,
   TokenClass,
+  TokenClassKeyProperties,
   TokenInstance,
-  TokenInstanceKey
+  TokenInstanceKey,
+  UserAlias
 } from "@gala-chain/api";
 import BigNumber from "bignumber.js";
 
 import { checkAllowances } from "../allowances";
-import { GalaChainContext } from "../types/GalaChainContext";
+import { GalaChainContext } from "../types";
 import { getObjectByKey, getObjectsByPartialCompositeKey } from "../utils";
+
+export interface ValidateMintRequestParams {
+  tokenClass: TokenClassKeyProperties;
+  owner: UserAlias | undefined;
+  quantity: BigNumber;
+  allowanceKey: AllowanceKey | undefined;
+  authorizedOnBehalf: AuthorizedOnBehalf | undefined;
+}
 
 export async function validateMintRequest(
   ctx: GalaChainContext,
-  dto: HighThroughputMintTokenDto,
+  params: ValidateMintRequestParams,
   tokenClass: TokenClass,
-  authorizedOnBehalf: AuthorizedOnBehalf | undefined
+  callingUser: UserAlias
 ): Promise<TokenAllowance[]> {
-  const callingUser: string = ctx.callingUser;
-  const owner = dto.owner ?? callingUser;
-  const tokenClassKey = dto.tokenClass;
-  const quantity = dto.quantity;
+  const owner = params.owner ?? callingUser;
+  const tokenClassKey = params.tokenClass;
+  const quantity = params.quantity;
 
-  const callingOnBehalf: string = authorizedOnBehalf?.callingOnBehalf ?? callingUser;
+  const callingOnBehalf: string = params.authorizedOnBehalf?.callingOnBehalf ?? callingUser;
 
   const decimalPlaces = quantity.decimalPlaces() ?? 0;
   if (decimalPlaces > tokenClass.decimals) {
@@ -50,8 +59,8 @@ export async function validateMintRequest(
   // dto is valid, do chain code specific validation
   let results: TokenAllowance[] = [];
 
-  if (dto.allowanceKey) {
-    const applicableAllowanceKey = dto.allowanceKey;
+  if (params.allowanceKey) {
+    const applicableAllowanceKey = params.allowanceKey;
     const allowance: TokenAllowance = await getObjectByKey(
       ctx,
       TokenAllowance,
@@ -114,7 +123,7 @@ export async function validateMintRequest(
 
   if (totalAllowance.isLessThan(quantity)) {
     throw new Error(
-      `${callingUser} does not have sufficient allowances ${totalAllowance.toString()} to ${actionDescription}`
+      `${callingOnBehalf} does not have sufficient allowances ${totalAllowance.toString()} to ${actionDescription}`
     );
   }
 

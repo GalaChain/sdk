@@ -1,0 +1,67 @@
+name: Manual Docs Publishing
+on:
+  workflow_dispatch:
+    inputs:
+      target_version:
+        description: 'Tag to publish docs for (e.g., v1.2.3)'
+        required: true
+        type: string
+
+env:
+  PAGES_BRANCH: gh-pages
+  HTTPS_REMOTE: "https://${{ secrets.GITHUB_TOKEN }}@github.com/${{ github.repository }}"
+
+jobs:
+  publish-pages:
+    name: Publish Pages
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install project dependencies
+        run: npm install
+      - name: Generate typedocs
+        run: |
+          npm run typedoc-chain-api
+          npm run typedoc-chain-client
+          npm run typedoc-chaincode
+          npm run typedoc-chain-connect
+          npm run typedoc-chain-test
+          npm run replace-readme-docs
+      - name: Install google-chrome
+        run: |
+          wget https://dl.google.com/linux/direct/google-chrome-stable_current_amd64.deb
+          sudo dpkg -i google-chrome*.deb
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: Install system dependencies
+        run: |
+          sudo apt-get install -y gcc musl-dev
+      - name: Setup Node.js
+        uses: actions/setup-node@v3
+      - name: Install mermaid-cli
+        run: npm install -g @mermaid-js/mermaid-cli
+      - name: Install pip packages
+        run: pip3 install mkdocs==1.5.3 mkdocs-material==9.4.8 mike==1.1.2 beautifulsoup4==4.9.3 setuptools==58.2.0 mkdocs-awesome-pages-plugin==2.9.2
+      - name: Git config
+        run: |
+          git config --global user.email "${GITHUB_ACTOR}"
+          git config --global user.name "${GITHUB_ACTOR}@gala.games"
+      - name: Clone mkdocs-with-pdf fixed branch and install
+        run: |
+          git clone -b render-mermaid-png https://github.com/Fuerback/mkdocs-with-pdf.git
+          cd mkdocs-with-pdf
+          sudo python3 setup.py install
+          cd ..
+      - name: Mkdocs build
+        run: |
+          mkdocs build
+      - name: Push a new version of the docs
+        run: |
+          git stash
+          git fetch origin $PAGES_BRANCH && git checkout -b $PAGES_BRANCH origin/$PAGES_BRANCH || git checkout $PAGES_BRANCH || echo "Pages branch not deployed yet."
+          git checkout $GITHUB_SHA
+          mike deploy --rebase --prefix docs -r $HTTPS_REMOTE -p -b $PAGES_BRANCH -u ${{ inputs.target_version }} latest
+          mike set-default --rebase --prefix docs -r $HTTPS_REMOTE -p -b $PAGES_BRANCH latest
+          git checkout $PAGES_BRANCH -- docs/ 

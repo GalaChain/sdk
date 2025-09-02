@@ -77,9 +77,7 @@ export async function fetchFeeAuthorizations(
     FeeAuthorization,
     data.bookmark,
     data.limit
-  ).catch((e) => {
-    throw ChainError.map(e, ErrorCode.NOT_FOUND, new NotFoundError(ctx.callingUser));
-  });
+  );
 
   const response = new FetchFeeAuthorizationsResDto();
   response.results = lookup.results;

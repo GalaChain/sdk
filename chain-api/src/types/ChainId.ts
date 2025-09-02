@@ -12,6 +12,33 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
+/**
+ * @description
+ *
+ * Define identifiers of other blockchains external to GalaChain, or
+ * other channels within the GalaChain ecosystem.
+ *
+ * Primarily used for bridging operations.
+ *
+ */
 export enum ChainId {
-  Ethereum = 2
+  Ethereum = 2,
+  TON = 1001,
+  Solana = 1002
 }
+
+/**
+ * @description
+ *
+ * Defines the list of external blockchains and/or GalaChain
+ * channels that can potentially be configured by channel operators
+ * to support bridge fees on `RequestTokenBridgeOut` actions.
+ *
+ * @remarks
+ *
+ * See also the `OracleBridgeFeeAssertion` within the `gala-chain/api` package,
+ * and the `requestTokenBridgeOutFeeGate` implementation in the
+ * `gala-chain/chaincode` package.
+ */
+export const ChainsWithBridgeFeeSupport: ChainId[] = [ChainId.Ethereum, ChainId.TON, ChainId.Solana];

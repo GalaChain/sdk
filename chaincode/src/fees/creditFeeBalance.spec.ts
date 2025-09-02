@@ -23,6 +23,7 @@ import {
   TokenBalance,
   TokenClass,
   TokenInstance,
+  UserRole,
   createValidChainObject,
   createValidDTO,
   createValidSubmitDTO
@@ -58,7 +59,7 @@ describe("creditFeeBalance", () => {
     const userBalance: TokenBalance = currency.tokenBalance();
     const authorizedFeeQuantity = new BigNumber("100");
 
-    const feeAuthority = randomUser("client|fee-authority");
+    const feeAuthority = randomUser("client|fee-authority", [UserRole.CURATOR]);
 
     const authDto = await createValidSubmitDTO(FeeAuthorizationDto, {
       authority: feeAuthority.identityKey,
@@ -105,7 +106,7 @@ describe("creditFeeBalance", () => {
       txId: txId,
       quantity: authorizedFeeQuantity,
       feeAuthorizationKey: feeAuthorizationKey
-    }).signed(users.testUser1.privateKey);
+    }).signed(feeAuthority.privateKey);
 
     // When
     const response = await contract.CreditFeeBalance(ctx, verificationDto);

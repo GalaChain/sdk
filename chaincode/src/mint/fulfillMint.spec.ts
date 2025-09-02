@@ -31,7 +31,7 @@ import {
   createValidRangedChainObject,
   createValidSubmitDTO
 } from "@gala-chain/api";
-import { currency, fixture, nft, users, writesMap } from "@gala-chain/test";
+import { currency, fixture, nft, transactionErrorMessageContains, users, writesMap } from "@gala-chain/test";
 import BigNumber from "bignumber.js";
 import { plainToInstance } from "class-transformer";
 
@@ -442,7 +442,7 @@ describe("FulfillMint", () => {
     expect(getWrites()).toEqual({});
   });
 
-  it("prevents attackers from exploiting the lack of signing requirement", async () => {
+  it("prevents attackers from tampering with mint request", async () => {
     // Given
     const nftInstance = nft.tokenInstance1();
     const nftInstanceKey = nft.tokenInstance1Key();
@@ -531,10 +531,8 @@ describe("FulfillMint", () => {
 
     // Then
     expect(response).toEqual(
-      GalaChainResponse.Error(
-        new Error(
-          `client|maliciousUser does not have sufficient allowances 0 to Mint 2 token TEST$Item$Potion$Elixir$0 to client|testUser1`
-        )
+      transactionErrorMessageContains(
+        `owner mismatch: MintRequestDto owner ${users.attacker.identityKey} does not match TokenMintRequest owner ${users.testUser1.identityKey}`
       )
     );
 

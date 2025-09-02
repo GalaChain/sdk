@@ -12,8 +12,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-import { ChainCallDTO, UserProfile, UserRole } from "@gala-chain/api";
-import { ChainUser } from "@gala-chain/client";
+import { ChainCallDTO, ChainUser, UserProfile, UserRole } from "@gala-chain/api";
 import {
   fixture,
   transactionErrorKey,
@@ -57,7 +56,9 @@ describe("authorization", () => {
     const f = () => authFixture(["Submit", "no org constraint", "no roles constraint", "no sig verif"]);
 
     // Then
-    expect(f).toThrow("SUBMIT transaction must have either verifySignature or allowedOrgs defined");
+    expect(f).toThrow(
+      "SUBMIT transaction 'GetCallingUser' must have either verifySignature or allowedOrgs defined"
+    );
   });
 
   it("should authorize by organization for evaluate method", async () => {
@@ -70,7 +71,7 @@ describe("authorization", () => {
     // Then
     expect(await f1.signedCall()).toEqual(transactionSuccess(registeredUser));
     expect(await f1.unsignedCall()).toEqual(
-      transactionSuccess({ alias: anonymousUserId, roles: [UserRole.EVALUATE] })
+      transactionSuccess({ alias: anonymousUserId, roles: [UserRole.EVALUATE, UserRole.SUBMIT] })
     );
 
     expect(await f2.signedCall()).toEqual(transactionErrorKey("ORGANIZATION_NOT_ALLOWED"));
@@ -92,13 +93,8 @@ describe("authorization", () => {
 
     // Then
     expect(await f1.signedCall()).toEqual(transactionSuccess(registeredUser));
-    const f1UnsignedCallResponse = await f1.unsignedCall();
-    expect(f1UnsignedCallResponse).toEqual(transactionErrorKey("MISSING_ROLE"));
-    expect(f1UnsignedCallResponse).toEqual(
-      transactionErrorMessageContains(
-        // EVALUATE is default role for anonymous user (no signature)
-        `User ${anonymousUserId} does not have one of required roles: SUBMIT (has: EVALUATE)`
-      )
+    expect(await f1.unsignedCall()).toEqual(
+      transactionSuccess({ alias: anonymousUserId, roles: [UserRole.EVALUATE, UserRole.SUBMIT] })
     );
 
     expect(await f2.signedCall()).toEqual(transactionErrorKey("ORGANIZATION_NOT_ALLOWED"));
@@ -227,7 +223,7 @@ describe("authorization", () => {
 
     const user = {
       ...ChainUser.withRandomKeys(customUser.alias),
-      roles: customUser.roles
+      roles: customUser.roles ?? [...UserProfile.DEFAULT_ROLES]
     };
 
     const ContractClass = TestContractClass(type, verifySignature, allowedOrgs, allowedRoles);

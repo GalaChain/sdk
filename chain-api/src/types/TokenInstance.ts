@@ -13,7 +13,7 @@
  * limitations under the License.
  */
 import { BigNumber } from "bignumber.js";
-import { Exclude, Type, classToPlain as instanceToPlain } from "class-transformer";
+import { Type, classToPlain as instanceToPlain } from "class-transformer";
 import {
   IsBoolean,
   IsDefined,
@@ -29,6 +29,7 @@ import { ChainKey } from "../utils";
 import { BigNumberIsInteger, BigNumberIsNotNegative, BigNumberProperty, IsUserAlias } from "../validators";
 import { ChainObject } from "./ChainObject";
 import { TokenClass, TokenClassKey, TokenClassKeyProperties } from "./TokenClass";
+import { UserAlias } from "./UserAlias";
 import { ChainCallDTO } from "./dtos";
 
 export interface TokenInstanceKeyProperties {
@@ -260,7 +261,7 @@ export class TokenInstance extends ChainObject {
 
   @ValidateIf((i) => i.isNonFungible === true)
   @IsUserAlias()
-  public owner?: string;
+  public owner?: UserAlias;
 
   public static INDEX_KEY = "GCTI2";
 

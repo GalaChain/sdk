@@ -36,19 +36,20 @@ import {
   BigNumberIsPositive,
   BigNumberProperty,
   IsDifferentValue,
-  IsUserAlias
+  IsUserRef
 } from "../validators";
 import { ChainObject } from "./ChainObject";
 import { TokenInstanceQuantity } from "./TokenInstance";
 import { TokenSwapRequest } from "./TokenSwapRequest";
-import { ChainCallDTO } from "./dtos";
+import { UserRef } from "./UserRef";
+import { ChainCallDTO, SubmitCallDTO } from "./dtos";
 
 @JSONSchema({
   description:
     "Defines a swap request to be created, i.e. a request when a requester " +
     "offers some tokens to another user in exchange of another tokens."
 })
-export class RequestTokenSwapDto extends ChainCallDTO {
+export class RequestTokenSwapDto extends SubmitCallDTO {
   static DEFAULT_EXPIRES = 0;
 
   @JSONSchema({
@@ -57,8 +58,8 @@ export class RequestTokenSwapDto extends ChainCallDTO {
       "Optional field, by default set to chaincode calling user."
   })
   @IsOptional()
-  @IsUserAlias()
-  public offeredBy?: string;
+  @IsUserRef()
+  public offeredBy?: UserRef;
 
   @JSONSchema({
     description: "User who probably has tokens the requester wants."
@@ -71,8 +72,8 @@ export class RequestTokenSwapDto extends ChainCallDTO {
   })
   @IsOptional()
   @IsNotEmpty()
-  @IsUserAlias()
-  public offeredTo?: string;
+  @IsUserRef()
+  public offeredTo?: UserRef;
 
   @JSONSchema({
     description: "A list of offered token instances."
@@ -139,7 +140,7 @@ export class ExpectedTokenSwap extends ChainCallDTO {
 @JSONSchema({
   description: "Defines a swap fill object, i.e. a response of another user for a swap request."
 })
-export class FillTokenSwapDto extends ChainCallDTO {
+export class FillTokenSwapDto extends SubmitCallDTO {
   public static DEFAULT_USES = new BigNumber(1);
 
   @JSONSchema({
@@ -153,6 +154,7 @@ export class FillTokenSwapDto extends ChainCallDTO {
   })
   @IsOptional()
   @ValidateNested()
+  @Type(() => ExpectedTokenSwap)
   public expectedTokenSwap?: ExpectedTokenSwap;
 
   @JSONSchema({
@@ -161,8 +163,8 @@ export class FillTokenSwapDto extends ChainCallDTO {
       "Optional field, by default set to chaincode calling user."
   })
   @IsOptional()
-  @IsUserAlias()
-  public filledBy?: string;
+  @IsUserRef()
+  public filledBy?: UserRef;
 
   @JSONSchema({
     description:
@@ -180,7 +182,7 @@ export class FillTokenSwapDto extends ChainCallDTO {
   description:
     "Fill multiple swaps in a single transaction, potentially swaps offered by many different users."
 })
-export class BatchFillTokenSwapDto extends ChainCallDTO {
+export class BatchFillTokenSwapDto extends SubmitCallDTO {
   static MAX_ARR_SIZE = 1000;
 
   @JSONSchema({
@@ -193,7 +195,7 @@ export class BatchFillTokenSwapDto extends ChainCallDTO {
   swapDtos: Array<FillTokenSwapDto>;
 }
 
-export class TerminateTokenSwapDto extends ChainCallDTO {
+export class TerminateTokenSwapDto extends SubmitCallDTO {
   @JSONSchema({
     description: "Swap request ID to be terminated."
   })
@@ -292,8 +294,8 @@ export class FetchTokenSwapsByUserDto extends ChainCallDTO {
   static readonly DEFAULT_LIMIT = 1000;
 
   @IsOptional()
-  @IsUserAlias()
-  public user?: string;
+  @IsUserRef()
+  public user?: UserRef;
 
   @JSONSchema({
     description: "Page bookmark. If it is undefined, then the first page is returned."
@@ -335,7 +337,7 @@ export class FetchTokenSwapsWithPaginationResponse extends ChainCallDTO {
     "which were added to support fine-grained querying of TokenSwapRequests by client applications. " +
     "The provided swapRequestIds will be looked up on chain, then their corresponding index Chain objects will be queried and written if necessary."
 })
-export class EnsureTokenSwapIndexingDto extends ChainCallDTO {
+export class EnsureTokenSwapIndexingDto extends SubmitCallDTO {
   @ArrayNotEmpty()
   swapRequestIds: string[];
 }
@@ -344,7 +346,7 @@ export class EnsureTokenSwapIndexingDto extends ChainCallDTO {
   description:
     "Response DTO for a EnsureTokenSwapIndexing request. If any writes were made, they will be provided in the writes array and noOp will be true."
 })
-export class EnsureTokenSwapIndexingResponse extends ChainCallDTO {
+export class EnsureTokenSwapIndexingResponse extends SubmitCallDTO {
   @IsBoolean()
   noOp: boolean;
 
@@ -356,7 +358,7 @@ export class EnsureTokenSwapIndexingResponse extends ChainCallDTO {
   description:
     "Request DTO for CleanTokenSwaps. Optionally, provide a list of ChainKeys to specifically clean/delete from world state. "
 })
-export class CleanTokenSwapsDto extends ChainCallDTO {
+export class CleanTokenSwapsDto extends SubmitCallDTO {
   @IsOptional()
   @ArrayNotEmpty()
   swapRequestIds?: string[];
@@ -366,7 +368,7 @@ export class CleanTokenSwapsDto extends ChainCallDTO {
   description:
     "Response DTO for a CleanTokenSwaps request. If any deletes occurred, they will be provided in the deletes array."
 })
-export class CleanTokenSwapsResponse extends ChainCallDTO {
+export class CleanTokenSwapsResponse extends SubmitCallDTO {
   @ArrayMinSize(0)
   deletes: TokenSwapRequest[];
 }

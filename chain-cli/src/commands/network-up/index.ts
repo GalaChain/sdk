@@ -20,10 +20,10 @@ import { readFileSync, writeFileSync } from "fs";
 import path from "path";
 
 import BaseCommand from "../../base-command";
-import { getCPPs, getCPPsBrowserApi } from "../../connection-profile";
+import { getCPPs } from "../../connection-profile";
 import { defaultFabloRoot } from "../../consts";
 import { execSync, execSyncStdio } from "../../exec-sync";
-import { overwriteApiConfig } from "../../galachain-utils";
+import { saveApiConfig } from "../../galachain-utils";
 
 const defaultChaincodeDir = ".";
 
@@ -37,7 +37,7 @@ export interface SingleArg {
 export default class NetworkUp extends BaseCommand<typeof NetworkUp> {
   static override aliases = ["network:up"];
 
-  static override description = "Start the chaincode in dev-mode and browser-api.";
+  static override description = "Start the chaincode, browser-api, and ops-api (in non-watch mode).";
 
   static override examples = [
     "galachain network:up -C=product-channel -t=curator -n=basic-product -d=./ --envConfig=./.dev-env --watch",
@@ -91,7 +91,14 @@ export default class NetworkUp extends BaseCommand<typeof NetworkUp> {
     }),
     contracts: Flags.string({
       char: "o",
-      description: "Contract names in a JSON format."
+      description: "Contract names in a JSON format.",
+      multiple: true
+    }),
+    "no-rest-api": Flags.boolean({
+      description: "Do not start GalaChain REST API services."
+    }),
+    "no-chain-browser": Flags.boolean({
+      description: "Do not start GalaChain Browser."
     })
   };
 
@@ -99,13 +106,14 @@ export default class NetworkUp extends BaseCommand<typeof NetworkUp> {
     const { flags } = await this.parse(NetworkUp);
     customValidation(flags);
 
-    if (flags.contracts) {
-      // This feature supports only a single channel
-      console.log("Overwriting api-config.json with contracts: " + flags.contracts);
-      await overwriteApiConfig(flags.contracts, flags.channel[0], flags.chaincodeName[0]);
-    }
-
     const fabloRoot = path.resolve(flags.fabloRoot);
+    const apiConfigPath = path.resolve(fabloRoot, "api-config.json");
+
+    // Generate API config content
+    if (flags.contracts) {
+      console.log("Processing api-config.json with contracts: " + flags.contracts);
+      await saveApiConfig(fabloRoot, flags.contracts, flags.channel, flags.chaincodeName);
+    }
 
     const localhostName = process.env.LOCALHOST_NAME ?? "localhost";
     console.log("Network root directory:", fabloRoot);
@@ -132,7 +140,9 @@ export default class NetworkUp extends BaseCommand<typeof NetworkUp> {
       )
       .execute("up");
 
-    startBrowserApi(fabloRoot);
+    startNetworkServices(fabloRoot, flags, apiConfigPath);
+
+    printTestAdminCredentials(fabloRoot);
 
     if (flags.watch) {
       startChaincodeInWatchMode(fabloRoot, singleArgs);
@@ -140,13 +150,61 @@ export default class NetworkUp extends BaseCommand<typeof NetworkUp> {
   }
 }
 
-function startBrowserApi(fabloRoot: string): void {
-  const commands = [
-    `cd "${fabloRoot}/browser-api"`,
-    "./browser-api-compose.sh up",
-    "./browser-api-compose.sh success-message"
-  ];
+interface NetworkServicesFlags {
+  watch: boolean;
+  "no-rest-api": boolean;
+  "no-chain-browser": boolean;
+}
 
+function startNetworkServices(fabloRoot: string, flags: NetworkServicesFlags, apiConfigPath: string): void {
+  try {
+    // Start browser-api only if not disabled by flags
+    if (!flags["no-chain-browser"]) {
+      startBrowserApi(fabloRoot);
+    }
+
+    // Start ops-api only in non-watch mode, and if not disabled by flags
+    if (!flags.watch && !flags["no-rest-api"]) {
+      startOpsApi(fabloRoot, apiConfigPath);
+    }
+  } catch (error) {
+    console.error("Failed to start network services:", error);
+    throw error;
+  }
+}
+
+function startBrowserApi(fabloRoot: string): void {
+  try {
+    const commands = [
+      `cd "${fabloRoot}/browser-api"`,
+      "./browser-api-compose.sh up",
+      "./browser-api-compose.sh success-message"
+    ];
+
+    execSyncStdio(commands.join(" && "));
+  } catch (error) {
+    console.error("Failed to start browser-api:", error);
+    throw error;
+  }
+}
+
+function startOpsApi(fabloRoot: string, apiConfigPath: string): void {
+  try {
+    const commands = [`cd "${fabloRoot}/ops-api"`, `./ops-api.sh up "${fabloRoot}" "${apiConfigPath}"`];
+
+    execSyncStdio(commands.join(" && "));
+  } catch (error) {
+    console.error("Failed to start ops-api:", error);
+    throw error;
+  }
+}
+
+function printTestAdminCredentials(fabloRoot: string): void {
+  const commands = [
+    `cd "${fabloRoot}"`,
+    `echo "Dev admin private key which you can use for signing transactions:"`,
+    `echo "  $(cat dev-admin-key/dev-admin.priv.hex.txt)"`
+  ];
   execSyncStdio(commands.join(" && "));
 }
 
@@ -342,7 +400,12 @@ function reduce(args: any): SingleArg[] {
 
 function copyNetworkScriptsTo(targetPath: string): void {
   const sourceScriptsDir = path.resolve(require.resolve("."), "../../../network");
-  execSync(`mkdir -p "${targetPath}" && cd "${targetPath}" && cp -R "${sourceScriptsDir}"/* ./`);
+  try {
+    execSync(`mkdir -p "${targetPath}" && cd "${targetPath}" && cp -R "${sourceScriptsDir}"/* ./ && ls -lh`);
+  } catch (error) {
+    console.error("Failed to copy network scripts:", error);
+    throw error;
+  }
 }
 
 function saveConnectionProfiles(
@@ -351,21 +414,12 @@ function saveConnectionProfiles(
   channelNames: string[],
   localhostName: string
 ): void {
-  // e2e tests
   const cryptoConfigRoot = path.resolve(fabloRoot, "fablo-target/fabric-config/crypto-config");
-  const cpps = getCPPs(cryptoConfigRoot, channelNames, localhostName, !isWatchMode, true, !isWatchMode);
 
-  const cppDir = path.resolve(fabloRoot, "connection-profiles");
-  execSync(`mkdir -p "${cppDir}"`);
-
-  const cppPath = (org: string) => path.resolve(cppDir, `cpp-${org}.json`);
-  writeFileSync(cppPath("curator"), JSON.stringify(cpps.curator, undefined, 2));
-  writeFileSync(cppPath("partner"), JSON.stringify(cpps.partner, undefined, 2));
-  writeFileSync(cppPath("users"), JSON.stringify(cpps.users, undefined, 2));
-
-  // browser-api
-  const cppsBrowser = getCPPsBrowserApi(
-    cryptoConfigRoot,
+  // Generate connection profiles for all services
+  const cppsLocal = getCPPs(cryptoConfigRoot, channelNames, localhostName, !isWatchMode, true, !isWatchMode);
+  const cppsDocker = getCPPs(
+    "/crypto-config",
     channelNames,
     localhostName,
     !isWatchMode,
@@ -373,15 +427,20 @@ function saveConnectionProfiles(
     !isWatchMode
   );
 
-  const cppDirBrowser = path.resolve(fabloRoot, "connection-profiles-browser");
-  execSync(`mkdir -p "${cppDirBrowser}"`);
+  // Save connection profiles for ops-api and e2e tests
+  const cppLocalDir = path.resolve(fabloRoot, "connection-profiles");
+  execSync(`mkdir -p "${cppLocalDir}"`);
 
-  // Browser-api needs the generated connection profile when running in watch mode and the harded coded one when running in non-watch mode
-  if (isWatchMode) {
-    const cppPathBrowser = (org: string) => path.resolve(cppDirBrowser, `cpp-${org}.json`);
-    writeFileSync(cppPathBrowser("curator"), JSON.stringify(cppsBrowser.curator, undefined, 2));
-  } else {
-    const sourceCppDirBrowser = path.resolve(".", `${defaultFabloRoot}/browser-api/connection-profiles`);
-    execSync(`cp "${sourceCppDirBrowser}/cpp-curator.json" "${cppDirBrowser}/"`);
-  }
+  const cppPath = (org: string) => path.resolve(cppLocalDir, `cpp-${org}.json`);
+  writeFileSync(cppPath("curator"), JSON.stringify(cppsLocal.curator, undefined, 2));
+  writeFileSync(cppPath("partner"), JSON.stringify(cppsLocal.partner, undefined, 2));
+  writeFileSync(cppPath("users"), JSON.stringify(cppsLocal.users, undefined, 2));
+
+  const cppDockerDir = path.resolve(fabloRoot, "connection-profiles-docker");
+  execSync(`mkdir -p "${cppDockerDir}"`);
+
+  const cppDockerPath = (org: string) => path.resolve(cppDockerDir, `cpp-${org}.json`);
+  writeFileSync(cppDockerPath("curator"), JSON.stringify(cppsDocker.curator, undefined, 2));
+  writeFileSync(cppDockerPath("partner"), JSON.stringify(cppsDocker.partner, undefined, 2));
+  writeFileSync(cppDockerPath("users"), JSON.stringify(cppsDocker.users, undefined, 2));
 }

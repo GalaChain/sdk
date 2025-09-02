@@ -29,19 +29,19 @@ import {
 } from "class-validator";
 import { JSONSchema } from "class-validator-jsonschema";
 
-import { NotImplementedError, ValidationFailedError } from "../utils";
+import { ValidationFailedError } from "../utils";
 import { BigNumberProperty } from "../validators";
 import { OracleDefinition } from "./OracleDefinition";
 import { ExternalToken, OraclePriceAssertion } from "./OraclePriceAssertion";
 import { OraclePriceCrossRateAssertion } from "./OraclePriceCrossRateAssertion";
 import { TokenClassKey } from "./TokenClass";
 import { TokenInstanceKey } from "./TokenInstance";
-import { ChainCallDTO } from "./dtos";
+import { ChainCallDTO, SubmitCallDTO } from "./dtos";
 
 @JSONSchema({
   description: "Save an Oracle definition on chain"
 })
-export class OracleDefinitionDto extends ChainCallDTO {
+export class OracleDefinitionDto extends SubmitCallDTO {
   @JSONSchema({
     description: "Name of the oracle. Unique chain key."
   })
@@ -123,7 +123,7 @@ export class FetchOracleDefinitionsResponse extends ChainCallDTO {
 @JSONSchema({
   description: "Price data for exchanging two tokens/currenices signed by an Authoritative Oracle"
 })
-export class OraclePriceAssertionDto extends ChainCallDTO {
+export class OraclePriceAssertionDto extends SubmitCallDTO {
   @JSONSchema({
     description: "Name of the oracle defined on chain."
   })
@@ -221,7 +221,7 @@ export class FetchOraclePriceAssertionsResponse extends ChainCallDTO {
 @JSONSchema({
   description: "Cross Rate Exchange price assertion. E.g. compare $GALA to $ETH via price in $USD for each."
 })
-export class OraclePriceCrossRateAssertionDto extends ChainCallDTO {
+export class OraclePriceCrossRateAssertionDto extends SubmitCallDTO {
   @JSONSchema({
     description: "Name of the oracle defined on chain."
   })
@@ -319,14 +319,44 @@ export class OraclePriceCrossRateAssertionDto extends ChainCallDTO {
     }
   }
 
+  /**
+   * @description
+   *
+   * Calculate the cross-rate using the instantiated instance's
+   * base and quote token exchange rates.
+   *
+   * Requires valid cross-rate token keys: For our purposes we expect the
+   * base exchange rate and the quote exchange rate to use a common
+   * quote token to faciliate the cross-rate calculation.
+   *
+   * @remarks
+   *
+   * The quote token exchange rate is inverted to yield a cross-rate
+   * exchange of "$n of quote token per 1 base token."
+   *
+   * @example
+   *
+   * Quote GALA in TON using hypothetical exchange rates:
+   *
+   * GALA is quoted in USD at $0.025 USD per GALA (quoteTokenCrossRate).
+   *
+   * TON is quoted in USD at $5.50 USD per TON. (baseTokenCrossRate).
+   *
+   * The GALA cross-rate is inverted, yielding 40 GALA per 1 USD.
+   *
+   * Multiply USD/TON x GALA/USD to yield a cross-rate of 220 GALA per 1 TON.
+   *
+   */
   @Exclude()
   public calculateCrossRate() {
     this.validateCrossRateTokenKeys();
 
     const quoteTokenCrossRate = this.quoteTokenCrossRate.exchangeRate;
+    const invertedQuoteTokenCrossRate = new BigNumber("1").dividedBy(quoteTokenCrossRate);
+
     const baseTokenCrossRate = this.baseTokenCrossRate.exchangeRate;
 
-    const calculatedCrossRate = quoteTokenCrossRate.dividedBy(baseTokenCrossRate);
+    const calculatedCrossRate = baseTokenCrossRate.times(invertedQuoteTokenCrossRate);
 
     return calculatedCrossRate;
   }
@@ -337,7 +367,8 @@ export class OraclePriceCrossRateAssertionDto extends ChainCallDTO {
 
     if (!this.crossRate.isEqualTo(calculatedCrossRate)) {
       throw new ValidationFailedError(
-        `Asserted cross rate (${this.crossRate} is not equal to calculated cross rate)`
+        `Asserted cross rate (${this.crossRate.toNumber()} is not equal to ` +
+          `the calculated cross rate: ${calculatedCrossRate.toNumber()})`
       );
     }
   }
@@ -355,14 +386,14 @@ export class FetchOraclePriceCrossRateAssertionsResponse extends ChainCallDTO {
   bookmark?: string;
 }
 
-export class DeleteOracleAssertionsDto extends ChainCallDTO {
+export class DeleteOracleAssertionsDto extends SubmitCallDTO {
   public static MAX_LIMIT = 1000;
 
   @ArrayNotEmpty()
   chainKeys: string[];
 }
 
-export class DeleteOracleDefinitionDto extends ChainCallDTO {
+export class DeleteOracleDefinitionDto extends SubmitCallDTO {
   @IsNotEmpty()
   name: string;
 }
@@ -370,22 +401,24 @@ export class DeleteOracleDefinitionDto extends ChainCallDTO {
 @JSONSchema({
   description: "Response with signed bridging fee data."
 })
-export class OracleBridgeFeeAssertionDto extends ChainCallDTO {
+export class OracleBridgeFeeAssertionDto extends SubmitCallDTO {
   @JSONSchema({
     description: "Exchange Rate Price Assertion used to calculate Gas Fee"
   })
+  @IsOptional()
   @ValidateIf((assertion) => !!assertion.galaExchangeCrossRate)
   @ValidateNested()
   @Type(() => OraclePriceAssertionDto)
-  public galaExchangeRate: OraclePriceAssertionDto;
+  public galaExchangeRate?: OraclePriceAssertionDto;
 
   @JSONSchema({
     description: "Cross-Rate Exchange Rate used to calculate Gas Fee"
   })
+  @IsOptional()
   @ValidateIf((assertion) => !!assertion.galaExchangeRate)
   @ValidateNested()
-  @Type(() => OraclePriceCrossRateAssertion)
-  public galaExchangeCrossRate?: OraclePriceCrossRateAssertion;
+  @Type(() => OraclePriceCrossRateAssertionDto)
+  public galaExchangeCrossRate?: OraclePriceCrossRateAssertionDto;
 
   @JSONSchema({
     description:

@@ -35,11 +35,12 @@ import {
   BigNumberIsPositive,
   BigNumberProperty,
   EnumProperty,
-  IsUserAlias
+  IsUserRef
 } from "../validators";
 import { GrantAllowanceQuantity } from "./GrantAllowance";
 import { TokenAllowance } from "./TokenAllowance";
 import { TokenInstance, TokenInstanceKey, TokenInstanceQueryKey } from "./TokenInstance";
+import { UserRef } from "./UserRef";
 import { AllowanceKey, AllowanceType, MintRequestDto } from "./common";
 import { ChainCallDTO, SubmitCallDTO } from "./dtos";
 
@@ -53,8 +54,8 @@ export class FetchAllowancesDto extends ChainCallDTO {
   @JSONSchema({
     description: "A user who can use an allowance."
   })
-  @IsUserAlias()
-  grantedTo: string;
+  @IsUserRef()
+  grantedTo: UserRef;
 
   @JSONSchema({
     description: "Token collection. Optional, but required if category is provided."
@@ -99,8 +100,8 @@ export class FetchAllowancesDto extends ChainCallDTO {
     description: "User who granted allowances."
   })
   @IsOptional()
-  @IsUserAlias()
-  grantedBy?: string;
+  @IsUserRef()
+  grantedBy?: UserRef;
 
   @JSONSchema({
     description: "Page bookmark. If it is undefined, then the first page is returned."
@@ -134,8 +135,8 @@ export class FetchAllowancesLegacyDto extends ChainCallDTO {
   @JSONSchema({
     description: "A user who can use an allowance."
   })
-  @IsUserAlias()
-  grantedTo: string;
+  @IsUserRef()
+  grantedTo: UserRef;
 
   @JSONSchema({
     description: "Token collection. Optional, but required if category is provided."
@@ -180,8 +181,8 @@ export class FetchAllowancesLegacyDto extends ChainCallDTO {
     description: "User who granted allowances."
   })
   @IsOptional()
-  @IsUserAlias()
-  grantedBy?: string;
+  @IsUserRef()
+  grantedBy?: UserRef;
 
   @JSONSchema({
     description: "Page bookmark. If it is undefined, then the first page is returned."
@@ -210,15 +211,15 @@ export class DeleteAllowancesDto extends SubmitCallDTO {
   @JSONSchema({
     description: "A user who can use an allowance."
   })
-  @IsUserAlias()
-  grantedTo: string;
+  @IsUserRef()
+  grantedTo: UserRef;
 
   @JSONSchema({
     description: "User who granted allowances."
   })
   @IsOptional()
-  @IsUserAlias()
-  grantedBy?: string;
+  @IsUserRef()
+  grantedBy?: UserRef;
 
   @JSONSchema({
     description: "Token collection. Optional, but required if category is provided."
@@ -317,7 +318,7 @@ export class GrantAllowanceDto extends SubmitCallDTO {
     "DTO properties backwards-compatible with prior GrantAllowanceDto, with the " +
     "exception that this implementation only supports AllowanceType.Mint."
 })
-export class HighThroughputGrantAllowanceDto extends ChainCallDTO {
+export class HighThroughputGrantAllowanceDto extends SubmitCallDTO {
   // todo: remove all these duplicated properties
   // it seems something about our @GalaTransaction decorator does not pass through
   // parent properties. Leaving this class empty with just the `extends GrantAllowanceDto`
@@ -370,7 +371,7 @@ export class HighThroughputGrantAllowanceDto extends ChainCallDTO {
   description:
     "Experimental: After submitting request to RequestMintAllowance, follow up with FulfillMintAllowance."
 })
-export class FulfillMintAllowanceDto extends ChainCallDTO {
+export class FulfillMintAllowanceDto extends SubmitCallDTO {
   static MAX_ARR_SIZE = 1000;
 
   @ValidateNested({ each: true })
@@ -392,16 +393,16 @@ export class FullAllowanceCheckDto extends ChainCallDTO {
     description: "Person who owns the balance(s). If the value is missing, chaincode caller is used."
   })
   @IsOptional()
-  @IsUserAlias()
-  owner?: string;
+  @IsUserRef()
+  owner?: UserRef;
 
   @JSONSchema({
     description:
       "Person/UserId to whom allowance(s) were granted. If the value is missing, chaincode caller is used."
   })
   @IsOptional()
-  @IsUserAlias()
-  grantedTo?: string;
+  @IsUserRef()
+  grantedTo?: UserRef;
 
   @JSONSchema({
     description: "Token collection. Optional."

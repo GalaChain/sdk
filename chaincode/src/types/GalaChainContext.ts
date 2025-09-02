@@ -12,7 +12,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-import { UnauthorizedError, UserRole } from "@gala-chain/api";
+import { UnauthorizedError, UserAlias, UserProfile, UserRole } from "@gala-chain/api";
 import { Context } from "fabric-contract-api";
 import { ChaincodeStub, Timestamp } from "fabric-shim";
 
@@ -26,15 +26,39 @@ function getTxUnixTime(ctx: Context): number {
   return Math.floor(txUnixTime);
 }
 
+export interface GalaChainContextConfig {
+  readonly adminPublicKey?: string;
+  readonly allowNonRegisteredUsers?: boolean;
+}
+
+class GalaChainContextConfigImpl implements GalaChainContextConfig {
+  constructor(private readonly config: GalaChainContextConfig) {}
+
+  get adminPublicKey(): string | undefined {
+    return this.config.adminPublicKey ?? process.env.DEV_ADMIN_PUBLIC_KEY;
+  }
+
+  get allowNonRegisteredUsers(): boolean | undefined {
+    return this.config.allowNonRegisteredUsers ?? process.env.ALLOW_NON_REGISTERED_USERS === "true";
+  }
+}
+
 export class GalaChainContext extends Context {
   stub: GalaChainStub;
-  private callingUserValue?: string;
+  private callingUserValue?: UserAlias;
   private callingUserEthAddressValue?: string;
   private callingUserTonAddressValue?: string;
   private callingUserRolesValue?: string[];
-  public isDryRun = false;
   private txUnixTimeValue?: number;
   private loggerInstance?: GalaLoggerInstance;
+
+  public isDryRun = false;
+  public config: GalaChainContextConfig;
+
+  constructor(config: GalaChainContextConfig) {
+    super();
+    this.config = new GalaChainContextConfigImpl(config);
+  }
 
   get logger(): GalaLoggerInstance {
     if (this.loggerInstance === undefined) {
@@ -43,13 +67,11 @@ export class GalaChainContext extends Context {
     return this.loggerInstance;
   }
 
-  get callingUser(): string {
+  get callingUser(): UserAlias {
     if (this.callingUserValue === undefined) {
       const message =
         "No calling user set. " +
         "It usually means that chaincode tried to get ctx.callingUser for unauthorized call (no DTO signature).";
-      const error = new UnauthorizedError(message);
-      console.error(error);
       throw new UnauthorizedError(message);
     }
     return this.callingUserValue;
@@ -76,7 +98,16 @@ export class GalaChainContext extends Context {
     return this.callingUserRolesValue;
   }
 
-  set callingUserData(d: { alias?: string; ethAddress?: string; tonAddress?: string; roles: string[], signedByKeys: string[], pubKeyCount: number }) {
+  get callingUserProfile(): UserProfile {
+    const profile = new UserProfile();
+    profile.alias = this.callingUser;
+    profile.ethAddress = this.callingUserEthAddressValue;
+    profile.tonAddress = this.callingUserTonAddressValue;
+    profile.roles = this.callingUserRoles;
+    return profile;
+  }
+
+  set callingUserData(d: { alias?: UserAlias; ethAddress?: string; tonAddress?: string; roles: string[] }) {
     if (this.callingUserValue !== undefined) {
       throw new Error("Calling user already set to " + this.callingUserValue);
     }
@@ -93,7 +124,7 @@ export class GalaChainContext extends Context {
     }
   }
 
-  resetCallingUserData() {
+  resetCallingUser() {
     this.callingUserValue = undefined;
     this.callingUserRolesValue = undefined;
     this.callingUserEthAddressValue = undefined;
@@ -101,7 +132,7 @@ export class GalaChainContext extends Context {
   }
 
   public setDryRunOnBehalfOf(d: {
-    alias: string;
+    alias: UserAlias;
     ethAddress?: string;
     tonAddress?: string;
     roles: string[];
@@ -120,8 +151,19 @@ export class GalaChainContext extends Context {
     return this.txUnixTimeValue;
   }
 
+  /**
+   * @returns a new, empty context that uses the same chaincode stub as
+   * the current context, but with dry run set (disables writes and deletes).
+   */
+  public createReadOnlyContext(index: number | undefined): GalaChainContext {
+    const ctx = new GalaChainContext(this.config);
+    ctx.clientIdentity = this.clientIdentity;
+    ctx.setChaincodeStub(createGalaChainStub(this.stub, true, index));
+    return ctx;
+  }
+
   setChaincodeStub(stub: ChaincodeStub) {
-    const galaChainStub = createGalaChainStub(stub);
+    const galaChainStub = createGalaChainStub(stub, this.isDryRun, undefined);
     // eslint-disable-next-line @typescript-eslint/ban-ts-comment
     // @ts-ignore - missing typings for `setChaincodeStub` in `fabric-contract-api`
     // eslint-disable-next-line @typescript-eslint/ban-ts-comment

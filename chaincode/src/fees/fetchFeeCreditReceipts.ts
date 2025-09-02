@@ -88,9 +88,7 @@ export async function fetchFeeCreditReceipts(
     FeeBalanceCreditReceipt,
     data.bookmark,
     data.limit
-  ).catch((e) => {
-    throw ChainError.map(e, ErrorCode.NOT_FOUND, new NotFoundError(ctx.callingUser));
-  });
+  );
 
   const response = new FetchFeeCreditReceiptsResponse();
   response.results = lookup.results.map((result) => {
