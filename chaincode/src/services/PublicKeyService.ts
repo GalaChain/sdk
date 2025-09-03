@@ -37,7 +37,9 @@ import {
   PkMissingError,
   PkNotFoundError,
   ProfileExistsError,
-  UserProfileNotFoundError
+  UserProfileNotFoundError,
+  PkDuplicateError,
+  PkCountMismatchError
 } from "./PublicKeyError";
 
 export class PublicKeyService {
@@ -66,6 +68,9 @@ export class PublicKeyService {
       signing !== SigningScheme.TON
         ? publicKeys.map((pk) => PublicKeyService.normalizePublicKey(pk))
         : publicKeys;
+    if (new Set(normalized).size !== normalized.length) {
+      throw new PkDuplicateError(userAlias);
+    }
     [obj.publicKey] = normalized;
     obj.publicKeys = normalized;
     obj.signing = signing;
@@ -193,7 +198,11 @@ export class PublicKeyService {
     if (data.length > 0) {
       const publicKey = ChainObject.deserialize<PublicKey>(PublicKey, data.toString());
       publicKey.signing = publicKey.signing ?? SigningScheme.ETH;
-
+      if (publicKey.publicKeys === undefined || publicKey.publicKeys.length === 0) {
+        publicKey.publicKeys = [publicKey.publicKey];
+      } else {
+        [publicKey.publicKey] = publicKey.publicKeys;
+      }
       return publicKey;
     }
 
@@ -206,6 +215,7 @@ export class PublicKeyService {
 
       const pk = new PublicKey();
       pk.publicKey = process.env.DEV_ADMIN_PUBLIC_KEY;
+      pk.publicKeys = [process.env.DEV_ADMIN_PUBLIC_KEY];
       pk.signing = SigningScheme.ETH;
       return pk;
     }
@@ -244,6 +254,9 @@ export class PublicKeyService {
     signing: SigningScheme,
     requiredSignatures: number
   ): Promise<string> {
+    if (requiredSignatures < 1 || requiredSignatures > publicKeys.length) {
+      throw new PkCountMismatchError(userAlias, publicKeys.length, requiredSignatures);
+    }
     const currPublicKey = await PublicKeyService.getPublicKey(ctx, userAlias);
     const firstPk = publicKeys[0];
     const providedPk =
