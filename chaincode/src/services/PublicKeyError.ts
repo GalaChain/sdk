@@ -63,3 +63,17 @@ export class UserProfileNotFoundError extends NotFoundError {
     super(`UserProfile not found for user alias ${user}`, { user });
   }
 }
+
+export class PkDuplicateError extends ConflictError {
+  constructor(user: string) {
+    super(`Duplicate public keys provided for user ${user}`, { user });
+  }
+}
+
+export class PkCountMismatchError extends ConflictError {
+  constructor(user: string, provided: number, required: number) {
+    const msg =
+      `Required signatures (${required}) do not match available public keys (${provided}) for user ${user}`;
+    super(msg, { user, provided, required });
+  }
+}
