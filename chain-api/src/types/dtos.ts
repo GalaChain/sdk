@@ -123,6 +123,51 @@ export function createValidSubmitDTO<T extends SubmitCallDTO>(
   } as unknown as NonFunctionProperties<T>);
 }
 
+export class SignatureDto {
+  @JSONSchema({
+    description:
+      "Signature of the DTO signed with caller's private key to be verified with user's public key saved on chain. " +
+      "The 'signature' field is optional for DTO, but is required for a transaction to be executed on chain. \n" +
+      "Please consult [GalaChain SDK documentation](https://github.com/GalaChain/sdk/blob/main/docs/authorization.md#signature-based-authorization) on how to create signatures."
+  })
+  @IsOptional()
+  @IsNotEmpty()
+  public signature?: string;
+
+  @JSONSchema({
+    description: "Public key of the user who signed the DTO."
+  })
+  @IsOptional()
+  @IsNotEmpty()
+  public signerPublicKey?: string;
+
+  @JSONSchema({
+    description: "Address of the user who signed the DTO. Typically Ethereum or TON address."
+  })
+  @IsOptional()
+  @IsNotEmpty()
+  public signerAddress?: string;
+
+  @JSONSchema({
+    description:
+      "Prefix for Metamask transaction signatures. " +
+      "Necessary to format payloads correctly to recover publicKey from web3 signatures."
+  })
+  @IsOptional()
+  @IsNotEmpty()
+  public prefix?: string;
+
+  @JSONSchema({
+    description:
+      `Signing scheme used for the signature. ` +
+      `"${SigningScheme.ETH}" for Ethereum, and "${SigningScheme.TON}" for The Open Network are supported. ` +
+      `Default: "${SigningScheme.ETH}".`
+  })
+  @IsOptional()
+  @StringEnumProperty(SigningScheme)
+  public signing?: SigningScheme;
+}
+
 /**
  * @description
  *
@@ -197,6 +242,12 @@ export class ChainCallDTO {
   @StringEnumProperty(SigningScheme)
   public signing?: SigningScheme;
 
+  @JSONSchema({ description: "List of signatures for this DTO." })
+  @IsOptional()
+  @ValidateNested({ each: true })
+  @Type(() => SignatureDto)
+  public signatures?: SignatureDto[];
+
   @JSONSchema({
     description: "Unit timestamp when the DTO expires. If the timestamp is in the past, the DTO is not valid."
   })
@@ -265,15 +316,37 @@ export class ChainCallDTO {
       }
     }
 
+    if (this.signerPublicKey === undefined && this.signing !== SigningScheme.TON) {
+      this.signerPublicKey = signatures.getPublicKey(privateKey);
+    }
+
+    const payload = {
+      ...this,
+      signature: undefined,
+      signatures: undefined,
+      signerPublicKey: undefined,
+      signerAddress: undefined,
+      prefix: undefined
+    };
+
     if (this.signing === SigningScheme.TON) {
       const keyBuffer = Buffer.from(privateKey, "base64");
-      this.signature = signatures.ton.getSignature(this, keyBuffer, this.prefix).toString("base64");
+      this.signature = signatures.ton.getSignature(payload, keyBuffer, this.prefix).toString("base64");
     } else {
       const keyBuffer = signatures.normalizePrivateKey(privateKey);
       this.signature = useDer
-        ? signatures.getDERSignature(this, keyBuffer)
-        : signatures.getSignature(this, keyBuffer);
+        ? signatures.getDERSignature(payload, keyBuffer)
+        : signatures.getSignature(payload, keyBuffer);
     }
+
+    const signatureDto: SignatureDto = {
+      signature: this.signature,
+      signerPublicKey: this.signerPublicKey,
+      signerAddress: this.signerAddress,
+      signing: this.signing,
+      prefix: this.prefix
+    };
+    this.signatures = [...(this.signatures ?? []), signatureDto];
   }
 
   /**
@@ -286,15 +359,57 @@ export class ChainCallDTO {
     return copied;
   }
 
-  public isSignatureValid(publicKey: string): boolean {
-    if (this.signing === SigningScheme.TON) {
-      const signatureBuff = Buffer.from(this.signature ?? "", "base64");
-      const publicKeyBuff = Buffer.from(publicKey, "base64");
-      return signatures.ton.isValidSignature(signatureBuff, this, publicKeyBuff, this.prefix);
+  public isSignatureValid(signatureOrPublicKey: string | SignatureDto, publicKey?: string): boolean {
+    let signature: string;
+    let pk: string | undefined;
+    let signing = this.signing;
+    let prefix = this.prefix;
+
+    if (typeof signatureOrPublicKey === "object") {
+      signature = signatureOrPublicKey.signature ?? "";
+      pk = signatureOrPublicKey.signerPublicKey ?? publicKey;
+      signing = signatureOrPublicKey.signing ?? this.signing;
+      prefix = signatureOrPublicKey.prefix ?? this.prefix;
+    } else if (publicKey) {
+      signature = signatureOrPublicKey;
+      pk = publicKey;
     } else {
-      return signatures.isValid(this.signature ?? "", this, publicKey);
+      signature = this.signature ?? "";
+      pk = signatureOrPublicKey;
+    }
+
+    const payload = {
+      ...this,
+      signatures: undefined,
+      signature: undefined,
+      signerPublicKey: undefined,
+      signerAddress: undefined,
+      prefix: undefined
+    };
+
+    if (signing === SigningScheme.TON) {
+      const signatureBuff = Buffer.from(signature ?? "", "base64");
+      const publicKeyBuff = Buffer.from(pk ?? "", "base64");
+      return signatures.ton.isValidSignature(signatureBuff, payload, publicKeyBuff, prefix);
+    } else {
+      return signatures.isValid(signature ?? "", payload, pk ?? "");
     }
   }
+}
+
+export function convertLegacySignatures<T extends ChainCallDTO>(dto: T): T {
+  if (!dto.signatures && dto.signature) {
+    dto.signatures = [
+      {
+        signature: dto.signature,
+        signerPublicKey: dto.signerPublicKey,
+        signerAddress: dto.signerAddress,
+        signing: dto.signing,
+        prefix: dto.prefix
+      }
+    ];
+  }
+  return dto;
 }
 
 // It just makes uniqueKey required

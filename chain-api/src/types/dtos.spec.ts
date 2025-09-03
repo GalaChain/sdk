@@ -19,7 +19,7 @@ import { ec as EC } from "elliptic";
 
 import { SigningScheme, getValidationErrorMessages, signatures } from "../utils";
 import { BigNumberArrayProperty, BigNumberProperty } from "../validators";
-import { ChainCallDTO, ClassConstructor } from "./dtos";
+import { ChainCallDTO, ClassConstructor, convertLegacySignatures } from "./dtos";
 
 const getInstanceOrErrorInfo = async <T extends ChainCallDTO>(
   constructor: ClassConstructor<T>,
@@ -126,14 +126,15 @@ describe("ChainCallDTO", () => {
     const { privateKey, publicKey } = genKeyPair();
     const dto = new TestDto();
     dto.amounts = [new BigNumber("12.3")];
-    expect(dto.signature).toEqual(undefined);
+    expect(dto.signatures).toEqual(undefined);
 
     // When
     dto.sign(privateKey);
 
     // Then
-    expect(dto.signature).toEqual(expect.stringMatching(/.{50,}/));
-    expect(dto.isSignatureValid(publicKey)).toEqual(true);
+    expect(dto.signatures).toHaveLength(1);
+    expect(dto.signatures![0].signature).toEqual(expect.stringMatching(/.{50,}/));
+    expect(dto.isSignatureValid(dto.signatures![0])).toEqual(true);
   });
 
   it("should sign and verify signature (edge case - shorter private key with missing trailing 0)", () => {
@@ -144,14 +145,15 @@ describe("ChainCallDTO", () => {
 
     const dto = new TestDto();
     dto.amounts = [new BigNumber("12.3")];
-    expect(dto.signature).toEqual(undefined);
+    expect(dto.signatures).toEqual(undefined);
 
     // When
     dto.sign(privateKey);
 
     // Then
-    expect(dto.signature).toEqual(expect.stringMatching(/.{50,}/));
-    expect(dto.isSignatureValid(publicKey)).toEqual(true);
+    expect(dto.signatures).toHaveLength(1);
+    expect(dto.signatures![0].signature).toEqual(expect.stringMatching(/.{50,}/));
+    expect(dto.isSignatureValid(dto.signatures![0])).toEqual(true);
   });
 
   it("should sign and fail to verify signature (invalid key)", () => {
@@ -165,7 +167,7 @@ describe("ChainCallDTO", () => {
     dto.sign(privateKey);
 
     // Then
-    expect(dto.isSignatureValid(invalid.publicKey)).toEqual(false);
+    expect(dto.isSignatureValid(dto.signatures![0].signature!, invalid.publicKey)).toEqual(false);
   });
 
   it("should sign and fail to verify signature (invalid payload)", () => {
@@ -179,7 +181,7 @@ describe("ChainCallDTO", () => {
     dto.key = "i-will-break-this";
 
     // Then
-    expect(dto.isSignatureValid(publicKey)).toEqual(false);
+    expect(dto.isSignatureValid(dto.signatures![0].signature!, publicKey)).toEqual(false);
   });
 
   it("should sign and verify TON signature", async () => {
@@ -188,13 +190,34 @@ describe("ChainCallDTO", () => {
     const dto = new TestDto();
     dto.amounts = [new BigNumber("78.9")];
     dto.signing = SigningScheme.TON;
-    expect(dto.signature).toEqual(undefined);
+    expect(dto.signatures).toEqual(undefined);
 
     // When
     dto.sign(pair.secretKey.toString("base64"));
 
     // Then
-    expect(dto.signature).toEqual(expect.stringMatching(/.{50,}/));
-    expect(dto.isSignatureValid(pair.publicKey.toString("base64"))).toEqual(true);
+    expect(dto.signatures).toHaveLength(1);
+    expect(dto.signatures![0].signature).toEqual(expect.stringMatching(/.{50,}/));
+    expect(
+      dto.isSignatureValid(dto.signatures![0].signature!, pair.publicKey.toString("base64"))
+    ).toEqual(true);
+  });
+
+  it("should convert legacy single signature", () => {
+    const dto = new TestDto();
+    dto.signature = "legacy";
+    dto.signerPublicKey = "pk";
+
+    convertLegacySignatures(dto);
+
+    expect(dto.signatures).toEqual([
+      {
+        signature: "legacy",
+        signerPublicKey: "pk",
+        signerAddress: undefined,
+        signing: undefined,
+        prefix: undefined
+      }
+    ]);
   });
 });
