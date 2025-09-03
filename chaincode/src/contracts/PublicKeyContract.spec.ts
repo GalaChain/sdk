@@ -345,6 +345,54 @@ describe("UpdatePublicKey", () => {
     expect(verifyResponse).toEqual(transactionSuccess());
   });
 
+  it("should preserve multi-key metadata when updating public key", async () => {
+    // Given
+    const chaincode = new TestChaincode([PublicKeyContract]);
+    const user = await createUser();
+    const other = signatures.genKeyPair();
+    const registerDto = await createValidSubmitDTO(RegisterUserDto, {
+      user: user.alias,
+      publicKeys: [user.publicKey, other.publicKey],
+      requiredSignatures: 2
+    });
+    const signedRegisterDto = registerDto.signed(process.env.DEV_ADMIN_PRIVATE_KEY as string);
+    expect(await chaincode.invoke("PublicKeyContract:RegisterUser", signedRegisterDto)).toEqual(
+      transactionSuccess()
+    );
+
+    const newKey = signatures.genKeyPair();
+    const updateDto = await createValidSubmitDTO(UpdatePublicKeyDto, { publicKey: newKey.publicKey });
+    const signedUpdateDto = updateDto.signed(user.privateKey);
+
+    // When
+    expect(await chaincode.invoke("PublicKeyContract:UpdatePublicKey", signedUpdateDto)).toEqual(
+      transactionSuccess()
+    );
+
+    // Then
+    const normalizedNew = PublicKeyService.normalizePublicKey(newKey.publicKey);
+    const normalizedOther = PublicKeyService.normalizePublicKey(other.publicKey);
+    expect(await getPublicKey(chaincode, user.alias)).toEqual(
+      transactionSuccess({
+        publicKey: normalizedNew,
+        publicKeys: [normalizedNew, normalizedOther],
+        signing: SigningScheme.ETH
+      })
+    );
+
+    const newAddress = signatures.getEthAddress(newKey.publicKey);
+    expect(await getUserProfile(chaincode, newAddress)).toEqual(
+      transactionSuccess(
+        expect.objectContaining({
+          alias: user.alias,
+          ethAddress: newAddress,
+          pubKeyCount: 2,
+          requiredSignatures: 2
+        })
+      )
+    );
+  });
+
   it("should prevent new user from reusing old public key after update", async () => {
     // Given
     const { chaincode, user } = await setup();
