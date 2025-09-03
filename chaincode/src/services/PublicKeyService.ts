@@ -97,9 +97,9 @@ export class PublicKeyService {
     const userProfile = await createValidChainObject(UserProfile, {
       alias: asValidUserAlias(`client|invalidated`),
       ethAddress: "0000000000000000000000000000000000000000",
-      roles: [],
+      roles: ["INVALIDATED"],
       pubKeyCount: 0,
-      requiredSignatures: 0
+      requiredSignatures: 1
     });
 
     const data = Buffer.from(userProfile.serialize());
