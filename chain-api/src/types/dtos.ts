@@ -24,7 +24,10 @@ import {
   MinLength,
   ValidateNested,
   ValidationError,
-  validate
+  ValidationArguments,
+  ValidationOptions,
+  validate,
+  registerDecorator
 } from "class-validator";
 import { JSONSchema } from "class-validator-jsonschema";
 
@@ -471,6 +474,31 @@ export class DryRunResultDto extends ChainCallDTO {
   public deletes: Record<string, true>;
 }
 
+function MaxArrayLength(property: string, validationOptions?: ValidationOptions) {
+  return function (object: object, propertyName: string) {
+    registerDecorator({
+      name: "maxArrayLength",
+      target: (object as Record<string, unknown>).constructor,
+      propertyName,
+      constraints: [property],
+      options: validationOptions,
+      validator: {
+        validate(value: unknown, args: ValidationArguments) {
+          const [relatedPropertyName] = args.constraints;
+          const relatedValue = (args.object as Record<string, unknown>)[relatedPropertyName];
+          return (
+            typeof value === "number" && Array.isArray(relatedValue) && value <= relatedValue.length
+          );
+        },
+        defaultMessage(args: ValidationArguments) {
+          const [relatedPropertyName] = args.constraints;
+          return `${args.property} must not be greater than ${relatedPropertyName}.length`;
+        }
+      }
+    });
+  };
+}
+
 /**
  * @description
  *
@@ -494,11 +522,18 @@ export class RegisterUserDto extends SubmitCallDTO {
   user: UserAlias;
 
   /**
-   * @description Public secp256k1 key (compact or non-compact, hex or base64).
+   * @description Public secp256k1 keys (compact or non-compact, hex or base64).
    */
-  @JSONSchema({ description: "Public secp256k1 key (compact or non-compact, hex or base64)." })
-  @IsNotEmpty()
-  publicKey: string;
+  @JSONSchema({ description: "Public secp256k1 keys (compact or non-compact, hex or base64)." })
+  @IsNotEmpty({ each: true })
+  @ArrayMinSize(1)
+  publicKeys: string[];
+
+  @JSONSchema({ description: "Number of required signatures." })
+  @IsNumber()
+  @Min(1)
+  @MaxArrayLength("publicKeys")
+  requiredSignatures: number;
 }
 
 /**
@@ -511,9 +546,16 @@ export class RegisterUserDto extends SubmitCallDTO {
   description: `Dto for secure method to save public keys for Eth users. Method is called and signed by Curators`
 })
 export class RegisterEthUserDto extends SubmitCallDTO {
-  @JSONSchema({ description: "Public secp256k1 key (compact or non-compact, hex or base64)." })
-  @IsNotEmpty()
-  publicKey: string;
+  @JSONSchema({ description: "Public secp256k1 keys (compact or non-compact, hex or base64)." })
+  @IsNotEmpty({ each: true })
+  @ArrayMinSize(1)
+  publicKeys: string[];
+
+  @JSONSchema({ description: "Number of required signatures." })
+  @IsNumber()
+  @Min(1)
+  @MaxArrayLength("publicKeys")
+  requiredSignatures: number;
 }
 
 /**
@@ -526,9 +568,16 @@ export class RegisterEthUserDto extends SubmitCallDTO {
   description: `Dto for secure method to save public keys for TON users. Method is called and signed by Curators`
 })
 export class RegisterTonUserDto extends SubmitCallDTO {
-  @JSONSchema({ description: "TON user public key (Ed25519 in base64)." })
-  @IsNotEmpty()
-  publicKey: string;
+  @JSONSchema({ description: "TON user public keys (Ed25519 in base64)." })
+  @IsNotEmpty({ each: true })
+  @ArrayMinSize(1)
+  publicKeys: string[];
+
+  @JSONSchema({ description: "Number of required signatures." })
+  @IsNumber()
+  @Min(1)
+  @MaxArrayLength("publicKeys")
+  requiredSignatures: number;
 }
 
 export class UpdatePublicKeyDto extends SubmitCallDTO {

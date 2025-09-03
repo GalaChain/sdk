@@ -75,7 +75,10 @@ it("should support the global state", async () => {
   const client1 = createClient(chaincodeDir);
   const client2 = createClient(chaincodeDir);
 
-  const registerDto = await createValidSubmitDTO(RegisterEthUserDto, { publicKey: user.publicKey });
+  const registerDto = await createValidSubmitDTO(RegisterEthUserDto, {
+    publicKeys: [user.publicKey],
+    requiredSignatures: 1
+  });
   registerDto.sign(admin.privateKey);
 
   const getProfileDto = await createValidDTO(GetPublicKeyDto, { user: user.alias });
@@ -109,7 +112,10 @@ it("should not change the state for evaluateTransaction", async () => {
   const otherUser = signatures.genKeyPair();
   const otherUserAlias = `eth|${signatures.getEthAddress(otherUser.publicKey)}` as UserAlias;
 
-  const registerDto = await createValidSubmitDTO(RegisterEthUserDto, { publicKey: otherUser.publicKey });
+  const registerDto = await createValidSubmitDTO(RegisterEthUserDto, {
+    publicKeys: [otherUser.publicKey],
+    requiredSignatures: 1
+  });
   registerDto.sign(admin.privateKey);
 
   const getProfileDto = await createValidDTO(GetPublicKeyDto, { user: otherUserAlias });
@@ -137,7 +143,10 @@ it.skip("should support key collision validation", async () => {
   const client2 = createClient(chaincodeDir, transactionDelayMs);
 
   const otherUser = signatures.genKeyPair();
-  const registerDto = await createValidSubmitDTO(RegisterEthUserDto, { publicKey: otherUser.publicKey });
+  const registerDto = await createValidSubmitDTO(RegisterEthUserDto, {
+    publicKeys: [otherUser.publicKey],
+    requiredSignatures: 1
+  });
   registerDto.sign(admin.privateKey);
 
   // When
