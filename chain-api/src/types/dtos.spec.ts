@@ -216,6 +216,20 @@ describe("ChainCallDTO", () => {
     expect(() => dto.sign(tonPair.secretKey.toString("base64"))).toThrow(ValidationFailedError);
   });
 
+  it("should validate signatures using stored signing params", () => {
+    const { privateKey } = genKeyPair();
+    const dto = new TestDto();
+    dto.prefix = "foo";
+    dto.amounts = [new BigNumber("1")];
+
+    dto.sign(privateKey);
+
+    dto.signing = SigningScheme.TON;
+    dto.prefix = "bar";
+
+    expect(dto.isSignatureValid(dto.signatures![0])).toEqual(true);
+  });
+
   it("should convert legacy single signature", () => {
     const dto = new TestDto();
     dto.signature = "legacy";

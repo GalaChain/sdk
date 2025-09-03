@@ -366,17 +366,29 @@ export class ChainCallDTO {
   public isSignatureValid(signatureOrPublicKey: string | SignatureDto, publicKey?: string): boolean {
     let signature: string;
     let pk: string | undefined;
+    let signing: SigningScheme | undefined;
+    let prefix = this.prefix;
+    let payloadSigning: SigningScheme | undefined;
 
     if (typeof signatureOrPublicKey === "object") {
       signature = signatureOrPublicKey.signature ?? "";
       pk = signatureOrPublicKey.signerPublicKey ?? publicKey;
+      signing = signatureOrPublicKey.signing;
+      payloadSigning = signatureOrPublicKey.signing;
+      prefix = signatureOrPublicKey.prefix ?? prefix;
     } else if (publicKey) {
       signature = signatureOrPublicKey;
       pk = publicKey;
+      signing = this.signing;
+      payloadSigning = this.signing;
     } else {
       signature = this.signature ?? "";
       pk = signatureOrPublicKey;
+      signing = this.signing;
+      payloadSigning = this.signing;
     }
+
+    signing = signing ?? SigningScheme.ETH;
 
     const payload = {
       ...this,
@@ -384,13 +396,14 @@ export class ChainCallDTO {
       signature: undefined,
       signerPublicKey: undefined,
       signerAddress: undefined,
-      prefix: undefined
+      prefix: undefined,
+      signing: payloadSigning
     };
 
-    if (this.signing === SigningScheme.TON) {
+    if (signing === SigningScheme.TON) {
       const signatureBuff = Buffer.from(signature ?? "", "base64");
       const publicKeyBuff = Buffer.from(pk ?? "", "base64");
-      return signatures.ton.isValidSignature(signatureBuff, payload, publicKeyBuff, this.prefix);
+      return signatures.ton.isValidSignature(signatureBuff, payload, publicKeyBuff, prefix);
     } else {
       return signatures.isValid(signature ?? "", payload, pk ?? "");
     }
