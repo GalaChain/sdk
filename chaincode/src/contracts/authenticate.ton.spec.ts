@@ -61,7 +61,9 @@ const Success = labeled<Expectation>("Success")((response, user) => {
     transactionSuccess({
       alias: user.alias,
       tonAddress: user.tonAddress,
-      roles: UserProfile.DEFAULT_ROLES
+      roles: UserProfile.DEFAULT_ROLES,
+      pubKeyCount: 1,
+      requiredSignatures: 1
     })
   );
 });

@@ -47,7 +47,12 @@ describe("authorization", () => {
     // Then
     expect(await f.signedCall()).toEqual(transactionSuccess(registeredUser));
     expect(await f.unsignedCall()).toEqual(
-      transactionSuccess({ alias: anonymousUserId, roles: [UserRole.EVALUATE] })
+      transactionSuccess({
+        alias: anonymousUserId,
+        roles: [UserRole.EVALUATE],
+        pubKeyCount: 1,
+        requiredSignatures: 1
+      })
     );
   });
 
@@ -71,7 +76,12 @@ describe("authorization", () => {
     // Then
     expect(await f1.signedCall()).toEqual(transactionSuccess(registeredUser));
     expect(await f1.unsignedCall()).toEqual(
-      transactionSuccess({ alias: anonymousUserId, roles: [UserRole.EVALUATE, UserRole.SUBMIT] })
+      transactionSuccess({
+        alias: anonymousUserId,
+        roles: [UserRole.EVALUATE, UserRole.SUBMIT],
+        pubKeyCount: 1,
+        requiredSignatures: 1
+      })
     );
 
     expect(await f2.signedCall()).toEqual(transactionErrorKey("ORGANIZATION_NOT_ALLOWED"));
@@ -94,7 +104,12 @@ describe("authorization", () => {
     // Then
     expect(await f1.signedCall()).toEqual(transactionSuccess(registeredUser));
     expect(await f1.unsignedCall()).toEqual(
-      transactionSuccess({ alias: anonymousUserId, roles: [UserRole.EVALUATE, UserRole.SUBMIT] })
+      transactionSuccess({
+        alias: anonymousUserId,
+        roles: [UserRole.EVALUATE, UserRole.SUBMIT],
+        pubKeyCount: 1,
+        requiredSignatures: 1
+      })
     );
 
     expect(await f2.signedCall()).toEqual(transactionErrorKey("ORGANIZATION_NOT_ALLOWED"));
@@ -120,7 +135,12 @@ describe("authorization", () => {
     expect(await f1.signedCall()).toEqual(transactionSuccess(registeredUser));
     expect(await f1.unsignedCall()).toEqual(
       // EVALUATE is default role for anonymous user (no signature)
-      transactionSuccess({ alias: anonymousUserId, roles: [UserRole.EVALUATE] })
+      transactionSuccess({
+        alias: anonymousUserId,
+        roles: [UserRole.EVALUATE],
+        pubKeyCount: 1,
+        requiredSignatures: 1
+      })
     );
 
     expect(await f2.signedCall()).toEqual(transactionSuccess(registeredUser));
@@ -180,7 +200,9 @@ describe("authorization", () => {
 
     const expectedUser = {
       alias: customUser.alias,
-      roles: UserProfile.DEFAULT_ROLES
+      roles: UserProfile.DEFAULT_ROLES,
+      pubKeyCount: 1,
+      requiredSignatures: 1
     };
 
     // When

@@ -84,6 +84,9 @@ export class PublicKeyService {
     } else {
       obj.ethAddress = address;
     }
+    obj.roles = Array.from(UserProfile.DEFAULT_ROLES);
+    obj.pubKeyCount = 1;
+    obj.requiredSignatures = 1;
 
     const data = Buffer.from(obj.serialize());
     await ctx.stub.putState(key, data);
@@ -94,7 +97,9 @@ export class PublicKeyService {
     const userProfile = await createValidChainObject(UserProfile, {
       alias: asValidUserAlias(`client|invalidated`),
       ethAddress: "0000000000000000000000000000000000000000",
-      roles: []
+      roles: [],
+      pubKeyCount: 0,
+      requiredSignatures: 0
     });
 
     const data = Buffer.from(userProfile.serialize());
@@ -119,6 +124,12 @@ export class PublicKeyService {
 
       if (userProfile.roles === undefined) {
         userProfile.roles = Array.from(UserProfile.DEFAULT_ROLES);
+      }
+      if (userProfile.pubKeyCount === undefined) {
+        userProfile.pubKeyCount = 1;
+      }
+      if (userProfile.requiredSignatures === undefined) {
+        userProfile.requiredSignatures = 1;
       }
 
       return userProfile as UserProfileWithRoles;
@@ -147,6 +158,8 @@ export class PublicKeyService {
         adminProfile.ethAddress = adminEthAddress;
         adminProfile.alias = alias;
         adminProfile.roles = Array.from(UserProfile.ADMIN_ROLES);
+        adminProfile.pubKeyCount = 1;
+        adminProfile.requiredSignatures = 1;
 
         return adminProfile as UserProfileWithRoles;
       }
@@ -162,6 +175,8 @@ export class PublicKeyService {
     profile.ethAddress = signing === SigningScheme.ETH ? address : undefined;
     profile.tonAddress = signing === SigningScheme.TON ? address : undefined;
     profile.roles = Array.from(UserProfile.DEFAULT_ROLES);
+    profile.pubKeyCount = 1;
+    profile.requiredSignatures = 1;
     return profile as UserProfileWithRoles;
   }
 
