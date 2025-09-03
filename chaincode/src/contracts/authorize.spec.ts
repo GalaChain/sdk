@@ -49,9 +49,7 @@ describe("authorization", () => {
     expect(await f.unsignedCall()).toEqual(
       transactionSuccess({
         alias: anonymousUserId,
-        roles: [UserRole.EVALUATE],
-        pubKeyCount: 1,
-        requiredSignatures: 1
+        roles: [UserRole.EVALUATE]
       })
     );
   });
@@ -78,9 +76,7 @@ describe("authorization", () => {
     expect(await f1.unsignedCall()).toEqual(
       transactionSuccess({
         alias: anonymousUserId,
-        roles: [UserRole.EVALUATE, UserRole.SUBMIT],
-        pubKeyCount: 1,
-        requiredSignatures: 1
+        roles: [UserRole.EVALUATE, UserRole.SUBMIT]
       })
     );
 
@@ -106,9 +102,7 @@ describe("authorization", () => {
     expect(await f1.unsignedCall()).toEqual(
       transactionSuccess({
         alias: anonymousUserId,
-        roles: [UserRole.EVALUATE, UserRole.SUBMIT],
-        pubKeyCount: 1,
-        requiredSignatures: 1
+        roles: [UserRole.EVALUATE, UserRole.SUBMIT]
       })
     );
 
@@ -137,9 +131,7 @@ describe("authorization", () => {
       // EVALUATE is default role for anonymous user (no signature)
       transactionSuccess({
         alias: anonymousUserId,
-        roles: [UserRole.EVALUATE],
-        pubKeyCount: 1,
-        requiredSignatures: 1
+        roles: [UserRole.EVALUATE]
       })
     );
 
@@ -200,9 +192,7 @@ describe("authorization", () => {
 
     const expectedUser = {
       alias: customUser.alias,
-      roles: UserProfile.DEFAULT_ROLES,
-      pubKeyCount: 1,
-      requiredSignatures: 1
+      roles: UserProfile.DEFAULT_ROLES
     };
 
     // When

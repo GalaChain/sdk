@@ -113,7 +113,8 @@ describeIfNonMockedChaincode("Chaincode client (CuratorOrg)", () => {
     const newUser = ChainUser.withRandomKeys();
 
     const dto = new RegisterUserDto();
-    dto.publicKey = newUser.publicKey;
+    dto.publicKeys = [newUser.publicKey];
+    dto.requiredSignatures = 1;
     dto.uniqueKey = randomUniqueKey();
     dto.sign(getAdminPrivateKey(), false);
 

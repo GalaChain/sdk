@@ -78,7 +78,7 @@ export class PublicKeyContract extends GalaContract {
       throw new ValidationFailedError(message);
     }
 
-    const providedPkHex = signatures.getNonCompactHexPublicKey(dto.publicKey);
+    const providedPkHex = signatures.getNonCompactHexPublicKey(dto.publicKeys[0]);
     const ethAddress = signatures.getEthAddress(providedPkHex);
     const userAlias = dto.user;
 
@@ -92,7 +92,7 @@ export class PublicKeyContract extends GalaContract {
     ...requireRegistrarAuth
   })
   public async RegisterEthUser(ctx: GalaChainContext, dto: RegisterEthUserDto): Promise<string> {
-    const providedPkHex = signatures.getNonCompactHexPublicKey(dto.publicKey);
+    const providedPkHex = signatures.getNonCompactHexPublicKey(dto.publicKeys[0]);
     const ethAddress = signatures.getEthAddress(providedPkHex);
     const userAlias = `eth|${ethAddress}` as UserAlias;
 
@@ -106,7 +106,7 @@ export class PublicKeyContract extends GalaContract {
     ...requireRegistrarAuth
   })
   public async RegisterTonUser(ctx: GalaChainContext, dto: RegisterTonUserDto): Promise<string> {
-    const publicKey = dto.publicKey;
+    const publicKey = dto.publicKeys[0];
     const address = signatures.ton.getTonAddress(Buffer.from(publicKey, "base64"));
     const userAlias = `ton|${address}` as UserAlias;
 
