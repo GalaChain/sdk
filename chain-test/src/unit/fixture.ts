@@ -231,10 +231,13 @@ class Fixture<Ctx extends TestGalaChainContext, T extends GalaContract<Ctx>> {
    * @returns This fixture instance for method chaining
    */
   registeredUsers(...users: ChainUserWithRoles[]): Fixture<Ctx, T> {
-    const publicKeys = users.map((u) => ({
-      key: `\u0000GCPK\u0000${u.identityKey}\u0000`,
-      value: JSON.stringify({ publicKey: signatures.normalizePublicKey(u.publicKey).toString("base64") })
-    }));
+    const publicKeys = users.map((u) => {
+      const normalized = signatures.normalizePublicKey(u.publicKey).toString("base64");
+      return {
+        key: `\u0000GCPK\u0000${u.identityKey}\u0000`,
+        value: JSON.stringify({ publicKey: normalized, publicKeys: [normalized] })
+      };
+    });
 
     const userProfiles = users.map((u) => ({
       key: `\u0000GCUP\u0000${u.ethAddress}\u0000`,

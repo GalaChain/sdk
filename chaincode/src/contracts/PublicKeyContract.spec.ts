@@ -71,6 +71,7 @@ it("should serve proper API", async () => {
 describe("RegisterUser", () => {
   const publicKey =
     "04215291d9d04aad96832bffe808acdc1d985b4b547c8b16f841e14e8fbfb11284d5a5a5c71d95bd520b90403abff8fe7ccf793e755baf69672ab6cf25b60fc942";
+  const otherPublicKey = signatures.genKeyPair().publicKey;
   const ethAddress = signatures.getEthAddress(publicKey);
 
   it("should register user", async () => {
@@ -78,8 +79,8 @@ describe("RegisterUser", () => {
     const chaincode = new TestChaincode([PublicKeyContract]);
     const dto = await createValidSubmitDTO(RegisterUserDto, {
       user: "client|user1" as UserAlias,
-      publicKeys: [publicKey],
-      requiredSignatures: 1
+      publicKeys: [publicKey, otherPublicKey],
+      requiredSignatures: 2
     });
     const signedDto = dto.signed(process.env.DEV_ADMIN_PRIVATE_KEY as string);
 
@@ -89,18 +90,26 @@ describe("RegisterUser", () => {
     // Then
     expect(response).toEqual(transactionSuccess());
 
+    const normalized1 = PublicKeyService.normalizePublicKey(publicKey);
+    const normalized2 = PublicKeyService.normalizePublicKey(otherPublicKey);
+
     expect(await getPublicKey(chaincode, dto.user)).toEqual(
       transactionSuccess({
-        publicKey: PublicKeyService.normalizePublicKey(publicKey),
+        publicKey: normalized1,
+        publicKeys: [normalized1, normalized2],
         signing: SigningScheme.ETH
       })
     );
 
     expect(await getUserProfile(chaincode, ethAddress)).toEqual(
-      transactionSuccess(expect.objectContaining({
-        alias: dto.user,
-        ethAddress
-      }))
+      transactionSuccess(
+        expect.objectContaining({
+          alias: dto.user,
+          ethAddress,
+          pubKeyCount: 2,
+          requiredSignatures: 2
+        })
+      )
     );
   });
 
@@ -179,9 +188,11 @@ describe("RegisterUser", () => {
     // New key is saved
     const getPublicKeyDto = await createValidDTO<GetPublicKeyDto>(GetPublicKeyDto, { user: user2.alias });
     const savedPk = await chaincode.invoke("PublicKeyContract:GetPublicKey", getPublicKeyDto);
+    const normalized = PublicKeyService.normalizePublicKey(user2.publicKey);
     expect(savedPk).toEqual(
       transactionSuccess({
-        publicKey: PublicKeyService.normalizePublicKey(user2.publicKey)
+        publicKey: normalized,
+        publicKeys: [normalized]
       })
     );
   });
@@ -222,9 +233,11 @@ describe("RegisterUser", () => {
       user: registerDto.user
     });
     const getPublicKeyResponse = await chaincode.invoke("PublicKeyContract:GetPublicKey", getPublicKeyDto);
+    const normalized = PublicKeyService.normalizePublicKey(user2.publicKey);
     expect(getPublicKeyResponse).toEqual(
       transactionSuccess({
-        publicKey: PublicKeyService.normalizePublicKey(user2.publicKey)
+        publicKey: normalized,
+        publicKeys: [normalized]
       })
     );
   });
@@ -248,15 +261,17 @@ describe("RegisterUser", () => {
     // Then
     expect(response).toEqual(transactionSuccess(alias));
 
+    const normalized = PublicKeyService.normalizePublicKey(publicKey);
     expect(await getPublicKey(chaincode, alias)).toEqual(
       transactionSuccess({
-        publicKey: PublicKeyService.normalizePublicKey(publicKey),
+        publicKey: normalized,
+        publicKeys: [normalized],
         signing: SigningScheme.ETH
       })
     );
 
     expect(await getUserProfile(chaincode, ethAddress)).toEqual(
-      transactionSuccess(expect.objectContaining({ alias, ethAddress }))
+      transactionSuccess(expect.objectContaining({ alias, ethAddress, pubKeyCount: 1, requiredSignatures: 1 }))
     );
   });
 
@@ -283,12 +298,15 @@ describe("RegisterUser", () => {
     expect(await getPublicKey(chaincode, alias)).toEqual(
       transactionSuccess({
         publicKey,
+        publicKeys: [publicKey],
         signing: SigningScheme.TON
       })
     );
 
     expect(await getUserProfile(chaincode, address)).toEqual(
-      transactionSuccess(expect.objectContaining({ alias, tonAddress: address }))
+      transactionSuccess(
+        expect.objectContaining({ alias, tonAddress: address, pubKeyCount: 1, requiredSignatures: 1 })
+      )
     );
   });
 });
@@ -312,9 +330,11 @@ describe("UpdatePublicKey", () => {
     expect(updateResponse).toEqual(transactionSuccess());
 
     // New key is saved
+    const normalizedNew = PublicKeyService.normalizePublicKey(newPublicKey);
     expect(await getPublicKey(chaincode, user.alias)).toEqual(
       transactionSuccess({
-        publicKey: PublicKeyService.normalizePublicKey(newPublicKey),
+        publicKey: normalizedNew,
+        publicKeys: [normalizedNew],
         signing: SigningScheme.ETH
       })
     );
@@ -345,9 +365,11 @@ describe("UpdatePublicKey", () => {
     expect(updateResponse).toEqual(transactionSuccess());
 
     // New key is saved
+    const normalizedNew = PublicKeyService.normalizePublicKey(newPublicKey);
     expect(await getPublicKey(chaincode, user.alias)).toEqual(
       transactionSuccess({
-        publicKey: PublicKeyService.normalizePublicKey(newPublicKey),
+        publicKey: normalizedNew,
+        publicKeys: [normalizedNew],
         signing: SigningScheme.ETH
       })
     );
@@ -409,6 +431,7 @@ describe("UpdatePublicKey", () => {
     expect(await getPublicKey(chaincode, user.alias)).toEqual(
       transactionSuccess({
         publicKey: dto.publicKey,
+        publicKeys: [dto.publicKey],
         signing: SigningScheme.TON
       })
     );
@@ -452,12 +475,15 @@ describe("UpdatePublicKey", () => {
     expect(await getPublicKey(chaincode, tonUser.alias)).toEqual(
       transactionSuccess({
         publicKey: tonUser.publicKey,
+        publicKeys: [tonUser.publicKey],
         signing: SigningScheme.TON
       })
     );
+    const normalizedEth = signatures.normalizePublicKey(ethUser.publicKey).toString("base64");
     expect(await getPublicKey(chaincode, ethUser.alias)).toEqual(
       transactionSuccess({
-        publicKey: signatures.normalizePublicKey(ethUser.publicKey).toString("base64"),
+        publicKey: normalizedEth,
+        publicKeys: [normalizedEth],
         signing: SigningScheme.ETH
       })
     );

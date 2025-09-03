@@ -732,14 +732,19 @@ describe("GalaContract.Batch", () => {
 async function generateUser(name?: string) {
   const user = ChainUser.withRandomKeys(name);
 
+  const normalized = signatures.normalizePublicKey(user.publicKey).toString("base64");
   const publicKey = await createValidChainObject(PublicKey, {
-    publicKey: signatures.normalizePublicKey(user.publicKey).toString("base64"),
+    publicKey: normalized,
+    publicKeys: [normalized],
     signing: SigningScheme.ETH
   });
 
   const userProfile = await createValidChainObject(UserProfile, {
     alias: user.identityKey,
-    ethAddress: user.ethAddress
+    ethAddress: user.ethAddress,
+    roles: Array.from(UserProfile.DEFAULT_ROLES),
+    pubKeyCount: 1,
+    requiredSignatures: 1
   });
 
   const state = {

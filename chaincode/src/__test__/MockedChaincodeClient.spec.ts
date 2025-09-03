@@ -65,6 +65,7 @@ it("should be able to call chaincode", async () => {
   expect(response).toEqual(
     transactionSuccess({
       publicKey: admin.publicKey,
+      publicKeys: [admin.publicKey],
       signing: SigningScheme.ETH
     })
   );
@@ -85,6 +86,7 @@ it("should support the global state", async () => {
 
   const expectedPublicKey = await createValidChainObject(PublicKey, {
     publicKey: user.base64PublicKey,
+    publicKeys: [user.base64PublicKey],
     signing: SigningScheme.ETH
   });
 

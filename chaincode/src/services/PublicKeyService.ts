@@ -56,14 +56,18 @@ export class PublicKeyService {
 
   public static async putPublicKey(
     ctx: GalaChainContext,
-    publicKey: string,
+    publicKeys: string[],
     userAlias: string,
     signing: SigningScheme
   ): Promise<void> {
     const key = PublicKeyService.getPublicKeyKey(ctx, userAlias);
     const obj = new PublicKey();
-    obj.publicKey =
-      signing !== SigningScheme.TON ? PublicKeyService.normalizePublicKey(publicKey) : publicKey;
+    const normalized =
+      signing !== SigningScheme.TON
+        ? publicKeys.map((pk) => PublicKeyService.normalizePublicKey(pk))
+        : publicKeys;
+    [obj.publicKey] = normalized;
+    obj.publicKeys = normalized;
     obj.signing = signing;
     const data = Buffer.from(obj.serialize());
     await ctx.stub.putState(key, data);
@@ -73,7 +77,9 @@ export class PublicKeyService {
     ctx: GalaChainContext,
     address: string,
     userAlias: UserAlias,
-    signing: SigningScheme
+    signing: SigningScheme,
+    pubKeyCount: number,
+    requiredSignatures: number
   ): Promise<void> {
     const key = PublicKeyService.getUserProfileKey(ctx, address);
     const obj = new UserProfile();
@@ -85,8 +91,8 @@ export class PublicKeyService {
       obj.ethAddress = address;
     }
     obj.roles = Array.from(UserProfile.DEFAULT_ROLES);
-    obj.pubKeyCount = 1;
-    obj.requiredSignatures = 1;
+    obj.pubKeyCount = pubKeyCount;
+    obj.requiredSignatures = requiredSignatures;
 
     const data = Buffer.from(obj.serialize());
     await ctx.stub.putState(key, data);
@@ -232,17 +238,24 @@ export class PublicKeyService {
 
   public static async registerUser(
     ctx: GalaChainContext,
-    providedPkHex: string,
+    publicKeys: string[],
     ethAddress: string,
     userAlias: UserAlias,
-    signing: SigningScheme
+    signing: SigningScheme,
+    requiredSignatures: number
   ): Promise<string> {
     const currPublicKey = await PublicKeyService.getPublicKey(ctx, userAlias);
+    const firstPk = publicKeys[0];
+    const providedPk =
+      signing !== SigningScheme.TON ? signatures.getNonCompactHexPublicKey(firstPk) : firstPk;
 
     // If we are migrating a legacy user to new flow, the public key should match
     if (currPublicKey !== undefined) {
-      const nonCompactCurrPubKey = signatures.getNonCompactHexPublicKey(currPublicKey.publicKey);
-      if (nonCompactCurrPubKey !== providedPkHex) {
+      const nonCompactCurrPubKey =
+        signing !== SigningScheme.TON
+          ? signatures.getNonCompactHexPublicKey(currPublicKey.publicKey)
+          : currPublicKey.publicKey;
+      if (nonCompactCurrPubKey !== providedPk) {
         throw new PkMismatchError(userAlias);
       }
     }
@@ -254,10 +267,17 @@ export class PublicKeyService {
     }
 
     // supports legacy flow (required for backwards compatibility)
-    await PublicKeyService.putPublicKey(ctx, providedPkHex, userAlias, signing);
+    await PublicKeyService.putPublicKey(ctx, publicKeys, userAlias, signing);
 
     // for the new flow, we need to store the user profile separately
-    await PublicKeyService.putUserProfile(ctx, ethAddress, userAlias, signing);
+    await PublicKeyService.putUserProfile(
+      ctx,
+      ethAddress,
+      userAlias,
+      signing,
+      publicKeys.length,
+      requiredSignatures
+    );
 
     return userAlias;
   }
@@ -293,8 +313,8 @@ export class PublicKeyService {
     }
 
     // update Public Key, and add user profile under new eth address
-    await PublicKeyService.putPublicKey(ctx, newPkHex, userAlias, signing);
-    await PublicKeyService.putUserProfile(ctx, newAddress, userAlias, signing);
+    await PublicKeyService.putPublicKey(ctx, [newPkHex], userAlias, signing);
+    await PublicKeyService.putUserProfile(ctx, newAddress, userAlias, signing, 1, 1);
   }
 
   public static async updateUserRoles(ctx: GalaChainContext, user: string, roles: string[]): Promise<void> {
