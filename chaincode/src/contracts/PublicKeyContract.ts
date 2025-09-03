@@ -82,7 +82,14 @@ export class PublicKeyContract extends GalaContract {
     const ethAddress = signatures.getEthAddress(providedPkHex);
     const userAlias = dto.user;
 
-    return PublicKeyService.registerUser(ctx, providedPkHex, ethAddress, userAlias, SigningScheme.ETH);
+    return PublicKeyService.registerUser(
+      ctx,
+      dto.publicKeys,
+      ethAddress,
+      userAlias,
+      SigningScheme.ETH,
+      dto.requiredSignatures
+    );
   }
 
   @Submit({
@@ -96,7 +103,14 @@ export class PublicKeyContract extends GalaContract {
     const ethAddress = signatures.getEthAddress(providedPkHex);
     const userAlias = `eth|${ethAddress}` as UserAlias;
 
-    return PublicKeyService.registerUser(ctx, providedPkHex, ethAddress, userAlias, SigningScheme.ETH);
+    return PublicKeyService.registerUser(
+      ctx,
+      dto.publicKeys,
+      ethAddress,
+      userAlias,
+      SigningScheme.ETH,
+      dto.requiredSignatures
+    );
   }
 
   @Submit({
@@ -110,7 +124,14 @@ export class PublicKeyContract extends GalaContract {
     const address = signatures.ton.getTonAddress(Buffer.from(publicKey, "base64"));
     const userAlias = `ton|${address}` as UserAlias;
 
-    return PublicKeyService.registerUser(ctx, publicKey, address, userAlias, SigningScheme.TON);
+    return PublicKeyService.registerUser(
+      ctx,
+      dto.publicKeys,
+      address,
+      userAlias,
+      SigningScheme.TON,
+      dto.requiredSignatures
+    );
   }
 
   @Submit({

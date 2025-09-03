@@ -12,7 +12,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-import { IsNotEmpty, IsOptional, IsString } from "class-validator";
+import { ArrayNotEmpty, IsNotEmpty, IsOptional, IsString } from "class-validator";
 
 import { SigningScheme, signatures } from "../utils";
 import { StringEnumProperty } from "../validators";
@@ -22,6 +22,11 @@ export class PublicKey extends ChainObject {
   @IsString()
   @IsNotEmpty()
   publicKey: string;
+
+  @IsOptional()
+  @IsString({ each: true })
+  @ArrayNotEmpty()
+  publicKeys?: string[];
 
   @IsOptional()
   @StringEnumProperty(SigningScheme)
