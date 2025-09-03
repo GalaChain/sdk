@@ -34,7 +34,14 @@ describe("authenticate", () => {
     dto.signerAddress = `service|${chaincodeId}`;
     dto.signature = undefined;
 
-    const expectedUserData = { alias: `service|${chaincodeId}`, ethAddress: undefined, roles: [] };
+    const expectedUserData = {
+      alias: `service|${chaincodeId}`,
+      ethAddress: undefined,
+      roles: [],
+      signedByKeys: [],
+      pubKeyCount: 1,
+      requiredSignatures: 1
+    };
 
     // When
     const result = await authenticate(ctx, dto);
