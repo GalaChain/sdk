@@ -313,8 +313,17 @@ export class PublicKeyService {
     }
 
     // update Public Key, and add user profile under new eth address
-    await PublicKeyService.putPublicKey(ctx, [newPkHex], userAlias, signing);
-    await PublicKeyService.putUserProfile(ctx, newAddress, userAlias, signing, 1, 1);
+    const oldKeys = oldPublicKey.publicKeys ?? [oldPublicKey.publicKey];
+    const updatedKeys = [newPkHex, ...oldKeys.slice(1)];
+    await PublicKeyService.putPublicKey(ctx, updatedKeys, userAlias, signing);
+    await PublicKeyService.putUserProfile(
+      ctx,
+      newAddress,
+      userAlias,
+      signing,
+      userProfile?.pubKeyCount ?? updatedKeys.length,
+      userProfile?.requiredSignatures ?? 1
+    );
   }
 
   public static async updateUserRoles(ctx: GalaChainContext, user: string, roles: string[]): Promise<void> {
