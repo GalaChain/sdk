@@ -89,6 +89,8 @@ interface CallingUserData {
   ethAddress?: string;
   tonAddress?: string;
   roles: string[];
+  pubKeyCount?: number;
+  requiredSignatures?: number;
 }
 
 /**
@@ -236,7 +238,13 @@ class Fixture<Ctx extends TestGalaChainContext, T extends GalaContract<Ctx>> {
 
     const userProfiles = users.map((u) => ({
       key: `\u0000GCUP\u0000${u.ethAddress}\u0000`,
-      value: JSON.stringify({ alias: u.identityKey, ethAddress: u.ethAddress, roles: u.roles })
+      value: JSON.stringify({
+        alias: u.identityKey,
+        ethAddress: u.ethAddress,
+        roles: u.roles,
+        pubKeyCount: 1,
+        requiredSignatures: 1
+      })
     }));
 
     return this.savedKVState(...publicKeys, ...userProfiles);
@@ -259,15 +267,24 @@ class Fixture<Ctx extends TestGalaChainContext, T extends GalaContract<Ctx>> {
    *
    * @param user - User data with identity, addresses, and roles
    * @returns This fixture instance for method chaining
-   */
+  */
   callingUser(
-    user: ChainUserWithRoles | { alias: UserAlias; ethAddress?: string; tonAddress?: string; roles: string[] }
+    user: ChainUserWithRoles | {
+      alias: UserAlias;
+      ethAddress?: string;
+      tonAddress?: string;
+      roles: string[];
+      pubKeyCount?: number;
+      requiredSignatures?: number;
+    }
   ): Fixture<Ctx, T> {
     if ("identityKey" in user) {
       this.ctx.callingUserData = {
         alias: user.identityKey,
         ethAddress: user.ethAddress,
-        roles: user.roles
+        roles: user.roles,
+        pubKeyCount: 1,
+        requiredSignatures: 1
       };
       return this;
     }
