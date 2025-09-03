@@ -23,11 +23,11 @@ import {
   Min,
   MinLength,
   ValidateNested,
-  ValidationError,
   ValidationArguments,
+  ValidationError,
   ValidationOptions,
-  validate,
-  registerDecorator
+  registerDecorator,
+  validate
 } from "class-validator";
 import { JSONSchema } from "class-validator-jsonschema";
 
@@ -306,6 +306,10 @@ export class ChainCallDTO {
   }
 
   public sign(privateKey: string, useDer = false): void {
+    if (this.signatures?.length && this.signatures[0].signing !== this.signing) {
+      throw new ValidationFailedError("Multiple signing schemes not supported in signatures");
+    }
+
     if (useDer) {
       if (this.signing === SigningScheme.TON) {
         throw new ValidationFailedError("TON signing scheme does not support DER signatures");
@@ -362,14 +366,10 @@ export class ChainCallDTO {
   public isSignatureValid(signatureOrPublicKey: string | SignatureDto, publicKey?: string): boolean {
     let signature: string;
     let pk: string | undefined;
-    let signing = this.signing;
-    let prefix = this.prefix;
 
     if (typeof signatureOrPublicKey === "object") {
       signature = signatureOrPublicKey.signature ?? "";
       pk = signatureOrPublicKey.signerPublicKey ?? publicKey;
-      signing = signatureOrPublicKey.signing ?? this.signing;
-      prefix = signatureOrPublicKey.prefix ?? this.prefix;
     } else if (publicKey) {
       signature = signatureOrPublicKey;
       pk = publicKey;
@@ -387,10 +387,10 @@ export class ChainCallDTO {
       prefix: undefined
     };
 
-    if (signing === SigningScheme.TON) {
+    if (this.signing === SigningScheme.TON) {
       const signatureBuff = Buffer.from(signature ?? "", "base64");
       const publicKeyBuff = Buffer.from(pk ?? "", "base64");
-      return signatures.ton.isValidSignature(signatureBuff, payload, publicKeyBuff, prefix);
+      return signatures.ton.isValidSignature(signatureBuff, payload, publicKeyBuff, this.prefix);
     } else {
       return signatures.isValid(signature ?? "", payload, pk ?? "");
     }
@@ -601,9 +601,7 @@ function MaxArrayLength(property: string, validationOptions?: ValidationOptions)
         validate(value: unknown, args: ValidationArguments) {
           const [relatedPropertyName] = args.constraints;
           const relatedValue = (args.object as Record<string, unknown>)[relatedPropertyName];
-          return (
-            typeof value === "number" && Array.isArray(relatedValue) && value <= relatedValue.length
-          );
+          return typeof value === "number" && Array.isArray(relatedValue) && value <= relatedValue.length;
         },
         defaultMessage(args: ValidationArguments) {
           const [relatedPropertyName] = args.constraints;

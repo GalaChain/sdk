@@ -17,7 +17,7 @@ import { instanceToPlain, plainToInstance } from "class-transformer";
 import { ArrayMinSize, ArrayNotEmpty, IsString } from "class-validator";
 import { ec as EC } from "elliptic";
 
-import { SigningScheme, getValidationErrorMessages, signatures } from "../utils";
+import { SigningScheme, ValidationFailedError, getValidationErrorMessages, signatures } from "../utils";
 import { BigNumberArrayProperty, BigNumberProperty } from "../validators";
 import { ChainCallDTO, ClassConstructor, convertLegacySignatures } from "./dtos";
 
@@ -198,9 +198,22 @@ describe("ChainCallDTO", () => {
     // Then
     expect(dto.signatures).toHaveLength(1);
     expect(dto.signatures![0].signature).toEqual(expect.stringMatching(/.{50,}/));
-    expect(
-      dto.isSignatureValid(dto.signatures![0].signature!, pair.publicKey.toString("base64"))
-    ).toEqual(true);
+    expect(dto.isSignatureValid(dto.signatures![0].signature!, pair.publicKey.toString("base64"))).toEqual(
+      true
+    );
+  });
+
+  it("should reject signatures with different schemes", async () => {
+    const { privateKey } = genKeyPair();
+    const dto = new TestDto();
+    dto.amounts = [new BigNumber("1")];
+
+    dto.sign(privateKey);
+
+    const tonPair = await signatures.ton.genKeyPair();
+    dto.signing = SigningScheme.TON;
+
+    expect(() => dto.sign(tonPair.secretKey.toString("base64"))).toThrow(ValidationFailedError);
   });
 
   it("should convert legacy single signature", () => {
