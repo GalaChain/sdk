@@ -55,6 +55,9 @@ export class SigningClient extends CustomClient {
       delete basePayload.domain;
       delete (basePayload as any).signature;
       delete (basePayload as any).signatures;
+      delete (basePayload as any).signerAddress;
+      delete (basePayload as any).signerPublicKey;
+      delete (basePayload as any).prefix;
 
       const prefix = calculatePersonalSignPrefix(basePayload);
       const prefixedPayload = { ...basePayload, prefix };
