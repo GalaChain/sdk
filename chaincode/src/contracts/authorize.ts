@@ -85,13 +85,34 @@ export interface AuthorizeOptions {
   allowedOrgs?: string[];
   allowedRoles?: string[];
   allowedOriginChaincodes?: string[];
+  quorum?: number;
 }
 
-export async function authorize(ctx: GalaChainContext, options: AuthorizeOptions) {
+export interface QuorumInfo {
+  signedByKeys: string[];
+  pubKeyCount: number;
+}
+
+export async function authorize(
+  ctx: GalaChainContext,
+  options: AuthorizeOptions,
+  quorum?: QuorumInfo
+) {
   if (options.allowedOriginChaincodes && ctx.callingUser.startsWith("service|")) {
     const callingChaincode = ctx.callingUser.slice(8);
     ensureChaincodeIsAllowed(callingChaincode, options.allowedOriginChaincodes);
     return;
+  }
+
+  if (quorum) {
+    const user = ctx.callingUserProfile;
+    const requiredSignatures = Math.max(user.requiredSignatures, options.quorum ?? 1);
+    if (quorum.signedByKeys.length < requiredSignatures) {
+      throw new UnauthorizedError(
+        `Insufficient signatures: got ${quorum.signedByKeys.length}, required ${requiredSignatures}.`,
+        { requiredSignatures, providedSignatures: quorum.signedByKeys.length, pubKeyCount: quorum.pubKeyCount }
+      );
+    }
   }
 
   if (options.allowedOrgs) {
