@@ -12,7 +12,9 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-import { calculatePersonalSignPrefix } from "./helpers";
+import { calculatePersonalSignPrefix, composeMultisigDto, recoverPublicKeysFromDto } from "./helpers";
+import { SigningClient } from "./customClients/SigningClient";
+import { SigningType } from "./types";
 
 describe("calculatePersonalSignPrefix", () => {
   it("should return the correct prefix for a simple payload", () => {
@@ -75,5 +77,27 @@ describe("calculatePersonalSignPrefix", () => {
     const expectedPrefix = "\u0019Ethereum Signed Message:\n1062";
 
     expect(prefix).toBe(expectedPrefix);
+  });
+
+  it("should compose multisig dto and recover public keys", async () => {
+    const client1 = new SigningClient(
+      "0x0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef"
+    );
+    const client2 = new SigningClient(
+      "0xfedcba9876543210fedcba9876543210fedcba9876543210fedcba9876543210"
+    );
+
+    const dto = { value: "test" };
+    const signed = await composeMultisigDto(
+      "TestMethod",
+      dto,
+      [client1, client2],
+      SigningType.PERSONAL_SIGN
+    );
+
+    expect(signed.signatures).toHaveLength(2);
+
+    const recovered = recoverPublicKeysFromDto(signed as any);
+    expect(recovered).toHaveLength(2);
   });
 });

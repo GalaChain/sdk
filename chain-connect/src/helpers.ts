@@ -12,8 +12,10 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-import { signatures } from "@gala-chain/api";
+import { ChainCallDTO, SignatureDto, signatures } from "@gala-chain/api";
 import { Eip1193Provider } from "ethers";
+import type { CustomClient } from "./GalaChainClient";
+import { SigningType } from "./types";
 
 /**
  * Calculates the personal sign prefix for Ethereum message signing.
@@ -34,6 +36,50 @@ export function calculatePersonalSignPrefix(payload: object): string {
   }
 
   return prefix;
+}
+
+/**
+ * Signs a DTO with multiple clients, appending each signature to the DTO.
+ * @param method - Chaincode method being signed
+ * @param dto - DTO to sign
+ * @param clients - Signing clients
+ * @param signingType - Optional signing type override
+ * @returns DTO with signatures from all clients
+ */
+export async function composeMultisigDto<T extends object>(
+  method: string,
+  dto: T,
+  clients: CustomClient[],
+  signingType: SigningType = SigningType.SIGN_TYPED_DATA
+): Promise<T & { signatures: SignatureDto[] }> {
+  let signed: any = dto;
+  for (const client of clients) {
+    signed = await client.sign(method, signed, signingType);
+  }
+  return signed;
+}
+
+/**
+ * Recovers public keys from all signatures present in the DTO.
+ * @param dto - DTO containing signatures
+ * @returns Array of recovered public keys in hex format
+ */
+export function recoverPublicKeysFromDto(dto: ChainCallDTO): string[] {
+  const basePayload = { ...dto } as Record<string, unknown>;
+  delete basePayload.signatures;
+  delete basePayload.signature;
+  delete basePayload.signerPublicKey;
+  delete basePayload.signerAddress;
+
+  const sigs = dto.signatures ?? [];
+
+  return sigs.map((s) =>
+    signatures.recoverPublicKey(
+      s.signature ?? "",
+      basePayload,
+      s.prefix ?? dto.prefix ?? ""
+    )
+  );
 }
 
 /**
