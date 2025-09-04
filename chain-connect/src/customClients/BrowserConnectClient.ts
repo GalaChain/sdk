@@ -185,8 +185,9 @@ export class BrowserConnectClient extends WebSigner {
       };
 
       return {
-        ...prefixedPayload,
+        ...payload,
         ...additional,
+        prefix,
         signature,
         signatures: [...existing, signatureDto]
       } as T & { signature: string; prefix: string; signatures: SignatureDto[] };
