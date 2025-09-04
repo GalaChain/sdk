@@ -51,18 +51,14 @@ export const publicKeyContractAPI = (client: ChainClient): PublicKeyContractAPI 
     const payload = Object.assign(new RegisterUserDto(), dto, {
       requiredSignatures: dto.requiredSignatures ?? dto.publicKeys.length
     });
-    return client.submitTransaction("RegisterUser", payload) as Promise<
-      GalaChainResponse<string>
-    >;
+    return client.submitTransaction("RegisterUser", payload) as Promise<GalaChainResponse<string>>;
   },
 
   RegisterEthUser(dto: RegisterEthUserDto) {
     const payload = Object.assign(new RegisterEthUserDto(), dto, {
       requiredSignatures: dto.requiredSignatures ?? dto.publicKeys.length
     });
-    return client.submitTransaction("RegisterEthUser", payload) as Promise<
-      GalaChainResponse<string>
-    >;
+    return client.submitTransaction("RegisterEthUser", payload) as Promise<GalaChainResponse<string>>;
   },
 
   UpdatePublicKey(dto: UpdatePublicKeyDto) {

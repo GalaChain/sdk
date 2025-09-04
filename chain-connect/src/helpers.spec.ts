@@ -12,8 +12,8 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-import { calculatePersonalSignPrefix, composeMultisigDto, recoverPublicKeysFromDto } from "./helpers";
 import { SigningClient } from "./customClients/SigningClient";
+import { calculatePersonalSignPrefix, composeMultisigDto, recoverPublicKeysFromDto } from "./helpers";
 import { SigningType } from "./types";
 
 describe("calculatePersonalSignPrefix", () => {
@@ -80,20 +80,11 @@ describe("calculatePersonalSignPrefix", () => {
   });
 
   it("should compose multisig dto and recover public keys", async () => {
-    const client1 = new SigningClient(
-      "0x0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef"
-    );
-    const client2 = new SigningClient(
-      "0xfedcba9876543210fedcba9876543210fedcba9876543210fedcba9876543210"
-    );
+    const client1 = new SigningClient("0x0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef");
+    const client2 = new SigningClient("0xfedcba9876543210fedcba9876543210fedcba9876543210fedcba9876543210");
 
     const dto = { value: "test" };
-    const signed = await composeMultisigDto(
-      "TestMethod",
-      dto,
-      [client1, client2],
-      SigningType.PERSONAL_SIGN
-    );
+    const signed = await composeMultisigDto("TestMethod", dto, [client1, client2], SigningType.PERSONAL_SIGN);
 
     expect(signed.signatures).toHaveLength(2);
 

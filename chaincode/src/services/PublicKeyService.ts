@@ -32,14 +32,14 @@ import { Context } from "fabric-contract-api";
 
 import { GalaChainContext } from "../types";
 import {
+  PkCountMismatchError,
+  PkDuplicateError,
   PkInvalidSignatureError,
   PkMismatchError,
   PkMissingError,
   PkNotFoundError,
   ProfileExistsError,
-  UserProfileNotFoundError,
-  PkDuplicateError,
-  PkCountMismatchError
+  UserProfileNotFoundError
 } from "./PublicKeyError";
 
 export class PublicKeyService {

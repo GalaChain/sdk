@@ -12,7 +12,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-import { serialize, SignatureDto, SigningScheme, signatures } from "@gala-chain/api";
+import { SignatureDto, SigningScheme, serialize, signatures } from "@gala-chain/api";
 import { BrowserProvider, Eip1193Provider, getAddress } from "ethers";
 
 import { GalaChainProviderOptions, WebSigner } from "../GalaChainClient";

@@ -131,9 +131,6 @@ describe("authenticate multisig", () => {
     dto.sign(userB.privateKey);
 
     const resp = await chaincode.invoke("PublicKeyContract:GetMyProfile", dto);
-    expect(resp).toEqual(
-      expect.objectContaining({ Status: 0, ErrorKey: "SIGNER_ALIAS_MISMATCH" })
-    );
+    expect(resp).toEqual(expect.objectContaining({ Status: 0, ErrorKey: "SIGNER_ALIAS_MISMATCH" }));
   });
 });
-

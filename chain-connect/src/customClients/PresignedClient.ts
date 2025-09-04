@@ -15,6 +15,7 @@
  * limitations under the License.
  */
 import { SignatureDto } from "@gala-chain/api";
+
 import { GalaChainProvider, GalaChainProviderOptions } from "../GalaChainClient";
 
 /**

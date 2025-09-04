@@ -107,9 +107,7 @@ export async function authenticate(
   const dtoWithSignatures = convertLegacySignatures(dto);
   const sigs = dtoWithSignatures.signatures ?? [];
 
-  const authResults = await Promise.all(
-    sigs.map((s) => authenticateSingle(ctx, dtoWithSignatures, s))
-  );
+  const authResults = await Promise.all(sigs.map((s) => authenticateSingle(ctx, dtoWithSignatures, s)));
 
   const aliases = authResults.map((r) => r.profile.alias);
   const uniqueAliases = Array.from(new Set(aliases));

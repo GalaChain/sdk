@@ -270,16 +270,18 @@ class Fixture<Ctx extends TestGalaChainContext, T extends GalaContract<Ctx>> {
    *
    * @param user - User data with identity, addresses, and roles
    * @returns This fixture instance for method chaining
-  */
+   */
   callingUser(
-    user: ChainUserWithRoles | {
-      alias: UserAlias;
-      ethAddress?: string;
-      tonAddress?: string;
-      roles: string[];
-      pubKeyCount?: number;
-      requiredSignatures?: number;
-    }
+    user:
+      | ChainUserWithRoles
+      | {
+          alias: UserAlias;
+          ethAddress?: string;
+          tonAddress?: string;
+          roles: string[];
+          pubKeyCount?: number;
+          requiredSignatures?: number;
+        }
   ): Fixture<Ctx, T> {
     if ("identityKey" in user) {
       this.ctx.callingUserData = {

@@ -132,10 +132,10 @@ describe("RegisterUser", () => {
     expect(registerResponse).toEqual(expect.objectContaining({ Status: 0, ErrorKey: "PROFILE_EXISTS" }));
   });
 
-    it("should fail when registering a new user with the same publiKey/eth address as existing user", async () => {
-      // Given
-      const chaincode = new TestChaincode([PublicKeyContract]);
-      const user = await createRegisteredUser(chaincode);
+  it("should fail when registering a new user with the same publiKey/eth address as existing user", async () => {
+    // Given
+    const chaincode = new TestChaincode([PublicKeyContract]);
+    const user = await createRegisteredUser(chaincode);
 
     const registerDto = await createValidSubmitDTO(RegisterUserDto, {
       publicKeys: [user.publicKey],
@@ -148,45 +148,45 @@ describe("RegisterUser", () => {
     const registerResponse = await chaincode.invoke("PublicKeyContract:RegisterUser", signedRegisterDto);
 
     // Then
-      expect(registerResponse).toEqual(expect.objectContaining({ Status: 0, ErrorKey: "PROFILE_EXISTS" }));
+    expect(registerResponse).toEqual(expect.objectContaining({ Status: 0, ErrorKey: "PROFILE_EXISTS" }));
+  });
+
+  it("should fail when required signatures exceed number of public keys", async () => {
+    // Given
+    const chaincode = new TestChaincode([PublicKeyContract]);
+    const { publicKey } = signatures.genKeyPair();
+    const other = signatures.genKeyPair().publicKey;
+    const dto = await createValidSubmitDTO(RegisterUserDto, {
+      user: "client|bad" as UserAlias,
+      publicKeys: [publicKey, other],
+      requiredSignatures: 3
     });
+    const signedDto = dto.signed(process.env.DEV_ADMIN_PRIVATE_KEY as string);
 
-    it("should fail when required signatures exceed number of public keys", async () => {
-      // Given
-      const chaincode = new TestChaincode([PublicKeyContract]);
-      const { publicKey } = signatures.genKeyPair();
-      const other = signatures.genKeyPair().publicKey;
-      const dto = await createValidSubmitDTO(RegisterUserDto, {
-        user: "client|bad" as UserAlias,
-        publicKeys: [publicKey, other],
-        requiredSignatures: 3
-      });
-      const signedDto = dto.signed(process.env.DEV_ADMIN_PRIVATE_KEY as string);
+    // When
+    const response = await chaincode.invoke("PublicKeyContract:RegisterUser", signedDto);
 
-      // When
-      const response = await chaincode.invoke("PublicKeyContract:RegisterUser", signedDto);
+    // Then
+    expect(response).toEqual(transactionErrorKey("PK_COUNT_MISMATCH"));
+  });
 
-      // Then
-      expect(response).toEqual(transactionErrorKey("PK_COUNT_MISMATCH"));
+  it("should fail when duplicate public keys provided", async () => {
+    // Given
+    const chaincode = new TestChaincode([PublicKeyContract]);
+    const { publicKey } = signatures.genKeyPair();
+    const dto = await createValidSubmitDTO(RegisterUserDto, {
+      user: "client|dup" as UserAlias,
+      publicKeys: [publicKey, publicKey],
+      requiredSignatures: 1
     });
+    const signedDto = dto.signed(process.env.DEV_ADMIN_PRIVATE_KEY as string);
 
-    it("should fail when duplicate public keys provided", async () => {
-      // Given
-      const chaincode = new TestChaincode([PublicKeyContract]);
-      const { publicKey } = signatures.genKeyPair();
-      const dto = await createValidSubmitDTO(RegisterUserDto, {
-        user: "client|dup" as UserAlias,
-        publicKeys: [publicKey, publicKey],
-        requiredSignatures: 1
-      });
-      const signedDto = dto.signed(process.env.DEV_ADMIN_PRIVATE_KEY as string);
+    // When
+    const response = await chaincode.invoke("PublicKeyContract:RegisterUser", signedDto);
 
-      // When
-      const response = await chaincode.invoke("PublicKeyContract:RegisterUser", signedDto);
-
-      // Then
-      expect(response).toEqual(transactionErrorKey("PK_DUPLICATE"));
-    });
+    // Then
+    expect(response).toEqual(transactionErrorKey("PK_DUPLICATE"));
+  });
 
   // TODO: this test will be redesigned in a follow-up story
   it.skip("should fail when migrating existing user to UserProfile, but PublicKey doesn't match", async () => {
@@ -308,7 +308,9 @@ describe("RegisterUser", () => {
     );
 
     expect(await getUserProfile(chaincode, ethAddress)).toEqual(
-      transactionSuccess(expect.objectContaining({ alias, ethAddress, pubKeyCount: 1, requiredSignatures: 1 }))
+      transactionSuccess(
+        expect.objectContaining({ alias, ethAddress, pubKeyCount: 1, requiredSignatures: 1 })
+      )
     );
   });
 

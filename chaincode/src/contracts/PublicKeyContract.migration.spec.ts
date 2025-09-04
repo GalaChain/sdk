@@ -72,9 +72,7 @@ describe("Migration from allowedOrgs to allowedRoles", () => {
     const dto = await createValidSubmitDTO(RegisterEthUserDto, {
       publicKeys: [user.publicKey],
       requiredSignatures: 1
-    }).signed(
-      adminPrivateKey
-    );
+    }).signed(adminPrivateKey);
     expect(await chaincode.invoke("PublicKeyContract:RegisterEthUser", dto)).toEqual(transactionSuccess());
 
     const profile = await getUserProfile();
