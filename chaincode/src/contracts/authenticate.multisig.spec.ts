@@ -15,6 +15,7 @@
 import {
   GetMyProfileDto,
   RegisterUserDto,
+  UserAlias,
   createValidSubmitDTO,
   signatures
 } from "@gala-chain/api";
@@ -24,6 +25,59 @@ import { PublicKeyContract } from "./PublicKeyContract";
 import { createRegisteredUser, createUser } from "./authenticate.testutils.spec";
 
 describe("authenticate multisig", () => {
+  it("authenticates user with multiple signatures", async () => {
+    const chaincode = new TestChaincode([PublicKeyContract]);
+
+    const kp1 = signatures.genKeyPair();
+    const kp2 = signatures.genKeyPair();
+    const alias = "client|multi" as UserAlias;
+
+    const regDto = await createValidSubmitDTO(RegisterUserDto, {
+      user: alias,
+      publicKeys: [kp1.publicKey, kp2.publicKey],
+      requiredSignatures: 2
+    });
+    const regResp = await chaincode.invoke(
+      "PublicKeyContract:RegisterUser",
+      regDto.signed(process.env.DEV_ADMIN_PRIVATE_KEY as string)
+    );
+    expect(regResp).toEqual(transactionSuccess());
+
+    const dto = new GetMyProfileDto();
+    dto.sign(kp1.privateKey);
+    dto.sign(kp2.privateKey);
+
+    const resp = await chaincode.invoke("PublicKeyContract:GetMyProfile", dto);
+    expect(resp).toEqual(
+      transactionSuccess(expect.objectContaining({ alias, pubKeyCount: 2, requiredSignatures: 2 }))
+    );
+  });
+
+  it("rejects when not enough signatures", async () => {
+    const chaincode = new TestChaincode([PublicKeyContract]);
+
+    const kp1 = signatures.genKeyPair();
+    const kp2 = signatures.genKeyPair();
+    const alias = "client|insufficient" as UserAlias;
+
+    const regDto = await createValidSubmitDTO(RegisterUserDto, {
+      user: alias,
+      publicKeys: [kp1.publicKey, kp2.publicKey],
+      requiredSignatures: 2
+    });
+    const regResp = await chaincode.invoke(
+      "PublicKeyContract:RegisterUser",
+      regDto.signed(process.env.DEV_ADMIN_PRIVATE_KEY as string)
+    );
+    expect(regResp).toEqual(transactionSuccess());
+
+    const dto = new GetMyProfileDto();
+    dto.sign(kp1.privateKey);
+
+    const resp = await chaincode.invoke("PublicKeyContract:GetMyProfile", dto);
+    expect(resp).toEqual(expect.objectContaining({ Status: 0, ErrorKey: "UNAUTHORIZED" }));
+  });
+
   it("throws on duplicate signer public keys", async () => {
     const chaincode = new TestChaincode([PublicKeyContract]);
 
