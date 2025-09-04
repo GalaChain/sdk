@@ -12,8 +12,19 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-import { ChainCallDTO, ChainUser, UserProfile, UserRole } from "@gala-chain/api";
 import {
+  ChainCallDTO,
+  ChainUser,
+  RegisterUserDto,
+  SubmitCallDTO,
+  UserAlias,
+  UserProfile,
+  UserRole,
+  createValidSubmitDTO,
+  signatures
+} from "@gala-chain/api";
+import {
+  TestChaincode,
   fixture,
   transactionErrorKey,
   transactionErrorMessageContains,
@@ -22,7 +33,8 @@ import {
 
 import { GalaChainContext } from "../types";
 import { GalaContract } from "./GalaContract";
-import { EVALUATE, GalaTransaction, GalaTransactionType, SUBMIT } from "./GalaTransaction";
+import { EVALUATE, GalaTransaction, GalaTransactionType, SUBMIT, Submit } from "./GalaTransaction";
+import { PublicKeyContract } from "./PublicKeyContract";
 
 describe("authorization", () => {
   type TestParams = [
@@ -47,7 +59,10 @@ describe("authorization", () => {
     // Then
     expect(await f.signedCall()).toEqual(transactionSuccess(registeredUser));
     expect(await f.unsignedCall()).toEqual(
-      transactionSuccess({ alias: anonymousUserId, roles: [UserRole.EVALUATE] })
+      transactionSuccess({
+        alias: anonymousUserId,
+        roles: [UserRole.EVALUATE]
+      })
     );
   });
 
@@ -71,7 +86,10 @@ describe("authorization", () => {
     // Then
     expect(await f1.signedCall()).toEqual(transactionSuccess(registeredUser));
     expect(await f1.unsignedCall()).toEqual(
-      transactionSuccess({ alias: anonymousUserId, roles: [UserRole.EVALUATE, UserRole.SUBMIT] })
+      transactionSuccess({
+        alias: anonymousUserId,
+        roles: [UserRole.EVALUATE, UserRole.SUBMIT]
+      })
     );
 
     expect(await f2.signedCall()).toEqual(transactionErrorKey("ORGANIZATION_NOT_ALLOWED"));
@@ -94,7 +112,10 @@ describe("authorization", () => {
     // Then
     expect(await f1.signedCall()).toEqual(transactionSuccess(registeredUser));
     expect(await f1.unsignedCall()).toEqual(
-      transactionSuccess({ alias: anonymousUserId, roles: [UserRole.EVALUATE, UserRole.SUBMIT] })
+      transactionSuccess({
+        alias: anonymousUserId,
+        roles: [UserRole.EVALUATE, UserRole.SUBMIT]
+      })
     );
 
     expect(await f2.signedCall()).toEqual(transactionErrorKey("ORGANIZATION_NOT_ALLOWED"));
@@ -120,7 +141,10 @@ describe("authorization", () => {
     expect(await f1.signedCall()).toEqual(transactionSuccess(registeredUser));
     expect(await f1.unsignedCall()).toEqual(
       // EVALUATE is default role for anonymous user (no signature)
-      transactionSuccess({ alias: anonymousUserId, roles: [UserRole.EVALUATE] })
+      transactionSuccess({
+        alias: anonymousUserId,
+        roles: [UserRole.EVALUATE]
+      })
     );
 
     expect(await f2.signedCall()).toEqual(transactionSuccess(registeredUser));
@@ -288,4 +312,82 @@ describe("authorization", () => {
 
     return ContractClass;
   }
+
+  it("should enforce signature quorum", async () => {
+    const ContractClass = class extends GalaContract {
+      constructor() {
+        super("TestContract", "1.0.0");
+      }
+
+      public async Action(_ctx: GalaChainContext, _dto: ChainCallDTO): Promise<void> {
+        return;
+      }
+    };
+
+    const target = ContractClass.prototype;
+    const propertyKey = "Action";
+    const descriptor = Object.getOwnPropertyDescriptor(target, propertyKey) as PropertyDescriptor;
+
+    GalaTransaction({
+      type: SUBMIT,
+      in: ChainCallDTO,
+      out: "object",
+      enforceUniqueKey: true,
+      verifySignature: true,
+      quorum: 2
+    })(target, propertyKey, descriptor);
+    Object.defineProperty(target, propertyKey, descriptor);
+
+    const user = { ...ChainUser.withRandomKeys("quorum-user"), roles: [UserRole.SUBMIT] };
+    const f = fixture(ContractClass).caClientIdentity(anonymousUserId, defaultMsp).registeredUsers(user);
+
+    const dto = new ChainCallDTO();
+    dto.uniqueKey = "uniqueKey-quorum";
+    dto.sign(user.privateKey);
+
+    const resp = await f.contract.Action(f.ctx, dto);
+    expect(resp).toEqual(transactionErrorKey("UNAUTHORIZED"));
+  });
+
+  it("should accept sufficient quorum signatures", async () => {
+    class QuorumContract extends GalaContract {
+      constructor() {
+        super("QuorumContract", "1.0.0");
+      }
+
+      @Submit({ in: SubmitCallDTO, out: "object", quorum: 2 })
+      public async Action(_ctx: GalaChainContext, _dto: SubmitCallDTO): Promise<void> {
+        return;
+      }
+    }
+
+    const chaincode = new TestChaincode([QuorumContract, PublicKeyContract]);
+
+    const kp1 = signatures.genKeyPair();
+    const kp2 = signatures.genKeyPair();
+    const alias = "client|quorum" as UserAlias;
+
+    const regDto = await createValidSubmitDTO(RegisterUserDto, {
+      user: alias,
+      publicKeys: [kp1.publicKey, kp2.publicKey],
+      requiredSignatures: 2
+    });
+    const regResp = await chaincode.invoke(
+      "PublicKeyContract:RegisterUser",
+      regDto.signed(process.env.DEV_ADMIN_PRIVATE_KEY as string)
+    );
+    expect(regResp).toEqual(transactionSuccess());
+
+    const dto = new SubmitCallDTO();
+    dto.uniqueKey = "uniqueKey-quorum-success";
+    dto.signerPublicKey = kp1.publicKey;
+    dto.sign(kp1.privateKey);
+    dto.signerPublicKey = kp2.publicKey;
+    dto.sign(kp2.privateKey);
+    dto.signerPublicKey = kp1.publicKey;
+
+    chaincode.setCallingUser(alias);
+    const resp = await chaincode.invoke("QuorumContract:Action", dto);
+    expect(resp).toEqual(transactionSuccess());
+  });
 });

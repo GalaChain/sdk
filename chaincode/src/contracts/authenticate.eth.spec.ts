@@ -68,7 +68,9 @@ const Success = labeled<Expectation>("Success")((response, user) => {
     transactionSuccess({
       alias: user.alias,
       ethAddress: user.ethAddress,
-      roles: UserProfile.DEFAULT_ROLES
+      roles: UserProfile.DEFAULT_ROLES,
+      pubKeyCount: 1,
+      requiredSignatures: 1
     })
   );
 });
@@ -78,7 +80,9 @@ const SuccessNoCustomAlias = labeled<Expectation>("SuccessNoCustomAlias")((respo
     transactionSuccess({
       alias: `eth|${user.ethAddress}`,
       ethAddress: user.ethAddress,
-      roles: UserProfile.DEFAULT_ROLES
+      roles: UserProfile.DEFAULT_ROLES,
+      pubKeyCount: 1,
+      requiredSignatures: 1
     })
   );
 });
@@ -88,7 +92,9 @@ const SuccessUnknownKey = labeled<Expectation>("SuccessUnknownKey")((response, u
     transactionSuccess({
       alias: expect.stringMatching(/^eth\|[a-fA-F0-9]{40}$/),
       ethAddress: expect.stringMatching(/^[a-fA-F0-9]{40}$/),
-      roles: UserProfile.DEFAULT_ROLES
+      roles: UserProfile.DEFAULT_ROLES,
+      pubKeyCount: 1,
+      requiredSignatures: 1
     })
   );
 });
@@ -124,13 +130,13 @@ describe("regular flow", () => {
   test.each([
     [__valid___, _________, ___registered, Success],
     [__valid___, _________, notRegistered, Error("USER_NOT_REGISTERED")],
-    [__valid___, signerKey, ___registered, Error("REDUNDANT_SIGNER_PUBLIC_KEY")],
+    [__valid___, signerKey, ___registered, Success],
     [__valid___, _wrongKey, ___registered, Error("PUBLIC_KEY_MISMATCH")],
-    [__valid___, signerKey, notRegistered, Error("REDUNDANT_SIGNER_PUBLIC_KEY")],
+    [__valid___, signerKey, notRegistered, Error("USER_NOT_REGISTERED")],
     [__valid___, _wrongKey, ___registered, Error("PUBLIC_KEY_MISMATCH")],
-    [__valid___, signerAdd, ___registered, Error("REDUNDANT_SIGNER_ADDRESS")],
+    [__valid___, signerAdd, ___registered, Success],
     [__valid___, _wrongAdd, ___registered, Error("ADDRESS_MISMATCH")],
-    [__valid___, signerAdd, notRegistered, Error("REDUNDANT_SIGNER_ADDRESS")],
+    [__valid___, signerAdd, notRegistered, Error("USER_NOT_REGISTERED")],
     [__valid___, _wrongAdd, notRegistered, Error("ADDRESS_MISMATCH")],
     [__validDER, _________, ___registered, Error("MISSING_SIGNER")],
     [__validDER, _________, notRegistered, Error("MISSING_SIGNER")],
@@ -161,13 +167,13 @@ describe("allowNonRegisteredUsers enabled", () => {
   test.each([
     [__valid___, _________, ___registered, Success],
     [__valid___, _________, notRegistered, SuccessNoCustomAlias],
-    [__valid___, signerKey, ___registered, Error("REDUNDANT_SIGNER_PUBLIC_KEY")],
+    [__valid___, signerKey, ___registered, Success],
     [__valid___, _wrongKey, ___registered, Error("PUBLIC_KEY_MISMATCH")],
-    [__valid___, signerKey, notRegistered, Error("REDUNDANT_SIGNER_PUBLIC_KEY")],
+    [__valid___, signerKey, notRegistered, SuccessNoCustomAlias],
     [__valid___, _wrongKey, ___registered, Error("PUBLIC_KEY_MISMATCH")],
-    [__valid___, signerAdd, ___registered, Error("REDUNDANT_SIGNER_ADDRESS")],
+    [__valid___, signerAdd, ___registered, Success],
     [__valid___, _wrongAdd, ___registered, Error("ADDRESS_MISMATCH")],
-    [__valid___, signerAdd, notRegistered, Error("REDUNDANT_SIGNER_ADDRESS")],
+    [__valid___, signerAdd, notRegistered, SuccessNoCustomAlias],
     [__valid___, _wrongAdd, notRegistered, Error("ADDRESS_MISMATCH")],
     [__validDER, _________, ___registered, Error("MISSING_SIGNER")],
     [__validDER, _________, notRegistered, Error("MISSING_SIGNER")],

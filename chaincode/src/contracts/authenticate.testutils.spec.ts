@@ -56,7 +56,11 @@ export async function createUser(): Promise<User> {
 
 export async function createRegisteredUser(chaincode: TestChaincode): Promise<User> {
   const { alias, privateKey, publicKey, ethAddress } = await createUser();
-  const dto = await createValidSubmitDTO(RegisterUserDto, { user: alias, publicKey });
+  const dto = await createValidSubmitDTO(RegisterUserDto, {
+    user: alias,
+    publicKeys: [publicKey],
+    requiredSignatures: 1
+  });
   const signedDto = dto.signed(process.env.DEV_ADMIN_PRIVATE_KEY as string);
   const response = await chaincode.invoke("PublicKeyContract:RegisterUser", signedDto);
   expect(response).toEqual(transactionSuccess());
@@ -74,7 +78,10 @@ export async function createTonUser(): Promise<TonUser> {
 
 export async function createRegisteredTonUser(chaincode: TestChaincode): Promise<TonUser> {
   const user = await createTonUser();
-  const dto = await createValidSubmitDTO(RegisterTonUserDto, { publicKey: user.publicKey });
+  const dto = await createValidSubmitDTO(RegisterTonUserDto, {
+    publicKeys: [user.publicKey],
+    requiredSignatures: 1
+  });
   const signedDto = dto.signed(process.env.DEV_ADMIN_PRIVATE_KEY as string);
   const response = await chaincode.invoke("PublicKeyContract:RegisterTonUser", signedDto);
   expect(response).toEqual(transactionSuccess());
@@ -84,7 +91,14 @@ export async function createRegisteredTonUser(chaincode: TestChaincode): Promise
 export function createSignedDto(unsigned: ChainCallDTO, privateKey: string) {
   const dto = instanceToInstance(unsigned);
   const keyBuff = signatures.normalizePrivateKey(privateKey);
-  dto.signature = signatures.getSignature(dto, keyBuff);
+  const payload = {
+    ...dto,
+    signature: undefined,
+    signatures: undefined,
+    signerPublicKey: undefined,
+    signerAddress: undefined
+  };
+  dto.signature = signatures.getSignature(payload, keyBuff);
   expect(dto.signature).toHaveLength(130);
   return dto;
 }
@@ -92,7 +106,14 @@ export function createSignedDto(unsigned: ChainCallDTO, privateKey: string) {
 export function createDerSignedDto(unsigned: ChainCallDTO, privateKey: string) {
   const dto = instanceToInstance(unsigned);
   const keyBuff = signatures.normalizePrivateKey(privateKey);
-  dto.signature = signatures.getDERSignature(dto, keyBuff);
+  const payload = {
+    ...dto,
+    signature: undefined,
+    signatures: undefined,
+    signerPublicKey: undefined,
+    signerAddress: undefined
+  };
+  dto.signature = signatures.getDERSignature(payload, keyBuff);
   expect([138, 140, 142, 144]).toContain(dto.signature.length);
   return dto;
 }

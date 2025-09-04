@@ -209,6 +209,36 @@ The `ctx.callingUserRoles` property will contain the user's assigned roles.
 
 This way it is possible to get the current user's properties in the chaincode and use them in the business logic.
 
+### Multisignature users and quorum
+
+Users may register more than one public key and specify how many signatures are required to authorize a transaction.
+During registration pass an array of keys and the `requiredSignatures` field:
+
+```typescript
+const { publicKey: pk1, privateKey: sk1 } = signatures.genKeyPair();
+const { publicKey: pk2, privateKey: sk2 } = signatures.genKeyPair();
+
+const reg = await createValidSubmitDTO(RegisterUserDto, {
+  user: "client|multisig",
+  publicKeys: [pk1, pk2],
+  requiredSignatures: 2
+});
+await pkContract.RegisterUser(reg.signed(adminKey));
+```
+
+Transactions are signed multiple times, producing a `signatures` array on the DTO:
+
+```typescript
+const dto = new GetMyProfileDto();
+dto.sign(sk1);
+dto.sign(sk2); // dto.signatures = [{ signerPublicKey: pk1, signature: "..." }, { signerPublicKey: pk2, signature: "..." }]
+```
+
+Chaincode enforces the user profile's `requiredSignatures` or an explicit `quorum` specified on
+`@Submit`/`@Evaluate` via the `GalaTransaction` decorator. If a transaction provides fewer unique
+signatures than required it fails with `UNAUTHORIZED`; duplicate keys are rejected with
+`DUPLICATE_SIGNER_PUBLIC_KEY`.
+
 ### User registration
 
 By default, GalaChain does not allow anonymous users to access the chaincode.

@@ -1,0 +1,24 @@
+{
+  "name": "test-network-PartnerOrg1",
+  "version": "1.0.0",
+  "client": { "organization": "PartnerOrg1" },
+  "organizations": {
+    "PartnerOrg1": {
+      "mspid": "PartnerOrg1",
+      "peers": ["peer0.partner1.local"],
+      "certificateAuthorities": ["ca.partner1.local"]
+    }
+  },
+  "peers": {
+    "peer0.partner1.local": { "url": "grpc://peer0.partner1.local:7061" }
+  },
+  "orderers": {
+    "orderer0.group1.orderer.local": { "url": "grpc://orderer0.group1.orderer.local:7030" }
+  },
+  "certificateAuthorities": {
+    "ca.partner1.local": {
+      "url": "http://ca.partner1.local:7060",
+      "caName": "ca.partner1.local"
+    }
+  }
+}

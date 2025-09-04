@@ -108,7 +108,8 @@ describe("API tests", () => {
   });
   it("test register", async () => {
     const dto: RegisterUserDto = await createValidSubmitDTO(RegisterUserDto, {
-      publicKey: "3",
+      publicKeys: ["3"],
+      requiredSignatures: 1,
       user: "client|4" as UserAlias
     });
 
@@ -135,7 +136,8 @@ describe("API tests", () => {
   });
   it("test both using same connection", async () => {
     const dto: RegisterUserDto = await createValidSubmitDTO(RegisterUserDto, {
-      publicKey: "3",
+      publicKeys: ["3"],
+      requiredSignatures: 1,
       user: "client|4" as UserAlias
     });
 
