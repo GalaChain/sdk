@@ -12,8 +12,18 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-import { ChainCallDTO, ChainUser, UserProfile, UserRole } from "@gala-chain/api";
 import {
+  ChainCallDTO,
+  ChainUser,
+  RegisterUserDto,
+  UserAlias,
+  UserProfile,
+  UserRole,
+  createValidSubmitDTO,
+  signatures
+} from "@gala-chain/api";
+import {
+  TestChaincode,
   fixture,
   transactionErrorKey,
   transactionErrorMessageContains,
@@ -22,7 +32,8 @@ import {
 
 import { GalaChainContext } from "../types";
 import { GalaContract } from "./GalaContract";
-import { EVALUATE, GalaTransaction, GalaTransactionType, SUBMIT } from "./GalaTransaction";
+import { PublicKeyContract } from "./PublicKeyContract";
+import { EVALUATE, GalaTransaction, GalaTransactionType, SUBMIT, Submit } from "./GalaTransaction";
 
 describe("authorization", () => {
   type TestParams = [
@@ -335,5 +346,41 @@ describe("authorization", () => {
 
     const resp = await f.contract.Action(f.ctx, dto);
     expect(resp).toEqual(transactionErrorKey("UNAUTHORIZED"));
+  });
+
+  it("should accept sufficient quorum signatures", async () => {
+    class QuorumContract extends GalaContract {
+      constructor() {
+        super("QuorumContract", "1.0.0");
+      }
+
+      @Submit({ in: ChainCallDTO, out: "object", enforceUniqueKey: true, quorum: 2 })
+      public async Action(ctx: GalaChainContext, dto: ChainCallDTO): Promise<void> {}
+    }
+
+    const chaincode = new TestChaincode([QuorumContract, PublicKeyContract]);
+
+    const kp1 = signatures.genKeyPair();
+    const kp2 = signatures.genKeyPair();
+    const alias = "client|quorum" as UserAlias;
+
+    const regDto = await createValidSubmitDTO(RegisterUserDto, {
+      user: alias,
+      publicKeys: [kp1.publicKey, kp2.publicKey],
+      requiredSignatures: 1
+    });
+    const regResp = await chaincode.invoke(
+      "PublicKeyContract:RegisterUser",
+      regDto.signed(process.env.DEV_ADMIN_PRIVATE_KEY as string)
+    );
+    expect(regResp).toEqual(transactionSuccess());
+
+    const dto = new ChainCallDTO();
+    dto.uniqueKey = "uniqueKey-quorum-success";
+    dto.sign(kp1.privateKey);
+    dto.sign(kp2.privateKey);
+
+    const resp = await chaincode.invoke("QuorumContract:Action", dto);
+    expect(resp).toEqual(transactionSuccess());
   });
 });
