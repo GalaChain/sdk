@@ -12,7 +12,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-import { serialize } from "@gala-chain/api";
+import { serialize, SignatureDto, SigningScheme } from "@gala-chain/api";
 import { SigningKey, computeAddress, ethers, hashMessage } from "ethers";
 
 import { CustomClient, GalaChainProviderOptions } from "../GalaChainClient";
@@ -48,23 +48,53 @@ export class SigningClient extends CustomClient {
     method: string,
     payload: U,
     signingType: SigningType = this.options?.signingType ?? SigningType.SIGN_TYPED_DATA
-  ): Promise<U & { signature: string; prefix?: string }> {
+  ): Promise<U & { signature: string; prefix?: string; signatures: SignatureDto[] }> {
     try {
-      const prefix = calculatePersonalSignPrefix(payload);
-      const prefixedPayload = { ...payload, prefix };
+      const basePayload = { ...payload } as Record<string, unknown>;
+      delete basePayload.types;
+      delete basePayload.domain;
+      delete (basePayload as any).signature;
+      delete (basePayload as any).signatures;
+      delete (basePayload as any).signerAddress;
+      delete (basePayload as any).signerPublicKey;
+      delete (basePayload as any).prefix;
+
+      const prefix = calculatePersonalSignPrefix(basePayload);
+      const prefixedPayload = { ...basePayload, prefix };
+
+      let signature: string;
+      const additional: Record<string, unknown> = {};
 
       if (signingType === SigningType.SIGN_TYPED_DATA) {
         const domain = { name: "GalaChain" };
-        const types = generateEIP712Types(method, payload);
-
-        const signature = await this.wallet.signTypedData(domain, types, prefixedPayload);
-        return { ...prefixedPayload, signature, types, domain };
+        const types = generateEIP712Types(method, basePayload);
+        signature = await this.wallet.signTypedData(domain, types, prefixedPayload);
+        additional.types = types;
+        additional.domain = domain;
       } else if (signingType === SigningType.PERSONAL_SIGN) {
-        const signature = await this.wallet.signMessage(serialize(prefixedPayload));
-        return { ...prefixedPayload, signature };
+        signature = await this.wallet.signMessage(serialize(prefixedPayload));
       } else {
         throw new Error("Unsupported signing type");
       }
+
+      const existing = Array.isArray((payload as any).signatures)
+        ? ((payload as any).signatures as SignatureDto[])
+        : [];
+
+      const signatureDto: SignatureDto = {
+        signature,
+        signerPublicKey: this.wallet.signingKey.publicKey,
+        signerAddress: this.ethereumAddress,
+        signing: SigningScheme.ETH,
+        prefix
+      };
+
+      return {
+        ...prefixedPayload,
+        ...additional,
+        signature,
+        signatures: [...existing, signatureDto]
+      } as U & { signature: string; prefix?: string; signatures: SignatureDto[] };
     } catch (error: unknown) {
       throw new Error((error as Error).message);
     }

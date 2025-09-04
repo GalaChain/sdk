@@ -14,6 +14,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+import { SignatureDto } from "@gala-chain/api";
 import { GalaChainProvider, GalaChainProviderOptions } from "../GalaChainClient";
 
 /**
@@ -25,7 +26,10 @@ export class PresignedClient extends GalaChainProvider {
     super(options);
   }
 
-  public async sign<U extends object>(_method: string, payload: U & { signature: string; prefix?: string }) {
+  public async sign<U extends object>(
+    _method: string,
+    payload: U & { signature: string; prefix?: string; signatures?: SignatureDto[] }
+  ) {
     return payload;
   }
 }
