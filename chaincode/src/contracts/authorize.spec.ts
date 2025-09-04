@@ -14,6 +14,7 @@
  */
 import {
   ChainCallDTO,
+  SubmitCallDTO,
   ChainUser,
   RegisterUserDto,
   UserAlias,
@@ -354,8 +355,8 @@ describe("authorization", () => {
         super("QuorumContract", "1.0.0");
       }
 
-      @Submit({ in: ChainCallDTO, out: "object", enforceUniqueKey: true, quorum: 2 })
-      public async Action(ctx: GalaChainContext, dto: ChainCallDTO): Promise<void> {}
+      @Submit({ in: SubmitCallDTO, out: "object", quorum: 2 })
+      public async Action(ctx: GalaChainContext, dto: SubmitCallDTO): Promise<void> {}
     }
 
     const chaincode = new TestChaincode([QuorumContract, PublicKeyContract]);
@@ -367,7 +368,7 @@ describe("authorization", () => {
     const regDto = await createValidSubmitDTO(RegisterUserDto, {
       user: alias,
       publicKeys: [kp1.publicKey, kp2.publicKey],
-      requiredSignatures: 1
+      requiredSignatures: 2
     });
     const regResp = await chaincode.invoke(
       "PublicKeyContract:RegisterUser",
@@ -375,11 +376,15 @@ describe("authorization", () => {
     );
     expect(regResp).toEqual(transactionSuccess());
 
-    const dto = new ChainCallDTO();
+    const dto = new SubmitCallDTO();
     dto.uniqueKey = "uniqueKey-quorum-success";
+    dto.signerPublicKey = kp1.publicKey;
     dto.sign(kp1.privateKey);
+    dto.signerPublicKey = kp2.publicKey;
     dto.sign(kp2.privateKey);
+    dto.signerPublicKey = kp1.publicKey;
 
+    chaincode.setCallingUser(alias);
     const resp = await chaincode.invoke("QuorumContract:Action", dto);
     expect(resp).toEqual(transactionSuccess());
   });
