@@ -1,0 +1,24 @@
+{
+  "name": "test-network-CuratorOrg",
+  "version": "1.0.0",
+  "client": { "organization": "CuratorOrg" },
+  "organizations": {
+    "CuratorOrg": {
+      "mspid": "CuratorOrg",
+      "peers": ["peer0.curator.local"],
+      "certificateAuthorities": ["ca.curator.local"]
+    }
+  },
+  "peers": {
+    "peer0.curator.local": { "url": "grpc://peer0.curator.local:7041" }
+  },
+  "orderers": {
+    "orderer0.group1.orderer.local": { "url": "grpc://orderer0.group1.orderer.local:7030" }
+  },
+  "certificateAuthorities": {
+    "ca.curator.local": {
+      "url": "http://ca.curator.local:7040",
+      "caName": "ca.curator.local"
+    }
+  }
+}
