@@ -38,7 +38,7 @@ import { GalaChainContext } from "../types";
 import { GalaContract } from "./GalaContract";
 import { updateApi } from "./GalaContractApi";
 import { authenticate } from "./authenticate";
-import { authorize } from "./authorize";
+import { authorize, QuorumInfo } from "./authorize";
 
 // All DTOs need to be registered in the application, including super classes. Otherwise, chaincode
 // containers will fail to start. Below we register just some base classes. Actual DTO classes are
@@ -86,6 +86,7 @@ export interface CommonTransactionOptions<In extends ChainCallDTO, Out> {
   allowedOrgs?: string[];
   allowedRoles?: string[];
   allowedOriginChaincodes?: string[];
+  quorum?: number;
   apiMethodName?: string;
   sequence?: MethodAPI[];
   before?: GalaTransactionBeforeFn<In>;
@@ -191,10 +192,13 @@ function GalaTransaction<In extends ChainCallDTO, Out>(
         }
 
         // Authenticate the user
+        let quorumInfo: QuorumInfo | undefined;
         if (ctx.isDryRun) {
           // Do not authenticate in dry run mode
         } else if (options?.verifySignature || dto?.signature !== undefined) {
-          ctx.callingUserData = await authenticate(ctx, dto);
+          const auth = await authenticate(ctx, dto);
+          ctx.callingUserData = auth;
+          quorumInfo = { signedByKeys: auth.signedByKeys, pubKeyCount: auth.pubKeyCount };
         } else {
           // it means a request where authorization is not required. If there is org-based authorization,
           // default roles are applied. If not, then only evaluate is possible. Alias is intentionally
@@ -204,7 +208,7 @@ function GalaTransaction<In extends ChainCallDTO, Out>(
         }
 
         // Authorize the user
-        await authorize(ctx, options);
+        await authorize(ctx, options, quorumInfo);
 
         // Prevent the same transaction from being submitted multiple times
         if (options.enforceUniqueKey) {

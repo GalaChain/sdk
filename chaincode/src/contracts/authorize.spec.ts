@@ -300,4 +300,40 @@ describe("authorization", () => {
 
     return ContractClass;
   }
+
+  it("should enforce signature quorum", async () => {
+    const ContractClass = class extends GalaContract {
+      constructor() {
+        super("TestContract", "1.0.0");
+      }
+
+      public async Action(ctx: GalaChainContext, dto: ChainCallDTO): Promise<void> {}
+    };
+
+    const target = ContractClass.prototype;
+    const propertyKey = "Action";
+    const descriptor = Object.getOwnPropertyDescriptor(target, propertyKey) as PropertyDescriptor;
+
+    GalaTransaction({
+      type: SUBMIT,
+      in: ChainCallDTO,
+      out: "object",
+      enforceUniqueKey: true,
+      verifySignature: true,
+      quorum: 2
+    })(target, propertyKey, descriptor);
+    Object.defineProperty(target, propertyKey, descriptor);
+
+    const user = { ...ChainUser.withRandomKeys("quorum-user"), roles: [UserRole.SUBMIT] };
+    const f = fixture(ContractClass)
+      .caClientIdentity(anonymousUserId, defaultMsp)
+      .registeredUsers(user);
+
+    const dto = new ChainCallDTO();
+    dto.uniqueKey = "uniqueKey-quorum";
+    dto.sign(user.privateKey);
+
+    const resp = await f.contract.Action(f.ctx, dto);
+    expect(resp).toEqual(transactionErrorKey("UNAUTHORIZED"));
+  });
 });
