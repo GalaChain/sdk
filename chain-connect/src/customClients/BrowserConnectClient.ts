@@ -140,6 +140,9 @@ export class BrowserConnectClient extends WebSigner {
       delete basePayload.domain;
       delete (basePayload as any).signature;
       delete (basePayload as any).signatures;
+      delete (basePayload as any).signerAddress;
+      delete (basePayload as any).signerPublicKey;
+      delete (basePayload as any).prefix;
 
       const domain = { name: "GalaChain" };
       const types = generateEIP712Types(method, basePayload);
