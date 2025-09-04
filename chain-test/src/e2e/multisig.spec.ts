@@ -50,7 +50,9 @@ describe("multisig e2e", () => {
   });
 
   afterAll(async () => {
-    await client.disconnect();
+    if (client) {
+      await client.disconnect();
+    }
   });
 
   it("rejects calls with insufficient signatures", async () => {
