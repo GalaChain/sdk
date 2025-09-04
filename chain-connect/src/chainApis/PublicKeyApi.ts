@@ -66,8 +66,7 @@ export class PublicKeyApi extends GalaChainBaseApi {
   public RegisterUser(dto: RegisterUserRequest) {
     const payload: RegisterUserRequest = {
       ...dto,
-      requiredSignatures:
-        dto.requiredSignatures ?? (dto.publicKeys as unknown as string[]).length
+      requiredSignatures: dto.requiredSignatures ?? (dto.publicKeys as unknown as string[]).length
     };
     return this.connection.submit<string, RegisterUserDto>({
       method: "RegisterUser",
@@ -86,8 +85,7 @@ export class PublicKeyApi extends GalaChainBaseApi {
   public RegisterEthUser(dto: RegisterEthUserRequest) {
     const payload: RegisterEthUserRequest = {
       ...dto,
-      requiredSignatures:
-        dto.requiredSignatures ?? (dto.publicKeys as unknown as string[]).length
+      requiredSignatures: dto.requiredSignatures ?? (dto.publicKeys as unknown as string[]).length
     };
     return this.connection.submit<string, RegisterEthUserDto>({
       method: "RegisterEthUser",

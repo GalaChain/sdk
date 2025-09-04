@@ -119,9 +119,7 @@ const expectedTestDtoSchema = {
       items: {
         properties: {
           signature: {
-            description: expect.stringContaining(
-              "Signature of the DTO signed with caller's private key"
-            ),
+            description: expect.stringContaining("Signature of the DTO signed with caller's private key"),
             minLength: 1,
             type: "string"
           },

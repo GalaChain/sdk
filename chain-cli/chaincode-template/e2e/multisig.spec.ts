@@ -76,4 +76,3 @@ describe("multisig template e2e", () => {
     );
   });
 });
-

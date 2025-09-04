@@ -31,7 +31,7 @@ import {
 import { Info } from "fabric-contract-api";
 
 import { PublicKeyService } from "../services";
-import { PkNotFoundError, PkCountMismatchError } from "../services/PublicKeyError";
+import { PkCountMismatchError, PkNotFoundError } from "../services/PublicKeyError";
 import { GalaChainContext } from "../types";
 import { GalaContract } from "./GalaContract";
 import { EVALUATE, Evaluate, GalaTransaction, Submit } from "./GalaTransaction";
@@ -101,11 +101,7 @@ export class PublicKeyContract extends GalaContract {
     const providedPkHex = signatures.getNonCompactHexPublicKey(dto.publicKeys[0]);
     const ethAddress = signatures.getEthAddress(providedPkHex);
     const userAlias = dto.user;
-    PublicKeyContract.validateRequiredSignatures(
-      dto.publicKeys,
-      dto.requiredSignatures,
-      userAlias
-    );
+    PublicKeyContract.validateRequiredSignatures(dto.publicKeys, dto.requiredSignatures, userAlias);
 
     return PublicKeyService.registerUser(
       ctx,
@@ -128,11 +124,7 @@ export class PublicKeyContract extends GalaContract {
     const providedPkHex = signatures.getNonCompactHexPublicKey(dto.publicKeys[0]);
     const ethAddress = signatures.getEthAddress(providedPkHex);
     const userAlias = `eth|${ethAddress}` as UserAlias;
-    PublicKeyContract.validateRequiredSignatures(
-      dto.publicKeys,
-      dto.requiredSignatures,
-      userAlias
-    );
+    PublicKeyContract.validateRequiredSignatures(dto.publicKeys, dto.requiredSignatures, userAlias);
 
     return PublicKeyService.registerUser(
       ctx,
@@ -155,11 +147,7 @@ export class PublicKeyContract extends GalaContract {
     const publicKey = dto.publicKeys[0];
     const address = signatures.ton.getTonAddress(Buffer.from(publicKey, "base64"));
     const userAlias = `ton|${address}` as UserAlias;
-    PublicKeyContract.validateRequiredSignatures(
-      dto.publicKeys,
-      dto.requiredSignatures,
-      userAlias
-    );
+    PublicKeyContract.validateRequiredSignatures(dto.publicKeys, dto.requiredSignatures, userAlias);
 
     return PublicKeyService.registerUser(
       ctx,

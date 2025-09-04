@@ -19,7 +19,9 @@ import {
   createValidSubmitDTO,
   signatures
 } from "@gala-chain/api";
-import { AdminChainClients, TestClients, transactionErrorKey, transactionSuccess } from "@gala-chain/test";
+
+import { transactionErrorKey, transactionSuccess } from "../matchers";
+import { AdminChainClients, TestClients } from "./TestClients";
 
 jest.setTimeout(30000);
 
@@ -76,4 +78,3 @@ describe("multisig e2e", () => {
     );
   });
 });
-

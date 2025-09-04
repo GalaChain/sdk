@@ -38,7 +38,7 @@ import { GalaChainContext } from "../types";
 import { GalaContract } from "./GalaContract";
 import { updateApi } from "./GalaContractApi";
 import { authenticate } from "./authenticate";
-import { authorize, QuorumInfo } from "./authorize";
+import { QuorumInfo, authorize } from "./authorize";
 
 // All DTOs need to be registered in the application, including super classes. Otherwise, chaincode
 // containers will fail to start. Below we register just some base classes. Actual DTO classes are

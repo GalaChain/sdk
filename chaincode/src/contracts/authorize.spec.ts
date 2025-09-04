@@ -14,9 +14,9 @@
  */
 import {
   ChainCallDTO,
-  SubmitCallDTO,
   ChainUser,
   RegisterUserDto,
+  SubmitCallDTO,
   UserAlias,
   UserProfile,
   UserRole,
@@ -33,8 +33,8 @@ import {
 
 import { GalaChainContext } from "../types";
 import { GalaContract } from "./GalaContract";
-import { PublicKeyContract } from "./PublicKeyContract";
 import { EVALUATE, GalaTransaction, GalaTransactionType, SUBMIT, Submit } from "./GalaTransaction";
+import { PublicKeyContract } from "./PublicKeyContract";
 
 describe("authorization", () => {
   type TestParams = [
@@ -319,7 +319,9 @@ describe("authorization", () => {
         super("TestContract", "1.0.0");
       }
 
-      public async Action(ctx: GalaChainContext, dto: ChainCallDTO): Promise<void> {}
+      public async Action(_ctx: GalaChainContext, _dto: ChainCallDTO): Promise<void> {
+        return;
+      }
     };
 
     const target = ContractClass.prototype;
@@ -337,9 +339,7 @@ describe("authorization", () => {
     Object.defineProperty(target, propertyKey, descriptor);
 
     const user = { ...ChainUser.withRandomKeys("quorum-user"), roles: [UserRole.SUBMIT] };
-    const f = fixture(ContractClass)
-      .caClientIdentity(anonymousUserId, defaultMsp)
-      .registeredUsers(user);
+    const f = fixture(ContractClass).caClientIdentity(anonymousUserId, defaultMsp).registeredUsers(user);
 
     const dto = new ChainCallDTO();
     dto.uniqueKey = "uniqueKey-quorum";
@@ -356,7 +356,9 @@ describe("authorization", () => {
       }
 
       @Submit({ in: SubmitCallDTO, out: "object", quorum: 2 })
-      public async Action(ctx: GalaChainContext, dto: SubmitCallDTO): Promise<void> {}
+      public async Action(_ctx: GalaChainContext, _dto: SubmitCallDTO): Promise<void> {
+        return;
+      }
     }
 
     const chaincode = new TestChaincode([QuorumContract, PublicKeyContract]);

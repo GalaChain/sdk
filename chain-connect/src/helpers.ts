@@ -14,6 +14,7 @@
  */
 import { ChainCallDTO, SignatureDto, signatures } from "@gala-chain/api";
 import { Eip1193Provider } from "ethers";
+
 import type { CustomClient } from "./GalaChainClient";
 import { SigningType } from "./types";
 
@@ -74,11 +75,7 @@ export function recoverPublicKeysFromDto(dto: ChainCallDTO): string[] {
   const sigs = dto.signatures ?? [];
 
   return sigs.map((s) =>
-    signatures.recoverPublicKey(
-      s.signature ?? "",
-      basePayload,
-      s.prefix ?? dto.prefix ?? ""
-    )
+    signatures.recoverPublicKey(s.signature ?? "", basePayload, s.prefix ?? dto.prefix ?? "")
   );
 }
 
