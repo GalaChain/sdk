@@ -12,7 +12,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-import { NotImplementedError, ValidationFailedError } from "../error";
+import { ValidationFailedError } from "../error";
 import { getPayloadToSign } from "./getPayloadToSign";
 
 // verify if TON is supported
