@@ -70,8 +70,7 @@ describe("Migration from allowedOrgs to allowedRoles", () => {
 
   test("When: User is registered with no allowed role", async () => {
     const dto = await createValidSubmitDTO(RegisterEthUserDto, {
-      publicKeys: [user.publicKey],
-      requiredSignatures: 1
+      publicKeys: [user.publicKey]
     }).signed(adminPrivateKey);
     expect(await chaincode.invoke("PublicKeyContract:RegisterEthUser", dto)).toEqual(transactionSuccess());
 

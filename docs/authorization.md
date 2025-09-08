@@ -211,8 +211,8 @@ This way it is possible to get the current user's properties in the chaincode an
 
 ### Multisignature users and quorum
 
-Users may register more than one public key and specify how many signatures are required to authorize a transaction.
-During registration pass an array of keys and the `requiredSignatures` field:
+Users may register more than one public key. A majority of signatures is required to authorize a transaction.
+During registration pass an array of keys:
 
 ```typescript
 const { publicKey: pk1, privateKey: sk1 } = signatures.genKeyPair();
@@ -220,8 +220,7 @@ const { publicKey: pk2, privateKey: sk2 } = signatures.genKeyPair();
 
 const reg = await createValidSubmitDTO(RegisterUserDto, {
   user: "client|multisig",
-  publicKeys: [pk1, pk2],
-  requiredSignatures: 2
+  publicKeys: [pk1, pk2]
 });
 await pkContract.RegisterUser(reg.signed(adminKey));
 ```

@@ -34,8 +34,7 @@ describe("authenticate multisig", () => {
 
     const regDto = await createValidSubmitDTO(RegisterUserDto, {
       user: alias,
-      publicKeys: [kp1.publicKey, kp2.publicKey],
-      requiredSignatures: 2
+      publicKeys: [kp1.publicKey, kp2.publicKey]
     });
     const regResp = await chaincode.invoke(
       "PublicKeyContract:RegisterUser",
@@ -62,8 +61,7 @@ describe("authenticate multisig", () => {
 
     const regDto = await createValidSubmitDTO(RegisterUserDto, {
       user: alias,
-      publicKeys: [kp1.publicKey, kp2.publicKey],
-      requiredSignatures: 2
+      publicKeys: [kp1.publicKey, kp2.publicKey]
     });
     const regResp = await chaincode.invoke(
       "PublicKeyContract:RegisterUser",
@@ -86,8 +84,7 @@ describe("authenticate multisig", () => {
 
     const regDto = await createValidSubmitDTO(RegisterUserDto, {
       user: user.alias,
-      publicKeys: [user.publicKey, other.publicKey],
-      requiredSignatures: 2
+      publicKeys: [user.publicKey, other.publicKey]
     });
     const regSigned = regDto.signed(process.env.DEV_ADMIN_PRIVATE_KEY as string);
     const regResp = await chaincode.invoke("PublicKeyContract:RegisterUser", regSigned);

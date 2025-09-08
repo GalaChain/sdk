@@ -64,10 +64,7 @@ export class PublicKeyApi extends GalaChainBaseApi {
    * @returns Promise resolving to registration confirmation
    */
   public RegisterUser(dto: RegisterUserRequest) {
-    const payload: RegisterUserRequest = {
-      ...dto,
-      requiredSignatures: dto.requiredSignatures ?? (dto.publicKeys as unknown as string[]).length
-    };
+    const payload: RegisterUserRequest = { ...dto };
     return this.connection.submit<string, RegisterUserDto>({
       method: "RegisterUser",
       payload,
@@ -83,10 +80,7 @@ export class PublicKeyApi extends GalaChainBaseApi {
    * @returns Promise resolving to registration confirmation
    */
   public RegisterEthUser(dto: RegisterEthUserRequest) {
-    const payload: RegisterEthUserRequest = {
-      ...dto,
-      requiredSignatures: dto.requiredSignatures ?? (dto.publicKeys as unknown as string[]).length
-    };
+    const payload: RegisterEthUserRequest = { ...dto };
     return this.connection.submit<string, RegisterEthUserDto>({
       method: "RegisterEthUser",
       payload,
