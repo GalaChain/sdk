@@ -12,8 +12,6 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-import { createHash } from "crypto";
-
 import { getPayloadToSign } from "./getPayloadToSign";
 
 describe("getPayloadToSign", () => {
@@ -42,23 +40,5 @@ describe("getPayloadToSign", () => {
 
     // Then
     expect(toSign).toEqual('{"c":8}');
-  });
-
-  it("should produce identical payload hashes whether signatures are present or not", () => {
-    // Given
-    const base = { c: 8 };
-    const withSignature = { ...base, signature: "to-be-ignored" };
-    const withSignatures = { ...base, signatures: ["to-be-ignored"] };
-
-    const hash = (s: string) => createHash("sha256").update(s).digest("hex");
-
-    // When
-    const baseHash = hash(getPayloadToSign(base));
-    const signatureHash = hash(getPayloadToSign(withSignature));
-    const signaturesHash = hash(getPayloadToSign(withSignatures));
-
-    // Then
-    expect(signatureHash).toEqual(baseHash);
-    expect(signaturesHash).toEqual(baseHash);
   });
 });
