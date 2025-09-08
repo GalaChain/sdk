@@ -654,12 +654,6 @@ export class RegisterUserDto extends SubmitCallDTO {
   @IsNotEmpty({ each: true })
   @ArrayMinSize(1)
   publicKeys: string[];
-
-  @JSONSchema({ description: "Number of required signatures." })
-  @IsNumber()
-  @Min(1)
-  @MaxArrayLength("publicKeys")
-  requiredSignatures: number;
 }
 
 /**
@@ -676,12 +670,6 @@ export class RegisterEthUserDto extends SubmitCallDTO {
   @IsNotEmpty({ each: true })
   @ArrayMinSize(1)
   publicKeys: string[];
-
-  @JSONSchema({ description: "Number of required signatures." })
-  @IsNumber()
-  @Min(1)
-  @MaxArrayLength("publicKeys")
-  requiredSignatures: number;
 }
 
 /**
@@ -698,12 +686,6 @@ export class RegisterTonUserDto extends SubmitCallDTO {
   @IsNotEmpty({ each: true })
   @ArrayMinSize(1)
   publicKeys: string[];
-
-  @JSONSchema({ description: "Number of required signatures." })
-  @IsNumber()
-  @Min(1)
-  @MaxArrayLength("publicKeys")
-  requiredSignatures: number;
 }
 
 export class UpdatePublicKeyDto extends SubmitCallDTO {

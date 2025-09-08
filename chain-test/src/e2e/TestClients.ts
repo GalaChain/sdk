@@ -372,8 +372,7 @@ async function createRegisteredUser(
 
   if (userAlias === undefined) {
     const dto = await createValidSubmitDTO(RegisterEthUserDto, {
-      publicKeys: [user.publicKey],
-      requiredSignatures: 1
+      publicKeys: [user.publicKey]
     });
     const response = await client.RegisterEthUser(dto.signed(client.privateKey));
     if (response.Status !== GalaChainResponseType.Success) {
@@ -382,8 +381,7 @@ async function createRegisteredUser(
   } else {
     const dto = await createValidSubmitDTO(RegisterUserDto, {
       user: user.identityKey,
-      publicKeys: [user.publicKey],
-      requiredSignatures: 1
+      publicKeys: [user.publicKey]
     });
     const response = await client.RegisterUser(dto.signed(client.privateKey));
     if (response.Status !== GalaChainResponseType.Success) {

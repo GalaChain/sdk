@@ -369,8 +369,7 @@ describe("authorization", () => {
 
     const regDto = await createValidSubmitDTO(RegisterUserDto, {
       user: alias,
-      publicKeys: [kp1.publicKey, kp2.publicKey],
-      requiredSignatures: 2
+      publicKeys: [kp1.publicKey, kp2.publicKey]
     });
     const regResp = await chaincode.invoke(
       "PublicKeyContract:RegisterUser",

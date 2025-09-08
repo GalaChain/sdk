@@ -32,7 +32,6 @@ import { Context } from "fabric-contract-api";
 
 import { GalaChainContext } from "../types";
 import {
-  PkCountMismatchError,
   PkDuplicateError,
   PkInvalidSignatureError,
   PkMismatchError,
@@ -83,8 +82,7 @@ export class PublicKeyService {
     address: string,
     userAlias: UserAlias,
     signing: SigningScheme,
-    pubKeyCount: number,
-    requiredSignatures: number
+    pubKeyCount: number
   ): Promise<void> {
     const key = PublicKeyService.getUserProfileKey(ctx, address);
     const obj = new UserProfile();
@@ -97,7 +95,7 @@ export class PublicKeyService {
     }
     obj.roles = Array.from(UserProfile.DEFAULT_ROLES);
     obj.pubKeyCount = pubKeyCount;
-    obj.requiredSignatures = requiredSignatures;
+    obj.requiredSignatures = Math.floor(pubKeyCount / 2) + 1;
 
     const data = Buffer.from(obj.serialize());
     await ctx.stub.putState(key, data);
@@ -251,12 +249,8 @@ export class PublicKeyService {
     publicKeys: string[],
     ethAddress: string,
     userAlias: UserAlias,
-    signing: SigningScheme,
-    requiredSignatures: number
+    signing: SigningScheme
   ): Promise<string> {
-    if (requiredSignatures < 1 || requiredSignatures > publicKeys.length) {
-      throw new PkCountMismatchError(userAlias, publicKeys.length, requiredSignatures);
-    }
     const currPublicKey = await PublicKeyService.getPublicKey(ctx, userAlias);
     const firstPk = publicKeys[0];
     const providedPk =
@@ -288,8 +282,7 @@ export class PublicKeyService {
       ethAddress,
       userAlias,
       signing,
-      publicKeys.length,
-      requiredSignatures
+      publicKeys.length
     );
 
     return userAlias;
@@ -334,8 +327,7 @@ export class PublicKeyService {
       newAddress,
       userAlias,
       signing,
-      userProfile?.pubKeyCount ?? updatedKeys.length,
-      userProfile?.requiredSignatures ?? 1
+      userProfile?.pubKeyCount ?? updatedKeys.length
     );
   }
 

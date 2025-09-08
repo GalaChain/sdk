@@ -77,8 +77,7 @@ it("should support the global state", async () => {
   const client2 = createClient(chaincodeDir);
 
   const registerDto = await createValidSubmitDTO(RegisterEthUserDto, {
-    publicKeys: [user.publicKey],
-    requiredSignatures: 1
+    publicKeys: [user.publicKey]
   });
   registerDto.sign(admin.privateKey);
 
@@ -115,8 +114,7 @@ it("should not change the state for evaluateTransaction", async () => {
   const otherUserAlias = `eth|${signatures.getEthAddress(otherUser.publicKey)}` as UserAlias;
 
   const registerDto = await createValidSubmitDTO(RegisterEthUserDto, {
-    publicKeys: [otherUser.publicKey],
-    requiredSignatures: 1
+    publicKeys: [otherUser.publicKey]
   });
   registerDto.sign(admin.privateKey);
 
@@ -146,8 +144,7 @@ it.skip("should support key collision validation", async () => {
 
   const otherUser = signatures.genKeyPair();
   const registerDto = await createValidSubmitDTO(RegisterEthUserDto, {
-    publicKeys: [otherUser.publicKey],
-    requiredSignatures: 1
+    publicKeys: [otherUser.publicKey]
   });
   registerDto.sign(admin.privateKey);
 

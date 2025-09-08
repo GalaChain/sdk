@@ -76,8 +76,8 @@ async mintToken(ctx: GalaChainContext, dto: MintTokenDto) {
 
 ### Multisignature profiles
 
-Profiles may hold several public keys. When registering a user, supply all keys and the
-`requiredSignatures` value indicating how many unique signatures are needed on each transaction.
+Profiles may hold several public keys. When registering a user, supply all keys. A majority of unique
+signatures is required on each transaction.
 
 ```typescript
 const k1 = signatures.genKeyPair();
@@ -86,8 +86,7 @@ await pkContract.RegisterUser(
   (
     await createValidSubmitDTO(RegisterUserDto, {
       user: "client|multi",
-      publicKeys: [k1.publicKey, k2.publicKey],
-      requiredSignatures: 2
+      publicKeys: [k1.publicKey, k2.publicKey]
     })
   ).signed(adminKey)
 );
