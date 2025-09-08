@@ -50,3 +50,7 @@ storybook-static
 Thumbs.db
 .npmrc
 /.nx
+
+# generated network connection profiles
+chain-cli/network/connection-profiles/
+chain-cli/network/connection-profiles-docker/
