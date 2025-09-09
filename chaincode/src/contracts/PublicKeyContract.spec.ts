@@ -79,7 +79,8 @@ describe("RegisterUser", () => {
     const chaincode = new TestChaincode([PublicKeyContract]);
     const dto = await createValidSubmitDTO(RegisterUserDto, {
       user: "client|user1" as UserAlias,
-      publicKeys: [publicKey, otherPublicKey]
+      publicKeys: [publicKey, otherPublicKey],
+      signing: SigningScheme.ETH
     });
     const signedDto = dto.signed(process.env.DEV_ADMIN_PRIVATE_KEY as string);
 
@@ -119,7 +120,8 @@ describe("RegisterUser", () => {
 
     const registerDto = await createValidSubmitDTO(RegisterUserDto, {
       publicKeys: [user.publicKey],
-      user: user.alias
+      user: user.alias,
+      signing: SigningScheme.ETH
     });
     const signedRegisterDto = registerDto.signed(process.env.DEV_ADMIN_PRIVATE_KEY as string);
 
@@ -137,7 +139,8 @@ describe("RegisterUser", () => {
 
     const registerDto = await createValidSubmitDTO(RegisterUserDto, {
       publicKeys: [user.publicKey],
-      user: "client|new_user" as UserAlias
+      user: "client|new_user" as UserAlias,
+      signing: SigningScheme.ETH
     });
     const signedRegisterDto = registerDto.signed(process.env.DEV_ADMIN_PRIVATE_KEY as string);
 
@@ -154,7 +157,8 @@ describe("RegisterUser", () => {
     const { publicKey } = signatures.genKeyPair();
     const dto = await createValidSubmitDTO(RegisterUserDto, {
       user: "client|dup" as UserAlias,
-      publicKeys: [publicKey, publicKey]
+      publicKeys: [publicKey, publicKey],
+      signing: SigningScheme.ETH
     });
     const signedDto = dto.signed(process.env.DEV_ADMIN_PRIVATE_KEY as string);
 
@@ -187,7 +191,8 @@ describe("RegisterUser", () => {
     chaincode.setCallingUser("client|admin");
     const registerDto = await createValidSubmitDTO(RegisterUserDto, {
       publicKeys: [newPublicKey],
-      user: user2.alias
+      user: user2.alias,
+      signing: SigningScheme.ETH
     });
     const signedRegisterDto = registerDto.signed(process.env.DEV_ADMIN_PRIVATE_KEY as string);
 
@@ -218,6 +223,7 @@ describe("RegisterUser", () => {
     const dto = await createValidSubmitDTO<RegisterUserDto>(RegisterUserDto, {
       user: user2.alias,
       publicKeys: [user2.publicKey],
+      signing: SigningScheme.ETH,
     });
 
     const response = await chaincode.invoke(
@@ -229,7 +235,8 @@ describe("RegisterUser", () => {
     chaincode.setCallingUser("client|admin");
     const registerDto = await createValidSubmitDTO(RegisterUserDto, {
       publicKeys: [user2.publicKey],
-      user: user2.alias
+      user: user2.alias,
+      signing: SigningScheme.ETH
     });
     const signedRegisterDto = registerDto.signed(process.env.DEV_ADMIN_PRIVATE_KEY as string);
 
@@ -362,7 +369,8 @@ describe("UpdatePublicKey", () => {
     const other = signatures.genKeyPair();
     const registerDto = await createValidSubmitDTO(RegisterUserDto, {
       user: user.alias,
-      publicKeys: [user.publicKey, other.publicKey]
+      publicKeys: [user.publicKey, other.publicKey],
+      signing: SigningScheme.ETH
     });
     const signedRegisterDto = registerDto.signed(process.env.DEV_ADMIN_PRIVATE_KEY as string);
     expect(await chaincode.invoke("PublicKeyContract:RegisterUser", signedRegisterDto)).toEqual(
@@ -372,6 +380,7 @@ describe("UpdatePublicKey", () => {
     const newKey = signatures.genKeyPair();
     const updateDto = await createValidSubmitDTO(UpdatePublicKeyDto, { publicKey: newKey.publicKey });
     const signedUpdateDto = updateDto.signed(user.privateKey);
+    signedUpdateDto.sign(other.privateKey);
 
     // When
     expect(await chaincode.invoke("PublicKeyContract:UpdatePublicKey", signedUpdateDto)).toEqual(
@@ -477,9 +486,11 @@ describe("UpdatePublicKey", () => {
       signerPublicKey: user.publicKey,
       signing: SigningScheme.TON
     });
+    const signedDto = dto.signed(user.privateKey);
+    signedDto.signing = SigningScheme.TON;
 
     // When
-    const response = await chaincode.invoke("PublicKeyContract:UpdatePublicKey", dto.signed(user.privateKey));
+    const response = await chaincode.invoke("PublicKeyContract:UpdatePublicKey", signedDto);
 
     // Then
     expect(response).toEqual(transactionSuccess());
@@ -509,18 +520,25 @@ describe("UpdatePublicKey", () => {
     });
 
     const dtoEthToTon = await createValidSubmitDTO(UpdatePublicKeyDto, {
-      publicKey: Buffer.from(tonKeyPair.publicKey).toString("base64")
+      publicKey: Buffer.from(tonKeyPair.publicKey).toString("base64"),
+      signerPublicKey: ethUser.publicKey,
+      signing: SigningScheme.ETH
     });
+
+    const signedTonToEth = dtoTonToEth.signed(tonUser.privateKey);
+    signedTonToEth.signing = SigningScheme.TON;
+    const signedEthToTon = dtoEthToTon.signed(ethUser.privateKey);
+    signedEthToTon.signing = SigningScheme.ETH;
 
     // When
     const responseTonToEth = await chaincode.invoke(
       "PublicKeyContract:UpdatePublicKey",
-      dtoTonToEth.signed(tonUser.privateKey)
+      signedTonToEth
     );
 
     const responseEthToTon = await chaincode.invoke(
       "PublicKeyContract:UpdatePublicKey",
-      dtoEthToTon.signed(ethUser.privateKey)
+      signedEthToTon
     );
 
     // Then

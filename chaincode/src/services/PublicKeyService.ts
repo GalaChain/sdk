@@ -247,7 +247,6 @@ export class PublicKeyService {
   public static async registerUser(
     ctx: GalaChainContext,
     publicKeys: string[],
-    ethAddress: string,
     userAlias: UserAlias,
     signing: SigningScheme
   ): Promise<string> {
@@ -270,10 +269,7 @@ export class PublicKeyService {
     const derivedAddresses = publicKeys.map((pk) =>
       PublicKeyService.getUserAddress(pk, signing)
     );
-    const uniqueAddresses =
-      publicKeys.length > 1
-        ? Array.from(new Set(derivedAddresses))
-        : [ethAddress ?? derivedAddresses[0]];
+    const uniqueAddresses = Array.from(new Set(derivedAddresses));
 
     for (const address of uniqueAddresses) {
       const existingUserProfile = await PublicKeyService.getUserProfile(ctx, address);

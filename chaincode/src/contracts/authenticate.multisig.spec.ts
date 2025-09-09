@@ -15,6 +15,7 @@
 import {
   GetMyProfileDto,
   RegisterUserDto,
+  SigningScheme,
   UserAlias,
   createValidSubmitDTO,
   signatures
@@ -34,7 +35,8 @@ describe("authenticate multisig", () => {
 
     const regDto = await createValidSubmitDTO(RegisterUserDto, {
       user: alias,
-      publicKeys: [kp1.publicKey, kp2.publicKey]
+      publicKeys: [kp1.publicKey, kp2.publicKey],
+      signing: SigningScheme.ETH
     });
     const regResp = await chaincode.invoke(
       "PublicKeyContract:RegisterUser",
@@ -61,7 +63,8 @@ describe("authenticate multisig", () => {
 
     const regDto = await createValidSubmitDTO(RegisterUserDto, {
       user: alias,
-      publicKeys: [kp1.publicKey, kp2.publicKey]
+      publicKeys: [kp1.publicKey, kp2.publicKey],
+      signing: SigningScheme.ETH
     });
     const regResp = await chaincode.invoke(
       "PublicKeyContract:RegisterUser",
@@ -84,7 +87,8 @@ describe("authenticate multisig", () => {
 
     const regDto = await createValidSubmitDTO(RegisterUserDto, {
       user: user.alias,
-      publicKeys: [user.publicKey, other.publicKey]
+      publicKeys: [user.publicKey, other.publicKey],
+      signing: SigningScheme.ETH
     });
     const regSigned = regDto.signed(process.env.DEV_ADMIN_PRIVATE_KEY as string);
     const regResp = await chaincode.invoke("PublicKeyContract:RegisterUser", regSigned);
