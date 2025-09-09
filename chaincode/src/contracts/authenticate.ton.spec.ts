@@ -12,7 +12,14 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-import { ChainCallDTO, SigningScheme, UserProfile, signatures } from "@gala-chain/api";
+import {
+  ChainCallDTO,
+  RegisterTonUserDto,
+  SigningScheme,
+  UserProfile,
+  createValidSubmitDTO,
+  signatures
+} from "@gala-chain/api";
 import { TestChaincode, transactionSuccess } from "@gala-chain/test";
 import { instanceToPlain, plainToClass } from "class-transformer";
 
@@ -110,6 +117,45 @@ test.each([
     expectation(response, userObj);
   }
 );
+
+it("authenticates secondary TON key by address", async () => {
+  const chaincode = new TestChaincode([PublicKeyContract]);
+
+  const pair1 = await signatures.ton.genKeyPair();
+  const pair2 = await signatures.ton.genKeyPair();
+  const pk1 = Buffer.from(pair1.publicKey).toString("base64");
+  const pk2 = Buffer.from(pair2.publicKey).toString("base64");
+  const addr1 = signatures.ton.getTonAddress(pair1.publicKey);
+  const addr2 = signatures.ton.getTonAddress(pair2.publicKey);
+
+  const regDto = await createValidSubmitDTO(RegisterTonUserDto, {
+    publicKeys: [pk1, pk2]
+  });
+  const regResp = await chaincode.invoke(
+    "PublicKeyContract:RegisterTonUser",
+    regDto.signed(process.env.DEV_ADMIN_PRIVATE_KEY as string)
+  );
+  expect(regResp).toEqual(transactionSuccess());
+
+  const dto = new ChainCallDTO();
+  dto.signing = SigningScheme.TON;
+  dto.signerAddress = addr2;
+  dto.sign(Buffer.from(pair2.secretKey).toString("base64"));
+  dto.signerAddress = addr1;
+  dto.sign(Buffer.from(pair1.secretKey).toString("base64"));
+  dto.signerAddress = undefined;
+
+  const resp = await chaincode.invoke("PublicKeyContract:GetMyProfile", dto);
+  expect(resp).toEqual(
+    transactionSuccess({
+      alias: `ton|${addr1}`,
+      tonAddress: addr2,
+      roles: UserProfile.DEFAULT_ROLES,
+      pubKeyCount: 2,
+      requiredSignatures: 2
+    })
+  );
+});
 
 // this is a hack to make pretty display of test cases
 function labeled<F>(label: string): (fn: F) => F & { toString: () => string } {
