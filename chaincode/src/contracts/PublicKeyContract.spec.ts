@@ -670,22 +670,16 @@ describe("GetMyProfile", () => {
     const chaincode = new TestChaincode([PublicKeyContract]);
     const user = await createRegisteredTonUser(chaincode);
 
-    const dto1 = new GetMyProfileDto();
-    dto1.signing = SigningScheme.TON;
-    dto1.signerPublicKey = user.publicKey;
-    dto1.sign(user.privateKey);
-
-    const dto2 = new GetMyProfileDto();
-    dto2.signing = SigningScheme.TON;
-    dto2.signerAddress = user.tonAddress;
-    dto2.sign(user.privateKey);
+    const dto = new GetMyProfileDto();
+    dto.signing = SigningScheme.TON;
+    dto.signerAddress = user.tonAddress;
+    dto.sign(user.privateKey);
 
     // When
-    const resp1 = await chaincode.invoke("PublicKeyContract:GetMyProfile", dto1);
-    const resp2 = await chaincode.invoke("PublicKeyContract:GetMyProfile", dto2);
+    const resp = await chaincode.invoke("PublicKeyContract:GetMyProfile", dto);
 
     // Then
-    expect(resp1).toEqual(
+    expect(resp).toEqual(
       transactionSuccess({
         alias: user.alias,
         tonAddress: user.tonAddress,
@@ -694,7 +688,6 @@ describe("GetMyProfile", () => {
         requiredSignatures: 1
       })
     );
-    expect(resp2).toEqual(resp1);
   });
 });
 

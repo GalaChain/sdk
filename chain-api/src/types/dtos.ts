@@ -313,14 +313,10 @@ export class ChainCallDTO {
     if (useDer) {
       if (this.signing === SigningScheme.TON) {
         throw new ValidationFailedError("TON signing scheme does not support DER signatures");
-      } else {
-        if (this.signerPublicKey === undefined && this.signerAddress === undefined) {
-          this.signerPublicKey = signatures.getPublicKey(privateKey);
-        }
       }
     }
 
-    if (this.signerPublicKey === undefined && this.signing !== SigningScheme.TON) {
+    if (this.signing !== SigningScheme.TON) {
       this.signerPublicKey = signatures.getPublicKey(privateKey);
     }
 

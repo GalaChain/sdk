@@ -67,10 +67,12 @@ export class PublicKeyService {
       signing !== SigningScheme.TON
         ? publicKeys.map((pk) => PublicKeyService.normalizePublicKey(pk))
         : publicKeys;
+    if (normalized.length === 0) {
+      throw new PkMissingError(userAlias);
+    }
     if (new Set(normalized).size !== normalized.length) {
       throw new PkDuplicateError(userAlias);
     }
-    [obj.publicKey] = normalized;
     obj.publicKeys = normalized;
     obj.signing = signing;
     const data = Buffer.from(obj.serialize());
@@ -194,13 +196,12 @@ export class PublicKeyService {
     const data = await ctx.stub.getState(key);
 
     if (data.length > 0) {
-      const publicKey = ChainObject.deserialize<PublicKey>(PublicKey, data.toString());
+      const publicKey = PublicKey.from(data.toString());
       publicKey.signing = publicKey.signing ?? SigningScheme.ETH;
       if (publicKey.publicKeys === undefined || publicKey.publicKeys.length === 0) {
-        publicKey.publicKeys = [publicKey.publicKey];
-      } else {
-        [publicKey.publicKey] = publicKey.publicKeys;
+        throw new PkMissingError(userId);
       }
+      [publicKey.publicKey] = publicKey.publicKeys;
       return publicKey;
     }
 
@@ -212,9 +213,9 @@ export class PublicKeyService {
       ctx.logging.getLogger().warn(message);
 
       const pk = new PublicKey();
-      pk.publicKey = process.env.DEV_ADMIN_PUBLIC_KEY;
       pk.publicKeys = [process.env.DEV_ADMIN_PUBLIC_KEY];
       pk.signing = SigningScheme.ETH;
+      pk.publicKey = pk.publicKeys[0];
       return pk;
     }
 
@@ -232,6 +233,10 @@ export class PublicKeyService {
     const pk = await PublicKeyService.getPublicKey(ctx, userId);
 
     if (pk === undefined) {
+      throw new PkMissingError(userId);
+    }
+
+    if (pk.publicKey === undefined) {
       throw new PkMissingError(userId);
     }
 
@@ -259,8 +264,8 @@ export class PublicKeyService {
     if (currPublicKey !== undefined) {
       const nonCompactCurrPubKey =
         signing !== SigningScheme.TON
-          ? signatures.getNonCompactHexPublicKey(currPublicKey.publicKey)
-          : currPublicKey.publicKey;
+          ? signatures.getNonCompactHexPublicKey(currPublicKey.publicKey!)
+          : currPublicKey.publicKey!;
       if (nonCompactCurrPubKey !== providedPk) {
         throw new PkMismatchError(userAlias);
       }
@@ -308,7 +313,7 @@ export class PublicKeyService {
     }
 
     // need to fetch userProfile from old address
-    const oldAddress = PublicKeyService.getUserAddress(oldPublicKey.publicKey, signing);
+    const oldAddress = PublicKeyService.getUserAddress(oldPublicKey.publicKey!, signing);
     const userProfile = await PublicKeyService.getUserProfile(ctx, oldAddress);
 
     // Note: we don't throw an error if userProfile is undefined in order to support legacy users with unsaved profiles
@@ -324,7 +329,7 @@ export class PublicKeyService {
     }
 
     // update Public Key, and add user profile under new eth address
-    const oldKeys = oldPublicKey.publicKeys ?? [oldPublicKey.publicKey];
+    const oldKeys = oldPublicKey.publicKeys;
     const updatedKeys = [newPkHex, ...oldKeys.slice(1)];
     await PublicKeyService.putPublicKey(ctx, updatedKeys, userAlias, signing);
     await PublicKeyService.putUserProfile(
@@ -344,7 +349,7 @@ export class PublicKeyService {
     }
 
     const address = PublicKeyService.getUserAddress(
-      publicKey.publicKey,
+      publicKey.publicKey!,
       publicKey.signing ?? SigningScheme.ETH
     );
     const profile = await PublicKeyService.getUserProfile(ctx, address);
