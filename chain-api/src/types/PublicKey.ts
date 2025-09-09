@@ -21,16 +21,36 @@ import { ChainObject } from "./ChainObject";
 export class PublicKey extends ChainObject {
   @IsString()
   @IsNotEmpty()
-  publicKey: string;
-
   @IsOptional()
+  public publicKey?: string;
+
   @IsString({ each: true })
   @ArrayNotEmpty()
-  publicKeys?: string[];
+  public publicKeys!: string[];
 
   @IsOptional()
   @StringEnumProperty(SigningScheme)
   public signing?: SigningScheme;
+
+  public override serialize(): string {
+    this.publicKey = this.publicKeys[0];
+    return super.serialize();
+  }
+
+  public static from(
+    object: string | Record<string, unknown> | Record<string, unknown>[]
+  ): PublicKey {
+    const pk = ChainObject.deserialize<PublicKey>(PublicKey, object);
+    if (pk.publicKeys === undefined || pk.publicKeys.length === 0) {
+      if (pk.publicKey !== undefined) {
+        pk.publicKeys = [pk.publicKey];
+      }
+    }
+    if (pk.publicKeys !== undefined && pk.publicKeys.length > 0) {
+      [pk.publicKey] = pk.publicKeys;
+    }
+    return pk;
+  }
 }
 
 export const PK_INDEX_KEY = "GCPK";

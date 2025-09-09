@@ -38,6 +38,44 @@ Please consult [GalaChain SDK documentation](https://github.com/GalaChain/sdk/bl
                         "minLength": 1,
                         "type": "string",
                       },
+                      "signatures": {
+                        "description": "List of signatures for this DTO.",
+                        "items": {
+                          "properties": {
+                            "prefix": {
+                              "description": "Prefix for Metamask transaction signatures. Necessary to format payloads correctly to recover publicKey from web3 signatures.",
+                              "minLength": 1,
+                              "type": "string",
+                            },
+                            "signature": {
+                              "description": "Signature of the DTO signed with caller's private key to be verified with user's public key saved on chain. The 'signature' field is optional for DTO, but is required for a transaction to be executed on chain. 
+Please consult [GalaChain SDK documentation](https://github.com/GalaChain/sdk/blob/main/docs/authorization.md#signature-based-authorization) on how to create signatures.",
+                              "minLength": 1,
+                              "type": "string",
+                            },
+                            "signerAddress": {
+                              "description": "Address of the user who signed the DTO. Typically Ethereum or TON address.",
+                              "minLength": 1,
+                              "type": "string",
+                            },
+                            "signerPublicKey": {
+                              "description": "Public key of the user who signed the DTO.",
+                              "minLength": 1,
+                              "type": "string",
+                            },
+                            "signing": {
+                              "description": "Signing scheme used for the signature. "ETH" for Ethereum, and "TON" for The Open Network are supported. Default: "ETH".",
+                              "enum": [
+                                "ETH",
+                                "TON",
+                              ],
+                              "type": "string",
+                            },
+                          },
+                          "type": "object",
+                        },
+                        "type": "array",
+                      },
                       "signerAddress": {
                         "description": "Address of the user who signed the DTO. Typically Ethereum or TON address.",
                         "minLength": 1,
@@ -84,6 +122,44 @@ Please consult [GalaChain SDK documentation](https://github.com/GalaChain/sdk/bl
                     "minLength": 1,
                     "type": "string",
                   },
+                  "signatures": {
+                    "description": "List of signatures for this DTO.",
+                    "items": {
+                      "properties": {
+                        "prefix": {
+                          "description": "Prefix for Metamask transaction signatures. Necessary to format payloads correctly to recover publicKey from web3 signatures.",
+                          "minLength": 1,
+                          "type": "string",
+                        },
+                        "signature": {
+                          "description": "Signature of the DTO signed with caller's private key to be verified with user's public key saved on chain. The 'signature' field is optional for DTO, but is required for a transaction to be executed on chain. 
+Please consult [GalaChain SDK documentation](https://github.com/GalaChain/sdk/blob/main/docs/authorization.md#signature-based-authorization) on how to create signatures.",
+                          "minLength": 1,
+                          "type": "string",
+                        },
+                        "signerAddress": {
+                          "description": "Address of the user who signed the DTO. Typically Ethereum or TON address.",
+                          "minLength": 1,
+                          "type": "string",
+                        },
+                        "signerPublicKey": {
+                          "description": "Public key of the user who signed the DTO.",
+                          "minLength": 1,
+                          "type": "string",
+                        },
+                        "signing": {
+                          "description": "Signing scheme used for the signature. "ETH" for Ethereum, and "TON" for The Open Network are supported. Default: "ETH".",
+                          "enum": [
+                            "ETH",
+                            "TON",
+                          ],
+                          "type": "string",
+                        },
+                      },
+                      "type": "object",
+                    },
+                    "type": "array",
+                  },
                   "signerAddress": {
                     "description": "Address of the user who signed the DTO. Typically Ethereum or TON address.",
                     "minLength": 1,
@@ -129,6 +205,44 @@ The key is generated by the caller and should be unique for each DTO. You can us
 Please consult [GalaChain SDK documentation](https://github.com/GalaChain/sdk/blob/main/docs/authorization.md#signature-based-authorization) on how to create signatures.",
               "minLength": 1,
               "type": "string",
+            },
+            "signatures": {
+              "description": "List of signatures for this DTO.",
+              "items": {
+                "properties": {
+                  "prefix": {
+                    "description": "Prefix for Metamask transaction signatures. Necessary to format payloads correctly to recover publicKey from web3 signatures.",
+                    "minLength": 1,
+                    "type": "string",
+                  },
+                  "signature": {
+                    "description": "Signature of the DTO signed with caller's private key to be verified with user's public key saved on chain. The 'signature' field is optional for DTO, but is required for a transaction to be executed on chain. 
+Please consult [GalaChain SDK documentation](https://github.com/GalaChain/sdk/blob/main/docs/authorization.md#signature-based-authorization) on how to create signatures.",
+                    "minLength": 1,
+                    "type": "string",
+                  },
+                  "signerAddress": {
+                    "description": "Address of the user who signed the DTO. Typically Ethereum or TON address.",
+                    "minLength": 1,
+                    "type": "string",
+                  },
+                  "signerPublicKey": {
+                    "description": "Public key of the user who signed the DTO.",
+                    "minLength": 1,
+                    "type": "string",
+                  },
+                  "signing": {
+                    "description": "Signing scheme used for the signature. "ETH" for Ethereum, and "TON" for The Open Network are supported. Default: "ETH".",
+                    "enum": [
+                      "ETH",
+                      "TON",
+                    ],
+                    "type": "string",
+                  },
+                },
+                "type": "object",
+              },
+              "type": "array",
             },
             "signerAddress": {
               "description": "Address of the user who signed the DTO. Typically Ethereum or TON address.",
@@ -222,6 +336,44 @@ Please consult [GalaChain SDK documentation](https://github.com/GalaChain/sdk/bl
                         "minLength": 1,
                         "type": "string",
                       },
+                      "signatures": {
+                        "description": "List of signatures for this DTO.",
+                        "items": {
+                          "properties": {
+                            "prefix": {
+                              "description": "Prefix for Metamask transaction signatures. Necessary to format payloads correctly to recover publicKey from web3 signatures.",
+                              "minLength": 1,
+                              "type": "string",
+                            },
+                            "signature": {
+                              "description": "Signature of the DTO signed with caller's private key to be verified with user's public key saved on chain. The 'signature' field is optional for DTO, but is required for a transaction to be executed on chain. 
+Please consult [GalaChain SDK documentation](https://github.com/GalaChain/sdk/blob/main/docs/authorization.md#signature-based-authorization) on how to create signatures.",
+                              "minLength": 1,
+                              "type": "string",
+                            },
+                            "signerAddress": {
+                              "description": "Address of the user who signed the DTO. Typically Ethereum or TON address.",
+                              "minLength": 1,
+                              "type": "string",
+                            },
+                            "signerPublicKey": {
+                              "description": "Public key of the user who signed the DTO.",
+                              "minLength": 1,
+                              "type": "string",
+                            },
+                            "signing": {
+                              "description": "Signing scheme used for the signature. "ETH" for Ethereum, and "TON" for The Open Network are supported. Default: "ETH".",
+                              "enum": [
+                                "ETH",
+                                "TON",
+                              ],
+                              "type": "string",
+                            },
+                          },
+                          "type": "object",
+                        },
+                        "type": "array",
+                      },
                       "signerAddress": {
                         "description": "Address of the user who signed the DTO. Typically Ethereum or TON address.",
                         "minLength": 1,
@@ -268,6 +420,44 @@ Please consult [GalaChain SDK documentation](https://github.com/GalaChain/sdk/bl
                     "minLength": 1,
                     "type": "string",
                   },
+                  "signatures": {
+                    "description": "List of signatures for this DTO.",
+                    "items": {
+                      "properties": {
+                        "prefix": {
+                          "description": "Prefix for Metamask transaction signatures. Necessary to format payloads correctly to recover publicKey from web3 signatures.",
+                          "minLength": 1,
+                          "type": "string",
+                        },
+                        "signature": {
+                          "description": "Signature of the DTO signed with caller's private key to be verified with user's public key saved on chain. The 'signature' field is optional for DTO, but is required for a transaction to be executed on chain. 
+Please consult [GalaChain SDK documentation](https://github.com/GalaChain/sdk/blob/main/docs/authorization.md#signature-based-authorization) on how to create signatures.",
+                          "minLength": 1,
+                          "type": "string",
+                        },
+                        "signerAddress": {
+                          "description": "Address of the user who signed the DTO. Typically Ethereum or TON address.",
+                          "minLength": 1,
+                          "type": "string",
+                        },
+                        "signerPublicKey": {
+                          "description": "Public key of the user who signed the DTO.",
+                          "minLength": 1,
+                          "type": "string",
+                        },
+                        "signing": {
+                          "description": "Signing scheme used for the signature. "ETH" for Ethereum, and "TON" for The Open Network are supported. Default: "ETH".",
+                          "enum": [
+                            "ETH",
+                            "TON",
+                          ],
+                          "type": "string",
+                        },
+                      },
+                      "type": "object",
+                    },
+                    "type": "array",
+                  },
                   "signerAddress": {
                     "description": "Address of the user who signed the DTO. Typically Ethereum or TON address.",
                     "minLength": 1,
@@ -313,6 +503,44 @@ The key is generated by the caller and should be unique for each DTO. You can us
 Please consult [GalaChain SDK documentation](https://github.com/GalaChain/sdk/blob/main/docs/authorization.md#signature-based-authorization) on how to create signatures.",
               "minLength": 1,
               "type": "string",
+            },
+            "signatures": {
+              "description": "List of signatures for this DTO.",
+              "items": {
+                "properties": {
+                  "prefix": {
+                    "description": "Prefix for Metamask transaction signatures. Necessary to format payloads correctly to recover publicKey from web3 signatures.",
+                    "minLength": 1,
+                    "type": "string",
+                  },
+                  "signature": {
+                    "description": "Signature of the DTO signed with caller's private key to be verified with user's public key saved on chain. The 'signature' field is optional for DTO, but is required for a transaction to be executed on chain. 
+Please consult [GalaChain SDK documentation](https://github.com/GalaChain/sdk/blob/main/docs/authorization.md#signature-based-authorization) on how to create signatures.",
+                    "minLength": 1,
+                    "type": "string",
+                  },
+                  "signerAddress": {
+                    "description": "Address of the user who signed the DTO. Typically Ethereum or TON address.",
+                    "minLength": 1,
+                    "type": "string",
+                  },
+                  "signerPublicKey": {
+                    "description": "Public key of the user who signed the DTO.",
+                    "minLength": 1,
+                    "type": "string",
+                  },
+                  "signing": {
+                    "description": "Signing scheme used for the signature. "ETH" for Ethereum, and "TON" for The Open Network are supported. Default: "ETH".",
+                    "enum": [
+                      "ETH",
+                      "TON",
+                    ],
+                    "type": "string",
+                  },
+                },
+                "type": "object",
+              },
+              "type": "array",
             },
             "signerAddress": {
               "description": "Address of the user who signed the DTO. Typically Ethereum or TON address.",
@@ -405,6 +633,44 @@ Please consult [GalaChain SDK documentation](https://github.com/GalaChain/sdk/bl
               "minLength": 1,
               "type": "string",
             },
+            "signatures": {
+              "description": "List of signatures for this DTO.",
+              "items": {
+                "properties": {
+                  "prefix": {
+                    "description": "Prefix for Metamask transaction signatures. Necessary to format payloads correctly to recover publicKey from web3 signatures.",
+                    "minLength": 1,
+                    "type": "string",
+                  },
+                  "signature": {
+                    "description": "Signature of the DTO signed with caller's private key to be verified with user's public key saved on chain. The 'signature' field is optional for DTO, but is required for a transaction to be executed on chain. 
+Please consult [GalaChain SDK documentation](https://github.com/GalaChain/sdk/blob/main/docs/authorization.md#signature-based-authorization) on how to create signatures.",
+                    "minLength": 1,
+                    "type": "string",
+                  },
+                  "signerAddress": {
+                    "description": "Address of the user who signed the DTO. Typically Ethereum or TON address.",
+                    "minLength": 1,
+                    "type": "string",
+                  },
+                  "signerPublicKey": {
+                    "description": "Public key of the user who signed the DTO.",
+                    "minLength": 1,
+                    "type": "string",
+                  },
+                  "signing": {
+                    "description": "Signing scheme used for the signature. "ETH" for Ethereum, and "TON" for The Open Network are supported. Default: "ETH".",
+                    "enum": [
+                      "ETH",
+                      "TON",
+                    ],
+                    "type": "string",
+                  },
+                },
+                "type": "object",
+              },
+              "type": "array",
+            },
             "signerAddress": {
               "description": "Address of the user who signed the DTO. Typically Ethereum or TON address.",
               "minLength": 1,
@@ -455,6 +721,44 @@ The key is generated by the caller and should be unique for each DTO. You can us
 Please consult [GalaChain SDK documentation](https://github.com/GalaChain/sdk/blob/main/docs/authorization.md#signature-based-authorization) on how to create signatures.",
                   "minLength": 1,
                   "type": "string",
+                },
+                "signatures": {
+                  "description": "List of signatures for this DTO.",
+                  "items": {
+                    "properties": {
+                      "prefix": {
+                        "description": "Prefix for Metamask transaction signatures. Necessary to format payloads correctly to recover publicKey from web3 signatures.",
+                        "minLength": 1,
+                        "type": "string",
+                      },
+                      "signature": {
+                        "description": "Signature of the DTO signed with caller's private key to be verified with user's public key saved on chain. The 'signature' field is optional for DTO, but is required for a transaction to be executed on chain. 
+Please consult [GalaChain SDK documentation](https://github.com/GalaChain/sdk/blob/main/docs/authorization.md#signature-based-authorization) on how to create signatures.",
+                        "minLength": 1,
+                        "type": "string",
+                      },
+                      "signerAddress": {
+                        "description": "Address of the user who signed the DTO. Typically Ethereum or TON address.",
+                        "minLength": 1,
+                        "type": "string",
+                      },
+                      "signerPublicKey": {
+                        "description": "Public key of the user who signed the DTO.",
+                        "minLength": 1,
+                        "type": "string",
+                      },
+                      "signing": {
+                        "description": "Signing scheme used for the signature. "ETH" for Ethereum, and "TON" for The Open Network are supported. Default: "ETH".",
+                        "enum": [
+                          "ETH",
+                          "TON",
+                        ],
+                        "type": "string",
+                      },
+                    },
+                    "type": "object",
+                  },
+                  "type": "array",
                 },
                 "signerAddress": {
                   "description": "Address of the user who signed the DTO. Typically Ethereum or TON address.",
@@ -598,6 +902,44 @@ Please consult [GalaChain SDK documentation](https://github.com/GalaChain/sdk/bl
               "minLength": 1,
               "type": "string",
             },
+            "signatures": {
+              "description": "List of signatures for this DTO.",
+              "items": {
+                "properties": {
+                  "prefix": {
+                    "description": "Prefix for Metamask transaction signatures. Necessary to format payloads correctly to recover publicKey from web3 signatures.",
+                    "minLength": 1,
+                    "type": "string",
+                  },
+                  "signature": {
+                    "description": "Signature of the DTO signed with caller's private key to be verified with user's public key saved on chain. The 'signature' field is optional for DTO, but is required for a transaction to be executed on chain. 
+Please consult [GalaChain SDK documentation](https://github.com/GalaChain/sdk/blob/main/docs/authorization.md#signature-based-authorization) on how to create signatures.",
+                    "minLength": 1,
+                    "type": "string",
+                  },
+                  "signerAddress": {
+                    "description": "Address of the user who signed the DTO. Typically Ethereum or TON address.",
+                    "minLength": 1,
+                    "type": "string",
+                  },
+                  "signerPublicKey": {
+                    "description": "Public key of the user who signed the DTO.",
+                    "minLength": 1,
+                    "type": "string",
+                  },
+                  "signing": {
+                    "description": "Signing scheme used for the signature. "ETH" for Ethereum, and "TON" for The Open Network are supported. Default: "ETH".",
+                    "enum": [
+                      "ETH",
+                      "TON",
+                    ],
+                    "type": "string",
+                  },
+                },
+                "type": "object",
+              },
+              "type": "array",
+            },
             "signerAddress": {
               "description": "Address of the user who signed the DTO. Typically Ethereum or TON address.",
               "minLength": 1,
@@ -671,6 +1013,44 @@ The key is generated by the caller and should be unique for each DTO. You can us
 Please consult [GalaChain SDK documentation](https://github.com/GalaChain/sdk/blob/main/docs/authorization.md#signature-based-authorization) on how to create signatures.",
               "minLength": 1,
               "type": "string",
+            },
+            "signatures": {
+              "description": "List of signatures for this DTO.",
+              "items": {
+                "properties": {
+                  "prefix": {
+                    "description": "Prefix for Metamask transaction signatures. Necessary to format payloads correctly to recover publicKey from web3 signatures.",
+                    "minLength": 1,
+                    "type": "string",
+                  },
+                  "signature": {
+                    "description": "Signature of the DTO signed with caller's private key to be verified with user's public key saved on chain. The 'signature' field is optional for DTO, but is required for a transaction to be executed on chain. 
+Please consult [GalaChain SDK documentation](https://github.com/GalaChain/sdk/blob/main/docs/authorization.md#signature-based-authorization) on how to create signatures.",
+                    "minLength": 1,
+                    "type": "string",
+                  },
+                  "signerAddress": {
+                    "description": "Address of the user who signed the DTO. Typically Ethereum or TON address.",
+                    "minLength": 1,
+                    "type": "string",
+                  },
+                  "signerPublicKey": {
+                    "description": "Public key of the user who signed the DTO.",
+                    "minLength": 1,
+                    "type": "string",
+                  },
+                  "signing": {
+                    "description": "Signing scheme used for the signature. "ETH" for Ethereum, and "TON" for The Open Network are supported. Default: "ETH".",
+                    "enum": [
+                      "ETH",
+                      "TON",
+                    ],
+                    "type": "string",
+                  },
+                },
+                "type": "object",
+              },
+              "type": "array",
             },
             "signerAddress": {
               "description": "Address of the user who signed the DTO. Typically Ethereum or TON address.",
@@ -749,6 +1129,44 @@ Please consult [GalaChain SDK documentation](https://github.com/GalaChain/sdk/bl
               "minLength": 1,
               "type": "string",
             },
+            "signatures": {
+              "description": "List of signatures for this DTO.",
+              "items": {
+                "properties": {
+                  "prefix": {
+                    "description": "Prefix for Metamask transaction signatures. Necessary to format payloads correctly to recover publicKey from web3 signatures.",
+                    "minLength": 1,
+                    "type": "string",
+                  },
+                  "signature": {
+                    "description": "Signature of the DTO signed with caller's private key to be verified with user's public key saved on chain. The 'signature' field is optional for DTO, but is required for a transaction to be executed on chain. 
+Please consult [GalaChain SDK documentation](https://github.com/GalaChain/sdk/blob/main/docs/authorization.md#signature-based-authorization) on how to create signatures.",
+                    "minLength": 1,
+                    "type": "string",
+                  },
+                  "signerAddress": {
+                    "description": "Address of the user who signed the DTO. Typically Ethereum or TON address.",
+                    "minLength": 1,
+                    "type": "string",
+                  },
+                  "signerPublicKey": {
+                    "description": "Public key of the user who signed the DTO.",
+                    "minLength": 1,
+                    "type": "string",
+                  },
+                  "signing": {
+                    "description": "Signing scheme used for the signature. "ETH" for Ethereum, and "TON" for The Open Network are supported. Default: "ETH".",
+                    "enum": [
+                      "ETH",
+                      "TON",
+                    ],
+                    "type": "string",
+                  },
+                },
+                "type": "object",
+              },
+              "type": "array",
+            },
             "signerAddress": {
               "description": "Address of the user who signed the DTO. Typically Ethereum or TON address.",
               "minLength": 1,
@@ -822,6 +1240,44 @@ Please consult [GalaChain SDK documentation](https://github.com/GalaChain/sdk/bl
               "minLength": 1,
               "type": "string",
             },
+            "signatures": {
+              "description": "List of signatures for this DTO.",
+              "items": {
+                "properties": {
+                  "prefix": {
+                    "description": "Prefix for Metamask transaction signatures. Necessary to format payloads correctly to recover publicKey from web3 signatures.",
+                    "minLength": 1,
+                    "type": "string",
+                  },
+                  "signature": {
+                    "description": "Signature of the DTO signed with caller's private key to be verified with user's public key saved on chain. The 'signature' field is optional for DTO, but is required for a transaction to be executed on chain. 
+Please consult [GalaChain SDK documentation](https://github.com/GalaChain/sdk/blob/main/docs/authorization.md#signature-based-authorization) on how to create signatures.",
+                    "minLength": 1,
+                    "type": "string",
+                  },
+                  "signerAddress": {
+                    "description": "Address of the user who signed the DTO. Typically Ethereum or TON address.",
+                    "minLength": 1,
+                    "type": "string",
+                  },
+                  "signerPublicKey": {
+                    "description": "Public key of the user who signed the DTO.",
+                    "minLength": 1,
+                    "type": "string",
+                  },
+                  "signing": {
+                    "description": "Signing scheme used for the signature. "ETH" for Ethereum, and "TON" for The Open Network are supported. Default: "ETH".",
+                    "enum": [
+                      "ETH",
+                      "TON",
+                    ],
+                    "type": "string",
+                  },
+                },
+                "type": "object",
+              },
+              "type": "array",
+            },
             "signerAddress": {
               "description": "Address of the user who signed the DTO. Typically Ethereum or TON address.",
               "minLength": 1,
@@ -879,7 +1335,7 @@ The key is generated by the caller and should be unique for each DTO. You can us
                 },
               },
               "required": [
-                "publicKey",
+                "publicKeys",
               ],
               "type": "object",
             },
@@ -923,16 +1379,49 @@ The key is generated by the caller and should be unique for each DTO. You can us
               "minItems": 1,
               "type": "array",
             },
-            "requiredSignatures": {
-              "description": "Number of required signatures.",
-              "minimum": 1,
-              "type": "number",
-            },
             "signature": {
               "description": "Signature of the DTO signed with caller's private key to be verified with user's public key saved on chain. The 'signature' field is optional for DTO, but is required for a transaction to be executed on chain. 
 Please consult [GalaChain SDK documentation](https://github.com/GalaChain/sdk/blob/main/docs/authorization.md#signature-based-authorization) on how to create signatures.",
               "minLength": 1,
               "type": "string",
+            },
+            "signatures": {
+              "description": "List of signatures for this DTO.",
+              "items": {
+                "properties": {
+                  "prefix": {
+                    "description": "Prefix for Metamask transaction signatures. Necessary to format payloads correctly to recover publicKey from web3 signatures.",
+                    "minLength": 1,
+                    "type": "string",
+                  },
+                  "signature": {
+                    "description": "Signature of the DTO signed with caller's private key to be verified with user's public key saved on chain. The 'signature' field is optional for DTO, but is required for a transaction to be executed on chain. 
+Please consult [GalaChain SDK documentation](https://github.com/GalaChain/sdk/blob/main/docs/authorization.md#signature-based-authorization) on how to create signatures.",
+                    "minLength": 1,
+                    "type": "string",
+                  },
+                  "signerAddress": {
+                    "description": "Address of the user who signed the DTO. Typically Ethereum or TON address.",
+                    "minLength": 1,
+                    "type": "string",
+                  },
+                  "signerPublicKey": {
+                    "description": "Public key of the user who signed the DTO.",
+                    "minLength": 1,
+                    "type": "string",
+                  },
+                  "signing": {
+                    "description": "Signing scheme used for the signature. "ETH" for Ethereum, and "TON" for The Open Network are supported. Default: "ETH".",
+                    "enum": [
+                      "ETH",
+                      "TON",
+                    ],
+                    "type": "string",
+                  },
+                },
+                "type": "object",
+              },
+              "type": "array",
             },
             "signerAddress": {
               "description": "Address of the user who signed the DTO. Typically Ethereum or TON address.",
@@ -961,7 +1450,6 @@ The key is generated by the caller and should be unique for each DTO. You can us
           },
           "required": [
             "publicKeys",
-            "requiredSignatures",
           ],
           "type": "object",
         },
@@ -1012,16 +1500,49 @@ The key is generated by the caller and should be unique for each DTO. You can us
               "minItems": 1,
               "type": "array",
             },
-            "requiredSignatures": {
-              "description": "Number of required signatures.",
-              "minimum": 1,
-              "type": "number",
-            },
             "signature": {
               "description": "Signature of the DTO signed with caller's private key to be verified with user's public key saved on chain. The 'signature' field is optional for DTO, but is required for a transaction to be executed on chain. 
 Please consult [GalaChain SDK documentation](https://github.com/GalaChain/sdk/blob/main/docs/authorization.md#signature-based-authorization) on how to create signatures.",
               "minLength": 1,
               "type": "string",
+            },
+            "signatures": {
+              "description": "List of signatures for this DTO.",
+              "items": {
+                "properties": {
+                  "prefix": {
+                    "description": "Prefix for Metamask transaction signatures. Necessary to format payloads correctly to recover publicKey from web3 signatures.",
+                    "minLength": 1,
+                    "type": "string",
+                  },
+                  "signature": {
+                    "description": "Signature of the DTO signed with caller's private key to be verified with user's public key saved on chain. The 'signature' field is optional for DTO, but is required for a transaction to be executed on chain. 
+Please consult [GalaChain SDK documentation](https://github.com/GalaChain/sdk/blob/main/docs/authorization.md#signature-based-authorization) on how to create signatures.",
+                    "minLength": 1,
+                    "type": "string",
+                  },
+                  "signerAddress": {
+                    "description": "Address of the user who signed the DTO. Typically Ethereum or TON address.",
+                    "minLength": 1,
+                    "type": "string",
+                  },
+                  "signerPublicKey": {
+                    "description": "Public key of the user who signed the DTO.",
+                    "minLength": 1,
+                    "type": "string",
+                  },
+                  "signing": {
+                    "description": "Signing scheme used for the signature. "ETH" for Ethereum, and "TON" for The Open Network are supported. Default: "ETH".",
+                    "enum": [
+                      "ETH",
+                      "TON",
+                    ],
+                    "type": "string",
+                  },
+                },
+                "type": "object",
+              },
+              "type": "array",
             },
             "signerAddress": {
               "description": "Address of the user who signed the DTO. Typically Ethereum or TON address.",
@@ -1050,7 +1571,6 @@ The key is generated by the caller and should be unique for each DTO. You can us
           },
           "required": [
             "publicKeys",
-            "requiredSignatures",
           ],
           "type": "object",
         },
@@ -1101,16 +1621,49 @@ The key is generated by the caller and should be unique for each DTO. You can us
               "minItems": 1,
               "type": "array",
             },
-            "requiredSignatures": {
-              "description": "Number of required signatures.",
-              "minimum": 1,
-              "type": "number",
-            },
             "signature": {
               "description": "Signature of the DTO signed with caller's private key to be verified with user's public key saved on chain. The 'signature' field is optional for DTO, but is required for a transaction to be executed on chain. 
 Please consult [GalaChain SDK documentation](https://github.com/GalaChain/sdk/blob/main/docs/authorization.md#signature-based-authorization) on how to create signatures.",
               "minLength": 1,
               "type": "string",
+            },
+            "signatures": {
+              "description": "List of signatures for this DTO.",
+              "items": {
+                "properties": {
+                  "prefix": {
+                    "description": "Prefix for Metamask transaction signatures. Necessary to format payloads correctly to recover publicKey from web3 signatures.",
+                    "minLength": 1,
+                    "type": "string",
+                  },
+                  "signature": {
+                    "description": "Signature of the DTO signed with caller's private key to be verified with user's public key saved on chain. The 'signature' field is optional for DTO, but is required for a transaction to be executed on chain. 
+Please consult [GalaChain SDK documentation](https://github.com/GalaChain/sdk/blob/main/docs/authorization.md#signature-based-authorization) on how to create signatures.",
+                    "minLength": 1,
+                    "type": "string",
+                  },
+                  "signerAddress": {
+                    "description": "Address of the user who signed the DTO. Typically Ethereum or TON address.",
+                    "minLength": 1,
+                    "type": "string",
+                  },
+                  "signerPublicKey": {
+                    "description": "Public key of the user who signed the DTO.",
+                    "minLength": 1,
+                    "type": "string",
+                  },
+                  "signing": {
+                    "description": "Signing scheme used for the signature. "ETH" for Ethereum, and "TON" for The Open Network are supported. Default: "ETH".",
+                    "enum": [
+                      "ETH",
+                      "TON",
+                    ],
+                    "type": "string",
+                  },
+                },
+                "type": "object",
+              },
+              "type": "array",
             },
             "signerAddress": {
               "description": "Address of the user who signed the DTO. Typically Ethereum or TON address.",
@@ -1144,7 +1697,6 @@ The key is generated by the caller and should be unique for each DTO. You can us
           "required": [
             "user",
             "publicKeys",
-            "requiredSignatures",
           ],
           "type": "object",
         },
@@ -1195,6 +1747,44 @@ The key is generated by the caller and should be unique for each DTO. You can us
 Please consult [GalaChain SDK documentation](https://github.com/GalaChain/sdk/blob/main/docs/authorization.md#signature-based-authorization) on how to create signatures.",
               "minLength": 1,
               "type": "string",
+            },
+            "signatures": {
+              "description": "List of signatures for this DTO.",
+              "items": {
+                "properties": {
+                  "prefix": {
+                    "description": "Prefix for Metamask transaction signatures. Necessary to format payloads correctly to recover publicKey from web3 signatures.",
+                    "minLength": 1,
+                    "type": "string",
+                  },
+                  "signature": {
+                    "description": "Signature of the DTO signed with caller's private key to be verified with user's public key saved on chain. The 'signature' field is optional for DTO, but is required for a transaction to be executed on chain. 
+Please consult [GalaChain SDK documentation](https://github.com/GalaChain/sdk/blob/main/docs/authorization.md#signature-based-authorization) on how to create signatures.",
+                    "minLength": 1,
+                    "type": "string",
+                  },
+                  "signerAddress": {
+                    "description": "Address of the user who signed the DTO. Typically Ethereum or TON address.",
+                    "minLength": 1,
+                    "type": "string",
+                  },
+                  "signerPublicKey": {
+                    "description": "Public key of the user who signed the DTO.",
+                    "minLength": 1,
+                    "type": "string",
+                  },
+                  "signing": {
+                    "description": "Signing scheme used for the signature. "ETH" for Ethereum, and "TON" for The Open Network are supported. Default: "ETH".",
+                    "enum": [
+                      "ETH",
+                      "TON",
+                    ],
+                    "type": "string",
+                  },
+                },
+                "type": "object",
+              },
+              "type": "array",
             },
             "signerAddress": {
               "description": "Address of the user who signed the DTO. Typically Ethereum or TON address.",
@@ -1274,6 +1864,44 @@ Please consult [GalaChain SDK documentation](https://github.com/GalaChain/sdk/bl
               "minLength": 1,
               "type": "string",
             },
+            "signatures": {
+              "description": "List of signatures for this DTO.",
+              "items": {
+                "properties": {
+                  "prefix": {
+                    "description": "Prefix for Metamask transaction signatures. Necessary to format payloads correctly to recover publicKey from web3 signatures.",
+                    "minLength": 1,
+                    "type": "string",
+                  },
+                  "signature": {
+                    "description": "Signature of the DTO signed with caller's private key to be verified with user's public key saved on chain. The 'signature' field is optional for DTO, but is required for a transaction to be executed on chain. 
+Please consult [GalaChain SDK documentation](https://github.com/GalaChain/sdk/blob/main/docs/authorization.md#signature-based-authorization) on how to create signatures.",
+                    "minLength": 1,
+                    "type": "string",
+                  },
+                  "signerAddress": {
+                    "description": "Address of the user who signed the DTO. Typically Ethereum or TON address.",
+                    "minLength": 1,
+                    "type": "string",
+                  },
+                  "signerPublicKey": {
+                    "description": "Public key of the user who signed the DTO.",
+                    "minLength": 1,
+                    "type": "string",
+                  },
+                  "signing": {
+                    "description": "Signing scheme used for the signature. "ETH" for Ethereum, and "TON" for The Open Network are supported. Default: "ETH".",
+                    "enum": [
+                      "ETH",
+                      "TON",
+                    ],
+                    "type": "string",
+                  },
+                },
+                "type": "object",
+              },
+              "type": "array",
+            },
             "signerAddress": {
               "description": "Address of the user who signed the DTO. Typically Ethereum or TON address.",
               "minLength": 1,
@@ -1351,6 +1979,44 @@ The key is generated by the caller and should be unique for each DTO. You can us
 Please consult [GalaChain SDK documentation](https://github.com/GalaChain/sdk/blob/main/docs/authorization.md#signature-based-authorization) on how to create signatures.",
               "minLength": 1,
               "type": "string",
+            },
+            "signatures": {
+              "description": "List of signatures for this DTO.",
+              "items": {
+                "properties": {
+                  "prefix": {
+                    "description": "Prefix for Metamask transaction signatures. Necessary to format payloads correctly to recover publicKey from web3 signatures.",
+                    "minLength": 1,
+                    "type": "string",
+                  },
+                  "signature": {
+                    "description": "Signature of the DTO signed with caller's private key to be verified with user's public key saved on chain. The 'signature' field is optional for DTO, but is required for a transaction to be executed on chain. 
+Please consult [GalaChain SDK documentation](https://github.com/GalaChain/sdk/blob/main/docs/authorization.md#signature-based-authorization) on how to create signatures.",
+                    "minLength": 1,
+                    "type": "string",
+                  },
+                  "signerAddress": {
+                    "description": "Address of the user who signed the DTO. Typically Ethereum or TON address.",
+                    "minLength": 1,
+                    "type": "string",
+                  },
+                  "signerPublicKey": {
+                    "description": "Public key of the user who signed the DTO.",
+                    "minLength": 1,
+                    "type": "string",
+                  },
+                  "signing": {
+                    "description": "Signing scheme used for the signature. "ETH" for Ethereum, and "TON" for The Open Network are supported. Default: "ETH".",
+                    "enum": [
+                      "ETH",
+                      "TON",
+                    ],
+                    "type": "string",
+                  },
+                },
+                "type": "object",
+              },
+              "type": "array",
             },
             "signerAddress": {
               "description": "Address of the user who signed the DTO. Typically Ethereum or TON address.",

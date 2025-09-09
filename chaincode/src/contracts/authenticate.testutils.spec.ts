@@ -120,11 +120,7 @@ export function createDerSignedDto(unsigned: ChainCallDTO, privateKey: string) {
 export function createTonSignedDto(unsigned: ChainCallDTO, privateKey: string) {
   const dto = instanceToInstance(unsigned);
   dto.signing = SigningScheme.TON;
-
-  const sigBuff = signatures.ton.getSignature(dto, Buffer.from(privateKey, "base64"), undefined);
-  expect(sigBuff).toHaveLength(64);
-
-  dto.signature = sigBuff.toString("base64");
+  dto.sign(privateKey);
   return dto;
 }
 

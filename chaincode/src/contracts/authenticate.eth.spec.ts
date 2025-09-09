@@ -12,7 +12,15 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-import { ChainCallDTO, UserProfile, signatures } from "@gala-chain/api";
+import {
+  ChainCallDTO,
+  RegisterUserDto,
+  SigningScheme,
+  UserAlias,
+  UserProfile,
+  createValidSubmitDTO,
+  signatures
+} from "@gala-chain/api";
 import { TestChaincode, transactionSuccess } from "@gala-chain/test";
 import { instanceToPlain, plainToClass } from "class-transformer";
 
@@ -190,6 +198,50 @@ describe("allowNonRegisteredUsers enabled", () => {
     [invalid___, signerAdd, ___registered, Error("ADDRESS_MISMATCH")],
     [invalid___, signerAdd, notRegistered, Error("ADDRESS_MISMATCH")]
   ])("(sig: %s, dto: %s, user: %s) => %s", testFn);
+});
+
+describe("multiple keys", () => {
+  it("authenticates DER signature with secondary key address", async () => {
+    const chaincode = new TestChaincode([PublicKeyContract]);
+
+    const kp1 = signatures.genKeyPair();
+    const kp2 = signatures.genKeyPair();
+    const alias = "client|multi" as UserAlias;
+
+    const regDto = await createValidSubmitDTO(RegisterUserDto, {
+      user: alias,
+      publicKeys: [kp1.publicKey, kp2.publicKey],
+      signing: SigningScheme.ETH
+    });
+    const regResp = await chaincode.invoke(
+      "PublicKeyContract:RegisterUser",
+      regDto.signed(process.env.DEV_ADMIN_PRIVATE_KEY as string)
+    );
+    expect(regResp).toEqual(transactionSuccess());
+
+    const address2 = signatures.getEthAddress(kp2.publicKey);
+    const dto = new ChainCallDTO();
+    dto.sign(kp2.privateKey, true);
+    dto.sign(kp1.privateKey);
+    if (dto.signatures) {
+      dto.signatures[0].signerPublicKey = undefined;
+      dto.signatures[0].signerAddress = address2;
+    }
+    // remove legacy fields
+    dto.signerPublicKey = undefined;
+    dto.signerAddress = undefined;
+
+    const resp = await chaincode.invoke("PublicKeyContract:GetMyProfile", dto);
+    expect(resp).toEqual(
+      transactionSuccess({
+        alias,
+        ethAddress: address2,
+        roles: UserProfile.DEFAULT_ROLES,
+        pubKeyCount: 2,
+        requiredSignatures: 2
+      })
+    );
+  });
 });
 
 interface User {

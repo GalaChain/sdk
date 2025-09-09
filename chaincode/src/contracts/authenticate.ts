@@ -169,11 +169,26 @@ export async function authenticateSingle(
   } else if (sig.signerAddress !== undefined) {
     const { profile, publicKey } = await getUserProfileAndPublicKey(ctx, sig.signerAddress);
 
-    if (!dto.isSignatureValid(sig, publicKey.publicKey)) {
-      throw new PkInvalidSignatureError(profile.alias);
+    const scheme = sig.signing ?? dto.signing ?? publicKey.signing ?? SigningScheme.ETH;
+    const keys = publicKey.publicKeys ?? [];
+
+    let key = keys.find(
+      (k) => PublicKeyService.getUserAddress(k, scheme) === sig.signerAddress
+    );
+
+    if (key) {
+      if (!dto.isSignatureValid(sig, key)) {
+        throw new PkInvalidSignatureError(profile.alias);
+      }
+    } else {
+      key = keys.find((k) => dto.isSignatureValid(sig, k));
+      if (!key) {
+        throw new PkInvalidSignatureError(profile.alias);
+      }
     }
 
-    const keyHex = signatures.getNonCompactHexPublicKey(publicKey.publicKey);
+    const keyHex =
+      scheme === SigningScheme.TON ? key : signatures.getNonCompactHexPublicKey(key);
     return { profile, signedByKey: keyHex };
   } else if (sig.signerPublicKey !== undefined) {
     if (!dto.isSignatureValid(sig)) {
@@ -182,7 +197,10 @@ export async function authenticateSingle(
     }
 
     const profile = await getUserProfile(ctx, sig.signerPublicKey, signing);
-    const keyHex = signatures.getNonCompactHexPublicKey(sig.signerPublicKey);
+    const keyHex =
+      signing === SigningScheme.TON
+        ? sig.signerPublicKey
+        : signatures.getNonCompactHexPublicKey(sig.signerPublicKey);
     return { profile, signedByKey: keyHex };
   }
 
