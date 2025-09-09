@@ -25,8 +25,7 @@ import {
   UpdateUserRolesDto,
   UserAlias,
   UserProfile,
-  ValidationFailedError,
-  signatures
+  ValidationFailedError
 } from "@gala-chain/api";
 import { Info } from "fabric-contract-api";
 
@@ -88,17 +87,9 @@ export class PublicKeyContract extends GalaContract {
     }
     PublicKeyContract.ensurePublicKeys(dto.publicKeys);
 
-    const providedPkHex = signatures.getNonCompactHexPublicKey(dto.publicKeys[0]);
-    const ethAddress = signatures.getEthAddress(providedPkHex);
     const userAlias = dto.user;
 
-    return PublicKeyService.registerUser(
-      ctx,
-      dto.publicKeys,
-      ethAddress,
-      userAlias,
-      SigningScheme.ETH
-    );
+    return PublicKeyService.registerUser(ctx, dto.publicKeys, userAlias);
   }
 
   @Submit({
@@ -109,17 +100,10 @@ export class PublicKeyContract extends GalaContract {
   })
   public async RegisterEthUser(ctx: GalaChainContext, dto: RegisterEthUserDto): Promise<string> {
     PublicKeyContract.ensurePublicKeys(dto.publicKeys);
-    const providedPkHex = signatures.getNonCompactHexPublicKey(dto.publicKeys[0]);
-    const ethAddress = signatures.getEthAddress(providedPkHex);
+    const ethAddress = PublicKeyService.getUserAddress(dto.publicKeys[0], SigningScheme.ETH);
     const userAlias = `eth|${ethAddress}` as UserAlias;
 
-    return PublicKeyService.registerUser(
-      ctx,
-      dto.publicKeys,
-      ethAddress,
-      userAlias,
-      SigningScheme.ETH
-    );
+    return PublicKeyService.registerUser(ctx, dto.publicKeys, userAlias);
   }
 
   @Submit({
@@ -130,17 +114,10 @@ export class PublicKeyContract extends GalaContract {
   })
   public async RegisterTonUser(ctx: GalaChainContext, dto: RegisterTonUserDto): Promise<string> {
     PublicKeyContract.ensurePublicKeys(dto.publicKeys);
-    const publicKey = dto.publicKeys[0];
-    const address = signatures.ton.getTonAddress(Buffer.from(publicKey, "base64"));
+    const address = PublicKeyService.getUserAddress(dto.publicKeys[0], SigningScheme.TON);
     const userAlias = `ton|${address}` as UserAlias;
 
-    return PublicKeyService.registerUser(
-      ctx,
-      dto.publicKeys,
-      address,
-      userAlias,
-      SigningScheme.TON
-    );
+    return PublicKeyService.registerUser(ctx, dto.publicKeys, userAlias);
   }
 
   @Submit({
