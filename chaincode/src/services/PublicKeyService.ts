@@ -267,23 +267,32 @@ export class PublicKeyService {
       }
     }
 
-    // If User Profile already exists on chain for this ethereum address, we should not allow registering the same user again
-    const existingUserProfile = await PublicKeyService.getUserProfile(ctx, ethAddress);
-    if (existingUserProfile !== undefined) {
-      throw new ProfileExistsError(ethAddress, existingUserProfile.alias);
+    const derivedAddresses = publicKeys.map((pk) =>
+      PublicKeyService.getUserAddress(pk, signing)
+    );
+    const uniqueAddresses =
+      publicKeys.length > 1
+        ? Array.from(new Set(derivedAddresses))
+        : [ethAddress ?? derivedAddresses[0]];
+
+    for (const address of uniqueAddresses) {
+      const existingUserProfile = await PublicKeyService.getUserProfile(ctx, address);
+      if (existingUserProfile !== undefined) {
+        throw new ProfileExistsError(address, existingUserProfile.alias);
+      }
     }
 
-    // supports legacy flow (required for backwards compatibility)
     await PublicKeyService.putPublicKey(ctx, publicKeys, userAlias, signing);
 
-    // for the new flow, we need to store the user profile separately
-    await PublicKeyService.putUserProfile(
-      ctx,
-      ethAddress,
-      userAlias,
-      signing,
-      publicKeys.length
-    );
+    for (const address of uniqueAddresses) {
+      await PublicKeyService.putUserProfile(
+        ctx,
+        address,
+        userAlias,
+        signing,
+        publicKeys.length
+      );
+    }
 
     return userAlias;
   }
