@@ -88,8 +88,9 @@ export class PublicKeyContract extends GalaContract {
     PublicKeyContract.ensurePublicKeys(dto.publicKeys);
 
     const userAlias = dto.user;
+    const signing = dto.signing ?? SigningScheme.ETH;
 
-    return PublicKeyService.registerUser(ctx, dto.publicKeys, userAlias);
+    return PublicKeyService.registerUser(ctx, dto.publicKeys, userAlias, signing);
   }
 
   @Submit({
@@ -103,7 +104,7 @@ export class PublicKeyContract extends GalaContract {
     const ethAddress = PublicKeyService.getUserAddress(dto.publicKeys[0], SigningScheme.ETH);
     const userAlias = `eth|${ethAddress}` as UserAlias;
 
-    return PublicKeyService.registerUser(ctx, dto.publicKeys, userAlias);
+    return PublicKeyService.registerUser(ctx, dto.publicKeys, userAlias, SigningScheme.ETH);
   }
 
   @Submit({
@@ -117,7 +118,7 @@ export class PublicKeyContract extends GalaContract {
     const address = PublicKeyService.getUserAddress(dto.publicKeys[0], SigningScheme.TON);
     const userAlias = `ton|${address}` as UserAlias;
 
-    return PublicKeyService.registerUser(ctx, dto.publicKeys, userAlias);
+    return PublicKeyService.registerUser(ctx, dto.publicKeys, userAlias, SigningScheme.TON);
   }
 
   @Submit({

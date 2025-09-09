@@ -58,7 +58,8 @@ export async function createRegisteredUser(chaincode: TestChaincode): Promise<Us
   const { alias, privateKey, publicKey, ethAddress } = await createUser();
   const dto = await createValidSubmitDTO(RegisterUserDto, {
     user: alias,
-    publicKeys: [publicKey]
+    publicKeys: [publicKey],
+    signing: SigningScheme.ETH
   });
   const signedDto = dto.signed(process.env.DEV_ADMIN_PRIVATE_KEY as string);
   const response = await chaincode.invoke("PublicKeyContract:RegisterUser", signedDto);

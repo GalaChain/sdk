@@ -65,7 +65,7 @@ it("should put user profiles for all unique addresses derived from public keys",
   const pk2 = users.random().publicKey;
   const alias = "client|multi" as UserAlias;
 
-  await PublicKeyService.registerUser(ctx, [pk1, pk2], alias);
+  await PublicKeyService.registerUser(ctx, [pk1, pk2], alias, SigningScheme.ETH);
 
   await ctx.stub.flushWrites();
 

@@ -16,6 +16,7 @@ import {
   ChainCallDTO,
   ChainUser,
   RegisterUserDto,
+  SigningScheme,
   SubmitCallDTO,
   UserAlias,
   UserProfile,
@@ -369,7 +370,8 @@ describe("authorization", () => {
 
     const regDto = await createValidSubmitDTO(RegisterUserDto, {
       user: alias,
-      publicKeys: [kp1.publicKey, kp2.publicKey]
+      publicKeys: [kp1.publicKey, kp2.publicKey],
+      signing: SigningScheme.ETH
     });
     const regResp = await chaincode.invoke(
       "PublicKeyContract:RegisterUser",

@@ -247,9 +247,9 @@ export class PublicKeyService {
   public static async registerUser(
     ctx: GalaChainContext,
     publicKeys: string[],
-    userAlias: UserAlias
+    userAlias: UserAlias,
+    signing: SigningScheme
   ): Promise<string> {
-    const signing = userAlias.startsWith("ton|") ? SigningScheme.TON : SigningScheme.ETH;
     const currPublicKey = await PublicKeyService.getPublicKey(ctx, userAlias);
     const firstPk = publicKeys[0];
     const providedPk =
