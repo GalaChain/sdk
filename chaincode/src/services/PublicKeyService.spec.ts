@@ -12,6 +12,10 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+import { ChainObject, SigningScheme, UserAlias, UserProfile } from "@gala-chain/api";
+import { fixture, users } from "@gala-chain/test";
+import TestGalaContract from "../__test__/TestGalaContract";
+import { GalaChainContext } from "../types";
 import { PublicKeyService } from "./PublicKeyService";
 
 it(`should normalize secp256k1 public key`, async () => {
@@ -50,4 +54,48 @@ it(`should normalize secp256k1 public key`, async () => {
   expect(keyFromHex0x).toEqual(inputBase64Compressed);
   expect(await fails1.catch((e) => e.message)).toEqual(expect.stringContaining("Cannot normalize secp256k1"));
   expect(await fails2.catch((e) => e.message)).toEqual(expect.stringContaining("Unknown point format"));
+});
+
+it("should put user profiles for all unique addresses derived from public keys", async () => {
+  const { ctx, getWrites } = fixture<GalaChainContext, TestGalaContract>(TestGalaContract).callingUser(
+    users.testUser1
+  );
+
+  const pk1 = users.random().publicKey;
+  const pk2 = users.random().publicKey;
+  const alias = "client|multi" as UserAlias;
+
+  await PublicKeyService.registerUser(
+    ctx,
+    [pk1, pk2],
+    "0000000000000000000000000000000000000000",
+    alias,
+    SigningScheme.ETH
+  );
+
+  await ctx.stub.flushWrites();
+
+  const addr1 = PublicKeyService.getUserAddress(pk1, SigningScheme.ETH);
+  const addr2 = PublicKeyService.getUserAddress(pk2, SigningScheme.ETH);
+  const key1 = PublicKeyService.getUserProfileKey(ctx, addr1);
+  const key2 = PublicKeyService.getUserProfileKey(ctx, addr2);
+  const wrongKey = PublicKeyService.getUserProfileKey(
+    ctx,
+    "0000000000000000000000000000000000000000"
+  );
+
+  const writes = getWrites();
+  expect(Object.keys(writes)).toContain(key1);
+  expect(Object.keys(writes)).toContain(key2);
+  expect(Object.keys(writes)).not.toContain(wrongKey);
+
+  const profile1 = ChainObject.deserialize<UserProfile>(UserProfile, writes[key1]);
+  const profile2 = ChainObject.deserialize<UserProfile>(UserProfile, writes[key2]);
+
+  expect(profile1.alias).toBe(alias);
+  expect(profile2.alias).toBe(alias);
+  expect(profile1.pubKeyCount).toBe(2);
+  expect(profile1.requiredSignatures).toBe(2);
+  expect(profile2.pubKeyCount).toBe(2);
+  expect(profile2.requiredSignatures).toBe(2);
 });
