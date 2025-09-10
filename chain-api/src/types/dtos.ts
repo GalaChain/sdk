@@ -21,12 +21,8 @@ import {
   IsOptional,
   Max,
   Min,
-  MinLength,
   ValidateNested,
-  ValidationArguments,
   ValidationError,
-  ValidationOptions,
-  registerDecorator,
   validate
 } from "class-validator";
 import { JSONSchema } from "class-validator-jsonschema";
@@ -596,29 +592,6 @@ export class DryRunResultDto extends ChainCallDTO {
    * for more details on the importantce of Read/Write sets.
    */
   public deletes: Record<string, true>;
-}
-
-function MaxArrayLength(property: string, validationOptions?: ValidationOptions) {
-  return function (object: object, propertyName: string) {
-    registerDecorator({
-      name: "maxArrayLength",
-      target: (object as Record<string, unknown>).constructor,
-      propertyName,
-      constraints: [property],
-      options: validationOptions,
-      validator: {
-        validate(value: unknown, args: ValidationArguments) {
-          const [relatedPropertyName] = args.constraints;
-          const relatedValue = (args.object as Record<string, unknown>)[relatedPropertyName];
-          return typeof value === "number" && Array.isArray(relatedValue) && value <= relatedValue.length;
-        },
-        defaultMessage(args: ValidationArguments) {
-          const [relatedPropertyName] = args.constraints;
-          return `${args.property} must not be greater than ${relatedPropertyName}.length`;
-        }
-      }
-    });
-  };
 }
 
 /**
