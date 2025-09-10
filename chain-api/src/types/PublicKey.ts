@@ -37,9 +37,7 @@ export class PublicKey extends ChainObject {
     return super.serialize();
   }
 
-  public static from(
-    object: string | Record<string, unknown> | Record<string, unknown>[]
-  ): PublicKey {
+  public static from(object: string | Record<string, unknown> | Record<string, unknown>[]): PublicKey {
     const pk = ChainObject.deserialize<PublicKey>(PublicKey, object);
     if (pk.publicKeys === undefined || pk.publicKeys.length === 0) {
       if (pk.publicKey !== undefined) {
