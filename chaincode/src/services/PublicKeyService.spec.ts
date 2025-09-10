@@ -93,3 +93,44 @@ it("should put user profiles for all unique addresses derived from public keys",
   expect(profile2.pubKeyCount).toBe(2);
   expect(profile2.requiredSignatures).toBe(2);
 });
+
+it("should load legacy public key format", async () => {
+  const { ctx } = fixture<GalaChainContext, TestGalaContract>(TestGalaContract).callingUser(
+    users.testUser1
+  );
+
+  const alias = "client|legacy" as UserAlias;
+  const pk = users.random().publicKey;
+  const pkKey = PublicKeyService.getPublicKeyKey(ctx, alias);
+  const legacyPk = JSON.stringify({ publicKey: pk, signing: SigningScheme.ETH });
+  await ctx.stub.putState(pkKey, Buffer.from(legacyPk));
+
+  const loaded = await PublicKeyService.getPublicKey(ctx, alias);
+
+  expect(loaded?.publicKeys).toEqual([pk]);
+  expect(loaded?.publicKey).toEqual(pk);
+});
+
+it("should populate profile counts for legacy entries", async () => {
+  const { ctx } = fixture<GalaChainContext, TestGalaContract>(TestGalaContract).callingUser(
+    users.testUser1
+  );
+
+  const alias = "client|profile" as UserAlias;
+  const pk1 = users.random().publicKey;
+  const pk2 = users.random().publicKey;
+
+  const pkKey = PublicKeyService.getPublicKeyKey(ctx, alias);
+  const pkObj = { publicKeys: [pk1, pk2], signing: SigningScheme.ETH };
+  await ctx.stub.putState(pkKey, Buffer.from(JSON.stringify(pkObj)));
+
+  const address = PublicKeyService.getUserAddress(pk1, SigningScheme.ETH);
+  const profileKey = PublicKeyService.getUserProfileKey(ctx, address);
+  const legacyProfile = JSON.stringify({ alias, ethAddress: address, roles: ["SUBMIT"] });
+  await ctx.stub.putState(profileKey, Buffer.from(legacyProfile));
+
+  const profile = await PublicKeyService.getUserProfile(ctx, address);
+
+  expect(profile?.pubKeyCount).toBe(2);
+  expect(profile?.requiredSignatures).toBe(2);
+});

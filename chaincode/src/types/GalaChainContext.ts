@@ -107,7 +107,8 @@ export class GalaChainContext extends Context {
     profile.tonAddress = this.callingUserTonAddressValue;
     profile.roles = this.callingUserRoles;
     profile.pubKeyCount = this.callingUserPubKeyCountValue ?? 1;
-    profile.requiredSignatures = this.callingUserRequiredSignaturesValue ?? 1;
+    profile.requiredSignatures =
+      this.callingUserRequiredSignaturesValue ?? Math.floor(profile.pubKeyCount / 2) + 1;
     return profile;
   }
 
@@ -126,7 +127,8 @@ export class GalaChainContext extends Context {
     this.callingUserValue = d.alias;
     this.callingUserRolesValue = d.roles ?? [UserRole.EVALUATE]; // default if `roles` is undefined
     this.callingUserPubKeyCountValue = d.pubKeyCount ?? 1;
-    this.callingUserRequiredSignaturesValue = d.requiredSignatures ?? 1;
+    this.callingUserRequiredSignaturesValue =
+      d.requiredSignatures ?? Math.floor(this.callingUserPubKeyCountValue / 2) + 1;
 
     if (d.ethAddress !== undefined) {
       this.callingUserEthAddressValue = d.ethAddress;
@@ -159,7 +161,8 @@ export class GalaChainContext extends Context {
     this.callingUserEthAddressValue = d.ethAddress;
     this.callingUserTonAddressValue = d.tonAddress;
     this.callingUserPubKeyCountValue = d.pubKeyCount ?? 1;
-    this.callingUserRequiredSignaturesValue = d.requiredSignatures ?? 1;
+    this.callingUserRequiredSignaturesValue =
+      d.requiredSignatures ?? Math.floor(this.callingUserPubKeyCountValue / 2) + 1;
     this.isDryRun = true;
   }
 

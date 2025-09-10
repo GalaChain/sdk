@@ -136,11 +136,12 @@ export class PublicKeyService {
       if (userProfile.roles === undefined) {
         userProfile.roles = Array.from(UserProfile.DEFAULT_ROLES);
       }
-      if (userProfile.pubKeyCount === undefined) {
-        userProfile.pubKeyCount = 1;
-      }
-      if (userProfile.requiredSignatures === undefined) {
-        userProfile.requiredSignatures = 1;
+      if (userProfile.pubKeyCount === undefined || userProfile.requiredSignatures === undefined) {
+        const pk = await PublicKeyService.getPublicKey(ctx, userProfile.alias);
+        const pkCount = pk?.publicKeys?.length ?? 1;
+        userProfile.pubKeyCount = userProfile.pubKeyCount ?? pkCount;
+        userProfile.requiredSignatures =
+          userProfile.requiredSignatures ?? Math.floor(userProfile.pubKeyCount / 2) + 1;
       }
 
       return userProfile as UserProfileWithRoles;
@@ -198,9 +199,14 @@ export class PublicKeyService {
     if (data.length > 0) {
       const publicKey = PublicKey.from(data.toString());
       publicKey.signing = publicKey.signing ?? SigningScheme.ETH;
+
       if (publicKey.publicKeys === undefined || publicKey.publicKeys.length === 0) {
-        throw new PkMissingError(userId);
+        if (publicKey.publicKey === undefined) {
+          throw new PkMissingError(userId);
+        }
+        publicKey.publicKeys = [publicKey.publicKey];
       }
+
       [publicKey.publicKey] = publicKey.publicKeys;
       return publicKey;
     }
