@@ -106,9 +106,14 @@ export class GalaChainContext extends Context {
     profile.ethAddress = this.callingUserEthAddressValue;
     profile.tonAddress = this.callingUserTonAddressValue;
     profile.roles = this.callingUserRoles;
-    profile.pubKeyCount = this.callingUserPubKeyCountValue ?? 1;
-    profile.requiredSignatures =
-      this.callingUserRequiredSignaturesValue ?? Math.floor(profile.pubKeyCount / 2) + 1;
+
+    const pubKeyCount = this.callingUserPubKeyCountValue ?? 1;
+    profile.pubKeyCount = pubKeyCount;
+
+    const requiredSignatures =
+      this.callingUserRequiredSignaturesValue ?? Math.floor(pubKeyCount / 2) + 1;
+    profile.requiredSignatures = requiredSignatures;
+
     return profile;
   }
 

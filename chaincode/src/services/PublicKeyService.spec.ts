@@ -134,3 +134,33 @@ it("should populate profile counts for legacy entries", async () => {
   expect(profile?.pubKeyCount).toBe(2);
   expect(profile?.requiredSignatures).toBe(2);
 });
+
+it("should return profile counts for multi-key entries", async () => {
+  const { ctx } = fixture<GalaChainContext, TestGalaContract>(TestGalaContract).callingUser(
+    users.testUser1
+  );
+
+  const alias = "client|multi-profile" as UserAlias;
+  const pk1 = users.random().publicKey;
+  const pk2 = users.random().publicKey;
+
+  const pkKey = PublicKeyService.getPublicKeyKey(ctx, alias);
+  const pkObj = { publicKeys: [pk1, pk2], signing: SigningScheme.ETH };
+  await ctx.stub.putState(pkKey, Buffer.from(JSON.stringify(pkObj)));
+
+  const address = PublicKeyService.getUserAddress(pk1, SigningScheme.ETH);
+  const profileKey = PublicKeyService.getUserProfileKey(ctx, address);
+  const profileObj = {
+    alias,
+    ethAddress: address,
+    roles: ["SUBMIT"],
+    pubKeyCount: 2,
+    requiredSignatures: 2
+  };
+  await ctx.stub.putState(profileKey, Buffer.from(JSON.stringify(profileObj)));
+
+  const profile = await PublicKeyService.getUserProfile(ctx, address);
+
+  expect(profile?.pubKeyCount).toBe(2);
+  expect(profile?.requiredSignatures).toBe(2);
+});
