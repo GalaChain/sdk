@@ -123,7 +123,7 @@ describe("ChainCallDTO", () => {
 
   it("should sign and verify signature", () => {
     // Given
-    const { privateKey, publicKey } = genKeyPair();
+    const { privateKey } = genKeyPair();
     const dto = new TestDto();
     dto.amounts = [new BigNumber("12.3")];
     expect(dto.signatures).toEqual(undefined);
@@ -133,14 +133,14 @@ describe("ChainCallDTO", () => {
 
     // Then
     expect(dto.signatures).toHaveLength(1);
-    expect(dto.signatures![0].signature).toEqual(expect.stringMatching(/.{50,}/));
-    expect(dto.isSignatureValid(dto.signatures![0])).toEqual(true);
+    const signature = dto.signatures?.[0];
+    expect(signature?.signature).toEqual(expect.stringMatching(/.{50,}/));
+    expect(signature && dto.isSignatureValid(signature)).toEqual(true);
   });
 
   it("should sign and verify signature (edge case - shorter private key with missing trailing 0)", () => {
     // Given
     const privateKey = "e8d506db1e7c8d98dbc6752537939312702962f48e169084a7babbb5c96217f";
-    const publicKey = "0365bc56f0a623867746cbb025a74c295b5f794cf7c4adc11991bad1522912e5f6";
     expect(privateKey.length).toEqual(63); // shorter than regular 64 one
 
     const dto = new TestDto();
@@ -152,8 +152,9 @@ describe("ChainCallDTO", () => {
 
     // Then
     expect(dto.signatures).toHaveLength(1);
-    expect(dto.signatures![0].signature).toEqual(expect.stringMatching(/.{50,}/));
-    expect(dto.isSignatureValid(dto.signatures![0])).toEqual(true);
+    const signature = dto.signatures?.[0];
+    expect(signature?.signature).toEqual(expect.stringMatching(/.{50,}/));
+    expect(signature && dto.isSignatureValid(signature)).toEqual(true);
   });
 
   it("should sign and fail to verify signature (invalid key)", () => {
@@ -167,7 +168,11 @@ describe("ChainCallDTO", () => {
     dto.sign(privateKey);
 
     // Then
-    expect(dto.isSignatureValid(dto.signatures![0].signature!, invalid.publicKey)).toEqual(false);
+    const signature = dto.signatures?.[0]?.signature;
+    expect(signature).toBeDefined();
+    if (signature) {
+      expect(dto.isSignatureValid(signature, invalid.publicKey)).toEqual(false);
+    }
   });
 
   it("should sign and fail to verify signature (invalid payload)", () => {
@@ -181,7 +186,11 @@ describe("ChainCallDTO", () => {
     dto.key = "i-will-break-this";
 
     // Then
-    expect(dto.isSignatureValid(dto.signatures![0].signature!, publicKey)).toEqual(false);
+    const signature = dto.signatures?.[0]?.signature;
+    expect(signature).toBeDefined();
+    if (signature) {
+      expect(dto.isSignatureValid(signature, publicKey)).toEqual(false);
+    }
   });
 
   it("should sign and verify TON signature", async () => {
@@ -197,10 +206,9 @@ describe("ChainCallDTO", () => {
 
     // Then
     expect(dto.signatures).toHaveLength(1);
-    expect(dto.signatures![0].signature).toEqual(expect.stringMatching(/.{50,}/));
-    expect(dto.isSignatureValid(dto.signatures![0].signature!, pair.publicKey.toString("base64"))).toEqual(
-      true
-    );
+    const signature = dto.signatures?.[0]?.signature;
+    expect(signature).toEqual(expect.stringMatching(/.{50,}/));
+    expect(signature && dto.isSignatureValid(signature, pair.publicKey.toString("base64"))).toEqual(true);
   });
 
   it("should reject signatures with different schemes", async () => {
@@ -227,7 +235,8 @@ describe("ChainCallDTO", () => {
     dto.signing = SigningScheme.TON;
     dto.prefix = "bar";
 
-    expect(dto.isSignatureValid(dto.signatures![0])).toEqual(true);
+    const signature = dto.signatures?.[0];
+    expect(signature && dto.isSignatureValid(signature)).toEqual(true);
   });
 
   it("should convert legacy single signature", () => {
