@@ -12,7 +12,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-import { ArrayNotEmpty, IsInt, IsNotEmpty, IsString, Min, ValidateIf } from "class-validator";
+import { IsInt, IsNotEmpty, IsOptional, IsString, Min, ValidateIf } from "class-validator";
 import { JSONSchema } from "class-validator-jsonschema";
 
 import { IsUserAlias } from "../validators";
@@ -57,9 +57,9 @@ export class UserProfile extends ChainObject {
       .sort()
       .join(", ")}, but you can use arbitrary strings to define your own roles.`
   })
+  @IsOptional()
   @IsString({ each: true })
-  @ArrayNotEmpty()
-  roles: string[];
+  roles?: string[];
 
   @JSONSchema({
     description: `Number of stored public keys for the user.`
