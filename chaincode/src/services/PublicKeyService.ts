@@ -200,8 +200,8 @@ export class PublicKeyService {
       const publicKey = PublicKey.from(data.toString());
       publicKey.signing = publicKey.signing ?? SigningScheme.ETH;
 
-      if (publicKey.publicKeys === undefined || publicKey.publicKeys.length === 0) {
-        if (publicKey.publicKey === undefined) {
+      if (!publicKey.publicKeys?.length) {
+        if (!publicKey.publicKey) {
           throw new PkMissingError(userId);
         }
         publicKey.publicKeys = [publicKey.publicKey];
