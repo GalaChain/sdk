@@ -64,22 +64,24 @@ export class UserProfile extends ChainObject {
   @JSONSchema({
     description: `Number of stored public keys for the user.`
   })
+  @IsOptional()
   @IsInt()
   @Min(0)
-  pubKeyCount: number;
+  pubKeyCount?: number;
 
   @JSONSchema({
     description: `Minimum number of signatures required for authorization.`
   })
+  @IsOptional()
   @IsInt()
   @Min(1)
-  requiredSignatures: number;
+  requiredSignatures?: number;
 }
 
 export const UP_INDEX_KEY = "GCUP";
 
 export type UserProfileWithRoles = UserProfile & {
   roles: string[];
-  pubKeyCount: number;
-  requiredSignatures: number;
+  pubKeyCount?: number;
+  requiredSignatures?: number;
 };
