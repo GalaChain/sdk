@@ -312,9 +312,8 @@ export class ChainCallDTO {
       }
     }
 
-    if (this.signing !== SigningScheme.TON) {
-      this.signerPublicKey = signatures.getPublicKey(privateKey);
-    }
+    const signerPublicKey =
+      this.signing !== SigningScheme.TON ? signatures.getPublicKey(privateKey) : undefined;
 
     const payload = {
       ...this,
@@ -337,7 +336,7 @@ export class ChainCallDTO {
 
     const signatureDto: SignatureDto = {
       signature: this.signature,
-      signerPublicKey: this.signerPublicKey,
+      signerPublicKey,
       signerAddress: this.signerAddress,
       signing: this.signing,
       prefix: this.prefix
