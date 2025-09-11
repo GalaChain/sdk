@@ -198,7 +198,10 @@ function GalaTransaction<In extends ChainCallDTO, Out>(
         } else if (options?.verifySignature || dto?.signature !== undefined) {
           const auth = await authenticate(ctx, dto);
           ctx.callingUserData = auth;
-          quorumInfo = { signedByKeys: auth.signedByKeys, pubKeyCount: auth.pubKeyCount };
+          quorumInfo = {
+            signedByKeys: auth.signedByKeys,
+            pubKeyCount: auth.pubKeyCount ?? 1
+          };
         } else {
           // it means a request where authorization is not required. If there is org-based authorization,
           // default roles are applied. If not, then only evaluate is possible. Alias is intentionally

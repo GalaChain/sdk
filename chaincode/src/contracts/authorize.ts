@@ -102,7 +102,10 @@ export async function authorize(ctx: GalaChainContext, options: AuthorizeOptions
 
   if (quorum) {
     const user = ctx.callingUserProfile;
-    const requiredSignatures = Math.max(user.requiredSignatures, options.quorum ?? 1);
+    const requiredSignatures = Math.max(
+      user.requiredSignatures ?? 1,
+      options.quorum ?? 1
+    );
     if (quorum.signedByKeys.length < requiredSignatures) {
       throw new UnauthorizedError(
         `Insufficient signatures: got ${quorum.signedByKeys.length}, required ${requiredSignatures}.`,
