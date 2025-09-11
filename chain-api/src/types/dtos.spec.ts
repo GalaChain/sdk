@@ -150,7 +150,8 @@ describe("ChainCallDTO", () => {
 
     // Then
     expect(dto.signature).toEqual(expect.stringMatching(/.{50,}/));
-    expect(dto.isSignatureValid(dto.signerPublicKey ?? "")).toEqual(true);
+    const publicKey = signatures.getPublicKey(privateKey);
+    expect(dto.isSignatureValid(publicKey)).toEqual(true);
   });
 
   it("should sign and fail to verify signature (invalid key)", () => {
@@ -229,7 +230,7 @@ describe("ChainCallDTO", () => {
 
     const signature = {
       signature: dto.signature ?? "",
-      signerPublicKey: dto.signerPublicKey,
+      signerPublicKey: signatures.getPublicKey(privateKey),
       signerAddress: dto.signerAddress,
       signing: dto.signing,
       prefix: dto.prefix
