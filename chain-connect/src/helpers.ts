@@ -59,6 +59,8 @@ export interface MetaMaskEvents {
   accountChanged: string | null;
   /** Fired when the list of accounts changes */
   accountsChanged: string[] | null;
+  /** Catch-all signature to support additional wallet events */
+  [event: string]: string | string[] | null;
 }
 
 /**
