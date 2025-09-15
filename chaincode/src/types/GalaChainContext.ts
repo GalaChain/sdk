@@ -130,8 +130,8 @@ export class GalaChainContext extends Context {
     this.callingUserValue = d.alias;
     this.callingUserRolesValue = d.roles ?? [UserRole.EVALUATE]; // default if `roles` is undefined
     this.callingUserPubKeyCountValue = d.pubKeyCount ?? 1;
-    this.callingUserRequiredSignaturesValue =
-      d.requiredSignatures ?? Math.floor(this.callingUserPubKeyCountValue / 2) + 1;
+    const defaultRequiredSignatures = Math.floor(this.callingUserPubKeyCountValue / 2) + 1;
+    this.callingUserRequiredSignaturesValue = d.requiredSignatures ?? defaultRequiredSignatures;
 
     if (d.ethAddress !== undefined) {
       this.callingUserEthAddressValue = d.ethAddress;
