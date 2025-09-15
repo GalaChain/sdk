@@ -37,7 +37,6 @@ import {
   OraclePriceAssertion,
   OraclePriceCrossRateAssertion,
   PaymentRequiredError,
-  RequestTokenBridgeOutDto,
   TerminateTokenSwapDto,
   TokenClassKey,
   TokenInstanceKey,
@@ -88,7 +87,9 @@ export function extractUniqueUsersFromRequests(ctx: GalaChainContext, requests: 
   return Array.from(new Set(users));
 }
 
-export async function batchFillTokenSwapFeeGate(ctx: GalaChainContext, dto: BatchFillTokenSwapDto) {
+export async function batchFillTokenSwapFeeGate(ctx: GalaChainContext, _dto: BatchFillTokenSwapDto) {
+  void _dto;
+
   return galaFeeGate(ctx, { feeCode: FeeGateCodes.BatchFillTokenSwap });
 }
 
@@ -97,6 +98,8 @@ export async function batchMintTokenFeeGate(ctx: GalaChainContext, dto: BatchMin
   const owners: string[] = extractUniqueOwnersFromRequests(ctx, dto.mintDtos);
 
   for (const owner of owners) {
+    void owner;
+
     await galaFeeGate(ctx, {
       feeCode
       // v1 fees requires only callingUser identities pay fees
@@ -132,7 +135,9 @@ export async function batchMintTokenFeeGate(ctx: GalaChainContext, dto: BatchMin
   return Promise.resolve();
 }
 
-export async function burnTokensFeeGate(ctx: GalaChainContext, dto: BurnTokensDto) {
+export async function burnTokensFeeGate(ctx: GalaChainContext, _dto: BurnTokensDto) {
+  void _dto;
+
   return galaFeeGate(ctx, {
     feeCode: FeeGateCodes.BurnTokens
     // v1 fees requires only callingUser identities pay fees
@@ -140,7 +145,9 @@ export async function burnTokensFeeGate(ctx: GalaChainContext, dto: BurnTokensDt
   });
 }
 
-export async function terminateTokenSwapFeeGate(ctx: GalaChainContext, dto: TerminateTokenSwapDto) {
+export async function terminateTokenSwapFeeGate(ctx: GalaChainContext, _dto: TerminateTokenSwapDto) {
+  void _dto;
+
   return galaFeeGate(ctx, { feeCode: FeeGateCodes.TerminateTokenSwap });
 }
 
@@ -413,7 +420,9 @@ export async function requestTokenBridgeOutFeeGate(
   await putChainObject(ctx, bridgeFeeAssertionRecord);
 }
 
-export async function transferTokenFeeGate(ctx: GalaChainContext, dto: TransferTokenDto) {
+export async function transferTokenFeeGate(ctx: GalaChainContext, _dto: TransferTokenDto) {
+  void _dto;
+
   return galaFeeGate(ctx, {
     feeCode: FeeGateCodes.TransferToken
     // v1 fees requires only callingUser identities pay fees
@@ -423,11 +432,15 @@ export async function transferTokenFeeGate(ctx: GalaChainContext, dto: TransferT
   });
 }
 
-export async function galaSwapRequestFeeGate(ctx: GalaChainContext, dto: ChainCallDTO) {
+export async function galaSwapRequestFeeGate(ctx: GalaChainContext, _dto: ChainCallDTO) {
+  void _dto;
+
   return galaFeeGate(ctx, { feeCode: FeeGateCodes.SwapTokenRequest });
 }
 
-export async function galaSwapFillFeeGate(ctx: GalaChainContext, dto: FillTokenSwapDto) {
+export async function galaSwapFillFeeGate(ctx: GalaChainContext, _dto: FillTokenSwapDto) {
+  void _dto;
+
   return galaFeeGate(ctx, { feeCode: FeeGateCodes.SwapTokenFill });
 }
 
@@ -437,7 +450,9 @@ export async function galaSwapBatchFillFeeGate(ctx: GalaChainContext, dto: Batch
   }
 }
 
-export async function simpleFeeGate(ctx: GalaChainContext, dto: ChainCallDTO) {
+export async function simpleFeeGate(ctx: GalaChainContext, _dto: ChainCallDTO) {
+  void _dto;
+
   // example quick implementation fee gate
   // no need to write FeeCodeDefinitions or lookup FeeCodeDefinition objects to calc amount
   // tradeoff is its not flexible to update or modify, and won't record usage

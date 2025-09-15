@@ -16,7 +16,6 @@ import {
   Allocation,
   ChainObject,
   TokenBalance,
-  TokenClass,
   TokenClassKey,
   TokenInstance,
   TokenInstanceKey,
@@ -27,7 +26,6 @@ import {
 import BigNumber from "bignumber.js";
 import { plainToInstance } from "class-transformer";
 
-import { fetchBalances } from "../balances";
 import { lockToken } from "../locks";
 import { MintTokenWithAllowanceParams, mintTokenWithAllowance } from "../mint";
 import { CreateTokenClassParams, createTokenClass } from "../token";
@@ -118,7 +116,7 @@ export async function createVestingToken(
   const tokenClassParams: CreateTokenClassParams = {
     ...params
   };
-  const tokenClassResponse = await createTokenClass(ctx, tokenClassParams);
+  await createTokenClass(ctx, tokenClassParams);
 
   const tokenInstanceKey = plainToInstance(TokenInstanceKey, {
     ...params.tokenClass,
@@ -136,7 +134,7 @@ export async function createVestingToken(
       owner: allocation.owner,
       quantity: allocation.quantity
     };
-    const mintResponse = await mintTokenWithAllowance(ctx, mintParams);
+    await mintTokenWithAllowance(ctx, mintParams);
 
     let vestingPeriodStart = params.startDate;
     let expires = vestingPeriodStart;
@@ -156,7 +154,7 @@ export async function createVestingToken(
       };
     };
 
-    const lockResponse = await lockToken(ctx, {
+    await lockToken(ctx, {
       owner: allocation.owner,
       lockAuthority: ctx.callingUser,
       tokenInstanceKey,
