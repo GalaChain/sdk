@@ -603,12 +603,22 @@ export class DryRunResultDto extends ChainCallDTO {
 @ValidatorConstraint({ name: "PublicKeyXorPublicKeys", async: false })
 class PublicKeyXorPublicKeys implements ValidatorConstraintInterface {
   validate(_value: unknown, args: ValidationArguments) {
-    const { publicKey, publicKeys } = args.object as {
+    const obj = args.object as {
       publicKey?: string;
       publicKeys?: string[];
     };
+    const { publicKey, publicKeys } = obj;
+
     const hasKey = typeof publicKey === "string" && publicKey.length > 0;
     const hasKeys = Array.isArray(publicKeys) && publicKeys.length > 0;
+
+    if (hasKey && !hasKeys) {
+      // populate publicKeys so downstream consumers always receive an array
+      obj.publicKeys = [publicKey];
+      delete obj.publicKey;
+      return true;
+    }
+
     return (hasKey || hasKeys) && !(hasKey && hasKeys);
   }
 
