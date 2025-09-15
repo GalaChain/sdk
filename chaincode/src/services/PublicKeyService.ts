@@ -277,9 +277,7 @@ export class PublicKeyService {
       }
     }
 
-    const derivedAddresses = publicKeys.map((pk) =>
-      PublicKeyService.getUserAddress(pk, signing)
-    );
+    const derivedAddresses = publicKeys.map((pk) => PublicKeyService.getUserAddress(pk, signing));
     const uniqueAddresses = Array.from(new Set(derivedAddresses));
 
     for (const address of uniqueAddresses) {
@@ -292,13 +290,7 @@ export class PublicKeyService {
     await PublicKeyService.putPublicKey(ctx, publicKeys, userAlias, signing);
 
     for (const address of uniqueAddresses) {
-      await PublicKeyService.putUserProfile(
-        ctx,
-        address,
-        userAlias,
-        signing,
-        publicKeys.length
-      );
+      await PublicKeyService.putUserProfile(ctx, address, userAlias, signing, publicKeys.length);
     }
 
     return userAlias;
