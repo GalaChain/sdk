@@ -45,6 +45,9 @@ interface ValidationFlags {
   watch?: boolean;
 }
 
+type ParsedNetworkUpFlags = ValidationFlags &
+  Required<Pick<ValidationFlags, "channel" | "channelType" | "chaincodeName">>;
+
 export default class NetworkUp extends BaseCommand<typeof NetworkUp> {
   static override aliases = ["network:up"];
 
@@ -67,7 +70,7 @@ export default class NetworkUp extends BaseCommand<typeof NetworkUp> {
       description:
         'Channel type. Can be "curator" or "partner". It means whether this is a chaincode managed by CuratorOrg or PartnerOrg.',
       required: true,
-      options: ["curator", "partner"],
+      options: ["curator", "partner"] as const,
       multiple: true
     }),
     chaincodeName: Flags.string({
@@ -115,7 +118,13 @@ export default class NetworkUp extends BaseCommand<typeof NetworkUp> {
 
   async run(): Promise<void> {
     const { flags } = await this.parse(NetworkUp);
-    customValidation(flags);
+    const typedFlags: ParsedNetworkUpFlags = {
+      ...flags,
+      channel: flags.channel,
+      chaincodeName: flags.chaincodeName,
+      channelType: flags.channelType as ChannelType[]
+    };
+    customValidation(typedFlags);
 
     const fabloRoot = path.resolve(flags.fabloRoot);
     const apiConfigPath = path.resolve(fabloRoot, "api-config.json");
@@ -131,7 +140,7 @@ export default class NetworkUp extends BaseCommand<typeof NetworkUp> {
 
     copyNetworkScriptsTo(fabloRoot);
 
-    const singleArgs = reduce(flags).map((a) => ({
+    const singleArgs = reduce(typedFlags).map((a) => ({
       ...a,
       chaincodeDir: a.chaincodeDir ?? defaultChaincodeDir
     }));
