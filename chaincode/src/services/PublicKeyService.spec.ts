@@ -14,6 +14,7 @@
  */
 import { ChainObject, SigningScheme, UserAlias, UserProfile } from "@gala-chain/api";
 import { fixture, users } from "@gala-chain/test";
+
 import TestGalaContract from "../__test__/TestGalaContract";
 import { GalaChainContext } from "../types";
 import { PublicKeyService } from "./PublicKeyService";
@@ -57,9 +58,8 @@ it(`should normalize secp256k1 public key`, async () => {
 });
 
 it("should put user profiles for all unique addresses derived from public keys", async () => {
-  const { ctx, getWrites } = fixture<GalaChainContext, TestGalaContract>(TestGalaContract).callingUser(
-    users.testUser1
-  );
+  const contractFixture = fixture<GalaChainContext, TestGalaContract>(TestGalaContract);
+  const { ctx, getWrites } = contractFixture.callingUser(users.testUser1);
 
   const pk1 = users.random().publicKey;
   const pk2 = users.random().publicKey;
@@ -73,10 +73,7 @@ it("should put user profiles for all unique addresses derived from public keys",
   const addr2 = PublicKeyService.getUserAddress(pk2, SigningScheme.ETH);
   const key1 = PublicKeyService.getUserProfileKey(ctx, addr1);
   const key2 = PublicKeyService.getUserProfileKey(ctx, addr2);
-  const wrongKey = PublicKeyService.getUserProfileKey(
-    ctx,
-    "0000000000000000000000000000000000000000"
-  );
+  const wrongKey = PublicKeyService.getUserProfileKey(ctx, "0000000000000000000000000000000000000000");
 
   const writes = getWrites();
   expect(Object.keys(writes)).toContain(key1);
@@ -95,9 +92,8 @@ it("should put user profiles for all unique addresses derived from public keys",
 });
 
 it("should load legacy public key format", async () => {
-  const { ctx } = fixture<GalaChainContext, TestGalaContract>(TestGalaContract).callingUser(
-    users.testUser1
-  );
+  const contractFixture = fixture<GalaChainContext, TestGalaContract>(TestGalaContract);
+  const { ctx } = contractFixture.callingUser(users.testUser1);
 
   const alias = "client|legacy" as UserAlias;
   const pk = users.random().publicKey;
@@ -112,9 +108,8 @@ it("should load legacy public key format", async () => {
 });
 
 it("should populate profile counts for legacy entries", async () => {
-  const { ctx } = fixture<GalaChainContext, TestGalaContract>(TestGalaContract).callingUser(
-    users.testUser1
-  );
+  const contractFixture = fixture<GalaChainContext, TestGalaContract>(TestGalaContract);
+  const { ctx } = contractFixture.callingUser(users.testUser1);
 
   const alias = "client|profile" as UserAlias;
   const pk1 = users.random().publicKey;
@@ -136,9 +131,8 @@ it("should populate profile counts for legacy entries", async () => {
 });
 
 it("should return profile counts for multi-key entries", async () => {
-  const { ctx } = fixture<GalaChainContext, TestGalaContract>(TestGalaContract).callingUser(
-    users.testUser1
-  );
+  const contractFixture = fixture<GalaChainContext, TestGalaContract>(TestGalaContract);
+  const { ctx } = contractFixture.callingUser(users.testUser1);
 
   const alias = "client|multi-profile" as UserAlias;
   const pk1 = users.random().publicKey;

@@ -109,9 +109,7 @@ export class GalaChainContext extends Context {
 
     const pubKeyCount = this.callingUserPubKeyCountValue ?? 1;
     profile.pubKeyCount = pubKeyCount;
-
-    const requiredSignatures =
-      this.callingUserRequiredSignaturesValue ?? Math.floor(pubKeyCount / 2) + 1;
+    const requiredSignatures = this.callingUserRequiredSignaturesValue ?? Math.floor(pubKeyCount / 2) + 1;
     profile.requiredSignatures = requiredSignatures;
 
     return profile;
