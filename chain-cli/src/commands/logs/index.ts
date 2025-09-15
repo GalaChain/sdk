@@ -129,8 +129,9 @@ export default class Log extends BaseCommand<typeof Log> {
       for (const logEntry of logs) {
         this.printLog(logEntry);
       }
-    } catch (error: any) {
-      throw new FetchLogsError(error.message);
+    } catch (error: unknown) {
+      const message = error instanceof Error ? error.message : String(error);
+      throw new FetchLogsError(message);
     }
   }
 
@@ -147,8 +148,9 @@ export default class Log extends BaseCommand<typeof Log> {
           this.handleSSEEvent(eventBlock);
         });
       });
-    } catch (error: any) {
-      throw new FetchLogsError(error.message);
+    } catch (error: unknown) {
+      const message = error instanceof Error ? error.message : String(error);
+      throw new FetchLogsError(message);
     }
   }
 
@@ -261,7 +263,7 @@ export default class Log extends BaseCommand<typeof Log> {
     );
   }
 
-  handleError(error: any): void {
+  handleError(error: unknown): void {
     if (error instanceof UnauthorizedError) {
       this.error(chalk.red(`Unauthorized: ${error.message}`), { exit: 1 });
     } else if (error instanceof BadRequestError) {
@@ -269,7 +271,8 @@ export default class Log extends BaseCommand<typeof Log> {
     } else if (error instanceof FetchLogsError) {
       this.error(chalk.red(`Failed to fetch logs: ${error.message}`), { exit: 1 });
     } else {
-      this.error(chalk.red(`An unexpected error occurred: ${error.message}`), { exit: 1 });
+      const message = error instanceof Error ? error.message : String(error);
+      this.error(chalk.red(`An unexpected error occurred: ${message}`), { exit: 1 });
     }
   }
 }

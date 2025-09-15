@@ -46,7 +46,7 @@ export interface ExtendedEip1193Provider extends Eip1193Provider {
   /** Removes a listener for account change events */
   removeListener(event: "accountsChanged", handler: Listener<string[]>): void;
   /** Array of available providers (for multi-wallet scenarios) */
-  providers?: Array<any>;
+  providers?: Eip1193Provider[];
   /** Flag indicating if this is a Trust Wallet provider */
   isTrust?: boolean;
 }
@@ -71,8 +71,7 @@ export type Listener<T> = (data: T) => void;
  * Simple event emitter implementation for handling wallet events.
  * @template Events - Record type defining available events and their data types
  */
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-export class EventEmitter<Events extends Record<string, any>> {
+export class EventEmitter<Events extends Record<string, unknown>> {
   private listeners: { [K in keyof Events]?: Listener<Events[K]>[] } = {};
 
   /**

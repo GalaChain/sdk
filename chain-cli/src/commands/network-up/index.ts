@@ -34,6 +34,17 @@ export interface SingleArg {
   chaincodeDir: string | undefined;
 }
 
+type ChannelType = SingleArg["channelType"];
+
+interface ValidationFlags {
+  channel?: string[];
+  channelType?: ChannelType[];
+  chaincodeName?: string[];
+  chaincodeDir?: Array<string | undefined>;
+  envConfig?: string;
+  watch?: boolean;
+}
+
 export default class NetworkUp extends BaseCommand<typeof NetworkUp> {
   static override aliases = ["network:up"];
 
@@ -290,8 +301,12 @@ function updatedFabloConfigWithEntry(
   return updated;
 }
 
-function customValidation(flags: any): void {
-  const { channel, channelType, chaincodeName, chaincodeDir, envConfig } = flags;
+function customValidation(flags: ValidationFlags): void {
+  const channel = flags.channel ?? [];
+  const channelType = flags.channelType ?? [];
+  const chaincodeName = flags.chaincodeName ?? [];
+  const chaincodeDir = (flags.chaincodeDir ?? []).filter((dir): dir is string => typeof dir === "string");
+  const envConfig = flags.envConfig;
 
   /*
     Check if the flags does not have special characters like &, |, ;, :, etc. Only -, _ and . and are allowed
@@ -300,38 +315,31 @@ function customValidation(flags: any): void {
   const specialChars = /[&\\#,+()$~%'":;*?<>@{}|]/;
   const maxLength = 64;
 
-  // Transform envConfig to array to use the same validation
-  const envConfigArray = [envConfig];
+  const valuesToValidate = [
+    ...channel,
+    ...channelType,
+    ...chaincodeName,
+    ...chaincodeDir,
+    ...(envConfig ? [envConfig] : [])
+  ];
 
-  const invalidFlags = [channel, channelType, chaincodeName, chaincodeDir, envConfigArray].reduce(
-    (acc: string[], arr: string[]) => [
-      ...acc,
-      ...arr.filter((flag: string) => {
-        if (flag.length > maxLength) {
-          throw new Error(`Error: Flag ${flag} is too long. Maximum length is ${maxLength} characters.`);
-        }
-        if (specialChars.test(flag)) {
-          throw new Error(`Error: Flag ${flag} contains special characters. Only - and _ are allowed.`);
-        }
-        return false;
-      })
-    ],
-    []
-  );
-  if (invalidFlags.length) {
-    throw new Error(`Error: Found invalid flags: ${invalidFlags.join(", ")}`);
-  }
+  valuesToValidate.forEach((flag) => {
+    if (flag.length > maxLength) {
+      throw new Error(`Error: Flag ${flag} is too long. Maximum length is ${maxLength} characters.`);
+    }
+    if (specialChars.test(flag)) {
+      throw new Error(`Error: Flag ${flag} contains special characters. Only - and _ are allowed.`);
+    }
+  });
 
   /*
     Check if chaincodeDir and envConfig are valid paths
   */
-  if (chaincodeDir) {
-    chaincodeDir.forEach((dir: string) => {
-      if (!fs.existsSync(dir)) {
-        throw new Error(`Error: Chaincode directory ${dir} does not exist.`);
-      }
-    });
-  }
+  chaincodeDir.forEach((dir: string) => {
+    if (!fs.existsSync(dir)) {
+      throw new Error(`Error: Chaincode directory ${dir} does not exist.`);
+    }
+  });
   if (envConfig && !fs.existsSync(envConfig)) {
     throw new Error(`Error: Env config file ${envConfig} does not exist.`);
   }
@@ -352,28 +360,26 @@ function customValidation(flags: any): void {
   /*
     Channel types need to be consistend
   */
-  channel.reduce(
-    (types: Record<string, "curator" | "partner">, ch: string, i: number) => {
-      if (!types[ch]) {
-        types[ch] = channelType[i];
-        return types;
-      } else if (types[ch] !== channelType[i]) {
-        throw new Error(
-          `Error: Channel ${ch} is provided both as ${types[ch]} and ${channelType[i]}. It should be consistent.`
-        );
-      } else {
-        return types;
-      }
-    },
-    {} as Record<string, "curator" | "partner">
-  );
+  const typesByChannel = new Map<string, ChannelType>();
+  channel.forEach((ch, index) => {
+    const type = channelType[index];
+    const existingType = typesByChannel.get(ch);
+
+    if (!existingType) {
+      typesByChannel.set(ch, type);
+    } else if (existingType !== type) {
+      throw new Error(
+        `Error: Channel ${ch} is provided both as ${existingType} and ${type}. It should be consistent.`
+      );
+    }
+  });
 
   /*
     (channel, chaincodeName) pairs should be unique
   */
   channel
-    .map((ch: any, i: string | number) => `(${ch}, ${chaincodeName[i]})`)
-    .forEach((pair: string, i: number, arr: string[]) => {
+    .map((ch, index) => `(${ch}, ${chaincodeName[index]})`)
+    .forEach((pair: string, _, arr: string[]) => {
       if (arr.filter((p) => p === pair).length > 1) {
         throw new Error(`Error: Found non-unique channel-chaincode pair: ${pair}`);
       }
@@ -389,12 +395,17 @@ function customValidation(flags: any): void {
   }
 }
 
-function reduce(args: any): SingleArg[] {
-  return args.chaincodeName.map((chaincodeName: unknown, i: number) => ({
+function reduce(args: {
+  chaincodeName: string[];
+  chaincodeDir?: Array<string | undefined>;
+  channel: string[];
+  channelType: ChannelType[];
+}): SingleArg[] {
+  return args.chaincodeName.map((chaincodeName, index) => ({
     chaincodeName,
-    chaincodeDir: args.chaincodeDir?.[i],
-    channel: args.channel[i],
-    channelType: args.channelType[i]
+    chaincodeDir: args.chaincodeDir?.[index],
+    channel: args.channel[index],
+    channelType: args.channelType[index]
   }));
 }
 
