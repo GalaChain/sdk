@@ -124,8 +124,7 @@ export async function authenticate(
 
   const profile = authResults[0].profile;
   const pubKeyCount = profile.pubKeyCount ?? 1;
-  const requiredSignatures =
-    profile.requiredSignatures ?? Math.floor(pubKeyCount / 2) + 1;
+  const requiredSignatures = profile.requiredSignatures ?? Math.floor(pubKeyCount / 2) + 1;
 
   return {
     alias: profile.alias,
@@ -176,9 +175,7 @@ export async function authenticateSingle(
     const scheme = sig.signing ?? dto.signing ?? publicKey.signing ?? SigningScheme.ETH;
     const keys = publicKey.publicKeys ?? [];
 
-    let key = keys.find(
-      (k) => PublicKeyService.getUserAddress(k, scheme) === sig.signerAddress
-    );
+    let key = keys.find((k) => PublicKeyService.getUserAddress(k, scheme) === sig.signerAddress);
 
     if (key) {
       if (!dto.isSignatureValid(sig, key)) {
@@ -191,8 +188,7 @@ export async function authenticateSingle(
       }
     }
 
-    const keyHex =
-      scheme === SigningScheme.TON ? key : signatures.getNonCompactHexPublicKey(key);
+    const keyHex = scheme === SigningScheme.TON ? key : signatures.getNonCompactHexPublicKey(key);
     return { profile, signedByKey: keyHex };
   } else if (sig.signerPublicKey !== undefined) {
     if (!dto.isSignatureValid(sig)) {
