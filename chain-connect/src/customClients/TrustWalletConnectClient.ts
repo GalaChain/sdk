@@ -12,7 +12,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-import { BrowserProvider } from "ethers";
+import { BrowserProvider, Eip1193Provider } from "ethers";
 
 import { ExtendedEip1193Provider } from "../helpers";
 import { BrowserConnectClient } from "./BrowserConnectClient";
@@ -53,17 +53,20 @@ async function listenForTrustWalletInitialized(
 }
 
 function getTrustWalletFromWindow() {
-  const isTrustWallet = (ethereum: ExtendedEip1193Provider | undefined) => {
-    // Identify if Trust Wallet injected provider is present.
-    const trustWallet = !!ethereum?.isTrust;
-
-    return trustWallet;
+  const isTrustWallet = (
+    ethereum: Eip1193Provider
+  ): ethereum is ExtendedEip1193Provider => {
+    return !!(ethereum as ExtendedEip1193Provider).isTrust;
   };
 
   const injectedProviderExist = typeof window !== "undefined" && typeof window.ethereum !== "undefined";
 
   // No injected providers exist.
   if (!injectedProviderExist) {
+    return null;
+  }
+
+  if (!window.ethereum) {
     return null;
   }
 
