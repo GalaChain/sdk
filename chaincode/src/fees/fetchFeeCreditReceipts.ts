@@ -13,12 +13,9 @@
  * limitations under the License.
  */
 import {
-  ChainError,
-  ErrorCode,
   FeeBalanceCreditReceipt,
   FeeCreditReceiptKeyValueResult,
-  FetchFeeCreditReceiptsResponse,
-  NotFoundError
+  FetchFeeCreditReceiptsResponse
 } from "@gala-chain/api";
 import { plainToInstance } from "class-transformer";
 
