@@ -12,7 +12,15 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-import { ChainCallDTO, ClassConstructor, createValidDTO, serialize, signatures } from "@gala-chain/api";
+import {
+  ChainCallDTO,
+  ClassConstructor,
+  GalaChainErrorResponse,
+  GalaChainSuccessResponse,
+  createValidDTO,
+  serialize,
+  signatures
+} from "@gala-chain/api";
 import { instanceToPlain, plainToInstance } from "class-transformer";
 import { BrowserProvider, SigningKey, computeAddress, getBytes, hashMessage } from "ethers";
 
@@ -28,6 +36,62 @@ import { ethereumToGalaChainAddress, galaChainToEthereumAddress } from "./utils"
 type NonArrayClassConstructor<T> = T extends Array<unknown>
   ? ClassConstructor<T[number]>
   : ClassConstructor<T>;
+
+type GalaChainErrorBody<T> = {
+  error: string | GalaChainErrorResponse<T>;
+  message: string;
+  statusCode?: number;
+};
+
+type GalaChainSuccessBody<T> = GalaChainSuccessResponse<T> & Record<string, unknown>;
+
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return typeof value === "object" && value !== null;
+}
+
+function isGalaChainErrorBody<T>(value: unknown): value is GalaChainErrorBody<T> {
+  if (!isRecord(value)) {
+    return false;
+  }
+
+  const { error, message, statusCode } = value as {
+    error?: unknown;
+    message?: unknown;
+    statusCode?: unknown;
+  };
+
+  const isValidError =
+    typeof error === "string" || (isRecord(error) && "ErrorKey" in error && "ErrorCode" in error);
+
+  return (
+    isValidError &&
+    typeof message === "string" &&
+    (typeof statusCode === "number" || typeof statusCode === "undefined")
+  );
+}
+
+function isGalaChainSuccessBody<T>(value: unknown): value is GalaChainSuccessBody<T> {
+  if (!isRecord(value)) {
+    return false;
+  }
+
+  return "Status" in value && "Data" in value;
+}
+
+function toGalaChainErrorBody<T>(value: unknown, statusCode?: number): GalaChainErrorBody<T> {
+  if (isGalaChainErrorBody<T>(value)) {
+    return value;
+  }
+
+  const message =
+    value instanceof Error ? value.message : typeof value === "string" ? value : "Unknown error";
+
+  return {
+    error: message,
+    message,
+    statusCode
+  };
+}
 
 /**
  * Configuration options for GalaChain providers.
@@ -147,20 +211,30 @@ export abstract class GalaChainProvider {
 
     // Check if the content-length is not zero and try to parse JSON
     if (response.headers.get("content-length") !== "0") {
-      let data: any;
+      let data: unknown;
       try {
         data = await response.json();
       } catch (error) {
         throw new Error("Invalid JSON response");
       }
-      if (!response.ok || data.error) {
-        throw new GalaChainResponseError<T>(data);
-      } else {
-        const transformedDataResponse = responseConstructor
-          ? plainToInstance(responseConstructor, data.Data)
-          : data.Data;
-        return new GalaChainResponseSuccess<T>({ ...data, Data: transformedDataResponse }, hash);
+      if (!response.ok) {
+        throw new GalaChainResponseError<T>(toGalaChainErrorBody<T>(data, response.status));
       }
+
+      if (isGalaChainErrorBody<T>(data)) {
+        throw new GalaChainResponseError<T>(data);
+      }
+
+      if (!isGalaChainSuccessBody<T>(data)) {
+        throw new Error("Invalid response format");
+      }
+
+      const transformedDataResponse = responseConstructor
+        ? plainToInstance(responseConstructor, data.Data)
+        : data.Data;
+      const successPayload: GalaChainSuccessBody<T> = { ...data, Data: transformedDataResponse };
+
+      return new GalaChainResponseSuccess<T>(successPayload, hash);
     }
     throw new Error(`Unable to get data. Received response: ${JSON.stringify(response)}`);
   }

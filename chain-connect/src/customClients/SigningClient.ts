@@ -53,11 +53,11 @@ export class SigningClient extends CustomClient {
       const basePayload = { ...payload } as Record<string, unknown>;
       delete basePayload.types;
       delete basePayload.domain;
-      delete (basePayload as any).signature;
-      delete (basePayload as any).signatures;
-      delete (basePayload as any).signerAddress;
-      delete (basePayload as any).signerPublicKey;
-      delete (basePayload as any).prefix;
+      delete basePayload.signature;
+      delete basePayload.signatures;
+      delete basePayload.signerAddress;
+      delete basePayload.signerPublicKey;
+      delete basePayload.prefix;
 
       const prefix = calculatePersonalSignPrefix(basePayload);
       const prefixedPayload = { ...basePayload, prefix };
@@ -77,8 +77,9 @@ export class SigningClient extends CustomClient {
         throw new Error("Unsupported signing type");
       }
 
-      const existing = Array.isArray((payload as any).signatures)
-        ? ((payload as any).signatures as SignatureDto[])
+      const payloadRecord = payload as Record<string, unknown>;
+      const existing = Array.isArray(payloadRecord.signatures)
+        ? (payloadRecord.signatures as SignatureDto[])
         : [];
 
       const signatureDto: SignatureDto = {
