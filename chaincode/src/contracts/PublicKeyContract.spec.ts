@@ -177,7 +177,7 @@ describe("RegisterUser", () => {
     chaincode.setCallingUser(user2.alias);
     const dto = await createValidSubmitDTO<RegisterUserDto>(RegisterUserDto, {
       user: user2.alias,
-      publicKeys: [user2.publicKey],
+      publicKeys: [user2.publicKey]
     });
 
     const response = await chaincode.invoke("PublicKeyContract:SavePublicKey", dto);
@@ -223,7 +223,7 @@ describe("RegisterUser", () => {
     const dto = await createValidSubmitDTO<RegisterUserDto>(RegisterUserDto, {
       user: user2.alias,
       publicKeys: [user2.publicKey],
-      signing: SigningScheme.ETH,
+      signing: SigningScheme.ETH
     });
 
     const response = await chaincode.invoke(
@@ -531,15 +531,8 @@ describe("UpdatePublicKey", () => {
     signedEthToTon.signing = SigningScheme.ETH;
 
     // When
-    const responseTonToEth = await chaincode.invoke(
-      "PublicKeyContract:UpdatePublicKey",
-      signedTonToEth
-    );
-
-    const responseEthToTon = await chaincode.invoke(
-      "PublicKeyContract:UpdatePublicKey",
-      signedEthToTon
-    );
+    const responseTonToEth = await chaincode.invoke("PublicKeyContract:UpdatePublicKey", signedTonToEth);
+    const responseEthToTon = await chaincode.invoke("PublicKeyContract:UpdatePublicKey", signedEthToTon);
 
     // Then
     expect(responseTonToEth).toEqual(transactionErrorMessageContains("Invalid public key length"));
