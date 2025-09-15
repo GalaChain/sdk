@@ -21,8 +21,12 @@ import {
   IsOptional,
   Max,
   Min,
+  Validate,
   ValidateNested,
+  ValidationArguments,
   ValidationError,
+  ValidatorConstraint,
+  ValidatorConstraintInterface,
   validate
 } from "class-validator";
 import { JSONSchema } from "class-validator-jsonschema";
@@ -594,6 +598,26 @@ export class DryRunResultDto extends ChainCallDTO {
 }
 
 /**
+ * Ensures that only one of `publicKey` or `publicKeys` is provided and not both.
+ */
+@ValidatorConstraint({ name: "PublicKeyXorPublicKeys", async: false })
+class PublicKeyXorPublicKeys implements ValidatorConstraintInterface {
+  validate(_value: unknown, args: ValidationArguments) {
+    const { publicKey, publicKeys } = args.object as {
+      publicKey?: string;
+      publicKeys?: string[];
+    };
+    const hasKey = typeof publicKey === "string" && publicKey.length > 0;
+    const hasKeys = Array.isArray(publicKeys) && publicKeys.length > 0;
+    return (hasKey || hasKeys) && !(hasKey && hasKeys);
+  }
+
+  defaultMessage() {
+    return "Provide either publicKey or publicKeys, but not both";
+  }
+}
+
+/**
  * @description
  *
  * Dto for secure method to save public keys for legacy users.
@@ -616,12 +640,19 @@ export class RegisterUserDto extends SubmitCallDTO {
   user: UserAlias;
 
   /**
-   * @description Public secp256k1 keys (compact or non-compact, hex or base64).
+   * @description Public secp256k1 key (compact or non-compact, hex or base64) or multiple keys.
    */
+  @JSONSchema({ description: "Public secp256k1 key (compact or non-compact, hex or base64)." })
+  @IsOptional()
+  @IsNotEmpty()
+  @Validate(PublicKeyXorPublicKeys)
+  public publicKey?: string;
+
   @JSONSchema({ description: "Public secp256k1 keys (compact or non-compact, hex or base64)." })
+  @IsOptional()
   @IsNotEmpty({ each: true })
   @ArrayMinSize(1)
-  publicKeys: string[];
+  public publicKeys?: string[];
 }
 
 /**
@@ -634,10 +665,17 @@ export class RegisterUserDto extends SubmitCallDTO {
   description: `Dto for secure method to save public keys for Eth users. Method is called and signed by Curators`
 })
 export class RegisterEthUserDto extends SubmitCallDTO {
+  @JSONSchema({ description: "Public secp256k1 key (compact or non-compact, hex or base64)." })
+  @IsOptional()
+  @IsNotEmpty()
+  @Validate(PublicKeyXorPublicKeys)
+  public publicKey?: string;
+
   @JSONSchema({ description: "Public secp256k1 keys (compact or non-compact, hex or base64)." })
+  @IsOptional()
   @IsNotEmpty({ each: true })
   @ArrayMinSize(1)
-  publicKeys: string[];
+  public publicKeys?: string[];
 }
 
 /**
@@ -650,20 +688,34 @@ export class RegisterEthUserDto extends SubmitCallDTO {
   description: `Dto for secure method to save public keys for TON users. Method is called and signed by Curators`
 })
 export class RegisterTonUserDto extends SubmitCallDTO {
+  @JSONSchema({ description: "TON user public key (Ed25519 in base64)." })
+  @IsOptional()
+  @IsNotEmpty()
+  @Validate(PublicKeyXorPublicKeys)
+  public publicKey?: string;
+
   @JSONSchema({ description: "TON user public keys (Ed25519 in base64)." })
+  @IsOptional()
   @IsNotEmpty({ each: true })
   @ArrayMinSize(1)
-  publicKeys: string[];
+  public publicKeys?: string[];
 }
 
 export class UpdatePublicKeyDto extends SubmitCallDTO {
   @JSONSchema({
     description:
-      "For users with ETH signing scheme it is public secp256k1 key (compact or non-compact, hex or base64). " +
-      "For users with TON signing scheme it is public Ed25519 key (base64)."
+      "For users with ETH signing scheme it is public secp256k1 key(s) (compact or non-compact, hex or base64). " +
+      "For users with TON signing scheme it is public Ed25519 key(s) (base64)."
   })
+  @IsOptional()
   @IsNotEmpty()
-  publicKey: string;
+  @Validate(PublicKeyXorPublicKeys)
+  public publicKey?: string;
+
+  @IsOptional()
+  @IsNotEmpty({ each: true })
+  @ArrayMinSize(1)
+  public publicKeys?: string[];
 }
 
 export class UpdateUserRolesDto extends SubmitCallDTO {
