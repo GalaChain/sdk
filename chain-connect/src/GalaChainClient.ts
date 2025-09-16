@@ -37,6 +37,18 @@ type NonArrayClassConstructor<T> = T extends Array<unknown>
   ? ClassConstructor<T[number]>
   : ClassConstructor<T>;
 
+function transformResponseData<T>(data: T, responseConstructor?: NonArrayClassConstructor<T>): T {
+  if (!responseConstructor) {
+    return data;
+  }
+
+  if (Array.isArray(data)) {
+    return plainToInstance(responseConstructor, data) as T;
+  }
+
+  return plainToInstance(responseConstructor, data) as T;
+}
+
 type GalaChainErrorBody<T> = {
   error: string | GalaChainErrorResponse<T>;
   message: string;
@@ -229,9 +241,7 @@ export abstract class GalaChainProvider {
         throw new Error("Invalid response format");
       }
 
-      const transformedDataResponse = responseConstructor
-        ? plainToInstance(responseConstructor, data.Data)
-        : data.Data;
+      const transformedDataResponse = transformResponseData(data.Data, responseConstructor);
       const successPayload: GalaChainSuccessBody<T> = { ...data, Data: transformedDataResponse };
 
       return new GalaChainResponseSuccess<T>(successPayload, hash);

@@ -23,11 +23,16 @@ declare global {
   }
 }
 
+type WindowWithTrustWallet = Window & {
+  ethereum?: ExtendedEip1193Provider;
+  trustwallet?: ExtendedEip1193Provider;
+};
+
 export async function getTrustWalletInjectedProvider({ timeout } = { timeout: 3000 }) {
-  const provider = new BrowserProvider(getTrustWalletFromWindow());
+  const provider = getTrustWalletFromWindow();
 
   if (provider) {
-    return provider;
+    return new BrowserProvider(provider);
   }
 
   return listenForTrustWalletInitialized({ timeout });
@@ -38,7 +43,8 @@ async function listenForTrustWalletInitialized(
 ): Promise<BrowserProvider | undefined> {
   return new Promise((resolve) => {
     const handleInitialization = () => {
-      resolve(getTrustWalletFromWindow());
+      const provider = getTrustWalletFromWindow();
+      resolve(provider ? new BrowserProvider(provider) : undefined);
     };
 
     window.addEventListener("trustwallet#initialized", handleInitialization, {
@@ -52,10 +58,8 @@ async function listenForTrustWalletInitialized(
   });
 }
 
-function getTrustWalletFromWindow() {
-  const isTrustWallet = (
-    ethereum: Eip1193Provider
-  ): ethereum is ExtendedEip1193Provider => {
+function getTrustWalletFromWindow(): ExtendedEip1193Provider | undefined {
+  const isTrustWallet = (ethereum: Eip1193Provider): ethereum is ExtendedEip1193Provider => {
     return !!(ethereum as ExtendedEip1193Provider).isTrust;
   };
 
@@ -63,25 +67,32 @@ function getTrustWalletFromWindow() {
 
   // No injected providers exist.
   if (!injectedProviderExist) {
-    return null;
+    return undefined;
   }
 
-  if (!window.ethereum) {
-    return null;
+  const ethereumProvider = (window as WindowWithTrustWallet).ethereum;
+
+  if (!ethereumProvider) {
+    return undefined;
   }
 
   // Trust Wallet was injected into window.ethereum.
-  if (isTrustWallet(window.ethereum)) {
-    return window.ethereum;
+  if (isTrustWallet(ethereumProvider)) {
+    return ethereumProvider;
   }
 
   // Trust Wallet provider might be replaced by another
   // injected provider, check the providers array.
-  if (window.ethereum?.providers) {
+  const providers = (
+    ethereumProvider as ExtendedEip1193Provider & {
+      providers?: Eip1193Provider[];
+    }
+  ).providers;
+  if (providers) {
     // ethereum.providers array is a non-standard way to
     // preserve multiple injected providers. Eventually, EIP-5749
     // will become a living standard and we will have to update this.
-    return window.ethereum.providers.find(isTrustWallet) ?? null;
+    return providers.find(isTrustWallet) ?? undefined;
   }
 
   // Trust Wallet injected provider is available in the global scope.
@@ -89,7 +100,7 @@ function getTrustWalletFromWindow() {
   // without updating the ethereum.providers array. To prevent issues where
   // the TW connector does not recognize the provider when TW extension is installed,
   // we begin our checks by relying on TW's global object.
-  return window["trustwallet"] ?? null;
+  return (window as WindowWithTrustWallet).trustwallet ?? undefined;
 }
 
 export class TrustWalletConnectClient extends BrowserConnectClient {
