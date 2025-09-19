@@ -188,6 +188,8 @@ export async function authenticateSingle(
       scheme === SigningScheme.TON ? keys[index] : signatures.getNonCompactHexPublicKey(keys[index]);
     return { profile, signedByKey: keyHex };
   } else if (sig.signerPublicKey !== undefined) {
+    const index = dto.signatures?.findIndex((s) => s.signerPublicKey === sig.signerPublicKey);
+
     if (!dto.isSignatureValid(sig.signerPublicKey, index)) {
       const address = PublicKeyService.getUserAddress(sig.signerPublicKey, signing);
       throw new PkInvalidSignatureError(address);

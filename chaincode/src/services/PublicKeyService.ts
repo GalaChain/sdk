@@ -22,7 +22,6 @@ import {
   UnauthorizedError,
   UserAlias,
   UserProfile,
-  UserProfileWithRoles,
   asValidUserAlias,
   createValidChainObject,
   normalizePublicKey,
@@ -123,10 +122,7 @@ export class PublicKeyService {
       : signatures.getEthAddress(signatures.getNonCompactHexPublicKey(publicKey));
   }
 
-  public static async getUserProfile(
-    ctx: Context,
-    address: string
-  ): Promise<UserProfileWithRoles | undefined> {
+  public static async getUserProfile(ctx: Context, address: string): Promise<UserProfile | undefined> {
     const key = PublicKeyService.getUserProfileKey(ctx, address);
     const data = await ctx.stub.getState(key);
 
@@ -144,7 +140,7 @@ export class PublicKeyService {
           userProfile.requiredSignatures ?? Math.floor(userProfile.pubKeyCount / 2) + 1;
       }
 
-      return userProfile as UserProfileWithRoles;
+      return userProfile;
     }
 
     // check if we want the profile of the admin
@@ -173,7 +169,7 @@ export class PublicKeyService {
         adminProfile.pubKeyCount = 1;
         adminProfile.requiredSignatures = 1;
 
-        return adminProfile as UserProfileWithRoles;
+        return adminProfile;
       }
     }
 

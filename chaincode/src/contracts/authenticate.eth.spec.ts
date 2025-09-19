@@ -12,7 +12,15 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-import { ChainCallDTO, RegisterUserDto, SigningScheme, UserAlias, UserProfile, createValidSubmitDTO, signatures } from "@gala-chain/api";
+import {
+  ChainCallDTO,
+  RegisterUserDto,
+  SigningScheme,
+  UserAlias,
+  UserProfile,
+  createValidSubmitDTO,
+  signatures
+} from "@gala-chain/api";
 import { TestChaincode, transactionSuccess } from "@gala-chain/test";
 import { instanceToPlain, plainToClass } from "class-transformer";
 

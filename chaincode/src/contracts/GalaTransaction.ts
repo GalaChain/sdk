@@ -198,7 +198,7 @@ function GalaTransaction<In extends ChainCallDTO, Out>(
           const auth = await authenticate(ctx, dto);
           ctx.callingUserData = auth;
           quorumInfo = {
-            signedByKeys: auth.signedByKeys,
+            signedByKeys: auth.signedByKeys ?? [],
             pubKeyCount: auth.pubKeyCount ?? 1
           };
         } else {
