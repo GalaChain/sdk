@@ -180,7 +180,7 @@ export class PublicKeyService {
     return undefined;
   }
 
-  public static getDefaultUserProfile(publicKey: string, signing: SigningScheme): UserProfileWithRoles {
+  public static getDefaultUserProfile(publicKey: string, signing: SigningScheme): UserProfile {
     const address = this.getUserAddress(publicKey, signing);
     const profile = new UserProfile();
     profile.alias = asValidUserAlias(`${signing.toLowerCase()}|${address}`);
@@ -189,7 +189,7 @@ export class PublicKeyService {
     profile.roles = Array.from(UserProfile.DEFAULT_ROLES);
     profile.pubKeyCount = 1;
     profile.requiredSignatures = 1;
-    return profile as UserProfileWithRoles;
+    return profile;
   }
 
   public static async getPublicKey(ctx: Context, userId: string): Promise<PublicKey | undefined> {

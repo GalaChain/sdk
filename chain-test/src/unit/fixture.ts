@@ -82,13 +82,12 @@ type GalaChainStub = ChaincodeStub & {
 /**
  * Data structure representing the currently authenticated user in a transaction context.
  * Contains user identity, addresses, and role information.
- * @internal
  */
-interface CallingUserData {
+export interface CallingUserData {
   alias?: UserAlias;
   ethAddress?: string;
   tonAddress?: string;
-  roles: string[];
+  roles?: string[];
   pubKeyCount?: number;
   requiredSignatures?: number;
 }
@@ -244,9 +243,7 @@ class Fixture<Ctx extends TestGalaChainContext, T extends GalaContract<Ctx>> {
       value: JSON.stringify({
         alias: u.identityKey,
         ethAddress: u.ethAddress,
-        roles: u.roles,
-        pubKeyCount: 1,
-        requiredSignatures: 1
+        roles: u.roles
       })
     }));
 
@@ -271,25 +268,12 @@ class Fixture<Ctx extends TestGalaChainContext, T extends GalaContract<Ctx>> {
    * @param user - User data with identity, addresses, and roles
    * @returns This fixture instance for method chaining
    */
-  callingUser(
-    user:
-      | ChainUserWithRoles
-      | {
-          alias: UserAlias;
-          ethAddress?: string;
-          tonAddress?: string;
-          roles: string[];
-          pubKeyCount?: number;
-          requiredSignatures?: number;
-        }
-  ): Fixture<Ctx, T> {
+  callingUser(user: ChainUserWithRoles | CallingUserData): Fixture<Ctx, T> {
     if ("identityKey" in user) {
       this.ctx.callingUserData = {
         alias: user.identityKey,
         ethAddress: user.ethAddress,
-        roles: user.roles,
-        pubKeyCount: 1,
-        requiredSignatures: 1
+        roles: user.roles
       };
       return this;
     }

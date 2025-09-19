@@ -313,29 +313,24 @@ export class ChainCallDTO {
     if (useDer) {
       if (this.signing === SigningScheme.TON) {
         throw new ValidationFailedError("TON signing scheme does not support DER signatures");
+      } else {
+        if (this.signerPublicKey === undefined && this.signerAddress === undefined) {
+          this.signerPublicKey = signatures.getPublicKey(privateKey);
+        }
       }
     }
 
     const signerPublicKey =
       this.signing !== SigningScheme.TON ? signatures.getPublicKey(privateKey) : undefined;
 
-    const payload = {
-      ...this,
-      signature: undefined,
-      signatures: undefined,
-      signerPublicKey: undefined,
-      signerAddress: undefined,
-      prefix: undefined
-    };
-
     if (this.signing === SigningScheme.TON) {
       const keyBuffer = Buffer.from(privateKey, "base64");
-      this.signature = signatures.ton.getSignature(payload, keyBuffer, this.prefix).toString("base64");
+      this.signature = signatures.ton.getSignature(this, keyBuffer, this.prefix).toString("base64");
     } else {
       const keyBuffer = signatures.normalizePrivateKey(privateKey);
       this.signature = useDer
-        ? signatures.getDERSignature(payload, keyBuffer)
-        : signatures.getSignature(payload, keyBuffer);
+        ? signatures.getDERSignature(this, keyBuffer)
+        : signatures.getSignature(this, keyBuffer);
     }
 
     const signatureDto: SignatureDto = {
@@ -358,32 +353,14 @@ export class ChainCallDTO {
     return copied;
   }
 
-  public isSignatureValid(signatureOrPublicKey: string | SignatureDto, publicKey?: string): boolean {
-    let signature: string;
-    let pk: string | undefined;
-    let signing: SigningScheme | undefined;
-    let prefix = this.prefix;
-    let payloadSigning: SigningScheme | undefined;
-
-    if (typeof signatureOrPublicKey === "object") {
-      signature = signatureOrPublicKey.signature ?? "";
-      pk = signatureOrPublicKey.signerPublicKey ?? publicKey;
-      signing = signatureOrPublicKey.signing;
-      payloadSigning = signatureOrPublicKey.signing;
-      prefix = signatureOrPublicKey.prefix ?? prefix;
-    } else if (publicKey) {
-      signature = signatureOrPublicKey;
-      pk = publicKey;
-      signing = this.signing;
-      payloadSigning = this.signing;
-    } else {
-      signature = this.signature ?? "";
-      pk = signatureOrPublicKey;
-      signing = this.signing;
-      payloadSigning = this.signing;
+  public isSignatureValid(publicKey: string, index = 0): boolean {
+    const signatureObj: ChainCallDTO | SignatureDto | undefined =
+      this.signatures?.[index] ?? (index == 0 ? this : undefined);
+    if (signatureObj === undefined) {
+      throw new ValidationFailedError(`No signature at index ${index}`);
     }
 
-    signing = signing ?? SigningScheme.ETH;
+    const signing = signatureObj.signing ?? SigningScheme.ETH;
 
     const payload = {
       ...this,
@@ -392,16 +369,48 @@ export class ChainCallDTO {
       signerPublicKey: undefined,
       signerAddress: undefined,
       prefix: undefined,
-      signing: payloadSigning
+      signing: signing
     };
 
     if (signing === SigningScheme.TON) {
-      const signatureBuff = Buffer.from(signature ?? "", "base64");
-      const publicKeyBuff = Buffer.from(pk ?? "", "base64");
-      return signatures.ton.isValidSignature(signatureBuff, payload, publicKeyBuff, prefix);
+      const signatureBuff = Buffer.from(signatureObj.signature ?? "", "base64");
+      const publicKeyBuff = Buffer.from(publicKey ?? "", "base64");
+      return signatures.ton.isValidSignature(
+        signatureBuff,
+        payload,
+        publicKeyBuff,
+        signatureObj.prefix ?? this.prefix
+      );
     } else {
-      return signatures.isValid(signature ?? "", payload, pk ?? "");
+      return signatures.isValid(signatureObj.signature ?? "", payload, publicKey ?? "");
     }
+  }
+}
+
+export function isSignatureValid(signatureObj: SignatureDto, publicKey: string): boolean {
+  const signing = signatureObj.signing ?? SigningScheme.ETH;
+
+  const payload = {
+    ...this,
+    signatures: undefined,
+    signature: undefined,
+    signerPublicKey: undefined,
+    signerAddress: undefined,
+    prefix: undefined,
+    signing: signing
+  };
+
+  if (signing === SigningScheme.TON) {
+    const signatureBuff = Buffer.from(signatureObj.signature ?? "", "base64");
+    const publicKeyBuff = Buffer.from(publicKey ?? "", "base64");
+    return signatures.ton.isValidSignature(
+      signatureBuff,
+      payload,
+      publicKeyBuff,
+      signatureObj.prefix ?? this.prefix
+    );
+  } else {
+    return signatures.isValid(signatureObj.signature ?? "", payload, publicKey ?? "");
   }
 }
 

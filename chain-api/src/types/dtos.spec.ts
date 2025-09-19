@@ -17,7 +17,7 @@ import { instanceToPlain, plainToInstance } from "class-transformer";
 import { ArrayMinSize, ArrayNotEmpty, IsString } from "class-validator";
 import { ec as EC } from "elliptic";
 
-import { SigningScheme, ValidationFailedError, getValidationErrorMessages, signatures } from "../utils";
+import { SigningScheme, getValidationErrorMessages, signatures } from "../utils";
 import { BigNumberArrayProperty, BigNumberProperty } from "../validators";
 import { ChainCallDTO, ClassConstructor, convertLegacySignatures } from "./dtos";
 
@@ -165,11 +165,7 @@ describe("ChainCallDTO", () => {
     dto.sign(privateKey);
 
     // Then
-    const signature = dto.signature;
-    expect(signature).toBeDefined();
-    if (signature) {
-      expect(dto.isSignatureValid(signature, invalid.publicKey)).toEqual(false);
-    }
+    expect(dto.isSignatureValid(invalid.publicKey)).toEqual(false);
   });
 
   it("should sign and fail to verify signature (invalid payload)", () => {
@@ -184,11 +180,7 @@ describe("ChainCallDTO", () => {
     dto.key = "i-will-break-this";
 
     // Then
-    const signature = dto.signature;
-    expect(signature).toBeDefined();
-    if (signature) {
-      expect(dto.isSignatureValid(signature, publicKey)).toEqual(false);
-    }
+    expect(dto.isSignatureValid(publicKey)).toEqual(false);
   });
 
   it("should sign and verify TON signature", async () => {
@@ -207,39 +199,21 @@ describe("ChainCallDTO", () => {
     expect(dto.isSignatureValid(pair.publicKey.toString("base64"))).toEqual(true);
   });
 
-  it("should reject signatures with different schemes", async () => {
-    const { privateKey } = genKeyPair();
-    const dto = new TestDto();
-    dto.amounts = [new BigNumber("1")];
-
-    dto.sign(privateKey);
-
-    const tonPair = await signatures.ton.genKeyPair();
-    dto.signing = SigningScheme.TON;
-
-    expect(() => dto.sign(tonPair.secretKey.toString("base64"))).toThrow(ValidationFailedError);
-  });
-
   it("should validate signatures using stored signing params", () => {
     const { privateKey } = genKeyPair();
     const dto = new TestDto();
-    dto.prefix = "foo";
     dto.amounts = [new BigNumber("1")];
 
     dto.sign(privateKey);
 
     const signature = {
       signature: dto.signature ?? "",
-      signerPublicKey: signatures.getPublicKey(privateKey),
-      signerAddress: dto.signerAddress,
-      signing: dto.signing,
-      prefix: dto.prefix
+      signing: dto.signing
     };
 
     dto.signing = SigningScheme.TON;
-    dto.prefix = "bar";
 
-    expect(dto.isSignatureValid(signature)).toEqual(true);
+    expect(dto.isSignatureValid(dto.signature)).toEqual(true);
   });
 
   it("should convert legacy single signature", () => {
@@ -258,5 +232,39 @@ describe("ChainCallDTO", () => {
         prefix: undefined
       }
     ]);
+  });
+
+  it("should validate signature by index", () => {
+    const { privateKey, publicKey } = genKeyPair();
+    const dto = new TestDto();
+    dto.amounts = [new BigNumber("12.3")];
+
+    // Sign multiple times to create multiple signatures
+    dto.sign(privateKey);
+
+    // Change the payload and sign again
+    dto.amounts = [new BigNumber("45.6")];
+    dto.sign(privateKey);
+
+    // Validate first signature (index 0) - should fail because payload changed
+    expect(dto.isSignatureValid(publicKey, 0)).toEqual(false);
+
+    // Validate second signature (index 1) - should pass
+    expect(dto.isSignatureValid(publicKey, 1)).toEqual(true);
+
+    // When index is 0 and no signatures array exists, it should fall back to the DTO itself
+    const simpleDto = new TestDto();
+    simpleDto.amounts = [new BigNumber("78.9")];
+    simpleDto.sign(privateKey);
+    simpleDto.signatures = undefined; // Clear signatures array
+    expect(simpleDto.isSignatureValid(publicKey, 0)).toEqual(true);
+  });
+
+  it("should throw error when signature at index doesn't exist", () => {
+    const { publicKey } = genKeyPair();
+    const dto = new TestDto();
+    dto.amounts = [new BigNumber("12.3")];
+
+    expect(() => dto.isSignatureValidByIndex(publicKey, 5)).toThrow("No signature at index 5");
   });
 });

@@ -18,7 +18,7 @@ import {
   PublicKey,
   SignatureDto,
   SigningScheme,
-  UserProfileWithRoles,
+  UserProfile,
   ValidationFailedError,
   convertLegacySignatures,
   signatures
@@ -90,24 +90,23 @@ export async function authenticate(
   ethAddress?: string;
   tonAddress?: string;
   roles: string[];
-  signedByKeys: string[];
-  pubKeyCount: number;
-  requiredSignatures: number;
+  signedByKeys?: string[];
+  pubKeyCount?: number;
+  requiredSignatures?: number;
 }> {
   if (!dto || (dto.signature === undefined && (!dto.signatures || dto.signatures.length === 0))) {
     if (dto?.signerAddress?.startsWith("service|")) {
       const chaincode = dto.signerAddress.slice(8);
       const res = await authenticateAsOriginChaincode(ctx, dto, chaincode);
-      return { ...res, signedByKeys: [], pubKeyCount: 1, requiredSignatures: 1 };
+      return { ...res };
     }
 
     throw new MissingSignatureError();
   }
 
-  const dtoWithSignatures = convertLegacySignatures(dto);
-  const sigs = dtoWithSignatures.signatures ?? [];
+  const sigs: SignatureDto[] | ChainCallDTO[] = dto.signatures || [dto];
 
-  const authResults = await Promise.all(sigs.map((s) => authenticateSingle(ctx, dtoWithSignatures, s)));
+  const authResults = await Promise.all(sigs.map((s) => authenticateSingle(ctx, dto, s)));
 
   const aliases = authResults.map((r) => r.profile.alias);
   const uniqueAliases = Array.from(new Set(aliases));
@@ -130,7 +129,7 @@ export async function authenticate(
     alias: profile.alias,
     ethAddress: profile.ethAddress,
     tonAddress: profile.tonAddress,
-    roles: profile.roles,
+    roles: profile.roles ?? Array.from(UserProfile.DEFAULT_ROLES),
     signedByKeys: keys,
     pubKeyCount,
     requiredSignatures
@@ -140,8 +139,8 @@ export async function authenticate(
 export async function authenticateSingle(
   ctx: GalaChainContext,
   dto: ChainCallDTO,
-  sig: SignatureDto
-): Promise<{ profile: UserProfileWithRoles; signedByKey: string }> {
+  sig: SignatureDto | ChainCallDTO
+): Promise<{ profile: UserProfile; signedByKey: string }> {
   if (!sig.signature) {
     throw new MissingSignatureError();
   }
@@ -175,23 +174,21 @@ export async function authenticateSingle(
     const scheme = sig.signing ?? dto.signing ?? publicKey.signing ?? SigningScheme.ETH;
     const keys = publicKey.publicKeys ?? [];
 
-    let key = keys.find((k) => PublicKeyService.getUserAddress(k, scheme) === sig.signerAddress);
+    const index = keys.findIndex((k) => PublicKeyService.getUserAddress(k, scheme) === sig.signerAddress);
 
-    if (key) {
-      if (!dto.isSignatureValid(sig, key)) {
+    if (index !== -1) {
+      if (!dto.isSignatureValid(keys[index], index)) {
         throw new PkInvalidSignatureError(profile.alias);
       }
     } else {
-      key = keys.find((k) => dto.isSignatureValid(sig, k));
-      if (!key) {
-        throw new PkInvalidSignatureError(profile.alias);
-      }
+      throw new PkInvalidSignatureError(profile.alias);
     }
 
-    const keyHex = scheme === SigningScheme.TON ? key : signatures.getNonCompactHexPublicKey(key);
+    const keyHex =
+      scheme === SigningScheme.TON ? keys[index] : signatures.getNonCompactHexPublicKey(keys[index]);
     return { profile, signedByKey: keyHex };
   } else if (sig.signerPublicKey !== undefined) {
-    if (!dto.isSignatureValid(sig)) {
+    if (!dto.isSignatureValid(sig.signerPublicKey, index)) {
       const address = PublicKeyService.getUserAddress(sig.signerPublicKey, signing);
       throw new PkInvalidSignatureError(address);
     }
@@ -211,7 +208,7 @@ async function getUserProfile(
   ctx: GalaChainContext,
   publicKey: string,
   signing: SigningScheme
-): Promise<UserProfileWithRoles> {
+): Promise<UserProfile> {
   const address = PublicKeyService.getUserAddress(publicKey, signing);
   const profile = await PublicKeyService.getUserProfile(ctx, address);
 
@@ -229,7 +226,7 @@ async function getUserProfile(
 async function getUserProfileAndPublicKey(
   ctx: GalaChainContext,
   address
-): Promise<{ profile: UserProfileWithRoles; publicKey: PublicKey }> {
+): Promise<{ profile: UserProfile; publicKey: PublicKey }> {
   const profile = await PublicKeyService.getUserProfile(ctx, address);
 
   if (profile === undefined) {
