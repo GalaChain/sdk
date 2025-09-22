@@ -122,16 +122,16 @@ export class PublicKeyService {
       : signatures.getEthAddress(signatures.getNonCompactHexPublicKey(publicKey));
   }
 
-  public static async getUserProfile(ctx: Context, address: string): Promise<UserProfile | undefined> {
+  public static async getUserProfile(
+    ctx: Context,
+    address: string
+  ): Promise<(UserProfile & { roles: string[] }) | undefined> {
     const key = PublicKeyService.getUserProfileKey(ctx, address);
     const data = await ctx.stub.getState(key);
 
     if (data.length > 0) {
       const userProfile = ChainObject.deserialize<UserProfile>(UserProfile, data.toString());
 
-      if (userProfile.roles === undefined) {
-        userProfile.roles = Array.from(UserProfile.DEFAULT_ROLES);
-      }
       if (userProfile.pubKeyCount === undefined || userProfile.requiredSignatures === undefined) {
         const pk = await PublicKeyService.getPublicKey(ctx, userProfile.alias);
         const pkCount = pk?.publicKeys?.length ?? 1;
@@ -140,7 +140,11 @@ export class PublicKeyService {
           userProfile.requiredSignatures ?? Math.floor(userProfile.pubKeyCount / 2) + 1;
       }
 
-      return userProfile;
+      if (!userProfile.roles) {
+        userProfile.roles = Array.from(UserProfile.DEFAULT_ROLES);
+      }
+
+      return userProfile as UserProfile & { roles: string[] };
     }
 
     // check if we want the profile of the admin
@@ -169,7 +173,7 @@ export class PublicKeyService {
         adminProfile.pubKeyCount = 1;
         adminProfile.requiredSignatures = 1;
 
-        return adminProfile;
+        return adminProfile as UserProfile & { roles: string[] };
       }
     }
 
