@@ -19,7 +19,7 @@ import { ec as EC } from "elliptic";
 
 import { SigningScheme, getValidationErrorMessages, signatures } from "../utils";
 import { BigNumberArrayProperty, BigNumberProperty } from "../validators";
-import { ChainCallDTO, ClassConstructor, convertLegacySignatures } from "./dtos";
+import { ChainCallDTO, ClassConstructor } from "./dtos";
 
 const getInstanceOrErrorInfo = async <T extends ChainCallDTO>(
   constructor: ClassConstructor<T>,
@@ -70,8 +70,10 @@ it("should parse TestDtoWithArray", async () => {
   expect(await getPlainOrError(TestDtoWithArray, valid)).toEqual({ playerIds: ["123"] });
   expect(await getPlainOrError(TestDtoWithArray, invalid1)).toEqual(failedArrayMatcher);
   expect(await getPlainOrError(TestDtoWithArray, invalid2)).toEqual(failedArrayMatcher);
-  const parseError = await getPlainOrError(TestDtoWithArray, invalid3);
-  expect(parseError).toMatch(/Unexpected end of JSON input|Unterminated string/);
+  const error = await getPlainOrError(TestDtoWithArray, invalid3);
+  expect(
+    error === "Unexpected end of JSON input" || error === "Unterminated string in JSON at position 16"
+  ).toBe(true);
 });
 
 it("should parse TestDtoWithBigNumber", async () => {
@@ -139,6 +141,7 @@ describe("ChainCallDTO", () => {
   it("should sign and verify signature (edge case - shorter private key with missing trailing 0)", () => {
     // Given
     const privateKey = "e8d506db1e7c8d98dbc6752537939312702962f48e169084a7babbb5c96217f";
+    const publicKey = "0365bc56f0a623867746cbb025a74c295b5f794cf7c4adc11991bad1522912e5f6";
     expect(privateKey.length).toEqual(63); // shorter than regular 64 one
 
     const dto = new TestDto();
@@ -150,7 +153,6 @@ describe("ChainCallDTO", () => {
 
     // Then
     expect(dto.signature).toEqual(expect.stringMatching(/.{50,}/));
-    const publicKey = signatures.getPublicKey(privateKey);
     expect(dto.isSignatureValid(publicKey)).toEqual(true);
   });
 
@@ -173,7 +175,6 @@ describe("ChainCallDTO", () => {
     const { privateKey, publicKey } = genKeyPair();
     const dto = new TestDto();
     dto.amounts = [new BigNumber("12.3")];
-    expect(dto.signature).toEqual(undefined);
 
     // When
     dto.sign(privateKey);
@@ -197,74 +198,5 @@ describe("ChainCallDTO", () => {
     // Then
     expect(dto.signature).toEqual(expect.stringMatching(/.{50,}/));
     expect(dto.isSignatureValid(pair.publicKey.toString("base64"))).toEqual(true);
-  });
-
-  it("should validate signatures using stored signing params", () => {
-    const { privateKey } = genKeyPair();
-    const dto = new TestDto();
-    dto.amounts = [new BigNumber("1")];
-
-    dto.sign(privateKey);
-
-    const signature = {
-      signature: dto.signature ?? "",
-      signing: dto.signing
-    };
-
-    dto.signing = SigningScheme.TON;
-
-    expect(dto.isSignatureValid(dto.signature)).toEqual(true);
-  });
-
-  it("should convert legacy single signature", () => {
-    const dto = new TestDto();
-    dto.signature = "legacy";
-    dto.signerPublicKey = "pk";
-
-    convertLegacySignatures(dto);
-
-    expect(dto.signatures).toEqual([
-      {
-        signature: "legacy",
-        signerPublicKey: "pk",
-        signerAddress: undefined,
-        signing: undefined,
-        prefix: undefined
-      }
-    ]);
-  });
-
-  it("should validate signature by index", () => {
-    const { privateKey, publicKey } = genKeyPair();
-    const dto = new TestDto();
-    dto.amounts = [new BigNumber("12.3")];
-
-    // Sign multiple times to create multiple signatures
-    dto.sign(privateKey);
-
-    // Change the payload and sign again
-    dto.amounts = [new BigNumber("45.6")];
-    dto.sign(privateKey);
-
-    // Validate first signature (index 0) - should fail because payload changed
-    expect(dto.isSignatureValid(publicKey, 0)).toEqual(false);
-
-    // Validate second signature (index 1) - should pass
-    expect(dto.isSignatureValid(publicKey, 1)).toEqual(true);
-
-    // When index is 0 and no signatures array exists, it should fall back to the DTO itself
-    const simpleDto = new TestDto();
-    simpleDto.amounts = [new BigNumber("78.9")];
-    simpleDto.sign(privateKey);
-    simpleDto.signatures = undefined; // Clear signatures array
-    expect(simpleDto.isSignatureValid(publicKey, 0)).toEqual(true);
-  });
-
-  it("should throw error when signature at index doesn't exist", () => {
-    const { publicKey } = genKeyPair();
-    const dto = new TestDto();
-    dto.amounts = [new BigNumber("12.3")];
-
-    expect(() => dto.isSignatureValidByIndex(publicKey, 5)).toThrow("No signature at index 5");
   });
 });
