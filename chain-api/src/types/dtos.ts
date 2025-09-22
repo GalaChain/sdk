@@ -353,36 +353,39 @@ export class ChainCallDTO {
     return copied;
   }
 
-  public isSignatureValid(publicKey: string, index = 0): boolean {
-    const signatureObj: ChainCallDTO | SignatureDto | undefined =
-      this.signatures?.[index] ?? (index == 0 ? this : undefined);
-    if (signatureObj === undefined) {
+  public isSignatureValid(publicKey?: string, index = 0): boolean {
+    const sig: SignatureDto | undefined =
+      this.signatures?.[index] ??
+      (index === 0 && this.signature
+        ? {
+            signature: this.signature,
+            signerPublicKey: this.signerPublicKey,
+            signerAddress: this.signerAddress,
+            signing: this.signing,
+            prefix: this.prefix
+          }
+        : undefined);
+
+    if (!sig) {
       throw new ValidationFailedError(`No signature at index ${index}`);
     }
 
-    const signing = signatureObj.signing ?? SigningScheme.ETH;
-
-    const payload = {
-      ...this,
-      signatures: undefined,
-      signature: undefined,
-      signerPublicKey: undefined,
-      signerAddress: undefined,
-      prefix: undefined,
-      signing: signing
-    };
+    const pk = publicKey ?? sig.signerPublicKey ?? this.signerPublicKey ?? "";
+    const signing = sig.signing ?? SigningScheme.ETH;
 
     if (signing === SigningScheme.TON) {
-      const signatureBuff = Buffer.from(signatureObj.signature ?? "", "base64");
-      const publicKeyBuff = Buffer.from(publicKey ?? "", "base64");
+      // TON expects base64-encoded keys/signatures in your code
+      const signatureBuff = Buffer.from(sig.signature ?? "", "base64");
+      const publicKeyBuff = Buffer.from(pk, "base64");
       return signatures.ton.isValidSignature(
         signatureBuff,
-        payload,
+        this, // <-- verify the payload you signed
         publicKeyBuff,
-        signatureObj.prefix ?? this.prefix
+        sig.prefix ?? this.prefix
       );
     } else {
-      return signatures.isValid(signatureObj.signature ?? "", payload, publicKey ?? "");
+      // Ensure pk is in the format `signatures.isValid` expects (often hex without 0x)
+      return signatures.isValid(sig.signature ?? "", this, pk); // <-- verify against `this`
     }
   }
 }
@@ -390,27 +393,17 @@ export class ChainCallDTO {
 export function isSignatureValid(signatureObj: SignatureDto, publicKey: string): boolean {
   const signing = signatureObj.signing ?? SigningScheme.ETH;
 
-  const payload = {
-    ...this,
-    signatures: undefined,
-    signature: undefined,
-    signerPublicKey: undefined,
-    signerAddress: undefined,
-    prefix: undefined,
-    signing: signing
-  };
-
   if (signing === SigningScheme.TON) {
     const signatureBuff = Buffer.from(signatureObj.signature ?? "", "base64");
     const publicKeyBuff = Buffer.from(publicKey ?? "", "base64");
     return signatures.ton.isValidSignature(
       signatureBuff,
-      payload,
+      signatureObj,
       publicKeyBuff,
       signatureObj.prefix ?? this.prefix
     );
   } else {
-    return signatures.isValid(signatureObj.signature ?? "", payload, publicKey ?? "");
+    return signatures.isValid(signatureObj.signature ?? "", signatureObj, publicKey ?? "");
   }
 }
 
