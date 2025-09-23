@@ -87,7 +87,7 @@ export interface CallingUserData {
   alias?: UserAlias;
   ethAddress?: string;
   tonAddress?: string;
-  roles?: string[];
+  roles: string[];
   pubKeyCount?: number;
   requiredSignatures?: number;
 }
