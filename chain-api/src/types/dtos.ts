@@ -19,11 +19,16 @@ import {
   IsNotEmpty,
   IsNumber,
   IsOptional,
+  IsString,
   Max,
   Min,
-  MinLength,
+  Validate,
+  ValidateIf,
   ValidateNested,
+  ValidationArguments,
   ValidationError,
+  ValidatorConstraint,
+  ValidatorConstraintInterface,
   validate
 } from "class-validator";
 import { JSONSchema } from "class-validator-jsonschema";
@@ -37,7 +42,7 @@ import {
   serialize,
   signatures
 } from "../utils";
-import { IsUserAlias, IsUserRef, StringEnumProperty } from "../validators";
+import { IsUserAlias, IsUserRef, SerializeIf, StringEnumProperty } from "../validators";
 import { UserAlias } from "./UserAlias";
 import { UserRef } from "./UserRef";
 import { GalaChainResponse } from "./contract";
@@ -120,6 +125,41 @@ export function createValidSubmitDTO<T extends SubmitCallDTO>(
   } as unknown as NonFunctionProperties<T>);
 }
 
+export class SignatureDto {
+  @JSONSchema({
+    description:
+      "Prefix for Metamask transaction signatures. " +
+      "Necessary to format payloads correctly to recover publicKey from web3 signatures."
+  })
+  @IsOptional()
+  @IsNotEmpty()
+  public prefix?: string;
+
+  @JSONSchema({
+    description:
+      "Signature of the DTO signed with caller's private key to be verified with user's public key saved on chain. " +
+      "The 'signature' field is optional for DTO, but is required for a transaction to be executed on chain. \n" +
+      "Please consult [GalaChain SDK documentation](https://github.com/GalaChain/sdk/blob/main/docs/authorization.md#signature-based-authorization) on how to create signatures."
+  })
+  @IsOptional()
+  @IsNotEmpty()
+  public signature?: string;
+
+  @JSONSchema({
+    description: "Public key of the user who signed the DTO."
+  })
+  @IsOptional()
+  @IsNotEmpty()
+  public signerPublicKey?: string;
+
+  @JSONSchema({
+    description: "Address of the user who signed the DTO. Typically Ethereum or TON address."
+  })
+  @IsOptional()
+  @IsNotEmpty()
+  public signerAddress?: string;
+}
+
 /**
  * @description
  *
@@ -195,6 +235,18 @@ export class ChainCallDTO {
   public signing?: SigningScheme;
 
   @JSONSchema({
+    description:
+      "List of signatures for this DTO if there are multiple signers. " +
+      "All signatures must use the same signing scheme as provided in the 'signing' field. " +
+      "If there are multiple signatures, it is not allowed to provide 'signature' or 'signerPublicKey' or 'signerAddress' or 'prefix' fields."
+  })
+  @IsOptional()
+  @ValidateNested({ each: true })
+  @ArrayMinSize(2)
+  @Type(() => String)
+  public signatures?: string[];
+
+  @JSONSchema({
     description: "Unit timestamp when the DTO expires. If the timestamp is in the past, the DTO is not valid."
   })
   @IsOptional()
@@ -252,8 +304,18 @@ export class ChainCallDTO {
   }
 
   public sign(privateKey: string, useDer = false): void {
+    const currentSignatures = this.signatures ?? (this.signature ? [this.signature] : []);
+    const someSignaturesExist = currentSignatures.length > 0;
+
+    if (someSignaturesExist && this.signerAddress && this.signerPublicKey && this.prefix) {
+      const msg = "signerAddress, signerPublicKey and prefix are not allowed for multisignature DTOs";
+      throw new ValidationFailedError(msg);
+    }
+
     if (useDer) {
-      if (this.signing === SigningScheme.TON) {
+      if (someSignaturesExist) {
+        throw new ValidationFailedError("DER signatures are not allowed for multisignature DTOs");
+      } else if (this.signing === SigningScheme.TON) {
         throw new ValidationFailedError("TON signing scheme does not support DER signatures");
       } else {
         if (this.signerPublicKey === undefined && this.signerAddress === undefined) {
@@ -262,14 +324,22 @@ export class ChainCallDTO {
       }
     }
 
+    let signature: string;
+
     if (this.signing === SigningScheme.TON) {
       const keyBuffer = Buffer.from(privateKey, "base64");
-      this.signature = signatures.ton.getSignature(this, keyBuffer, this.prefix).toString("base64");
+      signature = signatures.ton.getSignature(this, keyBuffer, this.prefix).toString("base64");
     } else {
       const keyBuffer = signatures.normalizePrivateKey(privateKey);
-      this.signature = useDer
+      signature = useDer
         ? signatures.getDERSignature(this, keyBuffer)
         : signatures.getSignature(this, keyBuffer);
+    }
+
+    if (someSignaturesExist) {
+      this.signatures = [...currentSignatures, signature];
+    } else {
+      this.signature = signature;
     }
   }
 
@@ -283,7 +353,13 @@ export class ChainCallDTO {
     return copied;
   }
 
-  public isSignatureValid(publicKey: string): boolean {
+  public isSignatureValid(publicKey: string, index = 0): boolean {
+    const sig = index === 0 ? this.signature : this.signatures?.[index];
+
+    if (!sig) {
+      throw new ValidationFailedError(`No signature at index ${index}`);
+    }
+
     if (this.signing === SigningScheme.TON) {
       const signatureBuff = Buffer.from(this.signature ?? "", "base64");
       const publicKeyBuff = Buffer.from(publicKey, "base64");
@@ -493,12 +569,19 @@ export class RegisterUserDto extends SubmitCallDTO {
   @IsUserAlias()
   user: UserAlias;
 
-  /**
-   * @description Public secp256k1 key (compact or non-compact, hex or base64).
-   */
   @JSONSchema({ description: "Public secp256k1 key (compact or non-compact, hex or base64)." })
+  @ValidateIf((o) => !o.publicKeys || o.publicKeys.length === 0)
+  @SerializeIf((o) => !o.publicKeys || o.publicKeys.length === 0)
+  @IsString()
   @IsNotEmpty()
-  publicKey: string;
+  public publicKey?: string;
+
+  @JSONSchema({ description: "Public secp256k1 keys (compact or non-compact, hex or base64)." })
+  @ValidateIf((o) => !o.publicKey)
+  @SerializeIf((o) => !o.publicKey)
+  @IsNotEmpty({ each: true })
+  @ArrayMinSize(2)
+  public publicKeys?: string[];
 }
 
 /**
@@ -531,6 +614,7 @@ export class RegisterTonUserDto extends SubmitCallDTO {
   publicKey: string;
 }
 
+// TODO consider supporting multiple public keys
 export class UpdatePublicKeyDto extends SubmitCallDTO {
   @JSONSchema({
     description:

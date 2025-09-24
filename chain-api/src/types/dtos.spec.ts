@@ -70,7 +70,10 @@ it("should parse TestDtoWithArray", async () => {
   expect(await getPlainOrError(TestDtoWithArray, valid)).toEqual({ playerIds: ["123"] });
   expect(await getPlainOrError(TestDtoWithArray, invalid1)).toEqual(failedArrayMatcher);
   expect(await getPlainOrError(TestDtoWithArray, invalid2)).toEqual(failedArrayMatcher);
-  expect(await getPlainOrError(TestDtoWithArray, invalid3)).toEqual("Unexpected end of JSON input");
+  const error = await getPlainOrError(TestDtoWithArray, invalid3);
+  expect(
+    error === "Unexpected end of JSON input" || error === "Unterminated string in JSON at position 16"
+  ).toBe(true);
 });
 
 it("should parse TestDtoWithBigNumber", async () => {

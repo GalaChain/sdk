@@ -12,7 +12,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-import { IsNotEmpty, IsOptional, IsString, ValidateIf } from "class-validator";
+import { IsInt, IsNotEmpty, IsOptional, IsString, Min, ValidateIf } from "class-validator";
 import { JSONSchema } from "class-validator-jsonschema";
 
 import { IsUserAlias } from "../validators";
@@ -29,6 +29,8 @@ export enum UserRole {
 export class UserProfile extends ChainObject {
   static ADMIN_ROLES = [UserRole.CURATOR, UserRole.EVALUATE, UserRole.REGISTRAR, UserRole.SUBMIT] as const;
   static DEFAULT_ROLES = [UserRole.EVALUATE, UserRole.SUBMIT] as const;
+  static DEFAULT_PUB_KEY_COUNT = 1;
+  static DEFAULT_REQUIRED_SIGNATURES = 1;
 
   @JSONSchema({
     description:
@@ -60,6 +62,22 @@ export class UserProfile extends ChainObject {
   @IsOptional()
   @IsString({ each: true })
   roles?: string[];
+
+  @JSONSchema({
+    description: `Number of stored public keys for the user. Defaults to ${UserProfile.DEFAULT_PUB_KEY_COUNT}.`
+  })
+  @IsOptional()
+  @IsInt()
+  @Min(0)
+  pubKeyCount?: number;
+
+  @JSONSchema({
+    description: `Minimum number of signatures required for authorization. Defaults to ${UserProfile.DEFAULT_REQUIRED_SIGNATURES}.`
+  })
+  @IsOptional()
+  @IsInt()
+  @Min(1)
+  requiredSignatures?: number;
 }
 
 export const UP_INDEX_KEY = "GCUP";

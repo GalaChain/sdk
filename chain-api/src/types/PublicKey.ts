@@ -12,16 +12,24 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-import { IsNotEmpty, IsOptional, IsString } from "class-validator";
+import { ArrayMinSize, IsNotEmpty, IsOptional, IsString, ValidateIf } from "class-validator";
 
 import { SigningScheme, signatures } from "../utils";
-import { StringEnumProperty } from "../validators";
+import { SerializeIf, StringEnumProperty } from "../validators";
 import { ChainObject } from "./ChainObject";
 
 export class PublicKey extends ChainObject {
+  @ValidateIf((o) => !o.publicKeys || o.publicKeys.length === 0)
+  @SerializeIf((o) => !o.publicKeys || o.publicKeys.length === 0)
   @IsString()
   @IsNotEmpty()
-  publicKey: string;
+  publicKey?: string;
+
+  @ValidateIf((o) => !o.publicKey)
+  @SerializeIf((o) => !o.publicKey)
+  @IsString({ each: true })
+  @ArrayMinSize(2)
+  public publicKeys?: string[];
 
   @IsOptional()
   @StringEnumProperty(SigningScheme)
