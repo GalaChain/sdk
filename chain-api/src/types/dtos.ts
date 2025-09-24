@@ -154,16 +154,6 @@ export class ChainCallDTO {
 
   @JSONSchema({
     description:
-      "Signature of the DTO signed with caller's private key to be verified with user's public key saved on chain. " +
-      "The 'signature' field is optional for DTO, but is required for a transaction to be executed on chain. \n" +
-      "Please consult [GalaChain SDK documentation](https://github.com/GalaChain/sdk/blob/main/docs/authorization.md#signature-based-authorization) on how to create signatures."
-  })
-  @IsOptional()
-  @IsNotEmpty()
-  public signature?: string;
-
-  @JSONSchema({
-    description:
       "Prefix for Metamask transaction signatures. " +
       "Necessary to format payloads correctly to recover publicKey from web3 signatures."
   })
@@ -197,12 +187,22 @@ export class ChainCallDTO {
 
   @JSONSchema({
     description:
+      "Signature of the DTO signed with caller's private key to be verified with user's public key saved on chain. " +
+      "The 'signature' field is optional for DTO, but is required for a transaction to be executed on chain. \n" +
+      "Please consult [GalaChain SDK documentation](https://github.com/GalaChain/sdk/blob/main/docs/authorization.md#signature-based-authorization) on how to create signatures."
+  })
+  @IsOptional()
+  @IsNotEmpty()
+  public signature?: string;
+
+  @JSONSchema({
+    description:
       "List of signatures for this DTO if there are multiple signers. " +
       "All signatures must use the same signing scheme as provided in the 'signing' field. " +
       "If there are multiple signatures, it is not allowed to provide 'signature' or 'signerPublicKey' or 'signerAddress' or 'prefix' fields."
   })
   @IsOptional()
-  @ValidateNested({ each: true })
+  @SerializeIf((o) => !o.signature)
   @ArrayMinSize(2)
   @Type(() => String)
   public signatures?: string[];
@@ -531,8 +531,7 @@ export class RegisterUserDto extends SubmitCallDTO {
   user: UserAlias;
 
   @JSONSchema({ description: "Public secp256k1 key (compact or non-compact, hex or base64)." })
-  @ValidateIf((o) => !o.publicKeys || o.publicKeys.length === 0)
-  @SerializeIf((o) => !o.publicKeys || o.publicKeys.length === 0)
+  @ValidateIf((o) => !o.publicKeys)
   @IsString()
   @IsNotEmpty()
   public publicKey?: string;

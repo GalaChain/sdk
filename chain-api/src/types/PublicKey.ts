@@ -19,8 +19,7 @@ import { SerializeIf, StringEnumProperty } from "../validators";
 import { ChainObject } from "./ChainObject";
 
 export class PublicKey extends ChainObject {
-  @ValidateIf((o) => !o.publicKeys || o.publicKeys.length === 0)
-  @SerializeIf((o) => !o.publicKeys || o.publicKeys.length === 0)
+  @ValidateIf((o) => !o.publicKeys)
   @IsString()
   @IsNotEmpty()
   publicKey?: string;
