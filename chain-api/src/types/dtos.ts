@@ -22,13 +22,9 @@ import {
   IsString,
   Max,
   Min,
-  Validate,
   ValidateIf,
   ValidateNested,
-  ValidationArguments,
   ValidationError,
-  ValidatorConstraint,
-  ValidatorConstraintInterface,
   validate
 } from "class-validator";
 import { JSONSchema } from "class-validator-jsonschema";
@@ -123,41 +119,6 @@ export function createValidSubmitDTO<T extends SubmitCallDTO>(
     ...plain,
     uniqueKey: plain?.uniqueKey ?? randomUniqueKey()
   } as unknown as NonFunctionProperties<T>);
-}
-
-export class SignatureDto {
-  @JSONSchema({
-    description:
-      "Prefix for Metamask transaction signatures. " +
-      "Necessary to format payloads correctly to recover publicKey from web3 signatures."
-  })
-  @IsOptional()
-  @IsNotEmpty()
-  public prefix?: string;
-
-  @JSONSchema({
-    description:
-      "Signature of the DTO signed with caller's private key to be verified with user's public key saved on chain. " +
-      "The 'signature' field is optional for DTO, but is required for a transaction to be executed on chain. \n" +
-      "Please consult [GalaChain SDK documentation](https://github.com/GalaChain/sdk/blob/main/docs/authorization.md#signature-based-authorization) on how to create signatures."
-  })
-  @IsOptional()
-  @IsNotEmpty()
-  public signature?: string;
-
-  @JSONSchema({
-    description: "Public key of the user who signed the DTO."
-  })
-  @IsOptional()
-  @IsNotEmpty()
-  public signerPublicKey?: string;
-
-  @JSONSchema({
-    description: "Address of the user who signed the DTO. Typically Ethereum or TON address."
-  })
-  @IsOptional()
-  @IsNotEmpty()
-  public signerAddress?: string;
 }
 
 /**
