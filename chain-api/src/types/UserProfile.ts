@@ -29,8 +29,7 @@ export enum UserRole {
 export class UserProfile extends ChainObject {
   static ADMIN_ROLES = [UserRole.CURATOR, UserRole.EVALUATE, UserRole.REGISTRAR, UserRole.SUBMIT] as const;
   static DEFAULT_ROLES = [UserRole.EVALUATE, UserRole.SUBMIT] as const;
-  static DEFAULT_PUB_KEY_COUNT = 1;
-  static DEFAULT_REQUIRED_SIGNATURES = 1;
+  static DEFAULT_SIGNATURE_QUORUM = 1;
 
   @JSONSchema({
     description:
@@ -64,22 +63,17 @@ export class UserProfile extends ChainObject {
   roles?: string[];
 
   @JSONSchema({
-    description: `Number of stored public keys for the user. Defaults to ${UserProfile.DEFAULT_PUB_KEY_COUNT}.`
-  })
-  @IsOptional()
-  @IsInt()
-  @Min(0)
-  pubKeyCount?: number;
-
-  @JSONSchema({
-    description: `Minimum number of signatures required for authorization. Defaults to ${UserProfile.DEFAULT_REQUIRED_SIGNATURES}.`
+    description: `Minimum number of signatures required for authorization. Defaults to ${UserProfile.DEFAULT_SIGNATURE_QUORUM}.`
   })
   @IsOptional()
   @IsInt()
   @Min(1)
-  requiredSignatures?: number;
+  signatureQuorum?: number;
 }
 
 export const UP_INDEX_KEY = "GCUP";
 
-export type UserProfileWithRoles = UserProfile & { roles: string[] };
+export type UserProfileStrict = UserProfile & {
+  roles: string[];
+  signatureQuorum: number;
+};

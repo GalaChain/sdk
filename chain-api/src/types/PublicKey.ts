@@ -33,6 +33,10 @@ export class PublicKey extends ChainObject {
   @IsOptional()
   @StringEnumProperty(SigningScheme)
   public signing?: SigningScheme;
+
+  public getAllPublicKeys(): string[] {
+    return this.publicKeys ?? this.publicKey ? [this.publicKey as string] : [];
+  }
 }
 
 export const PK_INDEX_KEY = "GCPK";
