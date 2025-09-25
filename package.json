@@ -72,5 +72,8 @@
     "chain-connect",
     "chain-test",
     "chaincode"
-  ]
+  ],
+  "dependencies": {
+    "semver": "^7.7.2"
+  }
 }
