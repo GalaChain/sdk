@@ -115,39 +115,10 @@ const expectedTestDtoSchema = {
       type: "string"
     },
     signatures: {
-      description: "List of signatures for this DTO.",
-      items: {
-        properties: {
-          signature: {
-            description: expect.stringContaining("Signature of the DTO signed with caller's private key"),
-            minLength: 1,
-            type: "string"
-          },
-          signerPublicKey: {
-            description: "Public key of the user who signed the DTO.",
-            minLength: 1,
-            type: "string"
-          },
-          signerAddress: {
-            description: "Address of the user who signed the DTO. Typically Ethereum or TON address.",
-            minLength: 1,
-            type: "string"
-          },
-          prefix: {
-            description:
-              "Prefix for Metamask transaction signatures. Necessary to format payloads correctly to recover publicKey from web3 signatures.",
-            minLength: 1,
-            type: "string"
-          },
-          signing: {
-            description:
-              'Signing scheme used for the signature. "ETH" for Ethereum, and "TON" for The Open Network are supported. Default: "ETH".',
-            enum: ["ETH", "TON"],
-            type: "string"
-          }
-        },
-        type: "object"
-      },
+      description:
+        "List of signatures for this DTO if there are multiple signers. All signatures must use the same signing scheme as provided in the 'signing' field. If there are multiple signatures, it is not allowed to provide 'signature' or 'signerPublicKey' or 'signerAddress' or 'prefix' fields.",
+      items: {},
+      minItems: 2,
       type: "array"
     },
     uniqueKey: {
@@ -193,7 +164,19 @@ const expectedTestDtoSchema = {
 
 const expectedTestDtoResponseSchema = {
   properties: {
-    Data: expectedTestDtoSchema,
+    Data: {
+      ...expectedTestDtoSchema,
+      properties: {
+        ...expectedTestDtoSchema.properties,
+        signatures: {
+          description:
+            "List of signatures for this DTO if there are multiple signers. All signatures must use the same signing scheme as provided in the 'signing' field. If there are multiple signatures, it is not allowed to provide 'signature' or 'signerPublicKey' or 'signerAddress' or 'prefix' fields.",
+          items: {},
+          minItems: 2,
+          type: "array"
+        }
+      }
+    },
     Message: {
       type: "string"
     },

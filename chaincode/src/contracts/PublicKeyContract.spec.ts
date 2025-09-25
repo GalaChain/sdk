@@ -44,6 +44,7 @@ import { PublicKeyService } from "../services";
 import { PublicKeyContract } from "./PublicKeyContract";
 import {
   createDerSignedDto,
+  createRegisteredMultiSigUser,
   createRegisteredTonUser,
   createRegisteredUser,
   createSignedDto,
@@ -155,7 +156,7 @@ describe("RegisterUser", () => {
     const response = await chaincode.invoke("PublicKeyContract:RegisterUser", signedDto);
 
     // Then
-    expect(response).toEqual(transactionSuccess("aa"));
+    expect(response).toEqual(transactionSuccess(dto.user));
   });
   it("should fail to register user with multiple duplicate public keys", async () => {
     // Given
@@ -172,7 +173,7 @@ describe("RegisterUser", () => {
     const response = await chaincode.invoke("PublicKeyContract:RegisterUser", signedDto);
 
     // Then
-    expect(response).toEqual(transactionErrorKey("DUPLICATE_PUBLIC_KEY"));
+    expect(response).toEqual(transactionErrorMessageContains("Found duplicate public keys"));
   });
 
   // TODO: this test will be redesigned in a follow-up story
@@ -311,9 +312,7 @@ describe("RegisterUser", () => {
     expect(await getPublicKey(chaincode, alias)).toEqual(
       transactionSuccess({
         publicKey,
-        signing: SigningScheme.TON,
-        roles: UserProfile.DEFAULT_ROLES,
-        signatureQuorum: 1
+        signing: SigningScheme.TON
       })
     );
 
@@ -590,7 +589,8 @@ describe("GetMyProfile", () => {
       transactionSuccess({
         alias: user.alias,
         ethAddress: user.ethAddress,
-        roles: [UserRole.EVALUATE, UserRole.SUBMIT]
+        roles: [UserRole.EVALUATE, UserRole.SUBMIT],
+        signatureQuorum: 1
       })
     );
     expect(resp2).toEqual(resp1);
@@ -621,10 +621,54 @@ describe("GetMyProfile", () => {
       transactionSuccess({
         alias: user.alias,
         tonAddress: user.tonAddress,
-        roles: UserProfile.DEFAULT_ROLES
+        roles: UserProfile.DEFAULT_ROLES,
+        signatureQuorum: 1
       })
     );
     expect(resp2).toEqual(resp1);
+  });
+
+  it("should get saved profile (ETH) with multiple public keys", async () => {
+    // Given
+    const chaincode = new TestChaincode([PublicKeyContract]);
+
+    const { keys, alias } = await createRegisteredMultiSigUser(chaincode, { keys: 3, quorum: 2 });
+    const [keys1, keys2, keys3] = keys;
+
+    // signed by first and second key
+    const dto1 = new GetMyProfileDto().signed(keys1.privateKey).signed(keys2.privateKey);
+
+    // signed by second and third key
+    const dto2 = new GetMyProfileDto().signed(keys2.privateKey).signed(keys3.privateKey);
+
+    // signed by all keys
+    const dto3 = new GetMyProfileDto()
+      .signed(keys1.privateKey)
+      .signed(keys2.privateKey)
+      .signed(keys3.privateKey);
+
+    // signed by first key only
+    const dto4 = new GetMyProfileDto().signed(keys1.privateKey);
+
+    // When
+    const resp1 = await chaincode.invoke("PublicKeyContract:GetMyProfile", dto1);
+    const resp2 = await chaincode.invoke("PublicKeyContract:GetMyProfile", dto2);
+    const resp3 = await chaincode.invoke("PublicKeyContract:GetMyProfile", dto3);
+    const resp4 = await chaincode.invoke("PublicKeyContract:GetMyProfile", dto4);
+
+    // Then
+    expect(resp1).toEqual(
+      transactionSuccess({
+        alias,
+        roles: [UserRole.EVALUATE, UserRole.SUBMIT],
+        signatureQuorum: 2
+      })
+    );
+
+    expect(resp2).toEqual(resp1);
+
+    expect(resp4).toEqual(transactionErrorKey("UNAUTHORIZED"));
+    expect(resp4).toEqual(transactionErrorMessageContains("Insufficient signatures: got 1, required 2."));
   });
 });
 

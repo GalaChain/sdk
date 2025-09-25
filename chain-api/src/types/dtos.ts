@@ -299,6 +299,7 @@ export class ChainCallDTO {
     }
 
     if (someSignaturesExist) {
+      delete this.signature;
       this.signatures = [...currentSignatures, signature];
     } else {
       this.signature = signature;
@@ -553,7 +554,7 @@ export class RegisterUserDto extends SubmitCallDTO {
   signatureQuorum?: number;
 
   public getAllPublicKeys(): string[] {
-    return this.publicKeys ?? this.publicKey ? [this.publicKey as string] : [];
+    return this.publicKey ? [this.publicKey as string] : this.publicKeys ?? [];
   }
 }
 

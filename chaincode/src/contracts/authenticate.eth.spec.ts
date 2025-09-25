@@ -75,7 +75,7 @@ const Success = labeled<Expectation>("Success")((response, user) => {
   expect(response).toEqual(
     transactionSuccess({
       alias: user.alias,
-      // ethAddress: user.ethAddress, TODO verify
+      ethAddress: user.ethAddress,
       roles: UserProfile.DEFAULT_ROLES,
       signatureQuorum: 1
     })
@@ -86,7 +86,7 @@ const SuccessNoCustomAlias = labeled<Expectation>("SuccessNoCustomAlias")((respo
   expect(response).toEqual(
     transactionSuccess({
       alias: `eth|${user.ethAddress}`,
-      // ethAddress: user.ethAddress,
+      ethAddress: user.ethAddress,
       roles: UserProfile.DEFAULT_ROLES,
       signatureQuorum: 1
     })
@@ -97,7 +97,7 @@ const SuccessUnknownKey = labeled<Expectation>("SuccessUnknownKey")((response, u
   expect(response).toEqual(
     transactionSuccess({
       alias: expect.stringMatching(/^eth\|[a-fA-F0-9]{40}$/),
-      // ethAddress: expect.stringMatching(/^[a-fA-F0-9]{40}$/),
+      ethAddress: expect.stringMatching(/^[a-fA-F0-9]{40}$/),
       roles: UserProfile.DEFAULT_ROLES,
       signatureQuorum: 1
     })

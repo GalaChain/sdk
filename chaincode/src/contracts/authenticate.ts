@@ -416,8 +416,10 @@ function multipleSignatures(
 }
 
 function singleSignAuthResult(profile: UserProfileStrict, publicKey: string): AuthenticateResult {
+  const addr = profile.ethAddress ? { ethAddress: profile.ethAddress } : { tonAddress: profile.tonAddress };
   return {
     alias: profile.alias,
+    ...addr,
     roles: profile.roles,
     signedByKeys: [publicKey],
     signatureQuorum: profile.signatureQuorum

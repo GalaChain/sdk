@@ -64,9 +64,14 @@ export class PublicKeyService {
       throw new PkMissingError(userAlias);
     }
 
-    if (new Set(publicKeys).size !== publicKeys.length) {
+    const normalizedKeys =
+      signing === SigningScheme.ETH
+        ? publicKeys.map((pk) => PublicKeyService.normalizePublicKey(pk))
+        : publicKeys;
+
+    if (new Set(normalizedKeys).size !== normalizedKeys.length) {
       throw new ValidationFailedError(
-        `Found duplicate public keys in ${userAlias}: ${publicKeys.join(", ")}. ` +
+        `Found duplicate public keys in ${userAlias}: ${normalizedKeys.join(", ")}. ` +
           `Public keys must be unique.`
       );
     }
@@ -74,8 +79,6 @@ export class PublicKeyService {
     const key = PublicKeyService.getPublicKeyKey(ctx, userAlias);
     const obj = new PublicKey();
     obj.signing = signing;
-
-    const normalizedKeys = publicKeys.map((pk) => PublicKeyService.normalizePublicKey(pk));
 
     if (normalizedKeys.length === 1) {
       obj.publicKey = normalizedKeys[0];
@@ -238,7 +241,7 @@ export class PublicKeyService {
 
     // First, validate that no user profile exists for any of the provided addresses
     for (const [index, publicKey] of publicKeys.entries()) {
-      const currPubKey = currPublicKey?.getAllPublicKeys()[index];
+      const currPubKey = currPublicKey?.getAllPublicKeys()?.[index];
 
       if (currPubKey !== undefined) {
         // Migration from legacy user is not supported for multiple public keys
@@ -339,4 +342,8 @@ export class PublicKeyService {
     const data = Buffer.from(profile.serialize());
     await ctx.stub.putState(key, data);
   }
+}
+
+function log(s: string) {
+  throw new Error(s);
 }
