@@ -62,6 +62,7 @@ export class PublicKeyContract extends GalaContract {
       "Returns profile for the calling user. " +
       "Since the profile contains also eth address of the user, this method is supported only for signature based authentication."
   })
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   public async GetMyProfile(ctx: GalaChainContext, dto: GetMyProfileDto): Promise<UserProfile> {
     return ctx.callingUserProfile;
   }
@@ -78,11 +79,15 @@ export class PublicKeyContract extends GalaContract {
       throw new ValidationFailedError(message);
     }
 
-    const providedPkHex = signatures.getNonCompactHexPublicKey(dto.publicKey);
-    const ethAddress = signatures.getEthAddress(providedPkHex);
-    const userAlias = dto.user;
+    const allPublicKeys = dto.getAllPublicKeys();
 
-    return PublicKeyService.registerUser(ctx, providedPkHex, ethAddress, userAlias, SigningScheme.ETH);
+    return PublicKeyService.registerUser(
+      ctx,
+      allPublicKeys,
+      dto.user,
+      SigningScheme.ETH,
+      dto.signatureQuorum ?? allPublicKeys.length
+    );
   }
 
   @Submit({
@@ -96,7 +101,7 @@ export class PublicKeyContract extends GalaContract {
     const ethAddress = signatures.getEthAddress(providedPkHex);
     const userAlias = `eth|${ethAddress}` as UserAlias;
 
-    return PublicKeyService.registerUser(ctx, providedPkHex, ethAddress, userAlias, SigningScheme.ETH);
+    return PublicKeyService.registerUser(ctx, [dto.publicKey], userAlias, SigningScheme.ETH, 1);
   }
 
   @Submit({
@@ -106,11 +111,10 @@ export class PublicKeyContract extends GalaContract {
     ...requireRegistrarAuth
   })
   public async RegisterTonUser(ctx: GalaChainContext, dto: RegisterTonUserDto): Promise<string> {
-    const publicKey = dto.publicKey;
-    const address = signatures.ton.getTonAddress(Buffer.from(publicKey, "base64"));
+    const address = signatures.ton.getTonAddress(Buffer.from(dto.publicKey, "base64"));
     const userAlias = `ton|${address}` as UserAlias;
 
-    return PublicKeyService.registerUser(ctx, publicKey, address, userAlias, SigningScheme.TON);
+    return PublicKeyService.registerUser(ctx, [dto.publicKey], userAlias, SigningScheme.TON, 1);
   }
 
   @Submit({

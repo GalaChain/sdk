@@ -16,6 +16,7 @@ import { Type, instanceToInstance, plainToInstance } from "class-transformer";
 import {
   ArrayMaxSize,
   ArrayMinSize,
+  IsInt,
   IsNotEmpty,
   IsNumber,
   IsOptional,
@@ -542,6 +543,18 @@ export class RegisterUserDto extends SubmitCallDTO {
   @IsNotEmpty({ each: true })
   @ArrayMinSize(2)
   public publicKeys?: string[];
+
+  @JSONSchema({
+    description: "Minimum number of signatures required for authorization. Defaults to number of public keys."
+  })
+  @IsOptional()
+  @IsInt()
+  @Min(1)
+  signatureQuorum?: number;
+
+  public getAllPublicKeys(): string[] {
+    return this.publicKeys ?? this.publicKey ? [this.publicKey as string] : [];
+  }
 }
 
 /**

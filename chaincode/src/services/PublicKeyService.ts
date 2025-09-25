@@ -23,6 +23,7 @@ import {
   UserAlias,
   UserProfile,
   UserProfileStrict,
+  ValidationFailedError,
   asValidUserAlias,
   createValidChainObject,
   normalizePublicKey,
@@ -32,7 +33,6 @@ import { Context } from "fabric-contract-api";
 
 import { GalaChainContext } from "../types";
 import {
-  PkDuplicateError,
   PkMismatchError,
   PkMissingError,
   PkNotFoundError,
@@ -223,33 +223,40 @@ export class PublicKeyService {
     return undefined;
   }
 
+  // TODO test to verify that all user profile entries are saved
   public static async registerUser(
     ctx: GalaChainContext,
     publicKeys: string[],
-    address: string,
     userAlias: UserAlias,
     signing: SigningScheme,
     signatureQuorum: number
   ): Promise<string> {
     const currPublicKey = await PublicKeyService.getPublicKey(ctx, userAlias);
 
-    // If we are migrating a legacy user to new flow, the public key should match
-    if (currPublicKey !== undefined) {
-      const providedPkHex = publicKeys[0];
-      const nonCompactCurrPubKey = signatures.getNonCompactHexPublicKey(currPublicKey.getAllPublicKeys()[0]);
+    for (const [index, publicKey] of publicKeys.entries()) {
+      // If we are migrating a legacy user to new flow, the public key should match
+      const providedPkHex = signatures.getNonCompactHexPublicKey(publicKey);
+      const currPubKey = currPublicKey?.getAllPublicKeys()[index];
+      if (currPubKey === undefined) {
+        throw new ValidationFailedError(`Public key ${index} is not saved on chain for user ${userAlias}`);
+      }
+
+      const nonCompactCurrPubKey = signatures.getNonCompactHexPublicKey(currPubKey);
       if (nonCompactCurrPubKey !== providedPkHex) {
         throw new PkMismatchError(userAlias);
       }
-    }
 
-    // If User Profile already exists on chain for this address, we should not allow registering the same user again
-    const existingUserProfile = await PublicKeyService.getUserProfile(ctx, address);
-    if (existingUserProfile !== undefined) {
-      throw new ProfileExistsError(address, existingUserProfile.alias);
+      const address = PublicKeyService.getUserAddress(providedPkHex, signing);
+      const existingUserProfile = await PublicKeyService.getUserProfile(ctx, address);
+      if (existingUserProfile !== undefined) {
+        throw new ProfileExistsError(address, existingUserProfile.alias);
+      }
+
+      // If User Profile already exists on chain for this address, we should not allow registering the same user again
+      await PublicKeyService.putUserProfile(ctx, address, userAlias, signing, signatureQuorum);
     }
 
     await PublicKeyService.putPublicKey(ctx, publicKeys, userAlias, signing);
-    await PublicKeyService.putUserProfile(ctx, address, userAlias, signing, signatureQuorum);
 
     return userAlias;
   }
