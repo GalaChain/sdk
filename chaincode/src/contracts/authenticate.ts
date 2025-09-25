@@ -57,6 +57,12 @@ class CannotRecoverPublicKeyError extends ValidationFailedError {
   }
 }
 
+class DuplicateSignerPublicKeyError extends ValidationFailedError {
+  constructor(signedByKeys: string[]) {
+    super(`Duplicate signer public key in: ${signedByKeys.join(", ")}.`, { signedByKeys });
+  }
+}
+
 class UserProfileMismatchError extends ValidationFailedError {
   constructor(info: string, expectedInfo: string) {
     super(`User profile mismatch. Expected: ${expectedInfo}. Got: ${info}.`, { info, expectedInfo });
@@ -230,6 +236,12 @@ async function authenticateMultipleSignatures(
     profileEntries.push([recoveredPkHex, profile]);
   }
 
+  const signedByKeys = profileEntries.map((p) => p[0]);
+  const keySet = new Set(signedByKeys);
+  if (keySet.size !== signedByKeys.length) {
+    throw new DuplicateSignerPublicKeyError(signedByKeys);
+  }
+
   const firstProfileEntry = profileEntries[0];
 
   if (!firstProfileEntry) {
@@ -246,6 +258,7 @@ async function authenticateMultipleSignatures(
   }
 
   // TODO test for profile mismatch
+  // TODO test for duplicate signer public key
   // TODO test update user roles and update public key for multisig
 
   const result: AuthenticateResult = {
