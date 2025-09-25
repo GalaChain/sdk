@@ -15,8 +15,8 @@
 import { instanceToPlain, plainToInstance } from "class-transformer";
 import { validate } from "class-validator";
 
-import { PublicKey } from "./PublicKey";
 import { SigningScheme } from "../utils";
+import { PublicKey } from "./PublicKey";
 
 describe("PublicKey", () => {
   describe("validation and serialization", () => {

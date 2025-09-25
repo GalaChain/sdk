@@ -236,26 +236,34 @@ export class PublicKeyService {
   ): Promise<string> {
     const currPublicKey = await PublicKeyService.getPublicKey(ctx, userAlias);
 
+    // First, validate that no user profile exists for any of the provided addresses
     for (const [index, publicKey] of publicKeys.entries()) {
-      // If we are migrating a legacy user to new flow, the public key should match
-      const providedPkHex = signatures.getNonCompactHexPublicKey(publicKey);
       const currPubKey = currPublicKey?.getAllPublicKeys()[index];
-      if (currPubKey === undefined) {
-        throw new ValidationFailedError(`Public key ${index} is not saved on chain for user ${userAlias}`);
+
+      if (currPubKey !== undefined) {
+        // Migration from legacy user is not supported for multiple public keys
+        if (currPublicKey?.publicKeys) {
+          throw new NotImplementedError("UpdatePublicKey when publicKeys is defined");
+        }
+
+        // If we are migrating a legacy user to new flow, the public key should match
+        const providedPkHex = signatures.getNonCompactHexPublicKey(publicKey);
+        const nonCompactCurrPubKey = signatures.getNonCompactHexPublicKey(currPubKey);
+        if (nonCompactCurrPubKey !== providedPkHex) {
+          throw new PkMismatchError(userAlias);
+        }
       }
 
-      const nonCompactCurrPubKey = signatures.getNonCompactHexPublicKey(currPubKey);
-      if (nonCompactCurrPubKey !== providedPkHex) {
-        throw new PkMismatchError(userAlias);
-      }
+      const address = PublicKeyService.getUserAddress(publicKey, signing);
 
-      const address = PublicKeyService.getUserAddress(providedPkHex, signing);
+      // If User Profile already exists on chain for this ethereum address,
+      // we should not allow registering the same user again
       const existingUserProfile = await PublicKeyService.getUserProfile(ctx, address);
       if (existingUserProfile !== undefined) {
         throw new ProfileExistsError(address, existingUserProfile.alias);
       }
 
-      // If User Profile already exists on chain for this address, we should not allow registering the same user again
+      // Create user profile for this address
       await PublicKeyService.putUserProfile(ctx, address, userAlias, signing, signatureQuorum);
     }
 

@@ -95,7 +95,9 @@ describe("RegisterUser", () => {
     expect(await getUserProfile(chaincode, ethAddress)).toEqual(
       transactionSuccess({
         alias: dto.user,
-        ethAddress
+        ethAddress,
+        roles: UserProfile.DEFAULT_ROLES,
+        signatureQuorum: 1
       })
     );
   });
@@ -134,6 +136,43 @@ describe("RegisterUser", () => {
 
     // Then
     expect(registerResponse).toEqual(expect.objectContaining({ Status: 0, ErrorKey: "PROFILE_EXISTS" }));
+  });
+
+  it("should register user with multiple public keys", async () => {
+    // Given
+    const chaincode = new TestChaincode([PublicKeyContract]);
+    const publicKey = signatures.genKeyPair().publicKey;
+    const publicKey2 = signatures.genKeyPair().publicKey;
+
+    const dto = await createValidSubmitDTO(RegisterUserDto, {
+      user: "client|multi" as UserAlias,
+      publicKeys: [publicKey, publicKey2],
+      signing: SigningScheme.ETH
+    });
+    const signedDto = dto.signed(process.env.DEV_ADMIN_PRIVATE_KEY as string);
+
+    // When
+    const response = await chaincode.invoke("PublicKeyContract:RegisterUser", signedDto);
+
+    // Then
+    expect(response).toEqual(transactionSuccess("aa"));
+  });
+  it("should fail to register user with multiple duplicate public keys", async () => {
+    // Given
+    const chaincode = new TestChaincode([PublicKeyContract]);
+    const { publicKey } = signatures.genKeyPair();
+    const dto = await createValidSubmitDTO(RegisterUserDto, {
+      user: "client|multi" as UserAlias,
+      publicKeys: [publicKey, publicKey],
+      signing: SigningScheme.ETH
+    });
+    const signedDto = dto.signed(process.env.DEV_ADMIN_PRIVATE_KEY as string);
+
+    // When
+    const response = await chaincode.invoke("PublicKeyContract:RegisterUser", signedDto);
+
+    // Then
+    expect(response).toEqual(transactionErrorKey("DUPLICATE_PUBLIC_KEY"));
   });
 
   // TODO: this test will be redesigned in a follow-up story
@@ -245,7 +284,9 @@ describe("RegisterUser", () => {
     expect(await getUserProfile(chaincode, ethAddress)).toEqual(
       transactionSuccess({
         alias,
-        ethAddress
+        ethAddress,
+        roles: UserProfile.DEFAULT_ROLES,
+        signatureQuorum: 1
       })
     );
   });
@@ -270,14 +311,18 @@ describe("RegisterUser", () => {
     expect(await getPublicKey(chaincode, alias)).toEqual(
       transactionSuccess({
         publicKey,
-        signing: SigningScheme.TON
+        signing: SigningScheme.TON,
+        roles: UserProfile.DEFAULT_ROLES,
+        signatureQuorum: 1
       })
     );
 
     expect(await getUserProfile(chaincode, address)).toEqual(
       transactionSuccess({
         alias,
-        tonAddress: address
+        tonAddress: address,
+        roles: UserProfile.DEFAULT_ROLES,
+        signatureQuorum: 1
       })
     );
   });

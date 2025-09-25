@@ -102,14 +102,18 @@ export class GalaChainContext extends Context {
 
   get callingUserSignedByKeys(): string[] {
     if (this.callingUserSignedByKeysValue === undefined) {
-      throw new UnauthorizedError(`No signed by keys known for user ${this.callingUserValue}`);
+      throw new UnauthorizedError(
+        `No signed by keys known for user ${this.callingUserValue} ${new Error().stack}`
+      );
     }
     return this.callingUserSignedByKeysValue;
   }
 
   get callingUserSignatureQuorum(): number {
     if (this.callingUserSignatureQuorumValue === undefined) {
-      throw new UnauthorizedError(`No signature quorum known for user ${this.callingUserValue}`);
+      throw new UnauthorizedError(
+        `No signature quorum known for user ${this.callingUserValue} ${new Error().stack}`
+      );
     }
     return this.callingUserSignatureQuorumValue;
   }

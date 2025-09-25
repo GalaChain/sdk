@@ -200,7 +200,7 @@ function GalaTransaction<In extends ChainCallDTO, Out>(
           // default roles are applied. If not, then only evaluate is possible. Alias is intentionally
           // missing.
           const roles = !options.allowedOrgs?.length ? [UserRole.EVALUATE] : [...UserProfile.DEFAULT_ROLES];
-          ctx.callingUserData = { roles };
+          ctx.callingUserData = { roles, signatureQuorum: 0, signedByKeys: [] };
         }
 
         // Authorize the user

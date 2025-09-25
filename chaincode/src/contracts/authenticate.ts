@@ -128,8 +128,7 @@ export interface AuthenticateResult {
   tonAddress?: string;
   roles: string[];
   signedByKeys: string[];
-  signedByAddresses: string[];
-  requiredSignatures: number;
+  signatureQuorum: number;
 }
 
 /**
@@ -187,8 +186,7 @@ export async function authenticateSingleSignature(
     }
 
     const p = await getUserProfile(ctx, recoveredPkHex, signing);
-    const address = PublicKeyService.getUserAddress(recoveredPkHex, signing);
-    return singleSignAuthResult(p, recoveredPkHex, address);
+    return singleSignAuthResult(p, recoveredPkHex);
   } else if (dto.signerAddress !== undefined) {
     if (dto.signerPublicKey !== undefined) {
       throw new RedundantSignerPublicKeyError(dto.signerAddress, dto.signerPublicKey);
@@ -200,7 +198,7 @@ export async function authenticateSingleSignature(
       throw new PkInvalidSignatureError(resp.profile.alias);
     }
 
-    return singleSignAuthResult(resp.profile, resp.matchedKey, dto.signerAddress);
+    return singleSignAuthResult(resp.profile, resp.matchedKey);
   } else if (dto.signerPublicKey !== undefined) {
     if (!dto.isSignatureValid(dto.signerPublicKey)) {
       const address = PublicKeyService.getUserAddress(dto.signerPublicKey, signing);
@@ -208,8 +206,7 @@ export async function authenticateSingleSignature(
     }
 
     const p = await getUserProfile(ctx, dto.signerPublicKey, signing);
-    const address = PublicKeyService.getUserAddress(dto.signerPublicKey, signing);
-    return singleSignAuthResult(p, dto.signerPublicKey, address);
+    return singleSignAuthResult(p, dto.signerPublicKey);
   } else {
     throw new MissingSignerError(dto.signature);
   }
@@ -270,8 +267,7 @@ async function authenticateMultipleSignatures(
     alias: firstProfileEntry[1].alias,
     roles: firstProfileEntry[1].roles,
     signedByKeys: profileEntries.map((p) => p[0]),
-    signedByAddresses: profileEntries.map((p) => PublicKeyService.getUserAddress(p[0], signing)),
-    requiredSignatures: firstProfileEntry[1].signatureQuorum
+    signatureQuorum: firstProfileEntry[1].signatureQuorum
   };
 
   return result;
@@ -399,8 +395,7 @@ export async function authenticateAsOriginChaincode(
     ethAddress: undefined,
     roles: [],
     signedByKeys: [],
-    signedByAddresses: [],
-    requiredSignatures: 0
+    signatureQuorum: 0
   };
 }
 
@@ -420,16 +415,11 @@ function multipleSignatures(
   return !!dto && dto.signatures !== undefined && dto.signatures.length >= 2 && dto.signature === undefined;
 }
 
-function singleSignAuthResult(
-  profile: UserProfileStrict,
-  publicKey: string,
-  address: string
-): AuthenticateResult {
+function singleSignAuthResult(profile: UserProfileStrict, publicKey: string): AuthenticateResult {
   return {
     alias: profile.alias,
     roles: profile.roles,
     signedByKeys: [publicKey],
-    signedByAddresses: [address],
-    requiredSignatures: profile.signatureQuorum
+    signatureQuorum: profile.signatureQuorum
   };
 }
