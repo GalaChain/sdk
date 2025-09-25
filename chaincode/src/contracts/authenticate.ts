@@ -185,7 +185,10 @@ export async function authenticateSingleSignature(
         throw new RedundantSignerAddressError(ethAddress, dto.signerAddress);
       }
     }
-    return await getUserProfile(ctx, recoveredPkHex, signing); // new flow only
+
+    const p = await getUserProfile(ctx, recoveredPkHex, signing);
+    const address = PublicKeyService.getUserAddress(recoveredPkHex, signing);
+    return singleSignAuthResult(p, recoveredPkHex, address);
   } else if (dto.signerAddress !== undefined) {
     if (dto.signerPublicKey !== undefined) {
       throw new RedundantSignerPublicKeyError(dto.signerAddress, dto.signerPublicKey);
@@ -197,14 +200,16 @@ export async function authenticateSingleSignature(
       throw new PkInvalidSignatureError(resp.profile.alias);
     }
 
-    return resp.profile;
+    return singleSignAuthResult(resp.profile, resp.matchedKey, dto.signerAddress);
   } else if (dto.signerPublicKey !== undefined) {
     if (!dto.isSignatureValid(dto.signerPublicKey)) {
       const address = PublicKeyService.getUserAddress(dto.signerPublicKey, signing);
       throw new PkInvalidSignatureError(address);
     }
 
-    return await getUserProfile(ctx, dto.signerPublicKey, signing); // new flow only
+    const p = await getUserProfile(ctx, dto.signerPublicKey, signing);
+    const address = PublicKeyService.getUserAddress(dto.signerPublicKey, signing);
+    return singleSignAuthResult(p, dto.signerPublicKey, address);
   } else {
     throw new MissingSignerError(dto.signature);
   }
@@ -293,24 +298,6 @@ async function getUserProfile(
   }
 
   throw new UserNotRegisteredError(address);
-}
-
-async function getPublicKey(
-  ctx: GalaChainContext,
-  alias: UserAlias,
-  signing: SigningScheme
-): Promise<PublicKey> {
-  const publicKey = await PublicKeyService.getPublicKey(ctx, alias);
-
-  if (publicKey === undefined) {
-    throw new PkMissingError(alias);
-  }
-
-  if (ctx.config.allowNonRegisteredUsers) {
-    return PublicKeyService.getDefaultPublicKey(alias, signing);
-  }
-
-  return publicKey;
 }
 
 async function getUserProfileAndPublicKey(
@@ -431,4 +418,18 @@ function multipleSignatures(
   dto: ChainCallDTO | undefined
 ): dto is Omit<ChainCallDTO, "signature"> & { signatures: string[] } {
   return !!dto && dto.signatures !== undefined && dto.signatures.length >= 2 && dto.signature === undefined;
+}
+
+function singleSignAuthResult(
+  profile: UserProfileStrict,
+  publicKey: string,
+  address: string
+): AuthenticateResult {
+  return {
+    alias: profile.alias,
+    roles: profile.roles,
+    signedByKeys: [publicKey],
+    signedByAddresses: [address],
+    requiredSignatures: profile.signatureQuorum
+  };
 }

@@ -65,7 +65,10 @@ export class PublicKeyService {
     }
 
     if (new Set(publicKeys).size !== publicKeys.length) {
-      throw new PkDuplicateError(userAlias);
+      throw new ValidationFailedError(
+        `Found duplicate public keys in ${userAlias}: ${publicKeys.join(", ")}. ` +
+          `Public keys must be unique.`
+      );
     }
 
     const key = PublicKeyService.getPublicKeyKey(ctx, userAlias);
