@@ -237,6 +237,16 @@ export class PublicKeyService {
     signing: SigningScheme,
     signatureQuorum: number
   ): Promise<string> {
+    // Validate signature quorum doesn't exceed number of public keys
+    if (signatureQuorum > publicKeys.length) {
+      throw new ValidationFailedError("Signature quorum cannot exceed number of public keys");
+    }
+
+    // Validate that multiple public keys are not used with TON signing scheme
+    if (signing === SigningScheme.TON && publicKeys.length > 1) {
+      throw new ValidationFailedError("Multiple public keys are not supported with TON signing scheme");
+    }
+
     const currPublicKey = await PublicKeyService.getPublicKey(ctx, userAlias);
 
     // First, validate that no user profile exists for any of the provided addresses

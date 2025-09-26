@@ -80,14 +80,10 @@ export class PublicKeyContract extends GalaContract {
     }
 
     const allPublicKeys = dto.getAllPublicKeys();
+    const signatureQuorum = dto.signatureQuorum ?? allPublicKeys.length;
+    const signing = dto.signing ?? SigningScheme.ETH;
 
-    return PublicKeyService.registerUser(
-      ctx,
-      allPublicKeys,
-      dto.user,
-      SigningScheme.ETH,
-      dto.signatureQuorum ?? allPublicKeys.length
-    );
+    return PublicKeyService.registerUser(ctx, allPublicKeys, dto.user, signing, signatureQuorum);
   }
 
   @Submit({
