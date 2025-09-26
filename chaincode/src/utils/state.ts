@@ -307,7 +307,17 @@ export async function getObjectHistory(
 
   while (!res.done) {
     if (res.value) {
-      history.push(res.value);
+      const { isDelete, value, timestamp, txId } = res.value;
+
+      // `value` is a buffer, so we need to convert it to a string.
+      const stringValue = (value as unknown as Buffer).toString("utf8");
+
+      history.push({
+        isDelete,
+        timestamp,
+        txId,
+        value: stringValue
+      });
     }
     res = await iterator.next();
   }
