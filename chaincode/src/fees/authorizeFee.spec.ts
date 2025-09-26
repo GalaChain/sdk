@@ -57,10 +57,12 @@ describe("authorizeFee", () => {
       authority: users.testUser1.identityKey,
       quantity: authorizedFeeQuantity,
       uniqueKey: randomUUID()
-    }).signed(users.testUser1.privateKey);
+    });
+
+    const signedDto = dto.signed(users.testUser1.privateKey);
 
     // When
-    const response = await contract.AuthorizeFee(ctx, dto);
+    const response = await contract.AuthorizeFee(ctx, signedDto);
 
     // Then
     const { year, month, day } = txUnixTimeToDateIndexKeys(ctx.txUnixTime);

@@ -19,7 +19,7 @@ import {
   GalaChainResponse,
   GetMyProfileDto,
   PublicKeyContractAPI,
-  RegisterUserDto,
+  RegisterEthUserDto,
   UserProfile,
   publicKeyContractAPI,
   randomUniqueKey,
@@ -112,7 +112,7 @@ describeIfNonMockedChaincode("Chaincode client (CuratorOrg)", () => {
     // Given
     const newUser = ChainUser.withRandomKeys();
 
-    const dto = new RegisterUserDto();
+    const dto = new RegisterEthUserDto();
     dto.publicKey = newUser.publicKey;
     dto.uniqueKey = randomUniqueKey();
     dto.sign(getAdminPrivateKey(), false);

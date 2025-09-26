@@ -13,6 +13,7 @@
  * limitations under the License.
  */
 import BigNumber from "bignumber.js";
+import { Transform, TransformOptions } from "class-transformer";
 import { ValidationArguments, ValidationOptions, registerDecorator } from "class-validator";
 
 import { NotImplementedError } from "../utils/error";
@@ -231,4 +232,28 @@ export function BigNumberIsInteger(validationOptions?: ValidationOptions) {
       }
     });
   };
+}
+
+/**
+ * @description Decorator that conditionally includes/excludes a property during serialization/deserialization
+ * based on a condition function that evaluates other properties of the object.
+ *
+ * @param condition - Function that receives the object and returns true if the property should be included
+ * @param transformOptions - Optional class-transformer options
+ *
+ * @example
+ * ```typescript
+ * class MyClass {
+ *   @SerializeIf(o => !o.publicKeys || o.publicKeys.length === 0)
+ *   public publicKey?: string;
+ *
+ *   @SerializeIf(o => !o.publicKey)
+ *   public publicKeys?: string[];
+ * }
+ * ```
+ */
+export function SerializeIf(condition: (obj: any) => boolean, transformOptions?: TransformOptions) {
+  return Transform(({ value, obj }) => {
+    return condition(obj) ? value : undefined;
+  }, transformOptions);
 }

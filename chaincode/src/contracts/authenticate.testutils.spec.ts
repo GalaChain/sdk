@@ -60,7 +60,24 @@ export async function createRegisteredUser(chaincode: TestChaincode): Promise<Us
   const signedDto = dto.signed(process.env.DEV_ADMIN_PRIVATE_KEY as string);
   const response = await chaincode.invoke("PublicKeyContract:RegisterUser", signedDto);
   expect(response).toEqual(transactionSuccess());
-  return { alias: alias, privateKey, publicKey, ethAddress };
+  return { alias, privateKey, publicKey, ethAddress };
+}
+
+export async function createRegisteredMultiSigUser(
+  chaincode: TestChaincode,
+  p: { keys: number; quorum: number }
+): Promise<{ alias: UserAlias; keys: { publicKey: string; privateKey: string }[] }> {
+  const alias = ("client|multi-" + randomUUID()) as UserAlias;
+  const keys = Array.from({ length: p.keys }, () => signatures.genKeyPair());
+  const dto = await createValidSubmitDTO(RegisterUserDto, {
+    user: alias,
+    publicKeys: keys.map((k) => k.publicKey),
+    signatureQuorum: p.quorum
+  });
+  const signedDto = dto.signed(process.env.DEV_ADMIN_PRIVATE_KEY as string);
+  const response = await chaincode.invoke("PublicKeyContract:RegisterUser", signedDto);
+  expect(response).toEqual(transactionSuccess());
+  return { alias, keys };
 }
 
 export async function createTonUser(): Promise<TonUser> {

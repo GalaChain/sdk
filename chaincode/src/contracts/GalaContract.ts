@@ -181,7 +181,11 @@ export abstract class GalaContract extends Contract {
         throw new NotFoundError(`User profile for ${ethAddr} not found`);
       }
 
-      ctx.setDryRunOnBehalfOf(userProfile);
+      ctx.setDryRunOnBehalfOf({
+        ...userProfile,
+        signedByKeys: [],
+        signatureQuorum: 0
+      });
     }
 
     // If the signer address is provided, we use it to set the dry run on behalf of the user.
@@ -190,7 +194,9 @@ export abstract class GalaContract extends Contract {
     else if (dto.signerAddress && isValidUserAlias(dto.signerAddress)) {
       ctx.setDryRunOnBehalfOf({
         alias: dto.signerAddress,
-        roles: [...UserProfile.DEFAULT_ROLES]
+        roles: [...UserProfile.DEFAULT_ROLES],
+        signedByKeys: [],
+        signatureQuorum: 0
       });
     }
 

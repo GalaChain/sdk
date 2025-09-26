@@ -12,8 +12,8 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-import { getJestProjects } from "@nx/jest";
+import { getJestProjectsAsync } from "@nx/jest";
 
-export default {
-  projects: getJestProjects()
-};
+export default async () => ({
+  projects: await getJestProjectsAsync()
+});
