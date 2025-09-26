@@ -541,6 +541,7 @@ export class RegisterUserDto extends SubmitCallDTO {
   @JSONSchema({ description: "Public secp256k1 keys (compact or non-compact, hex or base64)." })
   @ValidateIf((o) => !o.publicKey)
   @SerializeIf((o) => !o.publicKey)
+  @IsString({ each: true })
   @IsNotEmpty({ each: true })
   @ArrayMinSize(2)
   public publicKeys?: string[];
