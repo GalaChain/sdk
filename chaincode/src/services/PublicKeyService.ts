@@ -143,7 +143,7 @@ export class PublicKeyService {
       }
 
       if (userProfile.signatureQuorum === undefined) {
-        userProfile.signatureQuorum = UserProfile.DEFAULT_SIGNATURE_QUORUM;
+        userProfile.signatureQuorum = 1;
       }
 
       return userProfile as UserProfileStrict;
@@ -197,7 +197,7 @@ export class PublicKeyService {
     profile.ethAddress = signing === SigningScheme.ETH ? address : undefined;
     profile.tonAddress = signing === SigningScheme.TON ? address : undefined;
     profile.roles = Array.from(UserProfile.DEFAULT_ROLES);
-    profile.signatureQuorum = UserProfile.DEFAULT_SIGNATURE_QUORUM;
+    profile.signatureQuorum = 1;
 
     return profile as UserProfileStrict;
   }
@@ -306,7 +306,7 @@ export class PublicKeyService {
     // need to fetch userProfile from old address
     const oldAddress = PublicKeyService.getUserAddress(oldPublicKey.publicKey, signing);
     const userProfile = await PublicKeyService.getUserProfile(ctx, oldAddress);
-    const signatureQuorum = userProfile?.signatureQuorum ?? UserProfile.DEFAULT_SIGNATURE_QUORUM;
+    const signatureQuorum = userProfile?.signatureQuorum ?? 1;
 
     // Note: we don't throw an error if userProfile is undefined in order to support legacy users with unsaved profiles
     if (userProfile !== undefined) {
@@ -352,8 +352,4 @@ export class PublicKeyService {
     const data = Buffer.from(profile.serialize());
     await ctx.stub.putState(key, data);
   }
-}
-
-function log(s: string) {
-  throw new Error(s);
 }

@@ -29,7 +29,6 @@ export enum UserRole {
 export class UserProfile extends ChainObject {
   static ADMIN_ROLES = [UserRole.CURATOR, UserRole.EVALUATE, UserRole.REGISTRAR, UserRole.SUBMIT] as const;
   static DEFAULT_ROLES = [UserRole.EVALUATE, UserRole.SUBMIT] as const;
-  static DEFAULT_SIGNATURE_QUORUM = 1;
 
   @JSONSchema({
     description:
@@ -63,7 +62,7 @@ export class UserProfile extends ChainObject {
   roles?: string[];
 
   @JSONSchema({
-    description: `Minimum number of signatures required for authorization. Defaults to ${UserProfile.DEFAULT_SIGNATURE_QUORUM}.`
+    description: `Minimum number of signatures required for authorization.`
   })
   @IsOptional()
   @IsInt()

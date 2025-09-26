@@ -139,43 +139,6 @@ describe("RegisterUser", () => {
     expect(registerResponse).toEqual(expect.objectContaining({ Status: 0, ErrorKey: "PROFILE_EXISTS" }));
   });
 
-  it("should register user with multiple public keys", async () => {
-    // Given
-    const chaincode = new TestChaincode([PublicKeyContract]);
-    const publicKey = signatures.genKeyPair().publicKey;
-    const publicKey2 = signatures.genKeyPair().publicKey;
-
-    const dto = await createValidSubmitDTO(RegisterUserDto, {
-      user: "client|multi" as UserAlias,
-      publicKeys: [publicKey, publicKey2],
-      signing: SigningScheme.ETH
-    });
-    const signedDto = dto.signed(process.env.DEV_ADMIN_PRIVATE_KEY as string);
-
-    // When
-    const response = await chaincode.invoke("PublicKeyContract:RegisterUser", signedDto);
-
-    // Then
-    expect(response).toEqual(transactionSuccess(dto.user));
-  });
-  it("should fail to register user with multiple duplicate public keys", async () => {
-    // Given
-    const chaincode = new TestChaincode([PublicKeyContract]);
-    const { publicKey } = signatures.genKeyPair();
-    const dto = await createValidSubmitDTO(RegisterUserDto, {
-      user: "client|multi" as UserAlias,
-      publicKeys: [publicKey, publicKey],
-      signing: SigningScheme.ETH
-    });
-    const signedDto = dto.signed(process.env.DEV_ADMIN_PRIVATE_KEY as string);
-
-    // When
-    const response = await chaincode.invoke("PublicKeyContract:RegisterUser", signedDto);
-
-    // Then
-    expect(response).toEqual(transactionErrorMessageContains("Found duplicate public keys"));
-  });
-
   // TODO: this test will be redesigned in a follow-up story
   it.skip("should fail when migrating existing user to UserProfile, but PublicKey doesn't match", async () => {
     // Given

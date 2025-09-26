@@ -90,8 +90,6 @@ it("should support the global state", async () => {
   expect(noKeyResponse).toEqual(transactionErrorKey("PK_NOT_FOUND"));
 
   // When
-  console.log("registerDto", registerDto);
-  console.log("address", signatures.getEthAddress(registerDto.publicKey));
   const registerResponse = await client1.submitTransaction("RegisterEthUser", registerDto);
 
   // Then

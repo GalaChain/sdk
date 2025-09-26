@@ -589,7 +589,6 @@ export class RegisterTonUserDto extends SubmitCallDTO {
   publicKey: string;
 }
 
-// TODO consider supporting multiple public keys
 export class UpdatePublicKeyDto extends SubmitCallDTO {
   @JSONSchema({
     description:
