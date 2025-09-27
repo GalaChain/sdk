@@ -520,7 +520,7 @@ describe("FulfillMint", () => {
           owner: users.attacker.identityKey // <- tampered here. code expects users.testUser1Id
         })
       ]
-    });
+    }).signed(users.attacker.privateKey);
 
     testFixture
       .savedState(nftClass, nftInstance, tokenAllowance, tokenClaim)

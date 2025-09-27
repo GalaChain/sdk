@@ -112,6 +112,7 @@ type TestGalaChainContext = Context & {
   set callingUserData(d: CallingUserData);
   get callingUser(): UserAlias;
   get callingUserEthAddress(): string;
+  get callingUserRoles(): string[];
   get callingUserTonAddress(): string;
   get callingUserRoles(): string[];
   get callingUserProfile(): UserProfile;
@@ -122,6 +123,7 @@ type TestGalaChainContext = Context & {
   isDryRun: boolean;
   get txUnixTime(): number;
   setChaincodeStub(stub: ChaincodeStub): void;
+  resetCallingUserData(): void;
 };
 
 /**
