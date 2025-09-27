@@ -130,7 +130,7 @@ export default class NetworkUp extends BaseCommand<typeof NetworkUp> {
     await Fablo.directory(fabloRoot)
       .then(() => saveConnectionProfiles(fabloRoot, flags.watch, flags.channel ?? [], localhostName))
       .config(fabloConfig, (cfg) => updatedFabloConfig(cfg, fabloRoot, singleArgs))
-      .then(() => updateConfigTxWithChannelProfile(fabloRoot, singleArgs))
+      .then(() => updateCustomConfigTx(fabloRoot, singleArgs, flags.watch))
       .then(() =>
         copyEnvFile(
           fabloRoot,
@@ -226,10 +226,29 @@ function copyEnvFile(fabloRoot: string, envConfigPath: string | undefined, chain
   });
 }
 
-function updateConfigTxWithChannelProfile(fabloRoot: string, args: SingleArg[]) {
-  const update = createConfigtxProfiles(args);
+function updateCustomConfigTx(fabloRoot: string, args: SingleArg[], isWatchMode: boolean) {
   const configtxFilePath = path.resolve(fabloRoot, "configtx-policies.yml");
-  fs.appendFileSync(configtxFilePath, update);
+  let content = fs.readFileSync(configtxFilePath, "utf8");
+
+  if (!isWatchMode) {
+    content = removeConsortiumSections(content);
+  }
+
+  const update = createConfigtxProfiles(args);
+  fs.writeFileSync(configtxFilePath, content + update);
+}
+
+function removeConsortiumSections(content: string): string {
+  // Remove Consortium and Consortiums sections
+  const cleanedContent = content
+    .replace(
+      /\s*# Consortium\(s\) is a legacy required by Fablo, can be skipped for flow without system channel\n/g,
+      ""
+    )
+    .replace(/\s*Consortium: SampleConsortium\n/g, "")
+    .replace(/\s*Consortiums:\n\s*SampleConsortium:\n\s*Organizations:\n(\s*-\s*<<:\s*\*[^\n]+\n)*/g, "");
+
+  return cleanedContent;
 }
 
 export function createConfigtxProfiles(args: SingleArg[]): string {

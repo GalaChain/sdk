@@ -32,6 +32,19 @@ perl -i -pe "s/MaxMessageCount: 10/MaxMessageCount: ${MAX_MESSAGE_COUNT:-1}/g" "
 perl -i -pe "s/BatchTimeout: 2s/BatchTimeout: ${BATCH_TIMEOUT:-1s}/g" "$target_configtx"
 
 #
+# Set BFT-specific parameters for speed optimization
+echo "Updating BFT parameters for speed"
+perl -i -pe 's/RequestBatchMaxCount: 100/RequestBatchMaxCount: 1/g' "$target_configtx"
+perl -i -pe 's/RequestBatchMaxInterval: 50ms/RequestBatchMaxInterval: 1s/g' "$target_configtx"
+perl -i -pe 's/RequestForwardTimeout: 2s/RequestForwardTimeout: 1s/g' "$target_configtx"
+perl -i -pe 's/RequestComplainTimeout: 20s/RequestComplainTimeout: 1s/g' "$target_configtx"
+perl -i -pe 's/RequestAutoRemoveTimeout: 3m0s/RequestAutoRemoveTimeout: 1s/g' "$target_configtx"
+perl -i -pe 's/ViewChangeResendInterval: 5s/ViewChangeResendInterval: 1s/g' "$target_configtx"
+perl -i -pe 's/ViewChangeTimeout: 20s/ViewChangeTimeout: 1s/g' "$target_configtx"
+perl -i -pe 's/LeaderHeartbeatTimeout: 1m0s/LeaderHeartbeatTimeout: 1s/g' "$target_configtx"
+perl -i -pe 's/CollectTimeout: 1s/CollectTimeout: 1s/g' "$target_configtx"
+
+#
 # Update versions
 #perl -i -pe 's/_VERSION=2.4.2/_VERSION=2.4.7/g' "$target_env"
 perl -i -pe 's/_CA_VERSION=1.5.0/_CA_VERSION=1.5.5/g' "$target_env"
