@@ -5,7 +5,8 @@
     "module": "commonjs",
     "types": ["jest", "node"],
     "declarationMap": true,
-    "sourceMap": true
+    "sourceMap": true,
+    "allowJs": true
   },
   "include": ["jest.config.ts", "src/**/*.test.ts", "src/**/*.spec.ts", "src/**/*.d.ts"],
   "references": [

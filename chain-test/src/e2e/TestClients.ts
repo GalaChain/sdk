@@ -371,7 +371,9 @@ async function createRegisteredUser(
   const user = ChainUser.withRandomKeys(userAlias);
 
   if (userAlias === undefined) {
-    const dto = await createValidSubmitDTO(RegisterEthUserDto, { publicKey: user.publicKey });
+    const dto = await createValidSubmitDTO(RegisterEthUserDto, {
+      publicKeys: [user.publicKey]
+    });
     const response = await client.RegisterEthUser(dto.signed(client.privateKey));
     if (response.Status !== GalaChainResponseType.Success) {
       throw new Error(`Failed to register eth user: ${response.Message}`);
@@ -379,7 +381,7 @@ async function createRegisteredUser(
   } else {
     const dto = await createValidSubmitDTO(RegisterUserDto, {
       user: user.identityKey,
-      publicKey: user.publicKey
+      publicKeys: [user.publicKey]
     });
     const response = await client.RegisterUser(dto.signed(client.privateKey));
     if (response.Status !== GalaChainResponseType.Success) {

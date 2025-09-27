@@ -32,8 +32,12 @@ import { BrowserConnectClient } from "./customClients";
 // https://privatekeys.pw/key/1d3cc061492016bcd5e7ea2c31b1cf3dec584e07a38e21df7ef3049c6b224e70#addresses
 const sampleAddr = "0x3bb75c2Da3B669E253C338101420CC8dEBf0a777";
 
+type JsonRpcParams = unknown[] | Record<string, unknown>;
+type JsonRpcResult = string | string[];
+
 class EthereumMock extends EventEmitter {
-  send(method: string, params?: Array<any> | Record<string, any>): Promise<any> {
+  send(method: string, params?: JsonRpcParams): Promise<JsonRpcResult> {
+    void params;
     if (method === "eth_requestAccounts") {
       return Promise.resolve([sampleAddr]);
     } else if (method === "eth_accounts") {
@@ -44,7 +48,7 @@ class EthereumMock extends EventEmitter {
       throw new Error(`Method not mocked: ${method}`);
     }
   }
-  request(request: { method: string; params?: Array<any> | Record<string, any> }): Promise<any> {
+  request(request: { method: string; params?: JsonRpcParams }): Promise<JsonRpcResult> {
     if (request.method === "eth_requestAccounts") {
       return Promise.resolve([sampleAddr]);
     } else if (request.method === "eth_accounts") {
@@ -108,7 +112,7 @@ describe("API tests", () => {
   });
   it("test register", async () => {
     const dto: RegisterUserDto = await createValidSubmitDTO(RegisterUserDto, {
-      publicKey: "3",
+      publicKeys: ["3"],
       user: "client|4" as UserAlias
     });
 
@@ -135,7 +139,7 @@ describe("API tests", () => {
   });
   it("test both using same connection", async () => {
     const dto: RegisterUserDto = await createValidSubmitDTO(RegisterUserDto, {
-      publicKey: "3",
+      publicKeys: ["3"],
       user: "client|4" as UserAlias
     });
 

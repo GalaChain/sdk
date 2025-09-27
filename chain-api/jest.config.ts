@@ -21,6 +21,7 @@ export default {
   transform: {
     '^.+\\.ts$': ['ts-jest', { tsconfig: '<rootDir>/tsconfig.spec.json' }]
   },
+  transformIgnorePatterns: ['<rootDir>/lib/'],
   moduleFileExtensions: ['ts', 'js', 'html'],
   coverageDirectory: '../coverage/chain-api'
 };

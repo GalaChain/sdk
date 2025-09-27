@@ -51,7 +51,7 @@ export async function terminateTokenSwap(
       name: tokenSwap.getCompositeKey(),
       quantity: instanceQuantity.quantity.times(tokenSwap.uses.minus(tokenSwap.usesSpent)),
       owner: tokenSwap.offeredBy
-    }).catch((e) => {
+    }).catch(() => {
       chainValidationErrors.push(
         `UnlockToken() failed for token ${instanceQuantity.tokenInstance.toStringKey()}, ` +
           `callingUser: ${ctx.callingUser}, swap: ${tokenSwap.getCompositeKey()}`

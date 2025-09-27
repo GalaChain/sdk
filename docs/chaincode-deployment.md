@@ -153,7 +153,7 @@ We highly recommend using the `@gala-chain/api` library for handling DTOs and si
 
 ```typescript
 const dto = new RegisterEthUser();
-dto.publicKey = <newUserPublicKey>;
+dto.publicKeys = [<newUserPublicKey>];
 dto.sign(<gc-admin-key>);
 const payloadString = dto.serialize();
 ```

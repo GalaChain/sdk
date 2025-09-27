@@ -74,6 +74,32 @@ async mintToken(ctx: GalaChainContext, dto: MintTokenDto) {
 }
 ```
 
+### Multisignature profiles
+
+Profiles may hold several public keys. When registering a user, supply all keys. A majority of unique
+signatures is required on each transaction.
+
+```typescript
+const k1 = signatures.genKeyPair();
+const k2 = signatures.genKeyPair();
+await pkContract.RegisterUser(
+  (
+    await createValidSubmitDTO(RegisterUserDto, {
+      user: "client|multi",
+      publicKeys: [k1.publicKey, k2.publicKey]
+    })
+  ).signed(adminKey)
+);
+
+const dto = new GetMyProfileDto();
+dto.sign(k1.privateKey);
+dto.sign(k2.privateKey);
+const profile = await pkContract.GetMyProfile(dto);
+```
+
+If fewer signatures are provided than required, the call fails with `UNAUTHORIZED`. Reusing the
+same key twice results in `DUPLICATE_SIGNER_PUBLIC_KEY`.
+
 ## Identity Resolution
 
 GalaChain provides flexible identity resolution through the `resolveUserAlias` service:

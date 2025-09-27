@@ -17,3 +17,4 @@ export * from "./writes";
 export * from "./fixture";
 export * from "./TestChaincode";
 export * from "./TestChaincodeStub";
+export type { CallingUserData } from "./fixture";

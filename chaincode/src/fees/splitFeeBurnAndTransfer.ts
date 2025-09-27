@@ -38,7 +38,7 @@ export async function splitFeeImmediatelyWithBurnAndTransfer(
   data: SplitFeeBurnAndTransferParams
 ): Promise<void> {
   const payingUser = ctx.callingUser;
-  const { feeCode, galaCurrencyKey, splitFormula } = data;
+  const { galaCurrencyKey, splitFormula } = data;
   const totalFeeQuantity = data.quantity;
 
   const { collection, category, type, additionalKey } = galaCurrencyKey;

@@ -25,8 +25,7 @@ import {
   UpdateUserRolesDto,
   UserAlias,
   UserProfile,
-  ValidationFailedError,
-  signatures
+  ValidationFailedError
 } from "@gala-chain/api";
 import { Info } from "fabric-contract-api";
 
@@ -56,6 +55,16 @@ export class PublicKeyContract extends GalaContract {
     super("PublicKeyContract", version);
   }
 
+  private static ensurePublicKeys(publicKeys?: string[]): string[] {
+    if (!Array.isArray(publicKeys) || publicKeys.length === 0) {
+      throw new ValidationFailedError("At least one public key must be provided");
+    }
+    if (publicKeys.some((pk) => pk === undefined || pk === "")) {
+      throw new ValidationFailedError("Public keys must not be empty");
+    }
+    return publicKeys;
+  }
+
   @Evaluate({
     in: GetMyProfileDto,
     description:
@@ -77,12 +86,12 @@ export class PublicKeyContract extends GalaContract {
       const message = `User alias should start with 'client|', but got: ${dto.user}`;
       throw new ValidationFailedError(message);
     }
+    const publicKeys = PublicKeyContract.ensurePublicKeys(dto.publicKeys);
 
-    const providedPkHex = signatures.getNonCompactHexPublicKey(dto.publicKey);
-    const ethAddress = signatures.getEthAddress(providedPkHex);
     const userAlias = dto.user;
+    const signing = dto.signing ?? SigningScheme.ETH;
 
-    return PublicKeyService.registerUser(ctx, providedPkHex, ethAddress, userAlias, SigningScheme.ETH);
+    return PublicKeyService.registerUser(ctx, publicKeys, userAlias, signing);
   }
 
   @Submit({
@@ -92,11 +101,11 @@ export class PublicKeyContract extends GalaContract {
     ...requireRegistrarAuth
   })
   public async RegisterEthUser(ctx: GalaChainContext, dto: RegisterEthUserDto): Promise<string> {
-    const providedPkHex = signatures.getNonCompactHexPublicKey(dto.publicKey);
-    const ethAddress = signatures.getEthAddress(providedPkHex);
+    const publicKeys = PublicKeyContract.ensurePublicKeys(dto.publicKeys);
+    const ethAddress = PublicKeyService.getUserAddress(publicKeys[0], SigningScheme.ETH);
     const userAlias = `eth|${ethAddress}` as UserAlias;
 
-    return PublicKeyService.registerUser(ctx, providedPkHex, ethAddress, userAlias, SigningScheme.ETH);
+    return PublicKeyService.registerUser(ctx, publicKeys, userAlias, SigningScheme.ETH);
   }
 
   @Submit({
@@ -106,11 +115,11 @@ export class PublicKeyContract extends GalaContract {
     ...requireRegistrarAuth
   })
   public async RegisterTonUser(ctx: GalaChainContext, dto: RegisterTonUserDto): Promise<string> {
-    const publicKey = dto.publicKey;
-    const address = signatures.ton.getTonAddress(Buffer.from(publicKey, "base64"));
+    const publicKeys = PublicKeyContract.ensurePublicKeys(dto.publicKeys);
+    const address = PublicKeyService.getUserAddress(publicKeys[0], SigningScheme.TON);
     const userAlias = `ton|${address}` as UserAlias;
 
-    return PublicKeyService.registerUser(ctx, publicKey, address, userAlias, SigningScheme.TON);
+    return PublicKeyService.registerUser(ctx, publicKeys, userAlias, SigningScheme.TON);
   }
 
   @Submit({
@@ -127,9 +136,10 @@ export class PublicKeyContract extends GalaContract {
     description: "Updates public key for the calling user."
   })
   public async UpdatePublicKey(ctx: GalaChainContext, dto: UpdatePublicKeyDto): Promise<void> {
+    const publicKeys = PublicKeyContract.ensurePublicKeys(dto.publicKeys);
     const signing = dto.signing ?? SigningScheme.ETH;
-    const address = PublicKeyService.getUserAddress(dto.publicKey, signing);
-    await PublicKeyService.updatePublicKey(ctx, dto.publicKey, address, signing);
+    const address = PublicKeyService.getUserAddress(publicKeys[0], signing);
+    await PublicKeyService.updatePublicKey(ctx, publicKeys[0], address, signing);
   }
 
   @GalaTransaction({

@@ -16,9 +16,11 @@ import {
   ChainCallDTO,
   ForbiddenError,
   PublicKey,
+  SignatureDto,
   SigningScheme,
-  UserProfileWithRoles,
+  UserProfile,
   ValidationFailedError,
+  convertLegacySignatures,
   signatures
 } from "@gala-chain/api";
 import * as protos from "fabric-protos";
@@ -29,43 +31,19 @@ import { GalaChainContext } from "../types";
 
 class MissingSignatureError extends ValidationFailedError {
   constructor() {
-    super("Signature is missing.");
-  }
-}
-
-class RedundantSignerPublicKeyError extends ValidationFailedError {
-  constructor(recovered: string, inDto: string) {
-    super(
-      "Public key is redundant when it can be recovered from the signature, or when the address is provided.",
-      {
-        recovered,
-        inDto
-      }
-    );
+    super("DTO must include a signature.");
   }
 }
 
 class PublicKeyMismatchError extends ValidationFailedError {
   constructor(recovered: string, inDto: string) {
-    super("Public key recovered from signature is different from the one provided in dto.", {
-      recovered,
-      inDto
-    });
-  }
-}
-
-class RedundantSignerAddressError extends ValidationFailedError {
-  constructor(recovered: string, inDto: string) {
-    super("Signer address is redundant when it can be recovered from the signature.", {
-      recovered,
-      inDto
-    });
+    super("Recovered public key does not match signerPublicKey.", { recovered, inDto });
   }
 }
 
 class AddressMismatchError extends ValidationFailedError {
   constructor(recovered: string, inDto: string) {
-    super("Signer address recovered from signature is different from the one provided in dto.", {
+    super("Recovered signer address does not match signerAddress.", {
       recovered,
       inDto
     });
@@ -74,7 +52,19 @@ class AddressMismatchError extends ValidationFailedError {
 
 class MissingSignerError extends ValidationFailedError {
   constructor(signature: string) {
-    super(`Missing signerPublicKey or signerAddress field in dto. Signature: ${signature}.`, { signature });
+    super("Missing signerPublicKey or signerAddress for signature.", { signature });
+  }
+}
+
+class DuplicateSignerPublicKeyError extends ValidationFailedError {
+  constructor(key: string) {
+    super("Each signature must use a unique public key.", { key });
+  }
+}
+
+class SignerAliasMismatchError extends ValidationFailedError {
+  constructor(aliases: string[]) {
+    super("All signatures must belong to the same user alias.", { aliases });
   }
 }
 
@@ -95,65 +85,132 @@ export class ChaincodeAuthorizationError extends ForbiddenError {}
 export async function authenticate(
   ctx: GalaChainContext,
   dto: ChainCallDTO | undefined
-): Promise<{ alias: string; ethAddress?: string; tonAddress?: string; roles: string[] }> {
-  if (!dto || dto.signature === undefined) {
+): Promise<{
+  alias: string;
+  ethAddress?: string;
+  tonAddress?: string;
+  roles: string[];
+  signedByKeys?: string[];
+  pubKeyCount?: number;
+  requiredSignatures?: number;
+}> {
+  if (!dto || (dto.signature === undefined && (!dto.signatures || dto.signatures.length === 0))) {
     if (dto?.signerAddress?.startsWith("service|")) {
       const chaincode = dto.signerAddress.slice(8);
-      return await authenticateAsOriginChaincode(ctx, dto, chaincode);
+      const res = await authenticateAsOriginChaincode(ctx, dto, chaincode);
+      return { ...res };
     }
 
     throw new MissingSignatureError();
   }
 
-  const recoveredPkHex = recoverPublicKey(dto.signature, dto, dto.prefix ?? "");
+  const sigs: SignatureDto[] | ChainCallDTO[] = dto.signatures || [dto];
+
+  const authResults = await Promise.all(sigs.map((s) => authenticateSingle(ctx, dto, s)));
+
+  const aliases = authResults.map((r) => r.profile.alias);
+  const uniqueAliases = Array.from(new Set(aliases));
+  if (uniqueAliases.length > 1) {
+    throw new SignerAliasMismatchError(uniqueAliases);
+  }
+
+  const keys = authResults.map((r) => r.signedByKey);
+  const uniqueKeys = new Set(keys);
+  if (uniqueKeys.size !== keys.length) {
+    const dup = keys.find((k, i) => keys.indexOf(k) !== i) ?? "";
+    throw new DuplicateSignerPublicKeyError(dup);
+  }
+
+  const profile = authResults[0].profile;
+  const pubKeyCount = profile.pubKeyCount ?? 1;
+  const requiredSignatures = profile.requiredSignatures ?? Math.floor(pubKeyCount / 2) + 1;
+
+  return {
+    alias: profile.alias,
+    ethAddress: profile.ethAddress,
+    tonAddress: profile.tonAddress,
+    roles: profile.roles ?? Array.from(UserProfile.DEFAULT_ROLES),
+    signedByKeys: keys,
+    pubKeyCount,
+    requiredSignatures
+  };
+}
+
+export async function authenticateSingle(
+  ctx: GalaChainContext,
+  dto: ChainCallDTO,
+  sig: SignatureDto | ChainCallDTO
+): Promise<{ profile: UserProfile; signedByKey: string }> {
+  if (!sig.signature) {
+    throw new MissingSignatureError();
+  }
+
+  const signing = sig.signing ?? dto.signing ?? SigningScheme.ETH;
+  const recoveredPkHex = recoverPublicKey(
+    sig.signature,
+    dto,
+    sig.prefix ?? dto.prefix ?? "",
+    sig.signing ?? dto.signing
+  );
 
   if (recoveredPkHex !== undefined) {
-    if (dto.signerPublicKey !== undefined) {
-      const hexKey = signatures.getNonCompactHexPublicKey(dto.signerPublicKey);
+    if (sig.signerPublicKey !== undefined) {
+      const hexKey = signatures.getNonCompactHexPublicKey(sig.signerPublicKey);
       if (recoveredPkHex !== hexKey) {
         throw new PublicKeyMismatchError(recoveredPkHex, hexKey);
-      } else {
-        throw new RedundantSignerPublicKeyError(recoveredPkHex, dto.signerPublicKey);
       }
     }
-    if (dto.signerAddress !== undefined) {
+    if (sig.signerAddress !== undefined) {
       const ethAddress = signatures.getEthAddress(recoveredPkHex);
-      if (dto.signerAddress !== ethAddress) {
-        throw new AddressMismatchError(ethAddress, dto.signerAddress);
-      } else {
-        throw new RedundantSignerAddressError(ethAddress, dto.signerAddress);
+      if (sig.signerAddress !== ethAddress) {
+        throw new AddressMismatchError(ethAddress, sig.signerAddress);
       }
     }
-    return await getUserProfile(ctx, recoveredPkHex, dto.signing ?? SigningScheme.ETH); // new flow only
-  } else if (dto.signerAddress !== undefined) {
-    if (dto.signerPublicKey !== undefined) {
-      throw new RedundantSignerPublicKeyError(dto.signerAddress, dto.signerPublicKey);
-    }
+    const profile = await getUserProfile(ctx, recoveredPkHex, signing);
+    return { profile, signedByKey: recoveredPkHex };
+  } else if (sig.signerAddress !== undefined) {
+    const { profile, publicKey } = await getUserProfileAndPublicKey(ctx, sig.signerAddress);
 
-    const { profile, publicKey } = await getUserProfileAndPublicKey(ctx, dto.signerAddress);
+    const scheme = sig.signing ?? dto.signing ?? publicKey.signing ?? SigningScheme.ETH;
+    const keys = publicKey.publicKeys ?? [];
 
-    if (!dto.isSignatureValid(publicKey.publicKey)) {
+    const index = keys.findIndex((k) => PublicKeyService.getUserAddress(k, scheme) === sig.signerAddress);
+
+    if (index !== -1) {
+      if (!dto.isSignatureValid(keys[index], index)) {
+        throw new PkInvalidSignatureError(profile.alias);
+      }
+    } else {
       throw new PkInvalidSignatureError(profile.alias);
     }
 
-    return profile;
-  } else if (dto.signerPublicKey !== undefined) {
-    if (!dto.isSignatureValid(dto.signerPublicKey)) {
-      const address = PublicKeyService.getUserAddress(dto.signerPublicKey, dto.signing ?? SigningScheme.ETH);
+    const keyHex =
+      scheme === SigningScheme.TON ? keys[index] : signatures.getNonCompactHexPublicKey(keys[index]);
+    return { profile, signedByKey: keyHex };
+  } else if (sig.signerPublicKey !== undefined) {
+    const index = dto.signatures?.findIndex((s) => s.signerPublicKey === sig.signerPublicKey);
+
+    if (!dto.isSignatureValid(sig.signerPublicKey, index)) {
+      const address = PublicKeyService.getUserAddress(sig.signerPublicKey, signing);
       throw new PkInvalidSignatureError(address);
     }
 
-    return await getUserProfile(ctx, dto.signerPublicKey, dto.signing ?? SigningScheme.ETH); // new flow only
-  } else {
-    throw new MissingSignerError(dto.signature);
+    const profile = await getUserProfile(ctx, sig.signerPublicKey, signing);
+    const keyHex =
+      signing === SigningScheme.TON
+        ? sig.signerPublicKey
+        : signatures.getNonCompactHexPublicKey(sig.signerPublicKey);
+    return { profile, signedByKey: keyHex };
   }
+
+  throw new MissingSignerError(sig.signature);
 }
 
 async function getUserProfile(
   ctx: GalaChainContext,
   publicKey: string,
   signing: SigningScheme
-): Promise<UserProfileWithRoles> {
+): Promise<UserProfile> {
   const address = PublicKeyService.getUserAddress(publicKey, signing);
   const profile = await PublicKeyService.getUserProfile(ctx, address);
 
@@ -171,7 +228,7 @@ async function getUserProfile(
 async function getUserProfileAndPublicKey(
   ctx: GalaChainContext,
   address
-): Promise<{ profile: UserProfileWithRoles; publicKey: PublicKey }> {
+): Promise<{ profile: UserProfile; publicKey: PublicKey }> {
   const profile = await PublicKeyService.getUserProfile(ctx, address);
 
   if (profile === undefined) {
@@ -187,13 +244,32 @@ async function getUserProfileAndPublicKey(
   return { profile, publicKey };
 }
 
-function recoverPublicKey(signature: string, dto: ChainCallDTO, prefix = ""): string | undefined {
-  if (dto.signing === SigningScheme.TON) {
+function recoverPublicKey(
+  signature: string,
+  dto: ChainCallDTO,
+  prefix = "",
+  signing?: SigningScheme
+): string | undefined {
+  const scheme = signing ?? dto.signing;
+  if (scheme === SigningScheme.TON) {
     return undefined;
   }
 
+  const payload: Record<string, unknown> = {
+    ...dto,
+    signature: undefined,
+    signatures: undefined,
+    signerPublicKey: undefined,
+    signerAddress: undefined,
+    prefix: undefined
+  };
+
+  if (scheme !== undefined) {
+    payload.signing = scheme;
+  }
+
   try {
-    return signatures.recoverPublicKey(signature, dto, prefix);
+    return signatures.recoverPublicKey(signature, payload, prefix);
   } catch (err) {
     return undefined;
   }

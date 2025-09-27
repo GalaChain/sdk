@@ -13,12 +13,9 @@
  * limitations under the License.
  */
 import {
-  ChainError,
-  ErrorCode,
   FeePendingBalance,
   FeePendingBalanceKeyValueResult,
-  FetchFeePendingBalancesResDto,
-  NotFoundError
+  FetchFeePendingBalancesResDto
 } from "@gala-chain/api";
 import { plainToInstance } from "class-transformer";
 

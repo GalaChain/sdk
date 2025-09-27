@@ -102,7 +102,7 @@ export async function payFeeImmediatelyFromBalance(ctx: GalaChainContext, data: 
     });
   }
 
-  const { year, month, day, minutes, seconds } = txUnixTimeToDateIndexKeys(ctx.txUnixTime);
+  const { year, month, day } = txUnixTimeToDateIndexKeys(ctx.txUnixTime);
   const txId = ctx.stub.getTxID();
 
   // channel payment receipt and user payment receipts

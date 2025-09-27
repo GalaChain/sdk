@@ -59,7 +59,7 @@ export async function payFeeFromCrossChannelAuthorization(ctx: GalaChainContext,
   pendingBalance.quantity = pendingBalance.quantity.minus(paymentRequired);
   await putChainObject(ctx, pendingBalance);
 
-  const { year, month, day, minutes, seconds } = txUnixTimeToDateIndexKeys(ctx.txUnixTime);
+  const { year, month, day } = txUnixTimeToDateIndexKeys(ctx.txUnixTime);
   const { feeCode, quantity } = data;
   const txId = ctx.stub.getTxID();
 

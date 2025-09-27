@@ -33,8 +33,12 @@ import { generateEIP712Types } from "./utils";
 // https://privatekeys.pw/key/1d3cc061492016bcd5e7ea2c31b1cf3dec584e07a38e21df7ef3049c6b224e70#addresses
 const sampleAddr = "0x3bb75c2Da3B669E253C338101420CC8dEBf0a777";
 
+type JsonRpcParams = unknown[] | Record<string, unknown>;
+type JsonRpcResult = string | string[];
+
 class EthereumMock extends EventEmitter {
-  send(method: string, params?: Array<any> | Record<string, any>): Promise<any> {
+  send(method: string, params?: JsonRpcParams): Promise<JsonRpcResult> {
+    void params;
     if (method === "eth_requestAccounts") {
       return Promise.resolve([sampleAddr]);
     } else if (method === "eth_accounts") {
@@ -45,7 +49,7 @@ class EthereumMock extends EventEmitter {
       throw new Error(`Method not mocked: ${method}`);
     }
   }
-  request(request: { method: string; params?: Array<any> | Record<string, any> }): Promise<any> {
+  request(request: { method: string; params?: JsonRpcParams }): Promise<JsonRpcResult> {
     if (request.method === "eth_requestAccounts") {
       return Promise.resolve([sampleAddr]);
     } else if (request.method === "eth_accounts") {
@@ -220,8 +224,7 @@ describe("BrowserConnectClient", () => {
       console.log("Accounts changed:", accounts);
     });
     // Trigger the accountsChanged event
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    (window.ethereum as any).emit("accountsChanged", accounts);
+    (window.ethereum as unknown as EventEmitter).emit("accountsChanged", accounts);
 
     expect(consoleSpy).toHaveBeenCalledWith("Accounts changed:", accounts);
     consoleSpy.mockRestore();
@@ -365,8 +368,7 @@ describe("BrowserConnectClient", () => {
     await client.connect();
     await client.connect();
     // Trigger the accountsChanged event
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    (window.ethereum as any).emit("accountsChanged", [sampleAddr]);
+    (window.ethereum as unknown as EventEmitter).emit("accountsChanged", [sampleAddr]);
     // the client should emit two events (accountChanged and accountsChanged)
     // for each window.ethereum accountsChanged event
     expect(spy).toHaveBeenCalledTimes(2);
@@ -378,8 +380,7 @@ describe("BrowserConnectClient", () => {
     await client.connect();
     client.disconnect();
     // Trigger the accountsChanged event
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    (window.ethereum as any).emit("accountsChanged", [sampleAddr]);
+    (window.ethereum as unknown as EventEmitter).emit("accountsChanged", [sampleAddr]);
     expect(spy).toHaveBeenCalledTimes(0);
   });
 
@@ -397,8 +398,7 @@ describe("BrowserConnectClient", () => {
     client.disconnect();
     await client.connect();
     // Trigger the accountsChanged event
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    (window.ethereum as any).emit("accountsChanged", [sampleAddr]);
+    (window.ethereum as unknown as EventEmitter).emit("accountsChanged", [sampleAddr]);
     expect(spy).toHaveBeenCalledTimes(2);
   });
 });

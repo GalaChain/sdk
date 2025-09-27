@@ -12,13 +12,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-import {
-  ChainError,
-  ErrorCode,
-  FeeCodeDefinition,
-  FetchFeeScheduleResDto,
-  NotFoundError
-} from "@gala-chain/api";
+import { FeeCodeDefinition, FetchFeeScheduleResDto } from "@gala-chain/api";
 import BigNumber from "bignumber.js";
 
 import { GalaChainContext } from "../types";

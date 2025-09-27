@@ -21,9 +21,12 @@ import {
   IsOptional,
   Max,
   Min,
-  MinLength,
+  Validate,
   ValidateNested,
+  ValidationArguments,
   ValidationError,
+  ValidatorConstraint,
+  ValidatorConstraintInterface,
   validate
 } from "class-validator";
 import { JSONSchema } from "class-validator-jsonschema";
@@ -120,6 +123,51 @@ export function createValidSubmitDTO<T extends SubmitCallDTO>(
   } as unknown as NonFunctionProperties<T>);
 }
 
+export class SignatureDto {
+  @JSONSchema({
+    description:
+      "Signature of the DTO signed with caller's private key to be verified with user's public key saved on chain. " +
+      "The 'signature' field is optional for DTO, but is required for a transaction to be executed on chain. \n" +
+      "Please consult [GalaChain SDK documentation](https://github.com/GalaChain/sdk/blob/main/docs/authorization.md#signature-based-authorization) on how to create signatures."
+  })
+  @IsOptional()
+  @IsNotEmpty()
+  public signature?: string;
+
+  @JSONSchema({
+    description: "Public key of the user who signed the DTO."
+  })
+  @IsOptional()
+  @IsNotEmpty()
+  public signerPublicKey?: string;
+
+  @JSONSchema({
+    description: "Address of the user who signed the DTO. Typically Ethereum or TON address."
+  })
+  @IsOptional()
+  @IsNotEmpty()
+  public signerAddress?: string;
+
+  @JSONSchema({
+    description:
+      "Prefix for Metamask transaction signatures. " +
+      "Necessary to format payloads correctly to recover publicKey from web3 signatures."
+  })
+  @IsOptional()
+  @IsNotEmpty()
+  public prefix?: string;
+
+  @JSONSchema({
+    description:
+      `Signing scheme used for the signature. ` +
+      `"${SigningScheme.ETH}" for Ethereum, and "${SigningScheme.TON}" for The Open Network are supported. ` +
+      `Default: "${SigningScheme.ETH}".`
+  })
+  @IsOptional()
+  @StringEnumProperty(SigningScheme)
+  public signing?: SigningScheme;
+}
+
 /**
  * @description
  *
@@ -194,6 +242,12 @@ export class ChainCallDTO {
   @StringEnumProperty(SigningScheme)
   public signing?: SigningScheme;
 
+  @JSONSchema({ description: "List of signatures for this DTO." })
+  @IsOptional()
+  @ValidateNested({ each: true })
+  @Type(() => SignatureDto)
+  public signatures?: SignatureDto[];
+
   @JSONSchema({
     description: "Unit timestamp when the DTO expires. If the timestamp is in the past, the DTO is not valid."
   })
@@ -252,6 +306,10 @@ export class ChainCallDTO {
   }
 
   public sign(privateKey: string, useDer = false): void {
+    if (this.signatures?.length && this.signatures[0].signing !== this.signing) {
+      throw new ValidationFailedError("Multiple signing schemes not supported in signatures");
+    }
+
     if (useDer) {
       if (this.signing === SigningScheme.TON) {
         throw new ValidationFailedError("TON signing scheme does not support DER signatures");
@@ -262,6 +320,9 @@ export class ChainCallDTO {
       }
     }
 
+    const signerPublicKey =
+      this.signing !== SigningScheme.TON ? signatures.getPublicKey(privateKey) : undefined;
+
     if (this.signing === SigningScheme.TON) {
       const keyBuffer = Buffer.from(privateKey, "base64");
       this.signature = signatures.ton.getSignature(this, keyBuffer, this.prefix).toString("base64");
@@ -271,6 +332,15 @@ export class ChainCallDTO {
         ? signatures.getDERSignature(this, keyBuffer)
         : signatures.getSignature(this, keyBuffer);
     }
+
+    const signatureDto: SignatureDto = {
+      signature: this.signature,
+      signerPublicKey,
+      signerAddress: this.signerAddress,
+      signing: this.signing,
+      prefix: this.prefix
+    };
+    this.signatures = [...(this.signatures ?? []), signatureDto];
   }
 
   /**
@@ -283,15 +353,73 @@ export class ChainCallDTO {
     return copied;
   }
 
-  public isSignatureValid(publicKey: string): boolean {
-    if (this.signing === SigningScheme.TON) {
-      const signatureBuff = Buffer.from(this.signature ?? "", "base64");
-      const publicKeyBuff = Buffer.from(publicKey, "base64");
-      return signatures.ton.isValidSignature(signatureBuff, this, publicKeyBuff, this.prefix);
+  public isSignatureValid(publicKey?: string, index = 0): boolean {
+    const sig: SignatureDto | undefined =
+      this.signatures?.[index] ??
+      (index === 0 && this.signature
+        ? {
+            signature: this.signature,
+            signerPublicKey: this.signerPublicKey,
+            signerAddress: this.signerAddress,
+            signing: this.signing,
+            prefix: this.prefix
+          }
+        : undefined);
+
+    if (!sig) {
+      throw new ValidationFailedError(`No signature at index ${index}`);
+    }
+
+    const pk = publicKey ?? sig.signerPublicKey ?? this.signerPublicKey ?? "";
+    const signing = sig.signing ?? SigningScheme.ETH;
+
+    if (signing === SigningScheme.TON) {
+      // TON expects base64-encoded keys/signatures in your code
+      const signatureBuff = Buffer.from(sig.signature ?? "", "base64");
+      const publicKeyBuff = Buffer.from(pk, "base64");
+      return signatures.ton.isValidSignature(
+        signatureBuff,
+        this, // <-- verify the payload you signed
+        publicKeyBuff,
+        sig.prefix ?? this.prefix
+      );
     } else {
-      return signatures.isValid(this.signature ?? "", this, publicKey);
+      // Ensure pk is in the format `signatures.isValid` expects (often hex without 0x)
+      return signatures.isValid(sig.signature ?? "", this, pk); // <-- verify against `this`
     }
   }
+}
+
+export function isSignatureValid(signatureObj: SignatureDto, publicKey: string): boolean {
+  const signing = signatureObj.signing ?? SigningScheme.ETH;
+
+  if (signing === SigningScheme.TON) {
+    const signatureBuff = Buffer.from(signatureObj.signature ?? "", "base64");
+    const publicKeyBuff = Buffer.from(publicKey ?? "", "base64");
+    return signatures.ton.isValidSignature(
+      signatureBuff,
+      signatureObj,
+      publicKeyBuff,
+      signatureObj.prefix ?? this.prefix
+    );
+  } else {
+    return signatures.isValid(signatureObj.signature ?? "", signatureObj, publicKey ?? "");
+  }
+}
+
+export function convertLegacySignatures<T extends ChainCallDTO>(dto: T): T {
+  if (!dto.signatures && dto.signature) {
+    dto.signatures = [
+      {
+        signature: dto.signature,
+        signerPublicKey: dto.signerPublicKey,
+        signerAddress: dto.signerAddress,
+        signing: dto.signing,
+        prefix: dto.prefix
+      }
+    ];
+  }
+  return dto;
 }
 
 // It just makes uniqueKey required
@@ -472,6 +600,36 @@ export class DryRunResultDto extends ChainCallDTO {
 }
 
 /**
+ * Ensures that only one of `publicKey` or `publicKeys` is provided and not both.
+ */
+@ValidatorConstraint({ name: "PublicKeyXorPublicKeys", async: false })
+class PublicKeyXorPublicKeys implements ValidatorConstraintInterface {
+  validate(_value: unknown, args: ValidationArguments) {
+    const obj = args.object as {
+      publicKey?: string;
+      publicKeys?: string[];
+    };
+    const { publicKey, publicKeys } = obj;
+
+    const hasKey = typeof publicKey === "string" && publicKey.length > 0;
+    const hasKeys = Array.isArray(publicKeys) && publicKeys.length > 0;
+
+    if (hasKey && !hasKeys) {
+      // populate publicKeys so downstream consumers always receive an array
+      obj.publicKeys = [publicKey];
+      delete obj.publicKey;
+      return true;
+    }
+
+    return (hasKey || hasKeys) && !(hasKey && hasKeys);
+  }
+
+  defaultMessage() {
+    return "Provide either publicKey or publicKeys, but not both";
+  }
+}
+
+/**
  * @description
  *
  * Dto for secure method to save public keys for legacy users.
@@ -494,11 +652,19 @@ export class RegisterUserDto extends SubmitCallDTO {
   user: UserAlias;
 
   /**
-   * @description Public secp256k1 key (compact or non-compact, hex or base64).
+   * @description Public secp256k1 key (compact or non-compact, hex or base64) or multiple keys.
    */
   @JSONSchema({ description: "Public secp256k1 key (compact or non-compact, hex or base64)." })
+  @IsOptional()
   @IsNotEmpty()
-  publicKey: string;
+  @Validate(PublicKeyXorPublicKeys)
+  public publicKey?: string;
+
+  @JSONSchema({ description: "Public secp256k1 keys (compact or non-compact, hex or base64)." })
+  @IsOptional()
+  @IsNotEmpty({ each: true })
+  @ArrayMinSize(1)
+  public publicKeys?: string[];
 }
 
 /**
@@ -512,8 +678,16 @@ export class RegisterUserDto extends SubmitCallDTO {
 })
 export class RegisterEthUserDto extends SubmitCallDTO {
   @JSONSchema({ description: "Public secp256k1 key (compact or non-compact, hex or base64)." })
+  @IsOptional()
   @IsNotEmpty()
-  publicKey: string;
+  @Validate(PublicKeyXorPublicKeys)
+  public publicKey?: string;
+
+  @JSONSchema({ description: "Public secp256k1 keys (compact or non-compact, hex or base64)." })
+  @IsOptional()
+  @IsNotEmpty({ each: true })
+  @ArrayMinSize(1)
+  public publicKeys?: string[];
 }
 
 /**
@@ -527,18 +701,33 @@ export class RegisterEthUserDto extends SubmitCallDTO {
 })
 export class RegisterTonUserDto extends SubmitCallDTO {
   @JSONSchema({ description: "TON user public key (Ed25519 in base64)." })
+  @IsOptional()
   @IsNotEmpty()
-  publicKey: string;
+  @Validate(PublicKeyXorPublicKeys)
+  public publicKey?: string;
+
+  @JSONSchema({ description: "TON user public keys (Ed25519 in base64)." })
+  @IsOptional()
+  @IsNotEmpty({ each: true })
+  @ArrayMinSize(1)
+  public publicKeys?: string[];
 }
 
 export class UpdatePublicKeyDto extends SubmitCallDTO {
   @JSONSchema({
     description:
-      "For users with ETH signing scheme it is public secp256k1 key (compact or non-compact, hex or base64). " +
-      "For users with TON signing scheme it is public Ed25519 key (base64)."
+      "For users with ETH signing scheme it is public secp256k1 key(s) (compact or non-compact, hex or base64). " +
+      "For users with TON signing scheme it is public Ed25519 key(s) (base64)."
   })
+  @IsOptional()
   @IsNotEmpty()
-  publicKey: string;
+  @Validate(PublicKeyXorPublicKeys)
+  public publicKey?: string;
+
+  @IsOptional()
+  @IsNotEmpty({ each: true })
+  @ArrayMinSize(1)
+  public publicKeys?: string[];
 }
 
 export class UpdateUserRolesDto extends SubmitCallDTO {

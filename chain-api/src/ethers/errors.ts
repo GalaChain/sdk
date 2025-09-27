@@ -162,7 +162,7 @@ export interface EthersError<T extends ErrorCode = ErrorCode> extends Error {
   /**
    *  The string error code.
    */
-  code: ErrorCode;
+  code: T;
 
   /**
    *  A short message describing the error, with minimal additional

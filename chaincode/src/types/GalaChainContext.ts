@@ -49,6 +49,8 @@ export class GalaChainContext extends Context {
   private callingUserEthAddressValue?: string;
   private callingUserTonAddressValue?: string;
   private callingUserRolesValue?: string[];
+  private callingUserPubKeyCountValue?: number;
+  private callingUserRequiredSignaturesValue?: number;
   private txUnixTimeValue?: number;
   private loggerInstance?: GalaLoggerInstance;
 
@@ -104,16 +106,32 @@ export class GalaChainContext extends Context {
     profile.ethAddress = this.callingUserEthAddressValue;
     profile.tonAddress = this.callingUserTonAddressValue;
     profile.roles = this.callingUserRoles;
+
+    const pubKeyCount = this.callingUserPubKeyCountValue ?? 1;
+    profile.pubKeyCount = pubKeyCount;
+    const requiredSignatures = this.callingUserRequiredSignaturesValue ?? Math.floor(pubKeyCount / 2) + 1;
+    profile.requiredSignatures = requiredSignatures;
+
     return profile;
   }
 
-  set callingUserData(d: { alias?: UserAlias; ethAddress?: string; tonAddress?: string; roles: string[] }) {
+  set callingUserData(d: {
+    alias?: UserAlias;
+    ethAddress?: string;
+    tonAddress?: string;
+    roles: string[];
+    pubKeyCount?: number;
+    requiredSignatures?: number;
+  }) {
     if (this.callingUserValue !== undefined) {
       throw new Error("Calling user already set to " + this.callingUserValue);
     }
 
     this.callingUserValue = d.alias;
     this.callingUserRolesValue = d.roles ?? [UserRole.EVALUATE]; // default if `roles` is undefined
+    this.callingUserPubKeyCountValue = d.pubKeyCount ?? 1;
+    const defaultRequiredSignatures = Math.floor(this.callingUserPubKeyCountValue / 2) + 1;
+    this.callingUserRequiredSignaturesValue = d.requiredSignatures ?? defaultRequiredSignatures;
 
     if (d.ethAddress !== undefined) {
       this.callingUserEthAddressValue = d.ethAddress;
@@ -129,6 +147,8 @@ export class GalaChainContext extends Context {
     this.callingUserRolesValue = undefined;
     this.callingUserEthAddressValue = undefined;
     this.callingUserTonAddressValue = undefined;
+    this.callingUserPubKeyCountValue = undefined;
+    this.callingUserRequiredSignaturesValue = undefined;
   }
 
   public setDryRunOnBehalfOf(d: {
@@ -136,11 +156,16 @@ export class GalaChainContext extends Context {
     ethAddress?: string;
     tonAddress?: string;
     roles: string[];
+    pubKeyCount?: number;
+    requiredSignatures?: number;
   }): void {
     this.callingUserValue = d.alias;
     this.callingUserRolesValue = d.roles ?? [];
     this.callingUserEthAddressValue = d.ethAddress;
     this.callingUserTonAddressValue = d.tonAddress;
+    this.callingUserPubKeyCountValue = d.pubKeyCount ?? 1;
+    this.callingUserRequiredSignaturesValue =
+      d.requiredSignatures ?? Math.floor(this.callingUserPubKeyCountValue / 2) + 1;
     this.isDryRun = true;
   }
 

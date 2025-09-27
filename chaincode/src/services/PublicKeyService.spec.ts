@@ -12,6 +12,11 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+import { ChainObject, SigningScheme, UserAlias, UserProfile } from "@gala-chain/api";
+import { fixture, users } from "@gala-chain/test";
+
+import TestGalaContract from "../__test__/TestGalaContract";
+import { GalaChainContext } from "../types";
 import { PublicKeyService } from "./PublicKeyService";
 
 it(`should normalize secp256k1 public key`, async () => {
@@ -50,4 +55,106 @@ it(`should normalize secp256k1 public key`, async () => {
   expect(keyFromHex0x).toEqual(inputBase64Compressed);
   expect(await fails1.catch((e) => e.message)).toEqual(expect.stringContaining("Cannot normalize secp256k1"));
   expect(await fails2.catch((e) => e.message)).toEqual(expect.stringContaining("Unknown point format"));
+});
+
+it("should put user profiles for all unique addresses derived from public keys", async () => {
+  const contractFixture = fixture<GalaChainContext, TestGalaContract>(TestGalaContract);
+  const { ctx, getWrites } = contractFixture.callingUser(users.testUser1);
+
+  const pk1 = users.random().publicKey;
+  const pk2 = users.random().publicKey;
+  const alias = "client|multi" as UserAlias;
+
+  await PublicKeyService.registerUser(ctx, [pk1, pk2], alias, SigningScheme.ETH);
+
+  await ctx.stub.flushWrites();
+
+  const addr1 = PublicKeyService.getUserAddress(pk1, SigningScheme.ETH);
+  const addr2 = PublicKeyService.getUserAddress(pk2, SigningScheme.ETH);
+  const key1 = PublicKeyService.getUserProfileKey(ctx, addr1);
+  const key2 = PublicKeyService.getUserProfileKey(ctx, addr2);
+  const wrongKey = PublicKeyService.getUserProfileKey(ctx, "0000000000000000000000000000000000000000");
+
+  const writes = getWrites();
+  expect(Object.keys(writes)).toContain(key1);
+  expect(Object.keys(writes)).toContain(key2);
+  expect(Object.keys(writes)).not.toContain(wrongKey);
+
+  const profile1 = ChainObject.deserialize<UserProfile>(UserProfile, writes[key1]);
+  const profile2 = ChainObject.deserialize<UserProfile>(UserProfile, writes[key2]);
+
+  expect(profile1.alias).toBe(alias);
+  expect(profile2.alias).toBe(alias);
+  expect(profile1.pubKeyCount).toBe(2);
+  expect(profile1.requiredSignatures).toBe(2);
+  expect(profile2.pubKeyCount).toBe(2);
+  expect(profile2.requiredSignatures).toBe(2);
+});
+
+it("should load legacy public key format", async () => {
+  const contractFixture = fixture<GalaChainContext, TestGalaContract>(TestGalaContract);
+  const { ctx } = contractFixture.callingUser(users.testUser1);
+
+  const alias = "client|legacy" as UserAlias;
+  const pk = users.random().publicKey;
+  const pkKey = PublicKeyService.getPublicKeyKey(ctx, alias);
+  const legacyPk = JSON.stringify({ publicKey: pk, signing: SigningScheme.ETH });
+  await ctx.stub.putState(pkKey, Buffer.from(legacyPk));
+
+  const loaded = await PublicKeyService.getPublicKey(ctx, alias);
+
+  expect(loaded?.publicKeys).toEqual([pk]);
+  expect(loaded?.publicKey).toEqual(pk);
+});
+
+it("should populate profile counts for legacy entries", async () => {
+  const contractFixture = fixture<GalaChainContext, TestGalaContract>(TestGalaContract);
+  const { ctx } = contractFixture.callingUser(users.testUser1);
+
+  const alias = "client|profile" as UserAlias;
+  const pk1 = users.random().publicKey;
+  const pk2 = users.random().publicKey;
+
+  const pkKey = PublicKeyService.getPublicKeyKey(ctx, alias);
+  const pkObj = { publicKeys: [pk1, pk2], signing: SigningScheme.ETH };
+  await ctx.stub.putState(pkKey, Buffer.from(JSON.stringify(pkObj)));
+
+  const address = PublicKeyService.getUserAddress(pk1, SigningScheme.ETH);
+  const profileKey = PublicKeyService.getUserProfileKey(ctx, address);
+  const legacyProfile = JSON.stringify({ alias, ethAddress: address, roles: ["SUBMIT"] });
+  await ctx.stub.putState(profileKey, Buffer.from(legacyProfile));
+
+  const profile = await PublicKeyService.getUserProfile(ctx, address);
+
+  expect(profile?.pubKeyCount).toBe(2);
+  expect(profile?.requiredSignatures).toBe(2);
+});
+
+it("should return profile counts for multi-key entries", async () => {
+  const contractFixture = fixture<GalaChainContext, TestGalaContract>(TestGalaContract);
+  const { ctx } = contractFixture.callingUser(users.testUser1);
+
+  const alias = "client|multi-profile" as UserAlias;
+  const pk1 = users.random().publicKey;
+  const pk2 = users.random().publicKey;
+
+  const pkKey = PublicKeyService.getPublicKeyKey(ctx, alias);
+  const pkObj = { publicKeys: [pk1, pk2], signing: SigningScheme.ETH };
+  await ctx.stub.putState(pkKey, Buffer.from(JSON.stringify(pkObj)));
+
+  const address = PublicKeyService.getUserAddress(pk1, SigningScheme.ETH);
+  const profileKey = PublicKeyService.getUserProfileKey(ctx, address);
+  const profileObj = {
+    alias,
+    ethAddress: address,
+    roles: ["SUBMIT"],
+    pubKeyCount: 2,
+    requiredSignatures: 2
+  };
+  await ctx.stub.putState(profileKey, Buffer.from(JSON.stringify(profileObj)));
+
+  const profile = await PublicKeyService.getUserProfile(ctx, address);
+
+  expect(profile?.pubKeyCount).toBe(2);
+  expect(profile?.requiredSignatures).toBe(2);
 });

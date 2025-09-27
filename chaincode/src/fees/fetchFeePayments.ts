@@ -13,12 +13,9 @@
  * limitations under the License.
  */
 import {
-  ChainError,
-  ErrorCode,
   FeeChannelPaymentKeyValueResult,
   FeeChannelPaymentReceipt,
-  FetchFeeChannelPaymentsResDto,
-  NotFoundError
+  FetchFeeChannelPaymentsResDto
 } from "@gala-chain/api";
 import { plainToInstance } from "class-transformer";
 
