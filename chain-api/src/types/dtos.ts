@@ -605,6 +605,34 @@ export class UpdatePublicKeyDto extends SubmitCallDTO {
   publicKey: string;
 }
 
+export class AddPublicKeyDto extends SubmitCallDTO {
+  @JSONSchema({
+    description:
+      "For users with ETH signing scheme it is public secp256k1 key (compact or non-compact, hex or base64). " +
+      "For users with TON signing scheme it is public Ed25519 key (base64)."
+  })
+  @IsNotEmpty()
+  publicKey: string;
+}
+
+export class RemovePublicKeyDto extends SubmitCallDTO {
+  @JSONSchema({
+    description:
+      "For users with ETH signing scheme it is public secp256k1 key (compact or non-compact, hex or base64). " +
+      "For users with TON signing scheme it is public Ed25519 key (base64)."
+  })
+  @IsNotEmpty()
+  publicKey: string;
+}
+
+export class UpdateQuorumDto extends SubmitCallDTO {
+  @JSONSchema({
+    description: "New quorum for the user."
+  })
+  @IsNotEmpty()
+  quorum: number;
+}
+
 export class UpdateUserRolesDto extends SubmitCallDTO {
   @IsUserAlias()
   user: string;
