@@ -145,7 +145,7 @@ export class MockedChaincodeClientBuilder implements ChainClientBuilder {
         throw new Error(`Contract ${config.contract} not found in ${this.mockedChaincodeDir}`);
       }
       const state = getOrCreateState(config.channel, config.chaincode);
-      return new TestChaincode([contract], state, {}, this.adminId, this.orgMsp);
+      return new TestChaincode([contract], state, [], this.adminId, this.orgMsp);
     });
     return new MockedChaincodeClient(this, chaincode, config, this.orgMsp, this.adminId);
   }

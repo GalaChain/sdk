@@ -124,9 +124,14 @@ export class PublicKeyContract extends GalaContract {
 
   @Submit({
     in: UpdatePublicKeyDto,
+    minimalQuorum: 1,
     description: "Updates public key for the calling user."
   })
   public async UpdatePublicKey(ctx: GalaChainContext, dto: UpdatePublicKeyDto): Promise<void> {
+    if (dto.signatures || !dto.signature) {
+      throw new ValidationFailedError("UpdatePublicKey requires exactly 1 signature");
+    }
+
     const signing = dto.signing ?? SigningScheme.ETH;
     const address = PublicKeyService.getUserAddress(dto.publicKey, signing);
     await PublicKeyService.updatePublicKey(ctx, dto.publicKey, address, signing);

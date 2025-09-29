@@ -103,6 +103,12 @@ All decorators support the following parameters:
 - `allowedOrgs` - optional parameter to define which organizations are allowed to call the contract method.
   It is a string array with organization names.
   If not provided, all organizations are allowed to call the contract method.
+  **Note**: This parameter is deprecated and will be removed in future versions. Use `allowedRoles` instead.
+- `allowedRoles` - optional parameter to define which roles are allowed to call the contract method.
+  It is a string array with role names.
+  If not provided, defaults to `SUBMIT` for submit transactions and `EVALUATE` for evaluate transactions.
+- `minimalQuorum` - optional parameter to override the user's signature quorum requirement.
+  This allows you to require fewer signatures than the user's configured quorum for specific operations.
 - `apiMethodName` - optional name of the contract method that should be used in the GalaChain REST API.
   If not provided, the name of the contract method is used.
 - `sequence` - optional parameter for advanced use cases.
@@ -128,6 +134,12 @@ Asides from standard Fabric context, it provides some additional methods and pro
 
 - `callingUser` - returns standardized user id with prefix and actual name (note calling user is something different, than user in Fabric CA; see [Authentication and authorization](#authentication-and-authorization)).
 - `callingUserEthAddress` - returns eth address that is derived from calling user public key (see [Authentication and authorization](#authentication-and-authorization)).
+- `callingUserTonAddress` - returns TON address that is derived from calling user public key (see [Authentication and authorization](#authentication-and-authorization)).
+- `callingUserRoles` - returns array of roles assigned to the calling user.
+- `callingUserProfile` - returns complete user profile object for the calling user.
+- `callingUserSignedByKeys` - returns array of public keys that signed the current transaction (for multisig).
+- `callingUserSignatureQuorum` - returns required number of signatures for the calling user (for multisig).
+- `callingUserData` - setter for all calling user data (used internally by authentication).
 - `txUnixTime` - returns unix time of the transaction.
 - `span` - returns tracing span of the transaction (see [Tracing support](#tracing-support)).
 
@@ -136,6 +148,39 @@ In a standard Fabric context, the `stub` property returns a `ChaincodeStub` obje
 In a GalaChain context, the `stub` property returns a proxy object that wraps `ChaincodeStub` in a way to support caching (see [State cache](#state-cache)).
 
 Finally, it adds some customization to the `logger` property.
+
+### Multisig Context Properties
+
+When working with multisig transactions, additional context properties are available:
+
+- `callingUserSignedByKeys`: Array of public keys that signed the current transaction
+- `callingUserSignatureQuorum`: Required number of signatures for the calling user
+- `callingUserData`: Setter for all calling user data (used internally by authentication)
+
+These properties are particularly useful for implementing business logic that depends on multisig requirements:
+
+```typescript
+@Submit({
+  in: TransferDto,
+  description: "Transfer tokens with multisig validation"
+})
+async transferTokens(ctx: GalaChainContext, dto: TransferDto): Promise<void> {
+  // Access multisig information
+  const signedByKeys = ctx.callingUserSignedByKeys;
+  const requiredQuorum = ctx.callingUserSignatureQuorum;
+  
+  // Log multisig information
+  ctx.logger.info(`Transfer signed by ${signedByKeys.length}/${requiredQuorum} required signatures`);
+  
+  // Implement business logic based on signature count
+  if (dto.amount > 10000 && signedByKeys.length < 3) {
+    throw new ValidationFailedError("Large transfers require at least 3 signatures");
+  }
+  
+  // Process the transfer
+  await processTransfer(ctx, dto);
+}
+```
 
 
 ## Authentication and authorization
