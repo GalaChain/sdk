@@ -520,9 +520,9 @@ describe("GalaContract.Batch", () => {
 
     // When
     const response1 = await chaincode.invoke("TestGalaContract:BatchSubmit", batchSubmit1.serialize());
-    const savedKeys1 = Object.keys(chaincode.state).sort();
+    const savedKeys1 = Object.keys(chaincode.getState()).sort();
     const response2 = await chaincode.invoke("TestGalaContract:BatchSubmit", batchSubmit2.serialize());
-    const savedKeys2 = Object.keys(chaincode.state)
+    const savedKeys2 = Object.keys(chaincode.getState())
       .filter((k) => !savedKeys1.includes(k))
       .sort();
 
@@ -572,7 +572,7 @@ describe("GalaContract.Batch", () => {
 
     // When
     const response = await chaincode.invoke("TestGalaContract:BatchSubmit", batchSubmit.serialize());
-    const savedKeys = Object.keys(chaincode.state).sort();
+    const savedKeys = Object.keys(chaincode.getState()).sort();
 
     // Then
     expect(response).toEqual(
@@ -680,7 +680,7 @@ describe("GalaContract.Batch", () => {
       ])
     );
 
-    expect(chaincode.state).toMatchObject({
+    expect(chaincode.getState()).toMatchObject({
       "test-key-1": "human"
     });
   });
