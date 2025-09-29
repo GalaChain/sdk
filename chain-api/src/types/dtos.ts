@@ -90,6 +90,16 @@ type NonFunctionPropertyNames<T> = { [K in keyof T]: T[K] extends Function ? nev
 
 export type NonFunctionProperties<T> = Pick<T, NonFunctionPropertyNames<T>>;
 
+export type SignablePromise<T extends ChainCallDTO> = Promise<T> & {
+  signed(privateKey: string): SignablePromise<T>;
+};
+
+function signablePromise<T extends ChainCallDTO>(p: Promise<T>): SignablePromise<T> {
+  // @ts-expect-error adding new method in runtime
+  p.signed = (privateKey: string) => signablePromise(p.then((r) => r.signed(privateKey)));
+  return p as SignablePromise<T>;
+}
+
 /**
  * Creates valid DTO object from provided plain object.
  * Throws exception in case of validation errors.
@@ -97,14 +107,10 @@ export type NonFunctionProperties<T> = Pick<T, NonFunctionPropertyNames<T>>;
 export function createValidDTO<T extends ChainCallDTO>(
   constructor: ClassConstructor<T>,
   plain: NonFunctionProperties<T>
-): Promise<T> & { signed(privateKey: string): Promise<T> } {
+): SignablePromise<T> {
   const instance = plainToInstance(constructor, plain) as T;
   const response = validateDTO(instance);
-
-  // @ts-expect-error adding new method in runtime
-  response.signed = (k: string) => response.then((r) => r.signed(k));
-
-  return response as Promise<T> & { signed(privateKey: string): Promise<T> };
+  return signablePromise(response);
 }
 
 /**
@@ -115,7 +121,7 @@ export function createValidDTO<T extends ChainCallDTO>(
 export function createValidSubmitDTO<T extends SubmitCallDTO>(
   constructor: ClassConstructor<T>,
   plain: Omit<NonFunctionProperties<T>, "uniqueKey"> & { uniqueKey?: string }
-): Promise<T> & { signed(privateKey: string): Promise<T> } {
+): SignablePromise<T> {
   return createValidDTO<T>(constructor, {
     ...plain,
     uniqueKey: plain?.uniqueKey ?? randomUniqueKey()

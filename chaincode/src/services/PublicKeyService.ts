@@ -287,41 +287,55 @@ export class PublicKeyService {
 
   public static async updatePublicKey(
     ctx: GalaChainContext,
-    newPkHex: string,
-    newAddress: string,
+    newPublicKey: string,
     signing: SigningScheme
   ): Promise<void> {
     const userAlias = ctx.callingUser;
 
-    // fetch old public key for finding old user profile
-    const oldPublicKey = await PublicKeyService.getPublicKey(ctx, ctx.callingUser);
+    if (ctx.callingUserSignedByKeys.length !== 1) {
+      const msg = `Expected exactly 1 signed by key for user ${userAlias}, got ${ctx.callingUserSignedByKeys.length}`;
+      throw new UnauthorizedError(msg);
+    }
+
+    const oldPublicKey = await PublicKeyService.getPublicKey(ctx, userAlias);
     if (oldPublicKey === undefined) {
       throw new PkNotFoundError(userAlias);
     }
 
-    if (oldPublicKey.publicKey === undefined) {
-      throw new NotImplementedError("UpdatePublicKey when publicKey is undefined");
+    const allPublicKeys = oldPublicKey.getAllPublicKeys();
+    const oldPublicKeyNormalized = signatures
+      .normalizePublicKey(ctx.callingUserSignedByKeys[0])
+      .toString("base64");
+
+    const index = allPublicKeys.indexOf(oldPublicKeyNormalized);
+    if (index === -1) {
+      const allPKsStr = `[${allPublicKeys.join(", ")}]`;
+      const msg = `New public key ${newPublicKey} was not found in old public keys: ${allPKsStr}`;
+      throw new ValidationFailedError(msg);
     }
 
+    // replace old public key with new public key
+    allPublicKeys[index] = newPublicKey;
+
     // need to fetch userProfile from old address
-    const oldAddress = PublicKeyService.getUserAddress(oldPublicKey.publicKey, signing);
+    const oldAddress = PublicKeyService.getUserAddress(oldPublicKeyNormalized, signing);
     const userProfile = await PublicKeyService.getUserProfile(ctx, oldAddress);
     const signatureQuorum = userProfile?.signatureQuorum ?? 1;
 
-    // Note: we don't throw an error if userProfile is undefined in order to support legacy users with unsaved profiles
+    // invalidate old user profile to prevent double registration under old public key
     if (userProfile !== undefined) {
-      // invalidate old user profile
       await PublicKeyService.invalidateUserProfile(ctx, oldAddress);
     }
 
     // ensure no user profile exists under new address
+    const newAddress = PublicKeyService.getUserAddress(newPublicKey, signing);
     const newUserProfile = await PublicKeyService.getUserProfile(ctx, newAddress);
     if (newUserProfile !== undefined) {
       throw new ProfileExistsError(newAddress, newUserProfile.alias);
     }
 
     // update Public Key, and add user profile under new eth address
-    await PublicKeyService.putPublicKey(ctx, [newPkHex], userAlias, signing);
+    await PublicKeyService.putPublicKey(ctx, allPublicKeys, userAlias, signing);
     await PublicKeyService.putUserProfile(ctx, newAddress, userAlias, signing, signatureQuorum);
   }
 
