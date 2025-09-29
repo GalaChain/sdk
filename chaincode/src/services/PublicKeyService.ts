@@ -374,4 +374,145 @@ export class PublicKeyService {
     const data = Buffer.from(profile.serialize());
     await ctx.stub.putState(key, data);
   }
+
+  public static async addPublicKey(
+    ctx: GalaChainContext,
+    newPublicKey: string,
+    signing: SigningScheme
+  ): Promise<void> {
+    const userAlias = ctx.callingUser;
+    const currentPublicKey = await PublicKeyService.getPublicKey(ctx, userAlias);
+
+    if (currentPublicKey === undefined) {
+      throw new PkNotFoundError(userAlias);
+    }
+
+    const currentSigning = currentPublicKey.signing ?? SigningScheme.ETH;
+    if (currentSigning !== signing) {
+      throw new ValidationFailedError(
+        `Current signing scheme ${currentSigning} does not match new signing scheme ${signing}`
+      );
+    }
+
+    const allPublicKeys = currentPublicKey.getAllPublicKeys();
+
+    // Check if the new public key already exists
+    const normalizedNewKey =
+      signing === SigningScheme.ETH ? PublicKeyService.normalizePublicKey(newPublicKey) : newPublicKey;
+
+    if (allPublicKeys.includes(normalizedNewKey)) {
+      throw new ValidationFailedError("Public key already exists");
+    }
+
+    // Add the new public key
+    allPublicKeys.push(normalizedNewKey);
+
+    // Get the current signature quorum from any existing profile
+    const existingProfile = await PublicKeyService.getUserProfile(
+      ctx,
+      PublicKeyService.getUserAddress(allPublicKeys[0], signing)
+    );
+    const signatureQuorum = existingProfile?.signatureQuorum ?? 1;
+
+    // Create user profile for the new public key
+    const newAddress = PublicKeyService.getUserAddress(normalizedNewKey, signing);
+    const existingNewProfile = await PublicKeyService.getUserProfile(ctx, newAddress);
+    if (existingNewProfile !== undefined) {
+      throw new ProfileExistsError(newAddress, existingNewProfile.alias);
+    }
+
+    await PublicKeyService.putUserProfile(ctx, newAddress, userAlias, signing, signatureQuorum);
+    await PublicKeyService.putPublicKey(ctx, allPublicKeys, userAlias, signing);
+  }
+
+  public static async removePublicKey(
+    ctx: GalaChainContext,
+    publicKeyToRemove: string,
+    signing: SigningScheme
+  ): Promise<void> {
+    const userAlias = ctx.callingUser;
+    const currentPublicKey = await PublicKeyService.getPublicKey(ctx, userAlias);
+
+    if (currentPublicKey === undefined) {
+      throw new PkNotFoundError(userAlias);
+    }
+
+    const currentSigning = currentPublicKey.signing ?? SigningScheme.ETH;
+    if (currentSigning !== signing) {
+      throw new ValidationFailedError(
+        `Current signing scheme ${currentSigning} does not match signing scheme ${signing}`
+      );
+    }
+
+    const allPublicKeys = currentPublicKey.getAllPublicKeys();
+
+    // Check if we have multiple public keys (multisig setup)
+    if (allPublicKeys.length <= 1) {
+      throw new ValidationFailedError("Cannot remove the only public key");
+    }
+
+    // Find and remove the public key
+    const normalizedKeyToRemove =
+      signing === SigningScheme.ETH
+        ? PublicKeyService.normalizePublicKey(publicKeyToRemove)
+        : publicKeyToRemove;
+
+    const index = allPublicKeys.indexOf(normalizedKeyToRemove);
+    if (index === -1) {
+      throw new ValidationFailedError("Public key not found");
+    }
+
+    // Get current signature quorum
+    const existingProfile = await PublicKeyService.getUserProfile(
+      ctx,
+      PublicKeyService.getUserAddress(allPublicKeys[0], signing)
+    );
+    const signatureQuorum = existingProfile?.signatureQuorum ?? 1;
+
+    // Check if removing this key would make the number of keys below quorum
+    if (allPublicKeys.length - 1 < signatureQuorum) {
+      throw new ValidationFailedError("Cannot remove public key: would make number of keys below quorum");
+    }
+
+    // Remove the public key
+    allPublicKeys.splice(index, 1);
+
+    // Invalidate the user profile for the removed key
+    const addressToInvalidate = PublicKeyService.getUserAddress(normalizedKeyToRemove, signing);
+    await PublicKeyService.invalidateUserProfile(ctx, addressToInvalidate);
+
+    // Update the public key
+    await PublicKeyService.putPublicKey(ctx, allPublicKeys, userAlias, signing);
+  }
+
+  public static async updateQuorum(ctx: GalaChainContext, newQuorum: number): Promise<void> {
+    const userAlias = ctx.callingUser;
+    const currentPublicKey = await PublicKeyService.getPublicKey(ctx, userAlias);
+
+    if (currentPublicKey === undefined) {
+      throw new PkNotFoundError(userAlias);
+    }
+
+    const allPublicKeys = currentPublicKey.getAllPublicKeys();
+
+    // Check if new quorum exceeds number of public keys
+    if (newQuorum > allPublicKeys.length) {
+      throw new ValidationFailedError("Quorum cannot exceed number of public keys");
+    }
+
+    const signing = currentPublicKey.signing ?? SigningScheme.ETH;
+
+    // Update all user profiles with the new quorum
+    for (const publicKey of allPublicKeys) {
+      const address = PublicKeyService.getUserAddress(publicKey, signing);
+      const profile = await PublicKeyService.getUserProfile(ctx, address);
+
+      if (profile !== undefined) {
+        profile.signatureQuorum = newQuorum;
+        const key = PublicKeyService.getUserProfileKey(ctx, address);
+        const data = Buffer.from(profile.serialize());
+        await ctx.stub.putState(key, data);
+      }
+    }
+  }
 }

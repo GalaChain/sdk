@@ -13,6 +13,7 @@
  * limitations under the License.
  */
 import {
+  AddPublicKeyDto,
   ChainCallDTO,
   GetMyProfileDto,
   GetPublicKeyDto,
@@ -20,8 +21,10 @@ import {
   RegisterEthUserDto,
   RegisterTonUserDto,
   RegisterUserDto,
+  RemovePublicKeyDto,
   SigningScheme,
   UpdatePublicKeyDto,
+  UpdateQuorumDto,
   UpdateUserRolesDto,
   UserAlias,
   UserProfile,
@@ -134,6 +137,32 @@ export class PublicKeyContract extends GalaContract {
 
     const signing = dto.signing ?? SigningScheme.ETH;
     await PublicKeyService.updatePublicKey(ctx, dto.publicKey, signing);
+  }
+
+  @Submit({
+    in: AddPublicKeyDto,
+    description: "Adds a public key to the calling user's multisig setup."
+  })
+  public async AddPublicKey(ctx: GalaChainContext, dto: AddPublicKeyDto): Promise<void> {
+    const signing = dto.signing ?? SigningScheme.ETH;
+    await PublicKeyService.addPublicKey(ctx, dto.publicKey, signing);
+  }
+
+  @Submit({
+    in: RemovePublicKeyDto,
+    description: "Removes a public key from the calling user's multisig setup."
+  })
+  public async RemovePublicKey(ctx: GalaChainContext, dto: RemovePublicKeyDto): Promise<void> {
+    const signing = dto.signing ?? SigningScheme.ETH;
+    await PublicKeyService.removePublicKey(ctx, dto.publicKey, signing);
+  }
+
+  @Submit({
+    in: UpdateQuorumDto,
+    description: "Updates the signature quorum for the calling user's multisig setup."
+  })
+  public async UpdateQuorum(ctx: GalaChainContext, dto: UpdateQuorumDto): Promise<void> {
+    await PublicKeyService.updateQuorum(ctx, dto.quorum);
   }
 
   @GalaTransaction({

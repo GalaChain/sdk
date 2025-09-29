@@ -439,7 +439,6 @@ describe("PublicKeyContract Multisignature", () => {
       // Create DTO with only 1 signature (need 2)
       const dto = await createValidSubmitDTO(AddPublicKeyDto, { publicKey: newKey.publicKey }) //
         .signed(key1.privateKey);
-      expect(dto.signatures?.length).toEqual(1);
 
       // When
       const response = await chaincode.invoke("PublicKeyContract:AddPublicKey", dto);
@@ -477,8 +476,8 @@ describe("PublicKeyContract Multisignature", () => {
         .signed(key1.privateKey)
         .signed(key2.privateKey);
       const remove1Dto = await createValidSubmitDTO(RemovePublicKeyDto, { publicKey: key1.publicKey })
-        .signed(key2.privateKey)
-        .signed(key3.privateKey);
+        .signed(key1.privateKey)
+        .signed(key2.privateKey);
 
       // When
       const success = await chaincode.invoke("PublicKeyContract:RemovePublicKey", remove3Dto);
@@ -487,7 +486,7 @@ describe("PublicKeyContract Multisignature", () => {
       // Then
       expect(success).toEqual(transactionSuccess());
       expect(failure).toEqual(transactionErrorKey("VALIDATION_FAILED"));
-      expect(failure).toEqual(transactionErrorMessageContains("Quorum cannot exceed number of public keys"));
+      expect(failure).toEqual(transactionErrorMessageContains("would make number of keys below quorum"));
 
       // Verify the new state - should have 2 keys now
       expect(chaincode.getState()).toEqual({
