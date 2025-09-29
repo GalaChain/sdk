@@ -241,6 +241,10 @@ export class TestChaincode {
     }
   }
 
+  public getStateAll(): Record<string, string> {
+    return { ...this.state };
+  }
+
   public getState(skipKeysStartingWith: string[] = ["\u0000UNTX\u0000"]): Record<string, string> {
     return Object.entries(this.state).reduce((acc, [key, value]) => {
       if (!skipKeysStartingWith?.some((prefix) => key.startsWith(prefix))) {
