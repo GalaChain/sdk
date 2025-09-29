@@ -354,7 +354,8 @@ describe("UpdatePublicKey", () => {
     const verifyResponse = await chaincode.invoke("PublicKeyContract:VerifySignature", signedWithNewKey);
     expect(verifyResponse).toEqual(transactionSuccess());
 
-    // Case 1: new User Register under old public key
+    // Case 1: new User Register under old public key. It is not allowed,
+    // and the old public key GCUP-key is marked as invalidated.
 
     // Given
     const dto = await createValidSubmitDTO<RegisterUserDto>(RegisterUserDto, {
@@ -371,7 +372,8 @@ describe("UpdatePublicKey", () => {
     expect(response).toEqual(transactionErrorMessageContains("user client|invalidated"));
     expect(await getPublicKey(chaincode, dto.user)).toEqual(transactionErrorKey("PK_NOT_FOUND"));
 
-    // Case 2: UpdatePublicKey under old public key
+    // Case 2: UpdatePublicKey under old public key. It won't worked because
+    // the old public key no longer exists in the user's public keys.
 
     // Given
     const updateDto2 = await createValidSubmitDTO(UpdatePublicKeyDto, { publicKey: oldPublicKey });
@@ -381,8 +383,8 @@ describe("UpdatePublicKey", () => {
     const response2 = await chaincode.invoke("PublicKeyContract:UpdatePublicKey", signedUpdateDto2);
 
     // Then
-    expect(response2).toEqual(transactionErrorKey("PROFILE_EXISTS"));
-    expect(response2).toEqual(transactionErrorMessageContains("user client|invalidated"));
+    expect(response2).toEqual(transactionErrorKey("VALIDATION_FAILED"));
+    expect(response2).toEqual(transactionErrorMessageContains("not found in old public keys"));
   });
 
   it("should update TON public key", async () => {
@@ -426,7 +428,7 @@ describe("UpdatePublicKey", () => {
     });
 
     const dtoEthToTon = await createValidSubmitDTO(UpdatePublicKeyDto, {
-      publicKey: Buffer.from(tonKeyPair.publicKey).toString("base64")
+      publicKey: tonKeyPair.publicKey.toString("base64")
     });
 
     // When
@@ -453,7 +455,7 @@ describe("UpdatePublicKey", () => {
     );
     expect(await getPublicKey(chaincode, ethUser.alias)).toEqual(
       transactionSuccess({
-        publicKey: signatures.normalizePublicKey(ethUser.publicKey).toString("base64"),
+        publicKey: PublicKeyService.normalizePublicKey(ethUser.publicKey),
         signing: SigningScheme.ETH
       })
     );

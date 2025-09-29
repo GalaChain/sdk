@@ -328,13 +328,13 @@ describe("PublicKeyContract Multisignature", () => {
         ...publicKeyKV(alias, [key1.publicKey, key2.publicKey, key3.publicKey])
       });
 
-      const dtoWrongQuorum = await createValidSubmitDTO(UpdatePublicKeyDto, newKey)
+      const dtoWrongQuorum = await createValidSubmitDTO(UpdatePublicKeyDto, { publicKey: newKey.publicKey })
         .signed(key1.privateKey)
         .signed(key2.privateKey);
       expect(dtoWrongQuorum.signature).toBeUndefined();
       expect(dtoWrongQuorum.signatures?.length).toEqual(2);
 
-      const dto = await createValidSubmitDTO(UpdatePublicKeyDto, newKey) //
+      const dto = await createValidSubmitDTO(UpdatePublicKeyDto, { publicKey: newKey.publicKey }) //
         .signed(key3.privateKey);
       expect(dto.signature).toBeDefined();
       expect(dto.signatures).toBeUndefined();
@@ -378,7 +378,8 @@ describe("PublicKeyContract Multisignature", () => {
       });
 
       const newKey = signatures.genKeyPair();
-      const dto = await createValidSubmitDTO(AddPublicKeyDto, newKey).signed(user.privateKey);
+      const dto = await createValidSubmitDTO(AddPublicKeyDto, { publicKey: newKey.publicKey }) //
+        .signed(user.privateKey);
 
       // When
       const response = await chaincode.invoke("PublicKeyContract:AddPublicKey", dto);
@@ -408,7 +409,7 @@ describe("PublicKeyContract Multisignature", () => {
       });
 
       // Create DTO with quorum signatures (2 out of 3)
-      const dto = await createValidSubmitDTO(AddPublicKeyDto, newKey)
+      const dto = await createValidSubmitDTO(AddPublicKeyDto, { publicKey: newKey.publicKey })
         .signed(key1.privateKey)
         .signed(key2.privateKey);
       expect(dto.signatures?.length).toEqual(2);
@@ -436,7 +437,8 @@ describe("PublicKeyContract Multisignature", () => {
       const newKey = signatures.genKeyPair();
 
       // Create DTO with only 1 signature (need 2)
-      const dto = await createValidSubmitDTO(AddPublicKeyDto, newKey).signed(key1.privateKey);
+      const dto = await createValidSubmitDTO(AddPublicKeyDto, { publicKey: newKey.publicKey }) //
+        .signed(key1.privateKey);
       expect(dto.signatures?.length).toEqual(1);
 
       // When
@@ -471,10 +473,10 @@ describe("PublicKeyContract Multisignature", () => {
         ...publicKeyKV(alias, [key1.publicKey, key2.publicKey, key3.publicKey])
       });
 
-      const remove3Dto = await createValidSubmitDTO(RemovePublicKeyDto, key3)
+      const remove3Dto = await createValidSubmitDTO(RemovePublicKeyDto, { publicKey: key3.publicKey })
         .signed(key1.privateKey)
         .signed(key2.privateKey);
-      const remove1Dto = await createValidSubmitDTO(RemovePublicKeyDto, key1)
+      const remove1Dto = await createValidSubmitDTO(RemovePublicKeyDto, { publicKey: key1.publicKey })
         .signed(key2.privateKey)
         .signed(key3.privateKey);
 

@@ -302,10 +302,18 @@ export class PublicKeyService {
       throw new PkNotFoundError(userAlias);
     }
 
+    const oldPublicKeySigning = oldPublicKey.signing ?? SigningScheme.ETH;
+    if (oldPublicKeySigning !== signing) {
+      throw new ValidationFailedError(
+        `Old public key signing scheme ${oldPublicKeySigning} does not match new signing scheme ${signing}`
+      );
+    }
+
     const allPublicKeys = oldPublicKey.getAllPublicKeys();
-    const oldPublicKeyNormalized = signatures
-      .normalizePublicKey(ctx.callingUserSignedByKeys[0])
-      .toString("base64");
+    const oldPublicKeyNormalized =
+      signing === SigningScheme.ETH
+        ? PublicKeyService.normalizePublicKey(ctx.callingUserSignedByKeys[0])
+        : ctx.callingUserSignedByKeys[0];
 
     const index = allPublicKeys.indexOf(oldPublicKeyNormalized);
     if (index === -1) {
