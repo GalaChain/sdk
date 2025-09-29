@@ -67,11 +67,11 @@ export function ensureOrganizationIsAllowed(ctx: GalaChainContext, allowedOrgsMS
   }
 }
 
-export function ensureSignatureQuorumIsMet(ctx: GalaChainContext, minimalQuorum: number | undefined) {
+export function ensureSignatureQuorumIsMet(ctx: GalaChainContext, quorum: number | undefined) {
   const numberOfSignedKeys = ctx.callingUserSignedByKeys.length;
 
   // Quorum from options overrides quorum from UserProfile
-  const requiredQuorum = minimalQuorum ?? ctx.callingUserSignatureQuorum;
+  const requiredQuorum = quorum ?? ctx.callingUserSignatureQuorum;
 
   if (requiredQuorum > numberOfSignedKeys) {
     throw new UnauthorizedError(
@@ -98,7 +98,7 @@ export interface AuthorizeOptions {
   allowedOrgs?: string[];
   allowedRoles?: string[];
   allowedOriginChaincodes?: string[];
-  minimalQuorum?: number;
+  quorum?: number;
 }
 
 export async function authorize(ctx: GalaChainContext, options: AuthorizeOptions) {
@@ -108,7 +108,7 @@ export async function authorize(ctx: GalaChainContext, options: AuthorizeOptions
     return;
   }
 
-  ensureSignatureQuorumIsMet(ctx, options.minimalQuorum);
+  ensureSignatureQuorumIsMet(ctx, options.quorum);
 
   if (options.allowedOrgs) {
     ensureOrganizationIsAllowed(ctx, options.allowedOrgs);

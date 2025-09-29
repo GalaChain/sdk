@@ -256,12 +256,12 @@ The system enforces several validation rules for multisig transactions:
 
 #### Override Quorum Requirements
 
-You can override the user's signature quorum requirement on a per-transaction basis using the `minimalQuorum` option:
+You can override the user's signature quorum requirement on a per-transaction basis using the `quorum` option:
 
 ```typescript
 @Submit({
   in: UpdatePublicKeyDto,
-  minimalQuorum: 1,  // Override user's quorum requirement
+  quorum: 1,  // Override user's quorum requirement
   description: "Updates public key for the calling user."
 })
 public async UpdatePublicKey(ctx: GalaChainContext, dto: UpdatePublicKeyDto): Promise<void> {
@@ -335,7 +335,7 @@ async approveExpense(ctx: GalaChainContext, dto: ApproveExpenseDto): Promise<voi
 ```typescript
 @Submit({
   in: EmergencyActionDto,
-  minimalQuorum: 1, // Override user's quorum for emergency actions
+  quorum: 1, // Override user's quorum for emergency actions
   description: "Emergency action requiring only 1 signature"
 })
 async emergencyAction(ctx: GalaChainContext, dto: EmergencyActionDto): Promise<void> {

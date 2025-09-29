@@ -124,7 +124,7 @@ export class PublicKeyContract extends GalaContract {
 
   @Submit({
     in: UpdatePublicKeyDto,
-    minimalQuorum: 1,
+    quorum: 1,
     description: "Updates public key for the calling user."
   })
   public async UpdatePublicKey(ctx: GalaChainContext, dto: UpdatePublicKeyDto): Promise<void> {

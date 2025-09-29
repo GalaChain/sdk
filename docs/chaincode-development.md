@@ -107,7 +107,7 @@ All decorators support the following parameters:
 - `allowedRoles` - optional parameter to define which roles are allowed to call the contract method.
   It is a string array with role names.
   If not provided, defaults to `SUBMIT` for submit transactions and `EVALUATE` for evaluate transactions.
-- `minimalQuorum` - optional parameter to override the user's signature quorum requirement.
+- `quorum` - optional parameter to override the user's signature quorum requirement.
   This allows you to require fewer signatures than the user's configured quorum for specific operations.
 - `apiMethodName` - optional name of the contract method that should be used in the GalaChain REST API.
   If not provided, the name of the contract method is used.

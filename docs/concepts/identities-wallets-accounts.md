@@ -106,7 +106,7 @@ You can override the user's signature quorum requirement on a per-transaction ba
 ```typescript
 @Submit({
   in: UpdatePublicKeyDto,
-  minimalQuorum: 1,  // Override user's quorum requirement
+  quorum: 1,  // Override user's quorum requirement
   description: "Updates public key for the calling user."
 })
 public async UpdatePublicKey(ctx: GalaChainContext, dto: UpdatePublicKeyDto): Promise<void> {
