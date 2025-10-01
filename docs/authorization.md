@@ -305,6 +305,8 @@ transferDto
 await tokenContract.TransferToken(transferDto);
 ```
 
+Note that after multiple signing the `transferDto` object contains multiple signatures, so instead of the `signature` field it contains `multisig` field with an array of signatures.
+
 **Example 2: Contract Method with Multisig Context**
 
 ```typescript

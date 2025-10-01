@@ -131,7 +131,7 @@ export class PublicKeyContract extends GalaContract {
     description: "Updates public key for the calling user."
   })
   public async UpdatePublicKey(ctx: GalaChainContext, dto: UpdatePublicKeyDto): Promise<void> {
-    if (dto.signatures || !dto.signature) {
+    if (dto.multisig || !dto.signature) {
       throw new ValidationFailedError("UpdatePublicKey requires exactly 1 signature");
     }
 

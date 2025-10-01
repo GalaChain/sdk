@@ -213,7 +213,7 @@ describe("ChainCallDTO", () => {
 
     // Then
     expect(dto.signature).toEqual(undefined);
-    expect(dto.signatures).toEqual([expect.stringMatching(/.{50,}/), expect.stringMatching(/.{50,}/)]);
+    expect(dto.multisig).toEqual([expect.stringMatching(/.{50,}/), expect.stringMatching(/.{50,}/)]);
 
     // valid cases
     expect(dto.isSignatureValid(k1.publicKey, 0)).toEqual(true);
@@ -223,8 +223,6 @@ describe("ChainCallDTO", () => {
     expect(dto.isSignatureValid(k1.publicKey, 1)).toEqual(false);
 
     expect(() => dto.isSignatureValid(k1.publicKey)).toThrow("Index is required for multisig DTOs");
-    expect(() => dto.isSignatureValid(k1.publicKey, 2)).toThrow(
-      "No signature in signatures array at index 2"
-    );
+    expect(() => dto.isSignatureValid(k1.publicKey, 2)).toThrow("No signature in multisig array at index 2");
   });
 });

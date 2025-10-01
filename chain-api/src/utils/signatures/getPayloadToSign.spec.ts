@@ -26,12 +26,12 @@ describe("getPayloadToSign", () => {
     expect(toSign).toEqual('{"a":3,"b":[{"x":4,"y":5,"z":6},7],"c":8}');
   });
 
-  it("should ignore 'signature', 'signatures' and 'trace' fields", () => {
+  it("should ignore 'signature', 'multisig' and 'trace' fields", () => {
     // Given
     const obj = {
       c: 8,
       signature: "to-be-ignored",
-      signatures: ["to-be-ignored"],
+      multisig: ["to-be-ignored"],
       trace: 3
     };
 

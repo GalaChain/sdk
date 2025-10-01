@@ -205,14 +205,15 @@ export class ChainCallDTO {
   @JSONSchema({
     description:
       "List of signatures for this DTO if there are multiple signers. " +
-      "All signatures must use the same signing scheme as provided in the 'signing' field. " +
-      "If there are multiple signatures, it is not allowed to provide 'signature' or 'signerPublicKey' or 'signerAddress' or 'prefix' fields."
+      "If there are multiple signatures, it is not allowed to provide 'signature' " +
+      "or 'signerPublicKey' or 'signerAddress' or 'prefix' fields, " +
+      "and the signing scheme must be ETH."
   })
   @IsOptional()
   @SerializeIf((o) => !o.signature)
   @ArrayMinSize(2)
   @Type(() => String)
-  public signatures?: string[];
+  public multisig?: string[];
 
   @JSONSchema({
     description: "Unit timestamp when the DTO expires. If the timestamp is in the past, the DTO is not valid."
@@ -272,7 +273,7 @@ export class ChainCallDTO {
   }
 
   public sign(privateKey: string, useDer = false): void {
-    const currentSignatures = this.signatures ?? (this.signature ? [this.signature] : []);
+    const currentSignatures = this.multisig ?? (this.signature ? [this.signature] : []);
     const someSignaturesExist = currentSignatures.length > 0;
 
     if (someSignaturesExist && this.signerAddress && this.signerPublicKey && this.prefix) {
@@ -306,7 +307,7 @@ export class ChainCallDTO {
 
     if (someSignaturesExist) {
       delete this.signature;
-      this.signatures = [...currentSignatures, signature];
+      this.multisig = [...currentSignatures, signature];
     } else {
       this.signature = signature;
     }
@@ -347,7 +348,7 @@ export class ChainCallDTO {
       throw new ValidationFailedError("Index is required for multisig DTOs");
     }
 
-    const signature = this.signatures?.[index];
+    const signature = this.multisig?.[index];
 
     if (!signature) {
       throw new ValidationFailedError(`No signature in signatures array at index ${index}`);

@@ -75,7 +75,7 @@ export function ensureSignatureQuorumIsMet(ctx: GalaChainContext, quorum: number
 
   if (requiredQuorum > numberOfSignedKeys) {
     throw new UnauthorizedError(
-      `Insufficient signatures: got ${numberOfSignedKeys}, required ${ctx.callingUserSignatureQuorum}.`
+      `Insufficient number of signatures: got ${numberOfSignedKeys}, required ${ctx.callingUserSignatureQuorum}.`
     );
   }
 }

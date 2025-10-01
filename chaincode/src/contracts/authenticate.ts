@@ -37,8 +37,8 @@ class MissingSignatureError extends ValidationFailedError {
 class InvalidSignatureParametersError extends ValidationFailedError {
   constructor(dto: ChainCallDTO | undefined) {
     super(
-      `Invalid signature parameters. A single signature string, or an array of at least 2 signatures is expected, ` +
-        `but got 'signature': ${dto?.signature} and 'signatures': ${dto?.signatures}`
+      `Invalid multisig parameters. A single signature string, or an array of at least 2 signatures is expected, ` +
+        `but got 'signature': ${dto?.signature} and 'multisig': ${dto?.multisig}`
     );
   }
 }
@@ -214,7 +214,7 @@ export async function authenticateSingleSignature(
 
 async function authenticateMultipleSignatures(
   ctx: GalaChainContext,
-  dto: ChainCallDTO & { signatures: string[] }
+  dto: ChainCallDTO & { multisig: string[] }
 ): Promise<AuthenticateResult> {
   const signing = dto.signing ?? SigningScheme.ETH;
 
@@ -229,7 +229,7 @@ async function authenticateMultipleSignatures(
 
   const profileEntries: [string, UserProfileStrict][] = [];
 
-  for (const [index, signature] of dto.signatures.entries()) {
+  for (const [index, signature] of dto.multisig.entries()) {
     const recoveredPkHex = recoverPublicKey(signature, dto, dto.prefix ?? "");
     if (recoveredPkHex === undefined) {
       throw new CannotRecoverPublicKeyError(index, signature);
@@ -247,7 +247,7 @@ async function authenticateMultipleSignatures(
   const firstProfileEntry = profileEntries[0];
 
   if (!firstProfileEntry) {
-    throw new CannotRecoverPublicKeyError(0, dto.signatures[0]);
+    throw new CannotRecoverPublicKeyError(0, dto.multisig[0]);
   }
 
   const expectedInfo = profileInfoString(firstProfileEntry[1]);
@@ -399,20 +399,20 @@ export async function authenticateAsOriginChaincode(
   };
 }
 
-function noSignatures(dto: ChainCallDTO | undefined): dto is Omit<ChainCallDTO, "signature" | "signatures"> {
-  return !!dto && dto.signature === undefined && dto.signatures === undefined;
+function noSignatures(dto: ChainCallDTO | undefined): dto is Omit<ChainCallDTO, "signature" | "multisig"> {
+  return !!dto && dto.signature === undefined && dto.multisig === undefined;
 }
 
 function singleSignature(
   dto: ChainCallDTO | undefined
-): dto is Omit<ChainCallDTO, "signatures"> & { signature: string } {
-  return !!dto && dto.signature !== undefined && dto.signatures === undefined;
+): dto is Omit<ChainCallDTO, "multisig"> & { signature: string } {
+  return !!dto && dto.signature !== undefined && dto.multisig === undefined;
 }
 
 function multipleSignatures(
   dto: ChainCallDTO | undefined
-): dto is Omit<ChainCallDTO, "signature"> & { signatures: string[] } {
-  return !!dto && dto.signatures !== undefined && dto.signatures.length >= 2 && dto.signature === undefined;
+): dto is Omit<ChainCallDTO, "signature"> & { multisig: string[] } {
+  return !!dto && dto.multisig !== undefined && dto.multisig.length >= 2 && dto.signature === undefined;
 }
 
 function singleSignAuthResult(profile: UserProfileStrict, publicKey: string): AuthenticateResult {
