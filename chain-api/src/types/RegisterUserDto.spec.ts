@@ -379,11 +379,9 @@ describe("RegisterUserDto", () => {
         signature: undefined,
         signatures: [expect.stringMatching(/.{50,}/), expect.stringMatching(/.{50,}/)]
       });
-      // Note: The signatures are created with different private keys but the same DTO
-      // The validation will fail because the signatures don't match the public keys
-      // This is expected behavior for this test case
-      expect(() => dto.isSignatureValid(publicKey1, 0)).toThrow();
-      expect(() => dto.isSignatureValid(publicKey2, 1)).toThrow();
+
+      expect(dto.isSignatureValid(publicKey1, 0)).toEqual(true);
+      expect(dto.isSignatureValid(publicKey2, 1)).toEqual(true);
     });
 
     it("should fail to verify signature with invalid key", () => {

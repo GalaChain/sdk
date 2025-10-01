@@ -322,20 +322,38 @@ export class ChainCallDTO {
     return copied;
   }
 
-  public isSignatureValid(publicKey: string, index = 0): boolean {
-    const sig = index === 0 ? this.signature : this.signatures?.[index];
-
-    if (!sig) {
-      throw new ValidationFailedError(`No signature at index ${index}`);
-    }
-
+  public isSignatureValid(publicKey: string, index?: number): boolean {
     if (this.signing === SigningScheme.TON) {
+      if (index !== undefined) {
+        throw new ValidationFailedError("Multisig is not supported for TON signing scheme");
+      }
+
       const signatureBuff = Buffer.from(this.signature ?? "", "base64");
       const publicKeyBuff = Buffer.from(publicKey, "base64");
+
       return signatures.ton.isValidSignature(signatureBuff, this, publicKeyBuff, this.prefix);
-    } else {
-      return signatures.isValid(this.signature ?? "", this, publicKey);
     }
+
+    // ETH signing scheme - single signature
+    if (this.signature) {
+      if (index !== undefined) {
+        throw new ValidationFailedError("Index is not supported for single signed DTOs");
+      }
+      return signatures.isValid(this.signature, this, publicKey);
+    }
+
+    // ETH signing scheme - multisig
+    if (index === undefined) {
+      throw new ValidationFailedError("Index is required for multisig DTOs");
+    }
+
+    const signature = this.signatures?.[index];
+
+    if (!signature) {
+      throw new ValidationFailedError(`No signature in signatures array at index ${index}`);
+    }
+
+    return signatures.isValid(signature, this, publicKey);
   }
 }
 

@@ -59,7 +59,8 @@ describe("PublicKey", () => {
       const errors = await validate(instance);
       const serialized = instanceToPlain(instance);
 
-      // it's silent for now - if we want to improwe, we need addtional PR
+      // Then
+      // it's silent for now - if we want to improve, we need addtional PR
       expect(errors).toHaveLength(0);
       expect(instance).toEqual({ publicKey: "single-key" });
       expect(serialized).toEqual({ publicKey: "single-key" });
