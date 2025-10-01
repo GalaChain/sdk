@@ -351,7 +351,7 @@ export class ChainCallDTO {
     const signature = this.multisig?.[index];
 
     if (!signature) {
-      throw new ValidationFailedError(`No signature in signatures array at index ${index}`);
+      throw new ValidationFailedError(`No signature in multisig array at index ${index}`);
     }
 
     return signatures.isValid(signature, this, publicKey);

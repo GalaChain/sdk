@@ -450,7 +450,7 @@ describe("PublicKeyContract Multisignature", () => {
       // Then
       expect(response).toEqual(transactionErrorKey("UNAUTHORIZED"));
       expect(response).toEqual(
-        transactionErrorMessageContains("Insufficient signatures: got 1, required 2.")
+        transactionErrorMessageContains("Insufficient number of signatures: got 1, required 2.")
       );
     });
   });
