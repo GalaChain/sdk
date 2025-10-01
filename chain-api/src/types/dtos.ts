@@ -16,12 +16,14 @@ import { Type, instanceToInstance, plainToInstance } from "class-transformer";
 import {
   ArrayMaxSize,
   ArrayMinSize,
+  IsInt,
   IsNotEmpty,
   IsNumber,
   IsOptional,
+  IsString,
   Max,
   Min,
-  MinLength,
+  ValidateIf,
   ValidateNested,
   ValidationError,
   validate
@@ -37,7 +39,7 @@ import {
   serialize,
   signatures
 } from "../utils";
-import { IsUserAlias, IsUserRef, StringEnumProperty } from "../validators";
+import { IsUserAlias, IsUserRef, SerializeIf, StringEnumProperty } from "../validators";
 import { UserAlias } from "./UserAlias";
 import { UserRef } from "./UserRef";
 import { GalaChainResponse } from "./contract";
@@ -153,16 +155,6 @@ export class ChainCallDTO {
 
   @JSONSchema({
     description:
-      "Signature of the DTO signed with caller's private key to be verified with user's public key saved on chain. " +
-      "The 'signature' field is optional for DTO, but is required for a transaction to be executed on chain. \n" +
-      "Please consult [GalaChain SDK documentation](https://github.com/GalaChain/sdk/blob/main/docs/authorization.md#signature-based-authorization) on how to create signatures."
-  })
-  @IsOptional()
-  @IsNotEmpty()
-  public signature?: string;
-
-  @JSONSchema({
-    description:
       "Prefix for Metamask transaction signatures. " +
       "Necessary to format payloads correctly to recover publicKey from web3 signatures."
   })
@@ -193,6 +185,28 @@ export class ChainCallDTO {
   @IsOptional()
   @StringEnumProperty(SigningScheme)
   public signing?: SigningScheme;
+
+  @JSONSchema({
+    description:
+      "Signature of the DTO signed with caller's private key to be verified with user's public key saved on chain. " +
+      "The 'signature' field is optional for DTO, but is required for a transaction to be executed on chain. \n" +
+      "Please consult [GalaChain SDK documentation](https://github.com/GalaChain/sdk/blob/main/docs/authorization.md#signature-based-authorization) on how to create signatures."
+  })
+  @IsOptional()
+  @IsNotEmpty()
+  public signature?: string;
+
+  @JSONSchema({
+    description:
+      "List of signatures for this DTO if there are multiple signers. " +
+      "All signatures must use the same signing scheme as provided in the 'signing' field. " +
+      "If there are multiple signatures, it is not allowed to provide 'signature' or 'signerPublicKey' or 'signerAddress' or 'prefix' fields."
+  })
+  @IsOptional()
+  @SerializeIf((o) => !o.signature)
+  @ArrayMinSize(2)
+  @Type(() => String)
+  public signatures?: string[];
 
   @JSONSchema({
     description: "Unit timestamp when the DTO expires. If the timestamp is in the past, the DTO is not valid."
@@ -252,8 +266,18 @@ export class ChainCallDTO {
   }
 
   public sign(privateKey: string, useDer = false): void {
+    const currentSignatures = this.signatures ?? (this.signature ? [this.signature] : []);
+    const someSignaturesExist = currentSignatures.length > 0;
+
+    if (someSignaturesExist && this.signerAddress && this.signerPublicKey && this.prefix) {
+      const msg = "signerAddress, signerPublicKey and prefix are not allowed for multisignature DTOs";
+      throw new ValidationFailedError(msg);
+    }
+
     if (useDer) {
-      if (this.signing === SigningScheme.TON) {
+      if (someSignaturesExist) {
+        throw new ValidationFailedError("DER signatures are not allowed for multisignature DTOs");
+      } else if (this.signing === SigningScheme.TON) {
         throw new ValidationFailedError("TON signing scheme does not support DER signatures");
       } else {
         if (this.signerPublicKey === undefined && this.signerAddress === undefined) {
@@ -262,14 +286,23 @@ export class ChainCallDTO {
       }
     }
 
+    let signature: string;
+
     if (this.signing === SigningScheme.TON) {
       const keyBuffer = Buffer.from(privateKey, "base64");
-      this.signature = signatures.ton.getSignature(this, keyBuffer, this.prefix).toString("base64");
+      signature = signatures.ton.getSignature(this, keyBuffer, this.prefix).toString("base64");
     } else {
       const keyBuffer = signatures.normalizePrivateKey(privateKey);
-      this.signature = useDer
+      signature = useDer
         ? signatures.getDERSignature(this, keyBuffer)
         : signatures.getSignature(this, keyBuffer);
+    }
+
+    if (someSignaturesExist) {
+      delete this.signature;
+      this.signatures = [...currentSignatures, signature];
+    } else {
+      this.signature = signature;
     }
   }
 
@@ -283,14 +316,38 @@ export class ChainCallDTO {
     return copied;
   }
 
-  public isSignatureValid(publicKey: string): boolean {
+  public isSignatureValid(publicKey: string, index?: number): boolean {
     if (this.signing === SigningScheme.TON) {
+      if (index !== undefined) {
+        throw new ValidationFailedError("Multisig is not supported for TON signing scheme");
+      }
+
       const signatureBuff = Buffer.from(this.signature ?? "", "base64");
       const publicKeyBuff = Buffer.from(publicKey, "base64");
+
       return signatures.ton.isValidSignature(signatureBuff, this, publicKeyBuff, this.prefix);
-    } else {
-      return signatures.isValid(this.signature ?? "", this, publicKey);
     }
+
+    // ETH signing scheme - single signature
+    if (this.signature) {
+      if (index !== undefined) {
+        throw new ValidationFailedError("Index is not supported for single signed DTOs");
+      }
+      return signatures.isValid(this.signature, this, publicKey);
+    }
+
+    // ETH signing scheme - multisig
+    if (index === undefined) {
+      throw new ValidationFailedError("Index is required for multisig DTOs");
+    }
+
+    const signature = this.signatures?.[index];
+
+    if (!signature) {
+      throw new ValidationFailedError(`No signature in signatures array at index ${index}`);
+    }
+
+    return signatures.isValid(signature, this, publicKey);
   }
 }
 
@@ -493,12 +550,31 @@ export class RegisterUserDto extends SubmitCallDTO {
   @IsUserAlias()
   user: UserAlias;
 
-  /**
-   * @description Public secp256k1 key (compact or non-compact, hex or base64).
-   */
   @JSONSchema({ description: "Public secp256k1 key (compact or non-compact, hex or base64)." })
+  @ValidateIf((o) => !o.publicKeys)
+  @IsString()
   @IsNotEmpty()
-  publicKey: string;
+  public publicKey?: string;
+
+  @JSONSchema({ description: "Public secp256k1 keys (compact or non-compact, hex or base64)." })
+  @ValidateIf((o) => !o.publicKey)
+  @SerializeIf((o) => !o.publicKey)
+  @IsString({ each: true })
+  @IsNotEmpty({ each: true })
+  @ArrayMinSize(2)
+  public publicKeys?: string[];
+
+  @JSONSchema({
+    description: "Minimum number of signatures required for authorization. Defaults to number of public keys."
+  })
+  @IsOptional()
+  @IsInt()
+  @Min(1)
+  signatureQuorum?: number;
+
+  public getAllPublicKeys(): string[] {
+    return this.publicKey ? [this.publicKey as string] : this.publicKeys ?? [];
+  }
 }
 
 /**

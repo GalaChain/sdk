@@ -89,6 +89,8 @@ interface CallingUserData {
   ethAddress?: string;
   tonAddress?: string;
   roles: string[];
+  signedByKeys: string[];
+  signatureQuorum: number;
 }
 
 /**
@@ -114,6 +116,8 @@ type TestGalaChainContext = Context & {
   get callingUserEthAddress(): string;
   get callingUserTonAddress(): string;
   get callingUserRoles(): string[];
+  get callingUserSignedByKeys(): string[];
+  get callingUserSignatureQuorum(): number;
   get callingUserProfile(): UserProfile;
   resetCallingUser(): void;
   get config(): GalaChainContextConfig;
@@ -267,12 +271,18 @@ class Fixture<Ctx extends TestGalaChainContext, T extends GalaContract<Ctx>> {
       this.ctx.callingUserData = {
         alias: user.identityKey,
         ethAddress: user.ethAddress,
-        roles: user.roles
+        roles: user.roles,
+        signedByKeys: [],
+        signatureQuorum: 0
       };
       return this;
     }
 
-    this.ctx.callingUserData = user;
+    this.ctx.callingUserData = {
+      ...user,
+      signedByKeys: [],
+      signatureQuorum: 0
+    };
     return this;
   }
 

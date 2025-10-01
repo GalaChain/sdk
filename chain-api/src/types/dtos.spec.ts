@@ -70,7 +70,10 @@ it("should parse TestDtoWithArray", async () => {
   expect(await getPlainOrError(TestDtoWithArray, valid)).toEqual({ playerIds: ["123"] });
   expect(await getPlainOrError(TestDtoWithArray, invalid1)).toEqual(failedArrayMatcher);
   expect(await getPlainOrError(TestDtoWithArray, invalid2)).toEqual(failedArrayMatcher);
-  expect(await getPlainOrError(TestDtoWithArray, invalid3)).toEqual("Unexpected end of JSON input");
+  const error = await getPlainOrError(TestDtoWithArray, invalid3);
+  expect(
+    error === "Unexpected end of JSON input" || error === "Unterminated string in JSON at position 16"
+  ).toBe(true);
 });
 
 it("should parse TestDtoWithBigNumber", async () => {
@@ -195,5 +198,33 @@ describe("ChainCallDTO", () => {
     // Then
     expect(dto.signature).toEqual(expect.stringMatching(/.{50,}/));
     expect(dto.isSignatureValid(pair.publicKey.toString("base64"))).toEqual(true);
+  });
+
+  it("should sign and verify multiple signatures", () => {
+    // Given
+    const k1 = genKeyPair();
+    const k2 = genKeyPair();
+    const dto = new TestDto();
+    dto.amounts = [new BigNumber("12.3")];
+
+    // When
+    dto.sign(k1.privateKey);
+    dto.sign(k2.privateKey);
+
+    // Then
+    expect(dto.signature).toEqual(undefined);
+    expect(dto.signatures).toEqual([expect.stringMatching(/.{50,}/), expect.stringMatching(/.{50,}/)]);
+
+    // valid cases
+    expect(dto.isSignatureValid(k1.publicKey, 0)).toEqual(true);
+    expect(dto.isSignatureValid(k2.publicKey, 1)).toEqual(true);
+
+    expect(dto.isSignatureValid(k2.publicKey, 0)).toEqual(false);
+    expect(dto.isSignatureValid(k1.publicKey, 1)).toEqual(false);
+
+    expect(() => dto.isSignatureValid(k1.publicKey)).toThrow("Index is required for multisig DTOs");
+    expect(() => dto.isSignatureValid(k1.publicKey, 2)).toThrow(
+      "No signature in signatures array at index 2"
+    );
   });
 });

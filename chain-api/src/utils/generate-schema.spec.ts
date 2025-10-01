@@ -114,6 +114,13 @@ const expectedTestDtoSchema = {
       enum: ["ETH", "TON"],
       type: "string"
     },
+    signatures: {
+      description:
+        "List of signatures for this DTO if there are multiple signers. All signatures must use the same signing scheme as provided in the 'signing' field. If there are multiple signatures, it is not allowed to provide 'signature' or 'signerPublicKey' or 'signerAddress' or 'prefix' fields.",
+      items: {},
+      minItems: 2,
+      type: "array"
+    },
     uniqueKey: {
       description:
         "Unique key of the DTO. It is used to prevent double execution of the same transaction on chain. " +
@@ -157,7 +164,19 @@ const expectedTestDtoSchema = {
 
 const expectedTestDtoResponseSchema = {
   properties: {
-    Data: expectedTestDtoSchema,
+    Data: {
+      ...expectedTestDtoSchema,
+      properties: {
+        ...expectedTestDtoSchema.properties,
+        signatures: {
+          description:
+            "List of signatures for this DTO if there are multiple signers. All signatures must use the same signing scheme as provided in the 'signing' field. If there are multiple signatures, it is not allowed to provide 'signature' or 'signerPublicKey' or 'signerAddress' or 'prefix' fields.",
+          items: {},
+          minItems: 2,
+          type: "array"
+        }
+      }
+    },
     Message: {
       type: "string"
     },

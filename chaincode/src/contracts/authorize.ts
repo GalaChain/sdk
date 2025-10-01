@@ -67,6 +67,15 @@ export function ensureOrganizationIsAllowed(ctx: GalaChainContext, allowedOrgsMS
   }
 }
 
+export function ensureSignatureQuorumIsMet(ctx: GalaChainContext) {
+  const numberOfSignedKeys = ctx.callingUserSignedByKeys.length;
+  if (ctx.callingUserSignatureQuorum > numberOfSignedKeys) {
+    throw new UnauthorizedError(
+      `Insufficient signatures: got ${numberOfSignedKeys}, required ${ctx.callingUserSignatureQuorum}.`
+    );
+  }
+}
+
 export async function ensureRoleIsAllowed(ctx: GalaChainContext, allowedRoles: string[]) {
   const hasRole = allowedRoles.some((role) => ctx.callingUserRoles?.includes(role));
   if (!hasRole) {
@@ -93,6 +102,8 @@ export async function authorize(ctx: GalaChainContext, options: AuthorizeOptions
     ensureChaincodeIsAllowed(callingChaincode, options.allowedOriginChaincodes);
     return;
   }
+
+  ensureSignatureQuorumIsMet(ctx);
 
   if (options.allowedOrgs) {
     ensureOrganizationIsAllowed(ctx, options.allowedOrgs);
