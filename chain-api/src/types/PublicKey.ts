@@ -35,7 +35,7 @@ export class PublicKey extends ChainObject {
   public signing?: SigningScheme;
 
   public getAllPublicKeys(): string[] {
-    return this.publicKeys ?? this.publicKey ? [this.publicKey as string] : [];
+    return this.publicKeys ?? (this.publicKey ? [this.publicKey as string] : []);
   }
 }
 

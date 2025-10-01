@@ -67,6 +67,8 @@ After successful authentication, the following context properties are available:
 - `ctx.callingUserTonAddress`: The user's TON address (if available)
 - `ctx.callingUserRoles`: Array of roles assigned to the user
 - `ctx.callingUserProfile`: Complete user profile object
+- `ctx.callingUserSignedByKeys`: Array of public keys that signed the current transaction
+- `ctx.callingUserSignatureQuorum`: Required number of signatures for the user
 
 ## Signature based authorization
 
@@ -236,7 +238,75 @@ dto.sign(sk2); // dto.signature = undefined; dto.signatures = [signature1, signa
 
 Chaincode enforces that any transaction that requires signed DTO is signed by the required number of private keys.
 
+Multisig is supported only for Ethereum signing scheme (secp256k1) with non-DER signatures.
+
+#### Override Quorum Requirements
+
+You can override the user's signature quorum requirement on a per-transaction basis using the `quorum` option:
+
+```typescript
+@Submit({
+  in: UpdatePublicKeyDto,
+  quorum: 1,  // Override user's quorum requirement
+  description: "Updates public key for the calling user."
+})
+public async UpdatePublicKey(ctx: GalaChainContext, dto: UpdatePublicKeyDto): Promise<void> {
+  // This method requires only 1 signature regardless of user's quorum setting
+}
+```
+
 This feature is supported only for Ethereum signing scheme (secp256k1) with non-DER signatures.
+
+#### Multisig Examples
+
+**Example 1: Corporate Treasury Setup**
+
+```typescript
+// Register a corporate treasury with 5 keys requiring 3 signatures
+const treasuryKeys = Array.from({ length: 5 }, () => signatures.genKeyPair());
+const treasuryRegistration = await createValidSubmitDTO(RegisterUserDto, {
+  user: "client|treasury",
+  publicKeys: treasuryKeys.map(k => k.publicKey),
+  signatureQuorum: 3
+});
+
+await pkContract.RegisterUser(treasuryRegistration.signed(adminKey));
+
+// Create a transaction requiring 3 signatures
+const transferDto = new TransferTokenDto({
+  to: "client|recipient",
+  amount: "1000",
+  uniqueKey: "transfer-" + Date.now()
+});
+
+// Sign with 3 different keys
+transferDto
+  .signed(treasuryKeys[0].privateKey)
+  .signed(treasuryKeys[1].privateKey)
+  .signed(treasuryKeys[2].privateKey);
+
+// Execute the transaction
+await tokenContract.TransferToken(transferDto);
+```
+
+**Example 2: Dynamic Quorum Override**
+
+```typescript
+@Submit({
+  in: EmergencyActionDto,
+  quorum: 1, // Override user's quorum for emergency actions
+  description: "Emergency action requiring only 1 signature"
+})
+async emergencyAction(ctx: GalaChainContext, dto: EmergencyActionDto): Promise<void> {
+  // This method only requires 1 signature regardless of user's quorum setting
+  // Useful for emergency situations where speed is critical
+  
+  const signedByKeys = ctx.callingUserSignedByKeys;
+  ctx.logger.warn(`Emergency action executed by key: ${signedByKeys[0]}`);
+  
+  await executeEmergencyAction(ctx, dto);
+}
+```
 
 ### User registration
 

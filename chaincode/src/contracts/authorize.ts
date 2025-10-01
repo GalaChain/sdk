@@ -67,9 +67,13 @@ export function ensureOrganizationIsAllowed(ctx: GalaChainContext, allowedOrgsMS
   }
 }
 
-export function ensureSignatureQuorumIsMet(ctx: GalaChainContext) {
+export function ensureSignatureQuorumIsMet(ctx: GalaChainContext, quorum: number | undefined) {
   const numberOfSignedKeys = ctx.callingUserSignedByKeys.length;
-  if (ctx.callingUserSignatureQuorum > numberOfSignedKeys) {
+
+  // Quorum from options overrides quorum from UserProfile
+  const requiredQuorum = quorum ?? ctx.callingUserSignatureQuorum;
+
+  if (requiredQuorum > numberOfSignedKeys) {
     throw new UnauthorizedError(
       `Insufficient signatures: got ${numberOfSignedKeys}, required ${ctx.callingUserSignatureQuorum}.`
     );
@@ -94,6 +98,7 @@ export interface AuthorizeOptions {
   allowedOrgs?: string[];
   allowedRoles?: string[];
   allowedOriginChaincodes?: string[];
+  quorum?: number;
 }
 
 export async function authorize(ctx: GalaChainContext, options: AuthorizeOptions) {
@@ -103,7 +108,7 @@ export async function authorize(ctx: GalaChainContext, options: AuthorizeOptions
     return;
   }
 
-  ensureSignatureQuorumIsMet(ctx);
+  ensureSignatureQuorumIsMet(ctx, options.quorum);
 
   if (options.allowedOrgs) {
     ensureOrganizationIsAllowed(ctx, options.allowedOrgs);

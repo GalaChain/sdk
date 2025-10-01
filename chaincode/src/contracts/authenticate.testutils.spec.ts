@@ -25,6 +25,7 @@ import {
   UserAlias,
   UserProfile,
   UserRef,
+  UserRole,
   createValidDTO,
   createValidSubmitDTO,
   signatures
@@ -150,6 +151,40 @@ export async function getMyProfile(
   const dto = new GetMyProfileDto();
   dto.sign(privateKey);
   return chaincode.invoke("PublicKeyContract:GetMyProfile", dto);
+}
+
+export function userProfileKV(alias: UserAlias, publicKey: string, quorum: number): Record<string, string> {
+  const up = new UserProfile();
+  up.alias = alias;
+  up.ethAddress = signatures.getEthAddress(publicKey);
+  up.roles = [UserRole.EVALUATE, UserRole.SUBMIT];
+  up.signatureQuorum = quorum;
+  return {
+    [`\u0000GCUP\u0000${up.ethAddress}\u0000`]: up.serialize()
+  };
+}
+
+export function userProfileInvalidatedKV(alias: UserAlias, publicKey: string): Record<string, string> {
+  const up = new UserProfile();
+  up.alias = `client|invalidated` as UserAlias;
+  up.ethAddress = "0000000000000000000000000000000000000000";
+  up.roles = [];
+  return {
+    [`\u0000GCUP\u0000${signatures.getEthAddress(publicKey)}\u0000`]: up.serialize()
+  };
+}
+
+export function publicKeyKV(alias: UserAlias, publicKeys: string[]): Record<string, string> {
+  const pk = new PublicKey();
+  pk.signing = SigningScheme.ETH;
+  if (publicKeys.length === 1) {
+    pk.publicKey = signatures.normalizePublicKey(publicKeys[0]).toString("base64");
+  } else {
+    pk.publicKeys = publicKeys.map((pk) => signatures.normalizePublicKey(pk).toString("base64"));
+  }
+  return {
+    [`\u0000GCPK\u0000${alias}\u0000`]: pk.serialize()
+  };
 }
 
 test.skip("Workaround", () => {

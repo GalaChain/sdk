@@ -94,8 +94,8 @@ export class TestChaincode {
    */
   public constructor(
     contracts: ClassConstructor<Contract>[],
-    public readonly state: Record<string, string> = {},
-    public readonly writes: Record<string, string> = {},
+    private readonly state: Record<string, string> = {},
+    private readonly writes: Record<string, string>[] = [],
     public callingUser = "client|admin",
     public callingUserMsp = "CuratorOrg",
     public readonly callHistory: unknown[] = []
@@ -170,13 +170,14 @@ export class TestChaincode {
     ...args: (string | { serialize: () => string })[]
   ): Promise<T> {
     const argsSerialized = args.map((arg) => (typeof arg === "string" ? arg : arg.serialize()));
-    const stub = new TestChaincodeStub([method, ...argsSerialized], this.state, this.writes);
+    const newWrites = {};
+    const stub = new TestChaincodeStub([method, ...argsSerialized], this.state, newWrites);
     stub.mockCreator(this.callingUserMsp, this.callingUser);
     const rawResponse = await this.chaincode.Invoke(stub);
 
     if (rawResponse.status === 200) {
       const stringResponse = rawResponse.payload.toString();
-
+      this.writes.push(newWrites);
       return JSON.parse(stringResponse) as T;
     } else {
       throw rawResponse.message;
@@ -199,7 +200,7 @@ export class TestChaincode {
   ): Promise<T> {
     const argsSerialized = args.map((arg) => (typeof arg === "string" ? arg : arg.serialize()));
     const copyOfState = { ...this.state }; // to prevent writes
-    const stub = new TestChaincodeStub([method, ...argsSerialized], copyOfState, this.writes);
+    const stub = new TestChaincodeStub([method, ...argsSerialized], copyOfState, {});
     stub.mockCreator(this.callingUserMsp, this.callingUser);
     const rawResponse = await this.chaincode.Invoke(stub);
 
@@ -238,5 +239,27 @@ export class TestChaincode {
     } else {
       return data.contractInstance;
     }
+  }
+
+  public getStateAll(): Record<string, string> {
+    return { ...this.state };
+  }
+
+  public getState(skipKeysStartingWith: string[] = ["\u0000UNTX\u0000"]): Record<string, string> {
+    return Object.entries(this.state).reduce((acc, [key, value]) => {
+      if (!skipKeysStartingWith?.some((prefix) => key.startsWith(prefix))) {
+        acc[key] = value;
+      }
+      return acc;
+    }, {});
+  }
+
+  public getWrites(skipKeysStartingWith: string[] = ["\u0000UNTX\u0000"]): Record<string, string> {
+    return Object.entries(this.writes).reduce((acc, [key, value]) => {
+      if (!skipKeysStartingWith?.some((prefix) => key.startsWith(prefix))) {
+        acc[key] = value;
+      }
+      return acc;
+    }, {});
   }
 }
