@@ -114,7 +114,6 @@ public async UpdatePublicKey(ctx: GalaChainContext, dto: UpdatePublicKeyDto): Pr
 }
 ```
 
-
 ## Identity Resolution
 
 GalaChain provides flexible identity resolution through the `resolveUserAlias` service:
