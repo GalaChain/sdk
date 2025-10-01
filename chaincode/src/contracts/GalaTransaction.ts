@@ -270,7 +270,7 @@ function GalaTransaction<In extends ChainCallDTO, Out>(
     let description = options.description ? options.description : "";
 
     if (options.type === GalaTransactionType.SUBMIT) {
-      description += description ?? ` Transaction updates the chain (submit).`;
+      description += ` Transaction updates the chain (submit).`;
     } else {
       description += ` Transaction is read only (evaluate).`;
     }
