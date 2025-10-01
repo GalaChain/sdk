@@ -199,4 +199,32 @@ describe("ChainCallDTO", () => {
     expect(dto.signature).toEqual(expect.stringMatching(/.{50,}/));
     expect(dto.isSignatureValid(pair.publicKey.toString("base64"))).toEqual(true);
   });
+
+  it("should sign and verify multiple signatures", () => {
+    // Given
+    const k1 = genKeyPair();
+    const k2 = genKeyPair();
+    const dto = new TestDto();
+    dto.amounts = [new BigNumber("12.3")];
+
+    // When
+    dto.sign(k1.privateKey);
+    dto.sign(k2.privateKey);
+
+    // Then
+    expect(dto.signature).toEqual(undefined);
+    expect(dto.signatures).toEqual([expect.stringMatching(/.{50,}/), expect.stringMatching(/.{50,}/)]);
+
+    // valid cases
+    expect(dto.isSignatureValid(k1.publicKey, 0)).toEqual(true);
+    expect(dto.isSignatureValid(k2.publicKey, 1)).toEqual(true);
+
+    expect(dto.isSignatureValid(k2.publicKey, 0)).toEqual(false);
+    expect(dto.isSignatureValid(k1.publicKey, 1)).toEqual(false);
+
+    expect(() => dto.isSignatureValid(k1.publicKey)).toThrow("Index is required for multisig DTOs");
+    expect(() => dto.isSignatureValid(k1.publicKey, 2)).toThrow(
+      "No signature in signatures array at index 2"
+    );
+  });
 });
