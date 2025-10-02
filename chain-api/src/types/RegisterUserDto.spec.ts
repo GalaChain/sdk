@@ -366,7 +366,7 @@ describe("RegisterUserDto", () => {
       // When - first signature
       dto.sign(privateKey1);
       expect(dto.signature).toEqual(expect.stringMatching(/.{50,}/));
-      expect(dto.signatures).toBeUndefined();
+      expect(dto.multisig).toBeUndefined();
 
       // When - second signature (converts to multisig)
       dto.sign(privateKey2);
@@ -377,7 +377,7 @@ describe("RegisterUserDto", () => {
         user: "client|test-user",
         publicKeys: ["key1", "key2"],
         signature: undefined,
-        signatures: [expect.stringMatching(/.{50,}/), expect.stringMatching(/.{50,}/)]
+        multisig: [expect.stringMatching(/.{50,}/), expect.stringMatching(/.{50,}/)]
       });
 
       expect(dto.isSignatureValid(publicKey1, 0)).toEqual(true);

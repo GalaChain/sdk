@@ -238,8 +238,6 @@ dto.sign(sk2); // dto.signature = undefined; dto.signatures = [signature1, signa
 
 Chaincode enforces that any transaction that requires signed DTO is signed by the required number of private keys.
 
-Multisig is supported only for Ethereum signing scheme (secp256k1) with non-DER signatures.
-
 #### Override Quorum Requirements
 
 You can override the user's signature quorum requirement on a per-transaction basis using the `quorum` option:
@@ -289,17 +287,18 @@ transferDto
 await tokenContract.TransferToken(transferDto);
 ```
 
+Note that after multiple signing the `transferDto` object contains multiple signatures, so instead of the `signature` field it contains `multisig` field with an array of signatures.
+
 **Example 2: Dynamic Quorum Override**
 
 ```typescript
 @Submit({
   in: EmergencyActionDto,
-  quorum: 1, // Override user's quorum for emergency actions
+  quorum: 1, // Override user's quorum
   description: "Emergency action requiring only 1 signature"
 })
 async emergencyAction(ctx: GalaChainContext, dto: EmergencyActionDto): Promise<void> {
   // This method only requires 1 signature regardless of user's quorum setting
-  // Useful for emergency situations where speed is critical
   
   const signedByKeys = ctx.callingUserSignedByKeys;
   ctx.logger.warn(`Emergency action executed by key: ${signedByKeys[0]}`);

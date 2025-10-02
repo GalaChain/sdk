@@ -109,14 +109,12 @@ const expectedTestDtoSchema = {
       type: "string"
     },
     signing: {
-      description:
-        'Signing scheme used for the signature. "ETH" for Ethereum, and "TON" for The Open Network are supported. Default: "ETH".',
+      description: expect.stringContaining("Signing scheme used for the signature."),
       enum: ["ETH", "TON"],
       type: "string"
     },
-    signatures: {
-      description:
-        "List of signatures for this DTO if there are multiple signers. All signatures must use the same signing scheme as provided in the 'signing' field. If there are multiple signatures, it is not allowed to provide 'signature' or 'signerPublicKey' or 'signerAddress' or 'prefix' fields.",
+    multisig: {
+      description: expect.stringContaining("List of signatures for this DTO if there are multiple signers."),
       items: {},
       minItems: 2,
       type: "array"
@@ -168,9 +166,10 @@ const expectedTestDtoResponseSchema = {
       ...expectedTestDtoSchema,
       properties: {
         ...expectedTestDtoSchema.properties,
-        signatures: {
-          description:
-            "List of signatures for this DTO if there are multiple signers. All signatures must use the same signing scheme as provided in the 'signing' field. If there are multiple signatures, it is not allowed to provide 'signature' or 'signerPublicKey' or 'signerAddress' or 'prefix' fields.",
+        multisig: {
+          description: expect.stringContaining(
+            "List of signatures for this DTO if there are multiple signers."
+          ),
           items: {},
           minItems: 2,
           type: "array"

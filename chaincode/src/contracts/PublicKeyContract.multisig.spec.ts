@@ -214,7 +214,9 @@ describe("PublicKeyContract Multisignature", () => {
       expect(resp3).toEqual(resp1);
 
       expect(resp4).toEqual(transactionErrorKey("UNAUTHORIZED"));
-      expect(resp4).toEqual(transactionErrorMessageContains("Insufficient signatures: got 1, required 2."));
+      expect(resp4).toEqual(
+        transactionErrorMessageContains("Insufficient number of signatures: got 1, required 2.")
+      );
     });
 
     it("should fail when signing with wrong combination of keys", async () => {
@@ -287,7 +289,9 @@ describe("PublicKeyContract Multisignature", () => {
       const dto2 = new GetMyProfileDto().signed(key2_1.privateKey).signed(key2_2.privateKey);
       const resp2 = await chaincode.invoke("PublicKeyContract:GetMyProfile", dto2);
       expect(resp2).toEqual(transactionErrorKey("UNAUTHORIZED"));
-      expect(resp2).toEqual(transactionErrorMessageContains("Insufficient signatures: got 2, required 3."));
+      expect(resp2).toEqual(
+        transactionErrorMessageContains("Insufficient number of signatures: got 2, required 3.")
+      );
 
       // Quorum = 3: should work with all 3 keys
       const dto3 = new GetMyProfileDto()
@@ -332,12 +336,12 @@ describe("PublicKeyContract Multisignature", () => {
         .signed(key1.privateKey)
         .signed(key2.privateKey);
       expect(dtoWrongQuorum.signature).toBeUndefined();
-      expect(dtoWrongQuorum.signatures?.length).toEqual(2);
+      expect(dtoWrongQuorum.multisig?.length).toEqual(2);
 
       const dto = await createValidSubmitDTO(UpdatePublicKeyDto, { publicKey: newKey.publicKey }) //
         .signed(key3.privateKey);
       expect(dto.signature).toBeDefined();
-      expect(dto.signatures).toBeUndefined();
+      expect(dto.multisig).toBeUndefined();
 
       // When
       const failure = await chaincode.invoke("PublicKeyContract:UpdatePublicKey", dtoWrongQuorum);
@@ -412,7 +416,7 @@ describe("PublicKeyContract Multisignature", () => {
       const dto = await createValidSubmitDTO(AddPublicKeyDto, { publicKey: newKey.publicKey })
         .signed(key1.privateKey)
         .signed(key2.privateKey);
-      expect(dto.signatures?.length).toEqual(2);
+      expect(dto.multisig?.length).toEqual(2);
 
       // When
       const response = await chaincode.invoke("PublicKeyContract:AddPublicKey", dto);
@@ -446,7 +450,7 @@ describe("PublicKeyContract Multisignature", () => {
       // Then
       expect(response).toEqual(transactionErrorKey("UNAUTHORIZED"));
       expect(response).toEqual(
-        transactionErrorMessageContains("Insufficient signatures: got 1, required 2.")
+        transactionErrorMessageContains("Insufficient number of signatures: got 1, required 2.")
       );
     });
   });

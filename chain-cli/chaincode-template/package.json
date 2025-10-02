@@ -20,6 +20,7 @@
     "test": "jest",
     "test:e2e": "jest --config=e2e/jest.config.js --runInBand",
     "test:e2e-mocked": "env $(grep -v '^#' .dev-env | grep -v '^$' | xargs) CURATORORG_MOCKED_CHAINCODE_DIR=./ jest --config=e2e/jest.config.js --runInBand",
+    "test:update": "npm run build && npm run fix && npm run test -- -u && npm run test:e2e-mocked -- -u",
     "update-snapshot": "jest --updateSnapshot"
   },
   "dependencies": {
