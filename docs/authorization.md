@@ -238,22 +238,6 @@ dto.sign(sk2); // dto.signature = undefined; dto.signatures = [signature1, signa
 
 Chaincode enforces that any transaction that requires signed DTO is signed by the required number of private keys.
 
-#### Multisig Context Properties
-
-When using multisig, additional context properties are available:
-
-- `ctx.callingUserSignedByKeys`: Array of public keys that signed the current transaction
-- `ctx.callingUserSignatureQuorum`: Required number of signatures for the user
-
-#### Multisig Validation Rules
-
-The system enforces several validation rules for multisig transactions:
-
-1. **Duplicate Signer Prevention**: The same public key cannot sign the transaction multiple times
-2. **Profile Consistency**: All signing keys must belong to the same user profile
-3. **Quorum Enforcement**: The number of signatures must meet or exceed the required quorum
-4. **Key Registration**: All signing keys must be registered and associated with the user
-
 #### Override Quorum Requirements
 
 You can override the user's signature quorum requirement on a per-transaction basis using the `quorum` option:
@@ -271,9 +255,7 @@ public async UpdatePublicKey(ctx: GalaChainContext, dto: UpdatePublicKeyDto): Pr
 
 This feature is supported only for Ethereum signing scheme (secp256k1) with non-DER signatures.
 
-#### Comprehensive Multisig Examples
-
-Here are comprehensive examples of how to use multisig functionality in GalaChain:
+#### Multisig Examples
 
 **Example 1: Corporate Treasury Setup**
 
@@ -307,75 +289,21 @@ await tokenContract.TransferToken(transferDto);
 
 Note that after multiple signing the `transferDto` object contains multiple signatures, so instead of the `signature` field it contains `multisig` field with an array of signatures.
 
-**Example 2: Contract Method with Multisig Context**
-
-```typescript
-@Submit({
-  in: ApproveExpenseDto,
-  description: "Approve expense with multisig validation"
-})
-async approveExpense(ctx: GalaChainContext, dto: ApproveExpenseDto): Promise<void> {
-  // Access multisig information
-  const signedByKeys = ctx.callingUserSignedByKeys;
-  const requiredQuorum = ctx.callingUserSignatureQuorum;
-  
-  // Log multisig information
-  ctx.logger.info(`Transaction signed by ${signedByKeys.length} keys, required: ${requiredQuorum}`);
-  
-  // Business logic: require at least 2 signatures for expenses over $1000
-  if (dto.amount > 1000 && signedByKeys.length < 2) {
-    throw new ValidationFailedError("Expenses over $1000 require at least 2 signatures");
-  }
-  
-  // Process the expense approval
-  await processExpenseApproval(ctx, dto);
-}
-```
-
-**Example 3: Dynamic Quorum Override**
+**Example 2: Dynamic Quorum Override**
 
 ```typescript
 @Submit({
   in: EmergencyActionDto,
-  quorum: 1, // Override user's quorum for emergency actions
+  quorum: 1, // Override user's quorum
   description: "Emergency action requiring only 1 signature"
 })
 async emergencyAction(ctx: GalaChainContext, dto: EmergencyActionDto): Promise<void> {
   // This method only requires 1 signature regardless of user's quorum setting
-  // Useful for emergency situations where speed is critical
   
   const signedByKeys = ctx.callingUserSignedByKeys;
   ctx.logger.warn(`Emergency action executed by key: ${signedByKeys[0]}`);
   
   await executeEmergencyAction(ctx, dto);
-}
-```
-
-**Example 4: Multisig Validation in Business Logic**
-
-```typescript
-@Submit({
-  in: UpdateContractDto,
-  description: "Update contract terms with multisig validation"
-})
-async updateContract(ctx: GalaChainContext, dto: UpdateContractDto): Promise<void> {
-  const signedByKeys = ctx.callingUserSignedByKeys;
-  const userProfile = ctx.callingUserProfile;
-  
-  // Ensure all signing keys belong to the same user
-  if (signedByKeys.length !== new Set(signedByKeys).size) {
-    throw new ValidationFailedError("Duplicate signing keys detected");
-  }
-  
-  // Require specific roles for contract updates
-  if (!userProfile.roles.includes("CONTRACT_MANAGER")) {
-    throw new UnauthorizedError("Contract updates require CONTRACT_MANAGER role");
-  }
-  
-  // Log the multisig transaction
-  ctx.logger.info(`Contract updated by ${signedByKeys.length} signatures from user ${ctx.callingUser}`);
-  
-  await updateContractTerms(ctx, dto);
 }
 ```
 
