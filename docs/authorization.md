@@ -238,8 +238,6 @@ dto.sign(sk2); // dto.signature = undefined; dto.signatures = [signature1, signa
 
 Chaincode enforces that any transaction that requires signed DTO is signed by the required number of private keys.
 
-Multisig is supported only for Ethereum signing scheme (secp256k1) with non-DER signatures.
-
 #### Override Quorum Requirements
 
 You can override the user's signature quorum requirement on a per-transaction basis using the `quorum` option:
