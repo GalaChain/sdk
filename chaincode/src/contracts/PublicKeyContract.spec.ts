@@ -634,7 +634,9 @@ describe("GetMyProfile", () => {
     expect(resp3).toEqual(resp1);
 
     expect(resp4).toEqual(transactionErrorKey("UNAUTHORIZED"));
-    expect(resp4).toEqual(transactionErrorMessageContains("Insufficient signatures: got 1, required 2."));
+    expect(resp4).toEqual(
+      transactionErrorMessageContains("Insufficient number of signatures: got 1, required 2.")
+    );
   });
 });
 
