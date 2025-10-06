@@ -13,6 +13,7 @@
  * limitations under the License.
  */
 import {
+  ChainCallDTO,
   ChainObject,
   NotImplementedError,
   PK_INDEX_KEY,
@@ -33,6 +34,7 @@ import { Context } from "fabric-contract-api";
 
 import { GalaChainContext } from "../types";
 import {
+  PkInvalidSignatureError,
   PkMismatchError,
   PkMissingError,
   PkNotFoundError,
@@ -229,7 +231,6 @@ export class PublicKeyService {
     return undefined;
   }
 
-  // TODO test to verify that all user profile entries are saved
   public static async registerUser(
     ctx: GalaChainContext,
     publicKeys: string[],
@@ -514,5 +515,28 @@ export class PublicKeyService {
         await ctx.stub.putState(key, data);
       }
     }
+  }
+
+  /**
+   * Verifies if the data is properly signed. Throws exception instead.
+   */
+  public static async ensurePublicKeySignatureIsValid(
+    ctx: GalaChainContext,
+    userAlias: UserAlias,
+    dto: ChainCallDTO
+  ): Promise<PublicKey> {
+    const pk = await PublicKeyService.getPublicKey(ctx, userAlias);
+
+    if (pk === undefined) {
+      throw new PkMissingError(userAlias);
+    }
+
+    const isSignatureValid = dto.isSignatureValid(pk.publicKey ?? "");
+
+    if (!isSignatureValid) {
+      throw new PkInvalidSignatureError(userAlias);
+    }
+
+    return pk;
   }
 }
