@@ -205,7 +205,7 @@ function GalaTransaction<In extends ChainCallDTO, Out>(
         }
 
         // Authorize the user
-        await authorize(ctx, options);
+        await authorize(ctx, options, dto, method.name);
 
         // Prevent the same transaction from being submitted multiple times
         if (options.enforceUniqueKey) {

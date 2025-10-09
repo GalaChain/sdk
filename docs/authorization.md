@@ -98,6 +98,12 @@ const dto = await createValidDTO(MyDtoClass, {
 }).signed(userPrivateKey);
 ```
 
+### DTO operation name
+
+Providing explicit operation name in `dtoOperation` field in DTO is a way to improve security. It prevents from using the DTO as a parameter for a different operation that is was supposed (either by accident or man-in-the middle attack).
+
+The `dtoOperation` name must contain the exact method name as is used by calling the chain (like: `TransferToken` or `GetPublicProfile`). It is optional for single signature calls, but required for multisig.
+
 ### Signing the transaction payload
 
 Client side it is recommended to use `@gala-chain/api`, or `@gala-chain/cli`, or `@gala-chain/connect` library to sign the transactions.
@@ -272,6 +278,7 @@ await pkContract.RegisterUser(treasuryRegistration.signed(adminKey));
 
 // Create a transaction requiring 3 signatures
 const transferDto = new TransferTokenDto({
+  dtoOperation: "Transfer", // operation is required for multisig
   to: "client|recipient",
   amount: "1000",
   uniqueKey: "transfer-" + Date.now()

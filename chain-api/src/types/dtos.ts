@@ -216,6 +216,16 @@ export class ChainCallDTO {
   public multisig?: string[];
 
   @JSONSchema({
+    description:
+      "Method name that is called on chain with this DTO. " +
+      "Required for multisig DTOs, and optional for single signed DTOs."
+  })
+  @IsOptional()
+  @IsString()
+  @IsNotEmpty()
+  public dtoOperation?: string;
+
+  @JSONSchema({
     description: "Unit timestamp when the DTO expires. If the timestamp is in the past, the DTO is not valid."
   })
   @IsOptional()
@@ -320,6 +330,12 @@ export class ChainCallDTO {
   public signed(privateKey: string, useDer = false) {
     const copied = instanceToInstance(this);
     copied.sign(privateKey, useDer);
+    return copied;
+  }
+
+  public operation(name: string): this {
+    const copied = instanceToInstance(this);
+    copied.dtoOperation = name;
     return copied;
   }
 

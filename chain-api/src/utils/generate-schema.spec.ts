@@ -119,6 +119,11 @@ const expectedTestDtoSchema = {
       minItems: 2,
       type: "array"
     },
+    dtoOperation: {
+      description: expect.stringContaining("Method name that is called on chain with this DTO."),
+      minLength: 1,
+      type: "string"
+    },
     uniqueKey: {
       description:
         "Unique key of the DTO. It is used to prevent double execution of the same transaction on chain. " +
@@ -165,15 +170,7 @@ const expectedTestDtoResponseSchema = {
     Data: {
       ...expectedTestDtoSchema,
       properties: {
-        ...expectedTestDtoSchema.properties,
-        multisig: {
-          description: expect.stringContaining(
-            "List of signatures for this DTO if there are multiple signers."
-          ),
-          items: {},
-          minItems: 2,
-          type: "array"
-        }
+        ...expectedTestDtoSchema.properties
       }
     },
     Message: {

@@ -12,7 +12,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-import { ForbiddenError, UnauthorizedError, UserRole } from "@gala-chain/api";
+import { ChainCallDTO, ForbiddenError, UnauthorizedError, UserRole } from "@gala-chain/api";
 
 import { GalaChainContext } from "../types";
 
@@ -80,6 +80,31 @@ export function ensureSignatureQuorumIsMet(ctx: GalaChainContext, quorum: number
   }
 }
 
+export function ensureCorrectMethodIsUsed(
+  ctx: GalaChainContext,
+  quorum: number | undefined,
+  dto: ChainCallDTO | undefined,
+  currentMethod: string
+) {
+  const numberOfSignedKeys = ctx.callingUserSignedByKeys.length;
+  const requiredQuorum = quorum ?? ctx.callingUserSignatureQuorum;
+
+  // If there is only one signature, we don't need to check the method
+  if (numberOfSignedKeys <= 1 && requiredQuorum <= 1 && !dto?.dtoOperation) {
+    return;
+  }
+
+  if (!dto?.dtoOperation) {
+    const msg = `DTO operation is not provided. Please provide the operation name that is used for multisig.`;
+    throw new UnauthorizedError(msg);
+  }
+
+  if (dto.dtoOperation !== currentMethod) {
+    const msg = `The dto was signed to call ${dto.dtoOperation} operation, but the current operation is ${currentMethod}.`;
+    throw new UnauthorizedError(msg);
+  }
+}
+
 export async function ensureRoleIsAllowed(ctx: GalaChainContext, allowedRoles: string[]) {
   const hasRole = allowedRoles.some((role) => ctx.callingUserRoles?.includes(role));
   if (!hasRole) {
@@ -101,7 +126,12 @@ export interface AuthorizeOptions {
   quorum?: number;
 }
 
-export async function authorize(ctx: GalaChainContext, options: AuthorizeOptions) {
+export async function authorize(
+  ctx: GalaChainContext,
+  options: AuthorizeOptions,
+  dto: ChainCallDTO | undefined,
+  currentMethod: string
+) {
   if (options.allowedOriginChaincodes && ctx.callingUser.startsWith("service|")) {
     const callingChaincode = ctx.callingUser.slice(8);
     ensureChaincodeIsAllowed(callingChaincode, options.allowedOriginChaincodes);
@@ -109,6 +139,7 @@ export async function authorize(ctx: GalaChainContext, options: AuthorizeOptions
   }
 
   ensureSignatureQuorumIsMet(ctx, options.quorum);
+  ensureCorrectMethodIsUsed(ctx, options.quorum, dto, currentMethod);
 
   if (options.allowedOrgs) {
     ensureOrganizationIsAllowed(ctx, options.allowedOrgs);
