@@ -66,6 +66,8 @@ it("should serve proper API", async () => {
 
   const api = response as unknown as GalaChainSuccessResponse<Record<string, unknown>>;
   api.Data.contractVersion = "0.0.0";
+  api.Data.channelId = "channel-id";
+  api.Data.chaincodeId = "chaincode-id";
   expect(response).toMatchSnapshot();
 });
 
@@ -599,28 +601,29 @@ describe("GetMyProfile", () => {
 
     const { keys, alias } = await createRegisteredMultiSigUser(chaincode, { keys: 3, quorum: 2 });
     const [keys1, keys2, keys3] = keys;
+    const operationId = "asset-channel_basic-asset_PublicKeyContract:GetMyProfile";
 
     // signed by first and second key
     const dto1 = new GetMyProfileDto()
-      .operation("GetMyProfile")
+      .operation(operationId)
       .signed(keys1.privateKey)
       .signed(keys2.privateKey);
 
     // signed by second and third key
     const dto2 = new GetMyProfileDto()
-      .operation("GetMyProfile")
+      .operation(operationId)
       .signed(keys2.privateKey)
       .signed(keys3.privateKey);
 
     // signed by all keys
     const dto3 = new GetMyProfileDto()
-      .operation("GetMyProfile")
+      .operation(operationId)
       .signed(keys1.privateKey)
       .signed(keys2.privateKey)
       .signed(keys3.privateKey);
 
     // signed by first key only
-    const dto4 = new GetMyProfileDto().operation("GetMyProfile").signed(keys1.privateKey);
+    const dto4 = new GetMyProfileDto().operation(operationId).signed(keys1.privateKey);
 
     // When
     const resp1 = await chaincode.invoke("PublicKeyContract:GetMyProfile", dto1);

@@ -29,5 +29,10 @@ test(`${GalaChainTokenContract.name} API should match snapshot`, async () => {
   expect(methodNames).toContain("CreateTokenClass"); // method from contract
   expect(methodNames).toContain("GetContractVersion"); // method from parent
   expect(methodNames).not.toContain("GetPublicKey"); // method from other contract
-  expect({ ...contractApi.Data, contractVersion: "?.?.?" }).toMatchSnapshot();
+  expect({
+    ...contractApi.Data,
+    contractVersion: "?.?.?",
+    channelId: "channel-id",
+    chaincodeId: "chaincode-id"
+  }).toMatchSnapshot();
 });

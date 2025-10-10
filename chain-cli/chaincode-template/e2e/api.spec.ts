@@ -41,6 +41,13 @@ describe("API snapshots", () => {
 
   let client: AdminChainClients<typeof contractConfig>;
 
+  // might be different in different environments
+  const apiOverrides: Record<string, unknown> = {
+    contractVersion: "?.?.?",
+    channelId: "channel-id",
+    chaincodeId: "chaincode-id"
+  };
+
   beforeAll(async () => {
     client = await TestClients.createForAdmin(contractConfig);
   });
@@ -55,7 +62,7 @@ describe("API snapshots", () => {
 
     // Then
     expect(response).toEqual(transactionSuccess());
-    expect({ ...response.Data, contractVersion: "?.?.?" }).toMatchSnapshot();
+    expect({ ...response.Data, ...apiOverrides }).toMatchSnapshot();
   });
 
   test(`Api of ${contractConfig.assets.contract}`, async () => {
@@ -64,7 +71,7 @@ describe("API snapshots", () => {
 
     // Then
     expect(response).toEqual(transactionSuccess());
-    expect({ ...response.Data, contractVersion: "?.?.?" }).toMatchSnapshot();
+    expect({ ...response.Data, ...apiOverrides }).toMatchSnapshot();
   });
 
   test(`Api of ${contractConfig.apples.contract}`, async () => {
@@ -73,6 +80,6 @@ describe("API snapshots", () => {
 
     // Then
     expect(response).toEqual(transactionSuccess());
-    expect({ ...response.Data, contractVersion: "?.?.?" }).toMatchSnapshot();
+    expect({ ...response.Data, ...apiOverrides }).toMatchSnapshot();
   });
 });
