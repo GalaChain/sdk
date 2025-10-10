@@ -41,4 +41,19 @@ describe("getPayloadToSign", () => {
     // Then
     expect(toSign).toEqual('{"c":8}');
   });
+
+  it("should include 'dtoOperation' field", () => {
+    // Given
+    const obj = {
+      c: 8,
+      dtoOperation: "test",
+      signature: "to-be-ignored"
+    };
+
+    // When
+    const toSign = getPayloadToSign(obj);
+
+    // Then
+    expect(toSign).toEqual('{"c":8,"dtoOperation":"test"}');
+  });
 });

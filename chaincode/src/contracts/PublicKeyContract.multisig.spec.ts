@@ -181,13 +181,20 @@ describe("PublicKeyContract Multisignature", () => {
       const [keys1, keys2, keys3] = keys;
 
       // signed by first and second key
-      const dto1 = new GetMyProfileDto().signed(keys1.privateKey).signed(keys2.privateKey);
+      const dto1 = new GetMyProfileDto()
+        .operation("GetMyProfile")
+        .signed(keys1.privateKey)
+        .signed(keys2.privateKey);
 
       // signed by second and third key
-      const dto2 = new GetMyProfileDto().signed(keys2.privateKey).signed(keys3.privateKey);
+      const dto2 = new GetMyProfileDto()
+        .operation("GetMyProfile")
+        .signed(keys2.privateKey)
+        .signed(keys3.privateKey);
 
       // signed by all keys
       const dto3 = new GetMyProfileDto()
+        .operation("GetMyProfile")
         .signed(keys1.privateKey)
         .signed(keys2.privateKey)
         .signed(keys3.privateKey);
@@ -217,6 +224,46 @@ describe("PublicKeyContract Multisignature", () => {
       expect(resp4).toEqual(
         transactionErrorMessageContains("Insufficient number of signatures: got 1, required 2.")
       );
+    });
+
+    it("should fail when signing wrong method", async () => {
+      // Given
+      const chaincode = new TestChaincode([PublicKeyContract]);
+      const { keys } = await createRegisteredMultiSigUser(chaincode, { keys: 3, quorum: 2 });
+      const [keys1, keys2] = keys;
+
+      const correctMethod = "GetMyProfile";
+      const wrongMethod = "Get42";
+
+      // missing operation
+      const dto1 = new GetMyProfileDto().signed(keys1.privateKey).signed(keys2.privateKey);
+
+      // signed with wrong method
+      const dto2 = new GetMyProfileDto()
+        .operation(wrongMethod)
+        .signed(keys1.privateKey)
+        .signed(keys2.privateKey);
+
+      // operation replaced after signing
+      const dto3 = new GetMyProfileDto()
+        .operation(wrongMethod)
+        .signed(keys1.privateKey)
+        .signed(keys2.privateKey)
+        .operation(correctMethod);
+
+      // When
+      const resp1 = await chaincode.invoke("PublicKeyContract:GetMyProfile", dto1);
+      const resp2 = await chaincode.invoke("PublicKeyContract:GetMyProfile", dto2);
+      const resp3 = await chaincode.invoke("PublicKeyContract:GetMyProfile", dto3);
+
+      // Then
+      expect(resp1).toEqual(transactionErrorMessageContains("DTO operation is not provided"));
+
+      const err2Msg = `The dto was signed to call ${wrongMethod} operation, but the current operation is ${correctMethod}.`;
+      expect(resp2).toEqual(transactionErrorMessageContains(err2Msg));
+
+      // signing is broken => recovers public key to non-existing user
+      expect(resp3).toEqual(transactionErrorKey("USER_NOT_REGISTERED"));
     });
 
     it("should fail when signing with wrong combination of keys", async () => {
@@ -274,7 +321,7 @@ describe("PublicKeyContract Multisignature", () => {
 
       // When & Then
       // Quorum = 1: should work with any single key
-      const dto1 = new GetMyProfileDto().signed(key1_1.privateKey);
+      const dto1 = new GetMyProfileDto().operation("GetMyProfile").signed(key1_1.privateKey);
       const resp1 = await chaincode.invoke("PublicKeyContract:GetMyProfile", dto1);
       expect(resp1).toEqual(
         transactionSuccess(
@@ -286,7 +333,10 @@ describe("PublicKeyContract Multisignature", () => {
       );
 
       // Quorum = 3: should fail with only 2 keys
-      const dto2 = new GetMyProfileDto().signed(key2_1.privateKey).signed(key2_2.privateKey);
+      const dto2 = new GetMyProfileDto()
+        .operation("GetMyProfile")
+        .signed(key2_1.privateKey)
+        .signed(key2_2.privateKey);
       const resp2 = await chaincode.invoke("PublicKeyContract:GetMyProfile", dto2);
       expect(resp2).toEqual(transactionErrorKey("UNAUTHORIZED"));
       expect(resp2).toEqual(
@@ -295,6 +345,7 @@ describe("PublicKeyContract Multisignature", () => {
 
       // Quorum = 3: should work with all 3 keys
       const dto3 = new GetMyProfileDto()
+        .operation("GetMyProfile")
         .signed(key2_1.privateKey)
         .signed(key2_2.privateKey)
         .signed(key2_3.privateKey);
@@ -332,13 +383,16 @@ describe("PublicKeyContract Multisignature", () => {
         ...publicKeyKV(alias, [key1.publicKey, key2.publicKey, key3.publicKey])
       });
 
-      const dtoWrongQuorum = await createValidSubmitDTO(UpdatePublicKeyDto, { publicKey: newKey.publicKey })
+      const dtoWrongQuorum = await createValidSubmitDTO(UpdatePublicKeyDto, {
+        publicKey: newKey.publicKey,
+        dtoOperation: "UpdatePublicKey"
+      })
         .signed(key1.privateKey)
         .signed(key2.privateKey);
       expect(dtoWrongQuorum.signature).toBeUndefined();
       expect(dtoWrongQuorum.multisig?.length).toEqual(2);
 
-      const dto = await createValidSubmitDTO(UpdatePublicKeyDto, { publicKey: newKey.publicKey }) //
+      const dto = await createValidSubmitDTO(UpdatePublicKeyDto, { publicKey: newKey.publicKey }) // dtoOperation is not required for single signature
         .signed(key3.privateKey);
       expect(dto.signature).toBeDefined();
       expect(dto.multisig).toBeUndefined();
@@ -413,7 +467,10 @@ describe("PublicKeyContract Multisignature", () => {
       });
 
       // Create DTO with quorum signatures (2 out of 3)
-      const dto = await createValidSubmitDTO(AddPublicKeyDto, { publicKey: newKey.publicKey })
+      const dto = await createValidSubmitDTO(AddPublicKeyDto, {
+        publicKey: newKey.publicKey,
+        dtoOperation: "AddPublicKey"
+      })
         .signed(key1.privateKey)
         .signed(key2.privateKey);
       expect(dto.multisig?.length).toEqual(2);
@@ -476,10 +533,16 @@ describe("PublicKeyContract Multisignature", () => {
         ...publicKeyKV(alias, [key1.publicKey, key2.publicKey, key3.publicKey])
       });
 
-      const remove3Dto = await createValidSubmitDTO(RemovePublicKeyDto, { publicKey: key3.publicKey })
+      const remove3Dto = await createValidSubmitDTO(RemovePublicKeyDto, {
+        publicKey: key3.publicKey,
+        dtoOperation: "RemovePublicKey"
+      })
         .signed(key1.privateKey)
         .signed(key2.privateKey);
-      const remove1Dto = await createValidSubmitDTO(RemovePublicKeyDto, { publicKey: key1.publicKey })
+      const remove1Dto = await createValidSubmitDTO(RemovePublicKeyDto, {
+        publicKey: key1.publicKey,
+        dtoOperation: "RemovePublicKey"
+      })
         .signed(key1.privateKey)
         .signed(key2.privateKey);
 
@@ -528,10 +591,16 @@ describe("PublicKeyContract Multisignature", () => {
       });
 
       // Create DTO with quorum signatures (2 out of 3)
-      const dto1 = await createValidSubmitDTO(UpdateQuorumDto, { quorum: newQuorum })
+      const dto1 = await createValidSubmitDTO(UpdateQuorumDto, {
+        quorum: newQuorum,
+        dtoOperation: "UpdateQuorum"
+      })
         .signed(key1.privateKey)
         .signed(key2.privateKey);
-      const dto2 = await createValidSubmitDTO(UpdateQuorumDto, { quorum: newInvalidQuorum }) //
+      const dto2 = await createValidSubmitDTO(UpdateQuorumDto, {
+        quorum: newInvalidQuorum,
+        dtoOperation: "UpdateQuorum"
+      }) //
         .signed(key1.privateKey);
 
       // When
