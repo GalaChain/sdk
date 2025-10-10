@@ -102,7 +102,7 @@ const dto = await createValidDTO(MyDtoClass, {
 
 Providing explicit operation ID in `dtoOperation` field in DTO is a way to improve security. It prevents from using the DTO as a parameter for a different operation that is was supposed (either by accident or man-in-the middle attack).
 
-The `dtoOperation` name must contain channel, chaincode, and the exact method name as is used by calling the chain (like: `asset-channel_basic-asset_GalaToken:TransferToken` or `asset-channel_basic-asset_PublicKeyContract:GetPublicProfile`). It is optional for single signature calls, but required for multisig.
+The `dtoOperation` name must contain channel, chaincode, and the exact method name as is used by calling the chain (like: `asset-channel_basic-asset_GalaChainToken:TransferToken` or `asset-channel_basic-asset_PublicKeyContract:GetPublicProfile`). It is optional for single signature calls, but required for multisig.
 
 ### Signing the transaction payload
 
