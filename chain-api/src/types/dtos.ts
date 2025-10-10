@@ -217,8 +217,9 @@ export class ChainCallDTO {
 
   @JSONSchema({
     description:
-      "Method name that is called on chain with this DTO. " +
-      "Required for multisig DTOs, and optional for single signed DTOs."
+      "Full operation identifier that is called on chain with this DTO. " +
+      "The format is `channelId_chaincodeId_methodName`. " +
+      "It is required for multisig DTOs, and optional for single signed DTOs. "
   })
   @IsOptional()
   @IsString()

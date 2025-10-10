@@ -14,7 +14,7 @@
  */
 import { SubmitCallDTO } from "@gala-chain/api";
 
-import { GalaChainContext } from "../types";
+import { GalaChainContext, GalaChainStub } from "../types";
 import { authenticate } from "./authenticate";
 
 jest.mock("./authenticate", () => {
@@ -81,9 +81,16 @@ function mockedContext() {
     }
   };
 
-  const ctx = { stub: { getSignedProposal: () => signedProposal } } as unknown as GalaChainContext;
-
+  // it's encoded in the signed proposal
   const chaincodeId = "basic-asset";
+
+  const ctx = new GalaChainContext({});
+
+  ctx.stub = {
+    getSignedProposal: () => signedProposal,
+    getChannelID: () => "test-channel",
+    getFunctionAndParameters: () => ({ fcn: "TestMethod", args: [] })
+  } as unknown as GalaChainStub;
 
   return { ctx, chaincodeId };
 }

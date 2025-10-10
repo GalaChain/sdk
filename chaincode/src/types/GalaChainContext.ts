@@ -18,6 +18,7 @@ import { ChaincodeStub, Timestamp } from "fabric-shim";
 
 import { GalaChainStub, createGalaChainStub } from "./GalaChainStub";
 import { GalaLoggerInstance, GalaLoggerInstanceImpl } from "./GalaLoggerInstance";
+import { OperationContext, getOperationContext } from "./OperationContext";
 
 function getTxUnixTime(ctx: Context): number {
   const txTimestamp: Timestamp = ctx.stub.getTxTimestamp();
@@ -51,6 +52,7 @@ export class GalaChainContext extends Context {
   private callingUserRolesValue?: string[];
   private callingUserSignedByKeysValue?: string[];
   private callingUserSignatureQuorumValue?: number;
+  private operationCtxValue?: OperationContext;
   private txUnixTimeValue?: number;
   private loggerInstance?: GalaLoggerInstance;
 
@@ -164,7 +166,13 @@ export class GalaChainContext extends Context {
     this.callingUserSignatureQuorumValue = undefined;
   }
 
-  // TODO
+  get operationCtx(): OperationContext {
+    if (this.operationCtxValue === undefined) {
+      this.operationCtxValue = getOperationContext(this);
+    }
+    return { ...this.operationCtxValue }; // prevent mutation
+  }
+
   public setDryRunOnBehalfOf(d: {
     alias: UserAlias;
     ethAddress?: string;

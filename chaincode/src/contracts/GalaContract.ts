@@ -128,9 +128,11 @@ export abstract class GalaContract extends Contract {
     type: EVALUATE,
     out: "object"
   })
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   public async GetContractAPI(ctx: GalaChainContext): Promise<ContractAPI> {
-    return this.getContractAPI();
+    const api = this.getContractAPI() as ContractAPI & Record<string, unknown>;
+    api.channelId = ctx.operationCtx.channelId;
+    api.chaincodeId = ctx.operationCtx.chaincodeId;
+    return api;
   }
 
   public getContractAPI(): ContractAPI {

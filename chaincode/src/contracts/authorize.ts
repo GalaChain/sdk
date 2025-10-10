@@ -83,8 +83,7 @@ export function ensureSignatureQuorumIsMet(ctx: GalaChainContext, quorum: number
 export function ensureCorrectMethodIsUsed(
   ctx: GalaChainContext,
   quorum: number | undefined,
-  dto: ChainCallDTO | undefined,
-  currentMethod: string
+  dto: ChainCallDTO | undefined
 ) {
   const numberOfSignedKeys = ctx.callingUserSignedByKeys.length;
   const requiredQuorum = quorum ?? ctx.callingUserSignatureQuorum;
@@ -99,8 +98,10 @@ export function ensureCorrectMethodIsUsed(
     throw new UnauthorizedError(msg);
   }
 
-  if (dto.dtoOperation !== currentMethod) {
-    const msg = `The dto was signed to call ${dto.dtoOperation} operation, but the current operation is ${currentMethod}.`;
+  const fullOperationId = ctx.operationCtx.fullOperationId;
+
+  if (dto.dtoOperation !== fullOperationId) {
+    const msg = `The dto was signed to call ${dto.dtoOperation} operation, but the current operation is ${fullOperationId}.`;
     throw new UnauthorizedError(msg);
   }
 }
@@ -129,8 +130,7 @@ export interface AuthorizeOptions {
 export async function authorize(
   ctx: GalaChainContext,
   options: AuthorizeOptions,
-  dto: ChainCallDTO | undefined,
-  currentMethod: string
+  dto: ChainCallDTO | undefined
 ) {
   if (options.allowedOriginChaincodes && ctx.callingUser.startsWith("service|")) {
     const callingChaincode = ctx.callingUser.slice(8);
@@ -139,7 +139,7 @@ export async function authorize(
   }
 
   ensureSignatureQuorumIsMet(ctx, options.quorum);
-  ensureCorrectMethodIsUsed(ctx, options.quorum, dto, currentMethod);
+  ensureCorrectMethodIsUsed(ctx, options.quorum, dto);
 
   if (options.allowedOrgs) {
     ensureOrganizationIsAllowed(ctx, options.allowedOrgs);

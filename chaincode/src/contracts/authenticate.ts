@@ -21,7 +21,6 @@ import {
   ValidationFailedError,
   signatures
 } from "@gala-chain/api";
-import * as protos from "fabric-protos";
 
 import { PkInvalidSignatureError, PublicKeyService } from "../services";
 import { PkMissingError } from "../services/PublicKeyError";
@@ -258,10 +257,6 @@ async function authenticateMultipleSignatures(
     }
   }
 
-  // TODO test for profile mismatch
-  // TODO test for duplicate signer public key
-  // TODO test update user roles and update public key for multisig
-
   const result: AuthenticateResult = {
     alias: firstProfileEntry[1].alias,
     roles: firstProfileEntry[1].roles,
@@ -361,28 +356,7 @@ export async function authenticateAsOriginChaincode(
   dto: ChainCallDTO,
   chaincode: string
 ): Promise<AuthenticateResult> {
-  const signedProposal = ctx.stub.getSignedProposal();
-  if (signedProposal === undefined) {
-    const message = "Chaincode authorization failed: got empty signed proposal.";
-    throw new ChaincodeAuthorizationError(message);
-  }
-
-  // @ts-expect-error error in fabric types mapping
-  const proposalPayload = signedProposal.proposal.payload?.array?.[0];
-
-  if (proposalPayload === undefined) {
-    const message = "Chaincode authorization failed: got empty proposal payload in signed proposal.";
-    throw new ChaincodeAuthorizationError(message);
-  }
-
-  const decodedProposal = protos.protos.ChaincodeProposalPayload.decode(proposalPayload);
-  const invocationSpec = protos.protos.ChaincodeInvocationSpec.decode(decodedProposal.input);
-  const chaincodeId = invocationSpec.chaincode_spec?.chaincode_id?.name;
-
-  if (chaincodeId === undefined) {
-    const message = "Chaincode authorization failed: got empty chaincodeId in signed proposal.";
-    throw new ChaincodeAuthorizationError(message);
-  }
+  const chaincodeId = ctx.operationCtx.chaincodeId;
 
   if (chaincodeId !== chaincode) {
     const message = `Chaincode authorization failed. Got DTO with signerAddress: ${dto.signerAddress}, but signed proposal has chaincodeId: ${chaincodeId}.`;

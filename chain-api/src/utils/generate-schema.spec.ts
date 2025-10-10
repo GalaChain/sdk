@@ -120,7 +120,7 @@ const expectedTestDtoSchema = {
       type: "array"
     },
     dtoOperation: {
-      description: expect.stringContaining("Method name that is called on chain with this DTO."),
+      description: expect.stringContaining("Full operation identifier"),
       minLength: 1,
       type: "string"
     },
