@@ -21,6 +21,7 @@ import fs, { promises as fsPromises } from "fs";
 import { nanoid } from "nanoid";
 import path from "path";
 import process from "process";
+import { gt as semverGt } from "semver";
 import { Readable } from "stream";
 
 import { ExpectedImageArchitecture, ServicePortal } from "./consts";
@@ -260,7 +261,7 @@ export async function generateKeys(projectPath: string): Promise<void> {
 export function checkCliVersion() {
   const cliLatestVersion = execSync("npm show @gala-chain/cli version");
   const cliCurrentVersion = execSync("galachain --version").split(" ")[0].split("/")[2];
-  if (cliLatestVersion > cliCurrentVersion) {
+  if (semverGt(cliLatestVersion.toString().trim(), cliCurrentVersion.trim())) {
     console.warn(
       `Your Chain CLI is out of date, current version is ${cliCurrentVersion}, latest version is ${cliLatestVersion}. Please run 'npm install -g @gala-chain/cli --force' to update to the latest version.`
     );
