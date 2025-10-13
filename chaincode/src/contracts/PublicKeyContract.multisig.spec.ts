@@ -183,19 +183,19 @@ describe("PublicKeyContract Multisignature", () => {
 
       // signed by first and second key
       const dto1 = new GetMyProfileDto()
-        .operation(operationId)
+        .withOperation(operationId)
         .signed(keys1.privateKey)
         .signed(keys2.privateKey);
 
       // signed by second and third key
       const dto2 = new GetMyProfileDto()
-        .operation(operationId)
+        .withOperation(operationId)
         .signed(keys2.privateKey)
         .signed(keys3.privateKey);
 
       // signed by all keys
       const dto3 = new GetMyProfileDto()
-        .operation(operationId)
+        .withOperation(operationId)
         .signed(keys1.privateKey)
         .signed(keys2.privateKey)
         .signed(keys3.privateKey);
@@ -241,16 +241,16 @@ describe("PublicKeyContract Multisignature", () => {
 
       // signed with wrong method
       const dto2 = new GetMyProfileDto()
-        .operation(wrongMethod)
+        .withOperation(wrongMethod)
         .signed(keys1.privateKey)
         .signed(keys2.privateKey);
 
       // operation replaced after signing
       const dto3 = new GetMyProfileDto()
-        .operation(wrongMethod)
+        .withOperation(wrongMethod)
         .signed(keys1.privateKey)
         .signed(keys2.privateKey)
-        .operation(correctMethod);
+        .withOperation(correctMethod);
 
       // When
       const resp1 = await chaincode.invoke("PublicKeyContract:GetMyProfile", dto1);
@@ -323,7 +323,7 @@ describe("PublicKeyContract Multisignature", () => {
 
       // When & Then
       // Quorum = 1: should work with any single key
-      const dto1 = new GetMyProfileDto().operation(operationId).signed(key1_1.privateKey);
+      const dto1 = new GetMyProfileDto().withOperation(operationId).signed(key1_1.privateKey);
       const resp1 = await chaincode.invoke("PublicKeyContract:GetMyProfile", dto1);
       expect(resp1).toEqual(
         transactionSuccess(
@@ -336,7 +336,7 @@ describe("PublicKeyContract Multisignature", () => {
 
       // Quorum = 3: should fail with only 2 keys
       const dto2 = new GetMyProfileDto()
-        .operation(operationId)
+        .withOperation(operationId)
         .signed(key2_1.privateKey)
         .signed(key2_2.privateKey);
       const resp2 = await chaincode.invoke("PublicKeyContract:GetMyProfile", dto2);
@@ -347,7 +347,7 @@ describe("PublicKeyContract Multisignature", () => {
 
       // Quorum = 3: should work with all 3 keys
       const dto3 = new GetMyProfileDto()
-        .operation(operationId)
+        .withOperation(operationId)
         .signed(key2_1.privateKey)
         .signed(key2_2.privateKey)
         .signed(key2_3.privateKey);
