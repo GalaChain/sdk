@@ -605,25 +605,25 @@ describe("GetMyProfile", () => {
 
     // signed by first and second key
     const dto1 = new GetMyProfileDto()
-      .operation(operationId)
+      .withOperation(operationId)
       .signed(keys1.privateKey)
       .signed(keys2.privateKey);
 
     // signed by second and third key
     const dto2 = new GetMyProfileDto()
-      .operation(operationId)
+      .withOperation(operationId)
       .signed(keys2.privateKey)
       .signed(keys3.privateKey);
 
     // signed by all keys
     const dto3 = new GetMyProfileDto()
-      .operation(operationId)
+      .withOperation(operationId)
       .signed(keys1.privateKey)
       .signed(keys2.privateKey)
       .signed(keys3.privateKey);
 
     // signed by first key only
-    const dto4 = new GetMyProfileDto().operation(operationId).signed(keys1.privateKey);
+    const dto4 = new GetMyProfileDto().withOperation(operationId).signed(keys1.privateKey);
 
     // When
     const resp1 = await chaincode.invoke("PublicKeyContract:GetMyProfile", dto1);

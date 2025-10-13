@@ -334,9 +334,9 @@ export class ChainCallDTO {
     return copied;
   }
 
-  public operation(name: string): this {
+  public withOperation(operation: string): this {
     const copied = instanceToInstance(this);
-    copied.dtoOperation = name;
+    copied.dtoOperation = operation;
     return copied;
   }
 
