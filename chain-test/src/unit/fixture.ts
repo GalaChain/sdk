@@ -103,6 +103,13 @@ interface GalaChainContextConfig {
   readonly allowNonRegisteredUsers?: boolean;
 }
 
+interface TestOperationContext {
+  channelId: string;
+  chaincodeId: string;
+  methodName: string;
+  fullOperationId: string;
+}
+
 /**
  * Extended Hyperledger Fabric context with GalaChain-specific testing capabilities.
  * Provides user management, logging, and state tracking for contract testing.
@@ -125,6 +132,7 @@ type TestGalaChainContext = Context & {
   createReadOnlyContext(index: number | undefined): TestGalaChainContext;
   isDryRun: boolean;
   get txUnixTime(): number;
+  get operationCtx(): TestOperationContext;
   setChaincodeStub(stub: ChaincodeStub): void;
 };
 
