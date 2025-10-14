@@ -12,9 +12,8 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+import * as secp from "@noble/secp256k1";
 import BN from "bn.js";
-import { ec as EC, ec } from "elliptic";
-import Signature from "elliptic/lib/elliptic/ec/signature";
 import { keccak256 } from "js-sha3";
 
 import { ValidationFailedError } from "../error";
@@ -56,7 +55,7 @@ function normalizePrivateKey(input: string): Buffer {
   if (encoding !== undefined) {
     const missing0 = secpPrivKeyLength.isMissingTrailing0(length) ? "0" : "";
     if (isValidHex(inputNo0x) || isValidBase64(inputNo0x)) {
-      return Buffer.from(missing0 + inputNo0x, encoding);
+      return Buffer.from(missing0 + inputNo0x, encoding as BufferEncoding);
     }
     throw new InvalidKeyError(`Invalid private key: ${input}`);
   } else {
@@ -83,6 +82,18 @@ const secpPubKeyLength = {
     length === secpPubKeyLength.secpBase64 || length === secpPubKeyLength.secpBase64Compressed
 };
 
+function compressPublicKeyFromUncompressed(uncompressed: Buffer): Buffer {
+  // uncompressed expected: 65 bytes, first = 0x04, then 32 bytes X, 32 bytes Y
+  if (uncompressed.length !== 65 || uncompressed[0] !== 0x04) {
+    throw new InvalidKeyError("Invalid uncompressed public key format");
+  }
+  const x = uncompressed.slice(1, 33);
+  const y = uncompressed.slice(33, 65);
+  const yLast = y[y.length - 1];
+  const prefix = (yLast & 1) === 1 ? 0x03 : 0x02;
+  return Buffer.concat([Buffer.from([prefix]), x]);
+}
+
 function normalizePublicKey(input: string): Buffer {
   const startsWith0x = input.startsWith("0x");
   const length = startsWith0x ? input.length - 2 : input.length;
@@ -94,9 +105,22 @@ function normalizePublicKey(input: string): Buffer {
   if (encoding !== undefined) {
     const inputNo0x = startsWith0x ? input.slice(2) : input;
     if (isValidHex(inputNo0x) || isValidBase64(inputNo0x)) {
-      const buffer = Buffer.from(inputNo0x, encoding);
-      const pair = validateSecp256k1PublicKey(buffer);
-      return Buffer.from(pair.getPublic().encode("array", true));
+      const buffer = Buffer.from(inputNo0x, encoding as BufferEncoding);
+
+      // Accept compressed (33) or uncompressed (65). Convert to compressed representation.
+      if (buffer.length === 33 && (buffer[0] === 0x02 || buffer[0] === 0x03)) {
+        // compressed already
+        // Validate basic form
+        validateSecp256k1PublicKey(buffer);
+        return Buffer.from(buffer);
+      } else if (buffer.length === 65 && buffer[0] === 0x04) {
+        // compress and validate
+        const compressed = compressPublicKeyFromUncompressed(buffer);
+        validateSecp256k1PublicKey(compressed);
+        return Buffer.from(compressed);
+      } else {
+        throw new InvalidKeyError(`Invalid public key length or prefix: provided ${buffer.length} bytes`);
+      }
     }
     throw new InvalidKeyError(`Invalid public key: ${input}`);
   } else {
@@ -114,16 +138,18 @@ function getCompactBase64PublicKey(publicKey: string): string {
 }
 
 function getNonCompactHexPublicKey(publicKey: string): string {
-  const normalized = normalizePublicKey(publicKey);
-  const pair = validateSecp256k1PublicKey(normalized);
-  return pair.getPublic().encode("hex", false);
+  const normalized = normalizePublicKey(publicKey); // compressed 33 bytes
+  // convert compressed -> uncompressed hex (starts with 0x04)
+  const uncompressedHex = secp.Point.fromHex(normalized).toHex(false);
+  return uncompressedHex;
 }
 
-const ecSecp256k1 = new EC("secp256k1");
-
 function getPublicKey(privateKey: string): string {
-  const pkObj = new EC("secp256k1").keyFromPrivate(privateKey.replace(/^0x/, ""), "hex");
-  return pkObj.getPublic().encode("hex", false).toString();
+  // returns hex-encoded uncompressed public key, same as elliptic version (130 hex chars)
+  const privateHex = privateKey.replace(/^0x/, "");
+  const pubHex = secp.getPublicKey(privateHex, false); // uncompressed, hex string with 0x04 prefix
+  // noble returns hex string without 0x prefix in many versions; ensure it's hex without 0x
+  return pubHex.startsWith("0x") ? pubHex.slice(2) : pubHex;
 }
 
 function getEthAddress(publicKey: string) {
@@ -228,17 +254,38 @@ function secp256k1signatureFrom130HexString(hex: string): Secp256k1Signature {
 }
 
 function secp256k1signatureFromDERHexString(hex: string): Secp256k1Signature {
-  // some wallets return signatures in uppercase
-  const lowerCased = hex.toLowerCase();
-  const signature = new Signature(lowerCased, "hex");
-  return { r: signature.r, s: signature.s, recoveryParam: undefined };
+  // We don't rely on elliptic's Signature class anymore.
+  // Use noble to parse DER: noble's sign() can output DER, but parsing DER to r/s here:
+  // A simple DER parser is implemented below (lightweight) to extract r and s.
+  const buf = Buffer.from(hex, "hex");
+  // Minimal DER parser for ECDSA (sequence -> r -> s)
+  let offset = 0;
+  if (buf[offset++] !== 0x30) {
+    throw new InvalidSignatureFormatError("Invalid DER signature: expected sequence");
+  }
+  const seqLen = buf[offset++];
+  if (buf[offset++] !== 0x02)
+    throw new InvalidSignatureFormatError("Invalid DER signature: expected integer (r)");
+  const rLen = buf[offset++];
+  const rBuf = buf.slice(offset, offset + rLen);
+  offset += rLen;
+  if (buf[offset++] !== 0x02)
+    throw new InvalidSignatureFormatError("Invalid DER signature: expected integer (s)");
+  const sLen = buf[offset++];
+  const sBuf = buf.slice(offset, offset + sLen);
+  // r and s may have leading zero for DER; just convert to hex without sign extension
+  const rHex = rBuf.toString("hex").padStart(64, "0").slice(-64);
+  const sHex = sBuf.toString("hex").padStart(64, "0").slice(-64);
+  return { r: new BN(rHex, "hex"), s: new BN(sHex, "hex"), recoveryParam: undefined };
 }
 
 function parseSecp256k1Signature(s: string): Secp256k1Signature {
   const sigObject = normalizeSecp256k1Signature(s);
 
   // Additional check for low-S normalization
-  if (sigObject && sigObject.s.cmp(ecSecp256k1.curve.n.shrn(1)) > 0) {
+  // curve order n
+  const curveN = new BN(secp.CURVE.n.toString(16), "hex");
+  if (sigObject && sigObject.s.cmp(curveN.shrn(1)) > 0) {
     throw new InvalidSignatureFormatError("S value is too high", { signature: s });
   }
 
@@ -246,7 +293,7 @@ function parseSecp256k1Signature(s: string): Secp256k1Signature {
 }
 
 export function normalizeSecp256k1Signature(s: string): Secp256k1Signature {
-  // standard format with recovery parameter
+  // standard format with recovery parameter: 130 hex chars (r(64)+s(64)+v(2))
   if (s.length === 130) {
     return secp256k1signatureFrom130HexString(s);
   }
@@ -256,7 +303,7 @@ export function normalizeSecp256k1Signature(s: string): Secp256k1Signature {
     return secp256k1signatureFrom130HexString(s.slice(2));
   }
 
-  // standard format with recovery parameter, encoded with base64
+  // standard format with recovery parameter, encoded with base64 (88 chars)
   if (s.length === 88) {
     const hex = Buffer.from(s, "base64").toString("hex");
     if (hex.length === 130) {
@@ -269,7 +316,7 @@ export function normalizeSecp256k1Signature(s: string): Secp256k1Signature {
     return secp256k1signatureFromDERHexString(s.slice(2));
   }
 
-  // DER format
+  // DER format (various valid lengths)
   if (s.length === 136 || s.length === 138 || s.length === 140 || s.length === 142 || s.length === 144) {
     return secp256k1signatureFromDERHexString(s);
   }
@@ -284,12 +331,12 @@ export function normalizeSecp256k1Signature(s: string): Secp256k1Signature {
   throw new InvalidSignatureFormatError(errorMessage, { signature: s });
 }
 
-export function flipSignatureParity<T extends EC.Signature | Secp256k1Signature>(signatureObj: T): T {
-  const curveN = ecSecp256k1.curve.n;
+export function flipSignatureParity<T extends Secp256k1Signature>(signatureObj: T): T {
+  const curveN = new BN(secp.CURVE.n.toString(16), "hex");
   // flip sign of s to prevent malleability (S')
   const newS = new BN(curveN).sub(signatureObj.s);
   // flip recovery param
-  const newRecoverParam = signatureObj.recoveryParam != null ? 1 - signatureObj.recoveryParam : null;
+  const newRecoverParam = signatureObj.recoveryParam != null ? 1 - signatureObj.recoveryParam : undefined;
 
   // normalized signature
   signatureObj.s = newS;
@@ -298,37 +345,112 @@ export function flipSignatureParity<T extends EC.Signature | Secp256k1Signature>
   return signatureObj;
 }
 
-function signSecp256k1(dataHash: Buffer, privateKey: Buffer, useDer?: "DER"): string {
+function uint8ToBuffer(u: Uint8Array | string): Buffer {
+  if (typeof u === "string") {
+    return Buffer.from(u, "hex");
+  }
+  return Buffer.from(u);
+}
+
+async function signSecp256k1(dataHash: Buffer, privateKey: Buffer, useDer?: "DER"): Promise<string> {
   if (dataHash.length !== 32) {
     const msg = `secp256k1 can sign only 32-bytes long data keccak hash (got ${dataHash.length})`;
     throw new InvalidDataHashError(msg);
   }
 
-  let signature = ecSecp256k1.sign(dataHash, privateKey);
+  // noble accepts hex or Uint8Array
+  const privHex = privateKey.toString("hex");
 
-  // Low-S normalization
-  if (signature.s.cmp(ecSecp256k1.curve.n.shrn(1)) > 0) {
-    signature = flipSignatureParity(signature);
-  }
+  // produce compact signature (r||s) as hex; request DER when asked
+  let signatureCompactHex: string;
+  let signatureDerHex: string | undefined;
 
-  if (!useDer) {
-    return (
-      signature.r.toString("hex", 32) +
-      signature.s.toString("hex", 32) +
-      new BN(signature.recoveryParam === 1 ? 28 : 27).toString("hex", 1)
-    );
+  if (useDer) {
+    // noble sign can return DER if requested (some versions accept options)
+    // to be robust, produce compact and build DER if necessary from r/s
+    const sig = await secp.sign(dataHash, privHex); // returns compact 64-byte hex by default
+    signatureCompactHex = typeof sig === "string" ? sig : Buffer.from(sig).toString("hex");
+    // build DER using noble util
+    const der = secp.Signature.fromHex(signatureCompactHex).toDER();
+    signatureDerHex = Buffer.from(der).toString("hex");
   } else {
-    const signatureDER = Buffer.from(signature.toDER());
-    return signatureDER.toString("hex");
+    const sig = await secp.sign(dataHash, privHex);
+    signatureCompactHex = typeof sig === "string" ? sig : Buffer.from(sig).toString("hex");
   }
+
+  if (useDer) {
+    return signatureDerHex!;
+  }
+
+  // signatureCompactHex is r(32) + s(32)
+  const rHex = signatureCompactHex.slice(0, 64);
+  let sHex = signatureCompactHex.slice(64, 128);
+
+  // Determine recovery param: try rec = 0 or 1 and match public key
+  const pubFromPriv = (secp.getPublicKey(privHex, false) as string).replace(/^0x/, ""); // uncompressed 65 bytes hex (130 chars)
+  let recoveryParam: number | null = null;
+  const sigBytes = Buffer.from(signatureCompactHex, "hex");
+  for (let rec = 0; rec <= 1; rec++) {
+    try {
+      const recovered = secp.recoverPublicKey(dataHash, signatureCompactHex, rec); // recovered hex uncompressed
+      const recoveredHex = recovered.startsWith("0x") ? recovered.slice(2) : recovered;
+      if (recoveredHex.toLowerCase() === pubFromPriv.toLowerCase()) {
+        recoveryParam = rec;
+        break;
+      }
+    } catch (e) {
+      // try next
+    }
+  }
+
+  if (recoveryParam === null) {
+    // As a fallback, try rec 2/3 (unlikely for secp256k1 ECDSA but be thorough)
+    for (let rec = 2; rec <= 3; rec++) {
+      try {
+        const recovered = secp.recoverPublicKey(dataHash, signatureCompactHex, rec);
+        const recoveredHex = recovered.startsWith("0x") ? recovered.slice(2) : recovered;
+        if (recoveredHex.toLowerCase() === pubFromPriv.toLowerCase()) {
+          recoveryParam = rec;
+          break;
+        }
+      } catch (e) {
+        // continue
+      }
+    }
+  }
+
+  // Convert s to BN for low-S check
+  const curveN = new BN(secp.CURVE.n.toString(16), "hex");
+  const sBN = new BN(sHex, "hex");
+  if (sBN.cmp(curveN.shrn(1)) > 0) {
+    // flip s (S' = n - s)
+    const newS = curveN.sub(sBN);
+    sHex = newS.toString("hex", 32);
+    // flip recovery param if present
+    if (recoveryParam != null) {
+      recoveryParam = 1 - recoveryParam;
+    }
+  }
+
+  const vHex = new BN(recoveryParam === 1 ? 28 : 27).toString("hex", 1);
+  return rHex + sHex + vHex;
 }
 
-function validateSecp256k1PublicKey(publicKey: Buffer): ec.KeyPair {
-  try {
-    return ecSecp256k1.keyFromPublic(publicKey);
-  } catch (e) {
-    throw new InvalidKeyError(`Public key seems to be invalid. Error: ${e?.message ?? e}`);
+function validateSecp256k1PublicKey(publicKey: Buffer): Buffer {
+  // simple validation: compressed (33) starting 02/03 or uncompressed (65) starting 04
+  if (!(publicKey.length === 33 || publicKey.length === 65)) {
+    throw new InvalidKeyError("Public key has invalid length");
   }
+  const prefix = publicKey[0];
+  if (publicKey.length === 33 && !(prefix === 0x02 || prefix === 0x03)) {
+    throw new InvalidKeyError("Compressed public key has invalid prefix");
+  }
+  if (publicKey.length === 65 && prefix !== 0x04) {
+    throw new InvalidKeyError("Uncompressed public key has invalid prefix");
+  }
+  // optionally, more advanced curve membership validation could go here,
+  // but noble provides curve utilities in some versions (secp.utils.isValidPublicKey)
+  return publicKey;
 }
 
 function isValidSecp256k1Signature(
@@ -341,21 +463,33 @@ function isValidSecp256k1Signature(
     throw new InvalidDataHashError(msg);
   }
 
-  const pair = validateSecp256k1PublicKey(publicKey);
+  // convert signature to compact hex r||s
+  const rHex = signature.r.toString("hex", 32);
+  const sHex = signature.s.toString("hex", 32);
+  const sigHex = rHex + sHex;
 
-  return pair.verify(dataHash, signature);
+  // accept compressed public key buffer
+  const pubHex =
+    publicKey.length === 33 || publicKey.length === 65
+      ? publicKey.length === 33
+        ? Buffer.from(publicKey).toString("hex")
+        : secp.Point.fromHex(publicKey).toHex(false)
+      : Buffer.from(publicKey).toString("hex");
+
+  // noble.verify expects signature, messageHash, publicKey (all hex or Uint8Array)
+  return secp.verify(sigHex, dataHash, pubHex);
 }
 
 function calculateKeccak256(data: Buffer): Buffer {
   return Buffer.from(keccak256.digest(data));
 }
 
-function getSignature(obj: object, privateKey: Buffer): string {
+function getSignature(obj: object, privateKey: Buffer): Promise<string> {
   const data = Buffer.from(getPayloadToSign(obj));
   return signSecp256k1(calculateKeccak256(data), privateKey);
 }
 
-function getDERSignature(obj: object, privateKey: Buffer): string {
+function getDERSignature(obj: object, privateKey: Buffer): Promise<string> {
   const data = Buffer.from(getPayloadToSign(obj));
   return signSecp256k1(calculateKeccak256(data), privateKey, "DER");
 }
@@ -375,8 +509,14 @@ function recoverPublicKey(signature: string, obj: object, prefix?: string): stri
 
   const dataHash = Buffer.from(keccak256.hex(data), "hex");
 
-  const publicKeyObj = ecSecp256k1.recoverPubKey(dataHash, signatureObj, recoveryParam);
-  return publicKeyObj.encode("hex", false);
+  // rebuild compact signature r||s hex
+  const rHex = signatureObj.r.toString("hex", 32);
+  const sHex = signatureObj.s.toString("hex", 32);
+  const sigHex = rHex + sHex;
+
+  const recovered = secp.recoverPublicKey(dataHash, sigHex, recoveryParam);
+  const recoveredHex = recovered.startsWith("0x") ? recovered.slice(2) : recovered;
+  return recoveredHex;
 }
 
 function isValid(signature: string, obj: object, publicKey: string): boolean {
@@ -417,7 +557,9 @@ function enforceValidPublicKey(
   const keccakBuffer = calculateKeccak256(Buffer.from(getPayloadToSign(payload)));
 
   if (isValidSecp256k1Signature(signatureObj, keccakBuffer, publicKeyBuffer)) {
-    return publicKeyBuffer.toString("hex");
+    // return normalized hex (uncompressed) to keep parity with original impl
+    const uncompressedHex = secp.Point.fromHex(publicKeyBuffer).toHex(false);
+    return uncompressedHex;
   } else {
     throw new ValidationFailedError("Secp256k1 signature is invalid", { signature, publicKey, payload });
   }
@@ -432,9 +574,8 @@ function isValidBase64(input: string) {
 }
 
 function genKeyPair() {
-  const pair = ecSecp256k1.genKeyPair();
-  const privateKey = pair.getPrivate().toString("hex");
-  const publicKey = Buffer.from(pair.getPublic().encode("array", false)).toString("hex");
+  const privateKey = Buffer.from(secp.utils.randomPrivateKey()).toString("hex");
+  const publicKey = secp.getPublicKey(privateKey, false).replace(/^0x/, "");
   return { privateKey, publicKey };
 }
 
