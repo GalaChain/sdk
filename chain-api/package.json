@@ -14,7 +14,8 @@
     "@noble/secp256k1": "^1.7.1",
     "openapi3-ts": "^3.2.0",
     "reflect-metadata": "^0.1.13",
-    "tslib": "^2.6.2"
+    "tslib": "^2.6.2",
+    "elliptic": "6.6.1"
   },
   "peerDependencies": {
     "@ton/crypto": "^3.2.0",

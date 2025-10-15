@@ -123,7 +123,7 @@ describe("ChainCallDTO", () => {
     };
   }
 
-  it("should sign and verify signature", () => {
+  it("should sign and verify signature", async () => {
     // Given
     const { privateKey, publicKey } = genKeyPair();
     const dto = new TestDto();
@@ -131,7 +131,7 @@ describe("ChainCallDTO", () => {
     expect(dto.signature).toEqual(undefined);
 
     // When
-    dto.sign(privateKey);
+    await dto.sign(privateKey);
 
     // Then
     expect(dto.signature).toEqual(expect.stringMatching(/.{50,}/));

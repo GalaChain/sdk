@@ -81,8 +81,8 @@ export default class DtoSign extends BaseCommand<typeof DtoSign> {
     const dto = (await parseJsonFromStringOrFile(args.data)) as ChainCallDTO;
 
     dto.signature = flags.derSignature
-      ? signatures.getDERSignature(dto, keyBuffer)
-      : signatures.getSignature(dto, keyBuffer);
+      ? await signatures.getDERSignature(dto, keyBuffer)
+      : await signatures.getSignature(dto, keyBuffer);
     dto.signature = Buffer.from(dto.signature, "hex").toString("base64");
 
     const output = flags.onlySignature ? dto.signature : serialize(dto);

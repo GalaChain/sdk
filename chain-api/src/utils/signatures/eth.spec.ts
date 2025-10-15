@@ -33,7 +33,7 @@ function recoverPublicKeyTestFunction(signature: string, obj: object, prefix = "
   }
 
   const data = Buffer.concat([Buffer.from(prefix), Buffer.from(getPayloadToSign(obj))]);
-  const dataHash = Buffer.from(keccak256.hex(data), "hex");
+  const dataHash = Buffer.from(keccak256.hex(new Uint8Array(data)), "hex");
   const publicKeyObj = ecSecp256k1.recoverPubKey(dataHash, signatureObj, recoveryParam);
   return publicKeyObj.encode("hex", false);
 }
@@ -155,7 +155,7 @@ describe("signatures", () => {
     const privateKeyBuffer = Buffer.from(privateKey, "hex");
 
     // When
-    const actualSignature = signatures.getSignature(payload, privateKeyBuffer);
+    const actualSignature = await signatures.getSignature(payload, privateKeyBuffer);
 
     // Then
     expect(actualSignature).toEqual(signature);
@@ -166,7 +166,7 @@ describe("signatures", () => {
     const privateKeyBuffer = Buffer.from(privateKey, "hex");
 
     // When
-    const actualSignature = signatures.getDERSignature(payload, privateKeyBuffer);
+    const actualSignature = await signatures.getDERSignature(payload, privateKeyBuffer);
 
     // Then
     expect(actualSignature).toEqual(derSignature);
@@ -351,11 +351,11 @@ describe("signatures", () => {
       "3042021e638cd4b430a0e3e343e30601284eaea6d929e9c660c8e11ad3fe68fe95b102207f4e7c048a36564e60e56f093e0f7353de9a6f902afa10870f77a2fb4ce0efab"
     );
 
-    expect(weirdDer).toEqual({
-      r: new BN("638cd4b430a0e3e343e30601284eaea6d929e9c660c8e11ad3fe68fe95b1", "hex"),
-      recoveryParam: undefined,
-      s: new BN("7f4e7c048a36564e60e56f093e0f7353de9a6f902afa10870f77a2fb4ce0efab", "hex")
-    });
+    expect(weirdDer.r.toString("hex")).toBe("638cd4b430a0e3e343e30601284eaea6d929e9c660c8e11ad3fe68fe95b1");
+    expect(weirdDer.s.toString("hex")).toBe(
+      "7f4e7c048a36564e60e56f093e0f7353de9a6f902afa10870f77a2fb4ce0efab"
+    );
+    expect(weirdDer.recoveryParam).toBe(undefined);
   });
 
   it("test metamask signatures vs galachain signatures", async () => {

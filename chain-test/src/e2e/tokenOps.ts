@@ -169,7 +169,7 @@ async function createGalaNFT(client: ChainClient & ChainUserAPI, nftClassKey: To
 
   await client.submitTransaction<TokenClassKey>(
     "CreateTokenClass",
-    galaTokenDto.signed(client.privateKey),
+    await galaTokenDto.signed(client.privateKey),
     TokenClassKey
   );
 }
@@ -204,7 +204,7 @@ async function grantUsersMintingAllowance(
 
   await client.submitTransaction<TokenAllowance[]>(
     "GrantAllowance",
-    galaAllowanceDto.signed(client.privateKey),
+    await galaAllowanceDto.signed(client.privateKey),
     TokenAllowance
   );
 }
@@ -229,7 +229,7 @@ async function usersMintNFT(
       quantity: quantity
     });
 
-    const response = await client.submitTransaction("MintToken", userMintDto.signed(user.privateKey));
+    const response = await client.submitTransaction("MintToken", await userMintDto.signed(user.privateKey));
 
     const responseMatchers = Array.from({ length: quantity.toNumber() }).map(() => expect.anything());
     expect(response).toEqual(transactionSuccess(responseMatchers));

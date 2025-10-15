@@ -271,7 +271,7 @@ export class ChainCallDTO {
     return deserialize<T, ChainCallDTO>(constructor, object);
   }
 
-  public sign(privateKey: string, useDer = false): void {
+  public async sign(privateKey: string, useDer = false): Promise<void> {
     const currentSignatures = this.signatures ?? (this.signature ? [this.signature] : []);
     const someSignaturesExist = currentSignatures.length > 0;
 
@@ -300,8 +300,8 @@ export class ChainCallDTO {
     } else {
       const keyBuffer = signatures.normalizePrivateKey(privateKey);
       signature = useDer
-        ? signatures.getDERSignature(this, keyBuffer)
-        : signatures.getSignature(this, keyBuffer);
+        ? await signatures.getDERSignature(this, keyBuffer)
+        : await signatures.getSignature(this, keyBuffer);
     }
 
     if (someSignaturesExist) {
@@ -316,9 +316,9 @@ export class ChainCallDTO {
    * Creates a signed copy of current object.
    */
   // note: previously it was typed as "typeof this", but it's failed randomly on compilation
-  public signed(privateKey: string, useDer = false) {
+  public async signed(privateKey: string, useDer = false) {
     const copied = instanceToInstance(this);
-    copied.sign(privateKey, useDer);
+    await copied.sign(privateKey, useDer);
     return copied;
   }
 
