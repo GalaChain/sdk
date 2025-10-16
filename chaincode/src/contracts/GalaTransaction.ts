@@ -196,7 +196,7 @@ function GalaTransaction<In extends ChainCallDTO, Out>(
           // Do not authenticate in dry run mode
         } else if (options?.verifySignature || dto?.getAllSignatures().length) {
           // Authenticate if this is explicitly enabled or if there are any signatures in the DTO
-          ctx.callingUserData = await authenticate(ctx, dto);
+          ctx.callingUserData = await authenticate(ctx, dto, options.quorum);
         } else {
           // it means a request where authorization is not required. If there is org-based authorization,
           // default roles are applied. If not, then only evaluate is possible. Alias is intentionally
