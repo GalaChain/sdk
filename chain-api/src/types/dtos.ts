@@ -283,8 +283,12 @@ export class ChainCallDTO {
     return deserialize<T, ChainCallDTO>(constructor, object);
   }
 
+  public getAllSignatures(): string[] {
+    return this.multisig ?? (this.signature ? [this.signature] : []);
+  }
+
   public sign(privateKey: string, useDer = false): void {
-    const currentSignatures = this.multisig ?? (this.signature ? [this.signature] : []);
+    const currentSignatures = this.getAllSignatures();
     const someSignaturesExist = currentSignatures.length > 0;
 
     if (someSignaturesExist && this.signerAddress && this.signerPublicKey && this.prefix) {
