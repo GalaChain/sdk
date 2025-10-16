@@ -16,6 +16,8 @@ import BN from "bn.js";
 import { ec as EC, ec } from "elliptic";
 import Signature from "elliptic/lib/elliptic/ec/signature";
 import { keccak256 } from "js-sha3";
+import { randomBytes } from 'crypto'
+import * as secp256k1 from 'secp256k1'
 
 import { ValidationFailedError } from "../error";
 import { getPayloadToSign } from "./getPayloadToSign";
@@ -306,7 +308,8 @@ function signSecp256k1(dataHash: Buffer, privateKey: Buffer, useDer?: "DER"): st
 
   let signature = ecSecp256k1.sign(dataHash, privateKey);
 
-  // Low-S normalization
+  // Low-S normalization => its by default in noble-secp256k1
+  // Default behavior lowS: true prohibits signatures which have (sig.s >= CURVE.n/2n) and is compatible with BTC/ETH. Setting lowS: false allows to create malleable signatures, which is default openssl behavior. Non-malleable signatures can still be successfully verified in openssl.
   if (signature.s.cmp(ecSecp256k1.curve.n.shrn(1)) > 0) {
     signature = flipSignatureParity(signature);
   }
@@ -392,37 +395,6 @@ function validatePublicKey(publicKey: Buffer): void {
   validateSecp256k1PublicKey(publicKey);
 }
 
-function enforceValidPublicKey(
-  signature: string | undefined,
-  payload: object,
-  publicKey: string | undefined
-): string {
-  if (signature === undefined) {
-    throw new InvalidSignatureFormatError(`Signature is ${signature}`, { signature });
-  }
-
-  const signatureObj = parseSecp256k1Signature(signature);
-
-  if (publicKey === undefined) {
-    if (signatureObj.recoveryParam === undefined) {
-      const message = "Public key is required when the signature recovery parameter is missing";
-      throw new ValidationFailedError(message, { signature });
-    } else {
-      // recover public key from the signature and payload
-      return recoverPublicKey(signature, payload);
-    }
-  }
-
-  const publicKeyBuffer = normalizePublicKey(publicKey);
-  const keccakBuffer = calculateKeccak256(Buffer.from(getPayloadToSign(payload)));
-
-  if (isValidSecp256k1Signature(signatureObj, keccakBuffer, publicKeyBuffer)) {
-    return publicKeyBuffer.toString("hex");
-  } else {
-    throw new ValidationFailedError("Secp256k1 signature is invalid", { signature, publicKey, payload });
-  }
-}
-
 function isValidHex(input: string) {
   return /^[0-9a-fA-F]*$/.test(input);
 }
@@ -440,9 +412,7 @@ function genKeyPair() {
 
 export default {
   calculateKeccak256,
-  enforceValidPublicKey,
   genKeyPair,
-  flipSignatureParity,
   getCompactBase64PublicKey,
   getNonCompactHexPublicKey,
   getEthAddress,
@@ -452,15 +422,10 @@ export default {
   isChecksumedEthAddress,
   isLowercasedEthAddress,
   isValid,
-  isValidBase64,
-  isValidHex,
-  isValidSecp256k1Signature,
   normalizeEthAddress,
   normalizePrivateKey,
   normalizePublicKey,
   normalizeSecp256k1Signature,
   parseSecp256k1Signature,
-  recoverPublicKey,
-  validatePublicKey,
-  validateSecp256k1PublicKey
+  recoverPublicKey
 } as const;
