@@ -34,8 +34,8 @@ import { Context } from "fabric-contract-api";
 
 import { GalaChainContext } from "../types";
 import {
+  PkExistsError,
   PkInvalidSignatureError,
-  PkMismatchError,
   PkMissingError,
   PkNotFoundError,
   ProfileExistsError,
@@ -250,24 +250,13 @@ export class PublicKeyService {
 
     const currPublicKey = await PublicKeyService.getPublicKey(ctx, userAlias);
 
-    // First, validate that no user profile exists for any of the provided addresses
-    for (const [index, publicKey] of publicKeys.entries()) {
-      const currPubKey = currPublicKey?.getAllPublicKeys()?.[index];
+    if (currPublicKey) {
+      throw new PkExistsError(userAlias);
+    }
 
-      if (currPubKey !== undefined) {
-        // Migration from legacy user is not supported for multiple public keys
-        if (currPublicKey?.publicKeys) {
-          throw new NotImplementedError("UpdatePublicKey when publicKeys is defined");
-        }
+    await PublicKeyService.putPublicKey(ctx, publicKeys, userAlias, signing);
 
-        // If we are migrating a legacy user to new flow, the public key should match
-        const providedPkHex = signatures.getNonCompactHexPublicKey(publicKey);
-        const nonCompactCurrPubKey = signatures.getNonCompactHexPublicKey(currPubKey);
-        if (nonCompactCurrPubKey !== providedPkHex) {
-          throw new PkMismatchError(userAlias);
-        }
-      }
-
+    for (const publicKey of publicKeys) {
       const address = PublicKeyService.getUserAddress(publicKey, signing);
 
       // If User Profile already exists on chain for this ethereum address,
@@ -280,8 +269,6 @@ export class PublicKeyService {
       // Create user profile for this address
       await PublicKeyService.putUserProfile(ctx, address, userAlias, signing, signatureQuorum);
     }
-
-    await PublicKeyService.putPublicKey(ctx, publicKeys, userAlias, signing);
 
     return userAlias;
   }
