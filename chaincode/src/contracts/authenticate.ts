@@ -17,6 +17,7 @@ import {
   ForbiddenError,
   PublicKey,
   SigningScheme,
+  UnauthorizedError,
   UserProfileStrict,
   ValidationFailedError,
   signatures
@@ -137,7 +138,8 @@ export interface AuthenticateResult {
  */
 export async function authenticate(
   ctx: GalaChainContext,
-  dto: ChainCallDTO | undefined
+  dto: ChainCallDTO | undefined,
+  quorum: number | undefined
 ): Promise<AuthenticateResult> {
   if (noSignatures(dto)) {
     if (dto?.signerAddress?.startsWith("service|")) {
@@ -148,11 +150,15 @@ export async function authenticate(
   }
 
   if (singleSignature(dto)) {
-    return await authenticateSingleSignature(ctx, dto);
+    const result = await authenticateSingleSignature(ctx, dto);
+    ensureSignatureQuorumIsMet(result, quorum);
+    return result;
   }
 
   if (multipleSignatures(dto)) {
-    return await authenticateMultipleSignatures(ctx, dto);
+    const result = await authenticateMultipleSignatures(ctx, dto);
+    ensureSignatureQuorumIsMet(result, quorum);
+    return result;
   }
 
   throw new InvalidSignatureParametersError(dto);
@@ -333,9 +339,10 @@ function recoverPublicKey(signature: string, dto: ChainCallDTO, prefix = ""): st
 export async function ensureIsAuthenticatedBy(
   ctx: GalaChainContext,
   dto: ChainCallDTO,
-  expectedAlias: string
+  expectedAlias: string,
+  quorum: number | undefined
 ): Promise<{ alias: string; ethAddress?: string }> {
-  const user = await authenticate(ctx, dto);
+  const user = await authenticate(ctx, dto, quorum);
 
   if (user.alias !== expectedAlias) {
     throw new ForbiddenError(`Dto is authenticated by ${user.alias}, not by ${expectedAlias}.`, {
@@ -397,4 +404,17 @@ function singleSignAuthResult(profile: UserProfileStrict, publicKey: string): Au
     signedByKeys: [publicKey],
     signatureQuorum: profile.signatureQuorum
   };
+}
+
+export function ensureSignatureQuorumIsMet(a: AuthenticateResult, quorum: number | undefined) {
+  const numberOfSignedKeys = a.signedByKeys.length;
+
+  // Quorum from options overrides quorum from UserProfile
+  const requiredQuorum = quorum ?? a.signatureQuorum;
+
+  if (requiredQuorum > numberOfSignedKeys) {
+    throw new UnauthorizedError(
+      `Insufficient number of signatures: got ${numberOfSignedKeys}, required ${a.signatureQuorum}.`
+    );
+  }
 }

@@ -26,7 +26,7 @@ jest.mock("./authenticate", () => {
 });
 
 describe("authenticate", () => {
-  it("should authorize as origin chaincode", async () => {
+  it("should authenticate as origin chaincode", async () => {
     // Given
     const { ctx, chaincodeId } = mockedContext();
 
@@ -43,7 +43,7 @@ describe("authenticate", () => {
     };
 
     // When
-    const result = await authenticate(ctx, dto);
+    const result = await authenticate(ctx, dto, undefined);
 
     // Then
     expect(result).toEqual(expectedUserData);
@@ -60,7 +60,7 @@ describe("authenticate", () => {
     const expectedErrorMessage = `Chaincode authorization failed. Got DTO with signerAddress: ${dto.signerAddress}, but signed proposal has chaincodeId: ${chaincodeId}`;
 
     // When
-    const result = authenticate(ctx, dto);
+    const result = authenticate(ctx, dto, undefined);
 
     // Then
     await expect(result).rejects.toThrow(expectedErrorMessage);
