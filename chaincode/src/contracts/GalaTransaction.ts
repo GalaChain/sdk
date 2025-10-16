@@ -194,7 +194,8 @@ function GalaTransaction<In extends ChainCallDTO, Out>(
         // Authenticate the user
         if (ctx.isDryRun) {
           // Do not authenticate in dry run mode
-        } else if (options?.verifySignature || dto?.signature !== undefined) {
+        } else if (options?.verifySignature || dto?.getAllSignatures().length) {
+          // Authenticate if this is explicitly enabled or if there are any signatures in the DTO
           ctx.callingUserData = await authenticate(ctx, dto);
         } else {
           // it means a request where authorization is not required. If there is org-based authorization,
