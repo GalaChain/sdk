@@ -201,7 +201,7 @@ function GalaTransaction<In extends ChainCallDTO, Out>(
           // it means a request where authorization is not required. If there is org-based authorization,
           // default roles are applied. If not, then only evaluate is possible. Alias is intentionally
           // missing.
-          const roles = !options.allowedOrgs?.length ? [UserRole.EVALUTE] : [...UserProfile.DEFAULT_ROLES];
+          const roles = !options.allowedOrgs?.length ? [UserRole.EVALUATE] : [...UserProfile.DEFAULT_ROLES];
           ctx.callingUserData = { roles, signatureQuorum: 0, signedByKeys: [] };
         }
 
