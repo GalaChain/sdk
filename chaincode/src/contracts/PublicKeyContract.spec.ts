@@ -120,7 +120,7 @@ describe("RegisterUser", () => {
     const registerResponse = await chaincode.invoke("PublicKeyContract:RegisterUser", signedRegisterDto);
 
     // Then
-    expect(registerResponse).toEqual(expect.objectContaining({ Status: 0, ErrorKey: "PROFILE_EXISTS" }));
+    expect(registerResponse).toEqual(expect.objectContaining({ Status: 0, ErrorKey: "PK_EXISTS" }));
   });
 
   it("should fail when registering a new user with the same publiKey/eth address as existing user", async () => {
@@ -535,16 +535,19 @@ describe("GetMyProfile", () => {
     // regular signing
     const dto1 = new GetMyProfileDto();
     dto1.sign(user.privateKey);
+    console.log("dto1", dto1.serialize());
 
     // DER + signerPublicKey
     const dto2 = new GetMyProfileDto();
     dto2.signerPublicKey = user.publicKey;
     dto2.sign(user.privateKey, true);
+    console.log("dto2", dto2.serialize());
 
     // DER + signerAddress
     const dto3 = new GetMyProfileDto();
     dto3.signerAddress = user.ethAddress;
     dto3.sign(user.privateKey, true);
+    console.log("dto3", dto3.serialize());
 
     // When
     const resp1 = await chaincode.invoke("PublicKeyContract:GetMyProfile", dto1);

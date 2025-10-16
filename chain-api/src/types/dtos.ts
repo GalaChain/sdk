@@ -313,6 +313,7 @@ export class ChainCallDTO {
         // we have ETH signing scheme, and DER signatures, and single-sig
         const keyBuffer = signatures.normalizePrivateKey(privateKey);
         this.signature = signatures.getDERSignature(this, keyBuffer);
+        return;
       }
     }
 
