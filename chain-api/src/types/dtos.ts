@@ -291,7 +291,7 @@ export class ChainCallDTO {
     const currentSignatures = this.getAllSignatures();
     const someSignaturesExist = currentSignatures.length > 0;
 
-    if (someSignaturesExist && this.signerAddress && this.signerPublicKey && this.prefix) {
+    if (someSignaturesExist && (this.signerAddress || this.signerPublicKey || this.prefix)) {
       const msg = "signerAddress, signerPublicKey and prefix are not allowed for multisignature DTOs";
       throw new ValidationFailedError(msg);
     }
