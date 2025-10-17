@@ -170,7 +170,7 @@ export abstract class GalaContract extends Contract {
     // For dry run we don't use the regular authorization. We don't want users to provide signatures
     // to avoid replay attack in case if the method is eventually not executed, and someone in the middle
     // will replay the request.
-    if (dto.dto && dto.dto.signature) {
+    if (dto.dto && dto.dto.getAllSignatures().length > 0) {
       throw new ValidationFailedError("The dto should have no signature for dry run execution");
     }
 
