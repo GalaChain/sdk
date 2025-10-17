@@ -20,6 +20,7 @@ import {
   SigningScheme,
   UpdatePublicKeyDto,
   UpdateQuorumDto,
+  UpdateUserRolesDto,
   UserAlias,
   UserProfile,
   UserRole,
@@ -623,6 +624,52 @@ describe("PublicKeyContract Multisignature", () => {
         ...userProfileKV(alias, key3.publicKey, newQuorum),
         ...publicKeyKV(alias, [key1.publicKey, key2.publicKey, key3.publicKey])
       });
+    });
+  });
+});
+
+describe("UpdateUserRoles", () => {
+  async function setup() {
+    const chaincode = new TestChaincode([PublicKeyContract]);
+    const cfg = { keys: 3, quorum: 2 };
+    const resp = await createRegisteredMultiSigUser(chaincode, cfg);
+    return { chaincode, keys: resp.keys, alias: resp.alias, quorum: cfg.quorum };
+  }
+
+  it("should update user roles for multisig user with quorum signatures", async () => {
+    // Given
+    const { chaincode, keys, alias, quorum } = await setup();
+    const [key1, key2, key3] = keys;
+
+    expect(quorum).toEqual(2);
+    const defaultRoles = [...UserProfile.DEFAULT_ROLES];
+    const newRoles = [...defaultRoles, UserRole.REGISTRAR].sort();
+
+    // verify the current state
+    expect(chaincode.getState()).toEqual({
+      ...userProfileKV(alias, key1.publicKey, quorum, defaultRoles),
+      ...userProfileKV(alias, key2.publicKey, quorum, defaultRoles),
+      ...userProfileKV(alias, key3.publicKey, quorum, defaultRoles),
+      ...publicKeyKV(alias, [key1.publicKey, key2.publicKey, key3.publicKey])
+    });
+
+    const dto = await createValidSubmitDTO(UpdateUserRolesDto, {
+      user: alias,
+      roles: newRoles
+    }).signed(process.env.DEV_ADMIN_PRIVATE_KEY as string);
+
+    // When
+    const response = await chaincode.invoke("PublicKeyContract:UpdateUserRoles", dto);
+
+    // Then
+    expect(response).toEqual(transactionSuccess());
+
+    // Verify the new state - roles should be updated
+    expect(chaincode.getState()).toEqual({
+      ...userProfileKV(alias, key1.publicKey, quorum, newRoles),
+      ...userProfileKV(alias, key2.publicKey, quorum, newRoles),
+      ...userProfileKV(alias, key3.publicKey, quorum, newRoles),
+      ...publicKeyKV(alias, [key1.publicKey, key2.publicKey, key3.publicKey])
     });
   });
 });
