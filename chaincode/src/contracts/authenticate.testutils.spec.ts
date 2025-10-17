@@ -153,11 +153,16 @@ export async function getMyProfile(
   return chaincode.invoke("PublicKeyContract:GetMyProfile", dto);
 }
 
-export function userProfileKV(alias: UserAlias, publicKey: string, quorum: number): Record<string, string> {
+export function userProfileKV(
+  alias: UserAlias,
+  publicKey: string,
+  quorum: number,
+  roles: UserRole[] = [...UserProfile.DEFAULT_ROLES]
+): Record<string, string> {
   const up = new UserProfile();
   up.alias = alias;
   up.ethAddress = signatures.getEthAddress(publicKey);
-  up.roles = [UserRole.EVALUATE, UserRole.SUBMIT];
+  up.roles = roles;
   up.signatureQuorum = quorum;
   return {
     [`\u0000GCUP\u0000${up.ethAddress}\u0000`]: up.serialize()
