@@ -285,36 +285,37 @@ export class PublicKeyService {
       throw new UnauthorizedError(msg);
     }
 
-    const oldPublicKey = await PublicKeyService.getPublicKey(ctx, userAlias);
-    if (oldPublicKey === undefined) {
+    const currentPublicKeyObj = await PublicKeyService.getPublicKey(ctx, userAlias);
+    if (currentPublicKeyObj === undefined) {
       throw new PkNotFoundError(userAlias);
     }
 
-    const oldPublicKeySigning = oldPublicKey.signing ?? SigningScheme.ETH;
-    if (oldPublicKeySigning !== signing) {
-      throw new ValidationFailedError(
-        `Old public key signing scheme ${oldPublicKeySigning} does not match new signing scheme ${signing}`
-      );
+    const currentSigning = currentPublicKeyObj.signing ?? SigningScheme.ETH;
+    if (currentSigning !== signing) {
+      const msg = `Current public key signing scheme ${currentSigning} does not match new signing scheme ${signing}`;
+      throw new ValidationFailedError(msg);
     }
 
-    const allPublicKeys = oldPublicKey.getAllPublicKeys();
-    const oldPublicKeyNormalized =
-      signing === SigningScheme.ETH
-        ? PublicKeyService.normalizePublicKey(ctx.callingUserSignedByKeys[0])
-        : ctx.callingUserSignedByKeys[0];
+    const normalize = (pk: string) =>
+      signing === SigningScheme.ETH ? PublicKeyService.normalizePublicKey(pk) : pk;
 
-    const index = allPublicKeys.indexOf(oldPublicKeyNormalized);
+    const allCurrentPublicKeys = currentPublicKeyObj.getAllPublicKeys().map(normalize);
+
+    const callingUserSignedByKey = normalize(ctx.callingUserSignedByKeys[0]);
+
+    // verify that the calling user has permission to update by checking if their key exists in the authorized set
+    const index = allCurrentPublicKeys.indexOf(callingUserSignedByKey);
     if (index === -1) {
-      const allPKsStr = `[${allPublicKeys.join(", ")}]`;
-      const msg = `New public key ${newPublicKey} was not found in old public keys: ${allPKsStr}`;
+      const allPKsStr = `[${allCurrentPublicKeys.join(", ")}]`;
+      const msg = `Calling user's public key ${callingUserSignedByKey} was not found in authorized public keys: ${allPKsStr}`;
       throw new ValidationFailedError(msg);
     }
 
     // replace old public key with new public key
-    allPublicKeys[index] = newPublicKey;
+    allCurrentPublicKeys[index] = newPublicKey;
 
     // need to fetch userProfile from old address
-    const oldAddress = PublicKeyService.getUserAddress(oldPublicKeyNormalized, signing);
+    const oldAddress = PublicKeyService.getUserAddress(callingUserSignedByKey, signing);
     const userProfile = await PublicKeyService.getUserProfile(ctx, oldAddress);
     const signatureQuorum = userProfile?.signatureQuorum ?? 1;
 
@@ -330,8 +331,8 @@ export class PublicKeyService {
       throw new ProfileExistsError(newAddress, newUserProfile.alias);
     }
 
-    // update Public Key, and add user profile under new eth address
-    await PublicKeyService.putPublicKey(ctx, allPublicKeys, userAlias, signing);
+    // update PublicKey, and add user profile under new eth address
+    await PublicKeyService.putPublicKey(ctx, allCurrentPublicKeys, userAlias, signing);
     await PublicKeyService.putUserProfile(ctx, newAddress, userAlias, signing, signatureQuorum);
   }
 
