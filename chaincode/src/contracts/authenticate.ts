@@ -242,7 +242,8 @@ async function authenticateMultipleSignatures(
     profileEntries.push([recoveredPkHex, profile]);
   }
 
-  const signedByKeys = profileEntries.map((p) => p[0]);
+  // added explicit normalization to ensure that the keys are the same
+  const signedByKeys = profileEntries.map((p) => signatures.getNonCompactHexPublicKey(p[0]));
   const keySet = new Set(signedByKeys);
   if (keySet.size !== signedByKeys.length) {
     throw new DuplicateSignerPublicKeyError(signedByKeys);
