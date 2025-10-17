@@ -72,7 +72,7 @@ export function ensureCorrectMethodIsUsed(
   quorum: number | undefined,
   dto: ChainCallDTO | undefined
 ) {
-  const numberOfSignedKeys = ctx.callingUserSignedByKeys.length;
+  const numberOfSignedKeys = ctx.callingUserSignedBy.length;
   const requiredQuorum = quorum ?? ctx.callingUserSignatureQuorum;
 
   // If there is only one signature, we don't need to check the method

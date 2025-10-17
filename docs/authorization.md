@@ -67,7 +67,7 @@ After successful authentication, the following context properties are available:
 - `ctx.callingUserTonAddress`: The user's TON address (if available)
 - `ctx.callingUserRoles`: Array of roles assigned to the user
 - `ctx.callingUserProfile`: Complete user profile object
-- `ctx.callingUserSignedByKeys`: Array of public keys that signed the current transaction
+- `ctx.callingUserSignedBy`: Array of public keys that signed the current transaction
 - `ctx.callingUserSignatureQuorum`: Required number of signatures for the user
 
 ## Signature based authorization
@@ -307,7 +307,7 @@ Note that after multiple signing the `transferDto` object contains multiple sign
 async emergencyAction(ctx: GalaChainContext, dto: EmergencyActionDto): Promise<void> {
   // This method only requires 1 signature regardless of user's quorum setting
   
-  const signedByKeys = ctx.callingUserSignedByKeys;
+  const signedByKeys = ctx.callingUserSignedBy;
   ctx.logger.warn(`Emergency action executed by key: ${signedByKeys[0]}`);
   
   await executeEmergencyAction(ctx, dto);

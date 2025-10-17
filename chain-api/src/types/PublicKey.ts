@@ -15,27 +15,39 @@
 import { ArrayMinSize, IsNotEmpty, IsOptional, IsString, ValidateIf } from "class-validator";
 
 import { SigningScheme, signatures } from "../utils";
-import { SerializeIf, StringEnumProperty } from "../validators";
+import { IsUserAlias, SerializeIf, StringEnumProperty } from "../validators";
 import { ChainObject } from "./ChainObject";
+import { UserAlias } from "./UserAlias";
+import { UserRef, asValidUserRef } from "./UserRef";
 
 export class PublicKey extends ChainObject {
   @ValidateIf((o) => !o.publicKeys)
   @IsString()
   @IsNotEmpty()
-  publicKey?: string;
-
-  @ValidateIf((o) => !o.publicKey)
-  @SerializeIf((o) => !o.publicKey)
-  @IsString({ each: true })
-  @ArrayMinSize(2)
-  public publicKeys?: string[];
+  public publicKey?: string;
 
   @IsOptional()
   @StringEnumProperty(SigningScheme)
   public signing?: SigningScheme;
 
-  public getAllPublicKeys(): string[] {
-    return this.publicKeys ?? (this.publicKey ? [this.publicKey as string] : []);
+  @ValidateIf((o) => !o.publicKey)
+  @SerializeIf((o) => !o.publicKey)
+  @IsUserAlias({ each: true })
+  @ArrayMinSize(2)
+  public signers?: UserAlias[];
+
+  public getAllSigners(): UserRef[] {
+    if (this.publicKey) {
+      if (this.signing === SigningScheme.TON) {
+        const addr = signatures.ton.getTonAddress(Buffer.from(this.publicKey, "base64"));
+        return [asValidUserRef(addr)];
+      }
+
+      const pkHex = signatures.getNonCompactHexPublicKey(this.publicKey);
+      return [asValidUserRef(signatures.getEthAddress(pkHex))];
+    }
+
+    return this.signers ?? [];
   }
 }
 

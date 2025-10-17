@@ -50,7 +50,7 @@ export class GalaChainContext extends Context {
   private callingUserEthAddressValue?: string;
   private callingUserTonAddressValue?: string;
   private callingUserRolesValue?: string[];
-  private callingUserSignedByKeysValue?: string[];
+  private callingUserSignedByValue?: UserAlias[];
   private callingUserSignatureQuorumValue?: number;
   private operationCtxValue?: OperationContext;
   private txUnixTimeValue?: number;
@@ -102,13 +102,13 @@ export class GalaChainContext extends Context {
     return this.callingUserRolesValue;
   }
 
-  get callingUserSignedByKeys(): string[] {
-    if (this.callingUserSignedByKeysValue === undefined) {
+  get callingUserSignedBy(): string[] {
+    if (this.callingUserSignedByValue === undefined) {
       throw new UnauthorizedError(
         `No signed by keys known for user ${this.callingUserValue} ${new Error().stack}`
       );
     }
-    return this.callingUserSignedByKeysValue;
+    return this.callingUserSignedByValue;
   }
 
   get callingUserSignatureQuorum(): number {
@@ -136,7 +136,7 @@ export class GalaChainContext extends Context {
     ethAddress?: string;
     tonAddress?: string;
     roles: string[];
-    signedByKeys: string[];
+    signedBy: UserAlias[];
     signatureQuorum: number;
   }) {
     if (this.callingUserValue !== undefined) {
@@ -145,7 +145,7 @@ export class GalaChainContext extends Context {
 
     this.callingUserValue = d.alias;
     this.callingUserRolesValue = d.roles ?? [UserRole.EVALUATE]; // default if `roles` is undefined
-    this.callingUserSignedByKeysValue = d.signedByKeys;
+    this.callingUserSignedByValue = d.signedBy;
     this.callingUserSignatureQuorumValue = d.signatureQuorum;
 
     if (d.ethAddress !== undefined) {
@@ -162,7 +162,7 @@ export class GalaChainContext extends Context {
     this.callingUserRolesValue = undefined;
     this.callingUserEthAddressValue = undefined;
     this.callingUserTonAddressValue = undefined;
-    this.callingUserSignedByKeysValue = undefined;
+    this.callingUserSignedByValue = undefined;
     this.callingUserSignatureQuorumValue = undefined;
   }
 
@@ -178,14 +178,14 @@ export class GalaChainContext extends Context {
     ethAddress?: string;
     tonAddress?: string;
     roles: string[];
-    signedByKeys: string[];
+    signedBy: UserAlias[];
     signatureQuorum: number;
   }): void {
     this.callingUserValue = d.alias;
     this.callingUserRolesValue = d.roles ?? [];
     this.callingUserEthAddressValue = d.ethAddress;
     this.callingUserTonAddressValue = d.tonAddress;
-    this.callingUserSignedByKeysValue = d.signedByKeys;
+    this.callingUserSignedByValue = d.signedBy;
     this.callingUserSignatureQuorumValue = d.signatureQuorum;
     this.isDryRun = true;
   }

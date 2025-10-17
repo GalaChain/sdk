@@ -18,7 +18,9 @@ import {
   PublicKey,
   SigningScheme,
   UnauthorizedError,
+  UserAlias,
   UserProfileStrict,
+  UserRef,
   ValidationFailedError,
   signatures
 } from "@gala-chain/api";
@@ -45,7 +47,8 @@ class InvalidSignatureParametersError extends ValidationFailedError {
 class MultipleSignaturesNotAllowedError extends ValidationFailedError {
   constructor() {
     super(
-      `Multiple signatures are not allowed when signing is not ETH, or when signerAddress or signerPublicKey or prefix is provided.`
+      `Multiple signature authentication is supported only for ETH signing scheme, ` +
+        `and requires valid signerAddress, and no other signer parameters (signerPublicKey or prefix).`
     );
   }
 }
@@ -56,9 +59,9 @@ class CannotRecoverPublicKeyError extends ValidationFailedError {
   }
 }
 
-class DuplicateSignerPublicKeyError extends ValidationFailedError {
-  constructor(signedByKeys: string[]) {
-    super(`Duplicate signer public key in: ${signedByKeys.join(", ")}.`, { signedByKeys });
+class DuplicateSignerError extends ValidationFailedError {
+  constructor(signedBy: string[]) {
+    super(`Duplicate signer in: ${signedBy.join(", ")}.`, { signedBy });
   }
 }
 
@@ -126,7 +129,7 @@ export interface AuthenticateResult {
   ethAddress?: string;
   tonAddress?: string;
   roles: string[];
-  signedByKeys: string[];
+  signedBy: UserAlias[];
   signatureQuorum: number;
 }
 
@@ -190,19 +193,19 @@ export async function authenticateSingleSignature(
     }
 
     const p = await getUserProfile(ctx, recoveredPkHex, signing);
-    return singleSignAuthResult(p, recoveredPkHex);
+    return singleSignAuthResult(p);
   } else if (dto.signerAddress !== undefined) {
     if (dto.signerPublicKey !== undefined) {
       throw new RedundantSignerPublicKeyError(dto.signerAddress, dto.signerPublicKey);
     }
 
-    const resp = await getUserProfileAndPublicKey(ctx, dto.signerAddress, signing);
+    const resp = await getUserProfileAndPublicKey(ctx, dto.signerAddress);
 
     if (!dto.isSignatureValid(resp.matchedKey)) {
       throw new PkInvalidSignatureError(resp.profile.alias);
     }
 
-    return singleSignAuthResult(resp.profile, resp.matchedKey);
+    return singleSignAuthResult(resp.profile);
   } else if (dto.signerPublicKey !== undefined) {
     if (!dto.isSignatureValid(dto.signerPublicKey)) {
       const address = PublicKeyService.getUserAddress(dto.signerPublicKey, signing);
@@ -210,7 +213,7 @@ export async function authenticateSingleSignature(
     }
 
     const p = await getUserProfile(ctx, dto.signerPublicKey, signing);
-    return singleSignAuthResult(p, dto.signerPublicKey);
+    return singleSignAuthResult(p);
   } else {
     throw new MissingSignerError(dto.signature);
   }
@@ -224,14 +227,20 @@ async function authenticateMultipleSignatures(
 
   if (
     signing !== SigningScheme.ETH ||
-    dto.signerAddress !== undefined ||
     dto.signerPublicKey !== undefined ||
-    dto.prefix !== undefined
+    dto.prefix !== undefined ||
+    dto.signerAddress === undefined ||
+    dto.multisig.length < 2
   ) {
     throw new MultipleSignaturesNotAllowedError();
   }
 
-  const profileEntries: [string, UserProfileStrict][] = [];
+  const multisigProfile = await PublicKeyService.getUserProfile(ctx, dto.signerAddress);
+  if (multisigProfile === undefined) {
+    throw new UserNotRegisteredError(dto.signerAddress);
+  }
+
+  const signerProfiles: UserProfileStrict[] = [];
 
   for (const [index, signature] of dto.multisig.entries()) {
     const recoveredPkHex = recoverPublicKey(signature, dto, dto.prefix ?? "");
@@ -239,42 +248,23 @@ async function authenticateMultipleSignatures(
       throw new CannotRecoverPublicKeyError(index, signature);
     }
     const profile = await getUserProfile(ctx, recoveredPkHex, signing);
-    profileEntries.push([recoveredPkHex, profile]);
+    signerProfiles.push(profile);
   }
 
-  const signedByKeys = profileEntries.map((p) => p[0]);
-  const keySet = new Set(signedByKeys);
-  if (keySet.size !== signedByKeys.length) {
-    throw new DuplicateSignerPublicKeyError(signedByKeys);
-  }
-
-  const firstProfileEntry = profileEntries[0];
-
-  if (!firstProfileEntry) {
-    throw new CannotRecoverPublicKeyError(0, dto.multisig[0]);
-  }
-
-  const expectedInfo = profileInfoString(firstProfileEntry[1]);
-
-  for (const [, profile] of profileEntries) {
-    const info = profileInfoString(profile);
-    if (info !== expectedInfo) {
-      throw new UserProfileMismatchError(info, expectedInfo);
-    }
+  const signedBy = signerProfiles.map((p) => p.alias);
+  const signedBySet = new Set(signedBy);
+  if (signedBySet.size !== signedBy.length) {
+    throw new DuplicateSignerError(signedBy);
   }
 
   const result: AuthenticateResult = {
-    alias: firstProfileEntry[1].alias,
-    roles: firstProfileEntry[1].roles,
-    signedByKeys: profileEntries.map((p) => p[0]),
-    signatureQuorum: firstProfileEntry[1].signatureQuorum
+    alias: dto.signerAddress,
+    roles: multisigProfile.roles,
+    signedBy: signerProfiles.map((p) => p.alias),
+    signatureQuorum: multisigProfile.signatureQuorum
   };
 
   return result;
-}
-
-function profileInfoString(profile: UserProfileStrict): string {
-  return `alias: ${profile.alias}, roles: ${profile.roles}, signatureQuorum: ${profile.signatureQuorum}`;
 }
 
 async function getUserProfile(
@@ -298,8 +288,7 @@ async function getUserProfile(
 
 async function getUserProfileAndPublicKey(
   ctx: GalaChainContext,
-  address: string,
-  signing: SigningScheme
+  address: string
 ): Promise<{ profile: UserProfileStrict; publicKey: PublicKey; matchedKey: string }> {
   const profile = await PublicKeyService.getUserProfile(ctx, address);
 
@@ -313,9 +302,7 @@ async function getUserProfileAndPublicKey(
     throw new PkMissingError(profile.alias);
   }
 
-  const matchedKey = publicKey
-    .getAllPublicKeys()
-    .find((pk) => PublicKeyService.getUserAddress(pk, signing) === address);
+  const matchedKey = publicKey.getAllSigners().find((signer) => signer === address);
 
   if (matchedKey === undefined) {
     throw new PkMissingError(profile.alias);
@@ -374,7 +361,7 @@ export async function authenticateAsOriginChaincode(
     alias: `service|${chaincode}`,
     ethAddress: undefined,
     roles: [],
-    signedByKeys: [],
+    signedBy: [],
     signatureQuorum: 0
   };
 }
@@ -391,23 +378,23 @@ function singleSignature(
 
 function multipleSignatures(
   dto: ChainCallDTO | undefined
-): dto is Omit<ChainCallDTO, "signature"> & { multisig: string[] } {
+): dto is Omit<ChainCallDTO, "signature"> & { multisig: string[] & { signerAddress: UserRef } } {
   return !!dto && dto.multisig !== undefined && dto.multisig.length >= 2 && dto.signature === undefined;
 }
 
-function singleSignAuthResult(profile: UserProfileStrict, publicKey: string): AuthenticateResult {
+function singleSignAuthResult(profile: UserProfileStrict): AuthenticateResult {
   const addr = profile.ethAddress ? { ethAddress: profile.ethAddress } : { tonAddress: profile.tonAddress };
   return {
     alias: profile.alias,
     ...addr,
     roles: profile.roles,
-    signedByKeys: [publicKey],
+    signedBy: [profile.alias],
     signatureQuorum: profile.signatureQuorum
   };
 }
 
 export function ensureSignatureQuorumIsMet(a: AuthenticateResult, quorum: number | undefined) {
-  const numberOfSignedKeys = a.signedByKeys.length;
+  const numberOfSignedKeys = a.signedBy.length;
 
   // Quorum from options overrides quorum from UserProfile
   const requiredQuorum = quorum ?? a.signatureQuorum;

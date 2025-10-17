@@ -169,11 +169,11 @@ export class ChainCallDTO {
   public prefix?: string;
 
   @JSONSchema({
-    description: "Address of the user who signed the DTO. Typically Ethereum or TON address."
+    description: "Address of the user who signed the DTO. Typically Ethereum or TON address, or user alias."
   })
   @IsOptional()
   @IsNotEmpty()
-  public signerAddress?: string;
+  public signerAddress?: UserRef;
 
   @JSONSchema({
     description: "Public key of the user who signed the DTO."
@@ -587,18 +587,18 @@ export class RegisterUserDto extends SubmitCallDTO {
   user: UserAlias;
 
   @JSONSchema({ description: "Public secp256k1 key (compact or non-compact, hex or base64)." })
-  @ValidateIf((o) => !o.publicKeys)
+  @ValidateIf((o) => !o.signers)
   @IsString()
   @IsNotEmpty()
   public publicKey?: string;
 
-  @JSONSchema({ description: "Public secp256k1 keys (compact or non-compact, hex or base64)." })
+  @JSONSchema({ description: "Signer user refs." })
   @ValidateIf((o) => !o.publicKey)
   @SerializeIf((o) => !o.publicKey)
-  @IsString({ each: true })
+  @IsUserRef({ each: true })
   @IsNotEmpty({ each: true })
   @ArrayMinSize(2)
-  public publicKeys?: string[];
+  public signers?: UserRef[];
 
   @JSONSchema({
     description: "Minimum number of signatures required for authorization. Defaults to number of public keys."
@@ -607,10 +607,6 @@ export class RegisterUserDto extends SubmitCallDTO {
   @IsInt()
   @Min(1)
   signatureQuorum?: number;
-
-  public getAllPublicKeys(): string[] {
-    return this.publicKey ? [this.publicKey as string] : this.publicKeys ?? [];
-  }
 }
 
 /**
@@ -653,24 +649,20 @@ export class UpdatePublicKeyDto extends SubmitCallDTO {
   publicKey: string;
 }
 
-export class AddPublicKeyDto extends SubmitCallDTO {
+export class AddSignerDto extends SubmitCallDTO {
   @JSONSchema({
-    description:
-      "For users with ETH signing scheme it is public secp256k1 key (compact or non-compact, hex or base64). " +
-      "For users with TON signing scheme it is public Ed25519 key (base64)."
+    description: "User ref of the signer to add (typically Ethereum or TON address, or user alias)."
   })
   @IsNotEmpty()
-  publicKey: string;
+  signer: UserRef;
 }
 
-export class RemovePublicKeyDto extends SubmitCallDTO {
+export class RemoveSignerDto extends SubmitCallDTO {
   @JSONSchema({
-    description:
-      "For users with ETH signing scheme it is public secp256k1 key (compact or non-compact, hex or base64). " +
-      "For users with TON signing scheme it is public Ed25519 key (base64)."
+    description: "User ref of the signer to remove (typically Ethereum or TON address, or user alias)."
   })
   @IsNotEmpty()
-  publicKey: string;
+  signer: UserRef;
 }
 
 export class UpdateQuorumDto extends SubmitCallDTO {
@@ -682,8 +674,8 @@ export class UpdateQuorumDto extends SubmitCallDTO {
 }
 
 export class UpdateUserRolesDto extends SubmitCallDTO {
-  @IsUserAlias()
-  user: string;
+  @IsUserRef()
+  user: UserRef;
 
   @JSONSchema({ description: "New set of roles for the user that will replace the old ones." })
   @IsNotEmpty()
