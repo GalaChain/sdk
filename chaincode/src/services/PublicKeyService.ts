@@ -300,6 +300,8 @@ export class PublicKeyService {
 
     const currentPublicKeyObj = await PublicKeyService.getPublicKey(ctx, userAlias);
     if (currentPublicKeyObj === undefined) {
+    const currentPublicKeyObj = await PublicKeyService.getPublicKey(ctx, userAlias);
+    if (currentPublicKeyObj === undefined) {
       throw new PkNotFoundError(userAlias);
     }
 
@@ -351,25 +353,18 @@ export class PublicKeyService {
       throw new PkNotFoundError(user);
     }
 
-    if (publicKey.publicKey === undefined) {
-      throw new NotImplementedError("UpdateUserRoles when publicKey is undefined");
+    for (const pk of publicKey.getAllPublicKeys()) {
+      const address = PublicKeyService.getUserAddress(pk, publicKey.signing ?? SigningScheme.ETH);
+      const profile = await PublicKeyService.getUserProfile(ctx, address);
+      if (profile === undefined) {
+        throw new UserProfileNotFoundError(user);
+      }
+      profile.roles = Array.from(new Set(roles)).sort();
+
+      const key = PublicKeyService.getUserProfileKey(ctx, address);
+      const data = Buffer.from(profile.serialize());
+      await ctx.stub.putState(key, data);
     }
-
-    const address = PublicKeyService.getUserAddress(
-      publicKey.publicKey,
-      publicKey.signing ?? SigningScheme.ETH
-    );
-    const profile = await PublicKeyService.getUserProfile(ctx, address);
-
-    if (profile === undefined) {
-      throw new UserProfileNotFoundError(user);
-    }
-
-    profile.roles = Array.from(new Set(roles)).sort();
-
-    const key = PublicKeyService.getUserProfileKey(ctx, address);
-    const data = Buffer.from(profile.serialize());
-    await ctx.stub.putState(key, data);
   }
 
   public static async addSigner(
