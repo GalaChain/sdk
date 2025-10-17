@@ -289,38 +289,46 @@ export class ChainCallDTO {
 
   public sign(privateKey: string, useDer = false): void {
     const currentSignatures = this.getAllSignatures();
-    const someSignaturesExist = currentSignatures.length > 0;
+    const useMultisig = currentSignatures.length > 0;
 
-    if (someSignaturesExist && (this.signerAddress || this.signerPublicKey || this.prefix)) {
+    if (useMultisig && (this.signerAddress || this.signerPublicKey || this.prefix)) {
       const msg = "signerAddress, signerPublicKey and prefix are not allowed for multisignature DTOs";
       throw new ValidationFailedError(msg);
     }
 
     if (useDer) {
-      if (someSignaturesExist) {
+      if (useMultisig) {
         throw new ValidationFailedError("DER signatures are not allowed for multisignature DTOs");
-      } else if (this.signing === SigningScheme.TON) {
+      }
+
+      if (this.signing === SigningScheme.TON) {
         throw new ValidationFailedError("TON signing scheme does not support DER signatures");
       } else {
+        // for convenience and backwards compatibility, for ETH signing scheme,
+        // add signerPublicKey if it's not provided
         if (this.signerPublicKey === undefined && this.signerAddress === undefined) {
           this.signerPublicKey = signatures.getPublicKey(privateKey);
         }
+
+        // we have ETH signing scheme, and DER signatures, and single-sig
+        const keyBuffer = signatures.normalizePrivateKey(privateKey);
+        this.signature = signatures.getDERSignature(this, keyBuffer);
+        return;
       }
     }
 
-    let signature: string;
-
+    // we have TON signing scheme, what also means single-sig and non-DER
     if (this.signing === SigningScheme.TON) {
       const keyBuffer = Buffer.from(privateKey, "base64");
-      signature = signatures.ton.getSignature(this, keyBuffer, this.prefix).toString("base64");
-    } else {
-      const keyBuffer = signatures.normalizePrivateKey(privateKey);
-      signature = useDer
-        ? signatures.getDERSignature(this, keyBuffer)
-        : signatures.getSignature(this, keyBuffer);
+      this.signature = signatures.ton.getSignature(this, keyBuffer, this.prefix).toString("base64");
+      return;
     }
 
-    if (someSignaturesExist) {
+    // we have ETH signing scheme, and non-DER signatures, and either single-sig or multisig
+    const keyBuffer = signatures.normalizePrivateKey(privateKey);
+    const signature = signatures.getSignature(this, keyBuffer);
+
+    if (useMultisig) {
       delete this.signature;
       this.multisig = [...currentSignatures, signature];
     } else {
