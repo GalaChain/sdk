@@ -300,8 +300,6 @@ export class PublicKeyService {
 
     const currentPublicKeyObj = await PublicKeyService.getPublicKey(ctx, userAlias);
     if (currentPublicKeyObj === undefined) {
-    const currentPublicKeyObj = await PublicKeyService.getPublicKey(ctx, userAlias);
-    if (currentPublicKeyObj === undefined) {
       throw new PkNotFoundError(userAlias);
     }
 
@@ -353,8 +351,14 @@ export class PublicKeyService {
       throw new PkNotFoundError(user);
     }
 
-    for (const pk of publicKey.getAllPublicKeys()) {
-      const address = PublicKeyService.getUserAddress(pk, publicKey.signing ?? SigningScheme.ETH);
+    // With the redesigned multisig model, a user has either a single publicKey
+    // (address derived from the key) or a set of signers (address is the alias itself).
+    const addresses =
+      publicKey.publicKey !== undefined
+        ? [PublicKeyService.getUserAddress(publicKey.publicKey, publicKey.signing ?? SigningScheme.ETH)]
+        : [user];
+
+    for (const address of addresses) {
       const profile = await PublicKeyService.getUserProfile(ctx, address);
       if (profile === undefined) {
         throw new UserProfileNotFoundError(user);

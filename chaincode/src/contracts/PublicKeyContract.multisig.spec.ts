@@ -13,10 +13,10 @@
  * limitations under the License.
  */
 import {
-  AddPublicKeyDto,
+  AddSignerDto,
   GetMyProfileDto,
   RegisterUserDto,
-  RemovePublicKeyDto,
+  RemoveSignerDto,
   SigningScheme,
   UpdatePublicKeyDto,
   UpdateQuorumDto,
@@ -62,7 +62,7 @@ describe("PublicKeyContract Multisignature", () => {
 
       const dto = await createValidSubmitDTO(RegisterUserDto, {
         user: userAlias,
-        publicKeys,
+        signers: ethAddresses as unknown as UserAlias[],
         signatureQuorum
       });
       const signedDto = dto.signed(process.env.DEV_ADMIN_PRIVATE_KEY as string);
@@ -104,7 +104,7 @@ describe("PublicKeyContract Multisignature", () => {
 
       const dto = await createValidSubmitDTO(RegisterUserDto, {
         user: "client|duplicate-test" as UserAlias,
-        publicKeys,
+        signers: publicKeys.map((pk) => signatures.getEthAddress(pk)) as unknown as UserAlias[],
         signatureQuorum: 2
       });
       const signedDto = dto.signed(process.env.DEV_ADMIN_PRIVATE_KEY as string);
@@ -125,7 +125,7 @@ describe("PublicKeyContract Multisignature", () => {
 
       const dto = await createValidSubmitDTO(RegisterUserDto, {
         user: "client|quorum-test" as UserAlias,
-        publicKeys,
+        signers: publicKeys.map((pk) => signatures.getEthAddress(pk)) as unknown as UserAlias[],
         signatureQuorum: 5 // More than available keys - this should fail
       });
       const signedDto = dto.signed(process.env.DEV_ADMIN_PRIVATE_KEY as string);
@@ -149,7 +149,7 @@ describe("PublicKeyContract Multisignature", () => {
 
       const dto = await createValidSubmitDTO(RegisterUserDto, {
         user: "client|default-quorum" as UserAlias,
-        publicKeys
+        signers: publicKeys.map((pk) => signatures.getEthAddress(pk)) as unknown as UserAlias[]
         // signatureQuorum not specified - should default to publicKeys.length
       });
       const signedDto = dto.signed(process.env.DEV_ADMIN_PRIVATE_KEY as string);
@@ -420,7 +420,7 @@ describe("PublicKeyContract Multisignature", () => {
     });
   });
 
-  describe("AddPublicKey", () => {
+  describe("AddSigner", () => {
     async function setup() {
       const chaincode = new TestChaincode([PublicKeyContract]);
       const cfg = { keys: 3, quorum: 2 };
@@ -428,7 +428,7 @@ describe("PublicKeyContract Multisignature", () => {
       return { chaincode, keys: resp.keys, alias: resp.alias, quorum: cfg.quorum };
     }
 
-    it("should add a second public key", async () => {
+    it("should add a second signer", async () => {
       // Given
       const chaincode = new TestChaincode([PublicKeyContract]);
       const user = await createRegisteredUser(chaincode);
@@ -439,7 +439,9 @@ describe("PublicKeyContract Multisignature", () => {
       });
 
       const newKey = signatures.genKeyPair();
-      const dto = await createValidSubmitDTO(AddPublicKeyDto, { publicKey: newKey.publicKey }) //
+      const dto = await createValidSubmitDTO(AddSignerDto, {
+        signer: signatures.getEthAddress(newKey.publicKey) as unknown as UserAlias
+      }) //
         .signed(user.privateKey);
 
       // When
@@ -450,12 +452,11 @@ describe("PublicKeyContract Multisignature", () => {
 
       expect(chaincode.getState()).toEqual({
         ...userProfileKV(user.alias, user.publicKey, 1),
-        ...userProfileKV(user.alias, newKey.publicKey, 1),
         ...publicKeyKV(user.alias, [user.publicKey, newKey.publicKey])
       });
     });
 
-    it("should add public key for multisig user", async () => {
+    it("should add signer for multisig user", async () => {
       // Given
       const { chaincode, keys, alias, quorum } = await setup();
       const [key1, key2, key3] = keys;
@@ -470,16 +471,16 @@ describe("PublicKeyContract Multisignature", () => {
       });
 
       // Create DTO with quorum signatures (2 out of 3)
-      const dto = await createValidSubmitDTO(AddPublicKeyDto, {
-        publicKey: newKey.publicKey,
-        dtoOperation: "asset-channel_basic-asset_PublicKeyContract:AddPublicKey"
+      const dto = await createValidSubmitDTO(AddSignerDto, {
+        signer: signatures.getEthAddress(newKey.publicKey) as unknown as UserAlias,
+        dtoOperation: "asset-channel_basic-asset_PublicKeyContract:AddSigner"
       })
         .signed(key1.privateKey)
         .signed(key2.privateKey);
       expect(dto.multisig?.length).toEqual(2);
 
       // When
-      const response = await chaincode.invoke("PublicKeyContract:AddPublicKey", dto);
+      const response = await chaincode.invoke("PublicKeyContract:AddSigner", dto);
 
       // Then
       expect(response).toEqual(transactionSuccess());
@@ -489,7 +490,6 @@ describe("PublicKeyContract Multisignature", () => {
         ...userProfileKV(alias, key1.publicKey, quorum),
         ...userProfileKV(alias, key2.publicKey, quorum),
         ...userProfileKV(alias, key3.publicKey, quorum),
-        ...userProfileKV(alias, newKey.publicKey, quorum), // new key added
         ...publicKeyKV(alias, [key1.publicKey, key2.publicKey, key3.publicKey, newKey.publicKey])
       });
     });
@@ -501,11 +501,13 @@ describe("PublicKeyContract Multisignature", () => {
       const newKey = signatures.genKeyPair();
 
       // Create DTO with only 1 signature (need 2)
-      const dto = await createValidSubmitDTO(AddPublicKeyDto, { publicKey: newKey.publicKey }) //
+      const dto = await createValidSubmitDTO(AddSignerDto, {
+        signer: signatures.getEthAddress(newKey.publicKey) as unknown as UserAlias
+      }) //
         .signed(key1.privateKey);
 
       // When
-      const response = await chaincode.invoke("PublicKeyContract:AddPublicKey", dto);
+      const response = await chaincode.invoke("PublicKeyContract:AddSigner", dto);
 
       // Then
       expect(response).toEqual(transactionErrorKey("UNAUTHORIZED"));
@@ -515,7 +517,7 @@ describe("PublicKeyContract Multisignature", () => {
     });
   });
 
-  describe("RemovePublicKey", () => {
+  describe("RemoveSigner", () => {
     async function setup() {
       const chaincode = new TestChaincode([PublicKeyContract]);
       const cfg = { keys: 3, quorum: 2 };
@@ -536,22 +538,22 @@ describe("PublicKeyContract Multisignature", () => {
         ...publicKeyKV(alias, [key1.publicKey, key2.publicKey, key3.publicKey])
       });
 
-      const remove3Dto = await createValidSubmitDTO(RemovePublicKeyDto, {
-        publicKey: key3.publicKey,
-        dtoOperation: "asset-channel_basic-asset_PublicKeyContract:RemovePublicKey"
+      const remove3Dto = await createValidSubmitDTO(RemoveSignerDto, {
+        signer: signatures.getEthAddress(key3.publicKey) as unknown as UserAlias,
+        dtoOperation: "asset-channel_basic-asset_PublicKeyContract:RemoveSigner"
       })
         .signed(key1.privateKey)
         .signed(key2.privateKey);
-      const remove1Dto = await createValidSubmitDTO(RemovePublicKeyDto, {
-        publicKey: key1.publicKey,
-        dtoOperation: "asset-channel_basic-asset_PublicKeyContract:RemovePublicKey"
+      const remove1Dto = await createValidSubmitDTO(RemoveSignerDto, {
+        signer: signatures.getEthAddress(key1.publicKey) as unknown as UserAlias,
+        dtoOperation: "asset-channel_basic-asset_PublicKeyContract:RemoveSigner"
       })
         .signed(key1.privateKey)
         .signed(key2.privateKey);
 
       // When
-      const success = await chaincode.invoke("PublicKeyContract:RemovePublicKey", remove3Dto);
-      const failure = await chaincode.invoke("PublicKeyContract:RemovePublicKey", remove1Dto);
+      const success = await chaincode.invoke("PublicKeyContract:RemoveSigner", remove3Dto);
+      const failure = await chaincode.invoke("PublicKeyContract:RemoveSigner", remove1Dto);
 
       // Then
       expect(success).toEqual(transactionSuccess());

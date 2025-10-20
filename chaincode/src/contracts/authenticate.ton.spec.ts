@@ -12,7 +12,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-import { ChainCallDTO, SigningScheme, UserProfile, signatures } from "@gala-chain/api";
+import { ChainCallDTO, SigningScheme, UserProfile, asValidUserRef, signatures } from "@gala-chain/api";
 import { TestChaincode, transactionSuccess } from "@gala-chain/test";
 import { instanceToPlain, plainToClass } from "class-transformer";
 
@@ -48,7 +48,9 @@ const invalid = labeled<Signature>("invalid signature")((srcDto, privK) => {
 
 type PublicKey = (dto: ChainCallDTO, u: TonUser) => void;
 const signerKey = labeled<PublicKey>("signer key")((dto, u) => (dto.signerPublicKey = u.publicKey));
-const signerAdd = labeled<PublicKey>("signer address")((dto, u) => (dto.signerAddress = u.tonAddress));
+const signerAdd = labeled<PublicKey>("signer address")(
+  (dto, u) => (dto.signerAddress = asValidUserRef(`ton|${u.tonAddress}`))
+);
 const _________ = labeled<PublicKey>("raw dto")(() => ({}));
 
 type UserRegistered = (ch: TestChaincode) => Promise<TonUser>;

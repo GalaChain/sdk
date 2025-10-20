@@ -232,7 +232,7 @@ describe("ChainCallDTO", () => {
     dto.sign(privateKey); // first signature
 
     // When
-    dto.signerAddress = "0x123";
+    dto.signerAddress = "eth|0x0000000000000000000000000000000000000123" as unknown as any;
     dto.signerPublicKey = "0x456";
     dto.prefix = "test-prefix";
 

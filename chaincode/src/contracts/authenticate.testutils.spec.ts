@@ -72,7 +72,7 @@ export async function createRegisteredMultiSigUser(
   const keys = Array.from({ length: p.keys }, () => signatures.genKeyPair());
   const dto = await createValidSubmitDTO(RegisterUserDto, {
     user: alias,
-    publicKeys: keys.map((k) => k.publicKey),
+    signers: keys.map((k) => signatures.getEthAddress(k.publicKey)) as unknown as UserAlias[],
     signatureQuorum: p.quorum
   });
   const signedDto = dto.signed(process.env.DEV_ADMIN_PRIVATE_KEY as string);
@@ -185,7 +185,8 @@ export function publicKeyKV(alias: UserAlias, publicKeys: string[]): Record<stri
   if (publicKeys.length === 1) {
     pk.publicKey = signatures.normalizePublicKey(publicKeys[0]).toString("base64");
   } else {
-    pk.publicKeys = publicKeys.map((pk) => signatures.normalizePublicKey(pk).toString("base64"));
+    // In multisig model, persist signers (addresses), not multiple keys
+    pk.signers = publicKeys.map((pk) => signatures.getEthAddress(pk)) as unknown as UserAlias[];
   }
   return {
     [`\u0000GCPK\u0000${alias}\u0000`]: pk.serialize()

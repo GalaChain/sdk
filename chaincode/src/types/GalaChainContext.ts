@@ -102,11 +102,12 @@ export class GalaChainContext extends Context {
     return this.callingUserRolesValue;
   }
 
-  get callingUserSignedBy(): string[] {
+  get callingUserSignedBy(): UserAlias[] {
     if (this.callingUserSignedByValue === undefined) {
-      throw new UnauthorizedError(
-        `No signed by keys known for user ${this.callingUserValue} ${new Error().stack}`
-      );
+      const msg = `No signed by users known for user ${this.callingUserValue}`;
+      const error = new UnauthorizedError(msg);
+      this.loggerInstance?.log("error", error?.stack ?? msg);
+      throw error;
     }
     return this.callingUserSignedByValue;
   }

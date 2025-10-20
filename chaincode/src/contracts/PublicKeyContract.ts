@@ -92,7 +92,7 @@ export class PublicKeyContract extends GalaContract {
     return PublicKeyService.registerUser(
       ctx,
       dto.publicKey,
-      signerAliases,
+      signerAliases.length ? signerAliases : undefined,
       dto.user,
       signing,
       signatureQuorum

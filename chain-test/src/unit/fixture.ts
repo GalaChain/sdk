@@ -123,7 +123,7 @@ type TestGalaChainContext = Context & {
   get callingUserEthAddress(): string;
   get callingUserTonAddress(): string;
   get callingUserRoles(): string[];
-  get callingUserSignedBy(): string[];
+  get callingUserSignedBy(): UserAlias[];
   get callingUserSignatureQuorum(): number;
   get callingUserProfile(): UserProfile;
   resetCallingUser(): void;

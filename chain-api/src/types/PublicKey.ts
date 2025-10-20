@@ -21,7 +21,7 @@ import { UserAlias } from "./UserAlias";
 import { UserRef, asValidUserRef } from "./UserRef";
 
 export class PublicKey extends ChainObject {
-  @ValidateIf((o) => !o.publicKeys)
+  @ValidateIf((o) => !o.signers)
   @IsString()
   @IsNotEmpty()
   public publicKey?: string;

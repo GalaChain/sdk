@@ -32,6 +32,7 @@ import {
   randomUniqueKey,
   signatures
 } from "@gala-chain/api";
+import { asValidUserRef } from "@gala-chain/api";
 import {
   TestChaincode,
   fixture,
@@ -560,7 +561,7 @@ describe("GetMyProfile", () => {
 
     // DER + signerAddress
     const dto3 = new GetMyProfileDto();
-    dto3.signerAddress = user.ethAddress;
+    dto3.signerAddress = asValidUserRef(user.ethAddress);
     dto3.sign(user.privateKey, true);
 
     // When
@@ -593,7 +594,7 @@ describe("GetMyProfile", () => {
 
     const dto2 = new GetMyProfileDto();
     dto2.signing = SigningScheme.TON;
-    dto2.signerAddress = user.tonAddress;
+    dto2.signerAddress = asValidUserRef(user.tonAddress);
     dto2.sign(user.privateKey);
 
     // When
@@ -625,12 +626,14 @@ describe("GetMyProfile", () => {
       .withOperation(operationId)
       .signed(keys1.privateKey)
       .signed(keys2.privateKey);
+    dto1.signerAddress = asValidUserRef(alias);
 
     // signed by second and third key
     const dto2 = new GetMyProfileDto()
       .withOperation(operationId)
       .signed(keys2.privateKey)
       .signed(keys3.privateKey);
+    dto2.signerAddress = asValidUserRef(alias);
 
     // signed by all keys
     const dto3 = new GetMyProfileDto()
@@ -638,9 +641,11 @@ describe("GetMyProfile", () => {
       .signed(keys1.privateKey)
       .signed(keys2.privateKey)
       .signed(keys3.privateKey);
+    dto3.signerAddress = asValidUserRef(alias);
 
     // signed by first key only
     const dto4 = new GetMyProfileDto().withOperation(operationId).signed(keys1.privateKey);
+    dto4.signerAddress = asValidUserRef(alias);
 
     // When
     const resp1 = await chaincode.invoke("PublicKeyContract:GetMyProfile", dto1);
@@ -711,7 +716,7 @@ describe("UpdateUserRoles", () => {
     signerPrivateKey: string
   ): Promise<GalaChainResponse<any>> {
     const dto = new UpdateUserRolesDto();
-    dto.user = user;
+    dto.user = asValidUserRef(user);
     dto.roles = roles;
     dto.uniqueKey = randomUniqueKey();
     dto.sign(signerPrivateKey);
