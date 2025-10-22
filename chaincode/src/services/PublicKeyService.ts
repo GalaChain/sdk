@@ -24,7 +24,6 @@ import {
   UserAlias,
   UserProfile,
   UserProfileStrict,
-  UserRole,
   ValidationFailedError,
   asValidUserAlias,
   createValidChainObject,

@@ -629,6 +629,7 @@ describe("GetMyProfile", () => {
 
     // signed by first and second key
     const dto1 = new GetMyProfileDto()
+      .expiresInMs(1_000)
       .withSigner(alias)
       .withOperation(operationId)
       .signed(user1.privateKey)
@@ -636,6 +637,7 @@ describe("GetMyProfile", () => {
 
     // signed by second and third key
     const dto2 = new GetMyProfileDto()
+      .expiresInMs(1_000)
       .withSigner(alias)
       .withOperation(operationId)
       .signed(user2.privateKey)
@@ -643,6 +645,7 @@ describe("GetMyProfile", () => {
 
     // signed by all keys
     const dto3 = new GetMyProfileDto()
+      .expiresInMs(1_000)
       .withSigner(alias)
       .withOperation(operationId)
       .signed(user1.privateKey)

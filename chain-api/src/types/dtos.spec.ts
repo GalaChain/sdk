@@ -207,6 +207,7 @@ describe("ChainCallDTO", () => {
     dto.amounts = [new BigNumber("12.3")];
     dto.signerAddress = asValidUserRef("0x0000000000000000000000000000000000000123");
     dto.dtoOperation = "test-channel_test-chaincode_test-method";
+    dto.dtoExpiresAt = Date.now() + 1000;
 
     // When
     dto.sign(k1.privateKey);
@@ -227,6 +228,7 @@ describe("ChainCallDTO", () => {
     const dto = new TestDto();
     dto.amounts = [new BigNumber("12.3")];
     dto.dtoOperation = "test-channel_test-chaincode_test-method";
+    dto.dtoExpiresAt = Date.now() + 1000;
     dto.sign(privateKey); // first signature
 
     // When

@@ -48,7 +48,8 @@ class MultipleSignaturesNotAllowedError extends ValidationFailedError {
   constructor() {
     super(
       `Multiple signature authentication is supported only for ETH signing scheme, ` +
-        `and requires valid signerAddress, and no other signer parameters (signerPublicKey or prefix).`
+        "and requires valid signerAddress and dtoExpiresAt, " +
+        "and no other signer parameters (signerPublicKey or prefix)."
     );
   }
 }
@@ -232,7 +233,7 @@ async function authenticateMultipleSignatures(
     dto.signerPublicKey !== undefined ||
     dto.prefix !== undefined ||
     dto.signerAddress === undefined ||
-    // TODO fail if missing expirarion parameter
+    dto.dtoExpiresAt === undefined ||
     dto.multisig.length < 2
   ) {
     throw new MultipleSignaturesNotAllowedError();

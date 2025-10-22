@@ -300,10 +300,9 @@ export class ChainCallDTO {
       throw new ValidationFailedError("dtoOperation is required for multisignature DTOs");
     }
 
-    // TODO
-    // if (useMultisig && !this.dtoExpiresAt) {
-    //   throw new ValidationFailedError("dtoExpiresAt is required for multisignature DTOs");
-    // }
+    if (useMultisig && !this.dtoExpiresAt) {
+      throw new ValidationFailedError("dtoExpiresAt is required for multisignature DTOs");
+    }
 
     if (useMultisig && (this.signerPublicKey || this.prefix)) {
       throw new ValidationFailedError("signerPublicKey and prefix are not allowed for multisignature DTOs");
@@ -359,6 +358,12 @@ export class ChainCallDTO {
     return copied;
   }
 
+  public expiresInMs(ms: number): this {
+    const copied = instanceToInstance(this);
+    copied.dtoExpiresAt = Date.now() + ms;
+    return copied;
+  }
+
   public withOperation(operation: string): this {
     const copied = instanceToInstance(this);
     copied.dtoOperation = operation;
@@ -369,11 +374,6 @@ export class ChainCallDTO {
     const copied = instanceToInstance(this);
     copied.signerAddress = ref;
     return copied;
-  }
-
-  // TODO
-  public isValidForMultisig(): boolean {
-    throw new NotImplementedError("isValidForMultisig is not implemented");
   }
 
   public isSignatureValid(publicKey: string): boolean {

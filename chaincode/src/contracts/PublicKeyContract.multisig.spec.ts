@@ -81,7 +81,7 @@ describe("PublicKeyContract Multisignature", () => {
       // ensure fetching default users work
       const p1Resp = await chaincode.invoke(
         "PublicKeyContract:GetMyProfile",
-        new GetMyProfileDto().signed(key1.privateKey)
+        new GetMyProfileDto().expiresInMs(60_000).signed(key1.privateKey)
       );
       expect(p1Resp).toEqual(
         transactionSuccess({
@@ -207,6 +207,7 @@ describe("PublicKeyContract Multisignature", () => {
 
       // signed by first and second key
       const dto1 = new GetMyProfileDto()
+        .expiresInMs(60_000)
         .withOperation(operationId)
         .withSigner(alias)
         .signed(keys1.privateKey)
@@ -214,6 +215,7 @@ describe("PublicKeyContract Multisignature", () => {
 
       // signed by second and third key
       const dto2 = new GetMyProfileDto()
+        .expiresInMs(60_000)
         .withOperation(operationId)
         .withSigner(alias)
         .signed(keys2.privateKey)
@@ -221,6 +223,7 @@ describe("PublicKeyContract Multisignature", () => {
 
       // signed by all keys
       const dto3 = new GetMyProfileDto()
+        .expiresInMs(60_000)
         .withOperation(operationId)
         .withSigner(alias)
         .signed(keys1.privateKey)
@@ -229,6 +232,7 @@ describe("PublicKeyContract Multisignature", () => {
 
       // signed by first key only
       const dto4 = new GetMyProfileDto()
+        .expiresInMs(60_000)
         .withOperation(operationId)
         .withSigner(alias)
         .signed(keys1.privateKey);
@@ -267,7 +271,7 @@ describe("PublicKeyContract Multisignature", () => {
       const wrongMethod = "asset-channel_basic-asset_PublicKeyContract:Get42";
 
       // missing operation (requires manual addition of signatures)
-      const dto1 = new GetMyProfileDto().withSigner(alias);
+      const dto1 = new GetMyProfileDto().expiresInMs(60_000).withSigner(alias);
       dto1.multisig = [
         signatures.getSignature(dto1, signatures.normalizePrivateKey(keys1.privateKey)),
         signatures.getSignature(dto1, signatures.normalizePrivateKey(keys2.privateKey))
@@ -275,6 +279,7 @@ describe("PublicKeyContract Multisignature", () => {
 
       // signed with wrong method
       const dto2 = new GetMyProfileDto()
+        .expiresInMs(60_000)
         .withOperation(wrongMethod)
         .withSigner(alias)
         .signed(keys1.privateKey)
@@ -282,6 +287,7 @@ describe("PublicKeyContract Multisignature", () => {
 
       // operation replaced after signing
       const dto3 = new GetMyProfileDto()
+        .expiresInMs(60_000)
         .withOperation(wrongMethod)
         .withSigner(alias)
         .signed(keys1.privateKey)
@@ -318,6 +324,7 @@ describe("PublicKeyContract Multisignature", () => {
 
       // signed by one registered key and one wrong key
       const dto1 = new GetMyProfileDto()
+        .expiresInMs(60_000)
         .withOperation(operationId)
         .withSigner(alias)
         .signed(keys1.privateKey)
@@ -340,6 +347,7 @@ describe("PublicKeyContract Multisignature", () => {
 
       // signed by the same key twice
       const dto1 = new GetMyProfileDto()
+        .expiresInMs(60_000)
         .withOperation(operationId)
         .withSigner(alias)
         .signed(keys1.privateKey)
@@ -361,7 +369,7 @@ describe("PublicKeyContract Multisignature", () => {
       const operationId = "asset-channel_basic-asset_PublicKeyContract:GetMyProfile";
 
       // signed by one registered key and one wrong key
-      const dto1 = new GetMyProfileDto().withOperation(operationId);
+      const dto1 = new GetMyProfileDto().expiresInMs(60_000).withOperation(operationId);
 
       // we need to manually add signatures, because of strict validation in `signed()` method
       dto1.multisig = [
@@ -375,6 +383,40 @@ describe("PublicKeyContract Multisignature", () => {
       // Then
       expect(resp1).toEqual(transactionErrorKey("MULTIPLE_SIGNATURES_NOT_ALLOWED"));
       expect(resp1).toEqual(transactionErrorMessageContains("requires valid signerAddress"));
+    });
+
+    it("should fail when signing with wrong or mising DTO expiration time", async () => {
+      // Given
+      const chaincode = new TestChaincode([PublicKeyContract]);
+      const { keys, alias } = await createRegisteredMultiSigUser(chaincode, { keys: 2, quorum: 2 });
+      const [keys1, keys2] = keys;
+      const operationId = "asset-channel_basic-asset_PublicKeyContract:GetMyProfile";
+
+      // no expiration requires manual addition of signatures
+      const dto1 = new GetMyProfileDto().withOperation(operationId).withSigner(alias);
+      dto1.multisig = [
+        signatures.getSignature(dto1, signatures.normalizePrivateKey(keys1.privateKey)),
+        signatures.getSignature(dto1, signatures.normalizePrivateKey(keys2.privateKey))
+      ];
+
+      // expired DTO
+      const dto2 = new GetMyProfileDto()
+        .expiresInMs(-1_000)
+        .withOperation(operationId)
+        .withSigner(alias)
+        .signed(keys1.privateKey)
+        .signed(keys2.privateKey);
+
+      // When
+      const resp1 = await chaincode.invoke("PublicKeyContract:GetMyProfile", dto1);
+      const resp2 = await chaincode.invoke("PublicKeyContract:GetMyProfile", dto2);
+
+      // Then
+      expect(resp1).toEqual(transactionErrorKey("MULTIPLE_SIGNATURES_NOT_ALLOWED"));
+      expect(resp1).toEqual(transactionErrorMessageContains("requires valid signerAddress and dtoExpiresAt"));
+
+      expect(resp2).toEqual(transactionErrorKey("EXPIRED"));
+      expect(resp2).toEqual(transactionErrorMessageContains("DTO expired at"));
     });
 
     it("should work with single signature quorum requirements", async () => {
@@ -391,16 +433,24 @@ describe("PublicKeyContract Multisignature", () => {
       const signers = keys.map((k) => `eth|${signatures.getEthAddress(k.publicKey)}`).sort();
 
       // Single signature, but no signer => individual profile
-      const dto1 = new GetMyProfileDto().withOperation(operationId).signed(key1.privateKey);
+      const dto1 = new GetMyProfileDto()
+        .expiresInMs(60_000)
+        .withOperation(operationId)
+        .signed(key1.privateKey);
 
       // Single signature with individual signer => REDUNDANT_USER_ADDRESS error
       const dto2 = new GetMyProfileDto()
+        .expiresInMs(60_000)
         .withOperation(operationId)
         .withSigner(individualUserRef)
         .signed(key1.privateKey);
 
       // Single signature with multisig signer => multisig profile
-      const dto3 = new GetMyProfileDto().withOperation(operationId).withSigner(alias).signed(key1.privateKey);
+      const dto3 = new GetMyProfileDto()
+        .expiresInMs(60_000)
+        .withOperation(operationId)
+        .withSigner(alias)
+        .signed(key1.privateKey);
 
       // When
       const resp1 = await chaincode.invoke("PublicKeyContract:GetMyProfile", dto1);
@@ -454,13 +504,6 @@ describe("PublicKeyContract Multisignature", () => {
   });
 
   describe("AddSigner", () => {
-    async function setup() {
-      const chaincode = new TestChaincode([PublicKeyContract]);
-      const cfg = { keys: 3, quorum: 2 };
-      const resp = await createRegisteredMultiSigUser(chaincode, cfg);
-      return { chaincode, keys: resp.keys, alias: resp.alias, quorum: cfg.quorum };
-    }
-
     it("should not allow to add signer to a single signed user", async () => {
       // Given
       const chaincode = new TestChaincode([PublicKeyContract]);
@@ -494,11 +537,15 @@ describe("PublicKeyContract Multisignature", () => {
       });
 
       // Create DTO with quorum signatures (1 out of 1)
-      const dto = await createValidSubmitDTO(AddSignerDto, {
-        dtoOperation: "asset-channel_basic-asset_PublicKeyContract:AddSigner",
-        signerAddress: multisigUser.alias,
-        signer: user2.alias
-      }).signed(user1.privateKey);
+      const dto = (
+        await createValidSubmitDTO(AddSignerDto, {
+          dtoOperation: "asset-channel_basic-asset_PublicKeyContract:AddSigner",
+          signerAddress: multisigUser.alias,
+          signer: user2.alias
+        })
+      )
+        .expiresInMs(60_000)
+        .signed(user1.privateKey);
 
       // When
       const response = await chaincode.invoke("PublicKeyContract:AddSigner", dto);
@@ -529,11 +576,14 @@ describe("PublicKeyContract Multisignature", () => {
       });
 
       // Create DTO with quorum signatures (1 out of 1)
-      const dto = await createValidSubmitDTO(AddSignerDto, {
-        dtoOperation: "asset-channel_basic-asset_PublicKeyContract:AddSigner",
-        signerAddress: multisigUser.alias,
-        signer: user3.alias
-      })
+      const dto = (
+        await createValidSubmitDTO(AddSignerDto, {
+          dtoOperation: "asset-channel_basic-asset_PublicKeyContract:AddSigner",
+          signerAddress: multisigUser.alias,
+          signer: user3.alias
+        })
+      )
+        .expiresInMs(60_000)
         .signed(user1.privateKey)
         .signed(user2.privateKey);
 
@@ -556,41 +606,44 @@ describe("PublicKeyContract Multisignature", () => {
   });
 
   describe("RemoveSigner", () => {
-    async function setup() {
-      const chaincode = new TestChaincode([PublicKeyContract]);
-      const cfg = { keys: 3, quorum: 2 };
-      const resp = await createRegisteredMultiSigUser(chaincode, cfg);
-      return { chaincode, keys: resp.keys, alias: resp.alias, quorum: cfg.quorum };
-    }
-
     it("should remove public key for multisig user with quorum signatures", async () => {
       // Given
-      const { chaincode, keys, alias } = await setup();
+      const chaincode = new TestChaincode([PublicKeyContract]);
+      const { keys, alias } = await createRegisteredMultiSigUser(chaincode, { keys: 3, quorum: 2 });
       const [key1, key2, key3] = keys;
 
       const dtoOperation = "asset-channel_basic-asset_PublicKeyContract:RemoveSigner";
 
-      const remove1Dto = await createValidSubmitDTO(RemoveSignerDto, {
-        signer: asValidUserRef(signatures.getEthAddress(key1.publicKey)),
-        dtoOperation,
-        signerAddress: alias
-      })
+      const remove1Dto = (
+        await createValidSubmitDTO(RemoveSignerDto, {
+          signer: asValidUserRef(signatures.getEthAddress(key1.publicKey)),
+          dtoOperation,
+          signerAddress: alias
+        })
+      )
+        .expiresInMs(60_000)
         .signed(key1.privateKey)
         .signed(key2.privateKey);
 
-      const remove2Dto = await createValidSubmitDTO(RemoveSignerDto, {
-        signer: asValidUserRef(signatures.getEthAddress(key2.publicKey)),
-        dtoOperation,
-        signerAddress: alias
-      })
+      const remove2Dto = (
+        await createValidSubmitDTO(RemoveSignerDto, {
+          signer: asValidUserRef(signatures.getEthAddress(key2.publicKey)),
+          dtoOperation,
+          signerAddress: alias
+        })
+      )
+        .expiresInMs(60_000)
         .signed(key1.privateKey)
         .signed(key3.privateKey);
 
-      const remove3Dto = await createValidSubmitDTO(RemoveSignerDto, {
-        signer: asValidUserRef(signatures.getEthAddress(key3.publicKey)),
-        dtoOperation,
-        signerAddress: alias
-      })
+      const remove3Dto = (
+        await createValidSubmitDTO(RemoveSignerDto, {
+          signer: asValidUserRef(signatures.getEthAddress(key3.publicKey)),
+          dtoOperation,
+          signerAddress: alias
+        })
+      )
+        .expiresInMs(60_000)
         .signed(key1.privateKey)
         .signed(key3.privateKey);
 
@@ -631,25 +684,31 @@ describe("PublicKeyContract Multisignature", () => {
         keys: 3,
         quorum: 2
       });
-      const [key1, key2, key3] = keys;
+      const [key1, key2] = keys;
 
       const newQuorum = 1;
       const newInvalidQuorum = keys.length + 1;
 
       // Create DTO with quorum signatures (2 out of 3)
-      const dto1 = await createValidSubmitDTO(UpdateQuorumDto, {
-        quorum: newQuorum,
-        dtoOperation: "asset-channel_basic-asset_PublicKeyContract:UpdateQuorum",
-        signerAddress: alias
-      })
+      const dto1 = (
+        await createValidSubmitDTO(UpdateQuorumDto, {
+          quorum: newQuorum,
+          dtoOperation: "asset-channel_basic-asset_PublicKeyContract:UpdateQuorum",
+          signerAddress: alias
+        })
+      )
+        .expiresInMs(60_000)
         .signed(key1.privateKey)
         .signed(key2.privateKey);
 
-      const dto2 = await createValidSubmitDTO(UpdateQuorumDto, {
-        quorum: newInvalidQuorum,
-        dtoOperation: "asset-channel_basic-asset_PublicKeyContract:UpdateQuorum",
-        signerAddress: alias
-      }) //
+      const dto2 = (
+        await createValidSubmitDTO(UpdateQuorumDto, {
+          quorum: newInvalidQuorum,
+          dtoOperation: "asset-channel_basic-asset_PublicKeyContract:UpdateQuorum",
+          signerAddress: alias
+        })
+      )
+        .expiresInMs(60_000)
         .signed(key1.privateKey);
 
       // When
