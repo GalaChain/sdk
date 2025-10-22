@@ -64,6 +64,22 @@ export async function createRegisteredUser(chaincode: TestChaincode): Promise<Us
   return { alias, privateKey, publicKey, ethAddress };
 }
 
+export async function createRegisteredMultiSigUserForUsers(
+  chaincode: TestChaincode,
+  p: { users: User[]; quorum: number }
+): Promise<{ alias: UserAlias }> {
+  const alias = ("client|multi-" + randomUUID()) as UserAlias;
+  const dto = await createValidSubmitDTO(RegisterUserDto, {
+    user: alias,
+    signers: p.users.map((u) => u.alias),
+    signatureQuorum: p.quorum
+  });
+  const signedDto = dto.signed(process.env.DEV_ADMIN_PRIVATE_KEY as string);
+  const response = await chaincode.invoke("PublicKeyContract:RegisterUser", signedDto);
+  expect(response).toEqual(transactionSuccess());
+  return { alias };
+}
+
 export async function createRegisteredMultiSigUser(
   chaincode: TestChaincode,
   p: { keys: number; quorum: number }
@@ -151,46 +167,6 @@ export async function getMyProfile(
   const dto = new GetMyProfileDto();
   dto.sign(privateKey);
   return chaincode.invoke("PublicKeyContract:GetMyProfile", dto);
-}
-
-export function userProfileKV(
-  alias: UserAlias,
-  publicKey: string,
-  quorum: number,
-  roles: UserRole[] = [...UserProfile.DEFAULT_ROLES]
-): Record<string, string> {
-  const up = new UserProfile();
-  up.alias = alias;
-  up.ethAddress = signatures.getEthAddress(publicKey);
-  up.roles = roles;
-  up.signatureQuorum = quorum;
-  return {
-    [`\u0000GCUP\u0000${up.ethAddress}\u0000`]: up.serialize()
-  };
-}
-
-export function userProfileInvalidatedKV(alias: UserAlias, publicKey: string): Record<string, string> {
-  const up = new UserProfile();
-  up.alias = `client|invalidated` as UserAlias;
-  up.ethAddress = "0000000000000000000000000000000000000000";
-  up.roles = [];
-  return {
-    [`\u0000GCUP\u0000${signatures.getEthAddress(publicKey)}\u0000`]: up.serialize()
-  };
-}
-
-export function publicKeyKV(alias: UserAlias, publicKeys: string[]): Record<string, string> {
-  const pk = new PublicKey();
-  pk.signing = SigningScheme.ETH;
-  if (publicKeys.length === 1) {
-    pk.publicKey = signatures.normalizePublicKey(publicKeys[0]).toString("base64");
-  } else {
-    // In multisig model, persist signers (addresses), not multiple keys
-    pk.signers = publicKeys.map((pk) => signatures.getEthAddress(pk)) as unknown as UserAlias[];
-  }
-  return {
-    [`\u0000GCPK\u0000${alias}\u0000`]: pk.serialize()
-  };
 }
 
 test.skip("Workaround", () => {

@@ -31,6 +31,7 @@ import {
 import { JSONSchema } from "class-validator-jsonschema";
 
 import {
+  NotImplementedError,
   SigningScheme,
   ValidationFailedError,
   deserialize,
@@ -291,9 +292,21 @@ export class ChainCallDTO {
     const currentSignatures = this.getAllSignatures();
     const useMultisig = currentSignatures.length > 0;
 
-    if (useMultisig && (this.signerAddress || this.signerPublicKey || this.prefix)) {
-      const msg = "signerAddress, signerPublicKey and prefix are not allowed for multisignature DTOs";
-      throw new ValidationFailedError(msg);
+    if (useMultisig && !this.signerAddress) {
+      throw new ValidationFailedError("signerAddress is required for multisignature DTOs");
+    }
+
+    if (useMultisig && !this.dtoOperation) {
+      throw new ValidationFailedError("dtoOperation is required for multisignature DTOs");
+    }
+
+    // TODO
+    // if (useMultisig && !this.dtoExpiresAt) {
+    //   throw new ValidationFailedError("dtoExpiresAt is required for multisignature DTOs");
+    // }
+
+    if (useMultisig && (this.signerPublicKey || this.prefix)) {
+      throw new ValidationFailedError("signerPublicKey and prefix are not allowed for multisignature DTOs");
     }
 
     if (useDer) {
@@ -352,38 +365,30 @@ export class ChainCallDTO {
     return copied;
   }
 
-  public isSignatureValid(publicKey: string, index?: number): boolean {
-    if (this.signing === SigningScheme.TON) {
-      if (index !== undefined) {
-        throw new ValidationFailedError("Multisig is not supported for TON signing scheme");
-      }
+  public withSigner(ref: UserRef): this {
+    const copied = instanceToInstance(this);
+    copied.signerAddress = ref;
+    return copied;
+  }
 
+  // TODO
+  public isValidForMultisig(): boolean {
+    throw new NotImplementedError("isValidForMultisig is not implemented");
+  }
+
+  public isSignatureValid(publicKey: string): boolean {
+    if (this.multisig || !this.signature) {
+      throw new NotImplementedError("isSignatureValid is not supported for multisig DTOs");
+    }
+
+    if (this.signing === SigningScheme.TON) {
       const signatureBuff = Buffer.from(this.signature ?? "", "base64");
       const publicKeyBuff = Buffer.from(publicKey, "base64");
 
       return signatures.ton.isValidSignature(signatureBuff, this, publicKeyBuff, this.prefix);
     }
 
-    // ETH signing scheme - single signature
-    if (this.signature) {
-      if (index !== undefined) {
-        throw new ValidationFailedError("Index is not supported for single signed DTOs");
-      }
-      return signatures.isValid(this.signature, this, publicKey);
-    }
-
-    // ETH signing scheme - multisig
-    if (index === undefined) {
-      throw new ValidationFailedError("Index is required for multisig DTOs");
-    }
-
-    const signature = this.multisig?.[index];
-
-    if (!signature) {
-      throw new ValidationFailedError(`No signature in multisig array at index ${index}`);
-    }
-
-    return signatures.isValid(signature, this, publicKey);
+    return signatures.isValid(this.signature, this, publicKey);
   }
 }
 
@@ -597,7 +602,7 @@ export class RegisterUserDto extends SubmitCallDTO {
   @SerializeIf((o) => !o.publicKey)
   @IsUserRef({ each: true })
   @IsNotEmpty({ each: true })
-  @ArrayMinSize(2)
+  @ArrayMinSize(1)
   public signers?: UserRef[];
 
   @JSONSchema({

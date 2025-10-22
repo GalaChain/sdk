@@ -52,6 +52,7 @@ export class GalaChainContext extends Context {
   private callingUserRolesValue?: string[];
   private callingUserSignedByValue?: UserAlias[];
   private callingUserSignatureQuorumValue?: number;
+  private callingUserAllowedSignersValue?: UserAlias[];
   private operationCtxValue?: OperationContext;
   private txUnixTimeValue?: number;
   private loggerInstance?: GalaLoggerInstance;
@@ -112,13 +113,12 @@ export class GalaChainContext extends Context {
     return this.callingUserSignedByValue;
   }
 
-  get callingUserSignatureQuorum(): number {
-    if (this.callingUserSignatureQuorumValue === undefined) {
-      throw new UnauthorizedError(
-        `No signature quorum known for user ${this.callingUserValue} ${new Error().stack}`
-      );
-    }
+  get callingUserSignatureQuorum(): number | undefined {
     return this.callingUserSignatureQuorumValue;
+  }
+
+  get callingUserAllowedSigners(): UserAlias[] | undefined {
+    return this.callingUserAllowedSignersValue;
   }
 
   get callingUserProfile(): UserProfile {
@@ -128,6 +128,7 @@ export class GalaChainContext extends Context {
     profile.tonAddress = this.callingUserTonAddressValue;
     profile.roles = this.callingUserRoles;
     profile.signatureQuorum = this.callingUserSignatureQuorum;
+    profile.signers = this.callingUserAllowedSigners;
 
     return profile;
   }
@@ -138,7 +139,8 @@ export class GalaChainContext extends Context {
     tonAddress?: string;
     roles: string[];
     signedBy: UserAlias[];
-    signatureQuorum: number;
+    signatureQuorum?: number;
+    allowedSigners?: UserAlias[];
   }) {
     if (this.callingUserValue !== undefined) {
       throw new Error("Calling user already set to " + this.callingUserValue);
@@ -148,6 +150,7 @@ export class GalaChainContext extends Context {
     this.callingUserRolesValue = d.roles ?? [UserRole.EVALUATE]; // default if `roles` is undefined
     this.callingUserSignedByValue = d.signedBy;
     this.callingUserSignatureQuorumValue = d.signatureQuorum;
+    this.callingUserAllowedSignersValue = d.allowedSigners;
 
     if (d.ethAddress !== undefined) {
       this.callingUserEthAddressValue = d.ethAddress;

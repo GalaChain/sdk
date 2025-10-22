@@ -17,13 +17,14 @@ import {
   GetMyProfileDto,
   RegisterUserDto,
   RemoveSignerDto,
-  SigningScheme,
   UpdatePublicKeyDto,
   UpdateQuorumDto,
   UpdateUserRolesDto,
   UserAlias,
   UserProfile,
   UserRole,
+  asValidUserAlias,
+  asValidUserRef,
   createValidSubmitDTO,
   signatures
 } from "@gala-chain/api";
@@ -34,21 +35,31 @@ import {
   transactionSuccess
 } from "@gala-chain/test";
 
-import { PublicKeyService } from "../services";
 import { PublicKeyContract } from "./PublicKeyContract";
 import {
   createRegisteredMultiSigUser,
+  createRegisteredMultiSigUserForUsers,
   createRegisteredUser,
   getPublicKey,
-  getUserProfile,
-  publicKeyKV,
-  userProfileInvalidatedKV,
-  userProfileKV
+  getUserProfile
 } from "./authenticate.testutils.spec";
+
+let prevEnv: string | undefined;
+
+beforeAll(() => {
+  // we are enabling allow non registered users for this test suite to allow
+  // non-registered users to be used as signers
+  prevEnv = process.env.ALLOW_NON_REGISTERED_USERS;
+  process.env.ALLOW_NON_REGISTERED_USERS = "true";
+});
+
+afterAll(() => {
+  process.env.ALLOW_NON_REGISTERED_USERS = prevEnv;
+});
 
 describe("PublicKeyContract Multisignature", () => {
   describe("RegisterUser", () => {
-    it("should register user with 3 public keys and save 3 user profile objects", async () => {
+    it("should register user with 3 signers", async () => {
       // Given
       const chaincode = new TestChaincode([PublicKeyContract]);
       const key1 = signatures.genKeyPair();
@@ -57,15 +68,28 @@ describe("PublicKeyContract Multisignature", () => {
 
       const publicKeys = [key1.publicKey, key2.publicKey, key3.publicKey];
       const ethAddresses = publicKeys.map((pk) => signatures.getEthAddress(pk));
-      const userAlias = "client|multisig-test" as UserAlias;
+      const userAlias = asValidUserAlias("client|multisig-test");
       const signatureQuorum = 2;
 
       const dto = await createValidSubmitDTO(RegisterUserDto, {
         user: userAlias,
-        signers: ethAddresses as unknown as UserAlias[],
+        signers: ethAddresses.map(asValidUserRef),
         signatureQuorum
       });
       const signedDto = dto.signed(process.env.DEV_ADMIN_PRIVATE_KEY as string);
+
+      // ensure fetching default users work
+      const p1Resp = await chaincode.invoke(
+        "PublicKeyContract:GetMyProfile",
+        new GetMyProfileDto().signed(key1.privateKey)
+      );
+      expect(p1Resp).toEqual(
+        transactionSuccess({
+          alias: `eth|${ethAddresses[0]}`,
+          ethAddress: ethAddresses[0],
+          roles: UserProfile.DEFAULT_ROLES
+        })
+      );
 
       // When
       const response = await chaincode.invoke("PublicKeyContract:RegisterUser", signedDto);
@@ -73,38 +97,32 @@ describe("PublicKeyContract Multisignature", () => {
       // Then
       expect(response).toEqual(transactionSuccess(userAlias));
 
-      // Verify that all 3 user profile objects are saved
-      for (const ethAddress of ethAddresses) {
-        const profileResponse = await getUserProfile(chaincode, ethAddress);
-        expect(profileResponse).toEqual(
-          transactionSuccess({
-            alias: userAlias,
-            ethAddress,
-            roles: UserProfile.DEFAULT_ROLES,
-            signatureQuorum
-          })
-        );
-      }
-
-      // Verify that the public key is stored correctly
-      const publicKeyResponse = await getPublicKey(chaincode, userAlias);
-      expect(publicKeyResponse).toEqual(
+      // Verify that a user profile pointing to user alias is saved
+      const profileResponse = await getUserProfile(chaincode, userAlias);
+      expect(profileResponse).toEqual(
         transactionSuccess({
-          publicKeys: publicKeys.map((pk) => PublicKeyService.normalizePublicKey(pk)),
-          signing: SigningScheme.ETH
+          alias: userAlias,
+          roles: UserProfile.DEFAULT_ROLES,
+          signatureQuorum,
+          signers: ethAddresses.sort().map((a) => `eth|${a}`)
         })
       );
+
+      // No public key is stored for multisig users
+      const publicKeyResponse = await getPublicKey(chaincode, userAlias);
+      expect(publicKeyResponse).toEqual(transactionErrorKey("PK_NOT_FOUND"));
     });
 
-    it("should fail when registering with duplicate public keys", async () => {
+    it("should fail when registering with duplicate signers", async () => {
       // Given
       const chaincode = new TestChaincode([PublicKeyContract]);
       const key1 = signatures.genKeyPair();
       const publicKeys = [key1.publicKey, key1.publicKey, key1.publicKey]; // All same key
+      const ethAddresses = publicKeys.map((pk) => signatures.getEthAddress(pk));
 
       const dto = await createValidSubmitDTO(RegisterUserDto, {
         user: "client|duplicate-test" as UserAlias,
-        signers: publicKeys.map((pk) => signatures.getEthAddress(pk)) as unknown as UserAlias[],
+        signers: ethAddresses.map(asValidUserRef),
         signatureQuorum: 2
       });
       const signedDto = dto.signed(process.env.DEV_ADMIN_PRIVATE_KEY as string);
@@ -113,7 +131,7 @@ describe("PublicKeyContract Multisignature", () => {
       const response = await chaincode.invoke("PublicKeyContract:RegisterUser", signedDto);
 
       // Then
-      expect(response).toEqual(transactionErrorMessageContains("Found duplicate public keys"));
+      expect(response).toEqual(transactionErrorMessageContains("Found duplicate signers in"));
     });
 
     it("should fail when signature quorum exceeds number of public keys", async () => {
@@ -122,10 +140,11 @@ describe("PublicKeyContract Multisignature", () => {
       const key1 = signatures.genKeyPair();
       const key2 = signatures.genKeyPair();
       const publicKeys = [key1.publicKey, key2.publicKey];
+      const ethAddresses = publicKeys.map((pk) => signatures.getEthAddress(pk));
 
       const dto = await createValidSubmitDTO(RegisterUserDto, {
-        user: "client|quorum-test" as UserAlias,
-        signers: publicKeys.map((pk) => signatures.getEthAddress(pk)) as unknown as UserAlias[],
+        user: asValidUserAlias("client|quorum-test"),
+        signers: ethAddresses.map(asValidUserRef),
         signatureQuorum: 5 // More than available keys - this should fail
       });
       const signedDto = dto.signed(process.env.DEV_ADMIN_PRIVATE_KEY as string);
@@ -135,21 +154,25 @@ describe("PublicKeyContract Multisignature", () => {
 
       // Then
       expect(response).toEqual(
-        transactionErrorMessageContains("Signature quorum cannot exceed number of public keys")
+        transactionErrorMessageContains("Signature quorum cannot exceed number of signers")
       );
     });
 
-    it("should use all public keys as default signature quorum when not specified", async () => {
+    it("should use all signers as default signature quorum when not specified", async () => {
       // Given
       const chaincode = new TestChaincode([PublicKeyContract]);
       const key1 = signatures.genKeyPair();
       const key2 = signatures.genKeyPair();
       const key3 = signatures.genKeyPair();
+
+      const userAlias = asValidUserAlias("client|default-quorum");
+
       const publicKeys = [key1.publicKey, key2.publicKey, key3.publicKey];
+      const ethAddresses = publicKeys.map((pk) => signatures.getEthAddress(pk));
 
       const dto = await createValidSubmitDTO(RegisterUserDto, {
-        user: "client|default-quorum" as UserAlias,
-        signers: publicKeys.map((pk) => signatures.getEthAddress(pk)) as unknown as UserAlias[]
+        user: userAlias,
+        signers: ethAddresses.map(asValidUserRef)
         // signatureQuorum not specified - should default to publicKeys.length
       });
       const signedDto = dto.signed(process.env.DEV_ADMIN_PRIVATE_KEY as string);
@@ -161,12 +184,11 @@ describe("PublicKeyContract Multisignature", () => {
       expect(response).toEqual(transactionSuccess());
 
       // Verify that signature quorum is set to the number of public keys
-      const ethAddress = signatures.getEthAddress(publicKeys[0]);
-      const profileResponse = await getUserProfile(chaincode, ethAddress);
+      const profileResponse = await getUserProfile(chaincode, userAlias);
       expect(profileResponse).toEqual(
         transactionSuccess(
           expect.objectContaining({
-            signatureQuorum: 3 // Should be 3, same as publicKeys.length
+            signatureQuorum: ethAddresses.length
           })
         )
       );
@@ -174,35 +196,42 @@ describe("PublicKeyContract Multisignature", () => {
   });
 
   describe("GetMyProfile", () => {
-    it("should get saved profile (ETH) with multiple public keys", async () => {
+    it("should get saved profile (ETH) with multiple signers", async () => {
       // Given
       const chaincode = new TestChaincode([PublicKeyContract]);
 
       const { keys, alias } = await createRegisteredMultiSigUser(chaincode, { keys: 3, quorum: 2 });
       const [keys1, keys2, keys3] = keys;
+      const signers = keys.map((k) => `eth|${signatures.getEthAddress(k.publicKey)}`).sort();
       const operationId = "asset-channel_basic-asset_PublicKeyContract:GetMyProfile";
 
       // signed by first and second key
       const dto1 = new GetMyProfileDto()
         .withOperation(operationId)
+        .withSigner(alias)
         .signed(keys1.privateKey)
         .signed(keys2.privateKey);
 
       // signed by second and third key
       const dto2 = new GetMyProfileDto()
         .withOperation(operationId)
+        .withSigner(alias)
         .signed(keys2.privateKey)
         .signed(keys3.privateKey);
 
       // signed by all keys
       const dto3 = new GetMyProfileDto()
         .withOperation(operationId)
+        .withSigner(alias)
         .signed(keys1.privateKey)
         .signed(keys2.privateKey)
         .signed(keys3.privateKey);
 
       // signed by first key only
-      const dto4 = new GetMyProfileDto().signed(keys1.privateKey);
+      const dto4 = new GetMyProfileDto()
+        .withOperation(operationId)
+        .withSigner(alias)
+        .signed(keys1.privateKey);
 
       // When
       const resp1 = await chaincode.invoke("PublicKeyContract:GetMyProfile", dto1);
@@ -215,40 +244,46 @@ describe("PublicKeyContract Multisignature", () => {
         transactionSuccess({
           alias,
           roles: [UserRole.EVALUATE, UserRole.SUBMIT],
-          signatureQuorum: 2
+          signatureQuorum: 2,
+          signers
         })
       );
 
       expect(resp2).toEqual(resp1);
       expect(resp3).toEqual(resp1);
 
+      const err4Msg = "Insufficient number of signatures: got 1, required 2.";
       expect(resp4).toEqual(transactionErrorKey("UNAUTHORIZED"));
-      expect(resp4).toEqual(
-        transactionErrorMessageContains("Insufficient number of signatures: got 1, required 2.")
-      );
+      expect(resp4).toEqual(transactionErrorMessageContains(err4Msg));
     });
 
-    it("should fail when signing wrong method", async () => {
+    it("should fail when signing wrong operation", async () => {
       // Given
       const chaincode = new TestChaincode([PublicKeyContract]);
-      const { keys } = await createRegisteredMultiSigUser(chaincode, { keys: 3, quorum: 2 });
+      const { keys, alias } = await createRegisteredMultiSigUser(chaincode, { keys: 3, quorum: 2 });
       const [keys1, keys2] = keys;
 
       const correctMethod = "asset-channel_basic-asset_PublicKeyContract:GetMyProfile";
       const wrongMethod = "asset-channel_basic-asset_PublicKeyContract:Get42";
 
-      // missing operation
-      const dto1 = new GetMyProfileDto().signed(keys1.privateKey).signed(keys2.privateKey);
+      // missing operation (requires manual addition of signatures)
+      const dto1 = new GetMyProfileDto().withSigner(alias);
+      dto1.multisig = [
+        signatures.getSignature(dto1, signatures.normalizePrivateKey(keys1.privateKey)),
+        signatures.getSignature(dto1, signatures.normalizePrivateKey(keys2.privateKey))
+      ];
 
       // signed with wrong method
       const dto2 = new GetMyProfileDto()
         .withOperation(wrongMethod)
+        .withSigner(alias)
         .signed(keys1.privateKey)
         .signed(keys2.privateKey);
 
       // operation replaced after signing
       const dto3 = new GetMyProfileDto()
         .withOperation(wrongMethod)
+        .withSigner(alias)
         .signed(keys1.privateKey)
         .signed(keys2.privateKey)
         .withOperation(correctMethod);
@@ -265,158 +300,156 @@ describe("PublicKeyContract Multisignature", () => {
       expect(resp2).toEqual(transactionErrorMessageContains(err2Msg));
 
       // signing is broken => recovers public key to non-existing user
-      expect(resp3).toEqual(transactionErrorKey("USER_NOT_REGISTERED"));
+      // and we cannot use default user for multisig even if the feature is enabled
+      expect(process.env.ALLOW_NON_REGISTERED_USERS).toEqual("true");
+      expect(resp3).toEqual(transactionErrorKey("UNAUTHORIZED"));
+      expect(resp3).toEqual(transactionErrorMessageContains(`is not allowed to sign ${alias}.`));
     });
 
     it("should fail when signing with wrong combination of keys", async () => {
       // Given
       const chaincode = new TestChaincode([PublicKeyContract]);
-      const { keys } = await createRegisteredMultiSigUser(chaincode, { keys: 3, quorum: 2 });
+      const { keys, alias } = await createRegisteredMultiSigUser(chaincode, { keys: 3, quorum: 2 });
       const [keys1] = keys;
+      const operationId = "asset-channel_basic-asset_PublicKeyContract:GetMyProfile";
 
       // Create a different key pair that's not registered
       const wrongKey = signatures.genKeyPair();
 
       // signed by one registered key and one wrong key
-      const dto1 = new GetMyProfileDto().signed(keys1.privateKey).signed(wrongKey.privateKey);
+      const dto1 = new GetMyProfileDto()
+        .withOperation(operationId)
+        .withSigner(alias)
+        .signed(keys1.privateKey)
+        .signed(wrongKey.privateKey);
 
       // When
       const resp1 = await chaincode.invoke("PublicKeyContract:GetMyProfile", dto1);
 
       // Then
-      expect(resp1).toEqual(transactionErrorKey("USER_NOT_REGISTERED"));
+      expect(resp1).toEqual(transactionErrorKey("UNAUTHORIZED"));
+      expect(resp1).toEqual(transactionErrorMessageContains(`is not allowed to sign ${alias}.`));
     });
 
     it("should fail when signing with duplicate keys", async () => {
       // Given
       const chaincode = new TestChaincode([PublicKeyContract]);
-      const { keys } = await createRegisteredMultiSigUser(chaincode, { keys: 3, quorum: 2 });
+      const { keys, alias } = await createRegisteredMultiSigUser(chaincode, { keys: 3, quorum: 2 });
       const [keys1] = keys;
+      const operationId = "asset-channel_basic-asset_PublicKeyContract:GetMyProfile";
 
       // signed by the same key twice
-      const dto1 = new GetMyProfileDto().signed(keys1.privateKey).signed(keys1.privateKey);
+      const dto1 = new GetMyProfileDto()
+        .withOperation(operationId)
+        .withSigner(alias)
+        .signed(keys1.privateKey)
+        .signed(keys1.privateKey);
 
       // When
       const resp1 = await chaincode.invoke("PublicKeyContract:GetMyProfile", dto1);
 
       // Then
-      expect(resp1).toEqual(transactionErrorKey("DUPLICATE_SIGNER_PUBLIC_KEY"));
+      expect(resp1).toEqual(transactionErrorKey("DUPLICATE_SIGNER"));
+      expect(resp1).toEqual(transactionErrorMessageContains("Duplicate signer in"));
     });
 
-    it("should work with different signature quorum requirements", async () => {
+    it("should fail when missing signer address", async () => {
+      // Given
+      const chaincode = new TestChaincode([PublicKeyContract]);
+      const { keys } = await createRegisteredMultiSigUser(chaincode, { keys: 3, quorum: 2 });
+      const [keys1, keys2] = keys;
+      const operationId = "asset-channel_basic-asset_PublicKeyContract:GetMyProfile";
+
+      // signed by one registered key and one wrong key
+      const dto1 = new GetMyProfileDto().withOperation(operationId);
+
+      // we need to manually add signatures, because of strict validation in `signed()` method
+      dto1.multisig = [
+        signatures.getSignature(dto1, signatures.normalizePrivateKey(keys1.privateKey)),
+        signatures.getSignature(dto1, signatures.normalizePrivateKey(keys2.privateKey))
+      ];
+
+      // When
+      const resp1 = await chaincode.invoke("PublicKeyContract:GetMyProfile", dto1);
+
+      // Then
+      expect(resp1).toEqual(transactionErrorKey("MULTIPLE_SIGNATURES_NOT_ALLOWED"));
+      expect(resp1).toEqual(transactionErrorMessageContains("requires valid signerAddress"));
+    });
+
+    it("should work with single signature quorum requirements", async () => {
       // Given
       const chaincode = new TestChaincode([PublicKeyContract]);
       const operationId = "asset-channel_basic-asset_PublicKeyContract:GetMyProfile";
 
       // Test with quorum = 1 (any single key)
-      const { keys: keys1, alias: alias1 } = await createRegisteredMultiSigUser(chaincode, {
-        keys: 3,
-        quorum: 1
-      });
-      const [key1_1] = keys1;
+      const { keys, alias } = await createRegisteredMultiSigUser(chaincode, { keys: 3, quorum: 1 });
+      const [key1] = keys;
 
-      // Test with quorum = 3 (all keys required)
-      const { keys: keys2, alias: alias2 } = await createRegisteredMultiSigUser(chaincode, {
-        keys: 3,
-        quorum: 3
-      });
-      const [key2_1, key2_2, key2_3] = keys2;
+      const individualUserRef = asValidUserRef(signatures.getEthAddress(key1.publicKey));
+      const individualUserAlias = asValidUserAlias(`eth|${individualUserRef}`);
+      const signers = keys.map((k) => `eth|${signatures.getEthAddress(k.publicKey)}`).sort();
 
-      // When & Then
-      // Quorum = 1: should work with any single key
-      const dto1 = new GetMyProfileDto().withOperation(operationId).signed(key1_1.privateKey);
-      const resp1 = await chaincode.invoke("PublicKeyContract:GetMyProfile", dto1);
-      expect(resp1).toEqual(
-        transactionSuccess(
-          expect.objectContaining({
-            alias: alias1,
-            signatureQuorum: 1
-          })
-        )
-      );
+      // Single signature, but no signer => individual profile
+      const dto1 = new GetMyProfileDto().withOperation(operationId).signed(key1.privateKey);
 
-      // Quorum = 3: should fail with only 2 keys
+      // Single signature with individual signer => REDUNDANT_USER_ADDRESS error
       const dto2 = new GetMyProfileDto()
         .withOperation(operationId)
-        .signed(key2_1.privateKey)
-        .signed(key2_2.privateKey);
+        .withSigner(individualUserRef)
+        .signed(key1.privateKey);
+
+      // Single signature with multisig signer => multisig profile
+      const dto3 = new GetMyProfileDto().withOperation(operationId).withSigner(alias).signed(key1.privateKey);
+
+      // When
+      const resp1 = await chaincode.invoke("PublicKeyContract:GetMyProfile", dto1);
       const resp2 = await chaincode.invoke("PublicKeyContract:GetMyProfile", dto2);
-      expect(resp2).toEqual(transactionErrorKey("UNAUTHORIZED"));
-      expect(resp2).toEqual(
-        transactionErrorMessageContains("Insufficient number of signatures: got 2, required 3.")
+      const resp3 = await chaincode.invoke("PublicKeyContract:GetMyProfile", dto3);
+
+      // Then
+      expect(resp1).toEqual(
+        transactionSuccess({
+          alias: individualUserAlias,
+          ethAddress: individualUserRef,
+          roles: UserProfile.DEFAULT_ROLES
+        })
       );
 
-      // Quorum = 3: should work with all 3 keys
-      const dto3 = new GetMyProfileDto()
-        .withOperation(operationId)
-        .signed(key2_1.privateKey)
-        .signed(key2_2.privateKey)
-        .signed(key2_3.privateKey);
-      const resp3 = await chaincode.invoke("PublicKeyContract:GetMyProfile", dto3);
+      expect(resp2).toEqual(transactionErrorKey("REDUNDANT_SIGNER_ADDRESS"));
+
       expect(resp3).toEqual(
-        transactionSuccess(
-          expect.objectContaining({
-            alias: alias2,
-            signatureQuorum: 3
-          })
-        )
+        transactionSuccess({
+          alias,
+          roles: UserProfile.DEFAULT_ROLES,
+          signatureQuorum: 1,
+          signers
+        })
       );
     });
   });
 
   describe("UpdatePublicKey", () => {
-    async function setup() {
-      const chaincode = new TestChaincode([PublicKeyContract]);
-      const cfg = { keys: 3, quorum: 2 };
-      const resp = await createRegisteredMultiSigUser(chaincode, cfg);
-      return { chaincode, keys: resp.keys, alias: resp.alias, quorum: cfg.quorum };
-    }
-
-    it("should update public key for multisig user with single signature", async () => {
+    it("should not allow to update public key for multisig user", async () => {
       // Given
-      const { chaincode, keys, alias, quorum } = await setup();
-      const [key1, key2, key3] = keys;
+      const chaincode = new TestChaincode([PublicKeyContract]);
+      const { keys, alias } = await createRegisteredMultiSigUser(chaincode, { keys: 3, quorum: 1 });
+      const [key1] = keys;
       const newKey = signatures.genKeyPair();
 
-      // verify the current state
-      expect(chaincode.getState()).toEqual({
-        ...userProfileKV(alias, key1.publicKey, quorum),
-        ...userProfileKV(alias, key2.publicKey, quorum),
-        ...userProfileKV(alias, key3.publicKey, quorum),
-        ...publicKeyKV(alias, [key1.publicKey, key2.publicKey, key3.publicKey])
-      });
-
-      const dtoWrongQuorum = await createValidSubmitDTO(UpdatePublicKeyDto, {
+      const dto = await createValidSubmitDTO(UpdatePublicKeyDto, {
         publicKey: newKey.publicKey,
+        signerAddress: alias,
         dtoOperation: "asset-channel_basic-asset_PublicKeyContract:UpdatePublicKey"
-      })
-        .signed(key1.privateKey)
-        .signed(key2.privateKey);
-      expect(dtoWrongQuorum.signature).toBeUndefined();
-      expect(dtoWrongQuorum.multisig?.length).toEqual(2);
-
-      const dto = await createValidSubmitDTO(UpdatePublicKeyDto, { publicKey: newKey.publicKey }) // dtoOperation is not required for single signature
-        .signed(key3.privateKey);
-      expect(dto.signature).toBeDefined();
-      expect(dto.multisig).toBeUndefined();
+      }).signed(key1.privateKey);
 
       // When
-      const failure = await chaincode.invoke("PublicKeyContract:UpdatePublicKey", dtoWrongQuorum);
-      const success = await chaincode.invoke("PublicKeyContract:UpdatePublicKey", dto);
+      const response = await chaincode.invoke("PublicKeyContract:UpdatePublicKey", dto);
 
       // Then
-      expect(failure).toEqual(transactionErrorKey("VALIDATION_FAILED"));
-      expect(failure).toEqual(transactionErrorMessageContains("requires exactly 1 signature"));
-      expect(success).toEqual(transactionSuccess());
-
-      // Verify the new state
-      expect(chaincode.getState()).toEqual({
-        ...userProfileKV(alias, key1.publicKey, quorum),
-        ...userProfileKV(alias, key2.publicKey, quorum),
-        ...userProfileKV(alias, newKey.publicKey, quorum), // key3 was replaced by newKey
-        ...publicKeyKV(alias, [key1.publicKey, key2.publicKey, newKey.publicKey]),
-        ...userProfileInvalidatedKV(alias, key3.publicKey) // key3 profile was invalidated
-      });
+      const errMsg = `Public key is not saved for user ${alias}`;
+      expect(response).toEqual(transactionErrorKey("PK_NOT_FOUND"));
+      expect(response).toEqual(transactionErrorMessageContains(errMsg));
     });
   });
 
@@ -428,56 +461,81 @@ describe("PublicKeyContract Multisignature", () => {
       return { chaincode, keys: resp.keys, alias: resp.alias, quorum: cfg.quorum };
     }
 
-    it("should add a second signer", async () => {
+    it("should not allow to add signer to a single signed user", async () => {
       // Given
       const chaincode = new TestChaincode([PublicKeyContract]);
-      const user = await createRegisteredUser(chaincode);
+      const user1 = await createRegisteredUser(chaincode);
+      const user2 = await createRegisteredUser(chaincode);
 
-      expect(chaincode.getState()).toEqual({
-        ...userProfileKV(user.alias, user.publicKey, 1),
-        ...publicKeyKV(user.alias, [user.publicKey])
-      });
-
-      const newKey = signatures.genKeyPair();
       const dto = await createValidSubmitDTO(AddSignerDto, {
-        signer: signatures.getEthAddress(newKey.publicKey) as unknown as UserAlias
-      }) //
-        .signed(user.privateKey);
+        signer: user2.alias,
+        dtoOperation: "asset-channel_basic-asset_PublicKeyContract:AddSigner",
+        signerAddress: user1.alias
+      }).signed(user1.privateKey);
 
       // When
-      const response = await chaincode.invoke("PublicKeyContract:AddPublicKey", dto);
+      const response = await chaincode.invoke("PublicKeyContract:AddSigner", dto);
+
+      // Then
+      // Falls back to default single-signing logic, because the user profile is not multisig
+      const errMsg = `Signer address recovered from signature is different from the one provided in dto.`;
+      expect(response).toEqual(transactionErrorKey("ADDRESS_MISMATCH"));
+      expect(response).toEqual(transactionErrorMessageContains(errMsg));
+    });
+
+    it("should add a second signer to a multisig user", async () => {
+      // Given
+      const chaincode = new TestChaincode([PublicKeyContract]);
+      const user1 = await createRegisteredUser(chaincode);
+      const user2 = await createRegisteredUser(chaincode);
+      const multisigUser = await createRegisteredMultiSigUserForUsers(chaincode, {
+        users: [user1],
+        quorum: 1
+      });
+
+      // Create DTO with quorum signatures (1 out of 1)
+      const dto = await createValidSubmitDTO(AddSignerDto, {
+        dtoOperation: "asset-channel_basic-asset_PublicKeyContract:AddSigner",
+        signerAddress: multisigUser.alias,
+        signer: user2.alias
+      }).signed(user1.privateKey);
+
+      // When
+      const response = await chaincode.invoke("PublicKeyContract:AddSigner", dto);
 
       // Then
       expect(response).toEqual(transactionSuccess());
 
-      expect(chaincode.getState()).toEqual({
-        ...userProfileKV(user.alias, user.publicKey, 1),
-        ...publicKeyKV(user.alias, [user.publicKey, newKey.publicKey])
-      });
+      const profileResponse = await getUserProfile(chaincode, multisigUser.alias);
+      expect(profileResponse).toEqual(
+        transactionSuccess({
+          alias: multisigUser.alias,
+          roles: UserProfile.DEFAULT_ROLES,
+          signatureQuorum: 1,
+          signers: [user1.alias, user2.alias].sort()
+        })
+      );
     });
 
-    it("should add signer for multisig user", async () => {
+    it("should add a third signer to a multisig user", async () => {
       // Given
-      const { chaincode, keys, alias, quorum } = await setup();
-      const [key1, key2, key3] = keys;
-      const newKey = signatures.genKeyPair();
-
-      // verify the current state
-      expect(chaincode.getState()).toEqual({
-        ...userProfileKV(alias, key1.publicKey, quorum),
-        ...userProfileKV(alias, key2.publicKey, quorum),
-        ...userProfileKV(alias, key3.publicKey, quorum),
-        ...publicKeyKV(alias, [key1.publicKey, key2.publicKey, key3.publicKey])
+      const chaincode = new TestChaincode([PublicKeyContract]);
+      const user1 = await createRegisteredUser(chaincode);
+      const user2 = await createRegisteredUser(chaincode);
+      const user3 = await createRegisteredUser(chaincode);
+      const multisigUser = await createRegisteredMultiSigUserForUsers(chaincode, {
+        users: [user1, user2],
+        quorum: 2
       });
 
-      // Create DTO with quorum signatures (2 out of 3)
+      // Create DTO with quorum signatures (1 out of 1)
       const dto = await createValidSubmitDTO(AddSignerDto, {
-        signer: signatures.getEthAddress(newKey.publicKey) as unknown as UserAlias,
-        dtoOperation: "asset-channel_basic-asset_PublicKeyContract:AddSigner"
+        dtoOperation: "asset-channel_basic-asset_PublicKeyContract:AddSigner",
+        signerAddress: multisigUser.alias,
+        signer: user3.alias
       })
-        .signed(key1.privateKey)
-        .signed(key2.privateKey);
-      expect(dto.multisig?.length).toEqual(2);
+        .signed(user1.privateKey)
+        .signed(user2.privateKey);
 
       // When
       const response = await chaincode.invoke("PublicKeyContract:AddSigner", dto);
@@ -485,34 +543,14 @@ describe("PublicKeyContract Multisignature", () => {
       // Then
       expect(response).toEqual(transactionSuccess());
 
-      // Verify the new state - should have 4 keys now
-      expect(chaincode.getState()).toEqual({
-        ...userProfileKV(alias, key1.publicKey, quorum),
-        ...userProfileKV(alias, key2.publicKey, quorum),
-        ...userProfileKV(alias, key3.publicKey, quorum),
-        ...publicKeyKV(alias, [key1.publicKey, key2.publicKey, key3.publicKey, newKey.publicKey])
-      });
-    });
-
-    it("should fail when adding public key with insufficient signatures", async () => {
-      // Given
-      const { chaincode, keys } = await setup();
-      const [key1] = keys;
-      const newKey = signatures.genKeyPair();
-
-      // Create DTO with only 1 signature (need 2)
-      const dto = await createValidSubmitDTO(AddSignerDto, {
-        signer: signatures.getEthAddress(newKey.publicKey) as unknown as UserAlias
-      }) //
-        .signed(key1.privateKey);
-
-      // When
-      const response = await chaincode.invoke("PublicKeyContract:AddSigner", dto);
-
-      // Then
-      expect(response).toEqual(transactionErrorKey("UNAUTHORIZED"));
-      expect(response).toEqual(
-        transactionErrorMessageContains("Insufficient number of signatures: got 1, required 2.")
+      const profileResponse = await getUserProfile(chaincode, multisigUser.alias);
+      expect(profileResponse).toEqual(
+        transactionSuccess({
+          alias: multisigUser.alias,
+          roles: UserProfile.DEFAULT_ROLES,
+          signatureQuorum: 2,
+          signers: [user1.alias, user2.alias, user3.alias].sort()
+        })
       );
     });
   });
@@ -527,84 +565,90 @@ describe("PublicKeyContract Multisignature", () => {
 
     it("should remove public key for multisig user with quorum signatures", async () => {
       // Given
-      const { chaincode, keys, alias, quorum } = await setup();
+      const { chaincode, keys, alias } = await setup();
       const [key1, key2, key3] = keys;
 
-      // verify the current state
-      expect(chaincode.getState()).toEqual({
-        ...userProfileKV(alias, key1.publicKey, quorum),
-        ...userProfileKV(alias, key2.publicKey, quorum),
-        ...userProfileKV(alias, key3.publicKey, quorum),
-        ...publicKeyKV(alias, [key1.publicKey, key2.publicKey, key3.publicKey])
-      });
+      const dtoOperation = "asset-channel_basic-asset_PublicKeyContract:RemoveSigner";
+
+      const remove1Dto = await createValidSubmitDTO(RemoveSignerDto, {
+        signer: asValidUserRef(signatures.getEthAddress(key1.publicKey)),
+        dtoOperation,
+        signerAddress: alias
+      })
+        .signed(key1.privateKey)
+        .signed(key2.privateKey);
+
+      const remove2Dto = await createValidSubmitDTO(RemoveSignerDto, {
+        signer: asValidUserRef(signatures.getEthAddress(key2.publicKey)),
+        dtoOperation,
+        signerAddress: alias
+      })
+        .signed(key1.privateKey)
+        .signed(key3.privateKey);
 
       const remove3Dto = await createValidSubmitDTO(RemoveSignerDto, {
-        signer: signatures.getEthAddress(key3.publicKey) as unknown as UserAlias,
-        dtoOperation: "asset-channel_basic-asset_PublicKeyContract:RemoveSigner"
+        signer: asValidUserRef(signatures.getEthAddress(key3.publicKey)),
+        dtoOperation,
+        signerAddress: alias
       })
         .signed(key1.privateKey)
-        .signed(key2.privateKey);
-      const remove1Dto = await createValidSubmitDTO(RemoveSignerDto, {
-        signer: signatures.getEthAddress(key1.publicKey) as unknown as UserAlias,
-        dtoOperation: "asset-channel_basic-asset_PublicKeyContract:RemoveSigner"
-      })
-        .signed(key1.privateKey)
-        .signed(key2.privateKey);
+        .signed(key3.privateKey);
 
       // When
-      const success = await chaincode.invoke("PublicKeyContract:RemoveSigner", remove3Dto);
-      const failure = await chaincode.invoke("PublicKeyContract:RemoveSigner", remove1Dto);
+      const resp1 = await chaincode.invoke("PublicKeyContract:RemoveSigner", remove1Dto);
+      const resp2 = await chaincode.invoke("PublicKeyContract:RemoveSigner", remove2Dto);
+      const resp3 = await chaincode.invoke("PublicKeyContract:RemoveSigner", remove3Dto);
 
       // Then
-      expect(success).toEqual(transactionSuccess());
-      expect(failure).toEqual(transactionErrorKey("VALIDATION_FAILED"));
-      expect(failure).toEqual(transactionErrorMessageContains("would make number of keys below quorum"));
+      expect(resp1).toEqual(transactionErrorKey("VALIDATION_FAILED"));
+      expect(resp1).toEqual(transactionErrorMessageContains("that is the calling transaction signer"));
 
-      // Verify the new state - should have 2 keys now
-      expect(chaincode.getState()).toEqual({
-        ...userProfileKV(alias, key1.publicKey, quorum),
-        ...userProfileKV(alias, key2.publicKey, quorum),
-        ...userProfileInvalidatedKV(alias, key3.publicKey), // key3 profile invalidated
-        ...publicKeyKV(alias, [key1.publicKey, key2.publicKey]) // key3 removed from public keys
-      });
+      expect(resp2).toEqual(transactionSuccess());
+
+      expect(resp3).toEqual(transactionErrorKey("VALIDATION_FAILED"));
+      expect(resp3).toEqual(transactionErrorMessageContains("would make number of signers below quorum"));
+
+      const profileResponse = await getUserProfile(chaincode, alias);
+      expect(profileResponse).toEqual(
+        transactionSuccess({
+          alias,
+          roles: UserProfile.DEFAULT_ROLES,
+          signatureQuorum: 2,
+          signers: [
+            `eth|${signatures.getEthAddress(key1.publicKey)}`,
+            `eth|${signatures.getEthAddress(key3.publicKey)}`
+          ].sort()
+        })
+      );
     });
   });
 
   describe("UpdateQuorum", () => {
-    async function setup() {
-      const chaincode = new TestChaincode([PublicKeyContract]);
-      const cfg = { keys: 3, quorum: 2 };
-      const resp = await createRegisteredMultiSigUser(chaincode, cfg);
-      return { chaincode, keys: resp.keys, alias: resp.alias, quorum: cfg.quorum };
-    }
-
     it("should update quorum for multisig user with quorum signatures", async () => {
       // Given
-      const { chaincode, keys, alias, quorum } = await setup();
+      const chaincode = new TestChaincode([PublicKeyContract]);
+      const { keys, alias } = await createRegisteredMultiSigUser(chaincode, {
+        keys: 3,
+        quorum: 2
+      });
       const [key1, key2, key3] = keys;
 
-      expect(quorum).toEqual(2);
       const newQuorum = 1;
       const newInvalidQuorum = keys.length + 1;
-
-      // verify the current state
-      expect(chaincode.getState()).toEqual({
-        ...userProfileKV(alias, key1.publicKey, quorum),
-        ...userProfileKV(alias, key2.publicKey, quorum),
-        ...userProfileKV(alias, key3.publicKey, quorum),
-        ...publicKeyKV(alias, [key1.publicKey, key2.publicKey, key3.publicKey])
-      });
 
       // Create DTO with quorum signatures (2 out of 3)
       const dto1 = await createValidSubmitDTO(UpdateQuorumDto, {
         quorum: newQuorum,
-        dtoOperation: "asset-channel_basic-asset_PublicKeyContract:UpdateQuorum"
+        dtoOperation: "asset-channel_basic-asset_PublicKeyContract:UpdateQuorum",
+        signerAddress: alias
       })
         .signed(key1.privateKey)
         .signed(key2.privateKey);
+
       const dto2 = await createValidSubmitDTO(UpdateQuorumDto, {
         quorum: newInvalidQuorum,
-        dtoOperation: "asset-channel_basic-asset_PublicKeyContract:UpdateQuorum"
+        dtoOperation: "asset-channel_basic-asset_PublicKeyContract:UpdateQuorum",
+        signerAddress: alias
       }) //
         .signed(key1.privateKey);
 
@@ -616,16 +660,8 @@ describe("PublicKeyContract Multisignature", () => {
       expect(response1).toEqual(transactionSuccess());
       expect(response2).toEqual(transactionErrorKey("VALIDATION_FAILED"));
       expect(response2).toEqual(
-        transactionErrorMessageContains("Quorum cannot exceed number of public keys")
+        transactionErrorMessageContains("Quorum cannot exceed number of signers (3)")
       );
-
-      // Verify the new state - quorum should be updated to 3
-      expect(chaincode.getState()).toEqual({
-        ...userProfileKV(alias, key1.publicKey, newQuorum),
-        ...userProfileKV(alias, key2.publicKey, newQuorum),
-        ...userProfileKV(alias, key3.publicKey, newQuorum),
-        ...publicKeyKV(alias, [key1.publicKey, key2.publicKey, key3.publicKey])
-      });
     });
   });
 });
@@ -647,14 +683,6 @@ describe("UpdateUserRoles", () => {
     const defaultRoles = [...UserProfile.DEFAULT_ROLES];
     const newRoles = [...defaultRoles, UserRole.REGISTRAR].sort();
 
-    // verify the current state
-    expect(chaincode.getState()).toEqual({
-      ...userProfileKV(alias, key1.publicKey, quorum, defaultRoles),
-      ...userProfileKV(alias, key2.publicKey, quorum, defaultRoles),
-      ...userProfileKV(alias, key3.publicKey, quorum, defaultRoles),
-      ...publicKeyKV(alias, [key1.publicKey, key2.publicKey, key3.publicKey])
-    });
-
     const dto = await createValidSubmitDTO(UpdateUserRolesDto, {
       user: alias,
       roles: newRoles
@@ -666,12 +694,19 @@ describe("UpdateUserRoles", () => {
     // Then
     expect(response).toEqual(transactionSuccess());
 
-    // Verify the new state - roles should be updated
-    expect(chaincode.getState()).toEqual({
-      ...userProfileKV(alias, key1.publicKey, quorum, newRoles),
-      ...userProfileKV(alias, key2.publicKey, quorum, newRoles),
-      ...userProfileKV(alias, key3.publicKey, quorum, newRoles),
-      ...publicKeyKV(alias, [key1.publicKey, key2.publicKey, key3.publicKey])
-    });
+    // Verify the new state
+    const profileResponse = await getUserProfile(chaincode, alias);
+    expect(profileResponse).toEqual(
+      transactionSuccess({
+        alias,
+        roles: newRoles,
+        signatureQuorum: quorum,
+        signers: [
+          `eth|${signatures.getEthAddress(key1.publicKey)}`,
+          `eth|${signatures.getEthAddress(key2.publicKey)}`,
+          `eth|${signatures.getEthAddress(key3.publicKey)}`
+        ].sort()
+      })
+    );
   });
 });

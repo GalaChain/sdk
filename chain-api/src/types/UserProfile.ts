@@ -53,6 +53,13 @@ export class UserProfile extends ChainObject {
   tonAddress?: string;
 
   @JSONSchema({
+    description: "Signers of the virtual multisig profile."
+  })
+  @IsOptional()
+  @IsUserAlias({ each: true })
+  signers?: UserAlias[];
+
+  @JSONSchema({
     description: `Roles assigned to the user. Predefined roles are: ${Object.values(UserRole)
       .sort()
       .join(", ")}, but you can use arbitrary strings to define your own roles.`

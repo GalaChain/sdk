@@ -29,7 +29,6 @@ describe("checkAllowances", () => {
       alias: users.admin.identityKey,
       ethAddress: users.admin.ethAddress,
       roles: users.admin.roles,
-      signatureQuorum: 1,
       signedBy: [users.admin.identityKey]
     };
 

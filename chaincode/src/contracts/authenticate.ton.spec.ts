@@ -48,8 +48,11 @@ const invalid = labeled<Signature>("invalid signature")((srcDto, privK) => {
 
 type PublicKey = (dto: ChainCallDTO, u: TonUser) => void;
 const signerKey = labeled<PublicKey>("signer key")((dto, u) => (dto.signerPublicKey = u.publicKey));
-const signerAdd = labeled<PublicKey>("signer address")(
+const signerRef = labeled<PublicKey>("signer ton| ref")(
   (dto, u) => (dto.signerAddress = asValidUserRef(`ton|${u.tonAddress}`))
+);
+const signerAdd = labeled<PublicKey>("signer address")(
+  (dto, u) => (dto.signerAddress = asValidUserRef(u.tonAddress))
 );
 const _________ = labeled<PublicKey>("raw dto")(() => ({}));
 
@@ -63,8 +66,7 @@ const Success = labeled<Expectation>("Success")((response, user) => {
     transactionSuccess({
       alias: user.alias,
       tonAddress: user.tonAddress,
-      roles: UserProfile.DEFAULT_ROLES,
-      signatureQuorum: 1
+      roles: UserProfile.DEFAULT_ROLES
     })
   );
 });
@@ -79,38 +81,40 @@ test.each([
   [__valid, _________, notRegistered, Error("MISSING_SIGNER")],
   [__valid, signerKey, ___registered, Success],
   [__valid, signerKey, notRegistered, Error("USER_NOT_REGISTERED")],
+  [__valid, signerRef, ___registered, Success],
   [__valid, signerAdd, ___registered, Success],
-  [__valid, signerAdd, notRegistered, Error("USER_NOT_REGISTERED")],
+  [__valid, signerRef, notRegistered, Error("USER_NOT_REGISTERED")],
   [invalid, _________, ___registered, Error("MISSING_SIGNER")],
   [invalid, _________, notRegistered, Error("MISSING_SIGNER")],
   [invalid, signerKey, ___registered, Error("PK_INVALID_SIGNATURE")],
   [invalid, signerKey, notRegistered, Error("PK_INVALID_SIGNATURE")],
-  [invalid, signerAdd, ___registered, Error("PK_INVALID_SIGNATURE")],
-  [invalid, signerAdd, notRegistered, Error("USER_NOT_REGISTERED")]
-])(
-  "(%s, %s, %s) => %s",
-  async (
-    signatureFn: Signature,
-    publicKeyFn: PublicKey,
-    createUserFn: UserRegistered,
-    expectation: Expectation
-  ) => {
-    // Given
-    const chaincode = new TestChaincode([PublicKeyContract]);
-    const userObj = await createUserFn(chaincode);
+  [invalid, signerRef, ___registered, Error("PK_INVALID_SIGNATURE")],
+  [invalid, signerRef, notRegistered, Error("USER_NOT_REGISTERED")]
+])("(%s, %s, %s) => %s", performTest);
 
-    const dto = new ChainCallDTO();
-    dto.signing = SigningScheme.TON;
-    publicKeyFn(dto, userObj);
-    const signedDto = signatureFn(dto, userObj.privateKey);
+async function performTest(
+  signatureFn: Signature,
+  publicKeyFn: PublicKey,
+  createUserFn: UserRegistered,
+  expectation: Expectation
+) {
+  // Given
+  const chaincode = new TestChaincode([PublicKeyContract]);
+  const userObj = await createUserFn(chaincode);
 
-    // When
-    const response = await chaincode.invoke("PublicKeyContract:GetMyProfile", signedDto);
+  const dto = new ChainCallDTO();
+  dto.signing = SigningScheme.TON;
+  publicKeyFn(dto, userObj);
+  const signedDto = signatureFn(dto, userObj.privateKey);
 
-    // Then
-    expectation(response, userObj);
-  }
-);
+  console.log(JSON.stringify(chaincode.getState(), null, 2));
+
+  // When
+  const response = await chaincode.invoke("PublicKeyContract:GetMyProfile", signedDto);
+
+  // Then
+  expectation(response, userObj);
+}
 
 // this is a hack to make pretty display of test cases
 function labeled<F>(label: string): (fn: F) => F & { toString: () => string } {

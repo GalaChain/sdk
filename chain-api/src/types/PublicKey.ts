@@ -12,43 +12,20 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-import { ArrayMinSize, IsNotEmpty, IsOptional, IsString, ValidateIf } from "class-validator";
+import { IsNotEmpty, IsOptional, IsString } from "class-validator";
 
 import { SigningScheme, signatures } from "../utils";
-import { IsUserAlias, SerializeIf, StringEnumProperty } from "../validators";
+import { StringEnumProperty } from "../validators";
 import { ChainObject } from "./ChainObject";
-import { UserAlias } from "./UserAlias";
-import { UserRef, asValidUserRef } from "./UserRef";
 
 export class PublicKey extends ChainObject {
-  @ValidateIf((o) => !o.signers)
   @IsString()
   @IsNotEmpty()
-  public publicKey?: string;
+  public publicKey: string;
 
   @IsOptional()
   @StringEnumProperty(SigningScheme)
   public signing?: SigningScheme;
-
-  @ValidateIf((o) => !o.publicKey)
-  @SerializeIf((o) => !o.publicKey)
-  @IsUserAlias({ each: true })
-  @ArrayMinSize(2)
-  public signers?: UserAlias[];
-
-  public getAllSigners(): UserRef[] {
-    if (this.publicKey) {
-      if (this.signing === SigningScheme.TON) {
-        const addr = signatures.ton.getTonAddress(Buffer.from(this.publicKey, "base64"));
-        return [asValidUserRef(addr)];
-      }
-
-      const pkHex = signatures.getNonCompactHexPublicKey(this.publicKey);
-      return [asValidUserRef(signatures.getEthAddress(pkHex))];
-    }
-
-    return this.signers ?? [];
-  }
 }
 
 export const PK_INDEX_KEY = "GCPK";

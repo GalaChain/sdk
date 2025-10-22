@@ -150,9 +150,8 @@ export class PublicKeyContract extends GalaContract {
     description: "Adds a public key to the calling user's multisig setup."
   })
   public async AddSigner(ctx: GalaChainContext, dto: AddSignerDto): Promise<void> {
-    const signing = dto.signing ?? SigningScheme.ETH;
     const signer = await resolveUserAlias(ctx, dto.signer);
-    await PublicKeyService.addSigner(ctx, signer, signing);
+    await PublicKeyService.addSigner(ctx, signer);
   }
 
   @Submit({
@@ -160,9 +159,8 @@ export class PublicKeyContract extends GalaContract {
     description: "Removes a public key from the calling user's multisig setup."
   })
   public async RemoveSigner(ctx: GalaChainContext, dto: RemoveSignerDto): Promise<void> {
-    const signing = dto.signing ?? SigningScheme.ETH;
     const signer = await resolveUserAlias(ctx, dto.signer);
-    await PublicKeyService.removeSigner(ctx, signer, signing);
+    await PublicKeyService.removeSigner(ctx, signer);
   }
 
   @Submit({
@@ -170,8 +168,7 @@ export class PublicKeyContract extends GalaContract {
     description: "Updates the signature quorum for the calling user's multisig setup."
   })
   public async UpdateQuorum(ctx: GalaChainContext, dto: UpdateQuorumDto): Promise<void> {
-    const signing = dto.signing ?? SigningScheme.ETH;
-    await PublicKeyService.updateQuorum(ctx, dto.quorum, signing);
+    await PublicKeyService.updateQuorum(ctx, dto.quorum);
   }
 
   @GalaTransaction({

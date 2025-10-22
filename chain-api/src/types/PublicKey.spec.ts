@@ -35,54 +35,6 @@ describe("PublicKey", () => {
       expect(serialized).toEqual({ publicKey: "test-key-123" });
     });
 
-    it("should validate and serialize with multiple signers", async () => {
-      // Given
-      const input = { signers: ["client|u1", "client|u2", "client|u3"] };
-
-      // When
-      const instance = plainToInstance(PublicKey, input);
-      const errors = await validate(instance);
-      const serialized = instanceToPlain(instance);
-
-      // Then
-      expect(errors).toHaveLength(0);
-      expect(instance).toEqual({ signers: ["client|u1", "client|u2", "client|u3"] });
-      expect(serialized).toEqual({ signers: ["client|u1", "client|u2", "client|u3"] });
-    });
-
-    it("should prefer publicKey over publicKeys when both are provided", async () => {
-      // Given
-      const input = { publicKey: "single-key", signers: ["client|u1", "client|u2"] };
-
-      // When
-      const instance = plainToInstance(PublicKey, input);
-      const errors = await validate(instance);
-      const serialized = instanceToPlain(instance);
-
-      // Then
-      // it's silent for now - if we want to improve, we need addtional PR
-      expect(errors).toHaveLength(0);
-      expect(instance).toEqual({ publicKey: "single-key" });
-      expect(serialized).toEqual({ publicKey: "single-key" });
-    });
-
-    it("should fail validation when neither publicKey nor signers is provided", async () => {
-      // Given
-      const input = {};
-
-      // When
-      const instance = plainToInstance(PublicKey, input);
-      const errors = await validate(instance);
-      const serialized = instanceToPlain(instance);
-
-      // Then
-      expect(errors).toHaveLength(2);
-      expect(errors[0].property).toBe("publicKey");
-      expect(errors[1].property).toBe("signers");
-      expect(instance).toEqual({});
-      expect(serialized).toEqual({});
-    });
-
     it("should fail validation when publicKey is empty string", async () => {
       // Given
       const input = { publicKey: "" };
@@ -93,26 +45,9 @@ describe("PublicKey", () => {
       const serialized = instanceToPlain(instance);
 
       // Then
-      expect(errors).toHaveLength(2);
+      expect(errors).toHaveLength(1);
       expect(instance).toEqual({ publicKey: "" });
       expect(serialized).toEqual({ publicKey: "" });
-    });
-
-    it("should fail validation when signers has less than 2 items", async () => {
-      // Given
-      const input = { signers: ["client|u1"] };
-
-      // When
-      const instance = plainToInstance(PublicKey, input);
-      const errors = await validate(instance);
-      const serialized = instanceToPlain(instance);
-
-      // Then
-      expect(errors).toHaveLength(1);
-      expect(errors[0].property).toBe("signers");
-      expect(errors[0].constraints?.arrayMinSize).toBeDefined();
-      expect(instance).toEqual({ signers: ["client|u1"] });
-      expect(serialized).toEqual({ signers: ["client|u1"] });
     });
 
     it("should fail validation when signers contains invalid values", async () => {

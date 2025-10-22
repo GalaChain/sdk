@@ -38,8 +38,7 @@ describe("authenticate", () => {
       alias: `service|${chaincodeId}`,
       ethAddress: undefined,
       roles: [],
-      signedBy: [],
-      signatureQuorum: 0
+      signedBy: []
     };
 
     // When

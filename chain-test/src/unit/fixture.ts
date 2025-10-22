@@ -90,7 +90,8 @@ interface CallingUserData {
   tonAddress?: string;
   roles: string[];
   signedBy: UserAlias[];
-  signatureQuorum: number;
+  signatureQuorum?: number;
+  allowedSigners?: UserAlias[];
 }
 
 /**
@@ -124,7 +125,8 @@ type TestGalaChainContext = Context & {
   get callingUserTonAddress(): string;
   get callingUserRoles(): string[];
   get callingUserSignedBy(): UserAlias[];
-  get callingUserSignatureQuorum(): number;
+  get callingUserSignatureQuorum(): number | undefined;
+  get callingUserAllowedSigners(): UserAlias[] | undefined;
   get callingUserProfile(): UserProfile;
   resetCallingUser(): void;
   get config(): GalaChainContextConfig;
@@ -281,7 +283,8 @@ class Fixture<Ctx extends TestGalaChainContext, T extends GalaContract<Ctx>> {
         ethAddress: user.ethAddress,
         roles: user.roles,
         signedBy: [],
-        signatureQuorum: 0
+        signatureQuorum: 0,
+        allowedSigners: []
       };
       return this;
     }
@@ -289,7 +292,8 @@ class Fixture<Ctx extends TestGalaChainContext, T extends GalaContract<Ctx>> {
     this.ctx.callingUserData = {
       ...user,
       signedBy: [],
-      signatureQuorum: 0
+      signatureQuorum: 0,
+      allowedSigners: []
     };
     return this;
   }

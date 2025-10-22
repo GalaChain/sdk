@@ -72,8 +72,7 @@ const Success = labeled<Expectation>("Success")((response, user) => {
     transactionSuccess({
       alias: user.alias,
       ethAddress: user.ethAddress,
-      roles: UserProfile.DEFAULT_ROLES,
-      signatureQuorum: 1
+      roles: UserProfile.DEFAULT_ROLES
     })
   );
 });
@@ -83,8 +82,7 @@ const SuccessNoCustomAlias = labeled<Expectation>("SuccessNoCustomAlias")((respo
     transactionSuccess({
       alias: `eth|${user.ethAddress}`,
       ethAddress: user.ethAddress,
-      roles: UserProfile.DEFAULT_ROLES,
-      signatureQuorum: 1
+      roles: UserProfile.DEFAULT_ROLES
     })
   );
 });
@@ -94,8 +92,7 @@ const SuccessUnknownKey = labeled<Expectation>("SuccessUnknownKey")((response, u
     transactionSuccess({
       alias: expect.stringMatching(/^eth\|[a-fA-F0-9]{40}$/),
       ethAddress: expect.stringMatching(/^[a-fA-F0-9]{40}$/),
-      roles: UserProfile.DEFAULT_ROLES,
-      signatureQuorum: 1
+      roles: UserProfile.DEFAULT_ROLES
     })
   );
 });
