@@ -319,6 +319,10 @@ export class ChainCallDTO {
 
     // we have TON signing scheme, what also means single-sig and non-DER
     if (this.signing === SigningScheme.TON) {
+      if (useMultisig) {
+        throw new ValidationFailedError("Multisig is not supported for TON signing scheme");
+      }
+
       const keyBuffer = Buffer.from(privateKey, "base64");
       this.signature = signatures.ton.getSignature(this, keyBuffer, this.prefix).toString("base64");
       return;
