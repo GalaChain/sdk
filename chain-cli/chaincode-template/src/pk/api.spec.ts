@@ -25,5 +25,10 @@ test(`${PublicKeyContract.name} API should match snapshot`, async () => {
 
   // Then
   expect(contractApi).toEqual(transactionSuccess());
-  expect({ ...contractApi.Data, contractVersion: "?.?.?" }).toMatchSnapshot();
+  expect({
+    ...contractApi.Data,
+    contractVersion: "?.?.?",
+    channelId: "channel-id",
+    chaincodeId: "chaincode-id"
+  }).toMatchSnapshot();
 });

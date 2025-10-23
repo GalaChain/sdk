@@ -67,6 +67,8 @@ After successful authentication, the following context properties are available:
 - `ctx.callingUserTonAddress`: The user's TON address (if available)
 - `ctx.callingUserRoles`: Array of roles assigned to the user
 - `ctx.callingUserProfile`: Complete user profile object
+- `ctx.callingUserSignedByKeys`: Array of public keys that signed the current transaction
+- `ctx.callingUserSignatureQuorum`: Required number of signatures for the user
 
 ## Signature based authorization
 
@@ -95,6 +97,12 @@ const dto = await createValidDTO(MyDtoClass, {
   dtoExpiresAt: Date.now() + 300000 // Expires in 5 minutes
 }).signed(userPrivateKey);
 ```
+
+### DTO operation name
+
+Providing explicit operation ID in `dtoOperation` field in DTO is a way to improve security. It prevents from using the DTO as a parameter for a different operation that is was supposed (either by accident or man-in-the middle attack).
+
+The `dtoOperation` name must contain channel, chaincode, and the exact method name as is used by calling the chain (like: `asset-channel_basic-asset_GalaChainToken:TransferToken` or `asset-channel_basic-asset_PublicKeyContract:GetPublicProfile`). It is optional for single signature calls, but required for multisig.
 
 ### Signing the transaction payload
 
@@ -209,6 +217,103 @@ The `ctx.callingUserRoles` property will contain the user's assigned roles.
 
 This way it is possible to get the current user's properties in the chaincode and use them in the business logic.
 
+### Multisignature users and quorum
+
+Users may register more than one public key. The required number of signatures (as specified by signatureQuorum) must be provided to authorize a transaction.
+During registration pass an array of keys:
+
+```typescript
+const { publicKey: pk1, privateKey: sk1 } = signatures.genKeyPair();
+const { publicKey: pk2, privateKey: sk2 } = signatures.genKeyPair();
+
+const reg = await createValidSubmitDTO(RegisterUserDto, {
+  user: "client|multisig",
+  publicKeys: [pk1, pk2],
+  signatureQuorum: 2
+});
+await pkContract.RegisterUser(reg.signed(adminKey));
+```
+
+Transactions are signed multiple times, producing a `signatures` array on the DTO:
+
+```typescript
+const dto = new GetMyProfileDto();
+dto.sign(sk1); // dto.signature = signature1
+dto.sign(sk2); // dto.signature = undefined; dto.signatures = [signature1, signature2]
+```
+
+Chaincode enforces that any transaction that requires signed DTO is signed by the required number of private keys.
+
+#### Override Quorum Requirements
+
+You can override the user's signature quorum requirement on a per-transaction basis using the `quorum` option:
+
+```typescript
+@Submit({
+  in: UpdatePublicKeyDto,
+  quorum: 1,  // Override user's quorum requirement
+  description: "Updates public key for the calling user."
+})
+public async UpdatePublicKey(ctx: GalaChainContext, dto: UpdatePublicKeyDto): Promise<void> {
+  // This method requires only 1 signature regardless of user's quorum setting
+}
+```
+
+This feature is supported only for Ethereum signing scheme (secp256k1) with non-DER signatures.
+
+#### Multisig Examples
+
+**Example 1: Corporate Treasury Setup**
+
+```typescript
+// Register a corporate treasury with 5 keys requiring 3 signatures
+const treasuryKeys = Array.from({ length: 5 }, () => signatures.genKeyPair());
+const treasuryRegistration = await createValidSubmitDTO(RegisterUserDto, {
+  user: "client|treasury",
+  publicKeys: treasuryKeys.map(k => k.publicKey),
+  signatureQuorum: 3
+});
+
+await pkContract.RegisterUser(treasuryRegistration.signed(adminKey));
+
+// Create a transaction requiring 3 signatures
+const transferDto = new TransferTokenDto({
+  dtoOperation: "asset-channel_basic-asset_Conract:Transfer", // operation is required for multisig
+  to: "client|recipient",
+  amount: "1000",
+  uniqueKey: "transfer-" + Date.now()
+});
+
+// Sign with 3 different keys
+transferDto
+  .signed(treasuryKeys[0].privateKey)
+  .signed(treasuryKeys[1].privateKey)
+  .signed(treasuryKeys[2].privateKey);
+
+// Execute the transaction
+await tokenContract.TransferToken(transferDto);
+```
+
+Note that after multiple signing the `transferDto` object contains multiple signatures, so instead of the `signature` field it contains `multisig` field with an array of signatures.
+
+**Example 2: Dynamic Quorum Override**
+
+```typescript
+@Submit({
+  in: EmergencyActionDto,
+  quorum: 1, // Override user's quorum
+  description: "Emergency action requiring only 1 signature"
+})
+async emergencyAction(ctx: GalaChainContext, dto: EmergencyActionDto): Promise<void> {
+  // This method only requires 1 signature regardless of user's quorum setting
+  
+  const signedByKeys = ctx.callingUserSignedByKeys;
+  ctx.logger.warn(`Emergency action executed by key: ${signedByKeys[0]}`);
+  
+  await executeEmergencyAction(ctx, dto);
+}
+```
+
 ### User registration
 
 By default, GalaChain does not allow anonymous users to access the chaincode.
@@ -322,6 +427,7 @@ For admin users (when `DEV_ADMIN_PUBLIC_KEY` is set), the following admin roles 
 - `CURATOR`: Allows curator-level operations
 - `EVALUATE`: Allows querying the blockchain state  
 - `SUBMIT`: Allows submitting transactions that modify state
+- `REGISTRAR`: Allows registering new users
 
 For registration methods, the `REGISTRAR` role is required if RBAC is enabled.
 

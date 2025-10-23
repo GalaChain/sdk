@@ -14,7 +14,7 @@
  */
 import { SubmitCallDTO } from "@gala-chain/api";
 
-import { GalaChainContext } from "../types";
+import { GalaChainContext, GalaChainStub } from "../types";
 import { authenticate } from "./authenticate";
 
 jest.mock("./authenticate", () => {
@@ -26,7 +26,7 @@ jest.mock("./authenticate", () => {
 });
 
 describe("authenticate", () => {
-  it("should authorize as origin chaincode", async () => {
+  it("should authenticate as origin chaincode", async () => {
     // Given
     const { ctx, chaincodeId } = mockedContext();
 
@@ -34,10 +34,16 @@ describe("authenticate", () => {
     dto.signerAddress = `service|${chaincodeId}`;
     dto.signature = undefined;
 
-    const expectedUserData = { alias: `service|${chaincodeId}`, ethAddress: undefined, roles: [] };
+    const expectedUserData = {
+      alias: `service|${chaincodeId}`,
+      ethAddress: undefined,
+      roles: [],
+      signedByKeys: [],
+      signatureQuorum: 0
+    };
 
     // When
-    const result = await authenticate(ctx, dto);
+    const result = await authenticate(ctx, dto, undefined);
 
     // Then
     expect(result).toEqual(expectedUserData);
@@ -54,7 +60,7 @@ describe("authenticate", () => {
     const expectedErrorMessage = `Chaincode authorization failed. Got DTO with signerAddress: ${dto.signerAddress}, but signed proposal has chaincodeId: ${chaincodeId}`;
 
     // When
-    const result = authenticate(ctx, dto);
+    const result = authenticate(ctx, dto, undefined);
 
     // Then
     await expect(result).rejects.toThrow(expectedErrorMessage);
@@ -75,9 +81,16 @@ function mockedContext() {
     }
   };
 
-  const ctx = { stub: { getSignedProposal: () => signedProposal } } as unknown as GalaChainContext;
-
+  // it's encoded in the signed proposal
   const chaincodeId = "basic-asset";
+
+  const ctx = new GalaChainContext({});
+
+  ctx.stub = {
+    getSignedProposal: () => signedProposal,
+    getChannelID: () => "test-channel",
+    getFunctionAndParameters: () => ({ fcn: "TestMethod", args: [] })
+  } as unknown as GalaChainStub;
 
   return { ctx, chaincodeId };
 }

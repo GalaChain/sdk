@@ -12,7 +12,15 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-import { ChainCallDTO, UserProfile, signatures } from "@gala-chain/api";
+import {
+  ChainCallDTO,
+  RegisterUserDto,
+  SigningScheme,
+  UserAlias,
+  UserProfile,
+  createValidSubmitDTO,
+  signatures
+} from "@gala-chain/api";
 import { TestChaincode, transactionSuccess } from "@gala-chain/test";
 import { instanceToPlain, plainToClass } from "class-transformer";
 
@@ -68,7 +76,8 @@ const Success = labeled<Expectation>("Success")((response, user) => {
     transactionSuccess({
       alias: user.alias,
       ethAddress: user.ethAddress,
-      roles: UserProfile.DEFAULT_ROLES
+      roles: UserProfile.DEFAULT_ROLES,
+      signatureQuorum: 1
     })
   );
 });
@@ -78,7 +87,8 @@ const SuccessNoCustomAlias = labeled<Expectation>("SuccessNoCustomAlias")((respo
     transactionSuccess({
       alias: `eth|${user.ethAddress}`,
       ethAddress: user.ethAddress,
-      roles: UserProfile.DEFAULT_ROLES
+      roles: UserProfile.DEFAULT_ROLES,
+      signatureQuorum: 1
     })
   );
 });
@@ -88,7 +98,8 @@ const SuccessUnknownKey = labeled<Expectation>("SuccessUnknownKey")((response, u
     transactionSuccess({
       alias: expect.stringMatching(/^eth\|[a-fA-F0-9]{40}$/),
       ethAddress: expect.stringMatching(/^[a-fA-F0-9]{40}$/),
-      roles: UserProfile.DEFAULT_ROLES
+      roles: UserProfile.DEFAULT_ROLES,
+      signatureQuorum: 1
     })
   );
 });

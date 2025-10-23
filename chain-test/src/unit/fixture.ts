@@ -89,6 +89,8 @@ interface CallingUserData {
   ethAddress?: string;
   tonAddress?: string;
   roles: string[];
+  signedByKeys: string[];
+  signatureQuorum: number;
 }
 
 /**
@@ -99,6 +101,13 @@ interface CallingUserData {
 interface GalaChainContextConfig {
   readonly adminPublicKey?: string;
   readonly allowNonRegisteredUsers?: boolean;
+}
+
+interface TestOperationContext {
+  channelId: string;
+  chaincodeId: string;
+  methodName: string;
+  fullOperationId: string;
 }
 
 /**
@@ -114,6 +123,8 @@ type TestGalaChainContext = Context & {
   get callingUserEthAddress(): string;
   get callingUserTonAddress(): string;
   get callingUserRoles(): string[];
+  get callingUserSignedByKeys(): string[];
+  get callingUserSignatureQuorum(): number;
   get callingUserProfile(): UserProfile;
   resetCallingUser(): void;
   get config(): GalaChainContextConfig;
@@ -121,6 +132,7 @@ type TestGalaChainContext = Context & {
   createReadOnlyContext(index: number | undefined): TestGalaChainContext;
   isDryRun: boolean;
   get txUnixTime(): number;
+  get operationCtx(): TestOperationContext;
   setChaincodeStub(stub: ChaincodeStub): void;
 };
 
@@ -267,12 +279,18 @@ class Fixture<Ctx extends TestGalaChainContext, T extends GalaContract<Ctx>> {
       this.ctx.callingUserData = {
         alias: user.identityKey,
         ethAddress: user.ethAddress,
-        roles: user.roles
+        roles: user.roles,
+        signedByKeys: [],
+        signatureQuorum: 0
       };
       return this;
     }
 
-    this.ctx.callingUserData = user;
+    this.ctx.callingUserData = {
+      ...user,
+      signedByKeys: [],
+      signatureQuorum: 0
+    };
     return this;
   }
 

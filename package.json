@@ -1,6 +1,6 @@
 {
   "name": "@gala-chain/sdk",
-  "version": "2.4.3",
+  "version": "2.5.4",
   "license": "Apache-2.0",
   "engines": {
     "node": ">=16"
@@ -12,6 +12,7 @@
     "build": "nx run-many -t build",
     "madge": "nx run-many -t madge",
     "test": "nx run-many -t test",
+    "test:update": "npm run build && npm run fix && npm run test -- -u",
     "set-version": "node unifyVersions.js",
     "licenses": "license-checker --csv --customPath ./licenses/format.json > ./licenses/licenses.csv",
     "training-files": "ts-node ./tools/scripts/training-files.ts",

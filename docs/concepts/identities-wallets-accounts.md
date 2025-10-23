@@ -74,6 +74,46 @@ async mintToken(ctx: GalaChainContext, dto: MintTokenDto) {
 }
 ```
 
+### Multisignature profiles
+
+Profiles may hold several public keys. When registering a user, supply all keys, and the `signatureQuorum` parameter determining the minimum number of keys that need to sign the transaction.
+
+```typescript
+const k1 = signatures.genKeyPair();
+const k2 = signatures.genKeyPair();
+const k3 = signatures.genKeyPair();
+await pkContract.RegisterUser(
+  await createValidSubmitDTO(RegisterUserDto, {
+    user: "client|multi",
+    publicKeys: [k1.publicKey, k2.publicKey, k3.publicKey],
+    signatureQuorum: 2
+  })
+  .signed(adminKey)
+);
+
+const dto = new GetMyProfileDto();
+dto.sign(k1.privateKey);
+dto.sign(k2.privateKey);
+const profile = await pkContract.GetMyProfile(dto);
+```
+
+In the sample above it is required to sign the transaction with at least two of the provided keys. If fewer signatures are provided than required, the call fails with `UNAUTHORIZED`.
+
+#### Override Quorum Requirements
+
+You can override the user's signature quorum requirement on a per-transaction basis:
+
+```typescript
+@Submit({
+  in: UpdatePublicKeyDto,
+  quorum: 1,  // Override user's quorum requirement
+  description: "Updates public key for the calling user."
+})
+public async UpdatePublicKey(ctx: GalaChainContext, dto: UpdatePublicKeyDto): Promise<void> {
+  // This method requires only 1 signature regardless of user's quorum setting
+}
+```
+
 ## Identity Resolution
 
 GalaChain provides flexible identity resolution through the `resolveUserAlias` service:
