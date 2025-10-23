@@ -142,7 +142,7 @@ export class PublicKeyContract extends GalaContract {
   })
   public async UpdatePublicKey(ctx: GalaChainContext, dto: UpdatePublicKeyDto): Promise<void> {
     const signing = dto.signing ?? SigningScheme.ETH;
-    await PublicKeyService.updatePublicKey(ctx, dto.publicKey, signing);
+    await PublicKeyService.updatePublicKey(ctx, dto, signing);
   }
 
   @Submit({

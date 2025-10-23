@@ -491,7 +491,17 @@ describe("PublicKeyContract Multisignature", () => {
         publicKey: newKey.publicKey,
         signerAddress: alias,
         dtoOperation: "asset-channel_basic-asset_PublicKeyContract:UpdatePublicKey"
-      }).signed(key1.privateKey);
+      })
+        .signed(key1.privateKey)
+        .signed(key2.privateKey);
+      expect(dtoWrongQuorum.signature).toBeUndefined();
+      expect(dtoWrongQuorum.multisig?.length).toEqual(2);
+
+      const dto = (await createValidSubmitDTO(UpdatePublicKeyDto, { publicKey: newKey.publicKey })) // dtoOperation is not required for single signature
+        .withPublicKeySignedBy(newKey.privateKey)
+        .signed(key3.privateKey);
+      expect(dto.signature).toBeDefined();
+      expect(dto.multisig).toBeUndefined();
 
       // When
       const response = await chaincode.invoke("PublicKeyContract:UpdatePublicKey", dto);
