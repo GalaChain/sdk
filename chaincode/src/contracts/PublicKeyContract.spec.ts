@@ -302,7 +302,7 @@ describe("UpdatePublicKey", () => {
     expect(newPublicKey).not.toEqual(user.publicKey);
 
     const updateDto = await createValidSubmitDTO(UpdatePublicKeyDto, { publicKey: newPublicKey });
-    const signedUpdateDto = updateDto.withPublicKeySignedBy(user.privateKey).signed(user.privateKey);
+    const signedUpdateDto = updateDto.withPublicKeySignedBy(newPrivateKey).signed(user.privateKey);
 
     // When
     const updateResponse = await chaincode.invoke("PublicKeyContract:UpdatePublicKey", signedUpdateDto);
@@ -363,6 +363,7 @@ describe("UpdatePublicKey", () => {
   it("should prevent new user from reusing old public key after update", async () => {
     // Given
     const { chaincode, user } = await setup();
+    const oldPrivateKey = user.privateKey;
     const oldPublicKey = user.publicKey;
 
     const newPrivateKey = "62fa12aaf85829fab618755747a7f75c256bfc5ceab2cc24c668c55f1985cfad";
@@ -371,7 +372,7 @@ describe("UpdatePublicKey", () => {
     expect(newPublicKey).not.toEqual(user.publicKey);
 
     const updateDto = await createValidSubmitDTO(UpdatePublicKeyDto, { publicKey: newPublicKey });
-    const signedUpdateDto = updateDto.signed(user.privateKey);
+    const signedUpdateDto = updateDto.withPublicKeySignedBy(newPrivateKey).signed(user.privateKey);
 
     // When
     const updateResponse = await chaincode.invoke("PublicKeyContract:UpdatePublicKey", signedUpdateDto);
@@ -415,7 +416,7 @@ describe("UpdatePublicKey", () => {
 
     // Given
     const updateDto2 = await createValidSubmitDTO(UpdatePublicKeyDto, { publicKey: oldPublicKey });
-    const signedUpdateDto2 = updateDto2.signed(process.env.DEV_ADMIN_PRIVATE_KEY as string);
+    const signedUpdateDto2 = updateDto2.withPublicKeySignedBy(oldPrivateKey).signed(newPrivateKey);
 
     // When
     const response2 = await chaincode.invoke("PublicKeyContract:UpdatePublicKey", signedUpdateDto2);
@@ -430,14 +431,18 @@ describe("UpdatePublicKey", () => {
     const chaincode = new TestChaincode([PublicKeyContract]);
     const user = await createRegisteredTonUser(chaincode);
     const newPair = await signatures.ton.genKeyPair();
-    const dto = await createValidSubmitDTO(UpdatePublicKeyDto, {
-      publicKey: Buffer.from(newPair.publicKey).toString("base64"),
-      signerPublicKey: user.publicKey,
-      signing: SigningScheme.TON
-    });
+    const dto = (
+      await createValidSubmitDTO(UpdatePublicKeyDto, {
+        publicKey: Buffer.from(newPair.publicKey).toString("base64"),
+        signerPublicKey: user.publicKey,
+        signing: SigningScheme.TON
+      })
+    )
+      .withPublicKeySignedBy(Buffer.from(newPair.secretKey).toString("base64"))
+      .signed(user.privateKey);
 
     // When
-    const response = await chaincode.invoke("PublicKeyContract:UpdatePublicKey", dto.signed(user.privateKey));
+    const response = await chaincode.invoke("PublicKeyContract:UpdatePublicKey", dto);
 
     // Then
     expect(response).toEqual(transactionSuccess());

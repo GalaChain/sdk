@@ -394,10 +394,13 @@ describe("PublicKeyContract Multisignature", () => {
       expect(dtoWrongQuorum.signature).toBeUndefined();
       expect(dtoWrongQuorum.multisig?.length).toEqual(2);
 
-      const dto = await createValidSubmitDTO(UpdatePublicKeyDto, { publicKey: newKey.publicKey }) // dtoOperation is not required for single signature
+      const dto = (await createValidSubmitDTO(UpdatePublicKeyDto, { publicKey: newKey.publicKey })) // dtoOperation is not required for single signature
+        .withPublicKeySignedBy(newKey.privateKey)
         .signed(key3.privateKey);
       expect(dto.signature).toBeDefined();
       expect(dto.multisig).toBeUndefined();
+
+      console.log("dto", JSON.stringify(dto, null, 2));
 
       // When
       const failure = await chaincode.invoke("PublicKeyContract:UpdatePublicKey", dtoWrongQuorum);

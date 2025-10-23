@@ -280,7 +280,7 @@ export class PublicKeyService {
   ): Promise<void> {
     const userAlias = ctx.callingUser;
     const newPublicKey = dto.publicKey;
-    const newPublicKeySignature = dto.publicKeySignature;
+    const { publicKeySignature: newPublicKeySignature, ...dtoRemaining } = dto;
 
     if (ctx.callingUserSignedByKeys.length !== 1) {
       const msg = `Expected exactly 1 signed by key for user ${userAlias}, got ${ctx.callingUserSignedByKeys.length}`;
@@ -291,7 +291,12 @@ export class PublicKeyService {
       throw new ValidationFailedError("Public key signature is missing");
     }
 
-    const isSignatureValid = signatures.isValidSignature(newPublicKeySignature, dto, newPublicKey, signing);
+    const isSignatureValid = signatures.isValidSignature(
+      newPublicKeySignature,
+      dtoRemaining,
+      newPublicKey,
+      signing
+    );
     if (!isSignatureValid) {
       throw new ValidationFailedError(`Invalid ${signing} public key signature`);
     }
