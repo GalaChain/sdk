@@ -365,6 +365,7 @@ describe("UpdatePublicKey", () => {
     const { chaincode, user } = await setup();
     const oldPrivateKey = user.privateKey;
     const oldPublicKey = user.publicKey;
+    const oldPrivateKey = user.privateKey;
 
     const newPrivateKey = "62fa12aaf85829fab618755747a7f75c256bfc5ceab2cc24c668c55f1985cfad";
     const newPublicKey =
@@ -411,8 +412,8 @@ describe("UpdatePublicKey", () => {
     expect(response).toEqual(transactionErrorMessageContains("user client|invalidated"));
     expect(await getPublicKey(chaincode, dto.user)).toEqual(transactionErrorKey("PK_NOT_FOUND"));
 
-    // Case 2: UpdatePublicKey under old public key. It won't worked because
-    // the old public key no longer exists in the user's public keys.
+    // Case 2: UpdatePublicKey with old public key. It also won't work because
+    // the old GCUP-key is marked as invalidated.
 
     // Given
     const updateDto2 = await createValidSubmitDTO(UpdatePublicKeyDto, { publicKey: oldPublicKey });
@@ -422,8 +423,24 @@ describe("UpdatePublicKey", () => {
     const response2 = await chaincode.invoke("PublicKeyContract:UpdatePublicKey", signedUpdateDto2);
 
     // Then
-    expect(response2).toEqual(transactionErrorKey("VALIDATION_FAILED"));
-    expect(response2).toEqual(transactionErrorMessageContains("not found in old public keys"));
+    expect(response2).toEqual(transactionErrorKey("PROFILE_EXISTS"));
+    expect(response2).toEqual(transactionErrorMessageContains("user client|invalidated"));
+
+    // Case 3: UpdatePublicKey where dto is signed with old private key.
+    // It won't work because the old GCUP-key is marked as invalidated.
+
+    // Given
+    const randomKeyPair = signatures.genKeyPair();
+    const updateDto3 = await createValidSubmitDTO(UpdatePublicKeyDto, { publicKey: randomKeyPair.publicKey });
+    const signedUpdateDto3 = updateDto3.signed(oldPrivateKey);
+
+    // When
+    const response3 = await chaincode.invoke("PublicKeyContract:UpdatePublicKey", signedUpdateDto3);
+
+    // Then
+    const expectedMsg = `User client|invalidated does not have one of required roles: SUBMIT (has: no roles)`;
+    expect(response3).toEqual(transactionErrorKey("MISSING_ROLE"));
+    expect(response3).toEqual(transactionErrorMessageContains(expectedMsg));
   });
 
   it("should update TON public key", async () => {
