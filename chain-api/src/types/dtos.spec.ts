@@ -248,6 +248,9 @@ describe("ChainCallDTO", () => {
 
     const dto = new TestDto();
     dto.signing = SigningScheme.TON;
+    dto.signerAddress = asValidUserRef(signatures.ton.getTonAddress(pk1.publicKey));
+    dto.dtoOperation = "test-channel_test-chaincode_test-method";
+    dto.dtoExpiresAt = Date.now() + 1_000;
     dto.amounts = [new BigNumber("12.3")];
 
     // first signature
