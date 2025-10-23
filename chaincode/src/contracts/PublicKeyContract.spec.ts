@@ -365,7 +365,6 @@ describe("UpdatePublicKey", () => {
     const { chaincode, user } = await setup();
     const oldPrivateKey = user.privateKey;
     const oldPublicKey = user.publicKey;
-    const oldPrivateKey = user.privateKey;
 
     const newPrivateKey = "62fa12aaf85829fab618755747a7f75c256bfc5ceab2cc24c668c55f1985cfad";
     const newPublicKey =
@@ -486,10 +485,20 @@ describe("UpdatePublicKey", () => {
       signerPublicKey: tonUser.publicKey,
       signing: SigningScheme.TON
     });
+    dtoTonToEth.publicKeySignature = signatures.getSignature(
+      dtoTonToEth,
+      ethKeyPair.privateKey,
+      SigningScheme.ETH
+    );
 
     const dtoEthToTon = await createValidSubmitDTO(UpdatePublicKeyDto, {
       publicKey: tonKeyPair.publicKey.toString("base64")
     });
+    dtoEthToTon.publicKeySignature = signatures.getSignature(
+      dtoEthToTon,
+      tonKeyPair.secretKey,
+      SigningScheme.TON
+    );
 
     // When
     const responseTonToEth = await chaincode.invoke(
@@ -503,7 +512,7 @@ describe("UpdatePublicKey", () => {
     );
 
     // Then
-    expect(responseTonToEth).toEqual(transactionErrorMessageContains("Invalid public key length"));
+    expect(responseTonToEth).toEqual(transactionErrorMessageContains("bad signature size"));
     expect(responseEthToTon).toEqual(transactionErrorMessageContains("Public key seems to be invalid"));
 
     // Old keys are still there
