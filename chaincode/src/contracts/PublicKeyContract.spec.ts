@@ -302,7 +302,7 @@ describe("UpdatePublicKey", () => {
     expect(newPublicKey).not.toEqual(user.publicKey);
 
     const updateDto = await createValidSubmitDTO(UpdatePublicKeyDto, { publicKey: newPublicKey });
-    const signedUpdateDto = updateDto.signed(user.privateKey);
+    const signedUpdateDto = updateDto.withPublicKeySignedBy(user.privateKey).signed(user.privateKey);
 
     // When
     const updateResponse = await chaincode.invoke("PublicKeyContract:UpdatePublicKey", signedUpdateDto);
@@ -322,6 +322,42 @@ describe("UpdatePublicKey", () => {
     const signedWithNewKey = updateDto.signed(newPrivateKey);
     const verifyResponse = await chaincode.invoke("PublicKeyContract:VerifySignature", signedWithNewKey);
     expect(verifyResponse).toEqual(transactionSuccess());
+  });
+
+  it("should reject update public key with missing or invalid public key signature", async () => {
+    // Given
+    const { chaincode, user } = await setup();
+    const newPublicKey =
+      "040e8bda5af346c5a7a7312a94b34023e8c9610abf40e550de9696422312a9a67ea748dbe2686f9a115c58021fe538163285a97368f44b6bf8b13a8306c86e8c5a";
+    expect(newPublicKey).not.toEqual(user.publicKey);
+
+    const updateDto = await createValidSubmitDTO(UpdatePublicKeyDto, { publicKey: newPublicKey });
+
+    const signedUpdateDto1 = updateDto.signed(user.privateKey);
+    expect(signedUpdateDto1.publicKeySignature).toBeUndefined();
+
+    // public key signature is signed by old private key
+    const signedUpdateDto2 = updateDto.withPublicKeySignedBy(user.privateKey).signed(user.privateKey);
+    expect(signedUpdateDto2.publicKeySignature).toBeDefined();
+
+    // When
+    const updateResponse1 = await chaincode.invoke("PublicKeyContract:UpdatePublicKey", signedUpdateDto1);
+    const updateResponse2 = await chaincode.invoke("PublicKeyContract:UpdatePublicKey", signedUpdateDto2);
+
+    // Then
+    expect(updateResponse1).toEqual(transactionErrorKey("VALIDATION_FAILED"));
+    expect(updateResponse1).toEqual(transactionErrorMessageContains("Public key signature is missing"));
+
+    expect(updateResponse2).toEqual(transactionErrorKey("VALIDATION_FAILED"));
+    expect(updateResponse2).toEqual(transactionErrorMessageContains("Invalid ETH public key signature"));
+
+    // Old key is still there
+    expect(await getPublicKey(chaincode, user.alias)).toEqual(
+      transactionSuccess({
+        publicKey: PublicKeyService.normalizePublicKey(user.publicKey),
+        signing: SigningScheme.ETH
+      })
+    );
   });
 
   it("should prevent new user from reusing old public key after update", async () => {

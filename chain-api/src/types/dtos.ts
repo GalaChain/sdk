@@ -646,11 +646,30 @@ export class RegisterTonUserDto extends SubmitCallDTO {
 export class UpdatePublicKeyDto extends SubmitCallDTO {
   @JSONSchema({
     description:
+      "New public key for the user. " +
       "For users with ETH signing scheme it is public secp256k1 key (compact or non-compact, hex or base64). " +
       "For users with TON signing scheme it is public Ed25519 key (base64)."
   })
   @IsNotEmpty()
   publicKey: string;
+
+  @JSONSchema({
+    description:
+      "Signature from the new public key. " +
+      "The signature should be created over the same data as the main signature of this DTO, " +
+      "but the `signature` and `multisig` fields should be empty. " +
+      "This is to prove that the caller has access to the private key of the new public key."
+  })
+  @IsOptional()
+  @IsNotEmpty()
+  publicKeySignature?: string;
+
+  public withPublicKeySignedBy(privateKey: string): this {
+    const copied = instanceToInstance(this);
+    const signing = this.signing ?? SigningScheme.ETH;
+    copied.publicKeySignature = signatures.getSignature(copied, privateKey, signing);
+    return copied;
+  }
 }
 
 export class AddPublicKeyDto extends SubmitCallDTO {

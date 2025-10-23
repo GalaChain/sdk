@@ -21,8 +21,44 @@ export enum SigningScheme {
   TON = "TON"
 }
 
+function isValidSignature(
+  signature: string,
+  obj: object,
+  publicKey: string,
+  signing: SigningScheme = SigningScheme.ETH
+): boolean {
+  if (signing === SigningScheme.ETH) {
+    return eth.isValid(signature, obj, publicKey);
+  } else if (signing === SigningScheme.TON) {
+    return ton.isValidSignature(
+      Buffer.from(signature, "base64"),
+      obj,
+      Buffer.from(publicKey, "base64"),
+      undefined
+    );
+  }
+  throw new Error(`Unsupported signing scheme: ${signing}`);
+}
+
+function getSignature(
+  obj: object,
+  privateKey: string | Buffer,
+  signing: SigningScheme = SigningScheme.ETH
+): string {
+  if (signing === SigningScheme.ETH) {
+    const keyBuff = typeof privateKey === "string" ? eth.normalizePrivateKey(privateKey) : privateKey;
+    return eth.getSignature(obj, keyBuff);
+  } else if (signing === SigningScheme.TON) {
+    const keyBuff = typeof privateKey === "string" ? Buffer.from(privateKey, "base64") : privateKey;
+    return ton.getSignature(obj, keyBuff, undefined).toString("base64");
+  }
+  throw new Error(`Unsupported signing scheme: ${signing}`);
+}
+
 export default {
   ...eth,
   ton,
-  getPayloadToSign
+  getPayloadToSign,
+  isValidSignature,
+  getSignature
 } as const;
