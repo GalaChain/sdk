@@ -15,8 +15,8 @@
 import BigNumber from "bignumber.js";
 import { plainToInstance } from "class-transformer";
 
-import { UserAlias } from "./UserAlias";
 import { TokenClass, TokenClassKey } from "./TokenClass";
+import { UserAlias } from "./UserAlias";
 
 const existingToken = plainToInstance(TokenClass, {
   network: "GC",
