@@ -81,6 +81,25 @@ export class TokenClassKey extends ChainCallDTO {
 
     return false;
   }
+
+  public toB58EncodedString(): string {
+    // combine the collection, category, type, and additionalKey and encode as base58
+    const keyList = TokenClass.buildClassKeyList(this);
+    const stringKey = ChainObject.getEncodableStringKeyFromParts(keyList);
+    return ChainObject.encodeToBase58(stringKey);
+  }
+
+  public static fromB58EncodedString(base58String: string): TokenClassKey {
+    const stringKey = ChainObject.decodeFromBase58(base58String);
+    const parts = ChainObject.getPartsFromEncodableStringKey(stringKey);
+    const tokenClassKey = new TokenClassKey();
+    tokenClassKey.collection = parts[0];
+    tokenClassKey.category = parts[1];
+    tokenClassKey.type = parts[2];
+    tokenClassKey.additionalKey = parts[3];
+
+    return tokenClassKey;
+  }
 }
 
 export class TokenClass extends ChainObject {
