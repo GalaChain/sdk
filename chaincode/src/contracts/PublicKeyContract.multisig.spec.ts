@@ -497,6 +497,8 @@ describe("PublicKeyContract Multisignature", () => {
         .withPublicKeySignedBy(newKey.privateKey)
         .signed(key1.privateKey);
 
+      console.log("dto", JSON.stringify(dto, null, 2));
+
       // When
       const response = await chaincode.invoke("PublicKeyContract:UpdatePublicKey", dto);
 
