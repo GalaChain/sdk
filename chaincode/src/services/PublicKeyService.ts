@@ -275,14 +275,34 @@ export class PublicKeyService {
 
   public static async updatePublicKey(
     ctx: GalaChainContext,
-    newPublicKey: string,
+    dto: { publicKey: string; publicKeySignature?: string },
     signing: SigningScheme
   ): Promise<void> {
     const userAlias = ctx.callingUser;
+    const newPublicKey = dto.publicKey;
+    const { publicKeySignature: newPublicKeySignature, ...dtoRemaining } = dto;
 
     if (ctx.callingUserSignedByKeys.length !== 1) {
       const msg = `Expected exactly 1 signed by key for user ${userAlias}, got ${ctx.callingUserSignedByKeys.length}`;
       throw new UnauthorizedError(msg);
+    }
+
+    if (newPublicKeySignature === undefined) {
+      throw new ValidationFailedError("Public key signature is missing");
+    }
+
+    const isSignatureValid = signatures.isValidSignature(
+      newPublicKeySignature,
+      dtoRemaining,
+      newPublicKey,
+      signing
+    );
+    if (!isSignatureValid) {
+      throw new ValidationFailedError(`Invalid ${signing} public key signature`);
+    }
+
+    if (newPublicKeySignature === undefined) {
+      throw new ValidationFailedError("Public key signature is missing");
     }
 
     const currentPublicKeyObj = await PublicKeyService.getPublicKey(ctx, userAlias);

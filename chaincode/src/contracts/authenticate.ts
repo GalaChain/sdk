@@ -415,7 +415,7 @@ export function ensureSignatureQuorumIsMet(a: AuthenticateResult, quorum: number
 
   if (requiredQuorum > numberOfSignedKeys) {
     throw new UnauthorizedError(
-      `Insufficient number of signatures: got ${numberOfSignedKeys}, required ${a.signatureQuorum}.`
+      `Insufficient number of signatures: got ${numberOfSignedKeys}, required ${requiredQuorum}.`
     );
   }
 }

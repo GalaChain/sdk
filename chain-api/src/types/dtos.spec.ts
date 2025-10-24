@@ -240,4 +240,24 @@ describe("ChainCallDTO", () => {
     const expectedError = "signerAddress, signerPublicKey and prefix are not allowed for multisignature DTOs";
     expect(() => dto.sign(privateKey)).toThrow(expectedError);
   });
+
+  it("should throw an error when signing a multisig DTO with DER signatures", async () => {
+    // Given
+    const pk1 = await signatures.ton.genKeyPair();
+    const pk2 = await signatures.ton.genKeyPair();
+
+    const dto = new TestDto();
+    dto.signing = SigningScheme.TON;
+    dto.amounts = [new BigNumber("12.3")];
+
+    // first signature
+    dto.sign(Buffer.from(pk1.secretKey).toString("base64"));
+
+    // When
+    // second signature
+    const op = () => dto.sign(Buffer.from(pk2.secretKey).toString("base64"));
+
+    // Then
+    expect(op).toThrow("Multisig is not supported for TON signing scheme");
+  });
 });
