@@ -40,6 +40,7 @@ test.each<[string, string]>([
   ["valid 0x eth", `0x${validEthAddress}`],
   ["valid lower-cased 0x eth", `0x${lowerCasedEth}`],
   ["valid ton alias", `ton|${validTonAddress}`],
+  ["valid ton address", validTonAddress],
   ["valid bridge (eth)", `EthereumBridge`],
   ["valid bridge (ton)", `TonBridge`],
   ["valid bridge (solana)", `SolanaBridge`],
@@ -67,7 +68,7 @@ test.each<[string, string, string]>([
   ["invalid eth alias (invalid eth)", "eth|123", "'eth|' must end with valid checksumed"],
   ["invalid ton alias (invalid checksum)", `ton|${invalidTon}`, "'ton|' must end with valid bounceable"],
   ["invalid ton alias (invalid ton)", "ton|123", "'ton|' must end with valid bounceable base64 TON"],
-  ["invalid ton addr", validTonAddress, genericErrorMessage],
+  ["invalid ton addr", validTonAddress.substring(0, 47), genericErrorMessage],
   ["invalid bridge (external)", "GoldenGateBridge", genericErrorMessage],
   ["invalid bridge (GalaChain)", "GalaChainBridge-A", genericErrorMessage]
 ])("%s", async (label, input, expectedError) => {

@@ -21,12 +21,13 @@ import {
 } from "class-validator";
 
 import { signatures } from "../utils";
-import { UserAliasValidationResult, validateUserAlias } from "./IsUserAlias";
+import { UserAliasValidationResult, isValidTonAddress, validateUserAlias } from "./IsUserAlias";
 
 export enum UserRefValidationResult {
   VALID_USER_ALIAS,
   VALID_SYSTEM_USER,
   VALID_ETH_ADDRESS,
+  VALID_TON_ADDRESS,
   INVALID_ETH_USER_ALIAS,
   INVALID_TON_USER_ALIAS,
   INVALID_FORMAT
@@ -36,7 +37,8 @@ export function meansValidUserRef(result: UserRefValidationResult) {
   return (
     result === UserRefValidationResult.VALID_USER_ALIAS ||
     result === UserRefValidationResult.VALID_SYSTEM_USER ||
-    result === UserRefValidationResult.VALID_ETH_ADDRESS
+    result === UserRefValidationResult.VALID_ETH_ADDRESS ||
+    result === UserRefValidationResult.VALID_TON_ADDRESS
   );
 }
 
@@ -61,6 +63,11 @@ export function validateUserRef(value: unknown): UserRefValidationResult {
   // check if this is a valid Ethereum address
   if (signatures.isChecksumedEthAddress(value) || signatures.isLowercasedEthAddress(value)) {
     return UserRefValidationResult.VALID_ETH_ADDRESS;
+  }
+
+  // check if this is a valid TON address
+  if (isValidTonAddress(value)) {
+    return UserRefValidationResult.VALID_TON_ADDRESS;
   }
 
   return UserRefValidationResult.INVALID_FORMAT;

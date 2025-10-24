@@ -12,31 +12,20 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-import { ArrayMinSize, IsNotEmpty, IsOptional, IsString, ValidateIf } from "class-validator";
+import { IsNotEmpty, IsOptional, IsString } from "class-validator";
 
 import { SigningScheme, signatures } from "../utils";
-import { SerializeIf, StringEnumProperty } from "../validators";
+import { StringEnumProperty } from "../validators";
 import { ChainObject } from "./ChainObject";
 
 export class PublicKey extends ChainObject {
-  @ValidateIf((o) => !o.publicKeys)
   @IsString()
   @IsNotEmpty()
-  publicKey?: string;
-
-  @ValidateIf((o) => !o.publicKey)
-  @SerializeIf((o) => !o.publicKey)
-  @IsString({ each: true })
-  @ArrayMinSize(2)
-  public publicKeys?: string[];
+  public publicKey: string;
 
   @IsOptional()
   @StringEnumProperty(SigningScheme)
   public signing?: SigningScheme;
-
-  public getAllPublicKeys(): string[] {
-    return this.publicKeys ?? (this.publicKey ? [this.publicKey as string] : []);
-  }
 }
 
 export const PK_INDEX_KEY = "GCPK";

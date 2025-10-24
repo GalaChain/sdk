@@ -67,22 +67,17 @@ export function ensureOrganizationIsAllowed(ctx: GalaChainContext, allowedOrgsMS
   }
 }
 
-export function ensureCorrectMethodIsUsed(
-  ctx: GalaChainContext,
-  quorum: number | undefined,
-  dto: ChainCallDTO | undefined
-) {
-  const numberOfSignedKeys = ctx.callingUserSignedByKeys.length;
-  const requiredQuorum = quorum ?? ctx.callingUserSignatureQuorum;
+export function ensureCorrectMethodIsUsed(ctx: GalaChainContext, dto: ChainCallDTO | undefined) {
+  const isMultisig = (ctx.callingUserAllowedSigners?.length ?? 0) >= 1;
 
-  // If there is only one signature, we don't need to check the method
-  if (numberOfSignedKeys <= 1 && requiredQuorum <= 1 && !dto?.dtoOperation) {
-    return;
+  // If we use multisig, we need to check the method
+  if (isMultisig && !dto?.dtoOperation) {
+    const msg = `DTO operation is not provided. Please provide the operation name that is used for multisig.`;
+    throw new UnauthorizedError(msg);
   }
 
   if (!dto?.dtoOperation) {
-    const msg = `DTO operation is not provided. Please provide the operation name that is used for multisig.`;
-    throw new UnauthorizedError(msg);
+    return;
   }
 
   const fullOperationId = ctx.operationCtx.fullOperationId;
@@ -125,7 +120,7 @@ export async function authorize(
     return;
   }
 
-  ensureCorrectMethodIsUsed(ctx, options.quorum, dto);
+  ensureCorrectMethodIsUsed(ctx, dto);
 
   if (options.allowedOrgs) {
     ensureOrganizationIsAllowed(ctx, options.allowedOrgs);

@@ -12,7 +12,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-import { SubmitCallDTO } from "@gala-chain/api";
+import { SubmitCallDTO, asValidUserRef } from "@gala-chain/api";
 
 import { GalaChainContext, GalaChainStub } from "../types";
 import { authenticate } from "./authenticate";
@@ -31,15 +31,14 @@ describe("authenticate", () => {
     const { ctx, chaincodeId } = mockedContext();
 
     const dto = new SubmitCallDTO();
-    dto.signerAddress = `service|${chaincodeId}`;
+    dto.signerAddress = asValidUserRef(`service|${chaincodeId}`);
     dto.signature = undefined;
 
     const expectedUserData = {
       alias: `service|${chaincodeId}`,
       ethAddress: undefined,
       roles: [],
-      signedByKeys: [],
-      signatureQuorum: 0
+      signedBy: []
     };
 
     // When
@@ -54,7 +53,7 @@ describe("authenticate", () => {
     const { ctx, chaincodeId } = mockedContext();
 
     const dto = new SubmitCallDTO();
-    dto.signerAddress = `service|untrusted-chaincode`;
+    dto.signerAddress = asValidUserRef(`service|untrusted-chaincode`);
     dto.signature = undefined;
 
     const expectedErrorMessage = `Chaincode authorization failed. Got DTO with signerAddress: ${dto.signerAddress}, but signed proposal has chaincodeId: ${chaincodeId}`;
