@@ -13,6 +13,7 @@
     "madge": "nx run-many -t madge",
     "test": "nx run-many -t test",
     "test:update": "npm run build && npm run fix && npm run test -- -u",
+    "profile": "node --cpu-prof --cpu-prof-dir=. ./node_modules/.bin/jest",
     "set-version": "node unifyVersions.js",
     "licenses": "license-checker --csv --customPath ./licenses/format.json > ./licenses/licenses.csv",
     "training-files": "ts-node ./tools/scripts/training-files.ts",
