@@ -136,7 +136,7 @@ export class PublicKeyContract extends GalaContract {
     }
 
     const signing = dto.signing ?? SigningScheme.ETH;
-    await PublicKeyService.updatePublicKey(ctx, dto.publicKey, signing);
+    await PublicKeyService.updatePublicKey(ctx, dto, signing);
   }
 
   @Submit({

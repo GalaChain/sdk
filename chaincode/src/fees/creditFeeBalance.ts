@@ -60,7 +60,7 @@ export async function creditFeeBalance(
 
   const authzDto: FeeAuthorizationDto = ChainCallDTO.deserialize(FeeAuthorizationDto, authorization);
 
-  await ensureIsAuthenticatedBy(ctx, authzDto, authzDto.authority);
+  await ensureIsAuthenticatedBy(ctx, authzDto, authzDto.authority, undefined);
 
   if (authority !== authzDto.authority) {
     throw new UnauthorizedError(

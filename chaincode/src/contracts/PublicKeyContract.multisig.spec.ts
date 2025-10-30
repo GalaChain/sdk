@@ -20,6 +20,7 @@ import {
   SigningScheme,
   UpdatePublicKeyDto,
   UpdateQuorumDto,
+  UpdateUserRolesDto,
   UserAlias,
   UserProfile,
   UserRole,
@@ -183,19 +184,19 @@ describe("PublicKeyContract Multisignature", () => {
 
       // signed by first and second key
       const dto1 = new GetMyProfileDto()
-        .operation(operationId)
+        .withOperation(operationId)
         .signed(keys1.privateKey)
         .signed(keys2.privateKey);
 
       // signed by second and third key
       const dto2 = new GetMyProfileDto()
-        .operation(operationId)
+        .withOperation(operationId)
         .signed(keys2.privateKey)
         .signed(keys3.privateKey);
 
       // signed by all keys
       const dto3 = new GetMyProfileDto()
-        .operation(operationId)
+        .withOperation(operationId)
         .signed(keys1.privateKey)
         .signed(keys2.privateKey)
         .signed(keys3.privateKey);
@@ -241,16 +242,16 @@ describe("PublicKeyContract Multisignature", () => {
 
       // signed with wrong method
       const dto2 = new GetMyProfileDto()
-        .operation(wrongMethod)
+        .withOperation(wrongMethod)
         .signed(keys1.privateKey)
         .signed(keys2.privateKey);
 
       // operation replaced after signing
       const dto3 = new GetMyProfileDto()
-        .operation(wrongMethod)
+        .withOperation(wrongMethod)
         .signed(keys1.privateKey)
         .signed(keys2.privateKey)
-        .operation(correctMethod);
+        .withOperation(correctMethod);
 
       // When
       const resp1 = await chaincode.invoke("PublicKeyContract:GetMyProfile", dto1);
@@ -323,7 +324,7 @@ describe("PublicKeyContract Multisignature", () => {
 
       // When & Then
       // Quorum = 1: should work with any single key
-      const dto1 = new GetMyProfileDto().operation(operationId).signed(key1_1.privateKey);
+      const dto1 = new GetMyProfileDto().withOperation(operationId).signed(key1_1.privateKey);
       const resp1 = await chaincode.invoke("PublicKeyContract:GetMyProfile", dto1);
       expect(resp1).toEqual(
         transactionSuccess(
@@ -336,7 +337,7 @@ describe("PublicKeyContract Multisignature", () => {
 
       // Quorum = 3: should fail with only 2 keys
       const dto2 = new GetMyProfileDto()
-        .operation(operationId)
+        .withOperation(operationId)
         .signed(key2_1.privateKey)
         .signed(key2_2.privateKey);
       const resp2 = await chaincode.invoke("PublicKeyContract:GetMyProfile", dto2);
@@ -347,7 +348,7 @@ describe("PublicKeyContract Multisignature", () => {
 
       // Quorum = 3: should work with all 3 keys
       const dto3 = new GetMyProfileDto()
-        .operation(operationId)
+        .withOperation(operationId)
         .signed(key2_1.privateKey)
         .signed(key2_2.privateKey)
         .signed(key2_3.privateKey);
@@ -394,10 +395,13 @@ describe("PublicKeyContract Multisignature", () => {
       expect(dtoWrongQuorum.signature).toBeUndefined();
       expect(dtoWrongQuorum.multisig?.length).toEqual(2);
 
-      const dto = await createValidSubmitDTO(UpdatePublicKeyDto, { publicKey: newKey.publicKey }) // dtoOperation is not required for single signature
+      const dto = (await createValidSubmitDTO(UpdatePublicKeyDto, { publicKey: newKey.publicKey })) // dtoOperation is not required for single signature
+        .withPublicKeySignedBy(newKey.privateKey)
         .signed(key3.privateKey);
       expect(dto.signature).toBeDefined();
       expect(dto.multisig).toBeUndefined();
+
+      console.log("dto", JSON.stringify(dto, null, 2));
 
       // When
       const failure = await chaincode.invoke("PublicKeyContract:UpdatePublicKey", dtoWrongQuorum);
@@ -623,6 +627,52 @@ describe("PublicKeyContract Multisignature", () => {
         ...userProfileKV(alias, key3.publicKey, newQuorum),
         ...publicKeyKV(alias, [key1.publicKey, key2.publicKey, key3.publicKey])
       });
+    });
+  });
+});
+
+describe("UpdateUserRoles", () => {
+  async function setup() {
+    const chaincode = new TestChaincode([PublicKeyContract]);
+    const cfg = { keys: 3, quorum: 2 };
+    const resp = await createRegisteredMultiSigUser(chaincode, cfg);
+    return { chaincode, keys: resp.keys, alias: resp.alias, quorum: cfg.quorum };
+  }
+
+  it("should update user roles for multisig user with quorum signatures", async () => {
+    // Given
+    const { chaincode, keys, alias, quorum } = await setup();
+    const [key1, key2, key3] = keys;
+
+    expect(quorum).toEqual(2);
+    const defaultRoles = [...UserProfile.DEFAULT_ROLES];
+    const newRoles = [...defaultRoles, UserRole.REGISTRAR].sort();
+
+    // verify the current state
+    expect(chaincode.getState()).toEqual({
+      ...userProfileKV(alias, key1.publicKey, quorum, defaultRoles),
+      ...userProfileKV(alias, key2.publicKey, quorum, defaultRoles),
+      ...userProfileKV(alias, key3.publicKey, quorum, defaultRoles),
+      ...publicKeyKV(alias, [key1.publicKey, key2.publicKey, key3.publicKey])
+    });
+
+    const dto = await createValidSubmitDTO(UpdateUserRolesDto, {
+      user: alias,
+      roles: newRoles
+    }).signed(process.env.DEV_ADMIN_PRIVATE_KEY as string);
+
+    // When
+    const response = await chaincode.invoke("PublicKeyContract:UpdateUserRoles", dto);
+
+    // Then
+    expect(response).toEqual(transactionSuccess());
+
+    // Verify the new state - roles should be updated
+    expect(chaincode.getState()).toEqual({
+      ...userProfileKV(alias, key1.publicKey, quorum, newRoles),
+      ...userProfileKV(alias, key2.publicKey, quorum, newRoles),
+      ...userProfileKV(alias, key3.publicKey, quorum, newRoles),
+      ...publicKeyKV(alias, [key1.publicKey, key2.publicKey, key3.publicKey])
     });
   });
 });
