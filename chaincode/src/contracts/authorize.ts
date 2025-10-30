@@ -12,7 +12,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-import { ForbiddenError, UnauthorizedError, UserRole } from "@gala-chain/api";
+import { ChainCallDTO, ForbiddenError, UnauthorizedError, UserRole } from "@gala-chain/api";
 
 import { GalaChainContext } from "../types";
 
@@ -67,16 +67,29 @@ export function ensureOrganizationIsAllowed(ctx: GalaChainContext, allowedOrgsMS
   }
 }
 
-export function ensureSignatureQuorumIsMet(ctx: GalaChainContext, quorum: number | undefined) {
+export function ensureCorrectMethodIsUsed(
+  ctx: GalaChainContext,
+  quorum: number | undefined,
+  dto: ChainCallDTO | undefined
+) {
   const numberOfSignedKeys = ctx.callingUserSignedByKeys.length;
-
-  // Quorum from options overrides quorum from UserProfile
   const requiredQuorum = quorum ?? ctx.callingUserSignatureQuorum;
 
-  if (requiredQuorum > numberOfSignedKeys) {
-    throw new UnauthorizedError(
-      `Insufficient signatures: got ${numberOfSignedKeys}, required ${ctx.callingUserSignatureQuorum}.`
-    );
+  // If there is only one signature, we don't need to check the method
+  if (numberOfSignedKeys <= 1 && requiredQuorum <= 1 && !dto?.dtoOperation) {
+    return;
+  }
+
+  if (!dto?.dtoOperation) {
+    const msg = `DTO operation is not provided. Please provide the operation name that is used for multisig.`;
+    throw new UnauthorizedError(msg);
+  }
+
+  const fullOperationId = ctx.operationCtx.fullOperationId;
+
+  if (dto.dtoOperation !== fullOperationId) {
+    const msg = `The dto was signed to call ${dto.dtoOperation} operation, but the current operation is ${fullOperationId}.`;
+    throw new UnauthorizedError(msg);
   }
 }
 
@@ -101,14 +114,18 @@ export interface AuthorizeOptions {
   quorum?: number;
 }
 
-export async function authorize(ctx: GalaChainContext, options: AuthorizeOptions) {
+export async function authorize(
+  ctx: GalaChainContext,
+  options: AuthorizeOptions,
+  dto: ChainCallDTO | undefined
+) {
   if (options.allowedOriginChaincodes && ctx.callingUser.startsWith("service|")) {
     const callingChaincode = ctx.callingUser.slice(8);
     ensureChaincodeIsAllowed(callingChaincode, options.allowedOriginChaincodes);
     return;
   }
 
-  ensureSignatureQuorumIsMet(ctx, options.quorum);
+  ensureCorrectMethodIsUsed(ctx, options.quorum, dto);
 
   if (options.allowedOrgs) {
     ensureOrganizationIsAllowed(ctx, options.allowedOrgs);

@@ -194,8 +194,9 @@ function GalaTransaction<In extends ChainCallDTO, Out>(
         // Authenticate the user
         if (ctx.isDryRun) {
           // Do not authenticate in dry run mode
-        } else if (options?.verifySignature || dto?.signature !== undefined) {
-          ctx.callingUserData = await authenticate(ctx, dto);
+        } else if (options?.verifySignature || dto?.getAllSignatures().length) {
+          // Authenticate if this is explicitly enabled or if there are any signatures in the DTO
+          ctx.callingUserData = await authenticate(ctx, dto, options.quorum);
         } else {
           // it means a request where authorization is not required. If there is org-based authorization,
           // default roles are applied. If not, then only evaluate is possible. Alias is intentionally
@@ -205,7 +206,7 @@ function GalaTransaction<In extends ChainCallDTO, Out>(
         }
 
         // Authorize the user
-        await authorize(ctx, options);
+        await authorize(ctx, options, dto);
 
         // Prevent the same transaction from being submitted multiple times
         if (options.enforceUniqueKey) {
@@ -270,7 +271,7 @@ function GalaTransaction<In extends ChainCallDTO, Out>(
     let description = options.description ? options.description : "";
 
     if (options.type === GalaTransactionType.SUBMIT) {
-      description += description ?? ` Transaction updates the chain (submit).`;
+      description += ` Transaction updates the chain (submit).`;
     } else {
       description += ` Transaction is read only (evaluate).`;
     }

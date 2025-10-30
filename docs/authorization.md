@@ -98,6 +98,12 @@ const dto = await createValidDTO(MyDtoClass, {
 }).signed(userPrivateKey);
 ```
 
+### DTO operation name
+
+Providing explicit operation ID in `dtoOperation` field in DTO is a way to improve security. It prevents from using the DTO as a parameter for a different operation that is was supposed (either by accident or man-in-the middle attack).
+
+The `dtoOperation` name must contain channel, chaincode, and the exact method name as is used by calling the chain (like: `asset-channel_basic-asset_GalaChainToken:TransferToken` or `asset-channel_basic-asset_PublicKeyContract:GetPublicProfile`). It is optional for single signature calls, but required for multisig.
+
 ### Signing the transaction payload
 
 Client side it is recommended to use `@gala-chain/api`, or `@gala-chain/cli`, or `@gala-chain/connect` library to sign the transactions.
@@ -238,8 +244,6 @@ dto.sign(sk2); // dto.signature = undefined; dto.signatures = [signature1, signa
 
 Chaincode enforces that any transaction that requires signed DTO is signed by the required number of private keys.
 
-Multisig is supported only for Ethereum signing scheme (secp256k1) with non-DER signatures.
-
 #### Override Quorum Requirements
 
 You can override the user's signature quorum requirement on a per-transaction basis using the `quorum` option:
@@ -274,6 +278,7 @@ await pkContract.RegisterUser(treasuryRegistration.signed(adminKey));
 
 // Create a transaction requiring 3 signatures
 const transferDto = new TransferTokenDto({
+  dtoOperation: "asset-channel_basic-asset_Conract:Transfer", // operation is required for multisig
   to: "client|recipient",
   amount: "1000",
   uniqueKey: "transfer-" + Date.now()
@@ -289,17 +294,18 @@ transferDto
 await tokenContract.TransferToken(transferDto);
 ```
 
+Note that after multiple signing the `transferDto` object contains multiple signatures, so instead of the `signature` field it contains `multisig` field with an array of signatures.
+
 **Example 2: Dynamic Quorum Override**
 
 ```typescript
 @Submit({
   in: EmergencyActionDto,
-  quorum: 1, // Override user's quorum for emergency actions
+  quorum: 1, // Override user's quorum
   description: "Emergency action requiring only 1 signature"
 })
 async emergencyAction(ctx: GalaChainContext, dto: EmergencyActionDto): Promise<void> {
   // This method only requires 1 signature regardless of user's quorum setting
-  // Useful for emergency situations where speed is critical
   
   const signedByKeys = ctx.callingUserSignedByKeys;
   ctx.logger.warn(`Emergency action executed by key: ${signedByKeys[0]}`);

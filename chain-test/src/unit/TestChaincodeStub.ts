@@ -163,6 +163,14 @@ export class TestChaincodeStub extends ChaincodeStub {
           channelHeader: {
             epoch: 0
           }
+        },
+        payload: {
+          array: [
+            Buffer.from(
+              "CusECAESEQoAEgtiYXNpYy1hc3NldBoAGtMECh9HYWxhQ2hhaW5Ub2tlbjpDcmVhdGVUb2tlbkNsYXNzCq0EeyJkZWNpbWFscyI6MCwiZGVzY3JpcHRpb24iOiJUaGlzIGlzIGEgdGVzdCBkZXNjcmlwdGlvbiEiLCJpbWFnZSI6Imh0dHBzOi8vYXBwLmdhbGEuZ2FtZXMvX251eHQvaW1nL2dhbGEtbG9nb19ob3Jpem9udGFsX3doaXRlLjhiMDQwOWMucG5nIiwiaXNOb25GdW5naWJsZSI6dHJ1ZSwibWF4Q2FwYWNpdHkiOiIxMCIsIm1heFN1cHBseSI6IjEwIiwibmFtZSI6Ik1lZ2FBeGUiLCJuZXR3b3JrIjoiR0MiLCJzaWduYXR1cmUiOiIwYTRhODRmYWRjNDI0NDdjNjFhNjg3ZTJkNDA1YTZjNDc5ZGY3OTllMmQ4OWNkNzliNTRjMzU5MjVjZDA5ZWI3NGVlN2Q0MGYyNGIwNjg0OWExNDc2NDZjZDM0ZWM1NzY5YmE3ZmY1MjA1Nzk2ZjFhYWJjYTI2MzYyNWRiZGE3YjFiIiwic3ltYm9sIjoiTUEiLCJ0b2tlbkNsYXNzIjp7ImFkZGl0aW9uYWxLZXkiOiJub25lIiwiY2F0ZWdvcnkiOiJXZWFwb24iLCJjb2xsZWN0aW9uIjoiTWlyYW5kdXNnY29sdHNkbWppYyIsInR5cGUiOiJNZWdhQXhlIn0sInVuaXF1ZUtleSI6IkxDd2xXQmVoS3JyQnlPZytCNWtvQk92MFhGNXJRT0tQMDhxYmQ0UGZCOWM9In0YAA==",
+              "base64"
+            )
+          ]
         }
       }
     };

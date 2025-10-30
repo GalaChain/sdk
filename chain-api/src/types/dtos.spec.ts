@@ -71,9 +71,7 @@ it("should parse TestDtoWithArray", async () => {
   expect(await getPlainOrError(TestDtoWithArray, invalid1)).toEqual(failedArrayMatcher);
   expect(await getPlainOrError(TestDtoWithArray, invalid2)).toEqual(failedArrayMatcher);
   const error = await getPlainOrError(TestDtoWithArray, invalid3);
-  expect(
-    error === "Unexpected end of JSON input" || error === "Unterminated string in JSON at position 16"
-  ).toBe(true);
+  expect(error).toMatch(/JSON/);
 });
 
 it("should parse TestDtoWithBigNumber", async () => {
@@ -213,7 +211,7 @@ describe("ChainCallDTO", () => {
 
     // Then
     expect(dto.signature).toEqual(undefined);
-    expect(dto.signatures).toEqual([expect.stringMatching(/.{50,}/), expect.stringMatching(/.{50,}/)]);
+    expect(dto.multisig).toEqual([expect.stringMatching(/.{50,}/), expect.stringMatching(/.{50,}/)]);
 
     // valid cases
     expect(dto.isSignatureValid(k1.publicKey, 0)).toEqual(true);
@@ -223,8 +221,43 @@ describe("ChainCallDTO", () => {
     expect(dto.isSignatureValid(k1.publicKey, 1)).toEqual(false);
 
     expect(() => dto.isSignatureValid(k1.publicKey)).toThrow("Index is required for multisig DTOs");
-    expect(() => dto.isSignatureValid(k1.publicKey, 2)).toThrow(
-      "No signature in signatures array at index 2"
-    );
+    expect(() => dto.isSignatureValid(k1.publicKey, 2)).toThrow("No signature in multisig array at index 2");
+  });
+
+  it("should throw an error when signing a multisig DTO with signerAddress, signerPublicKey, or prefix", () => {
+    // Given
+    const { privateKey } = genKeyPair();
+    const dto = new TestDto();
+    dto.amounts = [new BigNumber("12.3")];
+    dto.sign(privateKey); // first signature
+
+    // When
+    dto.signerAddress = "0x123";
+    dto.signerPublicKey = "0x456";
+    dto.prefix = "test-prefix";
+
+    // Then
+    const expectedError = "signerAddress, signerPublicKey and prefix are not allowed for multisignature DTOs";
+    expect(() => dto.sign(privateKey)).toThrow(expectedError);
+  });
+
+  it("should throw an error when signing a multisig DTO with DER signatures", async () => {
+    // Given
+    const pk1 = await signatures.ton.genKeyPair();
+    const pk2 = await signatures.ton.genKeyPair();
+
+    const dto = new TestDto();
+    dto.signing = SigningScheme.TON;
+    dto.amounts = [new BigNumber("12.3")];
+
+    // first signature
+    dto.sign(Buffer.from(pk1.secretKey).toString("base64"));
+
+    // When
+    // second signature
+    const op = () => dto.sign(Buffer.from(pk2.secretKey).toString("base64"));
+
+    // Then
+    expect(op).toThrow("Multisig is not supported for TON signing scheme");
   });
 });

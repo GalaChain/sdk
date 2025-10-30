@@ -205,14 +205,26 @@ export class ChainCallDTO {
   @JSONSchema({
     description:
       "List of signatures for this DTO if there are multiple signers. " +
-      "All signatures must use the same signing scheme as provided in the 'signing' field. " +
-      "If there are multiple signatures, it is not allowed to provide 'signature' or 'signerPublicKey' or 'signerAddress' or 'prefix' fields."
+      "If there are multiple signatures, it is not allowed to provide 'signature' " +
+      "or 'signerPublicKey' or 'signerAddress' or 'prefix' fields, " +
+      "and the signing scheme must be ETH."
   })
   @IsOptional()
   @SerializeIf((o) => !o.signature)
   @ArrayMinSize(2)
   @Type(() => String)
-  public signatures?: string[];
+  public multisig?: string[];
+
+  @JSONSchema({
+    description:
+      "Full operation identifier that is called on chain with this DTO. " +
+      "The format is `channelId_chaincodeId_methodName`. " +
+      "It is required for multisig DTOs, and optional for single signed DTOs. "
+  })
+  @IsOptional()
+  @IsString()
+  @IsNotEmpty()
+  public dtoOperation?: string;
 
   @JSONSchema({
     description: "Unit timestamp when the DTO expires. If the timestamp is in the past, the DTO is not valid."
@@ -271,42 +283,58 @@ export class ChainCallDTO {
     return deserialize<T, ChainCallDTO>(constructor, object);
   }
 
-  public async sign(privateKey: string, useDer = false): Promise<void> {
-    const currentSignatures = this.signatures ?? (this.signature ? [this.signature] : []);
-    const someSignaturesExist = currentSignatures.length > 0;
+  public getAllSignatures(): string[] {
+    return this.multisig ?? (this.signature ? [this.signature] : []);
+  }
 
-    if (someSignaturesExist && this.signerAddress && this.signerPublicKey && this.prefix) {
+  public sign(privateKey: string, useDer = false): void {
+    const currentSignatures = this.getAllSignatures();
+    const useMultisig = currentSignatures.length > 0;
+
+    if (useMultisig && (this.signerAddress || this.signerPublicKey || this.prefix)) {
       const msg = "signerAddress, signerPublicKey and prefix are not allowed for multisignature DTOs";
       throw new ValidationFailedError(msg);
     }
 
     if (useDer) {
-      if (someSignaturesExist) {
+      if (useMultisig) {
         throw new ValidationFailedError("DER signatures are not allowed for multisignature DTOs");
-      } else if (this.signing === SigningScheme.TON) {
+      }
+
+      if (this.signing === SigningScheme.TON) {
         throw new ValidationFailedError("TON signing scheme does not support DER signatures");
       } else {
+        // for convenience and backwards compatibility, for ETH signing scheme,
+        // add signerPublicKey if it's not provided
         if (this.signerPublicKey === undefined && this.signerAddress === undefined) {
           this.signerPublicKey = signatures.getPublicKey(privateKey);
         }
+
+        // we have ETH signing scheme, and DER signatures, and single-sig
+        const keyBuffer = signatures.normalizePrivateKey(privateKey);
+        this.signature = signatures.getDERSignature(this, keyBuffer);
+        return;
       }
     }
 
-    let signature: string;
-
+    // we have TON signing scheme, what also means single-sig and non-DER
     if (this.signing === SigningScheme.TON) {
+      if (useMultisig) {
+        throw new ValidationFailedError("Multisig is not supported for TON signing scheme");
+      }
+
       const keyBuffer = Buffer.from(privateKey, "base64");
-      signature = signatures.ton.getSignature(this, keyBuffer, this.prefix).toString("base64");
-    } else {
-      const keyBuffer = signatures.normalizePrivateKey(privateKey);
-      signature = useDer
-        ? await signatures.getDERSignature(this, keyBuffer)
-        : await signatures.getSignature(this, keyBuffer);
+      this.signature = signatures.ton.getSignature(this, keyBuffer, this.prefix).toString("base64");
+      return;
     }
 
-    if (someSignaturesExist) {
+    // we have ETH signing scheme, and non-DER signatures, and either single-sig or multisig
+    const keyBuffer = signatures.normalizePrivateKey(privateKey);
+    const signature = signatures.getSignature(this, keyBuffer);
+
+    if (useMultisig) {
       delete this.signature;
-      this.signatures = [...currentSignatures, signature];
+      this.multisig = [...currentSignatures, signature];
     } else {
       this.signature = signature;
     }
@@ -319,6 +347,12 @@ export class ChainCallDTO {
   public async signed(privateKey: string, useDer = false) {
     const copied = instanceToInstance(this);
     await copied.sign(privateKey, useDer);
+    return copied;
+  }
+
+  public withOperation(operation: string): this {
+    const copied = instanceToInstance(this);
+    copied.dtoOperation = operation;
     return copied;
   }
 
@@ -347,10 +381,10 @@ export class ChainCallDTO {
       throw new ValidationFailedError("Index is required for multisig DTOs");
     }
 
-    const signature = this.signatures?.[index];
+    const signature = this.multisig?.[index];
 
     if (!signature) {
-      throw new ValidationFailedError(`No signature in signatures array at index ${index}`);
+      throw new ValidationFailedError(`No signature in multisig array at index ${index}`);
     }
 
     return signatures.isValid(signature, this, publicKey);
@@ -616,11 +650,30 @@ export class RegisterTonUserDto extends SubmitCallDTO {
 export class UpdatePublicKeyDto extends SubmitCallDTO {
   @JSONSchema({
     description:
+      "New public key for the user. " +
       "For users with ETH signing scheme it is public secp256k1 key (compact or non-compact, hex or base64). " +
       "For users with TON signing scheme it is public Ed25519 key (base64)."
   })
   @IsNotEmpty()
   publicKey: string;
+
+  @JSONSchema({
+    description:
+      "Signature from the new public key. " +
+      "The signature should be created over the same data as the main signature of this DTO, " +
+      "but the `signature` and `multisig` fields should be empty. " +
+      "This is to prove that the caller has access to the private key of the new public key."
+  })
+  @IsOptional()
+  @IsNotEmpty()
+  publicKeySignature?: string;
+
+  public withPublicKeySignedBy(privateKey: string): this {
+    const copied = instanceToInstance(this);
+    const signing = this.signing ?? SigningScheme.ETH;
+    copied.publicKeySignature = signatures.getSignature(copied, privateKey, signing);
+    return copied;
+  }
 }
 
 export class AddPublicKeyDto extends SubmitCallDTO {
