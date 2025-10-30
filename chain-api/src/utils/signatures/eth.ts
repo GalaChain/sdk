@@ -412,7 +412,7 @@ function recoverPublicKey(signature: string, obj: object, prefix?: string): stri
     ? Buffer.from(dataString.slice(2), "hex")
     : Buffer.from((prefix ?? "") + dataString);
 
-  const dataHash = Buffer.from(keccak256.hex(data), "hex");
+  const dataHash = new Uint8Array(Buffer.from(keccak256.hex(data), "hex"));
 
   // Convert signature to 64-byte format for recovery
   const signatureBuffer = new Uint8Array(64);
