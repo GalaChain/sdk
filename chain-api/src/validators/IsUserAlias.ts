@@ -73,7 +73,7 @@ export function validateUserAlias(value: unknown): UserAliasValidationResult {
   if (parts.length === 1) {
     if (isValidSystemUser(parts[0])) {
       return UserAliasValidationResult.VALID_SYSTEM_USER;
-    } else if (isValidTonAddress(parts[0])) {
+    } else {
       return UserAliasValidationResult.INVALID_FORMAT;
     }
   }

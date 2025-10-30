@@ -107,8 +107,6 @@ async function performTest(
   publicKeyFn(dto, userObj);
   const signedDto = signatureFn(dto, userObj.privateKey);
 
-  console.log(JSON.stringify(chaincode.getState(), null, 2));
-
   // When
   const response = await chaincode.invoke("PublicKeyContract:GetMyProfile", signedDto);
 

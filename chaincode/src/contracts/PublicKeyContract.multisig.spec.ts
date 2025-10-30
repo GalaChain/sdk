@@ -47,8 +47,8 @@ import {
 let prevEnv: string | undefined;
 
 beforeAll(() => {
-  // we are enabling allow non registered users for this test suite to allow
-  // non-registered users to be used as signers
+  // we are enabling ALLOW_NON_REGISTERED_USERS for this test suite
+  // so the registration of signers is not required
   prevEnv = process.env.ALLOW_NON_REGISTERED_USERS;
   process.env.ALLOW_NON_REGISTERED_USERS = "true";
 });
