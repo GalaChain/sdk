@@ -513,7 +513,7 @@ describe("UpdatePublicKey", () => {
 
     // Then
     expect(responseTonToEth).toEqual(transactionErrorMessageContains("bad signature size"));
-    expect(responseEthToTon).toEqual(transactionErrorMessageContains("Public key seems to be invalid"));
+    expect(responseEthToTon).toEqual(transactionErrorMessageContains("Invalid ETH public key signature"));
 
     // Old keys are still there
     expect(await getPublicKey(chaincode, tonUser.alias)).toEqual(
