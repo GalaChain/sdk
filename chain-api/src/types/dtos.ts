@@ -31,6 +31,7 @@ import {
 import { JSONSchema } from "class-validator-jsonschema";
 
 import {
+  NotImplementedError,
   SigningScheme,
   ValidationFailedError,
   deserialize,
@@ -169,11 +170,11 @@ export class ChainCallDTO {
   public prefix?: string;
 
   @JSONSchema({
-    description: "Address of the user who signed the DTO. Typically Ethereum or TON address."
+    description: "Address of the user who signed the DTO. Typically Ethereum or TON address, or user alias."
   })
   @IsOptional()
   @IsNotEmpty()
-  public signerAddress?: string;
+  public signerAddress?: UserRef;
 
   @JSONSchema({
     description: "Public key of the user who signed the DTO."
@@ -291,9 +292,20 @@ export class ChainCallDTO {
     const currentSignatures = this.getAllSignatures();
     const useMultisig = currentSignatures.length > 0;
 
-    if (useMultisig && (this.signerAddress || this.signerPublicKey || this.prefix)) {
-      const msg = "signerAddress, signerPublicKey and prefix are not allowed for multisignature DTOs";
-      throw new ValidationFailedError(msg);
+    if (useMultisig && !this.signerAddress) {
+      throw new ValidationFailedError("signerAddress is required for multisignature DTOs");
+    }
+
+    if (useMultisig && !this.dtoOperation) {
+      throw new ValidationFailedError("dtoOperation is required for multisignature DTOs");
+    }
+
+    if (useMultisig && !this.dtoExpiresAt) {
+      throw new ValidationFailedError("dtoExpiresAt is required for multisignature DTOs");
+    }
+
+    if (useMultisig && (this.signerPublicKey || this.prefix)) {
+      throw new ValidationFailedError("signerPublicKey and prefix are not allowed for multisignature DTOs");
     }
 
     if (useDer) {
@@ -350,44 +362,37 @@ export class ChainCallDTO {
     return copied;
   }
 
+  public expiresInMs(ms: number): this {
+    const copied = instanceToInstance(this);
+    copied.dtoExpiresAt = Date.now() + ms;
+    return copied;
+  }
+
   public withOperation(operation: string): this {
     const copied = instanceToInstance(this);
     copied.dtoOperation = operation;
     return copied;
   }
 
-  public isSignatureValid(publicKey: string, index?: number): boolean {
-    if (this.signing === SigningScheme.TON) {
-      if (index !== undefined) {
-        throw new ValidationFailedError("Multisig is not supported for TON signing scheme");
-      }
+  public withSigner(ref: UserRef): this {
+    const copied = instanceToInstance(this);
+    copied.signerAddress = ref;
+    return copied;
+  }
 
+  public isSignatureValid(publicKey: string): boolean {
+    if (this.multisig || !this.signature) {
+      throw new NotImplementedError("isSignatureValid is not supported for multisig DTOs");
+    }
+
+    if (this.signing === SigningScheme.TON) {
       const signatureBuff = Buffer.from(this.signature ?? "", "base64");
       const publicKeyBuff = Buffer.from(publicKey, "base64");
 
       return signatures.ton.isValidSignature(signatureBuff, this, publicKeyBuff, this.prefix);
     }
 
-    // ETH signing scheme - single signature
-    if (this.signature) {
-      if (index !== undefined) {
-        throw new ValidationFailedError("Index is not supported for single signed DTOs");
-      }
-      return signatures.isValid(this.signature, this, publicKey);
-    }
-
-    // ETH signing scheme - multisig
-    if (index === undefined) {
-      throw new ValidationFailedError("Index is required for multisig DTOs");
-    }
-
-    const signature = this.multisig?.[index];
-
-    if (!signature) {
-      throw new ValidationFailedError(`No signature in multisig array at index ${index}`);
-    }
-
-    return signatures.isValid(signature, this, publicKey);
+    return signatures.isValid(this.signature, this, publicKey);
   }
 }
 
@@ -591,18 +596,18 @@ export class RegisterUserDto extends SubmitCallDTO {
   user: UserAlias;
 
   @JSONSchema({ description: "Public secp256k1 key (compact or non-compact, hex or base64)." })
-  @ValidateIf((o) => !o.publicKeys)
+  @ValidateIf((o) => !o.signers)
   @IsString()
   @IsNotEmpty()
   public publicKey?: string;
 
-  @JSONSchema({ description: "Public secp256k1 keys (compact or non-compact, hex or base64)." })
+  @JSONSchema({ description: "Signer user refs." })
   @ValidateIf((o) => !o.publicKey)
   @SerializeIf((o) => !o.publicKey)
-  @IsString({ each: true })
+  @IsUserRef({ each: true })
   @IsNotEmpty({ each: true })
-  @ArrayMinSize(2)
-  public publicKeys?: string[];
+  @ArrayMinSize(1)
+  public signers?: UserRef[];
 
   @JSONSchema({
     description: "Minimum number of signatures required for authorization. Defaults to number of public keys."
@@ -611,10 +616,6 @@ export class RegisterUserDto extends SubmitCallDTO {
   @IsInt()
   @Min(1)
   signatureQuorum?: number;
-
-  public getAllPublicKeys(): string[] {
-    return this.publicKey ? [this.publicKey as string] : this.publicKeys ?? [];
-  }
 }
 
 /**
@@ -676,24 +677,20 @@ export class UpdatePublicKeyDto extends SubmitCallDTO {
   }
 }
 
-export class AddPublicKeyDto extends SubmitCallDTO {
+export class AddSignerDto extends SubmitCallDTO {
   @JSONSchema({
-    description:
-      "For users with ETH signing scheme it is public secp256k1 key (compact or non-compact, hex or base64). " +
-      "For users with TON signing scheme it is public Ed25519 key (base64)."
+    description: "User ref of the signer to add (typically Ethereum or TON address, or user alias)."
   })
   @IsNotEmpty()
-  publicKey: string;
+  signer: UserRef;
 }
 
-export class RemovePublicKeyDto extends SubmitCallDTO {
+export class RemoveSignerDto extends SubmitCallDTO {
   @JSONSchema({
-    description:
-      "For users with ETH signing scheme it is public secp256k1 key (compact or non-compact, hex or base64). " +
-      "For users with TON signing scheme it is public Ed25519 key (base64)."
+    description: "User ref of the signer to remove (typically Ethereum or TON address, or user alias)."
   })
   @IsNotEmpty()
-  publicKey: string;
+  signer: UserRef;
 }
 
 export class UpdateQuorumDto extends SubmitCallDTO {
@@ -705,8 +702,8 @@ export class UpdateQuorumDto extends SubmitCallDTO {
 }
 
 export class UpdateUserRolesDto extends SubmitCallDTO {
-  @IsUserAlias()
-  user: string;
+  @IsUserRef()
+  user: UserRef;
 
   @JSONSchema({ description: "New set of roles for the user that will replace the old ones." })
   @IsNotEmpty()

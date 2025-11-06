@@ -18,6 +18,7 @@ import { ArrayMinSize, ArrayNotEmpty, IsString } from "class-validator";
 
 import { SigningScheme, getValidationErrorMessages, signatures } from "../utils";
 import { BigNumberArrayProperty, BigNumberProperty } from "../validators";
+import { asValidUserRef } from "./UserRef";
 import { ChainCallDTO, ClassConstructor } from "./dtos";
 
 const getInstanceOrErrorInfo = async <T extends ChainCallDTO>(
@@ -189,30 +190,27 @@ describe("ChainCallDTO", () => {
     expect(dto.isSignatureValid(pair.publicKey.toString("base64"))).toEqual(true);
   });
 
-  it("should sign and verify multiple signatures", () => {
+  it("should not support multiple signatures verification", () => {
     // Given
     const k1 = signatures.genKeyPair();
     const k2 = signatures.genKeyPair();
     const dto = new TestDto();
     dto.amounts = [new BigNumber("12.3")];
+    dto.signerAddress = asValidUserRef("0x0000000000000000000000000000000000000123");
+    dto.dtoOperation = "test-channel_test-chaincode_test-method";
+    dto.dtoExpiresAt = Date.now() + 1000;
 
     // When
     dto.sign(k1.privateKey);
     dto.sign(k2.privateKey);
+    const verify = () => dto.isSignatureValid(k1.publicKey);
 
     // Then
     expect(dto.signature).toEqual(undefined);
     expect(dto.multisig).toEqual([expect.stringMatching(/.{50,}/), expect.stringMatching(/.{50,}/)]);
 
     // valid cases
-    expect(dto.isSignatureValid(k1.publicKey, 0)).toEqual(true);
-    expect(dto.isSignatureValid(k2.publicKey, 1)).toEqual(true);
-
-    expect(dto.isSignatureValid(k2.publicKey, 0)).toEqual(false);
-    expect(dto.isSignatureValid(k1.publicKey, 1)).toEqual(false);
-
-    expect(() => dto.isSignatureValid(k1.publicKey)).toThrow("Index is required for multisig DTOs");
-    expect(() => dto.isSignatureValid(k1.publicKey, 2)).toThrow("No signature in multisig array at index 2");
+    expect(verify).toThrow("isSignatureValid is not supported for multisig DTOs");
   });
 
   it("should throw an error when signing a multisig DTO with signerAddress, signerPublicKey, or prefix", () => {
@@ -220,15 +218,17 @@ describe("ChainCallDTO", () => {
     const { privateKey } = signatures.genKeyPair();
     const dto = new TestDto();
     dto.amounts = [new BigNumber("12.3")];
+    dto.dtoOperation = "test-channel_test-chaincode_test-method";
+    dto.dtoExpiresAt = Date.now() + 1000;
     dto.sign(privateKey); // first signature
 
     // When
-    dto.signerAddress = "0x123";
+    dto.signerAddress = asValidUserRef("0x0000000000000000000000000000000000000123");
     dto.signerPublicKey = "0x456";
     dto.prefix = "test-prefix";
 
     // Then
-    const expectedError = "signerAddress, signerPublicKey and prefix are not allowed for multisignature DTOs";
+    const expectedError = "signerPublicKey and prefix are not allowed for multisignature DTOs";
     expect(() => dto.sign(privateKey)).toThrow(expectedError);
   });
 
@@ -239,6 +239,9 @@ describe("ChainCallDTO", () => {
 
     const dto = new TestDto();
     dto.signing = SigningScheme.TON;
+    dto.signerAddress = asValidUserRef(signatures.ton.getTonAddress(pk1.publicKey));
+    dto.dtoOperation = "test-channel_test-chaincode_test-method";
+    dto.dtoExpiresAt = Date.now() + 1_000;
     dto.amounts = [new BigNumber("12.3")];
 
     // first signature
