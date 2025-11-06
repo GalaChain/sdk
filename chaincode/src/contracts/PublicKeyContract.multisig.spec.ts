@@ -193,6 +193,30 @@ describe("PublicKeyContract Multisignature", () => {
         )
       );
     });
+
+    it("should fail to override existing multisig user with single signed user", async () => {
+      // Given
+      const chaincode = new TestChaincode([PublicKeyContract]);
+
+      const { alias } = await createRegisteredMultiSigUser(chaincode, { keys: 2, quorum: 1 });
+
+      const newKey = signatures.genKeyPair();
+
+      const dto = await createValidSubmitDTO(RegisterUserDto, {
+        user: alias,
+        publicKey: newKey.publicKey
+      });
+      const signedDto = dto.signed(process.env.DEV_ADMIN_PRIVATE_KEY as string);
+
+      // When
+      const response = await chaincode.invoke("PublicKeyContract:RegisterUser", signedDto);
+
+      // Then
+      expect(response).toEqual(transactionErrorKey("PROFILE_EXISTS"));
+      expect(response).toEqual(
+        transactionErrorMessageContains(`User profile is already saved for user ${alias}`)
+      );
+    });
   });
 
   describe("GetMyProfile", () => {
