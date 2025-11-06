@@ -12,7 +12,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-import { ConflictError, NotFoundError, UnauthorizedError } from "@gala-chain/api";
+import { ConflictError, NotFoundError, UnauthorizedError, isValidUserAlias } from "@gala-chain/api";
 
 export class PkExistsError extends ConflictError {
   constructor(user: string) {
@@ -22,7 +22,9 @@ export class PkExistsError extends ConflictError {
 
 export class ProfileExistsError extends ConflictError {
   constructor(address: string, userAlias: string) {
-    const msg = `User Profile is already saved for ethereum address ${address}, user ${userAlias}`;
+    const msg = isValidUserAlias(address)
+      ? `User profile is already saved for user ${userAlias}`
+      : `User profile is already saved for ethereum address ${address}, user ${userAlias}`;
     super(msg, { address, userAlias });
   }
 }

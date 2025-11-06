@@ -272,11 +272,18 @@ export class PublicKeyService {
     // Otherwise, for multisig, we use the provided user alias as the address
     const address = publicKey ? PublicKeyService.getUserAddress(publicKey, signing) : userAlias;
 
-    // If User Profile already exists on chain for this ethereum address,
+    // If user profile already exists on chain for this ethereum address,
     // we should not allow registering the same user again
     const existingUserProfile = await PublicKeyService.getUserProfile(ctx, address);
     if (existingUserProfile !== undefined) {
       throw new ProfileExistsError(address, existingUserProfile.alias);
+    }
+
+    // If multisig user profile already exists on chain for this alias,
+    // we should not allow registering the same user again
+    const existingMultisigUserProfile = await PublicKeyService.getUserProfile(ctx, userAlias);
+    if (existingMultisigUserProfile !== undefined) {
+      throw new ProfileExistsError(userAlias, existingMultisigUserProfile.alias);
     }
 
     const addressObj = signers
