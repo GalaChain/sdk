@@ -137,7 +137,7 @@ Asides from standard Fabric context, it provides some additional methods and pro
 - `callingUserTonAddress` - returns TON address that is derived from calling user public key (see [Authentication and authorization](#authentication-and-authorization)).
 - `callingUserRoles` - returns array of roles assigned to the calling user.
 - `callingUserProfile` - returns complete user profile object for the calling user.
-- `callingUserSignedByKeys` - returns array of public keys that signed the current transaction (for multisig).
+- `callingUserSignedBy` - returns array of public keys that signed the current transaction (for multisig).
 - `callingUserSignatureQuorum` - returns required number of signatures for the calling user (for multisig).
 - `callingUserData` - setter for all calling user data (used internally by authentication).
 - `txUnixTime` - returns unix time of the transaction.
@@ -153,7 +153,7 @@ Finally, it adds some customization to the `logger` property.
 
 When working with multisig transactions, additional context properties are available:
 
-- `callingUserSignedByKeys`: Array of public keys that signed the current transaction
+- `callingUserSignedBy`: Array of public keys that signed the current transaction
 - `callingUserSignatureQuorum`: Required number of signatures for the calling user
 - `callingUserData`: Setter for all calling user data (used internally by authentication)
 
@@ -166,7 +166,7 @@ These properties are particularly useful for implementing business logic that de
 })
 async transferTokens(ctx: GalaChainContext, dto: TransferDto): Promise<void> {
   // Access multisig information
-  const signedByKeys = ctx.callingUserSignedByKeys;
+  const signedByKeys = ctx.callingUserSignedBy;
   const requiredQuorum = ctx.callingUserSignatureQuorum;
   
   // Log multisig information

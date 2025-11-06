@@ -67,7 +67,7 @@ After successful authentication, the following context properties are available:
 - `ctx.callingUserTonAddress`: The user's TON address (if available)
 - `ctx.callingUserRoles`: Array of roles assigned to the user
 - `ctx.callingUserProfile`: Complete user profile object
-- `ctx.callingUserSignedByKeys`: Array of public keys that signed the current transaction
+- `ctx.callingUserSignedBy`: Array of user aliases that signed the current transaction
 - `ctx.callingUserSignatureQuorum`: Required number of signatures for the user
 
 ## Signature based authorization
@@ -219,30 +219,89 @@ This way it is possible to get the current user's properties in the chaincode an
 
 ### Multisignature users and quorum
 
-Users may register more than one public key. The required number of signatures (as specified by signatureQuorum) must be provided to authorize a transaction.
-During registration pass an array of keys:
+Users may register a virtual multisig profile with multiple signers for enhanced security. The required number of signatures (as specified by signatureQuorum) must be provided to authorize a transaction.
+
+#### Registration with Multiple Signers
+
+During registration, you can specify multiple signers using the `signers` field:
 
 ```typescript
 const { publicKey: pk1, privateKey: sk1 } = signatures.genKeyPair();
 const { publicKey: pk2, privateKey: sk2 } = signatures.genKeyPair();
 
+// Register user1 and user2 first (may be skipped if you allow non-registered users)
+await pkContract.RegisterEthUser(createValidSubmitDTO(RegisterEthUserDto, {
+  publicKey: pk1
+}).signed(adminKey));
+
+await pkContract.RegisterEthUser(createValidSubmitDTO(RegisterEthUserDto, {
+  publicKey: pk2
+}).signed(adminKey));
+
+// Register multisig user with signers
 const reg = await createValidSubmitDTO(RegisterUserDto, {
   user: "client|multisig",
-  publicKeys: [pk1, pk2],
+  signers: [pk1, pk2].map((k) => asValidUserRef(signatures.getEthAddress(k)),
   signatureQuorum: 2
 });
 await pkContract.RegisterUser(reg.signed(adminKey));
 ```
 
-Transactions are signed multiple times, producing a `signatures` array on the DTO:
+#### Managing Signers
+
+You can add or remove signers from a multisig user:
 
 ```typescript
-const dto = new GetMyProfileDto();
-dto.sign(sk1); // dto.signature = signature1
-dto.sign(sk2); // dto.signature = undefined; dto.signatures = [signature1, signature2]
+// Add a new signer
+const addSignerDto = await createValidSubmitDTO(AddSignerDto, {
+  signer: asValidUserRef(signatures.getEthAddress(newPublicKey)),
+  dtoOperation: "asset-channel_basic-asset_PublicKeyContract:AddSigner",
+  signerAddress: "client|multisig"
+}).signed(sk1).signed(sk2); // Requires quorum signatures
+
+await pkContract.AddSigner(addSignerDto);
+
+// Remove a signer
+const removeSignerDto = await createValidSubmitDTO(RemoveSignerDto, {
+  signer: "eth|" + signatures.getEthAddress(oldPublicKey),
+  dtoOperation: "asset-channel_basic-asset_PublicKeyContract:RemoveSigner",
+  signerAddress: "client|multisig"
+}).signed(sk1).signed(sk2); // Requires quorum signatures
+
+await pkContract.RemoveSigner(removeSignerDto);
 ```
 
-Chaincode enforces that any transaction that requires signed DTO is signed by the required number of private keys.
+#### Signing Multisig Transactions
+
+Transactions are signed multiple times, producing a `multisig` array on the DTO:
+
+```typescript
+const dto = new GetMyProfileDto({
+  dtoOperation: "asset-channel_basic-asset_PublicKeyContract:GetMyProfile",
+  dtoExpiresAt: new Date().getTime() + 1000 * 60,
+  signerAddress: asValidUserAlias("client|multisig")
+});
+dto.sign(sk1); // dto.signature = signature1
+dto.sign(sk2); // dto.signature = undefined; dto.multisig = [signature1, signature2]
+```
+
+Chaincode enforces that any transaction that requires signed DTO is signed by the required number of private keys from the allowed signers list.
+
+#### Multisig Architecture
+
+The new multisig system is based on user aliases rather than raw public keys:
+
+- **Single Signer Users**: Have a single public key and can sign transactions directly
+- **Multisig Users**: Have a list of allowed signers (user aliases) and require multiple signatures
+- **Signer Management**: Use `AddSigner` and `RemoveSigner` methods to manage the signers list
+
+For multisig transactions the following fields are required in DTO:
+- `dtoOperation` - full operation ID on GalaChain (including channel and chaincode)
+- `dtoExpiresAt` - Unix timestamp when the operation expires
+- `signerAddress` - user alias of the multisig profile
+
+The purpose of `dtoOperation` and `dtoExpiresAt` fields is to enhance security when the DTO of the operation is processed off-chain in signing process.
+
 
 #### Override Quorum Requirements
 
@@ -266,11 +325,21 @@ This feature is supported only for Ethereum signing scheme (secp256k1) with non-
 **Example 1: Corporate Treasury Setup**
 
 ```typescript
-// Register a corporate treasury with 5 keys requiring 3 signatures
+// Register individual signers first
 const treasuryKeys = Array.from({ length: 5 }, () => signatures.genKeyPair());
+const signerRefs = treasuryKeys.map((k) => asValidUserRef(signatures.getEthAddress(k.publicKey)));
+
+// Register each signer
+for (let i = 0; i < treasuryKeys.length; i++) {
+  await pkContract.RegisterEthUser(createValidSubmitDTO(RegisterEthUserDto, {
+    publicKey: treasuryKeys[i].publicKey
+  }).signed(adminKey));
+}
+
+// Register corporate treasury with 5 signers requiring 3 signatures
 const treasuryRegistration = await createValidSubmitDTO(RegisterUserDto, {
   user: "client|treasury",
-  publicKeys: treasuryKeys.map(k => k.publicKey),
+  signers: signerRefs,
   signatureQuorum: 3
 });
 
@@ -278,7 +347,9 @@ await pkContract.RegisterUser(treasuryRegistration.signed(adminKey));
 
 // Create a transaction requiring 3 signatures
 const transferDto = new TransferTokenDto({
-  dtoOperation: "asset-channel_basic-asset_Conract:Transfer", // operation is required for multisig
+  dtoOperation: "asset-channel_basic-asset_Contract:Transfer", // operation is required for multisig
+  signerAddress: "client|treasury", // multisig user address
+  dtoExpiresAt: new Date().getTime() + 1000 * 60,
   to: "client|recipient",
   amount: "1000",
   uniqueKey: "transfer-" + Date.now()
@@ -307,8 +378,8 @@ Note that after multiple signing the `transferDto` object contains multiple sign
 async emergencyAction(ctx: GalaChainContext, dto: EmergencyActionDto): Promise<void> {
   // This method only requires 1 signature regardless of user's quorum setting
   
-  const signedByKeys = ctx.callingUserSignedByKeys;
-  ctx.logger.warn(`Emergency action executed by key: ${signedByKeys[0]}`);
+  const signedBy = ctx.callingUserSignedBy;
+  ctx.logger.warn(`Emergency action executed by signer: ${signedBy[0]}`);
   
   await executeEmergencyAction(ctx, dto);
 }

@@ -32,6 +32,7 @@ import {
   randomUniqueKey,
   signatures
 } from "@gala-chain/api";
+import { asValidUserRef } from "@gala-chain/api";
 import {
   TestChaincode,
   fixture,
@@ -45,6 +46,7 @@ import { PublicKeyContract } from "./PublicKeyContract";
 import {
   createDerSignedDto,
   createRegisteredMultiSigUser,
+  createRegisteredMultiSigUserForUsers,
   createRegisteredTonUser,
   createRegisteredUser,
   createSignedDto,
@@ -610,7 +612,7 @@ describe("GetMyProfile", () => {
 
     // DER + signerAddress
     const dto3 = new GetMyProfileDto();
-    dto3.signerAddress = user.ethAddress;
+    dto3.signerAddress = asValidUserRef(user.ethAddress);
     dto3.sign(user.privateKey, true);
 
     // When
@@ -623,8 +625,7 @@ describe("GetMyProfile", () => {
       transactionSuccess({
         alias: user.alias,
         ethAddress: user.ethAddress,
-        roles: [UserRole.EVALUATE, UserRole.SUBMIT],
-        signatureQuorum: 1
+        roles: [UserRole.EVALUATE, UserRole.SUBMIT]
       })
     );
     expect(resp2).toEqual(resp1);
@@ -643,7 +644,7 @@ describe("GetMyProfile", () => {
 
     const dto2 = new GetMyProfileDto();
     dto2.signing = SigningScheme.TON;
-    dto2.signerAddress = user.tonAddress;
+    dto2.signerAddress = asValidUserRef(user.tonAddress);
     dto2.sign(user.privateKey);
 
     // When
@@ -655,8 +656,7 @@ describe("GetMyProfile", () => {
       transactionSuccess({
         alias: user.alias,
         tonAddress: user.tonAddress,
-        roles: UserProfile.DEFAULT_ROLES,
-        signatureQuorum: 1
+        roles: UserProfile.DEFAULT_ROLES
       })
     );
     expect(resp2).toEqual(resp1);
@@ -666,31 +666,44 @@ describe("GetMyProfile", () => {
     // Given
     const chaincode = new TestChaincode([PublicKeyContract]);
 
-    const { keys, alias } = await createRegisteredMultiSigUser(chaincode, { keys: 3, quorum: 2 });
-    const [keys1, keys2, keys3] = keys;
+    const user1 = await createRegisteredUser(chaincode);
+    const user2 = await createRegisteredUser(chaincode);
+    const user3 = await createRegisteredUser(chaincode);
+
+    const { alias } = await createRegisteredMultiSigUserForUsers(chaincode, {
+      users: [user1, user2, user3],
+      quorum: 2
+    });
+
     const operationId = "asset-channel_basic-asset_PublicKeyContract:GetMyProfile";
 
     // signed by first and second key
     const dto1 = new GetMyProfileDto()
+      .expiresInMs(60_000)
+      .withSigner(alias)
       .withOperation(operationId)
-      .signed(keys1.privateKey)
-      .signed(keys2.privateKey);
+      .signed(user1.privateKey)
+      .signed(user2.privateKey);
 
     // signed by second and third key
     const dto2 = new GetMyProfileDto()
+      .expiresInMs(60_000)
+      .withSigner(alias)
       .withOperation(operationId)
-      .signed(keys2.privateKey)
-      .signed(keys3.privateKey);
+      .signed(user2.privateKey)
+      .signed(user3.privateKey);
 
     // signed by all keys
     const dto3 = new GetMyProfileDto()
+      .expiresInMs(60_000)
+      .withSigner(alias)
       .withOperation(operationId)
-      .signed(keys1.privateKey)
-      .signed(keys2.privateKey)
-      .signed(keys3.privateKey);
+      .signed(user1.privateKey)
+      .signed(user2.privateKey)
+      .signed(user3.privateKey);
 
     // signed by first key only
-    const dto4 = new GetMyProfileDto().withOperation(operationId).signed(keys1.privateKey);
+    const dto4 = new GetMyProfileDto().withSigner(alias).withOperation(operationId).signed(user1.privateKey);
 
     // When
     const resp1 = await chaincode.invoke("PublicKeyContract:GetMyProfile", dto1);
@@ -703,7 +716,8 @@ describe("GetMyProfile", () => {
       transactionSuccess({
         alias,
         roles: [UserRole.EVALUATE, UserRole.SUBMIT],
-        signatureQuorum: 2
+        signatureQuorum: 2,
+        signers: [user1.alias, user2.alias, user3.alias].sort()
       })
     );
 
@@ -761,7 +775,7 @@ describe("UpdateUserRoles", () => {
     signerPrivateKey: string
   ): Promise<GalaChainResponse<any>> {
     const dto = new UpdateUserRolesDto();
-    dto.user = user;
+    dto.user = asValidUserRef(user);
     dto.roles = roles;
     dto.uniqueKey = randomUniqueKey();
     dto.sign(signerPrivateKey);

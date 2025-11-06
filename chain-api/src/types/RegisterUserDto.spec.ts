@@ -17,7 +17,8 @@ import { validate } from "class-validator";
 import { ec as EC } from "elliptic";
 
 import { SigningScheme, signatures } from "../utils";
-import { UserAlias } from "./UserAlias";
+import { UserAlias, asValidUserAlias } from "./UserAlias";
+import { asValidUserRef } from "./UserRef";
 import { RegisterUserDto } from "./dtos";
 
 describe("RegisterUserDto", () => {
@@ -57,12 +58,16 @@ describe("RegisterUserDto", () => {
       });
     });
 
-    it("should validate and serialize with multiple publicKeys", async () => {
+    it("should validate and serialize with multiple signers", async () => {
       // Given
       const input = {
         uniqueKey: "test-unique-key-456",
         user: "client|test-user-multiple",
-        publicKeys: ["key1", "key2", "key3"]
+        signers: [
+          "client|u1",
+          "0xccD7dd7Ab3C4b8B0e4a454e92dFc82F0F6CA6899".toLowerCase(),
+          "eth|ccD7dd7Ab3C4b8B0e4a454e92dFc82F0F6CA6899"
+        ]
       };
 
       // When
@@ -75,22 +80,22 @@ describe("RegisterUserDto", () => {
       expect(instance).toEqual({
         uniqueKey: "test-unique-key-456",
         user: "client|test-user-multiple",
-        publicKeys: ["key1", "key2", "key3"]
+        signers: input.signers
       });
       expect(serialized).toEqual({
         uniqueKey: "test-unique-key-456",
         user: "client|test-user-multiple",
-        publicKeys: ["key1", "key2", "key3"]
+        signers: input.signers
       });
     });
 
-    it("should prefer publicKey over publicKeys when both are provided", async () => {
+    it("should prefer publicKey over signers when both are provided", async () => {
       // Given
       const input = {
         uniqueKey: "test-unique-key-789",
         user: "service|test-service",
         publicKey: "single-key",
-        publicKeys: ["key1", "key2"]
+        signers: ["client|u1", "client|u2"]
       };
 
       // When
@@ -112,7 +117,7 @@ describe("RegisterUserDto", () => {
       });
     });
 
-    it("should fail validation when neither publicKey nor publicKeys is provided", async () => {
+    it("should fail validation when neither publicKey nor signers is provided", async () => {
       // Given
       const input = {
         uniqueKey: "test-unique-key-000",
@@ -127,7 +132,7 @@ describe("RegisterUserDto", () => {
       // Then
       expect(errors).toHaveLength(2);
       expect(errors.some((e) => e.property === "publicKey")).toBe(true);
-      expect(errors.some((e) => e.property === "publicKeys")).toBe(true);
+      expect(errors.some((e) => e.property === "signers")).toBe(true);
       expect(instance).toEqual({
         uniqueKey: "test-unique-key-000",
         user: "client|test-user"
@@ -138,12 +143,12 @@ describe("RegisterUserDto", () => {
       });
     });
 
-    it("should fail validation when publicKeys has less than 2 elements", async () => {
+    it("should allow single signer", async () => {
       // Given
       const input = {
         uniqueKey: "test-unique-key-111",
         user: "client|test-user",
-        publicKeys: ["key1"]
+        signers: ["client|u1"]
       };
 
       // When
@@ -152,26 +157,26 @@ describe("RegisterUserDto", () => {
       const serialized = instanceToPlain(instance);
 
       // Then
-      expect(errors).toHaveLength(1);
-      expect(errors[0].property).toBe("publicKeys");
+      expect(errors).toHaveLength(0);
       expect(instance).toEqual({
         uniqueKey: "test-unique-key-111",
         user: "client|test-user",
-        publicKeys: ["key1"]
+        signers: ["client|u1"]
       });
       expect(serialized).toEqual({
         uniqueKey: "test-unique-key-111",
         user: "client|test-user",
-        publicKeys: ["key1"]
+        signers: ["client|u1"]
       });
     });
 
-    it("should fail validation when publicKeys contains non-string values", async () => {
+    it("should fail validation when signers contains invalid values", async () => {
       // Given
       const input = {
         uniqueKey: "test-unique-key-222",
         user: "client|test-user",
-        publicKeys: ["key1", 123, "key3"]
+        // number is invalid, must be UserRef string
+        signers: ["client|u1", 123 as unknown as string, "client|u3"]
       };
 
       // When
@@ -181,17 +186,16 @@ describe("RegisterUserDto", () => {
 
       // Then
       expect(errors).toHaveLength(1);
-      expect(errors[0].property).toBe("publicKeys");
-      expect(errors[0].constraints?.isString).toContain("each value in publicKeys must be a string");
+      expect(errors[0].property).toBe("signers");
       expect(instance).toEqual({
         uniqueKey: "test-unique-key-222",
         user: "client|test-user",
-        publicKeys: ["key1", 123, "key3"]
+        signers: ["client|u1", 123 as unknown as string, "client|u3"]
       });
       expect(serialized).toEqual({
         uniqueKey: "test-unique-key-222",
         user: "client|test-user",
-        publicKeys: ["key1", 123, "key3"]
+        signers: ["client|u1", 123 as unknown as string, "client|u3"]
       });
     });
 
@@ -308,28 +312,6 @@ describe("RegisterUserDto", () => {
       expect(dto.isSignatureValid(publicKey)).toEqual(true);
     });
 
-    it("should sign and verify signature with multiple publicKeys", () => {
-      // Given
-      const { privateKey, publicKey } = genKeyPair();
-      const dto = new RegisterUserDto();
-      dto.uniqueKey = "test-unique-key-multisig";
-      dto.user = "eth|0x1234567890123456789012345678901234567890" as unknown as UserAlias;
-      dto.publicKeys = ["key1", "key2", "key3"];
-      expect(dto.signature).toEqual(undefined);
-
-      // When
-      dto.sign(privateKey);
-
-      // Then
-      expect(dto).toEqual({
-        uniqueKey: "test-unique-key-multisig",
-        user: "eth|0x1234567890123456789012345678901234567890",
-        publicKeys: ["key1", "key2", "key3"],
-        signature: expect.stringMatching(/.{50,}/)
-      });
-      expect(dto.isSignatureValid(publicKey)).toEqual(true);
-    });
-
     it("should sign and verify TON signature", async () => {
       // Given
       const pair = await signatures.ton.genKeyPair();
@@ -352,36 +334,6 @@ describe("RegisterUserDto", () => {
         signature: expect.stringMatching(/.{50,}/)
       });
       expect(dto.isSignatureValid(pair.publicKey.toString("base64"))).toEqual(true);
-    });
-
-    it("should handle multisignature with signatures array", () => {
-      // Given
-      const { privateKey: privateKey1, publicKey: publicKey1 } = genKeyPair();
-      const { privateKey: privateKey2, publicKey: publicKey2 } = genKeyPair();
-      const dto = new RegisterUserDto();
-      dto.uniqueKey = "test-unique-key-multisig-array";
-      dto.user = "client|test-user" as unknown as UserAlias;
-      dto.publicKeys = ["key1", "key2"];
-
-      // When - first signature
-      dto.sign(privateKey1);
-      expect(dto.signature).toEqual(expect.stringMatching(/.{50,}/));
-      expect(dto.multisig).toBeUndefined();
-
-      // When - second signature (converts to multisig)
-      dto.sign(privateKey2);
-
-      // Then
-      expect(dto).toEqual({
-        uniqueKey: "test-unique-key-multisig-array",
-        user: "client|test-user",
-        publicKeys: ["key1", "key2"],
-        signature: undefined,
-        multisig: [expect.stringMatching(/.{50,}/), expect.stringMatching(/.{50,}/)]
-      });
-
-      expect(dto.isSignatureValid(publicKey1, 0)).toEqual(true);
-      expect(dto.isSignatureValid(publicKey2, 1)).toEqual(true);
     });
 
     it("should fail to verify signature with invalid key", () => {
@@ -433,56 +385,6 @@ describe("RegisterUserDto", () => {
       expect(signedDto.uniqueKey).toEqual(dto.uniqueKey);
       expect(signedDto.user).toEqual(dto.user);
       expect(signedDto.publicKey).toEqual(dto.publicKey);
-    });
-  });
-
-  describe("getAllPublicKeys method", () => {
-    it("should return single publicKey when only publicKey is set", () => {
-      // Given
-      const dto = new RegisterUserDto();
-      dto.publicKey = "single-key";
-
-      // When
-      const result = dto.getAllPublicKeys();
-
-      // Then
-      expect(result).toEqual(["single-key"]);
-    });
-
-    it("should return publicKeys array when only publicKeys is set", () => {
-      // Given
-      const dto = new RegisterUserDto();
-      dto.publicKeys = ["key1", "key2", "key3"];
-
-      // When
-      const result = dto.getAllPublicKeys();
-
-      // Then
-      expect(result).toEqual(["key1", "key2", "key3"]);
-    });
-
-    it("should return empty array when neither publicKey nor publicKeys is set", () => {
-      // Given
-      const dto = new RegisterUserDto();
-
-      // When
-      const result = dto.getAllPublicKeys();
-
-      // Then
-      expect(result).toEqual([]);
-    });
-
-    it("should prefer publicKey over publicKeys when both are set", () => {
-      // Given
-      const dto = new RegisterUserDto();
-      dto.publicKey = "single-key";
-      dto.publicKeys = ["key1", "key2"];
-
-      // When
-      const result = dto.getAllPublicKeys();
-
-      // Then
-      expect(result).toEqual(["single-key"]);
     });
   });
 

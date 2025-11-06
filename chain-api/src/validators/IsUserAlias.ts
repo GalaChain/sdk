@@ -47,6 +47,12 @@ export function isValidSystemUser(value: string): boolean {
   );
 }
 
+export function isValidTonAddress(value: string): boolean {
+  // Only allow bounceable (starts with 'EQ' or 'UQ') base64url TON addresses, length 48 or 52 chars
+  // See: https://ton-community.github.io/tutorials/address/
+  return /^(E|U)Q[A-Za-z0-9_-]{46}$/.test(value) || /^(E|U)Q[A-Za-z0-9_-]{50}$/.test(value);
+}
+
 /**
  * @description
  *
