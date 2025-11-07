@@ -168,6 +168,7 @@ export class GalaChainContext extends Context {
     this.callingUserTonAddressValue = undefined;
     this.callingUserSignedByValue = undefined;
     this.callingUserSignatureQuorumValue = undefined;
+    this.callingUserAllowedSignersValue = undefined;
   }
 
   get operationCtx(): OperationContext {
@@ -191,6 +192,7 @@ export class GalaChainContext extends Context {
     this.callingUserTonAddressValue = d.tonAddress;
     this.callingUserSignedByValue = d.signedBy;
     this.callingUserSignatureQuorumValue = d.signatureQuorum;
+    this.callingUserAllowedSignersValue = undefined;
     this.isDryRun = true;
   }
 
