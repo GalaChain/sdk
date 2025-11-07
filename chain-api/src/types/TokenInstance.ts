@@ -123,7 +123,7 @@ export class TokenInstanceKey extends ChainCallDTO {
 
   public static fromB58EncodedString(base58String: string): TokenInstanceKey {
     const stringKey = ChainObject.decodeFromBase58(base58String);
-    const parts = ChainObject.getPartsFromEncodableStringKey(stringKey);
+    const parts = ChainObject.getPartsFromEncodableStringKey(stringKey, 5);
     const tokenInstanceKey = new TokenInstanceKey();
     tokenInstanceKey.collection = parts[0];
     tokenInstanceKey.category = parts[1];
