@@ -77,11 +77,11 @@ export function randomUser(
  * ```
  */
 export default {
-  admin: randomUser("client|admin", [...UserProfile.ADMIN_ROLES]),
+  admin: randomUser("client|admin", [...UserProfile.ADMIN_ROLES, ...UserProfile.DEFAULT_ROLES]),
   testUser1: randomUser("client|testUser1"),
   testUser2: randomUser("client|testUser2"),
   testUser3: randomUser("client|testUser3"),
   tokenHolder: randomUser("client|tokenHolder"),
-  attacker: randomUser("client|maliciousUser", [...UserProfile.ADMIN_ROLES]),
+  attacker: randomUser("client|maliciousUser", [...UserProfile.ADMIN_ROLES, ...UserProfile.DEFAULT_ROLES]),
   random: randomUser
 };

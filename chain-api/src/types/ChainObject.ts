@@ -132,11 +132,22 @@ export abstract class ChainObject {
   }
 
   public static getEncodableStringKeyFromParts(parts: string[]): string {
-    return `${parts.join(ChainObject.MIN_UNICODE_RUNE_VALUE)}`;
+    parts.forEach((part, index) => {
+      if (part.includes(ChainObject.MIN_UNICODE_RUNE_VALUE)) {
+        const msg = `Invalid part with UTF-0 at index ${index} passed to getEncodableStringKeyFromParts}`;
+        throw new InvalidCompositeKeyError(msg);
+      }
+    });
+    return parts.join(ChainObject.MIN_UNICODE_RUNE_VALUE);
   }
 
-  public static getPartsFromEncodableStringKey(stringKey: string): string[] {
-    return stringKey.split(ChainObject.MIN_UNICODE_RUNE_VALUE);
+  public static getPartsFromEncodableStringKey(stringKey: string, expectedParts: number): string[] {
+    const parts = stringKey.split(ChainObject.MIN_UNICODE_RUNE_VALUE);
+    if (parts.length !== expectedParts) {
+      const msg = `Expected ${expectedParts} parts, got ${parts.length} parts in getPartsFromEncodableStringKey`;
+      throw new InvalidCompositeKeyError(msg);
+    }
+    return parts;
   }
 
   public static encodeToBase58(stringKey: string): string {
