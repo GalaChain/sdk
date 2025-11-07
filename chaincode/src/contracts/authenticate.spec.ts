@@ -36,9 +36,11 @@ describe("authenticate", () => {
 
     const expectedUserData = {
       alias: `service|${chaincodeId}`,
-      ethAddress: undefined,
       roles: [],
-      signedBy: []
+      signedBy: [],
+      signatureQuorum: 0,
+      allowedSigners: [],
+      isMultisig: false
     };
 
     // When

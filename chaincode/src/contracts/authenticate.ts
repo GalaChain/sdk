@@ -120,13 +120,14 @@ class UserNotRegisteredError extends ValidationFailedError {
 export class ChaincodeAuthorizationError extends ForbiddenError {}
 
 export interface AuthenticateResult {
-  alias: string;
+  alias: UserAlias;
   ethAddress?: string;
   tonAddress?: string;
   roles: string[];
   signedBy: UserAlias[];
-  signatureQuorum?: number;
-  allowedSigners?: UserAlias[];
+  signatureQuorum: number;
+  allowedSigners: UserAlias[];
+  isMultisig: boolean;
 }
 
 /**
@@ -370,10 +371,12 @@ export async function authenticateAsOriginChaincode(
   }
 
   return {
-    alias: `service|${chaincode}`,
-    ethAddress: undefined,
+    alias: `service|${chaincode}` as UserAlias,
     roles: [],
-    signedBy: []
+    signedBy: [],
+    signatureQuorum: 0,
+    allowedSigners: [],
+    isMultisig: false
   };
 }
 
@@ -399,17 +402,24 @@ function singleSignAuthResult(profile: UserProfileStrict): AuthenticateResult {
     alias: profile.alias,
     ...addr,
     roles: profile.roles,
-    signedBy: [profile.alias]
+    signedBy: [profile.alias],
+    signatureQuorum: profile.signatureQuorum,
+    allowedSigners: [profile.alias],
+    isMultisig: false
   };
 }
 
 function multisigAuthResult(profile: UserProfileStrict, signedBy: UserAlias[]): AuthenticateResult {
+  if (profile.signers === undefined) {
+    throw new UnauthorizedError("Multisig profile does not have signers.");
+  }
   return {
     alias: profile.alias,
     roles: profile.roles,
     signedBy,
     signatureQuorum: profile.signatureQuorum,
-    allowedSigners: profile.signers
+    allowedSigners: profile.signers,
+    isMultisig: true
   };
 }
 
