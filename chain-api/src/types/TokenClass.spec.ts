@@ -15,6 +15,7 @@
 import BigNumber from "bignumber.js";
 import { plainToInstance } from "class-transformer";
 
+import { ChainObject } from "./ChainObject";
 import { TokenClass, TokenClassKey } from "./TokenClass";
 import { UserAlias } from "./UserAlias";
 
@@ -132,4 +133,27 @@ it("should encode and decode successfully with $ in keys", async () => {
 
   // Then
   expect(decodedClassKey).toEqual(classKey);
+});
+
+it("should encode and decode successfully with utf 0 in keys", async () => {
+  // Given
+  const utf0 = ChainObject.MIN_UNICODE_RUNE_VALUE;
+
+  const classKey = new TokenClassKey();
+  classKey.collection = "Test";
+  classKey.category = "Class";
+  classKey.type = `Ke${utf0}y`;
+  classKey.additionalKey = "None";
+
+  const invalidEncoded = ChainObject.encodeToBase58(
+    [classKey.collection, classKey.category, classKey.type, classKey.additionalKey].join(utf0)
+  );
+
+  // When
+  const encode = () => classKey.toB58EncodedString();
+  const decode = () => TokenClassKey.fromB58EncodedString(invalidEncoded);
+
+  // Then
+  expect(encode).toThrow("Invalid part with UTF-0 at index 2 passed");
+  expect(decode).toThrow("Expected 4 parts, got 5 parts");
 });
