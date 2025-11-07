@@ -697,7 +697,8 @@ export class UpdateQuorumDto extends SubmitCallDTO {
   @JSONSchema({
     description: "New quorum for the user."
   })
-  @IsNotEmpty()
+  @IsInt()
+  @Min(1)
   quorum: number;
 }
 
