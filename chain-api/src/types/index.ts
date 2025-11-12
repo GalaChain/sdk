@@ -40,7 +40,6 @@ export * from "./loan.dtos";
 export * from "./Loan";
 export * from "./LoanError";
 export * from "./logger";
-export * from "./PublicKey";
 export * from "./UserProfile";
 export * from "./TokenInstance";
 export * from "./TokenClass";

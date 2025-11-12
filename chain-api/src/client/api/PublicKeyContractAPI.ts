@@ -15,19 +15,15 @@
 import {
   GalaChainResponse,
   GetMyProfileDto,
-  GetPublicKeyDto,
-  PublicKey,
   RegisterEthUserDto,
   RegisterUserDto,
   UpdatePublicKeyDto,
   UserProfile,
-  asValidUserRef
 } from "../../types";
 import { ChainClient } from "../generic";
 import { CommonContractAPI, commonContractAPI } from "./CommonContractAPI";
 
 export interface PublicKeyContractAPI extends CommonContractAPI {
-  GetPublicKey(user?: string | GetPublicKeyDto): Promise<GalaChainResponse<PublicKey>>;
   UpdatePublicKey(dto: UpdatePublicKeyDto): Promise<GalaChainResponse<void>>;
   RegisterUser(dto: RegisterUserDto): Promise<GalaChainResponse<string>>;
   RegisterEthUser(dto: RegisterEthUserDto): Promise<GalaChainResponse<string>>;
@@ -36,16 +32,6 @@ export interface PublicKeyContractAPI extends CommonContractAPI {
 
 export const publicKeyContractAPI = (client: ChainClient): PublicKeyContractAPI => ({
   ...commonContractAPI(client),
-
-  GetPublicKey(user?: string | GetPublicKeyDto) {
-    if (typeof user === "string") {
-      const dto = new GetPublicKeyDto();
-      dto.user = asValidUserRef(user);
-      return client.evaluateTransaction("GetPublicKey", dto, PublicKey);
-    } else {
-      return client.evaluateTransaction("GetPublicKey", user ?? new GetPublicKeyDto(), PublicKey);
-    }
-  },
 
   RegisterUser(dto: RegisterUserDto) {
     return client.submitTransaction("RegisterUser", dto) as Promise<GalaChainResponse<string>>;

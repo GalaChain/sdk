@@ -109,7 +109,6 @@ interface CallingUserDataDryRun {
  */
 interface GalaChainContextConfig {
   readonly adminPublicKey?: string;
-  readonly allowNonRegisteredUsers?: boolean;
 }
 
 interface TestOperationContext {
