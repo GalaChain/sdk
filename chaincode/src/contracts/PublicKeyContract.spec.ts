@@ -105,6 +105,46 @@ describe("RegisterUser", () => {
     );
   });
 
+  it("should register user twice (idempotency)", async () => {
+    // Given
+    const chaincode = new TestChaincode([PublicKeyContract]);
+    const plain = { user: "client|user2" as UserAlias, publicKey };
+    const adminPrivateKey = process.env.DEV_ADMIN_PRIVATE_KEY as string;
+
+    const dto1 = await createValidSubmitDTO(RegisterUserDto, plain).signed(adminPrivateKey);
+    const dto2 = await createValidSubmitDTO(RegisterUserDto, plain).signed(adminPrivateKey);
+    const dto3 = await createValidSubmitDTO(RegisterUserDto, {
+      ...plain,
+      publicKey: signatures.genKeyPair().publicKey
+    }).signed(adminPrivateKey);
+
+    // When
+    const response1 = await chaincode.invoke("PublicKeyContract:RegisterUser", dto1);
+    const response2 = await chaincode.invoke("PublicKeyContract:RegisterUser", dto2);
+    const response3 = await chaincode.invoke("PublicKeyContract:RegisterUser", dto3);
+
+    // Then
+    expect(response1).toEqual(transactionSuccess());
+    expect(response2).toEqual(transactionSuccess());
+    expect(response3).toEqual(expect.objectContaining({ Status: 0, ErrorKey: "PK_EXISTS" }));
+
+    expect(await getPublicKey(chaincode, dto1.user)).toEqual(
+      transactionSuccess({
+        publicKey: PublicKeyService.normalizePublicKey(publicKey),
+        signing: SigningScheme.ETH
+      })
+    );
+
+    expect(await getUserProfile(chaincode, ethAddress)).toEqual(
+      transactionSuccess({
+        alias: dto1.user,
+        ethAddress,
+        roles: UserProfile.DEFAULT_ROLES,
+        signatureQuorum: 1
+      })
+    );
+  });
+
   it("should fail when user publicKey and UserProfile are already registered", async () => {
     // Given
     const chaincode = new TestChaincode([PublicKeyContract]);

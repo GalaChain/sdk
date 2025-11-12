@@ -133,43 +133,6 @@ const testFn = async (
 describe("regular flow", () => {
   test.each([
     [__valid___, _________, ___registered, Success],
-    [__valid___, _________, notRegistered, Error("USER_NOT_REGISTERED")],
-    [__valid___, signerKey, ___registered, Error("REDUNDANT_SIGNER_PUBLIC_KEY")],
-    [__valid___, _wrongKey, ___registered, Error("PUBLIC_KEY_MISMATCH")],
-    [__valid___, signerKey, notRegistered, Error("REDUNDANT_SIGNER_PUBLIC_KEY")],
-    [__valid___, _wrongKey, ___registered, Error("PUBLIC_KEY_MISMATCH")],
-    [__valid___, signerAdd, ___registered, Error("REDUNDANT_SIGNER_ADDRESS")],
-    [__valid___, _wrongAdd, ___registered, Error("ADDRESS_MISMATCH")],
-    [__valid___, signerAdd, notRegistered, Error("REDUNDANT_SIGNER_ADDRESS")],
-    [__valid___, _wrongAdd, notRegistered, Error("ADDRESS_MISMATCH")],
-    [__validDER, _________, ___registered, Error("MISSING_SIGNER")],
-    [__validDER, _________, notRegistered, Error("MISSING_SIGNER")],
-    [__validDER, signerKey, ___registered, Success],
-    [__validDER, _wrongKey, ___registered, Error("PK_INVALID_SIGNATURE")],
-    [__validDER, signerKey, notRegistered, Error("USER_NOT_REGISTERED")],
-    [__validDER, signerAdd, ___registered, Success],
-    [__validDER, _wrongAdd, ___registered, Error("USER_NOT_REGISTERED")],
-    [__validDER, signerAdd, notRegistered, Error("USER_NOT_REGISTERED")],
-    [invalid___, _________, ___registered, Error("USER_NOT_REGISTERED")], // tries to get other user's profile
-    [invalid___, _________, notRegistered, Error("USER_NOT_REGISTERED")],
-    [invalid___, signerKey, ___registered, Error("PUBLIC_KEY_MISMATCH")],
-    [invalid___, signerKey, notRegistered, Error("PUBLIC_KEY_MISMATCH")],
-    [invalid___, signerAdd, ___registered, Error("ADDRESS_MISMATCH")],
-    [invalid___, signerAdd, notRegistered, Error("ADDRESS_MISMATCH")]
-  ])("(sig: %s, dto: %s, user: %s) => %s", testFn);
-});
-
-describe("allowNonRegisteredUsers enabled", () => {
-  beforeAll(() => {
-    process.env.ALLOW_NON_REGISTERED_USERS = "true";
-  });
-
-  afterAll(() => {
-    delete process.env.ALLOW_NON_REGISTERED_USERS;
-  });
-
-  test.each([
-    [__valid___, _________, ___registered, Success],
     [__valid___, _________, notRegistered, SuccessNoCustomAlias],
     [__valid___, signerKey, ___registered, Error("REDUNDANT_SIGNER_PUBLIC_KEY")],
     [__valid___, _wrongKey, ___registered, Error("PUBLIC_KEY_MISMATCH")],

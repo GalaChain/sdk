@@ -289,11 +289,7 @@ async function getUserProfile(
     return profile;
   }
 
-  if (ctx.config.allowNonRegisteredUsers) {
-    return PublicKeyService.getDefaultUserProfile(publicKey, signing);
-  }
-
-  throw new UserNotRegisteredError(address);
+  return PublicKeyService.getDefaultUserProfile(publicKey, signing);
 }
 
 async function getUserProfileAndPublicKey(
