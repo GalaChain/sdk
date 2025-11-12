@@ -618,36 +618,6 @@ export class RegisterUserDto extends SubmitCallDTO {
   signatureQuorum?: number;
 }
 
-/**
- * @description
- *
- * Dto for secure method to save public keys for Eth users.
- * Method is called and signed by Curators
- */
-@JSONSchema({
-  description: `Dto for secure method to save public keys for Eth users. Method is called and signed by Curators`
-})
-export class RegisterEthUserDto extends SubmitCallDTO {
-  @JSONSchema({ description: "Public secp256k1 key (compact or non-compact, hex or base64)." })
-  @IsNotEmpty()
-  publicKey: string;
-}
-
-/**
- * @description
- *
- * Dto for secure method to save public keys for TON users.
- * Method is called and signed by Curators
- */
-@JSONSchema({
-  description: `Dto for secure method to save public keys for TON users. Method is called and signed by Curators`
-})
-export class RegisterTonUserDto extends SubmitCallDTO {
-  @JSONSchema({ description: "TON user public key (Ed25519 in base64)." })
-  @IsNotEmpty()
-  publicKey: string;
-}
-
 export class UpdatePublicKeyDto extends SubmitCallDTO {
   @JSONSchema({
     description:

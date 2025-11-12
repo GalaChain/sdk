@@ -18,18 +18,15 @@ import {
   GetMyProfileDto,
   GetPublicKeyDto,
   PublicKey,
-  RegisterEthUserDto,
-  RegisterTonUserDto,
   RegisterUserDto,
   RemoveSignerDto,
   SigningScheme,
+  SubmitCallDTO,
   UpdatePublicKeyDto,
   UpdateQuorumDto,
   UpdateUserRolesDto,
-  UserAlias,
   UserProfile,
-  ValidationFailedError,
-  signatures
+  ValidationFailedError
 } from "@gala-chain/api";
 import { Info } from "fabric-contract-api";
 
@@ -100,30 +97,29 @@ export class PublicKeyContract extends GalaContract {
   }
 
   @Submit({
-    in: RegisterEthUserDto,
+    in: SubmitCallDTO,
     out: "string",
-    description: "Registers a new user on chain under alias derived from eth address.",
+    description:
+      "Registration of eth| users is no longer required. This method will be removed in the future.",
+    deprecated: true,
     ...requireRegistrarAuth
   })
-  public async RegisterEthUser(ctx: GalaChainContext, dto: RegisterEthUserDto): Promise<string> {
-    const providedPkHex = signatures.getNonCompactHexPublicKey(dto.publicKey);
-    const ethAddress = signatures.getEthAddress(providedPkHex);
-    const userAlias = `eth|${ethAddress}` as UserAlias;
-
-    return PublicKeyService.registerUser(ctx, dto.publicKey, undefined, userAlias, SigningScheme.ETH, 1);
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  public async RegisterEthUser(ctx: GalaChainContext, dto: SubmitCallDTO): Promise<string> {
+    return "Registration of eth| users is no longer required.";
   }
 
   @Submit({
-    in: RegisterTonUserDto,
+    in: SubmitCallDTO,
     out: "string",
-    description: "Registers a new user on chain under alias derived from TON address.",
+    description:
+      "Registration of ton| users is no longer required. This method will be removed in the future.",
+    deprecated: true,
     ...requireRegistrarAuth
   })
-  public async RegisterTonUser(ctx: GalaChainContext, dto: RegisterTonUserDto): Promise<string> {
-    const address = signatures.ton.getTonAddress(Buffer.from(dto.publicKey, "base64"));
-    const userAlias = `ton|${address}` as UserAlias;
-
-    return PublicKeyService.registerUser(ctx, dto.publicKey, undefined, userAlias, SigningScheme.TON, 1);
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  public async RegisterTonUser(ctx: GalaChainContext, dto: SubmitCallDTO): Promise<string> {
+    return "Registration of ton| users is no longer required.";
   }
 
   @Submit({
