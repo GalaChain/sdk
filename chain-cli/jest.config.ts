@@ -19,9 +19,10 @@ export default {
   preset: "../jest.preset.js",
   testEnvironment: "node",
   transform: {
-    "^.+\\.[tj]s$": ["ts-jest", { tsconfig: "<rootDir>/tsconfig.spec.json" }]
+    "^.+\\.ts$": ["ts-jest", { tsconfig: "<rootDir>/tsconfig.spec.json" }]
   },
   moduleFileExtensions: ["ts", "js", "html"],
+  transformIgnorePatterns: ["/node_modules/", ".*/lib/.*"],
   coverageDirectory: "../coverage/chain-cli",
   modulePathIgnorePatterns: ["chaincode-template/", "lib"],
   setupFilesAfterEnv: ["setimmediate"]
