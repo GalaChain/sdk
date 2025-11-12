@@ -251,7 +251,7 @@ function GalaTransaction<In extends ChainCallDTO, Out>(
           chainError.logWarn(ctx.logger);
           ctx.logger.logTimeline("Failed Transaction", loggingContext, [dtoPlain], err);
           ctx.logger.debug(err.message);
-          ctx.logger.error(err.stack);
+          ctx.logger.debug(err.stack);
         }
 
         // if external chaincode call succeeded, but the remaining part of the
