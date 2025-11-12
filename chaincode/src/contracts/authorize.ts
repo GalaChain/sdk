@@ -68,10 +68,8 @@ export function ensureOrganizationIsAllowed(ctx: GalaChainContext, allowedOrgsMS
 }
 
 export function ensureCorrectMethodIsUsed(ctx: GalaChainContext, dto: ChainCallDTO | undefined) {
-  const isMultisig = (ctx.callingUserAllowedSigners?.length ?? 0) >= 1;
-
   // If we use multisig, we need to check the method
-  if (isMultisig && !dto?.dtoOperation) {
+  if (ctx.isMultisig && !dto?.dtoOperation) {
     const msg = `DTO operation is not provided. Please provide the operation name that is used for multisig.`;
     throw new UnauthorizedError(msg);
   }

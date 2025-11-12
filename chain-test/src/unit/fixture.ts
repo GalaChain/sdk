@@ -90,8 +90,16 @@ interface CallingUserData {
   tonAddress?: string;
   roles: string[];
   signedBy: UserAlias[];
-  signatureQuorum?: number;
-  allowedSigners?: UserAlias[];
+  signatureQuorum: number;
+  allowedSigners: UserAlias[];
+  isMultisig: boolean;
+}
+
+interface CallingUserDataDryRun {
+  alias: UserAlias;
+  ethAddress?: string;
+  tonAddress?: string;
+  roles: string[];
 }
 
 /**
@@ -125,12 +133,13 @@ type TestGalaChainContext = Context & {
   get callingUserTonAddress(): string;
   get callingUserRoles(): string[];
   get callingUserSignedBy(): UserAlias[];
-  get callingUserSignatureQuorum(): number | undefined;
-  get callingUserAllowedSigners(): UserAlias[] | undefined;
+  get callingUserSignatureQuorum(): number;
+  get callingUserAllowedSigners(): UserAlias[];
+  get isMultisig(): boolean;
   get callingUserProfile(): UserProfile;
   resetCallingUser(): void;
   get config(): GalaChainContextConfig;
-  setDryRunOnBehalfOf(d: CallingUserData): void;
+  setDryRunOnBehalfOf(d: CallingUserDataDryRun): void;
   createReadOnlyContext(index: number | undefined): TestGalaChainContext;
   isDryRun: boolean;
   get txUnixTime(): number;
@@ -284,7 +293,8 @@ class Fixture<Ctx extends TestGalaChainContext, T extends GalaContract<Ctx>> {
         roles: user.roles,
         signedBy: [],
         signatureQuorum: 0,
-        allowedSigners: []
+        allowedSigners: [],
+        isMultisig: false
       };
       return this;
     }
@@ -293,7 +303,8 @@ class Fixture<Ctx extends TestGalaChainContext, T extends GalaContract<Ctx>> {
       ...user,
       signedBy: [],
       signatureQuorum: 0,
-      allowedSigners: []
+      allowedSigners: [],
+      isMultisig: false
     };
     return this;
   }

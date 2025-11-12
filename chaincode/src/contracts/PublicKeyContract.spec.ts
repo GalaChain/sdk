@@ -14,7 +14,6 @@
  */
 import {
   ChainCallDTO,
-  GalaChainResponse,
   GalaChainSuccessResponse,
   GetMyProfileDto,
   GetPublicKeyDto,
@@ -26,10 +25,10 @@ import {
   UpdateUserRolesDto,
   UserAlias,
   UserProfile,
+  UserProfileStrict,
   UserRole,
   createValidDTO,
   createValidSubmitDTO,
-  randomUniqueKey,
   signatures
 } from "@gala-chain/api";
 import { asValidUserRef } from "@gala-chain/api";
@@ -45,7 +44,6 @@ import { PublicKeyService } from "../services";
 import { PublicKeyContract } from "./PublicKeyContract";
 import {
   createDerSignedDto,
-  createRegisteredMultiSigUser,
   createRegisteredMultiSigUserForUsers,
   createRegisteredTonUser,
   createRegisteredUser,
@@ -625,7 +623,9 @@ describe("GetMyProfile", () => {
       transactionSuccess({
         alias: user.alias,
         ethAddress: user.ethAddress,
-        roles: [UserRole.EVALUATE, UserRole.SUBMIT]
+        roles: [UserRole.EVALUATE, UserRole.SUBMIT],
+        signatureQuorum: 1,
+        signers: [user.alias]
       })
     );
     expect(resp2).toEqual(resp1);
@@ -656,7 +656,9 @@ describe("GetMyProfile", () => {
       transactionSuccess({
         alias: user.alias,
         tonAddress: user.tonAddress,
-        roles: UserProfile.DEFAULT_ROLES
+        roles: UserProfile.DEFAULT_ROLES,
+        signatureQuorum: 1,
+        signers: [`ton|${user.tonAddress}`]
       })
     );
     expect(resp2).toEqual(resp1);
@@ -732,56 +734,108 @@ describe("GetMyProfile", () => {
 });
 
 describe("UpdateUserRoles", () => {
-  it("should update user roles", async () => {
+  it("should allow registrar to update user roles", async () => {
     // Given
     const chaincode = new TestChaincode([PublicKeyContract]);
 
-    // admin has curator role
     const adminPrivateKey = process.env.DEV_ADMIN_PRIVATE_KEY as string;
-    const adminProfileResp = await getMyProfile(chaincode, adminPrivateKey);
-    expect(adminProfileResp).toEqual(
-      transactionSuccess(
-        expect.objectContaining({
-          roles: [UserRole.CURATOR, UserRole.EVALUATE, UserRole.REGISTRAR, UserRole.SUBMIT]
-        })
-      )
-    );
+    const adminProfile = await getMyProfile(chaincode, adminPrivateKey);
+    expect(adminProfile.Data?.roles).toContain(UserRole.REGISTRAR);
 
-    // test users
-    const user1 = await createRegisteredUser(chaincode);
-    const user2 = await createRegisteredUser(chaincode);
+    const user = await createRegisteredUser(chaincode);
+    const userProfile = await getUserProfile(chaincode, user.ethAddress);
+    expect(userProfile.Data?.roles).not.toContain("CUSTOM_ROLE");
 
-    function setRegistrarRole(user: string, signerPrivateKey: string) {
-      return updateUserRoles(chaincode, user, [UserRole.REGISTRAR], signerPrivateKey);
-    }
+    const dto = await createValidSubmitDTO(UpdateUserRolesDto, {
+      user: user.alias,
+      roles: ["CUSTOM_ROLE"]
+    }).signed(adminPrivateKey);
 
     // When
-    const notAllowedByUser1 = await setRegistrarRole(user2.alias, user1.privateKey);
-    const allowedByAdmin = await setRegistrarRole(user1.alias, adminPrivateKey);
-    const allowedByUser1 = await setRegistrarRole(user2.alias, user1.privateKey);
+    const response = await chaincode.invoke("PublicKeyContract:UpdateUserRoles", dto);
 
     // Then
-    expect(notAllowedByUser1).toEqual(
-      transactionErrorMessageContains("does not have one of required roles: REGISTRAR")
-    );
-    expect(allowedByAdmin).toEqual(transactionSuccess());
-    expect(allowedByUser1).toEqual(transactionSuccess());
+    expect(response).toEqual(transactionSuccess());
+
+    const updatedUserProfile = await getUserProfile(chaincode, user.ethAddress);
+    expect(updatedUserProfile.Data?.roles).toContain("CUSTOM_ROLE");
   });
 
-  function updateUserRoles(
-    chaincode: TestChaincode,
-    user: string,
-    roles: UserRole[],
-    signerPrivateKey: string
-  ): Promise<GalaChainResponse<any>> {
-    const dto = new UpdateUserRolesDto();
-    dto.user = asValidUserRef(user);
-    dto.roles = roles;
-    dto.uniqueKey = randomUniqueKey();
-    dto.sign(signerPrivateKey);
+  it("should not allow user to update roles if they do not have the registrar role", async () => {
+    // Given
+    const chaincode = new TestChaincode([PublicKeyContract]);
 
-    return chaincode.invoke("PublicKeyContract:UpdateUserRoles", dto);
-  }
+    const user = await createRegisteredUser(chaincode);
+    const userProfile = await getUserProfile(chaincode, user.ethAddress);
+    expect(userProfile.Data?.roles).not.toContain(UserRole.REGISTRAR);
+
+    const dto = await createValidSubmitDTO(UpdateUserRolesDto, {
+      user: user.alias,
+      roles: ["CUSTOM_ROLE"]
+    }).signed(user.privateKey);
+
+    // When
+    const response = await chaincode.invoke("PublicKeyContract:UpdateUserRoles", dto);
+
+    // Then
+    expect(response).toEqual(transactionErrorKey("MISSING_ROLE"));
+    expect(response).toEqual(
+      transactionErrorMessageContains("does not have one of required roles: REGISTRAR")
+    );
+  });
+
+  it("should allow to remove only some of self-roles", async () => {
+    // Given
+    const chaincode = new TestChaincode([PublicKeyContract]);
+
+    const adminPrivateKey = process.env.DEV_ADMIN_PRIVATE_KEY as string;
+    const adminProfileResponse = await getMyProfile(chaincode, adminPrivateKey);
+    expect(adminProfileResponse).toEqual(transactionSuccess());
+
+    const adminProfile = adminProfileResponse.Data as UserProfileStrict;
+    expect(adminProfile.roles).toEqual([
+      UserRole.CURATOR,
+      UserRole.EVALUATE,
+      UserRole.REGISTRAR,
+      UserRole.SUBMIT
+    ]);
+
+    const removeSubmitDto = await createValidSubmitDTO(UpdateUserRolesDto, {
+      user: adminProfile.alias,
+      roles: adminProfile.roles.filter((role) => role !== UserRole.SUBMIT)
+    }).signed(adminPrivateKey);
+
+    const removeCuratorDto = await createValidSubmitDTO(UpdateUserRolesDto, {
+      user: adminProfile.alias,
+      roles: UserProfile.ADMIN_ROLES.filter((role) => role !== UserRole.CURATOR)
+    }).signed(adminPrivateKey);
+
+    const removeRegistrarDto = await createValidSubmitDTO(UpdateUserRolesDto, {
+      user: adminProfile.alias,
+      roles: UserProfile.ADMIN_ROLES.filter((role) => role !== UserRole.REGISTRAR)
+    }).signed(adminPrivateKey);
+
+    // When
+    const removeSubmitResp = await chaincode.invoke("PublicKeyContract:UpdateUserRoles", removeSubmitDto);
+    const removeCuratorResp = await chaincode.invoke("PublicKeyContract:UpdateUserRoles", removeCuratorDto);
+    const removeRegistrarResp = await chaincode.invoke(
+      "PublicKeyContract:UpdateUserRoles",
+      removeRegistrarDto
+    );
+
+    // Then
+    expect(removeSubmitResp).toEqual(transactionSuccess());
+    expect(removeCuratorResp).toEqual(
+      transactionErrorMessageContains("Cannot remove own admin role: CURATOR")
+    );
+    expect(removeRegistrarResp).toEqual(
+      transactionErrorMessageContains("Cannot remove own admin role: REGISTRAR")
+    );
+
+    const updatedAdminProfile = await getMyProfile(chaincode, adminPrivateKey);
+    expect(updatedAdminProfile).toEqual(transactionSuccess());
+    expect(updatedAdminProfile.Data?.roles).toEqual([UserRole.EVALUATE, ...UserProfile.ADMIN_ROLES].sort());
+  });
 });
 
 async function setup() {

@@ -167,7 +167,7 @@ export class PublicKeyService {
         const adminProfile = new UserProfile();
         adminProfile.ethAddress = adminEthAddress;
         adminProfile.alias = alias;
-        adminProfile.roles = Array.from(UserProfile.ADMIN_ROLES);
+        adminProfile.roles = [...UserProfile.ADMIN_ROLES, ...UserProfile.DEFAULT_ROLES].sort();
         adminProfile.signatureQuorum = 1;
 
         return adminProfile as UserProfileStrict;
@@ -272,11 +272,18 @@ export class PublicKeyService {
     // Otherwise, for multisig, we use the provided user alias as the address
     const address = publicKey ? PublicKeyService.getUserAddress(publicKey, signing) : userAlias;
 
-    // If User Profile already exists on chain for this ethereum address,
+    // If user profile already exists on chain for this ethereum address,
     // we should not allow registering the same user again
     const existingUserProfile = await PublicKeyService.getUserProfile(ctx, address);
     if (existingUserProfile !== undefined) {
       throw new ProfileExistsError(address, existingUserProfile.alias);
+    }
+
+    // If multisig user profile already exists on chain for this alias,
+    // we should not allow registering the same user again
+    const existingMultisigUserProfile = await PublicKeyService.getUserProfile(ctx, userAlias);
+    if (existingMultisigUserProfile !== undefined) {
+      throw new ProfileExistsError(userAlias, existingMultisigUserProfile.alias);
     }
 
     const addressObj = signers
@@ -393,12 +400,25 @@ export class PublicKeyService {
       throw new UserProfileNotFoundError(user);
     }
 
-    const newRoles = Array.from(new Set(roles)).sort();
+    const currentRolesSet = new Set(userProfile.roles);
+    const newRolesSet = new Set(roles);
+
+    // cannot remove own admin role
+    if (user === ctx.callingUser) {
+      UserProfile.ADMIN_ROLES.forEach((role) => {
+        if (currentRolesSet.has(role) && !newRolesSet.has(role)) {
+          throw new ValidationFailedError(`Cannot remove own admin role: ${role}`);
+        }
+        // note: since only the registrar can update user roles, there is no need
+        // to verify self-adding of REGISTRAR role, and self-adding of CURATOR role
+        // is allowed.
+      });
+    }
 
     await PublicKeyService.putUserProfile(
       ctx,
       user,
-      newRoles,
+      Array.from(newRolesSet).sort(),
       userProfile,
       userProfile.signers,
       userProfile.signatureQuorum
