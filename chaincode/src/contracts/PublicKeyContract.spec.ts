@@ -623,7 +623,9 @@ describe("GetMyProfile", () => {
       transactionSuccess({
         alias: user.alias,
         ethAddress: user.ethAddress,
-        roles: [UserRole.EVALUATE, UserRole.SUBMIT]
+        roles: [UserRole.EVALUATE, UserRole.SUBMIT],
+        signatureQuorum: 1,
+        signers: [user.alias]
       })
     );
     expect(resp2).toEqual(resp1);
@@ -654,7 +656,9 @@ describe("GetMyProfile", () => {
       transactionSuccess({
         alias: user.alias,
         tonAddress: user.tonAddress,
-        roles: UserProfile.DEFAULT_ROLES
+        roles: UserProfile.DEFAULT_ROLES,
+        signatureQuorum: 1,
+        signers: [`ton|${user.tonAddress}`]
       })
     );
     expect(resp2).toEqual(resp1);

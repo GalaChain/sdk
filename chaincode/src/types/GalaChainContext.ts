@@ -53,6 +53,7 @@ export class GalaChainContext extends Context {
   private callingUserSignedByValue?: UserAlias[];
   private callingUserSignatureQuorumValue?: number;
   private callingUserAllowedSignersValue?: UserAlias[];
+  private isMultisigValue?: boolean;
   private operationCtxValue?: OperationContext;
   private txUnixTimeValue?: number;
   private loggerInstance?: GalaLoggerInstance;
@@ -113,12 +114,25 @@ export class GalaChainContext extends Context {
     return this.callingUserSignedByValue;
   }
 
-  get callingUserSignatureQuorum(): number | undefined {
+  get callingUserSignatureQuorum(): number {
+    if (this.callingUserSignatureQuorumValue === undefined) {
+      throw new UnauthorizedError(`No signature quorum known for user ${this.callingUserValue}`);
+    }
     return this.callingUserSignatureQuorumValue;
   }
 
-  get callingUserAllowedSigners(): UserAlias[] | undefined {
+  get callingUserAllowedSigners(): UserAlias[] {
+    if (this.callingUserAllowedSignersValue === undefined) {
+      throw new UnauthorizedError(`No allowed signers known for user ${this.callingUserValue}`);
+    }
     return this.callingUserAllowedSignersValue;
+  }
+
+  get isMultisig(): boolean {
+    if (this.isMultisigValue === undefined) {
+      throw new UnauthorizedError(`No multisig known for user ${this.callingUserValue}`);
+    }
+    return this.isMultisigValue;
   }
 
   get callingUserProfile(): UserProfile {
@@ -139,8 +153,9 @@ export class GalaChainContext extends Context {
     tonAddress?: string;
     roles: string[];
     signedBy: UserAlias[];
-    signatureQuorum?: number;
-    allowedSigners?: UserAlias[];
+    signatureQuorum: number;
+    allowedSigners: UserAlias[];
+    isMultisig: boolean;
   }) {
     if (this.callingUserValue !== undefined) {
       throw new Error("Calling user already set to " + this.callingUserValue);
@@ -151,6 +166,7 @@ export class GalaChainContext extends Context {
     this.callingUserSignedByValue = d.signedBy;
     this.callingUserSignatureQuorumValue = d.signatureQuorum;
     this.callingUserAllowedSignersValue = d.allowedSigners;
+    this.isMultisigValue = d.isMultisig;
 
     if (d.ethAddress !== undefined) {
       this.callingUserEthAddressValue = d.ethAddress;
@@ -169,6 +185,7 @@ export class GalaChainContext extends Context {
     this.callingUserSignedByValue = undefined;
     this.callingUserSignatureQuorumValue = undefined;
     this.callingUserAllowedSignersValue = undefined;
+    this.isMultisigValue = undefined;
   }
 
   get operationCtx(): OperationContext {
@@ -183,16 +200,15 @@ export class GalaChainContext extends Context {
     ethAddress?: string;
     tonAddress?: string;
     roles: string[];
-    signedBy: UserAlias[];
-    signatureQuorum: number;
   }): void {
     this.callingUserValue = d.alias;
     this.callingUserRolesValue = d.roles ?? [];
     this.callingUserEthAddressValue = d.ethAddress;
     this.callingUserTonAddressValue = d.tonAddress;
-    this.callingUserSignedByValue = d.signedBy;
-    this.callingUserSignatureQuorumValue = d.signatureQuorum;
-    this.callingUserAllowedSignersValue = undefined;
+    this.callingUserSignedByValue = [];
+    this.callingUserSignatureQuorumValue = 0;
+    this.callingUserAllowedSignersValue = [];
+    this.isMultisigValue = false;
     this.isDryRun = true;
   }
 

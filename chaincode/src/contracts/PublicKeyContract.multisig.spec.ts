@@ -87,7 +87,9 @@ describe("PublicKeyContract Multisignature", () => {
         transactionSuccess({
           alias: `eth|${ethAddresses[0]}`,
           ethAddress: ethAddresses[0],
-          roles: UserProfile.DEFAULT_ROLES
+          roles: UserProfile.DEFAULT_ROLES,
+          signatureQuorum: 1,
+          signers: [`eth|${ethAddresses[0]}`]
         })
       );
 
@@ -486,7 +488,9 @@ describe("PublicKeyContract Multisignature", () => {
         transactionSuccess({
           alias: individualUserAlias,
           ethAddress: individualUserRef,
-          roles: UserProfile.DEFAULT_ROLES
+          roles: UserProfile.DEFAULT_ROLES,
+          signatureQuorum: 1,
+          signers: [`eth|${individualUserRef}`]
         })
       );
 

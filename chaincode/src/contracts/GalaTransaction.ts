@@ -175,7 +175,7 @@ function GalaTransaction<In extends ChainCallDTO, Out>(
     // optional one, is a plain dto object. We ignore the rest. This is our
     // convention.
     // eslint-disable-next-line no-param-reassign
-    descriptor.value = async function (ctx, dtoPlain) {
+    descriptor.value = async function (ctx: GalaChainContext, dtoPlain) {
       try {
         const metadata = [{ dto: dtoPlain }];
         ctx?.logger?.logTimeline("Begin Transaction", loggingContext, metadata);
@@ -202,7 +202,13 @@ function GalaTransaction<In extends ChainCallDTO, Out>(
           // default roles are applied. If not, then only evaluate is possible. Alias is intentionally
           // missing.
           const roles = !options.allowedOrgs?.length ? [UserRole.EVALUATE] : [...UserProfile.DEFAULT_ROLES];
-          ctx.callingUserData = { roles, signedBy: [] };
+          ctx.callingUserData = {
+            roles,
+            signedBy: [],
+            signatureQuorum: 0,
+            allowedSigners: [],
+            isMultisig: false
+          };
         }
 
         // Authorize the user

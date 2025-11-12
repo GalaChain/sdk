@@ -29,7 +29,10 @@ describe("checkAllowances", () => {
       alias: users.admin.identityKey,
       ethAddress: users.admin.ethAddress,
       roles: users.admin.roles,
-      signedBy: [users.admin.identityKey]
+      signedBy: [users.admin.identityKey],
+      signatureQuorum: 1,
+      allowedSigners: [users.admin.identityKey],
+      isMultisig: false
     };
 
     const txTime = ctx.txUnixTime;
