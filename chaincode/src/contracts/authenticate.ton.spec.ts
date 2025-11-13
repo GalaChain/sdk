@@ -72,12 +72,12 @@ const Error: (errorKey: string) => Expectation = (errorKey) =>
 test.each([
   [__valid, _________, Error("MISSING_SIGNER")],
   [__valid, signerKey, Success],
-  [__valid, signerRef, Success],
-  [__valid, signerAdd, Success],
+  [__valid, signerRef, Error("USER_NOT_REGISTERED")],
+  [__valid, signerAdd, Error("USER_NOT_REGISTERED")],
   [invalid, _________, Error("MISSING_SIGNER")],
   [invalid, signerKey, Error("PK_INVALID_SIGNATURE")],
-  [invalid, signerRef, Error("PK_INVALID_SIGNATURE")],
-  [invalid, signerAdd, Error("PK_INVALID_SIGNATURE")]
+  [invalid, signerRef, Error("USER_NOT_REGISTERED")],
+  [invalid, signerAdd, Error("USER_NOT_REGISTERED")]
 ])("(%s, %s) => %s", performTest);
 
 async function performTest(signatureFn: Signature, publicKeyFn: PublicKey, expectation: Expectation) {

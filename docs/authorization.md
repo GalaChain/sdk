@@ -229,16 +229,8 @@ During registration, you can specify multiple signers using the `signers` field:
 const { publicKey: pk1, privateKey: sk1 } = signatures.genKeyPair();
 const { publicKey: pk2, privateKey: sk2 } = signatures.genKeyPair();
 
-// Register user1 and user2 first (may be skipped if you allow non-registered users)
-await pkContract.RegisterEthUser(createValidSubmitDTO(RegisterEthUserDto, {
-  publicKey: pk1
-}).signed(adminKey));
-
-await pkContract.RegisterEthUser(createValidSubmitDTO(RegisterEthUserDto, {
-  publicKey: pk2
-}).signed(adminKey));
-
 // Register multisig user with signers
+// Note: Individual signers do not need to be registered separately
 const reg = await createValidSubmitDTO(RegisterUserDto, {
   user: "client|multisig",
   signers: [pk1, pk2].map((k) => asValidUserRef(signatures.getEthAddress(k)),
@@ -325,18 +317,12 @@ This feature is supported only for Ethereum signing scheme (secp256k1) with non-
 **Example 1: Corporate Treasury Setup**
 
 ```typescript
-// Register individual signers first
+// Generate keys for signers
 const treasuryKeys = Array.from({ length: 5 }, () => signatures.genKeyPair());
 const signerRefs = treasuryKeys.map((k) => asValidUserRef(signatures.getEthAddress(k.publicKey)));
 
-// Register each signer
-for (let i = 0; i < treasuryKeys.length; i++) {
-  await pkContract.RegisterEthUser(createValidSubmitDTO(RegisterEthUserDto, {
-    publicKey: treasuryKeys[i].publicKey
-  }).signed(adminKey));
-}
-
 // Register corporate treasury with 5 signers requiring 3 signatures
+// Note: Individual signers do not need to be registered separately
 const treasuryRegistration = await createValidSubmitDTO(RegisterUserDto, {
   user: "client|treasury",
   signers: signerRefs,
@@ -387,19 +373,16 @@ async emergencyAction(ctx: GalaChainContext, dto: EmergencyActionDto): Promise<v
 
 ### User registration
 
-By default, GalaChain does not allow anonymous users to access the chaincode.
+GalaChain requires every user to be registered before they can interact with the chaincode.
 In order to access the chaincode, the user must be registered with the chaincode.
-This behaviour may be changed as described in the [Optional User Registration](#optional-user-registration) section.
 
-There are three methods to register a user:
+The primary method to register a user is:
 
 1. `RegisterUser` method in the `PublicKeyContract`.
-2. `RegisterEthUser` method in the `PublicKeyContract`.
-3. `RegisterTonUser` method in the `PublicKeyContract`.
 
-All methods require the user to provide their public key (secp256k1 for Ethereum, ed25519 for TON).
-The only difference between these methods is that only `RegisterUser` allows to specify the `alias` parameter.
-For `RegisterEthUser` and `RegisterTonUser` methods, the alias is set to `eth|<eth-addr>` or `ton|<ton-addr>` respectively.
+This method requires the user to provide their public key (secp256k1 for Ethereum, ed25519 for TON) and allows you to specify a custom `alias` parameter.
+
+**Note**: The `RegisterEthUser` and `RegisterTonUser` methods are deprecated and will be removed in a future version. Registration of `eth|` and `ton|` users is no longer required - you can use `RegisterUser` with the appropriate alias format (`eth|<eth-addr>` or `ton|<ton-addr>`) if needed.
 
 Access to registration methods is now controlled as follows:
 - **Role-based authorization (RBAC)**: Requires the `REGISTRAR` role
@@ -551,30 +534,3 @@ If you want to call external chaincode and authorize your call as a chaincode:
 
 Remember to allow the chaincode in `allowedOriginChaincodes` transaction property in the target chaincode.
 
-## Optional User Registration
-
-By default, GalaChain requires every user to be registered before they can interact with the chaincode. However, in scenarios with a large number of users, you might want to make user registration optional.
-
-You can allow non-registered users to access the chaincode in one of two ways:
-
-1.  **Environment Variable**: Set the `ALLOW_NON_REGISTERED_USERS` environment variable to `true` for the chaincode container.
-
-    ```bash
-    ALLOW_NON_REGISTERED_USERS=true
-    ```
-
-2.  **Contract Configuration**: Set the `allowNonRegisteredUsers` property to `true` in your contract's configuration.
-
-    ```typescript
-    class MyContract extends GalaContract {
-      constructor() {
-        super("MyContract", version, {
-          allowNonRegisteredUsers: true
-        });
-      }
-    }
-    ```
-
-When non-registered users are allowed, they still need to sign the DTO with their private key. The public key is recovered from the signature. In this case, the user's alias will be `eth|<eth-addr>` or `ton|<ton-addr>`, and they will be granted default `EVALUATE` and `SUBMIT` roles.
-
-Registration remains necessary if you need to assign custom aliases or roles to users.

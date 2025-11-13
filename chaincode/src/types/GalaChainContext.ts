@@ -12,7 +12,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-import { UnauthorizedError, UserAlias, UserProfile, UserRole } from "@gala-chain/api";
+import { SigningScheme, UnauthorizedError, UserAlias, UserProfile, UserRole } from "@gala-chain/api";
 import { Context } from "fabric-contract-api";
 import { ChaincodeStub, Timestamp } from "fabric-shim";
 
@@ -29,7 +29,6 @@ function getTxUnixTime(ctx: Context): number {
 
 export interface GalaChainContextConfig {
   readonly adminPublicKey?: string;
-  readonly allowNonRegisteredUsers?: boolean;
 }
 
 class GalaChainContextConfigImpl implements GalaChainContextConfig {
@@ -37,10 +36,6 @@ class GalaChainContextConfigImpl implements GalaChainContextConfig {
 
   get adminPublicKey(): string | undefined {
     return this.config.adminPublicKey ?? process.env.DEV_ADMIN_PUBLIC_KEY;
-  }
-
-  get allowNonRegisteredUsers(): boolean | undefined {
-    return this.config.allowNonRegisteredUsers ?? process.env.ALLOW_NON_REGISTERED_USERS === "true";
   }
 }
 
@@ -83,18 +78,14 @@ export class GalaChainContext extends Context {
     return this.callingUserValue;
   }
 
-  get callingUserEthAddress(): string {
-    if (this.callingUserEthAddressValue === undefined) {
-      throw new UnauthorizedError(`No ETH address known for user ${this.callingUserValue}`);
+  get callingUserAddress(): { address: string; signing: SigningScheme } {
+    if (this.callingUserEthAddressValue !== undefined) {
+      return { address: this.callingUserEthAddressValue, signing: SigningScheme.ETH };
     }
-    return this.callingUserEthAddressValue;
-  }
-
-  get callingUserTonAddress(): string {
-    if (this.callingUserTonAddressValue === undefined) {
-      throw new UnauthorizedError(`No TON address known for user ${this.callingUserValue}`);
+    if (this.callingUserTonAddressValue !== undefined) {
+      return { address: this.callingUserTonAddressValue, signing: SigningScheme.TON };
     }
-    return this.callingUserTonAddressValue;
+    throw new UnauthorizedError(`No address known for user ${this.callingUserValue}`);
   }
 
   get callingUserRoles(): string[] {
