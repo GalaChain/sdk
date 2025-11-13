@@ -72,15 +72,18 @@ it("should serve proper API", async () => {
 });
 
 describe("RegisterUser", () => {
-  const publicKey =
-    "04215291d9d04aad96832bffe808acdc1d985b4b547c8b16f841e14e8fbfb11284d5a5a5c71d95bd520b90403abff8fe7ccf793e755baf69672ab6cf25b60fc942";
-  const ethAddress = signatures.getEthAddress(publicKey);
-
   it("should register user", async () => {
     // Given
     const chaincode = new TestChaincode([PublicKeyContract]);
+    const keyPair = signatures.genKeyPair();
+    const publicKey = keyPair.publicKey;
+    const privateKey = keyPair.privateKey;
+    const ethAddress = signatures.getEthAddress(publicKey);
+
     const dto = await createValidSubmitDTO(RegisterUserDto, { user: "client|user1" as UserAlias, publicKey });
-    const signedDto = dto.signed(process.env.DEV_ADMIN_PRIVATE_KEY as string);
+    const signedDto = dto
+      .withPublicKeySignedBy(privateKey)
+      .signed(process.env.DEV_ADMIN_PRIVATE_KEY as string);
 
     // When
     const response = await chaincode.invoke("PublicKeyContract:RegisterUser", signedDto);
@@ -105,6 +108,35 @@ describe("RegisterUser", () => {
     );
   });
 
+  it("should fail when public key signature is missing or invalid", async () => {
+    // Given
+    const chaincode = new TestChaincode([PublicKeyContract]);
+    const adminPrivateKey = process.env.DEV_ADMIN_PRIVATE_KEY as string;
+    const keyPair = signatures.genKeyPair();
+
+    // no public key signature (but DTO is signed by admin)
+    const dto1 = await createValidSubmitDTO(RegisterUserDto, {
+      user: "client|user1" as UserAlias,
+      publicKey: keyPair.publicKey
+    });
+    const signedDto1 = dto1.signed(adminPrivateKey);
+
+    // invalid public key signature (signed by wrong key)
+    const dto2 = dto1.withPublicKeySignedBy(adminPrivateKey);
+    const signedDto2 = dto2.signed(adminPrivateKey);
+
+    // When
+    const response1 = await chaincode.invoke("PublicKeyContract:RegisterUser", signedDto1);
+    const response2 = await chaincode.invoke("PublicKeyContract:RegisterUser", signedDto2);
+
+    // Then
+    expect(response1).toEqual(transactionErrorKey("VALIDATION_FAILED"));
+    expect(response1).toEqual(transactionErrorMessageContains("Public key signature is missing"));
+
+    expect(response2).toEqual(transactionErrorKey("VALIDATION_FAILED"));
+    expect(response2).toEqual(transactionErrorMessageContains("Invalid ETH public key signature"));
+  });
+
   it("should fail when user publicKey and UserProfile are already registered", async () => {
     // Given
     const chaincode = new TestChaincode([PublicKeyContract]);
@@ -114,7 +146,9 @@ describe("RegisterUser", () => {
       publicKey: user.publicKey,
       user: user.alias
     });
-    const signedRegisterDto = registerDto.signed(process.env.DEV_ADMIN_PRIVATE_KEY as string);
+    const signedRegisterDto = registerDto
+      .withPublicKeySignedBy(user.privateKey)
+      .signed(process.env.DEV_ADMIN_PRIVATE_KEY as string);
 
     // When
     const registerResponse = await chaincode.invoke("PublicKeyContract:RegisterUser", signedRegisterDto);
@@ -132,13 +166,89 @@ describe("RegisterUser", () => {
       publicKey: user.publicKey,
       user: "client|new_user" as UserAlias
     });
-    const signedRegisterDto = registerDto.signed(process.env.DEV_ADMIN_PRIVATE_KEY as string);
+    const signedRegisterDto = registerDto
+      .withPublicKeySignedBy(user.privateKey)
+      .signed(process.env.DEV_ADMIN_PRIVATE_KEY as string);
 
     // When
     const registerResponse = await chaincode.invoke("PublicKeyContract:RegisterUser", signedRegisterDto);
 
     // Then
     expect(registerResponse).toEqual(expect.objectContaining({ Status: 0, ErrorKey: "PROFILE_EXISTS" }));
+  });
+
+  it("should register user with valid public key signature", async () => {
+    // Given
+    const chaincode = new TestChaincode([PublicKeyContract]);
+    const newPrivateKey = "62fa12aaf85829fab618755747a7f75c256bfc5ceab2cc24c668c55f1985cfad";
+    const newPublicKey =
+      "040e8bda5af346c5a7a7312a94b34023e8c9610abf40e550de9696422312a9a67ea748dbe2686f9a115c58021fe538163285a97368f44b6bf8b13a8306c86e8c5a";
+    const ethAddress = signatures.getEthAddress(newPublicKey);
+
+    const registerDto = await createValidSubmitDTO(RegisterUserDto, {
+      user: "client|user-with-signature" as UserAlias,
+      publicKey: newPublicKey
+    });
+    const signedRegisterDto = registerDto
+      .withPublicKeySignedBy(newPrivateKey)
+      .signed(process.env.DEV_ADMIN_PRIVATE_KEY as string);
+
+    // When
+    const response = await chaincode.invoke("PublicKeyContract:RegisterUser", signedRegisterDto);
+
+    // Then
+    expect(response).toEqual(transactionSuccess());
+
+    expect(await getPublicKey(chaincode, registerDto.user)).toEqual(
+      transactionSuccess({
+        publicKey: PublicKeyService.normalizePublicKey(newPublicKey),
+        signing: SigningScheme.ETH
+      })
+    );
+
+    expect(await getUserProfile(chaincode, ethAddress)).toEqual(
+      transactionSuccess({
+        alias: registerDto.user,
+        ethAddress,
+        roles: UserProfile.DEFAULT_ROLES,
+        signatureQuorum: 1
+      })
+    );
+  });
+
+  it("should reject registration with missing or invalid public key signature", async () => {
+    // Given
+    const chaincode = new TestChaincode([PublicKeyContract]);
+    const newPublicKey =
+      "040e8bda5af346c5a7a7312a94b34023e8c9610abf40e550de9696422312a9a67ea748dbe2686f9a115c58021fe538163285a97368f44b6bf8b13a8306c86e8c5a";
+    // Wrong private key that doesn't correspond to newPublicKey
+    const wrongPrivateKey = "0000000000000000000000000000000000000000000000000000000000000001";
+
+    const registerDto = await createValidSubmitDTO(RegisterUserDto, {
+      user: "client|user-missing-sig" as UserAlias,
+      publicKey: newPublicKey
+    });
+
+    // Missing public key signature
+    const signedRegisterDto1 = registerDto.signed(process.env.DEV_ADMIN_PRIVATE_KEY as string);
+    expect(signedRegisterDto1.publicKeySignature).toBeUndefined();
+
+    // Invalid public key signature (signed by wrong private key that doesn't match newPublicKey)
+    const signedRegisterDto2 = registerDto
+      .withPublicKeySignedBy(wrongPrivateKey)
+      .signed(process.env.DEV_ADMIN_PRIVATE_KEY as string);
+    expect(signedRegisterDto2.publicKeySignature).toBeDefined();
+
+    // When
+    const registerResponse1 = await chaincode.invoke("PublicKeyContract:RegisterUser", signedRegisterDto1);
+    const registerResponse2 = await chaincode.invoke("PublicKeyContract:RegisterUser", signedRegisterDto2);
+
+    // Then
+    expect(registerResponse1).toEqual(transactionErrorKey("VALIDATION_FAILED"));
+    expect(registerResponse1).toEqual(transactionErrorMessageContains("Public key signature is missing"));
+
+    expect(registerResponse2).toEqual(transactionErrorKey("VALIDATION_FAILED"));
+    expect(registerResponse2).toEqual(transactionErrorMessageContains("Invalid ETH public key signature"));
   });
 
   // TODO: this test will be redesigned in a follow-up story
@@ -226,6 +336,8 @@ describe("RegisterUser", () => {
 
   it("RegisterEthUser should register user with eth address", async () => {
     // Given
+    const keyPair = signatures.genKeyPair();
+    const publicKey = keyPair.publicKey;
     const pkHex = signatures.getNonCompactHexPublicKey(publicKey);
     const ethAddress = signatures.getEthAddress(pkHex);
     const alias = `eth|${ethAddress}` as UserAlias;
@@ -401,7 +513,9 @@ describe("UpdatePublicKey", () => {
       user: "client|newUser" as UserAlias,
       publicKey: oldPublicKey
     });
-    const signedDto = dto.signed(process.env.DEV_ADMIN_PRIVATE_KEY as string);
+    const signedDto = dto
+      .withPublicKeySignedBy(oldPrivateKey)
+      .signed(process.env.DEV_ADMIN_PRIVATE_KEY as string);
 
     // When
     const response = await chaincode.invoke("PublicKeyContract:RegisterUser", signedDto);

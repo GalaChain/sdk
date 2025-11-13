@@ -601,6 +601,13 @@ export class RegisterUserDto extends SubmitCallDTO {
   @IsNotEmpty()
   public publicKey?: string;
 
+  @JSONSchema({ description: "Signature from the public key." })
+  @IsOptional()
+  @IsNotEmpty()
+  @SerializeIf((o) => !!o.publicKey)
+  @ValidateIf((o) => !o.signers)
+  public publicKeySignature?: string;
+
   @JSONSchema({ description: "Signer user refs." })
   @ValidateIf((o) => !o.publicKey)
   @SerializeIf((o) => !o.publicKey)
@@ -616,6 +623,12 @@ export class RegisterUserDto extends SubmitCallDTO {
   @IsInt()
   @Min(1)
   signatureQuorum?: number;
+
+  public withPublicKeySignedBy(privateKey: string): this {
+    const copied = instanceToInstance(this);
+    copied.publicKeySignature = signatures.getSignature(copied, privateKey, SigningScheme.ETH);
+    return copied;
+  }
 }
 
 /**
