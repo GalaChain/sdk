@@ -20,7 +20,6 @@ import {
   ContractConfig,
   GalaChainResponseType,
   PublicKeyContractAPI,
-  RegisterEthUserDto,
   RegisterUserDto,
   commonContractAPI,
   createValidSubmitDTO,
@@ -295,7 +294,7 @@ async function createForAdmin<T extends ChainClientOptions>(opts?: T): Promise<A
 
   return {
     ...clients,
-    createRegisteredUser: async (userAlias?: string) => createRegisteredUser(pk, userAlias)
+    createRegisteredUser: async (userAlias: string) => createRegisteredUser(pk, userAlias)
   };
 }
 
@@ -366,25 +365,18 @@ function getAdminUser() {
  */
 async function createRegisteredUser(
   client: TestChainClient & PublicKeyContractAPI,
-  userAlias?: string
+  userAlias: string
 ): Promise<ChainUser> {
   const user = ChainUser.withRandomKeys(userAlias);
 
-  if (userAlias === undefined) {
-    const dto = await createValidSubmitDTO(RegisterEthUserDto, { publicKey: user.publicKey });
-    const response = await client.RegisterEthUser(dto.signed(client.privateKey));
-    if (response.Status !== GalaChainResponseType.Success) {
-      throw new Error(`Failed to register eth user: ${response.Message}`);
-    }
-  } else {
-    const dto = await createValidSubmitDTO(RegisterUserDto, {
-      user: user.identityKey,
-      publicKey: user.publicKey
-    });
-    const response = await client.RegisterUser(dto.signed(client.privateKey));
-    if (response.Status !== GalaChainResponseType.Success) {
-      throw new Error(`Failed to register user: ${response.Message}`);
-    }
+  const dto = await createValidSubmitDTO(RegisterUserDto, {
+    user: user.identityKey,
+    publicKey: user.publicKey
+  });
+
+  const response = await client.RegisterUser(dto.signed(client.privateKey));
+  if (response.Status !== GalaChainResponseType.Success) {
+    throw new Error(`Failed to register user: ${response.Message}`);
   }
 
   return user;

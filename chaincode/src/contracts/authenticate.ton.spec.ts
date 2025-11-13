@@ -17,12 +17,7 @@ import { TestChaincode, transactionSuccess } from "@gala-chain/test";
 import { instanceToPlain, plainToClass } from "class-transformer";
 
 import { PublicKeyContract } from "./PublicKeyContract";
-import {
-  TonUser,
-  createRegisteredTonUser,
-  createTonSignedDto,
-  createTonUser
-} from "./authenticate.testutils.spec";
+import { TonUser, createTonSignedDto, createTonUser } from "./authenticate.testutils.spec";
 
 /**
  * Tests below cover a wide range of scenarios for GetMyProfile method for TON signing scheme,
@@ -56,10 +51,6 @@ const signerAdd = labeled<PublicKey>("signer address")(
 );
 const _________ = labeled<PublicKey>("raw dto")(() => ({}));
 
-type UserRegistered = (ch: TestChaincode) => Promise<TonUser>;
-const ___registered = labeled<UserRegistered>("user registered")((ch) => createRegisteredTonUser(ch));
-const notRegistered = labeled<UserRegistered>("user not registered")(() => createTonUser());
-
 type Expectation = (response: unknown, user: TonUser) => void;
 const Success = labeled<Expectation>("Success")((response, user) => {
   expect(response).toEqual(
@@ -79,30 +70,20 @@ const Error: (errorKey: string) => Expectation = (errorKey) =>
   });
 
 test.each([
-  [__valid, _________, ___registered, Error("MISSING_SIGNER")],
-  [__valid, _________, notRegistered, Error("MISSING_SIGNER")],
-  [__valid, signerKey, ___registered, Success],
-  [__valid, signerKey, notRegistered, Error("USER_NOT_REGISTERED")],
-  [__valid, signerRef, ___registered, Success],
-  [__valid, signerAdd, ___registered, Success],
-  [__valid, signerRef, notRegistered, Error("USER_NOT_REGISTERED")],
-  [invalid, _________, ___registered, Error("MISSING_SIGNER")],
-  [invalid, _________, notRegistered, Error("MISSING_SIGNER")],
-  [invalid, signerKey, ___registered, Error("PK_INVALID_SIGNATURE")],
-  [invalid, signerKey, notRegistered, Error("PK_INVALID_SIGNATURE")],
-  [invalid, signerRef, ___registered, Error("PK_INVALID_SIGNATURE")],
-  [invalid, signerRef, notRegistered, Error("USER_NOT_REGISTERED")]
-])("(%s, %s, %s) => %s", performTest);
+  [__valid, _________, Error("MISSING_SIGNER")],
+  [__valid, signerKey, Success],
+  [__valid, signerRef, Success],
+  [__valid, signerAdd, Success],
+  [invalid, _________, Error("MISSING_SIGNER")],
+  [invalid, signerKey, Error("PK_INVALID_SIGNATURE")],
+  [invalid, signerRef, Error("PK_INVALID_SIGNATURE")],
+  [invalid, signerAdd, Error("PK_INVALID_SIGNATURE")]
+])("(%s, %s) => %s", performTest);
 
-async function performTest(
-  signatureFn: Signature,
-  publicKeyFn: PublicKey,
-  createUserFn: UserRegistered,
-  expectation: Expectation
-) {
+async function performTest(signatureFn: Signature, publicKeyFn: PublicKey, expectation: Expectation) {
   // Given
   const chaincode = new TestChaincode([PublicKeyContract]);
-  const userObj = await createUserFn(chaincode);
+  const userObj = await createTonUser();
 
   const dto = new ChainCallDTO();
   dto.signing = SigningScheme.TON;
