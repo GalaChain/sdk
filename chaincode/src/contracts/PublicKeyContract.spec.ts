@@ -519,6 +519,11 @@ describe("UpdatePublicKey", () => {
     const user = await createTonUser();
     const newPair = await signatures.ton.genKeyPair();
     const newPrivateKeyBase64 = newPair.secretKey.toString("base64");
+    const newAddress = PublicKeyService.getUserAddress(
+      newPair.publicKey.toString("base64"),
+      SigningScheme.TON
+    );
+
     const dto = (
       await createValidSubmitDTO(UpdatePublicKeyDto, {
         publicKey: newPair.publicKey.toString("base64"),
@@ -531,6 +536,7 @@ describe("UpdatePublicKey", () => {
 
     // no public key saved for this user
     expect(await getPublicKey(chaincode, user.alias)).toEqual(transactionErrorKey("PK_NOT_FOUND"));
+    expect(await getUserProfile(chaincode, user.tonAddress)).toEqual(transactionErrorKey("OBJECT_NOT_FOUND"));
 
     // When
     const response = await chaincode.invoke("PublicKeyContract:UpdatePublicKey", dto);
@@ -542,6 +548,25 @@ describe("UpdatePublicKey", () => {
       transactionSuccess({
         publicKey: dto.publicKey,
         signing: SigningScheme.TON
+      })
+    );
+
+    // new profile is saved
+    expect(await getUserProfile(chaincode, newAddress)).toEqual(
+      transactionSuccess({
+        alias: user.alias,
+        tonAddress: newAddress,
+        roles: UserProfile.DEFAULT_ROLES,
+        signatureQuorum: 1
+      })
+    );
+
+    // old non-existent profile is invalidated
+    expect(await getUserProfile(chaincode, user.tonAddress)).toEqual(
+      transactionSuccess({
+        alias: "client|invalidated",
+        ethAddress: "0000000000000000000000000000000000000000",
+        roles: []
       })
     );
   });

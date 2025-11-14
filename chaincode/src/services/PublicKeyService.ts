@@ -37,7 +37,6 @@ import {
   PkExistsError,
   PkInvalidSignatureError,
   PkMissingError,
-  PkNotFoundError,
   ProfileExistsError,
   UserProfileNotFoundError
 } from "./PublicKeyError";
@@ -367,9 +366,8 @@ export class PublicKeyService {
     const signatureQuorum = userProfile?.signatureQuorum ?? 1;
 
     // invalidate old user profile to prevent double registration under old public key
-    if (userProfile !== undefined) {
-      await PublicKeyService.invalidateUserProfile(ctx, oldAddress);
-    }
+    // do it also for unregistered users (no check if profile exists)
+    await PublicKeyService.invalidateUserProfile(ctx, oldAddress);
 
     // ensure no user profile exists under new address
     const newAddress = PublicKeyService.getUserAddress(newPublicKey, signing);
