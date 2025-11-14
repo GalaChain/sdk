@@ -48,21 +48,13 @@ export function isValidSystemUser(value: string): boolean {
 }
 
 export function isValidTonAddress(value: string): boolean {
-  // Only allow bounceable (starts with 'EQ' or 'UQ') base64url TON addresses, length 48 or 52 chars
-  // See: https://ton-community.github.io/tutorials/address/
-  return /^(E|U)Q[A-Za-z0-9_-]{46}$/.test(value) || /^(E|U)Q[A-Za-z0-9_-]{50}$/.test(value);
+  try {
+    return signatures.ton.isValidTonAddress(value);
+  } catch (e) {
+    return false;
+  }
 }
 
-/**
- * @description
- *
- * Validates a provided user alias. As of 2024-10, The following alias types
- * are supported: legacy client| and service| prefixed aliases,
- * eth| and ton| prefixed addresses, and internally reserved identities.
- *
- * @param value
- * @returns UserRefValidationResult
- */
 export function validateUserAlias(value: unknown): UserAliasValidationResult {
   if (typeof value !== "string" || value.length === 0) {
     return UserAliasValidationResult.INVALID_FORMAT;
