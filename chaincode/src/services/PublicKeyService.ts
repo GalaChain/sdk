@@ -120,12 +120,6 @@ export class PublicKeyService {
     await ctx.stub.putState(key, data);
   }
 
-  public static getUserAddress(publicKey: string, signing: SigningScheme): string {
-    return signing === SigningScheme.TON
-      ? signatures.ton.getTonAddress(Buffer.from(publicKey, "base64"))
-      : signatures.getEthAddress(signatures.getNonCompactHexPublicKey(publicKey));
-  }
-
   public static async getUserProfile(ctx: Context, address: string): Promise<UserProfileStrict | undefined> {
     const key = PublicKeyService.getUserProfileKey(ctx, address);
     const data = await ctx.stub.getState(key);
@@ -185,12 +179,11 @@ export class PublicKeyService {
     return pk;
   }
 
-  public static getDefaultUserProfile(publicKey: string, signing: SigningScheme): UserProfileStrict {
-    const address = this.getUserAddress(publicKey, signing);
+  public static getDefaultUserProfile(address: string, signing: SigningScheme): UserProfileStrict {
     const profile = new UserProfile();
     profile.alias = asValidUserAlias(`${signing.toLowerCase()}|${address}`);
-    profile.ethAddress = signing === SigningScheme.ETH ? address : undefined;
-    profile.tonAddress = signing === SigningScheme.TON ? address : undefined;
+    profile.ethAddress = signing === SigningScheme.ETH ? address : undefined; // eslint-disable-line @typescript-eslint/no-unnecessary-condition
+    profile.tonAddress = signing === SigningScheme.TON ? address : undefined; // eslint-disable-line @typescript-eslint/no-unnecessary-condition
     profile.roles = Array.from(UserProfile.DEFAULT_ROLES);
     profile.signatureQuorum = 1;
 

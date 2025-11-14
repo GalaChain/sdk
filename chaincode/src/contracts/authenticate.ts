@@ -280,17 +280,18 @@ async function authenticateMultipleSignatures(
 
 async function getUserProfile(
   ctx: GalaChainContext,
+  address: string,
   publicKey: string,
   signing: SigningScheme
 ): Promise<UserProfileStrict> {
-  const address = PublicKeyService.getUserAddress(publicKey, signing);
   const profile = await PublicKeyService.getUserProfile(ctx, address);
 
   if (profile !== undefined) {
     return profile;
   }
 
-  if (ctx.config.allowNonRegisteredUsers) {
+
+  if (ctx.config.allowNonRegisteredUsers && signing === SigningScheme.ETH) {
     return PublicKeyService.getDefaultUserProfile(publicKey, signing);
   }
 
