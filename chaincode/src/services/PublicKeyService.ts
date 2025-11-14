@@ -251,8 +251,8 @@ export class PublicKeyService {
       throw new ValidationFailedError("Signature quorum cannot exceed number of signers");
     }
 
-    // Check for duplicate signers. Note: signers is a list of UserAlias objects
-    // (unique and unambiguous user idetfiers on chain)
+    // Check for duplicate signers. Note: at this point signers is a list
+    // of UserAlias objects (unambiguous user identifiers on chain)
     if (signers && signers.length !== new Set(signers).size) {
       throw new ValidationFailedError(`Found duplicate signers in: ${signers.join(",")}`);
     }
@@ -439,7 +439,7 @@ export class PublicKeyService {
 
     const allSigners = currentUserProfile.signers ?? [];
 
-    // Check if the new public key already exists
+    // Check if the new signer already exists
     if (allSigners.includes(newSigner)) {
       throw new ValidationFailedError(`Signer ${newSigner} is already in the list of signers`);
     }
