@@ -50,8 +50,8 @@ export class PublicKeyService {
     return ctx.stub.createCompositeKey(PublicKeyService.PK_INDEX_KEY, [userAlias]);
   }
 
-  public static getUserProfileKey(ctx: Context, ethAddress: string): string {
-    return ctx.stub.createCompositeKey(PublicKeyService.UP_INDEX_KEY, [ethAddress]);
+  public static getUserProfileKey(ctx: Context, address: string): string {
+    return ctx.stub.createCompositeKey(PublicKeyService.UP_INDEX_KEY, [address]);
   }
 
   public static normalizePublicKey = normalizePublicKey;
