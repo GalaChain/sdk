@@ -87,9 +87,11 @@ export async function payFeeImmediatelyFromBalance(ctx: GalaChainContext, data: 
       owner: payingUser,
       toBurn: [burnQuantity]
     }).catch((e: ChainError) => {
-      throw new PaymentRequiredError(`Failed to burnTokens fee: ${e.message}`, {
-        paymentQuantity: quantity.toString()
-      });
+      throw new PaymentRequiredError(
+        `Payment Requiured. payImmediatelyFromBalance: burnTokens for payingUser: ${payingUser}, ` +
+          `quantity: ${quantity.toString()}, feeCode: ${feeCode}, failed with error: ${e.message}`,
+        { paymentQuantity: quantity.toString() }
+      );
     });
   } else if (splitFormula instanceof ChainError) {
     throw splitFormula;
