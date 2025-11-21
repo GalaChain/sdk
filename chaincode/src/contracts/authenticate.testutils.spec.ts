@@ -58,7 +58,7 @@ export async function createUser(): Promise<User> {
 export async function createRegisteredUser(chaincode: TestChaincode): Promise<User> {
   const { alias, privateKey, publicKey, ethAddress } = await createUser();
   const dto = await createValidSubmitDTO(RegisterUserDto, { user: alias, publicKey });
-  const signedDto = dto.signed(process.env.DEV_ADMIN_PRIVATE_KEY as string);
+  const signedDto = dto.withPublicKeySignedBy(privateKey).signed(process.env.DEV_ADMIN_PRIVATE_KEY as string);
   const response = await chaincode.invoke("PublicKeyContract:RegisterUser", signedDto);
   expect(response).toEqual(transactionSuccess());
   return { alias, privateKey, publicKey, ethAddress };
