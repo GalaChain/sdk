@@ -1,6 +1,6 @@
 {
   "name": "@gala-chain/sdk",
-  "version": "2.5.4",
+  "version": "2.6.0",
   "license": "Apache-2.0",
   "engines": {
     "node": ">=16"

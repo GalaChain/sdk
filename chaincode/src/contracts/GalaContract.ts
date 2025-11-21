@@ -184,9 +184,7 @@ export abstract class GalaContract extends Contract {
       }
 
       ctx.setDryRunOnBehalfOf({
-        ...userProfile,
-        signedByKeys: [],
-        signatureQuorum: 0
+        ...userProfile
       });
     }
 
@@ -196,9 +194,7 @@ export abstract class GalaContract extends Contract {
     else if (dto.signerAddress && isValidUserAlias(dto.signerAddress)) {
       ctx.setDryRunOnBehalfOf({
         alias: dto.signerAddress,
-        roles: [...UserProfile.DEFAULT_ROLES],
-        signedByKeys: [],
-        signatureQuorum: 0
+        roles: [...UserProfile.DEFAULT_ROLES]
       });
     }
 

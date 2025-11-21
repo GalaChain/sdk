@@ -12,6 +12,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+import bs58 from "bs58";
 import { instanceToPlain } from "class-transformer";
 import { ValidationError, validate } from "class-validator";
 import "reflect-metadata";
@@ -128,5 +129,34 @@ export abstract class ChainObject {
 
   public static getStringKeyFromParts(parts: string[]): string {
     return `${parts.join(ChainObject.ID_SPLIT_CHAR)}`;
+  }
+
+  public static getEncodableStringKeyFromParts(parts: string[]): string {
+    parts.forEach((part, index) => {
+      if (part.includes(ChainObject.MIN_UNICODE_RUNE_VALUE)) {
+        const msg = `Invalid part with UTF-0 at index ${index} passed to getEncodableStringKeyFromParts}`;
+        throw new InvalidCompositeKeyError(msg);
+      }
+    });
+    return parts.join(ChainObject.MIN_UNICODE_RUNE_VALUE);
+  }
+
+  public static getPartsFromEncodableStringKey(stringKey: string, expectedParts: number): string[] {
+    const parts = stringKey.split(ChainObject.MIN_UNICODE_RUNE_VALUE);
+    if (parts.length !== expectedParts) {
+      const msg = `Expected ${expectedParts} parts, got ${parts.length} parts in getPartsFromEncodableStringKey`;
+      throw new InvalidCompositeKeyError(msg);
+    }
+    return parts;
+  }
+
+  public static encodeToBase58(stringKey: string): string {
+    const buffer = Buffer.from(stringKey);
+    return bs58.encode(buffer);
+  }
+
+  public static decodeFromBase58(base58String: string): string {
+    const decoded = bs58.decode(base58String);
+    return Buffer.from(decoded).toString("utf8");
   }
 }

@@ -27,7 +27,7 @@ export enum UserRole {
 }
 
 export class UserProfile extends ChainObject {
-  static ADMIN_ROLES = [UserRole.CURATOR, UserRole.EVALUATE, UserRole.REGISTRAR, UserRole.SUBMIT] as const;
+  static ADMIN_ROLES = [UserRole.CURATOR, UserRole.REGISTRAR] as const;
   static DEFAULT_ROLES = [UserRole.EVALUATE, UserRole.SUBMIT] as const;
 
   @JSONSchema({
@@ -51,6 +51,13 @@ export class UserProfile extends ChainObject {
   @IsNotEmpty()
   @ValidateIf((o) => !o.ethAddress)
   tonAddress?: string;
+
+  @JSONSchema({
+    description: "Signers of the virtual multisig profile."
+  })
+  @IsOptional()
+  @IsUserAlias({ each: true })
+  signers?: UserAlias[];
 
   @JSONSchema({
     description: `Roles assigned to the user. Predefined roles are: ${Object.values(UserRole)
