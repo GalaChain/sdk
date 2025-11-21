@@ -14,7 +14,6 @@
  */
 import { instanceToPlain, plainToInstance } from "class-transformer";
 import { validate } from "class-validator";
-import { ec as EC } from "elliptic";
 
 import { SigningScheme, signatures } from "../utils";
 import { UserAlias, asValidUserAlias } from "./UserAlias";
@@ -22,14 +21,6 @@ import { asValidUserRef } from "./UserRef";
 import { RegisterUserDto } from "./dtos";
 
 describe("RegisterUserDto", () => {
-  function genKeyPair() {
-    const pair = new EC("secp256k1").genKeyPair();
-    return {
-      privateKey: pair.getPrivate().toString("hex"),
-      publicKey: Buffer.from(pair.getPublic().encode("array", true)).toString("hex")
-    };
-  }
-
   describe("validation and serialization", () => {
     it("should validate and serialize with single publicKey", async () => {
       // Given
@@ -292,7 +283,7 @@ describe("RegisterUserDto", () => {
   describe("signature serialization", () => {
     it("should sign and verify signature with single publicKey", () => {
       // Given
-      const { privateKey, publicKey } = genKeyPair();
+      const { privateKey, publicKey } = signatures.genKeyPair();
       const dto = new RegisterUserDto();
       dto.uniqueKey = "test-unique-key-signature";
       dto.user = "client|test-user" as unknown as UserAlias;
@@ -338,8 +329,8 @@ describe("RegisterUserDto", () => {
 
     it("should fail to verify signature with invalid key", () => {
       // Given
-      const { privateKey } = genKeyPair();
-      const invalid = genKeyPair();
+      const { privateKey } = signatures.genKeyPair();
+      const invalid = signatures.genKeyPair();
       const dto = new RegisterUserDto();
       dto.uniqueKey = "test-unique-key-invalid";
       dto.user = "client|test-user" as unknown as UserAlias;
@@ -354,7 +345,7 @@ describe("RegisterUserDto", () => {
 
     it("should fail to verify signature with invalid payload", () => {
       // Given
-      const { privateKey, publicKey } = genKeyPair();
+      const { privateKey, publicKey } = signatures.genKeyPair();
       const dto = new RegisterUserDto();
       dto.uniqueKey = "test-unique-key-invalid-payload";
       dto.user = "client|test-user" as unknown as UserAlias;
@@ -370,7 +361,7 @@ describe("RegisterUserDto", () => {
 
     it("should create signed copy without modifying original", () => {
       // Given
-      const { privateKey } = genKeyPair();
+      const { privateKey } = signatures.genKeyPair();
       const dto = new RegisterUserDto();
       dto.uniqueKey = "test-unique-key-copy";
       dto.user = "client|test-user" as unknown as UserAlias;

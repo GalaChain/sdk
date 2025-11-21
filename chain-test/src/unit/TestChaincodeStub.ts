@@ -142,16 +142,7 @@ export class TestChaincodeStub extends ChaincodeStub {
     this.creator = creatorMock();
     this.state = state ?? {};
     this.writes = writes ?? {};
-
-    const seconds = Long.fromNumber(Date.now() / 1000);
-    // eslint-disable-next-line @typescript-eslint/ban-ts-comment
-    // @ts-ignore
-    this.txTimestamp = {
-      seconds,
-      nanos: 0,
-      getSeconds: () => seconds,
-      getNanos: () => 0
-    };
+    this.setCurrentTime();
 
     TestChaincodeStub.epoch += 1;
 
@@ -173,6 +164,41 @@ export class TestChaincodeStub extends ChaincodeStub {
           ]
         }
       }
+    };
+  }
+
+  private static prevTxTimestamp: Date | undefined;
+
+  private setCurrentTime(): void {
+    // We observed that with higly optimized testing code with a very short
+    // latency, test process may fail silently with no stack trace because
+    // of (1) a timestamp collision, or (2) a timestamp that equals or exceeds
+    // the current time.
+    //
+    // To avoid this, we first force the timestamp to be at least 100 ms
+    // in the past, and then in case of a timestamp collision, we increment
+    // the timestamp by 1 millisecond.
+    //
+    let time = new Date(Date.now() - 100);
+
+    const prevTxTimestamp = TestChaincodeStub?.prevTxTimestamp ?? new Date(0);
+    if (time.getTime() <= prevTxTimestamp.getTime()) {
+      time = new Date(prevTxTimestamp.getTime() + 1);
+    }
+
+    TestChaincodeStub.prevTxTimestamp = time;
+
+    const unixMilliseconds = time.getTime();
+    const seconds = Long.fromNumber(unixMilliseconds / 1_000);
+    const nanos = (unixMilliseconds % 1_000) * 1_000_000;
+
+    // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+    // @ts-ignore
+    this.txTimestamp = {
+      seconds,
+      nanos,
+      getSeconds: () => seconds,
+      getNanos: () => nanos
     };
   }
 

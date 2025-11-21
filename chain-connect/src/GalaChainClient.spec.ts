@@ -254,41 +254,12 @@ describe("BrowserConnectClient", () => {
     const payload = signatures.getPayloadToSign(prefixedPayload);
 
     const signature = await wallet.signMessage(payload);
-    console.log(signature);
 
     const publickKey = signatures.recoverPublicKey(signature, { ...prefixedPayload, signature }, prefix);
     const ethAddress = signatures.getEthAddress(publickKey);
     expect(ethAddress).toBe("e737c4D3072DA526f3566999e0434EAD423d06ec");
   });
-  it("should properly recover signature", async () => {
-    const params: LockTokenDto = await createValidSubmitDTO(LockTokenDto, {
-      quantity: new BigNumber("1"),
-      tokenInstance: plainToInstance(TokenInstanceKey, {
-        collection: "GALA",
-        category: "Unit",
-        additionalKey: "none",
-        instance: new BigNumber("0"),
-        type: "none"
-      })
-    });
 
-    const privateKey = "0x311e3750b1b698e70a2b37fd08b68fdcb389f955faea163f6ffa5be65cd0c251";
-
-    const client = new BrowserConnectClient();
-    await client.connect();
-
-    const prefix = client.calculatePersonalSignPrefix(params);
-    const prefixedPayload = { prefix, ...params };
-    const wallet = new ethers.Wallet(privateKey);
-    const dto = signatures.getPayloadToSign(prefixedPayload);
-
-    const signature = await wallet.signMessage(dto);
-    console.log(signature);
-
-    const publickKey = signatures.recoverPublicKey(signature, { ...prefixedPayload, signature }, prefix);
-    const ethAddress = signatures.getEthAddress(publickKey);
-    expect(ethAddress).toBe("e737c4D3072DA526f3566999e0434EAD423d06ec");
-  });
   it("should properly recover signature for typed signing", async () => {
     const dto: LockTokenDto = await createValidSubmitDTO(LockTokenDto, {
       quantity: new BigNumber("1"),
