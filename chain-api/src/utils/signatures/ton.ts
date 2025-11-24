@@ -15,8 +15,22 @@
 import { ValidationFailedError } from "../error";
 import { getPayloadToSign } from "./getPayloadToSign";
 
+// Cache for TON modules
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+let tonModules: { ton: any; crypto: any } | "not-available" | undefined;
+
 // verify if TON is supported
 function importTonOrReject() {
+  // If already determined to be unavailable, throw immediately (no require() overhead)
+  if (tonModules === "not-available") {
+    throw new Error("TON is not supported. Missing required libraries");
+  }
+
+  // Return cached modules if already loaded
+  if (tonModules !== undefined) {
+    return tonModules;
+  }
+
   // Using a dynamic variable names plus try...catch to prevent some bundlers (like Webpack)
   // from eagerly bundling these modules if they are optional.
   let ton, crypto;
@@ -24,6 +38,8 @@ function importTonOrReject() {
     // eslint-disable-next-line @typescript-eslint/no-var-requires
     ton = require("@ton/ton");
   } catch (e) {
+    // Cache failure state for performance - subsequent calls won't try require() again
+    tonModules = "not-available";
     throw new Error("TON is not supported. Missing library @ton/ton");
   }
 
@@ -31,10 +47,14 @@ function importTonOrReject() {
     // eslint-disable-next-line @typescript-eslint/no-var-requires
     crypto = require("@ton/crypto");
   } catch (e) {
+    // Cache failure state for performance - subsequent calls won't try require() again
+    tonModules = "not-available";
     throw new Error("TON is not supported. Missing library @ton/crypto");
   }
 
-  return { ton, crypto };
+  // Cache the modules for subsequent calls
+  tonModules = { ton, crypto };
+  return tonModules;
 }
 
 async function genKeyPair(): Promise<{ secretKey: Buffer; publicKey: Buffer }> {

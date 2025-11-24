@@ -206,8 +206,8 @@ export class ChainCallDTO {
   @JSONSchema({
     description:
       "List of signatures for this DTO if there are multiple signers. " +
-      "If there are multiple signatures, it is not allowed to provide 'signature' " +
-      "or 'signerPublicKey' or 'signerAddress' or 'prefix' fields, " +
+      "If there are multiple signatures, 'signerAddress' is required, " +
+      "and it is not allowed to provide 'signature' or 'signerPublicKey' or 'prefix' fields, " +
       "and the signing scheme must be ETH."
   })
   @IsOptional()
