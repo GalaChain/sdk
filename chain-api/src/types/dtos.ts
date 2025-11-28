@@ -671,6 +671,8 @@ export class UpdatePublicKeyDto extends SubmitCallDTO {
 
   public withPublicKeySignedBy(privateKey: string): this {
     const copied = instanceToInstance(this);
+    delete copied.publicKeySignature;
+
     const signing = this.signing ?? SigningScheme.ETH;
     copied.publicKeySignature = signatures.getSignature(copied, privateKey, signing);
     return copied;
