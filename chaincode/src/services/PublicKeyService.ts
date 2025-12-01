@@ -328,10 +328,6 @@ export class PublicKeyService {
       throw new ValidationFailedError(`Invalid ${signing} public key signature`);
     }
 
-    if (newPublicKeySignature === undefined) {
-      throw new ValidationFailedError("Public key signature is missing");
-    }
-
     const currentPublicKeyObj = await PublicKeyService.getPublicKey(ctx, userAlias);
     if (currentPublicKeyObj === undefined) {
       throw new PkNotFoundError(userAlias);
