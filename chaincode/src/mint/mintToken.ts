@@ -29,7 +29,13 @@ import {
 import { ChainCallDTO, ChainObject } from "@gala-chain/api";
 import { BigNumber } from "bignumber.js";
 
-import { checkAllowances, ensureQuantityCanBeMinted, fetchAllowances, useAllowances } from "../allowances";
+import {
+  AllowanceUsersMismatchError,
+  checkAllowances,
+  ensureQuantityCanBeMinted,
+  fetchAllowances,
+  useAllowances
+} from "../allowances";
 import { fetchOrCreateBalance } from "../balances";
 import { InvalidDecimalError } from "../token/TokenError";
 import { GalaChainContext } from "../types/GalaChainContext";
@@ -93,8 +99,19 @@ export async function mintToken(
       ])
     );
 
+    // Validate that the allowance is granted to the caller
+    if (allowance.grantedTo !== callingOnBehalf) {
+      throw new AllowanceUsersMismatchError(allowance, allowance.grantedBy, callingOnBehalf);
+    }
+
     applicableAllowanceResponse = [allowance];
   } else if (Array.isArray(applicableAllowances) && applicableAllowances.length > 0) {
+    // Validate that all allowances are granted to the caller
+    for (const allowance of applicableAllowances) {
+      if (allowance.grantedTo !== callingOnBehalf) {
+        throw new AllowanceUsersMismatchError(allowance, allowance.grantedBy, callingOnBehalf);
+      }
+    }
     applicableAllowanceResponse = applicableAllowances;
   } else {
     // Get allowances
