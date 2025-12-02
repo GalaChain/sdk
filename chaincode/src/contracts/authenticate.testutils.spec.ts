@@ -19,13 +19,11 @@ import {
   GetObjectDto,
   GetPublicKeyDto,
   PublicKey,
-  RegisterTonUserDto,
   RegisterUserDto,
   SigningScheme,
   UserAlias,
   UserProfile,
   UserRef,
-  UserRole,
   createValidDTO,
   createValidSubmitDTO,
   signatures
@@ -53,6 +51,13 @@ export async function createUser(): Promise<User> {
   const { privateKey, publicKey } = signatures.genKeyPair();
   const ethAddress = signatures.getEthAddress(publicKey);
   return { alias: name, privateKey, publicKey, ethAddress };
+}
+
+export async function createEthUser(): Promise<User> {
+  const { privateKey, publicKey } = signatures.genKeyPair();
+  const ethAddress = signatures.getEthAddress(publicKey);
+  const alias = `eth|${ethAddress}` as UserAlias;
+  return { alias, privateKey, publicKey, ethAddress };
 }
 
 export async function createRegisteredUser(chaincode: TestChaincode): Promise<User> {
@@ -99,20 +104,11 @@ export async function createRegisteredMultiSigUser(
 
 export async function createTonUser(): Promise<TonUser> {
   const pair = await signatures.ton.genKeyPair();
-  const privateKey = Buffer.from(pair.secretKey).toString("base64");
-  const publicKey = Buffer.from(pair.publicKey).toString("base64");
+  const privateKey = pair.secretKey.toString("base64");
+  const publicKey = pair.publicKey.toString("base64");
   const tonAddress = signatures.ton.getTonAddress(pair.publicKey);
   const alias = `ton|${tonAddress}` as UserAlias;
   return { alias, privateKey, publicKey, tonAddress };
-}
-
-export async function createRegisteredTonUser(chaincode: TestChaincode): Promise<TonUser> {
-  const user = await createTonUser();
-  const dto = await createValidSubmitDTO(RegisterTonUserDto, { publicKey: user.publicKey });
-  const signedDto = dto.signed(process.env.DEV_ADMIN_PRIVATE_KEY as string);
-  const response = await chaincode.invoke("PublicKeyContract:RegisterTonUser", signedDto);
-  expect(response).toEqual(transactionSuccess());
-  return user;
 }
 
 export function createSignedDto(unsigned: ChainCallDTO, privateKey: string) {

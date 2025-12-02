@@ -37,7 +37,6 @@ import {
   PkExistsError,
   PkInvalidSignatureError,
   PkMissingError,
-  PkNotFoundError,
   ProfileExistsError,
   UserProfileNotFoundError
 } from "./PublicKeyError";
@@ -185,8 +184,7 @@ export class PublicKeyService {
     return pk;
   }
 
-  public static getDefaultUserProfile(publicKey: string, signing: SigningScheme): UserProfileStrict {
-    const address = this.getUserAddress(publicKey, signing);
+  public static getDefaultUserProfile(address: string, signing: SigningScheme): UserProfileStrict {
     const profile = new UserProfile();
     profile.alias = asValidUserAlias(`${signing.toLowerCase()}|${address}`);
     profile.ethAddress = signing === SigningScheme.ETH ? address : undefined;
@@ -357,29 +355,19 @@ export class PublicKeyService {
     }
 
     const currentPublicKeyObj = await PublicKeyService.getPublicKey(ctx, userAlias);
-    if (currentPublicKeyObj === undefined) {
-      throw new PkNotFoundError(userAlias);
-    }
 
-    if (currentPublicKeyObj.publicKey === undefined) {
+    if (currentPublicKeyObj && currentPublicKeyObj.publicKey === undefined) {
       throw new NotImplementedError("UpdatePublicKey for multisig is not supported");
     }
 
-    const currentSigning = currentPublicKeyObj.signing ?? SigningScheme.ETH;
-    if (currentSigning !== signing) {
-      const msg = `Current public key signing scheme ${currentSigning} does not match new signing scheme ${signing}`;
-      throw new ValidationFailedError(msg);
-    }
-
     // need to fetch userProfile from old address
-    const oldAddress = PublicKeyService.getUserAddress(currentPublicKeyObj.publicKey, signing);
+    const oldAddress = ctx.callingUserAddress.address;
     const userProfile = await PublicKeyService.getUserProfile(ctx, oldAddress);
     const signatureQuorum = userProfile?.signatureQuorum ?? 1;
 
     // invalidate old user profile to prevent double registration under old public key
-    if (userProfile !== undefined) {
-      await PublicKeyService.invalidateUserProfile(ctx, oldAddress);
-    }
+    // do it also for unregistered users (no check if profile exists)
+    await PublicKeyService.invalidateUserProfile(ctx, oldAddress);
 
     // ensure no user profile exists under new address
     const newAddress = PublicKeyService.getUserAddress(newPublicKey, signing);
@@ -414,14 +402,22 @@ export class PublicKeyService {
     roles: string[]
   ): Promise<void> {
     const publicKey = await PublicKeyService.getPublicKey(ctx, user);
+    const allowedUnregisteredUsers = user.startsWith("eth|") || user.startsWith("ton|");
 
     const address = publicKey
       ? PublicKeyService.getUserAddress(publicKey.publicKey, publicKey.signing ?? SigningScheme.ETH)
-      : user;
+      : allowedUnregisteredUsers
+        ? user.slice(4)
+        : user;
 
-    const userProfile = await PublicKeyService.getUserProfile(ctx, address);
+    let userProfile = await PublicKeyService.getUserProfile(ctx, address);
     if (userProfile === undefined) {
-      throw new UserProfileNotFoundError(user);
+      if (allowedUnregisteredUsers) {
+        const signing = user.startsWith("eth|") ? SigningScheme.ETH : SigningScheme.TON;
+        userProfile = PublicKeyService.getDefaultUserProfile(address, signing);
+      } else {
+        throw new UserProfileNotFoundError(user);
+      }
     }
 
     const currentRolesSet = new Set(userProfile.roles);

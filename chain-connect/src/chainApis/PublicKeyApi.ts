@@ -12,17 +12,11 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-import {
-  GetMyProfileDto,
-  RegisterEthUserDto,
-  RegisterUserDto,
-  UpdatePublicKeyDto,
-  UserProfile
-} from "@gala-chain/api";
+import { GetMyProfileDto, RegisterUserDto, UpdatePublicKeyDto, UserProfile } from "@gala-chain/api";
 import { plainToInstance } from "class-transformer";
 
 import { GalaChainProvider } from "../GalaChainClient";
-import { RegisterEthUserRequest, RegisterUserRequest, UpdatePublicKeyRequest } from "../types";
+import { RegisterUserRequest, UpdatePublicKeyRequest } from "../types";
 import { GalaChainBaseApi } from "./GalaChainBaseApi";
 
 /**
@@ -70,21 +64,6 @@ export class PublicKeyApi extends GalaChainBaseApi {
       sign: true,
       url: this.chainCodeUrl,
       requestConstructor: RegisterUserDto
-    });
-  }
-
-  /**
-   * Registers a new Ethereum user on the GalaChain network.
-   * @param dto - The Ethereum user registration request data
-   * @returns Promise resolving to registration confirmation
-   */
-  public RegisterEthUser(dto: RegisterEthUserRequest) {
-    return this.connection.submit<string, RegisterEthUserDto>({
-      method: "RegisterEthUser",
-      payload: dto,
-      sign: true,
-      url: this.chainCodeUrl,
-      requestConstructor: RegisterEthUserDto
     });
   }
 
