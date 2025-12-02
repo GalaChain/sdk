@@ -64,9 +64,11 @@ export async function splitFeeImmediatelyWithBurnAndTransfer(
     toBurn: [burnQuantity]
   }).catch((e) => {
     throw new PaymentRequiredError(
-      `Failed to burnTokens for splitFeeFormula: ` +
+      `Payment Required. Failed to burnTokens for splitFeeFormula: ` +
+        `for payingUser: ${payingUser} ` +
         `burnFeeQuantity: ${burnFeeQuantity.toString()}, ` +
-        `totalFeeQuantity: ${totalFeeQuantity.toString()}, with error: ${e.message}`,
+        `totalFeeQuantity: ${totalFeeQuantity.toString()}, ` +
+        `failed with error: ${e.message}`,
       { paymentQuantity: totalFeeQuantity.toString() }
     );
   });
@@ -81,10 +83,12 @@ export async function splitFeeImmediatelyWithBurnAndTransfer(
       authorizedOnBehalf: undefined
     }).catch((e) => {
       throw new PaymentRequiredError(
-        `Failed to transferToken for splitFeeFormula: ` +
+        `Payment Required. Failed to transferToken for splitFeeFormula ` +
+          `defined for ${feeCode} feeCode: ` +
+          `from payingUser: ${payingUser}, to transferToUser: ${transfer.transferToUser}` +
           `transferQuantity: ${transfer.transferQuantity.toString()} ` +
-          `to identity: ${transfer.transferToUser}, ` +
-          `totalFeeQuantity: ${totalFeeQuantity.toString()}, with error: ${e.message}`,
+          `totalFeeQuantity: ${totalFeeQuantity.toString()}, ` +
+          `Received error: ${e.message}`,
         { paymentQuantity: totalFeeQuantity.toString() }
       );
     });
