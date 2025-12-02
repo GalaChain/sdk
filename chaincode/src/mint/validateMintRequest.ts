@@ -28,6 +28,7 @@ import {
 import BigNumber from "bignumber.js";
 
 import { checkAllowances } from "../allowances";
+import { NotATokenAuthorityError } from "../token/TokenError";
 import { GalaChainContext } from "../types";
 import { getObjectByKey, getObjectsByPartialCompositeKey } from "../utils";
 
@@ -71,13 +72,15 @@ export async function validateMintRequest(
         applicableAllowanceKey.type,
         applicableAllowanceKey.additionalKey,
         applicableAllowanceKey.instance.toString(),
-        applicableAllowanceKey.allowanceType.toString(),
+        AllowanceType.Mint.toString(),
         applicableAllowanceKey.grantedBy,
         applicableAllowanceKey.created.toString()
       ])
     );
 
-    results = [allowance];
+    if(tokenClass.authorities.includes(allowance.grantedBy)) {
+      results = [allowance];
+    }
   } else {
     const queryParams = [
       callingOnBehalf, // grantedTo
@@ -99,7 +102,9 @@ export async function validateMintRequest(
     results.sort((a: TokenAllowance, b: TokenAllowance): number => (a.created < b.created ? -1 : 1));
   }
 
-  const applicableAllowances: TokenAllowance[] = results;
+  const applicableAllowances: TokenAllowance[] = results.filter(
+    (allowance) => tokenClass.authorities.includes(allowance.grantedBy)
+  );
 
   const dtoInstanceKey = ChainCallDTO.deserialize<TokenInstanceKey>(TokenInstanceKey, {
     ...tokenClassKey,
@@ -108,6 +113,19 @@ export async function validateMintRequest(
 
   // Check allowances
   const allowanceType = AllowanceType.Mint;
+
+  // Validate that mint allowances are granted by current authorities
+  if (allowanceType === AllowanceType.Mint && applicableAllowances.length > 0) {
+    applicableAllowances.forEach((allowance) => {
+      if (!tokenClass.authorities.includes(allowance.grantedBy)) {
+        throw new NotATokenAuthorityError(
+          allowance.grantedBy,
+          tokenClass.getCompositeKey(),
+          tokenClass.authorities
+        );
+      }
+    });
+  }
 
   const totalAllowance: BigNumber = await checkAllowances(
     ctx,
