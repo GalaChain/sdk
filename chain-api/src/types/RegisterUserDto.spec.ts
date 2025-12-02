@@ -16,7 +16,7 @@ import { instanceToPlain, plainToInstance } from "class-transformer";
 import { validate } from "class-validator";
 import { ec as EC } from "elliptic";
 
-import { SigningScheme, signatures } from "../utils";
+import { signatures } from "../utils";
 import { UserAlias, asValidUserAlias } from "./UserAlias";
 import { asValidUserRef } from "./UserRef";
 import { RegisterUserDto } from "./dtos";
@@ -312,30 +312,6 @@ describe("RegisterUserDto", () => {
       expect(dto.isSignatureValid(publicKey)).toEqual(true);
     });
 
-    it("should sign and verify TON signature", async () => {
-      // Given
-      const pair = await signatures.ton.genKeyPair();
-      const dto = new RegisterUserDto();
-      dto.uniqueKey = "test-unique-key-ton";
-      dto.user = "ton|EQD3GhfZXYhnQrgXsV8xqe0X6FkYLtW8ys8NiqpkSlWWPUG1" as unknown as UserAlias;
-      dto.publicKey = "test-ton-key";
-      dto.signing = SigningScheme.TON;
-      expect(dto.signature).toEqual(undefined);
-
-      // When
-      dto.sign(pair.secretKey.toString("base64"));
-
-      // Then
-      expect(dto).toEqual({
-        uniqueKey: "test-unique-key-ton",
-        user: "ton|EQD3GhfZXYhnQrgXsV8xqe0X6FkYLtW8ys8NiqpkSlWWPUG1",
-        publicKey: "test-ton-key",
-        signing: SigningScheme.TON,
-        signature: expect.stringMatching(/.{50,}/)
-      });
-      expect(dto.isSignatureValid(pair.publicKey.toString("base64"))).toEqual(true);
-    });
-
     it("should fail to verify signature with invalid key", () => {
       // Given
       const { privateKey } = genKeyPair();
@@ -451,28 +427,6 @@ describe("RegisterUserDto", () => {
       expect(serialized).toEqual({
         uniqueKey: "test-unique-key-eth",
         user: "eth|0abB6F637a51eb26665e0DeBc5CE8A84e1fa8AC3",
-        publicKey: "test-key"
-      });
-    });
-
-    it("should serialize with ton user alias", async () => {
-      // Given
-      const input = {
-        uniqueKey: "test-unique-key-ton",
-        user: "ton|EQD3GhfZXYhnQrgXsV8xqe0X6FkYLtW8ys8NiqpkSlWWPUG1",
-        publicKey: "test-key"
-      };
-
-      // When
-      const instance = plainToInstance(RegisterUserDto, input);
-      const errors = await validate(instance);
-      const serialized = instanceToPlain(instance);
-
-      // Then
-      expect(errors).toHaveLength(0);
-      expect(serialized).toEqual({
-        uniqueKey: "test-unique-key-ton",
-        user: "ton|EQD3GhfZXYhnQrgXsV8xqe0X6FkYLtW8ys8NiqpkSlWWPUG1",
         publicKey: "test-key"
       });
     });
