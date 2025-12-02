@@ -14,6 +14,7 @@
  */
 import {
   BatchDto,
+  ChainCallDTO,
   ChainError,
   ContractAPI,
   DryRunDto,
@@ -167,10 +168,15 @@ export abstract class GalaContract extends Contract {
   public async DryRun(ctx: GalaChainContext, dto: DryRunDto): Promise<DryRunResultDto> {
     const method = getApiMethod(this, dto.method);
 
+    // We need to deserialize the internal dto again to avoid issues with deserialization of nested classes.
+    const internalDto = dto.dto
+      ? ChainCallDTO.deserialize(ChainCallDTO, dto.dto as unknown as Record<string, unknown>)
+      : undefined;
+
     // For dry run we don't use the regular authorization. We don't want users to provide signatures
     // to avoid replay attack in case if the method is eventually not executed, and someone in the middle
     // will replay the request.
-    if (dto.dto && dto.dto.getAllSignatures().length > 0) {
+    if (internalDto && internalDto.getAllSignatures().length > 0) {
       throw new ValidationFailedError("The dto should have no signature for dry run execution");
     }
 
@@ -204,7 +210,7 @@ export abstract class GalaContract extends Contract {
     }
 
     // method needs to be executed first to populate reads, writes and deletes
-    const response = await this[method.methodName](ctx, dto.dto);
+    const response = await this[method.methodName](ctx, internalDto);
 
     const gcStub = ctx.stub as unknown as GalaChainStub;
 
