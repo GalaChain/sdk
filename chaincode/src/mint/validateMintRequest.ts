@@ -71,13 +71,16 @@ export async function validateMintRequest(
         applicableAllowanceKey.type,
         applicableAllowanceKey.additionalKey,
         applicableAllowanceKey.instance.toString(),
-        applicableAllowanceKey.allowanceType.toString(),
+        AllowanceType.Mint.toString(),
         applicableAllowanceKey.grantedBy,
         applicableAllowanceKey.created.toString()
       ])
     );
 
-    results = [allowance];
+    // Filter out if grantor is no longer an authority
+    if (tokenClass.authorities.includes(allowance.grantedBy)) {
+      results = [allowance];
+    }
   } else {
     const queryParams = [
       callingOnBehalf, // grantedTo
@@ -99,7 +102,10 @@ export async function validateMintRequest(
     results.sort((a: TokenAllowance, b: TokenAllowance): number => (a.created < b.created ? -1 : 1));
   }
 
-  const applicableAllowances: TokenAllowance[] = results;
+  // Filter allowances to only include those granted by current authorities
+  const applicableAllowances: TokenAllowance[] = results.filter(
+    (allowance) => tokenClass.authorities.includes(allowance.grantedBy)
+  );
 
   const dtoInstanceKey = ChainCallDTO.deserialize<TokenInstanceKey>(TokenInstanceKey, {
     ...tokenClassKey,
