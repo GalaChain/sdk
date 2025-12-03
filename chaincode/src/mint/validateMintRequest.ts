@@ -103,8 +103,8 @@ export async function validateMintRequest(
   }
 
   // Filter allowances to only include those granted by current authorities
-  const applicableAllowances: TokenAllowance[] = results.filter(
-    (allowance) => tokenClass.authorities.includes(allowance.grantedBy)
+  const applicableAllowances: TokenAllowance[] = results.filter((allowance) =>
+    tokenClass.authorities.includes(allowance.grantedBy)
   );
 
   const dtoInstanceKey = ChainCallDTO.deserialize<TokenInstanceKey>(TokenInstanceKey, {

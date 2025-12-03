@@ -115,8 +115,8 @@ export async function mintToken(
   }
 
   // Filter allowances to only include those granted by current authorities
-  applicableAllowanceResponse = applicableAllowanceResponse.filter(
-    (allowance) => tokenClass.authorities.includes(allowance.grantedBy)
+  applicableAllowanceResponse = applicableAllowanceResponse.filter((allowance) =>
+    tokenClass.authorities.includes(allowance.grantedBy)
   );
 
   const dtoInstanceKey = ChainCallDTO.deserialize<TokenInstanceKey>(TokenInstanceKey, {
