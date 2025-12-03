@@ -60,7 +60,9 @@ export async function verifyAndUseAllowances(
   let applicableAllowances: TokenAllowance[];
 
   if (useAllowancesArr.length) {
-    const fetchedAllowances = await getObjectsByKeys(ctx, TokenAllowance, useAllowancesArr);
+    // Deduplicate allowance keys to prevent double-spending
+    const uniqueAllowanceKeys = [...new Set(useAllowancesArr)];
+    const fetchedAllowances = await getObjectsByKeys(ctx, TokenAllowance, uniqueAllowanceKeys);
     applicableAllowances = fetchedAllowances.filter(
       (a) =>
         a.allowanceType === actionType &&
