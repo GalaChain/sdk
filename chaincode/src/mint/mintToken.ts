@@ -93,10 +93,7 @@ export async function mintToken(
       ])
     );
 
-    // Filter out if grantor is no longer an authority
-    if (tokenClass.authorities.includes(allowance.grantedBy)) {
-      applicableAllowanceResponse = [allowance];
-    }
+    applicableAllowanceResponse = [allowance];
   } else if (Array.isArray(applicableAllowances) && applicableAllowances.length > 0) {
     applicableAllowanceResponse = applicableAllowances;
   } else {

@@ -77,10 +77,7 @@ export async function validateMintRequest(
       ])
     );
 
-    // Filter out if grantor is no longer an authority
-    if (tokenClass.authorities.includes(allowance.grantedBy)) {
-      results = [allowance];
-    }
+    results = [allowance];
   } else {
     const queryParams = [
       callingOnBehalf, // grantedTo
