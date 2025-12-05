@@ -205,12 +205,7 @@ describe("TransferToken", () => {
   });
 
   test("TransferToken fails when provided allowance is issued to another", async () => {
-    // A TransferAllowance for an NFT was granted from user1 to user2.
-    // An users.attacker is able to access the Operations API either directly or via the platform
-    // and send handcrafted DTOs.
-    // users.attacker finds the valid Allowance ID on chain and crafts a TransferDto.
-    // Option 1: Allowances provided in array
-
+    
     // Given
     const nftInstance = nft.tokenInstance1();
     const nftInstanceKey = nft.tokenInstance1Key();
@@ -261,9 +256,7 @@ describe("TransferToken", () => {
   });
 
   test("TransferToken fails if allowances are neither provided nor found on chain", async () => {
-    // Option 2: No Allowances provided, chaincode will attempt lookup on chain
-    // a: FetchAllowances() returns error
-
+   
     // Given
     const nftInstance = nft.tokenInstance1();
     const nftInstanceKey = nft.tokenInstance1Key();
@@ -379,8 +372,6 @@ describe("TransferToken", () => {
     const response = await contract.TransferToken(ctx, dto);
 
     // Then
-    // H-03 fix: Allowance is now invalidated when grantor (testUser1) no longer owns the specific NFT instance.
-    // The allowance check happens before the balance check, so we get INSUFFICIENT_ALLOWANCE instead of TOKEN_NOT_IN_BALANCE.
     expect(response).toEqual(
       GalaChainResponse.Error(
         new InsufficientAllowanceError(
