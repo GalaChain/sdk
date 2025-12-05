@@ -16,6 +16,7 @@ import BigNumber from "bignumber.js";
 import { Type } from "class-transformer";
 import {
   ArrayNotEmpty,
+  ArrayUnique,
   IsInt,
   IsNotEmpty,
   IsOptional,
@@ -76,6 +77,7 @@ export class LockTokenDto extends SubmitCallDTO {
   @IsString({ each: true })
   @IsOptional()
   @ArrayNotEmpty()
+  @ArrayUnique()
   useAllowances?: Array<string>;
 
   @JSONSchema({
@@ -118,6 +120,7 @@ export class LockTokensDto extends SubmitCallDTO {
   @IsString({ each: true })
   @IsOptional()
   @ArrayNotEmpty()
+  @ArrayUnique()
   useAllowances?: Array<string>;
 
   @JSONSchema({
