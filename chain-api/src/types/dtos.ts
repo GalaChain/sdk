@@ -32,7 +32,6 @@ import { JSONSchema } from "class-validator-jsonschema";
 
 import {
   NotImplementedError,
-  SigningScheme,
   ValidationFailedError,
   deserialize,
   getValidationErrorMessages,
@@ -170,7 +169,7 @@ export class ChainCallDTO {
   public prefix?: string;
 
   @JSONSchema({
-    description: "Address of the user who signed the DTO. Typically Ethereum or TON address, or user alias."
+    description: "Address of the user who signed the DTO. Typically Ethereum address, or user alias."
   })
   @IsOptional()
   @IsNotEmpty()
@@ -182,16 +181,6 @@ export class ChainCallDTO {
   @IsOptional()
   @IsNotEmpty()
   public signerPublicKey?: string;
-
-  @JSONSchema({
-    description:
-      `Signing scheme used for the signature. ` +
-      `"${SigningScheme.ETH}" for Ethereum, and "${SigningScheme.TON}" for The Open Network are supported. ` +
-      `Default: "${SigningScheme.ETH}".`
-  })
-  @IsOptional()
-  @StringEnumProperty(SigningScheme)
-  public signing?: SigningScheme;
 
   @JSONSchema({
     description:
@@ -313,34 +302,19 @@ export class ChainCallDTO {
         throw new ValidationFailedError("DER signatures are not allowed for multisignature DTOs");
       }
 
-      if (this.signing === SigningScheme.TON) {
-        throw new ValidationFailedError("TON signing scheme does not support DER signatures");
-      } else {
-        // for convenience and backwards compatibility, for ETH signing scheme,
-        // add signerPublicKey if it's not provided
-        if (this.signerPublicKey === undefined && this.signerAddress === undefined) {
-          this.signerPublicKey = signatures.getPublicKey(privateKey);
-        }
-
-        // we have ETH signing scheme, and DER signatures, and single-sig
-        const keyBuffer = signatures.normalizePrivateKey(privateKey);
-        this.signature = signatures.getDERSignature(this, keyBuffer);
-        return;
-      }
-    }
-
-    // we have TON signing scheme, what also means single-sig and non-DER
-    if (this.signing === SigningScheme.TON) {
-      if (useMultisig) {
-        throw new ValidationFailedError("Multisig is not supported for TON signing scheme");
+      // for convenience and backwards compatibility,
+      // add signerPublicKey if it's not provided
+      if (this.signerPublicKey === undefined && this.signerAddress === undefined) {
+        this.signerPublicKey = signatures.getPublicKey(privateKey);
       }
 
-      const keyBuffer = Buffer.from(privateKey, "base64");
-      this.signature = signatures.ton.getSignature(this, keyBuffer, this.prefix).toString("base64");
+      // DER signatures, and single-sig
+      const keyBuffer = signatures.normalizePrivateKey(privateKey);
+      this.signature = signatures.getDERSignature(this, keyBuffer);
       return;
     }
 
-    // we have ETH signing scheme, and non-DER signatures, and either single-sig or multisig
+    // non-DER signatures, and either single-sig or multisig
     const keyBuffer = signatures.normalizePrivateKey(privateKey);
     const signature = signatures.getSignature(this, keyBuffer);
 
@@ -383,13 +357,6 @@ export class ChainCallDTO {
   public isSignatureValid(publicKey: string): boolean {
     if (this.multisig || !this.signature) {
       throw new NotImplementedError("isSignatureValid is not supported for multisig DTOs");
-    }
-
-    if (this.signing === SigningScheme.TON) {
-      const signatureBuff = Buffer.from(this.signature ?? "", "base64");
-      const publicKeyBuff = Buffer.from(publicKey, "base64");
-
-      return signatures.ton.isValidSignature(signatureBuff, this, publicKeyBuff, this.prefix);
     }
 
     return signatures.isValid(this.signature, this, publicKey);
@@ -633,21 +600,6 @@ export class RegisterEthUserDto extends SubmitCallDTO {
   publicKey: string;
 }
 
-/**
- * @description
- *
- * Dto for secure method to save public keys for TON users.
- * Method is called and signed by Curators
- */
-@JSONSchema({
-  description: `Dto for secure method to save public keys for TON users. Method is called and signed by Curators`
-})
-export class RegisterTonUserDto extends SubmitCallDTO {
-  @JSONSchema({ description: "TON user public key (Ed25519 in base64)." })
-  @IsNotEmpty()
-  publicKey: string;
-}
-
 export class UpdatePublicKeyDto extends SubmitCallDTO {
   @JSONSchema({
     description:
@@ -671,15 +623,14 @@ export class UpdatePublicKeyDto extends SubmitCallDTO {
 
   public withPublicKeySignedBy(privateKey: string): this {
     const copied = instanceToInstance(this);
-    const signing = this.signing ?? SigningScheme.ETH;
-    copied.publicKeySignature = signatures.getSignature(copied, privateKey, signing);
+    copied.publicKeySignature = signatures.getSignature(copied, privateKey);
     return copied;
   }
 }
 
 export class AddSignerDto extends SubmitCallDTO {
   @JSONSchema({
-    description: "User ref of the signer to add (typically Ethereum or TON address, or user alias)."
+    description: "User ref of the signer to add (typically Ethereum address, or user alias)."
   })
   @IsNotEmpty()
   signer: UserRef;
@@ -687,7 +638,7 @@ export class AddSignerDto extends SubmitCallDTO {
 
 export class RemoveSignerDto extends SubmitCallDTO {
   @JSONSchema({
-    description: "User ref of the signer to remove (typically Ethereum or TON address, or user alias)."
+    description: "User ref of the signer to remove (typically Ethereum address, or user alias)."
   })
   @IsNotEmpty()
   signer: UserRef;

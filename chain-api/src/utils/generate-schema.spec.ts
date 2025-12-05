@@ -94,8 +94,7 @@ const expectedTestDtoSchema = {
       type: "string"
     },
     signerAddress: {
-      description:
-        "Address of the user who signed the DTO. Typically Ethereum or TON address, or user alias.",
+      description: "Address of the user who signed the DTO. Typically Ethereum address, or user alias.",
       minLength: 1,
       type: "string"
     },
@@ -107,11 +106,6 @@ const expectedTestDtoSchema = {
     signerPublicKey: {
       description: "Public key of the user who signed the DTO.",
       minLength: 1,
-      type: "string"
-    },
-    signing: {
-      description: expect.stringContaining("Signing scheme used for the signature."),
-      enum: ["ETH", "TON"],
       type: "string"
     },
     multisig: {

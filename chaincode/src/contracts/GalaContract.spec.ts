@@ -23,7 +23,6 @@ import {
   GalaChainResponseType,
   GetObjectDto,
   PublicKey,
-  SigningScheme,
   UserProfile,
   createValidChainObject,
   createValidDTO,
@@ -733,8 +732,7 @@ async function generateUser(name?: string) {
   const user = ChainUser.withRandomKeys(name);
 
   const publicKey = await createValidChainObject(PublicKey, {
-    publicKey: signatures.normalizePublicKey(user.publicKey).toString("base64"),
-    signing: SigningScheme.ETH
+    publicKey: signatures.normalizePublicKey(user.publicKey).toString("base64")
   });
 
   const userProfile = await createValidChainObject(UserProfile, {

@@ -15,7 +15,6 @@
 import { instanceToPlain, plainToInstance } from "class-transformer";
 import { validate } from "class-validator";
 
-import { SigningScheme } from "../utils";
 import { PublicKey } from "./PublicKey";
 
 describe("PublicKey", () => {
@@ -63,21 +62,6 @@ describe("PublicKey", () => {
       expect(errors).toHaveLength(1);
       expect(instance).toEqual({ signers: ["client|u1", "invalid", "client|u3"] });
       expect(serialized).toEqual({ signers: ["client|u1", "invalid", "client|u3"] });
-    });
-
-    it("should include signing scheme in serialization", async () => {
-      // Given
-      const input = { publicKey: "test-key", signing: SigningScheme.ETH };
-
-      // When
-      const instance = plainToInstance(PublicKey, input);
-      const errors = await validate(instance);
-      const serialized = instanceToPlain(instance);
-
-      // Then
-      expect(errors).toHaveLength(0);
-      expect(instance).toEqual({ publicKey: "test-key", signing: SigningScheme.ETH });
-      expect(serialized).toEqual({ publicKey: "test-key", signing: SigningScheme.ETH });
     });
   });
 });

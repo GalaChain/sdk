@@ -43,10 +43,6 @@ export async function resolveUserAlias(ctx: GalaChainContext, userRef: string): 
     return await resolveAliasFromEthAddress(ctx, userRef);
   }
 
-  if (res === UserRefValidationResult.VALID_TON_ADDRESS) {
-    return await resolveAliasFromTonAddress(ctx, userRef);
-  }
-
   const key = UserRefValidationResult[res];
   throw new ValidationFailedError(`Invalid user reference (${key}): ${userRef}`, { userRef });
 }
@@ -55,11 +51,5 @@ async function resolveAliasFromEthAddress(ctx: GalaChainContext, rawEthAddress: 
   const ethAddress = signatures.normalizeEthAddress(rawEthAddress);
   const userProfile = await PublicKeyService.getUserProfile(ctx, ethAddress);
   const actualAlias = userProfile?.alias ?? asValidUserAlias(`eth|${ethAddress}`);
-  return actualAlias;
-}
-
-async function resolveAliasFromTonAddress(ctx: GalaChainContext, tonAddress: string): Promise<UserAlias> {
-  const userProfile = await PublicKeyService.getUserProfile(ctx, tonAddress);
-  const actualAlias = userProfile?.alias ?? asValidUserAlias(`ton|${tonAddress}`);
   return actualAlias;
 }

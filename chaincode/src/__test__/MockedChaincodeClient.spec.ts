@@ -17,7 +17,6 @@ import {
   GetPublicKeyDto,
   PublicKey,
   RegisterEthUserDto,
-  SigningScheme,
   UserAlias,
   createValidChainObject,
   createValidDTO,
@@ -64,8 +63,7 @@ it("should be able to call chaincode", async () => {
   // Then
   expect(response).toEqual(
     transactionSuccess({
-      publicKey: admin.publicKey,
-      signing: SigningScheme.ETH
+      publicKey: admin.publicKey
     })
   );
 });
@@ -81,8 +79,7 @@ it("should support the global state", async () => {
   const getProfileDto = await createValidDTO(GetPublicKeyDto, { user: user.alias });
 
   const expectedPublicKey = await createValidChainObject(PublicKey, {
-    publicKey: user.base64PublicKey,
-    signing: SigningScheme.ETH
+    publicKey: user.base64PublicKey
   });
 
   // initially the key is missing

@@ -21,15 +21,13 @@ import {
 } from "class-validator";
 
 import { signatures } from "../utils";
-import { UserAliasValidationResult, isValidTonAddress, validateUserAlias } from "./IsUserAlias";
+import { UserAliasValidationResult, validateUserAlias } from "./IsUserAlias";
 
 export enum UserRefValidationResult {
   VALID_USER_ALIAS,
   VALID_SYSTEM_USER,
   VALID_ETH_ADDRESS,
-  VALID_TON_ADDRESS,
   INVALID_ETH_USER_ALIAS,
-  INVALID_TON_USER_ALIAS,
   INVALID_FORMAT
 }
 
@@ -37,16 +35,14 @@ export function meansValidUserRef(result: UserRefValidationResult) {
   return (
     result === UserRefValidationResult.VALID_USER_ALIAS ||
     result === UserRefValidationResult.VALID_SYSTEM_USER ||
-    result === UserRefValidationResult.VALID_ETH_ADDRESS ||
-    result === UserRefValidationResult.VALID_TON_ADDRESS
+    result === UserRefValidationResult.VALID_ETH_ADDRESS
   );
 }
 
 const userAliasValidationResultMapping = {
   [UserAliasValidationResult.VALID_USER_ALIAS]: UserRefValidationResult.VALID_USER_ALIAS,
   [UserAliasValidationResult.VALID_SYSTEM_USER]: UserRefValidationResult.VALID_SYSTEM_USER,
-  [UserAliasValidationResult.INVALID_ETH_USER_ALIAS]: UserRefValidationResult.INVALID_ETH_USER_ALIAS,
-  [UserAliasValidationResult.INVALID_TON_USER_ALIAS]: UserRefValidationResult.INVALID_TON_USER_ALIAS
+  [UserAliasValidationResult.INVALID_ETH_USER_ALIAS]: UserRefValidationResult.INVALID_ETH_USER_ALIAS
 };
 
 export function validateUserRef(value: unknown): UserRefValidationResult {
@@ -65,24 +61,17 @@ export function validateUserRef(value: unknown): UserRefValidationResult {
     return UserRefValidationResult.VALID_ETH_ADDRESS;
   }
 
-  // check if this is a valid TON address
-  if (isValidTonAddress(value)) {
-    return UserRefValidationResult.VALID_TON_ADDRESS;
-  }
-
   return UserRefValidationResult.INVALID_FORMAT;
 }
 
 const customMessages = {
   [UserRefValidationResult.INVALID_ETH_USER_ALIAS]:
-    "User ref starting with 'eth|' must end with valid checksumed eth address without 0x prefix.",
-  [UserRefValidationResult.INVALID_TON_USER_ALIAS]:
-    "User ref starting with 'ton|' must end with valid bounceable base64 TON address."
+    "User ref starting with 'eth|' must end with valid checksumed eth address without 0x prefix."
 };
 
 const genericMessage =
   "Expected a valid user alias ('client|<user-id>', or 'eth|<checksumed-eth-addr>', " +
-  "or 'ton|<chain:ton-address>', or valid system-level username), or valid Ethereum address.";
+  "or valid system-level username), or valid Ethereum address.";
 
 @ValidatorConstraint({ async: false })
 class IsUserRefConstraint implements ValidatorConstraintInterface {

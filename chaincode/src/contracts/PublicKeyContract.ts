@@ -19,10 +19,8 @@ import {
   GetPublicKeyDto,
   PublicKey,
   RegisterEthUserDto,
-  RegisterTonUserDto,
   RegisterUserDto,
   RemoveSignerDto,
-  SigningScheme,
   UpdatePublicKeyDto,
   UpdateQuorumDto,
   UpdateUserRolesDto,
@@ -87,14 +85,12 @@ export class PublicKeyContract extends GalaContract {
     );
 
     const signatureQuorum = Math.max(dto.signatureQuorum ?? signerAliases.length ?? 1, 1);
-    const signing = dto.signing ?? SigningScheme.ETH;
 
     return PublicKeyService.registerUser(
       ctx,
       dto.publicKey,
       signerAliases.length ? signerAliases : undefined,
       dto.user,
-      signing,
       signatureQuorum
     );
   }
@@ -110,20 +106,7 @@ export class PublicKeyContract extends GalaContract {
     const ethAddress = signatures.getEthAddress(providedPkHex);
     const userAlias = `eth|${ethAddress}` as UserAlias;
 
-    return PublicKeyService.registerUser(ctx, dto.publicKey, undefined, userAlias, SigningScheme.ETH, 1);
-  }
-
-  @Submit({
-    in: RegisterTonUserDto,
-    out: "string",
-    description: "Registers a new user on chain under alias derived from TON address.",
-    ...requireRegistrarAuth
-  })
-  public async RegisterTonUser(ctx: GalaChainContext, dto: RegisterTonUserDto): Promise<string> {
-    const address = signatures.ton.getTonAddress(Buffer.from(dto.publicKey, "base64"));
-    const userAlias = `ton|${address}` as UserAlias;
-
-    return PublicKeyService.registerUser(ctx, dto.publicKey, undefined, userAlias, SigningScheme.TON, 1);
+    return PublicKeyService.registerUser(ctx, dto.publicKey, undefined, userAlias, 1);
   }
 
   @Submit({
@@ -141,8 +124,7 @@ export class PublicKeyContract extends GalaContract {
     description: "Updates public key for the calling user."
   })
   public async UpdatePublicKey(ctx: GalaChainContext, dto: UpdatePublicKeyDto): Promise<void> {
-    const signing = dto.signing ?? SigningScheme.ETH;
-    await PublicKeyService.updatePublicKey(ctx, dto, signing);
+    await PublicKeyService.updatePublicKey(ctx, dto);
   }
 
   @Submit({

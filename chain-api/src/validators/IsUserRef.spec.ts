@@ -30,17 +30,12 @@ const validEthAddress = "0abB6F637a51eb26665e0DeBc5CE8A84e1fa8AC3";
 const lowerCasedEth = validEthAddress.toLowerCase();
 const invalidChecksumEth = validEthAddress.replace("a", "A");
 
-const validTonAddress = "EQD3GhfZXYhnQrgXsV8xqe0X6FkYLtW8ys8NiqpkSlWWPUG1";
-const invalidTon = validTonAddress.replace("Q", "q");
-
 test.each<[string, string]>([
   ["valid legacy alias", "client|123"],
   ["valid legacy service alias", "service|123"],
   ["valid eth alias", `eth|${validEthAddress}`],
   ["valid 0x eth", `0x${validEthAddress}`],
   ["valid lower-cased 0x eth", `0x${lowerCasedEth}`],
-  ["valid ton alias", `ton|${validTonAddress}`],
-  ["valid ton address", validTonAddress],
   ["valid bridge (eth)", `EthereumBridge`],
   ["valid bridge (ton)", `TonBridge`],
   ["valid bridge (solana)", `SolanaBridge`],
@@ -58,7 +53,7 @@ test.each<[string, string]>([
 
 const genericErrorMessage =
   "is not a valid GalaChain user ref. Expected a valid user alias ('client|<user-id>', or 'eth|<checksumed-eth-addr>', " +
-  "or 'ton|<chain:ton-address>', or valid system-level username), or valid Ethereum address.";
+  "or valid system-level username), or valid Ethereum address.";
 
 test.each<[string, string, string]>([
   ["invalid client alias (multiple |)", "client|123|45", genericErrorMessage],
@@ -66,9 +61,6 @@ test.each<[string, string, string]>([
   ["invalid eth alias (lower-cased eth)", `eth|${lowerCasedEth}`, "'eth|' must end with valid checksumed"],
   ["invalid eth alias (0x prefix)", `eth|0x${validEthAddress}`, "'eth|' must end with valid checksumed"],
   ["invalid eth alias (invalid eth)", "eth|123", "'eth|' must end with valid checksumed"],
-  ["invalid ton alias (invalid checksum)", `ton|${invalidTon}`, "'ton|' must end with valid bounceable"],
-  ["invalid ton alias (invalid ton)", "ton|123", "'ton|' must end with valid bounceable base64 TON"],
-  ["invalid ton addr", validTonAddress.substring(0, 47), genericErrorMessage],
   ["invalid bridge (external)", "GoldenGateBridge", genericErrorMessage],
   ["invalid bridge (GalaChain)", "GalaChainBridge-A", genericErrorMessage]
 ])("%s", async (label, input, expectedError) => {
@@ -85,13 +77,7 @@ test.each<[string, string, string]>([
 it("should validate array of user refs", async () => {
   // Given
   const validPlain = {
-    users: [
-      "client|123",
-      validEthAddress,
-      `EthereumBridge`,
-      `GalaChainBridge-42`,
-      `ton|${validTonAddress}`
-    ] as UserRef[]
+    users: ["client|123", validEthAddress, `EthereumBridge`, `GalaChainBridge-42`] as UserRef[]
   };
 
   const invalidPlain = { users: ["client|123", `eth|${invalidChecksumEth}`, "EthereumBridge"] as UserRef[] };
@@ -111,33 +97,29 @@ it("should support schema generation", () => {
   const schema2 = generateSchema(TestArrayDto);
 
   // Then
-  expect(schema1).toEqual(
-    expect.objectContaining({
-      properties: expect.objectContaining({
-        user: {
+  expect(schema1).toMatchObject({
+    properties: {
+      user: {
+        type: "string",
+        description: expect.stringContaining(
+          "Allowed value is a user alias ('client|<user-id>', or 'eth|<checksumed-eth-addr>', " +
+            "or valid system-level username), or valid Ethereum address."
+        )
+      }
+    }
+  });
+  expect(schema2).toMatchObject({
+    properties: {
+      users: {
+        type: "array",
+        items: {
           type: "string",
           description: expect.stringContaining(
             "Allowed value is a user alias ('client|<user-id>', or 'eth|<checksumed-eth-addr>', " +
-              "or 'ton|<chain:ton-address>', or valid system-level username), or valid Ethereum address."
+              "or valid system-level username), or valid Ethereum address."
           )
         }
-      })
-    })
-  );
-  expect(schema2).toEqual(
-    expect.objectContaining({
-      properties: expect.objectContaining({
-        users: {
-          type: "array",
-          items: {
-            type: "string",
-            description: expect.stringContaining(
-              "Allowed value is a user alias ('client|<user-id>', or 'eth|<checksumed-eth-addr>', " +
-                "or 'ton|<chain:ton-address>', or valid system-level username), or valid Ethereum address."
-            )
-          }
-        }
-      })
-    })
-  );
+      }
+    }
+  });
 });

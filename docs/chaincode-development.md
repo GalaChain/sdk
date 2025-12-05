@@ -134,7 +134,6 @@ Asides from standard Fabric context, it provides some additional methods and pro
 
 - `callingUser` - returns standardized user id with prefix and actual name (note calling user is something different, than user in Fabric CA; see [Authentication and authorization](#authentication-and-authorization)).
 - `callingUserEthAddress` - returns eth address that is derived from calling user public key (see [Authentication and authorization](#authentication-and-authorization)).
-- `callingUserTonAddress` - returns TON address that is derived from calling user public key (see [Authentication and authorization](#authentication-and-authorization)).
 - `callingUserRoles` - returns array of roles assigned to the calling user.
 - `callingUserProfile` - returns complete user profile object for the calling user.
 - `callingUserSignedBy` - returns array of public keys that signed the current transaction (for multisig).
