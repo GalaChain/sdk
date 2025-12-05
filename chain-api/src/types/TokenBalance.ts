@@ -661,8 +661,8 @@ export class TokenHold {
     }
 
     // if the current time is between the vesting vestingPeriodStart and expires, the quantity is partially unlocked
-    const perPeriodQuantity = this.quantity.div(this.totalTimeOfVestingPeriod());
-    const vestedQuantity = perPeriodQuantity.times(timeSinceStart);
+    // Multiply before divide to preserve precision with large time values
+    const vestedQuantity = this.quantity.times(timeSinceStart).div(this.totalTimeOfVestingPeriod());
     return this.quantity.minus(vestedQuantity);
   }
 
