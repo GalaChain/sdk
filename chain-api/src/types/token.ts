@@ -16,6 +16,7 @@ import BigNumber from "bignumber.js";
 import { Type } from "class-transformer";
 import {
   ArrayNotEmpty,
+  ArrayUnique,
   IsAlpha,
   IsBoolean,
   IsInt,
@@ -524,5 +525,6 @@ export class TransferTokenDto extends SubmitCallDTO {
   @IsString({ each: true })
   @IsOptional()
   @ArrayNotEmpty()
+  @ArrayUnique()
   useAllowances?: Array<string>;
 }
