@@ -140,7 +140,7 @@ describe("isAllowanceExpired", () => {
   });
 });
 
-describe("cleanAllowances - H-03: NFT allowances should be invalidated after transfer", () => {
+describe("cleanAllowances", () => {
   it("should invalidate NFT allowance when grantor no longer owns the specific NFT instance (self-grant scenario)", async () => {
     // Scenario: Alice owns NFT instance #1, grants allowance to herself, then transfers to Charlie
     // After transfer, Alice's allowance should be invalid because she no longer owns instance #1
