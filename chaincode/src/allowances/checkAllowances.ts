@@ -46,7 +46,24 @@ async function doesGrantorHaveToken(ctx: GalaChainContext, allowance: TokenAllow
     additionalKey: allowance.additionalKey
   };
   const balances = await fetchBalances(ctx, balancesData);
-  return balances.length > 0;
+
+  if (balances.length === 0) {
+    return false;
+  }
+
+  // For NFT allowances (instance > 0), verify grantor owns this specific instance
+  if (allowance.instance.isGreaterThan(0)) {
+    for (const balance of balances) {
+      const ownedInstanceIds = balance.getNftInstanceIds();
+      if (ownedInstanceIds.some((id) => id.isEqualTo(allowance.instance))) {
+        return true;
+      }
+    }
+    return false;
+  }
+
+  // For fungible tokens (instance = 0), having any balance is sufficient
+  return true;
 }
 
 async function isAllowanceInvalid(ctx: GalaChainContext, allowance: TokenAllowance): Promise<boolean> {

@@ -19,7 +19,6 @@ import {
   TokenBalance,
   TokenHold,
   TokenLockedError,
-  TokenNotInBalanceError,
   TransferTokenDto,
   UserAlias,
   createValidChainObject,
@@ -380,9 +379,18 @@ describe("TransferToken", () => {
     const response = await contract.TransferToken(ctx, dto);
 
     // Then
+    // H-03 fix: Allowance is now invalidated when grantor (testUser1) no longer owns the specific NFT instance.
+    // The allowance check happens before the balance check, so we get INSUFFICIENT_ALLOWANCE instead of TOKEN_NOT_IN_BALANCE.
     expect(response).toEqual(
       GalaChainResponse.Error(
-        new TokenNotInBalanceError(users.testUser1.identityKey, nftInstance, nftInstance.instance)
+        new InsufficientAllowanceError(
+          users.testUser2.identityKey,
+          new BigNumber("0"),
+          AllowanceType.Transfer,
+          new BigNumber("1"),
+          nftInstanceKey,
+          users.testUser1.identityKey
+        )
       )
     );
     expect(getWrites()).toEqual({});
