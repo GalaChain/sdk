@@ -27,20 +27,6 @@ it("should generate key pair", async () => {
   expect(pair.publicKey.length).toBe(32);
 });
 
-it("should get TON address from key pair", async () => {
-  // Given
-  const samplePubKey = Buffer.from("kYmSoaGdvS3NjLaiZEVU40e4AyYF0dKhmj2zBTbMxj8=", "base64");
-  const randomPubKey = (await ton.genKeyPair()).publicKey;
-
-  // When
-  const address1 = ton.getTonAddress(samplePubKey);
-  const address2 = ton.getTonAddress(randomPubKey, 42); // typically workchain is 0
-
-  // Then
-  expect(address1).toEqual("EQA82HGZUy9S2ezZLW5m7spMeTp10Hc7VJ5gpv01JFrm2f1i");
-  expect(address2).toEqual(expect.stringMatching(/^[a-zA-Z0-9_-]{48}$/));
-});
-
 it("should sign and verify TON signature", async () => {
   // Given
   const keyPair = {

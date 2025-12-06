@@ -12,7 +12,6 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-import { ValidationFailedError } from "../error";
 import { getPayloadToSign } from "./getPayloadToSign";
 
 // Cache for TON modules
@@ -62,19 +61,6 @@ async function genKeyPair(): Promise<{ secretKey: Buffer; publicKey: Buffer }> {
   const secret = await getSecureRandomBytes(32);
   const pair = keyPairFromSeed(secret);
   return { secretKey: pair.secretKey, publicKey: pair.publicKey };
-}
-
-function getTonAddress(publicKey: Buffer, workChain = 0): string {
-  const { Address, beginCell } = importTonOrReject().ton;
-
-  if (publicKey.length !== 32) {
-    throw new ValidationFailedError(`Invalid public key length: ${publicKey.length} (32 bytes required)`);
-  }
-
-  const cell = beginCell().storeBuffer(Buffer.from(publicKey)).endCell();
-  const hash = cell.hash();
-  const address = new Address(workChain, hash);
-  return address.toString();
 }
 
 function isValidTonAddress(address: string): boolean {
@@ -140,7 +126,6 @@ function isValidSignature(
 export default {
   genKeyPair,
   getSignature,
-  getTonAddress,
   isValidTonAddress,
   isValidSignature
 } as const;
