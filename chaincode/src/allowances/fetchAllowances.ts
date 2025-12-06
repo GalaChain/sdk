@@ -29,8 +29,30 @@ export interface FetchAllowancesParams {
   grantedBy?: string;
 }
 
-// This will return the list sorted by creation date descending (oldest first)
-// If the "From Filter" is applied, it will filter the results
+/**
+ * @description
+ *
+ * Query allowances from on-chain World State using the provided parameters.
+ * The results will be sorted by creation date ascending (oldest first)
+ *
+ * If `grantedBy` is provided, but the remaining parameters that constitute
+ * ChainKeys 0 through 7 on the `TokenAllowance` class definition are not all
+ * provided, this function will lookup a larger result set than is returned.
+ * The results set pulled from World State will be  filtered
+ * by the `grantedBy` identity after lookup.
+ *
+ * The `@ChainKeys` that make up the World State index key are ordered,
+ * and cannot be skipped when making partial composite key queries.
+ * Be advised that broad queries can lead
+ * to performance issues for large result sets.
+ *
+ * Non-paginated version, use `fetchAllowancesWithPagination()` if use case
+ * expects large result sets.
+ *
+ * @param ctx
+ * @param data
+ * @returns Promise<TokenAllowance[]>
+ */
 export async function fetchAllowances(
   ctx: GalaChainContext,
   data: FetchAllowancesParams
@@ -42,22 +64,43 @@ export async function fetchAllowances(
     data.type,
     data.additionalKey,
     data.instance,
-    data.allowanceType?.toString()
+    data.allowanceType?.toString(),
+    data.allowanceType === undefined ? undefined : data.grantedBy
   );
 
-  const getObjectsResponse = await getObjectsByPartialCompositeKey(
+  const getObjectsResponse: TokenAllowance[] = await getObjectsByPartialCompositeKey(
     ctx,
     TokenAllowance.INDEX_KEY,
     queryParams,
     TokenAllowance
   );
 
-  const results = filterByGrantedBy(getObjectsResponse, data.grantedBy);
+  // ChainKeys 0 through 7 already provided, `grantedBy` included in query, skip filtering
+  if (queryParams.length >= 8) {
+    sort(getObjectsResponse);
+    return getObjectsResponse;
+  }
+
+  const results: TokenAllowance[] = filterByGrantedBy(getObjectsResponse, data.grantedBy);
   sort(results);
 
   return results;
 }
 
+/**
+ * @description
+ *
+ * Query allowances from on-chain World State using the provided parameters.
+ * The results will be sorted by creation date ascending (oldest first)
+ *
+ * Paginated version, replaces fetchAllowances() for use cases that
+ * expect large result sets. Tuning the limit parameter to a reasonable
+ * page size will optimize performance.
+ *
+ * @param ctx
+ * @param data
+ * @returns <Promise<FetchAllowancesResponse>
+ */
 export async function fetchAllowancesWithPagination(
   ctx: GalaChainContext,
   data: FetchAllowancesParams & { bookmark?: string; limit: number }
@@ -89,7 +132,7 @@ export async function fetchAllowancesWithPagination(
   return response;
 }
 
-// Sort the items descending by date
+// Sort the items ascending by date
 function sort(results: TokenAllowance[]): void {
   results.sort((a: TokenAllowance, b: TokenAllowance): number => (a.created < b.created ? -1 : 1));
 }

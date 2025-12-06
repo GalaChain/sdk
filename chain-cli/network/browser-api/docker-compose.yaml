@@ -20,7 +20,7 @@ services:
   chain-browser-curator:
     image: fabloio/galachain-browser:0.1.0
     volumes:
-      - ../connection-profiles-browser:/connection-profiles-browser
+      - ../connection-profiles-docker:/connection-profiles-browser
       - ../fablo-target/fabric-config/crypto-config:/crypto-config
     networks:
       - basic

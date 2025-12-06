@@ -15,13 +15,14 @@
 import { BigNumber } from "bignumber.js";
 import { IsDefined, IsNotEmpty, IsOptional } from "class-validator";
 
-import { TokenAllowance } from "../types/TokenAllowance";
-import { AllowanceType, TokenMintStatus } from "../types/common";
-import { BigNumberProperty, ChainKey } from "../utils";
-import { BigNumberIsNotNegative } from "../validators";
+import { ChainKey } from "../utils";
+import { BigNumberIsNotNegative, BigNumberProperty, IsUserAlias } from "../validators";
 import { ChainObject } from "./ChainObject";
 import { RangedChainObject } from "./RangedChainObject";
+import { TokenAllowance } from "./TokenAllowance";
 import { TokenMintAllowance } from "./TokenMintAllowance";
+import { UserAlias } from "./UserAlias";
+import { AllowanceType, TokenMintStatus } from "./common";
 
 export class TokenMintAllowanceRequest extends RangedChainObject {
   public static INDEX_KEY = "GCTMAR";
@@ -47,8 +48,8 @@ export class TokenMintAllowanceRequest extends RangedChainObject {
   public timeKey: string;
 
   @ChainKey({ position: 5 })
-  @IsNotEmpty()
-  public grantedTo: string;
+  @IsUserAlias()
+  public grantedTo: UserAlias;
 
   @IsNotEmpty()
   @BigNumberProperty()
@@ -57,8 +58,8 @@ export class TokenMintAllowanceRequest extends RangedChainObject {
   @IsNotEmpty()
   public created: number;
 
-  @IsNotEmpty()
-  public grantedBy: string;
+  @IsUserAlias()
+  public grantedBy: UserAlias;
 
   @IsNotEmpty()
   @BigNumberIsNotNegative()

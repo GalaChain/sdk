@@ -16,17 +16,18 @@ import { BigNumber } from "bignumber.js";
 import { Exclude } from "class-transformer";
 import { IsDefined, IsInt, IsNotEmpty, IsPositive } from "class-validator";
 
-import { BigNumberProperty, ChainKey } from "../utils";
-import { BigNumberIsInteger, BigNumberIsNotNegative } from "../validators";
+import { ChainKey } from "../utils";
+import { BigNumberIsInteger, BigNumberIsNotNegative, BigNumberProperty, IsUserAlias } from "../validators";
 import { ChainObject } from "./ChainObject";
+import { UserAlias } from "./UserAlias";
 
 export class TokenBurn extends ChainObject {
   @Exclude()
   public static INDEX_KEY = "GCTBR";
 
   @ChainKey({ position: 0 })
-  @IsNotEmpty()
-  public burnedBy: string;
+  @IsUserAlias()
+  public burnedBy: UserAlias;
 
   @ChainKey({ position: 1 })
   @IsNotEmpty()

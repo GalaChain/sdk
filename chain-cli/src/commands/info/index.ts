@@ -16,20 +16,20 @@ import { Args, Flags } from "@oclif/core";
 
 import BaseCommand from "../../base-command";
 import { ChaincodeInfoDto } from "../../dto";
-import { getDeploymentResponse, getPrivateKey } from "../../galachain-utils";
+import { getChaincodeDefinition, getDeploymentResponse, getPrivateKey } from "../../galachain-utils";
 
 export default class Info extends BaseCommand<typeof Info> {
   static override description = "Get ChainCode information.";
 
   static override examples = [
     "galachain info",
-    "galachain info ./dev-private-key --testnet",
+    "galachain info ./dev-private-key",
     "galachain info c0fb1924408d936fb7cd0c86695885df4f66861621b5c8660df3924c4d09dd79"
   ];
 
   static override flags = {
-    testnet: Flags.boolean({
-      description: "Get info from testnet instead of sandbox."
+    mnt: Flags.boolean({
+      description: "Get info from MNT network instead of TNT (not supported yet)."
     })
   };
 
@@ -37,8 +37,10 @@ export default class Info extends BaseCommand<typeof Info> {
     developerPrivateKey: Args.string({
       char: "k",
       description:
-        "Optional private key to sign the data. It could be a file or a string. " +
-        "If not provided, the private key will be read from the environment variable DEV_PRIVATE_KEY.",
+        "Developer's private key to sign the request. It could be a file or a string. " +
+        "If not provided as an argument, the command will try to read the private key " +
+        "from the environment variable DEV_PRIVATE_KEY, or from the default location " +
+        "(~/.gc-keys/<chaincode-name>/gc-dev-key), or will ask for it in a prompt.",
       required: false
     })
   };
@@ -46,29 +48,18 @@ export default class Info extends BaseCommand<typeof Info> {
   async run(): Promise<void> {
     const { args, flags } = await this.parse(Info);
 
-    const developerPrivateKey = await getPrivateKey(args.developerPrivateKey);
+    const chaincode = await getChaincodeDefinition();
+    const developerPrivateKey = await getPrivateKey(args.developerPrivateKey, chaincode.name);
 
     try {
-      const response = await getDeploymentResponse({
+      const chainCodeInfo = await getDeploymentResponse({
         privateKey: developerPrivateKey,
-        isTestnet: flags.testnet ?? false
+        chaincodeName: chaincode.name
       });
-
-      const chainCodeInfo: ChaincodeInfoDto = {
-        org: response.org,
-        channel: response.channel,
-        chaincode: response.chaincode,
-        imageName: response.imageName,
-        status: response.status,
-        lastOperationId: response.lastOperationId,
-        adminPublicKey: response.adminPublicKey,
-        isTestnet: response.isTestnet,
-        lastUpdated: response.lastUpdated
-      };
 
       this.log(`${JSON.stringify(chainCodeInfo, null, 2)}`);
     } catch (error) {
-      this.error(`${error}`);
+      this.error(error?.message ?? error);
     }
   }
 }

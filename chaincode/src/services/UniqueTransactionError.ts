@@ -16,7 +16,7 @@ import { ConflictError } from "@gala-chain/api";
 
 export class UniqueTransactionConflictError extends ConflictError {
   constructor(uniqueKey: string, transactionId: string) {
-    super(`Unique Transaction key ${uniqueKey} is already saved for transaction ${transactionId}`, {
+    super(`Unique transaction key ${uniqueKey} is already saved for transaction ${transactionId}`, {
       uniqueKey,
       transactionId
     });

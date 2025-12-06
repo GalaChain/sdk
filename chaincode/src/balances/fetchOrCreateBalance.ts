@@ -12,27 +12,43 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-import { ChainError, ErrorCode, NonFunctionProperties, TokenBalance, TokenClassKey } from "@gala-chain/api";
+import {
+  ChainError,
+  ErrorCode,
+  NonFunctionProperties,
+  TokenBalance,
+  TokenClassKey,
+  UserAlias
+} from "@gala-chain/api";
 
 import { GalaChainContext } from "../types";
 import { getObjectByKey } from "../utils";
 
+/**
+ * @description
+ *
+ * Query a single `TokenBalance` from on-chain World State
+ * belonging to the provided `owner` for the specified
+ * `tokenClassKey` argument.
+ *
+ * If the `TokenBalance` does not yet exist on-chain, a
+ * new `TokenBalance` class instance will be instantiated
+ * and returned.
+ *
+ * @param ctx
+ * @param owner
+ * @param tokenClassKey
+ * @returns Promise<TokenBalance>
+ */
 export async function fetchOrCreateBalance(
   ctx: GalaChainContext,
-  owner: string,
+  owner: UserAlias,
   tokenClassKey: NonFunctionProperties<TokenClassKey>
 ): Promise<TokenBalance> {
   const emptyBalance = new TokenBalance({ owner, ...tokenClassKey });
 
-  const fetchedBalance = await getObjectByKey(ctx, TokenBalance, emptyBalance.getCompositeKey()).catch(
-    (e) => {
-      const chainError = ChainError.from(e);
-      if (chainError.matches(ErrorCode.NOT_FOUND)) {
-        return emptyBalance;
-      } else {
-        throw chainError;
-      }
-    }
+  const fetchedBalance = await getObjectByKey(ctx, TokenBalance, emptyBalance.getCompositeKey()).catch((e) =>
+    ChainError.recover(e, ErrorCode.NOT_FOUND, emptyBalance)
   );
 
   await fetchedBalance.validateOrReject();

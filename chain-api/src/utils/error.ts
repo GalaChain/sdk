@@ -25,6 +25,7 @@ export enum ErrorCode {
   NOT_FOUND = 404,
   CONFLICT = 409,
   NO_LONGER_AVAILABLE = 410,
+  EXPIRED = 418,
   DEFAULT_ERROR = 500,
   NOT_IMPLEMENTED = 501
 }
@@ -199,6 +200,57 @@ export abstract class ChainError extends Error implements OptionalChainErrorData
       return ChainError.from(e);
     }
   }
+
+  /**
+   * Recovers (mutes) ChainError to a specified return value or undefined.
+   *
+   * If the error is a ChainError and matches the error code, the error is
+   * recovered and the specified return value is returned. Otherwise, the error
+   * is re-thrown.
+   *
+   * For instance when you want to get an object from chain, and instead of
+   * throwing a NOT_FOUND error, you want to return undefined:
+   *
+   * ```ts
+   * getObjectByKey(...)
+   *   .catch((e) => CommonChainError.recover(e, ErrorCode.NOT_FOUND));
+   * ```
+   *
+   * If you want to return a default value instead of undefined, you can do:
+   *
+   * ```ts
+   * getObjectByKey(...)
+   *   .catch((e) => CommonChainError.recover(e, ErrorCode.NOT_FOUND, defaultValue));
+   * ```
+   *
+   * @param e original error
+   * @param key error code or error class to match
+   * @param defaultValue value to be returned if error code matches
+   */
+  public static recover<T = undefined>(
+    e: { message?: string } | ChainError,
+    key: ErrorCode | ClassConstructor<ChainError>,
+    defaultValue?: T
+  ): T {
+    if (ChainError.isChainError(e) && e.matches(key)) {
+      return defaultValue as T;
+    } else {
+      throw e;
+    }
+  }
+
+  /**
+   * Recovers (mutes) ChainError to a specified return value or undefined.
+   *
+   * @deprecated Use {@link ChainError.recover} instead.
+   */
+  public static ignore<T = undefined>(
+    e: { message?: string } | ChainError,
+    key: ErrorCode | ClassConstructor<ChainError>,
+    defaultValue?: T
+  ): T {
+    return ChainError.recover(e, key, defaultValue);
+  }
 }
 
 export class ValidationFailedError extends ChainError.withCode(ErrorCode.VALIDATION_FAILED) {}
@@ -216,6 +268,8 @@ export class ConflictError extends ChainError.withCode(ErrorCode.CONFLICT) {}
 export class NoLongerAvailableError extends ChainError.withCode(ErrorCode.NO_LONGER_AVAILABLE) {}
 
 export class DefaultError extends ChainError.withCode(ErrorCode.DEFAULT_ERROR) {}
+
+export class ExpiredError extends ChainError.withCode(ErrorCode.EXPIRED) {}
 
 export class RuntimeError extends ChainError.withCode(ErrorCode.DEFAULT_ERROR) {}
 

@@ -1,5 +1,4 @@
-galachain
-=================
+# galachain
 
 CLI tool for Gala chaincode
 
@@ -8,24 +7,29 @@ CLI tool for Gala chaincode
 [![GitHub license](https://img.shields.io/github/license/oclif/hello-world)](https://github.com/oclif/hello-world/blob/main/LICENSE)
 
 <!-- toc -->
+* [galachain](#galachain)
 * [Usage](#usage)
 * [Commands](#commands)
 <!-- tocstop -->
+
 # Usage
+
 <!-- usage -->
 ```sh-session
 $ npm install -g @gala-chain/cli
 $ galachain COMMAND
 running command...
 $ galachain (--version)
-@gala-chain/cli/1.1.13 linux-x64 node-v18.17.0
+@gala-chain/cli/2.6.2 linux-x64 node-v18.20.8
 $ galachain --help [COMMAND]
 USAGE
   $ galachain COMMAND
 ...
 ```
 <!-- usagestop -->
+
 # Commands
+
 <!-- commands -->
 * [`galachain deploy IMAGETAG [DEVELOPERPRIVATEKEY]`](#galachain-deploy-imagetag-developerprivatekey)
 * [`galachain dto-sign KEY DATA`](#galachain-dto-sign-key-data)
@@ -36,24 +40,32 @@ USAGE
 * [`galachain info [DEVELOPERPRIVATEKEY]`](#galachain-info-developerprivatekey)
 * [`galachain init PATH`](#galachain-init-path)
 * [`galachain keygen FILE`](#galachain-keygen-file)
+* [`galachain logs`](#galachain-logs)
 * [`galachain network-prune`](#galachain-network-prune)
 * [`galachain network-up`](#galachain-network-up)
 * [`galachain network:prune`](#galachain-networkprune)
 * [`galachain network:up`](#galachain-networkup)
-* [`galachain test-deploy IMAGETAG [DEVELOPERPRIVATEKEY]`](#galachain-test-deploy-imagetag-developerprivatekey)
+* [`galachain register [DEVELOPERPRIVATEKEY]`](#galachain-register-developerprivatekey)
 
 ## `galachain deploy IMAGETAG [DEVELOPERPRIVATEKEY]`
 
-Schedules deployment of published chaincode Docker image to GalaChain sandbox.
+Schedules deployment of published chaincode Docker image to GalaChain TNT network.
 
 ```
 USAGE
-  $ galachain deploy IMAGETAG [DEVELOPERPRIVATEKEY] [--json] [--log-level debug|info|warn|error]
+  $ galachain deploy IMAGETAG [DEVELOPERPRIVATEKEY] [--json] [--log-level debug|info|warn|error] [--mnt]
+    [--no-prompt]
 
 ARGUMENTS
   IMAGETAG             Image tag to deploy. It should follow the pattern imageName:version.
-  DEVELOPERPRIVATEKEY  Optional private key to sign the data. It could be a file or a string. If not provided, the
-                       private key will be read from the environment variable DEV_PRIVATE_KEY.
+  DEVELOPERPRIVATEKEY  Developer's private key to sign the request. It could be a file or a string. If not provided as
+                       an argument, the command will try to read the private key from the environment variable
+                       DEV_PRIVATE_KEY, or from the default location (~/.gc-keys/<chaincode-name>/gc-dev-key), or will
+                       ask for it in a prompt.
+
+FLAGS
+  --mnt        Get info from MNT network instead of TNT (not supported yet).
+  --no-prompt  Do not prompt for confirmation.
 
 GLOBAL FLAGS
   --json                Format output as json.
@@ -61,7 +73,7 @@ GLOBAL FLAGS
                         <options: debug|info|warn|error>
 
 DESCRIPTION
-  Schedules deployment of published chaincode Docker image to GalaChain sandbox.
+  Schedules deployment of published chaincode Docker image to GalaChain TNT network.
 
 EXAMPLES
   $ galachain deploy registry.image.name:latest
@@ -255,14 +267,16 @@ Get ChainCode information.
 
 ```
 USAGE
-  $ galachain info [DEVELOPERPRIVATEKEY] [--json] [--log-level debug||warn|error] [--testnet]
+  $ galachain info [DEVELOPERPRIVATEKEY] [--json] [--log-level debug|info|warn|error] [--mnt]
 
 ARGUMENTS
-  DEVELOPERPRIVATEKEY  Optional private key to sign the data. It could be a file or a string. If not provided, the
-                       private key will be read from the environment variable DEV_PRIVATE_KEY.
+  DEVELOPERPRIVATEKEY  Developer's private key to sign the request. It could be a file or a string. If not provided as
+                       an argument, the command will try to read the private key from the environment variable
+                       DEV_PRIVATE_KEY, or from the default location (~/.gc-keys/<chaincode-name>/gc-dev-key), or will
+                       ask for it in a prompt.
 
 FLAGS
-  --testnet  Get info from testnet instead of sandbox.
+  --mnt  Get info from MNT network instead of TNT (not supported yet).
 
 GLOBAL FLAGS
   --json                Format output as json.
@@ -275,7 +289,7 @@ DESCRIPTION
 EXAMPLES
   $ galachain info
 
-  $ galachain info ./dev-private-key --testnet
+  $ galachain info ./dev-private-key
 
   $ galachain info c0fb1924408d936fb7cd0c86695885df4f66861621b5c8660df3924c4d09dd79
 ```
@@ -327,6 +341,31 @@ EXAMPLES
   $ galachain keygen data/user1
 ```
 
+## `galachain logs`
+
+```
+USAGE
+  $ galachain logs [--json] [--log-level debug|info|warn|error] [-k <value>] [-s <value>] [-e <value>] [-l
+    <value>] [-f <value>] [--follow]
+
+FLAGS
+  -e, --endTime=<value>              [default: now] End time for logs. Accepts ISO8601 format or shorthand (e.g., now,
+                                     0).
+  -f, --filter=<value>               Filter for logs (e.g., error, info, warn, debug).
+  -k, --developerPrivateKey=<value>  Private key to sign the data. It can be a file path or a key string. If not
+                                     provided, the private key will be read from the environment variable
+                                     DEV_PRIVATE_KEY.
+  -l, --limit=<value>                Maximum number of log entries to fetch.
+  -s, --startTime=<value>            Start time for logs. Accepts ISO8601 format or shorthand (e.g.,
+                                     2023-01-01T00:00:00Z, 5m, 1h, 2d).
+      --follow                       Specify if logs should be streamed.
+
+GLOBAL FLAGS
+  --json                Format output as json.
+  --log-level=<option>  Specify level for logging.
+                        <options: debug|info|warn|error>
+```
+
 ## `galachain network-prune`
 
 Removes the network entirely.
@@ -356,12 +395,13 @@ EXAMPLES
 
 ## `galachain network-up`
 
-Start the chaincode in dev-mode and browser-api.
+Start the chaincode, browser-api, and ops-api (in non-watch mode).
 
 ```
 USAGE
-  $ galachain network-up -C <value> -t curator|partner -n <value> [--json] [--log-level debug|info|warn|error]
-    [-d <value>] [-r <value>] [-e <value>] [-w] [-o <value>]
+  $ galachain network-up -C <value>... -t curator|partner... -n <value>... [--json] [--log-level
+    debug|info|warn|error] [-d <value>...] [-r <value>] [-e <value>] [-w] [-o <value>...] [--no-rest-api]
+    [--no-chain-browser]
 
 FLAGS
   -C, --channel=<value>...        (required) Channel name.
@@ -369,7 +409,7 @@ FLAGS
                                   is used.
   -e, --envConfig=<value>         Path to .env file to be used for chaincodes.
   -n, --chaincodeName=<value>...  (required) Chaincode name.
-  -o, --contracts=<value>         Contract names in a JSON format.
+  -o, --contracts=<value>...      Contract names in a JSON format.
   -r, --fabloRoot=<value>         [default: ./test-network] Root directory of target network. Should not be the same as
                                   chaincodeDir and should not be a child of chaincodeDir. By default './test-network' is
                                   used.
@@ -377,6 +417,8 @@ FLAGS
                                   chaincode managed by CuratorOrg or PartnerOrg.
                                   <options: curator|partner>
   -w, --watch                     Enable watch mode (live chaincode reload).
+      --no-chain-browser          Do not start GalaChain Browser.
+      --no-rest-api               Do not start GalaChain REST API services.
 
 GLOBAL FLAGS
   --json                Format output as json.
@@ -384,7 +426,7 @@ GLOBAL FLAGS
                         <options: debug|info|warn|error>
 
 DESCRIPTION
-  Start the chaincode in dev-mode and browser-api.
+  Start the chaincode, browser-api, and ops-api (in non-watch mode).
 
 ALIASES
   $ galachain network:up
@@ -424,12 +466,13 @@ EXAMPLES
 
 ## `galachain network:up`
 
-Start the chaincode in dev-mode and browser-api.
+Start the chaincode, browser-api, and ops-api (in non-watch mode).
 
 ```
 USAGE
-  $ galachain network:up -C <value> -t curator|partner -n <value> [--json] [--log-level debug|info|warn|error]
-    [-d <value>] [-r <value>] [-e <value>] [-w] [-o <value>]
+  $ galachain network:up -C <value>... -t curator|partner... -n <value>... [--json] [--log-level
+    debug|info|warn|error] [-d <value>...] [-r <value>] [-e <value>] [-w] [-o <value>...] [--no-rest-api]
+    [--no-chain-browser]
 
 FLAGS
   -C, --channel=<value>...        (required) Channel name.
@@ -437,7 +480,7 @@ FLAGS
                                   is used.
   -e, --envConfig=<value>         Path to .env file to be used for chaincodes.
   -n, --chaincodeName=<value>...  (required) Chaincode name.
-  -o, --contracts=<value>         Contract names in a JSON format.
+  -o, --contracts=<value>...      Contract names in a JSON format.
   -r, --fabloRoot=<value>         [default: ./test-network] Root directory of target network. Should not be the same as
                                   chaincodeDir and should not be a child of chaincodeDir. By default './test-network' is
                                   used.
@@ -445,6 +488,8 @@ FLAGS
                                   chaincode managed by CuratorOrg or PartnerOrg.
                                   <options: curator|partner>
   -w, --watch                     Enable watch mode (live chaincode reload).
+      --no-chain-browser          Do not start GalaChain Browser.
+      --no-rest-api               Do not start GalaChain REST API services.
 
 GLOBAL FLAGS
   --json                Format output as json.
@@ -452,7 +497,7 @@ GLOBAL FLAGS
                         <options: debug|info|warn|error>
 
 DESCRIPTION
-  Start the chaincode in dev-mode and browser-api.
+  Start the chaincode, browser-api, and ops-api (in non-watch mode).
 
 ALIASES
   $ galachain network:up
@@ -463,18 +508,23 @@ EXAMPLES
   $ galachain network:up -C=product-channel -t=curator -n=basic-product -d=./ --envConfig=./.dev-env
 ```
 
-## `galachain test-deploy IMAGETAG [DEVELOPERPRIVATEKEY]`
+## `galachain register [DEVELOPERPRIVATEKEY]`
 
-Schedules deployment of published chaincode Docker image to GalaChain testnet.
+Registers chaincode on GalaChain TNT network.
 
 ```
 USAGE
-  $ galachain test-deploy IMAGETAG [DEVELOPERPRIVATEKEY] [--json] [--log-level debug|info|warn|error]
+  $ galachain register [DEVELOPERPRIVATEKEY] [--json] [--log-level debug|info|warn|error] [--mnt] [--no-prompt]
 
 ARGUMENTS
-  IMAGETAG             Image tag to deploy. It should follow the pattern imageName:version.
-  DEVELOPERPRIVATEKEY  Optional private key to sign the data. It could be a file or a string. If not provided, the
-                       private key will be read from the environment variable DEV_PRIVATE_KEY.
+  DEVELOPERPRIVATEKEY  Developer's private key to sign the request. It could be a file or a string. If not provided as
+                       an argument, the command will try to read the private key from the environment variable
+                       DEV_PRIVATE_KEY, or from the default location (~/.gc-keys/<chaincode-name>/gc-dev-key), or will
+                       ask for it in a prompt.
+
+FLAGS
+  --mnt        Get info from MNT network instead of TNT (not supported yet).
+  --no-prompt  Do not prompt for confirmation.
 
 GLOBAL FLAGS
   --json                Format output as json.
@@ -482,13 +532,13 @@ GLOBAL FLAGS
                         <options: debug|info|warn|error>
 
 DESCRIPTION
-  Schedules deployment of published chaincode Docker image to GalaChain testnet.
+  Registers chaincode on GalaChain TNT network.
 
 EXAMPLES
-  $ galachain test-deploy registry.image.name:latest
+  $ galachain register
 
-  $ galachain test-deploy registry.image.name:latest ./private-key
+  $ galachain register ./dev-private-key
 
-  $ galachain test-deploy registry.image.name:latest c0fb1924408d936fb7cd0c86695885df4f66861621b5c8660df3924c4d09dd79
+  $ galachain register c0fb1924408d936fb7cd0c86695885df4f66861621b5c8660df3924c4d09dd79
 ```
 <!-- commandsstop -->

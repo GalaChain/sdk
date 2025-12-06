@@ -14,6 +14,7 @@
  */
 import {
   AllowanceType,
+  ChainUser,
   GrantAllowanceDto,
   LockTokensDto,
   TokenAllowance,
@@ -21,9 +22,8 @@ import {
   TokenClassKey,
   TokenInstanceKey,
   UnlockTokensDto,
-  createValidDTO
+  createValidSubmitDTO
 } from "@gala-chain/api";
-import { ChainUser } from "@gala-chain/client";
 import {
   AdminChainClients,
   TestClients,
@@ -70,7 +70,7 @@ describe("NFT lock scenario", () => {
 
   it("User1 should lock own token", async () => {
     // Given
-    const lockDto = await createValidDTO<LockTokensDto>(LockTokensDto, {
+    const lockDto = await createValidSubmitDTO<LockTokensDto>(LockTokensDto, {
       lockAuthority: user1.identityKey,
       tokenInstances: [
         {
@@ -111,7 +111,7 @@ describe("NFT lock scenario", () => {
 
   it("User1 can transfer token after unlock", async () => {
     // Given
-    const unlockDto = await createValidDTO<UnlockTokensDto>(UnlockTokensDto, {
+    const unlockDto = await createValidSubmitDTO<UnlockTokensDto>(UnlockTokensDto, {
       tokenInstances: [
         {
           tokenInstanceKey: TokenInstanceKey.nftKey(nftClassKey, 1),
@@ -145,7 +145,7 @@ describe("NFT lock scenario", () => {
   // current state: token 1 - locked, quantity = 1
   it("Only lock authority can unlock token", async () => {
     // Given
-    const lockDto = await createValidDTO<LockTokensDto>(LockTokensDto, {
+    const lockDto = await createValidSubmitDTO<LockTokensDto>(LockTokensDto, {
       lockAuthority: user1.identityKey,
       tokenInstances: [
         {
@@ -156,7 +156,7 @@ describe("NFT lock scenario", () => {
       ]
     });
 
-    const unlockDto = await createValidDTO<UnlockTokensDto>(UnlockTokensDto, {
+    const unlockDto = await createValidSubmitDTO<UnlockTokensDto>(UnlockTokensDto, {
       tokenInstances: [
         {
           tokenInstanceKey: TokenInstanceKey.nftKey(nftClassKey, 2),
@@ -220,7 +220,7 @@ describe("lock with allowances", () => {
     await client.disconnect();
   });
   it("User1 grants lock allowance for token to User2", async () => {
-    const galaAllowanceDto = await createValidDTO<GrantAllowanceDto>(GrantAllowanceDto, {
+    const galaAllowanceDto = await createValidSubmitDTO<GrantAllowanceDto>(GrantAllowanceDto, {
       tokenInstance: token2Key.toQueryKey(),
       allowanceType: AllowanceType.Lock,
       quantities: [{ user: user2.identityKey, quantity: new BigNumber(1) }],
@@ -237,7 +237,7 @@ describe("lock with allowances", () => {
   });
 
   it("User2 can lock User1 token", async () => {
-    const lockDto = await createValidDTO<LockTokensDto>(LockTokensDto, {
+    const lockDto = await createValidSubmitDTO<LockTokensDto>(LockTokensDto, {
       lockAuthority: user1.identityKey,
       tokenInstances: [
         {

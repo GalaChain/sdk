@@ -12,15 +12,21 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-import { AllowanceType, FullAllowanceCheckResDto, TokenAllowance, TokenInstanceKey } from "@gala-chain/api";
+import {
+  AllowanceType,
+  FullAllowanceCheckResDto,
+  TokenAllowance,
+  TokenInstanceKey,
+  UserAlias
+} from "@gala-chain/api";
 import { TokenBalance } from "@gala-chain/api";
 
 import { GalaChainContext } from "../types";
 import { getObjectsByPartialCompositeKey, takeUntilUndefined } from "../utils";
 
 export interface FullAllowanceCheckParams {
-  owner: string;
-  grantedTo: string;
+  owner: UserAlias;
+  grantedTo: UserAlias;
   allowanceType: AllowanceType;
   collection?: string;
   category?: string;
@@ -28,6 +34,25 @@ export interface FullAllowanceCheckParams {
   additionalKey?: string;
 }
 
+/**
+ * @description
+ *
+ * Convenience method to efficiently determine if the `grantedTo` identity
+ * has useable allowances for all of the owner's tokens that match the
+ * provided query paraemters.
+ *
+ * Using the provided `TokenClassKey` parameters (collection, category, type, additionalKey)
+ * this method will query all the owners matching balances, and iterate through each
+ * NFT instance ensuring that the allowance of specified `AllowanceType` exists and is validly
+ * useable by the `grantedTo` identity.
+ *
+ * In the event one or more token instances has an expired, fully used, or otherwise missing
+ * allowance, its details will be returned in the response.
+ *
+ * @param ctx
+ * @param data
+ * @returns Promise<FullAllowanceCheckResDto>
+ */
 export async function fullAllowanceCheck(
   ctx: GalaChainContext,
   data: FullAllowanceCheckParams
@@ -73,8 +98,9 @@ export async function fullAllowanceCheck(
 
       const expiredAllowances = allowanceResults.filter((allowance) => {
         return (
-          allowance.usesSpent.isGreaterThanOrEqualTo(allowance.uses) ||
-          allowance.quantitySpent.isGreaterThanOrEqualTo(allowance.quantity) ||
+          (!!allowance.usesSpent && allowance.usesSpent?.isGreaterThanOrEqualTo(allowance.uses)) ||
+          (!!allowance.quantitySpent &&
+            allowance.quantitySpent?.isGreaterThanOrEqualTo(allowance.quantity)) ||
           (allowance.expires !== 0 && allowance.expires && allowance.expires <= ctx.txUnixTime)
         );
       });

@@ -18,10 +18,10 @@ import {
   RangedChainObject,
   TokenClass,
   TokenClassKeyProperties,
-  TokenMintAllowanceRequest
+  TokenMintAllowanceRequest,
+  createValidDTO
 } from "@gala-chain/api";
 import BigNumber from "bignumber.js";
-import { plainToInstance } from "class-transformer";
 
 import { GalaChainContext } from "../types/GalaChainContext";
 import { getObjectByKey, inverseKeyLength, inverseTime, lookbackTimeOffset, lookbackTxCount } from "../utils";
@@ -77,7 +77,7 @@ export async function fetchMintAllowanceSupply(
         const entry = RangedChainObject.deserialize(TokenMintAllowanceRequest, stringResult);
 
         // timeKey is a string padded with leading zeros. BigNumber.js will parse this format into an integer.
-        const entryTime = new BigNumber(entry.timeKey);
+        // const entryTime = new BigNumber(entry.timeKey);
 
         seekingFirstResult = false;
 
@@ -125,9 +125,7 @@ export async function fetchMintAllowanceSupplyForToken(ctx: GalaChainContext, da
 
   const supply = await fetchMintAllowanceSupply(ctx, tokenClass);
 
-  const response = plainToInstance(FetchTokenSupplyResponse, {
-    supply
-  });
+  const response = await createValidDTO(FetchTokenSupplyResponse, { supply });
 
   return response;
 }

@@ -18,20 +18,25 @@ import {
   ChainObject,
   GrantAllowanceQuantity,
   TokenAllowance,
+  TokenBalance,
   TokenClass,
   TokenInstance,
   TokenInstanceKey,
   TokenInstanceQueryKey,
   TokenMintAllowance,
   TokenMintAllowanceRequest,
-  TokenMintStatus
+  TokenMintStatus,
+  TokenNotInBalanceError,
+  createValidChainObject,
+  createValidRangedChainObject
 } from "@gala-chain/api";
 import { BigNumber } from "bignumber.js";
-import { classToPlain as instanceToPlain, plainToInstance } from "class-transformer";
+import { instanceToPlain } from "class-transformer";
 
-import { fetchBalances, fetchOrCreateBalance } from "../balances";
+import { fetchBalances } from "../balances";
 import { fetchKnownBurnCount } from "../burns/fetchBurns";
 import { fetchMintAllowanceSupply } from "../mint/fetchMintAllowanceSupply";
+import { resolveUserAlias } from "../services";
 import { fetchTokenInstance } from "../token";
 import {
   InvalidDecimalError,
@@ -48,10 +53,10 @@ import {
   putRangedChainObject
 } from "../utils";
 import {
+  BalanceNotFoundError,
   DuplicateAllowanceError,
   DuplicateUserError,
   GrantAllowanceFailedError,
-  InsufficientTokenBalanceError,
   InvalidTokenOwnerError,
   MintCapacityExceededError,
   TotalSupplyExceededError
@@ -60,7 +65,7 @@ import { isAllowanceExpired } from "./checkAllowances";
 import { refreshAllowances } from "./refreshAllowances";
 
 // this determines how many balances is enough to warrant optimization of allowance fetch
-const BALANCE_COUNT_THRESHOLD = 50;
+// const BALANCE_COUNT_THRESHOLD = 50;
 
 async function grantAllowanceByPartialKey(
   ctx: GalaChainContext,
@@ -71,7 +76,7 @@ async function grantAllowanceByPartialKey(
   expires: number
 ): Promise<TokenAllowance[]> {
   const tokenBalances = await fetchBalances(ctx, {
-    owner: ctx.callingUser,
+    owner: await resolveUserAlias(ctx, ctx.callingUser),
     ...tokenInstance
   });
 
@@ -230,6 +235,18 @@ async function grantAllowanceByPartialKey(
   return grantedAllowances;
 }
 
+/**
+ * @description
+ *
+ * Calculate whether or not the requested quantity exceeds the maximum
+ * capacity or supply for the given `TokenClass`.
+ *
+ * @param tokenClass
+ * @param quantity
+ * @param totalKnownMintAllowanceCount
+ * @param totalKnownBurnsCount
+ * @returns boolean
+ */
 export function ensureQuantityCanBeMinted(
   tokenClass: TokenClass,
   quantity: BigNumber,
@@ -309,22 +326,25 @@ async function putAllowancesOnChain(
 
     const grantedTo = quantities[index].user;
 
-    const newAllowance = plainToInstance(TokenAllowance, {
+    const newAllowance = await createValidChainObject(TokenAllowance, {
       collection: instanceKey.collection,
       category: instanceKey.category,
       type: instanceKey.type,
       additionalKey: instanceKey.additionalKey,
       instance: instanceKey.instance,
       quantity: quantities[index].quantity,
-      uses,
+      uses: quantities[index].quantity.isFinite() ? uses : new BigNumber(Infinity),
       expires,
-      quantitySpent: new BigNumber(0),
-      usesSpent: new BigNumber(0),
       allowanceType: allowanceType,
       grantedBy: ctx.callingUser,
       created: ctx.txUnixTime,
       grantedTo
     });
+
+    if (quantities[index].quantity.isFinite()) {
+      newAllowance.quantitySpent = new BigNumber(0);
+      newAllowance.usesSpent = new BigNumber(0);
+    }
 
     if (allowanceType !== AllowanceType.Mint) {
       // Validate instance
@@ -369,7 +389,8 @@ export async function putMintAllowanceRequestsOnChain(
     const grantedTo = quantities[index].user;
 
     // Ledger entry for new mint allowance qty
-    const mintAllowanceEntry = plainToInstance(TokenMintAllowanceRequest, {
+    const mintAllowanceEntry = await createValidRangedChainObject(TokenMintAllowanceRequest, {
+      id: "-", // hack to avoid compilation error
       collection: tokenClass.collection,
       category: tokenClass.category,
       type: tokenClass.type,
@@ -417,7 +438,7 @@ export async function putMintAllowancesOnChain(
     const grantedTo = mintAllowanceRequest.grantedTo;
 
     // Ledger entry for new mint allowance chain object for tracking quantity
-    const mintAllowanceEntry = plainToInstance(TokenMintAllowance, {
+    const mintAllowanceEntry = await createValidChainObject(TokenMintAllowance, {
       collection: tokenClass.collection,
       category: tokenClass.category,
       type: tokenClass.type,
@@ -426,10 +447,9 @@ export async function putMintAllowancesOnChain(
       grantedBy: ctx.callingUser,
       grantedTo: grantedTo,
       created: ctx.txUnixTime,
-      quantity: mintAllowanceRequest.quantity
+      quantity: mintAllowanceRequest.quantity,
+      reqId: mintAllowanceRequest.requestId()
     });
-
-    mintAllowanceEntry.reqId = mintAllowanceRequest.requestId();
 
     await putChainObject(ctx, mintAllowanceEntry);
 
@@ -439,6 +459,21 @@ export async function putMintAllowancesOnChain(
   return mintAllowanceEntries;
 }
 
+/**
+ * @description
+ *
+ * Grant one or more allowances to one or more users with the specified quantities, uses,
+ * and expiration timestamp. `TokenAllowance` entries granted on-chain will
+ * always set the `grantedBy` field to the calling user.
+ *
+ * Supports open-ended token instance query (refer to: `TokenInstanceQueryKey`).
+ *
+ * Ensure that the user identities specified in the quantities array are unique.
+ *
+ * @param ctx
+ * @param GrantAllowanceParams
+ * @returns Promise<TokenAllowance[]>
+ */
 export async function grantAllowance(
   ctx: GalaChainContext,
   { tokenInstance: tokenInstanceQueryKey, allowanceType, quantities, uses, expires }: GrantAllowanceParams
@@ -530,20 +565,15 @@ export async function grantAllowance(
           tokenInstance.owner
         );
       }
-    } else {
-      const instanceClassKey = await TokenClass.buildClassKeyObject(tokenInstance);
-      const callingUserBalance = await fetchOrCreateBalance(ctx, ctx.callingUser, instanceClassKey);
 
-      // for fungible tokens, we need to check the balance and quantities
-      if (callingUserBalance.getSpendableQuantityTotal(ctx.txUnixTime).isLessThan(totalQuantity)) {
-        throw new InsufficientTokenBalanceError(
-          ctx.callingUser,
-          instanceKey.toStringKey(),
-          AllowanceType[allowanceType],
-          callingUserBalance.getQuantityTotal(),
-          totalQuantity,
-          callingUserBalance.getLockedQuantityTotal(ctx.txUnixTime)
-        );
+      // verify if the token exists in the balance
+      const [balance]: (TokenBalance | undefined)[] = await fetchBalances(ctx, {
+        ...instanceKey,
+        owner: tokenInstance.owner
+      });
+      const currentInstances = balance?.getNftInstanceIds() ?? [];
+      if (!currentInstances.some((i) => i.eq(instanceKey.instance))) {
+        throw new TokenNotInBalanceError(tokenInstance.owner, instanceKey, instanceKey.instance);
       }
     }
 
@@ -587,9 +617,13 @@ export function allowanceIsUseable(ctx: GalaChainContext, tokenAllowance: TokenA
     return false;
   }
 
+  if (tokenAllowance.usesSpent === undefined && tokenAllowance.quantitySpent === undefined) {
+    return true;
+  }
+
   if (
-    tokenAllowance.usesSpent.isGreaterThanOrEqualTo(tokenAllowance.uses) ||
-    tokenAllowance.quantitySpent.isGreaterThanOrEqualTo(tokenAllowance.quantity)
+    tokenAllowance.usesSpent?.isGreaterThanOrEqualTo(tokenAllowance.uses) ||
+    tokenAllowance.quantitySpent?.isGreaterThanOrEqualTo(tokenAllowance.quantity)
   ) {
     return false;
   }

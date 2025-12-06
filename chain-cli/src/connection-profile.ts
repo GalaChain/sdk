@@ -36,14 +36,6 @@ const curatorCfg: OrgConfig = {
   peerPort: 7041
 };
 
-const curatorCfgBrowserApi: OrgConfig = {
-  domain: "curator.local",
-  caHost: "ca.curator.local",
-  caPort: 7054,
-  peerHost: "peer0.curator.local",
-  peerPort: 7041
-};
-
 const partnerCfg: OrgConfig = {
   domain: "partner1.local",
   caHost: "ca.partner1.local",
@@ -66,7 +58,7 @@ function caConfig(
   asLocalhost: boolean
 ) {
   const host = cfg.caHost;
-  const port = cfg.caPort;
+  const port = asLocalhost ? cfg.caPort : 7054;
   const orgDomain = cfg.domain;
   const caName = cfg.caHost;
 
@@ -75,12 +67,7 @@ function caConfig(
     ? {}
     : {
         tlsCACerts: {
-          path: path.resolve(
-            cryptoConfigRoot,
-            "peerOrganizations",
-            orgDomain,
-            `msp/tlscacerts/tlsca.${orgDomain}-cert.pem`
-          )
+          path: path.resolve(cryptoConfigRoot, "peerOrganizations", orgDomain, "peers", host, "tls/ca.crt")
         }
       };
   const httpOptions = {
@@ -112,7 +99,7 @@ function peerConfig(
           path: path.resolve(cryptoConfigRoot, "peerOrganizations", orgDomain, "peers", host, "tls/ca.crt")
         }
       };
-  const grpcOptions = !(useTls && asLocalhost)
+  const grpcOptions = !useTls
     ? {}
     : {
         grpcOptions: { "ssl-target-name-override": host }
@@ -140,7 +127,7 @@ function ordererConfig(
           path: path.resolve(cryptoConfigRoot, "peerOrganizations", orgDomain, "peers", host, "tls/ca.crt")
         }
       };
-  const grpcOptions = !(useTls && asLocalhost)
+  const grpcOptions = !useTls
     ? {}
     : {
         grpcOptions: { "ssl-target-name-override": host }
@@ -191,42 +178,6 @@ function ordererAndChannelConfig(
 
 function channelConfigs(channelNames: string[]) {
   return channelNames.reduce((cfg, ch) => ({ ...cfg, ...channelConfig(ch) }), {});
-}
-
-export function cppForCuratorBrowserApi(
-  cryptoConfigRoot: string,
-  channelNames: string[],
-  localhostName: string,
-  useTls: boolean,
-  asLocalhost: boolean,
-  useServiceDiscovery: boolean
-) {
-  return {
-    name: "test-network-CuratorOrg",
-    version: "1.0.0",
-    client: {
-      organization: "CuratorOrg"
-    },
-    organizations: {
-      CuratorOrg: {
-        mspid: "CuratorOrg",
-        peers: [curatorCfgBrowserApi.peerHost],
-        certificateAuthorities: [curatorCfgBrowserApi.caHost]
-      }
-    },
-    peers: {
-      ...peerConfig(curatorCfgBrowserApi, cryptoConfigRoot, localhostName, useTls, asLocalhost),
-      ...(useServiceDiscovery
-        ? {}
-        : peerConfig(partnerCfg, cryptoConfigRoot, localhostName, useTls, asLocalhost))
-    },
-    certificateAuthorities: {
-      ...caConfig(curatorCfgBrowserApi, cryptoConfigRoot, localhostName, useTls, asLocalhost)
-    },
-    ...(useServiceDiscovery
-      ? {}
-      : ordererAndChannelConfig(cryptoConfigRoot, channelNames, localhostName, useTls, asLocalhost))
-  };
 }
 
 export function cppForCurator(
@@ -368,26 +319,6 @@ export function getCPPs(
       useServiceDiscovery
     ),
     users: cppForUsers(
-      cryptoConfigRoot,
-      channelNames,
-      localhostName,
-      useTls,
-      asLocalhost,
-      useServiceDiscovery
-    )
-  };
-}
-
-export function getCPPsBrowserApi(
-  cryptoConfigRoot: string,
-  channelNames: string[],
-  localhostName: string,
-  useTls: boolean,
-  asLocalhost: boolean,
-  useServiceDiscovery: boolean
-) {
-  return {
-    curator: cppForCuratorBrowserApi(
       cryptoConfigRoot,
       channelNames,
       localhostName,

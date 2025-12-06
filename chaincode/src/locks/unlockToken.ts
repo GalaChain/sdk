@@ -12,12 +12,17 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-import { TokenBalance, TokenInstanceKey, UnauthorizedError, ValidationFailedError } from "@gala-chain/api";
+import {
+  RuntimeError,
+  TokenBalance,
+  TokenInstanceKey,
+  UserAlias,
+  ValidationFailedError
+} from "@gala-chain/api";
 import BigNumber from "bignumber.js";
 
 import { fetchOrCreateBalance } from "../balances";
-import { fetchTokenInstance } from "../token";
-import { fetchTokenClass } from "../token/fetchTokenClasses";
+import { fetchTokenClass, fetchTokenInstance } from "../token";
 import { GalaChainContext } from "../types";
 import { putChainObject } from "../utils";
 import { UnlockForbiddenUserError } from "./LockError";
@@ -26,7 +31,7 @@ export interface UnlockTokenParams {
   tokenInstanceKey: TokenInstanceKey;
   name: string | undefined;
   quantity: BigNumber | undefined;
-  owner?: string | undefined;
+  owner: UserAlias | undefined;
 }
 
 export async function unlockToken(
@@ -37,11 +42,14 @@ export async function unlockToken(
     return unlockFungibleToken(ctx, { tokenInstanceKey, name, quantity, owner });
   }
 
-  // owner is always present for NFT instances
   const tokenInstance = await fetchTokenInstance(ctx, tokenInstanceKey);
-  owner = tokenInstance.owner as string;
 
-  const balance = await fetchOrCreateBalance(ctx, owner, tokenInstanceKey.getTokenClassKey());
+  // owner is always present for NFT instances - throwing to detect potential issues
+  if (tokenInstance.owner === undefined) {
+    throw new RuntimeError(`Token instance ${tokenInstanceKey.toStringKey()} has no owner`);
+  }
+
+  const balance = await fetchOrCreateBalance(ctx, tokenInstance.owner, tokenInstanceKey.getTokenClassKey());
   const applicableHold = balance.findLockedHold(tokenInstanceKey.instance, name, ctx.txUnixTime);
 
   // determine if user is authorized to unlock
@@ -62,10 +70,6 @@ export async function unlockToken(
 
     if (!isTokenAuthority) {
       throw new UnlockForbiddenUserError(ctx.callingUser, tokenInstanceKey.toStringKey());
-    } else if (name !== undefined) {
-      throw new UnauthorizedError(
-        `callingUser ${ctx.callingUser} is not a token authority and passed in a lockedHoldName property for unlocking`
-      );
     }
   }
 
@@ -74,7 +78,7 @@ export async function unlockToken(
     return balance;
   }
 
-  balance.ensureCanUnlockInstance(applicableHold.instanceId, name, ctx.txUnixTime).unlock();
+  balance.unlockInstance(applicableHold.instanceId, name, ctx.txUnixTime);
 
   await putChainObject(ctx, balance);
 
@@ -94,19 +98,12 @@ export async function unlockFungibleToken(
 
   // determine if user is authorized to unlock
   // if calling user is not authorized, always token class authority can unlock
-  let lockAuthority: string = ctx.callingUser;
   const tokenClass = await fetchTokenClass(ctx, tokenInstanceKey);
   const isTokenAuthority = tokenClass.authorities.includes(ctx.callingUser);
 
-  if (!isTokenAuthority && ctx.callingUser !== owner) {
-    throw new UnlockForbiddenUserError(ctx.callingUser, tokenInstanceKey.toStringKey());
-  } else if (isTokenAuthority) {
-    lockAuthority = owner;
-  }
-
   const balance = await fetchOrCreateBalance(ctx, owner, tokenInstanceKey.getTokenClassKey());
 
-  balance.ensureCanUnlockQuantity(quantityToUnlock, ctx.txUnixTime, name, lockAuthority).unlock();
+  balance.unlockQuantity(quantityToUnlock, ctx.txUnixTime, name, ctx.callingUser, isTokenAuthority);
 
   await putChainObject(ctx, balance);
 

@@ -14,3 +14,6 @@
  */
 
 export * from "./decorators";
+export * from "./IsUserAlias";
+export * from "./IsUserRef";
+export * from "./transform-decorators";

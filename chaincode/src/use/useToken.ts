@@ -18,7 +18,8 @@ import {
   NotImplementedError,
   TokenBalance,
   TokenHold,
-  TokenInstanceKey
+  TokenInstanceKey,
+  UserAlias
 } from "@gala-chain/api";
 import { BigNumber } from "bignumber.js";
 
@@ -30,11 +31,11 @@ import { putChainObject } from "../utils";
 import { NftInvalidQuantityUseError } from "./UseError";
 
 export interface UseTokenParams {
-  owner: string;
-  inUseBy: string;
+  owner: UserAlias;
+  inUseBy: UserAlias;
   tokenInstanceKey: TokenInstanceKey;
   quantity: BigNumber;
-  allowancesToUse: Array<string>;
+  allowancesToUse: string[];
   authorizedOnBehalf: AuthorizedOnBehalf | undefined;
 }
 
@@ -89,10 +90,11 @@ export async function useToken(
     created: ctx.txUnixTime,
     expires: 0,
     name: undefined,
-    lockAuthority: undefined
+    lockAuthority: undefined,
+    vestingPeriodStart: undefined
   });
 
-  balance.ensureCanUseInstance(hold, ctx.txUnixTime).use();
+  balance.useInstance(hold, ctx.txUnixTime);
 
   await putChainObject(ctx, balance);
 

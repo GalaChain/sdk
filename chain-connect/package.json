@@ -1,0 +1,40 @@
+{
+  "name": "@gala-chain/connect",
+  "version": "2.6.2",
+  "dependencies": {
+    "@gala-chain/api": "2.6.2",
+    "ethers": "^6.12.1",
+    "tslib": "^2.3.0",
+    "bignumber.js": "9.1.2",
+    "class-validator": "0.14.2"
+  },
+  "peerDependencies": {
+    "class-transformer": "0.5.1"
+  },
+  "overrides": {
+    "ethers": {
+      "elliptic": "^6.6.1"
+    }
+  },
+  "type": "commonjs",
+  "main": "./lib/src/index.js",
+  "typings": "./lib/src/index.d.ts",
+  "files": [
+    "lib"
+  ],
+  "scripts": {
+    "clean": "tsc -b --clean",
+    "build": "tsc -b",
+    "build:watch": "tsc -b -w",
+    "madge": "madge --circular --warning lib",
+    "lint": "nx run lint",
+    "fix": "nx run lint --fix",
+    "prepublishOnly": "npm i && npm run clean && npm run build && npm run lint && npm run madge",
+    "format": "prettier --config ../.prettierrc 'src/**/*.ts' --write",
+    "test": "jest"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/GalaChain/sdk.git"
+  }
+}

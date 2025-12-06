@@ -12,18 +12,24 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-import { AuthorizedOnBehalf, TokenAllowance, TokenClassKey, TokenInstanceKey } from "@gala-chain/api";
+import {
+  AuthorizedOnBehalf,
+  TokenAllowance,
+  TokenClassKey,
+  TokenInstanceKey,
+  UserAlias
+} from "@gala-chain/api";
 import BigNumber from "bignumber.js";
 
 import { fetchAllowances } from "../allowances";
-import { GalaChainContext } from "../types/GalaChainContext";
+import { GalaChainContext } from "../types";
 import { BatchMintError } from "./MintError";
 import { fetchMintSupply } from "./fetchMintSupply";
 import { mintToken } from "./mintToken";
 
 export interface MintOperationParams {
   tokenClassKey: TokenClassKey;
-  owner: string;
+  owner: UserAlias;
   quantity: BigNumber;
   authorizedOnBehalf: AuthorizedOnBehalf | undefined;
   applicableAllowances?: TokenAllowance[] | undefined;

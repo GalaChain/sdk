@@ -48,20 +48,90 @@ export class InvalidResultsError extends DefaultError {
   }
 }
 
+/**
+ * @description
+ *
+ * Validate the provided `ChainObject`, serialize it into an appropriate
+ * format for on-chain storage, and queue a `putState` call in the `GalaChainStub`.
+ * Will write the data to World State indexed by its composite key upon
+ * successful transaction completeion.
+ *
+ * Throws `ObjectValidationFailedError` on validation failure.
+ *
+ * @remarks
+ * See also `GalaChainStub` for details on caching and transactional writes
+ * supported by this method.
+ *
+ * @param ctx
+ * @param data
+ * @returns
+ */
 export async function putChainObject(ctx: GalaChainContext, data: ChainObject): Promise<void> {
   await data.validateOrReject();
   return ctx.stub.putState(data.getCompositeKey(), Buffer.from(data.serialize()));
 }
 
+/**
+ * @description
+ *
+ * Validate the provided `RangedChainObject`, serialize it into an appropriate format
+ * for on-chain storage, and queue a `putState` call in the `GalaChainStub`.
+ * Will write the data to World State indexed by its simple key upon successful
+ * transaction completion.
+ *
+ * @remarks
+ * See also `GalaChainStub` for details on caching and transactional writes
+ * supported by this method.
+ *
+ * @param ctx
+ * @param data
+ * @returns
+ */
 export async function putRangedChainObject(ctx: GalaChainContext, data: RangedChainObject): Promise<void> {
   await data.validateOrReject();
   return ctx.stub.putState(data.getRangedKey(), Buffer.from(data.serialize()));
 }
 
+/**
+ * @description
+ *
+ * Queue a `deleteState` call in the `GalaChainStub` using the composite key
+ * of the provided `ChainObject`.
+ *
+ * @remarks
+ * See also `GalaChainStub` for details on caching and transactional writes
+ * supported by this method.
+ *
+ * @param ctx
+ * @param data
+ * @returns
+ */
 export async function deleteChainObject(ctx: GalaChainContext, data: ChainObject): Promise<void> {
   return ctx.stub.deleteState(data.getCompositeKey());
 }
 
+/**
+ * @description
+ *
+ * Query Chain Objects by Partial Composite Key. Refer to class definitions
+ * for types that extend `ChainObject` to determine property names and order
+ * of the `@ChainKey` composite parts.
+ *
+ * Non-paginated version. Use cases that expect large numbers of results
+ * should use `getObjectsByPartialCompositeKeyWithPagination()` instead.
+ *
+ * @remarks
+ * The `@ChainKeys` that make up the World State composite keys are ordered,
+ * and cannot be skipped when making partial composite key queries.
+ * Be advised that broad queries can lead
+ * to performance issues for large result sets.
+ *
+ * @param ctx
+ * @param objectType
+ * @param attributes
+ * @param constructor
+ * @returns Array of Chain Objects deserialized using the provided constructor
+ */
 export async function getObjectsByPartialCompositeKey<T extends ChainObject>(
   ctx: GalaChainContext,
   objectType: string,
@@ -91,6 +161,33 @@ export async function getObjectsByPartialCompositeKey<T extends ChainObject>(
   return allResults;
 }
 
+/**
+ * @description
+ *
+ * Query Chain Objects by Partial Composite Key. Refer to class definitions
+ * for types that extend `ChainObject` to determine property names and order
+ * of the `@ChainKey` composite parts.
+ *
+ * Paginated version. Use cases that expect large numbers of results
+ * can use this method to page through results. Cannot be used in SUBMIT
+ * transactions.
+ *
+ * @remarks
+ * The `@ChainKeys` that make up the World State composite keys are ordered,
+ * and cannot be skipped when making partial composite key queries.
+ * Be advised that broad queries can lead
+ * to performance issues for large result sets. Tune page size using the `limit`
+ * property accordingly.
+ *
+ * @param ctx
+ * @param objectType
+ * @param attributes
+ * @param constructor
+ * @returns
+ * Promise of an Object containing two properties:
+ * results: Array of Chain Objects deserialized using the provided constructor,
+ * metadata: QueryResponseMetadata
+ */
 export async function getObjectsByPartialCompositeKeyWithPagination<T extends ChainObject>(
   ctx: GalaChainContext,
   objectType: string,
@@ -115,11 +212,32 @@ export async function getObjectsByPartialCompositeKeyWithPagination<T extends Ch
     results.push(ChainObject.deserialize(constructor, stringResult));
   }
 
-  const metadata = (await response).metadata;
+  // Typically, Fabric returns undefined here if there are no results
+  const metadata: QueryResponseMetadata = (await response).metadata ?? {
+    bookmark: "",
+    fetchedRecordsCount: results.length
+  };
 
   return { results, metadata };
 }
 
+/**
+ * @description
+ *
+ * Fetch an object from on-chain World State by its key.
+ *
+ * The result will be deserialized and returned as an
+ * instantiated class instance using the provided `constructor`.
+ *
+ * @remarks
+ *
+ * Reads from `GalaChainStub` if object has been read
+ * previously during transaction execution.
+ *
+ * @param ctx
+ * @param constructor
+ * @param objectId
+ */
 export async function getObjectByKey<T extends ChainObject>(
   ctx: GalaChainContext,
   constructor: ClassConstructor<Inferred<T, ChainObject>>,
@@ -132,6 +250,38 @@ export async function getObjectByKey<T extends ChainObject>(
   }
 
   return ChainObject.deserialize(constructor, objectBuffer.toString());
+}
+
+/**
+ * @description
+ *
+ * Lookup a single ranged object by its key. `RangedChainObject` instances
+ * use HyperLedger Fabric's simple key scheme and are indexed in World State
+ * separately from the composite key namespace.
+ *
+ * The result will be deserialized and returned as an
+ * instantiated class instance using the provided `constructor`.
+ *
+ * @remarks
+ * Reads from `GalaChainStub` if object has been read
+ * previously during transaction execution.
+ *
+ * @param ctx
+ * @param constructor
+ * @param objectId
+ */
+export async function getRangedObjectByKey<T extends RangedChainObject>(
+  ctx: GalaChainContext,
+  constructor: ClassConstructor<Inferred<T, RangedChainObject>>,
+  objectId: string
+): Promise<T> {
+  const objectBuffer = await ctx.stub.getCachedState(objectId);
+
+  if (!objectBuffer || objectBuffer.length === 0) {
+    throw new ObjectNotFoundError(objectId);
+  }
+
+  return RangedChainObject.deserialize(constructor, objectBuffer.toString());
 }
 
 export async function getPlainObjectByKey(
@@ -157,7 +307,17 @@ export async function getObjectHistory(
 
   while (!res.done) {
     if (res.value) {
-      history.push(res.value);
+      const { isDelete, value, timestamp, txId } = res.value;
+
+      // `value` is a buffer, so we need to convert it to a string.
+      const stringValue = (value as unknown as Buffer).toString("utf8");
+
+      history.push({
+        isDelete,
+        timestamp,
+        txId,
+        value: stringValue
+      });
     }
     res = await iterator.next();
   }
@@ -167,6 +327,8 @@ export async function getObjectHistory(
 }
 
 /**
+ * @description
+ *
  * Gets objects by keys and returns them in the same order as in `projectIds` parameter.
  * If getting at least one object fails, throws an exception.
  */
@@ -208,8 +370,17 @@ export async function getObjectsByKeys<T extends ChainObject>(
   }
 }
 
-// objectExists returns true when asset with given ID exists in world state.
-// Only use this if we don't need the data from the chain
+/**
+ * @description
+ *
+ * objectExists returns true when asset with given ID exists in world state.
+ * Only use this function to check for existence. The stored data will not be
+ * deserialized or returned.
+ *
+ * @param ctx
+ * @param id
+ * @returns `Promise<boolean>`
+ */
 export async function objectExists(ctx: GalaChainContext, id: string): Promise<boolean> {
   const assetJSON = await ctx.stub.getCachedState(id);
 

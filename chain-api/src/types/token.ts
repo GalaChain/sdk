@@ -16,6 +16,7 @@ import BigNumber from "bignumber.js";
 import { Type } from "class-transformer";
 import {
   ArrayNotEmpty,
+  ArrayUnique,
   IsAlpha,
   IsBoolean,
   IsInt,
@@ -32,12 +33,12 @@ import {
 } from "class-validator";
 import { JSONSchema } from "class-validator-jsonschema";
 
-import { BigNumberProperty } from "../utils";
-import { BigNumberIsNotNegative, BigNumberIsPositive } from "../validators";
+import { BigNumberIsNotNegative, BigNumberIsPositive, BigNumberProperty, IsUserRef } from "../validators";
 import { TokenBalance } from "./TokenBalance";
 import { TokenClass, TokenClassKey } from "./TokenClass";
 import { TokenInstance, TokenInstanceKey } from "./TokenInstance";
-import { ChainCallDTO } from "./dtos";
+import { UserRef } from "./UserRef";
+import { ChainCallDTO, SubmitCallDTO } from "./dtos";
 
 @JSONSchema({
   description: "Contains list of objects representing token classes to fetch."
@@ -114,7 +115,7 @@ export class FetchTokenClassesResponse extends ChainCallDTO {
 
   @JSONSchema({ description: "Next page bookmark." })
   @IsOptional()
-  @IsNotEmpty()
+  @IsString()
   nextPageBookmark?: string;
 }
 
@@ -132,7 +133,7 @@ export class FetchTokenInstancesDto extends ChainCallDTO {
   description:
     "Contains properties of token class to be created. Actual token units and NFT instances are created on mint."
 })
-export class CreateTokenClassDto extends ChainCallDTO {
+export class CreateTokenClassDto extends SubmitCallDTO {
   static DEFAULT_NETWORK = "GC";
   static DEFAULT_DECIMALS = 0;
   static DEFAULT_MAX_CAPACITY = new BigNumber("Infinity");
@@ -264,7 +265,7 @@ export class CreateTokenClassDto extends ChainCallDTO {
   authorities?: string[];
 }
 
-export class UpdateTokenClassDto extends ChainCallDTO {
+export class UpdateTokenClassDto extends SubmitCallDTO {
   /* todo: should these fields be update-able? probably not, unless in exceptional circumstances.
            these are more complicted, as they track properties with second order effects.
            in theory, it's probably a bad idea if a token authority can just come in later
@@ -326,10 +327,10 @@ export class UpdateTokenClassDto extends ChainCallDTO {
       "Only token authorities can give mint allowances. " +
       "By default the calling user becomes a single token authority. "
   })
-  @IsString({ each: true })
+  @IsUserRef({ each: true })
   @IsOptional()
   @ArrayNotEmpty()
-  authorities?: string[];
+  authorities?: UserRef[];
 
   @JSONSchema({
     description:
@@ -349,8 +350,8 @@ export class FetchBalancesDto extends ChainCallDTO {
     description: "Person who owns the balance. If the value is missing, chaincode caller is used."
   })
   @IsOptional()
-  @IsNotEmpty()
-  owner?: string;
+  @IsUserRef()
+  owner?: UserRef;
 
   @JSONSchema({
     description: "Token collection. Optional, but required if category is provided."
@@ -391,8 +392,8 @@ export class FetchBalancesWithPaginationDto extends ChainCallDTO {
     description: "Person who owns the balance. If the value is missing, chaincode caller is used."
   })
   @IsOptional()
-  @IsNotEmpty()
-  owner?: string;
+  @IsUserRef()
+  owner?: UserRef;
 
   @JSONSchema({
     description: "Token collection. Optional, but required if category is provided."
@@ -461,6 +462,18 @@ export class TokenBalanceWithMetadata extends ChainCallDTO {
   token: TokenClass;
 }
 
+export class FetchBalancesWithPaginationResponse extends ChainCallDTO {
+  @JSONSchema({ description: "List of balances with token metadata." })
+  @ValidateNested({ each: true })
+  @Type(() => TokenBalance)
+  results: TokenBalance[];
+
+  @JSONSchema({ description: "Next page bookmark." })
+  @IsOptional()
+  @IsString()
+  nextPageBookmark?: string;
+}
+
 export class FetchBalancesWithTokenMetadataResponse extends ChainCallDTO {
   @JSONSchema({ description: "List of balances with token metadata." })
   @ValidateNested({ each: true })
@@ -469,7 +482,7 @@ export class FetchBalancesWithTokenMetadataResponse extends ChainCallDTO {
 
   @JSONSchema({ description: "Next page bookmark." })
   @IsOptional()
-  @IsNotEmpty()
+  @IsString()
   nextPageBookmark?: string;
 }
 
@@ -477,16 +490,16 @@ export class FetchBalancesWithTokenMetadataResponse extends ChainCallDTO {
   description:
     "Experimental: After submitting request to RequestMintAllowance, follow up with FulfillMintAllowance."
 })
-export class TransferTokenDto extends ChainCallDTO {
+export class TransferTokenDto extends SubmitCallDTO {
   @JSONSchema({
     description: "The current owner of tokens. If the value is missing, chaincode caller is used."
   })
   @IsOptional()
-  @IsNotEmpty()
-  from?: string;
+  @IsUserRef()
+  from?: UserRef;
 
-  @IsNotEmpty()
-  to: string;
+  @IsUserRef()
+  to: UserRef;
 
   @JSONSchema({
     description:
@@ -512,5 +525,6 @@ export class TransferTokenDto extends ChainCallDTO {
   @IsString({ each: true })
   @IsOptional()
   @ArrayNotEmpty()
+  @ArrayUnique()
   useAllowances?: Array<string>;
 }

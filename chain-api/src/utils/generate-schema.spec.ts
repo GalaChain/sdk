@@ -18,9 +18,8 @@ import { ArrayNotEmpty, IsNotEmpty, IsOptional, ValidateNested } from "class-val
 import { JSONSchema } from "class-validator-jsonschema";
 
 import { ChainCallDTO } from "../types";
-import { BigNumberIsPositive } from "../validators";
+import { BigNumberIsPositive, BigNumberProperty, EnumProperty } from "../validators";
 import { generateResponseSchema, generateSchema } from "./generate-schema";
-import { BigNumberProperty, EnumProperty } from "./transform-decorators";
 
 enum YesNoEnum {
   Yes,
@@ -94,27 +93,35 @@ const expectedTestDtoSchema = {
       description: "Quantity used in some place to support some feature. Number provided as a string.",
       type: "string"
     },
-    signature: {
+    signerAddress: {
       description:
-        "Signature of the DTO signed with caller's private key to be verified with user's public key saved on chain. " +
-        "The 'signature' field is optional for DTO, but is required for a transaction to be executed on chain.\n" +
-        "JSON payload to be signed is created from an object without 'signature' and 'trace` properties, " +
-        "and it's keys should be sorted alphabetically and no end of line at the end. " +
-        'Sample jq command to produce valid data to sign: `jq -cSj "." dto-file.json`.' +
-        "Also all BigNumber data should be provided as strings (not numbers) with fixed decimal point notation.\n" +
-        "The EC secp256k1 signature should be created for keccak256 hash of the data. " +
-        "The recommended format of the signature is a HEX encoded string, including r + s + v values. " +
-        "Signature in this format is supported by ethers.js library. " +
-        "Sample signature: b7244d62671319583ea8f30c8ef3b343cf28e7b7bd56e32b21a5920752dc95b94a9d202b2919581bcf776f0637462cb67170828ddbcc1ea63505f6a211f9ac5b1b\n" +
-        "This field can also contain a DER encoded signature, but this is deprecated and supported only to provide backwards compatibility. " +
-        "DER encoded signature cannot be used recover user's public key from the signature, " +
-        "and cannot be used with the new signature-based authorization flow for Gala Chain.\n",
+        "Address of the user who signed the DTO. Typically Ethereum or TON address, or user alias.",
+      minLength: 1,
+      type: "string"
+    },
+    signature: {
+      description: expect.stringContaining("Signature of the DTO signed with caller's private key"),
       minLength: 1,
       type: "string"
     },
     signerPublicKey: {
-      description:
-        "Public key of the user who signed the DTO. Required for DER encoded signatures, since they miss recovery part.",
+      description: "Public key of the user who signed the DTO.",
+      minLength: 1,
+      type: "string"
+    },
+    signing: {
+      description: expect.stringContaining("Signing scheme used for the signature."),
+      enum: ["ETH", "TON"],
+      type: "string"
+    },
+    multisig: {
+      description: expect.stringContaining("List of signatures for this DTO if there are multiple signers."),
+      items: {},
+      minItems: 2,
+      type: "array"
+    },
+    dtoOperation: {
+      description: expect.stringContaining("Full operation identifier"),
       minLength: 1,
       type: "string"
     },
@@ -130,6 +137,12 @@ const expectedTestDtoSchema = {
       minLength: 1,
       type: "string"
     },
+    prefix: {
+      description:
+        "Prefix for Metamask transaction signatures. Necessary to format payloads correctly to recover publicKey from web3 signatures.",
+      minLength: 1,
+      type: "string"
+    },
     quantities: {
       items: {
         description: "Number provided as a string.",
@@ -142,6 +155,11 @@ const expectedTestDtoSchema = {
       description: "0 - Yes, 1 - No",
       enum: [0, 1],
       type: "number"
+    },
+    dtoExpiresAt: {
+      description:
+        "Unit timestamp when the DTO expires. If the timestamp is in the past, the DTO is not valid.",
+      type: "number"
     }
   },
   type: "object",
@@ -150,7 +168,12 @@ const expectedTestDtoSchema = {
 
 const expectedTestDtoResponseSchema = {
   properties: {
-    Data: expectedTestDtoSchema,
+    Data: {
+      ...expectedTestDtoSchema,
+      properties: {
+        ...expectedTestDtoSchema.properties
+      }
+    },
     Message: {
       type: "string"
     },

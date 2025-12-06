@@ -63,6 +63,7 @@ replace_in_pwd_package_json() {
 
 # note: the order of packages is important
 replace_in_pwd_package_json "$script_dir/chain-api" "@gala-chain/api"
+replace_in_pwd_package_json "$script_dir/chain-connect" "@gala-chain/connect"
 replace_in_pwd_package_json "$script_dir/chain-client" "@gala-chain/client"
 replace_in_pwd_package_json "$script_dir/chain-test" "@gala-chain/test"
 replace_in_pwd_package_json "$script_dir/chaincode" "@gala-chain/chaincode"

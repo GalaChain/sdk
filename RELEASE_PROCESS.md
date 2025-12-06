@@ -12,6 +12,8 @@ We typically aim to release new versions on Mondays, although the timing may var
 
 ## Before release
 
+The current process of releasing a new version of the GalaChain SDK include a PR created by a bot (i.e. https://github.com/GalaChain/sdk/pull/242), which increments the version number (PATCH number) in the `package.json` file and all other necessary files. This PR should be merged before the release if you want to release this new version. So always check if the `package.json` in the main branch contains the correct version number.
+
 Please check if there are any approved pull requests that can be easily merged and merge them. You may also want to consult merging if there are some PRs marked with a `breaking-change` tag.
 
 By default we upgrade the PATCH version number, but if a given PR contains changes that should increment MINOR or MAJOR version number, then the upgrade should be made within the PR.

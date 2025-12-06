@@ -12,26 +12,32 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-import { ChainClient, ChainUser, ChainUserAPI, ContractConfig } from "@gala-chain/client";
+import { ChainClient, ChainUser, ChainUserAPI, ContractConfig } from "@gala-chain/api";
 
 import { ContractTestClient } from "./ContractTestClient";
 
-function contractConfig(c: string | ContractConfig): ContractConfig {
-  if (typeof c === "string") {
-    return {
-      channelName: "product-channel",
-      chaincodeName: "basic-product",
-      contractName: c
-    };
-  } else {
-    return c;
-  }
-}
-
-export function createChainClient(
-  user: ChainUser,
-  contract: string | ContractConfig
-): ChainClient & ChainUserAPI {
-  const cfg = contractConfig(contract);
-  return ContractTestClient.createForCurator(user, cfg);
+/**
+ * Creates a chain client for the specified user and contract configuration.
+ *
+ * This is a convenience function that creates a curator-level client using the ContractTestClient.
+ * The returned client provides both basic ChainClient functionality and ChainUserAPI methods.
+ *
+ * @param user - The chain user to authenticate with
+ * @param contract - Contract configuration including channel, chaincode, and contract details
+ * @returns Chain client with user API capabilities
+ *
+ * @example
+ * ```typescript
+ * const client = createChainClient(testUser, {
+ *   channel: "product-channel",
+ *   chaincode: "basic-product",
+ *   contract: "GalaChainToken"
+ * });
+ *
+ * // Use client for transactions
+ * await client.submitTransaction("CreateTokenClass", dto);
+ * ```
+ */
+export function createChainClient(user: ChainUser, contract: ContractConfig): ChainClient & ChainUserAPI {
+  return ContractTestClient.createForCurator(user, contract);
 }

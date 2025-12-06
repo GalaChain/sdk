@@ -21,7 +21,8 @@ import {
   TokenClass,
   TokenInstance,
   TokenInstanceQueryKey,
-  TokenMintAllowanceRequest
+  TokenMintAllowanceRequest,
+  UserAlias
 } from "@gala-chain/api";
 import BigNumber from "bignumber.js";
 
@@ -38,6 +39,7 @@ export interface InternalGrantAllowanceData {
   quantities: Array<GrantAllowanceQuantity>;
   uses: BigNumber;
   expires?: number;
+  uniqueKey: string;
 }
 
 export async function requestMintAllowance(
@@ -65,7 +67,7 @@ export async function requestMintAllowance(
 
   const tokenInstanceKeyString = TokenInstance.CreateCompositeKey(instanceKey);
 
-  const callingUser: string = ctx.callingUser;
+  const callingUser: UserAlias = ctx.callingUser;
 
   const totalQuantity = dto.quantities.reduce((a, b) => a.plus(b.quantity), new BigNumber(0));
 
@@ -124,6 +126,7 @@ export async function requestMintAllowance(
 
   const res = new FulfillMintAllowanceDto();
   res.requests = successfulRequests;
+  res.uniqueKey = `${dto.uniqueKey}-fulfill`;
 
   return res;
 }

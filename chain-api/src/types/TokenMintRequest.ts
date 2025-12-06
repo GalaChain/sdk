@@ -16,11 +16,12 @@ import BigNumber from "bignumber.js";
 import { Type } from "class-transformer";
 import { IsDefined, IsNotEmpty, IsOptional } from "class-validator";
 
-import { BigNumberProperty, ChainKey } from "../utils";
-import { BigNumberIsNotNegative } from "../validators";
+import { ChainKey } from "../utils";
+import { BigNumberIsNotNegative, BigNumberProperty, IsUserAlias } from "../validators";
 import { ChainObject } from "./ChainObject";
 import { RangedChainObject } from "./RangedChainObject";
 import { TokenMintFulfillment } from "./TokenMintFulfillment";
+import { UserAlias } from "./UserAlias";
 import { AllowanceKey, TokenMintStatus } from "./common";
 
 export class TokenMintRequest extends RangedChainObject {
@@ -48,15 +49,15 @@ export class TokenMintRequest extends RangedChainObject {
   public timeKey: string;
 
   @ChainKey({ position: 5 })
-  @IsNotEmpty()
-  public owner: string;
+  @IsUserAlias()
+  public owner: UserAlias;
 
   @IsNotEmpty()
   @BigNumberProperty()
   public totalKnownMintsCount: BigNumber;
 
-  @IsNotEmpty()
-  public requestor: string;
+  @IsUserAlias()
+  public requestor: UserAlias;
 
   @IsNotEmpty()
   public created: number;

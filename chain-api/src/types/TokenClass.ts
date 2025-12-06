@@ -21,16 +21,17 @@ import {
   IsDefined,
   IsNotEmpty,
   IsOptional,
-  IsString,
   Max,
   MaxLength,
   Min
 } from "class-validator";
 import { JSONSchema } from "class-validator-jsonschema";
 
-import { BigNumberProperty, ChainKey } from "../utils";
-import { BigNumberIsPositive } from "../validators";
+import { ChainKey } from "../utils";
+import { BigNumberIsPositive, BigNumberProperty, IsUserAlias } from "../validators";
 import { ChainObject } from "./ChainObject";
+import { UserAlias } from "./UserAlias";
+import { UserRef } from "./UserRef";
 import { GC_NETWORK_ID } from "./contract";
 import { ChainCallDTO } from "./dtos";
 
@@ -79,6 +80,25 @@ export class TokenClassKey extends ChainCallDTO {
     if (this.collection && this.category && this.type && additionalKeyPresent) return true;
 
     return false;
+  }
+
+  public toB58EncodedString(): string {
+    // combine the collection, category, type, and additionalKey and encode as base58
+    const keyList = TokenClass.buildClassKeyList(this);
+    const stringKey = ChainObject.getEncodableStringKeyFromParts(keyList);
+    return ChainObject.encodeToBase58(stringKey);
+  }
+
+  public static fromB58EncodedString(base58String: string): TokenClassKey {
+    const stringKey = ChainObject.decodeFromBase58(base58String);
+    const parts = ChainObject.getPartsFromEncodableStringKey(stringKey, 4);
+    const tokenClassKey = new TokenClassKey();
+    tokenClassKey.collection = parts[0];
+    tokenClassKey.category = parts[1];
+    tokenClassKey.type = parts[2];
+    tokenClassKey.additionalKey = parts[3];
+
+    return tokenClassKey;
   }
 }
 
@@ -131,8 +151,8 @@ export class TokenClass extends ChainObject {
   public maxCapacity: BigNumber;
 
   // IDs of authorities who can manage this token
-  @IsString({ each: true })
-  public authorities: Array<string>;
+  @IsUserAlias({ each: true })
+  public authorities: UserAlias[];
 
   /// ///////////////////////////////////////////////////
   // Permissioned Properties (Authorities can directly modify)
@@ -246,7 +266,7 @@ interface ToUpdate {
   metadataAddress?: string;
   rarity?: string;
   image?: string;
-  authorities?: string[];
+  authorities?: UserAlias[];
   overwriteAuthorities?: boolean;
 }
 

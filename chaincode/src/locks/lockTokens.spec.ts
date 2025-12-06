@@ -12,19 +12,12 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-import {
-  GalaChainResponse,
-  LockTokenDto,
-  TokenBalance,
-  TokenHold,
-  ValidationFailedError,
-  createValidDTO
-} from "@gala-chain/api";
+import { GalaChainResponse, LockTokenDto, TokenHold, createValidSubmitDTO } from "@gala-chain/api";
 import { currency, fixture, nft, users, writesMap } from "@gala-chain/test";
 import BigNumber from "bignumber.js";
-import { plainToInstance } from "class-transformer";
 
 import GalaChainTokenContract from "../__test__/GalaChainTokenContract";
+import { InvalidDecimalError } from "../token";
 
 describe("LockTokens", () => {
   test(`Adds a "lock" hold to a user's GalaChainTokenBalance`, async () => {
@@ -32,52 +25,40 @@ describe("LockTokens", () => {
     const nftInstance = nft.tokenInstance1();
     const nftInstanceKey = nft.tokenInstance1Key();
     const nftClass = nft.tokenClass();
-    const nftTokenBalancePlain = {
-      owner: users.testUser1Id,
-      collection: nftInstanceKey.collection,
-      category: nftInstanceKey.category,
-      type: nftInstanceKey.type,
-      additionalKey: nftInstanceKey.additionalKey,
-      instanceIds: [new BigNumber(nftInstanceKey.instance)],
-      lockedHolds: [],
-      inUseHolds: [],
-      quantity: new BigNumber("1")
-    };
-    const dto = await createValidDTO(LockTokenDto, {
-      owner: users.testUser1Id,
-      lockAuthority: users.testUser1Id,
+
+    const balance = nft.tokenBalance();
+    expect(balance.getNftInstanceIds()).toContainEqual(nftInstance.instance);
+
+    const dto = await createValidSubmitDTO(LockTokenDto, {
+      owner: users.testUser1.identityKey,
+      lockAuthority: users.testUser1.identityKey,
       tokenInstance: nftInstanceKey,
       quantity: new BigNumber("1")
-    });
-    const balance = plainToInstance(TokenBalance, {
-      ...nftTokenBalancePlain,
-      owner: users.testUser1Id,
-      instanceIds: [nftInstanceKey.instance],
-      lockedHolds: [],
-      inUseHolds: [],
-      quantity: new BigNumber(1)
-    });
+    }).signed(users.testUser1.privateKey);
 
-    const { ctx, contract, writes } = fixture(GalaChainTokenContract)
-      .callingUser(users.testUser1Id)
+    const { ctx, contract, getWrites } = fixture(GalaChainTokenContract)
+      .registeredUsers(users.testUser1)
       .savedState(nftClass, nftInstance, balance);
 
-    const expectedHold = new TokenHold({
-      createdBy: users.testUser1Id,
-      instanceId: nftInstanceKey.instance,
-      quantity: new BigNumber("1"),
-      created: ctx.txUnixTime,
-      lockAuthority: users.testUser1Id,
-      expires: 0
-    });
+    const balanceWithHold = balance.copy();
+    balanceWithHold.lockInstance(
+      new TokenHold({
+        createdBy: users.testUser1.identityKey,
+        instanceId: nftInstance.instance,
+        quantity: new BigNumber("1"),
+        created: ctx.txUnixTime,
+        lockAuthority: users.testUser1.identityKey,
+        expires: 0
+      }),
+      1
+    );
 
     // When
     const response = await contract.LockToken(ctx, dto);
 
     // Then
-    const balanceWithHold = plainToInstance(TokenBalance, { ...balance, lockedHolds: [expectedHold] });
     expect(response).toEqual(GalaChainResponse.Success(balanceWithHold));
-    expect(writes).toEqual(writesMap(balanceWithHold));
+    expect(getWrites()).toEqual(writesMap(balanceWithHold));
   });
 
   test(`Fails when quantity lower than decimal limit (10)`, async () => {
@@ -85,44 +66,30 @@ describe("LockTokens", () => {
     const currencyInstance = currency.tokenInstance();
     const currencyInstanceKey = currency.tokenInstanceKey();
     const currencyClass = currency.tokenClass();
+    const balance = currency.tokenBalance();
+
+    expect(currencyClass.decimals).toEqual(10);
+
     const decimalQuantity = new BigNumber("0.000000000001");
 
-    const dto = await createValidDTO(LockTokenDto, {
-      owner: users.testUser1Id,
-      lockAuthority: users.testUser1Id,
+    const dto = await createValidSubmitDTO(LockTokenDto, {
+      owner: users.testUser1.identityKey,
+      lockAuthority: users.testUser1.identityKey,
       tokenInstance: currencyInstanceKey,
       quantity: decimalQuantity
-    });
+    }).signed(users.testUser1.privateKey);
 
-    const { collection, category, type, additionalKey } = currencyClass;
-    const expectedBalance = new TokenBalance({
-      owner: users.testUser1Id,
-      collection,
-      category,
-      type,
-      additionalKey
-    });
-
-    expectedBalance.ensureCanAddQuantity(new BigNumber("10"));
-    const balanceKey = expectedBalance.getCompositeKey();
-
-    const { ctx, contract, writes } = fixture(GalaChainTokenContract)
-      .callingUser(users.testUser1Id)
-      .savedState(currencyClass, currencyInstance, expectedBalance);
+    const { ctx, contract, getWrites } = fixture(GalaChainTokenContract)
+      .registeredUsers(users.testUser1)
+      .savedState(currencyClass, currencyInstance, balance);
 
     // When
     const response = await contract.LockToken(ctx, dto);
 
     // Then
     expect(response).toEqual(
-      GalaChainResponse.Error(
-        new ValidationFailedError("Insufficient balance", {
-          balanceKey: balanceKey,
-          lockedQuantity: "0",
-          total: "0"
-        })
-      )
+      GalaChainResponse.Error(new InvalidDecimalError(decimalQuantity, currencyClass.decimals))
     );
-    expect(writes).toEqual({});
+    expect(getWrites()).toEqual({});
   });
 });

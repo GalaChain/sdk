@@ -12,142 +12,119 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-import {
-  ChainCallDTO,
-  ForbiddenError,
-  PublicKey,
-  UserProfile,
-  ValidationFailedError,
-  signatures
-} from "@gala-chain/api";
+import { ChainCallDTO, ForbiddenError, UnauthorizedError, UserRole } from "@gala-chain/api";
 
-import { PkInvalidSignatureError, PublicKeyService } from "../services";
 import { GalaChainContext } from "../types";
 
-class MissingSignatureError extends ValidationFailedError {
-  constructor() {
-    super("Signature is missing.");
+export class MissingRoleError extends UnauthorizedError {
+  constructor(callingUser: string, callingUserRoles: string[] | undefined, allowedRoles: string[]) {
+    const message =
+      `User ${callingUser} does not have one of required roles: ` +
+      `${allowedRoles.join(", ")} (has: ${callingUserRoles?.join(", ") || "no roles"})`;
+    super(message, { callingUser, callingUserRoles, allowedRoles });
   }
 }
 
-class RedundantSignerPublicKeyError extends ValidationFailedError {
-  constructor(recovered: string, inDto: string) {
-    super("Public key is redundant, when it can be recovered from signature.", { recovered, inDto });
+export class OrganizationNotAllowedError extends ForbiddenError {
+  constructor(userMsp: string, allowedOrgsMSPs: string[]) {
+    const message =
+      `Members of organization ${userMsp} do not have sufficient permissions.` +
+      ` Required one of [${allowedOrgsMSPs?.join(", ")}].`;
+    super(message, { userMsp, allowedOrgsMSPs });
   }
 }
 
-class UserNotRegisteredError extends ValidationFailedError {
-  constructor(userId: string) {
-    super(`User ${userId} is not registered.`, { userId });
+export class ChaincodeNotAllowedError extends ForbiddenError {
+  constructor(chaincode: string, allowedChaincodes: string[]) {
+    const message =
+      `Chaincode ${chaincode} is not allowed to access this method. ` +
+      `Required one of [${allowedChaincodes.join(", ")}].`;
+    super(message, { chaincode, allowedChaincodes });
   }
 }
 
-class OrganizationNotAllowedError extends ForbiddenError {}
+export const useRoleBasedAuth = process.env.USE_RBAC === "true";
 
-/**
- *
- * @param ctx
- * @param dto
- * @param legacyCAUser fallback user alias to use then the new flow is not applicable
- * @returns User alias of the calling user.
- */
-export async function authorize(
-  ctx: GalaChainContext,
-  dto: ChainCallDTO | undefined,
-  legacyCAUser: string
-): Promise<{ alias: string; ethAddress?: string }> {
-  if (!dto || dto.signature === undefined) {
-    throw new MissingSignatureError();
-  }
+export const curatorOrgMsp = process.env.CURATOR_ORG_MSP?.trim() ?? "CuratorOrg";
 
-  const recoveredPkHex = recoverPublicKey(dto.signature, dto);
+const registarOrgsFromEnv = process.env.REGISTRAR_ORG_MSPS?.split(",").map((o) => o.trim());
+export const registrarOrgMsps = registarOrgsFromEnv ?? [curatorOrgMsp];
 
-  if (recoveredPkHex !== undefined) {
-    if (dto.signerPublicKey !== undefined) {
-      throw new RedundantSignerPublicKeyError(recoveredPkHex, dto.signerPublicKey);
-    }
-    return await getUserProfile(ctx, recoveredPkHex); // new flow only
-  } else if (dto.signerPublicKey !== undefined) {
-    const providedPkHex = signatures.getNonCompactHexPublicKey(dto.signerPublicKey);
-    const ethAddress = signatures.getEthAddress(providedPkHex);
+export const requireCuratorAuth = useRoleBasedAuth
+  ? { allowedRoles: [UserRole.CURATOR] }
+  : { allowedOrgs: [curatorOrgMsp] };
 
-    if (!dto.isSignatureValid(providedPkHex)) {
-      throw new PkInvalidSignatureError(`eth|${ethAddress}`);
-    }
-
-    return await getUserProfile(ctx, providedPkHex); // new flow only
-  } else {
-    return await legacyAuthorize(ctx, dto, legacyCAUser); // legacy flow only
-  }
-}
-
-export async function ensureIsAuthorizedBy(
-  ctx: GalaChainContext,
-  dto: ChainCallDTO,
-  userAlias: string
-): Promise<{ alias: string; ethAddress?: string }> {
-  const authorized = await authorize(ctx, dto, userAlias);
-
-  if (authorized.alias !== userAlias) {
-    throw new ForbiddenError(`Dto is authorized by ${authorized}, and not by ${userAlias}`, { authorized });
-  }
-
-  return authorized;
-}
-
-async function getUserProfile(ctx: GalaChainContext, pkHex: string): Promise<UserProfile> {
-  const ethAddress = signatures.getEthAddress(pkHex);
-  const profile = await PublicKeyService.getUserProfile(ctx, ethAddress);
-
-  if (profile === undefined) {
-    throw new UserNotRegisteredError(ethAddress);
-  }
-
-  return profile;
-}
-
-async function legacyAuthorize(
-  ctx: GalaChainContext,
-  dto: ChainCallDTO,
-  legacyCAUser: string
-): Promise<{ alias: string; ethAddress: undefined }> {
-  const pk = await getSavedPKOrReject(ctx, legacyCAUser);
-
-  if (!dto.isSignatureValid(pk.publicKey)) {
-    throw new PkInvalidSignatureError(legacyCAUser);
-  }
-
-  return {
-    alias: legacyCAUser,
-    ethAddress: undefined
-  };
-}
+export const requireRegistrarAuth = useRoleBasedAuth
+  ? { allowedRoles: [UserRole.REGISTRAR] }
+  : { allowedOrgs: registrarOrgMsps };
 
 export function ensureOrganizationIsAllowed(ctx: GalaChainContext, allowedOrgsMSPs: string[] | undefined) {
-  const userOrg: string = ctx.clientIdentity.getMSPID();
-  const isAllowed = (allowedOrgsMSPs || []).some((o) => o === userOrg);
+  const userMsp: string = ctx.clientIdentity.getMSPID();
+  const isAllowed = (allowedOrgsMSPs || []).some((o) => o === userMsp);
 
   if (!isAllowed) {
-    const message = `Members of organization ${userOrg} do not have sufficient permissions.`;
-    const user = (ctx as { callingUser?: string } | undefined)?.callingUser;
-    throw new OrganizationNotAllowedError(message, { user, userOrg });
+    throw new OrganizationNotAllowedError(userMsp, allowedOrgsMSPs ?? []);
   }
 }
 
-function recoverPublicKey(signature: string, dto: ChainCallDTO): string | undefined {
-  try {
-    return signatures.recoverPublicKey(signature, dto);
-  } catch (err) {
-    return undefined;
+export function ensureCorrectMethodIsUsed(ctx: GalaChainContext, dto: ChainCallDTO | undefined) {
+  // If we use multisig, we need to check the method
+  if (ctx.isMultisig && !dto?.dtoOperation) {
+    const msg = `DTO operation is not provided. Please provide the operation name that is used for multisig.`;
+    throw new UnauthorizedError(msg);
+  }
+
+  if (!dto?.dtoOperation) {
+    return;
+  }
+
+  const fullOperationId = ctx.operationCtx.fullOperationId;
+
+  if (dto.dtoOperation !== fullOperationId) {
+    const msg = `The dto was signed to call ${dto.dtoOperation} operation, but the current operation is ${fullOperationId}.`;
+    throw new UnauthorizedError(msg);
   }
 }
 
-async function getSavedPKOrReject(ctx: GalaChainContext, userId: string): Promise<PublicKey> {
-  const publicKey = await PublicKeyService.getPublicKey(ctx, userId);
+export async function ensureRoleIsAllowed(ctx: GalaChainContext, allowedRoles: string[]) {
+  const hasRole = allowedRoles.some((role) => ctx.callingUserRoles?.includes(role));
+  if (!hasRole) {
+    const callingUser = await (async () => ctx.callingUser)().catch(() => "anonymous");
+    throw new MissingRoleError(callingUser, ctx.callingUserRoles, allowedRoles);
+  }
+}
 
-  if (publicKey === undefined) {
-    throw new UserNotRegisteredError(userId);
+export function ensureChaincodeIsAllowed(chaincode: string, allowedChaincodes: string[]) {
+  if (!allowedChaincodes.includes(chaincode)) {
+    throw new ChaincodeNotAllowedError(chaincode, allowedChaincodes);
+  }
+}
+
+export interface AuthorizeOptions {
+  allowedOrgs?: string[];
+  allowedRoles?: string[];
+  allowedOriginChaincodes?: string[];
+  quorum?: number;
+}
+
+export async function authorize(
+  ctx: GalaChainContext,
+  options: AuthorizeOptions,
+  dto: ChainCallDTO | undefined
+) {
+  if (options.allowedOriginChaincodes && ctx.callingUser.startsWith("service|")) {
+    const callingChaincode = ctx.callingUser.slice(8);
+    ensureChaincodeIsAllowed(callingChaincode, options.allowedOriginChaincodes);
+    return;
   }
 
-  return publicKey;
+  ensureCorrectMethodIsUsed(ctx, dto);
+
+  if (options.allowedOrgs) {
+    ensureOrganizationIsAllowed(ctx, options.allowedOrgs);
+  }
+
+  if (options.allowedRoles) {
+    await ensureRoleIsAllowed(ctx, options.allowedRoles);
+  }
 }

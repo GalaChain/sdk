@@ -14,18 +14,25 @@
  */
 import BigNumber from "bignumber.js";
 import { Type } from "class-transformer";
-import { ArrayNotEmpty, IsNotEmpty, IsOptional, IsString, ValidateNested } from "class-validator";
+import {
+  ArrayNotEmpty,
+  ArrayUnique,
+  IsNotEmpty,
+  IsOptional,
+  IsString,
+  ValidateNested
+} from "class-validator";
 import { JSONSchema } from "class-validator-jsonschema";
 
-import { TokenInstance, TokenInstanceKey } from "../types/TokenInstance";
-import { ChainCallDTO } from "../types/dtos";
-import { BigNumberProperty } from "../utils";
-import { BigNumberIsNotNegative } from "../validators";
+import { BigNumberIsNotNegative, BigNumberProperty, IsUserRef } from "../validators";
+import { TokenInstance, TokenInstanceKey } from "./TokenInstance";
+import { UserRef } from "./UserRef";
+import { SubmitCallDTO } from "./dtos";
 
 @JSONSchema({
   description: "Describes an action to release a token that is in use."
 })
-export class ReleaseTokenDto extends ChainCallDTO {
+export class ReleaseTokenDto extends SubmitCallDTO {
   @JSONSchema({
     description: "Token instance of token to be released."
   })
@@ -38,19 +45,19 @@ export class ReleaseTokenDto extends ChainCallDTO {
 @JSONSchema({
   description: "Describes an action to use a token."
 })
-export class UseTokenDto extends ChainCallDTO {
+export class UseTokenDto extends SubmitCallDTO {
   @JSONSchema({
     description: "The current owner of tokens. If the value is missing, chaincode caller is used."
   })
   @IsOptional()
-  @IsNotEmpty()
-  owner?: string;
+  @IsUserRef()
+  owner?: UserRef;
 
   @JSONSchema({
     description: "The user who is going to use token."
   })
-  @IsNotEmpty()
-  inUseBy: string;
+  @IsUserRef()
+  inUseBy: UserRef;
 
   @JSONSchema({
     description:
@@ -76,5 +83,6 @@ export class UseTokenDto extends ChainCallDTO {
   @IsString({ each: true })
   @IsOptional()
   @ArrayNotEmpty()
+  @ArrayUnique()
   useAllowances?: Array<string>;
 }

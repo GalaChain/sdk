@@ -12,18 +12,41 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+import { commonContractAPI } from "@gala-chain/api";
 import { AdminChainClients, TestClients, transactionSuccess } from "@gala-chain/test";
 
 jest.setTimeout(30000);
 
 describe("API snapshots", () => {
   const contractConfig = {
-    apples: "AppleContract",
-    pk: "PublicKeyContract",
-    assets: "GalaChainToken"
+    apples: {
+      channel: "product-channel",
+      chaincode: "basic-product",
+      contract: "AppleContract",
+      api: commonContractAPI
+    },
+    assets: {
+      channel: "product-channel",
+      chaincode: "basic-product",
+      contract: "GalaChainToken",
+      api: commonContractAPI
+    },
+    pk: {
+      channel: "product-channel",
+      chaincode: "basic-product",
+      contract: "PublicKeyContract",
+      api: commonContractAPI
+    }
   };
 
   let client: AdminChainClients<typeof contractConfig>;
+
+  // might be different in different environments
+  const apiOverrides: Record<string, unknown> = {
+    contractVersion: "?.?.?",
+    channelId: "channel-id",
+    chaincodeId: "chaincode-id"
+  };
 
   beforeAll(async () => {
     client = await TestClients.createForAdmin(contractConfig);
@@ -33,30 +56,30 @@ describe("API snapshots", () => {
     await client.disconnect();
   });
 
-  test(`Api of ${contractConfig.pk}`, async () => {
+  test(`Api of ${contractConfig.pk.contract}`, async () => {
     // When
     const response = await client.pk.GetContractAPI();
 
     // Then
     expect(response).toEqual(transactionSuccess());
-    expect({ ...response.Data, contractVersion: "?.?.?" }).toMatchSnapshot();
+    expect({ ...response.Data, ...apiOverrides }).toMatchSnapshot();
   });
 
-  test(`Api of ${contractConfig.assets}`, async () => {
+  test(`Api of ${contractConfig.assets.contract}`, async () => {
     // When
     const response = await client.assets.GetContractAPI();
 
     // Then
     expect(response).toEqual(transactionSuccess());
-    expect({ ...response.Data, contractVersion: "?.?.?" }).toMatchSnapshot();
+    expect({ ...response.Data, ...apiOverrides }).toMatchSnapshot();
   });
 
-  test(`Api of ${contractConfig.apples}`, async () => {
+  test(`Api of ${contractConfig.apples.contract}`, async () => {
     // When
     const response = await client.apples.GetContractAPI();
 
     // Then
     expect(response).toEqual(transactionSuccess());
-    expect({ ...response.Data, contractVersion: "?.?.?" }).toMatchSnapshot();
+    expect({ ...response.Data, ...apiOverrides }).toMatchSnapshot();
   });
 });

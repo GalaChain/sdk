@@ -16,14 +16,18 @@ import { AllowanceType, TokenAllowance, TokenInstanceKey } from "@gala-chain/api
 import { BigNumber } from "bignumber.js";
 
 import { FetchBalancesParams, fetchBalances } from "../balances";
+import { resolveUserAlias } from "../services";
 import { GalaChainContext } from "../types";
 import { DeleteOneAllowanceParams, deleteOneAllowance } from "./deleteAllowances";
 
 function isAllowanceSpent(allowance: TokenAllowance): boolean {
-  return (
-    allowance.usesSpent.isGreaterThanOrEqualTo(allowance.uses) ||
-    allowance.quantitySpent.isGreaterThanOrEqualTo(allowance.quantity)
-  );
+  if (allowance.usesSpent !== undefined && allowance.quantitySpent !== undefined) {
+    return (
+      allowance.usesSpent.isGreaterThanOrEqualTo(allowance.uses) ||
+      allowance.quantitySpent.isGreaterThanOrEqualTo(allowance.quantity)
+    );
+  }
+  return false;
 }
 
 export function isAllowanceExpired(ctx: GalaChainContext, allowance: TokenAllowance): boolean {
@@ -35,7 +39,7 @@ async function doesGrantorHaveToken(ctx: GalaChainContext, allowance: TokenAllow
   if (allowance.allowanceType === AllowanceType.Mint) return true;
 
   const balancesData: FetchBalancesParams = {
-    owner: allowance.grantedBy,
+    owner: await resolveUserAlias(ctx, allowance.grantedBy),
     collection: allowance.collection,
     category: allowance.category,
     type: allowance.type,
@@ -53,6 +57,18 @@ async function isAllowanceInvalid(ctx: GalaChainContext, allowance: TokenAllowan
   );
 }
 
+/**
+ * @description
+ *
+ * Iterate through the provided `TokenAllowance` chain objects,
+ * deleting those from world state that: a) have exhausted all uses, b) are expired,
+ * c) are otherwise invalid or unnecessary
+ *
+ * @param ctx
+ * @param allowancesToClean `TokenAllowance[]`
+ * @param authorizedOnBehalf `string`
+ * @returns `Promise<Array<TokenAllowance>>`
+ */
 export async function cleanAllowances(
   ctx: GalaChainContext,
   allowancesToClean: TokenAllowance[],
@@ -88,7 +104,22 @@ export async function cleanAllowances(
   return allowancesToClean;
 }
 
-// Check if a user has enough allowance to do a certain thing
+/**
+ * @description
+ *
+ * Given an array of allowances,
+ *
+ * 1. clean up and delete expired / fully used allowances
+ * 2. Match the remaining allowances against the `TokenInstanceKey` and `AllowanceType`
+ * 3. Sum up and return the total useable allowance quantity available
+ *
+ * @param ctx
+ * @param applicableAllowances
+ * @param tokenInstanceKey
+ * @param action
+ * @param callingOnBehalf
+ * @returns `Promise<BigNumber>`
+ */
 export async function checkAllowances(
   ctx: GalaChainContext,
   applicableAllowances: TokenAllowance[],
@@ -111,9 +142,11 @@ export async function checkAllowances(
       allowance.additionalKey === tokenInstanceKey.additionalKey &&
       allowance.instance.isEqualTo(tokenInstanceKey.instance) &&
       allowance.allowanceType === action &&
-      (allowance.expires === 0 || isAllowanceExpired(ctx, allowance))
+      !isAllowanceExpired(ctx, allowance)
     ) {
-      totalAllowance = totalAllowance.plus(allowance.quantity).minus(allowance.quantitySpent);
+      // quantitySpent could be undefined
+      const quantitySpent = allowance.quantitySpent ?? new BigNumber("0");
+      totalAllowance = totalAllowance.plus(allowance.quantity).minus(quantitySpent);
     }
   });
 

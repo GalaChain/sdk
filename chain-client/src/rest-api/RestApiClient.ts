@@ -12,10 +12,20 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-import { ChainCallDTO, ContractAPI, GalaChainResponse, Inferred } from "@gala-chain/api";
+import {
+  ChainCallDTO,
+  ChainClient,
+  ChainClientBuilder,
+  ClassType,
+  ContractAPI,
+  ContractConfig,
+  GalaChainResponse,
+  Inferred,
+  isClassType,
+  serialize
+} from "@gala-chain/api";
 import axios from "axios";
 
-import { ChainClient, ChainClientBuilder, ClassType, ContractConfig, isClassType } from "../generic";
 import { RestApiAdminCredentials, SetContractApiParams, globalRestApiConfig } from "./GlobalRestApiConfig";
 import { catchAxiosError } from "./catchAxiosError";
 import { RestApiConfig } from "./loadRestApiConfig";
@@ -52,10 +62,9 @@ export class RestApiClient extends ChainClient {
     builder: Promise<ChainClientBuilder>,
     restApiUrl: string,
     contractConfig: ContractConfig,
-    private readonly credentials: RestApiAdminCredentials,
     orgMsp: string
   ) {
-    super(builder, credentials.adminKey, contractConfig, orgMsp);
+    super(builder, "default-user", contractConfig, orgMsp);
     this.restApiUrl = builder.then(() => restApiUrl);
   }
 
@@ -94,21 +103,12 @@ export class RestApiClient extends ChainClient {
     dtoOrResp?: ChainCallDTO | ClassType<Inferred<T>>,
     resp?: ClassType<Inferred<T>>
   ): Promise<GalaChainResponse<T>> {
-    const { adminKey, adminSecret } = this.credentials;
     const [dto, responseType] = isClassType(dtoOrResp) ? [undefined, dtoOrResp] : [dtoOrResp, resp];
-    const serialized = JSON.parse(dto?.serialize() ?? "{}");
-    console.log(adminKey, "POST:", path, serialized);
-
-    const headers = {
-      "x-identity-lookup-key": adminKey,
-      "x-user-encryption-key": adminSecret
-    };
+    const serialized = JSON.parse(dto ? serialize(dto) : "{}");
 
     const response = await axios
-      .post<Record<string, unknown>>(path, serialized, { headers: headers })
+      .post<Record<string, unknown>>(path, serialized)
       .catch((e) => catchAxiosError(e));
-
-    console.log("Response: ", response.data);
 
     return GalaChainResponse.deserialize<T>(responseType, response.data ?? {});
   }
@@ -123,26 +123,13 @@ export class RestApiClient extends ChainClient {
     restApiUrl: string,
     restApiConfig: RestApiConfig
   ): Promise<SetContractApiParams[]> {
-    const headers = {
-      "x-identity-lookup-key": credentials.adminKey,
-      "x-user-encryption-key": credentials.adminSecret
-    };
-
-    // ensure admin account is created
-    await axios.post(`${restApiUrl}/identity/ensure-admin`, undefined, { headers });
-
-    // refresh api (may fail silently)
-    await axios.post(`${restApiUrl}/refresh-api`, undefined, { headers });
-
     const contractApis: SetContractApiParams[] = [];
 
     for (const channel of restApiConfig.channels) {
       for (const contract of channel.contracts) {
         const contractPath = `${channel.pathFragment}/${contract.pathFragment}`;
         const getApiPath = `${restApiUrl}/${contractPath}/GetContractAPI`;
-
-        console.log("Loading ContractAPI:", getApiPath);
-        const apiResponse = await axios.post(getApiPath, undefined, { headers });
+        const apiResponse = await axios.post(getApiPath);
 
         if (!GalaChainResponse.isSuccess<ContractAPI>(apiResponse.data)) {
           throw new Error(
@@ -150,7 +137,6 @@ export class RestApiClient extends ChainClient {
           );
         }
 
-        console.log("API:", getApiPath, apiResponse.data);
         contractApis.push({
           channelName: channel.channelName,
           chaincodeName: contract.chaincodeName,

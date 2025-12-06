@@ -1,12 +1,14 @@
 name: Test on push
 on:
   push:
+    tags: [v*]
+  pull_request:
   workflow_dispatch:
 
 jobs:
   ci:
     name: CI
-    runs-on: ubuntu-22.04
+    runs-on: ubuntu-latest
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -18,17 +20,36 @@ jobs:
           node-version: 18
       - name: Install dependencies
         run: npm i
-      - name: Lint
-        run: npm run lint
       - name: Build
         run: npm run build
+      - name: Lint
+        run: npm run lint
+      - name: Circular dependencies
+        run: npm run madge
       - name: Test
         run: npm run test
 
+  ensure-docker-cache:
+    name: Ensure Docker cache
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Cache Docker images
+        uses: ScribeMD/docker-cache@0.5.0
+        with:
+          key: docker-${{ runner.os }}-${{ github.ref_name }}
+      - name: Prefetch Fabric Docker layers
+        run: |
+          cd chain-cli/network
+          curl -Lf https://github.com/hyperledger-labs/fablo/releases/download/2.0.0/fablo.sh -o ./fablo && chmod +x ./fablo
+          ./fablo generate fablo-config-default.json
+          docker compose -f fablo-target/fabric-docker/docker-compose.yaml pull
+
   template-ci:
     name: Chaincode template CI
-    runs-on: ubuntu-22.04
-    needs: [ci]
+    runs-on: ubuntu-latest
+    needs: [ci, ensure-docker-cache]
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -36,6 +57,10 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: 18
+      - name: Cache Docker images
+        uses: ScribeMD/docker-cache@0.5.0
+        with:
+          key: docker-${{ runner.os }}-${{ github.ref_name }}
       - name: Install local CLI
         run: .github/scripts/install-local-cli.sh
       - name: Create test project
@@ -44,17 +69,17 @@ jobs:
         run: |
           (cd ./project-test && ../npm-pack-and-replace.sh --skipConfirmation)
           npm i --prefix ./project-test
-      - name: Lint
-        run: npm run lint --prefix ./project-test
       - name: Build
         run: npm run build --prefix ./project-test
+      - name: Lint
+        run: npm run lint --prefix ./project-test
       - name: Test
         run: npm run test --prefix ./project-test
 
   template-e2e:
     name: Chaincode template E2E (watch mode)
-    runs-on: ubuntu-22.04
-    needs: [ci]
+    runs-on: ubuntu-latest
+    needs: [ci, ensure-docker-cache]
     env:
       GALA_CLIENT_DEV_MODE: "true"
     steps:
@@ -73,11 +98,14 @@ jobs:
           yq --version
           bash --version
           docker version
-          docker-compose version
       - name: Set up Node.js
         uses: actions/setup-node@v4
         with:
           node-version: 18
+      - name: Cache Docker images
+        uses: ScribeMD/docker-cache@0.5.0
+        with:
+          key: docker-${{ runner.os }}-${{ github.ref_name }}
       - name: Install local CLI
         run: .github/scripts/install-local-cli.sh
       - name: Create test project
@@ -103,10 +131,88 @@ jobs:
           fi
           npm run network:prune --prefix ./project-test
 
+  template-e2e-rest:
+    name: Chaincode template E2E (REST API)
+    runs-on: ubuntu-latest
+    needs: [ci, ensure-docker-cache]
+    env:
+      CURATORORG_OPS_API_URL: "http://localhost:3000/api"
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Install tools
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y jq
+          sudo wget -qO /usr/local/bin/yq https://github.com/mikefarah/yq/releases/latest/download/yq_linux_amd64
+          sudo chmod a+x /usr/local/bin/yq
+          git --version
+          node --version
+          npm --version
+          jq --version
+          yq --version
+          bash --version
+          docker version
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 18
+      - name: Cache Docker images
+        uses: ScribeMD/docker-cache@0.5.0
+        with:
+          key: docker-${{ runner.os }}-${{ github.ref_name }}
+      - name: Install local CLI
+        run: .github/scripts/install-local-cli.sh
+      - name: Create test project
+        run: galachain init ./project-test
+      - name: Install dependencies
+        run: (cd ./project-test && ../npm-pack-and-replace.sh --skipConfirmation && npm run build)
+      - name: Run network in non-watch mode
+        run: npm run network:up --prefix ./project-test
+      - name: Run E2E tests
+        run: npm run test:e2e --prefix ./project-test
+
+  template-e2e-mocked:
+    name: Chaincode template E2E (Mocked client)
+    runs-on: ubuntu-latest
+    needs: [ci]
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Install tools
+        run: |
+          git --version
+          node --version
+          npm --version
+          jq --version
+          yq --version
+          bash --version
+          docker version
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 18
+      - name: Install local CLI
+        run: .github/scripts/install-local-cli.sh
+      - name: Create test project
+        run: galachain init ./project-test
+      - name: Install dependencies
+        run: |
+          (cd ./project-test && ../npm-pack-and-replace.sh --skipConfirmation)
+          npm i --prefix ./project-test
+      - name: Build test project
+        run: npm run build --prefix ./project-test
+      - name: Install dependencies
+        run: |
+          (cd ./project-test && ../npm-pack-and-replace.sh --skipConfirmation)
+          npm i --prefix ./project-test
+      - name: Run E2E tests on mocked client
+        run: npm run test:e2e-mocked --prefix ./project-test
+
   template-image-check:
     name: Chaincode template image check
-    needs: [ci]
-    runs-on: ubuntu-22.04
+    needs: [ci, ensure-docker-cache]
+    runs-on: ubuntu-latest
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -114,6 +220,10 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: 18
+      - name: Cache Docker images
+        uses: ScribeMD/docker-cache@0.5.0
+        with:
+          key: docker-${{ runner.os }}-${{ github.ref_name }}
       - name: Install local CLI
         run: .github/scripts/install-local-cli.sh
       - name: Create test project
@@ -135,5 +245,30 @@ jobs:
           else
             echo "---"
             echo "Unexpected error from the container. Expected: 'Missing required argument'."
+            exit 1
+          fi
+      - name: Verify contract names
+        run: |
+          run_output=$(docker run --rm chaincode-test lib/src/cli.js get-contract-names | tail -n 1 2>&1 || true)
+          echo "$run_output"
+          if echo "$run_output" | grep -q '[{"contractName":"AppleContract"},{"contractName":"GalaChainToken"},{"contractName":"PublicKeyContract"}]'; then
+            echo "Success: Got expected contract names."
+            exit 0
+          else
+            echo "---"
+            echo "Unexpected contract names."
+            exit 1
+          fi
+      - name: Verify contract API
+        run: |
+          docker run --name tmp chaincode-test lib/src/cli.js get-contract-api && docker cp tmp:/tmp/contract-api.json api.json && docker rm tmp
+          run_output=$(cat api.json)
+          echo "$run_output"
+          if echo "$run_output" | grep -q '"methodName":"PickApple"'; then
+            echo "Success: Got expected contract API."
+            exit 0
+          else
+            echo "---"
+            echo "Unexpected contract API."
             exit 1
           fi

@@ -22,6 +22,31 @@ import { checkAllowances } from "./checkAllowances";
 import { fetchAllowances } from "./fetchAllowances";
 import { useAllowances } from "./useAllowances";
 
+/**
+ * @description
+ *
+ * Query allowances from World State using either composite keys or a
+ * partial compomsite key query constructed from the provided paraemters,
+ * ensuring that the provided `grantedBy` and `authorizedOnBehalf` paraemters
+ * match the `TokenAllowance` `grantedBy` and `grantedTo` properties.
+ *
+ * Apply the remaining quantity of each applicable allowance to the total quantity.
+ *
+ * Return `true` after accounting for the full spend. Write a `TokenClaim` entry
+ * for each allowance used.
+ *
+ * Throws an exception if the full quantity cannot be
+ * met by the provided allowances.
+ * @param ctx
+ * @param grantedBy
+ * @param tokenInstanceKey
+ * @param quantity
+ * @param tokenInstance
+ * @param authorizedOnBehalf
+ * @param actionType
+ * @param useAllowancesArr
+ * @returns Promise<boolean>
+ */
 export async function verifyAndUseAllowances(
   ctx: GalaChainContext,
   grantedBy: string,
@@ -35,7 +60,9 @@ export async function verifyAndUseAllowances(
   let applicableAllowances: TokenAllowance[];
 
   if (useAllowancesArr.length) {
-    const fetchedAllowances = await getObjectsByKeys(ctx, TokenAllowance, useAllowancesArr);
+    // Deduplicate allowance keys to prevent double-spending
+    const uniqueAllowanceKeys = [...new Set(useAllowancesArr)];
+    const fetchedAllowances = await getObjectsByKeys(ctx, TokenAllowance, uniqueAllowanceKeys);
     applicableAllowances = fetchedAllowances.filter(
       (a) =>
         a.allowanceType === actionType &&
@@ -89,6 +116,6 @@ export async function verifyAndUseAllowances(
   }
 
   // Use allowances (which also creates claims)
-  const useResult = await useAllowances(ctx, quantity, applicableAllowances);
+  const useResult = await useAllowances(ctx, quantity, applicableAllowances, actionType);
   return useResult;
 }

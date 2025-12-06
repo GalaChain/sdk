@@ -61,3 +61,9 @@ export class InsufficientMintAllowanceError extends InsufficientAllowanceError {
     super(user, allowedQuantity, AllowanceType.Mint, quantity, tokenInstanceKey, toPersonKey);
   }
 }
+
+export class MintTokenFailedError extends DefaultError {
+  constructor(message: string, payload: Record<string, unknown> | undefined) {
+    super(`MintToken failed: ${message}`, payload);
+  }
+}

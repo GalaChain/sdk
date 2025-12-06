@@ -17,10 +17,10 @@ import BigNumber from "bignumber.js";
 
 import { GalaChainContext } from "../types";
 import {
-  blockTimeout,
   getObjectsByPartialCompositeKey,
   inverseKeyLength,
   inverseTime,
+  lookbackTimeOffset,
   lookbackTxCount,
   takeUntilUndefined
 } from "../utils";
@@ -35,7 +35,28 @@ export interface FetchBurnParams {
   burnedBy: string;
 }
 
-// This will return the list sorted by creation date ascending (oldest first)
+/**
+ * @description
+ *
+ * Query `TokenBurn` entries from on-chain World State using the provided
+ * filtering parameters.
+ *
+ * Results will be sorted by ascending creation date (oldest first).
+ *
+ * Non-paginated. Broad queries with many results could exceed the
+ * configured maximum and throw an error. Refer to the
+ * `TokenBurn` class definition, and use `@ChainKeys` of
+ * increasing specificity to limit queries.
+ *
+ * The `@ChainKeys` that make up the World State composite key are ordered,
+ * and cannot be skipped when making partial composite key queries.
+ * Be advised that broad queries can lead
+ * to performance issues for large result sets.
+ *
+ * @param ctx
+ * @param data
+ * @returns
+ */
 export async function fetchBurns(ctx: GalaChainContext, data: FetchBurnParams): Promise<TokenBurn[]> {
   const queryParams: string[] = takeUntilUndefined(
     data.burnedBy,
@@ -62,11 +83,39 @@ export interface FetchBurnCounterParams {
   additionalKey: string;
 }
 
+/**
+ * @experimental
+ *
+ * @description
+ *
+ * Execute a `getStateByRange` query of `TokenBurnCounter` entries.
+ *
+ * The start key will be offset by the configured `lookbackTimeOffset`
+ * (derived from the `blockTimeout`) environment variable, using an inverted
+ * time stamp.
+ *
+ * New entries are expected to be composed with a simple key
+ * generated based on the inversion of the current `ctx.txUnixTime`.
+ *
+ * The intent is to avoid reading new entries written in the same
+ * block, by choosing a start key that begins a range which
+ * will not include new writes.
+ *
+ * @remarks
+ *
+ * Unlike many other fetch queries, `fetchKnownBurnCount`
+ * iterate over entries extended from the `RangedChainObject`.
+ * `RangedChainObject` types do not support composite key queries.
+ *
+ * @param ctx
+ * @param token
+ * @returns
+ */
 export async function fetchKnownBurnCount(
   ctx: GalaChainContext,
   token: FetchBurnCounterParams
 ): Promise<BigNumber> {
-  const startTimeOffset = inverseTime(ctx, blockTimeout);
+  const startTimeOffset = inverseTime(ctx, lookbackTimeOffset);
   const keyLen = inverseKeyLength;
 
   const startKey = [
@@ -107,7 +156,7 @@ export async function fetchKnownBurnCount(
         const entry = RangedChainObject.deserialize(TokenBurnCounter, stringResult);
 
         // timeKey is a string padded with leading zeros. BigNumber will parse into an integer.
-        const entryTime = new BigNumber(entry.timeKey);
+        // const entryTime = new BigNumber(entry.timeKey);
 
         seekingFirstResult = false;
 

@@ -1,5 +1,6 @@
 name: Publish on tag
 on:
+  pull_request:
   push:
     tags: [v*]
   workflow_dispatch:
@@ -22,19 +23,28 @@ jobs:
           node-version: 18
       - name: Install Dependencies
         run: npm i
-      - name: Set up version
+      - name: Set up version and tag
         run: |
           # Extract package name and version
           NPM_PACKAGE_NAME=$(node -p "require('./package.json').name")
           NPM_PACKAGE_VERSION=$(node -p "require('./package.json').version")
+          # Set NPM_DIST_TAG based on version
+          if [[ $NPM_PACKAGE_VERSION == 2.* ]]; then
+            echo "NPM_DIST_TAG=latest" >> $GITHUB_ENV
+          elif [[ $NPM_PACKAGE_VERSION == 1.* ]]; then
+            echo "NPM_DIST_TAG=v1-latest" >> $GITHUB_ENV
+          else
+            echo "Error: Version must start with 1.* or 2.*"
+            exit 1
+          fi
           echo "//registry.npmjs.org/:_authToken=${{ secrets.NODE_AUTH_TOKEN }}" > .npmrc
       - name: publish-chain-api
         run: |
           cd chain-api
           npm i
           npm run build
-          # Publish to NPM registry
-          npm publish --access public
+          # Publish to NPM registry with appropriate tag
+          npm publish --access public --tag ${{ env.NPM_DIST_TAG }}
           cd ../
 
       - name: publish-chain-test
@@ -42,7 +52,7 @@ jobs:
           cd chain-test
           npm i
           npm run build
-          npm publish --access public
+          npm publish --access public --tag ${{ env.NPM_DIST_TAG }}
           cd ../
 
       - name: publish-chain-cli
@@ -50,7 +60,7 @@ jobs:
           cd chain-cli
           npm i
           npm run build
-          npm publish --access public
+          npm publish --access public --tag ${{ env.NPM_DIST_TAG }}
           cd ../
 
       - name: publish-chaincode
@@ -58,7 +68,7 @@ jobs:
           cd chaincode
           npm i
           npm run build
-          npm publish --access public
+          npm publish --access public --tag ${{ env.NPM_DIST_TAG }}
           cd ../
 
       - name: publish-client
@@ -66,7 +76,16 @@ jobs:
           cd chain-client
           npm i
           npm run build
-          npm publish --access public
+          npm publish --access public --tag ${{ env.NPM_DIST_TAG }}
+          cd ../
+
+      - name: publish-chain-connect
+        run: |
+          cd chain-connect
+          npm i
+          npm run build
+          # Publish to NPM registry
+          npm publish --access public --tag ${{ env.NPM_DIST_TAG }}
           cd ../
 
   publish-pages:
@@ -82,16 +101,20 @@ jobs:
           npm run typedoc-chain-api
           npm run typedoc-chain-client
           npm run typedoc-chaincode
+          npm run typedoc-chain-connect
           npm run typedoc-chain-test
           npm run replace-readme-docs
       - name: Install google-chrome
         run: |
           wget https://dl.google.com/linux/direct/google-chrome-stable_current_amd64.deb
           sudo dpkg -i google-chrome*.deb
-      - name: Install python3 and pip
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: Install system dependencies
         run: |
-          sudo apt-get install -y python3
-          sudo apt-get install -y python3-pip python3-pillow python3-cffi python3-brotli gcc musl-dev python3-dev
+          sudo apt-get install -y gcc musl-dev
       - name: Setup Node.js
         uses: actions/setup-node@v3
       - name: Install mermaid-cli
@@ -101,7 +124,7 @@ jobs:
       - name: Git config
         run: |
           git config --global user.email "${GITHUB_ACTOR}"
-          git config --global user.name "${GITHUB_ACTOR}@gala.games.com"
+          git config --global user.name "${GITHUB_ACTOR}@gala.games"
       - name: Clone mkdocs-with-pdf fixed branch and install
         run: |
           git clone -b render-mermaid-png https://github.com/Fuerback/mkdocs-with-pdf.git
@@ -114,7 +137,7 @@ jobs:
       - name: Push a new version of the docs
         run: |
           git stash
-          git fetch origin $PAGES_BRANCH && git -b checkout $PAGES_BRANCH origin/$PAGES_BRANCH || git checkout $PAGES_BRANCH || echo "Pages branch not deployed yet."
+          git fetch origin $PAGES_BRANCH && git checkout -b $PAGES_BRANCH origin/$PAGES_BRANCH || git checkout $PAGES_BRANCH || echo "Pages branch not deployed yet."
           git checkout $GITHUB_SHA
           mike deploy --rebase --prefix docs -r $HTTPS_REMOTE -p -b $PAGES_BRANCH -u ${GITHUB_REF#refs/tags/} latest
           mike set-default --rebase --prefix docs -r $HTTPS_REMOTE -p -b $PAGES_BRANCH latest
@@ -138,6 +161,10 @@ jobs:
         uses: docker/setup-qemu-action@v3
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
+      - name: Cache Docker images
+        uses: ScribeMD/docker-cache@0.5.0
+        with:
+          key: docker-${{ runner.os }}-${{ github.ref_name }}
       - name: Log in to the Container registry
         uses: docker/login-action@v3
         with:
@@ -165,7 +192,7 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
         with:
-          ref: "main"
+          ref: ${{ startsWith(github.ref_name, 'v1.') && 'main-v1' || 'main' }}
       - name: Set up Node.js
         uses: actions/setup-node@v4
         with:
@@ -182,9 +209,11 @@ jobs:
           echo "VERSION=$VERSION" >> $GITHUB_ENV
       - name: Create a new branch
         run: |
+          TARGET_BRANCH="${{ startsWith(github.ref_name, 'v1.') && 'main-v1' || 'main' }}"
           BRANCH_NAME="bump-version-to-$VERSION"
-          git checkout -b $BRANCH_NAME main
+          git checkout -b $BRANCH_NAME $TARGET_BRANCH
           echo "BRANCH_NAME=$BRANCH_NAME" >> $GITHUB_ENV
+          echo "TARGET_BRANCH=$TARGET_BRANCH" >> $GITHUB_ENV
       - name: Bump version and commit changes
         run: |
           ./unifyVersions.js $VERSION
@@ -194,4 +223,37 @@ jobs:
       - name: Create Pull Request
         env:
           GH_TOKEN: ${{ secrets.RELEASE_BOT_TOKEN }}
-        run: gh pr create --title "Bump Version to $VERSION" --body "Bump Version to $VERSION" --label "bump-version-pr" --head "bump-version-to-$VERSION" --base main
+        run: gh pr create --title "Bump Version to $VERSION" --body "Bump Version to $VERSION" --label "bump-version-pr" --head "bump-version-to-$VERSION" --base ${{ env.TARGET_BRANCH }}
+
+  notify-tag:
+    needs: [publish, publish-cli-image]
+    if: github.event_name != 'pull_request' && (startsWith(github.ref, 'refs/tags/v'))
+    name: Notify Tag
+    runs-on: ubuntu-latest
+    steps:
+      - name: Trigger GitLab Pipeline
+        id: trigger
+        run: |
+          curl -X POST -H 'Content-type: application/json' --data "{
+              \"channel\": \"#releases\",
+              \"username\": \"Tag Reporter Bot\",
+              \"text\": Galachain SDK ${{ github.ref_name }} Released by ${{ github.actor }}\n${{ github.event.head_commit.message }}
+          }" ${{ secrets.SLACK_TAG_WEBHOOK_URL }}
+
+  update-assets-chaincode:
+    needs: [publish]
+    runs-on: ubuntu-latest
+    name: Update assets chaincode
+    if: github.event_name != 'pull_request' && (startsWith(github.ref, 'refs/tags/v'))
+    steps:
+      - name: Trigger GitLab Pipeline
+        id: trigger
+        run: |
+          curl --request POST \
+            --form token=${{ secrets.GITLAB_PIPELINE_TOKEN }} \
+            --form ref=main \
+            --form variables[DEPLOY_NEW_SDK_TAG]="true" \
+            --form variables[NEW_VERSION_TAG]=${{ github.ref_name }} \
+            --form variables[GITHUB_AUTHOR]="${{ github.actor }}" \
+            --form variables[GITHUB_COMMIT_URL]="${{ github.server_url }}/${{ github.repository }}/commit/${{ github.sha }}" \
+            "https://gitlab.com/api/v4/projects/35484791/trigger/pipeline"

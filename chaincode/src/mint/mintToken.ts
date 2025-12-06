@@ -23,7 +23,8 @@ import {
   TokenClassKeyProperties,
   TokenInstance,
   TokenInstanceKey,
-  TokenMintFulfillment
+  TokenMintFulfillment,
+  UserAlias
 } from "@gala-chain/api";
 import { ChainCallDTO, ChainObject } from "@gala-chain/api";
 import { BigNumber } from "bignumber.js";
@@ -38,7 +39,7 @@ import { writeMintRequest } from "./requestMint";
 
 export interface MintTokenParams {
   tokenClassKey: TokenClassKey;
-  owner: string;
+  owner: UserAlias;
   quantity: BigNumber;
   authorizedOnBehalf: AuthorizedOnBehalf | undefined;
   applicableAllowanceKey?: AllowanceKey | undefined;
@@ -86,7 +87,7 @@ export async function mintToken(
         applicableAllowanceKey.type,
         applicableAllowanceKey.additionalKey,
         applicableAllowanceKey.instance.toString(),
-        applicableAllowanceKey.allowanceType.toString(),
+        AllowanceType.Mint.toString(),
         applicableAllowanceKey.grantedBy,
         applicableAllowanceKey.created.toString()
       ])
@@ -102,11 +103,18 @@ export async function mintToken(
       collection: tokenClassKey.collection,
       category: tokenClassKey.category,
       type: tokenClassKey.type,
-      additionalKey: tokenClassKey.additionalKey
+      additionalKey: tokenClassKey.additionalKey,
+      instance: TokenInstance.FUNGIBLE_TOKEN_INSTANCE.toString(),
+      allowanceType: AllowanceType.Mint
     };
 
     applicableAllowanceResponse = await fetchAllowances(ctx, fetchAllowancesData);
   }
+
+  // Filter allowances to only include those granted by current authorities
+  applicableAllowanceResponse = applicableAllowanceResponse.filter((allowance) =>
+    tokenClass.authorities.includes(allowance.grantedBy)
+  );
 
   const dtoInstanceKey = ChainCallDTO.deserialize<TokenInstanceKey>(TokenInstanceKey, {
     ...tokenClassKey,
@@ -139,7 +147,8 @@ export async function mintToken(
   const allowancesUsed: boolean = await useAllowances(
     ctx,
     new BigNumber(quantity),
-    applicableAllowanceResponse
+    applicableAllowanceResponse,
+    AllowanceType.Mint
   );
 
   if (!allowancesUsed) {
@@ -187,7 +196,7 @@ export async function mintToken(
       mintedNFTs.push(nftInfo);
 
       // update balance
-      userBalance.ensureCanAddInstance(nftInfo.instance).add();
+      userBalance.addInstance(nftInfo.instance);
     }
 
     // save instances
@@ -216,7 +225,7 @@ export async function mintToken(
     // Update the balance of the target user, or create it.
     const userBalance = await fetchOrCreateBalance(ctx, owner, tokenClassKey);
 
-    userBalance.ensureCanAddQuantity(quantity).add();
+    userBalance.addQuantity(quantity);
 
     // Write the balance to the chain
     await putChainObject(ctx, userBalance);
@@ -240,8 +249,8 @@ export async function mintToken(
 
 export interface UpdateTokenSupplyParams {
   tokenClassKey: TokenClassKeyProperties;
-  callingUser: string;
-  owner: string;
+  callingUser: UserAlias;
+  owner: UserAlias;
   quantity: BigNumber;
   allowanceKey?: AllowanceKey | undefined;
   knownTotalSupply?: BigNumber | undefined;

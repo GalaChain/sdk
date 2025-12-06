@@ -19,13 +19,14 @@ import {
   TokenBalance,
   TokenClassKey,
   TokenHold,
-  TokenInstanceKey
+  TokenInstanceKey,
+  UserAlias
 } from "@gala-chain/api";
 import { BigNumber } from "bignumber.js";
 
 import { verifyAndUseAllowances } from "../allowances";
 import { fetchOrCreateBalance } from "../balances";
-import { fetchTokenInstance } from "../token";
+import { InvalidDecimalError, fetchTokenClass, fetchTokenInstance } from "../token";
 import { GalaChainContext } from "../types";
 import { putChainObject } from "../utils";
 import { InvalidExpirationError, NftInvalidQuantityLockError } from "./LockError";
@@ -33,18 +34,19 @@ import { InvalidExpirationError, NftInvalidQuantityLockError } from "./LockError
 export interface TokenQuantity {
   tokenInstanceKey: TokenInstanceKey;
   quantity: BigNumber;
-  owner?: string;
+  owner?: UserAlias;
 }
 
 export interface LockTokenParams {
-  owner: string | undefined;
-  lockAuthority: string | undefined;
+  owner: UserAlias | undefined;
+  lockAuthority: UserAlias | undefined;
   tokenInstanceKey: TokenInstanceKey;
   quantity: BigNumber;
   allowancesToUse: string[];
   expires: number;
   name: string | undefined;
   verifyAuthorizedOnBehalf: (c: TokenClassKey) => Promise<AuthorizedOnBehalf | undefined>;
+  vestingPeriodStart: number | undefined;
 }
 
 export async function lockToken(
@@ -57,6 +59,7 @@ export async function lockToken(
     allowancesToUse,
     name,
     expires,
+    vestingPeriodStart,
     verifyAuthorizedOnBehalf
   }: LockTokenParams
 ): Promise<TokenBalance> {
@@ -71,6 +74,14 @@ export async function lockToken(
 
   if (expires > 0 && expires < ctx.txUnixTime) {
     throw new InvalidExpirationError(expires);
+  }
+
+  // Get the token class
+  const tokenClass = await fetchTokenClass(ctx, tokenInstanceKey);
+
+  const decimalPlaces = quantity.decimalPlaces() ?? 0;
+  if (decimalPlaces > tokenClass.decimals) {
+    throw new InvalidDecimalError(quantity, tokenClass.decimals);
   }
 
   // Get the token instance
@@ -112,17 +123,18 @@ export async function lockToken(
   const hold = await TokenHold.createValid({
     createdBy: callingOnBehalf,
     instanceId: tokenInstance.instance,
-    quantity: quantity,
+    quantity,
     created: ctx.txUnixTime,
-    expires: expires,
-    name: name,
-    lockAuthority
+    expires,
+    name,
+    lockAuthority,
+    vestingPeriodStart
   });
 
   if (tokenInstanceKey.isFungible()) {
-    balance.ensureCanLockQuantity(hold).lock();
+    balance.lockQuantity(hold);
   } else {
-    balance.ensureCanLockInstance(hold, ctx.txUnixTime).lock();
+    balance.lockInstance(hold, ctx.txUnixTime);
   }
 
   await putChainObject(ctx, balance);
@@ -130,11 +142,17 @@ export async function lockToken(
   return balance;
 }
 
+export interface TokenQuantityParams {
+  tokenInstanceKey: TokenInstanceKey;
+  quantity: BigNumber;
+  owner: UserAlias | undefined;
+}
+
 export interface LockTokensParams {
-  tokenInstances: TokenQuantity[];
+  tokenInstances: TokenQuantityParams[];
   allowancesToUse: string[];
   name: string | undefined;
-  lockAuthority: string | undefined;
+  lockAuthority: UserAlias | undefined;
   expires: number;
   verifyAuthorizedOnBehalf: (c: TokenClassKey) => Promise<AuthorizedOnBehalf | undefined>;
 }
@@ -161,7 +179,8 @@ export async function lockTokens(
       allowancesToUse,
       name,
       expires,
-      verifyAuthorizedOnBehalf: verifyAuthorizedOnBehalf
+      vestingPeriodStart: undefined, // don't allow vesting locks on batch locking
+      verifyAuthorizedOnBehalf
     });
     responses.push(updatedBalance);
   }

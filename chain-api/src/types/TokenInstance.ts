@@ -13,7 +13,7 @@
  * limitations under the License.
  */
 import { BigNumber } from "bignumber.js";
-import { Exclude, Type, classToPlain as instanceToPlain } from "class-transformer";
+import { Type, classToPlain as instanceToPlain } from "class-transformer";
 import {
   IsBoolean,
   IsDefined,
@@ -25,11 +25,11 @@ import {
 } from "class-validator";
 import { JSONSchema } from "class-validator-jsonschema";
 
-import { ChainKey } from "../utils/chain-decorators";
-import { BigNumberProperty } from "../utils/transform-decorators";
-import { BigNumberIsInteger, BigNumberIsNotNegative } from "../validators/decorators";
+import { ChainKey } from "../utils";
+import { BigNumberIsInteger, BigNumberIsNotNegative, BigNumberProperty, IsUserAlias } from "../validators";
 import { ChainObject } from "./ChainObject";
 import { TokenClass, TokenClassKey, TokenClassKeyProperties } from "./TokenClass";
+import { UserAlias } from "./UserAlias";
 import { ChainCallDTO } from "./dtos";
 
 export interface TokenInstanceKeyProperties {
@@ -112,6 +112,26 @@ export class TokenInstanceKey extends ChainCallDTO {
 
   public isFungible(): boolean {
     return TokenInstance.isFungible(this.instance);
+  }
+
+  public toB58EncodedString(): string {
+    // combine the collection, category, type, additionalKey, and instance and encode as base58
+    const keyList = TokenInstance.buildInstanceKeyList(this);
+    const stringKey = ChainObject.getEncodableStringKeyFromParts(keyList);
+    return ChainObject.encodeToBase58(stringKey);
+  }
+
+  public static fromB58EncodedString(base58String: string): TokenInstanceKey {
+    const stringKey = ChainObject.decodeFromBase58(base58String);
+    const parts = ChainObject.getPartsFromEncodableStringKey(stringKey, 5);
+    const tokenInstanceKey = new TokenInstanceKey();
+    tokenInstanceKey.collection = parts[0];
+    tokenInstanceKey.category = parts[1];
+    tokenInstanceKey.type = parts[2];
+    tokenInstanceKey.additionalKey = parts[3];
+    tokenInstanceKey.instance = new BigNumber(parts[4]);
+
+    return tokenInstanceKey;
   }
 }
 
@@ -260,20 +280,28 @@ export class TokenInstance extends ChainObject {
   public isNonFungible: boolean;
 
   @ValidateIf((i) => i.isNonFungible === true)
-  @IsNotEmpty()
-  public owner?: string;
+  @IsUserAlias()
+  public owner?: UserAlias;
 
   public static INDEX_KEY = "GCTI2";
 
   public static FUNGIBLE_TOKEN_INSTANCE = new BigNumber(0);
 
   // This returns the unique identifying string used in the composite key for querying HLF
-  @Exclude()
   public GetCompositeKeyString(): string {
     return TokenInstance.CreateCompositeKey(this);
   }
 
-  @Exclude()
+  public instanceKeyObj(): TokenInstanceKey {
+    const tik = new TokenInstanceKey();
+    tik.collection = this.collection;
+    tik.category = this.category;
+    tik.type = this.type;
+    tik.additionalKey = this.additionalKey;
+    tik.instance = this.instance;
+    return tik;
+  }
+
   public static GetFungibleInstanceFromClass(token: TokenClassKeyProperties): string {
     const { MIN_UNICODE_RUNE_VALUE } = ChainObject;
     const { collection, category, type, additionalKey } = token;
@@ -284,7 +312,6 @@ export class TokenInstance extends ChainObject {
   }
 
   // This returns the unique identifying string used in the composite key for querying HLF
-  @Exclude()
   public static CreateCompositeKey(token: TokenInstanceKeyProperties): string {
     const { MIN_UNICODE_RUNE_VALUE } = ChainObject;
     const { collection, category, type, additionalKey, instance } = instanceToPlain(token);
@@ -294,7 +321,6 @@ export class TokenInstance extends ChainObject {
 
   // This parses a string into the key that can be used to query HLF
   // This looks to be built to only handle the key to be composed of two parts and seperated by a |
-  @Exclude()
   public static GetCompositeKeyFromString(tokenCid: string): string {
     const idParts = tokenCid.split(ChainObject.ID_SPLIT_CHAR);
 
@@ -306,7 +332,6 @@ export class TokenInstance extends ChainObject {
     }
   }
 
-  @Exclude()
   public static buildInstanceKeyList(
     token: TokenInstanceKeyProperties
   ): [collection: string, category: string, type: string, additionalKey: string, instance: string] {
@@ -314,7 +339,6 @@ export class TokenInstance extends ChainObject {
     return [collection, category, type, additionalKey, instance.toString()];
   }
 
-  @Exclude()
   public static async buildInstanceKeyObject(token: TokenInstanceKeyProperties): Promise<TokenInstanceKey> {
     const tokenInstanceKey = new TokenInstanceKey();
 

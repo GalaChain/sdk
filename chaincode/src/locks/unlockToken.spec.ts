@@ -12,10 +12,9 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-import { GalaChainResponse, TokenBalance, UnlockTokenDto, createValidDTO } from "@gala-chain/api";
+import { GalaChainResponse, TokenHold, UnlockTokenDto, createValidSubmitDTO } from "@gala-chain/api";
 import { currency, fixture, nft, users, writesMap } from "@gala-chain/test";
 import BigNumber from "bignumber.js";
-import { plainToInstance } from "class-transformer";
 
 import GalaChainTokenContract from "../__test__/GalaChainTokenContract";
 import { UnlockForbiddenUserError } from "./LockError";
@@ -27,34 +26,35 @@ describe("UnlockToken", () => {
     const nftInstanceKey = nft.tokenInstance1Key();
     const nftClass = nft.tokenClass();
 
-    const ownerBalance = plainToInstance(TokenBalance, {
-      ...nft.tokenBalance(),
-      lockedHolds: [
-        {
-          createdBy: users.testUser1Id,
-          instanceId: nftInstance.instance,
-          quantity: new BigNumber("1"),
-          created: 1,
-          expires: 0
-        }
-      ]
-    });
+    const balanceNoLockedHolds = nft.tokenBalance();
+    expect(balanceNoLockedHolds.getNftInstanceIds()).toContainEqual(nftInstance.instance);
 
-    const { ctx, contract, writes } = fixture(GalaChainTokenContract)
-      .callingUser(users.testUser1Id)
-      .savedState(nftClass, nftInstance, ownerBalance);
+    const balanceWithLockedHold = balanceNoLockedHolds.copy();
+    balanceWithLockedHold.lockInstance(
+      new TokenHold({
+        createdBy: users.testUser1.identityKey,
+        instanceId: nftInstance.instance,
+        quantity: new BigNumber("1"),
+        created: 1,
+        expires: 0
+      }),
+      1
+    );
 
-    const dto = await createValidDTO(UnlockTokenDto, {
-      tokenInstance: nftInstanceKey
-    });
+    const { ctx, contract, getWrites } = fixture(GalaChainTokenContract)
+      .registeredUsers(users.testUser1)
+      .savedState(nftClass, nftInstance, balanceWithLockedHold);
+
+    const dto = await createValidSubmitDTO(UnlockTokenDto, { tokenInstance: nftInstanceKey }).signed(
+      users.testUser1.privateKey
+    );
 
     // When
     const response = await contract.UnlockToken(ctx, dto);
 
     // Then
-    const balanceNoLockedHolds = plainToInstance(TokenBalance, { ...ownerBalance, lockedHolds: [] });
     expect(response).toEqual(GalaChainResponse.Success(balanceNoLockedHolds));
-    expect(writes).toEqual(writesMap(balanceNoLockedHolds));
+    expect(getWrites()).toEqual(writesMap(balanceNoLockedHolds));
   });
 
   test("NFT unlocks for Token Authority", async () => {
@@ -63,34 +63,81 @@ describe("UnlockToken", () => {
     const nftInstanceKey = nft.tokenInstance1Key();
     const nftClass = nft.tokenClass();
 
-    const ownerBalance = plainToInstance(TokenBalance, {
-      ...nft.tokenBalance(),
-      lockedHolds: [
-        {
-          createdBy: users.testUser1Id,
-          instanceId: nftInstance.instance,
-          quantity: new BigNumber("1"),
-          created: 1,
-          expires: 0
-        }
-      ]
-    });
+    const balanceNoLockedHolds = nft.tokenBalance();
+    expect(balanceNoLockedHolds.getNftInstanceIds()).toContainEqual(nftInstance.instance);
 
-    const { ctx, contract, writes } = fixture(GalaChainTokenContract)
-      .callingUser(users.testAdminId)
-      .savedState(nftClass, nftInstance, ownerBalance);
+    const balanceWithLockedHold = balanceNoLockedHolds.copy();
+    balanceWithLockedHold.lockInstance(
+      new TokenHold({
+        createdBy: users.testUser1.identityKey,
+        instanceId: nftInstance.instance,
+        quantity: new BigNumber("1"),
+        created: 1,
+        expires: 0
+      }),
+      1
+    );
 
-    const dto = await createValidDTO(UnlockTokenDto, {
-      tokenInstance: nftInstanceKey
-    });
+    const { ctx, contract, getWrites } = fixture(GalaChainTokenContract)
+      .registeredUsers(users.admin)
+      .savedState(nftClass, nftInstance, balanceWithLockedHold);
+
+    const dto = await createValidSubmitDTO(UnlockTokenDto, { tokenInstance: nftInstanceKey }).signed(
+      users.admin.privateKey
+    );
+
+    expect(balanceWithLockedHold.getUnexpiredLockedHolds(0)[0].createdBy).toEqual(
+      users.testUser1.identityKey
+    );
+    expect(users.admin.identityKey).not.toEqual(users.testUser1.identityKey);
+    expect(nftClass.authorities).toContain(users.admin.identityKey);
 
     // When
     const response = await contract.UnlockToken(ctx, dto);
 
     // Then
-    const balanceNoLockedHolds = plainToInstance(TokenBalance, { ...ownerBalance, lockedHolds: [] });
     expect(response).toEqual(GalaChainResponse.Success(balanceNoLockedHolds));
-    expect(writes).toEqual(writesMap(balanceNoLockedHolds));
+    expect(getWrites()).toEqual(writesMap(balanceNoLockedHolds));
+  });
+
+  test("NFT unlocks for Token Authority with named locked hold", async () => {
+    // Given
+    const nftInstance = nft.tokenInstance1();
+    const nftInstanceKey = nft.tokenInstance1Key();
+    const nftClass = nft.tokenClass();
+    const lockedHoldName = "some test locked hold name";
+
+    const balanceNoLockedHolds = nft.tokenBalance();
+    expect(balanceNoLockedHolds.getNftInstanceIds()).toContainEqual(nftInstance.instance);
+
+    const balanceWithLockedHold = balanceNoLockedHolds.copy();
+    balanceWithLockedHold.lockInstance(
+      new TokenHold({
+        createdBy: users.testUser1.identityKey,
+        instanceId: nftInstance.instance,
+        quantity: new BigNumber("1"),
+        created: 1,
+        expires: 0,
+        name: lockedHoldName
+      }),
+      1
+    );
+
+    const { ctx, contract, getWrites } = fixture(GalaChainTokenContract)
+      .registeredUsers(users.admin)
+      .savedState(nftClass, nftInstance, balanceWithLockedHold);
+
+    const dto = await createValidSubmitDTO(UnlockTokenDto, {
+      tokenInstance: nftInstanceKey,
+      lockedHoldName: lockedHoldName
+    }).signed(users.admin.privateKey);
+
+    // When
+    const response = await contract.UnlockToken(ctx, dto);
+
+    // Then
+    expect(response).toEqual(GalaChainResponse.Success(balanceNoLockedHolds));
+    expect(getWrites()).toEqual(writesMap(balanceNoLockedHolds));
   });
 
   test("Fungible unlocks for Token Authority", async () => {
@@ -98,42 +145,40 @@ describe("UnlockToken", () => {
     const currencyInstance = currency.tokenInstance();
     const currencyInstanceKey = currency.tokenInstanceKey();
     const currencyClass = currency.tokenClass();
+    const balanceNoLockedHolds = currency.tokenBalance();
 
     const testLockedHoldName = "some test locked hold name";
 
-    const ownerBalance = plainToInstance(TokenBalance, {
-      ...currency.tokenBalance(),
-      lockedHolds: [
-        {
-          createdBy: users.testUser1Id,
-          instanceId: currencyInstance.instance,
-          quantity: new BigNumber("1"),
-          created: 1,
-          expires: 0,
-          lockAuthority: users.testUser1Id,
-          name: testLockedHoldName
-        }
-      ]
-    });
+    const balanceWithLockedHold = balanceNoLockedHolds.copy();
+    balanceWithLockedHold.lockQuantity(
+      new TokenHold({
+        createdBy: users.testUser1.identityKey,
+        lockAuthority: users.testUser1.identityKey,
+        instanceId: currencyInstance.instance,
+        quantity: new BigNumber("1"),
+        created: 1,
+        expires: 0,
+        name: testLockedHoldName
+      })
+    );
 
-    const { ctx, contract, writes } = fixture(GalaChainTokenContract)
-      .callingUser(users.testAdminId)
-      .savedState(currencyClass, currencyInstance, ownerBalance);
+    const { ctx, contract, getWrites } = fixture(GalaChainTokenContract)
+      .registeredUsers(users.admin)
+      .savedState(currencyClass, currencyInstance, balanceWithLockedHold);
 
-    const dto = await createValidDTO(UnlockTokenDto, {
+    const dto = await createValidSubmitDTO(UnlockTokenDto, {
       tokenInstance: currencyInstanceKey,
       quantity: new BigNumber("1"),
       lockedHoldName: testLockedHoldName,
-      owner: users.testUser1Id
-    });
+      owner: users.testUser1.identityKey
+    }).signed(users.admin.privateKey);
 
     // When
     const response = await contract.UnlockToken(ctx, dto);
 
     // Then
-    const balanceNoLockedHolds = plainToInstance(TokenBalance, { ...ownerBalance, lockedHolds: [] });
     expect(response).toEqual(GalaChainResponse.Success(balanceNoLockedHolds));
-    expect(writes).toEqual(writesMap(balanceNoLockedHolds));
+    expect(getWrites()).toEqual(writesMap(balanceNoLockedHolds));
   });
 
   test("prevents users.attacker's attempt to unlock owner's token", async () => {
@@ -150,69 +195,37 @@ describe("UnlockToken", () => {
     const nftInstance = nft.tokenInstance1();
     const nftInstanceKey = nft.tokenInstance1Key();
     const nftClass = nft.tokenClass();
-    const ownerBalance = plainToInstance(TokenBalance, {
-      ...nft.tokenBalance(),
-      lockedHolds: [
-        {
-          createdBy: users.testUser1Id,
-          instanceId: nftInstance.instance,
-          quantity: new BigNumber("1"),
-          created: 1,
-          expires: 0
-        }
-      ]
-    });
 
-    const { ctx, contract, writes } = fixture(GalaChainTokenContract)
-      .callingUser(users.attacker)
+    const ownerBalance = nft.tokenBalance();
+    expect(ownerBalance.getNftInstanceIds()).toContainEqual(nftInstance.instance);
+    ownerBalance.lockInstance(
+      new TokenHold({
+        createdBy: users.testUser1.identityKey,
+        instanceId: nftInstance.instance,
+        quantity: new BigNumber("1"),
+        created: 1,
+        expires: 0
+      }),
+      1
+    );
+
+    const { ctx, contract, getWrites } = fixture(GalaChainTokenContract)
+      .registeredUsers(users.attacker)
       .savedState(nftClass, nftInstance, ownerBalance);
 
-    const dto = await createValidDTO(UnlockTokenDto, {
-      tokenInstance: nftInstanceKey
-    });
+    const dto = await createValidSubmitDTO(UnlockTokenDto, { tokenInstance: nftInstanceKey }).signed(
+      users.attacker.privateKey
+    );
 
     // When
     const response = await contract.UnlockToken(ctx, dto); // handled by @GalaTransaction decorator which is mocked out
 
     // Then
     expect(response).toEqual(
-      GalaChainResponse.Error(new UnlockForbiddenUserError(users.attacker, nftInstanceKey.toStringKey()))
+      GalaChainResponse.Error(
+        new UnlockForbiddenUserError(users.attacker.identityKey, nftInstanceKey.toStringKey())
+      )
     );
-    expect(writes).toEqual({});
-  });
-
-  test("UnlockToken function unlocks for BridgeOuts executed by Bridge authorities", async () => {
-    // Given
-    const nftInstance = nft.tokenInstance1();
-    const nftInstanceKey = nft.tokenInstance1Key();
-    const nftClass = nft.tokenClass();
-
-    const ownerBalance = plainToInstance(TokenBalance, {
-      ...nft.tokenBalance(),
-      lockedHolds: [
-        {
-          createdBy: users.testUser1Id,
-          instanceId: nftInstance.instance,
-          quantity: new BigNumber("1"),
-          created: 1,
-          expires: 0
-        }
-      ]
-    });
-
-    const { ctx, contract, writes } = fixture(GalaChainTokenContract)
-      .callingUser(users.testAdminId)
-      .savedState(nftClass, nftInstance, ownerBalance);
-
-    const dto = await createValidDTO(UnlockTokenDto, {
-      tokenInstance: nftInstanceKey
-    });
-
-    const response = await contract.UnlockToken(ctx, dto);
-
-    expect(response).toEqual(
-      GalaChainResponse.Success(plainToInstance(TokenBalance, { ...ownerBalance, lockedHolds: [] }))
-    );
-    expect(writes).toEqual(writesMap(plainToInstance(TokenBalance, { ...ownerBalance, lockedHolds: [] })));
+    expect(getWrites()).toEqual({});
   });
 });

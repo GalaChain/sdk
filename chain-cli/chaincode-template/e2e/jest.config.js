@@ -22,11 +22,6 @@ if (process.env.GALA_NETWORK_ROOT_PATH === undefined) {
   process.env.GALA_NETWORK_ROOT_PATH = networkRoot;
 }
 
-// we use dev mode by default for tests
-if (process.env.GALA_CLIENT_DEV_MODE === undefined) {
-  process.env.GALA_CLIENT_DEV_MODE = "true";
-}
-
 // Force less information in logs.
 // We want this, because while running tests from command line Fabric produces
 // a lot of logs, and it's hard to see the actual test output.
@@ -34,6 +29,9 @@ if (process.env.GALA_CLIENT_DEV_MODE === undefined) {
 // the log level for chaincodes is configured during import resolution.
 process.env.CORE_CHAINCODE_LOGGING_LEVEL = "error";
 process.env.LOG_LEVEL = "error";
+
+// Use role-based access control (RBAC) for tests.
+process.env.USE_RBAC = "true";
 
 /** @type {import('ts-jest/dist/types').InitialOptionsTsJest} */
 module.exports = {

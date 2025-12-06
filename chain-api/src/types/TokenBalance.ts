@@ -27,22 +27,23 @@ import {
 } from "class-validator";
 import { JSONSchema } from "class-validator-jsonschema";
 
+import { ChainKey, ValidationFailedError } from "../utils";
 import {
   BigNumberArrayProperty,
+  BigNumberIsNotNegative,
+  BigNumberIsPositive,
   BigNumberProperty,
-  ChainKey,
-  ValidationFailedError,
-  getValidationErrorInfo
-} from "../utils";
-import { BigNumberIsNotNegative, BigNumberIsPositive } from "../validators";
+  IsUserAlias
+} from "../validators";
 import { ChainObject, ObjectValidationFailedError } from "./ChainObject";
 import { TokenClassKey, TokenClassKeyProperties } from "./TokenClass";
 import { TokenInstance, TokenInstanceKey } from "./TokenInstance";
+import { UserAlias } from "./UserAlias";
 
 export class TokenNotInBalanceError extends ValidationFailedError {
   constructor(owner: string, tokenClass: TokenClassKeyProperties, instanceId: BigNumber) {
     const tokenInstanceKey = TokenInstanceKey.nftKey(tokenClass, instanceId).toStringKey();
-    super(`Token instance ${tokenInstanceKey} not found in balance`, { owner, tokenInstanceKey });
+    super(`Token instance ${tokenInstanceKey} not found in balance of ${owner}`, { owner, tokenInstanceKey });
   }
 }
 
@@ -101,8 +102,8 @@ export class TokenBalance extends ChainObject {
   public static readonly INDEX_KEY = "GCTB";
 
   @ChainKey({ position: 0 })
-  @IsNotEmpty()
-  public readonly owner: string;
+  @IsUserAlias()
+  public readonly owner: UserAlias;
 
   @ChainKey({ position: 1 })
   @IsNotEmpty()
@@ -121,7 +122,7 @@ export class TokenBalance extends ChainObject {
   public readonly additionalKey: string;
 
   constructor(params?: {
-    owner: string;
+    owner: UserAlias;
     collection: string;
     category: string;
     type: string;
@@ -164,6 +165,15 @@ export class TokenBalance extends ChainObject {
   @BigNumberProperty()
   private quantity: BigNumber;
 
+  @JSONSchema({
+    description:
+      "vestingPeriodStart timestamp. For Vesting Locks, this specifies the beginning of the vesting period."
+  })
+  @Min(0)
+  @IsInt()
+  @IsOptional()
+  public vestingPeriodStart?: number | undefined;
+
   //
   // NFT
   //
@@ -186,7 +196,7 @@ export class TokenBalance extends ChainObject {
     return (this.inUseHolds ?? []).filter((h) => !h.isExpired(currentTime));
   }
 
-  public ensureCanAddInstance(instanceId: BigNumber): { add(): void } {
+  public addInstance(instanceId: BigNumber): void {
     this.ensureInstanceIsNft(instanceId);
 
     if (this.containsInstance(instanceId)) {
@@ -196,57 +206,41 @@ export class TokenBalance extends ChainObject {
       });
     }
 
-    const add = () => {
-      if (this.instanceIds === undefined) {
-        this.instanceIds = [];
-      }
+    if (this.instanceIds === undefined) {
+      this.instanceIds = [];
+    }
 
-      // add instance ID to array
-      this.instanceIds.push(instanceId);
-      this.instanceIds.sort((i) => i.comparedTo(i));
+    // add instance ID to array
+    this.instanceIds.push(instanceId);
+    this.instanceIds.sort((i) => i.comparedTo(i));
 
-      // update quantity
-      this.quantity = new BigNumber(this.instanceIds.length);
-    };
-
-    return { add };
+    // update quantity
+    this.quantity = new BigNumber(this.instanceIds.length);
   }
 
-  public ensureCanRemoveInstance(instanceId: BigNumber, currentTime: number): { remove(): void } {
+  public removeInstance(instanceId: BigNumber, currentTime: number) {
     this.ensureInstanceIsNft(instanceId);
     this.ensureInstanceIsInBalance(instanceId);
     this.ensureInstanceIsNotLocked(instanceId, currentTime);
     this.ensureInstanceIsNotUsed(instanceId, currentTime);
 
-    const remove = () => {
-      // remove instance ID from array
-      this.instanceIds = (this.instanceIds ?? []).filter((id) => !id.eq(instanceId));
+    // remove instance ID from array
+    this.instanceIds = (this.instanceIds ?? []).filter((id) => !id.eq(instanceId));
 
-      // update quantity
-      this.quantity = new BigNumber(this.instanceIds.length);
-    };
-
-    return { remove };
+    // update quantity
+    this.quantity = new BigNumber(this.instanceIds.length);
   }
 
-  public ensureCanLockInstance(hold: TokenHold, currentTime: number): { lock(): void } {
+  public lockInstance(hold: TokenHold, currentTime: number): void {
     this.ensureInstanceIsNft(hold.instanceId);
     this.ensureInstanceIsInBalance(hold.instanceId);
     this.ensureInstanceIsNotLockedWithTheSameName(hold.instanceId, hold.name, currentTime);
     this.ensureInstanceIsNotUsed(hold.instanceId, currentTime);
 
-    const lock = () => {
-      this.lockedHolds = [...this.getUnexpiredLockedHolds(currentTime), hold];
-    };
-
-    return { lock };
+    this.lockedHolds = [...this.getUnexpiredLockedHolds(currentTime), hold];
   }
 
-  public ensureCanUnlockInstance(
-    instanceId: BigNumber,
-    name: string | undefined,
-    currentTime: number
-  ): { unlock(): void } {
+  public unlockInstance(instanceId: BigNumber, name: string | undefined, currentTime: number): void {
     const unexpiredLockedHolds = this.getUnexpiredLockedHolds(currentTime);
     const updated = unexpiredLockedHolds.filter((h) => !h.matches(instanceId, name));
 
@@ -254,31 +248,19 @@ export class TokenBalance extends ChainObject {
       throw new TokenNotLockedError(this.owner, this, instanceId);
     }
 
-    const unlock = () => {
-      this.lockedHolds = updated;
-    };
-
-    return { unlock };
+    this.lockedHolds = updated;
   }
 
-  public ensureCanUseInstance(hold: TokenHold, currentTime: number): { use(): void } {
+  public useInstance(hold: TokenHold, currentTime: number): void {
     this.ensureInstanceIsNft(hold.instanceId);
     this.ensureInstanceIsInBalance(hold.instanceId);
     this.ensureInstanceIsNotLocked(hold.instanceId, currentTime);
     this.ensureInstanceIsNotUsed(hold.instanceId, currentTime);
 
-    const use = () => {
-      this.inUseHolds = [...this.getUnexpiredInUseHolds(currentTime), hold];
-    };
-
-    return { use };
+    this.inUseHolds = [...this.getUnexpiredInUseHolds(currentTime), hold];
   }
 
-  public ensureCanReleaseInstance(
-    instanceId: BigNumber,
-    name: string | undefined,
-    currentTime: number
-  ): { release(): void } {
+  public releaseInstance(instanceId: BigNumber, name: string | undefined, currentTime: number): void {
     const unexpiredInUseHolds = this.getUnexpiredInUseHolds(currentTime);
     const updated = unexpiredInUseHolds.filter((h) => !h.matches(instanceId, name));
 
@@ -286,11 +268,7 @@ export class TokenBalance extends ChainObject {
       throw new TokenNotInUseError(this.owner, this, instanceId);
     }
 
-    const release = () => {
-      this.inUseHolds = updated;
-    };
-
-    return { release };
+    this.inUseHolds = updated;
   }
 
   public clearHolds(instanceId: BigNumber, currentTime: number): void {
@@ -388,6 +366,7 @@ export class TokenBalance extends ChainObject {
       throw new TokenInUseError(this.owner, this, instanceId);
     }
   }
+
   //
   // Fungible API
   //
@@ -409,27 +388,19 @@ export class TokenBalance extends ChainObject {
     return lockedQuantity;
   }
 
-  public ensureCanAddQuantity(quantity: BigNumber): { add(): void } {
+  public addQuantity(quantity: BigNumber): void {
     this.ensureContainsNoNftInstances();
     this.ensureIsValidQuantityForFungible(quantity);
 
-    const add = () => {
-      this.quantity = this.quantity.plus(quantity);
-    };
-
-    return { add };
+    this.quantity = this.quantity.plus(quantity);
   }
 
-  public ensureCanSubtractQuantity(quantity: BigNumber, currentTime: number): { subtract(): void } {
+  public subtractQuantity(quantity: BigNumber, currentTime: number): void {
     this.ensureContainsNoNftInstances();
     this.ensureIsValidQuantityForFungible(quantity);
     this.ensureQuantityIsSpendable(quantity, currentTime);
 
-    const subtract = () => {
-      this.quantity = this.quantity.minus(quantity);
-    };
-
-    return { subtract };
+    this.quantity = this.quantity.minus(quantity);
   }
 
   private ensureQuantityIsSpendable(quantity: BigNumber, currentTime: number): void {
@@ -456,39 +427,49 @@ export class TokenBalance extends ChainObject {
     }
   }
 
-  public ensureCanLockQuantity(hold: TokenHold): { lock(): void } {
+  public lockQuantity(hold: TokenHold): void {
     this.ensureTokenQuantityHoldIsFungible(hold);
     this.ensureQuantityIsSpendable(hold.quantity, hold.created);
 
-    const lock = () => {
-      this.lockedHolds = [...this.getUnexpiredLockedHolds(hold.created), hold];
-    };
-
-    return { lock };
+    this.lockedHolds = [...this.getUnexpiredLockedHolds(hold.created), hold];
   }
 
-  private isMatchingHold(hold: TokenHold, name?: string, lockAuthority?: string): boolean {
+  private isCallingUserAuthorized(
+    hold: TokenHold,
+    name?: string,
+    callingUser?: UserAlias,
+    isTokenAuthority?: boolean
+  ): boolean {
     return (
-      (hold.name === name || (hold.name === undefined && name === undefined)) &&
-      (hold.lockAuthority === lockAuthority ||
-        (hold.lockAuthority === undefined && lockAuthority === undefined))
+      hold.name === name &&
+      (isTokenAuthority ||
+        callingUser === hold.lockAuthority ||
+        (hold.lockAuthority === undefined && callingUser === this.owner) ||
+        (hold.lockAuthority === undefined && callingUser === hold.createdBy))
     );
   }
 
-  public ensureCanUnlockQuantity(
+  public unlockQuantity(
     quantity: BigNumber,
     currentTime: number,
     name?: string,
-    lockAuthority?: string
-  ): { unlock(): void } {
+    callingUser?: UserAlias,
+    isTokenAuthority?: boolean
+  ): void {
     const unexpiredLockedHolds = this.getUnexpiredLockedHoldsSortedByAscendingExpiration(currentTime);
 
     const updated: TokenHold[] = [];
     let remainingQuantityToUnlock = quantity;
 
     for (const hold of unexpiredLockedHolds) {
+      // don't try to unlock vesting holds
+      if (hold.isVestingHold()) {
+        updated.push(hold);
+        continue;
+      }
+
       // if neither the authority nor the name match, just leave this hold alone
-      if (!this.isMatchingHold(hold, name, lockAuthority)) {
+      if (!this.isCallingUserAuthorized(hold, name, callingUser, isTokenAuthority)) {
         updated.push(hold);
         continue;
       }
@@ -519,18 +500,14 @@ export class TokenBalance extends ChainObject {
       throw new TokenQuantityNotUnlockedError(this.owner, this, quantity, name);
     }
 
-    const unlock = () => {
-      this.lockedHolds = updated;
-    };
-
-    return { unlock };
+    this.lockedHolds = updated;
   }
 
   private getCurrentLockedQuantity(currentTime: number): BigNumber {
-    return this.getUnexpiredLockedHolds(currentTime).reduce(
-      (sum, h) => sum.plus(h.quantity),
-      new BigNumber(0)
-    );
+    return this.getUnexpiredLockedHolds(currentTime).reduce((sum, h) => {
+      const toAdd = h.isVestingHold() ? h.getLockedVestingQuantity(currentTime) : h.quantity;
+      return sum.plus(toAdd);
+    }, new BigNumber(0));
   }
 
   private ensureContainsNoNftInstances(): void {
@@ -556,8 +533,8 @@ export class TokenBalance extends ChainObject {
 export class TokenHold {
   public static readonly DEFAULT_EXPIRES = 0;
 
-  @IsNotEmpty()
-  public readonly createdBy: string;
+  @IsUserAlias()
+  public readonly createdBy: UserAlias;
 
   @IsNotEmpty()
   @BigNumberIsPositive()
@@ -586,18 +563,24 @@ export class TokenHold {
       "If the value is missing, then token owner and lock creator can unlock " +
       "in all cases token authority can unlock token."
   })
-  @IsNotEmpty()
   @IsOptional()
-  lockAuthority?: string;
+  @IsUserAlias()
+  lockAuthority?: UserAlias;
+
+  @Min(0)
+  @IsInt()
+  @IsOptional()
+  public readonly vestingPeriodStart?: number | undefined;
 
   public constructor(params?: {
-    createdBy: string;
+    createdBy: UserAlias;
     instanceId: BigNumber;
     quantity: BigNumber;
     created: number;
     expires?: number;
     name?: string;
-    lockAuthority?: string;
+    lockAuthority?: UserAlias;
+    vestingPeriodStart?: number | undefined;
   }) {
     if (params) {
       this.createdBy = params.createdBy;
@@ -611,23 +594,27 @@ export class TokenHold {
       if (params.lockAuthority) {
         this.lockAuthority = params.lockAuthority;
       }
+      if (params.vestingPeriodStart) {
+        this.vestingPeriodStart = params.vestingPeriodStart;
+      }
     }
   }
 
   public static async createValid(params: {
-    createdBy: string;
+    createdBy: UserAlias;
     instanceId: BigNumber;
     quantity: BigNumber;
     created: number;
     expires: number | undefined;
     name: string | undefined;
-    lockAuthority: string | undefined;
+    lockAuthority: UserAlias | undefined;
+    vestingPeriodStart: number | undefined;
   }): Promise<TokenHold> {
     const hold = new TokenHold({ ...params });
 
     const errors = await validate(hold);
     if (errors.length > 0) {
-      throw new ObjectValidationFailedError(getValidationErrorInfo(errors));
+      throw new ObjectValidationFailedError(errors);
     }
 
     return hold;
@@ -639,6 +626,44 @@ export class TokenHold {
 
   public isExpired(currentTime: number): boolean {
     return this.expires !== 0 && currentTime > this.expires;
+  }
+  public isVestingHold(): boolean {
+    return this.vestingPeriodStart !== undefined;
+  }
+
+  public isVestingStarted(currentTime: number): boolean {
+    return this.isVestingHold() && currentTime >= this.vestingPeriodStart!;
+  }
+
+  public timeSinceStart(currentTime: number): number {
+    return this.isVestingHold() ? currentTime - this.vestingPeriodStart! : 0;
+  }
+
+  public totalTimeOfVestingPeriod(): number {
+    return this.isVestingHold() ? this.expires - this.vestingPeriodStart! : 0;
+  }
+
+  // For vesting holds, this returns the quantity that is currently locked by vesting
+  public getLockedVestingQuantity(currentTime: number): BigNumber {
+    if (!this.isVestingHold()) {
+      return new BigNumber(0);
+    }
+
+    // if the current time is before the vesting vestingPeriodStart, the full quantity is locked (cliff)
+    const timeSinceStart = this.timeSinceStart(currentTime);
+    if (timeSinceStart < 0) {
+      return this.quantity;
+    }
+
+    // if the current time is after the vesting expires, the full quantity is unlocked
+    if (currentTime > this.expires) {
+      return new BigNumber(0);
+    }
+
+    // if the current time is between the vesting vestingPeriodStart and expires, the quantity is partially unlocked
+    const perPeriodQuantity = this.quantity.div(this.totalTimeOfVestingPeriod());
+    const vestedQuantity = perPeriodQuantity.times(timeSinceStart);
+    return this.quantity.minus(vestedQuantity);
   }
 
   // sort holds in order of ascending expiration, 0 = no expiration date

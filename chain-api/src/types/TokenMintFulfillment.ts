@@ -15,10 +15,11 @@
 import BigNumber from "bignumber.js";
 import { IsDefined, IsNotEmpty } from "class-validator";
 
-import { TokenMintStatus } from "../types/common";
-import { BigNumberProperty, ChainKey } from "../utils";
-import { BigNumberIsNotNegative } from "../validators";
+import { ChainKey } from "../utils";
+import { BigNumberIsNotNegative, BigNumberProperty, IsUserAlias } from "../validators";
 import { ChainObject } from "./ChainObject";
+import { UserAlias } from "./UserAlias";
+import { TokenMintStatus } from "./common";
 
 export class TokenMintFulfillment extends ChainObject {
   public static INDEX_KEY = "GCTMF";
@@ -39,15 +40,15 @@ export class TokenMintFulfillment extends ChainObject {
   public additionalKey: string;
 
   @ChainKey({ position: 4 })
-  @IsNotEmpty()
-  public requestor: string;
+  @IsUserAlias()
+  public requestor: UserAlias;
 
   @ChainKey({ position: 5 })
   @IsNotEmpty()
   public requestCreated: number;
 
-  @IsNotEmpty()
-  public owner: string;
+  @IsUserAlias()
+  public owner: UserAlias;
 
   @IsNotEmpty()
   @BigNumberIsNotNegative()

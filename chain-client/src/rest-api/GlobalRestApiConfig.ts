@@ -12,9 +12,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-import { ContractAPI } from "@gala-chain/api";
-
-import { ContractConfig } from "../generic";
+import { ContractAPI, ContractConfig } from "@gala-chain/api";
 
 export interface RestApiAdminCredentials {
   adminKey: string;
@@ -25,33 +23,48 @@ interface ContractApiValue {
   contractPath: string;
   api: ContractAPI;
 }
+export interface ContractApiConfig {
+  readonly channelName: string;
+  readonly chaincodeName: string;
+  readonly contractName: string;
+}
 
-export type SetContractApiParams = ContractApiValue & ContractConfig;
+export type SetContractApiParams = ContractApiValue & ContractApiConfig;
+
+export enum RestApiStatus {
+  NONE = "NONE",
+  PENDING = "PENDING",
+  INITIALIZED = "INITIALIZED"
+}
 
 export class GlobalRestApiConfig {
-  private isRestApiInitializedAndHealthy: Record<string, true | Error> = {};
+  private isRestApiInitializedAndHealthy: Record<string, RestApiStatus | Error> = {};
   private contractApis: Record<string, ContractApiValue> = {};
   private authorizedFabloRest: Record<string, string> = {};
 
-  public isHealthy(apiUrl: string) {
+  public getStatus(apiUrl: string): RestApiStatus {
     const result = this.isRestApiInitializedAndHealthy[apiUrl];
 
-    if (result === true) {
-      return true;
+    if (result === RestApiStatus.INITIALIZED || result === RestApiStatus.PENDING) {
+      return result;
     }
 
-    if (result === undefined) {
-      return false;
+    if (!result || result === RestApiStatus.NONE) {
+      return RestApiStatus.NONE;
     }
 
     throw new Error(`Failed to initialize Rest API at ${apiUrl} failed to initialize: ${result?.message}`);
   }
 
-  public markHealthy(apiUrl: string) {
-    this.isRestApiInitializedAndHealthy[apiUrl] = true;
+  public markInitialized(apiUrl: string) {
+    this.isRestApiInitializedAndHealthy[apiUrl] = RestApiStatus.INITIALIZED;
   }
 
-  public markUnhealthy(apiUrl: string, error: Error) {
+  public markPending(apiUrl: string) {
+    this.isRestApiInitializedAndHealthy[apiUrl] = RestApiStatus.PENDING;
+  }
+
+  public markFailed(apiUrl: string, error: Error) {
     this.isRestApiInitializedAndHealthy[apiUrl] = error;
   }
 
@@ -60,8 +73,8 @@ export class GlobalRestApiConfig {
     this.contractApis[key] = { contractPath: params.contractPath, api: params.api };
   }
 
-  public getContractApi(params: { channelName: string; chaincodeName: string; contractName: string }) {
-    const key = `${params.channelName}|${params.chaincodeName}|${params.contractName}`;
+  public getContractApi(params: ContractConfig) {
+    const key = `${params.channel}|${params.chaincode}|${params.contract}`;
     return (
       this.contractApis[key] ??
       (() => {

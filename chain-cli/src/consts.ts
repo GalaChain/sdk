@@ -13,14 +13,15 @@
  * limitations under the License.
  */
 
-const GC_API_URL = process.env.GC_API_URL ?? "https://gateway.stage.galachain.com/cli/";
+const GC_API_URL = process.env.GC_API_URL ?? "https://gateway-testnet.galachain.com/cli/";
 export const defaultFabloRoot = "./test-network";
 export const ExpectedImageArchitecture = "linux/amd64";
 
 export const ServicePortal = {
-  GET_TEST_DEPLOYMENT_URL: GC_API_URL + "api/test-deployment",
   GET_DEPLOYMENT_URL: GC_API_URL + "api/deployment",
-  DEPLOY_TEST_URL: GC_API_URL + "api/test-deploy",
   DEPLOY_URL: GC_API_URL + "api/deploy",
-  AUTH_X_GC_KEY: "x-gc-authorization"
+  AUTH_X_GC_KEY: "x-gc-authorization",
+  GET_LOGS_URL: GC_API_URL + "api/chaincode/logs",
+  STREAM_LOGS_URL: GC_API_URL + "api/chaincode/logs/stream",
+  REGISTER_URL: GC_API_URL + "api/register"
 };

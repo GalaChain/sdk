@@ -21,6 +21,7 @@ import {
   IsInt,
   IsNotEmpty,
   IsOptional,
+  IsString,
   Max,
   Min,
   ValidateIf,
@@ -28,13 +29,20 @@ import {
 } from "class-validator";
 import { JSONSchema } from "class-validator-jsonschema";
 
-import { BigNumberProperty, EnumProperty } from "../utils";
-import { ArrayUniqueObjects, BigNumberIsInteger, BigNumberIsPositive } from "../validators";
+import {
+  ArrayUniqueObjects,
+  BigNumberIsInteger,
+  BigNumberIsPositive,
+  BigNumberProperty,
+  EnumProperty,
+  IsUserRef
+} from "../validators";
 import { GrantAllowanceQuantity } from "./GrantAllowance";
 import { TokenAllowance } from "./TokenAllowance";
 import { TokenInstance, TokenInstanceKey, TokenInstanceQueryKey } from "./TokenInstance";
+import { UserRef } from "./UserRef";
 import { AllowanceKey, AllowanceType, MintRequestDto } from "./common";
-import { ChainCallDTO } from "./dtos";
+import { ChainCallDTO, SubmitCallDTO } from "./dtos";
 
 @JSONSchema({
   description: "Contains parameters for fetching allowances with pagination."
@@ -46,8 +54,8 @@ export class FetchAllowancesDto extends ChainCallDTO {
   @JSONSchema({
     description: "A user who can use an allowance."
   })
-  @IsNotEmpty()
-  grantedTo: string;
+  @IsUserRef()
+  grantedTo: UserRef;
 
   @JSONSchema({
     description: "Token collection. Optional, but required if category is provided."
@@ -92,8 +100,8 @@ export class FetchAllowancesDto extends ChainCallDTO {
     description: "User who granted allowances."
   })
   @IsOptional()
-  @IsNotEmpty()
-  grantedBy?: string;
+  @IsUserRef()
+  grantedBy?: UserRef;
 
   @JSONSchema({
     description: "Page bookmark. If it is undefined, then the first page is returned."
@@ -127,8 +135,8 @@ export class FetchAllowancesLegacyDto extends ChainCallDTO {
   @JSONSchema({
     description: "A user who can use an allowance."
   })
-  @IsNotEmpty()
-  grantedTo: string;
+  @IsUserRef()
+  grantedTo: UserRef;
 
   @JSONSchema({
     description: "Token collection. Optional, but required if category is provided."
@@ -173,8 +181,8 @@ export class FetchAllowancesLegacyDto extends ChainCallDTO {
     description: "User who granted allowances."
   })
   @IsOptional()
-  @IsNotEmpty()
-  grantedBy?: string;
+  @IsUserRef()
+  grantedBy?: UserRef;
 
   @JSONSchema({
     description: "Page bookmark. If it is undefined, then the first page is returned."
@@ -192,26 +200,26 @@ export class FetchAllowancesResponse extends ChainCallDTO {
 
   @JSONSchema({ description: "Next page bookmark." })
   @IsOptional()
-  @IsNotEmpty()
+  @IsString()
   nextPageBookmark?: string;
 }
 
 @JSONSchema({
   description: "Contains parameters for deleting allowances for a calling user."
 })
-export class DeleteAllowancesDto extends ChainCallDTO {
+export class DeleteAllowancesDto extends SubmitCallDTO {
   @JSONSchema({
     description: "A user who can use an allowance."
   })
-  @IsNotEmpty()
-  grantedTo: string;
+  @IsUserRef()
+  grantedTo: UserRef;
 
   @JSONSchema({
     description: "User who granted allowances."
   })
   @IsOptional()
-  @IsNotEmpty()
-  grantedBy?: string;
+  @IsUserRef()
+  grantedBy?: UserRef;
 
   @JSONSchema({
     description: "Token collection. Optional, but required if category is provided."
@@ -256,7 +264,7 @@ export class DeleteAllowancesDto extends ChainCallDTO {
 @JSONSchema({
   description: "Defines allowances to be created."
 })
-export class GrantAllowanceDto extends ChainCallDTO {
+export class GrantAllowanceDto extends SubmitCallDTO {
   static DEFAULT_EXPIRES = 0;
 
   @JSONSchema({
@@ -287,8 +295,7 @@ export class GrantAllowanceDto extends ChainCallDTO {
     description: "How many times each allowance can be used."
   })
   @BigNumberIsPositive()
-  @BigNumberIsInteger()
-  @BigNumberProperty()
+  @BigNumberProperty({ allowInfinity: true })
   uses: BigNumber;
 
   @JSONSchema({
@@ -311,7 +318,7 @@ export class GrantAllowanceDto extends ChainCallDTO {
     "DTO properties backwards-compatible with prior GrantAllowanceDto, with the " +
     "exception that this implementation only supports AllowanceType.Mint."
 })
-export class HighThroughputGrantAllowanceDto extends ChainCallDTO {
+export class HighThroughputGrantAllowanceDto extends SubmitCallDTO {
   // todo: remove all these duplicated properties
   // it seems something about our @GalaTransaction decorator does not pass through
   // parent properties. Leaving this class empty with just the `extends GrantAllowanceDto`
@@ -364,7 +371,7 @@ export class HighThroughputGrantAllowanceDto extends ChainCallDTO {
   description:
     "Experimental: After submitting request to RequestMintAllowance, follow up with FulfillMintAllowance."
 })
-export class FulfillMintAllowanceDto extends ChainCallDTO {
+export class FulfillMintAllowanceDto extends SubmitCallDTO {
   static MAX_ARR_SIZE = 1000;
 
   @ValidateNested({ each: true })
@@ -386,16 +393,16 @@ export class FullAllowanceCheckDto extends ChainCallDTO {
     description: "Person who owns the balance(s). If the value is missing, chaincode caller is used."
   })
   @IsOptional()
-  @IsNotEmpty()
-  owner?: string;
+  @IsUserRef()
+  owner?: UserRef;
 
   @JSONSchema({
     description:
       "Person/UserId to whom allowance(s) were granted. If the value is missing, chaincode caller is used."
   })
   @IsOptional()
-  @IsNotEmpty()
-  grantedTo?: string;
+  @IsUserRef()
+  grantedTo?: UserRef;
 
   @JSONSchema({
     description: "Token collection. Optional."
@@ -448,7 +455,7 @@ export class FullAllowanceCheckResDto extends ChainCallDTO {
   @ValidateNested({ each: true })
   @Type(() => TokenInstanceKey)
   @ArrayNotEmpty()
-  missing: Array<TokenInstanceKey>;
+  missing?: Array<TokenInstanceKey>;
 }
 
 @JSONSchema({
@@ -476,7 +483,7 @@ export class RefreshAllowanceDto extends ChainCallDTO {
     "Refresh the uses or expiration date of an existing allowance. " +
     "If quantity needs updating, grant a new allowance instead."
 })
-export class RefreshAllowancesDto extends ChainCallDTO {
+export class RefreshAllowancesDto extends SubmitCallDTO {
   @ValidateNested({ each: true })
   @Type(() => RefreshAllowanceDto)
   @ArrayNotEmpty()

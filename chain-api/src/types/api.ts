@@ -18,6 +18,7 @@ export interface MethodAPI {
   methodName: string;
   apiMethodName?: string;
   isWrite: boolean;
+  deprecated?: true;
   description?: string;
   dtoSchema?: SchemaObject;
   responseSchema?: SchemaObject;

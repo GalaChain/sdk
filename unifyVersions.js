@@ -22,8 +22,12 @@
  * the same as version in child package.json files. If the version is different,
  * it ends with an error.
  *
- * Then, it updates all versions of the dependencies in all package.json files.
+ * Then, it updates all versions of the dependencies in all package.json files,
+ * and chaincode template package lock file.
  */
+
+const fs = require("fs");
+const childProcess = require("child_process");
 
 const packages = [
   ".",
@@ -31,6 +35,7 @@ const packages = [
   "./chain-cli",
   "./chain-cli/chaincode-template",
   "./chain-client",
+  "./chain-connect",
   "./chain-test",
   "./chaincode"
 ].map((p) => {
@@ -45,15 +50,14 @@ if (optionalVersion) {
   console.log("Applying version from command line:", optionalVersion);
 
   // just a sanity check
-  if (!optionalVersion.startsWith("1.1.")) {
-    console.error("Version must start with '1.1.'");
+  if (!optionalVersion.startsWith("2.")) {
+    console.error("Version must start with '2.'");
     process.exit(1);
   }
   packages.forEach(({ packageJson, packageJsonPath }) => {
     console.log(`Updating '${packageJson.name}' to version '${optionalVersion}'...`);
     packageJson.version = optionalVersion;
-    // eslint-disable-next-line @typescript-eslint/no-var-requires
-    require("fs").writeFileSync(packageJsonPath, JSON.stringify(packageJson, undefined, 2) + "\n");
+    fs.writeFileSync(packageJsonPath, JSON.stringify(packageJson, undefined, 2) + "\n");
   });
 }
 
@@ -90,15 +94,49 @@ packages.forEach(({ packageJson, packageJsonPath }) => {
     console.log(` - everything is up to date`);
   } else {
     console.log(` - saving changes in '${packageJsonPath}'`);
-    // eslint-disable-next-line @typescript-eslint/no-var-requires
-    require("fs").writeFileSync(packageJsonPath, JSON.stringify(packageJson, undefined, 2) + "\n");
+    fs.writeFileSync(packageJsonPath, JSON.stringify(packageJson, undefined, 2) + "\n");
   }
 });
 
-const { execSync } = require("child_process");
+// manually apply changes to chaincode-template package-lock.json
+console.log("Updating package-lock.json in 'chain-cli/chaincode-template'...");
+const chaincodeTemplatePackageLockPath = require.resolve("./chain-cli/chaincode-template/package-lock.json");
+// eslint-disable-next-line @typescript-eslint/no-var-requires
+const chaincodeTemplatePackageLock = require(chaincodeTemplatePackageLockPath);
+chaincodeTemplatePackageLock.version = versionToApply;
+chaincodeTemplatePackageLock.packages[""].version = versionToApply;
+
+// we don't want to keep versions of SDK modules in the lock file
+Object.keys(chaincodeTemplatePackageLock.packages)
+  .filter((key) => key.startsWith("node_modules/@gala-chain"))
+  .forEach((key) => {
+    delete chaincodeTemplatePackageLock.packages[key];
+  });
+Object.keys(chaincodeTemplatePackageLock.dependencies)
+  .filter((key) => key.startsWith("@gala-chain/"))
+  .forEach((key) => {
+    delete chaincodeTemplatePackageLock.dependencies[key];
+  });
+
+packages.forEach(({ packageJson }) => {
+  const dependencies = chaincodeTemplatePackageLock.packages?.[""]?.dependencies;
+  const devDependencies = chaincodeTemplatePackageLock.packages?.[""]?.devDependencies;
+  if (typeof dependencies?.[packageJson.name] === "string") {
+    dependencies[packageJson.name] = versionToApply;
+  }
+  if (typeof devDependencies?.[packageJson.name] === "string") {
+    devDependencies[packageJson.name] = versionToApply;
+  }
+});
+
+console.log(` - saving changes in '${chaincodeTemplatePackageLockPath}'`);
+fs.writeFileSync(
+  chaincodeTemplatePackageLockPath,
+  JSON.stringify(chaincodeTemplatePackageLock, undefined, 2) + "\n"
+);
 
 // execute `npm install` in the root directory to update the lock file and licenses
-execSync("npm install");
+childProcess.execSync("npm install");
 
 // execute `npm run build` in chain-cli to update the new version in README.md and oclif.manifest.json
-execSync("npm run build", { cwd: "chain-cli" });
+childProcess.execSync("npm run build", { cwd: "chain-cli" });

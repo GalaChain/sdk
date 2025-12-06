@@ -12,9 +12,16 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-import { MintTokenDto, TokenBalance, TokenClass, TokenInstance, TokenMintFulfillment } from "@gala-chain/api";
+import {
+  MintTokenDto,
+  TokenBalance,
+  TokenClass,
+  TokenInstance,
+  TokenMintFulfillment,
+  UserAlias,
+  createValidChainObject
+} from "@gala-chain/api";
 import BigNumber from "bignumber.js";
-import { plainToInstance } from "class-transformer";
 
 import { fetchOrCreateBalance } from "../balances";
 import { GalaChainContext } from "../types";
@@ -23,9 +30,9 @@ export async function constructVerifiedMints(
   ctx: GalaChainContext,
   dto: TokenMintFulfillment,
   tokenClass: TokenClass,
-  instanceCounter: BigNumber
+  instanceCounter: BigNumber,
+  callingUser: UserAlias
 ): Promise<[TokenInstance[], TokenBalance]> {
-  const callingUser: string = ctx.callingUser;
   const owner = dto.owner ?? callingUser;
   const { collection, category, type, additionalKey } = dto;
   const tokenClassKey = await TokenClass.buildClassKeyObject({ collection, category, type, additionalKey });
@@ -56,7 +63,7 @@ export async function constructVerifiedMints(
       instanceCounter = instanceCounter.plus("1");
       const mintInstance = new BigNumber(instanceCounter);
 
-      const nftInfo = plainToInstance(TokenInstance, {
+      const nftInfo = await createValidChainObject(TokenInstance, {
         collection,
         category,
         type,
@@ -71,16 +78,16 @@ export async function constructVerifiedMints(
     }
 
     instanceIds.forEach((instanceId) => {
-      userBalance.ensureCanAddInstance(instanceId).add();
+      userBalance.addInstance(instanceId);
     });
 
     return [mintedNFTs, userBalance];
   } else {
     const userBalance = await fetchOrCreateBalance(ctx, owner, tokenClassKey);
 
-    userBalance.ensureCanAddQuantity(quantity).add();
+    userBalance.addQuantity(quantity);
 
-    const fungibleReturnInstance = plainToInstance(TokenInstance, {
+    const fungibleReturnInstance = await createValidChainObject(TokenInstance, {
       collection,
       category,
       type,

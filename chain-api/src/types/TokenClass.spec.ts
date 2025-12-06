@@ -13,9 +13,11 @@
  * limitations under the License.
  */
 import BigNumber from "bignumber.js";
-import { plainToClass as plainToInstance } from "class-transformer";
+import { plainToInstance } from "class-transformer";
 
-import { TokenClass } from "./TokenClass";
+import { ChainObject } from "./ChainObject";
+import { TokenClass, TokenClassKey } from "./TokenClass";
+import { UserAlias } from "./UserAlias";
 
 const existingToken = plainToInstance(TokenClass, {
   network: "GC",
@@ -37,7 +39,7 @@ const existingToken = plainToInstance(TokenClass, {
   totalSupply: new BigNumber("50000000000"),
   totalMintAllowance: new BigNumber("50000000000"),
   image: "https://app.gala.games/_nuxt/img/gala-logo_horizontal_white.8b0409c.png",
-  authorities: ["client|old-admin"]
+  authorities: ["client|old-admin" as UserAlias]
 });
 
 it("should update properties that are allowed to be updated", async () => {
@@ -62,7 +64,7 @@ it("should update properties that are allowed to be updated", async () => {
     totalSupply: new BigNumber("998"),
     totalMintAllowance: new BigNumber("997"),
     image: "https://app.gala.games/_nuxt/img/updated-gala-logo_horizontal_white.8b0409c.png",
-    authorities: ["client|new-admin"]
+    authorities: ["client|new-admin" as UserAlias]
   };
 
   // When
@@ -85,7 +87,7 @@ it("should update properties that are allowed to be updated", async () => {
 it("should allow to override authorities", async () => {
   // Given
   const update = {
-    authorities: ["client|new-admin"],
+    authorities: ["client|new-admin" as UserAlias],
     overwriteAuthorities: true
   };
 
@@ -97,4 +99,61 @@ it("should allow to override authorities", async () => {
     ...existingToken.toPlainObject(),
     authorities: ["client|new-admin"]
   });
+});
+
+it("should encode and decode token class key from base58 encoded string", async () => {
+  // Given
+  const classKey = new TokenClassKey();
+  classKey.collection = "Test";
+  classKey.category = "Class";
+  classKey.type = "Key";
+  classKey.additionalKey = "None";
+
+  const base58EncodedString = classKey.toB58EncodedString();
+
+  // When
+  const decodedClassKey = TokenClassKey.fromB58EncodedString(base58EncodedString);
+
+  // Then
+  expect(decodedClassKey).toEqual(classKey);
+});
+
+it("should encode and decode successfully with $ in keys", async () => {
+  // Given
+  const classKey = new TokenClassKey();
+  classKey.collection = "$Test";
+  classKey.category = "Cl$ass";
+  classKey.type = "Key$";
+  classKey.additionalKey = "$No$ne$";
+
+  const base58EncodedString = classKey.toB58EncodedString();
+
+  // When
+  const decodedClassKey = TokenClassKey.fromB58EncodedString(base58EncodedString);
+
+  // Then
+  expect(decodedClassKey).toEqual(classKey);
+});
+
+it("should encode and decode successfully with utf 0 in keys", async () => {
+  // Given
+  const utf0 = ChainObject.MIN_UNICODE_RUNE_VALUE;
+
+  const classKey = new TokenClassKey();
+  classKey.collection = "Test";
+  classKey.category = "Class";
+  classKey.type = `Ke${utf0}y`;
+  classKey.additionalKey = "None";
+
+  const invalidEncoded = ChainObject.encodeToBase58(
+    [classKey.collection, classKey.category, classKey.type, classKey.additionalKey].join(utf0)
+  );
+
+  // When
+  const encode = () => classKey.toB58EncodedString();
+  const decode = () => TokenClassKey.fromB58EncodedString(invalidEncoded);
+
+  // Then
+  expect(encode).toThrow("Invalid part with UTF-0 at index 2 passed");
+  expect(decode).toThrow("Expected 4 parts, got 5 parts");
 });

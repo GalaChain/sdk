@@ -12,16 +12,19 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-import { ChainError, ChainObject, ErrorCode } from "@gala-chain/api";
 import {
+  ChainError,
+  ChainObject,
+  ErrorCode,
   FetchBalancesWithTokenMetadataResponse,
   TokenBalance,
   TokenBalanceWithMetadata,
-  TokenClass
+  TokenClass,
+  UserAlias,
+  createValidDTO
 } from "@gala-chain/api";
-import { plainToInstance } from "class-transformer";
 
-import { GalaChainContext } from "../types/GalaChainContext";
+import { GalaChainContext } from "../types";
 import { getObjectByKey, getObjectsByPartialCompositeKeyWithPagination, takeUntilUndefined } from "../utils";
 import { BalanceNotFoundError } from "./BalanceError";
 
@@ -30,11 +33,33 @@ export interface FetchBalancesWithTokenMetadataParams {
   category?: string;
   type?: string;
   additionalKey?: string;
-  owner: string;
+  owner: UserAlias;
   bookmark?: string;
   limit?: number;
 }
 
+/**
+ * @description
+ *
+ * Using the provided parameters, this function will first
+ * query TokenBalance entries from on-chain World State.
+ *
+ * Next, for each `TokenBalance`, the corresponding `TokenClass`
+ * will be fetched from the ledger.
+ *
+ * The `TokenBalance` and corresponding `TokenClass` for each
+ * result will be combined into a results set, yielding a
+ * response defined by the `FetchBalancesWithTokenMetadataResponse`
+ * DTO class.
+ *
+ * This method supports pagination. For large results sets,
+ * use the `bookmark` and `limit` parameters for subsequent
+ * calls.
+ *
+ * @param ctx
+ * @param data
+ * @returns Promise<FetchBalancesWithTokenMetadataResponse>
+ */
 export async function fetchBalancesWithTokenMetadata(
   ctx: GalaChainContext,
   data: FetchBalancesWithTokenMetadataParams
@@ -68,7 +93,7 @@ export async function fetchBalancesWithTokenMetadata(
     const compositeKey = ChainObject.getCompositeKeyFromParts(TokenClass.INDEX_KEY, keyList);
     const tokenClass: TokenClass = await getObjectByKey(ctx, TokenClass, compositeKey);
 
-    const balanceWithTokenMetadata = plainToInstance(TokenBalanceWithMetadata, {
+    const balanceWithTokenMetadata = await createValidDTO(TokenBalanceWithMetadata, {
       balance: balance,
       token: tokenClass
     });
@@ -76,8 +101,8 @@ export async function fetchBalancesWithTokenMetadata(
     results.push(balanceWithTokenMetadata);
   }
 
-  const response = plainToInstance(FetchBalancesWithTokenMetadataResponse, {
-    bookmark: balancesLookup.metadata.bookmark,
+  const response = await createValidDTO(FetchBalancesWithTokenMetadataResponse, {
+    nextPageBookmark: balancesLookup.metadata.bookmark,
     results: results
   });
 

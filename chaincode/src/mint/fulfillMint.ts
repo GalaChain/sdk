@@ -14,17 +14,22 @@
  */
 import {
   AllowanceType,
+  ChainCallDTO,
+  ChainError,
+  ChainObject,
+  GalaChainResponse,
   MintRequestDto,
+  RuntimeError,
   TokenAllowance,
   TokenClass,
   TokenClassKey,
   TokenInstance,
   TokenInstanceKey,
   TokenMintFulfillment,
-  TokenMintRequest
+  TokenMintRequest,
+  UserAlias,
+  ValidationFailedError
 } from "@gala-chain/api";
-import { ChainCallDTO, ChainError, ChainObject, GalaChainResponse, RuntimeError } from "@gala-chain/api";
-import { FulfillMintDto, MintTokenDto } from "@gala-chain/api";
 import BigNumber from "bignumber.js";
 import { plainToInstance } from "class-transformer";
 import { inspect } from "util";
@@ -32,17 +37,18 @@ import { inspect } from "util";
 import { ensureQuantityCanBeMinted, useAllowances } from "../allowances";
 import { fetchKnownBurnCount } from "../burns/fetchBurns";
 import { GalaChainContext } from "../types";
-import { getObjectByKey, putChainObject } from "../utils";
 import {
   blockTimeout,
   generateInverseTimeKey,
+  getObjectByKey,
   inverseKeyLength,
   inversionHeight,
-  lookbackTimeOffset
+  lookbackTimeOffset,
+  putChainObject
 } from "../utils";
 import { constructVerifiedMints } from "./constructVerifiedMints";
 import { indexMintRequests } from "./indexMintRequests";
-import { validateMintRequest } from "./validateMintRequest";
+import { ValidateMintRequestParams, validateMintRequest } from "./validateMintRequest";
 
 export async function mintRequestsByTimeRange(
   ctx: GalaChainContext,
@@ -117,11 +123,44 @@ export async function mintRequestsByTimeKeys(
   return requestEntries;
 }
 
+export interface FulfillMintRequestParams {
+  requests: MintRequestDto[];
+  callingUser: UserAlias;
+}
+
+function validateMintRequestDtoMatchesOriginal(
+  mintRequestDto: MintRequestDto,
+  originalRequest: TokenMintRequest
+): void {
+  const fieldsToVerify = [
+    ["owner", mintRequestDto.owner, originalRequest.owner],
+    ["collection", mintRequestDto.collection, originalRequest.collection],
+    ["category", mintRequestDto.category, originalRequest.category],
+    ["type", mintRequestDto.type, originalRequest.type],
+    ["additionalKey", mintRequestDto.additionalKey, originalRequest.additionalKey],
+    ["timeKey", mintRequestDto.timeKey, originalRequest.timeKey],
+    [
+      "totalKnownMintsCount",
+      mintRequestDto.totalKnownMintsCount?.toFixed(),
+      originalRequest.totalKnownMintsCount?.toFixed()
+    ]
+  ];
+
+  for (const [field, dtoValue, reqValue] of fieldsToVerify) {
+    if (dtoValue !== reqValue) {
+      const message = `${field} mismatch: MintRequestDto ${field} ${dtoValue} does not match TokenMintRequest ${field} ${reqValue}`;
+      throw new ValidationFailedError(message, {
+        dto: mintRequestDto,
+        originalRequest
+      });
+    }
+  }
+}
+
 export async function fulfillMintRequest(
   ctx: GalaChainContext,
-  dto: FulfillMintDto
+  { requests, callingUser }: FulfillMintRequestParams
 ): Promise<Array<TokenInstanceKey>> {
-  const requests = dto.requests;
   const requestIds = requests.map((r) => r.id);
 
   const reqIdx: Record<string, MintRequestDto[]> = indexMintRequests(requests);
@@ -228,6 +267,12 @@ export async function fulfillMintRequest(
         continue;
       }
 
+      // Add validation that the request matches the original mint request
+      const mintRequestDto = requests.find((r) => r.id === req.id);
+      if (mintRequestDto) {
+        validateMintRequestDtoMatchesOriginal(mintRequestDto, req);
+      }
+
       let mintableQty = false;
       let qtyError: ChainError | undefined;
 
@@ -253,21 +298,22 @@ export async function fulfillMintRequest(
       } else {
         const mintFulfillmentEntry: TokenMintFulfillment = req.fulfill(req.quantity);
 
-        const mintDto: MintTokenDto = plainToInstance(MintTokenDto, {
-          tokenClass: { collection, category, type, additionalKey },
+        const mintReqParams: ValidateMintRequestParams = {
+          tokenClass: plainToInstance(TokenClassKey, { collection, category, type, additionalKey }),
           owner: req.owner,
           quantity: req.quantity,
-          allowanceKey: req.allowanceKey
-        });
+          allowanceKey: req.allowanceKey,
+          authorizedOnBehalf: undefined
+        };
 
         // todo: bridging support. refactor FulfillMint and/or validateMintRequest
         // functionality to replace the hard-coded `undefined`
         // below with bridgeUserType handling.
         const applicableAllowances: TokenAllowance[] = await validateMintRequest(
           ctx,
-          mintDto,
+          mintReqParams,
           tokenClass,
-          undefined
+          callingUser
         );
 
         const actionDescription =
@@ -277,7 +323,8 @@ export async function fulfillMintRequest(
         const allowancesUsed: boolean = await useAllowances(
           ctx,
           new BigNumber(req.quantity),
-          applicableAllowances
+          applicableAllowances,
+          AllowanceType.Mint
         );
 
         if (!allowancesUsed) {
@@ -295,7 +342,8 @@ export async function fulfillMintRequest(
             ctx,
             mintFulfillmentEntry,
             tokenClass,
-            instanceCounter
+            instanceCounter,
+            callingUser
           );
 
           const returnKeys: Array<TokenInstanceKey> = [];
@@ -326,7 +374,7 @@ export async function fulfillMintRequest(
 
   await Promise.all(successful.map((mintFulfillment) => putChainObject(ctx, mintFulfillment)));
 
-  if (resultInstanceKeys.length < dto.requests.length) {
+  if (resultInstanceKeys.length < requests.length) {
     throw new Error(
       JSON.stringify({
         success: resultInstanceKeys,

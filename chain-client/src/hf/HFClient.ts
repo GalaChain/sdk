@@ -12,10 +12,18 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-import { ChainCallDTO, GalaChainResponse, Inferred } from "@gala-chain/api";
+import {
+  ChainCallDTO,
+  ChainClient,
+  ClassType,
+  ContractConfig,
+  GalaChainResponse,
+  Inferred,
+  isClassType,
+  serialize
+} from "@gala-chain/api";
 import { Contract, Gateway, Network } from "fabric-network";
 
-import { ChainClient, ClassType, ContractConfig, isClassType } from "../generic";
 import { HFClientBuilder } from "./HFClientBuilder";
 
 export class HFClient extends ChainClient {
@@ -62,7 +70,7 @@ export class HFClient extends ChainClient {
     resp?: ClassType<Inferred<T>>
   ): Promise<GalaChainResponse<T>> {
     const [dto, responseType] = isClassType(dtoOrResp) ? [undefined, dtoOrResp] : [dtoOrResp, resp];
-    const serialized = dto?.serialize();
+    const serialized = dto ? serialize(dto) : undefined;
 
     const contract = await this.contract;
     const transaction = contract.createTransaction(method);
@@ -81,7 +89,7 @@ export class HFClient extends ChainClient {
     resp?: ClassType<Inferred<T>>
   ): Promise<GalaChainResponse<T>> {
     const [dto, responseType] = isClassType(dtoOrResp) ? [undefined, dtoOrResp] : [dtoOrResp, resp];
-    const serialized = dto?.serialize();
+    const serialized = dto ? serialize(dto) : undefined;
 
     const contract = await this.contract;
     const transaction = contract.createTransaction(method);

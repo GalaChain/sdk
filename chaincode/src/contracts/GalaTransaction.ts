@@ -16,12 +16,16 @@ import {
   ChainCallDTO,
   ChainError,
   ClassConstructor,
+  ExpiredError,
   GalaChainResponse,
   Inferred,
   MethodAPI,
+  NotImplementedError,
   Primitive,
   RuntimeError,
-  UnauthorizedError,
+  SubmitCallDTO,
+  UserProfile,
+  UserRole,
   generateResponseSchema,
   generateSchema,
   parseValidDTO
@@ -33,18 +37,19 @@ import { UniqueTransactionService } from "../services";
 import { GalaChainContext } from "../types";
 import { GalaContract } from "./GalaContract";
 import { updateApi } from "./GalaContractApi";
-import { authorize, ensureOrganizationIsAllowed } from "./authorize";
-import { legacyClientAccountId } from "./legacyClientAccountId";
+import { authenticate } from "./authenticate";
+import { authorize } from "./authorize";
 
 // All DTOs need to be registered in the application, including super classes. Otherwise, chaincode
 // containers will fail to start. Below we register just some base classes. Actual DTO classes are
 // registered inside decorator factory.
 //
 DTOObject()(ChainCallDTO);
+DTOObject()(SubmitCallDTO);
 
 // Note: it is just a metadata, you cannot effectively forbid to submit the transaction
 // (you can, however make it readonly by passing random value to the result or manipulating the context)
-enum GalaTransactionType {
+export enum GalaTransactionType {
   EVALUATE,
   SUBMIT
 }
@@ -58,67 +63,104 @@ type GalaTransactionDecoratorFunction = (
   descriptor: TypedPropertyDescriptor<Function>
 ) => void;
 
-type OutType = ClassConstructor<unknown> | Primitive;
-type OutArrType = { arrayOf: OutType };
+type OutType<T> = ClassConstructor<T> | Primitive;
+type OutArrType<T> = { arrayOf: OutType<T> };
 
-export type GalaTransactionBeforeFn = (ctx: GalaChainContext, dto: ChainCallDTO) => Promise<void>;
-export type GalaTransactionAfterFn = (
+export type GalaTransactionBeforeFn<In extends ChainCallDTO> = (
   ctx: GalaChainContext,
-  dto: ChainCallDTO,
-  result: GalaChainResponse<unknown>
+  dto: In
+) => Promise<void>;
+
+export type GalaTransactionAfterFn<In extends ChainCallDTO, Out> = (
+  ctx: GalaChainContext,
+  dto: In,
+  result: GalaChainResponse<Out>
 ) => Promise<unknown>;
 
-export interface GalaTransactionOptions<T extends ChainCallDTO> {
-  type: GalaTransactionType;
+export interface CommonTransactionOptions<In extends ChainCallDTO, Out> {
+  deprecated?: true;
   description?: string;
-  in?: ClassConstructor<Inferred<T>>;
-  out?: OutType | OutArrType;
+  in?: ClassConstructor<Inferred<In>>;
+  out?: OutType<Out> | OutArrType<Out>;
+  /** @deprecated */
   allowedOrgs?: string[];
-  verifySignature?: true;
+  allowedRoles?: string[];
+  allowedOriginChaincodes?: string[];
+  quorum?: number;
   apiMethodName?: string;
   sequence?: MethodAPI[];
-  enforceUniqueKey?: true;
-  before?: GalaTransactionBeforeFn;
-  after?: GalaTransactionAfterFn;
+  before?: GalaTransactionBeforeFn<In>;
+  after?: GalaTransactionAfterFn<In, Out | Out[]>;
 }
 
-type GalaSubmitOptions<T extends ChainCallDTO> = Omit<
-  Omit<GalaTransactionOptions<T>, "type">,
-  "verifySignature"
->;
+export interface GalaTransactionOptions<In extends ChainCallDTO, Out>
+  extends CommonTransactionOptions<In, Out> {
+  type: GalaTransactionType;
+  verifySignature?: true;
+  enforceUniqueKey?: true;
+}
 
-type GalaEvaluateOptions<T extends ChainCallDTO> = Omit<
-  Omit<GalaTransactionOptions<T>, "type">,
-  "verifySignature"
->;
+export type GalaSubmitOptions<In extends SubmitCallDTO, Out> = CommonTransactionOptions<In, Out>;
 
-function isArrayOut(x: OutType | OutArrType | undefined): x is OutArrType {
+export interface GalaEvaluateOptions<In extends ChainCallDTO, Out> extends CommonTransactionOptions<In, Out> {
+  verifySignature?: true;
+}
+
+function isArrayOut<Out>(x: OutType<Out> | OutArrType<Out> | undefined): x is OutArrType<Out> {
   return typeof x === "object" && "arrayOf" in x;
 }
 
-function Submit<T extends ChainCallDTO>(options: GalaSubmitOptions<T>): GalaTransactionDecoratorFunction {
-  return GalaTransaction({ ...options, type: SUBMIT, verifySignature: true });
+function Submit<In extends SubmitCallDTO, Out>(
+  options: GalaSubmitOptions<In, Out>
+): GalaTransactionDecoratorFunction {
+  return GalaTransaction({ ...options, type: SUBMIT, verifySignature: true, enforceUniqueKey: true });
 }
 
-function Evaluate<T extends ChainCallDTO>(options: GalaEvaluateOptions<T>): GalaTransactionDecoratorFunction {
+function Evaluate<In extends ChainCallDTO, Out>(
+  options: GalaEvaluateOptions<In, Out>
+): GalaTransactionDecoratorFunction {
   return GalaTransaction({ ...options, type: EVALUATE, verifySignature: true });
 }
 
-function GalaTransaction<T extends ChainCallDTO>(
-  options: GalaTransactionOptions<T>
+function UnsignedEvaluate<In extends ChainCallDTO, Out>(
+  options: CommonTransactionOptions<In, Out>
 ): GalaTransactionDecoratorFunction {
-  // Register the DTO class to be passed
-  if (options.in !== undefined) {
-    DTOObject()(options.in);
-  }
+  return GalaTransaction({ ...options, type: EVALUATE });
+}
 
-  if (options.type === SUBMIT && !options.verifySignature && !options.allowedOrgs?.length) {
-    const message = `SUBMIT transaction must have either verifySignature or allowedOrgs defined`;
-    throw new UnauthorizedError(message);
-  }
-
-  // An actual decorator
+function GalaTransaction<In extends ChainCallDTO, Out>(
+  options: GalaTransactionOptions<In, Out>
+): GalaTransactionDecoratorFunction {
   return (target, propertyKey, descriptor): void => {
+    // Register the DTO class to be passed
+    if (options.in !== undefined) {
+      DTOObject()(options.in);
+    }
+
+    if (options.type === SUBMIT && !options.verifySignature && !options.allowedOrgs?.length) {
+      const message = `SUBMIT transaction '${propertyKey}' must have either verifySignature or allowedOrgs defined`;
+      throw new NotImplementedError(message);
+    }
+
+    if (options.allowedRoles !== undefined && options.allowedOrgs !== undefined) {
+      const message = `Transaction '${propertyKey}': allowedRoles and allowedOrgs cannot be defined at the same time`;
+      throw new NotImplementedError(message);
+    }
+
+    options.allowedRoles = options.allowedRoles ?? [
+      options.type === SUBMIT ? UserRole.SUBMIT : UserRole.EVALUATE
+    ];
+
+    if (options.type === SUBMIT && !options.enforceUniqueKey) {
+      const message = `SUBMIT transaction '${propertyKey}' must have enforceUniqueKey defined`;
+      throw new NotImplementedError(message);
+    }
+
+    if (options.type === EVALUATE && options.enforceUniqueKey) {
+      const message = `EVALUATE transaction '${propertyKey}' cannot have enforceUniqueKey defined`;
+      throw new NotImplementedError(message);
+    }
+
     // Takes the method to wrap
     const method = descriptor.value;
     const className = target.constructor?.name ?? "UnknownContractClass";
@@ -133,38 +175,56 @@ function GalaTransaction<T extends ChainCallDTO>(
     // optional one, is a plain dto object. We ignore the rest. This is our
     // convention.
     // eslint-disable-next-line no-param-reassign
-    descriptor.value = async function (ctx, dtoPlain) {
+    descriptor.value = async function (ctx: GalaChainContext, dtoPlain) {
       try {
         const metadata = [{ dto: dtoPlain }];
         ctx?.logger?.logTimeline("Begin Transaction", loggingContext, metadata);
 
         // Parse & validate - may throw an exception
-        const dtoClass = options.in ?? (ChainCallDTO as unknown as ClassConstructor<Inferred<T>>);
+        const dtoClass = options.in ?? (ChainCallDTO as unknown as ClassConstructor<Inferred<In>>);
         const dto = !dtoPlain
           ? undefined
-          : await parseValidDTO<T>(dtoClass, dtoPlain as string | Record<string, unknown>);
+          : await parseValidDTO<In>(dtoClass, dtoPlain as string | Record<string, unknown>);
 
-        // Verify public key signature if needed - throws exception in case of failure
-        if (options?.verifySignature || dto?.signature !== undefined) {
-          ctx.callingUserData = await authorize(ctx, dto, legacyClientAccountId(ctx));
-        } else {
-          // it means a request where authorization is not required
-          ctx.callingUserData = { alias: legacyClientAccountId(ctx) };
+        // Note using Date.now() instead of ctx.txUnixTime which is provided client-side.
+        if (dto?.dtoExpiresAt && dto.dtoExpiresAt < Date.now()) {
+          throw new ExpiredError(`DTO expired at ${new Date(dto.dtoExpiresAt).toISOString()}`);
         }
+
+        // Authenticate the user
+        if (ctx.isDryRun) {
+          // Do not authenticate in dry run mode
+        } else if (options?.verifySignature || dto?.getAllSignatures().length) {
+          // Authenticate if this is explicitly enabled or if there are any signatures in the DTO
+          ctx.callingUserData = await authenticate(ctx, dto, options.quorum);
+        } else {
+          // it means a request where authorization is not required. If there is org-based authorization,
+          // default roles are applied. If not, then only evaluate is possible. Alias is intentionally
+          // missing.
+          const roles = !options.allowedOrgs?.length ? [UserRole.EVALUATE] : [...UserProfile.DEFAULT_ROLES];
+          ctx.callingUserData = {
+            roles,
+            signedBy: [],
+            signatureQuorum: 0,
+            allowedSigners: [],
+            isMultisig: false
+          };
+        }
+
+        // Authorize the user
+        await authorize(ctx, options, dto);
 
         // Prevent the same transaction from being submitted multiple times
-        if (dto?.uniqueKey) {
-          await UniqueTransactionService.ensureUniqueTransaction(ctx, dto.uniqueKey);
-        } else if (options.enforceUniqueKey) {
-          throw new RuntimeError("Missing uniqueKey in transaction dto");
+        if (options.enforceUniqueKey) {
+          if (dto?.uniqueKey) {
+            await UniqueTransactionService.ensureUniqueTransaction(ctx, dto.uniqueKey);
+          } else {
+            const message = `Missing uniqueKey in transaction dto for method '${method.name}'`;
+            throw new RuntimeError(message);
+          }
         }
 
-        const argArray: [GalaChainContext, T] | [GalaChainContext] = dto ? [ctx, dto] : [ctx];
-
-        // Verify if organization can invoke this method - throws exception in case of failure
-        if (options?.allowedOrgs) {
-          ensureOrganizationIsAllowed(ctx, options.allowedOrgs);
-        }
+        const argArray: [GalaChainContext, In] | [GalaChainContext] = dto ? [ctx, dto] : [ctx];
 
         if (options?.before !== undefined) {
           await options?.before?.apply(this, argArray);
@@ -185,10 +245,26 @@ function GalaTransaction<T extends ChainCallDTO>(
 
         return normalizedResult;
       } catch (err) {
+        const chainError = ChainError.from(err);
+
         if (ctx.logger) {
-          ChainError.from(err).logWarn(ctx.logger);
+          chainError.logWarn(ctx.logger);
           ctx.logger.logTimeline("Failed Transaction", loggingContext, [dtoPlain], err);
+          ctx.logger.debug(err.message);
+          ctx.logger.debug(err.stack);
         }
+
+        // if external chaincode call succeeded, but the remaining part of the
+        // chaincode failed, we need to throw an error to prevent from the state
+        // being updated by the external chaincode. There seems to be no other
+        // way to rollback the state changes.
+        if (ctx.stub.externalChaincodeWasInvoked) {
+          const message =
+            "External chaincode call succeeded, but the remaining part of the chaincode failed with: " +
+            `${chainError.key}: ${chainError.message}`;
+          throw new RuntimeError(message);
+        }
+
         // Note: since it does not end with an exception, failed transactions are also saved
         // on chain in transaction history.
         return GalaChainResponse.Error(err as Error);
@@ -197,16 +273,36 @@ function GalaTransaction<T extends ChainCallDTO>(
 
     // Update API of contract object
     const isWrite = options.type === GalaTransactionType.SUBMIT;
+
+    let description = options.description ? options.description : "";
+
+    if (options.type === GalaTransactionType.SUBMIT) {
+      description += ` Transaction updates the chain (submit).`;
+    } else {
+      description += ` Transaction is read only (evaluate).`;
+    }
+
+    if (options.allowedRoles && options.allowedRoles.length > 0) {
+      description += ` Allowed roles: ${options.allowedRoles.join(", ")}.`;
+    }
+
+    if (options.allowedOrgs && options.allowedOrgs.length > 0) {
+      description += ` Allowed orgs: ${options.allowedOrgs.join(", ")}.`;
+    }
+
+    const responseSchema = isArrayOut(options.out)
+      ? generateResponseSchema(options.out.arrayOf, "array")
+      : generateResponseSchema(options.out);
+
     updateApi(target, {
       isWrite,
       methodName: method.name,
-      apiMethodName: options.apiMethodName,
-      dtoSchema: options.in === undefined ? undefined : generateSchema(options.in),
-      description: options.description,
-      responseSchema: isArrayOut(options.out)
-        ? generateResponseSchema(options.out.arrayOf, "array")
-        : generateResponseSchema(options.out),
-      sequence: options.sequence
+      ...(options.apiMethodName === undefined ? {} : { apiMethodName: options.apiMethodName }),
+      ...(options.in === undefined ? {} : { dtoSchema: generateSchema(options.in) }),
+      description,
+      responseSchema,
+      ...(options.deprecated === undefined ? {} : { deprecated: options.deprecated }),
+      ...(options.sequence === undefined ? {} : { sequence: options.sequence })
     });
 
     // Ensure this is an actual HLF transaction.
@@ -215,4 +311,4 @@ function GalaTransaction<T extends ChainCallDTO>(
   };
 }
 
-export { Submit, Evaluate, SUBMIT, EVALUATE, GalaTransaction };
+export { Submit, Evaluate, UnsignedEvaluate, SUBMIT, EVALUATE, GalaTransaction };

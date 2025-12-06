@@ -14,93 +14,69 @@
  */
 import {
   AllowanceType,
+  AuthorizedOnBehalf,
   BurnTokenQuantity,
+  ChainError,
   ChainObject,
+  ErrorCode,
   TokenAllowance,
   TokenBurn,
   TokenBurnCounter,
   TokenClass,
   TokenInstanceKey,
-  ValidationFailedError
+  UserAlias,
+  ValidationFailedError,
+  createValidChainObject,
+  createValidRangedChainObject
 } from "@gala-chain/api";
 import { BigNumber } from "bignumber.js";
+import { instanceToInstance, plainToInstance } from "class-transformer";
 
 import { checkAllowances, fetchAllowances, useAllowances } from "../allowances";
 import { fetchOrCreateBalance } from "../balances";
 import { InvalidDecimalError, fetchTokenInstance } from "../token";
-import { GalaChainContext, createValidChainObject } from "../types";
-import { getObjectByKey, inverseEpoch, inverseTime, putChainObject, putRangedChainObject } from "../utils";
+import { GalaChainContext } from "../types";
+import {
+  getObjectByKey,
+  getRangedObjectByKey,
+  inverseEpoch,
+  inverseTime,
+  putChainObject,
+  putRangedChainObject
+} from "../utils";
 import { InsufficientBurnAllowanceError, UseAllowancesFailedError } from "./BurnError";
 import { fetchKnownBurnCount } from "./fetchBurns";
 
-async function createTokenBurn(
-  ctx: GalaChainContext,
-  burnedBy: string,
-  { collection, category, type, additionalKey, instance }: TokenInstanceKey,
-  quantity: BigNumber
-): Promise<TokenBurn> {
-  return await createValidChainObject(TokenBurn, {
-    burnedBy,
-    collection,
-    category,
-    type,
-    additionalKey,
-    instance,
-    created: ctx.txUnixTime,
-    quantity
-  });
-}
-
-async function createTokenBurnCounter(
-  ctx: GalaChainContext,
-  tokenBurn: TokenBurn
-): Promise<TokenBurnCounter> {
-  const { collection, category, type, additionalKey, instance, burnedBy, created, quantity } = tokenBurn;
-
-  const referenceId = ChainObject.getStringKeyFromParts([
-    burnedBy,
-    collection,
-    category,
-    type,
-    additionalKey,
-    burnedBy,
-    `${created}`
-  ]);
-
-  const timeKey: string = inverseTime(ctx, 0);
-  const epoch: string = inverseEpoch(ctx, 0);
-
-  const totalKnownBurnsCount: BigNumber = await fetchKnownBurnCount(ctx, {
-    collection,
-    category,
-    type,
-    additionalKey
-  });
-
-  const burnCounter = await createValidChainObject(TokenBurnCounter, {
-    collection,
-    category,
-    type,
-    additionalKey,
-    timeKey,
-    burnedBy,
-    instance,
-    totalKnownBurnsCount,
-    created,
-    quantity,
-    referenceId,
-    epoch
-  });
-
-  return burnCounter;
-}
-
 export interface BurnsTokensParams {
-  owner: string;
+  owner: UserAlias;
   toBurn: BurnTokenQuantity[];
+  /**
+   * @deprecated since 2.3.2. It is recommended to use `authorizedOnBehalf` instead.
+   */
   preValidated?: boolean;
+  authorizedOnBehalf?: AuthorizedOnBehalf;
 }
 
+/**
+ * @description
+ *
+ * Burn a quantity of tokens described by one or more `TokenInstanceKey`s
+ * belonging to a single owner.
+ *
+ * @remarks
+ *
+ * The optional `preValidated?` boolean is intended for use internally by
+ * other chaincode contract methods that have already validated
+ * identities, allowances, and authorization to burn.
+ *
+ * For example, a
+ * burning bridge may need to burn tokens while executing `bridgeTokenOut`
+ * actions.
+ *
+ * @param ctx
+ * @param param1
+ * @returns
+ */
 export async function burnTokens(
   ctx: GalaChainContext,
   {
@@ -108,12 +84,17 @@ export async function burnTokens(
     toBurn,
     // NOTE: flag used so burnAndMint and bridgeTokenOut can bypass allowance check.
     // This suggests we might want to refactor burnAndMint, but this was outside the scope of burn allowances
-    preValidated
+    preValidated,
+    authorizedOnBehalf
   }: BurnsTokensParams
 ): Promise<TokenBurn[]> {
+  const callingOnBehalf = authorizedOnBehalf?.callingOnBehalf ?? ctx.callingUser;
+
   const burnResponses: Array<TokenBurn> = [];
 
-  for (const tokenQuantity of toBurn) {
+  const burnQuantitiesSummedByInstance = aggregateBurnQuantities(toBurn);
+
+  for (const tokenQuantity of burnQuantitiesSummedByInstance) {
     const tokenInstance = await fetchTokenInstance(ctx, tokenQuantity.tokenInstanceKey);
     const tokenInstanceClassKey = await TokenClass.buildClassKeyObject(tokenInstance);
     const tokenClass = await getObjectByKey(
@@ -127,14 +108,17 @@ export async function burnTokens(
 
     let applicableAllowanceResponse: TokenAllowance[] = [];
     // if user is not the owner, check allowances:
-    if (ctx.callingUser !== owner && !preValidated) {
+    if (!preValidated && callingOnBehalf !== owner) {
       // Get allowances
       const fetchAllowancesData = {
-        grantedTo: ctx.callingUser,
+        grantedTo: callingOnBehalf,
         collection: tokenInstanceClassKey.collection,
         category: tokenInstanceClassKey.category,
         type: tokenInstanceClassKey.type,
-        additionalKey: tokenInstanceClassKey.additionalKey
+        additionalKey: tokenInstanceClassKey.additionalKey,
+        instance: tokenInstance.instance.toString(),
+        allowanceType: AllowanceType.Burn,
+        grantedBy: owner
       };
 
       applicableAllowanceResponse = await fetchAllowances(ctx, fetchAllowancesData);
@@ -145,12 +129,12 @@ export async function burnTokens(
         applicableAllowanceResponse,
         tokenQuantity.tokenInstanceKey,
         AllowanceType.Burn,
-        ctx.callingUser
+        callingOnBehalf
       );
 
       if (totalAllowance.isLessThan(tokenQuantity.quantity)) {
         throw new InsufficientBurnAllowanceError(
-          ctx.callingUser,
+          callingOnBehalf,
           totalAllowance,
           tokenQuantity.quantity,
           tokenQuantity.tokenInstanceKey,
@@ -162,7 +146,8 @@ export async function burnTokens(
       const allowancesUsed: boolean = await useAllowances(
         ctx,
         new BigNumber(tokenQuantity.quantity),
-        applicableAllowanceResponse
+        applicableAllowanceResponse,
+        AllowanceType.Burn
       );
 
       if (!allowancesUsed) {
@@ -188,13 +173,24 @@ export async function burnTokens(
     const userBalance = await fetchOrCreateBalance(ctx, owner, tokenInstanceClassKey);
 
     if (tokenInstance.isNonFungible) {
-      userBalance.ensureCanRemoveInstance(tokenInstance.instance, ctx.txUnixTime).remove();
+      userBalance.removeInstance(tokenInstance.instance, ctx.txUnixTime);
     } else {
-      userBalance.ensureCanSubtractQuantity(tokenQuantity.quantity, ctx.txUnixTime).subtract();
+      userBalance.subtractQuantity(tokenQuantity.quantity, ctx.txUnixTime);
     }
 
-    const newBurn = await createTokenBurn(ctx, owner, tokenQuantity.tokenInstanceKey, tokenQuantity.quantity);
-    const newBurnCounter = await createTokenBurnCounter(ctx, newBurn);
+    const newBurn = await incrementOrCreateTokenBurnForTx(
+      ctx,
+      owner,
+      tokenQuantity.tokenInstanceKey,
+      tokenQuantity.quantity
+    );
+
+    const newBurnCounter = await incrementOrCreateTokenBurnCounterForTx(
+      ctx,
+      owner,
+      tokenQuantity.tokenInstanceKey,
+      tokenQuantity.quantity
+    );
 
     await putChainObject(ctx, userBalance);
     await putChainObject(ctx, newBurn);
@@ -204,4 +200,156 @@ export async function burnTokens(
   }
 
   return burnResponses;
+}
+
+/**
+ * @description
+ *
+ * Iterate through the provided array of `BurnTokenQuantity` objects, identifying any
+ * duplicates by `tokenInstanceKey`. If more than one `BurnTokenQuantity` exist for a
+ * given `tokenInstanceKey` combination, sum them together. The output array should have
+ * at most one value per unique `tokenInstanceKey`.
+ *
+ * @param requests: BurnTokenQuantity[]
+ * @returns BurnTokenQuantity[]
+ */
+export function aggregateBurnQuantities(requests: BurnTokenQuantity[]): BurnTokenQuantity[] {
+  const summedQuantities: BurnTokenQuantity[] = [];
+  const hash = {};
+
+  for (let i = 0; i < requests.length; i++) {
+    const { collection, category, type, additionalKey, instance } = requests[i].tokenInstanceKey;
+
+    const key = `${collection}_${category}_${type}_${additionalKey}_${instance.toString()}`;
+
+    hash[key] = hash[key] ?? summedQuantities.length;
+
+    const tokenIndex = hash[key];
+
+    if (summedQuantities[tokenIndex] === undefined) {
+      summedQuantities[tokenIndex] = instanceToInstance(requests[i]);
+    } else {
+      summedQuantities[tokenIndex].quantity = summedQuantities[tokenIndex].quantity.plus(
+        requests[i].quantity
+      );
+    }
+  }
+
+  return summedQuantities;
+}
+
+/**
+ * @description
+ *
+ * If the `TokenBurn` can be read, increment the quantity.
+ * Otherwise, create a new `TokenBurn` with the quantity set to the provided value.
+ *
+ * @remarks
+ * The ChainKey design of `TokenBurn` objects ensures uniqueness by
+ * burnedBy, tokenInstanceKey properties, and a created timestamp.
+ * Generally if a `TokenBurn` is read twice in the same transaction it means
+ * two `burnQuantities` were provided to `burnTokens` for the same token instance,
+ * or two separate functions burned the same token (e.g. a fee and a chaincode main method execution.)
+ */
+export async function incrementOrCreateTokenBurnForTx(
+  ctx: GalaChainContext,
+  burnedBy: UserAlias,
+  { collection, category, type, additionalKey, instance }: TokenInstanceKey,
+  quantity: BigNumber
+): Promise<TokenBurn> {
+  const instanceKey: TokenInstanceKey = plainToInstance(TokenInstanceKey, {
+    collection,
+    category,
+    type,
+    additionalKey,
+    instance
+  });
+
+  const newBurn = await createValidChainObject(TokenBurn, {
+    burnedBy,
+    collection,
+    category,
+    type,
+    additionalKey,
+    instance,
+    created: ctx.txUnixTime,
+    quantity
+  });
+
+  const burnKey = newBurn.getCompositeKey();
+
+  const response: TokenBurn | undefined = await getObjectByKey(ctx, TokenBurn, burnKey)
+    .then((cachedBurn) => {
+      cachedBurn.quantity = cachedBurn.quantity.plus(quantity);
+      return cachedBurn;
+    })
+    .catch((e) => ChainError.recover(e, ErrorCode.NOT_FOUND, newBurn));
+
+  return response;
+}
+
+/**
+ * @description
+ *
+ * If the `TokenBurnCounter` can be read, increment the quantity.
+ * Otherwise, create a new `TokenBurnCounter` with the quantity set to the provided value.
+ *
+ * @remarks
+ * The ChainKey design of `TokenBurnCounter` ranged objects ensures uniqueness by
+ * tokenInstanceKey properties, burnedBy, and a timeKey derived from the transaction timestamp.
+ * Generally if a `TokenBurnCounter` is read twice in the same transaction it means
+ * two `burnQuantities` were provided to `burnTokens` for the same token instance,
+ * or two separate functions burned the same token (e.g. a fee and a chaincode main method execution.)
+ */
+export async function incrementOrCreateTokenBurnCounterForTx(
+  ctx: GalaChainContext,
+  burnedBy: UserAlias,
+  { collection, category, type, additionalKey, instance }: TokenInstanceKey,
+  quantity: BigNumber
+): Promise<TokenBurnCounter> {
+  const referenceId = ChainObject.getStringKeyFromParts([
+    burnedBy,
+    collection,
+    category,
+    type,
+    additionalKey,
+    burnedBy,
+    `${ctx.txUnixTime}`
+  ]);
+
+  const timeKey: string = inverseTime(ctx, 0);
+  const epoch: string = inverseEpoch(ctx, 0);
+
+  const totalKnownBurnsCount: BigNumber = await fetchKnownBurnCount(ctx, {
+    collection,
+    category,
+    type,
+    additionalKey
+  });
+
+  const burnCounter = await createValidRangedChainObject(TokenBurnCounter, {
+    collection,
+    category,
+    type,
+    additionalKey,
+    timeKey,
+    burnedBy,
+    instance,
+    totalKnownBurnsCount,
+    created: ctx.txUnixTime,
+    quantity,
+    referenceId,
+    epoch
+  });
+
+  const burnCounterKey = burnCounter.getRangedKey();
+
+  const response = await getRangedObjectByKey(ctx, TokenBurnCounter, burnCounterKey)
+    .then((cachedBurnCounter) => {
+      cachedBurnCounter.quantity = cachedBurnCounter.quantity.plus(quantity);
+      return cachedBurnCounter;
+    })
+    .catch((e) => ChainError.recover(e, ErrorCode.NOT_FOUND, burnCounter));
+
+  return response;
 }

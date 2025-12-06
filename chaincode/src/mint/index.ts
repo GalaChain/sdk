@@ -12,6 +12,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+import { MintTokenFailedError } from "./MintError";
 import {
   MintOperationParams,
   batchMintToken,
@@ -19,7 +20,10 @@ import {
   indexedMintOperationsByTokenClass
 } from "./batchMintToken";
 import { constructVerifiedMints } from "./constructVerifiedMints";
+import { deleteTokenMintConfiguration } from "./deleteTokenMintConfiguration";
 import { fetchMintAllowanceSupply, fetchMintAllowanceSupplyForToken } from "./fetchMintAllowanceSupply";
+import { fetchTokenMintConfiguration } from "./fetchMintConfiguration";
+import { fetchTokenMintConfigurations } from "./fetchMintConfigurations";
 import { fetchMintSupply } from "./fetchMintSupply";
 import { fetchTokenClassesWithSupply } from "./fetchTokenClassWithSupply";
 import { fulfillMintRequest } from "./fulfillMint";
@@ -28,8 +32,9 @@ import { fulfillMintAllowanceRequest } from "./fulfillMintAllowance";
 import { indexMintRequests } from "./indexMintRequests";
 import { MintTokenParams, UpdateTokenSupplyParams, mintToken } from "./mintToken";
 import { MintTokenWithAllowanceParams, mintTokenWithAllowance } from "./mintTokenWithAllowance";
-import { WriteMintRequestParams, requestMint } from "./requestMint";
+import { WriteMintRequestParams, requestMint, requestMintBatch } from "./requestMint";
 import { InternalGrantAllowanceData, requestMintAllowance } from "./requestMintAllowance";
+import { saveTokenMintConfiguration } from "./saveMintConfiguration";
 import { validateMintRequest } from "./validateMintRequest";
 
 export {
@@ -38,6 +43,7 @@ export {
   indexedMintOperations,
   indexedMintOperationsByTokenClass,
   constructVerifiedMints,
+  deleteTokenMintConfiguration,
   fulfillMintAllowanceRequest,
   fulfillMintRequest,
   indexMintRequests,
@@ -48,12 +54,17 @@ export {
   requestMint,
   WriteMintRequestParams,
   requestMintAllowance,
+  requestMintBatch,
   InternalGrantAllowanceData,
+  saveTokenMintConfiguration,
   validateMintRequest,
   fetchMintAllowanceSupply,
+  fetchTokenMintConfiguration,
+  fetchTokenMintConfigurations,
   fetchMintSupply,
   fetchMintAllowanceSupplyForToken,
   fetchTokenClassesWithSupply,
   mintTokenWithAllowance,
-  MintTokenWithAllowanceParams
+  MintTokenWithAllowanceParams,
+  MintTokenFailedError
 };
