@@ -17,8 +17,7 @@ import { validate } from "class-validator";
 import { ec as EC } from "elliptic";
 
 import { SigningScheme, signatures } from "../utils";
-import { UserAlias, asValidUserAlias } from "./UserAlias";
-import { asValidUserRef } from "./UserRef";
+import { UserAlias } from "./UserAlias";
 import { RegisterUserDto } from "./dtos";
 
 describe("RegisterUserDto", () => {
