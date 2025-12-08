@@ -205,7 +205,6 @@ describe("TransferToken", () => {
   });
 
   test("TransferToken fails when provided allowance is issued to another", async () => {
-    
     // Given
     const nftInstance = nft.tokenInstance1();
     const nftInstanceKey = nft.tokenInstance1Key();
@@ -256,7 +255,6 @@ describe("TransferToken", () => {
   });
 
   test("TransferToken fails if allowances are neither provided nor found on chain", async () => {
-   
     // Given
     const nftInstance = nft.tokenInstance1();
     const nftInstanceKey = nft.tokenInstance1Key();
