@@ -71,7 +71,7 @@ export class FeeApi extends GalaChainBaseApi {
     return this.connection.submit({
       method: "FetchFeeProperties",
       payload: dto,
-      sign: false,
+      sign: true,
       url: this.chainCodeUrl,
       requestConstructor: FeePropertiesDto,
       responseConstructor: FeeProperties
