@@ -12,7 +12,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-import { AllowanceType, TokenAllowance, TokenInstanceKey } from "@gala-chain/api";
+import { AllowanceType, TokenAllowance, TokenInstance, TokenInstanceKey } from "@gala-chain/api";
 import { BigNumber } from "bignumber.js";
 
 import { FetchBalancesParams, fetchBalances } from "../balances";
@@ -47,23 +47,12 @@ async function doesGrantorHaveToken(ctx: GalaChainContext, allowance: TokenAllow
   };
   const balances = await fetchBalances(ctx, balancesData);
 
-  if (balances.length === 0) {
-    return false;
+  if (TokenInstance.FUNGIBLE_TOKEN_INSTANCE.isEqualTo(allowance.instance)) {
+    return balances.length > 0;
   }
 
-  // For NFT allowances (instance > 0), verify grantor owns this specific instance
-  if (allowance.instance.isGreaterThan(0)) {
-    for (const balance of balances) {
-      const ownedInstanceIds = balance.getNftInstanceIds();
-      if (ownedInstanceIds.some((id) => id.isEqualTo(allowance.instance))) {
-        return true;
-      }
-    }
-    return false;
-  }
-
-  // For fungible tokens (instance = 0), having any balance is sufficient
-  return true;
+  const instances = balances.flatMap((b) => b.getNftInstanceIds());
+  return instances.some((id) => id.isEqualTo(allowance.instance));
 }
 
 async function isAllowanceInvalid(ctx: GalaChainContext, allowance: TokenAllowance): Promise<boolean> {
