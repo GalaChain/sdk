@@ -12,7 +12,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-import { AllowanceType, TokenAllowance, TokenInstanceKey } from "@gala-chain/api";
+import { AllowanceType, TokenAllowance, TokenInstance, TokenInstanceKey } from "@gala-chain/api";
 import { BigNumber } from "bignumber.js";
 
 import { FetchBalancesParams, fetchBalances } from "../balances";
@@ -46,7 +46,13 @@ async function doesGrantorHaveToken(ctx: GalaChainContext, allowance: TokenAllow
     additionalKey: allowance.additionalKey
   };
   const balances = await fetchBalances(ctx, balancesData);
-  return balances.length > 0;
+
+  if (TokenInstance.FUNGIBLE_TOKEN_INSTANCE.isEqualTo(allowance.instance)) {
+    return balances.length > 0;
+  }
+
+  const instances = balances.flatMap((b) => b.getNftInstanceIds());
+  return instances.some((id) => id.isEqualTo(allowance.instance));
 }
 
 async function isAllowanceInvalid(ctx: GalaChainContext, allowance: TokenAllowance): Promise<boolean> {
