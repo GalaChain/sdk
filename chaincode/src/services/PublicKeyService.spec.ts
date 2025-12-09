@@ -49,5 +49,5 @@ it(`should normalize secp256k1 public key`, async () => {
   expect(keyFromHex0xC).toEqual(inputBase64Compressed);
   expect(keyFromHex0x).toEqual(inputBase64Compressed);
   expect(await fails1.catch((e) => e.message)).toEqual(expect.stringContaining("Cannot normalize secp256k1"));
-  expect(await fails2.catch((e) => e.message)).toEqual(expect.stringContaining("Unknown point format"));
+  expect(await fails2.catch((e) => e.message)).toEqual(expect.stringContaining("Invalid public key"));
 });
