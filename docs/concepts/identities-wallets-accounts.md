@@ -141,15 +141,13 @@ User information is stored in profiles that contain:
 ```typescript
 interface UserProfile {
   alias: UserAlias;        // Primary identifier
-  ethAddress?: string;     // Ethereum address, provide either eth or ton address
-  tonAddress?: string;     // TON address, provide either eth or ton address
+  ethAddress?: string;     // Ethereum address
   roles: string[];         // Assigned roles
   // ... other fields
 }
 
 interface PublicKey {
   publicKey: string;
-  public signing?: SigningScheme; // "ETH" or "TON"
 }
 ```
 
