@@ -31,7 +31,6 @@ import BigNumber from "bignumber.js";
 import { plainToClass as plainToInstance } from "class-transformer";
 
 import GalaChainTokenContract from "../__test__/GalaChainTokenContract";
-import { GalaChainContext } from "../types";
 
 describe("OfferLoan", () => {
   test("permits NFT owner to create LoanOffer on chain", async () => {

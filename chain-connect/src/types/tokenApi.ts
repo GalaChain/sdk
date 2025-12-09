@@ -94,7 +94,10 @@ type UnlockTokensRequest = ConstructorArgs<UnlockTokensDto>;
 type UpdateTokenClassRequest = ConstructorArgs<UpdateTokenClassDto>;
 type UseTokenRequest = ConstructorArgs<UseTokenDto>;
 
-// Unique case where we need to expose private properties but keep validations
+/**
+ * Token balance representation with validation decorators.
+ * Unique case where we need to expose private properties but keep validations.
+ */
 class TokenBalance implements ConstructorArgs<TokenBalanceDto> {
   @IsUserAlias()
   owner: UserAlias;

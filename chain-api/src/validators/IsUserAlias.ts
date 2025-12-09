@@ -20,6 +20,7 @@ import {
   registerDecorator
 } from "class-validator";
 
+import { UserAlias } from "../types";
 import { signatures } from "../utils";
 
 export enum UserAliasValidationResult {
@@ -46,16 +47,14 @@ export function isValidSystemUser(value: string): boolean {
   );
 }
 
-/**
- * @description
- *
- * Validates a provided user alias. As of 2024-10, The following alias types
- * are supported: legacy client| and service| prefixed aliases,
- * eth| and ton| prefixed addresses, and internally reserved identities.
- *
- * @param value
- * @returns UserRefValidationResult
- */
+export function isValidTonAddress(value: string): boolean {
+  try {
+    return signatures.ton.isValidTonAddress(value);
+  } catch (e) {
+    return false;
+  }
+}
+
 export function validateUserAlias(value: unknown): UserAliasValidationResult {
   if (typeof value !== "string" || value.length === 0) {
     return UserAliasValidationResult.INVALID_FORMAT;
@@ -94,6 +93,11 @@ export function validateUserAlias(value: unknown): UserAliasValidationResult {
   }
 
   return UserAliasValidationResult.INVALID_FORMAT;
+}
+
+export function isValidUserAlias(value: unknown): value is UserAlias {
+  const result = validateUserAlias(value);
+  return meansValidUserAlias(result);
 }
 
 const customMessages = {

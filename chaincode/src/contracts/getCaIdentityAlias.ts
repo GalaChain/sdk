@@ -30,18 +30,13 @@ export function getCaIdentityAlias(ctx: Context): UserAlias {
   const CNSuffix = ":";
 
   if (
+    !clientAccountID.startsWith("x509::") ||
     !clientAccountID.includes(OUPrefix) ||
     !clientAccountID.includes(OUSuffix) ||
     !clientAccountID.includes(CNPrefix) ||
     !clientAccountID.includes(CNSuffix)
   ) {
-    throw new Error("Invalid client account ID format");
-  }
-
-  // eslint-disable-next-line
-  const clientAccountIDRegex = /^x509::\/OU\=(.+)\/CN=(.+)\:/;
-  if (!clientAccountIDRegex.test(clientAccountID)) {
-    throw new Error("Invalid client account ID format");
+    throw new Error(`Invalid client account ID format: ${clientAccountID}`);
   }
 
   const orgStartIndex = clientAccountID.indexOf(OUPrefix) + OUPrefix.length;

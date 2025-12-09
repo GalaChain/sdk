@@ -18,6 +18,7 @@ import { ChaincodeStub, Timestamp } from "fabric-shim";
 
 import { GalaChainStub, createGalaChainStub } from "./GalaChainStub";
 import { GalaLoggerInstance, GalaLoggerInstanceImpl } from "./GalaLoggerInstance";
+import { OperationContext, getOperationContext } from "./OperationContext";
 
 function getTxUnixTime(ctx: Context): number {
   const txTimestamp: Timestamp = ctx.stub.getTxTimestamp();
@@ -49,6 +50,11 @@ export class GalaChainContext extends Context {
   private callingUserEthAddressValue?: string;
   private callingUserTonAddressValue?: string;
   private callingUserRolesValue?: string[];
+  private callingUserSignedByValue?: UserAlias[];
+  private callingUserSignatureQuorumValue?: number;
+  private callingUserAllowedSignersValue?: UserAlias[];
+  private isMultisigValue?: boolean;
+  private operationCtxValue?: OperationContext;
   private txUnixTimeValue?: number;
   private loggerInstance?: GalaLoggerInstance;
 
@@ -72,8 +78,6 @@ export class GalaChainContext extends Context {
       const message =
         "No calling user set. " +
         "It usually means that chaincode tried to get ctx.callingUser for unauthorized call (no DTO signature).";
-      const error = new UnauthorizedError(message);
-      console.error(error);
       throw new UnauthorizedError(message);
     }
     return this.callingUserValue;
@@ -100,22 +104,69 @@ export class GalaChainContext extends Context {
     return this.callingUserRolesValue;
   }
 
+  get callingUserSignedBy(): UserAlias[] {
+    if (this.callingUserSignedByValue === undefined) {
+      const msg = `No signed by users known for user ${this.callingUserValue}`;
+      const error = new UnauthorizedError(msg);
+      this.loggerInstance?.log("error", error?.stack ?? msg);
+      throw error;
+    }
+    return this.callingUserSignedByValue;
+  }
+
+  get callingUserSignatureQuorum(): number {
+    if (this.callingUserSignatureQuorumValue === undefined) {
+      throw new UnauthorizedError(`No signature quorum known for user ${this.callingUserValue}`);
+    }
+    return this.callingUserSignatureQuorumValue;
+  }
+
+  get callingUserAllowedSigners(): UserAlias[] {
+    if (this.callingUserAllowedSignersValue === undefined) {
+      throw new UnauthorizedError(`No allowed signers known for user ${this.callingUserValue}`);
+    }
+    return this.callingUserAllowedSignersValue;
+  }
+
+  get isMultisig(): boolean {
+    if (this.isMultisigValue === undefined) {
+      throw new UnauthorizedError(`No multisig known for user ${this.callingUserValue}`);
+    }
+    return this.isMultisigValue;
+  }
+
   get callingUserProfile(): UserProfile {
     const profile = new UserProfile();
     profile.alias = this.callingUser;
     profile.ethAddress = this.callingUserEthAddressValue;
     profile.tonAddress = this.callingUserTonAddressValue;
     profile.roles = this.callingUserRoles;
+    profile.signatureQuorum = this.callingUserSignatureQuorum;
+    profile.signers = this.callingUserAllowedSigners;
+
     return profile;
   }
 
-  set callingUserData(d: { alias?: UserAlias; ethAddress?: string; tonAddress?: string; roles: string[] }) {
+  set callingUserData(d: {
+    alias?: UserAlias;
+    ethAddress?: string;
+    tonAddress?: string;
+    roles: string[];
+    signedBy: UserAlias[];
+    signatureQuorum: number;
+    allowedSigners: UserAlias[];
+    isMultisig: boolean;
+  }) {
     if (this.callingUserValue !== undefined) {
       throw new Error("Calling user already set to " + this.callingUserValue);
     }
 
     this.callingUserValue = d.alias;
     this.callingUserRolesValue = d.roles ?? [UserRole.EVALUATE]; // default if `roles` is undefined
+    this.callingUserSignedByValue = d.signedBy;
+    this.callingUserSignatureQuorumValue = d.signatureQuorum;
+    this.callingUserAllowedSignersValue = d.allowedSigners;
+    this.isMultisigValue = d.isMultisig;
 
     if (d.ethAddress !== undefined) {
       this.callingUserEthAddressValue = d.ethAddress;
@@ -131,6 +182,17 @@ export class GalaChainContext extends Context {
     this.callingUserRolesValue = undefined;
     this.callingUserEthAddressValue = undefined;
     this.callingUserTonAddressValue = undefined;
+    this.callingUserSignedByValue = undefined;
+    this.callingUserSignatureQuorumValue = undefined;
+    this.callingUserAllowedSignersValue = undefined;
+    this.isMultisigValue = undefined;
+  }
+
+  get operationCtx(): OperationContext {
+    if (this.operationCtxValue === undefined) {
+      this.operationCtxValue = getOperationContext(this);
+    }
+    return { ...this.operationCtxValue }; // prevent mutation
   }
 
   public setDryRunOnBehalfOf(d: {
@@ -143,6 +205,10 @@ export class GalaChainContext extends Context {
     this.callingUserRolesValue = d.roles ?? [];
     this.callingUserEthAddressValue = d.ethAddress;
     this.callingUserTonAddressValue = d.tonAddress;
+    this.callingUserSignedByValue = [];
+    this.callingUserSignatureQuorumValue = 0;
+    this.callingUserAllowedSignersValue = [];
+    this.isMultisigValue = false;
     this.isDryRun = true;
   }
 
@@ -153,8 +219,19 @@ export class GalaChainContext extends Context {
     return this.txUnixTimeValue;
   }
 
+  /**
+   * @returns a new, empty context that uses the same chaincode stub as
+   * the current context, but with dry run set (disables writes and deletes).
+   */
+  public createReadOnlyContext(index: number | undefined): GalaChainContext {
+    const ctx = new GalaChainContext(this.config);
+    ctx.clientIdentity = this.clientIdentity;
+    ctx.setChaincodeStub(createGalaChainStub(this.stub, true, index));
+    return ctx;
+  }
+
   setChaincodeStub(stub: ChaincodeStub) {
-    const galaChainStub = createGalaChainStub(stub);
+    const galaChainStub = createGalaChainStub(stub, this.isDryRun, undefined);
     // eslint-disable-next-line @typescript-eslint/ban-ts-comment
     // @ts-ignore - missing typings for `setChaincodeStub` in `fabric-contract-api`
     // eslint-disable-next-line @typescript-eslint/ban-ts-comment

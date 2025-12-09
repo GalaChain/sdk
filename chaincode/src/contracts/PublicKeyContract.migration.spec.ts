@@ -19,8 +19,7 @@ import {
   RegisterEthUserDto,
   SubmitCallDTO,
   UpdateUserRolesDto,
-  UserProfile,
-  UserProfileWithRoles,
+  UserProfileStrict,
   UserRole,
   createValidSubmitDTO
 } from "@gala-chain/api";
@@ -61,7 +60,7 @@ describe("Migration from allowedOrgs to allowedRoles", () => {
 
   async function getUserProfile() {
     const dto = new ChainCallDTO().signed(user.privateKey);
-    const resp = await chaincode.invoke<GalaChainSuccessResponse<UserProfileWithRoles>>(
+    const resp = await chaincode.invoke<GalaChainSuccessResponse<UserProfileStrict>>(
       "PublicKeyContract:GetMyProfile",
       dto
     );

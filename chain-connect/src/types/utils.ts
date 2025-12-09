@@ -14,14 +14,28 @@
  */
 import { NonFunctionProperties } from "@gala-chain/api";
 
+/**
+ * Utility type that removes readonly modifiers from all properties of a type.
+ * @template T - The type to remove readonly modifiers from
+ */
 export type PublicProperties<T> = {
   -readonly [K in keyof T]: T[K]; // Remove readonly
 };
 
+/**
+ * Recursively extracts non-function properties from a type,
+ * diving into nested objects to preserve their structure.
+ * @template T - The type to extract properties from
+ */
 type NonFunctionPropertiesAndReplaceRecursive<T> = {
   [K in keyof NonFunctionProperties<T>]: NonFunctionProperties<T>[K] extends object
     ? NonFunctionPropertiesAndReplaceRecursive<NonFunctionProperties<T>[K]>
     : NonFunctionProperties<T>[K];
 };
 
+/**
+ * Type utility that extracts constructor arguments from a class type.
+ * Recursively processes nested objects to get only data properties.
+ * @template T - The class type to extract constructor arguments from
+ */
 export type ConstructorArgs<T> = NonFunctionPropertiesAndReplaceRecursive<T>;

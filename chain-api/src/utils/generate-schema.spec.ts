@@ -94,7 +94,8 @@ const expectedTestDtoSchema = {
       type: "string"
     },
     signerAddress: {
-      description: "Address of the user who signed the DTO. Typically Ethereum or TON address.",
+      description:
+        "Address of the user who signed the DTO. Typically Ethereum or TON address, or user alias.",
       minLength: 1,
       type: "string"
     },
@@ -109,9 +110,19 @@ const expectedTestDtoSchema = {
       type: "string"
     },
     signing: {
-      description:
-        'Signing scheme used for the signature. "ETH" for Ethereum, and "TON" for The Open Network are supported. Default: "ETH".',
+      description: expect.stringContaining("Signing scheme used for the signature."),
       enum: ["ETH", "TON"],
+      type: "string"
+    },
+    multisig: {
+      description: expect.stringContaining("List of signatures for this DTO if there are multiple signers."),
+      items: {},
+      minItems: 2,
+      type: "array"
+    },
+    dtoOperation: {
+      description: expect.stringContaining("Full operation identifier"),
+      minLength: 1,
       type: "string"
     },
     uniqueKey: {
@@ -144,6 +155,11 @@ const expectedTestDtoSchema = {
       description: "0 - Yes, 1 - No",
       enum: [0, 1],
       type: "number"
+    },
+    dtoExpiresAt: {
+      description:
+        "Unit timestamp when the DTO expires. If the timestamp is in the past, the DTO is not valid.",
+      type: "number"
     }
   },
   type: "object",
@@ -152,7 +168,12 @@ const expectedTestDtoSchema = {
 
 const expectedTestDtoResponseSchema = {
   properties: {
-    Data: expectedTestDtoSchema,
+    Data: {
+      ...expectedTestDtoSchema,
+      properties: {
+        ...expectedTestDtoSchema.properties
+      }
+    },
     Message: {
       type: "string"
     },

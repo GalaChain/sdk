@@ -16,6 +16,7 @@ import {
   ChainCallDTO,
   ChainError,
   ClassConstructor,
+  ExpiredError,
   GalaChainResponse,
   Inferred,
   MethodAPI,
@@ -84,6 +85,8 @@ export interface CommonTransactionOptions<In extends ChainCallDTO, Out> {
   /** @deprecated */
   allowedOrgs?: string[];
   allowedRoles?: string[];
+  allowedOriginChaincodes?: string[];
+  quorum?: number;
   apiMethodName?: string;
   sequence?: MethodAPI[];
   before?: GalaTransactionBeforeFn<In>;
@@ -172,7 +175,7 @@ function GalaTransaction<In extends ChainCallDTO, Out>(
     // optional one, is a plain dto object. We ignore the rest. This is our
     // convention.
     // eslint-disable-next-line no-param-reassign
-    descriptor.value = async function (ctx, dtoPlain) {
+    descriptor.value = async function (ctx: GalaChainContext, dtoPlain) {
       try {
         const metadata = [{ dto: dtoPlain }];
         ctx?.logger?.logTimeline("Begin Transaction", loggingContext, metadata);
@@ -183,28 +186,41 @@ function GalaTransaction<In extends ChainCallDTO, Out>(
           ? undefined
           : await parseValidDTO<In>(dtoClass, dtoPlain as string | Record<string, unknown>);
 
+        // Note using Date.now() instead of ctx.txUnixTime which is provided client-side.
+        if (dto?.dtoExpiresAt && dto.dtoExpiresAt < Date.now()) {
+          throw new ExpiredError(`DTO expired at ${new Date(dto.dtoExpiresAt).toISOString()}`);
+        }
+
         // Authenticate the user
         if (ctx.isDryRun) {
           // Do not authenticate in dry run mode
-        } else if (options?.verifySignature || dto?.signature !== undefined) {
-          ctx.callingUserData = await authenticate(ctx, dto);
+        } else if (options?.verifySignature || dto?.getAllSignatures().length) {
+          // Authenticate if this is explicitly enabled or if there are any signatures in the DTO
+          ctx.callingUserData = await authenticate(ctx, dto, options.quorum);
         } else {
           // it means a request where authorization is not required. If there is org-based authorization,
           // default roles are applied. If not, then only evaluate is possible. Alias is intentionally
           // missing.
           const roles = !options.allowedOrgs?.length ? [UserRole.EVALUATE] : [...UserProfile.DEFAULT_ROLES];
-          ctx.callingUserData = { roles };
+          ctx.callingUserData = {
+            roles,
+            signedBy: [],
+            signatureQuorum: 0,
+            allowedSigners: [],
+            isMultisig: false
+          };
         }
 
         // Authorize the user
-        await authorize(ctx, options);
+        await authorize(ctx, options, dto);
 
         // Prevent the same transaction from being submitted multiple times
         if (options.enforceUniqueKey) {
           if (dto?.uniqueKey) {
             await UniqueTransactionService.ensureUniqueTransaction(ctx, dto.uniqueKey);
           } else {
-            throw new RuntimeError("Missing uniqueKey in transaction dto");
+            const message = `Missing uniqueKey in transaction dto for method '${method.name}'`;
+            throw new RuntimeError(message);
           }
         }
 
@@ -229,11 +245,24 @@ function GalaTransaction<In extends ChainCallDTO, Out>(
 
         return normalizedResult;
       } catch (err) {
+        const chainError = ChainError.from(err);
+
         if (ctx.logger) {
-          ChainError.from(err).logWarn(ctx.logger);
+          chainError.logWarn(ctx.logger);
           ctx.logger.logTimeline("Failed Transaction", loggingContext, [dtoPlain], err);
           ctx.logger.debug(err.message);
           ctx.logger.debug(err.stack);
+        }
+
+        // if external chaincode call succeeded, but the remaining part of the
+        // chaincode failed, we need to throw an error to prevent from the state
+        // being updated by the external chaincode. There seems to be no other
+        // way to rollback the state changes.
+        if (ctx.stub.externalChaincodeWasInvoked) {
+          const message =
+            "External chaincode call succeeded, but the remaining part of the chaincode failed with: " +
+            `${chainError.key}: ${chainError.message}`;
+          throw new RuntimeError(message);
         }
 
         // Note: since it does not end with an exception, failed transactions are also saved
@@ -248,7 +277,7 @@ function GalaTransaction<In extends ChainCallDTO, Out>(
     let description = options.description ? options.description : "";
 
     if (options.type === GalaTransactionType.SUBMIT) {
-      description += description ?? ` Transaction updates the chain (submit).`;
+      description += ` Transaction updates the chain (submit).`;
     } else {
       description += ` Transaction is read only (evaluate).`;
     }

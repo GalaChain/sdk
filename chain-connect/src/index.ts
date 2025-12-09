@@ -12,6 +12,29 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
+/**
+ * @fileoverview Main entry point for the GalaChain Connect library.
+ *
+ * This library provides high-level client APIs and wallet integration for interacting
+ * with GalaChain networks. It includes browser wallet connectivity, signing abstractions,
+ * and chaincode API clients.
+ *
+ * @example
+ * ```typescript
+ * import { BrowserConnectClient, TokenApi } from '@gala-chain/connect';
+ *
+ * // Connect to a browser wallet
+ * const client = new BrowserConnectClient();
+ * await client.connect();
+ *
+ * // Create API instance
+ * const tokenApi = new TokenApi('https://api.galachain.com', client);
+ *
+ * // Make chaincode calls
+ * const balance = await tokenApi.FetchBalances({ owner: 'eth|...' });
+ * ```
+ */
 export * from "./customClients";
 export * from "./GalaChainClient";
 export * from "./utils/WalletUtils";

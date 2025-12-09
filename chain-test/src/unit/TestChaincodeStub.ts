@@ -12,12 +12,23 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-import { ClientIdentity, ChaincodeStub as FChaincodeStub, Iterators, StateQueryResponse } from "fabric-shim";
+import {
+  ChaincodeResponse,
+  ClientIdentity,
+  ChaincodeStub as FChaincodeStub,
+  Iterators,
+  StateQueryResponse
+} from "fabric-shim";
 import Long from "long";
 import { nanoid } from "nanoid";
 
 import { FabricIterable, asyncIterator, fabricIterable, filter } from "./FabricIterable";
 
+/**
+ * Interface for the Hyperledger Fabric ChaincodeStub class type.
+ * Extends the base FChaincodeStub with constructor and additional properties needed for testing.
+ * @internal
+ */
 /* eslint-disable  @typescript-eslint/no-misused-new */
 export interface ChaincodeStubClassType extends FChaincodeStub {
   new (client, channel_id, txId, chaincodeInput, signedProposal): ChaincodeStubClassType;
@@ -47,6 +58,19 @@ IGYQH8J4+PICOoEcHZAuaQYh53DHSONgC1/A45aWNoE/AiAfnoxXiiD2f1MdiKx4
 neOrBgBGMDzq2aBbdX5EeQZbAw==
 -----END CERTIFICATE-----`);
 
+/**
+ * Creates a mock X.509 client identity for testing purposes.
+ *
+ * @param caUser - User identifier, typically in format "client|username"
+ * @param mspId - Membership Service Provider ID
+ * @returns Mock ClientIdentity with X.509 certificate information
+ *
+ * @example
+ * ```typescript
+ * const identity = x509Identity("client|alice", "CuratorOrg");
+ * console.log(identity.getID()); // x509::/OU=client/CN=alice::...
+ * ```
+ */
 export function x509Identity(caUser: string, mspId: string): ClientIdentity {
   const userInCert = caUser.replace("client|", "");
   const id = `x509::/OU=client/CN=${userInCert}::/C=US/ST=California/L=San Francisco/O=curator.local/CN=ca.curator.local`;
@@ -73,11 +97,42 @@ const creatorMock = () => ({
   idBytes: sampleIdBytes
 });
 
+/**
+ * Mock implementation of Hyperledger Fabric ChaincodeStub for unit testing.
+ *
+ * Provides a complete testing environment that simulates blockchain state operations
+ * without requiring an actual Fabric network. Supports state management, composite keys,
+ * range queries, and identity mocking.
+ *
+ * @example
+ * ```typescript
+ * // Create stub with initial state
+ * const stub = new TestChaincodeStub(
+ *   ["methodName", "arg1", "arg2"],
+ *   { "key1": "value1" },
+ *   {}
+ * );
+ *
+ * // Mock creator identity
+ * stub.mockCreator("CuratorOrg", "client|admin");
+ *
+ * // Test state operations
+ * await stub.putState("newKey", Buffer.from("newValue"));
+ * const value = await stub.getState("newKey");
+ * ```
+ */
 export class TestChaincodeStub extends ChaincodeStub {
   private static epoch = 0;
   public readonly state: Record<string, string>;
   public readonly writes: Record<string, string>;
 
+  /**
+   * Creates a new TestChaincodeStub instance.
+   *
+   * @param args - Array of arguments simulating chaincode invocation parameters
+   * @param state - Initial blockchain state as key-value pairs
+   * @param writes - Object to track state writes for testing assertions
+   */
   constructor(
     args: string[],
     state: Record<string, string> | undefined,
@@ -108,23 +163,54 @@ export class TestChaincodeStub extends ChaincodeStub {
           channelHeader: {
             epoch: 0
           }
+        },
+        payload: {
+          array: [
+            Buffer.from(
+              "CusECAESEQoAEgtiYXNpYy1hc3NldBoAGtMECh9HYWxhQ2hhaW5Ub2tlbjpDcmVhdGVUb2tlbkNsYXNzCq0EeyJkZWNpbWFscyI6MCwiZGVzY3JpcHRpb24iOiJUaGlzIGlzIGEgdGVzdCBkZXNjcmlwdGlvbiEiLCJpbWFnZSI6Imh0dHBzOi8vYXBwLmdhbGEuZ2FtZXMvX251eHQvaW1nL2dhbGEtbG9nb19ob3Jpem9udGFsX3doaXRlLjhiMDQwOWMucG5nIiwiaXNOb25GdW5naWJsZSI6dHJ1ZSwibWF4Q2FwYWNpdHkiOiIxMCIsIm1heFN1cHBseSI6IjEwIiwibmFtZSI6Ik1lZ2FBeGUiLCJuZXR3b3JrIjoiR0MiLCJzaWduYXR1cmUiOiIwYTRhODRmYWRjNDI0NDdjNjFhNjg3ZTJkNDA1YTZjNDc5ZGY3OTllMmQ4OWNkNzliNTRjMzU5MjVjZDA5ZWI3NGVlN2Q0MGYyNGIwNjg0OWExNDc2NDZjZDM0ZWM1NzY5YmE3ZmY1MjA1Nzk2ZjFhYWJjYTI2MzYyNWRiZGE3YjFiIiwic3ltYm9sIjoiTUEiLCJ0b2tlbkNsYXNzIjp7ImFkZGl0aW9uYWxLZXkiOiJub25lIiwiY2F0ZWdvcnkiOiJXZWFwb24iLCJjb2xsZWN0aW9uIjoiTWlyYW5kdXNnY29sdHNkbWppYyIsInR5cGUiOiJNZWdhQXhlIn0sInVuaXF1ZUtleSI6IkxDd2xXQmVoS3JyQnlPZytCNWtvQk92MFhGNXJRT0tQMDhxYmQ0UGZCOWM9In0YAA==",
+              "base64"
+            )
+          ]
         }
       }
     };
   }
 
+  /**
+   * Creates a client identity for the specified user and MSP.
+   *
+   * @param caUser - User identifier
+   * @param mspId - Membership Service Provider ID
+   * @returns ClientIdentity for the specified user
+   */
   public getClientIdentity(caUser: string, mspId: string): ClientIdentity {
     return x509Identity(caUser, mspId);
   }
 
+  /**
+   * Adds a key-value pair to the mock blockchain state.
+   *
+   * @param key - State key
+   * @param value - State value
+   */
   public mockState(key: string, value: string): void {
     this.state[key] = value;
   }
 
+  /**
+   * Sets the mock creator identity for transactions.
+   *
+   * @param mspId - Membership Service Provider ID
+   * @param caUser - User identifier
+   */
   public mockCreator(mspId: string, caUser: string): void {
     this.creator = x509Identity(caUser, mspId);
   }
 
+  /**
+   * Stores a key-value pair in the blockchain state.
+   * Updates both the current state and writes tracking.
+   */
   putState: (key: string, value: Uint8Array) => Promise<void> = (key, value) => {
     const valueString = value.toString();
     this.state[key] = valueString;
@@ -133,6 +219,10 @@ export class TestChaincodeStub extends ChaincodeStub {
     return Promise.resolve();
   };
 
+  /**
+   * Deletes a key from the blockchain state.
+   * Removes from current state and marks as deleted in writes tracking.
+   */
   deleteState: (key: string) => Promise<void> = (key) => {
     delete this.state[key];
     this.writes[key] = "";
@@ -140,11 +230,19 @@ export class TestChaincodeStub extends ChaincodeStub {
     return Promise.resolve();
   };
 
+  /**
+   * Retrieves a value from the blockchain state by key.
+   * Returns empty buffer if key doesn't exist.
+   */
   getState: (key: string) => Promise<Uint8Array> = (key) => {
     const response = this.state[key] ?? "";
     return Promise.resolve(Buffer.from(response));
   };
 
+  /**
+   * Retrieves state entries that match a partial composite key.
+   * Used for querying related objects by their composite key prefix.
+   */
   getStateByPartialCompositeKey: (objectType: string, attributes: string[]) => FabricIterable<Iterators.KV> =
     (objectType, attributes) => {
       const partialCompositeKey = this.createCompositeKey(objectType, attributes);
@@ -156,6 +254,13 @@ export class TestChaincodeStub extends ChaincodeStub {
       return fabricIterable(asyncIterator(kvs));
     };
 
+  /**
+   * Retrieves state entries by partial composite key with pagination support.
+   *
+   * @param indexKey - Index key for the composite key
+   * @param keyParts - Parts of the composite key to match
+   * @returns Iterable query response with pagination metadata
+   */
   getStateByPartialCompositeKeyWithPagination(
     indexKey: string,
     keyParts: string[]
@@ -185,6 +290,13 @@ export class TestChaincodeStub extends ChaincodeStub {
     return iterator;
   }
 
+  /**
+   * Retrieves state entries within a specified key range.
+   *
+   * @param start - Start key (inclusive)
+   * @param end - End key (exclusive)
+   * @returns Iterable of key-value pairs within the range
+   */
   getStateByRange(
     start: string,
     end: string
@@ -200,5 +312,22 @@ export class TestChaincodeStub extends ChaincodeStub {
     const iterator = asyncIterator(kvs);
     const filtered = filter((obj) => obj.key >= start && obj.key < end, iterator);
     return fabricIterable<Iterators.KV>(filtered);
+  }
+
+  /**
+   * Mock implementation of chaincode invocation.
+   * Always returns a successful response for testing purposes.
+   *
+   * @param chaincodeName - Name of the chaincode to invoke (unused in mock)
+   * @param args - Arguments to pass to the chaincode (unused in mock)
+   * @param channel - Channel name (unused in mock)
+   * @returns Promise resolving to a successful ChaincodeResponse
+   */
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  async invokeChaincode(chaincodeName: string, args: string[], channel: string): Promise<ChaincodeResponse> {
+    return {
+      status: 200,
+      message: "This is a test success response"
+    };
   }
 }

@@ -23,13 +23,12 @@ import {
   TokenInstance,
   createValidDTO
 } from "@gala-chain/api";
-import { currency, fixture, randomUser, users } from "@gala-chain/test";
+import { currency, fixture, users } from "@gala-chain/test";
 import BigNumber from "bignumber.js";
 import { plainToInstance } from "class-transformer";
 import { randomUUID } from "crypto";
 
 import { GalaChainFeeContract } from "../__test__/GalaChainFeeContract";
-import { GalaChainContext } from "../types";
 import { txUnixTimeToDateIndexKeys } from "../utils";
 
 describe("authorizeFee", () => {
@@ -58,10 +57,12 @@ describe("authorizeFee", () => {
       authority: users.testUser1.identityKey,
       quantity: authorizedFeeQuantity,
       uniqueKey: randomUUID()
-    }).signed(users.testUser1.privateKey);
+    });
+
+    const signedDto = dto.signed(users.testUser1.privateKey);
 
     // When
-    const response = await contract.AuthorizeFee(ctx, dto);
+    const response = await contract.AuthorizeFee(ctx, signedDto);
 
     // Then
     const { year, month, day } = txUnixTimeToDateIndexKeys(ctx.txUnixTime);

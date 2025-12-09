@@ -27,17 +27,39 @@ import { PublicKeyService } from "./PublicKeyService";
 export async function resolveUserAlias(ctx: GalaChainContext, userRef: string): Promise<UserAlias> {
   const res = validateUserRef(userRef);
 
-  if (res === UserRefValidationResult.VALID_USER_ALIAS || res === UserRefValidationResult.VALID_SYSTEM_USER) {
+  if (res === UserRefValidationResult.VALID_SYSTEM_USER) {
+    return userRef as UserAlias;
+  }
+
+  if (res === UserRefValidationResult.VALID_USER_ALIAS) {
+    if (userRef.startsWith("eth|")) {
+      return await resolveAliasFromEthAddress(ctx, userRef.slice(4));
+    }
+
     return userRef as UserAlias;
   }
 
   if (res === UserRefValidationResult.VALID_ETH_ADDRESS) {
-    const ethAddress = signatures.normalizeEthAddress(userRef);
-    const userProfile = await PublicKeyService.getUserProfile(ctx, ethAddress);
-    const actualAlias = userProfile?.alias ?? asValidUserAlias(`eth|${ethAddress}`);
-    return actualAlias as UserAlias;
+    return await resolveAliasFromEthAddress(ctx, userRef);
+  }
+
+  if (res === UserRefValidationResult.VALID_TON_ADDRESS) {
+    return await resolveAliasFromTonAddress(ctx, userRef);
   }
 
   const key = UserRefValidationResult[res];
   throw new ValidationFailedError(`Invalid user reference (${key}): ${userRef}`, { userRef });
+}
+
+async function resolveAliasFromEthAddress(ctx: GalaChainContext, rawEthAddress: string): Promise<UserAlias> {
+  const ethAddress = signatures.normalizeEthAddress(rawEthAddress);
+  const userProfile = await PublicKeyService.getUserProfile(ctx, ethAddress);
+  const actualAlias = userProfile?.alias ?? asValidUserAlias(`eth|${ethAddress}`);
+  return actualAlias;
+}
+
+async function resolveAliasFromTonAddress(ctx: GalaChainContext, tonAddress: string): Promise<UserAlias> {
+  const userProfile = await PublicKeyService.getUserProfile(ctx, tonAddress);
+  const actualAlias = userProfile?.alias ?? asValidUserAlias(`ton|${tonAddress}`);
+  return actualAlias;
 }

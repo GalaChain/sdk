@@ -14,6 +14,7 @@
  */
 import {
   AllowanceType,
+  AuthorizedOnBehalf,
   BurnTokenQuantity,
   ChainError,
   ChainObject,
@@ -49,7 +50,11 @@ import { fetchKnownBurnCount } from "./fetchBurns";
 export interface BurnsTokensParams {
   owner: UserAlias;
   toBurn: BurnTokenQuantity[];
+  /**
+   * @deprecated since 2.3.2. It is recommended to use `authorizedOnBehalf` instead.
+   */
   preValidated?: boolean;
+  authorizedOnBehalf?: AuthorizedOnBehalf;
 }
 
 /**
@@ -79,9 +84,12 @@ export async function burnTokens(
     toBurn,
     // NOTE: flag used so burnAndMint and bridgeTokenOut can bypass allowance check.
     // This suggests we might want to refactor burnAndMint, but this was outside the scope of burn allowances
-    preValidated
+    preValidated,
+    authorizedOnBehalf
   }: BurnsTokensParams
 ): Promise<TokenBurn[]> {
+  const callingOnBehalf = authorizedOnBehalf?.callingOnBehalf ?? ctx.callingUser;
+
   const burnResponses: Array<TokenBurn> = [];
 
   const burnQuantitiesSummedByInstance = aggregateBurnQuantities(toBurn);
@@ -100,10 +108,10 @@ export async function burnTokens(
 
     let applicableAllowanceResponse: TokenAllowance[] = [];
     // if user is not the owner, check allowances:
-    if (!preValidated && ctx.callingUser !== owner) {
+    if (!preValidated && callingOnBehalf !== owner) {
       // Get allowances
       const fetchAllowancesData = {
-        grantedTo: ctx.callingUser,
+        grantedTo: callingOnBehalf,
         collection: tokenInstanceClassKey.collection,
         category: tokenInstanceClassKey.category,
         type: tokenInstanceClassKey.type,
@@ -121,12 +129,12 @@ export async function burnTokens(
         applicableAllowanceResponse,
         tokenQuantity.tokenInstanceKey,
         AllowanceType.Burn,
-        ctx.callingUser
+        callingOnBehalf
       );
 
       if (totalAllowance.isLessThan(tokenQuantity.quantity)) {
         throw new InsufficientBurnAllowanceError(
-          ctx.callingUser,
+          callingOnBehalf,
           totalAllowance,
           tokenQuantity.quantity,
           tokenQuantity.tokenInstanceKey,

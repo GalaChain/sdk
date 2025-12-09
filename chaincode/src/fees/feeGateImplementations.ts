@@ -18,7 +18,6 @@ import {
   BurnTokensDto,
   ChainCallDTO,
   ChainError,
-  ChainId,
   ChainObject,
   ChainsWithBridgeFeeSupport,
   ErrorCode,
@@ -291,7 +290,7 @@ export async function requestTokenBridgeOutFeeGate(
     );
   }
 
-  const identity = await authenticate(ctx, oracleAssertion);
+  const identity = await authenticate(ctx, oracleAssertion, undefined);
 
   if (
     !oracleDefinition.authorities.includes(identity.alias) &&

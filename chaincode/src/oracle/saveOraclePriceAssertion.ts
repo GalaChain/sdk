@@ -52,7 +52,7 @@ export async function saveOraclePriceAssertion(ctx: GalaChainContext, dto: Oracl
     );
   }
 
-  await ensureIsAuthenticatedBy(ctx, dto, identity);
+  await ensureIsAuthenticatedBy(ctx, dto, identity, undefined);
 
   const {
     oracle,

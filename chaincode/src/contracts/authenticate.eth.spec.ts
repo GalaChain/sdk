@@ -12,7 +12,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-import { ChainCallDTO, UserProfile, signatures } from "@gala-chain/api";
+import { ChainCallDTO, UserProfile, asValidUserRef, signatures } from "@gala-chain/api";
 import { TestChaincode, transactionSuccess } from "@gala-chain/test";
 import { instanceToPlain, plainToClass } from "class-transformer";
 
@@ -52,8 +52,12 @@ const otherPK = signatures.genKeyPair().publicKey;
 const otherAdd = signatures.getEthAddress(otherPK);
 const signerKey = labeled<PublicKey>("signer key")((dto, u) => (dto.signerPublicKey = u.publicKey));
 const _wrongKey = labeled<PublicKey>("wrong signer key")((dto) => (dto.signerPublicKey = otherPK));
-const signerAdd = labeled<PublicKey>("signer address")((dto, u) => (dto.signerAddress = u.ethAddress));
-const _wrongAdd = labeled<PublicKey>("wrong signer address")((dto) => (dto.signerAddress = otherAdd));
+const signerAdd = labeled<PublicKey>("signer address")(
+  (dto, u) => (dto.signerAddress = asValidUserRef(u.ethAddress))
+);
+const _wrongAdd = labeled<PublicKey>("wrong signer address")(
+  (dto) => (dto.signerAddress = asValidUserRef(otherAdd))
+);
 const _________ = labeled<PublicKey>("raw dto")(() => ({}));
 
 // User can be registered or not
@@ -68,7 +72,9 @@ const Success = labeled<Expectation>("Success")((response, user) => {
     transactionSuccess({
       alias: user.alias,
       ethAddress: user.ethAddress,
-      roles: UserProfile.DEFAULT_ROLES
+      roles: UserProfile.DEFAULT_ROLES,
+      signatureQuorum: 1,
+      signers: [user.alias]
     })
   );
 });
@@ -78,7 +84,9 @@ const SuccessNoCustomAlias = labeled<Expectation>("SuccessNoCustomAlias")((respo
     transactionSuccess({
       alias: `eth|${user.ethAddress}`,
       ethAddress: user.ethAddress,
-      roles: UserProfile.DEFAULT_ROLES
+      roles: UserProfile.DEFAULT_ROLES,
+      signatureQuorum: 1,
+      signers: [`eth|${user.ethAddress}`]
     })
   );
 });
@@ -88,7 +96,9 @@ const SuccessUnknownKey = labeled<Expectation>("SuccessUnknownKey")((response, u
     transactionSuccess({
       alias: expect.stringMatching(/^eth\|[a-fA-F0-9]{40}$/),
       ethAddress: expect.stringMatching(/^[a-fA-F0-9]{40}$/),
-      roles: UserProfile.DEFAULT_ROLES
+      roles: UserProfile.DEFAULT_ROLES,
+      signatureQuorum: 1,
+      signers: [expect.stringMatching(/^eth\|[a-fA-F0-9]{40}$/)]
     })
   );
 });

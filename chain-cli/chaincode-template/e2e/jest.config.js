@@ -30,6 +30,9 @@ if (process.env.GALA_NETWORK_ROOT_PATH === undefined) {
 process.env.CORE_CHAINCODE_LOGGING_LEVEL = "error";
 process.env.LOG_LEVEL = "error";
 
+// Use role-based access control (RBAC) for tests.
+process.env.USE_RBAC = "true";
+
 /** @type {import('ts-jest/dist/types').InitialOptionsTsJest} */
 module.exports = {
   preset: "ts-jest",

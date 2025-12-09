@@ -55,27 +55,25 @@ it("should fetch balances by empty signed dto", async () => {
 it("should fetch balances by any user ref", async () => {
   // Given
   const user = users.testUser1;
+
   const balance = new TokenBalance({ ...currency.tokenClassKey(), owner: user.identityKey });
   balance.addQuantity(new BigNumber(1000));
 
   const { contract, ctx } = fixture(GalaChainTokenContract).registeredUsers(user).savedState(balance);
 
-  const dto1 = await createValidDTO(FetchBalancesDto, { owner: asValidUserRef(user.identityKey) });
-  const dto2 = await createValidDTO(FetchBalancesDto, { owner: asValidUserRef(user.ethAddress) });
-  const dto3 = await createValidDTO(FetchBalancesDto, {
-    owner: asValidUserRef(user.ethAddress.toLowerCase())
-  });
-  const dto4 = await createValidDTO(FetchBalancesDto, { owner: asValidUserRef(`0x${user.ethAddress}`) });
+  const validUserRefs = [
+    user.identityKey,
+    user.ethAddress,
+    user.ethAddress.toLowerCase(),
+    `0x${user.ethAddress}`,
+    `eth|${user.ethAddress}`
+  ].map(asValidUserRef);
+
+  const dtos = await Promise.all(validUserRefs.map((owner) => createValidDTO(FetchBalancesDto, { owner })));
 
   // When
-  const result1 = await contract.FetchBalances(ctx, dto1);
-  const result2 = await contract.FetchBalances(ctx, dto2);
-  const result3 = await contract.FetchBalances(ctx, dto3);
-  const result4 = await contract.FetchBalances(ctx, dto4);
+  const results = await Promise.all(dtos.map((dto) => contract.FetchBalances(ctx, dto)));
 
   // Then
-  expect(result1).toEqual(transactionSuccess([balance]));
-  expect(result2).toEqual(transactionSuccess([balance]));
-  expect(result3).toEqual(transactionSuccess([balance]));
-  expect(result4).toEqual(transactionSuccess([balance]));
+  expect(results).toEqual(validUserRefs.map(() => transactionSuccess([balance])));
 });

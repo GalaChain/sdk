@@ -25,6 +25,7 @@ export enum ErrorCode {
   NOT_FOUND = 404,
   CONFLICT = 409,
   NO_LONGER_AVAILABLE = 410,
+  EXPIRED = 418,
   DEFAULT_ERROR = 500,
   NOT_IMPLEMENTED = 501
 }
@@ -267,6 +268,8 @@ export class ConflictError extends ChainError.withCode(ErrorCode.CONFLICT) {}
 export class NoLongerAvailableError extends ChainError.withCode(ErrorCode.NO_LONGER_AVAILABLE) {}
 
 export class DefaultError extends ChainError.withCode(ErrorCode.DEFAULT_ERROR) {}
+
+export class ExpiredError extends ChainError.withCode(ErrorCode.EXPIRED) {}
 
 export class RuntimeError extends ChainError.withCode(ErrorCode.DEFAULT_ERROR) {}
 

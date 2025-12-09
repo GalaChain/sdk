@@ -21,7 +21,7 @@ import { ChainObject } from "./ChainObject";
 export class PublicKey extends ChainObject {
   @IsString()
   @IsNotEmpty()
-  publicKey: string;
+  public publicKey: string;
 
   @IsOptional()
   @StringEnumProperty(SigningScheme)

@@ -247,3 +247,28 @@ jobs:
             echo "Unexpected error from the container. Expected: 'Missing required argument'."
             exit 1
           fi
+      - name: Verify contract names
+        run: |
+          run_output=$(docker run --rm chaincode-test lib/src/cli.js get-contract-names | tail -n 1 2>&1 || true)
+          echo "$run_output"
+          if echo "$run_output" | grep -q '[{"contractName":"AppleContract"},{"contractName":"GalaChainToken"},{"contractName":"PublicKeyContract"}]'; then
+            echo "Success: Got expected contract names."
+            exit 0
+          else
+            echo "---"
+            echo "Unexpected contract names."
+            exit 1
+          fi
+      - name: Verify contract API
+        run: |
+          docker run --name tmp chaincode-test lib/src/cli.js get-contract-api && docker cp tmp:/tmp/contract-api.json api.json && docker rm tmp
+          run_output=$(cat api.json)
+          echo "$run_output"
+          if echo "$run_output" | grep -q '"methodName":"PickApple"'; then
+            echo "Success: Got expected contract API."
+            exit 0
+          else
+            echo "---"
+            echo "Unexpected contract API."
+            exit 1
+          fi
