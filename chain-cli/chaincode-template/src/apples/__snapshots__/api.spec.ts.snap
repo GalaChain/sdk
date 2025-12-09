@@ -62,21 +62,13 @@ Please consult [GalaChain SDK documentation](https://github.com/GalaChain/sdk/bl
                       "type": "string",
                     },
                     "signerAddress": {
-                      "description": "Address of the user who signed the DTO. Typically Ethereum or TON address, or user alias.",
+                      "description": "Address of the user who signed the DTO. Typically Ethereum address, or user alias.",
                       "minLength": 1,
                       "type": "string",
                     },
                     "signerPublicKey": {
                       "description": "Public key of the user who signed the DTO.",
                       "minLength": 1,
-                      "type": "string",
-                    },
-                    "signing": {
-                      "description": "Signing scheme used for the signature. "ETH" for Ethereum, and "TON" for The Open Network are supported. Default: "ETH".",
-                      "enum": [
-                        "ETH",
-                        "TON",
-                      ],
                       "type": "string",
                     },
                     "uniqueKey": {
@@ -119,21 +111,13 @@ Please consult [GalaChain SDK documentation](https://github.com/GalaChain/sdk/bl
                   "type": "string",
                 },
                 "signerAddress": {
-                  "description": "Address of the user who signed the DTO. Typically Ethereum or TON address, or user alias.",
+                  "description": "Address of the user who signed the DTO. Typically Ethereum address, or user alias.",
                   "minLength": 1,
                   "type": "string",
                 },
                 "signerPublicKey": {
                   "description": "Public key of the user who signed the DTO.",
                   "minLength": 1,
-                  "type": "string",
-                },
-                "signing": {
-                  "description": "Signing scheme used for the signature. "ETH" for Ethereum, and "TON" for The Open Network are supported. Default: "ETH".",
-                  "enum": [
-                    "ETH",
-                    "TON",
-                  ],
                   "type": "string",
                 },
                 "uniqueKey": {
@@ -165,21 +149,13 @@ Please consult [GalaChain SDK documentation](https://github.com/GalaChain/sdk/bl
             "type": "string",
           },
           "signerAddress": {
-            "description": "Address of the user who signed the DTO. Typically Ethereum or TON address, or user alias.",
+            "description": "Address of the user who signed the DTO. Typically Ethereum address, or user alias.",
             "minLength": 1,
             "type": "string",
           },
           "signerPublicKey": {
             "description": "Public key of the user who signed the DTO.",
             "minLength": 1,
-            "type": "string",
-          },
-          "signing": {
-            "description": "Signing scheme used for the signature. "ETH" for Ethereum, and "TON" for The Open Network are supported. Default: "ETH".",
-            "enum": [
-              "ETH",
-              "TON",
-            ],
             "type": "string",
           },
           "uniqueKey": {
@@ -279,21 +255,13 @@ Please consult [GalaChain SDK documentation](https://github.com/GalaChain/sdk/bl
                       "type": "string",
                     },
                     "signerAddress": {
-                      "description": "Address of the user who signed the DTO. Typically Ethereum or TON address, or user alias.",
+                      "description": "Address of the user who signed the DTO. Typically Ethereum address, or user alias.",
                       "minLength": 1,
                       "type": "string",
                     },
                     "signerPublicKey": {
                       "description": "Public key of the user who signed the DTO.",
                       "minLength": 1,
-                      "type": "string",
-                    },
-                    "signing": {
-                      "description": "Signing scheme used for the signature. "ETH" for Ethereum, and "TON" for The Open Network are supported. Default: "ETH".",
-                      "enum": [
-                        "ETH",
-                        "TON",
-                      ],
                       "type": "string",
                     },
                     "uniqueKey": {
@@ -336,21 +304,13 @@ Please consult [GalaChain SDK documentation](https://github.com/GalaChain/sdk/bl
                   "type": "string",
                 },
                 "signerAddress": {
-                  "description": "Address of the user who signed the DTO. Typically Ethereum or TON address, or user alias.",
+                  "description": "Address of the user who signed the DTO. Typically Ethereum address, or user alias.",
                   "minLength": 1,
                   "type": "string",
                 },
                 "signerPublicKey": {
                   "description": "Public key of the user who signed the DTO.",
                   "minLength": 1,
-                  "type": "string",
-                },
-                "signing": {
-                  "description": "Signing scheme used for the signature. "ETH" for Ethereum, and "TON" for The Open Network are supported. Default: "ETH".",
-                  "enum": [
-                    "ETH",
-                    "TON",
-                  ],
                   "type": "string",
                 },
                 "uniqueKey": {
@@ -382,21 +342,13 @@ Please consult [GalaChain SDK documentation](https://github.com/GalaChain/sdk/bl
             "type": "string",
           },
           "signerAddress": {
-            "description": "Address of the user who signed the DTO. Typically Ethereum or TON address, or user alias.",
+            "description": "Address of the user who signed the DTO. Typically Ethereum address, or user alias.",
             "minLength": 1,
             "type": "string",
           },
           "signerPublicKey": {
             "description": "Public key of the user who signed the DTO.",
             "minLength": 1,
-            "type": "string",
-          },
-          "signing": {
-            "description": "Signing scheme used for the signature. "ETH" for Ethereum, and "TON" for The Open Network are supported. Default: "ETH".",
-            "enum": [
-              "ETH",
-              "TON",
-            ],
             "type": "string",
           },
           "uniqueKey": {
@@ -484,21 +436,13 @@ Please consult [GalaChain SDK documentation](https://github.com/GalaChain/sdk/bl
             "type": "string",
           },
           "signerAddress": {
-            "description": "Address of the user who signed the DTO. Typically Ethereum or TON address, or user alias.",
+            "description": "Address of the user who signed the DTO. Typically Ethereum address, or user alias.",
             "minLength": 1,
             "type": "string",
           },
           "signerPublicKey": {
             "description": "Public key of the user who signed the DTO.",
             "minLength": 1,
-            "type": "string",
-          },
-          "signing": {
-            "description": "Signing scheme used for the signature. "ETH" for Ethereum, and "TON" for The Open Network are supported. Default: "ETH".",
-            "enum": [
-              "ETH",
-              "TON",
-            ],
             "type": "string",
           },
           "uniqueKey": {
@@ -546,21 +490,13 @@ Please consult [GalaChain SDK documentation](https://github.com/GalaChain/sdk/bl
                 "type": "string",
               },
               "signerAddress": {
-                "description": "Address of the user who signed the DTO. Typically Ethereum or TON address, or user alias.",
+                "description": "Address of the user who signed the DTO. Typically Ethereum address, or user alias.",
                 "minLength": 1,
                 "type": "string",
               },
               "signerPublicKey": {
                 "description": "Public key of the user who signed the DTO.",
                 "minLength": 1,
-                "type": "string",
-              },
-              "signing": {
-                "description": "Signing scheme used for the signature. "ETH" for Ethereum, and "TON" for The Open Network are supported. Default: "ETH".",
-                "enum": [
-                  "ETH",
-                  "TON",
-                ],
                 "type": "string",
               },
               "uniqueKey": {
@@ -628,21 +564,13 @@ Please consult [GalaChain SDK documentation](https://github.com/GalaChain/sdk/bl
             "type": "string",
           },
           "signerAddress": {
-            "description": "Address of the user who signed the DTO. Typically Ethereum or TON address, or user alias.",
+            "description": "Address of the user who signed the DTO. Typically Ethereum address, or user alias.",
             "minLength": 1,
             "type": "string",
           },
           "signerPublicKey": {
             "description": "Public key of the user who signed the DTO.",
             "minLength": 1,
-            "type": "string",
-          },
-          "signing": {
-            "description": "Signing scheme used for the signature. "ETH" for Ethereum, and "TON" for The Open Network are supported. Default: "ETH".",
-            "enum": [
-              "ETH",
-              "TON",
-            ],
             "type": "string",
           },
           "uniqueKey": {
@@ -839,21 +767,13 @@ Please consult [GalaChain SDK documentation](https://github.com/GalaChain/sdk/bl
             "type": "string",
           },
           "signerAddress": {
-            "description": "Address of the user who signed the DTO. Typically Ethereum or TON address, or user alias.",
+            "description": "Address of the user who signed the DTO. Typically Ethereum address, or user alias.",
             "minLength": 1,
             "type": "string",
           },
           "signerPublicKey": {
             "description": "Public key of the user who signed the DTO.",
             "minLength": 1,
-            "type": "string",
-          },
-          "signing": {
-            "description": "Signing scheme used for the signature. "ETH" for Ethereum, and "TON" for The Open Network are supported. Default: "ETH".",
-            "enum": [
-              "ETH",
-              "TON",
-            ],
             "type": "string",
           },
           "uniqueKey": {
@@ -927,21 +847,13 @@ Please consult [GalaChain SDK documentation](https://github.com/GalaChain/sdk/bl
             "type": "string",
           },
           "signerAddress": {
-            "description": "Address of the user who signed the DTO. Typically Ethereum or TON address, or user alias.",
+            "description": "Address of the user who signed the DTO. Typically Ethereum address, or user alias.",
             "minLength": 1,
             "type": "string",
           },
           "signerPublicKey": {
             "description": "Public key of the user who signed the DTO.",
             "minLength": 1,
-            "type": "string",
-          },
-          "signing": {
-            "description": "Signing scheme used for the signature. "ETH" for Ethereum, and "TON" for The Open Network are supported. Default: "ETH".",
-            "enum": [
-              "ETH",
-              "TON",
-            ],
             "type": "string",
           },
           "uniqueKey": {
@@ -1014,21 +926,13 @@ Please consult [GalaChain SDK documentation](https://github.com/GalaChain/sdk/bl
             "type": "string",
           },
           "signerAddress": {
-            "description": "Address of the user who signed the DTO. Typically Ethereum or TON address, or user alias.",
+            "description": "Address of the user who signed the DTO. Typically Ethereum address, or user alias.",
             "minLength": 1,
             "type": "string",
           },
           "signerPublicKey": {
             "description": "Public key of the user who signed the DTO.",
             "minLength": 1,
-            "type": "string",
-          },
-          "signing": {
-            "description": "Signing scheme used for the signature. "ETH" for Ethereum, and "TON" for The Open Network are supported. Default: "ETH".",
-            "enum": [
-              "ETH",
-              "TON",
-            ],
             "type": "string",
           },
           "uniqueKey": {
@@ -1108,21 +1012,13 @@ Please consult [GalaChain SDK documentation](https://github.com/GalaChain/sdk/bl
             "type": "string",
           },
           "signerAddress": {
-            "description": "Address of the user who signed the DTO. Typically Ethereum or TON address, or user alias.",
+            "description": "Address of the user who signed the DTO. Typically Ethereum address, or user alias.",
             "minLength": 1,
             "type": "string",
           },
           "signerPublicKey": {
             "description": "Public key of the user who signed the DTO.",
             "minLength": 1,
-            "type": "string",
-          },
-          "signing": {
-            "description": "Signing scheme used for the signature. "ETH" for Ethereum, and "TON" for The Open Network are supported. Default: "ETH".",
-            "enum": [
-              "ETH",
-              "TON",
-            ],
             "type": "string",
           },
           "uniqueKey": {
@@ -1201,21 +1097,13 @@ Please consult [GalaChain SDK documentation](https://github.com/GalaChain/sdk/bl
             "type": "string",
           },
           "signerAddress": {
-            "description": "Address of the user who signed the DTO. Typically Ethereum or TON address, or user alias.",
+            "description": "Address of the user who signed the DTO. Typically Ethereum address, or user alias.",
             "minLength": 1,
             "type": "string",
           },
           "signerPublicKey": {
             "description": "Public key of the user who signed the DTO.",
             "minLength": 1,
-            "type": "string",
-          },
-          "signing": {
-            "description": "Signing scheme used for the signature. "ETH" for Ethereum, and "TON" for The Open Network are supported. Default: "ETH".",
-            "enum": [
-              "ETH",
-              "TON",
-            ],
             "type": "string",
           },
           "trees": {

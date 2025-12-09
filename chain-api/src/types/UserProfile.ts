@@ -33,7 +33,7 @@ export class UserProfile extends ChainObject {
   @JSONSchema({
     description:
       "A unique identifier of the user. " +
-      "It may have the following format: client|<id>, eth|<checksumed-eth-addr>, or ton|<ton-bounceable-addr>."
+      "It may have the following format: client|<id> or eth|<checksumed-eth-addr>."
   })
   @IsUserAlias()
   alias: UserAlias;
@@ -42,15 +42,7 @@ export class UserProfile extends ChainObject {
     description: `Eth address of the user.`
   })
   @IsNotEmpty()
-  @ValidateIf((o) => !o.tonAddress)
   ethAddress?: string;
-
-  @JSONSchema({
-    description: `TON address of the user.`
-  })
-  @IsNotEmpty()
-  @ValidateIf((o) => !o.ethAddress)
-  tonAddress?: string;
 
   @JSONSchema({
     description: "Signers of the virtual multisig profile."
