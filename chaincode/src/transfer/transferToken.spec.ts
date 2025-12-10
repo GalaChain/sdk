@@ -19,7 +19,6 @@ import {
   TokenBalance,
   TokenHold,
   TokenLockedError,
-  TokenNotInBalanceError,
   TransferTokenDto,
   UserAlias,
   createValidChainObject,
@@ -206,12 +205,6 @@ describe("TransferToken", () => {
   });
 
   test("TransferToken fails when provided allowance is issued to another", async () => {
-    // A TransferAllowance for an NFT was granted from user1 to user2.
-    // An users.attacker is able to access the Operations API either directly or via the platform
-    // and send handcrafted DTOs.
-    // users.attacker finds the valid Allowance ID on chain and crafts a TransferDto.
-    // Option 1: Allowances provided in array
-
     // Given
     const nftInstance = nft.tokenInstance1();
     const nftInstanceKey = nft.tokenInstance1Key();
@@ -262,9 +255,6 @@ describe("TransferToken", () => {
   });
 
   test("TransferToken fails if allowances are neither provided nor found on chain", async () => {
-    // Option 2: No Allowances provided, chaincode will attempt lookup on chain
-    // a: FetchAllowances() returns error
-
     // Given
     const nftInstance = nft.tokenInstance1();
     const nftInstanceKey = nft.tokenInstance1Key();
@@ -382,7 +372,14 @@ describe("TransferToken", () => {
     // Then
     expect(response).toEqual(
       GalaChainResponse.Error(
-        new TokenNotInBalanceError(users.testUser1.identityKey, nftInstance, nftInstance.instance)
+        new InsufficientAllowanceError(
+          users.testUser2.identityKey,
+          new BigNumber("0"),
+          AllowanceType.Transfer,
+          new BigNumber("1"),
+          nftInstanceKey,
+          users.testUser1.identityKey
+        )
       )
     );
     expect(getWrites()).toEqual({});
