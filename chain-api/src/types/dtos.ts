@@ -623,6 +623,8 @@ export class UpdatePublicKeyDto extends SubmitCallDTO {
 
   public withPublicKeySignedBy(privateKey: string): this {
     const copied = instanceToInstance(this);
+    delete copied.publicKeySignature;
+
     copied.publicKeySignature = signatures.getSignature(copied, privateKey);
     return copied;
   }
