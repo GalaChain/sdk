@@ -18,7 +18,7 @@ import BigNumber from "bignumber.js";
 import { plainToInstance } from "class-transformer";
 
 import GalaChainTokenContract from "../__test__/GalaChainTokenContract";
-import { checkAllowances, cleanAllowances, isAllowanceExpired } from "./checkAllowances";
+import { checkAllowances, cleanAllowances, isAllowanceExpired, isAllowanceSpent } from "./checkAllowances";
 
 describe("checkAllowances", () => {
   it("should not count expired allowances", async () => {
@@ -338,5 +338,119 @@ describe("cleanAllowances", () => {
     // Then: Only allowance for instance #2 should remain valid
     expect(validAllowances.length).toBe(1);
     expect(validAllowances[0].instance.isEqualTo(new BigNumber(2))).toBe(true);
+  });
+});
+
+describe("isAllowanceSpent", () => {
+  it("should return false for infinite allowance (both usesSpent and quantitySpent undefined)", () => {
+    const txTime = Date.now();
+
+    const allowance = plainToInstance(TokenAllowance, {
+      ...currency.tokenAllowancePlain(txTime),
+      uses: new BigNumber(Infinity),
+      quantity: new BigNumber(Infinity),
+      usesSpent: undefined,
+      quantitySpent: undefined
+    });
+
+    expect(isAllowanceSpent(allowance)).toBe(false);
+  });
+
+  it("should return false when both defined but neither exhausted", () => {
+    const txTime = Date.now();
+
+    const allowance = plainToInstance(TokenAllowance, {
+      ...currency.tokenAllowancePlain(txTime),
+      uses: new BigNumber(10),
+      quantity: new BigNumber(100),
+      usesSpent: new BigNumber(5),
+      quantitySpent: new BigNumber(50)
+    });
+
+    expect(isAllowanceSpent(allowance)).toBe(false);
+  });
+
+  it("should return true when uses are exhausted (usesSpent >= uses)", () => {
+    const txTime = Date.now();
+
+    const allowance = plainToInstance(TokenAllowance, {
+      ...currency.tokenAllowancePlain(txTime),
+      uses: new BigNumber(10),
+      quantity: new BigNumber(100),
+      usesSpent: new BigNumber(10),
+      quantitySpent: new BigNumber(50)
+    });
+
+    expect(isAllowanceSpent(allowance)).toBe(true);
+  });
+
+  it("should return true when quantity is exhausted (quantitySpent >= quantity)", () => {
+    const txTime = Date.now();
+
+    const allowance = plainToInstance(TokenAllowance, {
+      ...currency.tokenAllowancePlain(txTime),
+      uses: new BigNumber(10),
+      quantity: new BigNumber(100),
+      usesSpent: new BigNumber(5),
+      quantitySpent: new BigNumber(100)
+    });
+
+    expect(isAllowanceSpent(allowance)).toBe(true);
+  });
+
+  it("should return true when only usesSpent is defined and exhausted", () => {
+    const txTime = Date.now();
+
+    const allowance = plainToInstance(TokenAllowance, {
+      ...currency.tokenAllowancePlain(txTime),
+      uses: new BigNumber(10),
+      quantity: new BigNumber(100),
+      usesSpent: new BigNumber(10),
+      quantitySpent: undefined
+    });
+
+    expect(isAllowanceSpent(allowance)).toBe(true);
+  });
+
+  it("should return true when only quantitySpent is defined and exhausted", () => {
+    const txTime = Date.now();
+
+    const allowance = plainToInstance(TokenAllowance, {
+      ...currency.tokenAllowancePlain(txTime),
+      uses: new BigNumber(10),
+      quantity: new BigNumber(100),
+      usesSpent: undefined,
+      quantitySpent: new BigNumber(100)
+    });
+
+    expect(isAllowanceSpent(allowance)).toBe(true);
+  });
+
+  it("should return false when only usesSpent is defined but not exhausted", () => {
+    const txTime = Date.now();
+
+    const allowance = plainToInstance(TokenAllowance, {
+      ...currency.tokenAllowancePlain(txTime),
+      uses: new BigNumber(10),
+      quantity: new BigNumber(100),
+      usesSpent: new BigNumber(5),
+      quantitySpent: undefined
+    });
+
+    expect(isAllowanceSpent(allowance)).toBe(false);
+  });
+
+  it("should return false when only quantitySpent is defined but not exhausted", () => {
+    const txTime = Date.now();
+
+    const allowance = plainToInstance(TokenAllowance, {
+      ...currency.tokenAllowancePlain(txTime),
+      uses: new BigNumber(10),
+      quantity: new BigNumber(100),
+      usesSpent: undefined,
+      quantitySpent: new BigNumber(50)
+    });
+
+    expect(isAllowanceSpent(allowance)).toBe(false);
   });
 });
