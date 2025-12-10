@@ -36,6 +36,7 @@ import GalaChainTokenContract from "../__test__/GalaChainTokenContract";
 import { AllowanceUsersMismatchError, TotalSupplyExceededError } from "../allowances/AllowanceError";
 import { InvalidDecimalError } from "../token";
 import { inverseEpoch, inverseTime } from "../utils";
+import { InsufficientMintAllowanceError } from "./MintError";
 
 describe("MintToken", () => {
   test("mints currency, i.e. FTs", async () => {
@@ -448,5 +449,96 @@ describe("MintToken", () => {
       )
     );
     expect(getWrites()).toEqual({});
+  });
+
+  test("does not mint when allowance grantor is no longer an authority", async () => {
+    // Given
+    const currencyInstance = currency.tokenInstance();
+    const currencyClass = currency.tokenClass();
+    const mintQty = new BigNumber("100");
+
+    // Create allowance from admin
+    const tokenAllowance = currency.tokenAllowance();
+
+    // Remove admin from authorities (simulating revoked authority)
+    currencyClass.authorities = [];
+
+    const { ctx, contract, getWrites } = fixture(GalaChainTokenContract)
+      .registeredUsers(users.admin)
+      .savedState(currencyClass, currencyInstance, tokenAllowance)
+      .savedRangeState([]);
+
+    const dto = await createValidSubmitDTO(MintTokenDto, {
+      tokenClass: currency.tokenClassKey(),
+      owner: users.testUser1.identityKey,
+      quantity: mintQty
+    }).signed(users.admin.privateKey);
+
+    // When
+    const response = await contract.MintToken(ctx, dto);
+
+    // Then - should fail with insufficient allowance
+    expect(response).toEqual(
+      GalaChainResponse.Error(
+        new InsufficientMintAllowanceError(
+          users.admin.identityKey,
+          new BigNumber("0"),
+          mintQty,
+          currency.tokenInstanceKey(),
+          users.testUser1.identityKey
+        )
+      )
+    );
+    expect(getWrites()).toEqual({});
+  });
+
+  test("mints using valid authority allowance when mixed with revoked authority allowance", async () => {
+    // Given
+    const currencyInstance = currency.tokenInstance();
+    const currencyClass = currency.tokenClass();
+    const mintQty = new BigNumber("50");
+
+    // Allowance from valid authority (admin is in authorities)
+    const validAllowance = await createValidChainObject(TokenAllowance, {
+      ...currency.tokenAllowancePlain(1),
+      grantedBy: users.admin.identityKey,
+      grantedTo: users.admin.identityKey,
+      quantity: new BigNumber("100"),
+      quantitySpent: new BigNumber("0"),
+      uses: new BigNumber("1"),
+      usesSpent: new BigNumber("0")
+    });
+
+    // Allowance from revoked authority (testUser1 is NOT in authorities)
+    const revokedAllowance = await createValidChainObject(TokenAllowance, {
+      ...currency.tokenAllowancePlain(2),
+      grantedBy: users.testUser1.identityKey,
+      grantedTo: users.admin.identityKey,
+      quantity: new BigNumber("100"),
+      quantitySpent: new BigNumber("0"),
+      uses: new BigNumber("1"),
+      usesSpent: new BigNumber("0"),
+      created: 2
+    });
+
+    // Only admin is authority (testUser1 is not)
+    currencyClass.authorities = [users.admin.identityKey];
+
+    const { ctx, contract } = fixture(GalaChainTokenContract)
+      .registeredUsers(users.admin)
+      .savedState(currencyClass, currencyInstance, validAllowance, revokedAllowance)
+      .savedRangeState([]);
+
+    const dto = await createValidSubmitDTO(MintTokenDto, {
+      tokenClass: currency.tokenClassKey(),
+      owner: users.testUser1.identityKey,
+      quantity: mintQty
+    }).signed(users.admin.privateKey);
+
+    // When
+    const response = await contract.MintToken(ctx, dto);
+
+    // Then - should succeed using only valid allowance
+    expect(response).toEqual(GalaChainResponse.Success([currency.tokenInstanceKey()]));
   });
 });

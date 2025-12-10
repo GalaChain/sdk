@@ -93,7 +93,7 @@ export async function mintToken(
         applicableAllowanceKey.type,
         applicableAllowanceKey.additionalKey,
         applicableAllowanceKey.instance.toString(),
-        applicableAllowanceKey.allowanceType.toString(),
+        AllowanceType.Mint.toString(),
         applicableAllowanceKey.grantedBy,
         applicableAllowanceKey.created.toString()
       ])
@@ -127,6 +127,11 @@ export async function mintToken(
 
     applicableAllowanceResponse = await fetchAllowances(ctx, fetchAllowancesData);
   }
+
+  // Filter allowances to only include those granted by current authorities
+  applicableAllowanceResponse = applicableAllowanceResponse.filter((allowance) =>
+    tokenClass.authorities.includes(allowance.grantedBy)
+  );
 
   const dtoInstanceKey = ChainCallDTO.deserialize<TokenInstanceKey>(TokenInstanceKey, {
     ...tokenClassKey,

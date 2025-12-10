@@ -71,7 +71,7 @@ export async function validateMintRequest(
         applicableAllowanceKey.type,
         applicableAllowanceKey.additionalKey,
         applicableAllowanceKey.instance.toString(),
-        applicableAllowanceKey.allowanceType.toString(),
+        AllowanceType.Mint.toString(),
         applicableAllowanceKey.grantedBy,
         applicableAllowanceKey.created.toString()
       ])
@@ -104,7 +104,10 @@ export async function validateMintRequest(
     results.sort((a: TokenAllowance, b: TokenAllowance): number => (a.created < b.created ? -1 : 1));
   }
 
-  const applicableAllowances: TokenAllowance[] = results;
+  // Filter allowances to only include those granted by current authorities
+  const applicableAllowances: TokenAllowance[] = results.filter((allowance) =>
+    tokenClass.authorities.includes(allowance.grantedBy)
+  );
 
   const dtoInstanceKey = ChainCallDTO.deserialize<TokenInstanceKey>(TokenInstanceKey, {
     ...tokenClassKey,
