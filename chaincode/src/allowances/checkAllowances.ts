@@ -20,14 +20,10 @@ import { resolveUserAlias } from "../services";
 import { GalaChainContext } from "../types";
 import { DeleteOneAllowanceParams, deleteOneAllowance } from "./deleteAllowances";
 
-function isAllowanceSpent(allowance: TokenAllowance): boolean {
-  if (allowance.usesSpent !== undefined && allowance.quantitySpent !== undefined) {
-    return (
-      allowance.usesSpent.isGreaterThanOrEqualTo(allowance.uses) ||
-      allowance.quantitySpent.isGreaterThanOrEqualTo(allowance.quantity)
-    );
-  }
-  return false;
+export function isAllowanceSpent(allowance: TokenAllowance): boolean {
+  const usesExhausted = allowance.usesSpent?.isGreaterThanOrEqualTo(allowance.uses) ?? false;
+  const quantityExhausted = allowance.quantitySpent?.isGreaterThanOrEqualTo(allowance.quantity) ?? false;
+  return usesExhausted || quantityExhausted;
 }
 
 export function isAllowanceExpired(ctx: GalaChainContext, allowance: TokenAllowance): boolean {
