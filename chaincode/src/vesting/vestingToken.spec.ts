@@ -302,10 +302,77 @@ describe("Token Hold Helpers", () => {
     currentTime = 1738939680;
     // starts one day before current time, expires three days after
     vestedLockedHold = newLockedHold(currentTime - oneDay, currentTime + 3 * oneDay);
-    // result is 749.999999999999872 I could round this and say it's good, but want to think about maybe
-    // sending in the token decimals to the method and having that handle it?
-    // it could still happen with high enough decimals (e.g. 16 in this case)
-    // expect(vestedLockedHold.getLockedVestingQuantity(currentTime)).toEqual(new BigNumber(750));
+    expect(vestedLockedHold.getLockedVestingQuantity(currentTime)).toEqual(new BigNumber(750));
+  });
+
+  test("getLockedVestingQuantity preserves precision with large time values", () => {
+    // This test verifies the fix for rounding errors with large millisecond values
+    // Using realistic vesting scenario: 100 tokens over 365 days (in milliseconds)
+    const oneDay = 1000 * 60 * 60 * 24;
+    const oneYear = oneDay * 365;
+    const startTime = 1700000000000; // realistic timestamp in ms
+    const quantity = new BigNumber(100);
+
+    const vestingHold = new TokenHold({
+      createdBy: asValidUserAlias("client|me"),
+      instanceId: new BigNumber(0),
+      quantity: quantity,
+      created: startTime,
+      expires: startTime + oneYear,
+      name: "yearly vesting",
+      lockAuthority: asValidUserAlias("client|me"),
+      vestingPeriodStart: startTime
+    });
+
+    // At halfway point (6 months), 50% should be vested, 50% locked
+    const halfwayTime = startTime + oneYear / 2;
+    const lockedAtHalfway = vestingHold.getLockedVestingQuantity(halfwayTime);
+    expect(lockedAtHalfway.toNumber()).toEqual(50);
+
+    // At 25% through, 75% should still be locked
+    const quarterTime = startTime + oneYear / 4;
+    const lockedAtQuarter = vestingHold.getLockedVestingQuantity(quarterTime);
+    expect(lockedAtQuarter.toNumber()).toEqual(75);
+
+    // At 75% through, 25% should still be locked
+    const threeQuarterTime = startTime + (oneYear * 3) / 4;
+    const lockedAtThreeQuarter = vestingHold.getLockedVestingQuantity(threeQuarterTime);
+    expect(lockedAtThreeQuarter.toNumber()).toEqual(25);
+
+    // Before vesting starts, full quantity is locked
+    const beforeStart = startTime - 1000;
+    const lockedBeforeStart = vestingHold.getLockedVestingQuantity(beforeStart);
+    expect(lockedBeforeStart).toEqual(quantity);
+
+    // After vesting ends, nothing is locked
+    const afterEnd = startTime + oneYear + 1000;
+    const lockedAfterEnd = vestingHold.getLockedVestingQuantity(afterEnd);
+    expect(lockedAfterEnd.toNumber()).toEqual(0);
+  });
+
+  test("getLockedVestingQuantity handles small quantities with large time periods", () => {
+    // Edge case: small token quantity with large time periods
+    // This was previously affected by division rounding to zero
+    const oneDay = 1000 * 60 * 60 * 24;
+    const oneYear = oneDay * 365;
+    const startTime = 1700000000000;
+    const smallQuantity = new BigNumber(1);
+
+    const vestingHold = new TokenHold({
+      createdBy: asValidUserAlias("client|me"),
+      instanceId: new BigNumber(0),
+      quantity: smallQuantity,
+      created: startTime,
+      expires: startTime + oneYear,
+      name: "small quantity vesting",
+      lockAuthority: asValidUserAlias("client|me"),
+      vestingPeriodStart: startTime
+    });
+
+    // At halfway, should still have 0.5 locked (not 0 due to rounding)
+    const halfwayTime = startTime + oneYear / 2;
+    const lockedAtHalfway = vestingHold.getLockedVestingQuantity(halfwayTime);
+    expect(lockedAtHalfway.toNumber()).toEqual(0.5);
   });
   test("Create Vesting Token Allocation Error", async () => {
     // Given

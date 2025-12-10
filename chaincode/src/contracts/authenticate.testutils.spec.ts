@@ -19,9 +19,7 @@ import {
   GetObjectDto,
   GetPublicKeyDto,
   PublicKey,
-  RegisterTonUserDto,
   RegisterUserDto,
-  SigningScheme,
   UserAlias,
   UserProfile,
   UserRef,
@@ -39,13 +37,6 @@ export interface User {
   privateKey: string;
   publicKey: string;
   ethAddress: string;
-}
-
-export interface TonUser {
-  alias: UserAlias;
-  privateKey: string;
-  publicKey: string;
-  tonAddress: string;
 }
 
 export async function createUser(): Promise<User> {
@@ -97,24 +88,6 @@ export async function createRegisteredMultiSigUser(
   return { alias, keys };
 }
 
-export async function createTonUser(): Promise<TonUser> {
-  const pair = await signatures.ton.genKeyPair();
-  const privateKey = Buffer.from(pair.secretKey).toString("base64");
-  const publicKey = Buffer.from(pair.publicKey).toString("base64");
-  const tonAddress = signatures.ton.getTonAddress(pair.publicKey);
-  const alias = `ton|${tonAddress}` as UserAlias;
-  return { alias, privateKey, publicKey, tonAddress };
-}
-
-export async function createRegisteredTonUser(chaincode: TestChaincode): Promise<TonUser> {
-  const user = await createTonUser();
-  const dto = await createValidSubmitDTO(RegisterTonUserDto, { publicKey: user.publicKey });
-  const signedDto = dto.signed(process.env.DEV_ADMIN_PRIVATE_KEY as string);
-  const response = await chaincode.invoke("PublicKeyContract:RegisterTonUser", signedDto);
-  expect(response).toEqual(transactionSuccess());
-  return user;
-}
-
 export function createSignedDto(unsigned: ChainCallDTO, privateKey: string) {
   const dto = instanceToInstance(unsigned);
   const keyBuff = signatures.normalizePrivateKey(privateKey);
@@ -128,17 +101,6 @@ export function createDerSignedDto(unsigned: ChainCallDTO, privateKey: string) {
   const keyBuff = signatures.normalizePrivateKey(privateKey);
   dto.signature = signatures.getDERSignature(dto, keyBuff);
   expect([138, 140, 142, 144]).toContain(dto.signature.length);
-  return dto;
-}
-
-export function createTonSignedDto(unsigned: ChainCallDTO, privateKey: string) {
-  const dto = instanceToInstance(unsigned);
-  dto.signing = SigningScheme.TON;
-
-  const sigBuff = signatures.ton.getSignature(dto, Buffer.from(privateKey, "base64"), undefined);
-  expect(sigBuff).toHaveLength(64);
-
-  dto.signature = sigBuff.toString("base64");
   return dto;
 }
 
