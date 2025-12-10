@@ -33,7 +33,7 @@ import { currency, fixture, nft, users, writesMap } from "@gala-chain/test";
 import BigNumber from "bignumber.js";
 
 import GalaChainTokenContract from "../__test__/GalaChainTokenContract";
-import { TotalSupplyExceededError } from "../allowances/AllowanceError";
+import { AllowanceUsersMismatchError, TotalSupplyExceededError } from "../allowances/AllowanceError";
 import { InvalidDecimalError } from "../token";
 import { inverseEpoch, inverseTime } from "../utils";
 import { InsufficientMintAllowanceError } from "./MintError";
@@ -404,6 +404,51 @@ describe("MintToken", () => {
         mintFulfillment
       )
     );
+  });
+
+  test("rejects mint with allowance key where grantedTo does not match caller", async () => {
+    // Given: An allowance granted to testUser1, but attacker tries to use it
+    const currencyInstance = currency.tokenInstance();
+    const currencyClass = currency.tokenClass();
+    const tokenAllowance = currency.tokenAllowance();
+    // Modify allowance to be granted to testUser1
+    tokenAllowance.grantedTo = users.testUser1.identityKey;
+
+    const { ctx, contract, getWrites } = fixture(GalaChainTokenContract)
+      .registeredUsers(users.testUser1, users.attacker)
+      .savedState(currencyClass, currencyInstance, tokenAllowance);
+
+    // Create allowance key pointing to testUser1's allowance
+    const allowanceKey = await createValidDTO(AllowanceKey, {
+      grantedTo: tokenAllowance.grantedTo, // testUser1
+      collection: tokenAllowance.collection,
+      category: tokenAllowance.category,
+      type: tokenAllowance.type,
+      additionalKey: tokenAllowance.additionalKey,
+      instance: tokenAllowance.instance,
+      allowanceType: tokenAllowance.allowanceType,
+      grantedBy: tokenAllowance.grantedBy,
+      created: tokenAllowance.created
+    });
+
+    // Attacker tries to use testUser1's allowance
+    const dto = await createValidSubmitDTO(MintTokenDto, {
+      tokenClass: currency.tokenClassKey(),
+      owner: users.attacker.identityKey,
+      quantity: new BigNumber("1000000000000"),
+      allowanceKey
+    }).signed(users.attacker.privateKey);
+
+    // When
+    const response = await contract.MintToken(ctx, dto);
+
+    // Then: Should reject with AllowanceUsersMismatchError
+    expect(response).toEqual(
+      GalaChainResponse.Error(
+        new AllowanceUsersMismatchError(tokenAllowance, tokenAllowance.grantedBy, users.attacker.identityKey)
+      )
+    );
+    expect(getWrites()).toEqual({});
   });
 
   test("does not mint when allowance grantor is no longer an authority", async () => {
