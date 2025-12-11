@@ -23,7 +23,6 @@ export * from "./loans";
 export * from "./locks";
 export * from "./mint";
 export * from "./oracle";
-export * from "./sales";
 export * from "./services";
 export * from "./swaps";
 export * from "./token";

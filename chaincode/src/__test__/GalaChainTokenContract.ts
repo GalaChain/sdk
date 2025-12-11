@@ -22,7 +22,6 @@ import {
   CleanTokenSwapsResponse,
   CloseLoanDto,
   CreateTokenClassDto,
-  CreateTokenSaleDto,
   CreateVestingTokenDto,
   DeleteAllowancesDto,
   EnsureTokenSwapIndexingDto,
@@ -51,9 +50,6 @@ import {
   FetchTokenClassesDto,
   FetchTokenClassesResponse,
   FetchTokenClassesWithPaginationDto,
-  FetchTokenSaleByIdDto,
-  FetchTokenSalesWithPaginationDto,
-  FetchTokenSalesWithPaginationResponse,
   FetchTokenSwapByRequestIdDto,
   FetchTokenSwapsByInstanceDto,
   FetchTokenSwapsByUserDto,
@@ -62,7 +58,6 @@ import {
   FetchVestingTokenDto,
   FillTokenSwapDto,
   FulfillMintDto,
-  FulfillTokenSaleDto,
   FullAllowanceCheckDto,
   FullAllowanceCheckResDto,
   GrantAllowanceDto,
@@ -78,7 +73,6 @@ import {
   OfferLoanDto,
   RefreshAllowancesDto,
   ReleaseTokenDto,
-  RemoveTokenSaleDto,
   RequestTokenSwapDto,
   TerminateTokenSwapDto,
   TokenAllowance,
@@ -87,8 +81,6 @@ import {
   TokenClass,
   TokenClassKey,
   TokenInstanceKey,
-  TokenSale,
-  TokenSaleFulfillment,
   TokenSwapFill,
   TokenSwapRequest,
   TransferTokenDto,
@@ -114,7 +106,6 @@ import {
   batchMintToken,
   burnTokens,
   createTokenClass,
-  createTokenSale,
   createVestingToken,
   creditFeeBalance,
   defineFeeSchedule,
@@ -129,11 +120,8 @@ import {
   fetchFeeThresholdUsesWithPagination,
   fetchTokenClasses,
   fetchTokenClassesWithPagination,
-  fetchTokenSaleById,
-  fetchTokenSalesWithPagination,
   fetchVestingToken,
   fulfillMintRequest,
-  fulfillTokenSale,
   fullAllowanceCheck,
   grantAllowance,
   lockToken,
@@ -143,7 +131,6 @@ import {
   mintTokenWithAllowance,
   refreshAllowances,
   releaseToken,
-  removeTokenSale,
   requestMint,
   resolveUserAlias,
   transferToken,
@@ -652,65 +639,6 @@ export default class GalaChainTokenContract extends GalaContract {
       bookmark: dto.bookmark,
       limit: dto.limit
     });
-  }
-
-  @Submit({
-    in: CreateTokenSaleDto,
-    out: TokenSale
-  })
-  public async CreateTokenSale(ctx: GalaChainContext, dto: CreateTokenSaleDto): Promise<TokenSale> {
-    return createTokenSale(ctx, {
-      selling: dto.selling,
-      cost: dto.cost,
-      owner: dto.owner ? await resolveUserAlias(ctx, dto.owner) : undefined,
-      quantity: dto.quantity,
-      start: dto.start,
-      end: dto.end
-    });
-  }
-
-  @UnsignedEvaluate({
-    in: FetchTokenSaleByIdDto,
-    out: TokenSale
-  })
-  public async FetchTokenSaleById(ctx: GalaChainContext, dto: FetchTokenSaleByIdDto): Promise<TokenSale> {
-    return fetchTokenSaleById(ctx, dto.tokenSaleId);
-  }
-
-  @UnsignedEvaluate({
-    in: FetchTokenClassesWithPaginationDto,
-    out: FetchTokenSalesWithPaginationResponse
-  })
-  public async FetchTokenSalesWithPagination(
-    ctx: GalaChainContext,
-    dto: FetchTokenSalesWithPaginationDto
-  ): Promise<FetchTokenSalesWithPaginationResponse> {
-    return fetchTokenSalesWithPagination(ctx, dto);
-  }
-
-  @Submit({
-    in: FulfillTokenSaleDto,
-    out: TokenSaleFulfillment
-  })
-  public async FulfillTokenSale(
-    ctx: GalaChainContext,
-    dto: FulfillTokenSaleDto
-  ): Promise<TokenSaleFulfillment> {
-    return fulfillTokenSale(ctx, {
-      tokenSaleId: dto.tokenSaleId,
-      expectedTokenSale: dto.expectedTokenSale,
-      fulfilledBy: dto.fulfilledBy ? await resolveUserAlias(ctx, dto.fulfilledBy) : undefined,
-      quantity: dto.quantity
-    });
-  }
-
-  @Submit({
-    in: RemoveTokenSaleDto,
-    out: TokenSale,
-    ...requireCuratorAuth
-  })
-  public async RemoveTokenSale(ctx: GalaChainContext, dto: RemoveTokenSaleDto): Promise<TokenSale> {
-    return removeTokenSale(ctx, dto.tokenSaleId);
   }
 
   @Submit({
