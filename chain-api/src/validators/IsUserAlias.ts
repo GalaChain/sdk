@@ -27,7 +27,6 @@ export enum UserAliasValidationResult {
   VALID_USER_ALIAS,
   VALID_SYSTEM_USER,
   INVALID_ETH_USER_ALIAS,
-  INVALID_TON_USER_ALIAS,
   INVALID_FORMAT
 }
 
@@ -45,14 +44,6 @@ export function isValidSystemUser(value: string): boolean {
     value === "SolanaBridge" ||
     /^GalaChainBridge-\d+$/.test(value)
   );
-}
-
-export function isValidTonAddress(value: string): boolean {
-  try {
-    return signatures.ton.isValidTonAddress(value);
-  } catch (e) {
-    return false;
-  }
 }
 
 export function validateUserAlias(value: unknown): UserAliasValidationResult {
@@ -82,14 +73,6 @@ export function validateUserAlias(value: unknown): UserAliasValidationResult {
         return UserAliasValidationResult.INVALID_ETH_USER_ALIAS;
       }
     }
-
-    if (parts[0] === "ton") {
-      if (signatures.ton.isValidTonAddress(parts[1])) {
-        return UserAliasValidationResult.VALID_USER_ALIAS;
-      } else {
-        return UserAliasValidationResult.INVALID_TON_USER_ALIAS;
-      }
-    }
   }
 
   return UserAliasValidationResult.INVALID_FORMAT;
@@ -102,14 +85,12 @@ export function isValidUserAlias(value: unknown): value is UserAlias {
 
 const customMessages = {
   [UserAliasValidationResult.INVALID_ETH_USER_ALIAS]:
-    "User alias starting with 'eth|' must end with valid checksumed eth address without 0x prefix.",
-  [UserAliasValidationResult.INVALID_TON_USER_ALIAS]:
-    "User alias starting with 'ton|' must end with valid bounceable base64 TON address."
+    "User alias starting with 'eth|' must end with valid checksumed eth address without 0x prefix."
 };
 
 const genericMessage =
   "Expected string following the format of 'client|<user-id>', or 'eth|<checksumed-eth-addr>', " +
-  "or 'ton|<chain:ton-address>', or valid system-level username.";
+  "or valid system-level username.";
 
 @ValidatorConstraint({ async: false })
 class IsUserAliasConstraint implements ValidatorConstraintInterface {
@@ -141,7 +122,7 @@ class IsUserAliasConstraint implements ValidatorConstraintInterface {
  * See also IsUserAliasConstraint, validateUserAlias.
  * As of 2024-10, The following alias types
  * are supported: legacy client| and service| prefixed aliases,
- * eth| and ton| prefixed addresses, and internally reserved identities.
+ * eth| prefixed addresses, and internally reserved identities.
  *
  * @param options
  *
