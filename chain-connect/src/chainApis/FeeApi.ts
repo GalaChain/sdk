@@ -67,7 +67,7 @@ export class FeeApi extends GalaChainBaseApi {
     });
   }
 
-  public SetFeeProperties(dto: SetFeePropertiesRequest) {
+  public FetchFeeProperties(dto: SetFeePropertiesRequest) {
     return this.connection.submit({
       method: "FetchFeeProperties",
       payload: dto,
