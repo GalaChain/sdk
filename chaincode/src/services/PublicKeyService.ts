@@ -36,6 +36,7 @@ import {
   PkExistsError,
   PkInvalidSignatureError,
   PkMissingError,
+  PkNotFoundError,
   ProfileExistsError,
   UserProfileNotFoundError
 } from "./PublicKeyError";
@@ -314,13 +315,29 @@ export class PublicKeyService {
     }
 
     const currentPublicKeyObj = await PublicKeyService.getPublicKey(ctx, userAlias);
+    const oldAddress = ctx.callingUserAddress;
 
-    if (currentPublicKeyObj && currentPublicKeyObj.publicKey === undefined) {
-      throw new NotImplementedError("UpdatePublicKey for multisig is not supported");
+    // If public key exists, verify ownership by checking address match
+    if (currentPublicKeyObj !== undefined) {
+      if (currentPublicKeyObj.publicKey === undefined) {
+        throw new NotImplementedError("UpdatePublicKey for multisig is not supported");
+      }
+
+      // Verify ownership: ensure the address derived from the stored public key matches the calling user's address
+      const storedAddress = PublicKeyService.getUserAddress(currentPublicKeyObj.publicKey);
+      if (storedAddress !== oldAddress) {
+        throw new UnauthorizedError(
+          `Public key address mismatch: stored public key maps to ${storedAddress} but signature-derived address is ${oldAddress}`
+        );
+      }
+    } else {
+      // No public key exists - only allow creation for eth| users
+      if (!userAlias.startsWith("eth|")) {
+        throw new PkNotFoundError(userAlias);
+      }
     }
 
     // need to fetch userProfile from old address
-    const oldAddress = ctx.callingUserAddress;
     const userProfile = await PublicKeyService.getUserProfile(ctx, oldAddress);
     const signatureQuorum = userProfile?.signatureQuorum ?? 1;
 
@@ -357,7 +374,7 @@ export class PublicKeyService {
     roles: string[]
   ): Promise<void> {
     const publicKey = await PublicKeyService.getPublicKey(ctx, user);
-    const allowedUnregisteredUsers = user.startsWith("eth|") || user.startsWith("ton|");
+    const allowedUnregisteredUsers = user.startsWith("eth|");
 
     const address = publicKey
       ? PublicKeyService.getUserAddress(publicKey.publicKey)

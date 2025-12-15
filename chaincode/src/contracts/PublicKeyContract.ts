@@ -108,19 +108,6 @@ export class PublicKeyContract extends GalaContract {
   }
 
   @Submit({
-    in: SubmitCallDTO,
-    out: "string",
-    description:
-      "Registration of ton| users is no longer required. This method will be removed in the future.",
-    deprecated: true,
-    ...requireRegistrarAuth
-  })
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  public async RegisterTonUser(ctx: GalaChainContext, dto: SubmitCallDTO): Promise<string> {
-    return "Registration of ton| users is no longer required.";
-  }
-
-  @Submit({
     in: UpdateUserRolesDto,
     description: "Updates roles for the user with alias provided in DTO.",
     ...requireRegistrarAuth
