@@ -20,7 +20,6 @@ import {
   PublicKey,
   RegisterUserDto,
   RemoveSignerDto,
-  SigningScheme,
   SubmitCallDTO,
   UpdatePublicKeyDto,
   UpdateQuorumDto,

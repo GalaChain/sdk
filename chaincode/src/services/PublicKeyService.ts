@@ -171,7 +171,7 @@ export class PublicKeyService {
     return pk;
   }
 
-  public static getDefaultUserProfile(address: string, signing: SigningScheme): UserProfileStrict {
+  public static getDefaultUserProfile(address: string): UserProfileStrict {
     const profile = new UserProfile();
     profile.alias = asValidUserAlias(`eth|${address}`);
     profile.ethAddress = address;
@@ -320,7 +320,7 @@ export class PublicKeyService {
     }
 
     // need to fetch userProfile from old address
-    const oldAddress = ctx.callingUserAddress.address;
+    const oldAddress = ctx.callingUserAddress;
     const userProfile = await PublicKeyService.getUserProfile(ctx, oldAddress);
     const signatureQuorum = userProfile?.signatureQuorum ?? 1;
 
@@ -360,7 +360,7 @@ export class PublicKeyService {
     const allowedUnregisteredUsers = user.startsWith("eth|") || user.startsWith("ton|");
 
     const address = publicKey
-      ? PublicKeyService.getUserAddress(publicKey.publicKey, publicKey.signing ?? SigningScheme.ETH)
+      ? PublicKeyService.getUserAddress(publicKey.publicKey)
       : allowedUnregisteredUsers
         ? user.slice(4)
         : user;
@@ -368,8 +368,7 @@ export class PublicKeyService {
     let userProfile = await PublicKeyService.getUserProfile(ctx, address);
     if (userProfile === undefined) {
       if (allowedUnregisteredUsers) {
-        const signing = user.startsWith("eth|") ? SigningScheme.ETH : SigningScheme.TON;
-        userProfile = PublicKeyService.getDefaultUserProfile(address, signing);
+        userProfile = PublicKeyService.getDefaultUserProfile(address);
       } else {
         throw new UserProfileNotFoundError(user);
       }

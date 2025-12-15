@@ -239,8 +239,8 @@ async function create<T extends ChainClientOptions>(
  * @example
  * ```typescript
  * const adminClients = await TestClients.createForAdmin();
- * const user1 = await adminClients.createRegisteredUser();
- * const user2 = await adminClients.createRegisteredUser("alice");
+ * const user1 = ChainUser.withRandomKeys();
+ * const user2 = ChainUser.withRandomKeys("alice");
  * ```
  */
 export type AdminChainClients<T extends ChainClientOptions = DefaultChainClientOptions> = ChainClients<

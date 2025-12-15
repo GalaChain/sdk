@@ -18,7 +18,6 @@ import {
   GetMyProfileDto,
   GetPublicKeyDto,
   RegisterUserDto,
-  SigningScheme,
   SubmitCallDTO,
   UpdatePublicKeyDto,
   UpdateUserRolesDto,
@@ -47,7 +46,6 @@ import {
   createRegisteredMultiSigUserForUsers,
   createRegisteredUser,
   createSignedDto,
-  createTonUser,
   createUser,
   getMyProfile,
   getPublicKey,
@@ -761,30 +759,6 @@ describe("UpdateUserRoles", () => {
 
     const updatedUserProfile = await getUserProfile(chaincode, user.ethAddress);
     expect(updatedUserProfile.Data?.roles).toContain("CUSTOM_ETH_ROLE");
-  });
-
-  it("should allow registrar to update user roles for non-registered ton| user", async () => {
-    // Given
-    const chaincode = new TestChaincode([PublicKeyContract]);
-    const adminPrivateKey = process.env.DEV_ADMIN_PRIVATE_KEY as string;
-
-    const user = await createTonUser();
-    const userProfile = await getUserProfile(chaincode, user.tonAddress);
-    expect(userProfile.Data).toBeUndefined();
-
-    const dto = await createValidSubmitDTO(UpdateUserRolesDto, {
-      user: user.alias,
-      roles: ["CUSTOM_TON_ROLE"]
-    }).signed(adminPrivateKey);
-
-    // When
-    const response = await chaincode.invoke("PublicKeyContract:UpdateUserRoles", dto);
-
-    // Then
-    expect(response).toEqual(transactionSuccess());
-
-    const updatedUserProfile = await getUserProfile(chaincode, user.tonAddress);
-    expect(updatedUserProfile.Data?.roles).toContain("CUSTOM_TON_ROLE");
   });
 
   it("should not allow user to update roles if they do not have the registrar role", async () => {

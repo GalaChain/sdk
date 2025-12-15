@@ -17,8 +17,6 @@ import {
   GetPublicKeyDto,
   PublicKey,
   RegisterUserDto,
-  SigningScheme,
-  UserAlias,
   asValidUserAlias,
   createValidChainObject,
   createValidDTO,

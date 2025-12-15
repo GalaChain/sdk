@@ -277,7 +277,7 @@ async function getUserProfile(ctx: GalaChainContext, publicKey: string): Promise
     return profile;
   }
 
-  return PublicKeyService.getDefaultUserProfile(address, signing);
+  return PublicKeyService.getDefaultUserProfile(address);
 }
 
 async function getUserProfileAndPublicKey(

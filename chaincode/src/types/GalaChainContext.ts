@@ -12,7 +12,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-import { SigningScheme, UnauthorizedError, UserAlias, UserProfile, UserRole } from "@gala-chain/api";
+import { UnauthorizedError, UserAlias, UserProfile, UserRole } from "@gala-chain/api";
 import { Context } from "fabric-contract-api";
 import { ChaincodeStub, Timestamp } from "fabric-shim";
 
@@ -77,11 +77,11 @@ export class GalaChainContext extends Context {
     return this.callingUserValue;
   }
 
-  get callingUserAddress(): { address: string; signing: SigningScheme } {
+  get callingUserAddress(): string {
     if (this.callingUserEthAddressValue !== undefined) {
-      return { address: this.callingUserEthAddressValue, signing: SigningScheme.ETH };
+      return this.callingUserEthAddressValue;
     }
-    return this.callingUserEthAddressValue;
+    throw new UnauthorizedError(`No address known for user ${this.callingUserValue}`);
   }
 
   get callingUserRoles(): string[] {

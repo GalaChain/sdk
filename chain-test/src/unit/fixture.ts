@@ -18,7 +18,6 @@ import {
   ClassConstructor,
   GalaChainResponse,
   RangedChainObject,
-  SigningScheme,
   UserAlias,
   UserProfile,
   signatures
@@ -127,7 +126,7 @@ type TestGalaChainContext = Context & {
   readonly logger: GalaLoggerInstance;
   set callingUserData(d: CallingUserData);
   get callingUser(): UserAlias;
-  get callingUserAddress(): { address: string; signing: SigningScheme };
+  get callingUserAddress(): string;
   get callingUserRoles(): string[];
   get callingUserSignedBy(): UserAlias[];
   get callingUserSignatureQuorum(): number;
