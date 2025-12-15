@@ -83,10 +83,16 @@ export function isValidUserAlias(value: unknown): value is UserAlias {
   return meansValidUserAlias(result);
 }
 
+function requiresClientAliasOnly(args: ValidationArguments): boolean {
+  return args.constraints?.[0] as boolean;
+}
+
 const customMessages = {
   [UserAliasValidationResult.INVALID_ETH_USER_ALIAS]:
     "User alias starting with 'eth|' must end with valid checksumed eth address without 0x prefix."
 };
+
+const clientAliasOnlyMessage = "Only string following the format of 'client|<user-id>' is allowed";
 
 const genericMessage =
   "Expected string following the format of 'client|<user-id>', or 'eth|<checksumed-eth-addr>', " +
@@ -99,19 +105,30 @@ class IsUserAliasConstraint implements ValidatorConstraintInterface {
       return value.every((val) => this.validate(val, args));
     }
     const result = validateUserAlias(value);
-    return meansValidUserAlias(result);
+
+    if (requiresClientAliasOnly(args)) {
+      return meansValidUserAlias(result) && (value as string)?.startsWith("client|");
+    } else {
+      return meansValidUserAlias(result);
+    }
   }
 
   defaultMessage(args: ValidationArguments): string {
     const value = args.value;
+    const defaultMessage = requiresClientAliasOnly(args) ? clientAliasOnlyMessage : genericMessage;
+
     if (Array.isArray(value)) {
       const invalidValues = value.filter((val) => !meansValidUserAlias(validateUserAlias(val)));
-      return `${args.property} property with values ${invalidValues} are not valid GalaChain user aliases. ${genericMessage}`;
+      return `${args.property} property with values ${invalidValues} are not valid GalaChain user aliases. ${defaultMessage}`;
     }
     const result = validateUserAlias(args.value);
-    const details = customMessages[result] ?? genericMessage;
+    const details = customMessages[result] ?? defaultMessage;
     return `${args.property} property with value ${args.value} is not a valid GalaChain user alias. ${details}`;
   }
+}
+
+interface IsUserAliasOptions extends ValidationOptions {
+  clientAliasOnly?: boolean;
 }
 
 /**
@@ -127,14 +144,14 @@ class IsUserAliasConstraint implements ValidatorConstraintInterface {
  * @param options
  *
  */
-export function IsUserAlias(options?: ValidationOptions) {
+export function IsUserAlias(options?: IsUserAliasOptions) {
   return function (object: object, propertyName: string) {
     registerDecorator({
       name: "isUserAlias",
       target: object.constructor,
       propertyName,
       options,
-      constraints: [],
+      constraints: options?.clientAliasOnly ? [true] : [],
       validator: IsUserAliasConstraint
     });
   };

@@ -600,21 +600,6 @@ export class RegisterUserDto extends SubmitCallDTO {
   }
 }
 
-/**
- * @description
- *
- * Dto for secure method to save public keys for Eth users.
- * Method is called and signed by Curators
- */
-@JSONSchema({
-  description: `Dto for secure method to save public keys for Eth users. Method is called and signed by Curators`
-})
-export class RegisterEthUserDto extends SubmitCallDTO {
-  @JSONSchema({ description: "Public secp256k1 key (compact or non-compact, hex or base64)." })
-  @IsNotEmpty()
-  publicKey: string;
-}
-
 export class UpdatePublicKeyDto extends SubmitCallDTO {
   @JSONSchema({
     description:

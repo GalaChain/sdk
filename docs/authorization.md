@@ -186,16 +186,8 @@ During registration, you can specify multiple signers using the `signers` field:
 const { publicKey: pk1, privateKey: sk1 } = signatures.genKeyPair();
 const { publicKey: pk2, privateKey: sk2 } = signatures.genKeyPair();
 
-// Register user1 and user2 first (may be skipped if you allow non-registered users)
-await pkContract.RegisterEthUser(createValidSubmitDTO(RegisterEthUserDto, {
-  publicKey: pk1
-}).signed(adminKey));
-
-await pkContract.RegisterEthUser(createValidSubmitDTO(RegisterEthUserDto, {
-  publicKey: pk2
-}).signed(adminKey));
-
 // Register multisig user with signers
+// Note: Individual signers do not need to be registered separately
 const reg = await createValidSubmitDTO(RegisterUserDto, {
   user: "client|multisig",
   signers: [pk1, pk2].map((k) => asValidUserRef(signatures.getEthAddress(k)),
@@ -282,18 +274,12 @@ This feature is supported only for Ethereum signing scheme (secp256k1) with non-
 **Example 1: Corporate Treasury Setup**
 
 ```typescript
-// Register individual signers first
+// Generate keys for signers
 const treasuryKeys = Array.from({ length: 5 }, () => signatures.genKeyPair());
 const signerRefs = treasuryKeys.map((k) => asValidUserRef(signatures.getEthAddress(k.publicKey)));
 
-// Register each signer
-for (let i = 0; i < treasuryKeys.length; i++) {
-  await pkContract.RegisterEthUser(createValidSubmitDTO(RegisterEthUserDto, {
-    publicKey: treasuryKeys[i].publicKey
-  }).signed(adminKey));
-}
-
 // Register corporate treasury with 5 signers requiring 3 signatures
+// Note: Individual signers do not need to be registered separately
 const treasuryRegistration = await createValidSubmitDTO(RegisterUserDto, {
   user: "client|treasury",
   signers: signerRefs,
@@ -344,18 +330,12 @@ async emergencyAction(ctx: GalaChainContext, dto: EmergencyActionDto): Promise<v
 
 ### User registration
 
-By default, GalaChain does not allow anonymous users to access the chaincode.
-In order to access the chaincode, the user must be registered with the chaincode.
-This behaviour may be changed as described in the [Optional User Registration](#optional-user-registration) section.
+Users with aliases starting from the `client|` prefix need to be registered before they can interact with the chaincode.
+It can be done by `RegisterUser` method in the `PublicKeyContract`.
 
-There are two methods to register a user:
+This method requires the user to provide their secp256k1 public key and allows you to specify a custom `alias` parameter.
 
-1. `RegisterUser` method in the `PublicKeyContract`.
-2. `RegisterEthUser` method in the `PublicKeyContract`.
-
-All methods require the user to provide their public key (secp256k1).
-The only difference between these methods is that only `RegisterUser` allows to specify the `alias` parameter.
-For `RegisterEthUser` method, the alias is set to `eth|<eth-addr>`.
+**Note**: The `RegisterEthUser` method is deprecated and will be removed in a future version. Registration of `eth|` users is no longer needed.
 
 Access to registration methods is now controlled as follows:
 - **Role-based authorization (RBAC)**: Requires the `REGISTRAR` role
@@ -531,6 +511,6 @@ You can allow non-registered users to access the chaincode in one of two ways:
     }
     ```
 
-When non-registered users are allowed, they still need to sign the DTO with their private key. The public key is recovered from the signature. In this case, the user's alias will be `eth|<eth-addr>`, and they will be granted default `EVALUATE` and `SUBMIT` roles.
+When non-registered users are allowed, they still need to sign the DTO with their private key. The public key is recovered from the signature. In this case, the user's alias will be `eth|<eth-addr>` or `ton|<ton-addr>`, and they will be granted default `EVALUATE` and `SUBMIT` roles.
 
 Registration remains necessary if you need to assign custom aliases or roles to users.

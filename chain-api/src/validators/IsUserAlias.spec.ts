@@ -21,6 +21,11 @@ class TestDto extends ChainCallDTO {
   user: UserAlias;
 }
 
+class TestClientDto extends ChainCallDTO {
+  @IsUserAlias({ clientAliasOnly: true })
+  user: UserAlias;
+}
+
 class TestArrayDto extends ChainCallDTO {
   @IsUserAlias({ each: true })
   users: UserAlias[];
@@ -86,6 +91,20 @@ it("should validate array of user aliases", async () => {
   // Then
   expect(valid.users).toEqual(validPlain.users);
   await expect(invalid).rejects.toThrow(`users property with values eth|${invalidChecksumEth} are not valid`);
+});
+
+it("should validate client alias only", async () => {
+  // Given
+  const validPlain = { user: "client|123" as UserAlias };
+  const invalidPlain = { user: "service|123" as UserAlias };
+
+  // When
+  const valid = await createValidDTO(TestClientDto, validPlain);
+  const invalid = createValidDTO(TestClientDto, invalidPlain);
+
+  // Then
+  expect(valid.user).toBe(validPlain.user);
+  await expect(invalid).rejects.toThrow(`Only string following the format of 'client|<user-id>' is allowed`);
 });
 
 it("should support schema generation", () => {

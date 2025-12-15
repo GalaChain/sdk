@@ -107,7 +107,6 @@ interface CallingUserDataDryRun {
  */
 interface GalaChainContextConfig {
   readonly adminPublicKey?: string;
-  readonly allowNonRegisteredUsers?: boolean;
 }
 
 interface TestOperationContext {
@@ -127,7 +126,7 @@ type TestGalaChainContext = Context & {
   readonly logger: GalaLoggerInstance;
   set callingUserData(d: CallingUserData);
   get callingUser(): UserAlias;
-  get callingUserEthAddress(): string;
+  get callingUserAddress(): string;
   get callingUserRoles(): string[];
   get callingUserSignedBy(): UserAlias[];
   get callingUserSignatureQuorum(): number;

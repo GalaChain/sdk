@@ -277,11 +277,7 @@ async function getUserProfile(ctx: GalaChainContext, publicKey: string): Promise
     return profile;
   }
 
-  if (ctx.config.allowNonRegisteredUsers) {
-    return PublicKeyService.getDefaultUserProfile(publicKey);
-  }
-
-  throw new UserNotRegisteredError(address);
+  return PublicKeyService.getDefaultUserProfile(address);
 }
 
 async function getUserProfileAndPublicKey(
