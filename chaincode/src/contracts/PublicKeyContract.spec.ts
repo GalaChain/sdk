@@ -130,7 +130,7 @@ describe("RegisterUser", () => {
     expect(response1).toEqual(transactionErrorMessageContains("Public key signature is missing"));
 
     expect(response2).toEqual(transactionErrorKey("VALIDATION_FAILED"));
-    expect(response2).toEqual(transactionErrorMessageContains("Invalid ETH public key signature"));
+    expect(response2).toEqual(transactionErrorMessageContains("Invalid secp256k1 public key signature"));
   });
 
   it("should fail when user publicKey and UserProfile are already registered", async () => {
@@ -197,8 +197,7 @@ describe("RegisterUser", () => {
 
     expect(await getPublicKey(chaincode, registerDto.user)).toEqual(
       transactionSuccess({
-        publicKey: PublicKeyService.normalizePublicKey(newPublicKey),
-        signing: SigningScheme.ETH
+        publicKey: PublicKeyService.normalizePublicKey(newPublicKey)
       })
     );
 
@@ -244,7 +243,9 @@ describe("RegisterUser", () => {
     expect(registerResponse1).toEqual(transactionErrorMessageContains("Public key signature is missing"));
 
     expect(registerResponse2).toEqual(transactionErrorKey("VALIDATION_FAILED"));
-    expect(registerResponse2).toEqual(transactionErrorMessageContains("Invalid ETH public key signature"));
+    expect(registerResponse2).toEqual(
+      transactionErrorMessageContains("Invalid secp256k1 public key signature")
+    );
   });
 
   // TODO: this test will be redesigned in a follow-up story

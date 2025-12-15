@@ -248,14 +248,9 @@ export class PublicKeyService {
       // eslint-disable-next-line @typescript-eslint/no-unused-vars
       const { publicKeySignature: _, ...dtoRemaining } = dto;
 
-      const isSignatureValid = signatures.isValidSignature(
-        publicKeySignature,
-        dtoRemaining,
-        publicKey,
-        signing
-      );
+      const isSignatureValid = signatures.isValidSignature(publicKeySignature, dtoRemaining, publicKey);
       if (!isSignatureValid) {
-        throw new ValidationFailedError(`Invalid ${signing} public key signature`);
+        throw new ValidationFailedError(`Invalid secp256k1 public key signature`);
       }
     }
 

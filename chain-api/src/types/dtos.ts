@@ -593,7 +593,9 @@ export class RegisterUserDto extends SubmitCallDTO {
 
   public withPublicKeySignedBy(privateKey: string): this {
     const copied = instanceToInstance(this);
-    copied.publicKeySignature = signatures.getSignature(copied, privateKey, SigningScheme.ETH);
+    delete copied.publicKeySignature;
+
+    copied.publicKeySignature = signatures.getSignature(copied, privateKey);
     return copied;
   }
 }
