@@ -19,7 +19,7 @@ import {
   GalaChainResponse,
   GetMyProfileDto,
   PublicKeyContractAPI,
-  RegisterEthUserDto,
+  RegisterUserDto,
   UserProfile,
   publicKeyContractAPI,
   randomUniqueKey,
@@ -43,7 +43,7 @@ jest.setTimeout(30000);
 const describeIfNonMockedChaincode =
   process.env.CURATORORG_MOCKED_CHAINCODE_DIR === undefined ? describe : describe.skip;
 
-describeIfNonMockedChaincode("Chaincode client (PartnerOrg1)", () => {
+describe("Chaincode client (PartnerOrg1)", () => {
   let client: ChainClient & CustomAPI;
 
   beforeAll(() => {
@@ -110,15 +110,15 @@ describeIfNonMockedChaincode("Chaincode client (CuratorOrg)", () => {
 
   it("should register another user", async () => {
     // Given
-    const newUser = ChainUser.withRandomKeys();
+    const newUser = ChainUser.withRandomKeys("new-user");
 
-    const dto = new RegisterEthUserDto();
+    const dto = new RegisterUserDto();
     dto.publicKey = newUser.publicKey;
     dto.uniqueKey = randomUniqueKey();
     dto.sign(getAdminPrivateKey(), false);
 
     // When
-    const response = await client.RegisterEthUser(dto);
+    const response = await client.RegisterUser(dto);
 
     // Then
     expect(response).toEqual(GalaChainResponse.Success(newUser.identityKey));
