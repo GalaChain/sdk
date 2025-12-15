@@ -32,7 +32,6 @@ import { JSONSchema } from "class-validator-jsonschema";
 
 import {
   NotImplementedError,
-  SigningScheme,
   ValidationFailedError,
   deserialize,
   getValidationErrorMessages,
@@ -170,7 +169,7 @@ export class ChainCallDTO {
   public prefix?: string;
 
   @JSONSchema({
-    description: "Address of the user who signed the DTO. Typically Ethereum or TON address, or user alias."
+    description: "Address of the user who signed the DTO. Typically Ethereum address, or user alias."
   })
   @IsOptional()
   @IsNotEmpty()
@@ -185,16 +184,6 @@ export class ChainCallDTO {
 
   @JSONSchema({
     description:
-      `Signing scheme used for the signature. ` +
-      `"${SigningScheme.ETH}" for Ethereum, and "${SigningScheme.TON}" for The Open Network are supported. ` +
-      `Default: "${SigningScheme.ETH}".`
-  })
-  @IsOptional()
-  @StringEnumProperty(SigningScheme)
-  public signing?: SigningScheme;
-
-  @JSONSchema({
-    description:
       "Signature of the DTO signed with caller's private key to be verified with user's public key saved on chain. " +
       "The 'signature' field is optional for DTO, but is required for a transaction to be executed on chain. \n" +
       "Please consult [GalaChain SDK documentation](https://github.com/GalaChain/sdk/blob/main/docs/authorization.md#signature-based-authorization) on how to create signatures."
@@ -206,8 +195,8 @@ export class ChainCallDTO {
   @JSONSchema({
     description:
       "List of signatures for this DTO if there are multiple signers. " +
-      "If there are multiple signatures, it is not allowed to provide 'signature' " +
-      "or 'signerPublicKey' or 'signerAddress' or 'prefix' fields, " +
+      "If there are multiple signatures, 'signerAddress' is required, " +
+      "and it is not allowed to provide 'signature' or 'signerPublicKey' or 'prefix' fields, " +
       "and the signing scheme must be ETH."
   })
   @IsOptional()
@@ -313,34 +302,19 @@ export class ChainCallDTO {
         throw new ValidationFailedError("DER signatures are not allowed for multisignature DTOs");
       }
 
-      if (this.signing === SigningScheme.TON) {
-        throw new ValidationFailedError("TON signing scheme does not support DER signatures");
-      } else {
-        // for convenience and backwards compatibility, for ETH signing scheme,
-        // add signerPublicKey if it's not provided
-        if (this.signerPublicKey === undefined && this.signerAddress === undefined) {
-          this.signerPublicKey = signatures.getPublicKey(privateKey);
-        }
-
-        // we have ETH signing scheme, and DER signatures, and single-sig
-        const keyBuffer = signatures.normalizePrivateKey(privateKey);
-        this.signature = signatures.getDERSignature(this, keyBuffer);
-        return;
-      }
-    }
-
-    // we have TON signing scheme, what also means single-sig and non-DER
-    if (this.signing === SigningScheme.TON) {
-      if (useMultisig) {
-        throw new ValidationFailedError("Multisig is not supported for TON signing scheme");
+      // for convenience and backwards compatibility,
+      // add signerPublicKey if it's not provided
+      if (this.signerPublicKey === undefined && this.signerAddress === undefined) {
+        this.signerPublicKey = signatures.getPublicKey(privateKey);
       }
 
-      const keyBuffer = Buffer.from(privateKey, "base64");
-      this.signature = signatures.ton.getSignature(this, keyBuffer, this.prefix).toString("base64");
+      // DER signatures, and single-sig
+      const keyBuffer = signatures.normalizePrivateKey(privateKey);
+      this.signature = signatures.getDERSignature(this, keyBuffer);
       return;
     }
 
-    // we have ETH signing scheme, and non-DER signatures, and either single-sig or multisig
+    // non-DER signatures, and either single-sig or multisig
     const keyBuffer = signatures.normalizePrivateKey(privateKey);
     const signature = signatures.getSignature(this, keyBuffer);
 
@@ -383,13 +357,6 @@ export class ChainCallDTO {
   public isSignatureValid(publicKey: string): boolean {
     if (this.multisig || !this.signature) {
       throw new NotImplementedError("isSignatureValid is not supported for multisig DTOs");
-    }
-
-    if (this.signing === SigningScheme.TON) {
-      const signatureBuff = Buffer.from(this.signature ?? "", "base64");
-      const publicKeyBuff = Buffer.from(publicKey, "base64");
-
-      return signatures.ton.isValidSignature(signatureBuff, this, publicKeyBuff, this.prefix);
     }
 
     return signatures.isValid(this.signature, this, publicKey);
@@ -626,7 +593,9 @@ export class RegisterUserDto extends SubmitCallDTO {
 
   public withPublicKeySignedBy(privateKey: string): this {
     const copied = instanceToInstance(this);
-    copied.publicKeySignature = signatures.getSignature(copied, privateKey, SigningScheme.ETH);
+    delete copied.publicKeySignature;
+
+    copied.publicKeySignature = signatures.getSignature(copied, privateKey);
     return copied;
   }
 }
@@ -654,15 +623,16 @@ export class UpdatePublicKeyDto extends SubmitCallDTO {
 
   public withPublicKeySignedBy(privateKey: string): this {
     const copied = instanceToInstance(this);
-    const signing = this.signing ?? SigningScheme.ETH;
-    copied.publicKeySignature = signatures.getSignature(copied, privateKey, signing);
+    delete copied.publicKeySignature;
+
+    copied.publicKeySignature = signatures.getSignature(copied, privateKey);
     return copied;
   }
 }
 
 export class AddSignerDto extends SubmitCallDTO {
   @JSONSchema({
-    description: "User ref of the signer to add (typically Ethereum or TON address, or user alias)."
+    description: "User ref of the signer to add (typically Ethereum address, or user alias)."
   })
   @IsNotEmpty()
   signer: UserRef;
@@ -670,7 +640,7 @@ export class AddSignerDto extends SubmitCallDTO {
 
 export class RemoveSignerDto extends SubmitCallDTO {
   @JSONSchema({
-    description: "User ref of the signer to remove (typically Ethereum or TON address, or user alias)."
+    description: "User ref of the signer to remove (typically Ethereum address, or user alias)."
   })
   @IsNotEmpty()
   signer: UserRef;

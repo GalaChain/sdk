@@ -12,13 +12,13 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-import { TokenAllowance } from "@gala-chain/api";
-import { currency, fixture, users } from "@gala-chain/test";
+import { AllowanceType, TokenAllowance, TokenBalance } from "@gala-chain/api";
+import { currency, fixture, nft, users } from "@gala-chain/test";
 import BigNumber from "bignumber.js";
 import { plainToInstance } from "class-transformer";
 
 import GalaChainTokenContract from "../__test__/GalaChainTokenContract";
-import { checkAllowances, isAllowanceExpired } from "./checkAllowances";
+import { checkAllowances, cleanAllowances, isAllowanceExpired, isAllowanceSpent } from "./checkAllowances";
 
 describe("checkAllowances", () => {
   it("should not count expired allowances", async () => {
@@ -137,5 +137,320 @@ describe("isAllowanceExpired", () => {
     });
 
     expect(isAllowanceExpired(ctx, applicableAllowance)).toBe(true);
+  });
+});
+
+describe("cleanAllowances", () => {
+  it("should invalidate NFT allowance when grantor no longer owns the specific NFT instance (self-grant scenario)", async () => {
+    // Scenario: Alice owns NFT instance #1, grants allowance to herself, then transfers to Charlie
+    // After transfer, Alice's allowance should be invalid because she no longer owns instance #1
+
+    const nftClassKey = nft.tokenClassKey();
+    const txTime = Date.now();
+
+    // Alice's allowance for NFT instance #1 (granted to herself)
+    const aliceAllowance = plainToInstance(TokenAllowance, {
+      ...nft.tokenAllowancePlain(txTime),
+      grantedBy: users.testUser1.identityKey, // Alice grants
+      grantedTo: users.testUser1.identityKey, // to herself
+      instance: new BigNumber(1),
+      allowanceType: AllowanceType.Transfer
+    });
+
+    // Charlie now owns the NFT (Alice transferred it to Charlie)
+    // So Alice's balance should NOT contain instance #1
+    const aliceBalance = new TokenBalance({
+      owner: users.testUser1.identityKey,
+      ...nftClassKey
+    });
+    // Alice has NO instances after transfer (empty instanceIds)
+
+    const { ctx } = fixture(GalaChainTokenContract)
+      .registeredUsers(users.testUser1)
+      .savedState(aliceAllowance, aliceBalance);
+
+    ctx.callingUserData = {
+      alias: users.testUser1.identityKey,
+      ethAddress: users.testUser1.ethAddress,
+      roles: users.testUser1.roles,
+      signedBy: [users.testUser1.identityKey],
+      signatureQuorum: 1,
+      allowedSigners: [users.testUser1.identityKey],
+      isMultisig: false
+    };
+
+    const allowancesToCheck = [aliceAllowance];
+
+    // When cleanAllowances is called, Alice's allowance should be removed
+    // because doesGrantorHaveToken will return false (Alice doesn't own instance #1)
+    const validAllowances = await cleanAllowances(ctx, allowancesToCheck, users.testUser1.identityKey);
+
+    // Then: No valid allowances should remain
+    expect(validAllowances.length).toBe(0);
+  });
+
+  it("should invalidate NFT allowance when grantor no longer owns the specific NFT instance (third-party grant scenario)", async () => {
+    // Scenario: Alice owns NFT instance #1, grants allowance to Bob, then transfers to Charlie
+    // After transfer, Bob's allowance from Alice should be invalid
+
+    const nftClassKey = nft.tokenClassKey();
+    const txTime = Date.now();
+
+    // Alice's allowance granted to Bob for NFT instance #1
+    const bobAllowanceFromAlice = plainToInstance(TokenAllowance, {
+      ...nft.tokenAllowancePlain(txTime),
+      grantedBy: users.testUser1.identityKey, // Alice grants
+      grantedTo: users.testUser2.identityKey, // to Bob
+      instance: new BigNumber(1),
+      allowanceType: AllowanceType.Transfer
+    });
+
+    // Alice no longer owns the NFT (transferred to Charlie)
+    const aliceBalance = new TokenBalance({
+      owner: users.testUser1.identityKey,
+      ...nftClassKey
+    });
+    // Alice has NO instances after transfer
+
+    const { ctx } = fixture(GalaChainTokenContract)
+      .registeredUsers(users.testUser1, users.testUser2)
+      .savedState(bobAllowanceFromAlice, aliceBalance);
+
+    ctx.callingUserData = {
+      alias: users.testUser2.identityKey,
+      ethAddress: users.testUser2.ethAddress,
+      roles: users.testUser2.roles,
+      signedBy: [users.testUser2.identityKey],
+      signatureQuorum: 1,
+      allowedSigners: [users.testUser2.identityKey],
+      isMultisig: false
+    };
+
+    const allowancesToCheck = [bobAllowanceFromAlice];
+
+    // When cleanAllowances is called, Bob's allowance should be removed
+    // because doesGrantorHaveToken will return false (Alice doesn't own instance #1)
+    const validAllowances = await cleanAllowances(ctx, allowancesToCheck, users.testUser2.identityKey);
+
+    // Then: No valid allowances should remain
+    expect(validAllowances.length).toBe(0);
+  });
+
+  it("should keep NFT allowance valid when grantor still owns the specific NFT instance", async () => {
+    // Scenario: Alice owns NFT instance #1, grants allowance to Bob, and still owns it
+    // The allowance should remain valid
+
+    const nftClassKey = nft.tokenClassKey();
+    const txTime = Date.now();
+
+    // Alice's allowance granted to Bob for NFT instance #1
+    const bobAllowanceFromAlice = plainToInstance(TokenAllowance, {
+      ...nft.tokenAllowancePlain(txTime),
+      grantedBy: users.testUser1.identityKey, // Alice grants
+      grantedTo: users.testUser2.identityKey, // to Bob
+      instance: new BigNumber(1),
+      allowanceType: AllowanceType.Transfer
+    });
+
+    // Alice still owns the NFT
+    const aliceBalance = new TokenBalance({
+      owner: users.testUser1.identityKey,
+      ...nftClassKey
+    });
+    aliceBalance.addInstance(new BigNumber(1)); // Alice still has instance #1
+
+    const { ctx } = fixture(GalaChainTokenContract)
+      .registeredUsers(users.testUser1, users.testUser2)
+      .savedState(bobAllowanceFromAlice, aliceBalance);
+
+    ctx.callingUserData = {
+      alias: users.testUser2.identityKey,
+      ethAddress: users.testUser2.ethAddress,
+      roles: users.testUser2.roles,
+      signedBy: [users.testUser2.identityKey],
+      signatureQuorum: 1,
+      allowedSigners: [users.testUser2.identityKey],
+      isMultisig: false
+    };
+
+    const allowancesToCheck = [bobAllowanceFromAlice];
+
+    // When cleanAllowances is called, Bob's allowance should remain valid
+    const validAllowances = await cleanAllowances(ctx, allowancesToCheck, users.testUser2.identityKey);
+
+    // Then: The allowance should still be valid
+    expect(validAllowances.length).toBe(1);
+  });
+
+  it("should invalidate allowance for specific instance but keep allowance for different instance", async () => {
+    // Scenario: Alice owns NFT instances #1 and #2
+    // Alice grants allowances for both to Bob
+    // Alice transfers instance #1 to Charlie (but keeps #2)
+    // Only the allowance for instance #1 should be invalidated
+
+    const nftClassKey = nft.tokenClassKey();
+    const txTime = Date.now();
+
+    // Allowance for instance #1 (Alice no longer owns this)
+    const allowanceForInstance1 = plainToInstance(TokenAllowance, {
+      ...nft.tokenAllowancePlain(txTime),
+      grantedBy: users.testUser1.identityKey,
+      grantedTo: users.testUser2.identityKey,
+      instance: new BigNumber(1),
+      allowanceType: AllowanceType.Transfer
+    });
+
+    // Allowance for instance #2 (Alice still owns this)
+    const allowanceForInstance2 = plainToInstance(TokenAllowance, {
+      ...nft.tokenAllowancePlain(txTime + 1), // different created time for uniqueness
+      grantedBy: users.testUser1.identityKey,
+      grantedTo: users.testUser2.identityKey,
+      instance: new BigNumber(2),
+      allowanceType: AllowanceType.Transfer
+    });
+
+    // Alice only owns instance #2 now (transferred #1 to Charlie)
+    const aliceBalance = new TokenBalance({
+      owner: users.testUser1.identityKey,
+      ...nftClassKey
+    });
+    aliceBalance.addInstance(new BigNumber(2)); // Only instance #2
+
+    const { ctx } = fixture(GalaChainTokenContract)
+      .registeredUsers(users.testUser1, users.testUser2)
+      .savedState(allowanceForInstance1, allowanceForInstance2, aliceBalance);
+
+    ctx.callingUserData = {
+      alias: users.testUser2.identityKey,
+      ethAddress: users.testUser2.ethAddress,
+      roles: users.testUser2.roles,
+      signedBy: [users.testUser2.identityKey],
+      signatureQuorum: 1,
+      allowedSigners: [users.testUser2.identityKey],
+      isMultisig: false
+    };
+
+    const allowancesToCheck = [allowanceForInstance1, allowanceForInstance2];
+
+    // When cleanAllowances is called
+    const validAllowances = await cleanAllowances(ctx, allowancesToCheck, users.testUser2.identityKey);
+
+    // Then: Only allowance for instance #2 should remain valid
+    expect(validAllowances.length).toBe(1);
+    expect(validAllowances[0].instance.isEqualTo(new BigNumber(2))).toBe(true);
+  });
+});
+
+describe("isAllowanceSpent", () => {
+  it("should return false for infinite allowance (both usesSpent and quantitySpent undefined)", () => {
+    const txTime = Date.now();
+
+    const allowance = plainToInstance(TokenAllowance, {
+      ...currency.tokenAllowancePlain(txTime),
+      uses: new BigNumber(Infinity),
+      quantity: new BigNumber(Infinity),
+      usesSpent: undefined,
+      quantitySpent: undefined
+    });
+
+    expect(isAllowanceSpent(allowance)).toBe(false);
+  });
+
+  it("should return false when both defined but neither exhausted", () => {
+    const txTime = Date.now();
+
+    const allowance = plainToInstance(TokenAllowance, {
+      ...currency.tokenAllowancePlain(txTime),
+      uses: new BigNumber(10),
+      quantity: new BigNumber(100),
+      usesSpent: new BigNumber(5),
+      quantitySpent: new BigNumber(50)
+    });
+
+    expect(isAllowanceSpent(allowance)).toBe(false);
+  });
+
+  it("should return true when uses are exhausted (usesSpent >= uses)", () => {
+    const txTime = Date.now();
+
+    const allowance = plainToInstance(TokenAllowance, {
+      ...currency.tokenAllowancePlain(txTime),
+      uses: new BigNumber(10),
+      quantity: new BigNumber(100),
+      usesSpent: new BigNumber(10),
+      quantitySpent: new BigNumber(50)
+    });
+
+    expect(isAllowanceSpent(allowance)).toBe(true);
+  });
+
+  it("should return true when quantity is exhausted (quantitySpent >= quantity)", () => {
+    const txTime = Date.now();
+
+    const allowance = plainToInstance(TokenAllowance, {
+      ...currency.tokenAllowancePlain(txTime),
+      uses: new BigNumber(10),
+      quantity: new BigNumber(100),
+      usesSpent: new BigNumber(5),
+      quantitySpent: new BigNumber(100)
+    });
+
+    expect(isAllowanceSpent(allowance)).toBe(true);
+  });
+
+  it("should return true when only usesSpent is defined and exhausted", () => {
+    const txTime = Date.now();
+
+    const allowance = plainToInstance(TokenAllowance, {
+      ...currency.tokenAllowancePlain(txTime),
+      uses: new BigNumber(10),
+      quantity: new BigNumber(100),
+      usesSpent: new BigNumber(10),
+      quantitySpent: undefined
+    });
+
+    expect(isAllowanceSpent(allowance)).toBe(true);
+  });
+
+  it("should return true when only quantitySpent is defined and exhausted", () => {
+    const txTime = Date.now();
+
+    const allowance = plainToInstance(TokenAllowance, {
+      ...currency.tokenAllowancePlain(txTime),
+      uses: new BigNumber(10),
+      quantity: new BigNumber(100),
+      usesSpent: undefined,
+      quantitySpent: new BigNumber(100)
+    });
+
+    expect(isAllowanceSpent(allowance)).toBe(true);
+  });
+
+  it("should return false when only usesSpent is defined but not exhausted", () => {
+    const txTime = Date.now();
+
+    const allowance = plainToInstance(TokenAllowance, {
+      ...currency.tokenAllowancePlain(txTime),
+      uses: new BigNumber(10),
+      quantity: new BigNumber(100),
+      usesSpent: new BigNumber(5),
+      quantitySpent: undefined
+    });
+
+    expect(isAllowanceSpent(allowance)).toBe(false);
+  });
+
+  it("should return false when only quantitySpent is defined but not exhausted", () => {
+    const txTime = Date.now();
+
+    const allowance = plainToInstance(TokenAllowance, {
+      ...currency.tokenAllowancePlain(txTime),
+      uses: new BigNumber(10),
+      quantity: new BigNumber(100),
+      usesSpent: undefined,
+      quantitySpent: new BigNumber(50)
+    });
+
+    expect(isAllowanceSpent(allowance)).toBe(false);
   });
 });

@@ -17,7 +17,7 @@ import { instanceToPlain, plainToInstance } from "class-transformer";
 import { ArrayMinSize, ArrayNotEmpty, IsString } from "class-validator";
 import { ec as EC } from "elliptic";
 
-import { SigningScheme, getValidationErrorMessages, signatures } from "../utils";
+import { getValidationErrorMessages, signatures } from "../utils";
 import { BigNumberArrayProperty, BigNumberProperty } from "../validators";
 import { asValidUserRef } from "./UserRef";
 import { ChainCallDTO, ClassConstructor } from "./dtos";
@@ -183,22 +183,6 @@ describe("ChainCallDTO", () => {
     expect(dto.isSignatureValid(publicKey)).toEqual(false);
   });
 
-  it("should sign and verify TON signature", async () => {
-    // Given
-    const pair = await signatures.ton.genKeyPair();
-    const dto = new TestDto();
-    dto.amounts = [new BigNumber("78.9")];
-    dto.signing = SigningScheme.TON;
-    expect(dto.signature).toEqual(undefined);
-
-    // When
-    dto.sign(pair.secretKey.toString("base64"));
-
-    // Then
-    expect(dto.signature).toEqual(expect.stringMatching(/.{50,}/));
-    expect(dto.isSignatureValid(pair.publicKey.toString("base64"))).toEqual(true);
-  });
-
   it("should not support multiple signatures verification", () => {
     // Given
     const k1 = genKeyPair();
@@ -241,26 +225,22 @@ describe("ChainCallDTO", () => {
     expect(() => dto.sign(privateKey)).toThrow(expectedError);
   });
 
-  it("should throw an error when signing a multisig DTO with DER signatures", async () => {
+  it("should throw an error when signing a multisig DTO with DER signatures", () => {
     // Given
-    const pk1 = await signatures.ton.genKeyPair();
-    const pk2 = await signatures.ton.genKeyPair();
+    const k1 = genKeyPair();
+    const k2 = genKeyPair();
 
     const dto = new TestDto();
-    dto.signing = SigningScheme.TON;
-    dto.signerAddress = asValidUserRef(signatures.ton.getTonAddress(pk1.publicKey));
+    dto.signerAddress = asValidUserRef("0x0000000000000000000000000000000000000123");
     dto.dtoOperation = "test-channel_test-chaincode_test-method";
     dto.dtoExpiresAt = Date.now() + 1_000;
     dto.amounts = [new BigNumber("12.3")];
+    dto.sign(k1.privateKey); // first signature
 
-    // first signature
-    dto.sign(Buffer.from(pk1.secretKey).toString("base64"));
-
-    // When
-    // second signature
-    const op = () => dto.sign(Buffer.from(pk2.secretKey).toString("base64"));
+    // When - try to sign with DER
+    const op = () => dto.sign(k2.privateKey, true);
 
     // Then
-    expect(op).toThrow("Multisig is not supported for TON signing scheme");
+    expect(op).toThrow("DER signatures are not allowed for multisignature DTOs");
   });
 });

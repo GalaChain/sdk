@@ -84,14 +84,12 @@ export class PublicKeyContract extends GalaContract {
     );
 
     const signatureQuorum = Math.max(dto.signatureQuorum ?? signerAliases.length ?? 1, 1);
-    const signing = dto.signing ?? SigningScheme.ETH;
 
     return PublicKeyService.registerUser(
       ctx,
       dto.publicKey,
       signerAliases.length ? signerAliases : undefined,
       dto.user,
-      signing,
       signatureQuorum,
       dto as ChainCallDTO & { publicKeySignature?: string }
     );
@@ -138,13 +136,12 @@ export class PublicKeyContract extends GalaContract {
     description: "Updates public key for the calling user."
   })
   public async UpdatePublicKey(ctx: GalaChainContext, dto: UpdatePublicKeyDto): Promise<void> {
-    const signing = dto.signing ?? SigningScheme.ETH;
-    await PublicKeyService.updatePublicKey(ctx, dto, signing);
+    await PublicKeyService.updatePublicKey(ctx, dto);
   }
 
   @Submit({
     in: AddSignerDto,
-    description: "Adds a public key to the calling user's multisig setup."
+    description: "Adds a signer to the calling user's multisig setup."
   })
   public async AddSigner(ctx: GalaChainContext, dto: AddSignerDto): Promise<void> {
     const signer = await resolveUserAlias(ctx, dto.signer);
@@ -153,7 +150,7 @@ export class PublicKeyContract extends GalaContract {
 
   @Submit({
     in: RemoveSignerDto,
-    description: "Removes a public key from the calling user's multisig setup."
+    description: "Removes a signer from the calling user's multisig setup."
   })
   public async RemoveSigner(ctx: GalaChainContext, dto: RemoveSignerDto): Promise<void> {
     const signer = await resolveUserAlias(ctx, dto.signer);

@@ -27,7 +27,7 @@ import {
 } from "@gala-chain/api";
 import BigNumber from "bignumber.js";
 
-import { checkAllowances } from "../allowances";
+import { AllowanceUsersMismatchError, checkAllowances } from "../allowances";
 import { GalaChainContext } from "../types";
 import { getObjectByKey, getObjectsByPartialCompositeKey } from "../utils";
 
@@ -71,11 +71,16 @@ export async function validateMintRequest(
         applicableAllowanceKey.type,
         applicableAllowanceKey.additionalKey,
         applicableAllowanceKey.instance.toString(),
-        applicableAllowanceKey.allowanceType.toString(),
+        AllowanceType.Mint.toString(),
         applicableAllowanceKey.grantedBy,
         applicableAllowanceKey.created.toString()
       ])
     );
+
+    // Validate that the allowance is granted to the caller
+    if (allowance.grantedTo !== callingOnBehalf) {
+      throw new AllowanceUsersMismatchError(allowance, allowance.grantedBy, callingOnBehalf);
+    }
 
     results = [allowance];
   } else {
@@ -99,7 +104,10 @@ export async function validateMintRequest(
     results.sort((a: TokenAllowance, b: TokenAllowance): number => (a.created < b.created ? -1 : 1));
   }
 
-  const applicableAllowances: TokenAllowance[] = results;
+  // Filter allowances to only include those granted by current authorities
+  const applicableAllowances: TokenAllowance[] = results.filter((allowance) =>
+    tokenClass.authorities.includes(allowance.grantedBy)
+  );
 
   const dtoInstanceKey = ChainCallDTO.deserialize<TokenInstanceKey>(TokenInstanceKey, {
     ...tokenClassKey,

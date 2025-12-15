@@ -1,7 +1,7 @@
 # Authorization and authentication
 
 GalaChain uses two layers of authorization and authentication to ensure that only authorized users can access the system.
-The first level, exposed to the client, is based on secp256k1 signatures and private/public key authorization for the Ethereum signing scheme, and eddsa signatures for the TON signing scheme.
+The first level, exposed to the client, is based on secp256k1 signatures and private/public key authorization.
 The second level uses native Hyperledger Fabric CA users and organizations MSPs.
 
 ## How it works
@@ -64,7 +64,6 @@ After successful authentication, the following context properties are available:
 
 - `ctx.callingUser`: The user's alias (e.g., `eth|0x123...def`, `client|admin`)
 - `ctx.callingUserEthAddress`: The user's Ethereum address (if available)
-- `ctx.callingUserTonAddress`: The user's TON address (if available)
 - `ctx.callingUserRoles`: Array of roles assigned to the user
 - `ctx.callingUserProfile`: Complete user profile object
 - `ctx.callingUserSignedBy`: Array of user aliases that signed the current transaction
@@ -73,18 +72,16 @@ After successful authentication, the following context properties are available:
 ## Signature based authorization
 
 Signature-based authorization uses secp256k1 signatures to verify the identity of the end user.
-By default, it uses the same algorithm as Ethereum (keccak256 + secp256k1), but the TON (The Open Network) signing scheme is also supported.
-All payloads that should be authorized by the TON signing scheme must have the `signing` field set to `TON`.
+It uses the same algorithm as Ethereum (keccak256 + secp256k1).
 
 ### Required fields in dto object
 
 The following fields are required in the transaction payload object:
-* For Ethereum signing scheme with regular signature format (r + s + v): `signature` field only.
-* For Ethereum signing scheme with DER signature formar: `signature` and `signerPublicKey` fields. 
+* For regular signature format (r + s + v): `signature` field only.
+* For DER signature format: `signature` and `signerPublicKey` fields. 
   The `signerPublicKey` field is required to recover the public key from the signature, since DER signature does not contain the recovery parameter `v`.
-* For TON signing scheme: `signature`, `signerPublicKey`, and `signing` fields. The `signing` field must be set to `TON`.
 
-Both for Eth DER signature and TON signing scheme, instead of `signerPublicKey` field, you can use `signerAddress` field, which contains the user's checksumed Ethereum address or bounceable TON address respectively.
+Instead of `signerPublicKey` field, you can use `signerAddress` field, which contains the user's checksumed Ethereum address.
 The address will be used to get public key of a registered user and use it for signature verification.
 
 ### DTO Expiration
@@ -130,21 +127,6 @@ const dto3 = {myField: "myValue"};
 dto3.signature = signatures.getSignature(dto3, Buffer.from(userPrivateKey));
 ```
 
-If you want to use `TON` signing scheme, just provide `TON` as the signing scheme in your DTO object:
-
-```typescript
-// recommended way to sign the transaction
-const dto1 = await createValidDto(MyDtoClass, {myField: "myValue", signing: "TON"}).signed(userPrivateKey);
-
-// alternate way, imperative style
-const dto2 = new MyDtoClass({myField: "myValue", signing: "TON"});
-dto2.sign(userPrivateKey);
-
-// when you don't have the dto class, but just a plain object
-const dto3 = {myField: "myValue", signing: "TON"};
-dto3.signature = signatures.getSignature(dto3, Buffer.from(userPrivateKey));
-```
-
 #### Using `@gala-chain/cli`:
 
 ```bash
@@ -177,30 +159,6 @@ If you are not using any of the libraries, you can sign the transaction with the
 It is important to follow these steps exactly, because chain side the same way of serialization and hashing is used to verify the signature.
 If the payload is not serialized and hashed in the same way, the signature will not be verified.
 
-### "Manual" process (TON):
-
-In this case you need to have ed25519 private key and seed for the signing and signature verification, and we recommend using `safeSign` method from `@ton/core` library:
-
-```typescript
-import { beginCell, safeSign } from "@ton/core";
-
-const data = "..."; // properly serialized payload string
-const cell = beginCell().storeBuffer(Buffer.from(data)).endCell();
-const signature = safeSign(cell, privateKey, seed);
-```
-
-The serialized payload string must be prepared in the same way as for Ethereum signing:
-- no additional spaces or newlines,
-- fields sorted alphabetically,
-- all `BigNumber` values are converted to strings with fixed notation,
-- top-level `signature` and `trace` fields excluded from the payload.
-
-`safeSign` method generates the signature in the following way:
-
-```
-signature = Ed25519Sign(privkey, sha256(0xffff ++ utf8_encode(seed) ++ sha256(message)))
-```
-
 ### Authenticating in the chaincode
 
 In the chaincode, before the transaction is executed, GalaChain SDK will recover the public key from the signature and check if the user is registered.
@@ -212,7 +170,6 @@ Disabling signature based authorization is useful when you want to allow anonymo
 
 Chain side `ctx.callingUser` property will be populated with the user's alias, which is either `client|<custom-name>` or `eth|<eth-addr>` (if there is no custom name defined).
 Also, `ctx.callingUserEthAddress` will contain the user's Ethereum address, if the user is registered with the Ethereum address.
-If the TON signing scheme is used, `ctx.callingUserTonAddress` will contain the user's TON address.
 The `ctx.callingUserRoles` property will contain the user's assigned roles.
 
 This way it is possible to get the current user's properties in the chaincode and use them in the business logic.
@@ -534,3 +491,30 @@ If you want to call external chaincode and authorize your call as a chaincode:
 
 Remember to allow the chaincode in `allowedOriginChaincodes` transaction property in the target chaincode.
 
+## Optional User Registration
+
+By default, GalaChain requires every user to be registered before they can interact with the chaincode. However, in scenarios with a large number of users, you might want to make user registration optional.
+
+You can allow non-registered users to access the chaincode in one of two ways:
+
+1.  **Environment Variable**: Set the `ALLOW_NON_REGISTERED_USERS` environment variable to `true` for the chaincode container.
+
+    ```bash
+    ALLOW_NON_REGISTERED_USERS=true
+    ```
+
+2.  **Contract Configuration**: Set the `allowNonRegisteredUsers` property to `true` in your contract's configuration.
+
+    ```typescript
+    class MyContract extends GalaContract {
+      constructor() {
+        super("MyContract", version, {
+          allowNonRegisteredUsers: true
+        });
+      }
+    }
+    ```
+
+When non-registered users are allowed, they still need to sign the DTO with their private key. The public key is recovered from the signature. In this case, the user's alias will be `eth|<eth-addr>` or `ton|<ton-addr>`, and they will be granted default `EVALUATE` and `SUBMIT` roles.
+
+Registration remains necessary if you need to assign custom aliases or roles to users.

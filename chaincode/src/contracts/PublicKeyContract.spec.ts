@@ -93,8 +93,7 @@ describe("RegisterUser", () => {
 
     expect(await getPublicKey(chaincode, dto.user)).toEqual(
       transactionSuccess({
-        publicKey: PublicKeyService.normalizePublicKey(publicKey),
-        signing: SigningScheme.ETH
+        publicKey: PublicKeyService.normalizePublicKey(publicKey)
       })
     );
 
@@ -134,7 +133,7 @@ describe("RegisterUser", () => {
     expect(response1).toEqual(transactionErrorMessageContains("Public key signature is missing"));
 
     expect(response2).toEqual(transactionErrorKey("VALIDATION_FAILED"));
-    expect(response2).toEqual(transactionErrorMessageContains("Invalid ETH public key signature"));
+    expect(response2).toEqual(transactionErrorMessageContains("Invalid secp256k1 public key signature"));
   });
 
   it("should fail when user publicKey and UserProfile are already registered", async () => {
@@ -201,8 +200,7 @@ describe("RegisterUser", () => {
 
     expect(await getPublicKey(chaincode, registerDto.user)).toEqual(
       transactionSuccess({
-        publicKey: PublicKeyService.normalizePublicKey(newPublicKey),
-        signing: SigningScheme.ETH
+        publicKey: PublicKeyService.normalizePublicKey(newPublicKey)
       })
     );
 
@@ -248,7 +246,9 @@ describe("RegisterUser", () => {
     expect(registerResponse1).toEqual(transactionErrorMessageContains("Public key signature is missing"));
 
     expect(registerResponse2).toEqual(transactionErrorKey("VALIDATION_FAILED"));
-    expect(registerResponse2).toEqual(transactionErrorMessageContains("Invalid ETH public key signature"));
+    expect(registerResponse2).toEqual(
+      transactionErrorMessageContains("Invalid secp256k1 public key signature")
+    );
   });
 
   // TODO: this test will be redesigned in a follow-up story
@@ -346,19 +346,6 @@ describe("RegisterUser", () => {
     // Then
     expect(response).toEqual(transactionSuccess("Registration of eth| users is no longer required."));
   });
-
-  it("RegisterTonUser should return deprecation message", async () => {
-    // Given
-    const chaincode = new TestChaincode([PublicKeyContract]);
-    const dto = await createValidSubmitDTO(SubmitCallDTO, {});
-    const signedDto = dto.signed(process.env.DEV_ADMIN_PRIVATE_KEY as string);
-
-    // When
-    const response = await chaincode.invoke("PublicKeyContract:RegisterTonUser", signedDto);
-
-    // Then
-    expect(response).toEqual(transactionSuccess("Registration of ton| users is no longer required."));
-  });
 });
 
 describe("UpdatePublicKey", () => {
@@ -382,8 +369,7 @@ describe("UpdatePublicKey", () => {
     // New key is saved
     expect(await getPublicKey(chaincode, user.alias)).toEqual(
       transactionSuccess({
-        publicKey: PublicKeyService.normalizePublicKey(newPublicKey),
-        signing: SigningScheme.ETH
+        publicKey: PublicKeyService.normalizePublicKey(newPublicKey)
       })
     );
 
@@ -418,13 +404,12 @@ describe("UpdatePublicKey", () => {
     expect(updateResponse1).toEqual(transactionErrorMessageContains("Public key signature is missing"));
 
     expect(updateResponse2).toEqual(transactionErrorKey("VALIDATION_FAILED"));
-    expect(updateResponse2).toEqual(transactionErrorMessageContains("Invalid ETH public key signature"));
+    expect(updateResponse2).toEqual(transactionErrorMessageContains("Invalid public key signature"));
 
     // Old key is still there
     expect(await getPublicKey(chaincode, user.alias)).toEqual(
       transactionSuccess({
-        publicKey: PublicKeyService.normalizePublicKey(user.publicKey),
-        signing: SigningScheme.ETH
+        publicKey: PublicKeyService.normalizePublicKey(user.publicKey)
       })
     );
   });
@@ -452,8 +437,7 @@ describe("UpdatePublicKey", () => {
     // New key is saved
     expect(await getPublicKey(chaincode, user.alias)).toEqual(
       transactionSuccess({
-        publicKey: PublicKeyService.normalizePublicKey(newPublicKey),
-        signing: SigningScheme.ETH
+        publicKey: PublicKeyService.normalizePublicKey(newPublicKey)
       })
     );
 
@@ -511,123 +495,6 @@ describe("UpdatePublicKey", () => {
     const expectedMsg = `User client|invalidated does not have one of required roles: SUBMIT (has: no roles)`;
     expect(response3).toEqual(transactionErrorKey("MISSING_ROLE"));
     expect(response3).toEqual(transactionErrorMessageContains(expectedMsg));
-  });
-
-  it("should update TON public key", async () => {
-    // Given
-    const chaincode = new TestChaincode([PublicKeyContract]);
-    const user = await createTonUser();
-    const newPair = await signatures.ton.genKeyPair();
-    const newPrivateKeyBase64 = newPair.secretKey.toString("base64");
-    const newAddress = PublicKeyService.getUserAddress(
-      newPair.publicKey.toString("base64"),
-      SigningScheme.TON
-    );
-
-    const dto = (
-      await createValidSubmitDTO(UpdatePublicKeyDto, {
-        publicKey: newPair.publicKey.toString("base64"),
-        signerPublicKey: user.publicKey,
-        signing: SigningScheme.TON
-      })
-    )
-      .withPublicKeySignedBy(newPrivateKeyBase64)
-      .signed(user.privateKey);
-
-    // no public key saved for this user
-    expect(await getPublicKey(chaincode, user.alias)).toEqual(transactionErrorKey("PK_NOT_FOUND"));
-    expect(await getUserProfile(chaincode, user.tonAddress)).toEqual(transactionErrorKey("OBJECT_NOT_FOUND"));
-
-    // When
-    const response = await chaincode.invoke("PublicKeyContract:UpdatePublicKey", dto);
-
-    // Then
-    expect(response).toEqual(transactionSuccess());
-
-    expect(await getPublicKey(chaincode, user.alias)).toEqual(
-      transactionSuccess({
-        publicKey: dto.publicKey,
-        signing: SigningScheme.TON
-      })
-    );
-
-    // new profile is saved
-    expect(await getUserProfile(chaincode, newAddress)).toEqual(
-      transactionSuccess({
-        alias: user.alias,
-        tonAddress: newAddress,
-        roles: UserProfile.DEFAULT_ROLES,
-        signatureQuorum: 1
-      })
-    );
-
-    // old non-existent profile is invalidated
-    expect(await getUserProfile(chaincode, user.tonAddress)).toEqual(
-      transactionSuccess({
-        alias: "client|invalidated",
-        ethAddress: "0000000000000000000000000000000000000000",
-        roles: []
-      })
-    );
-  });
-
-  it("should prevent from changing key type", async () => {
-    // Given
-    const chaincode = new TestChaincode([PublicKeyContract]);
-    const tonUser = await createTonUser();
-    const ethUser = await createEthUser();
-
-    const ethKeyPair = signatures.genKeyPair();
-    const tonKeyPair = await signatures.ton.genKeyPair();
-
-    const dtoTonToEth = await createValidSubmitDTO(UpdatePublicKeyDto, {
-      publicKey: ethKeyPair.publicKey,
-      signerPublicKey: tonUser.publicKey,
-      signing: SigningScheme.TON
-    });
-    dtoTonToEth.publicKeySignature = signatures.getSignature(
-      dtoTonToEth,
-      ethKeyPair.privateKey,
-      SigningScheme.ETH
-    );
-
-    const dtoEthToTon = await createValidSubmitDTO(UpdatePublicKeyDto, {
-      publicKey: tonKeyPair.publicKey.toString("base64")
-    });
-    dtoEthToTon.publicKeySignature = signatures.getSignature(
-      dtoEthToTon,
-      tonKeyPair.secretKey,
-      SigningScheme.TON
-    );
-
-    // When
-    const responseTonToEth = await chaincode.invoke(
-      "PublicKeyContract:UpdatePublicKey",
-      dtoTonToEth.signed(tonUser.privateKey)
-    );
-
-    const responseEthToTon = await chaincode.invoke(
-      "PublicKeyContract:UpdatePublicKey",
-      dtoEthToTon.signed(ethUser.privateKey)
-    );
-
-    // Then
-    expect(responseTonToEth).toEqual(transactionErrorMessageContains("bad signature size"));
-    expect(responseEthToTon).toEqual(transactionErrorMessageContains("Public key seems to be invalid"));
-
-    // Old keys are still there
-    expect(await getPublicKey(chaincode, tonUser.alias)).toEqual(
-      transactionSuccess({
-        publicKey: tonUser.publicKey,
-        signing: SigningScheme.TON
-      })
-    );
-    expect(await getPublicKey(chaincode, ethUser.alias)).toEqual(
-      transactionSuccess({
-        publicKey: PublicKeyService.normalizePublicKey(ethUser.publicKey),
-        signing: SigningScheme.ETH
-      })
-    );
   });
 });
 
@@ -772,41 +639,6 @@ describe("GetMyProfile", () => {
 
     // it is not possible to recover public key from the provided payload
     expect(resp3).toEqual(transactionErrorKey("USER_NOT_REGISTERED"));
-  });
-
-  it("should get unregistered profile (ton|)", async () => {
-    // Given
-    const chaincode = new TestChaincode([PublicKeyContract]);
-    const user = await createTonUser();
-    expect(user.alias).toContain("ton|");
-
-    const dto1 = new GetMyProfileDto();
-    dto1.signing = SigningScheme.TON;
-    dto1.signerPublicKey = user.publicKey;
-    dto1.sign(user.privateKey);
-
-    const dto2 = new GetMyProfileDto();
-    dto2.signing = SigningScheme.TON;
-    dto2.signerAddress = asValidUserRef(user.tonAddress);
-    dto2.sign(user.privateKey);
-
-    // When
-    const resp1 = await chaincode.invoke("PublicKeyContract:GetMyProfile", dto1);
-    const resp2 = await chaincode.invoke("PublicKeyContract:GetMyProfile", dto2);
-
-    // Then
-    expect(resp1).toEqual(
-      transactionSuccess({
-        alias: user.alias,
-        tonAddress: user.tonAddress,
-        roles: UserProfile.DEFAULT_ROLES,
-        signatureQuorum: 1,
-        signers: [`ton|${user.tonAddress}`]
-      })
-    );
-
-    // it is not possible to recover public key from the provided payload
-    expect(resp2).toEqual(transactionErrorKey("USER_NOT_REGISTERED"));
   });
 
   it("should get saved profile (client| with multiple signers)", async () => {

@@ -35,14 +35,10 @@ const validEthAddress = "0abB6F637a51eb26665e0DeBc5CE8A84e1fa8AC3";
 const lowerCasedEth = validEthAddress.toLowerCase();
 const invalidChecksumEth = validEthAddress.replace("a", "A");
 
-const validTonAddress = "EQD3GhfZXYhnQrgXsV8xqe0X6FkYLtW8ys8NiqpkSlWWPUG1";
-const invalidTon = validTonAddress.replace("Q", "q");
-
 test.each<[string, string, string]>([
   ["valid legacy alias", "client|123", "client|123"],
   ["valid legacy service alias", "service|123", "service|123"],
   ["valid eth alias", `eth|${validEthAddress}`, `eth|${validEthAddress}`],
-  ["valid ton alias", `ton|${validTonAddress}`, `ton|${validTonAddress}`],
   ["valid bridge (eth)", `EthereumBridge`, `EthereumBridge`],
   ["valid bridge (ton)", `TonBridge`, `TonBridge`],
   ["valid bridge (solana)", `SolanaBridge`, `SolanaBridge`],
@@ -65,9 +61,6 @@ test.each<[string, string, string]>([
   ["invalid eth alias (0x prefix)", `eth|0x${validEthAddress}`, "'eth|' must end with valid checksumed"],
   ["invalid eth alias (invalid eth)", "eth|123", "'eth|' must end with valid checksumed"],
   ["invalid value (pure eth addr)", validEthAddress, "Expected string following the format"],
-  ["invalid ton alias (invalid checksum)", `ton|${invalidTon}`, "'ton|' must end with valid bounceable"],
-  ["invalid ton alias (invalid ton)", "ton|123", "'ton|' must end with valid bounceable base64 TON"],
-  ["invalid value (pure ton addr)", validTonAddress, "Expected string following the format"],
   ["invalid bridge (external)", "GoldenGateBridge", "Expected string following the format"],
   ["invalid bridge (GalaChain)", "GalaChainBridge-A", "Expected string following the format"]
 ])("%s", async (label, input, expectedError) => {
@@ -84,13 +77,7 @@ test.each<[string, string, string]>([
 it("should validate array of user aliases", async () => {
   // Given
   const validPlain = {
-    users: [
-      "client|123",
-      `eth|${validEthAddress}`,
-      `EthereumBridge`,
-      `GalaChainBridge-42`,
-      `ton|${validTonAddress}`
-    ] as UserAlias[]
+    users: ["client|123", `eth|${validEthAddress}`, `EthereumBridge`, `GalaChainBridge-42`] as UserAlias[]
   };
 
   const invalidPlain = {

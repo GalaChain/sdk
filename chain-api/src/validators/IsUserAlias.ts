@@ -27,7 +27,6 @@ export enum UserAliasValidationResult {
   VALID_USER_ALIAS,
   VALID_SYSTEM_USER,
   INVALID_ETH_USER_ALIAS,
-  INVALID_TON_USER_ALIAS,
   INVALID_FORMAT
 }
 
@@ -47,22 +46,6 @@ export function isValidSystemUser(value: string): boolean {
   );
 }
 
-export function isValidTonAddress(value: string): boolean {
-  // Only allow bounceable (starts with 'EQ' or 'UQ') base64url TON addresses, length 48 or 52 chars
-  // See: https://ton-community.github.io/tutorials/address/
-  return /^(E|U)Q[A-Za-z0-9_-]{46}$/.test(value) || /^(E|U)Q[A-Za-z0-9_-]{50}$/.test(value);
-}
-
-/**
- * @description
- *
- * Validates a provided user alias. As of 2024-10, The following alias types
- * are supported: legacy client| and service| prefixed aliases,
- * eth| and ton| prefixed addresses, and internally reserved identities.
- *
- * @param value
- * @returns UserRefValidationResult
- */
 export function validateUserAlias(value: unknown): UserAliasValidationResult {
   if (typeof value !== "string" || value.length === 0) {
     return UserAliasValidationResult.INVALID_FORMAT;
@@ -90,14 +73,6 @@ export function validateUserAlias(value: unknown): UserAliasValidationResult {
         return UserAliasValidationResult.INVALID_ETH_USER_ALIAS;
       }
     }
-
-    if (parts[0] === "ton") {
-      if (signatures.ton.isValidTonAddress(parts[1])) {
-        return UserAliasValidationResult.VALID_USER_ALIAS;
-      } else {
-        return UserAliasValidationResult.INVALID_TON_USER_ALIAS;
-      }
-    }
   }
 
   return UserAliasValidationResult.INVALID_FORMAT;
@@ -114,16 +89,14 @@ function requiresClientAliasOnly(args: ValidationArguments): boolean {
 
 const customMessages = {
   [UserAliasValidationResult.INVALID_ETH_USER_ALIAS]:
-    "User alias starting with 'eth|' must end with valid checksumed eth address without 0x prefix.",
-  [UserAliasValidationResult.INVALID_TON_USER_ALIAS]:
-    "User alias starting with 'ton|' must end with valid bounceable base64 TON address."
+    "User alias starting with 'eth|' must end with valid checksumed eth address without 0x prefix."
 };
 
 const clientAliasOnlyMessage = "Only string following the format of 'client|<user-id>' is allowed";
 
 const genericMessage =
   "Expected string following the format of 'client|<user-id>', or 'eth|<checksumed-eth-addr>', " +
-  "or 'ton|<chain:ton-address>', or valid system-level username.";
+  "or valid system-level username.";
 
 @ValidatorConstraint({ async: false })
 class IsUserAliasConstraint implements ValidatorConstraintInterface {
@@ -166,7 +139,7 @@ interface IsUserAliasOptions extends ValidationOptions {
  * See also IsUserAliasConstraint, validateUserAlias.
  * As of 2024-10, The following alias types
  * are supported: legacy client| and service| prefixed aliases,
- * eth| and ton| prefixed addresses, and internally reserved identities.
+ * eth| prefixed addresses, and internally reserved identities.
  *
  * @param options
  *

@@ -88,7 +88,6 @@ type GalaChainStub = ChaincodeStub & {
 interface CallingUserData {
   alias?: UserAlias;
   ethAddress?: string;
-  tonAddress?: string;
   roles: string[];
   signedBy: UserAlias[];
   signatureQuorum: number;
@@ -99,7 +98,6 @@ interface CallingUserData {
 interface CallingUserDataDryRun {
   alias: UserAlias;
   ethAddress?: string;
-  tonAddress?: string;
   roles: string[];
 }
 
@@ -283,7 +281,7 @@ class Fixture<Ctx extends TestGalaChainContext, T extends GalaContract<Ctx>> {
    * @returns This fixture instance for method chaining
    */
   callingUser(
-    user: ChainUserWithRoles | { alias: UserAlias; ethAddress?: string; tonAddress?: string; roles: string[] }
+    user: ChainUserWithRoles | { alias: UserAlias; ethAddress?: string; roles: string[] }
   ): Fixture<Ctx, T> {
     if ("identityKey" in user) {
       this.ctx.callingUserData = {
