@@ -330,16 +330,12 @@ async emergencyAction(ctx: GalaChainContext, dto: EmergencyActionDto): Promise<v
 
 ### User registration
 
-GalaChain requires every user to be registered before they can interact with the chaincode.
-In order to access the chaincode, the user must be registered with the chaincode.
+Users with aliases starting from the `client|` prefix need to be registered before they can interact with the chaincode.
+It can be done by `RegisterUser` method in the `PublicKeyContract`.
 
-The primary method to register a user is:
+This method requires the user to provide their secp256k1 public key and allows you to specify a custom `alias` parameter.
 
-1. `RegisterUser` method in the `PublicKeyContract`.
-
-This method requires the user to provide their public key (secp256k1 for Ethereum, ed25519 for TON) and allows you to specify a custom `alias` parameter.
-
-**Note**: The `RegisterEthUser` and `RegisterTonUser` methods are deprecated and will be removed in a future version. Registration of `eth|` and `ton|` users is no longer required - you can use `RegisterUser` with the appropriate alias format (`eth|<eth-addr>` or `ton|<ton-addr>`) if needed.
+**Note**: The `RegisterEthUser` method is deprecated and will be removed in a future version. Registration of `eth|` users is no longer needed.
 
 Access to registration methods is now controlled as follows:
 - **Role-based authorization (RBAC)**: Requires the `REGISTRAR` role
