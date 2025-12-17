@@ -67,11 +67,14 @@ function downNetworkServices(fabloRoot: string): void {
 }
 
 function getFabloRoot(fabloDir: string): string | undefined {
-  // Validate fabloDir to prevent command injection
-  // Reject special characters that could be used for shell injection
-  const specialChars = /[&\\#,+()$~%'":;*?<>@{}|`\n\r]/;
-  if (specialChars.test(fabloDir)) {
-    console.error(`Error: Path '${fabloDir}' contains unsafe characters.`);
+  // SECURITY: Allowlist validation to prevent command injection
+  // Only alphanumeric, hyphen, underscore, dot, and forward slash allowed
+  const allowedPathChars = /^[a-zA-Z0-9._/-]+$/;
+  if (!allowedPathChars.test(fabloDir)) {
+    console.error(
+      `Error: Path "${fabloDir}" contains invalid characters. ` +
+        `Only alphanumeric characters, hyphens (-), underscores (_), dots (.), and forward slashes (/) are allowed.`
+    );
     return undefined;
   }
 

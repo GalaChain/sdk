@@ -294,13 +294,16 @@ function customValidation(flags: any): void {
   const { channel, channelType, chaincodeName, chaincodeDir, envConfig, fabloRoot } = flags;
 
   /*
-    Check if the flags does not have special characters that could lead to command injection.
-    Includes: &, |, ;, :, $, backticks, quotes, parentheses, etc.
-    Only alphanumeric characters, -, _, ., / and spaces are allowed.
-    Check the maximum length of the flag is 256 characters for paths, 64 for names.
+    SECURITY: Allowlist validation to prevent command injection.
+    Using allowlist (specifying what IS allowed) rather than blocklist (what's NOT allowed)
+    because blocklists are prone to bypass via overlooked dangerous characters.
   */
-  // Added backticks (`) and newlines (\n\r) to prevent command injection in double-quoted shell strings
-  const specialChars = /[&\\#,+()$~%'":;*?<>@{}|`\n\r]/;
+
+  // Allowlist for names: alphanumeric, hyphen, underscore, dot only
+  const allowedNameChars = /^[a-zA-Z0-9._-]+$/;
+  // Allowlist for paths: alphanumeric, hyphen, underscore, dot, forward slash only
+  const allowedPathChars = /^[a-zA-Z0-9._/-]+$/;
+
   const maxLengthName = 64;
   const maxLengthPath = 256;
 
@@ -308,42 +311,37 @@ function customValidation(flags: any): void {
   const envConfigArray = [envConfig].filter(Boolean);
   const fabloRootArray = [fabloRoot].filter(Boolean);
 
-  // Validate name-like flags (shorter max length)
+  // Validate name-like flags (channel, channelType, chaincodeName)
+  // Only alphanumeric, hyphen, underscore, and dot allowed
   const nameFlags = [channel, channelType, chaincodeName];
   nameFlags.forEach((arr: string[]) => {
     arr?.forEach((flag: string) => {
       if (flag.length > maxLengthName) {
-        throw new Error(`Error: Flag ${flag} is too long. Maximum length is ${maxLengthName} characters.`);
+        throw new Error(`Error: Flag "${flag}" is too long. Maximum length is ${maxLengthName} characters.`);
       }
-      if (specialChars.test(flag)) {
-        throw new Error(`Error: Flag ${flag} contains special characters. Only -, _ and . are allowed.`);
+      if (!allowedNameChars.test(flag)) {
+        throw new Error(
+          `Error: Flag "${flag}" contains invalid characters. Only alphanumeric characters, hyphens (-), underscores (_), and dots (.) are allowed.`
+        );
       }
     });
   });
 
-  // Validate path-like flags (longer max length allowed)
+  // Validate path-like flags (chaincodeDir, envConfig, fabloRoot)
+  // Only alphanumeric, hyphen, underscore, dot, and forward slash allowed
   const pathFlags = [chaincodeDir, envConfigArray, fabloRootArray];
   pathFlags.forEach((arr: string[]) => {
     arr?.forEach((flag: string) => {
       if (flag.length > maxLengthPath) {
-        throw new Error(`Error: Path ${flag} is too long. Maximum length is ${maxLengthPath} characters.`);
+        throw new Error(`Error: Path "${flag}" is too long. Maximum length is ${maxLengthPath} characters.`);
       }
-      if (specialChars.test(flag)) {
-        throw new Error(`Error: Path ${flag} contains special characters that could be unsafe.`);
+      if (!allowedPathChars.test(flag)) {
+        throw new Error(
+          `Error: Path "${flag}" contains invalid characters. Only alphanumeric characters, hyphens (-), underscores (_), dots (.), and forward slashes (/) are allowed.`
+        );
       }
     });
   });
-
-  // Legacy check for backward compatibility
-  const invalidFlags = [channel, channelType, chaincodeName, chaincodeDir, envConfigArray, fabloRootArray]
-    .filter(Boolean)
-    .reduce(
-      (acc: string[], arr: string[]) => [...acc, ...arr.filter((flag: string) => specialChars.test(flag))],
-      []
-    );
-  if (invalidFlags.length) {
-    throw new Error(`Error: Found invalid flags: ${invalidFlags.join(", ")}`);
-  }
 
   /*
     Check if chaincodeDir and envConfig are valid paths
