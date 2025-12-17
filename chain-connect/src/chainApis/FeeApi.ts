@@ -47,7 +47,7 @@ export class FeeApi extends GalaChainBaseApi {
 
   public FetchFeeAutorizations(dto: FetchFeeAuthorizationsResponse) {
     return this.connection.submit({
-      method: "DryRun",
+      method: "FetchFeeAutorizations",
       payload: dto,
       sign: false,
       url: this.chainCodeUrl,
