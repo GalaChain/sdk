@@ -30,6 +30,8 @@ describe("Init Command", () => {
 
     const mkdirMock = jest.spyOn(require("fs"), "mkdirSync").mockImplementation(() => {});
     const cpMock = jest.spyOn(require("fs"), "cpSync").mockImplementation(() => {});
+    jest.spyOn(require("fs"), "writeFileSync").mockImplementation(() => {});
+    jest.spyOn(require("fs"), "readFileSync").mockReturnValue('{"name": "test"}');
 
     jest.spyOn(require("child_process"), "execSync").mockResolvedValue(undefined);
 
