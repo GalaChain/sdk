@@ -27,7 +27,7 @@ export interface UpdateTokenClassParams {
   metadataAddress?: string;
   rarity?: string;
   authorities?: UserAlias[];
-  overwriteAuthorities?: boolean; // TODO not used
+  overwriteAuthorities?: boolean;
 }
 
 export async function updateTokenClass(
