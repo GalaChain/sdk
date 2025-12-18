@@ -1,4 +1,3 @@
-import { users } from "@gala-chain/test";
 import { plainToInstance } from "class-transformer";
 
 import { NftCollectionAuthorization } from "./NftCollectionAuthorization";
@@ -9,7 +8,7 @@ describe("NftCollectionAuthorization", () => {
     const collectionName = "TestCollection";
     const mockAuthorization = plainToInstance(NftCollectionAuthorization, {
       collection: collectionName,
-      authorizedUsers: [users.admin.identityKey, users.random().identityKey]
+      authorizedUsers: ["client|testuser", "client|testuser2"]
     });
 
     // When
@@ -38,9 +37,9 @@ describe("NftCollectionAuthorization", () => {
   it("should create authorization with multiple authorized users", () => {
     // Given
     const collectionName = "MultiUserCollection";
-    const user1 = users.admin.identityKey;
-    const user2 = users.random().identityKey;
-    const user3 = users.random().identityKey;
+    const user1 = "client|testuser";
+    const user2 = "client|testuser2";
+    const user3 = "client|testuser3";
 
     const mockAuthorization = plainToInstance(NftCollectionAuthorization, {
       collection: collectionName,

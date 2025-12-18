@@ -1,6 +1,6 @@
 import BigNumber from "bignumber.js";
 import { Type } from "class-transformer";
-import { ArrayNotEmpty, IsNotEmpty, IsNumber, IsOptional, IsString, ValidateNested } from "class-validator";
+import { IsNotEmpty, IsNumber, IsOptional, IsString, ValidateNested } from "class-validator";
 import { JSONSchema } from "class-validator-jsonschema";
 
 import { BigNumberIsPositive, BigNumberProperty, IsUserRef } from "../validators";

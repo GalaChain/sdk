@@ -32,5 +32,6 @@ export * from "./utils";
 export * from "./use";
 export * from "./transfer";
 export * from "./vesting";
+export * from "./nftCollections";
 
 verifyPackageConsistency();
