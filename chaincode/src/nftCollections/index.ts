@@ -12,26 +12,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-import { verifyPackageConsistency } from "./verifyPackageConsistency";
-
-export * from "./allowances";
-export * from "./balances";
-export * from "./burns";
-export * from "./contracts";
-export * from "./fees";
-export * from "./loans";
-export * from "./locks";
-export * from "./mint";
-export * from "./oracle";
-export * from "./sales";
-export * from "./services";
-export * from "./swaps";
-export * from "./token";
-export * from "./types";
-export * from "./utils";
-export * from "./use";
-export * from "./transfer";
-export * from "./vesting";
-export * from "./nftCollections";
-
-verifyPackageConsistency();
+export * from "./authorization";
+export * from "./createNftCollection";
+export * from "./fetchNftCollectionAuthorizationsWithPagination";
+export * from "./NftCollectionError";
