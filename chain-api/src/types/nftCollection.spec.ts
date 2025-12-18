@@ -12,10 +12,10 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-import { createValidDTO } from "@gala-chain/api";
 import BigNumber from "bignumber.js";
 import { plainToClass as plainToInstance } from "class-transformer";
 
+import { createValidDTO } from "../types";
 import {
   CreateNftCollectionDto,
   FetchNftCollectionAuthorizationDto,

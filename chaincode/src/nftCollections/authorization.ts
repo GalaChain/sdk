@@ -13,7 +13,10 @@
  * limitations under the License.
  */
 import { NftCollectionAuthorization, UserAlias } from "@gala-chain/api";
-import { GalaChainContext, getObjectByKey, objectExists, putChainObject, UserNotAuthorizedForCollectionError } from "@gala-chain/chaincode";
+
+import { GalaChainContext } from "../types";
+import { getObjectByKey, objectExists, putChainObject } from "../utils";
+import { UserNotAuthorizedForCollectionError } from "./NftCollectionError";
 
 export async function grantNftCollectionAuthorization(
   ctx: GalaChainContext,

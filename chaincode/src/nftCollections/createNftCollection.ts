@@ -21,13 +21,13 @@ import {
 
 import { resolveUserAlias } from "../services/index";
 import { createTokenClass } from "../token/index";
+import { GalaChainContext } from "../types";
 import {
   CollectionNameMismatchError,
   NftCollectionAuthorizationNotFoundError,
   UserNotAuthorizedForCollectionError
 } from "./NftCollectionError";
 import { fetchNftCollectionAuthorization } from "./authorization";
-import { GalaChainContext } from "../types";
 
 export async function createNftCollection(
   ctx: GalaChainContext,

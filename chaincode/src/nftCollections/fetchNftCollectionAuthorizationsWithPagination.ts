@@ -13,8 +13,10 @@
  * limitations under the License.
  */
 import { FetchNftCollectionAuthorizationsResponse, NftCollectionAuthorization } from "@gala-chain/api";
-import { GalaChainContext, getObjectsByPartialCompositeKeyWithPagination } from "@gala-chain/chaincode";
 import { plainToInstance } from "class-transformer";
+
+import { GalaChainContext } from "../types";
+import { getObjectsByPartialCompositeKeyWithPagination } from "../utils";
 
 export interface FetchNftCollectionAuthorizationsWithPaginationParams {
   bookmark?: string;
