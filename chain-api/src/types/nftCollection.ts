@@ -38,7 +38,7 @@ export class GrantNftCollectionAuthorizationDto extends SubmitCallDTO {
   })
   @IsString()
   @IsNotEmpty()
-  public authorizedUser: string;
+  public authorizedUser: UserRef;
 }
 
 @JSONSchema({
