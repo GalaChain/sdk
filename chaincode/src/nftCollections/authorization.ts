@@ -58,6 +58,11 @@ export async function revokeNftCollectionAuthorization(
   );
 
   const authorization = await getObjectByKey(ctx, NftCollectionAuthorization, authorizationKey);
+  
+  // only authorized users can revoke authorization
+  if (!authorization.authorizedUsers.includes(ctx.callingUser)) {
+    throw new UserNotAuthorizedForCollectionError(ctx.callingUser, dto.collection);
+  }
 
   const index = authorization.authorizedUsers.indexOf(authorizedUser);
   if (index === -1) {
