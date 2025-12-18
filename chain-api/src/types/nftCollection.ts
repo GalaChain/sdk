@@ -1,15 +1,11 @@
-import {
-  BigNumberIsPositive,
-  BigNumberProperty,
-  ChainCallDTO,
-  IsUserRef,
-  SubmitCallDTO,
-  UserRef
-} from "@gala-chain/api";
 import BigNumber from "bignumber.js";
 import { Type } from "class-transformer";
 import { ArrayNotEmpty, IsNotEmpty, IsNumber, IsOptional, IsString, ValidateNested } from "class-validator";
 import { JSONSchema } from "class-validator-jsonschema";
+
+import { BigNumberIsPositive, BigNumberProperty, IsUserRef } from "../validators";
+import { ChainCallDTO, SubmitCallDTO } from "./dtos";
+import { UserRef } from "./UserRef";
 
 @JSONSchema({
   description:
