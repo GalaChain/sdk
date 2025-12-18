@@ -1,0 +1,84 @@
+import { UserAlias, NftCollectionAuthorization } from "@gala-chain/api";
+import { GalaChainContext, getObjectByKey, objectExists, putChainObject } from "@gala-chain/chaincode";
+
+export async function grantNftCollectionAuthorization(
+  ctx: GalaChainContext,
+  collection: string,
+  authorizedUser: UserAlias
+): Promise<NftCollectionAuthorization> {
+  const authorizationKey = NftCollectionAuthorization.getCompositeKeyFromParts(
+    NftCollectionAuthorization.INDEX_KEY,
+    [collection]
+  );
+
+  let authorization: NftCollectionAuthorization;
+
+  const exists = await objectExists(ctx, authorizationKey);
+  if (exists) {
+    authorization = await getObjectByKey(ctx, NftCollectionAuthorization, authorizationKey);
+
+    // Add user if not already in the list
+    if (!authorization.authorizedUsers.includes(authorizedUser)) {
+      authorization.authorizedUsers.push(authorizedUser);
+      authorization.authorizedUsers.sort(); // Keep sorted for consistency
+    }
+  } else {
+    // Create new authorization object
+    authorization = new NftCollectionAuthorization();
+    authorization.collection = collection;
+    authorization.authorizedUsers = [authorizedUser];
+  }
+
+  await putChainObject(ctx, authorization);
+  return authorization;
+}
+
+export async function revokeNftCollectionAuthorization(
+  ctx: GalaChainContext,
+  collection: string,
+  authorizedUser: UserAlias
+): Promise<NftCollectionAuthorization> {
+  const authorizationKey = NftCollectionAuthorization.getCompositeKeyFromParts(
+    NftCollectionAuthorization.INDEX_KEY,
+    [collection]
+  );
+
+  const authorization = await getObjectByKey(ctx, NftCollectionAuthorization, authorizationKey);
+
+  const index = authorization.authorizedUsers.indexOf(authorizedUser);
+  if (index === -1) {
+    // User not in list, return authorization as-is (idempotent)
+    // Don't write if nothing changed
+    return authorization;
+  }
+
+  authorization.authorizedUsers.splice(index, 1);
+  await putChainObject(ctx, authorization);
+  return authorization;
+}
+
+export async function fetchNftCollectionAuthorization(
+  ctx: GalaChainContext,
+  collection: string
+): Promise<NftCollectionAuthorization> {
+  const authorizationKey = NftCollectionAuthorization.getCompositeKeyFromParts(
+    NftCollectionAuthorization.INDEX_KEY,
+    [collection]
+  );
+
+  return await getObjectByKey(ctx, NftCollectionAuthorization, authorizationKey);
+}
+
+export async function isUserAuthorizedForCollection(
+  ctx: GalaChainContext,
+  collection: string,
+  user: UserAlias
+): Promise<boolean> {
+  try {
+    const authorization = await fetchNftCollectionAuthorization(ctx, collection);
+    return authorization.authorizedUsers.includes(user);
+  } catch (e) {
+    // If authorization doesn't exist, user is not authorized
+    return false;
+  }
+}
