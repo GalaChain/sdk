@@ -13,7 +13,7 @@
  * limitations under the License.
  */
 import { NftCollectionAuthorization, UserAlias } from "@gala-chain/api";
-import { GalaChainContext, getObjectByKey, objectExists, putChainObject } from "@gala-chain/chaincode";
+import { GalaChainContext, getObjectByKey, objectExists, putChainObject, UserNotAuthorizedForCollectionError } from "@gala-chain/chaincode";
 
 export async function grantNftCollectionAuthorization(
   ctx: GalaChainContext,
@@ -61,7 +61,7 @@ export async function revokeNftCollectionAuthorization(
 
   // only authorized users can revoke authorization
   if (!authorization.authorizedUsers.includes(ctx.callingUser)) {
-    throw new UserNotAuthorizedForCollectionError(ctx.callingUser, dto.collection);
+    throw new UserNotAuthorizedForCollectionError(ctx.callingUser, collection);
   }
 
   const index = authorization.authorizedUsers.indexOf(authorizedUser);

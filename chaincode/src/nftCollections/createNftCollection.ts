@@ -27,6 +27,7 @@ import {
   UserNotAuthorizedForCollectionError
 } from "./NftCollectionError";
 import { fetchNftCollectionAuthorization } from "./authorization";
+import { GalaChainContext } from "../types";
 
 export async function createNftCollection(
   ctx: GalaChainContext,
