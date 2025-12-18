@@ -12,9 +12,15 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-import { CreateTokenClassDto, TokenClassKey, NftCollectionAuthorization, CreateNftCollectionDto } from "@gala-chain/api";
-import { GalaChainContext, createTokenClass, resolveUserAlias } from "@gala-chain/chaincode";
+import {
+  CreateNftCollectionDto,
+  CreateTokenClassDto,
+  NftCollectionAuthorization,
+  TokenClassKey
+} from "@gala-chain/api";
 
+import { resolveUserAlias } from "../services/index";
+import { createTokenClass } from "../token/index";
 import {
   CollectionNameMismatchError,
   NftCollectionAuthorizationNotFoundError,

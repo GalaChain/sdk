@@ -446,10 +446,7 @@ export async function nftCollectionAuthorizationFeeGate(
   return galaFeeGate(ctx, { feeCode: FeeGateCodes.NftCollectionAuthorization });
 }
 
-export async function createNftCollectionFeeGate(
-  ctx: GalaChainContext,
-  dto: CreateNftCollectionDto
-) {
+export async function createNftCollectionFeeGate(ctx: GalaChainContext, dto: CreateNftCollectionDto) {
   return galaFeeGate(ctx, { feeCode: FeeGateCodes.CreateNftCollection });
 }
 

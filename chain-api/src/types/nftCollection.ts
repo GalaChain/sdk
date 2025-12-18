@@ -18,8 +18,8 @@ import { IsNotEmpty, IsNumber, IsOptional, IsString, ValidateNested } from "clas
 import { JSONSchema } from "class-validator-jsonschema";
 
 import { BigNumberIsPositive, BigNumberProperty, IsUserRef } from "../validators";
-import { ChainCallDTO, SubmitCallDTO } from "./dtos";
 import { UserRef } from "./UserRef";
+import { ChainCallDTO, SubmitCallDTO } from "./dtos";
 
 @JSONSchema({
   description:
