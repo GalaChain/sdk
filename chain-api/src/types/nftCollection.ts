@@ -58,7 +58,7 @@ export class RevokeNftCollectionAuthorizationDto extends SubmitCallDTO {
   })
   @IsString()
   @IsNotEmpty()
-  public authorizedUser: string;
+  public authorizedUser: UserRef;
 }
 
 @JSONSchema({
