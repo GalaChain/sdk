@@ -12,26 +12,23 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-import { verifyPackageConsistency } from "./verifyPackageConsistency";
+import { ArrayMinSize, IsArray, IsNotEmpty, IsString } from "class-validator";
 
-export * from "./allowances";
-export * from "./balances";
-export * from "./burns";
-export * from "./contracts";
-export * from "./fees";
-export * from "./loans";
-export * from "./locks";
-export * from "./mint";
-export * from "./oracle";
-export * from "./sales";
-export * from "./services";
-export * from "./swaps";
-export * from "./token";
-export * from "./types";
-export * from "./utils";
-export * from "./use";
-export * from "./transfer";
-export * from "./vesting";
-export * from "./nftCollections";
+import { ChainKey } from "../utils";
+import { IsUserAlias } from "../validators";
+import { ChainObject } from "./ChainObject";
+import { UserAlias } from "./UserAlias";
 
-verifyPackageConsistency();
+export class NftCollectionAuthorization extends ChainObject {
+  public static INDEX_KEY = "GCNFTC";
+
+  @ChainKey({ position: 0 })
+  @IsString()
+  @IsNotEmpty()
+  public collection: string;
+
+  @IsUserAlias({ each: true })
+  @IsArray()
+  @ArrayMinSize(0)
+  public authorizedUsers: UserAlias[];
+}
