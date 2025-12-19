@@ -50,6 +50,6 @@ export default class Keygen extends BaseCommand<typeof Keygen> {
     await writeFile(`${file}.pub`, publicKey.toString());
 
     this.log(`private key... ${args.file}`);
-    await writeFile(file, privateKey.toString());
+    await writeFile(file, privateKey.toString(), { mode: 0o600 });
   }
 }
