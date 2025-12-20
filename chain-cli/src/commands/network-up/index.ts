@@ -22,7 +22,7 @@ import path from "path";
 import BaseCommand from "../../base-command";
 import { getCPPs } from "../../connection-profile";
 import { defaultFabloRoot } from "../../consts";
-import { execSync, execSyncStdio } from "../../exec-sync";
+import { execSyncStdio } from "../../exec-sync";
 import { saveApiConfig } from "../../galachain-utils";
 
 const defaultChaincodeDir = ".";
@@ -291,36 +291,57 @@ function updatedFabloConfigWithEntry(
 }
 
 function customValidation(flags: any): void {
-  const { channel, channelType, chaincodeName, chaincodeDir, envConfig } = flags;
+  const { channel, channelType, chaincodeName, chaincodeDir, envConfig, fabloRoot } = flags;
 
   /*
-    Check if the flags does not have special characters like &, |, ;, :, etc. Only -, _ and . and are allowed
-    Check the maximum length of the flag is 64 characters
+    SECURITY: Allowlist validation to prevent command injection.
+    Using allowlist (specifying what IS allowed) rather than blocklist (what's NOT allowed)
+    because blocklists are prone to bypass via overlooked dangerous characters.
   */
-  const specialChars = /[&\\#,+()$~%'":;*?<>@{}|]/;
-  const maxLength = 64;
 
-  // Transform envConfig to array to use the same validation
-  const envConfigArray = [envConfig];
+  // Allowlist for names: alphanumeric, hyphen, underscore, dot only
+  const allowedNameChars = /^[a-zA-Z0-9._-]+$/;
+  // Allowlist for paths: alphanumeric, hyphen, underscore, dot, forward slash only
+  const allowedPathChars = /^[a-zA-Z0-9._/-]+$/;
 
-  const invalidFlags = [channel, channelType, chaincodeName, chaincodeDir, envConfigArray].reduce(
-    (acc: string[], arr: string[]) => [
-      ...acc,
-      ...arr.filter((flag: string) => {
-        if (flag.length > maxLength) {
-          throw new Error(`Error: Flag ${flag} is too long. Maximum length is ${maxLength} characters.`);
-        }
-        if (specialChars.test(flag)) {
-          throw new Error(`Error: Flag ${flag} contains special characters. Only - and _ are allowed.`);
-        }
-        return false;
-      })
-    ],
-    []
-  );
-  if (invalidFlags.length) {
-    throw new Error(`Error: Found invalid flags: ${invalidFlags.join(", ")}`);
-  }
+  const maxLengthName = 64;
+  const maxLengthPath = 256;
+
+  // Transform envConfig and fabloRoot to arrays to use the same validation
+  const envConfigArray = [envConfig].filter(Boolean);
+  const fabloRootArray = [fabloRoot].filter(Boolean);
+
+  // Validate name-like flags (channel, channelType, chaincodeName)
+  // Only alphanumeric, hyphen, underscore, and dot allowed
+  const nameFlags = [channel, channelType, chaincodeName];
+  nameFlags.forEach((arr: string[]) => {
+    arr?.forEach((flag: string) => {
+      if (flag.length > maxLengthName) {
+        throw new Error(`Error: Flag "${flag}" is too long. Maximum length is ${maxLengthName} characters.`);
+      }
+      if (!allowedNameChars.test(flag)) {
+        throw new Error(
+          `Error: Flag "${flag}" contains invalid characters. Only alphanumeric characters, hyphens (-), underscores (_), and dots (.) are allowed.`
+        );
+      }
+    });
+  });
+
+  // Validate path-like flags (chaincodeDir, envConfig, fabloRoot)
+  // Only alphanumeric, hyphen, underscore, dot, and forward slash allowed
+  const pathFlags = [chaincodeDir, envConfigArray, fabloRootArray];
+  pathFlags.forEach((arr: string[]) => {
+    arr?.forEach((flag: string) => {
+      if (flag.length > maxLengthPath) {
+        throw new Error(`Error: Path "${flag}" is too long. Maximum length is ${maxLengthPath} characters.`);
+      }
+      if (!allowedPathChars.test(flag)) {
+        throw new Error(
+          `Error: Path "${flag}" contains invalid characters. Only alphanumeric characters, hyphens (-), underscores (_), dots (.), and forward slashes (/) are allowed.`
+        );
+      }
+    });
+  });
 
   /*
     Check if chaincodeDir and envConfig are valid paths
@@ -401,7 +422,13 @@ function reduce(args: any): SingleArg[] {
 function copyNetworkScriptsTo(targetPath: string): void {
   const sourceScriptsDir = path.resolve(require.resolve("."), "../../../network");
   try {
-    execSync(`mkdir -p "${targetPath}" && cd "${targetPath}" && cp -R "${sourceScriptsDir}"/* ./ && ls -lh`);
+    // Using Node.js fs instead of shell commands (safe from command injection)
+    fs.mkdirSync(targetPath, { recursive: true });
+    fs.cpSync(sourceScriptsDir, targetPath, { recursive: true });
+
+    // List files for informational output
+    const files = fs.readdirSync(targetPath);
+    console.log(`Copied network scripts to ${targetPath}:`, files.join(", "));
   } catch (error) {
     console.error("Failed to copy network scripts:", error);
     throw error;
@@ -429,7 +456,7 @@ function saveConnectionProfiles(
 
   // Save connection profiles for ops-api and e2e tests
   const cppLocalDir = path.resolve(fabloRoot, "connection-profiles");
-  execSync(`mkdir -p "${cppLocalDir}"`);
+  fs.mkdirSync(cppLocalDir, { recursive: true });
 
   const cppPath = (org: string) => path.resolve(cppLocalDir, `cpp-${org}.json`);
   writeFileSync(cppPath("curator"), JSON.stringify(cppsLocal.curator, undefined, 2));
@@ -437,7 +464,7 @@ function saveConnectionProfiles(
   writeFileSync(cppPath("users"), JSON.stringify(cppsLocal.users, undefined, 2));
 
   const cppDockerDir = path.resolve(fabloRoot, "connection-profiles-docker");
-  execSync(`mkdir -p "${cppDockerDir}"`);
+  fs.mkdirSync(cppDockerDir, { recursive: true });
 
   const cppDockerPath = (org: string) => path.resolve(cppDockerDir, `cpp-${org}.json`);
   writeFileSync(cppDockerPath("curator"), JSON.stringify(cppsDocker.curator, undefined, 2));
