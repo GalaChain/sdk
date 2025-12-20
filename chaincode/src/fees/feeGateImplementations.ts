@@ -20,6 +20,7 @@ import {
   ChainError,
   ChainObject,
   ChainsWithBridgeFeeSupport,
+  CreateNftCollectionDto,
   ErrorCode,
   FeeAccelerationRateType,
   FeeCodeDefinition,
@@ -27,6 +28,7 @@ import {
   FillTokenSwapDto,
   FulfillMintAllowanceDto,
   FulfillMintDto,
+  GrantNftCollectionAuthorizationDto,
   HighThroughputGrantAllowanceDto,
   HighThroughputMintTokenDto,
   MintTokenDto,
@@ -435,6 +437,17 @@ export async function galaSwapBatchFillFeeGate(ctx: GalaChainContext, dto: Batch
   for (let i = 0; i < dto.swapDtos.length; i++) {
     await galaFeeGate(ctx, { feeCode: FeeGateCodes.SwapTokenFill });
   }
+}
+
+export async function nftCollectionAuthorizationFeeGate(
+  ctx: GalaChainContext,
+  dto: GrantNftCollectionAuthorizationDto
+) {
+  return galaFeeGate(ctx, { feeCode: FeeGateCodes.NftCollectionAuthorization });
+}
+
+export async function createNftCollectionFeeGate(ctx: GalaChainContext, dto: CreateNftCollectionDto) {
+  return galaFeeGate(ctx, { feeCode: FeeGateCodes.CreateNftCollection });
 }
 
 export async function simpleFeeGate(ctx: GalaChainContext, dto: ChainCallDTO) {
