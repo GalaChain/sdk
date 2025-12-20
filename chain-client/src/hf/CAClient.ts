@@ -139,25 +139,28 @@ async function enrollUser(
 
   pendingEnrollments[userId] = true;
 
-  // Enroll the user, and import the new identity into the wallet.
-  const enrollment = await caClient.enroll({
-    enrollmentID: userId,
-    enrollmentSecret: userSecret
-  });
+  try {
+    // Enroll the user, and import the new identity into the wallet.
+    const enrollment = await caClient.enroll({
+      enrollmentID: userId,
+      enrollmentSecret: userSecret
+    });
 
-  const x509Identity = {
-    credentials: {
-      certificate: enrollment.certificate,
-      privateKey: enrollment.key.toBytes()
-    },
-    mspId: orgMspId,
-    type: "X.509"
-  };
-  await wallet.put(userId, x509Identity);
+    const x509Identity = {
+      credentials: {
+        certificate: enrollment.certificate,
+        privateKey: enrollment.key.toBytes()
+      },
+      mspId: orgMspId,
+      type: "X.509"
+    };
+    await wallet.put(userId, x509Identity);
 
-  delete pendingEnrollments[userId];
-
-  return x509Identity;
+    return x509Identity;
+  } finally {
+    // Always clear the pending flag, even on error, to prevent infinite retry loops
+    delete pendingEnrollments[userId];
+  }
 }
 
 async function registerUser(
