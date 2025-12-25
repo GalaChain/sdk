@@ -15,7 +15,7 @@
     "test:update": "npm run build && npm run fix && npm run test -- -u",
     "set-version": "node unifyVersions.js",
     "licenses": "license-checker --csv --customPath ./licenses/format.json > ./licenses/licenses.csv",
-    "training-files": "ts-node ./tools/scripts/training-files.ts",
+    "training-files": "ts-node ./tools/scripts/training-files.ts && ts-node ./tools/scripts/questions-to-jsonl.ts",
     "typedoc-chain-api": "typedoc --tsconfig ./tsconfig.docs.json --hideGenerator --plugin typedoc-plugin-markdown --githubPages false --out ./docs/chain-api-docs ./chain-api/src && rm ./docs/chain-api-docs/README.md",
     "typedoc-chain-client": "typedoc --tsconfig ./tsconfig.docs.json --hideGenerator --plugin typedoc-plugin-markdown --githubPages false --out ./docs/chain-client-docs ./chain-client/src && rm ./docs/chain-client-docs/README.md",
     "typedoc-chaincode": "typedoc --tsconfig ./tsconfig.docs.json --hideGenerator --plugin typedoc-plugin-markdown --githubPages false --out ./docs/chaincode-docs ./chaincode/src && rm ./docs/chaincode-docs/README.md",
