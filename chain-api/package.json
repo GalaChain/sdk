@@ -1,6 +1,6 @@
 {
   "name": "@gala-chain/api",
-  "version": "2.6.2",
+  "version": "2.6.3",
   "description": "Common types, DTOs (Data Transfer Objects), APIs, signatures, and utils for GalaChain.",
   "license": "Apache-2.0",
   "dependencies": {
@@ -17,22 +17,7 @@
     "reflect-metadata": "^0.1.13",
     "tslib": "^2.6.2"
   },
-  "peerDependencies": {
-    "@ton/crypto": "^3.2.0",
-    "@ton/ton": "^14.0.0"
-  },
-  "peerDependenciesMeta": {
-    "@ton/crypto": {
-      "optional": true
-    },
-    "@ton/ton": {
-      "optional": true
-    }
-  },
-  "devDependencies": {
-    "@ton/crypto": "^3.2.0",
-    "@ton/ton": "^14.0.0"
-  },
+  "devDependencies": {},
   "type": "commonjs",
   "main": "./lib/src/index.js",
   "typings": "./lib/src/index.d.ts",

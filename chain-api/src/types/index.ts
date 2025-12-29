@@ -60,6 +60,8 @@ export * from "./lock";
 export * from "./use";
 export * from "./burn";
 export * from "./mint";
+export * from "./nftCollection";
+export * from "./NftCollectionAuthorization";
 export * from "./oracle";
 export * from "./OracleBridgeFeeAssertion";
 export * from "./OracleDefinition";

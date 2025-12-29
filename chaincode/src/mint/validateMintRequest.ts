@@ -27,7 +27,7 @@ import {
 } from "@gala-chain/api";
 import BigNumber from "bignumber.js";
 
-import { checkAllowances } from "../allowances";
+import { AllowanceUsersMismatchError, checkAllowances } from "../allowances";
 import { GalaChainContext } from "../types";
 import { getObjectByKey, getObjectsByPartialCompositeKey } from "../utils";
 
@@ -76,6 +76,11 @@ export async function validateMintRequest(
         applicableAllowanceKey.created.toString()
       ])
     );
+
+    // Validate that the allowance is granted to the caller
+    if (allowance.grantedTo !== callingOnBehalf) {
+      throw new AllowanceUsersMismatchError(allowance, allowance.grantedBy, callingOnBehalf);
+    }
 
     results = [allowance];
   } else {

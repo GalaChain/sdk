@@ -12,7 +12,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-import { AllowanceType, TokenAllowance, TokenInstanceKey } from "@gala-chain/api";
+import { AllowanceType, TokenAllowance, TokenInstance, TokenInstanceKey } from "@gala-chain/api";
 import { BigNumber } from "bignumber.js";
 
 import { FetchBalancesParams, fetchBalances } from "../balances";
@@ -20,14 +20,10 @@ import { resolveUserAlias } from "../services";
 import { GalaChainContext } from "../types";
 import { DeleteOneAllowanceParams, deleteOneAllowance } from "./deleteAllowances";
 
-function isAllowanceSpent(allowance: TokenAllowance): boolean {
-  if (allowance.usesSpent !== undefined && allowance.quantitySpent !== undefined) {
-    return (
-      allowance.usesSpent.isGreaterThanOrEqualTo(allowance.uses) ||
-      allowance.quantitySpent.isGreaterThanOrEqualTo(allowance.quantity)
-    );
-  }
-  return false;
+export function isAllowanceSpent(allowance: TokenAllowance): boolean {
+  const usesExhausted = allowance.usesSpent?.isGreaterThanOrEqualTo(allowance.uses) ?? false;
+  const quantityExhausted = allowance.quantitySpent?.isGreaterThanOrEqualTo(allowance.quantity) ?? false;
+  return usesExhausted || quantityExhausted;
 }
 
 export function isAllowanceExpired(ctx: GalaChainContext, allowance: TokenAllowance): boolean {
@@ -46,7 +42,13 @@ async function doesGrantorHaveToken(ctx: GalaChainContext, allowance: TokenAllow
     additionalKey: allowance.additionalKey
   };
   const balances = await fetchBalances(ctx, balancesData);
-  return balances.length > 0;
+
+  if (TokenInstance.FUNGIBLE_TOKEN_INSTANCE.isEqualTo(allowance.instance)) {
+    return balances.length > 0;
+  }
+
+  const instances = balances.flatMap((b) => b.getNftInstanceIds());
+  return instances.some((id) => id.isEqualTo(allowance.instance));
 }
 
 async function isAllowanceInvalid(ctx: GalaChainContext, allowance: TokenAllowance): Promise<boolean> {
