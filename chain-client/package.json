@@ -1,6 +1,6 @@
 {
   "name": "@gala-chain/client",
-  "version": "2.6.3",
+  "version": "3.0.0",
   "description": "GalaChain client library",
   "license": "Apache-2.0",
   "scripts": {
@@ -21,7 +21,7 @@
     "lib"
   ],
   "dependencies": {
-    "@gala-chain/api": "2.6.3",
+    "@gala-chain/api": "3.0.0",
     "axios": "^1.6.0",
     "jsonschema": "^1.4.1",
     "tslib": "^2.6.2"
