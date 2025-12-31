@@ -17,7 +17,7 @@ import { instanceToPlain, plainToInstance } from "class-transformer";
 import { ArrayMinSize, ArrayNotEmpty, IsString } from "class-validator";
 import { ec as EC } from "elliptic";
 
-import { getValidationErrorMessages, signatures } from "../utils";
+import { getValidationErrorMessages } from "../utils";
 import { BigNumberArrayProperty, BigNumberProperty } from "../validators";
 import { asValidUserRef } from "./UserRef";
 import { ChainCallDTO, ClassConstructor } from "./dtos";
