@@ -40,7 +40,7 @@
   },
   "devDependencies": {
     "@types/elliptic": "*",
-    "@types/node": "18.11.9",
+    "@types/node": "^24.0.0",
     "@types/setimmediate": "^1.0.2",
     "git-branch-is": "^4.0.0",
     "madge": "^5.0.1",
