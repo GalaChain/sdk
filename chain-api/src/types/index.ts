@@ -57,7 +57,6 @@ export * from "./TokenBurnCounter";
 export * from "./BurnTokenQuantity";
 export * from "./LockTokenQuantity";
 export * from "./lock";
-export * from "./use";
 export * from "./burn";
 export * from "./mint";
 export * from "./nftCollection";

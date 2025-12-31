@@ -29,7 +29,6 @@ export * from "./swaps";
 export * from "./token";
 export * from "./types";
 export * from "./utils";
-export * from "./use";
 export * from "./transfer";
 export * from "./vesting";
 export * from "./nftCollections";
