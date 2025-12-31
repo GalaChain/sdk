@@ -13,7 +13,6 @@
  * limitations under the License.
  */
 import {
-  AllowanceKey,
   AuthorizedOnBehalf,
   FulfillMintDto,
   MintRequestDto,
@@ -37,7 +36,6 @@ export interface RequestMintParams {
   tokenClass: TokenClassKeyProperties;
   owner: UserAlias | undefined;
   quantity: BigNumber;
-  allowanceKey: AllowanceKey | undefined;
   authorizedOnBehalf: AuthorizedOnBehalf | undefined;
 }
 
@@ -54,7 +52,6 @@ export async function requestMint(ctx: GalaChainContext, params: RequestMintPara
   mintRequestDto.totalKnownMintsCount = mintRequest.totalKnownMintsCount;
   mintRequestDto.owner = mintRequest.owner;
   mintRequestDto.id = mintRequest.requestId();
-  mintRequestDto.allowanceKey = params.allowanceKey;
 
   const resDto = new FulfillMintDto();
   resDto.requests = [mintRequestDto];
@@ -85,8 +82,7 @@ export async function requestMintBatch(
       tokenClass: ops[i].tokenClassKey,
       quantity: ops[i].quantity,
       owner: ops[i].owner,
-      authorizedOnBehalf: ops[i].authorizedOnBehalf,
-      allowanceKey: undefined
+      authorizedOnBehalf: ops[i].authorizedOnBehalf
     };
 
     try {
@@ -121,7 +117,6 @@ export async function submitMintRequest(
   const owner = params.owner ?? callingUser;
   const tokenClassKey = params.tokenClass;
   const quantity = params.quantity;
-  const allowanceKey = params.allowanceKey;
 
   const tokenClass = await getObjectByKey(
     ctx,
@@ -139,8 +134,7 @@ export async function submitMintRequest(
     tokenClassKey,
     callingUser,
     owner,
-    quantity,
-    allowanceKey
+    quantity
   });
 
   return mintRequest;
@@ -151,13 +145,12 @@ export interface WriteMintRequestParams {
   callingUser: UserAlias;
   owner: UserAlias;
   quantity: BigNumber;
-  allowanceKey?: AllowanceKey | undefined;
   knownTotalSupply?: BigNumber | undefined;
 }
 
 export async function writeMintRequest(
   ctx: GalaChainContext,
-  { tokenClassKey, callingUser, owner, quantity, allowanceKey, knownTotalSupply }: WriteMintRequestParams
+  { tokenClassKey, callingUser, owner, quantity, knownTotalSupply }: WriteMintRequestParams
 ): Promise<TokenMintRequest> {
   // for batch operations, support a way to pass in the knownTotalSupply to avoid repeated range queries
   // knownTotalSupply should never be exposed in a dto,
@@ -190,7 +183,6 @@ export async function writeMintRequest(
   mintRequest.id = mintRequest.requestId();
   mintRequest.created = ctx.txUnixTime;
   mintRequest.epoch = epochKey;
-  mintRequest.allowanceKey = allowanceKey;
 
   await putRangedChainObject(ctx, mintRequest).catch((e) => {
     throw new Error(`MintRequest putState failure: ${e.message}`);

@@ -81,7 +81,6 @@ export async function acceptLoanOffer(
     lockAuthority: registrarAlias,
     owner: ownerAlias,
     quantity: new BigNumber("1"),
-    allowancesToUse: [],
     expires: 0,
     name: undefined,
     vestingPeriodStart: undefined,

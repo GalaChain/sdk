@@ -33,7 +33,7 @@ import { currency, fixture, nft, users, writesMap } from "@gala-chain/test";
 import BigNumber from "bignumber.js";
 
 import GalaChainTokenContract from "../__test__/GalaChainTokenContract";
-import { AllowanceUsersMismatchError, TotalSupplyExceededError } from "../allowances/AllowanceError";
+import { TotalSupplyExceededError } from "../allowances/AllowanceError";
 import { InvalidDecimalError } from "../token";
 import { inverseEpoch, inverseTime } from "../utils";
 import { InsufficientMintAllowanceError } from "./MintError";
@@ -296,17 +296,6 @@ describe("MintToken", () => {
     const nftClass = nft.tokenClass();
     const mintQty = new BigNumber("2");
     const tokenAllowance = nft.tokenMintAllowance();
-    const allowanceKey = await createValidDTO(AllowanceKey, {
-      grantedTo: tokenAllowance.grantedTo,
-      collection: tokenAllowance.collection,
-      category: tokenAllowance.category,
-      type: tokenAllowance.type,
-      additionalKey: tokenAllowance.additionalKey,
-      instance: tokenAllowance.instance,
-      allowanceType: tokenAllowance.allowanceType,
-      grantedBy: tokenAllowance.grantedBy,
-      created: tokenAllowance.created
-    });
 
     const { ctx, contract, getWrites } = fixture(GalaChainTokenContract)
       .registeredUsers(users.admin)
@@ -316,8 +305,7 @@ describe("MintToken", () => {
     const dto = await createValidSubmitDTO(MintTokenDto, {
       tokenClass: nft.tokenClassKey(),
       owner: users.testUser1.identityKey,
-      quantity: mintQty,
-      allowanceKey: allowanceKey
+      quantity: mintQty
     }).signed(users.admin.privateKey);
 
     const nft1 = await createValidChainObject(TokenInstance, {
@@ -373,7 +361,6 @@ describe("MintToken", () => {
       type,
       additionalKey,
       timeKey,
-      allowanceKey,
       totalKnownMintsCount: new BigNumber("0"),
       requestor: users.admin.identityKey,
       owner: users.testUser1.identityKey,
@@ -406,8 +393,8 @@ describe("MintToken", () => {
     );
   });
 
-  test("rejects mint with allowance key where grantedTo does not match caller", async () => {
-    // Given: An allowance granted to testUser1, but attacker tries to use it
+  test("rejects mint when caller has no allowances (allowance granted to different user)", async () => {
+    // Given: An allowance granted to testUser1, but attacker tries to mint
     const currencyInstance = currency.tokenInstance();
     const currencyClass = currency.tokenClass();
     const tokenAllowance = currency.tokenAllowance();
@@ -418,34 +405,26 @@ describe("MintToken", () => {
       .registeredUsers(users.testUser1, users.attacker)
       .savedState(currencyClass, currencyInstance, tokenAllowance);
 
-    // Create allowance key pointing to testUser1's allowance
-    const allowanceKey = await createValidDTO(AllowanceKey, {
-      grantedTo: tokenAllowance.grantedTo, // testUser1
-      collection: tokenAllowance.collection,
-      category: tokenAllowance.category,
-      type: tokenAllowance.type,
-      additionalKey: tokenAllowance.additionalKey,
-      instance: tokenAllowance.instance,
-      allowanceType: tokenAllowance.allowanceType,
-      grantedBy: tokenAllowance.grantedBy,
-      created: tokenAllowance.created
-    });
-
-    // Attacker tries to use testUser1's allowance
+    // Attacker tries to mint (system will automatically find allowances for attacker)
     const dto = await createValidSubmitDTO(MintTokenDto, {
       tokenClass: currency.tokenClassKey(),
       owner: users.attacker.identityKey,
-      quantity: new BigNumber("1000000000000"),
-      allowanceKey
+      quantity: new BigNumber("1000000000000")
     }).signed(users.attacker.privateKey);
 
     // When
     const response = await contract.MintToken(ctx, dto);
 
-    // Then: Should reject with AllowanceUsersMismatchError
+    // Then: Should reject with InsufficientMintAllowanceError since attacker has no allowances
     expect(response).toEqual(
       GalaChainResponse.Error(
-        new AllowanceUsersMismatchError(tokenAllowance, tokenAllowance.grantedBy, users.attacker.identityKey)
+        new InsufficientMintAllowanceError(
+          users.attacker.identityKey,
+          new BigNumber("0"),
+          new BigNumber("1000000000000"),
+          currency.tokenInstanceKey(),
+          users.attacker.identityKey
+        )
       )
     );
     expect(getWrites()).toEqual({});

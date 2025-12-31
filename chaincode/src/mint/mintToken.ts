@@ -13,7 +13,6 @@
  * limitations under the License.
  */
 import {
-  AllowanceKey,
   AllowanceType,
   AuthorizedOnBehalf,
   MintTokenDto,
@@ -26,16 +25,10 @@ import {
   TokenMintFulfillment,
   UserAlias
 } from "@gala-chain/api";
-import { ChainCallDTO, ChainObject } from "@gala-chain/api";
+import { ChainCallDTO } from "@gala-chain/api";
 import { BigNumber } from "bignumber.js";
 
-import {
-  AllowanceUsersMismatchError,
-  checkAllowances,
-  ensureQuantityCanBeMinted,
-  fetchAllowances,
-  useAllowances
-} from "../allowances";
+import { checkAllowances, ensureQuantityCanBeMinted, fetchAllowances, useAllowances } from "../allowances";
 import { fetchOrCreateBalance } from "../balances";
 import { InvalidDecimalError } from "../token/TokenError";
 import { GalaChainContext } from "../types/GalaChainContext";
@@ -48,22 +41,12 @@ export interface MintTokenParams {
   owner: UserAlias;
   quantity: BigNumber;
   authorizedOnBehalf: AuthorizedOnBehalf | undefined;
-  applicableAllowanceKey?: AllowanceKey | undefined;
-  applicableAllowances?: TokenAllowance[] | undefined;
   knownTotalSupply?: BigNumber | undefined;
 }
 
 export async function mintToken(
   ctx: GalaChainContext,
-  {
-    tokenClassKey,
-    owner,
-    quantity,
-    authorizedOnBehalf,
-    applicableAllowanceKey,
-    applicableAllowances,
-    knownTotalSupply
-  }: MintTokenParams
+  { tokenClassKey, owner, quantity, authorizedOnBehalf, knownTotalSupply }: MintTokenParams
 ): Promise<Array<TokenInstanceKey>> {
   const callingOnBehalf = authorizedOnBehalf?.callingOnBehalf ?? ctx.callingUser;
 
@@ -80,53 +63,18 @@ export async function mintToken(
   }
 
   // dto is valid, do chain code specific validation
-  let applicableAllowanceResponse: TokenAllowance[] = [];
+  // Get allowances
+  const fetchAllowancesData = {
+    grantedTo: callingOnBehalf,
+    collection: tokenClassKey.collection,
+    category: tokenClassKey.category,
+    type: tokenClassKey.type,
+    additionalKey: tokenClassKey.additionalKey,
+    instance: TokenInstance.FUNGIBLE_TOKEN_INSTANCE.toString(),
+    allowanceType: AllowanceType.Mint
+  };
 
-  if (applicableAllowanceKey) {
-    const allowance: TokenAllowance = await getObjectByKey(
-      ctx,
-      TokenAllowance,
-      ChainObject.getCompositeKeyFromParts(TokenAllowance.INDEX_KEY, [
-        applicableAllowanceKey.grantedTo,
-        applicableAllowanceKey.collection,
-        applicableAllowanceKey.category,
-        applicableAllowanceKey.type,
-        applicableAllowanceKey.additionalKey,
-        applicableAllowanceKey.instance.toString(),
-        AllowanceType.Mint.toString(),
-        applicableAllowanceKey.grantedBy,
-        applicableAllowanceKey.created.toString()
-      ])
-    );
-
-    // Validate that the allowance is granted to the caller
-    if (allowance.grantedTo !== callingOnBehalf) {
-      throw new AllowanceUsersMismatchError(allowance, allowance.grantedBy, callingOnBehalf);
-    }
-
-    applicableAllowanceResponse = [allowance];
-  } else if (Array.isArray(applicableAllowances) && applicableAllowances.length > 0) {
-    // Validate that all allowances are granted to the caller
-    for (const allowance of applicableAllowances) {
-      if (allowance.grantedTo !== callingOnBehalf) {
-        throw new AllowanceUsersMismatchError(allowance, allowance.grantedBy, callingOnBehalf);
-      }
-    }
-    applicableAllowanceResponse = applicableAllowances;
-  } else {
-    // Get allowances
-    const fetchAllowancesData = {
-      grantedTo: callingOnBehalf,
-      collection: tokenClassKey.collection,
-      category: tokenClassKey.category,
-      type: tokenClassKey.type,
-      additionalKey: tokenClassKey.additionalKey,
-      instance: TokenInstance.FUNGIBLE_TOKEN_INSTANCE.toString(),
-      allowanceType: AllowanceType.Mint
-    };
-
-    applicableAllowanceResponse = await fetchAllowances(ctx, fetchAllowancesData);
-  }
+  let applicableAllowanceResponse: TokenAllowance[] = await fetchAllowances(ctx, fetchAllowancesData);
 
   // Filter allowances to only include those granted by current authorities
   applicableAllowanceResponse = applicableAllowanceResponse.filter((allowance) =>
@@ -233,7 +181,6 @@ export async function mintToken(
       callingUser: callingOnBehalf,
       owner,
       quantity,
-      allowanceKey: applicableAllowanceKey,
       knownTotalSupply: knownTotalSupply
     });
 
@@ -256,7 +203,6 @@ export async function mintToken(
       callingUser: callingOnBehalf,
       owner,
       quantity,
-      allowanceKey: applicableAllowanceKey,
       knownTotalSupply
     });
 
@@ -269,20 +215,18 @@ export interface UpdateTokenSupplyParams {
   callingUser: UserAlias;
   owner: UserAlias;
   quantity: BigNumber;
-  allowanceKey?: AllowanceKey | undefined;
   knownTotalSupply?: BigNumber | undefined;
 }
 // for backwards-compatibility with high throughput total supply data structures
 export async function updateTotalSupply(
   ctx: GalaChainContext,
-  { tokenClassKey, callingUser, owner, quantity, allowanceKey, knownTotalSupply }: UpdateTokenSupplyParams
+  { tokenClassKey, callingUser, owner, quantity, knownTotalSupply }: UpdateTokenSupplyParams
 ): Promise<void> {
   const mintRequest = await writeMintRequest(ctx, {
     tokenClassKey,
     callingUser,
     owner,
     quantity,
-    allowanceKey,
     knownTotalSupply
   });
 

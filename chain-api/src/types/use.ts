@@ -14,14 +14,7 @@
  */
 import BigNumber from "bignumber.js";
 import { Type } from "class-transformer";
-import {
-  ArrayNotEmpty,
-  ArrayUnique,
-  IsNotEmpty,
-  IsOptional,
-  IsString,
-  ValidateNested
-} from "class-validator";
+import { IsNotEmpty, IsOptional, ValidateNested } from "class-validator";
 import { JSONSchema } from "class-validator-jsonschema";
 
 import { BigNumberIsNotNegative, BigNumberProperty, IsUserRef } from "../validators";
@@ -76,13 +69,4 @@ export class UseTokenDto extends SubmitCallDTO {
   @BigNumberIsNotNegative()
   @BigNumberProperty()
   quantity: BigNumber;
-
-  @JSONSchema({
-    description: "Allowance ids to be used (optional)."
-  })
-  @IsString({ each: true })
-  @IsOptional()
-  @ArrayNotEmpty()
-  @ArrayUnique()
-  useAllowances?: Array<string>;
 }

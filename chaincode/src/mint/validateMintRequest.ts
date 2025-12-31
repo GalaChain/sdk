@@ -13,7 +13,6 @@
  * limitations under the License.
  */
 import {
-  AllowanceKey,
   AllowanceType,
   AuthorizedOnBehalf,
   ChainCallDTO,
@@ -35,7 +34,6 @@ export interface ValidateMintRequestParams {
   tokenClass: TokenClassKeyProperties;
   owner: UserAlias | undefined;
   quantity: BigNumber;
-  allowanceKey: AllowanceKey | undefined;
   authorizedOnBehalf: AuthorizedOnBehalf | undefined;
 }
 
@@ -57,52 +55,24 @@ export async function validateMintRequest(
   }
 
   // dto is valid, do chain code specific validation
-  let results: TokenAllowance[] = [];
+  const queryParams = [
+    callingOnBehalf, // grantedTo
+    tokenClassKey.collection,
+    tokenClassKey.category,
+    tokenClassKey.type,
+    tokenClassKey.additionalKey,
+    TokenInstance.FUNGIBLE_TOKEN_INSTANCE.toString(),
+    AllowanceType.Mint.toString()
+  ];
 
-  if (params.allowanceKey) {
-    const applicableAllowanceKey = params.allowanceKey;
-    const allowance: TokenAllowance = await getObjectByKey(
-      ctx,
-      TokenAllowance,
-      ChainObject.getCompositeKeyFromParts(TokenAllowance.INDEX_KEY, [
-        applicableAllowanceKey.grantedTo,
-        applicableAllowanceKey.collection,
-        applicableAllowanceKey.category,
-        applicableAllowanceKey.type,
-        applicableAllowanceKey.additionalKey,
-        applicableAllowanceKey.instance.toString(),
-        AllowanceType.Mint.toString(),
-        applicableAllowanceKey.grantedBy,
-        applicableAllowanceKey.created.toString()
-      ])
-    );
+  const results: TokenAllowance[] = await getObjectsByPartialCompositeKey(
+    ctx,
+    TokenAllowance.INDEX_KEY,
+    queryParams,
+    TokenAllowance
+  );
 
-    // Validate that the allowance is granted to the caller
-    if (allowance.grantedTo !== callingOnBehalf) {
-      throw new AllowanceUsersMismatchError(allowance, allowance.grantedBy, callingOnBehalf);
-    }
-
-    results = [allowance];
-  } else {
-    const queryParams = [
-      callingOnBehalf, // grantedTo
-      tokenClassKey.collection,
-      tokenClassKey.category,
-      tokenClassKey.type,
-      tokenClassKey.additionalKey,
-      TokenInstance.FUNGIBLE_TOKEN_INSTANCE.toString(),
-      AllowanceType.Mint.toString()
-    ];
-
-    results = await getObjectsByPartialCompositeKey(
-      ctx,
-      TokenAllowance.INDEX_KEY,
-      queryParams,
-      TokenAllowance
-    );
-
-    results.sort((a: TokenAllowance, b: TokenAllowance): number => (a.created < b.created ? -1 : 1));
-  }
+  results.sort((a: TokenAllowance, b: TokenAllowance): number => (a.created < b.created ? -1 : 1));
 
   // Filter allowances to only include those granted by current authorities
   const applicableAllowances: TokenAllowance[] = results.filter((allowance) =>

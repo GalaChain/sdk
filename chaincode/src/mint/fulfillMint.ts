@@ -302,7 +302,6 @@ export async function fulfillMintRequest(
           tokenClass: plainToInstance(TokenClassKey, { collection, category, type, additionalKey }),
           owner: req.owner,
           quantity: req.quantity,
-          allowanceKey: req.allowanceKey,
           authorizedOnBehalf: undefined
         };
 

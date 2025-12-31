@@ -79,7 +79,6 @@ export async function splitFeeImmediatelyWithBurnAndTransfer(
       to: transfer.transferToUser,
       tokenInstanceKey: galaCurrencyKey,
       quantity: transfer.transferQuantity,
-      allowancesToUse: [],
       authorizedOnBehalf: undefined
     }).catch((e) => {
       throw new PaymentRequiredError(

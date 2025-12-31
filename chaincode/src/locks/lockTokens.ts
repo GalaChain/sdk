@@ -42,7 +42,6 @@ export interface LockTokenParams {
   lockAuthority: UserAlias | undefined;
   tokenInstanceKey: TokenInstanceKey;
   quantity: BigNumber;
-  allowancesToUse: string[];
   expires: number;
   name: string | undefined;
   verifyAuthorizedOnBehalf: (c: TokenClassKey) => Promise<AuthorizedOnBehalf | undefined>;
@@ -56,16 +55,15 @@ export async function lockToken(
     lockAuthority,
     tokenInstanceKey,
     quantity,
-    allowancesToUse,
     name,
     expires,
     vestingPeriodStart,
     verifyAuthorizedOnBehalf
   }: LockTokenParams
 ): Promise<TokenBalance> {
-  const msg =
-    `LockToken ${tokenInstanceKey.toStringKey()} of ${optionalOwner ?? "?"}, ` +
-    `lockAuthority: ${lockAuthority}, allowancesToUse: ${allowancesToUse.length}`;
+  const msg = `LockToken ${tokenInstanceKey.toStringKey()} of ${
+    optionalOwner ?? "?"
+  }, lockAuthority: ${lockAuthority}`;
   ctx.logger.info(msg);
 
   if (!tokenInstanceKey.isFungible() && !quantity.isEqualTo(1)) {
@@ -113,8 +111,7 @@ export async function lockToken(
       quantity,
       tokenInstance,
       callingOnBehalf,
-      AllowanceType.Lock,
-      allowancesToUse
+      AllowanceType.Lock
     );
   }
 
@@ -150,7 +147,6 @@ export interface TokenQuantityParams {
 
 export interface LockTokensParams {
   tokenInstances: TokenQuantityParams[];
-  allowancesToUse: string[];
   name: string | undefined;
   lockAuthority: UserAlias | undefined;
   expires: number;
@@ -159,14 +155,7 @@ export interface LockTokensParams {
 
 export async function lockTokens(
   ctx: GalaChainContext,
-  {
-    tokenInstances,
-    allowancesToUse,
-    name,
-    lockAuthority,
-    expires,
-    verifyAuthorizedOnBehalf
-  }: LockTokensParams
+  { tokenInstances, name, lockAuthority, expires, verifyAuthorizedOnBehalf }: LockTokensParams
 ): Promise<TokenBalance[]> {
   const responses: Array<TokenBalance> = [];
 
@@ -176,7 +165,6 @@ export async function lockTokens(
       lockAuthority,
       tokenInstanceKey,
       quantity,
-      allowancesToUse,
       name,
       expires,
       vestingPeriodStart: undefined, // don't allow vesting locks on batch locking

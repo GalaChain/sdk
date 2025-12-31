@@ -35,17 +35,14 @@ export interface UseTokenParams {
   inUseBy: UserAlias;
   tokenInstanceKey: TokenInstanceKey;
   quantity: BigNumber;
-  allowancesToUse: string[];
   authorizedOnBehalf: AuthorizedOnBehalf | undefined;
 }
 
 export async function useToken(
   ctx: GalaChainContext,
-  { owner, inUseBy, tokenInstanceKey, quantity, allowancesToUse, authorizedOnBehalf }: UseTokenParams
+  { owner, inUseBy, tokenInstanceKey, quantity, authorizedOnBehalf }: UseTokenParams
 ): Promise<TokenBalance> {
-  const msg =
-    `UseToken ${tokenInstanceKey.toStringKey()} of ${owner ?? "?"}, ` +
-    `inUseBy: ${inUseBy}, allowancesToUse: ${allowancesToUse.length}`;
+  const msg = `UseToken ${tokenInstanceKey.toStringKey()} of ${owner ?? "?"}, inUseBy: ${inUseBy}`;
   ctx.logger.info(msg);
 
   if (tokenInstanceKey.isFungible()) {
@@ -76,8 +73,7 @@ export async function useToken(
       quantity,
       tokenInstance,
       callingOnBehalf,
-      AllowanceType.Use,
-      allowancesToUse
+      AllowanceType.Use
     );
   }
 
