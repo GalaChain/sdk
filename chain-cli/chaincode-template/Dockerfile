@@ -8,7 +8,7 @@ RUN npm ci --include=dev
 RUN npm run build
 RUN npm prune --production
 
-FROM gcr.io/distroless/nodejs24-debian11 as production
+FROM gcr.io/distroless/nodejs24-debian12 as production
 
 ARG CC_SERVER_ADDRESS=0.0.0.0
 ARG CC_SERVER_PORT=7052
