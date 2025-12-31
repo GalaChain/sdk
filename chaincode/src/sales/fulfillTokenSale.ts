@@ -29,7 +29,6 @@ import {
 import { BigNumber } from "bignumber.js";
 import { plainToInstance } from "class-transformer";
 
-import { AllowanceUsersMismatchError } from "../allowances";
 import { fetchOrCreateBalance } from "../balances";
 import { MintTokenFailedError, mintToken } from "../mint";
 import { fetchTokenClasses } from "../token/fetchTokenClasses";
@@ -198,26 +197,11 @@ export async function fulfillTokenSale(
     for (let index = 0; index < tokenSale.selling.length; index++) {
       const saleTokenClassKey = tokenSale.selling[index].tokenClassKey;
       const currentQuantity = tokenSale.selling[index].quantity;
-      const allowance = applicableAllowances.filter(
-        (x) =>
-          x.collection === saleTokenClassKey.collection &&
-          x.category === saleTokenClassKey.category &&
-          x.type === saleTokenClassKey.type &&
-          x.additionalKey === saleTokenClassKey.additionalKey
-      );
-
-      // Validate that all allowances are granted to the sale owner
-      for (const allowanceItem of allowance) {
-        if (allowanceItem.grantedTo !== tokenSale.owner) {
-          throw new AllowanceUsersMismatchError(allowanceItem, allowanceItem.grantedBy, tokenSale.owner);
-        }
-      }
 
       await mintToken(ctx, {
         tokenClassKey: saleTokenClassKey,
         owner: fulfilledBy,
         quantity: currentQuantity,
-        applicableAllowances: allowance,
         authorizedOnBehalf: {
           callingOnBehalf: tokenSale.owner,
           callingUser: ctx.callingUser

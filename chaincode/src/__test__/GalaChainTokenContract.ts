@@ -332,7 +332,6 @@ export default class GalaChainTokenContract extends GalaContract {
       tokenClass: dto.tokenClass,
       owner: await resolveUserAlias(ctx, dto.owner ?? ctx.callingUser),
       quantity: dto.quantity,
-      allowanceKey: dto.allowanceKey,
       authorizedOnBehalf: undefined
     });
   }
@@ -417,8 +416,7 @@ export default class GalaChainTokenContract extends GalaContract {
       tokenClassKey: dto.tokenClass,
       owner: await resolveUserAlias(ctx, dto.owner ?? ctx.callingUser),
       quantity: dto.quantity,
-      authorizedOnBehalf: undefined,
-      applicableAllowanceKey: dto.allowanceKey
+      authorizedOnBehalf: undefined
     });
   }
 
