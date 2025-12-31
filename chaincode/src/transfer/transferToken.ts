@@ -33,17 +33,16 @@ export interface TransferTokenParams {
   to: UserAlias;
   tokenInstanceKey: TokenInstanceKey;
   quantity: BigNumber;
-  allowancesToUse: string[];
   authorizedOnBehalf: AuthorizedOnBehalf | undefined;
 }
 
 export async function transferToken(
   ctx: GalaChainContext,
-  { from, to, tokenInstanceKey, quantity, allowancesToUse, authorizedOnBehalf }: TransferTokenParams
+  { from, to, tokenInstanceKey, quantity, authorizedOnBehalf }: TransferTokenParams
 ): Promise<TokenBalance[]> {
-  const msg =
-    `TransferToken ${tokenInstanceKey.toStringKey()} from ${from ?? "?"} to ${to}, ` +
-    `quantity: ${quantity.toFixed()}, allowancesToUse: ${allowancesToUse.length}.`;
+  const msg = `TransferToken ${tokenInstanceKey.toStringKey()} from ${
+    from ?? "?"
+  } to ${to}, quantity: ${quantity.toFixed()}.`;
   ctx.logger.info(msg);
 
   if (from === to) {
@@ -73,8 +72,7 @@ export async function transferToken(
       quantity,
       tokenInstance,
       callingOnBehalf,
-      AllowanceType.Transfer,
-      allowancesToUse
+      AllowanceType.Transfer
     );
   }
 

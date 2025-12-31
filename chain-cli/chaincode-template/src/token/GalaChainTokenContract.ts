@@ -418,7 +418,6 @@ export default class GalaChainTokenContract extends GalaContract {
       inUseBy: await resolveUserAlias(ctx, dto.inUseBy),
       tokenInstanceKey: dto.tokenInstance,
       quantity: dto.quantity,
-      allowancesToUse: dto.useAllowances ?? [],
       authorizedOnBehalf: undefined
     });
   }
@@ -443,7 +442,6 @@ export default class GalaChainTokenContract extends GalaContract {
       lockAuthority: dto.lockAuthority ? await resolveUserAlias(ctx, dto.lockAuthority) : undefined,
       tokenInstanceKey: dto.tokenInstance,
       quantity: dto.quantity,
-      allowancesToUse: dto.useAllowances ?? [],
       name: undefined,
       expires: 0,
       vestingPeriodStart: dto.vestingPeriodStart,
@@ -465,7 +463,6 @@ export default class GalaChainTokenContract extends GalaContract {
     return lockTokens(ctx, {
       lockAuthority,
       tokenInstances: await Promise.all(tokenInstances),
-      allowancesToUse: dto.useAllowances ?? [],
       name: dto.name,
       expires: dto.expires ?? 0,
       verifyAuthorizedOnBehalf: async () => undefined
@@ -510,7 +507,6 @@ export default class GalaChainTokenContract extends GalaContract {
       to: await resolveUserAlias(ctx, dto.to),
       tokenInstanceKey: dto.tokenInstance,
       quantity: dto.quantity,
-      allowancesToUse: dto.useAllowances ?? [],
       authorizedOnBehalf: undefined
     });
   }

@@ -224,7 +224,6 @@ export async function fulfillTokenSale(
         to: tokenSale.owner,
         tokenInstanceKey: costTokenInstanceKey,
         quantity: currentQuantity,
-        allowancesToUse: [],
         authorizedOnBehalf: undefined
       }).catch((e) => {
         const chainError = ChainError.from(e);
