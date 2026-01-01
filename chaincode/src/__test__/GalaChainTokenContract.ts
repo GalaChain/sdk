@@ -13,14 +13,12 @@
  * limitations under the License.
  */
 import {
-  AcceptLoanOfferDto,
   AllowanceType,
   BatchFillTokenSwapDto,
   BatchMintTokenDto,
   BurnTokensDto,
   CleanTokenSwapsDto,
   CleanTokenSwapsResponse,
-  CloseLoanDto,
   CreateTokenClassDto,
   CreateTokenSaleDto,
   CreateVestingTokenDto,
@@ -45,8 +43,6 @@ import {
   FetchFeeThresholdUsesResDto,
   FetchFeeThresholdUsesWithPaginationDto,
   FetchFeeThresholdUsesWithPaginationResponse,
-  FetchLoanOffersDto,
-  FetchLoansDto,
   FetchMintRequestsDto,
   FetchTokenClassesDto,
   FetchTokenClassesResponse,
@@ -67,15 +63,11 @@ import {
   FullAllowanceCheckResDto,
   GrantAllowanceDto,
   HighThroughputMintTokenDto,
-  Loan,
-  LoanOffer,
-  LoanOfferResDto,
   LockTokenDto,
   LockTokensDto,
   MintRequestDto,
   MintTokenDto,
   MintTokenWithAllowanceDto,
-  OfferLoanDto,
   RefreshAllowancesDto,
   ReleaseTokenDto,
   RemoveTokenSaleDto,
@@ -156,7 +148,6 @@ import {
 // @ts-ignore
 import { version } from "../../package.json";
 import { SUBMIT, getCaIdentityAlias, requireCuratorAuth } from "../contracts";
-import { acceptLoanOffer, closeLoan, fetchLoanOffers, fetchLoans, offerLoan } from "../loans";
 import {
   batchFillTokenSwaps,
   ensureTokenSwapIndexing,
@@ -711,69 +702,6 @@ export default class GalaChainTokenContract extends GalaContract {
   })
   public async RemoveTokenSale(ctx: GalaChainContext, dto: RemoveTokenSaleDto): Promise<TokenSale> {
     return removeTokenSale(ctx, dto.tokenSaleId);
-  }
-
-  @Submit({
-    in: OfferLoanDto,
-    out: { arrayOf: LoanOfferResDto }
-  })
-  public async OfferLoan(ctx: GalaChainContext, dto: OfferLoanDto): Promise<LoanOfferResDto[]> {
-    return offerLoan(ctx, {
-      owner: dto.owner ?? ctx.callingUser,
-      registrar: dto.registrar,
-      borrowers: dto.borrowers,
-      tokenQueryKey: dto.tokens,
-      rewards: dto.rewards,
-      uses: dto.uses,
-      expires: dto.expires ?? OfferLoanDto.DEFAULT_EXPIRES
-    });
-  }
-
-  @Submit({
-    in: AcceptLoanOfferDto,
-    out: Loan
-  })
-  public async AcceptLoanOffer(ctx: GalaChainContext, dto: AcceptLoanOfferDto): Promise<Loan> {
-    return acceptLoanOffer(ctx, {
-      offerKey: dto.offer,
-      borrower: dto.borrower,
-      token: dto.token
-    });
-  }
-
-  @UnsignedEvaluate({
-    in: FetchLoanOffersDto,
-    out: { arrayOf: LoanOffer }
-  })
-  public async FetchLoanOffers(ctx: GalaChainContext, dto: FetchLoanOffersDto): Promise<LoanOffer[]> {
-    return fetchLoanOffers(ctx, {
-      owner: dto.owner,
-      tokenQuery: dto.tokenQuery,
-      status: dto.status
-    });
-  }
-
-  @UnsignedEvaluate({
-    in: FetchLoansDto,
-    out: { arrayOf: Loan }
-  })
-  public async FetchLoans(ctx: GalaChainContext, dto: FetchLoansDto): Promise<Loan[]> {
-    return fetchLoans(ctx, {
-      byOwner: dto.owner ?? ctx.callingUser,
-      registrar: dto.registrar,
-      status: dto.status
-    });
-  }
-
-  @Submit({
-    in: CloseLoanDto,
-    out: Loan
-  })
-  public async CloseLoan(ctx: GalaChainContext, dto: CloseLoanDto): Promise<Loan> {
-    return closeLoan(ctx, {
-      loanKey: dto.loan,
-      closingStatus: dto.status
-    });
   }
 
   @Submit({

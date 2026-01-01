@@ -19,7 +19,6 @@ export * from "./balances";
 export * from "./burns";
 export * from "./contracts";
 export * from "./fees";
-export * from "./loans";
 export * from "./locks";
 export * from "./mint";
 export * from "./oracle";
