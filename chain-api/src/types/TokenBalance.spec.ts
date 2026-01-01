@@ -453,20 +453,6 @@ describe("non-fungible", () => {
     expect(error).toThrow("is locked");
   });
 
-  it("should fail to remove in use nft instance", () => {
-    // Given
-    const unexpiredHold = createHold(new BigNumber(1), 0);
-    const balance = emptyBalance();
-
-    // When
-    balance.addInstance(new BigNumber(1));
-    balance.useInstance(unexpiredHold, Date.now());
-    const error = () => balance.removeInstance(new BigNumber(1), Date.now());
-
-    // Then
-    expect(error).toThrow("is in use");
-  });
-
   it("should lock instance", () => {
     // Given
     const unexpiredHold = createHold(new BigNumber(1), 0);
@@ -484,23 +470,6 @@ describe("non-fungible", () => {
     );
   });
 
-  it("should use instance", () => {
-    // Given
-    const unexpiredHold = createHold(new BigNumber(1), 0);
-    const balance = emptyBalance();
-
-    // When
-    balance.addInstance(new BigNumber(1));
-    balance.useInstance(unexpiredHold, Date.now());
-
-    // Then
-    expect(balance).toEqual(
-      expect.objectContaining({
-        inUseHolds: [unexpiredHold]
-      })
-    );
-  });
-
   it("should fail to lock instance for non-nft instanceId", () => {
     // Given
     const unexpiredHold = createHold(new BigNumber(0), 0);
@@ -509,19 +478,6 @@ describe("non-fungible", () => {
     // When
     balance.addQuantity(new BigNumber(0));
     const error = () => balance.lockInstance(unexpiredHold, Date.now());
-
-    // Then
-    expect(error).toThrow("Instance ID must be positive integer");
-  });
-
-  it("should fail to use instance for non-nft instanceId", () => {
-    // Given
-    const unexpiredHold = createHold(new BigNumber(0), 0);
-    const balance = emptyBalance();
-
-    // When
-    balance.addQuantity(new BigNumber(0));
-    const error = () => balance.useInstance(unexpiredHold, Date.now());
 
     // Then
     expect(error).toThrow("Instance ID must be positive integer");
@@ -539,46 +495,6 @@ describe("non-fungible", () => {
     expect(error).toThrow("not found in balance");
   });
 
-  it("should fail to use instance not in balance", () => {
-    // Given
-    const unexpiredHold = createHold(new BigNumber(1), 0);
-    const balance = emptyBalance();
-
-    // When
-    const error = () => balance.useInstance(unexpiredHold, Date.now());
-
-    // Then
-    expect(error).toThrow("not found in balance");
-  });
-
-  it("should fail to lock in use instance", () => {
-    // Given
-    const unexpiredHold = createHold(new BigNumber(1), 0);
-    const balance = emptyBalance();
-
-    // When
-    balance.addInstance(new BigNumber(1));
-    balance.useInstance(unexpiredHold, Date.now());
-    const error = () => balance.lockInstance(unexpiredHold, Date.now());
-
-    // Then
-    expect(error).toThrow("is in use");
-  });
-
-  it("should fail to use instance already in use", () => {
-    // Given
-    const unexpiredHold = createHold(new BigNumber(1), 0);
-    const balance = emptyBalance();
-
-    // When
-    balance.addInstance(new BigNumber(1));
-    balance.useInstance(unexpiredHold, Date.now());
-    const error = () => balance.useInstance(unexpiredHold, Date.now());
-
-    // Then
-    expect(error).toThrow("is in use");
-  });
-
   it("should fail to lock already locked instance", () => {
     // Given
     const unexpiredHold = createHold(new BigNumber(1), 0);
@@ -588,20 +504,6 @@ describe("non-fungible", () => {
     balance.addInstance(new BigNumber(1));
     balance.lockInstance(unexpiredHold, Date.now());
     const error = () => balance.lockInstance(unexpiredHold, Date.now());
-
-    // Then
-    expect(error).toThrow("is locked");
-  });
-
-  it("should fail to use locked instance", () => {
-    // Given
-    const unexpiredHold = createHold(new BigNumber(1), 0);
-    const balance = emptyBalance();
-
-    // When
-    balance.addInstance(new BigNumber(1));
-    balance.lockInstance(unexpiredHold, Date.now());
-    const error = () => balance.useInstance(unexpiredHold, Date.now());
 
     // Then
     expect(error).toThrow("is locked");
@@ -637,36 +539,6 @@ describe("non-fungible", () => {
     expect(error).toThrow("is not locked");
   });
 
-  it("should release in use instance", () => {
-    // Given
-    const unexpiredHold = createHold(new BigNumber(1), 0);
-    const balance = emptyBalance();
-
-    // When
-    balance.addInstance(new BigNumber(1));
-    balance.useInstance(unexpiredHold, Date.now());
-    balance.releaseInstance(new BigNumber(1), undefined, Date.now());
-
-    // Then
-    expect(balance).toEqual(
-      expect.objectContaining({
-        inUseHolds: []
-      })
-    );
-  });
-
-  it("should fail to release instance not in use", () => {
-    // Given
-    const balance = emptyBalance();
-
-    // When
-    balance.addInstance(new BigNumber(1));
-    const error = () => balance.releaseInstance(new BigNumber(1), undefined, Date.now());
-
-    // Then
-    expect(error).toThrow("is not in use");
-  });
-
   it("should find locked hold", () => {
     // Given
     const unexpiredHold = createHold(new BigNumber(1), 0);
@@ -677,21 +549,6 @@ describe("non-fungible", () => {
     balance.lockInstance(unexpiredHold, Date.now());
 
     const foundHold = balance.findLockedHold(new BigNumber(1), undefined, Date.now());
-
-    // Then
-    expect(foundHold).toEqual(unexpiredHold);
-  });
-
-  it("should find in use hold", () => {
-    // Given
-    const unexpiredHold = createHold(new BigNumber(1), 0);
-    const balance = emptyBalance();
-
-    // When
-    balance.addInstance(new BigNumber(1));
-    balance.useInstance(unexpiredHold, Date.now());
-
-    const foundHold = balance.findInUseHold(new BigNumber(1), Date.now());
 
     // Then
     expect(foundHold).toEqual(unexpiredHold);
@@ -749,21 +606,6 @@ describe("non-fungible", () => {
     expect(notInBalance).toEqual(false);
   });
 
-  it("should not be spendable if instance is in use", () => {
-    // Given
-    const unexpiredHold = createHold(new BigNumber(1), 0);
-    const balance = emptyBalance();
-
-    // When
-    balance.addInstance(new BigNumber(1));
-    balance.useInstance(unexpiredHold, Date.now());
-
-    const notInBalance = balance.isInstanceSpendable(new BigNumber(1), Date.now());
-
-    // Then
-    expect(notInBalance).toEqual(false);
-  });
-
   it("should get correct instanceIds array from balance", () => {
     // Given
     const balance = emptyBalance();
@@ -781,28 +623,23 @@ describe("non-fungible", () => {
   it("should clear holds", () => {
     // Given
     const hold6 = createHold(new BigNumber(6), 20);
-    const hold7 = createHold(new BigNumber(7), 99);
 
     const balance = emptyBalance();
     balance.addInstance(new BigNumber(6));
-    balance.addInstance(new BigNumber(7));
     balance.lockInstance(hold6, Date.now());
-    balance.useInstance(hold7, Date.now());
 
     expect(balance).toEqual(
       expect.objectContaining({
-        lockedHolds: [hold6],
-        inUseHolds: [hold7]
+        lockedHolds: [hold6]
       })
     );
 
     // Then
-    balance.clearHolds(new BigNumber(1), 100);
+    balance.clearHolds(new BigNumber(6), 100);
 
     expect(balance).toEqual(
       expect.objectContaining({
-        lockedHolds: [],
-        inUseHolds: []
+        lockedHolds: []
       })
     );
   });

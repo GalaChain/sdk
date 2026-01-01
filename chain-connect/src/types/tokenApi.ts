@@ -43,7 +43,6 @@ import {
   MintTokenDto,
   MintTokenWithAllowanceDto,
   RefreshAllowanceDto,
-  ReleaseTokenDto,
   TokenAllowance,
   TokenBalance as TokenBalanceDto,
   TokenBalanceWithMetadata,
@@ -56,7 +55,6 @@ import {
   UnlockTokenDto,
   UnlockTokensDto,
   UpdateTokenClassDto,
-  UseTokenDto,
   UserAlias,
   UserRef
 } from "@gala-chain/api";
@@ -87,12 +85,10 @@ type MintRequest = ConstructorArgs<MintRequestDto>;
 type MintTokenRequest = ConstructorArgs<MintTokenDto>;
 type MintTokenWithAllowanceRequest = ConstructorArgs<MintTokenWithAllowanceDto>;
 type RefreshAllowanceRequest = ConstructorArgs<RefreshAllowanceDto>;
-type ReleaseTokenRequest = ConstructorArgs<ReleaseTokenDto>;
 type TransferTokenRequest = ConstructorArgs<TransferTokenDto>;
 type UnlockTokenRequest = ConstructorArgs<UnlockTokenDto>;
 type UnlockTokensRequest = ConstructorArgs<UnlockTokensDto>;
 type UpdateTokenClassRequest = ConstructorArgs<UpdateTokenClassDto>;
-type UseTokenRequest = ConstructorArgs<UseTokenDto>;
 
 /**
  * Token balance representation with validation decorators.
@@ -122,11 +118,6 @@ class TokenBalance implements ConstructorArgs<TokenBalanceDto> {
   @ValidateNested({ each: true })
   @Type(() => TokenHold)
   lockedHolds?: Array<TokenHold>;
-
-  @IsOptional()
-  @ValidateNested({ each: true })
-  @Type(() => TokenHold)
-  inUseHolds?: Array<TokenHold>;
 
   @BigNumberIsNotNegative()
   @BigNumberProperty()
@@ -160,7 +151,6 @@ export {
   MintTokenRequest,
   MintTokenWithAllowanceRequest,
   RefreshAllowanceRequest,
-  ReleaseTokenRequest,
   TokenAllowance,
   TokenBalance,
   TokenBalanceWithMetadata,
@@ -172,6 +162,5 @@ export {
   TransferTokenRequest,
   UnlockTokenRequest,
   UnlockTokensRequest,
-  UpdateTokenClassRequest,
-  UseTokenRequest
+  UpdateTokenClassRequest
 };

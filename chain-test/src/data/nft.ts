@@ -153,7 +153,6 @@ const tokenBalancePlain = createPlainFn({
   owner: users.testUser1.identityKey,
   instanceIds: [new BigNumber(1)],
   lockedHolds: [],
-  inUseHolds: [],
   quantity: new BigNumber(1)
 });
 
