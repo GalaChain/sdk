@@ -91,7 +91,8 @@ export class PublicKeyContract extends GalaContract {
       dto.publicKey,
       signerAliases.length ? signerAliases : undefined,
       dto.user,
-      signatureQuorum
+      signatureQuorum,
+      dto as ChainCallDTO & { publicKeySignature?: string }
     );
   }
 
