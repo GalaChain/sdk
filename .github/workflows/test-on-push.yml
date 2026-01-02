@@ -42,7 +42,7 @@ jobs:
       - name: Prefetch Fabric Docker layers
         run: |
           cd chain-cli/network
-          curl -Lf https://github.com/hyperledger-labs/fablo/releases/download/2.0.0/fablo.sh -o ./fablo && chmod +x ./fablo
+          curl -Lf https://github.com/hyperledger-labs/fablo/releases/download/2.4.3/fablo.sh -o ./fablo && chmod +x ./fablo
           ./fablo generate fablo-config-default.json
           docker compose -f fablo-target/fabric-docker/docker-compose.yaml pull
 

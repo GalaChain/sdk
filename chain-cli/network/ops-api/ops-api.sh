@@ -42,6 +42,31 @@ checkApiConfigFile() {
   fi
 }
 
+prefetchOpsApiImage() {
+  local image="ghcr.io/galachain/operation-api:1.0.0"
+  
+  # Check if image already exists locally
+  if docker image inspect "$image" >/dev/null 2>&1; then
+    echo "Docker image $image already exists locally"
+    return 0
+  fi
+  
+  echo "Pulling Docker image $image..."
+  
+  # Detect architecture and pull appropriate version
+  local arch=$(uname -m)
+  if [ "$arch" = "arm64" ] || [ "$arch" = "aarch64" ]; then
+    # On ARM architecture, pull Intel/AMD64 version for compatibility
+    echo "Detected ARM architecture, pulling Intel/AMD64 version for compatibility"
+    docker pull --platform linux/amd64 "$image"
+  else
+    # On other architectures, pull native version
+    docker pull "$image"
+  fi
+  
+  echo "Docker image $image pulled successfully"
+}
+
 verifyOpsInstance() {
   local port=$1
   local org=$2
@@ -82,6 +107,7 @@ verifyOpsInstance() {
 
 if [ "$command" = "up" ]; then
   checkApiConfigFile
+  prefetchOpsApiImage
 
   echo "Starting ops-api instances..."
   (cd "$current_dir" && docker compose --env-file ../fablo-target/fabric-docker/.env up -d)
