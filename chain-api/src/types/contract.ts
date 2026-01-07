@@ -18,7 +18,8 @@ import { ClassConstructor, Inferred } from "./dtos";
 export const GC_NETWORK_ID = "GC";
 export enum GalaChainResponseType {
   Error,
-  Success
+  Success,
+  Redirect
 }
 
 export abstract class GalaChainResponse<T> {
@@ -28,6 +29,7 @@ export abstract class GalaChainResponse<T> {
   public readonly ErrorKey?: string;
   public readonly ErrorPayload?: unknown;
   public readonly Data?: T;
+  public readonly RedirectTo?: string;
   public static Success<T>(Data: T): GalaChainResponse<T> {
     return new GalaChainSuccessResponse<T>(Data);
   }
@@ -53,6 +55,10 @@ export abstract class GalaChainResponse<T> {
     }
   }
 
+  public static Redirect<T>(RedirectTo: string): GalaChainResponse<T> {
+    return new GalaChainRedirectResponse<T>(RedirectTo);
+  }
+
   public static Wrap<T>(op: Promise<T>): Promise<GalaChainResponse<T>> {
     return op
       .then((Data) => GalaChainResponse.Success<T>(Data))
@@ -67,6 +73,10 @@ export abstract class GalaChainResponse<T> {
     return r.Status === GalaChainResponseType.Error;
   }
 
+  public static isRedirect<T>(r: GalaChainResponse<T>): r is GalaChainRedirectResponse<T> {
+    return r.Status === GalaChainResponseType.Redirect;
+  }
+
   public static deserialize<T>(
     constructor: ClassConstructor<Inferred<T>> | undefined,
     object: string | Record<string, unknown>
@@ -74,6 +84,8 @@ export abstract class GalaChainResponse<T> {
     const json = typeof object === "string" ? JSON.parse(object) : object;
     if (json.Status === GalaChainResponseType.Error) {
       return deserialize<GalaChainResponse<T>>(GalaChainErrorResponse, json);
+    } else if (json.Status === GalaChainResponseType.Redirect) {
+      return deserialize<GalaChainResponse<T>>(GalaChainRedirectResponse, json);
     } else if (constructor === undefined) {
       // TODO we are cheating somewhat with response type, fix with method overloading
       return deserialize(GalaChainSuccessResponse, json) as GalaChainResponse<T>;
@@ -132,5 +144,15 @@ export class GalaChainSuccessResponse<T> extends GalaChainResponse<T> {
     super();
     this.Status = GalaChainResponseType.Success;
     this.Data = data;
+  }
+}
+
+export class GalaChainRedirectResponse<T> extends GalaChainResponse<T> {
+  public readonly Status: GalaChainResponseType.Redirect;
+  public readonly RedirectTo: string;
+  constructor(redirectTo: string) {
+    super();
+    this.Status = GalaChainResponseType.Redirect;
+    this.RedirectTo = redirectTo;
   }
 }
