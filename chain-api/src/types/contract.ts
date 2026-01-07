@@ -17,9 +17,9 @@ import { ClassConstructor, Inferred } from "./dtos";
 
 export const GC_NETWORK_ID = "GC";
 export enum GalaChainResponseType {
-  Error,
-  Success,
-  Redirect
+  Error = 0,
+  Success = 1,
+  Redirect = 2
 }
 
 export abstract class GalaChainResponse<T> {
