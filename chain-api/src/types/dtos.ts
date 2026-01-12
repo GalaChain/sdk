@@ -661,6 +661,24 @@ export class RemoveSignerDto extends SubmitCallDTO {
   signer: UserRef;
 }
 
+export class UpdateSignersDto extends SubmitCallDTO {
+  @JSONSchema({
+    description: "Array of user refs of signers to add (typically Ethereum addresses, or user aliases)."
+  })
+  @IsOptional()
+  @IsUserRef({ each: true })
+  @IsNotEmpty({ each: true })
+  toAdd?: UserRef[];
+
+  @JSONSchema({
+    description: "Array of user refs of signers to remove (typically Ethereum addresses, or user aliases)."
+  })
+  @IsOptional()
+  @IsUserRef({ each: true })
+  @IsNotEmpty({ each: true })
+  toRemove?: UserRef[];
+}
+
 export class UpdateQuorumDto extends SubmitCallDTO {
   @JSONSchema({
     description: "New quorum for the user."

@@ -19,6 +19,7 @@ import {
   RemoveSignerDto,
   UpdatePublicKeyDto,
   UpdateQuorumDto,
+  UpdateSignersDto,
   UpdateUserRolesDto,
   UserAlias,
   UserProfile,
@@ -709,6 +710,131 @@ describe("PublicKeyContract Multisignature", () => {
           ].sort()
         })
       );
+    });
+  });
+
+  describe("UpdateSigners", () => {
+    it("should add and remove signers in one call", async () => {
+      // Given
+      const chaincode = new TestChaincode([PublicKeyContract]);
+      const user1 = await createRegisteredUser(chaincode);
+      const user2 = await createRegisteredUser(chaincode);
+      const user3 = await createRegisteredUser(chaincode);
+      const user4 = await createRegisteredUser(chaincode);
+      const multisigUser = await createRegisteredMultiSigUserForUsers(chaincode, {
+        users: [user1, user2],
+        quorum: 1
+      });
+
+      const dto = (
+        await createValidSubmitDTO(UpdateSignersDto, {
+          dtoOperation: "asset-channel_basic-asset_PublicKeyContract:UpdateSigners",
+          signerAddress: multisigUser.alias,
+          toAdd: [user3.alias, user4.alias],
+          toRemove: [user2.alias]
+        })
+      )
+        .expiresInMs(60_000)
+        .signed(user1.privateKey);
+
+      // When
+      const response = await chaincode.invoke("PublicKeyContract:UpdateSigners", dto);
+
+      // Then
+      expect(response).toEqual(transactionSuccess());
+
+      const profileResponse = await getUserProfile(chaincode, multisigUser.alias);
+      expect(profileResponse).toEqual(
+        transactionSuccess({
+          alias: multisigUser.alias,
+          roles: UserProfile.DEFAULT_ROLES,
+          signatureQuorum: 1,
+          signers: [user1.alias, user3.alias, user4.alias].sort()
+        })
+      );
+    });
+
+    it("should not allow removing self", async () => {
+      // Given
+      const chaincode = new TestChaincode([PublicKeyContract]);
+      const { keys, alias } = await createRegisteredMultiSigUser(chaincode, { keys: 3, quorum: 2 });
+      const [key1, key2] = keys;
+
+      const dto = (
+        await createValidSubmitDTO(UpdateSignersDto, {
+          dtoOperation: "asset-channel_basic-asset_PublicKeyContract:UpdateSigners",
+          signerAddress: alias,
+          toRemove: [asValidUserRef(signatures.getEthAddress(key1.publicKey))]
+        })
+      )
+        .expiresInMs(60_000)
+        .signed(key1.privateKey)
+        .signed(key2.privateKey);
+
+      // When
+      const response = await chaincode.invoke("PublicKeyContract:UpdateSigners", dto);
+
+      // Then
+      expect(response).toEqual(transactionErrorKey("VALIDATION_FAILED"));
+      expect(response).toEqual(transactionErrorMessageContains("that is the calling transaction signer"));
+    });
+
+    it("should not allow adding a duplicate signer", async () => {
+      // Given
+      const chaincode = new TestChaincode([PublicKeyContract]);
+      const user1 = await createRegisteredUser(chaincode);
+      const user2 = await createRegisteredUser(chaincode);
+      const multisigUser = await createRegisteredMultiSigUserForUsers(chaincode, {
+        users: [user1, user2],
+        quorum: 1
+      });
+
+      const dto = (
+        await createValidSubmitDTO(UpdateSignersDto, {
+          dtoOperation: "asset-channel_basic-asset_PublicKeyContract:UpdateSigners",
+          signerAddress: multisigUser.alias,
+          toAdd: [user2.alias]
+        })
+      )
+        .expiresInMs(60_000)
+        .signed(user1.privateKey);
+
+      // When
+      const response = await chaincode.invoke("PublicKeyContract:UpdateSigners", dto);
+
+      // Then
+      expect(response).toEqual(transactionErrorKey("VALIDATION_FAILED"));
+      expect(response).toEqual(transactionErrorMessageContains("is already in the list of signers"));
+    });
+
+    it("should not allow to add and remove the same signer", async () => {
+      // Given
+      const chaincode = new TestChaincode([PublicKeyContract]);
+      const user1 = await createRegisteredUser(chaincode);
+      const user2 = await createRegisteredUser(chaincode);
+      const user3 = await createRegisteredUser(chaincode);
+      const multisigUser = await createRegisteredMultiSigUserForUsers(chaincode, {
+        users: [user1, user2],
+        quorum: 1
+      });
+
+      const dto = (
+        await createValidSubmitDTO(UpdateSignersDto, {
+          dtoOperation: "asset-channel_basic-asset_PublicKeyContract:UpdateSigners",
+          signerAddress: multisigUser.alias,
+          toAdd: [user3.alias],
+          toRemove: [user3.alias]
+        })
+      )
+        .expiresInMs(60_000)
+        .signed(user1.privateKey);
+
+      // When
+      const response = await chaincode.invoke("PublicKeyContract:UpdateSigners", dto);
+
+      // Then
+      expect(response).toEqual(transactionErrorKey("VALIDATION_FAILED"));
+      expect(response).toEqual(transactionErrorMessageContains("Cannot add and remove the same signer"));
     });
   });
 

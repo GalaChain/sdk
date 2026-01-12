@@ -123,7 +123,9 @@ describe("Apple trees", () => {
     expect(response).toEqual(
       transactionSuccess({
         response: { Status: GalaChainResponseType.Success },
-        reads: {},
+        reads: {
+          [`\u0000GCUP\u0000${user.ethAddress}\u0000`]: expect.any(String)
+        },
         writes: {
           [saved.getCompositeKey()]: expect.any(String),
           [`\u0000UNTX\u0000${dto.uniqueKey}\u0000`]: expect.any(String)
