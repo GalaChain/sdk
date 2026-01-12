@@ -36,6 +36,12 @@ test.each<[string, string, true | string]>([
   ["valid solana address 2", "So11111111111111111111111111111111111111112", true],
   ["valid solana address 3", "TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA", true],
 
+  // Valid TON addresses (bounceable mainnet format: UQ prefix + 46 base64url chars)
+  ["valid TON address 1", "UQAQAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA", true],
+  ["valid TON address 2", "UQAWzEKcdnykvXfUNouqdS62tvrp32bCxuKS6eQrS6ISgZ8t", true],
+  ["valid TON address 3", "UQDbygQE0bV5pIUGWbaBPSzfBbHBanqlL9azLcPEYG2ZTN-4", true],
+  ["valid TON address 4", "UQBS0JmPVVV5qac7fWtlBCmrTkKPgyK7xr8OX4iq_ojQ6oJc", true],
+
   // Valid GalaChain addresses
   ["valid GalaChain address (client)", "client|123", true],
   ["valid GalaChain address (service)", "service|abc", true],
@@ -82,6 +88,16 @@ test.each<[string, string, string]>([
     "EQD0vdSA_NedR9uvbgN9EikRX-suesDxGeFg69XQMavfLqIo",
     "bounceable and not test-only"
   ],
+  [
+    "invalid TON (UQ prefix but flags indicate non-bounceable and testnet)",
+    "UQDocHtIukprXq1NSMgZCs-Y9WZcZvKfSol3Mg0PHHTU10TX",
+    "bounceable and not test-only"
+  ],
+  [
+    "invalid TON (UQ prefix but flags indicate non-bounceable and testnet)",
+    "UQChTmunCe2En0VCr-yiJdZoCzbT8p-F4CBPrc20gHIPnFly",
+    "bounceable and not test-only"
+  ],
   ["invalid TON (test-only)", "UfD0vdSA_NedR9uvbgN9EikRX-suesDxGeFg69XQMavfLqIo", "valid chain address"],
   [
     "invalid TON (bad format)",
@@ -125,6 +141,7 @@ it("should validate array of chain addresses", async () => {
     addresses: [
       "0x742d35Cc6634C0532925a3b844Bc454e4438f44e",
       "11111111111111111111111111111111",
+      "UQAWzEKcdnykvXfUNouqdS62tvrp32bCxuKS6eQrS6ISgZ8t",
       "client|123"
     ]
   };
