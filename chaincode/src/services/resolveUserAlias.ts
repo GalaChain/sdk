@@ -14,6 +14,7 @@
  */
 import {
   UserAlias,
+  UserRef,
   UserRefValidationResult,
   ValidationFailedError,
   asValidUserAlias,
@@ -23,6 +24,17 @@ import {
 
 import { GalaChainContext } from "../types";
 import { PublicKeyService } from "./PublicKeyService";
+
+export async function resolveUserAliases(
+  ctx: GalaChainContext,
+  userRefs: UserRef[] | undefined
+): Promise<UserAlias[]> {
+  const aliases: UserAlias[] = [];
+  for (const userRef of userRefs ?? []) {
+    aliases.push(await resolveUserAlias(ctx, userRef));
+  }
+  return aliases;
+}
 
 export async function resolveUserAlias(ctx: GalaChainContext, userRef: string): Promise<UserAlias> {
   const res = validateUserRef(userRef);

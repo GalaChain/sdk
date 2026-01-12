@@ -22,6 +22,10 @@ jest.setTimeout(10000);
 jest.mock("../../exec-sync", () => ({
   execSync(cmd: string) {
     return execSyncMock(cmd);
+  },
+  execFileSync(command: string, args: string[]) {
+    // Reconstruct command string for the mock
+    return execSyncMock(`${command} ${args.join(" ")}`);
   }
 }));
 

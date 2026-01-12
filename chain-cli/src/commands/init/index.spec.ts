@@ -18,6 +18,13 @@ import path from "path";
 
 import Init from "./index";
 
+// Mock galachain-utils to avoid actual file operations in generateKeys
+jest.mock("../../galachain-utils", () => ({
+  ...jest.requireActual("../../galachain-utils"),
+  checkCliVersion: jest.fn(),
+  generateKeys: jest.fn().mockResolvedValue(undefined)
+}));
+
 describe("Init Command", () => {
   afterEach(() => jest.restoreAllMocks());
 
@@ -30,6 +37,8 @@ describe("Init Command", () => {
 
     const mkdirMock = jest.spyOn(require("fs"), "mkdirSync").mockImplementation(() => {});
     const cpMock = jest.spyOn(require("fs"), "cpSync").mockImplementation(() => {});
+    jest.spyOn(require("fs"), "readFileSync").mockReturnValue('{"name": "test"}');
+    jest.spyOn(require("fs"), "writeFileSync").mockImplementation(() => {});
 
     jest.spyOn(require("child_process"), "execSync").mockResolvedValue(undefined);
 

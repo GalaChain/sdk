@@ -67,6 +67,17 @@ function downNetworkServices(fabloRoot: string): void {
 }
 
 function getFabloRoot(fabloDir: string): string | undefined {
+  // SECURITY: Allowlist validation to prevent command injection
+  // Only alphanumeric, hyphen, underscore, dot, and forward slash allowed
+  const allowedPathChars = /^[a-zA-Z0-9._/-]+$/;
+  if (!allowedPathChars.test(fabloDir)) {
+    console.error(
+      `Error: Path "${fabloDir}" contains invalid characters. ` +
+        `Only alphanumeric characters, hyphens (-), underscores (_), dots (.), and forward slashes (/) are allowed.`
+    );
+    return undefined;
+  }
+
   if (fs.existsSync(fabloDir)) {
     return path.resolve(fabloDir);
   } else {
