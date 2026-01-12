@@ -114,9 +114,12 @@ export class PublicKeyService {
     return signatures.getEthAddress(signatures.getNonCompactHexPublicKey(publicKey));
   }
 
-  public static async getUserProfile(ctx: Context, address: string): Promise<UserProfileStrict | undefined> {
+  public static async getUserProfile(
+    ctx: GalaChainContext,
+    address: string
+  ): Promise<UserProfileStrict | undefined> {
     const key = PublicKeyService.getUserProfileKey(ctx, address);
-    const data = await ctx.stub.getState(key);
+    const data = await ctx.stub.getCachedState(key);
 
     if (data.length > 0) {
       const userProfile = ChainObject.deserialize<UserProfile>(UserProfile, data.toString());
@@ -182,9 +185,9 @@ export class PublicKeyService {
     return profile as UserProfileStrict;
   }
 
-  public static async getPublicKey(ctx: Context, userId: UserAlias): Promise<PublicKey | undefined> {
+  public static async getPublicKey(ctx: GalaChainContext, userId: UserAlias): Promise<PublicKey | undefined> {
     const key = PublicKeyService.getPublicKeyKey(ctx, userId);
-    const data = await ctx.stub.getState(key);
+    const data = await ctx.stub.getCachedState(key);
 
     if (data.length > 0) {
       const publicKey = ChainObject.deserialize<PublicKey>(PublicKey, data.toString());
