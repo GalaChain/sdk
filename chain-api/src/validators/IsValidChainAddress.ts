@@ -153,8 +153,9 @@ function isValidTonAddress(address: string): boolean {
     const decoded = Buffer.from(paddedBase64, "base64");
 
     // TON address structure: 1 byte flags + address + checksum = 34 bytes total
-    // Base64url encoded: 34 * 4/3 = 45.33 -> 46 chars (UQ + 46)
-    if (decoded.length !== 34) {
+    // Base64url encoded: 34 * 4/3 = 45.33 -> 46 chars (UQ + 46 = 48 total)
+    // Accept 33-35 bytes to handle potential encoding variations
+    if (decoded.length < 33 || decoded.length > 35) {
       return false;
     }
 
