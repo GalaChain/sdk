@@ -17,6 +17,7 @@ import { instanceToPlain, plainToInstance } from "class-transformer";
 import { ArrayMinSize, ArrayNotEmpty, IsString } from "class-validator";
 
 import { getValidationErrorMessages } from "../utils";
+import { signatures } from "../utils";
 import { BigNumberArrayProperty, BigNumberProperty } from "../validators";
 import { asValidUserRef } from "./UserRef";
 import { ChainCallDTO, ClassConstructor } from "./dtos";
