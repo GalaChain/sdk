@@ -43,7 +43,7 @@ jest.setTimeout(30000);
 const describeIfNonMockedChaincode =
   process.env.CURATORORG_MOCKED_CHAINCODE_DIR === undefined ? describe : describe.skip;
 
-describe("Chaincode client (PartnerOrg1)", () => {
+describeIfNonMockedChaincode("Chaincode client (PartnerOrg1)", () => {
   let client: ChainClient & CustomAPI;
 
   beforeAll(() => {
