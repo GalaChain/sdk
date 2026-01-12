@@ -254,16 +254,20 @@ export async function generateKeys(projectPath: string): Promise<void> {
   const chaincodeName = "gc-" + signatures.getEthAddress(adminPublicKey).toLowerCase();
   const privateKeysPath = path.join(os.homedir(), DEFAULT_PRIVATE_KEYS_DIR, chaincodeName);
 
-  // create the keys directories using Node.js fs (safe from command injection)
+  // create the keys directory
   fs.mkdirSync(keysPath, { recursive: true });
-  fs.mkdirSync(privateKeysPath, { recursive: true });
+  fs.mkdirSync(privateKeysPath, { recursive: true, mode: 0o700 });
 
-  // create the public and private keys files using Node.js fs (safe from command injection)
-  fs.writeFileSync(path.join(keysPath, `${DEFAULT_ADMIN_PRIVATE_KEY_NAME}.pub`), adminPublicKey + "\n");
-  fs.writeFileSync(path.join(keysPath, `${DEFAULT_DEV_PRIVATE_KEY_NAME}.pub`), devPublicKey + "\n");
+  // create the public and private keys files
+  fs.writeFileSync(`${keysPath}/${DEFAULT_ADMIN_PRIVATE_KEY_NAME}.pub`, adminPublicKey);
+  fs.writeFileSync(`${keysPath}/${DEFAULT_DEV_PRIVATE_KEY_NAME}.pub`, devPublicKey);
 
-  fs.writeFileSync(path.join(privateKeysPath, DEFAULT_ADMIN_PRIVATE_KEY_NAME), adminPrivateKey + "\n");
-  fs.writeFileSync(path.join(privateKeysPath, DEFAULT_DEV_PRIVATE_KEY_NAME), devPrivateKey + "\n");
+  fs.writeFileSync(`${privateKeysPath}/${DEFAULT_ADMIN_PRIVATE_KEY_NAME}`, adminPrivateKey.toString(), {
+    mode: 0o600
+  });
+  fs.writeFileSync(`${privateKeysPath}/${DEFAULT_DEV_PRIVATE_KEY_NAME}`, devPrivateKey.toString(), {
+    mode: 0o600
+  });
 
   console.log(`Chaincode name:         ${chaincodeName}`);
   console.log(`Public keys directory:  ${keysPath}`);
