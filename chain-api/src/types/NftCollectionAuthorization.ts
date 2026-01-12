@@ -12,19 +12,23 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-import { IsNotEmpty, IsString } from "class-validator";
+import { ArrayMinSize, IsArray, IsNotEmpty, IsString } from "class-validator";
 
-import { signatures } from "../utils";
+import { ChainKey } from "../utils";
+import { IsUserAlias } from "../validators";
 import { ChainObject } from "./ChainObject";
+import { UserAlias } from "./UserAlias";
 
-export class PublicKey extends ChainObject {
+export class NftCollectionAuthorization extends ChainObject {
+  public static INDEX_KEY = "GCNFTC";
+
+  @ChainKey({ position: 0 })
   @IsString()
   @IsNotEmpty()
-  public publicKey: string;
-}
+  public collection: string;
 
-export const PK_INDEX_KEY = "GCPK";
-
-export function normalizePublicKey(input: string): string {
-  return signatures.normalizePublicKey(input).toString("base64");
+  @IsUserAlias({ each: true })
+  @IsArray()
+  @ArrayMinSize(0)
+  public authorizedUsers: UserAlias[];
 }
