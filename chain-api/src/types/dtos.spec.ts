@@ -235,16 +235,25 @@ describe("ChainCallDTO", () => {
     dto.dtoExpiresAt = Date.now() + 1000;
 
     const prefix = "\u0019Ethereum Signed Message:\n";
-    const length = prefix.length + getPayloadToSign(dto).length;
-    dto.prefix = prefix + length;
+    const payload = getPayloadToSign(dto);
+    const length = prefix.length + payload.length;
+    dto.prefix = `${prefix}${length}`;
+
+    const stringPayload = `${prefix}${length}${payload}`;
 
     // When
     dto.sign(pk1.privateKey); // first signature
     dto.sign(pk2.privateKey); // second signature
 
     // Then
-    expect(signatures.isValid(dto?.multisig?.[0] ?? "", dto, pk1.publicKey)).toBe(true);
-    expect(signatures.isValid(dto?.multisig?.[1] ?? "", dto, pk2.publicKey)).toBe(true);
+    const [signature1, signature2] = [dto.multisig?.[0] ?? "", dto.multisig?.[1] ?? ""];
+    expect([signature1, signature2]).toEqual(expect.arrayContaining([expect.stringMatching(/.{50,}/)]));
+
+    expect(signatures.isValid(signature1, dto, pk1.publicKey)).toBe(true);
+    expect(signatures.isValid(signature1, stringPayload, pk1.publicKey)).toBe(true);
+
+    expect(signatures.isValid(signature2, dto, pk2.publicKey)).toBe(true);
+    expect(signatures.isValid(signature2, stringPayload, pk2.publicKey)).toBe(true);
   });
 
   it("should throw an error when signing a multisig DTO with DER signatures", () => {

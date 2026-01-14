@@ -379,8 +379,8 @@ function recoverPublicKey(signature: string, obj: object, prefix?: string): stri
   return publicKeyObj.encode("hex", false);
 }
 
-function isValid(signature: string, obj: object, publicKey: string): boolean {
-  const data = Buffer.from(getPayloadToSign(obj));
+function isValid(signature: string, obj: object | string, publicKey: string): boolean {
+  const data = Buffer.from(typeof obj === "string" ? obj : getPayloadToSign(obj));
   const publicKeyBuffer = normalizePublicKey(publicKey);
 
   const signatureObj = parseSecp256k1Signature(signature);
