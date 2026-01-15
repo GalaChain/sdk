@@ -126,48 +126,45 @@ function isValidSolanaAddress(address: string): boolean {
 }
 
 function isValidTonAddress(address: string): boolean {
-  // TON addresses must be bounceable and not test-only (mainnet only)
+  // TON addresses must be non-bounceable and not test-only (mainnet only)
   // Friendly format: UQ... (48 characters, base64url encoded)
-  // U = bounceable, Q = mainnet (not test-only)
-  // We require: isBounceable = true && isTestOnly = false
+  // U = non-bounceable mainnet, Q = continuation (part of base64url encoding)
+  // We require: isBounceable = false && isTestOnly = false
 
-  // Check for bounceable mainnet format: UQ followed by base64url characters
+  // Check for non-bounceable mainnet format: UQ followed by base64url characters
   if (!/^UQ[a-zA-Z0-9_-]{46}$/.test(address)) {
     return false;
   }
 
   // Validate base64url encoding and decode to check flags
   try {
-    const base64urlPart = address.slice(2); // Remove "UQ" prefix
-
     // Base64url alphabet: A-Za-z0-9_- (no + or /)
-    if (!/^[A-Za-z0-9_-]+$/.test(base64urlPart)) {
+    if (!/^[A-Za-z0-9_-]+$/.test(address)) {
       return false;
     }
 
-    // Decode base64url
-    const base64 = base64urlPart.replace(/-/g, "+").replace(/_/g, "/");
+    // Decode the entire address string as base64url
+    const base64 = address.replace(/-/g, "+").replace(/_/g, "/");
     const padding = base64.length % 4;
     const paddedBase64 = base64 + "=".repeat(padding === 0 ? 0 : 4 - padding);
 
     const decoded = Buffer.from(paddedBase64, "base64");
 
-    // TON address structure: 1 byte flags + address + checksum = 34 bytes total
-    // Base64url encoded: 34 * 4/3 = 45.33 -> 46 chars (UQ + 46 = 48 total)
-    // Accept 33-35 bytes to handle potential encoding variations
-    if (decoded.length < 33 || decoded.length > 35) {
+    // TON address structure: 1 byte flags + 1 byte workchain + 32 bytes address hash + 2 bytes checksum = 36 bytes total
+    // Base64url encoded: 36 * 4/3 = 48 characters
+    if (decoded.length !== 36) {
       return false;
     }
 
     // Check flags byte (first byte)
-    // Bit 0: bounceable flag (0 = non-bounceable, 1 = bounceable)
-    // Bit 1: testnet flag (0 = mainnet, 1 = testnet/test-only)
+    // Bit 6 (0x40): bounceable flag (1 = non-bounceable, 0 = bounceable)
+    // Bit 7 (0x80): testnet flag (1 = testnet/test-only, 0 = mainnet)
     const flags = decoded[0];
-    const isBounceable = (flags & 0x01) !== 0;
-    const isTestOnly = (flags & 0x02) !== 0;
+    const isNonBounceable = (flags & 0x40) !== 0;
+    const isTestOnly = (flags & 0x80) !== 0;
 
-    // Must be bounceable and not test-only
-    return isBounceable && !isTestOnly;
+    // Must be non-bounceable and not test-only
+    return isNonBounceable && !isTestOnly;
   } catch {
     return false;
   }
@@ -197,7 +194,7 @@ export function validateChainAddress(value: unknown): ChainAddressValidationResu
     }
   }
 
-  // Check TON (starts with UQ for bounceable mainnet)
+  // Check TON (starts with UQ for non-bounceable mainnet)
   if (value.startsWith("UQ") || value.startsWith("EQ") || value.startsWith("0:")) {
     if (isValidTonAddress(value)) {
       return ChainAddressValidationResult.VALID_TON;
@@ -255,13 +252,13 @@ const customMessages = {
   [ChainAddressValidationResult.INVALID_SOLANA]:
     "Solana address must be a valid base58-encoded 32-byte public key.",
   [ChainAddressValidationResult.INVALID_TON]:
-    "TON address must be bounceable and not test-only (UQ... format).",
+    "TON address must be non-bounceable and not test-only (UQ... format).",
   [ChainAddressValidationResult.INVALID_GALACHAIN]: "GalaChain address must be a valid user alias."
 };
 
 const genericMessage =
   "Expected a valid chain address: Ethereum (checksummed with 0x prefix), " +
-  "Solana (base58-encoded 32-byte public key), TON (bounceable mainnet format: UQ...), " +
+  "Solana (base58-encoded 32-byte public key), TON (non-bounceable mainnet format: UQ...), " +
   "or GalaChain (valid user alias).";
 
 @ValidatorConstraint({ async: false })
@@ -295,7 +292,7 @@ class IsValidChainAddressConstraint implements ValidatorConstraintInterface {
  *
  * Ethereum addresses must be checksummed and start with '0x' prefix.
  * Solana addresses must be base58-encoded 32-byte public keys.
- * TON addresses must be bounceable and not test-only (UQ... format).
+ * TON addresses must be non-bounceable and not test-only (UQ... format).
  * GalaChain addresses must be valid user aliases.
  *
  * @param options

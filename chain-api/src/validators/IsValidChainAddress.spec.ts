@@ -12,9 +12,12 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+import { Address, beginCell } from "@ton/core";
+import { getSecureRandomBytes, keyPairFromSeed } from "@ton/crypto";
+
 import { ChainCallDTO, createValidDTO } from "../types";
-import { generateSchema } from "../utils";
-import { IsValidChainAddress } from "./IsValidChainAddress";
+import { ValidationFailedError, generateSchema } from "../utils";
+import { IsValidChainAddress, isValidChainAddress } from "./IsValidChainAddress";
 
 class TestDto extends ChainCallDTO {
   @IsValidChainAddress()
@@ -35,12 +38,25 @@ test.each<[string, string, true | string]>([
   ["valid solana address 1", "11111111111111111111111111111111", true],
   ["valid solana address 2", "So11111111111111111111111111111111111111112", true],
   ["valid solana address 3", "TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA", true],
+  // Solana addresses from bridge-requests.json (destinationChainId 1002)
+  ["valid solana address (bridge) 4", "3qbmnLjwqHmNrEUkDqWupSmvXo1vQvAjxXkNr8svx9M6", true],
+  ["valid solana address (bridge) 5", "EpTkHhxXAHaBh2LiaWPeobpiDGKLCcaNeujQFLeaKiBy", true],
+  ["valid solana address (bridge) 6", "4nQ1EAo8M8bsjnVC8tYUTncM4WH2ZLgtCAZM2o6baxX5", true],
+  ["valid solana address (bridge) 7", "4r9ezk9PjfAnNpWmCuZvaJ6jiHvyXUDxEpgsiizZAUqd", true],
+  ["valid solana address (bridge) 8", "F49gbYXgQVMyBNzdm5e7sfh2UVoxGiX466kPgc1rKqbN", true],
+  ["valid solana address (bridge) 9", "48t5yNSs2EUZ795p8Hc5At3VAve7sYqJqtY2Pzh4ays9", true],
+  ["valid solana address (bridge) 10", "8qaCPQvxY6eNanpUemCai47mpdVVEp44UmTveNfxVQ6F", true],
+  ["valid solana address (bridge) 11", "2CYz7an3J8mChq8ANwEh9F9up6EQ8WozZ1TMp9t4QcLf", true],
+  ["valid solana address (bridge) 12", "88Pc8eBfcJJen2cjpjP5Wsg28qvob4PQriHttpCxvsYS", true],
+  ["valid solana address (bridge) 13", "9iMH7CUpnmnHF7Uqe91PzbbXCU7gEPU9k44Qe5biUczC", true],
+  ["valid solana address (bridge) 14", "2eN4NXQAqPwqi59UGyrfxob5fAqneRJQcB4dfPaAMb7o", true],
+  ["valid solana address (bridge) 15", "9RW5dZo4WBEzCMJPq6XcnNHX4SEqLAxEu4rtrC76wsXs", true],
+  ["valid solana address (bridge) 16", "5DBNKFBc2HTRMqraDMBiYbnMqQdCSgrfLTtmhzMr61sb", true],
+  ["valid solana address (bridge) 17", "EAvpNCj3K9ZSRNSJ4PrS1SMh6uyHaQ8kS44kgoJSntvs", true],
+  ["valid solana address (bridge) 18", "2CQx3P55ZvbAFiACw6p2cQuj9S4Kb83Lgg6qEKA49ZZa", true],
 
-  // Valid TON addresses (bounceable mainnet format: UQ prefix + 46 base64url chars)
-  ["valid TON address 1", "UQAQAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA", true],
-  ["valid TON address 2", "UQAWzEKcdnykvXfUNouqdS62tvrp32bCxuKS6eQrS6ISgZ8t", true],
-  ["valid TON address 3", "UQDbygQE0bV5pIUGWbaBPSzfBbHBanqlL9azLcPEYG2ZTN-4", true],
-  ["valid TON address 4", "UQBS0JmPVVV5qac7fWtlBCmrTkKPgyK7xr8OX4iq_ojQ6oJc", true],
+  // Valid TON addresses (non-bounceable mainnet format: EQ prefix only)
+  // Note: UQ addresses are bounceable and should be rejected
 
   // Valid GalaChain addresses
   ["valid GalaChain address (client)", "client|123", true],
@@ -82,33 +98,7 @@ test.each<[string, string, string]>([
   ["invalid solana (too long)", "So111111111111111111111111111111111111111123", "base58-encoded 32-byte"],
   ["invalid solana (invalid chars)", "1111111111111111111111111111111O", "base58-encoded 32-byte"],
 
-  // Invalid TON addresses
-  [
-    "invalid TON (non-bounceable)",
-    "EQD0vdSA_NedR9uvbgN9EikRX-suesDxGeFg69XQMavfLqIo",
-    "bounceable and not test-only"
-  ],
-  [
-    "invalid TON (UQ prefix but flags indicate non-bounceable and testnet)",
-    "UQDocHtIukprXq1NSMgZCs-Y9WZcZvKfSol3Mg0PHHTU10TX",
-    "bounceable and not test-only"
-  ],
-  [
-    "invalid TON (UQ prefix but flags indicate non-bounceable and testnet)",
-    "UQChTmunCe2En0VCr-yiJdZoCzbT8p-F4CBPrc20gHIPnFly",
-    "bounceable and not test-only"
-  ],
-  ["invalid TON (test-only)", "UfD0vdSA_NedR9uvbgN9EikRX-suesDxGeFg69XQMavfLqIo", "valid chain address"],
-  [
-    "invalid TON (bad format)",
-    "EQD0vdSA_NedR9uvbgN9EikRX-suesDxGeFg69XQMavfLqI",
-    "bounceable and not test-only"
-  ],
-  [
-    "invalid TON (invalid chars)",
-    "UQD0vdSA_NedR9uvbgN9EikRX+suesDxGeFg69XQMavfLqIo",
-    "bounceable and not test-only"
-  ],
+  ["invalid TON (invalid chars)", "UQD0vdSA_NedR9uvbgN9EikRX+suesDxGeFg69XQMavfLqIo", "non-bounceable"],
   ["invalid TON (wrong prefix)", "XQD0vdSA_NedR9uvbgN9EikRX-suesDxGeFg69XQMavfLqIo", "valid chain address"],
   [
     "invalid TON (raw format)",
@@ -179,4 +169,40 @@ it("should support schema generation", () => {
       type: "array"
     })
   );
+});
+
+describe("TON", () => {
+  async function genKeyPair(): Promise<{ secretKey: Buffer; publicKey: Buffer }> {
+    const secret = await getSecureRandomBytes(32);
+    const pair = keyPairFromSeed(secret);
+    return { secretKey: pair.secretKey, publicKey: pair.publicKey };
+  }
+
+  function getTonAddress(publicKey: Buffer, bounceable: boolean, testOnly: boolean): string {
+    if (publicKey.length !== 32) {
+      throw new ValidationFailedError(`Invalid public key length: ${publicKey.length} (32 bytes required)`);
+    }
+
+    const cell = beginCell().storeBuffer(Buffer.from(publicKey)).endCell();
+    const hash = cell.hash();
+    const address = new Address(0, hash);
+    return address.toString({ bounceable, testOnly });
+  }
+
+  Array.from({ length: 5 }).forEach((v, i) => {
+    it(`test ${i}`, async () => {
+      // Given
+      const { publicKey } = await genKeyPair();
+      const valid = getTonAddress(publicKey, false, false);
+      const invalid1 = getTonAddress(publicKey, true, false).toString();
+      const invalid2 = getTonAddress(publicKey, false, true).toString();
+      const invalid3 = getTonAddress(publicKey, true, true).toString();
+
+      // When & Then
+      expect([valid, isValidChainAddress(valid)]).toEqual([valid, true]);
+      expect([invalid1, isValidChainAddress(invalid1)]).toEqual([invalid1, false]);
+      expect([invalid2, isValidChainAddress(invalid2)]).toEqual([invalid2, false]);
+      expect([invalid3, isValidChainAddress(invalid3)]).toEqual([invalid3, false]);
+    });
+  });
 });
