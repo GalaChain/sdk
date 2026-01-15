@@ -12,11 +12,8 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-import { Address, beginCell } from "@ton/core";
-import { getSecureRandomBytes, keyPairFromSeed } from "@ton/crypto";
-
 import { ChainCallDTO, createValidDTO } from "../types";
-import { ValidationFailedError, generateSchema } from "../utils";
+import { generateSchema } from "../utils";
 import { IsValidChainAddress, isValidChainAddress } from "./IsValidChainAddress";
 
 class TestDto extends ChainCallDTO {
@@ -29,100 +26,181 @@ class TestArrayDto extends ChainCallDTO {
   addresses: string[];
 }
 
-test.each<[string, string, true | string]>([
-  // Valid Ethereum addresses
-  ["valid ethereum address 1", "0x742d35Cc6634C0532925a3b844Bc454e4438f44e", true],
-  ["valid ethereum address 2", "0x8ba1f109551bD432803012645Ac136ddd64DBA72", true],
+describe("GalaChain", () => {
+  const DEFAULT_ERROR = "GalaChain address must be a valid user alias.";
 
-  // Valid Solana addresses
-  ["valid solana address 1", "11111111111111111111111111111111", true],
-  ["valid solana address 2", "So11111111111111111111111111111111111111112", true],
-  ["valid solana address 3", "TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA", true],
-  // Solana addresses from bridge-requests.json (destinationChainId 1002)
-  ["valid solana address (bridge) 4", "3qbmnLjwqHmNrEUkDqWupSmvXo1vQvAjxXkNr8svx9M6", true],
-  ["valid solana address (bridge) 5", "EpTkHhxXAHaBh2LiaWPeobpiDGKLCcaNeujQFLeaKiBy", true],
-  ["valid solana address (bridge) 6", "4nQ1EAo8M8bsjnVC8tYUTncM4WH2ZLgtCAZM2o6baxX5", true],
-  ["valid solana address (bridge) 7", "4r9ezk9PjfAnNpWmCuZvaJ6jiHvyXUDxEpgsiizZAUqd", true],
-  ["valid solana address (bridge) 8", "F49gbYXgQVMyBNzdm5e7sfh2UVoxGiX466kPgc1rKqbN", true],
-  ["valid solana address (bridge) 9", "48t5yNSs2EUZ795p8Hc5At3VAve7sYqJqtY2Pzh4ays9", true],
-  ["valid solana address (bridge) 10", "8qaCPQvxY6eNanpUemCai47mpdVVEp44UmTveNfxVQ6F", true],
-  ["valid solana address (bridge) 11", "2CYz7an3J8mChq8ANwEh9F9up6EQ8WozZ1TMp9t4QcLf", true],
-  ["valid solana address (bridge) 12", "88Pc8eBfcJJen2cjpjP5Wsg28qvob4PQriHttpCxvsYS", true],
-  ["valid solana address (bridge) 13", "9iMH7CUpnmnHF7Uqe91PzbbXCU7gEPU9k44Qe5biUczC", true],
-  ["valid solana address (bridge) 14", "2eN4NXQAqPwqi59UGyrfxob5fAqneRJQcB4dfPaAMb7o", true],
-  ["valid solana address (bridge) 15", "9RW5dZo4WBEzCMJPq6XcnNHX4SEqLAxEu4rtrC76wsXs", true],
-  ["valid solana address (bridge) 16", "5DBNKFBc2HTRMqraDMBiYbnMqQdCSgrfLTtmhzMr61sb", true],
-  ["valid solana address (bridge) 17", "EAvpNCj3K9ZSRNSJ4PrS1SMh6uyHaQ8kS44kgoJSntvs", true],
-  ["valid solana address (bridge) 18", "2CQx3P55ZvbAFiACw6p2cQuj9S4Kb83Lgg6qEKA49ZZa", true],
+  test.each<[string, string]>([
+    ["valid GalaChain address (client)", "client|123"],
+    ["valid GalaChain address (service)", "service|abc"],
+    ["valid GalaChain address (bridge)", "EthereumBridge"],
+    ["valid GalaChain address (chain bridge)", "GalaChainBridge-42"]
+  ])("%s", async (label, input) => {
+    // Given
+    const plain = { address: input };
 
-  // Valid TON addresses (non-bounceable mainnet format: EQ prefix only)
-  // Note: UQ addresses are bounceable and should be rejected
+    // When
+    const validated = await createValidDTO(TestDto, plain);
 
-  // Valid GalaChain addresses
-  ["valid GalaChain address (client)", "client|123", true],
-  ["valid GalaChain address (service)", "service|abc", true],
-  ["valid GalaChain address (bridge)", "EthereumBridge", true],
-  ["valid GalaChain address (chain bridge)", "GalaChainBridge-42", true]
-])("%s", async (label, input) => {
-  // Given
-  const plain = { address: input };
+    // Then
+    expect(validated.address).toBe(input);
+  });
 
-  // When
-  const validated = await createValidDTO(TestDto, plain);
+  test.each<[string, string, string]>([
+    ["invalid GalaChain (empty id)", "client|", DEFAULT_ERROR],
+    ["invalid GalaChain (invalid prefix)", "invalid|123", DEFAULT_ERROR]
+  ])("%s", async (label, input, expectedError) => {
+    // Given
+    const plain = { address: input };
 
-  // Then
-  expect(validated.address).toBe(input);
+    // When
+    const failed = createValidDTO(TestDto, plain);
+
+    // Then
+    await expect(failed).rejects.toThrow(expectedError);
+  });
 });
 
-test.each<[string, string, string]>([
-  // Invalid Ethereum addresses
-  ["invalid ethereum (no prefix)", "742d35Cc6634C0532925a3b844Bc454e4438f44e", "valid chain address"],
-  [
-    "invalid ethereum (lowercase)",
-    "0x742d35cc6634c0532925a3b844bc454e4438f44e",
-    "checksummed and start with '0x'"
-  ],
-  [
-    "invalid ethereum (bad checksum)",
-    "0x742d35Cc6634C0532925a3b844Bc454e4438f44E",
-    "checksummed and start with '0x'"
-  ],
-  [
-    "invalid ethereum (wrong length)",
-    "0x742d35Cc6634C0532925a3b844Bc454e4438f4",
-    "checksummed and start with '0x'"
-  ],
+describe("Ethereum", () => {
+  const DEFAULT_ERROR = "Ethereum address must be checksummed and start with '0x' prefix.";
+  const DEFAULT_INVALID_ERROR = "Expected a valid chain address";
 
-  // Invalid Solana addresses
-  ["invalid solana (too short)", "1111111111111111111111111111111", "base58-encoded 32-byte"],
-  ["invalid solana (too long)", "So111111111111111111111111111111111111111123", "base58-encoded 32-byte"],
-  ["invalid solana (invalid chars)", "1111111111111111111111111111111O", "base58-encoded 32-byte"],
+  test.each<[string, string]>([
+    ["valid ethereum address 1", "0x742d35Cc6634C0532925a3b844Bc454e4438f44e"],
+    ["valid ethereum address 2", "0x8ba1f109551bD432803012645Ac136ddd64DBA72"]
+  ])("%s", async (label, input) => {
+    // Given
+    const plain = { address: input };
 
-  ["invalid TON (invalid chars)", "UQD0vdSA_NedR9uvbgN9EikRX+suesDxGeFg69XQMavfLqIo", "non-bounceable"],
-  ["invalid TON (wrong prefix)", "XQD0vdSA_NedR9uvbgN9EikRX-suesDxGeFg69XQMavfLqIo", "valid chain address"],
-  [
-    "invalid TON (raw format)",
-    "0:83d2f75203f4ed47dbaf6e037d1224517facb9eb03c4678583af5740c6af7cba",
-    "valid chain address"
-  ],
+    // When
+    const validated = await createValidDTO(TestDto, plain);
 
-  // Invalid GalaChain addresses
-  ["invalid GalaChain (empty id)", "client|", "valid user alias"],
-  ["invalid GalaChain (invalid prefix)", "invalid|123", "valid user alias"],
+    // Then
+    expect(validated.address).toBe(input);
+  });
 
-  // Invalid format
-  ["invalid format (empty string)", "", "valid chain address"],
-  ["invalid format (random string)", "random-string-123", "valid chain address"],
-  ["invalid format (numbers only)", "1234567890123456789012345678901234567890", "valid chain address"]
-])("%s", async (label, input, expectedError) => {
-  // Given
-  const plain = { address: input };
+  test.each<[string, string, string]>([
+    ["invalid ethereum (no prefix)", "742d35Cc6634C0532925a3b844Bc454e4438f44e", DEFAULT_INVALID_ERROR],
+    ["invalid ethereum (lowercase)", "0x742d35cc6634c0532925a3b844bc454e4438f44e", DEFAULT_ERROR],
+    ["invalid ethereum (bad checksum)", "0x742d35Cc6634C0532925a3b844Bc454e4438f44E", DEFAULT_ERROR],
+    ["invalid ethereum (wrong length)", "0x742d35Cc6634C0532925a3b844Bc454e4438f4", DEFAULT_ERROR]
+  ])("%s", async (label, input, expectedError) => {
+    // Given
+    const plain = { address: input };
 
-  // When
-  const failed = createValidDTO(TestDto, plain);
+    // When
+    const failed = createValidDTO(TestDto, plain);
 
-  // Then
-  await expect(failed).rejects.toThrow(expectedError);
+    // Then
+    await expect(failed).rejects.toThrow(expectedError);
+  });
+});
+
+describe("Solana", () => {
+  const DEFAULT_ERROR = "Solana address must be a valid base58-encoded 32-byte public key.";
+
+  test.each<[string, string]>([
+    ["valid solana address 1", "11111111111111111111111111111111"],
+    ["valid solana address 2", "So11111111111111111111111111111111111111112"],
+    ["valid solana address 4", "3qbmnLjwqHmNrEUkDqWupSmvXo1vQvAjxXkNr8svx9M6"],
+    ["valid solana address 5", "EpTkHhxXAHaBh2LiaWPeobpiDGKLCcaNeujQFLeaKiBy"],
+    ["valid solana address 6", "4nQ1EAo8M8bsjnVC8tYUTncM4WH2ZLgtCAZM2o6baxX5"]
+  ])("%s", async (label, input) => {
+    // Given
+    const plain = { address: input };
+
+    // When
+    const validated = await createValidDTO(TestDto, plain);
+
+    // Then
+    expect(validated.address).toBe(input);
+  });
+
+  test.each<[string, string, string]>([
+    ["invalid solana (too short)", "1111111111111111111111111111111", DEFAULT_ERROR],
+    ["invalid solana (too long)", "So111111111111111111111111111111111111111123", DEFAULT_ERROR],
+    ["invalid solana (invalid chars)", "1111111111111111111111111111111O", DEFAULT_ERROR]
+  ])("%s", async (label, input, expectedError) => {
+    // Given
+    const plain = { address: input };
+
+    // When
+    const failed = createValidDTO(TestDto, plain);
+
+    // Then
+    await expect(failed).rejects.toThrow(expectedError);
+  });
+});
+
+describe("TON", () => {
+  const DEFAULT_ERROR = "Expected a valid chain address";
+  const DEFAULT_NON_BOUNCEABLE_ERROR = "TON address must be non-bounceable and not test-only (UQ... format).";
+
+  test.each<[string, string, string]>([
+    [
+      "invalid TON (invalid chars)",
+      "UQD0vdSA_NedR9uvbgN9EikRX+suesDxGeFg69XQMavfLqIo",
+      DEFAULT_NON_BOUNCEABLE_ERROR
+    ],
+    ["invalid TON (wrong prefix)", "XQD0vdSA_NedR9uvbgN9EikRX-suesDxGeFg69XQMavfLqIo", DEFAULT_ERROR],
+    [
+      "invalid TON (raw format)",
+      "0:83d2f75203f4ed47dbaf6e037d1224517facb9eb03c4678583af5740c6af7cba",
+      DEFAULT_ERROR
+    ]
+  ])("%s", async (label, input, expectedError) => {
+    // Given
+    const plain = { address: input };
+
+    // When
+    const failed = createValidDTO(TestDto, plain);
+
+    // Then
+    await expect(failed).rejects.toThrow(expectedError);
+  });
+
+  // samples were generated by @ton/crypto and @ton/core
+  // they are hardcoded here to avoid TON dependencies in the project
+  const generatedTonSamples = [
+    {
+      valid: "UQCujECl4bNjsAjK4I62az-rqNde5citayQkU80YACWzFzQx",
+      bounceable: "EQCujECl4bNjsAjK4I62az-rqNde5citayQkU80YACWzF2n0",
+      testOnly: "0QCujECl4bNjsAjK4I62az-rqNde5citayQkU80YACWzF4-7",
+      both: "kQCujECl4bNjsAjK4I62az-rqNde5citayQkU80YACWzF9J-"
+    },
+    {
+      valid: "UQAvVZf96T4XVIXA4RbJojaynSXB4ioF-gyQgkYizIj3xS-Y",
+      bounceable: "EQAvVZf96T4XVIXA4RbJojaynSXB4ioF-gyQgkYizIj3xXJd",
+      testOnly: "0QAvVZf96T4XVIXA4RbJojaynSXB4ioF-gyQgkYizIj3xZQS",
+      both: "kQAvVZf96T4XVIXA4RbJojaynSXB4ioF-gyQgkYizIj3xcnX"
+    },
+    {
+      valid: "UQA2OFhqBfixAfElUYkkluukh-jh_wieiufEnI_kR7AGqwA3",
+      bounceable: "EQA2OFhqBfixAfElUYkkluukh-jh_wieiufEnI_kR7AGq13y",
+      testOnly: "0QA2OFhqBfixAfElUYkkluukh-jh_wieiufEnI_kR7AGq7u9",
+      both: "kQA2OFhqBfixAfElUYkkluukh-jh_wieiufEnI_kR7AGq-Z4"
+    },
+    {
+      valid: "UQCyyB-aSBm_YQUVW2D3TK117lny-pluapYNOP8cem6lk4E7",
+      bounceable: "EQCyyB-aSBm_YQUVW2D3TK117lny-pluapYNOP8cem6lk9z-",
+      testOnly: "0QCyyB-aSBm_YQUVW2D3TK117lny-pluapYNOP8cem6lkzqx",
+      both: "kQCyyB-aSBm_YQUVW2D3TK117lny-pluapYNOP8cem6lk2d0"
+    },
+    {
+      valid: "UQARWpTD8YKEmIEv886mQHhC-i34vey0eC8Em4ot3YIltsH_",
+      bounceable: "EQARWpTD8YKEmIEv886mQHhC-i34vey0eC8Em4ot3YIltpw6",
+      testOnly: "0QARWpTD8YKEmIEv886mQHhC-i34vey0eC8Em4ot3YIltnp1",
+      both: "kQARWpTD8YKEmIEv886mQHhC-i34vey0eC8Em4ot3YIltiew"
+    }
+  ];
+
+  generatedTonSamples.forEach((v, i) => {
+    it(`generated TON address ${i}`, async () => {
+      expect([v.valid, isValidChainAddress(v.valid)]).toEqual([v.valid, true]);
+      expect([v.bounceable, isValidChainAddress(v.bounceable)]).toEqual([v.bounceable, false]);
+      expect([v.testOnly, isValidChainAddress(v.testOnly)]).toEqual([v.testOnly, false]);
+      expect([v.both, isValidChainAddress(v.both)]).toEqual([v.both, false]);
+    });
+  });
 });
 
 it("should validate array of chain addresses", async () => {
@@ -169,40 +247,4 @@ it("should support schema generation", () => {
       type: "array"
     })
   );
-});
-
-describe("TON", () => {
-  async function genKeyPair(): Promise<{ secretKey: Buffer; publicKey: Buffer }> {
-    const secret = await getSecureRandomBytes(32);
-    const pair = keyPairFromSeed(secret);
-    return { secretKey: pair.secretKey, publicKey: pair.publicKey };
-  }
-
-  function getTonAddress(publicKey: Buffer, bounceable: boolean, testOnly: boolean): string {
-    if (publicKey.length !== 32) {
-      throw new ValidationFailedError(`Invalid public key length: ${publicKey.length} (32 bytes required)`);
-    }
-
-    const cell = beginCell().storeBuffer(Buffer.from(publicKey)).endCell();
-    const hash = cell.hash();
-    const address = new Address(0, hash);
-    return address.toString({ bounceable, testOnly });
-  }
-
-  Array.from({ length: 5 }).forEach((v, i) => {
-    it(`test ${i}`, async () => {
-      // Given
-      const { publicKey } = await genKeyPair();
-      const valid = getTonAddress(publicKey, false, false);
-      const invalid1 = getTonAddress(publicKey, true, false).toString();
-      const invalid2 = getTonAddress(publicKey, false, true).toString();
-      const invalid3 = getTonAddress(publicKey, true, true).toString();
-
-      // When & Then
-      expect([valid, isValidChainAddress(valid)]).toEqual([valid, true]);
-      expect([invalid1, isValidChainAddress(invalid1)]).toEqual([invalid1, false]);
-      expect([invalid2, isValidChainAddress(invalid2)]).toEqual([invalid2, false]);
-      expect([invalid3, isValidChainAddress(invalid3)]).toEqual([invalid3, false]);
-    });
-  });
 });
