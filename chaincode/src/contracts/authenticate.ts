@@ -47,7 +47,7 @@ class MultipleSignaturesNotAllowedError extends ValidationFailedError {
   constructor() {
     super(
       `Multiple signature authentication requires valid signerAddress and dtoExpiresAt, ` +
-        "and no other signer parameters (signerPublicKey or prefix)."
+        "and no signerPublicKey."
     );
   }
 }
@@ -224,7 +224,6 @@ async function authenticateMultipleSignatures(
 ): Promise<AuthenticateResult> {
   if (
     dto.signerPublicKey !== undefined ||
-    dto.prefix !== undefined ||
     dto.signerAddress === undefined ||
     dto.dtoExpiresAt === undefined ||
     dto.multisig.length < 2
