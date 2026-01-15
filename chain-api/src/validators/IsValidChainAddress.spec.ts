@@ -27,7 +27,7 @@ class TestArrayDto extends ChainCallDTO {
 }
 
 describe("GalaChain", () => {
-  const DEFAULT_ERROR = "GalaChain address must be a valid user alias.";
+  const DEFAULT_ERROR = "Expected a valid chain address";
 
   test.each<[string, string]>([
     ["valid GalaChain address (client)", "client|123"],
@@ -97,6 +97,7 @@ describe("Ethereum", () => {
 
 describe("Solana", () => {
   const DEFAULT_ERROR = "Solana address must be a valid base58-encoded 32-byte public key.";
+  const DEFAULT_INVALID_ERROR = "Expected a valid chain address";
 
   test.each<[string, string]>([
     ["valid solana address 1", "11111111111111111111111111111111"],
@@ -116,9 +117,9 @@ describe("Solana", () => {
   });
 
   test.each<[string, string, string]>([
-    ["invalid solana (too short)", "1111111111111111111111111111111", DEFAULT_ERROR],
+    ["invalid solana (too short)", "1111111111111111111111111111111", DEFAULT_INVALID_ERROR],
     ["invalid solana (too long)", "So111111111111111111111111111111111111111123", DEFAULT_ERROR],
-    ["invalid solana (invalid chars)", "1111111111111111111111111111111O", DEFAULT_ERROR]
+    ["invalid solana (invalid chars)", "1111111111111111111111111111111O", DEFAULT_INVALID_ERROR]
   ])("%s", async (label, input, expectedError) => {
     // Given
     const plain = { address: input };
@@ -145,7 +146,7 @@ describe("TON", () => {
     [
       "invalid TON (raw format)",
       "0:83d2f75203f4ed47dbaf6e037d1224517facb9eb03c4678583af5740c6af7cba",
-      DEFAULT_ERROR
+      DEFAULT_NON_BOUNCEABLE_ERROR
     ]
   ])("%s", async (label, input, expectedError) => {
     // Given
