@@ -19,8 +19,9 @@ import {
   GalaChainResponse,
   GetMyProfileDto,
   PublicKeyContractAPI,
-  RegisterEthUserDto,
+  RegisterUserDto,
   UserProfile,
+  createValidSubmitDTO,
   publicKeyContractAPI,
   randomUniqueKey,
   signatures
@@ -110,15 +111,15 @@ describeIfNonMockedChaincode("Chaincode client (CuratorOrg)", () => {
 
   it("should register another user", async () => {
     // Given
-    const newUser = ChainUser.withRandomKeys();
+    const newUser = ChainUser.withRandomKeys("new-user");
 
-    const dto = new RegisterEthUserDto();
-    dto.publicKey = newUser.publicKey;
-    dto.uniqueKey = randomUniqueKey();
-    dto.sign(getAdminPrivateKey(), false);
+    const dto = await createValidSubmitDTO(RegisterUserDto, {
+      user: newUser.identityKey,
+      publicKey: newUser.publicKey
+    }).signed(getAdminPrivateKey());
 
     // When
-    const response = await client.RegisterEthUser(dto);
+    const response = await client.RegisterUser(dto);
 
     // Then
     expect(response).toEqual(GalaChainResponse.Success(newUser.identityKey));

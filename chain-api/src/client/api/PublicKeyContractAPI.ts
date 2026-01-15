@@ -17,7 +17,6 @@ import {
   GetMyProfileDto,
   GetPublicKeyDto,
   PublicKey,
-  RegisterEthUserDto,
   RegisterUserDto,
   UpdatePublicKeyDto,
   UserProfile,
@@ -30,7 +29,6 @@ export interface PublicKeyContractAPI extends CommonContractAPI {
   GetPublicKey(user?: string | GetPublicKeyDto): Promise<GalaChainResponse<PublicKey>>;
   UpdatePublicKey(dto: UpdatePublicKeyDto): Promise<GalaChainResponse<void>>;
   RegisterUser(dto: RegisterUserDto): Promise<GalaChainResponse<string>>;
-  RegisterEthUser(dto: RegisterEthUserDto): Promise<GalaChainResponse<string>>;
   GetMyProfile(dto: GetMyProfileDto): Promise<GalaChainResponse<UserProfile>>;
 }
 
@@ -49,10 +47,6 @@ export const publicKeyContractAPI = (client: ChainClient): PublicKeyContractAPI 
 
   RegisterUser(dto: RegisterUserDto) {
     return client.submitTransaction("RegisterUser", dto) as Promise<GalaChainResponse<string>>;
-  },
-
-  RegisterEthUser(dto: RegisterEthUserDto) {
-    return client.submitTransaction("RegisterEthUser", dto) as Promise<GalaChainResponse<string>>;
   },
 
   UpdatePublicKey(dto: UpdatePublicKeyDto) {

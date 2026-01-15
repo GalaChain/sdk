@@ -183,12 +183,8 @@ export abstract class GalaContract extends Contract {
     // If the caller public key is provided, we use it to set the dry run on behalf of the user.
     if (dto.callerPublicKey) {
       const ethAddr = signatures.getEthAddress(signatures.getNonCompactHexPublicKey(dto.callerPublicKey));
-      const userProfile = await PublicKeyService.getUserProfile(ctx, ethAddr);
-
-      if (!userProfile) {
-        throw new NotFoundError(`User profile for ${ethAddr} not found`);
-      }
-
+      const savedProfile = await PublicKeyService.getUserProfile(ctx, ethAddr);
+      const userProfile = savedProfile ?? PublicKeyService.getDefaultUserProfile(ethAddr);
       ctx.setDryRunOnBehalfOf({
         ...userProfile
       });

@@ -16,8 +16,8 @@ import {
   ChainCallDTO,
   GetPublicKeyDto,
   PublicKey,
-  RegisterEthUserDto,
-  UserAlias,
+  RegisterUserDto,
+  asValidUserAlias,
   createValidChainObject,
   createValidDTO,
   createValidSubmitDTO,
@@ -36,7 +36,7 @@ beforeAll(async () => {
 
   // Prepare user data
   const userKeys = signatures.genKeyPair();
-  const userAlias = `eth|${signatures.getEthAddress(userKeys.publicKey)}`;
+  const userAlias = asValidUserAlias(`client|user1`);
   user = {
     ...userKeys,
     base64PublicKey: signatures.getCompactBase64PublicKey(userKeys.publicKey),
@@ -73,28 +73,34 @@ it("should support the global state", async () => {
   const client1 = createClient(chaincodeDir);
   const client2 = createClient(chaincodeDir);
 
-  const registerDto = await createValidSubmitDTO(RegisterEthUserDto, { publicKey: user.publicKey });
-  registerDto.sign(admin.privateKey);
+  const registerDto = (
+    await createValidSubmitDTO(RegisterUserDto, {
+      user: user.alias,
+      publicKey: user.publicKey
+    })
+  )
+    .withPublicKeySignedBy(user.privateKey)
+    .signed(admin.privateKey);
 
-  const getProfileDto = await createValidDTO(GetPublicKeyDto, { user: user.alias });
+  const getPublicKeyDto = await createValidDTO(GetPublicKeyDto, { user: user.alias });
 
   const expectedPublicKey = await createValidChainObject(PublicKey, {
     publicKey: user.base64PublicKey
   });
 
   // initially the key is missing
-  const noKeyResponse = await client1.evaluateTransaction("GetPublicKey", getProfileDto);
+  const noKeyResponse = await client1.evaluateTransaction("GetPublicKey", getPublicKeyDto);
   expect(noKeyResponse).toEqual(transactionErrorKey("PK_NOT_FOUND"));
 
   // When
-  const registerResponse = await client1.submitTransaction("RegisterEthUser", registerDto);
+  const registerResponse = await client1.submitTransaction("RegisterUser", registerDto);
 
   // Then
   expect(registerResponse).toEqual(transactionSuccess());
 
   // both clients can get the key
-  const keyResponse1 = await client1.evaluateTransaction("GetPublicKey", getProfileDto);
-  const keyResponse2 = await client2.evaluateTransaction("GetPublicKey", getProfileDto);
+  const keyResponse1 = await client1.evaluateTransaction("GetPublicKey", getPublicKeyDto);
+  const keyResponse2 = await client2.evaluateTransaction("GetPublicKey", getPublicKeyDto);
   expect(keyResponse1).toEqual(transactionSuccess(expectedPublicKey));
   expect(keyResponse2).toEqual(transactionSuccess(expectedPublicKey));
 });
@@ -104,10 +110,13 @@ it("should not change the state for evaluateTransaction", async () => {
   const client = createClient(chaincodeDir);
 
   const otherUser = signatures.genKeyPair();
-  const otherUserAlias = `eth|${signatures.getEthAddress(otherUser.publicKey)}` as UserAlias;
+  const otherUserAlias = asValidUserAlias(`client|other-user`);
 
-  const registerDto = await createValidSubmitDTO(RegisterEthUserDto, { publicKey: otherUser.publicKey });
-  registerDto.sign(admin.privateKey);
+  const registerDto = (
+    await createValidSubmitDTO(RegisterUserDto, { user: otherUserAlias, publicKey: otherUser.publicKey })
+  )
+    .withPublicKeySignedBy(otherUser.privateKey)
+    .signed(admin.privateKey);
 
   const getProfileDto = await createValidDTO(GetPublicKeyDto, { user: otherUserAlias });
 
@@ -116,7 +125,7 @@ it("should not change the state for evaluateTransaction", async () => {
   expect(noKeyResponse1).toEqual(transactionErrorKey("PK_NOT_FOUND")); // initially the key is missing
 
   // When
-  const registerEvaluateResponse = await client.evaluateTransaction("RegisterEthUser", registerDto);
+  const registerEvaluateResponse = await client.evaluateTransaction("RegisterUser", registerDto);
 
   // Then
   expect(registerEvaluateResponse).toEqual(transactionSuccess()); // evaluate does not change the state
@@ -128,24 +137,6 @@ it("should not change the state for evaluateTransaction", async () => {
 });
 
 it.skip("should support key collision validation", async () => {
-  // Given
-  const transactionDelayMs = 100;
-  const client1 = createClient(chaincodeDir, transactionDelayMs);
-  const client2 = createClient(chaincodeDir, transactionDelayMs);
-
-  const otherUser = signatures.genKeyPair();
-  const registerDto = await createValidSubmitDTO(RegisterEthUserDto, { publicKey: otherUser.publicKey });
-  registerDto.sign(admin.privateKey);
-
-  // When
-  const parallelCalls = await Promise.all([
-    client1.submitTransaction("RegisterEthUser", registerDto),
-    client2.submitTransaction("RegisterEthUser", registerDto)
-  ]);
-
-  // Then
-  expect(parallelCalls).toEqual([transactionSuccess(), "MVCC_CONFLICT"]); // change the last value
-
   // Set transaction delay, and call two conflicting transactions in parallel (either the same client or different client)
   throw new Error("Not implemented");
 });

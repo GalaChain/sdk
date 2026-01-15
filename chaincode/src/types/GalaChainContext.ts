@@ -29,7 +29,6 @@ function getTxUnixTime(ctx: Context): number {
 
 export interface GalaChainContextConfig {
   readonly adminPublicKey?: string;
-  readonly allowNonRegisteredUsers?: boolean;
 }
 
 class GalaChainContextConfigImpl implements GalaChainContextConfig {
@@ -37,10 +36,6 @@ class GalaChainContextConfigImpl implements GalaChainContextConfig {
 
   get adminPublicKey(): string | undefined {
     return this.config.adminPublicKey ?? process.env.DEV_ADMIN_PUBLIC_KEY;
-  }
-
-  get allowNonRegisteredUsers(): boolean | undefined {
-    return this.config.allowNonRegisteredUsers ?? process.env.ALLOW_NON_REGISTERED_USERS === "true";
   }
 }
 
@@ -82,11 +77,11 @@ export class GalaChainContext extends Context {
     return this.callingUserValue;
   }
 
-  get callingUserEthAddress(): string {
-    if (this.callingUserEthAddressValue === undefined) {
-      throw new UnauthorizedError(`No ETH address known for user ${this.callingUserValue}`);
+  get callingUserAddress(): string {
+    if (this.callingUserEthAddressValue !== undefined) {
+      return this.callingUserEthAddressValue;
     }
-    return this.callingUserEthAddressValue;
+    throw new UnauthorizedError(`No address known for user ${this.callingUserValue}`);
   }
 
   get callingUserRoles(): string[] {
