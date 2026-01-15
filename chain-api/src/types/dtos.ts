@@ -196,7 +196,7 @@ export class ChainCallDTO {
     description:
       "List of signatures for this DTO if there are multiple signers. " +
       "If there are multiple signatures, 'signerAddress' is required, " +
-      "and it is not allowed to provide 'signature' or 'signerPublicKey' or 'prefix' fields, " +
+      "and it is not allowed to provide 'signature' or 'signerPublicKey' fields, " +
       "and the signing scheme must be ETH."
   })
   @IsOptional()
@@ -293,8 +293,8 @@ export class ChainCallDTO {
       throw new ValidationFailedError("dtoExpiresAt is required for multisignature DTOs");
     }
 
-    if (useMultisig && (this.signerPublicKey || this.prefix)) {
-      throw new ValidationFailedError("signerPublicKey and prefix are not allowed for multisignature DTOs");
+    if (useMultisig && this.signerPublicKey) {
+      throw new ValidationFailedError("signerPublicKey is not allowed for multisignature DTOs");
     }
 
     if (useDer) {
