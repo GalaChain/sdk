@@ -13,14 +13,18 @@
  * limitations under the License.
  */
 import {
+  AcceptLendingOfferDto,
+  AcceptLendingOfferResultDto,
   AcceptLoanOfferDto,
   AllowanceType,
   BatchFillTokenSwapDto,
   BatchMintTokenDto,
   BurnTokensDto,
+  CancelLendingOfferDto,
   CleanTokenSwapsDto,
   CleanTokenSwapsResponse,
   CloseLoanDto,
+  CreateLendingOfferDto,
   CreateTokenClassDto,
   CreateTokenSaleDto,
   CreateVestingTokenDto,
@@ -45,6 +49,7 @@ import {
   FetchFeeThresholdUsesResDto,
   FetchFeeThresholdUsesWithPaginationDto,
   FetchFeeThresholdUsesWithPaginationResponse,
+  FetchLendingOffersDto,
   FetchLoanOffersDto,
   FetchLoansDto,
   FetchMintRequestsDto,
@@ -65,8 +70,14 @@ import {
   FulfillTokenSaleDto,
   FullAllowanceCheckDto,
   FullAllowanceCheckResDto,
+  FungibleLendingOffer,
+  FungibleLoan,
   GrantAllowanceDto,
   HighThroughputMintTokenDto,
+  LendingAgreement,
+  LendingOfferResDto,
+  LiquidateLoanDto,
+  LiquidationResultDto,
   Loan,
   LoanOffer,
   LoanOfferResDto,
@@ -79,6 +90,8 @@ import {
   RefreshAllowancesDto,
   ReleaseTokenDto,
   RemoveTokenSaleDto,
+  RepayLoanDto,
+  RepaymentResultDto,
   RequestTokenSwapDto,
   TerminateTokenSwapDto,
   TokenAllowance,
@@ -111,8 +124,11 @@ import {
   GalaTransaction,
   Submit,
   UnsignedEvaluate,
+  acceptLendingOffer,
   batchMintToken,
   burnTokens,
+  cancelLendingOffer,
+  createLendingOffer,
   createTokenClass,
   createTokenSale,
   createVestingToken,
@@ -127,6 +143,7 @@ import {
   fetchFeeSchedule,
   fetchFeeThresholdUses,
   fetchFeeThresholdUsesWithPagination,
+  fetchLendingOffers,
   fetchTokenClasses,
   fetchTokenClassesWithPagination,
   fetchTokenSaleById,
@@ -136,6 +153,7 @@ import {
   fulfillTokenSale,
   fullAllowanceCheck,
   grantAllowance,
+  liquidateLoan,
   lockToken,
   lockTokens,
   mintRequestsByTimeRange,
@@ -144,6 +162,7 @@ import {
   refreshAllowances,
   releaseToken,
   removeTokenSale,
+  repayLoan,
   requestMint,
   resolveUserAlias,
   transferToken,
@@ -774,6 +793,122 @@ export default class GalaChainTokenContract extends GalaContract {
       loanKey: dto.loan,
       closingStatus: dto.status
     });
+  }
+
+  @Submit({
+    in: CreateLendingOfferDto,
+    out: { arrayOf: LendingOfferResDto }
+  })
+  public async CreateLendingOffer(
+    ctx: GalaChainContext,
+    dto: CreateLendingOfferDto
+  ): Promise<LendingOfferResDto[]> {
+    return createLendingOffer(ctx, {
+      lender: dto.lender ?? ctx.callingUser,
+      principalToken: dto.principalToken,
+      principalQuantity: dto.principalQuantity,
+      interestRate: dto.interestRate,
+      duration: dto.duration,
+      collateralToken: dto.collateralToken,
+      collateralRatio: dto.collateralRatio,
+      borrowers: dto.borrowers,
+      uses: dto.uses,
+      expires: dto.expires ?? CreateLendingOfferDto.DEFAULT_EXPIRES
+    });
+  }
+
+  @UnsignedEvaluate({
+    in: FetchLendingOffersDto,
+    out: { arrayOf: FungibleLendingOffer }
+  })
+  public async FetchLendingOffers(
+    ctx: GalaChainContext,
+    dto: FetchLendingOffersDto
+  ): Promise<FungibleLendingOffer[]> {
+    return fetchLendingOffers(ctx, {
+      lender: dto.lender,
+      principalToken: dto.principalToken,
+      borrower: dto.borrower,
+      status: dto.status
+    });
+  }
+
+  @Submit({
+    in: CancelLendingOfferDto,
+    out: FungibleLendingOffer
+  })
+  public async CancelLendingOffer(
+    ctx: GalaChainContext,
+    dto: CancelLendingOfferDto
+  ): Promise<FungibleLendingOffer> {
+    return cancelLendingOffer(ctx, {
+      offerKey: dto.offerKey,
+      callingUser: ctx.callingUser
+    });
+  }
+
+  @Submit({
+    in: AcceptLendingOfferDto,
+    out: AcceptLendingOfferResultDto
+  })
+  public async AcceptLendingOffer(
+    ctx: GalaChainContext,
+    dto: AcceptLendingOfferDto
+  ): Promise<AcceptLendingOfferResultDto> {
+    const result = await acceptLendingOffer(ctx, {
+      offer: dto.offer,
+      borrower: dto.borrower ?? ctx.callingUser,
+      collateralAmount: dto.collateralAmount
+    });
+
+    const resultDto = new AcceptLendingOfferResultDto();
+    resultDto.loan = result.loan;
+    resultDto.agreement = result.agreement;
+    resultDto.collateralLocked = result.collateralLocked;
+    resultDto.totalDebt = result.totalDebt;
+
+    return resultDto;
+  }
+
+  @Submit({
+    in: RepayLoanDto,
+    out: RepaymentResultDto
+  })
+  public async RepayLoan(ctx: GalaChainContext, dto: RepayLoanDto): Promise<RepaymentResultDto> {
+    const result = await repayLoan(ctx, {
+      loanKey: dto.loanKey,
+      repaymentAmount: dto.repaymentAmount,
+      borrower: ctx.callingUser
+    });
+
+    const resultDto = new RepaymentResultDto();
+    resultDto.loan = result.loan;
+    resultDto.principalRepaid = result.principalRepaid;
+    resultDto.interestRepaid = result.interestRepaid;
+    resultDto.collateralReturned = result.collateralReturned;
+
+    return resultDto;
+  }
+
+  @Submit({
+    in: LiquidateLoanDto,
+    out: LiquidationResultDto
+  })
+  public async LiquidateLoan(ctx: GalaChainContext, dto: LiquidateLoanDto): Promise<LiquidationResultDto> {
+    const result = await liquidateLoan(ctx, {
+      loanKey: dto.loanKey,
+      maxDebtRepayment: dto.maxDebtRepayment,
+      liquidator: ctx.callingUser
+    });
+
+    const resultDto = new LiquidationResultDto();
+    resultDto.loan = result.loan;
+    resultDto.debtRepaid = result.debtRepaid;
+    resultDto.collateralLiquidated = result.collateralLiquidated;
+    resultDto.liquidatorReward = result.liquidatorReward;
+    resultDto.collateralReturned = result.collateralReturned;
+
+    return resultDto;
   }
 
   @Submit({
