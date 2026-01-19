@@ -20,7 +20,7 @@ describe("calculatePersonalSignPrefix", () => {
 
     const prefix = calculatePersonalSignPrefix(payload);
 
-    const expectedPrefix = "\u0019Ethereum Signed Message:\n76";
+    const expectedPrefix = "\u0019Ethereum Signed Message:\n58";
 
     expect(prefix).toBe(expectedPrefix);
   });
@@ -32,7 +32,7 @@ describe("calculatePersonalSignPrefix", () => {
 
     const prefix = calculatePersonalSignPrefix(payload);
 
-    const expectedPrefix = "\u0019Ethereum Signed Message:\n149";
+    const expectedPrefix = "\u0019Ethereum Signed Message:\n131";
 
     expect(prefix).toBe(expectedPrefix);
   });
@@ -42,7 +42,7 @@ describe("calculatePersonalSignPrefix", () => {
 
     const prefix = calculatePersonalSignPrefix(payload);
 
-    const expectedPrefix = "\u0019Ethereum Signed Message:\n47";
+    const expectedPrefix = "\u0019Ethereum Signed Message:\n30";
 
     expect(prefix).toBe(expectedPrefix);
   });
@@ -52,7 +52,7 @@ describe("calculatePersonalSignPrefix", () => {
 
     const prefix = calculatePersonalSignPrefix(payload);
 
-    const expectedPrefix = "\u0019Ethereum Signed Message:\n61";
+    const expectedPrefix = "\u0019Ethereum Signed Message:\n43";
 
     expect(prefix).toBe(expectedPrefix);
   });
@@ -62,7 +62,7 @@ describe("calculatePersonalSignPrefix", () => {
 
     const prefix = calculatePersonalSignPrefix(payload);
 
-    const expectedPrefix = "\u0019Ethereum Signed Message:\n86";
+    const expectedPrefix = "\u0019Ethereum Signed Message:\n68";
 
     expect(prefix).toBe(expectedPrefix);
   });
@@ -72,7 +72,7 @@ describe("calculatePersonalSignPrefix", () => {
 
     const prefix = calculatePersonalSignPrefix(payload);
 
-    const expectedPrefix = "\u0019Ethereum Signed Message:\n1062";
+    const expectedPrefix = "\u0019Ethereum Signed Message:\n1044";
 
     expect(prefix).toBe(expectedPrefix);
   });

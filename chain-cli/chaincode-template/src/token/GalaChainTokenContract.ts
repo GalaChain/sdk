@@ -54,7 +54,6 @@ import {
   MintTokenDto,
   MintTokenWithAllowanceDto,
   RefreshAllowancesDto,
-  ReleaseTokenDto,
   TokenAllowance,
   TokenBalance,
   TokenBurn,
@@ -65,7 +64,6 @@ import {
   UnlockTokenDto,
   UnlockTokensDto,
   UpdateTokenClassDto,
-  UseTokenDto,
   VestingToken,
   VestingTokenInfo,
   generateResponseSchema,
@@ -106,15 +104,13 @@ import {
   mintToken,
   mintTokenWithAllowance,
   refreshAllowances,
-  releaseToken,
   requestMint,
   requireCuratorAuth,
   resolveUserAlias,
   transferToken,
   unlockToken,
   unlockTokens,
-  updateTokenClass,
-  useToken
+  updateTokenClass
 } from "@gala-chain/chaincode";
 import { plainToClass } from "class-transformer";
 import { Info } from "fabric-contract-api";
@@ -225,7 +221,7 @@ export default class GalaChainTokenContract extends GalaContract {
     return fullAllowanceCheck(ctx, {
       owner: dto.owner ? await resolveUserAlias(ctx, dto.owner) : ctx.callingUser,
       grantedTo: dto.grantedTo ? await resolveUserAlias(ctx, dto.grantedTo) : ctx.callingUser,
-      allowanceType: dto.allowanceType ?? AllowanceType.Use,
+      allowanceType: dto.allowanceType ?? AllowanceType.Transfer,
       collection: dto.collection,
       category: dto.category,
       type: dto.type,
@@ -406,30 +402,6 @@ export default class GalaChainTokenContract extends GalaContract {
       authorizedOnBehalf: undefined
     }));
     return batchMintToken(ctx, await Promise.all(params));
-  }
-
-  @Submit({
-    in: UseTokenDto,
-    out: TokenBalance
-  })
-  public async UseToken(ctx: GalaChainContext, dto: UseTokenDto): Promise<TokenBalance> {
-    return useToken(ctx, {
-      owner: await resolveUserAlias(ctx, dto.owner ?? ctx.callingUser),
-      inUseBy: await resolveUserAlias(ctx, dto.inUseBy),
-      tokenInstanceKey: dto.tokenInstance,
-      quantity: dto.quantity,
-      authorizedOnBehalf: undefined
-    });
-  }
-
-  @Submit({
-    in: ReleaseTokenDto,
-    out: TokenBalance
-  })
-  public ReleaseToken(ctx: GalaChainContext, dto: ReleaseTokenDto): Promise<TokenBalance> {
-    return releaseToken(ctx, {
-      tokenInstanceKey: dto.tokenInstance
-    });
   }
 
   @Submit({
