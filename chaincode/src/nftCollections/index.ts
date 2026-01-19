@@ -12,16 +12,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-import { createTokenSale } from "./createTokenSale";
-import { fetchTokenSaleById } from "./fetchTokenSaleById";
-import { fetchTokenSalesWithPagination } from "./fetchTokenSalesWithPagination";
-import { fulfillTokenSale } from "./fulfillTokenSale";
-import { removeTokenSale } from "./removeTokenSale";
-
-export {
-  createTokenSale,
-  fetchTokenSaleById,
-  fetchTokenSalesWithPagination,
-  fulfillTokenSale,
-  removeTokenSale
-};
+export * from "./authorization";
+export * from "./createNftCollection";
+export * from "./fetchNftCollectionAuthorizationsWithPagination";
+export * from "./NftCollectionError";

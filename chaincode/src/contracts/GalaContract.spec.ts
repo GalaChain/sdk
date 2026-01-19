@@ -23,7 +23,6 @@ import {
   GalaChainResponseType,
   GetObjectDto,
   PublicKey,
-  SigningScheme,
   UserProfile,
   createValidChainObject,
   createValidDTO,
@@ -242,6 +241,7 @@ describe("GalaContract.GetObjectsByPartialCompositeKey", () => {
 
 describe("GalaContract.DryRun", () => {
   const callerPublicKey = process.env.DEV_ADMIN_PUBLIC_KEY as string;
+  const callerProfileKey = `\u0000GCUP\u0000${signatures.getEthAddress(callerPublicKey)}\u0000`;
 
   it("should support DryRun for submit operations", async () => {
     // Given
@@ -259,7 +259,7 @@ describe("GalaContract.DryRun", () => {
       Status: GalaChainResponseType.Success,
       Data: {
         response: { Status: GalaChainResponseType.Success },
-        reads: {},
+        reads: { [callerProfileKey]: "" },
         writes: {
           [superhero.getCompositeKey()]: serialize({ age: 32, name: "Batman" }),
           [`\u0000UNTX\u0000${dto.uniqueKey}\u0000`]: expect.any(String)
@@ -290,7 +290,7 @@ describe("GalaContract.DryRun", () => {
       Status: GalaChainResponseType.Success,
       Data: {
         response: { Status: GalaChainResponseType.Success, Data: instanceToPlain(plainBatman) },
-        reads: { [batmanKey]: serialize(plainBatman) },
+        reads: { [callerProfileKey]: "", [batmanKey]: serialize(plainBatman) },
         writes: {},
         deletes: {}
       }
@@ -313,7 +313,7 @@ describe("GalaContract.DryRun", () => {
       Status: GalaChainResponseType.Success,
       Data: {
         response: { Status: GalaChainResponseType.Success, Data: expectedVersion },
-        reads: {},
+        reads: { [callerProfileKey]: "" },
         writes: {},
         deletes: {}
       }
@@ -346,7 +346,7 @@ describe("GalaContract.DryRun", () => {
           ErrorPayload: { objectId: batmanKey },
           Message: `No object with id ${batmanKey} exists`
         },
-        reads: { [batmanKey]: "" }, // empty string because object is missing
+        reads: { [callerProfileKey]: "", [batmanKey]: "" }, // empty string because object is missing
         writes: {},
         deletes: {}
       }
@@ -374,7 +374,7 @@ describe("GalaContract.DryRun", () => {
           ErrorPayload: ["isPositive: age must be a positive number"],
           Message: "DTO validation failed: (1) isPositive: age must be a positive number"
         },
-        reads: {},
+        reads: { [callerProfileKey]: "" },
         writes: {},
         deletes: {}
       }
@@ -733,8 +733,7 @@ async function generateUser(name?: string) {
   const user = ChainUser.withRandomKeys(name);
 
   const publicKey = await createValidChainObject(PublicKey, {
-    publicKey: signatures.normalizePublicKey(user.publicKey).toString("base64"),
-    signing: SigningScheme.ETH
+    publicKey: signatures.normalizePublicKey(user.publicKey).toString("base64")
   });
 
   const userProfile = await createValidChainObject(UserProfile, {

@@ -12,10 +12,23 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-import { acceptLoanOffer } from "./acceptLoanOffer";
-import { closeLoan } from "./closeLoan";
-import { fetchLoanOffers } from "./fetchLoanOffers";
-import { fetchLoans } from "./fetchLoans";
-import { offerLoan } from "./offerLoan";
+import { ArrayMinSize, IsArray, IsNotEmpty, IsString } from "class-validator";
 
-export { acceptLoanOffer, closeLoan, fetchLoanOffers, fetchLoans, offerLoan };
+import { ChainKey } from "../utils";
+import { IsUserAlias } from "../validators";
+import { ChainObject } from "./ChainObject";
+import { UserAlias } from "./UserAlias";
+
+export class NftCollectionAuthorization extends ChainObject {
+  public static INDEX_KEY = "GCNFTC";
+
+  @ChainKey({ position: 0 })
+  @IsString()
+  @IsNotEmpty()
+  public collection: string;
+
+  @IsUserAlias({ each: true })
+  @IsArray()
+  @ArrayMinSize(0)
+  public authorizedUsers: UserAlias[];
+}

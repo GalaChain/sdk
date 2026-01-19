@@ -27,7 +27,7 @@ import {
   UnauthorizedAllowanceRefreshError
 } from "./AllowanceError";
 import { checkAllowances } from "./checkAllowances";
-import { DeleteAllowancesParams, DeleteOneAllowanceParams, deleteAllowances } from "./deleteAllowances";
+import { DeleteAllowancesParams, deleteAllowances } from "./deleteAllowances";
 import { FetchAllowancesParams, fetchAllowances, fetchAllowancesWithPagination } from "./fetchAllowances";
 import { FullAllowanceCheckParams, fullAllowanceCheck } from "./fullAllowanceCheck";
 import {
@@ -67,7 +67,6 @@ export {
   PutMintAllowancesOnChainParams,
   deleteAllowances,
   DeleteAllowancesParams,
-  DeleteOneAllowanceParams,
   ensureQuantityCanBeMinted,
   verifyAndUseAllowances
 };

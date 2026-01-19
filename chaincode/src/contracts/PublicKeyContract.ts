@@ -19,12 +19,11 @@ import {
   GetPublicKeyDto,
   PublicKey,
   RegisterEthUserDto,
-  RegisterTonUserDto,
   RegisterUserDto,
   RemoveSignerDto,
-  SigningScheme,
   UpdatePublicKeyDto,
   UpdateQuorumDto,
+  UpdateSignersDto,
   UpdateUserRolesDto,
   UserAlias,
   UserProfile,
@@ -33,7 +32,7 @@ import {
 } from "@gala-chain/api";
 import { Info } from "fabric-contract-api";
 
-import { PublicKeyService, resolveUserAlias } from "../services";
+import { PublicKeyService, resolveUserAlias, resolveUserAliases } from "../services";
 import { PkNotFoundError } from "../services/PublicKeyError";
 import { GalaChainContext } from "../types";
 import { GalaContract } from "./GalaContract";
@@ -87,14 +86,12 @@ export class PublicKeyContract extends GalaContract {
     );
 
     const signatureQuorum = Math.max(dto.signatureQuorum ?? signerAliases.length ?? 1, 1);
-    const signing = dto.signing ?? SigningScheme.ETH;
 
     return PublicKeyService.registerUser(
       ctx,
       dto.publicKey,
       signerAliases.length ? signerAliases : undefined,
       dto.user,
-      signing,
       signatureQuorum
     );
   }
@@ -110,20 +107,7 @@ export class PublicKeyContract extends GalaContract {
     const ethAddress = signatures.getEthAddress(providedPkHex);
     const userAlias = `eth|${ethAddress}` as UserAlias;
 
-    return PublicKeyService.registerUser(ctx, dto.publicKey, undefined, userAlias, SigningScheme.ETH, 1);
-  }
-
-  @Submit({
-    in: RegisterTonUserDto,
-    out: "string",
-    description: "Registers a new user on chain under alias derived from TON address.",
-    ...requireRegistrarAuth
-  })
-  public async RegisterTonUser(ctx: GalaChainContext, dto: RegisterTonUserDto): Promise<string> {
-    const address = signatures.ton.getTonAddress(Buffer.from(dto.publicKey, "base64"));
-    const userAlias = `ton|${address}` as UserAlias;
-
-    return PublicKeyService.registerUser(ctx, dto.publicKey, undefined, userAlias, SigningScheme.TON, 1);
+    return PublicKeyService.registerUser(ctx, dto.publicKey, undefined, userAlias, 1);
   }
 
   @Submit({
@@ -141,8 +125,7 @@ export class PublicKeyContract extends GalaContract {
     description: "Updates public key for the calling user."
   })
   public async UpdatePublicKey(ctx: GalaChainContext, dto: UpdatePublicKeyDto): Promise<void> {
-    const signing = dto.signing ?? SigningScheme.ETH;
-    await PublicKeyService.updatePublicKey(ctx, dto, signing);
+    await PublicKeyService.updatePublicKey(ctx, dto);
   }
 
   @Submit({
@@ -161,6 +144,31 @@ export class PublicKeyContract extends GalaContract {
   public async RemoveSigner(ctx: GalaChainContext, dto: RemoveSignerDto): Promise<void> {
     const signer = await resolveUserAlias(ctx, dto.signer);
     await PublicKeyService.removeSigner(ctx, signer);
+  }
+
+  @Submit({
+    in: UpdateSignersDto,
+    description: "Updates signers for the calling user's multisig setup by adding and/or removing signers."
+  })
+  public async UpdateSigners(ctx: GalaChainContext, dto: UpdateSignersDto): Promise<void> {
+    const signersToRemove = await resolveUserAliases(ctx, dto.toRemove);
+    const signersToAdd = await resolveUserAliases(ctx, dto.toAdd);
+
+    // Check for conflicts: same signer in both toAdd and toRemove
+    const removeSet = new Set(signersToRemove);
+    for (const signer of signersToAdd) {
+      if (removeSet.has(signer)) {
+        throw new ValidationFailedError(`Cannot add and remove the same signer: ${signer}`);
+      }
+    }
+
+    for (const signer of signersToRemove) {
+      await PublicKeyService.removeSigner(ctx, signer);
+    }
+
+    for (const signer of signersToAdd) {
+      await PublicKeyService.addSigner(ctx, signer);
+    }
   }
 
   @Submit({

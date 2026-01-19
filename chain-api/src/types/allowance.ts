@@ -21,6 +21,7 @@ import {
   IsInt,
   IsNotEmpty,
   IsOptional,
+  IsPositive,
   IsString,
   Max,
   Min,
@@ -259,6 +260,14 @@ export class DeleteAllowancesDto extends SubmitCallDTO {
   @IsOptional()
   @EnumProperty(AllowanceType)
   allowanceType?: AllowanceType;
+
+  @JSONSchema({
+    description: "Created time. Optional."
+  })
+  @IsPositive()
+  @IsInt()
+  @IsOptional()
+  created?: number;
 }
 
 @JSONSchema({
