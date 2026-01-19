@@ -43,6 +43,6 @@ export function getPayloadToSign(obj: object): string {
   }
 
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  const { signature, multisig, trace, ...plain } = instanceToPlain(obj);
-  return serialize(plain);
+  const { signature, multisig, trace, prefix, ...plain } = instanceToPlain(obj);
+  return `${prefix ?? ""}${serialize(plain)}`;
 }
