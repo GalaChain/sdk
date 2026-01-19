@@ -17,7 +17,7 @@ import { PublicKeyService } from "./PublicKeyService";
 import { UniqueTransaction } from "./UniqueTransaction";
 import { UniqueTransactionConflictError } from "./UniqueTransactionError";
 import { UniqueTransactionService } from "./UniqueTransactionService";
-import { resolveUserAlias } from "./resolveUserAlias";
+import { resolveUserAlias, resolveUserAliases } from "./resolveUserAlias";
 
 export {
   PublicKeyService,
@@ -25,5 +25,6 @@ export {
   UniqueTransactionService,
   UniqueTransactionConflictError,
   PkInvalidSignatureError,
-  resolveUserAlias
+  resolveUserAlias,
+  resolveUserAliases
 };

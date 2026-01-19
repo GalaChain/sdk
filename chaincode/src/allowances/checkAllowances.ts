@@ -18,7 +18,7 @@ import { BigNumber } from "bignumber.js";
 import { FetchBalancesParams, fetchBalances } from "../balances";
 import { resolveUserAlias } from "../services";
 import { GalaChainContext } from "../types";
-import { DeleteOneAllowanceParams, deleteOneAllowance } from "./deleteAllowances";
+import { deleteOneAllowance } from "./deleteAllowances";
 
 export function isAllowanceSpent(allowance: TokenAllowance): boolean {
   const usesExhausted = allowance.usesSpent?.isGreaterThanOrEqualTo(allowance.uses) ?? false;
@@ -76,34 +76,18 @@ export async function cleanAllowances(
   allowancesToClean: TokenAllowance[],
   authorizedOnBehalf: string
 ): Promise<Array<TokenAllowance>> {
-  const deleteActions: Array<Promise<void>> = [];
+  const cleaned: Array<TokenAllowance> = [];
 
-  for (let i = allowancesToClean.length - 1; i >= 0; i--) {
-    const allowance = allowancesToClean[i];
+  for (const allowance of allowancesToClean) {
     const isInvalid = await isAllowanceInvalid(ctx, allowance);
     if (isInvalid) {
-      const deleteAllowanceParams: DeleteOneAllowanceParams = {
-        grantedTo: allowance.grantedTo,
-        grantedBy: allowance.grantedBy,
-        collection: allowance.collection,
-        category: allowance.category,
-        type: allowance.type,
-        additionalKey: allowance.additionalKey,
-        instance: allowance.instance.toString(),
-        allowanceType: allowance.allowanceType,
-        created: allowance.created
-      };
-
-      deleteActions.push(deleteOneAllowance(ctx, deleteAllowanceParams, authorizedOnBehalf));
-      deleteActions.push(ctx.stub.deleteState(allowance.getCompositeKey()));
-
-      allowancesToClean.splice(i, 1);
+      await deleteOneAllowance(ctx, allowance, authorizedOnBehalf);
+    } else {
+      cleaned.push(allowance);
     }
   }
 
-  await Promise.all(deleteActions);
-
-  return allowancesToClean;
+  return cleaned;
 }
 
 /**

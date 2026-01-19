@@ -56,4 +56,18 @@ describe("getPayloadToSign", () => {
     // Then
     expect(toSign).toEqual('{"c":8,"dtoOperation":"test"}');
   });
+
+  it("should use 'prefix' field", () => {
+    // Given
+    const obj = {
+      c: 8,
+      prefix: "\u0019Ethereum Signed Message:\n35"
+    };
+
+    // When
+    const toSign = getPayloadToSign(obj);
+
+    // Then
+    expect(toSign).toEqual('\u0019Ethereum Signed Message:\n35{"c":8}');
+  });
 });

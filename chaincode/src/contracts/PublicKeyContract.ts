@@ -23,6 +23,7 @@ import {
   RemoveSignerDto,
   UpdatePublicKeyDto,
   UpdateQuorumDto,
+  UpdateSignersDto,
   UpdateUserRolesDto,
   UserAlias,
   UserProfile,
@@ -31,7 +32,7 @@ import {
 } from "@gala-chain/api";
 import { Info } from "fabric-contract-api";
 
-import { PublicKeyService, resolveUserAlias } from "../services";
+import { PublicKeyService, resolveUserAlias, resolveUserAliases } from "../services";
 import { PkNotFoundError } from "../services/PublicKeyError";
 import { GalaChainContext } from "../types";
 import { GalaContract } from "./GalaContract";
@@ -143,6 +144,31 @@ export class PublicKeyContract extends GalaContract {
   public async RemoveSigner(ctx: GalaChainContext, dto: RemoveSignerDto): Promise<void> {
     const signer = await resolveUserAlias(ctx, dto.signer);
     await PublicKeyService.removeSigner(ctx, signer);
+  }
+
+  @Submit({
+    in: UpdateSignersDto,
+    description: "Updates signers for the calling user's multisig setup by adding and/or removing signers."
+  })
+  public async UpdateSigners(ctx: GalaChainContext, dto: UpdateSignersDto): Promise<void> {
+    const signersToRemove = await resolveUserAliases(ctx, dto.toRemove);
+    const signersToAdd = await resolveUserAliases(ctx, dto.toAdd);
+
+    // Check for conflicts: same signer in both toAdd and toRemove
+    const removeSet = new Set(signersToRemove);
+    for (const signer of signersToAdd) {
+      if (removeSet.has(signer)) {
+        throw new ValidationFailedError(`Cannot add and remove the same signer: ${signer}`);
+      }
+    }
+
+    for (const signer of signersToRemove) {
+      await PublicKeyService.removeSigner(ctx, signer);
+    }
+
+    for (const signer of signersToAdd) {
+      await PublicKeyService.addSigner(ctx, signer);
+    }
   }
 
   @Submit({

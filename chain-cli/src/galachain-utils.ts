@@ -26,7 +26,7 @@ import { Readable } from "stream";
 import { ExpectedImageArchitecture, ServicePortal } from "./consts";
 import { ChaincodeInfoDto, DeployChaincodeDto, GetChaincodeDeploymentDto, RegisterChaincodeDto } from "./dto";
 import { BadRequestError, UnauthorizedError } from "./errors";
-import { execSync } from "./exec-sync";
+import { execFileSync } from "./exec-sync";
 import { parseStringOrFileKey } from "./utils";
 
 const ConfigFileName = ".galachainrc.json";
@@ -125,13 +125,14 @@ export function getChaincodeImageInfo(imageTag: string): {
   imageArchitecture: string;
   imageSha256: string;
 } {
-  const inspectCommand = `docker inspect ${imageTag}`;
+  // Using execFileSync with argument array to prevent command injection
+  const inspectCommandDesc = `docker inspect <imageTag>`;
   let dockerJson;
   try {
-    const dockerImageInspect = execSync(inspectCommand);
+    const dockerImageInspect = execFileSync("docker", ["inspect", imageTag]);
     dockerJson = JSON.parse(dockerImageInspect);
   } catch (e) {
-    throw new Error(`Invalid output of 'docker inspect' command:\n\n  ${inspectCommand}\n\nError: ${e}`);
+    throw new Error(`Invalid output of 'docker inspect' command:\n\n  ${inspectCommandDesc}\n\nError: ${e}`);
   }
 
   const imageArchitecture = dockerJson?.[0]?.Os + "/" + dockerJson?.[0]?.Architecture;
@@ -144,22 +145,34 @@ export function getChaincodeImageInfo(imageTag: string): {
     );
   }
 
-  const getContractNamesCommand = `docker run --rm ${imageTag} lib/src/cli.js get-contract-names | tail -n 1`;
+  // Using execFileSync with argument array to prevent command injection
+  // Processing output in Node.js instead of piping to tail
+  const getContractNamesCommandDesc = `docker run --rm <imageTag> lib/src/cli.js get-contract-names`;
   let response = "<command-not-executed-yet>";
 
   try {
-    response = execSync(getContractNamesCommand);
+    const rawOutput = execFileSync("docker", [
+      "run",
+      "--rm",
+      imageTag,
+      "lib/src/cli.js",
+      "get-contract-names"
+    ]);
+    // Get the last non-empty line (equivalent to `tail -n 1`)
+    const lines = rawOutput.split("\n").filter((line) => line.trim() !== "");
+    response = lines[lines.length - 1] ?? "";
+
     const json = JSON.parse(response);
     if (!Array.isArray(json)) {
       throw new Error(
-        `Output of the following command is not an array:\n\n  ${getContractNamesCommand}\n\n` +
+        `Output of the following command is not an array:\n\n  ${getContractNamesCommandDesc}\n\n` +
           `Got the following response:\n\n  ${response}`
       );
     }
     json.forEach((n) => {
       if (typeof n?.contractName !== "string") {
         throw new Error(
-          `Output of the following command is not an array of objects with 'contractName' string:\n\n  ${getContractNamesCommand}\n\n` +
+          `Output of the following command is not an array of objects with 'contractName' string:\n\n  ${getContractNamesCommandDesc}\n\n` +
             `Missing 'contractName' for element ${n}. The output of the command is:\n\n  ${response}`
         );
       }
@@ -169,7 +182,7 @@ export function getChaincodeImageInfo(imageTag: string): {
     return { contracts, imageArchitecture, imageSha256 };
   } catch (e) {
     throw new Error(
-      `There was an error while executing the following command:\n\n  ${getContractNamesCommand}\n\n` +
+      `There was an error while executing the following command:\n\n  ${getContractNamesCommandDesc}\n\n` +
         `Error: ${e?.message}. The output is:\n\n  ${response}`
     );
   }
@@ -242,15 +255,19 @@ export async function generateKeys(projectPath: string): Promise<void> {
   const privateKeysPath = path.join(os.homedir(), DEFAULT_PRIVATE_KEYS_DIR, chaincodeName);
 
   // create the keys directory
-  execSync(`mkdir -p ${keysPath}`);
-  execSync(`mkdir -p ${privateKeysPath}`);
+  fs.mkdirSync(keysPath, { recursive: true });
+  fs.mkdirSync(privateKeysPath, { recursive: true, mode: 0o700 });
 
   // create the public and private keys files
-  execSync(`echo '${adminPublicKey}' > ${keysPath}/${DEFAULT_ADMIN_PRIVATE_KEY_NAME}.pub`);
-  execSync(`echo '${devPublicKey}' > ${keysPath}/${DEFAULT_DEV_PRIVATE_KEY_NAME}.pub`);
+  fs.writeFileSync(`${keysPath}/${DEFAULT_ADMIN_PRIVATE_KEY_NAME}.pub`, adminPublicKey);
+  fs.writeFileSync(`${keysPath}/${DEFAULT_DEV_PRIVATE_KEY_NAME}.pub`, devPublicKey);
 
-  execSync(`echo '${adminPrivateKey.toString()}' > ${privateKeysPath}/${DEFAULT_ADMIN_PRIVATE_KEY_NAME}`);
-  execSync(`echo '${devPrivateKey.toString()}' > ${privateKeysPath}/${DEFAULT_DEV_PRIVATE_KEY_NAME}`);
+  fs.writeFileSync(`${privateKeysPath}/${DEFAULT_ADMIN_PRIVATE_KEY_NAME}`, adminPrivateKey.toString(), {
+    mode: 0o600
+  });
+  fs.writeFileSync(`${privateKeysPath}/${DEFAULT_DEV_PRIVATE_KEY_NAME}`, devPrivateKey.toString(), {
+    mode: 0o600
+  });
 
   console.log(`Chaincode name:         ${chaincodeName}`);
   console.log(`Public keys directory:  ${keysPath}`);
@@ -258,8 +275,8 @@ export async function generateKeys(projectPath: string): Promise<void> {
 }
 
 export function checkCliVersion() {
-  const cliLatestVersion = execSync("npm show @gala-chain/cli version");
-  const cliCurrentVersion = execSync("galachain --version").split(" ")[0].split("/")[2];
+  const cliLatestVersion = execFileSync("npm", ["show", "@gala-chain/cli", "version"]);
+  const cliCurrentVersion = execFileSync("galachain", ["--version"]).split(" ")[0].split("/")[2];
   if (cliLatestVersion > cliCurrentVersion) {
     console.warn(
       `Your Chain CLI is out of date, current version is ${cliCurrentVersion}, latest version is ${cliLatestVersion}. Please run 'npm install -g @gala-chain/cli --force' to update to the latest version.`

@@ -12,20 +12,23 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-import { execFileSync as origExecFileSync, execSync as origExecSync } from "child_process";
+import { ArrayMinSize, IsArray, IsNotEmpty, IsString } from "class-validator";
 
-export function execSync(cmd: string): string {
-  return origExecSync(cmd).toString().trim();
-}
+import { ChainKey } from "../utils";
+import { IsUserAlias } from "../validators";
+import { ChainObject } from "./ChainObject";
+import { UserAlias } from "./UserAlias";
 
-export function execSyncStdio(cmd: string): void {
-  origExecSync(cmd, { stdio: "inherit" });
-}
+export class NftCollectionAuthorization extends ChainObject {
+  public static INDEX_KEY = "GCNFTC";
 
-/**
- * Execute a command without shell interpolation (safe from command injection).
- * Arguments are passed directly to the executable.
- */
-export function execFileSync(command: string, args: string[]): string {
-  return origExecFileSync(command, args).toString().trim();
+  @ChainKey({ position: 0 })
+  @IsString()
+  @IsNotEmpty()
+  public collection: string;
+
+  @IsUserAlias({ each: true })
+  @IsArray()
+  @ArrayMinSize(0)
+  public authorizedUsers: UserAlias[];
 }
