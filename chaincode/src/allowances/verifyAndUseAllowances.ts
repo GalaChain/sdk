@@ -16,8 +16,7 @@ import { AllowanceType, TokenAllowance, TokenInstance, TokenInstanceKey } from "
 import { BigNumber } from "bignumber.js";
 
 import { GalaChainContext } from "../types";
-import { getObjectsByKeys } from "../utils";
-import { AllowanceUsersMismatchError, InsufficientAllowanceError } from "./AllowanceError";
+import { InsufficientAllowanceError } from "./AllowanceError";
 import { checkAllowances } from "./checkAllowances";
 import { fetchAllowances } from "./fetchAllowances";
 import { useAllowances } from "./useAllowances";
@@ -44,7 +43,6 @@ import { useAllowances } from "./useAllowances";
  * @param tokenInstance
  * @param authorizedOnBehalf
  * @param actionType
- * @param useAllowancesArr
  * @returns Promise<boolean>
  */
 export async function verifyAndUseAllowances(
@@ -54,46 +52,21 @@ export async function verifyAndUseAllowances(
   quantity: BigNumber,
   tokenInstance: TokenInstance,
   authorizedOnBehalf: string,
-  actionType: AllowanceType,
-  useAllowancesArr: Array<string>
+  actionType: AllowanceType
 ): Promise<boolean> {
-  let applicableAllowances: TokenAllowance[];
+  // Auto-fetch allowances
+  const applicableAllowanceResponse = await fetchAllowances(ctx, {
+    grantedBy: grantedBy,
+    grantedTo: authorizedOnBehalf,
+    collection: tokenInstance.collection,
+    category: tokenInstance.category,
+    type: tokenInstance.type,
+    additionalKey: tokenInstance.additionalKey,
+    instance: tokenInstance.instance.toFixed(),
+    allowanceType: actionType
+  });
 
-  if (useAllowancesArr.length) {
-    // Deduplicate allowance keys to prevent double-spending
-    const uniqueAllowanceKeys = [...new Set(useAllowancesArr)];
-    const fetchedAllowances = await getObjectsByKeys(ctx, TokenAllowance, uniqueAllowanceKeys);
-    applicableAllowances = fetchedAllowances.filter(
-      (a) =>
-        a.allowanceType === actionType &&
-        a.collection === tokenInstance.collection &&
-        a.category === tokenInstance.category &&
-        a.type === tokenInstance.type &&
-        a.additionalKey === tokenInstance.additionalKey
-    );
-
-    // Verify grantedBy and grantedTo
-    applicableAllowances.forEach((allowance) => {
-      if (allowance.grantedBy !== grantedBy) {
-        throw new AllowanceUsersMismatchError(allowance, grantedBy, authorizedOnBehalf);
-      } else if (allowance.grantedTo !== authorizedOnBehalf) {
-        throw new AllowanceUsersMismatchError(allowance, grantedBy, authorizedOnBehalf);
-      }
-    });
-  } else {
-    const applicableAllowanceResponse = await fetchAllowances(ctx, {
-      grantedBy: grantedBy,
-      grantedTo: authorizedOnBehalf,
-      collection: tokenInstance.collection,
-      category: tokenInstance.category,
-      type: tokenInstance.type,
-      additionalKey: tokenInstance.additionalKey,
-      instance: tokenInstance.instance.toFixed(),
-      allowanceType: actionType
-    });
-
-    applicableAllowances = applicableAllowanceResponse ?? [];
-  }
+  const applicableAllowances: TokenAllowance[] = applicableAllowanceResponse ?? [];
 
   // verify allowance quantity
   const allowedQuantity = await checkAllowances(
