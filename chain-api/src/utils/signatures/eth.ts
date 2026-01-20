@@ -423,9 +423,10 @@ function recoverPublicKey(signature: string, obj: object, prefix?: string): stri
   return Buffer.from(publicKey).toString("hex");
 }
 
-function isValid(signature: string, obj: object, publicKey: string): boolean {
+function isValid(signature: string, obj: object | string, publicKey: string): boolean {
   try {
-    const data = Buffer.from(getPayloadToSign(obj));
+    const dataString = typeof obj === "string" ? obj : getPayloadToSign(obj);
+    const data = Buffer.from(dataString);
     const publicKeyBuffer = normalizePublicKey(publicKey);
 
     const signatureObj = parseSecp256k1Signature(signature);

@@ -762,7 +762,6 @@
 "fs-constants@1.0.0","fs-constants","1.0.0","https://github.com/mafintosh/fs-constants","Require constants across node and the browser","MIT"
 "fs-extra@8.1.0","fs-extra","8.1.0","https://github.com/jprichardson/node-fs-extra","fs-extra contains methods that aren't included in the vanilla Node.js fs package. Such as mkdir -p, cp -r, and rm -rf.","MIT"
 "fs.realpath@1.0.0","fs.realpath","1.0.0","https://github.com/isaacs/fs.realpath","Use node's fs.realpath, but fall back to the JS implementation if the native one fails","ISC"
-"fsevents@2.3.3","fsevents","2.3.3","https://github.com/fsevents/fsevents","Native Access to MacOS FSEvents","MIT"
 "function-bind@1.1.2","function-bind","1.1.2","https://github.com/Raynos/function-bind","Implementation of Function.prototype.bind","MIT"
 "functional-red-black-tree@1.0.1","functional-red-black-tree","1.0.1","https://github.com/mikolalysenko/functional-red-black-tree","A fully persistent balanced binary search tree","MIT"
 "gensync@1.0.0-beta.2","gensync","1.0.0-beta.2","https://github.com/loganfsmyth/gensync","Allows users to use generators in order to write common functions that can be both sync or async.","MIT"

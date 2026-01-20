@@ -218,7 +218,7 @@ describe("ChainCallDTO", () => {
 
   it("should allow prefix when signing a multisig DTO", () => {
     // Given
-    const [pk1, pk2] = [genKeyPair(), genKeyPair()];
+    const [pk1, pk2] = [signatures.genKeyPair(), signatures.genKeyPair()];
     const dto = new TestDto();
     dto.signerAddress = asValidUserRef("0x0000000000000000000000000000000000000123");
     dto.amounts = [new BigNumber("12.3")];
@@ -249,8 +249,8 @@ describe("ChainCallDTO", () => {
 
   it("should throw an error when signing a multisig DTO with DER signatures", () => {
     // Given
-    const k1 = genKeyPair();
-    const k2 = genKeyPair();
+    const k1 = signatures.genKeyPair();
+    const k2 = signatures.genKeyPair();
 
     const dto = new TestDto();
     dto.signerAddress = asValidUserRef("0x0000000000000000000000000000000000000123");
