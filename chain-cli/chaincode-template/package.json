@@ -37,7 +37,7 @@
     "@gala-chain/test": "3.0.0-beta",
     "@trivago/prettier-plugin-sort-imports": "^4.3.0",
     "@types/jest": "^29.5.12",
-    "@types/node": "18.11.9",
+    "@types/node": "^24.0.0",
     "@typescript-eslint/eslint-plugin": "^5.47.1",
     "@typescript-eslint/parser": "^5.47.1",
     "eslint": "^8.30.0",
