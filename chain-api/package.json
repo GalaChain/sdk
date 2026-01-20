@@ -15,6 +15,7 @@
     "json-stringify-deterministic": "1.0.12",
     "openapi3-ts": "^3.2.0",
     "reflect-metadata": "^0.1.13",
+    "secp256k1": "^5.0.1",
     "tslib": "^2.6.2"
   },
   "devDependencies": {},
