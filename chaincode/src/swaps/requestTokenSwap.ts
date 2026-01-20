@@ -193,8 +193,7 @@ export async function requestTokenSwap(
         quantity,
         tokenInstance,
         ctx.callingUser,
-        AllowanceType.Swap,
-        []
+        AllowanceType.Swap
       );
     }
 
@@ -273,7 +272,6 @@ export async function requestTokenSwap(
       lockAuthority: tokenOwner,
       tokenInstanceKey: offeredTokenInstance,
       quantity,
-      allowancesToUse: [],
       expires: newSwap.expires,
       name: swapRequestId,
       vestingPeriodStart: undefined,

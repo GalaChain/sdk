@@ -13,7 +13,6 @@
  * limitations under the License.
  */
 import {
-  AllowanceKey,
   AllowanceType,
   TokenClassKey,
   TokenInstanceKey,
@@ -51,7 +50,6 @@ export async function mintTokenWithAllowance(
   const tokenInstanceArray = await mintToken(ctx, {
     tokenClassKey: tokenClassKey,
     owner,
-    applicableAllowanceKey: await createValidDTO(AllowanceKey, response[0]),
     quantity,
     authorizedOnBehalf: undefined
   });

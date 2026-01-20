@@ -54,7 +54,6 @@ import {
   MintTokenDto,
   MintTokenWithAllowanceDto,
   RefreshAllowancesDto,
-  ReleaseTokenDto,
   TokenAllowance,
   TokenBalance,
   TokenBurn,
@@ -65,7 +64,6 @@ import {
   UnlockTokenDto,
   UnlockTokensDto,
   UpdateTokenClassDto,
-  UseTokenDto,
   VestingToken,
   VestingTokenInfo,
   generateResponseSchema,
@@ -106,15 +104,13 @@ import {
   mintToken,
   mintTokenWithAllowance,
   refreshAllowances,
-  releaseToken,
   requestMint,
   requireCuratorAuth,
   resolveUserAlias,
   transferToken,
   unlockToken,
   unlockTokens,
-  updateTokenClass,
-  useToken
+  updateTokenClass
 } from "@gala-chain/chaincode";
 import { plainToClass } from "class-transformer";
 import { Info } from "fabric-contract-api";
@@ -225,7 +221,7 @@ export default class GalaChainTokenContract extends GalaContract {
     return fullAllowanceCheck(ctx, {
       owner: dto.owner ? await resolveUserAlias(ctx, dto.owner) : ctx.callingUser,
       grantedTo: dto.grantedTo ? await resolveUserAlias(ctx, dto.grantedTo) : ctx.callingUser,
-      allowanceType: dto.allowanceType ?? AllowanceType.Use,
+      allowanceType: dto.allowanceType ?? AllowanceType.Transfer,
       collection: dto.collection,
       category: dto.category,
       type: dto.type,
@@ -286,7 +282,6 @@ export default class GalaChainTokenContract extends GalaContract {
       tokenClass: dto.tokenClass,
       owner: await resolveUserAlias(ctx, dto.owner ?? ctx.callingUser),
       quantity: dto.quantity,
-      allowanceKey: dto.allowanceKey,
       authorizedOnBehalf: undefined
     });
   }
@@ -375,8 +370,7 @@ export default class GalaChainTokenContract extends GalaContract {
       tokenClassKey: dto.tokenClass,
       owner: await resolveUserAlias(ctx, dto.owner ?? ctx.callingUser),
       quantity: dto.quantity,
-      authorizedOnBehalf: undefined,
-      applicableAllowanceKey: dto.allowanceKey
+      authorizedOnBehalf: undefined
     });
   }
 
@@ -411,31 +405,6 @@ export default class GalaChainTokenContract extends GalaContract {
   }
 
   @Submit({
-    in: UseTokenDto,
-    out: TokenBalance
-  })
-  public async UseToken(ctx: GalaChainContext, dto: UseTokenDto): Promise<TokenBalance> {
-    return useToken(ctx, {
-      owner: await resolveUserAlias(ctx, dto.owner ?? ctx.callingUser),
-      inUseBy: await resolveUserAlias(ctx, dto.inUseBy),
-      tokenInstanceKey: dto.tokenInstance,
-      quantity: dto.quantity,
-      allowancesToUse: dto.useAllowances ?? [],
-      authorizedOnBehalf: undefined
-    });
-  }
-
-  @Submit({
-    in: ReleaseTokenDto,
-    out: TokenBalance
-  })
-  public ReleaseToken(ctx: GalaChainContext, dto: ReleaseTokenDto): Promise<TokenBalance> {
-    return releaseToken(ctx, {
-      tokenInstanceKey: dto.tokenInstance
-    });
-  }
-
-  @Submit({
     in: LockTokenDto,
     out: TokenBalance
   })
@@ -445,7 +414,6 @@ export default class GalaChainTokenContract extends GalaContract {
       lockAuthority: dto.lockAuthority ? await resolveUserAlias(ctx, dto.lockAuthority) : undefined,
       tokenInstanceKey: dto.tokenInstance,
       quantity: dto.quantity,
-      allowancesToUse: dto.useAllowances ?? [],
       name: undefined,
       expires: 0,
       vestingPeriodStart: dto.vestingPeriodStart,
@@ -467,7 +435,6 @@ export default class GalaChainTokenContract extends GalaContract {
     return lockTokens(ctx, {
       lockAuthority,
       tokenInstances: await Promise.all(tokenInstances),
-      allowancesToUse: dto.useAllowances ?? [],
       name: dto.name,
       expires: dto.expires ?? 0,
       verifyAuthorizedOnBehalf: async () => undefined
@@ -512,7 +479,6 @@ export default class GalaChainTokenContract extends GalaContract {
       to: await resolveUserAlias(ctx, dto.to),
       tokenInstanceKey: dto.tokenInstance,
       quantity: dto.quantity,
-      allowancesToUse: dto.useAllowances ?? [],
       authorizedOnBehalf: undefined
     });
   }
