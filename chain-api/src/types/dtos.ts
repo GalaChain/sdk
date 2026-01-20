@@ -196,7 +196,7 @@ export class ChainCallDTO {
     description:
       "List of signatures for this DTO if there are multiple signers. " +
       "If there are multiple signatures, 'signerAddress' is required, " +
-      "and it is not allowed to provide 'signature' or 'signerPublicKey' or 'prefix' fields, " +
+      "and it is not allowed to provide 'signature' or 'signerPublicKey' fields, " +
       "and the signing scheme must be ETH."
   })
   @IsOptional()
@@ -293,8 +293,8 @@ export class ChainCallDTO {
       throw new ValidationFailedError("dtoExpiresAt is required for multisignature DTOs");
     }
 
-    if (useMultisig && (this.signerPublicKey || this.prefix)) {
-      throw new ValidationFailedError("signerPublicKey and prefix are not allowed for multisignature DTOs");
+    if (useMultisig && this.signerPublicKey) {
+      throw new ValidationFailedError("signerPublicKey is not allowed for multisignature DTOs");
     }
 
     if (useDer) {
@@ -644,6 +644,24 @@ export class RemoveSignerDto extends SubmitCallDTO {
   })
   @IsNotEmpty()
   signer: UserRef;
+}
+
+export class UpdateSignersDto extends SubmitCallDTO {
+  @JSONSchema({
+    description: "Array of user refs of signers to add (typically Ethereum addresses, or user aliases)."
+  })
+  @IsOptional()
+  @IsUserRef({ each: true })
+  @IsNotEmpty({ each: true })
+  toAdd?: UserRef[];
+
+  @JSONSchema({
+    description: "Array of user refs of signers to remove (typically Ethereum addresses, or user aliases)."
+  })
+  @IsOptional()
+  @IsUserRef({ each: true })
+  @IsNotEmpty({ each: true })
+  toRemove?: UserRef[];
 }
 
 export class UpdateQuorumDto extends SubmitCallDTO {

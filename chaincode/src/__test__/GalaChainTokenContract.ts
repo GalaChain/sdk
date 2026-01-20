@@ -13,16 +13,13 @@
  * limitations under the License.
  */
 import {
-  AcceptLoanOfferDto,
   AllowanceType,
   BatchFillTokenSwapDto,
   BatchMintTokenDto,
   BurnTokensDto,
   CleanTokenSwapsDto,
   CleanTokenSwapsResponse,
-  CloseLoanDto,
   CreateTokenClassDto,
-  CreateTokenSaleDto,
   CreateVestingTokenDto,
   DeleteAllowancesDto,
   EnsureTokenSwapIndexingDto,
@@ -45,15 +42,10 @@ import {
   FetchFeeThresholdUsesResDto,
   FetchFeeThresholdUsesWithPaginationDto,
   FetchFeeThresholdUsesWithPaginationResponse,
-  FetchLoanOffersDto,
-  FetchLoansDto,
   FetchMintRequestsDto,
   FetchTokenClassesDto,
   FetchTokenClassesResponse,
   FetchTokenClassesWithPaginationDto,
-  FetchTokenSaleByIdDto,
-  FetchTokenSalesWithPaginationDto,
-  FetchTokenSalesWithPaginationResponse,
   FetchTokenSwapByRequestIdDto,
   FetchTokenSwapsByInstanceDto,
   FetchTokenSwapsByUserDto,
@@ -62,23 +54,16 @@ import {
   FetchVestingTokenDto,
   FillTokenSwapDto,
   FulfillMintDto,
-  FulfillTokenSaleDto,
   FullAllowanceCheckDto,
   FullAllowanceCheckResDto,
   GrantAllowanceDto,
   HighThroughputMintTokenDto,
-  Loan,
-  LoanOffer,
-  LoanOfferResDto,
   LockTokenDto,
   LockTokensDto,
   MintRequestDto,
   MintTokenDto,
   MintTokenWithAllowanceDto,
-  OfferLoanDto,
   RefreshAllowancesDto,
-  ReleaseTokenDto,
-  RemoveTokenSaleDto,
   RequestTokenSwapDto,
   TerminateTokenSwapDto,
   TokenAllowance,
@@ -87,15 +72,12 @@ import {
   TokenClass,
   TokenClassKey,
   TokenInstanceKey,
-  TokenSale,
-  TokenSaleFulfillment,
   TokenSwapFill,
   TokenSwapRequest,
   TransferTokenDto,
   UnlockTokenDto,
   UnlockTokensDto,
   UpdateTokenClassDto,
-  UseTokenDto,
   VestingToken,
   VestingTokenInfo,
   asValidUserAlias,
@@ -114,7 +96,6 @@ import {
   batchMintToken,
   burnTokens,
   createTokenClass,
-  createTokenSale,
   createVestingToken,
   creditFeeBalance,
   defineFeeSchedule,
@@ -129,11 +110,8 @@ import {
   fetchFeeThresholdUsesWithPagination,
   fetchTokenClasses,
   fetchTokenClassesWithPagination,
-  fetchTokenSaleById,
-  fetchTokenSalesWithPagination,
   fetchVestingToken,
   fulfillMintRequest,
-  fulfillTokenSale,
   fullAllowanceCheck,
   grantAllowance,
   lockToken,
@@ -142,21 +120,17 @@ import {
   mintToken,
   mintTokenWithAllowance,
   refreshAllowances,
-  releaseToken,
-  removeTokenSale,
   requestMint,
   resolveUserAlias,
   transferToken,
   unlockToken,
   unlockTokens,
-  updateTokenClass,
-  useToken
+  updateTokenClass
 } from "../";
 // eslint-disable-next-line @typescript-eslint/ban-ts-comment
 // @ts-ignore
 import { version } from "../../package.json";
 import { SUBMIT, getCaIdentityAlias, requireCuratorAuth } from "../contracts";
-import { acceptLoanOffer, closeLoan, fetchLoanOffers, fetchLoans, offerLoan } from "../loans";
 import {
   batchFillTokenSwaps,
   ensureTokenSwapIndexing,
@@ -274,7 +248,7 @@ export default class GalaChainTokenContract extends GalaContract {
     return fullAllowanceCheck(ctx, {
       owner: dto.owner ? await resolveUserAlias(ctx, dto.owner) : ctx.callingUser,
       grantedTo: dto.grantedTo ? await resolveUserAlias(ctx, dto.grantedTo) : ctx.callingUser,
-      allowanceType: dto.allowanceType ?? AllowanceType.Use,
+      allowanceType: dto.allowanceType ?? AllowanceType.Transfer,
       collection: dto.collection,
       category: dto.category,
       type: dto.type,
@@ -332,7 +306,6 @@ export default class GalaChainTokenContract extends GalaContract {
       tokenClass: dto.tokenClass,
       owner: await resolveUserAlias(ctx, dto.owner ?? ctx.callingUser),
       quantity: dto.quantity,
-      allowanceKey: dto.allowanceKey,
       authorizedOnBehalf: undefined
     });
   }
@@ -417,8 +390,7 @@ export default class GalaChainTokenContract extends GalaContract {
       tokenClassKey: dto.tokenClass,
       owner: await resolveUserAlias(ctx, dto.owner ?? ctx.callingUser),
       quantity: dto.quantity,
-      authorizedOnBehalf: undefined,
-      applicableAllowanceKey: dto.allowanceKey
+      authorizedOnBehalf: undefined
     });
   }
 
@@ -453,31 +425,6 @@ export default class GalaChainTokenContract extends GalaContract {
   }
 
   @Submit({
-    in: UseTokenDto,
-    out: TokenBalance
-  })
-  public async UseToken(ctx: GalaChainContext, dto: UseTokenDto): Promise<TokenBalance> {
-    return useToken(ctx, {
-      owner: await resolveUserAlias(ctx, dto.owner ?? ctx.callingUser),
-      inUseBy: await resolveUserAlias(ctx, dto.inUseBy),
-      tokenInstanceKey: dto.tokenInstance,
-      quantity: dto.quantity,
-      allowancesToUse: dto.useAllowances ?? [],
-      authorizedOnBehalf: undefined
-    });
-  }
-
-  @Submit({
-    in: ReleaseTokenDto,
-    out: TokenBalance
-  })
-  public ReleaseToken(ctx: GalaChainContext, dto: ReleaseTokenDto): Promise<TokenBalance> {
-    return releaseToken(ctx, {
-      tokenInstanceKey: dto.tokenInstance
-    });
-  }
-
-  @Submit({
     in: LockTokenDto,
     out: TokenBalance
   })
@@ -487,7 +434,6 @@ export default class GalaChainTokenContract extends GalaContract {
       lockAuthority: dto.lockAuthority ? await resolveUserAlias(ctx, dto.lockAuthority) : undefined,
       tokenInstanceKey: dto.tokenInstance,
       quantity: dto.quantity,
-      allowancesToUse: dto.useAllowances ?? [],
       name: undefined,
       expires: 0,
       vestingPeriodStart: dto.vestingPeriodStart,
@@ -509,7 +455,6 @@ export default class GalaChainTokenContract extends GalaContract {
     return lockTokens(ctx, {
       lockAuthority,
       tokenInstances: await Promise.all(tokenInstances),
-      allowancesToUse: dto.useAllowances ?? [],
       name: dto.name,
       expires: dto.expires ?? 0,
       verifyAuthorizedOnBehalf: async () => undefined
@@ -554,7 +499,6 @@ export default class GalaChainTokenContract extends GalaContract {
       to: await resolveUserAlias(ctx, dto.to),
       tokenInstanceKey: dto.tokenInstance,
       quantity: dto.quantity,
-      allowancesToUse: dto.useAllowances ?? [],
       authorizedOnBehalf: undefined
     });
   }
@@ -651,128 +595,6 @@ export default class GalaChainTokenContract extends GalaContract {
       feeCode: dto.feeCode,
       bookmark: dto.bookmark,
       limit: dto.limit
-    });
-  }
-
-  @Submit({
-    in: CreateTokenSaleDto,
-    out: TokenSale
-  })
-  public async CreateTokenSale(ctx: GalaChainContext, dto: CreateTokenSaleDto): Promise<TokenSale> {
-    return createTokenSale(ctx, {
-      selling: dto.selling,
-      cost: dto.cost,
-      owner: dto.owner ? await resolveUserAlias(ctx, dto.owner) : undefined,
-      quantity: dto.quantity,
-      start: dto.start,
-      end: dto.end
-    });
-  }
-
-  @UnsignedEvaluate({
-    in: FetchTokenSaleByIdDto,
-    out: TokenSale
-  })
-  public async FetchTokenSaleById(ctx: GalaChainContext, dto: FetchTokenSaleByIdDto): Promise<TokenSale> {
-    return fetchTokenSaleById(ctx, dto.tokenSaleId);
-  }
-
-  @UnsignedEvaluate({
-    in: FetchTokenClassesWithPaginationDto,
-    out: FetchTokenSalesWithPaginationResponse
-  })
-  public async FetchTokenSalesWithPagination(
-    ctx: GalaChainContext,
-    dto: FetchTokenSalesWithPaginationDto
-  ): Promise<FetchTokenSalesWithPaginationResponse> {
-    return fetchTokenSalesWithPagination(ctx, dto);
-  }
-
-  @Submit({
-    in: FulfillTokenSaleDto,
-    out: TokenSaleFulfillment
-  })
-  public async FulfillTokenSale(
-    ctx: GalaChainContext,
-    dto: FulfillTokenSaleDto
-  ): Promise<TokenSaleFulfillment> {
-    return fulfillTokenSale(ctx, {
-      tokenSaleId: dto.tokenSaleId,
-      expectedTokenSale: dto.expectedTokenSale,
-      fulfilledBy: dto.fulfilledBy ? await resolveUserAlias(ctx, dto.fulfilledBy) : undefined,
-      quantity: dto.quantity
-    });
-  }
-
-  @Submit({
-    in: RemoveTokenSaleDto,
-    out: TokenSale,
-    ...requireCuratorAuth
-  })
-  public async RemoveTokenSale(ctx: GalaChainContext, dto: RemoveTokenSaleDto): Promise<TokenSale> {
-    return removeTokenSale(ctx, dto.tokenSaleId);
-  }
-
-  @Submit({
-    in: OfferLoanDto,
-    out: { arrayOf: LoanOfferResDto }
-  })
-  public async OfferLoan(ctx: GalaChainContext, dto: OfferLoanDto): Promise<LoanOfferResDto[]> {
-    return offerLoan(ctx, {
-      owner: dto.owner ?? ctx.callingUser,
-      registrar: dto.registrar,
-      borrowers: dto.borrowers,
-      tokenQueryKey: dto.tokens,
-      rewards: dto.rewards,
-      uses: dto.uses,
-      expires: dto.expires ?? OfferLoanDto.DEFAULT_EXPIRES
-    });
-  }
-
-  @Submit({
-    in: AcceptLoanOfferDto,
-    out: Loan
-  })
-  public async AcceptLoanOffer(ctx: GalaChainContext, dto: AcceptLoanOfferDto): Promise<Loan> {
-    return acceptLoanOffer(ctx, {
-      offerKey: dto.offer,
-      borrower: dto.borrower,
-      token: dto.token
-    });
-  }
-
-  @UnsignedEvaluate({
-    in: FetchLoanOffersDto,
-    out: { arrayOf: LoanOffer }
-  })
-  public async FetchLoanOffers(ctx: GalaChainContext, dto: FetchLoanOffersDto): Promise<LoanOffer[]> {
-    return fetchLoanOffers(ctx, {
-      owner: dto.owner,
-      tokenQuery: dto.tokenQuery,
-      status: dto.status
-    });
-  }
-
-  @UnsignedEvaluate({
-    in: FetchLoansDto,
-    out: { arrayOf: Loan }
-  })
-  public async FetchLoans(ctx: GalaChainContext, dto: FetchLoansDto): Promise<Loan[]> {
-    return fetchLoans(ctx, {
-      byOwner: dto.owner ?? ctx.callingUser,
-      registrar: dto.registrar,
-      status: dto.status
-    });
-  }
-
-  @Submit({
-    in: CloseLoanDto,
-    out: Loan
-  })
-  public async CloseLoan(ctx: GalaChainContext, dto: CloseLoanDto): Promise<Loan> {
-    return closeLoan(ctx, {
-      loanKey: dto.loan,
-      closingStatus: dto.status
     });
   }
 

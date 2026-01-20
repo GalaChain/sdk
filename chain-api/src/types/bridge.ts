@@ -17,7 +17,7 @@ import { Type } from "class-transformer";
 import { IsNotEmpty, IsOptional, IsString, ValidateNested } from "class-validator";
 import { JSONSchema } from "class-validator-jsonschema";
 
-import { BigNumberIsPositive, BigNumberProperty, EnumProperty } from "../validators";
+import { BigNumberIsPositive, BigNumberProperty, EnumProperty, IsValidChainAddress } from "../validators";
 import { ChainId } from "./ChainId";
 import { TokenInstance, TokenInstanceKey } from "./TokenInstance";
 import { SubmitCallDTO } from "./dtos";
@@ -55,7 +55,7 @@ export class RequestTokenBridgeOutDto extends SubmitCallDTO {
   @JSONSchema({
     description: "Recipient address for destination chain"
   })
-  @IsString()
+  @IsValidChainAddress()
   @IsNotEmpty()
   recipient: string;
 

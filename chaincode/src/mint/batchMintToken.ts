@@ -12,16 +12,9 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-import {
-  AuthorizedOnBehalf,
-  TokenAllowance,
-  TokenClassKey,
-  TokenInstanceKey,
-  UserAlias
-} from "@gala-chain/api";
+import { AuthorizedOnBehalf, TokenClassKey, TokenInstanceKey, UserAlias } from "@gala-chain/api";
 import BigNumber from "bignumber.js";
 
-import { fetchAllowances } from "../allowances";
 import { GalaChainContext } from "../types";
 import { BatchMintError } from "./MintError";
 import { fetchMintSupply } from "./fetchMintSupply";
@@ -32,7 +25,6 @@ export interface MintOperationParams {
   owner: UserAlias;
   quantity: BigNumber;
   authorizedOnBehalf: AuthorizedOnBehalf | undefined;
-  applicableAllowances?: TokenAllowance[] | undefined;
   knownTotalSupply?: BigNumber | undefined;
 }
 
@@ -53,18 +45,6 @@ export async function batchMintToken(
 
     for (const indexKeyByCaller in opsByToken.mintOperationsIndex) {
       const tokenOpsByCaller = opsByToken.mintOperationsIndex[indexKeyByCaller];
-      const callingOnBehalf = tokenOpsByCaller.callingOnBehalf;
-
-      // Get allowances
-      const fetchAllowancesData = {
-        grantedTo: `${callingOnBehalf}`,
-        collection: tokenClassKey.collection,
-        category: tokenClassKey.category,
-        type: tokenClassKey.type,
-        additionalKey: tokenClassKey.additionalKey
-      };
-
-      const applicableAllowances = await fetchAllowances(ctx, fetchAllowancesData);
 
       const mintOpsBatch = tokenOpsByCaller.mintOperations;
 
@@ -73,7 +53,6 @@ export async function batchMintToken(
         const mintOp = mintOpsBatch[i];
 
         mintOp.knownTotalSupply = new BigNumber(knownTotalSupply);
-        mintOp.applicableAllowances = applicableAllowances;
 
         try {
           const mintResponse = await mintToken(ctx, mintOp);

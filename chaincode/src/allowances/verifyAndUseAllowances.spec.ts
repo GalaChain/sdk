@@ -52,12 +52,8 @@ describe("verifyAndUseAllowances", () => {
       .registeredUsers(users.testUser1, users.tokenHolder)
       .savedState(currencyClass, currencyInstance, tokenAllowance, tokenBalance);
 
-    const allowanceKey = tokenAllowance.getCompositeKey();
-
-    // When - try to use same allowance key 3 times (should be deduplicated to 1)
-    const duplicateKeys = [allowanceKey, allowanceKey, allowanceKey];
-
-    // Then - should succeed with exactly 100 tokens (not 300)
+    // When - auto-fetch and use allowance
+    // Then - should succeed with exactly 100 tokens
     const result = await verifyAndUseAllowances(
       testCtx,
       users.tokenHolder.identityKey,
@@ -65,8 +61,7 @@ describe("verifyAndUseAllowances", () => {
       new BigNumber("100"),
       currencyInstance,
       users.testUser1.identityKey,
-      AllowanceType.Lock,
-      duplicateKeys
+      AllowanceType.Lock
     );
 
     expect(result).toBe(true);
@@ -102,13 +97,8 @@ describe("verifyAndUseAllowances", () => {
       .registeredUsers(users.testUser1, users.tokenHolder)
       .savedState(currencyClass, currencyInstance, tokenAllowance, tokenBalance);
 
-    const allowanceKey = tokenAllowance.getCompositeKey();
-
-    // When - try to use same allowance key 3 times but request 200 tokens
-    // Without deduplication fix, this would incorrectly allow 300 tokens
-    const duplicateKeys = [allowanceKey, allowanceKey, allowanceKey];
-
-    // Then - should fail because actual allowance is only 100 (not 300)
+    // When - auto-fetch and try to use 200 tokens
+    // Then - should fail because actual allowance is only 100
     await expect(
       verifyAndUseAllowances(
         testCtx,
@@ -117,8 +107,7 @@ describe("verifyAndUseAllowances", () => {
         new BigNumber("200"),
         currencyInstance,
         users.testUser1.identityKey,
-        AllowanceType.Lock,
-        duplicateKeys
+        AllowanceType.Lock
       )
     ).rejects.toThrow(InsufficientAllowanceError);
   });
@@ -166,12 +155,7 @@ describe("verifyAndUseAllowances", () => {
       .registeredUsers(users.testUser1, users.tokenHolder)
       .savedState(currencyClass, currencyInstance, tokenAllowance1, tokenAllowance2, tokenBalance);
 
-    const allowanceKey1 = tokenAllowance1.getCompositeKey();
-    const allowanceKey2 = tokenAllowance2.getCompositeKey();
-
-    // When - use two different allowance keys (total 200 tokens)
-    const uniqueKeys = [allowanceKey1, allowanceKey2];
-
+    // When - auto-fetch and use allowances (total 200 tokens)
     // Then - should succeed with 200 tokens
     const result = await verifyAndUseAllowances(
       testCtx,
@@ -180,8 +164,7 @@ describe("verifyAndUseAllowances", () => {
       new BigNumber("200"),
       currencyInstance,
       users.testUser1.identityKey,
-      AllowanceType.Lock,
-      uniqueKeys
+      AllowanceType.Lock
     );
 
     expect(result).toBe(true);
