@@ -478,15 +478,8 @@ function saveConnectionProfiles(
   const cryptoConfigRoot = path.resolve(fabloRoot, "fablo-target/fabric-config/crypto-config");
 
   // Generate connection profiles for all services
-  const cppsLocal = getCPPs(cryptoConfigRoot, channelNames, localhostName, !isWatchMode, true, !isWatchMode);
-  const cppsDocker = getCPPs(
-    "/crypto-config",
-    channelNames,
-    localhostName,
-    !isWatchMode,
-    false,
-    !isWatchMode
-  );
+  const cppsLocal = getCPPs(cryptoConfigRoot, channelNames, localhostName, true, true, true);
+  const cppsDocker = getCPPs(cryptoConfigRoot, channelNames, localhostName, true, false, true);
 
   // Save connection profiles for ops-api and e2e tests
   const cppLocalDir = path.resolve(fabloRoot, "connection-profiles");
