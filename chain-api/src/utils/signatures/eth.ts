@@ -351,16 +351,16 @@ function calculateKeccak256(data: Buffer): Buffer {
 }
 
 function getSignature(obj: object, privateKey: Buffer): string {
-  const data = Buffer.from(getPayloadToSign(obj));
+  const data = getPayloadToSign(obj);
   return signSecp256k1(calculateKeccak256(data), privateKey);
 }
 
 function getDERSignature(obj: object, privateKey: Buffer): string {
-  const data = Buffer.from(getPayloadToSign(obj));
+  const data = getPayloadToSign(obj);
   return signSecp256k1(calculateKeccak256(data), privateKey, "DER");
 }
 
-function recoverPublicKey(signature: string, obj: object, prefix?: string): string {
+function recoverPublicKey(signature: string, obj: object): string {
   const signatureObj = parseSecp256k1Signature(signature);
   const recoveryParam = signatureObj.recoveryParam;
   if (recoveryParam === undefined) {
@@ -368,11 +368,7 @@ function recoverPublicKey(signature: string, obj: object, prefix?: string): stri
     throw new InvalidSignatureFormatError(message, { signature });
   }
 
-  const dataString = getPayloadToSign(obj);
-  const data = dataString.startsWith("0x")
-    ? Buffer.from(dataString.slice(2), "hex")
-    : Buffer.from((prefix ?? "") + dataString);
-
+  const data = getPayloadToSign(obj);
   const dataHash = Buffer.from(keccak256.hex(data), "hex");
 
   const publicKeyObj = ecSecp256k1.recoverPubKey(dataHash, signatureObj, recoveryParam);
@@ -380,7 +376,7 @@ function recoverPublicKey(signature: string, obj: object, prefix?: string): stri
 }
 
 function isValid(signature: string, obj: object | string, publicKey: string): boolean {
-  const data = Buffer.from(typeof obj === "string" ? obj : getPayloadToSign(obj));
+  const data = typeof obj === "string" ? Buffer.from(obj) : getPayloadToSign(obj);
   const publicKeyBuffer = normalizePublicKey(publicKey);
 
   const signatureObj = parseSecp256k1Signature(signature);
@@ -414,7 +410,7 @@ function enforceValidPublicKey(
   }
 
   const publicKeyBuffer = normalizePublicKey(publicKey);
-  const keccakBuffer = calculateKeccak256(Buffer.from(getPayloadToSign(payload)));
+  const keccakBuffer = calculateKeccak256(getPayloadToSign(payload));
 
   if (isValidSecp256k1Signature(signatureObj, keccakBuffer, publicKeyBuffer)) {
     return publicKeyBuffer.toString("hex");
