@@ -89,15 +89,6 @@ done
 
 #
 #
-echo "Verifying chaincode directories..."
-for dir in $(cat "$fablo_config" | jq -r '.chaincodes[] | .directory'); do
-  echo "  - Checking if $dir exists..."
-  if [ ! -d "$dir" ]; then
-    echo "    ERROR: Chaincode directory does not exist: $dir"
-    exit 1
-  fi
-done
-
 echo "Adding BROWSER_API_CHANNEL_NAMES to .env"
 echo "BROWSER_API_CHANNEL_NAMES=$(cat "$fablo_config" | jq -r '.channels | map(.name) | join(",")')" >> "$target_env"
 
