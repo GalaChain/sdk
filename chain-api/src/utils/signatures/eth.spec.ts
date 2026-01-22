@@ -364,7 +364,7 @@ describe("signatures", () => {
     const metamask =
       "5078520b05186d8babacee43d061f14b3575ad2999e561772b57032aa019bc2a7b01eb5ec412c9330d343025697e9449a0766995e3646941948e4acf0d0dff501c";
     const metamaskPayload = {
-      prefix: "\u0019Ethereum Signed Message:\n999",
+      prefix: "\u0019Ethereum Signed Message:\n000", // note it's the same string.length as the final one
       quantity: "1",
       to: "client|63580d94c574ad78b121c267",
       tokenInstance: {
@@ -376,7 +376,8 @@ describe("signatures", () => {
       },
       uniqueKey: "26d4122e-34c8-4639-baa6-4382b398e68e"
     };
-    const metamaskPrefix = "\u0019Ethereum Signed Message:\n" + getPayloadToSign(metamaskPayload).length;
+    const metamaskPrefix =
+      "\u0019Ethereum Signed Message:\n" + getPayloadToSign(metamaskPayload).toString().length;
     metamaskPayload.prefix = metamaskPrefix;
 
     const galachain =
