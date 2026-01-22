@@ -13,8 +13,8 @@
  * limitations under the License.
  */
 import BN from "bn.js";
-import { ec as EC } from "elliptic";
 import { keccak256 } from "js-sha3";
+import * as secp256k1 from "secp256k1";
 
 import signatures, {
   InvalidSignatureFormatError,
@@ -24,7 +24,6 @@ import signatures, {
 import { getPayloadToSign } from "./getPayloadToSign";
 
 function recoverPublicKeyTestFunction(signature: string, obj: object, prefix = ""): string {
-  const ecSecp256k1 = new EC("secp256k1");
   const signatureObj = normalizeSecp256k1Signature(signature);
   const recoveryParam = signatureObj.recoveryParam;
   if (recoveryParam === undefined) {
@@ -33,9 +32,15 @@ function recoverPublicKeyTestFunction(signature: string, obj: object, prefix = "
   }
 
   const data = Buffer.concat([Buffer.from(prefix), Buffer.from(getPayloadToSign(obj))]);
-  const dataHash = Buffer.from(keccak256.hex(data), "hex");
-  const publicKeyObj = ecSecp256k1.recoverPubKey(dataHash, signatureObj, recoveryParam);
-  return publicKeyObj.encode("hex", false);
+  const dataHash = new Uint8Array(keccak256.digest(new Uint8Array(data)));
+
+  // Convert signature to 64-byte format for recovery
+  const signatureBuffer = new Uint8Array(64);
+  signatureBuffer.set(signatureObj.r.toArray("be", 32), 0);
+  signatureBuffer.set(signatureObj.s.toArray("be", 32), 32);
+
+  const publicKey = secp256k1.ecdsaRecover(signatureBuffer, recoveryParam, dataHash, false);
+  return Buffer.from(publicKey).toString("hex");
 }
 
 describe("ethAddress", () => {
@@ -136,9 +141,13 @@ describe("signatures", () => {
     "3045022100b7244d62671319583ea8f30c8ef3b343cf28e7b7bd56e32b21a5920752dc95b902204a9d202b2919581bcf776f0637462cb67170828ddbcc1ea63505f6a211f9ac5b";
 
   it("should explain the origin of pre-defined constants", () => {
-    const pkObj = new EC("secp256k1").keyFromPrivate(privateKey, "hex");
-    expect(pkObj.getPublic().encode("hex", false).toString()).toEqual(publicKey);
-    expect(pkObj.getPublic().encode("hex", true).toString()).toEqual(publicKeyCompact);
+    // Generate public key from private key using secp256k1-node
+    const privateKeyBuffer = Buffer.from(privateKey, "hex");
+    const publicKeyUncompressed = secp256k1.publicKeyCreate(privateKeyBuffer, false);
+    const publicKeyCompressed = secp256k1.publicKeyCreate(privateKeyBuffer, true);
+
+    expect(Buffer.from(publicKeyUncompressed).toString("hex")).toEqual(publicKey);
+    expect(Buffer.from(publicKeyCompressed).toString("hex")).toEqual(publicKeyCompact);
 
     const pkKeccak = signatures.calculateKeccak256(Buffer.from(publicKey.slice(2), "hex"));
     expect(pkKeccak.toString("hex")).toEqual(

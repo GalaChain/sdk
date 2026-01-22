@@ -115,14 +115,6 @@ export class MintRequestDto {
   @IsUserAlias() // TODO ???
   owner?: UserAlias;
 
-  @JSONSchema({
-    description: "(Optional). Specify the TokenAllowance on chain to use for this mint."
-  })
-  @IsOptional()
-  @Type(() => AllowanceKey)
-  @IsNotEmpty()
-  public allowanceKey?: AllowanceKey;
-
   public isTimeKeyValid(): boolean {
     try {
       new BigNumber(this.timeKey);

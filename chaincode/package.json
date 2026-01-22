@@ -1,6 +1,6 @@
 {
   "name": "@gala-chain/chaincode",
-  "version": "2.7.1",
+  "version": "3.0.0-beta",
   "description": "Framework for building chaincodes on GalaChain",
   "license": "Apache-2.0",
   "type": "commonjs",
@@ -22,7 +22,7 @@
     "update-snapshot": "jest --updateSnapshot"
   },
   "dependencies": {
-    "@gala-chain/api": "2.7.1",
+    "@gala-chain/api": "3.0.0-beta",
     "@grpc/grpc-js": "1.10.10",
     "fabric-contract-api": "2.5.6",
     "fabric-shim": "2.5.6",
@@ -35,12 +35,10 @@
     "class-transformer": "0.5.1",
     "class-validator": "0.14.2",
     "class-validator-jsonschema": "5.0.2",
-    "elliptic": "^6.6.1",
     "json-stringify-deterministic": "1.0.12"
   },
   "devDependencies": {
-    "@types/elliptic": "*",
-    "@types/node": "18.11.9",
+    "@types/node": "^24.0.0",
     "@types/setimmediate": "^1.0.2",
     "git-branch-is": "^4.0.0",
     "madge": "^5.0.1",
