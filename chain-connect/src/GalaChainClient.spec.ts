@@ -225,7 +225,7 @@ describe("BrowserConnectClient", () => {
     consoleSpy.mockRestore();
   });
 
-  it("should properly recover signature", async () => {
+  it("should properly recover signature for personal_sign", async () => {
     const dto: LockTokenDto = await createValidSubmitDTO(LockTokenDto, {
       quantity: new BigNumber("1"),
       tokenInstance: plainToInstance(TokenInstanceKey, {
@@ -236,25 +236,34 @@ describe("BrowserConnectClient", () => {
         type: "none"
       })
     });
+    const params = instanceToPlain(dto);
+
+    const client = new BrowserConnectClient();
+    await client.connect();
+    const prefix = client.calculatePersonalSignPrefix(params);
 
     const privateKey = "0x311e3750b1b698e70a2b37fd08b68fdcb389f955faea163f6ffa5be65cd0c251";
     const expectedEthAddress = "e737c4D3072DA526f3566999e0434EAD423d06ec";
 
-    const client = new BrowserConnectClient();
-    await client.connect();
-
-    const params = instanceToPlain(dto);
-    const prefix = client.calculatePersonalSignPrefix(params);
-    const prefixedPayload = { prefix, ...params };
     const wallet = new ethers.Wallet(privateKey);
-    const payload = signatures.getPayloadToSign(prefixedPayload).toString();
 
-    const signature = await wallet.signMessage(payload);
-    console.log(signature);
+    // When (sign with wallet)
+    // wallet.signMessage() automatically adds the Ethereum message prefix
+    const payloadToSign = signatures.getPayloadToSign(params).toString();
+    const signature = await wallet.signMessage(payloadToSign);
 
-    const publickKey = signatures.recoverPublicKey(signature, { ...prefixedPayload, signature });
-    const ethAddress = signatures.getEthAddress(publickKey);
-    expect(ethAddress).toBe(expectedEthAddress);
+    // When (sign with @gala-chain/api)
+    // We need to pass the object with a prefix that matches what ethers.js added.
+    const gcSignature = signatures.getSignature({ prefix, ...params }, privateKey);
+
+    // When recover public key with @gala-chain/api from prefixed payload
+    const recoveredPublicKey = signatures.recoverPublicKey(gcSignature, { prefix, ...params });
+    const recoveredAddress = signatures.getEthAddress(recoveredPublicKey);
+
+    // Then
+    expect("0x" + gcSignature).toBe(signature);
+    expect("0x" + recoveredAddress).toBe(wallet.address);
+    expect(recoveredAddress).toBe(expectedEthAddress);
   });
 
   it("should properly recover signature for typed signing", async () => {
