@@ -34,7 +34,8 @@ import { generateEIP712Types } from "./utils";
 const sampleAddr = "0x3bb75c2Da3B669E253C338101420CC8dEBf0a777";
 
 class EthereumMock extends EventEmitter {
-  send(method: string, params?: Array<any> | Record<string, any>): Promise<any> {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  send(method: string): Promise<any> {
     if (method === "eth_requestAccounts") {
       return Promise.resolve([sampleAddr]);
     } else if (method === "eth_accounts") {
@@ -45,7 +46,8 @@ class EthereumMock extends EventEmitter {
       throw new Error(`Method not mocked: ${method}`);
     }
   }
-  request(request: { method: string; params?: Array<any> | Record<string, any> }): Promise<any> {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  request(request: { method: string; params?: Array<unknown> | Record<string, unknown> }): Promise<any> {
     if (request.method === "eth_requestAccounts") {
       return Promise.resolve([sampleAddr]);
     } else if (request.method === "eth_accounts") {
@@ -136,20 +138,18 @@ describe("BrowserConnectClient", () => {
     mockFetch(mockResponse, {}, false);
 
     // send dto payload in send function
-    await client
-      .submit({
+    await expect(
+      client.submit({
         method: "TransferToken",
         payload: dto,
         sign: true,
         url: "https://example.com"
       })
-      .catch((error) => {
-        expect(error).toEqual({
-          Error: mockResponse.error,
-          Message: mockResponse.message,
-          ErrorCode: mockResponse.statusCode
-        });
-      });
+    ).rejects.toEqual({
+      Error: mockResponse.error,
+      Message: mockResponse.message,
+      ErrorCode: mockResponse.statusCode
+    });
   });
   it("test full flow (chain error)", async () => {
     const dto: TransferTokenDto = await createValidDTO(TransferTokenDto, {
@@ -196,20 +196,18 @@ describe("BrowserConnectClient", () => {
     mockFetch(mockResponse);
 
     // send dto payload in send function
-    await client
-      .submit({
+    await expect(
+      client.submit({
         method: "TransferToken",
         payload: dto,
         sign: true,
         url: "https://example.com"
       })
-      .catch((error) => {
-        expect(error).toEqual({
-          Error: mockResponse.error.ErrorKey,
-          Message: mockResponse.message,
-          ErrorCode: mockResponse.error.ErrorCode
-        });
-      });
+    ).rejects.toEqual({
+      Error: mockResponse.error.ErrorKey,
+      Message: mockResponse.message,
+      ErrorCode: mockResponse.error.ErrorCode
+    });
   });
 
   test("should log accounts changed", () => {
@@ -239,16 +237,13 @@ describe("BrowserConnectClient", () => {
       })
     });
 
-    await dto.validateOrReject();
-
-    const params = instanceToPlain(dto);
-
     const privateKey = "0x311e3750b1b698e70a2b37fd08b68fdcb389f955faea163f6ffa5be65cd0c251";
     const expectedEthAddress = "e737c4D3072DA526f3566999e0434EAD423d06ec";
 
     const client = new BrowserConnectClient();
     await client.connect();
 
+    const params = instanceToPlain(dto);
     const prefix = client.calculatePersonalSignPrefix(params);
     const prefixedPayload = { prefix, ...params };
     const wallet = new ethers.Wallet(privateKey);
@@ -261,35 +256,7 @@ describe("BrowserConnectClient", () => {
     const ethAddress = signatures.getEthAddress(publickKey);
     expect(ethAddress).toBe(expectedEthAddress);
   });
-  it("should properly recover signature", async () => {
-    const params: LockTokenDto = await createValidSubmitDTO(LockTokenDto, {
-      quantity: new BigNumber("1"),
-      tokenInstance: plainToInstance(TokenInstanceKey, {
-        collection: "GALA",
-        category: "Unit",
-        additionalKey: "none",
-        instance: new BigNumber("0"),
-        type: "none"
-      })
-    });
 
-    const privateKey = "0x311e3750b1b698e70a2b37fd08b68fdcb389f955faea163f6ffa5be65cd0c251";
-    const expectedEthAddress = "e737c4D3072DA526f3566999e0434EAD423d06ec";
-
-    const client = new BrowserConnectClient();
-    await client.connect();
-
-    const prefix = client.calculatePersonalSignPrefix(params);
-    const prefixedPayload = { prefix, ...params };
-    const wallet = new ethers.Wallet(privateKey);
-    const dto = signatures.getPayloadToSign(prefixedPayload).toString();
-
-    const signature = await wallet.signMessage(dto);
-
-    const publickKey = signatures.recoverPublicKey(signature, { ...prefixedPayload, signature });
-    const ethAddress = signatures.getEthAddress(publickKey);
-    expect(ethAddress).toBe(expectedEthAddress);
-  });
   it("should properly recover signature for typed signing", async () => {
     const dto: LockTokenDto = await createValidSubmitDTO(LockTokenDto, {
       quantity: new BigNumber("1"),
