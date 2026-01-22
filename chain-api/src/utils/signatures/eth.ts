@@ -101,7 +101,6 @@ function normalizePublicKey(input: string): Buffer {
       const buffer = Buffer.from(inputNo0x, encoding);
       validateSecp256k1PublicKey(buffer);
       // Convert to compressed format using secp256k1-node
-      // Convert Buffer to Uint8Array as secp256k1 library expects strict Uint8Array
       const compressed = secp256k1.publicKeyConvert(new Uint8Array(buffer), true);
       return Buffer.from(compressed);
     }
@@ -124,7 +123,6 @@ function getNonCompactHexPublicKey(publicKey: string): string {
   const normalized = normalizePublicKey(publicKey);
   validateSecp256k1PublicKey(normalized);
   // Convert compressed to uncompressed format
-  // Convert Buffer to Uint8Array as secp256k1 library expects strict Uint8Array
   const uncompressed = secp256k1.publicKeyConvert(new Uint8Array(normalized), false);
   return Buffer.from(uncompressed).toString("hex");
 }
@@ -132,7 +130,6 @@ function getNonCompactHexPublicKey(publicKey: string): string {
 function getPublicKey(privateKey: string): string {
   const privateKeyHex = privateKey.replace(/^0x/, "");
   const privateKeyBuffer = Buffer.from(privateKeyHex, "hex");
-  // Convert Buffer to Uint8Array as secp256k1 library expects strict Uint8Array
   const publicKey = secp256k1.publicKeyCreate(new Uint8Array(privateKeyBuffer), false);
   return Buffer.from(publicKey).toString("hex");
 }
@@ -244,7 +241,6 @@ function secp256k1signatureFromDERHexString(hex: string): Secp256k1Signature {
   const derBuffer = Buffer.from(lowerCased, "hex");
 
   // Parse DER signature using secp256k1-node
-  // Convert Buffer to Uint8Array as secp256k1 library expects strict Uint8Array
   const signature = secp256k1.signatureImport(new Uint8Array(derBuffer));
 
   // Extract r and s from the 64-byte signature (32 bytes each)
@@ -327,7 +323,6 @@ function signSecp256k1(dataHash: Buffer, privateKey: Buffer, useDer?: "DER"): st
   }
 
   // Sign with secp256k1-node (returns { signature: Uint8Array, recid: number })
-  // Convert Buffer to Uint8Array as secp256k1 library expects strict Uint8Array
   const sigObj = secp256k1.ecdsaSign(new Uint8Array(dataHash), new Uint8Array(privateKey));
 
   // Extract r and s from 64-byte signature
@@ -362,7 +357,6 @@ function signSecp256k1(dataHash: Buffer, privateKey: Buffer, useDer?: "DER"): st
 function validateSecp256k1PublicKey(publicKey: Buffer): void {
   try {
     // Verify the public key is valid using secp256k1-node
-    // Convert Buffer to Uint8Array as secp256k1 library expects strict Uint8Array
     if (!secp256k1.publicKeyVerify(new Uint8Array(publicKey))) {
       throw new Error("Invalid public key");
     }
@@ -388,7 +382,6 @@ function isValidSecp256k1Signature(
   signatureBuffer.set(signature.r.toArray("be", 32), 0);
   signatureBuffer.set(signature.s.toArray("be", 32), 32);
 
-  // Convert Buffer to Uint8Array as secp256k1 library expects strict Uint8Array
   return secp256k1.ecdsaVerify(signatureBuffer, new Uint8Array(dataHash), new Uint8Array(publicKey));
 }
 
@@ -422,7 +415,6 @@ function recoverPublicKey(signature: string, obj: object): string {
   signatureBuffer.set(signatureObj.r.toArray("be", 32), 0);
   signatureBuffer.set(signatureObj.s.toArray("be", 32), 32);
 
-  // Convert Buffer to Uint8Array as secp256k1 library expects strict Uint8Array
   const publicKey = secp256k1.ecdsaRecover(signatureBuffer, recoveryParam, new Uint8Array(dataHash), false);
   return Buffer.from(publicKey).toString("hex");
 }
@@ -454,11 +446,9 @@ function genKeyPair() {
   let privateKey: Buffer;
   do {
     privateKey = randomBytes(32);
-    // Convert Buffer to Uint8Array as secp256k1 library expects strict Uint8Array
   } while (!secp256k1.privateKeyVerify(new Uint8Array(privateKey)));
 
   // Derive public key from private key
-  // Convert Buffer to Uint8Array as secp256k1 library expects strict Uint8Array
   const publicKey = secp256k1.publicKeyCreate(new Uint8Array(privateKey), false);
 
   return {
