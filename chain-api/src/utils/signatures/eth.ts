@@ -369,7 +369,7 @@ function recoverPublicKey(signature: string, obj: object): string {
   }
 
   const data = getPayloadToSign(obj);
-  const dataHash = Buffer.from(keccak256.hex(data), "hex");
+  const dataHash = calculateKeccak256(data);
 
   const publicKeyObj = ecSecp256k1.recoverPubKey(dataHash, signatureObj, recoveryParam);
   return publicKeyObj.encode("hex", false);
@@ -380,7 +380,7 @@ function isValid(signature: string, obj: object | string, publicKey: string): bo
   const publicKeyBuffer = normalizePublicKey(publicKey);
 
   const signatureObj = parseSecp256k1Signature(signature);
-  const dataHash = Buffer.from(keccak256.hex(data), "hex");
+  const dataHash = calculateKeccak256(data);
   return isValidSecp256k1Signature(signatureObj, dataHash, publicKeyBuffer);
 }
 
