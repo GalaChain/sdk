@@ -101,7 +101,7 @@ function normalizePublicKey(input: string): Buffer {
       const buffer = Buffer.from(inputNo0x, encoding);
       validateSecp256k1PublicKey(buffer);
       // Convert to compressed format using secp256k1-node
-      const compressed = secp256k1.publicKeyConvert(buffer, true);
+      const compressed = secp256k1.publicKeyConvert(new Uint8Array(buffer), true);
       return Buffer.from(compressed);
     }
     throw new InvalidKeyError(`Invalid public key: ${input}`);
@@ -123,14 +123,14 @@ function getNonCompactHexPublicKey(publicKey: string): string {
   const normalized = normalizePublicKey(publicKey);
   validateSecp256k1PublicKey(normalized);
   // Convert compressed to uncompressed format
-  const uncompressed = secp256k1.publicKeyConvert(normalized, false);
+  const uncompressed = secp256k1.publicKeyConvert(new Uint8Array(normalized), false);
   return Buffer.from(uncompressed).toString("hex");
 }
 
 function getPublicKey(privateKey: string): string {
   const privateKeyHex = privateKey.replace(/^0x/, "");
   const privateKeyBuffer = Buffer.from(privateKeyHex, "hex");
-  const publicKey = secp256k1.publicKeyCreate(privateKeyBuffer, false);
+  const publicKey = secp256k1.publicKeyCreate(new Uint8Array(privateKeyBuffer), false);
   return Buffer.from(publicKey).toString("hex");
 }
 
@@ -241,7 +241,7 @@ function secp256k1signatureFromDERHexString(hex: string): Secp256k1Signature {
   const derBuffer = Buffer.from(lowerCased, "hex");
 
   // Parse DER signature using secp256k1-node
-  const signature = secp256k1.signatureImport(derBuffer);
+  const signature = secp256k1.signatureImport(new Uint8Array(derBuffer));
 
   // Extract r and s from the 64-byte signature (32 bytes each)
   // Convert to hex and strip leading zeros to match BN behavior from elliptic
@@ -323,7 +323,7 @@ function signSecp256k1(dataHash: Buffer, privateKey: Buffer, useDer?: "DER"): st
   }
 
   // Sign with secp256k1-node (returns { signature: Uint8Array, recid: number })
-  const sigObj = secp256k1.ecdsaSign(dataHash, privateKey);
+  const sigObj = secp256k1.ecdsaSign(new Uint8Array(dataHash), new Uint8Array(privateKey));
 
   // Extract r and s from 64-byte signature
   const r = new BN(sigObj.signature.slice(0, 32));
@@ -357,7 +357,7 @@ function signSecp256k1(dataHash: Buffer, privateKey: Buffer, useDer?: "DER"): st
 function validateSecp256k1PublicKey(publicKey: Buffer): void {
   try {
     // Verify the public key is valid using secp256k1-node
-    if (!secp256k1.publicKeyVerify(publicKey)) {
+    if (!secp256k1.publicKeyVerify(new Uint8Array(publicKey))) {
       throw new Error("Invalid public key");
     }
   } catch (e) {
@@ -382,7 +382,7 @@ function isValidSecp256k1Signature(
   signatureBuffer.set(signature.r.toArray("be", 32), 0);
   signatureBuffer.set(signature.s.toArray("be", 32), 32);
 
-  return secp256k1.ecdsaVerify(signatureBuffer, dataHash, publicKey);
+  return secp256k1.ecdsaVerify(signatureBuffer, new Uint8Array(dataHash), new Uint8Array(publicKey));
 }
 
 function calculateKeccak256(data: Buffer): Buffer {
@@ -390,16 +390,16 @@ function calculateKeccak256(data: Buffer): Buffer {
 }
 
 function getSignature(obj: object, privateKey: Buffer): string {
-  const data = Buffer.from(getPayloadToSign(obj));
+  const data = getPayloadToSign(obj);
   return signSecp256k1(calculateKeccak256(data), privateKey);
 }
 
 function getDERSignature(obj: object, privateKey: Buffer): string {
-  const data = Buffer.from(getPayloadToSign(obj));
+  const data = getPayloadToSign(obj);
   return signSecp256k1(calculateKeccak256(data), privateKey, "DER");
 }
 
-function recoverPublicKey(signature: string, obj: object, prefix?: string): string {
+function recoverPublicKey(signature: string, obj: object): string {
   const signatureObj = parseSecp256k1Signature(signature);
   const recoveryParam = signatureObj.recoveryParam;
   if (recoveryParam === undefined) {
@@ -407,26 +407,21 @@ function recoverPublicKey(signature: string, obj: object, prefix?: string): stri
     throw new InvalidSignatureFormatError(message, { signature });
   }
 
-  const dataString = getPayloadToSign(obj);
-  const data = dataString.startsWith("0x")
-    ? Buffer.from(dataString.slice(2), "hex")
-    : Buffer.from((prefix ?? "") + dataString);
-
-  const dataHash = new Uint8Array(Buffer.from(keccak256.hex(data), "hex"));
+  const data = getPayloadToSign(obj);
+  const dataHash = new Uint8Array(calculateKeccak256(data));
 
   // Convert signature to 64-byte format for recovery
   const signatureBuffer = new Uint8Array(64);
   signatureBuffer.set(signatureObj.r.toArray("be", 32), 0);
   signatureBuffer.set(signatureObj.s.toArray("be", 32), 32);
 
-  const publicKey = secp256k1.ecdsaRecover(signatureBuffer, recoveryParam, dataHash, false);
+  const publicKey = secp256k1.ecdsaRecover(signatureBuffer, recoveryParam, new Uint8Array(dataHash), false);
   return Buffer.from(publicKey).toString("hex");
 }
 
 function isValid(signature: string, obj: object | string, publicKey: string): boolean {
   try {
-    const dataString = typeof obj === "string" ? obj : getPayloadToSign(obj);
-    const data = Buffer.from(dataString);
+    const data = typeof obj === "string" ? Buffer.from(obj) : getPayloadToSign(obj);
     const publicKeyBuffer = normalizePublicKey(publicKey);
 
     const signatureObj = parseSecp256k1Signature(signature);
@@ -451,10 +446,10 @@ function genKeyPair() {
   let privateKey: Buffer;
   do {
     privateKey = randomBytes(32);
-  } while (!secp256k1.privateKeyVerify(privateKey));
+  } while (!secp256k1.privateKeyVerify(new Uint8Array(privateKey)));
 
   // Derive public key from private key
-  const publicKey = secp256k1.publicKeyCreate(privateKey, false);
+  const publicKey = secp256k1.publicKeyCreate(new Uint8Array(privateKey), false);
 
   return {
     privateKey: privateKey.toString("hex"),
