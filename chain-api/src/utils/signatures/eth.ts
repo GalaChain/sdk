@@ -212,6 +212,7 @@ export interface Secp256k1Signature {
   r: BN;
   s: BN;
   recoveryParam: number | undefined;
+  chainId?: number;
 }
 
 function secp256k1signatureFrom130HexString(hex: string): Secp256k1Signature {
@@ -254,11 +255,19 @@ function secp256k1signatureFromDERHexString(hex: string): Secp256k1Signature {
 }
 
 function parseSecp256k1Signature(s: string): Secp256k1Signature {
-  const sigObject = normalizeSecp256k1Signature(s);
+  const [part1, part2] = s.split(":");
+  const chainId = part2 ? parseInt(part1, 10) : undefined;
+  const signatureString = part2 ?? part1;
+
+  const sigObject = normalizeSecp256k1Signature(signatureString);
 
   // Additional check for low-S normalization
   if (sigObject && sigObject.s.cmp(CURVE_ORDER.shrn(1)) > 0) {
     throw new InvalidSignatureFormatError("S value is too high", { signature: s });
+  }
+
+  if (chainId !== undefined) {
+    sigObject.chainId = chainId;
   }
 
   return sigObject;
@@ -407,7 +416,7 @@ function recoverPublicKey(signature: string, obj: object, prefix?: string): stri
     throw new InvalidSignatureFormatError(message, { signature });
   }
 
-  const dataString = getPayloadToSign(obj);
+  const dataString = getPayloadToSign(obj, { chainId: signatureObj.chainId });
   const data = dataString.startsWith("0x")
     ? Buffer.from(dataString.slice(2), "hex")
     : Buffer.from((prefix ?? "") + dataString);
@@ -425,11 +434,13 @@ function recoverPublicKey(signature: string, obj: object, prefix?: string): stri
 
 function isValid(signature: string, obj: object | string, publicKey: string): boolean {
   try {
-    const dataString = typeof obj === "string" ? obj : getPayloadToSign(obj);
+    const signatureObj = parseSecp256k1Signature(signature);
+
+    const dataString =
+      typeof obj === "string" ? obj : getPayloadToSign(obj, { chainId: signatureObj.chainId });
     const data = Buffer.from(dataString);
     const publicKeyBuffer = normalizePublicKey(publicKey);
 
-    const signatureObj = parseSecp256k1Signature(signature);
     const dataHash = calculateKeccak256(data);
     return isValidSecp256k1Signature(signatureObj, dataHash, publicKeyBuffer);
   } catch (e) {

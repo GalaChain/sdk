@@ -37,8 +37,11 @@ function getEIP712PayloadToSign(obj: EIP712Object): string {
   return TypedDataEncoder.encode(obj.domain, obj.types, obj);
 }
 
-export function getPayloadToSign(obj: object): string {
+export function getPayloadToSign(obj: object, eipOverride: { chainId?: number } = {}): string {
   if (isEIP712Object(obj)) {
+    if (eipOverride.chainId !== undefined) {
+      obj.domain.chainId = eipOverride.chainId;
+    }
     return getEIP712PayloadToSign(obj);
   }
 
