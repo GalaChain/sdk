@@ -15,6 +15,7 @@
 import { Args, Flags, ux } from "@oclif/core";
 
 import BaseCommand from "../../base-command";
+import { ChaincodeInfoDto } from "../../dto";
 import {
   deployChaincode,
   getChaincodeDefinition,
@@ -103,16 +104,101 @@ export default class Deploy extends BaseCommand<typeof Deploy> {
         contracts
       });
 
-      this.log(`Deployment scheduled to TNT:`);
+      this.log(`Deployment scheduled to TNT. Waiting for deployment to complete...`);
 
-      const chainCodeInfo = await getDeploymentResponse({
-        privateKey: developerPrivateKey,
-        chaincodeName: chaincode.name
-      });
-
-      this.log(`${JSON.stringify(chainCodeInfo, null, 2)}`);
+      await this.verifyDeploymentStatus(developerPrivateKey, chaincode.name);
     } catch (error) {
       this.error(`${error?.message ?? error}`);
+    }
+  }
+
+  private async verifyDeploymentStatus(privateKey: string, chaincodeName: string): Promise<void> {
+    // Poll for deployment status every 1.5 seconds
+    const pollInterval = process.env.NODE_ENV === "test" ? 100 : 1500;
+    const initialWaitTime = pollInterval * 2;
+    const maxAttempts = 100;
+    const maxConsecutiveErrors = 5;
+
+    let attempts = 0;
+    let chainCodeInfo: ChaincodeInfoDto | undefined;
+    let consecutiveErrors = 0;
+
+    // Wait initially to allow status to change from previous deployment
+    await new Promise((resolve) => setTimeout(resolve, initialWaitTime));
+
+    while (attempts < maxAttempts) {
+      attempts++;
+
+      try {
+        chainCodeInfo = await getDeploymentResponse({
+          privateKey,
+          chaincodeName
+        });
+
+        consecutiveErrors = 0; // Reset error counter on success
+
+        // Check if deployment is successful
+        if (chainCodeInfo.status === "CC_DEPLOYED") {
+          this.log(`\nDeployment successful!`);
+          this.log(`${JSON.stringify(chainCodeInfo, null, 2)}`);
+          return;
+        }
+
+        // Check if deployment failed - terminate immediately
+        if (chainCodeInfo.status === "CC_DEPLOY_FAILED") {
+          this.log(`\nDeployment failed!`);
+          this.log(`${JSON.stringify(chainCodeInfo, null, 2)}`);
+          const deploymentError = new Error(`Deployment failed with status: CC_DEPLOY_FAILED`) as Error & {
+            isDeploymentFailure: boolean;
+          };
+          deploymentError.isDeploymentFailure = true;
+          throw deploymentError;
+        }
+
+        // Print status update
+        this.log(`Verifying deployment... (status: ${chainCodeInfo.status})`);
+
+        // Wait before next poll
+        await new Promise((resolve) => setTimeout(resolve, pollInterval));
+      } catch (error) {
+        // Re-throw if it's a deployment failure error - don't retry
+        if (
+          error instanceof Error &&
+          "isDeploymentFailure" in error &&
+          (error as Error & { isDeploymentFailure: boolean }).isDeploymentFailure
+        ) {
+          this.error(`Deployment failed with status: CC_DEPLOY_FAILED`);
+        }
+
+        consecutiveErrors++;
+
+        // If too many consecutive errors, abort
+        if (consecutiveErrors >= maxConsecutiveErrors) {
+          this.error(
+            `Failed to verify deployment status after ${consecutiveErrors} consecutive errors. ` +
+              `Last error: ${error?.message ?? error}. ` +
+              `Use 'galachain info' to check deployment status manually.`
+          );
+          return;
+        }
+
+        // If it's a transient error, continue polling
+        this.log(
+          `Verifying deployment... (attempt ${attempts}/${maxAttempts}, error: ${
+            error?.message ?? "unknown"
+          })`
+        );
+        await new Promise((resolve) => setTimeout(resolve, pollInterval));
+      }
+    }
+
+    // If we've exhausted attempts, show final status
+    if (chainCodeInfo) {
+      this.log(`\nDeployment verification timeout. Final status:`);
+      this.log(`${JSON.stringify(chainCodeInfo, null, 2)}`);
+      this.warn(`Deployment may still be in progress. Use 'galachain info' to check status later.`);
+    } else {
+      this.error(`Failed to verify deployment status after ${maxAttempts} attempts.`);
     }
   }
 }
