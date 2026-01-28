@@ -30,8 +30,7 @@ jest.mock("../../exec-sync", () => ({
 }));
 
 jest.mock("axios");
-axios.post = jest.fn().mockResolvedValue(axiosPostResponse);
-axios.get = jest.fn().mockResolvedValue(axiosGetResponse);
+const mockedAxios = axios as jest.Mocked<typeof axios>;
 
 describe("Deploy Command", () => {
   let stdOut: string[] = [];
@@ -66,6 +65,20 @@ describe("Deploy Command", () => {
   });
 
   it("should deploy a chaincode", async () => {
+    // Given
+    mockedAxios.post = jest.fn().mockResolvedValue(axiosPostResponse);
+    mockedAxios.get = jest
+      .fn()
+      .mockResolvedValueOnce({
+        data: { ...axiosGetResponse.data, status: "CC_DEPLOY_SCHEDULED" }
+      })
+      .mockResolvedValueOnce({
+        data: { ...axiosGetResponse.data, status: "CC_DEPLOY_SCHEDULED" }
+      })
+      .mockResolvedValue({
+        data: { ...axiosGetResponse.data, status: "CC_DEPLOYED" }
+      });
+
     // When
     await Deploy.run(["--no-prompt", "some/image-name:1d"]);
 
@@ -76,12 +89,39 @@ describe("Deploy Command", () => {
       `Image:        ${consts.imageName}`,
       `Image SHA256: ${consts.imageSha256}`,
       ...consts.contracts.map((contract) => `- ${contract}`),
-      "Deployment scheduled to TNT:",
+      "Deployment scheduled to TNT. Waiting for deployment to complete...",
+      "Verifying deployment...",
+      "Deployment successful!",
       '"network": "TNT"',
       `"chaincode": "${consts.chaincodeName}"`,
-      '"status": "CC_TEST_STATUS"'
+      '"status": "CC_DEPLOYED"'
     ];
 
+    const fullOutput = stdOut.join("\n");
+
+    expectedLines.forEach((line) => {
+      expect(fullOutput).toContain(line);
+    });
+  });
+
+  it("should fail to deploy a chaincode", async () => {
+    // Given
+    mockedAxios.post = jest.fn().mockResolvedValue(axiosPostResponse);
+    mockedAxios.get = jest
+      .fn()
+      .mockResolvedValueOnce({
+        data: { ...axiosGetResponse.data, status: "CC_DEPLOY_SCHEDULED" }
+      })
+      .mockResolvedValue({
+        data: { ...axiosGetResponse.data, status: "CC_DEPLOY_FAILED" }
+      });
+
+    // When & Then
+    await expect(Deploy.run(["--no-prompt", "some/image-name:1d"])).rejects.toThrow(
+      "Deployment failed with status: CC_DEPLOY_FAILED"
+    );
+
+    const expectedLines = ["Deployment failed!"];
     const fullOutput = stdOut.join("\n");
 
     expectedLines.forEach((line) => {
