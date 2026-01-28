@@ -90,7 +90,7 @@ describe("Deploy Command", () => {
       `Image SHA256: ${consts.imageSha256}`,
       ...consts.contracts.map((contract) => `- ${contract}`),
       "Deployment scheduled to TNT. Waiting for deployment to complete...",
-      "Verifying deployment... (status: CC_DEPLOY_SCHEDULED)",
+      "Verifying deployment...",
       "Deployment successful!",
       '"network": "TNT"',
       `"chaincode": "${consts.chaincodeName}"`,
