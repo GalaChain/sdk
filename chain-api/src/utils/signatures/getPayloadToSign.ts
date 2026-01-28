@@ -33,16 +33,19 @@ function isEIP712Object(obj: object): obj is EIP712Object {
   return obj && typeof obj === "object" && "domain" in obj && "types" in obj;
 }
 
-function getEIP712PayloadToSign(obj: EIP712Object): string {
+function getEIP712PayloadToSign(obj: EIP712Object, eipOverride: { chainId?: number }): string {
+  if (eipOverride.chainId !== undefined) {
+    obj.domain.chainId = eipOverride.chainId;
+  }
   return TypedDataEncoder.encode(obj.domain, obj.types, obj);
 }
 
-export function getPayloadToSign(obj: object): Buffer {
+export function getPayloadToSign(obj: object, eipOverride: { chainId?: number } = {}): Buffer {
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const { signature, multisig, trace, prefix, ...plain } = instanceToPlain(obj);
 
   const dataString = isEIP712Object(plain)
-    ? getEIP712PayloadToSign(plain)
+    ? getEIP712PayloadToSign(plain, eipOverride)
     : `${prefix ?? ""}${serialize(plain)}`;
 
   return dataString.startsWith("0x") //
