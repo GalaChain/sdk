@@ -89,15 +89,6 @@ done
 
 #
 #
-echo "Verifying chaincode directories..."
-for dir in $(cat "$fablo_config" | jq -r '.chaincodes[] | .directory'); do
-  echo "  - Checking if $dir exists..."
-  if [ ! -d "$dir" ]; then
-    echo "    ERROR: Chaincode directory does not exist: $dir"
-    exit 1
-  fi
-done
-
 echo "Adding BROWSER_API_CHANNEL_NAMES to .env"
 echo "BROWSER_API_CHANNEL_NAMES=$(cat "$fablo_config" | jq -r '.channels | map(.name) | join(",")')" >> "$target_env"
 
@@ -108,3 +99,8 @@ echo "ADMIN_PUBLIC_KEY=$(cat ./dev-admin-key/dev-admin.pub.hex.txt)" >> "$target
 # see: https://stackoverflow.com/questions/77641240
 perl -i -pe 's/docker-compose/docker compose/g' "./fablo-target/fabric-docker/commands-generated.sh"
 perl -i -pe 's/docker-compose/docker compose/g' "./fablo-target/fabric-docker/snapshot-scripts.sh"
+
+# workaround for https://github.com/hyperledger-labs/fablo/issues/653
+# it modifies the chaincode connection archive name to include the peer address
+# and not overwrite the original file
+perl -i -pe 's/\$CHAINCODE_LABEL\.tar\.gz/\$\{CHAINCODE_LABEL\}_\$\{PEER_ADDRESS%:*\}.tar.gz/g' "./fablo-target/fabric-docker/scripts/chaincode-functions.sh"

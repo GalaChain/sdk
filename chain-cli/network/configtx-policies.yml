@@ -187,15 +187,6 @@ Profiles:
         - <<: *PartnerOrg1
         - <<: *UsersOrg1
 
-    # Consortium(s) is a legacy required by Fablo, can be skipped for flow without system channel
-    Consortium: SampleConsortium
-    Consortiums:
-      SampleConsortium:
-        Organizations:
-          - <<: *CuratorOrg
-          - <<: *PartnerOrg1
-          - <<: *UsersOrg1
-
   PartnerChannel: &PartnerChannelDefaults
     <<: *ChannelDefaults
     Orderer:
@@ -219,12 +210,3 @@ Profiles:
         - <<: *CuratorOrg
         - <<: *PartnerOrg1
         - <<: *UsersOrg1
-
-    # Consortium(s) is a legacy required by Fablo, can be skipped for flow without system channel
-    Consortium: SampleConsortium
-    Consortiums:
-      SampleConsortium:
-        Organizations:
-          - <<: *CuratorOrg
-          - <<: *PartnerOrg1
-          - <<: *UsersOrg1
