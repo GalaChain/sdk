@@ -502,97 +502,101 @@ describe("eth addr validation", () => {
 });
 
 describe("EIP-712", () => {
-  it("should sign and recover public key from EIP-712 signature", () => {
-    // Given
-    const dto = {
-      prefix: "\u0019Ethereum Signed Message:\n367",
-      tokenInstance: {
-        collection: "GALA",
-        category: "Unit",
-        type: "none",
-        additionalKey: "none",
-        instance: "0"
-      },
-      quantities: [
+  const sampleDto = () => ({
+    prefix: "\u0019Ethereum Signed Message:\n367",
+    tokenInstance: {
+      collection: "GALA",
+      category: "Unit",
+      type: "none",
+      additionalKey: "none",
+      instance: "0"
+    },
+    quantities: [
+      {
+        user: "eth|C79A9370e09899BDdc1095eFDb011918AEb559c2",
+        quantity: "Infinity"
+      }
+    ],
+    allowanceType: 6,
+    uses: "9007199254740991",
+    types: {
+      GrantAllowance: [
         {
-          user: "eth|C79A9370e09899BDdc1095eFDb011918AEb559c2",
-          quantity: "Infinity"
+          name: "allowanceType",
+          type: "uint256"
+        },
+        {
+          name: "quantities",
+          type: "quantities[]"
+        },
+        {
+          name: "tokenInstance",
+          type: "tokenInstance"
+        },
+        {
+          name: "uses",
+          type: "string"
+        },
+        {
+          name: "uniqueKey",
+          type: "string"
         }
       ],
-      allowanceType: 6,
-      uses: "9007199254740991",
-      types: {
-        GrantAllowance: [
-          {
-            name: "allowanceType",
-            type: "uint256"
-          },
-          {
-            name: "quantities",
-            type: "quantities[]"
-          },
-          {
-            name: "tokenInstance",
-            type: "tokenInstance"
-          },
-          {
-            name: "uses",
-            type: "string"
-          },
-          {
-            name: "uniqueKey",
-            type: "string"
-          }
-        ],
-        quantities: [
-          {
-            name: "quantity",
-            type: "string"
-          },
-          {
-            name: "user",
-            type: "string"
-          }
-        ],
-        tokenInstance: [
-          {
-            name: "additionalKey",
-            type: "string"
-          },
-          {
-            name: "category",
-            type: "string"
-          },
-          {
-            name: "collection",
-            type: "string"
-          },
-          {
-            name: "type",
-            type: "string"
-          },
-          {
-            name: "instance",
-            type: "string"
-          }
-        ]
-      },
-      domain: {
-        name: "GalaChain"
-      },
-      uniqueKey: "sweepstakes-burn-allowance-0.9039872987694923-1759080110786",
-      trace: {
-        traceId: "4417579481222335154",
-        spanId: "677950533619774931"
-      }
-    };
+      quantities: [
+        {
+          name: "quantity",
+          type: "string"
+        },
+        {
+          name: "user",
+          type: "string"
+        }
+      ],
+      tokenInstance: [
+        {
+          name: "additionalKey",
+          type: "string"
+        },
+        {
+          name: "category",
+          type: "string"
+        },
+        {
+          name: "collection",
+          type: "string"
+        },
+        {
+          name: "type",
+          type: "string"
+        },
+        {
+          name: "instance",
+          type: "string"
+        }
+      ]
+    },
+    domain: {
+      name: "GalaChain",
+      chainId: undefined as number | undefined
+    },
+    uniqueKey: "sweepstakes-burn-allowance-0.9039872987694923-1759080110786",
+    trace: {
+      traceId: "4417579481222335154",
+      spanId: "677950533619774931"
+    }
+  });
 
-    const keyPair = {
-      privateKey: "77da8dc5fab0828f8295ca17f7af062b890cabeea3a5d9b72b1a40673b675a0",
-      publicKey:
-        "04fc1ac1e4459eecaac724d0cb43da0f1a81736c40c72d218083524e16455b9347eec88514eb48df32f90864198a93f21e89c525d63d3c1f0f0cc056e56a965447",
-      ethAddress: "A0a104598fF82f1d7A87c1752d7A19b0c6F83fB9"
-    };
+  const sampleKeyPair = () => ({
+    privateKey: "77da8dc5fab0828f8295ca17f7af062b890cabeea3a5d9b72b1a40673b675a0",
+    publicKey:
+      "04fc1ac1e4459eecaac724d0cb43da0f1a81736c40c72d218083524e16455b9347eec88514eb48df32f90864198a93f21e89c525d63d3c1f0f0cc056e56a965447",
+    ethAddress: "A0a104598fF82f1d7A87c1752d7A19b0c6F83fB9"
+  });
+
+  it("should sign and recover public key from EIP-712 signature", () => {
+    // Given
+    const keyPair = sampleKeyPair();
+    const dto = sampleDto();
 
     const expectedSignature =
       "a38757a2bdd0d31692cdc5413524d5b8a6bb65b2b938ea11bccb043fda6b7aaa7db38c764795acbfe2e7e13bca05a40a4163dcb605e3e18718ae6e2edc932cbe1c";
@@ -608,5 +612,41 @@ describe("EIP-712", () => {
       keyPair.publicKey,
       keyPair.ethAddress
     ]);
+  });
+
+  it("should sign and recover public key from EIP-712 signature with chainId", () => {
+    // Given
+    const keyPair = sampleKeyPair();
+    const privateKey = signatures.normalizePrivateKey(keyPair.privateKey);
+
+    const dto = sampleDto();
+
+    const isValid = (signature: string, dto: object) => signatures.isValid(signature, dto, keyPair.publicKey);
+    const recoverPubKey = (signature: string, dto: object) => signatures.recoverPublicKey(signature, dto);
+    const dtoWithChainId = (chainId: number) => ({ ...dto, domain: { ...dto.domain, chainId } });
+
+    // When
+    dto.domain.chainId = 1;
+    const signature1 = signatures.getSignature(dto, privateKey);
+
+    dto.domain.chainId = 42;
+    const signature42 = signatures.getSignature(dto, privateKey);
+
+    // Then
+    expect(signature1).not.toEqual(signature42);
+
+    expect(isValid(signature1, dto)).toEqual(false);
+    expect(isValid(signature1, dtoWithChainId(1))).toEqual(true);
+    expect(isValid(`1:${signature1}`, dto)).toEqual(true);
+
+    expect(isValid(signature42, dto)).toEqual(true);
+    expect(isValid(`42:${signature42}`, dto)).toEqual(true);
+
+    expect(recoverPubKey(signature1, dto)).not.toEqual(keyPair.publicKey);
+    expect(recoverPubKey(signature1, dtoWithChainId(1))).toEqual(keyPair.publicKey);
+    expect(recoverPubKey(`1:${signature1}`, dtoWithChainId(1))).toEqual(keyPair.publicKey);
+
+    expect(recoverPubKey(signature42, dtoWithChainId(42))).toEqual(keyPair.publicKey);
+    expect(recoverPubKey(`42:${signature42}`, dtoWithChainId(42))).toEqual(keyPair.publicKey);
   });
 });
