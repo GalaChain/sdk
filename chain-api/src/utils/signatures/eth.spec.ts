@@ -623,21 +623,32 @@ describe("EIP-712", () => {
 
     const isValid = (signature: string, dto: object) => signatures.isValid(signature, dto, keyPair.publicKey);
     const recoverPubKey = (signature: string, dto: object) => signatures.recoverPublicKey(signature, dto);
-    const dtoWithChainId = (chainId: number) => ({ ...dto, domain: { ...dto.domain, chainId } });
+    const dtoWithChainId = (chainId: number | undefined) => ({ ...dto, domain: { ...dto.domain, chainId } });
 
     // When
     dto.domain.chainId = 1;
     const signature1 = signatures.getSignature(dto, privateKey);
 
+    const dtoNoChainId = JSON.parse(JSON.stringify(dto));
+    delete dtoNoChainId.domain.chainId;
+    const signatureNoChainId = signatures.getSignature(dtoNoChainId, privateKey);
+
     dto.domain.chainId = 42;
     const signature42 = signatures.getSignature(dto, privateKey);
 
     // Then
+    expect(signature1).not.toEqual(signatureNoChainId);
     expect(signature1).not.toEqual(signature42);
+    expect(signatureNoChainId).not.toEqual(signature42);
 
     expect(isValid(signature1, dto)).toEqual(false);
     expect(isValid(signature1, dtoWithChainId(1))).toEqual(true);
     expect(isValid(`1:${signature1}`, dto)).toEqual(true);
+
+    expect(isValid(signatureNoChainId, dto)).toEqual(false);
+    expect(isValid(signatureNoChainId, dtoNoChainId)).toEqual(true);
+    expect(isValid(signatureNoChainId, dtoWithChainId(undefined))).toEqual(true);
+    expect(isValid(`:${signatureNoChainId}`, dto)).toEqual(true);
 
     expect(isValid(signature42, dto)).toEqual(true);
     expect(isValid(`42:${signature42}`, dto)).toEqual(true);
@@ -645,6 +656,10 @@ describe("EIP-712", () => {
     expect(recoverPubKey(signature1, dto)).not.toEqual(keyPair.publicKey);
     expect(recoverPubKey(signature1, dtoWithChainId(1))).toEqual(keyPair.publicKey);
     expect(recoverPubKey(`1:${signature1}`, dtoWithChainId(1))).toEqual(keyPair.publicKey);
+
+    expect(recoverPubKey(signatureNoChainId, dto)).not.toEqual(keyPair.publicKey);
+    expect(recoverPubKey(signatureNoChainId, dtoWithChainId(undefined))).toEqual(keyPair.publicKey);
+    expect(recoverPubKey(`:${signatureNoChainId}`, dtoWithChainId(undefined))).toEqual(keyPair.publicKey);
 
     expect(recoverPubKey(signature42, dtoWithChainId(42))).toEqual(keyPair.publicKey);
     expect(recoverPubKey(`42:${signature42}`, dtoWithChainId(42))).toEqual(keyPair.publicKey);
