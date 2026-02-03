@@ -212,7 +212,7 @@ export interface Secp256k1Signature {
   r: BN;
   s: BN;
   recoveryParam: number | undefined;
-  chainId?: number;
+  chainId?: number | "delete";
 }
 
 function secp256k1signatureFrom130HexString(hex: string): Secp256k1Signature {
@@ -266,7 +266,11 @@ function parseSecp256k1Signature(s: string): Secp256k1Signature {
     throw new InvalidSignatureFormatError("S value is too high", { signature: s });
   }
 
-  if (chainId !== undefined) {
+  if (part1.trim() === "") {
+    sigObject.chainId = "delete";
+  }
+
+  if (chainId !== undefined && !isNaN(chainId)) {
     sigObject.chainId = chainId;
   }
 
