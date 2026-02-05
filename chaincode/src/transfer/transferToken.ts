@@ -16,12 +16,13 @@ import {
   AllowanceType,
   AuthorizedOnBehalf,
   TokenBalance,
+  TokenInstance,
   TokenInstanceKey,
   UserAlias
 } from "@gala-chain/api";
 import BigNumber from "bignumber.js";
 
-import { verifyAndUseAllowances } from "../allowances";
+import { verifyAndUseAllowances, verifyAndUseTransferAllowancesByKeys } from "../allowances";
 import { fetchOrCreateBalance } from "../balances";
 import { InvalidDecimalError, fetchTokenClass, fetchTokenInstance } from "../token";
 import { GalaChainContext } from "../types";
@@ -33,16 +34,17 @@ export interface TransferTokenParams {
   to: UserAlias;
   tokenInstanceKey: TokenInstanceKey;
   quantity: BigNumber;
+  allowancesToUse: string[];
   authorizedOnBehalf: AuthorizedOnBehalf | undefined;
 }
 
 export async function transferToken(
   ctx: GalaChainContext,
-  { from, to, tokenInstanceKey, quantity, authorizedOnBehalf }: TransferTokenParams
+  { from, to, tokenInstanceKey, quantity, allowancesToUse, authorizedOnBehalf }: TransferTokenParams
 ): Promise<TokenBalance[]> {
-  const msg = `TransferToken ${tokenInstanceKey.toStringKey()} from ${
-    from ?? "?"
-  } to ${to}, quantity: ${quantity.toFixed()}.`;
+  const msg =
+    `TransferToken ${tokenInstanceKey.toStringKey()} from ${from ?? "?"} to ${to}, ` +
+    `quantity: ${quantity.toFixed()}, allowancesToUse: ${allowancesToUse.length}.`;
   ctx.logger.info(msg);
 
   if (from === to) {
@@ -65,14 +67,14 @@ export async function transferToken(
     const msg = `Transfer executed on behalf of another user (fromPerson: ${from}, callingUser: ${callingOnBehalf})`;
     ctx.logger.info(msg);
 
-    await verifyAndUseAllowances(
+    await verifyAndUseTransferAllowances(
       ctx,
       from,
       tokenInstanceKey,
       quantity,
       tokenInstance,
-      callingOnBehalf,
-      AllowanceType.Transfer
+      allowancesToUse,
+      callingOnBehalf
     );
   }
 
@@ -96,4 +98,36 @@ export async function transferToken(
   }
 
   return [fromPersonBalance, toPersonBalance];
+}
+
+async function verifyAndUseTransferAllowances(
+  ctx: GalaChainContext,
+  from: UserAlias,
+  tokenInstanceKey: TokenInstanceKey,
+  quantity: BigNumber,
+  tokenInstance: TokenInstance,
+  allowancesToUse: string[],
+  callingOnBehalf: UserAlias
+) {
+  if (allowancesToUse.length > 0) {
+    await verifyAndUseTransferAllowancesByKeys(
+      ctx,
+      from,
+      tokenInstanceKey,
+      quantity,
+      tokenInstance,
+      callingOnBehalf,
+      allowancesToUse
+    );
+  } else {
+    await verifyAndUseAllowances(
+      ctx,
+      from,
+      tokenInstanceKey,
+      quantity,
+      tokenInstance,
+      callingOnBehalf,
+      AllowanceType.Transfer
+    );
+  }
 }
