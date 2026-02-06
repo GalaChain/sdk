@@ -172,7 +172,8 @@ export async function verifyAndUseTransferAllowancesByKeys(
       a.collection === tokenInstance.collection &&
       a.category === tokenInstance.category &&
       a.type === tokenInstance.type &&
-      a.additionalKey === tokenInstance.additionalKey
+      a.additionalKey === tokenInstance.additionalKey &&
+      a.instance.isEqualTo(tokenInstance.instance)
   );
 
   // Verify grantedBy and grantedTo
