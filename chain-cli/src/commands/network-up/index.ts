@@ -24,6 +24,7 @@ import { getCPPs } from "../../connection-profile";
 import { defaultFabloRoot } from "../../consts";
 import { execSyncStdio } from "../../exec-sync";
 import { saveApiConfig } from "../../galachain-utils";
+import { downNetworkServices } from "../network-prune";
 
 const defaultChaincodeDir = ".";
 
@@ -129,7 +130,7 @@ export default class NetworkUp extends BaseCommand<typeof NetworkUp> {
 
     await Fablo.directory(fabloRoot)
       .then(() => saveConnectionProfiles(fabloRoot, flags.watch, flags.channel ?? [], localhostName))
-      .config(fabloConfig, (cfg) => updatedFabloConfig(cfg, fabloRoot, singleArgs))
+      .config(fabloConfig, (cfg) => updatedFabloConfig(cfg, fabloRoot, flags.watch, singleArgs))
       .then(() => updateConfigTxWithChannelProfile(fabloRoot, singleArgs))
       .then(() =>
         copyEnvFile(
@@ -138,15 +139,18 @@ export default class NetworkUp extends BaseCommand<typeof NetworkUp> {
           singleArgs.map((a) => a.chaincodeDir)
         )
       )
-      .execute("up");
-
-    startNetworkServices(fabloRoot, flags, apiConfigPath);
-
-    printTestAdminCredentials(fabloRoot);
-
-    if (flags.watch) {
-      startChaincodeInWatchMode(fabloRoot, singleArgs);
-    }
+      .execute("up")
+      .then(async () => {
+        await startNetworkServices(fabloRoot, flags, apiConfigPath);
+        await printTestAdminCredentials(fabloRoot);
+        if (flags.watch) {
+          await streamChaincodeLogsAndExit(fabloRoot, singleArgs);
+        }
+      })
+      .catch((error) => {
+        console.error("Failed to start network:", error);
+        Fablo.directory(fabloRoot).execute("prune");
+      });
   }
 }
 
@@ -156,16 +160,20 @@ interface NetworkServicesFlags {
   "no-chain-browser": boolean;
 }
 
-function startNetworkServices(fabloRoot: string, flags: NetworkServicesFlags, apiConfigPath: string): void {
+async function startNetworkServices(
+  fabloRoot: string,
+  flags: NetworkServicesFlags,
+  apiConfigPath: string
+): Promise<void> {
   try {
     // Start browser-api only if not disabled by flags
     if (!flags["no-chain-browser"]) {
-      startBrowserApi(fabloRoot);
+      await startBrowserApi(fabloRoot);
     }
 
     // Start ops-api only in non-watch mode, and if not disabled by flags
     if (!flags.watch && !flags["no-rest-api"]) {
-      startOpsApi(fabloRoot, apiConfigPath);
+      await startOpsApi(fabloRoot, apiConfigPath);
     }
   } catch (error) {
     console.error("Failed to start network services:", error);
@@ -173,7 +181,7 @@ function startNetworkServices(fabloRoot: string, flags: NetworkServicesFlags, ap
   }
 }
 
-function startBrowserApi(fabloRoot: string): void {
+async function startBrowserApi(fabloRoot: string): Promise<void> {
   try {
     const commands = [
       `cd "${fabloRoot}/browser-api"`,
@@ -188,7 +196,7 @@ function startBrowserApi(fabloRoot: string): void {
   }
 }
 
-function startOpsApi(fabloRoot: string, apiConfigPath: string): void {
+async function startOpsApi(fabloRoot: string, apiConfigPath: string): Promise<void> {
   try {
     const commands = [`cd "${fabloRoot}/ops-api"`, `./ops-api.sh up "${fabloRoot}" "${apiConfigPath}"`];
 
@@ -199,7 +207,7 @@ function startOpsApi(fabloRoot: string, apiConfigPath: string): void {
   }
 }
 
-function printTestAdminCredentials(fabloRoot: string): void {
+async function printTestAdminCredentials(fabloRoot: string): Promise<void> {
   const commands = [
     `echo "Dev admin private key which you can use for signing transactions is located at:"`,
     `echo "  $(cd "${fabloRoot}" && pwd)/dev-admin-key/dev-admin.priv.hex.txt"`
@@ -207,10 +215,23 @@ function printTestAdminCredentials(fabloRoot: string): void {
   execSyncStdio(commands.join(" && "));
 }
 
-function startChaincodeInWatchMode(fabloRoot: string, args: SingleArg[]): void {
-  const chaincodeName = args[0].chaincodeName;
-  const commands = [`cd "${fabloRoot}"`, `./chaincode-dev-start.sh "watch" "${chaincodeName}"`];
-  execSyncStdio(commands.join(" && "));
+function streamChaincodeLogsAndExit(fabloRoot: string, args: SingleArg[]): Promise<unknown> {
+  if (args.length === 0) {
+    throw new Error("Error: No chaincode found in watch mode.");
+  }
+
+  const containerName = `ccaas_peer0.curator.local_${args[0].channel}_${args[0].chaincodeName}_0.0.1`;
+  execSyncStdio(`docker logs -f ${containerName}`);
+
+  return Fablo.directory(fabloRoot)
+    .then(async () => {
+      // Print message in yellow
+      console.log("\x1b[33m\n\nChaincode process stopped, pruning network...\n\n\x1b[0m");
+      // Wait 2 seconds to let the user see the message
+      await new Promise((resolve) => setTimeout(resolve, 2000));
+    })
+    .then(() => downNetworkServices(fabloRoot))
+    .execute("prune");
 }
 
 function copyEnvFile(fabloRoot: string, envConfigPath: string | undefined, chaincodeDirs: string[]): void {
@@ -244,14 +265,16 @@ export function createConfigtxProfiles(args: SingleArg[]): string {
 export function updatedFabloConfig(
   initialCfg: FabloConfig,
   fabloRoot: string,
+  isWatchMode: boolean,
   args: SingleArg[]
 ): FabloConfig {
-  return args.reduce((cfg, arg) => updatedFabloConfigWithEntry(cfg, fabloRoot, arg), initialCfg);
+  return args.reduce((cfg, arg) => updatedFabloConfigWithEntry(cfg, fabloRoot, isWatchMode, arg), initialCfg);
 }
 
 function updatedFabloConfigWithEntry(
   initialCfg: FabloConfig,
   fabloRoot: string,
+  isWatchMode: boolean,
   arg: SingleArg
 ): FabloConfig {
   const updated = JSON.parse(JSON.stringify(initialCfg)); // deep copy
@@ -278,13 +301,24 @@ function updatedFabloConfigWithEntry(
   const absoluteChaincodeDir = path.resolve(arg.chaincodeDir ?? "./");
   const relativeChaincodeDir = path.relative(fabloRoot, absoluteChaincodeDir);
 
-  updated.chaincodes.push({
-    name: arg.chaincodeName,
-    version: "0.0.1",
-    lang: "node",
-    channel: arg.channel,
-    directory: relativeChaincodeDir
-  });
+  const newChaincode = isWatchMode
+    ? {
+        channel: arg.channel,
+        name: arg.chaincodeName,
+        version: "0.0.1",
+        lang: "ccaas",
+        image: "hyperledger/fabric-nodeenv:2.5",
+        chaincodeMountPath: `$CHAINCODES_BASE_DIR/${relativeChaincodeDir}`,
+        chaincodeStartCommand: "echo starting && npm run start:ccaas:watch"
+      }
+    : {
+        channel: arg.channel,
+        name: arg.chaincodeName,
+        version: "0.0.1",
+        lang: "node",
+        directory: relativeChaincodeDir
+      };
+  updated.chaincodes.push(newChaincode);
 
   return updated;
 }
@@ -443,15 +477,8 @@ function saveConnectionProfiles(
   const cryptoConfigRoot = path.resolve(fabloRoot, "fablo-target/fabric-config/crypto-config");
 
   // Generate connection profiles for all services
-  const cppsLocal = getCPPs(cryptoConfigRoot, channelNames, localhostName, !isWatchMode, true, !isWatchMode);
-  const cppsDocker = getCPPs(
-    "/crypto-config",
-    channelNames,
-    localhostName,
-    !isWatchMode,
-    false,
-    !isWatchMode
-  );
+  const cppsLocal = getCPPs(cryptoConfigRoot, channelNames, localhostName, true, true, true);
+  const cppsDocker = getCPPs(cryptoConfigRoot, channelNames, localhostName, true, false, true);
 
   // Save connection profiles for ops-api and e2e tests
   const cppLocalDir = path.resolve(fabloRoot, "connection-profiles");

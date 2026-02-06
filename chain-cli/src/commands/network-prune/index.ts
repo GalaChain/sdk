@@ -51,7 +51,7 @@ export default class NetworkPrune extends BaseCommand<typeof NetworkPrune> {
   }
 }
 
-function downNetworkServices(fabloRoot: string): void {
+export function downNetworkServices(fabloRoot: string): void {
   try {
     // Down ops-api
     execSyncStdio(`cd "${fabloRoot}/ops-api" && ./ops-api.sh down`);

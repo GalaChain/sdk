@@ -6,6 +6,7 @@
   "types": "lib/src/index.d.ts",
   "scripts": {
     "start": "node lib/src/cli.js start",
+    "start:ccaas:watch": "echo aaaaa && fabric-chaincode-node server --chaincode-address 0.0.0.0:7052 --chaincode-id \"$CHAINCODE_ID\"",
     "clean": "tsc -b --clean",
     "build": "tsc -p tsconfig.json",
     "build:watch": "tsc -p tsconfig.json -w",
