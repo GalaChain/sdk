@@ -38,7 +38,7 @@ import {
 } from "./grantAllowance";
 import { AllowanceType, refreshAllowances } from "./refreshAllowances";
 import { useAllowances } from "./useAllowances";
-import { verifyAndUseAllowances } from "./verifyAndUseAllowances";
+import { verifyAndUseAllowances, verifyAndUseTransferAllowancesByKeys } from "./verifyAndUseAllowances";
 
 export {
   InsufficientAllowanceError,
@@ -68,5 +68,6 @@ export {
   deleteAllowances,
   DeleteAllowancesParams,
   ensureQuantityCanBeMinted,
-  verifyAndUseAllowances
+  verifyAndUseAllowances,
+  verifyAndUseTransferAllowancesByKeys
 };

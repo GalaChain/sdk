@@ -479,6 +479,7 @@ export default class GalaChainTokenContract extends GalaContract {
       to: await resolveUserAlias(ctx, dto.to),
       tokenInstanceKey: dto.tokenInstance,
       quantity: dto.quantity,
+      allowancesToUse: [],
       authorizedOnBehalf: undefined
     });
   }
