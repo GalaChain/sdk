@@ -20,7 +20,7 @@ $ npm install -g @gala-chain/cli
 $ galachain COMMAND
 running command...
 $ galachain (--version)
-@gala-chain/cli/3.0.0-beta linux-x64 node-v24
+@gala-chain/cli/3.0.0 linux-x64 node-v24.13.0
 $ galachain --help [COMMAND]
 USAGE
   $ galachain COMMAND
@@ -57,11 +57,11 @@ USAGE
     [--no-prompt]
 
 ARGUMENTS
-  IMAGETAG             Image tag to deploy. It should follow the pattern imageName:version.
-  DEVELOPERPRIVATEKEY  Developer's private key to sign the request. It could be a file or a string. If not provided as
-                       an argument, the command will try to read the private key from the environment variable
-                       DEV_PRIVATE_KEY, or from the default location (~/.gc-keys/<chaincode-name>/gc-dev-key), or will
-                       ask for it in a prompt.
+  IMAGETAG               Image tag to deploy. It should follow the pattern imageName:version.
+  [DEVELOPERPRIVATEKEY]  Developer's private key to sign the request. It could be a file or a string. If not provided as
+                         an argument, the command will try to read the private key from the environment variable
+                         DEV_PRIVATE_KEY, or from the default location (~/.gc-keys/<chaincode-name>/gc-dev-key), or will
+                         ask for it in a prompt.
 
 FLAGS
   --mnt        Get info from MNT network instead of TNT (not supported yet).
@@ -250,7 +250,7 @@ USAGE
   $ galachain help [COMMAND] [--all]
 
 ARGUMENTS
-  COMMAND  command to show help for
+  [COMMAND]  command to show help for
 
 FLAGS
   --all  see all commands in CLI
@@ -270,10 +270,10 @@ USAGE
   $ galachain info [DEVELOPERPRIVATEKEY] [--json] [--log-level debug|info|warn|error] [--mnt]
 
 ARGUMENTS
-  DEVELOPERPRIVATEKEY  Developer's private key to sign the request. It could be a file or a string. If not provided as
-                       an argument, the command will try to read the private key from the environment variable
-                       DEV_PRIVATE_KEY, or from the default location (~/.gc-keys/<chaincode-name>/gc-dev-key), or will
-                       ask for it in a prompt.
+  [DEVELOPERPRIVATEKEY]  Developer's private key to sign the request. It could be a file or a string. If not provided as
+                         an argument, the command will try to read the private key from the environment variable
+                         DEV_PRIVATE_KEY, or from the default location (~/.gc-keys/<chaincode-name>/gc-dev-key), or will
+                         ask for it in a prompt.
 
 FLAGS
   --mnt  Get info from MNT network instead of TNT (not supported yet).
@@ -517,10 +517,10 @@ USAGE
   $ galachain register [DEVELOPERPRIVATEKEY] [--json] [--log-level debug|info|warn|error] [--mnt] [--no-prompt]
 
 ARGUMENTS
-  DEVELOPERPRIVATEKEY  Developer's private key to sign the request. It could be a file or a string. If not provided as
-                       an argument, the command will try to read the private key from the environment variable
-                       DEV_PRIVATE_KEY, or from the default location (~/.gc-keys/<chaincode-name>/gc-dev-key), or will
-                       ask for it in a prompt.
+  [DEVELOPERPRIVATEKEY]  Developer's private key to sign the request. It could be a file or a string. If not provided as
+                         an argument, the command will try to read the private key from the environment variable
+                         DEV_PRIVATE_KEY, or from the default location (~/.gc-keys/<chaincode-name>/gc-dev-key), or will
+                         ask for it in a prompt.
 
 FLAGS
   --mnt        Get info from MNT network instead of TNT (not supported yet).
