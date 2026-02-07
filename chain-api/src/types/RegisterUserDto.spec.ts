@@ -16,8 +16,7 @@ import { instanceToPlain, plainToInstance } from "class-transformer";
 import { validate } from "class-validator";
 
 import { signatures } from "../utils";
-import { UserAlias, asValidUserAlias } from "./UserAlias";
-import { asValidUserRef } from "./UserRef";
+import { UserAlias } from "./UserAlias";
 import { RegisterUserDto } from "./dtos";
 
 describe("RegisterUserDto", () => {

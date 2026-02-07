@@ -209,7 +209,9 @@ describe("PublicKeyContract Multisignature", () => {
         user: alias,
         publicKey: newKey.publicKey
       });
-      const signedDto = dto.signed(process.env.DEV_ADMIN_PRIVATE_KEY as string);
+      const signedDto = dto
+        .withPublicKeySignedBy(newKey.privateKey)
+        .signed(process.env.DEV_ADMIN_PRIVATE_KEY as string);
 
       // When
       const response = await chaincode.invoke("PublicKeyContract:RegisterUser", signedDto);

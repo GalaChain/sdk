@@ -215,7 +215,8 @@ export class PublicKeyService {
     publicKey: string | undefined,
     signers: UserAlias[] | undefined,
     userAlias: UserAlias,
-    signatureQuorum: number
+    signatureQuorum: number,
+    dto?: ChainCallDTO & { publicKeySignature?: string }
   ): Promise<string> {
     if (publicKey && signers) {
       throw new ValidationFailedError("Cannot use both publicKey and signers");
@@ -236,6 +237,24 @@ export class PublicKeyService {
     // of UserAlias objects (unambiguous user identifiers on chain)
     if (signers && signers.length !== new Set(signers).size) {
       throw new ValidationFailedError(`Found duplicate signers in: ${signers.join(",")}`);
+    }
+
+    // Validate public key signature when publicKey is provided (for single-signed users)
+    if (publicKey && !signers && dto) {
+      const publicKeySignature = dto.publicKeySignature;
+
+      if (publicKeySignature === undefined) {
+        throw new ValidationFailedError("Public key signature is missing");
+      }
+
+      // Create DTO without signature fields for validation
+      // eslint-disable-next-line @typescript-eslint/no-unused-vars
+      const { publicKeySignature: _, ...dtoRemaining } = dto;
+
+      const isSignatureValid = signatures.isValidSignature(publicKeySignature, dtoRemaining, publicKey);
+      if (!isSignatureValid) {
+        throw new ValidationFailedError(`Invalid secp256k1 public key signature`);
+      }
     }
 
     const currPublicKey = await PublicKeyService.getPublicKey(ctx, userAlias);
