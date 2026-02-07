@@ -50,6 +50,20 @@ export abstract class ChainObject {
 
   public static ID_SUB_SPLIT_CHAR = "|";
 
+  public serializeChainState(): [string, Buffer] {
+    const classIndexKey = this.getClassIndexKey();
+    const keyFields = ChainObject.getOrderedKeyFields(this);
+    const keyValues = ChainObject.getOrderedKeyValues(this, keyFields);
+    const compositeKey = ChainObject.getCompositeKeyFromParts(classIndexKey, keyValues);
+
+    const keyFieldsSet = new Set(keyFields);
+    const plain = this.toPlainObject();
+    const valueObj = Object.fromEntries(Object.entries(plain).filter(([k]) => !keyFieldsSet.has(k)));
+    const buffer = Buffer.from(JSON.stringify(valueObj));
+
+    return [compositeKey, buffer];
+  }
+
   public serialize(): string {
     return serialize(this);
   }
@@ -82,7 +96,57 @@ export abstract class ChainObject {
     return deserialize<T, ChainObject>(constructor, object);
   }
 
+  public static deserializeChainState<T extends ChainObject>(
+    constructor: ClassConstructor<Inferred<T, ChainObject>>,
+    key: string,
+    value: Buffer
+  ): T {
+    const [indexKey, keyParts] = ChainObject.extractKeyPartsFromCompositeKey(key);
+    const keyFields = ChainObject.getOrderedKeyFields(constructor.prototype);
+
+    if (keyParts.length !== keyFields.length) {
+      throw new InvalidCompositeKeyError(
+        `Key parts length ${keyParts.length} does not match key fields length ${keyFields.length}. Key: ${key}`
+      );
+    }
+
+    const plainObject = JSON.parse(value.toString());
+
+    keyFields.forEach((field, index) => {
+      plainObject[field] = keyParts[index];
+    });
+
+    const object = deserialize<T, ChainObject>(constructor, plainObject);
+
+    if (object.getClassIndexKey() !== indexKey) {
+      throw new InvalidCompositeKeyError(
+        `Index key ${object.getClassIndexKey()} does not match expected index key ${indexKey}. Key: ${key}`
+      );
+    }
+
+    return object;
+  }
+
+  private static extractKeyPartsFromCompositeKey(key: string): [string, string[]] {
+    // Remove namespace and index key
+    const parts = key.substring(1).split(this.MIN_UNICODE_RUNE_VALUE);
+
+    // First part is the index key, rest are the actual key parts
+    return [parts[0], parts.slice(1, -1)]; // Remove index key and trailing empty part
+  }
+
   public getCompositeKey(): string {
+    const classIndexKey = this.getClassIndexKey();
+    console.log("classIndexKey", classIndexKey);
+    const proto = Object.getPrototypeOf(this);
+    const keyFields = ChainObject.getOrderedKeyFields(proto);
+    console.log("keyFields", keyFields);
+    const keyParts = ChainObject.getOrderedKeyValues(this, keyFields);
+    console.log("keyParts", keyParts);
+    return ChainObject.getCompositeKeyFromParts(classIndexKey, keyParts);
+  }
+
+  private getClassIndexKey(): string {
     // eslint-disable-next-line @typescript-eslint/ban-ts-comment
     // @ts-ignore this is a way to access static property of current class
     const classIndexKey = this.__proto__.constructor.INDEX_KEY;
@@ -93,18 +157,19 @@ export abstract class ChainObject {
       );
     }
 
-    const target = Object.getPrototypeOf(this);
+    return classIndexKey;
+  }
+
+  private static getOrderedKeyFields(target: object): string[] {
     const fields: ChainKeyMetadata[] = Reflect.getOwnMetadata("galachain:chainkey", target) || [];
+    fields.sort((a, b) => a.position - b.position);
+    return fields.map((f) => f.key.toString());
+  }
 
-    const plain = instanceToPlain(this);
-    const keyParts = fields
-      .sort((a, b) => a.position - b.position)
-      .map((field) => {
-        const key = field.key.toString();
-        return typeof this[key]?.toStringKey === "function" ? this[key]?.toStringKey() : plain[key];
-      });
-
-    return ChainObject.getCompositeKeyFromParts(classIndexKey, keyParts);
+  private static getOrderedKeyValues(target: object, fields: string[]): unknown[] {
+    return fields.map((k) =>
+      typeof target[k]?.toStringKey === "function" ? target[k]?.toStringKey() : target[k]
+    );
   }
 
   public static getCompositeKeyFromParts(indexKey: string, parts: unknown[]): string {
