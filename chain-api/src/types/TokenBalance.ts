@@ -83,20 +83,6 @@ export class TokenQuantityNotUnlockedError extends ValidationFailedError {
   }
 }
 
-export class TokenInUseError extends ValidationFailedError {
-  constructor(owner: string, tokenClass: TokenClassKeyProperties, instanceId: BigNumber) {
-    const tokenInstanceKey = TokenInstanceKey.nftKey(tokenClass, instanceId).toStringKey();
-    super(`Token instance ${tokenInstanceKey} is in use`, { owner, tokenInstanceKey });
-  }
-}
-
-export class TokenNotInUseError extends ValidationFailedError {
-  constructor(owner: string, tokenClass: TokenClassKeyProperties, instanceId: BigNumber) {
-    const tokenInstanceKey = TokenInstanceKey.nftKey(tokenClass, instanceId).toStringKey();
-    super(`Token instance ${tokenInstanceKey} is not in use`, { owner, tokenInstanceKey });
-  }
-}
-
 export class TokenBalance extends ChainObject {
   @Exclude()
   public static readonly INDEX_KEY = "GCTB";
@@ -138,7 +124,6 @@ export class TokenBalance extends ChainObject {
       this.quantity = new BigNumber(0);
       this.instanceIds = [];
       this.lockedHolds = [];
-      this.inUseHolds = [];
     }
   }
 
@@ -155,11 +140,6 @@ export class TokenBalance extends ChainObject {
   @ValidateNested({ each: true })
   @Type(() => TokenHold)
   private lockedHolds?: Array<TokenHold>;
-
-  @IsOptional()
-  @ValidateNested({ each: true })
-  @Type(() => TokenHold)
-  private inUseHolds?: Array<TokenHold>;
 
   @BigNumberIsNotNegative()
   @BigNumberProperty()
@@ -192,10 +172,6 @@ export class TokenBalance extends ChainObject {
     return unexpiredHolds.sort(TokenHold.sortByAscendingExpiration);
   }
 
-  public getUnexpiredInUseHolds(currentTime: number): TokenHold[] {
-    return (this.inUseHolds ?? []).filter((h) => !h.isExpired(currentTime));
-  }
-
   public addInstance(instanceId: BigNumber): void {
     this.ensureInstanceIsNft(instanceId);
 
@@ -222,7 +198,6 @@ export class TokenBalance extends ChainObject {
     this.ensureInstanceIsNft(instanceId);
     this.ensureInstanceIsInBalance(instanceId);
     this.ensureInstanceIsNotLocked(instanceId, currentTime);
-    this.ensureInstanceIsNotUsed(instanceId, currentTime);
 
     // remove instance ID from array
     this.instanceIds = (this.instanceIds ?? []).filter((id) => !id.eq(instanceId));
@@ -235,7 +210,6 @@ export class TokenBalance extends ChainObject {
     this.ensureInstanceIsNft(hold.instanceId);
     this.ensureInstanceIsInBalance(hold.instanceId);
     this.ensureInstanceIsNotLockedWithTheSameName(hold.instanceId, hold.name, currentTime);
-    this.ensureInstanceIsNotUsed(hold.instanceId, currentTime);
 
     this.lockedHolds = [...this.getUnexpiredLockedHolds(currentTime), hold];
   }
@@ -251,33 +225,10 @@ export class TokenBalance extends ChainObject {
     this.lockedHolds = updated;
   }
 
-  public useInstance(hold: TokenHold, currentTime: number): void {
-    this.ensureInstanceIsNft(hold.instanceId);
-    this.ensureInstanceIsInBalance(hold.instanceId);
-    this.ensureInstanceIsNotLocked(hold.instanceId, currentTime);
-    this.ensureInstanceIsNotUsed(hold.instanceId, currentTime);
-
-    this.inUseHolds = [...this.getUnexpiredInUseHolds(currentTime), hold];
-  }
-
-  public releaseInstance(instanceId: BigNumber, name: string | undefined, currentTime: number): void {
-    const unexpiredInUseHolds = this.getUnexpiredInUseHolds(currentTime);
-    const updated = unexpiredInUseHolds.filter((h) => !h.matches(instanceId, name));
-
-    if (unexpiredInUseHolds.length === updated.length) {
-      throw new TokenNotInUseError(this.owner, this, instanceId);
-    }
-
-    this.inUseHolds = updated;
-  }
-
   public clearHolds(instanceId: BigNumber, currentTime: number): void {
     this.ensureInstanceIsNft(instanceId);
 
     this.lockedHolds = this.getUnexpiredLockedHolds(currentTime).filter(
-      (h) => !h.instanceId.isEqualTo(instanceId)
-    );
-    this.inUseHolds = this.getUnexpiredInUseHolds(currentTime).filter(
       (h) => !h.instanceId.isEqualTo(instanceId)
     );
   }
@@ -291,21 +242,12 @@ export class TokenBalance extends ChainObject {
     return this.getUnexpiredLockedHolds(currentTime).find((h) => h.matches(instanceId, name));
   }
 
-  public findInUseHold(instanceId: BigNumber, currentTime: number): TokenHold | undefined {
-    this.ensureInstanceIsNft(instanceId);
-    return this.getUnexpiredInUseHolds(currentTime).find((h) => h.matches(instanceId, undefined));
-  }
-
   public containsAnyNftInstanceId(): boolean {
     return this.getNftInstanceIds().length > 0;
   }
 
   public isInstanceSpendable(instanceId: BigNumber, currentTime: number): boolean {
-    return (
-      this.containsInstance(instanceId) &&
-      !this.isInstanceLocked(instanceId, currentTime) &&
-      !this.isInstanceInUse(instanceId, currentTime)
-    );
+    return this.containsInstance(instanceId) && !this.isInstanceLocked(instanceId, currentTime);
   }
 
   public getNftInstanceIds(): BigNumber[] {
@@ -314,7 +256,6 @@ export class TokenBalance extends ChainObject {
 
   public cleanupExpiredHolds(currentTime: number): TokenBalance {
     this.lockedHolds = this.getUnexpiredLockedHolds(currentTime);
-    this.inUseHolds = this.getUnexpiredInUseHolds(currentTime);
     return this;
   }
 
@@ -324,10 +265,6 @@ export class TokenBalance extends ChainObject {
 
   private isInstanceLocked(instanceId: BigNumber, currentTime: number): boolean {
     return this.getUnexpiredLockedHolds(currentTime).some((h) => h.instanceId.isEqualTo(instanceId));
-  }
-
-  private isInstanceInUse(instanceId: BigNumber, currentTime: number): boolean {
-    return this.getUnexpiredInUseHolds(currentTime).some((h) => h.instanceId.isEqualTo(instanceId));
   }
 
   private ensureInstanceIsNft(instanceId: BigNumber): void {
@@ -358,12 +295,6 @@ export class TokenBalance extends ChainObject {
     const hold = this.getUnexpiredLockedHolds(currentTime).find((h) => h.instanceId.isEqualTo(instanceId));
     if (hold !== undefined) {
       throw new TokenLockedError(this.owner, this, instanceId, hold?.name);
-    }
-  }
-
-  private ensureInstanceIsNotUsed(instanceId: BigNumber, currentTime: number): void {
-    if (this.isInstanceInUse(instanceId, currentTime)) {
-      throw new TokenInUseError(this.owner, this, instanceId);
     }
   }
 

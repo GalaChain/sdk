@@ -265,8 +265,7 @@ export async function fillTokenSwap(
           currentQuantity,
           tokenInstance,
           ctx.callingUser,
-          AllowanceType.Swap,
-          []
+          AllowanceType.Swap
         );
 
         ///////////////////////////////

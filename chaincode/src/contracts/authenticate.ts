@@ -165,7 +165,7 @@ export async function authenticateSingleSignature(
   ctx: GalaChainContext,
   dto: ChainCallDTO & { signature: string }
 ): Promise<AuthenticateResult> {
-  const recoveredEth = tryRecoverEthPublicKey(dto.signature, dto, dto.prefix ?? "");
+  const recoveredEth = tryRecoverEthPublicKey(dto.signature, dto);
 
   if (recoveredEth !== undefined) {
     if (dto.signerPublicKey !== undefined) {
@@ -245,7 +245,7 @@ async function authenticateMultipleSignatures(
   const signerProfiles: UserProfileStrict[] = [];
 
   for (const [index, signature] of dto.multisig.entries()) {
-    const recoveredEth = tryRecoverEthPublicKey(signature, dto, dto.prefix ?? "");
+    const recoveredEth = tryRecoverEthPublicKey(signature, dto);
     if (recoveredEth === undefined) {
       throw new CannotRecoverPublicKeyError(index, signature);
     }
@@ -310,11 +310,10 @@ async function getUserProfileAndPublicKey(
 
 function tryRecoverEthPublicKey(
   signature: string,
-  dto: ChainCallDTO,
-  prefix = ""
+  dto: ChainCallDTO
 ): { publicKeyHex: string; address: string } | undefined {
   try {
-    const publicKeyHex = signatures.recoverPublicKey(signature, dto, prefix);
+    const publicKeyHex = signatures.recoverPublicKey(signature, dto);
     const address = signatures.getEthAddress(publicKeyHex);
     return { publicKeyHex, address };
   } catch (err) {

@@ -25,76 +25,25 @@ import { useAllowances } from "./useAllowances";
 /**
  * @description
  *
- * Query allowances from World State using either composite keys or a
- * partial compomsite key query constructed from the provided paraemters,
- * ensuring that the provided `grantedBy` and `authorizedOnBehalf` paraemters
- * match the `TokenAllowance` `grantedBy` and `grantedTo` properties.
- *
- * Apply the remaining quantity of each applicable allowance to the total quantity.
+ * Internal function that verifies and uses allowances.
+ * Verifies allowance quantity and applies the remaining quantity of each applicable allowance.
+ * Assumes that the allowances are already filtered by token, the `grantedBy` and `authorizedOnBehalf` parameters.
  *
  * Return `true` after accounting for the full spend. Write a `TokenClaim` entry
  * for each allowance used.
  *
  * Throws an exception if the full quantity cannot be
  * met by the provided allowances.
- * @param ctx
- * @param grantedBy
- * @param tokenInstanceKey
- * @param quantity
- * @param tokenInstance
- * @param authorizedOnBehalf
- * @param actionType
- * @param useAllowancesArr
- * @returns Promise<boolean>
  */
-export async function verifyAndUseAllowances(
+async function verifyAndUseAllowancesInternal(
   ctx: GalaChainContext,
   grantedBy: string,
   tokenInstanceKey: TokenInstanceKey,
   quantity: BigNumber,
-  tokenInstance: TokenInstance,
   authorizedOnBehalf: string,
   actionType: AllowanceType,
-  useAllowancesArr: Array<string>
+  applicableAllowances: TokenAllowance[]
 ): Promise<boolean> {
-  let applicableAllowances: TokenAllowance[];
-
-  if (useAllowancesArr.length) {
-    // Deduplicate allowance keys to prevent double-spending
-    const uniqueAllowanceKeys = [...new Set(useAllowancesArr)];
-    const fetchedAllowances = await getObjectsByKeys(ctx, TokenAllowance, uniqueAllowanceKeys);
-    applicableAllowances = fetchedAllowances.filter(
-      (a) =>
-        a.allowanceType === actionType &&
-        a.collection === tokenInstance.collection &&
-        a.category === tokenInstance.category &&
-        a.type === tokenInstance.type &&
-        a.additionalKey === tokenInstance.additionalKey
-    );
-
-    // Verify grantedBy and grantedTo
-    applicableAllowances.forEach((allowance) => {
-      if (allowance.grantedBy !== grantedBy) {
-        throw new AllowanceUsersMismatchError(allowance, grantedBy, authorizedOnBehalf);
-      } else if (allowance.grantedTo !== authorizedOnBehalf) {
-        throw new AllowanceUsersMismatchError(allowance, grantedBy, authorizedOnBehalf);
-      }
-    });
-  } else {
-    const applicableAllowanceResponse = await fetchAllowances(ctx, {
-      grantedBy: grantedBy,
-      grantedTo: authorizedOnBehalf,
-      collection: tokenInstance.collection,
-      category: tokenInstance.category,
-      type: tokenInstance.type,
-      additionalKey: tokenInstance.additionalKey,
-      instance: tokenInstance.instance.toFixed(),
-      allowanceType: actionType
-    });
-
-    applicableAllowances = applicableAllowanceResponse ?? [];
-  }
-
   // verify allowance quantity
   const allowedQuantity = await checkAllowances(
     ctx,
@@ -118,4 +67,131 @@ export async function verifyAndUseAllowances(
   // Use allowances (which also creates claims)
   const useResult = await useAllowances(ctx, quantity, applicableAllowances, actionType);
   return useResult;
+}
+
+/**
+ * @description
+ *
+ * Query allowances from World State using a partial composite key query
+ * constructed from the provided parameters, ensuring that the provided
+ * `grantedBy` and `authorizedOnBehalf` parameters match the `TokenAllowance`
+ * `grantedBy` and `grantedTo` properties.
+ *
+ * Apply the remaining quantity of each applicable allowance to the total quantity.
+ *
+ * Return `true` after accounting for the full spend. Write a `TokenClaim` entry
+ * for each allowance used.
+ *
+ * Throws an exception if the full quantity cannot be
+ * met by the provided allowances.
+ * @param ctx
+ * @param grantedBy
+ * @param tokenInstanceKey
+ * @param quantity
+ * @param tokenInstance
+ * @param authorizedOnBehalf
+ * @param actionType
+ * @returns Promise<boolean>
+ */
+export async function verifyAndUseAllowances(
+  ctx: GalaChainContext,
+  grantedBy: string,
+  tokenInstanceKey: TokenInstanceKey,
+  quantity: BigNumber,
+  tokenInstance: TokenInstance,
+  authorizedOnBehalf: string,
+  actionType: AllowanceType
+): Promise<boolean> {
+  // Auto-fetch allowances
+  const applicableAllowanceResponse = await fetchAllowances(ctx, {
+    grantedBy: grantedBy,
+    grantedTo: authorizedOnBehalf,
+    collection: tokenInstance.collection,
+    category: tokenInstance.category,
+    type: tokenInstance.type,
+    additionalKey: tokenInstance.additionalKey,
+    instance: tokenInstance.instance.toFixed(),
+    allowanceType: actionType
+  });
+
+  const applicableAllowances: TokenAllowance[] = applicableAllowanceResponse ?? [];
+
+  return verifyAndUseAllowancesInternal(
+    ctx,
+    grantedBy,
+    tokenInstanceKey,
+    quantity,
+    authorizedOnBehalf,
+    actionType,
+    applicableAllowances
+  );
+}
+
+/**
+ * @description
+ *
+ * Query allowances from World State using specific allowance keys (composite keys),
+ * ensuring that the provided `grantedBy` and `authorizedOnBehalf` parameters
+ * match the `TokenAllowance` `grantedBy` and `grantedTo` properties.
+ *
+ * Apply the remaining quantity of each applicable allowance to the total quantity.
+ *
+ * Return `true` after accounting for the full spend. Write a `TokenClaim` entry
+ * for each allowance used.
+ *
+ * Throws an exception if the full quantity cannot be
+ * met by the provided allowances.
+ * @param ctx
+ * @param grantedBy
+ * @param tokenInstanceKey
+ * @param quantity
+ * @param tokenInstance
+ * @param authorizedOnBehalf
+ * @param actionType
+ * @param useAllowancesArr Array of allowance composite keys to use
+ * @returns Promise<boolean>
+ */
+export async function verifyAndUseTransferAllowancesByKeys(
+  ctx: GalaChainContext,
+  grantedBy: string,
+  tokenInstanceKey: TokenInstanceKey,
+  quantity: BigNumber,
+  tokenInstance: TokenInstance,
+  authorizedOnBehalf: string,
+  useAllowancesArr: Array<string>
+): Promise<boolean> {
+  const actionType = AllowanceType.Transfer;
+
+  // Deduplicate allowance keys to prevent double-spending
+  const uniqueAllowanceKeys = [...new Set(useAllowancesArr)];
+  const fetchedAllowances = await getObjectsByKeys(ctx, TokenAllowance, uniqueAllowanceKeys);
+
+  const applicableAllowances = fetchedAllowances.filter(
+    (a) =>
+      a.allowanceType === actionType &&
+      a.collection === tokenInstance.collection &&
+      a.category === tokenInstance.category &&
+      a.type === tokenInstance.type &&
+      a.additionalKey === tokenInstance.additionalKey &&
+      a.instance.isEqualTo(tokenInstance.instance)
+  );
+
+  // Verify grantedBy and grantedTo
+  applicableAllowances.forEach((allowance) => {
+    if (allowance.grantedBy !== grantedBy) {
+      throw new AllowanceUsersMismatchError(allowance, grantedBy, authorizedOnBehalf);
+    } else if (allowance.grantedTo !== authorizedOnBehalf) {
+      throw new AllowanceUsersMismatchError(allowance, grantedBy, authorizedOnBehalf);
+    }
+  });
+
+  return verifyAndUseAllowancesInternal(
+    ctx,
+    grantedBy,
+    tokenInstanceKey,
+    quantity,
+    authorizedOnBehalf,
+    actionType,
+    applicableAllowances
+  );
 }

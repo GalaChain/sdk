@@ -28,6 +28,7 @@ export interface DeleteAllowancesParams {
   additionalKey?: string;
   instance?: string;
   allowanceType?: AllowanceType;
+  created?: number;
 }
 
 class InvalidAllowanceUsersError extends ForbiddenError {
@@ -57,7 +58,11 @@ export async function deleteAllowances(
     throw new InvalidAllowanceUsersError(params.grantedBy, params.grantedTo, ctx.callingUser);
   }
 
-  const allowances = await fetchAllowances(ctx, params);
+  let allowances = await fetchAllowances(ctx, params);
+
+  if (params.created !== undefined) {
+    allowances = allowances.filter((a) => a.created === params.created);
+  }
 
   await Promise.all(allowances.map((allowance) => deleteChainObject(ctx, allowance)));
 

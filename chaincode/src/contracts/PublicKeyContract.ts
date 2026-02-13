@@ -35,19 +35,10 @@ import { Info } from "fabric-contract-api";
 import { PublicKeyService, resolveUserAlias, resolveUserAliases } from "../services";
 import { PkNotFoundError } from "../services/PublicKeyError";
 import { GalaChainContext } from "../types";
+import { getVersion } from "../utils/version";
 import { GalaContract } from "./GalaContract";
 import { EVALUATE, Evaluate, GalaTransaction, Submit } from "./GalaTransaction";
 import { requireRegistrarAuth } from "./authorize";
-
-let version = "0.0.0";
-
-try {
-  // eslint-disable-next-line @typescript-eslint/no-var-requires
-  version = require("../../../package.json").version;
-} catch (e) {
-  // eslint-disable-next-line @typescript-eslint/no-var-requires
-  version = require("../../package.json").version;
-}
 
 @Info({
   title: "PublicKeyContract",
@@ -55,7 +46,7 @@ try {
 })
 export class PublicKeyContract extends GalaContract {
   constructor() {
-    super("PublicKeyContract", version);
+    super("PublicKeyContract", getVersion());
   }
 
   @Evaluate({

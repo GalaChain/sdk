@@ -20,10 +20,12 @@ import { GalaChainStub, createGalaChainStub } from "./GalaChainStub";
 import { GalaLoggerInstance, GalaLoggerInstanceImpl } from "./GalaLoggerInstance";
 import { OperationContext, getOperationContext } from "./OperationContext";
 
+const NANOS_PER_MILLISECOND = 1_000_000;
+
 function getTxUnixTime(ctx: Context): number {
   const txTimestamp: Timestamp = ctx.stub.getTxTimestamp();
   // Convert time to milliseconds by multiplying seconds and dividing nanoseconds
-  const txUnixTime = txTimestamp.seconds.toNumber() * 1000 + txTimestamp.nanos / 10 ** 6;
+  const txUnixTime = txTimestamp.seconds.toNumber() * 1000 + txTimestamp.nanos / NANOS_PER_MILLISECOND;
   return Math.floor(txUnixTime);
 }
 

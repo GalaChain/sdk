@@ -16,7 +16,6 @@ import BigNumber from "bignumber.js";
 import { Type } from "class-transformer";
 import {
   ArrayNotEmpty,
-  ArrayUnique,
   IsInt,
   IsNotEmpty,
   IsOptional,
@@ -72,15 +71,6 @@ export class LockTokenDto extends SubmitCallDTO {
   quantity: BigNumber;
 
   @JSONSchema({
-    description: "Allowance ids to be used on lock (optional)."
-  })
-  @IsString({ each: true })
-  @IsOptional()
-  @ArrayNotEmpty()
-  @ArrayUnique()
-  useAllowances?: Array<string>;
-
-  @JSONSchema({
     description:
       "vestingPeriodStart timestamp. For Vesting Locks, this specifies the beginning of the vesting period."
   })
@@ -113,15 +103,6 @@ export class LockTokensDto extends SubmitCallDTO {
   @Type(() => LockTokenQuantity)
   @ValidateNested({ each: true })
   tokenInstances: Array<LockTokenQuantity>;
-
-  @JSONSchema({
-    description: "Allowance ids to be used on lock (optional)."
-  })
-  @IsString({ each: true })
-  @IsOptional()
-  @ArrayNotEmpty()
-  @ArrayUnique()
-  useAllowances?: Array<string>;
 
   @JSONSchema({
     description:

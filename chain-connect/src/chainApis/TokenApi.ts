@@ -34,12 +34,10 @@ import {
   MintTokenDto,
   MintTokenWithAllowanceDto,
   RefreshAllowanceDto,
-  ReleaseTokenDto,
   TransferTokenDto,
   UnlockTokenDto,
   UnlockTokensDto,
-  UpdateTokenClassDto,
-  UseTokenDto
+  UpdateTokenClassDto
 } from "@gala-chain/api";
 
 import { GalaChainProvider } from "../GalaChainClient";
@@ -70,7 +68,6 @@ import {
   MintTokenRequest,
   MintTokenWithAllowanceRequest,
   RefreshAllowanceRequest,
-  ReleaseTokenRequest,
   TokenAllowance,
   TokenBalance,
   TokenBurn,
@@ -80,8 +77,7 @@ import {
   TransferTokenRequest,
   UnlockTokenRequest,
   UnlockTokensRequest,
-  UpdateTokenClassRequest,
-  UseTokenRequest
+  UpdateTokenClassRequest
 } from "../types";
 import { GalaChainBaseApi } from "./GalaChainBaseApi";
 
@@ -290,28 +286,6 @@ export class TokenApi extends GalaChainBaseApi {
       url: this.chainCodeUrl,
       requestConstructor: BatchMintTokenDto,
       responseConstructor: TokenInstanceKey
-    });
-  }
-
-  public UseToken(dto: UseTokenRequest) {
-    return this.connection.submit({
-      method: "UseToken",
-      payload: dto,
-      sign: true,
-      url: this.chainCodeUrl,
-      requestConstructor: UseTokenDto,
-      responseConstructor: TokenBalance
-    });
-  }
-
-  public ReleaseToken(dto: ReleaseTokenRequest) {
-    return this.connection.submit({
-      method: "ReleaseToken",
-      payload: dto,
-      sign: true,
-      url: this.chainCodeUrl,
-      requestConstructor: ReleaseTokenDto,
-      responseConstructor: TokenBalance
     });
   }
 

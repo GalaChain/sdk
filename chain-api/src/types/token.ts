@@ -518,13 +518,4 @@ export class TransferTokenDto extends SubmitCallDTO {
   @BigNumberIsNotNegative()
   @BigNumberProperty()
   quantity: BigNumber;
-
-  @JSONSchema({
-    description: "Allowance ids to be used on transferToken (optional)."
-  })
-  @IsString({ each: true })
-  @IsOptional()
-  @ArrayNotEmpty()
-  @ArrayUnique()
-  useAllowances?: Array<string>;
 }

@@ -20,7 +20,7 @@ jobs:
       - name: Set up Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: 18
+          node-version: 24
       - name: Install Dependencies
         run: npm i
       - name: Set up version and tag
@@ -29,8 +29,10 @@ jobs:
           NPM_PACKAGE_NAME=$(node -p "require('./package.json').name")
           NPM_PACKAGE_VERSION=$(node -p "require('./package.json').version")
           # Set NPM_DIST_TAG based on version
-          if [[ $NPM_PACKAGE_VERSION == 2.* ]]; then
+          if [[ $NPM_PACKAGE_VERSION == 3.* ]]; then
             echo "NPM_DIST_TAG=latest" >> $GITHUB_ENV
+          elif [[ $NPM_PACKAGE_VERSION == 2.* ]]; then
+            echo "NPM_DIST_TAG=v2-latest" >> $GITHUB_ENV
           elif [[ $NPM_PACKAGE_VERSION == 1.* ]]; then
             echo "NPM_DIST_TAG=v1-latest" >> $GITHUB_ENV
           else
@@ -116,7 +118,9 @@ jobs:
         run: |
           sudo apt-get install -y gcc musl-dev
       - name: Setup Node.js
-        uses: actions/setup-node@v3
+        uses: actions/setup-node@v4
+        with:
+          node-version: 24
       - name: Install mermaid-cli
         run: npm install -g @mermaid-js/mermaid-cli
       - name: Install pip packages
@@ -196,7 +200,7 @@ jobs:
       - name: Set up Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: 18
+          node-version: 24
       - name: Install tools
         run: npm i -g semver
       - name: Configure Git
