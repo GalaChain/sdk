@@ -133,7 +133,9 @@ jobs:
 
   template-e2e-rest:
     name: Chaincode template E2E (REST API)
-    runs-on: ubuntu-latest
+    # Using Ubuntu 22.04 because ubuntu-latest has Docker v29, which is
+    # not compatible with Fabric spanning chaincode images.
+    runs-on: ubuntu-22.04
     needs: [ci, ensure-docker-cache]
     env:
       CURATORORG_OPS_API_URL: "http://localhost:3000/api"
