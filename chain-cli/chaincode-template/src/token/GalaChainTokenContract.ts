@@ -24,6 +24,8 @@ import {
   FeeCodeDefinitionDto,
   FeeCodeSplitFormula,
   FeeCodeSplitFormulaDto,
+  FeeProperties,
+  FeePropertiesDto,
   FeeThresholdUses,
   FeeVerificationDto,
   FetchAllowancesDto,
@@ -54,6 +56,7 @@ import {
   MintTokenDto,
   MintTokenWithAllowanceDto,
   RefreshAllowancesDto,
+  SubmitCallDTO,
   TokenAllowance,
   TokenBalance,
   TokenBurn,
@@ -107,12 +110,14 @@ import {
   requestMint,
   requireCuratorAuth,
   resolveUserAlias,
+  setGalaFeeProperties,
   transferToken,
+  transferTokenFeeGate,
   unlockToken,
   unlockTokens,
   updateTokenClass
 } from "@gala-chain/chaincode";
-import { plainToClass } from "class-transformer";
+import { ClassConstructor, plainToClass } from "class-transformer";
 import { Info } from "fabric-contract-api";
 
 import { version } from "../../package.json";
@@ -471,7 +476,8 @@ export default class GalaChainTokenContract extends GalaContract {
 
   @Submit({
     in: TransferTokenDto,
-    out: { arrayOf: TokenBalance }
+    out: { arrayOf: TokenBalance },
+    before: transferTokenFeeGate
   })
   public async TransferToken(ctx: GalaChainContext, dto: TransferTokenDto): Promise<TokenBalance[]> {
     return transferToken(ctx, {
@@ -631,5 +637,17 @@ export default class GalaChainTokenContract extends GalaContract {
     return fetchVestingToken(ctx, {
       tokenClass: dto.tokenClasses
     });
+  }
+
+  @Submit({
+    in: FeePropertiesDto as ClassConstructor<SubmitCallDTO>,
+    out: FeeProperties,
+    ...requireCuratorAuth
+  })
+  public async SetFeeProperties(
+    ctx: GalaChainContext,
+    dto: FeePropertiesDto
+  ): Promise<GalaChainResponse<FeeProperties>> {
+    return GalaChainResponse.Wrap(setGalaFeeProperties(ctx, dto));
   }
 }
