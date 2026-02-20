@@ -31,7 +31,7 @@ import { plainToInstance } from "class-transformer";
 import GalaChainTokenContract from "../__test__/GalaChainTokenContract";
 import { InsufficientAllowanceError } from "../allowances";
 import { InvalidDecimalError } from "../token";
-import { SameSenderAndRecipientError } from "./TransferError";
+import { NftInvalidQuantityTransferError, SameSenderAndRecipientError } from "./TransferError";
 
 describe("TransferToken", () => {
   test("TransferToken from user's wallet fails for locked token", async () => {
@@ -126,6 +126,35 @@ describe("TransferToken", () => {
     expect(response2).toEqual(
       GalaChainResponse.Error(
         new SameSenderAndRecipientError(users.testUser2.identityKey, users.testUser2.identityKey)
+      )
+    );
+    expect(getWrites()).toEqual({});
+  });
+
+  test("TransferToken fails when NFT quantity is not equal to 1", async () => {
+    // Given
+    const nftInstance = nft.tokenInstance1();
+    const nftInstanceKey = nft.tokenInstance1Key();
+    const nftClass = nft.tokenClass();
+    const tokenBalance = nft.tokenBalance();
+
+    const { ctx, contract, getWrites } = fixture(GalaChainTokenContract)
+      .registeredUsers(users.testUser1, users.testUser2)
+      .savedState(nftClass, nftInstance, tokenBalance);
+
+    const dto = await createValidSubmitDTO(TransferTokenDto, {
+      to: users.testUser2.identityKey,
+      tokenInstance: nftInstanceKey,
+      quantity: new BigNumber("2")
+    }).signed(users.testUser1.privateKey);
+
+    // When
+    const response = await contract.TransferToken(ctx, dto);
+
+    // Then
+    expect(response).toEqual(
+      GalaChainResponse.Error(
+        new NftInvalidQuantityTransferError(new BigNumber("2").toFixed(), nftInstanceKey.toStringKey())
       )
     );
     expect(getWrites()).toEqual({});
