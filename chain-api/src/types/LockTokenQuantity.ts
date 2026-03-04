@@ -17,7 +17,7 @@ import { Type } from "class-transformer";
 import { IsNotEmpty, IsOptional, ValidateNested } from "class-validator";
 import { JSONSchema } from "class-validator-jsonschema";
 
-import { BigNumberIsNotNegative, BigNumberProperty, IsUserRef } from "../validators";
+import { BigNumberIsPositive, BigNumberProperty, IsUserRef } from "../validators";
 import { TokenInstanceKey } from "./TokenInstance";
 import { UserRef } from "./UserRef";
 
@@ -27,7 +27,7 @@ export class LockTokenQuantity {
   @IsNotEmpty()
   tokenInstanceKey: TokenInstanceKey;
 
-  @BigNumberIsNotNegative()
+  @BigNumberIsPositive()
   @BigNumberProperty()
   quantity: BigNumber;
 
