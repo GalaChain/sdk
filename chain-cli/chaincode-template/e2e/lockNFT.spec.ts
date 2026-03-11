@@ -37,6 +37,7 @@ import {
 } from "@gala-chain/test";
 import BigNumber from "bignumber.js";
 import { instanceToPlain, plainToInstance } from "class-transformer";
+import { setupTransferFees } from "./setupTransferFees";
 
 jest.setTimeout(30000);
 
@@ -58,6 +59,7 @@ describe("NFT lock scenario", () => {
     client = await TestClients.createForAdmin();
     user1 = await client.createRegisteredUser();
     user2 = await client.createRegisteredUser();
+    await setupTransferFees(client, [user1, user2]);
 
     await mintTokensToUsers(client.assets, nftClassKey, [
       { user: user1, quantity: new BigNumber(2) },
