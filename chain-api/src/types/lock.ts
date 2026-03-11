@@ -66,7 +66,7 @@ export class LockTokenDto extends SubmitCallDTO {
   @JSONSchema({
     description: "The quantity of token units to be locked."
   })
-  @BigNumberIsNotNegative()
+  @BigNumberIsPositive()
   @BigNumberProperty()
   quantity: BigNumber;
 
