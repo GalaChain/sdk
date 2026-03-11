@@ -14,6 +14,7 @@
  */
 import {
   AllowanceType,
+  ApplyRequestsDto,
   ChainUser,
   GrantAllowanceDto,
   LockTokensDto,
@@ -104,9 +105,17 @@ describe("NFT lock scenario", () => {
       "TransferToken",
       transferDto.signed(user1.privateKey)
     );
+    expect(transferResponse).toEqual(transactionSuccess());
+
+    await new Promise((resolve) => setTimeout(resolve, 2_500));
+    const applyRequestsResponse = await client.assets.submitTransaction(
+      "ApplyRequests",
+      await createValidSubmitDTO(ApplyRequestsDto, {}).signed(client.assets.privateKey)
+    );
+    expect(applyRequestsResponse).toEqual(transactionSuccess());
 
     // Then
-    expect(transferResponse).toEqual(transactionErrorKey("TOKEN_LOCKED"));
+    expect(applyRequestsResponse.Data?.[0]).toEqual(transactionErrorKey("TOKEN_LOCKED"));
   });
 
   it("User1 can transfer token after unlock", async () => {
