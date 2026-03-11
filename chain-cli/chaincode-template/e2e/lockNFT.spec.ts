@@ -37,6 +37,7 @@ import {
 } from "@gala-chain/test";
 import BigNumber from "bignumber.js";
 import { instanceToPlain, plainToInstance } from "class-transformer";
+
 import { setupTransferFees } from "./setupTransferFees";
 
 jest.setTimeout(30000);

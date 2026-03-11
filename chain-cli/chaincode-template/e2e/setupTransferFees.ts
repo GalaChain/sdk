@@ -129,7 +129,10 @@ export async function setupTransferFees(client: AdminChainClients, users: ChainU
   );
   expect(grantGalaAllowanceResponse).toEqual(
     transactionSuccess([
-      expect.objectContaining({ grantedTo: client.assets.identityKey, quantity: new BigNumber(users.length * 10) })
+      expect.objectContaining({
+        grantedTo: client.assets.identityKey,
+        quantity: new BigNumber(users.length * 10)
+      })
     ])
   );
 
