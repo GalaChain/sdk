@@ -28,10 +28,8 @@ import {
   UserRole,
   generateResponseSchema,
   generateSchema,
-  parseValidDTO,
-  serialize
+  parseValidDTO
 } from "@gala-chain/api";
-import { instanceToPlain } from "class-transformer";
 import { Object as DTOObject, Transaction } from "fabric-contract-api";
 import { inspect } from "util";
 
@@ -39,6 +37,7 @@ import { UniqueTransactionService } from "../services";
 import { GalaChainContext } from "../types";
 import { GalaContract } from "./GalaContract";
 import { updateApi } from "./GalaContractApi";
+import { updateMethods } from "./GalaTransactionRequest";
 import { authenticate } from "./authenticate";
 import { authorize } from "./authorize";
 
@@ -53,11 +52,10 @@ DTOObject()(SubmitCallDTO);
 // (you can, however make it readonly by passing random value to the result or manipulating the context)
 export enum GalaTransactionType {
   EVALUATE,
-  SUBMIT,
-  SUBMIT_REQUEST
+  SUBMIT
 }
 
-const { SUBMIT, EVALUATE, SUBMIT_REQUEST } = GalaTransactionType;
+const { SUBMIT, EVALUATE } = GalaTransactionType;
 
 type GalaTransactionDecoratorFunction = (
   target: GalaContract,
@@ -103,38 +101,7 @@ export interface GalaTransactionOptions<In extends ChainCallDTO, Out>
   enforceUniqueKey?: true;
 }
 
-export interface GalaSubmitTransactionOptions<In extends SubmitCallDTO, Out>
-  extends CommonTransactionOptions<In, Out> {
-  type: GalaTransactionType.SUBMIT;
-  verifySignature?: true;
-  enforceUniqueKey?: true;
-}
-
-export interface GalaSubmitRequestTransactionOptions<In extends SubmitCallDTO, Out>
-  extends Omit<CommonTransactionOptions<In, Out>, "after"> {
-  type: GalaTransactionType.SUBMIT_REQUEST;
-  verifySignature?: true;
-  enforceUniqueKey?: true;
-  after?: never;
-}
-
-export interface GalaEvaluateTransactionOptions<In extends ChainCallDTO, Out>
-  extends CommonTransactionOptions<In, Out> {
-  type: GalaTransactionType.EVALUATE;
-  verifySignature?: true;
-  enforceUniqueKey?: never;
-}
-
-export type GalaTypedTransactionOptions<In extends ChainCallDTO, Out> =
-  | GalaSubmitTransactionOptions<In & SubmitCallDTO, Out>
-  | GalaSubmitRequestTransactionOptions<In & SubmitCallDTO, Out>
-  | GalaEvaluateTransactionOptions<In, Out>;
-
 export type GalaSubmitOptions<In extends SubmitCallDTO, Out> = CommonTransactionOptions<In, Out>;
-export type GalaSubmitRequestOptions<In extends SubmitCallDTO, Out> = Omit<
-  CommonTransactionOptions<In, Out>,
-  "after"
->;
 
 export interface GalaEvaluateOptions<In extends ChainCallDTO, Out> extends CommonTransactionOptions<In, Out> {
   verifySignature?: true;
@@ -150,12 +117,6 @@ function Submit<In extends SubmitCallDTO, Out>(
   return GalaTransaction({ ...options, type: SUBMIT, verifySignature: true, enforceUniqueKey: true });
 }
 
-function SubmitRequest<In extends SubmitCallDTO, Out>(
-  options: GalaSubmitRequestOptions<In, Out>
-): GalaTransactionDecoratorFunction {
-  return GalaTransaction({ ...options, type: SUBMIT_REQUEST, verifySignature: true, enforceUniqueKey: true });
-}
-
 function Evaluate<In extends ChainCallDTO, Out>(
   options: GalaEvaluateOptions<In, Out>
 ): GalaTransactionDecoratorFunction {
@@ -169,7 +130,7 @@ function UnsignedEvaluate<In extends ChainCallDTO, Out>(
 }
 
 function GalaTransaction<In extends ChainCallDTO, Out>(
-  options: GalaTypedTransactionOptions<In, Out> | GalaTransactionOptions<In, Out>
+  options: GalaTransactionOptions<In, Out>
 ): GalaTransactionDecoratorFunction {
   return (target, propertyKey, descriptor): void => {
     // Register the DTO class to be passed
@@ -177,13 +138,8 @@ function GalaTransaction<In extends ChainCallDTO, Out>(
       DTOObject()(options.in);
     }
 
-    const isSubmitLike = options.type === SUBMIT || options.type === SUBMIT_REQUEST;
-
-    if (isSubmitLike && !options.verifySignature && !options.allowedOrgs?.length) {
-      const message =
-        GalaTransactionType[options.type] +
-        ` transaction '${propertyKey}' ` +
-        "must have either verifySignature or allowedOrgs defined";
+    if (options.type === SUBMIT && !options.verifySignature && !options.allowedOrgs?.length) {
+      const message = `SUBMIT transaction '${propertyKey}' must have either verifySignature or allowedOrgs defined`;
       throw new NotImplementedError(message);
     }
 
@@ -192,22 +148,17 @@ function GalaTransaction<In extends ChainCallDTO, Out>(
       throw new NotImplementedError(message);
     }
 
-    options.allowedRoles = options.allowedRoles ?? [isSubmitLike ? UserRole.SUBMIT : UserRole.EVALUATE];
+    options.allowedRoles = options.allowedRoles ?? [
+      options.type === SUBMIT ? UserRole.SUBMIT : UserRole.EVALUATE
+    ];
 
-    if (isSubmitLike && !options.enforceUniqueKey) {
-      const message =
-        GalaTransactionType[options.type] +
-        ` transaction '${propertyKey}' must have enforceUniqueKey defined`;
+    if (options.type === SUBMIT && !options.enforceUniqueKey) {
+      const message = `SUBMIT transaction '${propertyKey}' must have enforceUniqueKey defined`;
       throw new NotImplementedError(message);
     }
 
     if (options.type === EVALUATE && options.enforceUniqueKey) {
       const message = `EVALUATE transaction '${propertyKey}' cannot have enforceUniqueKey defined`;
-      throw new NotImplementedError(message);
-    }
-
-    if (options.type === SUBMIT_REQUEST && options.after !== undefined) {
-      const message = `SUBMIT_REQUEST transaction '${propertyKey}' cannot have after defined`;
       throw new NotImplementedError(message);
     }
 
@@ -280,12 +231,6 @@ function GalaTransaction<In extends ChainCallDTO, Out>(
           await options?.before?.apply(this, argArray);
         }
 
-        // If this only the request, we delay execution, and save the method and arguments to the context
-        if (options.type === SUBMIT_REQUEST) {
-          await saveRequest(ctx, className, method.name, dto);
-          return GalaChainResponse.Success({ scheduled: true });
-        }
-
         // Execute the method. Note the contract method is always an async
         // function, so it is safe to do the `await`
         const result = await method?.apply(this, argArray);
@@ -328,15 +273,12 @@ function GalaTransaction<In extends ChainCallDTO, Out>(
     };
 
     // Update API of contract object
-    const isWrite =
-      options.type === GalaTransactionType.SUBMIT || options.type === GalaTransactionType.SUBMIT_REQUEST;
+    const isWrite = options.type === GalaTransactionType.SUBMIT;
 
     let description = options.description ? options.description : "";
 
     if (options.type === GalaTransactionType.SUBMIT) {
       description += ` Transaction updates the chain (submit).`;
-    } else if (options.type === GalaTransactionType.SUBMIT_REQUEST) {
-      description += ` Transaction schedules a submit request (submit_request).`;
     } else {
       description += ` Transaction is read only (evaluate).`;
     }
@@ -363,6 +305,7 @@ function GalaTransaction<In extends ChainCallDTO, Out>(
       ...(options.deprecated === undefined ? {} : { deprecated: options.deprecated }),
       ...(options.sequence === undefined ? {} : { sequence: options.sequence })
     });
+    updateMethods(target, method.name);
 
     // Ensure this is an actual HLF transaction.
     // If this annotation is missing, you cannot call the chaincode method
@@ -370,52 +313,4 @@ function GalaTransaction<In extends ChainCallDTO, Out>(
   };
 }
 
-const REQUEST_QUEUE_INDEX_KEY = "GCQUEUE";
-const REQUEST_TIME_KEY_LEN = 16;
-
-async function saveRequest(
-  ctx: GalaChainContext,
-  contractName: string,
-  methodName: string,
-  dto: ChainCallDTO | undefined
-): Promise<void> {
-  if (!dto?.uniqueKey) {
-    throw new RuntimeError(`Missing uniqueKey in SUBMIT_REQUEST dto for method '${methodName}'`);
-  }
-
-  const txTimeKey = `${ctx.txUnixTime}`.padStart(REQUEST_TIME_KEY_LEN, "0");
-  const requestKey = ctx.stub.createCompositeKey(REQUEST_QUEUE_INDEX_KEY, [
-    txTimeKey,
-    contractName,
-    methodName,
-    dto.uniqueKey
-  ]);
-
-  const dtoData = instanceToPlain(dto);
-  delete dtoData.signature;
-  delete dtoData.multisig;
-  delete dtoData.dtoExpiresAt;
-  delete dtoData.trace;
-  delete dtoData.operationName;
-  delete dtoData.dtoOperation;
-  delete dtoData.uniqueKey;
-
-  const requestData = {
-    callingUser: ctx.callingUser,
-    txUnixTime: ctx.txUnixTime,
-    dto: dtoData
-  };
-
-  await ctx.stub.putState(requestKey, Buffer.from(serialize(requestData)));
-}
-
-export {
-  Submit,
-  SubmitRequest,
-  Evaluate,
-  UnsignedEvaluate,
-  SUBMIT,
-  SUBMIT_REQUEST,
-  EVALUATE,
-  GalaTransaction
-};
+export { Submit, Evaluate, UnsignedEvaluate, SUBMIT, EVALUATE, GalaTransaction };

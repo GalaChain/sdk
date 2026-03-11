@@ -110,8 +110,8 @@ import {
   requestMint,
   requireCuratorAuth,
   resolveUserAlias,
+  saveRequest,
   setGalaFeeProperties,
-  transferToken,
   transferTokenFeeGate,
   unlockToken,
   unlockTokens,
@@ -476,18 +476,19 @@ export default class GalaChainTokenContract extends GalaContract {
 
   @Submit({
     in: TransferTokenDto,
-    out: { arrayOf: TokenBalance },
     before: transferTokenFeeGate
   })
-  public async TransferToken(ctx: GalaChainContext, dto: TransferTokenDto): Promise<TokenBalance[]> {
-    return transferToken(ctx, {
+  public async TransferToken(ctx: GalaChainContext, dto: TransferTokenDto): Promise<void> {
+    const params = {
       from: await resolveUserAlias(ctx, dto.from ?? ctx.callingUser),
       to: await resolveUserAlias(ctx, dto.to),
       tokenInstanceKey: dto.tokenInstance,
-      quantity: dto.quantity,
+      quantity: dto.quantity.toFixed(),
       allowancesToUse: [],
       authorizedOnBehalf: undefined
-    });
+    };
+
+    await saveRequest(ctx, "transferToken", params);
   }
 
   @Submit({

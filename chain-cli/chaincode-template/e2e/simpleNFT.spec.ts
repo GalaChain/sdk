@@ -14,6 +14,7 @@
  */
 import {
   AllowanceType,
+  ApplyRequestsDto,
   ChainUser,
   CreateTokenClassDto,
   FeeAccelerationRateType,
@@ -26,7 +27,6 @@ import {
   GrantAllowanceDto,
   MintTokenDto,
   TokenAllowance,
-  TokenBalance,
   TokenClassKey,
   TokenInstance,
   TokenInstanceKey,
@@ -188,6 +188,26 @@ describe("Simple NFT scenario", () => {
 
     // Then
     expect(transferResponse).toEqual(transactionSuccess());
+
+    // but no transfer yet
+    expect(await fetchNFTInstances(client.assets, nftClassKey, user1.identityKey)).toEqual([
+      new BigNumber(1)
+    ]);
+    expect(await fetchNFTInstances(client.assets, nftClassKey, user2.identityKey)).toEqual([
+      new BigNumber(2)
+    ]);
+
+    // When
+    await new Promise((resolve) => setTimeout(resolve, 2_500));
+    const applyRequestsResponse = await client.assets.submitTransaction(
+      "ApplyRequests",
+      await createValidSubmitDTO(ApplyRequestsDto, {}).signed(client.assets.privateKey)
+    );
+
+    // Then
+    expect(applyRequestsResponse).toEqual(transactionSuccess());
+
+    // Now the transfer should be applied
     expect(await fetchNFTInstances(client.assets, nftClassKey, user1.identityKey)).toEqual([]);
     expect(await fetchNFTInstances(client.assets, nftClassKey, user2.identityKey)).toEqual([
       new BigNumber(1),

@@ -415,6 +415,18 @@ export class BatchDto extends ChainCallDTO {
   operations: BatchOperationDto[];
 }
 
+export class ApplyRequestsDto extends SubmitCallDTO {
+  @IsOptional()
+  @IsInt()
+  @Min(1)
+  maxRequests?: number;
+
+  @IsOptional()
+  @IsInt()
+  @Min(0)
+  minDelayMs?: number;
+}
+
 /**
  * @description
  *
