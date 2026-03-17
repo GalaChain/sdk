@@ -16,4 +16,5 @@
 export * from "./decorators";
 export * from "./IsUserAlias";
 export * from "./IsUserRef";
+export * from "./IsValidChainAddress";
 export * from "./transform-decorators";

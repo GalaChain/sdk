@@ -16,17 +16,18 @@ import {
   AllowanceType,
   AuthorizedOnBehalf,
   TokenBalance,
+  TokenInstance,
   TokenInstanceKey,
   UserAlias
 } from "@gala-chain/api";
 import BigNumber from "bignumber.js";
 
-import { verifyAndUseAllowances } from "../allowances";
+import { verifyAndUseAllowances, verifyAndUseTransferAllowancesByKeys } from "../allowances";
 import { fetchOrCreateBalance } from "../balances";
 import { InvalidDecimalError, fetchTokenClass, fetchTokenInstance } from "../token";
 import { GalaChainContext } from "../types";
 import { putChainObject } from "../utils";
-import { SameSenderAndRecipientError } from "./TransferError";
+import { NftInvalidQuantityTransferError, SameSenderAndRecipientError } from "./TransferError";
 
 export interface TransferTokenParams {
   from: UserAlias;
@@ -53,6 +54,10 @@ export async function transferToken(
   const tokenInstance = await fetchTokenInstance(ctx, tokenInstanceKey);
   const tokenClass = await fetchTokenClass(ctx, tokenInstanceKey);
 
+  if (tokenInstance.isNonFungible && !quantity.isEqualTo(1)) {
+    throw new NftInvalidQuantityTransferError(quantity.toFixed(), tokenInstanceKey.toStringKey());
+  }
+
   const decimalPlaces = quantity.decimalPlaces() ?? 0;
   if (decimalPlaces > tokenClass.decimals) {
     throw new InvalidDecimalError(quantity, tokenClass.decimals);
@@ -66,15 +71,14 @@ export async function transferToken(
     const msg = `Transfer executed on behalf of another user (fromPerson: ${from}, callingUser: ${callingOnBehalf})`;
     ctx.logger.info(msg);
 
-    await verifyAndUseAllowances(
+    await verifyAndUseTransferAllowances(
       ctx,
       from,
       tokenInstanceKey,
       quantity,
       tokenInstance,
-      callingOnBehalf,
-      AllowanceType.Transfer,
-      allowancesToUse
+      allowancesToUse,
+      callingOnBehalf
     );
   }
 
@@ -98,4 +102,36 @@ export async function transferToken(
   }
 
   return [fromPersonBalance, toPersonBalance];
+}
+
+async function verifyAndUseTransferAllowances(
+  ctx: GalaChainContext,
+  from: UserAlias,
+  tokenInstanceKey: TokenInstanceKey,
+  quantity: BigNumber,
+  tokenInstance: TokenInstance,
+  allowancesToUse: string[],
+  callingOnBehalf: UserAlias
+) {
+  if (allowancesToUse.length > 0) {
+    await verifyAndUseTransferAllowancesByKeys(
+      ctx,
+      from,
+      tokenInstanceKey,
+      quantity,
+      tokenInstance,
+      callingOnBehalf,
+      allowancesToUse
+    );
+  } else {
+    await verifyAndUseAllowances(
+      ctx,
+      from,
+      tokenInstanceKey,
+      quantity,
+      tokenInstance,
+      callingOnBehalf,
+      AllowanceType.Transfer
+    );
+  }
 }

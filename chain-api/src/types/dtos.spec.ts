@@ -15,9 +15,9 @@
 import BigNumber from "bignumber.js";
 import { instanceToPlain, plainToInstance } from "class-transformer";
 import { ArrayMinSize, ArrayNotEmpty, IsString } from "class-validator";
-import { ec as EC } from "elliptic";
 
-import { getValidationErrorMessages } from "../utils";
+import { getValidationErrorMessages, signatures } from "../utils";
+import { getPayloadToSign } from "../utils/signatures/getPayloadToSign";
 import { BigNumberArrayProperty, BigNumberProperty } from "../validators";
 import { asValidUserRef } from "./UserRef";
 import { ChainCallDTO, ClassConstructor } from "./dtos";
@@ -114,17 +114,9 @@ describe("ChainCallDTO", () => {
     key?: string;
   }
 
-  function genKeyPair() {
-    const pair = new EC("secp256k1").genKeyPair();
-    return {
-      privateKey: pair.getPrivate().toString("hex"),
-      publicKey: Buffer.from(pair.getPublic().encode("array", true)).toString("hex")
-    };
-  }
-
   it("should sign and verify signature", () => {
     // Given
-    const { privateKey, publicKey } = genKeyPair();
+    const { privateKey, publicKey } = signatures.genKeyPair();
     const dto = new TestDto();
     dto.amounts = [new BigNumber("12.3")];
     expect(dto.signature).toEqual(undefined);
@@ -157,8 +149,8 @@ describe("ChainCallDTO", () => {
 
   it("should sign and fail to verify signature (invalid key)", () => {
     // Given
-    const { privateKey } = genKeyPair();
-    const invalid = genKeyPair();
+    const { privateKey } = signatures.genKeyPair();
+    const invalid = signatures.genKeyPair();
     const dto = new TestDto();
     dto.amounts = [new BigNumber("12.3")];
 
@@ -171,7 +163,7 @@ describe("ChainCallDTO", () => {
 
   it("should sign and fail to verify signature (invalid payload)", () => {
     // Given
-    const { privateKey, publicKey } = genKeyPair();
+    const { privateKey, publicKey } = signatures.genKeyPair();
     const dto = new TestDto();
     dto.amounts = [new BigNumber("12.3")];
 
@@ -185,8 +177,8 @@ describe("ChainCallDTO", () => {
 
   it("should not support multiple signatures verification", () => {
     // Given
-    const k1 = genKeyPair();
-    const k2 = genKeyPair();
+    const k1 = signatures.genKeyPair();
+    const k2 = signatures.genKeyPair();
     const dto = new TestDto();
     dto.amounts = [new BigNumber("12.3")];
     dto.signerAddress = asValidUserRef("0x0000000000000000000000000000000000000123");
@@ -206,9 +198,9 @@ describe("ChainCallDTO", () => {
     expect(verify).toThrow("isSignatureValid is not supported for multisig DTOs");
   });
 
-  it("should throw an error when signing a multisig DTO with signerAddress, signerPublicKey, or prefix", () => {
+  it("should throw an error when signing a multisig DTO with signerPublicKey", () => {
     // Given
-    const { privateKey } = genKeyPair();
+    const { privateKey } = signatures.genKeyPair();
     const dto = new TestDto();
     dto.amounts = [new BigNumber("12.3")];
     dto.dtoOperation = "test-channel_test-chaincode_test-method";
@@ -218,17 +210,47 @@ describe("ChainCallDTO", () => {
     // When
     dto.signerAddress = asValidUserRef("0x0000000000000000000000000000000000000123");
     dto.signerPublicKey = "0x456";
-    dto.prefix = "test-prefix";
 
     // Then
-    const expectedError = "signerPublicKey and prefix are not allowed for multisignature DTOs";
+    const expectedError = "signerPublicKey is not allowed for multisignature DTOs";
     expect(() => dto.sign(privateKey)).toThrow(expectedError);
+  });
+
+  it("should allow prefix when signing a multisig DTO", () => {
+    // Given
+    const [pk1, pk2] = [signatures.genKeyPair(), signatures.genKeyPair()];
+    const dto = new TestDto();
+    dto.signerAddress = asValidUserRef("0x0000000000000000000000000000000000000123");
+    dto.amounts = [new BigNumber("12.3")];
+    dto.dtoOperation = "test-channel_test-chaincode_test-method";
+    dto.dtoExpiresAt = Date.now() + 1000;
+
+    const prefix = "\u0019Ethereum Signed Message:\n";
+    const payload = getPayloadToSign(dto);
+    const length = prefix.length + payload.length;
+    dto.prefix = `${prefix}${length}`;
+
+    const stringPayload = `${prefix}${length}${payload}`;
+
+    // When
+    dto.sign(pk1.privateKey); // first signature
+    dto.sign(pk2.privateKey); // second signature
+
+    // Then
+    const [signature1, signature2] = [dto.multisig?.[0] ?? "", dto.multisig?.[1] ?? ""];
+    expect([signature1, signature2]).toEqual(expect.arrayContaining([expect.stringMatching(/.{50,}/)]));
+
+    expect(signatures.isValid(signature1, dto, pk1.publicKey)).toBe(true);
+    expect(signatures.isValid(signature1, stringPayload, pk1.publicKey)).toBe(true);
+
+    expect(signatures.isValid(signature2, dto, pk2.publicKey)).toBe(true);
+    expect(signatures.isValid(signature2, stringPayload, pk2.publicKey)).toBe(true);
   });
 
   it("should throw an error when signing a multisig DTO with DER signatures", () => {
     // Given
-    const k1 = genKeyPair();
-    const k2 = genKeyPair();
+    const k1 = signatures.genKeyPair();
+    const k2 = signatures.genKeyPair();
 
     const dto = new TestDto();
     dto.signerAddress = asValidUserRef("0x0000000000000000000000000000000000000123");

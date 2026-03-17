@@ -52,6 +52,13 @@ function customTargetConstructorToSchema(classType: ClassConstructor) {
           description:
             "Allowed value is a user alias ('client|<user-id>', or 'eth|<checksumed-eth-addr>', or valid system-level username), or valid Ethereum address."
         };
+      },
+      ["IsValidChainAddressConstraint"]: () => {
+        return {
+          type: "string",
+          description:
+            "Allowed value is a valid chain address: Ethereum (checksummed with 0x prefix), Solana (base58-encoded 32-byte public key), TON (non-bounceable mainnet format: UQ...), or GalaChain (valid user alias)."
+        };
       }
     },
     classTransformerMetadataStorage: defaultMetadataStorage

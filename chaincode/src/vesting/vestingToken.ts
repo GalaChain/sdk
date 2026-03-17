@@ -161,7 +161,6 @@ export async function createVestingToken(
       lockAuthority: ctx.callingUser,
       tokenInstanceKey,
       quantity: allocation.quantity,
-      allowancesToUse: [],
       name: `${params.vestingName}-${allocation.name}`,
       expires,
       verifyAuthorizedOnBehalf,

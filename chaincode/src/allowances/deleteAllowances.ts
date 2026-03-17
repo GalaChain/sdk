@@ -13,11 +13,10 @@
  * limitations under the License.
  */
 import { AllowanceType, TokenAllowance } from "@gala-chain/api";
-import { ChainObject } from "@gala-chain/api";
 import { ForbiddenError } from "@gala-chain/api";
 
 import { GalaChainContext } from "../types";
-import { deleteChainObject, getObjectByKey } from "../utils";
+import { deleteChainObject } from "../utils";
 import { fetchAllowances } from "./fetchAllowances";
 
 export interface DeleteAllowancesParams {
@@ -29,6 +28,7 @@ export interface DeleteAllowancesParams {
   additionalKey?: string;
   instance?: string;
   allowanceType?: AllowanceType;
+  created?: number;
 }
 
 class InvalidAllowanceUsersError extends ForbiddenError {
@@ -58,23 +58,15 @@ export async function deleteAllowances(
     throw new InvalidAllowanceUsersError(params.grantedBy, params.grantedTo, ctx.callingUser);
   }
 
-  const allowances = await fetchAllowances(ctx, params);
+  let allowances = await fetchAllowances(ctx, params);
+
+  if (params.created !== undefined) {
+    allowances = allowances.filter((a) => a.created === params.created);
+  }
 
   await Promise.all(allowances.map((allowance) => deleteChainObject(ctx, allowance)));
 
   return allowances.length;
-}
-
-export interface DeleteOneAllowanceParams {
-  grantedTo: string;
-  grantedBy: string;
-  collection: string;
-  category: string;
-  type: string;
-  additionalKey: string;
-  instance: string;
-  allowanceType: AllowanceType;
-  created: number;
 }
 
 /**
@@ -85,33 +77,17 @@ export interface DeleteOneAllowanceParams {
  * Fails if the `authorizedOnBehalf` agrument is neither the grantedBy nor grantedTo identity.
  *
  * @param ctx
- * @param params
+ * @param allowance
  * @param authorizedOnBehalf
  */
 export async function deleteOneAllowance(
   ctx: GalaChainContext,
-  params: DeleteOneAllowanceParams,
+  allowance: TokenAllowance,
   authorizedOnBehalf: string
 ): Promise<void> {
-  if (params.grantedBy !== authorizedOnBehalf && params.grantedTo !== authorizedOnBehalf) {
-    throw new InvalidAllowanceUsersError(params.grantedBy, params.grantedTo, ctx.callingUser);
+  if (allowance.grantedBy !== authorizedOnBehalf && allowance.grantedTo !== authorizedOnBehalf) {
+    throw new InvalidAllowanceUsersError(allowance.grantedBy, allowance.grantedTo, authorizedOnBehalf);
   }
-
-  const allowance: TokenAllowance = await getObjectByKey(
-    ctx,
-    TokenAllowance,
-    ChainObject.getCompositeKeyFromParts(TokenAllowance.INDEX_KEY, [
-      params.grantedTo,
-      params.collection,
-      params.category,
-      params.type,
-      params.additionalKey,
-      params.instance,
-      params.allowanceType.toString(),
-      params.grantedBy,
-      params.created.toString()
-    ])
-  );
 
   await deleteChainObject(ctx, allowance);
 }

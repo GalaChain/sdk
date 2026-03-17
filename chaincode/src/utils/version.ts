@@ -12,7 +12,20 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-import { ReleaseTokenParams, releaseToken } from "./releaseToken";
-import { UseTokenParams, useToken } from "./useToken";
+let version = "0.0.0";
 
-export { releaseToken, useToken, ReleaseTokenParams, UseTokenParams };
+try {
+  // eslint-disable-next-line @typescript-eslint/no-var-requires
+  version = require("../../../package.json").version;
+} catch (e) {
+  // eslint-disable-next-line @typescript-eslint/no-var-requires
+  version = require("../../package.json").version;
+}
+
+/**
+ * Returns the current package version of the chaincode.
+ * @returns The version string of the package.json file.
+ */
+export function getVersion(): string {
+  return version;
+}

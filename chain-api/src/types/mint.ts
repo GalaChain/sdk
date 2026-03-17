@@ -36,7 +36,7 @@ import {
   TokenMintConfiguration
 } from "./TokenMintConfiguration";
 import { UserRef } from "./UserRef";
-import { AllowanceKey, MintRequestDto } from "./common";
+import { MintRequestDto } from "./common";
 import { ChainCallDTO, SubmitCallDTO } from "./dtos";
 
 @JSONSchema({
@@ -69,11 +69,6 @@ export class MintTokenDto extends SubmitCallDTO {
   @BigNumberIsNotNegative()
   @BigNumberProperty()
   quantity: BigNumber;
-
-  @IsOptional()
-  @Type(() => AllowanceKey)
-  @IsNotEmpty()
-  public allowanceKey?: AllowanceKey;
 }
 
 @JSONSchema({
@@ -173,11 +168,6 @@ export class HighThroughputMintTokenDto extends SubmitCallDTO {
   @BigNumberIsNotNegative()
   @BigNumberProperty()
   quantity: BigNumber;
-
-  @IsOptional()
-  @Type(() => AllowanceKey)
-  @IsNotEmpty()
-  public allowanceKey?: AllowanceKey;
 }
 
 @JSONSchema({

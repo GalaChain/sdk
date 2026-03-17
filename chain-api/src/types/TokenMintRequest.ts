@@ -13,8 +13,7 @@
  * limitations under the License.
  */
 import BigNumber from "bignumber.js";
-import { Type } from "class-transformer";
-import { IsDefined, IsNotEmpty, IsOptional } from "class-validator";
+import { IsDefined, IsNotEmpty } from "class-validator";
 
 import { ChainKey } from "../utils";
 import { BigNumberIsNotNegative, BigNumberProperty, IsUserAlias } from "../validators";
@@ -22,7 +21,7 @@ import { ChainObject } from "./ChainObject";
 import { RangedChainObject } from "./RangedChainObject";
 import { TokenMintFulfillment } from "./TokenMintFulfillment";
 import { UserAlias } from "./UserAlias";
-import { AllowanceKey, TokenMintStatus } from "./common";
+import { TokenMintStatus } from "./common";
 
 export class TokenMintRequest extends RangedChainObject {
   public static INDEX_KEY = "GCTMR";
@@ -77,11 +76,6 @@ export class TokenMintRequest extends RangedChainObject {
   // @ChainKey({ position: ? })
   @IsNotEmpty()
   public epoch: string;
-
-  @IsOptional()
-  @Type(() => AllowanceKey)
-  @IsNotEmpty()
-  public allowanceKey?: AllowanceKey;
 
   public isTimeKeyValid(): boolean {
     try {

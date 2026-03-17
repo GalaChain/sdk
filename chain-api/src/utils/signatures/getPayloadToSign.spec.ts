@@ -20,7 +20,7 @@ describe("getPayloadToSign", () => {
     const obj = { c: 8, b: [{ z: 6, y: 5, x: 4 }, 7], a: 3 };
 
     // When
-    const toSign = getPayloadToSign(obj);
+    const toSign = getPayloadToSign(obj).toString();
 
     // Then
     expect(toSign).toEqual('{"a":3,"b":[{"x":4,"y":5,"z":6},7],"c":8}');
@@ -36,7 +36,7 @@ describe("getPayloadToSign", () => {
     };
 
     // When
-    const toSign = getPayloadToSign(obj);
+    const toSign = getPayloadToSign(obj).toString();
 
     // Then
     expect(toSign).toEqual('{"c":8}');
@@ -51,9 +51,23 @@ describe("getPayloadToSign", () => {
     };
 
     // When
-    const toSign = getPayloadToSign(obj);
+    const toSign = getPayloadToSign(obj).toString();
 
     // Then
     expect(toSign).toEqual('{"c":8,"dtoOperation":"test"}');
+  });
+
+  it("should use 'prefix' field", () => {
+    // Given
+    const obj = {
+      c: 8,
+      prefix: "\u0019Ethereum Signed Message:\n35"
+    };
+
+    // When
+    const toSign = getPayloadToSign(obj).toString();
+
+    // Then
+    expect(toSign).toEqual('\u0019Ethereum Signed Message:\n35{"c":8}');
   });
 });
