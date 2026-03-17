@@ -23,7 +23,6 @@ import {
   UserProfile,
   createValidSubmitDTO,
   publicKeyContractAPI,
-  randomUniqueKey,
   signatures
 } from "@gala-chain/api";
 import { HFClientConfig, RestApiClientConfig, gcclient } from "@gala-chain/client";
@@ -113,10 +112,14 @@ describeIfNonMockedChaincode("Chaincode client (CuratorOrg)", () => {
     // Given
     const newUser = ChainUser.withRandomKeys("new-user");
 
-    const dto = await createValidSubmitDTO(RegisterUserDto, {
-      user: newUser.identityKey,
-      publicKey: newUser.publicKey
-    }).signed(getAdminPrivateKey());
+    const dto = (
+      await createValidSubmitDTO(RegisterUserDto, {
+        user: newUser.identityKey,
+        publicKey: newUser.publicKey
+      })
+    )
+      .withPublicKeySignedBy(newUser.privateKey)
+      .signed(getAdminPrivateKey());
 
     // When
     const response = await client.RegisterUser(dto);
