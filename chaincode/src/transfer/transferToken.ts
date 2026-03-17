@@ -27,7 +27,7 @@ import { fetchOrCreateBalance } from "../balances";
 import { InvalidDecimalError, fetchTokenClass, fetchTokenInstance } from "../token";
 import { GalaChainContext } from "../types";
 import { putChainObject } from "../utils";
-import { SameSenderAndRecipientError } from "./TransferError";
+import { NftInvalidQuantityTransferError, SameSenderAndRecipientError } from "./TransferError";
 
 export interface TransferTokenParams {
   from: UserAlias;
@@ -53,6 +53,10 @@ export async function transferToken(
 
   const tokenInstance = await fetchTokenInstance(ctx, tokenInstanceKey);
   const tokenClass = await fetchTokenClass(ctx, tokenInstanceKey);
+
+  if (tokenInstance.isNonFungible && !quantity.isEqualTo(1)) {
+    throw new NftInvalidQuantityTransferError(quantity.toFixed(), tokenInstanceKey.toStringKey());
+  }
 
   const decimalPlaces = quantity.decimalPlaces() ?? 0;
   if (decimalPlaces > tokenClass.decimals) {

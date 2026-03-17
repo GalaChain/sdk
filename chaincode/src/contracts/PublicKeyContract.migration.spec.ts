@@ -16,7 +16,6 @@ import {
   ChainCallDTO,
   GalaChainResponse,
   GalaChainSuccessResponse,
-  RegisterEthUserDto,
   SubmitCallDTO,
   UpdateUserRolesDto,
   UserProfileStrict,
@@ -68,12 +67,7 @@ describe("Migration from allowedOrgs to allowedRoles", () => {
     return resp.Data;
   }
 
-  test("When: User is registered with no allowed role", async () => {
-    const dto = await createValidSubmitDTO(RegisterEthUserDto, { publicKey: user.publicKey }).signed(
-      adminPrivateKey
-    );
-    expect(await chaincode.invoke("PublicKeyContract:RegisterEthUser", dto)).toEqual(transactionSuccess());
-
+  test("When: User has no allowed role", async () => {
     const profile = await getUserProfile();
     expect(profile).toEqual(expect.objectContaining({ alias: user.identityKey }));
     expect(profile.roles).not.toContain(allowedRole);

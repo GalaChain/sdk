@@ -515,7 +515,7 @@ export class TransferTokenDto extends SubmitCallDTO {
     description: "The quantity of token units to be transferred."
   })
   @IsNotEmpty()
-  @BigNumberIsNotNegative()
+  @BigNumberIsPositive()
   @BigNumberProperty()
   quantity: BigNumber;
 }
