@@ -575,13 +575,6 @@ export class RegisterUserDto extends SubmitCallDTO {
   @ValidateIf((o) => !o.signers)
   public publicKeySignature?: string;
 
-  @JSONSchema({ description: "Signature from the public key." })
-  @IsOptional()
-  @IsNotEmpty()
-  @SerializeIf((o) => !!o.publicKey)
-  @ValidateIf((o) => !o.signers)
-  public publicKeySignature?: string;
-
   @JSONSchema({ description: "Signer user refs." })
   @ValidateIf((o) => !o.publicKey)
   @SerializeIf((o) => !o.publicKey)
