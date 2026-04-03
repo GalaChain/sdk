@@ -12,7 +12,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-import { ChainCallDTO, ForbiddenError, UnauthorizedError, UserRole } from "@gala-chain/api";
+import { BatchDto, ChainCallDTO, ForbiddenError, UnauthorizedError, UserRole } from "@gala-chain/api";
 
 import { GalaChainContext } from "../types";
 
@@ -100,6 +100,13 @@ export function ensureChaincodeIsAllowed(chaincode: string, allowedChaincodes: s
   }
 }
 
+function isBatchOperation(ctx: GalaChainContext, dto: ChainCallDTO | undefined) {
+  const methodName = ctx.operationCtx.methodName;
+  const isBatchMethod = methodName === "BatchSubmit" || methodName.endsWith(":BatchSubmit");
+  const isBatchDto = (dto as BatchDto | undefined)?.operations?.some((o) => o.method.length > 0);
+  return isBatchMethod || isBatchDto;
+}
+
 export interface AuthorizeOptions {
   allowedOrgs?: string[];
   allowedRoles?: string[];
@@ -112,6 +119,11 @@ export async function authorize(
   options: AuthorizeOptions,
   dto: ChainCallDTO | undefined
 ) {
+  // For batch operations authorization happens for each operation in the batch
+  if (isBatchOperation(ctx, dto)) {
+    return;
+  }
+
   if (options.allowedOriginChaincodes && ctx.callingUser.startsWith("service|")) {
     const callingChaincode = ctx.callingUser.slice(8);
     ensureChaincodeIsAllowed(callingChaincode, options.allowedOriginChaincodes);
