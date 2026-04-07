@@ -14,7 +14,6 @@
  */
 import {
   AllowanceType,
-  ApplyRequestsDto,
   ChainUser,
   CreateTokenClassDto,
   FetchBalancesDto,
@@ -30,6 +29,7 @@ import {
 import {
   AdminChainClients,
   TestClients,
+  applyRequests,
   createTransferDto,
   fetchNFTInstances,
   randomize,
@@ -139,17 +139,19 @@ describe("Simple NFT scenario", () => {
 
     // When
     const toUser1Response = await client.assets.submitTransaction(
-      "MintToken",
+      "RequestMintToken",
       user1MintDto.signed(user1.privateKey)
     );
     const toUser2Response = await client.assets.submitTransaction(
-      "MintToken",
+      "RequestMintToken",
       user2MintDto.signed(user2.privateKey)
     );
+    const applyRequestsResponse = await applyRequests(client);
 
     // Then
     expect(toUser1Response).toEqual(transactionSuccess());
     expect(toUser2Response).toEqual(transactionSuccess());
+    expect(applyRequestsResponse).toEqual(transactionSuccess());
   });
 
   it("Users should have some NTFs", async () => {
@@ -177,7 +179,7 @@ describe("Simple NFT scenario", () => {
 
     // When
     const transferResponse = await client.assets.submitTransaction(
-      "TransferToken",
+      "RequestTransferToken",
       transferDto.signed(user1.privateKey)
     );
 
@@ -193,11 +195,7 @@ describe("Simple NFT scenario", () => {
     ]);
 
     // When
-    await new Promise((resolve) => setTimeout(resolve, 2_500));
-    const applyRequestsResponse = await client.assets.submitTransaction(
-      "ApplyRequests",
-      await createValidSubmitDTO(ApplyRequestsDto, {}).signed(client.assets.privateKey)
-    );
+    const applyRequestsResponse = await applyRequests(client);
 
     // Then
     expect(applyRequestsResponse).toEqual(transactionSuccess());

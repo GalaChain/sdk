@@ -14,21 +14,17 @@
  */
 import {
   ApplyRequestsDto,
-  ChainCallDTO,
   ChainObject,
   GalaChainResponse,
   NotImplementedError,
   RangedChainObject,
   RuntimeError,
-  TokenInstanceKey,
   UserAlias,
   UserRole,
   serialize
 } from "@gala-chain/api";
-import BigNumber from "bignumber.js";
 import { instanceToPlain } from "class-transformer";
 
-import { TransferTokenParams, transferToken } from "../transfer";
 import { GalaChainContext } from "../types";
 
 export const REQUEST_QUEUE_INDEX_KEY = "GCQUEUE";
@@ -41,28 +37,10 @@ const rangedKeyHelpers = {
     RangedChainObject.getRangedKeyFromParts(indexKey, parts)
 };
 
-type RequestMethodHandler = (ctx: GalaChainContext, params: Record<string, unknown>) => Promise<unknown>;
-
-function parseTransferTokenParams(plain: Record<string, unknown>): TransferTokenParams {
-  const tokenInstanceKey = ChainCallDTO.deserialize(
-    TokenInstanceKey,
-    plain.tokenInstanceKey as Record<string, unknown>
-  );
-  const quantity =
-    plain.quantity instanceof BigNumber ? plain.quantity : new BigNumber(plain.quantity as string | number);
-  return {
-    from: plain.from as TransferTokenParams["from"],
-    to: plain.to as TransferTokenParams["to"],
-    tokenInstanceKey,
-    quantity,
-    allowancesToUse: (plain.allowancesToUse as string[]) ?? [],
-    authorizedOnBehalf: plain.authorizedOnBehalf as TransferTokenParams["authorizedOnBehalf"]
-  };
-}
-
-const requestMethodHandlers: Record<string, RequestMethodHandler> = {
-  transferToken: async (ctx, params) => transferToken(ctx, parseTransferTokenParams(params))
-};
+export type RequestMethodHandler = (
+  ctx: GalaChainContext,
+  params: Record<string, unknown>
+) => Promise<unknown>;
 
 // eslint-disable-next-line @typescript-eslint/ban-types
 export function updateMethods(target: Object, methodName: string): void {
@@ -120,7 +98,8 @@ export async function saveRequest(
 
 export async function applySavedRequest(
   ctx: GalaChainContext,
-  request: SavedRequest
+  request: SavedRequest,
+  requestMethodHandlers: Record<string, RequestMethodHandler>
 ): Promise<GalaChainResponse<unknown>> {
   const handler = requestMethodHandlers[request.requestMethodKey];
 
@@ -143,7 +122,8 @@ export async function applySavedRequest(
 
 export async function applySavedRequests(
   ctx: GalaChainContext,
-  dto: ApplyRequestsDto
+  dto: ApplyRequestsDto,
+  requestMethodHandlers: Record<string, RequestMethodHandler>
 ): Promise<GalaChainResponse<unknown>[]> {
   const maxRequests = dto.maxRequests ?? 500;
   const minDelayMs = dto.minDelayMs ?? 2000;
@@ -168,7 +148,7 @@ export async function applySavedRequests(
 
     let response: GalaChainResponse<unknown>;
     try {
-      response = await applySavedRequest(sandboxCtx, request);
+      response = await applySavedRequest(sandboxCtx, request, requestMethodHandlers);
     } catch (error) {
       response = GalaChainResponse.Error(error);
       ctx.logger.warn(`Failed to apply request ${requestKey}: ${(error as Error).message}`);

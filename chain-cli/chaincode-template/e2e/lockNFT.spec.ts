@@ -14,7 +14,6 @@
  */
 import {
   AllowanceType,
-  ApplyRequestsDto,
   ChainUser,
   GrantAllowanceDto,
   LockTokensDto,
@@ -28,9 +27,10 @@ import {
 import {
   AdminChainClients,
   TestClients,
+  applyRequests,
   createTransferDto,
-  mintTokensToUsers,
   randomize,
+  requestMintTokensToUsers,
   transactionError,
   transactionErrorKey,
   transactionSuccess
@@ -62,7 +62,7 @@ describe("NFT lock scenario", () => {
     user2 = await client.createRegisteredUser();
     await setupTransferFees(client, [user1, user2]);
 
-    await mintTokensToUsers(client.assets, nftClassKey, [
+    await requestMintTokensToUsers(client, nftClassKey, [
       { user: user1, quantity: new BigNumber(2) },
       { user: user2, quantity: new BigNumber(1) }
     ]);
@@ -105,16 +105,12 @@ describe("NFT lock scenario", () => {
 
     // When
     const transferResponse = await client.assets.submitTransaction(
-      "TransferToken",
+      "RequestTransferToken",
       transferDto.signed(user1.privateKey)
     );
     expect(transferResponse).toEqual(transactionSuccess());
 
-    await new Promise((resolve) => setTimeout(resolve, 2_500));
-    const applyRequestsResponse = await client.assets.submitTransaction(
-      "ApplyRequests",
-      await createValidSubmitDTO(ApplyRequestsDto, {}).signed(client.assets.privateKey)
-    );
+    const applyRequestsResponse = await applyRequests(client);
     expect(applyRequestsResponse).toEqual(transactionSuccess());
 
     // Then
@@ -146,12 +142,14 @@ describe("NFT lock scenario", () => {
 
     // When
     const transferResponse = await client.assets.submitTransaction(
-      "TransferToken",
+      "RequestTransferToken",
       transferDto.signed(user1.privateKey)
     );
+    expect(transferResponse).toEqual(transactionSuccess());
+    const applyRequestsResponse = await applyRequests(client);
 
     // Then
-    expect(transferResponse).toEqual(transactionSuccess());
+    expect(applyRequestsResponse).toEqual(transactionSuccess());
   });
 
   // current state: token 1 - locked, quantity = 1
@@ -222,7 +220,7 @@ describe("lock with allowances", () => {
     user1 = await client.createRegisteredUser();
     user2 = await client.createRegisteredUser();
 
-    await mintTokensToUsers(client.assets, nftClassKey, [
+    await requestMintTokensToUsers(client, nftClassKey, [
       { user: user1, quantity: new BigNumber(2) },
       { user: user2, quantity: new BigNumber(1) }
     ]);

@@ -77,6 +77,7 @@ import {
   GalaChainContext,
   GalaContract,
   GalaTransaction,
+  RequestMethodHandler,
   SUBMIT,
   Submit,
   UnsignedEvaluate,
@@ -106,12 +107,15 @@ import {
   mintRequestsByTimeRange,
   mintToken,
   mintTokenWithAllowance,
+  parseMintTokenParams,
+  parseTransferTokenParams,
   refreshAllowances,
   requestMint,
   requireCuratorAuth,
   resolveUserAlias,
   saveRequest,
   setGalaFeeProperties,
+  transferToken,
   transferTokenFeeGate,
   unlockToken,
   unlockTokens,
@@ -124,6 +128,12 @@ import { version } from "../../package.json";
 
 @Info({ title: "GalaChainToken", description: "Contract for managing GalaChain tokens" })
 export default class GalaChainTokenContract extends GalaContract {
+  protected readonly requestMethodHandlers: Record<string, RequestMethodHandler> = {
+    ["GalaChainToken:ApplyMintToken"]: async (ctx, params) => mintToken(ctx, parseMintTokenParams(params)),
+    ["GalaChainToken:ApplyTransferToken"]: async (ctx, params) =>
+      transferToken(ctx, parseTransferTokenParams(params))
+  };
+
   constructor() {
     super("GalaChainToken", version);
   }
@@ -368,7 +378,8 @@ export default class GalaChainTokenContract extends GalaContract {
    */
   @Submit({
     in: MintTokenDto,
-    out: { arrayOf: TokenInstanceKey }
+    out: { arrayOf: TokenInstanceKey },
+    deprecated: true
   })
   public async MintToken(ctx: GalaChainContext, dto: MintTokenDto): Promise<TokenInstanceKey[]> {
     return mintToken(ctx, {
@@ -377,6 +388,20 @@ export default class GalaChainTokenContract extends GalaContract {
       quantity: dto.quantity,
       authorizedOnBehalf: undefined
     });
+  }
+
+  @Submit({
+    in: MintTokenDto
+  })
+  public async RequestMintToken(ctx: GalaChainContext, dto: MintTokenDto): Promise<void> {
+    const params = {
+      tokenClassKey: dto.tokenClass,
+      owner: await resolveUserAlias(ctx, dto.owner ?? ctx.callingUser),
+      quantity: dto.quantity.toFixed(),
+      authorizedOnBehalf: undefined
+    };
+
+    await saveRequest(ctx, "GalaChainToken:ApplyMintToken", params);
   }
 
   @Submit({
@@ -476,9 +501,26 @@ export default class GalaChainTokenContract extends GalaContract {
 
   @Submit({
     in: TransferTokenDto,
+    out: { arrayOf: TokenBalance },
+    before: transferTokenFeeGate,
+    deprecated: true
+  })
+  public async TransferToken(ctx: GalaChainContext, dto: TransferTokenDto): Promise<TokenBalance[]> {
+    return transferToken(ctx, {
+      from: await resolveUserAlias(ctx, dto.from ?? ctx.callingUser),
+      to: await resolveUserAlias(ctx, dto.to),
+      tokenInstanceKey: dto.tokenInstance,
+      quantity: dto.quantity,
+      allowancesToUse: [],
+      authorizedOnBehalf: undefined
+    });
+  }
+
+  @Submit({
+    in: TransferTokenDto,
     before: transferTokenFeeGate
   })
-  public async TransferToken(ctx: GalaChainContext, dto: TransferTokenDto): Promise<void> {
+  public async RequestTransferToken(ctx: GalaChainContext, dto: TransferTokenDto): Promise<void> {
     const params = {
       from: await resolveUserAlias(ctx, dto.from ?? ctx.callingUser),
       to: await resolveUserAlias(ctx, dto.to),
@@ -488,7 +530,7 @@ export default class GalaChainTokenContract extends GalaContract {
       authorizedOnBehalf: undefined
     };
 
-    await saveRequest(ctx, "transferToken", params);
+    await saveRequest(ctx, "GalaChainToken:ApplyTransferToken", params);
   }
 
   @Submit({

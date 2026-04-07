@@ -15,6 +15,7 @@
 import {
   AllowanceType,
   AuthorizedOnBehalf,
+  ChainCallDTO,
   TokenBalance,
   TokenInstance,
   TokenInstanceKey,
@@ -36,6 +37,24 @@ export interface TransferTokenParams {
   quantity: BigNumber;
   allowancesToUse: string[];
   authorizedOnBehalf: AuthorizedOnBehalf | undefined;
+}
+
+export function parseTransferTokenParams(plain: Record<string, unknown>): TransferTokenParams {
+  const tokenInstanceKey = ChainCallDTO.deserialize(
+    TokenInstanceKey,
+    plain.tokenInstanceKey as Record<string, unknown>
+  );
+  const quantity =
+    plain.quantity instanceof BigNumber ? plain.quantity : new BigNumber(plain.quantity as string | number);
+
+  return {
+    from: plain.from as TransferTokenParams["from"],
+    to: plain.to as TransferTokenParams["to"],
+    tokenInstanceKey,
+    quantity,
+    allowancesToUse: (plain.allowancesToUse as string[]) ?? [],
+    authorizedOnBehalf: plain.authorizedOnBehalf as TransferTokenParams["authorizedOnBehalf"]
+  };
 }
 
 export async function transferToken(
