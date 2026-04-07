@@ -42,25 +42,6 @@ export type RequestMethodHandler = (
   params: Record<string, unknown>
 ) => Promise<unknown>;
 
-// eslint-disable-next-line @typescript-eslint/ban-types
-export function updateMethods(target: Object, methodName: string): void {
-  const className = target.constructor?.name;
-
-  if (className === undefined) {
-    throw new RuntimeError(`target.constructor?.name is undefined on ${target}`);
-  }
-
-  if (!requestMethods[className]) {
-    const parentClassName = Object.getPrototypeOf(target).constructor.name;
-    requestMethods[className] = [...(requestMethods[parentClassName] ?? [])];
-  }
-
-  if (!requestMethods[className].includes(methodName)) {
-    requestMethods[className].push(methodName);
-    requestMethods[className].sort((a, b) => a.localeCompare(b));
-  }
-}
-
 export interface SavedRequest {
   requestMethodKey: string;
   callingUser: UserAlias;

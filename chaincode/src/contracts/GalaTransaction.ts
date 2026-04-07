@@ -37,7 +37,6 @@ import { UniqueTransactionService } from "../services";
 import { GalaChainContext } from "../types";
 import { GalaContract } from "./GalaContract";
 import { updateApi } from "./GalaContractApi";
-import { updateMethods } from "./GalaTransactionRequest";
 import { authenticate } from "./authenticate";
 import { authorize } from "./authorize";
 
@@ -305,7 +304,6 @@ function GalaTransaction<In extends ChainCallDTO, Out>(
       ...(options.deprecated === undefined ? {} : { deprecated: options.deprecated }),
       ...(options.sequence === undefined ? {} : { sequence: options.sequence })
     });
-    updateMethods(target, method.name);
 
     // Ensure this is an actual HLF transaction.
     // If this annotation is missing, you cannot call the chaincode method
