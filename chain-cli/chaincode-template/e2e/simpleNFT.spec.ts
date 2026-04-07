@@ -49,8 +49,8 @@ describe("Simple NFT scenario", () => {
 
   beforeAll(async () => {
     client = await TestClients.createForAdmin();
-    user1 = await client.createRegisteredUser();
-    user2 = await client.createRegisteredUser();
+    user1 = ChainUser.withRandomKeys();
+    user2 = ChainUser.withRandomKeys();
     await setupTransferFees(client, [user1, user2]);
   });
 

@@ -12,12 +12,11 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-import { RegisterEthUserDto, RegisterUserDto, UpdatePublicKeyDto } from "@gala-chain/api";
+import { RegisterUserDto, UpdatePublicKeyDto } from "@gala-chain/api";
 
 import { ConstructorArgs } from "./utils";
 
 type RegisterUserRequest = ConstructorArgs<RegisterUserDto>;
-type RegisterEthUserRequest = ConstructorArgs<RegisterEthUserDto>;
 type UpdatePublicKeyRequest = ConstructorArgs<UpdatePublicKeyDto>;
 
-export { RegisterUserRequest, RegisterEthUserRequest, UpdatePublicKeyRequest };
+export { RegisterUserRequest, UpdatePublicKeyRequest };

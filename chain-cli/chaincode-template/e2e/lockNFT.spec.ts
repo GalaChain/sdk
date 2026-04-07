@@ -58,8 +58,8 @@ describe("NFT lock scenario", () => {
 
   beforeAll(async () => {
     client = await TestClients.createForAdmin();
-    user1 = await client.createRegisteredUser();
-    user2 = await client.createRegisteredUser();
+    user1 = ChainUser.withRandomKeys();
+    user2 = ChainUser.withRandomKeys();
     await setupTransferFees(client, [user1, user2]);
 
     await requestMintTokensToUsers(client, nftClassKey, [
@@ -217,8 +217,8 @@ describe("lock with allowances", () => {
 
   beforeAll(async () => {
     client = await TestClients.createForAdmin();
-    user1 = await client.createRegisteredUser();
-    user2 = await client.createRegisteredUser();
+    user1 = ChainUser.withRandomKeys();
+    user2 = ChainUser.withRandomKeys();
 
     await requestMintTokensToUsers(client, nftClassKey, [
       { user: user1, quantity: new BigNumber(2) },

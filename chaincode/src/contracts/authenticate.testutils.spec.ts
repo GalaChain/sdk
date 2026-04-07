@@ -23,7 +23,6 @@ import {
   UserAlias,
   UserProfile,
   UserRef,
-  UserRole,
   createValidDTO,
   createValidSubmitDTO,
   signatures
@@ -44,6 +43,13 @@ export async function createUser(): Promise<User> {
   const { privateKey, publicKey } = signatures.genKeyPair();
   const ethAddress = signatures.getEthAddress(publicKey);
   return { alias: name, privateKey, publicKey, ethAddress };
+}
+
+export async function createEthUser(): Promise<User> {
+  const { privateKey, publicKey } = signatures.genKeyPair();
+  const ethAddress = signatures.getEthAddress(publicKey);
+  const alias = `eth|${ethAddress}` as UserAlias;
+  return { alias, privateKey, publicKey, ethAddress };
 }
 
 export async function createRegisteredUser(chaincode: TestChaincode): Promise<User> {

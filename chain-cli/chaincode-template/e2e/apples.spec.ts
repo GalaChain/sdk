@@ -53,8 +53,8 @@ describe("Apple trees", () => {
 
   beforeAll(async () => {
     client = await TestClients.createForAdmin(appleContractConfig);
-    user = await client.createRegisteredUser();
-    user2 = await client.createRegisteredUser();
+    user = ChainUser.withRandomKeys();
+    user2 = ChainUser.withRandomKeys();
   });
 
   afterAll(async () => {

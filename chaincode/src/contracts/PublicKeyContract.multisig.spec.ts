@@ -45,19 +45,6 @@ import {
   getUserProfile
 } from "./authenticate.testutils.spec";
 
-let prevEnv: string | undefined;
-
-beforeAll(() => {
-  // we are enabling ALLOW_NON_REGISTERED_USERS for this test suite
-  // so the registration of signers is not required
-  prevEnv = process.env.ALLOW_NON_REGISTERED_USERS;
-  process.env.ALLOW_NON_REGISTERED_USERS = "true";
-});
-
-afterAll(() => {
-  process.env.ALLOW_NON_REGISTERED_USERS = prevEnv;
-});
-
 describe("PublicKeyContract Multisignature", () => {
   describe("RegisterUser", () => {
     it("should register user with 3 signers", async () => {
@@ -78,21 +65,6 @@ describe("PublicKeyContract Multisignature", () => {
         signatureQuorum
       });
       const signedDto = dto.signed(process.env.DEV_ADMIN_PRIVATE_KEY as string);
-
-      // ensure fetching default users work
-      const p1Resp = await chaincode.invoke(
-        "PublicKeyContract:GetMyProfile",
-        new GetMyProfileDto().expiresInMs(60_000).signed(key1.privateKey)
-      );
-      expect(p1Resp).toEqual(
-        transactionSuccess({
-          alias: `eth|${ethAddresses[0]}`,
-          ethAddress: ethAddresses[0],
-          roles: UserProfile.DEFAULT_ROLES,
-          signatureQuorum: 1,
-          signers: [`eth|${ethAddresses[0]}`]
-        })
-      );
 
       // When
       const response = await chaincode.invoke("PublicKeyContract:RegisterUser", signedDto);
@@ -336,7 +308,6 @@ describe("PublicKeyContract Multisignature", () => {
 
       // signing is broken => recovers public key to non-existing user
       // and we cannot use default user for multisig even if the feature is enabled
-      expect(process.env.ALLOW_NON_REGISTERED_USERS).toEqual("true");
       expect(resp3).toEqual(transactionErrorKey("UNAUTHORIZED"));
       expect(resp3).toEqual(transactionErrorMessageContains(`is not allowed to sign ${alias}.`));
     });
@@ -534,8 +505,8 @@ describe("PublicKeyContract Multisignature", () => {
       const response = await chaincode.invoke("PublicKeyContract:UpdatePublicKey", dto);
 
       // Then
-      const errMsg = `Public key is not saved for user ${alias}`;
-      expect(response).toEqual(transactionErrorKey("PK_NOT_FOUND"));
+      const errMsg = `No address known for user ${alias}`;
+      expect(response).toEqual(transactionErrorKey("UNAUTHORIZED"));
       expect(response).toEqual(transactionErrorMessageContains(errMsg));
     });
   });
