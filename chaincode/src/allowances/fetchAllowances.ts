@@ -12,7 +12,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-import { AllowanceType, FetchAllowancesResponse, TokenAllowance } from "@gala-chain/api";
+import { AllowanceType, FetchAllowancesResponse, TokenAllowance, UserAlias } from "@gala-chain/api";
 
 import { GalaChainContext } from "../types";
 import { getObjectsByPartialCompositeKey, getObjectsByPartialCompositeKeyWithPagination } from "../utils";
@@ -26,7 +26,7 @@ export interface FetchAllowancesParams {
   instance?: string;
   allowanceType?: AllowanceType;
   grantedTo: string;
-  grantedBy?: string;
+  grantedBy?: UserAlias;
 }
 
 /**
@@ -137,7 +137,7 @@ function sort(results: TokenAllowance[]): void {
   results.sort((a: TokenAllowance, b: TokenAllowance): number => (a.created < b.created ? -1 : 1));
 }
 
-function filterByGrantedBy(results: TokenAllowance[], grantedBy?: string): TokenAllowance[] {
+function filterByGrantedBy(results: TokenAllowance[], grantedBy?: UserAlias): TokenAllowance[] {
   if (grantedBy) {
     return results.filter((x: TokenAllowance) => x.grantedBy === grantedBy);
   } else {
