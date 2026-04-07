@@ -13,6 +13,7 @@
  * limitations under the License.
  */
 import {
+  ApplyRequestsDto,
   BatchDto,
   ChainCallDTO,
   ChainError,
@@ -38,7 +39,10 @@ import { PublicKeyService } from "../services";
 import { GalaChainContext, GalaChainContextConfig, GalaChainStub } from "../types";
 import { getObjectHistory, getPlainObjectByKey } from "../utils";
 import { getApiMethod, getApiMethods } from "./GalaContractApi";
-import { EVALUATE, GalaTransaction, SUBMIT } from "./GalaTransaction";
+import { EVALUATE, GalaTransaction, SUBMIT, Submit } from "./GalaTransaction";
+import { applySavedRequests } from "./GalaTransactionRequest";
+import type { RequestMethodHandler } from "./GalaTransactionRequest";
+import { requireCuratorAuth } from "./authorize";
 
 export class BatchWriteLimitExceededError extends ValidationFailedError {
   constructor(writesLimit: number) {
@@ -60,6 +64,8 @@ export class BatchPartialSuccessRequiredError extends ChainError {
 }
 
 export abstract class GalaContract extends Contract {
+  protected readonly requestMethodHandlers: Record<string, RequestMethodHandler> = {};
+
   /**
    * @param name Contract name
    * @param version Contract version. The actual value should be defined in the child
@@ -268,6 +274,19 @@ export abstract class GalaContract extends Contract {
     }
 
     return responses;
+  }
+
+  @Submit({
+    in: ApplyRequestsDto,
+    out: { arrayOf: "object" },
+    description: "Apply queued internal requests",
+    ...requireCuratorAuth
+  })
+  public async ApplyRequests(
+    ctx: GalaChainContext,
+    dto: ApplyRequestsDto
+  ): Promise<GalaChainResponse<unknown>[]> {
+    return applySavedRequests(ctx, dto, this.requestMethodHandlers);
   }
 
   @GalaTransaction({

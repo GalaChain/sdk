@@ -17,12 +17,13 @@ import {
   SameSenderAndRecipientError,
   TransferTokenFailedError
 } from "./TransferError";
-import { TransferTokenParams, transferToken } from "./transferToken";
+import { TransferTokenParams, parseTransferTokenParams, transferToken } from "./transferToken";
 
 export {
   NftInvalidQuantityTransferError,
   SameSenderAndRecipientError,
   TransferTokenFailedError,
+  parseTransferTokenParams,
   transferToken,
   TransferTokenParams
 };

@@ -20,7 +20,6 @@ import {
   GrantAllowanceDto,
   MintTokenDto,
   TokenAllowance,
-  TokenBalance,
   TokenClassKey,
   TokenInstance,
   TokenInstanceKey,
@@ -30,6 +29,7 @@ import {
 import {
   AdminChainClients,
   TestClients,
+  applyRequests,
   createTransferDto,
   fetchNFTInstances,
   randomize,
@@ -37,6 +37,8 @@ import {
 } from "@gala-chain/test";
 import BigNumber from "bignumber.js";
 import { instanceToPlain, plainToInstance } from "class-transformer";
+
+import { setupTransferFees } from "./setupTransferFees";
 
 jest.setTimeout(30000);
 
@@ -49,6 +51,7 @@ describe("Simple NFT scenario", () => {
     client = await TestClients.createForAdmin();
     user1 = ChainUser.withRandomKeys();
     user2 = ChainUser.withRandomKeys();
+    await setupTransferFees(client, [user1, user2]);
   });
 
   afterAll(async () => {
@@ -136,17 +139,19 @@ describe("Simple NFT scenario", () => {
 
     // When
     const toUser1Response = await client.assets.submitTransaction(
-      "MintToken",
+      "RequestMintToken",
       user1MintDto.signed(user1.privateKey)
     );
     const toUser2Response = await client.assets.submitTransaction(
-      "MintToken",
+      "RequestMintToken",
       user2MintDto.signed(user2.privateKey)
     );
+    const applyRequestsResponse = await applyRequests(client);
 
     // Then
     expect(toUser1Response).toEqual(transactionSuccess());
     expect(toUser2Response).toEqual(transactionSuccess());
+    expect(applyRequestsResponse).toEqual(transactionSuccess());
   });
 
   it("Users should have some NTFs", async () => {
@@ -156,20 +161,12 @@ describe("Simple NFT scenario", () => {
     const user2BalancesDto = balancesDto.signed(user2.privateKey);
 
     // When
-    const user1checkResponse = await client.assets.evaluateTransaction(
-      "FetchBalances",
-      user1BalancesDto,
-      TokenBalance
-    );
-    const user2checkResponse = await client.assets.evaluateTransaction(
-      "FetchBalances",
-      user2BalancesDto,
-      TokenBalance
-    );
+    const user1checkResponse = await client.assets.evaluateTransaction("FetchBalances", user1BalancesDto);
+    const user2checkResponse = await client.assets.evaluateTransaction("FetchBalances", user2BalancesDto);
 
     // Then
-    expect((user1checkResponse.Data ?? [])[0].instanceIds).toEqual([new BigNumber(1)]);
-    expect((user2checkResponse.Data ?? [])[0].instanceIds).toEqual([new BigNumber(2)]);
+    expect(new BigNumber((user1checkResponse.Data ?? [])[0].instanceIds?.[0] ?? 0).isEqualTo(1)).toBe(true);
+    expect(new BigNumber((user2checkResponse.Data ?? [])[0].instanceIds?.[0] ?? 0).isEqualTo(2)).toBe(true);
   });
 
   it("transfer NFT between users", async () => {
@@ -182,12 +179,28 @@ describe("Simple NFT scenario", () => {
 
     // When
     const transferResponse = await client.assets.submitTransaction(
-      "TransferToken",
+      "RequestTransferToken",
       transferDto.signed(user1.privateKey)
     );
 
     // Then
     expect(transferResponse).toEqual(transactionSuccess());
+
+    // but no transfer yet
+    expect(await fetchNFTInstances(client.assets, nftClassKey, user1.identityKey)).toEqual([
+      new BigNumber(1)
+    ]);
+    expect(await fetchNFTInstances(client.assets, nftClassKey, user2.identityKey)).toEqual([
+      new BigNumber(2)
+    ]);
+
+    // When
+    const applyRequestsResponse = await applyRequests(client);
+
+    // Then
+    expect(applyRequestsResponse).toEqual(transactionSuccess());
+
+    // Now the transfer should be applied
     expect(await fetchNFTInstances(client.assets, nftClassKey, user1.identityKey)).toEqual([]);
     expect(await fetchNFTInstances(client.assets, nftClassKey, user2.identityKey)).toEqual([
       new BigNumber(1),

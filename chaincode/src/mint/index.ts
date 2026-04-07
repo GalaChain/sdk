@@ -30,7 +30,7 @@ import { fulfillMintRequest } from "./fulfillMint";
 import { mintRequestsByTimeRange } from "./fulfillMint";
 import { fulfillMintAllowanceRequest } from "./fulfillMintAllowance";
 import { indexMintRequests } from "./indexMintRequests";
-import { MintTokenParams, UpdateTokenSupplyParams, mintToken } from "./mintToken";
+import { MintTokenParams, UpdateTokenSupplyParams, mintToken, parseMintTokenParams } from "./mintToken";
 import { MintTokenWithAllowanceParams, mintTokenWithAllowance } from "./mintTokenWithAllowance";
 import { WriteMintRequestParams, requestMint, requestMintBatch } from "./requestMint";
 import { InternalGrantAllowanceData, requestMintAllowance } from "./requestMintAllowance";
@@ -49,6 +49,7 @@ export {
   indexMintRequests,
   mintRequestsByTimeRange,
   mintToken,
+  parseMintTokenParams,
   MintTokenParams,
   UpdateTokenSupplyParams,
   requestMint,

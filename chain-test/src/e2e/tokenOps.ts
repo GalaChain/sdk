@@ -14,6 +14,7 @@
  */
 import {
   AllowanceType,
+  ApplyRequestsDto,
   ChainClient,
   ChainUser,
   ChainUserAPI,
@@ -37,6 +38,7 @@ import { instanceToPlain } from "class-transformer";
 import { nanoid } from "nanoid";
 
 import { transactionSuccess } from "../matchers";
+import type { AdminChainClients } from "./TestClients";
 
 /**
  * Generates a randomized string by appending a random suffix to the input.
@@ -80,6 +82,26 @@ export async function mintTokensToUsers(
   await createGalaNFT(client, nftClassKey);
   await grantUsersMintingAllowance(client, nftClassKey, users);
   await usersMintNFT(client, nftClassKey, users);
+}
+
+export async function requestMintTokensToUsers(
+  client: AdminChainClients,
+  nftClassKey: TokenClassKey,
+  users: { user: ChainUser; quantity: BigNumber }[],
+  delayMs = 2_500
+) {
+  await createGalaNFT(client.assets, nftClassKey);
+  await grantUsersMintingAllowance(client.assets, nftClassKey, users);
+  await usersRequestMintNFT(client.assets, nftClassKey, users);
+  await applyRequests(client, delayMs);
+}
+
+export async function applyRequests(client: AdminChainClients, delayMs = 2_500) {
+  await new Promise((resolve) => setTimeout(resolve, delayMs));
+  return client.assets.submitTransaction(
+    "ApplyRequests",
+    await createValidSubmitDTO(ApplyRequestsDto, {}).signed(client.assets.privateKey)
+  );
 }
 
 /**
@@ -233,5 +255,22 @@ async function usersMintNFT(
 
     const responseMatchers = Array.from({ length: quantity.toNumber() }).map(() => expect.anything());
     expect(response).toEqual(transactionSuccess(responseMatchers));
+  }
+}
+
+async function usersRequestMintNFT(
+  client: ChainClient,
+  nftClassKey: TokenClassKey,
+  users: { user: ChainUser; quantity: BigNumber }[]
+) {
+  for await (const { user, quantity } of users) {
+    const userMintDto = await createValidSubmitDTO<MintTokenDto>(MintTokenDto, {
+      owner: user.identityKey,
+      tokenClass: nftClassKey,
+      quantity
+    });
+
+    const response = await client.submitTransaction("RequestMintToken", userMintDto.signed(user.privateKey));
+    expect(response).toEqual(transactionSuccess());
   }
 }

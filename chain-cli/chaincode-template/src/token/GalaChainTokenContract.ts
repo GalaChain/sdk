@@ -24,6 +24,8 @@ import {
   FeeCodeDefinitionDto,
   FeeCodeSplitFormula,
   FeeCodeSplitFormulaDto,
+  FeeProperties,
+  FeePropertiesDto,
   FeeThresholdUses,
   FeeVerificationDto,
   FetchAllowancesDto,
@@ -54,6 +56,7 @@ import {
   MintTokenDto,
   MintTokenWithAllowanceDto,
   RefreshAllowancesDto,
+  SubmitCallDTO,
   TokenAllowance,
   TokenBalance,
   TokenBurn,
@@ -74,6 +77,7 @@ import {
   GalaChainContext,
   GalaContract,
   GalaTransaction,
+  RequestMethodHandler,
   SUBMIT,
   Submit,
   UnsignedEvaluate,
@@ -103,22 +107,33 @@ import {
   mintRequestsByTimeRange,
   mintToken,
   mintTokenWithAllowance,
+  parseMintTokenParams,
+  parseTransferTokenParams,
   refreshAllowances,
   requestMint,
   requireCuratorAuth,
   resolveUserAlias,
+  saveRequest,
+  setGalaFeeProperties,
   transferToken,
+  transferTokenFeeGate,
   unlockToken,
   unlockTokens,
   updateTokenClass
 } from "@gala-chain/chaincode";
-import { plainToClass } from "class-transformer";
+import { ClassConstructor, plainToClass } from "class-transformer";
 import { Info } from "fabric-contract-api";
 
 import { version } from "../../package.json";
 
 @Info({ title: "GalaChainToken", description: "Contract for managing GalaChain tokens" })
 export default class GalaChainTokenContract extends GalaContract {
+  protected readonly requestMethodHandlers: Record<string, RequestMethodHandler> = {
+    ["GalaChainToken:ApplyMintToken"]: async (ctx, params) => mintToken(ctx, parseMintTokenParams(params)),
+    ["GalaChainToken:ApplyTransferToken"]: async (ctx, params) =>
+      transferToken(ctx, parseTransferTokenParams(params))
+  };
+
   constructor() {
     super("GalaChainToken", version);
   }
@@ -363,7 +378,8 @@ export default class GalaChainTokenContract extends GalaContract {
    */
   @Submit({
     in: MintTokenDto,
-    out: { arrayOf: TokenInstanceKey }
+    out: { arrayOf: TokenInstanceKey },
+    deprecated: true
   })
   public async MintToken(ctx: GalaChainContext, dto: MintTokenDto): Promise<TokenInstanceKey[]> {
     return mintToken(ctx, {
@@ -372,6 +388,20 @@ export default class GalaChainTokenContract extends GalaContract {
       quantity: dto.quantity,
       authorizedOnBehalf: undefined
     });
+  }
+
+  @Submit({
+    in: MintTokenDto
+  })
+  public async RequestMintToken(ctx: GalaChainContext, dto: MintTokenDto): Promise<void> {
+    const params = {
+      tokenClassKey: dto.tokenClass,
+      owner: await resolveUserAlias(ctx, dto.owner ?? ctx.callingUser),
+      quantity: dto.quantity.toFixed(),
+      authorizedOnBehalf: undefined
+    };
+
+    await saveRequest(ctx, "GalaChainToken:ApplyMintToken", params);
   }
 
   @Submit({
@@ -471,7 +501,9 @@ export default class GalaChainTokenContract extends GalaContract {
 
   @Submit({
     in: TransferTokenDto,
-    out: { arrayOf: TokenBalance }
+    out: { arrayOf: TokenBalance },
+    before: transferTokenFeeGate,
+    deprecated: true
   })
   public async TransferToken(ctx: GalaChainContext, dto: TransferTokenDto): Promise<TokenBalance[]> {
     return transferToken(ctx, {
@@ -482,6 +514,23 @@ export default class GalaChainTokenContract extends GalaContract {
       allowancesToUse: [],
       authorizedOnBehalf: undefined
     });
+  }
+
+  @Submit({
+    in: TransferTokenDto,
+    before: transferTokenFeeGate
+  })
+  public async RequestTransferToken(ctx: GalaChainContext, dto: TransferTokenDto): Promise<void> {
+    const params = {
+      from: await resolveUserAlias(ctx, dto.from ?? ctx.callingUser),
+      to: await resolveUserAlias(ctx, dto.to),
+      tokenInstanceKey: dto.tokenInstance,
+      quantity: dto.quantity.toFixed(),
+      allowancesToUse: [],
+      authorizedOnBehalf: undefined
+    };
+
+    await saveRequest(ctx, "GalaChainToken:ApplyTransferToken", params);
   }
 
   @Submit({
@@ -631,5 +680,17 @@ export default class GalaChainTokenContract extends GalaContract {
     return fetchVestingToken(ctx, {
       tokenClass: dto.tokenClasses
     });
+  }
+
+  @Submit({
+    in: FeePropertiesDto as ClassConstructor<SubmitCallDTO>,
+    out: FeeProperties,
+    ...requireCuratorAuth
+  })
+  public async SetFeeProperties(
+    ctx: GalaChainContext,
+    dto: FeePropertiesDto
+  ): Promise<GalaChainResponse<FeeProperties>> {
+    return GalaChainResponse.Wrap(setGalaFeeProperties(ctx, dto));
   }
 }

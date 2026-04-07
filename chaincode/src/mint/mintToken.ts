@@ -44,6 +44,29 @@ export interface MintTokenParams {
   knownTotalSupply?: BigNumber | undefined;
 }
 
+export function parseMintTokenParams(plain: Record<string, unknown>): MintTokenParams {
+  const tokenClassKey = ChainCallDTO.deserialize(
+    TokenClassKey,
+    plain.tokenClassKey as Record<string, unknown>
+  );
+  const quantity =
+    plain.quantity instanceof BigNumber ? plain.quantity : new BigNumber(plain.quantity as string | number);
+  const knownTotalSupply =
+    plain.knownTotalSupply === undefined
+      ? undefined
+      : plain.knownTotalSupply instanceof BigNumber
+        ? plain.knownTotalSupply
+        : new BigNumber(plain.knownTotalSupply as string | number);
+
+  return {
+    tokenClassKey,
+    owner: plain.owner as MintTokenParams["owner"],
+    quantity,
+    authorizedOnBehalf: plain.authorizedOnBehalf as MintTokenParams["authorizedOnBehalf"],
+    knownTotalSupply
+  };
+}
+
 export async function mintToken(
   ctx: GalaChainContext,
   { tokenClassKey, owner, quantity, authorizedOnBehalf, knownTotalSupply }: MintTokenParams
