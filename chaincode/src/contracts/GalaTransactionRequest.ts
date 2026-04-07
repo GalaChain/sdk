@@ -27,7 +27,7 @@ import { instanceToPlain } from "class-transformer";
 
 import { GalaChainContext } from "../types";
 
-export const REQUEST_QUEUE_INDEX_KEY = "GCQUEUE";
+export const REQUEST_QUEUE_INDEX_KEY = "GCRQ";
 
 const REQUEST_TIME_KEY_LENGTH = 16;
 const requestMethods: Record<string, string[]> = {};
