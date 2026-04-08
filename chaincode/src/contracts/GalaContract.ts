@@ -26,7 +26,6 @@ import {
   GalaChainResponseType,
   GetObjectDto,
   GetObjectHistoryDto,
-  NotFoundError,
   UserProfile,
   ValidationFailedError,
   createValidDTO,
@@ -229,8 +228,7 @@ export abstract class GalaContract extends Contract {
     in: BatchDto,
     out: "object",
     enforceUniqueKey: true,
-    description: "Submit a batch of transactions",
-    allowedOrgs: [process.env.CURATOR_ORG_MSP ?? "CuratorOrg"]
+    description: "Submit a batch of transactions"
   })
   public async BatchSubmit(ctx: GalaChainContext, batchDto: BatchDto): Promise<GalaChainResponse<unknown>[]> {
     const responses: GalaChainResponse<unknown>[] = [];

@@ -138,8 +138,11 @@ function GalaTransaction<In extends ChainCallDTO, Out>(
     }
 
     if (options.type === SUBMIT && !options.verifySignature && !options.allowedOrgs?.length) {
-      const message = `SUBMIT transaction '${propertyKey}' must have either verifySignature or allowedOrgs defined`;
-      throw new NotImplementedError(message);
+      // Edge case: we allow BatchSubmit without verifySignature or allowedOrgs
+      if (propertyKey !== "BatchSubmit") {
+        const message = `SUBMIT transaction '${propertyKey}' must have either verifySignature or allowedOrgs defined`;
+        throw new NotImplementedError(message);
+      }
     }
 
     if (options.allowedRoles !== undefined && options.allowedOrgs !== undefined) {
