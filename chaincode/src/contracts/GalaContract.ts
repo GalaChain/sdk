@@ -26,7 +26,7 @@ import {
   GalaChainResponseType,
   GetObjectDto,
   GetObjectHistoryDto,
-  NotFoundError,
+  HasPendingApplyRequestsDto,
   UserProfile,
   ValidationFailedError,
   createValidDTO,
@@ -40,7 +40,7 @@ import { GalaChainContext, GalaChainContextConfig, GalaChainStub } from "../type
 import { getObjectHistory, getPlainObjectByKey } from "../utils";
 import { getApiMethod, getApiMethods } from "./GalaContractApi";
 import { EVALUATE, GalaTransaction, SUBMIT, Submit } from "./GalaTransaction";
-import { applySavedRequests } from "./GalaTransactionRequest";
+import { applySavedRequests, hasPendingApplyRequests } from "./GalaTransactionRequest";
 import type { RequestMethodHandler } from "./GalaTransactionRequest";
 import { requireCuratorAuth } from "./authorize";
 
@@ -286,7 +286,21 @@ export abstract class GalaContract extends Contract {
     ctx: GalaChainContext,
     dto: ApplyRequestsDto
   ): Promise<GalaChainResponse<unknown>[]> {
-    return applySavedRequests(ctx, dto, this.requestMethodHandlers);
+    return applySavedRequests(ctx, this.getName(), dto, this.requestMethodHandlers);
+  }
+
+  @GalaTransaction({
+    type: EVALUATE,
+    in: HasPendingApplyRequestsDto,
+    out: "boolean",
+    description:
+      "Returns true if this contract has at least one queued request old enough to apply (same delay semantics as ApplyRequests)."
+  })
+  public async HasPendingApplyRequests(
+    ctx: GalaChainContext,
+    dto: HasPendingApplyRequestsDto
+  ): Promise<boolean> {
+    return hasPendingApplyRequests(ctx, this.getName(), dto);
   }
 
   @GalaTransaction({

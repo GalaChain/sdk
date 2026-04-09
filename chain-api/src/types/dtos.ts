@@ -427,6 +427,18 @@ export class ApplyRequestsDto extends SubmitCallDTO {
   minDelayMs?: number;
 }
 
+export class HasPendingApplyRequestsDto extends ChainCallDTO {
+  @JSONSchema({
+    description:
+      "Minimum age in ms that a queued request must have before it counts as ready to apply. " +
+      "Defaults to the same value used by ApplyRequests when omitted."
+  })
+  @IsOptional()
+  @IsInt()
+  @Min(0)
+  minDelayMs?: number;
+}
+
 /**
  * @description
  *
