@@ -147,7 +147,8 @@ export class TokenBalance extends ChainObject {
 
   @JSONSchema({
     description:
-      "vestingPeriodStart timestamp. For Vesting Locks, this specifies the beginning of the vesting period."
+      "Unix epoch timestamp in milliseconds (ms) for vestingPeriodStart. " +
+      "For vesting locks, this is the beginning of the vesting period."
   })
   @Min(0)
   @IsInt()
@@ -476,10 +477,17 @@ export class TokenHold {
   @BigNumberProperty()
   public readonly quantity: BigNumber;
 
+  @JSONSchema({
+    description:
+      "Unix epoch timestamp in milliseconds (ms) when the hold was created (typically the transaction time)."
+  })
   @IsPositive()
   @IsInt()
   public readonly created: number;
 
+  @JSONSchema({
+    description: "Unix epoch timestamp in milliseconds (ms) when the hold expires. 0 means no expiration."
+  })
   @Min(0)
   @IsInt()
   public readonly expires: number;
@@ -498,6 +506,10 @@ export class TokenHold {
   @IsUserAlias()
   lockAuthority?: UserAlias;
 
+  @JSONSchema({
+    description:
+      "Unix epoch timestamp in milliseconds (ms) for vestingPeriodStart on vesting holds; undefined for non-vesting holds."
+  })
   @Min(0)
   @IsInt()
   @IsOptional()

@@ -103,7 +103,8 @@ export class RequestTokenSwapDto extends SubmitCallDTO {
 
   @JSONSchema({
     description:
-      "Unix timestamp of the date when the swap request should expire. 0 means that it won' expire. " +
+      "Unix epoch timestamp in milliseconds (ms) when the swap request should expire. " +
+      "0 means it never expires. " +
       `By default set to ${RequestTokenSwapDto.DEFAULT_EXPIRES}.`
   })
   @IsOptional()
@@ -205,11 +206,12 @@ export class TerminateTokenSwapDto extends SubmitCallDTO {
 
 @JSONSchema({
   description:
-    "Legacy FetchTokenSwapsDto. Provided created timestamp to limit result, or leave empty to query all swaps."
+    "Legacy FetchTokenSwapsDto. Provide a created-time lower bound as a Unix epoch timestamp in milliseconds (ms) to limit results, or leave empty to query all swaps."
 })
 export class FetchTokenSwapsDto extends ChainCallDTO {
   @JSONSchema({
-    description: "(optional). ChainKey 0 - Created timestamp of swap."
+    description:
+      "(optional) ChainKey 0 — Unix epoch timestamp in milliseconds (ms) of swap creation; partial query lower bound."
   })
   @IsOptional()
   @IsNumber()

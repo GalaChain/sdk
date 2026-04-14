@@ -69,6 +69,9 @@ export class AllowanceKey extends ChainCallDTO {
   @IsUserAlias()
   public grantedBy: UserAlias;
 
+  @JSONSchema({
+    description: "Unix epoch timestamp in milliseconds (ms) of allowance creation (chain key component)."
+  })
   @IsPositive()
   @IsInt()
   public created: number;

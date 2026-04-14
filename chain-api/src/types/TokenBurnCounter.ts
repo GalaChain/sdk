@@ -15,6 +15,7 @@
 import { BigNumber } from "bignumber.js";
 import { Exclude } from "class-transformer";
 import { IsDefined, IsNotEmpty } from "class-validator";
+import { JSONSchema } from "class-validator-jsonschema";
 
 import { ChainKey } from "../utils";
 import { BigNumberIsInteger, BigNumberIsNotNegative, BigNumberProperty, IsUserAlias } from "../validators";
@@ -61,6 +62,9 @@ export class TokenBurnCounter extends RangedChainObject {
   @BigNumberProperty()
   public totalKnownBurnsCount: BigNumber;
 
+  @JSONSchema({
+    description: "Unix epoch timestamp in milliseconds (ms) when this burn counter entry was created."
+  })
   @IsNotEmpty()
   public created: number;
 

@@ -197,7 +197,7 @@ export class OraclePriceAssertionDto extends SubmitCallDTO {
 
   @JSONSchema({
     description:
-      "Unix timestamp representing the date/time at which this price / exchange rate was calculated or estimated."
+      "Unix epoch timestamp in milliseconds (ms) for the date/time at which this price / exchange rate was calculated or estimated."
   })
   @IsNumber()
   timestamp: number;
@@ -482,7 +482,7 @@ export class OracleBridgeFeeAssertionDto extends SubmitCallDTO {
 
   @JSONSchema({
     description:
-      "Unix timestamp representing the date/time at which this assertion " +
+      "Unix epoch timestamp in milliseconds (ms) for the date/time at which this assertion " +
       "was calculated and/or estimated."
   })
   @IsNumber()

@@ -217,7 +217,9 @@ export class ChainCallDTO {
   public dtoOperation?: string;
 
   @JSONSchema({
-    description: "Unit timestamp when the DTO expires. If the timestamp is in the past, the DTO is not valid."
+    description:
+      "Unix epoch timestamp in milliseconds (ms) when the DTO expires. " +
+      "If this time is before the current time, the DTO is not valid."
   })
   @IsOptional()
   @IsNumber()

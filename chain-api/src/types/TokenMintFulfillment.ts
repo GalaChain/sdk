@@ -14,6 +14,7 @@
  */
 import BigNumber from "bignumber.js";
 import { IsDefined, IsNotEmpty } from "class-validator";
+import { JSONSchema } from "class-validator-jsonschema";
 
 import { ChainKey } from "../utils";
 import { BigNumberIsNotNegative, BigNumberProperty, IsUserAlias } from "../validators";
@@ -44,6 +45,10 @@ export class TokenMintFulfillment extends ChainObject {
   public requestor: UserAlias;
 
   @ChainKey({ position: 5 })
+  @JSONSchema({
+    description:
+      "Unix epoch timestamp in milliseconds (ms) when the original mint request was created (chain key component)."
+  })
   @IsNotEmpty()
   public requestCreated: number;
 
@@ -61,6 +66,9 @@ export class TokenMintFulfillment extends ChainObject {
   @IsNotEmpty()
   public id: string;
 
+  @JSONSchema({
+    description: "Unix epoch timestamp in milliseconds (ms) when this mint fulfillment was created."
+  })
   @IsNotEmpty()
   public created: number;
 }

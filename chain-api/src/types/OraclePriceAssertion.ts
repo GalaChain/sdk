@@ -133,7 +133,7 @@ export class OraclePriceAssertion extends ChainObject {
 
   @JSONSchema({
     description:
-      "Unix timestamp representing the date/time at which this price / exchange rate was calculated or estimated."
+      "Unix epoch timestamp in milliseconds (ms) for the date/time at which this price / exchange rate was calculated or estimated."
   })
   @IsNumber()
   timestamp: number;
