@@ -83,7 +83,7 @@ export class FetchBurnsDto extends ChainCallDTO {
   instance?: string;
 
   @JSONSchema({
-    description: "Created time. Optional."
+    description: "Unix epoch timestamp in milliseconds (ms) of burn creation, for partial queries. Optional."
   })
   @IsPositive()
   @IsInt()

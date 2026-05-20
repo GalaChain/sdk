@@ -24,6 +24,7 @@ import {
   Min,
   ValidateNested
 } from "class-validator";
+import { JSONSchema } from "class-validator-jsonschema";
 
 import { ChainKey, ValidationFailedError } from "../utils";
 import { BigNumberIsPositive, BigNumberProperty, IsUserAlias } from "../validators";
@@ -74,6 +75,10 @@ export class PostMintLockConfiguration extends ChainObject {
    *
    * 2592000000 = 30 days (1000 * 60 * 60 * 24 * 30)
    */
+  @JSONSchema({
+    description:
+      "Duration in milliseconds (ms) added to the transaction time (GalaChainContext.txUnixTime) to set the TokenHold expiration."
+  })
   @IsNumber()
   @IsInt()
   expirationModifier: number;

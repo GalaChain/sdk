@@ -125,7 +125,7 @@ export class OracleBridgeFeeAssertion extends ChainObject {
 
   @JSONSchema({
     description:
-      "Unix timestamp representing the date/time at which this assertion " +
+      "Unix epoch timestamp in milliseconds (ms) for the date/time at which this assertion " +
       "was calculated and/or estimated."
   })
   @IsNumber()

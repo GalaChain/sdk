@@ -72,7 +72,8 @@ export class LockTokenDto extends SubmitCallDTO {
 
   @JSONSchema({
     description:
-      "vestingPeriodStart timestamp. For Vesting Locks, this specifies the beginning of the vesting period."
+      "Unix epoch timestamp in milliseconds (ms) for vestingPeriodStart. " +
+      "For vesting locks, this is the beginning of the vesting period."
   })
   @Min(0)
   @IsInt()
@@ -114,7 +115,8 @@ export class LockTokensDto extends SubmitCallDTO {
 
   @JSONSchema({
     description:
-      "Expiration timestamp. The TokenHold will expire at this time. This name will be applied to all token holds created by this Lock."
+      "Unix epoch timestamp in milliseconds (ms) when token holds created by this lock expire. " +
+      "0 means no expiration. The optional name applies to all holds from this lock."
   })
   @Min(0)
   @IsInt()

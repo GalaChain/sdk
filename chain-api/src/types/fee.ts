@@ -132,7 +132,7 @@ export class FeeAuthorizationResDto extends ChainCallDTO {
   authority: UserAlias;
 
   @JSONSchema({
-    description: "Unix Timestamp of fee authorization chain object creation."
+    description: "Unix epoch timestamp in milliseconds (ms) of fee authorization chain object creation."
   })
   @IsNotEmpty()
   public created: number;
@@ -563,14 +563,16 @@ export class FetchFeePendingBalancesResDto extends ChainCallDTO {
 })
 export class FeeBalanceSettlementDto extends ChainCallDTO {
   @JSONSchema({
-    description: "Limit query/action time range. Start date as a unix timestamp. (optional)"
+    description:
+      "Limit query/action time range. Start as a Unix epoch timestamp in milliseconds (ms). (optional)"
   })
   @IsOptional()
   @IsNotEmpty()
   public startDate?: number;
 
   @JSONSchema({
-    description: "Limit query/action time range. End date as a unix timestamp. (optional)"
+    description:
+      "Limit query/action time range. End as a Unix epoch timestamp in milliseconds (ms). (optional)"
   })
   @IsOptional()
   @IsNotEmpty()
@@ -598,6 +600,12 @@ export class FeeCodeDefinitionDto extends SubmitCallDTO {
   @BigNumberProperty()
   public feeThresholdUses: BigNumber;
 
+  @JSONSchema({
+    description:
+      "Time window paired with fee threshold uses. " +
+      "Persisted on chain; not interpreted by current fee gate logic in this SDK, so the unit is not enforced here. " +
+      "If used, align with GalaChain wall-clock fields (Unix epoch milliseconds, same as txUnixTime)."
+  })
   @IsNumber()
   public feeThresholdTimePeriod: number;
 
@@ -695,7 +703,7 @@ export class FeeVerificationDto extends SubmitCallDTO {
   authority: UserRef;
 
   @JSONSchema({
-    description: "Unix Timestamp of fee authorization chain object creation."
+    description: "Unix epoch timestamp in milliseconds (ms) of fee authorization chain object creation."
   })
   @IsNotEmpty()
   public created: number;

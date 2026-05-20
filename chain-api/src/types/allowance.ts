@@ -262,7 +262,8 @@ export class DeleteAllowancesDto extends SubmitCallDTO {
   allowanceType?: AllowanceType;
 
   @JSONSchema({
-    description: "Created time. Optional."
+    description:
+      "Unix epoch timestamp in milliseconds (ms) of allowance creation, for partial queries. Optional."
   })
   @IsPositive()
   @IsInt()
@@ -309,7 +310,8 @@ export class GrantAllowanceDto extends SubmitCallDTO {
 
   @JSONSchema({
     description:
-      "Unix timestamp of the date when the allowances should expire. 0 means that it won' expire. " +
+      "Unix epoch timestamp in milliseconds (ms) when the allowances should expire. " +
+      "0 means they never expire. " +
       `By default set to ${GrantAllowanceDto.DEFAULT_EXPIRES}.`
   })
   @IsOptional()
@@ -369,7 +371,8 @@ export class HighThroughputGrantAllowanceDto extends SubmitCallDTO {
 
   @JSONSchema({
     description:
-      "Unix timestamp of the date when the allowances should expire. 0 means that it won' expire. " +
+      "Unix epoch timestamp in milliseconds (ms) when the allowances should expire. " +
+      "0 means they never expire. " +
       `By default set to ${GrantAllowanceDto.DEFAULT_EXPIRES}.`
   })
   @IsOptional()
@@ -482,6 +485,10 @@ export class RefreshAllowanceDto extends ChainCallDTO {
   @BigNumberProperty()
   public uses: BigNumber;
 
+  @JSONSchema({
+    description:
+      "Unix epoch timestamp in milliseconds (ms) when the allowance expires. " + "0 means it never expires."
+  })
   @Min(0)
   @IsInt()
   public expires: number;
