@@ -33,6 +33,10 @@ export function getOperationContext(ctx: Context): OperationContext {
 }
 
 export function getChaincodeId(ctx: Context): string {
+  if (process.env.GC_CHAINCODE_ID) {
+    return process.env.GC_CHAINCODE_ID;
+  }
+
   const signedProposal = ctx.stub.getSignedProposal();
   if (!signedProposal) {
     const message = "Cannot get chaincode id: got empty signed proposal.";
