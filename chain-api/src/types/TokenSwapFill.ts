@@ -15,6 +15,7 @@
 import BigNumber from "bignumber.js";
 import { Exclude } from "class-transformer";
 import { IsNotEmpty, IsPositive } from "class-validator";
+import { JSONSchema } from "class-validator-jsonschema";
 
 import { ChainKey } from "../utils";
 import { BigNumberIsPositive, BigNumberProperty, IsUserAlias } from "../validators";
@@ -33,6 +34,9 @@ export class TokenSwapFill extends ChainObject {
   public filledBy: string;
 
   @ChainKey({ position: 2 })
+  @JSONSchema({
+    description: "Unix epoch timestamp in milliseconds (ms) when this swap fill was recorded."
+  })
   @IsPositive()
   public created: number;
 

@@ -29,8 +29,10 @@ jobs:
           NPM_PACKAGE_NAME=$(node -p "require('./package.json').name")
           NPM_PACKAGE_VERSION=$(node -p "require('./package.json').version")
           # Set NPM_DIST_TAG based on version
-          if [[ $NPM_PACKAGE_VERSION == 2.* ]]; then
+          if [[ $NPM_PACKAGE_VERSION == 3.* ]]; then
             echo "NPM_DIST_TAG=latest" >> $GITHUB_ENV
+          elif [[ $NPM_PACKAGE_VERSION == 2.* ]]; then
+            echo "NPM_DIST_TAG=v2-latest" >> $GITHUB_ENV
           elif [[ $NPM_PACKAGE_VERSION == 1.* ]]; then
             echo "NPM_DIST_TAG=v1-latest" >> $GITHUB_ENV
           else

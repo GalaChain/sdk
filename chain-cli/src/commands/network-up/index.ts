@@ -201,9 +201,8 @@ function startOpsApi(fabloRoot: string, apiConfigPath: string): void {
 
 function printTestAdminCredentials(fabloRoot: string): void {
   const commands = [
-    `cd "${fabloRoot}"`,
-    `echo "Dev admin private key which you can use for signing transactions:"`,
-    `echo "  $(cat dev-admin-key/dev-admin.priv.hex.txt)"`
+    `echo "Dev admin private key which you can use for signing transactions is located at:"`,
+    `echo "  $(cd "${fabloRoot}" && pwd)/dev-admin-key/dev-admin.priv.hex.txt"`
   ];
   execSyncStdio(commands.join(" && "));
 }

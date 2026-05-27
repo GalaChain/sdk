@@ -12,7 +12,18 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-import { SameSenderAndRecipientError, TransferTokenFailedError } from "./TransferError";
-import { TransferTokenParams, transferToken } from "./transferToken";
+import {
+  NftInvalidQuantityTransferError,
+  SameSenderAndRecipientError,
+  TransferTokenFailedError
+} from "./TransferError";
+import { TransferTokenParams, parseTransferTokenParams, transferToken } from "./transferToken";
 
-export { SameSenderAndRecipientError, TransferTokenFailedError, transferToken, TransferTokenParams };
+export {
+  NftInvalidQuantityTransferError,
+  SameSenderAndRecipientError,
+  TransferTokenFailedError,
+  parseTransferTokenParams,
+  transferToken,
+  TransferTokenParams
+};

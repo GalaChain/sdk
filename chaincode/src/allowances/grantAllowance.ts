@@ -81,6 +81,7 @@ async function grantAllowanceByPartialKey(
   });
 
   const tokenAllowances: Array<TokenAllowance> = [];
+  const failedAllowances: Array<{ message: string; payload: Record<string, unknown> }> = [];
 
   const fetchAllowanceOps: Promise<TokenAllowance[]>[] = [];
 
@@ -214,8 +215,6 @@ async function grantAllowanceByPartialKey(
   });
 
   const grantedAllowances: TokenAllowance[] = [];
-  const failedAllowances: Array<{ message: string; payload: Record<string, unknown> }> = [];
-
   for (const op of grantAllowanceOps) {
     await op
       .then((granted) => {

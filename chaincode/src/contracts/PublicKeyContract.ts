@@ -18,36 +18,25 @@ import {
   GetMyProfileDto,
   GetPublicKeyDto,
   PublicKey,
-  RegisterEthUserDto,
   RegisterUserDto,
   RemoveSignerDto,
+  SubmitCallDTO,
   UpdatePublicKeyDto,
   UpdateQuorumDto,
   UpdateSignersDto,
   UpdateUserRolesDto,
-  UserAlias,
   UserProfile,
-  ValidationFailedError,
-  signatures
+  ValidationFailedError
 } from "@gala-chain/api";
 import { Info } from "fabric-contract-api";
 
 import { PublicKeyService, resolveUserAlias, resolveUserAliases } from "../services";
 import { PkNotFoundError } from "../services/PublicKeyError";
 import { GalaChainContext } from "../types";
+import { getVersion } from "../utils/version";
 import { GalaContract } from "./GalaContract";
 import { EVALUATE, Evaluate, GalaTransaction, Submit } from "./GalaTransaction";
 import { requireRegistrarAuth } from "./authorize";
-
-let version = "0.0.0";
-
-try {
-  // eslint-disable-next-line @typescript-eslint/no-var-requires
-  version = require("../../../package.json").version;
-} catch (e) {
-  // eslint-disable-next-line @typescript-eslint/no-var-requires
-  version = require("../../package.json").version;
-}
 
 @Info({
   title: "PublicKeyContract",
@@ -55,7 +44,7 @@ try {
 })
 export class PublicKeyContract extends GalaContract {
   constructor() {
-    super("PublicKeyContract", version);
+    super("PublicKeyContract", getVersion());
   }
 
   @Evaluate({
@@ -92,22 +81,22 @@ export class PublicKeyContract extends GalaContract {
       dto.publicKey,
       signerAliases.length ? signerAliases : undefined,
       dto.user,
-      signatureQuorum
+      signatureQuorum,
+      dto as ChainCallDTO & { publicKeySignature?: string }
     );
   }
 
   @Submit({
-    in: RegisterEthUserDto,
+    in: SubmitCallDTO,
     out: "string",
-    description: "Registers a new user on chain under alias derived from eth address.",
+    description:
+      "Registration of eth| users is no longer required. This method will be removed in the future.",
+    deprecated: true,
     ...requireRegistrarAuth
   })
-  public async RegisterEthUser(ctx: GalaChainContext, dto: RegisterEthUserDto): Promise<string> {
-    const providedPkHex = signatures.getNonCompactHexPublicKey(dto.publicKey);
-    const ethAddress = signatures.getEthAddress(providedPkHex);
-    const userAlias = `eth|${ethAddress}` as UserAlias;
-
-    return PublicKeyService.registerUser(ctx, dto.publicKey, undefined, userAlias, 1);
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  public async RegisterEthUser(ctx: GalaChainContext, dto: SubmitCallDTO): Promise<string> {
+    return "Registration of eth| users is no longer required.";
   }
 
   @Submit({

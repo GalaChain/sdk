@@ -14,6 +14,7 @@
  */
 import BigNumber from "bignumber.js";
 import { IsDefined, IsNotEmpty } from "class-validator";
+import { JSONSchema } from "class-validator-jsonschema";
 
 import { ChainKey } from "../utils";
 import { BigNumberIsNotNegative, BigNumberProperty, IsUserAlias } from "../validators";
@@ -58,6 +59,9 @@ export class TokenMintRequest extends RangedChainObject {
   @IsUserAlias()
   public requestor: UserAlias;
 
+  @JSONSchema({
+    description: "Unix epoch timestamp in milliseconds (ms) when this mint request was created."
+  })
   @IsNotEmpty()
   public created: number;
 

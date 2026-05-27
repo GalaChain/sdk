@@ -15,6 +15,7 @@
 import { BigNumber } from "bignumber.js";
 import { Exclude } from "class-transformer";
 import { IsDefined, IsInt, IsNotEmpty, IsPositive } from "class-validator";
+import { JSONSchema } from "class-validator-jsonschema";
 
 import { ChainKey } from "../utils";
 import { BigNumberIsInteger, BigNumberIsNotNegative, BigNumberProperty, IsUserAlias } from "../validators";
@@ -53,6 +54,9 @@ export class TokenBurn extends ChainObject {
   public instance: BigNumber;
 
   @ChainKey({ position: 6 })
+  @JSONSchema({
+    description: "Unix epoch timestamp in milliseconds (ms) when this burn was recorded."
+  })
   @IsPositive()
   @IsInt()
   public created: number;

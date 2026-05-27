@@ -14,6 +14,7 @@
  */
 import BigNumber from "bignumber.js";
 import { IsDefined, IsNotEmpty } from "class-validator";
+import { JSONSchema } from "class-validator-jsonschema";
 
 import { ChainKey } from "../utils";
 import { BigNumberProperty, IsUserAlias } from "../validators";
@@ -54,6 +55,9 @@ export class TokenMintAllowance extends ChainObject {
   public grantedTo: UserAlias;
 
   @ChainKey({ position: 7 })
+  @JSONSchema({
+    description: "Unix epoch timestamp in milliseconds (ms) when this mint allowance record was created."
+  })
   @IsNotEmpty()
   public created: number;
 

@@ -47,10 +47,16 @@ export class Allocation {
   @BigNumberProperty()
   quantity: BigNumber;
 
+  @JSONSchema({
+    description: "Number of full calendar days in the cliff period before linear vesting begins."
+  })
   @Min(0)
   @IsInt()
   cliff: number;
 
+  @JSONSchema({
+    description: "Number of full calendar days over which the allocation vests after the cliff."
+  })
   @Min(0)
   @IsInt()
   vestingDays: number;
@@ -79,6 +85,11 @@ export class VestingToken extends ChainObject {
   @IsString()
   vestingName: string;
 
+  @JSONSchema({
+    description:
+      "Unix epoch timestamp in milliseconds (ms) for the vesting schedule start. " +
+      "Cliff and vesting use this as the base time."
+  })
   @Min(0)
   @IsInt()
   startDate: number;
@@ -134,7 +145,9 @@ export class CreateVestingTokenDto extends SubmitCallDTO {
   vestingName: string;
 
   @JSONSchema({
-    description: "Start date timestamp. Cliff and vesting calculations will use this as the starting point."
+    description:
+      "Unix epoch timestamp in milliseconds (ms) for the vesting start date. " +
+      "Cliff and vesting calculations use this as the starting point."
   })
   @Min(0)
   @IsInt()

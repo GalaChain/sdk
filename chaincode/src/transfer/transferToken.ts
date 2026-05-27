@@ -15,34 +15,55 @@
 import {
   AllowanceType,
   AuthorizedOnBehalf,
+  ChainCallDTO,
   TokenBalance,
+  TokenInstance,
   TokenInstanceKey,
   UserAlias
 } from "@gala-chain/api";
 import BigNumber from "bignumber.js";
 
-import { verifyAndUseAllowances } from "../allowances";
+import { verifyAndUseAllowances, verifyAndUseTransferAllowancesByKeys } from "../allowances";
 import { fetchOrCreateBalance } from "../balances";
 import { InvalidDecimalError, fetchTokenClass, fetchTokenInstance } from "../token";
 import { GalaChainContext } from "../types";
 import { putChainObject } from "../utils";
-import { SameSenderAndRecipientError } from "./TransferError";
+import { NftInvalidQuantityTransferError, SameSenderAndRecipientError } from "./TransferError";
 
 export interface TransferTokenParams {
   from: UserAlias;
   to: UserAlias;
   tokenInstanceKey: TokenInstanceKey;
   quantity: BigNumber;
+  allowancesToUse: string[];
   authorizedOnBehalf: AuthorizedOnBehalf | undefined;
+}
+
+export function parseTransferTokenParams(plain: Record<string, unknown>): TransferTokenParams {
+  const tokenInstanceKey = ChainCallDTO.deserialize(
+    TokenInstanceKey,
+    plain.tokenInstanceKey as Record<string, unknown>
+  );
+  const quantity =
+    plain.quantity instanceof BigNumber ? plain.quantity : new BigNumber(plain.quantity as string | number);
+
+  return {
+    from: plain.from as TransferTokenParams["from"],
+    to: plain.to as TransferTokenParams["to"],
+    tokenInstanceKey,
+    quantity,
+    allowancesToUse: (plain.allowancesToUse as string[]) ?? [],
+    authorizedOnBehalf: plain.authorizedOnBehalf as TransferTokenParams["authorizedOnBehalf"]
+  };
 }
 
 export async function transferToken(
   ctx: GalaChainContext,
-  { from, to, tokenInstanceKey, quantity, authorizedOnBehalf }: TransferTokenParams
+  { from, to, tokenInstanceKey, quantity, allowancesToUse, authorizedOnBehalf }: TransferTokenParams
 ): Promise<TokenBalance[]> {
-  const msg = `TransferToken ${tokenInstanceKey.toStringKey()} from ${
-    from ?? "?"
-  } to ${to}, quantity: ${quantity.toFixed()}.`;
+  const msg =
+    `TransferToken ${tokenInstanceKey.toStringKey()} from ${from ?? "?"} to ${to}, ` +
+    `quantity: ${quantity.toFixed()}, allowancesToUse: ${allowancesToUse.length}.`;
   ctx.logger.info(msg);
 
   if (from === to) {
@@ -51,6 +72,10 @@ export async function transferToken(
 
   const tokenInstance = await fetchTokenInstance(ctx, tokenInstanceKey);
   const tokenClass = await fetchTokenClass(ctx, tokenInstanceKey);
+
+  if (tokenInstance.isNonFungible && !quantity.isEqualTo(1)) {
+    throw new NftInvalidQuantityTransferError(quantity.toFixed(), tokenInstanceKey.toStringKey());
+  }
 
   const decimalPlaces = quantity.decimalPlaces() ?? 0;
   if (decimalPlaces > tokenClass.decimals) {
@@ -65,14 +90,14 @@ export async function transferToken(
     const msg = `Transfer executed on behalf of another user (fromPerson: ${from}, callingUser: ${callingOnBehalf})`;
     ctx.logger.info(msg);
 
-    await verifyAndUseAllowances(
+    await verifyAndUseTransferAllowances(
       ctx,
       from,
       tokenInstanceKey,
       quantity,
       tokenInstance,
-      callingOnBehalf,
-      AllowanceType.Transfer
+      allowancesToUse,
+      callingOnBehalf
     );
   }
 
@@ -96,4 +121,36 @@ export async function transferToken(
   }
 
   return [fromPersonBalance, toPersonBalance];
+}
+
+async function verifyAndUseTransferAllowances(
+  ctx: GalaChainContext,
+  from: UserAlias,
+  tokenInstanceKey: TokenInstanceKey,
+  quantity: BigNumber,
+  tokenInstance: TokenInstance,
+  allowancesToUse: string[],
+  callingOnBehalf: UserAlias
+) {
+  if (allowancesToUse.length > 0) {
+    await verifyAndUseTransferAllowancesByKeys(
+      ctx,
+      from,
+      tokenInstanceKey,
+      quantity,
+      tokenInstance,
+      callingOnBehalf,
+      allowancesToUse
+    );
+  } else {
+    await verifyAndUseAllowances(
+      ctx,
+      from,
+      tokenInstanceKey,
+      quantity,
+      tokenInstance,
+      callingOnBehalf,
+      AllowanceType.Transfer
+    );
+  }
 }

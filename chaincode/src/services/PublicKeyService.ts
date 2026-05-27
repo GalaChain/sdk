@@ -175,8 +175,7 @@ export class PublicKeyService {
     return pk;
   }
 
-  public static getDefaultUserProfile(publicKey: string): UserProfileStrict {
-    const address = this.getUserAddress(publicKey);
+  public static getDefaultUserProfile(address: string): UserProfileStrict {
     const profile = new UserProfile();
     profile.alias = asValidUserAlias(`eth|${address}`);
     profile.ethAddress = address;
@@ -215,7 +214,8 @@ export class PublicKeyService {
     publicKey: string | undefined,
     signers: UserAlias[] | undefined,
     userAlias: UserAlias,
-    signatureQuorum: number
+    signatureQuorum: number,
+    dto?: ChainCallDTO & { publicKeySignature?: string }
   ): Promise<string> {
     if (publicKey && signers) {
       throw new ValidationFailedError("Cannot use both publicKey and signers");
@@ -236,6 +236,24 @@ export class PublicKeyService {
     // of UserAlias objects (unambiguous user identifiers on chain)
     if (signers && signers.length !== new Set(signers).size) {
       throw new ValidationFailedError(`Found duplicate signers in: ${signers.join(",")}`);
+    }
+
+    // Validate public key signature when publicKey is provided (for single-signed users)
+    if (publicKey && !signers && dto) {
+      const publicKeySignature = dto.publicKeySignature;
+
+      if (publicKeySignature === undefined) {
+        throw new ValidationFailedError("Public key signature is missing");
+      }
+
+      // Create DTO without signature fields for validation
+      // eslint-disable-next-line @typescript-eslint/no-unused-vars
+      const { publicKeySignature: _, ...dtoRemaining } = dto;
+
+      const isSignatureValid = signatures.isValidSignature(publicKeySignature, dtoRemaining, publicKey);
+      if (!isSignatureValid) {
+        throw new ValidationFailedError(`Invalid secp256k1 public key signature`);
+      }
     }
 
     const currPublicKey = await PublicKeyService.getPublicKey(ctx, userAlias);
@@ -300,23 +318,35 @@ export class PublicKeyService {
     }
 
     const currentPublicKeyObj = await PublicKeyService.getPublicKey(ctx, userAlias);
-    if (currentPublicKeyObj === undefined) {
-      throw new PkNotFoundError(userAlias);
-    }
+    const oldAddress = ctx.callingUserAddress;
 
-    if (currentPublicKeyObj.publicKey === undefined) {
-      throw new NotImplementedError("UpdatePublicKey for multisig is not supported");
+    // If public key exists, verify ownership by checking address match
+    if (currentPublicKeyObj !== undefined) {
+      if (currentPublicKeyObj.publicKey === undefined) {
+        throw new NotImplementedError("UpdatePublicKey for multisig is not supported");
+      }
+
+      // Verify ownership: ensure the address derived from the stored public key matches the calling user's address
+      const storedAddress = PublicKeyService.getUserAddress(currentPublicKeyObj.publicKey);
+      if (storedAddress !== oldAddress) {
+        throw new UnauthorizedError(
+          `Public key address mismatch: stored public key maps to ${storedAddress} but signature-derived address is ${oldAddress}`
+        );
+      }
+    } else {
+      // No public key exists - only allow creation for eth| users
+      if (!userAlias.startsWith("eth|")) {
+        throw new PkNotFoundError(userAlias);
+      }
     }
 
     // need to fetch userProfile from old address
-    const oldAddress = PublicKeyService.getUserAddress(currentPublicKeyObj.publicKey);
     const userProfile = await PublicKeyService.getUserProfile(ctx, oldAddress);
     const signatureQuorum = userProfile?.signatureQuorum ?? 1;
 
     // invalidate old user profile to prevent double registration under old public key
-    if (userProfile !== undefined) {
-      await PublicKeyService.invalidateUserProfile(ctx, oldAddress);
-    }
+    // do it also for unregistered users (no check if profile exists)
+    await PublicKeyService.invalidateUserProfile(ctx, oldAddress);
 
     // ensure no user profile exists under new address
     const newAddress = PublicKeyService.getUserAddress(newPublicKey);
@@ -347,12 +377,21 @@ export class PublicKeyService {
     roles: string[]
   ): Promise<void> {
     const publicKey = await PublicKeyService.getPublicKey(ctx, user);
+    const allowedUnregisteredUsers = user.startsWith("eth|");
 
-    const address = publicKey ? PublicKeyService.getUserAddress(publicKey.publicKey) : user;
+    const address = publicKey
+      ? PublicKeyService.getUserAddress(publicKey.publicKey)
+      : allowedUnregisteredUsers
+        ? user.slice(4)
+        : user;
 
-    const userProfile = await PublicKeyService.getUserProfile(ctx, address);
+    let userProfile = await PublicKeyService.getUserProfile(ctx, address);
     if (userProfile === undefined) {
-      throw new UserProfileNotFoundError(user);
+      if (allowedUnregisteredUsers) {
+        userProfile = PublicKeyService.getDefaultUserProfile(address);
+      } else {
+        throw new UserProfileNotFoundError(user);
+      }
     }
 
     const currentRolesSet = new Set(userProfile.roles);

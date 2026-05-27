@@ -18,5 +18,6 @@ export * from "./PublicKeyContract";
 export * from "./GalaContract";
 export * from "./GalaContractApi";
 export * from "./GalaTransaction";
+export * from "./GalaTransactionRequest";
 export * from "./authorize";
 export * from "./getCaIdentityAlias";

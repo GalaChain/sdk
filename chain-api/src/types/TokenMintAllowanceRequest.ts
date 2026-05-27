@@ -14,6 +14,7 @@
  */
 import { BigNumber } from "bignumber.js";
 import { IsDefined, IsNotEmpty, IsOptional } from "class-validator";
+import { JSONSchema } from "class-validator-jsonschema";
 
 import { ChainKey } from "../utils";
 import { BigNumberIsNotNegative, BigNumberProperty, IsUserAlias } from "../validators";
@@ -55,6 +56,9 @@ export class TokenMintAllowanceRequest extends RangedChainObject {
   @BigNumberProperty()
   public totalKnownMintAllowancesCount: BigNumber;
 
+  @JSONSchema({
+    description: "Unix epoch timestamp in milliseconds (ms) when this mint allowance request was created."
+  })
   @IsNotEmpty()
   public created: number;
 
@@ -76,6 +80,10 @@ export class TokenMintAllowanceRequest extends RangedChainObject {
   @BigNumberProperty()
   public uses: BigNumber;
 
+  @JSONSchema({
+    description:
+      "Unix epoch timestamp in milliseconds (ms) when the resulting allowance expires. 0 means never."
+  })
   @IsOptional()
   public expires?: number;
 

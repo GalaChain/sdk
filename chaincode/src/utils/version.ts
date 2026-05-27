@@ -12,11 +12,20 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-import { RegisterUserDto, UpdatePublicKeyDto } from "@gala-chain/api";
+let version = "0.0.0";
 
-import { ConstructorArgs } from "./utils";
+try {
+  // eslint-disable-next-line @typescript-eslint/no-var-requires
+  version = require("../../../package.json").version;
+} catch (e) {
+  // eslint-disable-next-line @typescript-eslint/no-var-requires
+  version = require("../../package.json").version;
+}
 
-type RegisterUserRequest = ConstructorArgs<RegisterUserDto>;
-type UpdatePublicKeyRequest = ConstructorArgs<UpdatePublicKeyDto>;
-
-export { RegisterUserRequest, UpdatePublicKeyRequest };
+/**
+ * Returns the current package version of the chaincode.
+ * @returns The version string of the package.json file.
+ */
+export function getVersion(): string {
+  return version;
+}

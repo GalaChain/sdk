@@ -27,6 +27,15 @@ export class SameSenderAndRecipientError extends ValidationFailedError {
   }
 }
 
+export class NftInvalidQuantityTransferError extends ValidationFailedError {
+  constructor(quantity: string, tokenInstanceKey: string) {
+    super(`Provided non-1 quantity (${quantity}) for transfer for NFT token ${tokenInstanceKey}`, {
+      quantity,
+      tokenInstanceKey
+    });
+  }
+}
+
 export class TransferTokenFailedError extends DefaultError {
   constructor(message: string, payload: Record<string, unknown> | undefined) {
     super(`TransferToken failed: ${message}`, payload);

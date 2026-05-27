@@ -15,6 +15,7 @@
 import { BigNumber } from "bignumber.js";
 import { Exclude } from "class-transformer";
 import { IsDefined, IsInt, IsNotEmpty, IsPositive } from "class-validator";
+import { JSONSchema } from "class-validator-jsonschema";
 
 import { ChainKey } from "../utils";
 import {
@@ -81,6 +82,10 @@ export class TokenClaim extends ChainObject {
   public issuerKey: UserAlias;
 
   @ChainKey({ position: 8 })
+  @JSONSchema({
+    description:
+      "Unix epoch timestamp in milliseconds (ms) when the related allowance was created (chain key component)."
+  })
   @IsPositive()
   @IsInt()
   public allowanceCreated: number;
@@ -91,6 +96,9 @@ export class TokenClaim extends ChainObject {
   @BigNumberProperty()
   public claimSequence: BigNumber;
 
+  @JSONSchema({
+    description: "Unix epoch timestamp in milliseconds (ms) when this claim was recorded."
+  })
   @IsPositive()
   @IsInt()
   public created: number;

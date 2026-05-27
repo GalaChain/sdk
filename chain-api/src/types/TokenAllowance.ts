@@ -15,6 +15,7 @@
 import { BigNumber } from "bignumber.js";
 import { Exclude } from "class-transformer";
 import { IsDefined, IsInt, IsNotEmpty, IsOptional, IsPositive, Min } from "class-validator";
+import { JSONSchema } from "class-validator-jsonschema";
 
 import { ChainKey } from "../utils";
 import {
@@ -70,6 +71,9 @@ export class TokenAllowance extends ChainObject {
   public grantedBy: UserAlias;
 
   @ChainKey({ position: 8 })
+  @JSONSchema({
+    description: "Unix epoch timestamp in milliseconds (ms) when this allowance was created."
+  })
   @IsPositive()
   @IsInt()
   public created: number;
@@ -85,6 +89,10 @@ export class TokenAllowance extends ChainObject {
   @IsOptional()
   public usesSpent?: BigNumber;
 
+  @JSONSchema({
+    description:
+      "Unix epoch timestamp in milliseconds (ms) when this allowance expires. 0 means it never expires."
+  })
   @Min(0)
   @IsInt()
   public expires: number;

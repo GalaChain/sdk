@@ -15,6 +15,7 @@
 import BigNumber from "bignumber.js";
 import { Exclude, Type } from "class-transformer";
 import { ArrayNotEmpty, IsInt, IsNotEmpty, IsNumber, IsOptional, Min, ValidateNested } from "class-validator";
+import { JSONSchema } from "class-validator-jsonschema";
 
 import { ChainKey } from "../utils";
 import { BigNumberIsInteger, BigNumberIsPositive, BigNumberProperty, IsUserAlias } from "../validators";
@@ -24,6 +25,9 @@ import { UserAlias } from "./UserAlias";
 
 export class TokenSwapRequest extends ChainObject {
   @ChainKey({ position: 0 })
+  @JSONSchema({
+    description: "Unix epoch timestamp in milliseconds (ms) when this swap request was created."
+  })
   @IsNumber()
   public created: number;
 
@@ -64,6 +68,10 @@ export class TokenSwapRequest extends ChainObject {
   @BigNumberProperty()
   public usesSpent: BigNumber;
 
+  @JSONSchema({
+    description:
+      "Unix epoch timestamp in milliseconds (ms) when this swap request expires. 0 means it never expires."
+  })
   @Min(0)
   @IsInt()
   public expires: number;

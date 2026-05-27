@@ -299,6 +299,7 @@ export async function fillTokenSwap(
           to: tokenSwap.offeredBy,
           tokenInstanceKey: toTokenId,
           quantity: currentQuantity,
+          allowancesToUse: [],
           authorizedOnBehalf: undefined // swap should not involve bridge
         }).catch((e) => {
           const chainError = ChainError.from(e);

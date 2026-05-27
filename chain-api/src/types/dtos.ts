@@ -217,7 +217,9 @@ export class ChainCallDTO {
   public dtoOperation?: string;
 
   @JSONSchema({
-    description: "Unit timestamp when the DTO expires. If the timestamp is in the past, the DTO is not valid."
+    description:
+      "Unix epoch timestamp in milliseconds (ms) when the DTO expires. " +
+      "If this time is before the current time, the DTO is not valid."
   })
   @IsOptional()
   @IsNumber()
@@ -415,6 +417,30 @@ export class BatchDto extends ChainCallDTO {
   operations: BatchOperationDto[];
 }
 
+export class ApplyRequestsDto extends SubmitCallDTO {
+  @IsOptional()
+  @IsInt()
+  @Min(1)
+  maxRequests?: number;
+
+  @IsOptional()
+  @IsInt()
+  @Min(0)
+  minDelayMs?: number;
+}
+
+export class HasPendingApplyRequestsDto extends ChainCallDTO {
+  @JSONSchema({
+    description:
+      "Minimum age in ms that a queued request must have before it counts as ready to apply. " +
+      "Defaults to the same value used by ApplyRequests when omitted."
+  })
+  @IsOptional()
+  @IsInt()
+  @Min(0)
+  minDelayMs?: number;
+}
+
 /**
  * @description
  *
@@ -568,6 +594,13 @@ export class RegisterUserDto extends SubmitCallDTO {
   @IsNotEmpty()
   public publicKey?: string;
 
+  @JSONSchema({ description: "Signature from the public key." })
+  @IsOptional()
+  @IsNotEmpty()
+  @SerializeIf((o) => !!o.publicKey)
+  @ValidateIf((o) => !o.signers)
+  public publicKeySignature?: string;
+
   @JSONSchema({ description: "Signer user refs." })
   @ValidateIf((o) => !o.publicKey)
   @SerializeIf((o) => !o.publicKey)
@@ -583,21 +616,14 @@ export class RegisterUserDto extends SubmitCallDTO {
   @IsInt()
   @Min(1)
   signatureQuorum?: number;
-}
 
-/**
- * @description
- *
- * Dto for secure method to save public keys for Eth users.
- * Method is called and signed by Curators
- */
-@JSONSchema({
-  description: `Dto for secure method to save public keys for Eth users. Method is called and signed by Curators`
-})
-export class RegisterEthUserDto extends SubmitCallDTO {
-  @JSONSchema({ description: "Public secp256k1 key (compact or non-compact, hex or base64)." })
-  @IsNotEmpty()
-  publicKey: string;
+  public withPublicKeySignedBy(privateKey: string): this {
+    const copied = instanceToInstance(this);
+    delete copied.publicKeySignature;
+
+    copied.publicKeySignature = signatures.getSignature(copied, privateKey);
+    return copied;
+  }
 }
 
 export class UpdatePublicKeyDto extends SubmitCallDTO {

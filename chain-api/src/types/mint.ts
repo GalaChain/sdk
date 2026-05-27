@@ -213,9 +213,17 @@ export class FetchMintRequestsDto extends ChainCallDTO {
   @IsNotEmpty()
   additionalKey: string;
 
+  @JSONSchema({
+    description:
+      "Start of time range as a Unix epoch timestamp in milliseconds (ms) (inclusive lower bound for queries)."
+  })
   @IsNotEmpty()
   startTimestamp: number;
 
+  @JSONSchema({
+    description:
+      "End of time range as a Unix epoch timestamp in milliseconds (ms) (inclusive upper bound for queries)."
+  })
   @IsNotEmpty()
   endTimestamp: number;
 }

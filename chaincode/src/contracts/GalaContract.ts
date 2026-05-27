@@ -13,6 +13,7 @@
  * limitations under the License.
  */
 import {
+  ApplyRequestsDto,
   BatchDto,
   ChainCallDTO,
   ChainError,
@@ -25,7 +26,7 @@ import {
   GalaChainResponseType,
   GetObjectDto,
   GetObjectHistoryDto,
-  NotFoundError,
+  HasPendingApplyRequestsDto,
   UserProfile,
   ValidationFailedError,
   createValidDTO,
@@ -38,7 +39,10 @@ import { PublicKeyService } from "../services";
 import { GalaChainContext, GalaChainContextConfig, GalaChainStub } from "../types";
 import { getObjectHistory, getPlainObjectByKey } from "../utils";
 import { getApiMethod, getApiMethods } from "./GalaContractApi";
-import { EVALUATE, GalaTransaction, SUBMIT } from "./GalaTransaction";
+import { EVALUATE, GalaTransaction, SUBMIT, Submit } from "./GalaTransaction";
+import { applySavedRequests, hasPendingApplyRequests } from "./GalaTransactionRequest";
+import type { RequestMethodHandler } from "./GalaTransactionRequest";
+import { requireCuratorAuth } from "./authorize";
 
 export class BatchWriteLimitExceededError extends ValidationFailedError {
   constructor(writesLimit: number) {
@@ -60,6 +64,8 @@ export class BatchPartialSuccessRequiredError extends ChainError {
 }
 
 export abstract class GalaContract extends Contract {
+  protected readonly requestMethodHandlers: Record<string, RequestMethodHandler> = {};
+
   /**
    * @param name Contract name
    * @param version Contract version. The actual value should be defined in the child
@@ -183,12 +189,8 @@ export abstract class GalaContract extends Contract {
     // If the caller public key is provided, we use it to set the dry run on behalf of the user.
     if (dto.callerPublicKey) {
       const ethAddr = signatures.getEthAddress(signatures.getNonCompactHexPublicKey(dto.callerPublicKey));
-      const userProfile = await PublicKeyService.getUserProfile(ctx, ethAddr);
-
-      if (!userProfile) {
-        throw new NotFoundError(`User profile for ${ethAddr} not found`);
-      }
-
+      const savedProfile = await PublicKeyService.getUserProfile(ctx, ethAddr);
+      const userProfile = savedProfile ?? PublicKeyService.getDefaultUserProfile(ethAddr);
       ctx.setDryRunOnBehalfOf({
         ...userProfile
       });
@@ -272,6 +274,33 @@ export abstract class GalaContract extends Contract {
     }
 
     return responses;
+  }
+
+  @Submit({
+    in: ApplyRequestsDto,
+    out: { arrayOf: "object" },
+    description: "Apply queued internal requests",
+    ...requireCuratorAuth
+  })
+  public async ApplyRequests(
+    ctx: GalaChainContext,
+    dto: ApplyRequestsDto
+  ): Promise<GalaChainResponse<unknown>[]> {
+    return applySavedRequests(ctx, this.getName(), dto, this.requestMethodHandlers);
+  }
+
+  @GalaTransaction({
+    type: EVALUATE,
+    in: HasPendingApplyRequestsDto,
+    out: "boolean",
+    description:
+      "Returns true if this contract has at least one queued request old enough to apply (same delay semantics as ApplyRequests)."
+  })
+  public async HasPendingApplyRequests(
+    ctx: GalaChainContext,
+    dto: HasPendingApplyRequestsDto
+  ): Promise<boolean> {
+    return hasPendingApplyRequests(ctx, this.getName(), dto);
   }
 
   @GalaTransaction({

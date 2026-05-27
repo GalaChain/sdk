@@ -26,7 +26,13 @@ import {
 import { JSONSchema } from "class-validator-jsonschema";
 
 import { ChainKey } from "../utils";
-import { BigNumberIsInteger, BigNumberIsNotNegative, BigNumberProperty, IsUserAlias } from "../validators";
+import {
+  BigNumberIsInteger,
+  BigNumberIsNotNegative,
+  BigNumberIsPositive,
+  BigNumberProperty,
+  IsUserAlias
+} from "../validators";
 import { ChainObject } from "./ChainObject";
 import { TokenClass, TokenClassKey, TokenClassKeyProperties } from "./TokenClass";
 import { UserAlias } from "./UserAlias";
@@ -142,7 +148,7 @@ export class TokenInstanceQuantity extends ChainCallDTO {
   public tokenInstance: TokenInstanceKey;
 
   @IsNotEmpty()
-  @BigNumberIsNotNegative()
+  @BigNumberIsPositive()
   @BigNumberProperty()
   public quantity: BigNumber;
 
