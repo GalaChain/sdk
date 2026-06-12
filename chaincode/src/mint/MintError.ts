@@ -12,16 +12,8 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-import {
-  AllowanceType,
-  DefaultError,
-  MintTokenDto,
-  TokenInstanceKey,
-  ValidationFailedError
-} from "@gala-chain/api";
+import { DefaultError, MintTokenDto, TokenInstanceKey, ValidationFailedError } from "@gala-chain/api";
 import { BigNumber } from "bignumber.js";
-
-import { InsufficientAllowanceError } from "../allowances/AllowanceError";
 
 export class NftMaxMintError extends ValidationFailedError {
   constructor(quantity: BigNumber) {
@@ -50,15 +42,24 @@ export class BatchMintError extends DefaultError {
   }
 }
 
-export class InsufficientMintAllowanceError extends InsufficientAllowanceError {
+export class InsufficientMintAllowanceError extends ValidationFailedError {
   constructor(
-    user: string,
+    grantedTo: string,
     allowedQuantity: BigNumber,
     quantity: BigNumber,
     tokenInstanceKey: TokenInstanceKey,
-    toPersonKey: string
+    owner: string
   ) {
-    super(user, allowedQuantity, AllowanceType.Mint, quantity, tokenInstanceKey, toPersonKey);
+    const message =
+      `${grantedTo} does not have sufficient allowances (${allowedQuantity.toFixed()}) to Mint ${quantity.toFixed()} ` +
+      `of token ${tokenInstanceKey}, owner: ${owner}`;
+    super(message, {
+      grantedTo,
+      allowedQuantity: allowedQuantity.toFixed(),
+      quantity: quantity.toFixed(),
+      tokenInstanceKey: tokenInstanceKey.toStringKey(),
+      owner
+    });
   }
 }
 
