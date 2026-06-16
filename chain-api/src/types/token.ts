@@ -16,8 +16,7 @@ import BigNumber from "bignumber.js";
 import { Type } from "class-transformer";
 import {
   ArrayNotEmpty,
-  ArrayUnique,
-  IsAlpha,
+  IsAlphanumeric,
   IsBoolean,
   IsInt,
   IsNotEmpty,
@@ -188,7 +187,7 @@ export class CreateTokenClassDto extends SubmitCallDTO {
   name: string;
 
   @MaxLength(20)
-  @IsAlpha()
+  @IsAlphanumeric()
   symbol: string;
 
   @IsNotEmpty()
@@ -240,7 +239,7 @@ export class CreateTokenClassDto extends SubmitCallDTO {
     description: "How rare is the NFT"
   })
   @IsOptional()
-  @IsAlpha()
+  @IsAlphanumeric()
   rarity?: string;
 
   @IsUrl()
@@ -294,7 +293,7 @@ export class UpdateTokenClassDto extends SubmitCallDTO {
 
   @IsOptional()
   @MaxLength(20)
-  @IsAlpha()
+  @IsAlphanumeric()
   symbol?: string;
 
   @IsOptional()
@@ -314,7 +313,7 @@ export class UpdateTokenClassDto extends SubmitCallDTO {
     description: "How rare is the NFT"
   })
   @IsOptional()
-  @IsAlpha()
+  @IsAlphanumeric()
   rarity?: string;
 
   @IsOptional()

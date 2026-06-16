@@ -16,7 +16,7 @@ import { BigNumber } from "bignumber.js";
 import { Exclude, instanceToInstance } from "class-transformer";
 import {
   Equals,
-  IsAlpha,
+  IsAlphanumeric,
   IsBoolean,
   IsDefined,
   IsNotEmpty,
@@ -160,7 +160,7 @@ export class TokenClass extends ChainObject {
   public name: string;
 
   @IsNotEmpty()
-  @IsAlpha()
+  @IsAlphanumeric()
   public symbol: string;
 
   @IsNotEmpty()
@@ -184,7 +184,7 @@ export class TokenClass extends ChainObject {
 
   // Rarity of the NFT
   @IsOptional()
-  @IsAlpha()
+  @IsAlphanumeric()
   public rarity?: string;
 
   @BigNumberIsPositive()
