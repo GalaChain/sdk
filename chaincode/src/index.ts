@@ -25,6 +25,7 @@ export * from "./oracle";
 export * from "./services";
 export * from "./swaps";
 export * from "./token";
+export * from "./tokenInstanceMetadata";
 export * from "./types";
 export * from "./utils";
 export * from "./transfer";

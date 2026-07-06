@@ -19,6 +19,7 @@ import {
   CreateTokenClassDto,
   CreateVestingTokenDto,
   DeleteAllowancesDto,
+  DeleteTokenInstanceMetadataDto,
   FeeAuthorizationResDto,
   FeeCodeDefinition,
   FeeCodeDefinitionDto,
@@ -43,6 +44,9 @@ import {
   FetchTokenClassesDto,
   FetchTokenClassesResponse,
   FetchTokenClassesWithPaginationDto,
+  FetchTokenInstanceMetadataDto,
+  FetchTokenInstanceMetadataResponse,
+  FetchTokenInstanceMetadataWithPaginationDto,
   FetchVestingTokenDto,
   FulfillMintDto,
   FullAllowanceCheckDto,
@@ -56,6 +60,7 @@ import {
   MintTokenDto,
   MintTokenWithAllowanceDto,
   RefreshAllowancesDto,
+  SetTokenInstanceMetadataDto,
   SubmitCallDTO,
   TokenAllowance,
   TokenBalance,
@@ -63,6 +68,7 @@ import {
   TokenClass,
   TokenClassKey,
   TokenInstanceKey,
+  TokenInstanceMetadata,
   TransferTokenDto,
   UnlockTokenDto,
   UnlockTokensDto,
@@ -89,6 +95,7 @@ import {
   defineFeeSchedule,
   defineFeeSplitFormula,
   deleteAllowances,
+  deleteTokenInstanceMetadata,
   fetchAllowancesWithPagination,
   fetchBalances,
   fetchBalancesWithTokenMetadata,
@@ -98,6 +105,8 @@ import {
   fetchFeeThresholdUsesWithPagination,
   fetchTokenClasses,
   fetchTokenClassesWithPagination,
+  fetchTokenInstanceMetadata,
+  fetchTokenInstanceMetadataWithPagination,
   fetchVestingToken,
   fulfillMintRequest,
   fullAllowanceCheck,
@@ -115,6 +124,7 @@ import {
   resolveUserAlias,
   saveRequest,
   setGalaFeeProperties,
+  setTokenInstanceMetadata,
   transferToken,
   transferTokenFeeGate,
   unlockToken,
@@ -200,6 +210,67 @@ export default class GalaChainTokenContract extends GalaContract {
     dto: FetchTokenClassesWithPaginationDto
   ): Promise<FetchTokenClassesResponse> {
     return fetchTokenClassesWithPagination(ctx, dto);
+  }
+
+  @Submit({
+    in: SetTokenInstanceMetadataDto,
+    out: TokenInstanceMetadata
+  })
+  public SetTokenInstanceMetadata(
+    ctx: GalaChainContext,
+    dto: SetTokenInstanceMetadataDto
+  ): Promise<TokenInstanceMetadata> {
+    return setTokenInstanceMetadata(ctx, {
+      tokenInstance: dto.tokenInstance,
+      project: dto.project,
+      name: dto.name,
+      description: dto.description,
+      image: dto.image,
+      external_url: dto.external_url,
+      animation_url: dto.animation_url,
+      background_color: dto.background_color,
+      youtube_url: dto.youtube_url,
+      attributes: dto.attributes,
+      customFields: dto.customFields
+    });
+  }
+
+  @GalaTransaction({
+    type: EVALUATE,
+    in: FetchTokenInstanceMetadataDto,
+    out: { arrayOf: TokenInstanceMetadata }
+  })
+  public FetchTokenInstanceMetadata(
+    ctx: GalaChainContext,
+    dto: FetchTokenInstanceMetadataDto
+  ): Promise<TokenInstanceMetadata[]> {
+    return fetchTokenInstanceMetadata(ctx, {
+      tokenInstance: dto.tokenInstance,
+      project: dto.project
+    });
+  }
+
+  @GalaTransaction({
+    type: EVALUATE,
+    in: FetchTokenInstanceMetadataWithPaginationDto,
+    out: FetchTokenInstanceMetadataResponse
+  })
+  public FetchTokenInstanceMetadataWithPagination(
+    ctx: GalaChainContext,
+    dto: FetchTokenInstanceMetadataWithPaginationDto
+  ): Promise<FetchTokenInstanceMetadataResponse> {
+    return fetchTokenInstanceMetadataWithPagination(ctx, dto);
+  }
+
+  @Submit({
+    in: DeleteTokenInstanceMetadataDto,
+    out: TokenInstanceKey
+  })
+  public DeleteTokenInstanceMetadata(
+    ctx: GalaChainContext,
+    dto: DeleteTokenInstanceMetadataDto
+  ): Promise<TokenInstanceKey> {
+    return deleteTokenInstanceMetadata(ctx, { tokenInstance: dto.tokenInstance, project: dto.project });
   }
 
   @Submit({
