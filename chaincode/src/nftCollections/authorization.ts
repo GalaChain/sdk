@@ -33,6 +33,11 @@ export async function grantNftCollectionAuthorization(
   const exists = await objectExists(ctx, authorizationKey);
   if (exists) {
     authorization = await getObjectByKey(ctx, NftCollectionAuthorization, authorizationKey);
+    
+    // only authorized users can grant authorization to other users
+    if (!authorization.authorizedUsers.includes(ctx.callingUser)) {
+      throw new UserNotAuthorizedForCollectionError(ctx.callingUser, collection);
+    }
 
     // Add user if not already in the list
     if (!authorization.authorizedUsers.includes(authorizedUser)) {
