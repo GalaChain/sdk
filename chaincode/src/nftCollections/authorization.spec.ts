@@ -18,8 +18,8 @@ import { plainToInstance } from "class-transformer";
 
 import GalaChainTokenContract from "../__test__/GalaChainTokenContract";
 import { GalaChainContext } from "../types";
-import { grantNftCollectionAuthorization } from "./authorization";
 import { UserNotAuthorizedForCollectionError } from "./NftCollectionError";
+import { grantNftCollectionAuthorization } from "./authorization";
 
 const collection = "TestCollection";
 
@@ -37,11 +37,9 @@ describe("grantNftCollectionAuthorization", () => {
     const expectedAuthorization = existingAuthorization([users.testUser2.identityKey]);
 
     // When
-    const result = await grantNftCollectionAuthorization(
-      ctx,
-      collection,
-      users.testUser2.identityKey
-    ).then((res) => ctx.stub.flushWrites().then(() => res));
+    const result = await grantNftCollectionAuthorization(ctx, collection, users.testUser2.identityKey).then(
+      (res) => ctx.stub.flushWrites().then(() => res)
+    );
 
     // Then
     expect(result).toEqual(expectedAuthorization);
@@ -61,11 +59,9 @@ describe("grantNftCollectionAuthorization", () => {
     );
 
     // When
-    const result = await grantNftCollectionAuthorization(
-      ctx,
-      collection,
-      users.testUser2.identityKey
-    ).then((res) => ctx.stub.flushWrites().then(() => res));
+    const result = await grantNftCollectionAuthorization(ctx, collection, users.testUser2.identityKey).then(
+      (res) => ctx.stub.flushWrites().then(() => res)
+    );
 
     // Then
     expect(result.authorizedUsers).toEqual(expectedAuthorization.authorizedUsers);
@@ -92,20 +88,16 @@ describe("grantNftCollectionAuthorization", () => {
 
   it("should not duplicate a user already in the list (idempotent) for an authorized caller", async () => {
     // Given
-    const saved = existingAuthorization(
-      [users.testUser1.identityKey, users.testUser2.identityKey].sort()
-    );
+    const saved = existingAuthorization([users.testUser1.identityKey, users.testUser2.identityKey].sort());
 
     const { ctx, getWrites } = fixture<GalaChainContext, GalaChainTokenContract>(GalaChainTokenContract)
       .callingUser(users.testUser1)
       .savedState(saved);
 
     // When
-    const result = await grantNftCollectionAuthorization(
-      ctx,
-      collection,
-      users.testUser2.identityKey
-    ).then((res) => ctx.stub.flushWrites().then(() => res));
+    const result = await grantNftCollectionAuthorization(ctx, collection, users.testUser2.identityKey).then(
+      (res) => ctx.stub.flushWrites().then(() => res)
+    );
 
     // Then
     expect(result.authorizedUsers).toEqual(saved.authorizedUsers);
