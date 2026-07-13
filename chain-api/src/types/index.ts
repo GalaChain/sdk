@@ -58,6 +58,7 @@ export * from "./burn";
 export * from "./mint";
 export * from "./nftCollection";
 export * from "./NftCollectionAuthorization";
+export * from "./NftCollectionNameReservation";
 export * from "./oracle";
 export * from "./OracleBridgeFeeAssertion";
 export * from "./OracleDefinition";
