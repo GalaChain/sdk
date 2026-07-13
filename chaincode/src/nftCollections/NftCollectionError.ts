@@ -12,7 +12,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-import { ForbiddenError, NotFoundError } from "@gala-chain/api";
+import { ConflictError, ForbiddenError, NotFoundError } from "@gala-chain/api";
 
 export class NftCollectionAuthorizationNotFoundError extends NotFoundError {
   constructor(collection: string) {
@@ -28,6 +28,19 @@ export class UserNotAuthorizedForCollectionError extends ForbiddenError {
       user,
       collection
     });
+  }
+}
+
+export class CollectionNameAlreadyClaimedError extends ConflictError {
+  constructor(requestedCollection: string, claimedCollection: string) {
+    super(
+      `Collection name "${requestedCollection}" is unavailable: it differs only by letter case from ` +
+        `the already-claimed collection "${claimedCollection}"`,
+      {
+        requestedCollection,
+        claimedCollection
+      }
+    );
   }
 }
 

@@ -12,11 +12,11 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-import { NftCollectionAuthorization, UserAlias } from "@gala-chain/api";
+import { NftCollectionAuthorization, NftCollectionNameReservation, UserAlias } from "@gala-chain/api";
 
 import { GalaChainContext } from "../types";
 import { getObjectByKey, objectExists, putChainObject } from "../utils";
-import { UserNotAuthorizedForCollectionError } from "./NftCollectionError";
+import { CollectionNameAlreadyClaimedError, UserNotAuthorizedForCollectionError } from "./NftCollectionError";
 
 export async function grantNftCollectionAuthorization(
   ctx: GalaChainContext,
@@ -45,6 +45,21 @@ export async function grantNftCollectionAuthorization(
       authorization.authorizedUsers.sort(); // Keep sorted for consistency
     }
   } else {
+    // A collection name is claimed across every letter case, so a name that differs from an
+    // existing claim only by case cannot be claimed by anyone else.
+    const reservation = await fetchNftCollectionNameReservation(ctx, collection);
+
+    if (reservation !== undefined && reservation.collection !== collection) {
+      throw new CollectionNameAlreadyClaimedError(collection, reservation.collection);
+    }
+
+    if (reservation === undefined) {
+      const newReservation = new NftCollectionNameReservation();
+      newReservation.normalizedName = NftCollectionNameReservation.normalize(collection);
+      newReservation.collection = collection;
+      await putChainObject(ctx, newReservation);
+    }
+
     // Create new authorization object
     authorization = new NftCollectionAuthorization();
     authorization.collection = collection;
@@ -53,6 +68,20 @@ export async function grantNftCollectionAuthorization(
 
   await putChainObject(ctx, authorization);
   return authorization;
+}
+
+async function fetchNftCollectionNameReservation(
+  ctx: GalaChainContext,
+  collection: string
+): Promise<NftCollectionNameReservation | undefined> {
+  const reservationKey = NftCollectionNameReservation.getCompositeKeyFromParts(
+    NftCollectionNameReservation.INDEX_KEY,
+    [NftCollectionNameReservation.normalize(collection)]
+  );
+
+  const exists = await objectExists(ctx, reservationKey);
+
+  return exists ? await getObjectByKey(ctx, NftCollectionNameReservation, reservationKey) : undefined;
 }
 
 export async function revokeNftCollectionAuthorization(
