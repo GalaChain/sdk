@@ -12,7 +12,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-import { UnauthorizedError, UserAlias, UserProfile, UserRole } from "@gala-chain/api";
+import { OtelTraceContext, UnauthorizedError, UserAlias, UserProfile, UserRole } from "@gala-chain/api";
 import { Context } from "fabric-contract-api";
 import { ChaincodeStub, Timestamp } from "fabric-shim";
 
@@ -56,6 +56,8 @@ export class GalaChainContext extends Context {
 
   public isDryRun = false;
   public config: GalaChainContextConfig;
+  /** OTEL trace from DTO, used to correlate chaincode logs with the caller span. */
+  public trace?: OtelTraceContext;
 
   constructor(config: GalaChainContextConfig) {
     super();

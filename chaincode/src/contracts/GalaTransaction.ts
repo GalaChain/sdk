@@ -35,6 +35,7 @@ import { inspect } from "util";
 
 import { UniqueTransactionService } from "../services";
 import { GalaChainContext } from "../types";
+import { extractOtelTrace } from "../utils";
 import { GalaContract } from "./GalaContract";
 import { updateApi } from "./GalaContractApi";
 import { authenticate } from "./authenticate";
@@ -177,6 +178,8 @@ function GalaTransaction<In extends ChainCallDTO, Out>(
     // eslint-disable-next-line no-param-reassign
     descriptor.value = async function (ctx: GalaChainContext, dtoPlain) {
       try {
+        ctx.trace = extractOtelTrace(dtoPlain);
+
         const metadata = [{ dto: dtoPlain }];
         ctx?.logger?.logTimeline("Begin Transaction", loggingContext, metadata);
 
