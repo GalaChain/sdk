@@ -13,6 +13,12 @@
  * limitations under the License.
  */
 
+/** OpenTelemetry trace context propagated via DTO for log correlation. */
+export interface OtelTraceContext {
+  traceId: string;
+  spanId: string;
+}
+
 export interface ILoggerCommons {
   context: IContextDetails;
   process: IProcessDetails;
@@ -57,4 +63,5 @@ export interface ITimeLogData {
   method: string;
   info?: ILoggerCommons;
   metaData?: unknown[];
+  trace?: OtelTraceContext;
 }

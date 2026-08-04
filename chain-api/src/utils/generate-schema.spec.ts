@@ -155,6 +155,12 @@ const expectedTestDtoSchema = {
         "Unix epoch timestamp in milliseconds (ms) when the DTO expires. " +
         "If this time is before the current time, the DTO is not valid.",
       type: "number"
+    },
+    trace: {
+      description:
+        "OpenTelemetry trace context propagated from the caller for chaincode log correlation. " +
+        "Not part of the signed payload.",
+      type: "object"
     }
   },
   type: "object",
