@@ -34,6 +34,7 @@ import { Object as DTOObject, Transaction } from "fabric-contract-api";
 import { inspect } from "util";
 
 import { UniqueTransactionService } from "../services";
+import { recordTransactionSpanError, startTransactionSpan } from "../tracing";
 import { GalaChainContext } from "../types";
 import { extractOtelTrace } from "../utils";
 import { GalaContract } from "./GalaContract";
@@ -179,6 +180,12 @@ function GalaTransaction<In extends ChainCallDTO, Out>(
     descriptor.value = async function (ctx: GalaChainContext, dtoPlain) {
       try {
         ctx.trace = extractOtelTrace(dtoPlain);
+        ctx.otelSpan = startTransactionSpan(loggingContext, ctx.trace, {
+          "gala.contract": className,
+          "gala.method": method.name,
+          "fabric.channel_id": ctx.stub?.getChannelID?.() ?? "",
+          "fabric.tx_id": ctx.stub?.getTxID?.() ?? ""
+        });
 
         const metadata = [{ dto: dtoPlain }];
         ctx?.logger?.logTimeline("Begin Transaction", loggingContext, metadata);
@@ -249,6 +256,7 @@ function GalaTransaction<In extends ChainCallDTO, Out>(
         return normalizedResult;
       } catch (err) {
         const chainError = ChainError.from(err);
+        recordTransactionSpanError(ctx.otelSpan, err);
 
         if (ctx.logger) {
           chainError.logWarn(ctx.logger);

@@ -13,6 +13,7 @@
  * limitations under the License.
  */
 import { OtelTraceContext, UnauthorizedError, UserAlias, UserProfile, UserRole } from "@gala-chain/api";
+import { Span } from "@opentelemetry/api";
 import { Context } from "fabric-contract-api";
 import { ChaincodeStub, Timestamp } from "fabric-shim";
 
@@ -58,6 +59,8 @@ export class GalaChainContext extends Context {
   public config: GalaChainContextConfig;
   /** OTEL trace from DTO, used to correlate chaincode logs with the caller span. */
   public trace?: OtelTraceContext;
+  /** Active OTEL span for the current decorated transaction (if tracing is enabled). */
+  public otelSpan?: Span;
 
   constructor(config: GalaChainContextConfig) {
     super();
