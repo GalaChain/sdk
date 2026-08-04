@@ -24,9 +24,14 @@
   "dependencies": {
     "@gala-chain/api": "3.1.5",
     "@grpc/grpc-js": "1.10.10",
+    "@opentelemetry/api": "^1.9.1",
+    "@opentelemetry/exporter-trace-otlp-proto": "^0.205.0",
+    "@opentelemetry/resources": "^2.10.0",
+    "@opentelemetry/sdk-trace-node": "^2.10.0",
+    "@opentelemetry/semantic-conventions": "^1.43.0",
     "fabric-contract-api": "2.5.6",
-    "fabric-shim": "2.5.6",
     "fabric-protos": "2.2.20",
+    "fabric-shim": "2.5.6",
     "nanoid": "^3.3.6",
     "winston": "^3.8.2"
   },

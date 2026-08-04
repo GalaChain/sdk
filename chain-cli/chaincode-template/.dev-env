@@ -5,3 +5,14 @@ DEV_ADMIN_PUBLIC_KEY="0448cdedfc76f55d03670fb42d76a8d63fe492a480f91989cc75807d98
 
 # use role based access control (RBAC) as default
 USE_RBAC="true"
+
+# OpenTelemetry (optional). When OTEL_EXPORTER_OTLP_ENDPOINT is set, chaincode
+# startup verifies connectivity and exports spans. For local check:
+#   npm run otel:verify
+# Put real values in .env (gitignored) or uncomment below for network:start
+# (network:start copies this file over .env).
+# OTEL_EXPORTER_OTLP_ENDPOINT=https://api.example.com/otel
+# OTEL_EXPORTER_OTLP_PROTOCOL=http/protobuf
+# OTEL_EXPORTER_OTLP_HEADERS=Authorization=Bearer <token>
+# OTEL_SERVICE_NAME=basic-product
+# OTEL_SERVICE_VERSION=3.1.4

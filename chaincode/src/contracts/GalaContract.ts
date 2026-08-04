@@ -36,6 +36,7 @@ import {
 import { Contract } from "fabric-contract-api";
 
 import { PublicKeyService } from "../services";
+import { endTransactionSpan } from "../tracing";
 import { GalaChainContext, GalaChainContextConfig, GalaChainStub } from "../types";
 import { getObjectHistory, getPlainObjectByKey } from "../utils";
 import { getApiMethod, getApiMethods } from "./GalaContractApi";
@@ -109,6 +110,11 @@ export abstract class GalaContract extends Contract {
     ctx?.logger?.logTimeline("End Transaction", ctx.stub.getFunctionAndParameters()?.fcn ?? this.getName(), [
       { chaincodeResult: result }
     ]);
+
+    // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
+    const failed = typeof result === "object" && result?.["Status"] === GalaChainResponseType.Error;
+    await endTransactionSpan(ctx.otelSpan, failed);
+    ctx.otelSpan = undefined;
   }
 
   @GalaTransaction({

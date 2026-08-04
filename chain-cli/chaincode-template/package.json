@@ -6,6 +6,7 @@
   "types": "lib/src/index.d.ts",
   "scripts": {
     "start": "node lib/src/cli.js start",
+    "otel:verify": "npm run build && node -r dotenv/config lib/src/cli.js otel:verify",
     "clean": "tsc -b --clean",
     "build": "tsc -p tsconfig.json",
     "build:watch": "tsc -p tsconfig.json -w",

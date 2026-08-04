@@ -17,5 +17,6 @@ import GalaJSONSerializer from "./GalaJSONSerializer";
 export * from "./state";
 export * from "./utils";
 export * from "./authorityOrgName";
+export * from "./extractOtelTrace";
 
 export { GalaJSONSerializer };

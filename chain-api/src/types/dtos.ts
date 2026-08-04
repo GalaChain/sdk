@@ -19,6 +19,7 @@ import {
   IsInt,
   IsNotEmpty,
   IsNumber,
+  IsObject,
   IsOptional,
   IsString,
   Max,
@@ -43,6 +44,7 @@ import { IsUserAlias, IsUserRef, SerializeIf, StringEnumProperty } from "../vali
 import { UserAlias } from "./UserAlias";
 import { UserRef } from "./UserRef";
 import { GalaChainResponse } from "./contract";
+import { OtelTraceContext } from "./logger";
 
 type Base<T, BaseT> = T extends BaseT ? T : never;
 
@@ -224,6 +226,15 @@ export class ChainCallDTO {
   @IsOptional()
   @IsNumber()
   public dtoExpiresAt?: number;
+
+  @JSONSchema({
+    description:
+      "OpenTelemetry trace context propagated from the caller for chaincode log correlation. " +
+      "Not part of the signed payload."
+  })
+  @IsOptional()
+  @IsObject()
+  public trace?: OtelTraceContext;
 
   validate(): Promise<ValidationError[]> {
     return validate(this);
