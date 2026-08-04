@@ -233,7 +233,7 @@ export class GalaLoggerInstanceImpl implements GalaLoggerInstance {
       args.info = this.commonMeta;
     }
 
-    const level = error ? "error" : "info";
+    const level = error ? "error" : "debug";
 
     const logData = {
       timestamp: Date.now(),
