@@ -24,6 +24,7 @@ import {
 } from "@gala-chain/api";
 import { QueryResponseMetadata } from "fabric-shim";
 
+import { truncateOtelAttr, withSpan } from "../tracing";
 import { GalaChainContext } from "../types";
 
 // Fabric default value, we don't want to change it
@@ -67,8 +68,18 @@ export class InvalidResultsError extends DefaultError {
  * @returns
  */
 export async function putChainObject(ctx: GalaChainContext, data: ChainObject): Promise<void> {
-  await data.validateOrReject();
-  return ctx.stub.putState(data.getCompositeKey(), Buffer.from(data.serialize()));
+  return withSpan(
+    "state.putChainObject",
+    {
+      "gala.state.operation": "putChainObject",
+      "gala.state.object_type": data.constructor?.name ?? "ChainObject",
+      "fabric.state.key": truncateOtelAttr(data.getCompositeKey())
+    },
+    async () => {
+      await data.validateOrReject();
+      return ctx.stub.putState(data.getCompositeKey(), Buffer.from(data.serialize()));
+    }
+  );
 }
 
 /**
@@ -88,8 +99,18 @@ export async function putChainObject(ctx: GalaChainContext, data: ChainObject): 
  * @returns
  */
 export async function putRangedChainObject(ctx: GalaChainContext, data: RangedChainObject): Promise<void> {
-  await data.validateOrReject();
-  return ctx.stub.putState(data.getRangedKey(), Buffer.from(data.serialize()));
+  return withSpan(
+    "state.putRangedChainObject",
+    {
+      "gala.state.operation": "putRangedChainObject",
+      "gala.state.object_type": data.constructor?.name ?? "RangedChainObject",
+      "fabric.state.key": truncateOtelAttr(data.getRangedKey())
+    },
+    async () => {
+      await data.validateOrReject();
+      return ctx.stub.putState(data.getRangedKey(), Buffer.from(data.serialize()));
+    }
+  );
 }
 
 /**
@@ -107,7 +128,15 @@ export async function putRangedChainObject(ctx: GalaChainContext, data: RangedCh
  * @returns
  */
 export async function deleteChainObject(ctx: GalaChainContext, data: ChainObject): Promise<void> {
-  return ctx.stub.deleteState(data.getCompositeKey());
+  return withSpan(
+    "state.deleteChainObject",
+    {
+      "gala.state.operation": "deleteChainObject",
+      "gala.state.object_type": data.constructor?.name ?? "ChainObject",
+      "fabric.state.key": truncateOtelAttr(data.getCompositeKey())
+    },
+    async () => ctx.stub.deleteState(data.getCompositeKey())
+  );
 }
 
 /**
@@ -138,27 +167,40 @@ export async function getObjectsByPartialCompositeKey<T extends ChainObject>(
   attributes: string[],
   constructor: ClassConstructor<Inferred<T, ChainObject>>
 ): Promise<Array<T>> {
-  const iterator = ctx.stub.getCachedStateByPartialCompositeKey(objectType, attributes);
+  return withSpan(
+    "state.getObjectsByPartialCompositeKey",
+    {
+      "gala.state.operation": "getObjectsByPartialCompositeKey",
+      "gala.state.object_type": objectType,
+      "gala.state.constructor": constructor.name,
+      "fabric.state.attribute_count": attributes.length
+    },
+    async (span) => {
+      const iterator = ctx.stub.getCachedStateByPartialCompositeKey(objectType, attributes);
 
-  const allResults: Array<T> = [];
+      const allResults: Array<T> = [];
 
-  for await (const res of iterator) {
-    const stringResult = Buffer.from(res.value).toString("utf8");
-    allResults.push(ChainObject.deserialize(constructor, stringResult));
-  }
+      for await (const res of iterator) {
+        const stringResult = Buffer.from(res.value).toString("utf8");
+        allResults.push(ChainObject.deserialize(constructor, stringResult));
+      }
 
-  if (allResults.length >= TOTAL_RESULTS_LIMIT) {
-    const message =
-      `Reached total results limit (${TOTAL_RESULTS_LIMIT}). ` +
-      `It means your results would be probably incomplete. ` +
-      `Please narrow your query or use pagination.`;
+      span?.setAttribute("gala.state.result_count", allResults.length);
 
-    throw new ForbiddenError(message, { objectType, attributes });
-  }
+      if (allResults.length >= TOTAL_RESULTS_LIMIT) {
+        const message =
+          `Reached total results limit (${TOTAL_RESULTS_LIMIT}). ` +
+          `It means your results would be probably incomplete. ` +
+          `Please narrow your query or use pagination.`;
 
-  // iterator will be automatically closed on exit from the loop
-  // either by reaching the end, or a break or throw terminated the loop
-  return allResults;
+        throw new ForbiddenError(message, { objectType, attributes });
+      }
+
+      // iterator will be automatically closed on exit from the loop
+      // either by reaching the end, or a break or throw terminated the loop
+      return allResults;
+    }
+  );
 }
 
 /**
@@ -196,29 +238,42 @@ export async function getObjectsByPartialCompositeKeyWithPagination<T extends Ch
   bookmark: string | undefined,
   limit: number = TOTAL_RESULTS_LIMIT
 ): Promise<{ results: Array<T>; metadata: QueryResponseMetadata }> {
-  // Uses default fabric call. No need for cache support, since Fabric disallows
-  // this call in submit queries.
-  const response = ctx.stub.getStateByPartialCompositeKeyWithPagination(
-    objectType,
-    attributes,
-    limit,
-    bookmark
+  return withSpan(
+    "state.getObjectsByPartialCompositeKeyWithPagination",
+    {
+      "gala.state.operation": "getObjectsByPartialCompositeKeyWithPagination",
+      "gala.state.object_type": objectType,
+      "gala.state.constructor": constructor.name,
+      "fabric.state.attribute_count": attributes.length,
+      "gala.state.limit": limit
+    },
+    async (span) => {
+      // Uses default fabric call. No need for cache support, since Fabric disallows
+      // this call in submit queries.
+      const response = ctx.stub.getStateByPartialCompositeKeyWithPagination(
+        objectType,
+        attributes,
+        limit,
+        bookmark
+      );
+
+      const results: Array<T> = [];
+
+      for await (const res of response) {
+        const stringResult = Buffer.from(res.value).toString("utf8");
+        results.push(ChainObject.deserialize(constructor, stringResult));
+      }
+
+      // Typically, Fabric returns undefined here if there are no results
+      const metadata: QueryResponseMetadata = (await response).metadata ?? {
+        bookmark: "",
+        fetchedRecordsCount: results.length
+      };
+
+      span?.setAttribute("gala.state.result_count", results.length);
+      return { results, metadata };
+    }
   );
-
-  const results: Array<T> = [];
-
-  for await (const res of response) {
-    const stringResult = Buffer.from(res.value).toString("utf8");
-    results.push(ChainObject.deserialize(constructor, stringResult));
-  }
-
-  // Typically, Fabric returns undefined here if there are no results
-  const metadata: QueryResponseMetadata = (await response).metadata ?? {
-    bookmark: "",
-    fetchedRecordsCount: results.length
-  };
-
-  return { results, metadata };
 }
 
 /**
@@ -243,13 +298,26 @@ export async function getObjectByKey<T extends ChainObject>(
   constructor: ClassConstructor<Inferred<T, ChainObject>>,
   objectId: string
 ): Promise<T> {
-  const objectBuffer = await ctx.stub.getCachedState(objectId);
+  return withSpan(
+    "state.getObjectByKey",
+    {
+      "gala.state.operation": "getObjectByKey",
+      "gala.state.constructor": constructor.name,
+      "fabric.state.key": truncateOtelAttr(objectId)
+    },
+    async (span) => {
+      const objectBuffer = await ctx.stub.getCachedState(objectId);
 
-  if (!objectBuffer || objectBuffer.length === 0) {
-    throw new ObjectNotFoundError(objectId);
-  }
+      if (!objectBuffer || objectBuffer.length === 0) {
+        span?.setAttribute("fabric.state.found", false);
+        throw new ObjectNotFoundError(objectId);
+      }
 
-  return ChainObject.deserialize(constructor, objectBuffer.toString());
+      span?.setAttribute("fabric.state.found", true);
+      span?.setAttribute("fabric.state.value_size", objectBuffer.length);
+      return ChainObject.deserialize(constructor, objectBuffer.toString());
+    }
+  );
 }
 
 /**
@@ -275,55 +343,90 @@ export async function getRangedObjectByKey<T extends RangedChainObject>(
   constructor: ClassConstructor<Inferred<T, RangedChainObject>>,
   objectId: string
 ): Promise<T> {
-  const objectBuffer = await ctx.stub.getCachedState(objectId);
+  return withSpan(
+    "state.getRangedObjectByKey",
+    {
+      "gala.state.operation": "getRangedObjectByKey",
+      "gala.state.constructor": constructor.name,
+      "fabric.state.key": truncateOtelAttr(objectId)
+    },
+    async (span) => {
+      const objectBuffer = await ctx.stub.getCachedState(objectId);
 
-  if (!objectBuffer || objectBuffer.length === 0) {
-    throw new ObjectNotFoundError(objectId);
-  }
+      if (!objectBuffer || objectBuffer.length === 0) {
+        span?.setAttribute("fabric.state.found", false);
+        throw new ObjectNotFoundError(objectId);
+      }
 
-  return RangedChainObject.deserialize(constructor, objectBuffer.toString());
+      span?.setAttribute("fabric.state.found", true);
+      span?.setAttribute("fabric.state.value_size", objectBuffer.length);
+      return RangedChainObject.deserialize(constructor, objectBuffer.toString());
+    }
+  );
 }
 
 export async function getPlainObjectByKey(
   ctx: GalaChainContext,
   objectId: string
 ): Promise<Record<string, unknown>> {
-  const objectBuffer = await ctx.stub.getCachedState(objectId);
+  return withSpan(
+    "state.getPlainObjectByKey",
+    {
+      "gala.state.operation": "getPlainObjectByKey",
+      "fabric.state.key": truncateOtelAttr(objectId)
+    },
+    async (span) => {
+      const objectBuffer = await ctx.stub.getCachedState(objectId);
 
-  if (!objectBuffer || objectBuffer.length === 0) {
-    throw new ObjectNotFoundError(objectId);
-  }
+      if (!objectBuffer || objectBuffer.length === 0) {
+        span?.setAttribute("fabric.state.found", false);
+        throw new ObjectNotFoundError(objectId);
+      }
 
-  return JSON.parse(objectBuffer.toString());
+      span?.setAttribute("fabric.state.found", true);
+      span?.setAttribute("fabric.state.value_size", objectBuffer.length);
+      return JSON.parse(objectBuffer.toString());
+    }
+  );
 }
 
 export async function getObjectHistory(
   ctx: GalaChainContext,
   objectId: string
 ): Promise<{ history: unknown[] }> {
-  const iterator = await ctx.stub.getHistoryForKey(objectId);
-  const history: unknown[] = [];
-  let res = await iterator.next();
+  return withSpan(
+    "state.getObjectHistory",
+    {
+      "gala.state.operation": "getObjectHistory",
+      "fabric.state.key": truncateOtelAttr(objectId)
+    },
+    async (span) => {
+      const iterator = await ctx.stub.getHistoryForKey(objectId);
+      const history: unknown[] = [];
+      let res = await iterator.next();
 
-  while (!res.done) {
-    if (res.value) {
-      const { isDelete, value, timestamp, txId } = res.value;
+      while (!res.done) {
+        if (res.value) {
+          const { isDelete, value, timestamp, txId } = res.value;
 
-      // `value` is a buffer, so we need to convert it to a string.
-      const stringValue = (value as unknown as Buffer).toString("utf8");
+          // `value` is a buffer, so we need to convert it to a string.
+          const stringValue = (value as unknown as Buffer).toString("utf8");
 
-      history.push({
-        isDelete,
-        timestamp,
-        txId,
-        value: stringValue
-      });
+          history.push({
+            isDelete,
+            timestamp,
+            txId,
+            value: stringValue
+          });
+        }
+        res = await iterator.next();
+      }
+      await iterator.close();
+
+      span?.setAttribute("gala.state.result_count", history.length);
+      return { history };
     }
-    res = await iterator.next();
-  }
-  await iterator.close();
-
-  return { history };
+  );
 }
 
 /**
@@ -337,37 +440,50 @@ export async function getObjectsByKeys<T extends ChainObject>(
   constructor: ClassConstructor<Inferred<T, ChainObject>>,
   objectIds: Array<string>
 ): Promise<Array<T>> {
-  if (objectIds.length < 1) {
-    throw new NoObjectIdsError();
-  }
-
-  // Start all async operations
-  const operations: Array<Promise<T>> = objectIds.map((id) => getObjectByKey(ctx, constructor, id));
-
-  // Collect results (in the same order as operations)
-  type ResultsType = { successes: Array<T>; failures: Array<{ id: string; message: string }> };
-  const results: ResultsType = await operations.reduce<Promise<ResultsType>>(
-    async (currentResults, operation, i) => {
-      const { successes, failures }: ResultsType = await currentResults;
-
-      try {
-        return { successes: [...successes, await operation], failures: failures };
-      } catch (e) {
-        return {
-          successes: successes,
-          failures: [...failures, { id: objectIds[i], message: (e as Error).message }]
-        };
-      }
+  return withSpan(
+    "state.getObjectsByKeys",
+    {
+      "gala.state.operation": "getObjectsByKeys",
+      "gala.state.constructor": constructor.name,
+      "gala.state.key_count": objectIds.length
     },
-    Promise.resolve({ successes: [], failures: [] })
-  );
+    async (span) => {
+      if (objectIds.length < 1) {
+        throw new NoObjectIdsError();
+      }
 
-  if (results.failures.length) {
-    const messages = results.failures.map(({ id, message }) => `${id}: ${message}`);
-    throw new InvalidResultsError(messages);
-  } else {
-    return results.successes;
-  }
+      // Start all async operations
+      const operations: Array<Promise<T>> = objectIds.map((id) => getObjectByKey(ctx, constructor, id));
+
+      // Collect results (in the same order as operations)
+      type ResultsType = { successes: Array<T>; failures: Array<{ id: string; message: string }> };
+      const results: ResultsType = await operations.reduce<Promise<ResultsType>>(
+        async (currentResults, operation, i) => {
+          const { successes, failures }: ResultsType = await currentResults;
+
+          try {
+            return { successes: [...successes, await operation], failures: failures };
+          } catch (e) {
+            return {
+              successes: successes,
+              failures: [...failures, { id: objectIds[i], message: (e as Error).message }]
+            };
+          }
+        },
+        Promise.resolve({ successes: [], failures: [] })
+      );
+
+      span?.setAttribute("gala.state.result_count", results.successes.length);
+      span?.setAttribute("gala.state.failure_count", results.failures.length);
+
+      if (results.failures.length) {
+        const messages = results.failures.map(({ id, message }) => `${id}: ${message}`);
+        throw new InvalidResultsError(messages);
+      } else {
+        return results.successes;
+      }
+    }
+  );
 }
 
 /**
@@ -382,7 +498,17 @@ export async function getObjectsByKeys<T extends ChainObject>(
  * @returns `Promise<boolean>`
  */
 export async function objectExists(ctx: GalaChainContext, id: string): Promise<boolean> {
-  const assetJSON = await ctx.stub.getCachedState(id);
-
-  return assetJSON && assetJSON.length > 0;
+  return withSpan(
+    "state.objectExists",
+    {
+      "gala.state.operation": "objectExists",
+      "fabric.state.key": truncateOtelAttr(id)
+    },
+    async (span) => {
+      const assetJSON = await ctx.stub.getCachedState(id);
+      const exists = !!(assetJSON && assetJSON.length > 0);
+      span?.setAttribute("fabric.state.found", exists);
+      return exists;
+    }
+  );
 }

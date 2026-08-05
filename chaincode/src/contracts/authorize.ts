@@ -14,6 +14,7 @@
  */
 import { ChainCallDTO, ForbiddenError, UnauthorizedError, UserRole } from "@gala-chain/api";
 
+import { withSpan } from "../tracing";
 import { GalaChainContext } from "../types";
 
 export class MissingRoleError extends UnauthorizedError {
@@ -112,19 +113,29 @@ export async function authorize(
   options: AuthorizeOptions,
   dto: ChainCallDTO | undefined
 ) {
-  if (options.allowedOriginChaincodes && ctx.callingUser.startsWith("service|")) {
-    const callingChaincode = ctx.callingUser.slice(8);
-    ensureChaincodeIsAllowed(callingChaincode, options.allowedOriginChaincodes);
-    return;
-  }
+  return withSpan(
+    "auth.authorize",
+    {
+      "gala.auth.has_allowed_orgs": !!options.allowedOrgs?.length,
+      "gala.auth.has_allowed_roles": !!options.allowedRoles?.length,
+      "gala.auth.has_allowed_origin_chaincodes": !!options.allowedOriginChaincodes?.length
+    },
+    async () => {
+      if (options.allowedOriginChaincodes && ctx.callingUser.startsWith("service|")) {
+        const callingChaincode = ctx.callingUser.slice(8);
+        ensureChaincodeIsAllowed(callingChaincode, options.allowedOriginChaincodes);
+        return;
+      }
 
-  ensureCorrectMethodIsUsed(ctx, dto);
+      ensureCorrectMethodIsUsed(ctx, dto);
 
-  if (options.allowedOrgs) {
-    ensureOrganizationIsAllowed(ctx, options.allowedOrgs);
-  }
+      if (options.allowedOrgs) {
+        ensureOrganizationIsAllowed(ctx, options.allowedOrgs);
+      }
 
-  if (options.allowedRoles) {
-    await ensureRoleIsAllowed(ctx, options.allowedRoles);
-  }
+      if (options.allowedRoles) {
+        await ensureRoleIsAllowed(ctx, options.allowedRoles);
+      }
+    }
+  );
 }
