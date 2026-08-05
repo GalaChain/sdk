@@ -15,7 +15,10 @@
 import { NotImplementedError } from "@gala-chain/api";
 import { ChaincodeResponse, ChaincodeStub } from "fabric-shim";
 
+import { truncateOtelAttr, withSpan, withSpanSync } from "../tracing";
 import { CachedKV, FabricIterable, fabricIterable, filter, prepend } from "./FabricIterable";
+
+const stateKeyAttr = truncateOtelAttr;
 
 /**
  * The main purpose of this class is to keep the state clean when the transaction fails. In this
@@ -53,6 +56,57 @@ class StubCache {
     return this.stub.getTxID();
   }
 
+  async getState(key: string): Promise<Uint8Array> {
+    return withSpan(
+      "stub.getState",
+      {
+        "fabric.state.operation": "getState",
+        "fabric.state.key": stateKeyAttr(key)
+      },
+      async (span) => {
+        const result = await this.stub.getState(key);
+        span?.setAttribute("fabric.state.value_size", result?.length ?? 0);
+        span?.setAttribute("fabric.state.found", (result?.length ?? 0) > 0);
+        return result;
+      }
+    );
+  }
+
+  getStateByRange(startKey: string, endKey: string): FabricIterable<CachedKV> {
+    return withSpanSync(
+      "stub.getStateByRange",
+      {
+        "fabric.state.operation": "getStateByRange",
+        "fabric.state.start_key": stateKeyAttr(startKey),
+        "fabric.state.end_key": stateKeyAttr(endKey)
+      },
+      () => this.stub.getStateByRange(startKey, endKey) as FabricIterable<CachedKV>
+    );
+  }
+
+  getStateByPartialCompositeKey(objectType: string, attributes: string[]): FabricIterable<CachedKV> {
+    return withSpanSync(
+      "stub.getStateByPartialCompositeKey",
+      {
+        "fabric.state.operation": "getStateByPartialCompositeKey",
+        "fabric.state.object_type": objectType,
+        "fabric.state.attribute_count": attributes.length
+      },
+      () => this.stub.getStateByPartialCompositeKey(objectType, attributes) as FabricIterable<CachedKV>
+    );
+  }
+
+  getHistoryForKey(key: string): ReturnType<ChaincodeStub["getHistoryForKey"]> {
+    return withSpanSync(
+      "stub.getHistoryForKey",
+      {
+        "fabric.state.operation": "getHistoryForKey",
+        "fabric.state.key": stateKeyAttr(key)
+      },
+      () => this.stub.getHistoryForKey(key)
+    );
+  }
+
   async getCachedState(key: string): Promise<Uint8Array> {
     if (key in this.deletes) {
       return new Uint8Array();
@@ -66,7 +120,8 @@ class StubCache {
       return this.reads[key];
     }
 
-    const result = await this.stub.getState(key);
+    // Cache miss: instrumented getState records the Fabric I/O.
+    const result = await this.getState(key);
     this.reads[key] = result;
 
     return result;
@@ -81,38 +136,56 @@ class StubCache {
 
     const keysToExclude = new Set(cached.map((kv) => kv.key).concat(Object.keys(this.deletes)));
 
-    const state = this.stub.getStateByPartialCompositeKey(objectType, attributes);
+    // Instrumented getStateByPartialCompositeKey records the Fabric query.
+    const state = this.getStateByPartialCompositeKey(objectType, attributes);
     const filteredState = filter((kv) => !keysToExclude.has(kv.key), state[Symbol.asyncIterator]());
 
     return fabricIterable(prepend(cached, filteredState));
   }
 
   putState(key: string, value: Uint8Array): Promise<void> {
-    this.writes[key] = value;
+    return withSpan(
+      "stub.putState",
+      {
+        "fabric.state.operation": "putState",
+        "fabric.state.key": stateKeyAttr(key),
+        "fabric.state.value_size": value.length,
+        "fabric.state.cached": true
+      },
+      async () => {
+        this.writes[key] = value;
 
-    if (key in this.deletes) {
-      delete this.deletes[key];
-    }
+        if (key in this.deletes) {
+          delete this.deletes[key];
+        }
 
-    if (key in this.reads) {
-      delete this.reads[key];
-    }
-
-    return Promise.resolve();
+        if (key in this.reads) {
+          delete this.reads[key];
+        }
+      }
+    );
   }
 
   deleteState(key: string): Promise<void> {
-    this.deletes[key] = true;
+    return withSpan(
+      "stub.deleteState",
+      {
+        "fabric.state.operation": "deleteState",
+        "fabric.state.key": stateKeyAttr(key),
+        "fabric.state.cached": true
+      },
+      async () => {
+        this.deletes[key] = true;
 
-    if (key in this.writes) {
-      delete this.writes[key];
-    }
+        if (key in this.writes) {
+          delete this.writes[key];
+        }
 
-    if (key in this.reads) {
-      delete this.reads[key];
-    }
-
-    return Promise.resolve();
+        if (key in this.reads) {
+          delete this.reads[key];
+        }
+      }
+    );
   }
 
   /**
@@ -124,20 +197,31 @@ class StubCache {
    * methods on the same chaincode are called before it.
    */
   async invokeChaincode(chaincodeName: string, args: string[], channel: string): Promise<ChaincodeResponse> {
-    const key = `${channel}/${chaincodeName}`;
-    const prevCall = this.invokeChaincodeCalls[key];
+    return withSpan(
+      "stub.invokeChaincode",
+      {
+        "fabric.state.operation": "invokeChaincode",
+        "fabric.invoke.chaincode": chaincodeName,
+        "fabric.invoke.channel": channel,
+        "fabric.invoke.method": args?.[0] ?? ""
+      },
+      async () => {
+        const key = `${channel}/${chaincodeName}`;
+        const prevCall = this.invokeChaincodeCalls[key];
 
-    if (prevCall) {
-      const effectiveChannel = channel === "" ? this.stub.getChannelID() : channel;
-      throw new DuplicateInvokeChaincodeError(chaincodeName, prevCall, effectiveChannel);
-    }
+        if (prevCall) {
+          const effectiveChannel = channel === "" ? this.stub.getChannelID() : channel;
+          throw new DuplicateInvokeChaincodeError(chaincodeName, prevCall, effectiveChannel);
+        }
 
-    const isDryRun = args?.[0].endsWith(":DryRun");
-    if (!isDryRun) {
-      this.invokeChaincodeCalls[key] = args;
-    }
+        const isDryRun = args?.[0].endsWith(":DryRun");
+        if (!isDryRun) {
+          this.invokeChaincodeCalls[key] = args;
+        }
 
-    return await this.stub.invokeChaincode(chaincodeName, args, channel);
+        return await this.stub.invokeChaincode(chaincodeName, args, channel);
+      }
+    );
   }
 
   get externalChaincodeWasInvoked(): boolean {
@@ -170,14 +254,48 @@ class StubCache {
   }
 
   async flushWrites(): Promise<void> {
-    if (this.isReadOnly) {
-      throw new NotImplementedError("Cannot flush writes in read-only mode");
-    }
+    const deleteKeys = Object.keys(this.deletes);
+    const putEntries = Object.entries(this.writes);
 
-    const deleteOps = Object.keys(this.deletes).map((key) => this.stub.deleteState(key));
-    const putOps = Object.entries(this.writes).map(([key, value]) => this.stub.putState(key, value));
-    await Promise.all(deleteOps);
-    await Promise.all(putOps);
+    return withSpan(
+      "stub.flushWrites",
+      {
+        "fabric.state.operation": "flushWrites",
+        "fabric.state.put_count": putEntries.length,
+        "fabric.state.delete_count": deleteKeys.length
+      },
+      async () => {
+        if (this.isReadOnly) {
+          throw new NotImplementedError("Cannot flush writes in read-only mode");
+        }
+
+        const deleteOps = deleteKeys.map((key) =>
+          withSpan(
+            "stub.deleteState.flush",
+            {
+              "fabric.state.operation": "deleteState",
+              "fabric.state.key": stateKeyAttr(key),
+              "fabric.state.cached": false
+            },
+            () => this.stub.deleteState(key)
+          )
+        );
+        const putOps = putEntries.map(([key, value]) =>
+          withSpan(
+            "stub.putState.flush",
+            {
+              "fabric.state.operation": "putState",
+              "fabric.state.key": stateKeyAttr(key),
+              "fabric.state.value_size": value.length,
+              "fabric.state.cached": false
+            },
+            () => this.stub.putState(key, value)
+          )
+        );
+        await Promise.all(deleteOps);
+        await Promise.all(putOps);
+      }
+    );
   }
 
   getReads(): Record<string, Uint8Array> {

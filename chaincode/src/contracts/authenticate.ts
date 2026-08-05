@@ -26,6 +26,7 @@ import {
 
 import { PkInvalidSignatureError, PublicKeyService, resolveUserAlias } from "../services";
 import { PkMissingError } from "../services/PublicKeyError";
+import { withSpan } from "../tracing";
 import { GalaChainContext } from "../types";
 
 class MissingSignatureError extends ValidationFailedError {
@@ -138,27 +139,42 @@ export async function authenticate(
   dto: ChainCallDTO | undefined,
   quorum: number | undefined
 ): Promise<AuthenticateResult> {
-  if (noSignatures(dto)) {
-    if (dto?.signerAddress?.startsWith("service|")) {
-      return await authenticateAsOriginChaincode(ctx, dto, dto.signerAddress.slice(8));
+  return withSpan(
+    "auth.authenticate",
+    {
+      "gala.auth.quorum": quorum ?? -1,
+      "gala.auth.has_signature": !noSignatures(dto),
+      "gala.auth.is_service": !!dto?.signerAddress?.startsWith("service|")
+    },
+    async (span) => {
+      if (noSignatures(dto)) {
+        if (dto?.signerAddress?.startsWith("service|")) {
+          span?.setAttribute("gala.auth.mode", "origin_chaincode");
+          return await authenticateAsOriginChaincode(ctx, dto, dto.signerAddress.slice(8));
+        }
+
+        throw new MissingSignatureError();
+      }
+
+      if (singleSignature(dto)) {
+        span?.setAttribute("gala.auth.mode", "single");
+        const result = await authenticateSingleSignature(ctx, dto);
+        ensureSignatureQuorumIsMet(result, quorum);
+        span?.setAttribute("gala.auth.user", result.alias);
+        return result;
+      }
+
+      if (multipleSignatures(dto)) {
+        span?.setAttribute("gala.auth.mode", "multisig");
+        const result = await authenticateMultipleSignatures(ctx, dto);
+        ensureSignatureQuorumIsMet(result, quorum);
+        span?.setAttribute("gala.auth.user", result.alias);
+        return result;
+      }
+
+      throw new InvalidSignatureParametersError(dto);
     }
-
-    throw new MissingSignatureError();
-  }
-
-  if (singleSignature(dto)) {
-    const result = await authenticateSingleSignature(ctx, dto);
-    ensureSignatureQuorumIsMet(result, quorum);
-    return result;
-  }
-
-  if (multipleSignatures(dto)) {
-    const result = await authenticateMultipleSignatures(ctx, dto);
-    ensureSignatureQuorumIsMet(result, quorum);
-    return result;
-  }
-
-  throw new InvalidSignatureParametersError(dto);
+  );
 }
 
 export async function authenticateSingleSignature(
