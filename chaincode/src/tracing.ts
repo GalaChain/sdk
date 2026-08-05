@@ -221,11 +221,23 @@ export function withSpanSync<T>(
   }
 }
 
+const ATTR_MAX_LEN = 256;
+
+/** Truncate long attribute values (e.g. Fabric keys) for OTEL. */
+export function truncateOtelAttr(value: string, maxLen = ATTR_MAX_LEN): string {
+  return value.length > maxLen ? `${value.slice(0, maxLen - 1)}…` : value;
+}
+
 /**
- * Ends the span and flushes so the export completes before the tx returns.
+ * Ends the span and optionally flushes so the export completes before the tx returns.
  * Pass `failed` when the transaction already recorded an error status.
+ * Set `flush` false for nested spans (e.g. batch ops); the outer tx ends with a flush.
  */
-export async function endTransactionSpan(span: Span | undefined, failed = false): Promise<void> {
+export async function endTransactionSpan(
+  span: Span | undefined,
+  failed = false,
+  flush = true
+): Promise<void> {
   if (!span) {
     return;
   }
@@ -236,7 +248,7 @@ export async function endTransactionSpan(span: Span | undefined, failed = false)
 
   span.end();
 
-  if (provider) {
+  if (flush && provider) {
     try {
       await provider.forceFlush();
     } catch {

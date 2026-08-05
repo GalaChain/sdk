@@ -15,15 +15,10 @@
 import { NotImplementedError } from "@gala-chain/api";
 import { ChaincodeResponse, ChaincodeStub } from "fabric-shim";
 
-import { withSpan, withSpanSync } from "../tracing";
+import { truncateOtelAttr, withSpan, withSpanSync } from "../tracing";
 import { CachedKV, FabricIterable, fabricIterable, filter, prepend } from "./FabricIterable";
 
-const STATE_KEY_ATTR_MAX = 256;
-
-/** Truncate long Fabric keys for span attributes. */
-function stateKeyAttr(key: string): string {
-  return key.length > STATE_KEY_ATTR_MAX ? `${key.slice(0, STATE_KEY_ATTR_MAX - 1)}…` : key;
-}
+const stateKeyAttr = truncateOtelAttr;
 
 /**
  * The main purpose of this class is to keep the state clean when the transaction fails. In this
@@ -113,70 +108,39 @@ class StubCache {
   }
 
   async getCachedState(key: string): Promise<Uint8Array> {
-    return withSpan(
-      "stub.getCachedState",
-      {
-        "fabric.state.operation": "getCachedState",
-        "fabric.state.key": stateKeyAttr(key)
-      },
-      async (span) => {
-        if (key in this.deletes) {
-          span?.setAttribute("fabric.state.cache_source", "delete");
-          span?.setAttribute("fabric.state.value_size", 0);
-          span?.setAttribute("fabric.state.found", false);
-          return new Uint8Array();
-        }
+    if (key in this.deletes) {
+      return new Uint8Array();
+    }
 
-        if (key in this.writes) {
-          const value = this.writes[key];
-          span?.setAttribute("fabric.state.cache_source", "write");
-          span?.setAttribute("fabric.state.value_size", value.length);
-          span?.setAttribute("fabric.state.found", value.length > 0);
-          return value;
-        }
+    if (key in this.writes) {
+      return this.writes[key];
+    }
 
-        if (key in this.reads) {
-          const value = this.reads[key];
-          span?.setAttribute("fabric.state.cache_source", "read");
-          span?.setAttribute("fabric.state.value_size", value.length);
-          span?.setAttribute("fabric.state.found", value.length > 0);
-          return value;
-        }
+    if (key in this.reads) {
+      return this.reads[key];
+    }
 
-        // Fabric I/O — nested under getCachedState via active context.
-        const result = await this.getState(key);
-        this.reads[key] = result;
-        span?.setAttribute("fabric.state.cache_source", "miss");
-        span?.setAttribute("fabric.state.value_size", result?.length ?? 0);
-        span?.setAttribute("fabric.state.found", (result?.length ?? 0) > 0);
-        return result;
-      }
-    );
+    // Cache miss: instrumented getState records the Fabric I/O.
+    const result = await this.getState(key);
+    this.reads[key] = result;
+
+    return result;
   }
 
   getCachedStateByPartialCompositeKey(objectType: string, attributes: string[]): FabricIterable<CachedKV> {
-    return withSpanSync(
-      "stub.getCachedStateByPartialCompositeKey",
-      {
-        "fabric.state.operation": "getCachedStateByPartialCompositeKey",
-        "fabric.state.object_type": objectType,
-        "fabric.state.attribute_count": attributes.length
-      },
-      () => {
-        const partialCompositeKey = this.stub.createCompositeKey(objectType, attributes);
+    const partialCompositeKey = this.stub.createCompositeKey(objectType, attributes);
 
-        const cached = Object.entries({ ...this.reads, ...this.writes })
-          .filter(([k]) => k.startsWith(partialCompositeKey))
-          .map(([k, v]) => ({ key: k, value: v }));
+    const cached = Object.entries({ ...this.reads, ...this.writes })
+      .filter(([k]) => k.startsWith(partialCompositeKey))
+      .map(([k, v]) => ({ key: k, value: v }));
 
-        const keysToExclude = new Set(cached.map((kv) => kv.key).concat(Object.keys(this.deletes)));
+    const keysToExclude = new Set(cached.map((kv) => kv.key).concat(Object.keys(this.deletes)));
 
-        const state = this.getStateByPartialCompositeKey(objectType, attributes);
-        const filteredState = filter((kv) => !keysToExclude.has(kv.key), state[Symbol.asyncIterator]());
+    // Instrumented getStateByPartialCompositeKey records the Fabric query.
+    const state = this.getStateByPartialCompositeKey(objectType, attributes);
+    const filteredState = filter((kv) => !keysToExclude.has(kv.key), state[Symbol.asyncIterator]());
 
-        return fabricIterable(prepend(cached, filteredState));
-      }
-    );
+    return fabricIterable(prepend(cached, filteredState));
   }
 
   putState(key: string, value: Uint8Array): Promise<void> {
