@@ -113,9 +113,11 @@ export abstract class GalaContract extends Contract {
         await (ctx.stub as unknown as GalaChainStub).flushWrites();
       }
 
-      ctx?.logger?.logTimeline("End Transaction", ctx.stub.getFunctionAndParameters()?.fcn ?? this.getName(), [
-        { chaincodeResult: result }
-      ]);
+      ctx?.logger?.logTimeline(
+        "End Transaction",
+        ctx.stub.getFunctionAndParameters()?.fcn ?? this.getName(),
+        [{ chaincodeResult: result }]
+      );
     });
 
     // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access

@@ -205,11 +205,7 @@ export async function withSpan<T>(
 /**
  * Times a sync operation as an INTERNAL child span. Never swallows errors.
  */
-export function withSpanSync<T>(
-  name: string,
-  attributes: Attributes,
-  fn: (span: Span | undefined) => T
-): T {
+export function withSpanSync<T>(name: string, attributes: Attributes, fn: (span: Span | undefined) => T): T {
   const span = startChildSpan(name, attributes);
   try {
     const result = span ? context.with(trace.setSpan(context.active(), span), () => fn(span)) : fn(span);
