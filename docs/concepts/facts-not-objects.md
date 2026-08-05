@@ -157,7 +157,7 @@ In the above example, we see that moves are stored separately as individual fact
 
 3. **Improved Observability**: By breaking down complex state changes into smaller, more manageable facts, it can be easier for downstream systems to watch for changes in specific events or conditions. 
 
-4. **Scalability**: Separating objects into multiple facts can help avoid [MVCC_READ_CONFLICTS](./mvcc_read_conflicts) and improve performance under high load.
+4. **Scalability**: Separating objects into multiple facts can help avoid [MVCC_READ_CONFLICTS](./mvcc-read-conflicts.md) and improve performance under high load.
 
 ## Best Practices
 
