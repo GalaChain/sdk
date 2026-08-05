@@ -143,6 +143,85 @@ export function recordTransactionSpanError(span: Span | undefined, err: unknown)
 }
 
 /**
+ * Runs `fn` with `span` as the active OTEL context so child spans nest under it.
+ */
+export async function runInSpanContext<T>(span: Span | undefined, fn: () => Promise<T>): Promise<T> {
+  if (!span) {
+    return fn();
+  }
+  return context.with(trace.setSpan(context.active(), span), fn);
+}
+
+/**
+ * Starts an INTERNAL child span under the active context (typically the tx span).
+ * No-op when tracing is disabled.
+ */
+export function startChildSpan(name: string, attributes: Attributes = {}): Span | undefined {
+  if (!isTracingEnabled()) {
+    return undefined;
+  }
+
+  return trace.getTracer(TRACER_NAME).startSpan(name, {
+    kind: SpanKind.INTERNAL,
+    attributes
+  });
+}
+
+export function endChildSpan(span: Span | undefined, err?: unknown): void {
+  if (!span) {
+    return;
+  }
+
+  if (err !== undefined) {
+    recordTransactionSpanError(span, err);
+  } else if (span.isRecording()) {
+    span.setStatus({ code: SpanStatusCode.OK });
+  }
+
+  span.end();
+}
+
+/**
+ * Times an async operation as an INTERNAL child span. Never swallows errors.
+ */
+export async function withSpan<T>(
+  name: string,
+  attributes: Attributes,
+  fn: (span: Span | undefined) => Promise<T>
+): Promise<T> {
+  const span = startChildSpan(name, attributes);
+  try {
+    const result = span
+      ? await context.with(trace.setSpan(context.active(), span), () => fn(span))
+      : await fn(span);
+    endChildSpan(span);
+    return result;
+  } catch (err) {
+    endChildSpan(span, err);
+    throw err;
+  }
+}
+
+/**
+ * Times a sync operation as an INTERNAL child span. Never swallows errors.
+ */
+export function withSpanSync<T>(
+  name: string,
+  attributes: Attributes,
+  fn: (span: Span | undefined) => T
+): T {
+  const span = startChildSpan(name, attributes);
+  try {
+    const result = span ? context.with(trace.setSpan(context.active(), span), () => fn(span)) : fn(span);
+    endChildSpan(span);
+    return result;
+  } catch (err) {
+    endChildSpan(span, err);
+    throw err;
+  }
+}
+
+/**
  * Ends the span and flushes so the export completes before the tx returns.
  * Pass `failed` when the transaction already recorded an error status.
  */

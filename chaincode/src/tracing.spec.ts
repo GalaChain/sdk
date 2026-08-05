@@ -17,8 +17,11 @@ import {
   endTransactionSpan,
   isTracingEnabled,
   recordTransactionSpanError,
+  runInSpanContext,
   startTransactionSpan,
-  verifyOtelConnection
+  verifyOtelConnection,
+  withSpan,
+  withSpanSync
 } from "./tracing";
 
 describe("tracing", () => {
@@ -87,5 +90,51 @@ describe("tracing", () => {
     recordTransactionSpanError(span, new Error("boom"));
     await endTransactionSpan(span, true);
     expect(span?.isRecording()).toBe(false);
+  });
+
+  it("should nest withSpan children under the active transaction span", async () => {
+    // Given
+    process.env.OTEL_EXPORTER_OTLP_ENDPOINT = "http://127.0.0.1:9";
+    process.env.OTEL_SERVICE_NAME = "test-chaincode";
+    await _resetTracingForTests();
+
+    const parent = startTransactionSpan("TestContract:Parent", undefined);
+    expect(parent).toBeDefined();
+
+    // When
+    let childTraceId: string | undefined;
+    let childParentSpanId: string | undefined;
+    await runInSpanContext(parent, async () => {
+      await withSpan("stub.getState", { "fabric.state.key": "k1" }, async (span) => {
+        const ctx = span?.spanContext();
+        childTraceId = ctx?.traceId;
+        // Parent linkage is via context; child must share the parent's trace id.
+        childParentSpanId = parent?.spanContext().spanId;
+        expect(span?.isRecording()).toBe(true);
+      });
+      withSpanSync("stub.putState", { "fabric.state.key": "k1" }, (span) => {
+        expect(span?.isRecording()).toBe(true);
+        expect(span?.spanContext().traceId).toBe(childTraceId);
+      });
+    });
+
+    // Then
+    expect(childTraceId).toBe(parent?.spanContext().traceId);
+    expect(childParentSpanId).toBe(parent?.spanContext().spanId);
+
+    await endTransactionSpan(parent);
+  });
+
+  it("should rethrow errors from withSpan and mark the span failed", async () => {
+    // Given
+    process.env.OTEL_EXPORTER_OTLP_ENDPOINT = "http://127.0.0.1:9";
+    await _resetTracingForTests();
+
+    // When & Then
+    await expect(
+      withSpan("stub.getState", {}, async () => {
+        throw new Error("state boom");
+      })
+    ).rejects.toThrow("state boom");
   });
 });

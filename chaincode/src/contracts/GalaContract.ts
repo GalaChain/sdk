@@ -36,7 +36,7 @@ import {
 import { Contract } from "fabric-contract-api";
 
 import { PublicKeyService } from "../services";
-import { endTransactionSpan } from "../tracing";
+import { endTransactionSpan, runInSpanContext } from "../tracing";
 import { GalaChainContext, GalaChainContextConfig, GalaChainStub } from "../types";
 import { getObjectHistory, getPlainObjectByKey } from "../utils";
 import { getApiMethod, getApiMethods } from "./GalaContractApi";
@@ -102,14 +102,21 @@ export abstract class GalaContract extends Contract {
   public async afterTransaction(ctx: GalaChainContext, result: unknown): Promise<void> {
     await super.afterTransaction(ctx, result);
 
-    // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
-    if (typeof result === "object" && result?.["Status"] === GalaChainResponseType.Success && !ctx.isDryRun) {
-      await (ctx.stub as unknown as GalaChainStub).flushWrites();
-    }
+    // Keep tx span active so flushWrites child spans nest under it.
+    await runInSpanContext(ctx.otelSpan, async () => {
+      if (
+        typeof result === "object" &&
+        // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
+        result?.["Status"] === GalaChainResponseType.Success &&
+        !ctx.isDryRun
+      ) {
+        await (ctx.stub as unknown as GalaChainStub).flushWrites();
+      }
 
-    ctx?.logger?.logTimeline("End Transaction", ctx.stub.getFunctionAndParameters()?.fcn ?? this.getName(), [
-      { chaincodeResult: result }
-    ]);
+      ctx?.logger?.logTimeline("End Transaction", ctx.stub.getFunctionAndParameters()?.fcn ?? this.getName(), [
+        { chaincodeResult: result }
+      ]);
+    });
 
     // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
     const failed = typeof result === "object" && result?.["Status"] === GalaChainResponseType.Error;
