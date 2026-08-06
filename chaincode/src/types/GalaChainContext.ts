@@ -216,6 +216,10 @@ export class GalaChainContext extends Context {
     const ctx = new GalaChainContext(this.config);
     ctx.clientIdentity = this.clientIdentity;
     ctx.setChaincodeStub(createGalaChainStub(this.stub, true, index));
+    // Preserve OTEL parenting for nested dry-run / batch sandbox contexts.
+    ctx.trace = this.trace;
+    ctx.otelSpan = this.otelSpan;
+    ctx.stub?.setActiveOtelSpan?.(this.otelFallbackSpan);
     return ctx;
   }
 
