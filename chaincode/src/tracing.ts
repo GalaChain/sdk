@@ -155,11 +155,17 @@ export async function runInSpanContext<T>(span: Span | undefined, fn: () => Prom
 
 /**
  * Resolves the parent for a child span.
- * Prefers the active context (preserves nesting); falls back to an explicit span
- * when Fabric/async boundaries drop AsyncLocalStorage context.
+ * 1. Prefer a *recording* active span (real nesting; safe under concurrent async).
+ * 2. Else use explicit fallback (survives Fabric ALS drops).
+ * 3. Ignore non-recording active spans (e.g. remote dto.trace) — those caused
+ *    "Missing Parent Spans" when children linked to another service's span id.
  */
 function resolveParentSpan(fallback?: Span): Span | undefined {
-  return trace.getSpan(context.active()) ?? fallback;
+  const active = trace.getSpan(context.active());
+  if (active?.isRecording()) {
+    return active;
+  }
+  return fallback ?? active;
 }
 
 /**

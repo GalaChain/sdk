@@ -6,6 +6,9 @@
 /tmp
 /yarn.lock
 node_modules
+# Packed by npm-pack-and-replace.sh — must stay out of `npm pack` / rsync into chain-cli/lib
+# or @gala-chain/cli tarballs recurse into multi-GB (or worse) archives.
+*.tgz
 .vscode
 secrets.json
 test-network
