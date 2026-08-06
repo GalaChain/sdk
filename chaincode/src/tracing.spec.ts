@@ -15,6 +15,7 @@
 import {
   _resetTracingForTests,
   endTransactionSpan,
+  formatOtelStateKey,
   isTracingEnabled,
   recordTransactionSpanError,
   runInSpanContext,
@@ -164,6 +165,18 @@ describe("tracing", () => {
     // Then
     expect(childTraceId).toBe(parent?.spanContext().traceId);
     await endTransactionSpan(parent);
+  });
+
+  it("should replace composite-key null separators with slashes in state keys", () => {
+    // Given
+    const compositeKey = ["TokenClass", "GALA", "Unit", "none", "none"].join("\u0000");
+
+    // When
+    const formatted = formatOtelStateKey(`\u0000${compositeKey}\u0000`);
+
+    // Then
+    expect(formatted).toBe("/TokenClass/GALA/Unit/none/none/");
+    expect(formatted.includes("\u0000")).toBe(false);
   });
 
   it("should keep withSpan open for the full async duration", async () => {

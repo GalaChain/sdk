@@ -16,10 +16,10 @@ import { NotImplementedError } from "@gala-chain/api";
 import { Span } from "@opentelemetry/api";
 import { ChaincodeResponse, ChaincodeStub } from "fabric-shim";
 
-import { truncateOtelAttr, withSpan } from "../tracing";
+import { formatOtelStateKey, withSpan } from "../tracing";
 import { CachedKV, FabricIterable, fabricIterable, filter, prepend } from "./FabricIterable";
 
-const stateKeyAttr = truncateOtelAttr;
+const stateKeyAttr = formatOtelStateKey;
 
 /**
  * The main purpose of this class is to keep the state clean when the transaction fails. In this

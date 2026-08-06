@@ -25,7 +25,7 @@ import {
 import { Attributes, Span } from "@opentelemetry/api";
 import { QueryResponseMetadata } from "fabric-shim";
 
-import { truncateOtelAttr, withSpan } from "../tracing";
+import { formatOtelStateKey, withSpan } from "../tracing";
 import { GalaChainContext } from "../types";
 
 // Fabric default value, we don't want to change it
@@ -85,7 +85,7 @@ export async function putChainObject(ctx: GalaChainContext, data: ChainObject): 
     {
       "gala.state.operation": "putChainObject",
       "gala.state.object_type": data.constructor?.name ?? "ChainObject",
-      "fabric.state.key": truncateOtelAttr(data.getCompositeKey())
+      "fabric.state.key": formatOtelStateKey(data.getCompositeKey())
     },
     async () => {
       await data.validateOrReject();
@@ -117,7 +117,7 @@ export async function putRangedChainObject(ctx: GalaChainContext, data: RangedCh
     {
       "gala.state.operation": "putRangedChainObject",
       "gala.state.object_type": data.constructor?.name ?? "RangedChainObject",
-      "fabric.state.key": truncateOtelAttr(data.getRangedKey())
+      "fabric.state.key": formatOtelStateKey(data.getRangedKey())
     },
     async () => {
       await data.validateOrReject();
@@ -147,7 +147,7 @@ export async function deleteChainObject(ctx: GalaChainContext, data: ChainObject
     {
       "gala.state.operation": "deleteChainObject",
       "gala.state.object_type": data.constructor?.name ?? "ChainObject",
-      "fabric.state.key": truncateOtelAttr(data.getCompositeKey())
+      "fabric.state.key": formatOtelStateKey(data.getCompositeKey())
     },
     async () => ctx.stub.deleteState(data.getCompositeKey())
   );
@@ -320,7 +320,7 @@ export async function getObjectByKey<T extends ChainObject>(
     {
       "gala.state.operation": "getObjectByKey",
       "gala.state.constructor": constructor.name,
-      "fabric.state.key": truncateOtelAttr(objectId)
+      "fabric.state.key": formatOtelStateKey(objectId)
     },
     async (span) => {
       const objectBuffer = await ctx.stub.getCachedState(objectId);
@@ -366,7 +366,7 @@ export async function getRangedObjectByKey<T extends RangedChainObject>(
     {
       "gala.state.operation": "getRangedObjectByKey",
       "gala.state.constructor": constructor.name,
-      "fabric.state.key": truncateOtelAttr(objectId)
+      "fabric.state.key": formatOtelStateKey(objectId)
     },
     async (span) => {
       const objectBuffer = await ctx.stub.getCachedState(objectId);
@@ -392,7 +392,7 @@ export async function getPlainObjectByKey(
     "state.getPlainObjectByKey",
     {
       "gala.state.operation": "getPlainObjectByKey",
-      "fabric.state.key": truncateOtelAttr(objectId)
+      "fabric.state.key": formatOtelStateKey(objectId)
     },
     async (span) => {
       const objectBuffer = await ctx.stub.getCachedState(objectId);
@@ -418,7 +418,7 @@ export async function getObjectHistory(
     "state.getObjectHistory",
     {
       "gala.state.operation": "getObjectHistory",
-      "fabric.state.key": truncateOtelAttr(objectId)
+      "fabric.state.key": formatOtelStateKey(objectId)
     },
     async (span) => {
       const iterator = await ctx.stub.getHistoryForKey(objectId);
@@ -524,7 +524,7 @@ export async function objectExists(ctx: GalaChainContext, id: string): Promise<b
     "state.objectExists",
     {
       "gala.state.operation": "objectExists",
-      "fabric.state.key": truncateOtelAttr(id)
+      "fabric.state.key": formatOtelStateKey(id)
     },
     async (span) => {
       const assetJSON = await ctx.stub.getCachedState(id);

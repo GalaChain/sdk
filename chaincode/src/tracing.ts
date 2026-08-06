@@ -250,9 +250,17 @@ export function withSpanSync<T>(
 
 const ATTR_MAX_LEN = 256;
 
-/** Truncate long attribute values (e.g. Fabric keys) for OTEL. */
+/** Truncate long attribute values for OTEL. */
 export function truncateOtelAttr(value: string, maxLen = ATTR_MAX_LEN): string {
   return value.length > maxLen ? `${value.slice(0, maxLen - 1)}…` : value;
+}
+
+/**
+ * Format a Fabric state key for span attributes: composite-key `\u0000` separators
+ * become `/` so keys are readable in trace UIs.
+ */
+export function formatOtelStateKey(key: string, maxLen = ATTR_MAX_LEN): string {
+  return truncateOtelAttr(key.replace(/\u0000/g, "/"), maxLen);
 }
 
 /**
