@@ -248,7 +248,12 @@ export class GalaLoggerInstanceImpl implements GalaLoggerInstance {
     };
 
     // Top-level OTEL fields for log↔trace correlation in collectors.
-    if (this.ctx.trace) {
+    // Prefer the active chaincode span; fall back to the caller's dto.trace.
+    const activeSpanCtx = this.ctx.otelSpan?.spanContext();
+    if (activeSpanCtx?.traceId) {
+      logData.trace_id = activeSpanCtx.traceId;
+      logData.span_id = activeSpanCtx.spanId;
+    } else if (this.ctx.trace) {
       logData.trace_id = this.ctx.trace.traceId;
       logData.span_id = this.ctx.trace.spanId;
     }

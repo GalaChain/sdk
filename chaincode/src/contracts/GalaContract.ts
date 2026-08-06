@@ -103,6 +103,8 @@ export abstract class GalaContract extends Contract {
     await super.afterTransaction(ctx, result);
 
     // Keep tx span active so flushWrites child spans nest under it.
+    // Re-bind on stub too — afterTransaction runs outside the decorator's ALS scope.
+    ctx.stub?.setActiveOtelSpan?.(ctx.otelSpan);
     await runInSpanContext(ctx.otelSpan, async () => {
       if (
         typeof result === "object" &&
@@ -123,6 +125,7 @@ export abstract class GalaContract extends Contract {
     // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
     const failed = typeof result === "object" && result?.["Status"] === GalaChainResponseType.Error;
     await endTransactionSpan(ctx.otelSpan, failed);
+    ctx.stub?.setActiveOtelSpan?.(undefined);
     ctx.otelSpan = undefined;
   }
 
@@ -288,6 +291,7 @@ export abstract class GalaContract extends Contract {
           const nestedFailed = GalaChainResponse.isError(opResponse);
           span?.setAttribute("gala.batch.op_success", !nestedFailed);
           await endTransactionSpan(sandboxCtx.otelSpan, nestedFailed, false);
+          sandboxCtx.stub?.setActiveOtelSpan?.(undefined);
           sandboxCtx.otelSpan = undefined;
 
           // Update the current context with the writes and deletes if the operation
@@ -299,7 +303,8 @@ export abstract class GalaContract extends Contract {
           }
 
           return opResponse;
-        }
+        },
+        ctx.otelSpan
       );
 
       responses.push(response);
@@ -380,10 +385,12 @@ export abstract class GalaContract extends Contract {
           const nestedFailed = GalaChainResponse.isError(opResponse);
           span?.setAttribute("gala.batch.op_success", !nestedFailed);
           await endTransactionSpan(sandboxCtx.otelSpan, nestedFailed, false);
+          sandboxCtx.stub?.setActiveOtelSpan?.(undefined);
           sandboxCtx.otelSpan = undefined;
 
           return opResponse;
-        }
+        },
+        ctx.otelSpan
       );
 
       responses.push(response);

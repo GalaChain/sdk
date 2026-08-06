@@ -136,6 +136,7 @@ export async function authorize(
       if (options.allowedRoles) {
         await ensureRoleIsAllowed(ctx, options.allowedRoles);
       }
-    }
+    },
+    ctx.otelSpan
   );
 }

@@ -75,6 +75,10 @@ type GalaChainStub = ChaincodeStub & {
   setReads(reads: Record<string, Uint8Array>): void;
   setWrites(writes: Record<string, Uint8Array>): void;
   setDeletes(deletes: Record<string, true>): void;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  setActiveOtelSpan(span: any): void;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  getActiveOtelSpan(): any;
   invokeChaincode(chaincodeName: string, args: string[], channel: string): Promise<ChaincodeResponse>;
   get externalChaincodeWasInvoked(): boolean;
 };

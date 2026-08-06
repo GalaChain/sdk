@@ -15,13 +15,13 @@
 import {
   _resetTracingForTests,
   endTransactionSpan,
+  formatOtelStateKey,
   isTracingEnabled,
   recordTransactionSpanError,
   runInSpanContext,
   startTransactionSpan,
   verifyOtelConnection,
-  withSpan,
-  withSpanSync
+  withSpan
 } from "./tracing";
 
 describe("tracing", () => {
@@ -112,7 +112,7 @@ describe("tracing", () => {
         childParentSpanId = parent?.spanContext().spanId;
         expect(span?.isRecording()).toBe(true);
       });
-      withSpanSync("stub.putState", { "fabric.state.key": "k1" }, (span) => {
+      await withSpan("stub.flushWrites", { "fabric.state.key": "k1" }, async (span) => {
         expect(span?.isRecording()).toBe(true);
         expect(span?.spanContext().traceId).toBe(childTraceId);
       });
@@ -136,5 +136,65 @@ describe("tracing", () => {
         throw new Error("state boom");
       })
     ).rejects.toThrow("state boom");
+  });
+
+  it("should parent withSpan to fallbackParent when no span is active", async () => {
+    // Given — simulates Fabric afterTransaction where ALS context was dropped
+    process.env.OTEL_EXPORTER_OTLP_ENDPOINT = "http://127.0.0.1:9";
+    process.env.OTEL_SERVICE_NAME = "test-chaincode";
+    await _resetTracingForTests();
+
+    const parent = startTransactionSpan("TestContract:Parent", {
+      traceId: "4bf92f3577b34da6a3ce929d0e0e4736",
+      spanId: "00f067aa0ba902b7"
+    });
+    expect(parent).toBeDefined();
+
+    // When — intentionally NOT inside runInSpanContext
+    let childTraceId: string | undefined;
+    await withSpan(
+      "stub.flushWrites",
+      {},
+      async (span) => {
+        childTraceId = span?.spanContext().traceId;
+        expect(span?.isRecording()).toBe(true);
+      },
+      parent
+    );
+
+    // Then
+    expect(childTraceId).toBe(parent?.spanContext().traceId);
+    await endTransactionSpan(parent);
+  });
+
+  it("should replace composite-key null separators with slashes in state keys", () => {
+    // Given
+    const compositeKey = ["TokenClass", "GALA", "Unit", "none", "none"].join("\u0000");
+
+    // When
+    const formatted = formatOtelStateKey(`\u0000${compositeKey}\u0000`);
+
+    // Then
+    expect(formatted).toBe("/TokenClass/GALA/Unit/none/none/");
+    expect(formatted.includes("\u0000")).toBe(false);
+  });
+
+  it("should keep withSpan open for the full async duration", async () => {
+    // Given
+    process.env.OTEL_EXPORTER_OTLP_ENDPOINT = "http://127.0.0.1:9";
+    await _resetTracingForTests();
+
+    const started = Date.now();
+    let endedWhileRunning = false;
+
+    // When
+    await withSpan("stub.getState", {}, async (span) => {
+      await new Promise((r) => setTimeout(r, 30));
+      endedWhileRunning = span?.isRecording() === true;
+    });
+
+    // Then
+    expect(endedWhileRunning).toBe(true);
+    expect(Date.now() - started).toBeGreaterThanOrEqual(25);
   });
 });

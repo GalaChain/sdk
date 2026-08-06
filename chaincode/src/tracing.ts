@@ -144,27 +144,49 @@ export function recordTransactionSpanError(span: Span | undefined, err: unknown)
 
 /**
  * Runs `fn` with `span` as the active OTEL context so child spans nest under it.
+ * Uses ROOT_CONTEXT as the base so a stale ambient span cannot become the parent.
  */
 export async function runInSpanContext<T>(span: Span | undefined, fn: () => Promise<T>): Promise<T> {
   if (!span) {
     return fn();
   }
-  return context.with(trace.setSpan(context.active(), span), fn);
+  return context.with(trace.setSpan(ROOT_CONTEXT, span), fn);
 }
 
 /**
- * Starts an INTERNAL child span under the active context (typically the tx span).
+ * Resolves the parent for a child span.
+ * Prefers the active context (preserves nesting); falls back to an explicit span
+ * when Fabric/async boundaries drop AsyncLocalStorage context.
+ */
+function resolveParentSpan(fallback?: Span): Span | undefined {
+  return trace.getSpan(context.active()) ?? fallback;
+}
+
+/**
+ * Starts an INTERNAL child span under the active context, or `fallbackParent` when
+ * no span is active (common after Fabric lifecycle boundaries).
  * No-op when tracing is disabled.
  */
-export function startChildSpan(name: string, attributes: Attributes = {}): Span | undefined {
+export function startChildSpan(
+  name: string,
+  attributes: Attributes = {},
+  fallbackParent?: Span
+): Span | undefined {
   if (!isTracingEnabled()) {
     return undefined;
   }
 
-  return trace.getTracer(TRACER_NAME).startSpan(name, {
-    kind: SpanKind.INTERNAL,
-    attributes
-  });
+  const parent = resolveParentSpan(fallbackParent);
+  const parentCtx = parent ? trace.setSpan(ROOT_CONTEXT, parent) : context.active();
+
+  return trace.getTracer(TRACER_NAME).startSpan(
+    name,
+    {
+      kind: SpanKind.INTERNAL,
+      attributes
+    },
+    parentCtx
+  );
 }
 
 export function endChildSpan(span: Span | undefined, err?: unknown): void {
@@ -183,17 +205,21 @@ export function endChildSpan(span: Span | undefined, err?: unknown): void {
 
 /**
  * Times an async operation as an INTERNAL child span. Never swallows errors.
+ * Pass `fallbackParent` (usually ctx.otelSpan) so parenting survives lost ALS context.
  */
 export async function withSpan<T>(
   name: string,
   attributes: Attributes,
-  fn: (span: Span | undefined) => Promise<T>
+  fn: (span: Span | undefined) => Promise<T>,
+  fallbackParent?: Span
 ): Promise<T> {
-  const span = startChildSpan(name, attributes);
+  const span = startChildSpan(name, attributes, fallbackParent);
   try {
-    const result = span
-      ? await context.with(trace.setSpan(context.active(), span), () => fn(span))
-      : await fn(span);
+    // Promise.resolve ensures we wait for thenables even if context.with's
+    // return type is not inferred as Promise (avoids ending the span too early).
+    const result = await Promise.resolve(
+      span ? context.with(trace.setSpan(ROOT_CONTEXT, span), () => fn(span)) : fn(span)
+    );
     endChildSpan(span);
     return result;
   } catch (err) {
@@ -205,10 +231,15 @@ export async function withSpan<T>(
 /**
  * Times a sync operation as an INTERNAL child span. Never swallows errors.
  */
-export function withSpanSync<T>(name: string, attributes: Attributes, fn: (span: Span | undefined) => T): T {
-  const span = startChildSpan(name, attributes);
+export function withSpanSync<T>(
+  name: string,
+  attributes: Attributes,
+  fn: (span: Span | undefined) => T,
+  fallbackParent?: Span
+): T {
+  const span = startChildSpan(name, attributes, fallbackParent);
   try {
-    const result = span ? context.with(trace.setSpan(context.active(), span), () => fn(span)) : fn(span);
+    const result = span ? context.with(trace.setSpan(ROOT_CONTEXT, span), () => fn(span)) : fn(span);
     endChildSpan(span);
     return result;
   } catch (err) {
@@ -219,9 +250,18 @@ export function withSpanSync<T>(name: string, attributes: Attributes, fn: (span:
 
 const ATTR_MAX_LEN = 256;
 
-/** Truncate long attribute values (e.g. Fabric keys) for OTEL. */
+/** Truncate long attribute values for OTEL. */
 export function truncateOtelAttr(value: string, maxLen = ATTR_MAX_LEN): string {
   return value.length > maxLen ? `${value.slice(0, maxLen - 1)}…` : value;
+}
+
+/**
+ * Format a Fabric state key for span attributes: composite-key `\u0000` separators
+ * become `/` so keys are readable in trace UIs.
+ */
+export function formatOtelStateKey(key: string, maxLen = ATTR_MAX_LEN): string {
+  // split/join avoids a control-char regex (eslint no-control-regex).
+  return truncateOtelAttr(key.split("\0").join("/"), maxLen);
 }
 
 /**
