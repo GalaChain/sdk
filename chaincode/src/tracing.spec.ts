@@ -167,6 +167,49 @@ describe("tracing", () => {
     await endTransactionSpan(parent);
   });
 
+  it("should ignore non-recording active span and use fallbackParent", async () => {
+    // Given — ambient context has only a remote (non-recording) parent from dto.trace
+    process.env.OTEL_EXPORTER_OTLP_ENDPOINT = "http://127.0.0.1:9";
+    process.env.OTEL_SERVICE_NAME = "test-chaincode";
+    await _resetTracingForTests();
+
+    const fallback = startTransactionSpan("TestContract:Fallback", undefined);
+    expect(fallback?.isRecording()).toBe(true);
+
+    const remoteParent = startTransactionSpan("TestContract:Remote", {
+      traceId: "4bf92f3577b34da6a3ce929d0e0e4736",
+      spanId: "00f067aa0ba902b7"
+    });
+    // End remote so any leftover context would be non-recording if re-used; instead
+    // simulate remote via setSpanContext on ROOT (non-recording wrapper).
+    await endTransactionSpan(remoteParent);
+
+    const { context: otelContext, ROOT_CONTEXT, trace: otelTrace } = await import("@opentelemetry/api");
+    const remoteCtx = otelTrace.setSpanContext(ROOT_CONTEXT, {
+      traceId: "4bf92f3577b34da6a3ce929d0e0e4736",
+      spanId: "00f067aa0ba902b7",
+      traceFlags: 1,
+      isRemote: true
+    });
+
+    let childTraceId: string | undefined;
+    await otelContext.with(remoteCtx, async () => {
+      // active getSpan is non-recording; child must still attach to our fallback
+      await withSpan(
+        "state.getObjectByKey",
+        {},
+        async (span) => {
+          childTraceId = span?.spanContext().traceId;
+        },
+        fallback
+      );
+    });
+
+    // Then
+    expect(childTraceId).toBe(fallback?.spanContext().traceId);
+    await endTransactionSpan(fallback);
+  });
+
   it("should replace composite-key null separators with slashes in state keys", () => {
     // Given
     const compositeKey = ["TokenClass", "GALA", "Unit", "none", "none"].join("\u0000");

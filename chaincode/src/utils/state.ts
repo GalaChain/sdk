@@ -32,14 +32,31 @@ import { GalaChainContext } from "../types";
 // see https://hyperledger-fabric.readthedocs.io/en/latest/performance.html#total-query-limit
 const TOTAL_RESULTS_LIMIT = 100 * 1000;
 
-/** withSpan parented to the active nested span (or SERVER) when ALS is missing. */
+/**
+ * State helper span. Always parents to ctx.otelFallbackSpan (explicit), and binds
+ * the new span on the stub so nested stub.getState/etc. nest under this helper
+ * even when AsyncLocalStorage is lost.
+ */
 function withStateSpan<T>(
   ctx: GalaChainContext,
   name: string,
   attributes: Attributes,
   fn: (span: Span | undefined) => Promise<T>
 ): Promise<T> {
-  return withSpan(name, attributes, fn, ctx.otelFallbackSpan);
+  return withSpan(
+    name,
+    attributes,
+    async (span) => {
+      const prev = ctx.stub?.getActiveOtelSpan?.();
+      ctx.stub?.setActiveOtelSpan?.(span ?? prev);
+      try {
+        return await fn(span);
+      } finally {
+        ctx.stub?.setActiveOtelSpan?.(prev);
+      }
+    },
+    ctx.otelFallbackSpan
+  );
 }
 
 export class ObjectNotFoundError extends NotFoundError {
@@ -473,7 +490,7 @@ export async function getObjectsByKeys<T extends ChainObject>(
         throw new NoObjectIdsError();
       }
 
-      // Start all async operations
+      // Start all async operations (ALS nests each under this span while recording).
       const operations: Array<Promise<T>> = objectIds.map((id) => getObjectByKey(ctx, constructor, id));
 
       // Collect results (in the same order as operations)
