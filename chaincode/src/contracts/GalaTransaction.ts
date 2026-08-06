@@ -34,7 +34,7 @@ import { Object as DTOObject, Transaction } from "fabric-contract-api";
 import { inspect } from "util";
 
 import { UniqueTransactionService } from "../services";
-import { recordTransactionSpanError, runInSpanContext, startTransactionSpan } from "../tracing";
+import { recordTransactionSpanError, runInSpanContext, startTransactionSpan, withSpan } from "../tracing";
 import { GalaChainContext } from "../types";
 import { extractOtelTrace } from "../utils";
 import { GalaContract } from "./GalaContract";
@@ -178,15 +178,23 @@ function GalaTransaction<In extends ChainCallDTO, Out>(
     // convention.
     // eslint-disable-next-line no-param-reassign
     descriptor.value = async function (ctx: GalaChainContext, dtoPlain) {
-      ctx.trace = extractOtelTrace(dtoPlain);
-      ctx.otelSpan = startTransactionSpan(loggingContext, ctx.trace, {
-        "gala.contract": className,
-        "gala.method": method.name,
-        "fabric.channel_id": ctx.stub?.getChannelID?.() ?? "",
-        "fabric.tx_id": ctx.stub?.getTxID?.() ?? ""
-      });
-      // Explicit parent for stub spans when Fabric drops AsyncLocalStorage context.
-      ctx.stub?.setActiveOtelSpan?.(ctx.otelSpan);
+      // Top-level invokes already have a SERVER span from GalaContract.aroundTransaction.
+      // Nested batch ops use a fresh ctx without otelSpan — start one here.
+      if (!ctx.otelSpan) {
+        ctx.trace = extractOtelTrace(dtoPlain);
+        ctx.otelSpan = startTransactionSpan(loggingContext, ctx.trace, {
+          "gala.contract": className,
+          "gala.method": method.name,
+          "fabric.channel_id": ctx.stub?.getChannelID?.() ?? "",
+          "fabric.tx_id": ctx.stub?.getTxID?.() ?? ""
+        });
+        ctx.stub?.setActiveOtelSpan?.(ctx.otelSpan);
+      } else if (!ctx.trace) {
+        ctx.trace = extractOtelTrace(dtoPlain);
+      }
+
+      const galaTxSpanName =
+        options.type === GalaTransactionType.SUBMIT ? "GalaTransaction.SUBMIT" : "GalaTransaction.EVALUATE";
 
       // Activate tx span so stub/state child spans nest under it.
       return runInSpanContext(ctx.otelSpan, async () => {
@@ -194,70 +202,104 @@ function GalaTransaction<In extends ChainCallDTO, Out>(
           const metadata = [{ dto: dtoPlain }];
           ctx?.logger?.logTimeline("Begin Transaction", loggingContext, metadata);
 
-          // Parse & validate - may throw an exception
-          const dtoClass = options.in ?? (ChainCallDTO as unknown as ClassConstructor<Inferred<In>>);
-          const dto = !dtoPlain
-            ? undefined
-            : await parseValidDTO<In>(dtoClass, dtoPlain as string | Record<string, unknown>);
+          return await withSpan(
+            galaTxSpanName,
+            {
+              "gala.contract": className,
+              "gala.method": method.name,
+              "gala.tx_type": options.type === GalaTransactionType.SUBMIT ? "SUBMIT" : "EVALUATE"
+            },
+            async () => {
+              // Parse & validate - may throw an exception
+              const dtoClass = options.in ?? (ChainCallDTO as unknown as ClassConstructor<Inferred<In>>);
+              const dto = !dtoPlain
+                ? undefined
+                : await parseValidDTO<In>(dtoClass, dtoPlain as string | Record<string, unknown>);
 
-          // Note using Date.now() instead of ctx.txUnixTime which is provided client-side.
-          if (dto?.dtoExpiresAt && dto.dtoExpiresAt < Date.now()) {
-            throw new ExpiredError(`DTO expired at ${new Date(dto.dtoExpiresAt).toISOString()}`);
-          }
+              // Note using Date.now() instead of ctx.txUnixTime which is provided client-side.
+              if (dto?.dtoExpiresAt && dto.dtoExpiresAt < Date.now()) {
+                throw new ExpiredError(`DTO expired at ${new Date(dto.dtoExpiresAt).toISOString()}`);
+              }
 
-          // Authenticate the user
-          if (ctx.isDryRun) {
-            // Do not authenticate in dry run mode
-          } else if (options?.verifySignature || dto?.getAllSignatures().length) {
-            // Authenticate if this is explicitly enabled or if there are any signatures in the DTO
-            ctx.callingUserData = await authenticate(ctx, dto, options.quorum);
-          } else {
-            // it means a request where authorization is not required. If there is org-based authorization,
-            // default roles are applied. If not, then only evaluate is possible. Alias is intentionally
-            // missing.
-            const roles = !options.allowedOrgs?.length ? [UserRole.EVALUATE] : [...UserProfile.DEFAULT_ROLES];
-            ctx.callingUserData = {
-              roles,
-              signedBy: [],
-              signatureQuorum: 0,
-              allowedSigners: [],
-              isMultisig: false
-            };
-          }
+              await withSpan(
+                "gala.authorize",
+                {},
+                async () => {
+                  // Authenticate the user
+                  if (ctx.isDryRun) {
+                    // Do not authenticate in dry run mode
+                  } else if (options?.verifySignature || dto?.getAllSignatures().length) {
+                    // Authenticate if this is explicitly enabled or if there are any signatures in the DTO
+                    ctx.callingUserData = await authenticate(ctx, dto, options.quorum);
+                  } else {
+                    // it means a request where authorization is not required. If there is org-based authorization,
+                    // default roles are applied. If not, then only evaluate is possible. Alias is intentionally
+                    // missing.
+                    const roles = !options.allowedOrgs?.length
+                      ? [UserRole.EVALUATE]
+                      : [...UserProfile.DEFAULT_ROLES];
+                    ctx.callingUserData = {
+                      roles,
+                      signedBy: [],
+                      signatureQuorum: 0,
+                      allowedSigners: [],
+                      isMultisig: false
+                    };
+                  }
 
-          // Authorize the user
-          await authorize(ctx, options, dto);
+                  // Authorize the user
+                  await authorize(ctx, options, dto);
 
-          // Prevent the same transaction from being submitted multiple times
-          if (options.enforceUniqueKey) {
-            if (dto?.uniqueKey) {
-              await UniqueTransactionService.ensureUniqueTransaction(ctx, dto.uniqueKey);
-            } else {
-              const message = `Missing uniqueKey in transaction dto for method '${method.name}'`;
-              throw new RuntimeError(message);
-            }
-          }
+                  // Prevent the same transaction from being submitted multiple times
+                  if (options.enforceUniqueKey) {
+                    if (dto?.uniqueKey) {
+                      await UniqueTransactionService.ensureUniqueTransaction(ctx, dto.uniqueKey);
+                    } else {
+                      const message = `Missing uniqueKey in transaction dto for method '${method.name}'`;
+                      throw new RuntimeError(message);
+                    }
+                  }
+                },
+                ctx.otelSpan
+              );
 
-          const argArray: [GalaChainContext, In] | [GalaChainContext] = dto ? [ctx, dto] : [ctx];
+              const argArray: [GalaChainContext, In] | [GalaChainContext] = dto ? [ctx, dto] : [ctx];
 
-          if (options?.before !== undefined) {
-            await options?.before?.apply(this, argArray);
-          }
+              if (options?.before !== undefined) {
+                await withSpan(
+                  "gala.before",
+                  {},
+                  async () => options.before?.apply(this, argArray),
+                  ctx.otelSpan
+                );
+              }
 
-          // Execute the method. Note the contract method is always an async
-          // function, so it is safe to do the `await`
-          const result = await method?.apply(this, argArray);
+              // Business handler — separate from auth/parse so traces show where time goes.
+              const result = await withSpan(
+                "gala.handle",
+                { "gala.contract": className, "gala.method": method.name },
+                async () => method?.apply(this, argArray),
+                ctx.otelSpan
+              );
 
-          const normalizedResult =
-            typeof result === "object" && "Status" in result && typeof result.Status === "number"
-              ? result
-              : GalaChainResponse.Success(result);
+              const normalizedResult =
+                typeof result === "object" && "Status" in result && typeof result.Status === "number"
+                  ? result
+                  : GalaChainResponse.Success(result);
 
-          if (options?.after !== undefined) {
-            await options?.after?.apply(this, [ctx, dto, normalizedResult]);
-          }
+              if (options?.after !== undefined) {
+                await withSpan(
+                  "gala.after",
+                  {},
+                  async () => options.after?.apply(this, [ctx, dto, normalizedResult]),
+                  ctx.otelSpan
+                );
+              }
 
-          return normalizedResult;
+              return normalizedResult;
+            },
+            ctx.otelSpan
+          );
         } catch (err) {
           const chainError = ChainError.from(err);
           recordTransactionSpanError(ctx.otelSpan, err);
