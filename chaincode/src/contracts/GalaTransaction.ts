@@ -251,7 +251,7 @@ function GalaTransaction<In extends ChainCallDTO, Out>(
 
           // Business handler — separate from auth/parse so traces show where time goes.
           const result = await withSpan(
-            "gala.handler",
+            loggingContext,
             { "gala.contract": className, "gala.method": method.name },
             async () => method?.apply(this, argArray),
             ctx.otelSpan
