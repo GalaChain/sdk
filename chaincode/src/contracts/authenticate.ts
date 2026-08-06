@@ -174,7 +174,7 @@ export async function authenticate(
 
       throw new InvalidSignatureParametersError(dto);
     },
-    ctx.otelSpan
+    ctx.otelFallbackSpan
   );
 }
 

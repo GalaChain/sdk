@@ -137,6 +137,6 @@ export async function authorize(
         await ensureRoleIsAllowed(ctx, options.allowedRoles);
       }
     },
-    ctx.otelSpan
+    ctx.otelFallbackSpan
   );
 }

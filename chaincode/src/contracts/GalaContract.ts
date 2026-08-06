@@ -141,28 +141,33 @@ export abstract class GalaContract extends Contract {
   public async afterTransaction(ctx: GalaChainContext, result: unknown): Promise<void> {
     await super.afterTransaction(ctx, result);
 
-    // Keep tx span active so flushWrites child spans nest under it.
-    // Re-bind on stub too — afterTransaction runs outside the decorator's ALS scope.
+    // Re-bind SERVER on stub — afterTransaction runs outside the decorator's ALS scope.
     ctx.stub?.setActiveOtelSpan?.(ctx.otelSpan);
     await runInSpanContext(ctx.otelSpan, async () => {
       await withSpan(
         "fabric.afterTransaction",
         {},
-        async () => {
-          if (
-            typeof result === "object" &&
-            // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
-            result?.["Status"] === GalaChainResponseType.Success &&
-            !ctx.isDryRun
-          ) {
-            await (ctx.stub as unknown as GalaChainStub).flushWrites();
-          }
+        async (afterSpan) => {
+          // Prefer afterTransaction as parent for flushWrites when ALS is dropped.
+          ctx.stub?.setActiveOtelSpan?.(afterSpan ?? ctx.otelSpan);
+          try {
+            if (
+              typeof result === "object" &&
+              // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
+              result?.["Status"] === GalaChainResponseType.Success &&
+              !ctx.isDryRun
+            ) {
+              await (ctx.stub as unknown as GalaChainStub).flushWrites();
+            }
 
-          ctx?.logger?.logTimeline(
-            "End Transaction",
-            ctx.stub.getFunctionAndParameters()?.fcn ?? this.getName(),
-            [{ chaincodeResult: result }]
-          );
+            ctx?.logger?.logTimeline(
+              "End Transaction",
+              ctx.stub.getFunctionAndParameters()?.fcn ?? this.getName(),
+              [{ chaincodeResult: result }]
+            );
+          } finally {
+            ctx.stub?.setActiveOtelSpan?.(ctx.otelSpan);
+          }
         },
         ctx.otelSpan
       );
