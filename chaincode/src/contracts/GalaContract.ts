@@ -89,8 +89,40 @@ export abstract class GalaContract extends Contract {
     return new GalaChainContext(this.config);
   }
 
+  /**
+   * SERVER span covering the full Fabric lifecycle (before → around → after).
+   * Safe to call multiple times; only the first call starts the span.
+   */
+  private ensureOtelTransactionSpan(ctx: GalaChainContext, methodName: string, dtoPlain: unknown): void {
+    if (ctx.otelSpan) {
+      return;
+    }
+
+    ctx.trace = extractOtelTrace(dtoPlain);
+    ctx.otelSpan = startTransactionSpan(`${this.getName()}:${methodName}`, ctx.trace, {
+      "gala.contract": this.getName(),
+      "gala.method": methodName,
+      "fabric.channel_id": ctx.stub?.getChannelID?.() ?? "",
+      "fabric.tx_id": ctx.stub?.getTxID?.() ?? ""
+    });
+    ctx.stub?.setActiveOtelSpan?.(ctx.otelSpan);
+  }
+
   public async beforeTransaction(ctx: GalaChainContext): Promise<void> {
-    await super.beforeTransaction(ctx);
+    const { fcn, params } = ctx.stub.getFunctionAndParameters();
+    const colon = fcn.lastIndexOf(":");
+    const methodName = colon >= 0 ? fcn.slice(colon + 1) : fcn || "unknown";
+
+    this.ensureOtelTransactionSpan(ctx, methodName, params[0]);
+
+    await runInSpanContext(ctx.otelSpan, () =>
+      withSpan(
+        "fabric.beforeTransaction",
+        { "gala.method": methodName },
+        () => super.beforeTransaction(ctx),
+        ctx.otelSpan
+      )
+    );
   }
 
   // eslint-disable-next-line @typescript-eslint/ban-types
@@ -98,20 +130,9 @@ export abstract class GalaContract extends Contract {
     // Fabric passes `fn` as the transaction name string (not a Function).
     const methodName = typeof fn === "string" ? fn : (fn as { name?: string })?.name ?? "unknown";
     const params = Array.isArray(parameters) ? parameters : [];
-    const dtoPlain = params[0];
 
-    // Parent SERVER span for the full Fabric invoke (around → afterTransaction).
-    // Nested batch ops create their own span in @GalaTransaction when ctx.otelSpan is unset.
-    if (!ctx.otelSpan) {
-      ctx.trace = extractOtelTrace(dtoPlain);
-      ctx.otelSpan = startTransactionSpan(`${this.getName()}:${methodName}`, ctx.trace, {
-        "gala.contract": this.getName(),
-        "gala.method": methodName,
-        "fabric.channel_id": ctx.stub?.getChannelID?.() ?? "",
-        "fabric.tx_id": ctx.stub?.getTxID?.() ?? ""
-      });
-      ctx.stub?.setActiveOtelSpan?.(ctx.otelSpan);
-    }
+    // Fallback when beforeTransaction did not run (direct/unit calls, nested batch).
+    this.ensureOtelTransactionSpan(ctx, methodName, params[0]);
 
     // note: Fabric uses Promise<void> type, but actually it returns transaction result
     return runInSpanContext(ctx.otelSpan, () => super.aroundTransaction(ctx, fn, parameters));
@@ -124,19 +145,26 @@ export abstract class GalaContract extends Contract {
     // Re-bind on stub too — afterTransaction runs outside the decorator's ALS scope.
     ctx.stub?.setActiveOtelSpan?.(ctx.otelSpan);
     await runInSpanContext(ctx.otelSpan, async () => {
-      if (
-        typeof result === "object" &&
-        // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
-        result?.["Status"] === GalaChainResponseType.Success &&
-        !ctx.isDryRun
-      ) {
-        await (ctx.stub as unknown as GalaChainStub).flushWrites();
-      }
+      await withSpan(
+        "fabric.afterTransaction",
+        {},
+        async () => {
+          if (
+            typeof result === "object" &&
+            // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
+            result?.["Status"] === GalaChainResponseType.Success &&
+            !ctx.isDryRun
+          ) {
+            await (ctx.stub as unknown as GalaChainStub).flushWrites();
+          }
 
-      ctx?.logger?.logTimeline(
-        "End Transaction",
-        ctx.stub.getFunctionAndParameters()?.fcn ?? this.getName(),
-        [{ chaincodeResult: result }]
+          ctx?.logger?.logTimeline(
+            "End Transaction",
+            ctx.stub.getFunctionAndParameters()?.fcn ?? this.getName(),
+            [{ chaincodeResult: result }]
+          );
+        },
+        ctx.otelSpan
       );
     });
 
