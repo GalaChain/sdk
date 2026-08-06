@@ -34,7 +34,7 @@ import { Object as DTOObject, Transaction } from "fabric-contract-api";
 import { inspect } from "util";
 
 import { UniqueTransactionService } from "../services";
-import { recordTransactionSpanError, runInSpanContext, startTransactionSpan } from "../tracing";
+import { recordTransactionSpanError, runInSpanContext, startTransactionSpan, withSpan } from "../tracing";
 import { GalaChainContext } from "../types";
 import { extractOtelTrace } from "../utils";
 import { GalaContract } from "./GalaContract";
@@ -178,15 +178,20 @@ function GalaTransaction<In extends ChainCallDTO, Out>(
     // convention.
     // eslint-disable-next-line no-param-reassign
     descriptor.value = async function (ctx: GalaChainContext, dtoPlain) {
-      ctx.trace = extractOtelTrace(dtoPlain);
-      ctx.otelSpan = startTransactionSpan(loggingContext, ctx.trace, {
-        "gala.contract": className,
-        "gala.method": method.name,
-        "fabric.channel_id": ctx.stub?.getChannelID?.() ?? "",
-        "fabric.tx_id": ctx.stub?.getTxID?.() ?? ""
-      });
-      // Explicit parent for stub spans when Fabric drops AsyncLocalStorage context.
-      ctx.stub?.setActiveOtelSpan?.(ctx.otelSpan);
+      // Top-level invokes already have a SERVER span from GalaContract.aroundTransaction.
+      // Nested batch ops use a fresh ctx without otelSpan — start one here.
+      if (!ctx.otelSpan) {
+        ctx.trace = extractOtelTrace(dtoPlain);
+        ctx.otelSpan = startTransactionSpan(loggingContext, ctx.trace, {
+          "gala.contract": className,
+          "gala.method": method.name,
+          "fabric.channel_id": ctx.stub?.getChannelID?.() ?? "",
+          "fabric.tx_id": ctx.stub?.getTxID?.() ?? ""
+        });
+        ctx.stub?.setActiveOtelSpan?.(ctx.otelSpan);
+      } else if (!ctx.trace) {
+        ctx.trace = extractOtelTrace(dtoPlain);
+      }
 
       // Activate tx span so stub/state child spans nest under it.
       return runInSpanContext(ctx.otelSpan, async () => {
@@ -244,9 +249,13 @@ function GalaTransaction<In extends ChainCallDTO, Out>(
             await options?.before?.apply(this, argArray);
           }
 
-          // Execute the method. Note the contract method is always an async
-          // function, so it is safe to do the `await`
-          const result = await method?.apply(this, argArray);
+          // Business handler — separate from auth/parse so traces show where time goes.
+          const result = await withSpan(
+            "gala.handler",
+            { "gala.contract": className, "gala.method": method.name },
+            async () => method?.apply(this, argArray),
+            ctx.otelSpan
+          );
 
           const normalizedResult =
             typeof result === "object" && "Status" in result && typeof result.Status === "number"

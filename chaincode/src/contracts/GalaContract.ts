@@ -36,9 +36,9 @@ import {
 import { Contract } from "fabric-contract-api";
 
 import { PublicKeyService } from "../services";
-import { endTransactionSpan, runInSpanContext, withSpan } from "../tracing";
+import { endTransactionSpan, runInSpanContext, startTransactionSpan, withSpan } from "../tracing";
 import { GalaChainContext, GalaChainContextConfig, GalaChainStub } from "../types";
-import { getObjectHistory, getPlainObjectByKey } from "../utils";
+import { extractOtelTrace, getObjectHistory, getPlainObjectByKey } from "../utils";
 import { getApiMethod, getApiMethods } from "./GalaContractApi";
 import { EVALUATE, GalaTransaction, SUBMIT, Submit } from "./GalaTransaction";
 import { applySavedRequests, hasPendingApplyRequests } from "./GalaTransactionRequest";
@@ -95,8 +95,26 @@ export abstract class GalaContract extends Contract {
 
   // eslint-disable-next-line @typescript-eslint/ban-types
   public async aroundTransaction(ctx: GalaChainContext, fn: Function, parameters: unknown): Promise<void> {
+    // Fabric passes `fn` as the transaction name string (not a Function).
+    const methodName = typeof fn === "string" ? fn : (fn as { name?: string })?.name ?? "unknown";
+    const params = Array.isArray(parameters) ? parameters : [];
+    const dtoPlain = params[0];
+
+    // Parent SERVER span for the full Fabric invoke (around → afterTransaction).
+    // Nested batch ops create their own span in @GalaTransaction when ctx.otelSpan is unset.
+    if (!ctx.otelSpan) {
+      ctx.trace = extractOtelTrace(dtoPlain);
+      ctx.otelSpan = startTransactionSpan(`${this.getName()}:${methodName}`, ctx.trace, {
+        "gala.contract": this.getName(),
+        "gala.method": methodName,
+        "fabric.channel_id": ctx.stub?.getChannelID?.() ?? "",
+        "fabric.tx_id": ctx.stub?.getTxID?.() ?? ""
+      });
+      ctx.stub?.setActiveOtelSpan?.(ctx.otelSpan);
+    }
+
     // note: Fabric uses Promise<void> type, but actually it returns transaction result
-    return super.aroundTransaction(ctx, fn, parameters);
+    return runInSpanContext(ctx.otelSpan, () => super.aroundTransaction(ctx, fn, parameters));
   }
 
   public async afterTransaction(ctx: GalaChainContext, result: unknown): Promise<void> {
