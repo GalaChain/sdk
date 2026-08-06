@@ -20,8 +20,7 @@ import {
   runInSpanContext,
   startTransactionSpan,
   verifyOtelConnection,
-  withSpan,
-  withSpanSync
+  withSpan
 } from "./tracing";
 
 describe("tracing", () => {
@@ -112,7 +111,7 @@ describe("tracing", () => {
         childParentSpanId = parent?.spanContext().spanId;
         expect(span?.isRecording()).toBe(true);
       });
-      withSpanSync("stub.putState", { "fabric.state.key": "k1" }, (span) => {
+      await withSpan("stub.flushWrites", { "fabric.state.key": "k1" }, async (span) => {
         expect(span?.isRecording()).toBe(true);
         expect(span?.spanContext().traceId).toBe(childTraceId);
       });
@@ -165,5 +164,24 @@ describe("tracing", () => {
     // Then
     expect(childTraceId).toBe(parent?.spanContext().traceId);
     await endTransactionSpan(parent);
+  });
+
+  it("should keep withSpan open for the full async duration", async () => {
+    // Given
+    process.env.OTEL_EXPORTER_OTLP_ENDPOINT = "http://127.0.0.1:9";
+    await _resetTracingForTests();
+
+    const started = Date.now();
+    let endedWhileRunning = false;
+
+    // When
+    await withSpan("stub.getState", {}, async (span) => {
+      await new Promise((r) => setTimeout(r, 30));
+      endedWhileRunning = span?.isRecording() === true;
+    });
+
+    // Then
+    expect(endedWhileRunning).toBe(true);
+    expect(Date.now() - started).toBeGreaterThanOrEqual(25);
   });
 });

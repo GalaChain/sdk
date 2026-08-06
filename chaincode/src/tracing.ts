@@ -215,9 +215,11 @@ export async function withSpan<T>(
 ): Promise<T> {
   const span = startChildSpan(name, attributes, fallbackParent);
   try {
-    const result = span
-      ? await context.with(trace.setSpan(ROOT_CONTEXT, span), () => fn(span))
-      : await fn(span);
+    // Promise.resolve ensures we wait for thenables even if context.with's
+    // return type is not inferred as Promise (avoids ending the span too early).
+    const result = await Promise.resolve(
+      span ? context.with(trace.setSpan(ROOT_CONTEXT, span), () => fn(span)) : fn(span)
+    );
     endChildSpan(span);
     return result;
   } catch (err) {
