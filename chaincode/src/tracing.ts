@@ -260,7 +260,8 @@ export function truncateOtelAttr(value: string, maxLen = ATTR_MAX_LEN): string {
  * become `/` so keys are readable in trace UIs.
  */
 export function formatOtelStateKey(key: string, maxLen = ATTR_MAX_LEN): string {
-  return truncateOtelAttr(key.replace(/\u0000/g, "/"), maxLen);
+  // split/join avoids a control-char regex (eslint no-control-regex).
+  return truncateOtelAttr(key.split("\0").join("/"), maxLen);
 }
 
 /**
