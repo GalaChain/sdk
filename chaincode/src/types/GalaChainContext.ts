@@ -59,8 +59,16 @@ export class GalaChainContext extends Context {
   public config: GalaChainContextConfig;
   /** OTEL trace from DTO, used to correlate chaincode logs with the caller span. */
   public trace?: OtelTraceContext;
-  /** Active OTEL span for the current decorated transaction (if tracing is enabled). */
+  /** SERVER span for the current Fabric invoke (before → after). */
   public otelSpan?: Span;
+
+  /**
+   * Fallback parent for child spans when AsyncLocalStorage context is missing.
+   * Prefers the stub's active nested span (e.g. gala.handle) over the SERVER span.
+   */
+  get otelFallbackSpan(): Span | undefined {
+    return this.stub?.getActiveOtelSpan?.() ?? this.otelSpan;
+  }
 
   constructor(config: GalaChainContextConfig) {
     super();

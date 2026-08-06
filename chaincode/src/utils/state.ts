@@ -32,14 +32,14 @@ import { GalaChainContext } from "../types";
 // see https://hyperledger-fabric.readthedocs.io/en/latest/performance.html#total-query-limit
 const TOTAL_RESULTS_LIMIT = 100 * 1000;
 
-/** withSpan parented to ctx.otelSpan when ALS context is missing. */
+/** withSpan parented to the active nested span (or SERVER) when ALS is missing. */
 function withStateSpan<T>(
   ctx: GalaChainContext,
   name: string,
   attributes: Attributes,
   fn: (span: Span | undefined) => Promise<T>
 ): Promise<T> {
-  return withSpan(name, attributes, fn, ctx.otelSpan);
+  return withSpan(name, attributes, fn, ctx.otelFallbackSpan);
 }
 
 export class ObjectNotFoundError extends NotFoundError {
