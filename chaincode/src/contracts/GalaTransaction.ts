@@ -185,6 +185,8 @@ function GalaTransaction<In extends ChainCallDTO, Out>(
         "fabric.channel_id": ctx.stub?.getChannelID?.() ?? "",
         "fabric.tx_id": ctx.stub?.getTxID?.() ?? ""
       });
+      // Explicit parent for stub spans when Fabric drops AsyncLocalStorage context.
+      ctx.stub?.setActiveOtelSpan?.(ctx.otelSpan);
 
       // Activate tx span so stub/state child spans nest under it.
       return runInSpanContext(ctx.otelSpan, async () => {

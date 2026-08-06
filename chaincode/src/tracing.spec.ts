@@ -137,4 +137,33 @@ describe("tracing", () => {
       })
     ).rejects.toThrow("state boom");
   });
+
+  it("should parent withSpan to fallbackParent when no span is active", async () => {
+    // Given — simulates Fabric afterTransaction where ALS context was dropped
+    process.env.OTEL_EXPORTER_OTLP_ENDPOINT = "http://127.0.0.1:9";
+    process.env.OTEL_SERVICE_NAME = "test-chaincode";
+    await _resetTracingForTests();
+
+    const parent = startTransactionSpan("TestContract:Parent", {
+      traceId: "4bf92f3577b34da6a3ce929d0e0e4736",
+      spanId: "00f067aa0ba902b7"
+    });
+    expect(parent).toBeDefined();
+
+    // When — intentionally NOT inside runInSpanContext
+    let childTraceId: string | undefined;
+    await withSpan(
+      "stub.flushWrites",
+      {},
+      async (span) => {
+        childTraceId = span?.spanContext().traceId;
+        expect(span?.isRecording()).toBe(true);
+      },
+      parent
+    );
+
+    // Then
+    expect(childTraceId).toBe(parent?.spanContext().traceId);
+    await endTransactionSpan(parent);
+  });
 });

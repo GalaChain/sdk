@@ -13,6 +13,7 @@
  * limitations under the License.
  */
 import { NotImplementedError } from "@gala-chain/api";
+import { Span } from "@opentelemetry/api";
 import { ChaincodeResponse, ChaincodeStub } from "fabric-shim";
 
 import { truncateOtelAttr, withSpan, withSpanSync } from "../tracing";
@@ -43,11 +44,22 @@ class StubCache {
 
   private invokeChaincodeCalls: Record<string, string[]> = {};
 
+  /** Fallback parent when AsyncLocalStorage context is missing (Fabric lifecycle). */
+  private activeOtelSpan: Span | undefined;
+
   constructor(
     private readonly stub: ChaincodeStub,
     private readonly isReadOnly: boolean,
     private readonly index: number | undefined
   ) {}
+
+  setActiveOtelSpan(span: Span | undefined): void {
+    this.activeOtelSpan = span;
+  }
+
+  getActiveOtelSpan(): Span | undefined {
+    return this.activeOtelSpan;
+  }
 
   getTxID(): string {
     if (typeof this.index === "number") {
@@ -68,7 +80,8 @@ class StubCache {
         span?.setAttribute("fabric.state.value_size", result?.length ?? 0);
         span?.setAttribute("fabric.state.found", (result?.length ?? 0) > 0);
         return result;
-      }
+      },
+      this.activeOtelSpan
     );
   }
 
@@ -80,7 +93,8 @@ class StubCache {
         "fabric.state.start_key": stateKeyAttr(startKey),
         "fabric.state.end_key": stateKeyAttr(endKey)
       },
-      () => this.stub.getStateByRange(startKey, endKey) as FabricIterable<CachedKV>
+      () => this.stub.getStateByRange(startKey, endKey) as FabricIterable<CachedKV>,
+      this.activeOtelSpan
     );
   }
 
@@ -92,7 +106,8 @@ class StubCache {
         "fabric.state.object_type": objectType,
         "fabric.state.attribute_count": attributes.length
       },
-      () => this.stub.getStateByPartialCompositeKey(objectType, attributes) as FabricIterable<CachedKV>
+      () => this.stub.getStateByPartialCompositeKey(objectType, attributes) as FabricIterable<CachedKV>,
+      this.activeOtelSpan
     );
   }
 
@@ -103,7 +118,8 @@ class StubCache {
         "fabric.state.operation": "getHistoryForKey",
         "fabric.state.key": stateKeyAttr(key)
       },
-      () => this.stub.getHistoryForKey(key)
+      () => this.stub.getHistoryForKey(key),
+      this.activeOtelSpan
     );
   }
 
@@ -162,7 +178,8 @@ class StubCache {
         if (key in this.reads) {
           delete this.reads[key];
         }
-      }
+      },
+      this.activeOtelSpan
     );
   }
 
@@ -184,7 +201,8 @@ class StubCache {
         if (key in this.reads) {
           delete this.reads[key];
         }
-      }
+      },
+      this.activeOtelSpan
     );
   }
 
@@ -220,7 +238,8 @@ class StubCache {
         }
 
         return await this.stub.invokeChaincode(chaincodeName, args, channel);
-      }
+      },
+      this.activeOtelSpan
     );
   }
 
@@ -277,7 +296,8 @@ class StubCache {
               "fabric.state.key": stateKeyAttr(key),
               "fabric.state.cached": false
             },
-            () => this.stub.deleteState(key)
+            () => this.stub.deleteState(key),
+            this.activeOtelSpan
           )
         );
         const putOps = putEntries.map(([key, value]) =>
@@ -289,12 +309,14 @@ class StubCache {
               "fabric.state.value_size": value.length,
               "fabric.state.cached": false
             },
-            () => this.stub.putState(key, value)
+            () => this.stub.putState(key, value),
+            this.activeOtelSpan
           )
         );
         await Promise.all(deleteOps);
         await Promise.all(putOps);
-      }
+      },
+      this.activeOtelSpan
     );
   }
 
@@ -356,6 +378,11 @@ export interface GalaChainStub extends ChaincodeStub {
   setWrites(writes: Record<string, Uint8Array>): void;
 
   setDeletes(deletes: Record<string, true>): void;
+
+  /** Bind the transaction span so stub spans parent correctly when ALS is lost. */
+  setActiveOtelSpan(span: Span | undefined): void;
+
+  getActiveOtelSpan(): Span | undefined;
 
   invokeChaincode(chaincodeName: string, args: string[], channel: string): Promise<ChaincodeResponse>;
 

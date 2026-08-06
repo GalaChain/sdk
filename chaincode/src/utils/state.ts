@@ -22,6 +22,7 @@ import {
   RangedChainObject,
   ValidationFailedError
 } from "@gala-chain/api";
+import { Attributes, Span } from "@opentelemetry/api";
 import { QueryResponseMetadata } from "fabric-shim";
 
 import { truncateOtelAttr, withSpan } from "../tracing";
@@ -30,6 +31,16 @@ import { GalaChainContext } from "../types";
 // Fabric default value, we don't want to change it
 // see https://hyperledger-fabric.readthedocs.io/en/latest/performance.html#total-query-limit
 const TOTAL_RESULTS_LIMIT = 100 * 1000;
+
+/** withSpan parented to ctx.otelSpan when ALS context is missing. */
+function withStateSpan<T>(
+  ctx: GalaChainContext,
+  name: string,
+  attributes: Attributes,
+  fn: (span: Span | undefined) => Promise<T>
+): Promise<T> {
+  return withSpan(name, attributes, fn, ctx.otelSpan);
+}
 
 export class ObjectNotFoundError extends NotFoundError {
   constructor(objectId: string) {
@@ -68,7 +79,8 @@ export class InvalidResultsError extends DefaultError {
  * @returns
  */
 export async function putChainObject(ctx: GalaChainContext, data: ChainObject): Promise<void> {
-  return withSpan(
+  return withStateSpan(
+    ctx,
     "state.putChainObject",
     {
       "gala.state.operation": "putChainObject",
@@ -99,7 +111,8 @@ export async function putChainObject(ctx: GalaChainContext, data: ChainObject): 
  * @returns
  */
 export async function putRangedChainObject(ctx: GalaChainContext, data: RangedChainObject): Promise<void> {
-  return withSpan(
+  return withStateSpan(
+    ctx,
     "state.putRangedChainObject",
     {
       "gala.state.operation": "putRangedChainObject",
@@ -128,7 +141,8 @@ export async function putRangedChainObject(ctx: GalaChainContext, data: RangedCh
  * @returns
  */
 export async function deleteChainObject(ctx: GalaChainContext, data: ChainObject): Promise<void> {
-  return withSpan(
+  return withStateSpan(
+    ctx,
     "state.deleteChainObject",
     {
       "gala.state.operation": "deleteChainObject",
@@ -167,7 +181,8 @@ export async function getObjectsByPartialCompositeKey<T extends ChainObject>(
   attributes: string[],
   constructor: ClassConstructor<Inferred<T, ChainObject>>
 ): Promise<Array<T>> {
-  return withSpan(
+  return withStateSpan(
+    ctx,
     "state.getObjectsByPartialCompositeKey",
     {
       "gala.state.operation": "getObjectsByPartialCompositeKey",
@@ -238,7 +253,8 @@ export async function getObjectsByPartialCompositeKeyWithPagination<T extends Ch
   bookmark: string | undefined,
   limit: number = TOTAL_RESULTS_LIMIT
 ): Promise<{ results: Array<T>; metadata: QueryResponseMetadata }> {
-  return withSpan(
+  return withStateSpan(
+    ctx,
     "state.getObjectsByPartialCompositeKeyWithPagination",
     {
       "gala.state.operation": "getObjectsByPartialCompositeKeyWithPagination",
@@ -298,7 +314,8 @@ export async function getObjectByKey<T extends ChainObject>(
   constructor: ClassConstructor<Inferred<T, ChainObject>>,
   objectId: string
 ): Promise<T> {
-  return withSpan(
+  return withStateSpan(
+    ctx,
     "state.getObjectByKey",
     {
       "gala.state.operation": "getObjectByKey",
@@ -343,7 +360,8 @@ export async function getRangedObjectByKey<T extends RangedChainObject>(
   constructor: ClassConstructor<Inferred<T, RangedChainObject>>,
   objectId: string
 ): Promise<T> {
-  return withSpan(
+  return withStateSpan(
+    ctx,
     "state.getRangedObjectByKey",
     {
       "gala.state.operation": "getRangedObjectByKey",
@@ -369,7 +387,8 @@ export async function getPlainObjectByKey(
   ctx: GalaChainContext,
   objectId: string
 ): Promise<Record<string, unknown>> {
-  return withSpan(
+  return withStateSpan(
+    ctx,
     "state.getPlainObjectByKey",
     {
       "gala.state.operation": "getPlainObjectByKey",
@@ -394,7 +413,8 @@ export async function getObjectHistory(
   ctx: GalaChainContext,
   objectId: string
 ): Promise<{ history: unknown[] }> {
-  return withSpan(
+  return withStateSpan(
+    ctx,
     "state.getObjectHistory",
     {
       "gala.state.operation": "getObjectHistory",
@@ -440,7 +460,8 @@ export async function getObjectsByKeys<T extends ChainObject>(
   constructor: ClassConstructor<Inferred<T, ChainObject>>,
   objectIds: Array<string>
 ): Promise<Array<T>> {
-  return withSpan(
+  return withStateSpan(
+    ctx,
     "state.getObjectsByKeys",
     {
       "gala.state.operation": "getObjectsByKeys",
@@ -498,7 +519,8 @@ export async function getObjectsByKeys<T extends ChainObject>(
  * @returns `Promise<boolean>`
  */
 export async function objectExists(ctx: GalaChainContext, id: string): Promise<boolean> {
-  return withSpan(
+  return withStateSpan(
+    ctx,
     "state.objectExists",
     {
       "gala.state.operation": "objectExists",
