@@ -22,7 +22,6 @@ import {
 } from "@gala-chain/api";
 import { plainToInstance } from "class-transformer";
 
-import { withSpan } from "../tracing";
 import { GalaChainContext } from "../types";
 import {
   getObjectsByKeys,
@@ -71,16 +70,9 @@ export async function fetchTokenSwapsOfferedByUser(
 
   const results = await getObjectsByKeys(ctx, TokenSwapRequest, swapRequestIds);
 
-  await withSpan(
-    "swaps.fetchTokenMetadataForSwap.batch",
-    { "gala.swap.count": results.length },
-    async () => {
-      for (const result of results) {
-        await fetchTokenMetadataForSwap(ctx, result);
-      }
-    },
-    ctx.otelSpan
-  );
+  for (const result of results) {
+    await fetchTokenMetadataForSwap(ctx, result);
+  }
 
   const response = plainToInstance(FetchTokenSwapsWithPaginationResponse, {
     nextPageBookMark: swapsOfferedByUser.metadata.bookmark,
@@ -124,16 +116,9 @@ export async function fetchTokenSwapsOfferedToUser(
 
   const results = await getObjectsByKeys(ctx, TokenSwapRequest, swapRequestIds);
 
-  await withSpan(
-    "swaps.fetchTokenMetadataForSwap.batch",
-    { "gala.swap.count": results.length },
-    async () => {
-      for (const result of results) {
-        await fetchTokenMetadataForSwap(ctx, result);
-      }
-    },
-    ctx.otelSpan
-  );
+  for (const result of results) {
+    await fetchTokenMetadataForSwap(ctx, result);
+  }
 
   const response = plainToInstance(FetchTokenSwapsWithPaginationResponse, {
     nextPageBookMark: swapsOfferedToUser.metadata.bookmark,
