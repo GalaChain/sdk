@@ -213,14 +213,14 @@ export abstract class ChainError extends Error implements OptionalChainErrorData
    *
    * ```ts
    * getObjectByKey(...)
-   *   .catch((e) => CommonChainError.recover(e, ErrorCode.NOT_FOUND));
+   *   .catch((e) => ChainError.recover(e, ErrorCode.NOT_FOUND));
    * ```
    *
    * If you want to return a default value instead of undefined, you can do:
    *
    * ```ts
    * getObjectByKey(...)
-   *   .catch((e) => CommonChainError.recover(e, ErrorCode.NOT_FOUND, defaultValue));
+   *   .catch((e) => ChainError.recover(e, ErrorCode.NOT_FOUND, defaultValue));
    * ```
    *
    * @param e original error
