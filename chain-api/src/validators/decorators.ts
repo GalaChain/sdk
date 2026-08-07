@@ -234,6 +234,32 @@ export function BigNumberIsInteger(validationOptions?: ValidationOptions) {
   };
 }
 
+export function IsStringOrNumber(maxStringLength?: number, validationOptions?: ValidationOptions) {
+  return function (object: object, propertyName: string) {
+    registerDecorator({
+      name: "IsStringOrNumber",
+      target: object.constructor,
+      propertyName,
+      constraints: [maxStringLength],
+      options: validationOptions,
+      validator: {
+        validate(value: unknown, args: ValidationArguments) {
+          const [maxLength] = args.constraints;
+          if (typeof value === "string") {
+            return maxLength === undefined || value.length <= maxLength;
+          }
+          return typeof value === "number" && Number.isFinite(value);
+        },
+        defaultMessage(args: ValidationArguments) {
+          const [maxLength] = args.constraints;
+          const lengthConstraint = maxLength === undefined ? "" : ` no longer than ${maxLength} characters`;
+          return `${args.property} must be a finite number or a string${lengthConstraint}`;
+        }
+      }
+    });
+  };
+}
+
 /**
  * @description Decorator that conditionally includes/excludes a property during serialization/deserialization
  * based on a condition function that evaluates other properties of the object.

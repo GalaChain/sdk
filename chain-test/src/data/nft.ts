@@ -20,9 +20,14 @@ import {
   TokenClass,
   TokenClassKey,
   TokenInstance,
-  TokenInstanceKey
+  TokenInstanceKey,
+  TokenInstanceMetadata,
+  TokenInstanceMetadataAttribute,
+  TokenInstanceMetadataCustomField,
+  TokenInstanceMetadataProject
 } from "@gala-chain/api";
 import BigNumber from "bignumber.js";
+import { plainToInstance } from "class-transformer";
 
 import users from "./users";
 import { createInstanceFn, createPlainFn } from "./utils";
@@ -145,6 +150,48 @@ const tokenInstance1Plain = createPlainFn({
 });
 
 /**
+ * Creates a plain token instance metadata project ownership record for testing.
+ * Marks admin as the owner of the "TestProject" metadata for the test NFT class.
+ *
+ * @param txUnixTime - Unix timestamp for the ownership record creation time
+ * @returns Plain object representing project metadata ownership
+ */
+const tokenInstance1MetadataProjectPlain = (txUnixTime: number) => ({
+  ...tokenClassKeyPlain(),
+  project: "TestProject",
+  owner: users.admin.identityKey,
+  created: txUnixTime
+});
+
+/**
+ * Creates a plain NFT token instance metadata object for testing.
+ * Represents an OpenSea-style metadata document for instance #1 and project
+ * "TestProject", created by admin.
+ *
+ * @param txUnixTime - Unix timestamp for the metadata creation time
+ * @returns Plain object representing token instance metadata
+ */
+const tokenInstance1MetadataPlain = (txUnixTime: number) => ({
+  ...tokenInstance1KeyPlain(),
+  project: "TestProject",
+  name: "Test Elixir #1",
+  description: "Generated via automated test suite.",
+  image: "https://app.gala.games/test-image-placeholder-url.png",
+  attributes: [
+    plainToInstance(TokenInstanceMetadataAttribute, {
+      trait_type: "Potency",
+      value: 9,
+      display_type: "number"
+    })
+  ],
+  customFields: [plainToInstance(TokenInstanceMetadataCustomField, { key: "gameId", value: "elixir-001" })],
+  createdBy: users.admin.identityKey,
+  lastModifiedBy: users.admin.identityKey,
+  created: txUnixTime,
+  lastModified: txUnixTime
+});
+
+/**
  * Creates a plain NFT token balance object for testing.
  * Assigns NFT instance #1 to testUser1.
  */
@@ -221,6 +268,13 @@ export default {
   tokenInstance1Key: createInstanceFn(TokenInstanceKey, tokenInstance1KeyPlain()),
   tokenInstance1Plain,
   tokenInstance1: createInstanceFn(TokenInstance, tokenInstance1Plain()),
+  tokenInstance1MetadataPlain,
+  tokenInstance1Metadata: createInstanceFn(TokenInstanceMetadata, tokenInstance1MetadataPlain(1)),
+  tokenInstance1MetadataProjectPlain,
+  tokenInstance1MetadataProject: createInstanceFn(
+    TokenInstanceMetadataProject,
+    tokenInstance1MetadataProjectPlain(1)
+  ),
   tokenBalancePlain,
   tokenBalance: createInstanceFn(TokenBalance, tokenBalancePlain()),
   tokenBurnPlain,
