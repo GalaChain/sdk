@@ -36,7 +36,6 @@ import {
 import { Contract } from "fabric-contract-api";
 
 import { PublicKeyService } from "../services";
-import { runInSpanContext } from "../tracing";
 import { GalaChainContext, GalaChainContextConfig, GalaChainStub } from "../types";
 import { getObjectHistory, getPlainObjectByKey } from "../utils";
 import { getApiMethod, getApiMethods } from "./GalaContractApi";
@@ -109,7 +108,7 @@ export abstract class GalaContract extends Contract {
 
     this.ensureOtelTransactionSpan(ctx, methodName, params[0]);
 
-    await runInSpanContext(ctx.otel.current, () =>
+    await ctx.otel.run(() =>
       ctx.otel.send("fabric.beforeTransaction", { "gala.method": methodName }, () =>
         super.beforeTransaction(ctx)
       )
@@ -126,35 +125,28 @@ export abstract class GalaContract extends Contract {
     this.ensureOtelTransactionSpan(ctx, methodName, params[0]);
 
     // note: Fabric uses Promise<void> type, but actually it returns transaction result
-    return runInSpanContext(ctx.otel.current, () => super.aroundTransaction(ctx, fn, parameters));
+    return ctx.otel.run(() => super.aroundTransaction(ctx, fn, parameters));
   }
 
   public async afterTransaction(ctx: GalaChainContext, result: unknown): Promise<void> {
     await super.afterTransaction(ctx, result);
 
-    // Re-bind SERVER — afterTransaction runs outside the decorator's ALS scope.
-    ctx.otel.setActive();
-    await runInSpanContext(ctx.otel.current, async () => {
-      await ctx.otel.send("fabric.afterTransaction", {}, async (afterSpan) => {
-        ctx.otel.setActive(afterSpan);
-        try {
-          if (
-            typeof result === "object" &&
-            // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
-            result?.["Status"] === GalaChainResponseType.Success &&
-            !ctx.isDryRun
-          ) {
-            await (ctx.stub as unknown as GalaChainStub).flushWrites();
-          }
-
-          ctx?.logger?.logTimeline(
-            "End Transaction",
-            ctx.stub.getFunctionAndParameters()?.fcn ?? this.getName(),
-            [{ chaincodeResult: result }]
-          );
-        } finally {
-          ctx.otel.setActive();
+    await ctx.otel.run(async () => {
+      await ctx.otel.sendBound("fabric.afterTransaction", {}, async () => {
+        if (
+          typeof result === "object" &&
+          // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
+          result?.["Status"] === GalaChainResponseType.Success &&
+          !ctx.isDryRun
+        ) {
+          await (ctx.stub as unknown as GalaChainStub).flushWrites();
         }
+
+        ctx?.logger?.logTimeline(
+          "End Transaction",
+          ctx.stub.getFunctionAndParameters()?.fcn ?? this.getName(),
+          [{ chaincodeResult: result }]
+        );
       });
     });
 
@@ -324,7 +316,7 @@ export abstract class GalaContract extends Contract {
           // Do not flush — outer afterTransaction flushes once.
           const nestedFailed = GalaChainResponse.isError(opResponse);
           span?.setAttribute("gala.batch.op_success", !nestedFailed);
-          await sandboxCtx.otel.end(nestedFailed, false);
+          await sandboxCtx.otel.end(nestedFailed);
 
           // Update the current context with the writes and deletes if the operation
           // is successful.
@@ -415,7 +407,7 @@ export abstract class GalaContract extends Contract {
 
           const nestedFailed = GalaChainResponse.isError(opResponse);
           span?.setAttribute("gala.batch.op_success", !nestedFailed);
-          await sandboxCtx.otel.end(nestedFailed, false);
+          await sandboxCtx.otel.end(nestedFailed);
 
           return opResponse;
         }

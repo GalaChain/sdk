@@ -34,7 +34,7 @@ const TOTAL_RESULTS_LIMIT = 100 * 1000;
 
 /**
  * State helper span. Parents to otel fallback (EVALUATE/SERVER), and binds
- * the new span on the stub so nested stub.getState/etc. nest under this helper
+ * the new span as stub parent so nested stub.getState/etc. nest under this helper
  * even when AsyncLocalStorage is lost.
  */
 function withStateSpan<T>(
@@ -43,15 +43,7 @@ function withStateSpan<T>(
   attributes: Attributes,
   fn: (span: Span | undefined) => Promise<T>
 ): Promise<T> {
-  return ctx.otel.send(name, attributes, async (span) => {
-    const prev = ctx.otel.getActive();
-    ctx.otel.setActive(span);
-    try {
-      return await fn(span);
-    } finally {
-      ctx.otel.setActive(prev);
-    }
-  });
+  return ctx.otel.sendBound(name, attributes, fn);
 }
 
 export class ObjectNotFoundError extends NotFoundError {

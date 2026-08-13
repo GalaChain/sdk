@@ -34,7 +34,6 @@ import { Object as DTOObject, Transaction } from "fabric-contract-api";
 import { inspect } from "util";
 
 import { UniqueTransactionService } from "../services";
-import { recordTransactionSpanError, runInSpanContext } from "../tracing";
 import { GalaChainContext } from "../types";
 import { GalaContract } from "./GalaContract";
 import { updateApi } from "./GalaContractApi";
@@ -189,107 +188,100 @@ function GalaTransaction<In extends ChainCallDTO, Out>(
       const galaTxSpanName =
         options.type === GalaTransactionType.SUBMIT ? "GalaTransaction.SUBMIT" : "GalaTransaction.EVALUATE";
 
-      // Activate tx span so stub/state child spans nest under it.
-      return runInSpanContext(ctx.otel.current, async () => {
+      // Activate SERVER ALS; EVALUATE/SUBMIT is the stub parent for state I/O.
+      return ctx.otel.run(async () => {
         try {
           const metadata = [{ dto: dtoPlain }];
           ctx?.logger?.logTimeline("Begin Transaction", loggingContext, metadata);
 
-          return await ctx.otel.send(
+          return await ctx.otel.sendBound(
             galaTxSpanName,
             {
               "gala.contract": className,
               "gala.method": method.name,
               "gala.tx_type": options.type === GalaTransactionType.SUBMIT ? "SUBMIT" : "EVALUATE"
             },
-            async (galaTxSpan) => {
-              ctx.otel.setActive(galaTxSpan);
+            async () => {
+              // Parse & validate - may throw an exception
+              const dtoClass = options.in ?? (ChainCallDTO as unknown as ClassConstructor<Inferred<In>>);
+              const dto = !dtoPlain
+                ? undefined
+                : await parseValidDTO<In>(dtoClass, dtoPlain as string | Record<string, unknown>);
 
-              try {
-                // Parse & validate - may throw an exception
-                const dtoClass = options.in ?? (ChainCallDTO as unknown as ClassConstructor<Inferred<In>>);
-                const dto = !dtoPlain
-                  ? undefined
-                  : await parseValidDTO<In>(dtoClass, dtoPlain as string | Record<string, unknown>);
-
-                // Note using Date.now() instead of ctx.txUnixTime which is provided client-side.
-                if (dto?.dtoExpiresAt && dto.dtoExpiresAt < Date.now()) {
-                  throw new ExpiredError(`DTO expired at ${new Date(dto.dtoExpiresAt).toISOString()}`);
-                }
-
-                await ctx.otel.send("gala.authorize", {}, async () => {
-                  // Authenticate the user
-                  if (ctx.isDryRun) {
-                    // Do not authenticate in dry run mode
-                  } else if (options?.verifySignature || dto?.getAllSignatures().length) {
-                    // Authenticate if this is explicitly enabled or if there are any signatures in the DTO
-                    ctx.callingUserData = await authenticate(ctx, dto, options.quorum);
-                  } else {
-                    // it means a request where authorization is not required. If there is org-based authorization,
-                    // default roles are applied. If not, then only evaluate is possible. Alias is intentionally
-                    // missing.
-                    const roles = !options.allowedOrgs?.length
-                      ? [UserRole.EVALUATE]
-                      : [...UserProfile.DEFAULT_ROLES];
-                    ctx.callingUserData = {
-                      roles,
-                      signedBy: [],
-                      signatureQuorum: 0,
-                      allowedSigners: [],
-                      isMultisig: false
-                    };
-                  }
-
-                  // Authorize the user
-                  await authorize(ctx, options, dto);
-
-                  // Prevent the same transaction from being submitted multiple times
-                  if (options.enforceUniqueKey) {
-                    if (dto?.uniqueKey) {
-                      await UniqueTransactionService.ensureUniqueTransaction(ctx, dto.uniqueKey);
-                    } else {
-                      const message = `Missing uniqueKey in transaction dto for method '${method.name}'`;
-                      throw new RuntimeError(message);
-                    }
-                  }
-                });
-
-                const argArray: [GalaChainContext, In] | [GalaChainContext] = dto ? [ctx, dto] : [ctx];
-
-                if (options?.before !== undefined) {
-                  await ctx.otel.send("gala.before", {}, async () => options.before?.apply(this, argArray));
-                }
-
-                // Business handler — separate from auth/parse so traces show where time goes.
-                const result = await ctx.otel.send(
-                  "gala.handle",
-                  { "gala.contract": className, "gala.method": method.name },
-                  async () => method?.apply(this, argArray)
-                );
-
-                const normalizedResult =
-                  typeof result === "object" && "Status" in result && typeof result.Status === "number"
-                    ? result
-                    : GalaChainResponse.Success(result);
-
-                if (options?.after !== undefined) {
-                  await ctx.otel.send(
-                    "gala.after",
-                    {},
-                    async () => options.after?.apply(this, [ctx, dto, normalizedResult])
-                  );
-                }
-
-                return normalizedResult;
-              } finally {
-                // Restore SERVER span for fabric.afterTransaction / flushWrites.
-                ctx.otel.setActive();
+              // Note using Date.now() instead of ctx.txUnixTime which is provided client-side.
+              if (dto?.dtoExpiresAt && dto.dtoExpiresAt < Date.now()) {
+                throw new ExpiredError(`DTO expired at ${new Date(dto.dtoExpiresAt).toISOString()}`);
               }
+
+              await ctx.otel.send("gala.authorize", {}, async () => {
+                // Authenticate the user
+                if (ctx.isDryRun) {
+                  // Do not authenticate in dry run mode
+                } else if (options?.verifySignature || dto?.getAllSignatures().length) {
+                  // Authenticate if this is explicitly enabled or if there are any signatures in the DTO
+                  ctx.callingUserData = await authenticate(ctx, dto, options.quorum);
+                } else {
+                  // it means a request where authorization is not required. If there is org-based authorization,
+                  // default roles are applied. If not, then only evaluate is possible. Alias is intentionally
+                  // missing.
+                  const roles = !options.allowedOrgs?.length
+                    ? [UserRole.EVALUATE]
+                    : [...UserProfile.DEFAULT_ROLES];
+                  ctx.callingUserData = {
+                    roles,
+                    signedBy: [],
+                    signatureQuorum: 0,
+                    allowedSigners: [],
+                    isMultisig: false
+                  };
+                }
+
+                // Authorize the user
+                await authorize(ctx, options, dto);
+
+                // Prevent the same transaction from being submitted multiple times
+                if (options.enforceUniqueKey) {
+                  if (dto?.uniqueKey) {
+                    await UniqueTransactionService.ensureUniqueTransaction(ctx, dto.uniqueKey);
+                  } else {
+                    const message = `Missing uniqueKey in transaction dto for method '${method.name}'`;
+                    throw new RuntimeError(message);
+                  }
+                }
+              });
+
+              const argArray: [GalaChainContext, In] | [GalaChainContext] = dto ? [ctx, dto] : [ctx];
+
+              if (options?.before !== undefined) {
+                await ctx.otel.send("gala.before", {}, async () => options.before?.apply(this, argArray));
+              }
+
+              // Business handler — separate from auth/parse so traces show where time goes.
+              const result = await ctx.otel.send(
+                "gala.handle",
+                { "gala.contract": className, "gala.method": method.name },
+                async () => method?.apply(this, argArray)
+              );
+
+              const normalizedResult =
+                typeof result === "object" && "Status" in result && typeof result.Status === "number"
+                  ? result
+                  : GalaChainResponse.Success(result);
+
+              if (options?.after !== undefined) {
+                await ctx.otel.send(
+                  "gala.after",
+                  {},
+                  async () => options.after?.apply(this, [ctx, dto, normalizedResult])
+                );
+              }
+
+              return normalizedResult;
             }
           );
         } catch (err) {
           const chainError = ChainError.from(err);
-          recordTransactionSpanError(ctx.otel.current, err);
+          ctx.otel.recordError(err);
 
           if (ctx.logger) {
             chainError.logWarn(ctx.logger);

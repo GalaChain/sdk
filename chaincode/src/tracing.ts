@@ -334,14 +334,8 @@ export function formatOtelStateKey(key: string, maxLen = ATTR_MAX_LEN): string {
  * Ends the SERVER span. Export is left to BatchSpanProcessor (background).
  * Do not forceFlush here — a down OTEL endpoint must not block the transaction.
  * Pass `failed` when the transaction already recorded an error status.
- * `flush` is ignored (kept for call-site compatibility).
  */
-export async function endTransactionSpan(
-  span: Span | undefined,
-  failed = false,
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  flush = true
-): Promise<void> {
+export async function endTransactionSpan(span: Span | undefined, failed = false): Promise<void> {
   if (!span) {
     return;
   }

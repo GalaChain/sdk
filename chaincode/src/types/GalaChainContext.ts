@@ -17,7 +17,13 @@ import { Attributes, Span } from "@opentelemetry/api";
 import { Context } from "fabric-contract-api";
 import { ChaincodeStub, Timestamp } from "fabric-shim";
 
-import { endTransactionSpan, startTransactionSpan, withSpan } from "../tracing";
+import {
+  endTransactionSpan,
+  recordTransactionSpanError,
+  runInSpanContext,
+  startTransactionSpan,
+  withSpan
+} from "../tracing";
 import { extractOtelTrace } from "../utils/extractOtelTrace";
 import { GalaChainStub, createGalaChainStub } from "./GalaChainStub";
 import { GalaLoggerInstance, GalaLoggerInstanceImpl } from "./GalaLoggerInstance";
@@ -73,9 +79,20 @@ export class GalaChainOtel {
     return this.server;
   }
 
+  /** Run `fn` with SERVER as the active OTEL ALS span. */
+  async run<T>(fn: () => Promise<T>): Promise<T> {
+    return runInSpanContext(this.server, fn);
+  }
+
+  /** Record an error on the SERVER span. */
+  recordError(err: unknown): void {
+    recordTransactionSpanError(this.server, err);
+  }
+
   /**
    * Record `fn` as an INTERNAL child span.
    * Parents to ALS when intact; otherwise to `fallback`.
+   * Does not change the stub parent (`gala.handle` must not steal it).
    * Telemetry failures never propagate; errors from `fn` do.
    */
   async send<T>(
@@ -87,17 +104,33 @@ export class GalaChainOtel {
   }
 
   /**
+   * Like `send`, and binds the child as stub parent for the duration of `fn`.
+   * Use for state helpers and afterTransaction so stub I/O nests under this span.
+   */
+  async sendBound<T>(
+    name: string,
+    attributes: Attributes,
+    fn: (span: Span | undefined) => Promise<T>
+  ): Promise<T> {
+    return this.send(name, attributes, (span) => this.withActive(span, () => fn(span)));
+  }
+
+  /**
    * Bind the stub fallback parent for Fabric I/O that drops ALS.
    * Omitting `span` (or passing undefined) binds SERVER.
-   * Does not change OTEL AsyncLocalStorage.
    */
-  setActive(span?: Span): void {
+  private setActive(span?: Span): void {
     this.bind(span ?? this.server);
   }
 
-  /** Current stub fallback parent. */
-  getActive(): Span | undefined {
-    return this.active;
+  private async withActive<T>(span: Span | undefined, fn: () => Promise<T>): Promise<T> {
+    const prev = this.active;
+    this.setActive(span);
+    try {
+      return await fn();
+    } finally {
+      this.bind(prev);
+    }
   }
 
   private bind(span: Span | undefined): void {
@@ -117,9 +150,9 @@ export class GalaChainOtel {
     this.setActive();
   }
 
-  /** End SERVER and drop span state. `flush` is ignored (call-site compatibility). */
-  async end(failed = false, flush = true): Promise<void> {
-    await endTransactionSpan(this.server, failed, flush);
+  /** End SERVER and drop span state. */
+  async end(failed = false): Promise<void> {
+    await endTransactionSpan(this.server, failed);
     this.server = undefined;
     this.bind(undefined);
   }
@@ -149,7 +182,7 @@ export class GalaChainContext extends Context {
 
   public isDryRun = false;
   public config: GalaChainContextConfig;
-  /** Tracing for this invoke. Use `otel.send` / `otel.current` / `otel.end`. */
+  /** Tracing for this invoke. Use `otel.send` / `otel.run` / `otel.end`. */
   public readonly otel: GalaChainOtel;
 
   constructor(config: GalaChainContextConfig) {
