@@ -12,7 +12,8 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-import { UnauthorizedError, UserAlias, UserProfile, UserRole } from "@gala-chain/api";
+import { OtelTraceContext, UnauthorizedError, UserAlias, UserProfile, UserRole } from "@gala-chain/api";
+import { Span } from "@opentelemetry/api";
 import { Context } from "fabric-contract-api";
 import { ChaincodeStub, Timestamp } from "fabric-shim";
 
@@ -56,6 +57,18 @@ export class GalaChainContext extends Context {
 
   public isDryRun = false;
   public config: GalaChainContextConfig;
+  /** OTEL trace from DTO, used to correlate chaincode logs with the caller span. */
+  public trace?: OtelTraceContext;
+  /** SERVER span for the current Fabric invoke (before → after). */
+  public otelSpan?: Span;
+
+  /**
+   * Fallback parent for child spans when AsyncLocalStorage context is missing.
+   * Prefers the stub's active nested span (e.g. gala.handle) over the SERVER span.
+   */
+  get otelFallbackSpan(): Span | undefined {
+    return this.stub?.getActiveOtelSpan?.() ?? this.otelSpan;
+  }
 
   constructor(config: GalaChainContextConfig) {
     super();
@@ -203,6 +216,10 @@ export class GalaChainContext extends Context {
     const ctx = new GalaChainContext(this.config);
     ctx.clientIdentity = this.clientIdentity;
     ctx.setChaincodeStub(createGalaChainStub(this.stub, true, index));
+    // Preserve OTEL parenting for nested dry-run / batch sandbox contexts.
+    ctx.trace = this.trace;
+    ctx.otelSpan = this.otelSpan;
+    ctx.stub?.setActiveOtelSpan?.(this.otelFallbackSpan);
     return ctx;
   }
 

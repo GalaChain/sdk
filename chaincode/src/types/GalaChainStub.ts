@@ -13,9 +13,13 @@
  * limitations under the License.
  */
 import { NotImplementedError } from "@gala-chain/api";
+import { Span } from "@opentelemetry/api";
 import { ChaincodeResponse, ChaincodeStub } from "fabric-shim";
 
+import { formatOtelStateKey, withSpan } from "../tracing";
 import { CachedKV, FabricIterable, fabricIterable, filter, prepend } from "./FabricIterable";
+
+const stateKeyAttr = formatOtelStateKey;
 
 /**
  * The main purpose of this class is to keep the state clean when the transaction fails. In this
@@ -40,17 +44,61 @@ class StubCache {
 
   private invokeChaincodeCalls: Record<string, string[]> = {};
 
+  /** Fallback parent when AsyncLocalStorage context is missing (Fabric lifecycle). */
+  private activeOtelSpan: Span | undefined;
+
   constructor(
     private readonly stub: ChaincodeStub,
     private readonly isReadOnly: boolean,
     private readonly index: number | undefined
   ) {}
 
+  setActiveOtelSpan(span: Span | undefined): void {
+    this.activeOtelSpan = span;
+  }
+
+  getActiveOtelSpan(): Span | undefined {
+    return this.activeOtelSpan;
+  }
+
   getTxID(): string {
     if (typeof this.index === "number") {
       return this.stub.getTxID() + `|${this.index}`;
     }
     return this.stub.getTxID();
+  }
+
+  async getState(key: string): Promise<Uint8Array> {
+    return withSpan(
+      "stub.getState",
+      {
+        "fabric.state.operation": "getState",
+        "fabric.state.key": stateKeyAttr(key)
+      },
+      async (span) => {
+        const result = await this.stub.getState(key);
+        span?.setAttribute("fabric.state.value_size", result?.length ?? 0);
+        span?.setAttribute("fabric.state.found", (result?.length ?? 0) > 0);
+        return result;
+      },
+      this.activeOtelSpan
+    );
+  }
+
+  getStateByRange(startKey: string, endKey: string): FabricIterable<CachedKV> {
+    // No span here: this only creates an iterator (would always be ~0ms).
+    // Higher-level state helpers time the full iteration.
+    return this.stub.getStateByRange(startKey, endKey) as FabricIterable<CachedKV>;
+  }
+
+  getStateByPartialCompositeKey(objectType: string, attributes: string[]): FabricIterable<CachedKV> {
+    // No span here: iterator creation only. See state.getObjectsByPartialCompositeKey*.
+    return this.stub.getStateByPartialCompositeKey(objectType, attributes) as FabricIterable<CachedKV>;
+  }
+
+  getHistoryForKey(key: string): ReturnType<ChaincodeStub["getHistoryForKey"]> {
+    // No span here: may return a Promise/iterator before work runs. See state.getObjectHistory.
+    return this.stub.getHistoryForKey(key);
   }
 
   async getCachedState(key: string): Promise<Uint8Array> {
@@ -66,7 +114,8 @@ class StubCache {
       return this.reads[key];
     }
 
-    const result = await this.stub.getState(key);
+    // Cache miss: instrumented getState records the Fabric I/O.
+    const result = await this.getState(key);
     this.reads[key] = result;
 
     return result;
@@ -81,13 +130,14 @@ class StubCache {
 
     const keysToExclude = new Set(cached.map((kv) => kv.key).concat(Object.keys(this.deletes)));
 
-    const state = this.stub.getStateByPartialCompositeKey(objectType, attributes);
+    const state = this.getStateByPartialCompositeKey(objectType, attributes);
     const filteredState = filter((kv) => !keysToExclude.has(kv.key), state[Symbol.asyncIterator]());
 
     return fabricIterable(prepend(cached, filteredState));
   }
 
   putState(key: string, value: Uint8Array): Promise<void> {
+    // Cache-only — no span (would always be ~0ms). Real I/O is timed in flushWrites.
     this.writes[key] = value;
 
     if (key in this.deletes) {
@@ -102,6 +152,7 @@ class StubCache {
   }
 
   deleteState(key: string): Promise<void> {
+    // Cache-only — no span (would always be ~0ms). Real I/O is timed in flushWrites.
     this.deletes[key] = true;
 
     if (key in this.writes) {
@@ -124,20 +175,32 @@ class StubCache {
    * methods on the same chaincode are called before it.
    */
   async invokeChaincode(chaincodeName: string, args: string[], channel: string): Promise<ChaincodeResponse> {
-    const key = `${channel}/${chaincodeName}`;
-    const prevCall = this.invokeChaincodeCalls[key];
+    return withSpan(
+      "stub.invokeChaincode",
+      {
+        "fabric.state.operation": "invokeChaincode",
+        "fabric.invoke.chaincode": chaincodeName,
+        "fabric.invoke.channel": channel,
+        "fabric.invoke.method": args?.[0] ?? ""
+      },
+      async () => {
+        const key = `${channel}/${chaincodeName}`;
+        const prevCall = this.invokeChaincodeCalls[key];
 
-    if (prevCall) {
-      const effectiveChannel = channel === "" ? this.stub.getChannelID() : channel;
-      throw new DuplicateInvokeChaincodeError(chaincodeName, prevCall, effectiveChannel);
-    }
+        if (prevCall) {
+          const effectiveChannel = channel === "" ? this.stub.getChannelID() : channel;
+          throw new DuplicateInvokeChaincodeError(chaincodeName, prevCall, effectiveChannel);
+        }
 
-    const isDryRun = args?.[0].endsWith(":DryRun");
-    if (!isDryRun) {
-      this.invokeChaincodeCalls[key] = args;
-    }
+        const isDryRun = args?.[0].endsWith(":DryRun");
+        if (!isDryRun) {
+          this.invokeChaincodeCalls[key] = args;
+        }
 
-    return await this.stub.invokeChaincode(chaincodeName, args, channel);
+        return await this.stub.invokeChaincode(chaincodeName, args, channel);
+      },
+      this.activeOtelSpan
+    );
   }
 
   get externalChaincodeWasInvoked(): boolean {
@@ -170,14 +233,51 @@ class StubCache {
   }
 
   async flushWrites(): Promise<void> {
-    if (this.isReadOnly) {
-      throw new NotImplementedError("Cannot flush writes in read-only mode");
-    }
+    const deleteKeys = Object.keys(this.deletes);
+    const putEntries = Object.entries(this.writes);
 
-    const deleteOps = Object.keys(this.deletes).map((key) => this.stub.deleteState(key));
-    const putOps = Object.entries(this.writes).map(([key, value]) => this.stub.putState(key, value));
-    await Promise.all(deleteOps);
-    await Promise.all(putOps);
+    return withSpan(
+      "stub.flushWrites",
+      {
+        "fabric.state.operation": "flushWrites",
+        "fabric.state.put_count": putEntries.length,
+        "fabric.state.delete_count": deleteKeys.length
+      },
+      async () => {
+        if (this.isReadOnly) {
+          throw new NotImplementedError("Cannot flush writes in read-only mode");
+        }
+
+        const deleteOps = deleteKeys.map((key) =>
+          withSpan(
+            "stub.deleteState.flush",
+            {
+              "fabric.state.operation": "deleteState",
+              "fabric.state.key": stateKeyAttr(key),
+              "fabric.state.cached": false
+            },
+            () => this.stub.deleteState(key),
+            this.activeOtelSpan
+          )
+        );
+        const putOps = putEntries.map(([key, value]) =>
+          withSpan(
+            "stub.putState.flush",
+            {
+              "fabric.state.operation": "putState",
+              "fabric.state.key": stateKeyAttr(key),
+              "fabric.state.value_size": value.length,
+              "fabric.state.cached": false
+            },
+            () => this.stub.putState(key, value),
+            this.activeOtelSpan
+          )
+        );
+        await Promise.all(deleteOps);
+        await Promise.all(putOps);
+      },
+      this.activeOtelSpan
+    );
   }
 
   getReads(): Record<string, Uint8Array> {
@@ -238,6 +338,11 @@ export interface GalaChainStub extends ChaincodeStub {
   setWrites(writes: Record<string, Uint8Array>): void;
 
   setDeletes(deletes: Record<string, true>): void;
+
+  /** Bind the transaction span so stub spans parent correctly when ALS is lost. */
+  setActiveOtelSpan(span: Span | undefined): void;
+
+  getActiveOtelSpan(): Span | undefined;
 
   invokeChaincode(chaincodeName: string, args: string[], channel: string): Promise<ChaincodeResponse>;
 

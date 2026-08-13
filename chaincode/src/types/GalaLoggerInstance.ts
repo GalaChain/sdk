@@ -233,14 +233,30 @@ export class GalaLoggerInstanceImpl implements GalaLoggerInstance {
       args.info = this.commonMeta;
     }
 
-    const level = error ? "error" : "info";
+    if (this.ctx.trace) {
+      args.trace = this.ctx.trace;
+    }
 
-    const logData = {
+    // Begin/End timelines are debug; failures stay error for alerting.
+    const level = error ? "error" : "debug";
+
+    const logData: Record<string, unknown> & { message: string } = {
       timestamp: Date.now(),
       context,
       message: JSON.stringify(args),
       stack: error?.stack
     };
+
+    // Top-level OTEL fields for log↔trace correlation in collectors.
+    // Prefer the active chaincode span; fall back to the caller's dto.trace.
+    const activeSpanCtx = this.ctx.otelSpan?.spanContext();
+    if (activeSpanCtx?.traceId) {
+      logData.trace_id = activeSpanCtx.traceId;
+      logData.span_id = activeSpanCtx.spanId;
+    } else if (this.ctx.trace) {
+      logData.trace_id = this.ctx.trace.traceId;
+      logData.span_id = this.ctx.trace.spanId;
+    }
 
     this.log(level, logData);
   }

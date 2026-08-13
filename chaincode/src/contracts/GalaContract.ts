@@ -36,8 +36,9 @@ import {
 import { Contract } from "fabric-contract-api";
 
 import { PublicKeyService } from "../services";
+import { endTransactionSpan, runInSpanContext, startTransactionSpan, withSpan } from "../tracing";
 import { GalaChainContext, GalaChainContextConfig, GalaChainStub } from "../types";
-import { getObjectHistory, getPlainObjectByKey } from "../utils";
+import { extractOtelTrace, getObjectHistory, getPlainObjectByKey } from "../utils";
 import { getApiMethod, getApiMethods } from "./GalaContractApi";
 import { EVALUATE, GalaTransaction, SUBMIT, Submit } from "./GalaTransaction";
 import { applySavedRequests, hasPendingApplyRequests } from "./GalaTransactionRequest";
@@ -88,27 +89,95 @@ export abstract class GalaContract extends Contract {
     return new GalaChainContext(this.config);
   }
 
+  /**
+   * SERVER span covering the full Fabric lifecycle (before → around → after).
+   * Safe to call multiple times; only the first call starts the span.
+   */
+  private ensureOtelTransactionSpan(ctx: GalaChainContext, methodName: string, dtoPlain: unknown): void {
+    if (ctx.otelSpan) {
+      return;
+    }
+
+    ctx.trace = extractOtelTrace(dtoPlain);
+    ctx.otelSpan = startTransactionSpan(`${this.getName()}:${methodName}`, ctx.trace, {
+      "gala.contract": this.getName(),
+      "gala.method": methodName,
+      "fabric.channel_id": ctx.stub?.getChannelID?.() ?? "",
+      "fabric.tx_id": ctx.stub?.getTxID?.() ?? ""
+    });
+    ctx.stub?.setActiveOtelSpan?.(ctx.otelSpan);
+  }
+
   public async beforeTransaction(ctx: GalaChainContext): Promise<void> {
-    await super.beforeTransaction(ctx);
+    const { fcn, params } = ctx.stub.getFunctionAndParameters();
+    const colon = fcn.lastIndexOf(":");
+    const methodName = colon >= 0 ? fcn.slice(colon + 1) : fcn || "unknown";
+
+    this.ensureOtelTransactionSpan(ctx, methodName, params[0]);
+
+    await runInSpanContext(ctx.otelSpan, () =>
+      withSpan(
+        "fabric.beforeTransaction",
+        { "gala.method": methodName },
+        () => super.beforeTransaction(ctx),
+        ctx.otelSpan
+      )
+    );
   }
 
   // eslint-disable-next-line @typescript-eslint/ban-types
   public async aroundTransaction(ctx: GalaChainContext, fn: Function, parameters: unknown): Promise<void> {
+    // Fabric passes `fn` as the transaction name string (not a Function).
+    const methodName = typeof fn === "string" ? fn : (fn as { name?: string })?.name ?? "unknown";
+    const params = Array.isArray(parameters) ? parameters : [];
+
+    // Fallback when beforeTransaction did not run (direct/unit calls, nested batch).
+    this.ensureOtelTransactionSpan(ctx, methodName, params[0]);
+
     // note: Fabric uses Promise<void> type, but actually it returns transaction result
-    return super.aroundTransaction(ctx, fn, parameters);
+    return runInSpanContext(ctx.otelSpan, () => super.aroundTransaction(ctx, fn, parameters));
   }
 
   public async afterTransaction(ctx: GalaChainContext, result: unknown): Promise<void> {
     await super.afterTransaction(ctx, result);
 
-    // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
-    if (typeof result === "object" && result?.["Status"] === GalaChainResponseType.Success && !ctx.isDryRun) {
-      await (ctx.stub as unknown as GalaChainStub).flushWrites();
-    }
+    // Re-bind SERVER on stub — afterTransaction runs outside the decorator's ALS scope.
+    ctx.stub?.setActiveOtelSpan?.(ctx.otelSpan);
+    await runInSpanContext(ctx.otelSpan, async () => {
+      await withSpan(
+        "fabric.afterTransaction",
+        {},
+        async (afterSpan) => {
+          // Prefer afterTransaction as parent for flushWrites when ALS is dropped.
+          ctx.stub?.setActiveOtelSpan?.(afterSpan ?? ctx.otelSpan);
+          try {
+            if (
+              typeof result === "object" &&
+              // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
+              result?.["Status"] === GalaChainResponseType.Success &&
+              !ctx.isDryRun
+            ) {
+              await (ctx.stub as unknown as GalaChainStub).flushWrites();
+            }
 
-    ctx?.logger?.logTimeline("End Transaction", ctx.stub.getFunctionAndParameters()?.fcn ?? this.getName(), [
-      { chaincodeResult: result }
-    ]);
+            ctx?.logger?.logTimeline(
+              "End Transaction",
+              ctx.stub.getFunctionAndParameters()?.fcn ?? this.getName(),
+              [{ chaincodeResult: result }]
+            );
+          } finally {
+            ctx.stub?.setActiveOtelSpan?.(ctx.otelSpan);
+          }
+        },
+        ctx.otelSpan
+      );
+    });
+
+    // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
+    const failed = typeof result === "object" && result?.["Status"] === GalaChainResponseType.Error;
+    await endTransactionSpan(ctx.otelSpan, failed);
+    ctx.stub?.setActiveOtelSpan?.(undefined);
+    ctx.otelSpan = undefined;
   }
 
   @GalaTransaction({
@@ -239,33 +308,57 @@ export abstract class GalaContract extends Contract {
     let writesCount = ctx.stub.getWritesCount();
 
     for (const [index, op] of batchDto.operations.entries()) {
-      // Use sandboxed context to avoid flushes of writes and deletes, and populate
-      // the stub with current writes and deletes.
-      const sandboxCtx = ctx.createReadOnlyContext(index);
-      sandboxCtx.stub.setWrites(ctx.stub.getWrites());
-      sandboxCtx.stub.setDeletes(ctx.stub.getDeletes());
+      const response = await withSpan(
+        "batch.operation",
+        {
+          "gala.batch.index": index,
+          "gala.batch.method": op.method,
+          "gala.batch.type": "submit",
+          "gala.batch.writes_count": writesCount
+        },
+        async (span) => {
+          // Use sandboxed context to avoid flushes of writes and deletes, and populate
+          // the stub with current writes and deletes.
+          const sandboxCtx = ctx.createReadOnlyContext(index);
+          sandboxCtx.stub.setWrites(ctx.stub.getWrites());
+          sandboxCtx.stub.setDeletes(ctx.stub.getDeletes());
 
-      // Execute the operation. Collect both successful and failed responses.
-      let response: GalaChainResponse<unknown>;
-      try {
-        if (writesCount >= writesLimit) {
-          throw new BatchWriteLimitExceededError(writesLimit);
-        }
+          // Execute the operation. Collect both successful and failed responses.
+          let opResponse: GalaChainResponse<unknown>;
+          try {
+            if (writesCount >= writesLimit) {
+              throw new BatchWriteLimitExceededError(writesLimit);
+            }
 
-        const method = getApiMethod(this, op.method, (m) => m.isWrite && m.methodName !== "BatchSubmit");
-        response = await this[method.methodName](sandboxCtx, op.dto);
-      } catch (error) {
-        response = GalaChainResponse.Error(error);
-      }
+            const method = getApiMethod(this, op.method, (m) => m.isWrite && m.methodName !== "BatchSubmit");
+            opResponse = await this[method.methodName](sandboxCtx, op.dto);
+          } catch (error) {
+            opResponse = GalaChainResponse.Error(error);
+          }
+
+          // Nested decorated methods start their own span on sandboxCtx; end it here
+          // because afterTransaction only runs for the outer BatchSubmit invoke.
+          // Do not flush — outer afterTransaction flushes once.
+          const nestedFailed = GalaChainResponse.isError(opResponse);
+          span?.setAttribute("gala.batch.op_success", !nestedFailed);
+          await endTransactionSpan(sandboxCtx.otelSpan, nestedFailed, false);
+          sandboxCtx.stub?.setActiveOtelSpan?.(undefined);
+          sandboxCtx.otelSpan = undefined;
+
+          // Update the current context with the writes and deletes if the operation
+          // is successful.
+          if (GalaChainResponse.isSuccess(opResponse)) {
+            ctx.stub.setWrites(sandboxCtx.stub.getWrites());
+            ctx.stub.setDeletes(sandboxCtx.stub.getDeletes());
+            writesCount = ctx.stub.getWritesCount();
+          }
+
+          return opResponse;
+        },
+        ctx.otelSpan
+      );
+
       responses.push(response);
-
-      // Update the current context with the writes and deletes if the operation
-      // is successful.
-      if (GalaChainResponse.isSuccess(response)) {
-        ctx.stub.setWrites(sandboxCtx.stub.getWrites());
-        ctx.stub.setDeletes(sandboxCtx.stub.getDeletes());
-        writesCount = ctx.stub.getWritesCount();
-      }
 
       // Store the first error if it's the first error we encounter.
       if (batchDto.noPartialSuccess && GalaChainResponse.isError(response)) {
@@ -316,17 +409,41 @@ export abstract class GalaContract extends Contract {
     const responses: GalaChainResponse<unknown>[] = [];
 
     for (const [index, op] of batchDto.operations.entries()) {
-      // Create a new context for each operation
-      const sandboxCtx = ctx.createReadOnlyContext(index);
+      const response = await withSpan(
+        "batch.operation",
+        {
+          "gala.batch.index": index,
+          "gala.batch.method": op.method,
+          "gala.batch.type": "evaluate"
+        },
+        async (span) => {
+          // Create a new context for each operation
+          const sandboxCtx = ctx.createReadOnlyContext(index);
 
-      // Execute the operation. Collect both successful and failed responses.
-      let response: GalaChainResponse<unknown>;
-      try {
-        const method = getApiMethod(this, op.method, (m) => !m.isWrite && m.methodName !== "BatchEvaluate");
-        response = await this[method.methodName](sandboxCtx, op.dto);
-      } catch (error) {
-        response = GalaChainResponse.Error(error);
-      }
+          // Execute the operation. Collect both successful and failed responses.
+          let opResponse: GalaChainResponse<unknown>;
+          try {
+            const method = getApiMethod(
+              this,
+              op.method,
+              (m) => !m.isWrite && m.methodName !== "BatchEvaluate"
+            );
+            opResponse = await this[method.methodName](sandboxCtx, op.dto);
+          } catch (error) {
+            opResponse = GalaChainResponse.Error(error);
+          }
+
+          const nestedFailed = GalaChainResponse.isError(opResponse);
+          span?.setAttribute("gala.batch.op_success", !nestedFailed);
+          await endTransactionSpan(sandboxCtx.otelSpan, nestedFailed, false);
+          sandboxCtx.stub?.setActiveOtelSpan?.(undefined);
+          sandboxCtx.otelSpan = undefined;
+
+          return opResponse;
+        },
+        ctx.otelSpan
+      );
+
       responses.push(response);
     }
     return responses;

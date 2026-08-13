@@ -34,7 +34,6 @@ export async function createNftCollection(
   dto: CreateNftCollectionDto
 ): Promise<TokenClassKey> {
   // Fetch authorization to verify user is authorized and get the authorized collection name
-  const callingUser = ctx.callingUser;
   let authorization: NftCollectionAuthorization;
   try {
     authorization = await fetchNftCollectionAuthorization(ctx, dto.collection);
