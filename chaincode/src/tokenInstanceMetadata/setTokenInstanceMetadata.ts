@@ -24,7 +24,7 @@ import {
 
 import { fetchTokenInstance } from "../token/fetchTokenInstance";
 import { GalaChainContext } from "../types";
-import { getObjectByKey, putChainObject } from "../utils/state";
+import { getObjectByKey, objectExists, putChainObject } from "../utils/state";
 import { NotProjectMetadataOwnerError, TokenInstanceNotFoundError } from "./TokenInstanceMetadataError";
 import {
   buildTokenInstanceMetadataCompositeKey,
@@ -79,7 +79,11 @@ export async function setTokenInstanceMetadata(
   }
 
   const metadataKey = buildTokenInstanceMetadataCompositeKey(tokenInstance, project);
-  const existing = await getObjectByKey(ctx, TokenInstanceMetadata, metadataKey).catch(() => undefined);
+
+  // deliberately not a .catch() on the read: only a missing document may resolve to undefined,
+  // since undefined resets createdBy/created below and would otherwise discard provenance
+  const metadataExists = await objectExists(ctx, metadataKey);
+  const existing = metadataExists ? await getObjectByKey(ctx, TokenInstanceMetadata, metadataKey) : undefined;
 
   const metadata = await createValidChainObject(TokenInstanceMetadata, {
     collection: tokenInstance.collection,

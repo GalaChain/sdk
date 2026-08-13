@@ -23,7 +23,7 @@ import {
 
 import { TokenClassNotFoundError } from "../token/TokenError";
 import { GalaChainContext } from "../types";
-import { getObjectByKey } from "../utils/state";
+import { getObjectByKey, objectExists } from "../utils/state";
 import { NftInstanceRequiredError } from "./TokenInstanceMetadataError";
 
 export async function ensureNftInstance(
@@ -71,5 +71,10 @@ export async function fetchTokenInstanceMetadataProject(
   project: string
 ): Promise<TokenInstanceMetadataProject | undefined> {
   const key = buildTokenInstanceMetadataProjectCompositeKey(tokenInstance, project);
-  return await getObjectByKey(ctx, TokenInstanceMetadataProject, key).catch(() => undefined);
+
+  // deliberately not a .catch() on the read: only a missing record may resolve to undefined,
+  // since callers treat undefined as "unowned" and claim ownership for the calling user
+  const exists = await objectExists(ctx, key);
+
+  return exists ? await getObjectByKey(ctx, TokenInstanceMetadataProject, key) : undefined;
 }

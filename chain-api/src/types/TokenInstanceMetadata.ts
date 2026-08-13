@@ -15,6 +15,7 @@
 import { BigNumber } from "bignumber.js";
 import { Type } from "class-transformer";
 import {
+  ArrayMaxSize,
   IsDefined,
   IsIn,
   IsInt,
@@ -22,6 +23,7 @@ import {
   IsOptional,
   IsPositive,
   IsString,
+  Matches,
   Max,
   MaxLength,
   Min,
@@ -50,6 +52,18 @@ export const METADATA_ATTRIBUTE_DISPLAY_TYPES = [
   "boost_percentage",
   "date"
 ] as const;
+
+// Six-character hexadecimal color, without a pre-pended #, per the OpenSea metadata standard
+export const METADATA_BACKGROUND_COLOR_REGEX = /^[0-9a-fA-F]{6}$/;
+
+// Unsigned integer token instance id, in the canonical form BigNumber.toString() produces.
+// Leading zeros are rejected: composite keys are built from that rendering, so "01" would
+// silently match nothing rather than the instance the caller meant.
+export const METADATA_INSTANCE_ID_REGEX = /^(0|[1-9]\d*)$/;
+
+// Caps on the repeated fields of a metadata document, to bound the size of a single write
+export const MAX_METADATA_ATTRIBUTES = 100;
+export const MAX_METADATA_CUSTOM_FIELDS = 100;
 
 @JSONSchema({
   description: "Single trait of a token instance, following the OpenSea metadata standard attribute format."
@@ -192,7 +206,7 @@ export class TokenInstanceMetadata extends ChainObject {
     description: "Background color as a six-character hexadecimal without a pre-pended #."
   })
   @IsOptional()
-  @MaxLength(6)
+  @Matches(METADATA_BACKGROUND_COLOR_REGEX)
   public background_color?: string;
 
   @IsOptional()
@@ -200,11 +214,13 @@ export class TokenInstanceMetadata extends ChainObject {
   public youtube_url?: string;
 
   @IsOptional()
+  @ArrayMaxSize(MAX_METADATA_ATTRIBUTES)
   @ValidateNested({ each: true })
   @Type(() => TokenInstanceMetadataAttribute)
   public attributes?: TokenInstanceMetadataAttribute[];
 
   @IsOptional()
+  @ArrayMaxSize(MAX_METADATA_CUSTOM_FIELDS)
   @ValidateNested({ each: true })
   @Type(() => TokenInstanceMetadataCustomField)
   public customFields?: TokenInstanceMetadataCustomField[];
@@ -269,7 +285,7 @@ export class SetTokenInstanceMetadataDto extends SubmitCallDTO {
     description: "Background color as a six-character hexadecimal without a pre-pended #."
   })
   @IsOptional()
-  @MaxLength(6)
+  @Matches(METADATA_BACKGROUND_COLOR_REGEX)
   background_color?: string;
 
   @IsOptional()
@@ -277,17 +293,23 @@ export class SetTokenInstanceMetadataDto extends SubmitCallDTO {
   youtube_url?: string;
 
   @JSONSchema({
-    description: "Traits following the OpenSea metadata standard attribute format."
+    description:
+      "Traits following the OpenSea metadata standard attribute format. " +
+      `At most ${MAX_METADATA_ATTRIBUTES} entries.`
   })
   @IsOptional()
+  @ArrayMaxSize(MAX_METADATA_ATTRIBUTES)
   @ValidateNested({ each: true })
   @Type(() => TokenInstanceMetadataAttribute)
   attributes?: TokenInstanceMetadataAttribute[];
 
   @JSONSchema({
-    description: "Arbitrary key-value entries for game or product specific metadata."
+    description:
+      "Arbitrary key-value entries for game or product specific metadata. " +
+      `At most ${MAX_METADATA_CUSTOM_FIELDS} entries.`
   })
   @IsOptional()
+  @ArrayMaxSize(MAX_METADATA_CUSTOM_FIELDS)
   @ValidateNested({ each: true })
   @Type(() => TokenInstanceMetadataCustomField)
   customFields?: TokenInstanceMetadataCustomField[];
@@ -353,10 +375,11 @@ export class FetchTokenInstanceMetadataWithPaginationDto extends ChainCallDTO {
   additionalKey?: string;
 
   @JSONSchema({
-    description: "Token instance. Optional, but required if project is provided."
+    description: "Token instance, as an unsigned integer. Optional, but required if project is provided."
   })
-  @ValidateIf((o) => !!o.project)
+  @ValidateIf((o) => !!o.project || o.instance !== undefined)
   @IsNotEmpty()
+  @Matches(METADATA_INSTANCE_ID_REGEX)
   instance?: string;
 
   @JSONSchema({

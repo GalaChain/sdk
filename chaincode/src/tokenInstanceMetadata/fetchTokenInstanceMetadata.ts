@@ -22,14 +22,15 @@ import {
 } from "@gala-chain/api";
 
 import { GalaChainContext } from "../types";
+import { getObjectByKey, getObjectsByPartialCompositeKeyWithPagination, takeUntilUndefined } from "../utils";
 import {
-  getObjectByKey,
-  getObjectsByPartialCompositeKey,
-  getObjectsByPartialCompositeKeyWithPagination,
-  takeUntilUndefined
-} from "../utils";
-import { TokenInstanceMetadataNotFoundError } from "./TokenInstanceMetadataError";
+  TokenInstanceMetadataNotFoundError,
+  TooManyMetadataDocumentsError
+} from "./TokenInstanceMetadataError";
 import { buildTokenInstanceMetadataCompositeKey } from "./tokenInstanceMetadataHelpers";
+
+// Upper bound on how many metadata documents the unpaginated fetch will return for one instance
+export const MAX_METADATA_DOCUMENTS_PER_INSTANCE = 1000;
 
 export interface FetchTokenInstanceMetadataParams {
   tokenInstance: TokenInstanceKey;
@@ -52,12 +53,24 @@ export async function fetchTokenInstanceMetadata(
 
   const instanceKeyParts = TokenInstance.buildInstanceKeyList(tokenInstance);
 
-  return await getObjectsByPartialCompositeKey(
+  // Any user can create a metadata document under a new project name on any instance, so the
+  // number of documents under this prefix is caller-controlled. Page one result past the cap so
+  // an oversized instance reports an actionable error instead of silently returning a truncated
+  // list, or accumulating until the global TOTAL_RESULTS_LIMIT rejects every call outright.
+  const response = await getObjectsByPartialCompositeKeyWithPagination(
     ctx,
     TokenInstanceMetadata.INDEX_KEY,
     instanceKeyParts,
-    TokenInstanceMetadata
+    TokenInstanceMetadata,
+    undefined,
+    MAX_METADATA_DOCUMENTS_PER_INSTANCE + 1
   );
+
+  if (response.results.length > MAX_METADATA_DOCUMENTS_PER_INSTANCE) {
+    throw new TooManyMetadataDocumentsError(tokenInstance.toStringKey(), MAX_METADATA_DOCUMENTS_PER_INSTANCE);
+  }
+
+  return response.results;
 }
 
 export interface FetchTokenInstanceMetadataWithPaginationParams {

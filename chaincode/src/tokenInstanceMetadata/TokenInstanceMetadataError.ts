@@ -37,6 +37,17 @@ export class NftInstanceRequiredError extends ValidationFailedError {
   }
 }
 
+export class TooManyMetadataDocumentsError extends ValidationFailedError {
+  constructor(tokenInstanceKey: string, limit: number) {
+    super(
+      `Token instance ${tokenInstanceKey} has more than ${limit} metadata documents. ` +
+        `Use FetchTokenInstanceMetadataWithPagination to page through them, ` +
+        `or provide a project to fetch a single document.`,
+      { tokenInstanceKey, limit }
+    );
+  }
+}
+
 export class NotProjectMetadataOwnerError extends ForbiddenError {
   constructor(user: string, project: string, tokenClassKey: string, owner: string) {
     super(

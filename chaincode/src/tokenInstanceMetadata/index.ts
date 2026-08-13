@@ -16,7 +16,8 @@ import {
   NftInstanceRequiredError,
   NotProjectMetadataOwnerError,
   TokenInstanceMetadataNotFoundError,
-  TokenInstanceNotFoundError
+  TokenInstanceNotFoundError,
+  TooManyMetadataDocumentsError
 } from "./TokenInstanceMetadataError";
 import {
   DeleteTokenInstanceMetadataParams,
@@ -25,6 +26,7 @@ import {
 import {
   FetchTokenInstanceMetadataParams,
   FetchTokenInstanceMetadataWithPaginationParams,
+  MAX_METADATA_DOCUMENTS_PER_INSTANCE,
   fetchTokenInstanceMetadata,
   fetchTokenInstanceMetadataWithPagination
 } from "./fetchTokenInstanceMetadata";
@@ -43,6 +45,7 @@ export {
   FetchTokenInstanceMetadataParams,
   fetchTokenInstanceMetadataWithPagination,
   FetchTokenInstanceMetadataWithPaginationParams,
+  MAX_METADATA_DOCUMENTS_PER_INSTANCE,
   deleteTokenInstanceMetadata,
   DeleteTokenInstanceMetadataParams,
   ensureNftInstance,
@@ -52,5 +55,6 @@ export {
   NftInstanceRequiredError,
   NotProjectMetadataOwnerError,
   TokenInstanceMetadataNotFoundError,
-  TokenInstanceNotFoundError
+  TokenInstanceNotFoundError,
+  TooManyMetadataDocumentsError
 };
