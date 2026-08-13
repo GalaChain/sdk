@@ -28,7 +28,6 @@ import {
 import { OTLPTraceExporter } from "@opentelemetry/exporter-trace-otlp-proto";
 import { resourceFromAttributes } from "@opentelemetry/resources";
 import { BatchSpanProcessor, NodeTracerProvider } from "@opentelemetry/sdk-trace-node";
-import type { SpanExporter } from "@opentelemetry/sdk-trace-node";
 import { ATTR_SERVICE_NAME, ATTR_SERVICE_VERSION } from "@opentelemetry/semantic-conventions";
 
 const TRACER_NAME = "gala-chaincode";
@@ -44,40 +43,13 @@ function tracesUrl(endpoint: string): string {
   return /\/v1\/traces$/i.test(trimmed) ? trimmed : `${trimmed}/v1/traces`;
 }
 
-function createTraceExporter(endpoint: string): SpanExporter {
+function createTraceExporter(endpoint: string): OTLPTraceExporter {
   // Pass url/headers explicitly so the exporter matches our probe parsing.
   // Relying on the exporter's own env parsing can disagree (quotes, commas).
-  const inner = new OTLPTraceExporter({
+  return new OTLPTraceExporter({
     url: tracesUrl(endpoint),
     headers: parseOtelHeaders(process.env.OTEL_EXPORTER_OTLP_HEADERS)
   });
-
-  // Ack the processor immediately and send OTLP in the background.
-  // A down collector must not block span.end(), forceFlush, or shutdown.
-  return {
-    export(spans, resultCallback) {
-      try {
-        resultCallback({ code: 0 }); // ExportResultCode.SUCCESS
-      } catch {
-        // ignore
-      }
-      try {
-        inner.export(spans, () => undefined);
-      } catch {
-        // ignore
-      }
-    },
-    async shutdown() {
-      try {
-        await Promise.race([inner.shutdown(), new Promise<void>((resolve) => setTimeout(resolve, 50))]);
-      } catch {
-        // ignore
-      }
-    },
-    forceFlush(): Promise<void> {
-      return Promise.resolve();
-    }
-  };
 }
 
 /**
@@ -109,10 +81,10 @@ export function initTracing(): void {
         [ATTR_SERVICE_NAME]: serviceName,
         ...(serviceVersion ? { [ATTR_SERVICE_VERSION]: serviceVersion } : {})
       }),
-      // Never block a tx on a hung flush (default is 30s).
+      // Startup/shutdown flush cap (default is 30s). Tx path does not forceFlush.
       forceFlushTimeoutMillis: 1000,
       spanProcessors: [
-        // Background export — do not use SimpleSpanProcessor (export runs on span.end).
+        // Queue on span.end — do not use SimpleSpanProcessor (export runs inline).
         new BatchSpanProcessor(createTraceExporter(endpoint), {
           maxQueueSize: 2048,
           maxExportBatchSize: 512,
