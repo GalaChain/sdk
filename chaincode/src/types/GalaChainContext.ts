@@ -104,15 +104,18 @@ export class GalaChainOtel {
   }
 
   /**
-   * Like `send`, and binds the child as stub parent for the duration of `fn`.
-   * Use for state helpers and afterTransaction so stub I/O nests under this span.
+   * Like `send`, but parents to `fallback` (not ambient ALS) and binds the child
+   * as stub parent for the duration of `fn`. Use at Fabric/tx boundaries and for
+   * state helpers so nested I/O does not inherit an outer span (e.g. batch.operation).
    */
   async sendBound<T>(
     name: string,
     attributes: Attributes,
     fn: (span: Span | undefined) => Promise<T>
   ): Promise<T> {
-    return this.send(name, attributes, (span) => this.withActive(span, () => fn(span)));
+    return runInSpanContext(this.fallback, () =>
+      this.send(name, attributes, (span) => this.withActive(span, () => fn(span)))
+    );
   }
 
   /**

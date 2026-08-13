@@ -108,10 +108,8 @@ export abstract class GalaContract extends Contract {
 
     this.ensureOtelTransactionSpan(ctx, methodName, params[0]);
 
-    await ctx.otel.run(() =>
-      ctx.otel.send("fabric.beforeTransaction", { "gala.method": methodName }, () =>
-        super.beforeTransaction(ctx)
-      )
+    await ctx.otel.sendBound("fabric.beforeTransaction", { "gala.method": methodName }, () =>
+      super.beforeTransaction(ctx)
     );
   }
 
@@ -131,23 +129,21 @@ export abstract class GalaContract extends Contract {
   public async afterTransaction(ctx: GalaChainContext, result: unknown): Promise<void> {
     await super.afterTransaction(ctx, result);
 
-    await ctx.otel.run(async () => {
-      await ctx.otel.sendBound("fabric.afterTransaction", {}, async () => {
-        if (
-          typeof result === "object" &&
-          // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
-          result?.["Status"] === GalaChainResponseType.Success &&
-          !ctx.isDryRun
-        ) {
-          await (ctx.stub as unknown as GalaChainStub).flushWrites();
-        }
+    await ctx.otel.sendBound("fabric.afterTransaction", {}, async () => {
+      if (
+        typeof result === "object" &&
+        // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
+        result?.["Status"] === GalaChainResponseType.Success &&
+        !ctx.isDryRun
+      ) {
+        await (ctx.stub as unknown as GalaChainStub).flushWrites();
+      }
 
-        ctx?.logger?.logTimeline(
-          "End Transaction",
-          ctx.stub.getFunctionAndParameters()?.fcn ?? this.getName(),
-          [{ chaincodeResult: result }]
-        );
-      });
+      ctx?.logger?.logTimeline(
+        "End Transaction",
+        ctx.stub.getFunctionAndParameters()?.fcn ?? this.getName(),
+        [{ chaincodeResult: result }]
+      );
     });
 
     // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
