@@ -34,9 +34,8 @@ import { Object as DTOObject, Transaction } from "fabric-contract-api";
 import { inspect } from "util";
 
 import { UniqueTransactionService } from "../services";
-import { recordTransactionSpanError, runInSpanContext, startTransactionSpan } from "../tracing";
-import { GalaChainContext, sendCtxSpan } from "../types";
-import { extractOtelTrace } from "../utils";
+import { recordTransactionSpanError, runInSpanContext } from "../tracing";
+import { GalaChainContext } from "../types";
 import { GalaContract } from "./GalaContract";
 import { updateApi } from "./GalaContractApi";
 import { authenticate } from "./authenticate";
@@ -179,31 +178,24 @@ function GalaTransaction<In extends ChainCallDTO, Out>(
     // eslint-disable-next-line no-param-reassign
     descriptor.value = async function (ctx: GalaChainContext, dtoPlain) {
       // Top-level invokes already have a SERVER span from GalaContract.aroundTransaction.
-      // Nested batch ops use a fresh ctx without otelSpan — start one here.
-      if (!ctx.otelSpan) {
-        ctx.trace = extractOtelTrace(dtoPlain);
-        ctx.otelSpan = startTransactionSpan(loggingContext, ctx.trace, {
-          "gala.contract": className,
-          "gala.method": method.name,
-          "fabric.channel_id": ctx.stub?.getChannelID?.() ?? "",
-          "fabric.tx_id": ctx.stub?.getTxID?.() ?? ""
-        });
-        ctx.stub?.setActiveOtelSpan?.(ctx.otelSpan);
-      } else if (!ctx.trace) {
-        ctx.trace = extractOtelTrace(dtoPlain);
-      }
+      // Nested batch ops use a fresh ctx — start one here.
+      ctx.otel.start(loggingContext, dtoPlain, {
+        "gala.contract": className,
+        "gala.method": method.name,
+        "fabric.channel_id": ctx.stub?.getChannelID?.() ?? "",
+        "fabric.tx_id": ctx.stub?.getTxID?.() ?? ""
+      });
 
       const galaTxSpanName =
         options.type === GalaTransactionType.SUBMIT ? "GalaTransaction.SUBMIT" : "GalaTransaction.EVALUATE";
 
       // Activate tx span so stub/state child spans nest under it.
-      return runInSpanContext(ctx.otelSpan, async () => {
+      return runInSpanContext(ctx.otel.current, async () => {
         try {
           const metadata = [{ dto: dtoPlain }];
           ctx?.logger?.logTimeline("Begin Transaction", loggingContext, metadata);
 
-          return await sendCtxSpan(
-            ctx,
+          return await ctx.otel.send(
             galaTxSpanName,
             {
               "gala.contract": className,
@@ -211,8 +203,7 @@ function GalaTransaction<In extends ChainCallDTO, Out>(
               "gala.tx_type": options.type === GalaTransactionType.SUBMIT ? "SUBMIT" : "EVALUATE"
             },
             async (galaTxSpan) => {
-              ctx.otelTxSpan = galaTxSpan ?? ctx.otelSpan;
-              ctx.stub?.setActiveOtelSpan?.(ctx.otelTxSpan);
+              ctx.otel.setActive(galaTxSpan);
 
               try {
                 // Parse & validate - may throw an exception
@@ -226,7 +217,7 @@ function GalaTransaction<In extends ChainCallDTO, Out>(
                   throw new ExpiredError(`DTO expired at ${new Date(dto.dtoExpiresAt).toISOString()}`);
                 }
 
-                await sendCtxSpan(ctx, "gala.authorize", {}, async () => {
+                await ctx.otel.send("gala.authorize", {}, async () => {
                   // Authenticate the user
                   if (ctx.isDryRun) {
                     // Do not authenticate in dry run mode
@@ -266,17 +257,11 @@ function GalaTransaction<In extends ChainCallDTO, Out>(
                 const argArray: [GalaChainContext, In] | [GalaChainContext] = dto ? [ctx, dto] : [ctx];
 
                 if (options?.before !== undefined) {
-                  await sendCtxSpan(
-                    ctx,
-                    "gala.before",
-                    {},
-                    async () => options.before?.apply(this, argArray)
-                  );
+                  await ctx.otel.send("gala.before", {}, async () => options.before?.apply(this, argArray));
                 }
 
                 // Business handler — separate from auth/parse so traces show where time goes.
-                const result = await sendCtxSpan(
-                  ctx,
+                const result = await ctx.otel.send(
                   "gala.handle",
                   { "gala.contract": className, "gala.method": method.name },
                   async () => method?.apply(this, argArray)
@@ -288,8 +273,7 @@ function GalaTransaction<In extends ChainCallDTO, Out>(
                     : GalaChainResponse.Success(result);
 
                 if (options?.after !== undefined) {
-                  await sendCtxSpan(
-                    ctx,
+                  await ctx.otel.send(
                     "gala.after",
                     {},
                     async () => options.after?.apply(this, [ctx, dto, normalizedResult])
@@ -299,13 +283,13 @@ function GalaTransaction<In extends ChainCallDTO, Out>(
                 return normalizedResult;
               } finally {
                 // Restore SERVER span for fabric.afterTransaction / flushWrites.
-                ctx.stub?.setActiveOtelSpan?.(ctx.otelSpan);
+                ctx.otel.setActive();
               }
             }
           );
         } catch (err) {
           const chainError = ChainError.from(err);
-          recordTransactionSpanError(ctx.otelSpan, err);
+          recordTransactionSpanError(ctx.otel.current, err);
 
           if (ctx.logger) {
             chainError.logWarn(ctx.logger);

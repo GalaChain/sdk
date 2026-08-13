@@ -26,14 +26,14 @@ import { Attributes, Span } from "@opentelemetry/api";
 import { QueryResponseMetadata } from "fabric-shim";
 
 import { formatOtelStateKey } from "../tracing";
-import { GalaChainContext, sendCtxSpan } from "../types";
+import { GalaChainContext } from "../types";
 
 // Fabric default value, we don't want to change it
 // see https://hyperledger-fabric.readthedocs.io/en/latest/performance.html#total-query-limit
 const TOTAL_RESULTS_LIMIT = 100 * 1000;
 
 /**
- * State helper span. Parents to ctx.otelFallbackSpan (EVALUATE/SERVER), and binds
+ * State helper span. Parents to otel fallback (EVALUATE/SERVER), and binds
  * the new span on the stub so nested stub.getState/etc. nest under this helper
  * even when AsyncLocalStorage is lost.
  */
@@ -43,13 +43,13 @@ function withStateSpan<T>(
   attributes: Attributes,
   fn: (span: Span | undefined) => Promise<T>
 ): Promise<T> {
-  return sendCtxSpan(ctx, name, attributes, async (span) => {
-    const prev = ctx.stub?.getActiveOtelSpan?.();
-    ctx.stub?.setActiveOtelSpan?.(span ?? prev);
+  return ctx.otel.send(name, attributes, async (span) => {
+    const prev = ctx.otel.getActive();
+    ctx.otel.setActive(span);
     try {
       return await fn(span);
     } finally {
-      ctx.stub?.setActiveOtelSpan?.(prev);
+      ctx.otel.setActive(prev);
     }
   });
 }

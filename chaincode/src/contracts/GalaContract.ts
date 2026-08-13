@@ -36,9 +36,9 @@ import {
 import { Contract } from "fabric-contract-api";
 
 import { PublicKeyService } from "../services";
-import { endTransactionSpan, runInSpanContext, startTransactionSpan } from "../tracing";
-import { GalaChainContext, GalaChainContextConfig, GalaChainStub, sendCtxSpan } from "../types";
-import { extractOtelTrace, getObjectHistory, getPlainObjectByKey } from "../utils";
+import { runInSpanContext } from "../tracing";
+import { GalaChainContext, GalaChainContextConfig, GalaChainStub } from "../types";
+import { getObjectHistory, getPlainObjectByKey } from "../utils";
 import { getApiMethod, getApiMethods } from "./GalaContractApi";
 import { EVALUATE, GalaTransaction, SUBMIT, Submit } from "./GalaTransaction";
 import { applySavedRequests, hasPendingApplyRequests } from "./GalaTransactionRequest";
@@ -94,18 +94,12 @@ export abstract class GalaContract extends Contract {
    * Safe to call multiple times; only the first call starts the span.
    */
   private ensureOtelTransactionSpan(ctx: GalaChainContext, methodName: string, dtoPlain: unknown): void {
-    if (ctx.otelSpan) {
-      return;
-    }
-
-    ctx.trace = extractOtelTrace(dtoPlain);
-    ctx.otelSpan = startTransactionSpan(`${this.getName()}:${methodName}`, ctx.trace, {
+    ctx.otel.start(`${this.getName()}:${methodName}`, dtoPlain, {
       "gala.contract": this.getName(),
       "gala.method": methodName,
       "fabric.channel_id": ctx.stub?.getChannelID?.() ?? "",
       "fabric.tx_id": ctx.stub?.getTxID?.() ?? ""
     });
-    ctx.stub?.setActiveOtelSpan?.(ctx.otelSpan);
   }
 
   public async beforeTransaction(ctx: GalaChainContext): Promise<void> {
@@ -115,8 +109,8 @@ export abstract class GalaContract extends Contract {
 
     this.ensureOtelTransactionSpan(ctx, methodName, params[0]);
 
-    await runInSpanContext(ctx.otelSpan, () =>
-      sendCtxSpan(ctx, "fabric.beforeTransaction", { "gala.method": methodName }, () =>
+    await runInSpanContext(ctx.otel.current, () =>
+      ctx.otel.send("fabric.beforeTransaction", { "gala.method": methodName }, () =>
         super.beforeTransaction(ctx)
       )
     );
@@ -132,17 +126,17 @@ export abstract class GalaContract extends Contract {
     this.ensureOtelTransactionSpan(ctx, methodName, params[0]);
 
     // note: Fabric uses Promise<void> type, but actually it returns transaction result
-    return runInSpanContext(ctx.otelSpan, () => super.aroundTransaction(ctx, fn, parameters));
+    return runInSpanContext(ctx.otel.current, () => super.aroundTransaction(ctx, fn, parameters));
   }
 
   public async afterTransaction(ctx: GalaChainContext, result: unknown): Promise<void> {
     await super.afterTransaction(ctx, result);
 
-    // Re-bind SERVER on stub — afterTransaction runs outside the decorator's ALS scope.
-    ctx.stub?.setActiveOtelSpan?.(ctx.otelSpan);
-    await runInSpanContext(ctx.otelSpan, async () => {
-      await sendCtxSpan(ctx, "fabric.afterTransaction", {}, async (afterSpan) => {
-        ctx.stub?.setActiveOtelSpan?.(afterSpan ?? ctx.otelSpan);
+    // Re-bind SERVER — afterTransaction runs outside the decorator's ALS scope.
+    ctx.otel.setActive();
+    await runInSpanContext(ctx.otel.current, async () => {
+      await ctx.otel.send("fabric.afterTransaction", {}, async (afterSpan) => {
+        ctx.otel.setActive(afterSpan);
         try {
           if (
             typeof result === "object" &&
@@ -159,17 +153,14 @@ export abstract class GalaContract extends Contract {
             [{ chaincodeResult: result }]
           );
         } finally {
-          ctx.stub?.setActiveOtelSpan?.(ctx.otelSpan);
+          ctx.otel.setActive();
         }
       });
     });
 
     // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
     const failed = typeof result === "object" && result?.["Status"] === GalaChainResponseType.Error;
-    await endTransactionSpan(ctx.otelSpan, failed);
-    ctx.stub?.setActiveOtelSpan?.(undefined);
-    ctx.otelTxSpan = undefined;
-    ctx.otelSpan = undefined;
+    await ctx.otel.end(failed);
   }
 
   @GalaTransaction({
@@ -300,8 +291,7 @@ export abstract class GalaContract extends Contract {
     let writesCount = ctx.stub.getWritesCount();
 
     for (const [index, op] of batchDto.operations.entries()) {
-      const response = await sendCtxSpan(
-        ctx,
+      const response = await ctx.otel.send(
         "batch.operation",
         {
           "gala.batch.index": index,
@@ -334,10 +324,7 @@ export abstract class GalaContract extends Contract {
           // Do not flush — outer afterTransaction flushes once.
           const nestedFailed = GalaChainResponse.isError(opResponse);
           span?.setAttribute("gala.batch.op_success", !nestedFailed);
-          await endTransactionSpan(sandboxCtx.otelSpan, nestedFailed, false);
-          sandboxCtx.stub?.setActiveOtelSpan?.(undefined);
-          sandboxCtx.otelTxSpan = undefined;
-          sandboxCtx.otelSpan = undefined;
+          await sandboxCtx.otel.end(nestedFailed, false);
 
           // Update the current context with the writes and deletes if the operation
           // is successful.
@@ -402,8 +389,7 @@ export abstract class GalaContract extends Contract {
     const responses: GalaChainResponse<unknown>[] = [];
 
     for (const [index, op] of batchDto.operations.entries()) {
-      const response = await sendCtxSpan(
-        ctx,
+      const response = await ctx.otel.send(
         "batch.operation",
         {
           "gala.batch.index": index,
@@ -429,10 +415,7 @@ export abstract class GalaContract extends Contract {
 
           const nestedFailed = GalaChainResponse.isError(opResponse);
           span?.setAttribute("gala.batch.op_success", !nestedFailed);
-          await endTransactionSpan(sandboxCtx.otelSpan, nestedFailed, false);
-          sandboxCtx.stub?.setActiveOtelSpan?.(undefined);
-          sandboxCtx.otelTxSpan = undefined;
-          sandboxCtx.otelSpan = undefined;
+          await sandboxCtx.otel.end(nestedFailed, false);
 
           return opResponse;
         }

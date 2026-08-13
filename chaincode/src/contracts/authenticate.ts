@@ -26,7 +26,7 @@ import {
 
 import { PkInvalidSignatureError, PublicKeyService, resolveUserAlias } from "../services";
 import { PkMissingError } from "../services/PublicKeyError";
-import { GalaChainContext, sendCtxSpan } from "../types";
+import { GalaChainContext } from "../types";
 
 class MissingSignatureError extends ValidationFailedError {
   constructor() {
@@ -138,8 +138,7 @@ export async function authenticate(
   dto: ChainCallDTO | undefined,
   quorum: number | undefined
 ): Promise<AuthenticateResult> {
-  return sendCtxSpan(
-    ctx,
+  return ctx.otel.send(
     "auth.authenticate",
     {
       "gala.auth.quorum": quorum ?? -1,

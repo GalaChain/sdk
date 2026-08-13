@@ -17,7 +17,8 @@ import { Attributes, Span } from "@opentelemetry/api";
 import { Context } from "fabric-contract-api";
 import { ChaincodeStub, Timestamp } from "fabric-shim";
 
-import { withSpan } from "../tracing";
+import { endTransactionSpan, startTransactionSpan, withSpan } from "../tracing";
+import { extractOtelTrace } from "../utils/extractOtelTrace";
 import { GalaChainStub, createGalaChainStub } from "./GalaChainStub";
 import { GalaLoggerInstance, GalaLoggerInstanceImpl } from "./GalaLoggerInstance";
 import { OperationContext, getOperationContext } from "./OperationContext";
@@ -44,17 +45,37 @@ class GalaChainContextConfigImpl implements GalaChainContextConfig {
 }
 
 /**
- * Child-span helper bound to a transaction context.
- * Export is async (BatchSpanProcessor); `send` never waits on OTLP.
+ * OTEL facade for a transaction context.
+ * Export is async (BatchSpanProcessor); `send` / `end` never wait on OTLP.
  */
-export class GalaChainSpan {
+export class GalaChainOtel {
   constructor(private readonly ctx: GalaChainContext) {}
+
+  /** DTO parent trace — log correlation and SERVER parenting. */
+  trace?: OtelTraceContext;
+
+  private server?: Span;
+  private active?: Span;
+
+  /** SERVER span for this Fabric invoke (before → after). */
+  get current(): Span | undefined {
+    return this.server;
+  }
+
+  /**
+   * Stub-bound recording span, else SERVER.
+   * Used when Fabric drops AsyncLocalStorage (getState). Never `gala.handle`.
+   */
+  private get fallback(): Span | undefined {
+    if (this.active?.isRecording()) {
+      return this.active;
+    }
+    return this.server;
+  }
 
   /**
    * Record `fn` as an INTERNAL child span.
-   * Parents to the active span when ALS is intact; otherwise to
-   * `GalaTransaction.EVALUATE`/`SUBMIT` or the SERVER span — never to
-   * inner spans like `gala.handle` that may be missing in the trace UI.
+   * Parents to ALS when intact; otherwise to `fallback`.
    * Telemetry failures never propagate; errors from `fn` do.
    */
   async send<T>(
@@ -62,21 +83,55 @@ export class GalaChainSpan {
     attributes: Attributes,
     fn: (span: Span | undefined) => Promise<T>
   ): Promise<T> {
-    return withSpan(name, attributes, fn, this.ctx.otelFallbackSpan);
+    return withSpan(name, attributes, fn, this.fallback);
   }
-}
 
-/** Safe `ctx.span.send` for contexts that are not a full GalaChainContext. */
-export function sendCtxSpan<T>(
-  ctx: GalaChainContext,
-  name: string,
-  attributes: Attributes,
-  fn: (span: Span | undefined) => Promise<T>
-): Promise<T> {
-  if (typeof ctx?.span?.send === "function") {
-    return ctx.span.send(name, attributes, fn);
+  /**
+   * Bind the stub fallback parent for Fabric I/O that drops ALS.
+   * Omitting `span` (or passing undefined) binds SERVER.
+   * Does not change OTEL AsyncLocalStorage.
+   */
+  setActive(span?: Span): void {
+    this.bind(span ?? this.server);
   }
-  return fn(undefined);
+
+  /** Current stub fallback parent. */
+  getActive(): Span | undefined {
+    return this.active;
+  }
+
+  private bind(span: Span | undefined): void {
+    this.active = span;
+    this.ctx.stub?.setActiveOtelSpan?.(span);
+  }
+
+  /** Start the SERVER span once. Safe to call again (no-op if `current` exists). */
+  start(name: string, dtoPlain: unknown, attributes: Attributes): void {
+    if (!this.trace) {
+      this.trace = extractOtelTrace(dtoPlain);
+    }
+    if (this.server) {
+      return;
+    }
+    this.server = startTransactionSpan(name, this.trace, attributes);
+    this.setActive();
+  }
+
+  /** End SERVER and drop span state. `flush` is ignored (call-site compatibility). */
+  async end(failed = false, flush = true): Promise<void> {
+    await endTransactionSpan(this.server, failed, flush);
+    this.server = undefined;
+    this.bind(undefined);
+  }
+
+  /**
+   * Sandbox ctx: share caller trace and stub parent, not SERVER.
+   * Nested decorated methods start their own SERVER via `start()`.
+   */
+  attachFrom(parent: GalaChainOtel): void {
+    this.trace = parent.trace;
+    this.bind(parent.fallback);
+  }
 }
 
 export class GalaChainContext extends Context {
@@ -94,32 +149,13 @@ export class GalaChainContext extends Context {
 
   public isDryRun = false;
   public config: GalaChainContextConfig;
-  /** OTEL trace from DTO, used to correlate chaincode logs with the caller span. */
-  public trace?: OtelTraceContext;
-  /** SERVER span for the current Fabric invoke (before → after). */
-  public otelSpan?: Span;
-  /** GalaTransaction.EVALUATE / SUBMIT span — stable fallback parent for stub/state. */
-  public otelTxSpan?: Span;
-  /** Record child spans for this transaction. Export is not on the hot path. */
-  public readonly span: GalaChainSpan;
-
-  /**
-   * Fallback parent when AsyncLocalStorage is missing (Fabric stub I/O).
-   * Uses EVALUATE/SUBMIT if present, else the SERVER span. Never an inner
-   * span (`gala.handle`) — those show up as missing parents in Sentry.
-   */
-  get otelFallbackSpan(): Span | undefined {
-    const tx = this.otelTxSpan;
-    if (tx?.isRecording()) {
-      return tx;
-    }
-    return this.otelSpan;
-  }
+  /** Tracing for this invoke. Use `otel.send` / `otel.current` / `otel.end`. */
+  public readonly otel: GalaChainOtel;
 
   constructor(config: GalaChainContextConfig) {
     super();
     this.config = new GalaChainContextConfigImpl(config);
-    this.span = new GalaChainSpan(this);
+    this.otel = new GalaChainOtel(this);
   }
 
   get logger(): GalaLoggerInstance {
@@ -263,11 +299,7 @@ export class GalaChainContext extends Context {
     const ctx = new GalaChainContext(this.config);
     ctx.clientIdentity = this.clientIdentity;
     ctx.setChaincodeStub(createGalaChainStub(this.stub, true, index));
-    // Preserve OTEL parenting for nested dry-run / batch sandbox contexts.
-    ctx.trace = this.trace;
-    ctx.otelSpan = this.otelSpan;
-    ctx.otelTxSpan = this.otelTxSpan;
-    ctx.stub?.setActiveOtelSpan?.(this.otelFallbackSpan);
+    ctx.otel.attachFrom(this.otel);
     return ctx;
   }
 
