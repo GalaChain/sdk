@@ -148,7 +148,11 @@ type TestGalaChainContext = Context & {
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   otelSpan?: any;
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  otelTxSpan?: any;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   get otelFallbackSpan(): any;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  span: any;
 };
 
 /**

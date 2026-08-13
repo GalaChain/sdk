@@ -14,8 +14,7 @@
  */
 import { ChainCallDTO, ForbiddenError, UnauthorizedError, UserRole } from "@gala-chain/api";
 
-import { withSpan } from "../tracing";
-import { GalaChainContext } from "../types";
+import { GalaChainContext, sendCtxSpan } from "../types";
 
 export class MissingRoleError extends UnauthorizedError {
   constructor(callingUser: string, callingUserRoles: string[] | undefined, allowedRoles: string[]) {
@@ -113,7 +112,8 @@ export async function authorize(
   options: AuthorizeOptions,
   dto: ChainCallDTO | undefined
 ) {
-  return withSpan(
+  return sendCtxSpan(
+    ctx,
     "auth.authorize",
     {
       "gala.auth.has_allowed_orgs": !!options.allowedOrgs?.length,
@@ -136,7 +136,6 @@ export async function authorize(
       if (options.allowedRoles) {
         await ensureRoleIsAllowed(ctx, options.allowedRoles);
       }
-    },
-    ctx.otelFallbackSpan
+    }
   );
 }

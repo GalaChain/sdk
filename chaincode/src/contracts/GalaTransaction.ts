@@ -34,8 +34,8 @@ import { Object as DTOObject, Transaction } from "fabric-contract-api";
 import { inspect } from "util";
 
 import { UniqueTransactionService } from "../services";
-import { recordTransactionSpanError, runInSpanContext, startTransactionSpan, withSpan } from "../tracing";
-import { GalaChainContext } from "../types";
+import { recordTransactionSpanError, runInSpanContext, startTransactionSpan } from "../tracing";
+import { GalaChainContext, sendCtxSpan } from "../types";
 import { extractOtelTrace } from "../utils";
 import { GalaContract } from "./GalaContract";
 import { updateApi } from "./GalaContractApi";
@@ -202,7 +202,8 @@ function GalaTransaction<In extends ChainCallDTO, Out>(
           const metadata = [{ dto: dtoPlain }];
           ctx?.logger?.logTimeline("Begin Transaction", loggingContext, metadata);
 
-          return await withSpan(
+          return await sendCtxSpan(
+            ctx,
             galaTxSpanName,
             {
               "gala.contract": className,
@@ -210,9 +211,8 @@ function GalaTransaction<In extends ChainCallDTO, Out>(
               "gala.tx_type": options.type === GalaTransactionType.SUBMIT ? "SUBMIT" : "EVALUATE"
             },
             async (galaTxSpan) => {
-              // Nested fallback parent for auth/state/stub when ALS is dropped mid-tx.
-              ctx.stub?.setActiveOtelSpan?.(galaTxSpan ?? ctx.otelSpan);
-              const parent = galaTxSpan ?? ctx.otelSpan;
+              ctx.otelTxSpan = galaTxSpan ?? ctx.otelSpan;
+              ctx.stub?.setActiveOtelSpan?.(ctx.otelTxSpan);
 
               try {
                 // Parse & validate - may throw an exception
@@ -226,77 +226,60 @@ function GalaTransaction<In extends ChainCallDTO, Out>(
                   throw new ExpiredError(`DTO expired at ${new Date(dto.dtoExpiresAt).toISOString()}`);
                 }
 
-                await withSpan(
-                  "gala.authorize",
-                  {},
-                  async (authorizeSpan) => {
-                    ctx.stub?.setActiveOtelSpan?.(authorizeSpan ?? parent);
-                    try {
-                      // Authenticate the user
-                      if (ctx.isDryRun) {
-                        // Do not authenticate in dry run mode
-                      } else if (options?.verifySignature || dto?.getAllSignatures().length) {
-                        // Authenticate if this is explicitly enabled or if there are any signatures in the DTO
-                        ctx.callingUserData = await authenticate(ctx, dto, options.quorum);
-                      } else {
-                        // it means a request where authorization is not required. If there is org-based authorization,
-                        // default roles are applied. If not, then only evaluate is possible. Alias is intentionally
-                        // missing.
-                        const roles = !options.allowedOrgs?.length
-                          ? [UserRole.EVALUATE]
-                          : [...UserProfile.DEFAULT_ROLES];
-                        ctx.callingUserData = {
-                          roles,
-                          signedBy: [],
-                          signatureQuorum: 0,
-                          allowedSigners: [],
-                          isMultisig: false
-                        };
-                      }
+                await sendCtxSpan(ctx, "gala.authorize", {}, async () => {
+                  // Authenticate the user
+                  if (ctx.isDryRun) {
+                    // Do not authenticate in dry run mode
+                  } else if (options?.verifySignature || dto?.getAllSignatures().length) {
+                    // Authenticate if this is explicitly enabled or if there are any signatures in the DTO
+                    ctx.callingUserData = await authenticate(ctx, dto, options.quorum);
+                  } else {
+                    // it means a request where authorization is not required. If there is org-based authorization,
+                    // default roles are applied. If not, then only evaluate is possible. Alias is intentionally
+                    // missing.
+                    const roles = !options.allowedOrgs?.length
+                      ? [UserRole.EVALUATE]
+                      : [...UserProfile.DEFAULT_ROLES];
+                    ctx.callingUserData = {
+                      roles,
+                      signedBy: [],
+                      signatureQuorum: 0,
+                      allowedSigners: [],
+                      isMultisig: false
+                    };
+                  }
 
-                      // Authorize the user
-                      await authorize(ctx, options, dto);
+                  // Authorize the user
+                  await authorize(ctx, options, dto);
 
-                      // Prevent the same transaction from being submitted multiple times
-                      if (options.enforceUniqueKey) {
-                        if (dto?.uniqueKey) {
-                          await UniqueTransactionService.ensureUniqueTransaction(ctx, dto.uniqueKey);
-                        } else {
-                          const message = `Missing uniqueKey in transaction dto for method '${method.name}'`;
-                          throw new RuntimeError(message);
-                        }
-                      }
-                    } finally {
-                      ctx.stub?.setActiveOtelSpan?.(parent);
+                  // Prevent the same transaction from being submitted multiple times
+                  if (options.enforceUniqueKey) {
+                    if (dto?.uniqueKey) {
+                      await UniqueTransactionService.ensureUniqueTransaction(ctx, dto.uniqueKey);
+                    } else {
+                      const message = `Missing uniqueKey in transaction dto for method '${method.name}'`;
+                      throw new RuntimeError(message);
                     }
-                  },
-                  parent
-                );
+                  }
+                });
 
                 const argArray: [GalaChainContext, In] | [GalaChainContext] = dto ? [ctx, dto] : [ctx];
 
                 if (options?.before !== undefined) {
-                  await withSpan(
+                  await sendCtxSpan(
+                    ctx,
                     "gala.before",
                     {},
-                    async () => options.before?.apply(this, argArray),
-                    parent
+                    async () => options.before?.apply(this, argArray)
                   );
                 }
 
                 // Business handler — separate from auth/parse so traces show where time goes.
-                const result = await withSpan(
+                const result = await sendCtxSpan(
+                  ctx,
                   "gala.handle",
                   { "gala.contract": className, "gala.method": method.name },
-                  async (handleSpan) => {
-                    ctx.stub?.setActiveOtelSpan?.(handleSpan ?? parent);
-                    try {
-                      return await method?.apply(this, argArray);
-                    } finally {
-                      ctx.stub?.setActiveOtelSpan?.(parent);
-                    }
-                  },
-                  parent
+                  async () => method?.apply(this, argArray)
                 );
 
                 const normalizedResult =
@@ -305,11 +288,11 @@ function GalaTransaction<In extends ChainCallDTO, Out>(
                     : GalaChainResponse.Success(result);
 
                 if (options?.after !== undefined) {
-                  await withSpan(
+                  await sendCtxSpan(
+                    ctx,
                     "gala.after",
                     {},
-                    async () => options.after?.apply(this, [ctx, dto, normalizedResult]),
-                    parent
+                    async () => options.after?.apply(this, [ctx, dto, normalizedResult])
                   );
                 }
 
@@ -318,8 +301,7 @@ function GalaTransaction<In extends ChainCallDTO, Out>(
                 // Restore SERVER span for fabric.afterTransaction / flushWrites.
                 ctx.stub?.setActiveOtelSpan?.(ctx.otelSpan);
               }
-            },
-            ctx.otelSpan
+            }
           );
         } catch (err) {
           const chainError = ChainError.from(err);

@@ -25,15 +25,15 @@ import {
 import { Attributes, Span } from "@opentelemetry/api";
 import { QueryResponseMetadata } from "fabric-shim";
 
-import { formatOtelStateKey, withSpan } from "../tracing";
-import { GalaChainContext } from "../types";
+import { formatOtelStateKey } from "../tracing";
+import { GalaChainContext, sendCtxSpan } from "../types";
 
 // Fabric default value, we don't want to change it
 // see https://hyperledger-fabric.readthedocs.io/en/latest/performance.html#total-query-limit
 const TOTAL_RESULTS_LIMIT = 100 * 1000;
 
 /**
- * State helper span. Always parents to ctx.otelFallbackSpan (explicit), and binds
+ * State helper span. Parents to ctx.otelFallbackSpan (EVALUATE/SERVER), and binds
  * the new span on the stub so nested stub.getState/etc. nest under this helper
  * even when AsyncLocalStorage is lost.
  */
@@ -43,20 +43,15 @@ function withStateSpan<T>(
   attributes: Attributes,
   fn: (span: Span | undefined) => Promise<T>
 ): Promise<T> {
-  return withSpan(
-    name,
-    attributes,
-    async (span) => {
-      const prev = ctx.stub?.getActiveOtelSpan?.();
-      ctx.stub?.setActiveOtelSpan?.(span ?? prev);
-      try {
-        return await fn(span);
-      } finally {
-        ctx.stub?.setActiveOtelSpan?.(prev);
-      }
-    },
-    ctx.otelFallbackSpan
-  );
+  return sendCtxSpan(ctx, name, attributes, async (span) => {
+    const prev = ctx.stub?.getActiveOtelSpan?.();
+    ctx.stub?.setActiveOtelSpan?.(span ?? prev);
+    try {
+      return await fn(span);
+    } finally {
+      ctx.stub?.setActiveOtelSpan?.(prev);
+    }
+  });
 }
 
 export class ObjectNotFoundError extends NotFoundError {
