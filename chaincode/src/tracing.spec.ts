@@ -23,6 +23,7 @@ import {
   verifyOtelConnection,
   withSpan
 } from "./tracing";
+import { GalaChainContext } from "./types";
 
 describe("tracing", () => {
   const previousEndpoint = process.env.OTEL_EXPORTER_OTLP_ENDPOINT;
@@ -257,5 +258,38 @@ describe("tracing", () => {
     // Then — span is closed locally; export is background (BatchSpanProcessor)
     expect(span?.isRecording()).toBe(false);
     expect(Date.now() - started).toBeLessThan(200);
+  });
+
+  it("should parent overlapping sendBound children as siblings, not a staircase", async () => {
+    // Given — getObjectsByKeys used to map() all getObjectByKey at once; each sendBound
+    // rewrote ALS to this.active (the previous in-flight child).
+    process.env.OTEL_EXPORTER_OTLP_ENDPOINT = "http://127.0.0.1:9";
+    process.env.OTEL_SERVICE_NAME = "test-chaincode";
+    await _resetTracingForTests();
+
+    const ctx = new GalaChainContext({});
+    ctx.stub = { setActiveOtelSpan: () => undefined } as unknown as GalaChainContext["stub"];
+    ctx.otel.start("TestContract:Parent", undefined, {});
+
+    const parentIds: string[] = [];
+
+    // When
+    await ctx.otel.sendBound("state.getObjectsByKeys", {}, async () => {
+      const ops = [0, 1, 2].map(() =>
+        ctx.otel.sendBound("state.getObjectByKey", {}, async (span) => {
+          const readable = span as unknown as { parentSpanContext?: { spanId?: string } };
+          parentIds.push(readable.parentSpanContext?.spanId ?? "");
+          await new Promise((r) => setTimeout(r, 5));
+        })
+      );
+      await Promise.all(ops);
+    });
+
+    // Then — every getObjectByKey parents to getObjectsByKeys, not the previous sibling
+    expect(parentIds).toHaveLength(3);
+    expect(new Set(parentIds).size).toBe(1);
+    expect(parentIds[0]).not.toBe("");
+
+    await ctx.otel.end();
   });
 });
