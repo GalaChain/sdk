@@ -146,9 +146,7 @@ type TestGalaChainContext = Context & {
   get operationCtx(): TestOperationContext;
   setChaincodeStub(stub: ChaincodeStub): void;
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  otelSpan?: any;
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  get otelFallbackSpan(): any;
+  otel: any;
 };
 
 /**
