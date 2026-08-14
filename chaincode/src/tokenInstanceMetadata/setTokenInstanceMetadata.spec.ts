@@ -23,7 +23,7 @@ import {
   createValidChainObject,
   createValidSubmitDTO
 } from "@gala-chain/api";
-import { currency, fixture, nft, users, writesMap } from "@gala-chain/test";
+import { currency, fixture, nft, transactionSuccess, users, writesMap } from "@gala-chain/test";
 import { plainToInstance } from "class-transformer";
 
 import GalaChainTokenContract from "../__test__/GalaChainTokenContract";
@@ -222,6 +222,56 @@ it("should fail for fungible token instances", async () => {
   expect(getWrites()).toEqual({});
 });
 
+it("should not persist signing envelope fields supplied on attributes or custom fields", async () => {
+  // Given
+  const { ctx, contract, getWrites } = fixture(GalaChainTokenContract)
+    .registeredUsers(users.testUser1)
+    .savedState(nft.tokenClass(), nft.tokenInstance1());
+
+  // attributes and custom fields extend ChainCallDTO, so a caller can populate the signing
+  // envelope on them; none of those fields carry a MaxLength
+  const envelope = {
+    signature: "X".repeat(5000),
+    signerPublicKey: "Y".repeat(5000),
+    signerAddress: "eth|abcdef",
+    uniqueKey: "attacker-supplied",
+    prefix: "junk",
+    dtoOperation: "junk",
+    dtoExpiresAt: 1,
+    trace: { traceId: "Z".repeat(5000) }
+  };
+
+  const dto = await defaultSetDto(nft.tokenInstance1Key(), {
+    attributes: [
+      plainToInstance(TokenInstanceMetadataAttribute, {
+        traitType: "Potency",
+        value: 9,
+        displayType: "number",
+        ...envelope
+      })
+    ],
+    customFields: [
+      plainToInstance(TokenInstanceMetadataCustomField, {
+        key: "gameId",
+        value: "elixir-001",
+        ...envelope
+      })
+    ]
+  }).signed(users.testUser1.privateKey);
+
+  // When
+  const response = await contract.SetTokenInstanceMetadata(ctx, dto);
+
+  // Then
+  expect(response).toEqual(transactionSuccess());
+
+  const written = Object.values(getWrites()).map((v) => JSON.parse(v as string));
+  const metadata = written.find((w) => w.attributes !== undefined);
+
+  expect(Object.keys(metadata.attributes[0]).sort()).toEqual(["displayType", "traitType", "value"]);
+  expect(Object.keys(metadata.customFields[0]).sort()).toEqual(["key", "value"]);
+});
+
 function defaultMetadataProps() {
   return {
     name: "Test Elixir #1",
@@ -229,9 +279,9 @@ function defaultMetadataProps() {
     image: "https://app.gala.games/test-image-placeholder-url.png",
     attributes: [
       plainToInstance(TokenInstanceMetadataAttribute, {
-        trait_type: "Potency",
+        traitType: "Potency",
         value: 9,
-        display_type: "number"
+        displayType: "number"
       })
     ],
     customFields: [plainToInstance(TokenInstanceMetadataCustomField, { key: "gameId", value: "elixir-001" })]

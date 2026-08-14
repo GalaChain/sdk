@@ -179,9 +179,9 @@ const tokenInstance1MetadataPlain = (txUnixTime: number) => ({
   image: "https://app.gala.games/test-image-placeholder-url.png",
   attributes: [
     plainToInstance(TokenInstanceMetadataAttribute, {
-      trait_type: "Potency",
+      traitType: "Potency",
       value: 9,
-      display_type: "number"
+      displayType: "number"
     })
   ],
   customFields: [plainToInstance(TokenInstanceMetadataCustomField, { key: "gameId", value: "elixir-001" })],

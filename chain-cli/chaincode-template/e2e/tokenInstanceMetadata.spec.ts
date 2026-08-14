@@ -122,9 +122,9 @@ describe("Token instance metadata scenario", () => {
       image: "https://app.gala.games/test-image-placeholder-url.png",
       attributes: [
         plainToInstance(TokenInstanceMetadataAttribute, {
-          trait_type: "Sharpness",
+          traitType: "Sharpness",
           value: 10,
-          display_type: "number"
+          displayType: "number"
         })
       ],
       customFields: [plainToInstance(TokenInstanceMetadataCustomField, { key: "gameId", value: "axe-001" })]
@@ -143,7 +143,7 @@ describe("Token instance metadata scenario", () => {
         expect.objectContaining({
           project,
           name: "Legendary Axe #1",
-          attributes: [expect.objectContaining({ trait_type: "Sharpness", value: 10 })]
+          attributes: [expect.objectContaining({ traitType: "Sharpness", value: 10 })]
         })
       )
     );

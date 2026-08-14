@@ -65,13 +65,17 @@ export const METADATA_INSTANCE_ID_REGEX = /^(0|[1-9]\d*)$/;
 export const MAX_METADATA_ATTRIBUTES = 100;
 export const MAX_METADATA_CUSTOM_FIELDS = 100;
 
+// Embedded value type, never sent to a contract method on its own, so it is a plain class
+// rather than a ChainCallDTO -- the same shape as LockTokenQuantity, BurnTokenQuantity and
+// GrantAllowanceQuantity. Extending ChainCallDTO would publish the signing envelope
+// (signature, signerPublicKey, multisig, uniqueKey, trace, ...) as part of a trait's schema.
 @JSONSchema({
   description: "Single trait of a token instance, following the OpenSea metadata standard attribute format."
 })
-export class TokenInstanceMetadataAttribute extends ChainCallDTO {
+export class TokenInstanceMetadataAttribute {
   @IsNotEmpty()
   @MaxLength(200)
-  public trait_type: string;
+  public traitType: string;
 
   @JSONSchema({
     description: "Trait value. Either a string or a finite number (strings limited to 500 characters)."
@@ -87,15 +91,16 @@ export class TokenInstanceMetadataAttribute extends ChainCallDTO {
   })
   @IsOptional()
   @IsIn(METADATA_ATTRIBUTE_DISPLAY_TYPES)
-  public display_type?: string;
+  public displayType?: string;
 }
 
+// Embedded value type; see the note on TokenInstanceMetadataAttribute above
 @JSONSchema({
   description:
     "Arbitrary key-value entry for game or product specific token instance metadata " +
     "that does not fit the OpenSea standard fields."
 })
-export class TokenInstanceMetadataCustomField extends ChainCallDTO {
+export class TokenInstanceMetadataCustomField {
   @IsNotEmpty()
   @MaxLength(200)
   public key: string;
@@ -145,8 +150,9 @@ export class TokenInstanceMetadataProject extends ChainObject {
 @JSONSchema({
   description:
     "Metadata document for a single NFT token instance, scoped to a project. A token instance " +
-    "may have multiple metadata documents, one per project. Field names follow the OpenSea " +
-    "metadata standard (snake_case) for direct off-chain format parity."
+    "may have multiple metadata documents, one per project. Fields mirror the OpenSea metadata " +
+    "standard, named in camelCase per GalaChain convention: consumers rendering OpenSea format " +
+    "map camelCase to the standard's snake_case (externalUrl -> external_url, and so on)."
 })
 export class TokenInstanceMetadata extends ChainObject {
   public static INDEX_KEY = "GCTIM";
@@ -196,22 +202,22 @@ export class TokenInstanceMetadata extends ChainObject {
 
   @IsOptional()
   @MaxLength(500)
-  public external_url?: string;
+  public externalUrl?: string;
 
   @IsOptional()
   @MaxLength(500)
-  public animation_url?: string;
+  public animationUrl?: string;
 
   @JSONSchema({
     description: "Background color as a six-character hexadecimal without a pre-pended #."
   })
   @IsOptional()
   @Matches(METADATA_BACKGROUND_COLOR_REGEX)
-  public background_color?: string;
+  public backgroundColor?: string;
 
   @IsOptional()
   @MaxLength(500)
-  public youtube_url?: string;
+  public youtubeUrl?: string;
 
   @IsOptional()
   @ArrayMaxSize(MAX_METADATA_ATTRIBUTES)
@@ -275,22 +281,22 @@ export class SetTokenInstanceMetadataDto extends SubmitCallDTO {
 
   @IsOptional()
   @MaxLength(500)
-  external_url?: string;
+  externalUrl?: string;
 
   @IsOptional()
   @MaxLength(500)
-  animation_url?: string;
+  animationUrl?: string;
 
   @JSONSchema({
     description: "Background color as a six-character hexadecimal without a pre-pended #."
   })
   @IsOptional()
   @Matches(METADATA_BACKGROUND_COLOR_REGEX)
-  background_color?: string;
+  backgroundColor?: string;
 
   @IsOptional()
   @MaxLength(500)
-  youtube_url?: string;
+  youtubeUrl?: string;
 
   @JSONSchema({
     description:

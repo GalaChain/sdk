@@ -39,38 +39,38 @@ async function errorsFor(plain: Record<string, unknown>): Promise<string[]> {
   return errors.map((e) => e.property);
 }
 
-describe("SetTokenInstanceMetadataDto background_color", () => {
-  it.each(["ff0000", "FF0000", "aBcDeF", "000000"])("should accept %s", async (background_color) => {
+describe("SetTokenInstanceMetadataDto backgroundColor", () => {
+  it.each(["ff0000", "FF0000", "aBcDeF", "000000"])("should accept %s", async (backgroundColor) => {
     // When
-    const properties = await errorsFor({ background_color });
+    const properties = await errorsFor({ backgroundColor });
 
     // Then
-    expect(properties).not.toContain("background_color");
+    expect(properties).not.toContain("backgroundColor");
   });
 
   // the field is documented as six hex characters without a pre-pended #
   it.each(["#ff0000", "#ff0", "fff", "zzzzzz", "ff00", "ff00000", ""])(
     "should reject %s",
-    async (background_color) => {
+    async (backgroundColor) => {
       // When
-      const properties = await errorsFor({ background_color });
+      const properties = await errorsFor({ backgroundColor });
 
       // Then
-      expect(properties).toContain("background_color");
+      expect(properties).toContain("backgroundColor");
     }
   );
 
-  it("should accept an omitted background_color", async () => {
+  it("should accept an omitted backgroundColor", async () => {
     // When
     const properties = await errorsFor({});
 
     // Then
-    expect(properties).not.toContain("background_color");
+    expect(properties).not.toContain("backgroundColor");
   });
 });
 
 describe("SetTokenInstanceMetadataDto array caps", () => {
-  const attribute = (i: number) => ({ trait_type: `trait-${i}`, value: i });
+  const attribute = (i: number) => ({ traitType: `trait-${i}`, value: i });
   const customField = (i: number) => ({ key: `key-${i}`, value: `value-${i}` });
 
   it("should accept attributes at the cap", async () => {

@@ -21,6 +21,7 @@ import {
   TokenInstanceMetadataProject,
   createValidChainObject
 } from "@gala-chain/api";
+import { plainToInstance } from "class-transformer";
 
 import { fetchTokenInstance } from "../token/fetchTokenInstance";
 import { GalaChainContext } from "../types";
@@ -32,16 +33,39 @@ import {
   fetchTokenInstanceMetadataProject
 } from "./tokenInstanceMetadataHelpers";
 
+// class-transformer copies undeclared properties onto the instance, and nothing in the SDK
+// strips them -- no whitelist or excludeExtraneousValues is configured -- so anything extra a
+// caller sends on an attribute or custom field survives validation. createValidChainObject then
+// assigns by reference rather than rebuilding, and it would reach world state unbounded, since
+// undeclared fields are subject to none of the MaxLength caps declared on these types.
+// Rebuild both from their declared fields only, so nothing else is persisted.
+function toStoredAttribute(attribute: TokenInstanceMetadataAttribute): TokenInstanceMetadataAttribute {
+  return plainToInstance(TokenInstanceMetadataAttribute, {
+    traitType: attribute.traitType,
+    value: attribute.value,
+    displayType: attribute.displayType
+  });
+}
+
+function toStoredCustomField(
+  customField: TokenInstanceMetadataCustomField
+): TokenInstanceMetadataCustomField {
+  return plainToInstance(TokenInstanceMetadataCustomField, {
+    key: customField.key,
+    value: customField.value
+  });
+}
+
 export interface SetTokenInstanceMetadataParams {
   tokenInstance: TokenInstanceKey;
   project: string;
   name?: string;
   description?: string;
   image?: string;
-  external_url?: string;
-  animation_url?: string;
-  background_color?: string;
-  youtube_url?: string;
+  externalUrl?: string;
+  animationUrl?: string;
+  backgroundColor?: string;
+  youtubeUrl?: string;
   attributes?: TokenInstanceMetadataAttribute[];
   customFields?: TokenInstanceMetadataCustomField[];
 }
@@ -95,12 +119,12 @@ export async function setTokenInstanceMetadata(
     name: params.name,
     description: params.description,
     image: params.image,
-    external_url: params.external_url,
-    animation_url: params.animation_url,
-    background_color: params.background_color,
-    youtube_url: params.youtube_url,
-    attributes: params.attributes,
-    customFields: params.customFields,
+    externalUrl: params.externalUrl,
+    animationUrl: params.animationUrl,
+    backgroundColor: params.backgroundColor,
+    youtubeUrl: params.youtubeUrl,
+    attributes: params.attributes?.map(toStoredAttribute),
+    customFields: params.customFields?.map(toStoredCustomField),
     createdBy: existing?.createdBy ?? ctx.callingUser,
     created: existing?.created ?? ctx.txUnixTime,
     lastModifiedBy: ctx.callingUser,

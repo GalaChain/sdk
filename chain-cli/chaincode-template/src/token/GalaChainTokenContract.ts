@@ -226,10 +226,10 @@ export default class GalaChainTokenContract extends GalaContract {
       name: dto.name,
       description: dto.description,
       image: dto.image,
-      external_url: dto.external_url,
-      animation_url: dto.animation_url,
-      background_color: dto.background_color,
-      youtube_url: dto.youtube_url,
+      externalUrl: dto.externalUrl,
+      animationUrl: dto.animationUrl,
+      backgroundColor: dto.backgroundColor,
+      youtubeUrl: dto.youtubeUrl,
       attributes: dto.attributes,
       customFields: dto.customFields
     });
