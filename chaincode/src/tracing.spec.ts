@@ -240,4 +240,22 @@ describe("tracing", () => {
     expect(endedWhileRunning).toBe(true);
     expect(Date.now() - started).toBeGreaterThanOrEqual(25);
   });
+
+  it("should not block the transaction on OTLP when ending a span", async () => {
+    // Given — discard port; forceFlush would hang for seconds
+    process.env.OTEL_EXPORTER_OTLP_ENDPOINT = "http://127.0.0.1:9";
+    process.env.OTEL_SERVICE_NAME = "test-chaincode";
+    await _resetTracingForTests();
+
+    const span = startTransactionSpan("TestContract:NoFlush", undefined);
+    expect(span).toBeDefined();
+
+    // When
+    const started = Date.now();
+    await endTransactionSpan(span);
+
+    // Then — span is closed locally; export is background (BatchSpanProcessor)
+    expect(span?.isRecording()).toBe(false);
+    expect(Date.now() - started).toBeLessThan(200);
+  });
 });

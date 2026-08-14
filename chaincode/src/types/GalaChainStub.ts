@@ -44,8 +44,8 @@ class StubCache {
 
   private invokeChaincodeCalls: Record<string, string[]> = {};
 
-  /** Fallback parent when AsyncLocalStorage context is missing (Fabric lifecycle). */
-  private activeOtelSpan: Span | undefined;
+  /** Fallback parent when AsyncLocalStorage is missing (Fabric lifecycle). */
+  private activeOtelSpan: Span | undefined = undefined;
 
   constructor(
     private readonly stub: ChaincodeStub,

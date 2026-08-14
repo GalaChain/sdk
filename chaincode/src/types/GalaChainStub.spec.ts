@@ -461,3 +461,18 @@ describe("invokeChaincode", () => {
     expect(gcStub.externalChaincodeWasInvoked).toBe(true);
   });
 });
+
+describe("otel fallback parent on stub", () => {
+  it("should round-trip setActiveOtelSpan through the proxy", () => {
+    // Given
+    const { gcStub } = setupTest();
+    const fakeSpan = { isRecording: () => true };
+
+    // When
+    gcStub.setActiveOtelSpan(fakeSpan as never);
+    const stored = gcStub.getActiveOtelSpan();
+
+    // Then
+    expect(stored).toBe(fakeSpan);
+  });
+});

@@ -82,9 +82,20 @@ describe("GalaContract transaction consistency", () => {
     expect(await chaincode.invoke("TestGalaContract:Get", key2)).toEqual(transactionSuccess(""));
   });
 
+  const contextWithoutCachedStub = (): GalaChainContext => {
+    const ctx = originalCreateContext();
+    ctx.setChaincodeStub = (stub) => {
+      // Skip GalaChainStub wrap: writes hit Fabric immediately and flushWrites is missing.
+      // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+      // @ts-ignore - missing typings for `setChaincodeStub` in `fabric-contract-api`
+      Context.prototype.setChaincodeStub.call(ctx, stub);
+    };
+    return ctx;
+  };
+
   it("should fail and save values when createContext is altered (no proper stub prepared)", async () => {
     // Given
-    contract.createContext = () => new Context() as unknown as GalaChainContext;
+    contract.createContext = contextWithoutCachedStub;
 
     const [key1, value1] = ["test-key-save", "robot"];
     const [key2, value2] = ["test-key-dont-save", "human"];
@@ -128,7 +139,7 @@ describe("GalaContract transaction consistency", () => {
 
   it("should save everything when both createContext and afterTransaction is altered", async () => {
     // Given
-    contract.createContext = () => new Context() as unknown as GalaChainContext;
+    contract.createContext = contextWithoutCachedStub;
     contract.afterTransaction = () => new Promise((res) => res());
 
     const [key1, value1] = ["test-key-save", "robot"];

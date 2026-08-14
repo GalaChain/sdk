@@ -27,7 +27,7 @@ import {
 } from "@opentelemetry/api";
 import { OTLPTraceExporter } from "@opentelemetry/exporter-trace-otlp-proto";
 import { resourceFromAttributes } from "@opentelemetry/resources";
-import { NodeTracerProvider, SimpleSpanProcessor } from "@opentelemetry/sdk-trace-node";
+import { BatchSpanProcessor, NodeTracerProvider } from "@opentelemetry/sdk-trace-node";
 import { ATTR_SERVICE_NAME, ATTR_SERVICE_VERSION } from "@opentelemetry/semantic-conventions";
 
 const TRACER_NAME = "gala-chaincode";
@@ -75,20 +75,35 @@ export function initTracing(): void {
   const serviceName = process.env.OTEL_SERVICE_NAME ?? "gala-chaincode";
   const serviceVersion = process.env.OTEL_SERVICE_VERSION;
 
-  provider = new NodeTracerProvider({
-    resource: resourceFromAttributes({
-      [ATTR_SERVICE_NAME]: serviceName,
-      ...(serviceVersion ? { [ATTR_SERVICE_VERSION]: serviceVersion } : {})
-    }),
-    // Export each span immediately — chaincode txs are short-lived.
-    spanProcessors: [new SimpleSpanProcessor(createTraceExporter(endpoint))]
-  });
+  try {
+    provider = new NodeTracerProvider({
+      resource: resourceFromAttributes({
+        [ATTR_SERVICE_NAME]: serviceName,
+        ...(serviceVersion ? { [ATTR_SERVICE_VERSION]: serviceVersion } : {})
+      }),
+      // Startup/shutdown flush cap (default is 30s). Tx path does not forceFlush.
+      forceFlushTimeoutMillis: 1000,
+      spanProcessors: [
+        // Queue on span.end — do not use SimpleSpanProcessor (export runs inline).
+        new BatchSpanProcessor(createTraceExporter(endpoint), {
+          maxQueueSize: 2048,
+          maxExportBatchSize: 512,
+          scheduledDelayMillis: 5000,
+          exportTimeoutMillis: 5000
+        })
+      ]
+    });
 
-  provider.register();
-  console.log(
-    `${LOG_PREFIX} Tracer initialized (endpoint=${endpoint}, service=${serviceName}` +
-      `${serviceVersion ? `, version=${serviceVersion}` : ""})`
-  );
+    provider.register();
+    console.log(
+      `${LOG_PREFIX} Tracer initialized (endpoint=${endpoint}, service=${serviceName}` +
+        `${serviceVersion ? `, version=${serviceVersion}` : ""})`
+    );
+  } catch (err) {
+    provider = undefined;
+    const message = err instanceof Error ? err.message : String(err);
+    console.error(`${LOG_PREFIX} Tracer init failed; tracing disabled: ${message}`);
+  }
 }
 
 export function isTracingEnabled(): boolean {
@@ -108,28 +123,32 @@ export function startTransactionSpan(
   parent: OtelTraceContext | undefined,
   attributes: Attributes = {}
 ): Span | undefined {
-  if (!isTracingEnabled()) {
+  try {
+    if (!isTracingEnabled()) {
+      return undefined;
+    }
+
+    let parentCtx = context.active();
+    if (parent && isValidParentTrace(parent)) {
+      parentCtx = trace.setSpanContext(ROOT_CONTEXT, {
+        traceId: parent.traceId.toLowerCase(),
+        spanId: parent.spanId.toLowerCase(),
+        traceFlags: TraceFlags.SAMPLED,
+        isRemote: true
+      });
+    }
+
+    return trace.getTracer(TRACER_NAME).startSpan(
+      name,
+      {
+        kind: SpanKind.SERVER,
+        attributes
+      },
+      parentCtx
+    );
+  } catch {
     return undefined;
   }
-
-  let parentCtx = context.active();
-  if (parent && isValidParentTrace(parent)) {
-    parentCtx = trace.setSpanContext(ROOT_CONTEXT, {
-      traceId: parent.traceId.toLowerCase(),
-      spanId: parent.spanId.toLowerCase(),
-      traceFlags: TraceFlags.SAMPLED,
-      isRemote: true
-    });
-  }
-
-  return trace.getTracer(TRACER_NAME).startSpan(
-    name,
-    {
-      kind: SpanKind.SERVER,
-      attributes
-    },
-    parentCtx
-  );
 }
 
 export function recordTransactionSpanError(span: Span | undefined, err: unknown): void {
@@ -137,9 +156,13 @@ export function recordTransactionSpanError(span: Span | undefined, err: unknown)
     return;
   }
 
-  const error = err instanceof Error ? err : new Error(String(err));
-  span.recordException(error);
-  span.setStatus({ code: SpanStatusCode.ERROR, message: error.message });
+  try {
+    const error = err instanceof Error ? err : new Error(String(err));
+    span.recordException(error);
+    span.setStatus({ code: SpanStatusCode.ERROR, message: error.message });
+  } catch {
+    // Never fail a chaincode transaction because of telemetry.
+  }
 }
 
 /**
@@ -178,21 +201,25 @@ export function startChildSpan(
   attributes: Attributes = {},
   fallbackParent?: Span
 ): Span | undefined {
-  if (!isTracingEnabled()) {
+  try {
+    if (!isTracingEnabled()) {
+      return undefined;
+    }
+
+    const parent = resolveParentSpan(fallbackParent);
+    const parentCtx = parent ? trace.setSpan(ROOT_CONTEXT, parent) : context.active();
+
+    return trace.getTracer(TRACER_NAME).startSpan(
+      name,
+      {
+        kind: SpanKind.INTERNAL,
+        attributes
+      },
+      parentCtx
+    );
+  } catch {
     return undefined;
   }
-
-  const parent = resolveParentSpan(fallbackParent);
-  const parentCtx = parent ? trace.setSpan(ROOT_CONTEXT, parent) : context.active();
-
-  return trace.getTracer(TRACER_NAME).startSpan(
-    name,
-    {
-      kind: SpanKind.INTERNAL,
-      attributes
-    },
-    parentCtx
-  );
 }
 
 export function endChildSpan(span: Span | undefined, err?: unknown): void {
@@ -200,18 +227,23 @@ export function endChildSpan(span: Span | undefined, err?: unknown): void {
     return;
   }
 
-  if (err !== undefined) {
-    recordTransactionSpanError(span, err);
-  } else if (span.isRecording()) {
-    span.setStatus({ code: SpanStatusCode.OK });
-  }
+  try {
+    if (err !== undefined) {
+      recordTransactionSpanError(span, err);
+    } else if (span.isRecording()) {
+      span.setStatus({ code: SpanStatusCode.OK });
+    }
 
-  span.end();
+    span.end();
+  } catch {
+    // Never fail a chaincode transaction because of telemetry.
+  }
 }
 
 /**
- * Times an async operation as an INTERNAL child span. Never swallows errors.
- * Pass `fallbackParent` (usually ctx.otelSpan) so parenting survives lost ALS context.
+ * Times an async operation as an INTERNAL child span. Never swallows errors from `fn`.
+ * Pass `fallbackParent` (EVALUATE/SERVER) so parenting survives lost ALS context.
+ * Export is not awaited — BatchSpanProcessor sends in the background.
  */
 export async function withSpan<T>(
   name: string,
@@ -271,31 +303,23 @@ export function formatOtelStateKey(key: string, maxLen = ATTR_MAX_LEN): string {
 }
 
 /**
- * Ends the span and optionally flushes so the export completes before the tx returns.
+ * Ends the SERVER span. Export is left to BatchSpanProcessor (background).
+ * Do not forceFlush here — a down OTEL endpoint must not block the transaction.
  * Pass `failed` when the transaction already recorded an error status.
- * Set `flush` false for nested spans (e.g. batch ops); the outer tx ends with a flush.
  */
-export async function endTransactionSpan(
-  span: Span | undefined,
-  failed = false,
-  flush = true
-): Promise<void> {
+export async function endTransactionSpan(span: Span | undefined, failed = false): Promise<void> {
   if (!span) {
     return;
   }
 
-  if (!failed) {
-    span.setStatus({ code: SpanStatusCode.OK });
-  }
-
-  span.end();
-
-  if (flush && provider) {
-    try {
-      await provider.forceFlush();
-    } catch {
-      // Never fail a chaincode transaction because of telemetry.
+  try {
+    if (!failed && span.isRecording()) {
+      span.setStatus({ code: SpanStatusCode.OK });
     }
+
+    span.end();
+  } catch {
+    // Never fail a chaincode transaction because of telemetry.
   }
 }
 
@@ -500,13 +524,15 @@ export async function verifyOtelConnection(): Promise<boolean> {
 
 /** @internal test helper */
 export async function _resetTracingForTests(): Promise<void> {
-  if (provider) {
-    try {
-      await provider.shutdown();
-    } catch {
-      // ignore
-    }
-  }
+  const current = provider;
   provider = undefined;
   initAttempted = false;
+  if (!current) {
+    return;
+  }
+  try {
+    await current.shutdown();
+  } catch {
+    // ignore
+  }
 }
