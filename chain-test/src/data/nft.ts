@@ -14,6 +14,7 @@
  */
 import {
   GC_NETWORK_ID,
+  NftCollectionAuthorization,
   TokenAllowance,
   TokenBalance,
   TokenBurn,
@@ -23,8 +24,7 @@ import {
   TokenInstanceKey,
   TokenInstanceMetadata,
   TokenInstanceMetadataAttribute,
-  TokenInstanceMetadataCustomField,
-  TokenInstanceMetadataProject
+  TokenInstanceMetadataCustomField
 } from "@gala-chain/api";
 import BigNumber from "bignumber.js";
 import { plainToInstance } from "class-transformer";
@@ -150,17 +150,13 @@ const tokenInstance1Plain = createPlainFn({
 });
 
 /**
- * Creates a plain token instance metadata project ownership record for testing.
- * Marks admin as the owner of the "TestProject" metadata for the test NFT class.
- *
- * @param txUnixTime - Unix timestamp for the ownership record creation time
- * @returns Plain object representing project metadata ownership
+ * Creates a plain NFT collection name authorization for the "TestProject" name,
+ * authorizing admin. Token instance metadata project names are claimed in this
+ * registry, so this record lets admin write "TestProject" metadata documents.
  */
-const tokenInstance1MetadataProjectPlain = (txUnixTime: number) => ({
-  ...tokenClassKeyPlain(),
-  project: "TestProject",
-  owner: users.admin.identityKey,
-  created: txUnixTime
+const projectAuthorizationPlain = createPlainFn({
+  collection: "TestProject",
+  authorizedUsers: [users.admin.identityKey]
 });
 
 /**
@@ -270,11 +266,8 @@ export default {
   tokenInstance1: createInstanceFn(TokenInstance, tokenInstance1Plain()),
   tokenInstance1MetadataPlain,
   tokenInstance1Metadata: createInstanceFn(TokenInstanceMetadata, tokenInstance1MetadataPlain(1)),
-  tokenInstance1MetadataProjectPlain,
-  tokenInstance1MetadataProject: createInstanceFn(
-    TokenInstanceMetadataProject,
-    tokenInstance1MetadataProjectPlain(1)
-  ),
+  projectAuthorizationPlain,
+  projectAuthorization: createInstanceFn(NftCollectionAuthorization, projectAuthorizationPlain()),
   tokenBalancePlain,
   tokenBalance: createInstanceFn(TokenBalance, tokenBalancePlain()),
   tokenBurnPlain,

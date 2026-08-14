@@ -112,43 +112,6 @@ export class TokenInstanceMetadataCustomField {
 
 @JSONSchema({
   description:
-    "Ownership record of a project's token instance metadata within a token class. " +
-    "The user who first creates metadata for a given project on any instance of a token class " +
-    "becomes the owner of that project's metadata for the whole class."
-})
-export class TokenInstanceMetadataProject extends ChainObject {
-  public static INDEX_KEY = "GCTIMP";
-
-  @ChainKey({ position: 0 })
-  @IsNotEmpty()
-  public collection: string;
-
-  @ChainKey({ position: 1 })
-  @IsNotEmpty()
-  public category: string;
-
-  @ChainKey({ position: 2 })
-  @IsNotEmpty()
-  public type: string;
-
-  @ChainKey({ position: 3 })
-  @IsDefined()
-  public additionalKey: string;
-
-  @ChainKey({ position: 4 })
-  @IsNotEmpty()
-  @MaxLength(200)
-  public project: string;
-
-  @IsUserAlias()
-  public owner: UserAlias;
-
-  @IsPositive()
-  public created: number;
-}
-
-@JSONSchema({
-  description:
     "Metadata document for a single NFT token instance, scoped to a project. A token instance " +
     "may have multiple metadata documents, one per project. Fields mirror the OpenSea metadata " +
     "standard, named in camelCase per GalaChain convention: consumers rendering OpenSea format " +
@@ -246,10 +209,10 @@ export class TokenInstanceMetadata extends ChainObject {
 
 @JSONSchema({
   description:
-    "Full-document upsert of a project's metadata for a single NFT token instance. The first user " +
-    "to create metadata for a given project on a token class becomes the owner of that project's " +
-    "metadata for the class; only the owner can update it afterwards. Replaces any existing " +
-    "metadata document of the project for the instance."
+    "Full-document upsert of a project's metadata for a single NFT token instance. The project " +
+    "identifier is a name claimed in the NFT collection name registry: the calling user must be " +
+    "authorized for it (see GrantNftCollectionAuthorization). Replaces any existing metadata " +
+    "document of the project for the instance."
 })
 export class SetTokenInstanceMetadataDto extends SubmitCallDTO {
   @JSONSchema({
@@ -430,7 +393,7 @@ export class FetchTokenInstanceMetadataResponse extends ChainCallDTO {
 @JSONSchema({
   description:
     "Deletes a project's metadata document of a single NFT token instance. Callable only by " +
-    "the owner of the project's metadata for the token class."
+    "users authorized for the project name in the NFT collection name registry."
 })
 export class DeleteTokenInstanceMetadataDto extends SubmitCallDTO {
   @JSONSchema({

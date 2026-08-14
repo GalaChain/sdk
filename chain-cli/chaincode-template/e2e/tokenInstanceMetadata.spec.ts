@@ -19,6 +19,7 @@ import {
   DeleteTokenInstanceMetadataDto,
   FetchTokenInstanceMetadataDto,
   GrantAllowanceDto,
+  GrantNftCollectionAuthorizationDto,
   MintTokenDto,
   SetTokenInstanceMetadataDto,
   TokenClassKey,
@@ -47,7 +48,10 @@ describe("Token instance metadata scenario", () => {
   let user1: ChainUser;
   let user2: ChainUser;
 
-  const project = "project-alpha";
+  // project names are claimed in the NFT collection name registry, and claims persist
+  // on chain across test runs, so each run claims fresh names
+  const project = randomize("project-alpha");
+  const projectBeta = randomize("project-beta");
 
   beforeAll(async () => {
     client = await TestClients.createForAdmin();
@@ -112,6 +116,51 @@ describe("Token instance metadata scenario", () => {
     expect(mintResponse).toEqual(transactionSuccess());
   });
 
+  it("Users should claim project names in the collection name registry", async () => {
+    // Given
+    const claimAlphaDto = await createValidSubmitDTO(GrantNftCollectionAuthorizationDto, {
+      collection: project,
+      authorizedUser: user1.identityKey
+    });
+
+    const claimBetaDto = await createValidSubmitDTO(GrantNftCollectionAuthorizationDto, {
+      collection: projectBeta,
+      authorizedUser: user2.identityKey
+    });
+
+    // When
+    const claimAlphaResponse = await client.assets.submitTransaction(
+      "GrantNftCollectionAuthorization",
+      claimAlphaDto.signed(user1.privateKey)
+    );
+    const claimBetaResponse = await client.assets.submitTransaction(
+      "GrantNftCollectionAuthorization",
+      claimBetaDto.signed(user2.privateKey)
+    );
+
+    // Then
+    expect(claimAlphaResponse).toEqual(transactionSuccess());
+    expect(claimBetaResponse).toEqual(transactionSuccess());
+  });
+
+  it("User should not set metadata for an unclaimed project name", async () => {
+    // Given
+    const setDto = await createValidSubmitDTO(SetTokenInstanceMetadataDto, {
+      tokenInstance: nftInstanceKey(),
+      project: randomize("project-unclaimed"),
+      name: "Unclaimed Project View"
+    });
+
+    // When
+    const response = await client.assets.submitTransaction(
+      "SetTokenInstanceMetadata",
+      setDto.signed(user1.privateKey)
+    );
+
+    // Then
+    expect(response).toEqual(transactionErrorCode(403));
+  });
+
   it("User should set token instance metadata for their project", async () => {
     // Given
     const setDto = await createValidSubmitDTO(SetTokenInstanceMetadataDto, {
@@ -171,7 +220,7 @@ describe("Token instance metadata scenario", () => {
     // Given
     const setDto = await createValidSubmitDTO(SetTokenInstanceMetadataDto, {
       tokenInstance: nftInstanceKey(),
-      project: "project-beta",
+      project: projectBeta,
       name: "Beta View of the Axe"
     });
 
@@ -184,7 +233,7 @@ describe("Token instance metadata scenario", () => {
 
     // Then
     expect(response).toEqual(
-      transactionSuccess(expect.objectContaining({ project: "project-beta", name: "Beta View of the Axe" }))
+      transactionSuccess(expect.objectContaining({ project: projectBeta, name: "Beta View of the Axe" }))
     );
   });
 
@@ -206,7 +255,7 @@ describe("Token instance metadata scenario", () => {
       transactionSuccess(
         expect.arrayContaining([
           expect.objectContaining({ project, name: "Legendary Axe #1" }),
-          expect.objectContaining({ project: "project-beta" })
+          expect.objectContaining({ project: projectBeta })
         ])
       )
     );

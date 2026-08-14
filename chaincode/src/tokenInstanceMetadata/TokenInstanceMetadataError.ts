@@ -48,12 +48,12 @@ export class TooManyMetadataDocumentsError extends ValidationFailedError {
   }
 }
 
-export class NotProjectMetadataOwnerError extends ForbiddenError {
-  constructor(user: string, project: string, tokenClassKey: string, owner: string) {
+export class UserNotAuthorizedForProjectError extends ForbiddenError {
+  constructor(user: string, project: string) {
     super(
-      `User ${user} is not the owner of metadata of project ${project} ` +
-        `for token class ${tokenClassKey}. Owner: ${owner}`,
-      { user, project, tokenClassKey, owner }
+      `User ${user} is not authorized for project name "${project}". Project names are ` +
+        `claimed in the NFT collection name registry (GrantNftCollectionAuthorization).`,
+      { user, project }
     );
   }
 }

@@ -14,12 +14,13 @@
  */
 import {
   GalaChainResponse,
+  NftCollectionAuthorization,
   SetTokenInstanceMetadataDto,
   TokenInstanceKey,
   TokenInstanceMetadata,
   TokenInstanceMetadataAttribute,
   TokenInstanceMetadataCustomField,
-  TokenInstanceMetadataProject,
+  UserAlias,
   createValidChainObject,
   createValidSubmitDTO
 } from "@gala-chain/api";
@@ -30,18 +31,26 @@ import GalaChainTokenContract from "../__test__/GalaChainTokenContract";
 import { TokenClassNotFoundError } from "../token/TokenError";
 import {
   NftInstanceRequiredError,
-  NotProjectMetadataOwnerError,
-  TokenInstanceNotFoundError
+  TokenInstanceNotFoundError,
+  UserNotAuthorizedForProjectError
 } from "./TokenInstanceMetadataError";
 import { SetTokenInstanceMetadataParams } from "./setTokenInstanceMetadata";
 
 const project = "TestProject";
 
-it("should set token instance metadata and create project ownership", async () => {
+// project names are claimed in the NFT collection name registry
+function authorizationFor(user: UserAlias, projectName = project): NftCollectionAuthorization {
+  return plainToInstance(NftCollectionAuthorization, {
+    collection: projectName,
+    authorizedUsers: [user]
+  });
+}
+
+it("should set token instance metadata as a user authorized for the project name", async () => {
   // Given
   const { ctx, contract, getWrites } = fixture(GalaChainTokenContract)
     .registeredUsers(users.testUser1)
-    .savedState(nft.tokenClass(), nft.tokenInstance1());
+    .savedState(nft.tokenClass(), nft.tokenInstance1(), authorizationFor(users.testUser1.identityKey));
 
   const metadataProps = defaultMetadataProps();
   const dto = await defaultSetDto(nft.tokenInstance1Key(), metadataProps).signed(users.testUser1.privateKey);
@@ -56,29 +65,22 @@ it("should set token instance metadata and create project ownership", async () =
     lastModified: ctx.txUnixTime
   });
 
-  const expectedOwnership = await createValidChainObject(TokenInstanceMetadataProject, {
-    ...nft.tokenClassKeyPlain(),
-    project,
-    owner: users.testUser1.identityKey,
-    created: ctx.txUnixTime
-  });
-
   // When
   const response = await contract.SetTokenInstanceMetadata(ctx, dto);
 
   // Then
   expect(response).toEqual(GalaChainResponse.Success(expectedMetadata));
-  expect(getWrites()).toEqual(writesMap(expectedOwnership, expectedMetadata));
+  expect(getWrites()).toEqual(writesMap(expectedMetadata));
 });
 
-it("should replace existing metadata as owner, preserving creation info", async () => {
+it("should replace existing metadata as an authorized user, preserving creation info", async () => {
   // Given
   const savedMetadata = nft.tokenInstance1Metadata();
-  const savedOwnership = nft.tokenInstance1MetadataProject(); // owned by users.admin
+  const savedAuthorization = nft.projectAuthorization(); // "TestProject" authorized to users.admin
 
   const { ctx, contract, getWrites } = fixture(GalaChainTokenContract)
     .registeredUsers(users.admin)
-    .savedState(nft.tokenClass(), nft.tokenInstance1(), savedOwnership, savedMetadata);
+    .savedState(nft.tokenClass(), nft.tokenInstance1(), savedAuthorization, savedMetadata);
 
   const update = { name: "Renamed Elixir", description: "Replaced document." };
   const dto = await defaultSetDto(nft.tokenInstance1Key(), update).signed(users.admin.privateKey);
@@ -104,13 +106,16 @@ it("should replace existing metadata as owner, preserving creation info", async 
 
 it("should allow a different user to set metadata for a different project", async () => {
   // Given
-  const savedOwnership = nft.tokenInstance1MetadataProject(); // "TestProject" owned by users.admin
+  const otherProject = "OtherProject";
 
   const { ctx, contract, getWrites } = fixture(GalaChainTokenContract)
     .registeredUsers(users.testUser2)
-    .savedState(nft.tokenClass(), nft.tokenInstance1(), savedOwnership);
-
-  const otherProject = "OtherProject";
+    .savedState(
+      nft.tokenClass(),
+      nft.tokenInstance1(),
+      nft.projectAuthorization(), // "TestProject" authorized to users.admin
+      authorizationFor(users.testUser2.identityKey, otherProject)
+    );
   const dto = await createValidSubmitDTO(SetTokenInstanceMetadataDto, {
     tokenInstance: nft.tokenInstance1Key(),
     project: otherProject,
@@ -127,30 +132,23 @@ it("should allow a different user to set metadata for a different project", asyn
     lastModified: ctx.txUnixTime
   });
 
-  const expectedOwnership = await createValidChainObject(TokenInstanceMetadataProject, {
-    ...nft.tokenClassKeyPlain(),
-    project: otherProject,
-    owner: users.testUser2.identityKey,
-    created: ctx.txUnixTime
-  });
-
   // When
   const response = await contract.SetTokenInstanceMetadata(ctx, dto);
 
   // Then
   expect(response).toEqual(GalaChainResponse.Success(expectedMetadata));
-  expect(getWrites()).toEqual(writesMap(expectedOwnership, expectedMetadata));
+  expect(getWrites()).toEqual(writesMap(expectedMetadata));
 });
 
-it("should fail if callingUser is not the project metadata owner", async () => {
+it("should fail if callingUser is not authorized for the project name", async () => {
   // Given
-  const savedOwnership = nft.tokenInstance1MetadataProject(); // owned by users.admin
+  const savedAuthorization = nft.projectAuthorization(); // authorized to users.admin
   const callingUser = users.testUser2;
-  expect(savedOwnership.owner).not.toEqual(callingUser.identityKey);
+  expect(savedAuthorization.authorizedUsers).not.toContain(callingUser.identityKey);
 
   const { ctx, contract, getWrites } = fixture(GalaChainTokenContract)
     .registeredUsers(callingUser)
-    .savedState(nft.tokenClass(), nft.tokenInstance1(), savedOwnership);
+    .savedState(nft.tokenClass(), nft.tokenInstance1(), savedAuthorization);
 
   const dto = await defaultSetDto(nft.tokenInstance1Key()).signed(callingUser.privateKey);
 
@@ -158,11 +156,26 @@ it("should fail if callingUser is not the project metadata owner", async () => {
   const response = await contract.SetTokenInstanceMetadata(ctx, dto);
 
   // Then
-  const classKey = nft.tokenClass().getCompositeKey();
   expect(response).toEqual(
-    GalaChainResponse.Error(
-      new NotProjectMetadataOwnerError(callingUser.identityKey, project, classKey, savedOwnership.owner)
-    )
+    GalaChainResponse.Error(new UserNotAuthorizedForProjectError(callingUser.identityKey, project))
+  );
+  expect(getWrites()).toEqual({});
+});
+
+it("should fail if the project name is not claimed in the registry", async () => {
+  // Given
+  const { ctx, contract, getWrites } = fixture(GalaChainTokenContract)
+    .registeredUsers(users.testUser1)
+    .savedState(nft.tokenClass(), nft.tokenInstance1()); // no authorization for the project name
+
+  const dto = await defaultSetDto(nft.tokenInstance1Key()).signed(users.testUser1.privateKey);
+
+  // When
+  const response = await contract.SetTokenInstanceMetadata(ctx, dto);
+
+  // Then
+  expect(response).toEqual(
+    GalaChainResponse.Error(new UserNotAuthorizedForProjectError(users.testUser1.identityKey, project))
   );
   expect(getWrites()).toEqual({});
 });
@@ -226,7 +239,7 @@ it("should not persist signing envelope fields supplied on attributes or custom 
   // Given
   const { ctx, contract, getWrites } = fixture(GalaChainTokenContract)
     .registeredUsers(users.testUser1)
-    .savedState(nft.tokenClass(), nft.tokenInstance1());
+    .savedState(nft.tokenClass(), nft.tokenInstance1(), authorizationFor(users.testUser1.identityKey));
 
   // attributes and custom fields extend ChainCallDTO, so a caller can populate the signing
   // envelope on them; none of those fields carry a MaxLength

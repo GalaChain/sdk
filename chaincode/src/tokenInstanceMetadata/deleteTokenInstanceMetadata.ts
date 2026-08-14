@@ -12,19 +12,16 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-import { TokenClass, TokenInstanceKey, TokenInstanceMetadata } from "@gala-chain/api";
+import { TokenInstanceKey, TokenInstanceMetadata } from "@gala-chain/api";
 
+import { isUserAuthorizedForCollection } from "../nftCollections/authorization";
 import { GalaChainContext } from "../types";
 import { deleteChainObject, getObjectByKey } from "../utils/state";
 import {
-  NotProjectMetadataOwnerError,
-  TokenInstanceMetadataNotFoundError
+  TokenInstanceMetadataNotFoundError,
+  UserNotAuthorizedForProjectError
 } from "./TokenInstanceMetadataError";
-import {
-  buildTokenInstanceMetadataCompositeKey,
-  ensureNftInstance,
-  fetchTokenInstanceMetadataProject
-} from "./tokenInstanceMetadataHelpers";
+import { buildTokenInstanceMetadataCompositeKey, ensureNftInstance } from "./tokenInstanceMetadataHelpers";
 
 export interface DeleteTokenInstanceMetadataParams {
   tokenInstance: TokenInstanceKey;
@@ -39,15 +36,10 @@ export async function deleteTokenInstanceMetadata(
 
   await ensureNftInstance(ctx, tokenInstance);
 
-  const ownership = await fetchTokenInstanceMetadataProject(ctx, tokenInstance, project);
+  const authorized = await isUserAuthorizedForCollection(ctx, project, ctx.callingUser);
 
-  if (ownership === undefined) {
-    throw new TokenInstanceMetadataNotFoundError(tokenInstance.toStringKey(), project);
-  }
-
-  if (ownership.owner !== ctx.callingUser) {
-    const classKey = TokenClass.buildTokenClassCompositeKey(tokenInstance);
-    throw new NotProjectMetadataOwnerError(ctx.callingUser, project, classKey, ownership.owner);
+  if (!authorized) {
+    throw new UserNotAuthorizedForProjectError(ctx.callingUser, project);
   }
 
   const metadataKey = buildTokenInstanceMetadataCompositeKey(tokenInstance, project);

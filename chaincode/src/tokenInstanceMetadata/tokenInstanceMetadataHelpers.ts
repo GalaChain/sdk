@@ -17,13 +17,12 @@ import {
   TokenClass,
   TokenInstance,
   TokenInstanceKey,
-  TokenInstanceMetadata,
-  TokenInstanceMetadataProject
+  TokenInstanceMetadata
 } from "@gala-chain/api";
 
 import { TokenClassNotFoundError } from "../token/TokenError";
 import { GalaChainContext } from "../types";
-import { getObjectByKey, objectExists } from "../utils/state";
+import { getObjectByKey } from "../utils/state";
 import { NftInstanceRequiredError } from "./TokenInstanceMetadataError";
 
 export async function ensureNftInstance(
@@ -49,32 +48,4 @@ export function buildTokenInstanceMetadataCompositeKey(
 ): string {
   const compositeKeyParts = [...TokenInstance.buildInstanceKeyList(tokenInstance), project];
   return ChainObject.getCompositeKeyFromParts(TokenInstanceMetadata.INDEX_KEY, compositeKeyParts);
-}
-
-export function buildTokenInstanceMetadataProjectCompositeKey(
-  tokenInstance: TokenInstanceKey,
-  project: string
-): string {
-  const compositeKeyParts = [
-    tokenInstance.collection,
-    tokenInstance.category,
-    tokenInstance.type,
-    tokenInstance.additionalKey,
-    project
-  ];
-  return ChainObject.getCompositeKeyFromParts(TokenInstanceMetadataProject.INDEX_KEY, compositeKeyParts);
-}
-
-export async function fetchTokenInstanceMetadataProject(
-  ctx: GalaChainContext,
-  tokenInstance: TokenInstanceKey,
-  project: string
-): Promise<TokenInstanceMetadataProject | undefined> {
-  const key = buildTokenInstanceMetadataProjectCompositeKey(tokenInstance, project);
-
-  // deliberately not a .catch() on the read: only a missing record may resolve to undefined,
-  // since callers treat undefined as "unowned" and claim ownership for the calling user
-  const exists = await objectExists(ctx, key);
-
-  return exists ? await getObjectByKey(ctx, TokenInstanceMetadataProject, key) : undefined;
 }

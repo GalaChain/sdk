@@ -14,10 +14,10 @@
  */
 import {
   NftInstanceRequiredError,
-  NotProjectMetadataOwnerError,
   TokenInstanceMetadataNotFoundError,
   TokenInstanceNotFoundError,
-  TooManyMetadataDocumentsError
+  TooManyMetadataDocumentsError,
+  UserNotAuthorizedForProjectError
 } from "./TokenInstanceMetadataError";
 import {
   DeleteTokenInstanceMetadataParams,
@@ -31,12 +31,7 @@ import {
   fetchTokenInstanceMetadataWithPagination
 } from "./fetchTokenInstanceMetadata";
 import { SetTokenInstanceMetadataParams, setTokenInstanceMetadata } from "./setTokenInstanceMetadata";
-import {
-  buildTokenInstanceMetadataCompositeKey,
-  buildTokenInstanceMetadataProjectCompositeKey,
-  ensureNftInstance,
-  fetchTokenInstanceMetadataProject
-} from "./tokenInstanceMetadataHelpers";
+import { buildTokenInstanceMetadataCompositeKey, ensureNftInstance } from "./tokenInstanceMetadataHelpers";
 
 export {
   setTokenInstanceMetadata,
@@ -49,12 +44,10 @@ export {
   deleteTokenInstanceMetadata,
   DeleteTokenInstanceMetadataParams,
   ensureNftInstance,
-  fetchTokenInstanceMetadataProject,
   buildTokenInstanceMetadataCompositeKey,
-  buildTokenInstanceMetadataProjectCompositeKey,
   NftInstanceRequiredError,
-  NotProjectMetadataOwnerError,
   TokenInstanceMetadataNotFoundError,
   TokenInstanceNotFoundError,
-  TooManyMetadataDocumentsError
+  TooManyMetadataDocumentsError,
+  UserNotAuthorizedForProjectError
 };

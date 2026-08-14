@@ -13,25 +13,20 @@
  * limitations under the License.
  */
 import {
-  TokenClass,
   TokenInstanceKey,
   TokenInstanceMetadata,
   TokenInstanceMetadataAttribute,
   TokenInstanceMetadataCustomField,
-  TokenInstanceMetadataProject,
   createValidChainObject
 } from "@gala-chain/api";
 import { plainToInstance } from "class-transformer";
 
+import { isUserAuthorizedForCollection } from "../nftCollections/authorization";
 import { fetchTokenInstance } from "../token/fetchTokenInstance";
 import { GalaChainContext } from "../types";
 import { getObjectByKey, objectExists, putChainObject } from "../utils/state";
-import { NotProjectMetadataOwnerError, TokenInstanceNotFoundError } from "./TokenInstanceMetadataError";
-import {
-  buildTokenInstanceMetadataCompositeKey,
-  ensureNftInstance,
-  fetchTokenInstanceMetadataProject
-} from "./tokenInstanceMetadataHelpers";
+import { TokenInstanceNotFoundError, UserNotAuthorizedForProjectError } from "./TokenInstanceMetadataError";
+import { buildTokenInstanceMetadataCompositeKey, ensureNftInstance } from "./tokenInstanceMetadataHelpers";
 
 // class-transformer copies undeclared properties onto the instance, and nothing in the SDK
 // strips them -- no whitelist or excludeExtraneousValues is configured -- so anything extra a
@@ -82,24 +77,13 @@ export async function setTokenInstanceMetadata(
     throw new TokenInstanceNotFoundError(tokenInstance.toStringKey());
   });
 
-  // the first user to create metadata for a project on a token class becomes
-  // the owner of that project's metadata for the whole class
-  const ownership = await fetchTokenInstanceMetadataProject(ctx, tokenInstance, project);
+  // project names are claimed in the NFT collection name registry: the same authorization
+  // that guards creating token classes under a collection name guards writing metadata
+  // under it as a project name, so a brand identity has a single owner across both features
+  const authorized = await isUserAuthorizedForCollection(ctx, project, ctx.callingUser);
 
-  if (ownership === undefined) {
-    const newOwnership = await createValidChainObject(TokenInstanceMetadataProject, {
-      collection: tokenInstance.collection,
-      category: tokenInstance.category,
-      type: tokenInstance.type,
-      additionalKey: tokenInstance.additionalKey,
-      project,
-      owner: ctx.callingUser,
-      created: ctx.txUnixTime
-    });
-    await putChainObject(ctx, newOwnership);
-  } else if (ownership.owner !== ctx.callingUser) {
-    const classKey = TokenClass.buildTokenClassCompositeKey(tokenInstance);
-    throw new NotProjectMetadataOwnerError(ctx.callingUser, project, classKey, ownership.owner);
+  if (!authorized) {
+    throw new UserNotAuthorizedForProjectError(ctx.callingUser, project);
   }
 
   const metadataKey = buildTokenInstanceMetadataCompositeKey(tokenInstance, project);

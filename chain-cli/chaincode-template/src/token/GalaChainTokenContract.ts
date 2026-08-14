@@ -41,6 +41,7 @@ import {
   FetchFeeThresholdUsesWithPaginationDto,
   FetchFeeThresholdUsesWithPaginationResponse,
   FetchMintRequestsDto,
+  FetchNftCollectionAuthorizationDto,
   FetchTokenClassesDto,
   FetchTokenClassesResponse,
   FetchTokenClassesWithPaginationDto,
@@ -53,13 +54,16 @@ import {
   FullAllowanceCheckResDto,
   GalaChainResponse,
   GrantAllowanceDto,
+  GrantNftCollectionAuthorizationDto,
   HighThroughputMintTokenDto,
   LockTokenDto,
   LockTokensDto,
   MintRequestDto,
   MintTokenDto,
   MintTokenWithAllowanceDto,
+  NftCollectionAuthorization,
   RefreshAllowancesDto,
+  RevokeNftCollectionAuthorizationDto,
   SetTokenInstanceMetadataDto,
   SubmitCallDTO,
   TokenAllowance,
@@ -103,6 +107,7 @@ import {
   fetchFeeSchedule,
   fetchFeeThresholdUses,
   fetchFeeThresholdUsesWithPagination,
+  fetchNftCollectionAuthorization,
   fetchTokenClasses,
   fetchTokenClassesWithPagination,
   fetchTokenInstanceMetadata,
@@ -111,20 +116,24 @@ import {
   fulfillMintRequest,
   fullAllowanceCheck,
   grantAllowance,
+  grantNftCollectionAuthorization,
   lockToken,
   lockTokens,
   mintRequestsByTimeRange,
   mintToken,
   mintTokenWithAllowance,
+  nftCollectionAuthorizationFeeGate,
   parseMintTokenParams,
   parseTransferTokenParams,
   refreshAllowances,
   requestMint,
   requireCuratorAuth,
   resolveUserAlias,
+  revokeNftCollectionAuthorization,
   saveRequest,
   setGalaFeeProperties,
   setTokenInstanceMetadata,
+  setTokenInstanceMetadataFeeGate,
   transferToken,
   transferTokenFeeGate,
   unlockToken,
@@ -213,8 +222,46 @@ export default class GalaChainTokenContract extends GalaContract {
   }
 
   @Submit({
+    in: GrantNftCollectionAuthorizationDto,
+    out: NftCollectionAuthorization,
+    before: nftCollectionAuthorizationFeeGate
+  })
+  public async GrantNftCollectionAuthorization(
+    ctx: GalaChainContext,
+    dto: GrantNftCollectionAuthorizationDto
+  ): Promise<NftCollectionAuthorization> {
+    const authorizedUser = await resolveUserAlias(ctx, dto.authorizedUser);
+    return grantNftCollectionAuthorization(ctx, dto.collection, authorizedUser);
+  }
+
+  @Submit({
+    in: RevokeNftCollectionAuthorizationDto,
+    out: NftCollectionAuthorization
+  })
+  public async RevokeNftCollectionAuthorization(
+    ctx: GalaChainContext,
+    dto: RevokeNftCollectionAuthorizationDto
+  ): Promise<NftCollectionAuthorization> {
+    const authorizedUser = await resolveUserAlias(ctx, dto.authorizedUser);
+    return revokeNftCollectionAuthorization(ctx, dto.collection, authorizedUser);
+  }
+
+  @GalaTransaction({
+    type: EVALUATE,
+    in: FetchNftCollectionAuthorizationDto,
+    out: NftCollectionAuthorization
+  })
+  public FetchNftCollectionAuthorization(
+    ctx: GalaChainContext,
+    dto: FetchNftCollectionAuthorizationDto
+  ): Promise<NftCollectionAuthorization> {
+    return fetchNftCollectionAuthorization(ctx, dto.collection);
+  }
+
+  @Submit({
     in: SetTokenInstanceMetadataDto,
-    out: TokenInstanceMetadata
+    out: TokenInstanceMetadata,
+    before: setTokenInstanceMetadataFeeGate
   })
   public SetTokenInstanceMetadata(
     ctx: GalaChainContext,

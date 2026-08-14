@@ -23,20 +23,20 @@ import { currency, fixture, nft, users } from "@gala-chain/test";
 import GalaChainTokenContract from "../__test__/GalaChainTokenContract";
 import {
   NftInstanceRequiredError,
-  NotProjectMetadataOwnerError,
-  TokenInstanceMetadataNotFoundError
+  TokenInstanceMetadataNotFoundError,
+  UserNotAuthorizedForProjectError
 } from "./TokenInstanceMetadataError";
 
 const project = "TestProject";
 
-it("should delete token instance metadata as project owner", async () => {
+it("should delete token instance metadata as a user authorized for the project name", async () => {
   // Given
   const savedMetadata = nft.tokenInstance1Metadata();
-  const savedOwnership = nft.tokenInstance1MetadataProject(); // owned by users.admin
+  const savedAuthorization = nft.projectAuthorization(); // "TestProject" authorized to users.admin
 
   const { ctx, contract, getWrites } = fixture(GalaChainTokenContract)
     .registeredUsers(users.admin)
-    .savedState(nft.tokenClass(), nft.tokenInstance1(), savedOwnership, savedMetadata);
+    .savedState(nft.tokenClass(), nft.tokenInstance1(), savedAuthorization, savedMetadata);
 
   const dto = await defaultDeleteDto(nft.tokenInstance1Key()).signed(users.admin.privateKey);
 
@@ -45,15 +45,15 @@ it("should delete token instance metadata as project owner", async () => {
 
   // Then
   expect(response).toEqual(GalaChainResponse.Success(nft.tokenInstance1Key()));
-  // deletions are recorded as writes with empty values; ownership record is kept
+  // deletions are recorded as writes with empty values
   expect(getWrites()).toEqual({ [savedMetadata.getCompositeKey()]: "" });
 });
 
 it("should fail if metadata does not exist", async () => {
-  // Given
+  // Given: authorization exists, but no metadata document for this instance
   const { ctx, contract, getWrites } = fixture(GalaChainTokenContract)
     .registeredUsers(users.admin)
-    .savedState(nft.tokenClass(), nft.tokenInstance1()); // no saved ownership or metadata
+    .savedState(nft.tokenClass(), nft.tokenInstance1(), nft.projectAuthorization());
 
   const tokenInstanceKey = nft.tokenInstance1Key();
   const dto = await defaultDeleteDto(tokenInstanceKey).signed(users.admin.privateKey);
@@ -68,37 +68,16 @@ it("should fail if metadata does not exist", async () => {
   expect(getWrites()).toEqual({});
 });
 
-it("should fail if metadata document is missing for the instance", async () => {
-  // Given: ownership exists (from another instance), but no document for this instance
-  const savedOwnership = nft.tokenInstance1MetadataProject();
-
-  const { ctx, contract, getWrites } = fixture(GalaChainTokenContract)
-    .registeredUsers(users.admin)
-    .savedState(nft.tokenClass(), nft.tokenInstance1(), savedOwnership);
-
-  const tokenInstanceKey = nft.tokenInstance1Key();
-  const dto = await defaultDeleteDto(tokenInstanceKey).signed(users.admin.privateKey);
-
-  // When
-  const response = await contract.DeleteTokenInstanceMetadata(ctx, dto);
-
-  // Then
-  expect(response).toEqual(
-    GalaChainResponse.Error(new TokenInstanceMetadataNotFoundError(tokenInstanceKey.toStringKey(), project))
-  );
-  expect(getWrites()).toEqual({});
-});
-
-it("should fail if callingUser is not the project metadata owner", async () => {
+it("should fail if callingUser is not authorized for the project name", async () => {
   // Given
   const savedMetadata = nft.tokenInstance1Metadata();
-  const savedOwnership = nft.tokenInstance1MetadataProject(); // owned by users.admin
+  const savedAuthorization = nft.projectAuthorization(); // authorized to users.admin
   const callingUser = users.testUser2;
-  expect(savedOwnership.owner).not.toEqual(callingUser.identityKey);
+  expect(savedAuthorization.authorizedUsers).not.toContain(callingUser.identityKey);
 
   const { ctx, contract, getWrites } = fixture(GalaChainTokenContract)
     .registeredUsers(callingUser)
-    .savedState(nft.tokenClass(), nft.tokenInstance1(), savedOwnership, savedMetadata);
+    .savedState(nft.tokenClass(), nft.tokenInstance1(), savedAuthorization, savedMetadata);
 
   const dto = await defaultDeleteDto(nft.tokenInstance1Key()).signed(callingUser.privateKey);
 
@@ -106,11 +85,8 @@ it("should fail if callingUser is not the project metadata owner", async () => {
   const response = await contract.DeleteTokenInstanceMetadata(ctx, dto);
 
   // Then
-  const classKey = nft.tokenClass().getCompositeKey();
   expect(response).toEqual(
-    GalaChainResponse.Error(
-      new NotProjectMetadataOwnerError(callingUser.identityKey, project, classKey, savedOwnership.owner)
-    )
+    GalaChainResponse.Error(new UserNotAuthorizedForProjectError(callingUser.identityKey, project))
   );
   expect(getWrites()).toEqual({});
 });
