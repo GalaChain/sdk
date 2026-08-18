@@ -23,6 +23,7 @@ import {
   GetObjectHistoryDto,
   createValidDTO
 } from "../../types";
+import { instanceToPlain } from "class-transformer";
 import { ChainClient } from "../generic";
 
 export interface CommonContractAPI extends Record<string, unknown> {
@@ -67,7 +68,11 @@ export const commonContractAPI = (client: ChainClient): CommonContractAPI => ({
     callerPublicKey: string,
     dto: ChainCallDTO
   ): Promise<GalaChainResponse<DryRunResultDto>> {
-    const dryRunDto = await createValidDTO(DryRunDto, { method, callerPublicKey, dto });
+    const dryRunDto = await createValidDTO(DryRunDto, {
+      method,
+      callerPublicKey,
+      dto: instanceToPlain(dto) as Record<string, unknown>
+    });
     const resp = await client.evaluateTransaction("DryRun", dryRunDto);
     return resp as GalaChainResponse<DryRunResultDto>;
   },

@@ -58,6 +58,16 @@ class TestDtoWithBigNumber extends ChainCallDTO {
   quantity: BigNumber;
 }
 
+it("should reject unknown properties", async () => {
+  const valid = '{"playerIds":["123"]}';
+  const withExtraField = '{"playerIds":["123"],"unknownField":"extra"}';
+
+  expect(await getPlainOrError(TestDtoWithArray, valid)).toEqual({ playerIds: ["123"] });
+  expect(await getPlainOrError(TestDtoWithArray, withExtraField)).toEqual(
+    expect.arrayContaining([expect.stringContaining("whitelistValidation")])
+  );
+});
+
 it("should parse TestDtoWithArray", async () => {
   const valid = '{"playerIds":["123"]}';
   const invalid1 = '{"playerIds":[]}';
