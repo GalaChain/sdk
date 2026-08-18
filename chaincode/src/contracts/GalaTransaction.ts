@@ -237,7 +237,8 @@ function GalaTransaction<In extends ChainCallDTO, Out>(
               // Authorize the user
               await authorize(ctx, options, dto);
 
-              // Prevent the same transaction from being submitted multiple times
+              // Record uniqueKey before the handler so a later business failure
+              // still consumes the key (flushed on error by afterTransaction).
               if (options.enforceUniqueKey) {
                 if (dto?.uniqueKey) {
                   await UniqueTransactionService.ensureUniqueTransaction(ctx, dto.uniqueKey);
