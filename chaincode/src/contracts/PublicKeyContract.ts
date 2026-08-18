@@ -110,6 +110,19 @@ export class PublicKeyContract extends GalaContract {
   }
 
   @Submit({
+    in: SubmitCallDTO,
+    description:
+      "Freezes the calling user's account by clearing all roles. Self-service; a registrar must call UpdateUserRoles to restore access."
+  })
+  public async FreezeAccount(
+    ctx: GalaChainContext,
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
+    dto: SubmitCallDTO
+  ): Promise<void> {
+    await PublicKeyService.freezeCallingUser(ctx);
+  }
+
+  @Submit({
     in: UpdatePublicKeyDto,
     description: "Updates public key for the calling user."
   })

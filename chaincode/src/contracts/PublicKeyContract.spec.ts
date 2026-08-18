@@ -838,6 +838,56 @@ describe("UpdateUserRoles", () => {
   });
 });
 
+describe("FreezeAccount", () => {
+  it("should let a user freeze themselves and require registrar to restore roles", async () => {
+    // Given
+    const chaincode = new TestChaincode([PublicKeyContract]);
+    const user = await createRegisteredUser(chaincode);
+    const adminPrivateKey = process.env.DEV_ADMIN_PRIVATE_KEY as string;
+
+    const freezeDto = await createValidSubmitDTO(SubmitCallDTO, {}).signed(user.privateKey);
+    const afterFreezeDto = await createValidSubmitDTO(SubmitCallDTO, {}).signed(user.privateKey);
+
+    // When
+    const freezeResp = await chaincode.invoke("PublicKeyContract:FreezeAccount", freezeDto);
+    const frozenProfile = await getUserProfile(chaincode, user.ethAddress);
+    const blockedResp = await chaincode.invoke("PublicKeyContract:FreezeAccount", afterFreezeDto);
+
+    const restoreDto = await createValidSubmitDTO(UpdateUserRolesDto, {
+      user: user.alias,
+      roles: [...UserProfile.DEFAULT_ROLES]
+    }).signed(adminPrivateKey);
+    const restoreResp = await chaincode.invoke("PublicKeyContract:UpdateUserRoles", restoreDto);
+    const restoredProfile = await getUserProfile(chaincode, user.ethAddress);
+
+    // Then
+    expect(freezeResp).toEqual(transactionSuccess());
+    expect(frozenProfile.Data?.roles).toEqual([]);
+    expect(blockedResp).toEqual(transactionErrorKey("MISSING_ROLE"));
+    expect(blockedResp).toEqual(
+      transactionErrorMessageContains("does not have one of required roles: SUBMIT")
+    );
+    expect(restoreResp).toEqual(transactionSuccess());
+    expect(restoredProfile.Data?.roles).toEqual([...UserProfile.DEFAULT_ROLES].sort());
+  });
+
+  it("should not require registrar to freeze", async () => {
+    // Given
+    const chaincode = new TestChaincode([PublicKeyContract]);
+    const user = await createRegisteredUser(chaincode);
+    const userProfile = await getUserProfile(chaincode, user.ethAddress);
+    expect(userProfile.Data?.roles).not.toContain(UserRole.REGISTRAR);
+
+    const dto = await createValidSubmitDTO(SubmitCallDTO, {}).signed(user.privateKey);
+
+    // When
+    const response = await chaincode.invoke("PublicKeyContract:FreezeAccount", dto);
+
+    // Then
+    expect(response).toEqual(transactionSuccess());
+  });
+});
+
 async function setup() {
   const chaincode = new TestChaincode([PublicKeyContract]);
   const user = await createRegisteredUser(chaincode);

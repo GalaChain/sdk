@@ -18,6 +18,7 @@ import {
   GetPublicKeyDto,
   PublicKey,
   RegisterUserDto,
+  SubmitCallDTO,
   UpdatePublicKeyDto,
   UserProfile,
   asValidUserRef
@@ -30,6 +31,7 @@ export interface PublicKeyContractAPI extends CommonContractAPI {
   UpdatePublicKey(dto: UpdatePublicKeyDto): Promise<GalaChainResponse<void>>;
   RegisterUser(dto: RegisterUserDto): Promise<GalaChainResponse<string>>;
   GetMyProfile(dto: GetMyProfileDto): Promise<GalaChainResponse<UserProfile>>;
+  FreezeAccount(dto: SubmitCallDTO): Promise<GalaChainResponse<void>>;
 }
 
 export const publicKeyContractAPI = (client: ChainClient): PublicKeyContractAPI => ({
@@ -55,5 +57,9 @@ export const publicKeyContractAPI = (client: ChainClient): PublicKeyContractAPI 
 
   GetMyProfile(dto: GetMyProfileDto) {
     return client.evaluateTransaction("GetMyProfile", dto, UserProfile);
+  },
+
+  FreezeAccount(dto: SubmitCallDTO) {
+    return client.submitTransaction("FreezeAccount", dto) as Promise<GalaChainResponse<void>>;
   }
 });

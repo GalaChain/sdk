@@ -419,6 +419,40 @@ export class PublicKeyService {
     );
   }
 
+  /**
+   * Self-service freeze: replace the calling user's roles with [].
+   * Unlock requires UpdateUserRoles from a registrar.
+   */
+  public static async freezeCallingUser(ctx: GalaChainContext): Promise<void> {
+    const user = ctx.callingUser;
+    const publicKey = await PublicKeyService.getPublicKey(ctx, user);
+    const allowedUnregisteredUsers = user.startsWith("eth|");
+
+    const address = publicKey
+      ? PublicKeyService.getUserAddress(publicKey.publicKey)
+      : allowedUnregisteredUsers
+        ? user.slice(4)
+        : user;
+
+    let userProfile = await PublicKeyService.getUserProfile(ctx, address);
+    if (userProfile === undefined) {
+      if (allowedUnregisteredUsers) {
+        userProfile = PublicKeyService.getDefaultUserProfile(address);
+      } else {
+        throw new UserProfileNotFoundError(user);
+      }
+    }
+
+    await PublicKeyService.putUserProfile(
+      ctx,
+      user,
+      [],
+      userProfile,
+      userProfile.signers,
+      userProfile.signatureQuorum
+    );
+  }
+
   public static async addSigner(ctx: GalaChainContext, newSigner: UserAlias): Promise<void> {
     const userAlias = ctx.callingUser;
     const currentUserProfile = await PublicKeyService.getUserProfile(ctx, userAlias);
