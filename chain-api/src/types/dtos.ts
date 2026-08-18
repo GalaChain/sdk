@@ -27,20 +27,20 @@ import {
   ValidateIf,
   ValidateNested,
   ValidationError,
-  validate,
-  ValidatorOptions
+  ValidatorOptions,
+  validate
 } from "class-validator";
 import { JSONSchema } from "class-validator-jsonschema";
 
 import {
   NotImplementedError,
+  STRICT_VALIDATION_OPTIONS,
   ValidationFailedError,
   deserialize,
   getValidationErrorMessages,
   randomUniqueKey,
   serialize,
-  signatures,
-  STRICT_VALIDATION_OPTIONS
+  signatures
 } from "../utils";
 import { IsUserAlias, IsUserRef, SerializeIf, StringEnumProperty } from "../validators";
 import { UserAlias } from "./UserAlias";

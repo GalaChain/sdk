@@ -26,7 +26,16 @@ import {
   randomUniqueKey
 } from "@gala-chain/api";
 import { Exclude, Type } from "class-transformer";
-import { IsArray, IsNotEmpty, IsNumber, IsObject, IsOptional, IsPositive, IsString, ValidateNested } from "class-validator";
+import {
+  IsArray,
+  IsNotEmpty,
+  IsNumber,
+  IsObject,
+  IsOptional,
+  IsPositive,
+  IsString,
+  ValidateNested
+} from "class-validator";
 import { Transaction } from "fabric-contract-api";
 
 import { version } from "../../package.json";

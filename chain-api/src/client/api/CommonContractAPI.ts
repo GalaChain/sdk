@@ -12,6 +12,8 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+import { instanceToPlain } from "class-transformer";
+
 import {
   BatchDto,
   ChainCallDTO,
@@ -23,7 +25,6 @@ import {
   GetObjectHistoryDto,
   createValidDTO
 } from "../../types";
-import { instanceToPlain } from "class-transformer";
 import { ChainClient } from "../generic";
 
 export interface CommonContractAPI extends Record<string, unknown> {

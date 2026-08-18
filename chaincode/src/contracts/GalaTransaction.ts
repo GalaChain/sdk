@@ -21,16 +21,16 @@ import {
   Inferred,
   MethodAPI,
   NotImplementedError,
+  PERMISSIVE_VALIDATION_OPTIONS,
   Primitive,
   RuntimeError,
+  STRICT_VALIDATION_OPTIONS,
   SubmitCallDTO,
   UserProfile,
   UserRole,
   generateResponseSchema,
   generateSchema,
-  parseValidDTO,
-  PERMISSIVE_VALIDATION_OPTIONS,
-  STRICT_VALIDATION_OPTIONS
+  parseValidDTO
 } from "@gala-chain/api";
 import { Object as DTOObject, Transaction } from "fabric-contract-api";
 import { inspect } from "util";
