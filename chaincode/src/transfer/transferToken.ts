@@ -28,7 +28,11 @@ import { fetchOrCreateBalance } from "../balances";
 import { InvalidDecimalError, fetchTokenClass, fetchTokenInstance } from "../token";
 import { GalaChainContext } from "../types";
 import { putChainObject } from "../utils";
-import { NftInvalidQuantityTransferError, SameSenderAndRecipientError } from "./TransferError";
+import {
+  MaxTransferQuantityExceededError,
+  NftInvalidQuantityTransferError,
+  SameSenderAndRecipientError
+} from "./TransferError";
 
 export interface TransferTokenParams {
   from: UserAlias;
@@ -80,6 +84,15 @@ export async function transferToken(
   const decimalPlaces = quantity.decimalPlaces() ?? 0;
   if (decimalPlaces > tokenClass.decimals) {
     throw new InvalidDecimalError(quantity, tokenClass.decimals);
+  }
+
+  const maxTransferQuantity = tokenClass.maxTransferQuantity;
+  if (maxTransferQuantity !== undefined && quantity.isGreaterThan(maxTransferQuantity)) {
+    throw new MaxTransferQuantityExceededError(
+      quantity.toFixed(),
+      maxTransferQuantity.toFixed(),
+      tokenClass.getCompositeKey()
+    );
   }
 
   // Determine if user acts as a bridge

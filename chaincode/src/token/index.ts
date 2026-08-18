@@ -23,6 +23,7 @@ import {
 import { CreateTokenClassParams, createTokenClass } from "./createTokenClass";
 import { fetchTokenClass, fetchTokenClasses, fetchTokenClassesWithPagination } from "./fetchTokenClasses";
 import { fetchTokenInstance, fetchTokenInstances } from "./fetchTokenInstance";
+import { SetMaxTransferQuantityParams, setMaxTransferQuantity } from "./setMaxTransferQuantity";
 import { UpdateTokenClassParams, updateTokenClass } from "./updateTokenClass";
 
 export {
@@ -32,6 +33,8 @@ export {
   CreateTokenClassParams,
   updateTokenClass,
   UpdateTokenClassParams,
+  setMaxTransferQuantity,
+  SetMaxTransferQuantityParams,
   fetchTokenClass,
   fetchTokenClasses,
   fetchTokenClassesWithPagination,

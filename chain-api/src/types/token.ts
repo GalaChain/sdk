@@ -518,3 +518,31 @@ export class TransferTokenDto extends SubmitCallDTO {
   @BigNumberProperty()
   quantity: BigNumber;
 }
+
+export class SetMaxTransferQuantityDto extends SubmitCallDTO {
+  @JSONSchema({
+    description: "Token class whose per-transfer quantity cap will be set."
+  })
+  @ValidateNested()
+  @Type(() => TokenClassKey)
+  @IsNotEmpty()
+  tokenClass: TokenClassKey;
+
+  @JSONSchema({
+    description:
+      "Maximum quantity allowed in a single TransferToken. Use ClearMaxTransferQuantity to remove the cap. 0 blocks transfers."
+  })
+  @BigNumberIsNotNegative()
+  @BigNumberProperty()
+  maxTransferQuantity: BigNumber;
+}
+
+export class ClearMaxTransferQuantityDto extends SubmitCallDTO {
+  @JSONSchema({
+    description: "Token class whose per-transfer quantity cap will be removed."
+  })
+  @ValidateNested()
+  @Type(() => TokenClassKey)
+  @IsNotEmpty()
+  tokenClass: TokenClassKey;
+}

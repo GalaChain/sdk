@@ -13,6 +13,7 @@
  * limitations under the License.
  */
 import {
+  MaxTransferQuantityExceededError,
   NftInvalidQuantityTransferError,
   SameSenderAndRecipientError,
   TransferTokenFailedError
@@ -23,6 +24,7 @@ export {
   NftInvalidQuantityTransferError,
   SameSenderAndRecipientError,
   TransferTokenFailedError,
+  MaxTransferQuantityExceededError,
   parseTransferTokenParams,
   transferToken,
   TransferTokenParams

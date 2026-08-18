@@ -28,7 +28,7 @@ import {
 import { JSONSchema } from "class-validator-jsonschema";
 
 import { ChainKey } from "../utils";
-import { BigNumberIsPositive, BigNumberProperty, IsUserAlias } from "../validators";
+import { BigNumberIsNotNegative, BigNumberIsPositive, BigNumberProperty, IsUserAlias } from "../validators";
 import { ChainObject } from "./ChainObject";
 import { UserAlias } from "./UserAlias";
 import { UserRef } from "./UserRef";
@@ -149,6 +149,16 @@ export class TokenClass extends ChainObject {
   @BigNumberIsPositive()
   @BigNumberProperty({ allowInfinity: true })
   public maxCapacity: BigNumber;
+
+  /**
+   * Token-wide max quantity per TransferToken. Unset = no limit.
+   * Stored on TokenClass (already loaded on transfer) rather than TokenBalance
+   * (per-owner) or a separate config object (extra read on every transfer).
+   */
+  @IsOptional()
+  @BigNumberIsNotNegative()
+  @BigNumberProperty()
+  public maxTransferQuantity?: BigNumber;
 
   // IDs of authorities who can manage this token
   @IsUserAlias({ each: true })

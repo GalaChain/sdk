@@ -36,6 +36,15 @@ export class NftInvalidQuantityTransferError extends ValidationFailedError {
   }
 }
 
+export class MaxTransferQuantityExceededError extends ValidationFailedError {
+  constructor(quantity: string, maxTransferQuantity: string, tokenClassKey: string) {
+    super(
+      `Transfer quantity ${quantity} exceeds maxTransferQuantity ${maxTransferQuantity} for token ${tokenClassKey}.`,
+      { quantity, maxTransferQuantity, tokenClassKey }
+    );
+  }
+}
+
 export class TransferTokenFailedError extends DefaultError {
   constructor(message: string, payload: Record<string, unknown> | undefined) {
     super(`TransferToken failed: ${message}`, payload);

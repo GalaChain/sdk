@@ -19,6 +19,7 @@ import {
   BurnTokensDto,
   CleanTokenSwapsDto,
   CleanTokenSwapsResponse,
+  ClearMaxTransferQuantityDto,
   CreateTokenClassDto,
   CreateVestingTokenDto,
   DeleteAllowancesDto,
@@ -65,6 +66,7 @@ import {
   MintTokenWithAllowanceDto,
   RefreshAllowancesDto,
   RequestTokenSwapDto,
+  SetMaxTransferQuantityDto,
   TerminateTokenSwapDto,
   TokenAllowance,
   TokenBalance,
@@ -122,6 +124,7 @@ import {
   refreshAllowances,
   requestMint,
   resolveUserAlias,
+  setMaxTransferQuantity,
   transferToken,
   unlockToken,
   unlockTokens,
@@ -194,6 +197,32 @@ export default class GalaChainTokenContract extends GalaContract {
       ? await Promise.all(dto.authorities.map((a) => resolveUserAlias(ctx, a)))
       : undefined;
     return updateTokenClass(ctx, { ...dto, authorities });
+  }
+
+  @Submit({
+    in: SetMaxTransferQuantityDto,
+    out: TokenClassKey,
+    description: "Sets a token-wide maximum quantity for a single TransferToken.",
+    ...requireCuratorAuth
+  })
+  public SetMaxTransferQuantity(
+    ctx: GalaChainContext,
+    dto: SetMaxTransferQuantityDto
+  ): Promise<TokenClassKey> {
+    return setMaxTransferQuantity(ctx, dto);
+  }
+
+  @Submit({
+    in: ClearMaxTransferQuantityDto,
+    out: TokenClassKey,
+    description: "Removes the token-wide TransferToken quantity cap.",
+    ...requireCuratorAuth
+  })
+  public ClearMaxTransferQuantity(
+    ctx: GalaChainContext,
+    dto: ClearMaxTransferQuantityDto
+  ): Promise<TokenClassKey> {
+    return setMaxTransferQuantity(ctx, { tokenClass: dto.tokenClass });
   }
 
   @UnsignedEvaluate({
