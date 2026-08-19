@@ -166,14 +166,17 @@ describe("NFT lock scenario", () => {
       ]
     });
 
-    const unlockDto = await createValidSubmitDTO<UnlockTokensDto>(UnlockTokensDto, {
+    const unlockPayload = {
       tokenInstances: [
         {
           tokenInstanceKey: TokenInstanceKey.nftKey(nftClassKey, 2),
           quantity: new BigNumber(1)
         }
       ]
-    });
+    };
+
+    const unlockDtoForUser2 = await createValidSubmitDTO<UnlockTokensDto>(UnlockTokensDto, unlockPayload);
+    const unlockDtoForUser1 = await createValidSubmitDTO<UnlockTokensDto>(UnlockTokensDto, unlockPayload);
 
     const lockResponse = await client.assets.submitTransaction<LockTokensDto>(
       "LockTokens",
@@ -186,12 +189,12 @@ describe("NFT lock scenario", () => {
     // When
     const unlockResult1 = await client.assets.submitTransaction<UnlockTokensDto>(
       "UnlockTokens",
-      unlockDto.signed(user2.privateKey),
+      unlockDtoForUser2.signed(user2.privateKey),
       UnlockTokensDto
     );
     const unlockResult2 = await client.assets.submitTransaction<UnlockTokensDto>(
       "UnlockTokens",
-      unlockDto.signed(user1.privateKey),
+      unlockDtoForUser1.signed(user1.privateKey),
       UnlockTokensDto
     );
 

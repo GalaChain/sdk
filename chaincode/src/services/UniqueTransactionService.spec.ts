@@ -13,9 +13,9 @@
  * limitations under the License.
  */
 import { createValidDTO } from "@gala-chain/api";
-import { TestChaincode, transactionError, transactionSuccess } from "@gala-chain/test";
+import { TestChaincode, transactionError, transactionErrorKey, transactionSuccess } from "@gala-chain/test";
 
-import TestGalaContract, { SuperheroDto } from "../__test__/TestGalaContract";
+import TestGalaContract, { KVDto, SuperheroDto } from "../__test__/TestGalaContract";
 
 describe("UniqueTransactionService", () => {
   it("should not error if transaction with uniqueKey does not exist on chain", async () => {
@@ -47,5 +47,24 @@ describe("UniqueTransactionService", () => {
 
     const saveResponse = await chaincode.invoke("TestGalaContract:CreateSuperhero", dto.serialize());
     expect(saveResponse).toEqual(transactionError());
+  });
+
+  it("should consume uniqueKey when the submit handler fails", async () => {
+    // Given
+    const chaincode = new TestChaincode([TestGalaContract]);
+    const dto = await createValidDTO(KVDto, {
+      uniqueKey: "failed-submit-uk",
+      key: "should-not-persist",
+      value: "robot"
+    });
+
+    // When
+    const first = await chaincode.invoke("TestGalaContract:ErrorAfterPutKv", dto.serialize());
+    const second = await chaincode.invoke("TestGalaContract:ErrorAfterPutKv", dto.serialize());
+
+    // Then the business write is discarded, but the uniqueKey is consumed
+    expect(first).toEqual(transactionError());
+    expect(chaincode.getStateAll()["should-not-persist"]).toBeUndefined();
+    expect(second).toEqual(transactionErrorKey("UNIQUE_TRANSACTION_CONFLICT"));
   });
 });

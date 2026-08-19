@@ -118,9 +118,12 @@ describe("RegisterUser", () => {
     });
     const signedDto1 = dto1.signed(adminPrivateKey);
 
-    // invalid public key signature (signed by wrong key)
-    const dto2 = dto1.withPublicKeySignedBy(adminPrivateKey);
-    const signedDto2 = dto2.signed(adminPrivateKey);
+    // invalid public key signature (signed by wrong key) — new uniqueKey, first attempt consumed its key
+    const dto2 = await createValidSubmitDTO(RegisterUserDto, {
+      user: "client|user1" as UserAlias,
+      publicKey: keyPair.publicKey
+    });
+    const signedDto2 = dto2.withPublicKeySignedBy(adminPrivateKey).signed(adminPrivateKey);
 
     // When
     const response1 = await chaincode.invoke("PublicKeyContract:RegisterUser", signedDto1);
@@ -230,7 +233,11 @@ describe("RegisterUser", () => {
     expect(signedRegisterDto1.publicKeySignature).toBeUndefined();
 
     // Invalid public key signature (signed by wrong private key that doesn't match newPublicKey)
-    const signedRegisterDto2 = registerDto
+    const registerDto2 = await createValidSubmitDTO(RegisterUserDto, {
+      user: "client|user-missing-sig" as UserAlias,
+      publicKey: newPublicKey
+    });
+    const signedRegisterDto2 = registerDto2
       .withPublicKeySignedBy(wrongPrivateKey)
       .signed(process.env.DEV_ADMIN_PRIVATE_KEY as string);
     expect(signedRegisterDto2.publicKeySignature).toBeDefined();
@@ -384,13 +391,13 @@ describe("UpdatePublicKey", () => {
       "040e8bda5af346c5a7a7312a94b34023e8c9610abf40e550de9696422312a9a67ea748dbe2686f9a115c58021fe538163285a97368f44b6bf8b13a8306c86e8c5a";
     expect(newPublicKey).not.toEqual(user.publicKey);
 
-    const updateDto = await createValidSubmitDTO(UpdatePublicKeyDto, { publicKey: newPublicKey });
-
-    const signedUpdateDto1 = updateDto.signed(user.privateKey);
+    const updateDto1 = await createValidSubmitDTO(UpdatePublicKeyDto, { publicKey: newPublicKey });
+    const signedUpdateDto1 = updateDto1.signed(user.privateKey);
     expect(signedUpdateDto1.publicKeySignature).toBeUndefined();
 
-    // public key signature is signed by old private key
-    const signedUpdateDto2 = updateDto.withPublicKeySignedBy(user.privateKey).signed(user.privateKey);
+    // public key signature is signed by old private key — new uniqueKey, first attempt consumed its key
+    const updateDto2 = await createValidSubmitDTO(UpdatePublicKeyDto, { publicKey: newPublicKey });
+    const signedUpdateDto2 = updateDto2.withPublicKeySignedBy(user.privateKey).signed(user.privateKey);
     expect(signedUpdateDto2.publicKeySignature).toBeDefined();
 
     // When

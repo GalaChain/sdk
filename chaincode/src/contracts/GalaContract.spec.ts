@@ -720,6 +720,41 @@ describe("GalaContract.Batch", () => {
     });
   });
 
+  it("should persist uniqueKey of a failed inner batch operation", async () => {
+    // Given
+    const chaincode = new TestChaincode([TestGalaContract]);
+    const firstBatch = plainToInstance(BatchDto, {
+      uniqueKey: "unique-key-batch-1",
+      operations: [
+        {
+          method: "ErrorAfterPutKv",
+          dto: { key: "test-key-1", value: "robot", uniqueKey: "failed-inner-uk" }
+        }
+      ]
+    });
+    const secondBatch = plainToInstance(BatchDto, {
+      uniqueKey: "unique-key-batch-2",
+      operations: [
+        {
+          method: "PutKv",
+          dto: { key: "test-key-2", value: "human", uniqueKey: "failed-inner-uk" }
+        }
+      ]
+    });
+
+    // When
+    const first = await chaincode.invoke("TestGalaContract:BatchSubmit", firstBatch.serialize());
+    const second = await chaincode.invoke("TestGalaContract:BatchSubmit", secondBatch.serialize());
+
+    // Then the inner uniqueKey is consumed even though the inner op failed
+    expect(first).toEqual(
+      transactionSuccess([transactionErrorMessageContains("Some error after put was invoked")])
+    );
+    expect(chaincode.getStateAll()["test-key-1"]).toBeUndefined();
+    expect(second).toEqual(transactionSuccess([transactionErrorKey("UNIQUE_TRANSACTION_CONFLICT")]));
+    expect(chaincode.getStateAll()["test-key-2"]).toBeUndefined();
+  });
+
   it("should get proper ctx data for transactions in batch", async () => {
     // Given
     const { user: user1, state: state1 } = await generateUser("user1");
