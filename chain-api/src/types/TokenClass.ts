@@ -184,8 +184,7 @@ export class TokenClass extends ChainObject {
   @JSONSchema({
     description:
       "Optional maximum quantity that may be subtracted from a balance of this class across the " +
-      "current hour and the preceding 23 hourly buckets. A balance-level limit.quantity, when " +
-      "present, takes precedence."
+      "current hour and the preceding 23 hourly buckets."
   })
   @IsOptional()
   @BigNumberIsNotNegative()

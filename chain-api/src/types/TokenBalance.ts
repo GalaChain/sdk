@@ -148,8 +148,7 @@ export class TokenBalance extends ChainObject {
 
   @JSONSchema({
     description:
-      "Optional owner quantity limit and hourly spend buckets (current hour plus the preceding 23). " +
-      "When quantity is set, it takes precedence over TokenClass.quantityLimit."
+      "Hourly spend buckets used to enforce TokenClass.quantityLimit (current hour plus the preceding 23)."
   })
   @IsOptional()
   @ValidateNested()
@@ -352,37 +351,6 @@ export class TokenBalance extends ChainObject {
     this.quantity = this.quantity.minus(quantity);
   }
 
-  /**
-   * Owner-requested maximum subtract quantity for this balance across the current hour
-   * and the preceding 23 hourly buckets.
-   * Increases take effect after TokenBalanceLimit.INCREASE_DELAY_MS.
-   * Decreases (and first-time limits that are not higher than the class limit) take effect immediately.
-   */
-  public setQuantityLimit(
-    newLimit: BigNumber,
-    currentTime: number,
-    classQuantityLimit: BigNumber | undefined
-  ): void {
-    this.ensureContainsNoNftInstances();
-    this.ensureIsValidQuantityForFungible(newLimit);
-    if (this.limit === undefined) {
-      this.limit = new TokenBalanceLimit();
-    }
-    this.limit.setQuantity(newLimit, currentTime, classQuantityLimit);
-  }
-
-  /**
-   * Effective max subtract quantity across the current hour and the preceding 23 hourly buckets.
-   * Owner limit (including a pending increase that is due) takes precedence over the token class
-   * limit. Undefined means no limit.
-   */
-  public getEffectiveQuantityLimit(
-    currentTime: number,
-    classQuantityLimit: BigNumber | undefined
-  ): BigNumber | undefined {
-    return TokenBalanceLimit.effective(this.limit, currentTime, classQuantityLimit);
-  }
-
   private ensureQuantityIsSpendable(quantity: BigNumber, currentTime: number): void {
     // in use not supported for fungibles
     const lockedQuantity = this.getCurrentLockedQuantity(currentTime);
@@ -402,16 +370,15 @@ export class TokenBalance extends ChainObject {
     currentTime: number,
     classQuantityLimit: BigNumber | undefined
   ): void {
-    const limit = this.getEffectiveQuantityLimit(currentTime, classQuantityLimit);
-    if (limit === undefined) {
+    if (!TokenBalanceLimit.isFinite(classQuantityLimit)) {
       return;
     }
     if (this.limit === undefined) {
       this.limit = new TokenBalanceLimit();
     }
     const spent = this.limit.spent(currentTime);
-    if (spent.plus(quantity).isGreaterThan(limit)) {
-      throw new TokenQuantityLimitExceededError(this.owner, this, quantity, limit, spent);
+    if (spent.plus(quantity).isGreaterThan(classQuantityLimit)) {
+      throw new TokenQuantityLimitExceededError(this.owner, this, quantity, classQuantityLimit, spent);
     }
   }
 
@@ -420,8 +387,7 @@ export class TokenBalance extends ChainObject {
     currentTime: number,
     classQuantityLimit: BigNumber | undefined
   ): void {
-    const limit = this.getEffectiveQuantityLimit(currentTime, classQuantityLimit);
-    if (limit === undefined) {
+    if (!TokenBalanceLimit.isFinite(classQuantityLimit)) {
       return;
     }
     if (this.limit === undefined) {

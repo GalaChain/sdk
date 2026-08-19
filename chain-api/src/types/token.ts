@@ -359,17 +359,6 @@ export class UpdateTokenClassDto extends SubmitCallDTO {
   @BigNumberIsNotNegative()
   @BigNumberProperty()
   quantityLimit?: BigNumber;
-
-  @JSONSchema({
-    description:
-      "Optional maximum quantity that may be subtracted from the calling user's balance of this class " +
-      "across the current hour and the preceding 23 hourly buckets. Takes precedence over quantityLimit. " +
-      "Increases take effect after a delay; decreases take effect immediately."
-  })
-  @IsOptional()
-  @BigNumberIsNotNegative()
-  @BigNumberProperty()
-  ownerQuantityLimit?: BigNumber;
 }
 
 @JSONSchema({

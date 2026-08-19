@@ -14,7 +14,6 @@
  */
 import {
   GalaChainResponse,
-  TokenBalance,
   TokenClass,
   TokenClassKey,
   UpdateTokenClassDto,
@@ -124,66 +123,6 @@ it("should fail if token does not exist", async () => {
   // Then
   expect(response).toEqual(GalaChainResponse.Error(new TokenClassNotFoundError(tokenClassKey.toStringKey())));
   expect(getWrites()).toEqual({});
-});
-
-it("should apply ownerQuantityLimit immediately when it is not higher than the class limit", async () => {
-  // Given
-  const savedTokenClass = currency.tokenClass((c) => ({ ...c, quantityLimit: new BigNumber("10") }));
-  const savedTokenClassKey = await savedTokenClass.getKey();
-  const { ctx, contract, getWrites } = fixture(GalaChainTokenContract)
-    .caClientIdentity("curator", "CuratorOrg")
-    .registeredUsers(users.admin)
-    .savedState(savedTokenClass);
-
-  const dto: UpdateTokenClassDto = await createValidSubmitDTO(UpdateTokenClassDto, {
-    tokenClass: savedTokenClassKey,
-    ownerQuantityLimit: new BigNumber("5")
-  }).signed(users.admin.privateKey);
-
-  const expectedBalance = new TokenBalance({
-    owner: users.admin.identityKey,
-    ...currency.tokenClassKey()
-  });
-  expectedBalance.setQuantityLimit(new BigNumber("5"), ctx.txUnixTime, savedTokenClass.quantityLimit);
-
-  // When
-  const response = await contract.UpdateTokenClass(ctx, dto);
-
-  // Then
-  expect(response).toEqual(GalaChainResponse.Success(savedTokenClassKey));
-  expect(expectedBalance.limit?.quantity).toEqual(new BigNumber("5"));
-  expect(expectedBalance.limit?.pendingQuantity).toBeUndefined();
-  expect(getWrites()).toEqual(writesMap(savedTokenClass.updatedWith({}), expectedBalance));
-});
-
-it("should delay ownerQuantityLimit when it is higher than the class limit", async () => {
-  // Given
-  const savedTokenClass = currency.tokenClass((c) => ({ ...c, quantityLimit: new BigNumber("10") }));
-  const savedTokenClassKey = await savedTokenClass.getKey();
-  const { ctx, contract, getWrites } = fixture(GalaChainTokenContract)
-    .caClientIdentity("curator", "CuratorOrg")
-    .registeredUsers(users.admin)
-    .savedState(savedTokenClass);
-
-  const dto: UpdateTokenClassDto = await createValidSubmitDTO(UpdateTokenClassDto, {
-    tokenClass: savedTokenClassKey,
-    ownerQuantityLimit: new BigNumber("50")
-  }).signed(users.admin.privateKey);
-
-  const expectedBalance = new TokenBalance({
-    owner: users.admin.identityKey,
-    ...currency.tokenClassKey()
-  });
-  expectedBalance.setQuantityLimit(new BigNumber("50"), ctx.txUnixTime, savedTokenClass.quantityLimit);
-
-  // When
-  const response = await contract.UpdateTokenClass(ctx, dto);
-
-  // Then
-  expect(response).toEqual(GalaChainResponse.Success(savedTokenClassKey));
-  expect(expectedBalance.limit?.pendingQuantity).toEqual(new BigNumber("50"));
-  expect(expectedBalance.limit?.quantity).toBeUndefined();
-  expect(getWrites()).toEqual(writesMap(savedTokenClass.updatedWith({}), expectedBalance));
 });
 
 function defaultUpdate() {
