@@ -13,7 +13,9 @@
  * limitations under the License.
  */
 import { TokenClass, TokenClassKey, UserAlias } from "@gala-chain/api";
+import BigNumber from "bignumber.js";
 
+import { fetchOrCreateBalance } from "../balances/fetchOrCreateBalance";
 import { GalaChainContext } from "../types";
 import { getObjectByKey, putChainObject } from "../utils/state";
 import { NotATokenAuthorityError, TokenClassNotFoundError } from "./TokenError";
@@ -28,6 +30,8 @@ export interface UpdateTokenClassParams {
   rarity?: string;
   authorities?: UserAlias[];
   overwriteAuthorities?: boolean;
+  quantityLimit?: BigNumber;
+  ownerQuantityLimit?: BigNumber;
 }
 
 export async function updateTokenClass(
@@ -56,6 +60,12 @@ export async function updateTokenClass(
   await updatedToken.validateOrReject();
 
   await putChainObject(ctx, updatedToken);
+
+  if (params.ownerQuantityLimit !== undefined) {
+    const balance = await fetchOrCreateBalance(ctx, ctx.callingUser, params.tokenClass);
+    balance.setQuantityLimit(params.ownerQuantityLimit, ctx.txUnixTime, updatedToken.quantityLimit);
+    await putChainObject(ctx, balance);
+  }
 
   const tokenId = await TokenClass.buildClassKeyObject(updatedToken);
   return tokenId;

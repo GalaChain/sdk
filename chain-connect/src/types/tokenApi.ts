@@ -45,6 +45,7 @@ import {
   RefreshAllowanceDto,
   TokenAllowance,
   TokenBalance as TokenBalanceDto,
+  TokenBalanceLimit,
   TokenBalanceWithMetadata,
   TokenBurn,
   TokenClass,
@@ -122,6 +123,11 @@ class TokenBalance implements ConstructorArgs<TokenBalanceDto> {
   @BigNumberIsNotNegative()
   @BigNumberProperty()
   quantity: BigNumber;
+
+  @IsOptional()
+  @ValidateNested()
+  @Type(() => TokenBalanceLimit)
+  limit?: TokenBalanceLimit;
 }
 
 export {
@@ -153,6 +159,7 @@ export {
   RefreshAllowanceRequest,
   TokenAllowance,
   TokenBalance,
+  TokenBalanceLimit,
   TokenBalanceWithMetadata,
   TokenBurn,
   TokenClass,

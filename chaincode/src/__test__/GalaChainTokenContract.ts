@@ -180,7 +180,8 @@ export default class GalaChainTokenContract extends GalaContract {
       totalMintAllowance: dto.totalMintAllowance ?? CreateTokenClassDto.INITIAL_MINT_ALLOWANCE,
       totalSupply: dto.totalSupply ?? CreateTokenClassDto.INITIAL_TOTAL_SUPPLY,
       totalBurned: dto.totalBurned ?? CreateTokenClassDto.INITIAL_TOTAL_BURNED,
-      authorities
+      authorities,
+      quantityLimit: dto.quantityLimit
     });
   }
 
@@ -766,6 +767,7 @@ export default class GalaChainTokenContract extends GalaContract {
       totalSupply: dto.tokenClass.totalSupply ?? CreateTokenClassDto.INITIAL_TOTAL_SUPPLY,
       totalBurned: dto.tokenClass.totalBurned ?? CreateTokenClassDto.INITIAL_TOTAL_BURNED,
       authorities,
+      quantityLimit: dto.tokenClass.quantityLimit,
       startDate: dto.startDate,
       vestingName: dto.vestingName,
       allocations: dto.allocations

@@ -48,6 +48,7 @@ export * from "./TokenAllowance";
 export * from "./allowance";
 export * from "./GrantAllowance";
 export * from "./TokenBalance";
+export * from "./TokenBalanceLimit";
 export * from "./TokenClaim";
 export * from "./TokenBurn";
 export * from "./TokenBurnCounter";
