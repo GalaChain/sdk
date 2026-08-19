@@ -24,6 +24,7 @@ import {
 } from "@gala-chain/api";
 import { instanceToPlain } from "class-transformer";
 
+import { UniqueTransactionService } from "../services";
 import { GalaChainContext } from "../types";
 
 export const REQUEST_QUEUE_INDEX_KEY = "GCRQ";
@@ -160,6 +161,8 @@ export async function applySavedRequests(
       response = GalaChainResponse.Error(error);
       ctx.logger.warn(`Failed to apply request ${requestKey}: ${(error as Error).message}`);
     }
+
+    UniqueTransactionService.copyUniqueTransactionWrites(sandboxCtx, ctx);
 
     if (GalaChainResponse.isSuccess(response)) {
       ctx.stub.setWrites(sandboxCtx.stub.getWrites());
