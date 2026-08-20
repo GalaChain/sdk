@@ -17,8 +17,14 @@ import { IsInt, IsOptional, Min } from "class-validator";
 import { JSONSchema } from "class-validator-jsonschema";
 
 import { ValidationFailedError } from "../utils";
-import { BigNumberArrayProperty } from "../validators";
+import { BigNumberArrayProperty, BigNumberIsNotNegative, BigNumberProperty } from "../validators";
 import { TokenClassKey, TokenClassKeyProperties } from "./TokenClass";
+
+export class TokenBalanceLimitTimeWentBackwardsError extends ValidationFailedError {
+  constructor(lastHour: number, hour: number) {
+    super(`Token balance limit time went backwards from hour ${lastHour} to ${hour}`, { lastHour, hour });
+  }
+}
 
 export class TokenQuantityLimitExceededError extends ValidationFailedError {
   constructor(
@@ -42,12 +48,40 @@ export class TokenQuantityLimitExceededError extends ValidationFailedError {
 export class TokenBalanceLimit {
   public static readonly WINDOW_HOURS = 24;
   public static readonly HOUR_MS = 60 * 60 * 1000;
+  public static readonly INCREASE_DELAY_MS = TokenBalanceLimit.WINDOW_HOURS * TokenBalanceLimit.HOUR_MS;
 
   @JSONSchema({
     description:
-      "Spend per hourly bucket against TokenClass.quantityLimit. Index is unixHour mod 24. " +
-      "Entering hour H zeros hours[H] (yesterday's same hour) and any skipped hours since lastHour, " +
-      "then new spend is added to hours[H]."
+      "Owner override for TokenClass.quantityLimit. When set, this value is the maximum that may be " +
+      "subtracted from this balance across the current hour and the preceding 23 hourly buckets."
+  })
+  @IsOptional()
+  @BigNumberIsNotNegative()
+  @BigNumberProperty()
+  quantity?: BigNumber;
+
+  @JSONSchema({
+    description:
+      "Owner-requested quantity that is not yet effective. Applied at pendingAppliesAt when the " +
+      "requested limit is an increase versus the current effective limit."
+  })
+  @IsOptional()
+  @BigNumberIsNotNegative()
+  @BigNumberProperty()
+  pendingQuantity?: BigNumber;
+
+  @JSONSchema({
+    description: "Unix epoch timestamp in milliseconds (ms) when pendingQuantity becomes effective."
+  })
+  @Min(0)
+  @IsInt()
+  @IsOptional()
+  pendingAppliesAt?: number;
+
+  @JSONSchema({
+    description:
+      "Spend per hourly bucket. Index is unixHour mod 24. Entering hour H zeros hours[H] " +
+      "(yesterday's same hour) and any skipped hours since lastHour, then new spend is added to hours[H]."
   })
   @IsOptional()
   @BigNumberArrayProperty()
@@ -73,12 +107,61 @@ export class TokenBalanceLimit {
     return limit !== undefined && limit.isFinite();
   }
 
+  public static effective(
+    limit: TokenBalanceLimit | undefined,
+    currentTime: number,
+    classQuantityLimit: BigNumber | undefined
+  ): BigNumber | undefined {
+    if (limit !== undefined) {
+      return limit.effectiveQuantity(currentTime, classQuantityLimit);
+    }
+    return TokenBalanceLimit.isFinite(classQuantityLimit) ? classQuantityLimit : undefined;
+  }
+
+  public effectiveQuantity(
+    currentTime: number,
+    classQuantityLimit: BigNumber | undefined
+  ): BigNumber | undefined {
+    this.promoteDue(currentTime);
+    if (TokenBalanceLimit.isFinite(this.quantity)) {
+      return this.quantity;
+    }
+    if (TokenBalanceLimit.isFinite(classQuantityLimit)) {
+      return classQuantityLimit;
+    }
+    return undefined;
+  }
+
+  /**
+   * Increase versus the current effective limit is delayed.
+   * A later increase while one is pending replaces it and restarts the delay.
+   */
+  public setQuantity(
+    newLimit: BigNumber,
+    currentTime: number,
+    classQuantityLimit: BigNumber | undefined
+  ): void {
+    const currentEffective = this.effectiveQuantity(currentTime, classQuantityLimit);
+    const isIncrease = currentEffective !== undefined && newLimit.isGreaterThan(currentEffective);
+
+    if (isIncrease) {
+      this.pendingQuantity = newLimit;
+      this.pendingAppliesAt = currentTime + TokenBalanceLimit.INCREASE_DELAY_MS;
+    } else {
+      this.quantity = newLimit;
+      delete this.pendingQuantity;
+      delete this.pendingAppliesAt;
+    }
+  }
+
   public spent(currentTime: number): BigNumber {
+    this.promoteDue(currentTime);
     this.rotateHours(currentTime);
     return (this.hours ?? []).reduce((sum, hourSpend) => sum.plus(hourSpend), new BigNumber(0));
   }
 
   public recordSpend(quantity: BigNumber, currentTime: number): void {
+    this.promoteDue(currentTime);
     this.rotateHours(currentTime);
     const hours = this.hours ?? TokenBalanceLimit.emptyHours();
     this.hours = hours;
@@ -86,10 +169,28 @@ export class TokenBalanceLimit {
     hours[idx] = (hours[idx] ?? new BigNumber(0)).plus(quantity);
   }
 
+  public promoteDue(currentTime: number): void {
+    const hasQuantity = this.pendingQuantity !== undefined;
+    const hasAppliesAt = this.pendingAppliesAt !== undefined;
+    if (hasQuantity !== hasAppliesAt) {
+      delete this.pendingQuantity;
+      delete this.pendingAppliesAt;
+      return;
+    }
+    if (
+      this.pendingQuantity !== undefined &&
+      this.pendingAppliesAt !== undefined &&
+      currentTime >= this.pendingAppliesAt
+    ) {
+      this.quantity = this.pendingQuantity;
+      delete this.pendingQuantity;
+      delete this.pendingAppliesAt;
+    }
+  }
+
   /**
    * Advance hourly buckets to currentTime.
-   * currentTime is expected to be monotonic (chain tx time). A backwards jump
-   * does not move lastHour, so a later forward step cannot zero a newer bucket.
+   * currentTime must be >= lastHour. Same-hour calls are a no-op.
    */
   private rotateHours(currentTime: number): void {
     const hour = TokenBalanceLimit.unixHour(currentTime);
@@ -104,7 +205,10 @@ export class TokenBalanceLimit {
     }
 
     const elapsed = hour - this.lastHour;
-    if (elapsed <= 0) {
+    if (elapsed < 0) {
+      throw new TokenBalanceLimitTimeWentBackwardsError(this.lastHour, hour);
+    }
+    if (elapsed === 0) {
       return;
     }
     if (elapsed >= TokenBalanceLimit.WINDOW_HOURS) {

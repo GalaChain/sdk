@@ -37,6 +37,7 @@ import {
   TransferTokenDto,
   UnlockTokenDto,
   UnlockTokensDto,
+  UpdateBalanceQuantityLimitDto,
   UpdateTokenClassDto
 } from "@gala-chain/api";
 
@@ -77,6 +78,7 @@ import {
   TransferTokenRequest,
   UnlockTokenRequest,
   UnlockTokensRequest,
+  UpdateBalanceQuantityLimitRequest,
   UpdateTokenClassRequest
 } from "../types";
 import { GalaChainBaseApi } from "./GalaChainBaseApi";
@@ -221,6 +223,17 @@ export class TokenApi extends GalaChainBaseApi {
       url: this.chainCodeUrl,
       requestConstructor: FetchBalancesWithPaginationDto,
       responseConstructor: FetchBalancesWithTokenMetadataResponse
+    });
+  }
+
+  public UpdateBalanceQuantityLimit(dto: UpdateBalanceQuantityLimitRequest) {
+    return this.connection.submit({
+      method: "UpdateBalanceQuantityLimit",
+      payload: dto,
+      sign: true,
+      url: this.chainCodeUrl,
+      requestConstructor: UpdateBalanceQuantityLimitDto,
+      responseConstructor: TokenBalance
     });
   }
 

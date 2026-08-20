@@ -506,6 +506,29 @@ export class FetchBalancesWithTokenMetadataResponse extends ChainCallDTO {
 }
 
 @JSONSchema({
+  description: "Contains parameters for the owner to set a per-balance quantity limit."
+})
+export class UpdateBalanceQuantityLimitDto extends SubmitCallDTO {
+  @JSONSchema({
+    description: "Token class of the balance whose quantity limit will be updated."
+  })
+  @ValidateNested()
+  @Type(() => TokenClassKey)
+  @IsNotEmpty()
+  tokenClass: TokenClassKey;
+
+  @JSONSchema({
+    description:
+      "Maximum quantity that may be subtracted from this balance across the current hour and the " +
+      "preceding 23 hourly buckets. Takes precedence over TokenClass.quantityLimit. Increases take " +
+      "effect after a delay; decreases take effect immediately."
+  })
+  @BigNumberIsNotNegative()
+  @BigNumberProperty()
+  quantityLimit: BigNumber;
+}
+
+@JSONSchema({
   description:
     "Experimental: After submitting request to RequestMintAllowance, follow up with FulfillMintAllowance."
 })

@@ -66,6 +66,7 @@ import {
   TransferTokenDto,
   UnlockTokenDto,
   UnlockTokensDto,
+  UpdateBalanceQuantityLimitDto,
   UpdateTokenClassDto,
   VestingToken,
   VestingTokenInfo,
@@ -119,6 +120,7 @@ import {
   transferTokenFeeGate,
   unlockToken,
   unlockTokens,
+  updateBalanceQuantityLimit,
   updateTokenClass
 } from "@gala-chain/chaincode";
 import { ClassConstructor, plainToClass } from "class-transformer";
@@ -286,6 +288,20 @@ export default class GalaChainTokenContract extends GalaContract {
     return fetchBalancesWithTokenMetadata(ctx, {
       ...dto,
       owner: await resolveUserAlias(ctx, dto.owner ?? ctx.callingUser)
+    });
+  }
+
+  @Submit({
+    in: UpdateBalanceQuantityLimitDto,
+    out: TokenBalance
+  })
+  public async UpdateBalanceQuantityLimit(
+    ctx: GalaChainContext,
+    dto: UpdateBalanceQuantityLimitDto
+  ): Promise<TokenBalance> {
+    return updateBalanceQuantityLimit(ctx, {
+      tokenClass: dto.tokenClass,
+      quantityLimit: dto.quantityLimit
     });
   }
 

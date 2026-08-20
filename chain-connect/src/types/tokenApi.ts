@@ -55,9 +55,9 @@ import {
   TransferTokenDto,
   UnlockTokenDto,
   UnlockTokensDto,
+  UpdateBalanceQuantityLimitDto,
   UpdateTokenClassDto,
-  UserAlias,
-  UserRef
+  UserAlias
 } from "@gala-chain/api";
 import BigNumber from "bignumber.js";
 import { Type } from "class-transformer";
@@ -89,6 +89,7 @@ type RefreshAllowanceRequest = ConstructorArgs<RefreshAllowanceDto>;
 type TransferTokenRequest = ConstructorArgs<TransferTokenDto>;
 type UnlockTokenRequest = ConstructorArgs<UnlockTokenDto>;
 type UnlockTokensRequest = ConstructorArgs<UnlockTokensDto>;
+type UpdateBalanceQuantityLimitRequest = ConstructorArgs<UpdateBalanceQuantityLimitDto>;
 type UpdateTokenClassRequest = ConstructorArgs<UpdateTokenClassDto>;
 
 /**
@@ -169,5 +170,6 @@ export {
   TransferTokenRequest,
   UnlockTokenRequest,
   UnlockTokensRequest,
+  UpdateBalanceQuantityLimitRequest,
   UpdateTokenClassRequest
 };
