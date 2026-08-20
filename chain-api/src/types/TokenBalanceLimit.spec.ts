@@ -82,6 +82,32 @@ describe("TokenBalanceLimit", () => {
     expect(balance.limit).toBeUndefined();
   });
 
+  it("should deserialize, validate, and spend a balance that has no limit field", async () => {
+    // Given
+    const json = JSON.stringify({
+      owner: "client|user1",
+      collection: "test-collection",
+      category: "test-category",
+      type: "test-type",
+      additionalKey: "test-additional-key",
+      quantity: "100"
+    });
+    const balance = TokenBalance.deserialize<TokenBalance>(TokenBalance, json);
+
+    // When
+    await balance.validateOrReject();
+    const afterLoad = balance.limit;
+    balance.subtractQuantity(new BigNumber(10), now, undefined);
+    const afterUnlimitedSpend = balance.limit;
+    balance.subtractQuantity(new BigNumber(10), now, new BigNumber(50));
+
+    // Then
+    expect(afterLoad).toBeUndefined();
+    expect(afterUnlimitedSpend).toBeUndefined();
+    expect(balance.getQuantityTotal()).toEqual(new BigNumber(80));
+    expect(balance.limit?.spent(now)).toEqual(new BigNumber(10));
+  });
+
   it("should zero the entered hour slot and keep the previous hour", () => {
     // Given
     const balance = emptyBalance();
