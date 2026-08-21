@@ -316,6 +316,12 @@ export class GrantAllowanceDto extends SubmitCallDTO {
   })
   @IsOptional()
   expires?: number;
+
+  @JSONSchema({
+    description: "Optional caller field some clients include. Ignored; the submitting user is the grantor."
+  })
+  @IsOptional()
+  from?: unknown;
 }
 
 /**

@@ -14,7 +14,7 @@
  */
 import BigNumber from "bignumber.js";
 import { Type } from "class-transformer";
-import { IsNotEmpty, IsOptional, IsString, ValidateNested } from "class-validator";
+import { IsBoolean, IsNotEmpty, IsOptional, IsString, ValidateNested } from "class-validator";
 import { JSONSchema } from "class-validator-jsonschema";
 
 import { BigNumberIsPositive, BigNumberProperty, EnumProperty, IsValidChainAddress } from "../validators";
@@ -67,4 +67,11 @@ export class RequestTokenBridgeOutDto extends SubmitCallDTO {
   @ValidateNested()
   @Type(() => OracleBridgeFeeAssertionDto)
   destinationChainTxFee?: OracleBridgeFeeAssertionDto;
+
+  @JSONSchema({
+    description: "Optional flag some callers include with a bridge-out request. Ignored."
+  })
+  @IsOptional()
+  @IsBoolean()
+  wrap?: boolean;
 }

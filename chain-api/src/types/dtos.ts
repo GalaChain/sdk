@@ -242,6 +242,24 @@ export class ChainCallDTO {
   @IsObject()
   public trace?: OtelTraceContext;
 
+  @JSONSchema({
+    description:
+      "EIP-712 signing domain. Present when the DTO is signed as typed data. " +
+      "Not a message field; ignored by personal_sign payloads."
+  })
+  @IsOptional()
+  @IsObject()
+  public domain?: Record<string, unknown>;
+
+  @JSONSchema({
+    description:
+      "EIP-712 type definitions for the signed message. Present when the DTO is signed as typed data. " +
+      "Not a message field; ignored by personal_sign payloads."
+  })
+  @IsOptional()
+  @IsObject()
+  public types?: Record<string, unknown>;
+
   validate(): Promise<ValidationError[]> {
     return validate(this, STRICT_VALIDATION_OPTIONS);
   }

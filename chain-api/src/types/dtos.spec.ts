@@ -68,6 +68,17 @@ it("should reject unknown properties", async () => {
   );
 });
 
+it("should allow EIP-712 domain and types", async () => {
+  const withTypedData =
+    '{"playerIds":["123"],"domain":{"name":"GalaChain"},"types":{"Test":[{"name":"playerIds","type":"string[]"}]}}';
+
+  expect(await getPlainOrError(TestDtoWithArray, withTypedData)).toEqual({
+    playerIds: ["123"],
+    domain: { name: "GalaChain" },
+    types: { Test: [{ name: "playerIds", type: "string[]" }] }
+  });
+});
+
 it("should parse TestDtoWithArray", async () => {
   const valid = '{"playerIds":["123"]}';
   const invalid1 = '{"playerIds":[]}';

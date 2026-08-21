@@ -26,6 +26,12 @@ describe("getPayloadToSign", () => {
     expect(toSign).toEqual('{"a":3,"b":[{"x":4,"y":5,"z":6},7],"c":8}');
   });
 
+  it("does not treat unset domain/types as EIP-712", () => {
+    const obj = { uniqueKey: "k", quantity: "1", domain: undefined, types: undefined };
+
+    expect(getPayloadToSign(obj).toString()).toEqual('{"quantity":"1","uniqueKey":"k"}');
+  });
+
   it("should ignore 'signature', 'multisig' and 'trace' fields", () => {
     // Given
     const obj = {

@@ -58,6 +58,13 @@ export class TokenClassKey extends ChainCallDTO {
   @IsDefined()
   public additionalKey: string;
 
+  @JSONSchema({
+    description:
+      "Not part of the token class key. Some callers include instance alongside the class fields; it is ignored."
+  })
+  @IsOptional()
+  public instance?: unknown;
+
   public toString() {
     return this.toStringKey();
   }
@@ -73,13 +80,8 @@ export class TokenClassKey extends ChainCallDTO {
   }
 
   public allKeysPresent(): boolean {
-    const keysAndValues = Object.entries(this);
-    if (keysAndValues.length !== 4) return false;
-
     const additionalKeyPresent = typeof this.additionalKey === "string";
-    if (this.collection && this.category && this.type && additionalKeyPresent) return true;
-
-    return false;
+    return !!(this.collection && this.category && this.type && additionalKeyPresent);
   }
 
   public toB58EncodedString(): string {
