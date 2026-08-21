@@ -15,7 +15,6 @@
 import BigNumber from "bignumber.js";
 import { Type } from "class-transformer";
 import {
-  Allow,
   ArrayNotEmpty,
   IsAlphanumeric,
   IsBoolean,
@@ -518,88 +517,4 @@ export class TransferTokenDto extends SubmitCallDTO {
   @BigNumberIsPositive()
   @BigNumberProperty()
   quantity: BigNumber;
-
-  @IsOptional()
-  @Allow()
-  token0?: unknown;
-
-  @IsOptional()
-  @Allow()
-  token1?: unknown;
-
-  @IsOptional()
-  @Allow()
-  fee?: unknown;
-
-  @IsOptional()
-  @Allow()
-  positionId?: unknown;
-
-  @IsOptional()
-  @Allow()
-  tickLower?: unknown;
-
-  @IsOptional()
-  @Allow()
-  tickUpper?: unknown;
-
-  @IsOptional()
-  @Allow()
-  amount0Min?: unknown;
-
-  @IsOptional()
-  @Allow()
-  amount1Min?: unknown;
-
-  @IsOptional()
-  @Allow()
-  amount0Desired?: unknown;
-
-  @IsOptional()
-  @Allow()
-  amount1Desired?: unknown;
-
-  @IsOptional()
-  @Allow()
-  amount0Requested?: unknown;
-
-  @IsOptional()
-  @Allow()
-  amount1Requested?: unknown;
-
-  @IsOptional()
-  @Allow()
-  owner?: unknown;
-
-  @IsOptional()
-  @Allow()
-  amount?: unknown;
-
-  @IsOptional()
-  @Allow()
-  recipient?: unknown;
-
-  @IsOptional()
-  @Allow()
-  amountOutMinimum?: unknown;
-
-  @IsOptional()
-  @Allow()
-  amountInMaximum?: unknown;
-
-  @IsOptional()
-  @Allow()
-  sqrtPriceLimit?: unknown;
-
-  @IsOptional()
-  @Allow()
-  zeroForOne?: unknown;
-
-  @IsOptional()
-  @Allow()
-  destinationChainId?: unknown;
-
-  @IsOptional()
-  @Allow()
-  destinationChainTxFee?: unknown;
 }

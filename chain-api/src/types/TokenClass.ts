@@ -58,9 +58,12 @@ export class TokenClassKey extends ChainCallDTO {
   @IsDefined()
   public additionalKey: string;
 
+  /**
+   * @deprecated Not part of the token class key. Ignored if present.
+   */
   @JSONSchema({
-    description:
-      "Not part of the token class key. Some callers include instance alongside the class fields; it is ignored."
+    deprecated: true,
+    description: "Not part of the token class key. Ignored if present."
   })
   @IsOptional()
   public instance?: unknown;
