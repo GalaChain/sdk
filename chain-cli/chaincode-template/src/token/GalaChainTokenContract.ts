@@ -13,6 +13,7 @@
  * limitations under the License.
  */
 import {
+  AllowAllTokenBalanceTargetsDto,
   AllowanceType,
   BatchMintTokenDto,
   BurnTokensDto,
@@ -44,6 +45,7 @@ import {
   FetchTokenClassesResponse,
   FetchTokenClassesWithPaginationDto,
   FetchVestingTokenDto,
+  FreezeTokenBalanceDto,
   FulfillMintDto,
   FullAllowanceCheckDto,
   FullAllowanceCheckResDto,
@@ -56,6 +58,7 @@ import {
   MintTokenDto,
   MintTokenWithAllowanceDto,
   RefreshAllowancesDto,
+  RestrictTokenBalanceTargetsDto,
   SubmitCallDTO,
   TokenAllowance,
   TokenBalance,
@@ -82,6 +85,7 @@ import {
   SUBMIT,
   Submit,
   UnsignedEvaluate,
+  allowAllTokenBalanceTargets,
   batchMintToken,
   burnTokens,
   createTokenClass,
@@ -100,6 +104,7 @@ import {
   fetchTokenClasses,
   fetchTokenClassesWithPagination,
   fetchVestingToken,
+  freezeTokenBalance,
   fulfillMintRequest,
   fullAllowanceCheck,
   grantAllowance,
@@ -114,6 +119,7 @@ import {
   requestMint,
   requireCuratorAuth,
   resolveUserAlias,
+  restrictTokenBalanceTargets,
   saveRequest,
   setGalaFeeProperties,
   transferToken,
@@ -302,6 +308,49 @@ export default class GalaChainTokenContract extends GalaContract {
     return updateBalanceQuantityLimit(ctx, {
       tokenClass: dto.tokenClass,
       quantityLimit: dto.quantityLimit
+    });
+  }
+
+  @Submit({
+    in: RestrictTokenBalanceTargetsDto,
+    out: TokenBalance,
+    ...requireCuratorAuth
+  })
+  public async RestrictTokenBalanceTargets(
+    ctx: GalaChainContext,
+    dto: RestrictTokenBalanceTargetsDto
+  ): Promise<TokenBalance> {
+    return restrictTokenBalanceTargets(ctx, {
+      user: await resolveUserAlias(ctx, dto.user),
+      tokenClass: dto.tokenClass,
+      targets: await Promise.all(dto.targets.map((t) => resolveUserAlias(ctx, t)))
+    });
+  }
+
+  @Submit({
+    in: AllowAllTokenBalanceTargetsDto,
+    out: TokenBalance,
+    ...requireCuratorAuth
+  })
+  public async AllowAllTokenBalanceTargets(
+    ctx: GalaChainContext,
+    dto: AllowAllTokenBalanceTargetsDto
+  ): Promise<TokenBalance> {
+    return allowAllTokenBalanceTargets(ctx, {
+      user: await resolveUserAlias(ctx, dto.user),
+      tokenClass: dto.tokenClass
+    });
+  }
+
+  @Submit({
+    in: FreezeTokenBalanceDto,
+    out: TokenBalance,
+    ...requireCuratorAuth
+  })
+  public async FreezeTokenBalance(ctx: GalaChainContext, dto: FreezeTokenBalanceDto): Promise<TokenBalance> {
+    return freezeTokenBalance(ctx, {
+      user: await resolveUserAlias(ctx, dto.user),
+      tokenClass: dto.tokenClass
     });
   }
 

@@ -1401,6 +1401,311 @@ exports[`API snapshots Api of GalaChainToken 1`] = `
   "contractVersion": "?.?.?",
   "methods": [
     {
+      "description": " Transaction updates the chain (submit). Allowed roles: CURATOR.",
+      "dtoSchema": {
+        "description": "Remove destination restrictions from a balance (any target including burn is allowed). Applied after 24 hours.",
+        "properties": {
+          "dtoExpiresAt": {
+            "description": "Unix epoch timestamp in milliseconds (ms) when the DTO expires. If this time is before the current time, the DTO is not valid.",
+            "type": "number",
+          },
+          "dtoOperation": {
+            "description": "Full operation identifier that is called on chain with this DTO. The format is \`channelId_chaincodeId_methodName\`. It is required for multisig DTOs, and optional for single signed DTOs. ",
+            "minLength": 1,
+            "type": "string",
+          },
+          "multisig": {
+            "description": "List of signatures for this DTO if there are multiple signers. If there are multiple signatures, 'signerAddress' is required, and it is not allowed to provide 'signature' or 'signerPublicKey' fields, and the signing scheme must be ETH.",
+            "items": {},
+            "minItems": 2,
+            "type": "array",
+          },
+          "prefix": {
+            "description": "Prefix for Metamask transaction signatures. Necessary to format payloads correctly to recover publicKey from web3 signatures.",
+            "minLength": 1,
+            "type": "string",
+          },
+          "signature": {
+            "description": "Signature of the DTO signed with caller's private key to be verified with user's public key saved on chain. The 'signature' field is optional for DTO, but is required for a transaction to be executed on chain. 
+Please consult [GalaChain SDK documentation](https://github.com/GalaChain/sdk/blob/main/docs/authorization.md#signature-based-authorization) on how to create signatures.",
+            "minLength": 1,
+            "type": "string",
+          },
+          "signerAddress": {
+            "description": "Address of the user who signed the DTO. Typically Ethereum address, or user alias.",
+            "minLength": 1,
+            "type": "string",
+          },
+          "signerPublicKey": {
+            "description": "Public key of the user who signed the DTO.",
+            "minLength": 1,
+            "type": "string",
+          },
+          "tokenClass": {
+            "description": "Token class of the balance whose destination restrictions will be cleared. Object representing the chain identifier of token class.",
+            "minLength": 1,
+            "properties": {
+              "additionalKey": {
+                "not": {
+                  "type": "null",
+                },
+              },
+              "category": {
+                "minLength": 1,
+                "type": "string",
+              },
+              "collection": {
+                "minLength": 1,
+                "type": "string",
+              },
+              "dtoExpiresAt": {
+                "description": "Unix epoch timestamp in milliseconds (ms) when the DTO expires. If this time is before the current time, the DTO is not valid.",
+                "type": "number",
+              },
+              "dtoOperation": {
+                "description": "Full operation identifier that is called on chain with this DTO. The format is \`channelId_chaincodeId_methodName\`. It is required for multisig DTOs, and optional for single signed DTOs. ",
+                "minLength": 1,
+                "type": "string",
+              },
+              "multisig": {
+                "description": "List of signatures for this DTO if there are multiple signers. If there are multiple signatures, 'signerAddress' is required, and it is not allowed to provide 'signature' or 'signerPublicKey' fields, and the signing scheme must be ETH.",
+                "items": {},
+                "minItems": 2,
+                "type": "array",
+              },
+              "prefix": {
+                "description": "Prefix for Metamask transaction signatures. Necessary to format payloads correctly to recover publicKey from web3 signatures.",
+                "minLength": 1,
+                "type": "string",
+              },
+              "signature": {
+                "description": "Signature of the DTO signed with caller's private key to be verified with user's public key saved on chain. The 'signature' field is optional for DTO, but is required for a transaction to be executed on chain. 
+Please consult [GalaChain SDK documentation](https://github.com/GalaChain/sdk/blob/main/docs/authorization.md#signature-based-authorization) on how to create signatures.",
+                "minLength": 1,
+                "type": "string",
+              },
+              "signerAddress": {
+                "description": "Address of the user who signed the DTO. Typically Ethereum address, or user alias.",
+                "minLength": 1,
+                "type": "string",
+              },
+              "signerPublicKey": {
+                "description": "Public key of the user who signed the DTO.",
+                "minLength": 1,
+                "type": "string",
+              },
+              "trace": {
+                "description": "OpenTelemetry trace context propagated from the caller for chaincode log correlation. Not part of the signed payload.",
+                "type": "object",
+              },
+              "type": {
+                "minLength": 1,
+                "type": "string",
+              },
+              "uniqueKey": {
+                "description": "Unique key of the DTO. It is used to prevent double execution of the same transaction on chain. The key is saved on chain and checked before execution. If a DTO with already saved key is used in transaction, the transaction will fail with UniqueTransactionConflict error, which is mapped to HTTP 409 Conflict error. In case of the error, no changes are saved to chain state.
+The key is generated by the caller and should be unique for each DTO. You can use \`nanoid\` library, UUID scheme, or any tool to generate unique string keys.",
+                "minLength": 1,
+                "type": "string",
+              },
+            },
+            "required": [
+              "collection",
+              "category",
+              "type",
+              "additionalKey",
+            ],
+            "type": "object",
+          },
+          "trace": {
+            "description": "OpenTelemetry trace context propagated from the caller for chaincode log correlation. Not part of the signed payload.",
+            "type": "object",
+          },
+          "uniqueKey": {
+            "description": "Unique key of the DTO. It is used to prevent double execution of the same transaction on chain. The key is saved on chain and checked before execution. If a DTO with already saved key is used in transaction, the transaction will fail with UniqueTransactionConflict error, which is mapped to HTTP 409 Conflict error. In case of the error, no changes are saved to chain state.
+The key is generated by the caller and should be unique for each DTO. You can use \`nanoid\` library, UUID scheme, or any tool to generate unique string keys.",
+            "minLength": 1,
+            "type": "string",
+          },
+          "user": {
+            "description": "Owner of the balance whose destination restrictions will be cleared.",
+            "type": "string",
+          },
+        },
+        "required": [
+          "user",
+          "tokenClass",
+        ],
+        "type": "object",
+      },
+      "isWrite": true,
+      "methodName": "AllowAllTokenBalanceTargets",
+      "responseSchema": {
+        "properties": {
+          "Data": {
+            "properties": {
+              "additionalKey": {
+                "not": {
+                  "type": "null",
+                },
+              },
+              "allowedTargets": {
+                "description": "Allowed subtract destinations. undefined = no restriction. Empty array = frozen (burn only). Non-empty = only those user aliases. Burn is allowed only when unrestricted or frozen.",
+                "items": {
+                  "description": "Allowed value is string following the format of 'client|<user-id>', or 'eth|<checksumed-eth-addr>', or valid system-level username.",
+                  "type": "string",
+                },
+                "type": "array",
+              },
+              "category": {
+                "minLength": 1,
+                "type": "string",
+              },
+              "collection": {
+                "minLength": 1,
+                "type": "string",
+              },
+              "instanceIds": {},
+              "limit": {
+                "description": "Optional owner quantity limit and hourly spend buckets (current hour plus the preceding 23). When quantity is set, it takes precedence over TokenClass.quantityLimit.",
+                "properties": {
+                  "hours": {
+                    "description": "Spend per hourly bucket. Index is unixHour mod 24. Entering hour H zeros hours[H] (yesterday's same hour) and any skipped hours since lastHour, then new spend is added to hours[H].",
+                  },
+                  "lastHour": {
+                    "description": "Unix hour (floor(ms / 3600000)) of the last recorded spend.",
+                    "minimum": 0,
+                    "type": "number",
+                  },
+                  "pendingAppliesAt": {
+                    "description": "Unix epoch timestamp in milliseconds (ms) when pendingQuantity becomes effective.",
+                    "minimum": 0,
+                    "type": "number",
+                  },
+                  "pendingQuantity": {
+                    "description": "Owner-requested quantity that is not yet effective. Applied at pendingAppliesAt when the requested limit is an increase versus the current effective limit. Number provided as a string.",
+                    "type": "string",
+                  },
+                  "quantity": {
+                    "description": "Owner override for TokenClass.quantityLimit. When set, this value is the maximum that may be subtracted from this balance across the current hour and the preceding 23 hourly buckets. Number provided as a string.",
+                    "type": "string",
+                  },
+                },
+                "type": "object",
+              },
+              "lockedHolds": {
+                "items": {
+                  "properties": {
+                    "created": {
+                      "description": "Unix epoch timestamp in milliseconds (ms) when the hold was created (typically the transaction time).",
+                      "exclusiveMinimum": 0,
+                      "type": "number",
+                    },
+                    "createdBy": {
+                      "description": "Allowed value is string following the format of 'client|<user-id>', or 'eth|<checksumed-eth-addr>', or valid system-level username.",
+                      "type": "string",
+                    },
+                    "expires": {
+                      "description": "Unix epoch timestamp in milliseconds (ms) when the hold expires. 0 means no expiration.",
+                      "minimum": 0,
+                      "type": "number",
+                    },
+                    "instanceId": {
+                      "description": "Number provided as a string.",
+                      "minLength": 1,
+                      "type": "string",
+                    },
+                    "lockAuthority": {
+                      "description": "User who will be able to unlock token. If the value is missing, then token owner and lock creator can unlock in all cases token authority can unlock token.",
+                      "type": "string",
+                    },
+                    "name": {
+                      "type": "string",
+                    },
+                    "quantity": {
+                      "description": "Number provided as a string.",
+                      "type": "string",
+                    },
+                    "vestingPeriodStart": {
+                      "description": "Unix epoch timestamp in milliseconds (ms) for vestingPeriodStart on vesting holds; undefined for non-vesting holds.",
+                      "minimum": 0,
+                      "type": "number",
+                    },
+                  },
+                  "required": [
+                    "createdBy",
+                    "instanceId",
+                    "quantity",
+                    "created",
+                    "expires",
+                  ],
+                  "type": "object",
+                },
+                "type": "array",
+              },
+              "owner": {
+                "description": "Allowed value is string following the format of 'client|<user-id>', or 'eth|<checksumed-eth-addr>', or valid system-level username.",
+                "type": "string",
+              },
+              "pendingAllowAll": {
+                "description": "When true, pending change clears allowedTargets (no restriction) at pendingTargetsAppliesAt.",
+                "type": "boolean",
+              },
+              "pendingAllowedTargets": {
+                "description": "Pending allowedTargets list. Applied at pendingTargetsAppliesAt.",
+                "items": {
+                  "description": "Allowed value is string following the format of 'client|<user-id>', or 'eth|<checksumed-eth-addr>', or valid system-level username.",
+                  "type": "string",
+                },
+                "type": "array",
+              },
+              "pendingTargetsAppliesAt": {
+                "description": "Unix epoch timestamp in milliseconds (ms) when the pending target change becomes effective.",
+                "minimum": 0,
+                "type": "number",
+              },
+              "quantity": {
+                "description": "Number provided as a string.",
+                "type": "string",
+              },
+              "type": {
+                "minLength": 1,
+                "type": "string",
+              },
+              "vestingPeriodStart": {
+                "description": "Unix epoch timestamp in milliseconds (ms) for vestingPeriodStart. For vesting locks, this is the beginning of the vesting period.",
+                "minimum": 0,
+                "type": "number",
+              },
+            },
+            "required": [
+              "owner",
+              "collection",
+              "category",
+              "type",
+              "additionalKey",
+              "quantity",
+            ],
+            "type": "object",
+          },
+          "Message": {
+            "type": "string",
+          },
+          "Status": {
+            "description": "Indicates Error (0) or Success (1)",
+            "enum": [
+              0,
+              1,
+            ],
+          },
+        },
+        "required": [
+          "Status",
+        ],
+        "type": "object",
+      },
+    },
+    {
       "description": "Apply queued internal requests Transaction updates the chain (submit). Allowed roles: CURATOR.",
       "dtoSchema": {
         "properties": {
@@ -4359,6 +4664,14 @@ The key is generated by the caller and should be unique for each DTO. You can us
                     "type": "null",
                   },
                 },
+                "allowedTargets": {
+                  "description": "Allowed subtract destinations. undefined = no restriction. Empty array = frozen (burn only). Non-empty = only those user aliases. Burn is allowed only when unrestricted or frozen.",
+                  "items": {
+                    "description": "Allowed value is string following the format of 'client|<user-id>', or 'eth|<checksumed-eth-addr>', or valid system-level username.",
+                    "type": "string",
+                  },
+                  "type": "array",
+                },
                 "category": {
                   "minLength": 1,
                   "type": "string",
@@ -4448,6 +4761,23 @@ The key is generated by the caller and should be unique for each DTO. You can us
                 "owner": {
                   "description": "Allowed value is string following the format of 'client|<user-id>', or 'eth|<checksumed-eth-addr>', or valid system-level username.",
                   "type": "string",
+                },
+                "pendingAllowAll": {
+                  "description": "When true, pending change clears allowedTargets (no restriction) at pendingTargetsAppliesAt.",
+                  "type": "boolean",
+                },
+                "pendingAllowedTargets": {
+                  "description": "Pending allowedTargets list. Applied at pendingTargetsAppliesAt.",
+                  "items": {
+                    "description": "Allowed value is string following the format of 'client|<user-id>', or 'eth|<checksumed-eth-addr>', or valid system-level username.",
+                    "type": "string",
+                  },
+                  "type": "array",
+                },
+                "pendingTargetsAppliesAt": {
+                  "description": "Unix epoch timestamp in milliseconds (ms) when the pending target change becomes effective.",
+                  "minimum": 0,
+                  "type": "number",
                 },
                 "quantity": {
                   "description": "Number provided as a string.",
@@ -4580,6 +4910,14 @@ The key is generated by the caller and should be unique for each DTO. You can us
                     "type": "null",
                   },
                 },
+                "allowedTargets": {
+                  "description": "Allowed subtract destinations. undefined = no restriction. Empty array = frozen (burn only). Non-empty = only those user aliases. Burn is allowed only when unrestricted or frozen.",
+                  "items": {
+                    "description": "Allowed value is string following the format of 'client|<user-id>', or 'eth|<checksumed-eth-addr>', or valid system-level username.",
+                    "type": "string",
+                  },
+                  "type": "array",
+                },
                 "category": {
                   "minLength": 1,
                   "type": "string",
@@ -4669,6 +5007,23 @@ The key is generated by the caller and should be unique for each DTO. You can us
                 "owner": {
                   "description": "Allowed value is string following the format of 'client|<user-id>', or 'eth|<checksumed-eth-addr>', or valid system-level username.",
                   "type": "string",
+                },
+                "pendingAllowAll": {
+                  "description": "When true, pending change clears allowedTargets (no restriction) at pendingTargetsAppliesAt.",
+                  "type": "boolean",
+                },
+                "pendingAllowedTargets": {
+                  "description": "Pending allowedTargets list. Applied at pendingTargetsAppliesAt.",
+                  "items": {
+                    "description": "Allowed value is string following the format of 'client|<user-id>', or 'eth|<checksumed-eth-addr>', or valid system-level username.",
+                    "type": "string",
+                  },
+                  "type": "array",
+                },
+                "pendingTargetsAppliesAt": {
+                  "description": "Unix epoch timestamp in milliseconds (ms) when the pending target change becomes effective.",
+                  "minimum": 0,
+                  "type": "number",
                 },
                 "quantity": {
                   "description": "Number provided as a string.",
@@ -6299,6 +6654,14 @@ The key is generated by the caller and should be unique for each DTO. You can us
                         "type": "null",
                       },
                     },
+                    "allowedTargets": {
+                      "description": "Allowed subtract destinations. undefined = no restriction. Empty array = frozen (burn only). Non-empty = only those user aliases. Burn is allowed only when unrestricted or frozen.",
+                      "items": {
+                        "description": "Allowed value is string following the format of 'client|<user-id>', or 'eth|<checksumed-eth-addr>', or valid system-level username.",
+                        "type": "string",
+                      },
+                      "type": "array",
+                    },
                     "category": {
                       "minLength": 1,
                       "type": "string",
@@ -6388,6 +6751,23 @@ The key is generated by the caller and should be unique for each DTO. You can us
                     "owner": {
                       "description": "Allowed value is string following the format of 'client|<user-id>', or 'eth|<checksumed-eth-addr>', or valid system-level username.",
                       "type": "string",
+                    },
+                    "pendingAllowAll": {
+                      "description": "When true, pending change clears allowedTargets (no restriction) at pendingTargetsAppliesAt.",
+                      "type": "boolean",
+                    },
+                    "pendingAllowedTargets": {
+                      "description": "Pending allowedTargets list. Applied at pendingTargetsAppliesAt.",
+                      "items": {
+                        "description": "Allowed value is string following the format of 'client|<user-id>', or 'eth|<checksumed-eth-addr>', or valid system-level username.",
+                        "type": "string",
+                      },
+                      "type": "array",
+                    },
+                    "pendingTargetsAppliesAt": {
+                      "description": "Unix epoch timestamp in milliseconds (ms) when the pending target change becomes effective.",
+                      "minimum": 0,
+                      "type": "number",
                     },
                     "quantity": {
                       "description": "Number provided as a string.",
@@ -6498,6 +6878,311 @@ The key is generated by the caller and should be unique for each DTO. You can us
             "required": [
               "vestingToken",
               "allocationBalances",
+            ],
+            "type": "object",
+          },
+          "Message": {
+            "type": "string",
+          },
+          "Status": {
+            "description": "Indicates Error (0) or Success (1)",
+            "enum": [
+              0,
+              1,
+            ],
+          },
+        },
+        "required": [
+          "Status",
+        ],
+        "type": "object",
+      },
+    },
+    {
+      "description": " Transaction updates the chain (submit). Allowed roles: CURATOR.",
+      "dtoSchema": {
+        "description": "Freeze a balance immediately so it may only be burned.",
+        "properties": {
+          "dtoExpiresAt": {
+            "description": "Unix epoch timestamp in milliseconds (ms) when the DTO expires. If this time is before the current time, the DTO is not valid.",
+            "type": "number",
+          },
+          "dtoOperation": {
+            "description": "Full operation identifier that is called on chain with this DTO. The format is \`channelId_chaincodeId_methodName\`. It is required for multisig DTOs, and optional for single signed DTOs. ",
+            "minLength": 1,
+            "type": "string",
+          },
+          "multisig": {
+            "description": "List of signatures for this DTO if there are multiple signers. If there are multiple signatures, 'signerAddress' is required, and it is not allowed to provide 'signature' or 'signerPublicKey' fields, and the signing scheme must be ETH.",
+            "items": {},
+            "minItems": 2,
+            "type": "array",
+          },
+          "prefix": {
+            "description": "Prefix for Metamask transaction signatures. Necessary to format payloads correctly to recover publicKey from web3 signatures.",
+            "minLength": 1,
+            "type": "string",
+          },
+          "signature": {
+            "description": "Signature of the DTO signed with caller's private key to be verified with user's public key saved on chain. The 'signature' field is optional for DTO, but is required for a transaction to be executed on chain. 
+Please consult [GalaChain SDK documentation](https://github.com/GalaChain/sdk/blob/main/docs/authorization.md#signature-based-authorization) on how to create signatures.",
+            "minLength": 1,
+            "type": "string",
+          },
+          "signerAddress": {
+            "description": "Address of the user who signed the DTO. Typically Ethereum address, or user alias.",
+            "minLength": 1,
+            "type": "string",
+          },
+          "signerPublicKey": {
+            "description": "Public key of the user who signed the DTO.",
+            "minLength": 1,
+            "type": "string",
+          },
+          "tokenClass": {
+            "description": "Token class of the balance to freeze. Object representing the chain identifier of token class.",
+            "minLength": 1,
+            "properties": {
+              "additionalKey": {
+                "not": {
+                  "type": "null",
+                },
+              },
+              "category": {
+                "minLength": 1,
+                "type": "string",
+              },
+              "collection": {
+                "minLength": 1,
+                "type": "string",
+              },
+              "dtoExpiresAt": {
+                "description": "Unix epoch timestamp in milliseconds (ms) when the DTO expires. If this time is before the current time, the DTO is not valid.",
+                "type": "number",
+              },
+              "dtoOperation": {
+                "description": "Full operation identifier that is called on chain with this DTO. The format is \`channelId_chaincodeId_methodName\`. It is required for multisig DTOs, and optional for single signed DTOs. ",
+                "minLength": 1,
+                "type": "string",
+              },
+              "multisig": {
+                "description": "List of signatures for this DTO if there are multiple signers. If there are multiple signatures, 'signerAddress' is required, and it is not allowed to provide 'signature' or 'signerPublicKey' fields, and the signing scheme must be ETH.",
+                "items": {},
+                "minItems": 2,
+                "type": "array",
+              },
+              "prefix": {
+                "description": "Prefix for Metamask transaction signatures. Necessary to format payloads correctly to recover publicKey from web3 signatures.",
+                "minLength": 1,
+                "type": "string",
+              },
+              "signature": {
+                "description": "Signature of the DTO signed with caller's private key to be verified with user's public key saved on chain. The 'signature' field is optional for DTO, but is required for a transaction to be executed on chain. 
+Please consult [GalaChain SDK documentation](https://github.com/GalaChain/sdk/blob/main/docs/authorization.md#signature-based-authorization) on how to create signatures.",
+                "minLength": 1,
+                "type": "string",
+              },
+              "signerAddress": {
+                "description": "Address of the user who signed the DTO. Typically Ethereum address, or user alias.",
+                "minLength": 1,
+                "type": "string",
+              },
+              "signerPublicKey": {
+                "description": "Public key of the user who signed the DTO.",
+                "minLength": 1,
+                "type": "string",
+              },
+              "trace": {
+                "description": "OpenTelemetry trace context propagated from the caller for chaincode log correlation. Not part of the signed payload.",
+                "type": "object",
+              },
+              "type": {
+                "minLength": 1,
+                "type": "string",
+              },
+              "uniqueKey": {
+                "description": "Unique key of the DTO. It is used to prevent double execution of the same transaction on chain. The key is saved on chain and checked before execution. If a DTO with already saved key is used in transaction, the transaction will fail with UniqueTransactionConflict error, which is mapped to HTTP 409 Conflict error. In case of the error, no changes are saved to chain state.
+The key is generated by the caller and should be unique for each DTO. You can use \`nanoid\` library, UUID scheme, or any tool to generate unique string keys.",
+                "minLength": 1,
+                "type": "string",
+              },
+            },
+            "required": [
+              "collection",
+              "category",
+              "type",
+              "additionalKey",
+            ],
+            "type": "object",
+          },
+          "trace": {
+            "description": "OpenTelemetry trace context propagated from the caller for chaincode log correlation. Not part of the signed payload.",
+            "type": "object",
+          },
+          "uniqueKey": {
+            "description": "Unique key of the DTO. It is used to prevent double execution of the same transaction on chain. The key is saved on chain and checked before execution. If a DTO with already saved key is used in transaction, the transaction will fail with UniqueTransactionConflict error, which is mapped to HTTP 409 Conflict error. In case of the error, no changes are saved to chain state.
+The key is generated by the caller and should be unique for each DTO. You can use \`nanoid\` library, UUID scheme, or any tool to generate unique string keys.",
+            "minLength": 1,
+            "type": "string",
+          },
+          "user": {
+            "description": "Owner of the balance to freeze.",
+            "type": "string",
+          },
+        },
+        "required": [
+          "user",
+          "tokenClass",
+        ],
+        "type": "object",
+      },
+      "isWrite": true,
+      "methodName": "FreezeTokenBalance",
+      "responseSchema": {
+        "properties": {
+          "Data": {
+            "properties": {
+              "additionalKey": {
+                "not": {
+                  "type": "null",
+                },
+              },
+              "allowedTargets": {
+                "description": "Allowed subtract destinations. undefined = no restriction. Empty array = frozen (burn only). Non-empty = only those user aliases. Burn is allowed only when unrestricted or frozen.",
+                "items": {
+                  "description": "Allowed value is string following the format of 'client|<user-id>', or 'eth|<checksumed-eth-addr>', or valid system-level username.",
+                  "type": "string",
+                },
+                "type": "array",
+              },
+              "category": {
+                "minLength": 1,
+                "type": "string",
+              },
+              "collection": {
+                "minLength": 1,
+                "type": "string",
+              },
+              "instanceIds": {},
+              "limit": {
+                "description": "Optional owner quantity limit and hourly spend buckets (current hour plus the preceding 23). When quantity is set, it takes precedence over TokenClass.quantityLimit.",
+                "properties": {
+                  "hours": {
+                    "description": "Spend per hourly bucket. Index is unixHour mod 24. Entering hour H zeros hours[H] (yesterday's same hour) and any skipped hours since lastHour, then new spend is added to hours[H].",
+                  },
+                  "lastHour": {
+                    "description": "Unix hour (floor(ms / 3600000)) of the last recorded spend.",
+                    "minimum": 0,
+                    "type": "number",
+                  },
+                  "pendingAppliesAt": {
+                    "description": "Unix epoch timestamp in milliseconds (ms) when pendingQuantity becomes effective.",
+                    "minimum": 0,
+                    "type": "number",
+                  },
+                  "pendingQuantity": {
+                    "description": "Owner-requested quantity that is not yet effective. Applied at pendingAppliesAt when the requested limit is an increase versus the current effective limit. Number provided as a string.",
+                    "type": "string",
+                  },
+                  "quantity": {
+                    "description": "Owner override for TokenClass.quantityLimit. When set, this value is the maximum that may be subtracted from this balance across the current hour and the preceding 23 hourly buckets. Number provided as a string.",
+                    "type": "string",
+                  },
+                },
+                "type": "object",
+              },
+              "lockedHolds": {
+                "items": {
+                  "properties": {
+                    "created": {
+                      "description": "Unix epoch timestamp in milliseconds (ms) when the hold was created (typically the transaction time).",
+                      "exclusiveMinimum": 0,
+                      "type": "number",
+                    },
+                    "createdBy": {
+                      "description": "Allowed value is string following the format of 'client|<user-id>', or 'eth|<checksumed-eth-addr>', or valid system-level username.",
+                      "type": "string",
+                    },
+                    "expires": {
+                      "description": "Unix epoch timestamp in milliseconds (ms) when the hold expires. 0 means no expiration.",
+                      "minimum": 0,
+                      "type": "number",
+                    },
+                    "instanceId": {
+                      "description": "Number provided as a string.",
+                      "minLength": 1,
+                      "type": "string",
+                    },
+                    "lockAuthority": {
+                      "description": "User who will be able to unlock token. If the value is missing, then token owner and lock creator can unlock in all cases token authority can unlock token.",
+                      "type": "string",
+                    },
+                    "name": {
+                      "type": "string",
+                    },
+                    "quantity": {
+                      "description": "Number provided as a string.",
+                      "type": "string",
+                    },
+                    "vestingPeriodStart": {
+                      "description": "Unix epoch timestamp in milliseconds (ms) for vestingPeriodStart on vesting holds; undefined for non-vesting holds.",
+                      "minimum": 0,
+                      "type": "number",
+                    },
+                  },
+                  "required": [
+                    "createdBy",
+                    "instanceId",
+                    "quantity",
+                    "created",
+                    "expires",
+                  ],
+                  "type": "object",
+                },
+                "type": "array",
+              },
+              "owner": {
+                "description": "Allowed value is string following the format of 'client|<user-id>', or 'eth|<checksumed-eth-addr>', or valid system-level username.",
+                "type": "string",
+              },
+              "pendingAllowAll": {
+                "description": "When true, pending change clears allowedTargets (no restriction) at pendingTargetsAppliesAt.",
+                "type": "boolean",
+              },
+              "pendingAllowedTargets": {
+                "description": "Pending allowedTargets list. Applied at pendingTargetsAppliesAt.",
+                "items": {
+                  "description": "Allowed value is string following the format of 'client|<user-id>', or 'eth|<checksumed-eth-addr>', or valid system-level username.",
+                  "type": "string",
+                },
+                "type": "array",
+              },
+              "pendingTargetsAppliesAt": {
+                "description": "Unix epoch timestamp in milliseconds (ms) when the pending target change becomes effective.",
+                "minimum": 0,
+                "type": "number",
+              },
+              "quantity": {
+                "description": "Number provided as a string.",
+                "type": "string",
+              },
+              "type": {
+                "minLength": 1,
+                "type": "string",
+              },
+              "vestingPeriodStart": {
+                "description": "Unix epoch timestamp in milliseconds (ms) for vestingPeriodStart. For vesting locks, this is the beginning of the vesting period.",
+                "minimum": 0,
+                "type": "number",
+              },
+            },
+            "required": [
+              "owner",
+              "collection",
+              "category",
+              "type",
+              "additionalKey",
+              "quantity",
             ],
             "type": "object",
           },
@@ -8503,6 +9188,14 @@ The key is generated by the caller and should be unique for each DTO. You can us
                   "type": "null",
                 },
               },
+              "allowedTargets": {
+                "description": "Allowed subtract destinations. undefined = no restriction. Empty array = frozen (burn only). Non-empty = only those user aliases. Burn is allowed only when unrestricted or frozen.",
+                "items": {
+                  "description": "Allowed value is string following the format of 'client|<user-id>', or 'eth|<checksumed-eth-addr>', or valid system-level username.",
+                  "type": "string",
+                },
+                "type": "array",
+              },
               "category": {
                 "minLength": 1,
                 "type": "string",
@@ -8592,6 +9285,23 @@ The key is generated by the caller and should be unique for each DTO. You can us
               "owner": {
                 "description": "Allowed value is string following the format of 'client|<user-id>', or 'eth|<checksumed-eth-addr>', or valid system-level username.",
                 "type": "string",
+              },
+              "pendingAllowAll": {
+                "description": "When true, pending change clears allowedTargets (no restriction) at pendingTargetsAppliesAt.",
+                "type": "boolean",
+              },
+              "pendingAllowedTargets": {
+                "description": "Pending allowedTargets list. Applied at pendingTargetsAppliesAt.",
+                "items": {
+                  "description": "Allowed value is string following the format of 'client|<user-id>', or 'eth|<checksumed-eth-addr>', or valid system-level username.",
+                  "type": "string",
+                },
+                "type": "array",
+              },
+              "pendingTargetsAppliesAt": {
+                "description": "Unix epoch timestamp in milliseconds (ms) when the pending target change becomes effective.",
+                "minimum": 0,
+                "type": "number",
               },
               "quantity": {
                 "description": "Number provided as a string.",
@@ -8820,6 +9530,14 @@ The key is generated by the caller and should be unique for each DTO. You can us
                     "type": "null",
                   },
                 },
+                "allowedTargets": {
+                  "description": "Allowed subtract destinations. undefined = no restriction. Empty array = frozen (burn only). Non-empty = only those user aliases. Burn is allowed only when unrestricted or frozen.",
+                  "items": {
+                    "description": "Allowed value is string following the format of 'client|<user-id>', or 'eth|<checksumed-eth-addr>', or valid system-level username.",
+                    "type": "string",
+                  },
+                  "type": "array",
+                },
                 "category": {
                   "minLength": 1,
                   "type": "string",
@@ -8909,6 +9627,23 @@ The key is generated by the caller and should be unique for each DTO. You can us
                 "owner": {
                   "description": "Allowed value is string following the format of 'client|<user-id>', or 'eth|<checksumed-eth-addr>', or valid system-level username.",
                   "type": "string",
+                },
+                "pendingAllowAll": {
+                  "description": "When true, pending change clears allowedTargets (no restriction) at pendingTargetsAppliesAt.",
+                  "type": "boolean",
+                },
+                "pendingAllowedTargets": {
+                  "description": "Pending allowedTargets list. Applied at pendingTargetsAppliesAt.",
+                  "items": {
+                    "description": "Allowed value is string following the format of 'client|<user-id>', or 'eth|<checksumed-eth-addr>', or valid system-level username.",
+                    "type": "string",
+                  },
+                  "type": "array",
+                },
+                "pendingTargetsAppliesAt": {
+                  "description": "Unix epoch timestamp in milliseconds (ms) when the pending target change becomes effective.",
+                  "minimum": 0,
+                  "type": "number",
                 },
                 "quantity": {
                   "description": "Number provided as a string.",
@@ -10321,6 +11056,322 @@ The key is generated by the caller and should be unique for each DTO. You can us
     {
       "description": " Transaction updates the chain (submit). Allowed roles: CURATOR.",
       "dtoSchema": {
+        "description": "Restrict a balance so it may only be subtracted to the given destinations. Applied after 24 hours.",
+        "properties": {
+          "dtoExpiresAt": {
+            "description": "Unix epoch timestamp in milliseconds (ms) when the DTO expires. If this time is before the current time, the DTO is not valid.",
+            "type": "number",
+          },
+          "dtoOperation": {
+            "description": "Full operation identifier that is called on chain with this DTO. The format is \`channelId_chaincodeId_methodName\`. It is required for multisig DTOs, and optional for single signed DTOs. ",
+            "minLength": 1,
+            "type": "string",
+          },
+          "multisig": {
+            "description": "List of signatures for this DTO if there are multiple signers. If there are multiple signatures, 'signerAddress' is required, and it is not allowed to provide 'signature' or 'signerPublicKey' fields, and the signing scheme must be ETH.",
+            "items": {},
+            "minItems": 2,
+            "type": "array",
+          },
+          "prefix": {
+            "description": "Prefix for Metamask transaction signatures. Necessary to format payloads correctly to recover publicKey from web3 signatures.",
+            "minLength": 1,
+            "type": "string",
+          },
+          "signature": {
+            "description": "Signature of the DTO signed with caller's private key to be verified with user's public key saved on chain. The 'signature' field is optional for DTO, but is required for a transaction to be executed on chain. 
+Please consult [GalaChain SDK documentation](https://github.com/GalaChain/sdk/blob/main/docs/authorization.md#signature-based-authorization) on how to create signatures.",
+            "minLength": 1,
+            "type": "string",
+          },
+          "signerAddress": {
+            "description": "Address of the user who signed the DTO. Typically Ethereum address, or user alias.",
+            "minLength": 1,
+            "type": "string",
+          },
+          "signerPublicKey": {
+            "description": "Public key of the user who signed the DTO.",
+            "minLength": 1,
+            "type": "string",
+          },
+          "targets": {
+            "description": "Non-empty list of allowed destination users. Takes effect after 24 hours. Burn is not included.",
+            "items": {
+              "description": "Allowed value is a user alias ('client|<user-id>', or 'eth|<checksumed-eth-addr>', or valid system-level username), or valid Ethereum address.",
+              "type": "string",
+            },
+            "minItems": 1,
+            "type": "array",
+            "uniqueItems": true,
+          },
+          "tokenClass": {
+            "description": "Token class of the balance whose destinations will be restricted. Object representing the chain identifier of token class.",
+            "minLength": 1,
+            "properties": {
+              "additionalKey": {
+                "not": {
+                  "type": "null",
+                },
+              },
+              "category": {
+                "minLength": 1,
+                "type": "string",
+              },
+              "collection": {
+                "minLength": 1,
+                "type": "string",
+              },
+              "dtoExpiresAt": {
+                "description": "Unix epoch timestamp in milliseconds (ms) when the DTO expires. If this time is before the current time, the DTO is not valid.",
+                "type": "number",
+              },
+              "dtoOperation": {
+                "description": "Full operation identifier that is called on chain with this DTO. The format is \`channelId_chaincodeId_methodName\`. It is required for multisig DTOs, and optional for single signed DTOs. ",
+                "minLength": 1,
+                "type": "string",
+              },
+              "multisig": {
+                "description": "List of signatures for this DTO if there are multiple signers. If there are multiple signatures, 'signerAddress' is required, and it is not allowed to provide 'signature' or 'signerPublicKey' fields, and the signing scheme must be ETH.",
+                "items": {},
+                "minItems": 2,
+                "type": "array",
+              },
+              "prefix": {
+                "description": "Prefix for Metamask transaction signatures. Necessary to format payloads correctly to recover publicKey from web3 signatures.",
+                "minLength": 1,
+                "type": "string",
+              },
+              "signature": {
+                "description": "Signature of the DTO signed with caller's private key to be verified with user's public key saved on chain. The 'signature' field is optional for DTO, but is required for a transaction to be executed on chain. 
+Please consult [GalaChain SDK documentation](https://github.com/GalaChain/sdk/blob/main/docs/authorization.md#signature-based-authorization) on how to create signatures.",
+                "minLength": 1,
+                "type": "string",
+              },
+              "signerAddress": {
+                "description": "Address of the user who signed the DTO. Typically Ethereum address, or user alias.",
+                "minLength": 1,
+                "type": "string",
+              },
+              "signerPublicKey": {
+                "description": "Public key of the user who signed the DTO.",
+                "minLength": 1,
+                "type": "string",
+              },
+              "trace": {
+                "description": "OpenTelemetry trace context propagated from the caller for chaincode log correlation. Not part of the signed payload.",
+                "type": "object",
+              },
+              "type": {
+                "minLength": 1,
+                "type": "string",
+              },
+              "uniqueKey": {
+                "description": "Unique key of the DTO. It is used to prevent double execution of the same transaction on chain. The key is saved on chain and checked before execution. If a DTO with already saved key is used in transaction, the transaction will fail with UniqueTransactionConflict error, which is mapped to HTTP 409 Conflict error. In case of the error, no changes are saved to chain state.
+The key is generated by the caller and should be unique for each DTO. You can use \`nanoid\` library, UUID scheme, or any tool to generate unique string keys.",
+                "minLength": 1,
+                "type": "string",
+              },
+            },
+            "required": [
+              "collection",
+              "category",
+              "type",
+              "additionalKey",
+            ],
+            "type": "object",
+          },
+          "trace": {
+            "description": "OpenTelemetry trace context propagated from the caller for chaincode log correlation. Not part of the signed payload.",
+            "type": "object",
+          },
+          "uniqueKey": {
+            "description": "Unique key of the DTO. It is used to prevent double execution of the same transaction on chain. The key is saved on chain and checked before execution. If a DTO with already saved key is used in transaction, the transaction will fail with UniqueTransactionConflict error, which is mapped to HTTP 409 Conflict error. In case of the error, no changes are saved to chain state.
+The key is generated by the caller and should be unique for each DTO. You can use \`nanoid\` library, UUID scheme, or any tool to generate unique string keys.",
+            "minLength": 1,
+            "type": "string",
+          },
+          "user": {
+            "description": "Owner of the balance whose destinations will be restricted.",
+            "type": "string",
+          },
+        },
+        "required": [
+          "user",
+          "tokenClass",
+          "targets",
+        ],
+        "type": "object",
+      },
+      "isWrite": true,
+      "methodName": "RestrictTokenBalanceTargets",
+      "responseSchema": {
+        "properties": {
+          "Data": {
+            "properties": {
+              "additionalKey": {
+                "not": {
+                  "type": "null",
+                },
+              },
+              "allowedTargets": {
+                "description": "Allowed subtract destinations. undefined = no restriction. Empty array = frozen (burn only). Non-empty = only those user aliases. Burn is allowed only when unrestricted or frozen.",
+                "items": {
+                  "description": "Allowed value is string following the format of 'client|<user-id>', or 'eth|<checksumed-eth-addr>', or valid system-level username.",
+                  "type": "string",
+                },
+                "type": "array",
+              },
+              "category": {
+                "minLength": 1,
+                "type": "string",
+              },
+              "collection": {
+                "minLength": 1,
+                "type": "string",
+              },
+              "instanceIds": {},
+              "limit": {
+                "description": "Optional owner quantity limit and hourly spend buckets (current hour plus the preceding 23). When quantity is set, it takes precedence over TokenClass.quantityLimit.",
+                "properties": {
+                  "hours": {
+                    "description": "Spend per hourly bucket. Index is unixHour mod 24. Entering hour H zeros hours[H] (yesterday's same hour) and any skipped hours since lastHour, then new spend is added to hours[H].",
+                  },
+                  "lastHour": {
+                    "description": "Unix hour (floor(ms / 3600000)) of the last recorded spend.",
+                    "minimum": 0,
+                    "type": "number",
+                  },
+                  "pendingAppliesAt": {
+                    "description": "Unix epoch timestamp in milliseconds (ms) when pendingQuantity becomes effective.",
+                    "minimum": 0,
+                    "type": "number",
+                  },
+                  "pendingQuantity": {
+                    "description": "Owner-requested quantity that is not yet effective. Applied at pendingAppliesAt when the requested limit is an increase versus the current effective limit. Number provided as a string.",
+                    "type": "string",
+                  },
+                  "quantity": {
+                    "description": "Owner override for TokenClass.quantityLimit. When set, this value is the maximum that may be subtracted from this balance across the current hour and the preceding 23 hourly buckets. Number provided as a string.",
+                    "type": "string",
+                  },
+                },
+                "type": "object",
+              },
+              "lockedHolds": {
+                "items": {
+                  "properties": {
+                    "created": {
+                      "description": "Unix epoch timestamp in milliseconds (ms) when the hold was created (typically the transaction time).",
+                      "exclusiveMinimum": 0,
+                      "type": "number",
+                    },
+                    "createdBy": {
+                      "description": "Allowed value is string following the format of 'client|<user-id>', or 'eth|<checksumed-eth-addr>', or valid system-level username.",
+                      "type": "string",
+                    },
+                    "expires": {
+                      "description": "Unix epoch timestamp in milliseconds (ms) when the hold expires. 0 means no expiration.",
+                      "minimum": 0,
+                      "type": "number",
+                    },
+                    "instanceId": {
+                      "description": "Number provided as a string.",
+                      "minLength": 1,
+                      "type": "string",
+                    },
+                    "lockAuthority": {
+                      "description": "User who will be able to unlock token. If the value is missing, then token owner and lock creator can unlock in all cases token authority can unlock token.",
+                      "type": "string",
+                    },
+                    "name": {
+                      "type": "string",
+                    },
+                    "quantity": {
+                      "description": "Number provided as a string.",
+                      "type": "string",
+                    },
+                    "vestingPeriodStart": {
+                      "description": "Unix epoch timestamp in milliseconds (ms) for vestingPeriodStart on vesting holds; undefined for non-vesting holds.",
+                      "minimum": 0,
+                      "type": "number",
+                    },
+                  },
+                  "required": [
+                    "createdBy",
+                    "instanceId",
+                    "quantity",
+                    "created",
+                    "expires",
+                  ],
+                  "type": "object",
+                },
+                "type": "array",
+              },
+              "owner": {
+                "description": "Allowed value is string following the format of 'client|<user-id>', or 'eth|<checksumed-eth-addr>', or valid system-level username.",
+                "type": "string",
+              },
+              "pendingAllowAll": {
+                "description": "When true, pending change clears allowedTargets (no restriction) at pendingTargetsAppliesAt.",
+                "type": "boolean",
+              },
+              "pendingAllowedTargets": {
+                "description": "Pending allowedTargets list. Applied at pendingTargetsAppliesAt.",
+                "items": {
+                  "description": "Allowed value is string following the format of 'client|<user-id>', or 'eth|<checksumed-eth-addr>', or valid system-level username.",
+                  "type": "string",
+                },
+                "type": "array",
+              },
+              "pendingTargetsAppliesAt": {
+                "description": "Unix epoch timestamp in milliseconds (ms) when the pending target change becomes effective.",
+                "minimum": 0,
+                "type": "number",
+              },
+              "quantity": {
+                "description": "Number provided as a string.",
+                "type": "string",
+              },
+              "type": {
+                "minLength": 1,
+                "type": "string",
+              },
+              "vestingPeriodStart": {
+                "description": "Unix epoch timestamp in milliseconds (ms) for vestingPeriodStart. For vesting locks, this is the beginning of the vesting period.",
+                "minimum": 0,
+                "type": "number",
+              },
+            },
+            "required": [
+              "owner",
+              "collection",
+              "category",
+              "type",
+              "additionalKey",
+              "quantity",
+            ],
+            "type": "object",
+          },
+          "Message": {
+            "type": "string",
+          },
+          "Status": {
+            "description": "Indicates Error (0) or Success (1)",
+            "enum": [
+              0,
+              1,
+            ],
+          },
+        },
+        "required": [
+          "Status",
+        ],
+        "type": "object",
+      },
+    },
+    {
+      "description": " Transaction updates the chain (submit). Allowed roles: CURATOR.",
+      "dtoSchema": {
         "description": "Configure GALA token properties on chain for use with supporting chaincalls.",
         "properties": {
           "additionalKey": {
@@ -10628,6 +11679,14 @@ The key is generated by the caller and should be unique for each DTO. You can us
                     "type": "null",
                   },
                 },
+                "allowedTargets": {
+                  "description": "Allowed subtract destinations. undefined = no restriction. Empty array = frozen (burn only). Non-empty = only those user aliases. Burn is allowed only when unrestricted or frozen.",
+                  "items": {
+                    "description": "Allowed value is string following the format of 'client|<user-id>', or 'eth|<checksumed-eth-addr>', or valid system-level username.",
+                    "type": "string",
+                  },
+                  "type": "array",
+                },
                 "category": {
                   "minLength": 1,
                   "type": "string",
@@ -10717,6 +11776,23 @@ The key is generated by the caller and should be unique for each DTO. You can us
                 "owner": {
                   "description": "Allowed value is string following the format of 'client|<user-id>', or 'eth|<checksumed-eth-addr>', or valid system-level username.",
                   "type": "string",
+                },
+                "pendingAllowAll": {
+                  "description": "When true, pending change clears allowedTargets (no restriction) at pendingTargetsAppliesAt.",
+                  "type": "boolean",
+                },
+                "pendingAllowedTargets": {
+                  "description": "Pending allowedTargets list. Applied at pendingTargetsAppliesAt.",
+                  "items": {
+                    "description": "Allowed value is string following the format of 'client|<user-id>', or 'eth|<checksumed-eth-addr>', or valid system-level username.",
+                    "type": "string",
+                  },
+                  "type": "array",
+                },
+                "pendingTargetsAppliesAt": {
+                  "description": "Unix epoch timestamp in milliseconds (ms) when the pending target change becomes effective.",
+                  "minimum": 0,
+                  "type": "number",
                 },
                 "quantity": {
                   "description": "Number provided as a string.",
@@ -10924,6 +12000,14 @@ The key is generated by the caller and should be unique for each DTO. You can us
                   "type": "null",
                 },
               },
+              "allowedTargets": {
+                "description": "Allowed subtract destinations. undefined = no restriction. Empty array = frozen (burn only). Non-empty = only those user aliases. Burn is allowed only when unrestricted or frozen.",
+                "items": {
+                  "description": "Allowed value is string following the format of 'client|<user-id>', or 'eth|<checksumed-eth-addr>', or valid system-level username.",
+                  "type": "string",
+                },
+                "type": "array",
+              },
               "category": {
                 "minLength": 1,
                 "type": "string",
@@ -11013,6 +12097,23 @@ The key is generated by the caller and should be unique for each DTO. You can us
               "owner": {
                 "description": "Allowed value is string following the format of 'client|<user-id>', or 'eth|<checksumed-eth-addr>', or valid system-level username.",
                 "type": "string",
+              },
+              "pendingAllowAll": {
+                "description": "When true, pending change clears allowedTargets (no restriction) at pendingTargetsAppliesAt.",
+                "type": "boolean",
+              },
+              "pendingAllowedTargets": {
+                "description": "Pending allowedTargets list. Applied at pendingTargetsAppliesAt.",
+                "items": {
+                  "description": "Allowed value is string following the format of 'client|<user-id>', or 'eth|<checksumed-eth-addr>', or valid system-level username.",
+                  "type": "string",
+                },
+                "type": "array",
+              },
+              "pendingTargetsAppliesAt": {
+                "description": "Unix epoch timestamp in milliseconds (ms) when the pending target change becomes effective.",
+                "minimum": 0,
+                "type": "number",
               },
               "quantity": {
                 "description": "Number provided as a string.",
@@ -11232,6 +12333,14 @@ The key is generated by the caller and should be unique for each DTO. You can us
                     "type": "null",
                   },
                 },
+                "allowedTargets": {
+                  "description": "Allowed subtract destinations. undefined = no restriction. Empty array = frozen (burn only). Non-empty = only those user aliases. Burn is allowed only when unrestricted or frozen.",
+                  "items": {
+                    "description": "Allowed value is string following the format of 'client|<user-id>', or 'eth|<checksumed-eth-addr>', or valid system-level username.",
+                    "type": "string",
+                  },
+                  "type": "array",
+                },
                 "category": {
                   "minLength": 1,
                   "type": "string",
@@ -11321,6 +12430,23 @@ The key is generated by the caller and should be unique for each DTO. You can us
                 "owner": {
                   "description": "Allowed value is string following the format of 'client|<user-id>', or 'eth|<checksumed-eth-addr>', or valid system-level username.",
                   "type": "string",
+                },
+                "pendingAllowAll": {
+                  "description": "When true, pending change clears allowedTargets (no restriction) at pendingTargetsAppliesAt.",
+                  "type": "boolean",
+                },
+                "pendingAllowedTargets": {
+                  "description": "Pending allowedTargets list. Applied at pendingTargetsAppliesAt.",
+                  "items": {
+                    "description": "Allowed value is string following the format of 'client|<user-id>', or 'eth|<checksumed-eth-addr>', or valid system-level username.",
+                    "type": "string",
+                  },
+                  "type": "array",
+                },
+                "pendingTargetsAppliesAt": {
+                  "description": "Unix epoch timestamp in milliseconds (ms) when the pending target change becomes effective.",
+                  "minimum": 0,
+                  "type": "number",
                 },
                 "quantity": {
                   "description": "Number provided as a string.",
@@ -11514,6 +12640,14 @@ The key is generated by the caller and should be unique for each DTO. You can us
                   "type": "null",
                 },
               },
+              "allowedTargets": {
+                "description": "Allowed subtract destinations. undefined = no restriction. Empty array = frozen (burn only). Non-empty = only those user aliases. Burn is allowed only when unrestricted or frozen.",
+                "items": {
+                  "description": "Allowed value is string following the format of 'client|<user-id>', or 'eth|<checksumed-eth-addr>', or valid system-level username.",
+                  "type": "string",
+                },
+                "type": "array",
+              },
               "category": {
                 "minLength": 1,
                 "type": "string",
@@ -11603,6 +12737,23 @@ The key is generated by the caller and should be unique for each DTO. You can us
               "owner": {
                 "description": "Allowed value is string following the format of 'client|<user-id>', or 'eth|<checksumed-eth-addr>', or valid system-level username.",
                 "type": "string",
+              },
+              "pendingAllowAll": {
+                "description": "When true, pending change clears allowedTargets (no restriction) at pendingTargetsAppliesAt.",
+                "type": "boolean",
+              },
+              "pendingAllowedTargets": {
+                "description": "Pending allowedTargets list. Applied at pendingTargetsAppliesAt.",
+                "items": {
+                  "description": "Allowed value is string following the format of 'client|<user-id>', or 'eth|<checksumed-eth-addr>', or valid system-level username.",
+                  "type": "string",
+                },
+                "type": "array",
+              },
+              "pendingTargetsAppliesAt": {
+                "description": "Unix epoch timestamp in milliseconds (ms) when the pending target change becomes effective.",
+                "minimum": 0,
+                "type": "number",
               },
               "quantity": {
                 "description": "Number provided as a string.",

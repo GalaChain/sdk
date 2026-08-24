@@ -13,6 +13,7 @@
  * limitations under the License.
  */
 import {
+  AllowAllTokenBalanceTargetsDto,
   BatchMintTokenDto,
   BurnTokensDto,
   CreateTokenClassDto,
@@ -24,6 +25,7 @@ import {
   FetchMintRequestsDto,
   FetchTokenClassesDto,
   FetchTokenClassesWithPaginationDto,
+  FreezeTokenBalanceDto,
   FulfillMintDto,
   FullAllowanceCheckDto,
   GrantAllowanceDto,
@@ -34,6 +36,7 @@ import {
   MintTokenDto,
   MintTokenWithAllowanceDto,
   RefreshAllowanceDto,
+  RestrictTokenBalanceTargetsDto,
   TransferTokenDto,
   UnlockTokenDto,
   UnlockTokensDto,
@@ -43,6 +46,7 @@ import {
 
 import { GalaChainProvider } from "../GalaChainClient";
 import {
+  AllowAllTokenBalanceTargetsRequest,
   BatchMintTokenRequest,
   BurnTokensRequest,
   CreateTokenClassRequest,
@@ -57,6 +61,7 @@ import {
   FetchTokenClassesRequest,
   FetchTokenClassesResponse,
   FetchTokenClassesWithPaginationRequest,
+  FreezeTokenBalanceRequest,
   FulfillMintRequest,
   FullAllowanceCheckRequest,
   FullAllowanceCheckResponse,
@@ -69,6 +74,7 @@ import {
   MintTokenRequest,
   MintTokenWithAllowanceRequest,
   RefreshAllowanceRequest,
+  RestrictTokenBalanceTargetsRequest,
   TokenAllowance,
   TokenBalance,
   TokenBurn,
@@ -233,6 +239,39 @@ export class TokenApi extends GalaChainBaseApi {
       sign: true,
       url: this.chainCodeUrl,
       requestConstructor: UpdateBalanceQuantityLimitDto,
+      responseConstructor: TokenBalance
+    });
+  }
+
+  public RestrictTokenBalanceTargets(dto: RestrictTokenBalanceTargetsRequest) {
+    return this.connection.submit({
+      method: "RestrictTokenBalanceTargets",
+      payload: dto,
+      sign: true,
+      url: this.chainCodeUrl,
+      requestConstructor: RestrictTokenBalanceTargetsDto,
+      responseConstructor: TokenBalance
+    });
+  }
+
+  public AllowAllTokenBalanceTargets(dto: AllowAllTokenBalanceTargetsRequest) {
+    return this.connection.submit({
+      method: "AllowAllTokenBalanceTargets",
+      payload: dto,
+      sign: true,
+      url: this.chainCodeUrl,
+      requestConstructor: AllowAllTokenBalanceTargetsDto,
+      responseConstructor: TokenBalance
+    });
+  }
+
+  public FreezeTokenBalance(dto: FreezeTokenBalanceRequest) {
+    return this.connection.submit({
+      method: "FreezeTokenBalance",
+      payload: dto,
+      sign: true,
+      url: this.chainCodeUrl,
+      requestConstructor: FreezeTokenBalanceDto,
       responseConstructor: TokenBalance
     });
   }

@@ -13,6 +13,7 @@
  * limitations under the License.
  */
 import {
+  AllowAllTokenBalanceTargetsDto,
   BatchMintTokenDto,
   BigNumberArrayProperty,
   BigNumberIsNotNegative,
@@ -30,6 +31,7 @@ import {
   FetchTokenClassesDto,
   FetchTokenClassesResponse,
   FetchTokenClassesWithPaginationDto,
+  FreezeTokenBalanceDto,
   FulfillMintDto,
   FullAllowanceCheckDto,
   FullAllowanceCheckResDto as FullAllowanceCheckResponse,
@@ -43,6 +45,7 @@ import {
   MintTokenDto,
   MintTokenWithAllowanceDto,
   RefreshAllowanceDto,
+  RestrictTokenBalanceTargetsDto,
   TokenAllowance,
   TokenBalance as TokenBalanceDto,
   TokenBalanceLimit,
@@ -61,7 +64,7 @@ import {
 } from "@gala-chain/api";
 import BigNumber from "bignumber.js";
 import { Type } from "class-transformer";
-import { IsDefined, IsNotEmpty, IsOptional, ValidateNested } from "class-validator";
+import { IsBoolean, IsDefined, IsInt, IsNotEmpty, IsOptional, Min, ValidateNested } from "class-validator";
 
 import { ConstructorArgs } from "./utils";
 
@@ -90,6 +93,9 @@ type TransferTokenRequest = ConstructorArgs<TransferTokenDto>;
 type UnlockTokenRequest = ConstructorArgs<UnlockTokenDto>;
 type UnlockTokensRequest = ConstructorArgs<UnlockTokensDto>;
 type UpdateBalanceQuantityLimitRequest = ConstructorArgs<UpdateBalanceQuantityLimitDto>;
+type RestrictTokenBalanceTargetsRequest = ConstructorArgs<RestrictTokenBalanceTargetsDto>;
+type AllowAllTokenBalanceTargetsRequest = ConstructorArgs<AllowAllTokenBalanceTargetsDto>;
+type FreezeTokenBalanceRequest = ConstructorArgs<FreezeTokenBalanceDto>;
 type UpdateTokenClassRequest = ConstructorArgs<UpdateTokenClassDto>;
 
 /**
@@ -129,6 +135,23 @@ class TokenBalance implements ConstructorArgs<TokenBalanceDto> {
   @ValidateNested()
   @Type(() => TokenBalanceLimit)
   limit?: TokenBalanceLimit;
+
+  @IsOptional()
+  @IsUserAlias({ each: true })
+  allowedTargets?: UserAlias[];
+
+  @IsOptional()
+  @IsUserAlias({ each: true })
+  pendingAllowedTargets?: UserAlias[];
+
+  @IsOptional()
+  @IsBoolean()
+  pendingAllowAll?: boolean;
+
+  @IsOptional()
+  @Min(0)
+  @IsInt()
+  pendingTargetsAppliesAt?: number;
 }
 
 export {
@@ -171,5 +194,8 @@ export {
   UnlockTokenRequest,
   UnlockTokensRequest,
   UpdateBalanceQuantityLimitRequest,
+  RestrictTokenBalanceTargetsRequest,
+  AllowAllTokenBalanceTargetsRequest,
+  FreezeTokenBalanceRequest,
   UpdateTokenClassRequest
 };

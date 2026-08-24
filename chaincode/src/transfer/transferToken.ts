@@ -108,7 +108,7 @@ export async function transferToken(
     fromPersonBalance.removeInstance(tokenInstance.instance, ctx.txUnixTime);
     toPersonBalance.addInstance(tokenInstance.instance);
   } else {
-    fromPersonBalance.subtractQuantity(quantity, ctx.txUnixTime, tokenClass.quantityLimit);
+    fromPersonBalance.subtractQuantity(quantity, ctx.txUnixTime, tokenClass.quantityLimit, to);
     toPersonBalance.addQuantity(quantity);
   }
 

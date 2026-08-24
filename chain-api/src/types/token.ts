@@ -16,6 +16,7 @@ import BigNumber from "bignumber.js";
 import { Type } from "class-transformer";
 import {
   ArrayNotEmpty,
+  ArrayUnique,
   IsAlphanumeric,
   IsBoolean,
   IsInt,
@@ -526,6 +527,74 @@ export class UpdateBalanceQuantityLimitDto extends SubmitCallDTO {
   @BigNumberIsNotNegative()
   @BigNumberProperty()
   quantityLimit: BigNumber;
+}
+
+@JSONSchema({
+  description:
+    "Restrict a balance so it may only be subtracted to the given destinations. Applied after 24 hours."
+})
+export class RestrictTokenBalanceTargetsDto extends SubmitCallDTO {
+  @JSONSchema({
+    description: "Owner of the balance whose destinations will be restricted."
+  })
+  @IsUserRef()
+  user: UserRef;
+
+  @JSONSchema({
+    description: "Token class of the balance whose destinations will be restricted."
+  })
+  @ValidateNested()
+  @Type(() => TokenClassKey)
+  @IsNotEmpty()
+  tokenClass: TokenClassKey;
+
+  @JSONSchema({
+    description:
+      "Non-empty list of allowed destination users. Takes effect after 24 hours. Burn is not included."
+  })
+  @ArrayNotEmpty()
+  @ArrayUnique()
+  @IsUserRef({ each: true })
+  targets: UserRef[];
+}
+
+@JSONSchema({
+  description:
+    "Remove destination restrictions from a balance (any target including burn is allowed). Applied after 24 hours."
+})
+export class AllowAllTokenBalanceTargetsDto extends SubmitCallDTO {
+  @JSONSchema({
+    description: "Owner of the balance whose destination restrictions will be cleared."
+  })
+  @IsUserRef()
+  user: UserRef;
+
+  @JSONSchema({
+    description: "Token class of the balance whose destination restrictions will be cleared."
+  })
+  @ValidateNested()
+  @Type(() => TokenClassKey)
+  @IsNotEmpty()
+  tokenClass: TokenClassKey;
+}
+
+@JSONSchema({
+  description: "Freeze a balance immediately so it may only be burned."
+})
+export class FreezeTokenBalanceDto extends SubmitCallDTO {
+  @JSONSchema({
+    description: "Owner of the balance to freeze."
+  })
+  @IsUserRef()
+  user: UserRef;
+
+  @JSONSchema({
+    description: "Token class of the balance to freeze."
+  })
+  @ValidateNested()
+  @Type(() => TokenClassKey)
+  @IsNotEmpty()
+  tokenClass: TokenClassKey;
 }
 
 @JSONSchema({
