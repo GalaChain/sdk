@@ -15,7 +15,6 @@
 import { BigNumber } from "bignumber.js";
 import { Exclude, Type } from "class-transformer";
 import {
-  IsBoolean,
   IsDefined,
   IsInt,
   IsNotEmpty,
@@ -38,35 +37,14 @@ import {
 } from "../validators";
 import { ChainObject, ObjectValidationFailedError } from "./ChainObject";
 import { TokenBalanceLimit, TokenQuantityLimitExceededError } from "./TokenBalanceLimit";
+import {
+  TokenBalanceSpendTarget,
+  TokenBalanceTargetNotAllowedError,
+  TokenBalanceTargets
+} from "./TokenBalanceTargets";
 import { TokenClassKey, TokenClassKeyProperties } from "./TokenClass";
 import { TokenInstance, TokenInstanceKey } from "./TokenInstance";
 import { UserAlias } from "./UserAlias";
-
-export type TokenBalanceSpendTarget = UserAlias | "burn";
-
-export class TokenBalanceTargetNotAllowedError extends ValidationFailedError {
-  constructor(
-    owner: string,
-    tokenClass: TokenClassKeyProperties,
-    target: TokenBalanceSpendTarget,
-    allowedTargets: UserAlias[]
-  ) {
-    const tokenClassKey = TokenClassKey.toStringKey(tokenClass);
-    const allowed = allowedTargets.length === 0 ? "burn" : allowedTargets.join(", ");
-    super(`Target ${target} is not allowed for token ${tokenClassKey} of ${owner} (allowed: ${allowed})`, {
-      owner,
-      tokenClassKey,
-      target,
-      allowedTargets
-    });
-  }
-}
-
-export class TokenBalanceTargetsEmptyError extends ValidationFailedError {
-  constructor() {
-    super("Targets list must be non-empty");
-  }
-}
 
 export class TokenNotInBalanceError extends ValidationFailedError {
   constructor(owner: string, tokenClass: TokenClassKeyProperties, instanceId: BigNumber) {
@@ -114,9 +92,6 @@ export class TokenQuantityNotUnlockedError extends ValidationFailedError {
 export class TokenBalance extends ChainObject {
   @Exclude()
   public static readonly INDEX_KEY = "GCTB";
-
-  @Exclude()
-  public static readonly TARGET_CHANGE_DELAY_MS = TokenBalanceLimit.INCREASE_DELAY_MS;
 
   @ChainKey({ position: 0 })
   @IsUserAlias()
@@ -187,36 +162,12 @@ export class TokenBalance extends ChainObject {
   public limit?: TokenBalanceLimit;
 
   @JSONSchema({
-    description:
-      "Allowed subtract destinations. undefined = no restriction. Empty array = frozen (burn only). " +
-      "Non-empty = only those user aliases. Burn is allowed only when unrestricted or frozen."
+    description: "Optional destination restrictions for fungible subtract."
   })
   @IsOptional()
-  @IsUserAlias({ each: true })
-  public allowedTargets?: UserAlias[];
-
-  @JSONSchema({
-    description: "Pending allowedTargets list. Applied at pendingTargetsAppliesAt."
-  })
-  @IsOptional()
-  @IsUserAlias({ each: true })
-  public pendingAllowedTargets?: UserAlias[];
-
-  @JSONSchema({
-    description:
-      "When true, pending change clears allowedTargets (no restriction) at pendingTargetsAppliesAt."
-  })
-  @IsOptional()
-  @IsBoolean()
-  public pendingAllowAll?: boolean;
-
-  @JSONSchema({
-    description: "Unix epoch timestamp in milliseconds (ms) when the pending target change becomes effective."
-  })
-  @Min(0)
-  @IsInt()
-  @IsOptional()
-  public pendingTargetsAppliesAt?: number;
+  @ValidateNested()
+  @Type(() => TokenBalanceTargets)
+  public targets?: TokenBalanceTargets;
 
   @JSONSchema({
     description:
@@ -418,39 +369,29 @@ export class TokenBalance extends ChainObject {
 
   /**
    * Restrict subtract destinations to the given non-empty alias list.
-   * Takes effect after TokenBalance.TARGET_CHANGE_DELAY_MS.
-   * A later restrict or allow-all while one is pending replaces it and restarts the delay.
+   * Takes effect after TokenBalanceTargets.CHANGE_DELAY_MS.
    */
   public restrictTargets(targets: UserAlias[], currentTime: number): void {
     this.ensureContainsNoNftInstances();
-    if (targets.length === 0) {
-      throw new TokenBalanceTargetsEmptyError();
-    }
-    this.promoteDueTargets(currentTime);
-    this.pendingAllowedTargets = [...targets];
-    delete this.pendingAllowAll;
-    this.pendingTargetsAppliesAt = currentTime + TokenBalance.TARGET_CHANGE_DELAY_MS;
+    this.ensureTargets().restrict(targets, currentTime);
   }
 
   /**
-   * Clear destination restrictions (allowedTargets becomes undefined).
-   * Takes effect after TokenBalance.TARGET_CHANGE_DELAY_MS.
+   * Clear destination restrictions.
+   * Takes effect after TokenBalanceTargets.CHANGE_DELAY_MS.
    */
   public allowAllTargets(currentTime: number): void {
     this.ensureContainsNoNftInstances();
-    this.promoteDueTargets(currentTime);
-    delete this.pendingAllowedTargets;
-    this.pendingAllowAll = true;
-    this.pendingTargetsAppliesAt = currentTime + TokenBalance.TARGET_CHANGE_DELAY_MS;
+    this.ensureTargets().allowAll(currentTime);
   }
 
   /**
-   * Freeze this balance: only burn is allowed. Takes effect immediately and clears any pending target change.
+   * Freeze this balance: no allowed transfer destinations.
+   * Takes effect immediately and clears any pending target change.
    */
   public freezeTargets(): void {
     this.ensureContainsNoNftInstances();
-    this.allowedTargets = [];
-    this.clearPendingTargets();
+    this.ensureTargets().freeze();
   }
 
   /**
@@ -531,48 +472,20 @@ export class TokenBalance extends ChainObject {
     this.limit.recordSpend(quantity, currentTime);
   }
 
+  private ensureTargets(): TokenBalanceTargets {
+    if (this.targets === undefined) {
+      this.targets = new TokenBalanceTargets();
+    }
+    return this.targets;
+  }
+
   private ensureTargetAllowed(target: TokenBalanceSpendTarget, currentTime: number): void {
-    this.promoteDueTargets(currentTime);
-    const allowed = this.allowedTargets;
-    if (allowed === undefined) {
+    if (this.targets === undefined) {
       return;
     }
-    if (allowed.length === 0) {
-      if (target === "burn") {
-        return;
-      }
-      throw new TokenBalanceTargetNotAllowedError(this.owner, this, target, allowed);
+    if (!this.targets.allows(target, currentTime)) {
+      throw new TokenBalanceTargetNotAllowedError(this.owner, this, target, this.targets.allowed ?? []);
     }
-    if (target === "burn" || !allowed.includes(target)) {
-      throw new TokenBalanceTargetNotAllowedError(this.owner, this, target, allowed);
-    }
-  }
-
-  private promoteDueTargets(currentTime: number): void {
-    const hasAppliesAt = this.pendingTargetsAppliesAt !== undefined;
-    const hasPendingList = this.pendingAllowedTargets !== undefined;
-    const hasPendingAllowAll = this.pendingAllowAll === true;
-    const pendingKindCount = (hasPendingList ? 1 : 0) + (hasPendingAllowAll ? 1 : 0);
-
-    if (hasAppliesAt !== (pendingKindCount === 1)) {
-      this.clearPendingTargets();
-      return;
-    }
-    if (this.pendingTargetsAppliesAt === undefined || currentTime < this.pendingTargetsAppliesAt) {
-      return;
-    }
-    if (hasPendingAllowAll) {
-      delete this.allowedTargets;
-    } else {
-      this.allowedTargets = this.pendingAllowedTargets;
-    }
-    this.clearPendingTargets();
-  }
-
-  private clearPendingTargets(): void {
-    delete this.pendingAllowedTargets;
-    delete this.pendingAllowAll;
-    delete this.pendingTargetsAppliesAt;
   }
 
   private ensureTokenQuantityHoldIsFungible(hold: TokenHold) {

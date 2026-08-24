@@ -49,6 +49,7 @@ import {
   TokenAllowance,
   TokenBalance as TokenBalanceDto,
   TokenBalanceLimit,
+  TokenBalanceTargets,
   TokenBalanceWithMetadata,
   TokenBurn,
   TokenClass,
@@ -64,7 +65,7 @@ import {
 } from "@gala-chain/api";
 import BigNumber from "bignumber.js";
 import { Type } from "class-transformer";
-import { IsBoolean, IsDefined, IsInt, IsNotEmpty, IsOptional, Min, ValidateNested } from "class-validator";
+import { IsDefined, IsNotEmpty, IsOptional, ValidateNested } from "class-validator";
 
 import { ConstructorArgs } from "./utils";
 
@@ -137,21 +138,9 @@ class TokenBalance implements ConstructorArgs<TokenBalanceDto> {
   limit?: TokenBalanceLimit;
 
   @IsOptional()
-  @IsUserAlias({ each: true })
-  allowedTargets?: UserAlias[];
-
-  @IsOptional()
-  @IsUserAlias({ each: true })
-  pendingAllowedTargets?: UserAlias[];
-
-  @IsOptional()
-  @IsBoolean()
-  pendingAllowAll?: boolean;
-
-  @IsOptional()
-  @Min(0)
-  @IsInt()
-  pendingTargetsAppliesAt?: number;
+  @ValidateNested()
+  @Type(() => TokenBalanceTargets)
+  targets?: TokenBalanceTargets;
 }
 
 export {

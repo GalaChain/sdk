@@ -20,6 +20,7 @@ import {
   RestrictTokenBalanceTargetsDto,
   TokenBalance,
   TokenBalanceTargetNotAllowedError,
+  TokenBalanceTargets,
   TransferTokenDto,
   createValidSubmitDTO
 } from "@gala-chain/api";
@@ -48,9 +49,9 @@ it("should delay RestrictTokenBalanceTargets", async () => {
   // Then
   const balance = response.Data as TokenBalance;
   expect(response.Status).toEqual(1);
-  expect(balance.allowedTargets).toBeUndefined();
-  expect(balance.pendingAllowedTargets).toEqual([users.testUser2.identityKey]);
-  expect(balance.pendingTargetsAppliesAt).toEqual(ctx.txUnixTime + TokenBalance.TARGET_CHANGE_DELAY_MS);
+  expect(balance.targets?.allowed).toBeUndefined();
+  expect(balance.targets?.pendingAllowed).toEqual([users.testUser2.identityKey]);
+  expect(balance.targets?.pendingAppliesAt).toEqual(ctx.txUnixTime + TokenBalanceTargets.CHANGE_DELAY_MS);
 });
 
 it("should keep allowing any transfer until restrict delay elapses", async () => {
@@ -93,8 +94,9 @@ it("should apply pending restrict after the delay has elapsed", async () => {
   const currencyInstanceKey = currency.tokenInstanceKey();
   const currencyClass = currency.tokenClass();
   const ownerBalance = currency.tokenBalance();
-  ownerBalance.pendingAllowedTargets = [users.testUser2.identityKey];
-  ownerBalance.pendingTargetsAppliesAt = 0;
+  ownerBalance.targets = new TokenBalanceTargets();
+  ownerBalance.targets.pendingAllowed = [users.testUser2.identityKey];
+  ownerBalance.targets.pendingAppliesAt = 0;
 
   const { ctx, contract } = fixture(GalaChainTokenContract)
     .registeredUsers(users.testUser1, users.testUser2, users.testUser3)
@@ -129,8 +131,9 @@ it("should allow a transfer to a pending restrict target after the delay has ela
   const currencyInstanceKey = currency.tokenInstanceKey();
   const currencyClass = currency.tokenClass();
   const ownerBalance = currency.tokenBalance();
-  ownerBalance.pendingAllowedTargets = [users.testUser2.identityKey];
-  ownerBalance.pendingTargetsAppliesAt = 0;
+  ownerBalance.targets = new TokenBalanceTargets();
+  ownerBalance.targets.pendingAllowed = [users.testUser2.identityKey];
+  ownerBalance.targets.pendingAppliesAt = 0;
 
   const { ctx, contract } = fixture(GalaChainTokenContract)
     .registeredUsers(users.testUser1, users.testUser2)
@@ -149,11 +152,11 @@ it("should allow a transfer to a pending restrict target after the delay has ela
   // Then
   expect(response.Status).toEqual(1);
   const [fromBalance] = response.Data as TokenBalance[];
-  expect(fromBalance.allowedTargets).toEqual([users.testUser2.identityKey]);
-  expect(fromBalance.pendingAllowedTargets).toBeUndefined();
+  expect(fromBalance.targets?.allowed).toEqual([users.testUser2.identityKey]);
+  expect(fromBalance.targets?.pendingAllowed).toBeUndefined();
 });
 
-it("should freeze immediately so only burn is allowed", async () => {
+it("should freeze immediately so transfers are rejected", async () => {
   // Given
   const currencyInstance = currency.tokenInstance();
   const currencyInstanceKey = currency.tokenInstanceKey();
@@ -173,7 +176,7 @@ it("should freeze immediately so only burn is allowed", async () => {
 
   const freezeResponse = await contract.FreezeTokenBalance(ctx, freezeDto);
   expect(freezeResponse.Status).toEqual(1);
-  expect((freezeResponse.Data as TokenBalance).allowedTargets).toEqual([]);
+  expect((freezeResponse.Data as TokenBalance).targets?.allowed).toEqual([]);
 
   const transferDto = await createValidSubmitDTO(TransferTokenDto, {
     from: users.testUser1.identityKey,
@@ -209,7 +212,8 @@ it("should delay AllowAllTokenBalanceTargets", async () => {
   // Given
   const savedTokenClass = currency.tokenClass();
   const ownerBalance = currency.tokenBalance();
-  ownerBalance.allowedTargets = [users.testUser2.identityKey];
+  ownerBalance.targets = new TokenBalanceTargets();
+  ownerBalance.targets.allowed = [users.testUser2.identityKey];
 
   const { ctx, contract } = fixture(GalaChainTokenContract)
     .caClientIdentity("curator", "CuratorOrg")
@@ -227,9 +231,9 @@ it("should delay AllowAllTokenBalanceTargets", async () => {
   // Then
   const balance = response.Data as TokenBalance;
   expect(response.Status).toEqual(1);
-  expect(balance.allowedTargets).toEqual([users.testUser2.identityKey]);
-  expect(balance.pendingAllowAll).toEqual(true);
-  expect(balance.pendingTargetsAppliesAt).toEqual(ctx.txUnixTime + TokenBalance.TARGET_CHANGE_DELAY_MS);
+  expect(balance.targets?.allowed).toEqual([users.testUser2.identityKey]);
+  expect(balance.targets?.pendingAllowAll).toEqual(true);
+  expect(balance.targets?.pendingAppliesAt).toEqual(ctx.txUnixTime + TokenBalanceTargets.CHANGE_DELAY_MS);
 });
 
 it("should allow any transfer after pending allow-all has elapsed", async () => {
@@ -238,9 +242,10 @@ it("should allow any transfer after pending allow-all has elapsed", async () => 
   const currencyInstanceKey = currency.tokenInstanceKey();
   const currencyClass = currency.tokenClass();
   const ownerBalance = currency.tokenBalance();
-  ownerBalance.allowedTargets = [users.testUser2.identityKey];
-  ownerBalance.pendingAllowAll = true;
-  ownerBalance.pendingTargetsAppliesAt = 0;
+  ownerBalance.targets = new TokenBalanceTargets();
+  ownerBalance.targets.allowed = [users.testUser2.identityKey];
+  ownerBalance.targets.pendingAllowAll = true;
+  ownerBalance.targets.pendingAppliesAt = 0;
 
   const { ctx, contract } = fixture(GalaChainTokenContract)
     .registeredUsers(users.testUser1, users.testUser2, users.testUser3)
@@ -259,6 +264,6 @@ it("should allow any transfer after pending allow-all has elapsed", async () => 
   // Then
   expect(response.Status).toEqual(1);
   const [fromBalance] = response.Data as TokenBalance[];
-  expect(fromBalance.allowedTargets).toBeUndefined();
-  expect(fromBalance.pendingAllowAll).toBeUndefined();
+  expect(fromBalance.targets?.allowed).toBeUndefined();
+  expect(fromBalance.targets?.pendingAllowAll).toBeUndefined();
 });

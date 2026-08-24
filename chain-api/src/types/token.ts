@@ -579,7 +579,7 @@ export class AllowAllTokenBalanceTargetsDto extends SubmitCallDTO {
 }
 
 @JSONSchema({
-  description: "Freeze a balance immediately so it may only be burned."
+  description: "Freeze a balance immediately: no allowed transfer destinations."
 })
 export class FreezeTokenBalanceDto extends SubmitCallDTO {
   @JSONSchema({
