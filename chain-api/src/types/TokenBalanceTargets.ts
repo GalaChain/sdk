@@ -12,7 +12,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-import { IsBoolean, IsInt, IsOptional, Min } from "class-validator";
+import { ArrayMaxSize, IsBoolean, IsInt, IsOptional, Min } from "class-validator";
 import { JSONSchema } from "class-validator-jsonschema";
 
 import { ValidationFailedError } from "../utils";
@@ -22,6 +22,8 @@ import { TokenClassKey, TokenClassKeyProperties } from "./TokenClass";
 import { UserAlias } from "./UserAlias";
 
 export type TokenBalanceSpendTarget = UserAlias | "burn";
+
+const TARGETS_MAX_LENGTH = 32;
 
 export class TokenBalanceTargetNotAllowedError extends ValidationFailedError {
   constructor(
@@ -50,15 +52,27 @@ export class TokenBalanceTargetsEmptyError extends ValidationFailedError {
   }
 }
 
+export class TokenBalanceTargetsTooLongError extends ValidationFailedError {
+  constructor(length: number) {
+    super(`Targets list must have at most ${TARGETS_MAX_LENGTH} entries`, {
+      length,
+      max: TARGETS_MAX_LENGTH
+    });
+  }
+}
+
 export class TokenBalanceTargets {
   public static readonly CHANGE_DELAY_MS = TokenBalanceLimit.INCREASE_DELAY_MS;
+  public static readonly MAX_LENGTH = TARGETS_MAX_LENGTH;
 
   @JSONSchema({
     description:
       "Allowed transfer destinations. undefined = no restriction. Empty array = frozen (no destinations). " +
-      "Non-empty = only those user aliases. Burn is not a destination; empty list allows it as an edge case."
+      "Non-empty = only those user aliases, stored sorted and unique. " +
+      "Burn is not a destination; empty list allows it as an edge case."
   })
   @IsOptional()
+  @ArrayMaxSize(TARGETS_MAX_LENGTH)
   @IsUserAlias({ each: true })
   public allowed?: UserAlias[];
 
@@ -66,6 +80,7 @@ export class TokenBalanceTargets {
     description: "Pending allowed list. Applied at pendingAppliesAt."
   })
   @IsOptional()
+  @ArrayMaxSize(TARGETS_MAX_LENGTH)
   @IsUserAlias({ each: true })
   public pendingAllowed?: UserAlias[];
 
@@ -93,8 +108,11 @@ export class TokenBalanceTargets {
     if (targets.length === 0) {
       throw new TokenBalanceTargetsEmptyError();
     }
+    if (targets.length > TokenBalanceTargets.MAX_LENGTH) {
+      throw new TokenBalanceTargetsTooLongError(targets.length);
+    }
     this.promoteDue(currentTime);
-    this.pendingAllowed = [...targets];
+    this.pendingAllowed = TokenBalanceTargets.sortedUnique(targets);
     delete this.pendingAllowAll;
     this.pendingAppliesAt = currentTime + TokenBalanceTargets.CHANGE_DELAY_MS;
   }
@@ -147,7 +165,7 @@ export class TokenBalanceTargets {
     if (hasPendingAllowAll) {
       delete this.allowed;
     } else {
-      this.allowed = this.pendingAllowed;
+      this.allowed = TokenBalanceTargets.sortedUnique(this.pendingAllowed ?? []);
     }
     this.clearPending();
   }
@@ -156,5 +174,9 @@ export class TokenBalanceTargets {
     delete this.pendingAllowed;
     delete this.pendingAllowAll;
     delete this.pendingAppliesAt;
+  }
+
+  private static sortedUnique(targets: UserAlias[]): UserAlias[] {
+    return [...new Set(targets)].sort();
   }
 }

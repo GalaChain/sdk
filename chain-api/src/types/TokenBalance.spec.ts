@@ -424,7 +424,7 @@ describe("non-fungible", () => {
 
     // When
     balance.addInstance(new BigNumber(1));
-    balance.removeInstance(new BigNumber(1), Date.now());
+    balance.removeInstance(new BigNumber(1), Date.now(), to);
 
     // Then
     expect(balance.getNftInstanceCount()).toEqual(0);
@@ -435,7 +435,7 @@ describe("non-fungible", () => {
     const balance = emptyBalance();
 
     // When
-    const error = () => balance.removeInstance(new BigNumber(1), Date.now());
+    const error = () => balance.removeInstance(new BigNumber(1), Date.now(), to);
 
     // Then
     expect(error).toThrow("not found in balance");
@@ -449,7 +449,7 @@ describe("non-fungible", () => {
     // When
     balance.addInstance(new BigNumber(1));
     balance.lockInstance(unexpiredHold, Date.now());
-    const error = () => balance.removeInstance(new BigNumber(1), Date.now());
+    const error = () => balance.removeInstance(new BigNumber(1), Date.now(), to);
 
     // Then
     expect(error).toThrow("is locked");

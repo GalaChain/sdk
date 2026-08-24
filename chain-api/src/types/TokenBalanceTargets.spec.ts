@@ -206,6 +206,63 @@ describe("TokenBalanceTargets", () => {
     expect(error).toThrow("must be non-empty");
   });
 
+  it("should reject restrict above the max length", () => {
+    // Given
+    const targets = emptyTargets();
+    const tooMany = Array.from(
+      { length: TokenBalanceTargets.MAX_LENGTH + 1 },
+      (_, i) => `client|u${i}` as UserAlias
+    );
+
+    // When
+    const error = () => targets.restrict(tooMany, now);
+
+    // Then
+    expect(error).toThrow("at most 32");
+  });
+
+  it("should accept restrict at the max length", () => {
+    // Given
+    const targets = emptyTargets();
+    const max = Array.from({ length: TokenBalanceTargets.MAX_LENGTH }, (_, i) => `client|u${i}` as UserAlias);
+
+    // When
+    targets.restrict(max, now);
+
+    // Then
+    expect(targets.pendingAllowed).toHaveLength(TokenBalanceTargets.MAX_LENGTH);
+  });
+
+  it("should store restrict targets sorted and unique", () => {
+    // Given
+    const targets = emptyTargets();
+
+    // When
+    targets.restrict([bob, alice, bob], now);
+
+    // Then
+    expect(targets.pendingAllowed).toEqual([alice, bob]);
+    expect(targets.allows(alice, now + delay)).toEqual(true);
+    expect(targets.allows(bob, now + delay)).toEqual(true);
+    expect(targets.allowed).toEqual([alice, bob]);
+  });
+
+  it("should allow members of an unsorted deserialized list", () => {
+    // Given
+    const targets = emptyTargets();
+    targets.allowed = [bob, alice];
+
+    // When
+    const aliceOk = targets.allows(alice, now);
+    const bobOk = targets.allows(bob, now);
+    const other = targets.allows("client|carol" as UserAlias, now);
+
+    // Then
+    expect(aliceOk).toEqual(true);
+    expect(bobOk).toEqual(true);
+    expect(other).toEqual(false);
+  });
+
   it("should copy the restrict list so later mutation of the input is ignored", () => {
     // Given
     const targets = emptyTargets();
@@ -289,16 +346,53 @@ describe("TokenBalance targets", () => {
     expect(balance.targets?.allowed).toEqual([]);
   });
 
-  it("should reject restrict on an NFT balance", () => {
+  it("should reject NFT transfer when frozen and still allow burn", () => {
     // Given
     const balance = emptyBalance();
     balance.addInstance(new BigNumber(1));
+    balance.addInstance(new BigNumber(2));
+    balance.freezeTargets();
 
     // When
-    const error = () => balance.restrictTargets([alice], now);
+    const transfer = () => balance.removeInstance(new BigNumber(1), now, alice);
+    balance.removeInstance(new BigNumber(2), now, "burn");
 
     // Then
-    expect(error).toThrow("FT-specific operation");
+    expect(transfer).toThrow("not allowed");
+    expect(balance.getNftInstanceIds()).toEqual([new BigNumber(1)]);
+  });
+
+  it("should delay NFT restrict until the delay elapses", () => {
+    // Given
+    const balance = emptyBalance();
+    balance.addInstance(new BigNumber(1));
+    balance.addInstance(new BigNumber(2));
+    balance.restrictTargets([alice], now);
+
+    // When
+    balance.removeInstance(new BigNumber(1), now + delay - 1, bob);
+    const atDelayWrong = () => balance.removeInstance(new BigNumber(2), now + delay, bob);
+
+    // Then
+    expect(atDelayWrong).toThrow("not allowed");
+    balance.removeInstance(new BigNumber(2), now + delay, alice);
+    expect(balance.getNftInstanceCount()).toEqual(0);
+  });
+
+  it("should not consume the quantity limit when the target is rejected", () => {
+    // Given
+    const balance = emptyBalance();
+    balance.addQuantity(new BigNumber(100));
+    balance.restrictTargets([alice], now);
+    balance.subtractQuantity(new BigNumber(6), now + delay, new BigNumber(10), alice);
+
+    // When
+    const rejected = () => balance.subtractQuantity(new BigNumber(5), now + delay, new BigNumber(10), bob);
+
+    // Then
+    expect(rejected).toThrow("not allowed");
+    expect(balance.limit?.spent(now + delay)).toEqual(new BigNumber(6));
+    expect(balance.getQuantityTotal()).toEqual(new BigNumber(94));
   });
 
   it("should apply pending restrict after delay during subtract", () => {

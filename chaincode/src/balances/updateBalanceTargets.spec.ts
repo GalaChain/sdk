@@ -24,7 +24,7 @@ import {
   TransferTokenDto,
   createValidSubmitDTO
 } from "@gala-chain/api";
-import { currency, fixture, users } from "@gala-chain/test";
+import { currency, fixture, nft, users } from "@gala-chain/test";
 import BigNumber from "bignumber.js";
 
 import GalaChainTokenContract from "../__test__/GalaChainTokenContract";
@@ -266,4 +266,56 @@ it("should allow any transfer after pending allow-all has elapsed", async () => 
   const [fromBalance] = response.Data as TokenBalance[];
   expect(fromBalance.targets?.allowed).toBeUndefined();
   expect(fromBalance.targets?.pendingAllowAll).toBeUndefined();
+});
+
+it("should freeze an NFT balance immediately so transfers are rejected", async () => {
+  // Given
+  const nftInstance = nft.tokenInstance1();
+  const nftInstanceKey = nft.tokenInstance1Key();
+  const nftClass = nft.tokenClass();
+  const ownerBalance = nft.tokenBalance();
+
+  const { ctx, contract } = fixture(GalaChainTokenContract)
+    .caClientIdentity("curator", "CuratorOrg")
+    .registeredUsers(users.admin, users.testUser1, users.testUser2)
+    .savedState(nftClass, nftInstance, ownerBalance)
+    .savedRangeState([]);
+
+  const freezeDto = await createValidSubmitDTO(FreezeTokenBalanceDto, {
+    user: users.testUser1.identityKey,
+    tokenClass: nft.tokenClassKey()
+  }).signed(users.admin.privateKey);
+
+  const freezeResponse = await contract.FreezeTokenBalance(ctx, freezeDto);
+  expect(freezeResponse.Status).toEqual(1);
+  expect((freezeResponse.Data as TokenBalance).targets?.allowed).toEqual([]);
+
+  const transferDto = await createValidSubmitDTO(TransferTokenDto, {
+    from: users.testUser1.identityKey,
+    to: users.testUser2.identityKey,
+    tokenInstance: nftInstanceKey,
+    quantity: new BigNumber("1")
+  }).signed(users.testUser1.privateKey);
+
+  // When
+  const transferResponse = await contract.TransferToken(ctx, transferDto);
+
+  // Then
+  expect(transferResponse).toEqual(
+    GalaChainResponse.Error(
+      new TokenBalanceTargetNotAllowedError(
+        users.testUser1.identityKey,
+        nftClass,
+        users.testUser2.identityKey,
+        []
+      )
+    )
+  );
+
+  const burnDto = await createValidSubmitDTO(BurnTokensDto, {
+    tokenInstances: [{ tokenInstanceKey: nftInstanceKey, quantity: new BigNumber("1") }]
+  }).signed(users.testUser1.privateKey);
+
+  const burnResponse = await contract.BurnTokens(ctx, burnDto);
+  expect(burnResponse.Status).toEqual(1);
 });

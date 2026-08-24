@@ -219,10 +219,11 @@ export class TokenBalance extends ChainObject {
     this.quantity = new BigNumber(this.instanceIds.length);
   }
 
-  public removeInstance(instanceId: BigNumber, currentTime: number) {
+  public removeInstance(instanceId: BigNumber, currentTime: number, target: TokenBalanceSpendTarget) {
     this.ensureInstanceIsNft(instanceId);
     this.ensureInstanceIsInBalance(instanceId);
     this.ensureInstanceIsNotLocked(instanceId, currentTime);
+    this.ensureTargetAllowed(target, currentTime);
 
     // remove instance ID from array
     this.instanceIds = (this.instanceIds ?? []).filter((id) => !id.eq(instanceId));
@@ -372,7 +373,6 @@ export class TokenBalance extends ChainObject {
    * Takes effect after TokenBalanceTargets.CHANGE_DELAY_MS.
    */
   public restrictTargets(targets: UserAlias[], currentTime: number): void {
-    this.ensureContainsNoNftInstances();
     this.ensureTargets().restrict(targets, currentTime);
   }
 
@@ -381,7 +381,6 @@ export class TokenBalance extends ChainObject {
    * Takes effect after TokenBalanceTargets.CHANGE_DELAY_MS.
    */
   public allowAllTargets(currentTime: number): void {
-    this.ensureContainsNoNftInstances();
     this.ensureTargets().allowAll(currentTime);
   }
 
@@ -390,7 +389,6 @@ export class TokenBalance extends ChainObject {
    * Takes effect immediately and clears any pending target change.
    */
   public freezeTargets(): void {
-    this.ensureContainsNoNftInstances();
     this.ensureTargets().freeze();
   }
 

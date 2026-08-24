@@ -15,6 +15,7 @@
 import BigNumber from "bignumber.js";
 import { Type } from "class-transformer";
 import {
+  ArrayMaxSize,
   ArrayNotEmpty,
   ArrayUnique,
   IsAlphanumeric,
@@ -35,6 +36,7 @@ import { JSONSchema } from "class-validator-jsonschema";
 
 import { BigNumberIsNotNegative, BigNumberIsPositive, BigNumberProperty, IsUserRef } from "../validators";
 import { TokenBalance } from "./TokenBalance";
+import { TokenBalanceTargets } from "./TokenBalanceTargets";
 import { TokenClass, TokenClassKey } from "./TokenClass";
 import { TokenInstance, TokenInstanceKey } from "./TokenInstance";
 import { UserRef } from "./UserRef";
@@ -550,9 +552,10 @@ export class RestrictTokenBalanceTargetsDto extends SubmitCallDTO {
 
   @JSONSchema({
     description:
-      "Non-empty list of allowed destination users. Takes effect after 24 hours. Burn is not included."
+      "Non-empty list of allowed destination users, at most 32. Takes effect after 24 hours. Burn is not included."
   })
   @ArrayNotEmpty()
+  @ArrayMaxSize(TokenBalanceTargets.MAX_LENGTH)
   @ArrayUnique()
   @IsUserRef({ each: true })
   targets: UserRef[];

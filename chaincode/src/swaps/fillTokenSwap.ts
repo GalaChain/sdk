@@ -80,7 +80,7 @@ async function swapToken(
       fromPersonBalance.unlockInstance(tokenInstance.instance, swapRequestId, ctx.txUnixTime);
     }
 
-    fromPersonBalance.removeInstance(tokenInstance.instance, ctx.txUnixTime);
+    fromPersonBalance.removeInstance(tokenInstance.instance, ctx.txUnixTime, toPersonKey);
     toPersonBalance.addInstance(tokenInstance.instance);
   } else {
     if (!skipUnlockForFillSide) {
