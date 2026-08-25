@@ -28,12 +28,9 @@ import { getObjectByKey, objectExists, putChainObject } from "../utils/state";
 import { TokenInstanceNotFoundError, UserNotAuthorizedForProjectError } from "./TokenInstanceMetadataError";
 import { buildTokenInstanceMetadataCompositeKey, ensureNftInstance } from "./tokenInstanceMetadataHelpers";
 
-// class-transformer copies undeclared properties onto the instance, and nothing in the SDK
-// strips them -- no whitelist or excludeExtraneousValues is configured -- so anything extra a
-// caller sends on an attribute or custom field survives validation. createValidChainObject then
-// assigns by reference rather than rebuilding, and it would reach world state unbounded, since
-// undeclared fields are subject to none of the MaxLength caps declared on these types.
-// Rebuild both from their declared fields only, so nothing else is persisted.
+// Rebuild from declared fields only, so persisted documents stay limited to the
+// declared attribute/custom-field shape if extra properties are present on an
+// internally constructed object.
 function toStoredAttribute(attribute: TokenInstanceMetadataAttribute): TokenInstanceMetadataAttribute {
   return plainToInstance(TokenInstanceMetadataAttribute, {
     traitType: attribute.traitType,

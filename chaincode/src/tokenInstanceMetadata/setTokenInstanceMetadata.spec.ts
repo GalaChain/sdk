@@ -235,54 +235,31 @@ it("should fail for fungible token instances", async () => {
   expect(getWrites()).toEqual({});
 });
 
-it("should not persist signing envelope fields supplied on attributes or custom fields", async () => {
+it("should reject unknown properties on attributes or custom fields", async () => {
   // Given
-  const { ctx, contract, getWrites } = fixture(GalaChainTokenContract)
-    .registeredUsers(users.testUser1)
-    .savedState(nft.tokenClass(), nft.tokenInstance1(), authorizationFor(users.testUser1.identityKey));
+  const extra = { unknownField: "extra" };
 
-  // attributes and custom fields extend ChainCallDTO, so a caller can populate the signing
-  // envelope on them; none of those fields carry a MaxLength
-  const envelope = {
-    signature: "X".repeat(5000),
-    signerPublicKey: "Y".repeat(5000),
-    signerAddress: "eth|abcdef",
-    uniqueKey: "attacker-supplied",
-    prefix: "junk",
-    dtoOperation: "junk",
-    dtoExpiresAt: 1,
-    trace: { traceId: "Z".repeat(5000) }
-  };
-
-  const dto = await defaultSetDto(nft.tokenInstance1Key(), {
+  // When
+  const createDto = defaultSetDto(nft.tokenInstance1Key(), {
     attributes: [
       plainToInstance(TokenInstanceMetadataAttribute, {
         traitType: "Potency",
         value: 9,
         displayType: "number",
-        ...envelope
+        ...extra
       })
     ],
     customFields: [
       plainToInstance(TokenInstanceMetadataCustomField, {
         key: "gameId",
         value: "elixir-001",
-        ...envelope
+        ...extra
       })
     ]
-  }).signed(users.testUser1.privateKey);
-
-  // When
-  const response = await contract.SetTokenInstanceMetadata(ctx, dto);
+  });
 
   // Then
-  expect(response).toEqual(transactionSuccess());
-
-  const written = Object.values(getWrites()).map((v) => JSON.parse(v as string));
-  const metadata = written.find((w) => w.attributes !== undefined);
-
-  expect(Object.keys(metadata.attributes[0]).sort()).toEqual(["displayType", "traitType", "value"]);
-  expect(Object.keys(metadata.customFields[0]).sort()).toEqual(["key", "value"]);
+  await expect(createDto).rejects.toThrow(/whitelistValidation/);
 });
 
 function defaultMetadataProps() {

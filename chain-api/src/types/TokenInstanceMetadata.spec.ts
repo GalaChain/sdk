@@ -116,6 +116,28 @@ describe("SetTokenInstanceMetadataDto array caps", () => {
     // Then
     expect(properties).toContain("customFields");
   });
+
+  it("should reject unknown properties on attributes", async () => {
+    // Given
+    const attributes = [{ traitType: "Potency", value: 9, unknownField: "extra" }];
+
+    // When
+    const properties = await errorsFor({ attributes });
+
+    // Then
+    expect(properties).toContain("attributes");
+  });
+
+  it("should reject unknown properties on customFields", async () => {
+    // Given
+    const customFields = [{ key: "gameId", value: "elixir-001", unknownField: "extra" }];
+
+    // When
+    const properties = await errorsFor({ customFields });
+
+    // Then
+    expect(properties).toContain("customFields");
+  });
 });
 
 describe("FetchTokenInstanceMetadataWithPaginationDto instance", () => {
