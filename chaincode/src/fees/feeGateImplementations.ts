@@ -40,6 +40,7 @@ import {
   OraclePriceCrossRateAssertion,
   PaymentRequiredError,
   RequestTokenBridgeOutDto,
+  SetTokenInstanceMetadataDto,
   TerminateTokenSwapDto,
   TokenClassKey,
   TokenInstanceKey,
@@ -58,7 +59,7 @@ import { fetchTokenMintConfiguration } from "../mint";
 import { KnownOracles } from "../oracle";
 import { resolveUserAlias } from "../services/resolveUserAlias";
 import { GalaChainContext } from "../types";
-import { getObjectByKey, putChainObject } from "../utils";
+import { getObjectByKey, getObjectsByPartialCompositeKey, putChainObject } from "../utils";
 import { burnToMintProcessing } from "./extendedFeeGateProcessing";
 import { galaFeeGate, writeUsageAndCalculateFeeAmount } from "./galaFeeGate";
 import { payFeeFromCrossChannelAuthorization } from "./payFeeFromCrossChannelAuthorization";
@@ -448,6 +449,41 @@ export async function nftCollectionAuthorizationFeeGate(
 
 export async function createNftCollectionFeeGate(ctx: GalaChainContext, dto: CreateNftCollectionDto) {
   return galaFeeGate(ctx, { feeCode: FeeGateCodes.CreateNftCollection });
+}
+
+export async function setTokenInstanceMetadataFeeGate(
+  ctx: GalaChainContext,
+  dto: SetTokenInstanceMetadataDto
+) {
+  const feeCode = FeeGateCodes.SetTokenInstanceMetadata;
+  const entryCount = (dto.attributes?.length ?? 0) + (dto.customFields?.length ?? 0);
+
+  // the fee scales with document size: each attribute and custom field adds one base fee
+  // unit on top of the standard per-use charge, so total = tierFee + baseQuantity * entryCount.
+  // The base unit is the lowest-threshold FeeCodeDefinition's baseQuantity, leaving
+  // threshold-based acceleration to apply to the per-use portion only.
+  let additionalFee: BigNumber | undefined;
+
+  if (entryCount > 0) {
+    const feeCodeDefinitions = await getObjectsByPartialCompositeKey(
+      ctx,
+      FeeCodeDefinition.INDEX_KEY,
+      [feeCode],
+      FeeCodeDefinition
+    );
+
+    feeCodeDefinitions.sort((a: FeeCodeDefinition, b: FeeCodeDefinition) => {
+      return a.feeThresholdUses.minus(b.feeThresholdUses).toNumber();
+    });
+
+    const baseQuantity: BigNumber | undefined = feeCodeDefinitions[0]?.baseQuantity;
+
+    if (baseQuantity !== undefined) {
+      additionalFee = baseQuantity.multipliedBy(entryCount);
+    }
+  }
+
+  return galaFeeGate(ctx, { feeCode, additionalFee });
 }
 
 export async function simpleFeeGate(ctx: GalaChainContext, dto: ChainCallDTO) {

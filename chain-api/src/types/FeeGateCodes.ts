@@ -32,5 +32,6 @@ export enum FeeGateCodes {
   TerminateTokenSwap = "TerminateTokenSwap",
   SimpleFee = "SimpleFee",
   NftCollectionAuthorization = "NftCollectionAuthorization",
-  CreateNftCollection = "CreateNftCollection"
+  CreateNftCollection = "CreateNftCollection",
+  SetTokenInstanceMetadata = "SetTokenInstanceMetadata"
 }
