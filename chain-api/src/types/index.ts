@@ -40,6 +40,7 @@ export * from "./logger";
 export * from "./PublicKey";
 export * from "./UserProfile";
 export * from "./TokenInstance";
+export * from "./TokenInstanceMetadata";
 export * from "./TokenClass";
 export * from "./token";
 export * from "./common";

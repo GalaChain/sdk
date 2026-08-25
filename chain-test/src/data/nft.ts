@@ -14,15 +14,20 @@
  */
 import {
   GC_NETWORK_ID,
+  NftCollectionAuthorization,
   TokenAllowance,
   TokenBalance,
   TokenBurn,
   TokenClass,
   TokenClassKey,
   TokenInstance,
-  TokenInstanceKey
+  TokenInstanceKey,
+  TokenInstanceMetadata,
+  TokenInstanceMetadataAttribute,
+  TokenInstanceMetadataCustomField
 } from "@gala-chain/api";
 import BigNumber from "bignumber.js";
+import { plainToInstance } from "class-transformer";
 
 import users from "./users";
 import { createInstanceFn, createPlainFn } from "./utils";
@@ -145,6 +150,44 @@ const tokenInstance1Plain = createPlainFn({
 });
 
 /**
+ * Creates a plain NFT collection name authorization for the "TestProject" name,
+ * authorizing admin. Token instance metadata project names are claimed in this
+ * registry, so this record lets admin write "TestProject" metadata documents.
+ */
+const projectAuthorizationPlain = createPlainFn({
+  collection: "TestProject",
+  authorizedUsers: [users.admin.identityKey]
+});
+
+/**
+ * Creates a plain NFT token instance metadata object for testing.
+ * Represents an OpenSea-style metadata document for instance #1 and project
+ * "TestProject", created by admin.
+ *
+ * @param txUnixTime - Unix timestamp for the metadata creation time
+ * @returns Plain object representing token instance metadata
+ */
+const tokenInstance1MetadataPlain = (txUnixTime: number) => ({
+  ...tokenInstance1KeyPlain(),
+  project: "TestProject",
+  name: "Test Elixir #1",
+  description: "Generated via automated test suite.",
+  image: "https://app.gala.games/test-image-placeholder-url.png",
+  attributes: [
+    plainToInstance(TokenInstanceMetadataAttribute, {
+      traitType: "Potency",
+      value: 9,
+      displayType: "number"
+    })
+  ],
+  customFields: [plainToInstance(TokenInstanceMetadataCustomField, { key: "gameId", value: "elixir-001" })],
+  createdBy: users.admin.identityKey,
+  lastModifiedBy: users.admin.identityKey,
+  created: txUnixTime,
+  lastModified: txUnixTime
+});
+
+/**
  * Creates a plain NFT token balance object for testing.
  * Assigns NFT instance #1 to testUser1.
  */
@@ -221,6 +264,10 @@ export default {
   tokenInstance1Key: createInstanceFn(TokenInstanceKey, tokenInstance1KeyPlain()),
   tokenInstance1Plain,
   tokenInstance1: createInstanceFn(TokenInstance, tokenInstance1Plain()),
+  tokenInstance1MetadataPlain,
+  tokenInstance1Metadata: createInstanceFn(TokenInstanceMetadata, tokenInstance1MetadataPlain(1)),
+  projectAuthorizationPlain,
+  projectAuthorization: createInstanceFn(NftCollectionAuthorization, projectAuthorizationPlain()),
   tokenBalancePlain,
   tokenBalance: createInstanceFn(TokenBalance, tokenBalancePlain()),
   tokenBurnPlain,

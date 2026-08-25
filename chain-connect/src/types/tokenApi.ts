@@ -20,6 +20,7 @@ import {
   BurnTokensDto,
   CreateTokenClassDto,
   DeleteAllowancesDto,
+  DeleteTokenInstanceMetadataDto,
   FetchAllowancesDto,
   FetchAllowancesResponse,
   FetchBalancesDto,
@@ -30,6 +31,9 @@ import {
   FetchTokenClassesDto,
   FetchTokenClassesResponse,
   FetchTokenClassesWithPaginationDto,
+  FetchTokenInstanceMetadataDto,
+  FetchTokenInstanceMetadataResponse,
+  FetchTokenInstanceMetadataWithPaginationDto,
   FulfillMintDto,
   FullAllowanceCheckDto,
   FullAllowanceCheckResDto as FullAllowanceCheckResponse,
@@ -43,6 +47,7 @@ import {
   MintTokenDto,
   MintTokenWithAllowanceDto,
   RefreshAllowanceDto,
+  SetTokenInstanceMetadataDto,
   TokenAllowance,
   TokenBalance as TokenBalanceDto,
   TokenBalanceLimit,
@@ -52,6 +57,7 @@ import {
   TokenClassKey,
   TokenHold,
   TokenInstanceKey,
+  TokenInstanceMetadata,
   TransferTokenDto,
   UnlockTokenDto,
   UnlockTokensDto,
@@ -69,6 +75,7 @@ type BatchMintTokenRequest = ConstructorArgs<BatchMintTokenDto>;
 type BurnTokensRequest = ConstructorArgs<BurnTokensDto>;
 type CreateTokenClassRequest = ConstructorArgs<CreateTokenClassDto>;
 type DeleteAllowancesRequest = ConstructorArgs<DeleteAllowancesDto>;
+type DeleteTokenInstanceMetadataRequest = ConstructorArgs<DeleteTokenInstanceMetadataDto>;
 type FetchAllowancesRequest = ConstructorArgs<FetchAllowancesDto>;
 type FetchBalancesRequest = ConstructorArgs<FetchBalancesDto>;
 type FetchBalancesWithPaginationRequest = ConstructorArgs<FetchBalancesWithPaginationDto>;
@@ -76,6 +83,9 @@ type FetchBurnsRequest = ConstructorArgs<FetchBurnsDto>;
 type FetchMintRequestsRequest = ConstructorArgs<FetchMintRequestsDto>;
 type FetchTokenClassesRequest = ConstructorArgs<FetchTokenClassesDto>;
 type FetchTokenClassesWithPaginationRequest = ConstructorArgs<FetchTokenClassesWithPaginationDto>;
+type FetchTokenInstanceMetadataRequest = ConstructorArgs<FetchTokenInstanceMetadataDto>;
+type FetchTokenInstanceMetadataWithPaginationRequest =
+  ConstructorArgs<FetchTokenInstanceMetadataWithPaginationDto>;
 type FulfillMintRequest = ConstructorArgs<FulfillMintDto>;
 type FullAllowanceCheckRequest = ConstructorArgs<FullAllowanceCheckDto>;
 type GrantAllowanceRequest = ConstructorArgs<GrantAllowanceDto>;
@@ -86,6 +96,7 @@ type MintRequest = ConstructorArgs<MintRequestDto>;
 type MintTokenRequest = ConstructorArgs<MintTokenDto>;
 type MintTokenWithAllowanceRequest = ConstructorArgs<MintTokenWithAllowanceDto>;
 type RefreshAllowanceRequest = ConstructorArgs<RefreshAllowanceDto>;
+type SetTokenInstanceMetadataRequest = ConstructorArgs<SetTokenInstanceMetadataDto>;
 type TransferTokenRequest = ConstructorArgs<TransferTokenDto>;
 type UnlockTokenRequest = ConstructorArgs<UnlockTokenDto>;
 type UnlockTokensRequest = ConstructorArgs<UnlockTokensDto>;
@@ -136,6 +147,7 @@ export {
   BurnTokensRequest,
   CreateTokenClassRequest,
   DeleteAllowancesRequest,
+  DeleteTokenInstanceMetadataRequest,
   FetchAllowancesRequest,
   FetchAllowancesResponse,
   FetchBalancesRequest,
@@ -146,6 +158,9 @@ export {
   FetchTokenClassesRequest,
   FetchTokenClassesResponse,
   FetchTokenClassesWithPaginationRequest,
+  FetchTokenInstanceMetadataRequest,
+  FetchTokenInstanceMetadataResponse,
+  FetchTokenInstanceMetadataWithPaginationRequest,
   FulfillMintRequest,
   FullAllowanceCheckRequest,
   FullAllowanceCheckResponse,
@@ -158,6 +173,7 @@ export {
   MintTokenRequest,
   MintTokenWithAllowanceRequest,
   RefreshAllowanceRequest,
+  SetTokenInstanceMetadataRequest,
   TokenAllowance,
   TokenBalance,
   TokenBalanceLimit,
@@ -167,6 +183,7 @@ export {
   TokenClassKey,
   TokenHold,
   TokenInstanceKey,
+  TokenInstanceMetadata,
   TransferTokenRequest,
   UnlockTokenRequest,
   UnlockTokensRequest,
