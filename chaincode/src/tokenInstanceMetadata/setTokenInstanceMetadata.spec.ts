@@ -235,17 +235,19 @@ it("should fail for fungible token instances", async () => {
   expect(getWrites()).toEqual({});
 });
 
-it("should not persist extra properties supplied on attributes or custom fields", async () => {
+it("should not persist signing envelope fields supplied on attributes or custom fields", async () => {
   // Given
   const { ctx, contract, getWrites } = fixture(GalaChainTokenContract)
     .registeredUsers(users.testUser1)
     .savedState(nft.tokenClass(), nft.tokenInstance1(), authorizationFor(users.testUser1.identityKey));
 
-  const extra = {
+  // attributes and custom fields extend ChainCallDTO, so a caller can populate the signing
+  // envelope on them; none of those fields carry a MaxLength
+  const envelope = {
     signature: "X".repeat(5000),
     signerPublicKey: "Y".repeat(5000),
     signerAddress: "eth|abcdef",
-    uniqueKey: "unused-unique-key",
+    uniqueKey: "attacker-supplied",
     prefix: "junk",
     dtoOperation: "junk",
     dtoExpiresAt: 1,
@@ -258,14 +260,14 @@ it("should not persist extra properties supplied on attributes or custom fields"
         traitType: "Potency",
         value: 9,
         displayType: "number",
-        ...extra
+        ...envelope
       })
     ],
     customFields: [
       plainToInstance(TokenInstanceMetadataCustomField, {
         key: "gameId",
         value: "elixir-001",
-        ...extra
+        ...envelope
       })
     ]
   }).signed(users.testUser1.privateKey);
