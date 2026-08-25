@@ -18,6 +18,7 @@ import {
   BurnTokensDto,
   CreateTokenClassDto,
   DeleteAllowancesDto,
+  DeleteTokenInstanceMetadataDto,
   FetchAllowancesDto,
   FetchBalancesDto,
   FetchBalancesWithPaginationDto,
@@ -25,6 +26,8 @@ import {
   FetchMintRequestsDto,
   FetchTokenClassesDto,
   FetchTokenClassesWithPaginationDto,
+  FetchTokenInstanceMetadataDto,
+  FetchTokenInstanceMetadataWithPaginationDto,
   FreezeTokenBalanceDto,
   FulfillMintDto,
   FullAllowanceCheckDto,
@@ -37,6 +40,7 @@ import {
   MintTokenWithAllowanceDto,
   RefreshAllowanceDto,
   RestrictTokenBalanceTargetsDto,
+  SetTokenInstanceMetadataDto,
   TransferTokenDto,
   UnlockTokenDto,
   UnlockTokensDto,
@@ -51,6 +55,7 @@ import {
   BurnTokensRequest,
   CreateTokenClassRequest,
   DeleteAllowancesRequest,
+  DeleteTokenInstanceMetadataRequest,
   FetchAllowancesRequest,
   FetchAllowancesResponse,
   FetchBalancesRequest,
@@ -61,6 +66,9 @@ import {
   FetchTokenClassesRequest,
   FetchTokenClassesResponse,
   FetchTokenClassesWithPaginationRequest,
+  FetchTokenInstanceMetadataRequest,
+  FetchTokenInstanceMetadataResponse,
+  FetchTokenInstanceMetadataWithPaginationRequest,
   FreezeTokenBalanceRequest,
   FulfillMintRequest,
   FullAllowanceCheckRequest,
@@ -75,12 +83,14 @@ import {
   MintTokenWithAllowanceRequest,
   RefreshAllowanceRequest,
   RestrictTokenBalanceTargetsRequest,
+  SetTokenInstanceMetadataRequest,
   TokenAllowance,
   TokenBalance,
   TokenBurn,
   TokenClass,
   TokenClassKey,
   TokenInstanceKey,
+  TokenInstanceMetadata,
   TransferTokenRequest,
   UnlockTokenRequest,
   UnlockTokensRequest,
@@ -155,6 +165,48 @@ export class TokenApi extends GalaChainBaseApi {
       url: this.chainCodeUrl,
       requestConstructor: FetchTokenClassesWithPaginationDto,
       responseConstructor: FetchTokenClassesResponse
+    });
+  }
+
+  public SetTokenInstanceMetadata(dto: SetTokenInstanceMetadataRequest) {
+    return this.connection.submit({
+      method: "SetTokenInstanceMetadata",
+      payload: dto,
+      sign: true,
+      url: this.chainCodeUrl,
+      requestConstructor: SetTokenInstanceMetadataDto,
+      responseConstructor: TokenInstanceMetadata
+    });
+  }
+
+  public FetchTokenInstanceMetadata(dto: FetchTokenInstanceMetadataRequest) {
+    return this.connection.submit<Array<TokenInstanceMetadata>, FetchTokenInstanceMetadataDto>({
+      method: "FetchTokenInstanceMetadata",
+      payload: dto,
+      url: this.chainCodeUrl,
+      requestConstructor: FetchTokenInstanceMetadataDto,
+      responseConstructor: TokenInstanceMetadata
+    });
+  }
+
+  public FetchTokenInstanceMetadataWithPagination(dto: FetchTokenInstanceMetadataWithPaginationRequest) {
+    return this.connection.submit({
+      method: "FetchTokenInstanceMetadataWithPagination",
+      payload: dto,
+      url: this.chainCodeUrl,
+      requestConstructor: FetchTokenInstanceMetadataWithPaginationDto,
+      responseConstructor: FetchTokenInstanceMetadataResponse
+    });
+  }
+
+  public DeleteTokenInstanceMetadata(dto: DeleteTokenInstanceMetadataRequest) {
+    return this.connection.submit({
+      method: "DeleteTokenInstanceMetadata",
+      payload: dto,
+      sign: true,
+      url: this.chainCodeUrl,
+      requestConstructor: DeleteTokenInstanceMetadataDto,
+      responseConstructor: TokenInstanceKey
     });
   }
 

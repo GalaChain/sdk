@@ -20,6 +20,7 @@ import {
   CreateTokenClassDto,
   CreateVestingTokenDto,
   DeleteAllowancesDto,
+  DeleteTokenInstanceMetadataDto,
   FeeAuthorizationResDto,
   FeeCodeDefinition,
   FeeCodeDefinitionDto,
@@ -41,9 +42,13 @@ import {
   FetchFeeThresholdUsesWithPaginationDto,
   FetchFeeThresholdUsesWithPaginationResponse,
   FetchMintRequestsDto,
+  FetchNftCollectionAuthorizationDto,
   FetchTokenClassesDto,
   FetchTokenClassesResponse,
   FetchTokenClassesWithPaginationDto,
+  FetchTokenInstanceMetadataDto,
+  FetchTokenInstanceMetadataResponse,
+  FetchTokenInstanceMetadataWithPaginationDto,
   FetchVestingTokenDto,
   FreezeTokenBalanceDto,
   FulfillMintDto,
@@ -51,14 +56,18 @@ import {
   FullAllowanceCheckResDto,
   GalaChainResponse,
   GrantAllowanceDto,
+  GrantNftCollectionAuthorizationDto,
   HighThroughputMintTokenDto,
   LockTokenDto,
   LockTokensDto,
   MintRequestDto,
   MintTokenDto,
   MintTokenWithAllowanceDto,
+  NftCollectionAuthorization,
   RefreshAllowancesDto,
   RestrictTokenBalanceTargetsDto,
+  RevokeNftCollectionAuthorizationDto,
+  SetTokenInstanceMetadataDto,
   SubmitCallDTO,
   TokenAllowance,
   TokenBalance,
@@ -66,6 +75,7 @@ import {
   TokenClass,
   TokenClassKey,
   TokenInstanceKey,
+  TokenInstanceMetadata,
   TransferTokenDto,
   UnlockTokenDto,
   UnlockTokensDto,
@@ -94,6 +104,7 @@ import {
   defineFeeSchedule,
   defineFeeSplitFormula,
   deleteAllowances,
+  deleteTokenInstanceMetadata,
   fetchAllowancesWithPagination,
   fetchBalances,
   fetchBalancesWithTokenMetadata,
@@ -101,18 +112,23 @@ import {
   fetchFeeSchedule,
   fetchFeeThresholdUses,
   fetchFeeThresholdUsesWithPagination,
+  fetchNftCollectionAuthorization,
   fetchTokenClasses,
   fetchTokenClassesWithPagination,
+  fetchTokenInstanceMetadata,
+  fetchTokenInstanceMetadataWithPagination,
   fetchVestingToken,
   freezeTokenBalance,
   fulfillMintRequest,
   fullAllowanceCheck,
   grantAllowance,
+  grantNftCollectionAuthorization,
   lockToken,
   lockTokens,
   mintRequestsByTimeRange,
   mintToken,
   mintTokenWithAllowance,
+  nftCollectionAuthorizationFeeGate,
   parseMintTokenParams,
   parseTransferTokenParams,
   refreshAllowances,
@@ -120,8 +136,11 @@ import {
   requireCuratorAuth,
   resolveUserAlias,
   restrictTokenBalanceTargets,
+  revokeNftCollectionAuthorization,
   saveRequest,
   setGalaFeeProperties,
+  setTokenInstanceMetadata,
+  setTokenInstanceMetadataFeeGate,
   transferToken,
   transferTokenFeeGate,
   unlockToken,
@@ -209,6 +228,105 @@ export default class GalaChainTokenContract extends GalaContract {
     dto: FetchTokenClassesWithPaginationDto
   ): Promise<FetchTokenClassesResponse> {
     return fetchTokenClassesWithPagination(ctx, dto);
+  }
+
+  @Submit({
+    in: GrantNftCollectionAuthorizationDto,
+    out: NftCollectionAuthorization,
+    before: nftCollectionAuthorizationFeeGate
+  })
+  public async GrantNftCollectionAuthorization(
+    ctx: GalaChainContext,
+    dto: GrantNftCollectionAuthorizationDto
+  ): Promise<NftCollectionAuthorization> {
+    const authorizedUser = await resolveUserAlias(ctx, dto.authorizedUser);
+    return grantNftCollectionAuthorization(ctx, dto.collection, authorizedUser);
+  }
+
+  @Submit({
+    in: RevokeNftCollectionAuthorizationDto,
+    out: NftCollectionAuthorization
+  })
+  public async RevokeNftCollectionAuthorization(
+    ctx: GalaChainContext,
+    dto: RevokeNftCollectionAuthorizationDto
+  ): Promise<NftCollectionAuthorization> {
+    const authorizedUser = await resolveUserAlias(ctx, dto.authorizedUser);
+    return revokeNftCollectionAuthorization(ctx, dto.collection, authorizedUser);
+  }
+
+  @GalaTransaction({
+    type: EVALUATE,
+    in: FetchNftCollectionAuthorizationDto,
+    out: NftCollectionAuthorization
+  })
+  public FetchNftCollectionAuthorization(
+    ctx: GalaChainContext,
+    dto: FetchNftCollectionAuthorizationDto
+  ): Promise<NftCollectionAuthorization> {
+    return fetchNftCollectionAuthorization(ctx, dto.collection);
+  }
+
+  @Submit({
+    in: SetTokenInstanceMetadataDto,
+    out: TokenInstanceMetadata,
+    before: setTokenInstanceMetadataFeeGate
+  })
+  public SetTokenInstanceMetadata(
+    ctx: GalaChainContext,
+    dto: SetTokenInstanceMetadataDto
+  ): Promise<TokenInstanceMetadata> {
+    return setTokenInstanceMetadata(ctx, {
+      tokenInstance: dto.tokenInstance,
+      project: dto.project,
+      name: dto.name,
+      description: dto.description,
+      image: dto.image,
+      externalUrl: dto.externalUrl,
+      animationUrl: dto.animationUrl,
+      backgroundColor: dto.backgroundColor,
+      youtubeUrl: dto.youtubeUrl,
+      attributes: dto.attributes,
+      customFields: dto.customFields
+    });
+  }
+
+  @GalaTransaction({
+    type: EVALUATE,
+    in: FetchTokenInstanceMetadataDto,
+    out: { arrayOf: TokenInstanceMetadata }
+  })
+  public FetchTokenInstanceMetadata(
+    ctx: GalaChainContext,
+    dto: FetchTokenInstanceMetadataDto
+  ): Promise<TokenInstanceMetadata[]> {
+    return fetchTokenInstanceMetadata(ctx, {
+      tokenInstance: dto.tokenInstance,
+      project: dto.project
+    });
+  }
+
+  @GalaTransaction({
+    type: EVALUATE,
+    in: FetchTokenInstanceMetadataWithPaginationDto,
+    out: FetchTokenInstanceMetadataResponse
+  })
+  public FetchTokenInstanceMetadataWithPagination(
+    ctx: GalaChainContext,
+    dto: FetchTokenInstanceMetadataWithPaginationDto
+  ): Promise<FetchTokenInstanceMetadataResponse> {
+    return fetchTokenInstanceMetadataWithPagination(ctx, dto);
+  }
+
+  @Submit({
+    in: DeleteTokenInstanceMetadataDto,
+    out: TokenInstanceKey
+  })
+  public DeleteTokenInstanceMetadata(
+    ctx: GalaChainContext,
+    dto: DeleteTokenInstanceMetadataDto
+  ): Promise<TokenInstanceKey> {
+    return deleteTokenInstanceMetadata(ctx, { tokenInstance: dto.tokenInstance, project: dto.project });
   }
 
   @Submit({
