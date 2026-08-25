@@ -28,9 +28,9 @@ import { getObjectByKey, objectExists, putChainObject } from "../utils/state";
 import { TokenInstanceNotFoundError, UserNotAuthorizedForProjectError } from "./TokenInstanceMetadataError";
 import { buildTokenInstanceMetadataCompositeKey, ensureNftInstance } from "./tokenInstanceMetadataHelpers";
 
-// Rebuild from declared fields only, so persisted documents stay limited to the
-// declared attribute/custom-field shape if extra properties are present on an
-// internally constructed object.
+// Nested attribute/custom-field objects allow extra properties: they are not
+// ChainCallDTOs and are validated without forbidNonWhitelisted. Rebuild from
+// declared fields only so extra properties are not persisted.
 function toStoredAttribute(attribute: TokenInstanceMetadataAttribute): TokenInstanceMetadataAttribute {
   return plainToInstance(TokenInstanceMetadataAttribute, {
     traitType: attribute.traitType,

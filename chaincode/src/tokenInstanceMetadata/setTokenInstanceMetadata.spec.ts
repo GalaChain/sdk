@@ -235,12 +235,24 @@ it("should fail for fungible token instances", async () => {
   expect(getWrites()).toEqual({});
 });
 
-it("should reject unknown properties on attributes or custom fields", async () => {
+it("should not persist extra properties supplied on attributes or custom fields", async () => {
   // Given
-  const extra = { unknownField: "extra" };
+  const { ctx, contract, getWrites } = fixture(GalaChainTokenContract)
+    .registeredUsers(users.testUser1)
+    .savedState(nft.tokenClass(), nft.tokenInstance1(), authorizationFor(users.testUser1.identityKey));
 
-  // When
-  const createDto = defaultSetDto(nft.tokenInstance1Key(), {
+  const extra = {
+    signature: "X".repeat(5000),
+    signerPublicKey: "Y".repeat(5000),
+    signerAddress: "eth|abcdef",
+    uniqueKey: "unused-unique-key",
+    prefix: "junk",
+    dtoOperation: "junk",
+    dtoExpiresAt: 1,
+    trace: { traceId: "Z".repeat(5000) }
+  };
+
+  const dto = await defaultSetDto(nft.tokenInstance1Key(), {
     attributes: [
       plainToInstance(TokenInstanceMetadataAttribute, {
         traitType: "Potency",
@@ -256,10 +268,19 @@ it("should reject unknown properties on attributes or custom fields", async () =
         ...extra
       })
     ]
-  });
+  }).signed(users.testUser1.privateKey);
+
+  // When
+  const response = await contract.SetTokenInstanceMetadata(ctx, dto);
 
   // Then
-  await expect(createDto).rejects.toThrow(/whitelistValidation/);
+  expect(response).toEqual(transactionSuccess());
+
+  const written = Object.values(getWrites()).map((v) => JSON.parse(v as string));
+  const metadata = written.find((w) => w.attributes !== undefined);
+
+  expect(Object.keys(metadata.attributes[0]).sort()).toEqual(["displayType", "traitType", "value"]);
+  expect(Object.keys(metadata.customFields[0]).sort()).toEqual(["key", "value"]);
 });
 
 function defaultMetadataProps() {

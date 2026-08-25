@@ -117,7 +117,7 @@ describe("SetTokenInstanceMetadataDto array caps", () => {
     expect(properties).toContain("customFields");
   });
 
-  it("should reject unknown properties on attributes", async () => {
+  it("should accept unknown properties on attributes", async () => {
     // Given
     const attributes = [{ traitType: "Potency", value: 9, unknownField: "extra" }];
 
@@ -125,10 +125,10 @@ describe("SetTokenInstanceMetadataDto array caps", () => {
     const properties = await errorsFor({ attributes });
 
     // Then
-    expect(properties).toContain("attributes");
+    expect(properties).not.toContain("attributes");
   });
 
-  it("should reject unknown properties on customFields", async () => {
+  it("should accept unknown properties on customFields", async () => {
     // Given
     const customFields = [{ key: "gameId", value: "elixir-001", unknownField: "extra" }];
 
@@ -136,7 +136,18 @@ describe("SetTokenInstanceMetadataDto array caps", () => {
     const properties = await errorsFor({ customFields });
 
     // Then
-    expect(properties).toContain("customFields");
+    expect(properties).not.toContain("customFields");
+  });
+
+  it("should still reject invalid declared fields on attributes", async () => {
+    // Given
+    const attributes = [{ traitType: "", value: 9 }];
+
+    // When
+    const properties = await errorsFor({ attributes });
+
+    // Then
+    expect(properties).toContain("attributes");
   });
 });
 
