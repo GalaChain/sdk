@@ -80,14 +80,14 @@ async function swapToken(
       fromPersonBalance.unlockInstance(tokenInstance.instance, swapRequestId, ctx.txUnixTime);
     }
 
-    fromPersonBalance.removeInstance(tokenInstance.instance, ctx.txUnixTime);
+    fromPersonBalance.removeInstance(tokenInstance.instance, ctx.txUnixTime, toPersonKey);
     toPersonBalance.addInstance(tokenInstance.instance);
   } else {
     if (!skipUnlockForFillSide) {
       fromPersonBalance.unlockQuantity(quantity, ctx.txUnixTime, swapRequestId, fromPersonKey);
     }
 
-    fromPersonBalance.subtractQuantity(quantity, ctx.txUnixTime, tokenClass.quantityLimit);
+    fromPersonBalance.subtractQuantity(quantity, ctx.txUnixTime, tokenClass.quantityLimit, toPersonKey);
     toPersonBalance.addQuantity(quantity);
   }
 

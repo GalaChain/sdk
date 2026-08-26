@@ -37,6 +37,11 @@ import {
 } from "../validators";
 import { ChainObject, ObjectValidationFailedError } from "./ChainObject";
 import { TokenBalanceLimit, TokenQuantityLimitExceededError } from "./TokenBalanceLimit";
+import {
+  TokenBalanceSpendTarget,
+  TokenBalanceTargetNotAllowedError,
+  TokenBalanceTargets
+} from "./TokenBalanceTargets";
 import { TokenClassKey, TokenClassKeyProperties } from "./TokenClass";
 import { TokenInstance, TokenInstanceKey } from "./TokenInstance";
 import { UserAlias } from "./UserAlias";
@@ -157,6 +162,14 @@ export class TokenBalance extends ChainObject {
   public limit?: TokenBalanceLimit;
 
   @JSONSchema({
+    description: "Optional destination restrictions for fungible subtract."
+  })
+  @IsOptional()
+  @ValidateNested()
+  @Type(() => TokenBalanceTargets)
+  public targets?: TokenBalanceTargets;
+
+  @JSONSchema({
     description:
       "Unix epoch timestamp in milliseconds (ms) for vestingPeriodStart. " +
       "For vesting locks, this is the beginning of the vesting period."
@@ -206,10 +219,11 @@ export class TokenBalance extends ChainObject {
     this.quantity = new BigNumber(this.instanceIds.length);
   }
 
-  public removeInstance(instanceId: BigNumber, currentTime: number) {
+  public removeInstance(instanceId: BigNumber, currentTime: number, target: TokenBalanceSpendTarget) {
     this.ensureInstanceIsNft(instanceId);
     this.ensureInstanceIsInBalance(instanceId);
     this.ensureInstanceIsNotLocked(instanceId, currentTime);
+    this.ensureTargetAllowed(target, currentTime);
 
     // remove instance ID from array
     this.instanceIds = (this.instanceIds ?? []).filter((id) => !id.eq(instanceId));
@@ -341,15 +355,41 @@ export class TokenBalance extends ChainObject {
   public subtractQuantity(
     quantity: BigNumber,
     currentTime: number,
-    classQuantityLimit: BigNumber | undefined
+    classQuantityLimit: BigNumber | undefined,
+    target: TokenBalanceSpendTarget
   ): void {
     this.ensureContainsNoNftInstances();
     this.ensureIsValidQuantityForFungible(quantity);
     this.ensureQuantityIsSpendable(quantity, currentTime);
+    this.ensureTargetAllowed(target, currentTime);
     this.ensureQuantityWithinLimit(quantity, currentTime, classQuantityLimit);
     this.recordLimitSpend(quantity, currentTime, classQuantityLimit);
 
     this.quantity = this.quantity.minus(quantity);
+  }
+
+  /**
+   * Restrict subtract destinations to the given non-empty alias list.
+   * Takes effect after TokenBalanceTargets.CHANGE_DELAY_MS.
+   */
+  public restrictTargets(targets: UserAlias[], currentTime: number): void {
+    this.ensureTargets().restrict(targets, currentTime);
+  }
+
+  /**
+   * Clear destination restrictions.
+   * Takes effect after TokenBalanceTargets.CHANGE_DELAY_MS.
+   */
+  public allowAllTargets(currentTime: number): void {
+    this.ensureTargets().allowAll(currentTime);
+  }
+
+  /**
+   * Freeze this balance: no allowed transfer destinations.
+   * Takes effect immediately and clears any pending target change.
+   */
+  public freezeTargets(): void {
+    this.ensureTargets().freeze();
   }
 
   /**
@@ -428,6 +468,22 @@ export class TokenBalance extends ChainObject {
       this.limit = new TokenBalanceLimit();
     }
     this.limit.recordSpend(quantity, currentTime);
+  }
+
+  private ensureTargets(): TokenBalanceTargets {
+    if (this.targets === undefined) {
+      this.targets = new TokenBalanceTargets();
+    }
+    return this.targets;
+  }
+
+  private ensureTargetAllowed(target: TokenBalanceSpendTarget, currentTime: number): void {
+    if (this.targets === undefined) {
+      return;
+    }
+    if (!this.targets.allows(target, currentTime)) {
+      throw new TokenBalanceTargetNotAllowedError(this.owner, this, target, this.targets.allowed ?? []);
+    }
   }
 
   private ensureTokenQuantityHoldIsFungible(hold: TokenHold) {

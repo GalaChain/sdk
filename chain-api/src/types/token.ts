@@ -15,7 +15,9 @@
 import BigNumber from "bignumber.js";
 import { Type } from "class-transformer";
 import {
+  ArrayMaxSize,
   ArrayNotEmpty,
+  ArrayUnique,
   IsAlphanumeric,
   IsBoolean,
   IsInt,
@@ -34,6 +36,7 @@ import { JSONSchema } from "class-validator-jsonschema";
 
 import { BigNumberIsNotNegative, BigNumberIsPositive, BigNumberProperty, IsUserRef } from "../validators";
 import { TokenBalance } from "./TokenBalance";
+import { TokenBalanceTargets } from "./TokenBalanceTargets";
 import { TokenClass, TokenClassKey } from "./TokenClass";
 import { TokenInstance, TokenInstanceKey } from "./TokenInstance";
 import { UserRef } from "./UserRef";
@@ -526,6 +529,75 @@ export class UpdateBalanceQuantityLimitDto extends SubmitCallDTO {
   @BigNumberIsNotNegative()
   @BigNumberProperty()
   quantityLimit: BigNumber;
+}
+
+@JSONSchema({
+  description:
+    "Restrict a balance so it may only be subtracted to the given destinations. Applied after 24 hours."
+})
+export class RestrictTokenBalanceTargetsDto extends SubmitCallDTO {
+  @JSONSchema({
+    description: "Owner of the balance whose destinations will be restricted."
+  })
+  @IsUserRef()
+  user: UserRef;
+
+  @JSONSchema({
+    description: "Token class of the balance whose destinations will be restricted."
+  })
+  @ValidateNested()
+  @Type(() => TokenClassKey)
+  @IsNotEmpty()
+  tokenClass: TokenClassKey;
+
+  @JSONSchema({
+    description:
+      "Non-empty list of allowed destination users, at most 32. Takes effect after 24 hours. Burn is not included."
+  })
+  @ArrayNotEmpty()
+  @ArrayMaxSize(TokenBalanceTargets.MAX_LENGTH)
+  @ArrayUnique()
+  @IsUserRef({ each: true })
+  targets: UserRef[];
+}
+
+@JSONSchema({
+  description:
+    "Remove destination restrictions from a balance (any target including burn is allowed). Applied after 24 hours."
+})
+export class AllowAllTokenBalanceTargetsDto extends SubmitCallDTO {
+  @JSONSchema({
+    description: "Owner of the balance whose destination restrictions will be cleared."
+  })
+  @IsUserRef()
+  user: UserRef;
+
+  @JSONSchema({
+    description: "Token class of the balance whose destination restrictions will be cleared."
+  })
+  @ValidateNested()
+  @Type(() => TokenClassKey)
+  @IsNotEmpty()
+  tokenClass: TokenClassKey;
+}
+
+@JSONSchema({
+  description: "Freeze a balance immediately: no allowed transfer destinations."
+})
+export class FreezeTokenBalanceDto extends SubmitCallDTO {
+  @JSONSchema({
+    description: "Owner of the balance to freeze."
+  })
+  @IsUserRef()
+  user: UserRef;
+
+  @JSONSchema({
+    description: "Token class of the balance to freeze."
+  })
+  @ValidateNested()
+  @Type(() => TokenClassKey)
+  @IsNotEmpty()
+  tokenClass: TokenClassKey;
 }
 
 @JSONSchema({

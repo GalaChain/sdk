@@ -105,10 +105,10 @@ export async function transferToken(
   const toPersonBalance = await fetchOrCreateBalance(ctx, to, tokenInstanceKey);
 
   if (tokenInstance.isNonFungible) {
-    fromPersonBalance.removeInstance(tokenInstance.instance, ctx.txUnixTime);
+    fromPersonBalance.removeInstance(tokenInstance.instance, ctx.txUnixTime, to);
     toPersonBalance.addInstance(tokenInstance.instance);
   } else {
-    fromPersonBalance.subtractQuantity(quantity, ctx.txUnixTime, tokenClass.quantityLimit);
+    fromPersonBalance.subtractQuantity(quantity, ctx.txUnixTime, tokenClass.quantityLimit, to);
     toPersonBalance.addQuantity(quantity);
   }
 

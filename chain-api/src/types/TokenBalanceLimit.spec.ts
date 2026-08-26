@@ -28,6 +28,8 @@ function emptyBalance() {
   });
 }
 
+const to = "client|user2" as UserAlias;
+
 describe("TokenBalanceLimit", () => {
   const now = 1_000_000;
   const hour = (h: number) => h * TokenBalanceLimit.HOUR_MS;
@@ -38,7 +40,7 @@ describe("TokenBalanceLimit", () => {
     balance.addQuantity(new BigNumber(100));
 
     // When
-    balance.subtractQuantity(new BigNumber(10), now, new BigNumber(10));
+    balance.subtractQuantity(new BigNumber(10), now, new BigNumber(10), to);
 
     // Then
     expect(balance.getQuantityTotal()).toEqual(new BigNumber(90));
@@ -50,7 +52,7 @@ describe("TokenBalanceLimit", () => {
     balance.addQuantity(new BigNumber(100));
 
     // When
-    const error = () => balance.subtractQuantity(new BigNumber(11), now, new BigNumber(10));
+    const error = () => balance.subtractQuantity(new BigNumber(11), now, new BigNumber(10), to);
 
     // Then
     expect(error).toThrow("exceeds quantity limit");
@@ -60,10 +62,10 @@ describe("TokenBalanceLimit", () => {
     // Given
     const balance = emptyBalance();
     balance.addQuantity(new BigNumber(100));
-    balance.subtractQuantity(new BigNumber(6), now, new BigNumber(10));
+    balance.subtractQuantity(new BigNumber(6), now, new BigNumber(10), to);
 
     // When
-    const error = () => balance.subtractQuantity(new BigNumber(5), now, new BigNumber(10));
+    const error = () => balance.subtractQuantity(new BigNumber(5), now, new BigNumber(10), to);
 
     // Then
     expect(error).toThrow("exceeds quantity limit");
@@ -75,7 +77,7 @@ describe("TokenBalanceLimit", () => {
     balance.addQuantity(new BigNumber(100));
 
     // When
-    balance.subtractQuantity(new BigNumber(100), now, undefined);
+    balance.subtractQuantity(new BigNumber(100), now, undefined, to);
 
     // Then
     expect(balance.getQuantityTotal()).toEqual(new BigNumber(0));
@@ -97,9 +99,9 @@ describe("TokenBalanceLimit", () => {
     // When
     await balance.validateOrReject();
     const afterLoad = balance.limit;
-    balance.subtractQuantity(new BigNumber(10), now, undefined);
+    balance.subtractQuantity(new BigNumber(10), now, undefined, to);
     const afterUnlimitedSpend = balance.limit;
-    balance.subtractQuantity(new BigNumber(10), now, new BigNumber(50));
+    balance.subtractQuantity(new BigNumber(10), now, new BigNumber(50), to);
 
     // Then
     expect(afterLoad).toBeUndefined();
@@ -114,8 +116,8 @@ describe("TokenBalanceLimit", () => {
     balance.addQuantity(new BigNumber(100));
 
     // When
-    balance.subtractQuantity(new BigNumber(3), hour(11), new BigNumber(10));
-    balance.subtractQuantity(new BigNumber(4), hour(12), new BigNumber(10));
+    balance.subtractQuantity(new BigNumber(3), hour(11), new BigNumber(10), to);
+    balance.subtractQuantity(new BigNumber(4), hour(12), new BigNumber(10), to);
 
     // Then
     expect(balance.limit?.hours?.[11]).toEqual(new BigNumber(3));
@@ -127,11 +129,11 @@ describe("TokenBalanceLimit", () => {
     // Given
     const balance = emptyBalance();
     balance.addQuantity(new BigNumber(100));
-    balance.subtractQuantity(new BigNumber(10), hour(0), new BigNumber(10));
+    balance.subtractQuantity(new BigNumber(10), hour(0), new BigNumber(10), to);
 
     // When
-    const stillInWindow = () => balance.subtractQuantity(new BigNumber(1), hour(23), new BigNumber(10));
-    const afterWindow = () => balance.subtractQuantity(new BigNumber(10), hour(24), new BigNumber(10));
+    const stillInWindow = () => balance.subtractQuantity(new BigNumber(1), hour(23), new BigNumber(10), to);
+    const afterWindow = () => balance.subtractQuantity(new BigNumber(10), hour(24), new BigNumber(10), to);
 
     // Then
     expect(stillInWindow).toThrow("exceeds quantity limit");
@@ -214,10 +216,10 @@ describe("TokenBalanceLimit", () => {
     // Given
     const balance = emptyBalance();
     balance.addQuantity(new BigNumber(100));
-    balance.subtractQuantity(new BigNumber(6), now, new BigNumber(10));
+    balance.subtractQuantity(new BigNumber(6), now, new BigNumber(10), to);
 
     // When
-    const error = () => balance.subtractQuantity(new BigNumber(1), now, new BigNumber(5));
+    const error = () => balance.subtractQuantity(new BigNumber(1), now, new BigNumber(5), to);
 
     // Then
     expect(error).toThrow("exceeds quantity limit");
@@ -227,10 +229,10 @@ describe("TokenBalanceLimit", () => {
     // Given
     const balance = emptyBalance();
     balance.addQuantity(new BigNumber(100));
-    balance.subtractQuantity(new BigNumber(6), now, new BigNumber(10));
+    balance.subtractQuantity(new BigNumber(6), now, new BigNumber(10), to);
 
     // When
-    balance.subtractQuantity(new BigNumber(11), now, new BigNumber(50));
+    balance.subtractQuantity(new BigNumber(11), now, new BigNumber(50), to);
 
     // Then
     expect(balance.getQuantityTotal()).toEqual(new BigNumber(83));
@@ -240,10 +242,10 @@ describe("TokenBalanceLimit", () => {
     // Given
     const balance = emptyBalance();
     balance.addQuantity(new BigNumber(100));
-    balance.subtractQuantity(new BigNumber(11), now, undefined);
+    balance.subtractQuantity(new BigNumber(11), now, undefined, to);
 
     // When
-    const error = () => balance.subtractQuantity(new BigNumber(11), now, new BigNumber(10));
+    const error = () => balance.subtractQuantity(new BigNumber(11), now, new BigNumber(10), to);
 
     // Then
     expect(error).toThrow("exceeds quantity limit");
@@ -257,8 +259,9 @@ describe("TokenBalanceLimit", () => {
     balance.setQuantityLimit(new BigNumber(50), now, new BigNumber(10));
 
     // When
-    const beforeDelay = () => balance.subtractQuantity(new BigNumber(11), now + delay - 1, new BigNumber(10));
-    const atDelay = () => balance.subtractQuantity(new BigNumber(11), now + delay, new BigNumber(10));
+    const beforeDelay = () =>
+      balance.subtractQuantity(new BigNumber(11), now + delay - 1, new BigNumber(10), to);
+    const atDelay = () => balance.subtractQuantity(new BigNumber(11), now + delay, new BigNumber(10), to);
 
     // Then
     expect(balance.limit?.pendingQuantity).toEqual(new BigNumber(50));
@@ -276,7 +279,7 @@ describe("TokenBalanceLimit", () => {
     balance.setQuantityLimit(new BigNumber(5), now, new BigNumber(10));
 
     // When
-    const error = () => balance.subtractQuantity(new BigNumber(6), now, new BigNumber(10));
+    const error = () => balance.subtractQuantity(new BigNumber(6), now, new BigNumber(10), to);
 
     // Then
     expect(balance.limit?.quantity).toEqual(new BigNumber(5));

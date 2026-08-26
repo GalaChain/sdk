@@ -13,6 +13,7 @@
  * limitations under the License.
  */
 import {
+  AllowAllTokenBalanceTargetsDto,
   BatchMintTokenDto,
   BigNumberArrayProperty,
   BigNumberIsNotNegative,
@@ -34,6 +35,7 @@ import {
   FetchTokenInstanceMetadataDto,
   FetchTokenInstanceMetadataResponse,
   FetchTokenInstanceMetadataWithPaginationDto,
+  FreezeTokenBalanceDto,
   FulfillMintDto,
   FullAllowanceCheckDto,
   FullAllowanceCheckResDto as FullAllowanceCheckResponse,
@@ -47,10 +49,12 @@ import {
   MintTokenDto,
   MintTokenWithAllowanceDto,
   RefreshAllowanceDto,
+  RestrictTokenBalanceTargetsDto,
   SetTokenInstanceMetadataDto,
   TokenAllowance,
   TokenBalance as TokenBalanceDto,
   TokenBalanceLimit,
+  TokenBalanceTargets,
   TokenBalanceWithMetadata,
   TokenBurn,
   TokenClass,
@@ -101,6 +105,9 @@ type TransferTokenRequest = ConstructorArgs<TransferTokenDto>;
 type UnlockTokenRequest = ConstructorArgs<UnlockTokenDto>;
 type UnlockTokensRequest = ConstructorArgs<UnlockTokensDto>;
 type UpdateBalanceQuantityLimitRequest = ConstructorArgs<UpdateBalanceQuantityLimitDto>;
+type RestrictTokenBalanceTargetsRequest = ConstructorArgs<RestrictTokenBalanceTargetsDto>;
+type AllowAllTokenBalanceTargetsRequest = ConstructorArgs<AllowAllTokenBalanceTargetsDto>;
+type FreezeTokenBalanceRequest = ConstructorArgs<FreezeTokenBalanceDto>;
 type UpdateTokenClassRequest = ConstructorArgs<UpdateTokenClassDto>;
 
 /**
@@ -140,6 +147,11 @@ class TokenBalance implements ConstructorArgs<TokenBalanceDto> {
   @ValidateNested()
   @Type(() => TokenBalanceLimit)
   limit?: TokenBalanceLimit;
+
+  @IsOptional()
+  @ValidateNested()
+  @Type(() => TokenBalanceTargets)
+  targets?: TokenBalanceTargets;
 }
 
 export {
@@ -188,5 +200,8 @@ export {
   UnlockTokenRequest,
   UnlockTokensRequest,
   UpdateBalanceQuantityLimitRequest,
+  RestrictTokenBalanceTargetsRequest,
+  AllowAllTokenBalanceTargetsRequest,
+  FreezeTokenBalanceRequest,
   UpdateTokenClassRequest
 };

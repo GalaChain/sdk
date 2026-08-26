@@ -370,7 +370,7 @@ describe("TransferToken", () => {
     const nftInstanceKey = nft.tokenInstance1Key();
     const nftClass = nft.tokenClass();
     const tokenBalance = nft.tokenBalance();
-    tokenBalance.removeInstance(nftInstance.instance, 1);
+    tokenBalance.removeInstance(nftInstance.instance, 1, users.testUser2.identityKey);
     const transferAllowance = await createValidChainObject(TokenAllowance, {
       grantedTo: users.testUser2.identityKey,
       grantedBy: users.testUser1.identityKey,
