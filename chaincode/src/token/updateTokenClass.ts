@@ -13,6 +13,7 @@
  * limitations under the License.
  */
 import { TokenClass, TokenClassKey, UserAlias } from "@gala-chain/api";
+import BigNumber from "bignumber.js";
 
 import { GalaChainContext } from "../types";
 import { getObjectByKey, putChainObject } from "../utils/state";
@@ -28,6 +29,7 @@ export interface UpdateTokenClassParams {
   rarity?: string;
   authorities?: UserAlias[];
   overwriteAuthorities?: boolean;
+  quantityLimit?: BigNumber;
 }
 
 export async function updateTokenClass(

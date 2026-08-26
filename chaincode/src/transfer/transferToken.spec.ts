@@ -19,6 +19,7 @@ import {
   TokenBalance,
   TokenHold,
   TokenLockedError,
+  TokenQuantityLimitExceededError,
   TransferTokenDto,
   UserAlias,
   createValidChainObject,
@@ -459,6 +460,46 @@ describe("TransferToken", () => {
     // Then
     expect(response).toEqual(
       GalaChainResponse.Error(new InvalidDecimalError(decimalQuantity, currencyClass.decimals))
+    );
+    expect(getWrites()).toEqual({});
+  });
+
+  test("TransferToken fails when quantity exceeds token class quantityLimit", async () => {
+    // Given
+    const currencyInstance = currency.tokenInstance();
+    const currencyInstanceKey = currency.tokenInstanceKey();
+    const currencyClass = currency.tokenClass((c) => ({ ...c, quantityLimit: new BigNumber("10") }));
+    const ownerBalance = currency.tokenBalance((b) => ({
+      ...b,
+      owner: users.tokenHolder.identityKey,
+      quantity: new BigNumber("100000")
+    }));
+
+    const { ctx, contract, getWrites } = fixture(GalaChainTokenContract)
+      .registeredUsers(users.tokenHolder)
+      .savedState(currencyClass, currencyInstance, ownerBalance);
+
+    const dto: TransferTokenDto = await createValidSubmitDTO(TransferTokenDto, {
+      from: users.tokenHolder.identityKey,
+      to: users.testUser2.identityKey,
+      tokenInstance: currencyInstanceKey,
+      quantity: new BigNumber("11")
+    }).signed(users.tokenHolder.privateKey);
+
+    // When
+    const response = await contract.TransferToken(ctx, dto);
+
+    // Then
+    expect(response).toEqual(
+      GalaChainResponse.Error(
+        new TokenQuantityLimitExceededError(
+          users.tokenHolder.identityKey,
+          currencyClass,
+          new BigNumber("11"),
+          new BigNumber("10"),
+          new BigNumber("0")
+        )
+      )
     );
     expect(getWrites()).toEqual({});
   });

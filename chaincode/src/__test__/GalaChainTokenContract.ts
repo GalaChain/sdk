@@ -83,6 +83,7 @@ import {
   TransferTokenDto,
   UnlockTokenDto,
   UnlockTokensDto,
+  UpdateBalanceQuantityLimitDto,
   UpdateTokenClassDto,
   VestingToken,
   VestingTokenInfo,
@@ -135,6 +136,7 @@ import {
   transferToken,
   unlockToken,
   unlockTokens,
+  updateBalanceQuantityLimit,
   updateTokenClass
 } from "../";
 // eslint-disable-next-line @typescript-eslint/ban-ts-comment
@@ -190,7 +192,8 @@ export default class GalaChainTokenContract extends GalaContract {
       totalMintAllowance: dto.totalMintAllowance ?? CreateTokenClassDto.INITIAL_MINT_ALLOWANCE,
       totalSupply: dto.totalSupply ?? CreateTokenClassDto.INITIAL_TOTAL_SUPPLY,
       totalBurned: dto.totalBurned ?? CreateTokenClassDto.INITIAL_TOTAL_BURNED,
-      authorities
+      authorities,
+      quantityLimit: dto.quantityLimit
     });
   }
 
@@ -363,6 +366,20 @@ export default class GalaChainTokenContract extends GalaContract {
     return fetchBalancesWithTokenMetadata(ctx, {
       ...dto,
       owner: await resolveUserAlias(ctx, dto.owner ?? ctx.callingUser)
+    });
+  }
+
+  @Submit({
+    in: UpdateBalanceQuantityLimitDto,
+    out: TokenBalance
+  })
+  public async UpdateBalanceQuantityLimit(
+    ctx: GalaChainContext,
+    dto: UpdateBalanceQuantityLimitDto
+  ): Promise<TokenBalance> {
+    return updateBalanceQuantityLimit(ctx, {
+      tokenClass: dto.tokenClass,
+      quantityLimit: dto.quantityLimit
     });
   }
 
@@ -835,6 +852,7 @@ export default class GalaChainTokenContract extends GalaContract {
       totalSupply: dto.tokenClass.totalSupply ?? CreateTokenClassDto.INITIAL_TOTAL_SUPPLY,
       totalBurned: dto.tokenClass.totalBurned ?? CreateTokenClassDto.INITIAL_TOTAL_BURNED,
       authorities,
+      quantityLimit: dto.tokenClass.quantityLimit,
       startDate: dto.startDate,
       vestingName: dto.vestingName,
       allocations: dto.allocations
