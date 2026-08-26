@@ -64,7 +64,8 @@ it("should update properties that are allowed to be updated", async () => {
     totalSupply: new BigNumber("998"),
     totalMintAllowance: new BigNumber("997"),
     image: "https://app.gala.games/_nuxt/img/updated-gala-logo_horizontal_white.8b0409c.png",
-    authorities: ["client|new-admin" as UserAlias]
+    authorities: ["client|new-admin" as UserAlias],
+    quantityLimit: new BigNumber("1000")
   };
 
   // When
@@ -80,7 +81,8 @@ it("should update properties that are allowed to be updated", async () => {
     image: update.image,
     contractAddress: update.contractAddress,
     metadataAddress: update.metadataAddress,
-    authorities: ["client|new-admin", "client|old-admin"] // sorted
+    authorities: ["client|new-admin", "client|old-admin"], // sorted
+    quantityLimit: update.quantityLimit.toFixed()
   });
 });
 

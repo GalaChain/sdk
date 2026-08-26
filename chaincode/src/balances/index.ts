@@ -23,6 +23,7 @@ import {
   fetchBalancesWithTokenMetadata
 } from "./fetchBalancesWithTokenMetadata";
 import { fetchOrCreateBalance } from "./fetchOrCreateBalance";
+import { UpdateBalanceQuantityLimitParams, updateBalanceQuantityLimit } from "./updateBalanceQuantityLimit";
 
 export {
   fetchOrCreateBalance,
@@ -31,5 +32,7 @@ export {
   fetchBalancesWithPagination,
   FetchBalancesWithPaginationParams,
   fetchBalancesWithTokenMetadata,
-  FetchBalancesWithTokenMetadataParams
+  FetchBalancesWithTokenMetadataParams,
+  updateBalanceQuantityLimit,
+  UpdateBalanceQuantityLimitParams
 };

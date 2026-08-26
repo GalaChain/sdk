@@ -87,7 +87,7 @@ async function swapToken(
       fromPersonBalance.unlockQuantity(quantity, ctx.txUnixTime, swapRequestId, fromPersonKey);
     }
 
-    fromPersonBalance.subtractQuantity(quantity, ctx.txUnixTime);
+    fromPersonBalance.subtractQuantity(quantity, ctx.txUnixTime, tokenClass.quantityLimit);
     toPersonBalance.addQuantity(quantity);
   }
 

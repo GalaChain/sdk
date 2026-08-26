@@ -50,6 +50,7 @@ import {
   SetTokenInstanceMetadataDto,
   TokenAllowance,
   TokenBalance as TokenBalanceDto,
+  TokenBalanceLimit,
   TokenBalanceWithMetadata,
   TokenBurn,
   TokenClass,
@@ -60,9 +61,9 @@ import {
   TransferTokenDto,
   UnlockTokenDto,
   UnlockTokensDto,
+  UpdateBalanceQuantityLimitDto,
   UpdateTokenClassDto,
-  UserAlias,
-  UserRef
+  UserAlias
 } from "@gala-chain/api";
 import BigNumber from "bignumber.js";
 import { Type } from "class-transformer";
@@ -99,6 +100,7 @@ type SetTokenInstanceMetadataRequest = ConstructorArgs<SetTokenInstanceMetadataD
 type TransferTokenRequest = ConstructorArgs<TransferTokenDto>;
 type UnlockTokenRequest = ConstructorArgs<UnlockTokenDto>;
 type UnlockTokensRequest = ConstructorArgs<UnlockTokensDto>;
+type UpdateBalanceQuantityLimitRequest = ConstructorArgs<UpdateBalanceQuantityLimitDto>;
 type UpdateTokenClassRequest = ConstructorArgs<UpdateTokenClassDto>;
 
 /**
@@ -133,6 +135,11 @@ class TokenBalance implements ConstructorArgs<TokenBalanceDto> {
   @BigNumberIsNotNegative()
   @BigNumberProperty()
   quantity: BigNumber;
+
+  @IsOptional()
+  @ValidateNested()
+  @Type(() => TokenBalanceLimit)
+  limit?: TokenBalanceLimit;
 }
 
 export {
@@ -169,6 +176,7 @@ export {
   SetTokenInstanceMetadataRequest,
   TokenAllowance,
   TokenBalance,
+  TokenBalanceLimit,
   TokenBalanceWithMetadata,
   TokenBurn,
   TokenClass,
@@ -179,5 +187,6 @@ export {
   TransferTokenRequest,
   UnlockTokenRequest,
   UnlockTokensRequest,
+  UpdateBalanceQuantityLimitRequest,
   UpdateTokenClassRequest
 };

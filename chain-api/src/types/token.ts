@@ -262,6 +262,16 @@ export class CreateTokenClassDto extends SubmitCallDTO {
   @IsOptional()
   @ArrayNotEmpty()
   authorities?: string[];
+
+  @JSONSchema({
+    description:
+      "Optional maximum quantity that may be subtracted from a balance of this class across the " +
+      "current hour and the preceding 23 hourly buckets."
+  })
+  @IsOptional()
+  @BigNumberIsNotNegative()
+  @BigNumberProperty()
+  quantityLimit?: BigNumber;
 }
 
 export class UpdateTokenClassDto extends SubmitCallDTO {
@@ -339,6 +349,16 @@ export class UpdateTokenClassDto extends SubmitCallDTO {
   })
   @IsOptional()
   overwriteAuthorities?: boolean;
+
+  @JSONSchema({
+    description:
+      "Optional maximum quantity that may be subtracted from a balance of this class across the " +
+      "current hour and the preceding 23 hourly buckets."
+  })
+  @IsOptional()
+  @BigNumberIsNotNegative()
+  @BigNumberProperty()
+  quantityLimit?: BigNumber;
 }
 
 @JSONSchema({
@@ -483,6 +503,29 @@ export class FetchBalancesWithTokenMetadataResponse extends ChainCallDTO {
   @IsOptional()
   @IsString()
   nextPageBookmark?: string;
+}
+
+@JSONSchema({
+  description: "Contains parameters for the owner to set a per-balance quantity limit."
+})
+export class UpdateBalanceQuantityLimitDto extends SubmitCallDTO {
+  @JSONSchema({
+    description: "Token class of the balance whose quantity limit will be updated."
+  })
+  @ValidateNested()
+  @Type(() => TokenClassKey)
+  @IsNotEmpty()
+  tokenClass: TokenClassKey;
+
+  @JSONSchema({
+    description:
+      "Maximum quantity that may be subtracted from this balance across the current hour and the " +
+      "preceding 23 hourly buckets. Takes precedence over TokenClass.quantityLimit. Increases take " +
+      "effect after a delay; decreases take effect immediately."
+  })
+  @BigNumberIsNotNegative()
+  @BigNumberProperty()
+  quantityLimit: BigNumber;
 }
 
 @JSONSchema({
