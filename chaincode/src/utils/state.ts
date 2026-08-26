@@ -477,36 +477,26 @@ export async function getObjectsByKeys<T extends ChainObject>(
         throw new NoObjectIdsError();
       }
 
-      // Start all async operations (ALS nests each under this span while recording).
-      const operations: Array<Promise<T>> = objectIds.map((id) => getObjectByKey(ctx, constructor, id));
+      const successes: T[] = [];
+      const failures: Array<{ id: string; message: string }> = [];
 
-      // Collect results (in the same order as operations)
-      type ResultsType = { successes: Array<T>; failures: Array<{ id: string; message: string }> };
-      const results: ResultsType = await operations.reduce<Promise<ResultsType>>(
-        async (currentResults, operation, i) => {
-          const { successes, failures }: ResultsType = await currentResults;
-
-          try {
-            return { successes: [...successes, await operation], failures: failures };
-          } catch (e) {
-            return {
-              successes: successes,
-              failures: [...failures, { id: objectIds[i], message: (e as Error).message }]
-            };
-          }
-        },
-        Promise.resolve({ successes: [], failures: [] })
-      );
-
-      span?.setAttribute("gala.state.result_count", results.successes.length);
-      span?.setAttribute("gala.state.failure_count", results.failures.length);
-
-      if (results.failures.length) {
-        const messages = results.failures.map(({ id, message }) => `${id}: ${message}`);
-        throw new InvalidResultsError(messages);
-      } else {
-        return results.successes;
+      for (const id of objectIds) {
+        try {
+          successes.push(await getObjectByKey(ctx, constructor, id));
+        } catch (e) {
+          failures.push({ id, message: (e as Error).message });
+        }
       }
+
+      span?.setAttribute("gala.state.result_count", successes.length);
+      span?.setAttribute("gala.state.failure_count", failures.length);
+
+      if (failures.length) {
+        const messages = failures.map(({ id, message }) => `${id}: ${message}`);
+        throw new InvalidResultsError(messages);
+      }
+
+      return successes;
     }
   );
 }

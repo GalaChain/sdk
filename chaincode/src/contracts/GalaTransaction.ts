@@ -190,130 +190,133 @@ function GalaTransaction<In extends ChainCallDTO, Out>(
       const galaTxSpanName =
         options.type === GalaTransactionType.SUBMIT ? "GalaTransaction.SUBMIT" : "GalaTransaction.EVALUATE";
 
-      try {
-        const metadata = [{ dto: dtoPlain }];
-        ctx?.logger?.logTimeline("Begin Transaction", loggingContext, metadata);
+      // ALS = SERVER so nested batch EVALUATE does not parent to batch.operation.
+      return ctx.otel.run(async () => {
+        try {
+          const metadata = [{ dto: dtoPlain }];
+          ctx?.logger?.logTimeline("Begin Transaction", loggingContext, metadata);
 
-        return await ctx.otel.sendBound(
-          galaTxSpanName,
-          {
-            "gala.contract": className,
-            "gala.method": method.name,
-            "gala.tx_type": options.type === GalaTransactionType.SUBMIT ? "SUBMIT" : "EVALUATE"
-          },
-          async () => {
-            // Parse & validate - may throw an exception
-            const dtoClass = options.in ?? (ChainCallDTO as unknown as ClassConstructor<Inferred<In>>);
-            const validationOptions =
-              dtoClass === (ChainCallDTO as unknown as ClassConstructor<Inferred<In>>)
-                ? PERMISSIVE_VALIDATION_OPTIONS
-                : STRICT_VALIDATION_OPTIONS;
-            const dto = !dtoPlain
-              ? undefined
-              : await parseValidDTO<In>(
-                  dtoClass,
-                  dtoPlain as string | Record<string, unknown>,
-                  validationOptions
-                );
+          return await ctx.otel.sendBound(
+            galaTxSpanName,
+            {
+              "gala.contract": className,
+              "gala.method": method.name,
+              "gala.tx_type": options.type === GalaTransactionType.SUBMIT ? "SUBMIT" : "EVALUATE"
+            },
+            async () => {
+              // Parse & validate - may throw an exception
+              const dtoClass = options.in ?? (ChainCallDTO as unknown as ClassConstructor<Inferred<In>>);
+              const validationOptions =
+                dtoClass === (ChainCallDTO as unknown as ClassConstructor<Inferred<In>>)
+                  ? PERMISSIVE_VALIDATION_OPTIONS
+                  : STRICT_VALIDATION_OPTIONS;
+              const dto = !dtoPlain
+                ? undefined
+                : await parseValidDTO<In>(
+                    dtoClass,
+                    dtoPlain as string | Record<string, unknown>,
+                    validationOptions
+                  );
 
-            // Note using Date.now() instead of ctx.txUnixTime which is provided client-side.
-            if (dto?.dtoExpiresAt && dto.dtoExpiresAt < Date.now()) {
-              throw new ExpiredError(`DTO expired at ${new Date(dto.dtoExpiresAt).toISOString()}`);
-            }
-
-            await ctx.otel.send("gala.authorize", {}, async () => {
-              // Authenticate the user
-              if (ctx.isDryRun) {
-                // Do not authenticate in dry run mode
-              } else if (options?.verifySignature || dto?.getAllSignatures().length) {
-                // Authenticate if this is explicitly enabled or if there are any signatures in the DTO
-                ctx.callingUserData = await authenticate(ctx, dto, options.quorum);
-              } else {
-                // it means a request where authorization is not required. If there is org-based authorization,
-                // default roles are applied. If not, then only evaluate is possible. Alias is intentionally
-                // missing.
-                const roles = !options.allowedOrgs?.length
-                  ? [UserRole.EVALUATE]
-                  : [...UserProfile.DEFAULT_ROLES];
-                ctx.callingUserData = {
-                  roles,
-                  signedBy: [],
-                  signatureQuorum: 0,
-                  allowedSigners: [],
-                  isMultisig: false
-                };
+              // Note using Date.now() instead of ctx.txUnixTime which is provided client-side.
+              if (dto?.dtoExpiresAt && dto.dtoExpiresAt < Date.now()) {
+                throw new ExpiredError(`DTO expired at ${new Date(dto.dtoExpiresAt).toISOString()}`);
               }
 
-              // Authorize the user
-              await authorize(ctx, options, dto);
-
-              // Record uniqueKey before the handler so a later business failure
-              // still consumes the key (flushed on error by afterTransaction).
-              if (options.enforceUniqueKey) {
-                if (dto?.uniqueKey) {
-                  await UniqueTransactionService.ensureUniqueTransaction(ctx, dto.uniqueKey);
+              await ctx.otel.send("gala.authorize", {}, async () => {
+                // Authenticate the user
+                if (ctx.isDryRun) {
+                  // Do not authenticate in dry run mode
+                } else if (options?.verifySignature || dto?.getAllSignatures().length) {
+                  // Authenticate if this is explicitly enabled or if there are any signatures in the DTO
+                  ctx.callingUserData = await authenticate(ctx, dto, options.quorum);
                 } else {
-                  const message = `Missing uniqueKey in transaction dto for method '${method.name}'`;
-                  throw new RuntimeError(message);
+                  // it means a request where authorization is not required. If there is org-based authorization,
+                  // default roles are applied. If not, then only evaluate is possible. Alias is intentionally
+                  // missing.
+                  const roles = !options.allowedOrgs?.length
+                    ? [UserRole.EVALUATE]
+                    : [...UserProfile.DEFAULT_ROLES];
+                  ctx.callingUserData = {
+                    roles,
+                    signedBy: [],
+                    signatureQuorum: 0,
+                    allowedSigners: [],
+                    isMultisig: false
+                  };
                 }
+
+                // Authorize the user
+                await authorize(ctx, options, dto);
+
+                // Record uniqueKey before the handler so a later business failure
+                // still consumes the key (flushed on error by afterTransaction).
+                if (options.enforceUniqueKey) {
+                  if (dto?.uniqueKey) {
+                    await UniqueTransactionService.ensureUniqueTransaction(ctx, dto.uniqueKey);
+                  } else {
+                    const message = `Missing uniqueKey in transaction dto for method '${method.name}'`;
+                    throw new RuntimeError(message);
+                  }
+                }
+              });
+
+              const argArray: [GalaChainContext, In] | [GalaChainContext] = dto ? [ctx, dto] : [ctx];
+
+              if (options?.before !== undefined) {
+                await ctx.otel.send("gala.before", {}, async () => options.before?.apply(this, argArray));
               }
-            });
 
-            const argArray: [GalaChainContext, In] | [GalaChainContext] = dto ? [ctx, dto] : [ctx];
-
-            if (options?.before !== undefined) {
-              await ctx.otel.send("gala.before", {}, async () => options.before?.apply(this, argArray));
-            }
-
-            // Business handler — separate from auth/parse so traces show where time goes.
-            const result = await ctx.otel.send(
-              "gala.handle",
-              { "gala.contract": className, "gala.method": method.name },
-              async () => method?.apply(this, argArray)
-            );
-
-            const normalizedResult =
-              typeof result === "object" && "Status" in result && typeof result.Status === "number"
-                ? result
-                : GalaChainResponse.Success(result);
-
-            if (options?.after !== undefined) {
-              await ctx.otel.send(
-                "gala.after",
-                {},
-                async () => options.after?.apply(this, [ctx, dto, normalizedResult])
+              // Business handler — separate from auth/parse so traces show where time goes.
+              const result = await ctx.otel.send(
+                "gala.handle",
+                { "gala.contract": className, "gala.method": method.name },
+                async () => method?.apply(this, argArray)
               );
+
+              const normalizedResult =
+                typeof result === "object" && "Status" in result && typeof result.Status === "number"
+                  ? result
+                  : GalaChainResponse.Success(result);
+
+              if (options?.after !== undefined) {
+                await ctx.otel.send(
+                  "gala.after",
+                  {},
+                  async () => options.after?.apply(this, [ctx, dto, normalizedResult])
+                );
+              }
+
+              return normalizedResult;
             }
+          );
+        } catch (err) {
+          const chainError = ChainError.from(err);
+          ctx.otel.recordError(err);
 
-            return normalizedResult;
+          if (ctx.logger) {
+            chainError.logWarn(ctx.logger);
+            ctx.logger.logTimeline("Failed Transaction", loggingContext, [dtoPlain], err);
+            ctx.logger.debug(err.message);
+            ctx.logger.debug(err.stack);
           }
-        );
-      } catch (err) {
-        const chainError = ChainError.from(err);
-        ctx.otel.recordError(err);
 
-        if (ctx.logger) {
-          chainError.logWarn(ctx.logger);
-          ctx.logger.logTimeline("Failed Transaction", loggingContext, [dtoPlain], err);
-          ctx.logger.debug(err.message);
-          ctx.logger.debug(err.stack);
+          // if external chaincode call succeeded, but the remaining part of the
+          // chaincode failed, we need to throw an error to prevent from the state
+          // being updated by the external chaincode. There seems to be no other
+          // way to rollback the state changes.
+          if (ctx.stub.externalChaincodeWasInvoked) {
+            const message =
+              "External chaincode call succeeded, but the remaining part of the chaincode failed with: " +
+              `${chainError.key}: ${chainError.message}`;
+            throw new RuntimeError(message);
+          }
+
+          // Note: since it does not end with an exception, failed transactions are also saved
+          // on chain in transaction history.
+          return GalaChainResponse.Error(err as Error);
         }
-
-        // if external chaincode call succeeded, but the remaining part of the
-        // chaincode failed, we need to throw an error to prevent from the state
-        // being updated by the external chaincode. There seems to be no other
-        // way to rollback the state changes.
-        if (ctx.stub.externalChaincodeWasInvoked) {
-          const message =
-            "External chaincode call succeeded, but the remaining part of the chaincode failed with: " +
-            `${chainError.key}: ${chainError.message}`;
-          throw new RuntimeError(message);
-        }
-
-        // Note: since it does not end with an exception, failed transactions are also saved
-        // on chain in transaction history.
-        return GalaChainResponse.Error(err as Error);
-      }
+      });
     };
 
     // Update API of contract object
