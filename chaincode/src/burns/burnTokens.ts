@@ -173,9 +173,9 @@ export async function burnTokens(
     const userBalance = await fetchOrCreateBalance(ctx, owner, tokenInstanceClassKey);
 
     if (tokenInstance.isNonFungible) {
-      userBalance.removeInstance(tokenInstance.instance, ctx.txUnixTime);
+      userBalance.removeInstance(tokenInstance.instance, ctx.txUnixTime, "burn");
     } else {
-      userBalance.subtractQuantity(tokenQuantity.quantity, ctx.txUnixTime);
+      userBalance.subtractQuantity(tokenQuantity.quantity, ctx.txUnixTime, tokenClass.quantityLimit, "burn");
     }
 
     const newBurn = await incrementOrCreateTokenBurnForTx(

@@ -13,6 +13,7 @@
  * limitations under the License.
  */
 import {
+  AllowAllTokenBalanceTargetsDto,
   BatchMintTokenDto,
   BigNumberArrayProperty,
   BigNumberIsNotNegative,
@@ -20,6 +21,7 @@ import {
   BurnTokensDto,
   CreateTokenClassDto,
   DeleteAllowancesDto,
+  DeleteTokenInstanceMetadataDto,
   FetchAllowancesDto,
   FetchAllowancesResponse,
   FetchBalancesDto,
@@ -30,6 +32,10 @@ import {
   FetchTokenClassesDto,
   FetchTokenClassesResponse,
   FetchTokenClassesWithPaginationDto,
+  FetchTokenInstanceMetadataDto,
+  FetchTokenInstanceMetadataResponse,
+  FetchTokenInstanceMetadataWithPaginationDto,
+  FreezeTokenBalanceDto,
   FulfillMintDto,
   FullAllowanceCheckDto,
   FullAllowanceCheckResDto as FullAllowanceCheckResponse,
@@ -43,20 +49,25 @@ import {
   MintTokenDto,
   MintTokenWithAllowanceDto,
   RefreshAllowanceDto,
+  RestrictTokenBalanceTargetsDto,
+  SetTokenInstanceMetadataDto,
   TokenAllowance,
   TokenBalance as TokenBalanceDto,
+  TokenBalanceLimit,
+  TokenBalanceTargets,
   TokenBalanceWithMetadata,
   TokenBurn,
   TokenClass,
   TokenClassKey,
   TokenHold,
   TokenInstanceKey,
+  TokenInstanceMetadata,
   TransferTokenDto,
   UnlockTokenDto,
   UnlockTokensDto,
+  UpdateBalanceQuantityLimitDto,
   UpdateTokenClassDto,
-  UserAlias,
-  UserRef
+  UserAlias
 } from "@gala-chain/api";
 import BigNumber from "bignumber.js";
 import { Type } from "class-transformer";
@@ -68,6 +79,7 @@ type BatchMintTokenRequest = ConstructorArgs<BatchMintTokenDto>;
 type BurnTokensRequest = ConstructorArgs<BurnTokensDto>;
 type CreateTokenClassRequest = ConstructorArgs<CreateTokenClassDto>;
 type DeleteAllowancesRequest = ConstructorArgs<DeleteAllowancesDto>;
+type DeleteTokenInstanceMetadataRequest = ConstructorArgs<DeleteTokenInstanceMetadataDto>;
 type FetchAllowancesRequest = ConstructorArgs<FetchAllowancesDto>;
 type FetchBalancesRequest = ConstructorArgs<FetchBalancesDto>;
 type FetchBalancesWithPaginationRequest = ConstructorArgs<FetchBalancesWithPaginationDto>;
@@ -75,6 +87,9 @@ type FetchBurnsRequest = ConstructorArgs<FetchBurnsDto>;
 type FetchMintRequestsRequest = ConstructorArgs<FetchMintRequestsDto>;
 type FetchTokenClassesRequest = ConstructorArgs<FetchTokenClassesDto>;
 type FetchTokenClassesWithPaginationRequest = ConstructorArgs<FetchTokenClassesWithPaginationDto>;
+type FetchTokenInstanceMetadataRequest = ConstructorArgs<FetchTokenInstanceMetadataDto>;
+type FetchTokenInstanceMetadataWithPaginationRequest =
+  ConstructorArgs<FetchTokenInstanceMetadataWithPaginationDto>;
 type FulfillMintRequest = ConstructorArgs<FulfillMintDto>;
 type FullAllowanceCheckRequest = ConstructorArgs<FullAllowanceCheckDto>;
 type GrantAllowanceRequest = ConstructorArgs<GrantAllowanceDto>;
@@ -85,9 +100,14 @@ type MintRequest = ConstructorArgs<MintRequestDto>;
 type MintTokenRequest = ConstructorArgs<MintTokenDto>;
 type MintTokenWithAllowanceRequest = ConstructorArgs<MintTokenWithAllowanceDto>;
 type RefreshAllowanceRequest = ConstructorArgs<RefreshAllowanceDto>;
+type SetTokenInstanceMetadataRequest = ConstructorArgs<SetTokenInstanceMetadataDto>;
 type TransferTokenRequest = ConstructorArgs<TransferTokenDto>;
 type UnlockTokenRequest = ConstructorArgs<UnlockTokenDto>;
 type UnlockTokensRequest = ConstructorArgs<UnlockTokensDto>;
+type UpdateBalanceQuantityLimitRequest = ConstructorArgs<UpdateBalanceQuantityLimitDto>;
+type RestrictTokenBalanceTargetsRequest = ConstructorArgs<RestrictTokenBalanceTargetsDto>;
+type AllowAllTokenBalanceTargetsRequest = ConstructorArgs<AllowAllTokenBalanceTargetsDto>;
+type FreezeTokenBalanceRequest = ConstructorArgs<FreezeTokenBalanceDto>;
 type UpdateTokenClassRequest = ConstructorArgs<UpdateTokenClassDto>;
 
 /**
@@ -122,6 +142,16 @@ class TokenBalance implements ConstructorArgs<TokenBalanceDto> {
   @BigNumberIsNotNegative()
   @BigNumberProperty()
   quantity: BigNumber;
+
+  @IsOptional()
+  @ValidateNested()
+  @Type(() => TokenBalanceLimit)
+  limit?: TokenBalanceLimit;
+
+  @IsOptional()
+  @ValidateNested()
+  @Type(() => TokenBalanceTargets)
+  targets?: TokenBalanceTargets;
 }
 
 export {
@@ -129,6 +159,7 @@ export {
   BurnTokensRequest,
   CreateTokenClassRequest,
   DeleteAllowancesRequest,
+  DeleteTokenInstanceMetadataRequest,
   FetchAllowancesRequest,
   FetchAllowancesResponse,
   FetchBalancesRequest,
@@ -139,6 +170,9 @@ export {
   FetchTokenClassesRequest,
   FetchTokenClassesResponse,
   FetchTokenClassesWithPaginationRequest,
+  FetchTokenInstanceMetadataRequest,
+  FetchTokenInstanceMetadataResponse,
+  FetchTokenInstanceMetadataWithPaginationRequest,
   FulfillMintRequest,
   FullAllowanceCheckRequest,
   FullAllowanceCheckResponse,
@@ -151,16 +185,23 @@ export {
   MintTokenRequest,
   MintTokenWithAllowanceRequest,
   RefreshAllowanceRequest,
+  SetTokenInstanceMetadataRequest,
   TokenAllowance,
   TokenBalance,
+  TokenBalanceLimit,
   TokenBalanceWithMetadata,
   TokenBurn,
   TokenClass,
   TokenClassKey,
   TokenHold,
   TokenInstanceKey,
+  TokenInstanceMetadata,
   TransferTokenRequest,
   UnlockTokenRequest,
   UnlockTokensRequest,
+  UpdateBalanceQuantityLimitRequest,
+  RestrictTokenBalanceTargetsRequest,
+  AllowAllTokenBalanceTargetsRequest,
+  FreezeTokenBalanceRequest,
   UpdateTokenClassRequest
 };

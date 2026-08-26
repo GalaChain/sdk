@@ -28,10 +28,9 @@ import {
 import { JSONSchema } from "class-validator-jsonschema";
 
 import { ChainKey } from "../utils";
-import { BigNumberIsPositive, BigNumberProperty, IsUserAlias } from "../validators";
+import { BigNumberIsNotNegative, BigNumberIsPositive, BigNumberProperty, IsUserAlias } from "../validators";
 import { ChainObject } from "./ChainObject";
 import { UserAlias } from "./UserAlias";
-import { UserRef } from "./UserRef";
 import { GC_NETWORK_ID } from "./contract";
 import { ChainCallDTO } from "./dtos";
 
@@ -58,6 +57,16 @@ export class TokenClassKey extends ChainCallDTO {
   @IsDefined()
   public additionalKey: string;
 
+  /**
+   * @deprecated Not part of the token class key. Ignored if present.
+   */
+  @JSONSchema({
+    deprecated: true,
+    description: "Not part of the token class key. Ignored if present."
+  })
+  @IsOptional()
+  public instance?: unknown;
+
   public toString() {
     return this.toStringKey();
   }
@@ -73,13 +82,8 @@ export class TokenClassKey extends ChainCallDTO {
   }
 
   public allKeysPresent(): boolean {
-    const keysAndValues = Object.entries(this);
-    if (keysAndValues.length !== 4) return false;
-
     const additionalKeyPresent = typeof this.additionalKey === "string";
-    if (this.collection && this.category && this.type && additionalKeyPresent) return true;
-
-    return false;
+    return !!(this.collection && this.category && this.type && additionalKeyPresent);
   }
 
   public toB58EncodedString(): string {
@@ -182,6 +186,17 @@ export class TokenClass extends ChainObject {
   @MaxLength(500)
   public image: string;
 
+  @JSONSchema({
+    description:
+      "Optional maximum quantity that may be subtracted from a balance of this class across the " +
+      "current hour and the preceding 23 hourly buckets. A balance-level limit.quantity, when " +
+      "present, takes precedence."
+  })
+  @IsOptional()
+  @BigNumberIsNotNegative()
+  @BigNumberProperty()
+  public quantityLimit?: BigNumber;
+
   // Rarity of the NFT
   @IsOptional()
   @IsAlphanumeric()
@@ -268,6 +283,7 @@ interface ToUpdate {
   image?: string;
   authorities?: UserAlias[];
   overwriteAuthorities?: boolean;
+  quantityLimit?: BigNumber;
 }
 
 function createUpdated(existingToken: TokenClass, toUpdate: ToUpdate): TokenClass {
@@ -279,6 +295,9 @@ function createUpdated(existingToken: TokenClass, toUpdate: ToUpdate): TokenClas
   newToken.metadataAddress = toUpdate.metadataAddress ?? existingToken.metadataAddress;
   newToken.rarity = toUpdate.rarity ?? existingToken.rarity;
   newToken.image = toUpdate.image ?? existingToken.image;
+  if (toUpdate.quantityLimit !== undefined) {
+    newToken.quantityLimit = toUpdate.quantityLimit;
+  }
 
   if (Array.isArray(toUpdate.authorities) && toUpdate.authorities.length > 0) {
     newToken.authorities = toUpdate.overwriteAuthorities

@@ -13,10 +13,12 @@
  * limitations under the License.
  */
 import {
+  AllowAllTokenBalanceTargetsDto,
   BatchMintTokenDto,
   BurnTokensDto,
   CreateTokenClassDto,
   DeleteAllowancesDto,
+  DeleteTokenInstanceMetadataDto,
   FetchAllowancesDto,
   FetchBalancesDto,
   FetchBalancesWithPaginationDto,
@@ -24,6 +26,9 @@ import {
   FetchMintRequestsDto,
   FetchTokenClassesDto,
   FetchTokenClassesWithPaginationDto,
+  FetchTokenInstanceMetadataDto,
+  FetchTokenInstanceMetadataWithPaginationDto,
+  FreezeTokenBalanceDto,
   FulfillMintDto,
   FullAllowanceCheckDto,
   GrantAllowanceDto,
@@ -34,18 +39,23 @@ import {
   MintTokenDto,
   MintTokenWithAllowanceDto,
   RefreshAllowanceDto,
+  RestrictTokenBalanceTargetsDto,
+  SetTokenInstanceMetadataDto,
   TransferTokenDto,
   UnlockTokenDto,
   UnlockTokensDto,
+  UpdateBalanceQuantityLimitDto,
   UpdateTokenClassDto
 } from "@gala-chain/api";
 
 import { GalaChainProvider } from "../GalaChainClient";
 import {
+  AllowAllTokenBalanceTargetsRequest,
   BatchMintTokenRequest,
   BurnTokensRequest,
   CreateTokenClassRequest,
   DeleteAllowancesRequest,
+  DeleteTokenInstanceMetadataRequest,
   FetchAllowancesRequest,
   FetchAllowancesResponse,
   FetchBalancesRequest,
@@ -56,6 +66,10 @@ import {
   FetchTokenClassesRequest,
   FetchTokenClassesResponse,
   FetchTokenClassesWithPaginationRequest,
+  FetchTokenInstanceMetadataRequest,
+  FetchTokenInstanceMetadataResponse,
+  FetchTokenInstanceMetadataWithPaginationRequest,
+  FreezeTokenBalanceRequest,
   FulfillMintRequest,
   FullAllowanceCheckRequest,
   FullAllowanceCheckResponse,
@@ -68,15 +82,19 @@ import {
   MintTokenRequest,
   MintTokenWithAllowanceRequest,
   RefreshAllowanceRequest,
+  RestrictTokenBalanceTargetsRequest,
+  SetTokenInstanceMetadataRequest,
   TokenAllowance,
   TokenBalance,
   TokenBurn,
   TokenClass,
   TokenClassKey,
   TokenInstanceKey,
+  TokenInstanceMetadata,
   TransferTokenRequest,
   UnlockTokenRequest,
   UnlockTokensRequest,
+  UpdateBalanceQuantityLimitRequest,
   UpdateTokenClassRequest
 } from "../types";
 import { GalaChainBaseApi } from "./GalaChainBaseApi";
@@ -147,6 +165,48 @@ export class TokenApi extends GalaChainBaseApi {
       url: this.chainCodeUrl,
       requestConstructor: FetchTokenClassesWithPaginationDto,
       responseConstructor: FetchTokenClassesResponse
+    });
+  }
+
+  public SetTokenInstanceMetadata(dto: SetTokenInstanceMetadataRequest) {
+    return this.connection.submit({
+      method: "SetTokenInstanceMetadata",
+      payload: dto,
+      sign: true,
+      url: this.chainCodeUrl,
+      requestConstructor: SetTokenInstanceMetadataDto,
+      responseConstructor: TokenInstanceMetadata
+    });
+  }
+
+  public FetchTokenInstanceMetadata(dto: FetchTokenInstanceMetadataRequest) {
+    return this.connection.submit<Array<TokenInstanceMetadata>, FetchTokenInstanceMetadataDto>({
+      method: "FetchTokenInstanceMetadata",
+      payload: dto,
+      url: this.chainCodeUrl,
+      requestConstructor: FetchTokenInstanceMetadataDto,
+      responseConstructor: TokenInstanceMetadata
+    });
+  }
+
+  public FetchTokenInstanceMetadataWithPagination(dto: FetchTokenInstanceMetadataWithPaginationRequest) {
+    return this.connection.submit({
+      method: "FetchTokenInstanceMetadataWithPagination",
+      payload: dto,
+      url: this.chainCodeUrl,
+      requestConstructor: FetchTokenInstanceMetadataWithPaginationDto,
+      responseConstructor: FetchTokenInstanceMetadataResponse
+    });
+  }
+
+  public DeleteTokenInstanceMetadata(dto: DeleteTokenInstanceMetadataRequest) {
+    return this.connection.submit({
+      method: "DeleteTokenInstanceMetadata",
+      payload: dto,
+      sign: true,
+      url: this.chainCodeUrl,
+      requestConstructor: DeleteTokenInstanceMetadataDto,
+      responseConstructor: TokenInstanceKey
     });
   }
 
@@ -221,6 +281,50 @@ export class TokenApi extends GalaChainBaseApi {
       url: this.chainCodeUrl,
       requestConstructor: FetchBalancesWithPaginationDto,
       responseConstructor: FetchBalancesWithTokenMetadataResponse
+    });
+  }
+
+  public UpdateBalanceQuantityLimit(dto: UpdateBalanceQuantityLimitRequest) {
+    return this.connection.submit({
+      method: "UpdateBalanceQuantityLimit",
+      payload: dto,
+      sign: true,
+      url: this.chainCodeUrl,
+      requestConstructor: UpdateBalanceQuantityLimitDto,
+      responseConstructor: TokenBalance
+    });
+  }
+
+  public RestrictTokenBalanceTargets(dto: RestrictTokenBalanceTargetsRequest) {
+    return this.connection.submit({
+      method: "RestrictTokenBalanceTargets",
+      payload: dto,
+      sign: true,
+      url: this.chainCodeUrl,
+      requestConstructor: RestrictTokenBalanceTargetsDto,
+      responseConstructor: TokenBalance
+    });
+  }
+
+  public AllowAllTokenBalanceTargets(dto: AllowAllTokenBalanceTargetsRequest) {
+    return this.connection.submit({
+      method: "AllowAllTokenBalanceTargets",
+      payload: dto,
+      sign: true,
+      url: this.chainCodeUrl,
+      requestConstructor: AllowAllTokenBalanceTargetsDto,
+      responseConstructor: TokenBalance
+    });
+  }
+
+  public FreezeTokenBalance(dto: FreezeTokenBalanceRequest) {
+    return this.connection.submit({
+      method: "FreezeTokenBalance",
+      payload: dto,
+      sign: true,
+      url: this.chainCodeUrl,
+      requestConstructor: FreezeTokenBalanceDto,
+      responseConstructor: TokenBalance
     });
   }
 

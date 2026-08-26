@@ -35,7 +35,7 @@ import {
 } from "@gala-chain/api";
 import { Contract } from "fabric-contract-api";
 
-import { PublicKeyService } from "../services";
+import { PublicKeyService, UniqueTransactionService } from "../services";
 import { GalaChainContext, GalaChainContextConfig, GalaChainStub } from "../types";
 import { getObjectHistory, getPlainObjectByKey } from "../utils";
 import { getApiMethod, getApiMethods } from "./GalaContractApi";
@@ -130,13 +130,25 @@ export abstract class GalaContract extends Contract {
     await super.afterTransaction(ctx, result);
 
     await ctx.otel.sendBound("fabric.afterTransaction", {}, async () => {
-      if (
-        typeof result === "object" &&
+      if (!ctx.isDryRun && typeof result === "object") {
         // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
-        result?.["Status"] === GalaChainResponseType.Success &&
-        !ctx.isDryRun
-      ) {
-        await (ctx.stub as unknown as GalaChainStub).flushWrites();
+        const status = result?.["Status"];
+
+        if (status === GalaChainResponseType.Success) {
+          await (ctx.stub as unknown as GalaChainStub).flushWrites();
+        } else if (status === GalaChainResponseType.Error) {
+          const stub = ctx.stub as unknown as GalaChainStub;
+          if (typeof stub.getWrites === "function") {
+            // Consume uniqueKey even when the business handler failed, so the
+            // same uniqueKey cannot be reused.
+            const uniqueKeyWrites = UniqueTransactionService.pickUniqueTransactionWrites(stub.getWrites());
+            if (Object.keys(uniqueKeyWrites).length > 0) {
+              stub.setWrites(uniqueKeyWrites);
+              stub.setDeletes({});
+              await stub.flushWrites();
+            }
+          }
+        }
       }
 
       ctx?.logger?.logTimeline(
@@ -314,13 +326,16 @@ export abstract class GalaContract extends Contract {
           span?.setAttribute("gala.batch.op_success", !nestedFailed);
           await sandboxCtx.otel.end(nestedFailed);
 
-          // Update the current context with the writes and deletes if the operation
-          // is successful.
+          // Always keep the inner uniqueKey. Business writes still merge only
+          // on success so a failed op cannot leave partial state.
+          UniqueTransactionService.copyUniqueTransactionWrites(sandboxCtx, ctx);
+
           if (GalaChainResponse.isSuccess(opResponse)) {
             ctx.stub.setWrites(sandboxCtx.stub.getWrites());
             ctx.stub.setDeletes(sandboxCtx.stub.getDeletes());
-            writesCount = ctx.stub.getWritesCount();
           }
+
+          writesCount = ctx.stub.getWritesCount();
 
           return opResponse;
         }

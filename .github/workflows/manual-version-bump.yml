@@ -7,6 +7,11 @@ on:
         description: 'Target branch (main or main-v*)'
         required: true
         default: 'main'
+      bump_minor:
+        description: 'Bump minor version instead of patch'
+        required: false
+        type: boolean
+        default: false
 
 permissions:
   contents: write
@@ -38,7 +43,8 @@ jobs:
 
       - name: Set a new version
         run: |
-          VERSION="$(semver "$(jq -r '.version' package.json)" -i patch)"
+          INCREMENT="${{ inputs.bump_minor && 'minor' || 'patch' }}"
+          VERSION="$(semver "$(jq -r '.version' package.json)" -i "$INCREMENT")"
           echo "VERSION=$VERSION" >> $GITHUB_ENV
 
       - name: Create a new branch

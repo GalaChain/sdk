@@ -18,6 +18,7 @@ import {
   ArrayNotEmpty,
   IsArray,
   IsIn,
+  IsInt,
   IsOptional,
   IsString,
   ValidateIf,
@@ -31,6 +32,7 @@ export class PlantAppleTreeDto extends SubmitCallDTO {
   @StringEnumProperty(Variety)
   public readonly variety: Variety;
 
+  @IsInt()
   public readonly index: number;
 
   constructor(variety: Variety, index: number, uniqueKey: string) {
@@ -45,6 +47,7 @@ export class AppleTreeDto {
   @StringEnumProperty(Variety)
   public readonly variety: Variety;
 
+  @IsInt()
   public readonly index: number;
 
   constructor(variety: Variety, index: number) {
@@ -73,6 +76,7 @@ export class PickAppleDto extends SubmitCallDTO {
   @StringEnumProperty(Variety)
   public readonly variety: Variety;
 
+  @IsInt()
   public readonly index: number;
 
   constructor(treePlantedBy: string, variety: Variety, index: number, uniqueKey: string) {
@@ -94,6 +98,7 @@ export class FetchTreesDto extends ChainCallDTO {
   public readonly variety?: Variety;
 
   @IsOptional()
+  @IsInt()
   public readonly index?: number;
 
   @IsString()

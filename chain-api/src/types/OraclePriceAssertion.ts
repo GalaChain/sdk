@@ -36,6 +36,7 @@ export class ExternalToken extends ChainObject {
   @JSONSchema({
     description: `Symbol of the external currency, e.g. "ETH"`
   })
+  @IsNotEmpty()
   public symbol: string;
 }
 

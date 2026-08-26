@@ -14,9 +14,11 @@
  */
 import BigNumber from "bignumber.js";
 import { Transform, TransformOptions } from "class-transformer";
-import { ValidationArguments, ValidationOptions, registerDecorator } from "class-validator";
+import { ValidationArguments, ValidationOptions, registerDecorator, validateSync } from "class-validator";
 
 import { NotImplementedError } from "../utils/error";
+import { getValidationErrorMessages } from "../utils/getValidationErrorMessages";
+import { PERMISSIVE_VALIDATION_OPTIONS } from "../utils/validationOptions";
 
 export function IsWholeNumber(property: string, validationOptions?: ValidationOptions) {
   return function (object: Record<string, unknown>, propertyName: string): void {
@@ -228,6 +230,64 @@ export function BigNumberIsInteger(validationOptions?: ValidationOptions) {
         defaultMessage(args: ValidationArguments) {
           // here you can provide default error message if validation failed
           return `${args.property} must be integer BigNumber but is ${args.value?.toString() ?? args.value}`;
+        }
+      }
+    });
+  };
+}
+
+export function IsStringOrNumber(maxStringLength?: number, validationOptions?: ValidationOptions) {
+  return function (object: object, propertyName: string) {
+    registerDecorator({
+      name: "IsStringOrNumber",
+      target: object.constructor,
+      propertyName,
+      constraints: [maxStringLength],
+      options: validationOptions,
+      validator: {
+        validate(value: unknown, args: ValidationArguments) {
+          const [maxLength] = args.constraints;
+          if (typeof value === "string") {
+            return maxLength === undefined || value.length <= maxLength;
+          }
+          return typeof value === "number" && Number.isFinite(value);
+        },
+        defaultMessage(args: ValidationArguments) {
+          const [maxLength] = args.constraints;
+          const lengthConstraint = maxLength === undefined ? "" : ` no longer than ${maxLength} characters`;
+          return `${args.property} must be a finite number or a string${lengthConstraint}`;
+        }
+      }
+    });
+  };
+}
+
+/**
+ * Nested validation that checks declared fields only and allows extra properties.
+ * Use instead of `@ValidateNested` when a nested value type must stay compatible with
+ * payloads that include undeclared fields (strict DTO whitelist still applies to the parent).
+ */
+export function ValidateNestedAllowUnknown(validationOptions?: ValidationOptions) {
+  return function (object: object, propertyName: string): void {
+    registerDecorator({
+      name: "validateNestedAllowUnknown",
+      target: object.constructor,
+      propertyName,
+      options: validationOptions,
+      validator: {
+        validate(value: unknown) {
+          if (value == null || typeof value !== "object") {
+            return false;
+          }
+          return validateSync(value, PERMISSIVE_VALIDATION_OPTIONS).length === 0;
+        },
+        defaultMessage(args: ValidationArguments) {
+          const errors =
+            args.value != null && typeof args.value === "object"
+              ? validateSync(args.value, PERMISSIVE_VALIDATION_OPTIONS)
+              : [];
+          const messages = getValidationErrorMessages(errors);
+          return messages.length ? messages.join(", ") : `${args.property} nested validation failed`;
         }
       }
     });

@@ -38,6 +38,7 @@ export interface CreateTokenClassParams {
   totalSupply: BigNumber;
   totalBurned: BigNumber;
   authorities: UserAlias[];
+  quantityLimit?: BigNumber;
 }
 
 export async function createTokenClass(
@@ -68,7 +69,8 @@ export async function createTokenClass(
     totalMintAllowance: params.totalMintAllowance,
     totalSupply: params.totalSupply,
     totalBurned: params.totalBurned,
-    authorities: params.authorities
+    authorities: params.authorities,
+    ...(params.quantityLimit !== undefined ? { quantityLimit: params.quantityLimit } : {})
   });
 
   // Token ID cannot be duplicated

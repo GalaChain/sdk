@@ -56,6 +56,7 @@ export interface CreateVestingTokenParams {
   startDate: number;
   vestingName: string;
   allocations: Allocation[];
+  quantityLimit?: BigNumber;
 }
 
 export interface FetchVestingTokenParams {
