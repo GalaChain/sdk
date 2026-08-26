@@ -28,9 +28,22 @@ interface EIP712Object {
   value: EIP712Value;
 }
 
-// Type guard to check if an object is EIP712Object
+// Type guard to check if an object is EIP712Object.
+// Require actual objects: optional `domain`/`types` on ChainCallDTO are undefined
+// when unset, and `"domain" in plain` would otherwise be true after instanceToPlain.
 function isEIP712Object(obj: object): obj is EIP712Object {
-  return obj && typeof obj === "object" && "domain" in obj && "types" in obj;
+  if (!obj || typeof obj !== "object") {
+    return false;
+  }
+  const record = obj as Record<string, unknown>;
+  return (
+    record.domain !== null &&
+    typeof record.domain === "object" &&
+    !Array.isArray(record.domain) &&
+    record.types !== null &&
+    typeof record.types === "object" &&
+    !Array.isArray(record.types)
+  );
 }
 
 /**

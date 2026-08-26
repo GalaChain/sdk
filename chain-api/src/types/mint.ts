@@ -69,6 +69,16 @@ export class MintTokenDto extends SubmitCallDTO {
   @BigNumberIsNotNegative()
   @BigNumberProperty()
   quantity: BigNumber;
+
+  /**
+   * @deprecated Mint identifies the token by tokenClass. Ignored if present.
+   */
+  @JSONSchema({
+    deprecated: true,
+    description: "Mint identifies the token by tokenClass. Ignored if present."
+  })
+  @IsOptional()
+  public tokenInstance?: unknown;
 }
 
 @JSONSchema({

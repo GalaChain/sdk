@@ -260,7 +260,11 @@ describe("GalaContract.DryRun", () => {
     const method = "CreateSuperhero";
     const dto = SuperheroDto.create("Batman", 32);
     const superhero = await createValidChainObject(Superhero, dto);
-    const dryRunDto = await createValidDTO(DryRunDto, { method, callerPublicKey, dto });
+    const dryRunDto = await createValidDTO(DryRunDto, {
+      method,
+      callerPublicKey,
+      dto: instanceToPlain(dto) as Record<string, unknown>
+    });
 
     // When
     const response = await chaincode.invoke("TestGalaContract:DryRun", dryRunDto);
@@ -290,7 +294,11 @@ describe("GalaContract.DryRun", () => {
 
     const method = "GetObjectByKey";
     const dto = await createValidDTO(GetObjectDto, { objectId: batmanKey });
-    const dryRunDto = await createValidDTO(DryRunDto, { method, callerPublicKey, dto });
+    const dryRunDto = await createValidDTO(DryRunDto, {
+      method,
+      callerPublicKey,
+      dto: instanceToPlain(dto) as Record<string, unknown>
+    });
 
     // When
     const response = await chaincode.invoke("TestGalaContract:DryRun", dryRunDto);
@@ -341,7 +349,11 @@ describe("GalaContract.DryRun", () => {
 
     const method = "GetObjectByKey";
     const dto = await createValidDTO(GetObjectDto, { objectId: batmanKey });
-    const dryRunDto = await createValidDTO(DryRunDto, { method, callerPublicKey, dto });
+    const dryRunDto = await createValidDTO(DryRunDto, {
+      method,
+      callerPublicKey,
+      dto: instanceToPlain(dto) as Record<string, unknown>
+    });
 
     // When
     const response = await chaincode.invoke("TestGalaContract:DryRun", dryRunDto);
@@ -369,7 +381,11 @@ describe("GalaContract.DryRun", () => {
     const chaincode = new TestChaincode([TestGalaContract]);
     const method = "CreateSuperhero";
     const dto = SuperheroDto.create("Batman", -1); // invalid age
-    const dryRunDto = await createValidDTO(DryRunDto, { method, callerPublicKey, dto });
+    const dryRunDto = await createValidDTO(DryRunDto, {
+      method,
+      callerPublicKey,
+      dto: instanceToPlain(dto) as Record<string, unknown>
+    });
 
     // When
     const response = await chaincode.invoke("TestGalaContract:DryRun", dryRunDto);
@@ -396,7 +412,11 @@ describe("GalaContract.DryRun", () => {
     // Given
     const chaincode = new TestChaincode([TestGalaContract]);
     const method = "UnknownMethod";
-    const dryRunDto = await createValidDTO(DryRunDto, { method, callerPublicKey, dto: new ChainCallDTO() });
+    const dryRunDto = await createValidDTO(DryRunDto, {
+      method,
+      callerPublicKey,
+      dto: instanceToPlain(new ChainCallDTO()) as Record<string, unknown>
+    });
 
     // When
     const response = await chaincode.invoke("TestGalaContract:DryRun", dryRunDto);
@@ -415,7 +435,11 @@ describe("GalaContract.DryRun", () => {
     const chaincode = new TestChaincode([TestGalaContract]);
     const method = "CreateSuperhero";
     const dto = await createValidDTO(ChainCallDTO, { signature: "some-signature" });
-    const dryRunDto = await createValidDTO(DryRunDto, { method, callerPublicKey, dto });
+    const dryRunDto = await createValidDTO(DryRunDto, {
+      method,
+      callerPublicKey,
+      dto: instanceToPlain(dto) as Record<string, unknown>
+    });
 
     // When
     const response = await chaincode.invoke("TestGalaContract:DryRun", dryRunDto);

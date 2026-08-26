@@ -161,6 +161,18 @@ const expectedTestDtoSchema = {
         "OpenTelemetry trace context propagated from the caller for chaincode log correlation. " +
         "Not part of the signed payload.",
       type: "object"
+    },
+    domain: {
+      description:
+        "EIP-712 signing domain. Present when the DTO is signed as typed data. " +
+        "Not a message field; ignored by personal_sign payloads.",
+      type: "object"
+    },
+    types: {
+      description:
+        "EIP-712 type definitions for the signed message. Present when the DTO is signed as typed data. " +
+        "Not a message field; ignored by personal_sign payloads.",
+      type: "object"
     }
   },
   type: "object",
