@@ -21,8 +21,10 @@ import {
   Inferred,
   MethodAPI,
   NotImplementedError,
+  PERMISSIVE_VALIDATION_OPTIONS,
   Primitive,
   RuntimeError,
+  STRICT_VALIDATION_OPTIONS,
   SubmitCallDTO,
   UserProfile,
   UserRole,
@@ -202,9 +204,17 @@ function GalaTransaction<In extends ChainCallDTO, Out>(
           async () => {
             // Parse & validate - may throw an exception
             const dtoClass = options.in ?? (ChainCallDTO as unknown as ClassConstructor<Inferred<In>>);
+            const validationOptions =
+              dtoClass === (ChainCallDTO as unknown as ClassConstructor<Inferred<In>>)
+                ? PERMISSIVE_VALIDATION_OPTIONS
+                : STRICT_VALIDATION_OPTIONS;
             const dto = !dtoPlain
               ? undefined
-              : await parseValidDTO<In>(dtoClass, dtoPlain as string | Record<string, unknown>);
+              : await parseValidDTO<In>(
+                  dtoClass,
+                  dtoPlain as string | Record<string, unknown>,
+                  validationOptions
+                );
 
             // Note using Date.now() instead of ctx.txUnixTime which is provided client-side.
             if (dto?.dtoExpiresAt && dto.dtoExpiresAt < Date.now()) {

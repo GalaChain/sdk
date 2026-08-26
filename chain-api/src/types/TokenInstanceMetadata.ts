@@ -38,7 +38,8 @@ import {
   BigNumberIsNotNegative,
   BigNumberProperty,
   IsStringOrNumber,
-  IsUserAlias
+  IsUserAlias,
+  ValidateNestedAllowUnknown
 } from "../validators";
 import { ChainObject } from "./ChainObject";
 import { TokenInstanceKey } from "./TokenInstance";
@@ -268,7 +269,7 @@ export class SetTokenInstanceMetadataDto extends SubmitCallDTO {
   })
   @IsOptional()
   @ArrayMaxSize(MAX_METADATA_ATTRIBUTES)
-  @ValidateNested({ each: true })
+  @ValidateNestedAllowUnknown({ each: true })
   @Type(() => TokenInstanceMetadataAttribute)
   attributes?: TokenInstanceMetadataAttribute[];
 
@@ -279,7 +280,7 @@ export class SetTokenInstanceMetadataDto extends SubmitCallDTO {
   })
   @IsOptional()
   @ArrayMaxSize(MAX_METADATA_CUSTOM_FIELDS)
-  @ValidateNested({ each: true })
+  @ValidateNestedAllowUnknown({ each: true })
   @Type(() => TokenInstanceMetadataCustomField)
   customFields?: TokenInstanceMetadataCustomField[];
 }

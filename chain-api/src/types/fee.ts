@@ -123,6 +123,8 @@ export class FeeAuthorizationResDto extends ChainCallDTO {
   @JSONSchema({
     description: "A serialized FeeAuthorizationDto signed by the authorizing / spending user."
   })
+  @IsNotEmpty()
+  @IsString()
   authorization: string;
 
   @JSONSchema({
@@ -692,6 +694,8 @@ export class FeeVerificationDto extends SubmitCallDTO {
   @JSONSchema({
     description: "A serialized FeeAuthorizationDto signed by the authorizing / spending user."
   })
+  @IsNotEmpty()
+  @IsString()
   authorization: string;
 
   @JSONSchema({

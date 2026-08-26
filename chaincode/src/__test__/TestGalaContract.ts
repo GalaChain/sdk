@@ -26,7 +26,16 @@ import {
   randomUniqueKey
 } from "@gala-chain/api";
 import { Exclude, Type } from "class-transformer";
-import { IsArray, IsNotEmpty, IsPositive, IsString, ValidateNested } from "class-validator";
+import {
+  IsArray,
+  IsNotEmpty,
+  IsNumber,
+  IsObject,
+  IsOptional,
+  IsPositive,
+  IsString,
+  ValidateNested
+} from "class-validator";
 import { Transaction } from "fabric-contract-api";
 
 import { version } from "../../package.json";
@@ -43,6 +52,8 @@ import { GalaChainContext } from "../types";
 import { getObjectsByPartialCompositeKey, putChainObject } from "../utils";
 
 export class SuperheroDto extends SubmitCallDTO {
+  @IsNotEmpty()
+  @IsString()
   public name: string;
 
   @IsPositive()
@@ -82,6 +93,8 @@ export class KVDto extends ChainCallDTO {
   @IsNotEmpty()
   public key: string;
 
+  @IsOptional()
+  @IsString()
   public value?: string;
 }
 
@@ -89,12 +102,20 @@ export class NestedKVDto extends ChainCallDTO {
   @IsNotEmpty()
   public key: string;
 
+  @IsOptional()
+  @IsString()
   public text?: string;
 
+  @IsOptional()
+  @IsObject()
   public map?: Record<string, unknown>;
 
+  @IsOptional()
+  @IsNumber()
   public counter?: number;
 
+  @IsOptional()
+  @IsArray()
   public array?: Array<unknown>;
 }
 

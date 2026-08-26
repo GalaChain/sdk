@@ -12,6 +12,8 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+import { instanceToPlain } from "class-transformer";
+
 import {
   BatchDto,
   ChainCallDTO,
@@ -67,7 +69,11 @@ export const commonContractAPI = (client: ChainClient): CommonContractAPI => ({
     callerPublicKey: string,
     dto: ChainCallDTO
   ): Promise<GalaChainResponse<DryRunResultDto>> {
-    const dryRunDto = await createValidDTO(DryRunDto, { method, callerPublicKey, dto });
+    const dryRunDto = await createValidDTO(DryRunDto, {
+      method,
+      callerPublicKey,
+      dto: instanceToPlain(dto) as Record<string, unknown>
+    });
     const resp = await client.evaluateTransaction("DryRun", dryRunDto);
     return resp as GalaChainResponse<DryRunResultDto>;
   },

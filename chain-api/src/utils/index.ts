@@ -32,3 +32,4 @@ export {
   Primitive,
   signatures
 };
+export { STRICT_VALIDATION_OPTIONS, PERMISSIVE_VALIDATION_OPTIONS } from "./validationOptions";

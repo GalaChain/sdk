@@ -27,12 +27,14 @@ import {
   ValidateIf,
   ValidateNested,
   ValidationError,
+  ValidatorOptions,
   validate
 } from "class-validator";
 import { JSONSchema } from "class-validator-jsonschema";
 
 import {
   NotImplementedError,
+  STRICT_VALIDATION_OPTIONS,
   ValidationFailedError,
   deserialize,
   getValidationErrorMessages,
@@ -64,8 +66,11 @@ class DtoValidationFailedError extends ValidationFailedError {
   }
 }
 
-export const validateDTO = async <T extends ChainCallDTO>(dto: T): Promise<T> => {
-  const validationErrors = await dto.validate();
+export const validateDTO = async <T extends ChainCallDTO>(
+  dto: T,
+  options: ValidatorOptions = STRICT_VALIDATION_OPTIONS
+): Promise<T> => {
+  const validationErrors = await validate(dto, options);
 
   if (validationErrors.length) {
     throw new DtoValidationFailedError(validationErrors);
@@ -79,10 +84,11 @@ export const validateDTO = async <T extends ChainCallDTO>(dto: T): Promise<T> =>
  */
 export const parseValidDTO = async <T extends ChainCallDTO>(
   constructor: ClassConstructor<Inferred<T, ChainCallDTO>>,
-  jsonStringOrObj: string | Record<string, unknown>
+  jsonStringOrObj: string | Record<string, unknown>,
+  options?: ValidatorOptions
 ): Promise<T> => {
   const deserialized = ChainCallDTO.deserialize<T>(constructor, jsonStringOrObj);
-  await validateDTO(deserialized);
+  await validateDTO(deserialized, options);
 
   return deserialized;
 };
@@ -236,8 +242,26 @@ export class ChainCallDTO {
   @IsObject()
   public trace?: OtelTraceContext;
 
+  @JSONSchema({
+    description:
+      "EIP-712 signing domain. Present when the DTO is signed as typed data. " +
+      "Not a message field; ignored by personal_sign payloads."
+  })
+  @IsOptional()
+  @IsObject()
+  public domain?: Record<string, unknown>;
+
+  @JSONSchema({
+    description:
+      "EIP-712 type definitions for the signed message. Present when the DTO is signed as typed data. " +
+      "Not a message field; ignored by personal_sign payloads."
+  })
+  @IsOptional()
+  @IsObject()
+  public types?: Record<string, unknown>;
+
   validate(): Promise<ValidationError[]> {
-    return validate(this);
+    return validate(this, STRICT_VALIDATION_OPTIONS);
   }
 
   async validateOrReject(): Promise<void> {
@@ -387,9 +411,8 @@ export class BatchOperationDto extends ChainCallDTO {
   method: string;
 
   @IsNotEmpty()
-  @ValidateNested()
-  @Type(() => ChainCallDTO)
-  dto: ChainCallDTO;
+  @IsObject()
+  dto: Record<string, unknown>;
 }
 
 export class BatchDto extends ChainCallDTO {
@@ -527,8 +550,8 @@ export class DryRunDto extends ChainCallDTO {
    */
   @IsNotEmpty()
   @IsOptional()
-  @Type(() => ChainCallDTO)
-  dto?: ChainCallDTO;
+  @IsObject()
+  dto?: Record<string, unknown>;
 }
 
 /**
@@ -544,6 +567,8 @@ export class DryRunResultDto extends ChainCallDTO {
    * The `GalaChainResponse` that would have occurred if the provided inputs had been
    * sent to the provided method, with a valid signature.
    */
+  @IsNotEmpty()
+  @IsObject()
   public response: GalaChainResponse<unknown>;
   /**
    * @description
@@ -554,6 +579,8 @@ export class DryRunResultDto extends ChainCallDTO {
    * [Valid Transactions](https://hyperledger-fabric.readthedocs.io/en/release-2.5/smartcontract/smartcontract.html#valid-transactions)
    * for more details on the importantce of Read/Write sets.
    */
+  @IsNotEmpty()
+  @IsObject()
   public writes: Record<string, string>;
   /**
    * @description
@@ -564,6 +591,8 @@ export class DryRunResultDto extends ChainCallDTO {
    * [Valid Transactions](https://hyperledger-fabric.readthedocs.io/en/release-2.5/smartcontract/smartcontract.html#valid-transactions)
    * for more details on the importantce of Read/Write sets.
    */
+  @IsNotEmpty()
+  @IsObject()
   public reads: Record<string, string>;
   /**
    * @description
@@ -574,6 +603,8 @@ export class DryRunResultDto extends ChainCallDTO {
    * [Valid Transactions](https://hyperledger-fabric.readthedocs.io/en/release-2.5/smartcontract/smartcontract.html#valid-transactions)
    * for more details on the importantce of Read/Write sets.
    */
+  @IsNotEmpty()
+  @IsObject()
   public deletes: Record<string, true>;
 }
 

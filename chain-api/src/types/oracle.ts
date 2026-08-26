@@ -276,6 +276,21 @@ export class OraclePriceCrossRateAssertionDto extends SubmitCallDTO {
   @BigNumberProperty()
   crossRate: BigNumber;
 
+  @JSONSchema({
+    description: "(Optional) Source of price data. Name of Third Party data source."
+  })
+  @IsOptional()
+  @IsNotEmpty()
+  source?: string;
+
+  @JSONSchema({
+    description:
+      "Unix epoch timestamp in milliseconds (ms) for the date/time at which this cross-rate was calculated or estimated."
+  })
+  @IsOptional()
+  @IsNumber()
+  timestamp?: number;
+
   @Exclude()
   public validateCrossRateTokenKeys() {
     const crossRateToken: TokenInstanceKey | undefined = this.crossRateToken;
