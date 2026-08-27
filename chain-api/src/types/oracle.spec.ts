@@ -17,8 +17,13 @@ import { plainToInstance } from "class-transformer";
 
 import { ExternalToken } from "./OraclePriceAssertion";
 import { TokenInstanceKey } from "./TokenInstance";
-import { createValidSubmitDTO } from "./dtos";
-import { OraclePriceAssertionDto, OraclePriceCrossRateAssertionDto } from "./oracle";
+import { createValidDTO, createValidSubmitDTO } from "./dtos";
+import {
+  FetchOracleAssertionsDto,
+  FetchOracleDefinitionsDto,
+  OraclePriceAssertionDto,
+  OraclePriceCrossRateAssertionDto
+} from "./oracle";
 
 describe("oracle.ts", () => {
   const mockOracle = "mock-oracle";
@@ -88,5 +93,35 @@ describe("oracle.ts", () => {
     mockAssertionDto.crossRate = new BigNumber("42");
 
     expect(mockAssertionDto.validateCrossRate).toThrow();
+  });
+
+  test("FetchOracleDefinitionsDto accepts optional name filter", async () => {
+    await expect(createValidDTO(FetchOracleDefinitionsDto, {})).resolves.toBeInstanceOf(
+      FetchOracleDefinitionsDto
+    );
+    await expect(
+      createValidDTO(FetchOracleDefinitionsDto, { name: "price-oracle-1", bookmark: "", limit: 10 })
+    ).resolves.toMatchObject({ name: "price-oracle-1", bookmark: "", limit: 10 });
+  });
+
+  test("FetchOracleAssertionsDto accepts optional oracle and identity filters", async () => {
+    await expect(createValidDTO(FetchOracleAssertionsDto, {})).resolves.toBeInstanceOf(
+      FetchOracleAssertionsDto
+    );
+    await expect(
+      createValidDTO(FetchOracleAssertionsDto, {
+        oracle: mockOracle,
+        identity: mockOracleIdentity,
+        txid: "abc",
+        bookmark: "next",
+        limit: 25
+      })
+    ).resolves.toMatchObject({
+      oracle: mockOracle,
+      identity: mockOracleIdentity,
+      txid: "abc",
+      bookmark: "next",
+      limit: 25
+    });
   });
 });
