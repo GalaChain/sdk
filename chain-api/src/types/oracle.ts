@@ -18,6 +18,7 @@ import {
   ArrayNotEmpty,
   ArrayUnique,
   IsBoolean,
+  IsInt,
   IsNotEmpty,
   IsNumber,
   IsOptional,
@@ -62,16 +63,22 @@ export class FetchOracleDefinitionsDto extends ChainCallDTO {
   @JSONSchema({
     description: "(optional). Provide a name key to fetch a specific oracle definition"
   })
+  @IsOptional()
+  @IsString()
   name?: string | undefined;
 
   @JSONSchema({
     description: "(optional). Bookmark for paginated results"
   })
+  @IsOptional()
+  @IsString()
   bookmark?: string | undefined;
 
   @JSONSchema({
     description: "(optional). Limit results set."
   })
+  @IsOptional()
+  @IsInt()
   limit?: number | undefined;
 }
 
@@ -82,26 +89,36 @@ export class FetchOracleAssertionsDto extends ChainCallDTO {
   @JSONSchema({
     description: "(optional). Provide a oracle name key to fetch a specific oracle definition"
   })
+  @IsOptional()
+  @IsString()
   oracle?: string | undefined;
 
   @JSONSchema({
     description: "(optional). Filter by identity"
   })
+  @IsOptional()
+  @IsString()
   identity?: string | undefined;
 
   @JSONSchema({
     description: "(optional). Filter by a specific txid"
   })
+  @IsOptional()
+  @IsString()
   txid?: string | undefined;
 
   @JSONSchema({
     description: "(optional). Bookmark for paginated results"
   })
+  @IsOptional()
+  @IsString()
   bookmark?: string | undefined;
 
   @JSONSchema({
     description: "(optional). Limit results set."
   })
+  @IsOptional()
+  @IsInt()
   limit?: number | undefined;
 }
 
