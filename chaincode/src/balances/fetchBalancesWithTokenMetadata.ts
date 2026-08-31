@@ -20,9 +20,9 @@ import {
   TokenBalance,
   TokenBalanceWithMetadata,
   TokenClass,
-  UserAlias,
-  createValidDTO
+  UserAlias
 } from "@gala-chain/api";
+import { plainToInstance } from "class-transformer";
 
 import { GalaChainContext } from "../types";
 import { getObjectByKey, getObjectsByPartialCompositeKeyWithPagination, takeUntilUndefined } from "../utils";
@@ -93,7 +93,10 @@ export async function fetchBalancesWithTokenMetadata(
     const compositeKey = ChainObject.getCompositeKeyFromParts(TokenClass.INDEX_KEY, keyList);
     const tokenClass: TokenClass = await getObjectByKey(ctx, TokenClass, compositeKey);
 
-    const balanceWithTokenMetadata = await createValidDTO(TokenBalanceWithMetadata, {
+    // Chain entries are returned as-is, without response DTO validation.
+    // Balances read of chain may carry legacy fields absent from the current
+    // TokenBalance class definition, and validating them here would reject them.
+    const balanceWithTokenMetadata = plainToInstance(TokenBalanceWithMetadata, {
       balance: balance,
       token: tokenClass
     });
@@ -101,7 +104,7 @@ export async function fetchBalancesWithTokenMetadata(
     results.push(balanceWithTokenMetadata);
   }
 
-  const response = await createValidDTO(FetchBalancesWithTokenMetadataResponse, {
+  const response = plainToInstance(FetchBalancesWithTokenMetadataResponse, {
     nextPageBookmark: balancesLookup.metadata.bookmark,
     results: results
   });
