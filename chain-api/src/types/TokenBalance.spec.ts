@@ -1,5 +1,7 @@
 import BigNumber from "bignumber.js";
+import { validate } from "class-validator";
 
+import { STRICT_VALIDATION_OPTIONS } from "../utils";
 import { TokenBalance, TokenHold } from "./TokenBalance";
 import { TokenClassKey } from "./TokenClass";
 import { TokenInstance } from "./TokenInstance";
@@ -644,5 +646,38 @@ describe("non-fungible", () => {
         lockedHolds: []
       })
     );
+  });
+});
+
+describe("legacy state compatibility", () => {
+  it("should pass strict validation for balances with legacy inUseHolds in world state", async () => {
+    // Given - balance JSON as written to chain before the use/release feature was removed
+    const storedBalance = {
+      owner: "client|user1",
+      collection: "test-collection",
+      category: "test-category",
+      type: "test-type",
+      additionalKey: "test-additional-key",
+      quantity: "1",
+      instanceIds: ["1"],
+      lockedHolds: [],
+      inUseHolds: [
+        {
+          createdBy: "client|user1",
+          instanceId: "1",
+          quantity: "1",
+          created: 1,
+          expires: 0
+        }
+      ]
+    };
+
+    const balance = TokenBalance.deserialize(TokenBalance, storedBalance);
+
+    // When
+    const errors = await validate(balance, STRICT_VALIDATION_OPTIONS);
+
+    // Then
+    expect(errors).toEqual([]);
   });
 });

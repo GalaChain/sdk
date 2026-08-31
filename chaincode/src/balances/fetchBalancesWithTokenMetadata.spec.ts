@@ -16,6 +16,7 @@ import {
   FetchBalancesDto,
   FetchBalancesWithTokenMetadataResponse,
   GalaChainResponse,
+  TokenBalance,
   TokenBalanceWithMetadata,
   createValidDTO
 } from "@gala-chain/api";
@@ -54,6 +55,32 @@ it("should Fetch Token Balances with Token Class Metadata", async () => {
 
   const expectedResponse = await createValidDTO(FetchBalancesWithTokenMetadataResponse, {
     results: [curencyBalanceWithMetadata, nftBalanceWithMetadata],
+    nextPageBookmark: ""
+  });
+
+  // When
+  const response = await contract.FetchBalancesWithTokenMetadata(ctx, dto).catch((e) => e);
+
+  // Then
+  expect(response).toEqual(GalaChainResponse.Success(expectedResponse));
+});
+
+it("should fetch balances with legacy inUseHolds property in saved state", async () => {
+  // Given - balance state written before the use/release feature was removed
+  const currencyClass = currency.tokenClass();
+  const legacyBalance = plainToInstance(TokenBalance, {
+    ...currency.tokenBalance().toPlainObject(),
+    inUseHolds: []
+  });
+
+  const { ctx, contract } = fixture(GalaChainTokenContract).savedState(currencyClass, legacyBalance);
+
+  const dto: FetchBalancesDto = await createValidDTO(FetchBalancesDto, {
+    owner: legacyBalance.owner
+  });
+
+  const expectedResponse = await createValidDTO(FetchBalancesWithTokenMetadataResponse, {
+    results: [plainToInstance(TokenBalanceWithMetadata, { balance: legacyBalance, token: currencyClass })],
     nextPageBookmark: ""
   });
 
