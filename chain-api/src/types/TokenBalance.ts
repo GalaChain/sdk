@@ -147,6 +147,19 @@ export class TokenBalance extends ChainObject {
   @Type(() => TokenHold)
   private lockedHolds?: Array<TokenHold>;
 
+  /**
+   * @deprecated Legacy field from the removed use/release feature. Balances
+   * written before its removal may still carry it in world state, so it must
+   * stay declared to pass strict whitelist validation. Not used by any logic.
+   */
+  @JSONSchema({
+    description: "Deprecated. Legacy holds from the removed use/release feature; retained for old state."
+  })
+  @IsOptional()
+  @ValidateNested({ each: true })
+  @Type(() => TokenHold)
+  private inUseHolds?: Array<TokenHold>;
+
   @BigNumberIsNotNegative()
   @BigNumberProperty()
   private quantity: BigNumber;
