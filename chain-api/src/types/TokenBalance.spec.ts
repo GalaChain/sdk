@@ -1,11 +1,14 @@
 import BigNumber from "bignumber.js";
+import { plainToInstance } from "class-transformer";
 import { validate } from "class-validator";
 
 import { STRICT_VALIDATION_OPTIONS } from "../utils";
 import { TokenBalance, TokenHold } from "./TokenBalance";
-import { TokenClassKey } from "./TokenClass";
+import { TokenClass, TokenClassKey } from "./TokenClass";
 import { TokenInstance } from "./TokenInstance";
 import { UserAlias, asValidUserAlias } from "./UserAlias";
+import { createValidDTO } from "./dtos";
+import { FetchBalancesWithPaginationResponse, TokenBalanceWithMetadata } from "./token";
 
 /*
  * Copyright (c) Gala Games Inc. All rights reserved.
@@ -679,5 +682,53 @@ describe("legacy state compatibility", () => {
 
     // Then
     expect(errors).toEqual([]);
+  });
+
+  it("should build TokenBalanceWithMetadata from a balance with unknown legacy fields", async () => {
+    // Given - stored balance JSON with fields removed before the SDK was open-sourced
+    const storedBalance = {
+      owner: "client|user1",
+      collection: "test-collection",
+      category: "test-category",
+      type: "test-type",
+      additionalKey: "test-additional-key",
+      quantity: "10",
+      quantityLocked: "5",
+      quantityInUse: "2"
+    };
+
+    const balance = TokenBalance.deserialize(TokenBalance, storedBalance);
+    const token = plainToInstance(TokenClass, {});
+
+    // When
+    const dto = await createValidDTO(TokenBalanceWithMetadata, { balance, token }).catch((e) => e);
+
+    // Then
+    expect(dto).toBeInstanceOf(TokenBalanceWithMetadata);
+  });
+
+  it("should build FetchBalancesWithPaginationResponse from balances with unknown legacy fields", async () => {
+    // Given
+    const storedBalance = {
+      owner: "client|user1",
+      collection: "test-collection",
+      category: "test-category",
+      type: "test-type",
+      additionalKey: "test-additional-key",
+      quantity: "10",
+      quantityLocked: "5",
+      quantityInUse: "2"
+    };
+
+    const balance = TokenBalance.deserialize(TokenBalance, storedBalance);
+
+    // When
+    const dto = await createValidDTO(FetchBalancesWithPaginationResponse, {
+      results: [balance],
+      nextPageBookmark: ""
+    }).catch((e) => e);
+
+    // Then
+    expect(dto).toBeInstanceOf(FetchBalancesWithPaginationResponse);
   });
 });

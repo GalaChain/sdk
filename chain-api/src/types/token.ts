@@ -34,7 +34,13 @@ import {
 } from "class-validator";
 import { JSONSchema } from "class-validator-jsonschema";
 
-import { BigNumberIsNotNegative, BigNumberIsPositive, BigNumberProperty, IsUserRef } from "../validators";
+import {
+  BigNumberIsNotNegative,
+  BigNumberIsPositive,
+  BigNumberProperty,
+  IsUserRef,
+  ValidateNestedAllowUnknown
+} from "../validators";
 import { TokenBalance } from "./TokenBalance";
 import { TokenBalanceTargets } from "./TokenBalanceTargets";
 import { TokenClass, TokenClassKey } from "./TokenClass";
@@ -111,7 +117,9 @@ export class FetchTokenClassesWithPaginationDto extends ChainCallDTO {
 
 export class FetchTokenClassesResponse extends ChainCallDTO {
   @JSONSchema({ description: "List of Token Classes." })
-  @ValidateNested({ each: true })
+  // Token classes read of chain may carry legacy fields absent from the current
+  // class definition, so unknown properties must not be rejected.
+  @ValidateNestedAllowUnknown({ each: true })
   @Type(() => TokenClass)
   results: TokenClass[];
 
@@ -471,7 +479,9 @@ export class TokenBalanceWithMetadata extends ChainCallDTO {
   @JSONSchema({
     description: "A TokenBalance read of chain."
   })
-  @ValidateNested()
+  // Balances read of chain may carry fields removed from TokenBalance long ago
+  // (pre-open-source legacy state), so unknown properties must not be rejected.
+  @ValidateNestedAllowUnknown()
   @Type(() => TokenBalance)
   @IsObject()
   balance: TokenBalance;
@@ -486,7 +496,9 @@ export class TokenBalanceWithMetadata extends ChainCallDTO {
 
 export class FetchBalancesWithPaginationResponse extends ChainCallDTO {
   @JSONSchema({ description: "List of balances with token metadata." })
-  @ValidateNested({ each: true })
+  // Balances read of chain may carry legacy fields absent from the current
+  // class definition, so unknown properties must not be rejected.
+  @ValidateNestedAllowUnknown({ each: true })
   @Type(() => TokenBalance)
   results: TokenBalance[];
 

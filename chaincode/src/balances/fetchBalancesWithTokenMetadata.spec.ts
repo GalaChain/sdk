@@ -65,12 +65,15 @@ it("should Fetch Token Balances with Token Class Metadata", async () => {
   expect(response).toEqual(GalaChainResponse.Success(expectedResponse));
 });
 
-it("should fetch balances with legacy inUseHolds property in saved state", async () => {
-  // Given - balance state written before the use/release feature was removed
+it("should fetch balances with legacy properties in saved state", async () => {
+  // Given - balance state with fields removed from TokenBalance over the years,
+  // including pre-open-source ones the SDK has no declaration for
   const currencyClass = currency.tokenClass();
   const legacyBalance = plainToInstance(TokenBalance, {
     ...currency.tokenBalance().toPlainObject(),
-    inUseHolds: []
+    inUseHolds: [],
+    quantityLocked: "5",
+    quantityInUse: "2"
   });
 
   const { ctx, contract } = fixture(GalaChainTokenContract).savedState(currencyClass, legacyBalance);
