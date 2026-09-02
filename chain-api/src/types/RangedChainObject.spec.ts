@@ -34,6 +34,23 @@ class TestRangedClass extends RangedChainObject {
   }
 }
 
+it("should drop undeclared fields when deserializing a ranged chain object", () => {
+  // Given
+  const stored = {
+    isNft: true,
+    category: "legendary",
+    leftoverField: "drop-me"
+  };
+
+  // When
+  const obj = RangedChainObject.deserialize(TestRangedClass, stored);
+
+  // Then
+  expect(obj).toBeInstanceOf(TestRangedClass);
+  expect(obj.isNft).toEqual(true);
+  expect(obj).not.toHaveProperty("leftoverField");
+});
+
 it("should use custom serializers while constructing ranged key", () => {
   // Given
   const obj = new TestRangedClass(true, "legendary");

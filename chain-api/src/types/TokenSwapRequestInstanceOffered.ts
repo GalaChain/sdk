@@ -14,7 +14,7 @@
  */
 import BigNumber from "bignumber.js";
 import { Exclude } from "class-transformer";
-import { IsNotEmpty } from "class-validator";
+import { IsDefined, IsNotEmpty } from "class-validator";
 
 import { ChainKey } from "../utils";
 import { BigNumberIsInteger, BigNumberIsNotNegative, BigNumberProperty } from "../validators";
@@ -32,6 +32,7 @@ export class TokenSwapRequestInstanceOffered extends ChainObject {
   public collection: string;
 
   @ChainKey({ position: 1 })
+  @IsDefined()
   public category: string;
 
   @ChainKey({ position: 2 })

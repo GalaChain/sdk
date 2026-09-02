@@ -380,6 +380,14 @@ export class FetchTokenInstanceMetadataWithPaginationDto extends ChainCallDTO {
 }
 
 export class FetchTokenInstanceMetadataResponse extends ChainCallDTO {
+  constructor(params?: { results: TokenInstanceMetadata[]; nextPageBookmark?: string }) {
+    super();
+    if (params) {
+      this.results = params.results;
+      this.nextPageBookmark = params.nextPageBookmark;
+    }
+  }
+
   @JSONSchema({ description: "List of token instance metadata documents." })
   @ValidateNested({ each: true })
   @Type(() => TokenInstanceMetadata)

@@ -17,8 +17,7 @@ import {
   FetchTokenInstanceMetadataWithPaginationDto,
   TokenInstance,
   TokenInstanceKey,
-  TokenInstanceMetadata,
-  createValidDTO
+  TokenInstanceMetadata
 } from "@gala-chain/api";
 
 import { GalaChainContext } from "../types";
@@ -106,10 +105,8 @@ export async function fetchTokenInstanceMetadataWithPagination(
     params.limit ?? FetchTokenInstanceMetadataWithPaginationDto.DEFAULT_LIMIT
   );
 
-  const response = await createValidDTO(FetchTokenInstanceMetadataResponse, {
+  return new FetchTokenInstanceMetadataResponse({
     results: getObjectsResponse.results,
     nextPageBookmark: getObjectsResponse.metadata.bookmark
   });
-
-  return response;
 }

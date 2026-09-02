@@ -684,6 +684,29 @@ describe("legacy state compatibility", () => {
     expect(errors).toEqual([]);
   });
 
+  it("should drop unknown legacy fields when deserializing a TokenBalance", () => {
+    // Given - stored balance JSON with fields removed from TokenBalance
+    const storedBalance = {
+      owner: "client|user1",
+      collection: "test-collection",
+      category: "test-category",
+      type: "test-type",
+      additionalKey: "test-additional-key",
+      quantity: "10",
+      quantityLocked: "5",
+      quantityInUse: "2"
+    };
+
+    // When
+    const balance = TokenBalance.deserialize(TokenBalance, storedBalance);
+
+    // Then
+    expect(balance).toBeInstanceOf(TokenBalance);
+    expect(balance).not.toHaveProperty("quantityLocked");
+    expect(balance).not.toHaveProperty("quantityInUse");
+    expect(balance.getQuantityTotal()).toEqual(new BigNumber("10"));
+  });
+
   it("should build TokenBalanceWithMetadata from a balance with unknown legacy fields", async () => {
     // Given - stored balance JSON with fields removed before the SDK was open-sourced
     const storedBalance = {

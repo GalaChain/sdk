@@ -54,6 +54,36 @@ it("should fetch metadata documents of all projects for an instance", async () =
   expect(getWrites()).toEqual({});
 });
 
+it("should keep customFields when fetching metadata written with extra properties", async () => {
+  // Given - customFields is the additional-fields option; leftover keys are not
+  const savedMetadata = nft.tokenInstance1Metadata();
+  expect(savedMetadata.customFields).toEqual([
+    expect.objectContaining({ key: "gameId", value: "elixir-001" })
+  ]);
+
+  const { ctx, contract } = fixture(GalaChainTokenContract).savedKVState({
+    key: savedMetadata.getCompositeKey(),
+    value: JSON.stringify({
+      ...savedMetadata.toPlainObject(),
+      leftoverField: "should-be-dropped"
+    })
+  });
+
+  const dto = await createValidDTO(FetchTokenInstanceMetadataDto, {
+    tokenInstance: nft.tokenInstance1Key(),
+    project: savedMetadata.project
+  });
+
+  // When
+  const response = await contract.FetchTokenInstanceMetadata(ctx, dto);
+
+  // Then
+  const fetched = (response.Data as TokenInstanceMetadata[])[0];
+  expect(fetched).not.toHaveProperty("leftoverField");
+  expect(fetched.customFields).toEqual(savedMetadata.customFields);
+  expect(fetched.name).toEqual(savedMetadata.name);
+});
+
 it("should fetch metadata document of a single project", async () => {
   // Given
   const savedMetadata = nft.tokenInstance1Metadata();
