@@ -14,6 +14,7 @@
  */
 import { BigNumber } from "bignumber.js";
 import { Transform } from "class-transformer";
+import { IsString } from "class-validator";
 
 import { ChainKey } from "../utils";
 import { BigNumberProperty } from "../validators";
@@ -37,6 +38,21 @@ class TestClass extends ChainObject {
   }
 }
 
+class TestClassWithConstructorField extends ChainObject {
+  static INDEX_KEY = "test-ctor";
+
+  @ChainKey({ position: 0 })
+  @IsString()
+  owner: string;
+
+  plantedAt: number;
+
+  constructor() {
+    super();
+    this.plantedAt = 0;
+  }
+}
+
 it("should drop undeclared fields when deserializing a chain object", () => {
   // Given
   const stored = {
@@ -53,6 +69,23 @@ it("should drop undeclared fields when deserializing a chain object", () => {
   expect(obj).toBeInstanceOf(TestClass);
   expect(obj.bigNum).toEqual(new BigNumber("123"));
   expect(obj).not.toHaveProperty("quantityLocked");
+  expect(obj).not.toHaveProperty("leftoverField");
+});
+
+it("should keep constructor-initialized fields that have no validator", () => {
+  // Given
+  const stored = {
+    owner: "client|user1",
+    plantedAt: 1_700_000_000_000,
+    leftoverField: true
+  };
+
+  // When
+  const obj = ChainObject.deserialize(TestClassWithConstructorField, stored);
+
+  // Then
+  expect(obj.plantedAt).toEqual(1_700_000_000_000);
+  expect(obj.owner).toEqual("client|user1");
   expect(obj).not.toHaveProperty("leftoverField");
 });
 

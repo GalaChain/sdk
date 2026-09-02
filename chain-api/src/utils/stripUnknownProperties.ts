@@ -43,6 +43,19 @@ function getKnownPropertyNames(constructor: ClassLike): Set<string> {
     proto = Object.getPrototypeOf(proto);
   }
 
+  // Fields assigned in the constructor are part of the current class even when
+  // they have no validator (e.g. AppleTree.plantedAt).
+  try {
+    const blank = new constructor();
+    if (blank && typeof blank === "object") {
+      for (const key of Object.keys(blank)) {
+        names.add(key);
+      }
+    }
+  } catch {
+    // constructor requires arguments
+  }
+
   knownPropertyCache.set(constructor, names);
   return names;
 }
@@ -58,7 +71,8 @@ function shouldRecurse(value: unknown): value is object {
 }
 
 /**
- * Removes properties that are not declared on the class (no validator and no @ChainKey).
+ * Removes properties that are not declared on the class (no validator, no @ChainKey,
+ * and not assigned in the constructor).
  * Used when reading ChainObject / RangedChainObject values that may still carry fields
  * removed from the class definition.
  */
