@@ -27,7 +27,13 @@ import {
 } from "class-validator";
 import { JSONSchema } from "class-validator-jsonschema";
 
-import { ArrayUniqueObjects, BigNumberIsNotNegative, BigNumberProperty, IsUserRef } from "../validators";
+import {
+  ArrayUniqueObjects,
+  BigNumberIsNotNegative,
+  BigNumberProperty,
+  IsUserRef,
+  ValidateNestedAllowUnknown
+} from "../validators";
 import { TokenClassKey } from "./TokenClass";
 import {
   BurnToMintConfiguration,
@@ -487,6 +493,11 @@ export class FetchTokenMintConfigurationsResponse extends ChainCallDTO {
   @JSONSchema({
     description: "Results set of TokenMintConfiguration entries."
   })
+  // Whitelist validation rejects properties with no class-validator decorator,
+  // and mint configurations are read of chain, so unknown nested properties
+  // must not be rejected either.
+  @ValidateNestedAllowUnknown({ each: true })
+  @Type(() => TokenMintConfiguration)
   results: TokenMintConfiguration[];
 
   @IsString()
