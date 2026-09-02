@@ -347,6 +347,7 @@ export class FetchFeeChannelPaymentsDto extends ChainCallDTO {
 })
 export class FeeChannelPaymentKeyValueResult extends ChainCallDTO {
   @JSONSchema({ description: "Chain key identifying object on chain." })
+  @IsString()
   key: string;
 
   @JSONSchema({ description: "Chain key identifying object on chain." })
@@ -457,6 +458,7 @@ export class FetchFeeCreditReceiptsDto extends ChainCallDTO {
 })
 export class FeeCreditReceiptKeyValueResult extends ChainCallDTO {
   @JSONSchema({ description: "Chain key identifying object on chain." })
+  @IsString()
   key: string;
 
   @JSONSchema({ description: "Chain key identifying object on chain." })
@@ -535,6 +537,7 @@ export class FetchFeePendingBalancesDto extends ChainCallDTO {
 })
 export class FeePendingBalanceKeyValueResult extends ChainCallDTO {
   @JSONSchema({ description: "Chain key identifying object on chain." })
+  @IsString()
   key: string;
 
   @JSONSchema({ description: "Chain key identifying object on chain." })
@@ -811,6 +814,7 @@ export class FetchFeeThresholdUsesWithPaginationDto extends ChainCallDTO {
 })
 export class FeeThresholdUsesKeyValueResult extends ChainCallDTO {
   @JSONSchema({ description: "Chain key identifying object on chain." })
+  @IsString()
   key: string;
 
   @JSONSchema({ description: "Chain key identifying object on chain." })
@@ -854,6 +858,7 @@ export class ChainKeysDto extends SubmitCallDTO {
 })
 export class ChainKeyValueResult extends ChainCallDTO {
   @JSONSchema({ description: "Chain key identifying object on chain." })
+  @IsString()
   key: string;
 
   @JSONSchema({ description: "Chain key identifying object on chain." })
