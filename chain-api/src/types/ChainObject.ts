@@ -22,7 +22,8 @@ import {
   ValidationFailedError,
   deserialize,
   getValidationErrorMessages,
-  serialize
+  serialize,
+  stripUnknownProperties
 } from "../utils";
 import { ClassConstructor, Inferred } from "./dtos";
 
@@ -79,7 +80,9 @@ export abstract class ChainObject {
     constructor: ClassConstructor<Inferred<T, ChainObject>>,
     object: string | Record<string, unknown> | Record<string, unknown>[]
   ): T {
-    return deserialize<T, ChainObject>(constructor, object);
+    const result = deserialize<T, ChainObject>(constructor, object);
+    stripUnknownProperties(result as object);
+    return result;
   }
 
   public getCompositeKey(): string {

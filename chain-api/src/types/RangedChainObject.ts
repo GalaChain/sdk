@@ -16,7 +16,13 @@ import { instanceToPlain } from "class-transformer";
 import { ValidationError, validate } from "class-validator";
 import "reflect-metadata";
 
-import { ChainKeyMetadata, ValidationFailedError, deserialize, serialize } from "../utils";
+import {
+  ChainKeyMetadata,
+  ValidationFailedError,
+  deserialize,
+  serialize,
+  stripUnknownProperties
+} from "../utils";
 import { ChainObject, ObjectValidationFailedError } from "./ChainObject";
 import { ClassConstructor, Inferred } from "./dtos";
 
@@ -51,7 +57,9 @@ export abstract class RangedChainObject {
     constructor: ClassConstructor<Inferred<T, RangedChainObject>>,
     object: string | Record<string, unknown> | Record<string, unknown>[]
   ): T {
-    return deserialize<T, RangedChainObject>(constructor, object);
+    const result = deserialize<T, RangedChainObject>(constructor, object);
+    stripUnknownProperties(result as object);
+    return result;
   }
 
   public getRangedKey(): string {

@@ -23,6 +23,7 @@ export * from "./error";
 export * from "../ethers/type-utils";
 export * from "./randomUniqueKey";
 
+export { stripUnknownProperties } from "./stripUnknownProperties";
 export {
   deserialize,
   serialize,
