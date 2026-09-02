@@ -34,13 +34,7 @@ import {
 } from "class-validator";
 import { JSONSchema } from "class-validator-jsonschema";
 
-import {
-  BigNumberIsNotNegative,
-  BigNumberIsPositive,
-  BigNumberProperty,
-  IsUserRef,
-  ValidateNestedAllowUnknown
-} from "../validators";
+import { BigNumberIsNotNegative, BigNumberIsPositive, BigNumberProperty, IsUserRef } from "../validators";
 import { TokenBalance } from "./TokenBalance";
 import { TokenBalanceTargets } from "./TokenBalanceTargets";
 import { TokenClass, TokenClassKey } from "./TokenClass";
@@ -116,10 +110,16 @@ export class FetchTokenClassesWithPaginationDto extends ChainCallDTO {
 }
 
 export class FetchTokenClassesResponse extends ChainCallDTO {
+  constructor(params?: { results: TokenClass[]; nextPageBookmark?: string }) {
+    super();
+    if (params) {
+      this.results = params.results;
+      this.nextPageBookmark = params.nextPageBookmark;
+    }
+  }
+
   @JSONSchema({ description: "List of Token Classes." })
-  // Token classes read of chain may carry legacy fields absent from the current
-  // class definition, so unknown properties must not be rejected.
-  @ValidateNestedAllowUnknown({ each: true })
+  @ValidateNested({ each: true })
   @Type(() => TokenClass)
   results: TokenClass[];
 
@@ -476,12 +476,18 @@ export class FetchBalancesWithPaginationDto extends ChainCallDTO {
   description: "Response DTO containing a TokenBalance and the balance's corresponding TokenClass."
 })
 export class TokenBalanceWithMetadata extends ChainCallDTO {
+  constructor(params?: { balance: TokenBalance; token: TokenClass }) {
+    super();
+    if (params) {
+      this.balance = params.balance;
+      this.token = params.token;
+    }
+  }
+
   @JSONSchema({
     description: "A TokenBalance read of chain."
   })
-  // Balances read of chain may carry fields removed from TokenBalance long ago
-  // (pre-open-source legacy state), so unknown properties must not be rejected.
-  @ValidateNestedAllowUnknown()
+  @ValidateNested()
   @Type(() => TokenBalance)
   @IsObject()
   balance: TokenBalance;
@@ -495,10 +501,16 @@ export class TokenBalanceWithMetadata extends ChainCallDTO {
 }
 
 export class FetchBalancesWithPaginationResponse extends ChainCallDTO {
+  constructor(params?: { results: TokenBalance[]; nextPageBookmark?: string }) {
+    super();
+    if (params) {
+      this.results = params.results;
+      this.nextPageBookmark = params.nextPageBookmark;
+    }
+  }
+
   @JSONSchema({ description: "List of balances with token metadata." })
-  // Balances read of chain may carry legacy fields absent from the current
-  // class definition, so unknown properties must not be rejected.
-  @ValidateNestedAllowUnknown({ each: true })
+  @ValidateNested({ each: true })
   @Type(() => TokenBalance)
   results: TokenBalance[];
 
@@ -509,6 +521,14 @@ export class FetchBalancesWithPaginationResponse extends ChainCallDTO {
 }
 
 export class FetchBalancesWithTokenMetadataResponse extends ChainCallDTO {
+  constructor(params?: { results: TokenBalanceWithMetadata[]; nextPageBookmark?: string }) {
+    super();
+    if (params) {
+      this.results = params.results;
+      this.nextPageBookmark = params.nextPageBookmark;
+    }
+  }
+
   @JSONSchema({ description: "List of balances with token metadata." })
   @ValidateNested({ each: true })
   @Type(() => TokenBalanceWithMetadata)

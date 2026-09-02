@@ -19,7 +19,6 @@ import {
   TokenClassKey,
   TokenInstanceKey
 } from "@gala-chain/api";
-import { plainToInstance } from "class-transformer";
 
 import { GalaChainContext } from "../types";
 import { getObjectByKey, getObjectsByPartialCompositeKeyWithPagination, takeUntilUndefined } from "../utils";
@@ -66,13 +65,8 @@ export async function fetchTokenClassesWithPagination(
     dto.limit ?? FetchTokenClassesWithPaginationDto.DEFAULT_LIMIT
   );
 
-  // Chain entries are returned as-is, without response DTO validation.
-  // Token classes read of chain may carry legacy fields absent from the current
-  // class definition, and validating them here would reject them.
-  const response = plainToInstance(FetchTokenClassesResponse, {
+  return new FetchTokenClassesResponse({
     results: getObjectsResponse.results,
     nextPageBookmark: getObjectsResponse.metadata.bookmark
   });
-
-  return response;
 }

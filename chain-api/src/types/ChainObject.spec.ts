@@ -37,6 +37,25 @@ class TestClass extends ChainObject {
   }
 }
 
+it("should drop undeclared fields when deserializing a chain object", () => {
+  // Given
+  const stored = {
+    bigNum: "123",
+    category: "legendary",
+    quantityLocked: "5",
+    leftoverField: true
+  };
+
+  // When
+  const obj = ChainObject.deserialize(TestClass, stored);
+
+  // Then
+  expect(obj).toBeInstanceOf(TestClass);
+  expect(obj.bigNum).toEqual(new BigNumber("123"));
+  expect(obj).not.toHaveProperty("quantityLocked");
+  expect(obj).not.toHaveProperty("leftoverField");
+});
+
 it("should use custom serializers while constructing composite key", () => {
   // Given
   const bigNumStr = "730750818665451215712927172538123444058715062271"; // MAX_SAFE_INTEGER^3

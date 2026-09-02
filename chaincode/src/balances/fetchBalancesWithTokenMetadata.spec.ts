@@ -24,6 +24,7 @@ import { currency, fixture, nft } from "@gala-chain/test";
 import { plainToInstance } from "class-transformer";
 
 import GalaChainTokenContract from "../__test__/GalaChainTokenContract";
+import { getObjectByKey } from "../utils";
 
 it("should Fetch Token Balances with Token Class Metadata", async () => {
   // Given
@@ -69,28 +70,43 @@ it("should fetch balances with legacy properties in saved state", async () => {
   // Given - balance state with fields removed from TokenBalance over the years,
   // including pre-open-source ones the SDK has no declaration for
   const currencyClass = currency.tokenClass();
+  const currentBalance = currency.tokenBalance();
   const legacyBalance = plainToInstance(TokenBalance, {
-    ...currency.tokenBalance().toPlainObject(),
+    ...currentBalance.toPlainObject(),
     inUseHolds: [],
     quantityLocked: "5",
     quantityInUse: "2"
   });
 
-  const { ctx, contract } = fixture(GalaChainTokenContract).savedState(currencyClass, legacyBalance);
+  const { ctx, contract } = fixture(GalaChainTokenContract)
+    .savedState(currencyClass)
+    .savedKVState({
+      key: currentBalance.getCompositeKey(),
+      value: JSON.stringify({
+        ...currentBalance.toPlainObject(),
+        inUseHolds: [],
+        quantityLocked: "5",
+        quantityInUse: "2"
+      })
+    });
 
   const dto: FetchBalancesDto = await createValidDTO(FetchBalancesDto, {
     owner: legacyBalance.owner
   });
 
-  const expectedResponse = await createValidDTO(FetchBalancesWithTokenMetadataResponse, {
-    results: [plainToInstance(TokenBalanceWithMetadata, { balance: legacyBalance, token: currencyClass })],
-    nextPageBookmark: ""
-  });
-
   // When
+  const fetched = await getObjectByKey(ctx, TokenBalance, currentBalance.getCompositeKey());
   const response = await contract.FetchBalancesWithTokenMetadata(ctx, dto).catch((e) => e);
 
-  // Then
+  // Then - undeclared fields are dropped on read
+  expect(fetched).not.toHaveProperty("quantityLocked");
+  expect(fetched).not.toHaveProperty("quantityInUse");
+  expect(fetched.getQuantityTotal()).toEqual(currentBalance.getQuantityTotal());
+
+  const expectedResponse = await createValidDTO(FetchBalancesWithTokenMetadataResponse, {
+    results: [plainToInstance(TokenBalanceWithMetadata, { balance: fetched, token: currencyClass })],
+    nextPageBookmark: ""
+  });
   expect(response).toEqual(GalaChainResponse.Success(expectedResponse));
 });
 

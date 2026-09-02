@@ -18,7 +18,8 @@ import {
   FetchTokenInstanceMetadataWithPaginationDto,
   MAX_METADATA_ATTRIBUTES,
   MAX_METADATA_CUSTOM_FIELDS,
-  SetTokenInstanceMetadataDto
+  SetTokenInstanceMetadataDto,
+  TokenInstanceMetadata
 } from "./TokenInstanceMetadata";
 
 const tokenInstance = {
@@ -148,6 +149,35 @@ describe("SetTokenInstanceMetadataDto array caps", () => {
 
     // Then
     expect(properties).toContain("attributes");
+  });
+});
+
+describe("TokenInstanceMetadata deserialize", () => {
+  it("should keep customFields and drop leftover fields", () => {
+    // Given
+    const stored = {
+      collection: tokenInstance.collection,
+      category: tokenInstance.category,
+      type: tokenInstance.type,
+      additionalKey: tokenInstance.additionalKey,
+      instance: "1",
+      project: "TestProject",
+      name: "Test Elixir #1",
+      customFields: [{ key: "gameId", value: "elixir-001" }],
+      leftoverField: "should-be-dropped",
+      createdBy: "client|admin",
+      lastModifiedBy: "client|admin",
+      created: 1,
+      lastModified: 1
+    };
+
+    // When
+    const metadata = TokenInstanceMetadata.deserialize(TokenInstanceMetadata, stored);
+
+    // Then
+    expect(metadata).toBeInstanceOf(TokenInstanceMetadata);
+    expect(metadata).not.toHaveProperty("leftoverField");
+    expect(metadata.customFields).toEqual([expect.objectContaining({ key: "gameId", value: "elixir-001" })]);
   });
 });
 
