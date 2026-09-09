@@ -39,9 +39,11 @@ describe("ApplyRequests uniqueKey", () => {
     expect(applyResponse).toEqual(
       transactionSuccess([
         {
-          Status: GalaChainResponseType.Success,
-          Data: { key: "queued-key", value: "queued-value" },
-          uniqueKey: "request-uk-1"
+          uniqueKey: "request-uk-1",
+          result: {
+            Status: GalaChainResponseType.Success,
+            Data: { key: "queued-key", value: "queued-value" }
+          }
         }
       ])
     );

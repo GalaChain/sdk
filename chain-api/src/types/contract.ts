@@ -28,11 +28,6 @@ export abstract class GalaChainResponse<T> {
   public readonly ErrorKey?: string;
   public readonly ErrorPayload?: unknown;
   public readonly Data?: T;
-  /**
-   * Set on ApplyRequests items: uniqueKey of the original queued request
-   * (the value the client sent on RequestTransfer / RequestMint / …).
-   */
-  public readonly uniqueKey?: string;
   public static Success<T>(Data: T): GalaChainResponse<T> {
     return new GalaChainSuccessResponse<T>(Data);
   }
@@ -140,5 +135,8 @@ export class GalaChainSuccessResponse<T> extends GalaChainResponse<T> {
   }
 }
 
-/** One ApplyRequests Data item: inner handler result plus the queued request uniqueKey. */
-export type AppliedRequest<T = unknown> = GalaChainResponse<T> & { uniqueKey?: string };
+/** One ApplyRequests Data item: the queued operation's uniqueKey and its handler result. */
+export interface AppliedRequest<T = unknown> {
+  uniqueKey?: string;
+  result: GalaChainResponse<T>;
+}

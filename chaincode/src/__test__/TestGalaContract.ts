@@ -142,10 +142,16 @@ export default class TestGalaContract extends GalaContract {
     allowedOrgs: ["CuratorOrg"]
   })
   public async RequestPutKv(ctx: GalaChainContext, dto: KVDto): Promise<unknown> {
-    return saveRequest(ctx, this.getName(), "TestGalaContract:ApplyPutKv", {
-      key: dto.key,
-      value: dto.value
-    });
+    return saveRequest(
+      ctx,
+      this.getName(),
+      "TestGalaContract:ApplyPutKv",
+      {
+        key: dto.key,
+        value: dto.value
+      },
+      dto.uniqueKey as string
+    );
   }
 
   @Transaction()

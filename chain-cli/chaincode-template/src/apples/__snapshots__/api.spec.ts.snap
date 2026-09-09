@@ -8,7 +8,7 @@ exports[`AppleContract API should match snapshot 1`] = `
   "contractVersion": "?.?.?",
   "methods": [
     {
-      "description": "Apply queued internal requests. Each Data item is the inner handler GalaChainResponse plus uniqueKey from the original Request* DTO when it was queued. Transaction updates the chain (submit). Allowed roles: CURATOR.",
+      "description": "Apply queued internal requests. Data is { uniqueKey, result }[] — uniqueKey from the original Request* DTO, result the inner handler GalaChainResponse. Transaction updates the chain (submit). Allowed roles: CURATOR.",
       "dtoSchema": {
         "properties": {
           "domain": {

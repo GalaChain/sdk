@@ -114,7 +114,9 @@ describe("NFT lock scenario", () => {
     expect(applyRequestsResponse).toEqual(transactionSuccess());
 
     // Then
-    expect(applyRequestsResponse.Data?.[0]).toEqual(transactionErrorKey("TOKEN_LOCKED"));
+    expect(applyRequestsResponse.Data?.[0]).toEqual(
+      expect.objectContaining({ result: transactionErrorKey("TOKEN_LOCKED") })
+    );
   });
 
   it("User1 can transfer token after unlock", async () => {

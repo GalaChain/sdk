@@ -357,8 +357,8 @@ export abstract class GalaContract extends Contract {
     in: ApplyRequestsDto,
     out: { arrayOf: "object" },
     description:
-      "Apply queued internal requests. Each Data item is the inner handler GalaChainResponse " +
-      "plus uniqueKey from the original Request* DTO when it was queued.",
+      "Apply queued internal requests. Data is { uniqueKey, result }[] — uniqueKey from the " +
+      "original Request* DTO, result the inner handler GalaChainResponse.",
     ...requireCuratorAuth
   })
   public async ApplyRequests(ctx: GalaChainContext, dto: ApplyRequestsDto): Promise<AppliedRequest[]> {

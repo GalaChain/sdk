@@ -70,7 +70,7 @@ export async function saveRequest(
   contractName: string,
   requestMethodKey: string,
   params: Record<string, unknown>,
-  uniqueKey?: string
+  uniqueKey: string
 ): Promise<unknown> {
   const txTimeKey = getRequestTimeKeyPart(ctx.txUnixTime);
 
@@ -81,16 +81,13 @@ export async function saveRequest(
     ctx.stub.getTxID()
   ]);
 
-  const resolvedUniqueKey = uniqueKey ?? ctx.dtoUniqueKey;
   const requestData: SavedRequest = {
     requestMethodKey,
     callingUser: ctx.callingUser,
     txUnixTime: ctx.txUnixTime,
-    params: instanceToPlain(params)
+    params: instanceToPlain(params),
+    uniqueKey
   };
-  if (resolvedUniqueKey) {
-    requestData.uniqueKey = resolvedUniqueKey;
-  }
 
   await ctx.stub.putState(rangedKey, Buffer.from(serialize(requestData)));
   return { scheduled: true };
@@ -118,16 +115,6 @@ async function applySavedRequest(
   };
 
   return GalaChainResponse.Wrap(handler(ctx, request.params));
-}
-
-function attachRequestUniqueKey<T>(
-  response: GalaChainResponse<T>,
-  uniqueKey: string | undefined
-): AppliedRequest<T> {
-  if (!uniqueKey) {
-    return response;
-  }
-  return Object.assign(response, { uniqueKey });
 }
 
 export async function hasPendingApplyRequests(
@@ -188,7 +175,7 @@ export async function applySavedRequests(
     }
 
     await ctx.stub.deleteState(requestKey);
-    responses.push(attachRequestUniqueKey(response, request.uniqueKey));
+    responses.push({ uniqueKey: request.uniqueKey, result: response });
   }
 
   return responses;

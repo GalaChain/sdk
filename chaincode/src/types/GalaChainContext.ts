@@ -183,8 +183,6 @@ export class GalaChainContext extends Context {
 
   public isDryRun = false;
   public config: GalaChainContextConfig;
-  /** uniqueKey from the current submit DTO. Set by GalaTransaction. */
-  public dtoUniqueKey?: string;
   /** Tracing for this invoke. Use `otel.send` / `otel.run` / `otel.end`. */
   public readonly otel: GalaChainOtel;
 
