@@ -218,6 +218,10 @@ function GalaTransaction<In extends ChainCallDTO, Out>(
                     validationOptions
                   );
 
+              if (dto?.uniqueKey) {
+                ctx.dtoUniqueKey = dto.uniqueKey;
+              }
+
               // Note using Date.now() instead of ctx.txUnixTime which is provided client-side.
               if (dto?.dtoExpiresAt && dto.dtoExpiresAt < Date.now()) {
                 throw new ExpiredError(`DTO expired at ${new Date(dto.dtoExpiresAt).toISOString()}`);

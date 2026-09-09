@@ -13,6 +13,7 @@
  * limitations under the License.
  */
 import {
+  AppliedRequest,
   ApplyRequestsDto,
   GalaChainResponse,
   HasPendingApplyRequestsDto,
@@ -60,13 +61,16 @@ export interface SavedRequest {
   callingUser: UserAlias;
   txUnixTime: number;
   params: Record<string, unknown>;
+  /** uniqueKey of the original Request* submit DTO. Absent on items queued before this field existed. */
+  uniqueKey?: string;
 }
 
 export async function saveRequest(
   ctx: GalaChainContext,
   contractName: string,
   requestMethodKey: string,
-  params: Record<string, unknown>
+  params: Record<string, unknown>,
+  uniqueKey?: string
 ): Promise<unknown> {
   const txTimeKey = getRequestTimeKeyPart(ctx.txUnixTime);
 
@@ -77,12 +81,16 @@ export async function saveRequest(
     ctx.stub.getTxID()
   ]);
 
+  const resolvedUniqueKey = uniqueKey ?? ctx.dtoUniqueKey;
   const requestData: SavedRequest = {
     requestMethodKey,
     callingUser: ctx.callingUser,
     txUnixTime: ctx.txUnixTime,
     params: instanceToPlain(params)
   };
+  if (resolvedUniqueKey) {
+    requestData.uniqueKey = resolvedUniqueKey;
+  }
 
   await ctx.stub.putState(rangedKey, Buffer.from(serialize(requestData)));
   return { scheduled: true };
@@ -112,6 +120,16 @@ async function applySavedRequest(
   return GalaChainResponse.Wrap(handler(ctx, request.params));
 }
 
+function attachRequestUniqueKey<T>(
+  response: GalaChainResponse<T>,
+  uniqueKey: string | undefined
+): AppliedRequest<T> {
+  if (!uniqueKey) {
+    return response;
+  }
+  return Object.assign(response, { uniqueKey });
+}
+
 export async function hasPendingApplyRequests(
   ctx: GalaChainContext,
   contractName: string,
@@ -133,7 +151,7 @@ export async function applySavedRequests(
   contractName: string,
   dto: ApplyRequestsDto,
   requestMethodHandlers: Record<string, RequestMethodHandler>
-): Promise<GalaChainResponse<unknown>[]> {
+): Promise<AppliedRequest[]> {
   const maxRequests = dto.maxRequests ?? 500;
   const minDelayMs = dto.minDelayMs ?? MIN_DELAY_MS;
   const cutoffTime = Math.max(0, ctx.txUnixTime - minDelayMs);
@@ -141,7 +159,7 @@ export async function applySavedRequests(
   const { startKey, stopKey } = getApplyRequestsKeyRange(contractName, cutoffTime);
   const iterator = ctx.stub.getStateByRange(startKey, stopKey);
 
-  const responses: GalaChainResponse<unknown>[] = [];
+  const responses: AppliedRequest[] = [];
 
   for await (const kv of iterator) {
     if (responses.length >= maxRequests) {
@@ -170,7 +188,7 @@ export async function applySavedRequests(
     }
 
     await ctx.stub.deleteState(requestKey);
-    responses.push(response);
+    responses.push(attachRequestUniqueKey(response, request.uniqueKey));
   }
 
   return responses;
