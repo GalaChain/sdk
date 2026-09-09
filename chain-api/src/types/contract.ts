@@ -134,9 +134,3 @@ export class GalaChainSuccessResponse<T> extends GalaChainResponse<T> {
     this.Data = data;
   }
 }
-
-/** One ApplyRequests Data item: the queued operation's uniqueKey and its handler result. */
-export interface AppliedRequest<T = unknown> {
-  uniqueKey?: string;
-  result: GalaChainResponse<T>;
-}
