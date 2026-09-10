@@ -13,6 +13,7 @@
  * limitations under the License.
  */
 import {
+  AppliedRequest,
   ApplyRequestsDto,
   GalaChainResponse,
   HasPendingApplyRequestsDto,
@@ -60,13 +61,16 @@ export interface SavedRequest {
   callingUser: UserAlias;
   txUnixTime: number;
   params: Record<string, unknown>;
+  /** uniqueKey of the original Request* submit DTO. Absent on items queued before this field existed. */
+  uniqueKey?: string;
 }
 
 export async function saveRequest(
   ctx: GalaChainContext,
   contractName: string,
   requestMethodKey: string,
-  params: Record<string, unknown>
+  params: Record<string, unknown>,
+  uniqueKey: string
 ): Promise<unknown> {
   const txTimeKey = getRequestTimeKeyPart(ctx.txUnixTime);
 
@@ -81,7 +85,8 @@ export async function saveRequest(
     requestMethodKey,
     callingUser: ctx.callingUser,
     txUnixTime: ctx.txUnixTime,
-    params: instanceToPlain(params)
+    params: instanceToPlain(params),
+    uniqueKey
   };
 
   await ctx.stub.putState(rangedKey, Buffer.from(serialize(requestData)));
@@ -133,7 +138,7 @@ export async function applySavedRequests(
   contractName: string,
   dto: ApplyRequestsDto,
   requestMethodHandlers: Record<string, RequestMethodHandler>
-): Promise<GalaChainResponse<unknown>[]> {
+): Promise<AppliedRequest[]> {
   const maxRequests = dto.maxRequests ?? 500;
   const minDelayMs = dto.minDelayMs ?? MIN_DELAY_MS;
   const cutoffTime = Math.max(0, ctx.txUnixTime - minDelayMs);
@@ -141,7 +146,7 @@ export async function applySavedRequests(
   const { startKey, stopKey } = getApplyRequestsKeyRange(contractName, cutoffTime);
   const iterator = ctx.stub.getStateByRange(startKey, stopKey);
 
-  const responses: GalaChainResponse<unknown>[] = [];
+  const responses: AppliedRequest[] = [];
 
   for await (const kv of iterator) {
     if (responses.length >= maxRequests) {
@@ -170,7 +175,7 @@ export async function applySavedRequests(
     }
 
     await ctx.stub.deleteState(requestKey);
-    responses.push(response);
+    responses.push({ uniqueKey: request.uniqueKey, result: response });
   }
 
   return responses;

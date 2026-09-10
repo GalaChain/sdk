@@ -463,6 +463,32 @@ export class ApplyRequestsDto extends SubmitCallDTO {
   minDelayMs?: number;
 }
 
+/** One item in ApplyRequests Data: the queued operation and its handler result. */
+export class AppliedRequest<T = unknown> {
+  @JSONSchema({
+    description: "uniqueKey from the original Request* DTO that queued this operation."
+  })
+  @IsOptional()
+  @IsString()
+  uniqueKey?: string;
+
+  @JSONSchema({
+    description: "Inner handler GalaChainResponse.",
+    type: "object",
+    properties: {
+      Status: { enum: [0, 1], description: "Indicates Error (0) or Success (1)" },
+      Message: { type: "string" },
+      Data: {},
+      ErrorCode: { type: "number" },
+      ErrorKey: { type: "string" },
+      ErrorPayload: {}
+    },
+    required: ["Status"]
+  })
+  @IsObject()
+  result: GalaChainResponse<T>;
+}
+
 export class HasPendingApplyRequestsDto extends ChainCallDTO {
   @JSONSchema({
     description:

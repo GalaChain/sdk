@@ -43,10 +43,12 @@ import {
   EVALUATE,
   GalaContract,
   GalaTransaction,
+  RequestMethodHandler,
   SUBMIT,
   Submit,
   UnsignedEvaluate,
-  requireCuratorAuth
+  requireCuratorAuth,
+  saveRequest
 } from "../contracts";
 import { GalaChainContext } from "../types";
 import { getObjectsByPartialCompositeKey, putChainObject } from "../utils";
@@ -120,8 +122,36 @@ export class NestedKVDto extends ChainCallDTO {
 }
 
 export default class TestGalaContract extends GalaContract {
+  protected readonly requestMethodHandlers: Record<string, RequestMethodHandler> = {
+    ["TestGalaContract:ApplyPutKv"]: async (ctx, params) => {
+      const key = String(params.key);
+      const value = String(params.value ?? "");
+      await ctx.stub.putState(key, Buffer.from(value));
+      return { key, value };
+    }
+  };
+
   constructor() {
     super("TestGalaContract", version);
+  }
+
+  @GalaTransaction({
+    type: SUBMIT,
+    in: KVDto,
+    enforceUniqueKey: true,
+    allowedOrgs: ["CuratorOrg"]
+  })
+  public async RequestPutKv(ctx: GalaChainContext, dto: KVDto): Promise<unknown> {
+    return saveRequest(
+      ctx,
+      this.getName(),
+      "TestGalaContract:ApplyPutKv",
+      {
+        key: dto.key,
+        value: dto.value
+      },
+      dto.uniqueKey as string
+    );
   }
 
   @Transaction()

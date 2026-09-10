@@ -585,7 +585,7 @@ export default class GalaChainTokenContract extends GalaContract {
       authorizedOnBehalf: undefined
     };
 
-    await saveRequest(ctx, this.getName(), "GalaChainToken:ApplyMintToken", params);
+    await saveRequest(ctx, this.getName(), "GalaChainToken:ApplyMintToken", params, dto.uniqueKey);
   }
 
   @Submit({
@@ -714,7 +714,7 @@ export default class GalaChainTokenContract extends GalaContract {
       authorizedOnBehalf: undefined
     };
 
-    await saveRequest(ctx, this.getName(), "GalaChainToken:ApplyTransferToken", params);
+    await saveRequest(ctx, this.getName(), "GalaChainToken:ApplyTransferToken", params, dto.uniqueKey);
   }
 
   @Submit({

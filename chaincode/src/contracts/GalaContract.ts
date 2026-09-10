@@ -13,6 +13,7 @@
  * limitations under the License.
  */
 import {
+  AppliedRequest,
   ApplyRequestsDto,
   BatchDto,
   ChainCallDTO,
@@ -354,14 +355,11 @@ export abstract class GalaContract extends Contract {
 
   @Submit({
     in: ApplyRequestsDto,
-    out: { arrayOf: "object" },
+    out: { arrayOf: AppliedRequest },
     description: "Apply queued internal requests",
     ...requireCuratorAuth
   })
-  public async ApplyRequests(
-    ctx: GalaChainContext,
-    dto: ApplyRequestsDto
-  ): Promise<GalaChainResponse<unknown>[]> {
+  public async ApplyRequests(ctx: GalaChainContext, dto: ApplyRequestsDto): Promise<AppliedRequest[]> {
     return applySavedRequests(ctx, this.getName(), dto, this.requestMethodHandlers);
   }
 
