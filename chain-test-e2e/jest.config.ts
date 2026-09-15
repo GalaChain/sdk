@@ -13,15 +13,22 @@
  * limitations under the License.
  */
 
+if (process.env.GALA_NETWORK_ROOT_PATH === undefined) {
+  // eslint-disable-next-line @typescript-eslint/no-var-requires
+  const path = require("path");
+  const networkRoot = path.resolve(__dirname, "../chain-cli/network");
+  process.env.GALA_NETWORK_ROOT_PATH = networkRoot;
+}
+
 /* eslint-disable */
 export default {
-  displayName: "chain-test",
+  displayName: "chain-test-e2e",
   preset: "../jest.preset.js",
   testEnvironment: "node",
   transform: {
-    "^.+\\.ts$": ["ts-jest", { tsconfig: "<rootDir>/tsconfig.spec.json" }]
+    "^.+\.ts$": ["ts-jest", { tsconfig: "<rootDir>/tsconfig.spec.json" }]
   },
   moduleFileExtensions: ["ts", "js", "html"],
   transformIgnorePatterns: ["/node_modules/", ".*/lib/.*"],
-  coverageDirectory: "../coverage/chain-test"
+  coverageDirectory: "../coverage/chain-test-e2e"
 };

@@ -12,23 +12,9 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-import {
-  GC_NETWORK_ID,
-  NftCollectionAuthorization,
-  TokenAllowance,
-  TokenBalance,
-  TokenBurn,
-  TokenClass,
-  TokenClassKey,
-  TokenInstance,
-  TokenInstanceKey,
-  TokenInstanceMetadata,
-  TokenInstanceMetadataAttribute,
-  TokenInstanceMetadataCustomField
-} from "@gala-chain/api";
 import BigNumber from "bignumber.js";
-import { plainToInstance } from "class-transformer";
 
+import { tokenFixtureClass } from "./tokenFixtureClasses";
 import users from "./users";
 import { createInstanceFn, createPlainFn } from "./utils";
 
@@ -74,7 +60,7 @@ const tokenClassPlain = createPlainFn({
   maxCapacity: new BigNumber(100000000),
   maxSupply: new BigNumber(100000000),
   name: "TestElixirNft",
-  network: GC_NETWORK_ID,
+  network: "GC",
   symbol: "GALAXR",
   totalBurned: new BigNumber(0),
   totalMintAllowance: new BigNumber(0),
@@ -174,13 +160,13 @@ const tokenInstance1MetadataPlain = (txUnixTime: number) => ({
   description: "Generated via automated test suite.",
   image: "https://app.gala.games/test-image-placeholder-url.png",
   attributes: [
-    plainToInstance(TokenInstanceMetadataAttribute, {
+    {
       traitType: "Potency",
       value: 9,
       displayType: "number"
-    })
+    }
   ],
-  customFields: [plainToInstance(TokenInstanceMetadataCustomField, { key: "gameId", value: "elixir-001" })],
+  customFields: [{ key: "gameId", value: "elixir-001" }],
   createdBy: users.admin.identityKey,
   lastModifiedBy: users.admin.identityKey,
   created: txUnixTime,
@@ -251,26 +237,35 @@ const tokenBurnCounterPlain = (
  * const tokenClassInstance = nft.tokenClass();
  * ```
  */
+function boundInstance(
+  name: Parameters<typeof tokenFixtureClass>[0],
+  plain: object
+): (override?: (p: object) => object) => any {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  return (override?: (p: any) => any) =>
+    createInstanceFn(tokenFixtureClass(name) as any, plain as any)(override);
+}
+
 export default {
   tokenClassKeyPlain,
-  tokenClassKey: createInstanceFn(TokenClassKey, tokenClassKeyPlain()),
+  tokenClassKey: boundInstance("TokenClassKey", tokenClassKeyPlain()),
   tokenClassPlain,
-  tokenClass: createInstanceFn(TokenClass, tokenClassPlain()),
+  tokenClass: boundInstance("TokenClass", tokenClassPlain()),
   tokenAllowancePlain,
-  tokenAllowance: createInstanceFn(TokenAllowance, tokenAllowancePlain(1)),
+  tokenAllowance: boundInstance("TokenAllowance", tokenAllowancePlain(1)),
   tokenMintAllowancePlain,
-  tokenMintAllowance: createInstanceFn(TokenAllowance, tokenMintAllowancePlain(1)),
+  tokenMintAllowance: boundInstance("TokenAllowance", tokenMintAllowancePlain(1)),
   tokenInstance1KeyPlain,
-  tokenInstance1Key: createInstanceFn(TokenInstanceKey, tokenInstance1KeyPlain()),
+  tokenInstance1Key: boundInstance("TokenInstanceKey", tokenInstance1KeyPlain()),
   tokenInstance1Plain,
-  tokenInstance1: createInstanceFn(TokenInstance, tokenInstance1Plain()),
+  tokenInstance1: boundInstance("TokenInstance", tokenInstance1Plain()),
   tokenInstance1MetadataPlain,
-  tokenInstance1Metadata: createInstanceFn(TokenInstanceMetadata, tokenInstance1MetadataPlain(1)),
+  tokenInstance1Metadata: boundInstance("TokenInstanceMetadata", tokenInstance1MetadataPlain(1)),
   projectAuthorizationPlain,
-  projectAuthorization: createInstanceFn(NftCollectionAuthorization, projectAuthorizationPlain()),
+  projectAuthorization: boundInstance("NftCollectionAuthorization", projectAuthorizationPlain()),
   tokenBalancePlain,
-  tokenBalance: createInstanceFn(TokenBalance, tokenBalancePlain()),
+  tokenBalance: boundInstance("TokenBalance", tokenBalancePlain()),
   tokenBurnPlain,
-  tokenBurn: createInstanceFn(TokenBurn, tokenBurnPlain(1)),
+  tokenBurn: boundInstance("TokenBurn", tokenBurnPlain(1)),
   tokenBurnCounterPlain
 };

@@ -73,6 +73,7 @@
     "chain-client",
     "chain-connect",
     "chain-test",
+    "chain-test-e2e",
     "chaincode"
   ]
 }

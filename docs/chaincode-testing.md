@@ -1,7 +1,6 @@
 # Testing your chaincode
 
-The GalaChain SDK includes a comprehensive set of tools in the `@gala-chain/test` package to facilitate the testing of your chaincode.
-This package supports both unit testing for individual contracts and integration/end-to-end testing for running networks.
+The GalaChain SDK includes test helpers in `@gala-chain/test` (unit) and `@gala-chain/test-e2e` (network clients).
 
 ## Unit testing
 
@@ -209,7 +208,7 @@ In the context of testing contract methods with `fixture`, you don't need to man
 
 ## Integration testing
 
-The `@gala-chain/test` package, combined with the `@gala-chain/client` package, provides utilities for integration testing your chaincode.
+`@gala-chain/test-e2e` provides clients for integration testing your chaincode, and uses `@gala-chain/client`.
 The primary objective of integration or end-to-end tests is to call transactions on the actual Hyperledger Fabric network and verify the results.
 
 The recommended library for tests is [Jest](https://jestjs.io/).
@@ -252,7 +251,8 @@ It needs to be connected to the network, anf it needs to be disconnected after t
 Here is an example of the test setup:
 
 ```typescript
-import { AdminChainClients, TestClients, transactionErrorKey, transactionSuccess, } from "@gala-chain/test";
+import { transactionErrorKey, transactionSuccess } from "@gala-chain/test";
+import { AdminChainClients, TestClients } from "@gala-chain/test-e2e";
 import { ChainUser, GalaChainResponse } from "@gala-chain/api";
 import { ChainClient } from "@gala-chain/client";
 import { AppleTreeDto, AppleTreesDto, FetchTreesDto, PagedTreesDto, PickAppleDto, Variety } from "../src/apples";

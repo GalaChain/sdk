@@ -37,6 +37,7 @@ const packages = [
   "./chain-client",
   "./chain-connect",
   "./chain-test",
+  "./chain-test-e2e",
   "./chaincode"
 ].map((p) => {
   const packageJsonPath = require.resolve(`${p}/package.json`);

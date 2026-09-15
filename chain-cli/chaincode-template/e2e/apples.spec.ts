@@ -22,7 +22,8 @@ import {
   commonContractAPI,
   randomUniqueKey
 } from "@gala-chain/api";
-import { AdminChainClients, TestClients, transactionErrorKey, transactionSuccess } from "@gala-chain/test";
+import { transactionErrorKey, transactionSuccess } from "@gala-chain/test";
+import { AdminChainClients, TestClients } from "@gala-chain/test-e2e";
 import { plainToInstance } from "class-transformer";
 
 import {

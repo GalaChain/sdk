@@ -14,6 +14,6 @@
  */
 
 export * from "./data";
-export * from "./e2e";
 export * from "./matchers";
 export * from "./unit";
+export { randomize } from "./randomize";

@@ -12,7 +12,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-import { ChainObject, RangedChainObject } from "@gala-chain/api";
+import { CompositeKeyed, RangeKeyed } from "../types";
 
 /**
  * Union type representing different types of blockchain write operations.
@@ -20,12 +20,12 @@ import { ChainObject, RangedChainObject } from "@gala-chain/api";
  * Supports writing ChainObjects, RangedChainObjects, deletions, and raw key-value pairs.
  */
 export type WriteRecord =
-  | ChainObject
-  | RangedChainObject
+  | CompositeKeyed
+  | RangeKeyed
   | { key: string; isDelete: true }
   | { key: string; value: string };
 
-function isRangedChainObject(record: WriteRecord): record is RangedChainObject {
+function isRangedChainObject(record: WriteRecord): record is RangeKeyed {
   return typeof record["getRangedKey"] === "function";
 }
 

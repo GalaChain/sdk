@@ -23,7 +23,8 @@ import {
   createValidSubmitDTO,
   signatures
 } from "@gala-chain/api";
-import { MockedChaincodeClientBuilder, transactionErrorKey, transactionSuccess } from "@gala-chain/test";
+import { transactionErrorKey, transactionSuccess } from "@gala-chain/test";
+import { MockedChaincodeClientBuilder } from "@gala-chain/test-e2e";
 import path from "path";
 import process from "process";
 

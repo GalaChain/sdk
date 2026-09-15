@@ -12,18 +12,9 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-import {
-  GC_NETWORK_ID,
-  TokenAllowance,
-  TokenBalance,
-  TokenBurn,
-  TokenClass,
-  TokenClassKey,
-  TokenInstance,
-  TokenInstanceKey
-} from "@gala-chain/api";
 import BigNumber from "bignumber.js";
 
+import { tokenFixtureClass } from "./tokenFixtureClasses";
 import users from "./users";
 import { createInstanceFn, createPlainFn } from "./utils";
 
@@ -75,7 +66,7 @@ const tokenClassPlain = createPlainFn({
   maxCapacity: new BigNumber(100000000000000),
   maxSupply: new BigNumber(100000000000000),
   name: "AUTOMATEDTESTCOIN",
-  network: GC_NETWORK_ID,
+  network: "GC",
   symbol: "AUTC",
   totalBurned: new BigNumber(0),
   totalMintAllowance: new BigNumber(0),
@@ -247,26 +238,35 @@ const tokenBurnCounterPlain = (
  * const tokenClassInstance = currency.tokenClass();
  * ```
  */
+function boundInstance(
+  name: Parameters<typeof tokenFixtureClass>[0],
+  plain: object
+): (override?: (p: object) => object) => any {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  return (override?: (p: any) => any) =>
+    createInstanceFn(tokenFixtureClass(name) as any, plain as any)(override);
+}
+
 export default {
   tokenClassKeyPlain,
-  tokenClassKey: createInstanceFn(TokenClassKey, tokenClassKeyPlain()),
+  tokenClassKey: boundInstance("TokenClassKey", tokenClassKeyPlain()),
   tokenClassPlain: tokenClassPlain,
-  tokenClass: createInstanceFn(TokenClass, tokenClassPlain()),
+  tokenClass: boundInstance("TokenClass", tokenClassPlain()),
   tokenAllowancePlain,
-  tokenAllowance: createInstanceFn(TokenAllowance, tokenAllowancePlain(1)),
+  tokenAllowance: boundInstance("TokenAllowance", tokenAllowancePlain(1)),
   tokenBurnAllowancePlain,
-  tokenBurnAllowance: createInstanceFn(TokenAllowance, tokenBurnAllowancePlain(1)),
+  tokenBurnAllowance: boundInstance("TokenAllowance", tokenBurnAllowancePlain(1)),
   tokenBurnAllowanceUser3Plain,
-  tokenBurnAllowanceUser3: createInstanceFn(TokenAllowance, tokenBurnAllowanceUser3Plain(1)),
+  tokenBurnAllowanceUser3: boundInstance("TokenAllowance", tokenBurnAllowanceUser3Plain(1)),
   tokenMintAllowancePlain,
-  tokenMintAllowance: createInstanceFn(TokenAllowance, tokenMintAllowancePlain(1)),
+  tokenMintAllowance: boundInstance("TokenAllowance", tokenMintAllowancePlain(1)),
   tokenInstanceKeyPlain,
-  tokenInstanceKey: createInstanceFn(TokenInstanceKey, tokenInstanceKeyPlain()),
+  tokenInstanceKey: boundInstance("TokenInstanceKey", tokenInstanceKeyPlain()),
   tokenInstancePlain,
-  tokenInstance: createInstanceFn(TokenInstance, tokenInstancePlain()),
+  tokenInstance: boundInstance("TokenInstance", tokenInstancePlain()),
   tokenBalancePlain,
-  tokenBalance: createInstanceFn(TokenBalance, tokenBalancePlain()),
+  tokenBalance: boundInstance("TokenBalance", tokenBalancePlain()),
   tokenBurnPlain,
-  tokenBurn: createInstanceFn(TokenBurn, tokenBurnPlain(1)),
+  tokenBurn: boundInstance("TokenBurn", tokenBurnPlain(1)),
   tokenBurnCounterPlain
 };

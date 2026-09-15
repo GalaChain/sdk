@@ -26,15 +26,15 @@ import {
   createValidDTO,
   createValidSubmitDTO
 } from "@gala-chain/api";
+import { transactionSuccess } from "@gala-chain/test";
 import {
   AdminChainClients,
   TestClients,
   applyRequests,
   createTransferDto,
   fetchNFTInstances,
-  randomize,
-  transactionSuccess
-} from "@gala-chain/test";
+  randomize
+} from "@gala-chain/test-e2e";
 import BigNumber from "bignumber.js";
 import { instanceToPlain, plainToInstance } from "class-transformer";
 

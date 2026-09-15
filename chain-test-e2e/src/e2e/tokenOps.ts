@@ -32,48 +32,15 @@ import {
   createValidDTO,
   createValidSubmitDTO
 } from "@gala-chain/api";
+import { transactionSuccess } from "@gala-chain/test";
 import { expect } from "@jest/globals";
 import BigNumber from "bignumber.js";
 import { instanceToPlain } from "class-transformer";
-import { nanoid } from "nanoid";
 
-import { transactionSuccess } from "../matchers";
 import type { AdminChainClients } from "./TestClients";
 
-/**
- * Generates a randomized string by appending a random suffix to the input.
- *
- * @param str - Base string to randomize
- * @returns Randomized string with the base string and random characters, limited to 30 characters
- *
- * @example
- * ```typescript
- * const randomCollection = randomize("MyNFT"); // "MyNFTabc123xyz"
- * const randomUser = randomize("testuser"); // "testuserdef456uvw"
- * ```
- */
-export function randomize(str: string): string {
-  return `${str}${nanoid().replace(/[^a-z]/g, "")}`.slice(0, 30);
-}
+export { randomize } from "@gala-chain/test";
 
-/**
- * Complete workflow to mint tokens to multiple users.
- *
- * Performs the full token minting process: creates token class, grants minting allowances,
- * and mints tokens to each specified user.
- *
- * @param client - Chain client with user API capabilities
- * @param nftClassKey - Token class identifier
- * @param users - Array of users and quantities to mint
- *
- * @example
- * ```typescript
- * await mintTokensToUsers(client, nftClassKey, [
- *   { user: user1, quantity: new BigNumber(1) },
- *   { user: user2, quantity: new BigNumber(2) }
- * ]);
- * ```
- */
 export async function mintTokensToUsers(
   client: ChainClient & ChainUserAPI,
   nftClassKey: TokenClassKey,

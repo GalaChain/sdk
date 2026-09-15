@@ -42,6 +42,9 @@
       "@gala-chain/test": [
         "chain-test/src/index.ts"
       ],
+      "@gala-chain/test-e2e": [
+        "chain-test-e2e/src/index.ts"
+      ],
     }
   },
   "exclude": [
@@ -54,6 +57,7 @@
     "chain-client/**/*.ts",
     "chaincode/**/*.ts",
     "chain-test/**/*.ts",
+    "chain-test-e2e/**/*.ts",
     "chain-connect/**/*.ts",
     "package.json",
     "chain-client/src/ops-api-config-schema.json"

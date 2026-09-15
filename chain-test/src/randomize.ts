@@ -12,13 +12,11 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-import currency from "./currency";
-import nft from "./nft";
-import users from "./users";
-import { ChainUserWithRoles, randomUser } from "./users";
+import { nanoid } from "nanoid";
 
-export { currency, nft, users, ChainUserWithRoles, randomUser };
-
-export { bindTokenFixtureClasses } from "./tokenFixtureClasses";
-export type { TokenFixtureClasses } from "./tokenFixtureClasses";
-export { ADMIN_ROLES, DEFAULT_ROLES } from "./users";
+/**
+ * Generates a randomized string by appending a random suffix to the input.
+ */
+export function randomize(str: string): string {
+  return `${str}${nanoid().replace(/[^a-z]/g, "")}`.slice(0, 30);
+}

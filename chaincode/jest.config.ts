@@ -24,7 +24,7 @@ export default {
   moduleFileExtensions: ["ts", "js", "html"],
   transformIgnorePatterns: ["/node_modules/", ".*/lib/.*"],
   coverageDirectory: "../coverage/chaincode",
-  setupFilesAfterEnv: ["setimmediate"]
+  setupFilesAfterEnv: ["setimmediate", "<rootDir>/bindTokenFixtureClasses.ts"]
 };
 
 // For testing purposes we use initial admin key pair

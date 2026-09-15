@@ -24,17 +24,15 @@ import {
   UnlockTokensDto,
   createValidSubmitDTO
 } from "@gala-chain/api";
+import { transactionError, transactionErrorKey, transactionSuccess } from "@gala-chain/test";
 import {
   AdminChainClients,
   TestClients,
   applyRequests,
   createTransferDto,
   randomize,
-  requestMintTokensToUsers,
-  transactionError,
-  transactionErrorKey,
-  transactionSuccess
-} from "@gala-chain/test";
+  requestMintTokensToUsers
+} from "@gala-chain/test-e2e";
 import BigNumber from "bignumber.js";
 import { instanceToPlain, plainToInstance } from "class-transformer";
 
