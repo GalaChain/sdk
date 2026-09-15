@@ -12,9 +12,10 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-import { serialize } from "@gala-chain/api";
 import { plainToInstance } from "class-transformer";
 import * as Logger from "fabric-contract-api/lib/logger";
+
+import { serializeValue } from "../serialize";
 
 // intentionally copied from GalaJSONSerializer from @gala-chain/chaincode library
 
@@ -35,7 +36,7 @@ const logger = Logger.getLogger("GalaJSONSerializer");
 /**
  * Buffers are converted to the format of {type:'Buffer', data:xxxxx }
  * If an object has a toJSON() method then that will be used - as this uses
- * serialize() from @gala-chain/sdk
+ * serializeValue()
  *
  */
 export default class GalaJSONSerializer {
@@ -67,7 +68,7 @@ export default class GalaJSONSerializer {
           `${loggerPrefix} toBuffer has no schema/lacks sufficient schema to validate against`,
           schema
         );
-        const payload = serialize(result);
+        const payload = serializeValue(result);
         return Buffer.from(payload);
       }
     } else {

@@ -12,9 +12,9 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-import { ClassConstructor, NotImplementedError } from "@gala-chain/api";
 import { Context, Contract } from "fabric-contract-api";
 
+import { ClassConstructor } from "../types";
 import GalaJSONSerializer from "./GalaJSONSerializer";
 import { ChaincodeStubClassType, TestChaincodeStub } from "./TestChaincodeStub";
 
@@ -220,7 +220,7 @@ export class TestChaincode {
    * @template T - Type of the contract class
    * @param contractClass - Constructor function of the contract class
    * @returns The contract instance
-   * @throws NotImplementedError if the contract class is not found in the chaincode
+   * @throws Error if the contract class is not found in the chaincode
    */
   public getContractInstance<T extends Contract>(
     // eslint-disable-next-line @typescript-eslint/ban-types
@@ -235,7 +235,7 @@ export class TestChaincode {
       | undefined;
 
     if (data === undefined) {
-      throw new NotImplementedError(`Cannot get contract instance for ${contractClass.name}`);
+      throw new Error(`Cannot get contract instance for ${contractClass.name}`);
     } else {
       return data.contractInstance;
     }

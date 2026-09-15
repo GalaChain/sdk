@@ -12,11 +12,15 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-import { ChainUser, UserAlias, UserProfile } from "@gala-chain/api";
+import { genKeyPair, getEthAddress } from "../keys";
+import { UserAlias } from "../types";
+
+export const ADMIN_ROLES = ["CURATOR", "REGISTRAR"] as const;
+export const DEFAULT_ROLES = ["EVALUATE", "SUBMIT"] as const;
 
 /**
  * Chain user with role-based access control information.
- * Extends basic ChainUser with role assignments for testing authorization scenarios.
+ * Extends basic user identity with role assignments for testing authorization scenarios.
  */
 export interface ChainUserWithRoles {
   identityKey: UserAlias;
@@ -39,22 +43,35 @@ export interface ChainUserWithRoles {
  * const user = randomUser();
  *
  * // Create admin user
- * const admin = randomUser("admin", UserProfile.ADMIN_ROLES);
+ * const admin = randomUser("admin", [...ADMIN_ROLES]);
  *
  * // Create user with custom roles
  * const curator = randomUser("curator", ["TokenCurator", "NFTManager"]);
  * ```
  */
 export function randomUser(
-  string?: string | undefined,
-  roles: string[] = [...UserProfile.DEFAULT_ROLES]
-): ChainUserWithRoles & { roles: string[] } {
-  const user = ChainUser.withRandomKeys(string);
+  name?: string | undefined,
+  roles: string[] = [...DEFAULT_ROLES]
+): ChainUserWithRoles {
+  const { privateKey, publicKey } = genKeyPair();
+  const ethAddress = getEthAddress(publicKey);
+
+  if (name === undefined) {
+    return {
+      identityKey: `eth|${ethAddress}` as UserAlias,
+      ethAddress,
+      publicKey,
+      privateKey,
+      roles
+    };
+  }
+
+  const clientName = name.replace("client|", "");
   return {
-    identityKey: user.identityKey,
-    ethAddress: user.ethAddress,
-    publicKey: user.publicKey,
-    privateKey: user.privateKey,
+    identityKey: `client|${clientName}` as UserAlias,
+    ethAddress,
+    publicKey,
+    privateKey,
     roles
   };
 }
@@ -77,11 +94,11 @@ export function randomUser(
  * ```
  */
 export default {
-  admin: randomUser("client|admin", [...UserProfile.ADMIN_ROLES, ...UserProfile.DEFAULT_ROLES]),
+  admin: randomUser("client|admin", [...ADMIN_ROLES, ...DEFAULT_ROLES]),
   testUser1: randomUser("client|testUser1"),
   testUser2: randomUser("client|testUser2"),
   testUser3: randomUser("client|testUser3"),
   tokenHolder: randomUser("client|tokenHolder"),
-  attacker: randomUser("client|maliciousUser", [...UserProfile.ADMIN_ROLES, ...UserProfile.DEFAULT_ROLES]),
+  attacker: randomUser("client|maliciousUser", [...ADMIN_ROLES, ...DEFAULT_ROLES]),
   random: randomUser
 };

@@ -12,8 +12,9 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-import { ClassConstructor, NonFunctionProperties } from "@gala-chain/api";
 import { plainToInstance } from "class-transformer";
+
+import { ClassConstructor, NonFunctionProperties } from "../types";
 
 /**
  * Function type for creating instances with optional property overrides.

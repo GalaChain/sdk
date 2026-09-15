@@ -12,13 +12,27 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-import currency from "./currency";
-import nft from "./nft";
-import users from "./users";
-import { ChainUserWithRoles, randomUser } from "./users";
+import {
+  NftCollectionAuthorization,
+  TokenAllowance,
+  TokenBalance,
+  TokenBurn,
+  TokenClass,
+  TokenClassKey,
+  TokenInstance,
+  TokenInstanceKey,
+  TokenInstanceMetadata
+} from "@gala-chain/api";
+import { bindTokenFixtureClasses } from "@gala-chain/test";
 
-export { currency, nft, users, ChainUserWithRoles, randomUser };
-
-export { bindTokenFixtureClasses } from "./tokenFixtureClasses";
-export type { TokenFixtureClasses } from "./tokenFixtureClasses";
-export { ADMIN_ROLES, DEFAULT_ROLES } from "./users";
+bindTokenFixtureClasses({
+  TokenClassKey,
+  TokenClass,
+  TokenAllowance,
+  TokenInstanceKey,
+  TokenInstance,
+  TokenInstanceMetadata,
+  NftCollectionAuthorization,
+  TokenBalance,
+  TokenBurn
+});
