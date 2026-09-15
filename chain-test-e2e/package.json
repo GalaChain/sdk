@@ -1,23 +1,19 @@
 {
-  "name": "@gala-chain/test",
+  "name": "@gala-chain/test-e2e",
   "version": "3.2.5",
-  "description": "Unit testing helpers for GalaChain",
+  "description": "E2E test clients for GalaChain",
   "license": "Apache-2.0",
   "dependencies": {
-    "nanoid": "^3.3.6",
-    "tslib": "^2.6.2",
+    "@gala-chain/api": "3.2.5",
+    "@gala-chain/client": "3.2.5",
+    "@gala-chain/test": "3.2.5",
     "@jest/globals": "29.7.0",
-    "class-transformer": "0.5.1",
-    "js-sha3": "^0.9.3",
-    "json-stringify-deterministic": "1.0.12",
-    "secp256k1": "^5.0.1"
+    "tslib": "^2.6.2"
   },
   "peerDependencies": {
     "bignumber.js": "*",
     "class-transformer": "0.5.1",
-    "fabric-contract-api": "*",
-    "fabric-shim": "*",
-    "long": "*"
+    "fabric-contract-api": "*"
   },
   "type": "commonjs",
   "main": "./lib/src/index.js",
@@ -33,6 +29,7 @@
     "lint": "nx run lint",
     "fix": "nx run lint --fix",
     "prepublishOnly": "npm i && npm run clean && npm run build && npm run lint && npm run madge",
-    "format": "prettier --config ../.prettierrc 'src/**/*.ts' --write"
+    "format": "prettier --config ../.prettierrc 'src/**/*.ts' --write",
+    "test": "jest"
   }
 }

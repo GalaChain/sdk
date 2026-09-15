@@ -23,13 +23,8 @@ import {
   createValidDTO,
   createValidSubmitDTO
 } from "@gala-chain/api";
-import {
-  AdminChainClients,
-  TestClients,
-  mintTokensToUsers,
-  randomize,
-  transactionSuccess
-} from "@gala-chain/test";
+import { transactionSuccess } from "@gala-chain/test";
+import { AdminChainClients, TestClients, mintTokensToUsers, randomize } from "@gala-chain/test-e2e";
 import BigNumber from "bignumber.js";
 import { instanceToPlain, plainToInstance } from "class-transformer";
 

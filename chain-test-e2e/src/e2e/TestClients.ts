@@ -25,12 +25,12 @@ import {
   createValidSubmitDTO,
   publicKeyContractAPI
 } from "@gala-chain/api";
+import { randomize } from "@gala-chain/test";
 import * as fs from "fs";
 import * as path from "path";
 
 import { networkRoot } from "./ContractTestClient";
 import { createChainClient } from "./createChainClient";
-import { randomize } from "./tokenOps";
 
 /**
  * Configuration for a contract API that extends the base contract configuration

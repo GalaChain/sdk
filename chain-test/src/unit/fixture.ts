@@ -402,6 +402,8 @@ class Fixture<T extends GalaContract> {
  *   .caClientIdentity(\"admin\", \"MarketplaceOrg\");
  * ```
  */
-export function fixture<T extends GalaContract>(contractClass: ClassConstructor<T>) {
+export function fixture<T extends GalaContract>(contractClass: ClassConstructor<T>): Fixture<T>;
+export function fixture<Ctx, T extends GalaContract>(contractClass: ClassConstructor<T>): Fixture<T>;
+export function fixture<T extends GalaContract>(contractClass: ClassConstructor<T>): Fixture<T> {
   return new Fixture<T>(contractClass);
 }

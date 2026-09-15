@@ -6,14 +6,19 @@
     "declarationDir": "lib",
     "experimentalDecorators": true,
     "composite": true,
-    "types": ["node"],
+    "types": [
+      "node"
+    ],
     "declarationMap": true,
     "sourceMap": true
   },
-  "include": ["src/**/*"],
-  "exclude": ["jest.config.ts", "src/**/*.spec.ts", "src/**/*.test.ts"],
-  "references": [
-    { "path": "../chain-api" },
-    { "path": "../chain-client" }
-  ]
+  "include": [
+    "src/**/*"
+  ],
+  "exclude": [
+    "jest.config.ts",
+    "src/**/*.spec.ts",
+    "src/**/*.test.ts"
+  ],
+  "references": []
 }

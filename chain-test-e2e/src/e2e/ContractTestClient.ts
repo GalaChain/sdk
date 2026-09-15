@@ -309,7 +309,7 @@ function createForPartner(
  *
  * @example
  * ```typescript
- * import { ContractTestClient } from "@gala-chain/test";
+ * import { ContractTestClient } from "@gala-chain/test-e2e";
  *
  * // Create curator client for admin operations
  * const curatorClient = ContractTestClient.createForCurator(adminUser, contractConfig);

@@ -12,16 +12,11 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+import { nanoid } from "nanoid";
 
-/* eslint-disable */
-export default {
-  displayName: "chain-test",
-  preset: "../jest.preset.js",
-  testEnvironment: "node",
-  transform: {
-    "^.+\\.ts$": ["ts-jest", { tsconfig: "<rootDir>/tsconfig.spec.json" }]
-  },
-  moduleFileExtensions: ["ts", "js", "html"],
-  transformIgnorePatterns: ["/node_modules/", ".*/lib/.*"],
-  coverageDirectory: "../coverage/chain-test"
-};
+/**
+ * Generates a randomized string by appending a random suffix to the input.
+ */
+export function randomize(str: string): string {
+  return `${str}${nanoid().replace(/[^a-z]/g, "")}`.slice(0, 30);
+}

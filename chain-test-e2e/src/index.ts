@@ -13,15 +13,4 @@
  * limitations under the License.
  */
 
-/* eslint-disable */
-export default {
-  displayName: "chain-test",
-  preset: "../jest.preset.js",
-  testEnvironment: "node",
-  transform: {
-    "^.+\\.ts$": ["ts-jest", { tsconfig: "<rootDir>/tsconfig.spec.json" }]
-  },
-  moduleFileExtensions: ["ts", "js", "html"],
-  transformIgnorePatterns: ["/node_modules/", ".*/lib/.*"],
-  coverageDirectory: "../coverage/chain-test"
-};
+export * from "./e2e";

@@ -1,0 +1,18 @@
+{
+  "extends": "../tsconfig.base.json",
+  "compilerOptions": {
+    "rootDir": ".",
+    "outDir": "lib",
+    "declarationDir": "lib",
+    "composite": true,
+    "declarationMap": true,
+    "sourceMap": true
+  },
+  "files": [],
+  "include": ["**/*", "package.json"],
+  "exclude": ["lib", "**/*spec.ts"],
+  "references": [
+    { "path": "./tsconfig.lib.json" },
+    { "path": "./tsconfig.spec.json" }
+  ]
+}

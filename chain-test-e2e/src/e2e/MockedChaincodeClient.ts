@@ -23,10 +23,9 @@ import {
   Inferred,
   serialize
 } from "@gala-chain/api";
+import { TestChaincode } from "@gala-chain/test";
 import { Contract } from "fabric-contract-api";
 import path from "path";
-
-import { TestChaincode } from "../unit";
 
 /**
  * Mocked chaincode client implementation for testing.

@@ -31,13 +31,8 @@ import {
   createValidDTO,
   createValidSubmitDTO
 } from "@gala-chain/api";
-import {
-  AdminChainClients,
-  TestClients,
-  randomize,
-  transactionErrorCode,
-  transactionSuccess
-} from "@gala-chain/test";
+import { transactionErrorCode, transactionSuccess } from "@gala-chain/test";
+import { AdminChainClients, TestClients, randomize } from "@gala-chain/test-e2e";
 import BigNumber from "bignumber.js";
 import { plainToInstance } from "class-transformer";
 
