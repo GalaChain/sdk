@@ -12,9 +12,15 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-import { instanceToPlain } from "class-transformer";
-import stringify from "json-stringify-deterministic";
+/**
+ * The following types are from ethers maths.ts
+ */
+/**
+ *  Any type that can be used where a numeric value is needed.
+ */
+export type Numeric = number | bigint;
 
-export function serialize(object: unknown): string {
-  return stringify(instanceToPlain(object));
-}
+/**
+ *  Any type that can be used where a big number is needed.
+ */
+export type BigNumberish = string | Numeric;

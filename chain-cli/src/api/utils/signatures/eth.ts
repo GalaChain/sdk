@@ -17,23 +17,14 @@ import { randomBytes } from "crypto";
 import { keccak256 } from "js-sha3";
 import * as secp256k1 from "secp256k1";
 
+import { ValidationFailedError } from "../error";
 import { getPayloadToSign } from "./getPayloadToSign";
 
-class InvalidKeyError extends Error {
-  constructor(
-    message?: string,
-    public payload?: Record<string, unknown>
-  ) {
-    super(message);
-    this.name = new.target.name;
-  }
-}
+class InvalidKeyError extends ValidationFailedError {}
 
-export class InvalidSignatureFormatError extends InvalidKeyError {}
+export class InvalidSignatureFormatError extends ValidationFailedError {}
 
-class InvalidDataHashError extends InvalidKeyError {}
-
-class ValidationFailedError extends InvalidKeyError {}
+class InvalidDataHashError extends ValidationFailedError {}
 
 // secp256k1 curve order (n) - this is a mathematical constant defined in the secp256k1 specification
 // See: https://en.bitcoin.it/wiki/Secp256k1
@@ -429,7 +420,7 @@ function recoverPublicKey(signature: string, obj: object): string {
     throw new InvalidSignatureFormatError(message, { signature });
   }
 
-  const data = getPayloadToSign(obj);
+  const data = getPayloadToSign(obj, { chainId: signatureObj.chainId });
   const dataHash = new Uint8Array(keccak256.digest(data));
 
   // Convert signature to 64-byte format for recovery
@@ -448,7 +439,7 @@ function isValid(signature: string, obj: object | string, publicKey: string): bo
     const data =
       typeof obj === "string" //
         ? Buffer.from(obj)
-        : getPayloadToSign(obj);
+        : getPayloadToSign(obj, { chainId: signatureObj.chainId });
     const publicKeyBuffer = normalizePublicKey(publicKey);
 
     const dataHash = calculateKeccak256(data);

@@ -14,8 +14,8 @@
  */
 import { Args } from "@oclif/core";
 
+import signatures from "../../api/utils/signatures";
 import BaseCommand from "../../base-command";
-import { signatures } from "../../signatures";
 import { parseJsonFromStringOrFile, readPublicKeyFromFile } from "../../utils";
 
 export default class DtoVerify extends BaseCommand<typeof DtoVerify> {

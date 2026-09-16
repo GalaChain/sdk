@@ -1,0 +1,4 @@
+src/api
+lib
+coverage
+node_modules

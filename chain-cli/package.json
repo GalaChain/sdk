@@ -57,7 +57,7 @@
     "prepack": "npm run build",
     "test": "jest",
     "version": "npm run build && git add README.md",
-    "format": "prettier --config ../.prettierrc 'src/**/*.ts' 'chaincode-template/**/*.ts' --write",
+    "format": "prettier --config ../.prettierrc --ignore-path .prettierignore 'src/**/*.ts' 'chaincode-template/**/*.ts' --write",
     "prepublishOnly": "npm i && npm run clean && npm run build && npm run lint && npm run madge"
   },
   "type": "commonjs",

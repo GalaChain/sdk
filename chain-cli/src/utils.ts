@@ -14,7 +14,7 @@
  */
 import { readFile } from "fs/promises";
 
-import { signatures } from "./signatures";
+import signatures from "./api/utils/signatures";
 
 export async function readPublicKeyFromFile(path: string): Promise<string> {
   return await readFile(path, { encoding: "utf-8" }).catch((e) => {

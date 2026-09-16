@@ -13,6 +13,20 @@
  * limitations under the License.
  */
 import eth from "./eth";
+import { getPayloadToSign } from "./getPayloadToSign";
 
-export { serialize } from "./serialize";
-export const signatures = eth;
+function isValidSignature(signature: string, obj: object, publicKey: string): boolean {
+  return eth.isValid(signature, obj, publicKey);
+}
+
+function getSignature(obj: object, privateKey: string | Buffer): string {
+  const keyBuff = typeof privateKey === "string" ? eth.normalizePrivateKey(privateKey) : privateKey;
+  return eth.getSignature(obj, keyBuff);
+}
+
+export default {
+  ...eth,
+  getPayloadToSign,
+  isValidSignature,
+  getSignature
+} as const;
