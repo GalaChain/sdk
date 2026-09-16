@@ -14,9 +14,8 @@
  */
 import { Args } from "@oclif/core";
 
-import { ChainCallDTO, signatures } from "@gala-chain/api";
-
 import BaseCommand from "../../base-command";
+import { signatures } from "../../signatures";
 import { parseJsonFromStringOrFile, readPublicKeyFromFile } from "../../utils";
 
 export default class DtoVerify extends BaseCommand<typeof DtoVerify> {
@@ -60,7 +59,7 @@ export default class DtoVerify extends BaseCommand<typeof DtoVerify> {
       this.error(`Failed to read public key from file: ${args.key}. ${e}`, { exit: 1 });
     }
 
-    const dto = (await parseJsonFromStringOrFile(args.data)) as ChainCallDTO;
+    const dto = (await parseJsonFromStringOrFile(args.data)) as { signature?: string };
     const signature = dto.signature;
 
     if (!signature) {

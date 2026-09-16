@@ -12,7 +12,5 @@
     "sourceMap": true
   },
   "include": ["src/**/*"],
-  "references": [
-    { "path":  "../chain-api"}
-  ]
+  "references": []
 }

@@ -14,10 +14,10 @@
  */
 import { Args, Flags } from "@oclif/core";
 
-import { ChainCallDTO, serialize, signatures } from "@gala-chain/api";
 import { writeFile } from "fs/promises";
 
 import BaseCommand from "../../base-command";
+import { serialize, signatures } from "../../signatures";
 import { parseJsonFromStringOrFile, parseStringOrFileKey } from "../../utils";
 
 export default class DtoSign extends BaseCommand<typeof DtoSign> {
@@ -78,7 +78,7 @@ export default class DtoSign extends BaseCommand<typeof DtoSign> {
     const privateKey = (await parseStringOrFileKey(args.key)) as string;
     const keyBuffer = signatures.normalizePrivateKey(privateKey);
 
-    const dto = (await parseJsonFromStringOrFile(args.data)) as ChainCallDTO;
+    const dto = (await parseJsonFromStringOrFile(args.data)) as { signature?: string };
 
     dto.signature = flags.derSignature
       ? signatures.getDERSignature(dto, keyBuffer)
