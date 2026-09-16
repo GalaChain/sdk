@@ -13,6 +13,7 @@
  * limitations under the License.
  */
 import { readFileSync, readdirSync, statSync } from "fs";
+import { builtinModules } from "module";
 import path from "path";
 
 const cliSrc = path.resolve(__dirname);
@@ -54,5 +55,34 @@ describe("copied API files", () => {
       const api = readFileSync(path.join(apiSrc, "ethers", rel), "utf8");
       expect(cli).toEqual(api);
     }
+  });
+
+  it("declares every npm import used by copied files", () => {
+    const pkg = JSON.parse(readFileSync(path.resolve(cliSrc, "../package.json"), "utf8")) as {
+      dependencies?: Record<string, string>;
+    };
+    const declared = new Set(Object.keys(pkg.dependencies ?? {}));
+    const builtins = new Set(builtinModules.concat(builtinModules.map((m) => `node:${m}`)));
+    const importRe = /(?:from|import)\s+["']([^./][^"']*)["']/g;
+    const missing = new Set<string>();
+
+    for (const rel of listFiles(path.join(cliSrc, "api"))) {
+      if (!rel.endsWith(".ts") || rel.endsWith(".spec.ts")) {
+        continue;
+      }
+      const src = readFileSync(path.join(cliSrc, "api", rel), "utf8")
+        .replace(/\/\*[\s\S]*?\*\//g, "")
+        .replace(/^\s*\/\/.*$/gm, "");
+      for (const match of src.matchAll(importRe)) {
+        const spec = match[1];
+        const name = spec.startsWith("@") ? spec.split("/").slice(0, 2).join("/") : spec.split("/")[0];
+        if (builtins.has(name) || declared.has(name)) {
+          continue;
+        }
+        missing.add(name);
+      }
+    }
+
+    expect([...missing].sort()).toEqual([]);
   });
 });
