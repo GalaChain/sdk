@@ -14,7 +14,6 @@
  */
 import { ux } from "@oclif/core";
 
-import { signatures } from "@gala-chain/api";
 import * as secp from "@noble/secp256k1";
 import axios, { AxiosError } from "axios";
 import fs, { promises as fsPromises } from "fs";
@@ -27,6 +26,7 @@ import { ExpectedImageArchitecture, ServicePortal } from "./consts";
 import { ChaincodeInfoDto, DeployChaincodeDto, GetChaincodeDeploymentDto, RegisterChaincodeDto } from "./dto";
 import { BadRequestError, UnauthorizedError } from "./errors";
 import { execFileSync } from "./exec-sync";
+import signatures from "./signatures";
 import { parseStringOrFileKey } from "./utils";
 
 const ConfigFileName = ".galachainrc.json";

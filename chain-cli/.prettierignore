@@ -1,0 +1,4 @@
+src/signatures/serialize.ts
+lib
+coverage
+node_modules

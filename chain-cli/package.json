@@ -14,13 +14,17 @@
     "/oclif.manifest.json"
   ],
   "dependencies": {
-    "@gala-chain/api": "3.2.5",
     "@noble/secp256k1": "^1.7.1",
     "@oclif/core": "^3",
     "@oclif/plugin-help": "^3",
     "axios": "^1.6.0",
+    "bn.js": "^5.2.1",
+    "class-transformer": "0.5.1",
     "dotenv": "16.3.1",
     "fablo": "2.0.0",
+    "js-sha3": "^0.9.3",
+    "json-stringify-deterministic": "1.0.12",
+    "secp256k1": "^5.0.1",
     "nanoid": "^3.3.6",
     "tslib": "^2.6.2"
   },
@@ -53,7 +57,7 @@
     "prepack": "npm run build",
     "test": "jest",
     "version": "npm run build && git add README.md",
-    "format": "prettier --config ../.prettierrc 'src/**/*.ts' 'chaincode-template/**/*.ts' --write",
+    "format": "prettier --config ../.prettierrc --ignore-path .prettierignore 'src/**/*.ts' 'chaincode-template/**/*.ts' --write",
     "prepublishOnly": "npm i && npm run clean && npm run build && npm run lint && npm run madge"
   },
   "type": "commonjs",

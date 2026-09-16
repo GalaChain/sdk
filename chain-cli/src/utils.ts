@@ -12,8 +12,9 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-import { signatures } from "@gala-chain/api";
 import { readFile } from "fs/promises";
+
+import signatures from "./signatures";
 
 export async function readPublicKeyFromFile(path: string): Promise<string> {
   return await readFile(path, { encoding: "utf-8" }).catch((e) => {
