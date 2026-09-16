@@ -14,7 +14,6 @@
  */
 import {
   AllowanceType,
-  ChainUser,
   CreateTokenClassDto,
   FeeAccelerationRateType,
   FeeCodeDefinition,
@@ -32,7 +31,8 @@ import {
   createValidDTO,
   createValidSubmitDTO
 } from "@gala-chain/api";
-import { AdminChainClients, randomize, transactionErrorKey, transactionSuccess } from "@gala-chain/test";
+import { AdminChainClients, ChainUser } from "@gala-chain/client";
+import { randomize, transactionErrorKey, transactionSuccess } from "@gala-chain/test";
 import BigNumber from "bignumber.js";
 import { plainToInstance } from "class-transformer";
 

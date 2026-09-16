@@ -12,8 +12,8 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-import { commonContractAPI } from "@gala-chain/api";
-import { AdminChainClients, TestClients, transactionSuccess } from "@gala-chain/test";
+import { AdminChainClients, TestClients, commonContractAPI } from "@gala-chain/client";
+import { transactionSuccess } from "@gala-chain/test";
 
 jest.setTimeout(30000);
 

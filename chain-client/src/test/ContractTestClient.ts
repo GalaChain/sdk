@@ -12,21 +12,24 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-import {
-  ChainClient,
-  ChainClientBuilder,
-  ChainUser,
-  ChainUserAPI,
-  CommonContractAPI,
-  ContractConfig,
-  buildChainUserAPI,
-  commonContractAPI
-} from "@gala-chain/api";
-import { HFClientConfig, RestApiClientConfig, gcclient } from "@gala-chain/client";
 import { jest } from "@jest/globals";
 import * as path from "path";
 
-import { MockedChaincodeClientBuilder } from "./MockedChaincodeClient";
+import { ChainUserAPI, CommonContractAPI, buildChainUserAPI, commonContractAPI } from "../api";
+import { HFClientConfig, RestApiClientConfig, gcclient } from "../gcclient";
+import { ChainClient, ChainClientBuilder, ChainUser, ContractConfig } from "../generic";
+
+type MockedBuilderFactory = (params: {
+  mockedChaincodeDir: string;
+  orgMsp?: string;
+  adminId?: string;
+}) => ChainClientBuilder;
+
+let mockedBuilderFactory: MockedBuilderFactory | undefined;
+
+export function setMockedChaincodeBuilder(factory: MockedBuilderFactory): void {
+  mockedBuilderFactory = factory;
+}
 
 /**
  * Test client factory for creating GalaChain contract test clients.
@@ -231,7 +234,10 @@ function buildRestApiParams(params: TestClientParamsForApi): RestApiClientConfig
  */
 function getBuilder(params: TestClientParams): ChainClientBuilder {
   if (isChaincodeDirDefined(params)) {
-    return new MockedChaincodeClientBuilder(params);
+    if (mockedBuilderFactory === undefined) {
+      throw new Error("Mocked chaincode builder is not registered");
+    }
+    return mockedBuilderFactory(params);
   } else if (isApiUrlDefined(params)) {
     const restApiParams = buildRestApiParams(params);
     return gcclient.forApiConfig(restApiParams);
@@ -309,7 +315,7 @@ function createForPartner(
  *
  * @example
  * ```typescript
- * import { ContractTestClient } from "@gala-chain/test";
+ * import { ContractTestClient } from "@gala-chain/client";
  *
  * // Create curator client for admin operations
  * const curatorClient = ContractTestClient.createForCurator(adminUser, contractConfig);

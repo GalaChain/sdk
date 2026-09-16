@@ -13,10 +13,9 @@
  * limitations under the License.
  */
 import { gcclient } from "./gcclient";
-import { loadJson } from "./generic/loadJson";
+import { loadJson } from "./generic";
 import { HFClientBuilder } from "./hf";
-import { RestApiClientBuilder } from "./rest-api";
-import { loadRestApiConfig } from "./rest-api/loadRestApiConfig";
+import { RestApiClientBuilder, loadRestApiConfig } from "./rest-api";
 
 jest.mock("./generic/loadJson");
 jest.mock("./rest-api/loadRestApiConfig");

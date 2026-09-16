@@ -13,11 +13,12 @@
  * limitations under the License.
  */
 import { AllowanceType, TokenAllowance, TokenBalance } from "@gala-chain/api";
-import { currency, fixture, users } from "@gala-chain/test";
+import { fixture, users } from "@gala-chain/test";
 import BigNumber from "bignumber.js";
 import { plainToInstance } from "class-transformer";
 
 import GalaChainTokenContract from "../__test__/GalaChainTokenContract";
+import { currency } from "../testdata/index";
 import { InsufficientAllowanceError } from "./AllowanceError";
 import { verifyAndUseAllowances } from "./verifyAndUseAllowances";
 

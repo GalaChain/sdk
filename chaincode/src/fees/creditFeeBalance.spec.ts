@@ -28,11 +28,12 @@ import {
   createValidDTO,
   createValidSubmitDTO
 } from "@gala-chain/api";
-import { currency, fixture, randomUser, users } from "@gala-chain/test";
+import { fixture, randomUser, users } from "@gala-chain/test";
 import BigNumber from "bignumber.js";
 import { IsNotEmpty, IsString } from "class-validator";
 
 import GalaChainTokenContract from "../__test__/GalaChainTokenContract";
+import { currency } from "../testdata/index";
 import { txUnixTimeToDateIndexKeys } from "../utils";
 
 // todo: temporarily defining this here, because .savedState() fails with:

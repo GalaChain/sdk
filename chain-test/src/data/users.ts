@@ -12,7 +12,11 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-import { ChainUser, UserAlias, UserProfile } from "@gala-chain/api";
+import { genKeyPair, getEthAddress } from "../keys";
+import { UserAlias } from "../types";
+
+const ADMIN_ROLES = ["CURATOR", "REGISTRAR"];
+const DEFAULT_ROLES = ["EVALUATE", "SUBMIT"];
 
 /**
  * Chain user with role-based access control information.
@@ -39,7 +43,7 @@ export interface ChainUserWithRoles {
  * const user = randomUser();
  *
  * // Create admin user
- * const admin = randomUser("admin", UserProfile.ADMIN_ROLES);
+ * const admin = randomUser("admin", ["CURATOR", "REGISTRAR"]);
  *
  * // Create user with custom roles
  * const curator = randomUser("curator", ["TokenCurator", "NFTManager"]);
@@ -47,14 +51,17 @@ export interface ChainUserWithRoles {
  */
 export function randomUser(
   string?: string | undefined,
-  roles: string[] = [...UserProfile.DEFAULT_ROLES]
+  roles: string[] = [...DEFAULT_ROLES]
 ): ChainUserWithRoles & { roles: string[] } {
-  const user = ChainUser.withRandomKeys(string);
+  const keys = genKeyPair();
+  const ethAddress = getEthAddress(keys.publicKey);
+  const name = string?.replace("client|", "");
+  const identityKey = (name === undefined ? `eth|${ethAddress}` : `client|${name}`) as UserAlias;
   return {
-    identityKey: user.identityKey,
-    ethAddress: user.ethAddress,
-    publicKey: user.publicKey,
-    privateKey: user.privateKey,
+    identityKey,
+    ethAddress,
+    publicKey: keys.publicKey,
+    privateKey: keys.privateKey,
     roles
   };
 }
@@ -77,11 +84,11 @@ export function randomUser(
  * ```
  */
 export default {
-  admin: randomUser("client|admin", [...UserProfile.ADMIN_ROLES, ...UserProfile.DEFAULT_ROLES]),
+  admin: randomUser("client|admin", [...ADMIN_ROLES, ...DEFAULT_ROLES]),
   testUser1: randomUser("client|testUser1"),
   testUser2: randomUser("client|testUser2"),
   testUser3: randomUser("client|testUser3"),
   tokenHolder: randomUser("client|tokenHolder"),
-  attacker: randomUser("client|maliciousUser", [...UserProfile.ADMIN_ROLES, ...UserProfile.DEFAULT_ROLES]),
+  attacker: randomUser("client|maliciousUser", [...ADMIN_ROLES, ...DEFAULT_ROLES]),
   random: randomUser
 };

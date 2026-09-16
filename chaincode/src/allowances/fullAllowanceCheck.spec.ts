@@ -19,10 +19,11 @@ import {
   TokenInstanceKey,
   createValidDTO
 } from "@gala-chain/api";
-import { fixture, nft, users } from "@gala-chain/test";
+import { fixture, users } from "@gala-chain/test";
 import { plainToInstance } from "class-transformer";
 
 import GalaChainTokenContract from "../__test__/GalaChainTokenContract";
+import { nft } from "../testdata/index";
 
 describe("FullAllowanceCheck", () => {
   it("should return false with missing allowances when there are no allowances on chain", async () => {

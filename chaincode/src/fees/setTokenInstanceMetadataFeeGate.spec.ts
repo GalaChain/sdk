@@ -26,11 +26,12 @@ import {
   TokenInstanceMetadataCustomField,
   createValidSubmitDTO
 } from "@gala-chain/api";
-import { fixture, nft, users, writesMap } from "@gala-chain/test";
+import { fixture, users, writesMap } from "@gala-chain/test";
 import BigNumber from "bignumber.js";
 import { plainToInstance } from "class-transformer";
 
 import GalaChainTokenContract from "../__test__/GalaChainTokenContract";
+import { nft } from "../testdata/index";
 import { GalaChainContext } from "../types";
 import { txUnixTimeToDateIndexKeys } from "../utils";
 import { setTokenInstanceMetadataFeeGate } from "./feeGateImplementations";

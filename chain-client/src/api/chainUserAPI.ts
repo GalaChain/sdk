@@ -12,8 +12,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-import { UserAlias } from "../../types";
-import { ChainClient, ChainUser } from "../generic";
+import { ChainClient, ChainUser, UserAlias } from "../generic";
 
 export interface ChainUserAPI {
   privateKey: string;

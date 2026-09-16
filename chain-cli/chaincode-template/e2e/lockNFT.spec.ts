@@ -14,7 +14,6 @@
  */
 import {
   AllowanceType,
-  ChainUser,
   GrantAllowanceDto,
   LockTokensDto,
   TokenAllowance,
@@ -24,21 +23,13 @@ import {
   UnlockTokensDto,
   createValidSubmitDTO
 } from "@gala-chain/api";
-import {
-  AdminChainClients,
-  TestClients,
-  applyRequests,
-  createTransferDto,
-  randomize,
-  requestMintTokensToUsers,
-  transactionError,
-  transactionErrorKey,
-  transactionSuccess
-} from "@gala-chain/test";
+import { AdminChainClients, ChainUser, TestClients } from "@gala-chain/client";
+import { randomize, transactionError, transactionErrorKey, transactionSuccess } from "@gala-chain/test";
 import BigNumber from "bignumber.js";
 import { instanceToPlain, plainToInstance } from "class-transformer";
 
 import { setupTransferFees } from "./setupTransferFees";
+import { applyRequests, createTransferDto, requestMintTokensToUsers } from "./tokenOps";
 
 jest.setTimeout(30000);
 

@@ -12,9 +12,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-import currency from "./currency";
-import nft from "./nft";
 import users from "./users";
 import { ChainUserWithRoles, randomUser } from "./users";
 
-export { currency, nft, users, ChainUserWithRoles, randomUser };
+export { users, ChainUserWithRoles, randomUser };

@@ -13,19 +13,19 @@
  * limitations under the License.
  */
 import {
-  ChainCallDTO,
   ChainClient,
   ChainClientBuilder,
-  ClassConstructor,
   ClassType,
   ContractConfig,
   GalaChainResponse,
   Inferred,
+  Serializable,
   serialize
-} from "@gala-chain/api";
+} from "@gala-chain/client";
 import { Contract } from "fabric-contract-api";
 import path from "path";
 
+import { ClassConstructor } from "../types";
 import { TestChaincode } from "../unit";
 
 /**
@@ -219,7 +219,7 @@ export class MockedChaincodeClient extends ChainClient {
    */
   async submitTransaction<T>(
     method: string,
-    dtoOrResp?: ChainCallDTO | ClassType<Inferred<T>>,
+    dtoOrResp?: Serializable | ClassType<Inferred<T>>,
     resp?: ClassType<Inferred<T>>
   ): Promise<GalaChainResponse<T>> {
     await this.optionalDelay();
@@ -240,7 +240,7 @@ export class MockedChaincodeClient extends ChainClient {
    */
   async evaluateTransaction<T>(
     method: string,
-    dtoOrResp?: ChainCallDTO | ClassType<Inferred<T>>,
+    dtoOrResp?: Serializable | ClassType<Inferred<T>>,
     resp?: ClassType<Inferred<T>>
   ): Promise<GalaChainResponse<T>> {
     await this.optionalDelay();
@@ -262,7 +262,7 @@ export class MockedChaincodeClient extends ChainClient {
    */
   private getParameters<T>(
     method: string,
-    dtoOrResp?: ChainCallDTO | Record<string, unknown> | ClassType<Inferred<T>>,
+    dtoOrResp?: Serializable | Record<string, unknown> | ClassType<Inferred<T>>,
     resp?: ClassType<Inferred<T>>
   ): {
     fullMethod: string;

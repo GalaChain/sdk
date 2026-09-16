@@ -19,9 +19,10 @@ import {
   createValidChainObject,
   createValidDTO
 } from "@gala-chain/api";
-import { fixture, nft, users } from "@gala-chain/test";
+import { fixture, users } from "@gala-chain/test";
 
 import GalaChainTokenContract from "../__test__/GalaChainTokenContract";
+import { nft } from "../testdata/index";
 
 describe("FetchBurns", () => {
   it("should FetchBurns", async () => {

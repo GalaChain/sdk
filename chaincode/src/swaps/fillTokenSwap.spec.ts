@@ -24,11 +24,12 @@ import {
   TokenSwapRequest,
   createValidDTO
 } from "@gala-chain/api";
-import { currency, fixture, nft, users, writesMap } from "@gala-chain/test";
+import { fixture, users, writesMap } from "@gala-chain/test";
 import BigNumber from "bignumber.js";
 import { plainToInstance } from "class-transformer";
 
 import GalaChainTokenContract from "../__test__/GalaChainTokenContract";
+import { currency, nft } from "../testdata/index";
 
 describe("FillTokenSwap", () => {
   test("NFT for currency", async () => {

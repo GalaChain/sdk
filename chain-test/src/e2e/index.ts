@@ -12,9 +12,4 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
-export * from "./ContractTestClient";
-export * from "./TestClients";
-export * from "./tokenOps";
-export { MockedChaincodeClient } from "./MockedChaincodeClient";
-export { MockedChaincodeClientBuilder } from "./MockedChaincodeClient";
+export { MockedChaincodeClient, MockedChaincodeClientBuilder } from "./MockedChaincodeClient";

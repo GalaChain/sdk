@@ -12,9 +12,9 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-import { ClassConstructor, NotImplementedError } from "@gala-chain/api";
 import { Context, Contract } from "fabric-contract-api";
 
+import { ClassConstructor } from "../types";
 import GalaJSONSerializer from "./GalaJSONSerializer";
 import { ChaincodeStubClassType, TestChaincodeStub } from "./TestChaincodeStub";
 
@@ -235,7 +235,7 @@ export class TestChaincode {
       | undefined;
 
     if (data === undefined) {
-      throw new NotImplementedError(`Cannot get contract instance for ${contractClass.name}`);
+      throw new Error(`Cannot get contract instance for ${contractClass.name}`);
     } else {
       return data.contractInstance;
     }

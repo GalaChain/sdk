@@ -31,11 +31,12 @@ import {
   createValidRangedChainObject,
   createValidSubmitDTO
 } from "@gala-chain/api";
-import { currency, fixture, nft, transactionErrorMessageContains, users, writesMap } from "@gala-chain/test";
+import { fixture, transactionErrorMessageContains, users, writesMap } from "@gala-chain/test";
 import BigNumber from "bignumber.js";
 import { plainToInstance } from "class-transformer";
 
 import GalaChainTokenContract from "../__test__/GalaChainTokenContract";
+import { currency, nft } from "../testdata/index";
 import { generateInverseTimeKey, inverseEpoch, inverseTime, lookbackTimeOffset } from "../utils";
 
 describe("FulfillMint", () => {

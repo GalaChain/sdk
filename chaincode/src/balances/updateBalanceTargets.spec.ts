@@ -24,10 +24,11 @@ import {
   TransferTokenDto,
   createValidSubmitDTO
 } from "@gala-chain/api";
-import { currency, fixture, nft, users } from "@gala-chain/test";
+import { fixture, users } from "@gala-chain/test";
 import BigNumber from "bignumber.js";
 
 import GalaChainTokenContract from "../__test__/GalaChainTokenContract";
+import { currency, nft } from "../testdata/index";
 
 it("should delay RestrictTokenBalanceTargets", async () => {
   // Given

@@ -23,11 +23,12 @@ import {
   UserRole,
   createValidSubmitDTO
 } from "@gala-chain/api";
-import { currency, fixture, randomUser } from "@gala-chain/test";
+import { fixture, randomUser } from "@gala-chain/test";
 import BigNumber from "bignumber.js";
 import { plainToInstance } from "class-transformer";
 
 import GalaChainTokenContract from "../__test__/GalaChainTokenContract";
+import { currency } from "../testdata/index";
 import { GalaChainContext } from "../types";
 
 describe("defineFeeSchedule", () => {

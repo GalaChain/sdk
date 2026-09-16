@@ -12,8 +12,20 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-import { ClassConstructor, NonFunctionProperties } from "@gala-chain/api";
+import { UserAlias } from "@gala-chain/api";
 import { plainToInstance } from "class-transformer";
+
+export function alias(id: string): UserAlias {
+  return id as UserAlias;
+}
+
+export interface ClassConstructor<T> {
+  new (...args: unknown[]): T;
+}
+type NonFunctionPropertyNames<T> = {
+  [K in keyof T]: T[K] extends (...args: never[]) => unknown ? never : K;
+}[keyof T];
+export type NonFunctionProperties<T> = Pick<T, NonFunctionPropertyNames<T>>;
 
 /**
  * Function type for creating instances with optional property overrides.

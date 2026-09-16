@@ -24,10 +24,11 @@ import {
   createValidChainObject,
   createValidSubmitDTO
 } from "@gala-chain/api";
-import { currency, fixture, nft, transactionSuccess, users, writesMap } from "@gala-chain/test";
+import { fixture, transactionSuccess, users, writesMap } from "@gala-chain/test";
 import { plainToInstance } from "class-transformer";
 
 import GalaChainTokenContract from "../__test__/GalaChainTokenContract";
+import { currency, nft } from "../testdata/index";
 import { TokenClassNotFoundError } from "../token/TokenError";
 import {
   NftInstanceRequiredError,

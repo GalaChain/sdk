@@ -28,11 +28,12 @@ import {
   createValidRangedChainObject,
   createValidSubmitDTO
 } from "@gala-chain/api";
-import { currency, fixture, nft, transactionErrorKey, users, writesMap } from "@gala-chain/test";
+import { fixture, transactionErrorKey, users, writesMap } from "@gala-chain/test";
 import BigNumber from "bignumber.js";
 import { instanceToInstance, instanceToPlain, plainToInstance } from "class-transformer";
 
 import GalaChainTokenContract from "../__test__/GalaChainTokenContract";
+import { currency, nft } from "../testdata/index";
 import { InvalidDecimalError, NotATokenAuthorityError } from "../token/TokenError";
 import { inverseEpoch, inverseTime } from "../utils";
 import { DuplicateAllowanceError, DuplicateUserError, MintCapacityExceededError } from "./AllowanceError";

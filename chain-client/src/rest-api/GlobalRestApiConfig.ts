@@ -12,7 +12,11 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-import { ContractAPI, ContractConfig } from "@gala-chain/api";
+import { ContractConfig } from "../generic";
+
+export interface ContractAPI {
+  methods: Array<{ methodName: string; isWrite: boolean; apiMethodName?: string }>;
+}
 
 export interface RestApiAdminCredentials {
   adminKey: string;

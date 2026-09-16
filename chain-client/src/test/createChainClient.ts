@@ -12,8 +12,8 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-import { ChainClient, ChainUser, ChainUserAPI, ContractConfig } from "@gala-chain/api";
-
+import { ChainUserAPI } from "../api";
+import { ChainClient, ChainUser, ContractConfig } from "../generic";
 import { ContractTestClient } from "./ContractTestClient";
 
 /**

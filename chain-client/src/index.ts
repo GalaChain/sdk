@@ -16,3 +16,7 @@
 export * from "./gcclient";
 export * from "./hf";
 export * from "./rest-api";
+export * from "./generic";
+export * from "./api";
+export * from "./wire";
+export * from "./test";

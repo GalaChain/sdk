@@ -21,10 +21,11 @@ import {
   UpdateBalanceQuantityLimitDto,
   createValidSubmitDTO
 } from "@gala-chain/api";
-import { currency, fixture, users } from "@gala-chain/test";
+import { fixture, users } from "@gala-chain/test";
 import BigNumber from "bignumber.js";
 
 import GalaChainTokenContract from "../__test__/GalaChainTokenContract";
+import { currency } from "../testdata/index";
 
 it("should apply an owner quantityLimit immediately when it is not higher than the class limit", async () => {
   // Given

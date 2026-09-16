@@ -20,10 +20,11 @@ import {
   TokenBalanceWithMetadata,
   createValidDTO
 } from "@gala-chain/api";
-import { currency, fixture, nft } from "@gala-chain/test";
+import { fixture } from "@gala-chain/test";
 import { plainToInstance } from "class-transformer";
 
 import GalaChainTokenContract from "../__test__/GalaChainTokenContract";
+import { currency, nft } from "../testdata/index";
 import { getObjectByKey } from "../utils";
 
 it("should Fetch Token Balances with Token Class Metadata", async () => {

@@ -15,9 +15,6 @@
 import {
   AllowanceType,
   ApplyRequestsDto,
-  ChainClient,
-  ChainUser,
-  ChainUserAPI,
   CreateTokenClassDto,
   FetchBalancesDto,
   GrantAllowanceDto,
@@ -32,29 +29,11 @@ import {
   createValidDTO,
   createValidSubmitDTO
 } from "@gala-chain/api";
+import { AdminChainClients, ChainClient, ChainUser, ChainUserAPI } from "@gala-chain/client";
+import { transactionSuccess } from "@gala-chain/test";
 import { expect } from "@jest/globals";
 import BigNumber from "bignumber.js";
 import { instanceToPlain } from "class-transformer";
-import { nanoid } from "nanoid";
-
-import { transactionSuccess } from "../matchers";
-import type { AdminChainClients } from "./TestClients";
-
-/**
- * Generates a randomized string by appending a random suffix to the input.
- *
- * @param str - Base string to randomize
- * @returns Randomized string with the base string and random characters, limited to 30 characters
- *
- * @example
- * ```typescript
- * const randomCollection = randomize("MyNFT"); // "MyNFTabc123xyz"
- * const randomUser = randomize("testuser"); // "testuserdef456uvw"
- * ```
- */
-export function randomize(str: string): string {
-  return `${str}${nanoid().replace(/[^a-z]/g, "")}`.slice(0, 30);
-}
 
 /**
  * Complete workflow to mint tokens to multiple users.

@@ -13,10 +13,11 @@
  * limitations under the License.
  */
 import { FetchBalancesDto, TokenBalance, asValidUserRef, createValidDTO } from "@gala-chain/api";
-import { currency, fixture, transactionSuccess, users } from "@gala-chain/test";
+import { fixture, transactionSuccess, users } from "@gala-chain/test";
 import BigNumber from "bignumber.js";
 
 import GalaChainTokenContract from "../__test__/GalaChainTokenContract";
+import { currency } from "../testdata/index";
 
 it("should fetch balances by user alias", async () => {
   // Given

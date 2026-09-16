@@ -23,11 +23,12 @@ import {
   createValidChainObject,
   createValidSubmitDTO
 } from "@gala-chain/api";
-import { currency, fixture, nft, users, writesMap } from "@gala-chain/test";
+import { fixture, users, writesMap } from "@gala-chain/test";
 import BigNumber from "bignumber.js";
 import { instanceToInstance, plainToInstance } from "class-transformer";
 
 import GalaChainTokenContract from "../__test__/GalaChainTokenContract";
+import { currency, nft } from "../testdata/index";
 import { InvalidDecimalError } from "../token";
 import { inverseEpoch, inverseTime } from "../utils";
 import { InsufficientBurnAllowanceError } from "./BurnError";
