@@ -20,11 +20,10 @@ import {
   ClassType,
   ContractConfig,
   Inferred,
+  Serializable,
   isClassType
 } from "../generic";
-import { Serializable } from "../generic/types";
-import { GalaChainResponse } from "../wire/response";
-import { serialize } from "../wire/serialize";
+import { GalaChainResponse, serialize } from "../wire";
 import { ContractAPI } from "./GlobalRestApiConfig";
 import { RestApiAdminCredentials, SetContractApiParams, globalRestApiConfig } from "./GlobalRestApiConfig";
 import { catchAxiosError } from "./catchAxiosError";

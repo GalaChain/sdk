@@ -12,10 +12,8 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-import { ChainClient } from "../generic/ChainClient";
-import { Serializable } from "../generic/types";
-import { GalaChainResponse } from "../wire/response";
-import { serialize } from "../wire/serialize";
+import { ChainClient, Serializable } from "../generic";
+import { GalaChainResponse, serialize } from "../wire";
 import { CommonContractAPI, commonContractAPI } from "./commonContractAPI";
 
 export interface PublicKeyContractAPI extends CommonContractAPI {

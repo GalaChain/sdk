@@ -12,7 +12,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-import { GalaChainResponse } from "../wire/response";
+import { GalaChainResponse } from "../wire";
 import { ChainClientBuilder } from "./ChainClientBuilder";
 import { ContractConfig } from "./ContractConfig";
 import { ClassType, Inferred, Serializable } from "./types";

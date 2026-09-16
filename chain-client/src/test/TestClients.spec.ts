@@ -14,7 +14,7 @@
  */
 import { commonContractAPI, publicKeyContractAPI } from "../api";
 import { ChainClient, ChainUser } from "../generic";
-import { GalaChainResponse } from "../wire/response";
+import { GalaChainResponse } from "../wire";
 import { TestClients } from "./TestClients";
 import { createChainClient } from "./createChainClient";
 

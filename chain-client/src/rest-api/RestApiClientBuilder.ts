@@ -14,9 +14,15 @@
  */
 import axios from "axios";
 
-import { ChainClient, ChainClientBuilder, ClassType, ContractConfig, Inferred } from "../generic";
-import { Serializable } from "../generic/types";
-import { GalaChainResponse } from "../wire/response";
+import {
+  ChainClient,
+  ChainClientBuilder,
+  ClassType,
+  ContractConfig,
+  Inferred,
+  Serializable
+} from "../generic";
+import { GalaChainResponse } from "../wire";
 import { FabloRestClient } from "./FabloRestClient";
 import {
   RestApiAdminCredentials,

@@ -14,7 +14,7 @@
  */
 import { plainToInstance } from "class-transformer";
 
-import { ClassType, Inferred } from "../generic/types";
+import type { ClassType, Inferred } from "../generic";
 
 export const GalaChainResponseType = {
   Error: 0,

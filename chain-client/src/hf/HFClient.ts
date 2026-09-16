@@ -14,10 +14,8 @@
  */
 import { Contract, Gateway, Network } from "fabric-network";
 
-import { ChainClient, ClassType, ContractConfig, Inferred, isClassType } from "../generic";
-import { Serializable } from "../generic/types";
-import { GalaChainResponse } from "../wire/response";
-import { serialize } from "../wire/serialize";
+import { ChainClient, ClassType, ContractConfig, Inferred, Serializable, isClassType } from "../generic";
+import { GalaChainResponse, serialize } from "../wire";
 import { HFClientBuilder } from "./HFClientBuilder";
 
 export class HFClient extends ChainClient {
