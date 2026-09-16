@@ -22,11 +22,11 @@ import path from "path";
 import process from "process";
 import { Readable } from "stream";
 
-import signatures from "./api/utils/signatures";
 import { ExpectedImageArchitecture, ServicePortal } from "./consts";
 import { ChaincodeInfoDto, DeployChaincodeDto, GetChaincodeDeploymentDto, RegisterChaincodeDto } from "./dto";
 import { BadRequestError, UnauthorizedError } from "./errors";
 import { execFileSync } from "./exec-sync";
+import signatures from "./signatures";
 import { parseStringOrFileKey } from "./utils";
 
 const ConfigFileName = ".galachainrc.json";

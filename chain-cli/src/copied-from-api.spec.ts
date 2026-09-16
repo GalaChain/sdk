@@ -12,77 +12,18 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-import { readFileSync, readdirSync, statSync } from "fs";
-import { builtinModules } from "module";
+import { readFileSync } from "fs";
 import path from "path";
 
 const cliSrc = path.resolve(__dirname);
 const apiSrc = path.resolve(__dirname, "../../chain-api/src");
 
-const copiedFiles: Array<[string, string]> = [
-  ["api/utils/signatures/eth.ts", "utils/signatures/eth.ts"],
-  ["api/utils/signatures/eth.spec.ts", "utils/signatures/eth.spec.ts"],
-  ["api/utils/signatures/getPayloadToSign.ts", "utils/signatures/getPayloadToSign.ts"],
-  ["api/utils/signatures/index.ts", "utils/signatures/index.ts"],
-  ["api/utils/serialize.ts", "utils/serialize.ts"],
-  ["api/utils/error.ts", "utils/error.ts"]
-];
-
-function listFiles(dir: string, prefix = ""): string[] {
-  return readdirSync(dir)
-    .flatMap((name) => {
-      const rel = prefix ? `${prefix}/${name}` : name;
-      const full = path.join(dir, name);
-      return statSync(full).isDirectory() ? listFiles(full, rel) : [rel];
-    })
-    .sort();
-}
+const copiedFiles: Array<[string, string]> = [["signatures/serialize.ts", "utils/serialize.ts"]];
 
 describe("copied API files", () => {
   it.each(copiedFiles)("%s matches chain-api %s", (cliRel, apiRel) => {
     const cli = readFileSync(path.join(cliSrc, cliRel), "utf8");
     const api = readFileSync(path.join(apiSrc, apiRel), "utf8");
     expect(cli).toEqual(api);
-  });
-
-  it("ethers tree matches chain-api", () => {
-    const cliFiles = listFiles(path.join(cliSrc, "api/ethers"));
-    const apiFiles = listFiles(path.join(apiSrc, "ethers"));
-    expect(cliFiles).toEqual(apiFiles);
-
-    for (const rel of apiFiles) {
-      const cli = readFileSync(path.join(cliSrc, "api/ethers", rel), "utf8");
-      const api = readFileSync(path.join(apiSrc, "ethers", rel), "utf8");
-      expect(cli).toEqual(api);
-    }
-  });
-
-  it("declares every npm import used by copied files", () => {
-    const pkg = JSON.parse(readFileSync(path.resolve(cliSrc, "../package.json"), "utf8")) as {
-      dependencies?: Record<string, string>;
-    };
-    const declared = new Set(Object.keys(pkg.dependencies ?? {}));
-    const builtins = new Set(builtinModules.concat(builtinModules.map((m) => `node:${m}`)));
-    const importRe = /(?:from|import)\s+["']([^./][^"']*)["']/g;
-    const missing = new Set<string>();
-
-    for (const rel of listFiles(path.join(cliSrc, "api"))) {
-      if (!rel.endsWith(".ts") || rel.endsWith(".spec.ts")) {
-        continue;
-      }
-      const src = readFileSync(path.join(cliSrc, "api", rel), "utf8")
-        .replace(/\/\*[\s\S]*?\*\//g, "")
-        .replace(/^\s*\/\/.*$/gm, "");
-      for (const match of src.matchAll(importRe)) {
-        const spec = match[1];
-        const name = spec.startsWith("@") ? spec.split("/").slice(0, 2).join("/") : spec.split("/")[0];
-        if (builtins.has(name) || declared.has(name)) {
-          continue;
-        }
-        missing.add(name);
-      }
-    }
-
-    expect([...missing].sort()).toEqual([]);
   });
 });

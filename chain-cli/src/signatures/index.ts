@@ -15,6 +15,8 @@
 import eth from "./eth";
 import { getPayloadToSign } from "./getPayloadToSign";
 
+export { default as serialize } from "./serialize";
+
 function isValidSignature(signature: string, obj: object, publicKey: string): boolean {
   return eth.isValid(signature, obj, publicKey);
 }

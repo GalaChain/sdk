@@ -16,9 +16,8 @@ import { Args, Flags } from "@oclif/core";
 
 import { writeFile } from "fs/promises";
 
-import serialize from "../../api/utils/serialize";
-import signatures from "../../api/utils/signatures";
 import BaseCommand from "../../base-command";
+import signatures, { serialize } from "../../signatures";
 import { parseJsonFromStringOrFile, parseStringOrFileKey } from "../../utils";
 
 export default class DtoSign extends BaseCommand<typeof DtoSign> {

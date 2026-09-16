@@ -17,8 +17,17 @@ import { randomBytes } from "crypto";
 import { keccak256 } from "js-sha3";
 import * as secp256k1 from "secp256k1";
 
-import { ValidationFailedError } from "../error";
 import { getPayloadToSign } from "./getPayloadToSign";
+
+class ValidationFailedError extends Error {
+  constructor(
+    message?: string,
+    public payload?: Record<string, unknown>
+  ) {
+    super(message);
+    this.name = new.target.name;
+  }
+}
 
 class InvalidKeyError extends ValidationFailedError {}
 
