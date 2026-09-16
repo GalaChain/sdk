@@ -19,9 +19,10 @@ import {
   GalaChainResponse,
   createValidDTO
 } from "@gala-chain/api";
-import { currency, fixture, nft } from "@gala-chain/test";
+import { fixture } from "@gala-chain/test";
 
 import GalaChainTokenContract from "../__test__/GalaChainTokenContract";
+import { currency, nft } from "../testdata/index";
 import { TokenClassNotFoundError } from "./TokenError";
 
 it("should FetchTokenClasses", async () => {

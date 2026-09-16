@@ -12,4 +12,10 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-export * from "./loadJson";
+
+export { ChainClient } from "./ChainClient";
+export { ChainClientBuilder } from "./ChainClientBuilder";
+export { ChainUser } from "./ChainUser";
+export { ContractConfig } from "./ContractConfig";
+export { ClassType, Inferred, Serializable, UserAlias, isClassType } from "./types";
+export { loadJson } from "./loadJson";

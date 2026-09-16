@@ -12,8 +12,21 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-import { ChainError, GalaChainResponseType } from "@gala-chain/api";
 import { expect } from "@jest/globals";
+
+const Success = 1;
+const ErrorStatus = 0;
+
+function isChainErrorLike(
+  value: unknown
+): value is { message: string; code?: number; key?: string; payload?: unknown } {
+  return (
+    typeof value === "object" &&
+    value !== null &&
+    "message" in value &&
+    typeof (value as { message: unknown }).message === "string"
+  );
+}
 
 /**
  * Creates a Jest matcher for asserting successful GalaChain transaction responses.
@@ -33,9 +46,9 @@ import { expect } from "@jest/globals";
  */
 export function transactionSuccess<T>(payload?: T): unknown {
   if (payload === undefined) {
-    return expect.objectContaining({ Status: GalaChainResponseType.Success });
+    return expect.objectContaining({ Status: Success });
   } else {
-    return expect.objectContaining({ Status: GalaChainResponseType.Success, Data: payload });
+    return expect.objectContaining({ Status: Success, Data: payload });
   }
 }
 
@@ -62,14 +75,14 @@ export function transactionSuccess<T>(payload?: T): unknown {
  * expect(response).toEqual(transactionError(error));
  * ```
  */
-export function transactionError(matcher?: string | unknown | ChainError): unknown {
+export function transactionError(matcher?: string | unknown): unknown {
   if (matcher === undefined) {
-    return expect.objectContaining({ Status: GalaChainResponseType.Error });
+    return expect.objectContaining({ Status: ErrorStatus });
   }
 
-  if (matcher instanceof ChainError) {
+  if (isChainErrorLike(matcher)) {
     return expect.objectContaining({
-      Status: GalaChainResponseType.Error,
+      Status: ErrorStatus,
       Message: matcher.message,
       ErrorCode: matcher.code,
       ErrorKey: matcher.key,
@@ -77,7 +90,7 @@ export function transactionError(matcher?: string | unknown | ChainError): unkno
     });
   }
 
-  return expect.objectContaining({ Status: GalaChainResponseType.Error, Message: matcher });
+  return expect.objectContaining({ Status: ErrorStatus, Message: matcher });
 }
 
 /**
@@ -96,7 +109,7 @@ export function transactionError(matcher?: string | unknown | ChainError): unkno
 export function transactionErrorKey(key: string) {
   return expect.objectContaining({
     ErrorKey: key,
-    Status: GalaChainResponseType.Error
+    Status: ErrorStatus
   });
 }
 
@@ -116,7 +129,7 @@ export function transactionErrorKey(key: string) {
 export function transactionErrorCode(code: number) {
   return expect.objectContaining({
     ErrorCode: code,
-    Status: GalaChainResponseType.Error
+    Status: ErrorStatus
   });
 }
 
@@ -136,6 +149,6 @@ export function transactionErrorCode(code: number) {
 export function transactionErrorMessageContains(s: string) {
   return expect.objectContaining({
     Message: expect.stringContaining(s),
-    Status: GalaChainResponseType.Error
+    Status: ErrorStatus
   });
 }

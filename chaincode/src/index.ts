@@ -32,6 +32,7 @@ export * from "./utils";
 export * from "./transfer";
 export * from "./vesting";
 export * from "./nftCollections";
+export * from "./testdata";
 export * from "./tracing";
 
 // Starts only when OTEL_EXPORTER_OTLP_ENDPOINT is set in the container env.

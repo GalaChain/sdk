@@ -12,23 +12,24 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-import {
-  ChainCallDTO,
-  ChainObject,
-  ClassConstructor,
-  GalaChainResponse,
-  RangedChainObject,
-  UserAlias,
-  UserProfile,
-  signatures
-} from "@gala-chain/api";
 import { Context, Contract } from "fabric-contract-api";
 import { ChaincodeResponse, ChaincodeStub } from "fabric-shim";
 import Logger from "fabric-shim/lib/logger";
 
 import { ChainUserWithRoles } from "../data/users";
+import { compactPublicKeyBase64 } from "../keys";
+import { ClassConstructor, CompositeKeyed, RangeKeyed, UserAlias } from "../types";
 import { CachedKV, FabricIterable } from "./FabricIterable";
 import { TestChaincodeStub, x509Identity } from "./TestChaincodeStub";
+
+interface ChainCallDTO {
+  serialize?: () => string;
+}
+
+interface GalaChainResponse<T> {
+  Status: number;
+  Data?: T;
+}
 
 /**
  * Interface for GalaChain logger instance with various logging methods.
@@ -136,7 +137,8 @@ type TestGalaChainContext = Context & {
   get callingUserSignatureQuorum(): number;
   get callingUserAllowedSigners(): UserAlias[];
   get isMultisig(): boolean;
-  get callingUserProfile(): UserProfile;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  get callingUserProfile(): any;
   resetCallingUser(): void;
   get config(): GalaChainContextConfig;
   setDryRunOnBehalfOf(d: CallingUserDataDryRun): void;
@@ -153,9 +155,9 @@ type TestGalaChainContext = Context & {
  * GalaChain contract interface with lifecycle methods and context creation.
  * @internal
  */
-type GalaContract<Ctx extends TestGalaChainContext> = Contract & {
-  beforeTransaction(ctx: Ctx): Promise<void>;
-  createContext(): Ctx;
+type GalaContract = Contract & {
+  beforeTransaction(ctx: Context): Promise<void>;
+  createContext(): Context;
 };
 
 const defaultCaClientIdentity = x509Identity("test", "TestOrg");
@@ -198,10 +200,10 @@ type Wrapped<Contract> = {
  * expect(writes).toHaveProperty(newTokenClass.getCompositeKey());
  * ```
  */
-class Fixture<Ctx extends TestGalaChainContext, T extends GalaContract<Ctx>> {
+class Fixture<T extends GalaContract> {
   public readonly state: Record<string, string> = {};
   public readonly contract: Wrapped<T>;
-  public readonly ctx: Ctx;
+  public readonly ctx: ReturnType<T["createContext"]> & TestGalaChainContext;
   private readonly stub: TestChaincodeStub;
   private readonly allWrites: Record<string, string> = {};
 
@@ -217,7 +219,7 @@ class Fixture<Ctx extends TestGalaChainContext, T extends GalaContract<Ctx>> {
         // check if target property is a function with ctx + dto as parameters
         if (typeof target[prop as string] === "function" && target[prop as string].length === 2) {
           const method = target[prop as string];
-          return async (ctx: Ctx, dto?: ChainCallDTO) => {
+          return async (ctx: ReturnType<T["createContext"]> & TestGalaChainContext, dto?: ChainCallDTO) => {
             await contractInstance.beforeTransaction(ctx);
             const result = dto
               ? await method.call(contractInstance, ctx, dto)
@@ -234,7 +236,8 @@ class Fixture<Ctx extends TestGalaChainContext, T extends GalaContract<Ctx>> {
 
     this.stub = new TestChaincodeStub([], this.state, this.allWrites);
 
-    const ctxInstance = this.contract.createContext() as Ctx;
+    const ctxInstance = this.contract.createContext() as ReturnType<T["createContext"]> &
+      TestGalaChainContext;
     ctxInstance.setChaincodeStub(this.stub);
     ctxInstance.logging = {
       setLevel: Logger.setLevel,
@@ -253,10 +256,12 @@ class Fixture<Ctx extends TestGalaChainContext, T extends GalaContract<Ctx>> {
    * @param users - Array of users to register with their roles
    * @returns This fixture instance for method chaining
    */
-  registeredUsers(...users: ChainUserWithRoles[]): Fixture<Ctx, T> {
+  registeredUsers(
+    ...users: Array<{ identityKey: string; publicKey: string; ethAddress: string; roles?: string[] }>
+  ): Fixture<T> {
     const publicKeys = users.map((u) => ({
       key: `\u0000GCPK\u0000${u.identityKey}\u0000`,
-      value: JSON.stringify({ publicKey: signatures.normalizePublicKey(u.publicKey).toString("base64") })
+      value: JSON.stringify({ publicKey: compactPublicKeyBase64(u.publicKey) })
     }));
 
     const userProfiles = users.map((u) => ({
@@ -274,7 +279,7 @@ class Fixture<Ctx extends TestGalaChainContext, T extends GalaContract<Ctx>> {
    * @param mspId - Optional MSP ID, defaults to current context MSP
    * @returns This fixture instance for method chaining
    */
-  caClientIdentity(caUser: string, mspId?: string): Fixture<Ctx, T> {
+  caClientIdentity(caUser: string, mspId?: string): Fixture<T> {
     this.ctx.clientIdentity = x509Identity(caUser, mspId ?? this.ctx.clientIdentity.getMSPID());
     return this;
   }
@@ -286,11 +291,14 @@ class Fixture<Ctx extends TestGalaChainContext, T extends GalaContract<Ctx>> {
    * @returns This fixture instance for method chaining
    */
   callingUser(
-    user: ChainUserWithRoles | { alias: UserAlias; ethAddress?: string; roles: string[] }
-  ): Fixture<Ctx, T> {
+    user:
+      | ChainUserWithRoles
+      | { identityKey: string; ethAddress?: string; roles: string[] }
+      | { alias: string; ethAddress?: string; roles: string[] }
+  ): Fixture<T> {
     if ("identityKey" in user) {
       this.ctx.callingUserData = {
-        alias: user.identityKey,
+        alias: user.identityKey as UserAlias,
         ethAddress: user.ethAddress,
         roles: user.roles,
         signedBy: [],
@@ -303,6 +311,7 @@ class Fixture<Ctx extends TestGalaChainContext, T extends GalaContract<Ctx>> {
 
     this.ctx.callingUserData = {
       ...user,
+      alias: user.alias as UserAlias,
       signedBy: [],
       signatureQuorum: 0,
       allowedSigners: [],
@@ -319,7 +328,7 @@ class Fixture<Ctx extends TestGalaChainContext, T extends GalaContract<Ctx>> {
    * @returns This fixture instance for method chaining
    * @throws Error if composite key generation fails
    */
-  savedState(...objs: ChainObject[]): Fixture<Ctx, T> {
+  savedState(...objs: CompositeKeyed[]): Fixture<T> {
     objs.forEach((o) => {
       try {
         this.state[o.getCompositeKey()] = o.serialize();
@@ -336,7 +345,7 @@ class Fixture<Ctx extends TestGalaChainContext, T extends GalaContract<Ctx>> {
    * @param objs - Array of key-value objects to save to state
    * @returns This fixture instance for method chaining
    */
-  savedKVState(...objs: { key: string; value: string }[]): Fixture<Ctx, T> {
+  savedKVState(...objs: { key: string; value: string }[]): Fixture<T> {
     objs.forEach(({ key, value }) => {
       this.state[key] = value;
     });
@@ -350,7 +359,7 @@ class Fixture<Ctx extends TestGalaChainContext, T extends GalaContract<Ctx>> {
    * @param objs - Array of RangedChainObjects to save to state
    * @returns This fixture instance for method chaining
    */
-  savedRangeState(objs: RangedChainObject[]): Fixture<Ctx, T> {
+  savedRangeState(objs: RangeKeyed[]): Fixture<T> {
     objs.forEach((o) => {
       this.state[o.getRangedKey()] = o.serialize();
     });
@@ -408,8 +417,8 @@ class Fixture<Ctx extends TestGalaChainContext, T extends GalaContract<Ctx>> {
  *   .caClientIdentity(\"admin\", \"MarketplaceOrg\");
  * ```
  */
-export function fixture<Ctx extends TestGalaChainContext, T extends GalaContract<Ctx>>(
-  contractClass: ClassConstructor<T>
-) {
-  return new Fixture<Ctx, T>(contractClass);
+export function fixture<T extends GalaContract>(contractClass: ClassConstructor<T>): Fixture<T>;
+export function fixture<Ctx, T extends GalaContract>(contractClass: ClassConstructor<T>): Fixture<T>;
+export function fixture<T extends GalaContract>(contractClass: ClassConstructor<T>): Fixture<T> {
+  return new Fixture<T>(contractClass);
 }

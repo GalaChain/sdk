@@ -12,17 +12,11 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-import {
-  ChainCallDTO,
-  ChainClient,
-  ChainClientBuilder,
-  ClassType,
-  ContractConfig,
-  GalaChainResponse,
-  Inferred
-} from "@gala-chain/api";
 import axios from "axios";
 
+import { ChainClient, ChainClientBuilder, ClassType, ContractConfig, Inferred } from "../generic";
+import { Serializable } from "../generic/types";
+import { GalaChainResponse } from "../wire/response";
 import { FabloRestClient } from "./FabloRestClient";
 import {
   RestApiAdminCredentials,
@@ -154,7 +148,7 @@ class AsyncProxyClient extends ChainClient {
 
   public async evaluateTransaction<T>(
     method: string,
-    dtoOrResp?: ChainCallDTO | ClassType<Inferred<T>>,
+    dtoOrResp?: Serializable | ClassType<Inferred<T>>,
     resp?: ClassType<Inferred<T>>
   ): Promise<GalaChainResponse<T>> {
     const client = await this.clientPromise;
@@ -164,7 +158,7 @@ class AsyncProxyClient extends ChainClient {
 
   public async submitTransaction<T>(
     method: string,
-    dtoOrResp?: ChainCallDTO | ClassType<Inferred<T>>,
+    dtoOrResp?: Serializable | ClassType<Inferred<T>>,
     resp?: ClassType<Inferred<T>>
   ): Promise<GalaChainResponse<T>> {
     const client = await this.clientPromise;

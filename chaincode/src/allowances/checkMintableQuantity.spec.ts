@@ -12,9 +12,9 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-import { currency } from "@gala-chain/test";
 import BigNumber from "bignumber.js";
 
+import { currency } from "../testdata/index";
 import { MintCapacityExceededError, TotalSupplyExceededError } from "./AllowanceError";
 import { ensureQuantityCanBeMinted } from "./grantAllowance";
 

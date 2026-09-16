@@ -13,10 +13,11 @@
  * limitations under the License.
  */
 import { CreateTokenClassDto, GalaChainResponse, UserAlias, createValidSubmitDTO } from "@gala-chain/api";
-import { currency, fixture, users, writesMap } from "@gala-chain/test";
+import { fixture, users, writesMap } from "@gala-chain/test";
 import BigNumber from "bignumber.js";
 
 import GalaChainTokenContract from "../__test__/GalaChainTokenContract";
+import { currency } from "../testdata/index";
 
 it("should CreateTokenClass", async () => {
   // Given

@@ -24,11 +24,12 @@ import {
   createValidChainObject,
   createValidSubmitDTO
 } from "@gala-chain/api";
-import { currency, fixture, randomUser, users, writesMap } from "@gala-chain/test";
+import { fixture, randomUser, users, writesMap } from "@gala-chain/test";
 import BigNumber from "bignumber.js";
 
 import GalaChainTokenContract from "../__test__/GalaChainTokenContract";
 import { MissingRoleError } from "../contracts";
+import { currency } from "../testdata/index";
 import { NotATokenAuthorityError, TokenClassNotFoundError } from "./TokenError";
 
 it("should update token class", async () => {

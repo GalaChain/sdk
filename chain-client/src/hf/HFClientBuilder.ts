@@ -12,8 +12,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-import { ChainClientBuilder, ContractConfig } from "@gala-chain/api";
-
+import { ChainClientBuilder, ContractConfig } from "../generic";
 import { CAClient } from "./CAClient";
 import { HFClient } from "./HFClient";
 

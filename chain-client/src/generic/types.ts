@@ -13,7 +13,16 @@
  * limitations under the License.
  */
 
-export { ChainClient, isClassType, ClassType } from "./ChainClient";
-export { ChainClientBuilder } from "./ChainClientBuilder";
-export { ChainUser } from "./ChainUser";
-export { ContractConfig } from "./ContractConfig";
+export type ClassType<T> = {
+  new (...args: unknown[]): T;
+};
+
+export const isClassType = (obj: unknown): obj is ClassType<unknown> => typeof obj === "function";
+
+export type Inferred<T> = T extends (infer U)[] ? U : T;
+
+export interface Serializable {
+  serialize?: () => string;
+}
+
+export type UserAlias = string & { __userAlias__: void };

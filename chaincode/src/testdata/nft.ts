@@ -13,7 +13,6 @@
  * limitations under the License.
  */
 import {
-  GC_NETWORK_ID,
   NftCollectionAuthorization,
   TokenAllowance,
   TokenBalance,
@@ -29,8 +28,7 @@ import {
 import BigNumber from "bignumber.js";
 import { plainToInstance } from "class-transformer";
 
-import users from "./users";
-import { createInstanceFn, createPlainFn } from "./utils";
+import { alias, createInstanceFn, createPlainFn } from "./utils";
 
 /**
  * Test data factory for GalaChain NFT-related objects.
@@ -40,7 +38,7 @@ import { createInstanceFn, createPlainFn } from "./utils";
  *
  * @example
  * ```typescript
- * import nft from "@gala-chain/test";
+ * import { nft } from "@gala-chain/chaincode";
  *
  * // Use plain objects for DTOs
  * const tokenClass = nft.tokenClassPlain();
@@ -74,12 +72,12 @@ const tokenClassPlain = createPlainFn({
   maxCapacity: new BigNumber(100000000),
   maxSupply: new BigNumber(100000000),
   name: "TestElixirNft",
-  network: GC_NETWORK_ID,
+  network: "GC",
   symbol: "GALAXR",
   totalBurned: new BigNumber(0),
   totalMintAllowance: new BigNumber(0),
   totalSupply: new BigNumber(0),
-  authorities: [users.admin.identityKey]
+  authorities: [alias("client|admin")]
 });
 
 /**
@@ -99,8 +97,8 @@ const tokenAllowancePlain = (txUnixTime: number) => ({
   created: txUnixTime,
   expires: 0,
   instance: new BigNumber(1),
-  grantedBy: users.testUser2.identityKey,
-  grantedTo: users.testUser1.identityKey,
+  grantedBy: alias("client|testUser2"),
+  grantedTo: alias("client|testUser1"),
   type: "Potion",
   uses: new BigNumber(1),
   usesSpent: new BigNumber(0)
@@ -123,8 +121,8 @@ const tokenMintAllowancePlain = (txUnixTime: number) => ({
   created: txUnixTime,
   expires: 0,
   instance: new BigNumber(0),
-  grantedBy: users.admin.identityKey,
-  grantedTo: users.admin.identityKey,
+  grantedBy: alias("client|admin"),
+  grantedTo: alias("client|admin"),
   type: "Potion",
   uses: new BigNumber(1),
   usesSpent: new BigNumber(0)
@@ -146,7 +144,7 @@ const tokenInstance1KeyPlain = createPlainFn({
 const tokenInstance1Plain = createPlainFn({
   ...tokenInstance1KeyPlain(),
   isNonFungible: true,
-  owner: users.testUser1.identityKey
+  owner: alias("client|testUser1")
 });
 
 /**
@@ -156,7 +154,7 @@ const tokenInstance1Plain = createPlainFn({
  */
 const projectAuthorizationPlain = createPlainFn({
   collection: "TestProject",
-  authorizedUsers: [users.admin.identityKey]
+  authorizedUsers: [alias("client|admin")]
 });
 
 /**
@@ -181,8 +179,8 @@ const tokenInstance1MetadataPlain = (txUnixTime: number) => ({
     })
   ],
   customFields: [plainToInstance(TokenInstanceMetadataCustomField, { key: "gameId", value: "elixir-001" })],
-  createdBy: users.admin.identityKey,
-  lastModifiedBy: users.admin.identityKey,
+  createdBy: alias("client|admin"),
+  lastModifiedBy: alias("client|admin"),
   created: txUnixTime,
   lastModified: txUnixTime
 });
@@ -193,7 +191,7 @@ const tokenInstance1MetadataPlain = (txUnixTime: number) => ({
  */
 const tokenBalancePlain = createPlainFn({
   ...tokenClassKeyPlain(),
-  owner: users.testUser1.identityKey,
+  owner: alias("client|testUser1"),
   instanceIds: [new BigNumber(1)],
   lockedHolds: [],
   quantity: new BigNumber(1)
@@ -207,7 +205,7 @@ const tokenBalancePlain = createPlainFn({
  */
 const tokenBurnPlain = (txUnixTime: number) => ({
   ...tokenInstance1KeyPlain(),
-  burnedBy: users.testUser1.identityKey,
+  burnedBy: alias("client|testUser1"),
   created: txUnixTime,
   quantity: new BigNumber(1)
 });

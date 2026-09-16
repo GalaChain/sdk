@@ -12,15 +12,15 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-import { signatures } from "../../utils";
 import { ChainUser } from "./ChainUser";
+import { genKeyPair, getEthAddress } from "./keys";
 
 describe("ChainUser", () => {
   describe("constructor", () => {
     it("should create a ChainUser with eth prefix when name is not provided", () => {
       // Given
-      const { privateKey, publicKey } = signatures.genKeyPair();
-      const ethAddress = signatures.getEthAddress(publicKey);
+      const { privateKey, publicKey } = genKeyPair();
+      const ethAddress = getEthAddress(publicKey);
 
       // When
       const chainUser = new ChainUser({ privateKey });
@@ -40,8 +40,8 @@ describe("ChainUser", () => {
 
     it("should create a ChainUser with client prefix when name is provided", () => {
       // Given
-      const { privateKey, publicKey } = signatures.genKeyPair();
-      const ethAddress = signatures.getEthAddress(publicKey);
+      const { privateKey, publicKey } = genKeyPair();
+      const ethAddress = getEthAddress(publicKey);
       const name = "some-name";
 
       // When

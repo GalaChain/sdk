@@ -16,19 +16,20 @@ import {
   BatchDto,
   ChainCallDTO,
   ChainObject,
-  ChainUser,
   DefaultError,
   DryRunDto,
   GalaChainResponse,
   GalaChainResponseType,
   GetObjectDto,
   PublicKey,
+  UserAlias,
   UserProfile,
   createValidChainObject,
   createValidDTO,
   serialize,
   signatures
 } from "@gala-chain/api";
+import { ChainUser } from "@gala-chain/client";
 import {
   TestChaincode,
   transactionError,
@@ -807,7 +808,7 @@ async function generateUser(name?: string) {
   });
 
   const userProfile = await createValidChainObject(UserProfile, {
-    alias: user.identityKey,
+    alias: user.identityKey as UserAlias,
     ethAddress: user.ethAddress
   });
 

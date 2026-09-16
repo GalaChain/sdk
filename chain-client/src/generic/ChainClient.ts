@@ -12,15 +12,10 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-import { ChainCallDTO, GalaChainResponse, Inferred } from "../../types";
+import { GalaChainResponse } from "../wire/response";
 import { ChainClientBuilder } from "./ChainClientBuilder";
 import { ContractConfig } from "./ContractConfig";
-
-export type ClassType<T> = {
-  new (...args: unknown[]): T;
-};
-
-export const isClassType = (obj: unknown): obj is ClassType<unknown> => typeof obj === "function";
+import { ClassType, Inferred, Serializable } from "./types";
 
 export abstract class ChainClient {
   protected constructor(
@@ -31,29 +26,23 @@ export abstract class ChainClient {
   ) {}
 
   abstract submitTransaction(method: string): Promise<GalaChainResponse<unknown>>;
-
-  abstract submitTransaction(method: string, dto: ChainCallDTO): Promise<GalaChainResponse<unknown>>;
-
+  abstract submitTransaction(method: string, dto: Serializable): Promise<GalaChainResponse<unknown>>;
   abstract submitTransaction<T>(method: string, resp: ClassType<Inferred<T>>): Promise<GalaChainResponse<T>>;
-
   abstract submitTransaction<T>(
     method: string,
-    dto: ChainCallDTO,
+    dto: Serializable,
     resp: ClassType<Inferred<T>>
   ): Promise<GalaChainResponse<T>>;
 
   abstract evaluateTransaction(method: string): Promise<GalaChainResponse<unknown>>;
-
-  abstract evaluateTransaction(method: string, dto: ChainCallDTO): Promise<GalaChainResponse<unknown>>;
-
+  abstract evaluateTransaction(method: string, dto: Serializable): Promise<GalaChainResponse<unknown>>;
   abstract evaluateTransaction<T>(
     method: string,
     resp: ClassType<Inferred<T>>
   ): Promise<GalaChainResponse<T>>;
-
   abstract evaluateTransaction<T>(
     method: string,
-    dto: ChainCallDTO,
+    dto: Serializable,
     resp: ClassType<Inferred<T>>
   ): Promise<GalaChainResponse<T>>;
 

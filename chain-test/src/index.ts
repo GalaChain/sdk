@@ -12,8 +12,21 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+import {
+  AdminChainClients,
+  ChainClients,
+  ContractTestClient,
+  TestClients,
+  setMockedChaincodeBuilder
+} from "@gala-chain/client";
+
+import { MockedChaincodeClientBuilder } from "./e2e/MockedChaincodeClient";
+
+setMockedChaincodeBuilder((params) => new MockedChaincodeClientBuilder(params));
 
 export * from "./data";
 export * from "./e2e";
 export * from "./matchers";
 export * from "./unit";
+export { randomize } from "./randomize";
+export { AdminChainClients, ChainClients, ContractTestClient, TestClients, setMockedChaincodeBuilder };

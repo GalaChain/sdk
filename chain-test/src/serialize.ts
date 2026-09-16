@@ -12,7 +12,16 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+import { instanceToPlain } from "class-transformer";
+import stringify from "json-stringify-deterministic";
 
-export * from "./ChainUserAPI";
-export * from "./CommonContractAPI";
-export * from "./PublicKeyContractAPI";
+export function serializeValue(object: unknown): string {
+  if (
+    object &&
+    typeof object === "object" &&
+    typeof (object as { serialize?: unknown }).serialize === "function"
+  ) {
+    return (object as { serialize: () => string }).serialize();
+  }
+  return stringify(instanceToPlain(object));
+}

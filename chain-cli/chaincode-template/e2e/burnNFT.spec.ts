@@ -14,7 +14,6 @@
  */
 import {
   BurnTokensDto,
-  ChainUser,
   FetchBalancesDto,
   TokenBalance,
   TokenBurn,
@@ -23,15 +22,12 @@ import {
   createValidDTO,
   createValidSubmitDTO
 } from "@gala-chain/api";
-import {
-  AdminChainClients,
-  TestClients,
-  mintTokensToUsers,
-  randomize,
-  transactionSuccess
-} from "@gala-chain/test";
+import { AdminChainClients, ChainUser, TestClients } from "@gala-chain/client";
+import { randomize, transactionSuccess } from "@gala-chain/test";
 import BigNumber from "bignumber.js";
 import { instanceToPlain, plainToInstance } from "class-transformer";
+
+import { mintTokensToUsers } from "./tokenOps";
 
 jest.setTimeout(30000);
 

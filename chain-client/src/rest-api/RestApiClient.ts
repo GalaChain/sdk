@@ -12,20 +12,20 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+import axios from "axios";
+
 import {
-  ChainCallDTO,
   ChainClient,
   ChainClientBuilder,
   ClassType,
-  ContractAPI,
   ContractConfig,
-  GalaChainResponse,
   Inferred,
-  isClassType,
-  serialize
-} from "@gala-chain/api";
-import axios from "axios";
-
+  isClassType
+} from "../generic";
+import { Serializable } from "../generic/types";
+import { GalaChainResponse } from "../wire/response";
+import { serialize } from "../wire/serialize";
+import { ContractAPI } from "./GlobalRestApiConfig";
 import { RestApiAdminCredentials, SetContractApiParams, globalRestApiConfig } from "./GlobalRestApiConfig";
 import { catchAxiosError } from "./catchAxiosError";
 import { RestApiConfig } from "./loadRestApiConfig";
@@ -80,7 +80,7 @@ export class RestApiClient extends ChainClient {
 
   async submitTransaction<T>(
     method: string,
-    dtoOrResp?: ChainCallDTO | ClassType<Inferred<T>>,
+    dtoOrResp?: Serializable | ClassType<Inferred<T>>,
     resp?: ClassType<Inferred<T>>
   ): Promise<GalaChainResponse<T>> {
     const path = await getPath(await this.restApiUrl, this.contractConfig, method, true);
@@ -90,7 +90,7 @@ export class RestApiClient extends ChainClient {
 
   async evaluateTransaction<T>(
     method: string,
-    dtoOrResp?: ChainCallDTO | ClassType<Inferred<T>>,
+    dtoOrResp?: Serializable | ClassType<Inferred<T>>,
     resp?: ClassType<Inferred<T>>
   ): Promise<GalaChainResponse<T>> {
     const path = await getPath(await this.restApiUrl, this.contractConfig, method, false);
@@ -100,7 +100,7 @@ export class RestApiClient extends ChainClient {
 
   public async post<T>(
     path: string,
-    dtoOrResp?: ChainCallDTO | ClassType<Inferred<T>>,
+    dtoOrResp?: Serializable | ClassType<Inferred<T>>,
     resp?: ClassType<Inferred<T>>
   ): Promise<GalaChainResponse<T>> {
     const [dto, responseType] = isClassType(dtoOrResp) ? [undefined, dtoOrResp] : [dtoOrResp, resp];

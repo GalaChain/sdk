@@ -23,12 +23,13 @@ import {
   TokenInstance,
   createValidDTO
 } from "@gala-chain/api";
-import { currency, fixture, users } from "@gala-chain/test";
+import { fixture, users } from "@gala-chain/test";
 import BigNumber from "bignumber.js";
 import { plainToInstance } from "class-transformer";
 import { randomUUID } from "crypto";
 
 import { GalaChainFeeContract } from "../__test__/GalaChainFeeContract";
+import { currency } from "../testdata/index";
 import { txUnixTimeToDateIndexKeys } from "../utils";
 
 describe("authorizeFee", () => {

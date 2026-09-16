@@ -12,8 +12,9 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-import { ChainClient, GalaChainResponse, commonContractAPI, publicKeyContractAPI } from "@gala-chain/api";
-
+import { commonContractAPI, publicKeyContractAPI } from "../api";
+import { ChainClient, ChainUser } from "../generic";
+import { GalaChainResponse } from "../wire/response";
 import { TestClients } from "./TestClients";
 import { createChainClient } from "./createChainClient";
 
@@ -28,6 +29,7 @@ import { createChainClient } from "./createChainClient";
 jest.mock("./createChainClient");
 
 beforeAll(() => {
+  process.env.DEV_ADMIN_PRIVATE_KEY ??= ChainUser.withRandomKeys().privateKey;
   (createChainClient as jest.Mock).mockImplementation(() => new ChainClientMock());
 });
 

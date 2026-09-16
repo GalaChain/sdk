@@ -12,25 +12,24 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-import {
-  ChainClient,
-  ChainUser,
-  ChainUserAPI,
-  CommonContractAPI,
-  ContractConfig,
-  GalaChainResponseType,
-  PublicKeyContractAPI,
-  RegisterUserDto,
-  commonContractAPI,
-  createValidSubmitDTO,
-  publicKeyContractAPI
-} from "@gala-chain/api";
 import * as fs from "fs";
 import * as path from "path";
 
+import {
+  ChainUserAPI,
+  CommonContractAPI,
+  PublicKeyContractAPI,
+  commonContractAPI,
+  publicKeyContractAPI
+} from "../api";
+import { ChainClient, ChainUser, ContractConfig } from "../generic";
+import { GalaChainResponseType, randomUniqueKey, signPlain } from "../wire";
 import { networkRoot } from "./ContractTestClient";
 import { createChainClient } from "./createChainClient";
-import { randomize } from "./tokenOps";
+
+function randomize(str: string): string {
+  return `${str}${randomUniqueKey().replace(/[^a-zA-Z0-9]/g, "")}`.slice(0, 30);
+}
 
 /**
  * Configuration for a contract API that extends the base contract configuration
@@ -342,8 +341,9 @@ function getAdminKeyFromPath(keyPath: string) {
  * @internal
  */
 function getAdminUser() {
-  const defaultKeyPath = path.resolve(networkRoot(), "dev-admin-key/dev-admin.priv.hex.txt");
-  const privateKey = process.env.DEV_ADMIN_PRIVATE_KEY ?? getAdminKeyFromPath(defaultKeyPath);
+  const defaultKeyPath = "dev-admin-key/dev-admin.priv.hex.txt";
+  const privateKey =
+    process.env.DEV_ADMIN_PRIVATE_KEY ?? getAdminKeyFromPath(path.resolve(networkRoot(), defaultKeyPath));
 
   if (privateKey === undefined) {
     throw new Error(
@@ -365,16 +365,16 @@ function getAdminUser() {
  */
 async function createRegisteredUser(
   client: TestChainClient & PublicKeyContractAPI,
-  userAlias: string
+  userAlias?: string
 ): Promise<ChainUser> {
   const user = ChainUser.withRandomKeys(userAlias);
 
-  const dto = await createValidSubmitDTO(RegisterUserDto, {
-    user: user.identityKey,
-    publicKey: user.publicKey
-  });
+  const dto = signPlain(
+    { user: user.identityKey, publicKey: user.publicKey, uniqueKey: randomUniqueKey() },
+    client.privateKey
+  );
 
-  const response = await client.RegisterUser(dto.signed(client.privateKey));
+  const response = await client.RegisterUser(dto);
   if (response.Status !== GalaChainResponseType.Success) {
     throw new Error(`Failed to register user: ${response.Message}`);
   }

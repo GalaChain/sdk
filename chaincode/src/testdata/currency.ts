@@ -13,7 +13,6 @@
  * limitations under the License.
  */
 import {
-  GC_NETWORK_ID,
   TokenAllowance,
   TokenBalance,
   TokenBurn,
@@ -24,8 +23,7 @@ import {
 } from "@gala-chain/api";
 import BigNumber from "bignumber.js";
 
-import users from "./users";
-import { createInstanceFn, createPlainFn } from "./utils";
+import { alias, createInstanceFn, createPlainFn } from "./utils";
 
 /**
  * Test data factory for GalaChain currency-related objects.
@@ -36,7 +34,7 @@ import { createInstanceFn, createPlainFn } from "./utils";
  *
  * @example
  * ```typescript
- * import currency from "@gala-chain/test";
+ * import { currency } from "@gala-chain/chaincode";
  *
  * // Use plain objects for DTOs
  * const tokenClass = currency.tokenClassPlain();
@@ -75,12 +73,12 @@ const tokenClassPlain = createPlainFn({
   maxCapacity: new BigNumber(100000000000000),
   maxSupply: new BigNumber(100000000000000),
   name: "AUTOMATEDTESTCOIN",
-  network: GC_NETWORK_ID,
+  network: "GC",
   symbol: "AUTC",
   totalBurned: new BigNumber(0),
   totalMintAllowance: new BigNumber(0),
   totalSupply: new BigNumber(0),
-  authorities: [users.admin.identityKey]
+  authorities: [alias("client|admin")]
 });
 
 /**
@@ -97,8 +95,8 @@ const tokenAllowancePlain = (txUnixTime: number) => ({
   created: txUnixTime,
   expires: 0,
   instance: new BigNumber(0),
-  grantedBy: users.admin.identityKey,
-  grantedTo: users.admin.identityKey,
+  grantedBy: alias("client|admin"),
+  grantedTo: alias("client|admin"),
   uses: new BigNumber(1),
   usesSpent: new BigNumber(0)
 });
@@ -118,8 +116,8 @@ const tokenBurnAllowancePlain = (txUnixTime: number) => ({
   created: txUnixTime,
   expires: 0,
   instance: new BigNumber(0),
-  grantedBy: users.testUser1.identityKey,
-  grantedTo: users.testUser2.identityKey,
+  grantedBy: alias("client|testUser1"),
+  grantedTo: alias("client|testUser2"),
   uses: new BigNumber(1),
   usesSpent: new BigNumber(0)
 });
@@ -138,8 +136,8 @@ const tokenBurnAllowanceUser3Plain = (txUnixTime: number) => ({
   created: txUnixTime,
   expires: 0,
   instance: new BigNumber(0),
-  grantedBy: users.testUser3.identityKey,
-  grantedTo: users.testUser2.identityKey,
+  grantedBy: alias("client|testUser3"),
+  grantedTo: alias("client|testUser2"),
   uses: new BigNumber(1),
   usesSpent: new BigNumber(0)
 });
@@ -159,8 +157,8 @@ const tokenMintAllowancePlain = (txUnixTime: number) => ({
   created: txUnixTime,
   expires: 0,
   instance: new BigNumber(0),
-  grantedBy: users.testUser1.identityKey,
-  grantedTo: users.testUser2.identityKey,
+  grantedBy: alias("client|testUser1"),
+  grantedTo: alias("client|testUser2"),
   uses: new BigNumber(1),
   usesSpent: new BigNumber(0)
 });
@@ -189,7 +187,7 @@ const tokenInstancePlain = createPlainFn({
  */
 const tokenBalancePlain = createPlainFn({
   ...tokenClassKeyPlain(),
-  owner: users.testUser1.identityKey,
+  owner: alias("client|testUser1"),
   lockedHolds: [],
   instanceIds: [],
   quantity: new BigNumber("1000")
@@ -203,7 +201,7 @@ const tokenBalancePlain = createPlainFn({
  */
 const tokenBurnPlain = (txUnixTime: number) => ({
   ...tokenInstanceKeyPlain(),
-  burnedBy: users.testUser1.identityKey,
+  burnedBy: alias("client|testUser1"),
   created: txUnixTime,
   quantity: new BigNumber(1)
 });

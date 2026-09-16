@@ -20,9 +20,10 @@ import {
   TokenInstanceMetadata,
   createValidDTO
 } from "@gala-chain/api";
-import { fixture, nft } from "@gala-chain/test";
+import { fixture } from "@gala-chain/test";
 
 import GalaChainTokenContract from "../__test__/GalaChainTokenContract";
+import { nft } from "../testdata/index";
 import { TokenInstanceMetadataNotFoundError } from "./TokenInstanceMetadataError";
 
 it("should fetch metadata documents of all projects for an instance", async () => {
