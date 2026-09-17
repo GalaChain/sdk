@@ -223,6 +223,17 @@ function GalaTransaction<In extends ChainCallDTO, Out>(
                 throw new ExpiredError(`DTO expired at ${new Date(dto.dtoExpiresAt).toISOString()}`);
               }
 
+              // Record uniqueKey before auth so authenticate/authorize failures
+              // still consume the key (flushed on error by afterTransaction).
+              if (options.enforceUniqueKey) {
+                if (dto?.uniqueKey) {
+                  await UniqueTransactionService.ensureUniqueTransaction(ctx, dto.uniqueKey);
+                } else {
+                  const message = `Missing uniqueKey in transaction dto for method '${method.name}'`;
+                  throw new RuntimeError(message);
+                }
+              }
+
               await ctx.otel.send("gala.authorize", {}, async () => {
                 // Authenticate the user
                 if (ctx.isDryRun) {
@@ -248,17 +259,6 @@ function GalaTransaction<In extends ChainCallDTO, Out>(
 
                 // Authorize the user
                 await authorize(ctx, options, dto);
-
-                // Record uniqueKey before the handler so a later business failure
-                // still consumes the key (flushed on error by afterTransaction).
-                if (options.enforceUniqueKey) {
-                  if (dto?.uniqueKey) {
-                    await UniqueTransactionService.ensureUniqueTransaction(ctx, dto.uniqueKey);
-                  } else {
-                    const message = `Missing uniqueKey in transaction dto for method '${method.name}'`;
-                    throw new RuntimeError(message);
-                  }
-                }
               });
 
               const argArray: [GalaChainContext, In] | [GalaChainContext] = dto ? [ctx, dto] : [ctx];
