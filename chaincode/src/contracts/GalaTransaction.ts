@@ -215,6 +215,9 @@ function GalaTransaction<In extends ChainCallDTO, Out>(
 
       // ALS = SERVER so nested batch EVALUATE does not parent to batch.operation.
       return ctx.otel.run(async () => {
+        let uniqueKey: string | undefined;
+        let uniqueKeySaved = false;
+
         try {
           const metadata = [{ dto: dtoPlain }];
           ctx?.logger?.logTimeline("Begin Transaction", loggingContext, metadata);
@@ -227,18 +230,6 @@ function GalaTransaction<In extends ChainCallDTO, Out>(
               "gala.tx_type": options.type === GalaTransactionType.SUBMIT ? "SUBMIT" : "EVALUATE"
             },
             async () => {
-              // uniqueKey is global and the method is not in the signed payload.
-              // Spend it from the raw submit before this endpoint's parse/auth.
-              if (options.enforceUniqueKey) {
-                const uniqueKey = readUniqueKeyFromPlain(dtoPlain);
-                if (uniqueKey) {
-                  await UniqueTransactionService.ensureUniqueTransaction(ctx, uniqueKey);
-                } else {
-                  const message = `Missing uniqueKey in transaction dto for method '${method.name}'`;
-                  throw new RuntimeError(message);
-                }
-              }
-
               // Parse & validate - may throw an exception
               const dtoClass = options.in ?? (ChainCallDTO as unknown as ClassConstructor<Inferred<In>>);
               const validationOptions =
@@ -252,6 +243,7 @@ function GalaTransaction<In extends ChainCallDTO, Out>(
                     dtoPlain as string | Record<string, unknown>,
                     validationOptions
                   );
+              uniqueKey = dto?.uniqueKey;
 
               // Note using Date.now() instead of ctx.txUnixTime which is provided client-side.
               if (dto?.dtoExpiresAt && dto.dtoExpiresAt < Date.now()) {
@@ -283,6 +275,17 @@ function GalaTransaction<In extends ChainCallDTO, Out>(
 
                 // Authorize the user
                 await authorize(ctx, options, dto);
+
+                // Record uniqueKey before the handler so a later business failure
+                // still consumes the key (flushed on error by afterTransaction).
+                if (options.enforceUniqueKey) {
+                  if (!uniqueKey) {
+                    const message = `Missing uniqueKey in transaction dto for method '${method.name}'`;
+                    throw new RuntimeError(message);
+                  }
+                  await UniqueTransactionService.ensureUniqueTransaction(ctx, uniqueKey);
+                  uniqueKeySaved = true;
+                }
               });
 
               const argArray: [GalaChainContext, In] | [GalaChainContext] = dto ? [ctx, dto] : [ctx];
@@ -315,14 +318,27 @@ function GalaTransaction<In extends ChainCallDTO, Out>(
             }
           );
         } catch (err) {
-          const chainError = ChainError.from(err);
-          ctx.otel.recordError(err);
+          let resultErr = err as Error;
+          if (options.enforceUniqueKey && !uniqueKeySaved) {
+            uniqueKey = uniqueKey ?? readUniqueKeyFromPlain(dtoPlain);
+            if (uniqueKey) {
+              try {
+                await UniqueTransactionService.ensureUniqueTransaction(ctx, uniqueKey);
+                uniqueKeySaved = true;
+              } catch (persistErr) {
+                resultErr = persistErr as Error;
+              }
+            }
+          }
+
+          const chainError = ChainError.from(resultErr);
+          ctx.otel.recordError(resultErr);
 
           if (ctx.logger) {
             chainError.logWarn(ctx.logger);
-            ctx.logger.logTimeline("Failed Transaction", loggingContext, [dtoPlain], err);
-            ctx.logger.debug(err.message);
-            ctx.logger.debug(err.stack);
+            ctx.logger.logTimeline("Failed Transaction", loggingContext, [dtoPlain], resultErr);
+            ctx.logger.debug(resultErr.message);
+            ctx.logger.debug(resultErr.stack ?? "");
           }
 
           // if external chaincode call succeeded, but the remaining part of the
@@ -338,7 +354,7 @@ function GalaTransaction<In extends ChainCallDTO, Out>(
 
           // Note: since it does not end with an exception, failed transactions are also saved
           // on chain in transaction history.
-          return GalaChainResponse.Error(err as Error);
+          return GalaChainResponse.Error(resultErr);
         }
       });
     };
