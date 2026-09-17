@@ -17,6 +17,7 @@ import {
   ApplyRequestsDto,
   CreateTokenClassDto,
   FetchBalancesDto,
+  GetMyProfileDto,
   GrantAllowanceDto,
   MintTokenDto,
   TokenAllowance,
@@ -25,6 +26,8 @@ import {
   TokenInstance,
   TokenInstanceKey,
   TransferTokenDto,
+  UpdateUserRolesDto,
+  UserRole,
   asValidUserRef,
   createValidDTO,
   createValidSubmitDTO
@@ -75,7 +78,27 @@ export async function requestMintTokensToUsers(
   await applyRequests(client, delayMs);
 }
 
+async function ensureRequestApplierRole(client: AdminChainClients) {
+  const profileDto = new GetMyProfileDto();
+  profileDto.sign(client.pk.privateKey);
+  const profile = await client.pk.GetMyProfile(profileDto);
+  const roles = Array.isArray(profile.Data?.roles) ? (profile.Data.roles as string[]) : [];
+
+  if (roles.includes(UserRole.REQUEST_APPLIER)) {
+    return;
+  }
+
+  const updateDto = await createValidSubmitDTO(UpdateUserRolesDto, {
+    user: client.pk.identityKey,
+    roles: [...roles, UserRole.REQUEST_APPLIER]
+  }).signed(client.pk.privateKey);
+
+  const response = await client.pk.submitTransaction("UpdateUserRoles", updateDto);
+  expect(response).toEqual(transactionSuccess());
+}
+
 export async function applyRequests(client: AdminChainClients, delayMs = 2_500) {
+  await ensureRequestApplierRole(client);
   await new Promise((resolve) => setTimeout(resolve, delayMs));
   return client.assets.submitTransaction(
     "ApplyRequests",

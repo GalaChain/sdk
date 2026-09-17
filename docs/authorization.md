@@ -422,7 +422,7 @@ The roles are assigned to the `UserProfile` object in the chain data.
 By default, the `EVALUATE` and `SUBMIT` roles are assigned to the user when they are registered.
 You can assign additional roles to the user using the `PublicKeyContract:UpdateUserRoles` method. This method requires that the calling user either has the `CURATOR` role or is a CA user from a curator organization.
 
-There are some predefined roles (`EVALUATE`, `SUBMIT`, `CURATOR`, `REGISTRAR`). You can also define custom roles for more granular access control.
+There are some predefined roles (`EVALUATE`, `SUBMIT`, `CURATOR`, `REGISTRAR`, `REQUEST_APPLIER`). You can also define custom roles for more granular access control.
 
 ### Default Role Assignment
 
@@ -435,6 +435,8 @@ For admin users (when `DEV_ADMIN_PUBLIC_KEY` is set), the following admin roles 
 - `EVALUATE`: Allows querying the blockchain state  
 - `SUBMIT`: Allows submitting transactions that modify state
 - `REGISTRAR`: Allows registering new users
+
+`ApplyRequests` requires `REQUEST_APPLIER` only. Assign that role with `UpdateUserRoles`; curator or submit access is not enough.
 
 For registration methods, the `REGISTRAR` role is required if RBAC is enabled.
 

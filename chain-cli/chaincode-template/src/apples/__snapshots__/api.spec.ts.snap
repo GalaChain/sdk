@@ -8,7 +8,7 @@ exports[`AppleContract API should match snapshot 1`] = `
   "contractVersion": "?.?.?",
   "methods": [
     {
-      "description": "Apply queued internal requests Transaction updates the chain (submit). Allowed roles: CURATOR.",
+      "description": "Apply queued internal requests Transaction updates the chain (submit). Allowed roles: REQUEST_APPLIER.",
       "dtoSchema": {
         "properties": {
           "domain": {
