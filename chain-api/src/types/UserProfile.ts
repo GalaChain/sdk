@@ -23,8 +23,7 @@ export enum UserRole {
   CURATOR = "CURATOR",
   REGISTRAR = "REGISTRAR",
   SUBMIT = "SUBMIT",
-  EVALUATE = "EVALUATE",
-  REQUEST_APPLIER = "REQUEST_APPLIER"
+  EVALUATE = "EVALUATE"
 }
 
 export class UserProfile extends ChainObject {

@@ -58,8 +58,6 @@ export const requireRegistrarAuth = useRoleBasedAuth
   ? { allowedRoles: [UserRole.REGISTRAR] }
   : { allowedOrgs: registrarOrgMsps };
 
-export const requireRequestApplierAuth = { allowedRoles: [UserRole.REQUEST_APPLIER] };
-
 export function ensureOrganizationIsAllowed(ctx: GalaChainContext, allowedOrgsMSPs: string[] | undefined) {
   const userMsp: string = ctx.clientIdentity.getMSPID();
   const isAllowed = (allowedOrgsMSPs || []).some((o) => o === userMsp);
