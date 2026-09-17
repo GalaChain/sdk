@@ -12,7 +12,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-import { SubmitCallDTO, asValidUserRef } from "@gala-chain/api";
+import { ChainCallDTO, SubmitCallDTO, asValidUserRef, signatures } from "@gala-chain/api";
 
 import { GalaChainContext, GalaChainStub } from "../types";
 import { authenticate } from "./authenticate";
@@ -65,6 +65,21 @@ describe("authenticate", () => {
 
     // Then
     await expect(result).rejects.toThrow(expectedErrorMessage);
+  });
+
+  it("does not emit MISSING_SIGNER when public-key recovery throws", async () => {
+    const { ctx } = mockedContext();
+    const { privateKey } = signatures.genKeyPair();
+    const dto = new ChainCallDTO();
+    dto.uniqueKey = "k";
+    Object.assign(dto, {
+      domain: { name: "GalaChain" },
+      types: { Message: [{ name: "uniqueKey", type: "string" }] }
+    });
+    dto.signature = signatures.getSignature(dto, signatures.normalizePrivateKey(privateKey));
+    Object.assign(dto, { extra: "not-in-types" });
+
+    await expect(authenticate(ctx, dto, undefined)).rejects.toThrow(/not declared in the signed type/);
   });
 });
 
