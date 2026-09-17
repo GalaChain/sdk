@@ -14,6 +14,7 @@
  */
 import {
   ChainCallDTO,
+  ChainError,
   ForbiddenError,
   PublicKey,
   UnauthorizedError,
@@ -328,7 +329,12 @@ function tryRecoverEthPublicKey(
     const address = signatures.getEthAddress(publicKeyHex);
     return { publicKeyHex, address };
   } catch (err) {
-    return undefined;
+    // DER / no-recovery signatures cannot recover a key. Everything else
+    // (payload hash, undeclared EIP-712 fields) must surface as-is.
+    if (ChainError.from(err).key === "INVALID_SIGNATURE_FORMAT") {
+      return undefined;
+    }
+    throw err;
   }
 }
 
