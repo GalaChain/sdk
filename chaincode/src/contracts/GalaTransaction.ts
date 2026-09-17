@@ -357,6 +357,10 @@ function GalaTransaction<In extends ChainCallDTO, Out>(
     // If this annotation is missing, you cannot call the chaincode method
     Transaction(isWrite)(target, propertyKey);
 
+    // Overwrite all Reflect metadata types. Fabric stores them by method name,
+    // so duplicate method names across contracts can get the wrong type.
+    // Strict serialization is applied in GalaTransaction via parseValidDTO.
+    // Fabric's generic object schema is sufficient here.
     const transactions =
       (Reflect.getMetadata("fabric:transactions", target) as
         | { name?: string; parameters?: { schema?: unknown }[] }[]
