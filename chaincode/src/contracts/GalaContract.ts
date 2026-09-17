@@ -43,7 +43,6 @@ import { getApiMethod, getApiMethods } from "./GalaContractApi";
 import { EVALUATE, GalaTransaction, SUBMIT, Submit } from "./GalaTransaction";
 import { applySavedRequests, hasPendingApplyRequests } from "./GalaTransactionRequest";
 import type { RequestMethodHandler } from "./GalaTransactionRequest";
-import { requireCuratorAuth } from "./authorize";
 
 export class BatchWriteLimitExceededError extends ValidationFailedError {
   constructor(writesLimit: number) {
@@ -63,6 +62,8 @@ export class BatchPartialSuccessRequiredError extends ChainError {
     this.code = error.ErrorCode;
   }
 }
+
+const REQUEST_APPLIER_ROLE = "REQUEST_APPLIER";
 
 export abstract class GalaContract extends Contract {
   protected readonly requestMethodHandlers: Record<string, RequestMethodHandler> = {};
@@ -357,7 +358,7 @@ export abstract class GalaContract extends Contract {
     in: ApplyRequestsDto,
     out: { arrayOf: AppliedRequest },
     description: "Apply queued internal requests",
-    ...requireCuratorAuth
+    allowedRoles: [REQUEST_APPLIER_ROLE]
   })
   public async ApplyRequests(ctx: GalaChainContext, dto: ApplyRequestsDto): Promise<AppliedRequest[]> {
     return applySavedRequests(ctx, this.getName(), dto, this.requestMethodHandlers);
