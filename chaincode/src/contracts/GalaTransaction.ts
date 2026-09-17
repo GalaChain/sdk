@@ -35,7 +35,7 @@ import {
 import { Object as DTOObject, Transaction } from "fabric-contract-api";
 import { inspect } from "util";
 
-import { UniqueTransactionService } from "../services";
+import { UniqueTransactionConflictError, UniqueTransactionService } from "../services";
 import { GalaChainContext } from "../types";
 import { GalaContract } from "./GalaContract";
 import { updateApi } from "./GalaContractApi";
@@ -135,6 +135,25 @@ function readUniqueKeyFromPlain(dtoPlain: unknown): string | undefined {
   return typeof uniqueKey === "string" && uniqueKey.length > 0 ? uniqueKey : undefined;
 }
 
+function isUniqueTransactionConflict(err: unknown): boolean {
+  return ChainError.matches(ChainError.from(err as object), UniqueTransactionConflictError);
+}
+
+async function persistUniqueKeyOnFailure(
+  ctx: GalaChainContext,
+  uniqueKey: string | undefined
+): Promise<void> {
+  if (!uniqueKey) {
+    return;
+  }
+
+  try {
+    await UniqueTransactionService.ensureUniqueTransaction(ctx, uniqueKey);
+  } catch (e) {
+    ChainError.recover(e, UniqueTransactionConflictError);
+  }
+}
+
 function Submit<In extends SubmitCallDTO, Out>(
   options: GalaSubmitOptions<In, Out>
 ): GalaTransactionDecoratorFunction {
@@ -216,7 +235,6 @@ function GalaTransaction<In extends ChainCallDTO, Out>(
       // ALS = SERVER so nested batch EVALUATE does not parent to batch.operation.
       return ctx.otel.run(async () => {
         let uniqueKey: string | undefined;
-        let uniqueKeySaved = false;
 
         try {
           const metadata = [{ dto: dtoPlain }];
@@ -284,7 +302,6 @@ function GalaTransaction<In extends ChainCallDTO, Out>(
                     throw new RuntimeError(message);
                   }
                   await UniqueTransactionService.ensureUniqueTransaction(ctx, uniqueKey);
-                  uniqueKeySaved = true;
                 }
               });
 
@@ -318,27 +335,18 @@ function GalaTransaction<In extends ChainCallDTO, Out>(
             }
           );
         } catch (err) {
-          let resultErr = err as Error;
-          if (options.enforceUniqueKey && !uniqueKeySaved) {
-            uniqueKey = uniqueKey ?? readUniqueKeyFromPlain(dtoPlain);
-            if (uniqueKey) {
-              try {
-                await UniqueTransactionService.ensureUniqueTransaction(ctx, uniqueKey);
-                uniqueKeySaved = true;
-              } catch (persistErr) {
-                resultErr = persistErr as Error;
-              }
-            }
+          if (options.enforceUniqueKey && !isUniqueTransactionConflict(err)) {
+            await persistUniqueKeyOnFailure(ctx, uniqueKey ?? readUniqueKeyFromPlain(dtoPlain));
           }
 
-          const chainError = ChainError.from(resultErr);
-          ctx.otel.recordError(resultErr);
+          const chainError = ChainError.from(err);
+          ctx.otel.recordError(err);
 
           if (ctx.logger) {
             chainError.logWarn(ctx.logger);
-            ctx.logger.logTimeline("Failed Transaction", loggingContext, [dtoPlain], resultErr);
-            ctx.logger.debug(resultErr.message);
-            ctx.logger.debug(resultErr.stack ?? "");
+            ctx.logger.logTimeline("Failed Transaction", loggingContext, [dtoPlain], err);
+            ctx.logger.debug(err.message);
+            ctx.logger.debug(err.stack);
           }
 
           // if external chaincode call succeeded, but the remaining part of the
@@ -354,7 +362,7 @@ function GalaTransaction<In extends ChainCallDTO, Out>(
 
           // Note: since it does not end with an exception, failed transactions are also saved
           // on chain in transaction history.
-          return GalaChainResponse.Error(resultErr);
+          return GalaChainResponse.Error(err as Error);
         }
       });
     };

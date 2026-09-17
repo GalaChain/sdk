@@ -82,7 +82,10 @@ describe("UniqueTransactionService", () => {
 
     // When
     const first = await chaincode.invoke("TestGalaContract:CreateSuperhero", dto.serialize());
-    const second = await chaincode.invoke("TestGalaContract:CreateSuperhero", dto.serialize());
+    const second = await chaincode.invoke(
+      "TestGalaContract:PutKv",
+      JSON.stringify({ uniqueKey: dto.uniqueKey, key: "should-not-persist", value: "robot" })
+    );
 
     // Then the first attempt fails auth, but the uniqueKey is still consumed
     expect(first).toEqual(transactionErrorKey("MISSING_SIGNER"));
