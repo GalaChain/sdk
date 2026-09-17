@@ -112,6 +112,29 @@ function isArrayOut<Out>(x: OutType<Out> | OutArrType<Out> | undefined): x is Ou
   return typeof x === "object" && "arrayOf" in x;
 }
 
+/** uniqueKey is a global nonce; read it from the raw submit, not the method DTO. */
+function readUniqueKeyFromPlain(dtoPlain: unknown): string | undefined {
+  if (dtoPlain == null) {
+    return undefined;
+  }
+
+  let plain: unknown = dtoPlain;
+  if (typeof dtoPlain === "string") {
+    try {
+      plain = JSON.parse(dtoPlain);
+    } catch {
+      return undefined;
+    }
+  }
+
+  if (typeof plain !== "object" || plain === null || Array.isArray(plain)) {
+    return undefined;
+  }
+
+  const uniqueKey = (plain as { uniqueKey?: unknown }).uniqueKey;
+  return typeof uniqueKey === "string" && uniqueKey.length > 0 ? uniqueKey : undefined;
+}
+
 function Submit<In extends SubmitCallDTO, Out>(
   options: GalaSubmitOptions<In, Out>
 ): GalaTransactionDecoratorFunction {
@@ -204,6 +227,18 @@ function GalaTransaction<In extends ChainCallDTO, Out>(
               "gala.tx_type": options.type === GalaTransactionType.SUBMIT ? "SUBMIT" : "EVALUATE"
             },
             async () => {
+              // uniqueKey is global and the method is not in the signed payload.
+              // Spend it from the raw submit before this endpoint's parse/auth.
+              if (options.enforceUniqueKey) {
+                const uniqueKey = readUniqueKeyFromPlain(dtoPlain);
+                if (uniqueKey) {
+                  await UniqueTransactionService.ensureUniqueTransaction(ctx, uniqueKey);
+                } else {
+                  const message = `Missing uniqueKey in transaction dto for method '${method.name}'`;
+                  throw new RuntimeError(message);
+                }
+              }
+
               // Parse & validate - may throw an exception
               const dtoClass = options.in ?? (ChainCallDTO as unknown as ClassConstructor<Inferred<In>>);
               const validationOptions =
@@ -221,17 +256,6 @@ function GalaTransaction<In extends ChainCallDTO, Out>(
               // Note using Date.now() instead of ctx.txUnixTime which is provided client-side.
               if (dto?.dtoExpiresAt && dto.dtoExpiresAt < Date.now()) {
                 throw new ExpiredError(`DTO expired at ${new Date(dto.dtoExpiresAt).toISOString()}`);
-              }
-
-              // Record uniqueKey before auth so authenticate/authorize failures
-              // still consume the key (flushed on error by afterTransaction).
-              if (options.enforceUniqueKey) {
-                if (dto?.uniqueKey) {
-                  await UniqueTransactionService.ensureUniqueTransaction(ctx, dto.uniqueKey);
-                } else {
-                  const message = `Missing uniqueKey in transaction dto for method '${method.name}'`;
-                  throw new RuntimeError(message);
-                }
               }
 
               await ctx.otel.send("gala.authorize", {}, async () => {

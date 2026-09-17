@@ -49,6 +49,24 @@ describe("UniqueTransactionService", () => {
     expect(saveResponse).toEqual(transactionError());
   });
 
+  it("should consume uniqueKey when this endpoint rejects the DTO", async () => {
+    // Given a submit that fails CreateSuperhero validation but is valid for PutKv
+    const chaincode = new TestChaincode([TestGalaContract]);
+    const uniqueKey = "failed-parse-uk";
+
+    // When
+    const first = await chaincode.invoke("TestGalaContract:CreateSuperhero", JSON.stringify({ uniqueKey }));
+    const second = await chaincode.invoke(
+      "TestGalaContract:PutKv",
+      JSON.stringify({ uniqueKey, key: "should-not-persist", value: "robot" })
+    );
+
+    // Then the first endpoint rejects the DTO, but the uniqueKey is still consumed
+    expect(first).toEqual(transactionErrorKey("DTO_VALIDATION_FAILED"));
+    expect(second).toEqual(transactionErrorKey("UNIQUE_TRANSACTION_CONFLICT"));
+    expect(chaincode.getStateAll()["should-not-persist"]).toBeUndefined();
+  });
+
   it("should consume uniqueKey when authentication fails", async () => {
     // Given a signed submit DTO whose signature cannot recover a public key
     const chaincode = new TestChaincode([TestGalaContract]);
