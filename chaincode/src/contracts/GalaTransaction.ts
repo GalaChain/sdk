@@ -356,6 +356,15 @@ function GalaTransaction<In extends ChainCallDTO, Out>(
     // Ensure this is an actual HLF transaction.
     // If this annotation is missing, you cannot call the chaincode method
     Transaction(isWrite)(target, propertyKey);
+
+    const transactions =
+      (Reflect.getMetadata("fabric:transactions", target) as
+        | { name?: string; parameters?: { schema?: unknown }[] }[]
+        | undefined) ?? [];
+    const transaction = transactions.find((entry) => entry.name === propertyKey);
+    for (const parameter of transaction?.parameters ?? []) {
+      parameter.schema = { type: "object" };
+    }
   };
 }
 
