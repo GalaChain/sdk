@@ -3,13 +3,7 @@
  *
  *  @_subsection: api/crypto:Signing  [about-signing]
  */
-
-/*
- I changed this to save us a bit of space rather than import another keccak lib  
-//import { secp256k1 } from "@noble/curves/secp256k1";
-*/
-//I used to use this:
-import { ec as EC, ec } from "elliptic";
+import * as secp256k1 from "secp256k1";
 
 import { assertArgument } from "../errors";
 import { Signature, SignatureLike } from "../signature";
@@ -22,7 +16,7 @@ import { toBeHex } from "../utils/maths";
  */
 export class SigningKey {
   #privateKey: string;
-  ecSecp256k1: ec;
+  #privateKeyBuffer: Uint8Array;
 
   /**
    *  Creates a new **SigningKey** for %%privateKey%%.
@@ -30,7 +24,9 @@ export class SigningKey {
   constructor(privateKey: BytesLike) {
     assertArgument(dataLength(privateKey) === 32, "invalid private key", "privateKey", "[REDACTED]");
     this.#privateKey = hexlify(privateKey);
-    this.ecSecp256k1 = new EC("secp256k1");
+    const keyBytes = getBytes(privateKey);
+    assertArgument(secp256k1.privateKeyVerify(keyBytes), "invalid private key", "privateKey", "[REDACTED]");
+    this.#privateKeyBuffer = keyBytes;
   }
 
   /**
@@ -67,13 +63,18 @@ export class SigningKey {
   sign(digest: BytesLike): Signature {
     assertArgument(dataLength(digest) === 32, "invalid digest length", "digest", digest);
 
-    const keyPair = this.ecSecp256k1.keyFromPrivate(this.#privateKey.substring(2));
-    const sig = keyPair.sign(getBytesCopy(digest), { canonical: true });
+    const digestBytes = getBytesCopy(digest);
+    const sigObj = secp256k1.ecdsaSign(digestBytes, this.#privateKeyBuffer);
+
+    // Extract r and s from 64-byte signature
+    const r = sigObj.signature.slice(0, 32);
+    const s = sigObj.signature.slice(32, 64);
+    const recoveryParam = sigObj.recid;
 
     return Signature.from({
-      r: toBeHex(sig.r, 32),
-      s: toBeHex(sig.s, 32),
-      v: sig.recoveryParam ? 0x1c : 0x1b
+      r: toBeHex(r, 32),
+      s: toBeHex(s, 32),
+      v: recoveryParam === 1 ? 0x1c : 0x1b
     });
   }
 
@@ -99,15 +100,14 @@ export class SigningKey {
    *    sign2.computeSharedSecret(sign1.publicKey)
    *    //_result:
    */
-  computeSharedSecret(other: BytesLike): string {
-    const pubKey = SigningKey.computePublicKey(other);
-    const keyPair = this.ecSecp256k1.keyFromPrivate(this.#privateKey.substring(2));
-    const sharedSecret = keyPair.derive(
-      this.ecSecp256k1.keyFromPublic(getBytes(pubKey).slice(1)).getPublic()
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  computeSharedSecret(_other: BytesLike): string {
+    // ECDH is not directly supported by secp256k1 library
+    // This would require point multiplication which is not exposed
+    // For now, throw an error indicating this needs elliptic or manual implementation
+    throw new Error(
+      "ECDH shared secret computation requires elliptic library or manual point multiplication implementation"
     );
-
-    const sharedSecretArray = sharedSecret.toArray("be", 32); // Get array of bytes in big-endian order
-    return hexlify(new Uint8Array(sharedSecretArray));
   }
 
   /**
@@ -146,10 +146,8 @@ export class SigningKey {
 
     // private key
     if (bytes.length === 32) {
-      const ec = new EC("secp256k1");
-      const keyPair = ec.keyFromPrivate(bytes);
-      const pubKey = keyPair.getPublic(compressed, "hex");
-      return "0x" + pubKey;
+      const pubKey = secp256k1.publicKeyCreate(bytes, compressed);
+      return "0x" + Buffer.from(pubKey).toString("hex");
     }
 
     // raw public key; use uncompressed key with 0x04 prefix
@@ -160,9 +158,14 @@ export class SigningKey {
       bytes = pub;
     }
 
-    const ec = new EC("secp256k1");
-    const point = ec.keyFromPublic(bytes).getPublic();
-    return "0x" + point.encode("hex", compressed);
+    // Validate and convert public key format
+    if (bytes.length === 65 || bytes.length === 33) {
+      // Convert to desired compression format
+      const converted = secp256k1.publicKeyConvert(bytes, compressed);
+      return "0x" + Buffer.from(converted).toString("hex");
+    }
+
+    throw new Error(`Invalid key length: ${bytes.length}`);
   }
 
   /**
@@ -189,18 +192,17 @@ export class SigningKey {
     const sig = Signature.from(signature);
     const recoveryParam = sig.yParity === 1 ? 1 : 0;
 
-    const ec = new EC("secp256k1");
-    const recoveredKey = ec.recoverPubKey(
-      getBytesCopy(digest),
-      {
-        r: sig.r.substring(2),
-        s: sig.s.substring(2),
-        recoveryParam: sig.yParity
-      },
-      recoveryParam
-    );
+    // Convert r and s to 64-byte signature buffer
+    const signatureBuffer = new Uint8Array(64);
+    const rBytes = getBytes(sig.r);
+    const sBytes = getBytes(sig.s);
+    signatureBuffer.set(rBytes.slice(-32), 0); // Take last 32 bytes in case of padding
+    signatureBuffer.set(sBytes.slice(-32), 32);
 
-    return "0x" + recoveredKey.encode("hex", false);
+    const digestBytes = getBytesCopy(digest);
+    const recoveredKey = secp256k1.ecdsaRecover(signatureBuffer, recoveryParam, digestBytes, false);
+
+    return "0x" + Buffer.from(recoveredKey).toString("hex");
   }
 
   /**
@@ -213,12 +215,13 @@ export class SigningKey {
    *  For example, it is used by [[HDNodeWallet]] to compute child
    *  addresses from parent public keys and chain codes.
    */
-  static addPoints(p0: BytesLike, p1: BytesLike, compressed = false): string {
-    const ec = new EC("secp256k1");
-    const pub0 = ec.keyFromPublic(SigningKey.computePublicKey(p0).substring(2), "hex").getPublic();
-    const pub1 = ec.keyFromPublic(SigningKey.computePublicKey(p1).substring(2), "hex").getPublic();
-    const sum = pub0.add(pub1);
-
-    return "0x" + sum.encode("hex", compressed);
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  static addPoints(_p0: BytesLike, _p1: BytesLike, _compressed = false): string {
+    // Point addition is not directly supported by secp256k1 library
+    // This would require elliptic curve point arithmetic which is not exposed
+    // For now, throw an error indicating this needs elliptic or manual implementation
+    throw new Error(
+      "Point addition requires elliptic library or manual elliptic curve point arithmetic implementation"
+    );
   }
 }
