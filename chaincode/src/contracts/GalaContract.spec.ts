@@ -403,7 +403,9 @@ describe("GalaContract.DryRun", () => {
           Message: "DTO validation failed: (1) isPositive: age must be a positive number"
         },
         reads: { [callerProfileKey]: "" },
-        writes: {},
+        writes: {
+          [`\u0000UNTX\u0000${dto.uniqueKey}\u0000`]: expect.any(String)
+        },
         deletes: {}
       }
     });

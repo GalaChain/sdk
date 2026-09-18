@@ -35,7 +35,7 @@ import {
 import { Object as DTOObject, Transaction } from "fabric-contract-api";
 import { inspect } from "util";
 
-import { UniqueTransactionService } from "../services";
+import { UniqueTransactionConflictError, UniqueTransactionService } from "../services";
 import { GalaChainContext } from "../types";
 import { GalaContract } from "./GalaContract";
 import { updateApi } from "./GalaContractApi";
@@ -110,6 +110,48 @@ export interface GalaEvaluateOptions<In extends ChainCallDTO, Out> extends Commo
 
 function isArrayOut<Out>(x: OutType<Out> | OutArrType<Out> | undefined): x is OutArrType<Out> {
   return typeof x === "object" && "arrayOf" in x;
+}
+
+/** uniqueKey is a global nonce; read it from the raw submit, not the method DTO. */
+function readUniqueKeyFromPlain(dtoPlain: unknown): string | undefined {
+  if (dtoPlain == null) {
+    return undefined;
+  }
+
+  let plain: unknown = dtoPlain;
+  if (typeof dtoPlain === "string") {
+    try {
+      plain = JSON.parse(dtoPlain);
+    } catch {
+      return undefined;
+    }
+  }
+
+  if (typeof plain !== "object" || plain === null || Array.isArray(plain)) {
+    return undefined;
+  }
+
+  const uniqueKey = (plain as { uniqueKey?: unknown }).uniqueKey;
+  return typeof uniqueKey === "string" && uniqueKey.length > 0 ? uniqueKey : undefined;
+}
+
+function isUniqueTransactionConflict(err: unknown): boolean {
+  return ChainError.matches(ChainError.from(err as object), UniqueTransactionConflictError);
+}
+
+async function persistUniqueKeyOnFailure(
+  ctx: GalaChainContext,
+  uniqueKey: string | undefined
+): Promise<void> {
+  if (!uniqueKey) {
+    return;
+  }
+
+  try {
+    await UniqueTransactionService.ensureUniqueTransaction(ctx, uniqueKey);
+  } catch (e) {
+    ChainError.recover(e, UniqueTransactionConflictError);
+  }
 }
 
 function Submit<In extends SubmitCallDTO, Out>(
@@ -192,6 +234,8 @@ function GalaTransaction<In extends ChainCallDTO, Out>(
 
       // ALS = SERVER so nested batch EVALUATE does not parent to batch.operation.
       return ctx.otel.run(async () => {
+        let uniqueKey: string | undefined;
+
         try {
           const metadata = [{ dto: dtoPlain }];
           ctx?.logger?.logTimeline("Begin Transaction", loggingContext, metadata);
@@ -217,6 +261,7 @@ function GalaTransaction<In extends ChainCallDTO, Out>(
                     dtoPlain as string | Record<string, unknown>,
                     validationOptions
                   );
+              uniqueKey = dto?.uniqueKey;
 
               // Note using Date.now() instead of ctx.txUnixTime which is provided client-side.
               if (dto?.dtoExpiresAt && dto.dtoExpiresAt < Date.now()) {
@@ -252,12 +297,11 @@ function GalaTransaction<In extends ChainCallDTO, Out>(
                 // Record uniqueKey before the handler so a later business failure
                 // still consumes the key (flushed on error by afterTransaction).
                 if (options.enforceUniqueKey) {
-                  if (dto?.uniqueKey) {
-                    await UniqueTransactionService.ensureUniqueTransaction(ctx, dto.uniqueKey);
-                  } else {
+                  if (!uniqueKey) {
                     const message = `Missing uniqueKey in transaction dto for method '${method.name}'`;
                     throw new RuntimeError(message);
                   }
+                  await UniqueTransactionService.ensureUniqueTransaction(ctx, uniqueKey);
                 }
               });
 
@@ -291,6 +335,10 @@ function GalaTransaction<In extends ChainCallDTO, Out>(
             }
           );
         } catch (err) {
+          if (options.enforceUniqueKey && !isUniqueTransactionConflict(err)) {
+            await persistUniqueKeyOnFailure(ctx, uniqueKey ?? readUniqueKeyFromPlain(dtoPlain));
+          }
+
           const chainError = ChainError.from(err);
           ctx.otel.recordError(err);
 
