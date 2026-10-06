@@ -15,7 +15,6 @@
 import BigNumber from "bignumber.js";
 import { Type } from "class-transformer";
 import {
-  ArrayMaxSize,
   ArrayNotEmpty,
   IsBoolean,
   IsInt,
@@ -42,7 +41,7 @@ import { GrantAllowanceQuantity } from "./GrantAllowance";
 import { TokenAllowance } from "./TokenAllowance";
 import { TokenInstance, TokenInstanceKey, TokenInstanceQueryKey } from "./TokenInstance";
 import { UserRef } from "./UserRef";
-import { AllowanceKey, AllowanceType, MintRequestDto } from "./common";
+import { AllowanceKey, AllowanceType } from "./common";
 import { ChainCallDTO, SubmitCallDTO } from "./dtos";
 
 @JSONSchema({
@@ -322,82 +321,6 @@ export class GrantAllowanceDto extends SubmitCallDTO {
   })
   @IsOptional()
   from?: unknown;
-}
-
-/**
- * Experimental: Defines allowances to be created. High-throughput implementation.
- *
- * @experimental 2023-03-23
- */
-@JSONSchema({
-  description:
-    "Experimental: Defines allowances to be created. High-throughput implementation. " +
-    "DTO properties backwards-compatible with prior GrantAllowanceDto, with the " +
-    "exception that this implementation only supports AllowanceType.Mint."
-})
-export class HighThroughputGrantAllowanceDto extends SubmitCallDTO {
-  // todo: remove all these duplicated properties
-  // it seems something about our @GalaTransaction decorator does not pass through
-  // parent properties. Leaving this class empty with just the `extends GrantAllowanceDto`
-  // results in an api definition with no property except the signature.
-  // update: using extends GrantAllowanceDto causes issues with property validation and failure
-  static DEFAULT_EXPIRES = 0;
-
-  @JSONSchema({
-    description:
-      "Token instance of token which the allowance concerns. " +
-      "In case of fungible tokens, tokenInstance.instance field " +
-      `should be set to ${TokenInstance.FUNGIBLE_TOKEN_INSTANCE}.`
-  })
-  @ValidateNested()
-  @Type(() => TokenInstanceQueryKey)
-  @IsNotEmpty()
-  tokenInstance: TokenInstanceQueryKey;
-
-  @JSONSchema({
-    description: "List of objects with user and token quantities. " + "The user fields must be unique"
-  })
-  @ValidateNested({ each: true })
-  @Type(() => GrantAllowanceQuantity)
-  @ArrayNotEmpty()
-  @ArrayUniqueObjects("user")
-  quantities: Array<GrantAllowanceQuantity>;
-
-  @IsNotEmpty()
-  @EnumProperty(AllowanceType)
-  allowanceType: AllowanceType;
-
-  @JSONSchema({
-    description: "How many times each allowance can be used."
-  })
-  @BigNumberIsPositive()
-  @BigNumberIsInteger()
-  @BigNumberProperty()
-  uses: BigNumber;
-
-  @JSONSchema({
-    description:
-      "Unix epoch timestamp in milliseconds (ms) when the allowances should expire. " +
-      "0 means they never expire. " +
-      `By default set to ${GrantAllowanceDto.DEFAULT_EXPIRES}.`
-  })
-  @IsOptional()
-  expires?: number;
-}
-
-@JSONSchema({
-  description:
-    "Experimental: After submitting request to RequestMintAllowance, follow up with FulfillMintAllowance."
-})
-export class FulfillMintAllowanceDto extends SubmitCallDTO {
-  static MAX_ARR_SIZE = 1000;
-
-  @ValidateNested({ each: true })
-  @Type(() => MintRequestDto)
-  @ArrayNotEmpty()
-  @ArrayMaxSize(FulfillMintAllowanceDto.MAX_ARR_SIZE)
-  @ArrayUniqueObjects("id")
-  requests: MintRequestDto[];
 }
 
 @JSONSchema({

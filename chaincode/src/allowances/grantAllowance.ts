@@ -496,8 +496,6 @@ export async function grantAllowance(
   const tokenClass: TokenClass = await getObjectByKey(ctx, TokenClass, compositeKey);
   const totalQuantity = quantities.reduce((a, b) => a.plus(b.quantity), new BigNumber(0));
 
-  // todo: deprecate grantAllowance for Mints
-  // migrate all consumers to HighThroughputMintAllowance
   // If the action is to give mint allowance then only the token authorities can do that.
   // Otherwise, use normal permission checks
   if (allowanceType === AllowanceType.Mint) {

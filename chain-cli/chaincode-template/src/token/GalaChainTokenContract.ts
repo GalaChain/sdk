@@ -51,13 +51,11 @@ import {
   FetchTokenInstanceMetadataWithPaginationDto,
   FetchVestingTokenDto,
   FreezeTokenBalanceDto,
-  FulfillMintDto,
   FullAllowanceCheckDto,
   FullAllowanceCheckResDto,
   GalaChainResponse,
   GrantAllowanceDto,
   GrantNftCollectionAuthorizationDto,
-  HighThroughputMintTokenDto,
   LockTokenDto,
   LockTokensDto,
   MintRequestDto,
@@ -82,9 +80,7 @@ import {
   UpdateBalanceQuantityLimitDto,
   UpdateTokenClassDto,
   VestingToken,
-  VestingTokenInfo,
-  generateResponseSchema,
-  generateSchema
+  VestingTokenInfo
 } from "@gala-chain/api";
 import {
   EVALUATE,
@@ -92,7 +88,6 @@ import {
   GalaContract,
   GalaTransaction,
   RequestMethodHandler,
-  SUBMIT,
   Submit,
   UnsignedEvaluate,
   allowAllTokenBalanceTargets,
@@ -119,7 +114,6 @@ import {
   fetchTokenInstanceMetadataWithPagination,
   fetchVestingToken,
   freezeTokenBalance,
-  fulfillMintRequest,
   fullAllowanceCheck,
   grantAllowance,
   grantNftCollectionAuthorization,
@@ -132,7 +126,6 @@ import {
   parseMintTokenParams,
   parseTransferTokenParams,
   refreshAllowances,
-  requestMint,
   requireCuratorAuth,
   resolveUserAlias,
   restrictTokenBalanceTargets,
@@ -472,70 +465,6 @@ export default class GalaChainTokenContract extends GalaContract {
     });
   }
 
-  @Submit({
-    in: HighThroughputMintTokenDto,
-    out: FulfillMintDto
-  })
-  public async RequestMint(ctx: GalaChainContext, dto: HighThroughputMintTokenDto): Promise<FulfillMintDto> {
-    return requestMint(ctx, {
-      tokenClass: dto.tokenClass,
-      owner: await resolveUserAlias(ctx, dto.owner ?? ctx.callingUser),
-      quantity: dto.quantity,
-      authorizedOnBehalf: undefined
-    });
-  }
-
-  @GalaTransaction({
-    type: SUBMIT,
-    in: FulfillMintDto,
-    out: { arrayOf: TokenInstanceKey },
-    allowedOrgs: ["CuratorOrg"],
-    enforceUniqueKey: true
-    // no signature verification
-  })
-  public async FulfillMint(ctx: GalaChainContext, dto: FulfillMintDto): Promise<TokenInstanceKey[]> {
-    return fulfillMintRequest(ctx, {
-      ...dto,
-      callingUser: ctx.callingUser
-    });
-  }
-
-  /**
-   * Mint a new instance of an existing TokenClass. High-throughput implementation.
-   *
-   * @experimental 2023-03-23
-   *
-   * @decorator `@GalaTransaction(GalaTransactionOptions<HighThroughputMintTokenDto>)`
-   */
-  @Submit({
-    in: HighThroughputMintTokenDto,
-    out: { arrayOf: TokenInstanceKey },
-    sequence: [
-      {
-        methodName: "RequestMint",
-        isWrite: true,
-        dtoSchema: generateSchema(HighThroughputMintTokenDto),
-        responseSchema: generateResponseSchema(FulfillMintDto)
-      },
-      {
-        methodName: "FulfillMint",
-        isWrite: true,
-        dtoSchema: generateSchema(FulfillMintDto),
-        responseSchema: generateResponseSchema(TokenInstanceKey, "array")
-      }
-    ]
-  })
-  public async HighThroughputMint(
-    // eslint-disable-next-line @typescript-eslint/no-unused-vars
-    ctx: GalaChainContext,
-    // eslint-disable-next-line @typescript-eslint/no-unused-vars
-    dto: HighThroughputMintTokenDto
-  ): Promise<TokenInstanceKey[]> {
-    return Promise.reject(
-      new Error(`HighThroughputMint is a sequence call: Execute RequestMint and FulfillMint sequentially.`)
-    );
-  }
-
   @GalaTransaction({
     type: EVALUATE,
     in: FetchMintRequestsDto,
@@ -557,13 +486,10 @@ export default class GalaChainTokenContract extends GalaContract {
 
   /**
    * Mint a new instance of an existing TokenClass.
-   *
-   * @deprecated 2022-12-12, replaced with high-throughput implementation.
    */
   @Submit({
     in: MintTokenDto,
-    out: { arrayOf: TokenInstanceKey },
-    deprecated: true
+    out: { arrayOf: TokenInstanceKey }
   })
   public async MintToken(ctx: GalaChainContext, dto: MintTokenDto): Promise<TokenInstanceKey[]> {
     return mintToken(ctx, {

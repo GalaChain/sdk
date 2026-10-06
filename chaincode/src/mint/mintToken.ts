@@ -34,7 +34,7 @@ import { InvalidDecimalError } from "../token/TokenError";
 import { GalaChainContext } from "../types/GalaChainContext";
 import { getObjectByKey, putChainObject } from "../utils";
 import { InsufficientMintAllowanceError, NftMaxMintError, UseAllowancesFailedError } from "./MintError";
-import { writeMintRequest } from "./requestMint";
+import { writeMintRequest } from "./writeMintRequest";
 
 export interface MintTokenParams {
   tokenClassKey: TokenClassKey;
