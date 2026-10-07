@@ -33,6 +33,7 @@ import {
   FetchAllowancesDto,
   FetchAllowancesResponse,
   FetchBalancesDto,
+  FetchBalancesWithPaginationDto,
   FetchBalancesWithTokenMetadataResponse,
   FetchBurnsDto,
   FetchFeeScheduleDto,
@@ -402,12 +403,12 @@ export default class GalaChainTokenContract extends GalaContract {
 
   @GalaTransaction({
     type: EVALUATE,
-    in: FetchBalancesDto,
-    out: { arrayOf: TokenBalance }
+    in: FetchBalancesWithPaginationDto,
+    out: FetchBalancesWithTokenMetadataResponse
   })
   public async FetchBalancesWithTokenMetadata(
     ctx: GalaChainContext,
-    dto: FetchBalancesDto
+    dto: FetchBalancesWithPaginationDto
   ): Promise<FetchBalancesWithTokenMetadataResponse> {
     return fetchBalancesWithTokenMetadata(ctx, {
       ...dto,
