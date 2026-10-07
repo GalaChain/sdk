@@ -125,7 +125,7 @@ class StubCache {
     const partialCompositeKey = this.stub.createCompositeKey(objectType, attributes);
 
     const cached = Object.entries({ ...this.reads, ...this.writes })
-      .filter(([k]) => k.startsWith(partialCompositeKey))
+      .filter(([k, v]) => k.startsWith(partialCompositeKey) && (k in this.writes || v.length > 0))
       .map(([k, v]) => ({ key: k, value: v }));
 
     const keysToExclude = new Set(cached.map((kv) => kv.key).concat(Object.keys(this.deletes)));

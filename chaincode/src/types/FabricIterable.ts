@@ -37,6 +37,14 @@ export const asyncIterator = <T>(arr: T[]): AsyncIterator<T> => {
   };
 };
 
+const closeIterator = async <T>(iterator: AsyncIterator<T>): Promise<IteratorResult<T>> => {
+  if (iterator.return) {
+    return iterator.return();
+  }
+
+  return { done: true, value: undefined };
+};
+
 export const filter = <T>(include: (_: T) => boolean, iterator: AsyncIterator<T>): AsyncIterator<T> => {
   const filteredIterator = {
     next: async (): Promise<IteratorResult<T>> => {
@@ -47,7 +55,8 @@ export const filter = <T>(include: (_: T) => boolean, iterator: AsyncIterator<T>
       }
 
       return filteredIterator.next();
-    }
+    },
+    return: (): Promise<IteratorResult<T>> => closeIterator(iterator)
   };
 
   return filteredIterator;
@@ -72,7 +81,8 @@ export const prepend = <T>(arr: T[], iterator: AsyncIterator<T>): AsyncIterator<
       } else {
         return iterator.next();
       }
-    }
+    },
+    return: (): Promise<IteratorResult<T>> => closeIterator(iterator)
   };
 };
 
@@ -87,16 +97,16 @@ export interface CachedKV {
 
 export const fabricIterable = <T>(iterator: AsyncIterator<T>): FabricIterable<T> => {
   const stateQueryIterator: Iterators.CommonIterator<T> = {
-    close: (): Promise<void> => Promise.resolve(), // do nothing,
+    close: async (): Promise<void> => {
+      await closeIterator(iterator);
+    },
     // eslint-disable-next-line @typescript-eslint/ban-ts-comment
     // @ts-ignore the only incompatibility is whether 'done' can be undefined
     next: (): Promise<Iterators.NextResult<T>> => iterator.next()
   };
 
-  const response: FabricIterable<T> = {
-    ...Promise.resolve(stateQueryIterator),
-    [Symbol.asyncIterator]: (): AsyncIterator<T> => iterator
-  };
+  const response = Promise.resolve(stateQueryIterator) as FabricIterable<T>;
+  response[Symbol.asyncIterator] = (): AsyncIterator<T> => iterator;
 
   return response;
 };
