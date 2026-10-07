@@ -14,9 +14,9 @@
  */
 import { ChainCallDTO, ClassConstructor, createValidDTO, serialize, signatures } from "@gala-chain/api";
 import { instanceToPlain, plainToInstance } from "class-transformer";
-import { BrowserProvider, SigningKey, computeAddress, getBytes, hashMessage } from "ethers";
+import { BrowserProvider } from "ethers";
 
-import { EventEmitter, Listener, MetaMaskEvents } from "./helpers";
+import { EventEmitter, Listener, MetaMaskEvents, recoverPublicKeyFromPersonalSign } from "./helpers";
 import { GalaChainResponseError, GalaChainResponseSuccess, SigningType } from "./types";
 import { ConstructorArgs } from "./types/utils";
 import { ethereumToGalaChainAddress, galaChainToEthereumAddress } from "./utils";
@@ -290,17 +290,9 @@ export abstract class WebSigner extends CustomClient {
    * @returns Promise resolving to the public key and recovered address
    */
   async getPublicKey() {
-    const message = "Sign this to retrieve your public key";
-
-    const signature = await this.signMessage(message);
-
-    const messageHash = hashMessage(message);
-
-    const publicKey = SigningKey.recoverPublicKey(getBytes(messageHash), signature);
-
-    const recoveredAddress = computeAddress(publicKey);
-
-    return { publicKey, recoveredAddress };
+    return recoverPublicKeyFromPersonalSign("Sign this to retrieve your public key", (message) =>
+      this.signMessage(message)
+    );
   }
 
   /**

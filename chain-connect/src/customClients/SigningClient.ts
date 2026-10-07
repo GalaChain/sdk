@@ -13,10 +13,10 @@
  * limitations under the License.
  */
 import { serialize } from "@gala-chain/api";
-import { SigningKey, computeAddress, ethers, hashMessage } from "ethers";
+import { ethers } from "ethers";
 
 import { CustomClient, GalaChainProviderOptions } from "../GalaChainClient";
-import { calculatePersonalSignPrefix } from "../helpers";
+import { calculatePersonalSignPrefix, recoverPublicKeyFromPersonalSign } from "../helpers";
 import { SigningType } from "../types";
 import { ethereumToGalaChainAddress, generateEIP712Types } from "../utils";
 
@@ -30,11 +30,7 @@ export class SigningClient extends CustomClient {
   }
 
   async getPublicKey(): Promise<{ publicKey: string; recoveredAddress: string }> {
-    const message = "I <3 GalaChain";
-    const signedMessage = await this.wallet.signMessage(message);
-    const publicKey = SigningKey.recoverPublicKey(hashMessage(message), signedMessage);
-    const recoveredAddress = computeAddress(publicKey);
-    return { publicKey, recoveredAddress };
+    return recoverPublicKeyFromPersonalSign("I <3 GalaChain", (message) => this.wallet.signMessage(message));
   }
 
   private wallet: ethers.Wallet;
