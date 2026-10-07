@@ -226,7 +226,7 @@ export class TokenBalance extends ChainObject {
 
     // add instance ID to array
     this.instanceIds.push(instanceId);
-    this.instanceIds.sort((i) => i.comparedTo(i));
+    this.instanceIds.sort((left, right) => left.comparedTo(right) ?? 0);
 
     // update quantity
     this.quantity = new BigNumber(this.instanceIds.length);
