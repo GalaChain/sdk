@@ -822,7 +822,8 @@ export default class GalaChainTokenContract extends GalaContract {
 
   @Submit({
     in: CreateVestingTokenDto,
-    out: VestingToken
+    out: VestingToken,
+    ...requireCuratorAuth
   })
   public async CreateVestingToken(ctx: GalaChainContext, dto: CreateVestingTokenDto): Promise<VestingToken> {
     const authorities = dto.tokenClass.authorities
