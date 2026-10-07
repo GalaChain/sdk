@@ -17,6 +17,18 @@
   "type": "commonjs",
   "main": "./lib/src/index.js",
   "typings": "./lib/src/index.d.ts",
+  "typesVersions": {
+    "*": {
+      "rest": [
+        "lib/src/rest.d.ts"
+      ]
+    }
+  },
+  "exports": {
+    ".": "./lib/src/index.js",
+    "./rest": "./lib/src/rest.js",
+    "./lib/*": "./lib/*"
+  },
   "files": [
     "lib"
   ],

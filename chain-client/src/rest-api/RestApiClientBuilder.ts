@@ -33,6 +33,15 @@ import {
 import { RestApiClient } from "./RestApiClient";
 import { RestApiConfig } from "./loadRestApiConfig";
 
+function readStatusCode(error: unknown): number | undefined {
+  if (typeof error !== "object" || error === null || !("response" in error)) {
+    return undefined;
+  }
+
+  const status = (error as { response?: { status?: unknown } }).response?.status;
+  return typeof status === "number" ? status : undefined;
+}
+
 export class RestApiClientBuilder extends ChainClientBuilder {
   constructor(
     public readonly restApiUrl: string,
@@ -84,8 +93,14 @@ export class RestApiClientBuilder extends ChainClientBuilder {
     try {
       await axios.get(`${this.restApiUrl}/user/identities`);
       return false;
-    } catch (e) {
-      return e.response?.status === 400;
+    } catch (error) {
+      const status = readStatusCode(error);
+      if (status === 400) {
+        return true;
+      }
+
+      const message = error instanceof Error ? error.message : "request failed";
+      throw new Error(`Failed to identify REST API at ${this.restApiUrl}: ${status ?? message}`);
     }
   }
 
