@@ -57,3 +57,48 @@ it("should CreateTokenClass", async () => {
   });
   expect(getWrites()).toEqual(writesMap(expectedInstance, expectedClass));
 });
+
+it("should CreateTokenClass when max supply is omitted", async () => {
+  // Given
+  const { ctx, contract, getWrites } = fixture(GalaChainTokenContract)
+    .caClientIdentity("test-admin", "CuratorOrg")
+    .registeredUsers(users.admin);
+
+  const tokenClassKey = currency.tokenClassKey();
+
+  const dto: CreateTokenClassDto = await createValidSubmitDTO(CreateTokenClassDto, {
+    tokenClass: tokenClassKey,
+    maxCapacity: new BigNumber("1000000000"),
+    name: "TESTCURRENCY",
+    description: "A mock currency for automated tests.",
+    decimals: 4,
+    network: "GC",
+    totalMintAllowance: new BigNumber("100000000"),
+    image: "http://app.gala.games/some-test-image-url",
+    symbol: "AUTOTESTCOIN",
+    isNonFungible: false,
+    authorities: [users.admin.identityKey]
+  }).signed(users.admin.privateKey);
+
+  // When
+  const response = await contract.CreateTokenClass(ctx, dto);
+
+  // Then
+  expect(response).toEqual(GalaChainResponse.Success(tokenClassKey));
+
+  const expectedInstance = currency.tokenInstance();
+  const expectedClass = currency.tokenClass((defaults) => {
+    const { tokenClass, signature, uniqueKey, ...fromDto } = dto;
+    const authorities = dto.authorities as UserAlias[];
+    const missingInDto = { contractAddress: undefined, metadataAddress: undefined, rarity: undefined };
+    return {
+      ...defaults,
+      ...fromDto,
+      authorities,
+      ...missingInDto,
+      ...tokenClass,
+      maxSupply: CreateTokenClassDto.DEFAULT_MAX_SUPPLY
+    };
+  });
+  expect(getWrites()).toEqual(writesMap(expectedInstance, expectedClass));
+});
