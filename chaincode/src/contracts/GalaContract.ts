@@ -318,6 +318,11 @@ export abstract class GalaContract extends Contract {
             const method = getApiMethod(this, op.method, (m) => m.isWrite && m.methodName !== "BatchSubmit");
             opResponse = await this[method.methodName](sandboxCtx, op.dto);
           } catch (error) {
+            // An external invoke cannot be rolled back by discarding the local
+            // write cache, so the whole transaction has to fail.
+            if (sandboxCtx.stub.externalChaincodeWasInvoked) {
+              throw error;
+            }
             opResponse = GalaChainResponse.Error(error);
           }
 
