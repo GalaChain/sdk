@@ -72,13 +72,13 @@ export class GlobalRestApiConfig {
     this.isRestApiInitializedAndHealthy[apiUrl] = error;
   }
 
-  public setContractApi(params: SetContractApiParams) {
-    const key = `${params.channelName}|${params.chaincodeName}|${params.contractName}`;
+  public setContractApi(restApiUrl: string, params: SetContractApiParams) {
+    const key = contractApiKey(restApiUrl, params.channelName, params.chaincodeName, params.contractName);
     this.contractApis[key] = { contractPath: params.contractPath, api: params.api };
   }
 
-  public getContractApi(params: ContractConfig) {
-    const key = `${params.channel}|${params.chaincode}|${params.contract}`;
+  public getContractApi(restApiUrl: string, params: ContractConfig) {
+    const key = contractApiKey(restApiUrl, params.channel, params.chaincode, params.contract);
     return (
       this.contractApis[key] ??
       (() => {
@@ -87,13 +87,34 @@ export class GlobalRestApiConfig {
     );
   }
 
-  public setAuthorizedFabloRest(apiUrl: string, token: string) {
-    this.authorizedFabloRest[apiUrl] = token;
+  public setAuthorizedFabloRest(
+    apiUrl: string,
+    credentials: RestApiAdminCredentials,
+    orgMsp: string,
+    token: string
+  ) {
+    this.authorizedFabloRest[fabloAuthKey(apiUrl, credentials, orgMsp)] = token;
   }
 
-  public getAuthorizedFabloRest(apiUrl: string): string | undefined {
-    return this.authorizedFabloRest[apiUrl];
+  public getAuthorizedFabloRest(
+    apiUrl: string,
+    credentials: RestApiAdminCredentials,
+    orgMsp: string
+  ): string | undefined {
+    return this.authorizedFabloRest[fabloAuthKey(apiUrl, credentials, orgMsp)];
   }
+}
+
+export function normalizeRestApiUrl(apiUrl: string): string {
+  return apiUrl.replace(/\/+$/, "");
+}
+
+function contractApiKey(apiUrl: string, channel: string, chaincode: string, contract: string): string {
+  return JSON.stringify([normalizeRestApiUrl(apiUrl), channel, chaincode, contract]);
+}
+
+function fabloAuthKey(apiUrl: string, credentials: RestApiAdminCredentials, orgMsp: string): string {
+  return JSON.stringify([normalizeRestApiUrl(apiUrl), orgMsp, credentials.adminKey, credentials.adminSecret]);
 }
 
 export const globalRestApiConfig = new GlobalRestApiConfig();

@@ -57,7 +57,7 @@ export class RestApiClientBuilder extends ChainClientBuilder {
           : await this.getContractApisFromGCRestApi();
 
         for (const api of apis) {
-          globalRestApiConfig.setContractApi(api);
+          globalRestApiConfig.setContractApi(this.restApiUrl, api);
         }
 
         globalRestApiConfig.markInitialized(this.restApiUrl);
@@ -91,14 +91,14 @@ export class RestApiClientBuilder extends ChainClientBuilder {
 
   private async getContractApisFromFabloRest(): Promise<SetContractApiParams[]> {
     const token =
-      globalRestApiConfig.getAuthorizedFabloRest(this.restApiUrl) ??
+      globalRestApiConfig.getAuthorizedFabloRest(this.restApiUrl, this.credentials, this.orgMsp) ??
       (await FabloRestClient.enroll(
         this.restApiUrl,
         this.credentials.adminKey,
         this.credentials.adminSecret
       ));
 
-    globalRestApiConfig.setAuthorizedFabloRest(this.restApiUrl, token);
+    globalRestApiConfig.setAuthorizedFabloRest(this.restApiUrl, this.credentials, this.orgMsp, token);
 
     return await FabloRestClient.getContractApis(token, this.restApiUrl, this.restApiConfig);
   }
@@ -117,29 +117,36 @@ class AsyncProxyClient extends ChainClient {
   private clientPromise: Promise<ChainClient>;
 
   constructor(
-    builder: Promise<RestApiClientBuilder>,
+    private readonly readyBuilder: Promise<RestApiClientBuilder>,
     adminKey: string,
     contractConfig: ContractConfig,
     orgMsp: string
   ) {
-    super(builder, adminKey, contractConfig, orgMsp);
-    this.clientPromise = builder.then((b) => {
-      // Token present means we want to use Fablo REST
-      const token = globalRestApiConfig.getAuthorizedFabloRest(b.restApiUrl);
+    super(readyBuilder, adminKey, contractConfig, orgMsp);
+    this.clientPromise = readyBuilder.then((b) => this.createClient(b, contractConfig));
+  }
 
-      if (token) {
-        return new FabloRestClient(
-          Promise.resolve(b),
-          b.restApiUrl,
-          contractConfig,
-          b.credentials,
-          Promise.resolve(token),
-          this.orgMsp
-        );
-      } else {
-        return new RestApiClient(Promise.resolve(b), b.restApiUrl, contractConfig, this.orgMsp);
-      }
-    });
+  private createClient(builder: RestApiClientBuilder, contractConfig: ContractConfig): ChainClient {
+    // Token present means we want to use Fablo REST
+    const token = globalRestApiConfig.getAuthorizedFabloRest(
+      builder.restApiUrl,
+      builder.credentials,
+      this.orgMsp
+    );
+
+    if (token) {
+      return new FabloRestClient(
+        Promise.resolve(builder),
+        builder.restApiUrl,
+        contractConfig,
+        builder.credentials,
+        Promise.resolve(token),
+        this.orgMsp,
+        this.userId
+      );
+    }
+
+    return new RestApiClient(Promise.resolve(builder), builder.restApiUrl, contractConfig, this.orgMsp);
   }
 
   public async disconnect(): Promise<void> {
@@ -148,8 +155,9 @@ class AsyncProxyClient extends ChainClient {
   }
 
   public forUser(userId: string, secret?: string): ChainClient {
-    this.clientPromise = this.clientPromise.then((c) => c.forUser(userId, secret));
-    return this;
+    const forked = new AsyncProxyClient(this.readyBuilder, userId, this.contractConfig, this.orgMsp);
+    forked.clientPromise = this.clientPromise.then((client) => client.forUser(userId, secret));
+    return forked;
   }
 
   public async evaluateTransaction<T>(
