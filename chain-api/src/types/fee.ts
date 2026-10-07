@@ -21,6 +21,7 @@ import {
   ArrayUnique,
   IsBoolean,
   IsDefined,
+  IsInt,
   IsNotEmpty,
   IsNumber,
   IsOptional,
@@ -238,10 +239,12 @@ export class FetchFeeAuthorizationsDto extends ChainCallDTO {
   bookmark?: string;
 
   @JSONSchema({
-    description: "Limit number of results. Useful for pagination queries."
+    description: "Page size. Must be an integer from 1 to 10000."
   })
   @IsOptional()
-  @IsNumber()
+  @Min(1)
+  @Max(10 * 1000)
+  @IsInt()
   limit?: number;
 }
 
@@ -335,10 +338,12 @@ export class FetchFeeChannelPaymentsDto extends ChainCallDTO {
   bookmark?: string;
 
   @JSONSchema({
-    description: "Limit number of results. Useful for pagination queries."
+    description: "Page size. Must be an integer from 1 to 10000."
   })
   @IsOptional()
-  @IsNumber()
+  @Min(1)
+  @Max(10 * 1000)
+  @IsInt()
   limit?: number;
 }
 
@@ -446,10 +451,12 @@ export class FetchFeeCreditReceiptsDto extends ChainCallDTO {
   bookmark?: string;
 
   @JSONSchema({
-    description: "Limit number of results. Useful for pagination queries."
+    description: "Page size. Must be an integer from 1 to 10000."
   })
   @IsOptional()
-  @IsNumber()
+  @Min(1)
+  @Max(10 * 1000)
+  @IsInt()
   limit?: number;
 }
 
@@ -525,10 +532,12 @@ export class FetchFeePendingBalancesDto extends ChainCallDTO {
   bookmark?: string;
 
   @JSONSchema({
-    description: "Limit number of results. Useful for pagination queries."
+    description: "Page size. Must be an integer from 1 to 10000."
   })
   @IsOptional()
-  @IsNumber()
+  @Min(1)
+  @Max(10 * 1000)
+  @IsInt()
   limit?: number;
 }
 
@@ -802,10 +811,12 @@ export class FetchFeeThresholdUsesWithPaginationDto extends ChainCallDTO {
   bookmark?: string;
 
   @JSONSchema({
-    description: "Limit number of results. Useful for pagination queries."
+    description: "Page size. Must be an integer from 1 to 10000."
   })
   @IsOptional()
-  @IsNumber()
+  @Min(1)
+  @Max(10 * 1000)
+  @IsInt()
   limit?: number;
 }
 
