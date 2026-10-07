@@ -21,6 +21,7 @@ import { createValidDTO, createValidSubmitDTO } from "./dtos";
 import {
   FetchOracleAssertionsDto,
   FetchOracleDefinitionsDto,
+  OracleDefinitionDto,
   OraclePriceAssertionDto,
   OraclePriceCrossRateAssertionDto
 } from "./oracle";
@@ -33,7 +34,8 @@ describe("oracle.ts", () => {
     collection: "GALA",
     category: "Unit",
     type: "none",
-    additionalKey: "none"
+    additionalKey: "none",
+    instance: new BigNumber("0")
   });
 
   const usdDetails = plainToInstance(ExternalToken, {
@@ -123,5 +125,54 @@ describe("oracle.ts", () => {
       bookmark: "next",
       limit: 25
     });
+  });
+
+  test("price assertion requires exactly one token on each side", async () => {
+    const shared = {
+      oracle: mockOracle,
+      identity: mockOracleIdentity,
+      exchangeRate: new BigNumber("1"),
+      timestamp: 0
+    };
+
+    await expect(
+      createValidSubmitDTO(OraclePriceAssertionDto, {
+        ...shared,
+        externalBaseToken: usdDetails,
+        externalQuoteToken: usdDetails
+      })
+    ).resolves.toBeInstanceOf(OraclePriceAssertionDto);
+
+    await expect(
+      createValidSubmitDTO(OraclePriceAssertionDto, {
+        ...shared,
+        baseToken: galaTokenInstanceKey,
+        externalBaseToken: usdDetails,
+        externalQuoteToken: usdDetails
+      })
+    ).rejects.toThrow(/exactly one of baseToken/);
+
+    await expect(
+      createValidSubmitDTO(OraclePriceAssertionDto, {
+        ...shared,
+        externalQuoteToken: usdDetails
+      })
+    ).rejects.toThrow(/exactly one of baseToken/);
+  });
+
+  test("oracle authorities must be strings", async () => {
+    await expect(
+      createValidSubmitDTO(OracleDefinitionDto, {
+        name: mockOracle,
+        authorities: ["client|oracle"]
+      })
+    ).resolves.toBeInstanceOf(OracleDefinitionDto);
+
+    await expect(
+      createValidSubmitDTO(OracleDefinitionDto, {
+        name: mockOracle,
+        authorities: [1] as unknown as string[]
+      })
+    ).rejects.toThrow(/authorities/);
   });
 });
