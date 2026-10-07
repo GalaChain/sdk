@@ -41,6 +41,8 @@ export interface GalaChainProviderOptions {
     identityLookupKey: string;
     /** User encryption key for secure operations */
     userEncryptionKey: string;
+    /** Origin that may receive the identity headers */
+    origin: string;
   };
 }
 
@@ -48,8 +50,11 @@ export interface GalaChainProviderOptions {
  * Abstract base class for GalaChain providers that handle communication with GalaChain networks.
  * Provides common functionality for signing transactions and submitting requests.
  */
+const legacyCredentialHeaders = ["X-Identity-Lookup-Key", "X-User-Encryption-Key"] as const;
+
 export abstract class GalaChainProvider {
-  private legacyCredentials: Record<string, string>;
+  private legacyCredentials: Record<string, string> | undefined;
+  private legacyCredentialOrigin: string | undefined;
 
   /**
    * Creates a new GalaChain provider instance.
@@ -57,11 +62,32 @@ export abstract class GalaChainProvider {
    */
   constructor(protected options?: GalaChainProviderOptions) {
     if (options?.legacyCredentials) {
+      this.legacyCredentialOrigin = new URL(options.legacyCredentials.origin).origin;
       this.legacyCredentials = {
         "X-Identity-Lookup-Key": options.legacyCredentials.identityLookupKey,
         "X-User-Encryption-Key": options.legacyCredentials.userEncryptionKey
       };
     }
+  }
+
+  private requestHeaders(url: string, headers: Record<string, string>): Record<string, string> {
+    const requestHeaders: Record<string, string> = { "Content-Type": "application/json" };
+    for (const [name, value] of Object.entries(headers)) {
+      if (legacyCredentialHeaders.some((header) => header === name)) {
+        continue;
+      }
+      requestHeaders[name] = value;
+    }
+
+    if (
+      this.legacyCredentials &&
+      this.legacyCredentialOrigin &&
+      new URL(url).origin === this.legacyCredentialOrigin
+    ) {
+      return { ...requestHeaders, ...this.legacyCredentials };
+    }
+
+    return requestHeaders;
   }
 
   /**
@@ -136,11 +162,7 @@ export abstract class GalaChainProvider {
     const response = await fetch(fullUrl, {
       method: "POST",
       body: serialize(newPayload),
-      headers: {
-        "Content-Type": "application/json",
-        ...this.legacyCredentials,
-        ...headers
-      }
+      headers: this.requestHeaders(fullUrl, headers)
     });
 
     const hash = response.headers.get("x-transaction-id") ?? undefined;
