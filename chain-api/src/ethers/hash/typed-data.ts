@@ -360,9 +360,23 @@ export class TypedDataEncoder {
 
     defineProperties<TypedDataEncoder>(this, { primaryType: primaryTypes[0] });
 
-    // Check for circular type references
+    // Check for circular type references. Completed subgraphs are reused so a
+    // type shared by many parents is walked once.
+    const completed = new Set<string>();
     function checkCircular(type: string, found: Set<string>) {
       assertArgument(!found.has(type), `circular type reference to ${JSON.stringify(type)}`, "types", _types);
+
+      if (completed.has(type)) {
+        const descendants = subtypes.get(type) as Set<string>;
+        for (const ancestor of found) {
+          const ancestorSubtypes = subtypes.get(ancestor) as Set<string>;
+          ancestorSubtypes.add(type);
+          for (const descendant of descendants) {
+            ancestorSubtypes.add(descendant);
+          }
+        }
+        return;
+      }
 
       found.add(type);
 
@@ -381,6 +395,7 @@ export class TypedDataEncoder {
       }
 
       found.delete(type);
+      completed.add(type);
     }
     checkCircular(this.primaryType, new Set());
 
@@ -599,7 +614,14 @@ export class TypedDataEncoder {
     types: Record<string, Array<TypedDataField>>,
     value: Record<string, any>
   ): string {
-    return concat(["0x1901", TypedDataEncoder.hashDomain(domain), TypedDataEncoder.from(types).hash(value)]);
+    return TypedDataEncoder.encodeWith(TypedDataEncoder.from(types), domain, value);
+  }
+
+  /**
+   *  Encode %%value%% with an encoder that was already built for %%types%%.
+   */
+  static encodeWith(encoder: TypedDataEncoder, domain: TypedDataDomain, value: Record<string, any>): string {
+    return concat(["0x1901", TypedDataEncoder.hashDomain(domain), encoder.hash(value)]);
   }
 
   /**

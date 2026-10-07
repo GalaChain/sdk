@@ -175,4 +175,25 @@ describe("EIP-712 Signing", () => {
 
     expect(types).toMatchObject(expectedTypes);
   });
+
+  it("omits verification metadata from the signed schema", async () => {
+    const params = {
+      quantity: "1",
+      trace: { span: "before-sign" },
+      prefix: "already-present",
+      signature: "already-present"
+    };
+
+    const types = generateEIP712Types("LockTokenRequest", params);
+
+    expect(types.LockTokenRequest).toEqual([{ name: "quantity", type: "string" }]);
+    expect(types.trace).toBeUndefined();
+
+    const domain = { name: "GalaChain" };
+    const wallet = new ethers.Wallet("0x0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef");
+    const signature = await wallet.signTypedData(domain, types, params);
+
+    expect(signature).toMatch(/^0x[a-fA-F0-9]{130}$/);
+    expect(ethers.verifyTypedData(domain, types, { quantity: "1" }, signature)).toBe(wallet.address);
+  });
 });

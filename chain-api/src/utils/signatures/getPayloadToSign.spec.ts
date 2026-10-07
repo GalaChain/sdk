@@ -150,6 +150,32 @@ describe("getPayloadToSign", () => {
       // When / Then
       expect(() => getPayloadToSign(obj)).toThrow(/"tokenInstance\.injected" is not declared/);
     });
+
+    it("rejects an undeclared field inside a multidimensional struct array", () => {
+      const obj = {
+        domain,
+        types: {
+          Batch: [{ name: "rows", type: "Row[][]" }],
+          Row: [{ name: "id", type: "string" }]
+        },
+        rows: [[{ id: "1", extra: "undeclared" }]]
+      };
+
+      expect(() => getPayloadToSign(obj)).toThrow(/"rows\.extra" is not declared/);
+    });
+
+    it("produces a payload for a fully declared multidimensional struct array", () => {
+      const obj = {
+        domain,
+        types: {
+          Batch: [{ name: "rows", type: "Row[][]" }],
+          Row: [{ name: "id", type: "string" }]
+        },
+        rows: [[{ id: "1" }], [{ id: "2" }]]
+      };
+
+      expect(getPayloadToSign(obj).toString("hex")).toHaveLength(132);
+    });
   });
 
   it("should use 'prefix' field", () => {
