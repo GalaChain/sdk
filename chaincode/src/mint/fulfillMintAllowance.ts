@@ -112,7 +112,7 @@ export async function fulfillMintAllowanceRequest(
     const recentTimeKey = mostRecentTimeInversion.toString().padStart(inverseKeyLength, "0");
     const oldestTimeKey = oldestTimeInversion.toString().padStart(inverseKeyLength, "0");
 
-    const startKey = [
+    const startKey = ChainObject.joinKeyParts([
       TokenMintAllowanceRequest.INDEX_KEY,
       tokenClass.collection,
       tokenClass.category,
@@ -120,9 +120,9 @@ export async function fulfillMintAllowanceRequest(
       tokenClass.additionalKey,
       recentTimeKey,
       "".padStart(inverseKeyLength, "0")
-    ].join(ChainObject.MIN_UNICODE_RUNE_VALUE);
+    ]);
 
-    const endKey = [
+    const endKey = ChainObject.joinKeyParts([
       TokenMintAllowanceRequest.INDEX_KEY,
       tokenClass.collection,
       tokenClass.category,
@@ -130,7 +130,7 @@ export async function fulfillMintAllowanceRequest(
       tokenClass.additionalKey,
       oldestTimeKey,
       "".padStart(inverseKeyLength, "z")
-    ].join(ChainObject.MIN_UNICODE_RUNE_VALUE);
+    ]);
 
     const iterator = ctx.stub.getStateByRange(startKey, endKey);
 
