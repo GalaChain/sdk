@@ -85,18 +85,39 @@ async function grantAllowanceByPartialKey(
 
   const fetchAllowanceOps: Promise<TokenAllowance[]>[] = [];
 
-  const grantedToUser = quantities[0].user; // in the context of a partial key grant, only one user should be grantedTo
+  for (const { user: grantedToUser } of quantities) {
+    for (const balance of tokenBalances) {
+      if (balance.containsAnyNftInstanceId()) {
+        for (const balanceInstance of balance.getNftInstanceIds()) {
+          const allowanceQueryParamsForBalance = [
+            grantedToUser,
+            balance.collection,
+            balance.category,
+            balance.type,
+            balance.additionalKey,
+            balanceInstance.toString(),
+            allowanceType.toString(),
+            ctx.callingUser // grantedBy ChainKey#7
+          ];
 
-  for (const balance of tokenBalances) {
-    if (balance.containsAnyNftInstanceId()) {
-      for (const balanceInstance of balance.getNftInstanceIds()) {
+          fetchAllowanceOps.push(
+            getObjectsByPartialCompositeKey(
+              ctx,
+              TokenAllowance.INDEX_KEY,
+              allowanceQueryParamsForBalance,
+              TokenAllowance
+            )
+          );
+        }
+      } else {
+        // no instanceIds on balance, assume fungible TokenClass
         const allowanceQueryParamsForBalance = [
           grantedToUser,
           balance.collection,
           balance.category,
           balance.type,
           balance.additionalKey,
-          balanceInstance.toString(),
+          TokenInstance.FUNGIBLE_TOKEN_INSTANCE.toString(),
           allowanceType.toString(),
           ctx.callingUser // grantedBy ChainKey#7
         ];
@@ -110,27 +131,6 @@ async function grantAllowanceByPartialKey(
           )
         );
       }
-    } else {
-      // no instanceIds on balance, assume fungible TokenClass
-      const allowanceQueryParamsForBalance = [
-        grantedToUser,
-        balance.collection,
-        balance.category,
-        balance.type,
-        balance.additionalKey,
-        TokenInstance.FUNGIBLE_TOKEN_INSTANCE.toString(),
-        allowanceType.toString(),
-        ctx.callingUser // grantedBy ChainKey#7
-      ];
-
-      fetchAllowanceOps.push(
-        getObjectsByPartialCompositeKey(
-          ctx,
-          TokenAllowance.INDEX_KEY,
-          allowanceQueryParamsForBalance,
-          TokenAllowance
-        )
-      );
     }
   }
 
