@@ -49,6 +49,8 @@ function validateTokenSwapQuantity(quantity: BigNumber, tokenClass: TokenClass):
     // Must be less than or equal to the token info quantity
   } else if (!tokenClass.isNonFungible && quantity.isLessThan(0)) {
     validationResults.push(`Token quantity must be positive. ${quantity} is not valid.`);
+  } else if (!tokenClass.isNonFungible && (quantity.decimalPlaces() ?? 0) > tokenClass.decimals) {
+    validationResults.push(`Quantity: ${quantity} has more than ${tokenClass.decimals} decimal places.`);
   } else if (tokenClass.isNonFungible && !quantity.isEqualTo(1)) {
     validationResults.push(`cannot swap more than 1 Non Fungible Token Instance. ${quantity} is not valid.`);
   } else if (quantity.isGreaterThan(tokenClass.maxSupply) || quantity.isGreaterThan(tokenClass.maxCapacity)) {
