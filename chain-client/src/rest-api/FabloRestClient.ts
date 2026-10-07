@@ -118,7 +118,8 @@ export class FabloRestClient extends ChainClient {
 
     const response = await axios.post(path, payload, { headers }).catch((e) => catchAxiosError(e));
 
-    return GalaChainResponse.deserialize<T>(responseType, response?.data?.response ?? {});
+    const body = response?.data?.response ?? response?.data;
+    return GalaChainResponse.deserialize<T>(responseType, body ?? {});
   }
 
   public static async enroll(restApiUrl: string, userId: string, secret: string): Promise<string> {
