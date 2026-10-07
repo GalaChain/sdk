@@ -14,6 +14,7 @@
  */
 import { ethers } from "ethers";
 
+import { fetchWithTimeout } from "../fetchWithTimeout";
 import { ethereumToGalaChainAddress } from "./CommonUtils";
 
 /**
@@ -50,7 +51,7 @@ export class WalletUtils {
    */
   static async registerWallet(uri: string, walletPublicKey: string): Promise<string> {
     try {
-      const response = await fetch(uri, {
+      const response = await fetchWithTimeout(uri, {
         method: "POST",
         headers: {
           "Content-Type": "application/json"

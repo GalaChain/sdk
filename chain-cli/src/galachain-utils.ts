@@ -38,6 +38,11 @@ const DEFAULT_PRIVATE_KEYS_DIR = ".gc-keys";
 const DEFAULT_PUBLIC_KEYS_DIR = "keys";
 const DEFAULT_ADMIN_PRIVATE_KEY_NAME = "gc-admin-key";
 const DEFAULT_DEV_PRIVATE_KEY_NAME = "gc-dev-key";
+const REQUEST_TIMEOUT_MS = 30_000;
+
+function requestConfig<T extends object>(config: T): T & { timeout: number } {
+  return { timeout: REQUEST_TIMEOUT_MS, ...config };
+}
 
 export interface Config {
   org: string;
@@ -95,12 +100,15 @@ export async function getDeploymentResponse(params: {
   const servicePortalURL = ServicePortal.GET_DEPLOYMENT_URL;
 
   const response = await axios
-    .get(servicePortalURL, {
-      headers: {
-        [ServicePortal.AUTH_X_GC_KEY]: signature
-      },
-      params: getChaincodeDeploymentDto
-    })
+    .get(
+      servicePortalURL,
+      requestConfig({
+        headers: {
+          [ServicePortal.AUTH_X_GC_KEY]: signature
+        },
+        params: getChaincodeDeploymentDto
+      })
+    )
     .catch((error) => {
       throw new Error(axiosErrorMessage(error));
     });
@@ -204,11 +212,15 @@ export async function deployChaincode(params: {
   const signature = await generateSignature(dto, params.privateKey);
 
   const response = await axios
-    .post(ServicePortal.DEPLOY_URL, dto, {
-      headers: {
-        [ServicePortal.AUTH_X_GC_KEY]: signature
-      }
-    })
+    .post(
+      ServicePortal.DEPLOY_URL,
+      dto,
+      requestConfig({
+        headers: {
+          [ServicePortal.AUTH_X_GC_KEY]: signature
+        }
+      })
+    )
     .catch((error) => {
       throw new Error(axiosErrorMessage(error));
     });
@@ -230,11 +242,15 @@ export async function registerChaincode(params: {
   const signature = await generateSignature(dto, params.privateKey);
 
   const response = await axios
-    .post(ServicePortal.REGISTER_URL, dto, {
-      headers: {
-        [ServicePortal.AUTH_X_GC_KEY]: signature
-      }
-    })
+    .post(
+      ServicePortal.REGISTER_URL,
+      dto,
+      requestConfig({
+        headers: {
+          [ServicePortal.AUTH_X_GC_KEY]: signature
+        }
+      })
+    )
     .catch((error) => {
       throw new Error(axiosErrorMessage(error));
     });
@@ -423,12 +439,15 @@ export async function getLogs(params: {
 
   try {
     const response = await axios
-      .get(servicePortalURL, {
-        headers: {
-          [ServicePortal.AUTH_X_GC_KEY]: signature
-        },
-        params: requestParams
-      })
+      .get(
+        servicePortalURL,
+        requestConfig({
+          headers: {
+            [ServicePortal.AUTH_X_GC_KEY]: signature
+          },
+          params: requestParams
+        })
+      )
       .catch((error) => {
         throw new Error(axiosErrorMessage(error));
       });
@@ -464,6 +483,9 @@ export async function streamLogs(
 
   const servicePortalURL = ServicePortal.STREAM_LOGS_URL;
 
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), REQUEST_TIMEOUT_MS);
+
   try {
     const response = await axios.get(servicePortalURL, {
       headers: {
@@ -471,8 +493,10 @@ export async function streamLogs(
         Accept: "text/event-stream"
       },
       params: requestParams,
-      responseType: "stream"
+      responseType: "stream",
+      signal: controller.signal
     });
+    clearTimeout(timer);
 
     const stream = response.data as Readable;
 
@@ -489,12 +513,13 @@ export async function streamLogs(
       throw error;
     });
   } catch (error: any) {
+    clearTimeout(timer);
     throw new Error(`Failed to stream logs: ${error.response?.data?.message || error.message}`);
   }
 }
 
 function axiosErrorMessage(error: AxiosError<{ message: string }>) {
   const status = error?.response?.status ?? "unknown";
-  const message = error?.response?.data?.message ?? "unknown";
+  const message = error?.response?.data?.message ?? error?.message ?? "unknown";
   return `[${status}] ${message}`;
 }

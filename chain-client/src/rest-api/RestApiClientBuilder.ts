@@ -32,6 +32,7 @@ import {
 } from "./GlobalRestApiConfig";
 import { RestApiClient } from "./RestApiClient";
 import { RestApiConfig } from "./loadRestApiConfig";
+import { withRequestTimeout } from "./requestTimeout";
 
 export class RestApiClientBuilder extends ChainClientBuilder {
   constructor(
@@ -82,10 +83,14 @@ export class RestApiClientBuilder extends ChainClientBuilder {
 
   private async shouldUseFabloRest(): Promise<boolean> {
     try {
-      await axios.get(`${this.restApiUrl}/user/identities`);
+      await axios.get(`${this.restApiUrl}/user/identities`, withRequestTimeout());
       return false;
     } catch (e) {
-      return e.response?.status === 400;
+      const error = e as { code?: string; response?: { status?: number } };
+      if (error.code === "ECONNABORTED" || error.code === "ERR_CANCELED") {
+        throw e;
+      }
+      return error.response?.status === 400;
     }
   }
 

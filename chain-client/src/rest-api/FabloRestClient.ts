@@ -28,6 +28,7 @@ import { ContractAPI } from "./GlobalRestApiConfig";
 import { RestApiAdminCredentials, SetContractApiParams, globalRestApiConfig } from "./GlobalRestApiConfig";
 import { catchAxiosError } from "./catchAxiosError";
 import { RestApiConfig } from "./loadRestApiConfig";
+import { withRequestTimeout } from "./requestTimeout";
 
 async function getPath(
   restApiUrl: string,
@@ -116,14 +117,16 @@ export class FabloRestClient extends ChainClient {
       Authorization: `Bearer ${await this.token}`
     };
 
-    const response = await axios.post(path, payload, { headers }).catch((e) => catchAxiosError(e));
+    const response = await axios
+      .post(path, payload, withRequestTimeout({ headers }))
+      .catch((e) => catchAxiosError(e));
 
     return GalaChainResponse.deserialize<T>(responseType, response?.data?.response ?? {});
   }
 
   public static async enroll(restApiUrl: string, userId: string, secret: string): Promise<string> {
     const response = await axios
-      .post(`${restApiUrl}/user/enroll`, { id: userId, secret })
+      .post(`${restApiUrl}/user/enroll`, { id: userId, secret }, withRequestTimeout())
       .catch((e) => catchAxiosError(e));
 
     if (!response.data.token) {
@@ -158,7 +161,7 @@ export class FabloRestClient extends ChainClient {
         const payload = { method: `${contract.contractName}:GetContractAPI`, args: [] };
 
         const apiResponse = await axios
-          .post(getApiPath, payload, { headers })
+          .post(getApiPath, payload, withRequestTimeout({ headers }))
           .catch((e) => catchAxiosError(e));
 
         if (!GalaChainResponse.isSuccess<ContractAPI>(apiResponse.data.response)) {

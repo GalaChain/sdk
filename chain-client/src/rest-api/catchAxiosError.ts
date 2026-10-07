@@ -15,6 +15,10 @@
 import { AxiosError } from "axios";
 
 export function catchAxiosError(e?: AxiosError<{ error?: { Status?: number } }>) {
+  if (e?.code === "ECONNABORTED" || e?.code === "ERR_CANCELED") {
+    throw e;
+  }
+
   // if data object contains { error: { Status: 0 } }, it means this is GalaChainResponse
   if (e?.response?.data?.error?.Status === 0) {
     return { data: e?.response?.data?.error };

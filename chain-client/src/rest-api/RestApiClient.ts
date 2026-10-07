@@ -28,6 +28,7 @@ import { ContractAPI } from "./GlobalRestApiConfig";
 import { RestApiAdminCredentials, SetContractApiParams, globalRestApiConfig } from "./GlobalRestApiConfig";
 import { catchAxiosError } from "./catchAxiosError";
 import { RestApiConfig } from "./loadRestApiConfig";
+import { withRequestTimeout } from "./requestTimeout";
 
 async function getPath(
   restApiUrl: string,
@@ -106,7 +107,7 @@ export class RestApiClient extends ChainClient {
     const serialized = JSON.parse(dto ? serialize(dto) : "{}");
 
     const response = await axios
-      .post<Record<string, unknown>>(path, serialized)
+      .post<Record<string, unknown>>(path, serialized, withRequestTimeout())
       .catch((e) => catchAxiosError(e));
 
     return GalaChainResponse.deserialize<T>(responseType, response.data ?? {});
@@ -128,7 +129,7 @@ export class RestApiClient extends ChainClient {
       for (const contract of channel.contracts) {
         const contractPath = `${channel.pathFragment}/${contract.pathFragment}`;
         const getApiPath = `${restApiUrl}/${contractPath}/GetContractAPI`;
-        const apiResponse = await axios.post(getApiPath);
+        const apiResponse = await axios.post(getApiPath, undefined, withRequestTimeout());
 
         if (!GalaChainResponse.isSuccess<ContractAPI>(apiResponse.data)) {
           throw new Error(
