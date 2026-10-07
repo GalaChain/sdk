@@ -119,11 +119,15 @@ export class MintRequestDto {
   owner?: UserAlias;
 
   public isTimeKeyValid(): boolean {
-    try {
-      new BigNumber(this.timeKey);
-      return true;
-    } catch (e) {
-      return false;
-    }
+    return isFiniteIntegerTimeKey(this.timeKey);
   }
+}
+
+export function isFiniteIntegerTimeKey(timeKey: string | undefined): boolean {
+  if (typeof timeKey !== "string" || timeKey.length === 0) {
+    return false;
+  }
+
+  const value = new BigNumber(timeKey);
+  return value.isFinite() && value.isInteger();
 }
