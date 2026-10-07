@@ -845,4 +845,20 @@ describe("transaction expiration", () => {
     expect(response1).toEqual(transactionErrorMessageContains("DTO expired at"));
     expect(response2).toEqual(transactionErrorKey("NOT_FOUND"));
   });
+
+  it("should fail when dto expires at is zero", async () => {
+    // Given
+    const chaincode = new TestChaincode([TestGalaContract]);
+    const dto = await createValidDTO(KVDto, {
+      dtoExpiresAt: 0,
+      uniqueKey: "test-key-0",
+      key: "test-key-0"
+    });
+
+    // When
+    const response = await chaincode.invoke("TestGalaContract:GetKv", dto.serialize());
+
+    // Then
+    expect(response).toEqual(transactionErrorKey("EXPIRED"));
+  });
 });
