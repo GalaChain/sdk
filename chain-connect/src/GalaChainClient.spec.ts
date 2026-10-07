@@ -145,11 +145,19 @@ describe("BrowserConnectClient", () => {
         sign: true,
         url: "https://example.com"
       })
-    ).rejects.toEqual({
+    ).rejects.toMatchObject({
       Error: mockResponse.error,
       Message: mockResponse.message,
       ErrorCode: mockResponse.statusCode
     });
+    await expect(
+      client.submit({
+        method: "TransferToken",
+        payload: dto,
+        sign: true,
+        url: "https://example.com"
+      })
+    ).rejects.toBeInstanceOf(Error);
   });
   it("test full flow (chain error)", async () => {
     const dto: TransferTokenDto = await createValidDTO(TransferTokenDto, {
@@ -203,10 +211,11 @@ describe("BrowserConnectClient", () => {
         sign: true,
         url: "https://example.com"
       })
-    ).rejects.toEqual({
+    ).rejects.toMatchObject({
       Error: mockResponse.error.ErrorKey,
       Message: mockResponse.message,
-      ErrorCode: mockResponse.error.ErrorCode
+      ErrorCode: mockResponse.error.ErrorCode,
+      ErrorPayload: mockResponse.error.ErrorPayload
     });
   });
 
