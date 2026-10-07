@@ -26,14 +26,20 @@ function checkGrpcVersionConflicts() {
     return;
   }
 
-  const packageLock = JSON.parse(fs.readFileSync(packageLockPath, "utf8"));
-  const dependencies = packageLock.dependencies ?? {};
+  let packageLock: unknown;
+  try {
+    packageLock = JSON.parse(fs.readFileSync(packageLockPath, "utf8"));
+  } catch (e) {
+    console.warn(`Unable to read package-lock.json. Skipping gRPC version check. ${e}`);
+    return;
+  }
 
-  const grpcVersions = Object.keys(dependencies)
-    .filter((dep) => dep === "@grpc/grpc-js")
-    .map((dep) => dependencies[dep].version);
+  if (!isInspectableLockfile(packageLock)) {
+    console.warn("Unable to read package-lock.json. Skipping gRPC version check.");
+    return;
+  }
 
-  const uniqueVersions = [...new Set(grpcVersions)].sort();
+  const uniqueVersions = installedGrpcVersions(packageLock);
 
   if (uniqueVersions.length > 1) {
     console.warn(
@@ -45,4 +51,60 @@ function checkGrpcVersionConflicts() {
   } else {
     console.log("No conflicting versions of @grpc/grpc-js detected.");
   }
+}
+
+export function installedGrpcVersions(packageLock: unknown): string[] {
+  const versions = new Set<string>();
+  if (!packageLock || typeof packageLock !== "object") {
+    return [];
+  }
+
+  const lock = packageLock as { dependencies?: unknown; packages?: unknown };
+  collectDependencyVersions(lock.dependencies, versions);
+  collectPackageVersions(lock.packages, versions);
+  return [...versions].sort();
+}
+
+function collectDependencyVersions(dependencies: unknown, versions: Set<string>): void {
+  if (!dependencies || typeof dependencies !== "object") {
+    return;
+  }
+
+  for (const [name, value] of Object.entries(dependencies as Record<string, unknown>)) {
+    if (!value || typeof value !== "object") {
+      continue;
+    }
+    const dependency = value as { version?: unknown; dependencies?: unknown };
+    if (name === "@grpc/grpc-js" && typeof dependency.version === "string") {
+      versions.add(dependency.version);
+    }
+    collectDependencyVersions(dependency.dependencies, versions);
+  }
+}
+
+function collectPackageVersions(packages: unknown, versions: Set<string>): void {
+  if (!packages || typeof packages !== "object") {
+    return;
+  }
+
+  for (const [name, value] of Object.entries(packages as Record<string, unknown>)) {
+    if (!isGrpcPackagePath(name) || !value || typeof value !== "object") {
+      continue;
+    }
+    const version = (value as { version?: unknown }).version;
+    if (typeof version === "string") {
+      versions.add(version);
+    }
+  }
+}
+
+function isGrpcPackagePath(name: string): boolean {
+  return name === "node_modules/@grpc/grpc-js" || name.endsWith("/node_modules/@grpc/grpc-js");
+}
+
+function isInspectableLockfile(packageLock: unknown): boolean {
+  if (!packageLock || typeof packageLock !== "object" || Array.isArray(packageLock)) {
+    return false;
+  }
+  return "dependencies" in packageLock || "packages" in packageLock;
 }
