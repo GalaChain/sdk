@@ -62,7 +62,7 @@ function normalizePrivateKey(input: string): Buffer {
     if (isValidHex(inputNo0x) || isValidBase64(inputNo0x)) {
       return Buffer.from(missing0 + inputNo0x, encoding);
     }
-    throw new InvalidKeyError(`Invalid private key: ${input}`);
+    throw new InvalidKeyError("Invalid private key.");
   } else {
     const excl0x = startsWith0x ? " (excluding trailing '0x')" : "";
     const errorMessage =
