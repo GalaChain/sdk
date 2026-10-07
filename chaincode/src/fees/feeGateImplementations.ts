@@ -97,18 +97,6 @@ export async function batchFillTokenSwapFeeGate(ctx: GalaChainContext, dto: Batc
 
 export async function batchMintTokenFeeGate(ctx: GalaChainContext, dto: BatchMintTokenDto) {
   const feeCode = FeeGateCodes.BatchMintToken;
-  const owners: string[] = extractUniqueOwnersFromRequests(ctx, dto.mintDtos);
-
-  for (const owner of owners) {
-    await galaFeeGate(ctx, {
-      feeCode
-      // v1 fees requires only callingUser identities pay fees
-      // uncomment below to require benefiting / initiating user to pay,
-      // regardless of who executes the method
-      // activeUser: owner
-    });
-  }
-
   const batchPayments: PaymentRequiredError[] = [];
 
   for (const mintDto of dto.mintDtos) {
