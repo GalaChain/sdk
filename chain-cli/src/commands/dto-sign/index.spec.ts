@@ -12,9 +12,15 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+import { writeFile } from "fs/promises";
 import path from "path";
 
+import signatures from "../../signatures";
 import DtoSign from "./index";
+
+jest.mock("fs/promises", () => ({
+  writeFile: jest.fn()
+}));
 
 jest.setTimeout(10000);
 
@@ -28,11 +34,14 @@ const dataTestJson = `{
 }`;
 
 const fakePrivateKey = "45f2db331d77c0154c70be06d7d9fe00fa2b5471872f134d73a6e43c6b7e3d29";
+const mockParseJsonFromStringOrFile = jest.fn(
+  (): Promise<Record<string, unknown>> => Promise.resolve({ dataTestJson })
+);
 
 jest.mock("../../utils", () => ({
   ...jest.requireActual("../../utils"),
   parseStringOrFileKey: () => Promise.resolve(fakePrivateKey),
-  parseJsonFromStringOrFile: () => Promise.resolve({ dataTestJson })
+  parseJsonFromStringOrFile: () => mockParseJsonFromStringOrFile()
 }));
 
 describe("DtoSign Command", () => {
@@ -70,6 +79,33 @@ describe("DtoSign Command", () => {
     // Then
     expect(result.join()).toContain(`tokenClass`);
     expect(result.join()).toContain(`signature`);
+    expect(result.join()).toContain(signatures.getPublicKey(fakePrivateKey));
+  });
+
+  it("keeps an existing signer address on a DER signature", async () => {
+    const result: (string | Uint8Array)[] = [];
+    jest.spyOn(process.stdout, "write").mockImplementation((v) => {
+      result.push(v);
+      return true;
+    });
+    mockParseJsonFromStringOrFile.mockResolvedValueOnce({
+      tokenClass: { collection: "CLITest" },
+      signerAddress: "eth|0xabc"
+    });
+
+    await DtoSign.run([path.resolve(__dirname, "./test-key"), dataTestJson, "-d"]);
+
+    const output = result.join("");
+    expect(output).toContain("eth|0xabc");
+    expect(output).not.toContain("signerPublicKey");
+  });
+
+  it("fails when the output file cannot be written", async () => {
+    jest.mocked(writeFile).mockRejectedValueOnce(new Error("disk full"));
+
+    await expect(
+      DtoSign.run([path.resolve(__dirname, "./test-key"), dataTestJson, "-o", "signed.json"])
+    ).rejects.toThrow(/Failed to writeFile to signed.json/);
   });
 
   it("it should return only the signature", async () => {
