@@ -93,6 +93,17 @@ describe("oracle.ts", () => {
     mockAssertionDto.crossRate = new BigNumber("42");
 
     expect(mockAssertionDto.validateCrossRate).toThrow();
+
+    await expect(
+      createValidSubmitDTO(OraclePriceCrossRateAssertionDto, {
+        oracle: mockOracle,
+        identity: mockOracleIdentity,
+        baseTokenCrossRate: tonUsdPriceAssertion,
+        quoteTokenCrossRate: galaUsdPriceAssertion,
+        externalCrossRateToken: usdDetails,
+        crossRate: new BigNumber("42")
+      })
+    ).rejects.toThrow(/cross rate does not match/);
   });
 
   test("FetchOracleDefinitionsDto accepts optional name filter", async () => {
