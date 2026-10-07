@@ -43,6 +43,7 @@ export enum RestApiStatus {
 
 export class GlobalRestApiConfig {
   private isRestApiInitializedAndHealthy: Record<string, RestApiStatus | Error> = {};
+  private initialization: Record<string, Promise<void>> = {};
   private contractApis: Record<string, ContractApiValue> = {};
   private authorizedFabloRest: Record<string, string> = {};
 
@@ -53,11 +54,41 @@ export class GlobalRestApiConfig {
       return result;
     }
 
-    if (!result || result === RestApiStatus.NONE) {
-      return RestApiStatus.NONE;
+    if (result instanceof Error) {
+      delete this.isRestApiInitializedAndHealthy[apiUrl];
     }
 
-    throw new Error(`Failed to initialize Rest API at ${apiUrl} failed to initialize: ${result?.message}`);
+    return RestApiStatus.NONE;
+  }
+
+  public initialize(apiUrl: string, load: () => Promise<void>): Promise<void> {
+    const current = this.initialization[apiUrl];
+    if (Object.prototype.hasOwnProperty.call(this.initialization, apiUrl)) {
+      return current;
+    }
+
+    if (this.getStatus(apiUrl) === RestApiStatus.INITIALIZED) {
+      return Promise.resolve();
+    }
+
+    this.markPending(apiUrl);
+
+    const pending = load()
+      .then(() => {
+        this.markInitialized(apiUrl);
+      })
+      .catch((error: unknown) => {
+        this.forgetInitialization(apiUrl);
+        throw error;
+      })
+      .finally(() => {
+        if (this.initialization[apiUrl] === pending) {
+          delete this.initialization[apiUrl];
+        }
+      });
+
+    this.initialization[apiUrl] = pending;
+    return pending;
   }
 
   public markInitialized(apiUrl: string) {
@@ -68,8 +99,18 @@ export class GlobalRestApiConfig {
     this.isRestApiInitializedAndHealthy[apiUrl] = RestApiStatus.PENDING;
   }
 
-  public markFailed(apiUrl: string, error: Error) {
-    this.isRestApiInitializedAndHealthy[apiUrl] = error;
+  public markFailed(apiUrl: string, _error: Error) {
+    if (Object.prototype.hasOwnProperty.call(this.initialization, apiUrl)) {
+      return;
+    }
+
+    this.forgetInitialization(apiUrl);
+  }
+
+  private forgetInitialization(apiUrl: string) {
+    if (this.isRestApiInitializedAndHealthy[apiUrl] !== RestApiStatus.INITIALIZED) {
+      delete this.isRestApiInitializedAndHealthy[apiUrl];
+    }
   }
 
   public setContractApi(params: SetContractApiParams) {
