@@ -126,7 +126,7 @@ export class BrowserConnectClient extends WebSigner {
     method: string,
     payload: T,
     signingType: SigningType = SigningType.SIGN_TYPED_DATA
-  ): Promise<T & { signature: string; prefix: string }> {
+  ): Promise<T & { prefix: string; signature?: string; multisig?: string[] }> {
     if (!this.provider) {
       throw new Error("Ethereum provider not found");
     }
@@ -135,19 +135,33 @@ export class BrowserConnectClient extends WebSigner {
     }
 
     try {
+      const record = payload as T & Record<string, unknown>;
+      const existing = existingSignatures(record);
+      if (existing.length > 0) {
+        assertMultisigReady(record);
+      }
+
+      const message = omitVerificationMetadata(record);
       const domain = { name: "GalaChain" };
-      const types = generateEIP712Types(method, payload);
-
-      const prefix = this.calculatePersonalSignPrefix(payload);
-      const prefixedPayload = { ...payload, prefix };
-
+      const types = generateEIP712Types(method, message);
+      const prefix = this.calculatePersonalSignPrefix(message);
+      const prefixedPayload = { ...message, prefix };
       const signer = await this.provider.getSigner();
+
       if (signingType === SigningType.SIGN_TYPED_DATA) {
         const signature = await signer.signTypedData(domain, types, prefixedPayload);
-        return { ...prefixedPayload, signature, types, domain };
+        return withSignature(prefixedPayload, existing, signature, { types, domain }) as T & {
+          prefix: string;
+          signature?: string;
+          multisig?: string[];
+        };
       } else if (signingType === SigningType.PERSONAL_SIGN) {
         const signature = await signer.signMessage(serialize(prefixedPayload));
-        return { ...prefixedPayload, signature };
+        return withSignature(prefixedPayload, existing, signature) as T & {
+          prefix: string;
+          signature?: string;
+          multisig?: string[];
+        };
       } else {
         throw new Error("Unsupported signing type");
       }
@@ -155,4 +169,66 @@ export class BrowserConnectClient extends WebSigner {
       throw new Error((error as Error).message);
     }
   }
+}
+
+function existingSignatures(payload: object): string[] {
+  const record = payload as { signature?: unknown; multisig?: unknown };
+  if (Array.isArray(record.multisig) && record.multisig.length > 0) {
+    return record.multisig.filter((item): item is string => typeof item === "string" && item.length > 0);
+  }
+  if (typeof record.signature === "string" && record.signature.length > 0) {
+    return [record.signature];
+  }
+  return [];
+}
+
+function assertMultisigReady(payload: object): void {
+  const record = payload as {
+    signerAddress?: unknown;
+    dtoOperation?: unknown;
+    dtoExpiresAt?: unknown;
+    signerPublicKey?: unknown;
+  };
+  if (!record.signerAddress) {
+    throw new Error("signerAddress is required for multisignature DTOs");
+  }
+  if (!record.dtoOperation) {
+    throw new Error("dtoOperation is required for multisignature DTOs");
+  }
+  if (!record.dtoExpiresAt) {
+    throw new Error("dtoExpiresAt is required for multisignature DTOs");
+  }
+  if (record.signerPublicKey) {
+    throw new Error("signerPublicKey is not allowed for multisignature DTOs");
+  }
+}
+
+function omitVerificationMetadata<T extends object>(
+  payload: T
+): Omit<T, "signature" | "multisig" | "trace" | "prefix"> {
+  const {
+    signature: _signature,
+    multisig: _multisig,
+    trace: _trace,
+    prefix: _prefix,
+    ...message
+  } = payload as T & {
+    signature?: unknown;
+    multisig?: unknown;
+    trace?: unknown;
+    prefix?: unknown;
+  };
+  return message;
+}
+
+function withSignature<T extends object>(
+  payload: T,
+  existing: string[],
+  signature: string,
+  typedData?: { types: unknown; domain: unknown }
+): T & { signature?: string; multisig?: string[] } {
+  if (existing.length > 0) {
+    return { ...payload, ...typedData, multisig: [...existing, signature] };
+  }
+  return { ...payload, ...typedData, signature };
 }
