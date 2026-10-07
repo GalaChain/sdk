@@ -71,7 +71,7 @@ import {
 } from "@gala-chain/api";
 import BigNumber from "bignumber.js";
 import { Type } from "class-transformer";
-import { IsDefined, IsNotEmpty, IsOptional, ValidateNested } from "class-validator";
+import { IsDefined, IsInt, IsNotEmpty, IsOptional, Min, ValidateNested } from "class-validator";
 
 import { ConstructorArgs } from "./utils";
 
@@ -152,6 +152,11 @@ class TokenBalance implements ConstructorArgs<TokenBalanceDto> {
   @ValidateNested()
   @Type(() => TokenBalanceTargets)
   targets?: TokenBalanceTargets;
+
+  @Min(0)
+  @IsInt()
+  @IsOptional()
+  vestingPeriodStart?: number;
 }
 
 export {
