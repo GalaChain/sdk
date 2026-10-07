@@ -84,9 +84,10 @@ export async function readDockerfile(): Promise<string> {
 export async function getDeploymentResponse(params: {
   privateKey: string;
   chaincodeName: string;
+  operationId?: string;
 }): Promise<ChaincodeInfoDto> {
   const getChaincodeDeploymentDto: GetChaincodeDeploymentDto = {
-    operationId: nanoid(),
+    operationId: params.operationId ?? nanoid(),
     chaincode: params.chaincodeName
   };
 
@@ -116,7 +117,8 @@ export async function getDeploymentResponse(params: {
     imageName: d.imageName,
     sequence: d.sequence,
     status: d.status,
-    lastUpdated: d.lastUpdated
+    lastUpdated: d.lastUpdated,
+    ...(typeof d.operationId === "string" ? { operationId: d.operationId } : {})
   };
 }
 
@@ -193,9 +195,10 @@ export async function deployChaincode(params: {
   imageTag: string;
   chaincode: string;
   contracts: { contractName: string }[];
-}) {
+}): Promise<{ operationId: string }> {
+  const operationId = nanoid();
   const dto: DeployChaincodeDto = {
-    operationId: nanoid(),
+    operationId,
     imageTag: params.imageTag,
     chaincode: params.chaincode,
     contracts: params.contracts
@@ -203,7 +206,7 @@ export async function deployChaincode(params: {
 
   const signature = await generateSignature(dto, params.privateKey);
 
-  const response = await axios
+  await axios
     .post(ServicePortal.DEPLOY_URL, dto, {
       headers: {
         [ServicePortal.AUTH_X_GC_KEY]: signature
@@ -213,7 +216,7 @@ export async function deployChaincode(params: {
       throw new Error(axiosErrorMessage(error));
     });
 
-  return response.data;
+  return { operationId };
 }
 
 export async function registerChaincode(params: {
