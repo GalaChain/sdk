@@ -199,30 +199,6 @@ export class FetchFeeAuthorizationsDto extends ChainCallDTO {
   day?: string;
 
   @JSONSchema({
-    description:
-      "Hour from timestamp of authorizaiton. Chain Key used for partial querying. " + "String in HH format."
-  })
-  @IsOptional()
-  @IsNotEmpty()
-  hours?: string;
-
-  @JSONSchema({
-    description:
-      "Minutes from timestamp of authorizaiton. Chain Key used for partial querying. " +
-      "String in mm format."
-  })
-  @IsOptional()
-  @IsNotEmpty()
-  minutes?: string;
-
-  @JSONSchema({
-    description: "feeCode identifier for which this fee was authorized. Chain key used for specific querying."
-  })
-  @IsOptional()
-  @IsNotEmpty()
-  feeCode?: string;
-
-  @JSONSchema({
     description: "Transaction ID where authorization was written. Chain key used for specific querying."
   })
   @IsOptional()
@@ -287,23 +263,6 @@ export class FetchFeeChannelPaymentsDto extends ChainCallDTO {
   @IsOptional()
   @IsNotEmpty()
   day?: string;
-
-  @JSONSchema({
-    description:
-      "Hour from timestamp of authorizaiton. Chain Key used for partial querying. " + "String in HH format."
-  })
-  @IsOptional()
-  @IsNotEmpty()
-  hours?: string;
-
-  @JSONSchema({
-    description:
-      "Minutes from timestamp of authorizaiton. Chain Key used for partial querying. " +
-      "String in mm format."
-  })
-  @IsOptional()
-  @IsNotEmpty()
-  minutes?: string;
 
   @JSONSchema({
     description: "feeCode identifier for which this fee was paid. Chain key used for specific querying."
@@ -417,11 +376,13 @@ export class FetchFeeCreditReceiptsDto extends ChainCallDTO {
   minutes?: string;
 
   @JSONSchema({
-    description: "feeCode identifier for which this receipt. Chain key used for specific querying."
+    description:
+      "Seconds from timestamp of receipt creation. Chain Key used for partial querying. " +
+      "String in ss format."
   })
   @IsOptional()
   @IsNotEmpty()
-  feeCode?: string;
+  seconds?: string;
 
   @JSONSchema({
     description: "Receipt issued to user."
