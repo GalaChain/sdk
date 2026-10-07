@@ -33,7 +33,7 @@ import { JSONSchema } from "class-validator-jsonschema";
 import { ValidationFailedError } from "../utils";
 import { BigNumberProperty } from "../validators";
 import { OracleDefinition } from "./OracleDefinition";
-import { ExternalToken, OraclePriceAssertion } from "./OraclePriceAssertion";
+import { ExternalToken, OraclePriceAssertion, PositiveFiniteRate } from "./OraclePriceAssertion";
 import { OraclePriceCrossRateAssertion } from "./OraclePriceCrossRateAssertion";
 import { TokenClassKey } from "./TokenClass";
 import { TokenInstanceKey } from "./TokenInstance";
@@ -195,6 +195,7 @@ export class OraclePriceAssertionDto extends SubmitCallDTO {
   @JSONSchema({
     description: "How much of the quoteToken is needed to purchase one unit of the baseToken."
   })
+  @PositiveFiniteRate()
   @BigNumberProperty()
   exchangeRate: BigNumber;
 
@@ -290,6 +291,7 @@ export class OraclePriceCrossRateAssertionDto extends SubmitCallDTO {
   @JSONSchema({
     description: "Cross rate for baseToken and quoteToken, calculated from the crossRateToken exchange rates."
   })
+  @PositiveFiniteRate()
   @BigNumberProperty()
   crossRate: BigNumber;
 
@@ -457,6 +459,7 @@ export class OracleBridgeFeeAssertionDto extends SubmitCallDTO {
       "Rounding decimals used for estimatedTotalTxFeeInGala. " +
       "Expected to match $GALA TokenClass.decimals."
   })
+  @IsInt()
   @Min(0)
   @Max(32)
   public galaDecimals: number;
