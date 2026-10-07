@@ -22,9 +22,10 @@ export class CAClient {
   public readonly asLocalhost: boolean;
   public readonly affiliation: string;
   public readonly wallet: Promise<Wallet>;
-  public readonly enrolledAdmin: Promise<Identity>;
   public readonly adminId: string;
+  private readonly adminSecret: string;
   private readonly caClient: FabricCAServices;
+  private adminEnrollment: Promise<Identity> | undefined;
 
   constructor(
     orgMsp: string,
@@ -37,14 +38,31 @@ export class CAClient {
     this.caClient = buildCAClient(connectionProfile, this.caHostName);
     this.wallet = getGlobalWallet(this.orgMsp);
     this.adminId = adminId;
-    this.enrolledAdmin = this.wallet.then(async (wallet) => {
-      const identity = await enrollUser(this.caClient, wallet, orgMsp, adminId, adminSecret);
-      if (identity === undefined) {
-        throw new Error(`Failed to enroll admin user (${adminId})`);
-      } else {
+    this.adminSecret = adminSecret;
+  }
+
+  public get enrolledAdmin(): Promise<Identity> {
+    if (this.adminEnrollment) {
+      return this.adminEnrollment;
+    }
+
+    const pending = this.wallet
+      .then((wallet) => enrollUser(this.caClient, wallet, this.orgMsp, this.adminId, this.adminSecret))
+      .then((identity) => {
+        if (identity === undefined) {
+          throw new Error(`Failed to enroll admin user (${this.adminId})`);
+        }
         return identity;
-      }
-    });
+      })
+      .catch((error: unknown) => {
+        if (this.adminEnrollment === pending) {
+          this.adminEnrollment = undefined;
+        }
+        throw error;
+      });
+
+    this.adminEnrollment = pending;
+    return pending;
   }
 
   public async isReady(): Promise<boolean> {
@@ -53,26 +71,48 @@ export class CAClient {
   }
 
   async getIdentityOrRegisterUser(userId: string): Promise<Identity> {
+    const key = onboardingKey(this.orgMsp, this.caHostName, userId);
+    const current = userProvisioning.get(key);
+    if (current) {
+      return current;
+    }
+
+    const pending = this.provisionUser(userId).finally(() => {
+      if (userProvisioning.get(key) === pending) {
+        userProvisioning.delete(key);
+      }
+    });
+    userProvisioning.set(key, pending);
+    return pending;
+  }
+
+  private async provisionUser(userId: string): Promise<Identity> {
     await this.isReady();
 
-    const identity = await this.wallet.then((w) => w.get(userId));
-
+    const wallet = await this.wallet;
+    const identity = await wallet.get(userId);
     if (identity !== undefined) {
       return identity;
     }
 
-    // register
-    const userSecret = await registerUser(
-      this.caClient,
-      this.adminId,
-      await this.wallet,
-      userId,
-      this.affiliation
-    );
+    const key = onboardingKey(this.orgMsp, this.caHostName, userId);
+    let userSecret = registrationSecrets.get(key);
+    if (userSecret === undefined) {
+      userSecret = await registerUser(this.caClient, this.adminId, wallet, userId, this.affiliation);
+      registrationSecrets.set(key, userSecret);
+    }
 
-    // enroll
-    return await enrollUser(this.caClient, await this.wallet, this.orgMsp, userId, userSecret);
+    const enrolled = await enrollUser(this.caClient, wallet, this.orgMsp, userId, userSecret);
+    registrationSecrets.delete(key);
+    return enrolled;
   }
+}
+
+const userProvisioning = new Map<string, Promise<Identity>>();
+const registrationSecrets = new Map<string, string>();
+
+function onboardingKey(orgMsp: string, caHostName: string, userId: string): string {
+  return JSON.stringify([orgMsp, caHostName, userId]);
 }
 
 function getCAHostName(connectionProfile: Record<string, unknown>, orgMsp: string): string {
