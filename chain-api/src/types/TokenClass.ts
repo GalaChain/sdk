@@ -300,9 +300,10 @@ function createUpdated(existingToken: TokenClass, toUpdate: ToUpdate): TokenClas
   }
 
   if (Array.isArray(toUpdate.authorities) && toUpdate.authorities.length > 0) {
-    newToken.authorities = toUpdate.overwriteAuthorities
-      ? toUpdate.authorities
-      : Array.from(new Set(newToken.authorities.concat(toUpdate.authorities))).sort();
+    newToken.authorities =
+      toUpdate.overwriteAuthorities === true
+        ? toUpdate.authorities
+        : Array.from(new Set(newToken.authorities.concat(toUpdate.authorities))).sort();
   }
 
   return newToken;
