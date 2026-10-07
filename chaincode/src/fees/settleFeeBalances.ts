@@ -68,6 +68,7 @@ export async function settleFeeBalances(
   for (const balance of results) {
     const unspentBalance: BigNumber = new BigNumber(balance.quantity);
     balance.quantity = new BigNumber("0");
+    await putChainObject(ctx, balance);
 
     const settlement = plainToInstance(FeeBalanceSettlement, {
       balance: balance
