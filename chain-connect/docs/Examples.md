@@ -135,7 +135,8 @@ async function createAndRegisterWallet() {
   try {
     const randomWallet = await WalletUtils.createAndRegisterRandomWallet(registrationEndpoint);
 
-    console.log("Private Key:", randomWallet.privateKey);
+    console.log("Ethereum Address:", randomWallet.ethAddress);
+    // privateKey and mnemonic are secrets. Do not print them.
   } catch (error) {
     console.error("Failed to create and register wallet:", error);
   }
