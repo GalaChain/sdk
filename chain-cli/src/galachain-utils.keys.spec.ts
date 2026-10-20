@@ -38,6 +38,22 @@ describe("saveApiConfig contract names", () => {
       )
     ).rejects.toThrow(/Duplicate contract name "Apple"/);
   });
+
+  it("removes -channel only when it is a suffix", async () => {
+    const dir = fs.mkdtempSync(path.join(os.tmpdir(), "api-config-"));
+
+    await saveApiConfig(dir, ['[{"contractName":"Apple"}]'], ["my-channel-name"], ["basic"]);
+    const kept = JSON.parse(fs.readFileSync(path.join(dir, "api-config.json"), "utf8")) as {
+      channels: { pathFragment: string }[];
+    };
+    expect(kept.channels[0].pathFragment).toEqual("my-channel-name");
+
+    await saveApiConfig(dir, ['[{"contractName":"Apple"}]'], ["product-channel"], ["basic"]);
+    const stripped = JSON.parse(fs.readFileSync(path.join(dir, "api-config.json"), "utf8")) as {
+      channels: { pathFragment: string }[];
+    };
+    expect(stripped.channels[0].pathFragment).toEqual("product");
+  });
 });
 
 describe("getDeveloperPublicKeys", () => {

@@ -395,11 +395,20 @@ function getApiConfigForChannel(channel: string, chaincodeName: string, contract
   });
 
   return {
-    pathFragment: channel.replace("-channel", ""),
+    pathFragment: channelPathFragment(channel),
     channelName: channel,
     asLocalHost: true,
     contracts: contractsArr
   };
+}
+
+// Remove a trailing "-channel" suffix only. An earlier "-channel" stays in the name.
+function channelPathFragment(channel: string): string {
+  const suffix = "-channel";
+  if (channel.endsWith(suffix)) {
+    return channel.slice(0, -suffix.length);
+  }
+  return channel;
 }
 
 function getDefaultDevPrivateKeyFile(chaincodeName: string): string | undefined {
