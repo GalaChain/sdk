@@ -12,11 +12,15 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+import BigNumber from "bignumber.js";
 import { plainToInstance } from "class-transformer";
 import { validate } from "class-validator";
 
+import { TokenAllowance } from "./TokenAllowance";
+import { UserAlias } from "./UserAlias";
 import { GrantAllowanceDto, HighThroughputGrantAllowanceDto, RefreshAllowanceDto } from "./allowance";
 import { AllowanceType } from "./common";
+import { createValidChainObject } from "./createValidChainObject";
 
 const grant = {
   tokenInstance: {
@@ -50,4 +54,30 @@ it("should allow a refresh that sets uses to zero", async () => {
 
   expect(zero.map((error) => error.property)).not.toContain("uses");
   expect(negative.map((error) => error.property)).toContain("uses");
+});
+
+it("should store an allowance with zero uses", async () => {
+  const fields = {
+    grantedTo: "client|testUser1" as UserAlias,
+    collection: "TEST",
+    category: "Item",
+    type: "Potion",
+    additionalKey: "Elixir",
+    instance: new BigNumber("1"),
+    allowanceType: AllowanceType.Lock,
+    grantedBy: "client|testUser2" as UserAlias,
+    created: 1,
+    expires: 0,
+    quantity: new BigNumber("100")
+  };
+
+  const allowance = await createValidChainObject(TokenAllowance, {
+    ...fields,
+    uses: new BigNumber("0")
+  });
+
+  expect(allowance.uses.isZero()).toBe(true);
+  await expect(
+    createValidChainObject(TokenAllowance, { ...fields, uses: new BigNumber("-1") })
+  ).rejects.toThrow(/uses/);
 });

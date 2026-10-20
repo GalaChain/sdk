@@ -616,6 +616,10 @@ export function allowanceIsUseable(ctx: GalaChainContext, tokenAllowance: TokenA
     return false;
   }
 
+  if (!tokenAllowance.uses.isGreaterThan(0)) {
+    return false;
+  }
+
   if (tokenAllowance.usesSpent === undefined && tokenAllowance.quantitySpent === undefined) {
     return true;
   }
