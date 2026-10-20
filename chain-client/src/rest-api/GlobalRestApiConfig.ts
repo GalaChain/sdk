@@ -45,6 +45,8 @@ export class GlobalRestApiConfig {
   private isRestApiInitializedAndHealthy: Record<string, RestApiStatus | Error> = {};
   private contractApis: Record<string, ContractApiValue> = {};
   private authorizedFabloRest: Record<string, string> = {};
+  private usesFabloRestByUrl: Record<string, boolean> = {};
+  private publishedBuilderScopes = new Set<string>();
 
   public getStatus(apiUrl: string): RestApiStatus {
     const result = this.isRestApiInitializedAndHealthy[apiUrl];
@@ -102,6 +104,22 @@ export class GlobalRestApiConfig {
     orgMsp: string
   ): string | undefined {
     return this.authorizedFabloRest[fabloAuthKey(apiUrl, credentials, orgMsp)];
+  }
+
+  public setUsesFabloRest(apiUrl: string, usesFabloRest: boolean) {
+    this.usesFabloRestByUrl[normalizeRestApiUrl(apiUrl)] = usesFabloRest;
+  }
+
+  public usesFabloRest(apiUrl: string): boolean {
+    return this.usesFabloRestByUrl[normalizeRestApiUrl(apiUrl)] === true;
+  }
+
+  public hasPublishedBuilderScope(scope: string): boolean {
+    return this.publishedBuilderScopes.has(scope);
+  }
+
+  public markBuilderScopePublished(scope: string) {
+    this.publishedBuilderScopes.add(scope);
   }
 }
 

@@ -28,7 +28,8 @@ import {
   RestApiAdminCredentials,
   RestApiStatus,
   SetContractApiParams,
-  globalRestApiConfig
+  globalRestApiConfig,
+  normalizeRestApiUrl
 } from "./GlobalRestApiConfig";
 import { RestApiClient } from "./RestApiClient";
 import { RestApiConfig } from "./loadRestApiConfig";
@@ -49,17 +50,8 @@ export class RestApiClientBuilder extends ChainClientBuilder {
     if (status === RestApiStatus.NONE) {
       try {
         globalRestApiConfig.markPending(this.restApiUrl);
-
-        const shouldUseFabloRest = await this.shouldUseFabloRest();
-
-        const apis = shouldUseFabloRest
-          ? await this.getContractApisFromFabloRest()
-          : await this.getContractApisFromGCRestApi();
-
-        for (const api of apis) {
-          globalRestApiConfig.setContractApi(this.restApiUrl, api);
-        }
-
+        globalRestApiConfig.setUsesFabloRest(this.restApiUrl, await this.shouldUseFabloRest());
+        await this.publishBuilderApis();
         globalRestApiConfig.markInitialized(this.restApiUrl);
         return;
       } catch (e) {
@@ -78,6 +70,27 @@ export class RestApiClientBuilder extends ChainClientBuilder {
       await new Promise((resolve) => setTimeout(resolve, 200));
       return this.ensureInitializedRestApi(retriesLeft - 1);
     }
+
+    if (status === RestApiStatus.INITIALIZED) {
+      await this.publishBuilderApis();
+    }
+  }
+
+  private async publishBuilderApis(): Promise<void> {
+    const scope = builderScopeKey(this.restApiUrl, this.orgMsp, this.credentials, this.restApiConfig);
+    if (globalRestApiConfig.hasPublishedBuilderScope(scope)) {
+      return;
+    }
+
+    const apis = globalRestApiConfig.usesFabloRest(this.restApiUrl)
+      ? await this.getContractApisFromFabloRest()
+      : await this.getContractApisFromGCRestApi();
+
+    for (const api of apis) {
+      globalRestApiConfig.setContractApi(this.restApiUrl, api);
+    }
+
+    globalRestApiConfig.markBuilderScopePublished(scope);
   }
 
   private async shouldUseFabloRest(): Promise<boolean> {
@@ -179,4 +192,19 @@ class AsyncProxyClient extends ChainClient {
     // @ts-expect-error - method overload signatures fail for some reason on dtoOrResp
     return await client.submitTransaction(method, dtoOrResp, resp);
   }
+}
+
+function builderScopeKey(
+  apiUrl: string,
+  orgMsp: string,
+  credentials: RestApiAdminCredentials,
+  restApiConfig: RestApiConfig
+): string {
+  return JSON.stringify([
+    normalizeRestApiUrl(apiUrl),
+    orgMsp,
+    credentials.adminKey,
+    credentials.adminSecret,
+    restApiConfig
+  ]);
 }

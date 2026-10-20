@@ -122,4 +122,54 @@ describe("REST cache scope", () => {
     expect(post).toHaveBeenCalledWith(`${url}/user/enroll`, { id: "alice", secret: "alice-secret" });
     expect(post).toHaveBeenCalledWith(`${url}/user/enroll`, { id: "bob", secret: "bob-secret" });
   });
+
+  it("loads a later builder's identity and contracts on an initialized endpoint", async () => {
+    const url = "http://later-builder.example";
+    const firstCredentials = { adminKey: "admin", adminSecret: "one" };
+    const secondCredentials = { adminKey: "admin", adminSecret: "two" };
+    const channel = {
+      channelName: "product",
+      pathFragment: "product",
+      contracts: [{ chaincodeName: "assets", contractName: "GalaChainToken", pathFragment: "token" }]
+    };
+    const extra = { channel: "product", chaincode: "assets", contract: "ExtraContract" };
+    const get = jest.spyOn(axios, "get").mockRejectedValue({ response: { status: 400 } });
+    post.mockImplementation(async (requestUrl: string, body?: { id?: string; secret?: string }) => {
+      if (String(requestUrl).endsWith("/user/enroll")) {
+        return { data: { token: `token-${body?.id}-${body?.secret}` } };
+      }
+
+      return {
+        data: {
+          response: {
+            Status: 1,
+            Data: { methods: [{ methodName: "Ping", isWrite: false }] }
+          }
+        }
+      };
+    });
+
+    const first = new RestApiClientBuilder(url, "Org1", firstCredentials, { channels: [channel] });
+    const second = new RestApiClientBuilder(url, "Org1", secondCredentials, {
+      channels: [
+        {
+          ...channel,
+          contracts: [
+            ...channel.contracts,
+            { chaincodeName: "assets", contractName: "ExtraContract", pathFragment: "extra" }
+          ]
+        }
+      ]
+    });
+
+    await first.forContract(contract).disconnect();
+    await second.forContract(extra).disconnect();
+
+    expect(globalRestApiConfig.getAuthorizedFabloRest(url, firstCredentials, "Org1")).toBe("token-admin-one");
+    expect(globalRestApiConfig.getAuthorizedFabloRest(url, secondCredentials, "Org1")).toBe(
+      "token-admin-two"
+    );
+    expect(globalRestApiConfig.getContractApi(url, extra).contractPath).toBe("product/assets");
+    get.mockRestore();
+  });
 });
