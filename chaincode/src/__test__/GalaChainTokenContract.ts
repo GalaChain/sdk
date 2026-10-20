@@ -372,7 +372,8 @@ export default class GalaChainTokenContract extends GalaContract {
   ): Promise<FetchBalancesWithTokenMetadataResponse> {
     return fetchBalancesWithTokenMetadata(ctx, {
       ...dto,
-      owner: await resolveUserAlias(ctx, dto.owner ?? ctx.callingUser)
+      owner: await resolveUserAlias(ctx, dto.owner ?? ctx.callingUser),
+      limit: dto.limit ?? FetchBalancesWithPaginationDto.DEFAULT_LIMIT
     });
   }
 
