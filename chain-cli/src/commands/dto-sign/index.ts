@@ -84,7 +84,12 @@ export default class DtoSign extends BaseCommand<typeof DtoSign> {
       signerAddress?: string;
     };
 
-    if (flags.derSignature && dto.signerPublicKey === undefined && dto.signerAddress === undefined) {
+    if (
+      flags.derSignature &&
+      !flags.onlySignature &&
+      dto.signerPublicKey === undefined &&
+      dto.signerAddress === undefined
+    ) {
       dto.signerPublicKey = signatures.getPublicKey(privateKey);
     }
 

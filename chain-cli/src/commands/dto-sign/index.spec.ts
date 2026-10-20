@@ -100,6 +100,16 @@ describe("DtoSign Command", () => {
     expect(output).not.toContain("signerPublicKey");
   });
 
+  it("does not attach a signer identity when only the DER signature is requested", async () => {
+    const der = jest.spyOn(signatures, "getDERSignature");
+    jest.spyOn(process.stdout, "write").mockImplementation(() => true);
+
+    await DtoSign.run([path.resolve(__dirname, "./test-key"), dataTestJson, "-d", "-s"]);
+
+    const signed = der.mock.calls[0][0] as { signerPublicKey?: string };
+    expect(signed.signerPublicKey).toBeUndefined();
+  });
+
   it("fails when the output file cannot be written", async () => {
     jest.mocked(writeFile).mockRejectedValueOnce(new Error("disk full"));
 
