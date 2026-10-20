@@ -120,4 +120,25 @@ describe("legacy credential origin", () => {
     expect(secondHeaders["X-Identity-Lookup-Key"]).toBeUndefined();
     expect(secondHeaders["X-User-Encryption-Key"]).toBeUndefined();
   });
+
+  it("does not let a differently cased header replace credentials", async () => {
+    const client = provider();
+
+    await client.submit({
+      url: "https://chain.example/api",
+      method: "Ping",
+      payload: {},
+      sign: false,
+      headers: {
+        "x-identity-lookup-key": "replaced",
+        "x-user-encryption-key": "replaced"
+      }
+    });
+
+    const sent = fetchMock.mock.calls[0][1].headers;
+    expect(sent["x-identity-lookup-key"]).toBeUndefined();
+    expect(sent["x-user-encryption-key"]).toBeUndefined();
+    expect(sent["X-Identity-Lookup-Key"]).toBe("lookup");
+    expect(sent["X-User-Encryption-Key"]).toBe("encrypt");
+  });
 });

@@ -52,6 +52,11 @@ export interface GalaChainProviderOptions {
  */
 const legacyCredentialHeaders = ["X-Identity-Lookup-Key", "X-User-Encryption-Key"] as const;
 
+function isLegacyCredentialHeader(name: string): boolean {
+  const normalized = name.toLowerCase();
+  return legacyCredentialHeaders.some((header) => header.toLowerCase() === normalized);
+}
+
 export abstract class GalaChainProvider {
   private legacyCredentials: Record<string, string> | undefined;
   private legacyCredentialOrigin: string | undefined;
@@ -73,7 +78,7 @@ export abstract class GalaChainProvider {
   private requestHeaders(url: string, headers: Record<string, string>): Record<string, string> {
     const requestHeaders: Record<string, string> = { "Content-Type": "application/json" };
     for (const [name, value] of Object.entries(headers)) {
-      if (legacyCredentialHeaders.some((header) => header === name)) {
+      if (isLegacyCredentialHeader(name)) {
         continue;
       }
       requestHeaders[name] = value;
