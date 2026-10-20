@@ -17,7 +17,7 @@ import { Span } from "@opentelemetry/api";
 import { ChaincodeResponse, ChaincodeStub } from "fabric-shim";
 
 import { formatOtelStateKey, withSpan } from "../tracing";
-import { CachedKV, FabricIterable, fabricIterable, filter, prepend } from "./FabricIterable";
+import { CachedKV, FabricIterable, fabricIterable, filter, prepend, readBeforeClose } from "./FabricIterable";
 
 const stateKeyAttr = formatOtelStateKey;
 
@@ -131,7 +131,10 @@ class StubCache {
     const keysToExclude = new Set(cached.map((kv) => kv.key).concat(Object.keys(this.deletes)));
 
     const state = this.getStateByPartialCompositeKey(objectType, attributes);
-    const filteredState = filter((kv) => !keysToExclude.has(kv.key), state[Symbol.asyncIterator]());
+    const filteredState = filter(
+      (kv) => !keysToExclude.has(kv.key),
+      readBeforeClose(state[Symbol.asyncIterator]())
+    );
 
     return fabricIterable(prepend(cached, filteredState));
   }

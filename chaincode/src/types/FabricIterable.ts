@@ -45,6 +45,31 @@ const closeIterator = async <T>(iterator: AsyncIterator<T>): Promise<IteratorRes
   return { done: true, value: undefined };
 };
 
+// A ledger query assigns its iterator during next(). Closing before that read
+// has to perform the read first, then close, or the query stays open.
+export const readBeforeClose = <T>(iterator: AsyncIterator<T>): AsyncIterator<T> => {
+  let opened = false;
+
+  return {
+    next: async (): Promise<IteratorResult<T>> => {
+      const result = await iterator.next();
+      opened = true;
+      return result;
+    },
+    return: async (): Promise<IteratorResult<T>> => {
+      if (!opened) {
+        const first = await iterator.next();
+        opened = true;
+        if (first.done) {
+          return { done: true, value: undefined };
+        }
+      }
+
+      return closeIterator(iterator);
+    }
+  };
+};
+
 export const filter = <T>(include: (_: T) => boolean, iterator: AsyncIterator<T>): AsyncIterator<T> => {
   const filteredIterator = {
     next: async (): Promise<IteratorResult<T>> => {
