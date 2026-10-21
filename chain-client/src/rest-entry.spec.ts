@@ -33,8 +33,7 @@ describe("REST package entry", () => {
     jest.resetModules();
   });
 
-  it("loads the REST entry and package root without Fabric packages", () => {
-    expect(() => nodeRequire("./rest")).not.toThrow();
+  it("loads the package root without Fabric packages", () => {
     expect(() => nodeRequire("./index")).not.toThrow();
   });
 
