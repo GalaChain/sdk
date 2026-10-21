@@ -161,7 +161,7 @@ export class TokenApi extends GalaChainBaseApi {
     return this.connection.submit({
       method: "FetchTokenClassesWithPagination",
       payload: dto,
-      sign: true,
+      sign: false,
       url: this.chainCodeUrl,
       requestConstructor: FetchTokenClassesWithPaginationDto,
       responseConstructor: FetchTokenClassesResponse
@@ -236,7 +236,7 @@ export class TokenApi extends GalaChainBaseApi {
     return this.connection.submit({
       method: "FullAllowanceCheck",
       payload: dto,
-      sign: true,
+      sign: false,
       url: this.chainCodeUrl,
       requestConstructor: FullAllowanceCheckDto,
       responseConstructor: FullAllowanceCheckResponse
@@ -247,7 +247,7 @@ export class TokenApi extends GalaChainBaseApi {
     return this.connection.submit({
       method: "FetchAllowances",
       payload: dto,
-      sign: true,
+      sign: false,
       url: this.chainCodeUrl,
       requestConstructor: FetchAllowancesDto,
       responseConstructor: FetchAllowancesResponse
