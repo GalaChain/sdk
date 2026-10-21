@@ -112,8 +112,29 @@ export class RestApiClientBuilder extends ChainClientBuilder {
         return true;
       }
 
+      if (status === 404 && (await this.matchesGCRestContractApi())) {
+        return false;
+      }
+
       const message = error instanceof Error ? error.message : "request failed";
       throw new Error(`Failed to identify REST API at ${this.restApiUrl}: ${status ?? message}`);
+    }
+  }
+
+  private async matchesGCRestContractApi(): Promise<boolean> {
+    const channel = this.restApiConfig.channels[0];
+    const contract = channel?.contracts[0];
+    if (!channel || !contract) {
+      return false;
+    }
+
+    try {
+      const response = await axios.post(
+        `${this.restApiUrl}/${channel.pathFragment}/${contract.pathFragment}/GetContractAPI`
+      );
+      return GalaChainResponse.isSuccess(response.data);
+    } catch {
+      return false;
     }
   }
 

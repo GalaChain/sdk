@@ -49,4 +49,53 @@ describe("REST protocol probe", () => {
     );
     expect(post).not.toHaveBeenCalled();
   });
+
+  it("uses the chain REST API when the identities route is missing and contract metadata loads", async () => {
+    const url = "http://gcrest.example";
+    jest
+      .spyOn(axios, "get")
+      .mockRejectedValue(Object.assign(new Error("missing"), { response: { status: 404 } }));
+    const post = jest.spyOn(axios, "post").mockResolvedValue({
+      data: { Status: 1, Data: { methods: [{ methodName: "Ping", isWrite: false }] } }
+    });
+    const builder = new RestApiClientBuilder(url, "Org1", credentials, {
+      channels: [
+        {
+          channelName: "product",
+          pathFragment: "product",
+          contracts: [{ chaincodeName: "assets", contractName: "GalaChainToken", pathFragment: "assets" }]
+        }
+      ]
+    });
+
+    await builder.forContract(contract).evaluateTransaction("Ping");
+
+    const urls = post.mock.calls.map((call) => String(call[0]));
+    expect(urls).toContain(`${url}/product/assets/GetContractAPI`);
+    expect(urls.some((called) => called.includes("/user/enroll"))).toBe(false);
+  });
+
+  it("does not enroll when a missing identities route is not the chain REST API", async () => {
+    const url = "http://unknown-rest.example";
+    jest
+      .spyOn(axios, "get")
+      .mockRejectedValue(Object.assign(new Error("missing"), { response: { status: 404 } }));
+    const post = jest
+      .spyOn(axios, "post")
+      .mockRejectedValue(Object.assign(new Error("missing"), { response: { status: 404 } }));
+    const builder = new RestApiClientBuilder(url, "Org1", credentials, {
+      channels: [
+        {
+          channelName: "product",
+          pathFragment: "product",
+          contracts: [{ chaincodeName: "assets", contractName: "GalaChainToken", pathFragment: "assets" }]
+        }
+      ]
+    });
+
+    await expect(builder.forContract(contract).evaluateTransaction("Ping")).rejects.toThrow(
+      `Failed to identify REST API at ${url}: 404`
+    );
+    expect(post.mock.calls.some((call) => String(call[0]).includes("/user/enroll"))).toBe(false);
+  });
 });
