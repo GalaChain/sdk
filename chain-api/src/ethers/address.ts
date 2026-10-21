@@ -16,7 +16,7 @@ function getChecksumAddress(address: string): string {
     expanded[i] = chars[i].charCodeAt(0);
   }
 
-  const hashed = getBytes(keccak256(expanded));
+  const hashed = getBytes("0x" + keccak256(expanded));
 
   for (let i = 0; i < 40; i += 2) {
     if (hashed[i >> 1] >> 4 >= 8) {

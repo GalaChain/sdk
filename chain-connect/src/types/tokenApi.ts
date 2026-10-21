@@ -49,6 +49,7 @@ import {
   MintTokenDto,
   MintTokenWithAllowanceDto,
   RefreshAllowanceDto,
+  RefreshAllowancesDto,
   RestrictTokenBalanceTargetsDto,
   SetTokenInstanceMetadataDto,
   TokenAllowance,
@@ -71,7 +72,7 @@ import {
 } from "@gala-chain/api";
 import BigNumber from "bignumber.js";
 import { Type } from "class-transformer";
-import { IsDefined, IsNotEmpty, IsOptional, ValidateNested } from "class-validator";
+import { IsDefined, IsInt, IsNotEmpty, IsOptional, Min, ValidateNested } from "class-validator";
 
 import { ConstructorArgs } from "./utils";
 
@@ -100,6 +101,7 @@ type MintRequest = ConstructorArgs<MintRequestDto>;
 type MintTokenRequest = ConstructorArgs<MintTokenDto>;
 type MintTokenWithAllowanceRequest = ConstructorArgs<MintTokenWithAllowanceDto>;
 type RefreshAllowanceRequest = ConstructorArgs<RefreshAllowanceDto>;
+type RefreshAllowancesRequest = ConstructorArgs<RefreshAllowancesDto>;
 type SetTokenInstanceMetadataRequest = ConstructorArgs<SetTokenInstanceMetadataDto>;
 type TransferTokenRequest = ConstructorArgs<TransferTokenDto>;
 type UnlockTokenRequest = ConstructorArgs<UnlockTokenDto>;
@@ -152,6 +154,11 @@ class TokenBalance implements ConstructorArgs<TokenBalanceDto> {
   @ValidateNested()
   @Type(() => TokenBalanceTargets)
   targets?: TokenBalanceTargets;
+
+  @Min(0)
+  @IsInt()
+  @IsOptional()
+  vestingPeriodStart?: number;
 }
 
 export {
@@ -185,6 +192,7 @@ export {
   MintTokenRequest,
   MintTokenWithAllowanceRequest,
   RefreshAllowanceRequest,
+  RefreshAllowancesRequest,
   SetTokenInstanceMetadataRequest,
   TokenAllowance,
   TokenBalance,
