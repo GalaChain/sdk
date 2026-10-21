@@ -19,42 +19,14 @@ import { RestApiClientBuilder } from "./RestApiClientBuilder";
 const contract = { channel: "product", chaincode: "assets", contract: "GalaChainToken" };
 const credentials = { adminKey: "admin", adminSecret: "secret" };
 
-describe("REST protocol probe", () => {
+describe("chain REST client", () => {
   afterEach(() => {
     jest.restoreAllMocks();
   });
 
-  it("does not enroll when the probe status is not 400", async () => {
-    const url = "http://ambiguous-rest.example";
-    jest
-      .spyOn(axios, "get")
-      .mockRejectedValue(Object.assign(new Error("denied"), { response: { status: 401 } }));
-    const post = jest.spyOn(axios, "post");
-    const builder = new RestApiClientBuilder(url, "Org1", credentials, { channels: [] });
-
-    await expect(builder.forContract(contract).evaluateTransaction("Ping")).rejects.toThrow(
-      `Failed to identify REST API at ${url}: 401`
-    );
-    expect(post).not.toHaveBeenCalled();
-  });
-
-  it("does not enroll when the probe fails without a status", async () => {
-    const url = "http://offline-rest.example";
-    jest.spyOn(axios, "get").mockRejectedValue(new Error("connect ECONNREFUSED"));
-    const post = jest.spyOn(axios, "post");
-    const builder = new RestApiClientBuilder(url, "Org1", credentials, { channels: [] });
-
-    await expect(builder.forContract(contract).evaluateTransaction("Ping")).rejects.toThrow(
-      `Failed to identify REST API at ${url}: connect ECONNREFUSED`
-    );
-    expect(post).not.toHaveBeenCalled();
-  });
-
-  it("uses the chain REST API when the identities route is missing and contract metadata loads", async () => {
+  it("loads contract metadata and does not call user enrollment", async () => {
     const url = "http://gcrest.example";
-    jest
-      .spyOn(axios, "get")
-      .mockRejectedValue(Object.assign(new Error("missing"), { response: { status: 404 } }));
+    const get = jest.spyOn(axios, "get");
     const post = jest.spyOn(axios, "post").mockResolvedValue({
       data: { Status: 1, Data: { methods: [{ methodName: "Ping", isWrite: false }] } }
     });
@@ -73,29 +45,6 @@ describe("REST protocol probe", () => {
     const urls = post.mock.calls.map((call) => String(call[0]));
     expect(urls).toContain(`${url}/product/assets/GetContractAPI`);
     expect(urls.some((called) => called.includes("/user/enroll"))).toBe(false);
-  });
-
-  it("does not enroll when a missing identities route is not the chain REST API", async () => {
-    const url = "http://unknown-rest.example";
-    jest
-      .spyOn(axios, "get")
-      .mockRejectedValue(Object.assign(new Error("missing"), { response: { status: 404 } }));
-    const post = jest
-      .spyOn(axios, "post")
-      .mockRejectedValue(Object.assign(new Error("missing"), { response: { status: 404 } }));
-    const builder = new RestApiClientBuilder(url, "Org1", credentials, {
-      channels: [
-        {
-          channelName: "product",
-          pathFragment: "product",
-          contracts: [{ chaincodeName: "assets", contractName: "GalaChainToken", pathFragment: "assets" }]
-        }
-      ]
-    });
-
-    await expect(builder.forContract(contract).evaluateTransaction("Ping")).rejects.toThrow(
-      `Failed to identify REST API at ${url}: 404`
-    );
-    expect(post.mock.calls.some((call) => String(call[0]).includes("/user/enroll"))).toBe(false);
+    expect(get).not.toHaveBeenCalled();
   });
 });

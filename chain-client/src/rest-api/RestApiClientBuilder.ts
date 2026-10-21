@@ -12,8 +12,6 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-import axios from "axios";
-
 import {
   ChainClient,
   ChainClientBuilder,
@@ -23,7 +21,6 @@ import {
   Serializable
 } from "../generic";
 import { GalaChainResponse } from "../wire";
-import { FabloRestClient } from "./FabloRestClient";
 import {
   RestApiAdminCredentials,
   RestApiStatus,
@@ -33,15 +30,6 @@ import {
 } from "./GlobalRestApiConfig";
 import { RestApiClient } from "./RestApiClient";
 import { RestApiConfig } from "./loadRestApiConfig";
-
-function readStatusCode(error: unknown): number | undefined {
-  if (typeof error !== "object" || error === null || !("response" in error)) {
-    return undefined;
-  }
-
-  const status = (error as { response?: { status?: unknown } }).response?.status;
-  return typeof status === "number" ? status : undefined;
-}
 
 export class RestApiClientBuilder extends ChainClientBuilder {
   constructor(
@@ -59,7 +47,6 @@ export class RestApiClientBuilder extends ChainClientBuilder {
     if (status === RestApiStatus.NONE) {
       try {
         globalRestApiConfig.markPending(this.restApiUrl);
-        globalRestApiConfig.setUsesFabloRest(this.restApiUrl, await this.shouldUseFabloRest());
         await this.publishBuilderApis();
         globalRestApiConfig.markInitialized(this.restApiUrl);
         return;
@@ -91,65 +78,13 @@ export class RestApiClientBuilder extends ChainClientBuilder {
       return;
     }
 
-    const apis = globalRestApiConfig.usesFabloRest(this.restApiUrl)
-      ? await this.getContractApisFromFabloRest()
-      : await this.getContractApisFromGCRestApi();
+    const apis = await this.getContractApisFromGCRestApi();
 
     for (const api of apis) {
       globalRestApiConfig.setContractApi(this.restApiUrl, api);
     }
 
     globalRestApiConfig.markBuilderScopePublished(scope);
-  }
-
-  private async shouldUseFabloRest(): Promise<boolean> {
-    try {
-      await axios.get(`${this.restApiUrl}/user/identities`);
-      return false;
-    } catch (error) {
-      const status = readStatusCode(error);
-      if (status === 400) {
-        return true;
-      }
-
-      if (status === 404 && (await this.matchesGCRestContractApi())) {
-        return false;
-      }
-
-      const message = error instanceof Error ? error.message : "request failed";
-      throw new Error(`Failed to identify REST API at ${this.restApiUrl}: ${status ?? message}`);
-    }
-  }
-
-  private async matchesGCRestContractApi(): Promise<boolean> {
-    const channel = this.restApiConfig.channels[0];
-    const contract = channel?.contracts[0];
-    if (!channel || !contract) {
-      return false;
-    }
-
-    try {
-      const response = await axios.post(
-        `${this.restApiUrl}/${channel.pathFragment}/${contract.pathFragment}/GetContractAPI`
-      );
-      return GalaChainResponse.isSuccess(response.data);
-    } catch {
-      return false;
-    }
-  }
-
-  private async getContractApisFromFabloRest(): Promise<SetContractApiParams[]> {
-    const token =
-      globalRestApiConfig.getAuthorizedFabloRest(this.restApiUrl, this.credentials, this.orgMsp) ??
-      (await FabloRestClient.enroll(
-        this.restApiUrl,
-        this.credentials.adminKey,
-        this.credentials.adminSecret
-      ));
-
-    globalRestApiConfig.setAuthorizedFabloRest(this.restApiUrl, this.credentials, this.orgMsp, token);
-
-    return await FabloRestClient.getContractApis(token, this.restApiUrl, this.restApiConfig);
   }
 
   private async getContractApisFromGCRestApi(): Promise<SetContractApiParams[]> {
@@ -176,25 +111,6 @@ class AsyncProxyClient extends ChainClient {
   }
 
   private createClient(builder: RestApiClientBuilder, contractConfig: ContractConfig): ChainClient {
-    // Token present means we want to use Fablo REST
-    const token = globalRestApiConfig.getAuthorizedFabloRest(
-      builder.restApiUrl,
-      builder.credentials,
-      this.orgMsp
-    );
-
-    if (token) {
-      return new FabloRestClient(
-        Promise.resolve(builder),
-        builder.restApiUrl,
-        contractConfig,
-        builder.credentials,
-        Promise.resolve(token),
-        this.orgMsp,
-        this.userId
-      );
-    }
-
     return new RestApiClient(Promise.resolve(builder), builder.restApiUrl, contractConfig, this.orgMsp);
   }
 

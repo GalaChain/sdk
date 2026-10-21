@@ -124,31 +124,8 @@ export class FabloRestClient extends ChainClient {
     return GalaChainResponse.deserialize<T>(responseType, response?.data?.response ?? {});
   }
 
-  public static async enroll(restApiUrl: string, userId: string, secret: string): Promise<string> {
-    const response = await axios
-      .post(`${restApiUrl}/user/enroll`, { id: userId, secret })
-      .catch((e) => catchAxiosError(e));
-
-    if (!response.data.token) {
-      throw new Error(`User enrollment failed, invalid response: ${JSON.stringify(response.data)}`);
-    }
-
-    return response.data.token;
-  }
-
-  public forUser(userId: string, secret?: string): ChainClient {
-    const token = this.restApiUrl.then((url) =>
-      FabloRestClient.enroll(url, userId, secret ?? this.credentials.adminSecret)
-    );
-    return new FabloRestClient(
-      this.builder,
-      this.apiUrl,
-      this.contractConfig,
-      this.credentials,
-      token,
-      this.orgMsp,
-      userId
-    );
+  public forUser(_userId: string, _secret?: string): ChainClient {
+    return this;
   }
 
   public static async getContractApis(

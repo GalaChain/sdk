@@ -87,20 +87,9 @@ describe("REST cache scope", () => {
     const bob = client.forUser("bob", "bob-secret");
     await settle();
 
-    expect(alice).not.toBe(client);
-    expect(bob).not.toBe(client);
-    expect(alice).not.toBe(bob);
-    expect(client.userId).toBe("admin");
-    expect(alice.userId).toBe("alice");
-    expect(bob.userId).toBe("bob");
-    expect(post).toHaveBeenCalledWith("http://fablo-user.example/user/enroll", {
-      id: "alice",
-      secret: "alice-secret"
-    });
-    expect(post).toHaveBeenCalledWith("http://fablo-user.example/user/enroll", {
-      id: "bob",
-      secret: "bob-secret"
-    });
+    expect(alice).toBe(client);
+    expect(bob).toBe(client);
+    expect(post).not.toHaveBeenCalled();
   });
 
   it("does not retarget the shared proxy when selecting a user", async () => {
@@ -119,8 +108,7 @@ describe("REST cache scope", () => {
     expect(client.userId).toBe("admin");
     expect(alice.userId).toBe("alice");
     expect(bob.userId).toBe("bob");
-    expect(post).toHaveBeenCalledWith(`${url}/user/enroll`, { id: "alice", secret: "alice-secret" });
-    expect(post).toHaveBeenCalledWith(`${url}/user/enroll`, { id: "bob", secret: "bob-secret" });
+    expect(post).not.toHaveBeenCalled();
   });
 
   it("loads a later builder's identity and contracts on an initialized endpoint", async () => {
@@ -133,20 +121,8 @@ describe("REST cache scope", () => {
       contracts: [{ chaincodeName: "assets", contractName: "GalaChainToken", pathFragment: "token" }]
     };
     const extra = { channel: "product", chaincode: "assets", contract: "ExtraContract" };
-    const get = jest.spyOn(axios, "get").mockRejectedValue({ response: { status: 400 } });
-    post.mockImplementation(async (requestUrl: string, body?: { id?: string; secret?: string }) => {
-      if (String(requestUrl).endsWith("/user/enroll")) {
-        return { data: { token: `token-${body?.id}-${body?.secret}` } };
-      }
-
-      return {
-        data: {
-          response: {
-            Status: 1,
-            Data: { methods: [{ methodName: "Ping", isWrite: false }] }
-          }
-        }
-      };
+    post.mockResolvedValue({
+      data: { Status: 1, Data: { methods: [{ methodName: "Ping", isWrite: false }] } }
     });
 
     const first = new RestApiClientBuilder(url, "Org1", firstCredentials, { channels: [channel] });
@@ -165,12 +141,9 @@ describe("REST cache scope", () => {
     await first.forContract(contract).disconnect();
     await second.forContract(extra).disconnect();
 
-    expect(globalRestApiConfig.getAuthorizedFabloRest(url, firstCredentials, "Org1")).toBe("token-admin-one");
-    expect(globalRestApiConfig.getAuthorizedFabloRest(url, secondCredentials, "Org1")).toBe(
-      "token-admin-two"
-    );
-    expect(globalRestApiConfig.getContractApi(url, extra).contractPath).toBe("product/assets");
-    get.mockRestore();
+    const urls = post.mock.calls.map((call) => String(call[0]));
+    expect(urls.some((called) => called.includes("/user/enroll"))).toBe(false);
+    expect(globalRestApiConfig.getContractApi(url, extra).contractPath).toBe("product/extra");
   });
 });
 
