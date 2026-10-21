@@ -36,20 +36,38 @@ export class HFClient extends ChainClient {
 
   public get contract(): Promise<Contract> {
     if (this.contractPromise === undefined) {
-      this.contractPromise = this.createContractPromise(this.userId);
+      const pending = this.createContractPromise(this.userId).then(
+        (connected) => connected,
+        (error: unknown) => {
+          if (this.contractPromise === pending) {
+            this.contractPromise = undefined;
+          }
+          return Promise.reject(error);
+        }
+      );
+      this.contractPromise = pending;
     }
 
-    return this.contractPromise.then((c) => c.contract);
+    return this.contractPromise.then((connected) => connected.contract);
   }
 
   public async disconnect(): Promise<void> {
-    if (this.contractPromise === undefined) {
-      return;
-    }
+    const pending = this.contractPromise;
 
-    const { gateway } = await this.contractPromise;
-    gateway.disconnect();
-    this.contractPromise = undefined;
+    try {
+      if (pending === undefined) {
+        return;
+      }
+
+      const { gateway } = await pending;
+      gateway.disconnect();
+    } catch {
+      // Initialization failed before a gateway was returned. Drop the cached attempt below.
+    } finally {
+      if (this.contractPromise === pending) {
+        this.contractPromise = undefined;
+      }
+    }
   }
 
   public async submitTransaction<T>(

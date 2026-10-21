@@ -112,9 +112,9 @@ function buildCAClient(ccp: Record<string, unknown>, caHostName: string): Fabric
   return new FabricCAServices(caUrl, tlsConfig, caName);
 }
 
-const pendingEnrollments: Record<string, true> = {};
+const pendingEnrollments = new Map<string, true>();
 
-async function enrollUser(
+export async function enrollUser(
   caClient: FabricCAServices,
   wallet: Wallet,
   orgMspId: string,
@@ -130,14 +130,14 @@ async function enrollUser(
 
   // Verify if the enrollment is already in progress - too many simultaneous
   // enrollments will cause the CA to fail with a timeout
-  if (pendingEnrollments[userId]) {
+  if (pendingEnrollments.has(userId)) {
     // Try again after a short delay
     return new Promise((res) => {
       setTimeout(() => res(undefined), 200);
     }).then(() => enrollUser(caClient, wallet, orgMspId, userId, userSecret));
   }
 
-  pendingEnrollments[userId] = true;
+  pendingEnrollments.set(userId, true);
 
   try {
     // Enroll the user, and import the new identity into the wallet.
@@ -159,7 +159,7 @@ async function enrollUser(
     return x509Identity;
   } finally {
     // Always clear the pending flag, even on error, to prevent infinite retry loops
-    delete pendingEnrollments[userId];
+    pendingEnrollments.delete(userId);
   }
 }
 
