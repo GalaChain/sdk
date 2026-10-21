@@ -17,7 +17,8 @@ import BigNumber from "bignumber.js";
 import { instanceToPlain, plainToInstance } from "class-transformer";
 import { ethers } from "ethers";
 
-import { generateEIP712Types } from "./CommonUtils";
+import { SigningClient } from "../customClients/SigningClient";
+import { generateEIP712Types, valueForTypedDataSigning } from "./CommonUtils";
 
 describe("EIP-712 Signing", () => {
   it("should correctly generate EIP-712 types and values and sign the data for single types", async () => {
@@ -174,5 +175,80 @@ describe("EIP-712 Signing", () => {
     };
 
     expect(types).toMatchObject(expectedTypes);
+  });
+
+  it("encodes an empty array and numbers that are not uint256", async () => {
+    const params = {
+      feeCode: "SPLIT",
+      burnPercentage: 0.9,
+      counts: [1, 0.5],
+      deltas: [1, -2],
+      transferPercentages: [] as unknown[],
+      whole: 2
+    };
+
+    const types = generateEIP712Types("FeeSplit", params);
+
+    expect(types.FeeSplit).toEqual([
+      { name: "feeCode", type: "string" },
+      { name: "burnPercentage", type: "string" },
+      { name: "counts", type: "string[]" },
+      { name: "deltas", type: "int256[]" },
+      { name: "transferPercentages", type: "string[]" },
+      { name: "whole", type: "uint256" }
+    ]);
+
+    const domain = { name: "GalaChain" };
+    const signingValue = valueForTypedDataSigning(types, "FeeSplit", params);
+    const wallet = new ethers.Wallet("0x0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef");
+    const signature = await wallet.signTypedData(domain, types, signingValue);
+
+    expect(signature).toMatch(/^0x[a-fA-F0-9]{130}$/);
+    expect(signingValue.burnPercentage).toBe("0.9");
+    expect(signingValue.counts).toEqual(["1", "0.5"]);
+    expect(params.burnPercentage).toBe(0.9);
+    expect(ethers.verifyTypedData(domain, types, signingValue, signature)).toBe(wallet.address);
+  });
+
+  it("does not treat inherited property names as existing types", async () => {
+    const params = {
+      constructor: { label: "kept" },
+      toString: "text"
+    };
+
+    const types = generateEIP712Types("toString", params);
+
+    expect(types.toString).toEqual([
+      { name: "constructor", type: "constructor" },
+      { name: "toString", type: "string" }
+    ]);
+    expect(types.constructor).toEqual([{ name: "label", type: "string" }]);
+
+    const domain = { name: "GalaChain" };
+    const wallet = new ethers.Wallet("0x0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef");
+    const signature = await wallet.signTypedData(domain, types, params);
+    expect(signature).toMatch(/^0x[a-fA-F0-9]{130}$/);
+  });
+
+  it("signs the original numeric value through the signing client", async () => {
+    const client = new SigningClient("0x0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef");
+    const signed = (await client.sign("FeeSplit", {
+      feeCode: "SPLIT",
+      burnPercentage: 0.9,
+      transferPercentages: [] as unknown[]
+    })) as unknown as {
+      burnPercentage: number;
+      signature: string;
+      types: { FeeSplit: Array<{ name: string; type: string }> };
+    };
+
+    expect(signed.burnPercentage).toBe(0.9);
+    expect(signed.signature).toMatch(/^0x[a-fA-F0-9]{130}$/);
+    expect(signed.types.FeeSplit).toEqual(
+      expect.arrayContaining([
+        { name: "burnPercentage", type: "string" },
+        { name: "transferPercentages", type: "string[]" }
+      ])
+    );
   });
 });
