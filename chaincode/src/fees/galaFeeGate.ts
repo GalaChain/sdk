@@ -187,21 +187,30 @@ function calculateFeeAmountBasedOnAccelerationRateType(
         ); // baseQuantity + (chargeableUses * feeAccelerationRate)
         break;
       case FeeAccelerationRateType.Multiplicative:
+        // At the tier threshold chargeableUses is zero. Count that first use so a
+        // configured base quantity is not dropped.
         feeAmount = billableCode.baseQuantity.multipliedBy(
-          chargeableUses.multipliedBy(billableCode.feeAccelerationRate)
-        ); // baseQuantity * (chargeableUses * feeAccelerationRate)
+          (chargeableUses.isZero() ? new BigNumber(1) : chargeableUses).multipliedBy(
+            billableCode.feeAccelerationRate
+          )
+        );
+        feeAmount = feeAtThresholdOrBase(chargeableUses, billableCode.baseQuantity, feeAmount);
         break;
       case FeeAccelerationRateType.Exponential:
         feeAmount = billableCode.baseQuantity.multipliedBy(
           Math.pow(billableCode.feeAccelerationRate.toNumber(), chargeableUses.toNumber())
         ); // baseQuantity * feeAccelerationRate^chargeableUses
         break;
-      case FeeAccelerationRateType.Logarithmic:
-        // feeAmount = baseQuantity * cumulativeUses^feeAccelerationRate + feeThresholdUses
-        feeAmount = billableCode.baseQuantity.plus(
-          Math.log(chargeableUses.multipliedBy(billableCode.feeAccelerationRate).toNumber())
-        ); // baseQuantity + log(chargeableUses * feeAccelerationRate)
+      case FeeAccelerationRateType.Logarithmic: {
+        // log(0) is not a fee. At the threshold, log the acceleration rate itself.
+        const logArgument = chargeableUses.isZero()
+          ? billableCode.feeAccelerationRate
+          : chargeableUses.multipliedBy(billableCode.feeAccelerationRate);
+        const logValue = logArgument.isGreaterThan(0) ? Math.log(logArgument.toNumber()) : Number.NaN;
+        feeAmount = billableCode.baseQuantity.plus(Number.isFinite(logValue) ? logValue : 0);
+        feeAmount = feeAtThresholdOrBase(chargeableUses, billableCode.baseQuantity, feeAmount);
         break;
+      }
       case FeeAccelerationRateType.Custom:
         // Expect Custom FeeCodeDefintions rate accelerations to be calculated elsewhere
         continue;
@@ -216,7 +225,27 @@ function calculateFeeAmountBasedOnAccelerationRateType(
     break;
   }
 
+  if (!feeAmount.isFinite() || feeAmount.isNegative()) {
+    feeAmount = new BigNumber(0);
+  }
+
   feeAmount = feeAmount.decimalPlaces(FeeCodeDefinition.DECIMAL_PRECISION);
+
+  return feeAmount;
+}
+
+function feeAtThresholdOrBase(
+  chargeableUses: BigNumber,
+  baseQuantity: BigNumber,
+  feeAmount: BigNumber
+): BigNumber {
+  if (
+    chargeableUses.isZero() &&
+    baseQuantity.isGreaterThan(0) &&
+    (!feeAmount.isFinite() || !feeAmount.isGreaterThan(0))
+  ) {
+    return baseQuantity;
+  }
 
   return feeAmount;
 }
