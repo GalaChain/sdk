@@ -16,6 +16,7 @@ import {
   FeeAuthorizationDto,
   FeeProperties,
   FeePropertiesDto,
+  FetchFeeAuthorizationsDto,
   FeeAuthorizationResDto as FetchFeeAuthorizationsResponse,
   FetchFeePropertiesDto
 } from "@gala-chain/api";
@@ -23,11 +24,13 @@ import {
 import { ConstructorArgs } from "./utils";
 
 type FeeAuthorizationRequest = ConstructorArgs<FeeAuthorizationDto>;
+type FetchFeeAuthorizationsRequest = ConstructorArgs<FetchFeeAuthorizationsDto>;
 type FetchFeePropertiesRequest = ConstructorArgs<FetchFeePropertiesDto>;
 type SetFeePropertiesRequest = ConstructorArgs<FeePropertiesDto>;
 
 export {
   FeeAuthorizationRequest,
+  FetchFeeAuthorizationsRequest,
   FetchFeePropertiesRequest,
   SetFeePropertiesRequest,
   FeeProperties,
