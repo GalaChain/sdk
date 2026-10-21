@@ -56,7 +56,7 @@ export abstract class ChainClient {
       get(target: ChainClient & T, p: string): unknown {
         // eslint-disable-next-line @typescript-eslint/ban-ts-comment
         // @ts-ignore
-        return p in handler ? handler[p] : target[p];
+        return Object.prototype.hasOwnProperty.call(handler, p) ? handler[p] : target[p];
       }
     });
   }
