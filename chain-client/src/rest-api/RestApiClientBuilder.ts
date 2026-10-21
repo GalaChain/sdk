@@ -34,6 +34,8 @@ import {
 import { RestApiClient } from "./RestApiClient";
 import { RestApiConfig } from "./loadRestApiConfig";
 
+const REST_API_INIT_WAIT_MS = 10_000;
+
 export class RestApiClientBuilder extends ChainClientBuilder {
   constructor(
     public readonly restApiUrl: string,
@@ -44,36 +46,18 @@ export class RestApiClientBuilder extends ChainClientBuilder {
     super();
   }
 
-  private async ensureInitializedRestApi(retriesLeft = 50): Promise<void> {
-    const status = globalRestApiConfig.getStatus(this.restApiUrl);
-
-    if (status === RestApiStatus.NONE) {
-      try {
-        globalRestApiConfig.markPending(this.restApiUrl);
-        globalRestApiConfig.setUsesFabloRest(this.restApiUrl, await this.shouldUseFabloRest());
+  private ensureInitializedRestApi(): Promise<void> {
+    const initialization = globalRestApiConfig.initialize(this.restApiUrl, () => this.loadContractApis());
+    return waitForInitialization(initialization, this.restApiUrl, REST_API_INIT_WAIT_MS).then(async () => {
+      if (globalRestApiConfig.getStatus(this.restApiUrl) === RestApiStatus.INITIALIZED) {
         await this.publishBuilderApis();
-        globalRestApiConfig.markInitialized(this.restApiUrl);
-        return;
-      } catch (e) {
-        globalRestApiConfig.markFailed(this.restApiUrl, e);
-        throw e;
       }
-    }
+    });
+  }
 
-    if (retriesLeft === 0) {
-      const error = new Error(`Failed to initialize Rest API at ${this.restApiUrl} after 50 retries`);
-      globalRestApiConfig.markFailed(this.restApiUrl, error);
-      throw error;
-    }
-
-    if (status === RestApiStatus.PENDING) {
-      await new Promise((resolve) => setTimeout(resolve, 200));
-      return this.ensureInitializedRestApi(retriesLeft - 1);
-    }
-
-    if (status === RestApiStatus.INITIALIZED) {
-      await this.publishBuilderApis();
-    }
+  private async loadContractApis(): Promise<void> {
+    globalRestApiConfig.setUsesFabloRest(this.restApiUrl, await this.shouldUseFabloRest());
+    await this.publishBuilderApis();
   }
 
   private async publishBuilderApis(): Promise<void> {
@@ -207,4 +191,23 @@ function builderScopeKey(
     credentials.adminSecret,
     restApiConfig
   ]);
+}
+
+function waitForInitialization(initialization: Promise<void>, apiUrl: string, waitMs: number): Promise<void> {
+  return new Promise((resolve, reject) => {
+    const timer = setTimeout(() => {
+      reject(new Error(`Failed to initialize Rest API at ${apiUrl} after 50 retries`));
+    }, waitMs);
+
+    initialization.then(
+      () => {
+        clearTimeout(timer);
+        resolve();
+      },
+      (error: unknown) => {
+        clearTimeout(timer);
+        reject(error);
+      }
+    );
+  });
 }
