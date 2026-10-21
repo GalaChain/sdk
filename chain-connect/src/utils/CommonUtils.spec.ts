@@ -18,7 +18,7 @@ import { instanceToPlain, plainToInstance } from "class-transformer";
 import { ethers } from "ethers";
 
 import { SigningClient } from "../customClients/SigningClient";
-import { generateEIP712Types, valueForTypedDataSigning } from "./CommonUtils";
+import { galaChainToEthereumAddress, generateEIP712Types, valueForTypedDataSigning } from "./CommonUtils";
 
 describe("EIP-712 Signing", () => {
   it("should correctly generate EIP-712 types and values and sign the data for single types", async () => {
@@ -175,6 +175,36 @@ describe("EIP-712 Signing", () => {
     };
 
     expect(types).toMatchObject(expectedTypes);
+  });
+
+  it("strips only a leading address prefix", () => {
+    const checksum = "0x8ba1f109551bD432803012645Ac136ddd64DBA72";
+
+    expect(galaChainToEthereumAddress(`eth|${checksum.slice(2)}`)).toBe(checksum);
+    expect(galaChainToEthereumAddress(checksum)).toBe(checksum);
+    expect(galaChainToEthereumAddress("")).toBe("");
+    expect(() => galaChainToEthereumAddress(`8b0x${checksum.slice(4)}`)).toThrow();
+  });
+
+  it("omits verification metadata from the signed schema", async () => {
+    const params = {
+      quantity: "1",
+      trace: { span: "before-sign" },
+      prefix: "already-present",
+      signature: "already-present"
+    };
+
+    const types = generateEIP712Types("LockTokenRequest", params);
+
+    expect(types.LockTokenRequest).toEqual([{ name: "quantity", type: "string" }]);
+    expect(types.trace).toBeUndefined();
+
+    const domain = { name: "GalaChain" };
+    const wallet = new ethers.Wallet("0x0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef");
+    const signature = await wallet.signTypedData(domain, types, params);
+
+    expect(signature).toMatch(/^0x[a-fA-F0-9]{130}$/);
+    expect(ethers.verifyTypedData(domain, types, { quantity: "1" }, signature)).toBe(wallet.address);
   });
 
   it("encodes an empty array and numbers that are not uint256", async () => {
