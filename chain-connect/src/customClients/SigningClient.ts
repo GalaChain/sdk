@@ -18,7 +18,7 @@ import { ethers } from "ethers";
 import { CustomClient, GalaChainProviderOptions } from "../GalaChainClient";
 import { calculatePersonalSignPrefix, recoverPublicKeyFromPersonalSign } from "../helpers";
 import { SigningType } from "../types";
-import { ethereumToGalaChainAddress, generateEIP712Types } from "../utils";
+import { ethereumToGalaChainAddress, generateEIP712Types, valueForTypedDataSigning } from "../utils";
 
 export class SigningClient extends CustomClient {
   get ethereumAddress(): string {
@@ -53,7 +53,11 @@ export class SigningClient extends CustomClient {
         const domain = { name: "GalaChain" };
         const types = generateEIP712Types(method, payload);
 
-        const signature = await this.wallet.signTypedData(domain, types, prefixedPayload);
+        const signature = await this.wallet.signTypedData(
+          domain,
+          types,
+          valueForTypedDataSigning(types, method, prefixedPayload)
+        );
         return { ...prefixedPayload, signature, types, domain };
       } else if (signingType === SigningType.PERSONAL_SIGN) {
         const signature = await this.wallet.signMessage(serialize(prefixedPayload));
