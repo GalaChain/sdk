@@ -122,6 +122,16 @@ describe("public key", () => {
 
     expect(publicKeyWithPrefix).toEqual(publicKeyWithoutPrefix);
   });
+
+  it("derives a public key from base64 and shortened hex", () => {
+    const privateKey = "0000000000000000000000000000000000000000000000000000000000000001";
+    const fromHex = signatures.getPublicKey(privateKey);
+    const fromBase64 = signatures.getPublicKey(Buffer.from(privateKey, "hex").toString("base64"));
+    const fromShortHex = signatures.getPublicKey(privateKey.slice(1));
+
+    expect(fromBase64).toEqual(fromHex);
+    expect(fromShortHex).toEqual(fromHex);
+  });
 });
 
 describe("signatures", () => {
