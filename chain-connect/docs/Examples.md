@@ -108,10 +108,9 @@ import { WalletUtils } from "@gala-chain/connect";
 const randomWallet = WalletUtils.createRandom();
 
 console.log("GalaChain Address:", randomWallet.galachainAddress);
-console.log("Private Key:", randomWallet.privateKey);
 console.log("Public Key:", randomWallet.publicKey);
 console.log("Ethereum Address:", randomWallet.ethAddress);
-console.log("Mnemonic:", randomWallet.mnemonic?.phrase);
+// privateKey and mnemonic are secrets. Do not print them.
 ```
 
 The `createRandom()` method returns an object containing:
@@ -136,7 +135,8 @@ async function createAndRegisterWallet() {
   try {
     const randomWallet = await WalletUtils.createAndRegisterRandomWallet(registrationEndpoint);
 
-    console.log("Private Key:", randomWallet.privateKey);
+    console.log("Ethereum Address:", randomWallet.ethAddress);
+    // privateKey and mnemonic are secrets. Do not print them.
   } catch (error) {
     console.error("Failed to create and register wallet:", error);
   }

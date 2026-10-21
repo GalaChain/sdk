@@ -35,7 +35,7 @@ async function getPath(
   method: string,
   isWrite: boolean
 ): Promise<string> {
-  const { api, contractPath } = globalRestApiConfig.getContractApi(cfg);
+  const { api, contractPath } = globalRestApiConfig.getContractApi(restApiUrl, cfg);
 
   const methodApi = api.methods.find((m) => m.methodName === method);
 
