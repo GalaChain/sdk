@@ -128,8 +128,7 @@ function getNonCompactHexPublicKey(publicKey: string): string {
 }
 
 function getPublicKey(privateKey: string): string {
-  const privateKeyHex = privateKey.replace(/^0x/, "");
-  const privateKeyBuffer = Buffer.from(privateKeyHex, "hex");
+  const privateKeyBuffer = normalizePrivateKey(privateKey);
   const publicKey = secp256k1.publicKeyCreate(new Uint8Array(privateKeyBuffer), false);
   return Buffer.from(publicKey).toString("hex");
 }
