@@ -231,12 +231,38 @@ function updateConfigTxWithChannelProfile(fabloRoot: string, args: SingleArg[]) 
   fs.appendFileSync(configtxFilePath, update);
 }
 
+export function configtxProfileName(channel: string): string {
+  return channel.replace(/(^\w|-\w)/g, (token) => token.replace(/-/, "").toUpperCase());
+}
+
+export function assertUniqueConfigtxProfileNames(channels: string[]): void {
+  const profileToChannel = new Map<string, string>();
+  channels.forEach((channel) => {
+    const profileName = configtxProfileName(channel);
+    const existing = profileToChannel.get(profileName);
+    if (existing !== undefined && existing !== channel) {
+      throw new Error(
+        `Error: Channel names "${existing}" and "${channel}" produce the same configtx profile "${profileName}". Use channel names that keep profile names unique.`
+      );
+    }
+    profileToChannel.set(profileName, channel);
+  });
+}
+
 export function createConfigtxProfiles(args: SingleArg[]): string {
-  const profiles = args.map(({ channel, channelType }) => {
-    const configtxProfileName = channel.replace(/(^\w|-\w)/g, (t) => t.replace(/-/, "").toUpperCase());
+  assertUniqueConfigtxProfileNames(args.map((arg) => arg.channel));
+
+  const profiles: string[] = [];
+  const seenProfiles = new Set<string>();
+  args.forEach(({ channel, channelType }) => {
+    const profileName = configtxProfileName(channel);
+    if (seenProfiles.has(profileName)) {
+      return;
+    }
+    seenProfiles.add(profileName);
     const configtxProfileDefaults =
       channelType === "curator" ? "CuratorChannelDefaults" : "PartnerChannelDefaults";
-    return `  ${configtxProfileName}:\n    <<: *${configtxProfileDefaults}`;
+    profiles.push(`  ${profileName}:\n    <<: *${configtxProfileDefaults}`);
   });
   return `\n${profiles.join("\n")}`;
 }
@@ -398,6 +424,8 @@ function customValidation(flags: any): void {
         throw new Error(`Error: Found non-unique channel-chaincode pair: ${pair}`);
       }
     });
+
+  assertUniqueConfigtxProfileNames(channel);
 
   /*
     Watch mode

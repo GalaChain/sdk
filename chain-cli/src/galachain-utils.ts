@@ -15,16 +15,17 @@
 import { ux } from "@oclif/core";
 
 import * as secp from "@noble/secp256k1";
-import axios, { AxiosError } from "axios";
+import axios from "axios";
 import fs, { promises as fsPromises } from "fs";
 import { nanoid } from "nanoid";
 import path from "path";
 import process from "process";
 import { Readable } from "stream";
+import { StringDecoder } from "string_decoder";
 
 import { ExpectedImageArchitecture, ServicePortal } from "./consts";
 import { ChaincodeInfoDto, DeployChaincodeDto, GetChaincodeDeploymentDto, RegisterChaincodeDto } from "./dto";
-import { BadRequestError, UnauthorizedError } from "./errors";
+import { BadRequestError, FetchLogsError, UnauthorizedError } from "./errors";
 import { execFileSync } from "./exec-sync";
 import signatures from "./signatures";
 import { parseStringOrFileKey } from "./utils";
@@ -274,10 +275,54 @@ export async function generateKeys(projectPath: string): Promise<void> {
   console.log(`Private keys directory: ${privateKeysPath}`);
 }
 
+export function isNewerVersion(latest: string, current: string): boolean {
+  const latestParts = versionParts(latest);
+  const currentParts = versionParts(current);
+  const length = Math.max(latestParts.length, currentParts.length);
+
+  for (let index = 0; index < length; index++) {
+    const latestPart = latestParts[index] ?? 0;
+    const currentPart = currentParts[index] ?? 0;
+    if (latestPart > currentPart) {
+      return true;
+    }
+    if (latestPart < currentPart) {
+      return false;
+    }
+  }
+
+  return false;
+}
+
+function versionParts(version: string): number[] {
+  return version
+    .trim()
+    .replace(/^v/, "")
+    .split(".")
+    .map((part) => {
+      const numeric = parseInt(part, 10);
+      return Number.isNaN(numeric) ? 0 : numeric;
+    });
+}
+
 export function checkCliVersion() {
-  const cliLatestVersion = execFileSync("npm", ["show", "@gala-chain/cli", "version"]);
-  const cliCurrentVersion = execFileSync("galachain", ["--version"]).split(" ")[0].split("/")[2];
-  if (cliLatestVersion > cliCurrentVersion) {
+  let cliLatestVersion: string;
+  let cliCurrentVersion: string;
+
+  try {
+    cliLatestVersion = execFileSync("npm", ["show", "@gala-chain/cli", "version"]);
+    cliCurrentVersion = execFileSync("galachain", ["--version"]).split(" ")[0].split("/")[2];
+  } catch (error) {
+    console.warn(`Unable to compare Chain CLI versions: ${error}`);
+    return;
+  }
+
+  if (!cliLatestVersion || !cliCurrentVersion) {
+    console.warn("Unable to compare Chain CLI versions.");
+    return;
+  }
+
+  if (isNewerVersion(cliLatestVersion, cliCurrentVersion)) {
     console.warn(
       `Your Chain CLI is out of date, current version is ${cliCurrentVersion}, latest version is ${cliLatestVersion}. Please run 'npm install -g @gala-chain/cli --force' to update to the latest version.`
     );
@@ -310,11 +355,29 @@ export async function getChaincodeDefinition(): Promise<{ name: string; adminPub
 
 export async function getDeveloperPublicKeys(): Promise<string[]> {
   const keysPath = path.join(process.cwd(), DEFAULT_PUBLIC_KEYS_DIR);
-  const keys = fs.readdirSync(keysPath);
-  return keys
-    .filter((key) => key.match(/gc-dev.*-key.*\.pub/))
-    .map((key) => fs.readFileSync(path.join(keysPath, key), "utf8").trim())
-    .sort();
+  const developerPublicKeyFile = /^gc-dev.*-key.*\.pub$/;
+  const publicKeys = new Set<string>();
+
+  fs.readdirSync(keysPath).forEach((key) => {
+    if (!developerPublicKeyFile.test(key)) {
+      return;
+    }
+
+    const keyPath = path.join(keysPath, key);
+    if (!fs.statSync(keyPath).isFile()) {
+      return;
+    }
+
+    const contents = fs.readFileSync(keyPath, "utf8").trim();
+    try {
+      signatures.normalizePublicKey(contents);
+    } catch {
+      return;
+    }
+    publicKeys.add(contents);
+  });
+
+  return [...publicKeys].sort();
 }
 
 export async function getPrivateKey(keysFromArg: string | undefined, chaincodeName: string) {
@@ -353,24 +416,44 @@ export async function saveApiConfig(
 }
 
 function getApiConfigForChannel(channel: string, chaincodeName: string, contracts: string) {
-  const contractNamesArr = JSON.parse(contracts) as { contractName: string }[];
+  const contractNamesArr = JSON.parse(contracts) as { contractName?: unknown }[];
 
   if (!contractNamesArr || !Array.isArray(contractNamesArr)) {
     throw new Error(`Invalid contracts JSON: ${contracts}`);
   }
 
-  const contractsArr = contractNamesArr.map(({ contractName }) => ({
-    contractName,
-    chaincodeName,
-    pathFragment: contractName
-  }));
+  const seenNames = new Set<string>();
+  const contractsArr = contractNamesArr.map((entry) => {
+    const contractName = entry?.contractName;
+    if (typeof contractName !== "string" || contractName.trim() === "") {
+      throw new Error("Contract name must be a non-empty string.");
+    }
+    if (seenNames.has(contractName)) {
+      throw new Error(`Duplicate contract name "${contractName}".`);
+    }
+    seenNames.add(contractName);
+    return {
+      contractName,
+      chaincodeName,
+      pathFragment: contractName
+    };
+  });
 
   return {
-    pathFragment: channel.replace("-channel", ""),
+    pathFragment: channelPathFragment(channel),
     channelName: channel,
     asLocalHost: true,
     contracts: contractsArr
   };
+}
+
+// Remove a trailing "-channel" suffix only. An earlier "-channel" stays in the name.
+function channelPathFragment(channel: string): string {
+  const suffix = "-channel";
+  if (channel.endsWith(suffix)) {
+    return channel.slice(0, -suffix.length);
+  }
+  return channel;
 }
 
 function getDefaultDevPrivateKeyFile(chaincodeName: string): string | undefined {
@@ -422,29 +505,16 @@ export async function getLogs(params: {
   const servicePortalURL = ServicePortal.GET_LOGS_URL;
 
   try {
-    const response = await axios
-      .get(servicePortalURL, {
-        headers: {
-          [ServicePortal.AUTH_X_GC_KEY]: signature
-        },
-        params: requestParams
-      })
-      .catch((error) => {
-        throw new Error(axiosErrorMessage(error));
-      });
+    const response = await axios.get(servicePortalURL, {
+      headers: {
+        [ServicePortal.AUTH_X_GC_KEY]: signature
+      },
+      params: requestParams
+    });
 
     return response.data;
-  } catch (error: any) {
-    const status = error.response?.status;
-    const message = error.response?.data?.message;
-
-    if (status === 403) {
-      throw new UnauthorizedError(`Unauthorized'.`);
-    } else if (status === 400) {
-      throw new BadRequestError(`Bad request: ${message || error.message}`);
-    } else {
-      throw new Error(`Failed to fetch logs: ${message || error.message}`);
-    }
+  } catch (error) {
+    throw classifyLogRequestError(error);
   }
 }
 
@@ -475,25 +545,74 @@ export async function streamLogs(
     });
 
     const stream = response.data as Readable;
+    const decoder = new StringDecoder("utf8");
 
-    stream.on("data", (chunk) => {
-      const data = chunk.toString();
-      onData(data);
+    await new Promise<void>((resolve, reject) => {
+      const fail = (error: unknown) => {
+        stream.removeAllListeners();
+        reject(error instanceof Error ? error : new Error(String(error)));
+      };
+
+      stream.on("data", (chunk: Buffer) => {
+        try {
+          onData(decoder.write(chunk));
+        } catch (error) {
+          fail(error);
+        }
+      });
+
+      stream.on("end", () => {
+        try {
+          const rest = decoder.end();
+          if (rest) {
+            onData(rest);
+          }
+          resolve();
+        } catch (error) {
+          fail(error);
+        }
+      });
+
+      stream.on("error", (error) => {
+        fail(error);
+      });
     });
-
-    stream.on("end", () => {
-      console.log("Stream ended");
-    });
-
-    stream.on("error", (error) => {
+  } catch (error) {
+    if (
+      error instanceof UnauthorizedError ||
+      error instanceof BadRequestError ||
+      error instanceof FetchLogsError
+    ) {
       throw error;
-    });
-  } catch (error: any) {
-    throw new Error(`Failed to stream logs: ${error.response?.data?.message || error.message}`);
+    }
+    if (axios.isAxiosError(error)) {
+      throw classifyLogRequestError(error);
+    }
+    const message = error instanceof Error ? error.message : String(error);
+    throw new Error(`Failed to stream logs: ${message}`);
   }
 }
 
-function axiosErrorMessage(error: AxiosError<{ message: string }>) {
+function classifyLogRequestError(error: unknown): Error {
+  if (!axios.isAxiosError(error)) {
+    const message = error instanceof Error ? error.message : String(error);
+    return new Error(`Failed to fetch logs: ${message}`);
+  }
+
+  const status = error.response?.status;
+  const data = error.response?.data as { message?: string } | undefined;
+  const message = data?.message;
+
+  if (status === 403) {
+    return new UnauthorizedError("Unauthorized.");
+  }
+  if (status === 400) {
+    return new BadRequestError(`Bad request: ${message || error.message}`);
+  }
+  return new Error(`Failed to fetch logs: ${message || error.message}`);
+}
+
+function axiosErrorMessage(error: { response?: { status?: number; data?: { message?: string } } }): string {
   const status = error?.response?.status ?? "unknown";
   const message = error?.response?.data?.message ?? "unknown";
   return `[${status}] ${message}`;
