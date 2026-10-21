@@ -64,7 +64,7 @@ describe("network path checks", () => {
     ).toThrow(/must not equal chaincode directory/);
   });
 
-  it("rejects a network root inside a chaincode directory", () => {
+  it("allows the default network directory inside the chaincode project", () => {
     expect(() =>
       customValidation(
         flags({
@@ -75,6 +75,22 @@ describe("network path checks", () => {
           fabloRoot: "./test-network"
         })
       )
-    ).toThrow(path.resolve("./test-network"));
+    ).not.toThrow();
+  });
+
+  it("rejects a chaincode directory inside the network root", () => {
+    const networkRoot = path.resolve(__dirname, "..");
+
+    expect(() =>
+      customValidation(
+        flags({
+          channel: ["product-channel"],
+          channelType: ["curator"],
+          chaincodeName: ["product"],
+          chaincodeDir: [__dirname],
+          fabloRoot: networkRoot
+        })
+      )
+    ).toThrow(networkRoot);
   });
 });

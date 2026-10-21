@@ -76,7 +76,7 @@ export default class NetworkUp extends BaseCommand<typeof NetworkUp> {
       char: "r",
       description:
         "Root directory of target network. " +
-        "Should not be the same as chaincodeDir and should not be a child of chaincodeDir. " +
+        "Should not be the same as chaincodeDir and should not contain chaincodeDir. " +
         `By default '${defaultFabloRoot}' is used.`,
       default: defaultFabloRoot
     }),
@@ -299,9 +299,9 @@ export function assertNetworkRootOutsideChaincodeDirs(fabloRoot: string, chainco
   const networkRoot = path.resolve(fabloRoot);
   chaincodeDirs.forEach((dir) => {
     const chaincodeDirectory = path.resolve(dir);
-    if (isEqualOrInside(chaincodeDirectory, networkRoot)) {
+    if (isEqualOrInside(networkRoot, chaincodeDirectory)) {
       throw new Error(
-        `Error: Network root "${networkRoot}" must not equal chaincode directory "${chaincodeDirectory}" or be inside it.`
+        `Error: Network root "${networkRoot}" must not equal chaincode directory "${chaincodeDirectory}" or contain it.`
       );
     }
   });
