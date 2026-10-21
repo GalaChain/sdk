@@ -72,8 +72,14 @@ executeInConfigtx '.Profiles.CuratorChannel anchor = "CuratorChannelDefaults"'
 setFromPoliciesConfigtx '.Profiles.PartnerChannel'
 executeInConfigtx '.Profiles.PartnerChannel anchor = "PartnerChannelDefaults"'
 
+seen_profile_names=""
 for channel_name in $(cat "$fablo_config" | jq -r '.channels[] | .name'); do
   channel_name_pascal_case="$(perl -pe 's/(^|-)(\w)/\U$2/g' <<<"$channel_name")"
+  if printf '%s\n' "$seen_profile_names" | grep -Fxq -- "$channel_name_pascal_case"; then
+    echo "Configtx profile ${channel_name_pascal_case} is not unique across channel names."
+    exit 1
+  fi
+  seen_profile_names="${seen_profile_names}${channel_name_pascal_case}"$'\n'
   executeInConfigtx "del(.Profiles.$channel_name_pascal_case)"
   setFromPoliciesConfigtx ".Profiles.$channel_name_pascal_case"
 done
