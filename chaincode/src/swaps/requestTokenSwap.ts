@@ -38,6 +38,7 @@ import { fetchTokenInstances } from "../token";
 import { GalaChainContext } from "../types";
 import { getObjectByKey, putChainObject } from "../utils";
 import { SwapDtoValidationError } from "./SwapError";
+import { reserveDistinctOrdinal } from "./reserveDistinctOrdinal";
 
 function validateTokenSwapQuantity(quantity: BigNumber, tokenClass: TokenClass): Array<string> {
   const validationResults: Array<string> = [];
@@ -111,6 +112,7 @@ export async function requestTokenSwap(
   newSwap.usesSpent = new BigNumber(0);
   newSwap.expires = expires;
   newSwap.fillIds = [];
+  await reserveDistinctOrdinal(ctx, newSwap, "requestOrdinal");
   // convenience for downstream client applications
   // its not often feasible or straightforward for a client to construct the composite key outside of a JS/TS environment (with common-api code)
   // if I want to query swaps and then fill one, the necessary id for FillTokenSwap should be in my JSON response
