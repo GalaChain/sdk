@@ -16,6 +16,7 @@ import {
   FeeAuthorizationDto,
   FeePropertiesDto,
   FetchFeeAuthorizationsDto,
+  FetchFeeAuthorizationsResDto,
   FetchFeePropertiesDto
 } from "@gala-chain/api";
 
@@ -23,6 +24,7 @@ import { GalaChainProvider } from "../GalaChainClient";
 import {
   FeeAuthorizationRequest,
   FeeProperties,
+  FetchFeeAuthorizationsRequest,
   FetchFeeAuthorizationsResponse,
   FetchFeePropertiesRequest,
   SetFeePropertiesRequest
@@ -45,14 +47,14 @@ export class FeeApi extends GalaChainBaseApi {
     });
   }
 
-  public FetchFeeAutorizations(dto: FetchFeeAuthorizationsResponse) {
+  public FetchFeeAuthorizations(dto: FetchFeeAuthorizationsRequest) {
     return this.connection.submit({
-      method: "FetchFeeAutorizations",
+      method: "FetchFeeAuthorizations",
       payload: dto,
       sign: false,
       url: this.chainCodeUrl,
       requestConstructor: FetchFeeAuthorizationsDto,
-      responseConstructor: FetchFeeAuthorizationsResponse
+      responseConstructor: FetchFeeAuthorizationsResDto
     });
   }
 
