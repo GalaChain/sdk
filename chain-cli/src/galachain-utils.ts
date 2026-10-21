@@ -15,16 +15,17 @@
 import { ux } from "@oclif/core";
 
 import * as secp from "@noble/secp256k1";
-import axios, { AxiosError } from "axios";
+import axios from "axios";
 import fs, { promises as fsPromises } from "fs";
 import { nanoid } from "nanoid";
 import path from "path";
 import process from "process";
 import { Readable } from "stream";
+import { StringDecoder } from "string_decoder";
 
 import { ExpectedImageArchitecture, ServicePortal } from "./consts";
 import { ChaincodeInfoDto, DeployChaincodeDto, GetChaincodeDeploymentDto, RegisterChaincodeDto } from "./dto";
-import { BadRequestError, UnauthorizedError } from "./errors";
+import { BadRequestError, FetchLogsError, UnauthorizedError } from "./errors";
 import { execFileSync } from "./exec-sync";
 import signatures from "./signatures";
 import { parseStringOrFileKey } from "./utils";
@@ -504,29 +505,16 @@ export async function getLogs(params: {
   const servicePortalURL = ServicePortal.GET_LOGS_URL;
 
   try {
-    const response = await axios
-      .get(servicePortalURL, {
-        headers: {
-          [ServicePortal.AUTH_X_GC_KEY]: signature
-        },
-        params: requestParams
-      })
-      .catch((error) => {
-        throw new Error(axiosErrorMessage(error));
-      });
+    const response = await axios.get(servicePortalURL, {
+      headers: {
+        [ServicePortal.AUTH_X_GC_KEY]: signature
+      },
+      params: requestParams
+    });
 
     return response.data;
-  } catch (error: any) {
-    const status = error.response?.status;
-    const message = error.response?.data?.message;
-
-    if (status === 403) {
-      throw new UnauthorizedError(`Unauthorized'.`);
-    } else if (status === 400) {
-      throw new BadRequestError(`Bad request: ${message || error.message}`);
-    } else {
-      throw new Error(`Failed to fetch logs: ${message || error.message}`);
-    }
+  } catch (error) {
+    throw classifyLogRequestError(error);
   }
 }
 
@@ -557,25 +545,74 @@ export async function streamLogs(
     });
 
     const stream = response.data as Readable;
+    const decoder = new StringDecoder("utf8");
 
-    stream.on("data", (chunk) => {
-      const data = chunk.toString();
-      onData(data);
+    await new Promise<void>((resolve, reject) => {
+      const fail = (error: unknown) => {
+        stream.removeAllListeners();
+        reject(error instanceof Error ? error : new Error(String(error)));
+      };
+
+      stream.on("data", (chunk: Buffer) => {
+        try {
+          onData(decoder.write(chunk));
+        } catch (error) {
+          fail(error);
+        }
+      });
+
+      stream.on("end", () => {
+        try {
+          const rest = decoder.end();
+          if (rest) {
+            onData(rest);
+          }
+          resolve();
+        } catch (error) {
+          fail(error);
+        }
+      });
+
+      stream.on("error", (error) => {
+        fail(error);
+      });
     });
-
-    stream.on("end", () => {
-      console.log("Stream ended");
-    });
-
-    stream.on("error", (error) => {
+  } catch (error) {
+    if (
+      error instanceof UnauthorizedError ||
+      error instanceof BadRequestError ||
+      error instanceof FetchLogsError
+    ) {
       throw error;
-    });
-  } catch (error: any) {
-    throw new Error(`Failed to stream logs: ${error.response?.data?.message || error.message}`);
+    }
+    if (axios.isAxiosError(error)) {
+      throw classifyLogRequestError(error);
+    }
+    const message = error instanceof Error ? error.message : String(error);
+    throw new Error(`Failed to stream logs: ${message}`);
   }
 }
 
-function axiosErrorMessage(error: AxiosError<{ message: string }>) {
+function classifyLogRequestError(error: unknown): Error {
+  if (!axios.isAxiosError(error)) {
+    const message = error instanceof Error ? error.message : String(error);
+    return new Error(`Failed to fetch logs: ${message}`);
+  }
+
+  const status = error.response?.status;
+  const data = error.response?.data as { message?: string } | undefined;
+  const message = data?.message;
+
+  if (status === 403) {
+    return new UnauthorizedError("Unauthorized.");
+  }
+  if (status === 400) {
+    return new BadRequestError(`Bad request: ${message || error.message}`);
+  }
+  return new Error(`Failed to fetch logs: ${message || error.message}`);
+}
+
+function axiosErrorMessage(error: { response?: { status?: number; data?: { message?: string } } }): string {
   const status = error?.response?.status ?? "unknown";
   const message = error?.response?.data?.message ?? "unknown";
   return `[${status}] ${message}`;
