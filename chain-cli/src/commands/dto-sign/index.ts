@@ -78,7 +78,20 @@ export default class DtoSign extends BaseCommand<typeof DtoSign> {
     const privateKey = (await parseStringOrFileKey(args.key)) as string;
     const keyBuffer = signatures.normalizePrivateKey(privateKey);
 
-    const dto = (await parseJsonFromStringOrFile(args.data)) as { signature?: string };
+    const dto = (await parseJsonFromStringOrFile(args.data)) as {
+      signature?: string;
+      signerPublicKey?: string;
+      signerAddress?: string;
+    };
+
+    if (
+      flags.derSignature &&
+      !flags.onlySignature &&
+      dto.signerPublicKey === undefined &&
+      dto.signerAddress === undefined
+    ) {
+      dto.signerPublicKey = signatures.getPublicKey(privateKey);
+    }
 
     dto.signature = flags.derSignature
       ? signatures.getDERSignature(dto, keyBuffer)
@@ -88,11 +101,11 @@ export default class DtoSign extends BaseCommand<typeof DtoSign> {
     const output = flags.onlySignature ? dto.signature : serialize(dto);
 
     if (flags.outputFile) {
-      await writeFile(flags.outputFile, output, "utf-8").catch((e) => {
-        this.log(`Failed to writeFile to ${flags.outputFile}. ${e}`);
-        this.log(output);
-        return;
-      });
+      try {
+        await writeFile(flags.outputFile, output, "utf-8");
+      } catch (e) {
+        this.error(`Failed to writeFile to ${flags.outputFile}. ${e}`, { exit: 1 });
+      }
     } else {
       this.log(output);
     }

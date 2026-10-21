@@ -14,7 +14,7 @@
  */
 import path from "path";
 
-import { chaincodeDirsForChannels, customValidation } from "./index";
+import { SingleArg, chaincodeDirsForChannels, createConfigtxProfiles, customValidation } from "./index";
 
 function flags(overrides: Record<string, unknown> = {}): {
   channel: string[];
@@ -92,5 +92,35 @@ describe("network path checks", () => {
         })
       )
     ).toThrow(networkRoot);
+  });
+});
+
+function arg(channel: string, channelType: SingleArg["channelType"] = "curator"): SingleArg {
+  return {
+    channel,
+    channelType,
+    chaincodeName: "basic",
+    chaincodeDir: "."
+  };
+}
+
+describe("createConfigtxProfiles", () => {
+  it("keeps profile names unique for distinct channels", () => {
+    const yaml = createConfigtxProfiles([arg("product-channel"), arg("other-channel", "partner")]);
+
+    expect(yaml).toContain("  ProductChannel:\n    <<: *CuratorChannelDefaults");
+    expect(yaml).toContain("  OtherChannel:\n    <<: *PartnerChannelDefaults");
+  });
+
+  it("rejects channel names that would share a configtx profile", () => {
+    expect(() => createConfigtxProfiles([arg("foo-bar"), arg("fooBar", "partner")])).toThrow(
+      'Channel names "foo-bar" and "fooBar" produce the same configtx profile "FooBar".'
+    );
+  });
+
+  it("emits a profile once when the same channel is listed more than once", () => {
+    const yaml = createConfigtxProfiles([arg("product-channel"), arg("product-channel")]);
+
+    expect(yaml.match(/ProductChannel:/g)).toHaveLength(1);
   });
 });
