@@ -115,7 +115,10 @@ export async function lockOnMintProcessing(ctx: GalaChainContext, data: ILockOnM
     .times(lockPercentage)
     .decimalPlaces(tokenClassEntry.decimals, BigNumber.ROUND_DOWN);
 
-  const verifyAuthorizedOnBehalf = async (c: TokenClassKey) => undefined;
+  const verifyAuthorizedOnBehalf = async (_tokenClass: TokenClassKey) => ({
+    callingOnBehalf: owner,
+    callingUser: ctx.callingUser
+  });
 
   // only support lock-on-mint postprocessing for fungibles, initially.
   // we would need to know a specific instance to lock for NFTs
