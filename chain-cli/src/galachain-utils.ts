@@ -274,10 +274,54 @@ export async function generateKeys(projectPath: string): Promise<void> {
   console.log(`Private keys directory: ${privateKeysPath}`);
 }
 
+export function isNewerVersion(latest: string, current: string): boolean {
+  const latestParts = versionParts(latest);
+  const currentParts = versionParts(current);
+  const length = Math.max(latestParts.length, currentParts.length);
+
+  for (let index = 0; index < length; index++) {
+    const latestPart = latestParts[index] ?? 0;
+    const currentPart = currentParts[index] ?? 0;
+    if (latestPart > currentPart) {
+      return true;
+    }
+    if (latestPart < currentPart) {
+      return false;
+    }
+  }
+
+  return false;
+}
+
+function versionParts(version: string): number[] {
+  return version
+    .trim()
+    .replace(/^v/, "")
+    .split(".")
+    .map((part) => {
+      const numeric = parseInt(part, 10);
+      return Number.isNaN(numeric) ? 0 : numeric;
+    });
+}
+
 export function checkCliVersion() {
-  const cliLatestVersion = execFileSync("npm", ["show", "@gala-chain/cli", "version"]);
-  const cliCurrentVersion = execFileSync("galachain", ["--version"]).split(" ")[0].split("/")[2];
-  if (cliLatestVersion > cliCurrentVersion) {
+  let cliLatestVersion: string;
+  let cliCurrentVersion: string;
+
+  try {
+    cliLatestVersion = execFileSync("npm", ["show", "@gala-chain/cli", "version"]);
+    cliCurrentVersion = execFileSync("galachain", ["--version"]).split(" ")[0].split("/")[2];
+  } catch (error) {
+    console.warn(`Unable to compare Chain CLI versions: ${error}`);
+    return;
+  }
+
+  if (!cliLatestVersion || !cliCurrentVersion) {
+    console.warn("Unable to compare Chain CLI versions.");
+    return;
+  }
+
+  if (isNewerVersion(cliLatestVersion, cliCurrentVersion)) {
     console.warn(
       `Your Chain CLI is out of date, current version is ${cliCurrentVersion}, latest version is ${cliLatestVersion}. Please run 'npm install -g @gala-chain/cli --force' to update to the latest version.`
     );
