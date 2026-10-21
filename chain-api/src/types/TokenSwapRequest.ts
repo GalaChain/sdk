@@ -14,7 +14,16 @@
  */
 import BigNumber from "bignumber.js";
 import { Exclude, Type } from "class-transformer";
-import { ArrayNotEmpty, IsInt, IsNotEmpty, IsNumber, IsOptional, Min, ValidateNested } from "class-validator";
+import {
+  ArrayNotEmpty,
+  IsInt,
+  IsNotEmpty,
+  IsNumber,
+  IsOptional,
+  IsString,
+  Min,
+  ValidateNested
+} from "class-validator";
 import { JSONSchema } from "class-validator-jsonschema";
 
 import { ChainKey } from "../utils";
@@ -22,6 +31,7 @@ import { BigNumberIsInteger, BigNumberIsPositive, BigNumberProperty, IsUserAlias
 import { ChainObject } from "./ChainObject";
 import { TokenInstanceQuantity } from "./TokenInstance";
 import { UserAlias } from "./UserAlias";
+import { compositeKeyOmittingUnset } from "./compositeKey";
 
 export class TokenSwapRequest extends ChainObject {
   @ChainKey({ position: 0 })
@@ -34,6 +44,21 @@ export class TokenSwapRequest extends ChainObject {
   @ChainKey({ position: 1 })
   @IsNotEmpty()
   public txid: string;
+
+  @ChainKey({ position: 2 })
+  @IsOptional()
+  @IsString()
+  @IsNotEmpty()
+  @JSONSchema({
+    description:
+      "Set when more than one swap request is created in the same transaction, so each request has its own key. " +
+      "Omitted on the first request."
+  })
+  public requestOrdinal?: string;
+
+  public getCompositeKey(): string {
+    return compositeKeyOmittingUnset(this, TokenSwapRequest.INDEX_KEY, ["requestOrdinal"]);
+  }
 
   @IsNotEmpty()
   public swapRequestId: string;
