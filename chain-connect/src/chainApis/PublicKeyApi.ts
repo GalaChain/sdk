@@ -12,8 +12,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-import { GetMyProfileDto, RegisterUserDto, UpdatePublicKeyDto, UserProfile } from "@gala-chain/api";
-import { plainToInstance } from "class-transformer";
+import { RegisterUserDto, UpdatePublicKeyDto, UserProfile } from "@gala-chain/api";
 
 import { GalaChainProvider } from "../GalaChainClient";
 import { RegisterUserRequest, UpdatePublicKeyRequest } from "../types";
@@ -36,17 +35,12 @@ export class PublicKeyApi extends GalaChainBaseApi {
   // PublicKey Chaincode calls:
   /**
    * Retrieves the current user's profile information.
-   * @param message - Optional message for authentication
-   * @param signature - Optional signature for the message
    * @returns Promise resolving to the user's profile
    */
-  public GetMyProfile(message?: string, signature?: string) {
-    return this.connection.submit<UserProfile, GetMyProfileDto>({
+  public GetMyProfile() {
+    return this.connection.submit<UserProfile, { signature?: string }>({
       method: "GetMyProfile",
-      payload: plainToInstance(GetMyProfileDto, {
-        ...(message ? { message } : {}),
-        ...(signature ? { signature } : {})
-      }),
+      payload: {},
       sign: true,
       url: this.chainCodeUrl
     });
