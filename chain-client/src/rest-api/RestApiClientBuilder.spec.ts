@@ -38,7 +38,7 @@ describe("REST client startup", () => {
       .mockRejectedValueOnce(new Error("enroll down"))
       .mockResolvedValueOnce({ data: { token: "enrolled" } });
 
-    globalRestApiConfig.setContractApi({
+    globalRestApiConfig.setContractApi(url, {
       channelName: contract.channel,
       chaincodeName: contract.chaincode,
       contractName: contract.contract,
