@@ -18,8 +18,10 @@ import {
   FeeAuthorization,
   FeeAuthorizationDto,
   FeeAuthorizationResDto,
+  FeePropertiesDto,
   FeeVerificationDto,
   GalaChainResponse,
+  GalaChainResponseType,
   TokenBalance,
   TokenClass,
   TokenInstance,
@@ -123,5 +125,41 @@ describe("creditFeeBalance", () => {
     });
 
     expect(response).toEqual(GalaChainResponse.Success(resDto));
+
+    const replayDto = await createValidSubmitDTO(FeeVerificationDto, {
+      authorization: authDto.serialize(),
+      authority: feeAuthority.identityKey,
+      created: priorTimeStamp,
+      txId: txId,
+      quantity: authorizedFeeQuantity,
+      feeAuthorizationKey: feeAuthorizationKey,
+      uniqueKey: "replayed-fee-authorization"
+    }).signed(feeAuthority.privateKey);
+
+    const replay = await contract.CreditFeeBalance(ctx, replayDto);
+
+    const replayResponse = replay as { Status: GalaChainResponseType; Message?: string };
+    expect(replayResponse.Status).toEqual(GalaChainResponseType.Error);
+    expect(replayResponse.Message).toContain(feeAuthorizationKey);
+  });
+
+  it("should require a unique key when setting fee properties", async () => {
+    const properties = {
+      collection: "GALA",
+      category: "Unit",
+      type: "none",
+      additionalKey: "none",
+      instance: new BigNumber("0")
+    };
+
+    await expect(
+      createValidDTO(FeePropertiesDto, { ...properties, uniqueKey: undefined as unknown as string })
+    ).rejects.toThrow(/uniqueKey/);
+
+    const valid = await createValidDTO(FeePropertiesDto, {
+      ...properties,
+      uniqueKey: "fee-properties-key"
+    });
+    expect(valid.uniqueKey).toBe("fee-properties-key");
   });
 });
