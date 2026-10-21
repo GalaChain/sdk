@@ -116,6 +116,7 @@ import {
   fetchNftCollectionAuthorization,
   fetchTokenClasses,
   fetchTokenClassesWithPagination,
+  fetchTokenClassesWithSupply,
   fetchTokenInstanceMetadata,
   fetchTokenInstanceMetadataWithPagination,
   fetchVestingToken,
@@ -217,6 +218,18 @@ export default class GalaChainTokenContract extends GalaContract {
   })
   public FetchTokenClasses(ctx: GalaChainContext, dto: FetchTokenClassesDto): Promise<TokenClass[]> {
     return fetchTokenClasses(ctx, dto.tokenClasses);
+  }
+
+  @GalaTransaction({
+    type: EVALUATE,
+    in: FetchTokenClassesDto,
+    out: { arrayOf: TokenClass }
+  })
+  public FetchTokenClassesWithSupply(
+    ctx: GalaChainContext,
+    dto: FetchTokenClassesDto
+  ): Promise<TokenClass[]> {
+    return fetchTokenClassesWithSupply(ctx, dto.tokenClasses);
   }
 
   @GalaTransaction({
