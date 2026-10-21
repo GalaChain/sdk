@@ -12,7 +12,88 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-import { SingleArg, createConfigtxProfiles } from "./index";
+import path from "path";
+
+import { SingleArg, chaincodeDirsForChannels, createConfigtxProfiles, customValidation } from "./index";
+
+function flags(overrides: Record<string, unknown> = {}): {
+  channel: string[];
+  channelType: string[];
+  chaincodeName: string[];
+  fabloRoot: string;
+  watch: boolean;
+  chaincodeDir?: string[];
+} {
+  return {
+    channel: ["product-channel", "asset-channel"],
+    channelType: ["curator", "partner"],
+    chaincodeName: ["product", "asset"],
+    fabloRoot: "/tmp/gala-network-root",
+    watch: false,
+    ...overrides
+  };
+}
+
+describe("network path checks", () => {
+  it("repeats the default chaincode directory once per chaincode", () => {
+    const networkFlags = flags();
+
+    customValidation(networkFlags);
+
+    expect(networkFlags.chaincodeDir).toEqual([".", "."]);
+    expect(chaincodeDirsForChannels(["a", "b", "c"], undefined)).toEqual([".", ".", "."]);
+  });
+
+  it("keeps an explicit chaincode directory list in the count check", () => {
+    expect(() => customValidation(flags({ chaincodeDir: ["chain-cli"] }))).toThrow(
+      /2 channel names, 2 channel types, 2 chaincodes and 1 chaincode directories/
+    );
+  });
+
+  it("rejects a network root equal to a chaincode directory", () => {
+    expect(() =>
+      customValidation(
+        flags({
+          channel: ["product-channel"],
+          channelType: ["curator"],
+          chaincodeName: ["product"],
+          chaincodeDir: ["."],
+          fabloRoot: "."
+        })
+      )
+    ).toThrow(/must not equal chaincode directory/);
+  });
+
+  it("allows the default network directory inside the chaincode project", () => {
+    expect(() =>
+      customValidation(
+        flags({
+          channel: ["product-channel"],
+          channelType: ["curator"],
+          chaincodeName: ["product"],
+          chaincodeDir: ["."],
+          fabloRoot: "./test-network"
+        })
+      )
+    ).not.toThrow();
+  });
+
+  it("rejects a chaincode directory inside the network root", () => {
+    const networkRoot = path.resolve(__dirname, "..");
+
+    expect(() =>
+      customValidation(
+        flags({
+          channel: ["product-channel"],
+          channelType: ["curator"],
+          chaincodeName: ["product"],
+          chaincodeDir: [__dirname],
+          fabloRoot: networkRoot
+        })
+      )
+    ).toThrow(networkRoot);
+  });
+});
 
 function arg(channel: string, channelType: SingleArg["channelType"] = "curator"): SingleArg {
   return {
