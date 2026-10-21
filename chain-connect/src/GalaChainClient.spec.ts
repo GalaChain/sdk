@@ -27,6 +27,7 @@ import { ethers } from "ethers";
 import { EventEmitter } from "events";
 
 import { createRandomHash, mockFetch } from "../test/test-utils";
+import { GalaChainProvider } from "./GalaChainClient";
 import {
   BrowserConnectClient,
   TrustWalletConnectClient,
@@ -416,6 +417,25 @@ describe("BrowserConnectClient", () => {
     expect(request.mock.calls.map((call) => call[0].method)).toContain("personal_sign");
     expect(request.mock.calls.map((call) => call[0].method)).not.toContain("eth_signTypedData_v4");
   });
+
+  it("appends a wallet signature to an existing multisig list", async () => {
+    const client = new BrowserConnectClient();
+    await client.connect();
+
+    const signed = await client.sign("TransferToken", {
+      quantity: "1",
+      uniqueKey: "k",
+      multisig: ["0xexisting"],
+      signerAddress: "eth|63580d94c574ad78b121c267",
+      dtoOperation: "asset_channel_assets_TransferToken",
+      dtoExpiresAt: 4000000000000
+    });
+
+    expect(signed.signature).toBeUndefined();
+    expect(signed.multisig).toEqual(["0xexisting", "sampleSignature"]);
+    const types = (signed as { types?: { TransferToken?: Array<{ name: string }> } }).types;
+    expect(types?.TransferToken?.map((field) => field.name)).not.toContain("multisig");
+  });
 });
 
 describe("TrustConnectClient", () => {
@@ -482,5 +502,104 @@ describe("TrustConnectClient", () => {
 
     await expect(pending).resolves.toBeDefined();
     window.ethereum = previous;
+  });
+});
+
+describe("validated submission", () => {
+  class RecordingProvider extends GalaChainProvider {
+    signCount = 0;
+    signedPayload: unknown;
+
+    async sign<T extends object>(_method: string, dto: T) {
+      this.signCount += 1;
+      this.signedPayload = dto;
+      return { ...dto, signature: "signed-locally" };
+    }
+  }
+
+  const transfer = {
+    quantity: new BigNumber("1"),
+    to: asValidUserRef("client|63580d94c574ad78b121c267"),
+    tokenInstance: {
+      additionalKey: "none",
+      category: "Unit",
+      collection: "GALA",
+      instance: new BigNumber("0"),
+      type: "none"
+    },
+    uniqueKey: "26d4122e-34c8-4639-baa6-4382b398e68e"
+  };
+
+  function mockOk() {
+    mockFetch({ Data: {}, Status: 1 }, { "x-transaction-id": "abc" });
+  }
+
+  function sentBody(): { quantity: string; signature?: string; tokenInstance: { instance: string } } {
+    return JSON.parse((global.fetch as jest.Mock).mock.calls[0][1].body);
+  }
+
+  it("signs and sends the validated request", async () => {
+    const provider = new RecordingProvider();
+    mockOk();
+
+    await provider.submit({
+      url: "https://example.com",
+      method: "TransferToken",
+      payload: transfer,
+      sign: true,
+      requestConstructor: TransferTokenDto
+    });
+
+    expect(provider.signedPayload).toMatchObject({
+      quantity: "1",
+      tokenInstance: { instance: "0" }
+    });
+    expect(sentBody().quantity).toBe("1");
+    expect(sentBody().tokenInstance.instance).toBe("0");
+    expect(sentBody().signature).toBe("signed-locally");
+  });
+
+  it("signs when signature is missing, undefined, or null", async () => {
+    for (const signature of [undefined, null]) {
+      const provider = new RecordingProvider();
+      mockOk();
+      await provider.submit({
+        url: "https://example.com",
+        method: "TransferToken",
+        payload: { ...transfer, signature },
+        sign: true,
+        requestConstructor: TransferTokenDto
+      });
+      expect(provider.signCount).toBe(1);
+    }
+  });
+
+  it("signs an empty signature when the payload is not validated first", async () => {
+    const provider = new RecordingProvider();
+    mockOk();
+    await provider.submit({
+      url: "https://example.com",
+      method: "TransferToken",
+      payload: { quantity: "1", signature: "" },
+      sign: true
+    });
+    expect(provider.signCount).toBe(1);
+  });
+
+  it("keeps an existing signature string", async () => {
+    const provider = new RecordingProvider();
+    mockOk();
+
+    await provider.submit({
+      url: "https://example.com",
+      method: "TransferToken",
+      payload: { ...transfer, signature: "0xalready" },
+      sign: true,
+      requestConstructor: TransferTokenDto
+    });
+
+    expect(provider.signCount).toBe(0);
+    expect(sentBody().signature).toBe("0xalready");
+    expect(sentBody().quantity).toBe("1");
   });
 });
