@@ -32,6 +32,7 @@ declare global {
  */
 export class BrowserConnectClient extends WebSigner {
   protected isInitialized = false;
+  protected activeProvider?: ExtendedEip1193Provider;
 
   /**
    * Creates a new browser connect client.
@@ -43,26 +44,31 @@ export class BrowserConnectClient extends WebSigner {
     super(options);
     this.address = "";
     this.onAccountsChanged = this.onAccountsChanged.bind(this);
-    if (provider) {
-      this.provider = new BrowserProvider(provider);
-    } else if (window.ethereum) {
-      this.provider = new BrowserProvider(window.ethereum);
-    } else {
+    const active = provider ?? window.ethereum;
+    if (!active) {
       throw new Error("Ethereum provider not found");
     }
+    this.useEip1193Provider(active);
+  }
+
+  protected useEip1193Provider(provider: Eip1193Provider): void {
+    if (this.isInitialized && this.activeProvider) {
+      this.activeProvider.removeListener("accountsChanged", this.onAccountsChanged);
+      this.isInitialized = false;
+    }
+    this.activeProvider = provider as ExtendedEip1193Provider;
+    this.provider = new BrowserProvider(provider);
   }
 
   /**
    * Initializes the listeners to watch for events from the provider. Not all providers may support every event
    */
   protected initializeListeners(): void {
-    if (!window.ethereum) {
+    if (!this.activeProvider || this.isInitialized) {
       return;
     }
-    if (!this.isInitialized) {
-      window.ethereum.on("accountsChanged", this.onAccountsChanged);
-      this.isInitialized = true;
-    }
+    this.activeProvider.on("accountsChanged", this.onAccountsChanged);
+    this.isInitialized = true;
   }
 
   /**
@@ -106,8 +112,8 @@ export class BrowserConnectClient extends WebSigner {
    * Disconnects from the wallet and cleans up event listeners.
    */
   public disconnect() {
-    if (this.isInitialized && window.ethereum) {
-      window.ethereum.removeListener("accountsChanged", this.onAccountsChanged);
+    if (this.isInitialized && this.activeProvider) {
+      this.activeProvider.removeListener("accountsChanged", this.onAccountsChanged);
       this.isInitialized = false;
     }
     this.ethereumAddress = "";
@@ -125,7 +131,7 @@ export class BrowserConnectClient extends WebSigner {
   public async sign<T extends object>(
     method: string,
     payload: T,
-    signingType: SigningType = SigningType.SIGN_TYPED_DATA
+    signingType: SigningType = this.options?.signingType ?? SigningType.SIGN_TYPED_DATA
   ): Promise<T & { prefix: string; signature?: string; multisig?: string[] }> {
     if (!this.provider) {
       throw new Error("Ethereum provider not found");

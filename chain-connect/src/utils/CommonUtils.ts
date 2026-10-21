@@ -175,7 +175,15 @@ export function valueForTypedDataSigning<T>(types: EIP712Types, primaryType: str
  * @returns The equivalent Ethereum address
  */
 export function galaChainToEthereumAddress(galaAddress: string) {
-  return galaAddress ? getAddress(`0x${galaAddress.replace(/0x|eth\|/, "")}`) : "";
+  if (!galaAddress) {
+    return "";
+  }
+  const body = galaAddress.startsWith("eth|")
+    ? galaAddress.slice(4)
+    : galaAddress.startsWith("0x")
+      ? galaAddress.slice(2)
+      : galaAddress;
+  return getAddress(`0x${body}`);
 }
 
 /**
