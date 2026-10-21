@@ -12,8 +12,6 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-import axios from "axios";
-
 import {
   ChainClient,
   ChainClientBuilder,
@@ -23,7 +21,6 @@ import {
   Serializable
 } from "../generic";
 import { GalaChainResponse } from "../wire";
-import { FabloRestClient } from "./FabloRestClient";
 import {
   RestApiAdminCredentials,
   RestApiStatus,
@@ -56,7 +53,6 @@ export class RestApiClientBuilder extends ChainClientBuilder {
   }
 
   private async loadContractApis(): Promise<void> {
-    globalRestApiConfig.setUsesFabloRest(this.restApiUrl, await this.shouldUseFabloRest());
     await this.publishBuilderApis();
   }
 
@@ -66,38 +62,13 @@ export class RestApiClientBuilder extends ChainClientBuilder {
       return;
     }
 
-    const apis = globalRestApiConfig.usesFabloRest(this.restApiUrl)
-      ? await this.getContractApisFromFabloRest()
-      : await this.getContractApisFromGCRestApi();
+    const apis = await this.getContractApisFromGCRestApi();
 
     for (const api of apis) {
       globalRestApiConfig.setContractApi(this.restApiUrl, api);
     }
 
     globalRestApiConfig.markBuilderScopePublished(scope);
-  }
-
-  private async shouldUseFabloRest(): Promise<boolean> {
-    try {
-      await axios.get(`${this.restApiUrl}/user/identities`);
-      return false;
-    } catch (e) {
-      return e.response?.status === 400;
-    }
-  }
-
-  private async getContractApisFromFabloRest(): Promise<SetContractApiParams[]> {
-    const token =
-      globalRestApiConfig.getAuthorizedFabloRest(this.restApiUrl, this.credentials, this.orgMsp) ??
-      (await FabloRestClient.enroll(
-        this.restApiUrl,
-        this.credentials.adminKey,
-        this.credentials.adminSecret
-      ));
-
-    globalRestApiConfig.setAuthorizedFabloRest(this.restApiUrl, this.credentials, this.orgMsp, token);
-
-    return await FabloRestClient.getContractApis(token, this.restApiUrl, this.restApiConfig);
   }
 
   private async getContractApisFromGCRestApi(): Promise<SetContractApiParams[]> {
@@ -124,37 +95,12 @@ class AsyncProxyClient extends ChainClient {
   }
 
   private createClient(builder: RestApiClientBuilder, contractConfig: ContractConfig): ChainClient {
-    // Token present means we want to use Fablo REST
-    const token = globalRestApiConfig.getAuthorizedFabloRest(
-      builder.restApiUrl,
-      builder.credentials,
-      this.orgMsp
-    );
-
-    if (token) {
-      return new FabloRestClient(
-        Promise.resolve(builder),
-        builder.restApiUrl,
-        contractConfig,
-        builder.credentials,
-        Promise.resolve(token),
-        this.orgMsp,
-        this.userId
-      );
-    }
-
     return new RestApiClient(Promise.resolve(builder), builder.restApiUrl, contractConfig, this.orgMsp);
   }
 
   public async disconnect(): Promise<void> {
     const client = await this.clientPromise;
     await client.disconnect();
-  }
-
-  public forUser(userId: string, secret?: string): ChainClient {
-    const forked = new AsyncProxyClient(this.readyBuilder, userId, this.contractConfig, this.orgMsp);
-    forked.clientPromise = this.clientPromise.then((client) => client.forUser(userId, secret));
-    return forked;
   }
 
   public async evaluateTransaction<T>(

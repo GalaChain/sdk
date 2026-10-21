@@ -122,12 +122,11 @@ export class GlobalRestApiConfig {
 
   public getContractApi(restApiUrl: string, params: ContractConfig) {
     const key = contractApiKey(restApiUrl, params.channel, params.chaincode, params.contract);
-    return (
-      this.contractApis[key] ??
-      (() => {
-        throw new Error(`Cannot find contract API for key ${key}`);
-      })
-    );
+    if (!Object.prototype.hasOwnProperty.call(this.contractApis, key)) {
+      throw new Error(`Cannot find contract API for key ${key}`);
+    }
+
+    return this.contractApis[key];
   }
 
   public setAuthorizedFabloRest(

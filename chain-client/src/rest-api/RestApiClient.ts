@@ -112,11 +112,6 @@ export class RestApiClient extends ChainClient {
     return GalaChainResponse.deserialize<T>(responseType, response.data ?? {});
   }
 
-  public forUser(userId: string): ChainClient {
-    console.warn(`Ignoring forUser(${userId}) for RestApiClient`);
-    return this;
-  }
-
   public static async getContractApis(
     credentials: RestApiAdminCredentials,
     restApiUrl: string,
