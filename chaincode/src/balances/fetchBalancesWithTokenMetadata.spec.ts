@@ -13,12 +13,17 @@
  * limitations under the License.
  */
 import {
+  ContractAPI,
   FetchBalancesDto,
+  FetchBalancesWithPaginationDto,
   FetchBalancesWithTokenMetadataResponse,
   GalaChainResponse,
+  GalaChainSuccessResponse,
   TokenBalance,
   TokenBalanceWithMetadata,
-  createValidDTO
+  TokenClass,
+  createValidDTO,
+  generateResponseSchema
 } from "@gala-chain/api";
 import { fixture } from "@gala-chain/test";
 import { plainToInstance } from "class-transformer";
@@ -162,4 +167,68 @@ it("should validate the response DTO if the nextPageBookmark is undefined", asyn
 
   // Then
   expect(dtoIsValid).toBe(true);
+});
+
+it("uses the default page size when a balance metadata query omits limit", async () => {
+  // Given
+  const currencyClass = currency.tokenClass();
+  const currencyBalance = currency.tokenBalance();
+  const { ctx, contract } = fixture(GalaChainTokenContract).savedState(currencyClass, currencyBalance);
+  const dto = await createValidDTO(FetchBalancesWithPaginationDto, {
+    owner: currencyBalance.owner
+  });
+  const page = jest.spyOn(ctx.stub, "getStateByPartialCompositeKeyWithPagination");
+
+  // When
+  await contract.FetchBalancesWithTokenMetadata(ctx, dto);
+
+  // Then
+  expect(page.mock.calls[0]?.[0]).toEqual(TokenBalance.INDEX_KEY);
+  expect(page.mock.calls[0]?.[2]).toEqual(FetchBalancesWithPaginationDto.DEFAULT_LIMIT);
+  expect(page.mock.calls[0]?.[3]).toBeUndefined();
+});
+
+it("forwards a provided balance metadata page size", async () => {
+  // Given
+  const currencyClass = currency.tokenClass();
+  const currencyBalance = currency.tokenBalance();
+  const { ctx, contract } = fixture(GalaChainTokenContract).savedState(currencyClass, currencyBalance);
+  const dto = await createValidDTO(FetchBalancesWithPaginationDto, {
+    owner: currencyBalance.owner,
+    limit: 2
+  });
+  const page = jest.spyOn(ctx.stub, "getStateByPartialCompositeKeyWithPagination");
+
+  // When
+  await contract.FetchBalancesWithTokenMetadata(ctx, dto);
+
+  // Then
+  expect(page.mock.calls[0]?.[2]).toEqual(2);
+});
+
+it("deserializes the published balance metadata response", async () => {
+  // Given
+  const { ctx, contract } = fixture(GalaChainTokenContract);
+  const published = (await contract.GetContractAPI(ctx)) as unknown as GalaChainSuccessResponse<ContractAPI>;
+  const method = published.Data.methods.find(
+    (entry) => entry.methodName === "FetchBalancesWithTokenMetadata"
+  );
+
+  // Then
+  expect(method?.responseSchema).toEqual(generateResponseSchema(FetchBalancesWithTokenMetadataResponse));
+
+  const deserialized = await createValidDTO(FetchBalancesWithTokenMetadataResponse, {
+    results: [
+      {
+        balance: currency.tokenBalance().toPlainObject(),
+        token: currency.tokenClass().toPlainObject()
+      }
+    ],
+    nextPageBookmark: "next"
+  } as unknown as FetchBalancesWithTokenMetadataResponse);
+
+  expect(deserialized.results[0].balance).toBeInstanceOf(TokenBalance);
+  expect(deserialized.results[0].token).toBeInstanceOf(TokenClass);
+  expect(deserialized.results[0].token.decimals).toEqual(currency.tokenClass().decimals);
+  expect(deserialized.nextPageBookmark).toEqual("next");
 });
