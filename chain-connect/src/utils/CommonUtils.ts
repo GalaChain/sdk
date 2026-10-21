@@ -123,7 +123,11 @@ export function generateEIP712Types<T>(typeName: string, params: T): EIP712Types
     return addField(name, values[0], parentTypeName, true);
   }
 
+  const excludedFromSchema = new Set(["signature", "multisig", "trace", "prefix"]);
   Object.entries(params as Record<string, unknown>).forEach(([key, value]) => {
+    if (excludedFromSchema.has(key)) {
+      return;
+    }
     addField(key, value, typeName);
   });
 
