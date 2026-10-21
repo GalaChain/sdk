@@ -28,13 +28,19 @@ import { EventEmitter } from "events";
 
 import { createRandomHash, mockFetch } from "../test/test-utils";
 import { GalaChainProvider } from "./GalaChainClient";
-import { BrowserConnectClient, TrustWalletConnectClient } from "./customClients";
+import {
+  BrowserConnectClient,
+  TrustWalletConnectClient,
+  getTrustWalletInjectedProvider
+} from "./customClients";
+import { SigningType } from "./types";
 import { generateEIP712Types } from "./utils";
 
 // https://privatekeys.pw/key/1d3cc061492016bcd5e7ea2c31b1cf3dec584e07a38e21df7ef3049c6b224e70#addresses
 const sampleAddr = "0x3bb75c2Da3B669E253C338101420CC8dEBf0a777";
 
 class EthereumMock extends EventEmitter {
+  isTrust?: boolean;
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   send(method: string): Promise<any> {
     if (method === "eth_requestAccounts") {
@@ -380,6 +386,38 @@ describe("BrowserConnectClient", () => {
     expect(spy).toHaveBeenCalledTimes(2);
   });
 
+  it("tracks account changes on the provider it was given", async () => {
+    const active = new EthereumMock();
+    const other = new EthereumMock();
+    const previous = window.ethereum;
+    window.ethereum = other;
+    const client = new BrowserConnectClient(active);
+    await client.connect();
+
+    active.emit("accountsChanged", ["0x8ba1f109551bD432803012645Ac136ddd64DBA72"]);
+    expect(client.ethereumAddress).toBe("0x8ba1f109551bD432803012645Ac136ddd64DBA72");
+
+    other.emit("accountsChanged", [sampleAddr]);
+    expect(client.ethereumAddress).toBe("0x8ba1f109551bD432803012645Ac136ddd64DBA72");
+
+    client.disconnect();
+    active.emit("accountsChanged", [sampleAddr]);
+    expect(client.ethereumAddress).toBe("");
+    window.ethereum = previous;
+  });
+
+  it("uses the configured signing type when sign is called without one", async () => {
+    const client = new BrowserConnectClient(undefined, { signingType: SigningType.PERSONAL_SIGN });
+    await client.connect();
+    const request = jest.spyOn(window.ethereum as EthereumMock, "request");
+
+    const signed = await client.sign("TransferToken", { quantity: "1" });
+
+    expect(signed.signature).toBe("sampleSignature");
+    expect(request.mock.calls.map((call) => call[0].method)).toContain("personal_sign");
+    expect(request.mock.calls.map((call) => call[0].method)).not.toContain("eth_signTypedData_v4");
+  });
+
   it("appends a wallet signature to an existing multisig list", async () => {
     const client = new BrowserConnectClient();
     await client.connect();
@@ -450,6 +488,20 @@ describe("TrustConnectClient", () => {
       Data: mockResponse.Data,
       Status: mockResponse.Status
     });
+  });
+
+  it("waits for a Trust Wallet that initializes after the call starts", async () => {
+    const previous = window.ethereum;
+    delete (window as { ethereum?: EthereumMock }).ethereum;
+
+    const pending = getTrustWalletInjectedProvider({ timeout: 1000 });
+    const wallet = new EthereumMock();
+    wallet.isTrust = true;
+    window.ethereum = wallet;
+    window.dispatchEvent(new Event("trustwallet#initialized"));
+
+    await expect(pending).resolves.toBeDefined();
+    window.ethereum = previous;
   });
 });
 
