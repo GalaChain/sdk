@@ -195,8 +195,8 @@ function getBaseEncoder(type: string): null | ((value: any) => string) {
         return keccak256(value);
       };
     case "string":
-      return function (value: string) {
-        return id(value);
+      return function (value: string | number) {
+        return id(typeof value === "number" ? String(value) : value);
       };
   }
 
