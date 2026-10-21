@@ -94,14 +94,18 @@ export class FeeCodeSplitFormula extends ChainObject {
       let amount: BigNumber;
       if (burnPercentage === 0 && i + 1 === transferPercentages.length) {
         // last one, assign remainder, avoid roundings errors from multiplication
-        amount = remainingFeeQuantity.decimalPlaces(tokenDecimals);
+        amount = remainingFeeQuantity;
       } else {
         amount = totalFeeQuantity
           .times(transferPercentages[i].transferPercentage)
           .decimalPlaces(tokenDecimals);
 
-        remainingFeeQuantity = remainingFeeQuantity.minus(amount);
+        if (amount.isGreaterThan(remainingFeeQuantity)) {
+          amount = remainingFeeQuantity;
+        }
       }
+
+      remainingFeeQuantity = remainingFeeQuantity.minus(amount);
 
       const transferQuantity = plainToInstance(FeeCodeTransferQuantity, {
         transferToUser: transferPercentages[i].transferToUser,
@@ -126,7 +130,9 @@ export class FeeCodeSplitFormula extends ChainObject {
       transferPercentages.push(t.transferPercentage);
     }
 
-    if (percentageTotal !== 1) {
+    // Sums of binary fractions such as ten shares of 0.1 are not exactly 1.
+    const percentageTolerance = 1e-8;
+    if (Math.abs(percentageTotal - 1) > percentageTolerance) {
       throw new ValidationFailedError(
         `FeeCodeSplitFormula's burnPercentage and transferPercentages must add up to exactly 1.0. ` +
           `Calculated ${percentageTotal} from burnPercentage ${this.burnPercentage} and ` +
