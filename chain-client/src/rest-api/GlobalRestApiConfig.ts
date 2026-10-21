@@ -45,6 +45,8 @@ export class GlobalRestApiConfig {
   private isRestApiInitializedAndHealthy: Record<string, RestApiStatus | Error> = {};
   private contractApis: Record<string, ContractApiValue> = {};
   private authorizedFabloRest: Record<string, string> = {};
+  private usesFabloRestByUrl: Record<string, boolean> = {};
+  private publishedBuilderScopes = new Set<string>();
 
   public getStatus(apiUrl: string): RestApiStatus {
     const result = this.isRestApiInitializedAndHealthy[apiUrl];
@@ -72,13 +74,13 @@ export class GlobalRestApiConfig {
     this.isRestApiInitializedAndHealthy[apiUrl] = error;
   }
 
-  public setContractApi(params: SetContractApiParams) {
-    const key = `${params.channelName}|${params.chaincodeName}|${params.contractName}`;
+  public setContractApi(restApiUrl: string, params: SetContractApiParams) {
+    const key = contractApiKey(restApiUrl, params.channelName, params.chaincodeName, params.contractName);
     this.contractApis[key] = { contractPath: params.contractPath, api: params.api };
   }
 
-  public getContractApi(params: ContractConfig) {
-    const key = `${params.channel}|${params.chaincode}|${params.contract}`;
+  public getContractApi(restApiUrl: string, params: ContractConfig) {
+    const key = contractApiKey(restApiUrl, params.channel, params.chaincode, params.contract);
     if (!Object.prototype.hasOwnProperty.call(this.contractApis, key)) {
       throw new Error(`Cannot find contract API for key ${key}`);
     }
@@ -86,13 +88,50 @@ export class GlobalRestApiConfig {
     return this.contractApis[key];
   }
 
-  public setAuthorizedFabloRest(apiUrl: string, token: string) {
-    this.authorizedFabloRest[apiUrl] = token;
+  public setAuthorizedFabloRest(
+    apiUrl: string,
+    credentials: RestApiAdminCredentials,
+    orgMsp: string,
+    token: string
+  ) {
+    this.authorizedFabloRest[fabloAuthKey(apiUrl, credentials, orgMsp)] = token;
   }
 
-  public getAuthorizedFabloRest(apiUrl: string): string | undefined {
-    return this.authorizedFabloRest[apiUrl];
+  public getAuthorizedFabloRest(
+    apiUrl: string,
+    credentials: RestApiAdminCredentials,
+    orgMsp: string
+  ): string | undefined {
+    return this.authorizedFabloRest[fabloAuthKey(apiUrl, credentials, orgMsp)];
   }
+
+  public setUsesFabloRest(apiUrl: string, usesFabloRest: boolean) {
+    this.usesFabloRestByUrl[normalizeRestApiUrl(apiUrl)] = usesFabloRest;
+  }
+
+  public usesFabloRest(apiUrl: string): boolean {
+    return this.usesFabloRestByUrl[normalizeRestApiUrl(apiUrl)] === true;
+  }
+
+  public hasPublishedBuilderScope(scope: string): boolean {
+    return this.publishedBuilderScopes.has(scope);
+  }
+
+  public markBuilderScopePublished(scope: string) {
+    this.publishedBuilderScopes.add(scope);
+  }
+}
+
+export function normalizeRestApiUrl(apiUrl: string): string {
+  return apiUrl.replace(/\/+$/, "");
+}
+
+function contractApiKey(apiUrl: string, channel: string, chaincode: string, contract: string): string {
+  return JSON.stringify([normalizeRestApiUrl(apiUrl), channel, chaincode, contract]);
+}
+
+function fabloAuthKey(apiUrl: string, credentials: RestApiAdminCredentials, orgMsp: string): string {
+  return JSON.stringify([normalizeRestApiUrl(apiUrl), orgMsp, credentials.adminKey, credentials.adminSecret]);
 }
 
 export const globalRestApiConfig = new GlobalRestApiConfig();

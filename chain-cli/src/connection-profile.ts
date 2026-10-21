@@ -124,7 +124,14 @@ function ordererConfig(
     ? {}
     : {
         tlsCACerts: {
-          path: path.resolve(cryptoConfigRoot, "peerOrganizations", orgDomain, "peers", host, "tls/ca.crt")
+          path: path.resolve(
+            cryptoConfigRoot,
+            "ordererOrganizations",
+            orgDomain,
+            "orderers",
+            host,
+            "tls/ca.crt"
+          )
         }
       };
   const grpcOptions = !useTls
