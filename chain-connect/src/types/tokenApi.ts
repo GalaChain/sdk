@@ -49,6 +49,7 @@ import {
   MintTokenDto,
   MintTokenWithAllowanceDto,
   RefreshAllowanceDto,
+  RefreshAllowancesDto,
   RestrictTokenBalanceTargetsDto,
   SetTokenInstanceMetadataDto,
   TokenAllowance,
@@ -100,6 +101,7 @@ type MintRequest = ConstructorArgs<MintRequestDto>;
 type MintTokenRequest = ConstructorArgs<MintTokenDto>;
 type MintTokenWithAllowanceRequest = ConstructorArgs<MintTokenWithAllowanceDto>;
 type RefreshAllowanceRequest = ConstructorArgs<RefreshAllowanceDto>;
+type RefreshAllowancesRequest = ConstructorArgs<RefreshAllowancesDto>;
 type SetTokenInstanceMetadataRequest = ConstructorArgs<SetTokenInstanceMetadataDto>;
 type TransferTokenRequest = ConstructorArgs<TransferTokenDto>;
 type UnlockTokenRequest = ConstructorArgs<UnlockTokenDto>;
@@ -190,6 +192,7 @@ export {
   MintTokenRequest,
   MintTokenWithAllowanceRequest,
   RefreshAllowanceRequest,
+  RefreshAllowancesRequest,
   SetTokenInstanceMetadataRequest,
   TokenAllowance,
   TokenBalance,
