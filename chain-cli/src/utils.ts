@@ -72,17 +72,11 @@ export async function parseJsonFromStringOrFile(jsonOrPath: string): Promise<unk
   return data;
 }
 
-export function getPathFileName(path: string): string {
-  // verify if the path contains a slash or backslash (linux/mac or windows)
-  if (path.includes("/") || path.includes("\\")) {
-    const projectName = new RegExp(/.*[/\\]([^/\\]+)$/).exec(path);
-
-    if (projectName != null && projectName.length > 1) {
-      return projectName[1];
-    }
-
-    return path;
+export function getPathFileName(inputPath: string): string {
+  const trimmed = inputPath.trim().replace(/[\\/]+$/, "");
+  const name = trimmed.split(/[\\/]/).pop() ?? "";
+  if (!name || name === "." || name === "..") {
+    throw new Error(`Cannot derive a project name from path "${inputPath}".`);
   }
-
-  return path;
+  return name;
 }

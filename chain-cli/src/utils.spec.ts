@@ -113,14 +113,8 @@ describe("getPathFileName", () => {
     expect(result).toEqual("file.txt");
   });
 
-  it("should return the file name when given a path without slashes or backslashes", () => {
-    // Given
-    const path = "file.txt";
-
-    // When
-    const result = getPathFileName(path);
-
-    // Then
-    expect(result).toEqual("file.txt");
+  it("should return the directory name when the path has a trailing slash", () => {
+    expect(getPathFileName("./my-project/")).toEqual("my-project");
+    expect(getPathFileName(".\\my-project\\")).toEqual("my-project");
   });
 });
