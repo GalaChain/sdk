@@ -95,12 +95,42 @@ function assertNoUnsignedFields(
   for (const f of fields) {
     const base = f.type.replace(/(\[\d*\])+$/, ""); // strip any array suffixes: "quantities[]" -> "quantities"
     if (!encoder.types[base]) continue; // atomic field type (string, uint256, ...)
-    const fieldVal = record[f.name];
-    const items = f.type.endsWith("]") && Array.isArray(fieldVal) ? fieldVal : [fieldVal];
-    for (const item of items) {
+    for (const item of structValues(f.type, record[f.name])) {
       assertNoUnsignedFields(encoder, base, item, new Set(), `${path}${f.name}.`);
     }
   }
+}
+
+function arrayDepth(type: string): number {
+  const suffix = type.match(/(\[\d*\])+$/);
+  if (!suffix) {
+    return 0;
+  }
+  return suffix[0].split("[").length - 1;
+}
+
+function structValues(type: string, value: unknown): unknown[] {
+  const depth = arrayDepth(type);
+  if (depth === 0) {
+    return [value];
+  }
+  return flattenArrays(value, depth);
+}
+
+function flattenArrays(value: unknown, depth: number): unknown[] {
+  if (depth === 0) {
+    return [value];
+  }
+  if (!Array.isArray(value)) {
+    return [];
+  }
+  const leaves: unknown[] = [];
+  for (const item of value) {
+    for (const leaf of flattenArrays(item, depth - 1)) {
+      leaves.push(leaf);
+    }
+  }
+  return leaves;
 }
 
 function getEIP712PayloadToSign(obj: EIP712Object, eipOverride: { chainId?: number | "delete" }): string {
@@ -113,7 +143,7 @@ function getEIP712PayloadToSign(obj: EIP712Object, eipOverride: { chainId?: numb
   // envelope members of the EIP-712 object, not message fields, so they are exempt.
   const encoder = TypedDataEncoder.from(obj.types);
   assertNoUnsignedFields(encoder, encoder.primaryType, obj, new Set(["domain", "types"]), "");
-  return TypedDataEncoder.encode(obj.domain, obj.types, obj);
+  return TypedDataEncoder.encodeWith(encoder, obj.domain, obj);
 }
 
 export function getPayloadToSign(obj: object, eipOverride: { chainId?: number | "delete" } = {}): Buffer {
