@@ -124,10 +124,6 @@ export class FabloRestClient extends ChainClient {
     return GalaChainResponse.deserialize<T>(responseType, response?.data?.response ?? {});
   }
 
-  public forUser(_userId: string, _secret?: string): ChainClient {
-    return this;
-  }
-
   public static async getContractApis(
     token: string,
     restApiUrl: string,

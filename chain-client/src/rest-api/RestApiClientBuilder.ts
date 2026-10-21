@@ -119,12 +119,6 @@ class AsyncProxyClient extends ChainClient {
     await client.disconnect();
   }
 
-  public forUser(userId: string, secret?: string): ChainClient {
-    const forked = new AsyncProxyClient(this.readyBuilder, userId, this.contractConfig, this.orgMsp);
-    forked.clientPromise = this.clientPromise.then((client) => client.forUser(userId, secret));
-    return forked;
-  }
-
   public async evaluateTransaction<T>(
     method: string,
     dtoOrResp?: Serializable | ClassType<Inferred<T>>,

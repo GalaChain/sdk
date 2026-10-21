@@ -14,15 +14,10 @@
  */
 import axios from "axios";
 
-import { FabloRestClient } from "./FabloRestClient";
 import { globalRestApiConfig } from "./GlobalRestApiConfig";
 import { RestApiClientBuilder } from "./RestApiClientBuilder";
 
 const contract = { channel: "product", chaincode: "assets", contract: "GalaChainToken" };
-
-function settle(): Promise<void> {
-  return new Promise((resolve) => setImmediate(resolve));
-}
 
 describe("REST cache scope", () => {
   let post: jest.SpyInstance;
@@ -70,45 +65,6 @@ describe("REST cache scope", () => {
     expect(globalRestApiConfig.getAuthorizedFabloRest(url, admin, "Org1")).toBe("token-a");
     expect(globalRestApiConfig.getAuthorizedFabloRest(url, other, "Org1")).toBe("token-b");
     expect(globalRestApiConfig.getAuthorizedFabloRest(url, admin, "Org2")).toBe("token-c");
-  });
-
-  it("gives each forUser call its own client", async () => {
-    const credentials = { adminKey: "admin", adminSecret: "secret" };
-    const client = new FabloRestClient(
-      Promise.resolve({} as never),
-      "http://fablo-user.example",
-      contract,
-      credentials,
-      Promise.resolve("admin-token"),
-      "Org1"
-    );
-
-    const alice = client.forUser("alice", "alice-secret");
-    const bob = client.forUser("bob", "bob-secret");
-    await settle();
-
-    expect(alice).toBe(client);
-    expect(bob).toBe(client);
-    expect(post).not.toHaveBeenCalled();
-  });
-
-  it("does not retarget the shared proxy when selecting a user", async () => {
-    const url = "http://proxy.example";
-    const credentials = { adminKey: "admin", adminSecret: "secret" };
-    globalRestApiConfig.markInitialized(url);
-    globalRestApiConfig.setAuthorizedFabloRest(url, credentials, "Org1", "admin-token");
-    const builder = new RestApiClientBuilder(url, "Org1", credentials, { channels: [] });
-    const client = builder.forContract(contract);
-    const alice = client.forUser("alice", "alice-secret");
-    const bob = client.forUser("bob", "bob-secret");
-    await settle();
-
-    expect(alice).not.toBe(client);
-    expect(bob).not.toBe(alice);
-    expect(client.userId).toBe("admin");
-    expect(alice.userId).toBe("alice");
-    expect(bob.userId).toBe("bob");
-    expect(post).not.toHaveBeenCalled();
   });
 
   it("loads a later builder's identity and contracts on an initialized endpoint", async () => {
