@@ -652,6 +652,7 @@ export class FeeCodeDefinitionDto extends SubmitCallDTO {
   public feeAccelerationRateType: FeeAccelerationRateType;
 
   @IsNotEmpty()
+  @BigNumberIsNotNegative()
   @BigNumberProperty()
   public feeAccelerationRate: BigNumber;
 
