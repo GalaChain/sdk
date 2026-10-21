@@ -198,3 +198,74 @@ test("validatePercentages() method succeeds if percentages do add up to 1.0", as
   // Then
   expect(validationResult).toBe(splitFormula);
 });
+
+test("calculateAmounts() does not assign a negative burn when rounded transfers exceed the fee", () => {
+  // Given
+  const transferPercentages = [0.26, 0.26, 0.26].map((transferPercentage, index) =>
+    plainToInstance(FeeCodeTransferPercentage, {
+      transferToUser: `client|pool-${index}`,
+      transferPercentage
+    })
+  );
+
+  const splitFormula = plainToInstance(FeeCodeSplitFormula, {
+    feeCode: "TestFeeCode",
+    burnPercentage: 0.22,
+    transferPercentages
+  });
+
+  // When
+  const [burnQuantity, transfers] = splitFormula.calculateAmounts(new BigNumber("0.02"), 2);
+
+  // Then
+  const transferSum = transfers.reduce(
+    (sum, transfer) => sum.plus(transfer.transferQuantity),
+    new BigNumber(0)
+  );
+
+  expect(burnQuantity.isNegative()).toBe(false);
+  expect(burnQuantity.plus(transferSum).toFixed()).toBe(new BigNumber("0.02").toFixed());
+});
+
+test("calculateAmounts() assigns a zero burn for a zero-burn formula", () => {
+  // Given
+  const transferPercentage = plainToInstance(FeeCodeTransferPercentage, {
+    transferToUser: "client|test-user",
+    transferPercentage: 1
+  });
+
+  const splitFormula = plainToInstance(FeeCodeSplitFormula, {
+    feeCode: "TestFeeCode",
+    burnPercentage: 0,
+    transferPercentages: [transferPercentage]
+  });
+
+  // When
+  const [burnQuantity, [transfer]] = splitFormula.calculateAmounts(new BigNumber("10"), 0);
+
+  // Then
+  expect(burnQuantity.toFixed()).toBe("0");
+  expect(transfer.transferQuantity.toFixed()).toBe("10");
+});
+
+test("validatePercentages() accepts shares that sum to 1 within binary floating-point error", async () => {
+  // Given
+  const transferPercentages = Array.from({ length: 10 }, (_, index) =>
+    plainToInstance(FeeCodeTransferPercentage, {
+      transferToUser: `client|pool-${index}`,
+      transferPercentage: 0.1
+    })
+  );
+
+  const splitFormula = plainToInstance(FeeCodeSplitFormula, {
+    feeCode: "TestFeeCode",
+    burnPercentage: 0,
+    transferPercentages
+  });
+
+  // When
+  const validationResult = await splitFormula.validatePercentages().catch((e) => e);
+
+  // Then
+  expect(validationResult).toBe(splitFormula);
+});
