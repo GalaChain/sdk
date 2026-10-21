@@ -74,6 +74,10 @@ export async function splitFeeImmediatelyWithBurnAndTransfer(
   });
 
   for (const transfer of transferQuantities) {
+    if (transfer.transferToUser === payingUser) {
+      continue;
+    }
+
     await transferToken(ctx, {
       from: payingUser,
       to: transfer.transferToUser,
