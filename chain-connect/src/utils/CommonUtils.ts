@@ -128,7 +128,11 @@ export function generateEIP712Types<T>(typeName: string, params: T): EIP712Types
     return addField(name, values[0], parentTypeName, true);
   }
 
+  const excludedFromSchema = new Set(["signature", "multisig", "trace", "prefix"]);
   Object.entries(params as Record<string, unknown>).forEach(([key, value]) => {
+    if (excludedFromSchema.has(key)) {
+      return;
+    }
     addField(key, value, typeName);
   });
 
@@ -211,7 +215,15 @@ export function generateEIP712Value<T>(params: T): EIP712Value {
  * @returns The equivalent Ethereum address
  */
 export function galaChainToEthereumAddress(galaAddress: string) {
-  return galaAddress ? getAddress(`0x${galaAddress.replace(/0x|eth\|/, "")}`) : "";
+  if (!galaAddress) {
+    return "";
+  }
+  const body = galaAddress.startsWith("eth|")
+    ? galaAddress.slice(4)
+    : galaAddress.startsWith("0x")
+      ? galaAddress.slice(2)
+      : galaAddress;
+  return getAddress(`0x${body}`);
 }
 
 /**
