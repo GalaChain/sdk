@@ -275,10 +275,54 @@ export async function generateKeys(projectPath: string): Promise<void> {
   console.log(`Private keys directory: ${privateKeysPath}`);
 }
 
+export function isNewerVersion(latest: string, current: string): boolean {
+  const latestParts = versionParts(latest);
+  const currentParts = versionParts(current);
+  const length = Math.max(latestParts.length, currentParts.length);
+
+  for (let index = 0; index < length; index++) {
+    const latestPart = latestParts[index] ?? 0;
+    const currentPart = currentParts[index] ?? 0;
+    if (latestPart > currentPart) {
+      return true;
+    }
+    if (latestPart < currentPart) {
+      return false;
+    }
+  }
+
+  return false;
+}
+
+function versionParts(version: string): number[] {
+  return version
+    .trim()
+    .replace(/^v/, "")
+    .split(".")
+    .map((part) => {
+      const numeric = parseInt(part, 10);
+      return Number.isNaN(numeric) ? 0 : numeric;
+    });
+}
+
 export function checkCliVersion() {
-  const cliLatestVersion = execFileSync("npm", ["show", "@gala-chain/cli", "version"]);
-  const cliCurrentVersion = execFileSync("galachain", ["--version"]).split(" ")[0].split("/")[2];
-  if (cliLatestVersion > cliCurrentVersion) {
+  let cliLatestVersion: string;
+  let cliCurrentVersion: string;
+
+  try {
+    cliLatestVersion = execFileSync("npm", ["show", "@gala-chain/cli", "version"]);
+    cliCurrentVersion = execFileSync("galachain", ["--version"]).split(" ")[0].split("/")[2];
+  } catch (error) {
+    console.warn(`Unable to compare Chain CLI versions: ${error}`);
+    return;
+  }
+
+  if (!cliLatestVersion || !cliCurrentVersion) {
+    console.warn("Unable to compare Chain CLI versions.");
+    return;
+  }
+
+  if (isNewerVersion(cliLatestVersion, cliCurrentVersion)) {
     console.warn(
       `Your Chain CLI is out of date, current version is ${cliCurrentVersion}, latest version is ${cliLatestVersion}. Please run 'npm install -g @gala-chain/cli --force' to update to the latest version.`
     );
@@ -311,11 +355,29 @@ export async function getChaincodeDefinition(): Promise<{ name: string; adminPub
 
 export async function getDeveloperPublicKeys(): Promise<string[]> {
   const keysPath = path.join(process.cwd(), DEFAULT_PUBLIC_KEYS_DIR);
-  const keys = fs.readdirSync(keysPath);
-  return keys
-    .filter((key) => key.match(/gc-dev.*-key.*\.pub/))
-    .map((key) => fs.readFileSync(path.join(keysPath, key), "utf8").trim())
-    .sort();
+  const developerPublicKeyFile = /^gc-dev.*-key.*\.pub$/;
+  const publicKeys = new Set<string>();
+
+  fs.readdirSync(keysPath).forEach((key) => {
+    if (!developerPublicKeyFile.test(key)) {
+      return;
+    }
+
+    const keyPath = path.join(keysPath, key);
+    if (!fs.statSync(keyPath).isFile()) {
+      return;
+    }
+
+    const contents = fs.readFileSync(keyPath, "utf8").trim();
+    try {
+      signatures.normalizePublicKey(contents);
+    } catch {
+      return;
+    }
+    publicKeys.add(contents);
+  });
+
+  return [...publicKeys].sort();
 }
 
 export async function getPrivateKey(keysFromArg: string | undefined, chaincodeName: string) {
@@ -354,24 +416,44 @@ export async function saveApiConfig(
 }
 
 function getApiConfigForChannel(channel: string, chaincodeName: string, contracts: string) {
-  const contractNamesArr = JSON.parse(contracts) as { contractName: string }[];
+  const contractNamesArr = JSON.parse(contracts) as { contractName?: unknown }[];
 
   if (!contractNamesArr || !Array.isArray(contractNamesArr)) {
     throw new Error(`Invalid contracts JSON: ${contracts}`);
   }
 
-  const contractsArr = contractNamesArr.map(({ contractName }) => ({
-    contractName,
-    chaincodeName,
-    pathFragment: contractName
-  }));
+  const seenNames = new Set<string>();
+  const contractsArr = contractNamesArr.map((entry) => {
+    const contractName = entry?.contractName;
+    if (typeof contractName !== "string" || contractName.trim() === "") {
+      throw new Error("Contract name must be a non-empty string.");
+    }
+    if (seenNames.has(contractName)) {
+      throw new Error(`Duplicate contract name "${contractName}".`);
+    }
+    seenNames.add(contractName);
+    return {
+      contractName,
+      chaincodeName,
+      pathFragment: contractName
+    };
+  });
 
   return {
-    pathFragment: channel.replace("-channel", ""),
+    pathFragment: channelPathFragment(channel),
     channelName: channel,
     asLocalHost: true,
     contracts: contractsArr
   };
+}
+
+// Remove a trailing "-channel" suffix only. An earlier "-channel" stays in the name.
+function channelPathFragment(channel: string): string {
+  const suffix = "-channel";
+  if (channel.endsWith(suffix)) {
+    return channel.slice(0, -suffix.length);
+  }
+  return channel;
 }
 
 function getDefaultDevPrivateKeyFile(chaincodeName: string): string | undefined {
