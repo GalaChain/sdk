@@ -18,7 +18,7 @@ import { BrowserProvider, Eip1193Provider, getAddress } from "ethers";
 import { GalaChainProviderOptions, WebSigner } from "../GalaChainClient";
 import { ExtendedEip1193Provider } from "../helpers";
 import { SigningType } from "../types";
-import { generateEIP712Types } from "../utils";
+import { generateEIP712Types, valueForTypedDataSigning } from "../utils";
 
 declare global {
   interface Window {
@@ -149,7 +149,11 @@ export class BrowserConnectClient extends WebSigner {
 
       const signer = await this.provider.getSigner();
       if (signingType === SigningType.SIGN_TYPED_DATA) {
-        const signature = await signer.signTypedData(domain, types, prefixedPayload);
+        const signature = await signer.signTypedData(
+          domain,
+          types,
+          valueForTypedDataSigning(types, method, prefixedPayload)
+        );
         return { ...prefixedPayload, signature, types, domain };
       } else if (signingType === SigningType.PERSONAL_SIGN) {
         const signature = await signer.signMessage(serialize(prefixedPayload));
