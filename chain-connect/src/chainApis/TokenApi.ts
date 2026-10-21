@@ -38,7 +38,7 @@ import {
   MintRequestDto,
   MintTokenDto,
   MintTokenWithAllowanceDto,
-  RefreshAllowanceDto,
+  RefreshAllowancesDto,
   RestrictTokenBalanceTargetsDto,
   SetTokenInstanceMetadataDto,
   TransferTokenDto,
@@ -81,7 +81,7 @@ import {
   MintRequest,
   MintTokenRequest,
   MintTokenWithAllowanceRequest,
-  RefreshAllowanceRequest,
+  RefreshAllowancesRequest,
   RestrictTokenBalanceTargetsRequest,
   SetTokenInstanceMetadataRequest,
   TokenAllowance,
@@ -121,7 +121,7 @@ export class TokenApi extends GalaChainBaseApi {
       sign: true,
       url: this.chainCodeUrl,
       requestConstructor: CreateTokenClassDto,
-      responseConstructor: TokenClass
+      responseConstructor: TokenClassKey
     });
   }
 
@@ -161,7 +161,7 @@ export class TokenApi extends GalaChainBaseApi {
     return this.connection.submit({
       method: "FetchTokenClassesWithPagination",
       payload: dto,
-      sign: true,
+      sign: false,
       url: this.chainCodeUrl,
       requestConstructor: FetchTokenClassesWithPaginationDto,
       responseConstructor: FetchTokenClassesResponse
@@ -221,13 +221,13 @@ export class TokenApi extends GalaChainBaseApi {
     });
   }
 
-  public RefreshAllowances(dto: RefreshAllowanceRequest) {
-    return this.connection.submit<Array<TokenAllowance>, RefreshAllowanceDto>({
+  public RefreshAllowances(dto: RefreshAllowancesRequest) {
+    return this.connection.submit<Array<TokenAllowance>, RefreshAllowancesDto>({
       method: "RefreshAllowances",
       payload: dto,
       sign: true,
       url: this.chainCodeUrl,
-      requestConstructor: RefreshAllowanceDto,
+      requestConstructor: RefreshAllowancesDto,
       responseConstructor: TokenAllowance
     });
   }
@@ -236,7 +236,7 @@ export class TokenApi extends GalaChainBaseApi {
     return this.connection.submit({
       method: "FullAllowanceCheck",
       payload: dto,
-      sign: true,
+      sign: false,
       url: this.chainCodeUrl,
       requestConstructor: FullAllowanceCheckDto,
       responseConstructor: FullAllowanceCheckResponse
@@ -247,7 +247,7 @@ export class TokenApi extends GalaChainBaseApi {
     return this.connection.submit({
       method: "FetchAllowances",
       payload: dto,
-      sign: true,
+      sign: false,
       url: this.chainCodeUrl,
       requestConstructor: FetchAllowancesDto,
       responseConstructor: FetchAllowancesResponse
