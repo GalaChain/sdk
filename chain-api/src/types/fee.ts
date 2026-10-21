@@ -27,7 +27,9 @@ import {
   IsString,
   Max,
   Min,
-  ValidateNested
+  ValidateNested,
+  ValidationArguments,
+  registerDecorator
 } from "class-validator";
 import { JSONSchema } from "class-validator-jsonschema";
 
@@ -51,11 +53,31 @@ import { UserAlias } from "./UserAlias";
 import { UserRef } from "./UserRef";
 import { ChainCallDTO, SubmitCallDTO } from "./dtos";
 
+function RequireFeePropertiesUniqueKey() {
+  return function (object: object, propertyName: string) {
+    registerDecorator({
+      name: "feePropertiesRequireUniqueKey",
+      target: object.constructor,
+      propertyName,
+      validator: {
+        validate(_value: unknown, args: ValidationArguments) {
+          const uniqueKey = (args.object as FeePropertiesDto).uniqueKey;
+          return typeof uniqueKey === "string" && uniqueKey.length > 0;
+        },
+        defaultMessage() {
+          return "uniqueKey should not be empty";
+        }
+      }
+    });
+  };
+}
+
 @JSONSchema({
   description: "Configure GALA token properties on chain for use with supporting chaincalls."
 })
 export class FeePropertiesDto extends ChainCallDTO {
   @IsNotEmpty()
+  @RequireFeePropertiesUniqueKey()
   public collection: string;
 
   @IsNotEmpty()
@@ -84,8 +106,7 @@ export class FeePropertiesDto extends ChainCallDTO {
       "You can use `nanoid` library, UUID scheme, or any tool to generate unique string keys."
   })
   @IsNotEmpty()
-  @IsOptional()
-  public uniqueKey?: string;
+  public uniqueKey: string;
 }
 
 @JSONSchema({
@@ -631,6 +652,7 @@ export class FeeCodeDefinitionDto extends SubmitCallDTO {
   public feeAccelerationRateType: FeeAccelerationRateType;
 
   @IsNotEmpty()
+  @BigNumberIsNotNegative()
   @BigNumberProperty()
   public feeAccelerationRate: BigNumber;
 

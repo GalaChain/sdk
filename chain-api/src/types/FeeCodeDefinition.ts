@@ -63,6 +63,7 @@ export class FeeCodeDefinition extends ChainObject {
   @EnumProperty(FeeAccelerationRateType)
   public feeAccelerationRateType: FeeAccelerationRateType;
 
+  @BigNumberIsNotNegative()
   @BigNumberProperty()
   public feeAccelerationRate: BigNumber;
 
