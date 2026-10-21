@@ -121,7 +121,7 @@ export class TokenApi extends GalaChainBaseApi {
       sign: true,
       url: this.chainCodeUrl,
       requestConstructor: CreateTokenClassDto,
-      responseConstructor: TokenClass
+      responseConstructor: TokenClassKey
     });
   }
 
