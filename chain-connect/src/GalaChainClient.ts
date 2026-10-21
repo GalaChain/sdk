@@ -82,7 +82,7 @@ export abstract class GalaChainProvider {
     method: string,
     dto: T,
     signingType?: SigningType
-  ): Promise<T & { signature: string; prefix?: string }>;
+  ): Promise<T & { signature?: string; multisig?: string[]; prefix?: string }>;
   /**
    * Submits a request to the GalaChain network.
    * @param params - The submission parameters
@@ -116,26 +116,17 @@ export abstract class GalaChainProvider {
     responseConstructor?: NonArrayClassConstructor<T>;
     signingType?: SigningType;
   }): Promise<GalaChainResponseSuccess<T>> {
-    // Throws error if class validation fails
-    if (requestConstructor) {
-      await createValidDTO(requestConstructor, payload);
-    }
+    // Throws error if class validation fails. Signing and transport use the
+    // validated instance so constructor transforms are not discarded.
+    const validated = requestConstructor ? await createValidDTO(requestConstructor, payload) : payload;
 
-    let newPayload = instanceToPlain(payload);
+    let newPayload = instanceToPlain(validated);
 
-    if (sign === true) {
-      //Only try signing if signature is not already present
-      if (
-        typeof payload !== "object" ||
-        payload === null ||
-        !("signature" in payload) ||
-        payload.signature === null
-      ) {
-        try {
-          newPayload = await this.sign(method, newPayload, signingType);
-        } catch (error: unknown) {
-          throw new Error((error as Error).message);
-        }
+    if (sign === true && !hasUsableSignature(validated)) {
+      try {
+        newPayload = await this.sign(method, newPayload, signingType);
+      } catch (error: unknown) {
+        throw new Error((error as Error).message);
       }
     }
 
@@ -212,6 +203,14 @@ export abstract class CustomClient extends GalaChainProvider {
     const prefix = "\u0019Ethereum Signed Message:\n" + payloadLength;
     return prefix;
   }
+}
+
+function hasUsableSignature(value: object): boolean {
+  if (!("signature" in value)) {
+    return false;
+  }
+  const signature = (value as { signature?: unknown }).signature;
+  return typeof signature === "string" && signature.length > 0;
 }
 
 /**
