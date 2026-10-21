@@ -17,9 +17,10 @@ import { readFile } from "fs/promises";
 import signatures from "./signatures";
 
 export async function readPublicKeyFromFile(path: string): Promise<string> {
-  return await readFile(path, { encoding: "utf-8" }).catch((e) => {
+  const contents = await readFile(path, { encoding: "utf-8" }).catch((e) => {
     throw new Error(`Failed to read public key from file: ${path}. ${e}`);
   });
+  return contents.trim();
 }
 
 export async function parseStringOrFileKey(stringOrPath: string): Promise<string> {

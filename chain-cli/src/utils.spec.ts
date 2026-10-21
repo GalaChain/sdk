@@ -14,7 +14,7 @@
  */
 import fs from "fs/promises";
 
-import { getPathFileName, parseJsonFromStringOrFile } from "./utils";
+import { getPathFileName, parseJsonFromStringOrFile, readPublicKeyFromFile } from "./utils";
 
 describe("parseJsonFromStringOrFile", () => {
   it("should parse JSON string", async () => {
@@ -73,6 +73,18 @@ describe("parseJsonFromStringOrFile", () => {
         "No valid JSON value found at filepath provided. Provided either a JSON.parse()-able string or file path to a valid JSON object."
       );
     }
+
+    await fs.unlink(filePath);
+  });
+});
+
+describe("readPublicKeyFromFile", () => {
+  it("trims a trailing newline from the file contents", async () => {
+    const filePath = "./public-key-trim.pub";
+    const key = "04abcd";
+    await fs.writeFile(filePath, `${key}\n`);
+
+    await expect(readPublicKeyFromFile(filePath)).resolves.toEqual(key);
 
     await fs.unlink(filePath);
   });
