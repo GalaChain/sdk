@@ -35,7 +35,7 @@ async function getPath(
   method: string,
   isWrite: boolean
 ): Promise<string> {
-  const { api, contractPath } = globalRestApiConfig.getContractApi(cfg);
+  const { api, contractPath } = globalRestApiConfig.getContractApi(restApiUrl, cfg);
 
   const methodApi = api.methods.find((m) => m.methodName === method);
 
@@ -58,16 +58,19 @@ async function getPath(
 
 export class FabloRestClient extends ChainClient {
   private readonly restApiUrl: Promise<string>;
+  private readonly apiUrl: string;
 
   constructor(
     builder: Promise<ChainClientBuilder>,
     restApiUrl: string,
     contractConfig: ContractConfig,
     private readonly credentials: RestApiAdminCredentials,
-    private token: Promise<string>,
-    orgMsp: string
+    private readonly token: Promise<string>,
+    orgMsp: string,
+    userId = credentials.adminKey
   ) {
-    super(builder, credentials.adminKey, contractConfig, orgMsp);
+    super(builder, userId, contractConfig, orgMsp);
+    this.apiUrl = restApiUrl;
     this.restApiUrl = builder.then(() => restApiUrl);
   }
 
@@ -134,10 +137,18 @@ export class FabloRestClient extends ChainClient {
   }
 
   public forUser(userId: string, secret?: string): ChainClient {
-    this.token = this.restApiUrl.then((url) =>
+    const token = this.restApiUrl.then((url) =>
       FabloRestClient.enroll(url, userId, secret ?? this.credentials.adminSecret)
     );
-    return this;
+    return new FabloRestClient(
+      this.builder,
+      this.apiUrl,
+      this.contractConfig,
+      this.credentials,
+      token,
+      this.orgMsp,
+      userId
+    );
   }
 
   public static async getContractApis(

@@ -28,10 +28,13 @@ import {
   RestApiAdminCredentials,
   RestApiStatus,
   SetContractApiParams,
-  globalRestApiConfig
+  globalRestApiConfig,
+  normalizeRestApiUrl
 } from "./GlobalRestApiConfig";
 import { RestApiClient } from "./RestApiClient";
 import { RestApiConfig } from "./loadRestApiConfig";
+
+const REST_API_INIT_WAIT_MS = 10_000;
 
 export class RestApiClientBuilder extends ChainClientBuilder {
   constructor(
@@ -43,41 +46,35 @@ export class RestApiClientBuilder extends ChainClientBuilder {
     super();
   }
 
-  private async ensureInitializedRestApi(retriesLeft = 50): Promise<void> {
-    const status = globalRestApiConfig.getStatus(this.restApiUrl);
-
-    if (status === RestApiStatus.NONE) {
-      try {
-        globalRestApiConfig.markPending(this.restApiUrl);
-
-        const shouldUseFabloRest = await this.shouldUseFabloRest();
-
-        const apis = shouldUseFabloRest
-          ? await this.getContractApisFromFabloRest()
-          : await this.getContractApisFromGCRestApi();
-
-        for (const api of apis) {
-          globalRestApiConfig.setContractApi(api);
-        }
-
-        globalRestApiConfig.markInitialized(this.restApiUrl);
-        return;
-      } catch (e) {
-        globalRestApiConfig.markFailed(this.restApiUrl, e);
-        throw e;
+  private ensureInitializedRestApi(): Promise<void> {
+    const initialization = globalRestApiConfig.initialize(this.restApiUrl, () => this.loadContractApis());
+    return waitForInitialization(initialization, this.restApiUrl, REST_API_INIT_WAIT_MS).then(async () => {
+      if (globalRestApiConfig.getStatus(this.restApiUrl) === RestApiStatus.INITIALIZED) {
+        await this.publishBuilderApis();
       }
+    });
+  }
+
+  private async loadContractApis(): Promise<void> {
+    globalRestApiConfig.setUsesFabloRest(this.restApiUrl, await this.shouldUseFabloRest());
+    await this.publishBuilderApis();
+  }
+
+  private async publishBuilderApis(): Promise<void> {
+    const scope = builderScopeKey(this.restApiUrl, this.orgMsp, this.credentials, this.restApiConfig);
+    if (globalRestApiConfig.hasPublishedBuilderScope(scope)) {
+      return;
     }
 
-    if (retriesLeft === 0) {
-      const error = new Error(`Failed to initialize Rest API at ${this.restApiUrl} after 50 retries`);
-      globalRestApiConfig.markFailed(this.restApiUrl, error);
-      throw error;
+    const apis = globalRestApiConfig.usesFabloRest(this.restApiUrl)
+      ? await this.getContractApisFromFabloRest()
+      : await this.getContractApisFromGCRestApi();
+
+    for (const api of apis) {
+      globalRestApiConfig.setContractApi(this.restApiUrl, api);
     }
 
-    if (status === RestApiStatus.PENDING) {
-      await new Promise((resolve) => setTimeout(resolve, 200));
-      return this.ensureInitializedRestApi(retriesLeft - 1);
-    }
+    globalRestApiConfig.markBuilderScopePublished(scope);
   }
 
   private async shouldUseFabloRest(): Promise<boolean> {
@@ -91,14 +88,14 @@ export class RestApiClientBuilder extends ChainClientBuilder {
 
   private async getContractApisFromFabloRest(): Promise<SetContractApiParams[]> {
     const token =
-      globalRestApiConfig.getAuthorizedFabloRest(this.restApiUrl) ??
+      globalRestApiConfig.getAuthorizedFabloRest(this.restApiUrl, this.credentials, this.orgMsp) ??
       (await FabloRestClient.enroll(
         this.restApiUrl,
         this.credentials.adminKey,
         this.credentials.adminSecret
       ));
 
-    globalRestApiConfig.setAuthorizedFabloRest(this.restApiUrl, token);
+    globalRestApiConfig.setAuthorizedFabloRest(this.restApiUrl, this.credentials, this.orgMsp, token);
 
     return await FabloRestClient.getContractApis(token, this.restApiUrl, this.restApiConfig);
   }
@@ -117,29 +114,36 @@ class AsyncProxyClient extends ChainClient {
   private clientPromise: Promise<ChainClient>;
 
   constructor(
-    builder: Promise<RestApiClientBuilder>,
+    private readonly readyBuilder: Promise<RestApiClientBuilder>,
     adminKey: string,
     contractConfig: ContractConfig,
     orgMsp: string
   ) {
-    super(builder, adminKey, contractConfig, orgMsp);
-    this.clientPromise = builder.then((b) => {
-      // Token present means we want to use Fablo REST
-      const token = globalRestApiConfig.getAuthorizedFabloRest(b.restApiUrl);
+    super(readyBuilder, adminKey, contractConfig, orgMsp);
+    this.clientPromise = readyBuilder.then((b) => this.createClient(b, contractConfig));
+  }
 
-      if (token) {
-        return new FabloRestClient(
-          Promise.resolve(b),
-          b.restApiUrl,
-          contractConfig,
-          b.credentials,
-          Promise.resolve(token),
-          this.orgMsp
-        );
-      } else {
-        return new RestApiClient(Promise.resolve(b), b.restApiUrl, contractConfig, this.orgMsp);
-      }
-    });
+  private createClient(builder: RestApiClientBuilder, contractConfig: ContractConfig): ChainClient {
+    // Token present means we want to use Fablo REST
+    const token = globalRestApiConfig.getAuthorizedFabloRest(
+      builder.restApiUrl,
+      builder.credentials,
+      this.orgMsp
+    );
+
+    if (token) {
+      return new FabloRestClient(
+        Promise.resolve(builder),
+        builder.restApiUrl,
+        contractConfig,
+        builder.credentials,
+        Promise.resolve(token),
+        this.orgMsp,
+        this.userId
+      );
+    }
+
+    return new RestApiClient(Promise.resolve(builder), builder.restApiUrl, contractConfig, this.orgMsp);
   }
 
   public async disconnect(): Promise<void> {
@@ -148,8 +152,9 @@ class AsyncProxyClient extends ChainClient {
   }
 
   public forUser(userId: string, secret?: string): ChainClient {
-    this.clientPromise = this.clientPromise.then((c) => c.forUser(userId, secret));
-    return this;
+    const forked = new AsyncProxyClient(this.readyBuilder, userId, this.contractConfig, this.orgMsp);
+    forked.clientPromise = this.clientPromise.then((client) => client.forUser(userId, secret));
+    return forked;
   }
 
   public async evaluateTransaction<T>(
@@ -171,4 +176,38 @@ class AsyncProxyClient extends ChainClient {
     // @ts-expect-error - method overload signatures fail for some reason on dtoOrResp
     return await client.submitTransaction(method, dtoOrResp, resp);
   }
+}
+
+function builderScopeKey(
+  apiUrl: string,
+  orgMsp: string,
+  credentials: RestApiAdminCredentials,
+  restApiConfig: RestApiConfig
+): string {
+  return JSON.stringify([
+    normalizeRestApiUrl(apiUrl),
+    orgMsp,
+    credentials.adminKey,
+    credentials.adminSecret,
+    restApiConfig
+  ]);
+}
+
+function waitForInitialization(initialization: Promise<void>, apiUrl: string, waitMs: number): Promise<void> {
+  return new Promise((resolve, reject) => {
+    const timer = setTimeout(() => {
+      reject(new Error(`Failed to initialize Rest API at ${apiUrl} after 50 retries`));
+    }, waitMs);
+
+    initialization.then(
+      () => {
+        clearTimeout(timer);
+        resolve();
+      },
+      (error: unknown) => {
+        clearTimeout(timer);
+        reject(error);
+      }
+    );
+  });
 }

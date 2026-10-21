@@ -19,6 +19,7 @@ import { GalaChainContext } from "../types";
 import { BatchMintError } from "./MintError";
 import { fetchMintSupply } from "./fetchMintSupply";
 import { mintToken } from "./mintToken";
+import { tokenClassGroupKey } from "./tokenClassGroupKey";
 
 export interface MintOperationParams {
   tokenClassKey: TokenClassKey;
@@ -94,7 +95,7 @@ export function indexMintOperations(
     const callingOnBehalf = ops[i].authorizedOnBehalf ?? ctx.callingUser;
     const { collection, category, type, additionalKey } = ops[i].tokenClassKey;
 
-    const tokenKey = `${collection}_${category}_${type}_${additionalKey}`;
+    const tokenKey = tokenClassGroupKey(collection, category, type, additionalKey);
 
     if (mintIndex[tokenKey] === undefined) {
       const emptyIndexedTokenClass: indexedMintOperationsByTokenClass = {
@@ -105,7 +106,7 @@ export function indexMintOperations(
       mintIndex[tokenKey] = emptyIndexedTokenClass;
     }
 
-    const key = `${callingOnBehalf}_${collection}_${category}_${type}_${additionalKey}`;
+    const key = tokenClassGroupKey(`${callingOnBehalf}`, collection, category, type, additionalKey);
 
     if (mintIndex[tokenKey].mintOperationsIndex[key] === undefined) {
       const emptyIndexedMintOp: indexedMintOperations = {

@@ -17,7 +17,7 @@ import fs from "fs";
 import os from "os";
 import path from "path";
 
-import { CAClient } from "./CAClient";
+import { CAClient, enrollUser } from "./CAClient";
 
 jest.mock("fabric-ca-client", () =>
   jest.fn().mockImplementation(() => ({
@@ -87,5 +87,26 @@ describe("Fabric CA wallet", () => {
       { trustedRoots: [pem], verify: true },
       "ca.example"
     );
+  });
+});
+
+describe("pending enrollment ids", () => {
+  it.each(["constructor", "toString", "__proto__"])("enrolls %s as its own user id", async (userId) => {
+    const caClient = {
+      enroll: jest.fn().mockResolvedValue({
+        certificate: "cert",
+        key: { toBytes: () => "key-bytes" }
+      })
+    };
+    const wallet = {
+      get: jest.fn().mockResolvedValue(undefined),
+      put: jest.fn().mockResolvedValue(undefined)
+    };
+
+    const identity = await enrollUser(caClient as never, wallet as never, "Org1MSP", userId, "secret");
+
+    expect(caClient.enroll).toHaveBeenCalledWith({ enrollmentID: userId, enrollmentSecret: "secret" });
+    expect(wallet.put).toHaveBeenCalledWith(userId, expect.objectContaining({ type: "X.509" }));
+    expect(identity.mspId).toBe("Org1MSP");
   });
 });
