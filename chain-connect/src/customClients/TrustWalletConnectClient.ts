@@ -24,18 +24,21 @@ declare global {
 }
 
 export async function getTrustWalletInjectedProvider({ timeout } = { timeout: 3000 }) {
-  const provider = new BrowserProvider(getTrustWalletFromWindow());
+  const injected = await resolveTrustWalletProvider({ timeout });
+  return injected ? new BrowserProvider(injected) : undefined;
+}
 
-  if (provider) {
-    return provider;
+async function resolveTrustWalletProvider({ timeout } = { timeout: 3000 }) {
+  const injected = getTrustWalletFromWindow();
+  if (injected) {
+    return injected;
   }
-
   return listenForTrustWalletInitialized({ timeout });
 }
 
 async function listenForTrustWalletInitialized(
   { timeout } = { timeout: 3000 }
-): Promise<BrowserProvider | undefined> {
+): Promise<ExtendedEip1193Provider | null> {
   return new Promise((resolve) => {
     const handleInitialization = () => {
       resolve(getTrustWalletFromWindow());
@@ -47,7 +50,7 @@ async function listenForTrustWalletInitialized(
 
     setTimeout(() => {
       window.removeEventListener("trustwallet#initialized", handleInitialization, false);
-      resolve(undefined);
+      resolve(null);
     }, timeout);
   });
 }
@@ -96,7 +99,12 @@ export class TrustWalletConnectClient extends BrowserConnectClient {
   }
 
   public async connect() {
-    this.provider = await getTrustWalletInjectedProvider();
+    const injected = await resolveTrustWalletProvider();
+    if (injected) {
+      this.useEip1193Provider(injected);
+    } else {
+      this.provider = undefined;
+    }
     return super.connect();
   }
 }
