@@ -36,6 +36,7 @@ import {
   FetchAllowancesDto,
   FetchAllowancesResponse,
   FetchBalancesDto,
+  FetchBalancesWithPaginationDto,
   FetchBalancesWithTokenMetadataResponse,
   FetchBurnsDto,
   FetchFeeScheduleDto,
@@ -374,16 +375,17 @@ export default class GalaChainTokenContract extends GalaContract {
   }
 
   @UnsignedEvaluate({
-    in: FetchBalancesDto,
-    out: { arrayOf: TokenBalance }
+    in: FetchBalancesWithPaginationDto,
+    out: FetchBalancesWithTokenMetadataResponse
   })
   public async FetchBalancesWithTokenMetadata(
     ctx: GalaChainContext,
-    dto: FetchBalancesDto
+    dto: FetchBalancesWithPaginationDto
   ): Promise<FetchBalancesWithTokenMetadataResponse> {
     return fetchBalancesWithTokenMetadata(ctx, {
       ...dto,
-      owner: await resolveUserAlias(ctx, dto.owner ?? ctx.callingUser)
+      owner: await resolveUserAlias(ctx, dto.owner ?? ctx.callingUser),
+      limit: dto.limit ?? FetchBalancesWithPaginationDto.DEFAULT_LIMIT
     });
   }
 
