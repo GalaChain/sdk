@@ -69,15 +69,14 @@ export default class NetworkUp extends BaseCommand<typeof NetworkUp> {
       char: "d",
       description:
         "Root directory of chaincode source, relative to fabloRoot. " +
-        `By default '${defaultChaincodeDir}' is used.`,
-      default: [defaultChaincodeDir],
+        `By default '${defaultChaincodeDir}' is used for every chaincode when this flag is omitted.`,
       multiple: true
     }),
     fabloRoot: Flags.string({
       char: "r",
       description:
         "Root directory of target network. " +
-        "Should not be the same as chaincodeDir and should not be a child of chaincodeDir. " +
+        "Should not be the same as chaincodeDir and should not contain chaincodeDir. " +
         `By default '${defaultFabloRoot}' is used.`,
       default: defaultFabloRoot
     }),
@@ -315,7 +314,35 @@ function updatedFabloConfigWithEntry(
   return updated;
 }
 
-function customValidation(flags: any): void {
+export function chaincodeDirsForChannels(channels: string[], chaincodeDir: string[] | undefined): string[] {
+  if (!chaincodeDir || chaincodeDir.length === 0) {
+    return channels.map(() => defaultChaincodeDir);
+  }
+  return chaincodeDir;
+}
+
+export function assertNetworkRootOutsideChaincodeDirs(fabloRoot: string, chaincodeDirs: string[]): void {
+  const networkRoot = path.resolve(fabloRoot);
+  chaincodeDirs.forEach((dir) => {
+    const chaincodeDirectory = path.resolve(dir);
+    if (isEqualOrInside(networkRoot, chaincodeDirectory)) {
+      throw new Error(
+        `Error: Network root "${networkRoot}" must not equal chaincode directory "${chaincodeDirectory}" or contain it.`
+      );
+    }
+  });
+}
+
+function isEqualOrInside(directory: string, candidate: string): boolean {
+  const relative = path.relative(directory, candidate);
+  return (
+    relative === "" ||
+    (!relative.startsWith(`..${path.sep}`) && relative !== ".." && !path.isAbsolute(relative))
+  );
+}
+
+export function customValidation(flags: any): void {
+  flags.chaincodeDir = chaincodeDirsForChannels(flags.channel ?? [], flags.chaincodeDir);
   const { channel, channelType, chaincodeName, chaincodeDir, envConfig, fabloRoot } = flags;
 
   /*
@@ -435,6 +462,8 @@ function customValidation(flags: any): void {
       throw new Error("Error: Watch mode suports only a network with a single chaincode.");
     }
   }
+
+  assertNetworkRootOutsideChaincodeDirs(fabloRoot, chaincodeDir);
 }
 
 function reduce(args: any): SingleArg[] {
