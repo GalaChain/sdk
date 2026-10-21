@@ -26,6 +26,7 @@ import BigNumber from "bignumber.js";
 import { plainToClass as plainToInstance } from "class-transformer";
 
 import { ensureIsAuthenticatedBy } from "../contracts";
+import { UniqueTransactionService } from "../services";
 import { GalaChainContext } from "../types";
 import { getObjectByKey, putChainObject } from "../utils";
 
@@ -73,6 +74,8 @@ export async function creditFeeBalance(
       `FeeVerificationDto.quantity ${quantity.toString()} !== FeeAuthorizationDto.quantity (${authzDto.quantity.toString()})`
     );
   }
+
+  await UniqueTransactionService.ensureUniqueTransaction(ctx, feeAuthorizationKey);
 
   const userPendingAuthorizationBalanceChainKeys = [authority];
 
