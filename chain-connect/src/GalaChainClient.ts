@@ -35,64 +35,21 @@ type NonArrayClassConstructor<T> = T extends Array<unknown>
 export interface GalaChainProviderOptions {
   /** The type of signing to use for transactions */
   signingType?: SigningType;
-  /** Legacy authentication credentials for backward compatibility */
-  legacyCredentials?: {
-    /** Identity lookup key for user identification */
-    identityLookupKey: string;
-    /** User encryption key for secure operations */
-    userEncryptionKey: string;
-    /** Origin that may receive the identity headers */
-    origin: string;
-  };
 }
 
 /**
  * Abstract base class for GalaChain providers that handle communication with GalaChain networks.
  * Provides common functionality for signing transactions and submitting requests.
  */
-const legacyCredentialHeaders = ["X-Identity-Lookup-Key", "X-User-Encryption-Key"] as const;
-
-function isLegacyCredentialHeader(name: string): boolean {
-  const normalized = name.toLowerCase();
-  return legacyCredentialHeaders.some((header) => header.toLowerCase() === normalized);
-}
-
 export abstract class GalaChainProvider {
-  private legacyCredentials: Record<string, string> | undefined;
-  private legacyCredentialOrigin: string | undefined;
-
   /**
    * Creates a new GalaChain provider instance.
    * @param options - Configuration options for the provider
    */
-  constructor(protected options?: GalaChainProviderOptions) {
-    if (options?.legacyCredentials) {
-      this.legacyCredentialOrigin = new URL(options.legacyCredentials.origin).origin;
-      this.legacyCredentials = {
-        "X-Identity-Lookup-Key": options.legacyCredentials.identityLookupKey,
-        "X-User-Encryption-Key": options.legacyCredentials.userEncryptionKey
-      };
-    }
-  }
+  constructor(protected options?: GalaChainProviderOptions) {}
 
-  private requestHeaders(url: string, headers: Record<string, string>): Record<string, string> {
-    const requestHeaders: Record<string, string> = { "Content-Type": "application/json" };
-    for (const [name, value] of Object.entries(headers)) {
-      if (isLegacyCredentialHeader(name)) {
-        continue;
-      }
-      requestHeaders[name] = value;
-    }
-
-    if (
-      this.legacyCredentials &&
-      this.legacyCredentialOrigin &&
-      new URL(url).origin === this.legacyCredentialOrigin
-    ) {
-      return { ...requestHeaders, ...this.legacyCredentials };
-    }
-
-    return requestHeaders;
+  private requestHeaders(headers: Record<string, string>): Record<string, string> {
+    return { "Content-Type": "application/json", ...headers };
   }
 
   /**
@@ -158,7 +115,7 @@ export abstract class GalaChainProvider {
     const response = await fetch(fullUrl, {
       method: "POST",
       body: serialize(newPayload),
-      headers: this.requestHeaders(fullUrl, headers)
+      headers: this.requestHeaders(headers)
     });
 
     const hash = response.headers.get("x-transaction-id") ?? undefined;

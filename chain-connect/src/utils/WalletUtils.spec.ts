@@ -12,14 +12,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-import { GalaChainProvider } from "../GalaChainClient";
 import { WalletUtils } from "./WalletUtils";
-
-class TestProvider extends GalaChainProvider {
-  public sign(): Promise<never> {
-    return Promise.reject(new Error("not signed"));
-  }
-}
 
 function jsonResponse(status = 200): Response {
   return {
@@ -72,73 +65,5 @@ describe("wallet registration", () => {
     await expect(WalletUtils.createAndRegisterRandomWallet("https://example.test/register")).resolves.toBe(
       created
     );
-  });
-});
-
-describe("legacy credential origin", () => {
-  const fetchMock = jest.fn();
-
-  beforeEach(() => {
-    fetchMock.mockReset();
-    fetchMock.mockResolvedValue(jsonResponse());
-    global.fetch = fetchMock;
-  });
-
-  function provider(): TestProvider {
-    return new TestProvider({
-      legacyCredentials: {
-        identityLookupKey: "lookup",
-        userEncryptionKey: "encrypt",
-        origin: "https://chain.example"
-      }
-    });
-  }
-
-  it("sends credentials only to the configured origin", async () => {
-    const client = provider();
-
-    await client.submit({
-      url: "https://chain.example/api",
-      method: "Ping",
-      payload: {},
-      sign: false,
-      headers: { "X-Identity-Lookup-Key": "replaced", "X-Trace": "1" }
-    });
-    await client.submit({
-      url: "https://other.example/api",
-      method: "Ping",
-      payload: {},
-      sign: false,
-      headers: { "X-Identity-Lookup-Key": "replaced" }
-    });
-
-    const firstHeaders = fetchMock.mock.calls[0][1].headers;
-    const secondHeaders = fetchMock.mock.calls[1][1].headers;
-    expect(firstHeaders["X-Identity-Lookup-Key"]).toBe("lookup");
-    expect(firstHeaders["X-User-Encryption-Key"]).toBe("encrypt");
-    expect(firstHeaders["X-Trace"]).toBe("1");
-    expect(secondHeaders["X-Identity-Lookup-Key"]).toBeUndefined();
-    expect(secondHeaders["X-User-Encryption-Key"]).toBeUndefined();
-  });
-
-  it("does not let a differently cased header replace credentials", async () => {
-    const client = provider();
-
-    await client.submit({
-      url: "https://chain.example/api",
-      method: "Ping",
-      payload: {},
-      sign: false,
-      headers: {
-        "x-identity-lookup-key": "replaced",
-        "x-user-encryption-key": "replaced"
-      }
-    });
-
-    const sent = fetchMock.mock.calls[0][1].headers;
-    expect(sent["x-identity-lookup-key"]).toBeUndefined();
-    expect(sent["x-user-encryption-key"]).toBeUndefined();
-    expect(sent["X-Identity-Lookup-Key"]).toBe("lookup");
-    expect(sent["X-User-Encryption-Key"]).toBe("encrypt");
   });
 });
