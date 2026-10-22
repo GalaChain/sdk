@@ -187,11 +187,11 @@ class StubCache {
         "fabric.invoke.method": args?.[0] ?? ""
       },
       async () => {
-        const key = `${channel}/${chaincodeName}`;
+        const effectiveChannel = channel === "" ? this.stub.getChannelID() : channel;
+        const key = `${effectiveChannel}/${chaincodeName}`;
         const prevCall = this.invokeChaincodeCalls[key];
 
         if (prevCall) {
-          const effectiveChannel = channel === "" ? this.stub.getChannelID() : channel;
           throw new DuplicateInvokeChaincodeError(chaincodeName, prevCall, effectiveChannel);
         }
 

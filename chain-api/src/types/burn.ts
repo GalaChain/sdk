@@ -50,35 +50,56 @@ export class FetchBurnsDto extends ChainCallDTO {
   @JSONSchema({
     description: "Token collection. Optional, but required if category is provided."
   })
-  @ValidateIf((o) => !!o.category)
+  @ValidateIf(
+    (burn: FetchBurnsDto) =>
+      burn.collection !== undefined ||
+      burn.category !== undefined ||
+      burn.type !== undefined ||
+      burn.additionalKey !== undefined ||
+      burn.instance !== undefined
+  )
+  @IsString()
   @IsNotEmpty()
   collection?: string;
 
   @JSONSchema({
     description: "Token category. Optional, but required if type is provided."
   })
-  @ValidateIf((o) => !!o.type)
+  @ValidateIf(
+    (burn: FetchBurnsDto) =>
+      burn.category !== undefined ||
+      burn.type !== undefined ||
+      burn.additionalKey !== undefined ||
+      burn.instance !== undefined
+  )
+  @IsString()
   @IsNotEmpty()
   category?: string;
 
   @JSONSchema({
     description: "Token type. Optional, but required if additionalKey is provided."
   })
-  @ValidateIf((o) => !!o.additionalKey)
+  @ValidateIf(
+    (burn: FetchBurnsDto) =>
+      burn.type !== undefined || burn.additionalKey !== undefined || burn.instance !== undefined
+  )
+  @IsString()
   @IsNotEmpty()
   type?: string;
 
   @JSONSchema({
     description: "Token additionalKey. Optional, but required if instance is provided."
   })
-  @ValidateIf((o) => !!o.instance)
+  @ValidateIf((burn: FetchBurnsDto) => burn.additionalKey !== undefined || burn.instance !== undefined)
+  @IsString()
   @IsNotEmpty()
   additionalKey?: string;
 
   @JSONSchema({
-    description: "Token instance. Optional, but required if allowanceType is provided."
+    description: "Token instance. Optional."
   })
-  @ValidateIf((o) => o.allowanceType !== undefined)
+  @ValidateIf((burn: FetchBurnsDto) => burn.instance !== undefined)
+  @IsString()
   @IsNotEmpty()
   instance?: string;
 
