@@ -292,6 +292,20 @@ describe("cached range queries", () => {
     };
   };
 
+  it("should omit a cached missing record from a later prefix query", async () => {
+    // Given
+    const test = setupTestWithInitialState();
+    const missingKey = `${separator}people${separator}sc${separator}missing${separator}`;
+    const missing = await test.gcStub.getCachedState(missingKey);
+
+    // When
+    const result = await test.getCachedStateByPartialCompositeKey(people, scientists);
+
+    // Then
+    expect(missing.length).toBe(0);
+    expect(result).toEqual([expect.objectContaining(scientist1), expect.objectContaining(scientist2)]);
+  });
+
   it("should read values from chain both times", async () => {
     // Given
     const test = setupTestWithInitialState();
