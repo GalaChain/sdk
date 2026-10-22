@@ -98,6 +98,7 @@ export async function fullAllowanceCheck(
 
       const expiredAllowances = allowanceResults.filter((allowance) => {
         return (
+          !allowance.uses.isGreaterThan(0) ||
           (!!allowance.usesSpent && allowance.usesSpent?.isGreaterThanOrEqualTo(allowance.uses)) ||
           (!!allowance.quantitySpent &&
             allowance.quantitySpent?.isGreaterThanOrEqualTo(allowance.quantity)) ||

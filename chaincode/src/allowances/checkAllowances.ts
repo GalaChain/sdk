@@ -21,6 +21,10 @@ import { GalaChainContext } from "../types";
 import { deleteOneAllowance } from "./deleteAllowances";
 
 export function isAllowanceSpent(allowance: TokenAllowance): boolean {
+  if (!allowance.uses.isGreaterThan(0)) {
+    return true;
+  }
+
   const usesExhausted = allowance.usesSpent?.isGreaterThanOrEqualTo(allowance.uses) ?? false;
   const quantityExhausted = allowance.quantitySpent?.isGreaterThanOrEqualTo(allowance.quantity) ?? false;
   return usesExhausted || quantityExhausted;

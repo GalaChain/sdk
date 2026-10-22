@@ -107,6 +107,14 @@ it("should validate client alias only", async () => {
   await expect(invalid).rejects.toThrow(`Only string following the format of 'client|<user-id>' is allowed`);
 });
 
+it("should reject an array where a single alias is required", async () => {
+  const empty = createValidDTO(TestDto, { user: [] as unknown as UserAlias });
+  const nested = createValidDTO(TestDto, { user: [["client|123"]] as unknown as UserAlias });
+
+  await expect(empty).rejects.toThrow(/user/);
+  await expect(nested).rejects.toThrow(/user/);
+});
+
 it("should support schema generation", () => {
   // When
   const schema1 = generateSchema(TestDto);

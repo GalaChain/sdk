@@ -25,6 +25,7 @@ import {
   IsString,
   Max,
   Min,
+  Validate,
   ValidateIf,
   ValidateNested
 } from "class-validator";
@@ -33,7 +34,13 @@ import { JSONSchema } from "class-validator-jsonschema";
 import { ValidationFailedError } from "../utils";
 import { BigNumberProperty } from "../validators";
 import { OracleDefinition } from "./OracleDefinition";
-import { ExternalToken, OraclePriceAssertion, PositiveFiniteRate } from "./OraclePriceAssertion";
+import {
+  ExactlyOneBaseTokenConstraint,
+  ExactlyOneQuoteTokenConstraint,
+  ExternalToken,
+  OraclePriceAssertion,
+  PositiveFiniteRate
+} from "./OraclePriceAssertion";
 import { OraclePriceCrossRateAssertion } from "./OraclePriceCrossRateAssertion";
 import { TokenClassKey } from "./TokenClass";
 import { TokenInstanceKey } from "./TokenInstance";
@@ -50,10 +57,16 @@ export class OracleDefinitionDto extends SubmitCallDTO {
   public name: string;
 
   @JSONSchema({
-    description: "Oracle Authorities. On-Chain identities that speak for this Oracle."
+    description:
+      "Oracle Authorities. On-Chain identities that speak for this Oracle. " +
+      "When omitted, the caller is saved as the authority."
   })
+  @IsOptional()
+  @ArrayNotEmpty()
   @ArrayUnique()
-  public authorities: string[];
+  @IsString({ each: true })
+  @IsNotEmpty({ each: true })
+  public authorities?: string[];
 }
 
 @JSONSchema({
@@ -75,9 +88,11 @@ export class FetchOracleDefinitionsDto extends ChainCallDTO {
   bookmark?: string | undefined;
 
   @JSONSchema({
-    description: "(optional). Limit results set."
+    description: "Page size. Must be an integer from 1 to 10000."
   })
   @IsOptional()
+  @Min(1)
+  @Max(10 * 1000)
   @IsInt()
   limit?: number | undefined;
 }
@@ -115,9 +130,11 @@ export class FetchOracleAssertionsDto extends ChainCallDTO {
   bookmark?: string | undefined;
 
   @JSONSchema({
-    description: "(optional). Limit results set."
+    description: "Page size. Must be an integer from 1 to 10000."
   })
   @IsOptional()
+  @Min(1)
+  @Max(10 * 1000)
   @IsInt()
   limit?: number | undefined;
 }
@@ -158,7 +175,7 @@ export class OraclePriceAssertionDto extends SubmitCallDTO {
       "First currency in the described currency pair. Unit of exchange. " +
       "Optional, but required if externalBaseToken is not provided."
   })
-  @ValidateIf((assertion) => !!assertion.externalBaseToken)
+  @IsOptional()
   @ValidateNested()
   @Type(() => TokenInstanceKey)
   baseToken?: TokenInstanceKey;
@@ -168,7 +185,7 @@ export class OraclePriceAssertionDto extends SubmitCallDTO {
       "External token representing the first currency in the described currency pair. " +
       "Unit of exchange. Optional, but required if baseToken is not provided."
   })
-  @ValidateIf((assertion) => !!assertion.baseToken)
+  @IsOptional()
   @ValidateNested()
   @Type(() => ExternalToken)
   externalBaseToken?: ExternalToken;
@@ -178,7 +195,7 @@ export class OraclePriceAssertionDto extends SubmitCallDTO {
       "Second token/currency in the pair. Token/Currency in which the baseToken is quoted. " +
       "Optional, but required if externalQuoteToken is not provided."
   })
-  @ValidateIf((o) => !!o.externalQuoteToken)
+  @IsOptional()
   @ValidateNested()
   @Type(() => TokenInstanceKey)
   quoteToken?: TokenInstanceKey;
@@ -187,7 +204,7 @@ export class OraclePriceAssertionDto extends SubmitCallDTO {
     description:
       "Second token/currency in the pair. Token/Currency in which the baseToken is quoted. Optional, but required if quoteToken is not provided."
   })
-  @ValidateIf((o) => !!o.quoteToken)
+  @IsOptional()
   @ValidateNested()
   @Type(() => ExternalToken)
   externalQuoteToken?: ExternalToken;
@@ -196,6 +213,8 @@ export class OraclePriceAssertionDto extends SubmitCallDTO {
     description: "How much of the quoteToken is needed to purchase one unit of the baseToken."
   })
   @PositiveFiniteRate()
+  @Validate(ExactlyOneBaseTokenConstraint)
+  @Validate(ExactlyOneQuoteTokenConstraint)
   @BigNumberProperty()
   exchangeRate: BigNumber;
 

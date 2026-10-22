@@ -26,5 +26,7 @@ export class OracleDefinition extends ChainObject {
   public name: string;
 
   @ArrayNotEmpty()
+  @IsString({ each: true })
+  @IsNotEmpty({ each: true })
   public authorities: string[];
 }
