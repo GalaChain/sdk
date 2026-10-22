@@ -50,7 +50,8 @@ export async function cleanTokenSwaps(
   const deletes: TokenSwapRequest[] = [];
 
   for (const swap of results) {
-    if ((swap.expires !== 0 && swap.expires <= ctx.txUnixTime) || swap.uses <= swap.usesSpent) {
+    const usesExhausted = swap.uses.isLessThanOrEqualTo(swap.usesSpent);
+    if ((swap.expires !== 0 && swap.expires <= ctx.txUnixTime) || usesExhausted) {
       await deindexTokenSwapRequest(ctx, swap);
 
       deletes.push(swap);
