@@ -445,7 +445,7 @@ export class FeeCreditReceiptKeyValueResult extends ChainCallDTO {
 
   @JSONSchema({ description: "Chain key identifying object on chain." })
   @ValidateNested()
-  @Type(() => FeeChannelPaymentReceipt)
+  @Type(() => FeeBalanceCreditReceipt)
   value: FeeBalanceCreditReceipt;
 }
 
@@ -802,7 +802,7 @@ export class FeeThresholdUsesKeyValueResult extends ChainCallDTO {
 
   @JSONSchema({ description: "Chain key identifying object on chain." })
   @ValidateNested()
-  @Type(() => ChainObject)
+  @Type(() => FeeThresholdUses)
   value: FeeThresholdUses;
 }
 
