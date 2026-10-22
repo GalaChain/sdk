@@ -42,13 +42,6 @@ type NonArrayClassConstructor<T> = T extends Array<unknown>
 export interface GalaChainProviderOptions {
   /** The type of signing to use for transactions */
   signingType?: SigningType;
-  /** Legacy authentication credentials for backward compatibility */
-  legacyCredentials?: {
-    /** Identity lookup key for user identification */
-    identityLookupKey: string;
-    /** User encryption key for secure operations */
-    userEncryptionKey: string;
-  };
 }
 
 /**
@@ -56,19 +49,14 @@ export interface GalaChainProviderOptions {
  * Provides common functionality for signing transactions and submitting requests.
  */
 export abstract class GalaChainProvider {
-  private legacyCredentials: Record<string, string>;
-
   /**
    * Creates a new GalaChain provider instance.
    * @param options - Configuration options for the provider
    */
-  constructor(protected options?: GalaChainProviderOptions) {
-    if (options?.legacyCredentials) {
-      this.legacyCredentials = {
-        "X-Identity-Lookup-Key": options.legacyCredentials.identityLookupKey,
-        "X-User-Encryption-Key": options.legacyCredentials.userEncryptionKey
-      };
-    }
+  constructor(protected options?: GalaChainProviderOptions) {}
+
+  private requestHeaders(headers: Record<string, string>): Record<string, string> {
+    return { "Content-Type": "application/json", ...headers };
   }
 
   /**
@@ -134,11 +122,7 @@ export abstract class GalaChainProvider {
     const response = await fetch(fullUrl, {
       method: "POST",
       body: serialize(newPayload),
-      headers: {
-        "Content-Type": "application/json",
-        ...this.legacyCredentials,
-        ...headers
-      }
+      headers: this.requestHeaders(headers)
     });
 
     const hash = response.headers.get("x-transaction-id") ?? undefined;
