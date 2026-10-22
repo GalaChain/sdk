@@ -448,6 +448,23 @@ describe("invokeChaincode", () => {
     expect(internalStub.invokeChaincode).toHaveBeenCalledTimes(3);
   });
 
+  it("should treat an empty channel as the current channel", async () => {
+    // Given
+    const { internalStub, gcStub } = setupTest();
+    const args = ["Contract:Method", "{}"];
+    internalStub.getChannelID = jest.fn(() => "channel-A");
+
+    // When
+    const first = await gcStub.invokeChaincode("chaincode-1", args, "");
+    const second = await gcStub.invokeChaincode("chaincode-1", args, "channel-A").catch((e) => e);
+
+    // Then
+    expect(first).toEqual(successInvoke);
+    expect(second).toEqual(new DuplicateInvokeChaincodeError("chaincode-1", args, "channel-A"));
+    expect(internalStub.invokeChaincode).toHaveBeenCalledTimes(1);
+    expect(internalStub.invokeChaincode).toHaveBeenCalledWith("chaincode-1", args, "");
+  });
+
   it("should record external chaincode invocation", async () => {
     // Given
     const { gcStub } = setupTest();
