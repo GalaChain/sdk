@@ -139,13 +139,8 @@ export async function createVestingToken(
     };
     const mintResponse = await mintTokenWithAllowance(ctx, mintParams);
 
-    let vestingPeriodStart = params.startDate;
-    let expires = vestingPeriodStart;
-    //first lock period vests on startDate + cliff (verify this is right)
-    if (allocation.cliff !== 0) {
-      vestingPeriodStart += daysToMilliseconds(allocation.cliff);
-      expires = vestingPeriodStart + daysToMilliseconds(allocation.vestingDays);
-    }
+    const vestingPeriodStart = params.startDate + daysToMilliseconds(allocation.cliff);
+    let expires = vestingPeriodStart + daysToMilliseconds(allocation.vestingDays);
 
     // if after calculating expiration it turns out that it expires before now, set to now
     expires = Math.max(expires, ctx.txUnixTime);
