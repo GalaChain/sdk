@@ -64,20 +64,34 @@ describe("Deploy Command", () => {
     process.env.CHAINCODE_ADMIN_PUBLIC_KEY = undefined;
   });
 
+  function mockStatusResponses(
+    statuses: string[],
+    operationIdForStatus: (submittedOperationId: string) => string
+  ) {
+    let submittedOperationId = "";
+    let polls = 0;
+
+    mockedAxios.post = jest.fn().mockImplementation((_url, body) => {
+      submittedOperationId = body.operationId;
+      return Promise.resolve(axiosPostResponse);
+    });
+    mockedAxios.get = jest.fn().mockImplementation((_url, config) => {
+      expect(config.params.operationId).toBe(submittedOperationId);
+      const status = statuses[Math.min(polls, statuses.length - 1)];
+      polls += 1;
+      return Promise.resolve({
+        data: {
+          ...axiosGetResponse.data,
+          status,
+          operationId: operationIdForStatus(submittedOperationId)
+        }
+      });
+    });
+  }
+
   it("should deploy a chaincode", async () => {
     // Given
-    mockedAxios.post = jest.fn().mockResolvedValue(axiosPostResponse);
-    mockedAxios.get = jest
-      .fn()
-      .mockResolvedValueOnce({
-        data: { ...axiosGetResponse.data, status: "CC_DEPLOY_SCHEDULED" }
-      })
-      .mockResolvedValueOnce({
-        data: { ...axiosGetResponse.data, status: "CC_DEPLOY_SCHEDULED" }
-      })
-      .mockResolvedValue({
-        data: { ...axiosGetResponse.data, status: "CC_DEPLOYED" }
-      });
+    mockStatusResponses(["CC_DEPLOY_SCHEDULED", "CC_DEPLOY_SCHEDULED", "CC_DEPLOYED"], (id) => id);
 
     // When
     await Deploy.run(["--no-prompt", "some/image-name:1d"]);
@@ -106,15 +120,7 @@ describe("Deploy Command", () => {
 
   it("should fail to deploy a chaincode", async () => {
     // Given
-    mockedAxios.post = jest.fn().mockResolvedValue(axiosPostResponse);
-    mockedAxios.get = jest
-      .fn()
-      .mockResolvedValueOnce({
-        data: { ...axiosGetResponse.data, status: "CC_DEPLOY_SCHEDULED" }
-      })
-      .mockResolvedValue({
-        data: { ...axiosGetResponse.data, status: "CC_DEPLOY_FAILED" }
-      });
+    mockStatusResponses(["CC_DEPLOY_SCHEDULED", "CC_DEPLOY_FAILED"], (id) => id);
 
     // When & Then
     await expect(Deploy.run(["--no-prompt", "some/image-name:1d"])).rejects.toThrow(
@@ -127,5 +133,30 @@ describe("Deploy Command", () => {
     expectedLines.forEach((line) => {
       expect(fullOutput).toContain(line);
     });
+  });
+
+  it("does not treat another deployment of the same chaincode as this request", async () => {
+    mockStatusResponses(["CC_DEPLOYED"], () => "other-operation");
+
+    await expect(Deploy.run(["--no-prompt", "some/image-name:1d"])).rejects.toThrow(
+      "Deployment status was not verified."
+    );
+    expect(stdOut.join("\n")).not.toContain("Deployment successful!");
+  });
+
+  it("rejects an invalid image tag", async () => {
+    mockedAxios.post = jest.fn();
+
+    await expect(Deploy.run(["--no-prompt", "not a tag"])).rejects.toThrow(/not valid/);
+    expect(mockedAxios.post).not.toHaveBeenCalled();
+  });
+
+  it("fails when polling never verifies the submitted request", async () => {
+    mockStatusResponses(["CC_DEPLOY_SCHEDULED"], (id) => id);
+
+    await expect(Deploy.run(["--no-prompt", "some/image-name:1d"])).rejects.toThrow(
+      "Deployment status was not verified."
+    );
+    expect(stdOut.join("\n")).not.toContain("Deployment successful!");
   });
 });

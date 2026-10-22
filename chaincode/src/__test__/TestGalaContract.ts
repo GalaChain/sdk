@@ -210,6 +210,18 @@ export default class TestGalaContract extends GalaContract {
     throw new NotImplementedError("Some error after put was invoked");
   }
 
+  @GalaTransaction({
+    type: SUBMIT,
+    in: KVDto,
+    enforceUniqueKey: true,
+    allowedOrgs: ["CuratorOrg"]
+  })
+  public async ErrorAfterExternalCall(ctx: GalaChainContext, dto: KVDto): Promise<void> {
+    await ctx.stub.invokeChaincode("other-chaincode", ["OtherContract:Submit", "{}"], "");
+    await ctx.stub.putState(dto.key, Buffer.from(dto.value ?? "placeholder"));
+    throw new NotImplementedError("Some error after external call was invoked");
+  }
+
   @Transaction()
   public async IncrementTwiceWrong(ctx: GalaChainContext, key: string): Promise<GalaChainResponse<void>> {
     const getOrZero = async (): Promise<number> => +(await ctx.stub.getState(key)).toString();

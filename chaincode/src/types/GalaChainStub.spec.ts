@@ -292,6 +292,20 @@ describe("cached range queries", () => {
     };
   };
 
+  it("should omit a cached missing record from a later prefix query", async () => {
+    // Given
+    const test = setupTestWithInitialState();
+    const missingKey = `${separator}people${separator}sc${separator}missing${separator}`;
+    const missing = await test.gcStub.getCachedState(missingKey);
+
+    // When
+    const result = await test.getCachedStateByPartialCompositeKey(people, scientists);
+
+    // Then
+    expect(missing.length).toBe(0);
+    expect(result).toEqual([expect.objectContaining(scientist1), expect.objectContaining(scientist2)]);
+  });
+
   it("should read values from chain both times", async () => {
     // Given
     const test = setupTestWithInitialState();
@@ -446,6 +460,23 @@ describe("invokeChaincode", () => {
     ]);
 
     expect(internalStub.invokeChaincode).toHaveBeenCalledTimes(3);
+  });
+
+  it("should treat an empty channel as the current channel", async () => {
+    // Given
+    const { internalStub, gcStub } = setupTest();
+    const args = ["Contract:Method", "{}"];
+    internalStub.getChannelID = jest.fn(() => "channel-A");
+
+    // When
+    const first = await gcStub.invokeChaincode("chaincode-1", args, "");
+    const second = await gcStub.invokeChaincode("chaincode-1", args, "channel-A").catch((e) => e);
+
+    // Then
+    expect(first).toEqual(successInvoke);
+    expect(second).toEqual(new DuplicateInvokeChaincodeError("chaincode-1", args, "channel-A"));
+    expect(internalStub.invokeChaincode).toHaveBeenCalledTimes(1);
+    expect(internalStub.invokeChaincode).toHaveBeenCalledWith("chaincode-1", args, "");
   });
 
   it("should record external chaincode invocation", async () => {
