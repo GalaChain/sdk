@@ -284,9 +284,9 @@ const genericMessage =
 
 @ValidatorConstraint({ async: false })
 class IsValidChainAddressConstraint implements ValidatorConstraintInterface {
-  validate(value: unknown, args: ValidationArguments): boolean {
+  validate(value: unknown): boolean {
     if (Array.isArray(value)) {
-      return value.every((val) => this.validate(val, args));
+      return false;
     }
     const result = validateChainAddress(value);
     return meansValidChainAddress(result);

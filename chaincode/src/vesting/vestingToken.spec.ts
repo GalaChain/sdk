@@ -94,7 +94,7 @@ describe("VestingToken", () => {
           owner: users.admin.identityKey,
           quantity: new BigNumber(850),
           cliff: 0,
-          vestingDays: 0
+          vestingDays: 10
         }
       ]
     }).signed(users.admin.privateKey);
@@ -165,7 +165,9 @@ describe("VestingToken", () => {
             plainToInstance(TokenHold, {
               created: ctx.txUnixTime,
               createdBy: users.admin.identityKey,
-              expires: vestingTokenDto.startDate,
+              expires:
+                vestingTokenDto.startDate +
+                1000 * 24 * 60 * 60 * (allocation3.cliff + allocation3.vestingDays),
               instanceId: 0,
               lockAuthority: users.admin.identityKey,
               name: "SuperTokenTGE-allocation3",
@@ -296,6 +298,20 @@ describe("Token Hold Helpers", () => {
     // starts one day before current time, expires three days after
     vestedLockedHold = newLockedHold(currentTime - oneDay, currentTime + 3 * oneDay);
     expect(vestedLockedHold.getLockedVestingQuantity(currentTime)).toEqual(new BigNumber(750));
+  });
+
+  test("stores a vesting start of zero", () => {
+    const hold = newLockedHold(0);
+
+    expect(hold.vestingPeriodStart).toEqual(0);
+    expect(hold.isVestingHold()).toEqual(true);
+  });
+
+  test("returns a defined locked quantity when the vesting period has no duration", () => {
+    const hold = newLockedHold(50, 50);
+
+    expect(hold.getLockedVestingQuantity(50).isNaN()).toEqual(false);
+    expect(hold.getLockedVestingQuantity(50)).toEqual(new BigNumber(0));
   });
 
   test("getLockedVestingQuantity preserves precision with large time values", () => {
