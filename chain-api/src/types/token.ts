@@ -360,6 +360,7 @@ export class UpdateTokenClassDto extends SubmitCallDTO {
       "Set this to true and provide a full list to remove one or more existing authorities."
   })
   @IsOptional()
+  @IsBoolean()
   overwriteAuthorities?: boolean;
 
   @JSONSchema({
