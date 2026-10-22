@@ -232,6 +232,14 @@ it("should validate array of chain addresses", async () => {
   await expect(invalid).rejects.toThrow("addresses property with values");
 });
 
+it("should reject an array where a single chain address is required", async () => {
+  const empty = createValidDTO(TestDto, { address: [] as unknown as string });
+  const nested = createValidDTO(TestDto, { address: [["client|123"]] as unknown as string });
+
+  await expect(empty).rejects.toThrow(/address/);
+  await expect(nested).rejects.toThrow(/address/);
+});
+
 it("should support schema generation", () => {
   // When
   const schema1 = generateSchema(TestDto);
