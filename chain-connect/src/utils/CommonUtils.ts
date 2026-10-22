@@ -20,11 +20,6 @@ import { getAddress } from "ethers";
 type EIP712Field = { name: string; type: string };
 type EIP712Types = Record<string, Array<EIP712Field>>;
 
-/**
- * Type definition for EIP-712 value structures.
- */
-type EIP712Value = Record<string, unknown>;
-
 function hasOwn(obj: object, key: string): boolean {
   return Object.prototype.hasOwnProperty.call(obj, key);
 }
@@ -172,41 +167,6 @@ function coerceTypedValue(types: EIP712Types, type: string, value: unknown): unk
  */
 export function valueForTypedDataSigning<T>(types: EIP712Types, primaryType: string, value: T): T {
   return coerceTypedValue(types, primaryType, value) as T;
-}
-
-/**
- * Capitalizes the first letter of a string.
- * @param string - The string to capitalize
- * @returns The string with the first letter capitalized
- */
-export function capitalizeFirstLetter(string: string): string {
-  return string.charAt(0).toUpperCase() + string.slice(1);
-}
-
-/**
- * Generates EIP-712 value structures from a given object.
- * @template T - The type of the object to generate values for
- * @param params - The object to convert to EIP-712 format
- * @returns EIP-712 compatible value structure
- */
-export function generateEIP712Value<T>(params: T): EIP712Value {
-  const value: EIP712Value = {};
-
-  function addField(name: string, field: unknown) {
-    if (Array.isArray(field) || (typeof field === "object" && field !== null)) {
-      Object.entries(field).forEach(([key, val]) => {
-        addField(`${name}${capitalizeFirstLetter(key)}`, val);
-      });
-    } else {
-      value[name] = field;
-    }
-  }
-
-  Object.entries(params as Record<string, unknown>).forEach(([key, field]) => {
-    addField(key, field);
-  });
-
-  return value;
 }
 
 /**

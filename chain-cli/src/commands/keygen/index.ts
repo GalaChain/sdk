@@ -15,7 +15,7 @@
 import { Args } from "@oclif/core";
 
 import * as secp from "@noble/secp256k1";
-import { writeFile } from "node:fs/promises";
+import { stat, unlink, writeFile } from "node:fs/promises";
 
 import BaseCommand from "../../base-command";
 
@@ -43,13 +43,38 @@ export default class Keygen extends BaseCommand<typeof Keygen> {
     const publicKey = secp.utils.bytesToHex(secp.getPublicKey(privateKey));
 
     const file: string = args.file as string;
+    const publicKeyFile = `${file}.pub`;
+
+    await this.ensureKeyFileAbsent(file);
+    await this.ensureKeyFileAbsent(publicKeyFile);
 
     this.log(`Writing keys to ${file}`);
 
-    this.log(`public key... ${file}.pub`);
-    await writeFile(`${file}.pub`, publicKey.toString());
+    this.log(`public key... ${publicKeyFile}`);
+    await writeFile(publicKeyFile, publicKey.toString(), { flag: "wx" });
 
-    this.log(`private key... ${args.file}`);
-    await writeFile(file, privateKey.toString(), { mode: 0o600 });
+    this.log(`private key... ${file}`);
+    try {
+      await writeFile(file, privateKey.toString(), { mode: 0o600, flag: "wx" });
+    } catch (e) {
+      await unlink(publicKeyFile).catch(() => undefined);
+      if ((e as NodeJS.ErrnoException).code === "EEXIST") {
+        this.error(`Refusing to overwrite existing key file: ${file}`, { exit: 1 });
+      }
+      throw e;
+    }
+  }
+
+  private async ensureKeyFileAbsent(file: string): Promise<void> {
+    try {
+      await stat(file);
+    } catch (e) {
+      if ((e as NodeJS.ErrnoException).code === "ENOENT") {
+        return;
+      }
+      throw e;
+    }
+
+    this.error(`Refusing to overwrite existing key file: ${file}`, { exit: 1 });
   }
 }

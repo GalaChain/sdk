@@ -40,7 +40,7 @@ export interface FetchFeeCreditReceiptsParams {
   day?: string;
   hours?: string;
   minutes?: string;
-  feeCode?: string;
+  seconds?: string;
   creditToUser?: string;
   txId?: string;
   bookmark?: string;
@@ -76,7 +76,7 @@ export async function fetchFeeCreditReceipts(
     data.day,
     data.hours,
     data.minutes,
-    data.feeCode,
+    data.seconds,
     data.creditToUser,
     data.txId
   );
