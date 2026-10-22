@@ -17,11 +17,17 @@ const GC_API_URL = process.env.GC_API_URL ?? "https://gateway-testnet.galachain.
 export const defaultFabloRoot = "./test-network";
 export const ExpectedImageArchitecture = "linux/amd64";
 
+export function joinServiceUrl(base: string, path: string): string {
+  const trimmedBase = base.replace(/\/+$/, "");
+  const trimmedPath = path.replace(/^\/+/, "");
+  return `${trimmedBase}/${trimmedPath}`;
+}
+
 export const ServicePortal = {
-  GET_DEPLOYMENT_URL: GC_API_URL + "api/deployment",
-  DEPLOY_URL: GC_API_URL + "api/deploy",
+  GET_DEPLOYMENT_URL: joinServiceUrl(GC_API_URL, "api/deployment"),
+  DEPLOY_URL: joinServiceUrl(GC_API_URL, "api/deploy"),
   AUTH_X_GC_KEY: "x-gc-authorization",
-  GET_LOGS_URL: GC_API_URL + "api/chaincode/logs",
-  STREAM_LOGS_URL: GC_API_URL + "api/chaincode/logs/stream",
-  REGISTER_URL: GC_API_URL + "api/register"
+  GET_LOGS_URL: joinServiceUrl(GC_API_URL, "api/chaincode/logs"),
+  STREAM_LOGS_URL: joinServiceUrl(GC_API_URL, "api/chaincode/logs/stream"),
+  REGISTER_URL: joinServiceUrl(GC_API_URL, "api/register")
 };

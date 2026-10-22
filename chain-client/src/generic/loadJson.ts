@@ -16,10 +16,17 @@ import fs from "fs";
 
 export function loadJson(path: string): Record<string, unknown> {
   const content = fs.readFileSync(path).toString();
+  let parsed: unknown;
 
   try {
-    return JSON.parse(content);
+    parsed = JSON.parse(content);
   } catch (e) {
     throw new Error(`Failed to parse JSON at ${path}: ${e}`);
   }
+
+  if (parsed === null || typeof parsed !== "object" || Array.isArray(parsed)) {
+    throw new Error(`Failed to parse JSON at ${path}: expected an object`);
+  }
+
+  return parsed as Record<string, unknown>;
 }

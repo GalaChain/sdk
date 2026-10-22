@@ -192,6 +192,46 @@ export function BigNumberIsNotInfinity(validationOptions?: ValidationOptions) {
   };
 }
 
+export function BigNumberIsNotNaN(validationOptions?: ValidationOptions) {
+  return function (object: object, propertyName: string) {
+    registerDecorator({
+      name: "BigNumberIsNotNaN",
+      target: object.constructor,
+      propertyName,
+      options: validationOptions,
+      validator: {
+        validate(value: unknown) {
+          return validateBigNumberOrIgnore(value, (b) => !b.isNaN());
+        },
+        defaultMessage(args: ValidationArguments) {
+          return `${args.property} must not be NaN`;
+        }
+      }
+    });
+  };
+}
+
+export function BigNumberIsPositiveInfinityOrFinite(validationOptions?: ValidationOptions) {
+  return function (object: object, propertyName: string) {
+    registerDecorator({
+      name: "BigNumberIsPositiveInfinityOrFinite",
+      target: object.constructor,
+      propertyName,
+      options: validationOptions,
+      validator: {
+        validate(value: unknown) {
+          return validateBigNumberOrIgnore(value, (b) => b.isFinite() || b.isPositive());
+        },
+        defaultMessage(args: ValidationArguments) {
+          return `${args.property} must be a finite number or positive infinity but is ${
+            args.value?.toString() ?? args.value
+          }`;
+        }
+      }
+    });
+  };
+}
+
 export function BigNumberIsNotNegative(validationOptions?: ValidationOptions) {
   return function (object: object, propertyName: string) {
     IsBigNumber(validationOptions)(object, propertyName);

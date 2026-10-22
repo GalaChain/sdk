@@ -110,6 +110,7 @@ export class LockTokensDto extends SubmitCallDTO {
       "Name for the token holds (optional). This name will be applied to all token holds created by this Lock."
   })
   @IsString()
+  @IsNotEmpty()
   @IsOptional()
   name?: string;
 
@@ -140,7 +141,10 @@ export class UnlockTokenDto extends SubmitCallDTO {
     description: "Optional quantity for unlocking fungible tokens. Not for use with NFT token instances."
   })
   @IsOptional()
-  @ValidateIf((o) => o.tokenInstance.instance === TokenInstance.FUNGIBLE_TOKEN_INSTANCE)
+  @ValidateIf((dto: UnlockTokenDto) => {
+    const instance = dto.tokenInstance?.instance;
+    return instance !== undefined && TokenInstance.isFungible(instance);
+  })
   @BigNumberIsPositive()
   @BigNumberProperty()
   quantity?: BigNumber;
@@ -180,6 +184,7 @@ export class UnlockTokensDto extends SubmitCallDTO {
       "Name for the token holds (optional). Only token holds with this name will be Unlocked if provided."
   })
   @IsString()
+  @IsNotEmpty()
   @IsOptional()
   name?: string;
 }
