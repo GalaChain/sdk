@@ -15,6 +15,7 @@
 import FabricCAServices from "fabric-ca-client";
 import { Wallet, Wallets } from "fabric-network";
 import { Identity } from "fabric-network/lib/impl/wallet/identity";
+import fs from "fs";
 
 export class CAClient {
   public readonly orgMsp: string;
@@ -36,7 +37,7 @@ export class CAClient {
     this.orgMsp = orgMsp;
     this.caHostName = getCAHostName(connectionProfile, orgMsp);
     this.caClient = buildCAClient(connectionProfile, this.caHostName);
-    this.wallet = getGlobalWallet(this.orgMsp);
+    this.wallet = getGlobalWallet(this.orgMsp, connectionProfile);
     this.adminId = adminId;
     this.adminSecret = adminSecret;
   }
@@ -138,7 +139,7 @@ function buildCAClient(ccp: Record<string, unknown>, caHostName: string): Fabric
   }
 
   const tlsCACerts = caInfo.tlsCACerts as unknown as { pem?: string; path?: string };
-  const caTLSCACerts = tlsCACerts?.pem ?? tlsCACerts?.path;
+  const caTLSCACerts = readTlsTrustedRoot(tlsCACerts);
   const tlsConfig = caTLSCACerts
     ? { trustedRoots: [caTLSCACerts], verify: caInfo?.httpOptions?.verify }
     : undefined;
@@ -231,12 +232,34 @@ async function registerUser(
   );
 }
 
-const globalWallets: Record<string, Promise<Wallet>> = {};
+const globalWallets = new Map<string, Promise<Wallet>>();
 
-function getGlobalWallet(orgMsp: string): Promise<Wallet> {
-  if (globalWallets[orgMsp] === undefined) {
-    globalWallets[orgMsp] = Wallets.newInMemoryWallet();
+function walletCacheKey(orgMsp: string, connectionProfile: Record<string, unknown>): string {
+  const caHostName = getCAHostName(connectionProfile, orgMsp);
+  const authorities = connectionProfile.certificateAuthorities as Record<string, unknown> | undefined;
+  return JSON.stringify([orgMsp, caHostName, authorities?.[caHostName] ?? null]);
+}
+
+function getGlobalWallet(orgMsp: string, connectionProfile: Record<string, unknown>): Promise<Wallet> {
+  const key = walletCacheKey(orgMsp, connectionProfile);
+  const existing = globalWallets.get(key);
+  if (existing) {
+    return existing;
   }
 
-  return globalWallets[orgMsp];
+  const wallet = Wallets.newInMemoryWallet();
+  globalWallets.set(key, wallet);
+  return wallet;
+}
+
+function readTlsTrustedRoot(tlsCACerts: { pem?: string; path?: string } | undefined): string | undefined {
+  if (typeof tlsCACerts?.pem === "string") {
+    return tlsCACerts.pem;
+  }
+
+  if (typeof tlsCACerts?.path === "string") {
+    return fs.readFileSync(tlsCACerts.path, "utf8");
+  }
+
+  return undefined;
 }

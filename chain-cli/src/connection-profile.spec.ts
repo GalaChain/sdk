@@ -44,5 +44,14 @@ describe("getCPPs", () => {
         "tls/ca.crt"
       )
     );
+    expect(profiles.partner.certificateAuthorities?.["ca.partner1.local"].tlsCACerts?.path).toEqual(
+      path.resolve(
+        cryptoConfigRoot,
+        "peerOrganizations",
+        "partner1.local",
+        "ca",
+        "ca.partner1.local-cert.pem"
+      )
+    );
   });
 });
