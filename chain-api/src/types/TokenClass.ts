@@ -19,6 +19,7 @@ import {
   IsAlphanumeric,
   IsBoolean,
   IsDefined,
+  IsInt,
   IsNotEmpty,
   IsOptional,
   Max,
@@ -139,11 +140,12 @@ export class TokenClass extends ChainObject {
 
   @Min(0)
   @Max(32)
+  @IsInt()
   public decimals: number; // This can only be expanded after creation
 
   @IsNotEmpty()
   @BigNumberIsPositive()
-  @BigNumberProperty()
+  @BigNumberProperty({ allowInfinity: true })
   public maxSupply: BigNumber;
 
   @IsBoolean()
@@ -300,9 +302,10 @@ function createUpdated(existingToken: TokenClass, toUpdate: ToUpdate): TokenClas
   }
 
   if (Array.isArray(toUpdate.authorities) && toUpdate.authorities.length > 0) {
-    newToken.authorities = toUpdate.overwriteAuthorities
-      ? toUpdate.authorities
-      : Array.from(new Set(newToken.authorities.concat(toUpdate.authorities))).sort();
+    newToken.authorities =
+      toUpdate.overwriteAuthorities === true
+        ? toUpdate.authorities
+        : Array.from(new Set(newToken.authorities.concat(toUpdate.authorities))).sort();
   }
 
   return newToken;

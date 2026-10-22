@@ -17,7 +17,7 @@ import BigNumber from "bignumber.js";
 import { plainToInstance } from "class-transformer";
 
 import { GalaChainContext } from "../types";
-import { putChainObject } from "../utils";
+import { ObjectNotFoundError, getObjectByKey, putChainObject } from "../utils";
 
 export interface WriteUserPaymentReceiptParams {
   paidByUser: string;
@@ -35,6 +35,15 @@ export async function writeUserPaymentReceipt(
   data: WriteUserPaymentReceiptParams
 ): Promise<void> {
   const userPaymentReceipt: FeeUserPaymentReceipt = plainToInstance(FeeUserPaymentReceipt, data);
+
+  try {
+    const existing = await getObjectByKey(ctx, FeeUserPaymentReceipt, userPaymentReceipt.getCompositeKey());
+    userPaymentReceipt.quantity = existing.quantity.plus(userPaymentReceipt.quantity);
+  } catch (err) {
+    if (!(err instanceof ObjectNotFoundError)) {
+      throw err;
+    }
+  }
 
   await putChainObject(ctx, userPaymentReceipt);
 }

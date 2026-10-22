@@ -19,15 +19,35 @@ import Register from "./index";
 
 jest.setTimeout(10000);
 
-jest.mock("fs", () => ({
-  ...jest.requireActual("fs"),
-  readdirSync: jest.fn().mockReturnValue(["gc-dev-key.pub"]),
-  readFileSync: jest
-    .fn()
-    .mockReturnValue(
-      "04815c06dda6a0e8e9753a67aa638c2aa02e01f7b1d06b8ae5b7570c49f8d8cb894f6f8fda3beed896d1ea70ab54ad069e19d8fdbf7125f9fc23ee6109e2ac38ec\n"
-    )
-}));
+jest.mock("fs", () => {
+  const actual = jest.requireActual("fs") as typeof import("fs");
+  const nodePath = jest.requireActual("path") as typeof import("path");
+  const developerKey =
+    "04815c06dda6a0e8e9753a67aa638c2aa02e01f7b1d06b8ae5b7570c49f8d8cb894f6f8fda3beed896d1ea70ab54ad069e19d8fdbf7125f9fc23ee6109e2ac38ec\n";
+  const isDeveloperKey = (target: unknown) => String(target).endsWith("gc-dev-key.pub");
+
+  return {
+    ...actual,
+    readdirSync: jest.fn((target: string, options?: never) => {
+      if (String(target).endsWith(`${nodePath.sep}keys`) || String(target).endsWith("/keys")) {
+        return ["gc-dev-key.pub"];
+      }
+      return actual.readdirSync(target, options);
+    }),
+    statSync: jest.fn((target: string, options?: never) => {
+      if (isDeveloperKey(target)) {
+        return { isFile: () => true, isDirectory: () => false };
+      }
+      return actual.statSync(target, options);
+    }),
+    readFileSync: jest.fn((target: string, options?: never) => {
+      if (isDeveloperKey(target)) {
+        return developerKey;
+      }
+      return actual.readFileSync(target, options);
+    })
+  };
+});
 
 jest.mock("../../exec-sync", () => ({
   execSync(cmd: string) {

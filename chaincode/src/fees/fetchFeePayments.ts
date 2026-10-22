@@ -29,8 +29,6 @@ export interface FetchFeeChannelPaymentReceiptsParams {
   year?: string;
   month?: string;
   day?: string;
-  hours?: string;
-  minutes?: string;
   feeCode?: string;
   paidByUser?: string;
   txId?: string;
@@ -46,8 +44,6 @@ export async function fetchFeePayments(
     data.year,
     data.month,
     data.day,
-    data.hours,
-    data.minutes,
     data.feeCode,
     data.paidByUser,
     data.txId
