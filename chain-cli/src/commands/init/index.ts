@@ -12,7 +12,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-import { Args } from "@oclif/core";
+import { Args, ux } from "@oclif/core";
 
 import * as fs from "fs";
 import path from "path";
@@ -39,6 +39,8 @@ export default class Init extends BaseCommand<typeof Init> {
 
     try {
       checkCliVersion();
+
+      await this.confirmOverwrite(args.path);
 
       this.copyChaincodeTemplate(args.path);
 
@@ -76,5 +78,32 @@ export default class Init extends BaseCommand<typeof Init> {
     const sourceTemplateDir = path.resolve(require.resolve("."), "../../../chaincode-template");
     fs.mkdirSync(destinationPath, { recursive: true });
     fs.cpSync(sourceTemplateDir, destinationPath, { recursive: true });
+  }
+
+  private async confirmOverwrite(destinationPath: string): Promise<void> {
+    const entries = existingDestinationEntries(destinationPath);
+    if (entries.length === 0) {
+      return;
+    }
+
+    const prompt = `Destination ${destinationPath} is not empty. Overwrite existing files? (y/n)`;
+    if (!(await ux.confirm(prompt))) {
+      this.error(`Refusing to initialize into non-empty destination ${destinationPath}.`, { exit: 1 });
+    }
+  }
+}
+
+function existingDestinationEntries(destinationPath: string): string[] {
+  try {
+    const stat = fs.statSync(destinationPath);
+    if (!stat.isDirectory()) {
+      return [path.basename(destinationPath)];
+    }
+    return fs.readdirSync(destinationPath);
+  } catch (error) {
+    if ((error as NodeJS.ErrnoException).code === "ENOENT") {
+      return [];
+    }
+    throw error;
   }
 }

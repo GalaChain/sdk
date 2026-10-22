@@ -64,8 +64,28 @@ describe("Logs Command", () => {
     const errorMessage = "Unauthorized access";
     jest.spyOn(utils, "getLogs").mockRejectedValue(new UnauthorizedError(errorMessage));
     jest.spyOn(utils, "getPrivateKey").mockResolvedValue(consts.developerPrivateKey);
+    jest.spyOn(utils, "getChaincodeDefinition").mockResolvedValue({
+      name: consts.chaincodeName,
+      adminPublicKey: consts.chaincodeAdminPublicKey
+    });
 
-    await expect(Log.run([])).rejects.toThrow(`Failed to fetch logs: ${errorMessage}`);
+    await expect(Log.run([])).rejects.toThrow(`Unauthorized: ${errorMessage}`);
+  });
+
+  it("keeps newlines between CRLF log data lines", async () => {
+    jest.spyOn(utils, "streamLogs").mockImplementation(async (_params, onData) => {
+      onData("data: line one\r\ndata: line two\r\n\r\n");
+    });
+    jest.spyOn(utils, "getPrivateKey").mockResolvedValue(consts.developerPrivateKey);
+    jest.spyOn(utils, "getChaincodeDefinition").mockResolvedValue({
+      name: consts.chaincodeName,
+      adminPublicKey: consts.chaincodeAdminPublicKey
+    });
+    const logSpy = jest.spyOn(Log.prototype, "log").mockImplementation(() => {});
+
+    await Log.run(["--follow"]);
+
+    expect(logSpy).toHaveBeenCalledWith("line one\nline two");
   });
 
   it("should handle FetchLogsError correctly", async () => {
