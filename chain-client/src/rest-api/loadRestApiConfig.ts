@@ -24,6 +24,7 @@ export interface ContractConfig {
 export interface ChannelConfig {
   pathFragment: string;
   channelName: string;
+  asLocalHost?: boolean;
   contracts: ContractConfig[];
 }
 
@@ -50,6 +51,9 @@ export const restApiJsonSchema: Schema = {
         pathFragment: {
           type: "string",
           minLength: 1
+        },
+        asLocalHost: {
+          type: "boolean"
         }
       },
       additionalProperties: false,

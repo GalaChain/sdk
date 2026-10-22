@@ -109,4 +109,14 @@ describe("client configuration", () => {
 
     expect(loadRestApiConfig(file).channels[0].channelName).toBe("product");
   });
+
+  it("loads a channel marked as localhost", () => {
+    const config = validConfig();
+    const file = write("rest.json", {
+      ...config,
+      channels: [{ ...config.channels[0], asLocalHost: true }]
+    });
+
+    expect(loadRestApiConfig(file).channels[0].asLocalHost).toBe(true);
+  });
 });
