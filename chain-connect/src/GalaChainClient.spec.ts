@@ -152,11 +152,19 @@ describe("BrowserConnectClient", () => {
         sign: true,
         url: "https://example.com"
       })
-    ).rejects.toEqual({
+    ).rejects.toMatchObject({
       Error: mockResponse.error,
       Message: mockResponse.message,
       ErrorCode: mockResponse.statusCode
     });
+    await expect(
+      client.submit({
+        method: "TransferToken",
+        payload: dto,
+        sign: true,
+        url: "https://example.com"
+      })
+    ).rejects.toBeInstanceOf(Error);
   });
   it("test full flow (chain error)", async () => {
     const dto: TransferTokenDto = await createValidDTO(TransferTokenDto, {
@@ -210,10 +218,11 @@ describe("BrowserConnectClient", () => {
         sign: true,
         url: "https://example.com"
       })
-    ).rejects.toEqual({
+    ).rejects.toMatchObject({
       Error: mockResponse.error.ErrorKey,
       Message: mockResponse.message,
-      ErrorCode: mockResponse.error.ErrorCode
+      ErrorCode: mockResponse.error.ErrorCode,
+      ErrorPayload: mockResponse.error.ErrorPayload
     });
   });
 
@@ -502,6 +511,26 @@ describe("TrustConnectClient", () => {
 
     await expect(pending).resolves.toBeDefined();
     window.ethereum = previous;
+  });
+});
+
+describe("submit response envelope", () => {
+  it("rejects a body without a numeric status", async () => {
+    mockFetch({});
+    const client = new BrowserConnectClient();
+
+    await expect(
+      client.submit({ method: "Ping", payload: {}, sign: false, url: "https://example.com" })
+    ).rejects.toThrow("Chain response is missing a status");
+  });
+
+  it("rejects a body whose status is not a number", async () => {
+    mockFetch({ Status: "1", Data: { ok: true } });
+    const client = new BrowserConnectClient();
+
+    await expect(
+      client.submit({ method: "Ping", payload: {}, sign: false, url: "https://example.com" })
+    ).rejects.toThrow("Chain response is missing a status");
   });
 });
 

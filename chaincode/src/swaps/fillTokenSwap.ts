@@ -36,6 +36,7 @@ import { TransferTokenFailedError, transferToken } from "../transfer";
 import { GalaChainContext } from "../types";
 import { getObjectByKey, putChainObject } from "../utils";
 import { InvalidDecimalError, SwapDtoValidationError, SwapTokenFailedError } from "./SwapError";
+import { reserveDistinctOrdinal } from "./reserveDistinctOrdinal";
 
 async function swapToken(
   ctx: GalaChainContext,
@@ -119,6 +120,7 @@ export async function fillTokenSwap(
     uses,
     created: ctx.txUnixTime
   });
+  await reserveDistinctOrdinal(ctx, newSwapFill, "fillOrdinal");
 
   // the conversion from data to instance was successful, begin chaincode-specific instance validation
 
