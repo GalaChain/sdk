@@ -125,6 +125,23 @@ function isValidSolanaAddress(address: string): boolean {
   return decoded.length === 32;
 }
 
+function crc16(data: Uint8Array): number {
+  let crc = 0;
+
+  for (const byte of data) {
+    crc ^= byte << 8;
+    for (let bit = 0; bit < 8; bit++) {
+      if (crc & 0x8000) {
+        crc = ((crc << 1) ^ 0x1021) & 0xffff;
+      } else {
+        crc = (crc << 1) & 0xffff;
+      }
+    }
+  }
+
+  return crc & 0xffff;
+}
+
 function isValidTonAddress(address: string): boolean {
   // TON addresses must be non-bounceable and not test-only (mainnet only)
   // Friendly format: UQ... (48 characters, base64url encoded)
@@ -153,6 +170,11 @@ function isValidTonAddress(address: string): boolean {
     // TON address structure: 1 byte flags + 1 byte workchain + 32 bytes address hash + 2 bytes checksum = 36 bytes total
     // Base64url encoded: 36 * 4/3 = 48 characters
     if (decoded.length !== 36) {
+      return false;
+    }
+
+    const checksum = (decoded[34] << 8) | decoded[35];
+    if (checksum !== crc16(decoded.subarray(0, 34))) {
       return false;
     }
 
@@ -194,13 +216,12 @@ export function validateChainAddress(value: unknown): ChainAddressValidationResu
     }
   }
 
-  // Check TON (starts with UQ for non-bounceable mainnet)
-  if (value.startsWith("UQ") || value.startsWith("EQ") || value.startsWith("0:")) {
-    if (isValidTonAddress(value)) {
-      return ChainAddressValidationResult.VALID_TON;
-    } else {
-      return ChainAddressValidationResult.INVALID_TON;
-    }
+  // A UQ or EQ prefix is not enough to skip other chains. A Solana address can start the same way.
+  if (
+    (value.startsWith("UQ") || value.startsWith("EQ") || value.startsWith("0:")) &&
+    isValidTonAddress(value)
+  ) {
+    return ChainAddressValidationResult.VALID_TON;
   }
 
   // Check Solana (base58 encoded, 32-44 chars, doesn't start with special prefixes)
