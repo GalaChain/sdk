@@ -16,6 +16,7 @@ import { Type, instanceToInstance, plainToInstance } from "class-transformer";
 import {
   ArrayMaxSize,
   ArrayMinSize,
+  IsArray,
   IsBoolean,
   IsInt,
   IsNotEmpty,
@@ -27,8 +28,10 @@ import {
   Min,
   ValidateIf,
   ValidateNested,
+  ValidationArguments,
   ValidationError,
   ValidatorOptions,
+  registerDecorator,
   validate
 } from "class-validator";
 import { JSONSchema } from "class-validator-jsonschema";
@@ -636,6 +639,25 @@ export class DryRunResultDto extends ChainCallDTO {
   public deletes: Record<string, true>;
 }
 
+function RejectMixedPublicKeyAndSigners() {
+  return function (object: object, propertyName: string) {
+    registerDecorator({
+      name: "RejectMixedPublicKeyAndSigners",
+      target: object.constructor,
+      propertyName,
+      validator: {
+        validate(_value: unknown, args?: ValidationArguments) {
+          const dto = args?.object as { publicKey?: string; signers?: unknown };
+          return !(dto.publicKey && dto.signers);
+        },
+        defaultMessage() {
+          return "Cannot use both publicKey and signers";
+        }
+      }
+    });
+  };
+}
+
 /**
  * @description
  *
@@ -656,6 +678,7 @@ export class RegisterUserDto extends SubmitCallDTO {
     description: `Id of user to save public key for.`
   })
   @IsUserAlias()
+  @RejectMixedPublicKeyAndSigners()
   user: UserAlias;
 
   @JSONSchema({ description: "Public secp256k1 key (compact or non-compact, hex or base64)." })
@@ -673,7 +696,6 @@ export class RegisterUserDto extends SubmitCallDTO {
 
   @JSONSchema({ description: "Signer user refs." })
   @ValidateIf((o) => !o.publicKey)
-  @SerializeIf((o) => !o.publicKey)
   @IsUserRef({ each: true })
   @IsNotEmpty({ each: true })
   @ArrayMinSize(1)
@@ -747,6 +769,7 @@ export class UpdateSignersDto extends SubmitCallDTO {
     description: "Array of user refs of signers to add (typically Ethereum addresses, or user aliases)."
   })
   @IsOptional()
+  @IsArray()
   @IsUserRef({ each: true })
   @IsNotEmpty({ each: true })
   toAdd?: UserRef[];
@@ -755,6 +778,7 @@ export class UpdateSignersDto extends SubmitCallDTO {
     description: "Array of user refs of signers to remove (typically Ethereum addresses, or user aliases)."
   })
   @IsOptional()
+  @IsArray()
   @IsUserRef({ each: true })
   @IsNotEmpty({ each: true })
   toRemove?: UserRef[];
@@ -774,7 +798,9 @@ export class UpdateUserRolesDto extends SubmitCallDTO {
   user: UserRef;
 
   @JSONSchema({ description: "New set of roles for the user that will replace the old ones." })
-  @IsNotEmpty()
+  @IsArray()
+  @IsString({ each: true })
+  @IsNotEmpty({ each: true })
   roles: string[];
 }
 

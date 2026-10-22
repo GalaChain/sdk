@@ -508,6 +508,28 @@ describe("GalaContract.Batch", () => {
     expect(evaluateResp).toEqual(transactionSuccess(expectedEvaluateResponses));
   });
 
+  it("should fail the batch when an operation invokes external chaincode and then fails", async () => {
+    // Given
+    const chaincode = new TestChaincode([TestGalaContract]);
+    const batchSubmit = plainToInstance(BatchDto, {
+      uniqueKey: "unique-key-batch",
+      operations: [
+        { method: "PutKv", dto: { key: "test-key-1", value: "robot", uniqueKey: "unique-key-1" } },
+        {
+          method: "ErrorAfterExternalCall",
+          dto: { key: "test-key-2", value: "zerg", uniqueKey: "unique-key-2" }
+        }
+      ]
+    });
+
+    // When
+    const response = chaincode.invoke("TestGalaContract:BatchSubmit", batchSubmit.serialize());
+
+    // Then
+    await expect(response).rejects.toEqual(expect.stringMatching(/External chaincode call succeeded/));
+    expect(chaincode.getWrites()).toEqual({});
+  });
+
   it("should support batch operations with no partial success", async () => {
     // Given
     const chaincode = new TestChaincode([TestGalaContract]);
