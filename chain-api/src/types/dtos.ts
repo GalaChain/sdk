@@ -330,7 +330,7 @@ export class ChainCallDTO {
       throw new ValidationFailedError("dtoOperation is required for multisignature DTOs");
     }
 
-    if (useMultisig && !this.dtoExpiresAt) {
+    if (useMultisig && this.dtoExpiresAt === undefined) {
       throw new ValidationFailedError("dtoExpiresAt is required for multisignature DTOs");
     }
 
