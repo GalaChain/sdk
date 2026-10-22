@@ -14,6 +14,8 @@
  */
 
 /* eslint-disable @typescript-eslint/no-var-requires */
+import { ux } from "@oclif/core";
+
 import path from "path";
 
 import Init from "./index";
@@ -37,6 +39,8 @@ describe("Init Command", () => {
 
     const mkdirMock = jest.spyOn(require("fs"), "mkdirSync").mockImplementation(() => {});
     const cpMock = jest.spyOn(require("fs"), "cpSync").mockImplementation(() => {});
+    jest.spyOn(require("fs"), "statSync").mockReturnValue({ isDirectory: () => true });
+    jest.spyOn(require("fs"), "readdirSync").mockReturnValue([]);
     jest.spyOn(require("fs"), "readFileSync").mockReturnValue('{"name": "test"}');
     jest.spyOn(require("fs"), "writeFileSync").mockImplementation(() => {});
 
@@ -54,5 +58,33 @@ describe("Init Command", () => {
       path.resolve(__dirname, "../../__test__/test-project"),
       { recursive: true }
     );
+  });
+
+  it("refuses a non-empty destination unless the user confirms", async () => {
+    jest.spyOn(require("fs"), "statSync").mockReturnValue({ isDirectory: () => true });
+    jest.spyOn(require("fs"), "readdirSync").mockReturnValue(["package.json"]);
+    const cpMock = jest.spyOn(require("fs"), "cpSync").mockImplementation(() => {});
+    jest.spyOn(ux, "confirm").mockResolvedValue(false);
+
+    await expect(Init.run(["./existing-project"])).rejects.toThrow(/non-empty destination/);
+    expect(cpMock).not.toHaveBeenCalled();
+  });
+
+  it("initializes a non-empty destination after confirmation", async () => {
+    jest.spyOn(require("fs"), "statSync").mockReturnValue({ isDirectory: () => true });
+    jest.spyOn(require("fs"), "readdirSync").mockReturnValue(["package.json"]);
+    jest.spyOn(require("fs"), "mkdirSync").mockImplementation(() => {});
+    const cpMock = jest.spyOn(require("fs"), "cpSync").mockImplementation(() => {});
+    jest.spyOn(require("fs"), "readFileSync").mockReturnValue('{"name": "test"}');
+    jest.spyOn(require("fs"), "writeFileSync").mockImplementation(() => {});
+    jest.spyOn(ux, "confirm").mockResolvedValue(true);
+    jest.spyOn(process.stdout, "write").mockImplementation(() => true);
+
+    await Init.run(["./existing-project/"]);
+
+    expect(cpMock).toHaveBeenCalled();
+    const writeFileSync = require("fs").writeFileSync as jest.Mock;
+    const packageJson = JSON.parse(writeFileSync.mock.calls[0][1]);
+    expect(packageJson.name).toEqual("@gala-chain/existing-project");
   });
 });

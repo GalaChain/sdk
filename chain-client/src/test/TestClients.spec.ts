@@ -114,8 +114,4 @@ class ChainClientMock extends ChainClient {
   submitTransaction(): Promise<GalaChainResponse<unknown>> {
     return Promise.resolve(GalaChainResponse.Success({}));
   }
-
-  forUser(): ChainClient {
-    throw new Error("Not Implemented");
-  }
 }

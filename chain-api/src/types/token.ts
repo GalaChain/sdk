@@ -167,6 +167,7 @@ export class CreateTokenClassDto extends SubmitCallDTO {
   })
   @Min(0)
   @Max(32)
+  @IsInt()
   @IsOptional()
   decimals?: number;
 

@@ -44,6 +44,32 @@ import { TokenSwapRequest } from "./TokenSwapRequest";
 import { UserRef } from "./UserRef";
 import { ChainCallDTO, SubmitCallDTO } from "./dtos";
 
+function swapLegInstanceId(leg: TokenInstanceQuantity): string {
+  const tokenInstance = leg?.tokenInstance;
+  if (!tokenInstance) {
+    return "";
+  }
+
+  const instance = BigNumber.isBigNumber(tokenInstance.instance)
+    ? tokenInstance.instance.toString()
+    : `${tokenInstance.instance ?? ""}`;
+
+  const parts = [
+    tokenInstance.collection,
+    tokenInstance.category,
+    tokenInstance.type,
+    tokenInstance.additionalKey,
+    instance
+  ];
+
+  return parts
+    .map((part) => {
+      const value = `${part ?? ""}`;
+      return `${value.length}:${value}`;
+    })
+    .join("|");
+}
+
 @JSONSchema({
   description:
     "Defines a swap request to be created, i.e. a request when a requester " +
@@ -81,7 +107,7 @@ export class RequestTokenSwapDto extends SubmitCallDTO {
   @ValidateNested({ each: true })
   @Type(() => TokenInstanceQuantity)
   @ArrayMinSize(1)
-  @ArrayUnique()
+  @ArrayUnique(swapLegInstanceId)
   public offered: Array<TokenInstanceQuantity>;
 
   @JSONSchema({
@@ -90,7 +116,7 @@ export class RequestTokenSwapDto extends SubmitCallDTO {
   @ValidateNested({ each: true })
   @Type(() => TokenInstanceQuantity)
   @ArrayMinSize(1)
-  @ArrayUnique()
+  @ArrayUnique(swapLegInstanceId)
   public wanted: Array<TokenInstanceQuantity>;
 
   @JSONSchema({
@@ -124,7 +150,7 @@ export class ExpectedTokenSwap extends ChainCallDTO {
   @ValidateNested({ each: true })
   @Type(() => TokenInstanceQuantity)
   @ArrayMinSize(1)
-  @ArrayUnique()
+  @ArrayUnique(swapLegInstanceId)
   public offered: Array<TokenInstanceQuantity>;
 
   @JSONSchema({
@@ -134,7 +160,7 @@ export class ExpectedTokenSwap extends ChainCallDTO {
   @ValidateNested({ each: true })
   @Type(() => TokenInstanceQuantity)
   @ArrayMinSize(1)
-  @ArrayUnique()
+  @ArrayUnique(swapLegInstanceId)
   public wanted: Array<TokenInstanceQuantity>;
 }
 

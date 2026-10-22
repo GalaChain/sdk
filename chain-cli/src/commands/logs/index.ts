@@ -129,8 +129,16 @@ export default class Log extends BaseCommand<typeof Log> {
       for (const logEntry of logs) {
         this.printLog(logEntry);
       }
-    } catch (error: any) {
-      throw new FetchLogsError(error.message);
+    } catch (error) {
+      if (
+        error instanceof UnauthorizedError ||
+        error instanceof BadRequestError ||
+        error instanceof FetchLogsError
+      ) {
+        throw error;
+      }
+      const message = error instanceof Error ? error.message : String(error);
+      throw new FetchLogsError(message);
     }
   }
 
@@ -140,15 +148,23 @@ export default class Log extends BaseCommand<typeof Log> {
       await streamLogs(params, (data) => {
         buffer += data;
 
-        const events = buffer.split("\n\n");
+        const events = buffer.split(/\r?\n\r?\n/);
         buffer = events.pop() || "";
 
         events.forEach((eventBlock) => {
           this.handleSSEEvent(eventBlock);
         });
       });
-    } catch (error: any) {
-      throw new FetchLogsError(error.message);
+    } catch (error) {
+      if (
+        error instanceof UnauthorizedError ||
+        error instanceof BadRequestError ||
+        error instanceof FetchLogsError
+      ) {
+        throw error;
+      }
+      const message = error instanceof Error ? error.message : String(error);
+      throw new FetchLogsError(message);
     }
   }
 
@@ -163,7 +179,7 @@ export default class Log extends BaseCommand<typeof Log> {
   }
 
   parseSSEEvent(eventBlock: string): SSEEvent {
-    const lines = eventBlock.split("\n");
+    const lines = eventBlock.split(/\r?\n/);
     let eventType = "message";
     let data = "";
     let id = "";
@@ -172,7 +188,8 @@ export default class Log extends BaseCommand<typeof Log> {
       if (line.startsWith("event:")) {
         eventType = line.slice("event:".length).trim();
       } else if (line.startsWith("data:")) {
-        data += line.slice("data:".length).trim();
+        const value = line.slice("data:".length).replace(/^ /, "");
+        data = data.length === 0 ? value : `${data}\n${value}`;
       } else if (line.startsWith("id:")) {
         id = line.slice("id:".length).trim();
       }
