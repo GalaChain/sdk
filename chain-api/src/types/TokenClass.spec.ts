@@ -103,6 +103,23 @@ it("should allow to override authorities", async () => {
   });
 });
 
+it("should augment authorities when overwriteAuthorities is the string false", async () => {
+  // Given
+  const update = {
+    authorities: ["client|new-admin" as UserAlias],
+    overwriteAuthorities: "false" as unknown as boolean
+  };
+
+  // When
+  const updatedToken = existingToken.updatedWith(update);
+
+  // Then
+  expect(updatedToken.toPlainObject()).toEqual({
+    ...existingToken.toPlainObject(),
+    authorities: ["client|new-admin", "client|old-admin"]
+  });
+});
+
 it("should encode and decode token class key from base58 encoded string", async () => {
   // Given
   const classKey = new TokenClassKey();

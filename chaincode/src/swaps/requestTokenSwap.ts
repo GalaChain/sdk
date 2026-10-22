@@ -38,6 +38,7 @@ import { fetchTokenInstances } from "../token";
 import { GalaChainContext } from "../types";
 import { getObjectByKey, putChainObject } from "../utils";
 import { SwapDtoValidationError } from "./SwapError";
+import { reserveDistinctOrdinal } from "./reserveDistinctOrdinal";
 
 function validateTokenSwapQuantity(quantity: BigNumber, tokenClass: TokenClass): Array<string> {
   const validationResults: Array<string> = [];
@@ -49,6 +50,8 @@ function validateTokenSwapQuantity(quantity: BigNumber, tokenClass: TokenClass):
     // Must be less than or equal to the token info quantity
   } else if (!tokenClass.isNonFungible && quantity.isLessThan(0)) {
     validationResults.push(`Token quantity must be positive. ${quantity} is not valid.`);
+  } else if (!tokenClass.isNonFungible && (quantity.decimalPlaces() ?? 0) > tokenClass.decimals) {
+    validationResults.push(`Quantity: ${quantity} has more than ${tokenClass.decimals} decimal places.`);
   } else if (tokenClass.isNonFungible && !quantity.isEqualTo(1)) {
     validationResults.push(`cannot swap more than 1 Non Fungible Token Instance. ${quantity} is not valid.`);
   } else if (quantity.isGreaterThan(tokenClass.maxSupply) || quantity.isGreaterThan(tokenClass.maxCapacity)) {
@@ -109,6 +112,7 @@ export async function requestTokenSwap(
   newSwap.usesSpent = new BigNumber(0);
   newSwap.expires = expires;
   newSwap.fillIds = [];
+  await reserveDistinctOrdinal(ctx, newSwap, "requestOrdinal");
   // convenience for downstream client applications
   // its not often feasible or straightforward for a client to construct the composite key outside of a JS/TS environment (with common-api code)
   // if I want to query swaps and then fill one, the necessary id for FillTokenSwap should be in my JSON response
