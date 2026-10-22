@@ -74,6 +74,10 @@ export async function useAllowances(
       continue;
     }
 
+    if (!tokenAllowance.uses.isGreaterThan(0)) {
+      continue;
+    }
+
     // Only update chain objects if quantitySpent and usesSpent are defined(and therefore the tokenAllowance quantity is finite)
     if (tokenAllowance.quantitySpent !== undefined && tokenAllowance.usesSpent !== undefined) {
       // we still need to remove

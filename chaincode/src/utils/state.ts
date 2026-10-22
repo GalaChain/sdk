@@ -249,6 +249,13 @@ export async function getObjectsByPartialCompositeKey<T extends ChainObject>(
  * results: Array of Chain Objects deserialized using the provided constructor,
  * metadata: QueryResponseMetadata
  */
+function clampQueryPageLimit(limit: number): number {
+  if (!Number.isInteger(limit) || limit < 1) {
+    return 1;
+  }
+  return Math.min(limit, TOTAL_RESULTS_LIMIT);
+}
+
 export async function getObjectsByPartialCompositeKeyWithPagination<T extends ChainObject>(
   ctx: GalaChainContext,
   objectType: string,
@@ -257,6 +264,7 @@ export async function getObjectsByPartialCompositeKeyWithPagination<T extends Ch
   bookmark: string | undefined,
   limit: number = TOTAL_RESULTS_LIMIT
 ): Promise<{ results: Array<T>; metadata: QueryResponseMetadata }> {
+  const pageLimit = clampQueryPageLimit(limit);
   return withStateSpan(
     ctx,
     "state.getObjectsByPartialCompositeKeyWithPagination",
@@ -265,7 +273,7 @@ export async function getObjectsByPartialCompositeKeyWithPagination<T extends Ch
       "gala.state.object_type": objectType,
       "gala.state.constructor": constructor.name,
       "fabric.state.attribute_count": attributes.length,
-      "gala.state.limit": limit
+      "gala.state.limit": pageLimit
     },
     async (span) => {
       // Uses default fabric call. No need for cache support, since Fabric disallows
@@ -273,7 +281,7 @@ export async function getObjectsByPartialCompositeKeyWithPagination<T extends Ch
       const response = ctx.stub.getStateByPartialCompositeKeyWithPagination(
         objectType,
         attributes,
-        limit,
+        pageLimit,
         bookmark
       );
 

@@ -14,13 +14,50 @@
  */
 import BigNumber from "bignumber.js";
 import { Type } from "class-transformer";
-import { IsNotEmpty, IsNumber, IsOptional, ValidateIf, ValidateNested } from "class-validator";
+import {
+  IsNotEmpty,
+  IsNumber,
+  IsOptional,
+  Validate,
+  ValidateNested,
+  ValidationArguments,
+  ValidatorConstraint,
+  ValidatorConstraintInterface
+} from "class-validator";
 import { JSONSchema } from "class-validator-jsonschema";
 
 import { ChainKey } from "../utils";
 import { BigNumberProperty } from "../validators";
 import { ChainObject } from "./ChainObject";
 import { TokenInstanceKey } from "./TokenInstance";
+
+function tokenSidePresent(value: unknown): boolean {
+  return value !== undefined && value !== null;
+}
+
+@ValidatorConstraint({ name: "exactlyOneBaseToken", async: false })
+export class ExactlyOneBaseTokenConstraint implements ValidatorConstraintInterface {
+  validate(_value: unknown, args: ValidationArguments): boolean {
+    const assertion = args.object as { baseToken?: unknown; externalBaseToken?: unknown };
+    return tokenSidePresent(assertion.baseToken) !== tokenSidePresent(assertion.externalBaseToken);
+  }
+
+  defaultMessage(): string {
+    return "exactly one of baseToken or externalBaseToken is required";
+  }
+}
+
+@ValidatorConstraint({ name: "exactlyOneQuoteToken", async: false })
+export class ExactlyOneQuoteTokenConstraint implements ValidatorConstraintInterface {
+  validate(_value: unknown, args: ValidationArguments): boolean {
+    const assertion = args.object as { quoteToken?: unknown; externalQuoteToken?: unknown };
+    return tokenSidePresent(assertion.quoteToken) !== tokenSidePresent(assertion.externalQuoteToken);
+  }
+
+  defaultMessage(): string {
+    return "exactly one of quoteToken or externalQuoteToken is required";
+  }
+}
 
 @JSONSchema({
   description:
@@ -63,7 +100,7 @@ export class OraclePriceAssertion extends ChainObject {
   @JSONSchema({
     description: "First currency in the described currency pair. Unit of exchange."
   })
-  @ValidateIf((assertion) => !!assertion.externalBaseToken)
+  @IsOptional()
   @ValidateNested()
   @Type(() => TokenInstanceKey)
   baseToken?: TokenInstanceKey;
@@ -73,7 +110,7 @@ export class OraclePriceAssertion extends ChainObject {
       "External token representing the first currency in the described currency pair. " +
       "Unit of exchange. Optional, but required if baseToken is not provided."
   })
-  @ValidateIf((assertion) => !!assertion.baseToken)
+  @IsOptional()
   @ValidateNested()
   @Type(() => ExternalToken)
   externalBaseToken?: ExternalToken;
@@ -83,7 +120,7 @@ export class OraclePriceAssertion extends ChainObject {
       "Second token/currency in the pair. Token/Currency in which the baseToken is quoted. " +
       "Optional, but required if externalQuoteToken is not provided."
   })
-  @ValidateIf((o) => !o.externalQuoteToken)
+  @IsOptional()
   @ValidateNested()
   @Type(() => TokenInstanceKey)
   quoteToken?: TokenInstanceKey;
@@ -93,7 +130,7 @@ export class OraclePriceAssertion extends ChainObject {
       "Second token/currency in the pair. Token/Currency in which the baseToken is quoted. " +
       "Optional, but required if quoteToken is not provided."
   })
-  @ValidateIf((o) => !o.quoteToken)
+  @IsOptional()
   @ValidateNested()
   @Type(() => ExternalToken)
   externalQuoteToken?: ExternalToken;
@@ -101,6 +138,8 @@ export class OraclePriceAssertion extends ChainObject {
   @JSONSchema({
     description: "How much of the quoteToken is needed to purchase one unit of the baseToken."
   })
+  @Validate(ExactlyOneBaseTokenConstraint)
+  @Validate(ExactlyOneQuoteTokenConstraint)
   @BigNumberProperty()
   exchangeRate: BigNumber;
 
