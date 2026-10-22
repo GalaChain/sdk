@@ -335,20 +335,22 @@ export class TokenInstance extends ChainObject {
   }
 
   public static GetFungibleInstanceFromClass(token: TokenClassKeyProperties): string {
-    const { MIN_UNICODE_RUNE_VALUE } = ChainObject;
     const { collection, category, type, additionalKey } = token;
 
-    return [collection, category, type, additionalKey, this.FUNGIBLE_TOKEN_INSTANCE].join(
-      MIN_UNICODE_RUNE_VALUE
-    );
+    return ChainObject.joinKeyParts([
+      collection,
+      category,
+      type,
+      additionalKey,
+      this.FUNGIBLE_TOKEN_INSTANCE
+    ]);
   }
 
   // This returns the unique identifying string used in the composite key for querying HLF
   public static CreateCompositeKey(token: TokenInstanceKeyProperties): string {
-    const { MIN_UNICODE_RUNE_VALUE } = ChainObject;
     const { collection, category, type, additionalKey, instance } = instanceToPlain(token);
 
-    return [collection, category, type, additionalKey, instance].join(MIN_UNICODE_RUNE_VALUE);
+    return ChainObject.joinKeyParts([collection, category, type, additionalKey, instance]);
   }
 
   // This parses a string into the key that can be used to query HLF

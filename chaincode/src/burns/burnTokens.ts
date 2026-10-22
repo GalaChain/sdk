@@ -213,6 +213,18 @@ export async function burnTokens(
  * @param requests: BurnTokenQuantity[]
  * @returns BurnTokenQuantity[]
  */
+function burnAggregationKey(
+  collection: string,
+  category: string,
+  type: string,
+  additionalKey: string,
+  instance: string
+): string {
+  return [collection, category, type, additionalKey, instance]
+    .map((part) => `${part.length}:${part}`)
+    .join("|");
+}
+
 export function aggregateBurnQuantities(requests: BurnTokenQuantity[]): BurnTokenQuantity[] {
   const summedQuantities: BurnTokenQuantity[] = [];
   const hash = {};
@@ -220,7 +232,7 @@ export function aggregateBurnQuantities(requests: BurnTokenQuantity[]): BurnToke
   for (let i = 0; i < requests.length; i++) {
     const { collection, category, type, additionalKey, instance } = requests[i].tokenInstanceKey;
 
-    const key = `${collection}_${category}_${type}_${additionalKey}_${instance.toString()}`;
+    const key = burnAggregationKey(collection, category, type, additionalKey, instance.toString());
 
     hash[key] = hash[key] ?? summedQuantities.length;
 

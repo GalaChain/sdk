@@ -31,7 +31,7 @@ export async function fetchMintSupply(
   const startTimeKey: string = inverseTime(ctx, startTimeOffset);
   const keyLen = inverseKeyLength;
 
-  const startKey = [
+  const startKey = ChainObject.joinKeyParts([
     TokenMintRequest.INDEX_KEY,
     tokenClass.collection,
     tokenClass.category,
@@ -39,9 +39,9 @@ export async function fetchMintSupply(
     tokenClass.additionalKey,
     startTimeKey,
     "".padStart(keyLen, "0")
-  ].join(ChainObject.MIN_UNICODE_RUNE_VALUE);
+  ]);
 
-  const endKey = [
+  const endKey = ChainObject.joinKeyParts([
     TokenMintRequest.INDEX_KEY,
     tokenClass.collection,
     tokenClass.category,
@@ -49,7 +49,7 @@ export async function fetchMintSupply(
     tokenClass.additionalKey,
     "".padStart(keyLen, "z"),
     "".padStart(keyLen, "z")
-  ].join(ChainObject.MIN_UNICODE_RUNE_VALUE);
+  ]);
 
   const iterator = ctx.stub.getStateByRange(startKey, endKey);
 
