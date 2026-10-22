@@ -72,8 +72,13 @@ export abstract class GalaChainResponse<T> {
     object: string | Record<string, unknown>
   ): GalaChainResponse<T> {
     const json = typeof object === "string" ? JSON.parse(object) : object;
+    if (json === null || typeof json !== "object" || Array.isArray(json)) {
+      throw new Error("Chain response is missing a status");
+    }
     if (json.Status === GalaChainResponseType.Error) {
       return deserialize<GalaChainResponse<T>>(GalaChainErrorResponse, json);
+    } else if (json.Status !== GalaChainResponseType.Success) {
+      throw new Error("Chain response is missing a status");
     } else if (constructor === undefined) {
       // TODO we are cheating somewhat with response type, fix with method overloading
       return deserialize(GalaChainSuccessResponse, json) as GalaChainResponse<T>;

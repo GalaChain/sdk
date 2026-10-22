@@ -12,11 +12,18 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-import { ChainCallDTO, ClassConstructor, createValidDTO, serialize, signatures } from "@gala-chain/api";
+import {
+  ChainCallDTO,
+  ClassConstructor,
+  GalaChainResponseType,
+  createValidDTO,
+  serialize,
+  signatures
+} from "@gala-chain/api";
 import { instanceToPlain, plainToInstance } from "class-transformer";
-import { BrowserProvider, SigningKey, computeAddress, getBytes, hashMessage } from "ethers";
+import { BrowserProvider } from "ethers";
 
-import { EventEmitter, Listener, MetaMaskEvents } from "./helpers";
+import { EventEmitter, Listener, MetaMaskEvents, recoverPublicKeyFromPersonalSign } from "./helpers";
 import { GalaChainResponseError, GalaChainResponseSuccess, SigningType } from "./types";
 import { ConstructorArgs } from "./types/utils";
 import { ethereumToGalaChainAddress, galaChainToEthereumAddress } from "./utils";
@@ -128,8 +135,10 @@ export abstract class GalaChainProvider {
       } catch (error) {
         throw new Error("Invalid JSON response");
       }
-      if (!response.ok || data.error) {
+      if (!response.ok || data?.error || data?.Status === GalaChainResponseType.Error) {
         throw new GalaChainResponseError<T>(data);
+      } else if (data?.Status !== GalaChainResponseType.Success) {
+        throw new Error("Chain response is missing a status");
       } else {
         const transformedDataResponse = responseConstructor
           ? plainToInstance(responseConstructor, data.Data)
@@ -273,17 +282,9 @@ export abstract class WebSigner extends CustomClient {
    * @returns Promise resolving to the public key and recovered address
    */
   async getPublicKey() {
-    const message = "Sign this to retrieve your public key";
-
-    const signature = await this.signMessage(message);
-
-    const messageHash = hashMessage(message);
-
-    const publicKey = SigningKey.recoverPublicKey(getBytes(messageHash), signature);
-
-    const recoveredAddress = computeAddress(publicKey);
-
-    return { publicKey, recoveredAddress };
+    return recoverPublicKeyFromPersonalSign("Sign this to retrieve your public key", (message) =>
+      this.signMessage(message)
+    );
   }
 
   /**

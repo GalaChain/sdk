@@ -14,7 +14,7 @@
  */
 import fs from "fs/promises";
 
-import { getPathFileName, parseJsonFromStringOrFile } from "./utils";
+import { getPathFileName, parseJsonFromStringOrFile, readPublicKeyFromFile } from "./utils";
 
 describe("parseJsonFromStringOrFile", () => {
   it("should parse JSON string", async () => {
@@ -78,6 +78,18 @@ describe("parseJsonFromStringOrFile", () => {
   });
 });
 
+describe("readPublicKeyFromFile", () => {
+  it("trims a trailing newline from the file contents", async () => {
+    const filePath = "./public-key-trim.pub";
+    const key = "04abcd";
+    await fs.writeFile(filePath, `${key}\n`);
+
+    await expect(readPublicKeyFromFile(filePath)).resolves.toEqual(key);
+
+    await fs.unlink(filePath);
+  });
+});
+
 describe("getPathFileName", () => {
   it("should return the file name when given a path with a slash", () => {
     // Given
@@ -101,14 +113,8 @@ describe("getPathFileName", () => {
     expect(result).toEqual("file.txt");
   });
 
-  it("should return the file name when given a path without slashes or backslashes", () => {
-    // Given
-    const path = "file.txt";
-
-    // When
-    const result = getPathFileName(path);
-
-    // Then
-    expect(result).toEqual("file.txt");
+  it("should return the directory name when the path has a trailing slash", () => {
+    expect(getPathFileName("./my-project/")).toEqual("my-project");
+    expect(getPathFileName(".\\my-project\\")).toEqual("my-project");
   });
 });
