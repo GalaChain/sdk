@@ -9,12 +9,11 @@
 //import { secp256k1 } from "@noble/curves/secp256k1";
 */
 //I used to use this:
-import { ec as EC, ec } from "elliptic";
+import { ec as EC } from "elliptic";
 
 import { assertArgument } from "../errors";
 import { Signature, SignatureLike } from "../signature";
 import { BytesLike, dataLength, getBytes, getBytesCopy, hexlify } from "../utils/data";
-import { toBeHex } from "../utils/maths";
 
 /**
  *  A **SigningKey** provides high-level access to the elliptic curve
@@ -22,7 +21,6 @@ import { toBeHex } from "../utils/maths";
  */
 export class SigningKey {
   #privateKey: string;
-  ecSecp256k1: ec;
 
   /**
    *  Creates a new **SigningKey** for %%privateKey%%.
@@ -30,7 +28,6 @@ export class SigningKey {
   constructor(privateKey: BytesLike) {
     assertArgument(dataLength(privateKey) === 32, "invalid private key", "privateKey", "[REDACTED]");
     this.#privateKey = hexlify(privateKey);
-    this.ecSecp256k1 = new EC("secp256k1");
   }
 
   /**
@@ -59,55 +56,6 @@ export class SigningKey {
    */
   get compressedPublicKey(): string {
     return SigningKey.computePublicKey(this.#privateKey, true);
-  }
-
-  /**
-   *  Return the signature of the signed %%digest%%.
-   */
-  sign(digest: BytesLike): Signature {
-    assertArgument(dataLength(digest) === 32, "invalid digest length", "digest", digest);
-
-    const keyPair = this.ecSecp256k1.keyFromPrivate(this.#privateKey.substring(2));
-    const sig = keyPair.sign(getBytesCopy(digest), { canonical: true });
-
-    return Signature.from({
-      r: toBeHex(sig.r, 32),
-      s: toBeHex(sig.s, 32),
-      v: sig.recoveryParam ? 0x1c : 0x1b
-    });
-  }
-
-  /**
-   *  Returns the [[link-wiki-ecdh]] shared secret between this
-   *  private key and the %%other%% key.
-   *
-   *  The %%other%% key may be any type of key, a raw public key,
-   *  a compressed/uncompressed pubic key or aprivate key.
-   *
-   *  Best practice is usually to use a cryptographic hash on the
-   *  returned value before using it as a symetric secret.
-   *
-   *  @example:
-   *    sign1 = new SigningKey(id("some-secret-1"))
-   *    sign2 = new SigningKey(id("some-secret-2"))
-   *
-   *    // Notice that privA.computeSharedSecret(pubB)...
-   *    sign1.computeSharedSecret(sign2.publicKey)
-   *    //_result:
-   *
-   *    // ...is equal to privB.computeSharedSecret(pubA).
-   *    sign2.computeSharedSecret(sign1.publicKey)
-   *    //_result:
-   */
-  computeSharedSecret(other: BytesLike): string {
-    const pubKey = SigningKey.computePublicKey(other);
-    const keyPair = this.ecSecp256k1.keyFromPrivate(this.#privateKey.substring(2));
-    const sharedSecret = keyPair.derive(
-      this.ecSecp256k1.keyFromPublic(getBytes(pubKey).slice(1)).getPublic()
-    );
-
-    const sharedSecretArray = sharedSecret.toArray("be", 32); // Get array of bytes in big-endian order
-    return hexlify(new Uint8Array(sharedSecretArray));
   }
 
   /**
@@ -168,20 +116,6 @@ export class SigningKey {
   /**
    *  Returns the public key for the private key which produced the
    *  %%signature%% for the given %%digest%%.
-   *
-   *  @example:
-   *    key = new SigningKey(id("some-secret"))
-   *    digest = id("hello world")
-   *    sig = key.sign(digest)
-   *
-   *    // Notice the signer public key...
-   *    key.publicKey
-   *    //_result:
-   *
-   *    // ...is equal to the recovered public key
-   *    SigningKey.recoverPublicKey(digest, sig)
-   *    //_result:
-   *
    */
   static recoverPublicKey(digest: BytesLike, signature: SignatureLike): string {
     assertArgument(dataLength(digest) === 32, "invalid digest length", "digest", digest);

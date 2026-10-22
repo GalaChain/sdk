@@ -8,8 +8,6 @@ import { getAddress } from "../address";
 import { keccak256 } from "../crypto/keccak_256";
 import { assertArgument } from "../errors";
 import { defineProperties } from "../properties";
-import { SignatureLike } from "../signature";
-import { recoverAddress } from "../transaction/address";
 import { BigNumberish } from "../type-utils";
 import { BytesLike, concat, getBytes, hexlify, isHexString, zeroPadValue } from "../utils/data";
 import { getBigInt, mask, toBeHex, toQuantity, toTwos } from "../utils/maths";
@@ -768,16 +766,4 @@ export class TypedDataEncoder {
       })
     };
   }
-}
-
-/**
- *  Compute the address used to sign the typed data for the %%signature%%.
- */
-export function verifyTypedData(
-  domain: TypedDataDomain,
-  types: Record<string, Array<TypedDataField>>,
-  value: Record<string, any>,
-  signature: SignatureLike
-): string {
-  return recoverAddress(TypedDataEncoder.hash(domain, types, value), signature);
 }

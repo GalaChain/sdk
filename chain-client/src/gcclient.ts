@@ -12,9 +12,12 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+import { createRequire } from "module";
+
 import { ChainClientBuilder, loadJson } from "./generic";
-import { HFClientBuilder } from "./hf";
 import { RestApiClientBuilder, loadRestApiConfig } from "./rest-api";
+
+const nodeRequire = createRequire(__filename);
 
 export interface HFClientConfig {
   orgMsp: string;
@@ -26,11 +29,13 @@ export interface HFClientConfig {
 function forConnectionProfile(hf: HFClientConfig): ChainClientBuilder {
   const connectionProfile = loadJson(hf.connectionProfilePath);
 
-  if (!connectionProfile.organizations?.[hf.orgMsp]) {
-    const allowedOrgs =
-      typeof connectionProfile.organizations === "object"
-        ? Object.keys(connectionProfile.organizations ?? {})
-        : [];
+  const organizations = connectionProfile.organizations;
+  const organizationRecord =
+    organizations !== null && typeof organizations === "object" && !Array.isArray(organizations)
+      ? (organizations as Record<string, unknown>)
+      : undefined;
+  if (!organizationRecord || organizationRecord[hf.orgMsp] == null) {
+    const allowedOrgs = organizationRecord ? Object.keys(organizationRecord) : [];
     throw new Error(
       `Organization ${hf.orgMsp} not found in connection profile. Allowed orgs: ${allowedOrgs.join(", ")}`
     );
@@ -46,6 +51,7 @@ function forConnectionProfile(hf: HFClientConfig): ChainClientBuilder {
     throw new Error("Missing user pass. Please provide it manually or in GC_USER_PASS environment variable.");
   }
 
+  const { HFClientBuilder } = nodeRequire("./hf") as typeof import("./hf");
   return new HFClientBuilder(hf.orgMsp, userId, adminPass, connectionProfile);
 }
 
