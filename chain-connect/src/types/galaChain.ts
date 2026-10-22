@@ -55,27 +55,62 @@ export class GalaChainResponseSuccess<T> {
  * Represents an error response from a GalaChain operation.
  * @template T - The type of data associated with the error
  */
-export class GalaChainResponseError<T> {
+export class GalaChainResponseError<T> extends Error {
   /** The error key or identifier */
   public readonly Error: string;
   /** Human-readable error message */
   public readonly Message: string;
   /** Numeric error code */
   public readonly ErrorCode: number;
+  /** Structured details from the response, when present */
+  public readonly ErrorPayload?: unknown;
 
   /**
    * Creates a new error response.
    * @param data - The error data to construct the response from
    */
   constructor(data: GalaChainError<T>) {
-    if (typeof data.error === "string" || !data.error) {
-      this.Error = data.error;
-      this.Message = data.message;
-      this.ErrorCode = data.statusCode ?? 500;
-    } else {
-      this.Error = data.error.ErrorKey;
-      this.Message = data.message;
-      this.ErrorCode = data.error.ErrorCode;
-    }
+    const details = readResponseError(data);
+    super(details.message);
+    this.name = "GalaChainResponseError";
+    Object.setPrototypeOf(this, new.target.prototype);
+    this.Error = details.error;
+    this.Message = details.message;
+    this.ErrorCode = details.code;
+    this.ErrorPayload = details.payload;
   }
+}
+
+function readResponseError<T>(data: GalaChainError<T>): {
+  error: string;
+  message: string;
+  code: number;
+  payload?: unknown;
+} {
+  const message = typeof data?.message === "string" ? data.message : "Request failed";
+
+  if (typeof data?.error === "string") {
+    return { error: data.error, message, code: data.statusCode ?? 500 };
+  }
+
+  if (isStructuredError(data?.error)) {
+    return {
+      error: data.error.ErrorKey,
+      message,
+      code: data.error.ErrorCode ?? data.statusCode ?? 500,
+      payload: data.error.ErrorPayload
+    };
+  }
+
+  return { error: "UNKNOWN", message, code: data?.statusCode ?? 500 };
+}
+
+function isStructuredError(
+  error: unknown
+): error is { ErrorKey: string; ErrorCode?: number; ErrorPayload?: unknown } {
+  return (
+    typeof error === "object" &&
+    error !== null &&
+    typeof (error as { ErrorKey?: unknown }).ErrorKey === "string"
+  );
 }
