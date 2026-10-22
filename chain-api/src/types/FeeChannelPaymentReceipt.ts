@@ -46,9 +46,6 @@ export class FeeChannelPaymentReceipt extends ChainObject {
   @IsUserAlias()
   public paidByUser: UserAlias;
 
-  // todo: consider adding hours and minutes
-  // to the index as additional chain keys
-
   @ChainKey({ position: 5 })
   @IsNotEmpty()
   public txId: string;

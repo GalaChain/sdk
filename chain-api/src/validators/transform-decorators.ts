@@ -17,7 +17,12 @@ import { Transform, Type } from "class-transformer";
 import { IsIn, ValidateBy, ValidationOptions, buildMessage } from "class-validator";
 import "reflect-metadata";
 
-import { BigNumberIsNotInfinity, IsBigNumber } from "./decorators";
+import {
+  BigNumberIsNotInfinity,
+  BigNumberIsNotNaN,
+  BigNumberIsPositiveInfinityOrFinite,
+  IsBigNumber
+} from "./decorators";
 
 type ClassConstructor<Signature = unknown[]> = {
   new (args: Signature): unknown;
@@ -76,8 +81,11 @@ export const BigNumberProperty = (opts?: { allowInfinity: boolean }) => {
     to(target, propertyKey);
 
     IsBigNumber()(target, propertyKey);
+    BigNumberIsNotNaN()(target, propertyKey);
     if (!opts?.allowInfinity) {
       BigNumberIsNotInfinity()(target, propertyKey);
+    } else {
+      BigNumberIsPositiveInfinityOrFinite()(target, propertyKey);
     }
   };
 };

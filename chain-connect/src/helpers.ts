@@ -13,7 +13,7 @@
  * limitations under the License.
  */
 import { signatures } from "@gala-chain/api";
-import { Eip1193Provider } from "ethers";
+import { Eip1193Provider, SigningKey, computeAddress, getBytes, hashMessage } from "ethers";
 
 /**
  * Calculates the personal sign prefix for Ethereum message signing.
@@ -34,6 +34,15 @@ export function calculatePersonalSignPrefix(payload: object): string {
   }
 
   return prefix;
+}
+
+export async function recoverPublicKeyFromPersonalSign(
+  message: string,
+  sign: (message: string) => Promise<string>
+): Promise<{ publicKey: string; recoveredAddress: string }> {
+  const signature = await sign(message);
+  const publicKey = SigningKey.recoverPublicKey(getBytes(hashMessage(message)), signature);
+  return { publicKey, recoveredAddress: computeAddress(publicKey) };
 }
 
 /**
