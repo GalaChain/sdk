@@ -67,7 +67,7 @@ function caConfig(
     ? {}
     : {
         tlsCACerts: {
-          path: path.resolve(cryptoConfigRoot, "peerOrganizations", orgDomain, "peers", host, "tls/ca.crt")
+          path: path.resolve(cryptoConfigRoot, "peerOrganizations", orgDomain, "ca", `${host}-cert.pem`)
         }
       };
   const httpOptions = {
