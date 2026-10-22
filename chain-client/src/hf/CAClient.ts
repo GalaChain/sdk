@@ -15,6 +15,7 @@
 import FabricCAServices from "fabric-ca-client";
 import { Wallet, Wallets } from "fabric-network";
 import { Identity } from "fabric-network/lib/impl/wallet/identity";
+import fs from "fs";
 
 export class CAClient {
   public readonly orgMsp: string;
@@ -22,9 +23,10 @@ export class CAClient {
   public readonly asLocalhost: boolean;
   public readonly affiliation: string;
   public readonly wallet: Promise<Wallet>;
-  public readonly enrolledAdmin: Promise<Identity>;
   public readonly adminId: string;
+  private readonly adminSecret: string;
   private readonly caClient: FabricCAServices;
+  private adminEnrollment: Promise<Identity> | undefined;
 
   constructor(
     orgMsp: string,
@@ -35,16 +37,33 @@ export class CAClient {
     this.orgMsp = orgMsp;
     this.caHostName = getCAHostName(connectionProfile, orgMsp);
     this.caClient = buildCAClient(connectionProfile, this.caHostName);
-    this.wallet = getGlobalWallet(this.orgMsp);
+    this.wallet = getGlobalWallet(this.orgMsp, connectionProfile);
     this.adminId = adminId;
-    this.enrolledAdmin = this.wallet.then(async (wallet) => {
-      const identity = await enrollUser(this.caClient, wallet, orgMsp, adminId, adminSecret);
-      if (identity === undefined) {
-        throw new Error(`Failed to enroll admin user (${adminId})`);
-      } else {
+    this.adminSecret = adminSecret;
+  }
+
+  public get enrolledAdmin(): Promise<Identity> {
+    if (this.adminEnrollment) {
+      return this.adminEnrollment;
+    }
+
+    const pending = this.wallet
+      .then((wallet) => enrollUser(this.caClient, wallet, this.orgMsp, this.adminId, this.adminSecret))
+      .then((identity) => {
+        if (identity === undefined) {
+          throw new Error(`Failed to enroll admin user (${this.adminId})`);
+        }
         return identity;
-      }
-    });
+      })
+      .catch((error: unknown) => {
+        if (this.adminEnrollment === pending) {
+          this.adminEnrollment = undefined;
+        }
+        throw error;
+      });
+
+    this.adminEnrollment = pending;
+    return pending;
   }
 
   public async isReady(): Promise<boolean> {
@@ -53,26 +72,48 @@ export class CAClient {
   }
 
   async getIdentityOrRegisterUser(userId: string): Promise<Identity> {
+    const key = onboardingKey(this.orgMsp, this.caHostName, userId);
+    const current = userProvisioning.get(key);
+    if (current) {
+      return current;
+    }
+
+    const pending = this.provisionUser(userId).finally(() => {
+      if (userProvisioning.get(key) === pending) {
+        userProvisioning.delete(key);
+      }
+    });
+    userProvisioning.set(key, pending);
+    return pending;
+  }
+
+  private async provisionUser(userId: string): Promise<Identity> {
     await this.isReady();
 
-    const identity = await this.wallet.then((w) => w.get(userId));
-
+    const wallet = await this.wallet;
+    const identity = await wallet.get(userId);
     if (identity !== undefined) {
       return identity;
     }
 
-    // register
-    const userSecret = await registerUser(
-      this.caClient,
-      this.adminId,
-      await this.wallet,
-      userId,
-      this.affiliation
-    );
+    const key = onboardingKey(this.orgMsp, this.caHostName, userId);
+    let userSecret = registrationSecrets.get(key);
+    if (userSecret === undefined) {
+      userSecret = await registerUser(this.caClient, this.adminId, wallet, userId, this.affiliation);
+      registrationSecrets.set(key, userSecret);
+    }
 
-    // enroll
-    return await enrollUser(this.caClient, await this.wallet, this.orgMsp, userId, userSecret);
+    const enrolled = await enrollUser(this.caClient, wallet, this.orgMsp, userId, userSecret);
+    registrationSecrets.delete(key);
+    return enrolled;
   }
+}
+
+const userProvisioning = new Map<string, Promise<Identity>>();
+const registrationSecrets = new Map<string, string>();
+
+function onboardingKey(orgMsp: string, caHostName: string, userId: string): string {
+  return JSON.stringify([orgMsp, caHostName, userId]);
 }
 
 function getCAHostName(connectionProfile: Record<string, unknown>, orgMsp: string): string {
@@ -98,7 +139,7 @@ function buildCAClient(ccp: Record<string, unknown>, caHostName: string): Fabric
   }
 
   const tlsCACerts = caInfo.tlsCACerts as unknown as { pem?: string; path?: string };
-  const caTLSCACerts = tlsCACerts?.pem ?? tlsCACerts?.path;
+  const caTLSCACerts = readTlsTrustedRoot(tlsCACerts);
   const tlsConfig = caTLSCACerts
     ? { trustedRoots: [caTLSCACerts], verify: caInfo?.httpOptions?.verify }
     : undefined;
@@ -112,9 +153,9 @@ function buildCAClient(ccp: Record<string, unknown>, caHostName: string): Fabric
   return new FabricCAServices(caUrl, tlsConfig, caName);
 }
 
-const pendingEnrollments: Record<string, true> = {};
+const pendingEnrollments = new Map<string, true>();
 
-async function enrollUser(
+export async function enrollUser(
   caClient: FabricCAServices,
   wallet: Wallet,
   orgMspId: string,
@@ -130,14 +171,14 @@ async function enrollUser(
 
   // Verify if the enrollment is already in progress - too many simultaneous
   // enrollments will cause the CA to fail with a timeout
-  if (pendingEnrollments[userId]) {
+  if (pendingEnrollments.has(userId)) {
     // Try again after a short delay
     return new Promise((res) => {
       setTimeout(() => res(undefined), 200);
     }).then(() => enrollUser(caClient, wallet, orgMspId, userId, userSecret));
   }
 
-  pendingEnrollments[userId] = true;
+  pendingEnrollments.set(userId, true);
 
   try {
     // Enroll the user, and import the new identity into the wallet.
@@ -159,7 +200,7 @@ async function enrollUser(
     return x509Identity;
   } finally {
     // Always clear the pending flag, even on error, to prevent infinite retry loops
-    delete pendingEnrollments[userId];
+    pendingEnrollments.delete(userId);
   }
 }
 
@@ -191,12 +232,34 @@ async function registerUser(
   );
 }
 
-const globalWallets: Record<string, Promise<Wallet>> = {};
+const globalWallets = new Map<string, Promise<Wallet>>();
 
-function getGlobalWallet(orgMsp: string): Promise<Wallet> {
-  if (globalWallets[orgMsp] === undefined) {
-    globalWallets[orgMsp] = Wallets.newInMemoryWallet();
+function walletCacheKey(orgMsp: string, connectionProfile: Record<string, unknown>): string {
+  const caHostName = getCAHostName(connectionProfile, orgMsp);
+  const authorities = connectionProfile.certificateAuthorities as Record<string, unknown> | undefined;
+  return JSON.stringify([orgMsp, caHostName, authorities?.[caHostName] ?? null]);
+}
+
+function getGlobalWallet(orgMsp: string, connectionProfile: Record<string, unknown>): Promise<Wallet> {
+  const key = walletCacheKey(orgMsp, connectionProfile);
+  const existing = globalWallets.get(key);
+  if (existing) {
+    return existing;
   }
 
-  return globalWallets[orgMsp];
+  const wallet = Wallets.newInMemoryWallet();
+  globalWallets.set(key, wallet);
+  return wallet;
+}
+
+function readTlsTrustedRoot(tlsCACerts: { pem?: string; path?: string } | undefined): string | undefined {
+  if (typeof tlsCACerts?.pem === "string") {
+    return tlsCACerts.pem;
+  }
+
+  if (typeof tlsCACerts?.path === "string") {
+    return fs.readFileSync(tlsCACerts.path, "utf8");
+  }
+
+  return undefined;
 }
