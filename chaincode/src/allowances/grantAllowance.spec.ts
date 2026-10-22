@@ -363,6 +363,59 @@ describe("GrantAllowance", () => {
     expect(getWrites()).toEqual(writesMap(allowance));
   });
 
+  it("refreshes an existing partial-key allowance for every recipient", async () => {
+    const nftClass = nft.tokenClass();
+    const nftClassKey = nft.tokenClassKey();
+    const nftInstance = await createValidChainObject(TokenInstance, {
+      ...nft.tokenInstance1(),
+      owner: users.testUser2.identityKey
+    });
+    const nftBalance = new TokenBalance({ owner: users.testUser2.identityKey, ...nftClassKey });
+    nftBalance.addInstance(new BigNumber("1"));
+
+    const first = nft.tokenAllowance((allowance) => ({ ...allowance, created: 1 }));
+    const second = nft.tokenAllowance((allowance) => ({
+      ...allowance,
+      created: 2,
+      grantedTo: users.testUser3.identityKey
+    }));
+
+    const { ctx, contract, getWrites } = fixture(GalaChainTokenContract)
+      .registeredUsers(users.testUser2)
+      .savedState(nftClass, nftBalance, nftInstance, first, second);
+
+    const dto = await createValidSubmitDTO(GrantAllowanceDto, {
+      tokenInstance: await createValidDTO(TokenInstanceQueryKey, { collection: "TEST" }),
+      quantities: [
+        { user: users.testUser1.identityKey, quantity: new BigNumber("100") },
+        { user: users.testUser3.identityKey, quantity: new BigNumber("100") }
+      ],
+      allowanceType: AllowanceType.Lock,
+      uses: new BigNumber("5"),
+      expires: 50
+    });
+    dto.sign(users.testUser2.privateKey);
+
+    const response = await contract.GrantAllowance(ctx, dto);
+
+    const refreshedFirst = nft.tokenAllowance((allowance) => ({
+      ...allowance,
+      created: 1,
+      uses: new BigNumber("5"),
+      expires: 50
+    }));
+    const refreshedSecond = nft.tokenAllowance((allowance) => ({
+      ...allowance,
+      created: 2,
+      grantedTo: users.testUser3.identityKey,
+      uses: new BigNumber("5"),
+      expires: 50
+    }));
+
+    expect(response).toEqual(GalaChainResponse.Success([]));
+    expect(getWrites()).toEqual(writesMap(refreshedFirst, refreshedSecond));
+  });
+
   it("only permits tokenClass.authorities to Mint", async () => {
     // Given
     const nftInstance = await createValidChainObject(TokenInstance, {

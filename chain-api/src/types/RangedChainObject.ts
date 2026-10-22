@@ -86,6 +86,8 @@ export abstract class RangedChainObject {
   }
 
   public static getRangedKeyFromParts(indexKey: string, parts: unknown[]): string {
+    ChainObject.rejectEmbeddedNul(indexKey, "index key");
+
     for (const part of parts) {
       if (
         part === null ||
@@ -97,12 +99,13 @@ export abstract class RangedChainObject {
           `Invalid part ${part} passed to getRangedKeyFromParts: ${parts.join(", ")}`
         );
       }
+      ChainObject.rejectEmbeddedNul(String(part), "key part");
     }
 
     return indexKey + ChainObject.MIN_UNICODE_RUNE_VALUE + parts.join(ChainObject.MIN_UNICODE_RUNE_VALUE);
   }
 
   public static getStringKeyFromParts(parts: string[]): string {
-    return `${parts.join(ChainObject.ID_SPLIT_CHAR)}`;
+    return ChainObject.getStringKeyFromParts(parts);
   }
 }

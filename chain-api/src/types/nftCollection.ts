@@ -14,7 +14,7 @@
  */
 import BigNumber from "bignumber.js";
 import { Type } from "class-transformer";
-import { IsNotEmpty, IsNumber, IsOptional, IsString, ValidateNested } from "class-validator";
+import { IsInt, IsNotEmpty, IsOptional, IsString, Max, Min, ValidateNested } from "class-validator";
 import { JSONSchema } from "class-validator-jsonschema";
 
 import { BigNumberIsPositive, BigNumberProperty, IsUserRef } from "../validators";
@@ -86,10 +86,12 @@ export class FetchNftCollectionAuthorizationsWithPaginationDto extends ChainCall
   public bookmark?: string;
 
   @JSONSchema({
-    description: "Optional limit for the number of results to return per page."
+    description: "Page size. Must be an integer from 1 to 10000."
   })
-  @IsNumber()
   @IsOptional()
+  @Min(1)
+  @Max(10 * 1000)
+  @IsInt()
   public limit?: number;
 
   public static readonly DEFAULT_LIMIT = 100;

@@ -70,6 +70,52 @@ describe("RequestTokenBridgeOutDto", () => {
       expect(instance.recipient).toBe("11111111111111111111111111111111");
     });
 
+    it("should reject a recipient that belongs to a different chain", async () => {
+      // Given
+      const input = {
+        destinationChainId: ChainId.TON,
+        tokenInstance: {
+          collection: "COLLECTION",
+          category: "CATEGORY",
+          type: "TYPE",
+          additionalKey: "KEY",
+          instance: TokenInstance.FUNGIBLE_TOKEN_INSTANCE
+        } as TokenInstanceKey,
+        quantity: new BigNumber("100"),
+        recipient: "0x742d35Cc6634C0532925a3b844Bc454e4438f44e"
+      };
+
+      // When
+      const instance = plainToInstance(RequestTokenBridgeOutDto, input);
+      const errors = await validate(instance);
+
+      // Then
+      expect(errors.map((error) => error.property)).toContain("recipient");
+    });
+
+    it("should accept a Solana recipient that starts with UQ", async () => {
+      // Given
+      const input = {
+        destinationChainId: ChainId.Solana,
+        tokenInstance: {
+          collection: "COLLECTION",
+          category: "CATEGORY",
+          type: "TYPE",
+          additionalKey: "KEY",
+          instance: TokenInstance.FUNGIBLE_TOKEN_INSTANCE
+        } as TokenInstanceKey,
+        quantity: new BigNumber("100"),
+        recipient: `UQ${"1".repeat(41)}`
+      };
+
+      // When
+      const instance = plainToInstance(RequestTokenBridgeOutDto, input);
+      const errors = await validate(instance);
+
+      // Then
+      expect(errors).toHaveLength(0);
+    });
+
     it("should reject invalid address", async () => {
       // Given
       const input = {
