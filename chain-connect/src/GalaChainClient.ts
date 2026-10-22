@@ -12,7 +12,14 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-import { ChainCallDTO, ClassConstructor, createValidDTO, serialize, signatures } from "@gala-chain/api";
+import {
+  ChainCallDTO,
+  ClassConstructor,
+  GalaChainResponseType,
+  createValidDTO,
+  serialize,
+  signatures
+} from "@gala-chain/api";
 import { instanceToPlain, plainToInstance } from "class-transformer";
 import { BrowserProvider } from "ethers";
 
@@ -144,8 +151,10 @@ export abstract class GalaChainProvider {
       } catch (error) {
         throw new Error("Invalid JSON response");
       }
-      if (!response.ok || data.error) {
+      if (!response.ok || data?.error || data?.Status === GalaChainResponseType.Error) {
         throw new GalaChainResponseError<T>(data);
+      } else if (data?.Status !== GalaChainResponseType.Success) {
+        throw new Error("Chain response is missing a status");
       } else {
         const transformedDataResponse = responseConstructor
           ? plainToInstance(responseConstructor, data.Data)
