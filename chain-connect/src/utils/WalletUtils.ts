@@ -47,25 +47,20 @@ export class WalletUtils {
    * - For Stage: `https://dex-api-platform-dex-stage-gala.gala.com/v1/CreateHeadlessWallet`
    * - For Prod: `https://api-galaswap.gala.com/v1/CreateHeadlessWallet`
    *
-   * @returns {Promise<string>} - A promise that resolves to a success message if the wallet is registered successfully, or an error message otherwise.
+   * @returns {Promise<string>} - A promise that resolves to a success message after registration succeeds.
    */
   static async registerWallet(uri: string, walletPublicKey: string): Promise<string> {
-    try {
-      const response = await fetchWithTimeout(uri, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json"
-        },
-        body: JSON.stringify({ publicKey: walletPublicKey })
-      });
-      if (response.status === 201) {
-        return "Wallet registered successfully";
-      } else {
-        throw new Error(`Unexpected response status: ${response.status}`);
-      }
-    } catch (error) {
-      return `Error registering wallet: ${error.message}`;
+    const response = await fetchWithTimeout(uri, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json"
+      },
+      body: JSON.stringify({ publicKey: walletPublicKey })
+    });
+    if (!response.ok) {
+      throw new Error(`Unexpected response status: ${response.status}`);
     }
+    return "Wallet registered successfully";
   }
 
   /**
