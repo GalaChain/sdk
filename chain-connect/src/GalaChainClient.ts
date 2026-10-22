@@ -23,6 +23,7 @@ import {
 import { instanceToPlain, plainToInstance } from "class-transformer";
 import { BrowserProvider } from "ethers";
 
+import { DEFAULT_REQUEST_TIMEOUT_MS, fetchWithTimeout } from "./fetchWithTimeout";
 import { EventEmitter, Listener, MetaMaskEvents, recoverPublicKeyFromPersonalSign } from "./helpers";
 import { GalaChainResponseError, GalaChainResponseSuccess, SigningType } from "./types";
 import { ConstructorArgs } from "./types/utils";
@@ -42,6 +43,8 @@ type NonArrayClassConstructor<T> = T extends Array<unknown>
 export interface GalaChainProviderOptions {
   /** The type of signing to use for transactions */
   signingType?: SigningType;
+  /** Milliseconds to wait for a gateway response. Defaults to 30 seconds. */
+  timeoutMs?: number;
 }
 
 /**
@@ -119,11 +122,16 @@ export abstract class GalaChainProvider {
     }
 
     const fullUrl = `${url}/${method}`;
-    const response = await fetch(fullUrl, {
-      method: "POST",
-      body: serialize(newPayload),
-      headers: this.requestHeaders(headers)
-    });
+    const timeoutMs = this.options?.timeoutMs ?? DEFAULT_REQUEST_TIMEOUT_MS;
+    const response = await fetchWithTimeout(
+      fullUrl,
+      {
+        method: "POST",
+        body: serialize(newPayload),
+        headers: this.requestHeaders(headers)
+      },
+      timeoutMs
+    );
 
     const hash = response.headers.get("x-transaction-id") ?? undefined;
 

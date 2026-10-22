@@ -15,7 +15,7 @@
 import { ux } from "@oclif/core";
 
 import * as secp from "@noble/secp256k1";
-import axios from "axios";
+import axios, { AxiosError } from "axios";
 import fs, { promises as fsPromises } from "fs";
 import { nanoid } from "nanoid";
 import path from "path";
@@ -39,6 +39,11 @@ const DEFAULT_PRIVATE_KEYS_DIR = ".gc-keys";
 const DEFAULT_PUBLIC_KEYS_DIR = "keys";
 const DEFAULT_ADMIN_PRIVATE_KEY_NAME = "gc-admin-key";
 const DEFAULT_DEV_PRIVATE_KEY_NAME = "gc-dev-key";
+const REQUEST_TIMEOUT_MS = 30_000;
+
+function requestConfig<T extends object>(config: T): T & { timeout: number } {
+  return { timeout: REQUEST_TIMEOUT_MS, ...config };
+}
 
 export interface Config {
   org: string;
@@ -96,12 +101,15 @@ export async function getDeploymentResponse(params: {
   const servicePortalURL = ServicePortal.GET_DEPLOYMENT_URL;
 
   const response = await axios
-    .get(servicePortalURL, {
-      headers: {
-        [ServicePortal.AUTH_X_GC_KEY]: signature
-      },
-      params: getChaincodeDeploymentDto
-    })
+    .get(
+      servicePortalURL,
+      requestConfig({
+        headers: {
+          [ServicePortal.AUTH_X_GC_KEY]: signature
+        },
+        params: getChaincodeDeploymentDto
+      })
+    )
     .catch((error) => {
       throw new Error(axiosErrorMessage(error));
     });
@@ -205,11 +213,15 @@ export async function deployChaincode(params: {
   const signature = await generateSignature(dto, params.privateKey);
 
   const response = await axios
-    .post(ServicePortal.DEPLOY_URL, dto, {
-      headers: {
-        [ServicePortal.AUTH_X_GC_KEY]: signature
-      }
-    })
+    .post(
+      ServicePortal.DEPLOY_URL,
+      dto,
+      requestConfig({
+        headers: {
+          [ServicePortal.AUTH_X_GC_KEY]: signature
+        }
+      })
+    )
     .catch((error) => {
       throw new Error(axiosErrorMessage(error));
     });
@@ -231,11 +243,15 @@ export async function registerChaincode(params: {
   const signature = await generateSignature(dto, params.privateKey);
 
   const response = await axios
-    .post(ServicePortal.REGISTER_URL, dto, {
-      headers: {
-        [ServicePortal.AUTH_X_GC_KEY]: signature
-      }
-    })
+    .post(
+      ServicePortal.REGISTER_URL,
+      dto,
+      requestConfig({
+        headers: {
+          [ServicePortal.AUTH_X_GC_KEY]: signature
+        }
+      })
+    )
     .catch((error) => {
       throw new Error(axiosErrorMessage(error));
     });
@@ -505,12 +521,15 @@ export async function getLogs(params: {
   const servicePortalURL = ServicePortal.GET_LOGS_URL;
 
   try {
-    const response = await axios.get(servicePortalURL, {
-      headers: {
-        [ServicePortal.AUTH_X_GC_KEY]: signature
-      },
-      params: requestParams
-    });
+    const response = await axios.get(
+      servicePortalURL,
+      requestConfig({
+        headers: {
+          [ServicePortal.AUTH_X_GC_KEY]: signature
+        },
+        params: requestParams
+      })
+    );
 
     return response.data;
   } catch (error) {
@@ -534,6 +553,9 @@ export async function streamLogs(
 
   const servicePortalURL = ServicePortal.STREAM_LOGS_URL;
 
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), REQUEST_TIMEOUT_MS);
+
   try {
     const response = await axios.get(servicePortalURL, {
       headers: {
@@ -541,8 +563,10 @@ export async function streamLogs(
         Accept: "text/event-stream"
       },
       params: requestParams,
-      responseType: "stream"
+      responseType: "stream",
+      signal: controller.signal
     });
+    clearTimeout(timer);
 
     const stream = response.data as Readable;
     const decoder = new StringDecoder("utf8");
@@ -578,6 +602,7 @@ export async function streamLogs(
       });
     });
   } catch (error) {
+    clearTimeout(timer);
     if (
       error instanceof UnauthorizedError ||
       error instanceof BadRequestError ||
@@ -612,8 +637,8 @@ function classifyLogRequestError(error: unknown): Error {
   return new Error(`Failed to fetch logs: ${message || error.message}`);
 }
 
-function axiosErrorMessage(error: { response?: { status?: number; data?: { message?: string } } }): string {
+function axiosErrorMessage(error: AxiosError<{ message?: string }>): string {
   const status = error?.response?.status ?? "unknown";
-  const message = error?.response?.data?.message ?? "unknown";
+  const message = error?.response?.data?.message ?? error?.message ?? "unknown";
   return `[${status}] ${message}`;
 }
