@@ -405,14 +405,13 @@ USAGE
 
 FLAGS
   -C, --channel=<value>...        (required) Channel name.
-  -d, --chaincodeDir=<value>...   [default: .] Root directory of chaincode source, relative to fabloRoot. By default '.'
-                                  is used.
+  -d, --chaincodeDir=<value>...   Root directory of chaincode source, relative to fabloRoot. By default '.' is used for
+                                  every chaincode when this flag is omitted.
   -e, --envConfig=<value>         Path to .env file to be used for chaincodes.
   -n, --chaincodeName=<value>...  (required) Chaincode name.
   -o, --contracts=<value>...      Contract names in a JSON format.
   -r, --fabloRoot=<value>         [default: ./test-network] Root directory of target network. Should not be the same as
-                                  chaincodeDir and should not be a child of chaincodeDir. By default './test-network' is
-                                  used.
+                                  chaincodeDir and should not contain chaincodeDir. By default './test-network' is used.
   -t, --channelType=<option>...   (required) Channel type. Can be "curator" or "partner". It means whether this is a
                                   chaincode managed by CuratorOrg or PartnerOrg.
                                   <options: curator|partner>
@@ -476,14 +475,13 @@ USAGE
 
 FLAGS
   -C, --channel=<value>...        (required) Channel name.
-  -d, --chaincodeDir=<value>...   [default: .] Root directory of chaincode source, relative to fabloRoot. By default '.'
-                                  is used.
+  -d, --chaincodeDir=<value>...   Root directory of chaincode source, relative to fabloRoot. By default '.' is used for
+                                  every chaincode when this flag is omitted.
   -e, --envConfig=<value>         Path to .env file to be used for chaincodes.
   -n, --chaincodeName=<value>...  (required) Chaincode name.
   -o, --contracts=<value>...      Contract names in a JSON format.
   -r, --fabloRoot=<value>         [default: ./test-network] Root directory of target network. Should not be the same as
-                                  chaincodeDir and should not be a child of chaincodeDir. By default './test-network' is
-                                  used.
+                                  chaincodeDir and should not contain chaincodeDir. By default './test-network' is used.
   -t, --channelType=<option>...   (required) Channel type. Can be "curator" or "partner". It means whether this is a
                                   chaincode managed by CuratorOrg or PartnerOrg.
                                   <options: curator|partner>

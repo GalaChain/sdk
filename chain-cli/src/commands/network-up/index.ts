@@ -69,15 +69,14 @@ export default class NetworkUp extends BaseCommand<typeof NetworkUp> {
       char: "d",
       description:
         "Root directory of chaincode source, relative to fabloRoot. " +
-        `By default '${defaultChaincodeDir}' is used.`,
-      default: [defaultChaincodeDir],
+        `By default '${defaultChaincodeDir}' is used for every chaincode when this flag is omitted.`,
       multiple: true
     }),
     fabloRoot: Flags.string({
       char: "r",
       description:
         "Root directory of target network. " +
-        "Should not be the same as chaincodeDir and should not be a child of chaincodeDir. " +
+        "Should not be the same as chaincodeDir and should not contain chaincodeDir. " +
         `By default '${defaultFabloRoot}' is used.`,
       default: defaultFabloRoot
     }),
@@ -231,12 +230,38 @@ function updateConfigTxWithChannelProfile(fabloRoot: string, args: SingleArg[]) 
   fs.appendFileSync(configtxFilePath, update);
 }
 
+export function configtxProfileName(channel: string): string {
+  return channel.replace(/(^\w|-\w)/g, (token) => token.replace(/-/, "").toUpperCase());
+}
+
+export function assertUniqueConfigtxProfileNames(channels: string[]): void {
+  const profileToChannel = new Map<string, string>();
+  channels.forEach((channel) => {
+    const profileName = configtxProfileName(channel);
+    const existing = profileToChannel.get(profileName);
+    if (existing !== undefined && existing !== channel) {
+      throw new Error(
+        `Error: Channel names "${existing}" and "${channel}" produce the same configtx profile "${profileName}". Use channel names that keep profile names unique.`
+      );
+    }
+    profileToChannel.set(profileName, channel);
+  });
+}
+
 export function createConfigtxProfiles(args: SingleArg[]): string {
-  const profiles = args.map(({ channel, channelType }) => {
-    const configtxProfileName = channel.replace(/(^\w|-\w)/g, (t) => t.replace(/-/, "").toUpperCase());
+  assertUniqueConfigtxProfileNames(args.map((arg) => arg.channel));
+
+  const profiles: string[] = [];
+  const seenProfiles = new Set<string>();
+  args.forEach(({ channel, channelType }) => {
+    const profileName = configtxProfileName(channel);
+    if (seenProfiles.has(profileName)) {
+      return;
+    }
+    seenProfiles.add(profileName);
     const configtxProfileDefaults =
       channelType === "curator" ? "CuratorChannelDefaults" : "PartnerChannelDefaults";
-    return `  ${configtxProfileName}:\n    <<: *${configtxProfileDefaults}`;
+    profiles.push(`  ${profileName}:\n    <<: *${configtxProfileDefaults}`);
   });
   return `\n${profiles.join("\n")}`;
 }
@@ -289,7 +314,35 @@ function updatedFabloConfigWithEntry(
   return updated;
 }
 
-function customValidation(flags: any): void {
+export function chaincodeDirsForChannels(channels: string[], chaincodeDir: string[] | undefined): string[] {
+  if (!chaincodeDir || chaincodeDir.length === 0) {
+    return channels.map(() => defaultChaincodeDir);
+  }
+  return chaincodeDir;
+}
+
+export function assertNetworkRootOutsideChaincodeDirs(fabloRoot: string, chaincodeDirs: string[]): void {
+  const networkRoot = path.resolve(fabloRoot);
+  chaincodeDirs.forEach((dir) => {
+    const chaincodeDirectory = path.resolve(dir);
+    if (isEqualOrInside(networkRoot, chaincodeDirectory)) {
+      throw new Error(
+        `Error: Network root "${networkRoot}" must not equal chaincode directory "${chaincodeDirectory}" or contain it.`
+      );
+    }
+  });
+}
+
+function isEqualOrInside(directory: string, candidate: string): boolean {
+  const relative = path.relative(directory, candidate);
+  return (
+    relative === "" ||
+    (!relative.startsWith(`..${path.sep}`) && relative !== ".." && !path.isAbsolute(relative))
+  );
+}
+
+export function customValidation(flags: any): void {
+  flags.chaincodeDir = chaincodeDirsForChannels(flags.channel ?? [], flags.chaincodeDir);
   const { channel, channelType, chaincodeName, chaincodeDir, envConfig, fabloRoot } = flags;
 
   /*
@@ -399,6 +452,8 @@ function customValidation(flags: any): void {
       }
     });
 
+  assertUniqueConfigtxProfileNames(channel);
+
   /*
     Watch mode
   */
@@ -407,6 +462,8 @@ function customValidation(flags: any): void {
       throw new Error("Error: Watch mode suports only a network with a single chaincode.");
     }
   }
+
+  assertNetworkRootOutsideChaincodeDirs(fabloRoot, chaincodeDir);
 }
 
 function reduce(args: any): SingleArg[] {

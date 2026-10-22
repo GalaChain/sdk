@@ -72,6 +72,16 @@ it("should deserialize string array response", () => {
   expect(deserialized.Data).toEqual(["GALA1", "GALA2"]);
 });
 
+it("should reject a response without a numeric status", () => {
+  expect(() => GalaChainResponse.deserialize(DummyClass, "{}")).toThrow("Chain response is missing a status");
+  expect(() => GalaChainResponse.deserialize(DummyClass, { Status: "1" })).toThrow(
+    "Chain response is missing a status"
+  );
+  expect(() => GalaChainResponse.deserialize(DummyClass, { Status: 2, Data: {} })).toThrow(
+    "Chain response is missing a status"
+  );
+});
+
 it("should deserialize error response", () => {
   // Given
   const responseString = `{"Status":0,"Message":"No object found","ErrorCode":404,"ErrorKey":"NOT_FOUND"}`;
