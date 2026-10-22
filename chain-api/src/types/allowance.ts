@@ -33,6 +33,7 @@ import { JSONSchema } from "class-validator-jsonschema";
 import {
   ArrayUniqueObjects,
   BigNumberIsInteger,
+  BigNumberIsNotNegative,
   BigNumberIsPositive,
   BigNumberProperty,
   EnumProperty,
@@ -315,6 +316,8 @@ export class GrantAllowanceDto extends SubmitCallDTO {
       `By default set to ${GrantAllowanceDto.DEFAULT_EXPIRES}.`
   })
   @IsOptional()
+  @Min(0)
+  @IsInt()
   expires?: number;
 
   @JSONSchema({
@@ -382,6 +385,8 @@ export class HighThroughputGrantAllowanceDto extends SubmitCallDTO {
       `By default set to ${GrantAllowanceDto.DEFAULT_EXPIRES}.`
   })
   @IsOptional()
+  @Min(0)
+  @IsInt()
   expires?: number;
 }
 
@@ -486,7 +491,7 @@ export class RefreshAllowanceDto extends ChainCallDTO {
   @IsNotEmpty()
   public allowanceKey: AllowanceKey;
 
-  @BigNumberIsPositive()
+  @BigNumberIsNotNegative()
   @BigNumberIsInteger()
   @BigNumberProperty()
   public uses: BigNumber;
