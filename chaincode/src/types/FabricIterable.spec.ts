@@ -12,7 +12,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-import { asyncIterator, fabricIterable, filter, prepend } from "./FabricIterable";
+import { asyncIterator, fabricIterable, filter, prepend, readBeforeClose } from "./FabricIterable";
 
 const getAllResults = async <T>(iterator: AsyncIterator<T>): Promise<T[]> => {
   const iterable = fabricIterable(iterator);
@@ -79,4 +79,110 @@ prependTestCases.forEach(({ values, toPrepend, expected }) => {
     // Then
     expect(result).toEqual(expected);
   });
+});
+
+it("should resolve to an iterator and close the source", async () => {
+  // Given
+  let closed = false;
+  const source: AsyncIterator<number> = {
+    next: async () => ({ value: 1, done: false }),
+    return: async () => {
+      closed = true;
+      return { value: undefined, done: true };
+    }
+  };
+
+  // When
+  const iterator = await fabricIterable(filter((value) => value > 0, source));
+  const first = await iterator.next();
+  await iterator.close();
+
+  // Then
+  expect(first).toEqual({ value: 1, done: false });
+  expect(closed).toBe(true);
+});
+
+it("should close the source when iteration stops early", async () => {
+  // Given
+  let closed = false;
+  const source: AsyncIterator<number> = {
+    next: async () => ({ value: 1, done: false }),
+    return: async () => {
+      closed = true;
+      return { value: undefined, done: true };
+    }
+  };
+  const iterable = fabricIterable(
+    prepend(
+      [0],
+      filter(() => true, source)
+    )
+  );
+
+  // When
+  for await (const value of iterable) {
+    if (value === 0) {
+      break;
+    }
+  }
+
+  // Then
+  expect(closed).toBe(true);
+});
+
+it("should close a query that is only assigned on the first read", async () => {
+  // Given
+  let assigned = false;
+  let closed = false;
+  const source: AsyncIterator<number> = {
+    next: async () => {
+      assigned = true;
+      return { value: 1, done: false };
+    },
+    return: async () => {
+      if (!assigned) {
+        throw new TypeError("query is unset");
+      }
+      closed = true;
+      return { value: undefined, done: true };
+    }
+  };
+  const iterable = fabricIterable(prepend([0], readBeforeClose(source)));
+
+  // When
+  for await (const value of iterable) {
+    if (value === 0) {
+      break;
+    }
+  }
+
+  // Then
+  expect(closed).toBe(true);
+});
+
+it("should close an empty query before any read", async () => {
+  // Given
+  let assigned = false;
+  let closed = false;
+  const source: AsyncIterator<number> = {
+    next: async () => {
+      assigned = true;
+      closed = true;
+      return { value: undefined, done: true };
+    },
+    return: async () => {
+      if (!assigned) {
+        throw new TypeError("query is unset");
+      }
+      closed = true;
+      return { value: undefined, done: true };
+    }
+  };
+
+  // When
+  const iterator = await fabricIterable(readBeforeClose(source));
+  await iterator.close();
+
+  // Then
+  expect(closed).toBe(true);
 });
