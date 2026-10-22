@@ -54,4 +54,26 @@ describe("user admin lists", () => {
     const errors = await validate(dto);
     expect(errors.some((error) => error.property === "roles")).toBe(false);
   });
+
+  it("accepts a role update that clears every role", async () => {
+    const dto = plainToInstance(UpdateUserRolesDto, {
+      user: "client|alice",
+      roles: [],
+      uniqueKey: "roles-key"
+    });
+
+    const errors = await validate(dto);
+    expect(errors.some((error) => error.property === "roles")).toBe(false);
+  });
+
+  it("rejects a blank role name", async () => {
+    const dto = plainToInstance(UpdateUserRolesDto, {
+      user: "client|alice",
+      roles: [""],
+      uniqueKey: "roles-key"
+    });
+
+    const errors = await validate(dto);
+    expect(errors.some((error) => error.property === "roles")).toBe(true);
+  });
 });

@@ -795,7 +795,6 @@ export class UpdateUserRolesDto extends SubmitCallDTO {
 
   @JSONSchema({ description: "New set of roles for the user that will replace the old ones." })
   @IsArray()
-  @ArrayMinSize(1)
   @IsString({ each: true })
   @IsNotEmpty({ each: true })
   roles: string[];
