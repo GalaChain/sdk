@@ -12,6 +12,8 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+import { Contract, Gateway, Network } from "fabric-network";
+
 import { ChainClientBuilder, ContractConfig } from "../generic";
 import { CAClient } from "./CAClient";
 import { HFClient } from "./HFClient";
@@ -54,10 +56,7 @@ export class HFClientBuilder extends ChainClientBuilder {
   public forContract(cfg: ContractConfig): HFClient {
     const createContractPromise = async (userId: string) => {
       const gateway = await this.buildConnectedGateway(userId);
-      const network = await gateway.getNetwork(cfg.channel);
-      const contract = network.getContract(cfg.chaincode, cfg.contract);
-
-      return { contract: contract, gateway: gateway, network: network };
+      return loadGatewayContract(gateway, cfg);
     };
 
     return new HFClient(this, this.caClient.adminId, cfg, createContractPromise);
@@ -82,6 +81,20 @@ export class HFClientBuilder extends ChainClientBuilder {
     await gateway.connect(this.connectionProfile, gatewayOpts);
 
     return gateway;
+  }
+}
+
+export async function loadGatewayContract(
+  gateway: Gateway,
+  cfg: ContractConfig
+): Promise<{ contract: Contract; gateway: Gateway; network: Network }> {
+  try {
+    const network = await gateway.getNetwork(cfg.channel);
+    const contract = network.getContract(cfg.chaincode, cfg.contract);
+    return { contract: contract, gateway: gateway, network: network };
+  } catch (error) {
+    gateway.disconnect();
+    throw error;
   }
 }
 
