@@ -92,5 +92,20 @@ describe("ChainUser", () => {
         })
       );
     });
+
+    it("strips only a leading client prefix", () => {
+      const { privateKey } = genKeyPair();
+      const chainUser = new ChainUser({ name: "client|some-name", privateKey });
+
+      expect(chainUser.identityKey).toEqual("client|some-name");
+      expect(chainUser.name).toEqual("some-name");
+    });
+
+    it("rejects a name that is not a valid alias", () => {
+      const { privateKey } = genKeyPair();
+
+      expect(() => new ChainUser({ name: "", privateKey })).toThrow(/Invalid user alias/);
+      expect(() => new ChainUser({ name: "xclient|y", privateKey })).toThrow(/Invalid user alias/);
+    });
   });
 });

@@ -14,6 +14,7 @@
  */
 import BigNumber from "bignumber.js";
 
+import { ChainObject } from "./ChainObject";
 import { TokenInstance, TokenInstanceKey } from "./TokenInstance";
 
 it("should get proper value for long instance key", async () => {
@@ -83,4 +84,14 @@ it("should encode and decode successfully with $ in keys", async () => {
 
   // Then
   expect(decodedInstance).toEqual(instance);
+});
+
+it("rejects an instance id with trailing characters", () => {
+  expect(() => TokenInstance.GetCompositeKeyFromString("collection$12junk")).toThrow(/Invalid string/);
+});
+
+it("builds an instance key from the whole integer", () => {
+  expect(TokenInstance.GetCompositeKeyFromString("collection$12")).toEqual(
+    ChainObject.getCompositeKeyFromParts(TokenInstance.INDEX_KEY, ["collection", "12"])
+  );
 });
