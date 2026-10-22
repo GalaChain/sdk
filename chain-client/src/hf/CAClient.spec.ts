@@ -14,12 +14,33 @@
  */
 import FabricCAServices from "fabric-ca-client";
 import { Wallets } from "fabric-network";
+import fs from "fs";
+import os from "os";
+import path from "path";
 
 import { CAClient, enrollUser } from "./CAClient";
 
 jest.mock("fabric-ca-client", () => jest.fn());
 
-function profile(orgMsp: string): Record<string, unknown> {
+const pem = "-----BEGIN CERTIFICATE-----\nTEST\n-----END CERTIFICATE-----\n";
+
+function walletProfile(caName: string, tlsCACerts: { pem?: string; path?: string }): Record<string, unknown> {
+  return {
+    organizations: {
+      Org1MSP: { certificateAuthorities: [caName] }
+    },
+    certificateAuthorities: {
+      [caName]: {
+        url: `https://${caName}:7054`,
+        caName,
+        tlsCACerts,
+        httpOptions: { verify: true }
+      }
+    }
+  };
+}
+
+function orgProfile(orgMsp: string): Record<string, unknown> {
   return {
     organizations: {
       [orgMsp]: { certificateAuthorities: ["ca.example"] }
@@ -32,6 +53,56 @@ function profile(orgMsp: string): Record<string, unknown> {
     }
   };
 }
+
+describe("Fabric CA wallet", () => {
+  let directory: string;
+
+  beforeEach(() => {
+    directory = fs.mkdtempSync(path.join(os.tmpdir(), "ca-wallet-"));
+    (FabricCAServices as unknown as jest.Mock).mockReset();
+    (FabricCAServices as unknown as jest.Mock).mockImplementation(() => ({
+      enroll: jest.fn().mockResolvedValue({
+        certificate: "cert",
+        key: { toBytes: () => "key" }
+      })
+    }));
+  });
+
+  afterEach(() => {
+    fs.rmSync(directory, { recursive: true, force: true });
+  });
+
+  it("keeps wallets separate when the same MSP uses different authorities", async () => {
+    const first = new CAClient("Org1MSP", "admin", "pw", walletProfile("ca-one.example", { pem }));
+    const second = new CAClient("Org1MSP", "admin", "pw", walletProfile("ca-two.example", { pem }));
+    const again = new CAClient("Org1MSP", "admin", "pw", walletProfile("ca-one.example", { pem }));
+
+    const identity = {
+      credentials: { certificate: "cert", privateKey: "key" },
+      mspId: "Org1MSP",
+      type: "X.509"
+    };
+    await (await first.wallet).put("user", identity);
+
+    expect(second.wallet).not.toBe(first.wallet);
+    expect(again.wallet).toBe(first.wallet);
+    expect(await (await second.wallet).get("user")).toBeUndefined();
+    expect(await (await again.wallet).get("user")).toEqual(identity);
+  });
+
+  it("reads tlsCACerts.path as certificate contents", () => {
+    const certPath = path.join(directory, "ca.pem");
+    fs.writeFileSync(certPath, pem);
+
+    new CAClient("Org1MSP", "admin", "pw", walletProfile("ca.example", { path: certPath }));
+
+    expect(FabricCAServices).toHaveBeenCalledWith(
+      "https://ca.example:7054",
+      { trustedRoots: [pem], verify: true },
+      "ca.example"
+    );
+  });
+});
 
 function certificateOf(identity: unknown): string | undefined {
   return (identity as { credentials?: { certificate?: string } }).credentials?.certificate;
@@ -74,7 +145,7 @@ describe("enrollment retry", () => {
 
   it("registers a new user once when two callers provision together", async () => {
     enroll.mockImplementation(async ({ enrollmentID }: { enrollmentID: string }) => enrolled(enrollmentID));
-    const client = new CAClient("OrgTogether", "admin", "pw", profile("OrgTogether"));
+    const client = new CAClient("OrgTogether", "admin", "pw", orgProfile("OrgTogether"));
 
     const [first, second] = await Promise.all([
       client.getIdentityOrRegisterUser("alice"),
@@ -91,7 +162,7 @@ describe("enrollment retry", () => {
       .mockResolvedValueOnce(enrolled("admin"))
       .mockRejectedValueOnce(new Error("enroll down"))
       .mockImplementation(async ({ enrollmentID }: { enrollmentID: string }) => enrolled(enrollmentID));
-    const client = new CAClient("OrgRetry", "admin", "pw", profile("OrgRetry"));
+    const client = new CAClient("OrgRetry", "admin", "pw", orgProfile("OrgRetry"));
 
     await expect(client.getIdentityOrRegisterUser("bob")).rejects.toThrow("enroll down");
     const identity = await client.getIdentityOrRegisterUser("bob");
@@ -103,7 +174,7 @@ describe("enrollment retry", () => {
 
   it("retries administrator enrollment after a rejection", async () => {
     enroll.mockRejectedValueOnce(new Error("ca down")).mockResolvedValue(enrolled("admin"));
-    const client = new CAClient("OrgAdmin", "admin", "pw", profile("OrgAdmin"));
+    const client = new CAClient("OrgAdmin", "admin", "pw", orgProfile("OrgAdmin"));
 
     await expect(client.isReady()).rejects.toThrow("ca down");
     await expect(client.isReady()).resolves.toBe(true);
