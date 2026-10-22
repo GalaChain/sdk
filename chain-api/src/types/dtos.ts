@@ -17,6 +17,7 @@ import {
   ArrayMaxSize,
   ArrayMinSize,
   IsArray,
+  IsBoolean,
   IsInt,
   IsNotEmpty,
   IsNumber,
@@ -445,6 +446,7 @@ export class BatchDto extends ChainCallDTO {
       "Default: false."
   })
   @IsOptional()
+  @IsBoolean()
   noPartialSuccess?: boolean;
 
   @Type(() => BatchOperationDto)
