@@ -514,6 +514,26 @@ describe("TrustConnectClient", () => {
   });
 });
 
+describe("submit response envelope", () => {
+  it("rejects a body without a numeric status", async () => {
+    mockFetch({});
+    const client = new BrowserConnectClient();
+
+    await expect(
+      client.submit({ method: "Ping", payload: {}, sign: false, url: "https://example.com" })
+    ).rejects.toThrow("Chain response is missing a status");
+  });
+
+  it("rejects a body whose status is not a number", async () => {
+    mockFetch({ Status: "1", Data: { ok: true } });
+    const client = new BrowserConnectClient();
+
+    await expect(
+      client.submit({ method: "Ping", payload: {}, sign: false, url: "https://example.com" })
+    ).rejects.toThrow("Chain response is missing a status");
+  });
+});
+
 describe("validated submission", () => {
   class RecordingProvider extends GalaChainProvider {
     signCount = 0;
