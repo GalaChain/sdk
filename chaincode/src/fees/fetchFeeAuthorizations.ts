@@ -38,9 +38,6 @@ export interface FetchFeeAuthorizationsParams {
   year?: string;
   month?: string;
   day?: string;
-  hours?: string;
-  minutes?: string;
-  feeCode?: string;
   txId?: string;
   bookmark?: string;
   limit?: number;
@@ -64,9 +61,6 @@ export async function fetchFeeAuthorizations(
     data.year,
     data.month,
     data.day,
-    data.hours,
-    data.minutes,
-    data.feeCode,
     data.txId
   );
 

@@ -14,13 +14,15 @@
  */
 import { MintRequestDto } from "@gala-chain/api";
 
+import { tokenClassGroupKey } from "./tokenClassGroupKey";
+
 export function indexMintRequests(requests: MintRequestDto[]): Record<string, MintRequestDto[]> {
   const hash = {};
 
   for (let i = 0; i < requests.length; i++) {
     const { collection, category, type, additionalKey } = requests[i];
 
-    const key = `${collection}_${category}_${type}_${additionalKey}`;
+    const key = tokenClassGroupKey(collection, category, type, additionalKey);
 
     hash[key] = hash[key] ?? [];
 

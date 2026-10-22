@@ -64,6 +64,11 @@ describe("private key", () => {
 
   it("should throw an error for invalid private key", () => {
     expect(() => signatures.normalizePrivateKey(invalidPrivateKey)).toThrow(/Invalid private key/);
+    try {
+      signatures.normalizePrivateKey(invalidPrivateKey);
+    } catch (e) {
+      expect((e as Error).message).not.toContain(invalidPrivateKey);
+    }
   });
 
   it("should normalize private key", () => {
