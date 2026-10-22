@@ -769,6 +769,7 @@ export class UpdateSignersDto extends SubmitCallDTO {
     description: "Array of user refs of signers to add (typically Ethereum addresses, or user aliases)."
   })
   @IsOptional()
+  @IsArray()
   @IsUserRef({ each: true })
   @IsNotEmpty({ each: true })
   toAdd?: UserRef[];
@@ -777,6 +778,7 @@ export class UpdateSignersDto extends SubmitCallDTO {
     description: "Array of user refs of signers to remove (typically Ethereum addresses, or user aliases)."
   })
   @IsOptional()
+  @IsArray()
   @IsUserRef({ each: true })
   @IsNotEmpty({ each: true })
   toRemove?: UserRef[];
