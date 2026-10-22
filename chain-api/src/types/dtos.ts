@@ -16,6 +16,7 @@ import { Type, instanceToInstance, plainToInstance } from "class-transformer";
 import {
   ArrayMaxSize,
   ArrayMinSize,
+  IsBoolean,
   IsInt,
   IsNotEmpty,
   IsNumber,
@@ -442,6 +443,7 @@ export class BatchDto extends ChainCallDTO {
       "Default: false."
   })
   @IsOptional()
+  @IsBoolean()
   noPartialSuccess?: boolean;
 
   @Type(() => BatchOperationDto)
