@@ -14,6 +14,7 @@
  */
 import BigNumber from "bignumber.js";
 import { plainToInstance } from "class-transformer";
+import { validate } from "class-validator";
 
 import { ExternalToken } from "./OraclePriceAssertion";
 import { TokenInstanceKey } from "./TokenInstance";
@@ -21,6 +22,7 @@ import { createValidDTO, createValidSubmitDTO } from "./dtos";
 import {
   FetchOracleAssertionsDto,
   FetchOracleDefinitionsDto,
+  OracleBridgeFeeAssertionDto,
   OracleDefinitionDto,
   OraclePriceAssertionDto,
   OraclePriceCrossRateAssertionDto
@@ -125,6 +127,27 @@ describe("oracle.ts", () => {
       bookmark: "next",
       limit: 25
     });
+  });
+
+  test("exchange rate must be positive and gala decimals must be an integer", async () => {
+    await expect(
+      createValidSubmitDTO(OraclePriceAssertionDto, {
+        oracle: mockOracle,
+        identity: mockOracleIdentity,
+        externalBaseToken: tonDetails,
+        externalQuoteToken: usdDetails,
+        exchangeRate: new BigNumber("0"),
+        timestamp: 0
+      })
+    ).rejects.toThrow(/positive/);
+
+    const fractional = plainToInstance(OracleBridgeFeeAssertionDto, { galaDecimals: 1.5 });
+    const fractionalErrors = await validate(fractional);
+    expect(fractionalErrors.some((error) => error.property === "galaDecimals")).toBe(true);
+
+    const whole = plainToInstance(OracleBridgeFeeAssertionDto, { galaDecimals: 8 });
+    const wholeErrors = await validate(whole);
+    expect(wholeErrors.some((error) => error.property === "galaDecimals")).toBe(false);
   });
 
   test("price assertion requires exactly one token on each side", async () => {

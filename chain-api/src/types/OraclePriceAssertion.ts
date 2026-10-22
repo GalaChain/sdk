@@ -19,10 +19,14 @@ import {
   IsNumber,
   IsOptional,
   Validate,
+  ValidateBy,
+  ValidateIf,
   ValidateNested,
   ValidationArguments,
+  ValidationOptions,
   ValidatorConstraint,
-  ValidatorConstraintInterface
+  ValidatorConstraintInterface,
+  buildMessage
 } from "class-validator";
 import { JSONSchema } from "class-validator-jsonschema";
 
@@ -30,6 +34,21 @@ import { ChainKey } from "../utils";
 import { BigNumberProperty } from "../validators";
 import { ChainObject } from "./ChainObject";
 import { TokenInstanceKey } from "./TokenInstance";
+
+export function PositiveFiniteRate(validationOptions?: ValidationOptions) {
+  return ValidateBy(
+    {
+      name: "positiveFiniteRate",
+      validator: {
+        validate(value: unknown) {
+          return BigNumber.isBigNumber(value) && value.isFinite() && value.isGreaterThan(0);
+        },
+        defaultMessage: buildMessage(() => "rate must be positive and finite", validationOptions)
+      }
+    },
+    validationOptions
+  );
+}
 
 function tokenSidePresent(value: unknown): boolean {
   return value !== undefined && value !== null;
@@ -138,6 +157,7 @@ export class OraclePriceAssertion extends ChainObject {
   @JSONSchema({
     description: "How much of the quoteToken is needed to purchase one unit of the baseToken."
   })
+  @PositiveFiniteRate()
   @Validate(ExactlyOneBaseTokenConstraint)
   @Validate(ExactlyOneQuoteTokenConstraint)
   @BigNumberProperty()

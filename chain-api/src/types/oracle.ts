@@ -38,7 +38,8 @@ import {
   ExactlyOneBaseTokenConstraint,
   ExactlyOneQuoteTokenConstraint,
   ExternalToken,
-  OraclePriceAssertion
+  OraclePriceAssertion,
+  PositiveFiniteRate
 } from "./OraclePriceAssertion";
 import { OraclePriceCrossRateAssertion } from "./OraclePriceCrossRateAssertion";
 import { TokenClassKey } from "./TokenClass";
@@ -211,6 +212,7 @@ export class OraclePriceAssertionDto extends SubmitCallDTO {
   @JSONSchema({
     description: "How much of the quoteToken is needed to purchase one unit of the baseToken."
   })
+  @PositiveFiniteRate()
   @Validate(ExactlyOneBaseTokenConstraint)
   @Validate(ExactlyOneQuoteTokenConstraint)
   @BigNumberProperty()
@@ -308,6 +310,7 @@ export class OraclePriceCrossRateAssertionDto extends SubmitCallDTO {
   @JSONSchema({
     description: "Cross rate for baseToken and quoteToken, calculated from the crossRateToken exchange rates."
   })
+  @PositiveFiniteRate()
   @BigNumberProperty()
   crossRate: BigNumber;
 
@@ -475,6 +478,7 @@ export class OracleBridgeFeeAssertionDto extends SubmitCallDTO {
       "Rounding decimals used for estimatedTotalTxFeeInGala. " +
       "Expected to match $GALA TokenClass.decimals."
   })
+  @IsInt()
   @Min(0)
   @Max(32)
   public galaDecimals: number;
