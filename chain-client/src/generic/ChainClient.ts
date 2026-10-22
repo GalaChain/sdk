@@ -48,15 +48,13 @@ export abstract class ChainClient {
 
   abstract disconnect(): Promise<void>;
 
-  abstract forUser(userId: string, secret?: string): ChainClient;
-
   extendAPI<T extends object>(apiHandlerFn: (_: ChainClient) => T): this & T {
     const handler = apiHandlerFn(this);
     return new Proxy<this & T>(this as this & T, {
       get(target: ChainClient & T, p: string): unknown {
         // eslint-disable-next-line @typescript-eslint/ban-ts-comment
         // @ts-ignore
-        return p in handler ? handler[p] : target[p];
+        return Object.prototype.hasOwnProperty.call(handler, p) ? handler[p] : target[p];
       }
     });
   }
