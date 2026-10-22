@@ -393,6 +393,15 @@ describe("non-fungible", () => {
     expect(balance.getNftInstanceCount()).toEqual(2);
   });
 
+  it("should keep nft instance ids in numeric order", () => {
+    const balance = emptyBalance();
+
+    balance.addInstance(new BigNumber(10));
+    balance.addInstance(new BigNumber(2));
+
+    expect(balance.getNftInstanceIds()).toEqual([new BigNumber(2), new BigNumber(10)]);
+  });
+
   it("should fail to add nft instance if instance already exists", () => {
     // Given
     const balance = emptyBalance();

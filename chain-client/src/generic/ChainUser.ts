@@ -32,8 +32,12 @@ export class ChainUser {
       this.prefix = "eth";
       this.name = this.ethAddress;
     } else {
+      const name = config.name.startsWith("client|") ? config.name.slice("client|".length) : config.name;
+      if (name.length === 0 || name.includes("|")) {
+        throw new Error(`Invalid user alias: ${config.name}`);
+      }
       this.prefix = "client";
-      this.name = config.name.replace("client|", "");
+      this.name = name;
     }
 
     this.identityKey = `${this.prefix}|${this.name}` as UserAlias;
