@@ -12,7 +12,9 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-import { calculatePersonalSignPrefix } from "./helpers";
+import { Wallet } from "ethers";
+
+import { calculatePersonalSignPrefix, recoverPublicKeyFromPersonalSign } from "./helpers";
 
 describe("calculatePersonalSignPrefix", () => {
   it("should return the correct prefix for a simple payload", () => {
@@ -75,5 +77,18 @@ describe("calculatePersonalSignPrefix", () => {
     const expectedPrefix = "\u0019Ethereum Signed Message:\n1044";
 
     expect(prefix).toBe(expectedPrefix);
+  });
+});
+
+describe("recoverPublicKeyFromPersonalSign", () => {
+  it("recovers the signer public key and address from a personal sign", async () => {
+    const wallet = new Wallet("0x3b19099e96dccf44e1dfc13c89c7e490d902a96b0791faf185e194ae0e71786d");
+
+    const result = await recoverPublicKeyFromPersonalSign("I <3 GalaChain", (message) =>
+      wallet.signMessage(message)
+    );
+
+    expect(result.recoveredAddress).toEqual(wallet.address);
+    expect(result.publicKey.startsWith("0x04")).toBe(true);
   });
 });

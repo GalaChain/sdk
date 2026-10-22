@@ -12,9 +12,12 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+import { createRequire } from "module";
+
 import { ChainClientBuilder, loadJson } from "./generic";
-import { HFClientBuilder } from "./hf";
 import { RestApiClientBuilder, loadRestApiConfig } from "./rest-api";
+
+const nodeRequire = createRequire(__filename);
 
 export interface HFClientConfig {
   orgMsp: string;
@@ -48,6 +51,7 @@ function forConnectionProfile(hf: HFClientConfig): ChainClientBuilder {
     throw new Error("Missing user pass. Please provide it manually or in GC_USER_PASS environment variable.");
   }
 
+  const { HFClientBuilder } = nodeRequire("./hf") as typeof import("./hf");
   return new HFClientBuilder(hf.orgMsp, userId, adminPass, connectionProfile);
 }
 
