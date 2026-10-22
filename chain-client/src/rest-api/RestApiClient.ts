@@ -28,6 +28,7 @@ import { ContractAPI } from "./GlobalRestApiConfig";
 import { RestApiAdminCredentials, SetContractApiParams, globalRestApiConfig } from "./GlobalRestApiConfig";
 import { catchAxiosError } from "./catchAxiosError";
 import { RestApiConfig } from "./loadRestApiConfig";
+import { withRequestTimeout } from "./requestTimeout";
 
 async function getPath(
   restApiUrl: string,
@@ -35,7 +36,7 @@ async function getPath(
   method: string,
   isWrite: boolean
 ): Promise<string> {
-  const { api, contractPath } = globalRestApiConfig.getContractApi(cfg);
+  const { api, contractPath } = globalRestApiConfig.getContractApi(restApiUrl, cfg);
 
   const methodApi = api.methods.find((m) => m.methodName === method);
 
@@ -106,15 +107,10 @@ export class RestApiClient extends ChainClient {
     const serialized = JSON.parse(dto ? serialize(dto) : "{}");
 
     const response = await axios
-      .post<Record<string, unknown>>(path, serialized)
+      .post<Record<string, unknown>>(path, serialized, withRequestTimeout())
       .catch((e) => catchAxiosError(e));
 
     return GalaChainResponse.deserialize<T>(responseType, response.data ?? {});
-  }
-
-  public forUser(userId: string): ChainClient {
-    console.warn(`Ignoring forUser(${userId}) for RestApiClient`);
-    return this;
   }
 
   public static async getContractApis(
@@ -128,7 +124,7 @@ export class RestApiClient extends ChainClient {
       for (const contract of channel.contracts) {
         const contractPath = `${channel.pathFragment}/${contract.pathFragment}`;
         const getApiPath = `${restApiUrl}/${contractPath}/GetContractAPI`;
-        const apiResponse = await axios.post(getApiPath);
+        const apiResponse = await axios.post(getApiPath, undefined, withRequestTimeout());
 
         if (!GalaChainResponse.isSuccess<ContractAPI>(apiResponse.data)) {
           throw new Error(

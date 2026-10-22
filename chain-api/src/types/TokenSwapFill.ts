@@ -14,12 +14,13 @@
  */
 import BigNumber from "bignumber.js";
 import { Exclude } from "class-transformer";
-import { IsNotEmpty, IsPositive } from "class-validator";
+import { IsNotEmpty, IsOptional, IsPositive, IsString } from "class-validator";
 import { JSONSchema } from "class-validator-jsonschema";
 
 import { ChainKey } from "../utils";
 import { BigNumberIsPositive, BigNumberProperty, IsUserAlias } from "../validators";
 import { ChainObject } from "./ChainObject";
+import { compositeKeyOmittingUnset } from "./compositeKey";
 
 export class TokenSwapFill extends ChainObject {
   @Exclude()
@@ -39,6 +40,21 @@ export class TokenSwapFill extends ChainObject {
   })
   @IsPositive()
   public created: number;
+
+  @ChainKey({ position: 3 })
+  @IsOptional()
+  @IsString()
+  @IsNotEmpty()
+  @JSONSchema({
+    description:
+      "Set when the same swap is filled more than once by the same user in one transaction, so each fill has its own key. " +
+      "Omitted on the first fill."
+  })
+  public fillOrdinal?: string;
+
+  public getCompositeKey(): string {
+    return compositeKeyOmittingUnset(this, TokenSwapFill.INDEX_KEY, ["fillOrdinal"]);
+  }
 
   @BigNumberIsPositive()
   @BigNumberProperty()

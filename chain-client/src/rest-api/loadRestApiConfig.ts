@@ -12,9 +12,8 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-import { ValidationError } from "class-validator";
 import fs from "fs";
-import { Schema, Validator } from "jsonschema";
+import { Schema, ValidationError, Validator } from "jsonschema";
 
 export interface ContractConfig {
   pathFragment: string;
@@ -25,6 +24,7 @@ export interface ContractConfig {
 export interface ChannelConfig {
   pathFragment: string;
   channelName: string;
+  asLocalHost?: boolean;
   contracts: ContractConfig[];
 }
 
@@ -38,31 +38,42 @@ export const restApiJsonSchema: Schema = {
     IChannelConfig: {
       properties: {
         channelName: {
-          type: "string"
+          type: "string",
+          minLength: 1
         },
         contracts: {
           items: {
             $ref: "#/definitions/IContractConfig"
           },
+          minItems: 1,
           type: "array"
         },
         pathFragment: {
-          type: "string"
+          type: "string",
+          minLength: 1
+        },
+        asLocalHost: {
+          type: "boolean"
         }
       },
+      additionalProperties: false,
       required: ["channelName", "contracts", "pathFragment"] as ["channelName", "contracts", "pathFragment"],
       type: "object"
     },
     IContractConfig: {
+      additionalProperties: false,
       properties: {
         chaincodeName: {
-          type: "string"
+          type: "string",
+          minLength: 1
         },
         contractName: {
-          type: "string"
+          type: "string",
+          minLength: 1
         },
         pathFragment: {
-          type: "string"
+          type: "string",
+          minLength: 1
         }
       },
       required: ["chaincodeName", "contractName", "pathFragment"] as [
@@ -78,21 +89,30 @@ export const restApiJsonSchema: Schema = {
       items: {
         $ref: "#/definitions/IChannelConfig"
       },
+      minItems: 1,
       type: "array"
     }
   },
+  additionalProperties: false,
   required: ["channels"] as ["channels"],
   type: "object"
 } as const;
 
 function loadJson(path: string): Record<string, unknown> {
   const content = fs.readFileSync(path).toString();
+  let parsed: unknown;
 
   try {
-    return JSON.parse(content);
+    parsed = JSON.parse(content);
   } catch (e) {
     throw new Error(`Failed to parse JSON at ${path}: ${e}`);
   }
+
+  if (parsed === null || typeof parsed !== "object" || Array.isArray(parsed)) {
+    throw new Error(`Failed to parse JSON at ${path}: expected an object`);
+  }
+
+  return parsed as Record<string, unknown>;
 }
 
 export function loadRestApiConfig(configPath: string): RestApiConfig {
@@ -101,23 +121,33 @@ export function loadRestApiConfig(configPath: string): RestApiConfig {
   const validator = new Validator();
   const validation = validator.validate(json, restApiJsonSchema);
 
-  if (validation.valid) {
-    return json as unknown as RestApiConfig;
-  } else {
+  if (!validation.valid) {
     throw new Error(getValidationErrorMessage(validation.errors));
+  }
+
+  const config = json as unknown as RestApiConfig;
+  assertUniqueNames(config);
+  return config;
+}
+
+function assertUniqueNames(config: RestApiConfig): void {
+  const channelNames = new Set<string>();
+  for (const channel of config.channels) {
+    if (channelNames.has(channel.channelName)) {
+      throw new Error(`Duplicate channel ${channel.channelName}`);
+    }
+    channelNames.add(channel.channelName);
+
+    const contractNames = new Set<string>();
+    for (const contract of channel.contracts) {
+      if (contractNames.has(contract.contractName)) {
+        throw new Error(`Duplicate contract ${contract.contractName} on channel ${channel.channelName}`);
+      }
+      contractNames.add(contract.contractName);
+    }
   }
 }
 
 function getValidationErrorMessage(validationErrors: ValidationError[]): string {
-  return validationErrors
-    .map((e) => {
-      const targetInfo = typeof e.target === "object" ? ` of ${e.target.constructor?.name ?? e.target}` : "";
-      const intro = `Property '${e.property}'${targetInfo} has failed the following constraints:`;
-      const constraints = e.constraints ?? {};
-      const details = Object.keys(constraints)
-        .sort()
-        .map((k) => `${k} (${constraints[k]})`);
-      return `${intro} ${details.join(", ")}`;
-    })
-    .join(". ");
+  return validationErrors.map((error) => `${error.property} ${error.message}`).join(". ");
 }

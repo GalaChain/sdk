@@ -31,7 +31,6 @@
     "tslib": "^2.6.2"
   },
   "peerDependencies": {
-    "class-validator": "0.14.2",
     "fabric-ca-client": "*",
     "fabric-network": "*"
   },

@@ -1,0 +1,94 @@
+/*
+ * Copyright (c) Gala Games Inc. All rights reserved.
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+import BigNumber from "bignumber.js";
+import { plainToInstance } from "class-transformer";
+import { validate } from "class-validator";
+
+import {
+  CreateTokenClassDto,
+  GrantAllowanceQuantity,
+  TokenClass,
+  UserAlias,
+  createValidChainObject
+} from "../types";
+import { BigNumberProperty } from "./transform-decorators";
+
+class OptionalInfinityQuantity {
+  @BigNumberProperty({ allowInfinity: true })
+  quantity: BigNumber;
+}
+
+describe("token class numbers", () => {
+  const tokenClassKey = {
+    collection: "CC",
+    category: "Currency",
+    type: "TEST",
+    additionalKey: "none"
+  };
+
+  it("rejects a fractional token decimal precision", async () => {
+    const dto = plainToInstance(CreateTokenClassDto, {
+      tokenClass: tokenClassKey,
+      name: "Name",
+      symbol: "SYM",
+      description: "A token",
+      image: "http://example.com/a.png",
+      decimals: 1.5,
+      uniqueKey: "decimals-key"
+    });
+
+    const errors = await validate(dto);
+    expect(errors.some((error) => error.property === "decimals")).toBe(true);
+  });
+
+  it("accepts an infinite max supply on a persisted token class", async () => {
+    const tokenClass = await createValidChainObject(TokenClass, {
+      ...tokenClassKey,
+      network: "GC",
+      decimals: 0,
+      maxSupply: new BigNumber("Infinity"),
+      isNonFungible: false,
+      maxCapacity: new BigNumber("Infinity"),
+      authorities: ["client|admin" as UserAlias],
+      name: "Name",
+      symbol: "SYM",
+      description: "A token",
+      image: "http://example.com/a.png",
+      totalBurned: new BigNumber("0"),
+      totalMintAllowance: new BigNumber("0"),
+      totalSupply: new BigNumber("0")
+    });
+
+    expect(tokenClass.maxSupply.isEqualTo(new BigNumber("Infinity"))).toBe(true);
+  });
+
+  it("rejects NaN when infinity is allowed and still accepts positive infinity", async () => {
+    const nanQuantity = plainToInstance(OptionalInfinityQuantity, { quantity: "NaN" });
+    const negativeInfinity = plainToInstance(OptionalInfinityQuantity, { quantity: "-Infinity" });
+    const positiveInfinity = plainToInstance(OptionalInfinityQuantity, { quantity: "Infinity" });
+
+    expect(await validate(nanQuantity)).not.toHaveLength(0);
+    expect(await validate(negativeInfinity)).not.toHaveLength(0);
+    expect(await validate(positiveInfinity)).toHaveLength(0);
+
+    const allowance = plainToInstance(GrantAllowanceQuantity, {
+      user: "client|alice",
+      quantity: "NaN"
+    });
+    const allowanceErrors = await validate(allowance);
+    expect(allowanceErrors.some((error) => error.property === "quantity")).toBe(true);
+    expect(JSON.stringify(allowanceErrors)).toContain("NaN");
+  });
+});

@@ -38,4 +38,26 @@ describe("KeyGen Command", () => {
     await fs.unlink(`${target}.pub`);
     await fs.unlink(target);
   });
+
+  it("refuses to overwrite an existing private key file", async () => {
+    const target = path.resolve(__dirname, "./test-key-existing");
+    await fs.writeFile(target, "existing-secret", { mode: 0o600 });
+
+    await expect(KeyGen.run([target])).rejects.toThrow(/Refusing to overwrite existing key file/);
+    await expect(fs.readFile(target, "utf8")).resolves.toEqual("existing-secret");
+
+    await fs.unlink(target);
+  });
+
+  it("writes a new private key with owner-only permissions", async () => {
+    const target = path.resolve(__dirname, "./test-key-mode");
+
+    await KeyGen.run([target]);
+
+    const info = await fs.stat(target);
+    expect(info.mode & 0o777).toEqual(0o600);
+
+    await fs.unlink(`${target}.pub`);
+    await fs.unlink(target);
+  });
 });
