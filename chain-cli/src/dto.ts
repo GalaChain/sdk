@@ -48,4 +48,5 @@ export interface ChaincodeInfoDto {
   adminPublicKey: string;
   lastUpdated: string;
   developersPublicKeys: string[];
+  operationId?: string;
 }
