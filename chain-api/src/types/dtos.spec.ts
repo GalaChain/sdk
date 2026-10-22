@@ -219,6 +219,24 @@ describe("ChainCallDTO", () => {
     expect(verify).toThrow("isSignatureValid is not supported for multisig DTOs");
   });
 
+  it("should treat a zero expiration as present when adding another signature", () => {
+    // Given
+    const { privateKey } = signatures.genKeyPair();
+    const dto = new TestDto();
+    dto.amounts = [new BigNumber("12.3")];
+    dto.signerAddress = asValidUserRef("0x0000000000000000000000000000000000000123");
+    dto.dtoOperation = "test-channel_test-chaincode_test-method";
+    dto.dtoExpiresAt = 0;
+    dto.sign(privateKey);
+
+    // When
+    const signAgain = () => dto.sign(privateKey);
+
+    // Then
+    expect(signAgain).not.toThrow(/dtoExpiresAt is required/);
+    expect(dto.multisig).toHaveLength(2);
+  });
+
   it("should throw an error when signing a multisig DTO with signerPublicKey", () => {
     // Given
     const { privateKey } = signatures.genKeyPair();

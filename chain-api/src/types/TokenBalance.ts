@@ -688,7 +688,7 @@ export class TokenHold {
       if (params.lockAuthority) {
         this.lockAuthority = params.lockAuthority;
       }
-      if (params.vestingPeriodStart) {
+      if (params.vestingPeriodStart !== undefined) {
         this.vestingPeriodStart = params.vestingPeriodStart;
       }
     }
@@ -754,9 +754,14 @@ export class TokenHold {
       return new BigNumber(0);
     }
 
+    const vestingDuration = this.totalTimeOfVestingPeriod();
+    if (vestingDuration === 0) {
+      return new BigNumber(0);
+    }
+
     // if the current time is between the vesting vestingPeriodStart and expires, the quantity is partially unlocked
     // Multiply before divide to preserve precision with large time values
-    const vestedQuantity = this.quantity.times(timeSinceStart).div(this.totalTimeOfVestingPeriod());
+    const vestedQuantity = this.quantity.times(timeSinceStart).div(vestingDuration);
     return this.quantity.minus(vestedQuantity);
   }
 

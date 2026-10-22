@@ -90,3 +90,27 @@ it("should take error payload", () => {
   expect(error2.payload).toEqual({ key: "abc" });
   expect(error2.key).toEqual("ABC_NOT_FOUND");
 });
+
+it("does not treat a plain object as a chain error", () => {
+  const plain = { key: "NOT_FOUND", code: ErrorCode.NOT_FOUND, message: "missing" };
+
+  expect(ChainError.isChainError(plain)).toEqual(false);
+  expect(ChainError.matches(plain, ErrorCode.NOT_FOUND)).toEqual(false);
+  try {
+    ChainError.recover(plain, ErrorCode.NOT_FOUND);
+    fail("expected the original object to be rethrown");
+  } catch (e) {
+    expect(e).toBe(plain);
+  }
+});
+
+it("does not crash when the thrown value is a primitive", () => {
+  expect(ChainError.isChainError("hello")).toEqual(false);
+  expect(ChainError.matches("hello" as unknown as { message?: string }, ErrorCode.NOT_FOUND)).toEqual(false);
+  try {
+    ChainError.recover("hello" as unknown as { message?: string }, ErrorCode.NOT_FOUND);
+    fail("expected the original value to be rethrown");
+  } catch (e) {
+    expect(e).toBe("hello");
+  }
+});
