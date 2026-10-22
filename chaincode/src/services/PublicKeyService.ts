@@ -394,6 +394,10 @@ export class PublicKeyService {
       }
     }
 
+    if (!Array.isArray(roles) || roles.some((role) => typeof role !== "string" || role.length === 0)) {
+      throw new ValidationFailedError("roles must be an array of non-empty strings");
+    }
+
     const currentRolesSet = new Set(userProfile.roles);
     const newRolesSet = new Set(roles);
 
