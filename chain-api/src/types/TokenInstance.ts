@@ -356,11 +356,14 @@ export class TokenInstance extends ChainObject {
   public static GetCompositeKeyFromString(tokenCid: string): string {
     const idParts = tokenCid.split(ChainObject.ID_SPLIT_CHAR);
 
-    // We expect two parts, and for the second one to be a number
-    if (idParts.length !== 2 || Number.isNaN(Number.parseInt(idParts[1]))) {
+    const instanceText = idParts[1];
+    const canonicalInstance = /^(0|[1-9]\d*)$/.test(instanceText ?? "");
+
+    // We expect two parts, and for the second one to be a canonical non-negative integer
+    if (idParts.length !== 2 || !canonicalInstance) {
       throw new Error(`Invalid string passed to TokenInstance.GetCompositeKeyFromString : ${tokenCid}`);
     } else {
-      return ChainObject.getCompositeKeyFromParts(TokenInstance.INDEX_KEY, idParts);
+      return ChainObject.getCompositeKeyFromParts(TokenInstance.INDEX_KEY, [idParts[0], instanceText]);
     }
   }
 
