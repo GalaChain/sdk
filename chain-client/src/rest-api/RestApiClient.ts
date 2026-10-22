@@ -36,7 +36,7 @@ async function getPath(
   method: string,
   isWrite: boolean
 ): Promise<string> {
-  const { api, contractPath } = globalRestApiConfig.getContractApi(cfg);
+  const { api, contractPath } = globalRestApiConfig.getContractApi(restApiUrl, cfg);
 
   const methodApi = api.methods.find((m) => m.methodName === method);
 
@@ -111,11 +111,6 @@ export class RestApiClient extends ChainClient {
       .catch((e) => catchAxiosError(e));
 
     return GalaChainResponse.deserialize<T>(responseType, response.data ?? {});
-  }
-
-  public forUser(userId: string): ChainClient {
-    console.warn(`Ignoring forUser(${userId}) for RestApiClient`);
-    return this;
   }
 
   public static async getContractApis(

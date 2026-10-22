@@ -44,7 +44,16 @@ describe("service portal requests", () => {
   it("bounds only the start of a log stream", async () => {
     jest.useFakeTimers();
     mockedAxios.get.mockResolvedValue({
-      data: { on: () => undefined }
+      data: {
+        on(event: string, listener: () => void) {
+          if (event === "end") {
+            listener();
+          }
+        },
+        removeAllListeners() {
+          return undefined;
+        }
+      }
     });
 
     await streamLogs({ privateKey: consts.developerPrivateKey }, () => undefined);

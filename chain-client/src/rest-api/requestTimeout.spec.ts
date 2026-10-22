@@ -14,7 +14,6 @@
  */
 import axios, { AxiosError } from "axios";
 
-import { FabloRestClient } from "./FabloRestClient";
 import { RestApiClient } from "./RestApiClient";
 import { catchAxiosError } from "./catchAxiosError";
 import { DEFAULT_REQUEST_TIMEOUT_MS } from "./requestTimeout";
@@ -24,14 +23,20 @@ describe("REST request timeout", () => {
     jest.restoreAllMocks();
   });
 
-  it("bounds enrollment", async () => {
-    const post = jest.spyOn(axios, "post").mockResolvedValue({ data: { token: "token" } });
+  it("bounds a contract call", async () => {
+    const post = jest.spyOn(axios, "post").mockResolvedValue({ data: { Status: 1 } });
+    const client = new RestApiClient(
+      Promise.resolve({} as never),
+      "http://rest.example",
+      { channel: "product", chaincode: "basic", contract: "GalaChainToken" },
+      "Org1"
+    );
 
-    await FabloRestClient.enroll("http://rest.example", "user", "secret");
+    await client.post("http://rest.example/product/GalaChainToken/Ping");
 
     expect(post).toHaveBeenCalledWith(
-      "http://rest.example/user/enroll",
-      { id: "user", secret: "secret" },
+      "http://rest.example/product/GalaChainToken/Ping",
+      {},
       expect.objectContaining({ timeout: DEFAULT_REQUEST_TIMEOUT_MS })
     );
   });

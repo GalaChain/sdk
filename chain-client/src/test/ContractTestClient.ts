@@ -220,6 +220,14 @@ function buildRestApiParams(params: TestClientParamsForApi): RestApiClientConfig
   };
 }
 
+function paramsForUser<T extends { mockedChaincodeDir?: string }>(params: T, user: ChainUser): T {
+  if (params.mockedChaincodeDir === undefined) {
+    return params;
+  }
+
+  return { ...params, adminId: user.identityKey };
+}
+
 /**
  * Gets the appropriate chain client builder based on provided parameters.
  *
@@ -258,13 +266,9 @@ function createForCurator(
   user: ChainUser,
   contract: ContractConfig
 ): ChainClient & CommonContractAPI & ChainUserAPI {
-  const builder = getBuilder(defaultParams.CuratorOrg); // TODO override with user params??
+  const builder = getBuilder(paramsForUser(defaultParams.CuratorOrg, user));
 
-  return builder
-    .forContract(contract)
-    .forUser(user.name)
-    .extendAPI(commonContractAPI)
-    .extendAPI(buildChainUserAPI(user));
+  return builder.forContract(contract).extendAPI(commonContractAPI).extendAPI(buildChainUserAPI(user));
 }
 
 /**
@@ -278,13 +282,9 @@ function createForUser(
   user: ChainUser,
   contract: ContractConfig
 ): ChainClient & CommonContractAPI & ChainUserAPI {
-  const builder = getBuilder(defaultParams.UsersOrg1);
+  const builder = getBuilder(paramsForUser(defaultParams.UsersOrg1, user));
 
-  return builder
-    .forContract(contract)
-    .forUser(user.name)
-    .extendAPI(commonContractAPI)
-    .extendAPI(buildChainUserAPI(user));
+  return builder.forContract(contract).extendAPI(commonContractAPI).extendAPI(buildChainUserAPI(user));
 }
 
 /**
@@ -298,13 +298,9 @@ function createForPartner(
   user: ChainUser,
   contract: ContractConfig
 ): ChainClient & CommonContractAPI & ChainUserAPI {
-  const builder = getBuilder(defaultParams.PartnerOrg1);
+  const builder = getBuilder(paramsForUser(defaultParams.PartnerOrg1, user));
 
-  return builder
-    .forContract(contract)
-    .forUser(user.name)
-    .extendAPI(commonContractAPI)
-    .extendAPI(buildChainUserAPI(user));
+  return builder.forContract(contract).extendAPI(commonContractAPI).extendAPI(buildChainUserAPI(user));
 }
 
 /**
