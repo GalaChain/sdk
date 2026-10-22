@@ -102,7 +102,7 @@ const genericMessage =
 class IsUserAliasConstraint implements ValidatorConstraintInterface {
   validate(value: unknown, args: ValidationArguments): boolean {
     if (Array.isArray(value)) {
-      return value.every((val) => this.validate(val, args));
+      return false;
     }
     const result = validateUserAlias(value);
 
