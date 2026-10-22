@@ -12,11 +12,36 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+import { createRequire } from "module";
+
+import type { CAClient as CAClientType } from "./hf/CAClient";
+import type { HFClient as HFClientType } from "./hf/HFClient";
+import type { HFClientBuilder as HFClientBuilderType } from "./hf/HFClientBuilder";
 
 export * from "./gcclient";
-export * from "./hf";
 export * from "./rest-api";
 export * from "./generic";
 export * from "./api";
 export * from "./wire";
 export * from "./test";
+
+export declare const HFClient: typeof HFClientType;
+export declare const HFClientBuilder: typeof HFClientBuilderType;
+export declare const CAClient: typeof CAClientType;
+
+declare const exports: Record<string, unknown>;
+
+const nodeRequire = createRequire(__filename);
+const fabricExportNames = ["HFClient", "HFClientBuilder", "CAClient"] as const;
+
+function loadFabricClient(): typeof import("./hf") {
+  return nodeRequire("./hf");
+}
+
+for (const name of fabricExportNames) {
+  Object.defineProperty(exports, name, {
+    enumerable: true,
+    configurable: true,
+    get: () => loadFabricClient()[name]
+  });
+}

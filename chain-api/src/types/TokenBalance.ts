@@ -643,6 +643,7 @@ export class TokenHold {
   public readonly expires: number;
 
   @IsString()
+  @IsNotEmpty()
   @IsOptional()
   public readonly name?: string;
 
@@ -681,7 +682,7 @@ export class TokenHold {
       this.quantity = params.quantity;
       this.created = params.created;
       this.expires = params.expires ?? TokenHold.DEFAULT_EXPIRES;
-      if (params.name) {
+      if (params.name !== undefined) {
         this.name = params.name;
       }
       if (params.lockAuthority) {
