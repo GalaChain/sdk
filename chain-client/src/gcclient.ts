@@ -29,11 +29,13 @@ export interface HFClientConfig {
 function forConnectionProfile(hf: HFClientConfig): ChainClientBuilder {
   const connectionProfile = loadJson(hf.connectionProfilePath);
 
-  if (!connectionProfile.organizations?.[hf.orgMsp]) {
-    const allowedOrgs =
-      typeof connectionProfile.organizations === "object"
-        ? Object.keys(connectionProfile.organizations ?? {})
-        : [];
+  const organizations = connectionProfile.organizations;
+  const organizationRecord =
+    organizations !== null && typeof organizations === "object" && !Array.isArray(organizations)
+      ? (organizations as Record<string, unknown>)
+      : undefined;
+  if (!organizationRecord || organizationRecord[hf.orgMsp] == null) {
+    const allowedOrgs = organizationRecord ? Object.keys(organizationRecord) : [];
     throw new Error(
       `Organization ${hf.orgMsp} not found in connection profile. Allowed orgs: ${allowedOrgs.join(", ")}`
     );
