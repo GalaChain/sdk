@@ -19,6 +19,7 @@ import {
   ErrorCode,
   TokenSwapRequest,
   TokenSwapRequestInstanceOffered,
+  TokenSwapRequestInstanceWanted,
   TokenSwapRequestOfferedBy,
   TokenSwapRequestOfferedTo
 } from "@gala-chain/api";
@@ -75,6 +76,27 @@ export async function ensureTokenSwapIndexing(
 
         noOp = false;
         writes.push(expectedSwapInstance);
+      }
+    }
+
+    for (const wanted of swap.wanted) {
+      const expectedWantedInstance = plainToInstance(TokenSwapRequestInstanceWanted, {
+        ...wanted.tokenInstance,
+        swapRequestId: swapRequestId
+      });
+
+      const existingWantedInstance = await getObjectByKey(
+        ctx,
+        TokenSwapRequestInstanceWanted,
+        expectedWantedInstance.getCompositeKey()
+      ).catch(acceptNotFoundError);
+
+      if (!existingWantedInstance) {
+        await expectedWantedInstance.validateOrReject();
+        await putChainObject(ctx, expectedWantedInstance);
+
+        noOp = false;
+        writes.push(expectedWantedInstance);
       }
     }
 
