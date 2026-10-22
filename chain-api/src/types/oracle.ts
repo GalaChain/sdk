@@ -87,9 +87,11 @@ export class FetchOracleDefinitionsDto extends ChainCallDTO {
   bookmark?: string | undefined;
 
   @JSONSchema({
-    description: "(optional). Limit results set."
+    description: "Page size. Must be an integer from 1 to 10000."
   })
   @IsOptional()
+  @Min(1)
+  @Max(10 * 1000)
   @IsInt()
   limit?: number | undefined;
 }
@@ -127,9 +129,11 @@ export class FetchOracleAssertionsDto extends ChainCallDTO {
   bookmark?: string | undefined;
 
   @JSONSchema({
-    description: "(optional). Limit results set."
+    description: "Page size. Must be an integer from 1 to 10000."
   })
   @IsOptional()
+  @Min(1)
+  @Max(10 * 1000)
   @IsInt()
   limit?: number | undefined;
 }

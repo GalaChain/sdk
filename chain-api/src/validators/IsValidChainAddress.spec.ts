@@ -14,7 +14,12 @@
  */
 import { ChainCallDTO, createValidDTO } from "../types";
 import { generateSchema } from "../utils";
-import { IsValidChainAddress, isValidChainAddress } from "./IsValidChainAddress";
+import {
+  ChainAddressValidationResult,
+  IsValidChainAddress,
+  isValidChainAddress,
+  validateChainAddress
+} from "./IsValidChainAddress";
 
 class TestDto extends ChainCallDTO {
   @IsValidChainAddress()
@@ -230,6 +235,28 @@ it("should validate array of chain addresses", async () => {
   // Then
   expect(valid.addresses).toEqual(validPlain.addresses);
   await expect(invalid).rejects.toThrow("addresses property with values");
+});
+
+it("should reject a TON address whose checksum does not match", () => {
+  const valid = "UQCujECl4bNjsAjK4I62az-rqNde5citayQkU80YACWzFzQx";
+  const broken = `${valid.slice(0, -1)}0`;
+
+  expect(isValidChainAddress(valid)).toBe(true);
+  expect(isValidChainAddress(broken)).toBe(false);
+});
+
+it("should accept a Solana address that starts with a TON prefix", () => {
+  for (const address of [`UQ${"1".repeat(41)}`, `EQ${"1".repeat(41)}`]) {
+    expect(validateChainAddress(address)).toBe(ChainAddressValidationResult.VALID_SOLANA);
+  }
+});
+
+it("should reject an array where a single chain address is required", async () => {
+  const empty = createValidDTO(TestDto, { address: [] as unknown as string });
+  const nested = createValidDTO(TestDto, { address: [["client|123"]] as unknown as string });
+
+  await expect(empty).rejects.toThrow(/address/);
+  await expect(nested).rejects.toThrow(/address/);
 });
 
 it("should support schema generation", () => {

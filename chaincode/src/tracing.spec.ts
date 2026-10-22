@@ -12,6 +12,8 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+import { DiagLogLevel, diag } from "@opentelemetry/api";
+
 import {
   _resetTracingForTests,
   endTransactionSpan,
@@ -70,6 +72,35 @@ describe("tracing", () => {
 
     // Then
     expect(ok).toBe(false);
+  });
+
+  it("should restore the diagnostic logger after the startup probe", async () => {
+    // Given
+    const seen: string[] = [];
+    diag.setLogger(
+      {
+        error: (message) => {
+          seen.push(String(message));
+        },
+        warn: () => undefined,
+        info: () => undefined,
+        debug: () => undefined,
+        verbose: () => undefined
+      },
+      { logLevel: DiagLogLevel.ERROR, suppressOverrideMessage: true }
+    );
+    process.env.OTEL_EXPORTER_OTLP_ENDPOINT = "http://127.0.0.1:9";
+    process.env.OTEL_SERVICE_NAME = "test-chaincode";
+    const fetchSpy = jest.spyOn(globalThis, "fetch").mockResolvedValue(new Response("", { status: 200 }));
+    await _resetTracingForTests();
+
+    // When
+    await verifyOtelConnection();
+    fetchSpy.mockRestore();
+    diag.error("after probe");
+
+    // Then
+    expect(seen).toContain("after probe");
   });
 
   it("should start and end a span when endpoint is configured", async () => {
