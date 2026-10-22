@@ -26,10 +26,6 @@ class RecordingClient extends ChainClient {
     );
   }
 
-  public forUser(): ChainClient {
-    return this;
-  }
-
   public disconnect(): Promise<void> {
     return Promise.resolve();
   }

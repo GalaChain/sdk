@@ -19,35 +19,48 @@ import { RestApiClientBuilder } from "./RestApiClientBuilder";
 
 const contract = { channel: "product", chaincode: "assets", contract: "GalaChainToken" };
 const credentials = { adminKey: "admin", adminSecret: "secret" };
+const restConfig = {
+  channels: [
+    {
+      channelName: "product",
+      pathFragment: "product",
+      contracts: [{ chaincodeName: "assets", contractName: "GalaChainToken", pathFragment: "assets" }]
+    }
+  ]
+};
 
-function fabloProbeRejection(): Error {
-  return Object.assign(new Error("probe"), { response: { status: 400 } });
-}
-
-describe("REST client startup", () => {
+describe("chain REST client", () => {
   afterEach(() => {
     jest.restoreAllMocks();
     jest.useRealTimers();
   });
 
+  it("loads contract metadata and does not call user enrollment", async () => {
+    const url = "http://gcrest.example";
+    const get = jest.spyOn(axios, "get");
+    const post = jest.spyOn(axios, "post").mockResolvedValue({
+      data: { Status: 1, Data: { methods: [{ methodName: "Ping", isWrite: false }] } }
+    });
+    const builder = new RestApiClientBuilder(url, "Org1", credentials, restConfig);
+
+    await builder.forContract(contract).evaluateTransaction("Ping");
+
+    const urls = post.mock.calls.map((call) => String(call[0]));
+    expect(urls).toContain(`${url}/product/assets/GetContractAPI`);
+    expect(urls.some((called) => called.includes("/user/enroll"))).toBe(false);
+    expect(get).not.toHaveBeenCalled();
+  });
+
   it("retries initialization after a failed attempt", async () => {
     const url = "http://retry-init.example";
-    jest.spyOn(axios, "get").mockRejectedValue(fabloProbeRejection());
     jest
       .spyOn(axios, "post")
-      .mockRejectedValueOnce(new Error("enroll down"))
-      .mockResolvedValueOnce({ data: { token: "enrolled" } });
+      .mockRejectedValueOnce(new Error("metadata down"))
+      .mockResolvedValue({ data: { Status: 1, Data: { methods: [] } } });
 
-    globalRestApiConfig.setContractApi(url, {
-      channelName: contract.channel,
-      chaincodeName: contract.chaincode,
-      contractName: contract.contract,
-      contractPath: "product/assets",
-      api: { methods: [] }
-    });
-    const builder = new RestApiClientBuilder(url, "Org1", credentials, { channels: [] });
+    const builder = new RestApiClientBuilder(url, "Org1", credentials, restConfig);
     const first = builder.forContract(contract);
-    await expect(first.evaluateTransaction("Ping")).rejects.toThrow(/User enrollment failed/);
+    await expect(first.evaluateTransaction("Ping")).rejects.toThrow("metadata down");
     expect(globalRestApiConfig.getStatus(url)).toBe(RestApiStatus.NONE);
 
     const second = builder.forContract(contract);
@@ -58,9 +71,9 @@ describe("REST client startup", () => {
   it("does not mark initialization failed when a waiter times out", async () => {
     jest.useFakeTimers();
     const url = "http://slow-init.example";
-    jest.spyOn(axios, "get").mockImplementation(() => new Promise(() => undefined));
+    jest.spyOn(axios, "post").mockImplementation(() => new Promise(() => undefined));
 
-    const builder = new RestApiClientBuilder(url, "Org1", credentials, { channels: [] });
+    const builder = new RestApiClientBuilder(url, "Org1", credentials, restConfig);
     const client = builder.forContract(contract);
     const pending = client.evaluateTransaction("Ping");
     const assertion = expect(pending).rejects.toThrow(

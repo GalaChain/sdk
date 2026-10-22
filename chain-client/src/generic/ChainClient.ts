@@ -48,8 +48,6 @@ export abstract class ChainClient {
 
   abstract disconnect(): Promise<void>;
 
-  abstract forUser(userId: string, secret?: string): ChainClient;
-
   extendAPI<T extends object>(apiHandlerFn: (_: ChainClient) => T): this & T {
     const handler = apiHandlerFn(this);
     return new Proxy<this & T>(this as this & T, {

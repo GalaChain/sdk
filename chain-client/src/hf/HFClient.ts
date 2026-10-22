@@ -34,10 +34,6 @@ export class HFClient extends ChainClient {
     super(Promise.resolve(resolvedBuilder), userId, contractConfig, resolvedBuilder.orgMsp);
   }
 
-  public forUser(userId: string): ChainClient {
-    return new HFClient(this.resolvedBuilder, userId, this.contractConfig, this.createContractPromise);
-  }
-
   public get contract(): Promise<Contract> {
     if (this.contractPromise === undefined) {
       const pending = this.createContractPromise(this.userId).then(

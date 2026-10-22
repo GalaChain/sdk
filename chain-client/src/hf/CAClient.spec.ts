@@ -13,24 +13,18 @@
  * limitations under the License.
  */
 import FabricCAServices from "fabric-ca-client";
+import { Wallets } from "fabric-network";
 import fs from "fs";
 import os from "os";
 import path from "path";
 
 import { CAClient, enrollUser } from "./CAClient";
 
-jest.mock("fabric-ca-client", () =>
-  jest.fn().mockImplementation(() => ({
-    enroll: jest.fn().mockResolvedValue({
-      certificate: "cert",
-      key: { toBytes: () => "key" }
-    })
-  }))
-);
+jest.mock("fabric-ca-client", () => jest.fn());
 
 const pem = "-----BEGIN CERTIFICATE-----\nTEST\n-----END CERTIFICATE-----\n";
 
-function profile(caName: string, tlsCACerts: { pem?: string; path?: string }): Record<string, unknown> {
+function walletProfile(caName: string, tlsCACerts: { pem?: string; path?: string }): Record<string, unknown> {
   return {
     organizations: {
       Org1MSP: { certificateAuthorities: [caName] }
@@ -46,12 +40,32 @@ function profile(caName: string, tlsCACerts: { pem?: string; path?: string }): R
   };
 }
 
+function orgProfile(orgMsp: string): Record<string, unknown> {
+  return {
+    organizations: {
+      [orgMsp]: { certificateAuthorities: ["ca.example"] }
+    },
+    certificateAuthorities: {
+      "ca.example": {
+        url: "https://ca.example:7054",
+        caName: "ca.example"
+      }
+    }
+  };
+}
+
 describe("Fabric CA wallet", () => {
   let directory: string;
 
   beforeEach(() => {
     directory = fs.mkdtempSync(path.join(os.tmpdir(), "ca-wallet-"));
-    (FabricCAServices as unknown as jest.Mock).mockClear();
+    (FabricCAServices as unknown as jest.Mock).mockReset();
+    (FabricCAServices as unknown as jest.Mock).mockImplementation(() => ({
+      enroll: jest.fn().mockResolvedValue({
+        certificate: "cert",
+        key: { toBytes: () => "key" }
+      })
+    }));
   });
 
   afterEach(() => {
@@ -59,9 +73,9 @@ describe("Fabric CA wallet", () => {
   });
 
   it("keeps wallets separate when the same MSP uses different authorities", async () => {
-    const first = new CAClient("Org1MSP", "admin", "pw", profile("ca-one.example", { pem }));
-    const second = new CAClient("Org1MSP", "admin", "pw", profile("ca-two.example", { pem }));
-    const again = new CAClient("Org1MSP", "admin", "pw", profile("ca-one.example", { pem }));
+    const first = new CAClient("Org1MSP", "admin", "pw", walletProfile("ca-one.example", { pem }));
+    const second = new CAClient("Org1MSP", "admin", "pw", walletProfile("ca-two.example", { pem }));
+    const again = new CAClient("Org1MSP", "admin", "pw", walletProfile("ca-one.example", { pem }));
 
     const identity = {
       credentials: { certificate: "cert", privateKey: "key" },
@@ -80,13 +94,91 @@ describe("Fabric CA wallet", () => {
     const certPath = path.join(directory, "ca.pem");
     fs.writeFileSync(certPath, pem);
 
-    new CAClient("Org1MSP", "admin", "pw", profile("ca.example", { path: certPath }));
+    new CAClient("Org1MSP", "admin", "pw", walletProfile("ca.example", { path: certPath }));
 
     expect(FabricCAServices).toHaveBeenCalledWith(
       "https://ca.example:7054",
       { trustedRoots: [pem], verify: true },
       "ca.example"
     );
+  });
+});
+
+function certificateOf(identity: unknown): string | undefined {
+  return (identity as { credentials?: { certificate?: string } }).credentials?.certificate;
+}
+
+function enrolled(id: string) {
+  return {
+    certificate: `${id}-cert`,
+    key: { toBytes: () => `${id}-key` }
+  };
+}
+
+describe("enrollment retry", () => {
+  const register = jest.fn().mockResolvedValue("user-secret");
+  const enroll = jest.fn();
+
+  beforeEach(() => {
+    register.mockClear();
+    enroll.mockReset();
+    (FabricCAServices as unknown as jest.Mock).mockImplementation(() => ({ enroll, register }));
+    jest.spyOn(Wallets, "newInMemoryWallet").mockImplementation(async () => {
+      const stored = new Map<string, unknown>();
+      return {
+        get: async (id: string) => stored.get(id),
+        put: async (id: string, identity: unknown) => {
+          stored.set(id, identity);
+        },
+        getProviderRegistry: () => ({
+          getProvider: () => ({
+            getUserContext: async () => ({ name: "admin" })
+          })
+        })
+      } as never;
+    });
+  });
+
+  afterEach(() => {
+    jest.restoreAllMocks();
+  });
+
+  it("registers a new user once when two callers provision together", async () => {
+    enroll.mockImplementation(async ({ enrollmentID }: { enrollmentID: string }) => enrolled(enrollmentID));
+    const client = new CAClient("OrgTogether", "admin", "pw", orgProfile("OrgTogether"));
+
+    const [first, second] = await Promise.all([
+      client.getIdentityOrRegisterUser("alice"),
+      client.getIdentityOrRegisterUser("alice")
+    ]);
+
+    expect(register).toHaveBeenCalledTimes(1);
+    expect(first).toEqual(second);
+    expect(certificateOf(first)).toBe("alice-cert");
+  });
+
+  it("reuses the registration secret when enrollment fails", async () => {
+    enroll
+      .mockResolvedValueOnce(enrolled("admin"))
+      .mockRejectedValueOnce(new Error("enroll down"))
+      .mockImplementation(async ({ enrollmentID }: { enrollmentID: string }) => enrolled(enrollmentID));
+    const client = new CAClient("OrgRetry", "admin", "pw", orgProfile("OrgRetry"));
+
+    await expect(client.getIdentityOrRegisterUser("bob")).rejects.toThrow("enroll down");
+    const identity = await client.getIdentityOrRegisterUser("bob");
+
+    expect(register).toHaveBeenCalledTimes(1);
+    expect(enroll).toHaveBeenLastCalledWith({ enrollmentID: "bob", enrollmentSecret: "user-secret" });
+    expect(certificateOf(identity)).toBe("bob-cert");
+  });
+
+  it("retries administrator enrollment after a rejection", async () => {
+    enroll.mockRejectedValueOnce(new Error("ca down")).mockResolvedValue(enrolled("admin"));
+    const client = new CAClient("OrgAdmin", "admin", "pw", orgProfile("OrgAdmin"));
+
+    await expect(client.isReady()).rejects.toThrow("ca down");
+    await expect(client.isReady()).resolves.toBe(true);
+    expect(enroll).toHaveBeenCalledTimes(2);
   });
 });
 
