@@ -14,14 +14,67 @@
  */
 import BigNumber from "bignumber.js";
 import { Type } from "class-transformer";
-import { IsBoolean, IsNotEmpty, IsOptional, IsString, ValidateNested } from "class-validator";
+import {
+  IsBoolean,
+  IsNotEmpty,
+  IsOptional,
+  IsString,
+  ValidateBy,
+  ValidateNested,
+  ValidationOptions,
+  buildMessage
+} from "class-validator";
 import { JSONSchema } from "class-validator-jsonschema";
 
-import { BigNumberIsPositive, BigNumberProperty, EnumProperty, IsValidChainAddress } from "../validators";
+import {
+  BigNumberIsPositive,
+  BigNumberProperty,
+  ChainAddressValidationResult,
+  EnumProperty,
+  IsValidChainAddress,
+  validateChainAddress
+} from "../validators";
 import { ChainId } from "./ChainId";
 import { TokenInstance, TokenInstanceKey } from "./TokenInstance";
 import { SubmitCallDTO } from "./dtos";
 import { OracleBridgeFeeAssertionDto } from "./oracle";
+
+function recipientMatchesDestination(recipient: string, chainId: ChainId): boolean {
+  const result = validateChainAddress(recipient);
+  if (chainId === ChainId.Ethereum) {
+    return result === ChainAddressValidationResult.VALID_ETHEREUM;
+  }
+  if (chainId === ChainId.Solana) {
+    return result === ChainAddressValidationResult.VALID_SOLANA;
+  }
+  if (chainId === ChainId.TON) {
+    return result === ChainAddressValidationResult.VALID_TON;
+  }
+  return false;
+}
+
+function RecipientMatchesDestinationChain(validationOptions?: ValidationOptions) {
+  return ValidateBy(
+    {
+      name: "recipientMatchesDestinationChain",
+      validator: {
+        validate(recipient: unknown, args) {
+          const chainId = (args?.object as { destinationChainId?: ChainId } | undefined)?.destinationChainId;
+          return (
+            typeof recipient === "string" &&
+            chainId !== undefined &&
+            recipientMatchesDestination(recipient, chainId)
+          );
+        },
+        defaultMessage: buildMessage(
+          () => "recipient must be a valid address for destinationChainId",
+          validationOptions
+        )
+      }
+    },
+    validationOptions
+  );
+}
 
 @JSONSchema({
   description: "Contains properties of bridge request, i.e. a request to bridge token out from GalaChain."
@@ -56,6 +109,7 @@ export class RequestTokenBridgeOutDto extends SubmitCallDTO {
     description: "Recipient address for destination chain"
   })
   @IsValidChainAddress()
+  @RecipientMatchesDestinationChain()
   @IsNotEmpty()
   recipient: string;
 

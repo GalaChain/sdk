@@ -325,7 +325,7 @@ export async function incrementOrCreateTokenBurnCounterForTx(
     category,
     type,
     additionalKey,
-    burnedBy,
+    instance.toString(),
     `${ctx.txUnixTime}`
   ]);
 

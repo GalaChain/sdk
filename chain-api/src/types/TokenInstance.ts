@@ -20,6 +20,7 @@ import {
   IsNotEmpty,
   IsObject,
   IsOptional,
+  IsString,
   ValidateIf,
   ValidateNested
 } from "class-validator";
@@ -178,16 +179,31 @@ export class TokenInstanceQuantity extends ChainCallDTO {
     "A full or partial key of a TokenInstance, for querying or actioning one or more instances of a token."
 })
 export class TokenInstanceQueryKey extends ChainCallDTO {
+  @IsString()
   @IsNotEmpty()
   public collection: string;
 
-  @IsOptional()
+  @ValidateIf(
+    (key: TokenInstanceQueryKey) =>
+      key.category !== undefined ||
+      key.type !== undefined ||
+      key.additionalKey !== undefined ||
+      key.instance !== undefined
+  )
+  @IsString()
+  @IsNotEmpty()
   public category?: string;
 
-  @IsOptional()
+  @ValidateIf(
+    (key: TokenInstanceQueryKey) =>
+      key.type !== undefined || key.additionalKey !== undefined || key.instance !== undefined
+  )
+  @IsString()
+  @IsNotEmpty()
   public type?: string;
 
-  @IsOptional()
+  @ValidateIf((key: TokenInstanceQueryKey) => key.additionalKey !== undefined || key.instance !== undefined)
+  @IsString()
   public additionalKey?: string;
 
   @IsOptional()
@@ -246,14 +262,24 @@ export class TokenInstanceQueryKey extends ChainCallDTO {
 
   public toQueryParams() {
     const queryParams: string[] = [];
+    let omitted = false;
 
-    const publicKeyProperties = this.publicKeyProperties();
-    for (const property of publicKeyProperties) {
-      if (typeof this[property] !== "string") {
-        break;
+    for (const property of this.publicKeyProperties()) {
+      const value = this[property];
+      if (typeof value !== "string") {
+        omitted = true;
+        continue;
       }
-      queryParams.push(this[property]);
+      if (omitted) {
+        throw new Error(`Partial token key cannot include ${property} after an omitted component`);
+      }
+      queryParams.push(value);
     }
+
+    if (omitted && this.instance !== undefined) {
+      throw new Error("Partial token key cannot include instance after an omitted component");
+    }
+
     return queryParams;
   }
 }
