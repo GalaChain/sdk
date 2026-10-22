@@ -56,13 +56,16 @@ export class OracleDefinitionDto extends SubmitCallDTO {
   public name: string;
 
   @JSONSchema({
-    description: "Oracle Authorities. On-Chain identities that speak for this Oracle."
+    description:
+      "Oracle Authorities. On-Chain identities that speak for this Oracle. " +
+      "When omitted, the caller is saved as the authority."
   })
+  @IsOptional()
   @ArrayNotEmpty()
   @ArrayUnique()
   @IsString({ each: true })
   @IsNotEmpty({ each: true })
-  public authorities: string[];
+  public authorities?: string[];
 }
 
 @JSONSchema({

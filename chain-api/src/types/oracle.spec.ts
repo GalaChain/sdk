@@ -160,13 +160,30 @@ describe("oracle.ts", () => {
     ).rejects.toThrow(/exactly one of baseToken/);
   });
 
-  test("oracle authorities must be strings", async () => {
+  test("oracle authorities reject an empty list and invalid entries", async () => {
     await expect(
       createValidSubmitDTO(OracleDefinitionDto, {
         name: mockOracle,
         authorities: ["client|oracle"]
       })
     ).resolves.toBeInstanceOf(OracleDefinitionDto);
+
+    const omitted = await createValidSubmitDTO(OracleDefinitionDto, { name: mockOracle });
+    expect(omitted.authorities).toBeUndefined();
+
+    await expect(
+      createValidSubmitDTO(OracleDefinitionDto, {
+        name: mockOracle,
+        authorities: []
+      })
+    ).rejects.toThrow(/authorities/);
+
+    await expect(
+      createValidSubmitDTO(OracleDefinitionDto, {
+        name: mockOracle,
+        authorities: [""]
+      })
+    ).rejects.toThrow(/authorities/);
 
     await expect(
       createValidSubmitDTO(OracleDefinitionDto, {
