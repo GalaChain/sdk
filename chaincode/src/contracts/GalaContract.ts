@@ -346,7 +346,7 @@ export abstract class GalaContract extends Contract {
       responses.push(response);
 
       // Store the first error if it's the first error we encounter.
-      if (batchDto.noPartialSuccess && GalaChainResponse.isError(response)) {
+      if (batchDto.noPartialSuccess === true && GalaChainResponse.isError(response)) {
         throw new BatchPartialSuccessRequiredError(index, response);
       }
     }
