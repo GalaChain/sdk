@@ -118,7 +118,7 @@ export async function fetchKnownBurnCount(
   const startTimeOffset = inverseTime(ctx, lookbackTimeOffset);
   const keyLen = inverseKeyLength;
 
-  const startKey = [
+  const startKey = ChainObject.joinKeyParts([
     TokenBurnCounter.INDEX_KEY,
     token.collection,
     token.category,
@@ -126,9 +126,9 @@ export async function fetchKnownBurnCount(
     token.additionalKey,
     startTimeOffset,
     "".padStart(keyLen, "0")
-  ].join(ChainObject.MIN_UNICODE_RUNE_VALUE);
+  ]);
 
-  const endKey = [
+  const endKey = ChainObject.joinKeyParts([
     TokenBurnCounter.INDEX_KEY,
     token.collection,
     token.category,
@@ -136,7 +136,7 @@ export async function fetchKnownBurnCount(
     token.additionalKey,
     "".padStart(keyLen, "z"),
     "".padStart(keyLen, "z")
-  ].join(ChainObject.MIN_UNICODE_RUNE_VALUE);
+  ]);
 
   const iterator = ctx.stub.getStateByRange(startKey, endKey);
 

@@ -24,6 +24,38 @@ type ClassConstructor = {
 
 class GenerateSchemaError extends RuntimeError {}
 
+function stringOrNumberSchema(meta: { constraints?: unknown[] }): SchemaObject {
+  const maxLength = meta.constraints?.[0];
+  const stringSchema: SchemaObject = { type: "string" };
+  if (typeof maxLength === "number") {
+    stringSchema.maxLength = maxLength;
+  }
+  return { oneOf: [stringSchema, { type: "number" }] };
+}
+
+function designTypeSchema(
+  meta: { target: unknown; propertyName: string },
+  refPointerPrefix = "#/definitions/"
+): SchemaObject {
+  if (typeof meta.target !== "function") {
+    return {};
+  }
+  const designType = Reflect.getMetadata("design:type", meta.target.prototype, meta.propertyName);
+  if (designType === String || designType === Symbol) {
+    return { type: "string" };
+  }
+  if (designType === Number) {
+    return { type: "number" };
+  }
+  if (designType === Boolean) {
+    return { type: "boolean" };
+  }
+  if (typeof designType === "function" && designType.name) {
+    return { $ref: `${refPointerPrefix}${designType.name}` } as SchemaObject;
+  }
+  return {};
+}
+
 function customTargetConstructorToSchema(classType: ClassConstructor) {
   const schema = targetConstructorToSchema(classType, {
     additionalConverters: {
@@ -59,6 +91,13 @@ function customTargetConstructorToSchema(classType: ClassConstructor) {
           description:
             "Allowed value is a valid chain address: Ethereum (checksummed with 0x prefix), Solana (base58-encoded 32-byte public key), TON (non-bounceable mainnet format: UQ...), or GalaChain (valid user alias)."
         };
+      },
+      ["IsStringOrNumber"]: (meta) => stringOrNumberSchema(meta),
+      ["customValidation"]: (meta, options) => {
+        if (meta.name === "IsStringOrNumber") {
+          return stringOrNumberSchema(meta);
+        }
+        return designTypeSchema(meta, options?.refPointerPrefix);
       }
     },
     classTransformerMetadataStorage: defaultMetadataStorage
@@ -124,11 +163,14 @@ function updateDefinitions(
           object[k] = schema[k];
         }
       });
-    } catch (e) {
-      console.error("Error processing schema:", e.message);
-    } finally {
       object.type = "object";
       delete object["$ref"];
+    } catch (e) {
+      if (e instanceof GenerateSchemaError) {
+        throw e;
+      }
+      const message = e instanceof Error ? e.message : String(e);
+      throw new GenerateSchemaError(message);
     }
     return;
   }

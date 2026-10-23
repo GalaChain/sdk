@@ -210,3 +210,12 @@ it("should generateSchema of TestDto", async () => {
 it("should generateResponseSchema of TestDto", async () => {
   expect(generateResponseSchema(TestDto)).toEqual(expectedTestDtoResponseSchema);
 });
+
+class UnresolvedNestedValue {
+  @ValidateNested()
+  value: Record<string, string>;
+}
+
+it("fails when a nested constraint cannot be resolved", () => {
+  expect(() => generateSchema(UnresolvedNestedValue)).toThrow(/Cannot find type metadata/);
+});

@@ -16,6 +16,7 @@ import { OtelTraceContext } from "@gala-chain/api";
 import {
   Attributes,
   DiagLogLevel,
+  DiagLogger,
   ROOT_CONTEXT,
   Span,
   SpanKind,
@@ -29,6 +30,22 @@ import { OTLPTraceExporter } from "@opentelemetry/exporter-trace-otlp-proto";
 import { resourceFromAttributes } from "@opentelemetry/resources";
 import { BatchSpanProcessor, NodeTracerProvider } from "@opentelemetry/sdk-trace-node";
 import { ATTR_SERVICE_NAME, ATTR_SERVICE_VERSION } from "@opentelemetry/semantic-conventions";
+
+const OTEL_DIAG_GLOBAL_KEY = Symbol.for("opentelemetry.js.api.1");
+
+function registeredDiagLogger(): DiagLogger | undefined {
+  const api = (globalThis as Record<symbol, { diag?: DiagLogger } | undefined>)[OTEL_DIAG_GLOBAL_KEY];
+  return api?.diag;
+}
+
+function restoreDiagLogger(previousLogger: DiagLogger | undefined): void {
+  if (previousLogger) {
+    diag.setLogger(previousLogger, { logLevel: DiagLogLevel.ALL, suppressOverrideMessage: true });
+    return;
+  }
+
+  diag.disable();
+}
 
 const TRACER_NAME = "gala-chaincode";
 const TRACE_ID_RE = /^[0-9a-f]{32}$/i;
@@ -472,6 +489,7 @@ export async function verifyOtelConnection(): Promise<boolean> {
 
   // 2) Real OTLP export via the SDK
   const exportErrors: string[] = [];
+  const previousLogger = registeredDiagLogger();
   diag.setLogger(
     {
       error: (message, ...args) => {
@@ -482,7 +500,7 @@ export async function verifyOtelConnection(): Promise<boolean> {
       debug: () => undefined,
       verbose: () => undefined
     },
-    DiagLogLevel.ERROR
+    { logLevel: DiagLogLevel.ERROR, suppressOverrideMessage: true }
   );
 
   try {
@@ -519,6 +537,8 @@ export async function verifyOtelConnection(): Promise<boolean> {
         `${describeAuthHeaders(headers)}, tracesUrl=${url}`
     );
     return false;
+  } finally {
+    restoreDiagLogger(previousLogger);
   }
 }
 

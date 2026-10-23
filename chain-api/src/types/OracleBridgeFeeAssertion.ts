@@ -14,7 +14,16 @@
  */
 import BigNumber from "bignumber.js";
 import { Type } from "class-transformer";
-import { IsBoolean, IsNotEmpty, IsNumber, Max, Min, ValidateIf, ValidateNested } from "class-validator";
+import {
+  IsBoolean,
+  IsInt,
+  IsNotEmpty,
+  IsNumber,
+  Max,
+  Min,
+  ValidateIf,
+  ValidateNested
+} from "class-validator";
 import { JSONSchema } from "class-validator-jsonschema";
 
 import { ChainKey } from "../utils";
@@ -68,6 +77,7 @@ export class OracleBridgeFeeAssertion extends ChainObject {
       "Rounding decimals used for estimatedTotalTxFeeInGala. " +
       "Expected to match $GALA TokenClass.decimals."
   })
+  @IsInt()
   @Min(0)
   @Max(32)
   public galaDecimals: number;

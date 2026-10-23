@@ -162,8 +162,25 @@ export abstract class ChainError extends Error implements OptionalChainErrorData
     return newError;
   }
 
-  public static isChainError(e: object | undefined): e is ChainError {
-    return !!e && "key" in e && e.key !== undefined && "code" in e && e.code !== undefined;
+  public static isChainError(e: unknown): e is ChainError {
+    if (typeof e !== "object" || e === null) {
+      return false;
+    }
+    if (!("key" in e) || !("code" in e) || !("matches" in e) || !("map" in e)) {
+      return false;
+    }
+    const candidate = e as {
+      key?: unknown;
+      code?: unknown;
+      matches?: unknown;
+      map?: unknown;
+    };
+    return (
+      candidate.key !== undefined &&
+      candidate.code !== undefined &&
+      typeof candidate.matches === "function" &&
+      typeof candidate.map === "function"
+    );
   }
 
   public static from(e: object & { message?: string }): ChainError {
