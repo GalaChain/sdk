@@ -152,9 +152,7 @@ export function getPayloadToSign(obj: object, eipOverride: { chainId?: number | 
 
   if (isEIP712Object(plain)) {
     const dataString = getEIP712PayloadToSign(plain, eipOverride);
-    return dataString.startsWith("0x")
-      ? Buffer.from(dataString.slice(2), "hex")
-      : Buffer.from(dataString);
+    return dataString.startsWith("0x") ? Buffer.from(dataString.slice(2), "hex") : Buffer.from(dataString);
   }
 
   const serialized = serialize(plain);
