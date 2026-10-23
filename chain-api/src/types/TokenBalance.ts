@@ -226,7 +226,7 @@ export class TokenBalance extends ChainObject {
 
     // add instance ID to array
     this.instanceIds.push(instanceId);
-    this.instanceIds.sort((i) => i.comparedTo(i));
+    this.instanceIds.sort((left, right) => left.comparedTo(right) ?? 0);
 
     // update quantity
     this.quantity = new BigNumber(this.instanceIds.length);
@@ -643,6 +643,7 @@ export class TokenHold {
   public readonly expires: number;
 
   @IsString()
+  @IsNotEmpty()
   @IsOptional()
   public readonly name?: string;
 
@@ -681,13 +682,13 @@ export class TokenHold {
       this.quantity = params.quantity;
       this.created = params.created;
       this.expires = params.expires ?? TokenHold.DEFAULT_EXPIRES;
-      if (params.name) {
+      if (params.name !== undefined) {
         this.name = params.name;
       }
       if (params.lockAuthority) {
         this.lockAuthority = params.lockAuthority;
       }
-      if (params.vestingPeriodStart) {
+      if (params.vestingPeriodStart !== undefined) {
         this.vestingPeriodStart = params.vestingPeriodStart;
       }
     }
@@ -753,9 +754,14 @@ export class TokenHold {
       return new BigNumber(0);
     }
 
+    const vestingDuration = this.totalTimeOfVestingPeriod();
+    if (vestingDuration === 0) {
+      return new BigNumber(0);
+    }
+
     // if the current time is between the vesting vestingPeriodStart and expires, the quantity is partially unlocked
     // Multiply before divide to preserve precision with large time values
-    const vestedQuantity = this.quantity.times(timeSinceStart).div(this.totalTimeOfVestingPeriod());
+    const vestedQuantity = this.quantity.times(timeSinceStart).div(vestingDuration);
     return this.quantity.minus(vestedQuantity);
   }
 

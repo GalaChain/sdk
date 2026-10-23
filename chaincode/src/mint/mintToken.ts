@@ -110,7 +110,7 @@ export async function mintToken(
   });
 
   // Check allowances
-  const totalAllowance: BigNumber = await checkAllowances(
+  const { total, remaining } = await checkAllowances(
     ctx,
     applicableAllowanceResponse,
     dtoInstanceKey,
@@ -118,14 +118,8 @@ export async function mintToken(
     callingOnBehalf
   );
 
-  if (totalAllowance.isLessThan(quantity)) {
-    throw new InsufficientMintAllowanceError(
-      callingOnBehalf,
-      totalAllowance,
-      quantity,
-      dtoInstanceKey,
-      owner
-    );
+  if (total.isLessThan(quantity)) {
+    throw new InsufficientMintAllowanceError(callingOnBehalf, total, quantity, dtoInstanceKey, owner);
   }
 
   // check that mint is valid based on max supply, max capacity, etc
@@ -135,7 +129,7 @@ export async function mintToken(
   const allowancesUsed: boolean = await useAllowances(
     ctx,
     new BigNumber(quantity),
-    applicableAllowanceResponse,
+    remaining,
     AllowanceType.Mint
   );
 

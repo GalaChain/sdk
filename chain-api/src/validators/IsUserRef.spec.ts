@@ -91,6 +91,14 @@ it("should validate array of user refs", async () => {
   await expect(invalid).rejects.toThrow(`users property with values eth|${invalidChecksumEth} are not valid`);
 });
 
+it("should reject an array where a single user ref is required", async () => {
+  const empty = createValidDTO(TestDto, { user: [] as unknown as UserRef });
+  const nested = createValidDTO(TestDto, { user: [["client|123"]] as unknown as UserRef });
+
+  await expect(empty).rejects.toThrow(/user/);
+  await expect(nested).rejects.toThrow(/user/);
+});
+
 it("should support schema generation", () => {
   // When
   const schema1 = generateSchema(TestDto);

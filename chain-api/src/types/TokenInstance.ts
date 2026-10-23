@@ -20,6 +20,7 @@ import {
   IsNotEmpty,
   IsObject,
   IsOptional,
+  IsString,
   ValidateIf,
   ValidateNested
 } from "class-validator";
@@ -178,16 +179,31 @@ export class TokenInstanceQuantity extends ChainCallDTO {
     "A full or partial key of a TokenInstance, for querying or actioning one or more instances of a token."
 })
 export class TokenInstanceQueryKey extends ChainCallDTO {
+  @IsString()
   @IsNotEmpty()
   public collection: string;
 
-  @IsOptional()
+  @ValidateIf(
+    (key: TokenInstanceQueryKey) =>
+      key.category !== undefined ||
+      key.type !== undefined ||
+      key.additionalKey !== undefined ||
+      key.instance !== undefined
+  )
+  @IsString()
+  @IsNotEmpty()
   public category?: string;
 
-  @IsOptional()
+  @ValidateIf(
+    (key: TokenInstanceQueryKey) =>
+      key.type !== undefined || key.additionalKey !== undefined || key.instance !== undefined
+  )
+  @IsString()
+  @IsNotEmpty()
   public type?: string;
 
-  @IsOptional()
+  @ValidateIf((key: TokenInstanceQueryKey) => key.additionalKey !== undefined || key.instance !== undefined)
+  @IsString()
   public additionalKey?: string;
 
   @IsOptional()
@@ -246,14 +262,24 @@ export class TokenInstanceQueryKey extends ChainCallDTO {
 
   public toQueryParams() {
     const queryParams: string[] = [];
+    let omitted = false;
 
-    const publicKeyProperties = this.publicKeyProperties();
-    for (const property of publicKeyProperties) {
-      if (typeof this[property] !== "string") {
-        break;
+    for (const property of this.publicKeyProperties()) {
+      const value = this[property];
+      if (typeof value !== "string") {
+        omitted = true;
+        continue;
       }
-      queryParams.push(this[property]);
+      if (omitted) {
+        throw new Error(`Partial token key cannot include ${property} after an omitted component`);
+      }
+      queryParams.push(value);
     }
+
+    if (omitted && this.instance !== undefined) {
+      throw new Error("Partial token key cannot include instance after an omitted component");
+    }
+
     return queryParams;
   }
 }
@@ -309,20 +335,22 @@ export class TokenInstance extends ChainObject {
   }
 
   public static GetFungibleInstanceFromClass(token: TokenClassKeyProperties): string {
-    const { MIN_UNICODE_RUNE_VALUE } = ChainObject;
     const { collection, category, type, additionalKey } = token;
 
-    return [collection, category, type, additionalKey, this.FUNGIBLE_TOKEN_INSTANCE].join(
-      MIN_UNICODE_RUNE_VALUE
-    );
+    return ChainObject.joinKeyParts([
+      collection,
+      category,
+      type,
+      additionalKey,
+      this.FUNGIBLE_TOKEN_INSTANCE
+    ]);
   }
 
   // This returns the unique identifying string used in the composite key for querying HLF
   public static CreateCompositeKey(token: TokenInstanceKeyProperties): string {
-    const { MIN_UNICODE_RUNE_VALUE } = ChainObject;
     const { collection, category, type, additionalKey, instance } = instanceToPlain(token);
 
-    return [collection, category, type, additionalKey, instance].join(MIN_UNICODE_RUNE_VALUE);
+    return ChainObject.joinKeyParts([collection, category, type, additionalKey, instance]);
   }
 
   // This parses a string into the key that can be used to query HLF
@@ -330,11 +358,14 @@ export class TokenInstance extends ChainObject {
   public static GetCompositeKeyFromString(tokenCid: string): string {
     const idParts = tokenCid.split(ChainObject.ID_SPLIT_CHAR);
 
-    // We expect two parts, and for the second one to be a number
-    if (idParts.length !== 2 || Number.isNaN(Number.parseInt(idParts[1]))) {
+    const instanceText = idParts[1];
+    const canonicalInstance = /^(0|[1-9]\d*)$/.test(instanceText ?? "");
+
+    // We expect two parts, and for the second one to be a canonical non-negative integer
+    if (idParts.length !== 2 || !canonicalInstance) {
       throw new Error(`Invalid string passed to TokenInstance.GetCompositeKeyFromString : ${tokenCid}`);
     } else {
-      return ChainObject.getCompositeKeyFromParts(TokenInstance.INDEX_KEY, idParts);
+      return ChainObject.getCompositeKeyFromParts(TokenInstance.INDEX_KEY, [idParts[0], instanceText]);
     }
   }
 

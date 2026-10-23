@@ -150,6 +150,66 @@ describe("getPayloadToSign", () => {
       // When / Then
       expect(() => getPayloadToSign(obj)).toThrow(/"tokenInstance\.injected" is not declared/);
     });
+
+    it("rejects an undeclared field inside a multidimensional struct array", () => {
+      const obj = {
+        domain,
+        types: {
+          Batch: [{ name: "rows", type: "Row[][]" }],
+          Row: [{ name: "id", type: "string" }]
+        },
+        rows: [[{ id: "1", extra: "undeclared" }]]
+      };
+
+      expect(() => getPayloadToSign(obj)).toThrow(/"rows\.extra" is not declared/);
+    });
+
+    it("produces a payload for a fully declared multidimensional struct array", () => {
+      const obj = {
+        domain,
+        types: {
+          Batch: [{ name: "rows", type: "Row[][]" }],
+          Row: [{ name: "id", type: "string" }]
+        },
+        rows: [[{ id: "1" }], [{ id: "2" }]]
+      };
+
+      expect(getPayloadToSign(obj).toString("hex")).toHaveLength(132);
+    });
+
+    it("rejects an object value for a field declared as bool", () => {
+      const obj = {
+        domain,
+        types: {
+          Flag: [
+            { name: "enabled", type: "bool" },
+            { name: "uniqueKey", type: "string" }
+          ]
+        },
+        enabled: { nested: true },
+        uniqueKey: "bool-obj-1"
+      };
+
+      expect(() => getPayloadToSign(obj)).toThrow(
+        /"enabled" is declared as type "bool" and must be a primitive value/
+      );
+    });
+
+    it("produces a payload when bool is an actual boolean", () => {
+      const obj = {
+        domain,
+        types: {
+          Flag: [
+            { name: "enabled", type: "bool" },
+            { name: "uniqueKey", type: "string" }
+          ]
+        },
+        enabled: true,
+        uniqueKey: "bool-true-1"
+      };
+
+      expect(getPayloadToSign(obj).toString("hex")).toHaveLength(132);
+    });
   });
 
   it("should use 'prefix' field", () => {
@@ -164,5 +224,20 @@ describe("getPayloadToSign", () => {
 
     // Then
     expect(toSign).toEqual('\u0019Ethereum Signed Message:\n35{"c":8}');
+  });
+
+  it("rejects a bare '0x' signing prefix", () => {
+    expect(() => getPayloadToSign({ a: 1, prefix: "0x" })).toThrow(/Invalid hexadecimal signing prefix/);
+    expect(() => getPayloadToSign({ b: 2, prefix: "0x" })).toThrow(/Invalid hexadecimal signing prefix/);
+  });
+
+  it("decodes a hex signing prefix separately from the serialized DTO", () => {
+    const withA = getPayloadToSign({ a: 1, prefix: "0xabcd" });
+    const withB = getPayloadToSign({ b: 2, prefix: "0xabcd" });
+
+    expect(withA.subarray(0, 2)).toEqual(Buffer.from("abcd", "hex"));
+    expect(withA.subarray(2).toString("utf8")).toEqual('{"a":1}');
+    expect(withB.subarray(2).toString("utf8")).toEqual('{"b":2}');
+    expect(withA.equals(withB)).toBe(false);
   });
 });

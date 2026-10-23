@@ -17,101 +17,156 @@ import { getAddress } from "ethers";
 /**
  * Type definition for EIP-712 type structures.
  */
-type EIP712Types = Record<string, Array<{ name: string; type: string }>>;
+type EIP712Field = { name: string; type: string };
+type EIP712Types = Record<string, Array<EIP712Field>>;
 
-/**
- * Type definition for EIP-712 value structures.
- */
-type EIP712Value = Record<string, unknown>;
+function hasOwn(obj: object, key: string): boolean {
+  return Object.prototype.hasOwnProperty.call(obj, key);
+}
+
+function numericEip712Type(value: number): string {
+  if (!Number.isFinite(value)) {
+    throw new Error(`Unsupported type, number, value: ${value}`);
+  }
+  if (Number.isSafeInteger(value) && value >= 0) {
+    return "uint256";
+  }
+  if (Number.isSafeInteger(value)) {
+    return "int256";
+  }
+  return "string";
+}
+
+function scalarEip712Type(value: unknown): string {
+  switch (typeof value) {
+    case "string":
+      return "string";
+    case "number":
+      return numericEip712Type(value);
+    case "boolean":
+      return "bool";
+    default:
+      throw new Error(`Unsupported type, ${typeof value}, value: ${value}`);
+  }
+}
+
+function numericArrayType(values: number[]): string {
+  let type = "uint256";
+  for (const value of values) {
+    const valueType = numericEip712Type(value);
+    if (valueType === "string") {
+      return "string";
+    }
+    if (valueType === "int256") {
+      type = "int256";
+    }
+  }
+  return type;
+}
 
 /**
  * Generates EIP-712 type definitions from a given object structure.
+ * Empty arrays stay encodable without reading a missing element. Whole numbers
+ * that fit in uint256 or int256 use those types; other numbers are strings.
  * @template T - The type of the object to generate types for
  * @param typeName - The name of the primary type
  * @param params - The object to analyze for type generation
  * @returns EIP-712 compatible type definitions
  */
 export function generateEIP712Types<T>(typeName: string, params: T): EIP712Types {
-  const types: EIP712Types = {};
+  const types: EIP712Types = Object.create(null);
   types[typeName] = [];
 
-  function addField(name: string, fieldValue: unknown, parentTypeName: string, onlyGetType = false) {
+  function addField(
+    name: string,
+    fieldValue: unknown,
+    parentTypeName: string,
+    onlyGetType = false
+  ): string | undefined {
     if (Array.isArray(fieldValue)) {
-      //Take the type of the first element
-      const type = addField(name, fieldValue[0], parentTypeName, true);
-      if (!onlyGetType) types[parentTypeName].push({ name, type: (type ?? name) + "[]" });
-    } else if (typeof fieldValue === "object" && fieldValue !== null) {
-      if (types[name]) {
+      const elementType = arrayElementType(name, fieldValue, parentTypeName);
+      const arrayType = `${elementType ?? name}[]`;
+      if (!onlyGetType) {
+        types[parentTypeName].push({ name, type: arrayType });
+      }
+      return arrayType;
+    }
+
+    if (typeof fieldValue === "object" && fieldValue !== null) {
+      if (hasOwn(types, name)) {
         throw new Error("Name collisions not yet supported");
       }
       types[name] = [];
       Object.entries(fieldValue).forEach(([key, value]) => {
         addField(key, value, name);
       });
-      if (!onlyGetType) types[parentTypeName].push({ name, type: name });
-    } else {
-      let eipType: string;
-      switch (typeof fieldValue) {
-        case "string":
-          eipType = "string";
-          break;
-        case "number":
-          eipType = "uint256";
-          break;
-        case "boolean":
-          eipType = "bool";
-          break;
-        default:
-          throw new Error(`Unsupported type, ${typeof fieldValue}, value: ${fieldValue}`);
+      if (!onlyGetType) {
+        types[parentTypeName].push({ name, type: name });
       }
-      if (onlyGetType) {
-        return eipType;
-      } else {
-        types[parentTypeName].push({ name, type: eipType });
-      }
+      return name;
     }
+
+    const eipType = scalarEip712Type(fieldValue);
+    if (!onlyGetType) {
+      types[parentTypeName].push({ name, type: eipType });
+    }
+    return eipType;
   }
 
+  function arrayElementType(name: string, values: unknown[], parentTypeName: string): string | undefined {
+    if (values.length === 0) {
+      return "string";
+    }
+    if (values.every((value) => typeof value === "number")) {
+      return numericArrayType(values as number[]);
+    }
+    return addField(name, values[0], parentTypeName, true);
+  }
+
+  const excludedFromSchema = new Set(["signature", "multisig", "trace", "prefix"]);
   Object.entries(params as Record<string, unknown>).forEach(([key, value]) => {
+    if (excludedFromSchema.has(key)) {
+      return;
+    }
     addField(key, value, typeName);
   });
 
   return types;
 }
 
-/**
- * Capitalizes the first letter of a string.
- * @param string - The string to capitalize
- * @returns The string with the first letter capitalized
- */
-export function capitalizeFirstLetter(string: string): string {
-  return string.charAt(0).toUpperCase() + string.slice(1);
+function coerceTypedValue(types: EIP712Types, type: string, value: unknown): unknown {
+  if (type.endsWith("[]")) {
+    if (!Array.isArray(value)) {
+      return value;
+    }
+    const elementType = type.slice(0, -2);
+    return value.map((item) => coerceTypedValue(types, elementType, item));
+  }
+
+  if (hasOwn(types, type) && value !== null && typeof value === "object" && !Array.isArray(value)) {
+    const record = value as Record<string, unknown>;
+    const copy: Record<string, unknown> = { ...record };
+    for (const field of types[type]) {
+      if (hasOwn(record, field.name)) {
+        copy[field.name] = coerceTypedValue(types, field.type, record[field.name]);
+      }
+    }
+    return copy;
+  }
+
+  if (type === "string" && typeof value === "number" && Number.isFinite(value)) {
+    return String(value);
+  }
+
+  return value;
 }
 
 /**
- * Generates EIP-712 value structures from a given object.
- * @template T - The type of the object to generate values for
- * @param params - The object to convert to EIP-712 format
- * @returns EIP-712 compatible value structure
+ * Copies a typed-data value so fractional numbers declared as strings are strings.
+ * Integer fields keep their numeric values.
  */
-export function generateEIP712Value<T>(params: T): EIP712Value {
-  const value: EIP712Value = {};
-
-  function addField(name: string, field: unknown) {
-    if (Array.isArray(field) || (typeof field === "object" && field !== null)) {
-      Object.entries(field).forEach(([key, val]) => {
-        addField(`${name}${capitalizeFirstLetter(key)}`, val);
-      });
-    } else {
-      value[name] = field;
-    }
-  }
-
-  Object.entries(params as Record<string, unknown>).forEach(([key, field]) => {
-    addField(key, field);
-  });
-
-  return value;
+export function valueForTypedDataSigning<T>(types: EIP712Types, primaryType: string, value: T): T {
+  return coerceTypedValue(types, primaryType, value) as T;
 }
 
 /**
@@ -120,7 +175,15 @@ export function generateEIP712Value<T>(params: T): EIP712Value {
  * @returns The equivalent Ethereum address
  */
 export function galaChainToEthereumAddress(galaAddress: string) {
-  return galaAddress ? getAddress(`0x${galaAddress.replace(/0x|eth\|/, "")}`) : "";
+  if (!galaAddress) {
+    return "";
+  }
+  const body = galaAddress.startsWith("eth|")
+    ? galaAddress.slice(4)
+    : galaAddress.startsWith("0x")
+      ? galaAddress.slice(2)
+      : galaAddress;
+  return getAddress(`0x${body}`);
 }
 
 /**

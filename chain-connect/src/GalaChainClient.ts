@@ -12,11 +12,19 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-import { ChainCallDTO, ClassConstructor, createValidDTO, serialize, signatures } from "@gala-chain/api";
+import {
+  ChainCallDTO,
+  ClassConstructor,
+  GalaChainResponseType,
+  createValidDTO,
+  serialize,
+  signatures
+} from "@gala-chain/api";
 import { instanceToPlain, plainToInstance } from "class-transformer";
-import { BrowserProvider, SigningKey, computeAddress, getBytes, hashMessage } from "ethers";
+import { BrowserProvider } from "ethers";
 
-import { EventEmitter, Listener, MetaMaskEvents } from "./helpers";
+import { DEFAULT_REQUEST_TIMEOUT_MS, fetchWithTimeout } from "./fetchWithTimeout";
+import { EventEmitter, Listener, MetaMaskEvents, recoverPublicKeyFromPersonalSign } from "./helpers";
 import { GalaChainResponseError, GalaChainResponseSuccess, SigningType } from "./types";
 import { ConstructorArgs } from "./types/utils";
 import { ethereumToGalaChainAddress, galaChainToEthereumAddress } from "./utils";
@@ -35,13 +43,8 @@ type NonArrayClassConstructor<T> = T extends Array<unknown>
 export interface GalaChainProviderOptions {
   /** The type of signing to use for transactions */
   signingType?: SigningType;
-  /** Legacy authentication credentials for backward compatibility */
-  legacyCredentials?: {
-    /** Identity lookup key for user identification */
-    identityLookupKey: string;
-    /** User encryption key for secure operations */
-    userEncryptionKey: string;
-  };
+  /** Milliseconds to wait for a gateway response. Defaults to 30 seconds. */
+  timeoutMs?: number;
 }
 
 /**
@@ -49,19 +52,14 @@ export interface GalaChainProviderOptions {
  * Provides common functionality for signing transactions and submitting requests.
  */
 export abstract class GalaChainProvider {
-  private legacyCredentials: Record<string, string>;
-
   /**
    * Creates a new GalaChain provider instance.
    * @param options - Configuration options for the provider
    */
-  constructor(protected options?: GalaChainProviderOptions) {
-    if (options?.legacyCredentials) {
-      this.legacyCredentials = {
-        "X-Identity-Lookup-Key": options.legacyCredentials.identityLookupKey,
-        "X-User-Encryption-Key": options.legacyCredentials.userEncryptionKey
-      };
-    }
+  constructor(protected options?: GalaChainProviderOptions) {}
+
+  private requestHeaders(headers: Record<string, string>): Record<string, string> {
+    return { "Content-Type": "application/json", ...headers };
   }
 
   /**
@@ -75,7 +73,7 @@ export abstract class GalaChainProvider {
     method: string,
     dto: T,
     signingType?: SigningType
-  ): Promise<T & { signature: string; prefix?: string }>;
+  ): Promise<T & { signature?: string; multisig?: string[]; prefix?: string }>;
   /**
    * Submits a request to the GalaChain network.
    * @param params - The submission parameters
@@ -109,39 +107,31 @@ export abstract class GalaChainProvider {
     responseConstructor?: NonArrayClassConstructor<T>;
     signingType?: SigningType;
   }): Promise<GalaChainResponseSuccess<T>> {
-    // Throws error if class validation fails
-    if (requestConstructor) {
-      await createValidDTO(requestConstructor, payload);
-    }
+    // Throws error if class validation fails. Signing and transport use the
+    // validated instance so constructor transforms are not discarded.
+    const validated = requestConstructor ? await createValidDTO(requestConstructor, payload) : payload;
 
-    let newPayload = instanceToPlain(payload);
+    let newPayload = instanceToPlain(validated);
 
-    if (sign === true) {
-      //Only try signing if signature is not already present
-      if (
-        typeof payload !== "object" ||
-        payload === null ||
-        !("signature" in payload) ||
-        payload.signature === null
-      ) {
-        try {
-          newPayload = await this.sign(method, newPayload, signingType);
-        } catch (error: unknown) {
-          throw new Error((error as Error).message);
-        }
+    if (sign === true && !hasUsableSignature(validated)) {
+      try {
+        newPayload = await this.sign(method, newPayload, signingType);
+      } catch (error: unknown) {
+        throw new Error((error as Error).message);
       }
     }
 
     const fullUrl = `${url}/${method}`;
-    const response = await fetch(fullUrl, {
-      method: "POST",
-      body: serialize(newPayload),
-      headers: {
-        "Content-Type": "application/json",
-        ...this.legacyCredentials,
-        ...headers
-      }
-    });
+    const timeoutMs = this.options?.timeoutMs ?? DEFAULT_REQUEST_TIMEOUT_MS;
+    const response = await fetchWithTimeout(
+      fullUrl,
+      {
+        method: "POST",
+        body: serialize(newPayload),
+        headers: this.requestHeaders(headers)
+      },
+      timeoutMs
+    );
 
     const hash = response.headers.get("x-transaction-id") ?? undefined;
 
@@ -153,8 +143,10 @@ export abstract class GalaChainProvider {
       } catch (error) {
         throw new Error("Invalid JSON response");
       }
-      if (!response.ok || data.error) {
+      if (!response.ok || data?.error || data?.Status === GalaChainResponseType.Error) {
         throw new GalaChainResponseError<T>(data);
+      } else if (data?.Status !== GalaChainResponseType.Success) {
+        throw new Error("Chain response is missing a status");
       } else {
         const transformedDataResponse = responseConstructor
           ? plainToInstance(responseConstructor, data.Data)
@@ -203,6 +195,14 @@ export abstract class CustomClient extends GalaChainProvider {
     const prefix = "\u0019Ethereum Signed Message:\n" + payloadLength;
     return prefix;
   }
+}
+
+function hasUsableSignature(value: object): boolean {
+  if (!("signature" in value)) {
+    return false;
+  }
+  const signature = (value as { signature?: unknown }).signature;
+  return typeof signature === "string" && signature.length > 0;
 }
 
 /**
@@ -290,17 +290,9 @@ export abstract class WebSigner extends CustomClient {
    * @returns Promise resolving to the public key and recovered address
    */
   async getPublicKey() {
-    const message = "Sign this to retrieve your public key";
-
-    const signature = await this.signMessage(message);
-
-    const messageHash = hashMessage(message);
-
-    const publicKey = SigningKey.recoverPublicKey(getBytes(messageHash), signature);
-
-    const recoveredAddress = computeAddress(publicKey);
-
-    return { publicKey, recoveredAddress };
+    return recoverPublicKeyFromPersonalSign("Sign this to retrieve your public key", (message) =>
+      this.signMessage(message)
+    );
   }
 
   /**

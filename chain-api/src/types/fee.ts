@@ -21,13 +21,16 @@ import {
   ArrayUnique,
   IsBoolean,
   IsDefined,
+  IsInt,
   IsNotEmpty,
   IsNumber,
   IsOptional,
   IsString,
   Max,
   Min,
-  ValidateNested
+  ValidateNested,
+  ValidationArguments,
+  registerDecorator
 } from "class-validator";
 import { JSONSchema } from "class-validator-jsonschema";
 
@@ -51,11 +54,31 @@ import { UserAlias } from "./UserAlias";
 import { UserRef } from "./UserRef";
 import { ChainCallDTO, SubmitCallDTO } from "./dtos";
 
+function RequireFeePropertiesUniqueKey() {
+  return function (object: object, propertyName: string) {
+    registerDecorator({
+      name: "feePropertiesRequireUniqueKey",
+      target: object.constructor,
+      propertyName,
+      validator: {
+        validate(_value: unknown, args: ValidationArguments) {
+          const uniqueKey = (args.object as FeePropertiesDto).uniqueKey;
+          return typeof uniqueKey === "string" && uniqueKey.length > 0;
+        },
+        defaultMessage() {
+          return "uniqueKey should not be empty";
+        }
+      }
+    });
+  };
+}
+
 @JSONSchema({
   description: "Configure GALA token properties on chain for use with supporting chaincalls."
 })
 export class FeePropertiesDto extends ChainCallDTO {
   @IsNotEmpty()
+  @RequireFeePropertiesUniqueKey()
   public collection: string;
 
   @IsNotEmpty()
@@ -84,8 +107,7 @@ export class FeePropertiesDto extends ChainCallDTO {
       "You can use `nanoid` library, UUID scheme, or any tool to generate unique string keys."
   })
   @IsNotEmpty()
-  @IsOptional()
-  public uniqueKey?: string;
+  public uniqueKey: string;
 }
 
 @JSONSchema({
@@ -199,30 +221,6 @@ export class FetchFeeAuthorizationsDto extends ChainCallDTO {
   day?: string;
 
   @JSONSchema({
-    description:
-      "Hour from timestamp of authorizaiton. Chain Key used for partial querying. " + "String in HH format."
-  })
-  @IsOptional()
-  @IsNotEmpty()
-  hours?: string;
-
-  @JSONSchema({
-    description:
-      "Minutes from timestamp of authorizaiton. Chain Key used for partial querying. " +
-      "String in mm format."
-  })
-  @IsOptional()
-  @IsNotEmpty()
-  minutes?: string;
-
-  @JSONSchema({
-    description: "feeCode identifier for which this fee was authorized. Chain key used for specific querying."
-  })
-  @IsOptional()
-  @IsNotEmpty()
-  feeCode?: string;
-
-  @JSONSchema({
     description: "Transaction ID where authorization was written. Chain key used for specific querying."
   })
   @IsOptional()
@@ -238,10 +236,12 @@ export class FetchFeeAuthorizationsDto extends ChainCallDTO {
   bookmark?: string;
 
   @JSONSchema({
-    description: "Limit number of results. Useful for pagination queries."
+    description: "Page size. Must be an integer from 1 to 10000."
   })
   @IsOptional()
-  @IsNumber()
+  @Min(1)
+  @Max(10 * 1000)
+  @IsInt()
   limit?: number;
 }
 
@@ -289,23 +289,6 @@ export class FetchFeeChannelPaymentsDto extends ChainCallDTO {
   day?: string;
 
   @JSONSchema({
-    description:
-      "Hour from timestamp of authorizaiton. Chain Key used for partial querying. " + "String in HH format."
-  })
-  @IsOptional()
-  @IsNotEmpty()
-  hours?: string;
-
-  @JSONSchema({
-    description:
-      "Minutes from timestamp of authorizaiton. Chain Key used for partial querying. " +
-      "String in mm format."
-  })
-  @IsOptional()
-  @IsNotEmpty()
-  minutes?: string;
-
-  @JSONSchema({
     description: "feeCode identifier for which this fee was paid. Chain key used for specific querying."
   })
   @IsOptional()
@@ -335,10 +318,12 @@ export class FetchFeeChannelPaymentsDto extends ChainCallDTO {
   bookmark?: string;
 
   @JSONSchema({
-    description: "Limit number of results. Useful for pagination queries."
+    description: "Page size. Must be an integer from 1 to 10000."
   })
   @IsOptional()
-  @IsNumber()
+  @Min(1)
+  @Max(10 * 1000)
+  @IsInt()
   limit?: number;
 }
 
@@ -417,11 +402,13 @@ export class FetchFeeCreditReceiptsDto extends ChainCallDTO {
   minutes?: string;
 
   @JSONSchema({
-    description: "feeCode identifier for which this receipt. Chain key used for specific querying."
+    description:
+      "Seconds from timestamp of receipt creation. Chain Key used for partial querying. " +
+      "String in ss format."
   })
   @IsOptional()
   @IsNotEmpty()
-  feeCode?: string;
+  seconds?: string;
 
   @JSONSchema({
     description: "Receipt issued to user."
@@ -446,10 +433,12 @@ export class FetchFeeCreditReceiptsDto extends ChainCallDTO {
   bookmark?: string;
 
   @JSONSchema({
-    description: "Limit number of results. Useful for pagination queries."
+    description: "Page size. Must be an integer from 1 to 10000."
   })
   @IsOptional()
-  @IsNumber()
+  @Min(1)
+  @Max(10 * 1000)
+  @IsInt()
   limit?: number;
 }
 
@@ -463,7 +452,7 @@ export class FeeCreditReceiptKeyValueResult extends ChainCallDTO {
 
   @JSONSchema({ description: "Chain key identifying object on chain." })
   @ValidateNested()
-  @Type(() => FeeChannelPaymentReceipt)
+  @Type(() => FeeBalanceCreditReceipt)
   value: FeeBalanceCreditReceipt;
 }
 
@@ -525,10 +514,12 @@ export class FetchFeePendingBalancesDto extends ChainCallDTO {
   bookmark?: string;
 
   @JSONSchema({
-    description: "Limit number of results. Useful for pagination queries."
+    description: "Page size. Must be an integer from 1 to 10000."
   })
   @IsOptional()
-  @IsNumber()
+  @Min(1)
+  @Max(10 * 1000)
+  @IsInt()
   limit?: number;
 }
 
@@ -631,6 +622,7 @@ export class FeeCodeDefinitionDto extends SubmitCallDTO {
   public feeAccelerationRateType: FeeAccelerationRateType;
 
   @IsNotEmpty()
+  @BigNumberIsNotNegative()
   @BigNumberProperty()
   public feeAccelerationRate: BigNumber;
 
@@ -802,10 +794,12 @@ export class FetchFeeThresholdUsesWithPaginationDto extends ChainCallDTO {
   bookmark?: string;
 
   @JSONSchema({
-    description: "Limit number of results. Useful for pagination queries."
+    description: "Page size. Must be an integer from 1 to 10000."
   })
   @IsOptional()
-  @IsNumber()
+  @Min(1)
+  @Max(10 * 1000)
+  @IsInt()
   limit?: number;
 }
 
@@ -819,7 +813,7 @@ export class FeeThresholdUsesKeyValueResult extends ChainCallDTO {
 
   @JSONSchema({ description: "Chain key identifying object on chain." })
   @ValidateNested()
-  @Type(() => ChainObject)
+  @Type(() => FeeThresholdUses)
   value: FeeThresholdUses;
 }
 

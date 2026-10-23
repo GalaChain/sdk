@@ -8,8 +8,6 @@ import { getAddress } from "../address";
 import { keccak256 } from "../crypto/keccak_256";
 import { assertArgument } from "../errors";
 import { defineProperties } from "../properties";
-import { SignatureLike } from "../signature";
-import { recoverAddress } from "../transaction/address";
 import { BigNumberish } from "../type-utils";
 import { BytesLike, concat, getBytes, hexlify, isHexString, zeroPadValue } from "../utils/data";
 import { getBigInt, mask, toBeHex, toQuantity, toTwos } from "../utils/maths";
@@ -147,6 +145,13 @@ function getBaseEncoder(type: string): null | ((value: any) => string) {
       const boundsLower = signed ? (boundsUpper + BN_1) * BN__1 : BN_0;
 
       return function (_value: BigNumberish) {
+        assertArgument(
+          _value === null || typeof _value !== "object",
+          `invalid value for ${type}`,
+          "value",
+          _value
+        );
+
         const value = getBigInt(_value, "value");
 
         assertArgument(
@@ -174,6 +179,12 @@ function getBaseEncoder(type: string): null | ((value: any) => string) {
       );
 
       return function (value: BytesLike) {
+        assertArgument(
+          typeof value === "string" || value instanceof Uint8Array,
+          `invalid value for ${type}`,
+          "value",
+          value
+        );
         const bytes = getBytes(value);
         assertArgument(bytes.length === width, `invalid length for ${type}`, "value", value);
         return hexPadRight(value);
@@ -184,19 +195,33 @@ function getBaseEncoder(type: string): null | ((value: any) => string) {
   switch (type) {
     case "address":
       return function (value: string) {
+        assertArgument(typeof value === "string", "invalid address value", "value", value);
         return zeroPadValue(getAddress(value), 32);
       };
     case "bool":
       return function (value: boolean) {
+        assertArgument(typeof value === "boolean", "invalid bool value", "value", value);
         return !value ? hexFalse : hexTrue;
       };
     case "bytes":
       return function (value: BytesLike) {
+        assertArgument(
+          typeof value === "string" || value instanceof Uint8Array,
+          "invalid bytes value",
+          "value",
+          value
+        );
         return keccak256(value);
       };
     case "string":
-      return function (value: string) {
-        return id(value);
+      return function (value: string | number) {
+        assertArgument(
+          typeof value === "string" || typeof value === "number",
+          "invalid string value",
+          "value",
+          value
+        );
+        return id(typeof value === "number" ? String(value) : value);
       };
   }
 
@@ -360,9 +385,23 @@ export class TypedDataEncoder {
 
     defineProperties<TypedDataEncoder>(this, { primaryType: primaryTypes[0] });
 
-    // Check for circular type references
+    // Check for circular type references. Completed subgraphs are reused so a
+    // type shared by many parents is walked once.
+    const completed = new Set<string>();
     function checkCircular(type: string, found: Set<string>) {
       assertArgument(!found.has(type), `circular type reference to ${JSON.stringify(type)}`, "types", _types);
+
+      if (completed.has(type)) {
+        const descendants = subtypes.get(type) as Set<string>;
+        for (const ancestor of found) {
+          const ancestorSubtypes = subtypes.get(ancestor) as Set<string>;
+          ancestorSubtypes.add(type);
+          for (const descendant of descendants) {
+            ancestorSubtypes.add(descendant);
+          }
+        }
+        return;
+      }
 
       found.add(type);
 
@@ -381,6 +420,7 @@ export class TypedDataEncoder {
       }
 
       found.delete(type);
+      completed.add(type);
     }
     checkCircular(this.primaryType, new Set());
 
@@ -599,7 +639,14 @@ export class TypedDataEncoder {
     types: Record<string, Array<TypedDataField>>,
     value: Record<string, any>
   ): string {
-    return concat(["0x1901", TypedDataEncoder.hashDomain(domain), TypedDataEncoder.from(types).hash(value)]);
+    return TypedDataEncoder.encodeWith(TypedDataEncoder.from(types), domain, value);
+  }
+
+  /**
+   *  Encode %%value%% with an encoder that was already built for %%types%%.
+   */
+  static encodeWith(encoder: TypedDataEncoder, domain: TypedDataDomain, value: Record<string, any>): string {
+    return concat(["0x1901", TypedDataEncoder.hashDomain(domain), encoder.hash(value)]);
   }
 
   /**
@@ -746,16 +793,4 @@ export class TypedDataEncoder {
       })
     };
   }
-}
-
-/**
- *  Compute the address used to sign the typed data for the %%signature%%.
- */
-export function verifyTypedData(
-  domain: TypedDataDomain,
-  types: Record<string, Array<TypedDataField>>,
-  value: Record<string, any>,
-  signature: SignatureLike
-): string {
-  return recoverAddress(TypedDataEncoder.hash(domain, types, value), signature);
 }

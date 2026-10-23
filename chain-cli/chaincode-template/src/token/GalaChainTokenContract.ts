@@ -401,8 +401,12 @@ export default class GalaChainTokenContract extends GalaContract {
     in: DeleteAllowancesDto,
     out: "number"
   })
-  public DeleteAllowances(ctx: GalaChainContext, dto: DeleteAllowancesDto): Promise<number> {
-    return deleteAllowances(ctx, dto);
+  public async DeleteAllowances(ctx: GalaChainContext, dto: DeleteAllowancesDto): Promise<number> {
+    return deleteAllowances(ctx, {
+      ...dto,
+      grantedTo: await resolveUserAlias(ctx, dto.grantedTo),
+      ...(dto.grantedBy !== undefined ? { grantedBy: await resolveUserAlias(ctx, dto.grantedBy) } : {})
+    });
   }
 
   @GalaTransaction({

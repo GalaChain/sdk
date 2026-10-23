@@ -18,7 +18,7 @@ import { IsString } from "class-validator";
 
 import { ChainKey } from "../utils";
 import { BigNumberProperty } from "../validators";
-import { ChainObject } from "./ChainObject";
+import { ChainObject, InvalidCompositeKeyError } from "./ChainObject";
 
 class TestClass extends ChainObject {
   static INDEX_KEY = "test";
@@ -87,6 +87,28 @@ it("should keep constructor-initialized fields that have no validator", () => {
   expect(obj.plantedAt).toEqual(1_700_000_000_000);
   expect(obj.owner).toEqual("client|user1");
   expect(obj).not.toHaveProperty("leftoverField");
+});
+
+it("rejects a NUL character inside a composite key part", () => {
+  expect(() => ChainObject.getCompositeKeyFromParts("idx", ["a\u0000b", "c"])).toThrow(
+    InvalidCompositeKeyError
+  );
+  expect(() => ChainObject.getCompositeKeyFromParts("idx", ["a", "b\u0000c"])).toThrow(/NUL/);
+  expect(() => ChainObject.getCompositeKeyFromParts("id\u0000x", ["a"])).toThrow(/NUL/);
+
+  const nested = ChainObject.getCompositeKeyFromParts("inner", ["created", "tx"]);
+  expect(() => ChainObject.getCompositeKeyFromParts("outer", [nested])).not.toThrow();
+});
+
+it("rejects the string key separator inside a part", () => {
+  expect(ChainObject.getStringKeyFromParts(["a", "b_c"])).toEqual("a$b_c");
+  expect(() => ChainObject.getStringKeyFromParts(["a$b", "c"])).toThrow(/separator/);
+  expect(() => ChainObject.getStringKeyFromParts(["a\u0000b"])).toThrow(/separator/);
+});
+
+it("rejects a NUL character in a joined query prefix", () => {
+  expect(ChainObject.joinKeyParts(["a", "b_c", null])).toEqual("a\u0000b_c\u0000");
+  expect(() => ChainObject.joinKeyParts(["a\u0000b", "c"])).toThrow(/NUL/);
 });
 
 it("should use custom serializers while constructing composite key", () => {

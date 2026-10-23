@@ -84,7 +84,7 @@ describe("checkAllowances", () => {
 
     const expectedTotal = allAllowancesTotal.minus(expiredTotal);
 
-    const totalAllowance: BigNumber = await checkAllowances(
+    const { total } = await checkAllowances(
       ctx,
       applicableAllowances,
       currency.tokenInstanceKey(),
@@ -92,9 +92,9 @@ describe("checkAllowances", () => {
       ctx.callingUser
     );
 
-    expect(totalAllowance.toNumber()).toBe(expectedTotal.toNumber());
+    expect(total.toNumber()).toBe(expectedTotal.toNumber());
     expect(expiredTotal.toNumber()).not.toBe(0);
-    expect(totalAllowance.toNumber()).not.toBe(0);
+    expect(total.toNumber()).not.toBe(0);
   });
 });
 

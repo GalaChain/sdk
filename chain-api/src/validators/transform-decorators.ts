@@ -17,7 +17,12 @@ import { Transform, Type } from "class-transformer";
 import { IsIn, ValidateBy, ValidationOptions, buildMessage } from "class-validator";
 import "reflect-metadata";
 
-import { BigNumberIsNotInfinity, IsBigNumber } from "./decorators";
+import {
+  BigNumberIsNotInfinity,
+  BigNumberIsNotNaN,
+  BigNumberIsPositiveInfinityOrFinite,
+  IsBigNumber
+} from "./decorators";
 
 type ClassConstructor<Signature = unknown[]> = {
   new (args: Signature): unknown;
@@ -51,6 +56,11 @@ export function ApplyConstructor<ClassInstance, ConstructorSignature, Serialized
 // create BigNumber object only if we have proper input that matches .toFixed()
 const parseBigNumber = (value: unknown): unknown => {
   if (typeof value === "string") {
+    // Leave exponent form and over-long digit strings unchanged so validation fails
+    // before BigNumber expands them.
+    if (/[eE]/.test(value) || value.length > 256) {
+      return value;
+    }
     const bn = new BigNumber(value);
     return bn.toFixed() === value ? bn : value;
   } else {
@@ -76,8 +86,11 @@ export const BigNumberProperty = (opts?: { allowInfinity: boolean }) => {
     to(target, propertyKey);
 
     IsBigNumber()(target, propertyKey);
+    BigNumberIsNotNaN()(target, propertyKey);
     if (!opts?.allowInfinity) {
       BigNumberIsNotInfinity()(target, propertyKey);
+    } else {
+      BigNumberIsPositiveInfinityOrFinite()(target, propertyKey);
     }
   };
 };

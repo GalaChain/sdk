@@ -13,6 +13,7 @@
  * limitations under the License.
  */
 import {
+  BurnTokenQuantity,
   BurnTokensDto,
   GalaChainResponse,
   TokenAllowance,
@@ -20,6 +21,7 @@ import {
   TokenBurn,
   TokenBurnCounter,
   TokenClaim,
+  TokenInstanceKey,
   createValidChainObject,
   createValidSubmitDTO
 } from "@gala-chain/api";
@@ -32,7 +34,7 @@ import { currency, nft } from "../testdata/index";
 import { InvalidDecimalError } from "../token";
 import { inverseEpoch, inverseTime } from "../utils";
 import { InsufficientBurnAllowanceError } from "./BurnError";
-import { burnTokens } from "./burnTokens";
+import { aggregateBurnQuantities, burnTokens } from "./burnTokens";
 
 describe("BurnTokens", () => {
   it("should BurnTokens", async () => {
@@ -571,4 +573,56 @@ describe("BurnTokens", () => {
       );
     }
   );
+});
+
+function burnQuantity(
+  collection: string,
+  category: string,
+  type: string,
+  additionalKey: string,
+  amount: string
+): BurnTokenQuantity {
+  const tokenInstanceKey = new TokenInstanceKey();
+  tokenInstanceKey.collection = collection;
+  tokenInstanceKey.category = category;
+  tokenInstanceKey.type = type;
+  tokenInstanceKey.additionalKey = additionalKey;
+  tokenInstanceKey.instance = new BigNumber("0");
+
+  const request = new BurnTokenQuantity();
+  request.tokenInstanceKey = tokenInstanceKey;
+  request.quantity = new BigNumber(amount);
+  return request;
+}
+
+describe("aggregateBurnQuantities", () => {
+  it("does not merge token keys that only match when joined with underscores", () => {
+    const partitions: Array<[string, string, string, string]> = [
+      ["a_b", "c", "t", "k"],
+      ["a", "b_c", "t", "k"],
+      ["a", "b", "c_t", "k"],
+      ["a", "b", "c", "t_k"]
+    ];
+
+    const summed = aggregateBurnQuantities(
+      partitions.map(([collection, category, type, additionalKey], index) =>
+        burnQuantity(collection, category, type, additionalKey, String(index + 1))
+      )
+    );
+
+    expect(summed).toHaveLength(4);
+    expect(summed.map((entry) => entry.quantity.toString())).toEqual(["1", "2", "3", "4"]);
+    expect(summed.map((entry) => entry.tokenInstanceKey.collection)).toEqual(["a_b", "a", "a", "a"]);
+  });
+
+  it("still sums repeated burns of the same token", () => {
+    const summed = aggregateBurnQuantities([
+      burnQuantity("a_b", "c", "t", "k", "1"),
+      burnQuantity("a_b", "c", "t", "k", "2")
+    ]);
+
+    expect(summed).toHaveLength(1);
+    expect(summed[0].quantity).toEqual(new BigNumber("3"));
+    expect(summed[0].tokenInstanceKey.collection).toEqual("a_b");
+  });
 });
