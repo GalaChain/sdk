@@ -26,11 +26,7 @@ import {
   FeeCodeDefinition,
   FeeGateCodes,
   FillTokenSwapDto,
-  FulfillMintAllowanceDto,
-  FulfillMintDto,
   GrantNftCollectionAuthorizationDto,
-  HighThroughputGrantAllowanceDto,
-  HighThroughputMintTokenDto,
   MintTokenDto,
   MintTokenWithAllowanceDto,
   OracleBridgeFeeAssertion,
@@ -79,16 +75,6 @@ export function extractUniqueOwnersFromRequests(ctx: GalaChainContext, requests:
   const owners = requests.map((r) => r.owner ?? ctx.callingUser);
 
   return Array.from(new Set(owners));
-}
-
-export interface IRequestUser {
-  user?: string | undefined;
-}
-
-export function extractUniqueUsersFromRequests(ctx: GalaChainContext, requests: IRequestUser[]) {
-  const users: string[] = requests.map((r) => r.user ?? ctx.callingUser);
-
-  return Array.from(new Set(users));
 }
 
 export async function batchFillTokenSwapFeeGate(ctx: GalaChainContext, dto: BatchFillTokenSwapDto) {
@@ -145,61 +131,6 @@ export async function burnTokensFeeGate(ctx: GalaChainContext, dto: BurnTokensDt
 
 export async function terminateTokenSwapFeeGate(ctx: GalaChainContext, dto: TerminateTokenSwapDto) {
   return galaFeeGate(ctx, { feeCode: FeeGateCodes.TerminateTokenSwap });
-}
-
-export async function highThroughputMintRequestFeeGate(
-  ctx: GalaChainContext,
-  dto: HighThroughputMintTokenDto
-) {
-  const owner = dto.owner ? await resolveUserAlias(ctx, dto.owner) : ctx.callingUser;
-  const feeCode = FeeGateCodes.HighThroughputMintRequest;
-
-  await combinedMintFees(ctx, { feeCode, tokenClass: dto.tokenClass, owner, quantity: dto.quantity });
-}
-
-export async function highThroughputMintFulfillFeeGate(ctx: GalaChainContext, dto: FulfillMintDto) {
-  const owners: string[] = extractUniqueOwnersFromRequests(ctx, dto.requests);
-
-  for (const owner of owners) {
-    await galaFeeGate(ctx, {
-      feeCode: FeeGateCodes.HighThroughputMintFulfill,
-      activeUser: owner
-    });
-  }
-
-  return Promise.resolve();
-}
-
-export async function highThroughputMintAllowanceRequestFeeGate(
-  ctx: GalaChainContext,
-  dto: HighThroughputGrantAllowanceDto
-) {
-  const users: string[] = extractUniqueUsersFromRequests(ctx, dto.quantities);
-
-  for (const user of users) {
-    await galaFeeGate(ctx, {
-      feeCode: FeeGateCodes.HighThroughputMintAllowanceRequest,
-      activeUser: user
-    });
-  }
-
-  return Promise.resolve();
-}
-
-export async function highThroughputMintAllowanceFulfillFeeGate(
-  ctx: GalaChainContext,
-  dto: FulfillMintAllowanceDto
-) {
-  const owners: string[] = extractUniqueOwnersFromRequests(ctx, dto.requests);
-
-  for (const owner of owners) {
-    await galaFeeGate(ctx, {
-      feeCode: FeeGateCodes.HighThroughputMintAllowanceFulfill,
-      activeUser: owner
-    });
-  }
-
-  return Promise.resolve();
 }
 
 export async function mintTokenFeeGate(ctx: GalaChainContext, dto: MintTokenDto) {

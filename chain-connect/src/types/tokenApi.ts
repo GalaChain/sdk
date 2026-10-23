@@ -36,12 +36,9 @@ import {
   FetchTokenInstanceMetadataResponse,
   FetchTokenInstanceMetadataWithPaginationDto,
   FreezeTokenBalanceDto,
-  FulfillMintDto,
   FullAllowanceCheckDto,
   FullAllowanceCheckResDto as FullAllowanceCheckResponse,
   GrantAllowanceDto,
-  HighThroughputMintTokenDto,
-  FulfillMintDto as HighThroughputMintTokenResponse,
   IsUserAlias,
   LockTokenDto,
   LockTokensDto,
@@ -91,10 +88,8 @@ type FetchTokenClassesWithPaginationRequest = ConstructorArgs<FetchTokenClassesW
 type FetchTokenInstanceMetadataRequest = ConstructorArgs<FetchTokenInstanceMetadataDto>;
 type FetchTokenInstanceMetadataWithPaginationRequest =
   ConstructorArgs<FetchTokenInstanceMetadataWithPaginationDto>;
-type FulfillMintRequest = ConstructorArgs<FulfillMintDto>;
 type FullAllowanceCheckRequest = ConstructorArgs<FullAllowanceCheckDto>;
 type GrantAllowanceRequest = ConstructorArgs<GrantAllowanceDto>;
-type HighThroughputMintTokenRequest = ConstructorArgs<HighThroughputMintTokenDto>;
 type LockTokenRequest = ConstructorArgs<LockTokenDto>;
 type LockTokensRequest = ConstructorArgs<LockTokensDto>;
 type MintRequest = ConstructorArgs<MintRequestDto>;
@@ -180,12 +175,9 @@ export {
   FetchTokenInstanceMetadataRequest,
   FetchTokenInstanceMetadataResponse,
   FetchTokenInstanceMetadataWithPaginationRequest,
-  FulfillMintRequest,
   FullAllowanceCheckRequest,
   FullAllowanceCheckResponse,
   GrantAllowanceRequest,
-  HighThroughputMintTokenRequest,
-  HighThroughputMintTokenResponse,
   LockTokenRequest,
   LockTokensRequest,
   MintRequest,
