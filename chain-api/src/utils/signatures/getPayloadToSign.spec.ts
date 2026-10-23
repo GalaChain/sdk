@@ -225,4 +225,19 @@ describe("getPayloadToSign", () => {
     // Then
     expect(toSign).toEqual('\u0019Ethereum Signed Message:\n35{"c":8}');
   });
+
+  it("rejects a bare '0x' signing prefix", () => {
+    expect(() => getPayloadToSign({ a: 1, prefix: "0x" })).toThrow(/Invalid hexadecimal signing prefix/);
+    expect(() => getPayloadToSign({ b: 2, prefix: "0x" })).toThrow(/Invalid hexadecimal signing prefix/);
+  });
+
+  it("decodes a hex signing prefix separately from the serialized DTO", () => {
+    const withA = getPayloadToSign({ a: 1, prefix: "0xabcd" });
+    const withB = getPayloadToSign({ b: 2, prefix: "0xabcd" });
+
+    expect(withA.subarray(0, 2)).toEqual(Buffer.from("abcd", "hex"));
+    expect(withA.subarray(2).toString("utf8")).toEqual('{"a":1}');
+    expect(withB.subarray(2).toString("utf8")).toEqual('{"b":2}');
+    expect(withA.equals(withB)).toBe(false);
+  });
 });

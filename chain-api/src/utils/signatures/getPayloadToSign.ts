@@ -160,11 +160,19 @@ export function getPayloadToSign(obj: object, eipOverride: { chainId?: number | 
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const { signature, multisig, trace, prefix, ...plain } = instanceToPlain(obj);
 
-  const dataString = isEIP712Object(plain)
-    ? getEIP712PayloadToSign(plain, eipOverride)
-    : `${prefix ?? ""}${serialize(plain)}`;
+  if (isEIP712Object(plain)) {
+    const dataString = getEIP712PayloadToSign(plain, eipOverride);
+    return dataString.startsWith("0x") ? Buffer.from(dataString.slice(2), "hex") : Buffer.from(dataString);
+  }
 
-  return dataString.startsWith("0x") //
-    ? Buffer.from(dataString.slice(2), "hex") //
-    : Buffer.from(dataString);
+  const serialized = serialize(plain);
+  if (typeof prefix === "string" && prefix.startsWith("0x")) {
+    const hex = prefix.slice(2);
+    if (hex.length === 0 || hex.length % 2 !== 0 || !/^[0-9a-fA-F]+$/.test(hex)) {
+      throw new Error("Invalid hexadecimal signing prefix");
+    }
+    return Buffer.concat([Buffer.from(hex, "hex"), Buffer.from(serialized, "utf8")]);
+  }
+
+  return Buffer.from(`${prefix ?? ""}${serialized}`);
 }
