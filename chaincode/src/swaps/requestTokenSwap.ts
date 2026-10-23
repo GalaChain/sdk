@@ -182,23 +182,32 @@ export async function requestTokenSwap(
     if (offeredOnBehalfOfOwner) {
       // todo: unsure why verifyAndUseAllowances() requires *both* the tokenInstanceKey and tokenInstance be supplied -
       // its code appears to just need the string properties not the actual TokenInstance off chain
-      const { collection, category, type, additionalKey, instance } = tokenInstanceKey;
-      const tokenInstanceKeyList = [collection, category, type, additionalKey, instance.toString()];
-      const instanceCompositeKey = TokenInstance.getCompositeKeyFromParts(
-        TokenInstance.INDEX_KEY,
-        tokenInstanceKeyList
-      );
-      const tokenInstance = await getObjectByKey(ctx, TokenInstance, instanceCompositeKey);
+      if (tokenClass.isNonFungible && newSwap.uses.isGreaterThan(1)) {
+        chainValidationErrors.push(
+          `Offered non-fungible token instance cannot be used for more than one swap use when offered on behalf of the owner`
+        );
+      } else {
+        const { collection, category, type, additionalKey, instance } = tokenInstanceKey;
+        const tokenInstanceKeyList = [collection, category, type, additionalKey, instance.toString()];
+        const instanceCompositeKey = TokenInstance.getCompositeKeyFromParts(
+          TokenInstance.INDEX_KEY,
+          tokenInstanceKeyList
+        );
+        const tokenInstance = await getObjectByKey(ctx, TokenInstance, instanceCompositeKey);
 
-      await verifyAndUseAllowances(
-        ctx,
-        newSwap.offeredBy,
-        tokenInstanceKey,
-        quantity,
-        tokenInstance,
-        ctx.callingUser,
-        AllowanceType.Swap
-      );
+        // Fungible offers lock quantity * uses; consume that total from the swap allowance.
+        const allowanceQuantity = tokenClass.isNonFungible ? quantity : quantity.times(newSwap.uses);
+
+        await verifyAndUseAllowances(
+          ctx,
+          newSwap.offeredBy,
+          tokenInstanceKey,
+          allowanceQuantity,
+          tokenInstance,
+          ctx.callingUser,
+          AllowanceType.Swap
+        );
+      }
     }
 
     if (tokenClass.isNonFungible === false) {
