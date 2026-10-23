@@ -94,8 +94,18 @@ function assertNoUnsignedFields(
   // Recurse into struct-typed fields so nested injection is caught too.
   for (const f of fields) {
     const base = f.type.replace(/(\[\d*\])+$/, ""); // strip any array suffixes: "quantities[]" -> "quantities"
-    if (!encoder.types[base]) continue; // atomic field type (string, uint256, ...)
-    for (const item of structValues(f.type, record[f.name])) {
+    const values = structValues(f.type, record[f.name]);
+    if (!encoder.types[base]) {
+      for (const item of values) {
+        if (item !== null && typeof item === "object" && !(item instanceof Uint8Array)) {
+          throw new Error(
+            `EIP-712 payload field "${path}${f.name}" is declared as type "${f.type}" and must be a primitive value.`
+          );
+        }
+      }
+      continue;
+    }
+    for (const item of values) {
       assertNoUnsignedFields(encoder, base, item, new Set(), `${path}${f.name}.`);
     }
   }

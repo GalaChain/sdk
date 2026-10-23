@@ -176,6 +176,40 @@ describe("getPayloadToSign", () => {
 
       expect(getPayloadToSign(obj).toString("hex")).toHaveLength(132);
     });
+
+    it("rejects an object value for a field declared as bool", () => {
+      const obj = {
+        domain,
+        types: {
+          Flag: [
+            { name: "enabled", type: "bool" },
+            { name: "uniqueKey", type: "string" }
+          ]
+        },
+        enabled: { nested: true },
+        uniqueKey: "bool-obj-1"
+      };
+
+      expect(() => getPayloadToSign(obj)).toThrow(
+        /"enabled" is declared as type "bool" and must be a primitive value/
+      );
+    });
+
+    it("produces a payload when bool is an actual boolean", () => {
+      const obj = {
+        domain,
+        types: {
+          Flag: [
+            { name: "enabled", type: "bool" },
+            { name: "uniqueKey", type: "string" }
+          ]
+        },
+        enabled: true,
+        uniqueKey: "bool-true-1"
+      };
+
+      expect(getPayloadToSign(obj).toString("hex")).toHaveLength(132);
+    });
   });
 
   it("should use 'prefix' field", () => {
