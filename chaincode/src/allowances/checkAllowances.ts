@@ -80,18 +80,23 @@ export async function cleanAllowances(
   allowancesToClean: TokenAllowance[],
   authorizedOnBehalf: string
 ): Promise<Array<TokenAllowance>> {
-  const cleaned: Array<TokenAllowance> = [];
+  const remaining: Array<TokenAllowance> = [];
 
   for (const allowance of allowancesToClean) {
     const isInvalid = await isAllowanceInvalid(ctx, allowance);
     if (isInvalid) {
       await deleteOneAllowance(ctx, allowance, authorizedOnBehalf);
     } else {
-      cleaned.push(allowance);
+      remaining.push(allowance);
     }
   }
 
-  return cleaned;
+  return remaining;
+}
+
+export interface CheckAllowancesResult {
+  total: BigNumber;
+  remaining: TokenAllowance[];
 }
 
 /**
@@ -101,14 +106,15 @@ export async function cleanAllowances(
  *
  * 1. clean up and delete expired / fully used allowances
  * 2. Match the remaining allowances against the `TokenInstanceKey` and `AllowanceType`
- * 3. Sum up and return the total useable allowance quantity available
+ * 3. Sum up the total useable allowance quantity available
+ * 4. Return both the remaining allowances and the total
  *
  * @param ctx
  * @param applicableAllowances
  * @param tokenInstanceKey
  * @param action
  * @param callingOnBehalf
- * @returns `Promise<BigNumber>`
+ * @returns `Promise<CheckAllowancesResult>`
  */
 export async function checkAllowances(
   ctx: GalaChainContext,
@@ -116,12 +122,12 @@ export async function checkAllowances(
   tokenInstanceKey: TokenInstanceKey,
   action: AllowanceType,
   callingOnBehalf: string
-): Promise<BigNumber> {
-  let totalAllowance: BigNumber = new BigNumber(0);
+): Promise<CheckAllowancesResult> {
+  let total: BigNumber = new BigNumber(0);
 
-  const validAllowances = await cleanAllowances(ctx, applicableAllowances, callingOnBehalf);
+  const remaining = await cleanAllowances(ctx, applicableAllowances, callingOnBehalf);
 
-  validAllowances.forEach((allowance: TokenAllowance) => {
+  remaining.forEach((allowance: TokenAllowance) => {
     // Check if the token instance matches
     // Check if the action matches
     // Check if allowance is expired
@@ -136,10 +142,9 @@ export async function checkAllowances(
     ) {
       // quantitySpent could be undefined
       const quantitySpent = allowance.quantitySpent ?? new BigNumber("0");
-      totalAllowance = totalAllowance.plus(allowance.quantity).minus(quantitySpent);
+      total = total.plus(allowance.quantity).minus(quantitySpent);
     }
   });
 
-  // return a comparison of total allowance and the requested quantity
-  return totalAllowance;
+  return { total, remaining };
 }
