@@ -145,6 +145,13 @@ function getBaseEncoder(type: string): null | ((value: any) => string) {
       const boundsLower = signed ? (boundsUpper + BN_1) * BN__1 : BN_0;
 
       return function (_value: BigNumberish) {
+        assertArgument(
+          _value === null || typeof _value !== "object",
+          `invalid value for ${type}`,
+          "value",
+          _value
+        );
+
         const value = getBigInt(_value, "value");
 
         assertArgument(
@@ -172,6 +179,12 @@ function getBaseEncoder(type: string): null | ((value: any) => string) {
       );
 
       return function (value: BytesLike) {
+        assertArgument(
+          typeof value === "string" || value instanceof Uint8Array,
+          `invalid value for ${type}`,
+          "value",
+          value
+        );
         const bytes = getBytes(value);
         assertArgument(bytes.length === width, `invalid length for ${type}`, "value", value);
         return hexPadRight(value);
@@ -182,18 +195,32 @@ function getBaseEncoder(type: string): null | ((value: any) => string) {
   switch (type) {
     case "address":
       return function (value: string) {
+        assertArgument(typeof value === "string", "invalid address value", "value", value);
         return zeroPadValue(getAddress(value), 32);
       };
     case "bool":
       return function (value: boolean) {
+        assertArgument(typeof value === "boolean", "invalid bool value", "value", value);
         return !value ? hexFalse : hexTrue;
       };
     case "bytes":
       return function (value: BytesLike) {
+        assertArgument(
+          typeof value === "string" || value instanceof Uint8Array,
+          "invalid bytes value",
+          "value",
+          value
+        );
         return keccak256(value);
       };
     case "string":
       return function (value: string | number) {
+        assertArgument(
+          typeof value === "string" || typeof value === "number",
+          "invalid string value",
+          "value",
+          value
+        );
         return id(typeof value === "number" ? String(value) : value);
       };
   }

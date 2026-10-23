@@ -94,8 +94,18 @@ function assertNoUnsignedFields(
   // Recurse into struct-typed fields so nested injection is caught too.
   for (const f of fields) {
     const base = f.type.replace(/(\[\d*\])+$/, ""); // strip any array suffixes: "quantities[]" -> "quantities"
-    if (!encoder.types[base]) continue; // atomic field type (string, uint256, ...)
-    for (const item of structValues(f.type, record[f.name])) {
+    const values = structValues(f.type, record[f.name]);
+    if (!encoder.types[base]) {
+      for (const item of values) {
+        if (item !== null && typeof item === "object" && !(item instanceof Uint8Array)) {
+          throw new Error(
+            `EIP-712 payload field "${path}${f.name}" is declared as type "${f.type}" and must be a primitive value.`
+          );
+        }
+      }
+      continue;
+    }
+    for (const item of values) {
       assertNoUnsignedFields(encoder, base, item, new Set(), `${path}${f.name}.`);
     }
   }
@@ -150,11 +160,19 @@ export function getPayloadToSign(obj: object, eipOverride: { chainId?: number | 
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const { signature, multisig, trace, prefix, ...plain } = instanceToPlain(obj);
 
-  const dataString = isEIP712Object(plain)
-    ? getEIP712PayloadToSign(plain, eipOverride)
-    : `${prefix ?? ""}${serialize(plain)}`;
+  if (isEIP712Object(plain)) {
+    const dataString = getEIP712PayloadToSign(plain, eipOverride);
+    return dataString.startsWith("0x") ? Buffer.from(dataString.slice(2), "hex") : Buffer.from(dataString);
+  }
 
-  return dataString.startsWith("0x") //
-    ? Buffer.from(dataString.slice(2), "hex") //
-    : Buffer.from(dataString);
+  const serialized = serialize(plain);
+  if (typeof prefix === "string" && prefix.startsWith("0x")) {
+    const hex = prefix.slice(2);
+    if (hex.length === 0 || hex.length % 2 !== 0 || !/^[0-9a-fA-F]+$/.test(hex)) {
+      throw new Error("Invalid hexadecimal signing prefix");
+    }
+    return Buffer.concat([Buffer.from(hex, "hex"), Buffer.from(serialized, "utf8")]);
+  }
+
+  return Buffer.from(`${prefix ?? ""}${serialized}`);
 }
