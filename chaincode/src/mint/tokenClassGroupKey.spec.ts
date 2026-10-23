@@ -12,24 +12,22 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-import { MintRequestDto, UserAlias } from "@gala-chain/api";
+import { UserAlias } from "@gala-chain/api";
 import BigNumber from "bignumber.js";
 
 import { GalaChainContext } from "../types";
 import { MintOperationParams, indexMintOperations } from "./batchMintToken";
-import { indexMintRequests } from "./indexMintRequests";
+import { tokenClassGroupKey } from "./tokenClassGroupKey";
 
 const classA = { collection: "a_b", category: "c", type: "d", additionalKey: "e" };
 const classB = { collection: "a", category: "b_c", type: "d", additionalKey: "e" };
 
 describe("mint group keys", () => {
   it("keeps token classes distinct when their names contain underscores", () => {
-    const indexed = indexMintRequests([{ ...classA } as MintRequestDto, { ...classB } as MintRequestDto]);
+    const keyA = tokenClassGroupKey(classA.collection, classA.category, classA.type, classA.additionalKey);
+    const keyB = tokenClassGroupKey(classB.collection, classB.category, classB.type, classB.additionalKey);
 
-    expect(Object.keys(indexed)).toHaveLength(2);
-    expect(indexed[Object.keys(indexed)[0]][0].collection).not.toEqual(
-      indexed[Object.keys(indexed)[1]][0].collection
-    );
+    expect(keyA).not.toEqual(keyB);
   });
 
   it("groups mint operations for one token class and separates underscore collisions", () => {
