@@ -14,12 +14,12 @@
  */
 import { AxiosError } from "axios";
 
-export function catchAxiosError(e?: AxiosError<{ error?: { Status?: number } }>) {
-  // if data object contains { error: { Status: 0 } }, it means this is GalaChainResponse
-  if (e?.response?.data?.error?.Status === 0) {
-    return { data: e?.response?.data?.error };
-  } else {
-    const data = { axiosError: { message: e?.message, data: e?.response?.data } };
-    return { data: data };
+export function catchAxiosError(e?: AxiosError) {
+  const data = e?.response?.data as { error?: { Status?: number } } | undefined;
+  // A chain error body is returned so callers can deserialize it as a failed response.
+  if (data?.error?.Status === 0) {
+    return { data: data.error };
   }
+
+  throw e instanceof Error ? e : new Error("Request failed");
 }

@@ -87,7 +87,7 @@ export async function validateMintRequest(
   // Check allowances
   const allowanceType = AllowanceType.Mint;
 
-  const totalAllowance: BigNumber = await checkAllowances(
+  const { total, remaining } = await checkAllowances(
     ctx,
     applicableAllowances,
     dtoInstanceKey,
@@ -99,11 +99,11 @@ export async function validateMintRequest(
     `${AllowanceType[allowanceType]} ${quantity.toString()} ` +
     `token ${dtoInstanceKey.toStringKey()} to ${owner}`;
 
-  if (totalAllowance.isLessThan(quantity)) {
+  if (total.isLessThan(quantity)) {
     throw new Error(
-      `${callingOnBehalf} does not have sufficient allowances ${totalAllowance.toString()} to ${actionDescription}`
+      `${callingOnBehalf} does not have sufficient allowances ${total.toString()} to ${actionDescription}`
     );
   }
 
-  return applicableAllowances;
+  return remaining;
 }

@@ -81,6 +81,7 @@ export class PostMintLockConfiguration extends ChainObject {
   })
   @IsNumber()
   @IsInt()
+  @Min(0)
   expirationModifier: number;
 
   /**

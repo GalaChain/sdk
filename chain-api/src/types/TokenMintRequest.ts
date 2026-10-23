@@ -22,7 +22,7 @@ import { ChainObject } from "./ChainObject";
 import { RangedChainObject } from "./RangedChainObject";
 import { TokenMintFulfillment } from "./TokenMintFulfillment";
 import { UserAlias } from "./UserAlias";
-import { TokenMintStatus } from "./common";
+import { TokenMintStatus, isFiniteIntegerTimeKey } from "./common";
 
 export class TokenMintRequest extends RangedChainObject {
   public static INDEX_KEY = "GCTMR";
@@ -82,12 +82,7 @@ export class TokenMintRequest extends RangedChainObject {
   public epoch: string;
 
   public isTimeKeyValid(): boolean {
-    try {
-      new BigNumber(this.timeKey);
-      return true;
-    } catch (e) {
-      return false;
-    }
+    return isFiniteIntegerTimeKey(this.timeKey);
   }
 
   public requestId(): string {

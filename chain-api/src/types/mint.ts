@@ -18,12 +18,17 @@ import {
   ArrayMaxSize,
   ArrayNotEmpty,
   IsDefined,
+  IsInt,
   IsNotEmpty,
   IsNumber,
   IsOptional,
   IsString,
+  Min,
+  ValidateBy,
   ValidateIf,
-  ValidateNested
+  ValidateNested,
+  ValidationOptions,
+  buildMessage
 } from "class-validator";
 import { JSONSchema } from "class-validator-jsonschema";
 
@@ -201,6 +206,29 @@ export class FulfillMintDto extends SubmitCallDTO {
   requests: MintRequestDto[];
 }
 
+function EndNotBeforeStart(validationOptions?: ValidationOptions) {
+  return ValidateBy(
+    {
+      name: "endNotBeforeStart",
+      validator: {
+        validate(endTimestamp: unknown, args) {
+          const startTimestamp = (args?.object as { startTimestamp?: unknown } | undefined)?.startTimestamp;
+          return (
+            typeof startTimestamp === "number" &&
+            typeof endTimestamp === "number" &&
+            startTimestamp <= endTimestamp
+          );
+        },
+        defaultMessage: buildMessage(
+          () => "startTimestamp must be less than or equal to endTimestamp",
+          validationOptions
+        )
+      }
+    },
+    validationOptions
+  );
+}
+
 @JSONSchema({
   description: "Fetch MintRequest or MintAllowanceRequest objects off chain."
 })
@@ -233,14 +261,17 @@ export class FetchMintRequestsDto extends ChainCallDTO {
     description:
       "Start of time range as a Unix epoch timestamp in milliseconds (ms) (inclusive lower bound for queries)."
   })
-  @IsNotEmpty()
+  @IsInt()
+  @Min(0)
   startTimestamp: number;
 
   @JSONSchema({
     description:
       "End of time range as a Unix epoch timestamp in milliseconds (ms) (inclusive upper bound for queries)."
   })
-  @IsNotEmpty()
+  @IsInt()
+  @Min(0)
+  @EndNotBeforeStart()
   endTimestamp: number;
 }
 
@@ -445,32 +476,32 @@ export class FetchTokenMintConfigurationsDto extends ChainCallDTO {
   public static MAX_LIMIT = 10000;
 
   @JSONSchema({
-    description: "Token Class collection."
-  })
-  @IsOptional()
-  @IsNotEmpty()
-  collection: string;
-
-  @JSONSchema({
-    description: "Token Class category. Optional, but required if collection is provided."
-  })
-  @ValidateIf((c) => !!c.collection)
-  @IsNotEmpty()
-  category: string;
-
-  @JSONSchema({
-    description: "Token Class type. Optional, but required if category is provided."
+    description: "Token Class collection. Optional, but required if category is provided."
   })
   @ValidateIf((c) => !!c.category)
   @IsNotEmpty()
-  type: string;
+  collection?: string;
 
   @JSONSchema({
-    description: "Token Class additionalKey. Optional, but required if type is provided. "
+    description: "Token Class category. Optional, but required if type is provided."
   })
   @ValidateIf((c) => !!c.type)
   @IsNotEmpty()
-  additionalKey: string;
+  category?: string;
+
+  @JSONSchema({
+    description: "Token Class type. Optional, but required if additionalKey is provided."
+  })
+  @ValidateIf((c) => !!c.additionalKey)
+  @IsNotEmpty()
+  type?: string;
+
+  @JSONSchema({
+    description: "Token Class additionalKey."
+  })
+  @IsOptional()
+  @IsNotEmpty()
+  additionalKey?: string;
 
   @JSONSchema({
     description: "Bookmark for paginated queries. Provide the empty string for the first page of results."

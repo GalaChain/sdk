@@ -64,6 +64,11 @@ describe("private key", () => {
 
   it("should throw an error for invalid private key", () => {
     expect(() => signatures.normalizePrivateKey(invalidPrivateKey)).toThrow(/Invalid private key/);
+    try {
+      signatures.normalizePrivateKey(invalidPrivateKey);
+    } catch (e) {
+      expect((e as Error).message).not.toContain(invalidPrivateKey);
+    }
   });
 
   it("should normalize private key", () => {
@@ -121,6 +126,16 @@ describe("public key", () => {
     const publicKeyWithoutPrefix = signatures.getPublicKey(ketWithoutPrefix);
 
     expect(publicKeyWithPrefix).toEqual(publicKeyWithoutPrefix);
+  });
+
+  it("derives a public key from base64 and shortened hex", () => {
+    const privateKey = "0000000000000000000000000000000000000000000000000000000000000001";
+    const fromHex = signatures.getPublicKey(privateKey);
+    const fromBase64 = signatures.getPublicKey(Buffer.from(privateKey, "hex").toString("base64"));
+    const fromShortHex = signatures.getPublicKey(privateKey.slice(1));
+
+    expect(fromBase64).toEqual(fromHex);
+    expect(fromShortHex).toEqual(fromHex);
   });
 });
 

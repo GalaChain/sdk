@@ -111,7 +111,8 @@ export abstract class ChainObject {
   }
 
   public static getCompositeKeyFromParts(indexKey: string, parts: unknown[]): string {
-    let compositeKey = ChainObject.COMPOSITEKEY_NS + indexKey + ChainObject.MIN_UNICODE_RUNE_VALUE;
+    const index = ChainObject.rejectEmbeddedNul(indexKey, "index key");
+    let compositeKey = ChainObject.COMPOSITEKEY_NS + index + ChainObject.MIN_UNICODE_RUNE_VALUE;
 
     for (const part of parts) {
       if (
@@ -124,14 +125,48 @@ export abstract class ChainObject {
           `Invalid part ${part} passed to getCompositeKeyFromParts: ${parts.join(", ")}`
         );
       }
-      compositeKey = compositeKey + part + ChainObject.MIN_UNICODE_RUNE_VALUE;
+      const text = ChainObject.rejectEmbeddedNul(String(part), "key part");
+      compositeKey = compositeKey + text + ChainObject.MIN_UNICODE_RUNE_VALUE;
     }
 
     return compositeKey;
   }
 
+  public static joinKeyParts(parts: readonly unknown[]): string {
+    return parts
+      .map((part) => {
+        if (part === null || part === undefined) {
+          return "";
+        }
+        return ChainObject.rejectEmbeddedNul(String(part), "key part");
+      })
+      .join(ChainObject.MIN_UNICODE_RUNE_VALUE);
+  }
+
+  public static rejectEmbeddedNul(text: string, label: string): string {
+    const nul = ChainObject.MIN_UNICODE_RUNE_VALUE;
+    if (!text.includes(nul)) {
+      return text;
+    }
+
+    // A complete composite key is sometimes stored as one component of another key.
+    // It starts and ends with the separator. Any other embedded separator is ambiguous.
+    const isNestedCompositeKey = text.startsWith(nul) && text.endsWith(nul) && text.length > 1;
+    if (!isNestedCompositeKey) {
+      throw new InvalidCompositeKeyError(`${label} contains a NUL character`);
+    }
+    return text;
+  }
+
   public static getStringKeyFromParts(parts: string[]): string {
-    return `${parts.join(ChainObject.ID_SPLIT_CHAR)}`;
+    const texts = parts.map((part, index) => {
+      const text = part === null || part === undefined ? "" : String(part);
+      if (text.includes(ChainObject.ID_SPLIT_CHAR) || text.includes(ChainObject.MIN_UNICODE_RUNE_VALUE)) {
+        throw new InvalidCompositeKeyError(`string key part at index ${index} contains the separator`);
+      }
+      return text;
+    });
+    return texts.join(ChainObject.ID_SPLIT_CHAR);
   }
 
   public static getEncodableStringKeyFromParts(parts: string[]): string {

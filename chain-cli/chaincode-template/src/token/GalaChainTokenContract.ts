@@ -33,6 +33,7 @@ import {
   FetchAllowancesDto,
   FetchAllowancesResponse,
   FetchBalancesDto,
+  FetchBalancesWithPaginationDto,
   FetchBalancesWithTokenMetadataResponse,
   FetchBurnsDto,
   FetchFeeScheduleDto,
@@ -110,6 +111,7 @@ import {
   fetchNftCollectionAuthorization,
   fetchTokenClasses,
   fetchTokenClassesWithPagination,
+  fetchTokenClassesWithSupply,
   fetchTokenInstanceMetadata,
   fetchTokenInstanceMetadataWithPagination,
   fetchVestingToken,
@@ -209,6 +211,18 @@ export default class GalaChainTokenContract extends GalaContract {
   })
   public FetchTokenClasses(ctx: GalaChainContext, dto: FetchTokenClassesDto): Promise<TokenClass[]> {
     return fetchTokenClasses(ctx, dto.tokenClasses);
+  }
+
+  @GalaTransaction({
+    type: EVALUATE,
+    in: FetchTokenClassesDto,
+    out: { arrayOf: TokenClass }
+  })
+  public FetchTokenClassesWithSupply(
+    ctx: GalaChainContext,
+    dto: FetchTokenClassesDto
+  ): Promise<TokenClass[]> {
+    return fetchTokenClassesWithSupply(ctx, dto.tokenClasses);
   }
 
   @GalaTransaction({
@@ -380,8 +394,12 @@ export default class GalaChainTokenContract extends GalaContract {
     in: DeleteAllowancesDto,
     out: "number"
   })
-  public DeleteAllowances(ctx: GalaChainContext, dto: DeleteAllowancesDto): Promise<number> {
-    return deleteAllowances(ctx, dto);
+  public async DeleteAllowances(ctx: GalaChainContext, dto: DeleteAllowancesDto): Promise<number> {
+    return deleteAllowances(ctx, {
+      ...dto,
+      grantedTo: await resolveUserAlias(ctx, dto.grantedTo),
+      ...(dto.grantedBy !== undefined ? { grantedBy: await resolveUserAlias(ctx, dto.grantedBy) } : {})
+    });
   }
 
   @GalaTransaction({
@@ -395,16 +413,17 @@ export default class GalaChainTokenContract extends GalaContract {
 
   @GalaTransaction({
     type: EVALUATE,
-    in: FetchBalancesDto,
-    out: { arrayOf: TokenBalance }
+    in: FetchBalancesWithPaginationDto,
+    out: FetchBalancesWithTokenMetadataResponse
   })
   public async FetchBalancesWithTokenMetadata(
     ctx: GalaChainContext,
-    dto: FetchBalancesDto
+    dto: FetchBalancesWithPaginationDto
   ): Promise<FetchBalancesWithTokenMetadataResponse> {
     return fetchBalancesWithTokenMetadata(ctx, {
       ...dto,
-      owner: await resolveUserAlias(ctx, dto.owner ?? ctx.callingUser)
+      owner: await resolveUserAlias(ctx, dto.owner ?? ctx.callingUser),
+      limit: dto.limit ?? FetchBalancesWithPaginationDto.DEFAULT_LIMIT
     });
   }
 
