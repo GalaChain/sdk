@@ -56,6 +56,11 @@ export function ApplyConstructor<ClassInstance, ConstructorSignature, Serialized
 // create BigNumber object only if we have proper input that matches .toFixed()
 const parseBigNumber = (value: unknown): unknown => {
   if (typeof value === "string") {
+    // Leave exponent form and over-long digit strings unchanged so validation fails
+    // before BigNumber expands them.
+    if (/[eE]/.test(value) || value.length > 256) {
+      return value;
+    }
     const bn = new BigNumber(value);
     return bn.toFixed() === value ? bn : value;
   } else {
