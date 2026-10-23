@@ -323,6 +323,16 @@ async function putAllowancesOnChain(
       throw new InvalidDecimalError(quantities[index].quantity, tokenClass.decimals);
     }
 
+    if (
+      tokenClass.isNonFungible &&
+      allowanceType !== AllowanceType.Mint &&
+      !quantities[index].quantity.isEqualTo(1)
+    ) {
+      throw new Error(
+        `Quantity for non-fungible token allowance must be 1 (got ${quantities[index].quantity.toFixed()})`
+      );
+    }
+
     const grantedTo = quantities[index].user;
 
     const newAllowance = await createValidChainObject(TokenAllowance, {
