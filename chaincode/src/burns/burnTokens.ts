@@ -124,7 +124,7 @@ export async function burnTokens(
       applicableAllowanceResponse = await fetchAllowances(ctx, fetchAllowancesData);
 
       // Check allowances
-      const totalAllowance: BigNumber = await checkAllowances(
+      const { total, remaining } = await checkAllowances(
         ctx,
         applicableAllowanceResponse,
         tokenQuantity.tokenInstanceKey,
@@ -132,10 +132,10 @@ export async function burnTokens(
         callingOnBehalf
       );
 
-      if (totalAllowance.isLessThan(tokenQuantity.quantity)) {
+      if (total.isLessThan(tokenQuantity.quantity)) {
         throw new InsufficientBurnAllowanceError(
           callingOnBehalf,
-          totalAllowance,
+          total,
           tokenQuantity.quantity,
           tokenQuantity.tokenInstanceKey,
           owner
@@ -146,7 +146,7 @@ export async function burnTokens(
       const allowancesUsed: boolean = await useAllowances(
         ctx,
         new BigNumber(tokenQuantity.quantity),
-        applicableAllowanceResponse,
+        remaining,
         AllowanceType.Burn
       );
 
@@ -213,6 +213,18 @@ export async function burnTokens(
  * @param requests: BurnTokenQuantity[]
  * @returns BurnTokenQuantity[]
  */
+function burnAggregationKey(
+  collection: string,
+  category: string,
+  type: string,
+  additionalKey: string,
+  instance: string
+): string {
+  return [collection, category, type, additionalKey, instance]
+    .map((part) => `${part.length}:${part}`)
+    .join("|");
+}
+
 export function aggregateBurnQuantities(requests: BurnTokenQuantity[]): BurnTokenQuantity[] {
   const summedQuantities: BurnTokenQuantity[] = [];
   const hash = {};
@@ -220,7 +232,7 @@ export function aggregateBurnQuantities(requests: BurnTokenQuantity[]): BurnToke
   for (let i = 0; i < requests.length; i++) {
     const { collection, category, type, additionalKey, instance } = requests[i].tokenInstanceKey;
 
-    const key = `${collection}_${category}_${type}_${additionalKey}_${instance.toString()}`;
+    const key = burnAggregationKey(collection, category, type, additionalKey, instance.toString());
 
     hash[key] = hash[key] ?? summedQuantities.length;
 
@@ -313,7 +325,7 @@ export async function incrementOrCreateTokenBurnCounterForTx(
     category,
     type,
     additionalKey,
-    burnedBy,
+    instance.toString(),
     `${ctx.txUnixTime}`
   ]);
 

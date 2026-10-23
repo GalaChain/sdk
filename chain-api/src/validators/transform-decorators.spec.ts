@@ -120,4 +120,48 @@ describe("infinity", () => {
     expect(output).toEqual([]);
     expect(deserializezd.amount).toBeUndefined();
   });
+
+  it("deserializing exponent-form string leaves amount as string and fails validation", async () => {
+    class MockMintTokenDto extends ChainCallDTO {
+      @BigNumberProperty()
+      amount: BigNumber;
+    }
+
+    const deserialized = deserialize(MockMintTokenDto, `{"amount":"1e+999999999"}`);
+    const output = await deserialized.validate();
+
+    expect(typeof deserialized.amount).toBe("string");
+    expect(deserialized.amount).toBe("1e+999999999");
+    expect(output.length).toBeGreaterThan(0);
+  });
+
+  it("deserializing finite canonical decimals produces BigNumbers", async () => {
+    class MockMintTokenDto extends ChainCallDTO {
+      @BigNumberProperty()
+      amount: BigNumber;
+    }
+
+    const five = deserialize(MockMintTokenDto, `{"amount":"5"}`);
+    const onePointFive = deserialize(MockMintTokenDto, `{"amount":"1.5"}`);
+
+    expect(BigNumber.isBigNumber(five.amount)).toBe(true);
+    expect(five.amount.toFixed()).toBe("5");
+    expect(BigNumber.isBigNumber(onePointFive.amount)).toBe(true);
+    expect(onePointFive.amount.toFixed()).toBe("1.5");
+  });
+
+  it("deserializing over-long digit string leaves amount as string and fails validation", async () => {
+    class MockMintTokenDto extends ChainCallDTO {
+      @BigNumberProperty()
+      amount: BigNumber;
+    }
+
+    const overLong = "9".repeat(300);
+    const deserialized = deserialize(MockMintTokenDto, `{"amount":"${overLong}"}`);
+    const output = await deserialized.validate();
+
+    expect(typeof deserialized.amount).toBe("string");
+    expect(deserialized.amount).toBe(overLong);
+    expect(output.length).toBeGreaterThan(0);
+  });
 });

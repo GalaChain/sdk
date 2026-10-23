@@ -67,8 +67,7 @@ export default class Deploy extends BaseCommand<typeof Deploy> {
     // eslint-disable-next-line
     const imageTagRegex = /^[a-zA-Z0-9\.?][+\/?a-zA-Z0-9_.-]+\:.{0,127}$/;
     if (!imageTagRegex.test(imageTag)) {
-      this.log(`The image tag ${imageTag} is not valid. It should follow the pattern imageName:version.`);
-      return;
+      this.error(`The image tag ${imageTag} is not valid. It should follow the pattern imageName:version.`);
     }
 
     const chaincode = await getChaincodeDefinition();
@@ -97,7 +96,7 @@ export default class Deploy extends BaseCommand<typeof Deploy> {
         }
       }
 
-      await deployChaincode({
+      const { operationId } = await deployChaincode({
         privateKey: developerPrivateKey,
         imageTag,
         chaincode: chaincode.name,
@@ -107,11 +106,17 @@ export default class Deploy extends BaseCommand<typeof Deploy> {
       this.log(`Deployment scheduled to TNT. Waiting for deployment to complete...`);
 
       const pollInterval = process.env.NODE_ENV === "test" ? 100 : 1500;
+      const maxAttempts = process.env.NODE_ENV === "test" ? 4 : 100;
 
-      // Wait initially to allow status to change from previous deployment
-      await new Promise((resolve) => setTimeout(resolve, pollInterval * 2));
-
-      await this.verifyDeploymentStatus(developerPrivateKey, chaincode.name, 100, pollInterval, undefined);
+      await this.verifyDeploymentStatus(
+        developerPrivateKey,
+        chaincode.name,
+        operationId,
+        imageTag,
+        maxAttempts,
+        pollInterval,
+        undefined
+      );
     } catch (error) {
       this.error(`${error?.message ?? error}`);
     }
@@ -120,19 +125,18 @@ export default class Deploy extends BaseCommand<typeof Deploy> {
   private async verifyDeploymentStatus(
     privateKey: string,
     chaincodeName: string,
+    operationId: string,
+    imageTag: string,
     attemptsLeft: number,
     interval: number,
     lastInfo: ChaincodeInfoDto | undefined
   ): Promise<void> {
-    // Check if we've exceeded max attempts
     if (attemptsLeft <= 0) {
       if (lastInfo) {
         this.log(`\nDeployment verification timeout. Final status:`);
         this.log(`${JSON.stringify(lastInfo, null, 2)}`);
-        this.warn(`Deployment may still be in progress. Use 'galachain info' to check status later.`);
-      } else {
-        this.error(`Failed to verify deployment status.`);
       }
+      this.error(`Deployment status was not verified.`);
       return;
     }
 
@@ -142,36 +146,55 @@ export default class Deploy extends BaseCommand<typeof Deploy> {
       } else {
         this.log(`Verifying deployment...`);
       }
-      const chainCodeInfo = await getDeploymentResponse({ privateKey, chaincodeName });
+      const chainCodeInfo = await getDeploymentResponse({ privateKey, chaincodeName, operationId });
+      const matchesRequest =
+        chainCodeInfo.operationId === operationId && chainCodeInfo.imageName === imageTag;
 
-      // Check if deployment is successful
-      if (chainCodeInfo.status === "CC_DEPLOYED") {
+      if (chainCodeInfo.status === "CC_DEPLOYED" && matchesRequest) {
         this.log(`\nDeployment successful!`);
         this.log(`${JSON.stringify(chainCodeInfo, null, 2)}`);
         return;
       }
 
-      // Check if deployment failed - terminate immediately
-      if (chainCodeInfo.status === "CC_DEPLOY_FAILED") {
+      if (chainCodeInfo.status === "CC_DEPLOY_FAILED" && chainCodeInfo.operationId === operationId) {
         this.log(`\nDeployment failed!`);
         this.log(`${JSON.stringify(chainCodeInfo, null, 2)}`);
         this.error(`Deployment failed with status: CC_DEPLOY_FAILED`);
         return;
       }
 
-      // Wait before next poll and recurse
       await new Promise((resolve) => setTimeout(resolve, interval));
-      await this.verifyDeploymentStatus(privateKey, chaincodeName, attemptsLeft - 1, interval, chainCodeInfo);
+      await this.verifyDeploymentStatus(
+        privateKey,
+        chaincodeName,
+        operationId,
+        imageTag,
+        attemptsLeft - 1,
+        interval,
+        chainCodeInfo
+      );
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : String(error);
-      this.warn(`Error verifying deployment: ${errorMessage}`);
 
-      if (errorMessage.includes("Deployment failed with status: CC_DEPLOY_FAILED")) {
+      if (
+        errorMessage.includes("Deployment failed with status: CC_DEPLOY_FAILED") ||
+        errorMessage.includes("Deployment status was not verified.")
+      ) {
         throw error;
       }
 
+      this.warn(`Error verifying deployment: ${errorMessage}`);
+
       await new Promise((resolve) => setTimeout(resolve, interval));
-      await this.verifyDeploymentStatus(privateKey, chaincodeName, attemptsLeft - 1, interval, lastInfo);
+      await this.verifyDeploymentStatus(
+        privateKey,
+        chaincodeName,
+        operationId,
+        imageTag,
+        attemptsLeft - 1,
+        interval,
+        lastInfo
+      );
     }
   }
 }

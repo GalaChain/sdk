@@ -21,7 +21,6 @@ import { ChainKey } from "../utils";
 import {
   BigNumberIsInteger,
   BigNumberIsNotNegative,
-  BigNumberIsPositive,
   BigNumberProperty,
   EnumProperty,
   IsUserAlias
@@ -79,7 +78,7 @@ export class TokenAllowance extends ChainObject {
   public created: number;
 
   @IsNotEmpty()
-  @BigNumberIsPositive()
+  @BigNumberIsNotNegative()
   @BigNumberProperty({ allowInfinity: true })
   public uses: BigNumber;
 

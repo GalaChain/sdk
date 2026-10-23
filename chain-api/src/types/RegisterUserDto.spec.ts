@@ -79,7 +79,7 @@ describe("RegisterUserDto", () => {
       });
     });
 
-    it("should prefer publicKey over signers when both are provided", async () => {
+    it("should reject publicKey and signers when both are provided", async () => {
       // Given
       const input = {
         uniqueKey: "test-unique-key-789",
@@ -91,20 +91,13 @@ describe("RegisterUserDto", () => {
       // When
       const instance = plainToInstance(RegisterUserDto, input);
       const errors = await validate(instance);
-      const serialized = instanceToPlain(instance);
 
       // Then
-      expect(errors).toHaveLength(0);
-      expect(instance).toEqual({
-        uniqueKey: "test-unique-key-789",
-        user: "service|test-service",
-        publicKey: "single-key"
+      expect(errors).toHaveLength(1);
+      expect(errors[0].constraints).toEqual({
+        RejectMixedPublicKeyAndSigners: "Cannot use both publicKey and signers"
       });
-      expect(serialized).toEqual({
-        uniqueKey: "test-unique-key-789",
-        user: "service|test-service",
-        publicKey: "single-key"
-      });
+      expect(instance.signers).toEqual(input.signers);
     });
 
     it("should fail validation when neither publicKey nor signers is provided", async () => {

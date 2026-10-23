@@ -85,18 +85,39 @@ async function grantAllowanceByPartialKey(
 
   const fetchAllowanceOps: Promise<TokenAllowance[]>[] = [];
 
-  const grantedToUser = quantities[0].user; // in the context of a partial key grant, only one user should be grantedTo
+  for (const { user: grantedToUser } of quantities) {
+    for (const balance of tokenBalances) {
+      if (balance.containsAnyNftInstanceId()) {
+        for (const balanceInstance of balance.getNftInstanceIds()) {
+          const allowanceQueryParamsForBalance = [
+            grantedToUser,
+            balance.collection,
+            balance.category,
+            balance.type,
+            balance.additionalKey,
+            balanceInstance.toString(),
+            allowanceType.toString(),
+            ctx.callingUser // grantedBy ChainKey#7
+          ];
 
-  for (const balance of tokenBalances) {
-    if (balance.containsAnyNftInstanceId()) {
-      for (const balanceInstance of balance.getNftInstanceIds()) {
+          fetchAllowanceOps.push(
+            getObjectsByPartialCompositeKey(
+              ctx,
+              TokenAllowance.INDEX_KEY,
+              allowanceQueryParamsForBalance,
+              TokenAllowance
+            )
+          );
+        }
+      } else {
+        // no instanceIds on balance, assume fungible TokenClass
         const allowanceQueryParamsForBalance = [
           grantedToUser,
           balance.collection,
           balance.category,
           balance.type,
           balance.additionalKey,
-          balanceInstance.toString(),
+          TokenInstance.FUNGIBLE_TOKEN_INSTANCE.toString(),
           allowanceType.toString(),
           ctx.callingUser // grantedBy ChainKey#7
         ];
@@ -110,27 +131,6 @@ async function grantAllowanceByPartialKey(
           )
         );
       }
-    } else {
-      // no instanceIds on balance, assume fungible TokenClass
-      const allowanceQueryParamsForBalance = [
-        grantedToUser,
-        balance.collection,
-        balance.category,
-        balance.type,
-        balance.additionalKey,
-        TokenInstance.FUNGIBLE_TOKEN_INSTANCE.toString(),
-        allowanceType.toString(),
-        ctx.callingUser // grantedBy ChainKey#7
-      ];
-
-      fetchAllowanceOps.push(
-        getObjectsByPartialCompositeKey(
-          ctx,
-          TokenAllowance.INDEX_KEY,
-          allowanceQueryParamsForBalance,
-          TokenAllowance
-        )
-      );
     }
   }
 
@@ -321,6 +321,16 @@ async function putAllowancesOnChain(
     const decimalPlaces = quantities[index].quantity.decimalPlaces() ?? 0;
     if (decimalPlaces > tokenClass.decimals) {
       throw new InvalidDecimalError(quantities[index].quantity, tokenClass.decimals);
+    }
+
+    if (
+      tokenClass.isNonFungible &&
+      allowanceType !== AllowanceType.Mint &&
+      !quantities[index].quantity.isEqualTo(1)
+    ) {
+      throw new Error(
+        `Quantity for non-fungible token allowance must be 1 (got ${quantities[index].quantity.toFixed()})`
+      );
     }
 
     const grantedTo = quantities[index].user;
@@ -613,6 +623,10 @@ export async function preventDuplicateAllowance(
 
 export function allowanceIsUseable(ctx: GalaChainContext, tokenAllowance: TokenAllowance): boolean {
   if (isAllowanceExpired(ctx, tokenAllowance)) {
+    return false;
+  }
+
+  if (!tokenAllowance.uses.isGreaterThan(0)) {
     return false;
   }
 

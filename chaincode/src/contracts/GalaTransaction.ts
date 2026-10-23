@@ -263,8 +263,7 @@ function GalaTransaction<In extends ChainCallDTO, Out>(
                   );
               uniqueKey = dto?.uniqueKey;
 
-              // Note using Date.now() instead of ctx.txUnixTime which is provided client-side.
-              if (dto?.dtoExpiresAt && dto.dtoExpiresAt < Date.now()) {
+              if (dto?.dtoExpiresAt !== undefined && dto.dtoExpiresAt < ctx.txUnixTime) {
                 throw new ExpiredError(`DTO expired at ${new Date(dto.dtoExpiresAt).toISOString()}`);
               }
 
@@ -404,6 +403,19 @@ function GalaTransaction<In extends ChainCallDTO, Out>(
     // Ensure this is an actual HLF transaction.
     // If this annotation is missing, you cannot call the chaincode method
     Transaction(isWrite)(target, propertyKey);
+
+    // Overwrite all Reflect metadata types. Fabric stores them by method name,
+    // so duplicate method names across contracts can get the wrong type.
+    // Strict serialization is applied in GalaTransaction via parseValidDTO.
+    // Fabric's generic object schema is sufficient here.
+    const transactions =
+      (Reflect.getMetadata("fabric:transactions", target) as
+        | { name?: string; parameters?: { schema?: unknown }[] }[]
+        | undefined) ?? [];
+    const transaction = transactions.find((entry) => entry.name === propertyKey);
+    for (const parameter of transaction?.parameters ?? []) {
+      parameter.schema = { type: "object" };
+    }
   };
 }
 

@@ -12,15 +12,30 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-import { ApplyRequestsDto, GalaChainResponseType } from "@gala-chain/api";
+import {
+  ApplyRequestsDto,
+  GalaChainResponseType,
+  UpdateUserRolesDto,
+  createValidSubmitDTO
+} from "@gala-chain/api";
 import { TestChaincode, transactionSuccess } from "@gala-chain/test";
 import { plainToInstance } from "class-transformer";
 
 import TestGalaContract, { KVDto } from "../__test__/TestGalaContract";
+import { PublicKeyContract } from "./PublicKeyContract";
+import { createRegisteredUser } from "./authenticate.testutils.spec";
 
 describe("ApplyRequests uniqueKey", () => {
   it("echoes the queued request uniqueKey on each applied item", async () => {
-    const chaincode = new TestChaincode([TestGalaContract]);
+    const chaincode = new TestChaincode([TestGalaContract, PublicKeyContract]);
+    const applier = await createRegisteredUser(chaincode);
+    const grantRoles = await createValidSubmitDTO(UpdateUserRolesDto, {
+      user: applier.alias,
+      roles: ["REQUEST_APPLIER"]
+    }).signed(process.env.DEV_ADMIN_PRIVATE_KEY as string);
+    expect(await chaincode.invoke("PublicKeyContract:UpdateUserRoles", grantRoles)).toEqual(
+      transactionSuccess()
+    );
 
     const requestDto = plainToInstance(KVDto, {
       key: "queued-key",
@@ -33,7 +48,7 @@ describe("ApplyRequests uniqueKey", () => {
     const applyDto = plainToInstance(ApplyRequestsDto, {
       uniqueKey: "apply-uk-1",
       minDelayMs: 0
-    }).signed(process.env.DEV_ADMIN_PRIVATE_KEY as string);
+    }).signed(applier.privateKey);
     const applyResponse = await chaincode.invoke("TestGalaContract:ApplyRequests", applyDto.serialize());
 
     expect(applyResponse).toEqual(

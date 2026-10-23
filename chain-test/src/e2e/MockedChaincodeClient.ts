@@ -174,7 +174,6 @@ function chaincodeIndexJsPath(chaincodeDir: string) {
 export class MockedChaincodeClient extends ChainClient {
   private readonly chaincode: Promise<TestChaincode>;
   private transactionDelayMs: number;
-  private readonly customBuilder: MockedChaincodeClientBuilder;
 
   /**
    * Creates a new mocked chaincode client.
@@ -195,7 +194,6 @@ export class MockedChaincodeClient extends ChainClient {
     super(Promise.resolve(builder), userId, contractConfig, orgMsp);
     this.transactionDelayMs = 0;
     this.chaincode = chaincode;
-    this.customBuilder = builder;
   }
 
   /**
@@ -274,23 +272,6 @@ export class MockedChaincodeClient extends ChainClient {
     const args = dto === undefined ? [] : [serialize(dto)];
     const responseClass = responseType ?? (Object as unknown as ClassType<Inferred<T>>);
     return { fullMethod, args, responseClass };
-  }
-
-  /**
-   * Creates a new client instance for a different user.
-   *
-   * @param userId - New user ID to authenticate as
-   * @param secret - User secret (unused in mocked implementation)
-   * @returns New client instance for the specified user
-   */
-  forUser(userId: string, secret?: string | undefined): ChainClient {
-    return new MockedChaincodeClient(
-      this.customBuilder,
-      this.chaincode.then((c) => c.setCallingUser(`client|${userId}`)),
-      this.contractConfig,
-      this.orgMsp,
-      userId
-    );
   }
 
   /**

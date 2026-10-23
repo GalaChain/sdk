@@ -1,6 +1,6 @@
 {
   "name": "@gala-chain/cli",
-  "version": "3.2.5",
+  "version": "3.3.0",
   "description": "CLI for GalaChain to manage and deploy chaincodes",
   "license": "Apache-2.0",
   "bin": {

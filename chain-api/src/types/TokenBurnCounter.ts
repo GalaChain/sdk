@@ -84,7 +84,7 @@ export class TokenBurnCounter extends RangedChainObject {
 
   @Exclude()
   public referencedBurnId(): string {
-    const { collection, category, type, additionalKey, burnedBy, created } = this;
+    const { collection, category, type, additionalKey, burnedBy, instance, created } = this;
 
     return ChainObject.getStringKeyFromParts([
       burnedBy,
@@ -92,7 +92,7 @@ export class TokenBurnCounter extends RangedChainObject {
       category,
       type,
       additionalKey,
-      burnedBy,
+      instance.toString(),
       `${created}`
     ]);
   }

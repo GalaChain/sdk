@@ -36,6 +36,7 @@ import { TransferTokenFailedError, transferToken } from "../transfer";
 import { GalaChainContext } from "../types";
 import { getObjectByKey, putChainObject } from "../utils";
 import { InvalidDecimalError, SwapDtoValidationError, SwapTokenFailedError } from "./SwapError";
+import { reserveDistinctOrdinal } from "./reserveDistinctOrdinal";
 
 async function swapToken(
   ctx: GalaChainContext,
@@ -119,6 +120,7 @@ export async function fillTokenSwap(
     uses,
     created: ctx.txUnixTime
   });
+  await reserveDistinctOrdinal(ctx, newSwapFill, "fillOrdinal");
 
   // the conversion from data to instance was successful, begin chaincode-specific instance validation
 
@@ -153,7 +155,7 @@ export async function fillTokenSwap(
 
   // Check that token IDs exist
   const offeredInstanceKeys = tokenSwap.offered.map((t) => t.tokenInstance);
-  await fetchTokenInstances(ctx, offeredInstanceKeys).catch((e) => {
+  const offeredTokenInstances = await fetchTokenInstances(ctx, offeredInstanceKeys).catch((e) => {
     chainValidationErrors.push(`Error fetching from tokens: ${e.message}. SwapRequestId ${swapRequestId}`);
     return [];
   });
@@ -183,6 +185,31 @@ export async function fillTokenSwap(
   // Check if the swap has expired
   if (tokenSwap.expires && tokenSwap.expires !== 0 && tokenSwap.expires <= ctx.txUnixTime) {
     chainValidationErrors.push(`Token swap has expired. SwapRequestId ${swapRequestId}`);
+  }
+
+  // Non-fungible legs must move exactly one instance for the fill (quantity * uses === 1)
+  if (uses && uses.isInteger() && uses.isGreaterThan(0)) {
+    for (let index = 0; index < offeredTokenInstances.length; index++) {
+      if (offeredTokenInstances[index].isNonFungible) {
+        const scaledQuantity = tokenSwap.offered[index].quantity.times(uses);
+        if (!scaledQuantity.isEqualTo(1)) {
+          chainValidationErrors.push(
+            `Quantity for non-fungible token fill must be 1 (got ${scaledQuantity.toFixed()}). SwapRequestId ${swapRequestId}`
+          );
+        }
+      }
+    }
+
+    for (let index = 0; index < wantedTokenInstances.length; index++) {
+      if (wantedTokenInstances[index].isNonFungible) {
+        const scaledQuantity = tokenSwap.wanted[index].quantity.times(uses);
+        if (!scaledQuantity.isEqualTo(1)) {
+          chainValidationErrors.push(
+            `Quantity for non-fungible token fill must be 1 (got ${scaledQuantity.toFixed()}). SwapRequestId ${swapRequestId}`
+          );
+        }
+      }
+    }
   }
 
   // We have established that the swap is still valid.

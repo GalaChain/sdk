@@ -43,7 +43,6 @@ import { getApiMethod, getApiMethods } from "./GalaContractApi";
 import { EVALUATE, GalaTransaction, SUBMIT, Submit } from "./GalaTransaction";
 import { applySavedRequests, hasPendingApplyRequests } from "./GalaTransactionRequest";
 import type { RequestMethodHandler } from "./GalaTransactionRequest";
-import { requireCuratorAuth } from "./authorize";
 
 export class BatchWriteLimitExceededError extends ValidationFailedError {
   constructor(writesLimit: number) {
@@ -63,6 +62,8 @@ export class BatchPartialSuccessRequiredError extends ChainError {
     this.code = error.ErrorCode;
   }
 }
+
+const REQUEST_APPLIER_ROLE = "REQUEST_APPLIER";
 
 export abstract class GalaContract extends Contract {
   protected readonly requestMethodHandlers: Record<string, RequestMethodHandler> = {};
@@ -317,6 +318,11 @@ export abstract class GalaContract extends Contract {
             const method = getApiMethod(this, op.method, (m) => m.isWrite && m.methodName !== "BatchSubmit");
             opResponse = await this[method.methodName](sandboxCtx, op.dto);
           } catch (error) {
+            // An external invoke cannot be rolled back by discarding the local
+            // write cache, so the whole transaction has to fail.
+            if (sandboxCtx.stub.externalChaincodeWasInvoked) {
+              throw error;
+            }
             opResponse = GalaChainResponse.Error(error);
           }
 
@@ -345,7 +351,7 @@ export abstract class GalaContract extends Contract {
       responses.push(response);
 
       // Store the first error if it's the first error we encounter.
-      if (batchDto.noPartialSuccess && GalaChainResponse.isError(response)) {
+      if (batchDto.noPartialSuccess === true && GalaChainResponse.isError(response)) {
         throw new BatchPartialSuccessRequiredError(index, response);
       }
     }
@@ -357,7 +363,7 @@ export abstract class GalaContract extends Contract {
     in: ApplyRequestsDto,
     out: { arrayOf: AppliedRequest },
     description: "Apply queued internal requests",
-    ...requireCuratorAuth
+    allowedRoles: [REQUEST_APPLIER_ROLE]
   })
   public async ApplyRequests(ctx: GalaChainContext, dto: ApplyRequestsDto): Promise<AppliedRequest[]> {
     return applySavedRequests(ctx, this.getName(), dto, this.requestMethodHandlers);

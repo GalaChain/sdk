@@ -12,7 +12,13 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-import { ChainError, ErrorCode, OracleDefinition, UnauthorizedError } from "@gala-chain/api";
+import {
+  ChainError,
+  ErrorCode,
+  OracleDefinition,
+  UnauthorizedError,
+  ValidationFailedError
+} from "@gala-chain/api";
 import { plainToInstance } from "class-transformer";
 
 import { GalaChainContext } from "../types";
@@ -20,7 +26,7 @@ import { getObjectByKey, putChainObject } from "../utils";
 
 export interface IOracleDefinition {
   name: string;
-  authorities: string[];
+  authorities?: string[];
 }
 
 const curatorOrgMsp = process.env.CURATOR_ORG_MSP ?? "CuratorOrg";
@@ -52,8 +58,16 @@ export async function saveOracleDefinition(
     }
   }
 
-  if (data.authorities.length < 1) {
-    data.authorities.push(ctx.callingUser);
+  if (data.authorities === undefined) {
+    data.authorities = [ctx.callingUser];
+  }
+
+  if (
+    !Array.isArray(data.authorities) ||
+    data.authorities.length === 0 ||
+    data.authorities.some((authority) => typeof authority !== "string" || authority.length === 0)
+  ) {
+    throw new ValidationFailedError("authorities must be an array of non-empty strings");
   }
 
   const oracle = plainToInstance(OracleDefinition, {

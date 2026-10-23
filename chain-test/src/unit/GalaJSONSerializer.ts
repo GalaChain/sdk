@@ -12,7 +12,6 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-import { plainToInstance } from "class-transformer";
 import * as Logger from "fabric-contract-api/lib/logger";
 
 import { serializeValue } from "../serialize";
@@ -150,17 +149,10 @@ export default class GalaJSONSerializer {
         jsonForValidation = value;
         return { value, jsonForValidation };
       } else if (schema.type === "object") {
-        logger.debug(`${loggerPrefix} fromBuffer assuming data as object`);
-        // so this implies we have some json that should be formed up as an object
-        // need to get the constructor
-        const cnstr = fullschema.components.schemas[schema.$id].cnstr;
-        if (cnstr) {
-          logger.debug(`${loggerPrefix} fromBuffer handling data as object`);
-          jsonForValidation = JSON.parse(stringData);
-          value = plainToInstance(cnstr, jsonForValidation);
-          return { value, jsonForValidation };
-        }
-        logger.debug(`${loggerPrefix} no known constructor`);
+        logger.debug(`${loggerPrefix} fromBuffer handling data as JSON object`);
+        jsonForValidation = JSON.parse(stringData);
+        value = jsonForValidation;
+        return { value, jsonForValidation };
       } else if (schema.type === "array") {
         jsonForValidation = JSON.parse(stringData);
 
