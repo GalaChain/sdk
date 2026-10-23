@@ -119,13 +119,7 @@ export async function mintToken(
   );
 
   if (total.isLessThan(quantity)) {
-    throw new InsufficientMintAllowanceError(
-      callingOnBehalf,
-      total,
-      quantity,
-      dtoInstanceKey,
-      owner
-    );
+    throw new InsufficientMintAllowanceError(callingOnBehalf, total, quantity, dtoInstanceKey, owner);
   }
 
   // check that mint is valid based on max supply, max capacity, etc
