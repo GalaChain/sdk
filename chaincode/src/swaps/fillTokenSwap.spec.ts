@@ -376,6 +376,67 @@ describe("FillTokenSwap", () => {
       })
     );
   });
+
+  test("should reject filling 2 uses when wanted side is one NFT", async () => {
+    const currencyClass = currency.tokenClass();
+    const currencyInstance = currency.tokenInstance();
+    const currencyInstanceKey = currency.tokenInstanceKey();
+    const currencyPerUse = new BigNumber("100");
+
+    const nftInstance = nft.tokenInstance1();
+    const nftInstanceKey = nft.tokenInstance1Key();
+    const nftClass = nft.tokenClass();
+
+    const multiUseSwap = plainToInstance(TokenSwapRequest, {
+      created: 1,
+      txid: "test-tx-id-nft-uses",
+      offered: [
+        {
+          tokenInstance: currencyInstanceKey,
+          quantity: currencyPerUse
+        }
+      ],
+      wanted: [
+        {
+          tokenInstance: nftInstanceKey,
+          quantity: new BigNumber("1")
+        }
+      ],
+      offeredBy: users.testUser1.identityKey,
+      offeredTo: users.testUser2.identityKey,
+      fillIds: [],
+      uses: new BigNumber("2"),
+      usesSpent: new BigNumber("0"),
+      expires: 0
+    });
+
+    multiUseSwap.swapRequestId = multiUseSwap.getCompositeKey();
+
+    const { ctx, contract } = fixture(GalaChainTokenContract)
+      .registeredUsers(users.testUser2)
+      .savedState(nftClass, nftInstance, currencyClass, currencyInstance, multiUseSwap);
+
+    const dto = (
+      await createValidDTO(FillTokenSwapDto, {
+        swapRequestId: multiUseSwap.getCompositeKey(),
+        uses: new BigNumber("2"),
+        uniqueKey: "test-fill-nft-two-uses"
+      })
+    ).signed(users.testUser2.privateKey);
+
+    // When
+    const failedResponse = await contract.FillTokenSwap(ctx, dto).catch((e) => e);
+
+    // Then
+    expect(failedResponse).toEqual(
+      expect.objectContaining({
+        ErrorCode: ErrorCode.VALIDATION_FAILED,
+        ErrorKey: "SWAP_DTO_VALIDATION",
+        Status: 0,
+        Message: expect.stringContaining("Quantity for non-fungible token fill must be 1 (got 2)")
+      })
+    );
+  });
 });
 
 test("should fail when token swap doesn't match the expected token swap using BatchFillTokenSwap", async () => {

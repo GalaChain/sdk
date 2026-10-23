@@ -45,7 +45,7 @@ async function verifyAndUseAllowancesInternal(
   applicableAllowances: TokenAllowance[]
 ): Promise<boolean> {
   // verify allowance quantity
-  const allowedQuantity = await checkAllowances(
+  const { total, remaining } = await checkAllowances(
     ctx,
     applicableAllowances,
     tokenInstanceKey,
@@ -53,10 +53,10 @@ async function verifyAndUseAllowancesInternal(
     authorizedOnBehalf
   );
 
-  if (quantity.isGreaterThan(allowedQuantity)) {
+  if (quantity.isGreaterThan(total)) {
     throw new InsufficientAllowanceError(
       authorizedOnBehalf,
-      allowedQuantity,
+      total,
       actionType,
       quantity,
       tokenInstanceKey,
@@ -65,7 +65,7 @@ async function verifyAndUseAllowancesInternal(
   }
 
   // Use allowances (which also creates claims)
-  const useResult = await useAllowances(ctx, quantity, applicableAllowances, actionType);
+  const useResult = await useAllowances(ctx, quantity, remaining, actionType);
   return useResult;
 }
 

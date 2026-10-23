@@ -61,7 +61,7 @@ describe("GrantAllowance", () => {
 
     const dto: GrantAllowanceDto = await createValidSubmitDTO(GrantAllowanceDto, {
       tokenInstance: nftInstanceQueryKey,
-      quantities: [{ user: users.testUser1.identityKey, quantity: new BigNumber("100") }],
+      quantities: [{ user: users.testUser1.identityKey, quantity: new BigNumber("1") }],
       allowanceType: AllowanceType.Lock,
       uses: new BigNumber("1")
     }).signed(users.testUser2.privateKey);
@@ -70,9 +70,52 @@ describe("GrantAllowance", () => {
     const response = await contract.GrantAllowance(ctx, dto);
 
     // Then
-    const allowance = nft.tokenAllowance((a) => ({ ...a, created: ctx.txUnixTime }));
+    const allowance = nft.tokenAllowance((a) => ({
+      ...a,
+      created: ctx.txUnixTime,
+      quantity: new BigNumber("1")
+    }));
     expect(response).toEqual(GalaChainResponse.Success([allowance]));
     expect(getWrites()).toEqual(writesMap(allowance));
+  });
+
+  it("should reject non-mint NFT allowance with quantity other than 1", async () => {
+    const nftInstance = await createValidChainObject(TokenInstance, {
+      ...nft.tokenInstance1(),
+      owner: users.testUser2.identityKey
+    });
+    const nftClass = nft.tokenClass();
+    const nftClassKey = nft.tokenClassKey();
+    const nftInstanceQueryKey = await createValidDTO(TokenInstanceQueryKey, nft.tokenInstance1KeyPlain());
+
+    const nftBalance = new TokenBalance({
+      owner: users.testUser2.identityKey,
+      ...nftClassKey
+    });
+    nftBalance.addInstance(new BigNumber("1"));
+
+    const { ctx, contract, getWrites } = fixture(GalaChainTokenContract)
+      .registeredUsers(users.testUser2)
+      .savedState(nftClass, nftInstance, nftBalance);
+
+    const dto: GrantAllowanceDto = await createValidSubmitDTO(GrantAllowanceDto, {
+      tokenInstance: nftInstanceQueryKey,
+      quantities: [{ user: users.testUser1.identityKey, quantity: new BigNumber("2") }],
+      allowanceType: AllowanceType.Lock,
+      uses: new BigNumber("1")
+    }).signed(users.testUser2.privateKey);
+
+    // When
+    const response = await contract.GrantAllowance(ctx, dto);
+
+    // Then
+    expect(response).toEqual(
+      expect.objectContaining({
+        Status: 0,
+        Message: expect.stringContaining("Quantity for non-fungible token allowance must be 1 (got 2)")
+      })
+    );
+    expect(getWrites()).toEqual({});
   });
 
   it("should fail to GrantAllowance when the instance is missing in balance", async () => {
@@ -344,7 +387,7 @@ describe("GrantAllowance", () => {
 
     const dto: GrantAllowanceDto = await createValidSubmitDTO(GrantAllowanceDto, {
       tokenInstance: currencyInstanceQueryKey,
-      quantities: [{ user: users.testUser1.identityKey, quantity: new BigNumber("100") }],
+      quantities: [{ user: users.testUser1.identityKey, quantity: new BigNumber("1") }],
       allowanceType: AllowanceType.Lock,
       uses: new BigNumber("1")
     });
@@ -358,7 +401,11 @@ describe("GrantAllowance", () => {
     const response = await contract.GrantAllowance(ctx, partialDto);
 
     // Then
-    const allowance = nft.tokenAllowance((a) => ({ ...a, created: ctx.txUnixTime }));
+    const allowance = nft.tokenAllowance((a) => ({
+      ...a,
+      created: ctx.txUnixTime,
+      quantity: new BigNumber("1")
+    }));
     expect(response).toEqual(GalaChainResponse.Success([allowance]));
     expect(getWrites()).toEqual(writesMap(allowance));
   });
@@ -509,7 +556,7 @@ describe("GrantAllowance", () => {
       uses: new BigNumber("1"),
       usesSpent: new BigNumber("0"),
       expires: 0,
-      quantity: new BigNumber("100"),
+      quantity: new BigNumber("1"),
       quantitySpent: new BigNumber("0")
     });
 
@@ -524,7 +571,7 @@ describe("GrantAllowance", () => {
 
     const dto: GrantAllowanceDto = await createValidSubmitDTO(GrantAllowanceDto, {
       tokenInstance: nftInstanceQueryKey,
-      quantities: [{ user: users.testUser1.identityKey, quantity: new BigNumber("100") }],
+      quantities: [{ user: users.testUser1.identityKey, quantity: new BigNumber("1") }],
       allowanceType: AllowanceType.Lock,
       uses: new BigNumber("1")
     }).signed(users.testUser2.privateKey);
