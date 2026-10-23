@@ -29,10 +29,8 @@ import {
   FetchTokenInstanceMetadataDto,
   FetchTokenInstanceMetadataWithPaginationDto,
   FreezeTokenBalanceDto,
-  FulfillMintDto,
   FullAllowanceCheckDto,
   GrantAllowanceDto,
-  HighThroughputMintTokenDto,
   LockTokenDto,
   LockTokensDto,
   MintRequestDto,
@@ -70,12 +68,9 @@ import {
   FetchTokenInstanceMetadataResponse,
   FetchTokenInstanceMetadataWithPaginationRequest,
   FreezeTokenBalanceRequest,
-  FulfillMintRequest,
   FullAllowanceCheckRequest,
   FullAllowanceCheckResponse,
   GrantAllowanceRequest,
-  HighThroughputMintTokenRequest,
-  HighThroughputMintTokenResponse,
   LockTokenRequest,
   LockTokensRequest,
   MintRequest,
@@ -325,28 +320,6 @@ export class TokenApi extends GalaChainBaseApi {
       url: this.chainCodeUrl,
       requestConstructor: FreezeTokenBalanceDto,
       responseConstructor: TokenBalance
-    });
-  }
-
-  public RequestMint(dto: HighThroughputMintTokenRequest) {
-    return this.connection.submit({
-      method: "RequestMint",
-      payload: dto,
-      sign: true,
-      url: this.chainCodeUrl,
-      requestConstructor: HighThroughputMintTokenDto,
-      responseConstructor: HighThroughputMintTokenResponse
-    });
-  }
-
-  public FulfillMint(dto: FulfillMintRequest) {
-    return this.connection.submit<Array<TokenInstanceKey>, FulfillMintDto>({
-      method: "FulfillMint",
-      payload: dto,
-      sign: true,
-      url: this.chainCodeUrl,
-      requestConstructor: FulfillMintDto,
-      responseConstructor: TokenInstanceKey
     });
   }
 

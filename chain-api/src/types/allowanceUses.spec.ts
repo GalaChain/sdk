@@ -18,7 +18,7 @@ import { validate } from "class-validator";
 
 import { TokenAllowance } from "./TokenAllowance";
 import { UserAlias } from "./UserAlias";
-import { GrantAllowanceDto, HighThroughputGrantAllowanceDto, RefreshAllowanceDto } from "./allowance";
+import { GrantAllowanceDto, RefreshAllowanceDto } from "./allowance";
 import { AllowanceType } from "./common";
 import { createValidChainObject } from "./createValidChainObject";
 
@@ -37,7 +37,7 @@ const grant = {
 };
 
 it("should reject a grant expiration that is not a non-negative integer", async () => {
-  for (const dtoClass of [GrantAllowanceDto, HighThroughputGrantAllowanceDto]) {
+  for (const dtoClass of [GrantAllowanceDto]) {
     const negative = await validate(plainToInstance(dtoClass, { ...grant, expires: -1 }));
     const text = await validate(plainToInstance(dtoClass, { ...grant, expires: "soon" }));
     const never = await validate(plainToInstance(dtoClass, { ...grant, expires: 0 }));
