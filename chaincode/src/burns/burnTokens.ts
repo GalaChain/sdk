@@ -124,7 +124,7 @@ export async function burnTokens(
       applicableAllowanceResponse = await fetchAllowances(ctx, fetchAllowancesData);
 
       // Check allowances
-      const totalAllowance: BigNumber = await checkAllowances(
+      const { total, remaining } = await checkAllowances(
         ctx,
         applicableAllowanceResponse,
         tokenQuantity.tokenInstanceKey,
@@ -132,10 +132,10 @@ export async function burnTokens(
         callingOnBehalf
       );
 
-      if (totalAllowance.isLessThan(tokenQuantity.quantity)) {
+      if (total.isLessThan(tokenQuantity.quantity)) {
         throw new InsufficientBurnAllowanceError(
           callingOnBehalf,
-          totalAllowance,
+          total,
           tokenQuantity.quantity,
           tokenQuantity.tokenInstanceKey,
           owner
@@ -146,7 +146,7 @@ export async function burnTokens(
       const allowancesUsed: boolean = await useAllowances(
         ctx,
         new BigNumber(tokenQuantity.quantity),
-        applicableAllowanceResponse,
+        remaining,
         AllowanceType.Burn
       );
 
