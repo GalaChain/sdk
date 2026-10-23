@@ -170,4 +170,65 @@ describe("verifyAndUseAllowances", () => {
 
     expect(result).toBe(true);
   });
+
+  test("should not write back an exhausted unexpired allowance after cleanup", async () => {
+    // Given: one fully spent finite allowance (still unexpired) plus a separate valid allowance
+    const currencyClass = currency.tokenClass();
+    const currencyInstance = currency.tokenInstance();
+    const currencyInstanceKey = currency.tokenInstanceKey();
+
+    const { ctx } = fixture(GalaChainTokenContract).registeredUsers(users.testUser1, users.tokenHolder);
+
+    const exhaustedAllowance = plainToInstance(TokenAllowance, {
+      ...currency.tokenAllowancePlain(ctx.txUnixTime),
+      grantedTo: users.testUser1.identityKey,
+      grantedBy: users.tokenHolder.identityKey,
+      allowanceType: AllowanceType.Lock,
+      quantity: new BigNumber("100"),
+      quantitySpent: new BigNumber("100"),
+      uses: new BigNumber("10"),
+      usesSpent: new BigNumber("10"),
+      expires: 0,
+      created: 1
+    });
+
+    const validAllowance = plainToInstance(TokenAllowance, {
+      ...currency.tokenAllowancePlain(ctx.txUnixTime),
+      grantedTo: users.testUser1.identityKey,
+      grantedBy: users.tokenHolder.identityKey,
+      allowanceType: AllowanceType.Lock,
+      quantity: new BigNumber("100"),
+      quantitySpent: new BigNumber("0"),
+      uses: new BigNumber("10"),
+      usesSpent: new BigNumber("0"),
+      expires: 0,
+      created: 2
+    });
+
+    const tokenBalance = plainToInstance(TokenBalance, {
+      ...currency.tokenBalance(),
+      owner: users.tokenHolder.identityKey,
+      quantity: new BigNumber("1000")
+    });
+
+    const { ctx: testCtx, getWrites } = fixture(GalaChainTokenContract)
+      .registeredUsers(users.testUser1, users.tokenHolder)
+      .savedState(currencyClass, currencyInstance, exhaustedAllowance, validAllowance, tokenBalance);
+
+    // When - aggregate quantity is covered by the valid allowance alone
+    const result = await verifyAndUseAllowances(
+      testCtx,
+      users.tokenHolder.identityKey,
+      currencyInstanceKey,
+      new BigNumber("50"),
+      currencyInstance,
+      users.testUser1.identityKey,
+      AllowanceType.Lock
+    );
+    await testCtx.stub.flushWrites();
+
+    // Then - spent entry stays deleted; it is not put back during consumption
+    expect(result).toBe(true);
+    expect(getWrites()[exhaustedAllowance.getCompositeKey()]).toEqual("");
+  });
 });
