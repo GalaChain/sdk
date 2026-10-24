@@ -12,7 +12,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-import { createValidDTO } from "@gala-chain/api";
+import { createValidDTO, signatures } from "@gala-chain/api";
 import { TestChaincode, transactionError, transactionErrorKey, transactionSuccess } from "@gala-chain/test";
 
 import TestGalaContract, { KVDto, SuperheroDto } from "../__test__/TestGalaContract";
@@ -47,6 +47,49 @@ describe("UniqueTransactionService", () => {
 
     const saveResponse = await chaincode.invoke("TestGalaContract:CreateSuperhero", dto.serialize());
     expect(saveResponse).toEqual(transactionError());
+  });
+
+  it("should consume uniqueKey when this endpoint rejects the DTO", async () => {
+    // Given a submit that fails CreateSuperhero validation but is valid for PutKv
+    const chaincode = new TestChaincode([TestGalaContract]);
+    const uniqueKey = "failed-parse-uk";
+
+    // When
+    const first = await chaincode.invoke("TestGalaContract:CreateSuperhero", JSON.stringify({ uniqueKey }));
+    const second = await chaincode.invoke(
+      "TestGalaContract:PutKv",
+      JSON.stringify({ uniqueKey, key: "should-not-persist", value: "robot" })
+    );
+
+    // Then the first endpoint rejects the DTO, but the uniqueKey is still consumed
+    expect(first).toEqual(transactionErrorKey("DTO_VALIDATION_FAILED"));
+    expect(second).toEqual(transactionErrorKey("UNIQUE_TRANSACTION_CONFLICT"));
+    expect(chaincode.getStateAll()["should-not-persist"]).toBeUndefined();
+  });
+
+  it("should consume uniqueKey when authentication fails", async () => {
+    // Given a signed submit DTO whose signature cannot recover a public key
+    const chaincode = new TestChaincode([TestGalaContract]);
+    const dto = await createValidDTO(SuperheroDto, {
+      name: "foo",
+      age: 2,
+      uniqueKey: "failed-auth-uk"
+    });
+    dto.signature = signatures.getDERSignature(
+      dto,
+      signatures.normalizePrivateKey(signatures.genKeyPair().privateKey)
+    );
+
+    // When
+    const first = await chaincode.invoke("TestGalaContract:CreateSuperhero", dto.serialize());
+    const second = await chaincode.invoke(
+      "TestGalaContract:PutKv",
+      JSON.stringify({ uniqueKey: dto.uniqueKey, key: "should-not-persist", value: "robot" })
+    );
+
+    // Then the first attempt fails auth, but the uniqueKey is still consumed
+    expect(first).toEqual(transactionErrorKey("MISSING_SIGNER"));
+    expect(second).toEqual(transactionErrorKey("UNIQUE_TRANSACTION_CONFLICT"));
   });
 
   it("should consume uniqueKey when the submit handler fails", async () => {
