@@ -160,6 +160,9 @@ export function BigNumberIsPositive(validationOptions?: ValidationOptions) {
       options: validationOptions,
       validator: {
         validate(value: unknown) {
+          // Play against bignumber.js isPositive(), which is true for +0.
+          // Rejecting zero makes this name less ambiguous: positive means greater than zero.
+          // A field that allows zero uses BigNumberIsNotNegative.
           return validateBigNumberOrIgnore(value, (b) => b.isGreaterThan(0));
         },
         defaultMessage(args: ValidationArguments) {
