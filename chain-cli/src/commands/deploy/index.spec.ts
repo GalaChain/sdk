@@ -14,7 +14,13 @@
  */
 import axios from "axios";
 
-import { axiosGetResponse, axiosPostResponse, consts, execSyncMock } from "../../__test__/data";
+import {
+  axiosGetResponse,
+  axiosPostResponse,
+  consts,
+  dockerInspectResponse,
+  execSyncMock
+} from "../../__test__/data";
 import Deploy from "./index";
 
 jest.setTimeout(10000);
@@ -83,7 +89,8 @@ describe("Deploy Command", () => {
         data: {
           ...axiosGetResponse.data,
           status,
-          operationId: operationIdForStatus(submittedOperationId)
+          operationId: operationIdForStatus(submittedOperationId),
+          imageDigest: consts.imageDigest
         }
       });
     });
@@ -101,7 +108,7 @@ describe("Deploy Command", () => {
       "Verifying Docker image some/image-name:1d...",
       `Chaincode:    ${consts.chaincodeName}`,
       `Image:        ${consts.imageName}`,
-      `Image SHA256: ${consts.imageSha256}`,
+      `Image SHA256: ${consts.imageDigest}`,
       ...consts.contracts.map((contract) => `- ${contract}`),
       "Deployment scheduled to TNT. Waiting for deployment to complete...",
       "Verifying deployment...",
@@ -116,6 +123,16 @@ describe("Deploy Command", () => {
     expectedLines.forEach((line) => {
       expect(fullOutput).toContain(line);
     });
+    expect(mockedAxios.post).toHaveBeenCalledWith(
+      expect.anything(),
+      expect.objectContaining({
+        imageTag: consts.imageName,
+        imageDigest: consts.imageDigest
+      }),
+      expect.anything()
+    );
+    const submitted = (mockedAxios.post as jest.Mock).mock.calls[0][1];
+    expect(submitted.imageDigest).not.toBe(consts.imageSha256);
   });
 
   it("should fail to deploy a chaincode", async () => {
@@ -142,6 +159,39 @@ describe("Deploy Command", () => {
       "Deployment status was not verified."
     );
     expect(stdOut.join("\n")).not.toContain("Deployment successful!");
+  });
+
+  it("fails when the deployed image digest is not the signed digest", async () => {
+    mockedAxios.post = jest.fn().mockImplementation((_url, body) => {
+      mockedAxios.get = jest.fn().mockResolvedValue({
+        data: {
+          ...axiosGetResponse.data,
+          status: "CC_DEPLOYED",
+          operationId: body.operationId,
+          imageDigest: "sha256:cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc"
+        }
+      });
+      return Promise.resolve(axiosPostResponse);
+    });
+
+    await expect(Deploy.run(["--no-prompt", "some/image-name:1d"])).rejects.toThrow(
+      "Deployment did not report the signed image digest."
+    );
+    expect(mockedAxios.get).toHaveBeenCalledTimes(1);
+    expect(stdOut.join("\n")).not.toContain("Deployment successful!");
+  });
+
+  it("fails before sending when the image has no registry digest", async () => {
+    const saved = dockerInspectResponse[0].RepoDigests;
+    dockerInspectResponse[0].RepoDigests = [];
+    mockedAxios.post = jest.fn();
+
+    try {
+      await expect(Deploy.run(["--no-prompt", "some/image-name:1d"])).rejects.toThrow(/registry digest/);
+      expect(mockedAxios.post).not.toHaveBeenCalled();
+    } finally {
+      dockerInspectResponse[0].RepoDigests = saved;
+    }
   });
 
   it("rejects an invalid image tag", async () => {

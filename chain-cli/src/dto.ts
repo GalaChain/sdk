@@ -28,6 +28,7 @@ export interface PostChaincodeDto {
 export interface DeployChaincodeDto {
   operationId: string;
   imageTag: string;
+  imageDigest: string;
   chaincode: string;
   contracts: { contractName: string }[];
 }
@@ -43,6 +44,7 @@ export interface ChaincodeInfoDto {
   channel: string;
   chaincode: string;
   imageName: string;
+  imageDigest?: string;
   sequence: number;
   status: string;
   adminPublicKey: string;

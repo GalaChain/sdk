@@ -22,12 +22,14 @@ export const consts = {
   chaincodeName: "gc-ce89f06e1801fca0cb1b7d7324f9cc0a7b1681dc",
   imageName: "some/image-name:1d",
   imageSha256: "sha256:a123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef",
+  imageDigest: "sha256:b23456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef0",
   contracts: ["TestContract", "OrangesContract"]
 };
 
 export const dockerInspectResponse = [
   {
     Id: consts.imageSha256,
+    RepoDigests: [`some/image-name@${consts.imageDigest}`],
     Os: "linux",
     Architecture: "amd64"
   }

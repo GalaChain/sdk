@@ -161,7 +161,9 @@ export default class GalaJSONSerializer {
             components: fullschema.components
           };
 
-          return this._fromString(JSON.stringify(v), _schema, loggerPrefix).value;
+          // A string is already decoded. Encoding it again would keep the quote characters.
+          const encoded = typeof v === "string" ? v : JSON.stringify(v);
+          return this._fromString(encoded, _schema, loggerPrefix).value;
         });
         return { value, jsonForValidation };
       }
