@@ -12,7 +12,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-import { serialize } from "@gala-chain/api";
+import { signatures } from "@gala-chain/api";
 import { ethers } from "ethers";
 
 import { CustomClient, GalaChainProviderOptions } from "../GalaChainClient";
@@ -60,8 +60,18 @@ export class SigningClient extends CustomClient {
         );
         return { ...prefixedPayload, signature, types, domain };
       } else if (signingType === SigningType.PERSONAL_SIGN) {
-        const signature = await this.wallet.signMessage(serialize(prefixedPayload));
-        return { ...prefixedPayload, signature };
+        const {
+          domain: _domain,
+          types: _types,
+          ...body
+        } = payload as U & {
+          domain?: unknown;
+          types?: unknown;
+        };
+        const personalMessage = signatures.personalSignMessage(body);
+        const personalPrefix = calculatePersonalSignPrefix(body);
+        const signature = await this.wallet.signMessage(personalMessage);
+        return { ...body, prefix: personalPrefix, signature } as U & { signature: string; prefix?: string };
       } else {
         throw new Error("Unsupported signing type");
       }

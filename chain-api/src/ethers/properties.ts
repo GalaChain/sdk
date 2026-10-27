@@ -7,15 +7,15 @@
 
 function checkType(value: any, type: string, name: string): void {
   const types = type.split("|").map((t) => t.trim());
-  for (let i = 0; i < types.length; i++) {
-    switch (type) {
+  for (const member of types) {
+    switch (member) {
       case "any":
         return;
       case "bigint":
       case "boolean":
       case "number":
       case "string":
-        if (typeof value === type) {
+        if (typeof value === member) {
           return;
         }
     }
