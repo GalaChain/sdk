@@ -94,7 +94,7 @@ describe("LockTokens", () => {
     expect(getWrites()).toEqual({});
   });
 
-  test("saves a non-vesting lock when a vesting start is sent", async () => {
+  test("makes the locked quantity spendable at the vesting start", async () => {
     // Given
     const nftInstance = nft.tokenInstance1();
     const nftInstanceKey = nft.tokenInstance1Key();
@@ -121,7 +121,8 @@ describe("LockTokens", () => {
         quantity: new BigNumber("1"),
         created: ctx.txUnixTime,
         lockAuthority: users.testUser1.identityKey,
-        expires: 0
+        expires: 0,
+        vestingPeriodStart: 1
       }),
       1
     );

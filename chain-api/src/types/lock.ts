@@ -71,7 +71,7 @@ export class LockTokenDto extends SubmitCallDTO {
   quantity: BigNumber;
 
   @JSONSchema({
-    description: "Accepted and ignored. This call saves a lock with no vesting period."
+    description: "When set, the locked quantity becomes spendable at this time."
   })
   @Min(0)
   @IsInt()

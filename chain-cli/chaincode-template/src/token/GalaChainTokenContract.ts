@@ -575,8 +575,7 @@ export default class GalaChainTokenContract extends GalaContract {
       quantity: dto.quantity,
       name: undefined,
       expires: 0,
-      // This call has no vesting end, so a start is not saved.
-      vestingPeriodStart: undefined,
+      vestingPeriodStart: dto.vestingPeriodStart,
       verifyAuthorizedOnBehalf: async () => undefined
     });
   }
