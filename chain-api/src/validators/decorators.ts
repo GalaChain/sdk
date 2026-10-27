@@ -160,7 +160,7 @@ export function BigNumberIsPositive(validationOptions?: ValidationOptions) {
       options: validationOptions,
       validator: {
         validate(value: unknown) {
-          return validateBigNumberOrIgnore(value, (b) => b.isPositive());
+          return validateBigNumberOrIgnore(value, (b) => b.isGreaterThan(0));
         },
         defaultMessage(args: ValidationArguments) {
           // here you can provide default error message if validation failed

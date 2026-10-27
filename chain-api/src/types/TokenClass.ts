@@ -29,7 +29,7 @@ import {
 import { JSONSchema } from "class-validator-jsonschema";
 
 import { ChainKey } from "../utils";
-import { BigNumberIsNotNegative, BigNumberIsPositive, BigNumberProperty, IsUserAlias } from "../validators";
+import { BigNumberIsNotNegative, BigNumberProperty, IsUserAlias } from "../validators";
 import { ChainObject } from "./ChainObject";
 import { UserAlias } from "./UserAlias";
 import { GC_NETWORK_ID } from "./contract";
@@ -143,16 +143,22 @@ export class TokenClass extends ChainObject {
   @IsInt()
   public decimals: number; // This can only be expanded after creation
 
+  @JSONSchema({
+    description: "Maximum supply. Zero means unlimited."
+  })
   @IsNotEmpty()
-  @BigNumberIsPositive()
+  @BigNumberIsNotNegative()
   @BigNumberProperty({ allowInfinity: true })
   public maxSupply: BigNumber;
 
   @IsBoolean()
   public isNonFungible: boolean;
 
+  @JSONSchema({
+    description: "Maximum capacity. Zero means unlimited."
+  })
   @IsNotEmpty()
-  @BigNumberIsPositive()
+  @BigNumberIsNotNegative()
   @BigNumberProperty({ allowInfinity: true })
   public maxCapacity: BigNumber;
 
@@ -204,7 +210,7 @@ export class TokenClass extends ChainObject {
   @IsAlphanumeric()
   public rarity?: string;
 
-  @BigNumberIsPositive()
+  @BigNumberIsNotNegative()
   @BigNumberProperty()
   public totalBurned: BigNumber;
 

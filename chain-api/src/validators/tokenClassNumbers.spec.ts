@@ -20,6 +20,8 @@ import {
   CreateTokenClassDto,
   GrantAllowanceQuantity,
   TokenClass,
+  TokenHold,
+  TransferTokenDto,
   UserAlias,
   createValidChainObject
 } from "../types";
@@ -51,6 +53,53 @@ describe("token class numbers", () => {
 
     const errors = await validate(dto);
     expect(errors.some((error) => error.property === "decimals")).toBe(true);
+  });
+
+  it("accepts a zero max supply as unlimited and a zero burned total", async () => {
+    const tokenClass = await createValidChainObject(TokenClass, {
+      ...tokenClassKey,
+      network: "GC",
+      decimals: 0,
+      maxSupply: new BigNumber("0"),
+      isNonFungible: false,
+      maxCapacity: new BigNumber("0"),
+      authorities: ["client|admin" as UserAlias],
+      name: "Name",
+      symbol: "SYM",
+      description: "A token",
+      image: "http://example.com/a.png",
+      totalBurned: new BigNumber("0"),
+      totalMintAllowance: new BigNumber("0"),
+      totalSupply: new BigNumber("0")
+    });
+
+    expect(tokenClass.maxSupply.isZero()).toBe(true);
+    expect(tokenClass.totalBurned.isZero()).toBe(true);
+  });
+
+  it("accepts a fungible hold instance of zero", async () => {
+    const hold = plainToInstance(TokenHold, {
+      createdBy: "client|admin",
+      instanceId: "0",
+      quantity: "1",
+      created: 1,
+      expires: 0
+    });
+
+    const errors = await validate(hold);
+    expect(errors.some((error) => error.property === "instanceId")).toBe(false);
+  });
+
+  it("rejects a zero transfer quantity", async () => {
+    const dto = plainToInstance(TransferTokenDto, {
+      to: "client|bob",
+      tokenInstance: { ...tokenClassKey, instance: "1" },
+      quantity: "0",
+      uniqueKey: "zero-quantity"
+    });
+
+    const errors = await validate(dto);
+    expect(errors.some((error) => error.property === "quantity")).toBe(true);
   });
 
   it("accepts an infinite max supply on a persisted token class", async () => {
