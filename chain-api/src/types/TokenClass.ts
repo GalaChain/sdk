@@ -144,7 +144,7 @@ export class TokenClass extends ChainObject {
   public decimals: number; // This can only be expanded after creation
 
   @JSONSchema({
-    description: "Maximum supply. Zero means unlimited."
+    description: "Maximum supply. Zero and Infinity are unlimited."
   })
   @IsNotEmpty()
   @BigNumberIsNotNegative()
@@ -155,7 +155,7 @@ export class TokenClass extends ChainObject {
   public isNonFungible: boolean;
 
   @JSONSchema({
-    description: "Maximum capacity. Zero means unlimited."
+    description: "Maximum capacity. Zero and Infinity are unlimited."
   })
   @IsNotEmpty()
   @BigNumberIsNotNegative()

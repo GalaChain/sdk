@@ -172,7 +172,7 @@ export class CreateTokenClassDto extends SubmitCallDTO {
   decimals?: number;
 
   @JSONSchema({
-    description: `If missing, set to ${CreateTokenClassDto.DEFAULT_MAX_CAPACITY}. Zero means unlimited.`
+    description: `If missing, set to Infinity. Zero and Infinity are unlimited.`
   })
   @IsOptional()
   @BigNumberIsNotNegative()
@@ -180,7 +180,7 @@ export class CreateTokenClassDto extends SubmitCallDTO {
   maxCapacity?: BigNumber;
 
   @JSONSchema({
-    description: `If missing, set to infinity ${CreateTokenClassDto.DEFAULT_MAX_SUPPLY}. Zero means unlimited.`
+    description: `If missing, set to Infinity. Zero and Infinity are unlimited.`
   })
   @IsOptional()
   @BigNumberIsNotNegative()

@@ -17,13 +17,15 @@ import { plainToInstance } from "class-transformer";
 import { validate } from "class-validator";
 
 import {
+  CreateNftCollectionDto,
   CreateTokenClassDto,
   GrantAllowanceQuantity,
   TokenClass,
   TokenHold,
   TransferTokenDto,
   UserAlias,
-  createValidChainObject
+  createValidChainObject,
+  createValidDTO
 } from "../types";
 import { BigNumberProperty } from "./transform-decorators";
 
@@ -100,6 +102,45 @@ describe("token class numbers", () => {
 
     const errors = await validate(dto);
     expect(errors.some((error) => error.property === "quantity")).toBe(true);
+  });
+
+  it("accepts zero and Infinity as unlimited supply bounds", async () => {
+    for (const bound of ["0", "Infinity"]) {
+      const dto = await createValidDTO(CreateTokenClassDto, {
+        tokenClass: tokenClassKey,
+        name: "Name",
+        symbol: "SYM",
+        description: "A token",
+        image: "http://example.com/a.png",
+        maxSupply: bound,
+        maxCapacity: bound,
+        uniqueKey: `bound-${bound}`
+      } as any);
+
+      expect(dto.maxSupply?.isEqualTo(new BigNumber(bound))).toBe(true);
+      expect(dto.maxCapacity?.isEqualTo(new BigNumber(bound))).toBe(true);
+    }
+  });
+
+  it("accepts zero and Infinity as unlimited NFT collection bounds", async () => {
+    for (const bound of ["0", "Infinity"]) {
+      const dto = await createValidDTO(CreateNftCollectionDto, {
+        collection: "TestCollection",
+        category: "Weapon",
+        type: "Sword",
+        additionalKey: "none",
+        name: "Test Sword",
+        symbol: "TSW",
+        description: "A test sword",
+        image: "https://example.com/image.png",
+        maxSupply: bound,
+        maxCapacity: bound,
+        uniqueKey: `nft-bound-${bound}`
+      } as any);
+
+      expect(dto.maxSupply?.isEqualTo(new BigNumber(bound))).toBe(true);
+      expect(dto.maxCapacity?.isEqualTo(new BigNumber(bound))).toBe(true);
+    }
   });
 
   it("accepts an infinite max supply on a persisted token class", async () => {

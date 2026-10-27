@@ -197,18 +197,18 @@ export class CreateNftCollectionDto extends SubmitCallDTO {
   rarity?: string;
 
   @JSONSchema({
-    description: "Maximum supply for the NFT collection. Zero means unlimited."
+    description: "Maximum supply. Zero and Infinity are unlimited. If missing, set to Infinity."
   })
   @BigNumberIsNotNegative()
-  @BigNumberProperty()
+  @BigNumberProperty({ allowInfinity: true })
   @IsOptional()
   maxSupply?: BigNumber;
 
   @JSONSchema({
-    description: "Maximum capacity for the NFT collection. Zero means unlimited."
+    description: "Maximum capacity. Zero and Infinity are unlimited. If missing, set to Infinity."
   })
   @BigNumberIsNotNegative()
-  @BigNumberProperty()
+  @BigNumberProperty({ allowInfinity: true })
   @IsOptional()
   maxCapacity?: BigNumber;
 
