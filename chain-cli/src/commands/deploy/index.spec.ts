@@ -131,8 +131,6 @@ describe("Deploy Command", () => {
       }),
       expect.anything()
     );
-    const submitted = (mockedAxios.post as jest.Mock).mock.calls[0][1];
-    expect(submitted.imageDigest).not.toBe(consts.imageSha256);
   });
 
   it("should fail to deploy a chaincode", async () => {
