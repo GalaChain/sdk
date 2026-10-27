@@ -69,6 +69,14 @@ export class LockTokenDto extends SubmitCallDTO {
   @BigNumberIsPositive()
   @BigNumberProperty()
   quantity: BigNumber;
+
+  @JSONSchema({
+    description: "Accepted and ignored. This call saves a lock with no vesting period."
+  })
+  @Min(0)
+  @IsInt()
+  @IsOptional()
+  public vestingPeriodStart?: number | undefined;
 }
 
 @JSONSchema({
