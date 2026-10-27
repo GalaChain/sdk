@@ -21,12 +21,8 @@ import {
   TokenClaim,
   TokenClass,
   TokenInstance,
-  TokenMintFulfillment,
-  TokenMintRequest,
-  TokenMintStatus,
   createValidChainObject,
   createValidDTO,
-  createValidRangedChainObject,
   createValidSubmitDTO
 } from "@gala-chain/api";
 import { fixture, users, writesMap } from "@gala-chain/test";
@@ -36,7 +32,6 @@ import GalaChainTokenContract from "../__test__/GalaChainTokenContract";
 import { TotalSupplyExceededError } from "../allowances/AllowanceError";
 import { currency, nft } from "../testdata/index";
 import { InvalidDecimalError } from "../token";
-import { inverseEpoch, inverseTime } from "../utils";
 import { InsufficientMintAllowanceError } from "./MintError";
 
 describe("MintToken", () => {
@@ -71,30 +66,6 @@ describe("MintToken", () => {
       created: ctx.txUnixTime
     });
 
-    const { collection, category, type, additionalKey } = currencyClass;
-    const timeKey = inverseTime(ctx, 0);
-    const epochKey = inverseEpoch(ctx, 0);
-
-    const mintRequest = await createValidRangedChainObject(TokenMintRequest, {
-      id: "-", // will be set in the mintRequest.requestId() call
-      collection,
-      category,
-      type,
-      additionalKey,
-      timeKey,
-      totalKnownMintsCount: new BigNumber("0"),
-      requestor: users.admin.identityKey,
-      owner: users.testUser1.identityKey,
-      created: ctx.txUnixTime,
-      quantity: mintQty,
-      state: TokenMintStatus.Unknown,
-      epoch: epochKey
-    });
-
-    mintRequest.id = mintRequest.requestId();
-
-    const mintFulfillment: TokenMintFulfillment = mintRequest.fulfill(mintRequest.quantity);
-
     const expectedClass = await createValidChainObject(TokenClass, {
       ...currencyClass,
       totalSupply: mintQty
@@ -116,9 +87,7 @@ describe("MintToken", () => {
     // Then
     expect(response).toEqual(GalaChainResponse.Success([currency.tokenInstanceKey()]));
 
-    expect(getWrites()).toEqual(
-      writesMap(tokenClaim, expectedAllowance, expectedBalance, expectedClass, mintRequest, mintFulfillment)
-    );
+    expect(getWrites()).toEqual(writesMap(tokenClaim, expectedAllowance, expectedBalance, expectedClass));
   });
 
   test("mints unique items, i.e. NFTs", async () => {
@@ -182,30 +151,6 @@ describe("MintToken", () => {
       created: ctx.txUnixTime
     });
 
-    const { collection, category, type, additionalKey } = nftClass;
-    const timeKey = inverseTime(ctx, 0);
-    const epochKey = inverseEpoch(ctx, 0);
-
-    const mintRequest = await createValidRangedChainObject(TokenMintRequest, {
-      id: "-", // will be set in the mintRequest.requestId() call
-      collection,
-      category,
-      type,
-      additionalKey,
-      timeKey,
-      totalKnownMintsCount: new BigNumber("0"),
-      requestor: users.admin.identityKey,
-      owner: users.testUser1.identityKey,
-      created: ctx.txUnixTime,
-      quantity: mintQty,
-      state: TokenMintStatus.Unknown,
-      epoch: epochKey
-    });
-
-    mintRequest.id = mintRequest.requestId();
-
-    const mintFulfillment: TokenMintFulfillment = mintRequest.fulfill(mintRequest.quantity);
-
     // When
     const response = await contract.MintToken(ctx, dto);
 
@@ -213,16 +158,7 @@ describe("MintToken", () => {
     expect(response).toEqual(GalaChainResponse.Success([nft1.instanceKeyObj(), nft2.instanceKeyObj()]));
 
     expect(getWrites()).toEqual(
-      writesMap(
-        tokenClaim,
-        expectedAllowance,
-        nft1,
-        nft2,
-        expectedBalance,
-        expectedClass,
-        mintRequest,
-        mintFulfillment
-      )
+      writesMap(tokenClaim, expectedAllowance, nft1, nft2, expectedBalance, expectedClass)
     );
   });
 
@@ -351,46 +287,13 @@ describe("MintToken", () => {
       created: ctx.txUnixTime
     });
 
-    const { collection, category, type, additionalKey } = nftClass;
-    const timeKey = inverseTime(ctx, 0);
-    const epochKey = inverseEpoch(ctx, 0);
-
-    const mintRequest = await createValidRangedChainObject(TokenMintRequest, {
-      id: "-", // will be set in the mintRequest.requestId() call
-      collection,
-      category,
-      type,
-      additionalKey,
-      timeKey,
-      totalKnownMintsCount: new BigNumber("0"),
-      requestor: users.admin.identityKey,
-      owner: users.testUser1.identityKey,
-      created: ctx.txUnixTime,
-      quantity: mintQty,
-      state: TokenMintStatus.Unknown,
-      epoch: epochKey
-    });
-
-    mintRequest.id = mintRequest.requestId();
-
-    const mintFulfillment: TokenMintFulfillment = mintRequest.fulfill(mintRequest.quantity);
-
     // When
     const response = await contract.MintToken(ctx, dto);
 
     // Then
     expect(response).toEqual(GalaChainResponse.Success([nft1.instanceKeyObj(), nft2.instanceKeyObj()]));
     expect(getWrites()).toEqual(
-      writesMap(
-        tokenClaim,
-        expectedAllowance,
-        nft1,
-        nft2,
-        expectedBalance,
-        expectedClass,
-        mintRequest,
-        mintFulfillment
-      )
+      writesMap(tokenClaim, expectedAllowance, nft1, nft2, expectedBalance, expectedClass)
     );
   });
 

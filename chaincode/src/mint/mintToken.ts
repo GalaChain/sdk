@@ -19,10 +19,8 @@ import {
   TokenAllowance,
   TokenClass,
   TokenClassKey,
-  TokenClassKeyProperties,
   TokenInstance,
   TokenInstanceKey,
-  TokenMintFulfillment,
   UserAlias
 } from "@gala-chain/api";
 import { ChainCallDTO } from "@gala-chain/api";
@@ -34,14 +32,12 @@ import { InvalidDecimalError } from "../token/TokenError";
 import { GalaChainContext } from "../types/GalaChainContext";
 import { getObjectByKey, putChainObject } from "../utils";
 import { InsufficientMintAllowanceError, NftMaxMintError, UseAllowancesFailedError } from "./MintError";
-import { writeMintRequest } from "./writeMintRequest";
 
 export interface MintTokenParams {
   tokenClassKey: TokenClassKey;
   owner: UserAlias;
   quantity: BigNumber;
   authorizedOnBehalf: AuthorizedOnBehalf | undefined;
-  knownTotalSupply?: BigNumber | undefined;
 }
 
 export function parseMintTokenParams(plain: Record<string, unknown>): MintTokenParams {
@@ -51,25 +47,18 @@ export function parseMintTokenParams(plain: Record<string, unknown>): MintTokenP
   );
   const quantity =
     plain.quantity instanceof BigNumber ? plain.quantity : new BigNumber(plain.quantity as string | number);
-  const knownTotalSupply =
-    plain.knownTotalSupply === undefined
-      ? undefined
-      : plain.knownTotalSupply instanceof BigNumber
-        ? plain.knownTotalSupply
-        : new BigNumber(plain.knownTotalSupply as string | number);
 
   return {
     tokenClassKey,
     owner: plain.owner as MintTokenParams["owner"],
     quantity,
-    authorizedOnBehalf: plain.authorizedOnBehalf as MintTokenParams["authorizedOnBehalf"],
-    knownTotalSupply
+    authorizedOnBehalf: plain.authorizedOnBehalf as MintTokenParams["authorizedOnBehalf"]
   };
 }
 
 export async function mintToken(
   ctx: GalaChainContext,
-  { tokenClassKey, owner, quantity, authorizedOnBehalf, knownTotalSupply }: MintTokenParams
+  { tokenClassKey, owner, quantity, authorizedOnBehalf }: MintTokenParams
 ): Promise<Array<TokenInstanceKey>> {
   const callingOnBehalf = authorizedOnBehalf?.callingOnBehalf ?? ctx.callingUser;
 
@@ -193,14 +182,6 @@ export async function mintToken(
       returnKeys.push(await TokenInstance.buildInstanceKeyObject(nftInfo));
     }
 
-    await updateTotalSupply(ctx, {
-      tokenClassKey,
-      callingUser: callingOnBehalf,
-      owner,
-      quantity,
-      knownTotalSupply: knownTotalSupply
-    });
-
     return returnKeys;
   } else {
     // Update the balance of the target user, or create it.
@@ -215,39 +196,6 @@ export async function mintToken(
 
     await putChainObject(ctx, tokenClass);
 
-    await updateTotalSupply(ctx, {
-      tokenClassKey,
-      callingUser: callingOnBehalf,
-      owner,
-      quantity,
-      knownTotalSupply
-    });
-
     return [dtoInstanceKey];
   }
-}
-
-export interface UpdateTokenSupplyParams {
-  tokenClassKey: TokenClassKeyProperties;
-  callingUser: UserAlias;
-  owner: UserAlias;
-  quantity: BigNumber;
-  knownTotalSupply?: BigNumber | undefined;
-}
-// for backwards-compatibility with high throughput total supply data structures
-export async function updateTotalSupply(
-  ctx: GalaChainContext,
-  { tokenClassKey, callingUser, owner, quantity, knownTotalSupply }: UpdateTokenSupplyParams
-): Promise<void> {
-  const mintRequest = await writeMintRequest(ctx, {
-    tokenClassKey,
-    callingUser,
-    owner,
-    quantity,
-    knownTotalSupply
-  });
-
-  const mintFulfillmentEntry: TokenMintFulfillment = mintRequest.fulfill(quantity);
-
-  await putChainObject(ctx, mintFulfillmentEntry);
 }

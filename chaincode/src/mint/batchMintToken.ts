@@ -17,7 +17,6 @@ import BigNumber from "bignumber.js";
 
 import { GalaChainContext } from "../types";
 import { BatchMintError } from "./MintError";
-import { fetchMintSupply } from "./fetchMintSupply";
 import { mintToken } from "./mintToken";
 import { tokenClassGroupKey } from "./tokenClassGroupKey";
 
@@ -26,7 +25,6 @@ export interface MintOperationParams {
   owner: UserAlias;
   quantity: BigNumber;
   authorizedOnBehalf: AuthorizedOnBehalf | undefined;
-  knownTotalSupply?: BigNumber | undefined;
 }
 
 export async function batchMintToken(
@@ -40,10 +38,6 @@ export async function batchMintToken(
 
   for (const indexKey in opsByTokenClass) {
     const opsByToken = opsByTokenClass[indexKey];
-    const tokenClassKey = opsByToken.tokenClassKey;
-
-    let knownTotalSupply = await fetchMintSupply(ctx, tokenClassKey);
-
     for (const indexKeyByCaller in opsByToken.mintOperationsIndex) {
       const tokenOpsByCaller = opsByToken.mintOperationsIndex[indexKeyByCaller];
 
@@ -53,17 +47,12 @@ export async function batchMintToken(
       for (let i = 0; i < mintOpsBatch.length; i += 1) {
         const mintOp = mintOpsBatch[i];
 
-        mintOp.knownTotalSupply = new BigNumber(knownTotalSupply);
-
         try {
           const mintResponse = await mintToken(ctx, mintOp);
           minted.push(...mintResponse);
         } catch (e) {
           errors.push(`index: ${i}, message: ${e.message ?? ""}`);
         }
-
-        // ensure we're incrementing known supply as we go
-        knownTotalSupply = knownTotalSupply.plus(mintOp.quantity);
       }
     }
   }

@@ -26,7 +26,7 @@ import { fetchTokenMintConfigurations } from "./fetchMintConfigurations";
 import { mintRequestsByTimeRange } from "./fetchMintRequests";
 import { fetchMintSupply } from "./fetchMintSupply";
 import { fetchTokenClassesWithSupply } from "./fetchTokenClassWithSupply";
-import { MintTokenParams, UpdateTokenSupplyParams, mintToken, parseMintTokenParams } from "./mintToken";
+import { MintTokenParams, mintToken, parseMintTokenParams } from "./mintToken";
 import { MintTokenWithAllowanceParams, mintTokenWithAllowance } from "./mintTokenWithAllowance";
 import { saveTokenMintConfiguration } from "./saveMintConfiguration";
 import { validateMintRequest } from "./validateMintRequest";
@@ -41,7 +41,6 @@ export {
   mintToken,
   parseMintTokenParams,
   MintTokenParams,
-  UpdateTokenSupplyParams,
   saveTokenMintConfiguration,
   validateMintRequest,
   fetchMintAllowanceSupply,
