@@ -14,7 +14,16 @@
  */
 import BigNumber from "bignumber.js";
 import { Type } from "class-transformer";
-import { IsInt, IsNotEmpty, IsOptional, IsString, Max, Min, ValidateNested } from "class-validator";
+import {
+  ArrayNotEmpty,
+  IsInt,
+  IsNotEmpty,
+  IsOptional,
+  IsString,
+  Max,
+  Min,
+  ValidateNested
+} from "class-validator";
 import { JSONSchema } from "class-validator-jsonschema";
 
 import { BigNumberIsNotNegative, BigNumberProperty, IsUserRef } from "../validators";
@@ -213,9 +222,12 @@ export class CreateNftCollectionDto extends SubmitCallDTO {
   maxCapacity?: BigNumber;
 
   @JSONSchema({
-    description: "List of user aliases who should become token authorities. Defaults to the calling user."
+    description:
+      "List of user aliases who should become token authorities. Defaults to the calling user. " +
+      "Must be non-empty when provided."
   })
   @IsUserRef({ each: true })
   @IsOptional()
+  @ArrayNotEmpty()
   authorities?: UserRef[];
 }

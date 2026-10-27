@@ -12,7 +12,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-import { getPayloadToSign } from "./getPayloadToSign";
+import { ethereumPersonalSignPrefix, getPayloadToSign, personalSignMessage } from "./getPayloadToSign";
 
 describe("getPayloadToSign", () => {
   it("should sort keys", () => {
@@ -239,5 +239,26 @@ describe("getPayloadToSign", () => {
     expect(withA.subarray(2).toString("utf8")).toEqual('{"a":1}');
     expect(withB.subarray(2).toString("utf8")).toEqual('{"b":2}');
     expect(withA.equals(withB)).toBe(false);
+  });
+});
+
+describe("personalSignMessage", () => {
+  it("omits typed-data metadata from the signed message", () => {
+    const message = personalSignMessage({
+      quantity: "1",
+      domain: { name: "GalaChain" },
+      types: { TransferToken: [{ name: "quantity", type: "string" }] },
+      signature: "abc",
+      prefix: "ignored"
+    });
+
+    expect(JSON.parse(message)).toEqual({ quantity: "1" });
+  });
+
+  it("verifies the same bytes a wallet hashes for that message", () => {
+    const message = personalSignMessage({ quantity: "1" });
+    const prefix = ethereumPersonalSignPrefix(message);
+
+    expect(getPayloadToSign({ quantity: "1", prefix }).toString("utf8")).toBe(prefix + message);
   });
 });
