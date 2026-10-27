@@ -254,7 +254,7 @@ export class FetchMintRequestsDto extends ChainCallDTO {
   @JSONSchema({
     description: "Token additionalKey."
   })
-  @IsNotEmpty()
+  @IsDefined()
   additionalKey: string;
 
   @JSONSchema({
@@ -300,7 +300,7 @@ export class FetchTokenSupplyDto extends ChainCallDTO {
   @JSONSchema({
     description: "Token additionalKey."
   })
-  @IsNotEmpty()
+  @IsDefined()
   additionalKey: string;
 }
 
@@ -346,7 +346,7 @@ export class PatchMintAllowanceRequestDto extends SubmitCallDTO {
   @JSONSchema({
     description: "Token additionalKey."
   })
-  @IsNotEmpty()
+  @IsDefined()
   additionalKey: string;
 
   @JSONSchema({
@@ -388,7 +388,7 @@ export class PatchMintRequestDto extends SubmitCallDTO {
   @JSONSchema({
     description: "Token additionalKey."
   })
-  @IsNotEmpty()
+  @IsDefined()
   additionalKey: string;
 
   @JSONSchema({
@@ -500,7 +500,7 @@ export class FetchTokenMintConfigurationsDto extends ChainCallDTO {
     description: "Token Class additionalKey."
   })
   @IsOptional()
-  @IsNotEmpty()
+  @IsDefined()
   additionalKey?: string;
 
   @JSONSchema({

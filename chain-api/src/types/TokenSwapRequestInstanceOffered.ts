@@ -40,7 +40,7 @@ export class TokenSwapRequestInstanceOffered extends ChainObject {
   public type: string;
 
   @ChainKey({ position: 3 })
-  @IsNotEmpty()
+  @IsDefined()
   public additionalKey: string;
 
   @ChainKey({ position: 4 })

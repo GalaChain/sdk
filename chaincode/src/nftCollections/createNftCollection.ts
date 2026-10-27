@@ -16,7 +16,8 @@ import {
   CreateNftCollectionDto,
   CreateTokenClassDto,
   NftCollectionAuthorization,
-  TokenClassKey
+  TokenClassKey,
+  ValidationFailedError
 } from "@gala-chain/api";
 
 import { resolveUserAlias } from "../services/index";
@@ -33,6 +34,10 @@ export async function createNftCollection(
   ctx: GalaChainContext,
   dto: CreateNftCollectionDto
 ): Promise<TokenClassKey> {
+  if (dto.authorities !== undefined && dto.authorities.length === 0) {
+    throw new ValidationFailedError("authorities must be a non-empty array");
+  }
+
   // Fetch authorization to verify user is authorized and get the authorized collection name
   let authorization: NftCollectionAuthorization;
   try {

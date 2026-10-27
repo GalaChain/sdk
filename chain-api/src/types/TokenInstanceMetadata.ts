@@ -341,7 +341,7 @@ export class FetchTokenInstanceMetadataWithPaginationDto extends ChainCallDTO {
     description: "Token additionalKey. Optional, but required if instance is provided."
   })
   @ValidateIf((o) => !!o.instance)
-  @IsNotEmpty()
+  @IsDefined()
   additionalKey?: string;
 
   @JSONSchema({

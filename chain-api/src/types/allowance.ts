@@ -17,6 +17,7 @@ import { Type } from "class-transformer";
 import {
   ArrayNotEmpty,
   IsBoolean,
+  IsDefined,
   IsInt,
   IsNotEmpty,
   IsOptional,
@@ -83,7 +84,7 @@ export class FetchAllowancesDto extends ChainCallDTO {
     description: "Token additionalKey. Optional, but required if instance is provided."
   })
   @ValidateIf((o) => !!o.instance)
-  @IsNotEmpty()
+  @IsDefined()
   additionalKey?: string;
 
   @JSONSchema({
@@ -164,7 +165,7 @@ export class FetchAllowancesLegacyDto extends ChainCallDTO {
     description: "Token additionalKey. Optional, but required if instance is provided."
   })
   @ValidateIf((o) => !!o.instance)
-  @IsNotEmpty()
+  @IsDefined()
   additionalKey?: string;
 
   @JSONSchema({
@@ -247,7 +248,7 @@ export class DeleteAllowancesDto extends SubmitCallDTO {
     description: "Token additionalKey. Optional, but required if instance is provided."
   })
   @ValidateIf((o) => !!o.instance)
-  @IsNotEmpty()
+  @IsDefined()
   additionalKey?: string;
 
   @JSONSchema({

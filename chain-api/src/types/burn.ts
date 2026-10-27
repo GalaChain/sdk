@@ -92,7 +92,7 @@ export class FetchBurnsDto extends ChainCallDTO {
   })
   @ValidateIf((burn: FetchBurnsDto) => burn.additionalKey !== undefined || burn.instance !== undefined)
   @IsString()
-  @IsNotEmpty()
+  @IsDefined()
   additionalKey?: string;
 
   @JSONSchema({
@@ -205,7 +205,7 @@ export class FetchBurnCountersWithPaginationDto extends ChainCallDTO {
     description: "Token additionalKey. Optional, but required if instance is provided."
   })
   @ValidateIf((o) => !!o.instance)
-  @IsNotEmpty()
+  @IsDefined()
   additionalKey?: string;
 
   @JSONSchema({
