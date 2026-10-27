@@ -26,7 +26,8 @@ import {
   RestApiStatus,
   SetContractApiParams,
   globalRestApiConfig,
-  normalizeRestApiUrl
+  normalizeRestApiUrl,
+  requireSecureRestApiUrl
 } from "./GlobalRestApiConfig";
 import { RestApiClient } from "./RestApiClient";
 import { RestApiConfig } from "./loadRestApiConfig";
@@ -41,6 +42,7 @@ export class RestApiClientBuilder extends ChainClientBuilder {
     public readonly restApiConfig: RestApiConfig
   ) {
     super();
+    requireSecureRestApiUrl(restApiUrl);
   }
 
   private ensureInitializedRestApi(): Promise<void> {

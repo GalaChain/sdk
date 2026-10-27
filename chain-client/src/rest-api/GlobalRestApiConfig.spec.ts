@@ -14,7 +14,7 @@
  */
 import axios from "axios";
 
-import { globalRestApiConfig } from "./GlobalRestApiConfig";
+import { globalRestApiConfig, requireSecureRestApiUrl } from "./GlobalRestApiConfig";
 import { RestApiClientBuilder } from "./RestApiClientBuilder";
 
 const contract = { channel: "product", chaincode: "assets", contract: "GalaChainToken" };
@@ -68,7 +68,7 @@ describe("REST cache scope", () => {
   });
 
   it("loads a later builder's identity and contracts on an initialized endpoint", async () => {
-    const url = "http://later-builder.example";
+    const url = "https://later-builder.example";
     const firstCredentials = { adminKey: "admin", adminSecret: "one" };
     const secondCredentials = { adminKey: "admin", adminSecret: "two" };
     const channel = {
@@ -110,5 +110,18 @@ describe("getContractApi", () => {
     expect(() => globalRestApiConfig.getContractApi("http://missing.example", params)).toThrow(
       'Cannot find contract API for key ["http://missing.example","missing","assets","Unknown"]'
     );
+  });
+});
+
+describe("requireSecureRestApiUrl", () => {
+  it("allows https and local http", () => {
+    expect(() => requireSecureRestApiUrl("https://remote.example")).not.toThrow();
+    expect(() => requireSecureRestApiUrl("http://localhost:3010")).not.toThrow();
+    expect(() => requireSecureRestApiUrl("http://127.0.0.1:3010")).not.toThrow();
+    expect(() => requireSecureRestApiUrl("http://[::1]:3010")).not.toThrow();
+  });
+
+  it("rejects a remote http URL", () => {
+    expect(() => requireSecureRestApiUrl("http://remote.example")).toThrow(/https/);
   });
 });

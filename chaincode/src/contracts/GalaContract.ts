@@ -29,20 +29,21 @@ import {
   GetObjectHistoryDto,
   HasPendingApplyRequestsDto,
   UserProfile,
+  UserRole,
   ValidationFailedError,
-  createValidDTO,
-  isValidUserAlias,
-  signatures
+  createValidDTO
 } from "@gala-chain/api";
 import { Contract } from "fabric-contract-api";
 
-import { PublicKeyService, UniqueTransactionService } from "../services";
+import { UniqueTransactionService } from "../services";
 import { GalaChainContext, GalaChainContextConfig, GalaChainStub } from "../types";
 import { getObjectHistory, getPlainObjectByKey } from "../utils";
 import { getApiMethod, getApiMethods } from "./GalaContractApi";
 import { EVALUATE, GalaTransaction, SUBMIT, Submit } from "./GalaTransaction";
 import { applySavedRequests, hasPendingApplyRequests } from "./GalaTransactionRequest";
 import type { RequestMethodHandler } from "./GalaTransactionRequest";
+import { curatorOrgMsp } from "./authorize";
+import { getCaIdentityAlias } from "./getCaIdentityAlias";
 
 export class BatchWriteLimitExceededError extends ValidationFailedError {
   constructor(writesLimit: number) {
@@ -205,7 +206,8 @@ export abstract class GalaContract extends Contract {
   @GalaTransaction({
     type: EVALUATE,
     in: GetObjectDto,
-    out: "object"
+    out: "object",
+    allowedOrgs: [curatorOrgMsp]
   })
   public GetObjectByKey(ctx: GalaChainContext, dto: GetObjectDto): Promise<Record<string, unknown>> {
     return getPlainObjectByKey(ctx, dto.objectId);
@@ -214,7 +216,8 @@ export abstract class GalaContract extends Contract {
   @GalaTransaction({
     type: EVALUATE,
     in: GetObjectHistoryDto,
-    out: "object"
+    out: "object",
+    allowedOrgs: [curatorOrgMsp]
   })
   public GetObjectHistory(ctx: GalaChainContext, dto: GetObjectHistoryDto): Promise<Record<string, unknown>> {
     return getObjectHistory(ctx, dto.objectId);
@@ -223,7 +226,8 @@ export abstract class GalaContract extends Contract {
   @GalaTransaction({
     type: EVALUATE,
     in: DryRunDto,
-    out: DryRunResultDto
+    out: DryRunResultDto,
+    allowedOrgs: [curatorOrgMsp]
   })
   public async DryRun(ctx: GalaChainContext, dto: DryRunDto): Promise<DryRunResultDto> {
     const method = getApiMethod(this, dto.method);
@@ -240,30 +244,10 @@ export abstract class GalaContract extends Contract {
       throw new ValidationFailedError("The dto should have no signature for dry run execution");
     }
 
-    // If the caller public key is provided, we use it to set the dry run on behalf of the user.
-    if (dto.callerPublicKey) {
-      const ethAddr = signatures.getEthAddress(signatures.getNonCompactHexPublicKey(dto.callerPublicKey));
-      const savedProfile = await PublicKeyService.getUserProfile(ctx, ethAddr);
-      const userProfile = savedProfile ?? PublicKeyService.getDefaultUserProfile(ethAddr);
-      ctx.setDryRunOnBehalfOf({
-        ...userProfile
-      });
-    }
-
-    // If the signer address is provided, we use it to set the dry run on behalf of the user.
-    // Initially we don't fetch the actual registered user to get actual roles, but we use the default roles.
-    // That might be a future improvement.
-    else if (dto.signerAddress && isValidUserAlias(dto.signerAddress)) {
-      ctx.setDryRunOnBehalfOf({
-        alias: dto.signerAddress,
-        roles: [...UserProfile.DEFAULT_ROLES]
-      });
-    }
-
-    // If neither callerPublicKey nor signerAddress is provided, we throw an error.
-    else {
-      throw new ValidationFailedError("Either callerPublicKey or signerAddress must be provided");
-    }
+    ctx.setDryRunOnBehalfOf({
+      alias: getCaIdentityAlias(ctx),
+      roles: [UserRole.CURATOR, ...UserProfile.DEFAULT_ROLES]
+    });
 
     // method needs to be executed first to populate reads, writes and deletes
     const response = await this[method.methodName](ctx, internalDto);

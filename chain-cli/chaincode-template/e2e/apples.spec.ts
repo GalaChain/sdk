@@ -113,21 +113,19 @@ describe("Apple trees", () => {
   test("Support Dry Run operations", async () => {
     // Given
     const dto = new PlantAppleTreeDto(Variety.HONEYCRISP, 10, randomUniqueKey());
-    const saved = new AppleTree(user.identityKey, Variety.HONEYCRISP, 10, new Date().getTime());
+    const saved = new AppleTree("client|admin", Variety.HONEYCRISP, 10, new Date().getTime());
 
     // When
-    const response = await client.apples.DryRun("PlantTree", user.publicKey, dto);
+    const response = await client.apples.DryRun("PlantTree", dto);
 
     // Then
     expect(response).toEqual(
       transactionSuccess({
         response: { Status: GalaChainResponseType.Success },
-        reads: {
-          [`\u0000GCUP\u0000${user.ethAddress}\u0000`]: expect.any(String)
-        },
+        reads: {},
         writes: {
           [saved.getCompositeKey()]: expect.any(String),
-          [`\u0000UNTX\u0000${dto.uniqueKey}\u0000`]: expect.any(String)
+          [`\u0000UNTX\u0000client|admin\u0000${dto.uniqueKey}\u0000`]: expect.any(String)
         },
         deletes: {}
       })
