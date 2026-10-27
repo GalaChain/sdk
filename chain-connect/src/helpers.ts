@@ -16,24 +16,13 @@ import { signatures } from "@gala-chain/api";
 import { Eip1193Provider, SigningKey, computeAddress, getBytes, hashMessage } from "ethers";
 
 /**
- * Calculates the personal sign prefix for Ethereum message signing.
- * Iteratively calculates the correct prefix length to account for variable payload sizes.
+ * Ethereum personal_sign prefix for the payload's signed message.
+ * Domain and types are not part of that message.
  * @param payload - The payload object to calculate prefix for
  * @returns The calculated prefix string
  */
 export function calculatePersonalSignPrefix(payload: object): string {
-  let payloadLength = signatures.getPayloadToSign(payload).length;
-  let prefix = "\u0019Ethereum Signed Message:\n" + payloadLength;
-  let previousLength = -1;
-
-  while (payloadLength !== previousLength) {
-    previousLength = payloadLength;
-    prefix = "\u0019Ethereum Signed Message:\n" + payloadLength;
-    const newPayload = { ...payload, prefix };
-    payloadLength = signatures.getPayloadToSign(newPayload).length;
-  }
-
-  return prefix;
+  return signatures.ethereumPersonalSignPrefix(signatures.personalSignMessage(payload));
 }
 
 export async function recoverPublicKeyFromPersonalSign(
