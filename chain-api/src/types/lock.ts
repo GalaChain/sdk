@@ -69,16 +69,6 @@ export class LockTokenDto extends SubmitCallDTO {
   @BigNumberIsPositive()
   @BigNumberProperty()
   quantity: BigNumber;
-
-  @JSONSchema({
-    description:
-      "Unix epoch timestamp in milliseconds (ms) for vestingPeriodStart. " +
-      "For vesting locks, this is the beginning of the vesting period."
-  })
-  @Min(0)
-  @IsInt()
-  @IsOptional()
-  public vestingPeriodStart?: number | undefined;
 }
 
 @JSONSchema({

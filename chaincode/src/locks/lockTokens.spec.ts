@@ -93,4 +93,16 @@ describe("LockTokens", () => {
     );
     expect(getWrites()).toEqual({});
   });
+
+  test("rejects a vesting start on a single lock", async () => {
+    const plain = {
+      owner: users.testUser1.identityKey,
+      lockAuthority: users.testUser1.identityKey,
+      tokenInstance: nft.tokenInstance1Key(),
+      quantity: new BigNumber("1"),
+      vestingPeriodStart: 1
+    };
+
+    await expect(createValidSubmitDTO(LockTokenDto, plain)).rejects.toThrow(/vestingPeriodStart/);
+  });
 });

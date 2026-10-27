@@ -190,7 +190,9 @@ export class TokenBalanceLimit {
 
   /**
    * Advance hourly buckets to currentTime.
-   * currentTime must be >= lastHour. Same-hour calls are a no-op.
+   * A time in the same hour is a no-op.
+   * A time exactly one hour behind lastHour keeps lastHour and does not throw.
+   * An earlier hour throws.
    */
   private rotateHours(currentTime: number): void {
     const hour = TokenBalanceLimit.unixHour(currentTime);
@@ -205,6 +207,9 @@ export class TokenBalanceLimit {
     }
 
     const elapsed = hour - this.lastHour;
+    if (elapsed === -1) {
+      return;
+    }
     if (elapsed < 0) {
       throw new TokenBalanceLimitTimeWentBackwardsError(this.lastHour, hour);
     }

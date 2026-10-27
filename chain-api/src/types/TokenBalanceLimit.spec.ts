@@ -393,13 +393,26 @@ describe("TokenBalanceLimit", () => {
     expect(limit.pendingAppliesAt).toBeUndefined();
   });
 
-  it("should reject spend when currentTime is earlier than lastHour", () => {
+  it("should keep the stored hour when the next spend is exactly one hour earlier", () => {
     // Given
     const limit = new TokenBalanceLimit();
     limit.recordSpend(new BigNumber(1), hour(10));
 
     // When
-    const error = () => limit.recordSpend(new BigNumber(1), hour(9));
+    limit.recordSpend(new BigNumber(1), hour(9));
+
+    // Then
+    expect(limit.lastHour).toEqual(10);
+    expect(limit.spent(hour(9))).toEqual(new BigNumber(2));
+  });
+
+  it("should reject spend when currentTime is more than one hour earlier than lastHour", () => {
+    // Given
+    const limit = new TokenBalanceLimit();
+    limit.recordSpend(new BigNumber(1), hour(10));
+
+    // When
+    const error = () => limit.recordSpend(new BigNumber(1), hour(8));
 
     // Then
     expect(error).toThrow("Token balance limit time went backwards");
