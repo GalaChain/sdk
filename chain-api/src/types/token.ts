@@ -20,7 +20,6 @@ import {
   ArrayUnique,
   IsAlphanumeric,
   IsBoolean,
-  IsDefined,
   IsInt,
   IsNotEmpty,
   IsObject,
@@ -87,7 +86,7 @@ export class FetchTokenClassesWithPaginationDto extends ChainCallDTO {
     description: "Token additionalKey. Optional, but required if instance is provided."
   })
   @ValidateIf((o) => !!o.instance)
-  @IsDefined()
+  @IsNotEmpty()
   additionalKey?: string;
 
   @JSONSchema({

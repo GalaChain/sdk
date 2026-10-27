@@ -20,7 +20,6 @@ import {
   ArrayNotEmpty,
   ArrayUnique,
   IsBoolean,
-  IsDefined,
   IsInt,
   IsNotEmpty,
   IsNumber,
@@ -285,7 +284,7 @@ export class FetchTokenSwapsByInstanceDto extends ChainCallDTO {
     description: "Token additionalKey. Optional, but required if instance is provided."
   })
   @ValidateIf((o) => !!o.instance)
-  @IsDefined()
+  @IsNotEmpty()
   additionalKey?: string;
 
   @JSONSchema({

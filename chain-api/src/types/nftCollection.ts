@@ -16,7 +16,6 @@ import BigNumber from "bignumber.js";
 import { Type } from "class-transformer";
 import {
   ArrayNotEmpty,
-  IsDefined,
   IsInt,
   IsNotEmpty,
   IsOptional,
@@ -155,7 +154,7 @@ export class CreateNftCollectionDto extends SubmitCallDTO {
     description: "Additional key for the NFT collection."
   })
   @IsString()
-  @IsDefined()
+  @IsNotEmpty()
   additionalKey: string;
 
   @JSONSchema({

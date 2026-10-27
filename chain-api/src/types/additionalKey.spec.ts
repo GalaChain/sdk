@@ -12,66 +12,43 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-import BigNumber from "bignumber.js";
 import { plainToInstance } from "class-transformer";
 
 import { createValidDTO } from "../types";
-import { TokenSwapRequestInstanceOffered } from "./TokenSwapRequestInstanceOffered";
-import { FetchBurnsDto } from "./burn";
-import { FetchMintRequestsDto } from "./mint";
+import { TokenClassKey } from "./TokenClass";
 
-describe("empty additional key", () => {
-  it("should accept an empty additional key on a mint request query", async () => {
+describe("token class additional key", () => {
+  it("should reject an empty additional key", async () => {
     // Given
-    const valid = {
-      collection: "CC",
-      category: "Currency",
-      type: "Unit",
-      additionalKey: "",
-      startTimestamp: 1,
-      endTimestamp: 2
-    };
-
-    // When
-    const dto = await createValidDTO(FetchMintRequestsDto, valid);
-
-    // Then
-    expect(dto.additionalKey).toEqual("");
-  });
-
-  it("should accept an empty additional key on an exact burn query", async () => {
-    // Given
-    const valid = {
-      burnedBy: "client|testUser1",
-      collection: "CC",
-      category: "Currency",
-      type: "Unit",
-      additionalKey: "",
-      instance: "1"
-    };
-
-    // When
-    const dto = await createValidDTO(FetchBurnsDto, valid as any);
-
-    // Then
-    expect(dto.additionalKey).toEqual("");
-  });
-
-  it("should accept an empty additional key on a swap offer index", async () => {
-    // Given
-    const offered = plainToInstance(TokenSwapRequestInstanceOffered, {
-      collection: "CC",
-      category: "Currency",
-      type: "Unit",
-      additionalKey: "",
-      instance: new BigNumber(0),
-      swapRequestId: "swap"
+    const key = plainToInstance(TokenClassKey, {
+      collection: "GALA",
+      category: "Unit",
+      type: "none",
+      additionalKey: ""
     });
 
     // When
-    const errors = await offered.validate();
+    const errors = await key.validate();
 
     // Then
-    expect(errors).toEqual([]);
+    expect(errors.some((e) => e.property === "additionalKey")).toBe(true);
+    expect(key.allKeysPresent()).toBe(false);
+  });
+
+  it("should accept the none additional key", async () => {
+    // Given
+    const valid = {
+      collection: "GALA",
+      category: "Unit",
+      type: "none",
+      additionalKey: "none"
+    };
+
+    // When
+    const key = await createValidDTO(TokenClassKey, valid);
+
+    // Then
+    expect(key.additionalKey).toEqual("none");
+    expect(key.allKeysPresent()).toBe(true);
   });
 });

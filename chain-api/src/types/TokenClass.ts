@@ -18,7 +18,6 @@ import {
   Equals,
   IsAlphanumeric,
   IsBoolean,
-  IsDefined,
   IsInt,
   IsNotEmpty,
   IsOptional,
@@ -55,7 +54,7 @@ export class TokenClassKey extends ChainCallDTO {
   @IsNotEmpty()
   public type: string;
 
-  @IsDefined()
+  @IsNotEmpty()
   public additionalKey: string;
 
   /**
@@ -83,7 +82,7 @@ export class TokenClassKey extends ChainCallDTO {
   }
 
   public allKeysPresent(): boolean {
-    const additionalKeyPresent = typeof this.additionalKey === "string";
+    const additionalKeyPresent = typeof this.additionalKey === "string" && this.additionalKey.length > 0;
     return !!(this.collection && this.category && this.type && additionalKeyPresent);
   }
 
@@ -126,7 +125,7 @@ export class TokenClass extends ChainObject {
   public type: string;
 
   @ChainKey({ position: 3 })
-  @IsDefined()
+  @IsNotEmpty()
   public additionalKey: string;
 
   @IsNotEmpty()

@@ -165,9 +165,9 @@ describe("NFT Collection DTOs", () => {
       expect(dto.image).toEqual("https://example.com/image.png");
     });
 
-    it("should accept an empty additional key", async () => {
+    it("should reject an empty additional key", async () => {
       // Given
-      const valid = {
+      const invalid = {
         collection: "TestCollection",
         category: "Weapon",
         type: "Sword",
@@ -179,10 +179,11 @@ describe("NFT Collection DTOs", () => {
       };
 
       // When
-      const dto = await createValidDTO<CreateNftCollectionDto>(CreateNftCollectionDto, valid as any);
+      const dto = plainToInstance(CreateNftCollectionDto, invalid);
+      const errors = await dto.validate();
 
       // Then
-      expect(dto.additionalKey).toEqual("");
+      expect(errors.some((e) => e.property === "additionalKey")).toBe(true);
     });
 
     it("should reject an empty authority list", async () => {

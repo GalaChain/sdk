@@ -99,7 +99,7 @@ export class MintRequestDto {
   @IsNotEmpty()
   public type: string;
 
-  @IsDefined()
+  @IsNotEmpty()
   public additionalKey: string;
 
   @IsNotEmpty()
