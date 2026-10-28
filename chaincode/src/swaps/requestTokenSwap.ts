@@ -40,7 +40,7 @@ import { getObjectByKey, putChainObject } from "../utils";
 import { SwapDtoValidationError } from "./SwapError";
 import { reserveDistinctOrdinal } from "./reserveDistinctOrdinal";
 
-function validateTokenSwapQuantity(quantity: BigNumber, tokenClass: TokenClass): Array<string> {
+export function validateTokenSwapQuantity(quantity: BigNumber, tokenClass: TokenClass): Array<string> {
   const validationResults: Array<string> = [];
 
   const genericErrorMessage = `Token quantity must be a positive integer. ${quantity} is not valid.`;
@@ -54,7 +54,10 @@ function validateTokenSwapQuantity(quantity: BigNumber, tokenClass: TokenClass):
     validationResults.push(`Quantity: ${quantity} has more than ${tokenClass.decimals} decimal places.`);
   } else if (tokenClass.isNonFungible && !quantity.isEqualTo(1)) {
     validationResults.push(`cannot swap more than 1 Non Fungible Token Instance. ${quantity} is not valid.`);
-  } else if (quantity.isGreaterThan(tokenClass.maxSupply) || quantity.isGreaterThan(tokenClass.maxCapacity)) {
+  } else if (
+    (tokenClass.maxSupply.isGreaterThan(0) && quantity.isGreaterThan(tokenClass.maxSupply)) ||
+    (tokenClass.maxCapacity.isGreaterThan(0) && quantity.isGreaterThan(tokenClass.maxCapacity))
+  ) {
     validationResults.push(`Token quantity must not exceed Token max supply and max capacity`);
   }
 

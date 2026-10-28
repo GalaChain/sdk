@@ -46,6 +46,21 @@ export interface IBurnToMintProcessing {
   burnConfiguration: BurnToMintConfiguration;
 }
 
+export function percentageOfQuantity(
+  quantity: BigNumber,
+  percentage: BigNumber.Value,
+  decimals: number
+): BigNumber {
+  const share = quantity.times(percentage).decimalPlaces(decimals, BigNumber.ROUND_DOWN);
+  const rate = new BigNumber(percentage);
+  if (!quantity.isGreaterThan(0) || !rate.isGreaterThan(0) || share.isGreaterThan(0)) {
+    return share;
+  }
+
+  const unit = new BigNumber(1).shiftedBy(-decimals);
+  return BigNumber.minimum(quantity, unit);
+}
+
 /**
  * @description
  *
@@ -78,9 +93,7 @@ export async function burnToMintProcessing(ctx: GalaChainContext, data: IBurnToM
     TokenClass.getCompositeKeyFromParts(TokenClass.INDEX_KEY, [collection, category, type, additionalKey])
   );
 
-  const mintQuantityToBurn = quantity
-    .times(burnPercentage)
-    .decimalPlaces(tokenClassEntry.decimals, BigNumber.ROUND_DOWN);
+  const mintQuantityToBurn = percentageOfQuantity(quantity, burnPercentage, tokenClassEntry.decimals);
 
   // Only support burn-on-mint postprocessing for fungibles, initially.
   // One could implement this for NFTs by slicing a trailing subset of the

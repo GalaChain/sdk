@@ -36,7 +36,7 @@ import { lockTokens } from "../locks";
 import { resolveUserAlias } from "../services";
 import { GalaChainContext } from "../types";
 import { getObjectByKey } from "../utils";
-import { burnToMintProcessing } from "./extendedFeeGateProcessing";
+import { burnToMintProcessing, percentageOfQuantity } from "./extendedFeeGateProcessing";
 
 export interface IMintPostProcessing {
   tokenClass: TokenClassKey;
@@ -111,9 +111,7 @@ export async function lockOnMintProcessing(ctx: GalaChainContext, data: ILockOnM
 
   const { lockName, lockAuthority, expirationModifier, lockPercentage } = lockConfiguration;
 
-  const mintQuantityToLock = quantity
-    .times(lockPercentage)
-    .decimalPlaces(tokenClassEntry.decimals, BigNumber.ROUND_DOWN);
+  const mintQuantityToLock = percentageOfQuantity(quantity, lockPercentage, tokenClassEntry.decimals);
 
   const verifyAuthorizedOnBehalf = async (_tokenClass: TokenClassKey) => ({
     callingOnBehalf: owner,
@@ -166,7 +164,7 @@ export async function mintTokenExitGate(
     return;
   }
 
-  await mintPostProcessing(ctx, { tokenClass, owner, tokens, quantity });
+  await mintPostProcessing(ctx, { tokenClass, owner, tokens, quantity, feeCode: FeeGateCodes.MintToken });
 }
 
 export async function mintTokenWithAllowanceExitGate(
@@ -182,7 +180,13 @@ export async function mintTokenWithAllowanceExitGate(
     return;
   }
 
-  await mintPostProcessing(ctx, { tokenClass, owner, tokens, quantity });
+  await mintPostProcessing(ctx, {
+    tokenClass,
+    owner,
+    tokens,
+    quantity,
+    feeCode: FeeGateCodes.MintTokenWithAllowance
+  });
 }
 
 export async function batchMintTokenExitGate(
@@ -201,6 +205,12 @@ export async function batchMintTokenExitGate(
     // for now, just passing in an empty array as placeholder.
     const tokens: TokenInstanceKey[] = [];
 
-    await mintPostProcessing(ctx, { tokenClass, owner, tokens, quantity });
+    await mintPostProcessing(ctx, {
+      tokenClass,
+      owner,
+      tokens,
+      quantity,
+      feeCode: FeeGateCodes.BatchMintToken
+    });
   }
 }

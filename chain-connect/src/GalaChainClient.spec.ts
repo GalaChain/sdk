@@ -420,9 +420,15 @@ describe("BrowserConnectClient", () => {
     await client.connect();
     const request = jest.spyOn(window.ethereum as EthereumMock, "request");
 
-    const signed = await client.sign("TransferToken", { quantity: "1" });
+    const signed = await client.sign("TransferToken", {
+      quantity: "1",
+      domain: { name: "GalaChain" },
+      types: { TransferToken: [{ name: "quantity", type: "string" }] }
+    });
 
     expect(signed.signature).toBe("sampleSignature");
+    expect("domain" in signed).toBe(false);
+    expect("types" in signed).toBe(false);
     expect(request.mock.calls.map((call) => call[0].method)).toContain("personal_sign");
     expect(request.mock.calls.map((call) => call[0].method)).not.toContain("eth_signTypedData_v4");
   });
