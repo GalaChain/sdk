@@ -117,7 +117,7 @@ export class MockedChaincodeClientBuilder implements ChainClientBuilder {
   constructor(params: MockedChaincodeClientParams) {
     this.mockedChaincodeDir = params.mockedChaincodeDir;
     this.mockedChaincodeIndexJs = chaincodeIndexJsPath(this.mockedChaincodeDir);
-    this.orgMsp = params.orgMsp ?? "MockedOrg";
+    this.orgMsp = params.orgMsp ?? "CuratorOrg";
     this.adminId = params.adminId ?? "client|mocked-user";
 
     this.mockedChaincodeLib = Promise.resolve()

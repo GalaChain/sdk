@@ -75,7 +75,7 @@ export async function creditFeeBalance(
     );
   }
 
-  await UniqueTransactionService.ensureUniqueTransaction(ctx, feeAuthorizationKey);
+  await UniqueTransactionService.ensureUniqueTransaction(ctx, feeAuthorizationKey, { global: true });
 
   const userPendingAuthorizationBalanceChainKeys = [authority];
 

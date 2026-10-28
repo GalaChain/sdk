@@ -537,18 +537,14 @@ export class GetObjectHistoryDto extends ChainCallDTO {
  *
  * @remarks
  *
- * Authorization is not checked for `DryRun` execution. This allows application,
- * administrative, game server identities etc. to simulate a transaction result
- * without prompting the end user to sign the input first. This helps avoid
- * replay attacks (as the unique id would not be written to chain in a DryRun)
- * and also allows applications to present certain outcomes to the end user
- * before they decide to sign and authorize the transaction.
+ * Only the curator organization can call `DryRun`. The caller names the user to
+ * simulate with `callerPublicKey` or `signerAddress`. The inner dto must not be signed.
  *
  * Example use case: Executing a `DryRun` on a given method, and then processing
  * the results for `FeeChannelPaymentReceipt` or `FeeUserPaymentReceipt` objects
- * can yield the exepcted/estimated fee prior to executing a transaction. The
- * estimated fee can then be presented to an end user for them to decide whether
- * or not they want to authorize the transaction.
+ * can yield the expected fee before the user signs and submits. The estimated fee
+ * can then be presented to an end user for them to decide whether or not they
+ * want to authorize the transaction.
  */
 export class DryRunDto extends ChainCallDTO {
   /**
@@ -566,7 +562,7 @@ export class DryRunDto extends ChainCallDTO {
   /**
    * @description
    *
-   * The identity used for the transaction simulation.
+   * The public key of the user to simulate.
    */
   @IsOptional()
   @IsNotEmpty()

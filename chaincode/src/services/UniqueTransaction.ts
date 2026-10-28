@@ -38,3 +38,30 @@ export class UniqueTransaction extends ChainObject {
   @IsNotEmpty()
   transactionId: string;
 }
+
+export class CallerUniqueTransaction extends ChainObject {
+  @Exclude()
+  static INDEX_KEY = "UNTX";
+
+  @ChainKey({ position: 0 })
+  @IsString()
+  @IsNotEmpty()
+  caller: string;
+
+  @ChainKey({ position: 1 })
+  @JSONSchema({
+    description:
+      "Unique key to prevent a transaction from being submitted multiple times. " +
+      "A transaction will be rejected if this caller already used the unique key."
+  })
+  @IsString()
+  @IsNotEmpty()
+  uniqueKey: string;
+
+  @IsNotEmpty()
+  created: number;
+
+  @IsString()
+  @IsNotEmpty()
+  transactionId: string;
+}

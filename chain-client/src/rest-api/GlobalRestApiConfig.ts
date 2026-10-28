@@ -163,8 +163,30 @@ export class GlobalRestApiConfig {
   }
 }
 
+const LOCAL_HTTP_HOSTS = new Set(["localhost", "127.0.0.1", "::1"]);
+
 export function normalizeRestApiUrl(apiUrl: string): string {
   return apiUrl.replace(/\/+$/, "");
+}
+
+export function requireSecureRestApiUrl(apiUrl: string): void {
+  let url: URL;
+  try {
+    url = new URL(apiUrl);
+  } catch {
+    throw new Error(`Invalid REST API URL: ${apiUrl}`);
+  }
+
+  if (url.protocol === "https:") {
+    return;
+  }
+
+  const host = url.hostname.replace(/^\[|\]$/g, "");
+  if (url.protocol === "http:" && LOCAL_HTTP_HOSTS.has(host)) {
+    return;
+  }
+
+  throw new Error("REST API URL must use https. http is allowed only for localhost.");
 }
 
 function contractApiKey(apiUrl: string, channel: string, chaincode: string, contract: string): string {
