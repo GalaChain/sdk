@@ -24,7 +24,7 @@ import {
 import BigNumber from "bignumber.js";
 
 import { GalaChainContext } from "../types/GalaChainContext";
-import { getObjectByKey, inverseKeyLength, inverseTime, lookbackTimeOffset, lookbackTxCount } from "../utils";
+import { getObjectByKey, inverseKeyLength, inverseTime, lookbackTimeOffset } from "../utils";
 
 export async function fetchMintAllowanceSupply(
   ctx: GalaChainContext,
@@ -61,34 +61,23 @@ export async function fetchMintAllowanceSupply(
 
   const iterator = ctx.stub.getStateByRange(startKey, endKey);
 
-  let seekingFirstResult = true;
-  let resultsCount = 0;
-  const minResults = lookbackTxCount;
-
   const previousRequests: TokenMintAllowanceRequest[] = [];
+  let groupTimeKey: string | undefined;
 
   try {
     for await (const kv of iterator) {
-      if (!seekingFirstResult && resultsCount >= minResults) {
-        break;
-      }
       if (kv.value) {
         const stringResult = Buffer.from(kv.value).toString("utf8");
         const entry = RangedChainObject.deserialize(TokenMintAllowanceRequest, stringResult);
 
-        // timeKey is a string padded with leading zeros. BigNumber.js will parse this format into an integer.
-        // const entryTime = new BigNumber(entry.timeKey);
+        // One grant writes every recipient at the same time key and the same baseline.
+        // Older grants are already inside that baseline, so the walk stops when the time key changes.
+        if (groupTimeKey === undefined) {
+          groupTimeKey = entry.timeKey;
+        } else if (entry.timeKey !== groupTimeKey) {
+          break;
+        }
 
-        seekingFirstResult = false;
-
-        resultsCount++;
-
-        // inverted timeKeys read most recent first; using unshift sorts a new array as oldest first.
-        // essentially, we rewind the tape and then play it forward.
-        // covering the following possible scenarios:
-        //     a) no results yet - empty array, start with zero below.
-        //     b) no recent results. continue back toward the beginning of the ledger until we find at least one.
-        //     c) recent results. Get all results within two past block spans to cover any missing timestamp gaps from concurrent recent transactions.
         previousRequests.unshift(entry);
       }
     }
