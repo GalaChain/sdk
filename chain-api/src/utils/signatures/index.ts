@@ -13,7 +13,7 @@
  * limitations under the License.
  */
 import eth from "./eth";
-import { getPayloadToSign } from "./getPayloadToSign";
+import { ethereumPersonalSignPrefix, getPayloadToSign, personalSignMessage } from "./getPayloadToSign";
 
 function isValidSignature(signature: string, obj: object, publicKey: string): boolean {
   return eth.isValid(signature, obj, publicKey);
@@ -26,7 +26,9 @@ function getSignature(obj: object, privateKey: string | Buffer): string {
 
 export default {
   ...eth,
+  ethereumPersonalSignPrefix,
   getPayloadToSign,
+  personalSignMessage,
   isValidSignature,
   getSignature
 } as const;

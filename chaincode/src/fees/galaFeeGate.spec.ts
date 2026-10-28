@@ -32,7 +32,7 @@ import { instanceToInstance, plainToInstance } from "class-transformer";
 import GalaChainTokenContract from "../__test__/GalaChainTokenContract";
 import { GalaChainContext } from "../types";
 import { txUnixTimeToDateIndexKeys } from "../utils";
-import { galaFeeGate } from "./galaFeeGate";
+import { galaFeeGate, incrementCumulativeUsesAndCalculateFee } from "./galaFeeGate";
 
 describe("feeGate", () => {
   const feeCode1 = "testCode";
@@ -777,5 +777,27 @@ describe("feeGate", () => {
 
     expect(result).toEqual(undefined);
     expect(getWrites()).toEqual(writesMap(expectedUsageWrite));
+  });
+
+  it("stops the calculated fee at maxQuantity", () => {
+    const definition = plainToInstance(FeeCodeDefinition, {
+      feeCode: feeCode1,
+      feeThresholdUses: new BigNumber("0"),
+      feeThresholdTimePeriod: 0,
+      baseQuantity: new BigNumber("5"),
+      maxQuantity: new BigNumber("6"),
+      feeAccelerationRateType: FeeAccelerationRateType.Additive,
+      feeAccelerationRate: new BigNumber("2")
+    });
+    const uses = plainToInstance(FeeThresholdUses, {
+      feeCode: feeCode1,
+      user: users.testUser1.identityKey,
+      cumulativeUses: new BigNumber("10"),
+      cumulativeFeeQuantity: new BigNumber("0")
+    });
+
+    const result = incrementCumulativeUsesAndCalculateFee([definition], uses);
+
+    expect(result.feeAmount.isEqualTo(6)).toBe(true);
   });
 });
