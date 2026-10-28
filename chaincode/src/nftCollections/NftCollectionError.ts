@@ -22,6 +22,12 @@ export class NftCollectionAuthorizationNotFoundError extends NotFoundError {
   }
 }
 
+export class CannotRevokeLastCollectionUserError extends ForbiddenError {
+  constructor(collection: string) {
+    super(`Cannot remove the last authorized user of collection "${collection}"`, { collection });
+  }
+}
+
 export class UserNotAuthorizedForCollectionError extends ForbiddenError {
   constructor(user: string, collection: string) {
     super(`User ${user} is not authorized to create NFT collections for collection "${collection}"`, {

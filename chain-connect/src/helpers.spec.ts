@@ -12,71 +12,39 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+import { signatures } from "@gala-chain/api";
 import { Wallet } from "ethers";
 
 import { calculatePersonalSignPrefix, recoverPublicKeyFromPersonalSign } from "./helpers";
 
 describe("calculatePersonalSignPrefix", () => {
-  it("should return the correct prefix for a simple payload", () => {
-    const payload = { message: "Hello, Ethereum!" };
-
+  it.each([
+    [{ message: "Hello, Ethereum!" }],
+    [
+      {
+        message: "This is a longer message that will cause the length of the prefix to change when updated"
+      }
+    ],
+    [{}],
+    [{ value: 12345 }],
+    [{ data: { key: "value", array: [1, 2, 3] } }],
+    [{ message: "x".repeat(1000) }]
+  ])("uses the byte length of the personal-sign message", (payload) => {
+    const message = signatures.personalSignMessage(payload);
     const prefix = calculatePersonalSignPrefix(payload);
 
-    const expectedPrefix = "\u0019Ethereum Signed Message:\n58";
-
-    expect(prefix).toBe(expectedPrefix);
+    expect(prefix).toBe("\u0019Ethereum Signed Message:\n" + Buffer.byteLength(message, "utf8"));
   });
 
-  it("should handle payloads requiring multiple iterations", () => {
-    const payload = {
-      message: "This is a longer message that will cause the length of the prefix to change when updated"
+  it("ignores typed-data metadata", () => {
+    const payload = { quantity: "1" };
+    const withMetadata = {
+      ...payload,
+      domain: { name: "GalaChain" },
+      types: { TransferToken: [{ name: "quantity", type: "string" }] }
     };
 
-    const prefix = calculatePersonalSignPrefix(payload);
-
-    const expectedPrefix = "\u0019Ethereum Signed Message:\n131";
-
-    expect(prefix).toBe(expectedPrefix);
-  });
-
-  it("should handle an empty payload", () => {
-    const payload = {};
-
-    const prefix = calculatePersonalSignPrefix(payload);
-
-    const expectedPrefix = "\u0019Ethereum Signed Message:\n30";
-
-    expect(prefix).toBe(expectedPrefix);
-  });
-
-  it("should handle payloads with numeric values", () => {
-    const payload = { value: 12345 };
-
-    const prefix = calculatePersonalSignPrefix(payload);
-
-    const expectedPrefix = "\u0019Ethereum Signed Message:\n43";
-
-    expect(prefix).toBe(expectedPrefix);
-  });
-
-  it("should handle payloads with nested objects", () => {
-    const payload = { data: { key: "value", array: [1, 2, 3] } };
-
-    const prefix = calculatePersonalSignPrefix(payload);
-
-    const expectedPrefix = "\u0019Ethereum Signed Message:\n68";
-
-    expect(prefix).toBe(expectedPrefix);
-  });
-
-  it("should handle payloads that increase the length of the length string", () => {
-    const payload = { message: "x".repeat(1000) };
-
-    const prefix = calculatePersonalSignPrefix(payload);
-
-    const expectedPrefix = "\u0019Ethereum Signed Message:\n1044";
-
-    expect(prefix).toBe(expectedPrefix);
+    expect(calculatePersonalSignPrefix(withMetadata)).toBe(calculatePersonalSignPrefix(payload));
   });
 });
 

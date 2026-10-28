@@ -165,6 +165,49 @@ describe("NFT Collection DTOs", () => {
       expect(dto.image).toEqual("https://example.com/image.png");
     });
 
+    it("should reject an empty additional key", async () => {
+      // Given
+      const invalid = {
+        collection: "TestCollection",
+        category: "Weapon",
+        type: "Sword",
+        additionalKey: "",
+        name: "Test Sword",
+        symbol: "TSW",
+        description: "A test sword",
+        image: "https://example.com/image.png"
+      };
+
+      // When
+      const dto = plainToInstance(CreateNftCollectionDto, invalid);
+      const errors = await dto.validate();
+
+      // Then
+      expect(errors.some((e) => e.property === "additionalKey")).toBe(true);
+    });
+
+    it("should reject an empty authority list", async () => {
+      // Given
+      const invalid = {
+        collection: "TestCollection",
+        category: "Weapon",
+        type: "Sword",
+        additionalKey: "none",
+        name: "Test Sword",
+        symbol: "TSW",
+        description: "A test sword",
+        image: "https://example.com/image.png",
+        authorities: []
+      };
+
+      // When
+      const dto = plainToInstance(CreateNftCollectionDto, invalid);
+      const errors = await dto.validate();
+
+      // Then
+      expect(errors.some((e) => e.property === "authorities")).toBe(true);
+    });
+
     it("should parse valid create collection DTO with optional fields", async () => {
       // Given
       const valid = {

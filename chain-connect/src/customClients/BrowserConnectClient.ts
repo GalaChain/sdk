@@ -12,7 +12,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-import { serialize } from "@gala-chain/api";
+import { signatures } from "@gala-chain/api";
 import { BrowserProvider, Eip1193Provider, getAddress } from "ethers";
 
 import { GalaChainProviderOptions, WebSigner } from "../GalaChainClient";
@@ -148,13 +148,13 @@ export class BrowserConnectClient extends WebSigner {
       }
 
       const message = omitVerificationMetadata(record);
-      const domain = { name: "GalaChain" };
-      const types = generateEIP712Types(method, message);
-      const prefix = this.calculatePersonalSignPrefix(message);
-      const prefixedPayload = { ...message, prefix };
       const signer = await this.provider.getSigner();
 
       if (signingType === SigningType.SIGN_TYPED_DATA) {
+        const domain = { name: "GalaChain" };
+        const types = generateEIP712Types(method, message);
+        const prefix = this.calculatePersonalSignPrefix(message);
+        const prefixedPayload = { ...message, prefix };
         const signature = await signer.signTypedData(
           domain,
           types,
@@ -166,8 +166,11 @@ export class BrowserConnectClient extends WebSigner {
           multisig?: string[];
         };
       } else if (signingType === SigningType.PERSONAL_SIGN) {
-        const signature = await signer.signMessage(serialize(prefixedPayload));
-        return withSignature(prefixedPayload, existing, signature) as T & {
+        const body = omitTypedData(message);
+        const personalMessage = signatures.personalSignMessage(body);
+        const prefix = this.calculatePersonalSignPrefix(body);
+        const signature = await signer.signMessage(personalMessage);
+        return withSignature({ ...body, prefix }, existing, signature) as T & {
           prefix: string;
           signature?: string;
           multisig?: string[];
@@ -211,6 +214,18 @@ function assertMultisigReady(payload: object): void {
   if (record.signerPublicKey) {
     throw new Error("signerPublicKey is not allowed for multisignature DTOs");
   }
+}
+
+function omitTypedData<T extends object>(payload: T): Omit<T, "domain" | "types"> {
+  const {
+    domain: _domain,
+    types: _types,
+    ...message
+  } = payload as T & {
+    domain?: unknown;
+    types?: unknown;
+  };
+  return message;
 }
 
 function omitVerificationMetadata<T extends object>(
