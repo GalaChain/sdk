@@ -75,7 +75,7 @@ export default class Deploy extends BaseCommand<typeof Deploy> {
 
     try {
       this.log(`Verifying Docker image ${imageTag}...`);
-      const { contracts, imageSha256 } = getChaincodeImageInfo(imageTag);
+      const { contracts, imageDigest } = getChaincodeImageInfo(imageTag);
 
       if (contracts.length === 0) {
         throw new Error("No contracts found in the Docker image.");
@@ -83,7 +83,7 @@ export default class Deploy extends BaseCommand<typeof Deploy> {
 
       this.log(`\n  Chaincode:    ${chaincode.name}`);
       this.log(`  Image:        ${imageTag}`);
-      this.log(`  Image SHA256: ${imageSha256}`);
+      this.log(`  Image SHA256: ${imageDigest}`);
 
       const nameList = contracts.map((c) => `\n   - ${c.contractName}`).join("");
       this.log(`  Contracts: ${nameList}\n`);
@@ -99,6 +99,7 @@ export default class Deploy extends BaseCommand<typeof Deploy> {
       const { operationId } = await deployChaincode({
         privateKey: developerPrivateKey,
         imageTag,
+        imageDigest,
         chaincode: chaincode.name,
         contracts
       });
@@ -113,6 +114,7 @@ export default class Deploy extends BaseCommand<typeof Deploy> {
         chaincode.name,
         operationId,
         imageTag,
+        imageDigest,
         maxAttempts,
         pollInterval,
         undefined
@@ -127,6 +129,7 @@ export default class Deploy extends BaseCommand<typeof Deploy> {
     chaincodeName: string,
     operationId: string,
     imageTag: string,
+    imageDigest: string,
     attemptsLeft: number,
     interval: number,
     lastInfo: ChaincodeInfoDto | undefined
@@ -148,9 +151,18 @@ export default class Deploy extends BaseCommand<typeof Deploy> {
       }
       const chainCodeInfo = await getDeploymentResponse({ privateKey, chaincodeName, operationId });
       const matchesRequest =
-        chainCodeInfo.operationId === operationId && chainCodeInfo.imageName === imageTag;
+        chainCodeInfo.operationId === operationId &&
+        chainCodeInfo.imageName === imageTag &&
+        chainCodeInfo.imageDigest === imageDigest;
 
-      if (chainCodeInfo.status === "CC_DEPLOYED" && matchesRequest) {
+      if (chainCodeInfo.status === "CC_DEPLOYED" && chainCodeInfo.operationId === operationId) {
+        if (!matchesRequest) {
+          this.log(`\nDeployment did not report the signed image.`);
+          this.log(`${JSON.stringify(chainCodeInfo, null, 2)}`);
+          this.error(`Deployment did not report the signed image digest.`);
+          return;
+        }
+
         this.log(`\nDeployment successful!`);
         this.log(`${JSON.stringify(chainCodeInfo, null, 2)}`);
         return;
@@ -169,6 +181,7 @@ export default class Deploy extends BaseCommand<typeof Deploy> {
         chaincodeName,
         operationId,
         imageTag,
+        imageDigest,
         attemptsLeft - 1,
         interval,
         chainCodeInfo
@@ -178,7 +191,8 @@ export default class Deploy extends BaseCommand<typeof Deploy> {
 
       if (
         errorMessage.includes("Deployment failed with status: CC_DEPLOY_FAILED") ||
-        errorMessage.includes("Deployment status was not verified.")
+        errorMessage.includes("Deployment status was not verified.") ||
+        errorMessage.includes("Deployment did not report the signed image digest.")
       ) {
         throw error;
       }
@@ -191,6 +205,7 @@ export default class Deploy extends BaseCommand<typeof Deploy> {
         chaincodeName,
         operationId,
         imageTag,
+        imageDigest,
         attemptsLeft - 1,
         interval,
         lastInfo

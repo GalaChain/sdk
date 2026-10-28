@@ -170,6 +170,7 @@ function calculateFeeAmountBasedOnAccelerationRateType(
   cumulativeUses: BigNumber
 ): BigNumber {
   let feeAmount = new BigNumber("0");
+  let maxQuantity: BigNumber | undefined;
 
   for (let i = feeCodeDefinitions.length - 1; i >= 0; i--) {
     if (cumulativeUses.isLessThan(feeCodeDefinitions[i].feeThresholdUses)) {
@@ -222,11 +223,16 @@ function calculateFeeAmountBasedOnAccelerationRateType(
         break;
     }
 
+    maxQuantity = billableCode.maxQuantity;
     break;
   }
 
   if (!feeAmount.isFinite() || feeAmount.isNegative()) {
     feeAmount = new BigNumber(0);
+  }
+
+  if (maxQuantity?.isFinite()) {
+    feeAmount = BigNumber.minimum(feeAmount, maxQuantity);
   }
 
   feeAmount = feeAmount.decimalPlaces(FeeCodeDefinition.DECIMAL_PRECISION);

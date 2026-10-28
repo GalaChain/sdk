@@ -31,7 +31,6 @@ import { ChainKey, ValidationFailedError } from "../utils";
 import {
   BigNumberArrayProperty,
   BigNumberIsNotNegative,
-  BigNumberIsPositive,
   BigNumberProperty,
   IsUserAlias
 } from "../validators";
@@ -619,7 +618,7 @@ export class TokenHold {
   public readonly createdBy: UserAlias;
 
   @IsNotEmpty()
-  @BigNumberIsPositive()
+  @BigNumberIsNotNegative()
   @BigNumberProperty()
   public readonly instanceId: BigNumber;
 
