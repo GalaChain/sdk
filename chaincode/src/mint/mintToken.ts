@@ -32,6 +32,7 @@ import { InvalidDecimalError } from "../token/TokenError";
 import { GalaChainContext } from "../types/GalaChainContext";
 import { getObjectByKey, putChainObject } from "../utils";
 import { InsufficientMintAllowanceError, NftMaxMintError, UseAllowancesFailedError } from "./MintError";
+import { readMintSupply } from "./fetchMintSupply";
 
 export interface MintTokenParams {
   tokenClassKey: TokenClassKey;
@@ -110,6 +111,8 @@ export async function mintToken(
   if (total.isLessThan(quantity)) {
     throw new InsufficientMintAllowanceError(callingOnBehalf, total, quantity, dtoInstanceKey, owner);
   }
+
+  tokenClass.totalSupply = await readMintSupply(ctx, tokenClass);
 
   // check that mint is valid based on max supply, max capacity, etc
   ensureQuantityCanBeMinted(tokenClass, quantity);

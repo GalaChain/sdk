@@ -21,8 +21,11 @@ import {
   TokenClaim,
   TokenClass,
   TokenInstance,
+  TokenMintRequest,
+  TokenMintStatus,
   createValidChainObject,
   createValidDTO,
+  createValidRangedChainObject,
   createValidSubmitDTO
 } from "@gala-chain/api";
 import { fixture, users, writesMap } from "@gala-chain/test";
@@ -32,6 +35,7 @@ import GalaChainTokenContract from "../__test__/GalaChainTokenContract";
 import { TotalSupplyExceededError } from "../allowances/AllowanceError";
 import { currency, nft } from "../testdata/index";
 import { InvalidDecimalError } from "../token";
+import { inverseEpoch, inverseTime } from "../utils";
 import { InsufficientMintAllowanceError } from "./MintError";
 
 describe("MintToken", () => {
@@ -87,6 +91,75 @@ describe("MintToken", () => {
     // Then
     expect(response).toEqual(GalaChainResponse.Success([currency.tokenInstanceKey()]));
 
+    expect(getWrites()).toEqual(writesMap(tokenClaim, expectedAllowance, expectedBalance, expectedClass));
+  });
+
+  test("saves the larger request total before adding the mint", async () => {
+    const currencyInstance = currency.tokenInstance();
+    const currencyInstanceKey = currency.tokenInstanceKey();
+    const currencyClass = currency.tokenClass();
+    currencyClass.totalSupply = new BigNumber("2");
+    const mintQty = new BigNumber("1");
+    const tokenAllowance = currency.tokenAllowance();
+
+    const testFixture = fixture(GalaChainTokenContract)
+      .registeredUsers(users.admin)
+      .savedState(currencyClass, currencyInstance, tokenAllowance);
+    const { ctx, contract, getWrites } = testFixture;
+
+    const mintRequest = await createValidRangedChainObject(TokenMintRequest, {
+      id: "prior-mint",
+      collection: currencyClass.collection,
+      category: currencyClass.category,
+      type: currencyClass.type,
+      additionalKey: currencyClass.additionalKey,
+      timeKey: inverseTime(ctx, 1),
+      totalKnownMintsCount: new BigNumber("10"),
+      requestor: users.admin.identityKey,
+      owner: users.testUser1.identityKey,
+      created: ctx.txUnixTime,
+      quantity: new BigNumber("5"),
+      state: TokenMintStatus.Minted,
+      epoch: inverseEpoch(ctx, 0)
+    });
+    testFixture.savedRangeState([mintRequest]);
+
+    const dto = await createValidSubmitDTO(MintTokenDto, {
+      tokenClass: currency.tokenClassKey(),
+      owner: users.testUser1.identityKey,
+      quantity: mintQty
+    }).signed(users.admin.privateKey);
+
+    const tokenClaim = await createValidChainObject(TokenClaim, {
+      ...currencyInstanceKey,
+      ownerKey: users.admin.identityKey,
+      issuerKey: users.admin.identityKey,
+      instance: new BigNumber("0"),
+      action: 4,
+      quantity: mintQty,
+      allowanceCreated: 1,
+      claimSequence: new BigNumber("1"),
+      created: ctx.txUnixTime
+    });
+
+    const expectedClass = await createValidChainObject(TokenClass, {
+      ...currencyClass,
+      totalSupply: new BigNumber("16")
+    });
+
+    const expectedBalance = new TokenBalance({ ...currencyClass, owner: users.testUser1.identityKey });
+    expectedBalance.addQuantity(mintQty);
+
+    const expectedAllowance = await createValidChainObject(TokenAllowance, {
+      ...tokenAllowance,
+      quantitySpent: mintQty,
+      usesSpent: new BigNumber("1"),
+      expires: ctx.txUnixTime
+    });
+
+    const response = await contract.MintToken(ctx, dto);
+
+    expect(response).toEqual(GalaChainResponse.Success([currency.tokenInstanceKey()]));
     expect(getWrites()).toEqual(writesMap(tokenClaim, expectedAllowance, expectedBalance, expectedClass));
   });
 

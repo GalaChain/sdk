@@ -107,3 +107,15 @@ export async function fetchMintSupply(
 
   return updatedKnownMintsCount;
 }
+
+// The token class total and the mint request records can disagree.
+// The larger number is the supply. A mint writes it onto the token class before adding the new quantity.
+export async function readMintSupply(
+  ctx: GalaChainContext,
+  tokenClass: TokenClassKeyProperties & { totalSupply: BigNumber }
+): Promise<BigNumber> {
+  const fromClass = new BigNumber(tokenClass.totalSupply);
+  const fromRequests = await fetchMintSupply(ctx, tokenClass, 0);
+
+  return fromRequests.isGreaterThan(fromClass) ? fromRequests : fromClass;
+}

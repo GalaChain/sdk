@@ -13,13 +13,13 @@
  * limitations under the License.
  */
 import { TokenClass, TokenClassKey } from "@gala-chain/api";
-import BigNumber from "bignumber.js";
 
 import { fetchKnownBurnCount } from "../burns/fetchBurns";
 import { TokenClassNotFoundError } from "../token/TokenError";
 import { GalaChainContext } from "../types";
 import { getObjectByKey } from "../utils";
 import { fetchMintAllowanceSupply } from "./fetchMintAllowanceSupply";
+import { readMintSupply } from "./fetchMintSupply";
 
 export async function fetchTokenClassesWithSupply(
   ctx: GalaChainContext,
@@ -46,7 +46,7 @@ export async function fetchTokenClassWithKnownSupply(
 
   tokenClass.knownMintAllowanceSupply = knownMintAllowanceSupply;
 
-  tokenClass.knownMintSupply = new BigNumber(tokenClass.totalSupply);
+  tokenClass.knownMintSupply = await readMintSupply(ctx, tokenClass);
 
   const totalBurned = await fetchKnownBurnCount(ctx, tokenClass);
 

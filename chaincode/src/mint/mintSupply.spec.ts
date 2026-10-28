@@ -58,6 +58,36 @@ describe("mint supply", () => {
     expect(result.totalSupply.isEqualTo("7")).toBe(true);
   });
 
+  it("uses the request total when it is larger than the token class total", async () => {
+    const tokenClass = currency.tokenClass();
+    tokenClass.totalSupply = new BigNumber("2");
+    const testFixture = fixture(GalaChainTokenContract).savedState(tokenClass);
+    const { ctx } = testFixture;
+
+    const mintRequest = await createValidRangedChainObject(TokenMintRequest, {
+      id: "larger-mint",
+      collection: tokenClass.collection,
+      category: tokenClass.category,
+      type: tokenClass.type,
+      additionalKey: tokenClass.additionalKey,
+      timeKey: inverseTime(ctx, 1),
+      totalKnownMintsCount: new BigNumber("10"),
+      requestor: users.admin.identityKey,
+      owner: users.testUser1.identityKey,
+      created: ctx.txUnixTime,
+      quantity: new BigNumber("5"),
+      state: TokenMintStatus.Minted,
+      epoch: inverseEpoch(ctx, 0)
+    });
+
+    testFixture.savedRangeState([mintRequest]);
+
+    const result = await fetchTokenClassWithKnownSupply(ctx, currency.tokenClassKey());
+
+    expect(result.knownMintSupply?.isEqualTo("15")).toBe(true);
+    expect(result.totalSupply.isEqualTo("2")).toBe(true);
+  });
+
   it("sums allowance supply across more than 200 records", async () => {
     const tokenClass = currency.tokenClass();
     const testFixture = fixture(GalaChainTokenContract).savedState(tokenClass);
