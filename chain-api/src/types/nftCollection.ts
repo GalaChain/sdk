@@ -26,7 +26,7 @@ import {
 } from "class-validator";
 import { JSONSchema } from "class-validator-jsonschema";
 
-import { BigNumberIsPositive, BigNumberProperty, IsUserRef } from "../validators";
+import { BigNumberIsNotNegative, BigNumberProperty, IsUserRef } from "../validators";
 import { UserRef } from "./UserRef";
 import { ChainCallDTO, SubmitCallDTO } from "./dtos";
 
@@ -206,18 +206,18 @@ export class CreateNftCollectionDto extends SubmitCallDTO {
   rarity?: string;
 
   @JSONSchema({
-    description: "Maximum supply for the NFT collection."
+    description: "Maximum supply. Zero and Infinity are unlimited. If missing, set to Infinity."
   })
-  @BigNumberIsPositive()
-  @BigNumberProperty()
+  @BigNumberIsNotNegative()
+  @BigNumberProperty({ allowInfinity: true })
   @IsOptional()
   maxSupply?: BigNumber;
 
   @JSONSchema({
-    description: "Maximum capacity for the NFT collection."
+    description: "Maximum capacity. Zero and Infinity are unlimited. If missing, set to Infinity."
   })
-  @BigNumberIsPositive()
-  @BigNumberProperty()
+  @BigNumberIsNotNegative()
+  @BigNumberProperty({ allowInfinity: true })
   @IsOptional()
   maxCapacity?: BigNumber;
 
