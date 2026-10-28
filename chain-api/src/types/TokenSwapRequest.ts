@@ -27,7 +27,13 @@ import {
 import { JSONSchema } from "class-validator-jsonschema";
 
 import { ChainKey } from "../utils";
-import { BigNumberIsInteger, BigNumberIsPositive, BigNumberProperty, IsUserAlias } from "../validators";
+import {
+  BigNumberIsInteger,
+  BigNumberIsNotNegative,
+  BigNumberIsPositive,
+  BigNumberProperty,
+  IsUserAlias
+} from "../validators";
 import { ChainObject } from "./ChainObject";
 import { TokenInstanceQuantity } from "./TokenInstance";
 import { UserAlias } from "./UserAlias";
@@ -88,7 +94,7 @@ export class TokenSwapRequest extends ChainObject {
   @BigNumberProperty()
   public uses: BigNumber;
 
-  @BigNumberIsPositive()
+  @BigNumberIsNotNegative()
   @BigNumberIsInteger()
   @BigNumberProperty()
   public usesSpent: BigNumber;

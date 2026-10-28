@@ -30,6 +30,19 @@ describe("CheckMintableQuantity", () => {
     expect(response).toEqual(true);
   });
 
+  it("should allow a mint when max supply is zero", async () => {
+    // Given
+    const currencyClass = currency.tokenClass();
+    currencyClass.maxSupply = new BigNumber("0");
+    currencyClass.totalSupply = new BigNumber("10");
+
+    // When
+    const response = ensureQuantityCanBeMinted(currencyClass, new BigNumber("1"));
+
+    // Then
+    expect(response).toEqual(true);
+  });
+
   it("should report Invalid_Supply", async () => {
     // Given
     const currencyClass = currency.tokenClass();
