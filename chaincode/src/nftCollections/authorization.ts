@@ -16,7 +16,11 @@ import { NftCollectionAuthorization, NftCollectionNameReservation, UserAlias } f
 
 import { GalaChainContext } from "../types";
 import { getObjectByKey, objectExists, putChainObject } from "../utils";
-import { CollectionNameAlreadyClaimedError, UserNotAuthorizedForCollectionError } from "./NftCollectionError";
+import {
+  CannotRevokeLastCollectionUserError,
+  CollectionNameAlreadyClaimedError,
+  UserNotAuthorizedForCollectionError
+} from "./NftCollectionError";
 
 export async function grantNftCollectionAuthorization(
   ctx: GalaChainContext,
@@ -106,6 +110,10 @@ export async function revokeNftCollectionAuthorization(
     // User not in list, return authorization as-is (idempotent)
     // Don't write if nothing changed
     return authorization;
+  }
+
+  if (authorization.authorizedUsers.length === 1) {
+    throw new CannotRevokeLastCollectionUserError(collection);
   }
 
   authorization.authorizedUsers.splice(index, 1);

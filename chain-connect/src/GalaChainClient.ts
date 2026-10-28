@@ -190,10 +190,7 @@ export abstract class CustomClient extends GalaChainProvider {
    * @returns The calculated prefix string
    */
   public calculatePersonalSignPrefix(payload: object): string {
-    const unprefixedPayload = { ...payload, prefix: undefined };
-    const payloadLength = signatures.getPayloadToSign(unprefixedPayload).length;
-    const prefix = "\u0019Ethereum Signed Message:\n" + payloadLength;
-    return prefix;
+    return signatures.ethereumPersonalSignPrefix(signatures.personalSignMessage(payload));
   }
 }
 

@@ -18,7 +18,6 @@ import {
   Equals,
   IsAlphanumeric,
   IsBoolean,
-  IsDefined,
   IsInt,
   IsNotEmpty,
   IsOptional,
@@ -29,7 +28,7 @@ import {
 import { JSONSchema } from "class-validator-jsonschema";
 
 import { ChainKey } from "../utils";
-import { BigNumberIsNotNegative, BigNumberIsPositive, BigNumberProperty, IsUserAlias } from "../validators";
+import { BigNumberIsNotNegative, BigNumberProperty, IsUserAlias } from "../validators";
 import { ChainObject } from "./ChainObject";
 import { UserAlias } from "./UserAlias";
 import { GC_NETWORK_ID } from "./contract";
@@ -55,7 +54,7 @@ export class TokenClassKey extends ChainCallDTO {
   @IsNotEmpty()
   public type: string;
 
-  @IsDefined()
+  @IsNotEmpty()
   public additionalKey: string;
 
   /**
@@ -83,7 +82,7 @@ export class TokenClassKey extends ChainCallDTO {
   }
 
   public allKeysPresent(): boolean {
-    const additionalKeyPresent = typeof this.additionalKey === "string";
+    const additionalKeyPresent = typeof this.additionalKey === "string" && this.additionalKey.length > 0;
     return !!(this.collection && this.category && this.type && additionalKeyPresent);
   }
 
@@ -126,7 +125,7 @@ export class TokenClass extends ChainObject {
   public type: string;
 
   @ChainKey({ position: 3 })
-  @IsDefined()
+  @IsNotEmpty()
   public additionalKey: string;
 
   @IsNotEmpty()
@@ -143,16 +142,22 @@ export class TokenClass extends ChainObject {
   @IsInt()
   public decimals: number; // This can only be expanded after creation
 
+  @JSONSchema({
+    description: "Maximum supply. Zero and Infinity are unlimited."
+  })
   @IsNotEmpty()
-  @BigNumberIsPositive()
+  @BigNumberIsNotNegative()
   @BigNumberProperty({ allowInfinity: true })
   public maxSupply: BigNumber;
 
   @IsBoolean()
   public isNonFungible: boolean;
 
+  @JSONSchema({
+    description: "Maximum capacity. Zero and Infinity are unlimited."
+  })
   @IsNotEmpty()
-  @BigNumberIsPositive()
+  @BigNumberIsNotNegative()
   @BigNumberProperty({ allowInfinity: true })
   public maxCapacity: BigNumber;
 
@@ -204,7 +209,7 @@ export class TokenClass extends ChainObject {
   @IsAlphanumeric()
   public rarity?: string;
 
-  @BigNumberIsPositive()
+  @BigNumberIsNotNegative()
   @BigNumberProperty()
   public totalBurned: BigNumber;
 

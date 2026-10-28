@@ -18,8 +18,12 @@ import { plainToInstance } from "class-transformer";
 
 import GalaChainTokenContract from "../__test__/GalaChainTokenContract";
 import { GalaChainContext } from "../types";
-import { CollectionNameAlreadyClaimedError, UserNotAuthorizedForCollectionError } from "./NftCollectionError";
-import { grantNftCollectionAuthorization } from "./authorization";
+import {
+  CannotRevokeLastCollectionUserError,
+  CollectionNameAlreadyClaimedError,
+  UserNotAuthorizedForCollectionError
+} from "./NftCollectionError";
+import { grantNftCollectionAuthorization, revokeNftCollectionAuthorization } from "./authorization";
 
 const collection = "TestCollection";
 
@@ -204,5 +208,53 @@ describe("grantNftCollectionAuthorization case-variant squatting", () => {
 
     // Then
     expect(result).toEqual(new CollectionNameAlreadyClaimedError("mirandus", claimed));
+  });
+});
+
+describe("revokeNftCollectionAuthorization", () => {
+  it("should reject removal of the only authorized user and still allow a later grant", async () => {
+    // Given
+    const saved = existingAuthorization([users.testUser1.identityKey]);
+
+    const { ctx } = fixture<GalaChainContext, GalaChainTokenContract>(GalaChainTokenContract)
+      .callingUser(users.testUser1)
+      .savedState(saved);
+
+    // When
+    const revoked = await revokeNftCollectionAuthorization(
+      ctx,
+      collection,
+      users.testUser1.identityKey
+    ).catch((e) => e);
+
+    const granted = await grantNftCollectionAuthorization(ctx, collection, users.testUser2.identityKey).then(
+      (res) => ctx.stub.flushWrites().then(() => res)
+    );
+
+    // Then
+    expect(revoked).toEqual(new CannotRevokeLastCollectionUserError(collection));
+    expect(granted.authorizedUsers).toEqual(
+      [users.testUser1.identityKey, users.testUser2.identityKey].sort()
+    );
+  });
+
+  it("should remove one user when another authorized user remains", async () => {
+    // Given
+    const saved = existingAuthorization([users.testUser1.identityKey, users.testUser2.identityKey].sort());
+
+    const { ctx, getWrites } = fixture<GalaChainContext, GalaChainTokenContract>(GalaChainTokenContract)
+      .callingUser(users.testUser1)
+      .savedState(saved);
+
+    const expected = existingAuthorization([users.testUser1.identityKey]);
+
+    // When
+    const result = await revokeNftCollectionAuthorization(ctx, collection, users.testUser2.identityKey).then(
+      (res) => ctx.stub.flushWrites().then(() => res)
+    );
+
+    // Then
+    expect(result.authorizedUsers).toEqual(expected.authorizedUsers);
+    expect(getWrites()).toEqual(writesMap(expected));
   });
 });

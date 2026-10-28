@@ -93,4 +93,45 @@ describe("LockTokens", () => {
     );
     expect(getWrites()).toEqual({});
   });
+
+  test("makes the locked quantity spendable at the vesting start", async () => {
+    // Given
+    const nftInstance = nft.tokenInstance1();
+    const nftInstanceKey = nft.tokenInstance1Key();
+    const nftClass = nft.tokenClass();
+    const balance = nft.tokenBalance();
+
+    const dto = await createValidSubmitDTO(LockTokenDto, {
+      owner: users.testUser1.identityKey,
+      lockAuthority: users.testUser1.identityKey,
+      tokenInstance: nftInstanceKey,
+      quantity: new BigNumber("1"),
+      vestingPeriodStart: 1
+    }).signed(users.testUser1.privateKey);
+
+    const { ctx, contract, getWrites } = fixture(GalaChainTokenContract)
+      .registeredUsers(users.testUser1)
+      .savedState(nftClass, nftInstance, balance);
+
+    const balanceWithHold = balance.copy();
+    balanceWithHold.lockInstance(
+      new TokenHold({
+        createdBy: users.testUser1.identityKey,
+        instanceId: nftInstance.instance,
+        quantity: new BigNumber("1"),
+        created: ctx.txUnixTime,
+        lockAuthority: users.testUser1.identityKey,
+        expires: 0,
+        vestingPeriodStart: 1
+      }),
+      1
+    );
+
+    // When
+    const response = await contract.LockToken(ctx, dto);
+
+    // Then
+    expect(response).toEqual(GalaChainResponse.Success(balanceWithHold));
+    expect(getWrites()).toEqual(writesMap(balanceWithHold));
+  });
 });

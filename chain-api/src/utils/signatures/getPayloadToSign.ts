@@ -143,6 +143,25 @@ function flattenArrays(value: unknown, depth: number): unknown[] {
   return leaves;
 }
 
+const personalSignExcludedKeys = ["signature", "multisig", "trace", "prefix", "domain", "types"];
+
+/**
+ * JSON signed by personal_sign. Domain and types are omitted so typed-data
+ * metadata cannot change the message or select EIP-712 verification.
+ */
+export function personalSignMessage(obj: object): string {
+  const plain = { ...(instanceToPlain(obj) as Record<string, unknown>) };
+  for (const key of personalSignExcludedKeys) {
+    delete plain[key];
+  }
+  return serialize(plain);
+}
+
+/** Ethereum message prefix for the UTF-8 length of a personal-sign message. */
+export function ethereumPersonalSignPrefix(message: string): string {
+  return "\u0019Ethereum Signed Message:\n" + Buffer.byteLength(message, "utf8");
+}
+
 function getEIP712PayloadToSign(obj: EIP712Object, eipOverride: { chainId?: number | "delete" }): string {
   if (eipOverride.chainId === "delete") {
     delete obj.domain.chainId;
@@ -165,7 +184,7 @@ export function getPayloadToSign(obj: object, eipOverride: { chainId?: number | 
     return dataString.startsWith("0x") ? Buffer.from(dataString.slice(2), "hex") : Buffer.from(dataString);
   }
 
-  const serialized = serialize(plain);
+  const serialized = personalSignMessage(obj);
   if (typeof prefix === "string" && prefix.startsWith("0x")) {
     const hex = prefix.slice(2);
     if (hex.length === 0 || hex.length % 2 !== 0 || !/^[0-9a-fA-F]+$/.test(hex)) {

@@ -61,21 +61,11 @@ import { galaFeeGate, writeUsageAndCalculateFeeAmount } from "./galaFeeGate";
 import { payFeeFromCrossChannelAuthorization } from "./payFeeFromCrossChannelAuthorization";
 import { payFeeImmediatelyFromBalance } from "./payFeeImmediatelyFromBalance";
 
-export interface IRequestOwner {
-  owner?: string | undefined;
-}
-
 const assertionExpirationLimit: number = process?.env?.ORACLE_ASSERTION_EXPIRATION
   ? isFinite(parseInt(process?.env?.ORACLE_ASSERTION_EXPIRATION, 10))
     ? parseInt(process?.env?.ORACLE_ASSERTION_EXPIRATION)
     : 15 * 60 * 1000
   : 15 * 60 * 1000;
-
-export function extractUniqueOwnersFromRequests(ctx: GalaChainContext, requests: IRequestOwner[]) {
-  const owners = requests.map((r) => r.owner ?? ctx.callingUser);
-
-  return Array.from(new Set(owners));
-}
 
 export async function batchFillTokenSwapFeeGate(ctx: GalaChainContext, dto: BatchFillTokenSwapDto) {
   return galaFeeGate(ctx, { feeCode: FeeGateCodes.BatchFillTokenSwap });
@@ -83,18 +73,6 @@ export async function batchFillTokenSwapFeeGate(ctx: GalaChainContext, dto: Batc
 
 export async function batchMintTokenFeeGate(ctx: GalaChainContext, dto: BatchMintTokenDto) {
   const feeCode = FeeGateCodes.BatchMintToken;
-  const owners: string[] = extractUniqueOwnersFromRequests(ctx, dto.mintDtos);
-
-  for (const owner of owners) {
-    await galaFeeGate(ctx, {
-      feeCode
-      // v1 fees requires only callingUser identities pay fees
-      // uncomment below to require benefiting / initiating user to pay,
-      // regardless of who executes the method
-      // activeUser: owner
-    });
-  }
-
   const batchPayments: PaymentRequiredError[] = [];
 
   for (const mintDto of dto.mintDtos) {
