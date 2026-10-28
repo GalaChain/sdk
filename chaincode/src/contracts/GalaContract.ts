@@ -29,13 +29,14 @@ import {
   GetObjectHistoryDto,
   HasPendingApplyRequestsDto,
   UserProfile,
-  UserRole,
   ValidationFailedError,
-  createValidDTO
+  createValidDTO,
+  isValidUserAlias,
+  signatures
 } from "@gala-chain/api";
 import { Contract } from "fabric-contract-api";
 
-import { UniqueTransactionService } from "../services";
+import { PublicKeyService, UniqueTransactionService } from "../services";
 import { GalaChainContext, GalaChainContextConfig, GalaChainStub } from "../types";
 import { getObjectHistory, getPlainObjectByKey } from "../utils";
 import { getApiMethod, getApiMethods } from "./GalaContractApi";
@@ -43,7 +44,6 @@ import { EVALUATE, GalaTransaction, SUBMIT, Submit } from "./GalaTransaction";
 import { applySavedRequests, hasPendingApplyRequests } from "./GalaTransactionRequest";
 import type { RequestMethodHandler } from "./GalaTransactionRequest";
 import { curatorOrgMsp } from "./authorize";
-import { getCaIdentityAlias } from "./getCaIdentityAlias";
 
 export class BatchWriteLimitExceededError extends ValidationFailedError {
   constructor(writesLimit: number) {
@@ -237,17 +237,37 @@ export abstract class GalaContract extends Contract {
       ? ChainCallDTO.deserialize(ChainCallDTO, dto.dto as unknown as Record<string, unknown>)
       : undefined;
 
-    // For dry run we don't use the regular authorization. We don't want users to provide signatures
-    // to avoid replay attack in case if the method is eventually not executed, and someone in the middle
-    // will replay the request.
+    // Only the curator organization can call DryRun. The caller names who to simulate.
+    // A fee estimate runs here before that user signs and submits.
+    // The inner dto stays unsigned, so that signature is not available to submit later.
     if (internalDto && internalDto.getAllSignatures().length > 0) {
       throw new ValidationFailedError("The dto should have no signature for dry run execution");
     }
 
-    ctx.setDryRunOnBehalfOf({
-      alias: getCaIdentityAlias(ctx),
-      roles: [UserRole.CURATOR, ...UserProfile.DEFAULT_ROLES]
-    });
+    // If the caller public key is provided, we use it to set the dry run on behalf of the user.
+    if (dto.callerPublicKey) {
+      const ethAddr = signatures.getEthAddress(signatures.getNonCompactHexPublicKey(dto.callerPublicKey));
+      const savedProfile = await PublicKeyService.getUserProfile(ctx, ethAddr);
+      const userProfile = savedProfile ?? PublicKeyService.getDefaultUserProfile(ethAddr);
+      ctx.setDryRunOnBehalfOf({
+        ...userProfile
+      });
+    }
+
+    // If the signer address is provided, we use it to set the dry run on behalf of the user.
+    // Initially we don't fetch the actual registered user to get actual roles, but we use the default roles.
+    // That might be a future improvement.
+    else if (dto.signerAddress && isValidUserAlias(dto.signerAddress)) {
+      ctx.setDryRunOnBehalfOf({
+        alias: dto.signerAddress,
+        roles: [...UserProfile.DEFAULT_ROLES]
+      });
+    }
+
+    // If neither callerPublicKey nor signerAddress is provided, we throw an error.
+    else {
+      throw new ValidationFailedError("Either callerPublicKey or signerAddress must be provided");
+    }
 
     // method needs to be executed first to populate reads, writes and deletes
     const response = await this[method.methodName](ctx, internalDto);

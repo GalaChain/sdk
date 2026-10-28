@@ -537,14 +537,14 @@ export class GetObjectHistoryDto extends ChainCallDTO {
  *
  * @remarks
  *
- * Only the curator organization can call `DryRun`. The simulation runs as the calling client.
- * The inner dto must not be signed. `callerPublicKey` is accepted and ignored.
+ * Only the curator organization can call `DryRun`. The caller names the user to
+ * simulate with `callerPublicKey` or `signerAddress`. The inner dto must not be signed.
  *
  * Example use case: Executing a `DryRun` on a given method, and then processing
  * the results for `FeeChannelPaymentReceipt` or `FeeUserPaymentReceipt` objects
- * can yield the exepcted/estimated fee prior to executing a transaction. The
- * estimated fee can then be presented to an end user for them to decide whether
- * or not they want to authorize the transaction.
+ * can yield the expected fee before the user signs and submits. The estimated fee
+ * can then be presented to an end user for them to decide whether or not they
+ * want to authorize the transaction.
  */
 export class DryRunDto extends ChainCallDTO {
   /**
@@ -562,7 +562,7 @@ export class DryRunDto extends ChainCallDTO {
   /**
    * @description
    *
-   * Accepted and ignored. The dry run uses the calling client.
+   * The public key of the user to simulate.
    */
   @IsOptional()
   @IsNotEmpty()

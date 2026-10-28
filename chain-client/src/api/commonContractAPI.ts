@@ -20,7 +20,11 @@ export interface CommonContractAPI extends Record<string, unknown> {
   GetContractAPI(): Promise<GalaChainResponse<Record<string, unknown>>>;
   GetObjectByKey(key: string): Promise<GalaChainResponse<Record<string, unknown>>>;
   GetObjectHistory(key: string): Promise<GalaChainResponse<Record<string, unknown>>>;
-  DryRun(method: string, dto: Serializable): Promise<GalaChainResponse<Record<string, unknown>>>;
+  DryRun(
+    method: string,
+    callerPublicKey: string,
+    dto: Serializable
+  ): Promise<GalaChainResponse<Record<string, unknown>>>;
   BatchSubmit(batch: Serializable): Promise<GalaChainResponse<GalaChainResponse<unknown>[]>>;
   BatchEvaluate(batch: Serializable): Promise<GalaChainResponse<GalaChainResponse<unknown>[]>>;
 }
@@ -52,9 +56,13 @@ export const commonContractAPI = (client: ChainClient): CommonContractAPI => ({
     >;
   },
 
-  async DryRun(method: string, dto: Serializable): Promise<GalaChainResponse<Record<string, unknown>>> {
+  async DryRun(
+    method: string,
+    callerPublicKey: string,
+    dto: Serializable
+  ): Promise<GalaChainResponse<Record<string, unknown>>> {
     const inner = JSON.parse(serialize(dto));
-    return client.evaluateTransaction("DryRun", asDto({ method, dto: inner })) as Promise<
+    return client.evaluateTransaction("DryRun", asDto({ method, callerPublicKey, dto: inner })) as Promise<
       GalaChainResponse<Record<string, unknown>>
     >;
   },

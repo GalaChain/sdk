@@ -252,6 +252,11 @@ describe("GalaContract.GetObjectsByPartialCompositeKey", () => {
 });
 
 describe("GalaContract.DryRun", () => {
+  const callerPublicKey = process.env.DEV_ADMIN_PUBLIC_KEY as string;
+  const callerEthAddress = signatures.getEthAddress(callerPublicKey);
+  const callerProfileKey = `\u0000GCUP\u0000${callerEthAddress}\u0000`;
+  const callerAlias = process.env.DEV_ADMIN_USER_ID ?? `eth|${callerEthAddress}`;
+
   it("should support DryRun for submit operations", async () => {
     // Given
     const chaincode = new TestChaincode([TestGalaContract]);
@@ -260,6 +265,7 @@ describe("GalaContract.DryRun", () => {
     const superhero = await createValidChainObject(Superhero, dto);
     const dryRunDto = await createValidDTO(DryRunDto, {
       method,
+      callerPublicKey,
       dto: instanceToPlain(dto) as Record<string, unknown>
     });
 
@@ -271,10 +277,10 @@ describe("GalaContract.DryRun", () => {
       Status: GalaChainResponseType.Success,
       Data: {
         response: { Status: GalaChainResponseType.Success },
-        reads: {},
+        reads: { [callerProfileKey]: "" },
         writes: {
           [superhero.getCompositeKey()]: serialize({ age: 32, name: "Batman" }),
-          [`\u0000UNTX\u0000client|admin\u0000${dto.uniqueKey}\u0000`]: expect.any(String)
+          [`\u0000UNTX\u0000${callerAlias}\u0000${dto.uniqueKey}\u0000`]: expect.any(String)
         },
         deletes: {}
       }
@@ -293,6 +299,7 @@ describe("GalaContract.DryRun", () => {
     const dto = await createValidDTO(GetObjectDto, { objectId: batmanKey });
     const dryRunDto = await createValidDTO(DryRunDto, {
       method,
+      callerPublicKey,
       dto: instanceToPlain(dto) as Record<string, unknown>
     });
 
@@ -305,7 +312,7 @@ describe("GalaContract.DryRun", () => {
       Status: GalaChainResponseType.Success,
       Data: {
         response: { Status: GalaChainResponseType.Success, Data: instanceToPlain(plainBatman) },
-        reads: { [batmanKey]: serialize(plainBatman) },
+        reads: { [callerProfileKey]: "", [batmanKey]: serialize(plainBatman) },
         writes: {},
         deletes: {}
       }
@@ -315,7 +322,7 @@ describe("GalaContract.DryRun", () => {
   it("should support DryRun for operations with no dto", async () => {
     // Given
     const chaincode = new TestChaincode([TestGalaContract]);
-    const dryRunDto = await createValidDTO(DryRunDto, { method: "GetContractVersion" });
+    const dryRunDto = await createValidDTO(DryRunDto, { method: "GetContractVersion", callerPublicKey });
 
     // eslint-disable-next-line @typescript-eslint/no-var-requires
     const expectedVersion = require("../../package.json").version;
@@ -328,7 +335,7 @@ describe("GalaContract.DryRun", () => {
       Status: GalaChainResponseType.Success,
       Data: {
         response: { Status: GalaChainResponseType.Success, Data: expectedVersion },
-        reads: {},
+        reads: { [callerProfileKey]: "" },
         writes: {},
         deletes: {}
       }
@@ -347,6 +354,7 @@ describe("GalaContract.DryRun", () => {
     const dto = await createValidDTO(GetObjectDto, { objectId: batmanKey });
     const dryRunDto = await createValidDTO(DryRunDto, {
       method,
+      callerPublicKey,
       dto: instanceToPlain(dto) as Record<string, unknown>
     });
 
@@ -364,7 +372,7 @@ describe("GalaContract.DryRun", () => {
           ErrorPayload: { objectId: batmanKey },
           Message: `No object with id ${batmanKey} exists`
         },
-        reads: { [batmanKey]: "" }, // empty string because object is missing
+        reads: { [callerProfileKey]: "", [batmanKey]: "" }, // empty string because object is missing
         writes: {},
         deletes: {}
       }
@@ -378,6 +386,7 @@ describe("GalaContract.DryRun", () => {
     const dto = SuperheroDto.create("Batman", -1); // invalid age
     const dryRunDto = await createValidDTO(DryRunDto, {
       method,
+      callerPublicKey,
       dto: instanceToPlain(dto) as Record<string, unknown>
     });
 
@@ -395,7 +404,7 @@ describe("GalaContract.DryRun", () => {
           ErrorPayload: ["isPositive: age must be a positive number"],
           Message: "DTO validation failed: (1) isPositive: age must be a positive number"
         },
-        reads: {},
+        reads: { [callerProfileKey]: "" },
         writes: {},
         deletes: {}
       }
@@ -408,6 +417,7 @@ describe("GalaContract.DryRun", () => {
     const method = "UnknownMethod";
     const dryRunDto = await createValidDTO(DryRunDto, {
       method,
+      callerPublicKey,
       dto: instanceToPlain(new ChainCallDTO()) as Record<string, unknown>
     });
 
@@ -430,6 +440,7 @@ describe("GalaContract.DryRun", () => {
     const dto = await createValidDTO(ChainCallDTO, { signature: "some-signature" });
     const dryRunDto = await createValidDTO(DryRunDto, {
       method,
+      callerPublicKey,
       dto: instanceToPlain(dto) as Record<string, unknown>
     });
 
@@ -447,7 +458,7 @@ describe("GalaContract.DryRun", () => {
 
   it("should reject DryRun from an organization other than the curator", async () => {
     const chaincode = new TestChaincode([TestGalaContract]).setCallingUserMsp("OtherOrg");
-    const dryRunDto = await createValidDTO(DryRunDto, { method: "GetContractVersion" });
+    const dryRunDto = await createValidDTO(DryRunDto, { method: "GetContractVersion", callerPublicKey });
 
     const response = await chaincode.query("TestGalaContract:DryRun", dryRunDto);
 
