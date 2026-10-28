@@ -16,7 +16,13 @@ import { TokenClassKeyProperties, TokenMintRequest, TokenMintStatus, UserAlias }
 import BigNumber from "bignumber.js";
 
 import { GalaChainContext } from "../types";
-import { inverseEpoch, inverseTime, putRangedChainObject } from "../utils";
+import {
+  ObjectNotFoundError,
+  getRangedObjectByKey,
+  inverseEpoch,
+  inverseTime,
+  putRangedChainObject
+} from "../utils";
 import { fetchMintSupply } from "./fetchMintSupply";
 
 export interface WriteMintRequestParams {
@@ -31,6 +37,27 @@ export async function writeMintRequest(
   ctx: GalaChainContext,
   { tokenClassKey, callingUser, owner, quantity, knownTotalSupply }: WriteMintRequestParams
 ): Promise<TokenMintRequest> {
+  const timeKey = inverseTime(ctx, 0);
+  const pendingKey = new TokenMintRequest();
+  pendingKey.collection = tokenClassKey.collection;
+  pendingKey.category = tokenClassKey.category;
+  pendingKey.type = tokenClassKey.type;
+  pendingKey.additionalKey = tokenClassKey.additionalKey;
+  pendingKey.timeKey = timeKey;
+  pendingKey.owner = owner;
+
+  // A second mint in this transaction uses the same key. Add its quantity to the record already written.
+  try {
+    const pending = await getRangedObjectByKey(ctx, TokenMintRequest, pendingKey.getRangedKey());
+    pending.quantity = pending.quantity.plus(quantity);
+    await putRangedChainObject(ctx, pending);
+    return pending;
+  } catch (e) {
+    if (!(e instanceof ObjectNotFoundError)) {
+      throw new Error(`MintRequest read failure: ${e instanceof Error ? e.message : e}`);
+    }
+  }
+
   // for batch operations, support a way to pass in the knownTotalSupply to avoid repeated range queries
   // knownTotalSupply should never be exposed in a dto,
   // it should only ever be determined by application code logic.
@@ -44,7 +71,6 @@ export async function writeMintRequest(
   }
 
   const epochKey = inverseEpoch(ctx, 0);
-  const timeKey = inverseTime(ctx, 0);
 
   const mintRequest = new TokenMintRequest();
 
