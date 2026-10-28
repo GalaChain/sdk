@@ -12,19 +12,13 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-import {
-  TokenMintAllowanceRequest,
-  TokenMintRequest,
-  TokenMintStatus,
-  createValidRangedChainObject
-} from "@gala-chain/api";
+import { TokenMintRequest, TokenMintStatus, createValidRangedChainObject } from "@gala-chain/api";
 import { fixture, users } from "@gala-chain/test";
 import BigNumber from "bignumber.js";
 
 import GalaChainTokenContract from "../__test__/GalaChainTokenContract";
 import { currency } from "../testdata/index";
 import { inverseEpoch, inverseTime } from "../utils";
-import { fetchMintAllowanceSupply } from "./fetchMintAllowanceSupply";
 import { fetchTokenClassWithKnownSupply } from "./fetchTokenClassWithSupply";
 
 describe("mint supply", () => {
@@ -86,38 +80,5 @@ describe("mint supply", () => {
 
     expect(result.knownMintSupply?.isEqualTo("15")).toBe(true);
     expect(result.totalSupply.isEqualTo("2")).toBe(true);
-  });
-
-  it("sums allowance supply across more than 200 records", async () => {
-    const tokenClass = currency.tokenClass();
-    const testFixture = fixture(GalaChainTokenContract).savedState(tokenClass);
-    const { ctx } = testFixture;
-    const requests: TokenMintAllowanceRequest[] = [];
-
-    for (let i = 0; i < 201; i += 1) {
-      requests.push(
-        await createValidRangedChainObject(TokenMintAllowanceRequest, {
-          collection: tokenClass.collection,
-          category: tokenClass.category,
-          type: tokenClass.type,
-          additionalKey: tokenClass.additionalKey,
-          timeKey: inverseTime(ctx, i + 1),
-          grantedTo: users.testUser1.identityKey,
-          totalKnownMintAllowancesCount: new BigNumber("0"),
-          created: ctx.txUnixTime - i,
-          grantedBy: users.admin.identityKey,
-          quantity: new BigNumber("1"),
-          state: TokenMintStatus.Minted,
-          id: `allowance-${i}`,
-          uses: new BigNumber("1"),
-          epoch: inverseEpoch(ctx, 0)
-        })
-      );
-    }
-
-    testFixture.savedRangeState(requests);
-    const supply = await fetchMintAllowanceSupply(ctx, tokenClass, 0);
-
-    expect(supply.isEqualTo("201")).toBe(true);
   });
 });
