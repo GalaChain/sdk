@@ -257,6 +257,7 @@ export function ensureQuantityCanBeMinted(
   if (
     tokenClass.totalSupply &&
     tokenClass.totalSupply.isGreaterThan("0") &&
+    tokenClass.maxSupply.isGreaterThan(0) &&
     tokenClass.totalSupply.plus(quantity).isGreaterThan(tokenClass.maxSupply)
   ) {
     throw new TotalSupplyExceededError(tokenClass.getCompositeKey(), tokenClass.maxSupply, quantity);

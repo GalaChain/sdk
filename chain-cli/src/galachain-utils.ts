@@ -127,14 +127,42 @@ export async function getDeploymentResponse(params: {
     sequence: d.sequence,
     status: d.status,
     lastUpdated: d.lastUpdated,
-    ...(typeof d.operationId === "string" ? { operationId: d.operationId } : {})
+    ...(typeof d.operationId === "string" ? { operationId: d.operationId } : {}),
+    ...(typeof d.imageDigest === "string" ? { imageDigest: d.imageDigest } : {})
   };
+}
+
+function imageRepository(imageTag: string): string {
+  const slash = imageTag.lastIndexOf("/");
+  const colon = imageTag.lastIndexOf(":");
+  return colon > slash ? imageTag.slice(0, colon) : imageTag;
+}
+
+function registryDigest(imageTag: string, repoDigests: unknown): string {
+  const repository = imageRepository(imageTag);
+  const prefix = `${repository}@`;
+  const matches = Array.isArray(repoDigests)
+    ? repoDigests.filter((entry): entry is string => typeof entry === "string" && entry.startsWith(prefix))
+    : [];
+
+  if (matches.length !== 1) {
+    throw new Error(
+      `Docker image ${imageTag} has no single registry digest. Pull the published image before deploying.`
+    );
+  }
+
+  const digest = matches[0].slice(prefix.length);
+  if (!/^sha256:[a-f0-9]{64}$/.test(digest)) {
+    throw new Error(`Docker image ${imageTag} has an unsupported registry digest ${digest}.`);
+  }
+
+  return digest;
 }
 
 export function getChaincodeImageInfo(imageTag: string): {
   contracts: { contractName: string }[];
   imageArchitecture: string;
-  imageSha256: string;
+  imageDigest: string;
 } {
   // Using execFileSync with argument array to prevent command injection
   const inspectCommandDesc = `docker inspect <imageTag>`;
@@ -147,7 +175,7 @@ export function getChaincodeImageInfo(imageTag: string): {
   }
 
   const imageArchitecture = dockerJson?.[0]?.Os + "/" + dockerJson?.[0]?.Architecture;
-  const imageSha256 = dockerJson?.[0]?.Id;
+  const imageDigest = registryDigest(imageTag, dockerJson?.[0]?.RepoDigests);
 
   if (imageArchitecture !== ExpectedImageArchitecture) {
     throw new Error(
@@ -190,7 +218,7 @@ export function getChaincodeImageInfo(imageTag: string): {
     });
 
     const contracts = (json as { contractName: string }[]).map(({ contractName }) => ({ contractName }));
-    return { contracts, imageArchitecture, imageSha256 };
+    return { contracts, imageArchitecture, imageDigest };
   } catch (e) {
     throw new Error(
       `There was an error while executing the following command:\n\n  ${getContractNamesCommandDesc}\n\n` +
@@ -202,6 +230,7 @@ export function getChaincodeImageInfo(imageTag: string): {
 export async function deployChaincode(params: {
   privateKey: string;
   imageTag: string;
+  imageDigest: string;
   chaincode: string;
   contracts: { contractName: string }[];
 }): Promise<{ operationId: string }> {
@@ -209,6 +238,7 @@ export async function deployChaincode(params: {
   const dto: DeployChaincodeDto = {
     operationId,
     imageTag: params.imageTag,
+    imageDigest: params.imageDigest,
     chaincode: params.chaincode,
     contracts: params.contracts
   };
