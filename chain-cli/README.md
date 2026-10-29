@@ -405,8 +405,8 @@ USAGE
 
 FLAGS
   -C, --channel=<value>...        (required) Channel name.
-  -d, --chaincodeDir=<value>...   Root directory of chaincode source, relative to fabloRoot. By default '.' is used for
-                                  every chaincode when this flag is omitted.
+  -d, --chaincodeDir=<value>...   Root directory of chaincode source, relative to the current directory. By default '.'
+                                  is used for every chaincode when this flag is omitted.
   -e, --envConfig=<value>         Path to .env file to be used for chaincodes.
   -n, --chaincodeName=<value>...  (required) Chaincode name.
   -o, --contracts=<value>...      Contract names in a JSON format.
@@ -475,8 +475,8 @@ USAGE
 
 FLAGS
   -C, --channel=<value>...        (required) Channel name.
-  -d, --chaincodeDir=<value>...   Root directory of chaincode source, relative to fabloRoot. By default '.' is used for
-                                  every chaincode when this flag is omitted.
+  -d, --chaincodeDir=<value>...   Root directory of chaincode source, relative to the current directory. By default '.'
+                                  is used for every chaincode when this flag is omitted.
   -e, --envConfig=<value>         Path to .env file to be used for chaincodes.
   -n, --chaincodeName=<value>...  (required) Chaincode name.
   -o, --contracts=<value>...      Contract names in a JSON format.
