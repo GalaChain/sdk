@@ -15,12 +15,19 @@
 import { ChainClient, ChainUser, UserAlias } from "../generic";
 
 export interface ChainUserAPI {
-  privateKey: string;
   identityKey: UserAlias;
   publicKey: string;
   ethAddress: string;
+  sign<T extends { signed(privateKey: string, useDer?: boolean): T }>(dto: T, useDer?: boolean): T;
+  signInPlace<T extends { sign(privateKey: string, useDer?: boolean): void }>(dto: T, useDer?: boolean): T;
 }
 
 export function buildChainUserAPI(user: ChainUser): (c: ChainClient) => ChainUserAPI {
-  return (): ChainUserAPI => user;
+  return (): ChainUserAPI => ({
+    identityKey: user.identityKey,
+    publicKey: user.publicKey,
+    ethAddress: user.ethAddress,
+    sign: (dto, useDer) => user.sign(dto, useDer),
+    signInPlace: (dto, useDer) => user.signInPlace(dto, useDer)
+  });
 }

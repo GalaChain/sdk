@@ -78,7 +78,7 @@ describe("NFT lock scenario", () => {
     // When
     const lockResult = await client.assets.submitTransaction<TokenBalance>(
       "LockTokens",
-      lockDto.signed(user1.privateKey),
+      user1.sign(lockDto),
       TokenBalance
     );
 
@@ -97,7 +97,7 @@ describe("NFT lock scenario", () => {
     // When
     const transferResponse = await client.assets.submitTransaction(
       "RequestTransferToken",
-      transferDto.signed(user1.privateKey)
+      user1.sign(transferDto)
     );
     expect(transferResponse).toEqual(transactionSuccess());
 
@@ -123,7 +123,7 @@ describe("NFT lock scenario", () => {
 
     await client.assets.submitTransaction<UnlockTokensDto>(
       "UnlockTokens",
-      unlockDto.signed(user1.privateKey),
+      user1.sign(unlockDto),
       UnlockTokensDto
     );
 
@@ -136,7 +136,7 @@ describe("NFT lock scenario", () => {
     // When
     const transferResponse = await client.assets.submitTransaction(
       "RequestTransferToken",
-      transferDto.signed(user1.privateKey)
+      user1.sign(transferDto)
     );
     expect(transferResponse).toEqual(transactionSuccess());
     const applyRequestsResponse = await applyRequests(client);
@@ -173,7 +173,7 @@ describe("NFT lock scenario", () => {
 
     const lockResponse = await client.assets.submitTransaction<LockTokensDto>(
       "LockTokens",
-      lockDto.signed(user1.privateKey),
+      user1.sign(lockDto),
       LockTokensDto
     );
 
@@ -182,12 +182,12 @@ describe("NFT lock scenario", () => {
     // When
     const unlockResult1 = await client.assets.submitTransaction<UnlockTokensDto>(
       "UnlockTokens",
-      unlockDtoForUser2.signed(user2.privateKey),
+      user2.sign(unlockDtoForUser2),
       UnlockTokensDto
     );
     const unlockResult2 = await client.assets.submitTransaction<UnlockTokensDto>(
       "UnlockTokens",
-      unlockDtoForUser1.signed(user1.privateKey),
+      user1.sign(unlockDtoForUser1),
       UnlockTokensDto
     );
 
@@ -235,7 +235,7 @@ describe("lock with allowances", () => {
 
     const result = await client.assets.submitTransaction<TokenAllowance[]>(
       "GrantAllowance",
-      galaAllowanceDto.signed(user1.privateKey),
+      user1.sign(galaAllowanceDto),
       TokenAllowance
     );
 
@@ -257,7 +257,7 @@ describe("lock with allowances", () => {
     // When
     const lockResult = await client.assets.submitTransaction<TokenBalance>(
       "LockTokens",
-      lockDto.signed(user2.privateKey),
+      user2.sign(lockDto),
       TokenBalance
     );
 

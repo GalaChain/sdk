@@ -116,13 +116,13 @@ describeIfNonMockedChaincode("Chaincode client (CuratorOrg)", () => {
     // Given
     const newUser = ChainUser.withRandomKeys("new-user");
 
-    const dto = (
-      await createValidSubmitDTO(RegisterUserDto, {
-        user: newUser.identityKey,
-        publicKey: newUser.publicKey
-      })
-    )
-      .withPublicKeySignedBy(newUser.privateKey)
+    const dto = newUser
+      .signPublicKey(
+        await createValidSubmitDTO(RegisterUserDto, {
+          user: newUser.identityKey,
+          publicKey: newUser.publicKey
+        })
+      )
       .signed(getAdminPrivateKey());
 
     // When
@@ -131,7 +131,7 @@ describeIfNonMockedChaincode("Chaincode client (CuratorOrg)", () => {
     // Then
     expect(response).toEqual(GalaChainResponse.Success(newUser.identityKey));
 
-    const newUserProfile = await client.GetProfile(newUser.privateKey);
+    const newUserProfile = await client.GetProfile(newUser);
     expect(newUserProfile).toEqual(
       expect.objectContaining({ alias: newUser.identityKey, ethAddress: newUser.ethAddress })
     );
@@ -200,13 +200,16 @@ function networkRoot() {
 }
 
 interface CustomAPI {
-  GetProfile(privateKey: string): Promise<UserProfile>;
+  GetProfile(signer: ChainUser | string): Promise<UserProfile>;
 }
 
 function customAPI(client: ChainClient): CustomAPI {
   return {
-    async GetProfile(privateKey: string) {
-      const dto = new GetMyProfileDto().signed(privateKey, false);
+    async GetProfile(signer: ChainUser | string) {
+      const dto =
+        typeof signer === "string"
+          ? new GetMyProfileDto().signed(signer, false)
+          : signer.sign(new GetMyProfileDto(), false);
       const response = await client.evaluateTransaction("GetMyProfile", dto, UserProfile);
       if (GalaChainResponse.isError(response)) {
         throw new Error(`Cannot get profile: ${response.Message} (${response.ErrorKey})`);

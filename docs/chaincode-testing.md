@@ -154,8 +154,8 @@ During validation, we assert that the response from picking an apple is successf
 However, the `ctx` parameter is tied to the contract, and you must provide any contract class, such as `AppleContract` or any class that extends `GalaContract` from the `@gala-chain/chaincode` package.
 
 ```typescript
-import { GalaContract } from "@gala-chain/chaincode";
 import { ChainUser } from "@gala-chain/api";
+import { GalaContract } from "@gala-chain/chaincode";
 import { fixture, writesMap } from "@gala-chain/test";
 
 import { AppleTree } from "./AppleTree";
@@ -344,11 +344,14 @@ And it allows you to use type-safe calls, defined in the API, like `client.apple
 ```typescript
 test("Plant a bunch of trees", async () => {
   // Given
-  const dto = new AppleTreesDto([
-    new AppleTreeDto(Variety.GALA, 1),
-    new AppleTreeDto(Variety.GOLDEN_DELICIOUS, 2),
-    new AppleTreeDto(Variety.GALA, 3)
-  ]).signed(user.privateKey, false);
+  const dto = user.sign(
+    new AppleTreesDto([
+      new AppleTreeDto(Variety.GALA, 1),
+      new AppleTreeDto(Variety.GOLDEN_DELICIOUS, 2),
+      new AppleTreeDto(Variety.GALA, 3)
+    ]),
+    false
+  );
 
   // When
   const response = await client.apples.PlantTrees(dto);
@@ -372,7 +375,7 @@ We will use them in the next test.
 ```typescript
 test("Fetch GALA trees planted by a user", async () => {
   // Given
-  const dto = new FetchTreesDto(user.identityKey, Variety.GALA).signed(user.privateKey, false);
+  const dto = user.sign(new FetchTreesDto(user.identityKey, Variety.GALA), false);
 
   // When
   const response = await client.apples.FetchTrees(dto);
@@ -400,7 +403,7 @@ The response contains two trees, planted by the user, and the bookmark for fetch
 ```typescript
 test("Fail to pick a GOLDEN_DELICIOUS apple because tree is too young", async () => {
   // Given
-  const dto = new PickAppleDto(user.identityKey, Variety.GOLDEN_DELICIOUS, 2).signed(user.privateKey, false);
+  const dto = user.sign(new PickAppleDto(user.identityKey, Variety.GOLDEN_DELICIOUS, 2), false);
 
   // When
   const response = await client.apples.PickApple(dto);

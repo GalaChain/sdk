@@ -287,13 +287,14 @@ async function createForAdmin<T extends ChainClientOptions>(opts?: T): Promise<A
     return createForAdmin({ ...opts, pk: defaultChainClientsOptions().pk });
   }
 
-  const admin = getAdminUser();
+  const adminKey = getAdminPrivateKey();
+  const admin = new ChainUser({ name: "admin", privateKey: adminKey });
   const clients = (await create(admin, opts)) as unknown as ChainClients<T & ChainClientOptionsWithPK>;
   const pk = (clients as ChainClients<ChainClientOptionsWithPK>).pk;
 
   return {
     ...clients,
-    createRegisteredUser: async (userAlias: string) => createRegisteredUser(pk, userAlias)
+    createRegisteredUser: async (userAlias: string) => createRegisteredUser(pk, adminKey, userAlias)
   };
 }
 
@@ -305,16 +306,7 @@ async function createForAdmin<T extends ChainClientOptions>(opts?: T): Promise<A
  * @internal
  */
 function isUserConfig(user: ChainUser | unknown): user is ChainUser {
-  return (
-    typeof user === "object" &&
-    !!user &&
-    "prefix" in user &&
-    "name" in user &&
-    "identityKey" in user &&
-    "ethAddress" in user &&
-    "privateKey" in user &&
-    "publicKey" in user
-  );
+  return user instanceof ChainUser;
 }
 
 /**
@@ -333,14 +325,12 @@ function getAdminKeyFromPath(keyPath: string) {
 }
 
 /**
- * Gets the admin user configuration for privileged operations.
- * Reads private key from environment variable or default file path.
+ * Reads the admin private key from the environment or the default file path.
  *
- * @returns ChainUser configured with admin privileges
- * @throws Error if admin private key cannot be found
+ * @throws Error if the admin private key cannot be found
  * @internal
  */
-function getAdminUser() {
+function getAdminPrivateKey() {
   const defaultKeyPath = "dev-admin-key/dev-admin.priv.hex.txt";
   const privateKey =
     process.env.DEV_ADMIN_PRIVATE_KEY ?? getAdminKeyFromPath(path.resolve(networkRoot(), defaultKeyPath));
@@ -351,13 +341,14 @@ function getAdminUser() {
     );
   }
 
-  return new ChainUser({ name: "admin", privateKey });
+  return privateKey;
 }
 
 /**
  * Creates and registers a new user on the blockchain.
  *
  * @param client - Chain client with public key contract API for user registration
+ * @param adminKey - Private key of the admin that registers the user
  * @param userAlias - Optional alias for the user. If provided, registers with identity; if not, registers as ETH user
  * @returns Promise resolving to the created and registered ChainUser
  * @throws Error if user registration fails
@@ -365,13 +356,14 @@ function getAdminUser() {
  */
 async function createRegisteredUser(
   client: TestChainClient & PublicKeyContractAPI,
+  adminKey: string,
   userAlias?: string
 ): Promise<ChainUser> {
   const user = ChainUser.withRandomKeys(userAlias);
 
   const dto = signPlain(
     { user: user.identityKey, publicKey: user.publicKey, uniqueKey: randomUniqueKey() },
-    client.privateKey
+    adminKey
   );
 
   const response = await client.RegisterUser(dto);

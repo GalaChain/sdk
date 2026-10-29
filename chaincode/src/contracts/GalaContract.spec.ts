@@ -846,7 +846,7 @@ describe("GalaContract.Batch", () => {
     const { user: user2, state: state2 } = await generateUser();
 
     const signedDto = (u: ChainUser, uniqueKey: string) =>
-      plainToInstance(ChainCallDTO, { uniqueKey }).signed(u.privateKey);
+      u.sign(plainToInstance(ChainCallDTO, { uniqueKey }));
 
     const chaincode = new TestChaincode([TestGalaContract], { ...state1, ...state2 });
 
