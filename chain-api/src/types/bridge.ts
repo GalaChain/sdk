@@ -115,7 +115,9 @@ export class RequestTokenBridgeOutDto extends SubmitCallDTO {
 
   @JSONSchema({
     description:
-      "(Experimetnal) Serialzed OracleBridgeFeeAssertionDto signed by a valid Oracle Authority. To cover the gas fee on the other side"
+      "(Experimental) Serialized OracleBridgeFeeAssertionDto signed by a valid Bridge Oracle Authority, " +
+      "to cover the gas fee on the destination chain. Its signingIdentity must equal the alias or " +
+      "eth address of the key that signed the assertion."
   })
   @IsOptional()
   @ValidateNested()
