@@ -34,6 +34,8 @@ import * as fs from "fs";
 import * as path from "path";
 import process from "process";
 
+import { mockedOperation } from "./mockedOperation";
+
 /*
  * The test is to show how to use chaincode client without test utilities.
  * You may want to use similar code in your client application.
@@ -118,10 +120,12 @@ describeIfNonMockedChaincode("Chaincode client (CuratorOrg)", () => {
 
     const dto = newUser
       .signPublicKey(
-        await createValidSubmitDTO(RegisterUserDto, {
-          user: newUser.identityKey,
-          publicKey: newUser.publicKey
-        })
+        (
+          await createValidSubmitDTO(RegisterUserDto, {
+            user: newUser.identityKey,
+            publicKey: newUser.publicKey
+          })
+        ).withOperation(mockedOperation("PublicKeyContract:RegisterUser"))
       )
       .signed(getAdminPrivateKey());
 
@@ -206,10 +210,8 @@ interface CustomAPI {
 function customAPI(client: ChainClient): CustomAPI {
   return {
     async GetProfile(signer: ChainUser | string) {
-      const dto =
-        typeof signer === "string"
-          ? new GetMyProfileDto().signed(signer, false)
-          : signer.sign(new GetMyProfileDto(), false);
+      const profile = new GetMyProfileDto().withOperation(mockedOperation("PublicKeyContract:GetMyProfile"));
+      const dto = typeof signer === "string" ? profile.signed(signer, false) : signer.sign(profile, false);
       const response = await client.evaluateTransaction("GetMyProfile", dto, UserProfile);
       if (GalaChainResponse.isError(response)) {
         throw new Error(`Cannot get profile: ${response.Message} (${response.ErrorKey})`);
