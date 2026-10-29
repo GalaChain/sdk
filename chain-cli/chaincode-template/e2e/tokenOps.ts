@@ -165,11 +165,7 @@ export async function fetchNFTInstances(
     owner: asValidUserRef(owner)
   });
 
-  const resp = await client.evaluateTransaction(
-    "FetchBalances",
-    dto,
-    FetchBalancesWithPaginationResponse
-  );
+  const resp = await client.evaluateTransaction("FetchBalances", dto, FetchBalancesWithPaginationResponse);
   const balance = resp.Data?.results?.[0] as unknown as { instanceIds?: BigNumber[] } | undefined;
   return (balance?.instanceIds ?? []).sort((a, b) => a.comparedTo(b));
 }
