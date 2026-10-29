@@ -24,6 +24,10 @@ describe("getAddress", () => {
     expect(getAddress(checksum)).toBe(checksum);
   });
 
+  it("rejects an ICAP address", () => {
+    expect(() => getAddress("XE65GB6LDNXYOFTX0NSV3FUWKOWIXAMJK36")).toThrow(/invalid address/);
+  });
+
   it("encodes an address field and verifyingContract", () => {
     const address = "0x8ba1f109551bd432803012645ac136ddd64dba72";
     const encoded = TypedDataEncoder.encode(

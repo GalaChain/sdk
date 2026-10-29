@@ -15,12 +15,15 @@
 import { ChainCallDTO, StringEnumProperty, SubmitCallDTO } from "@gala-chain/api";
 import { Type } from "class-transformer";
 import {
+  ArrayMaxSize,
   ArrayNotEmpty,
   IsArray,
   IsIn,
   IsInt,
   IsOptional,
   IsString,
+  Max,
+  Min,
   ValidateIf,
   ValidateNested
 } from "class-validator";
@@ -57,9 +60,12 @@ export class AppleTreeDto {
 }
 
 export class PlantAppleTreesDto extends SubmitCallDTO {
+  static readonly MAX_TREES = 100;
+
   @ValidateNested({ each: true })
   @Type(() => AppleTreeDto)
   @ArrayNotEmpty()
+  @ArrayMaxSize(PlantAppleTreesDto.MAX_TREES)
   public readonly trees: AppleTreeDto[];
 
   constructor(trees: AppleTreeDto[], uniqueKey: string) {
@@ -106,6 +112,9 @@ export class FetchTreesDto extends ChainCallDTO {
   public readonly bookmark?: string;
 
   @IsOptional()
+  @IsInt()
+  @Min(1)
+  @Max(1000)
   public readonly limit?: number;
 
   constructor(plantedBy?: string, variety?: Variety, index?: number, bookmark?: string, limit?: number) {

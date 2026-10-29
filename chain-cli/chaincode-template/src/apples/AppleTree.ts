@@ -80,7 +80,7 @@ export class AppleTree extends ChainObject {
 
   public ensureCanPick(now: number): { pick(): void } {
     if (!this.canPick(now)) {
-      throw new NoApplesLeftError(this.applesPicked, this.applesTotal(now));
+      throw new NoApplesLeftError(this.applesTotal(now), this.applesPicked);
     }
 
     const pick = () => {

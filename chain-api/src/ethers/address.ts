@@ -115,10 +115,6 @@ function fromBase36(value: string): bigint {
  *    getAddress("0x8ba1f109551bd432803012645ac136ddd64dba72")
  *    //_result:
  *
- *    // Converts ICAP address and adds checksum
- *    getAddress("XE65GB6LDNXYOFTX0NSV3FUWKOWIXAMJK36");
- *    //_result:
- *
  *    // Throws an error if an address contains mixed case,
  *    // but the checksum fails
  *    getAddress("0x8Ba1f109551bD432803012645Ac136ddd64DBA72")
@@ -144,23 +140,6 @@ export function getAddress(address: string): string {
     );
 
     return result;
-  }
-
-  // Maybe ICAP? (we only support direct mode)
-  if (address.match(/^XE[0-9]{2}[0-9A-Za-z]{30,31}$/)) {
-    // It is an ICAP address with a bad checksum
-    assertArgument(
-      address.substring(2, 4) === ibanChecksum(address),
-      "bad icap checksum",
-      "address",
-      address
-    );
-
-    let result = fromBase36(address.substring(4)).toString(16);
-    while (result.length < 40) {
-      result = "0" + result;
-    }
-    return getChecksumAddress("0x" + result);
   }
 
   assertArgument(false, "invalid address", "address", address);

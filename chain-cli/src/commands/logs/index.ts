@@ -209,6 +209,10 @@ export default class Log extends BaseCommand<typeof Log> {
 
   printLog(logEntry: LogEntry) {
     const { message, timestamp, status } = logEntry;
+    if (typeof status !== "string" || typeof timestamp !== "string" || Number.isNaN(Date.parse(timestamp))) {
+      this.log(typeof message === "string" ? message : JSON.stringify(logEntry));
+      return;
+    }
 
     let levelColor: chalk.Chalk = chalk.white;
     const levelPadded = (status || "info").toUpperCase().padEnd(5);
