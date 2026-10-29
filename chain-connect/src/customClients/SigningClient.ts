@@ -12,7 +12,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-import { signatures } from "@gala-chain/api";
+import { configuredDtoOperation, signatures, withDtoOperation } from "@gala-chain/api";
 import { ethers } from "ethers";
 
 import { CustomClient, GalaChainProviderOptions } from "../GalaChainClient";
@@ -46,12 +46,13 @@ export class SigningClient extends CustomClient {
     signingType: SigningType = this.options?.signingType ?? SigningType.SIGN_TYPED_DATA
   ): Promise<U & { signature: string; prefix?: string }> {
     try {
-      const prefix = calculatePersonalSignPrefix(payload);
-      const prefixedPayload = { ...payload, prefix };
+      const message = withDtoOperation(payload, configuredDtoOperation(this.operationParts(), method));
+      const prefix = calculatePersonalSignPrefix(message);
+      const prefixedPayload = { ...message, prefix };
 
       if (signingType === SigningType.SIGN_TYPED_DATA) {
-        const domain = { name: "GalaChain" };
-        const types = generateEIP712Types(method, payload);
+        const domain = this.eip712Domain();
+        const types = generateEIP712Types(method, message);
 
         const signature = await this.wallet.signTypedData(
           domain,
@@ -64,7 +65,7 @@ export class SigningClient extends CustomClient {
           domain: _domain,
           types: _types,
           ...body
-        } = payload as U & {
+        } = message as U & {
           domain?: unknown;
           types?: unknown;
         };

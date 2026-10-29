@@ -21,6 +21,7 @@
     "lib"
   ],
   "dependencies": {
+    "@gala-chain/api": "3.4.0",
     "@jest/globals": "29.7.0",
     "axios": "^1.6.0",
     "class-transformer": "0.5.1",

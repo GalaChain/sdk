@@ -12,10 +12,24 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-import { DryRunDto, GetObjectDto, GetObjectHistoryDto } from "@gala-chain/api";
+import {
+  ChainCallDTO,
+  ClassConstructor,
+  DryRunDto,
+  GetObjectDto,
+  GetObjectHistoryDto,
+  configuredDtoOperation,
+  withDtoOperation
+} from "@gala-chain/api";
 
 import { GalaChainProvider } from "../GalaChainClient";
+import { GalaChainResponseSuccess, SigningType } from "../types";
 import { DryRunRequest, DryRunResult, GetObjectByKeyRequest, GetObjectHistoryRequest } from "../types";
+import { ConstructorArgs } from "../types/utils";
+
+type NonArrayClassConstructor<T> = T extends Array<unknown>
+  ? ClassConstructor<T[number]>
+  : ClassConstructor<T>;
 
 /**
  * Base API class providing common chaincode operations.
@@ -29,8 +43,28 @@ export class GalaChainBaseApi {
    */
   constructor(
     protected chainCodeUrl: string,
-    protected connection: GalaChainProvider
+    protected connection: GalaChainProvider,
+    protected contract?: string
   ) {}
+
+  protected submit<T, U extends object>(params: {
+    url: string;
+    method: string;
+    payload: ConstructorArgs<U>;
+    sign?: boolean;
+    headers?: Record<string, string>;
+    requestConstructor?: ClassConstructor<ChainCallDTO>;
+    responseConstructor?: NonArrayClassConstructor<T>;
+    signingType?: SigningType;
+  }): Promise<GalaChainResponseSuccess<T>> {
+    return this.connection.submit({
+      ...params,
+      payload: withDtoOperation(
+        params.payload,
+        configuredDtoOperation(this.connection.operationParts(this.contract), params.method)
+      )
+    });
+  }
 
   /**
    * Performs a dry run of a chaincode operation without committing to the ledger.
@@ -38,7 +72,7 @@ export class GalaChainBaseApi {
    * @returns Promise resolving to the dry run results
    */
   public DryRun(dto: DryRunRequest) {
-    return this.connection.submit({
+    return this.submit({
       method: "DryRun",
       payload: dto,
       sign: false,
@@ -55,7 +89,7 @@ export class GalaChainBaseApi {
    * @returns Promise resolving to the retrieved object
    */
   public GetObjectByKey<T = Record<string, unknown>>(dto: GetObjectByKeyRequest) {
-    return this.connection.submit<T, GetObjectDto>({
+    return this.submit<T, GetObjectDto>({
       method: "GetObjectByKey",
       payload: dto,
       sign: false,
@@ -71,7 +105,7 @@ export class GalaChainBaseApi {
    * @returns Promise resolving to the object's history
    */
   public GetObjectHistory<T = Record<string, unknown>>(dto: GetObjectHistoryRequest) {
-    return this.connection.submit<T, GetObjectHistoryDto>({
+    return this.submit<T, GetObjectHistoryDto>({
       method: "GetObjectHistory",
       payload: dto,
       sign: false,

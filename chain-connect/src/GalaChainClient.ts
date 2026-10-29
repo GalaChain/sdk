@@ -23,6 +23,7 @@ import {
 import { instanceToPlain, plainToInstance } from "class-transformer";
 import { BrowserProvider } from "ethers";
 
+import { eip712DomainName } from "./eip712DomainName";
 import { DEFAULT_REQUEST_TIMEOUT_MS, fetchWithTimeout } from "./fetchWithTimeout";
 import { EventEmitter, Listener, MetaMaskEvents, recoverPublicKeyFromPersonalSign } from "./helpers";
 import { GalaChainResponseError, GalaChainResponseSuccess, SigningType } from "./types";
@@ -45,6 +46,19 @@ export interface GalaChainProviderOptions {
   signingType?: SigningType;
   /** Milliseconds to wait for a gateway response. Defaults to 30 seconds. */
   timeoutMs?: number;
+  /**
+   * EIP-712 domain name. When omitted, network STG uses GalaChainStage, DEV uses GalaChainDev,
+   * and every other value stays GalaChain. chainId is left to the wallet.
+   */
+  domainName?: string;
+  /** Deployment selector used when domainName is omitted. */
+  network?: "MNT" | "STG" | "DEV";
+  /** Channel used to name dtoOperation when a payload is signed. */
+  channel?: string;
+  /** Chaincode used to name dtoOperation when a payload is signed. */
+  chaincode?: string;
+  /** Contract used to name dtoOperation when a payload is signed. An API contract overrides this. */
+  contract?: string;
 }
 
 /**
@@ -57,6 +71,25 @@ export abstract class GalaChainProvider {
    * @param options - Configuration options for the provider
    */
   constructor(protected options?: GalaChainProviderOptions) {}
+
+  /** EIP-712 domain. The name selects the deployment. chainId is not set here. */
+  public eip712Domain(): { name: string } {
+    return { name: eip712DomainName(this.options) };
+  }
+
+  /** Channel, chaincode, and contract used to name a signed operation. */
+  public operationParts(contractOverride?: string): {
+    channel?: string;
+    chaincode?: string;
+    contract?: string;
+  } {
+    const override = contractOverride?.trim();
+    return {
+      channel: this.options?.channel,
+      chaincode: this.options?.chaincode,
+      contract: override ? override : this.options?.contract
+    };
+  }
 
   private requestHeaders(headers: Record<string, string>): Record<string, string> {
     return { "Content-Type": "application/json", ...headers };

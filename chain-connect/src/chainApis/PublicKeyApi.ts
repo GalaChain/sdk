@@ -28,8 +28,8 @@ export class PublicKeyApi extends GalaChainBaseApi {
    * @param chainCodeUrl - The URL of the public key chaincode service
    * @param connection - The GalaChain provider for network communication
    */
-  constructor(chainCodeUrl: string, connection: GalaChainProvider) {
-    super(chainCodeUrl, connection);
+  constructor(chainCodeUrl: string, connection: GalaChainProvider, contract?: string) {
+    super(chainCodeUrl, connection, contract);
   }
 
   // PublicKey Chaincode calls:
@@ -38,7 +38,7 @@ export class PublicKeyApi extends GalaChainBaseApi {
    * @returns Promise resolving to the user's profile
    */
   public GetMyProfile() {
-    return this.connection.submit<UserProfile, { signature?: string }>({
+    return this.submit<UserProfile, { signature?: string }>({
       method: "GetMyProfile",
       payload: {},
       sign: true,
@@ -52,7 +52,7 @@ export class PublicKeyApi extends GalaChainBaseApi {
    * @returns Promise resolving to registration confirmation
    */
   public RegisterUser(dto: RegisterUserRequest) {
-    return this.connection.submit<string, RegisterUserDto>({
+    return this.submit<string, RegisterUserDto>({
       method: "RegisterUser",
       payload: dto,
       sign: true,
@@ -67,7 +67,7 @@ export class PublicKeyApi extends GalaChainBaseApi {
    * @returns Promise resolving when the update is complete
    */
   public UpdatePublicKey(dto: UpdatePublicKeyRequest) {
-    return this.connection.submit<void, UpdatePublicKeyDto>({
+    return this.submit<void, UpdatePublicKeyDto>({
       method: "UpdatePublicKey",
       payload: dto,
       sign: true,
