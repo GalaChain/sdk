@@ -26,6 +26,9 @@ import BigNumber from "bignumber.js";
 import { GalaChainContext } from "../types/GalaChainContext";
 import { getObjectByKey, inverseKeyLength, inverseTime, lookbackTimeOffset } from "../utils";
 
+// A block can carry grants a few seconds apart. The walk keeps that span and then stops.
+export const allowanceSupplyWindowMs = 5_000;
+
 export async function fetchMintAllowanceSupply(
   ctx: GalaChainContext,
   tokenClass: TokenClass,
@@ -62,7 +65,7 @@ export async function fetchMintAllowanceSupply(
   const iterator = ctx.stub.getStateByRange(startKey, endKey);
 
   const previousRequests: TokenMintAllowanceRequest[] = [];
-  let groupBaseline: BigNumber | undefined;
+  let newestCreated: number | undefined;
 
   try {
     for await (const kv of iterator) {
@@ -70,12 +73,11 @@ export async function fetchMintAllowanceSupply(
         const stringResult = Buffer.from(kv.value).toString("utf8");
         const entry = RangedChainObject.deserialize(TokenMintAllowanceRequest, stringResult);
 
-        // One grant writes every recipient at the same baseline.
-        // Grants that did not see each other store that same baseline, so they stay in the sum.
-        // The walk stops when the baseline changes, because that older grant is already inside it.
-        if (groupBaseline === undefined) {
-          groupBaseline = entry.totalKnownMintAllowancesCount;
-        } else if (!entry.totalKnownMintAllowancesCount.isEqualTo(groupBaseline)) {
+        // Start at the newest grant. Keep grants within five seconds of it.
+        // Anything older is already inside the oldest baseline in this window.
+        if (newestCreated === undefined) {
+          newestCreated = entry.created;
+        } else if (newestCreated - entry.created > allowanceSupplyWindowMs) {
           break;
         }
 

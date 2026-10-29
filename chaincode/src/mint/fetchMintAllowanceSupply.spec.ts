@@ -25,23 +25,23 @@ import GalaChainTokenContract from "../__test__/GalaChainTokenContract";
 import { currency } from "../testdata/index";
 import { GalaChainContext } from "../types";
 import { inverseEpoch, inverseTime } from "../utils";
-import { fetchMintAllowanceSupply } from "./fetchMintAllowanceSupply";
+import { allowanceSupplyWindowMs, fetchMintAllowanceSupply } from "./fetchMintAllowanceSupply";
 
 describe("fetchMintAllowanceSupply", () => {
   async function allowanceRequest(
     ctx: GalaChainContext,
     tokenClass: ReturnType<typeof currency.tokenClass>,
-    fields: { id: string; timeKey: string; grantedTo: string; baseline: string; quantity: string }
+    fields: { id: string; ageMs: number; grantedTo: string; baseline: string; quantity: string }
   ) {
     return createValidRangedChainObject(TokenMintAllowanceRequest, {
       collection: tokenClass.collection,
       category: tokenClass.category,
       type: tokenClass.type,
       additionalKey: tokenClass.additionalKey,
-      timeKey: fields.timeKey,
+      timeKey: inverseTime(ctx, fields.ageMs),
       grantedTo: fields.grantedTo as UserAlias,
       totalKnownMintAllowancesCount: new BigNumber(fields.baseline),
-      created: ctx.txUnixTime,
+      created: ctx.txUnixTime - fields.ageMs,
       grantedBy: users.admin.identityKey,
       quantity: new BigNumber(fields.quantity),
       state: TokenMintStatus.Minted,
@@ -55,14 +55,13 @@ describe("fetchMintAllowanceSupply", () => {
     const tokenClass = currency.tokenClass();
     const testFixture = fixture(GalaChainTokenContract).savedState(tokenClass);
     const { ctx } = testFixture;
-    const timeKey = inverseTime(ctx, 1);
     const requests: TokenMintAllowanceRequest[] = [];
 
     for (let i = 0; i < 201; i += 1) {
       requests.push(
         await allowanceRequest(ctx, tokenClass, {
           id: `allowance-${i}`,
-          timeKey,
+          ageMs: 1,
           grantedTo: `client|user${i}`,
           baseline: "0",
           quantity: "1"
@@ -83,14 +82,14 @@ describe("fetchMintAllowanceSupply", () => {
     const { ctx } = testFixture;
     const older = await allowanceRequest(ctx, tokenClass, {
       id: "older",
-      timeKey: inverseTime(ctx, 10_000),
+      ageMs: 10_000,
       grantedTo: users.testUser1.identityKey,
       baseline: "0",
       quantity: "10"
     });
     const newer = await allowanceRequest(ctx, tokenClass, {
       id: "newer",
-      timeKey: inverseTime(ctx, 1),
+      ageMs: 1,
       grantedTo: users.testUser2.identityKey,
       baseline: "100",
       quantity: "1"
@@ -103,36 +102,62 @@ describe("fetchMintAllowanceSupply", () => {
     expect(supply.isEqualTo("101")).toBe(true);
   });
 
-  it("adds grants that stored the same baseline", async () => {
+  it("adds grants inside five seconds and drops the grant beyond them", async () => {
     const tokenClass = currency.tokenClass();
     const testFixture = fixture(GalaChainTokenContract).savedState(tokenClass);
     const { ctx } = testFixture;
-    const alreadyCounted = await allowanceRequest(ctx, tokenClass, {
-      id: "already-counted",
-      timeKey: inverseTime(ctx, 10_000),
+    const beyondWindow = await allowanceRequest(ctx, tokenClass, {
+      id: "beyond-window",
+      ageMs: 1 + allowanceSupplyWindowMs + 1,
       grantedTo: users.admin.identityKey,
-      baseline: "50",
+      baseline: "0",
       quantity: "100"
     });
+    const edgeOfWindow = await allowanceRequest(ctx, tokenClass, {
+      id: "edge-of-window",
+      ageMs: 1 + allowanceSupplyWindowMs,
+      grantedTo: users.testUser1.identityKey,
+      baseline: "0",
+      quantity: "7"
+    });
+    const newer = await allowanceRequest(ctx, tokenClass, {
+      id: "newer",
+      ageMs: 1,
+      grantedTo: users.testUser2.identityKey,
+      baseline: "0",
+      quantity: "3"
+    });
+
+    testFixture.savedRangeState([beyondWindow, edgeOfWindow, newer]);
+
+    const supply = await fetchMintAllowanceSupply(ctx, tokenClass, 0);
+
+    expect(supply.isEqualTo("10")).toBe(true);
+  });
+
+  it("does not add a newer baseline on top of an older grant inside the window", async () => {
+    const tokenClass = currency.tokenClass();
+    const testFixture = fixture(GalaChainTokenContract).savedState(tokenClass);
+    const { ctx } = testFixture;
     const older = await allowanceRequest(ctx, tokenClass, {
       id: "older",
-      timeKey: inverseTime(ctx, 5_000),
+      ageMs: 4_000,
       grantedTo: users.testUser1.identityKey,
       baseline: "0",
       quantity: "10"
     });
     const newer = await allowanceRequest(ctx, tokenClass, {
       id: "newer",
-      timeKey: inverseTime(ctx, 1),
+      ageMs: 1,
       grantedTo: users.testUser2.identityKey,
-      baseline: "0",
-      quantity: "10"
+      baseline: "10",
+      quantity: "5"
     });
 
-    testFixture.savedRangeState([alreadyCounted, older, newer]);
+    testFixture.savedRangeState([older, newer]);
 
     const supply = await fetchMintAllowanceSupply(ctx, tokenClass, 0);
 
-    expect(supply.isEqualTo("20")).toBe(true);
+    expect(supply.isEqualTo("15")).toBe(true);
   });
 });
