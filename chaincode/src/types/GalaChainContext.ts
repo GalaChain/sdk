@@ -307,6 +307,17 @@ export class GalaChainContext extends Context {
     return { ...this.operationCtxValue }; // prevent mutation
   }
 
+  // The batch stub still names the outer call. An inner DTO is checked against its own method.
+  public bindOperationMethod(methodName: string): void {
+    const current = this.operationCtx;
+    this.operationCtxValue = {
+      channelId: current.channelId,
+      chaincodeId: current.chaincodeId,
+      methodName,
+      fullOperationId: `${current.channelId}_${current.chaincodeId}_${methodName}`
+    };
+  }
+
   public setDryRunOnBehalfOf(d: { alias: UserAlias; ethAddress?: string; roles: string[] }): void {
     this.callingUserValue = d.alias;
     this.callingUserRolesValue = d.roles ?? [];

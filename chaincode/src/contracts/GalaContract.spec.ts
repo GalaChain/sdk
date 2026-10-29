@@ -482,6 +482,42 @@ describe("unique keys", () => {
 });
 
 describe("GalaContract.Batch", () => {
+  it("checks an inner dto against the inner method", async () => {
+    const chaincode = new TestChaincode([TestGalaContract]);
+    const innerOperation = "asset-channel_basic-asset_PutKv";
+    const accepted = plainToInstance(BatchDto, {
+      uniqueKey: "batch-inner-op",
+      operations: [
+        {
+          method: "PutKv",
+          dto: { key: "op-key", value: "kept", uniqueKey: "uk-inner", dtoOperation: innerOperation }
+        }
+      ]
+    });
+    const rejected = plainToInstance(BatchDto, {
+      uniqueKey: "batch-outer-op",
+      operations: [
+        {
+          method: "PutKv",
+          dto: {
+            key: "op-key-2",
+            value: "dropped",
+            uniqueKey: "uk-outer",
+            dtoOperation: "asset-channel_basic-asset_BatchSubmit"
+          }
+        }
+      ]
+    });
+
+    const ok = await chaincode.invoke("TestGalaContract:BatchSubmit", accepted.serialize());
+    const bad = await chaincode.invoke("TestGalaContract:BatchSubmit", rejected.serialize());
+
+    expect(ok).toEqual(transactionSuccess([transactionSuccess()]));
+    expect(bad).toEqual(
+      transactionSuccess([transactionErrorMessageContains(`current operation is ${innerOperation}`)])
+    );
+  });
+
   it("should support batch operations properly", async () => {
     // Given
     const chaincode = new TestChaincode([TestGalaContract]);
