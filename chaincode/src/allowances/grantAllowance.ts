@@ -172,7 +172,7 @@ async function grantAllowanceByPartialKey(
   tokenBalances.forEach((tokenBalance) => {
     if (tokenBalance.containsAnyNftInstanceId()) {
       // construct a GrantAllowance call per instance / nft
-      let allowanceInstanceKeys = tokenBalance.getNftInstanceIds().map((instanceId) => {
+      const allowanceInstanceKeys = tokenBalance.getNftInstanceIds().map((instanceId) => {
         const allowanceTokenInstanceKey = new TokenInstanceQueryKey();
         allowanceTokenInstanceKey.collection = tokenBalance.collection;
         allowanceTokenInstanceKey.category = tokenBalance.category;
@@ -182,22 +182,30 @@ async function grantAllowanceByPartialKey(
         return allowanceTokenInstanceKey;
       });
 
-      //filter keys to ones that don't have existing allowances
-      allowanceInstanceKeys = allowanceInstanceKeys.filter(
-        (allowanceKey) =>
-          tokenAllowances.findIndex(
-            (allowance) =>
-              allowance.collection === allowanceKey.collection &&
-              allowance.category === allowanceKey.category &&
-              allowance.type === allowanceKey.type &&
-              allowance.additionalKey === allowanceKey.additionalKey &&
-              allowanceKey.instance &&
-              allowance.instance.isEqualTo(allowanceKey.instance)
-          ) < 0
-      );
-
       allowanceInstanceKeys.forEach((allowanceKey) => {
-        const params = { tokenInstance: allowanceKey, allowanceType, quantities, uses, expires };
+        const remaining = quantities.filter(
+          (quantity) =>
+            tokenAllowances.findIndex(
+              (allowance) =>
+                allowance.grantedTo === quantity.user &&
+                allowance.collection === allowanceKey.collection &&
+                allowance.category === allowanceKey.category &&
+                allowance.type === allowanceKey.type &&
+                allowance.additionalKey === allowanceKey.additionalKey &&
+                allowanceKey.instance &&
+                allowance.instance.isEqualTo(allowanceKey.instance)
+            ) < 0
+        );
+        if (remaining.length === 0) {
+          return;
+        }
+        const params = {
+          tokenInstance: allowanceKey,
+          allowanceType,
+          quantities: remaining,
+          uses,
+          expires
+        };
         grantAllowanceOps.push(grantAllowance(ctx, params));
       });
     } else {

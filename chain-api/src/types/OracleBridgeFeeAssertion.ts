@@ -59,7 +59,7 @@ export class OracleBridgeFeeAssertion extends ChainObject {
   @JSONSchema({
     description: "Exchange Rate Price Assertion used to calculate Gas Fee"
   })
-  @ValidateIf((assertion) => !!assertion.galaExchangeCrossRate)
+  @ValidateIf((assertion) => assertion.galaExchangeRate !== undefined)
   @ValidateNested()
   @Type(() => OraclePriceAssertion)
   public galaExchangeRate?: OraclePriceAssertion;
@@ -67,7 +67,7 @@ export class OracleBridgeFeeAssertion extends ChainObject {
   @JSONSchema({
     description: "Cross-Rate Exchange Rate used to calculate Gas Fee"
   })
-  @ValidateIf((assertion) => !!assertion.galaExchangeRate)
+  @ValidateIf((assertion) => assertion.galaExchangeCrossRate !== undefined)
   @ValidateNested()
   @Type(() => OraclePriceCrossRateAssertion)
   public galaExchangeCrossRate?: OraclePriceCrossRateAssertion;

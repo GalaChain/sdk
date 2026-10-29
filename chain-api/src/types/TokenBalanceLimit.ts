@@ -165,8 +165,17 @@ export class TokenBalanceLimit {
     this.rotateHours(currentTime);
     const hours = this.hours ?? TokenBalanceLimit.emptyHours();
     this.hours = hours;
-    const idx = TokenBalanceLimit.hourIndex(currentTime);
+    const idx = this.spendHourIndex(currentTime);
     hours[idx] = (hours[idx] ?? new BigNumber(0)).plus(quantity);
+  }
+
+  // A spend one hour behind the stored hour is recorded in that stored hour.
+  private spendHourIndex(currentTime: number): number {
+    const hour = TokenBalanceLimit.unixHour(currentTime);
+    if (this.lastHour !== undefined && hour + 1 === this.lastHour) {
+      return TokenBalanceLimit.modWindow(this.lastHour);
+    }
+    return TokenBalanceLimit.hourIndex(currentTime);
   }
 
   public promoteDue(currentTime: number): void {
