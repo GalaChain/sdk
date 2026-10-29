@@ -27,7 +27,10 @@ import {
   Min,
   Validate,
   ValidateIf,
-  ValidateNested
+  ValidateNested,
+  ValidationArguments,
+  ValidatorConstraint,
+  ValidatorConstraintInterface
 } from "class-validator";
 import { JSONSchema } from "class-validator-jsonschema";
 
@@ -255,6 +258,24 @@ export class FetchOraclePriceAssertionsResponse extends ChainCallDTO {
   bookmark?: string | undefined;
 }
 
+@ValidatorConstraint({ name: "crossRateMatchesQuote", async: false })
+class CrossRateMatchesQuoteConstraint implements ValidatorConstraintInterface {
+  validate(_value: unknown, args: ValidationArguments): boolean {
+    const assertion = args.object as OraclePriceCrossRateAssertionDto;
+    try {
+      assertion.validateCrossRateTokenKeys();
+      assertion.validateCrossRate();
+      return true;
+    } catch {
+      return false;
+    }
+  }
+
+  defaultMessage(): string {
+    return "cross rate does not match the quoted token pair";
+  }
+}
+
 @JSONSchema({
   description: "Cross Rate Exchange price assertion. E.g. compare $GALA to $ETH via price in $USD for each."
 })
@@ -310,6 +331,7 @@ export class OraclePriceCrossRateAssertionDto extends SubmitCallDTO {
   @JSONSchema({
     description: "Cross rate for baseToken and quoteToken, calculated from the crossRateToken exchange rates."
   })
+  @Validate(CrossRateMatchesQuoteConstraint)
   @PositiveFiniteRate()
   @BigNumberProperty()
   crossRate: BigNumber;
@@ -484,6 +506,12 @@ export class OracleBridgeFeeAssertionDto extends SubmitCallDTO {
   public galaDecimals: number;
 
   @JSONSchema({
+    description: "Destination chain this quote prices."
+  })
+  @IsInt()
+  public destinationChainId: number;
+
+  @JSONSchema({
     description:
       "The token requested to bridge. Token Class used to query the estimated " + "transaction fee units."
   })
@@ -544,8 +572,8 @@ export class OracleBridgeFeeAssertionDto extends SubmitCallDTO {
 
   @JSONSchema({
     description:
-      "Oracle identity / alias. Used with signature and GalaChain SDK " +
-      "authorize() function for verification/validation."
+      "Oracle identity: the alias or eth address of the key that signed this assertion. " +
+      "Must match the authenticated signer, and that signer must be a listed oracle authority."
   })
   @IsNotEmpty()
   signingIdentity: string;

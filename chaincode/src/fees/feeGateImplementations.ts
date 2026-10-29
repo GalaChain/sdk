@@ -39,6 +39,7 @@ import {
   SetTokenInstanceMetadataDto,
   TerminateTokenSwapDto,
   TokenClassKey,
+  TokenInstance,
   TokenInstanceKey,
   TokenMintConfiguration,
   TransferTokenDto,
@@ -133,6 +134,32 @@ export async function mintTokenWithAllowanceFeeGate(
   });
 }
 
+export function assertOracleQuoteMatchesTransfer(
+  quote: OracleBridgeFeeAssertionDto,
+  transfer: { destinationChainId: number; tokenInstance: TokenInstanceKey }
+): void {
+  const quoted = quote.bridgeToken;
+  const requested = transfer.tokenInstance;
+  const sameClass =
+    quoted.collection === requested.collection &&
+    quoted.category === requested.category &&
+    quoted.type === requested.type &&
+    quoted.additionalKey === requested.additionalKey;
+
+  if (!sameClass) {
+    throw new ValidationFailedError("Oracle quote is for a different token");
+  }
+
+  const requestedIsNonFungible = !TokenInstance.isFungible(requested.instance);
+  if (quote.bridgeTokenIsNonFungible !== requestedIsNonFungible) {
+    throw new ValidationFailedError("Oracle quote does not match whether the token is non-fungible");
+  }
+
+  if (quote.destinationChainId !== transfer.destinationChainId) {
+    throw new ValidationFailedError("Oracle quote is for a different destination chain");
+  }
+}
+
 export interface RequestTokenBridgeOutFeeGateParams {
   destinationChainId: number;
   tokenInstance: TokenInstanceKey;
@@ -164,9 +191,11 @@ export async function requestTokenBridgeOutFeeGate(
   if (oracleDefinitionLookup instanceof ChainError && oracleDefinitionLookup.code === ErrorCode.NOT_FOUND) {
     // if the oracle is not defined, we don't charge a dynamic, gas based fee
     return galaFeeGate(ctx, { feeCode: FeeGateCodes.BridgeTokenOut });
+  } else if (oracleDefinitionLookup instanceof Error) {
+    throw oracleDefinitionLookup;
   }
 
-  const oracleDefinition: OracleDefinition = oracleDefinitionLookup as OracleDefinition;
+  const oracleDefinition: OracleDefinition = oracleDefinitionLookup;
 
   const oracleAssertion: OracleBridgeFeeAssertionDto | undefined = dto.destinationChainTxFee;
 
@@ -204,21 +233,23 @@ export async function requestTokenBridgeOutFeeGate(
 
   const identity = await authenticate(ctx, oracleAssertion, undefined);
 
-  if (
-    !oracleDefinition.authorities.includes(identity.alias) &&
-    !oracleDefinition.authorities.includes(identity.ethAddress ?? "") &&
-    !oracleDefinition.authorities.includes(oracleAssertion.signingIdentity)
-  ) {
+  // The recovered signer must be a listed authority, and signingIdentity must be that signer's alias or eth address.
+  const claimedIdentity = oracleAssertion.signingIdentity;
+  const signerIds = [identity.alias, identity.ethAddress].filter((id): id is string => !!id);
+  const signerIsAuthority = signerIds.some((id) => oracleDefinition.authorities.includes(id));
+  const claimMatchesSigner = signerIds.includes(claimedIdentity);
+
+  if (!signerIsAuthority || !claimMatchesSigner) {
     throw new UnauthorizedError(
-      `BridgeTokenOut to destination chain ${destinationChainId} requires ` +
-        `an Oracle to calculate an appropriate transaction fee. ` +
-        `Received an assertion dto  with alias: ${identity.alias}, ` +
-        `ethAddress?: ${identity.ethAddress}, and ` +
-        `assertion signingIdentity: ${oracleAssertion.signingIdentity}. ` +
-        `None of which are listed in the authorities definition: ` +
-        `${oracleDefinition.authorities.join(", ")}`
+      `BridgeTokenOut to destination chain ${destinationChainId} requires an assertion signed ` +
+        `by a Bridge oracle authority, with signingIdentity matching the signer. ` +
+        `Signer alias: ${identity.alias}, ethAddress: ${identity.ethAddress}, ` +
+        `claimed signingIdentity: ${claimedIdentity}. ` +
+        `Authorities: ${oracleDefinition.authorities.join(", ")}`
     );
   }
+
+  assertOracleQuoteMatchesTransfer(oracleAssertion, dto);
 
   const gasFeeQuantity: BigNumber = oracleAssertion.estimatedTotalTxFeeInGala;
 
@@ -275,15 +306,14 @@ export async function requestTokenBridgeOutFeeGate(
     estimatedPricePerTxFeeUnit,
     estimatedTotalTxFeeInExternalToken,
     estimatedTotalTxFeeInGala,
-    timestamp,
-    signingIdentity
+    timestamp
   } = oracleAssertion;
 
   const txid = ctx.stub.getTxID();
 
   const bridgeFeeAssertionRecord = plainToInstance(OracleBridgeFeeAssertion, {
     oracle: KnownOracles.Bridge,
-    signingIdentity,
+    signingIdentity: identity.alias,
     txid,
     galaDecimals,
     bridgeToken,
