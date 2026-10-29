@@ -102,4 +102,37 @@ describe("fetchMintAllowanceSupply", () => {
 
     expect(supply.isEqualTo("101")).toBe(true);
   });
+
+  it("adds grants that stored the same baseline", async () => {
+    const tokenClass = currency.tokenClass();
+    const testFixture = fixture(GalaChainTokenContract).savedState(tokenClass);
+    const { ctx } = testFixture;
+    const alreadyCounted = await allowanceRequest(ctx, tokenClass, {
+      id: "already-counted",
+      timeKey: inverseTime(ctx, 10_000),
+      grantedTo: users.admin.identityKey,
+      baseline: "50",
+      quantity: "100"
+    });
+    const older = await allowanceRequest(ctx, tokenClass, {
+      id: "older",
+      timeKey: inverseTime(ctx, 5_000),
+      grantedTo: users.testUser1.identityKey,
+      baseline: "0",
+      quantity: "10"
+    });
+    const newer = await allowanceRequest(ctx, tokenClass, {
+      id: "newer",
+      timeKey: inverseTime(ctx, 1),
+      grantedTo: users.testUser2.identityKey,
+      baseline: "0",
+      quantity: "10"
+    });
+
+    testFixture.savedRangeState([alreadyCounted, older, newer]);
+
+    const supply = await fetchMintAllowanceSupply(ctx, tokenClass, 0);
+
+    expect(supply.isEqualTo("20")).toBe(true);
+  });
 });

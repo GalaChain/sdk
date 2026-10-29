@@ -62,7 +62,7 @@ export async function fetchMintAllowanceSupply(
   const iterator = ctx.stub.getStateByRange(startKey, endKey);
 
   const previousRequests: TokenMintAllowanceRequest[] = [];
-  let groupTimeKey: string | undefined;
+  let groupBaseline: BigNumber | undefined;
 
   try {
     for await (const kv of iterator) {
@@ -70,11 +70,12 @@ export async function fetchMintAllowanceSupply(
         const stringResult = Buffer.from(kv.value).toString("utf8");
         const entry = RangedChainObject.deserialize(TokenMintAllowanceRequest, stringResult);
 
-        // One grant writes every recipient at the same time key and the same baseline.
-        // Older grants are already inside that baseline, so the walk stops when the time key changes.
-        if (groupTimeKey === undefined) {
-          groupTimeKey = entry.timeKey;
-        } else if (entry.timeKey !== groupTimeKey) {
+        // One grant writes every recipient at the same baseline.
+        // Grants that did not see each other store that same baseline, so they stay in the sum.
+        // The walk stops when the baseline changes, because that older grant is already inside it.
+        if (groupBaseline === undefined) {
+          groupBaseline = entry.totalKnownMintAllowancesCount;
+        } else if (!entry.totalKnownMintAllowancesCount.isEqualTo(groupBaseline)) {
           break;
         }
 
