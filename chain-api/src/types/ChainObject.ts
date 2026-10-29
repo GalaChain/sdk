@@ -150,8 +150,15 @@ export abstract class ChainObject {
     }
 
     // A complete composite key is sometimes stored as one component of another key.
-    // It starts and ends with the separator. Any other embedded separator is ambiguous.
-    const isNestedCompositeKey = text.startsWith(nul) && text.endsWith(nul) && text.length > 1;
+    // It starts and ends with the separator, and none of its own parts are empty.
+    const interior = text.slice(1, -1);
+    const isNestedCompositeKey =
+      text.startsWith(nul) &&
+      text.endsWith(nul) &&
+      interior.length > 0 &&
+      !interior.startsWith(nul) &&
+      !interior.endsWith(nul) &&
+      !interior.includes(nul + nul);
     if (!isNestedCompositeKey) {
       throw new InvalidCompositeKeyError(`${label} contains a NUL character`);
     }

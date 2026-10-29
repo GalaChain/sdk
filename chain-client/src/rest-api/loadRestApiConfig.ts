@@ -138,12 +138,12 @@ function assertUniqueNames(config: RestApiConfig): void {
     }
     channelNames.add(channel.channelName);
 
-    const contractNames = new Set<string>();
+    const pathFragments = new Set<string>();
     for (const contract of channel.contracts) {
-      if (contractNames.has(contract.contractName)) {
-        throw new Error(`Duplicate contract ${contract.contractName} on channel ${channel.channelName}`);
+      if (pathFragments.has(contract.pathFragment)) {
+        throw new Error(`Duplicate path ${contract.pathFragment} on channel ${channel.channelName}`);
       }
-      contractNames.add(contract.contractName);
+      pathFragments.add(contract.pathFragment);
     }
   }
 }

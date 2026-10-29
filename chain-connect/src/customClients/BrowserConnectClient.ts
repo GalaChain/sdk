@@ -148,7 +148,7 @@ export class BrowserConnectClient extends WebSigner {
         assertMultisigReady(record);
       }
 
-      const message = omitVerificationMetadata(record);
+      const message = omitTypedData(omitVerificationMetadata(record));
       const signer = await this.provider.getSigner();
 
       if (signingType === SigningType.SIGN_TYPED_DATA) {
@@ -167,7 +167,7 @@ export class BrowserConnectClient extends WebSigner {
           multisig?: string[];
         };
       } else if (signingType === SigningType.PERSONAL_SIGN) {
-        const body = omitTypedData(message);
+        const body = message;
         const personalMessage = signatures.personalSignMessage(body);
         const prefix = this.calculatePersonalSignPrefix(body);
         const signature = await signer.signMessage(personalMessage);

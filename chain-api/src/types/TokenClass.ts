@@ -21,6 +21,7 @@ import {
   IsInt,
   IsNotEmpty,
   IsOptional,
+  Matches,
   Max,
   MaxLength,
   Min
@@ -41,20 +42,27 @@ export interface TokenClassKeyProperties {
   additionalKey: string;
 }
 
+const keyPart = new RegExp(`^[^$${String.fromCharCode(0)}]+$`);
+const keyPartMessage = "must not contain $ or a NUL character";
+
 @JSONSchema({
   description: "Object representing the chain identifier of token class."
 })
 export class TokenClassKey extends ChainCallDTO {
   @IsNotEmpty()
+  @Matches(keyPart, { message: keyPartMessage })
   public collection: string;
 
   @IsNotEmpty()
+  @Matches(keyPart, { message: keyPartMessage })
   public category: string;
 
   @IsNotEmpty()
+  @Matches(keyPart, { message: keyPartMessage })
   public type: string;
 
   @IsNotEmpty()
+  @Matches(keyPart, { message: keyPartMessage })
   public additionalKey: string;
 
   /**
@@ -114,18 +122,22 @@ export class TokenClass extends ChainObject {
   // CANNOT BE CHANGED AFTER CREATION
   @ChainKey({ position: 0 })
   @IsNotEmpty()
+  @Matches(keyPart, { message: keyPartMessage })
   public collection: string;
 
   @ChainKey({ position: 1 })
   @IsNotEmpty()
+  @Matches(keyPart, { message: keyPartMessage })
   public category: string;
 
   @ChainKey({ position: 2 })
   @IsNotEmpty()
+  @Matches(keyPart, { message: keyPartMessage })
   public type: string;
 
   @ChainKey({ position: 3 })
   @IsNotEmpty()
+  @Matches(keyPart, { message: keyPartMessage })
   public additionalKey: string;
 
   @IsNotEmpty()

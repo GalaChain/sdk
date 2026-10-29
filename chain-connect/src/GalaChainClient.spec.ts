@@ -451,6 +451,27 @@ describe("BrowserConnectClient", () => {
     const types = (signed as { types?: { TransferToken?: Array<{ name: string }> } }).types;
     expect(types?.TransferToken?.map((field) => field.name)).not.toContain("multisig");
   });
+
+  it("appends a typed-data signature onto a payload that already carries types", async () => {
+    const client = new BrowserConnectClient();
+    await client.connect();
+    const ready = {
+      quantity: "1",
+      uniqueKey: "k",
+      signerAddress: "eth|63580d94c574ad78b121c267",
+      dtoOperation: "asset_channel_assets_TransferToken",
+      dtoExpiresAt: 4000000000000
+    };
+
+    const first = await client.sign("TransferToken", ready);
+    const second = await client.sign("TransferToken", first);
+
+    expect(second.signature).toBeUndefined();
+    expect(second.multisig).toEqual(["sampleSignature", "sampleSignature"]);
+    const types = (second as { types?: { TransferToken?: Array<{ name: string }> } }).types;
+    expect(types?.TransferToken?.map((field) => field.name)).not.toContain("types");
+    expect(types?.TransferToken?.map((field) => field.name)).not.toContain("domain");
+  });
 });
 
 describe("TrustConnectClient", () => {

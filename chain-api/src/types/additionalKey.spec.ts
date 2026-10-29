@@ -50,5 +50,27 @@ describe("token class additional key", () => {
     // Then
     expect(key.additionalKey).toEqual("none");
     expect(key.allKeysPresent()).toBe(true);
+    expect(key.toStringKey()).toEqual("GALA$Unit$none$none");
+  });
+
+  it("should reject a key part that contains $ or NUL", async () => {
+    const withDollar = plainToInstance(TokenClassKey, {
+      collection: "GA$LA",
+      category: "Unit",
+      type: "none",
+      additionalKey: "none"
+    });
+    const withNul = plainToInstance(TokenClassKey, {
+      collection: "GALA",
+      category: "Unit",
+      type: "no\u0000ne",
+      additionalKey: "none"
+    });
+
+    const dollarErrors = await withDollar.validate();
+    const nulErrors = await withNul.validate();
+
+    expect(dollarErrors.some((error) => error.property === "collection")).toBe(true);
+    expect(nulErrors.some((error) => error.property === "type")).toBe(true);
   });
 });

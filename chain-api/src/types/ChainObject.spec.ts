@@ -98,6 +98,9 @@ it("rejects a NUL character inside a composite key part", () => {
 
   const nested = ChainObject.getCompositeKeyFromParts("inner", ["created", "tx"]);
   expect(() => ChainObject.getCompositeKeyFromParts("outer", [nested])).not.toThrow();
+  expect(() =>
+    ChainObject.getCompositeKeyFromParts("idx", ["\u0000a\u0000", "\u0000b\u0000\u0000\u0000c\u0000"])
+  ).toThrow(/NUL/);
 });
 
 it("rejects the string key separator inside a part", () => {

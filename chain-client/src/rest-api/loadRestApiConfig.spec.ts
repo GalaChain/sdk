@@ -96,12 +96,28 @@ describe("client configuration", () => {
     expect(() => loadRestApiConfig(file)).toThrow(/contractName does not meet minimum length of 1/);
   });
 
-  it("rejects a duplicate contract name", () => {
+  it("rejects a duplicate contract path", () => {
     const config = validConfig();
-    config.channels[0].contracts.push({ ...config.channels[0].contracts[0] });
+    config.channels[0].contracts.push({
+      chaincodeName: "other",
+      contractName: "PublicKeyContract",
+      pathFragment: "token"
+    });
     const file = write("rest.json", config);
 
-    expect(() => loadRestApiConfig(file)).toThrow("Duplicate contract GalaChainToken on channel product");
+    expect(() => loadRestApiConfig(file)).toThrow("Duplicate path token on channel product");
+  });
+
+  it("allows the same contract name on two chaincodes", () => {
+    const config = validConfig();
+    config.channels[0].contracts.push({
+      chaincodeName: "other",
+      contractName: "GalaChainToken",
+      pathFragment: "other-token"
+    });
+    const file = write("rest.json", config);
+
+    expect(loadRestApiConfig(file).channels[0].contracts).toHaveLength(2);
   });
 
   it("loads a usable REST configuration", () => {
