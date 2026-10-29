@@ -55,7 +55,8 @@ describe("requestTokenBridgeOutFeeGate", () => {
       estimatedTotalTxFeeInExternalToken: new BigNumber("0"),
       estimatedTotalTxFeeInGala: new BigNumber("0"),
       timestamp,
-      signingIdentity
+      signingIdentity,
+      destinationChainId: ChainId.Ethereum
     }).signed(signerKey);
   }
 
