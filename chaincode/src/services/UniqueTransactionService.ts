@@ -70,13 +70,15 @@ export class UniqueTransactionService {
     uniqueKey: string,
     options?: { global?: boolean }
   ): Promise<void> {
-    const parts = options?.global ? [uniqueKey] : [UniqueTransactionService.replayCaller(ctx), uniqueKey];
+    const global = options?.global === true;
+    const caller = global ? undefined : UniqueTransactionService.replayCaller(ctx);
+    const parts = global ? [uniqueKey] : [caller as string, uniqueKey];
     await UniqueTransactionService.ensureUniqueKey(ctx, uniqueKey, parts);
-    await UniqueTransactionService.putUniqueTransaction(
-      ctx,
-      uniqueKey,
-      options?.global ? undefined : parts[0]
-    );
+    // A key consumed before caller scope still lives under the old single-part record.
+    if (!global) {
+      await UniqueTransactionService.ensureUniqueKey(ctx, uniqueKey, [uniqueKey]);
+    }
+    await UniqueTransactionService.putUniqueTransaction(ctx, uniqueKey, caller);
   }
 
   public static isUniqueTransactionKey(key: string): boolean {
