@@ -39,6 +39,7 @@ import {
   SetTokenInstanceMetadataDto,
   TerminateTokenSwapDto,
   TokenClassKey,
+  TokenInstance,
   TokenInstanceKey,
   TokenMintConfiguration,
   TransferTokenDto,
@@ -133,6 +134,32 @@ export async function mintTokenWithAllowanceFeeGate(
   });
 }
 
+export function assertOracleQuoteMatchesTransfer(
+  quote: OracleBridgeFeeAssertionDto,
+  transfer: { destinationChainId: number; tokenInstance: TokenInstanceKey }
+): void {
+  const quoted = quote.bridgeToken;
+  const requested = transfer.tokenInstance;
+  const sameClass =
+    quoted.collection === requested.collection &&
+    quoted.category === requested.category &&
+    quoted.type === requested.type &&
+    quoted.additionalKey === requested.additionalKey;
+
+  if (!sameClass) {
+    throw new ValidationFailedError("Oracle quote is for a different token");
+  }
+
+  const requestedIsNonFungible = !TokenInstance.isFungible(requested.instance);
+  if (quote.bridgeTokenIsNonFungible !== requestedIsNonFungible) {
+    throw new ValidationFailedError("Oracle quote does not match whether the token is non-fungible");
+  }
+
+  if (quote.destinationChainId !== transfer.destinationChainId) {
+    throw new ValidationFailedError("Oracle quote is for a different destination chain");
+  }
+}
+
 export interface RequestTokenBridgeOutFeeGateParams {
   destinationChainId: number;
   tokenInstance: TokenInstanceKey;
@@ -221,6 +248,8 @@ export async function requestTokenBridgeOutFeeGate(
         `Authorities: ${oracleDefinition.authorities.join(", ")}`
     );
   }
+
+  assertOracleQuoteMatchesTransfer(oracleAssertion, dto);
 
   const gasFeeQuantity: BigNumber = oracleAssertion.estimatedTotalTxFeeInGala;
 
