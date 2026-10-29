@@ -181,10 +181,22 @@ describe("GalaContract.GetObjectsByPartialCompositeKey", () => {
     const unsubmittedJoker = SuperheroDto.create("Joker", 44);
 
     expect(
-      await chaincode.invoke("TestGalaContract:CreateSuperhero", batman.signed(adminPrivateKey).serialize())
+      await chaincode.invoke(
+        "TestGalaContract:CreateSuperhero",
+        batman
+          .withOperation("asset-channel_basic-asset_TestGalaContract:CreateSuperhero")
+          .signed(adminPrivateKey)
+          .serialize()
+      )
     ).toEqual(transactionSuccess());
     expect(
-      await chaincode.invoke("TestGalaContract:CreateSuperhero", penguin.signed(adminPrivateKey).serialize())
+      await chaincode.invoke(
+        "TestGalaContract:CreateSuperhero",
+        penguin
+          .withOperation("asset-channel_basic-asset_TestGalaContract:CreateSuperhero")
+          .signed(adminPrivateKey)
+          .serialize()
+      )
     ).toEqual(transactionSuccess());
 
     return {
@@ -293,7 +305,13 @@ describe("GalaContract.DryRun", () => {
     const adminPrivateKey = process.env.DEV_ADMIN_PRIVATE_KEY as string;
     const batman = SuperheroDto.create("Batman", 32);
     const batmanKey = (await createValidChainObject(Superhero, batman)).getCompositeKey();
-    await chaincode.invoke("TestGalaContract:CreateSuperhero", batman.signed(adminPrivateKey).serialize());
+    await chaincode.invoke(
+      "TestGalaContract:CreateSuperhero",
+      batman
+        .withOperation("asset-channel_basic-asset_TestGalaContract:CreateSuperhero")
+        .signed(adminPrivateKey)
+        .serialize()
+    );
 
     const method = "GetObjectByKey";
     const dto = await createValidDTO(GetObjectDto, { objectId: batmanKey });
@@ -810,7 +828,9 @@ describe("GalaContract.Batch", () => {
     const { user: user2, state: state2 } = await generateUser();
 
     const signedDto = (u: ChainUser, uniqueKey: string) =>
-      plainToInstance(ChainCallDTO, { uniqueKey }).signed(u.privateKey);
+      plainToInstance(ChainCallDTO, { uniqueKey })
+        .withOperation("asset-channel_basic-asset_TestGalaContract:BatchSubmit")
+        .signed(u.privateKey);
 
     const chaincode = new TestChaincode([TestGalaContract], { ...state1, ...state2 });
 

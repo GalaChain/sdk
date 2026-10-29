@@ -27,7 +27,9 @@ describe("UniqueTransactionService", () => {
       name: "foo",
       age: 2,
       uniqueKey: "foo1"
-    }).signed(adminPrivateKey);
+    })
+      .withOperation("asset-channel_basic-asset_TestGalaContract:CreateSuperhero")
+      .signed(adminPrivateKey);
 
     const saveResponse = await chaincode.invoke("TestGalaContract:CreateSuperhero", dto.serialize());
     expect(saveResponse).toEqual(transactionSuccess());

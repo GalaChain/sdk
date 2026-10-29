@@ -68,17 +68,29 @@ export function ensureOrganizationIsAllowed(ctx: GalaChainContext, allowedOrgsMS
 }
 
 export function ensureCorrectMethodIsUsed(ctx: GalaChainContext, dto: ChainCallDTO | undefined) {
-  // If we use multisig, we need to check the method
-  if (ctx.isMultisig && !dto?.dtoOperation) {
-    const msg = `DTO operation is not provided. Please provide the operation name that is used for multisig.`;
+  const signed = !!dto?.signature || (dto?.multisig?.length ?? 0) > 0;
+
+  if (!signed && !ctx.isMultisig && !dto?.dtoOperation) {
+    return;
+  }
+
+  const { methodName, fullOperationId } = ctx.operationCtx;
+
+  // A direct call leaves the function name empty, so there is no operation id to compare.
+  if (!methodName && !dto?.dtoOperation && !ctx.isMultisig) {
+    return;
+  }
+
+  if ((ctx.isMultisig || signed) && !dto?.dtoOperation) {
+    const msg = ctx.isMultisig
+      ? `DTO operation is not provided. Please provide the operation name that is used for multisig.`
+      : `DTO operation is not provided. Signed requests must include dtoOperation.`;
     throw new UnauthorizedError(msg);
   }
 
   if (!dto?.dtoOperation) {
     return;
   }
-
-  const fullOperationId = ctx.operationCtx.fullOperationId;
 
   if (dto.dtoOperation !== fullOperationId) {
     const msg = `The dto was signed to call ${dto.dtoOperation} operation, but the current operation is ${fullOperationId}.`;

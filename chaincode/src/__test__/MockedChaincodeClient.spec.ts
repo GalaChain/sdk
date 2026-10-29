@@ -55,7 +55,9 @@ afterAll(() => {
 it("should be able to call chaincode", async () => {
   // Given
   const client = createClient(chaincodeDir);
-  const dto = new ChainCallDTO().signed(admin.privateKey);
+  const dto = new ChainCallDTO()
+    .withOperation("asset-channel_basic-asset_PublicKeyContract:GetPublicKey")
+    .signed(admin.privateKey);
 
   // When
   const response = await client.submitTransaction("GetPublicKey", dto);
@@ -79,6 +81,7 @@ it("should support the global state", async () => {
       publicKey: user.publicKey
     })
   )
+    .withOperation("asset-channel_basic-asset_PublicKeyContract:RegisterUser")
     .withPublicKeySignedBy(user.privateKey)
     .signed(admin.privateKey);
 
@@ -115,6 +118,7 @@ it("should not change the state for evaluateTransaction", async () => {
   const registerDto = (
     await createValidSubmitDTO(RegisterUserDto, { user: otherUserAlias, publicKey: otherUser.publicKey })
   )
+    .withOperation("asset-channel_basic-asset_PublicKeyContract:RegisterUser")
     .withPublicKeySignedBy(otherUser.privateKey)
     .signed(admin.privateKey);
 

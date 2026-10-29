@@ -80,6 +80,7 @@ describe("RegisterUser", () => {
 
     const dto = await createValidSubmitDTO(RegisterUserDto, { user: "client|user1" as UserAlias, publicKey });
     const signedDto = dto
+      .withOperation("asset-channel_basic-asset_PublicKeyContract:RegisterUser")
       .withPublicKeySignedBy(privateKey)
       .signed(process.env.DEV_ADMIN_PRIVATE_KEY as string);
 
@@ -116,14 +117,19 @@ describe("RegisterUser", () => {
       user: "client|user1" as UserAlias,
       publicKey: keyPair.publicKey
     });
-    const signedDto1 = dto1.signed(adminPrivateKey);
+    const signedDto1 = dto1
+      .withOperation("asset-channel_basic-asset_PublicKeyContract:RegisterUser")
+      .signed(adminPrivateKey);
 
     // invalid public key signature (signed by wrong key) — new uniqueKey, first attempt consumed its key
     const dto2 = await createValidSubmitDTO(RegisterUserDto, {
       user: "client|user1" as UserAlias,
       publicKey: keyPair.publicKey
     });
-    const signedDto2 = dto2.withPublicKeySignedBy(adminPrivateKey).signed(adminPrivateKey);
+    const signedDto2 = dto2
+      .withOperation("asset-channel_basic-asset_PublicKeyContract:RegisterUser")
+      .withPublicKeySignedBy(adminPrivateKey)
+      .signed(adminPrivateKey);
 
     // When
     const response1 = await chaincode.invoke("PublicKeyContract:RegisterUser", signedDto1);
@@ -147,6 +153,7 @@ describe("RegisterUser", () => {
       user: user.alias
     });
     const signedRegisterDto = registerDto
+      .withOperation("asset-channel_basic-asset_PublicKeyContract:RegisterUser")
       .withPublicKeySignedBy(user.privateKey)
       .signed(process.env.DEV_ADMIN_PRIVATE_KEY as string);
 
@@ -167,6 +174,7 @@ describe("RegisterUser", () => {
       user: "client|new_user" as UserAlias
     });
     const signedRegisterDto = registerDto
+      .withOperation("asset-channel_basic-asset_PublicKeyContract:RegisterUser")
       .withPublicKeySignedBy(user.privateKey)
       .signed(process.env.DEV_ADMIN_PRIVATE_KEY as string);
 
@@ -190,6 +198,7 @@ describe("RegisterUser", () => {
       publicKey: newPublicKey
     });
     const signedRegisterDto = registerDto
+      .withOperation("asset-channel_basic-asset_PublicKeyContract:RegisterUser")
       .withPublicKeySignedBy(newPrivateKey)
       .signed(process.env.DEV_ADMIN_PRIVATE_KEY as string);
 
@@ -229,7 +238,9 @@ describe("RegisterUser", () => {
     });
 
     // Missing public key signature
-    const signedRegisterDto1 = registerDto.signed(process.env.DEV_ADMIN_PRIVATE_KEY as string);
+    const signedRegisterDto1 = registerDto
+      .withOperation("asset-channel_basic-asset_PublicKeyContract:RegisterUser")
+      .signed(process.env.DEV_ADMIN_PRIVATE_KEY as string);
     expect(signedRegisterDto1.publicKeySignature).toBeUndefined();
 
     // Invalid public key signature (signed by wrong private key that doesn't match newPublicKey)
@@ -238,6 +249,7 @@ describe("RegisterUser", () => {
       publicKey: newPublicKey
     });
     const signedRegisterDto2 = registerDto2
+      .withOperation("asset-channel_basic-asset_PublicKeyContract:RegisterUser")
       .withPublicKeySignedBy(wrongPrivateKey)
       .signed(process.env.DEV_ADMIN_PRIVATE_KEY as string);
     expect(signedRegisterDto2.publicKeySignature).toBeDefined();
@@ -280,7 +292,9 @@ describe("RegisterUser", () => {
       publicKey: newPublicKey,
       user: user2.alias
     });
-    const signedRegisterDto = registerDto.signed(process.env.DEV_ADMIN_PRIVATE_KEY as string);
+    const signedRegisterDto = registerDto
+      .withOperation("asset-channel_basic-asset_PublicKeyContract:RegisterUser")
+      .signed(process.env.DEV_ADMIN_PRIVATE_KEY as string);
 
     // When
     const registerResponse = await chaincode.invoke("PublicKeyContract:RegisterUser", signedRegisterDto);
@@ -311,7 +325,9 @@ describe("RegisterUser", () => {
 
     const response = await chaincode.invoke(
       "PublicKeyContract:RegisterUser",
-      dto.signed(process.env.DEV_ADMIN_PRIVATE_KEY as string)
+      dto
+        .withOperation("asset-channel_basic-asset_PublicKeyContract:RegisterUser")
+        .signed(process.env.DEV_ADMIN_PRIVATE_KEY as string)
     );
     expect(response).toEqual(transactionSuccess());
 
@@ -320,7 +336,9 @@ describe("RegisterUser", () => {
       publicKey: user2.publicKey,
       user: user2.alias
     });
-    const signedRegisterDto = registerDto.signed(process.env.DEV_ADMIN_PRIVATE_KEY as string);
+    const signedRegisterDto = registerDto
+      .withOperation("asset-channel_basic-asset_PublicKeyContract:RegisterUser")
+      .signed(process.env.DEV_ADMIN_PRIVATE_KEY as string);
 
     // When
     const registerResponse = await chaincode.invoke("PublicKeyContract:RegisterUser", signedRegisterDto);
@@ -343,7 +361,9 @@ describe("RegisterUser", () => {
     // Given
     const chaincode = new TestChaincode([PublicKeyContract]);
     const dto = await createValidSubmitDTO(SubmitCallDTO, {});
-    const signedDto = dto.signed(process.env.DEV_ADMIN_PRIVATE_KEY as string);
+    const signedDto = dto
+      .withOperation("asset-channel_basic-asset_PublicKeyContract:RegisterEthUser")
+      .signed(process.env.DEV_ADMIN_PRIVATE_KEY as string);
 
     // When
     const response = await chaincode.invoke("PublicKeyContract:RegisterEthUser", signedDto);
@@ -363,7 +383,10 @@ describe("UpdatePublicKey", () => {
     expect(newPublicKey).not.toEqual(user.publicKey);
 
     const updateDto = await createValidSubmitDTO(UpdatePublicKeyDto, { publicKey: newPublicKey });
-    const signedUpdateDto = updateDto.withPublicKeySignedBy(newPrivateKey).signed(user.privateKey);
+    const signedUpdateDto = updateDto
+      .withOperation("asset-channel_basic-asset_PublicKeyContract:UpdatePublicKey")
+      .withPublicKeySignedBy(newPrivateKey)
+      .signed(user.privateKey);
 
     // When
     const updateResponse = await chaincode.invoke("PublicKeyContract:UpdatePublicKey", signedUpdateDto);
@@ -379,7 +402,9 @@ describe("UpdatePublicKey", () => {
     );
 
     // New key works for signature verification
-    const signedWithNewKey = updateDto.signed(newPrivateKey);
+    const signedWithNewKey = updateDto
+      .withOperation("asset-channel_basic-asset_PublicKeyContract:VerifySignature")
+      .signed(newPrivateKey);
     const verifyResponse = await chaincode.invoke("PublicKeyContract:VerifySignature", signedWithNewKey);
     expect(verifyResponse).toEqual(transactionSuccess());
   });
@@ -392,12 +417,17 @@ describe("UpdatePublicKey", () => {
     expect(newPublicKey).not.toEqual(user.publicKey);
 
     const updateDto1 = await createValidSubmitDTO(UpdatePublicKeyDto, { publicKey: newPublicKey });
-    const signedUpdateDto1 = updateDto1.signed(user.privateKey);
+    const signedUpdateDto1 = updateDto1
+      .withOperation("asset-channel_basic-asset_PublicKeyContract:UpdatePublicKey")
+      .signed(user.privateKey);
     expect(signedUpdateDto1.publicKeySignature).toBeUndefined();
 
     // public key signature is signed by old private key — new uniqueKey, first attempt consumed its key
     const updateDto2 = await createValidSubmitDTO(UpdatePublicKeyDto, { publicKey: newPublicKey });
-    const signedUpdateDto2 = updateDto2.withPublicKeySignedBy(user.privateKey).signed(user.privateKey);
+    const signedUpdateDto2 = updateDto2
+      .withOperation("asset-channel_basic-asset_PublicKeyContract:UpdatePublicKey")
+      .withPublicKeySignedBy(user.privateKey)
+      .signed(user.privateKey);
     expect(signedUpdateDto2.publicKeySignature).toBeDefined();
 
     // When
@@ -431,7 +461,10 @@ describe("UpdatePublicKey", () => {
     expect(newPublicKey).not.toEqual(user.publicKey);
 
     const updateDto = await createValidSubmitDTO(UpdatePublicKeyDto, { publicKey: newPublicKey });
-    const signedUpdateDto = updateDto.withPublicKeySignedBy(newPrivateKey).signed(user.privateKey);
+    const signedUpdateDto = updateDto
+      .withOperation("asset-channel_basic-asset_PublicKeyContract:UpdatePublicKey")
+      .withPublicKeySignedBy(newPrivateKey)
+      .signed(user.privateKey);
 
     // When
     const updateResponse = await chaincode.invoke("PublicKeyContract:UpdatePublicKey", signedUpdateDto);
@@ -447,7 +480,9 @@ describe("UpdatePublicKey", () => {
     );
 
     // New key works for signature verification
-    const signedWithNewKey = updateDto.signed(newPrivateKey);
+    const signedWithNewKey = updateDto
+      .withOperation("asset-channel_basic-asset_PublicKeyContract:VerifySignature")
+      .signed(newPrivateKey);
     const verifyResponse = await chaincode.invoke("PublicKeyContract:VerifySignature", signedWithNewKey);
     expect(verifyResponse).toEqual(transactionSuccess());
 
@@ -460,6 +495,7 @@ describe("UpdatePublicKey", () => {
       publicKey: oldPublicKey
     });
     const signedDto = dto
+      .withOperation("asset-channel_basic-asset_PublicKeyContract:RegisterUser")
       .withPublicKeySignedBy(oldPrivateKey)
       .signed(process.env.DEV_ADMIN_PRIVATE_KEY as string);
 
@@ -476,7 +512,10 @@ describe("UpdatePublicKey", () => {
 
     // Given
     const updateDto2 = await createValidSubmitDTO(UpdatePublicKeyDto, { publicKey: oldPublicKey });
-    const signedUpdateDto2 = updateDto2.withPublicKeySignedBy(oldPrivateKey).signed(newPrivateKey);
+    const signedUpdateDto2 = updateDto2
+      .withOperation("asset-channel_basic-asset_PublicKeyContract:UpdatePublicKey")
+      .withPublicKeySignedBy(oldPrivateKey)
+      .signed(newPrivateKey);
 
     // When
     const response2 = await chaincode.invoke("PublicKeyContract:UpdatePublicKey", signedUpdateDto2);
@@ -491,7 +530,9 @@ describe("UpdatePublicKey", () => {
     // Given
     const randomKeyPair = signatures.genKeyPair();
     const updateDto3 = await createValidSubmitDTO(UpdatePublicKeyDto, { publicKey: randomKeyPair.publicKey });
-    const signedUpdateDto3 = updateDto3.signed(oldPrivateKey);
+    const signedUpdateDto3 = updateDto3
+      .withOperation("asset-channel_basic-asset_PublicKeyContract:UpdatePublicKey")
+      .signed(oldPrivateKey);
 
     // When
     const response3 = await chaincode.invoke("PublicKeyContract:UpdatePublicKey", signedUpdateDto3);
@@ -504,10 +545,12 @@ describe("UpdatePublicKey", () => {
 });
 
 describe("VerifySignature", () => {
+  const operation = "asset-channel_basic-asset_PublicKeyContract:VerifySignature";
+
   it("should verify signature", async () => {
     // Given
     const { chaincode, user } = await setup();
-    const signedDto = createSignedDto(new ChainCallDTO(), user.privateKey);
+    const signedDto = createSignedDto(new ChainCallDTO().withOperation(operation), user.privateKey);
 
     // When
     const response = await chaincode.invoke("PublicKeyContract:VerifySignature", signedDto);
@@ -522,7 +565,7 @@ describe("VerifySignature", () => {
     const otherUserPublicKey = process.env.DEV_ADMIN_PUBLIC_KEY as string;
     expect(otherUserPublicKey).not.toEqual(user.publicKey);
 
-    const dto = new ChainCallDTO();
+    const dto = new ChainCallDTO().withOperation(operation);
     dto.signerPublicKey = otherUserPublicKey;
     const signedDto = createSignedDto(dto, user.privateKey);
 
@@ -536,7 +579,7 @@ describe("VerifySignature", () => {
   it("should verify DER signature", async () => {
     // Given
     const { chaincode, user } = await setup();
-    const dto = new ChainCallDTO();
+    const dto = new ChainCallDTO().withOperation(operation);
     dto.signerPublicKey = user.publicKey;
     const signedDto = createDerSignedDto(dto, user.privateKey);
 
@@ -553,7 +596,7 @@ describe("VerifySignature", () => {
     const otherUserPublicKey = process.env.DEV_ADMIN_PUBLIC_KEY as string;
     expect(otherUserPublicKey).not.toEqual(user.publicKey);
 
-    const dto = new ChainCallDTO();
+    const dto = new ChainCallDTO().withOperation(operation);
     dto.signerPublicKey = otherUserPublicKey;
     const signedDto = createDerSignedDto(dto, user.privateKey);
 
@@ -573,16 +616,22 @@ describe("GetMyProfile", () => {
     expect(user.alias).toContain("client|");
 
     // regular signing
-    const dto1 = new GetMyProfileDto();
+    const dto1 = new GetMyProfileDto().withOperation(
+      "asset-channel_basic-asset_PublicKeyContract:GetMyProfile"
+    );
     dto1.sign(user.privateKey);
 
     // DER + signerPublicKey
-    const dto2 = new GetMyProfileDto();
+    const dto2 = new GetMyProfileDto().withOperation(
+      "asset-channel_basic-asset_PublicKeyContract:GetMyProfile"
+    );
     dto2.signerPublicKey = user.publicKey;
     dto2.sign(user.privateKey, true);
 
     // DER + signerAddress
-    const dto3 = new GetMyProfileDto();
+    const dto3 = new GetMyProfileDto().withOperation(
+      "asset-channel_basic-asset_PublicKeyContract:GetMyProfile"
+    );
     dto3.signerAddress = asValidUserRef(user.ethAddress);
     dto3.sign(user.privateKey, true);
 
@@ -612,16 +661,22 @@ describe("GetMyProfile", () => {
     expect(user.alias).toContain("eth|");
 
     // regular signing
-    const dto1 = new GetMyProfileDto();
+    const dto1 = new GetMyProfileDto().withOperation(
+      "asset-channel_basic-asset_PublicKeyContract:GetMyProfile"
+    );
     dto1.sign(user.privateKey);
 
     // DER + signerPublicKey
-    const dto2 = new GetMyProfileDto();
+    const dto2 = new GetMyProfileDto().withOperation(
+      "asset-channel_basic-asset_PublicKeyContract:GetMyProfile"
+    );
     dto2.signerPublicKey = user.publicKey;
     dto2.sign(user.privateKey, true);
 
     // DER + signerAddress
-    const dto3 = new GetMyProfileDto();
+    const dto3 = new GetMyProfileDto().withOperation(
+      "asset-channel_basic-asset_PublicKeyContract:GetMyProfile"
+    );
     dto3.signerAddress = asValidUserRef(user.ethAddress);
     dto3.sign(user.privateKey, true);
 
@@ -732,7 +787,9 @@ describe("UpdateUserRoles", () => {
     const dto = await createValidSubmitDTO(UpdateUserRolesDto, {
       user: user.alias,
       roles: ["CUSTOM_CLIENT_ROLE"]
-    }).signed(adminPrivateKey);
+    })
+      .withOperation("asset-channel_basic-asset_PublicKeyContract:UpdateUserRoles")
+      .signed(adminPrivateKey);
 
     // When
     const response = await chaincode.invoke("PublicKeyContract:UpdateUserRoles", dto);
@@ -756,7 +813,9 @@ describe("UpdateUserRoles", () => {
     const dto = await createValidSubmitDTO(UpdateUserRolesDto, {
       user: user.alias,
       roles: ["CUSTOM_ETH_ROLE"]
-    }).signed(adminPrivateKey);
+    })
+      .withOperation("asset-channel_basic-asset_PublicKeyContract:UpdateUserRoles")
+      .signed(adminPrivateKey);
 
     // When
     const response = await chaincode.invoke("PublicKeyContract:UpdateUserRoles", dto);
@@ -779,7 +838,9 @@ describe("UpdateUserRoles", () => {
     const dto = await createValidSubmitDTO(UpdateUserRolesDto, {
       user: user.alias,
       roles: ["CUSTOM_ROLE"]
-    }).signed(user.privateKey);
+    })
+      .withOperation("asset-channel_basic-asset_PublicKeyContract:UpdateUserRoles")
+      .signed(user.privateKey);
 
     // When
     const response = await chaincode.invoke("PublicKeyContract:UpdateUserRoles", dto);
@@ -810,17 +871,23 @@ describe("UpdateUserRoles", () => {
     const removeSubmitDto = await createValidSubmitDTO(UpdateUserRolesDto, {
       user: adminProfile.alias,
       roles: adminProfile.roles.filter((role) => role !== UserRole.SUBMIT)
-    }).signed(adminPrivateKey);
+    })
+      .withOperation("asset-channel_basic-asset_PublicKeyContract:UpdateUserRoles")
+      .signed(adminPrivateKey);
 
     const removeCuratorDto = await createValidSubmitDTO(UpdateUserRolesDto, {
       user: adminProfile.alias,
       roles: UserProfile.ADMIN_ROLES.filter((role) => role !== UserRole.CURATOR)
-    }).signed(adminPrivateKey);
+    })
+      .withOperation("asset-channel_basic-asset_PublicKeyContract:UpdateUserRoles")
+      .signed(adminPrivateKey);
 
     const removeRegistrarDto = await createValidSubmitDTO(UpdateUserRolesDto, {
       user: adminProfile.alias,
       roles: UserProfile.ADMIN_ROLES.filter((role) => role !== UserRole.REGISTRAR)
-    }).signed(adminPrivateKey);
+    })
+      .withOperation("asset-channel_basic-asset_PublicKeyContract:UpdateUserRoles")
+      .signed(adminPrivateKey);
 
     // When
     const removeSubmitResp = await chaincode.invoke("PublicKeyContract:UpdateUserRoles", removeSubmitDto);
