@@ -481,7 +481,6 @@ export class OracleBridgeFeeAssertionDto extends SubmitCallDTO {
     description: "Exchange Rate Price Assertion used to calculate Gas Fee"
   })
   @IsOptional()
-  @ValidateIf((assertion) => !!assertion.galaExchangeCrossRate)
   @ValidateNested()
   @Type(() => OraclePriceAssertionDto)
   public galaExchangeRate?: OraclePriceAssertionDto;
@@ -490,7 +489,6 @@ export class OracleBridgeFeeAssertionDto extends SubmitCallDTO {
     description: "Cross-Rate Exchange Rate used to calculate Gas Fee"
   })
   @IsOptional()
-  @ValidateIf((assertion) => !!assertion.galaExchangeRate)
   @ValidateNested()
   @Type(() => OraclePriceCrossRateAssertionDto)
   public galaExchangeCrossRate?: OraclePriceCrossRateAssertionDto;

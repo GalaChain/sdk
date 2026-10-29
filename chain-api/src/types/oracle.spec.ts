@@ -108,6 +108,14 @@ describe("oracle.ts", () => {
         crossRate: new BigNumber("42")
       })
     ).rejects.toThrow(/cross rate does not match/);
+
+    const crossRateOnly = new OracleBridgeFeeAssertionDto();
+    const badCrossRate = new OraclePriceCrossRateAssertionDto();
+    Object.assign(badCrossRate, mockAssertionDto);
+    badCrossRate.crossRate = new BigNumber("42");
+    crossRateOnly.galaExchangeCrossRate = badCrossRate;
+    const crossRateErrors = await validate(crossRateOnly);
+    expect(crossRateErrors.some((error) => error.property === "galaExchangeCrossRate")).toBe(true);
   });
 
   test("FetchOracleDefinitionsDto accepts optional name filter", async () => {

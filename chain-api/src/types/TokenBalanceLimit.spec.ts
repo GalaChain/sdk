@@ -403,7 +403,23 @@ describe("TokenBalanceLimit", () => {
 
     // Then
     expect(limit.lastHour).toEqual(10);
-    expect(limit.spent(hour(9))).toEqual(new BigNumber(2));
+    expect(limit.hours?.[10]).toEqual(new BigNumber(2));
+    expect(limit.hours?.[9]).toEqual(new BigNumber(0));
+    expect(limit.spent(hour(33))).toEqual(new BigNumber(2));
+  });
+
+  it("should reject a spend one hour earlier once the stored hour is at its limit", () => {
+    // Given
+    const balance = emptyBalance();
+    balance.addQuantity(new BigNumber(200));
+    balance.setQuantityLimit(new BigNumber(100), hour(10), undefined);
+    balance.subtractQuantity(new BigNumber(100), hour(10), undefined, to);
+
+    // When
+    const error = () => balance.subtractQuantity(new BigNumber(1), hour(9), undefined, to);
+
+    // Then
+    expect(error).toThrow(/exceeds quantity limit/);
   });
 
   it("should reject spend when currentTime is more than one hour earlier than lastHour", () => {
