@@ -73,7 +73,7 @@ describe("authenticate", () => {
     const dto = new ChainCallDTO();
     dto.uniqueKey = "k";
     Object.assign(dto, {
-      domain: { name: "GalaChain" },
+      domain: { name: "GalaChainDev" },
       types: { Message: [{ name: "uniqueKey", type: "string" }] }
     });
     dto.signature = signatures.getSignature(dto, signatures.normalizePrivateKey(privateKey));
