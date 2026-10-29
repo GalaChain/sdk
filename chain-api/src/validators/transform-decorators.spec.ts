@@ -164,4 +164,19 @@ describe("infinity", () => {
     expect(deserialized.amount).toBe(overLong);
     expect(output.length).toBeGreaterThan(0);
   });
+
+  it("does not expand a huge exponent in the validation message", async () => {
+    class MockMintTokenDto extends ChainCallDTO {
+      @BigNumberProperty()
+      amount: BigNumber;
+    }
+
+    const deserialized = deserialize(MockMintTokenDto, `{"amount":"1e+10000000"}`);
+    const output = await deserialized.validate();
+    const message = JSON.stringify(output);
+
+    expect(output.length).toBeGreaterThan(0);
+    expect(message.length).toBeLessThan(500);
+    expect(message).not.toContain("0000000000");
+  });
 });
