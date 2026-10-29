@@ -126,9 +126,13 @@ it("accepts a well-formed nested composite key as a part", () => {
   expect(ChainObject.joinKeyParts([nested, "x"])).toEqual(`${nested}\u0000x`);
 });
 
-it("allows $ but rejects NUL inside a string key part", () => {
+it("allows $ only as the first character of a string key part", () => {
+  expect(ChainObject.getStringKeyFromParts(["aaa", "$bb"])).toEqual("aaa$$bb");
+  expect(ChainObject.getPartsFromStringKey("aaa$$bb")).toEqual(["aaa", "$bb"]);
   expect(ChainObject.getStringKeyFromParts(["a", "b_c"])).toEqual("a$b_c");
-  expect(ChainObject.getStringKeyFromParts(["a$b", "c"])).toEqual("a$b$c");
+  expect(ChainObject.getPartsFromStringKey("a$b_c")).toEqual(["a", "b_c"]);
+  expect(() => ChainObject.getStringKeyFromParts(["aaa$", "bb"])).toThrow(/first character/);
+  expect(() => ChainObject.getStringKeyFromParts(["aa$a", "bb"])).toThrow(/first character/);
   expect(() => ChainObject.getStringKeyFromParts(["a\u0000b"])).toThrow(/NUL/);
 });
 

@@ -356,7 +356,7 @@ export class TokenInstance extends ChainObject {
   // This parses a string into the key that can be used to query HLF
   // This looks to be built to only handle the key to be composed of two parts and seperated by a |
   public static GetCompositeKeyFromString(tokenCid: string): string {
-    const idParts = tokenCid.split(ChainObject.ID_SPLIT_CHAR);
+    const idParts = ChainObject.getPartsFromStringKey(tokenCid);
 
     const instanceText = idParts[1];
     const canonicalInstance = /^(0|[1-9]\d*)$/.test(instanceText ?? "");

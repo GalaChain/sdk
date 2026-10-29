@@ -161,10 +161,12 @@ describe("Simple NFT scenario", () => {
     // When
     const user1checkResponse = await client.assets.evaluateTransaction("FetchBalances", user1BalancesDto);
     const user2checkResponse = await client.assets.evaluateTransaction("FetchBalances", user2BalancesDto);
+    const user1Page = user1checkResponse.Data as { results?: Array<{ instanceIds?: BigNumber[] }> };
+    const user2Page = user2checkResponse.Data as { results?: Array<{ instanceIds?: BigNumber[] }> };
 
     // Then
-    expect(new BigNumber((user1checkResponse.Data ?? [])[0].instanceIds?.[0] ?? 0).isEqualTo(1)).toBe(true);
-    expect(new BigNumber((user2checkResponse.Data ?? [])[0].instanceIds?.[0] ?? 0).isEqualTo(2)).toBe(true);
+    expect(new BigNumber(user1Page.results?.[0].instanceIds?.[0] ?? 0).isEqualTo(1)).toBe(true);
+    expect(new BigNumber(user2Page.results?.[0].instanceIds?.[0] ?? 0).isEqualTo(2)).toBe(true);
   });
 
   it("transfer NFT between users", async () => {

@@ -96,11 +96,11 @@ it("builds an instance key from the whole integer", () => {
   );
 });
 
-it("should build a string key when key fields contain $", () => {
+it("should build a string key when a key field starts with $", () => {
   // Given
   const instance = new TokenInstanceKey();
-  instance.collection = "$Test";
-  instance.category = "Ve$ry";
+  instance.collection = "aaa";
+  instance.category = "$bb";
   instance.type = "Large";
   instance.additionalKey = "none";
   instance.instance = new BigNumber(0);
@@ -109,5 +109,6 @@ it("should build a string key when key fields contain $", () => {
   const stringKey = instance.toStringKey();
 
   // Then
-  expect(stringKey).toEqual("$Test$Ve$ry$Large$none$0");
+  expect(stringKey).toEqual("aaa$$bb$Large$none$0");
+  expect(ChainObject.getPartsFromStringKey(stringKey)).toEqual(["aaa", "$bb", "Large", "none", "0"]);
 });
