@@ -12,7 +12,12 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-// The mocked chaincode stub reports this channel and chaincode.
+// The in-memory stub reports asset-channel and basic-asset.
+// A network started from this template reports product-channel and basic-product.
 export function mockedOperation(method: string): string {
-  return `asset-channel_basic-asset_${method}`;
+  const prefix =
+    process.env.CURATORORG_MOCKED_CHAINCODE_DIR === undefined
+      ? "product-channel_basic-product_"
+      : "asset-channel_basic-asset_";
+  return `${prefix}${method}`;
 }
