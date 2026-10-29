@@ -16,15 +16,15 @@ import { genKeyPair, getEthAddress, getPublicKey } from "./keys";
 import { UserAlias } from "./types";
 
 export class ChainUser {
+  readonly #privateKey: string;
   public readonly prefix: string;
   public readonly name: string;
   public readonly identityKey: UserAlias;
   public readonly ethAddress: string;
-  public readonly privateKey: string;
   public readonly publicKey: string;
 
   constructor(config: { name?: string; privateKey: string }) {
-    this.privateKey = config.privateKey;
+    this.#privateKey = config.privateKey;
     this.publicKey = getPublicKey(config.privateKey);
     this.ethAddress = getEthAddress(this.publicKey);
 
@@ -45,5 +45,21 @@ export class ChainUser {
 
   public static withRandomKeys(name?: string): ChainUser {
     return new ChainUser({ ...genKeyPair(), name });
+  }
+
+  public sign<T extends { signed(privateKey: string, useDer?: boolean): T }>(dto: T, useDer = false): T {
+    return dto.signed(this.#privateKey, useDer);
+  }
+
+  public signInPlace<T extends { sign(privateKey: string, useDer?: boolean): void }>(
+    dto: T,
+    useDer = false
+  ): T {
+    dto.sign(this.#privateKey, useDer);
+    return dto;
+  }
+
+  public signPublicKey<T extends { withPublicKeySignedBy(privateKey: string): T }>(dto: T): T {
+    return dto.withPublicKeySignedBy(this.#privateKey);
   }
 }

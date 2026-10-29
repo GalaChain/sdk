@@ -80,27 +80,29 @@ export async function requestMintTokensToUsers(
 }
 
 export async function applyRequests(client: AdminChainClients, delayMs = 2_500) {
-  const profileDto = new GetMyProfileDto()
-    .withOperation(mockedOperation("PublicKeyContract:GetMyProfile"))
-    .signed(client.pk.privateKey);
+  const profileDto = client.pk.sign(
+    new GetMyProfileDto().withOperation(mockedOperation("PublicKeyContract:GetMyProfile"))
+  );
   const profile = await client.pk.GetMyProfile(profileDto);
   const roles = Array.isArray(profile.Data?.roles) ? (profile.Data.roles as string[]) : [];
   if (!roles.includes("REQUEST_APPLIER")) {
-    const grantRoles = await createValidSubmitDTO(UpdateUserRolesDto, {
-      user: client.pk.identityKey,
-      roles: [...roles, "REQUEST_APPLIER"]
-    })
-      .withOperation(mockedOperation("PublicKeyContract:UpdateUserRoles"))
-      .signed(client.pk.privateKey);
+    const grantRoles = client.pk.sign(
+      await createValidSubmitDTO(UpdateUserRolesDto, {
+        user: client.pk.identityKey,
+        roles: [...roles, "REQUEST_APPLIER"]
+      }).withOperation(mockedOperation("PublicKeyContract:UpdateUserRoles"))
+    );
     expect(await client.pk.submitTransaction("UpdateUserRoles", grantRoles)).toEqual(transactionSuccess());
   }
 
   await new Promise((resolve) => setTimeout(resolve, delayMs));
   return client.assets.submitTransaction(
     "ApplyRequests",
-    await createValidSubmitDTO(ApplyRequestsDto, {})
-      .withOperation(mockedOperation("GalaChainToken:ApplyRequests"))
-      .signed(client.assets.privateKey)
+    client.assets.sign(
+      await createValidSubmitDTO(ApplyRequestsDto, {}).withOperation(
+        mockedOperation("GalaChainToken:ApplyRequests")
+      )
+    )
   );
 }
 
@@ -191,7 +193,7 @@ async function createGalaNFT(client: ChainClient & ChainUserAPI, nftClassKey: To
 
   await client.submitTransaction<TokenClassKey>(
     "CreateTokenClass",
-    galaTokenDto.withOperation(mockedOperation("GalaChainToken:CreateTokenClass")).signed(client.privateKey),
+    client.sign(galaTokenDto.withOperation(mockedOperation("GalaChainToken:CreateTokenClass"))),
     TokenClassKey
   );
 }
@@ -226,9 +228,7 @@ async function grantUsersMintingAllowance(
 
   await client.submitTransaction<TokenAllowance[]>(
     "GrantAllowance",
-    galaAllowanceDto
-      .withOperation(mockedOperation("GalaChainToken:GrantAllowance"))
-      .signed(client.privateKey),
+    client.sign(galaAllowanceDto.withOperation(mockedOperation("GalaChainToken:GrantAllowance"))),
     TokenAllowance
   );
 }
@@ -255,7 +255,7 @@ async function usersMintNFT(
 
     const response = await client.submitTransaction(
       "MintToken",
-      userMintDto.withOperation(mockedOperation("GalaChainToken:MintToken")).signed(user.privateKey)
+      user.sign(userMintDto.withOperation(mockedOperation("GalaChainToken:MintToken")))
     );
 
     const responseMatchers = Array.from({ length: quantity.toNumber() }).map(() => expect.anything());
@@ -277,7 +277,7 @@ async function usersRequestMintNFT(
 
     const response = await client.submitTransaction(
       "RequestMintToken",
-      userMintDto.withOperation(mockedOperation("GalaChainToken:RequestMintToken")).signed(user.privateKey)
+      user.sign(userMintDto.withOperation(mockedOperation("GalaChainToken:RequestMintToken")))
     );
     expect(response).toEqual(transactionSuccess());
   }

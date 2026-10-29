@@ -79,7 +79,7 @@ describe("NFT lock scenario", () => {
     // When
     const lockResult = await client.assets.submitTransaction<TokenBalance>(
       "LockTokens",
-      lockDto.withOperation(mockedOperation("GalaChainToken:LockTokens")).signed(user1.privateKey),
+      user1.sign(lockDto.withOperation(mockedOperation("GalaChainToken:LockTokens"))),
       TokenBalance
     );
 
@@ -98,9 +98,7 @@ describe("NFT lock scenario", () => {
     // When
     const transferResponse = await client.assets.submitTransaction(
       "RequestTransferToken",
-      transferDto
-        .withOperation(mockedOperation("GalaChainToken:RequestTransferToken"))
-        .signed(user1.privateKey)
+      user1.sign(transferDto.withOperation(mockedOperation("GalaChainToken:RequestTransferToken")))
     );
     expect(transferResponse).toEqual(transactionSuccess());
 
@@ -126,7 +124,7 @@ describe("NFT lock scenario", () => {
 
     await client.assets.submitTransaction<UnlockTokensDto>(
       "UnlockTokens",
-      unlockDto.withOperation(mockedOperation("GalaChainToken:UnlockTokens")).signed(user1.privateKey),
+      user1.sign(unlockDto.withOperation(mockedOperation("GalaChainToken:UnlockTokens"))),
       UnlockTokensDto
     );
 
@@ -139,9 +137,7 @@ describe("NFT lock scenario", () => {
     // When
     const transferResponse = await client.assets.submitTransaction(
       "RequestTransferToken",
-      transferDto
-        .withOperation(mockedOperation("GalaChainToken:RequestTransferToken"))
-        .signed(user1.privateKey)
+      user1.sign(transferDto.withOperation(mockedOperation("GalaChainToken:RequestTransferToken")))
     );
     expect(transferResponse).toEqual(transactionSuccess());
     const applyRequestsResponse = await applyRequests(client);
@@ -178,7 +174,7 @@ describe("NFT lock scenario", () => {
 
     const lockResponse = await client.assets.submitTransaction<LockTokensDto>(
       "LockTokens",
-      lockDto.withOperation(mockedOperation("GalaChainToken:LockTokens")).signed(user1.privateKey),
+      user1.sign(lockDto.withOperation(mockedOperation("GalaChainToken:LockTokens"))),
       LockTokensDto
     );
 
@@ -187,16 +183,12 @@ describe("NFT lock scenario", () => {
     // When
     const unlockResult1 = await client.assets.submitTransaction<UnlockTokensDto>(
       "UnlockTokens",
-      unlockDtoForUser2
-        .withOperation(mockedOperation("GalaChainToken:UnlockTokens"))
-        .signed(user2.privateKey),
+      user2.sign(unlockDtoForUser2.withOperation(mockedOperation("GalaChainToken:UnlockTokens"))),
       UnlockTokensDto
     );
     const unlockResult2 = await client.assets.submitTransaction<UnlockTokensDto>(
       "UnlockTokens",
-      unlockDtoForUser1
-        .withOperation(mockedOperation("GalaChainToken:UnlockTokens"))
-        .signed(user1.privateKey),
+      user1.sign(unlockDtoForUser1.withOperation(mockedOperation("GalaChainToken:UnlockTokens"))),
       UnlockTokensDto
     );
 
@@ -244,9 +236,7 @@ describe("lock with allowances", () => {
 
     const result = await client.assets.submitTransaction<TokenAllowance[]>(
       "GrantAllowance",
-      galaAllowanceDto
-        .withOperation(mockedOperation("GalaChainToken:GrantAllowance"))
-        .signed(user1.privateKey),
+      user1.sign(galaAllowanceDto.withOperation(mockedOperation("GalaChainToken:GrantAllowance"))),
       TokenAllowance
     );
 
@@ -268,7 +258,7 @@ describe("lock with allowances", () => {
     // When
     const lockResult = await client.assets.submitTransaction<TokenBalance>(
       "LockTokens",
-      lockDto.withOperation(mockedOperation("GalaChainToken:LockTokens")).signed(user2.privateKey),
+      user2.sign(lockDto.withOperation(mockedOperation("GalaChainToken:LockTokens"))),
       TokenBalance
     );
 

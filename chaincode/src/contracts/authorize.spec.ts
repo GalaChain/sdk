@@ -222,8 +222,9 @@ describe("authorization", () => {
     const allowedOrgs = orgsParam === "no org constraint" ? undefined : orgsParam;
     const allowedRoles = rolesParam === "no roles constraint" ? undefined : rolesParam;
 
+    const chainUser = ChainUser.withRandomKeys(customUser.alias);
     const user = {
-      ...ChainUser.withRandomKeys(customUser.alias),
+      ...chainUser,
       roles: customUser.roles ?? [...UserProfile.DEFAULT_ROLES]
     };
 
@@ -237,7 +238,7 @@ describe("authorization", () => {
     const signedDto = new ChainCallDTO();
     signedDto.uniqueKey = "uniqueKey-456";
     signedDto.dtoOperation = "asset-channel_basic-asset_TestContract:GetCallingUser";
-    signedDto.sign(user.privateKey);
+    chainUser.signInPlace(signedDto);
 
     return {
       user,
