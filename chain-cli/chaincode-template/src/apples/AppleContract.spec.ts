@@ -23,7 +23,7 @@ import {
 
 import { AppleTree, PickAppleDto, Variety } from "../apples";
 import { AppleContract } from "./AppleContract";
-import { PlantAppleTreeDto } from "./dtos";
+import { FetchTreesDto, PlantAppleTreeDto } from "./dtos";
 
 it("should allow to plant a tree", async () => {
   // Given
@@ -85,5 +85,29 @@ it("should allow to pick apples", async () => {
         applesPicked: tree.applesPicked.plus(1)
       })
     )
+  );
+});
+
+it("should fetch trees with the default page size when limit is not provided", async () => {
+  // Given
+  const tree = new AppleTree("client|some-user", Variety.GALA, 1, 0);
+  const user = users.random();
+  const { contract, ctx } = fixture(AppleContract).registeredUsers(user).savedState(tree);
+  const query = jest.spyOn(ctx.stub, "getStateByPartialCompositeKeyWithPagination");
+  const dto = new FetchTreesDto(tree.plantedBy)
+    .withOperation("asset-channel_basic-asset_AppleContract:FetchTrees")
+    .signed(user.privateKey);
+
+  // When
+  const response = await contract.FetchTrees(ctx, dto);
+
+  // Then
+  expect(response).toEqual(transactionSuccess(expect.anything()));
+  expect(response.Data?.trees).toEqual([tree]);
+  expect(query).toHaveBeenCalledWith(
+    AppleTree.INDEX_KEY,
+    [tree.plantedBy],
+    FetchTreesDto.DEFAULT_LIMIT,
+    undefined
   );
 });

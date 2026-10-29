@@ -41,7 +41,7 @@ export default class Log extends BaseCommand<typeof Log> {
     developerPrivateKey: Flags.string({
       char: "k",
       description:
-        "Private key to sign the data. It can be a file path or a key string. " +
+        "Path to the private key file used to sign the data. " +
         "If not provided, the private key will be read from the environment variable DEV_PRIVATE_KEY.",
       required: false
     }),

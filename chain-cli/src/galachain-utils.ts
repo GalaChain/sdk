@@ -28,7 +28,7 @@ import { ChaincodeInfoDto, DeployChaincodeDto, GetChaincodeDeploymentDto, Regist
 import { BadRequestError, FetchLogsError, UnauthorizedError } from "./errors";
 import { execFileSync } from "./exec-sync";
 import signatures from "./signatures";
-import { parseStringOrFileKey } from "./utils";
+import { assertPrivateKeyFileArg, parseStringOrFileKey } from "./utils";
 
 const ConfigFileName = ".galachainrc.json";
 const PackageJsonFileName = "package.json";
@@ -349,43 +349,79 @@ export async function generateKeys(projectPath: string): Promise<void> {
   console.log(`Private keys directory: ${privateKeysPath}`);
 }
 
+// Compares versions by semver precedence: numeric release parts first, and a prerelease
+// (e.g. 3.10.0-beta.1) is lower than the same release (3.10.0). Build metadata is ignored.
 export function isNewerVersion(latest: string, current: string): boolean {
-  const latestParts = versionParts(latest);
-  const currentParts = versionParts(current);
-  const length = Math.max(latestParts.length, currentParts.length);
+  return compareVersions(latest, current) > 0;
+}
+
+function compareVersions(a: string, b: string): number {
+  const left = parseVersion(a);
+  const right = parseVersion(b);
+  const length = Math.max(left.release.length, right.release.length);
 
   for (let index = 0; index < length; index++) {
-    const latestPart = latestParts[index] ?? 0;
-    const currentPart = currentParts[index] ?? 0;
-    if (latestPart > currentPart) {
-      return true;
-    }
-    if (latestPart < currentPart) {
-      return false;
+    const diff = (left.release[index] ?? 0) - (right.release[index] ?? 0);
+    if (diff !== 0) {
+      return Math.sign(diff);
     }
   }
 
-  return false;
+  if (left.prerelease.length === 0 || right.prerelease.length === 0) {
+    // a release is higher than any of its prereleases
+    return Math.sign(right.prerelease.length - left.prerelease.length);
+  }
+
+  const prereleaseLength = Math.max(left.prerelease.length, right.prerelease.length);
+  for (let index = 0; index < prereleaseLength; index++) {
+    const l = left.prerelease[index];
+    const r = right.prerelease[index];
+    if (l === undefined || r === undefined) {
+      // a shorter set of identifiers is lower when all preceding ones are equal
+      return l === undefined ? -1 : 1;
+    }
+    const diff = comparePrereleaseIdentifiers(l, r);
+    if (diff !== 0) {
+      return diff;
+    }
+  }
+
+  return 0;
 }
 
-function versionParts(version: string): number[] {
-  return version
-    .trim()
-    .replace(/^v/, "")
-    .split(".")
-    .map((part) => {
-      const numeric = parseInt(part, 10);
-      return Number.isNaN(numeric) ? 0 : numeric;
-    });
+function comparePrereleaseIdentifiers(a: string, b: string): number {
+  const aNumeric = /^\d+$/.test(a);
+  const bNumeric = /^\d+$/.test(b);
+  if (aNumeric && bNumeric) {
+    return Math.sign(parseInt(a, 10) - parseInt(b, 10));
+  }
+  if (aNumeric !== bNumeric) {
+    // numeric identifiers are lower than alphanumeric ones
+    return aNumeric ? -1 : 1;
+  }
+  return a < b ? -1 : a > b ? 1 : 0;
 }
 
-export function checkCliVersion() {
+function parseVersion(version: string): { release: number[]; prerelease: string[] } {
+  const withoutBuild = version.trim().replace(/^v/, "").split("+")[0];
+  const dashIndex = withoutBuild.indexOf("-");
+  const releasePart = dashIndex === -1 ? withoutBuild : withoutBuild.slice(0, dashIndex);
+  const prereleasePart = dashIndex === -1 ? "" : withoutBuild.slice(dashIndex + 1);
+
+  const release = releasePart.split(".").map((part) => {
+    const numeric = parseInt(part, 10);
+    return Number.isNaN(numeric) ? 0 : numeric;
+  });
+  const prerelease = prereleasePart === "" ? [] : prereleasePart.split(".");
+
+  return { release, prerelease };
+}
+
+export function checkCliVersion(cliCurrentVersion: string) {
   let cliLatestVersion: string;
-  let cliCurrentVersion: string;
 
   try {
-    cliLatestVersion = execFileSync("npm", ["show", "@gala-chain/cli", "version"]);
-    cliCurrentVersion = execFileSync("galachain", ["--version"]).split(" ")[0].split("/")[2];
+    cliLatestVersion = execFileSync("npm", ["show", "@gala-chain/cli", "version"]).trim();
   } catch (error) {
     console.warn(`Unable to compare Chain CLI versions: ${error}`);
     return;
@@ -455,6 +491,9 @@ export async function getDeveloperPublicKeys(): Promise<string[]> {
 }
 
 export async function getPrivateKey(keysFromArg: string | undefined, chaincodeName: string) {
+  if (keysFromArg !== undefined) {
+    assertPrivateKeyFileArg(keysFromArg);
+  }
   return (
     keysFromArg ??
     process.env.DEV_PRIVATE_KEY ??
@@ -478,6 +517,18 @@ export async function saveApiConfig(
       getApiConfigForChannel(channel, chaincodeName[index], contracts[index])
     )
   };
+
+  const channelsByPathFragment = new Map<string, string>();
+  for (const { pathFragment, channelName } of apiConfig.channels) {
+    const existing = channelsByPathFragment.get(pathFragment);
+    if (existing !== undefined) {
+      throw new Error(
+        `Channels "${existing}" and "${channelName}" have the same API path fragment "${pathFragment}". ` +
+          "Use channel names that differ after removing the -channel suffix."
+      );
+    }
+    channelsByPathFragment.set(pathFragment, channelName);
+  }
 
   // Ensure directory exists
   if (!fs.existsSync(dir)) {

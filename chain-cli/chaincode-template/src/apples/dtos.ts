@@ -95,6 +95,9 @@ export class PickAppleDto extends SubmitCallDTO {
 }
 
 export class FetchTreesDto extends ChainCallDTO {
+  static readonly MAX_LIMIT = 1000;
+  static readonly DEFAULT_LIMIT = 1000;
+
   @IsString()
   @ValidateIf((o) => o.plantedBy !== undefined || o.variety !== undefined)
   public readonly plantedBy?: string;
@@ -114,7 +117,7 @@ export class FetchTreesDto extends ChainCallDTO {
   @IsOptional()
   @IsInt()
   @Min(1)
-  @Max(1000)
+  @Max(FetchTreesDto.MAX_LIMIT)
   public readonly limit?: number;
 
   constructor(plantedBy?: string, variety?: Variety, index?: number, bookmark?: string, limit?: number) {

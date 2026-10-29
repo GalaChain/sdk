@@ -17,7 +17,7 @@ import fs from "fs";
 import os from "os";
 import path from "path";
 
-import { getDeveloperPublicKeys, saveApiConfig } from "./galachain-utils";
+import { getDeveloperPublicKeys, getPrivateKey, saveApiConfig } from "./galachain-utils";
 
 describe("saveApiConfig contract names", () => {
   it("rejects a missing, empty, or duplicate contract name", async () => {
@@ -53,6 +53,51 @@ describe("saveApiConfig contract names", () => {
       channels: { pathFragment: string }[];
     };
     expect(stripped.channels[0].pathFragment).toEqual("product");
+  });
+
+  it("rejects channels with the same path fragment", async () => {
+    // Given
+    const dir = fs.mkdtempSync(path.join(os.tmpdir(), "api-config-"));
+    const contracts = '[{"contractName":"Apple"}]';
+
+    // When & Then
+    await expect(
+      saveApiConfig(dir, [contracts, contracts], ["product-channel", "product"], ["basic", "basic"])
+    ).rejects.toThrow(/Channels "product-channel" and "product" have the same API path fragment "product"/);
+    expect(fs.existsSync(path.join(dir, "api-config.json"))).toBe(false);
+  });
+});
+
+describe("getPrivateKey", () => {
+  const privateKey = secp.utils.bytesToHex(secp.utils.randomPrivateKey());
+
+  it("accepts a path to a key file as an argument", async () => {
+    // Given
+    const keyFile = path.join(fs.mkdtempSync(path.join(os.tmpdir(), "dev-key-")), "gc-dev-key");
+    fs.writeFileSync(keyFile, privateKey);
+
+    // When & Then
+    await expect(getPrivateKey(keyFile, "gc-test")).resolves.toEqual(keyFile);
+  });
+
+  it("rejects a raw private key as an argument", async () => {
+    // When & Then
+    await expect(getPrivateKey(privateKey, "gc-test")).rejects.toThrow(/Pass a path to a private key file/);
+    await expect(getPrivateKey(`0x${privateKey}`, "gc-test")).rejects.toThrow(
+      /Pass a path to a private key file/
+    );
+  });
+
+  it("still reads a raw key from the environment variable", async () => {
+    // Given
+    process.env.DEV_PRIVATE_KEY = privateKey;
+
+    // When & Then
+    try {
+      await expect(getPrivateKey(undefined, "gc-test")).resolves.toEqual(privateKey);
+    } finally {
+      delete process.env.DEV_PRIVATE_KEY;
+    }
   });
 });
 

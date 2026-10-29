@@ -405,7 +405,11 @@ export default class GalaChainTokenContract extends GalaContract {
   @GalaTransaction({
     type: EVALUATE,
     in: FetchBalancesDto,
-    out: { arrayOf: TokenBalance }
+    out: { arrayOf: TokenBalance },
+    description:
+      "Deprecated: returns all matching balances without pagination. " +
+      "Use FetchBalancesWithTokenMetadata, which supports pagination, instead.",
+    deprecated: true
   })
   public async FetchBalances(ctx: GalaChainContext, dto: FetchBalancesDto): Promise<TokenBalance[]> {
     return fetchBalances(ctx, { ...dto, owner: await resolveUserAlias(ctx, dto.owner ?? ctx.callingUser) });
