@@ -23,6 +23,7 @@ import {
   TokenInstance,
   TokenInstanceKey,
   TokenMintFulfillment,
+  TokenMintStatus,
   UserAlias
 } from "@gala-chain/api";
 import { ChainCallDTO } from "@gala-chain/api";
@@ -32,7 +33,7 @@ import { checkAllowances, ensureQuantityCanBeMinted, fetchAllowances, useAllowan
 import { fetchOrCreateBalance } from "../balances";
 import { InvalidDecimalError } from "../token/TokenError";
 import { GalaChainContext } from "../types/GalaChainContext";
-import { getObjectByKey, putChainObject } from "../utils";
+import { ObjectNotFoundError, getObjectByKey, putChainObject } from "../utils";
 import { InsufficientMintAllowanceError, NftMaxMintError, UseAllowancesFailedError } from "./MintError";
 import { writeMintRequest } from "./writeMintRequest";
 
@@ -248,6 +249,21 @@ export async function updateTotalSupply(
   });
 
   const mintFulfillmentEntry: TokenMintFulfillment = mintRequest.fulfill(quantity);
+
+  // A second mint in this transaction uses the same fulfillment key. Add its quantity when the owner matches.
+  try {
+    const pending = await getObjectByKey(ctx, TokenMintFulfillment, mintFulfillmentEntry.getCompositeKey());
+    if (pending.owner === mintFulfillmentEntry.owner) {
+      mintFulfillmentEntry.quantity = pending.quantity.plus(quantity);
+      mintFulfillmentEntry.state = mintFulfillmentEntry.quantity.isLessThan(mintRequest.quantity)
+        ? TokenMintStatus.PartiallyMinted
+        : TokenMintStatus.Minted;
+    }
+  } catch (e) {
+    if (!(e instanceof ObjectNotFoundError)) {
+      throw e;
+    }
+  }
 
   await putChainObject(ctx, mintFulfillmentEntry);
 }

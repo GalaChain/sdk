@@ -572,8 +572,8 @@ export class OracleBridgeFeeAssertionDto extends SubmitCallDTO {
 
   @JSONSchema({
     description:
-      "Oracle identity / alias. Used with signature and GalaChain SDK " +
-      "authorize() function for verification/validation."
+      "Oracle identity: the alias or eth address of the key that signed this assertion. " +
+      "Must match the authenticated signer, and that signer must be a listed oracle authority."
   })
   @IsNotEmpty()
   signingIdentity: string;

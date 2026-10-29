@@ -36,7 +36,7 @@ describe("chain REST client", () => {
   });
 
   it("loads contract metadata and does not call user enrollment", async () => {
-    const url = "http://gcrest.example";
+    const url = "https://gcrest.example";
     const get = jest.spyOn(axios, "get");
     const post = jest.spyOn(axios, "post").mockResolvedValue({
       data: { Status: 1, Data: { methods: [{ methodName: "Ping", isWrite: false }] } }
@@ -52,7 +52,7 @@ describe("chain REST client", () => {
   });
 
   it("retries initialization after a failed attempt", async () => {
-    const url = "http://retry-init.example";
+    const url = "https://retry-init.example";
     jest
       .spyOn(axios, "post")
       .mockRejectedValueOnce(new Error("metadata down"))
@@ -70,7 +70,7 @@ describe("chain REST client", () => {
 
   it("does not mark initialization failed when a waiter times out", async () => {
     jest.useFakeTimers();
-    const url = "http://slow-init.example";
+    const url = "https://slow-init.example";
     jest.spyOn(axios, "post").mockImplementation(() => new Promise(() => undefined));
 
     const builder = new RestApiClientBuilder(url, "Org1", credentials, restConfig);

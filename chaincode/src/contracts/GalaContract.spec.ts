@@ -253,7 +253,9 @@ describe("GalaContract.GetObjectsByPartialCompositeKey", () => {
 
 describe("GalaContract.DryRun", () => {
   const callerPublicKey = process.env.DEV_ADMIN_PUBLIC_KEY as string;
-  const callerProfileKey = `\u0000GCUP\u0000${signatures.getEthAddress(callerPublicKey)}\u0000`;
+  const callerEthAddress = signatures.getEthAddress(callerPublicKey);
+  const callerProfileKey = `\u0000GCUP\u0000${callerEthAddress}\u0000`;
+  const callerAlias = process.env.DEV_ADMIN_USER_ID ?? `eth|${callerEthAddress}`;
 
   it("should support DryRun for submit operations", async () => {
     // Given
@@ -278,7 +280,7 @@ describe("GalaContract.DryRun", () => {
         reads: { [callerProfileKey]: "" },
         writes: {
           [superhero.getCompositeKey()]: serialize({ age: 32, name: "Batman" }),
-          [`\u0000UNTX\u0000${dto.uniqueKey}\u0000`]: expect.any(String)
+          [`\u0000UNTX\u0000${callerAlias}\u0000${dto.uniqueKey}\u0000`]: expect.any(String)
         },
         deletes: {}
       }
@@ -453,9 +455,69 @@ describe("GalaContract.DryRun", () => {
       Message: "The dto should have no signature for dry run execution"
     });
   });
+
+  it("should reject DryRun from an organization other than the curator", async () => {
+    const chaincode = new TestChaincode([TestGalaContract]).setCallingUserMsp("OtherOrg");
+    const dryRunDto = await createValidDTO(DryRunDto, { method: "GetContractVersion", callerPublicKey });
+
+    const response = await chaincode.query("TestGalaContract:DryRun", dryRunDto);
+
+    expect(response).toEqual(transactionErrorMessageContains("CuratorOrg"));
+  });
+});
+
+describe("unique keys", () => {
+  it("should let another caller use the same unique key", async () => {
+    const chaincode = new TestChaincode([TestGalaContract]);
+    const dto = await createValidDTO(KVDto, { key: "same-key", value: "v", uniqueKey: "shared-key" });
+
+    const first = await chaincode.setCallingUser("client|alice").invoke("TestGalaContract:PutKv", dto);
+    const second = await chaincode.setCallingUser("client|bob").invoke("TestGalaContract:PutKv", dto);
+    const repeat = await chaincode.setCallingUser("client|alice").invoke("TestGalaContract:PutKv", dto);
+
+    expect(first).toEqual(transactionSuccess());
+    expect(second).toEqual(transactionSuccess());
+    expect(repeat).toEqual(transactionErrorKey("UNIQUE_TRANSACTION_CONFLICT"));
+  });
 });
 
 describe("GalaContract.Batch", () => {
+  it("checks an inner dto against the inner method", async () => {
+    const chaincode = new TestChaincode([TestGalaContract]);
+    const innerOperation = "asset-channel_basic-asset_PutKv";
+    const accepted = plainToInstance(BatchDto, {
+      uniqueKey: "batch-inner-op",
+      operations: [
+        {
+          method: "PutKv",
+          dto: { key: "op-key", value: "kept", uniqueKey: "uk-inner", dtoOperation: innerOperation }
+        }
+      ]
+    });
+    const rejected = plainToInstance(BatchDto, {
+      uniqueKey: "batch-outer-op",
+      operations: [
+        {
+          method: "PutKv",
+          dto: {
+            key: "op-key-2",
+            value: "dropped",
+            uniqueKey: "uk-outer",
+            dtoOperation: "asset-channel_basic-asset_BatchSubmit"
+          }
+        }
+      ]
+    });
+
+    const ok = await chaincode.invoke("TestGalaContract:BatchSubmit", accepted.serialize());
+    const bad = await chaincode.invoke("TestGalaContract:BatchSubmit", rejected.serialize());
+
+    expect(ok).toEqual(transactionSuccess([transactionSuccess()]));
+    expect(bad).toEqual(
+      transactionSuccess([transactionErrorMessageContains(`current operation is ${innerOperation}`)])
+    );
+  });
+
   it("should support batch operations properly", async () => {
     // Given
     const chaincode = new TestChaincode([TestGalaContract]);

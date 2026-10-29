@@ -43,6 +43,7 @@ import { getApiMethod, getApiMethods } from "./GalaContractApi";
 import { EVALUATE, GalaTransaction, SUBMIT, Submit } from "./GalaTransaction";
 import { applySavedRequests, hasPendingApplyRequests } from "./GalaTransactionRequest";
 import type { RequestMethodHandler } from "./GalaTransactionRequest";
+import { curatorOrgMsp } from "./authorize";
 
 export class BatchWriteLimitExceededError extends ValidationFailedError {
   constructor(writesLimit: number) {
@@ -205,7 +206,8 @@ export abstract class GalaContract extends Contract {
   @GalaTransaction({
     type: EVALUATE,
     in: GetObjectDto,
-    out: "object"
+    out: "object",
+    allowedOrgs: [curatorOrgMsp]
   })
   public GetObjectByKey(ctx: GalaChainContext, dto: GetObjectDto): Promise<Record<string, unknown>> {
     return getPlainObjectByKey(ctx, dto.objectId);
@@ -214,7 +216,8 @@ export abstract class GalaContract extends Contract {
   @GalaTransaction({
     type: EVALUATE,
     in: GetObjectHistoryDto,
-    out: "object"
+    out: "object",
+    allowedOrgs: [curatorOrgMsp]
   })
   public GetObjectHistory(ctx: GalaChainContext, dto: GetObjectHistoryDto): Promise<Record<string, unknown>> {
     return getObjectHistory(ctx, dto.objectId);
@@ -223,7 +226,8 @@ export abstract class GalaContract extends Contract {
   @GalaTransaction({
     type: EVALUATE,
     in: DryRunDto,
-    out: DryRunResultDto
+    out: DryRunResultDto,
+    allowedOrgs: [curatorOrgMsp]
   })
   public async DryRun(ctx: GalaChainContext, dto: DryRunDto): Promise<DryRunResultDto> {
     const method = getApiMethod(this, dto.method);
@@ -233,9 +237,9 @@ export abstract class GalaContract extends Contract {
       ? ChainCallDTO.deserialize(ChainCallDTO, dto.dto as unknown as Record<string, unknown>)
       : undefined;
 
-    // For dry run we don't use the regular authorization. We don't want users to provide signatures
-    // to avoid replay attack in case if the method is eventually not executed, and someone in the middle
-    // will replay the request.
+    // Only the curator organization can call DryRun. The caller names who to simulate.
+    // A fee estimate runs here before that user signs and submits.
+    // The inner dto stays unsigned, so that signature is not available to submit later.
     if (internalDto && internalDto.getAllSignatures().length > 0) {
       throw new ValidationFailedError("The dto should have no signature for dry run execution");
     }
@@ -316,6 +320,7 @@ export abstract class GalaContract extends Contract {
             }
 
             const method = getApiMethod(this, op.method, (m) => m.isWrite && m.methodName !== "BatchSubmit");
+            sandboxCtx.bindOperationMethod(method.methodName);
             opResponse = await this[method.methodName](sandboxCtx, op.dto);
           } catch (error) {
             // An external invoke cannot be rolled back by discarding the local
@@ -415,6 +420,7 @@ export abstract class GalaContract extends Contract {
               op.method,
               (m) => !m.isWrite && m.methodName !== "BatchEvaluate"
             );
+            sandboxCtx.bindOperationMethod(method.methodName);
             opResponse = await this[method.methodName](sandboxCtx, op.dto);
           } catch (error) {
             opResponse = GalaChainResponse.Error(error);

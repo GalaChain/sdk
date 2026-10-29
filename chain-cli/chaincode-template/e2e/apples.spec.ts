@@ -127,7 +127,7 @@ describe("Apple trees", () => {
         },
         writes: {
           [saved.getCompositeKey()]: expect.any(String),
-          [`\u0000UNTX\u0000${dto.uniqueKey}\u0000`]: expect.any(String)
+          [`\u0000UNTX\u0000${user.identityKey}\u0000${dto.uniqueKey}\u0000`]: expect.any(String)
         },
         deletes: {}
       })

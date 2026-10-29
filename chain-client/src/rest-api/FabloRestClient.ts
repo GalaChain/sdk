@@ -25,7 +25,12 @@ import {
 } from "../generic";
 import { GalaChainResponse, serialize } from "../wire";
 import { ContractAPI } from "./GlobalRestApiConfig";
-import { RestApiAdminCredentials, SetContractApiParams, globalRestApiConfig } from "./GlobalRestApiConfig";
+import {
+  RestApiAdminCredentials,
+  SetContractApiParams,
+  globalRestApiConfig,
+  requireSecureRestApiUrl
+} from "./GlobalRestApiConfig";
 import { catchAxiosError } from "./catchAxiosError";
 import { RestApiConfig } from "./loadRestApiConfig";
 import { withRequestTimeout } from "./requestTimeout";
@@ -71,6 +76,7 @@ export class FabloRestClient extends ChainClient {
     userId = credentials.adminKey
   ) {
     super(builder, userId, contractConfig, orgMsp);
+    requireSecureRestApiUrl(restApiUrl);
     this.apiUrl = restApiUrl;
     this.restApiUrl = builder.then(() => restApiUrl);
   }
@@ -133,6 +139,7 @@ export class FabloRestClient extends ChainClient {
     restApiUrl: string,
     restApiConfig: RestApiConfig
   ): Promise<SetContractApiParams[]> {
+    requireSecureRestApiUrl(restApiUrl);
     const headers = {
       Authorization: `Bearer ${token}`
     };

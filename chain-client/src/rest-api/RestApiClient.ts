@@ -25,7 +25,12 @@ import {
 } from "../generic";
 import { GalaChainResponse, serialize } from "../wire";
 import { ContractAPI } from "./GlobalRestApiConfig";
-import { RestApiAdminCredentials, SetContractApiParams, globalRestApiConfig } from "./GlobalRestApiConfig";
+import {
+  RestApiAdminCredentials,
+  SetContractApiParams,
+  globalRestApiConfig,
+  requireSecureRestApiUrl
+} from "./GlobalRestApiConfig";
 import { catchAxiosError } from "./catchAxiosError";
 import { RestApiConfig } from "./loadRestApiConfig";
 import { withRequestTimeout } from "./requestTimeout";
@@ -65,6 +70,7 @@ export class RestApiClient extends ChainClient {
     orgMsp: string
   ) {
     super(builder, "default-user", contractConfig, orgMsp);
+    requireSecureRestApiUrl(restApiUrl);
     this.restApiUrl = builder.then(() => restApiUrl);
   }
 
@@ -118,6 +124,7 @@ export class RestApiClient extends ChainClient {
     restApiUrl: string,
     restApiConfig: RestApiConfig
   ): Promise<SetContractApiParams[]> {
+    requireSecureRestApiUrl(restApiUrl);
     const contractApis: SetContractApiParams[] = [];
 
     for (const channel of restApiConfig.channels) {

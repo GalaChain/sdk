@@ -27,7 +27,7 @@ describe("REST request timeout", () => {
     const post = jest.spyOn(axios, "post").mockResolvedValue({ data: { Status: 1 } });
     const client = new RestApiClient(
       Promise.resolve({} as never),
-      "http://rest.example",
+      "https://rest.example",
       { channel: "product", chaincode: "basic", contract: "GalaChainToken" },
       "Org1"
     );
@@ -46,7 +46,7 @@ describe("REST request timeout", () => {
       data: { Status: 1, Data: { methods: [] } }
     });
 
-    await RestApiClient.getContractApis({ adminKey: "key", adminSecret: "secret" }, "http://rest.example", {
+    await RestApiClient.getContractApis({ adminKey: "key", adminSecret: "secret" }, "https://rest.example", {
       channels: [
         {
           channelName: "product",
@@ -63,7 +63,7 @@ describe("REST request timeout", () => {
     });
 
     expect(post).toHaveBeenCalledWith(
-      "http://rest.example/product/GalaChainToken/GetContractAPI",
+      "https://rest.example/product/GalaChainToken/GetContractAPI",
       undefined,
       expect.objectContaining({ timeout: DEFAULT_REQUEST_TIMEOUT_MS })
     );

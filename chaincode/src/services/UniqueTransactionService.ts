@@ -15,38 +15,68 @@
 import { ChainError, ErrorCode } from "@gala-chain/api";
 import { Context } from "fabric-contract-api";
 
+import { getCaIdentityAlias } from "../contracts/getCaIdentityAlias";
 import { GalaChainContext, GalaChainStub } from "../types";
 import { getObjectByKey, putChainObject } from "../utils/state";
-import { UniqueTransaction } from "./UniqueTransaction";
+import { CallerUniqueTransaction, UniqueTransaction } from "./UniqueTransaction";
 import { UniqueTransactionConflictError } from "./UniqueTransactionError";
 
 export class UniqueTransactionService {
   private static UT_INDEX_KEY = UniqueTransaction.INDEX_KEY;
 
-  private static getUniqueTransactionKey(ctx: Context, uniqueKey: string): string {
-    return ctx.stub.createCompositeKey(UniqueTransactionService.UT_INDEX_KEY, [uniqueKey]);
+  private static replayCaller(ctx: GalaChainContext): string {
+    try {
+      return ctx.callingUser;
+    } catch {
+      return getCaIdentityAlias(ctx);
+    }
   }
 
-  private static async putUniqueTransaction(ctx: GalaChainContext, uniqueKey: string): Promise<void> {
-    const dto = new UniqueTransaction();
+  private static getUniqueTransactionKey(ctx: Context, parts: string[]): string {
+    return ctx.stub.createCompositeKey(UniqueTransactionService.UT_INDEX_KEY, parts);
+  }
+
+  private static async putUniqueTransaction(
+    ctx: GalaChainContext,
+    uniqueKey: string,
+    caller: string | undefined
+  ): Promise<void> {
+    const dto = caller === undefined ? new UniqueTransaction() : new CallerUniqueTransaction();
     dto.uniqueKey = uniqueKey;
     dto.created = ctx.txUnixTime;
     dto.transactionId = ctx.stub.getTxID();
+    if (dto instanceof CallerUniqueTransaction && caller !== undefined) {
+      dto.caller = caller;
+    }
     await putChainObject(ctx, dto);
   }
 
-  private static async ensureUniqueKey(ctx: GalaChainContext, uniqueKey: string): Promise<void> {
-    const key = UniqueTransactionService.getUniqueTransactionKey(ctx, uniqueKey);
-    await getObjectByKey(ctx, UniqueTransaction, key)
+  private static async ensureUniqueKey(
+    ctx: GalaChainContext,
+    uniqueKey: string,
+    parts: string[]
+  ): Promise<void> {
+    const key = UniqueTransactionService.getUniqueTransactionKey(ctx, parts);
+    const lookupClass = parts.length === 1 ? UniqueTransaction : CallerUniqueTransaction;
+    await getObjectByKey(ctx, lookupClass, key)
       .then((ut) => {
         throw new UniqueTransactionConflictError(uniqueKey, ut.transactionId);
       })
       .catch((e) => ChainError.recover(e, ErrorCode.NOT_FOUND));
   }
 
-  public static async ensureUniqueTransaction(ctx: GalaChainContext, uniqueKey: string): Promise<void> {
-    await UniqueTransactionService.ensureUniqueKey(ctx, uniqueKey);
-    await UniqueTransactionService.putUniqueTransaction(ctx, uniqueKey);
+  public static async ensureUniqueTransaction(
+    ctx: GalaChainContext,
+    uniqueKey: string,
+    options?: { global?: boolean }
+  ): Promise<void> {
+    const parts = options?.global ? [uniqueKey] : [UniqueTransactionService.replayCaller(ctx), uniqueKey];
+    await UniqueTransactionService.ensureUniqueKey(ctx, uniqueKey, parts);
+    await UniqueTransactionService.putUniqueTransaction(
+      ctx,
+      uniqueKey,
+      options?.global ? undefined : parts[0]
+    );
   }
 
   public static isUniqueTransactionKey(key: string): boolean {
