@@ -39,7 +39,9 @@ describe("ensureCorrectMethodIsUsed", () => {
   });
 
   it("rejects a signed DTO without dtoOperation", () => {
-    expect(() => ensureCorrectMethodIsUsed(ctxFor(operation), signedDto())).toThrow(/dtoOperation/);
+    expect(() => ensureCorrectMethodIsUsed(ctxFor(operation), signedDto())).toThrow(
+      `Signed requests must include dtoOperation. Expected: ${operation}`
+    );
   });
 
   it("allows a signed DTO without dtoOperation when the invocation has no function name", () => {
@@ -52,7 +54,9 @@ describe("ensureCorrectMethodIsUsed", () => {
   it("rejects a multisignature DTO without dtoOperation", () => {
     const dto = { multisig: ["sig-a", "sig-b"] } as SignedDto;
 
-    expect(() => ensureCorrectMethodIsUsed(ctxFor(operation, true), dto)).toThrow(/multisig/);
+    expect(() => ensureCorrectMethodIsUsed(ctxFor(operation, true), dto)).toThrow(
+      `operation name that is used for multisig. Expected: ${operation}`
+    );
   });
 
   it("accepts a signed DTO bound to the current operation", () => {

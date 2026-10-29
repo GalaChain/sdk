@@ -83,8 +83,8 @@ export function ensureCorrectMethodIsUsed(ctx: GalaChainContext, dto: ChainCallD
 
   if ((ctx.isMultisig || signed) && !dto?.dtoOperation) {
     const msg = ctx.isMultisig
-      ? `DTO operation is not provided. Please provide the operation name that is used for multisig.`
-      : `DTO operation is not provided. Signed requests must include dtoOperation.`;
+      ? `DTO operation is not provided. Please provide the operation name that is used for multisig. Expected: ${fullOperationId}`
+      : `DTO operation is not provided. Signed requests must include dtoOperation. Expected: ${fullOperationId}`;
     throw new UnauthorizedError(msg);
   }
 
