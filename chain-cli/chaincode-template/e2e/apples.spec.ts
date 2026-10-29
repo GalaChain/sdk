@@ -62,14 +62,16 @@ describe("Apple trees", () => {
 
   test("Plant a bunch of trees", async () => {
     // Given
-    const dto = new PlantAppleTreesDto(
-      [
-        new AppleTreeDto(Variety.GALA, 1),
-        new AppleTreeDto(Variety.GOLDEN_DELICIOUS, 2),
-        new AppleTreeDto(Variety.GALA, 3)
-      ],
-      randomUniqueKey()
-    ).signed(user.privateKey);
+    const dto = user.sign(
+      new PlantAppleTreesDto(
+        [
+          new AppleTreeDto(Variety.GALA, 1),
+          new AppleTreeDto(Variety.GOLDEN_DELICIOUS, 2),
+          new AppleTreeDto(Variety.GALA, 3)
+        ],
+        randomUniqueKey()
+      )
+    );
 
     // When
     const response = await client.apples.PlantTrees(dto);
@@ -80,7 +82,7 @@ describe("Apple trees", () => {
 
   test("Fetch GALA trees planted by a user", async () => {
     // Given
-    const dto = new FetchTreesDto(user.identityKey, Variety.GALA).signed(user.privateKey);
+    const dto = user.sign(new FetchTreesDto(user.identityKey, Variety.GALA));
 
     // When
     const response = await client.apples.FetchTrees(dto);
@@ -99,9 +101,7 @@ describe("Apple trees", () => {
 
   test("Fail to pick a GOLDEN_DELICIOUS apple because tree is too young", async () => {
     // Given
-    const dto = new PickAppleDto(user.identityKey, Variety.GOLDEN_DELICIOUS, 2, randomUniqueKey()).signed(
-      user.privateKey
-    );
+    const dto = user.sign(new PickAppleDto(user.identityKey, Variety.GOLDEN_DELICIOUS, 2, randomUniqueKey()));
 
     // When
     const response = await client.apples.PickApple(dto);
@@ -143,9 +143,9 @@ describe("Apple trees", () => {
     const batch = plainToInstance(BatchDto, {
       uniqueKey: randomUniqueKey(),
       operations: [
-        { method: "PickApple", dto: pick1.signed(user.privateKey) },
-        { method: "PlantTree", dto: plant.signed(user.privateKey) },
-        { method: "PickApple", dto: pick2.signed(user2.privateKey) }
+        { method: "PickApple", dto: user.sign(pick1) },
+        { method: "PlantTree", dto: user.sign(plant) },
+        { method: "PickApple", dto: user2.sign(pick2) }
       ]
     });
 

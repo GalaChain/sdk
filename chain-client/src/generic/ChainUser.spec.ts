@@ -32,7 +32,6 @@ describe("ChainUser", () => {
           name: ethAddress,
           identityKey: `eth|${ethAddress}`,
           ethAddress,
-          privateKey,
           publicKey
         })
       );
@@ -54,7 +53,6 @@ describe("ChainUser", () => {
           name,
           identityKey: `client|${name}`,
           ethAddress,
-          privateKey,
           publicKey
         })
       );

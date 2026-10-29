@@ -72,7 +72,7 @@ describe("NFT Burn scenario", () => {
     // When
     const burnTokenResponse = await client.assets.submitTransaction<TokenBurn[]>(
       "BurnTokens",
-      burnTokensDto.signed(user1.privateKey),
+      user1.sign(burnTokensDto),
       TokenBurn
     );
 

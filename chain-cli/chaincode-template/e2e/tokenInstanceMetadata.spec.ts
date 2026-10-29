@@ -95,14 +95,14 @@ describe("Token instance metadata scenario", () => {
     // When
     const createClassResponse = await client.assets.submitTransaction<TokenClassKey>(
       "CreateTokenClass",
-      createClassDto.signed(client.assets.privateKey),
+      client.assets.sign(createClassDto),
       TokenClassKey
     );
     const allowanceResponse = await client.assets.submitTransaction(
       "GrantAllowance",
-      allowanceDto.signed(client.assets.privateKey)
+      client.assets.sign(allowanceDto)
     );
-    const mintResponse = await client.assets.submitTransaction("MintToken", mintDto.signed(user1.privateKey));
+    const mintResponse = await client.assets.submitTransaction("MintToken", user1.sign(mintDto));
 
     // Then
     expect(createClassResponse).toEqual(transactionSuccess(nftClassKey));
@@ -125,11 +125,11 @@ describe("Token instance metadata scenario", () => {
     // When
     const claimAlphaResponse = await client.assets.submitTransaction(
       "GrantNftCollectionAuthorization",
-      claimAlphaDto.signed(user1.privateKey)
+      user1.sign(claimAlphaDto)
     );
     const claimBetaResponse = await client.assets.submitTransaction(
       "GrantNftCollectionAuthorization",
-      claimBetaDto.signed(user2.privateKey)
+      user2.sign(claimBetaDto)
     );
 
     // Then
@@ -146,10 +146,7 @@ describe("Token instance metadata scenario", () => {
     });
 
     // When
-    const response = await client.assets.submitTransaction(
-      "SetTokenInstanceMetadata",
-      setDto.signed(user1.privateKey)
-    );
+    const response = await client.assets.submitTransaction("SetTokenInstanceMetadata", user1.sign(setDto));
 
     // Then
     expect(response).toEqual(transactionErrorCode(403));
@@ -176,7 +173,7 @@ describe("Token instance metadata scenario", () => {
     // When
     const response = await client.assets.submitTransaction<TokenInstanceMetadata>(
       "SetTokenInstanceMetadata",
-      setDto.signed(user1.privateKey),
+      user1.sign(setDto),
       TokenInstanceMetadata
     );
 
@@ -201,10 +198,7 @@ describe("Token instance metadata scenario", () => {
     });
 
     // When
-    const response = await client.assets.submitTransaction(
-      "SetTokenInstanceMetadata",
-      setDto.signed(user2.privateKey)
-    );
+    const response = await client.assets.submitTransaction("SetTokenInstanceMetadata", user2.sign(setDto));
 
     // Then
     expect(response).toEqual(transactionErrorCode(403));
@@ -221,7 +215,7 @@ describe("Token instance metadata scenario", () => {
     // When
     const response = await client.assets.submitTransaction<TokenInstanceMetadata>(
       "SetTokenInstanceMetadata",
-      setDto.signed(user2.privateKey),
+      user2.sign(setDto),
       TokenInstanceMetadata
     );
 
@@ -266,7 +260,7 @@ describe("Token instance metadata scenario", () => {
     // When
     const response = await client.assets.submitTransaction<TokenInstanceMetadata>(
       "SetTokenInstanceMetadata",
-      replaceDto.signed(user1.privateKey),
+      user1.sign(replaceDto),
       TokenInstanceMetadata
     );
 
@@ -292,7 +286,7 @@ describe("Token instance metadata scenario", () => {
     // When
     const deleteResponse = await client.assets.submitTransaction(
       "DeleteTokenInstanceMetadata",
-      deleteDto.signed(user1.privateKey)
+      user1.sign(deleteDto)
     );
     const fetchResponse = await client.assets.evaluateTransaction(
       "FetchTokenInstanceMetadata",
