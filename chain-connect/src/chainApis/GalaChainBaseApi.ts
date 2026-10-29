@@ -56,6 +56,7 @@ export class GalaChainBaseApi {
     requestConstructor?: ClassConstructor<ChainCallDTO>;
     responseConstructor?: NonArrayClassConstructor<T>;
     signingType?: SigningType;
+    signal?: AbortSignal;
   }): Promise<GalaChainResponseSuccess<T>> {
     return this.connection.submit({
       ...params,

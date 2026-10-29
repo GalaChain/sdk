@@ -13,7 +13,14 @@
  * limitations under the License.
  */
 import { configuredDtoOperation, signatures, withDtoOperation } from "@gala-chain/api";
-import { BrowserProvider, Eip1193Provider, getAddress } from "ethers";
+import {
+  BrowserProvider,
+  Eip1193Provider,
+  JsonRpcSigner,
+  TypedDataEncoder,
+  TypedDataField,
+  getAddress
+} from "ethers";
 
 import { GalaChainProviderOptions, WebSigner } from "../GalaChainClient";
 import { ExtendedEip1193Provider } from "../helpers";
@@ -124,7 +131,8 @@ export class BrowserConnectClient extends WebSigner {
    * @template T - The type of the payload to sign
    * @param method - The method name for EIP-712 signing
    * @param payload - The data to sign
-   * @param signingType - The type of signing to use (defaults to signTypedData)
+   * @param signingType - The type of signing to use (defaults to signTypedData). When the payload
+   *   is already signed, the new signature uses the same mode as the existing ones instead.
    * @returns Promise resolving to the signed payload with signature
    * @throws {Error} If no provider/account is connected or signing fails
    */
@@ -144,24 +152,31 @@ export class BrowserConnectClient extends WebSigner {
       const stamped = withDtoOperation(payload, configuredDtoOperation(this.operationParts(), method));
       const record = stamped as T & Record<string, unknown>;
       const existing = existingSignatures(record);
+      const signer = await this.provider.getSigner();
+
       if (existing.length > 0) {
         assertMultisigReady(record);
+        return (await this.appendSignature(signer, record, existing)) as T & {
+          prefix: string;
+          signature?: string;
+          multisig?: string[];
+        };
       }
 
       const message = omitVerificationMetadata(record);
-      const signer = await this.provider.getSigner();
 
       if (signingType === SigningType.SIGN_TYPED_DATA) {
+        const body = omitTypedData(message);
         const domain = this.eip712Domain();
-        const types = generateEIP712Types(method, message);
-        const prefix = this.calculatePersonalSignPrefix(message);
-        const prefixedPayload = { ...message, prefix };
+        const types = generateEIP712Types(method, body);
+        const prefix = this.calculatePersonalSignPrefix(body);
+        const prefixedPayload = { ...body, prefix };
         const signature = await signer.signTypedData(
           domain,
           types,
           valueForTypedDataSigning(types, method, prefixedPayload)
         );
-        return withSignature(prefixedPayload, existing, signature, { types, domain }) as T & {
+        return { ...prefixedPayload, types, domain, signature } as T & {
           prefix: string;
           signature?: string;
           multisig?: string[];
@@ -171,7 +186,7 @@ export class BrowserConnectClient extends WebSigner {
         const personalMessage = signatures.personalSignMessage(body);
         const prefix = this.calculatePersonalSignPrefix(body);
         const signature = await signer.signMessage(personalMessage);
-        return withSignature({ ...body, prefix }, existing, signature) as T & {
+        return { ...body, prefix, signature } as T & {
           prefix: string;
           signature?: string;
           multisig?: string[];
@@ -183,6 +198,55 @@ export class BrowserConnectClient extends WebSigner {
       throw new Error((error as Error).message);
     }
   }
+
+  /**
+   * Adds a signature to a payload that other signers already signed. Every signature
+   * is checked against the same types, domain and prefix, so they are reused as they are.
+   */
+  private async appendSignature(
+    signer: JsonRpcSigner,
+    record: Record<string, unknown>,
+    existing: string[]
+  ): Promise<Record<string, unknown>> {
+    const { types, domain, prefix } = record;
+    const body = omitTypedData(omitVerificationMetadata(record));
+
+    if (isRecord(types) && isRecord(domain)) {
+      const { EIP712Domain: _eip712Domain, ...messageTypes } = types as Record<string, TypedDataField[]>;
+      const primaryType = TypedDataEncoder.getPrimaryType(messageTypes);
+      const signature = await signer.signTypedData(
+        domain,
+        messageTypes,
+        valueForTypedDataSigning(messageTypes, primaryType, body)
+      );
+      return {
+        ...body,
+        ...(prefix !== undefined ? { prefix } : {}),
+        types,
+        domain,
+        multisig: [...existing, signature]
+      };
+    }
+
+    if (types === undefined && domain === undefined && typeof prefix === "string") {
+      if (prefix !== this.calculatePersonalSignPrefix(body)) {
+        throw new Error(
+          "Cannot add a wallet signature: the existing signatures use a prefix a wallet personal sign does not produce"
+        );
+      }
+      const signature = await signer.signMessage(signatures.personalSignMessage(body));
+      return { ...body, prefix, multisig: [...existing, signature] };
+    }
+
+    throw new Error(
+      "Cannot add a wallet signature: the payload must carry the EIP-712 types and domain, " +
+        "or the personal sign prefix, used by the existing signatures"
+    );
+  }
+}
+
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return typeof value === "object" && value !== null && !Array.isArray(value);
 }
 
 function existingSignatures(payload: object): string[] {
@@ -245,16 +309,4 @@ function omitVerificationMetadata<T extends object>(
     prefix?: unknown;
   };
   return message;
-}
-
-function withSignature<T extends object>(
-  payload: T,
-  existing: string[],
-  signature: string,
-  typedData?: { types: unknown; domain: unknown }
-): T & { signature?: string; multisig?: string[] } {
-  if (existing.length > 0) {
-    return { ...payload, ...typedData, multisig: [...existing, signature] };
-  }
-  return { ...payload, ...typedData, signature };
 }

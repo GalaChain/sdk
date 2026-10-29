@@ -145,7 +145,7 @@ export class TokenApi extends GalaChainBaseApi {
     return this.submit<Array<TokenClass>, FetchTokenClassesDto>({
       method: "FetchTokenClassesWithSupply",
       payload: dto,
-      sign: true,
+      sign: false,
       url: this.chainCodeUrl,
       requestConstructor: FetchTokenClassesDto,
       responseConstructor: TokenClass

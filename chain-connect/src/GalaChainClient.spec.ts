@@ -437,19 +437,29 @@ describe("BrowserConnectClient", () => {
     const client = new BrowserConnectClient();
     await client.connect();
 
+    const types = {
+      TransferToken: [
+        { name: "quantity", type: "string" },
+        { name: "uniqueKey", type: "string" },
+        { name: "signerAddress", type: "string" },
+        { name: "dtoOperation", type: "string" },
+        { name: "dtoExpiresAt", type: "uint256" }
+      ]
+    };
     const signed = await client.sign("TransferToken", {
       quantity: "1",
       uniqueKey: "k",
       multisig: ["0xexisting"],
       signerAddress: "eth|63580d94c574ad78b121c267",
       dtoOperation: "asset_channel_assets_TransferToken",
-      dtoExpiresAt: 4000000000000
+      dtoExpiresAt: 4000000000000,
+      types,
+      domain: { name: "GalaChainDev" }
     });
 
     expect(signed.signature).toBeUndefined();
     expect(signed.multisig).toEqual(["0xexisting", "sampleSignature"]);
-    const types = (signed as { types?: { TransferToken?: Array<{ name: string }> } }).types;
-    expect(types?.TransferToken?.map((field) => field.name)).not.toContain("multisig");
+    expect((signed as { types?: unknown }).types).toEqual(types);
   });
 });
 

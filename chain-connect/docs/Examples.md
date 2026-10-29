@@ -29,35 +29,36 @@ First, you need to create a client and connect to a web3 wallet, the below shows
 ```typescript
 import { BrowserConnectClient } from "@gala-chain/connect";
 
-const web3Wallet = new BrowserConnectClient();
+// Mainnet apps set network: "MNT". Without it the EIP-712 domain name is GalaChainDev.
+const web3Wallet = new BrowserConnectClient(undefined, { network: "MNT" });
 
 export async function connectToWeb3Wallet() {
-    try {
-        const connectionResult = await web3Wallet.connect();
-        console.log(`User connected with wallet: ${connectionResult}`)
+  try {
+    const connectionResult = await web3Wallet.connect();
+    console.log(`User connected with wallet: ${connectionResult}`);
 
-        // Listening to account changes
-        web3Wallet.on("accountChanged", (account: string[] | string | null) => {
-            if (Array.isArray(account)) {
-                //For simplicity of the example,we'll just grab the first connected wallet
-                if (account.length > 0) {
-                    connectedUser.value = account[0];
-                }
-            } else {
-                console.log(`Account changed: ${account}`);
-            }
-        });
-    } catch (error) {
-        message.value = "Failed to connect!";
-        console.error(error);
-    }
+    // Listening to account changes
+    web3Wallet.on("accountChanged", (account: string[] | string | null) => {
+      if (Array.isArray(account)) {
+        //For simplicity of the example,we'll just grab the first connected wallet
+        if (account.length > 0) {
+          connectedUser.value = account[0];
+        }
+      } else {
+        console.log(`Account changed: ${account}`);
+      }
+    });
+  } catch (error) {
+    message.value = "Failed to connect!";
+    console.error(error);
+  }
 }
 
 export function isConnected() {
-    if (Array.isArray(connectedUser.value)) {
-        return connectedUser.value.length > 0;
-    }
-    return connectedUser.value !== null;
+  if (Array.isArray(connectedUser.value)) {
+    return connectedUser.value.length > 0;
+  }
+  return connectedUser.value !== null;
 }
 ```
 
@@ -93,7 +94,6 @@ export async function createTokenClass() {
   }
 }
 ```
-
 
 ### Generating Wallets
 
@@ -165,9 +165,7 @@ export async function generateWallet() {
     );
     console.log(`Wallet generated and registered. Address: ${wallet.ethAddress}`);
     createdUser.value = wallet.ethAddress;
-
-    //This is unsafe, please don't use in production
-    console.log("Private Key:", wallet.privateKey);
+    // privateKey and mnemonic are secrets. Do not log them.
   } catch (error) {
     console.log("Failed to generate wallet!");
     console.error(error);
@@ -185,7 +183,9 @@ GalaChain Connect supports server-side signing using a private key. This is usef
 import { PublicKeyApi, SigningClient } from "@gala-chain/connect";
 
 const privateKey = "your-private-key-here";
-const connection = new SigningClient(privateKey);
+// The gateway below is on stage, so the EIP-712 domain is selected with network: "STG".
+// Mainnet apps set network: "MNT".
+const connection = new SigningClient(privateKey, { network: "STG" });
 
 // The below URI is an example; you can use any URI that supports this
 const uri =
@@ -215,7 +215,8 @@ You can also create a token class on the server side:
 import { SigningClient, TokenApi } from "@gala-chain/connect";
 
 const privateKey = "your-private-key-here";
-const connection = new SigningClient(privateKey);
+// Mainnet apps set network: "MNT" so signatures use the GalaChain EIP-712 domain.
+const connection = new SigningClient(privateKey, { network: "MNT" });
 
 const tokenClient = new TokenApi("https://your-galachain-api-url/asset/token-contract", connection);
 
@@ -249,5 +250,6 @@ createTokenClass();
 
 - **Token Data**: Adjust `arbitraryTokenData` to match the specific token class details you wish to create.
 - **Image Field**: The `image` field in `arbitraryTokenData` should point to a valid image URL
+- **Network**: The `network` option selects the EIP-712 domain name used for signing: `MNT` uses `GalaChain`, `STG` uses `GalaChainStage`, and anything else (including no value) uses `GalaChainDev`. Mainnet apps must set `network: "MNT"`, or pass `domainName` explicitly.
 
 ---

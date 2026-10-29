@@ -19,7 +19,7 @@ function jsonResponse(status = 200): Response {
     ok: status >= 200 && status < 300,
     status,
     headers: { get: () => "2" },
-    json: async () => ({ Status: 1, Data: {} })
+    text: async () => JSON.stringify({ Status: 1, Data: {} })
   } as unknown as Response;
 }
 
