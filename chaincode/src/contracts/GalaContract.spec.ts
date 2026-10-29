@@ -868,7 +868,9 @@ describe("GalaContract.Batch", () => {
 
     const signedDto = (u: ChainUser, uniqueKey: string) =>
       u.sign(
-        plainToInstance(ChainCallDTO, { uniqueKey }).withOperation("asset-channel_basic-asset_GetCtxData")
+        plainToInstance(ChainCallDTO, { uniqueKey }).withOperation(
+          "asset-channel_basic-asset_TestGalaContract:GetCtxData"
+        )
       );
 
     const chaincode = new TestChaincode([TestGalaContract], { ...state1, ...state2 });

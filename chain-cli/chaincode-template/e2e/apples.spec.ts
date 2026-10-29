@@ -155,15 +155,15 @@ describe("Apple trees", () => {
       operations: [
         {
           method: "PickApple",
-          dto: user.sign(pick1.withOperation(mockedOperation("PickApple")))
+          dto: user.sign(pick1.withOperation(mockedOperation("AppleContract:PickApple")))
         },
         {
           method: "PlantTree",
-          dto: user.sign(plant.withOperation(mockedOperation("PlantTree")))
+          dto: user.sign(plant.withOperation(mockedOperation("AppleContract:PlantTree")))
         },
         {
           method: "PickApple",
-          dto: user2.sign(pick2.withOperation(mockedOperation("PickApple")))
+          dto: user2.sign(pick2.withOperation(mockedOperation("AppleContract:PickApple")))
         }
       ]
     });
