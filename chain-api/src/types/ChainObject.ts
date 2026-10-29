@@ -150,19 +150,30 @@ export abstract class ChainObject {
     }
 
     // A complete composite key is sometimes stored as one component of another key.
-    // It starts and ends with the separator. Any other embedded separator is ambiguous.
-    const isNestedCompositeKey = text.startsWith(nul) && text.endsWith(nul) && text.length > 1;
-    if (!isNestedCompositeKey) {
+    // It must be well formed: the separator, then non-empty segments each followed by the separator.
+    // Any other embedded separator is ambiguous.
+    if (!ChainObject.isNestedCompositeKey(text)) {
       throw new InvalidCompositeKeyError(`${label} contains a NUL character`);
     }
     return text;
   }
 
+  private static isNestedCompositeKey(text: string): boolean {
+    const nul = ChainObject.MIN_UNICODE_RUNE_VALUE;
+    if (text.length < 3 || !text.startsWith(nul) || !text.endsWith(nul)) {
+      return false;
+    }
+    const segments = text.slice(1, -1).split(nul);
+    return segments.every((segment) => segment.length > 0);
+  }
+
   public static getStringKeyFromParts(parts: string[]): string {
+    // The "$" separator is not rejected here: existing token classes already use it in key fields,
+    // and their string keys must stay readable in the existing format.
     const texts = parts.map((part, index) => {
       const text = part === null || part === undefined ? "" : String(part);
-      if (text.includes(ChainObject.ID_SPLIT_CHAR) || text.includes(ChainObject.MIN_UNICODE_RUNE_VALUE)) {
-        throw new InvalidCompositeKeyError(`string key part at index ${index} contains the separator`);
+      if (text.includes(ChainObject.MIN_UNICODE_RUNE_VALUE)) {
+        throw new InvalidCompositeKeyError(`string key part at index ${index} contains a NUL character`);
       }
       return text;
     });

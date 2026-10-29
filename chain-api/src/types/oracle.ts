@@ -35,7 +35,7 @@ import {
 import { JSONSchema } from "class-validator-jsonschema";
 
 import { ValidationFailedError } from "../utils";
-import { BigNumberProperty } from "../validators";
+import { BigNumberProperty, IsUserAlias } from "../validators";
 import { OracleDefinition } from "./OracleDefinition";
 import {
   ExactlyOneBaseTokenConstraint,
@@ -67,8 +67,7 @@ export class OracleDefinitionDto extends SubmitCallDTO {
   @IsOptional()
   @ArrayNotEmpty()
   @ArrayUnique()
-  @IsString({ each: true })
-  @IsNotEmpty({ each: true })
+  @IsUserAlias({ each: true })
   public authorities?: string[];
 }
 

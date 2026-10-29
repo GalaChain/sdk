@@ -100,10 +100,36 @@ it("rejects a NUL character inside a composite key part", () => {
   expect(() => ChainObject.getCompositeKeyFromParts("outer", [nested])).not.toThrow();
 });
 
-it("rejects the string key separator inside a part", () => {
+it("rejects composite key parts that only look like nested composite keys", () => {
+  // Given
+  const nul = "\u0000";
+  const first = [`${nul}a${nul}`, `${nul}b${nul}${nul}${nul}c${nul}`];
+  const second = [`${nul}a${nul}${nul}${nul}b${nul}`, `${nul}c${nul}`];
+
+  // When & Then
+  expect(() => ChainObject.getCompositeKeyFromParts("idx", first)).toThrow(/NUL/);
+  expect(() => ChainObject.getCompositeKeyFromParts("idx", second)).toThrow(/NUL/);
+  expect(() => ChainObject.getCompositeKeyFromParts("idx", [nul])).toThrow(/NUL/);
+  expect(() => ChainObject.getCompositeKeyFromParts("idx", [`${nul}${nul}`])).toThrow(/NUL/);
+  expect(() => ChainObject.joinKeyParts(first)).toThrow(/NUL/);
+});
+
+it("accepts a well-formed nested composite key as a part", () => {
+  // Given
+  const nested = ChainObject.getCompositeKeyFromParts("inner", ["1700000000000", "tx1"]);
+
+  // When
+  const key = ChainObject.getCompositeKeyFromParts("outer", [nested, "client|user"]);
+
+  // Then
+  expect(key).toEqual(`\u0000outer\u0000${nested}\u0000client|user\u0000`);
+  expect(ChainObject.joinKeyParts([nested, "x"])).toEqual(`${nested}\u0000x`);
+});
+
+it("allows $ but rejects NUL inside a string key part", () => {
   expect(ChainObject.getStringKeyFromParts(["a", "b_c"])).toEqual("a$b_c");
-  expect(() => ChainObject.getStringKeyFromParts(["a$b", "c"])).toThrow(/separator/);
-  expect(() => ChainObject.getStringKeyFromParts(["a\u0000b"])).toThrow(/separator/);
+  expect(ChainObject.getStringKeyFromParts(["a$b", "c"])).toEqual("a$b$c");
+  expect(() => ChainObject.getStringKeyFromParts(["a\u0000b"])).toThrow(/NUL/);
 });
 
 it("rejects a NUL character in a joined query prefix", () => {

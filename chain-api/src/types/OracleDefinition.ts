@@ -15,6 +15,7 @@
 import { ArrayNotEmpty, IsNotEmpty, IsString } from "class-validator";
 
 import { ChainKey } from "../utils";
+import { IsUserAlias } from "../validators";
 import { ChainObject } from "./ChainObject";
 
 export class OracleDefinition extends ChainObject {
@@ -26,7 +27,6 @@ export class OracleDefinition extends ChainObject {
   public name: string;
 
   @ArrayNotEmpty()
-  @IsString({ each: true })
-  @IsNotEmpty({ each: true })
+  @IsUserAlias({ each: true })
   public authorities: string[];
 }

@@ -56,7 +56,8 @@ export class FetchBurnsDto extends ChainCallDTO {
       burn.category !== undefined ||
       burn.type !== undefined ||
       burn.additionalKey !== undefined ||
-      burn.instance !== undefined
+      burn.instance !== undefined ||
+      burn.created !== undefined
   )
   @IsString()
   @IsNotEmpty()
@@ -70,7 +71,8 @@ export class FetchBurnsDto extends ChainCallDTO {
       burn.category !== undefined ||
       burn.type !== undefined ||
       burn.additionalKey !== undefined ||
-      burn.instance !== undefined
+      burn.instance !== undefined ||
+      burn.created !== undefined
   )
   @IsString()
   @IsNotEmpty()
@@ -81,7 +83,10 @@ export class FetchBurnsDto extends ChainCallDTO {
   })
   @ValidateIf(
     (burn: FetchBurnsDto) =>
-      burn.type !== undefined || burn.additionalKey !== undefined || burn.instance !== undefined
+      burn.type !== undefined ||
+      burn.additionalKey !== undefined ||
+      burn.instance !== undefined ||
+      burn.created !== undefined
   )
   @IsString()
   @IsNotEmpty()
@@ -90,15 +95,18 @@ export class FetchBurnsDto extends ChainCallDTO {
   @JSONSchema({
     description: "Token additionalKey. Optional, but required if instance is provided."
   })
-  @ValidateIf((burn: FetchBurnsDto) => burn.additionalKey !== undefined || burn.instance !== undefined)
+  @ValidateIf(
+    (burn: FetchBurnsDto) =>
+      burn.additionalKey !== undefined || burn.instance !== undefined || burn.created !== undefined
+  )
   @IsString()
   @IsNotEmpty()
   additionalKey?: string;
 
   @JSONSchema({
-    description: "Token instance. Optional."
+    description: "Token instance. Optional, but required if created is provided."
   })
-  @ValidateIf((burn: FetchBurnsDto) => burn.instance !== undefined)
+  @ValidateIf((burn: FetchBurnsDto) => burn.instance !== undefined || burn.created !== undefined)
   @IsString()
   @IsNotEmpty()
   instance?: string;

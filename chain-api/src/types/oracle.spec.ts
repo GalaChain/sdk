@@ -16,6 +16,7 @@ import BigNumber from "bignumber.js";
 import { plainToInstance } from "class-transformer";
 import { validate } from "class-validator";
 
+import { OracleDefinition } from "./OracleDefinition";
 import { ExternalToken } from "./OraclePriceAssertion";
 import { TokenInstanceKey } from "./TokenInstance";
 import { createValidDTO, createValidSubmitDTO } from "./dtos";
@@ -233,5 +234,32 @@ describe("oracle.ts", () => {
         authorities: [1] as unknown as string[]
       })
     ).rejects.toThrow(/authorities/);
+  });
+
+  test.each([["   "], ["foo"], ["0x0000000000000000000000000000000000000001"]])(
+    "oracle authorities reject %p as it is not a user alias",
+    async (authority) => {
+      // When & Then
+      await expect(
+        createValidSubmitDTO(OracleDefinitionDto, {
+          name: mockOracle,
+          authorities: ["client|oracle", authority]
+        })
+      ).rejects.toThrow(/authorities/);
+    }
+  );
+
+  test("oracle definition rejects authorities that are not user aliases", async () => {
+    // Given
+    const definition = plainToInstance(OracleDefinition, {
+      name: mockOracle,
+      authorities: ["client|oracle", "EthereumBridge", " "]
+    });
+
+    // When
+    const errors = await validate(definition);
+
+    // Then
+    expect(errors.map((e) => e.property)).toEqual(["authorities"]);
   });
 });

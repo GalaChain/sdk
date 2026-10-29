@@ -176,3 +176,18 @@ it("should encode and decode successfully with utf 0 in keys", async () => {
   expect(encode).toThrow("Invalid part with UTF-0 at index 2 passed");
   expect(decode).toThrow("Expected 4 parts, got 5 parts");
 });
+
+it("should build a string key when key fields contain $", () => {
+  // Given
+  const classKey = new TokenClassKey();
+  classKey.collection = "$Test";
+  classKey.category = "Cl$ass";
+  classKey.type = "Key";
+  classKey.additionalKey = "none";
+
+  // When
+  const stringKey = classKey.toStringKey();
+
+  // Then
+  expect(stringKey).toEqual("$Test$Cl$ass$Key$none");
+});
