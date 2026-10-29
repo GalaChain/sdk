@@ -15,6 +15,7 @@
 import {
   AllowanceType,
   AuthorizedOnBehalf,
+  ChainObject,
   MintTokenDto,
   TokenAllowance,
   TokenClass,
@@ -250,20 +251,39 @@ export async function updateTotalSupply(
 
   const mintFulfillmentEntry: TokenMintFulfillment = mintRequest.fulfill(quantity);
 
-  // A second mint in this transaction uses the same fulfillment key. Add its quantity when the owner matches.
-  try {
-    const pending = await getObjectByKey(ctx, TokenMintFulfillment, mintFulfillmentEntry.getCompositeKey());
-    if (pending.owner === mintFulfillmentEntry.owner) {
-      mintFulfillmentEntry.quantity = pending.quantity.plus(quantity);
-      mintFulfillmentEntry.state = mintFulfillmentEntry.quantity.isLessThan(mintRequest.quantity)
-        ? TokenMintStatus.PartiallyMinted
-        : TokenMintStatus.Minted;
-    }
-  } catch (e) {
-    if (!(e instanceof ObjectNotFoundError)) {
-      throw e;
-    }
+  // Fulfillments in one transaction share a key per requestor. A second mint for the same owner
+  // adds to the existing record. A mint for another owner gets its own key with the owner appended.
+  let key = mintFulfillmentEntry.getCompositeKey();
+  let pending = await findMintFulfillment(ctx, key);
+
+  if (pending !== undefined && pending.owner !== mintFulfillmentEntry.owner) {
+    key = `${key}${mintFulfillmentEntry.owner}${ChainObject.MIN_UNICODE_RUNE_VALUE}`;
+    pending = await findMintFulfillment(ctx, key);
   }
 
-  await putChainObject(ctx, mintFulfillmentEntry);
+  if (pending !== undefined) {
+    mintFulfillmentEntry.quantity = pending.quantity.plus(quantity);
+    mintFulfillmentEntry.state = mintFulfillmentEntry.quantity.isLessThan(mintRequest.quantity)
+      ? TokenMintStatus.PartiallyMinted
+      : TokenMintStatus.Minted;
+  }
+
+  if (key === mintFulfillmentEntry.getCompositeKey()) {
+    await putChainObject(ctx, mintFulfillmentEntry);
+  } else {
+    await mintFulfillmentEntry.validateOrReject();
+    await ctx.stub.putState(key, Buffer.from(mintFulfillmentEntry.serialize()));
+  }
+}
+
+async function findMintFulfillment(
+  ctx: GalaChainContext,
+  key: string
+): Promise<TokenMintFulfillment | undefined> {
+  return getObjectByKey(ctx, TokenMintFulfillment, key).catch((e) => {
+    if (e instanceof ObjectNotFoundError) {
+      return undefined;
+    }
+    throw e;
+  });
 }

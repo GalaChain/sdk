@@ -14,6 +14,7 @@
  */
 import {
   AllowanceType,
+  ChainObject,
   GalaChainResponse,
   GrantAllowanceDto,
   TokenAllowance,
@@ -740,5 +741,46 @@ describe("GrantAllowance", () => {
     expect(response).toEqual(GalaChainResponse.Success([allowance]));
 
     expect(getWrites()).toEqual(writesMap(allowance, mintAllowance, mintAllowanceRequest));
+  });
+
+  it("rejects a second mint allowance grant to the same user in the same transaction", async () => {
+    // Given
+    const nftClass = nft.tokenClass();
+    const { collection, category, type, additionalKey } = nft.tokenInstance1KeyPlain();
+    const tokenInstance = await createValidDTO(TokenInstanceQueryKey, {
+      collection,
+      category,
+      type,
+      additionalKey,
+      instance: TokenInstance.FUNGIBLE_TOKEN_INSTANCE
+    });
+
+    const { ctx, contract, getWrites } = fixture(GalaChainTokenContract)
+      .registeredUsers(users.admin)
+      .savedState(nftClass, nft.tokenInstance1());
+
+    const grantDto = (quantity: BigNumber) =>
+      createValidSubmitDTO(GrantAllowanceDto, {
+        tokenInstance,
+        quantities: [{ user: users.testUser1.identityKey, quantity }],
+        allowanceType: AllowanceType.Mint,
+        uses: new BigNumber("1")
+      })
+        .withOperation("asset-channel_basic-asset_GalaChainToken:GrantAllowance")
+        .signed(users.admin.privateKey);
+
+    // When
+    const first = await contract.GrantAllowance(ctx, await grantDto(new BigNumber("100")));
+    const second = await contract.GrantAllowance(ctx, await grantDto(new BigNumber("50")));
+
+    // Then
+    expect(first).toEqual(GalaChainResponse.Success(expect.any(Array)));
+    expect(second).toEqual(expect.objectContaining({ Status: 0, ErrorKey: "DUPLICATE_ALLOWANCE" }));
+
+    const allowances = Object.entries(getWrites())
+      .filter(([key]) => key.startsWith(`\u0000${TokenAllowance.INDEX_KEY}\u0000`))
+      .map(([, value]) => ChainObject.deserialize(TokenAllowance, value));
+
+    expect(allowances.map((a) => a.quantity.toString())).toEqual(["100"]);
   });
 });

@@ -24,6 +24,7 @@ import {
   TokenMintFulfillment,
   TokenMintRequest,
   TokenMintStatus,
+  UserAlias,
   createValidChainObject,
   createValidDTO,
   createValidRangedChainObject,
@@ -222,6 +223,49 @@ describe("MintToken", () => {
         mintFulfillment
       )
     );
+  });
+
+  test("keeps the fulfillment of each owner minted in the same transaction", async () => {
+    // Given
+    const currencyClass = currency.tokenClass();
+    const tokenAllowance = currency.tokenAllowance();
+    tokenAllowance.uses = new BigNumber("2");
+
+    const { ctx, contract, getWrites } = fixture(GalaChainTokenContract)
+      .registeredUsers(users.admin)
+      .savedState(currencyClass, currency.tokenInstance(), tokenAllowance)
+      .savedRangeState([]);
+
+    const mintDto = (owner: UserAlias, quantity: BigNumber) =>
+      createValidSubmitDTO(MintTokenDto, { tokenClass: currency.tokenClassKey(), owner, quantity })
+        .withOperation("asset-channel_basic-asset_GalaChainToken:MintToken")
+        .signed(users.admin.privateKey);
+
+    // When
+    const firstResponse = await contract.MintToken(
+      ctx,
+      await mintDto(users.testUser1.identityKey, new BigNumber("1"))
+    );
+    const secondResponse = await contract.MintToken(
+      ctx,
+      await mintDto(users.testUser2.identityKey, new BigNumber("2"))
+    );
+
+    // Then
+    expect(firstResponse).toEqual(GalaChainResponse.Success([currency.tokenInstanceKey()]));
+    expect(secondResponse).toEqual(GalaChainResponse.Success([currency.tokenInstanceKey()]));
+
+    const fulfillments = Object.entries(getWrites())
+      .filter(([key]) => key.startsWith(`\u0000${TokenMintFulfillment.INDEX_KEY}\u0000`))
+      .map(([key, value]) => ({ key, ...(JSON.parse(value) as { owner: string; quantity: string }) }));
+
+    expect(fulfillments).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({ owner: users.testUser1.identityKey, quantity: "1" }),
+        expect.objectContaining({ owner: users.testUser2.identityKey, quantity: "2" })
+      ])
+    );
+    expect(fulfillments).toHaveLength(2);
   });
 
   test("mints unique items, i.e. NFTs", async () => {

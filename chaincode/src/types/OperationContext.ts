@@ -23,10 +23,13 @@ export interface OperationContext {
   fullOperationId: string;
 }
 
-export function getOperationContext(ctx: Context): OperationContext {
+export function getOperationContext(ctx: Context, contractName?: string): OperationContext {
   const channelId = ctx.stub.getChannelID();
   const chaincodeId = getChaincodeId(ctx);
-  const methodName = ctx.stub.getFunctionAndParameters().fcn;
+  const fcn = ctx.stub.getFunctionAndParameters().fcn;
+  // A call routed to the default contract may omit the "Contract:" prefix.
+  // Use the same Contract:Method form that clients sign and batches bind.
+  const methodName = contractName && fcn && !fcn.includes(":") ? `${contractName}:${fcn}` : fcn;
   const fullOperationId = `${channelId}_${chaincodeId}_${methodName}`;
 
   return { channelId, chaincodeId, methodName, fullOperationId };

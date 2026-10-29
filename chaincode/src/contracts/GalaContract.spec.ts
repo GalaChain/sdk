@@ -971,3 +971,35 @@ describe("transaction expiration", () => {
     expect(response).toEqual(transactionErrorKey("EXPIRED"));
   });
 });
+
+describe("GalaContract operation id", () => {
+  it("should accept a DTO signed for Contract:Method when the call has no contract prefix", async () => {
+    // Given
+    const chaincode = new TestChaincode([TestGalaContract]);
+    const adminPrivateKey = process.env.DEV_ADMIN_PRIVATE_KEY as string;
+    const dto = SuperheroDto.create("Batman", 32)
+      .withOperation("asset-channel_basic-asset_TestGalaContract:CreateSuperhero")
+      .signed(adminPrivateKey);
+
+    // When
+    const response = await chaincode.invoke("CreateSuperhero", dto.serialize());
+
+    // Then
+    expect(response).toEqual(transactionSuccess());
+  });
+
+  it("should reject a DTO signed for a bare method name", async () => {
+    // Given
+    const chaincode = new TestChaincode([TestGalaContract]);
+    const adminPrivateKey = process.env.DEV_ADMIN_PRIVATE_KEY as string;
+    const dto = SuperheroDto.create("Batman", 32)
+      .withOperation("asset-channel_basic-asset_CreateSuperhero")
+      .signed(adminPrivateKey);
+
+    // When
+    const response = await chaincode.invoke("CreateSuperhero", dto.serialize());
+
+    // Then
+    expect(response).toEqual(transactionErrorKey("UNAUTHORIZED"));
+  });
+});

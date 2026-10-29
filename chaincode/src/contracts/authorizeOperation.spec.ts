@@ -12,7 +12,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-import { GalaChainContext } from "../types";
+import { GalaChainContext, GalaChainStub } from "../types";
 import { ensureCorrectMethodIsUsed } from "./authorize";
 
 type SignedDto = NonNullable<Parameters<typeof ensureCorrectMethodIsUsed>[1]>;
@@ -80,5 +80,37 @@ describe("ensureCorrectMethodIsUsed", () => {
     expect(() => ensureCorrectMethodIsUsed(ctxFor(operation), signedDto(other))).toThrow(
       /FreezeTokenBalance/
     );
+  });
+
+  it("accepts a DTO signed for Contract:Method when the call has no contract prefix", () => {
+    // Given
+    const previousChaincodeId = process.env.GC_CHAINCODE_ID;
+    process.env.GC_CHAINCODE_ID = chaincode;
+
+    const ctx = new GalaChainContext({});
+    ctx.stub = {
+      getChannelID: () => channel,
+      getFunctionAndParameters: () => ({ fcn: "TransferToken", params: [] })
+    } as unknown as GalaChainStub;
+    ctx.callingUserData = {
+      roles: [],
+      signedBy: [],
+      signatureQuorum: 1,
+      allowedSigners: [],
+      isMultisig: false
+    };
+    ctx.setContractName("GalaChainToken");
+
+    try {
+      // When & Then
+      expect(ctx.operationCtx.fullOperationId).toEqual(operation);
+      expect(() => ensureCorrectMethodIsUsed(ctx, signedDto(operation))).not.toThrow();
+    } finally {
+      if (previousChaincodeId === undefined) {
+        delete process.env.GC_CHAINCODE_ID;
+      } else {
+        process.env.GC_CHAINCODE_ID = previousChaincodeId;
+      }
+    }
   });
 });

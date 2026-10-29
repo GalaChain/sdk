@@ -187,12 +187,17 @@ class StubCache {
         "fabric.invoke.method": args?.[0] ?? ""
       },
       async () => {
-        const effectiveChannel = channel === "" ? this.stub.getChannelID() : channel;
-        const key = `${effectiveChannel}/${chaincodeName}`;
+        // Fabric also accepts "name/channel" as the chaincode name with an empty channel,
+        // and treats an empty channel as the current one. Normalize both before the check.
+        const separator = chaincodeName.indexOf("/");
+        const nameChannel = !channel && separator >= 0 ? chaincodeName.slice(separator + 1) : "";
+        const targetName = nameChannel ? chaincodeName.slice(0, separator) : chaincodeName;
+        const effectiveChannel = channel || nameChannel || this.stub.getChannelID();
+        const key = `${effectiveChannel}/${targetName}`;
         const prevCall = this.invokeChaincodeCalls[key];
 
         if (prevCall) {
-          throw new DuplicateInvokeChaincodeError(chaincodeName, prevCall, effectiveChannel);
+          throw new DuplicateInvokeChaincodeError(targetName, prevCall, effectiveChannel);
         }
 
         const isDryRun = args?.[0].endsWith(":DryRun");

@@ -15,16 +15,18 @@
 import {
   ChainObject,
   CleanTokenSwapsResponse,
+  Inferred,
   TokenSwapRequest,
   TokenSwapRequestInstanceOffered,
   TokenSwapRequestInstanceWanted,
   TokenSwapRequestOfferedBy,
   TokenSwapRequestOfferedTo
 } from "@gala-chain/api";
-import { plainToInstance } from "class-transformer";
+import { ClassConstructor, plainToInstance } from "class-transformer";
 
 import { GalaChainContext } from "../types";
 import {
+  ObjectNotFoundError,
   deleteChainObject,
   getObjectByKey,
   getObjectsByKeys,
@@ -65,6 +67,25 @@ export async function cleanTokenSwaps(
   return response;
 }
 
+// An index entry may already be gone, e.g. when a swap lists the same token twice.
+// Skip it, so that one such record does not block the cleanup.
+async function deleteIndexIfExists<T extends ChainObject>(
+  ctx: GalaChainContext,
+  constructor: ClassConstructor<Inferred<T, ChainObject>>,
+  key: string
+): Promise<void> {
+  const index = await getObjectByKey(ctx, constructor, key).catch((e) => {
+    if (e instanceof ObjectNotFoundError) {
+      return undefined;
+    }
+    throw e;
+  });
+
+  if (index !== undefined) {
+    await deleteChainObject(ctx, index);
+  }
+}
+
 export async function deindexTokenSwapRequest(ctx: GalaChainContext, swap: TokenSwapRequest) {
   const { offeredBy, offeredTo, offered, wanted, swapRequestId } = swap;
 
@@ -73,9 +94,7 @@ export async function deindexTokenSwapRequest(ctx: GalaChainContext, swap: Token
     swapRequestId
   ]);
 
-  const offeredByIndex = await getObjectByKey(ctx, TokenSwapRequestOfferedBy, offeredByIndexKey);
-
-  await deleteChainObject(ctx, offeredByIndex);
+  await deleteIndexIfExists(ctx, TokenSwapRequestOfferedBy, offeredByIndexKey);
 
   if (offeredTo) {
     const offeredToIndexKey = ChainObject.getCompositeKeyFromParts(TokenSwapRequestOfferedTo.INDEX_KEY, [
@@ -83,9 +102,7 @@ export async function deindexTokenSwapRequest(ctx: GalaChainContext, swap: Token
       swapRequestId
     ]);
 
-    const offeredToIndex = await getObjectByKey(ctx, TokenSwapRequestOfferedTo, offeredToIndexKey);
-
-    await deleteChainObject(ctx, offeredToIndex);
+    await deleteIndexIfExists(ctx, TokenSwapRequestOfferedTo, offeredToIndexKey);
   }
 
   for (const offeredTokenQty of offered) {
@@ -96,13 +113,7 @@ export async function deindexTokenSwapRequest(ctx: GalaChainContext, swap: Token
       [collection, category, type, additionalKey, instance.toString(), swapRequestId]
     );
 
-    const offeredInstanceIndex = await getObjectByKey(
-      ctx,
-      TokenSwapRequestInstanceOffered,
-      offeredInstanceIndexKey
-    );
-
-    await deleteChainObject(ctx, offeredInstanceIndex);
+    await deleteIndexIfExists(ctx, TokenSwapRequestInstanceOffered, offeredInstanceIndexKey);
   }
 
   for (const wantedTokenQty of wanted) {
@@ -113,13 +124,7 @@ export async function deindexTokenSwapRequest(ctx: GalaChainContext, swap: Token
       [collection, category, type, additionalKey, instance.toString(), swapRequestId]
     );
 
-    const wantedInstanceIndex = await getObjectByKey(
-      ctx,
-      TokenSwapRequestInstanceWanted,
-      wantedInstanceIndexKey
-    );
-
-    await deleteChainObject(ctx, wantedInstanceIndex);
+    await deleteIndexIfExists(ctx, TokenSwapRequestInstanceWanted, wantedInstanceIndexKey);
   }
 
   await deleteChainObject(ctx, swap);

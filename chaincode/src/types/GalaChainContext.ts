@@ -178,6 +178,7 @@ export class GalaChainContext extends Context {
   private callingUserAllowedSignersValue?: UserAlias[];
   private isMultisigValue?: boolean;
   private operationCtxValue?: OperationContext;
+  private contractNameValue?: string;
   private txUnixTimeValue?: number;
   private loggerInstance?: GalaLoggerInstance;
 
@@ -302,9 +303,17 @@ export class GalaChainContext extends Context {
 
   get operationCtx(): OperationContext {
     if (this.operationCtxValue === undefined) {
-      this.operationCtxValue = getOperationContext(this);
+      this.operationCtxValue = getOperationContext(this, this.contractNameValue);
     }
     return { ...this.operationCtxValue }; // prevent mutation
+  }
+
+  /** Name of the contract handling the call, used to resolve a method name without a contract prefix. */
+  public setContractName(contractName: string): void {
+    this.contractNameValue = contractName;
+    if (this.operationCtxValue !== undefined && !this.operationCtxValue.methodName.includes(":")) {
+      this.operationCtxValue = undefined;
+    }
   }
 
   // The batch stub still names the outer call. An inner DTO is checked against Contract:method,
