@@ -307,7 +307,8 @@ export class GalaChainContext extends Context {
     return { ...this.operationCtxValue }; // prevent mutation
   }
 
-  // The batch stub still names the outer call. An inner DTO is checked against its own method.
+  // The batch stub still names the outer call. An inner DTO is checked against Contract:method,
+  // the same name a direct call uses.
   public bindOperationMethod(methodName: string): void {
     const current = this.operationCtx;
     this.operationCtxValue = {
