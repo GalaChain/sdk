@@ -34,6 +34,7 @@ import {
   Variety
 } from "../src/apples";
 import { PlantAppleTreeDto } from "../src/apples/dtos";
+import { mockedOperation } from "./mockedOperation";
 
 jest.setTimeout(30000);
 
@@ -69,7 +70,9 @@ describe("Apple trees", () => {
         new AppleTreeDto(Variety.GALA, 3)
       ],
       randomUniqueKey()
-    ).signed(user.privateKey);
+    )
+      .withOperation(mockedOperation("AppleContract:PlantTrees"))
+      .signed(user.privateKey);
 
     // When
     const response = await client.apples.PlantTrees(dto);
@@ -80,7 +83,9 @@ describe("Apple trees", () => {
 
   test("Fetch GALA trees planted by a user", async () => {
     // Given
-    const dto = new FetchTreesDto(user.identityKey, Variety.GALA).signed(user.privateKey);
+    const dto = new FetchTreesDto(user.identityKey, Variety.GALA)
+      .withOperation(mockedOperation("AppleContract:FetchTrees"))
+      .signed(user.privateKey);
 
     // When
     const response = await client.apples.FetchTrees(dto);
@@ -99,9 +104,9 @@ describe("Apple trees", () => {
 
   test("Fail to pick a GOLDEN_DELICIOUS apple because tree is too young", async () => {
     // Given
-    const dto = new PickAppleDto(user.identityKey, Variety.GOLDEN_DELICIOUS, 2, randomUniqueKey()).signed(
-      user.privateKey
-    );
+    const dto = new PickAppleDto(user.identityKey, Variety.GOLDEN_DELICIOUS, 2, randomUniqueKey())
+      .withOperation(mockedOperation("AppleContract:PickApple"))
+      .signed(user.privateKey);
 
     // When
     const response = await client.apples.PickApple(dto);
@@ -143,9 +148,18 @@ describe("Apple trees", () => {
     const batch = plainToInstance(BatchDto, {
       uniqueKey: randomUniqueKey(),
       operations: [
-        { method: "PickApple", dto: pick1.signed(user.privateKey) },
-        { method: "PlantTree", dto: plant.signed(user.privateKey) },
-        { method: "PickApple", dto: pick2.signed(user2.privateKey) }
+        {
+          method: "PickApple",
+          dto: pick1.withOperation(mockedOperation("PickApple")).signed(user.privateKey)
+        },
+        {
+          method: "PlantTree",
+          dto: plant.withOperation(mockedOperation("PlantTree")).signed(user.privateKey)
+        },
+        {
+          method: "PickApple",
+          dto: pick2.withOperation(mockedOperation("PickApple")).signed(user2.privateKey)
+        }
       ]
     });
 
