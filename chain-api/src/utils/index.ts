@@ -19,6 +19,7 @@ import serialize from "./serialize";
 import signatures from "./signatures";
 
 export * from "./chain-decorators";
+export * from "./dtoOperation";
 export * from "./error";
 export * from "../ethers/type-utils";
 export * from "./randomUniqueKey";

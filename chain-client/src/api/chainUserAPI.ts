@@ -12,22 +12,38 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+import { configuredDtoOperation } from "@gala-chain/api";
+
 import { ChainClient, ChainUser, UserAlias } from "../generic";
+
+type Signable<T> = {
+  signed(privateKey: string, useDer?: boolean): T;
+  withOperation(operation: string): T;
+  dtoOperation?: string;
+};
 
 export interface ChainUserAPI {
   identityKey: UserAlias;
   publicKey: string;
   ethAddress: string;
   sign<T extends { signed(privateKey: string, useDer?: boolean): T }>(dto: T, useDer?: boolean): T;
+  signFor<T extends Signable<T>>(method: string, dto: T, useDer?: boolean): T;
   signInPlace<T extends { sign(privateKey: string, useDer?: boolean): void }>(dto: T, useDer?: boolean): T;
 }
 
 export function buildChainUserAPI(user: ChainUser): (c: ChainClient) => ChainUserAPI {
-  return (): ChainUserAPI => ({
+  return (client): ChainUserAPI => ({
     identityKey: user.identityKey,
     publicKey: user.publicKey,
     ethAddress: user.ethAddress,
     sign: (dto, useDer) => user.sign(dto, useDer),
+    signFor: (method, dto, useDer) => {
+      const operation = configuredDtoOperation(client.contractConfig, method);
+      if (operation === undefined || (typeof dto.dtoOperation === "string" && dto.dtoOperation.length > 0)) {
+        return user.sign(dto, useDer);
+      }
+      return user.sign(dto.withOperation(operation), useDer);
+    },
     signInPlace: (dto, useDer) => user.signInPlace(dto, useDer)
   });
 }

@@ -32,12 +32,12 @@ import {
 import { GalaChainBaseApi } from "./GalaChainBaseApi";
 
 export class FeeApi extends GalaChainBaseApi {
-  constructor(chainCodeUrl: string, connection: GalaChainProvider) {
-    super(chainCodeUrl, connection);
+  constructor(chainCodeUrl: string, connection: GalaChainProvider, contract?: string) {
+    super(chainCodeUrl, connection, contract);
   }
 
   public AuthorizeFee(dto: FeeAuthorizationRequest) {
-    return this.connection.submit({
+    return this.submit({
       method: "AuthorizeFee",
       payload: dto,
       sign: true,
@@ -48,7 +48,7 @@ export class FeeApi extends GalaChainBaseApi {
   }
 
   public FetchFeeAuthorizations(dto: FetchFeeAuthorizationsRequest) {
-    return this.connection.submit({
+    return this.submit({
       method: "FetchFeeAuthorizations",
       payload: dto,
       sign: false,
@@ -59,7 +59,7 @@ export class FeeApi extends GalaChainBaseApi {
   }
 
   public FetchFeeProperties(dto: FetchFeePropertiesRequest) {
-    return this.connection.submit({
+    return this.submit({
       method: "FetchFeeProperties",
       payload: dto,
       sign: true,
@@ -70,7 +70,7 @@ export class FeeApi extends GalaChainBaseApi {
   }
 
   public SetFeeProperties(dto: SetFeePropertiesRequest) {
-    return this.connection.submit({
+    return this.submit({
       method: "SetFeeProperties",
       payload: dto,
       sign: true,

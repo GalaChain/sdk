@@ -12,7 +12,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-import { signatures } from "@gala-chain/api";
+import { configuredDtoOperation, signatures, withDtoOperation } from "@gala-chain/api";
 import { BrowserProvider, Eip1193Provider, getAddress } from "ethers";
 
 import { GalaChainProviderOptions, WebSigner } from "../GalaChainClient";
@@ -141,7 +141,8 @@ export class BrowserConnectClient extends WebSigner {
     }
 
     try {
-      const record = payload as T & Record<string, unknown>;
+      const stamped = withDtoOperation(payload, configuredDtoOperation(this.operationParts(), method));
+      const record = stamped as T & Record<string, unknown>;
       const existing = existingSignatures(record);
       if (existing.length > 0) {
         assertMultisigReady(record);
@@ -151,7 +152,7 @@ export class BrowserConnectClient extends WebSigner {
       const signer = await this.provider.getSigner();
 
       if (signingType === SigningType.SIGN_TYPED_DATA) {
-        const domain = { name: "GalaChain" };
+        const domain = this.eip712Domain();
         const types = generateEIP712Types(method, message);
         const prefix = this.calculatePersonalSignPrefix(message);
         const prefixedPayload = { ...message, prefix };

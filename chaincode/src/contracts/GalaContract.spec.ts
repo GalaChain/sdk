@@ -505,7 +505,7 @@ describe("unique keys", () => {
 describe("GalaContract.Batch", () => {
   it("checks an inner dto against the inner method", async () => {
     const chaincode = new TestChaincode([TestGalaContract]);
-    const innerOperation = "asset-channel_basic-asset_PutKv";
+    const innerOperation = "asset-channel_basic-asset_TestGalaContract:PutKv";
     const accepted = plainToInstance(BatchDto, {
       uniqueKey: "batch-inner-op",
       operations: [
