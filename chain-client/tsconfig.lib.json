@@ -12,5 +12,5 @@
   },
   "include": ["src/**/*"],
   "exclude": ["jest.config.ts", "src/**/*.spec.ts", "src/**/*.test.ts"],
-  "references": []
+  "references": [{ "path": "../chain-api" }]
 }
