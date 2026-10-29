@@ -43,9 +43,9 @@ it("should update token class", async () => {
     .savedState(savedTokenClass);
 
   const update = defaultUpdate();
-  const dto: UpdateTokenClassDto = await defaultUpdateDto(savedTokenClassKey, update).signed(
-    users.admin.privateKey
-  );
+  const dto: UpdateTokenClassDto = await defaultUpdateDto(savedTokenClassKey, update)
+    .withOperation("asset-channel_basic-asset_GalaChainToken:UpdateTokenClass")
+    .signed(users.admin.privateKey);
 
   const expectedWrite = await createValidChainObject(TokenClass, {
     ...savedTokenClass,
@@ -71,7 +71,9 @@ it("should fail if callingUser is not token authority", async () => {
     .registeredUsers(callingUser)
     .savedState(savedTokenClass);
 
-  const dto: UpdateTokenClassDto = await defaultUpdateDto(savedTokenClassKey).signed(callingUser.privateKey);
+  const dto: UpdateTokenClassDto = await defaultUpdateDto(savedTokenClassKey)
+    .withOperation("asset-channel_basic-asset_GalaChainToken:UpdateTokenClass")
+    .signed(callingUser.privateKey);
 
   // When
   const response = await contract.UpdateTokenClass(ctx, dto);
@@ -96,7 +98,9 @@ it("should fail if CA client is not authorized as curator", async () => {
     .registeredUsers(callingUser)
     .savedState(savedTokenClass);
 
-  const dto: UpdateTokenClassDto = await defaultUpdateDto(savedTokenClassKey).signed(callingUser.privateKey);
+  const dto: UpdateTokenClassDto = await defaultUpdateDto(savedTokenClassKey)
+    .withOperation("asset-channel_basic-asset_GalaChainToken:UpdateTokenClass")
+    .signed(callingUser.privateKey);
 
   // When
   const response = await contract.UpdateTokenClass(ctx, dto);
@@ -118,7 +122,9 @@ it("should fail if token does not exist", async () => {
     .registeredUsers(users.admin); // no saved token class
 
   const tokenClassKey = currency.tokenClassKey();
-  const dto: UpdateTokenClassDto = await defaultUpdateDto(tokenClassKey).signed(users.admin.privateKey);
+  const dto: UpdateTokenClassDto = await defaultUpdateDto(tokenClassKey)
+    .withOperation("asset-channel_basic-asset_GalaChainToken:UpdateTokenClass")
+    .signed(users.admin.privateKey);
 
   // When
   const response = await contract.UpdateTokenClass(ctx, dto);
@@ -148,7 +154,9 @@ it("should apply a new class quantityLimit to subsequent transfers immediately",
   const updateDto: UpdateTokenClassDto = await createValidSubmitDTO(UpdateTokenClassDto, {
     tokenClass: savedTokenClassKey,
     quantityLimit: new BigNumber("10")
-  }).signed(users.admin.privateKey);
+  })
+    .withOperation("asset-channel_basic-asset_GalaChainToken:UpdateTokenClass")
+    .signed(users.admin.privateKey);
 
   await contract.UpdateTokenClass(ctx, updateDto);
 
@@ -157,7 +165,9 @@ it("should apply a new class quantityLimit to subsequent transfers immediately",
     to: users.testUser2.identityKey,
     tokenInstance: currencyInstanceKey,
     quantity: new BigNumber("11")
-  }).signed(users.tokenHolder.privateKey);
+  })
+    .withOperation("asset-channel_basic-asset_GalaChainToken:TransferToken")
+    .signed(users.tokenHolder.privateKey);
 
   // When
   const response = await contract.TransferToken(ctx, transferDto);
@@ -196,7 +206,9 @@ it("should apply a raised class quantityLimit to subsequent transfers immediatel
   const updateDto: UpdateTokenClassDto = await createValidSubmitDTO(UpdateTokenClassDto, {
     tokenClass: savedTokenClassKey,
     quantityLimit: new BigNumber("50")
-  }).signed(users.admin.privateKey);
+  })
+    .withOperation("asset-channel_basic-asset_GalaChainToken:UpdateTokenClass")
+    .signed(users.admin.privateKey);
 
   await contract.UpdateTokenClass(ctx, updateDto);
 
@@ -205,7 +217,9 @@ it("should apply a raised class quantityLimit to subsequent transfers immediatel
     to: users.testUser2.identityKey,
     tokenInstance: currencyInstanceKey,
     quantity: new BigNumber("11")
-  }).signed(users.tokenHolder.privateKey);
+  })
+    .withOperation("asset-channel_basic-asset_GalaChainToken:TransferToken")
+    .signed(users.tokenHolder.privateKey);
 
   // When
   const response = await contract.TransferToken(ctx, transferDto);
@@ -236,7 +250,9 @@ it("should apply a lowered class quantityLimit against spend already in the wind
     to: users.testUser2.identityKey,
     tokenInstance: currencyInstanceKey,
     quantity: new BigNumber("6")
-  }).signed(users.tokenHolder.privateKey);
+  })
+    .withOperation("asset-channel_basic-asset_GalaChainToken:TransferToken")
+    .signed(users.tokenHolder.privateKey);
 
   const firstResponse = await contract.TransferToken(ctx, firstTransfer);
   expect(firstResponse.Status).toEqual(1);
@@ -244,7 +260,9 @@ it("should apply a lowered class quantityLimit against spend already in the wind
   const updateDto: UpdateTokenClassDto = await createValidSubmitDTO(UpdateTokenClassDto, {
     tokenClass: savedTokenClassKey,
     quantityLimit: new BigNumber("5")
-  }).signed(users.admin.privateKey);
+  })
+    .withOperation("asset-channel_basic-asset_GalaChainToken:UpdateTokenClass")
+    .signed(users.admin.privateKey);
 
   await contract.UpdateTokenClass(ctx, updateDto);
 
@@ -253,7 +271,9 @@ it("should apply a lowered class quantityLimit against spend already in the wind
     to: users.testUser2.identityKey,
     tokenInstance: currencyInstanceKey,
     quantity: new BigNumber("1")
-  }).signed(users.tokenHolder.privateKey);
+  })
+    .withOperation("asset-channel_basic-asset_GalaChainToken:TransferToken")
+    .signed(users.tokenHolder.privateKey);
 
   // When
   const response = await contract.TransferToken(ctx, secondTransfer);

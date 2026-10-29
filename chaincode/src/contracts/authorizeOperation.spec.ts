@@ -44,11 +44,13 @@ describe("ensureCorrectMethodIsUsed", () => {
     );
   });
 
-  it("allows a signed DTO without dtoOperation when the invocation has no function name", () => {
+  it("rejects a signed DTO without dtoOperation when the invocation has no function name", () => {
     const ctx = ctxFor(`${channel}_${chaincode}_`);
     (ctx.operationCtx as { methodName: string }).methodName = "";
 
-    expect(() => ensureCorrectMethodIsUsed(ctx, signedDto())).not.toThrow();
+    expect(() => ensureCorrectMethodIsUsed(ctx, signedDto())).toThrow(
+      `Signed requests must include dtoOperation. Expected: ${channel}_${chaincode}_`
+    );
   });
 
   it("rejects a multisignature DTO without dtoOperation", () => {

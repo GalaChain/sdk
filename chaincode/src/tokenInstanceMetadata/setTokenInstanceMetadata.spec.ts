@@ -54,7 +54,9 @@ it("should set token instance metadata as a user authorized for the project name
     .savedState(nft.tokenClass(), nft.tokenInstance1(), authorizationFor(users.testUser1.identityKey));
 
   const metadataProps = defaultMetadataProps();
-  const dto = await defaultSetDto(nft.tokenInstance1Key(), metadataProps).signed(users.testUser1.privateKey);
+  const dto = await defaultSetDto(nft.tokenInstance1Key(), metadataProps)
+    .withOperation("asset-channel_basic-asset_GalaChainToken:SetTokenInstanceMetadata")
+    .signed(users.testUser1.privateKey);
 
   const expectedMetadata = await createValidChainObject(TokenInstanceMetadata, {
     ...nft.tokenInstance1KeyPlain(),
@@ -84,7 +86,9 @@ it("should replace existing metadata as an authorized user, preserving creation 
     .savedState(nft.tokenClass(), nft.tokenInstance1(), savedAuthorization, savedMetadata);
 
   const update = { name: "Renamed Elixir", description: "Replaced document." };
-  const dto = await defaultSetDto(nft.tokenInstance1Key(), update).signed(users.admin.privateKey);
+  const dto = await defaultSetDto(nft.tokenInstance1Key(), update)
+    .withOperation("asset-channel_basic-asset_GalaChainToken:SetTokenInstanceMetadata")
+    .signed(users.admin.privateKey);
 
   // full-document semantics: fields omitted in the dto (image, attributes, etc.) are removed
   const expectedMetadata = await createValidChainObject(TokenInstanceMetadata, {
@@ -121,7 +125,9 @@ it("should allow a different user to set metadata for a different project", asyn
     tokenInstance: nft.tokenInstance1Key(),
     project: otherProject,
     name: "Other Project View"
-  }).signed(users.testUser2.privateKey);
+  })
+    .withOperation("asset-channel_basic-asset_GalaChainToken:SetTokenInstanceMetadata")
+    .signed(users.testUser2.privateKey);
 
   const expectedMetadata = await createValidChainObject(TokenInstanceMetadata, {
     ...nft.tokenInstance1KeyPlain(),
@@ -151,7 +157,9 @@ it("should fail if callingUser is not authorized for the project name", async ()
     .registeredUsers(callingUser)
     .savedState(nft.tokenClass(), nft.tokenInstance1(), savedAuthorization);
 
-  const dto = await defaultSetDto(nft.tokenInstance1Key()).signed(callingUser.privateKey);
+  const dto = await defaultSetDto(nft.tokenInstance1Key())
+    .withOperation("asset-channel_basic-asset_GalaChainToken:SetTokenInstanceMetadata")
+    .signed(callingUser.privateKey);
 
   // When
   const response = await contract.SetTokenInstanceMetadata(ctx, dto);
@@ -169,7 +177,9 @@ it("should fail if the project name is not claimed in the registry", async () =>
     .registeredUsers(users.testUser1)
     .savedState(nft.tokenClass(), nft.tokenInstance1()); // no authorization for the project name
 
-  const dto = await defaultSetDto(nft.tokenInstance1Key()).signed(users.testUser1.privateKey);
+  const dto = await defaultSetDto(nft.tokenInstance1Key())
+    .withOperation("asset-channel_basic-asset_GalaChainToken:SetTokenInstanceMetadata")
+    .signed(users.testUser1.privateKey);
 
   // When
   const response = await contract.SetTokenInstanceMetadata(ctx, dto);
@@ -186,7 +196,9 @@ it("should fail if token class does not exist", async () => {
   const { ctx, contract, getWrites } = fixture(GalaChainTokenContract).registeredUsers(users.testUser1); // no saved token class
 
   const tokenInstanceKey = nft.tokenInstance1Key();
-  const dto = await defaultSetDto(tokenInstanceKey).signed(users.testUser1.privateKey);
+  const dto = await defaultSetDto(tokenInstanceKey)
+    .withOperation("asset-channel_basic-asset_GalaChainToken:SetTokenInstanceMetadata")
+    .signed(users.testUser1.privateKey);
 
   // When
   const response = await contract.SetTokenInstanceMetadata(ctx, dto);
@@ -205,7 +217,9 @@ it("should fail if token instance does not exist", async () => {
     .savedState(nft.tokenClass()); // class saved, but no instance
 
   const tokenInstanceKey = nft.tokenInstance1Key();
-  const dto = await defaultSetDto(tokenInstanceKey).signed(users.testUser1.privateKey);
+  const dto = await defaultSetDto(tokenInstanceKey)
+    .withOperation("asset-channel_basic-asset_GalaChainToken:SetTokenInstanceMetadata")
+    .signed(users.testUser1.privateKey);
 
   // When
   const response = await contract.SetTokenInstanceMetadata(ctx, dto);
@@ -224,7 +238,9 @@ it("should fail for fungible token instances", async () => {
     .savedState(currency.tokenClass(), currency.tokenInstance());
 
   const tokenInstanceKey = currency.tokenInstanceKey();
-  const dto = await defaultSetDto(tokenInstanceKey).signed(users.testUser1.privateKey);
+  const dto = await defaultSetDto(tokenInstanceKey)
+    .withOperation("asset-channel_basic-asset_GalaChainToken:SetTokenInstanceMetadata")
+    .signed(users.testUser1.privateKey);
 
   // When
   const response = await contract.SetTokenInstanceMetadata(ctx, dto);
@@ -271,7 +287,9 @@ it("should not persist signing envelope fields supplied on attributes or custom 
         ...envelope
       })
     ]
-  }).signed(users.testUser1.privateKey);
+  })
+    .withOperation("asset-channel_basic-asset_GalaChainToken:SetTokenInstanceMetadata")
+    .signed(users.testUser1.privateKey);
 
   // When
   const response = await contract.SetTokenInstanceMetadata(ctx, dto);

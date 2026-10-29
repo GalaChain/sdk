@@ -39,7 +39,9 @@ it("should delete token instance metadata as a user authorized for the project n
     .registeredUsers(users.admin)
     .savedState(nft.tokenClass(), nft.tokenInstance1(), savedAuthorization, savedMetadata);
 
-  const dto = await defaultDeleteDto(nft.tokenInstance1Key()).signed(users.admin.privateKey);
+  const dto = await defaultDeleteDto(nft.tokenInstance1Key())
+    .withOperation("asset-channel_basic-asset_GalaChainToken:DeleteTokenInstanceMetadata")
+    .signed(users.admin.privateKey);
 
   // When
   const response = await contract.DeleteTokenInstanceMetadata(ctx, dto);
@@ -57,7 +59,9 @@ it("should fail if metadata does not exist", async () => {
     .savedState(nft.tokenClass(), nft.tokenInstance1(), nft.projectAuthorization());
 
   const tokenInstanceKey = nft.tokenInstance1Key();
-  const dto = await defaultDeleteDto(tokenInstanceKey).signed(users.admin.privateKey);
+  const dto = await defaultDeleteDto(tokenInstanceKey)
+    .withOperation("asset-channel_basic-asset_GalaChainToken:DeleteTokenInstanceMetadata")
+    .signed(users.admin.privateKey);
 
   // When
   const response = await contract.DeleteTokenInstanceMetadata(ctx, dto);
@@ -80,7 +84,9 @@ it("should fail if callingUser is not authorized for the project name", async ()
     .registeredUsers(callingUser)
     .savedState(nft.tokenClass(), nft.tokenInstance1(), savedAuthorization, savedMetadata);
 
-  const dto = await defaultDeleteDto(nft.tokenInstance1Key()).signed(callingUser.privateKey);
+  const dto = await defaultDeleteDto(nft.tokenInstance1Key())
+    .withOperation("asset-channel_basic-asset_GalaChainToken:DeleteTokenInstanceMetadata")
+    .signed(callingUser.privateKey);
 
   // When
   const response = await contract.DeleteTokenInstanceMetadata(ctx, dto);
@@ -99,7 +105,9 @@ it("should fail for fungible token instances", async () => {
     .savedState(currency.tokenClass(), currency.tokenInstance());
 
   const tokenInstanceKey = currency.tokenInstanceKey();
-  const dto = await defaultDeleteDto(tokenInstanceKey).signed(users.admin.privateKey);
+  const dto = await defaultDeleteDto(tokenInstanceKey)
+    .withOperation("asset-channel_basic-asset_GalaChainToken:DeleteTokenInstanceMetadata")
+    .signed(users.admin.privateKey);
 
   // When
   const response = await contract.DeleteTokenInstanceMetadata(ctx, dto);

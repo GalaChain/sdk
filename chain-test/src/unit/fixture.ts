@@ -146,6 +146,7 @@ type TestGalaChainContext = Context & {
   isDryRun: boolean;
   get txUnixTime(): number;
   get operationCtx(): TestOperationContext;
+  bindOperationMethod(methodName: string): void;
   setChaincodeStub(stub: ChaincodeStub): void;
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   otel: any;
@@ -214,12 +215,18 @@ class Fixture<T extends GalaContract> {
    */
   constructor(contractClass: ClassConstructor<T>) {
     const contractInstance = new contractClass() as Wrapped<T>; // it's done by @GalaTransaction decorator
+    this.stub = new TestChaincodeStub([], this.state, this.allWrites);
     this.contract = new Proxy(contractInstance, {
       get: (target, prop) => {
         // check if target property is a function with ctx + dto as parameters
         if (typeof target[prop as string] === "function" && target[prop as string].length === 2) {
           const method = target[prop as string];
           return async (ctx: ReturnType<T["createContext"]> & TestGalaChainContext, dto?: ChainCallDTO) => {
+            const fcn = `${contractInstance.getName()}:${String(prop)}`;
+            const stub = this.stub as TestChaincodeStub & { args: string[]; bufferArgs: Buffer[] };
+            stub.args = [fcn];
+            stub.bufferArgs = [Buffer.from(fcn)];
+            ctx.bindOperationMethod(fcn);
             await contractInstance.beforeTransaction(ctx);
             const result = dto
               ? await method.call(contractInstance, ctx, dto)
@@ -233,8 +240,6 @@ class Fixture<T extends GalaContract> {
         return target[prop];
       }
     });
-
-    this.stub = new TestChaincodeStub([], this.state, this.allWrites);
 
     const ctxInstance = this.contract.createContext() as ReturnType<T["createContext"]> &
       TestGalaChainContext;

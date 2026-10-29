@@ -44,7 +44,9 @@ it("should fetch balances by empty signed dto", async () => {
 
   const { contract, ctx } = fixture(GalaChainTokenContract).registeredUsers(user).savedState(balance);
 
-  const dto = await createValidDTO(FetchBalancesDto, {}).signed(user.privateKey);
+  const dto = await createValidDTO(FetchBalancesDto, {})
+    .withOperation("asset-channel_basic-asset_GalaChainToken:FetchBalances")
+    .signed(user.privateKey);
 
   // When
   const result = await contract.FetchBalances(ctx, dto);

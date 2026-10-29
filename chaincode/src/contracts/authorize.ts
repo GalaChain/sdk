@@ -74,12 +74,7 @@ export function ensureCorrectMethodIsUsed(ctx: GalaChainContext, dto: ChainCallD
     return;
   }
 
-  const { methodName, fullOperationId } = ctx.operationCtx;
-
-  // A direct call leaves the function name empty, so there is no operation id to compare.
-  if (!methodName && !dto?.dtoOperation && !ctx.isMultisig) {
-    return;
-  }
+  const { fullOperationId } = ctx.operationCtx;
 
   if ((ctx.isMultisig || signed) && !dto?.dtoOperation) {
     const msg = ctx.isMultisig

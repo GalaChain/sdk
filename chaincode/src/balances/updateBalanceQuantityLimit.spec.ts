@@ -37,7 +37,9 @@ it("should apply an owner quantityLimit immediately when it is not higher than t
   const dto = await createValidSubmitDTO(UpdateBalanceQuantityLimitDto, {
     tokenClass: currency.tokenClassKey(),
     quantityLimit: new BigNumber("5")
-  }).signed(users.testUser1.privateKey);
+  })
+    .withOperation("asset-channel_basic-asset_GalaChainToken:UpdateBalanceQuantityLimit")
+    .signed(users.testUser1.privateKey);
 
   // When
   const response = await contract.UpdateBalanceQuantityLimit(ctx, dto);
@@ -60,7 +62,9 @@ it("should delay an owner quantityLimit that is higher than the class limit", as
   const dto = await createValidSubmitDTO(UpdateBalanceQuantityLimitDto, {
     tokenClass: currency.tokenClassKey(),
     quantityLimit: new BigNumber("50")
-  }).signed(users.testUser1.privateKey);
+  })
+    .withOperation("asset-channel_basic-asset_GalaChainToken:UpdateBalanceQuantityLimit")
+    .signed(users.testUser1.privateKey);
 
   // When
   const response = await contract.UpdateBalanceQuantityLimit(ctx, dto);
@@ -91,7 +95,9 @@ it("should keep using the class limit until the owner increase delay elapses", a
   const limitDto = await createValidSubmitDTO(UpdateBalanceQuantityLimitDto, {
     tokenClass: currency.tokenClassKey(),
     quantityLimit: new BigNumber("50")
-  }).signed(users.testUser1.privateKey);
+  })
+    .withOperation("asset-channel_basic-asset_GalaChainToken:UpdateBalanceQuantityLimit")
+    .signed(users.testUser1.privateKey);
 
   await contract.UpdateBalanceQuantityLimit(ctx, limitDto);
 
@@ -100,7 +106,9 @@ it("should keep using the class limit until the owner increase delay elapses", a
     to: users.testUser2.identityKey,
     tokenInstance: currencyInstanceKey,
     quantity: new BigNumber("11")
-  }).signed(users.testUser1.privateKey);
+  })
+    .withOperation("asset-channel_basic-asset_GalaChainToken:TransferToken")
+    .signed(users.testUser1.privateKey);
 
   // When
   const response = await contract.TransferToken(ctx, transferDto);
@@ -142,7 +150,9 @@ it("should apply a pending owner quantityLimit after the delay has elapsed", asy
     to: users.testUser2.identityKey,
     tokenInstance: currencyInstanceKey,
     quantity: new BigNumber("11")
-  }).signed(users.testUser1.privateKey);
+  })
+    .withOperation("asset-channel_basic-asset_GalaChainToken:TransferToken")
+    .signed(users.testUser1.privateKey);
 
   // When
   const response = await contract.TransferToken(ctx, transferDto);

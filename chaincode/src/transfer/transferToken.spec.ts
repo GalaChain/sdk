@@ -62,6 +62,7 @@ describe("TransferToken", () => {
       tokenInstance: nftInstanceKey,
       quantity: new BigNumber("1")
     });
+    dto.dtoOperation = "asset-channel_basic-asset_GalaChainToken:TransferToken";
     dto.sign(users.testUser1.privateKey);
 
     // When
@@ -104,6 +105,7 @@ describe("TransferToken", () => {
       tokenInstance: nftInstanceKey,
       quantity: new BigNumber("1")
     });
+    dto1.dtoOperation = "asset-channel_basic-asset_GalaChainToken:TransferToken";
     dto1.sign(users.testUser1.privateKey);
 
     // case 2: from is the sender
@@ -113,6 +115,7 @@ describe("TransferToken", () => {
       tokenInstance: nftInstanceKey,
       quantity: new BigNumber("1")
     });
+    dto2.dtoOperation = "asset-channel_basic-asset_GalaChainToken:TransferToken";
     dto2.sign(users.testUser1.privateKey);
 
     // When
@@ -148,7 +151,9 @@ describe("TransferToken", () => {
       to: users.testUser2.identityKey,
       tokenInstance: nftInstanceKey,
       quantity: new BigNumber("2")
-    }).signed(users.testUser1.privateKey);
+    })
+      .withOperation("asset-channel_basic-asset_GalaChainToken:TransferToken")
+      .signed(users.testUser1.privateKey);
 
     // When
     const response = await contract.TransferToken(ctx, dto);
@@ -200,7 +205,9 @@ describe("TransferToken", () => {
       to: users.testUser2.identityKey,
       tokenInstance: currencyInstanceKey,
       quantity: new BigNumber("50000")
-    }).signed(users.tokenHolder.privateKey);
+    })
+      .withOperation("asset-channel_basic-asset_GalaChainToken:TransferToken")
+      .signed(users.tokenHolder.privateKey);
 
     const response = await contract.TransferToken(ctx, dto);
 
@@ -265,6 +272,7 @@ describe("TransferToken", () => {
       tokenInstance: nftInstanceKey,
       quantity: new BigNumber("1")
     });
+    dto.dtoOperation = "asset-channel_basic-asset_GalaChainToken:TransferToken";
     dto.sign(users.attacker.privateKey);
 
     // When
@@ -304,6 +312,7 @@ describe("TransferToken", () => {
       tokenInstance: nftInstanceKey,
       quantity: new BigNumber("1")
     });
+    dto.dtoOperation = "asset-channel_basic-asset_GalaChainToken:TransferToken";
     dto.sign(users.testUser2.privateKey);
 
     // When
@@ -344,6 +353,7 @@ describe("TransferToken", () => {
       tokenInstance: nftInstanceKey,
       quantity: new BigNumber("1")
     });
+    dto.dtoOperation = "asset-channel_basic-asset_GalaChainToken:TransferToken";
     dto.sign(users.testUser2.privateKey);
 
     // When
@@ -396,6 +406,7 @@ describe("TransferToken", () => {
       tokenInstance: nftInstanceKey,
       quantity: new BigNumber("1")
     });
+    dto.dtoOperation = "asset-channel_basic-asset_GalaChainToken:TransferToken";
     dto.sign(users.testUser2.privateKey);
 
     // When
@@ -453,6 +464,7 @@ describe("TransferToken", () => {
       tokenInstance: currencyInstanceKey,
       quantity: decimalQuantity
     });
+    transferDto.dtoOperation = "asset-channel_basic-asset_GalaChainToken:TransferToken";
     transferDto.sign(users.tokenHolder.privateKey);
 
     // When
@@ -485,7 +497,9 @@ describe("TransferToken", () => {
       to: users.testUser2.identityKey,
       tokenInstance: currencyInstanceKey,
       quantity: new BigNumber("11")
-    }).signed(users.tokenHolder.privateKey);
+    })
+      .withOperation("asset-channel_basic-asset_GalaChainToken:TransferToken")
+      .signed(users.tokenHolder.privateKey);
 
     // When
     const response = await contract.TransferToken(ctx, dto);

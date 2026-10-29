@@ -53,7 +53,9 @@ describe("defineFeeSchedule", () => {
       maxQuantity: new BigNumber("1000"),
       feeAccelerationRateType: FeeAccelerationRateType.CuratorDefined,
       feeAccelerationRate: new BigNumber("1")
-    }).signed(feeAuthority.privateKey);
+    })
+      .withOperation("asset-channel_basic-asset_GalaChainToken:DefineFeeSchedule")
+      .signed(feeAuthority.privateKey);
 
     // When
     const response = await contract.DefineFeeSchedule(ctx, dto);

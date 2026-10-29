@@ -51,7 +51,9 @@ describe("BurnTokens", () => {
 
     const dto = await createValidSubmitDTO(BurnTokensDto, {
       tokenInstances: [{ tokenInstanceKey: nftInstanceKey, quantity: new BigNumber("1") }]
-    }).signed(users.testUser1.privateKey);
+    })
+      .withOperation("asset-channel_basic-asset_GalaChainToken:BurnTokens")
+      .signed(users.testUser1.privateKey);
 
     const totalKnownBurns = new BigNumber("0");
     const nftTokenBurn = await createValidChainObject(TokenBurn, nft.tokenBurnPlain(ctx.txUnixTime));
@@ -94,7 +96,9 @@ describe("BurnTokens", () => {
     const decimalQuantity = new BigNumber("0.00000000001");
     const dto = await createValidSubmitDTO(BurnTokensDto, {
       tokenInstances: [{ tokenInstanceKey: currencyInstanceKey, quantity: decimalQuantity }]
-    }).signed(users.testUser1.privateKey);
+    })
+      .withOperation("asset-channel_basic-asset_GalaChainToken:BurnTokens")
+      .signed(users.testUser1.privateKey);
 
     // When
     const response = await contract.BurnTokens(ctx, dto);
@@ -123,7 +127,9 @@ describe("BurnTokens", () => {
     const dto = await createValidSubmitDTO(BurnTokensDto, {
       tokenInstances: [{ tokenInstanceKey: currencyInstanceKey, quantity: burnQty }],
       owner: users.testUser1.identityKey
-    }).signed(users.testUser2.privateKey);
+    })
+      .withOperation("asset-channel_basic-asset_GalaChainToken:BurnTokens")
+      .signed(users.testUser2.privateKey);
 
     const tokenBurn = currency.tokenBurn();
     tokenBurn.created = ctx.txUnixTime;
@@ -196,7 +202,9 @@ describe("BurnTokens", () => {
     const dto = await createValidSubmitDTO(BurnTokensDto, {
       tokenInstances: [{ tokenInstanceKey: currencyInstanceKey, quantity: burnQty }],
       owner: users.testUser1.identityKey
-    }).signed(users.testUser2.privateKey);
+    })
+      .withOperation("asset-channel_basic-asset_GalaChainToken:BurnTokens")
+      .signed(users.testUser2.privateKey);
 
     const tokenBurn = currency.tokenBurn();
     tokenBurn.created = ctx.txUnixTime;
@@ -243,7 +251,9 @@ describe("BurnTokens", () => {
     const dto = await createValidSubmitDTO(BurnTokensDto, {
       tokenInstances: [{ tokenInstanceKey: currencyInstanceKey, quantity: burnQty }],
       owner: users.testUser1.identityKey
-    }).signed(users.testUser2.privateKey);
+    })
+      .withOperation("asset-channel_basic-asset_GalaChainToken:BurnTokens")
+      .signed(users.testUser2.privateKey);
 
     const tokenBurn = currency.tokenBurn();
     tokenBurn.created = ctx.txUnixTime;
@@ -311,7 +321,9 @@ describe("BurnTokens", () => {
     const dto = await createValidSubmitDTO(BurnTokensDto, {
       tokenInstances: [{ tokenInstanceKey: currencyInstanceKey, quantity: burnQty }],
       owner: users.testUser1.identityKey
-    }).signed(users.testUser2.privateKey);
+    })
+      .withOperation("asset-channel_basic-asset_GalaChainToken:BurnTokens")
+      .signed(users.testUser2.privateKey);
 
     const tokenBurn = currency.tokenBurn();
     tokenBurn.created = ctx.txUnixTime;
@@ -378,7 +390,9 @@ describe("BurnTokens", () => {
     const dto = await createValidSubmitDTO(BurnTokensDto, {
       tokenInstances: [{ tokenInstanceKey: currencyInstanceKey, quantity: burnQty }],
       owner: users.testUser1.identityKey
-    }).signed(users.testUser2.privateKey);
+    })
+      .withOperation("asset-channel_basic-asset_GalaChainToken:BurnTokens")
+      .signed(users.testUser2.privateKey);
 
     const tokenBurn = currency.tokenBurn();
     tokenBurn.created = ctx.txUnixTime;
@@ -427,7 +441,9 @@ describe("BurnTokens", () => {
     const dto = await createValidSubmitDTO(BurnTokensDto, {
       tokenInstances: [{ tokenInstanceKey: currencyInstanceKey, quantity: burnQty }],
       owner: users.testUser1.identityKey
-    }).signed(users.testUser2.privateKey);
+    })
+      .withOperation("asset-channel_basic-asset_GalaChainToken:BurnTokens")
+      .signed(users.testUser2.privateKey);
 
     // When
     const response = await contract.BurnTokens(ctx, dto);
@@ -470,7 +486,9 @@ describe("BurnTokens", () => {
           { tokenInstanceKey: currencyInstanceKey, quantity: burn2Qty }
         ],
         owner: users.testUser1.identityKey
-      }).signed(users.testUser1.privateKey);
+      })
+        .withOperation("asset-channel_basic-asset_GalaChainToken:BurnTokens")
+        .signed(users.testUser1.privateKey);
 
       const tokenBurn = currency.tokenBurn();
       tokenBurn.created = ctx.txUnixTime;

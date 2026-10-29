@@ -109,7 +109,9 @@ describe("FillTokenSwap", () => {
         uses: new BigNumber("1"),
         uniqueKey: "test-fill-token-swap-dto"
       })
-    ).signed(users.testUser2.privateKey);
+    )
+      .withOperation("asset-channel_basic-asset_GalaChainToken:FillTokenSwap")
+      .signed(users.testUser2.privateKey);
 
     const expectedResponse = plainToInstance(TokenSwapFill, {
       created: ctx.txUnixTime,
@@ -254,7 +256,9 @@ describe("FillTokenSwap", () => {
         expectedTokenSwap: expectedTokenSwap,
         uniqueKey: "test-fill-token-swap-dto"
       })
-    ).signed(users.testUser2.privateKey);
+    )
+      .withOperation("asset-channel_basic-asset_GalaChainToken:FillTokenSwap")
+      .signed(users.testUser2.privateKey);
 
     const expectedResponse = plainToInstance(TokenSwapFill, {
       created: ctx.txUnixTime,
@@ -361,7 +365,9 @@ describe("FillTokenSwap", () => {
         expectedTokenSwap: expectedTokenSwap,
         uniqueKey: "test-fill-token-swap-dto"
       })
-    ).signed(users.testUser2.privateKey);
+    )
+      .withOperation("asset-channel_basic-asset_GalaChainToken:FillTokenSwap")
+      .signed(users.testUser2.privateKey);
 
     const failedResponse = await contract.FillTokenSwap(ctx, dto).catch((e) => e);
 
@@ -422,7 +428,9 @@ describe("FillTokenSwap", () => {
         uses: new BigNumber("2"),
         uniqueKey: "test-fill-nft-two-uses"
       })
-    ).signed(users.testUser2.privateKey);
+    )
+      .withOperation("asset-channel_basic-asset_GalaChainToken:FillTokenSwap")
+      .signed(users.testUser2.privateKey);
 
     // When
     const failedResponse = await contract.FillTokenSwap(ctx, dto).catch((e) => e);
@@ -537,7 +545,9 @@ test("should fail when token swap doesn't match the expected token swap using Ba
       swapDtos: [fillDto],
       uniqueKey: "batch-fill-token-swap-dto"
     })
-  ).signed(users.testUser2.privateKey);
+  )
+    .withOperation("asset-channel_basic-asset_GalaChainToken:BatchFillTokenSwap")
+    .signed(users.testUser2.privateKey);
 
   const failedResponse = await contract.BatchFillTokenSwap(ctx, batchFillDto).catch((e) => e);
 

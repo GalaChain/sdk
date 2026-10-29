@@ -35,7 +35,9 @@ describe("LockTokens", () => {
       lockAuthority: users.testUser1.identityKey,
       tokenInstance: nftInstanceKey,
       quantity: new BigNumber("1")
-    }).signed(users.testUser1.privateKey);
+    })
+      .withOperation("asset-channel_basic-asset_GalaChainToken:LockToken")
+      .signed(users.testUser1.privateKey);
 
     const { ctx, contract, getWrites } = fixture(GalaChainTokenContract)
       .registeredUsers(users.testUser1)
@@ -78,7 +80,9 @@ describe("LockTokens", () => {
       lockAuthority: users.testUser1.identityKey,
       tokenInstance: currencyInstanceKey,
       quantity: decimalQuantity
-    }).signed(users.testUser1.privateKey);
+    })
+      .withOperation("asset-channel_basic-asset_GalaChainToken:LockToken")
+      .signed(users.testUser1.privateKey);
 
     const { ctx, contract, getWrites } = fixture(GalaChainTokenContract)
       .registeredUsers(users.testUser1)
@@ -107,7 +111,9 @@ describe("LockTokens", () => {
       tokenInstance: nftInstanceKey,
       quantity: new BigNumber("1"),
       vestingPeriodStart: 1
-    }).signed(users.testUser1.privateKey);
+    })
+      .withOperation("asset-channel_basic-asset_GalaChainToken:LockToken")
+      .signed(users.testUser1.privateKey);
 
     const { ctx, contract, getWrites } = fixture(GalaChainTokenContract)
       .registeredUsers(users.testUser1)
