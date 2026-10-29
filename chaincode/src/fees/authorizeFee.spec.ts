@@ -60,7 +60,9 @@ describe("authorizeFee", () => {
       uniqueKey: randomUUID()
     });
 
-    const signedDto = dto.signed(users.testUser1.privateKey);
+    const signedDto = dto
+      .withOperation("asset-channel_basic-asset_GalaChainFee:AuthorizeFee")
+      .signed(users.testUser1.privateKey);
 
     // When
     const response = await contract.AuthorizeFee(ctx, signedDto);
@@ -78,7 +80,10 @@ describe("authorizeFee", () => {
     const resDto = plainToInstance(FeeAuthorizationResDto, {
       authority: dto.authority,
       quantity: dto.quantity,
-      authorization: dto.signed(users.testUser1.privateKey, false).serialize(),
+      authorization: dto
+        .withOperation("asset-channel_basic-asset_GalaChainFee:AuthorizeFee")
+        .signed(users.testUser1.privateKey, false)
+        .serialize(),
       feeAuthorizationKey: feeAuthorizationKey,
       created: ctx.txUnixTime,
       txId: txId

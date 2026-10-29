@@ -64,7 +64,9 @@ describe("GrantAllowance", () => {
       quantities: [{ user: users.testUser1.identityKey, quantity: new BigNumber("1") }],
       allowanceType: AllowanceType.Lock,
       uses: new BigNumber("1")
-    }).signed(users.testUser2.privateKey);
+    })
+      .withOperation("asset-channel_basic-asset_GalaChainToken:GrantAllowance")
+      .signed(users.testUser2.privateKey);
 
     // When
     const response = await contract.GrantAllowance(ctx, dto);
@@ -103,7 +105,9 @@ describe("GrantAllowance", () => {
       quantities: [{ user: users.testUser1.identityKey, quantity: new BigNumber("2") }],
       allowanceType: AllowanceType.Lock,
       uses: new BigNumber("1")
-    }).signed(users.testUser2.privateKey);
+    })
+      .withOperation("asset-channel_basic-asset_GalaChainToken:GrantAllowance")
+      .signed(users.testUser2.privateKey);
 
     // When
     const response = await contract.GrantAllowance(ctx, dto);
@@ -142,7 +146,9 @@ describe("GrantAllowance", () => {
       quantities: [{ user: users.testUser1.identityKey, quantity: new BigNumber("100") }],
       allowanceType: AllowanceType.Lock,
       uses: new BigNumber("1")
-    }).signed(users.testUser2.privateKey);
+    })
+      .withOperation("asset-channel_basic-asset_GalaChainToken:GrantAllowance")
+      .signed(users.testUser2.privateKey);
 
     // When
     const response = await contract.GrantAllowance(ctx, dto);
@@ -176,7 +182,9 @@ describe("GrantAllowance", () => {
       quantities: [{ user: users.testUser1.identityKey, quantity: decimalQuantity }],
       allowanceType: AllowanceType.Lock,
       uses: new BigNumber("1")
-    }).signed(users.testUser2.privateKey);
+    })
+      .withOperation("asset-channel_basic-asset_GalaChainToken:GrantAllowance")
+      .signed(users.testUser2.privateKey);
 
     // When
     const response = await contract.GrantAllowance(ctx, dto);
@@ -210,7 +218,9 @@ describe("GrantAllowance", () => {
       quantities: [{ user: users.testUser1.identityKey, quantity: new BigNumber("1001") }],
       allowanceType: AllowanceType.Lock,
       uses: new BigNumber("1")
-    }).signed(users.testUser2.privateKey);
+    })
+      .withOperation("asset-channel_basic-asset_GalaChainToken:GrantAllowance")
+      .signed(users.testUser2.privateKey);
 
     // When
     const response = await contract.GrantAllowance(ctx, dto);
@@ -250,7 +260,9 @@ describe("GrantAllowance", () => {
       quantities: [{ user: users.testUser1.identityKey, quantity: new BigNumber("1000") }],
       allowanceType: AllowanceType.Lock,
       uses: new BigNumber("1")
-    }).signed(users.testUser2.privateKey);
+    })
+      .withOperation("asset-channel_basic-asset_GalaChainToken:GrantAllowance")
+      .signed(users.testUser2.privateKey);
 
     // When
     const response = await contract.GrantAllowance(ctx, dto);
@@ -294,7 +306,9 @@ describe("GrantAllowance", () => {
       quantities: [{ user: users.testUser1.identityKey, quantity: new BigNumber(Infinity) }],
       allowanceType: AllowanceType.Lock,
       uses: new BigNumber(Infinity)
-    }).signed(users.testUser2.privateKey);
+    })
+      .withOperation("asset-channel_basic-asset_GalaChainToken:GrantAllowance")
+      .signed(users.testUser2.privateKey);
 
     // When
     const response = await contract.GrantAllowance(ctx, dto);
@@ -395,6 +409,7 @@ describe("GrantAllowance", () => {
     const partialDto = instanceToInstance(dto);
     partialDto.tokenInstance = await createValidDTO(TokenInstanceQueryKey, { collection: "TEST" });
 
+    partialDto.dtoOperation = "asset-channel_basic-asset_GalaChainToken:GrantAllowance";
     partialDto.sign(users.testUser2.privateKey);
 
     // When
@@ -441,6 +456,7 @@ describe("GrantAllowance", () => {
       uses: new BigNumber("5"),
       expires: 50
     });
+    dto.dtoOperation = "asset-channel_basic-asset_GalaChainToken:GrantAllowance";
     dto.sign(users.testUser2.privateKey);
 
     const response = await contract.GrantAllowance(ctx, dto);
@@ -481,7 +497,9 @@ describe("GrantAllowance", () => {
       quantities: [{ user: users.testUser1.identityKey, quantity: new BigNumber("100") }],
       allowanceType: AllowanceType.Mint,
       uses: new BigNumber("1")
-    }).signed(users.testUser2.privateKey);
+    })
+      .withOperation("asset-channel_basic-asset_GalaChainToken:GrantAllowance")
+      .signed(users.testUser2.privateKey);
 
     // When
     const response = await contract.GrantAllowance(ctx, dto);
@@ -517,7 +535,9 @@ describe("GrantAllowance", () => {
       quantities: [{ user: users.testUser1.identityKey, quantity: new BigNumber(Infinity) }],
       allowanceType: AllowanceType.Mint,
       uses: new BigNumber(Infinity)
-    }).signed(users.admin.privateKey);
+    })
+      .withOperation("asset-channel_basic-asset_GalaChainToken:GrantAllowance")
+      .signed(users.admin.privateKey);
 
     const response = await contract.GrantAllowance(ctx, dto);
 
@@ -574,7 +594,9 @@ describe("GrantAllowance", () => {
       quantities: [{ user: users.testUser1.identityKey, quantity: new BigNumber("1") }],
       allowanceType: AllowanceType.Lock,
       uses: new BigNumber("1")
-    }).signed(users.testUser2.privateKey);
+    })
+      .withOperation("asset-channel_basic-asset_GalaChainToken:GrantAllowance")
+      .signed(users.testUser2.privateKey);
 
     // When
     const response = await contract.GrantAllowance(ctx, dto);
@@ -613,7 +635,9 @@ describe("GrantAllowance", () => {
       quantities: [{ user: users.testUser1.identityKey, quantity: requestedQuantity }],
       allowanceType: AllowanceType.Mint,
       uses: new BigNumber("1")
-    }).signed(users.admin.privateKey);
+    })
+      .withOperation("asset-channel_basic-asset_GalaChainToken:GrantAllowance")
+      .signed(users.admin.privateKey);
 
     // When
     const response = await contract.GrantAllowance(ctx, dto);

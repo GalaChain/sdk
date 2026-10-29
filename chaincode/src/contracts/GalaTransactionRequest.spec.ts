@@ -32,7 +32,9 @@ describe("ApplyRequests uniqueKey", () => {
     const grantRoles = await createValidSubmitDTO(UpdateUserRolesDto, {
       user: applier.alias,
       roles: ["REQUEST_APPLIER"]
-    }).signed(process.env.DEV_ADMIN_PRIVATE_KEY as string);
+    })
+      .withOperation("asset-channel_basic-asset_PublicKeyContract:UpdateUserRoles")
+      .signed(process.env.DEV_ADMIN_PRIVATE_KEY as string);
     expect(await chaincode.invoke("PublicKeyContract:UpdateUserRoles", grantRoles)).toEqual(
       transactionSuccess()
     );
@@ -41,14 +43,18 @@ describe("ApplyRequests uniqueKey", () => {
       key: "queued-key",
       value: "queued-value",
       uniqueKey: "request-uk-1"
-    }).signed(process.env.DEV_ADMIN_PRIVATE_KEY as string);
+    })
+      .withOperation("asset-channel_basic-asset_TestGalaContract:RequestPutKv")
+      .signed(process.env.DEV_ADMIN_PRIVATE_KEY as string);
     const requestResponse = await chaincode.invoke("TestGalaContract:RequestPutKv", requestDto.serialize());
     expect(requestResponse).toEqual(transactionSuccess({ scheduled: true }));
 
     const applyDto = plainToInstance(ApplyRequestsDto, {
       uniqueKey: "apply-uk-1",
       minDelayMs: 0
-    }).signed(applier.privateKey);
+    })
+      .withOperation("asset-channel_basic-asset_TestGalaContract:ApplyRequests")
+      .signed(applier.privateKey);
     const applyResponse = await chaincode.invoke("TestGalaContract:ApplyRequests", applyDto.serialize());
 
     expect(applyResponse).toEqual(

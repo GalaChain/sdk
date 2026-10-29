@@ -64,7 +64,9 @@ describe("PublicKeyContract Multisignature", () => {
         signers: ethAddresses.map(asValidUserRef),
         signatureQuorum
       });
-      const signedDto = dto.signed(process.env.DEV_ADMIN_PRIVATE_KEY as string);
+      const signedDto = dto
+        .withOperation("asset-channel_basic-asset_PublicKeyContract:RegisterUser")
+        .signed(process.env.DEV_ADMIN_PRIVATE_KEY as string);
 
       // When
       const response = await chaincode.invoke("PublicKeyContract:RegisterUser", signedDto);
@@ -100,7 +102,9 @@ describe("PublicKeyContract Multisignature", () => {
         signers: ethAddresses.map(asValidUserRef),
         signatureQuorum: 2
       });
-      const signedDto = dto.signed(process.env.DEV_ADMIN_PRIVATE_KEY as string);
+      const signedDto = dto
+        .withOperation("asset-channel_basic-asset_PublicKeyContract:RegisterUser")
+        .signed(process.env.DEV_ADMIN_PRIVATE_KEY as string);
 
       // When
       const response = await chaincode.invoke("PublicKeyContract:RegisterUser", signedDto);
@@ -122,7 +126,9 @@ describe("PublicKeyContract Multisignature", () => {
         signers: ethAddresses.map(asValidUserRef),
         signatureQuorum: 5 // More than available keys - this should fail
       });
-      const signedDto = dto.signed(process.env.DEV_ADMIN_PRIVATE_KEY as string);
+      const signedDto = dto
+        .withOperation("asset-channel_basic-asset_PublicKeyContract:RegisterUser")
+        .signed(process.env.DEV_ADMIN_PRIVATE_KEY as string);
 
       // When
       const response = await chaincode.invoke("PublicKeyContract:RegisterUser", signedDto);
@@ -150,7 +156,9 @@ describe("PublicKeyContract Multisignature", () => {
         signers: ethAddresses.map(asValidUserRef)
         // signatureQuorum not specified - should default to publicKeys.length
       });
-      const signedDto = dto.signed(process.env.DEV_ADMIN_PRIVATE_KEY as string);
+      const signedDto = dto
+        .withOperation("asset-channel_basic-asset_PublicKeyContract:RegisterUser")
+        .signed(process.env.DEV_ADMIN_PRIVATE_KEY as string);
 
       // When
       const response = await chaincode.invoke("PublicKeyContract:RegisterUser", signedDto);
@@ -182,6 +190,7 @@ describe("PublicKeyContract Multisignature", () => {
         publicKey: newKey.publicKey
       });
       const signedDto = dto
+        .withOperation("asset-channel_basic-asset_PublicKeyContract:RegisterUser")
         .withPublicKeySignedBy(newKey.privateKey)
         .signed(process.env.DEV_ADMIN_PRIVATE_KEY as string);
 
@@ -878,7 +887,9 @@ describe("UpdateUserRoles", () => {
     const dto = await createValidSubmitDTO(UpdateUserRolesDto, {
       user: alias,
       roles: newRoles
-    }).signed(process.env.DEV_ADMIN_PRIVATE_KEY as string);
+    })
+      .withOperation("asset-channel_basic-asset_PublicKeyContract:UpdateUserRoles")
+      .signed(process.env.DEV_ADMIN_PRIVATE_KEY as string);
 
     // When
     const response = await chaincode.invoke("PublicKeyContract:UpdateUserRoles", dto);

@@ -51,14 +51,18 @@ describe("Migration from allowedOrgs to allowedRoles", () => {
   const chaincode = new TestChaincode([PublicKeyContract, TestContract]);
 
   async function callChaincode(msp: string, method: "V1" | "V2") {
-    const dto = await createValidSubmitDTO(SubmitCallDTO, {}).signed(user.privateKey);
+    const dto = (await createValidSubmitDTO(SubmitCallDTO, {}))
+      .withOperation(`asset-channel_basic-asset_TestContract:${method}`)
+      .signed(user.privateKey);
     return await chaincode
       .setCallingUserMsp(msp)
       .invoke<GalaChainResponse<string>>(`TestContract:${method}`, dto);
   }
 
   async function getUserProfile() {
-    const dto = new ChainCallDTO().signed(user.privateKey);
+    const dto = new ChainCallDTO()
+      .withOperation("asset-channel_basic-asset_PublicKeyContract:GetMyProfile")
+      .signed(user.privateKey);
     const resp = await chaincode.invoke<GalaChainSuccessResponse<UserProfileStrict>>(
       "PublicKeyContract:GetMyProfile",
       dto
@@ -89,7 +93,9 @@ describe("Migration from allowedOrgs to allowedRoles", () => {
     const updateRolesDto = await createValidSubmitDTO(UpdateUserRolesDto, {
       user: user.identityKey,
       roles: [allowedRole, ...currentProfile.roles] // need to provide all roles
-    }).signed(adminPrivateKey);
+    })
+      .withOperation("asset-channel_basic-asset_PublicKeyContract:UpdateUserRoles")
+      .signed(adminPrivateKey);
     const updateRolesResp = await chaincode
       .setCallingUserMsp("CuratorOrg") // required for the UpdateUserRoles method
       .invoke("PublicKeyContract:UpdateUserRoles", updateRolesDto);

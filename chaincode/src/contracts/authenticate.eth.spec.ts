@@ -120,6 +120,7 @@ const testFn = async (
   chaincode.setCallingUser(userObj.alias);
 
   const dto = new ChainCallDTO();
+  dto.dtoOperation = "asset-channel_basic-asset_PublicKeyContract:GetMyProfile";
   publicKeyFn(dto, userObj);
   const signedDto = signatureFn(dto, userObj.privateKey);
 

@@ -40,7 +40,9 @@ it("should CreateTokenClass", async () => {
     symbol: "AUTOTESTCOIN",
     isNonFungible: false,
     authorities: [users.admin.identityKey]
-  }).signed(users.admin.privateKey);
+  })
+    .withOperation("asset-channel_basic-asset_GalaChainToken:CreateTokenClass")
+    .signed(users.admin.privateKey);
 
   // When
   const response = await contract.CreateTokenClass(ctx, dto);
@@ -50,7 +52,7 @@ it("should CreateTokenClass", async () => {
 
   const expectedInstance = currency.tokenInstance();
   const expectedClass = currency.tokenClass((defaults) => {
-    const { tokenClass, signature, uniqueKey, ...fromDto } = dto;
+    const { tokenClass, signature, uniqueKey, dtoOperation, ...fromDto } = dto;
     const authorities = dto.authorities as UserAlias[];
     const missingInDto = { contractAddress: undefined, metadataAddress: undefined, rarity: undefined };
     return { ...defaults, ...fromDto, authorities, ...missingInDto, ...tokenClass };
@@ -78,7 +80,9 @@ it("should CreateTokenClass when max supply is omitted", async () => {
     symbol: "AUTOTESTCOIN",
     isNonFungible: false,
     authorities: [users.admin.identityKey]
-  }).signed(users.admin.privateKey);
+  })
+    .withOperation("asset-channel_basic-asset_GalaChainToken:CreateTokenClass")
+    .signed(users.admin.privateKey);
 
   // When
   const response = await contract.CreateTokenClass(ctx, dto);
@@ -88,7 +92,7 @@ it("should CreateTokenClass when max supply is omitted", async () => {
 
   const expectedInstance = currency.tokenInstance();
   const expectedClass = currency.tokenClass((defaults) => {
-    const { tokenClass, signature, uniqueKey, ...fromDto } = dto;
+    const { tokenClass, signature, uniqueKey, dtoOperation, ...fromDto } = dto;
     const authorities = dto.authorities as UserAlias[];
     const missingInDto = { contractAddress: undefined, metadataAddress: undefined, rarity: undefined };
     return {

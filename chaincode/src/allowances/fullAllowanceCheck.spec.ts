@@ -44,7 +44,9 @@ describe("FullAllowanceCheck", () => {
       owner: users.testUser1.identityKey,
       grantedTo: users.admin.identityKey,
       allowanceType: 1
-    }).signed(users.admin.privateKey);
+    })
+      .withOperation("asset-channel_basic-asset_GalaChainToken:FullAllowanceCheck")
+      .signed(users.admin.privateKey);
 
     // When
     const response = await contract.FullAllowanceCheck(ctx, dto);

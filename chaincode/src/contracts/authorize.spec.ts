@@ -237,6 +237,7 @@ describe("authorization", () => {
 
     const signedDto = new ChainCallDTO();
     signedDto.uniqueKey = "uniqueKey-456";
+    signedDto.dtoOperation = "asset-channel_basic-asset_TestContract:GetCallingUser";
     chainUser.signInPlace(signedDto);
 
     return {

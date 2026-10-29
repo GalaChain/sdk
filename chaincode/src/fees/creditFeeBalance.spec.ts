@@ -109,7 +109,9 @@ describe("creditFeeBalance", () => {
       txId: txId,
       quantity: authorizedFeeQuantity,
       feeAuthorizationKey: feeAuthorizationKey
-    }).signed(feeAuthority.privateKey);
+    })
+      .withOperation("asset-channel_basic-asset_GalaChainToken:CreditFeeBalance")
+      .signed(feeAuthority.privateKey);
 
     // When
     const response = await contract.CreditFeeBalance(ctx, verificationDto);
@@ -134,7 +136,9 @@ describe("creditFeeBalance", () => {
       quantity: authorizedFeeQuantity,
       feeAuthorizationKey: feeAuthorizationKey,
       uniqueKey: "replayed-fee-authorization"
-    }).signed(feeAuthority.privateKey);
+    })
+      .withOperation("asset-channel_basic-asset_GalaChainToken:CreditFeeBalance")
+      .signed(feeAuthority.privateKey);
 
     const replay = await contract.CreditFeeBalance(ctx, replayDto);
 
@@ -169,7 +173,9 @@ describe("creditFeeBalance", () => {
       txId: "tx-1",
       quantity: authorizedFeeQuantity,
       feeAuthorizationKey: "outer-key-1"
-    }).signed(feeAuthority.privateKey);
+    })
+      .withOperation("asset-channel_basic-asset_GalaChainToken:CreditFeeBalance")
+      .signed(feeAuthority.privateKey);
     const second = await createValidSubmitDTO(FeeVerificationDto, {
       authorization: authDto.serialize(),
       authority: feeAuthority.identityKey,
@@ -178,7 +184,9 @@ describe("creditFeeBalance", () => {
       quantity: authorizedFeeQuantity,
       feeAuthorizationKey: "outer-key-2",
       uniqueKey: "verification-2"
-    }).signed(feeAuthority.privateKey);
+    })
+      .withOperation("asset-channel_basic-asset_GalaChainToken:CreditFeeBalance")
+      .signed(feeAuthority.privateKey);
 
     const firstResponse = (await contract.CreditFeeBalance(ctx, first)) as {
       Status: GalaChainResponseType;

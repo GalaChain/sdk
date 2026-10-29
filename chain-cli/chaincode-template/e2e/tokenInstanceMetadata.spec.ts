@@ -35,6 +35,8 @@ import { randomize, transactionErrorCode, transactionSuccess } from "@gala-chain
 import BigNumber from "bignumber.js";
 import { plainToInstance } from "class-transformer";
 
+import { mockedOperation } from "./mockedOperation";
+
 jest.setTimeout(30000);
 
 describe("Token instance metadata scenario", () => {
@@ -95,14 +97,17 @@ describe("Token instance metadata scenario", () => {
     // When
     const createClassResponse = await client.assets.submitTransaction<TokenClassKey>(
       "CreateTokenClass",
-      client.assets.sign(createClassDto),
+      client.assets.sign(createClassDto.withOperation(mockedOperation("GalaChainToken:CreateTokenClass"))),
       TokenClassKey
     );
     const allowanceResponse = await client.assets.submitTransaction(
       "GrantAllowance",
-      client.assets.sign(allowanceDto)
+      client.assets.sign(allowanceDto.withOperation(mockedOperation("GalaChainToken:GrantAllowance")))
     );
-    const mintResponse = await client.assets.submitTransaction("MintToken", user1.sign(mintDto));
+    const mintResponse = await client.assets.submitTransaction(
+      "MintToken",
+      user1.sign(mintDto.withOperation(mockedOperation("GalaChainToken:MintToken")))
+    );
 
     // Then
     expect(createClassResponse).toEqual(transactionSuccess(nftClassKey));
@@ -125,11 +130,15 @@ describe("Token instance metadata scenario", () => {
     // When
     const claimAlphaResponse = await client.assets.submitTransaction(
       "GrantNftCollectionAuthorization",
-      user1.sign(claimAlphaDto)
+      user1.sign(
+        claimAlphaDto.withOperation(mockedOperation("GalaChainToken:GrantNftCollectionAuthorization"))
+      )
     );
     const claimBetaResponse = await client.assets.submitTransaction(
       "GrantNftCollectionAuthorization",
-      user2.sign(claimBetaDto)
+      user2.sign(
+        claimBetaDto.withOperation(mockedOperation("GalaChainToken:GrantNftCollectionAuthorization"))
+      )
     );
 
     // Then
@@ -146,7 +155,10 @@ describe("Token instance metadata scenario", () => {
     });
 
     // When
-    const response = await client.assets.submitTransaction("SetTokenInstanceMetadata", user1.sign(setDto));
+    const response = await client.assets.submitTransaction(
+      "SetTokenInstanceMetadata",
+      user1.sign(setDto.withOperation(mockedOperation("GalaChainToken:SetTokenInstanceMetadata")))
+    );
 
     // Then
     expect(response).toEqual(transactionErrorCode(403));
@@ -173,7 +185,7 @@ describe("Token instance metadata scenario", () => {
     // When
     const response = await client.assets.submitTransaction<TokenInstanceMetadata>(
       "SetTokenInstanceMetadata",
-      user1.sign(setDto),
+      user1.sign(setDto.withOperation(mockedOperation("GalaChainToken:SetTokenInstanceMetadata"))),
       TokenInstanceMetadata
     );
 
@@ -198,7 +210,10 @@ describe("Token instance metadata scenario", () => {
     });
 
     // When
-    const response = await client.assets.submitTransaction("SetTokenInstanceMetadata", user2.sign(setDto));
+    const response = await client.assets.submitTransaction(
+      "SetTokenInstanceMetadata",
+      user2.sign(setDto.withOperation(mockedOperation("GalaChainToken:SetTokenInstanceMetadata")))
+    );
 
     // Then
     expect(response).toEqual(transactionErrorCode(403));
@@ -215,7 +230,7 @@ describe("Token instance metadata scenario", () => {
     // When
     const response = await client.assets.submitTransaction<TokenInstanceMetadata>(
       "SetTokenInstanceMetadata",
-      user2.sign(setDto),
+      user2.sign(setDto.withOperation(mockedOperation("GalaChainToken:SetTokenInstanceMetadata"))),
       TokenInstanceMetadata
     );
 
@@ -260,7 +275,7 @@ describe("Token instance metadata scenario", () => {
     // When
     const response = await client.assets.submitTransaction<TokenInstanceMetadata>(
       "SetTokenInstanceMetadata",
-      user1.sign(replaceDto),
+      user1.sign(replaceDto.withOperation(mockedOperation("GalaChainToken:SetTokenInstanceMetadata"))),
       TokenInstanceMetadata
     );
 
@@ -286,7 +301,7 @@ describe("Token instance metadata scenario", () => {
     // When
     const deleteResponse = await client.assets.submitTransaction(
       "DeleteTokenInstanceMetadata",
-      user1.sign(deleteDto)
+      user1.sign(deleteDto.withOperation(mockedOperation("GalaChainToken:DeleteTokenInstanceMetadata")))
     );
     const fetchResponse = await client.assets.evaluateTransaction(
       "FetchTokenInstanceMetadata",

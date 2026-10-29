@@ -73,7 +73,9 @@ test("RequestTokenSwap, NFT for currency", async () => {
       expires: 0,
       uniqueKey: "test-swap"
     })
-  ).signed(users.testUser1.privateKey);
+  )
+    .withOperation("asset-channel_basic-asset_GalaChainToken:RequestTokenSwap")
+    .signed(users.testUser1.privateKey);
 
   const expectedCurrencySwap = plainToInstance(TokenSwapRequest, {
     created: ctx.txUnixTime,
@@ -192,7 +194,9 @@ test("RequestTokenSwap on behalf fails when fungible swap allowance covers one u
       expires: 0,
       uniqueKey: "test-swap-on-behalf-fungible-uses"
     })
-  ).signed(users.testUser2.privateKey);
+  )
+    .withOperation("asset-channel_basic-asset_GalaChainToken:RequestTokenSwap")
+    .signed(users.testUser2.privateKey);
 
   // When
   const response = await contract.RequestTokenSwap(ctx, dto);
@@ -257,7 +261,9 @@ test("RequestTokenSwap on behalf rejects multi-use NFT offer", async () => {
       expires: 0,
       uniqueKey: "test-swap-on-behalf-nft-multi-use"
     })
-  ).signed(users.testUser2.privateKey);
+  )
+    .withOperation("asset-channel_basic-asset_GalaChainToken:RequestTokenSwap")
+    .signed(users.testUser2.privateKey);
 
   // When
   const response = await contract.RequestTokenSwap(ctx, dto);

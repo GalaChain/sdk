@@ -42,7 +42,9 @@ it("should delay RestrictTokenBalanceTargets", async () => {
     user: users.testUser1.identityKey,
     tokenClass: currency.tokenClassKey(),
     targets: [users.testUser2.identityKey]
-  }).signed(users.admin.privateKey);
+  })
+    .withOperation("asset-channel_basic-asset_GalaChainToken:RestrictTokenBalanceTargets")
+    .signed(users.admin.privateKey);
 
   // When
   const response = await contract.RestrictTokenBalanceTargets(ctx, dto);
@@ -71,7 +73,9 @@ it("should keep allowing any transfer until restrict delay elapses", async () =>
     user: users.testUser1.identityKey,
     tokenClass: currency.tokenClassKey(),
     targets: [users.testUser2.identityKey]
-  }).signed(users.admin.privateKey);
+  })
+    .withOperation("asset-channel_basic-asset_GalaChainToken:RestrictTokenBalanceTargets")
+    .signed(users.admin.privateKey);
 
   await contract.RestrictTokenBalanceTargets(ctx, restrictDto);
 
@@ -80,7 +84,9 @@ it("should keep allowing any transfer until restrict delay elapses", async () =>
     to: users.testUser3.identityKey,
     tokenInstance: currencyInstanceKey,
     quantity: new BigNumber("11")
-  }).signed(users.testUser1.privateKey);
+  })
+    .withOperation("asset-channel_basic-asset_GalaChainToken:TransferToken")
+    .signed(users.testUser1.privateKey);
 
   // When
   const response = await contract.TransferToken(ctx, transferDto);
@@ -108,7 +114,9 @@ it("should apply pending restrict after the delay has elapsed", async () => {
     to: users.testUser3.identityKey,
     tokenInstance: currencyInstanceKey,
     quantity: new BigNumber("11")
-  }).signed(users.testUser1.privateKey);
+  })
+    .withOperation("asset-channel_basic-asset_GalaChainToken:TransferToken")
+    .signed(users.testUser1.privateKey);
 
   // When
   const response = await contract.TransferToken(ctx, transferDto);
@@ -145,7 +153,9 @@ it("should allow a transfer to a pending restrict target after the delay has ela
     to: users.testUser2.identityKey,
     tokenInstance: currencyInstanceKey,
     quantity: new BigNumber("11")
-  }).signed(users.testUser1.privateKey);
+  })
+    .withOperation("asset-channel_basic-asset_GalaChainToken:TransferToken")
+    .signed(users.testUser1.privateKey);
 
   // When
   const response = await contract.TransferToken(ctx, transferDto);
@@ -173,7 +183,9 @@ it("should freeze immediately so transfers are rejected", async () => {
   const freezeDto = await createValidSubmitDTO(FreezeTokenBalanceDto, {
     user: users.testUser1.identityKey,
     tokenClass: currency.tokenClassKey()
-  }).signed(users.admin.privateKey);
+  })
+    .withOperation("asset-channel_basic-asset_GalaChainToken:FreezeTokenBalance")
+    .signed(users.admin.privateKey);
 
   const freezeResponse = await contract.FreezeTokenBalance(ctx, freezeDto);
   expect(freezeResponse.Status).toEqual(1);
@@ -184,7 +196,9 @@ it("should freeze immediately so transfers are rejected", async () => {
     to: users.testUser2.identityKey,
     tokenInstance: currencyInstanceKey,
     quantity: new BigNumber("11")
-  }).signed(users.testUser1.privateKey);
+  })
+    .withOperation("asset-channel_basic-asset_GalaChainToken:TransferToken")
+    .signed(users.testUser1.privateKey);
 
   // When
   const transferResponse = await contract.TransferToken(ctx, transferDto);
@@ -203,7 +217,9 @@ it("should freeze immediately so transfers are rejected", async () => {
 
   const burnDto = await createValidSubmitDTO(BurnTokensDto, {
     tokenInstances: [{ tokenInstanceKey: currencyInstanceKey, quantity: new BigNumber("11") }]
-  }).signed(users.testUser1.privateKey);
+  })
+    .withOperation("asset-channel_basic-asset_GalaChainToken:BurnTokens")
+    .signed(users.testUser1.privateKey);
 
   const burnResponse = await contract.BurnTokens(ctx, burnDto);
   expect(burnResponse.Status).toEqual(1);
@@ -224,7 +240,9 @@ it("should delay AllowAllTokenBalanceTargets", async () => {
   const dto = await createValidSubmitDTO(AllowAllTokenBalanceTargetsDto, {
     user: users.testUser1.identityKey,
     tokenClass: currency.tokenClassKey()
-  }).signed(users.admin.privateKey);
+  })
+    .withOperation("asset-channel_basic-asset_GalaChainToken:AllowAllTokenBalanceTargets")
+    .signed(users.admin.privateKey);
 
   // When
   const response = await contract.AllowAllTokenBalanceTargets(ctx, dto);
@@ -257,7 +275,9 @@ it("should allow any transfer after pending allow-all has elapsed", async () => 
     to: users.testUser3.identityKey,
     tokenInstance: currencyInstanceKey,
     quantity: new BigNumber("11")
-  }).signed(users.testUser1.privateKey);
+  })
+    .withOperation("asset-channel_basic-asset_GalaChainToken:TransferToken")
+    .signed(users.testUser1.privateKey);
 
   // When
   const response = await contract.TransferToken(ctx, transferDto);
@@ -285,7 +305,9 @@ it("should freeze an NFT balance immediately so transfers are rejected", async (
   const freezeDto = await createValidSubmitDTO(FreezeTokenBalanceDto, {
     user: users.testUser1.identityKey,
     tokenClass: nft.tokenClassKey()
-  }).signed(users.admin.privateKey);
+  })
+    .withOperation("asset-channel_basic-asset_GalaChainToken:FreezeTokenBalance")
+    .signed(users.admin.privateKey);
 
   const freezeResponse = await contract.FreezeTokenBalance(ctx, freezeDto);
   expect(freezeResponse.Status).toEqual(1);
@@ -296,7 +318,9 @@ it("should freeze an NFT balance immediately so transfers are rejected", async (
     to: users.testUser2.identityKey,
     tokenInstance: nftInstanceKey,
     quantity: new BigNumber("1")
-  }).signed(users.testUser1.privateKey);
+  })
+    .withOperation("asset-channel_basic-asset_GalaChainToken:TransferToken")
+    .signed(users.testUser1.privateKey);
 
   // When
   const transferResponse = await contract.TransferToken(ctx, transferDto);
@@ -315,7 +339,9 @@ it("should freeze an NFT balance immediately so transfers are rejected", async (
 
   const burnDto = await createValidSubmitDTO(BurnTokensDto, {
     tokenInstances: [{ tokenInstanceKey: nftInstanceKey, quantity: new BigNumber("1") }]
-  }).signed(users.testUser1.privateKey);
+  })
+    .withOperation("asset-channel_basic-asset_GalaChainToken:BurnTokens")
+    .signed(users.testUser1.privateKey);
 
   const burnResponse = await contract.BurnTokens(ctx, burnDto);
   expect(burnResponse.Status).toEqual(1);

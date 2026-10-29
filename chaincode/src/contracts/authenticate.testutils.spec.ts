@@ -55,7 +55,10 @@ export async function createEthUser(): Promise<User> {
 export async function createRegisteredUser(chaincode: TestChaincode): Promise<User> {
   const { alias, privateKey, publicKey, ethAddress } = await createUser();
   const dto = await createValidSubmitDTO(RegisterUserDto, { user: alias, publicKey });
-  const signedDto = dto.withPublicKeySignedBy(privateKey).signed(process.env.DEV_ADMIN_PRIVATE_KEY as string);
+  const signedDto = dto
+    .withOperation("asset-channel_basic-asset_PublicKeyContract:RegisterUser")
+    .withPublicKeySignedBy(privateKey)
+    .signed(process.env.DEV_ADMIN_PRIVATE_KEY as string);
   const response = await chaincode.invoke("PublicKeyContract:RegisterUser", signedDto);
   expect(response).toEqual(transactionSuccess());
   return { alias, privateKey, publicKey, ethAddress };
@@ -71,7 +74,9 @@ export async function createRegisteredMultiSigUserForUsers(
     signers: p.users.map((u) => u.alias),
     signatureQuorum: p.quorum
   });
-  const signedDto = dto.signed(process.env.DEV_ADMIN_PRIVATE_KEY as string);
+  const signedDto = dto
+    .withOperation("asset-channel_basic-asset_PublicKeyContract:RegisterUser")
+    .signed(process.env.DEV_ADMIN_PRIVATE_KEY as string);
   const response = await chaincode.invoke("PublicKeyContract:RegisterUser", signedDto);
   expect(response).toEqual(transactionSuccess());
   return { alias };
@@ -88,7 +93,9 @@ export async function createRegisteredMultiSigUser(
     signers: keys.map((k) => signatures.getEthAddress(k.publicKey)) as unknown as UserAlias[],
     signatureQuorum: p.quorum
   });
-  const signedDto = dto.signed(process.env.DEV_ADMIN_PRIVATE_KEY as string);
+  const signedDto = dto
+    .withOperation("asset-channel_basic-asset_PublicKeyContract:RegisterUser")
+    .signed(process.env.DEV_ADMIN_PRIVATE_KEY as string);
   const response = await chaincode.invoke("PublicKeyContract:RegisterUser", signedDto);
   expect(response).toEqual(transactionSuccess());
   return { alias, keys };
@@ -132,7 +139,7 @@ export async function getMyProfile(
   chaincode: TestChaincode,
   privateKey: string
 ): Promise<GalaChainResponse<UserProfile>> {
-  const dto = new GetMyProfileDto();
+  const dto = new GetMyProfileDto().withOperation("asset-channel_basic-asset_PublicKeyContract:GetMyProfile");
   dto.sign(privateKey);
   return chaincode.invoke("PublicKeyContract:GetMyProfile", dto);
 }

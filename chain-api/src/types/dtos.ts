@@ -104,11 +104,14 @@ export type NonFunctionProperties<T> = Pick<T, NonFunctionPropertyNames<T>>;
 
 export type SignablePromise<T extends ChainCallDTO> = Promise<T> & {
   signed(privateKey: string): SignablePromise<T>;
+  withOperation(operation: string): SignablePromise<T>;
 };
 
 function signablePromise<T extends ChainCallDTO>(p: Promise<T>): SignablePromise<T> {
   // @ts-expect-error adding new method in runtime
   p.signed = (privateKey: string) => signablePromise(p.then((r) => r.signed(privateKey)));
+  // @ts-expect-error adding new method in runtime
+  p.withOperation = (operation: string) => signablePromise(p.then((r) => r.withOperation(operation)));
   return p as SignablePromise<T>;
 }
 
@@ -221,7 +224,7 @@ export class ChainCallDTO {
     description:
       "Full operation identifier that is called on chain with this DTO. " +
       "The format is `channelId_chaincodeId_methodName`. " +
-      "It is required for multisig DTOs, and optional for single signed DTOs. "
+      "It is required for multisig DTOs and for any DTO that carries a signature. "
   })
   @IsOptional()
   @IsString()

@@ -38,7 +38,9 @@ describe("FetchBurns", () => {
 
     const dto = await createValidDTO(FetchBurnsDto, {
       burnedBy: users.testUser1.identityKey
-    }).signed(users.testUser1.privateKey);
+    })
+      .withOperation("asset-channel_basic-asset_GalaChainToken:FetchBurns")
+      .signed(users.testUser1.privateKey);
 
     // When
     const response = await contract.FetchBurns(ctx, dto);

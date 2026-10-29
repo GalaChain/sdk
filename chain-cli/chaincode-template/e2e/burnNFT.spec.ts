@@ -27,6 +27,7 @@ import { randomize, transactionSuccess } from "@gala-chain/test";
 import BigNumber from "bignumber.js";
 import { instanceToPlain, plainToInstance } from "class-transformer";
 
+import { mockedOperation } from "./mockedOperation";
 import { mintTokensToUsers } from "./tokenOps";
 
 jest.setTimeout(30000);
@@ -72,7 +73,7 @@ describe("NFT Burn scenario", () => {
     // When
     const burnTokenResponse = await client.assets.submitTransaction<TokenBurn[]>(
       "BurnTokens",
-      user1.sign(burnTokensDto),
+      user1.sign(burnTokensDto.withOperation(mockedOperation("GalaChainToken:BurnTokens"))),
       TokenBurn
     );
 

@@ -34,6 +34,7 @@ import {
   Variety
 } from "../src/apples";
 import { PlantAppleTreeDto } from "../src/apples/dtos";
+import { mockedOperation } from "./mockedOperation";
 
 jest.setTimeout(30000);
 
@@ -70,7 +71,7 @@ describe("Apple trees", () => {
           new AppleTreeDto(Variety.GALA, 3)
         ],
         randomUniqueKey()
-      )
+      ).withOperation(mockedOperation("AppleContract:PlantTrees"))
     );
 
     // When
@@ -82,7 +83,11 @@ describe("Apple trees", () => {
 
   test("Fetch GALA trees planted by a user", async () => {
     // Given
-    const dto = user.sign(new FetchTreesDto(user.identityKey, Variety.GALA));
+    const dto = user.sign(
+      new FetchTreesDto(user.identityKey, Variety.GALA).withOperation(
+        mockedOperation("AppleContract:FetchTrees")
+      )
+    );
 
     // When
     const response = await client.apples.FetchTrees(dto);
@@ -101,7 +106,11 @@ describe("Apple trees", () => {
 
   test("Fail to pick a GOLDEN_DELICIOUS apple because tree is too young", async () => {
     // Given
-    const dto = user.sign(new PickAppleDto(user.identityKey, Variety.GOLDEN_DELICIOUS, 2, randomUniqueKey()));
+    const dto = user.sign(
+      new PickAppleDto(user.identityKey, Variety.GOLDEN_DELICIOUS, 2, randomUniqueKey()).withOperation(
+        mockedOperation("AppleContract:PickApple")
+      )
+    );
 
     // When
     const response = await client.apples.PickApple(dto);
@@ -144,9 +153,18 @@ describe("Apple trees", () => {
     const batch = plainToInstance(BatchDto, {
       uniqueKey: randomUniqueKey(),
       operations: [
-        { method: "PickApple", dto: user.sign(pick1) },
-        { method: "PlantTree", dto: user.sign(plant) },
-        { method: "PickApple", dto: user2.sign(pick2) }
+        {
+          method: "PickApple",
+          dto: user.sign(pick1.withOperation(mockedOperation("AppleContract:PickApple")))
+        },
+        {
+          method: "PlantTree",
+          dto: user.sign(plant.withOperation(mockedOperation("AppleContract:PlantTree")))
+        },
+        {
+          method: "PickApple",
+          dto: user2.sign(pick2.withOperation(mockedOperation("AppleContract:PickApple")))
+        }
       ]
     });
 

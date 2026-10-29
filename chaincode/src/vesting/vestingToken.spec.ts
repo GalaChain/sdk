@@ -97,7 +97,9 @@ describe("VestingToken", () => {
           vestingDays: 10
         }
       ]
-    }).signed(users.admin.privateKey);
+    })
+      .withOperation("asset-channel_basic-asset_GalaChainToken:CreateVestingToken")
+      .signed(users.admin.privateKey);
 
     // When
     const response = await contract.CreateVestingToken(ctx, vestingTokenDto);
@@ -441,7 +443,9 @@ describe("Token Hold Helpers", () => {
           vestingDays: 0
         }
       ]
-    }).signed(users.admin.privateKey);
+    })
+      .withOperation("asset-channel_basic-asset_GalaChainToken:CreateVestingToken")
+      .signed(users.admin.privateKey);
 
     // When
     const response = await contract.CreateVestingToken(ctx, vestingTokenDto);

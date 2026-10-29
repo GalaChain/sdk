@@ -36,6 +36,8 @@ import { randomize, transactionErrorKey, transactionSuccess } from "@gala-chain/
 import BigNumber from "bignumber.js";
 import { plainToInstance } from "class-transformer";
 
+import { mockedOperation } from "./mockedOperation";
+
 export async function setupTransferFees(client: AdminChainClients, users: ChainUser[]): Promise<void> {
   // Step 1: Create gala token
   const galaTokenClassKey: TokenClassKey = plainToInstance(TokenClassKey, {
@@ -56,14 +58,16 @@ export async function setupTransferFees(client: AdminChainClients, users: ChainU
     maxCapacity: new BigNumber(50000000000)
   });
   const feeConfigDto = client.assets.sign(
-    await createValidDTO(FeePropertiesDto, {
-      collection: "GALA",
-      category: "Unit",
-      type: "none",
-      additionalKey: "none",
-      instance: TokenInstance.FUNGIBLE_TOKEN_INSTANCE,
-      uniqueKey: randomize("fee-config")
-    })
+    (
+      await createValidDTO(FeePropertiesDto, {
+        collection: "GALA",
+        category: "Unit",
+        type: "none",
+        additionalKey: "none",
+        instance: TokenInstance.FUNGIBLE_TOKEN_INSTANCE,
+        uniqueKey: randomize("fee-config")
+      })
+    ).withOperation(mockedOperation("GalaChainToken:SetFeeProperties"))
   );
   const expectedResponse = plainToInstance(FeeProperties, {
     id: "galachain", // defined in chaincode/src/fees/galaFeeProperties.ts
@@ -85,7 +89,7 @@ export async function setupTransferFees(client: AdminChainClients, users: ChainU
 
   const createTokenResponse = await client.assets.submitTransaction<TokenClassKey>(
     "CreateTokenClass",
-    client.assets.sign(createGalaTokenDto),
+    client.assets.sign(createGalaTokenDto.withOperation(mockedOperation("GalaChainToken:CreateTokenClass"))),
     TokenClassKey
   );
   try {
@@ -105,7 +109,9 @@ export async function setupTransferFees(client: AdminChainClients, users: ChainU
   // Step 3: Make transfers charge GALA
   const defineTransferFeeResponse = await client.assets.submitTransaction<FeeCodeDefinition>(
     "DefineFeeSchedule",
-    client.assets.sign(transferFeeScheduleDto),
+    client.assets.sign(
+      transferFeeScheduleDto.withOperation(mockedOperation("GalaChainToken:DefineFeeSchedule"))
+    ),
     FeeCodeDefinition
   );
   expect(defineTransferFeeResponse).toEqual(
@@ -124,7 +130,7 @@ export async function setupTransferFees(client: AdminChainClients, users: ChainU
   });
   const grantGalaAllowanceResponse = await client.assets.submitTransaction<TokenAllowance[]>(
     "GrantAllowance",
-    client.assets.sign(grantGalaAllowanceDto),
+    client.assets.sign(grantGalaAllowanceDto.withOperation(mockedOperation("GalaChainToken:GrantAllowance"))),
     TokenAllowance
   );
   expect(grantGalaAllowanceResponse).toEqual(
@@ -145,7 +151,7 @@ export async function setupTransferFees(client: AdminChainClients, users: ChainU
     });
     const mintGalaResponse = await client.assets.submitTransaction(
       "MintToken",
-      client.assets.sign(galaMintDto)
+      client.assets.sign(galaMintDto.withOperation(mockedOperation("GalaChainToken:MintToken")))
     );
     expect(mintGalaResponse).toEqual(transactionSuccess());
 
@@ -158,7 +164,7 @@ export async function setupTransferFees(client: AdminChainClients, users: ChainU
     });
     const userGalaBalanceResponse = await client.assets.evaluateTransaction(
       "FetchBalances",
-      user.sign(userGalaBalancesDto)
+      user.sign(userGalaBalancesDto.withOperation(mockedOperation("GalaChainToken:FetchBalances")))
     );
     expect(new BigNumber(userGalaBalanceResponse.Data?.[0]?.quantity ?? 0).isGreaterThan(0)).toBe(true);
   }

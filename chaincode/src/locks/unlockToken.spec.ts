@@ -46,9 +46,9 @@ describe("UnlockToken", () => {
       .registeredUsers(users.testUser1)
       .savedState(nftClass, nftInstance, balanceWithLockedHold);
 
-    const dto = await createValidSubmitDTO(UnlockTokenDto, { tokenInstance: nftInstanceKey }).signed(
-      users.testUser1.privateKey
-    );
+    const dto = await createValidSubmitDTO(UnlockTokenDto, { tokenInstance: nftInstanceKey })
+      .withOperation("asset-channel_basic-asset_GalaChainToken:UnlockToken")
+      .signed(users.testUser1.privateKey);
 
     // When
     const response = await contract.UnlockToken(ctx, dto);
@@ -83,9 +83,9 @@ describe("UnlockToken", () => {
       .registeredUsers(users.admin)
       .savedState(nftClass, nftInstance, balanceWithLockedHold);
 
-    const dto = await createValidSubmitDTO(UnlockTokenDto, { tokenInstance: nftInstanceKey }).signed(
-      users.admin.privateKey
-    );
+    const dto = await createValidSubmitDTO(UnlockTokenDto, { tokenInstance: nftInstanceKey })
+      .withOperation("asset-channel_basic-asset_GalaChainToken:UnlockToken")
+      .signed(users.admin.privateKey);
 
     expect(balanceWithLockedHold.getUnexpiredLockedHolds(0)[0].createdBy).toEqual(
       users.testUser1.identityKey
@@ -131,7 +131,9 @@ describe("UnlockToken", () => {
     const dto = await createValidSubmitDTO(UnlockTokenDto, {
       tokenInstance: nftInstanceKey,
       lockedHoldName: lockedHoldName
-    }).signed(users.admin.privateKey);
+    })
+      .withOperation("asset-channel_basic-asset_GalaChainToken:UnlockToken")
+      .signed(users.admin.privateKey);
 
     // When
     const response = await contract.UnlockToken(ctx, dto);
@@ -172,7 +174,9 @@ describe("UnlockToken", () => {
       quantity: new BigNumber("1"),
       lockedHoldName: testLockedHoldName,
       owner: users.testUser1.identityKey
-    }).signed(users.admin.privateKey);
+    })
+      .withOperation("asset-channel_basic-asset_GalaChainToken:UnlockToken")
+      .signed(users.admin.privateKey);
 
     // When
     const response = await contract.UnlockToken(ctx, dto);
@@ -214,9 +218,9 @@ describe("UnlockToken", () => {
       .registeredUsers(users.attacker)
       .savedState(nftClass, nftInstance, ownerBalance);
 
-    const dto = await createValidSubmitDTO(UnlockTokenDto, { tokenInstance: nftInstanceKey }).signed(
-      users.attacker.privateKey
-    );
+    const dto = await createValidSubmitDTO(UnlockTokenDto, { tokenInstance: nftInstanceKey })
+      .withOperation("asset-channel_basic-asset_GalaChainToken:UnlockToken")
+      .signed(users.attacker.privateKey);
 
     // When
     const response = await contract.UnlockToken(ctx, dto); // handled by @GalaTransaction decorator which is mocked out

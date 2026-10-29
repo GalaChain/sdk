@@ -57,7 +57,9 @@ describe("MintToken", () => {
       tokenClass: currency.tokenClassKey(),
       owner: users.testUser1.identityKey,
       quantity: mintQty
-    }).signed(users.admin.privateKey);
+    })
+      .withOperation("asset-channel_basic-asset_GalaChainToken:MintToken")
+      .signed(users.admin.privateKey);
 
     const tokenClaim = await createValidChainObject(TokenClaim, {
       ...currencyInstanceKey,
@@ -139,12 +141,16 @@ describe("MintToken", () => {
       tokenClass: currency.tokenClassKey(),
       owner: users.testUser1.identityKey,
       quantity: firstQty
-    }).signed(users.admin.privateKey);
+    })
+      .withOperation("asset-channel_basic-asset_GalaChainToken:MintToken")
+      .signed(users.admin.privateKey);
     const secondDto = await createValidSubmitDTO(MintTokenDto, {
       tokenClass: currency.tokenClassKey(),
       owner: users.testUser1.identityKey,
       quantity: secondQty
-    }).signed(users.admin.privateKey);
+    })
+      .withOperation("asset-channel_basic-asset_GalaChainToken:MintToken")
+      .signed(users.admin.privateKey);
 
     const { collection, category, type, additionalKey } = currencyClass;
     const mintRequest = await createValidRangedChainObject(TokenMintRequest, {
@@ -235,7 +241,9 @@ describe("MintToken", () => {
       tokenClass: nft.tokenClassKey(),
       owner: users.testUser1.identityKey,
       quantity: mintQty
-    }).signed(users.admin.privateKey);
+    })
+      .withOperation("asset-channel_basic-asset_GalaChainToken:MintToken")
+      .signed(users.admin.privateKey);
 
     const nft1 = await createValidChainObject(TokenInstance, {
       ...nftInstanceKey,
@@ -339,7 +347,9 @@ describe("MintToken", () => {
       tokenClass: currency.tokenClassKey(),
       owner: users.testUser1.identityKey,
       quantity: decimalQuantity
-    }).signed(users.testUser1.privateKey);
+    })
+      .withOperation("asset-channel_basic-asset_GalaChainToken:MintToken")
+      .signed(users.testUser1.privateKey);
 
     // When
     const response = await contract.MintToken(ctx, dto);
@@ -369,7 +379,9 @@ describe("MintToken", () => {
       tokenClass: currency.tokenClassKey(),
       owner: users.admin.identityKey,
       quantity: mintQuantity
-    }).signed(users.admin.privateKey);
+    })
+      .withOperation("asset-channel_basic-asset_GalaChainToken:MintToken")
+      .signed(users.admin.privateKey);
 
     // When
     const response = await contract.MintToken(ctx, dto);
@@ -404,7 +416,9 @@ describe("MintToken", () => {
       tokenClass: nft.tokenClassKey(),
       owner: users.testUser1.identityKey,
       quantity: mintQty
-    }).signed(users.admin.privateKey);
+    })
+      .withOperation("asset-channel_basic-asset_GalaChainToken:MintToken")
+      .signed(users.admin.privateKey);
 
     const nft1 = await createValidChainObject(TokenInstance, {
       ...nftInstanceKey,
@@ -508,7 +522,9 @@ describe("MintToken", () => {
       tokenClass: currency.tokenClassKey(),
       owner: users.attacker.identityKey,
       quantity: new BigNumber("1000000000000")
-    }).signed(users.attacker.privateKey);
+    })
+      .withOperation("asset-channel_basic-asset_GalaChainToken:MintToken")
+      .signed(users.attacker.privateKey);
 
     // When
     const response = await contract.MintToken(ctx, dto);
@@ -549,7 +565,9 @@ describe("MintToken", () => {
       tokenClass: currency.tokenClassKey(),
       owner: users.testUser1.identityKey,
       quantity: mintQty
-    }).signed(users.admin.privateKey);
+    })
+      .withOperation("asset-channel_basic-asset_GalaChainToken:MintToken")
+      .signed(users.admin.privateKey);
 
     // When
     const response = await contract.MintToken(ctx, dto);
@@ -610,7 +628,9 @@ describe("MintToken", () => {
       tokenClass: currency.tokenClassKey(),
       owner: users.testUser1.identityKey,
       quantity: mintQty
-    }).signed(users.admin.privateKey);
+    })
+      .withOperation("asset-channel_basic-asset_GalaChainToken:MintToken")
+      .signed(users.admin.privateKey);
 
     // When
     const response = await contract.MintToken(ctx, dto);

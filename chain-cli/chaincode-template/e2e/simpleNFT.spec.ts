@@ -30,6 +30,7 @@ import { randomize, transactionSuccess } from "@gala-chain/test";
 import BigNumber from "bignumber.js";
 import { instanceToPlain, plainToInstance } from "class-transformer";
 
+import { mockedOperation } from "./mockedOperation";
 import { setupTransferFees } from "./setupTransferFees";
 import { applyRequests, createTransferDto, fetchNFTInstances } from "./tokenOps";
 
@@ -74,7 +75,7 @@ describe("Simple NFT scenario", () => {
     // When
     const response = await client.assets.submitTransaction<TokenClassKey>(
       "CreateTokenClass",
-      client.assets.sign(galaTokenDto),
+      client.assets.sign(galaTokenDto.withOperation(mockedOperation("GalaChainToken:CreateTokenClass"))),
       TokenClassKey
     );
 
@@ -97,7 +98,7 @@ describe("Simple NFT scenario", () => {
     // When
     const galaResult = await client.assets.submitTransaction<TokenAllowance[]>(
       "GrantAllowance",
-      client.assets.sign(galaAllowanceDto),
+      client.assets.sign(galaAllowanceDto.withOperation(mockedOperation("GalaChainToken:GrantAllowance"))),
       TokenAllowance
     );
 
@@ -133,11 +134,11 @@ describe("Simple NFT scenario", () => {
     // When
     const toUser1Response = await client.assets.submitTransaction(
       "RequestMintToken",
-      user1.sign(user1MintDto)
+      user1.sign(user1MintDto.withOperation(mockedOperation("GalaChainToken:RequestMintToken")))
     );
     const toUser2Response = await client.assets.submitTransaction(
       "RequestMintToken",
-      user2.sign(user2MintDto)
+      user2.sign(user2MintDto.withOperation(mockedOperation("GalaChainToken:RequestMintToken")))
     );
     const applyRequestsResponse = await applyRequests(client);
 
@@ -150,8 +151,12 @@ describe("Simple NFT scenario", () => {
   it("Users should have some NTFs", async () => {
     // Given
     const balancesDto = await createValidDTO(FetchBalancesDto, { ...instanceToPlain(nftClassKey) });
-    const user1BalancesDto = user1.sign(balancesDto);
-    const user2BalancesDto = user2.sign(balancesDto);
+    const user1BalancesDto = user1.sign(
+      balancesDto.withOperation(mockedOperation("GalaChainToken:FetchBalances"))
+    );
+    const user2BalancesDto = user2.sign(
+      balancesDto.withOperation(mockedOperation("GalaChainToken:FetchBalances"))
+    );
 
     // When
     const user1checkResponse = await client.assets.evaluateTransaction("FetchBalances", user1BalancesDto);
@@ -173,7 +178,7 @@ describe("Simple NFT scenario", () => {
     // When
     const transferResponse = await client.assets.submitTransaction(
       "RequestTransferToken",
-      user1.sign(transferDto)
+      user1.sign(transferDto.withOperation(mockedOperation("GalaChainToken:RequestTransferToken")))
     );
 
     // Then
