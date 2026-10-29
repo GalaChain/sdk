@@ -320,6 +320,7 @@ export abstract class GalaContract extends Contract {
             }
 
             const method = getApiMethod(this, op.method, (m) => m.isWrite && m.methodName !== "BatchSubmit");
+            sandboxCtx.bindOperationMethod(method.methodName);
             opResponse = await this[method.methodName](sandboxCtx, op.dto);
           } catch (error) {
             // An external invoke cannot be rolled back by discarding the local
@@ -419,6 +420,7 @@ export abstract class GalaContract extends Contract {
               op.method,
               (m) => !m.isWrite && m.methodName !== "BatchEvaluate"
             );
+            sandboxCtx.bindOperationMethod(method.methodName);
             opResponse = await this[method.methodName](sandboxCtx, op.dto);
           } catch (error) {
             opResponse = GalaChainResponse.Error(error);
