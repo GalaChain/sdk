@@ -17,6 +17,7 @@ export const mockFetch = (body: Record<string, unknown>, headers?: Record<string
     Promise.resolve({
       ok,
       json: () => Promise.resolve(body),
+      text: () => Promise.resolve(JSON.stringify(body)),
       headers: {
         get: (key: string) => headers?.[key]
       }

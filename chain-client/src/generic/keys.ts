@@ -28,8 +28,27 @@ export function genKeyPair(): { privateKey: string; publicKey: string } {
   };
 }
 
+// Accepts a secp256k1 private key as hex (with or without "0x", possibly missing
+// a leading zero) or as base64, and returns the raw 32 key bytes.
+export function normalizePrivateKey(privateKey: string): Buffer {
+  const input = privateKey.startsWith("0x") ? privateKey.slice(2) : privateKey;
+
+  if (input.length >= 61 && input.length <= 64 && /^[0-9a-fA-F]+$/.test(input)) {
+    return Buffer.from(input.padStart(64, "0"), "hex");
+  }
+
+  if (input.length === 44 && /^[A-Za-z0-9+/]{43}=$/.test(input)) {
+    return Buffer.from(input, "base64");
+  }
+
+  throw new Error(
+    `Cannot normalize secp256k1 private key. Got string of length ${input.length}, ` +
+      `but expected 44 for base64 or up to 64 for hex encoding (excluding '0x').`
+  );
+}
+
 export function getPublicKey(privateKey: string): string {
-  const key = Buffer.from(privateKey.replace(/^0x/, ""), "hex");
+  const key = normalizePrivateKey(privateKey);
   return Buffer.from(secp256k1.publicKeyCreate(new Uint8Array(key), false)).toString("hex");
 }
 

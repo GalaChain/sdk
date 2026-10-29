@@ -34,6 +34,7 @@ import {
   FetchAllowancesResponse,
   FetchBalancesDto,
   FetchBalancesWithPaginationDto,
+  FetchBalancesWithPaginationResponse,
   FetchBalancesWithTokenMetadataResponse,
   FetchBurnsDto,
   FetchFeeScheduleDto,
@@ -102,7 +103,7 @@ import {
   deleteAllowances,
   deleteTokenInstanceMetadata,
   fetchAllowancesWithPagination,
-  fetchBalances,
+  fetchBalancesWithPagination,
   fetchBalancesWithTokenMetadata,
   fetchBurns,
   fetchFeeSchedule,
@@ -405,10 +406,21 @@ export default class GalaChainTokenContract extends GalaContract {
   @GalaTransaction({
     type: EVALUATE,
     in: FetchBalancesDto,
-    out: { arrayOf: TokenBalance }
+    out: FetchBalancesWithPaginationResponse,
+    description:
+      "Returns a page of balances. Provide limit and bookmark to page. " +
+      "When limit is omitted, the query uses the total results limit."
   })
-  public async FetchBalances(ctx: GalaChainContext, dto: FetchBalancesDto): Promise<TokenBalance[]> {
-    return fetchBalances(ctx, { ...dto, owner: await resolveUserAlias(ctx, dto.owner ?? ctx.callingUser) });
+  public async FetchBalances(
+    ctx: GalaChainContext,
+    dto: FetchBalancesDto
+  ): Promise<FetchBalancesWithPaginationResponse> {
+    return fetchBalancesWithPagination(ctx, {
+      ...dto,
+      owner: await resolveUserAlias(ctx, dto.owner ?? ctx.callingUser),
+      bookmark: dto.bookmark,
+      limit: dto.limit
+    });
   }
 
   @GalaTransaction({

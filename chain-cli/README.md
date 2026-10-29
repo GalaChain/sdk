@@ -7,14 +7,16 @@ CLI tool for Gala chaincode
 [![GitHub license](https://img.shields.io/github/license/oclif/hello-world)](https://github.com/oclif/hello-world/blob/main/LICENSE)
 
 <!-- toc -->
-* [galachain](#galachain)
-* [Usage](#usage)
-* [Commands](#commands)
+
+- [galachain](#galachain)
+- [Usage](#usage)
+- [Commands](#commands)
 <!-- tocstop -->
 
 # Usage
 
 <!-- usage -->
+
 ```sh-session
 $ npm install -g @gala-chain/cli
 $ galachain COMMAND
@@ -26,26 +28,28 @@ USAGE
   $ galachain COMMAND
 ...
 ```
+
 <!-- usagestop -->
 
 # Commands
 
 <!-- commands -->
-* [`galachain deploy IMAGETAG [DEVELOPERPRIVATEKEY]`](#galachain-deploy-imagetag-developerprivatekey)
-* [`galachain dto-sign KEY DATA`](#galachain-dto-sign-key-data)
-* [`galachain dto-verify KEY DATA`](#galachain-dto-verify-key-data)
-* [`galachain dto:sign KEY DATA`](#galachain-dtosign-key-data)
-* [`galachain dto:verify KEY DATA`](#galachain-dtoverify-key-data)
-* [`galachain help [COMMAND]`](#galachain-help-command)
-* [`galachain info [DEVELOPERPRIVATEKEY]`](#galachain-info-developerprivatekey)
-* [`galachain init PATH`](#galachain-init-path)
-* [`galachain keygen FILE`](#galachain-keygen-file)
-* [`galachain logs`](#galachain-logs)
-* [`galachain network-prune`](#galachain-network-prune)
-* [`galachain network-up`](#galachain-network-up)
-* [`galachain network:prune`](#galachain-networkprune)
-* [`galachain network:up`](#galachain-networkup)
-* [`galachain register [DEVELOPERPRIVATEKEY]`](#galachain-register-developerprivatekey)
+
+- [`galachain deploy IMAGETAG [DEVELOPERPRIVATEKEY]`](#galachain-deploy-imagetag-developerprivatekey)
+- [`galachain dto-sign KEY DATA`](#galachain-dto-sign-key-data)
+- [`galachain dto-verify KEY DATA`](#galachain-dto-verify-key-data)
+- [`galachain dto:sign KEY DATA`](#galachain-dtosign-key-data)
+- [`galachain dto:verify KEY DATA`](#galachain-dtoverify-key-data)
+- [`galachain help [COMMAND]`](#galachain-help-command)
+- [`galachain info [DEVELOPERPRIVATEKEY]`](#galachain-info-developerprivatekey)
+- [`galachain init PATH`](#galachain-init-path)
+- [`galachain keygen FILE`](#galachain-keygen-file)
+- [`galachain logs`](#galachain-logs)
+- [`galachain network-prune`](#galachain-network-prune)
+- [`galachain network-up`](#galachain-network-up)
+- [`galachain network:prune`](#galachain-networkprune)
+- [`galachain network:up`](#galachain-networkup)
+- [`galachain register [DEVELOPERPRIVATEKEY]`](#galachain-register-developerprivatekey)
 
 ## `galachain deploy IMAGETAG [DEVELOPERPRIVATEKEY]`
 
@@ -58,7 +62,7 @@ USAGE
 
 ARGUMENTS
   IMAGETAG               Image tag to deploy. It should follow the pattern imageName:version.
-  [DEVELOPERPRIVATEKEY]  Developer's private key to sign the request. It could be a file or a string. If not provided as
+  [DEVELOPERPRIVATEKEY]  Path to the developer's private key file used to sign the request. If not provided as
                          an argument, the command will try to read the private key from the environment variable
                          DEV_PRIVATE_KEY, or from the default location (~/.gc-keys/<chaincode-name>/gc-dev-key), or will
                          ask for it in a prompt.
@@ -270,7 +274,7 @@ USAGE
   $ galachain info [DEVELOPERPRIVATEKEY] [--json] [--log-level debug|info|warn|error] [--mnt]
 
 ARGUMENTS
-  [DEVELOPERPRIVATEKEY]  Developer's private key to sign the request. It could be a file or a string. If not provided as
+  [DEVELOPERPRIVATEKEY]  Path to the developer's private key file used to sign the request. If not provided as
                          an argument, the command will try to read the private key from the environment variable
                          DEV_PRIVATE_KEY, or from the default location (~/.gc-keys/<chaincode-name>/gc-dev-key), or will
                          ask for it in a prompt.
@@ -352,7 +356,7 @@ FLAGS
   -e, --endTime=<value>              [default: now] End time for logs. Accepts ISO8601 format or shorthand (e.g., now,
                                      0).
   -f, --filter=<value>               Filter for logs (e.g., error, info, warn, debug).
-  -k, --developerPrivateKey=<value>  Private key to sign the data. It can be a file path or a key string. If not
+  -k, --developerPrivateKey=<value>  Path to the private key file used to sign the data. If not
                                      provided, the private key will be read from the environment variable
                                      DEV_PRIVATE_KEY.
   -l, --limit=<value>                Maximum number of log entries to fetch.
@@ -515,7 +519,7 @@ USAGE
   $ galachain register [DEVELOPERPRIVATEKEY] [--json] [--log-level debug|info|warn|error] [--mnt] [--no-prompt]
 
 ARGUMENTS
-  [DEVELOPERPRIVATEKEY]  Developer's private key to sign the request. It could be a file or a string. If not provided as
+  [DEVELOPERPRIVATEKEY]  Path to the developer's private key file used to sign the request. If not provided as
                          an argument, the command will try to read the private key from the environment variable
                          DEV_PRIVATE_KEY, or from the default location (~/.gc-keys/<chaincode-name>/gc-dev-key), or will
                          ask for it in a prompt.
@@ -539,4 +543,5 @@ EXAMPLES
 
   $ galachain register c0fb1924408d936fb7cd0c86695885df4f66861621b5c8660df3924c4d09dd79
 ```
+
 <!-- commandsstop -->

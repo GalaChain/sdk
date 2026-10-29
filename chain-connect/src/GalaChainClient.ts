@@ -24,7 +24,7 @@ import { instanceToPlain, plainToInstance } from "class-transformer";
 import { BrowserProvider } from "ethers";
 
 import { eip712DomainName } from "./eip712DomainName";
-import { DEFAULT_REQUEST_TIMEOUT_MS, fetchWithTimeout } from "./fetchWithTimeout";
+import { fetchWithTimeout } from "./fetchWithTimeout";
 import { EventEmitter, Listener, MetaMaskEvents, recoverPublicKeyFromPersonalSign } from "./helpers";
 import { GalaChainResponseError, GalaChainResponseSuccess, SigningType } from "./types";
 import { ConstructorArgs } from "./types/utils";
@@ -44,14 +44,18 @@ type NonArrayClassConstructor<T> = T extends Array<unknown>
 export interface GalaChainProviderOptions {
   /** The type of signing to use for transactions */
   signingType?: SigningType;
-  /** Milliseconds to wait for a gateway response. Defaults to 30 seconds. */
+  /** Milliseconds to wait for a gateway response, including its body. Defaults to 30 seconds. */
   timeoutMs?: number;
+  /** Largest gateway response body accepted, in bytes. Defaults to 10 MB. */
+  maxResponseBytes?: number;
   /**
-   * EIP-712 domain name. When omitted, network STG uses GalaChainStage, DEV uses GalaChainDev,
-   * and every other value stays GalaChain. chainId is left to the wallet.
+   * EIP-712 domain name. Overrides network when set. chainId is left to the wallet.
    */
   domainName?: string;
-  /** Deployment selector used when domainName is omitted. */
+  /**
+   * Deployment selector used when domainName is omitted: MNT uses GalaChain, STG uses
+   * GalaChainStage, and DEV or no value uses GalaChainDev. Mainnet apps must set MNT.
+   */
   network?: "MNT" | "STG" | "DEV";
   /** Channel used to name dtoOperation when a payload is signed. */
   channel?: string;
@@ -118,6 +122,7 @@ export abstract class GalaChainProvider {
    * @param params.requestConstructor - Constructor for request validation
    * @param params.responseConstructor - Constructor for response transformation
    * @param params.signingType - Type of signing to use
+   * @param params.signal - Optional signal that cancels the request
    * @returns Promise resolving to a successful response
    * @throws {GalaChainResponseError} When the request fails
    */
@@ -129,7 +134,8 @@ export abstract class GalaChainProvider {
     headers = {},
     requestConstructor,
     responseConstructor,
-    signingType = this.options?.signingType ?? SigningType.SIGN_TYPED_DATA
+    signingType = this.options?.signingType ?? SigningType.SIGN_TYPED_DATA,
+    signal
   }: {
     url: string;
     method: string;
@@ -139,6 +145,7 @@ export abstract class GalaChainProvider {
     requestConstructor?: ClassConstructor<ChainCallDTO>;
     responseConstructor?: NonArrayClassConstructor<T>;
     signingType?: SigningType;
+    signal?: AbortSignal;
   }): Promise<GalaChainResponseSuccess<T>> {
     // Throws error if class validation fails. Signing and transport use the
     // validated instance so constructor transforms are not discarded.
@@ -155,15 +162,14 @@ export abstract class GalaChainProvider {
     }
 
     const fullUrl = `${url}/${method}`;
-    const timeoutMs = this.options?.timeoutMs ?? DEFAULT_REQUEST_TIMEOUT_MS;
-    const response = await fetchWithTimeout(
+    const { response, body } = await fetchWithTimeout(
       fullUrl,
       {
         method: "POST",
         body: serialize(newPayload),
         headers: this.requestHeaders(headers)
       },
-      timeoutMs
+      { timeoutMs: this.options?.timeoutMs, maxResponseBytes: this.options?.maxResponseBytes, signal }
     );
 
     const hash = response.headers.get("x-transaction-id") ?? undefined;
@@ -172,7 +178,7 @@ export abstract class GalaChainProvider {
     if (response.headers.get("content-length") !== "0") {
       let data: any;
       try {
-        data = await response.json();
+        data = JSON.parse(body);
       } catch (error) {
         throw new Error("Invalid JSON response");
       }

@@ -37,7 +37,7 @@ export default class Info extends BaseCommand<typeof Info> {
     developerPrivateKey: Args.string({
       char: "k",
       description:
-        "Developer's private key to sign the request. It could be a file or a string. " +
+        "Path to the developer's private key file used to sign the request. " +
         "If not provided as an argument, the command will try to read the private key " +
         "from the environment variable DEV_PRIVATE_KEY, or from the default location " +
         "(~/.gc-keys/<chaincode-name>/gc-dev-key), or will ask for it in a prompt.",

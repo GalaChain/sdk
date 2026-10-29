@@ -17,6 +17,7 @@ import { Contract, Gateway, Network } from "fabric-network";
 import { ChainClientBuilder, ContractConfig } from "../generic";
 import { CAClient } from "./CAClient";
 import { HFClient } from "./HFClient";
+import { validateConnectionProfile } from "./validateConnectionProfile";
 
 export class HFClientBuilder extends ChainClientBuilder {
   public readonly useServiceDiscovery: boolean;
@@ -31,6 +32,8 @@ export class HFClientBuilder extends ChainClientBuilder {
   ) {
     super();
 
+    validateConnectionProfile(connectionProfile, orgMsp);
+
     this.caClient = new CAClient(orgMsp, adminId, adminSecret, connectionProfile);
 
     // if there are both orderers and channels in the connection profile, then we don't need to use service discovery
@@ -38,12 +41,9 @@ export class HFClientBuilder extends ChainClientBuilder {
       isNonEmptyObject(connectionProfile.orderers) && isNonEmptyObject(connectionProfile.channels)
     );
 
-    if (!isNonEmptyObject(connectionProfile.peers)) {
-      throw new Error("No peers found in connection profile");
-    }
-
     // if peer urls contain localhost, then asLocalhost = true
-    const peerUrls = Object.values(connectionProfile.peers ?? {}).map((peer) => peer?.url);
+    const peers = connectionProfile.peers as Record<string, { url: string }>;
+    const peerUrls = Object.values(peers).map((peer) => peer.url);
     const localhostUrls = peerUrls.filter((url) => url.includes("//localhost:"));
 
     if (localhostUrls.length > 0 && localhostUrls.length !== peerUrls.length) {

@@ -16,6 +16,7 @@ import { randomBytes } from "crypto";
 import { keccak256 } from "js-sha3";
 import * as secp256k1 from "secp256k1";
 
+import { normalizePrivateKey } from "../generic/keys";
 import { serialize } from "./serialize";
 
 export function randomUniqueKey(): string {
@@ -32,7 +33,7 @@ export function signPlain(
   delete payload.signature;
   delete payload.multisig;
   const hash = Buffer.from(keccak256.digest(Buffer.from(serialize(payload))));
-  const key = Buffer.from(privateKey.replace(/^0x/, ""), "hex");
+  const key = normalizePrivateKey(privateKey);
   const sig = secp256k1.ecdsaSign(new Uint8Array(hash), new Uint8Array(key));
   const r = Buffer.from(sig.signature.slice(0, 32)).toString("hex");
   const s = Buffer.from(sig.signature.slice(32, 64)).toString("hex");

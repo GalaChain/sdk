@@ -150,23 +150,53 @@ export abstract class ChainObject {
     }
 
     // A complete composite key is sometimes stored as one component of another key.
-    // It starts and ends with the separator. Any other embedded separator is ambiguous.
-    const isNestedCompositeKey = text.startsWith(nul) && text.endsWith(nul) && text.length > 1;
-    if (!isNestedCompositeKey) {
+    // It must be well formed: the separator, then non-empty segments each followed by the separator.
+    // Any other embedded separator is ambiguous.
+    if (!ChainObject.isNestedCompositeKey(text)) {
       throw new InvalidCompositeKeyError(`${label} contains a NUL character`);
     }
     return text;
   }
 
+  private static isNestedCompositeKey(text: string): boolean {
+    const nul = ChainObject.MIN_UNICODE_RUNE_VALUE;
+    if (text.length < 3 || !text.startsWith(nul) || !text.endsWith(nul)) {
+      return false;
+    }
+    const segments = text.slice(1, -1).split(nul);
+    return segments.every((segment) => segment.length > 0);
+  }
+
   public static getStringKeyFromParts(parts: string[]): string {
+    // "$" may be the first character of a part. "aaa" + "$bb" is "aaa$$bb".
+    // A "$" later in the part is rejected, so "aaa$" + "bb" cannot produce the same string.
     const texts = parts.map((part, index) => {
       const text = part === null || part === undefined ? "" : String(part);
-      if (text.includes(ChainObject.ID_SPLIT_CHAR) || text.includes(ChainObject.MIN_UNICODE_RUNE_VALUE)) {
-        throw new InvalidCompositeKeyError(`string key part at index ${index} contains the separator`);
+      if (text.includes(ChainObject.MIN_UNICODE_RUNE_VALUE)) {
+        throw new InvalidCompositeKeyError(`string key part at index ${index} contains a NUL character`);
+      }
+      if (text.indexOf(ChainObject.ID_SPLIT_CHAR) > 0) {
+        throw new InvalidCompositeKeyError(
+          `string key part at index ${index} contains $ after its first character`
+        );
       }
       return text;
     });
     return texts.join(ChainObject.ID_SPLIT_CHAR);
+  }
+
+  public static getPartsFromStringKey(stringKey: string): string[] {
+    const raw = stringKey.split(ChainObject.ID_SPLIT_CHAR);
+    const parts: string[] = [];
+    for (let i = 0; i < raw.length; i++) {
+      if (raw[i] === "" && i + 1 < raw.length) {
+        parts.push(`${ChainObject.ID_SPLIT_CHAR}${raw[i + 1]}`);
+        i += 1;
+      } else {
+        parts.push(raw[i]);
+      }
+    }
+    return parts;
   }
 
   public static getEncodableStringKeyFromParts(parts: string[]): string {

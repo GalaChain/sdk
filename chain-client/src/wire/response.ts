@@ -63,14 +63,23 @@ export const GalaChainResponse = {
     object: string | Record<string, unknown>
   ): GalaChainResponse<T> {
     const json = typeof object === "string" ? JSON.parse(object) : object;
+    if (json === null || typeof json !== "object" || Array.isArray(json)) {
+      return GalaChainResponse.Error("Chain response is not an object", 500, "INVALID_CHAIN_RESPONSE");
+    }
     if (json.Status === GalaChainResponseType.Error) {
-      return {
-        Status: GalaChainResponseType.Error,
-        Message: json.Message,
-        ErrorCode: json.ErrorCode,
-        ErrorKey: json.ErrorKey,
-        ErrorPayload: json.ErrorPayload
-      };
+      return GalaChainResponse.Error(
+        typeof json.Message === "string" ? json.Message : "Unknown chain error",
+        typeof json.ErrorCode === "number" ? json.ErrorCode : undefined,
+        typeof json.ErrorKey === "string" ? json.ErrorKey : undefined,
+        json.ErrorPayload
+      );
+    }
+    if (json.Status !== GalaChainResponseType.Success) {
+      return GalaChainResponse.Error(
+        `Chain response has invalid status: ${JSON.stringify(json.Status)}`,
+        500,
+        "INVALID_CHAIN_RESPONSE"
+      );
     }
     const raw = json.Data;
     const data =

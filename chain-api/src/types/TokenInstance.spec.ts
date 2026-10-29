@@ -95,3 +95,20 @@ it("builds an instance key from the whole integer", () => {
     ChainObject.getCompositeKeyFromParts(TokenInstance.INDEX_KEY, ["collection", "12"])
   );
 });
+
+it("should build a string key when a key field starts with $", () => {
+  // Given
+  const instance = new TokenInstanceKey();
+  instance.collection = "aaa";
+  instance.category = "$bb";
+  instance.type = "Large";
+  instance.additionalKey = "none";
+  instance.instance = new BigNumber(0);
+
+  // When
+  const stringKey = instance.toStringKey();
+
+  // Then
+  expect(stringKey).toEqual("aaa$$bb$Large$none$0");
+  expect(ChainObject.getPartsFromStringKey(stringKey)).toEqual(["aaa", "$bb", "Large", "none", "0"]);
+});

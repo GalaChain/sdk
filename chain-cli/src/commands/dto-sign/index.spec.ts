@@ -12,7 +12,9 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+import { mkdtempSync, writeFileSync } from "fs";
 import { writeFile } from "fs/promises";
+import os from "os";
 import path from "path";
 
 import signatures from "../../signatures";
@@ -44,7 +46,13 @@ jest.mock("../../utils", () => ({
   parseJsonFromStringOrFile: () => mockParseJsonFromStringOrFile()
 }));
 
+const keyFile = path.join(mkdtempSync(path.join(os.tmpdir(), "dto-sign-")), "test-key");
+
 describe("DtoSign Command", () => {
+  beforeAll(() => {
+    writeFileSync(keyFile, fakePrivateKey);
+  });
+
   it("it should check signature field in the response", async () => {
     // Given
     const result: (string | Uint8Array)[] = [];
@@ -53,7 +61,7 @@ describe("DtoSign Command", () => {
       return true;
     });
 
-    const target = path.resolve(__dirname, "./test-key");
+    const target = keyFile;
 
     // When
     await DtoSign.run([target, dataTestJson]);
@@ -71,7 +79,7 @@ describe("DtoSign Command", () => {
       return true;
     });
 
-    const target = path.resolve(__dirname, "./test-key");
+    const target = keyFile;
 
     // When
     await DtoSign.run([target, dataTestJson, "-d"]);
@@ -83,28 +91,72 @@ describe("DtoSign Command", () => {
   });
 
   it("keeps an existing signer address on a DER signature", async () => {
+    // Given
     const result: (string | Uint8Array)[] = [];
     jest.spyOn(process.stdout, "write").mockImplementation((v) => {
       result.push(v);
       return true;
     });
+    const signerAddress = `eth|${signatures.getEthAddress(signatures.getPublicKey(fakePrivateKey))}`;
     mockParseJsonFromStringOrFile.mockResolvedValueOnce({
       tokenClass: { collection: "CLITest" },
-      signerAddress: "eth|0xabc"
+      signerAddress
     });
 
-    await DtoSign.run([path.resolve(__dirname, "./test-key"), dataTestJson, "-d"]);
+    // When
+    await DtoSign.run([keyFile, dataTestJson, "-d"]);
 
+    // Then
     const output = result.join("");
-    expect(output).toContain("eth|0xabc");
+    expect(output).toContain(signerAddress);
     expect(output).not.toContain("signerPublicKey");
+  });
+
+  it("rejects a signer address that does not match the key on a DER signature", async () => {
+    // Given
+    const otherAddress = signatures.getEthAddress(signatures.getPublicKey("11".repeat(32)));
+    mockParseJsonFromStringOrFile.mockResolvedValueOnce({
+      tokenClass: { collection: "CLITest" },
+      signerAddress: `eth|${otherAddress}`
+    });
+
+    // When & Then
+    await expect(DtoSign.run([keyFile, dataTestJson, "-d"])).rejects.toThrow(
+      /signerAddress in the DTO .* does not match the signing key/
+    );
+  });
+
+  it("accepts a matching compressed signer public key on a DER signature", async () => {
+    // Given
+    jest.spyOn(process.stdout, "write").mockImplementation(() => true);
+    const compressed = signatures.getCompactBase64PublicKey(signatures.getPublicKey(fakePrivateKey));
+    mockParseJsonFromStringOrFile.mockResolvedValueOnce({
+      tokenClass: { collection: "CLITest" },
+      signerPublicKey: compressed
+    });
+
+    // When & Then
+    await expect(DtoSign.run([keyFile, dataTestJson, "-d"])).resolves.toBeUndefined();
+  });
+
+  it("rejects a signer public key that does not match the key on a DER signature", async () => {
+    // Given
+    mockParseJsonFromStringOrFile.mockResolvedValueOnce({
+      tokenClass: { collection: "CLITest" },
+      signerPublicKey: signatures.getPublicKey("11".repeat(32))
+    });
+
+    // When & Then
+    await expect(DtoSign.run([keyFile, dataTestJson, "-d"])).rejects.toThrow(
+      /signerPublicKey in the DTO does not match the signing key/
+    );
   });
 
   it("does not attach a signer identity when only the DER signature is requested", async () => {
     const der = jest.spyOn(signatures, "getDERSignature");
     jest.spyOn(process.stdout, "write").mockImplementation(() => true);
 
-    await DtoSign.run([path.resolve(__dirname, "./test-key"), dataTestJson, "-d", "-s"]);
+    await DtoSign.run([keyFile, dataTestJson, "-d", "-s"]);
 
     const signed = der.mock.calls[0][0] as { signerPublicKey?: string };
     expect(signed.signerPublicKey).toBeUndefined();
@@ -113,13 +165,19 @@ describe("DtoSign Command", () => {
   it("fails when the output file cannot be written", async () => {
     jest.mocked(writeFile).mockRejectedValueOnce(new Error("disk full"));
 
-    await expect(
-      DtoSign.run([path.resolve(__dirname, "./test-key"), dataTestJson, "-o", "signed.json"])
-    ).rejects.toThrow(/Failed to writeFile to signed.json/);
+    await expect(DtoSign.run([keyFile, dataTestJson, "-o", "signed.json"])).rejects.toThrow(
+      /Failed to writeFile to signed.json/
+    );
   });
 
-  it("rejects a raw private key", async () => {
-    await expect(DtoSign.run([fakePrivateKey, dataTestJson])).rejects.toThrow(/Pass a path to a key file/);
+  it.each([
+    ["64 hex chars", fakePrivateKey],
+    ["0x-prefixed hex", `0x${fakePrivateKey}`],
+    ["62 hex chars", fakePrivateKey.slice(2)],
+    ["base64", Buffer.from(fakePrivateKey, "hex").toString("base64")]
+  ])("rejects a raw private key (%s)", async (_, key) => {
+    // When & Then
+    await expect(DtoSign.run([key, dataTestJson])).rejects.toThrow(/Pass a path to a private key file/);
   });
 
   it("it should return only the signature", async () => {
@@ -130,7 +188,7 @@ describe("DtoSign Command", () => {
       return true;
     });
 
-    const target = path.resolve(__dirname, "./test-key");
+    const target = keyFile;
 
     // When
     await DtoSign.run([target, dataTestJson, "-s"]);

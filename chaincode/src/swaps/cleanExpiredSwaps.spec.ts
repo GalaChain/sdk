@@ -93,4 +93,30 @@ describe("cleanTokenSwaps use comparison", () => {
 
     expect(response.deletes.map((deleted) => deleted.swapRequestId)).toEqual([swap.swapRequestId]);
   });
+
+  it("deletes an expired swap that lists the same token twice", async () => {
+    // Given
+    const swap = swapWithUses("1", "1");
+    swap.offered = [swap.offered[0], swap.offered[0]];
+    const other = swapWithUses("2", "2");
+    const { ctx, getWrites } = fixture(GalaChainTokenContract).savedState(
+      swap,
+      ...indexesFor(swap),
+      other,
+      ...indexesFor(other)
+    );
+
+    // When
+    const response = await cleanTokenSwaps(ctx, {});
+
+    // Then
+    expect(response.deletes.map((deleted) => deleted.swapRequestId).sort()).toEqual(
+      [swap.swapRequestId, other.swapRequestId].sort()
+    );
+    const deletedKeys = [swap, ...indexesFor(swap), other, ...indexesFor(other)].map((o) =>
+      o.getCompositeKey()
+    );
+    await ctx.stub.flushWrites();
+    expect(Object.keys(getWrites()).sort()).toEqual(deletedKeys.sort());
+  });
 });

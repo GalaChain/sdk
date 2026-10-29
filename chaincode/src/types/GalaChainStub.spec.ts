@@ -479,6 +479,38 @@ describe("invokeChaincode", () => {
     expect(internalStub.invokeChaincode).toHaveBeenCalledWith("chaincode-1", args, "");
   });
 
+  it("should treat a chaincode name with a channel suffix as the same target", async () => {
+    // Given
+    const { internalStub, gcStub } = setupTest();
+    const args = ["Contract:Method", "{}"];
+
+    // When
+    const first = await gcStub.invokeChaincode("chaincode-1/channel-B", args, "");
+    const second = await gcStub.invokeChaincode("chaincode-1", args, "channel-B").catch((e) => e);
+
+    // Then
+    expect(first).toEqual(successInvoke);
+    expect(second).toEqual(new DuplicateInvokeChaincodeError("chaincode-1", args, "channel-B"));
+    expect(internalStub.invokeChaincode).toHaveBeenCalledTimes(1);
+    expect(internalStub.invokeChaincode).toHaveBeenCalledWith("chaincode-1/channel-B", args, "");
+  });
+
+  it.each([null, undefined])("should treat channel %s as the current channel", async (channel) => {
+    // Given
+    const { internalStub, gcStub } = setupTest();
+    const args = ["Contract:Method", "{}"];
+    internalStub.getChannelID = jest.fn(() => "channel-A");
+
+    // When
+    const first = await gcStub.invokeChaincode("chaincode-1", args, channel as unknown as string);
+    const second = await gcStub.invokeChaincode("chaincode-1", args, "channel-A").catch((e) => e);
+
+    // Then
+    expect(first).toEqual(successInvoke);
+    expect(second).toEqual(new DuplicateInvokeChaincodeError("chaincode-1", args, "channel-A"));
+    expect(internalStub.invokeChaincode).toHaveBeenCalledTimes(1);
+  });
+
   it("should record external chaincode invocation", async () => {
     // Given
     const { gcStub } = setupTest();

@@ -14,7 +14,15 @@
  */
 import fs from "fs/promises";
 
-import { getPathFileName, parseJsonFromStringOrFile, readPublicKeyFromFile } from "./utils";
+import {
+  assertPrivateKeyFileArg,
+  getPathFileName,
+  parseJsonFromStringOrFile,
+  parseStringOrFileKey,
+  readPublicKeyFromFile
+} from "./utils";
+
+const privateKeyHex = "45f2db331d77c0154c70be06d7d9fe00fa2b5471872f134d73a6e43c6b7e3d29";
 
 describe("parseJsonFromStringOrFile", () => {
   it("should parse JSON string", async () => {
@@ -116,5 +124,77 @@ describe("getPathFileName", () => {
   it("should return the directory name when the path has a trailing slash", () => {
     expect(getPathFileName("./my-project/")).toEqual("my-project");
     expect(getPathFileName(".\\my-project\\")).toEqual("my-project");
+  });
+});
+
+describe("assertPrivateKeyFileArg", () => {
+  const keyFile = "./private-key-arg.key";
+
+  beforeAll(() => fs.writeFile(keyFile, privateKeyHex));
+  afterAll(() => fs.unlink(keyFile));
+
+  it("accepts a path to an existing file", () => {
+    // When & Then
+    expect(() => assertPrivateKeyFileArg(keyFile)).not.toThrow();
+  });
+
+  it.each([
+    ["64 hex chars", privateKeyHex],
+    ["0x-prefixed hex", `0x${privateKeyHex}`],
+    ["61 hex chars", privateKeyHex.slice(3)],
+    ["66 hex chars", `00${privateKeyHex}`],
+    ["0x-prefixed 66 hex chars", `0x00${privateKeyHex}`],
+    ["base64", Buffer.from(privateKeyHex, "hex").toString("base64")],
+    ["unpadded base64", Buffer.from(privateKeyHex, "hex").toString("base64").replace(/=$/, "")]
+  ])("rejects a raw private key (%s) without printing it", (_, key) => {
+    // When & Then
+    expect(() => assertPrivateKeyFileArg(key)).toThrow(/Pass a path to a private key file/);
+    expect(() => assertPrivateKeyFileArg(key)).not.toThrow(key);
+  });
+
+  it("rejects a path to a missing file", () => {
+    // When & Then
+    expect(() => assertPrivateKeyFileArg("./missing-key-file")).toThrow(
+      "Private key file not found: ./missing-key-file"
+    );
+  });
+});
+
+describe("parseStringOrFileKey", () => {
+  it("reads the key from a file", async () => {
+    // Given
+    const keyFile = "./parse-key-valid.key";
+    await fs.writeFile(keyFile, `${privateKeyHex}\n`);
+
+    // When
+    const key = await parseStringOrFileKey(keyFile);
+
+    // Then
+    expect(key).toEqual(privateKeyHex);
+    await fs.unlink(keyFile);
+  });
+
+  it("does not print an invalid key", async () => {
+    // Given
+    const invalid = "!!" + privateKeyHex.slice(2);
+
+    // When
+    const error = await parseStringOrFileKey(invalid).catch((e) => e as Error);
+
+    // Then
+    expect(error).toEqual(new Error("Failed to parse private key."));
+  });
+
+  it("includes the file path when the file does not contain a valid key", async () => {
+    // Given
+    const keyFile = "./parse-key-invalid.key";
+    await fs.writeFile(keyFile, "not a key");
+
+    // When
+    const error = await parseStringOrFileKey(keyFile).catch((e) => e as Error);
+
+    // Then
+    expect(error).toEqual(new Error(`Failed to parse private key from file: ${keyFile}.`));
+    await fs.unlink(keyFile);
   });
 });

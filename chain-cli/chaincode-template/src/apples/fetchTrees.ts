@@ -30,7 +30,7 @@ export async function fetchTrees(ctx: GalaChainContext, dto: FetchTreesDto): Pro
     keyParts,
     AppleTree,
     dto.bookmark,
-    dto.limit
+    dto.limit ?? FetchTreesDto.DEFAULT_LIMIT
   );
 
   return new PagedTreesDto(results, metadata.bookmark);

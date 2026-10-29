@@ -178,6 +178,11 @@ function GalaTransaction<In extends ChainCallDTO, Out>(
     // convention.
     // eslint-disable-next-line no-param-reassign
     descriptor.value = async function (ctx: GalaChainContext, dtoPlain) {
+      const contractName = (this as { getName?: () => string } | undefined)?.getName?.();
+      if (contractName && typeof ctx.setContractName === "function") {
+        ctx.setContractName(contractName);
+      }
+
       // Top-level invokes already have a SERVER span from GalaContract.aroundTransaction.
       // Nested batch ops use a fresh ctx — start one here.
       ctx.otel.start(loggingContext, dtoPlain, {

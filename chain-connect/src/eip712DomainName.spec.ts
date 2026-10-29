@@ -15,17 +15,23 @@
 import { eip712DomainName } from "./eip712DomainName";
 
 describe("eip712DomainName", () => {
-  it("stays GalaChain when no deployment is selected", () => {
-    expect(eip712DomainName()).toBe("GalaChain");
-    expect(eip712DomainName({ network: "MNT" })).toBe("GalaChain");
+  it("uses the dev name when no network is selected", () => {
+    // When & Then
+    expect(eip712DomainName()).toBe("GalaChainDev");
+    expect(eip712DomainName({})).toBe("GalaChainDev");
   });
 
-  it("uses the stage and dev names", () => {
+  it("uses the name for each network", () => {
+    // When & Then
+    expect(eip712DomainName({ network: "MNT" })).toBe("GalaChain");
     expect(eip712DomainName({ network: "STG" })).toBe("GalaChainStage");
     expect(eip712DomainName({ network: "DEV" })).toBe("GalaChainDev");
+    expect(eip712DomainName({ network: "OTHER" })).toBe("GalaChainDev");
   });
 
   it("lets an explicit name override the network", () => {
+    // When & Then
     expect(eip712DomainName({ network: "STG", domainName: "GalaChain" })).toBe("GalaChain");
+    expect(eip712DomainName({ domainName: "GalaChain" })).toBe("GalaChain");
   });
 });

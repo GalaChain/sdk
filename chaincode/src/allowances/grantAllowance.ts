@@ -45,6 +45,7 @@ import {
 } from "../token/TokenError";
 import { GalaChainContext } from "../types/GalaChainContext";
 import {
+  ObjectNotFoundError,
   getObjectByKey,
   getObjectsByPartialCompositeKey,
   inverseEpoch,
@@ -373,6 +374,10 @@ async function putAllowancesOnChain(
       await preventDuplicateAllowance(ctx, newAllowance);
     }
 
+    // Allowances granted in one transaction share the same created time, so a repeated grant would overwrite
+    // an allowance that has not been used yet.
+    await preventAllowanceOverwrite(ctx, newAllowance);
+
     await putChainObject(ctx, newAllowance);
     // todo: this code appears to be writing an un-modified tokenClass on every mint allowance grant...?
     // I don't see code that increments the totalSupply, totalMintAllowanceSupply, etc.
@@ -594,6 +599,20 @@ export async function grantAllowance(
     }
 
     return putAllowancesOnChain(ctx, { allowanceType, quantities, uses, expires }, instanceKey, tokenClass);
+  }
+}
+
+async function preventAllowanceOverwrite(ctx: GalaChainContext, tokenAllowance: TokenAllowance) {
+  const key = tokenAllowance.getCompositeKey();
+  const existing = await getObjectByKey(ctx, TokenAllowance, key).catch((e) => {
+    if (e instanceof ObjectNotFoundError) {
+      return undefined;
+    }
+    throw e;
+  });
+
+  if (existing !== undefined && allowanceIsUseable(ctx, existing)) {
+    throw new DuplicateAllowanceError(key, instanceToPlain(tokenAllowance));
   }
 }
 

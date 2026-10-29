@@ -50,10 +50,10 @@ function scalarEip712Type(value: unknown): string {
   }
 }
 
-function numericArrayType(values: number[]): string {
+function numericArrayType(values: unknown[]): string {
   let type = "uint256";
   for (const value of values) {
-    const valueType = numericEip712Type(value);
+    const valueType = numericEip712Type(value as number);
     if (valueType === "string") {
       return "string";
     }
@@ -64,10 +64,20 @@ function numericArrayType(values: number[]): string {
   return type;
 }
 
+function isPlainObject(value: unknown): value is Record<string, unknown> {
+  return typeof value === "object" && value !== null && !Array.isArray(value);
+}
+
+function sameFields(a: EIP712Field[], b: EIP712Field[]): boolean {
+  return a.length === b.length && a.every((field, i) => field.name === b[i].name && field.type === b[i].type);
+}
+
 /**
  * Generates EIP-712 type definitions from a given object structure.
  * Empty arrays stay encodable without reading a missing element. Whole numbers
  * that fit in uint256 or int256 use those types; other numbers are strings.
+ * Elements of an object array share one struct type with the fields of all
+ * elements. A nested name may repeat when its fields are the same.
  * @template T - The type of the object to generate types for
  * @param typeName - The name of the primary type
  * @param params - The object to analyze for type generation
@@ -75,63 +85,77 @@ function numericArrayType(values: number[]): string {
  */
 export function generateEIP712Types<T>(typeName: string, params: T): EIP712Types {
   const types: EIP712Types = Object.create(null);
-  types[typeName] = [];
 
-  function addField(
-    name: string,
-    fieldValue: unknown,
-    parentTypeName: string,
-    onlyGetType = false
-  ): string | undefined {
-    if (Array.isArray(fieldValue)) {
-      const elementType = arrayElementType(name, fieldValue, parentTypeName);
-      const arrayType = `${elementType ?? name}[]`;
-      if (!onlyGetType) {
-        types[parentTypeName].push({ name, type: arrayType });
-      }
-      return arrayType;
-    }
-
-    if (typeof fieldValue === "object" && fieldValue !== null) {
-      if (hasOwn(types, name)) {
-        throw new Error("Name collisions not yet supported");
-      }
-      types[name] = [];
-      Object.entries(fieldValue).forEach(([key, value]) => {
-        addField(key, value, name);
-      });
-      if (!onlyGetType) {
-        types[parentTypeName].push({ name, type: name });
+  function registerStruct(name: string, fields: EIP712Field[]): string {
+    if (hasOwn(types, name)) {
+      if (!sameFields(types[name], fields)) {
+        throw new Error(`Name collisions not yet supported: ${name} has different fields`);
       }
       return name;
     }
-
-    const eipType = scalarEip712Type(fieldValue);
-    if (!onlyGetType) {
-      types[parentTypeName].push({ name, type: eipType });
-    }
-    return eipType;
+    types[name] = fields;
+    return name;
   }
 
-  function arrayElementType(name: string, values: unknown[], parentTypeName: string): string | undefined {
+  // One struct type for a list of objects: fields of all of them, in first-seen order.
+  function structType(name: string, objects: Record<string, unknown>[]): string {
+    const names: string[] = [];
+    for (const object of objects) {
+      for (const key of Object.keys(object)) {
+        if (!names.includes(key)) {
+          names.push(key);
+        }
+      }
+    }
+    const fields = names.map((key) => {
+      const values = objects.filter((object) => hasOwn(object, key)).map((object) => object[key]);
+      return { name: key, type: valuesType(key, values) };
+    });
+    return registerStruct(name, fields);
+  }
+
+  // A single type that encodes every value given for the same field.
+  function valuesType(name: string, values: unknown[]): string {
+    if (values.every(isPlainObject)) {
+      return structType(name, values);
+    }
+    if (values.every(Array.isArray)) {
+      return `${arrayElementType(name, values.flat())}[]`;
+    }
+    if (values.every((value) => typeof value === "number")) {
+      return numericArrayType(values);
+    }
+    const fieldTypes = new Set(values.map(scalarEip712Type));
+    if (fieldTypes.size === 1) {
+      return [...fieldTypes][0];
+    }
+    // Numbers declared as strings are signed as strings.
+    if (values.every((value) => typeof value === "string" || typeof value === "number")) {
+      return "string";
+    }
+    throw new Error(`Field ${name} has values of different types`);
+  }
+
+  function arrayElementType(name: string, values: unknown[]): string {
     if (values.length === 0) {
       return "string";
     }
-    if (values.every((value) => typeof value === "number")) {
-      return numericArrayType(values as number[]);
-    }
-    return addField(name, values[0], parentTypeName, true);
+    return valuesType(name, values);
   }
 
   const excludedFromSchema = new Set(["signature", "multisig", "trace", "prefix"]);
-  Object.entries(params as Record<string, unknown>).forEach(([key, value]) => {
-    if (excludedFromSchema.has(key)) {
-      return;
-    }
-    addField(key, value, typeName);
-  });
+  const message = Object.fromEntries(
+    Object.entries(params as Record<string, unknown>).filter(([key]) => !excludedFromSchema.has(key))
+  );
+  structType(typeName, [message]);
 
-  return types;
+  // Keep the primary type first, as before.
+  const ordered: EIP712Types = Object.create(null);
+  ordered[typeName] = types[typeName];
+  for (const name of Object.keys(types)) {
+    ordered[name] = types[name];
+  }
+  return ordered;
 }
 
 function coerceTypedValue(types: EIP712Types, type: string, value: unknown): unknown {
@@ -192,5 +216,8 @@ export function galaChainToEthereumAddress(galaAddress: string) {
  * @returns The equivalent GalaChain address
  */
 export function ethereumToGalaChainAddress(ethereumAddress: string) {
-  return ethereumAddress?.replace("0x", "eth|") ?? "";
+  if (!ethereumAddress) {
+    return "";
+  }
+  return ethereumAddress.startsWith("0x") ? `eth|${ethereumAddress.slice(2)}` : ethereumAddress;
 }

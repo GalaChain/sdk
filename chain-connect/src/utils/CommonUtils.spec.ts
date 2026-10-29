@@ -12,13 +12,24 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-import { LockTokenDto, LockTokensDto, TokenInstanceKey, createValidSubmitDTO } from "@gala-chain/api";
+import {
+  LockTokenDto,
+  LockTokensDto,
+  TokenInstanceKey,
+  createValidSubmitDTO,
+  signatures
+} from "@gala-chain/api";
 import BigNumber from "bignumber.js";
 import { instanceToPlain, plainToInstance } from "class-transformer";
 import { ethers } from "ethers";
 
 import { SigningClient } from "../customClients/SigningClient";
-import { galaChainToEthereumAddress, generateEIP712Types, valueForTypedDataSigning } from "./CommonUtils";
+import {
+  ethereumToGalaChainAddress,
+  galaChainToEthereumAddress,
+  generateEIP712Types,
+  valueForTypedDataSigning
+} from "./CommonUtils";
 
 describe("EIP-712 Signing", () => {
   it("should correctly generate EIP-712 types and values and sign the data for single types", async () => {
@@ -280,5 +291,88 @@ describe("EIP-712 Signing", () => {
         { name: "transferPercentages", type: "string[]" }
       ])
     );
+  });
+
+  it("includes fields that only later array elements have", () => {
+    // Given
+    const params = {
+      tokenInstances: [
+        { quantity: "1", tokenInstanceKey: { collection: "GALA", instance: "0" } },
+        {
+          quantity: "2",
+          owner: "eth|abc",
+          tokenInstanceKey: { collection: "GALA", instance: "1", type: "none" }
+        }
+      ]
+    };
+
+    // When
+    const types = generateEIP712Types("LockTokens", params);
+
+    // Then
+    expect(types.tokenInstances).toEqual([
+      { name: "quantity", type: "string" },
+      { name: "tokenInstanceKey", type: "tokenInstanceKey" },
+      { name: "owner", type: "string" }
+    ]);
+    expect(types.tokenInstanceKey).toEqual([
+      { name: "collection", type: "string" },
+      { name: "instance", type: "string" },
+      { name: "type", type: "string" }
+    ]);
+  });
+
+  it("allows a repeated nested name with the same fields and signs it", async () => {
+    // Given
+    const tokenInstance = (instance: string) => ({ collection: "GALA", category: "Unit", instance });
+    const params = {
+      offered: [{ quantity: "1", tokenInstance: tokenInstance("0") }],
+      wanted: [{ quantity: "2", tokenInstance: tokenInstance("1") }],
+      uniqueKey: "swap-1"
+    };
+    const wallet = new ethers.Wallet("0x0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef");
+    const domain = { name: "GalaChain" };
+
+    // When
+    const types = generateEIP712Types("RequestTokenSwap", params);
+    const signature = await wallet.signTypedData(domain, types, params);
+
+    // Then
+    expect(types.RequestTokenSwap).toEqual([
+      { name: "offered", type: "offered[]" },
+      { name: "wanted", type: "wanted[]" },
+      { name: "uniqueKey", type: "string" }
+    ]);
+    expect(types.tokenInstance).toEqual([
+      { name: "collection", type: "string" },
+      { name: "category", type: "string" },
+      { name: "instance", type: "string" }
+    ]);
+    const recovered = signatures.recoverPublicKey(signature, { ...params, types, domain });
+    expect("0x" + signatures.getEthAddress(recovered)).toBe(wallet.address);
+  });
+
+  it("rejects a repeated nested name with different fields", () => {
+    // Given
+    const params = {
+      offered: { tokenInstance: { collection: "GALA" } },
+      wanted: { tokenInstance: { collection: "GALA", instance: "1" } }
+    };
+
+    // When & Then
+    expect(() => generateEIP712Types("RequestTokenSwap", params)).toThrow(
+      "Name collisions not yet supported"
+    );
+  });
+
+  it("replaces only a leading 0x when converting to a GalaChain address", () => {
+    // When & Then
+    expect(ethereumToGalaChainAddress("0x8ba1f109551bD432803012645Ac136ddd64DBA72")).toBe(
+      "eth|8ba1f109551bD432803012645Ac136ddd64DBA72"
+    );
+    expect(ethereumToGalaChainAddress("8b0x1f109551bD432803012645Ac136ddd64DBA72")).toBe(
+      "8b0x1f109551bD432803012645Ac136ddd64DBA72"
+    );
+    expect(ethereumToGalaChainAddress("")).toBe("");
   });
 });

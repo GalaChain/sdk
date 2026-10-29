@@ -18,7 +18,7 @@ import { writeFile } from "fs/promises";
 
 import BaseCommand from "../../base-command";
 import signatures, { serialize } from "../../signatures";
-import { parseJsonFromStringOrFile, parseStringOrFileKey } from "../../utils";
+import { assertPrivateKeyFileArg, parseJsonFromStringOrFile, parseStringOrFileKey } from "../../utils";
 
 export default class DtoSign extends BaseCommand<typeof DtoSign> {
   static override aliases = ["dto:sign"];
@@ -75,10 +75,10 @@ export default class DtoSign extends BaseCommand<typeof DtoSign> {
   async run(): Promise<void> {
     const { flags, args } = await this.parse(DtoSign);
 
-    if (/^(0x)?[0-9a-fA-F]{64}$/.test(args.key.trim())) {
-      this.error("Pass a path to a key file. A raw private key is not accepted as the key argument.", {
-        exit: 1
-      });
+    try {
+      assertPrivateKeyFileArg(args.key);
+    } catch (e) {
+      this.error((e as Error).message, { exit: 1 });
     }
 
     const privateKey = (await parseStringOrFileKey(args.key)) as string;
@@ -89,6 +89,15 @@ export default class DtoSign extends BaseCommand<typeof DtoSign> {
       signerPublicKey?: string;
       signerAddress?: string;
     };
+
+    // A DER signature does not allow to recover the public key, so a mismatching
+    // signer identity would only be detected on chain.
+    if (flags.derSignature) {
+      const mismatch = this.getSignerIdentityMismatch(dto, privateKey);
+      if (mismatch) {
+        this.error(mismatch, { exit: 1 });
+      }
+    }
 
     if (
       flags.derSignature &&
@@ -115,5 +124,38 @@ export default class DtoSign extends BaseCommand<typeof DtoSign> {
     } else {
       this.log(output);
     }
+  }
+
+  private getSignerIdentityMismatch(
+    dto: { signerPublicKey?: string; signerAddress?: string },
+    privateKey: string
+  ): string | undefined {
+    const publicKey = signatures.getPublicKey(privateKey);
+
+    if (dto.signerPublicKey !== undefined) {
+      let provided: string;
+      try {
+        provided = signatures.getNonCompactHexPublicKey(dto.signerPublicKey);
+      } catch (e) {
+        return `Invalid signerPublicKey in the DTO: ${(e as Error).message}`;
+      }
+      if (provided !== publicKey) {
+        return "signerPublicKey in the DTO does not match the signing key.";
+      }
+    }
+
+    if (dto.signerAddress !== undefined) {
+      // Only eth addresses can be checked locally. Other user refs (e.g. client|...)
+      // are resolved on chain.
+      const ethAddress = /^(eth\|)?(0x)?([0-9a-fA-F]{40})$/.exec(dto.signerAddress)?.[3];
+      if (
+        ethAddress !== undefined &&
+        ethAddress.toLowerCase() !== signatures.getEthAddress(publicKey).toLowerCase()
+      ) {
+        return `signerAddress in the DTO (${dto.signerAddress}) does not match the signing key.`;
+      }
+    }
+
+    return undefined;
   }
 }

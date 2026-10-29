@@ -176,3 +176,29 @@ it("should encode and decode successfully with utf 0 in keys", async () => {
   expect(encode).toThrow("Invalid part with UTF-0 at index 2 passed");
   expect(decode).toThrow("Expected 4 parts, got 5 parts");
 });
+
+it("should build a string key when a key field starts with $", () => {
+  // Given
+  const classKey = new TokenClassKey();
+  classKey.collection = "aaa";
+  classKey.category = "$bb";
+  classKey.type = "Key";
+  classKey.additionalKey = "none";
+
+  // When
+  const stringKey = classKey.toStringKey();
+
+  // Then
+  expect(stringKey).toEqual("aaa$$bb$Key$none");
+  expect(ChainObject.getPartsFromStringKey(stringKey)).toEqual(["aaa", "$bb", "Key", "none"]);
+});
+
+it("rejects $ after the first character of a token class key field", () => {
+  const classKey = new TokenClassKey();
+  classKey.collection = "aaa";
+  classKey.category = "Cl$ass";
+  classKey.type = "Key";
+  classKey.additionalKey = "none";
+
+  expect(() => classKey.toStringKey()).toThrow(/first character/);
+});

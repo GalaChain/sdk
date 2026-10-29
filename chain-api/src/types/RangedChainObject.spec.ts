@@ -55,7 +55,11 @@ it("rejects a NUL character inside a ranged key part", () => {
   expect(() => RangedChainObject.getRangedKeyFromParts("idx", ["a\u0000b", "c"])).toThrow(/NUL/);
   expect(() => RangedChainObject.getRangedKeyFromParts("id\u0000x", ["a"])).toThrow(/NUL/);
   expect(RangedChainObject.getStringKeyFromParts(["a", "b_c"])).toEqual("a$b_c");
-  expect(() => RangedChainObject.getStringKeyFromParts(["a$b", "c"])).toThrow(/separator/);
+  expect(RangedChainObject.getStringKeyFromParts(["aaa", "$bb"])).toEqual("aaa$$bb");
+  expect(() => RangedChainObject.getStringKeyFromParts(["a$b", "c"])).toThrow(/first character/);
+  expect(() => RangedChainObject.getRangedKeyFromParts("idx", ["\u0000a\u0000\u0000\u0000b\u0000"])).toThrow(
+    /NUL/
+  );
 });
 
 it("should use custom serializers while constructing ranged key", () => {

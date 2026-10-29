@@ -142,6 +142,14 @@ describe("createConfigtxProfiles", () => {
     );
   });
 
+  it.each(["curator-channel", "partner-channel", "CuratorChannel"])(
+    "rejects channel %s that would override a built-in configtx profile",
+    (channel) => {
+      // When & Then
+      expect(() => createConfigtxProfiles([arg(channel)])).toThrow(/reserved for a built-in profile/);
+    }
+  );
+
   it("emits a profile once when the same channel is listed more than once", () => {
     const yaml = createConfigtxProfiles([arg("product-channel"), arg("product-channel")]);
 

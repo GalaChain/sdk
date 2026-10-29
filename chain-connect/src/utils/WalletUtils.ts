@@ -50,7 +50,7 @@ export class WalletUtils {
    * @returns {Promise<string>} - A promise that resolves to a success message after registration succeeds.
    */
   static async registerWallet(uri: string, walletPublicKey: string): Promise<string> {
-    const response = await fetchWithTimeout(uri, {
+    const { response } = await fetchWithTimeout(uri, {
       method: "POST",
       headers: {
         "Content-Type": "application/json"

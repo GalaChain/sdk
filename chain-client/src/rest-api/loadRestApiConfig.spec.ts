@@ -101,7 +101,59 @@ describe("client configuration", () => {
     config.channels[0].contracts.push({ ...config.channels[0].contracts[0] });
     const file = write("rest.json", config);
 
-    expect(() => loadRestApiConfig(file)).toThrow("Duplicate contract GalaChainToken on channel product");
+    expect(() => loadRestApiConfig(file)).toThrow(
+      "Duplicate contract GalaChainToken in chaincode assets on channel product"
+    );
+  });
+
+  it("accepts the same contract name in different chaincodes on one channel", () => {
+    // Given
+    const config = validConfig();
+    config.channels[0].contracts = [
+      { chaincodeName: "assets", contractName: "PublicKeyContract", pathFragment: "assets-public-key" },
+      { chaincodeName: "trading", contractName: "PublicKeyContract", pathFragment: "trading-public-key" }
+    ];
+    const file = write("rest.json", config);
+
+    // When
+    const loaded = loadRestApiConfig(file);
+
+    // Then
+    expect(loaded.channels[0].contracts).toHaveLength(2);
+  });
+
+  it("rejects a duplicate contract pathFragment on one channel", () => {
+    // Given
+    const config = validConfig();
+    config.channels[0].contracts.push({
+      chaincodeName: "trading",
+      contractName: "PublicKeyContract",
+      pathFragment: "token"
+    });
+    const file = write("rest.json", config);
+
+    // When & Then
+    expect(() => loadRestApiConfig(file)).toThrow("Duplicate contract pathFragment token on channel product");
+  });
+
+  it("accepts the same contract pathFragment on different channels", () => {
+    // Given
+    const config = validConfig();
+    config.channels.push({ ...config.channels[0], channelName: "asset", pathFragment: "asset" });
+    const file = write("rest.json", config);
+
+    // When & Then
+    expect(loadRestApiConfig(file).channels).toHaveLength(2);
+  });
+
+  it("rejects a duplicate channel pathFragment", () => {
+    // Given
+    const config = validConfig();
+    config.channels.push({ ...config.channels[0], channelName: "asset" });
+    const file = write("rest.json", config);
+
+    // When & Then
+    expect(() => loadRestApiConfig(file)).toThrow("Duplicate channel pathFragment product");
   });
 
   it("loads a usable REST configuration", () => {

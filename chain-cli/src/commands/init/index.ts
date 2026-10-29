@@ -38,7 +38,7 @@ export default class Init extends BaseCommand<typeof Init> {
     const { args } = await this.parse(Init);
 
     try {
-      checkCliVersion();
+      checkCliVersion(this.config.version);
 
       await this.confirmOverwrite(args.path);
 

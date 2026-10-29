@@ -61,12 +61,18 @@ export async function fetchMintSupply(
 
   try {
     for await (const kv of iterator) {
-      if (!seekingFirstResult && resultsCount >= minResults) {
-        break;
-      }
       if (kv.value) {
         const stringResult = Buffer.from(kv.value).toString("utf8");
         const entry = RangedChainObject.deserialize(TokenMintRequest, stringResult);
+
+        // Stop only between time keys, so all records of the oldest transaction are read.
+        if (
+          !seekingFirstResult &&
+          resultsCount >= minResults &&
+          entry.timeKey !== previousRequests[0].timeKey
+        ) {
+          break;
+        }
 
         // timeKey is a string padded with leading zeros. BigNumber will parse into an integer.
         // const entryTime = new BigNumber(entry.timeKey);
@@ -88,21 +94,25 @@ export async function fetchMintSupply(
     throw new Error(`Failed to get iterator for getStateByRange with key: ${startKey}, ${iterator}, ${e}`);
   }
 
-  let startingKnownMintsCount: BigNumber = new BigNumber("0");
+  // The oldest records set the baseline. A batch writes several records with one time key and
+  // a growing baseline for each, so use the smallest baseline among them.
+  const oldestTimeKey = previousRequests[0]?.timeKey;
   let updatedKnownMintsCount: BigNumber = new BigNumber("0");
-
-  let firstResult = true;
+  let baseline: BigNumber | undefined;
 
   for (const entry of previousRequests) {
-    if (firstResult && entry.totalKnownMintsCount.isGreaterThan(startingKnownMintsCount)) {
-      // establish baseline for first result
-      startingKnownMintsCount = entry.totalKnownMintsCount;
-      updatedKnownMintsCount = new BigNumber(entry.totalKnownMintsCount);
+    if (
+      entry.timeKey === oldestTimeKey &&
+      (baseline === undefined || entry.totalKnownMintsCount.isLessThan(baseline))
+    ) {
+      baseline = entry.totalKnownMintsCount;
     }
 
-    firstResult = false;
-
     updatedKnownMintsCount = updatedKnownMintsCount.plus(entry.quantity);
+  }
+
+  if (baseline !== undefined && baseline.isGreaterThan(0)) {
+    updatedKnownMintsCount = updatedKnownMintsCount.plus(baseline);
   }
 
   return updatedKnownMintsCount;

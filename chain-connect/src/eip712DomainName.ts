@@ -14,8 +14,9 @@
  */
 
 /**
- * Domain name for an EIP-712 signature.
- * An explicit name wins. Otherwise STG and DEV select the deployment name, and anything else stays GalaChain.
+ * Domain name for an EIP-712 signature. Matches the name the chaincode expects.
+ * An explicit name wins. Otherwise MNT is GalaChain, STG is GalaChainStage, and
+ * anything else (including no network) is GalaChainDev.
  * chainId is not part of this domain.
  */
 export function eip712DomainName(options?: { domainName?: string; network?: string }): string {
@@ -23,11 +24,11 @@ export function eip712DomainName(options?: { domainName?: string; network?: stri
   if (explicit) {
     return explicit;
   }
+  if (options?.network === "MNT") {
+    return "GalaChain";
+  }
   if (options?.network === "STG") {
     return "GalaChainStage";
   }
-  if (options?.network === "DEV") {
-    return "GalaChainDev";
-  }
-  return "GalaChain";
+  return "GalaChainDev";
 }

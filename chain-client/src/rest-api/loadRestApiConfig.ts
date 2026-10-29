@@ -132,18 +132,38 @@ export function loadRestApiConfig(configPath: string): RestApiConfig {
 
 function assertUniqueNames(config: RestApiConfig): void {
   const channelNames = new Set<string>();
+  const channelPaths = new Set<string>();
   for (const channel of config.channels) {
     if (channelNames.has(channel.channelName)) {
       throw new Error(`Duplicate channel ${channel.channelName}`);
     }
     channelNames.add(channel.channelName);
 
-    const contractNames = new Set<string>();
+    if (channelPaths.has(channel.pathFragment)) {
+      throw new Error(`Duplicate channel pathFragment ${channel.pathFragment}`);
+    }
+    channelPaths.add(channel.pathFragment);
+
+    // contracts are identified by (chaincode, contract) within a channel
+    const contractKeys = new Set<string>();
+    // the REST URL is built from the path fragment, so it has to be unique within a channel
+    const contractPaths = new Set<string>();
     for (const contract of channel.contracts) {
-      if (contractNames.has(contract.contractName)) {
-        throw new Error(`Duplicate contract ${contract.contractName} on channel ${channel.channelName}`);
+      const key = JSON.stringify([contract.chaincodeName, contract.contractName]);
+      if (contractKeys.has(key)) {
+        throw new Error(
+          `Duplicate contract ${contract.contractName} in chaincode ${contract.chaincodeName} ` +
+            `on channel ${channel.channelName}`
+        );
       }
-      contractNames.add(contract.contractName);
+      contractKeys.add(key);
+
+      if (contractPaths.has(contract.pathFragment)) {
+        throw new Error(
+          `Duplicate contract pathFragment ${contract.pathFragment} on channel ${channel.channelName}`
+        );
+      }
+      contractPaths.add(contract.pathFragment);
     }
   }
 }

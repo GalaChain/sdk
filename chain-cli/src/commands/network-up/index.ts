@@ -234,10 +234,19 @@ export function configtxProfileName(channel: string): string {
   return channel.replace(/(^\w|-\w)/g, (token) => token.replace(/-/, "").toUpperCase());
 }
 
+// Profiles defined in network/configtx-policies.yml. Channel profiles are appended to that file,
+// so they must not reuse these names.
+const builtInConfigtxProfileNames = ["CuratorChannel", "PartnerChannel"];
+
 export function assertUniqueConfigtxProfileNames(channels: string[]): void {
   const profileToChannel = new Map<string, string>();
   channels.forEach((channel) => {
     const profileName = configtxProfileName(channel);
+    if (builtInConfigtxProfileNames.includes(profileName)) {
+      throw new Error(
+        `Error: Channel name "${channel}" produces the configtx profile "${profileName}", which is reserved for a built-in profile. Use a different channel name.`
+      );
+    }
     const existing = profileToChannel.get(profileName);
     if (existing !== undefined && existing !== channel) {
       throw new Error(
