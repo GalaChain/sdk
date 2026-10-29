@@ -19,7 +19,8 @@ import {
   FeeAccelerationRateType,
   FeeCodeDefinition,
   FeeExemption,
-  FeeThresholdUses
+  FeeThresholdUses,
+  ValidationFailedError
 } from "@gala-chain/api";
 import BigNumber from "bignumber.js";
 import { plainToInstance } from "class-transformer";
@@ -227,12 +228,17 @@ function calculateFeeAmountBasedOnAccelerationRateType(
     break;
   }
 
-  if (!feeAmount.isFinite() || feeAmount.isNegative()) {
-    feeAmount = new BigNumber(0);
-  }
+  const positiveCap = maxQuantity?.isFinite() && maxQuantity.isGreaterThan(0) ? maxQuantity : undefined;
 
-  if (maxQuantity?.isFinite()) {
-    feeAmount = BigNumber.minimum(feeAmount, maxQuantity);
+  if (!feeAmount.isFinite()) {
+    if (positiveCap === undefined) {
+      throw new ValidationFailedError("Calculated fee is not a usable amount.");
+    }
+    feeAmount = positiveCap;
+  } else if (feeAmount.isNegative()) {
+    throw new ValidationFailedError("Calculated fee is not a usable amount.");
+  } else if (positiveCap !== undefined) {
+    feeAmount = BigNumber.minimum(feeAmount, positiveCap);
   }
 
   feeAmount = feeAmount.decimalPlaces(FeeCodeDefinition.DECIMAL_PRECISION);

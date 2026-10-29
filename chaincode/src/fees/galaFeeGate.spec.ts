@@ -744,7 +744,7 @@ describe("feeGate", () => {
     );
   });
 
-  it("should clamp a non-finite accelerated fee to zero", async () => {
+  it("caps a non-finite accelerated fee at maxQuantity", async () => {
     const definition = plainToInstance(FeeCodeDefinition, {
       feeCode: feeCode1,
       feeThresholdUses: new BigNumber("0"),
@@ -763,9 +763,18 @@ describe("feeGate", () => {
       cumulativeFeeQuantity: new BigNumber("0")
     });
 
+    const userPendingBalance = await createValidChainObject(FeePendingBalance, {
+      owner: users.testUser1.identityKey,
+      quantity: new BigNumber("100")
+    });
+
+    const expectedFeeAmount = new BigNumber("10");
+
     const { ctx, getWrites } = fixture<GalaChainContext, GalaChainTokenContract>(GalaChainTokenContract)
       .callingUser(users.testUser1)
-      .savedState(definition, userThresholdUses);
+      .savedState(definition, userThresholdUses, userPendingBalance);
+
+    const { year, month, day } = txUnixTimeToDateIndexKeys(ctx.txUnixTime);
 
     const result = await galaFeeGate(ctx, { feeCode: feeCode1 })
       .then(() => ctx.stub.flushWrites())
@@ -773,10 +782,42 @@ describe("feeGate", () => {
 
     const expectedUsageWrite = instanceToInstance(userThresholdUses);
     expectedUsageWrite.cumulativeUses = new BigNumber("400");
-    expectedUsageWrite.cumulativeFeeQuantity = new BigNumber("0");
+    expectedUsageWrite.cumulativeFeeQuantity = expectedFeeAmount;
+
+    const expectedBalanceWrite = instanceToInstance(userPendingBalance);
+    expectedBalanceWrite.quantity = userPendingBalance.quantity.minus(expectedFeeAmount);
+
+    const expectedChannelPaymentReceipt = plainToInstance(FeeChannelPaymentReceipt, {
+      year,
+      month,
+      day,
+      paidByUser: users.testUser1.identityKey,
+      txId: ctx.stub.getTxID(),
+      feeCode: feeCode1,
+      quantity: expectedFeeAmount,
+      status: FeeReceiptStatus.Open
+    });
+
+    const expectedUserPaymentReceipt = plainToInstance(FeeUserPaymentReceipt, {
+      year,
+      month,
+      day,
+      paidByUser: users.testUser1.identityKey,
+      txId: ctx.stub.getTxID(),
+      feeCode: feeCode1,
+      quantity: expectedFeeAmount,
+      status: FeeReceiptStatus.Open
+    });
 
     expect(result).toEqual(undefined);
-    expect(getWrites()).toEqual(writesMap(expectedUsageWrite));
+    expect(getWrites()).toEqual(
+      writesMap(
+        expectedBalanceWrite,
+        expectedChannelPaymentReceipt,
+        expectedUserPaymentReceipt,
+        expectedUsageWrite
+      )
+    );
   });
 
   it("stops the calculated fee at maxQuantity", () => {
@@ -799,5 +840,89 @@ describe("feeGate", () => {
     const result = incrementCumulativeUsesAndCalculateFee([definition], uses);
 
     expect(result.feeAmount.isEqualTo(6)).toBe(true);
+  });
+
+  it("caps a non-finite fee at maxQuantity", () => {
+    const definition = plainToInstance(FeeCodeDefinition, {
+      feeCode: feeCode1,
+      feeThresholdUses: new BigNumber("0"),
+      feeThresholdTimePeriod: 0,
+      baseQuantity: new BigNumber("1"),
+      maxQuantity: new BigNumber("6"),
+      feeAccelerationRateType: FeeAccelerationRateType.Exponential,
+      feeAccelerationRate: new BigNumber("2")
+    });
+    const uses = plainToInstance(FeeThresholdUses, {
+      feeCode: feeCode1,
+      user: users.testUser1.identityKey,
+      cumulativeUses: new BigNumber("1023"),
+      cumulativeFeeQuantity: new BigNumber("0")
+    });
+
+    const result = incrementCumulativeUsesAndCalculateFee([definition], uses);
+
+    expect(result.feeAmount.isEqualTo(6)).toBe(true);
+  });
+
+  it("rejects a non-finite fee when the cap is zero", () => {
+    const definition = plainToInstance(FeeCodeDefinition, {
+      feeCode: feeCode1,
+      feeThresholdUses: new BigNumber("0"),
+      feeThresholdTimePeriod: 0,
+      baseQuantity: new BigNumber("1"),
+      maxQuantity: new BigNumber("0"),
+      feeAccelerationRateType: FeeAccelerationRateType.Exponential,
+      feeAccelerationRate: new BigNumber("2")
+    });
+    const uses = plainToInstance(FeeThresholdUses, {
+      feeCode: feeCode1,
+      user: users.testUser1.identityKey,
+      cumulativeUses: new BigNumber("1023"),
+      cumulativeFeeQuantity: new BigNumber("0")
+    });
+
+    expect(() => incrementCumulativeUsesAndCalculateFee([definition], uses)).toThrow(/usable amount/);
+  });
+
+  it("does not treat a zero cap as a free fee", () => {
+    const definition = plainToInstance(FeeCodeDefinition, {
+      feeCode: feeCode1,
+      feeThresholdUses: new BigNumber("0"),
+      feeThresholdTimePeriod: 0,
+      baseQuantity: new BigNumber("5"),
+      maxQuantity: new BigNumber("0"),
+      feeAccelerationRateType: FeeAccelerationRateType.Additive,
+      feeAccelerationRate: new BigNumber("2")
+    });
+    const uses = plainToInstance(FeeThresholdUses, {
+      feeCode: feeCode1,
+      user: users.testUser1.identityKey,
+      cumulativeUses: new BigNumber("10"),
+      cumulativeFeeQuantity: new BigNumber("0")
+    });
+
+    const result = incrementCumulativeUsesAndCalculateFee([definition], uses);
+
+    expect(result.feeAmount.isEqualTo(27)).toBe(true);
+  });
+
+  it("rejects a negative calculated fee", () => {
+    const definition = plainToInstance(FeeCodeDefinition, {
+      feeCode: feeCode1,
+      feeThresholdUses: new BigNumber("0"),
+      feeThresholdTimePeriod: 0,
+      baseQuantity: new BigNumber("1"),
+      maxQuantity: new BigNumber("10"),
+      feeAccelerationRateType: FeeAccelerationRateType.Additive,
+      feeAccelerationRate: new BigNumber("-1")
+    });
+    const uses = plainToInstance(FeeThresholdUses, {
+      feeCode: feeCode1,
+      user: users.testUser1.identityKey,
+      cumulativeUses: new BigNumber("3"),
+      cumulativeFeeQuantity: new BigNumber("0")
+    });
+
+    expect(() => incrementCumulativeUsesAndCalculateFee([definition], uses)).toThrow(/usable amount/);
   });
 });
