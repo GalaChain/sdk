@@ -55,10 +55,13 @@ export const axiosPostResponse = {
 export const axiosGetResponse = {
   data: {
     network: "TNT",
+    channel: "product-channel",
     chaincode: consts.chaincodeName,
     adminPublicKey: consts.chaincodeAdminPublicKey,
+    developersPublicKeys: [consts.chaincodeAdminPublicKey],
     imageName: consts.imageName,
     sequence: 1,
-    status: "CC_TEST_STATUS"
+    status: "CC_TEST_STATUS",
+    lastUpdated: "2026-01-01T00:00:00.000Z"
   }
 };

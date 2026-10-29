@@ -28,7 +28,19 @@ describe("service portal requests", () => {
   });
 
   it("bounds a deployment status request", async () => {
-    mockedAxios.get.mockResolvedValue({ data: { status: "CC_DEPLOYED" } });
+    mockedAxios.get.mockResolvedValue({
+      data: {
+        network: "test",
+        channel: "product-channel",
+        chaincode: "basic-product",
+        imageName: "basic-product",
+        sequence: 1,
+        status: "CC_DEPLOYED",
+        adminPublicKey: "0x01",
+        lastUpdated: "2026-01-01T00:00:00.000Z",
+        developersPublicKeys: []
+      }
+    });
 
     await getDeploymentResponse({
       privateKey: consts.developerPrivateKey,
@@ -39,6 +51,17 @@ describe("service portal requests", () => {
       expect.any(String),
       expect.objectContaining({ timeout: 30_000 })
     );
+  });
+
+  it("rejects a deployment response that omits required fields", async () => {
+    mockedAxios.get.mockResolvedValue({ data: { status: "CC_DEPLOYED" } });
+
+    await expect(
+      getDeploymentResponse({
+        privateKey: consts.developerPrivateKey,
+        chaincodeName: consts.chaincodeName
+      })
+    ).rejects.toThrow(/Deployment response is missing/);
   });
 
   it("bounds only the start of a log stream", async () => {

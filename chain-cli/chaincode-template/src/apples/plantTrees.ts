@@ -13,21 +13,38 @@
  * limitations under the License.
  */
 import { ConflictError } from "@gala-chain/api";
-import { GalaChainContext, getObjectByKey, putChainObject } from "@gala-chain/chaincode";
+import { GalaChainContext, ObjectNotFoundError, getObjectByKey, putChainObject } from "@gala-chain/chaincode";
 
 import { AppleTree } from "./AppleTree";
 import { AppleTreeDto, PlantAppleTreesDto } from "./dtos";
 
 export async function plantTrees(ctx: GalaChainContext, dto: PlantAppleTreesDto): Promise<AppleTree[]> {
-  const ops = dto.trees.map((tree) => plantTree(ctx, tree));
+  const planted: AppleTree[] = [];
+  const seen = new Set<string>();
 
-  return await Promise.all(ops);
+  for (const tree of dto.trees) {
+    const key = `${tree.variety}:${tree.index}`;
+    if (seen.has(key)) {
+      throw new ConflictError("Duplicate tree in request", { variety: tree.variety, index: tree.index });
+    }
+    seen.add(key);
+    planted.push(await plantTree(ctx, tree));
+  }
+
+  return planted;
 }
 
 export async function plantTree(ctx: GalaChainContext, dto: AppleTreeDto): Promise<AppleTree> {
   const tree = new AppleTree(ctx.callingUser, dto.variety, dto.index, ctx.txUnixTime);
 
-  const existingTree = await getObjectByKey(ctx, AppleTree, tree.getCompositeKey()).catch(() => undefined);
+  const existingTree = await getObjectByKey(ctx, AppleTree, tree.getCompositeKey()).catch(
+    (error: unknown) => {
+      if (error instanceof ObjectNotFoundError) {
+        return undefined;
+      }
+      throw error;
+    }
+  );
 
   if (existingTree !== undefined) {
     throw new ConflictError("Tree already exists on chain", existingTree.toPlainObject());

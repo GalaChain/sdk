@@ -115,20 +115,45 @@ export async function getDeploymentResponse(params: {
       throw new Error(axiosErrorMessage(error));
     });
 
-  const d = response.data;
+  return readDeploymentResponse(response.data);
+}
+
+function deploymentField(data: Record<string, unknown>, field: string): string {
+  const value = data[field];
+  if (typeof value !== "string" || value.length === 0) {
+    throw new Error(`Deployment response is missing ${field}.`);
+  }
+  return value;
+}
+
+export function readDeploymentResponse(data: unknown): ChaincodeInfoDto {
+  if (data === null || typeof data !== "object" || Array.isArray(data)) {
+    throw new Error("Deployment response is not an object.");
+  }
+
+  const record = data as Record<string, unknown>;
+  if (typeof record.sequence !== "number" || !Number.isInteger(record.sequence)) {
+    throw new Error("Deployment response is missing sequence.");
+  }
+  if (
+    !Array.isArray(record.developersPublicKeys) ||
+    record.developersPublicKeys.some((key) => typeof key !== "string")
+  ) {
+    throw new Error("Deployment response is missing developersPublicKeys.");
+  }
 
   return {
-    network: d.network,
-    channel: d.channel,
-    chaincode: d.chaincode,
-    adminPublicKey: d.adminPublicKey,
-    developersPublicKeys: d.developersPublicKeys,
-    imageName: d.imageName,
-    sequence: d.sequence,
-    status: d.status,
-    lastUpdated: d.lastUpdated,
-    ...(typeof d.operationId === "string" ? { operationId: d.operationId } : {}),
-    ...(typeof d.imageDigest === "string" ? { imageDigest: d.imageDigest } : {})
+    network: deploymentField(record, "network"),
+    channel: deploymentField(record, "channel"),
+    chaincode: deploymentField(record, "chaincode"),
+    adminPublicKey: deploymentField(record, "adminPublicKey"),
+    developersPublicKeys: record.developersPublicKeys as string[],
+    imageName: deploymentField(record, "imageName"),
+    sequence: record.sequence,
+    status: deploymentField(record, "status"),
+    lastUpdated: deploymentField(record, "lastUpdated"),
+    ...(typeof record.operationId === "string" ? { operationId: record.operationId } : {}),
+    ...(typeof record.imageDigest === "string" ? { imageDigest: record.imageDigest } : {})
   };
 }
 
@@ -564,10 +589,39 @@ export async function getLogs(params: {
       })
     );
 
-    return response.data;
+    return readLogEntries(response.data);
   } catch (error) {
+    if (error instanceof FetchLogsError) {
+      throw error;
+    }
     throw classifyLogRequestError(error);
   }
+}
+
+export function readLogEntries(data: unknown): LogEntry[] {
+  if (!Array.isArray(data)) {
+    throw new FetchLogsError("Log response is not a list.");
+  }
+
+  return data.map((entry, index) => {
+    if (!isLogEntry(entry)) {
+      throw new FetchLogsError(`Log response entry ${index} is missing message, timestamp, or status.`);
+    }
+    return entry;
+  });
+}
+
+function isLogEntry(value: unknown): value is LogEntry {
+  if (value === null || typeof value !== "object") {
+    return false;
+  }
+  const entry = value as Record<string, unknown>;
+  return (
+    typeof entry.message === "string" &&
+    typeof entry.status === "string" &&
+    typeof entry.timestamp === "string" &&
+    !Number.isNaN(Date.parse(entry.timestamp))
+  );
 }
 
 export async function streamLogs(

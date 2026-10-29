@@ -21,7 +21,6 @@ export class CAClient {
   public readonly orgMsp: string;
   public readonly caHostName: string;
   public readonly asLocalhost: boolean;
-  public readonly affiliation: string;
   public readonly wallet: Promise<Wallet>;
   public readonly adminId: string;
   private readonly adminSecret: string;
@@ -99,7 +98,8 @@ export class CAClient {
     const key = onboardingKey(this.orgMsp, this.caHostName, userId);
     let userSecret = registrationSecrets.get(key);
     if (userSecret === undefined) {
-      userSecret = await registerUser(this.caClient, this.adminId, wallet, userId, this.affiliation);
+      // The CA uses the registrar's affiliation when this request does not set one.
+      userSecret = await registerUser(this.caClient, this.adminId, wallet, userId);
       registrationSecrets.set(key, userSecret);
     }
 
@@ -208,8 +208,7 @@ async function registerUser(
   caClient: FabricCAServices,
   adminId: string,
   wallet: Wallet,
-  userId: string,
-  affiliation: string
+  userId: string
 ): Promise<string> {
   const adminIdentity = await wallet.get(adminId);
 
@@ -221,15 +220,14 @@ async function registerUser(
   const provider = wallet.getProviderRegistry().getProvider(adminIdentity.type);
   const adminUser = await provider.getUserContext(adminIdentity, adminId);
 
-  return await caClient.register(
-    {
-      affiliation: affiliation,
-      enrollmentID: userId,
-      role: "client",
-      maxEnrollments: 0
-    },
-    adminUser
-  );
+  // Affiliation is omitted. The CA assigns the registrar's affiliation.
+  const request = {
+    enrollmentID: userId,
+    role: "client",
+    maxEnrollments: 0
+  } as FabricCAServices.IRegisterRequest;
+
+  return await caClient.register(request, adminUser);
 }
 
 const globalWallets = new Map<string, Promise<Wallet>>();
