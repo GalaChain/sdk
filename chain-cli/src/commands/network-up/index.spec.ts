@@ -12,6 +12,8 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+import fs from "fs";
+import os from "os";
 import path from "path";
 
 import { SingleArg, chaincodeDirsForChannels, createConfigtxProfiles, customValidation } from "./index";
@@ -76,6 +78,28 @@ describe("network path checks", () => {
         })
       )
     ).not.toThrow();
+  });
+
+  it("checks the env file next to the network root", () => {
+    const root = fs.mkdtempSync(path.join(os.tmpdir(), "gala-network-"));
+    const network = path.join(root, "test-network");
+    fs.mkdirSync(network);
+    fs.writeFileSync(path.join(root, ".dev-env"), "A=1\n");
+
+    expect(() =>
+      customValidation(
+        flags({
+          channel: ["product-channel"],
+          channelType: ["curator"],
+          chaincodeName: ["product"],
+          chaincodeDir: ["."],
+          fabloRoot: network,
+          envConfig: ".dev-env"
+        })
+      )
+    ).not.toThrow();
+
+    fs.rmSync(root, { recursive: true, force: true });
   });
 
   it("rejects a chaincode directory inside the network root", () => {

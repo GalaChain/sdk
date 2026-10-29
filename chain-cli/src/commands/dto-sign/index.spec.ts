@@ -118,6 +118,10 @@ describe("DtoSign Command", () => {
     ).rejects.toThrow(/Failed to writeFile to signed.json/);
   });
 
+  it("rejects a raw private key", async () => {
+    await expect(DtoSign.run([fakePrivateKey, dataTestJson])).rejects.toThrow(/Pass a path to a key file/);
+  });
+
   it("it should return only the signature", async () => {
     // Given
     const result: (string | Uint8Array)[] = [];

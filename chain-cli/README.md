@@ -92,7 +92,7 @@ USAGE
   $ galachain dto-sign KEY DATA [--json] [--log-level debug|info|warn|error] [-o <value>] [-d] [-s]
 
 ARGUMENTS
-  KEY   Private key string or path to the private key file.
+  KEY   Path to the private key file.
   DATA  Data representing an unsigned DTO object you wish to sign. Provide a JSON string or a path to a valid JSON file.
 
 FLAGS
@@ -124,7 +124,7 @@ EXAMPLES
 
   $ galachain dto:sign ./testkey dto.json -d
 
-  $ galachain dto:sign 04ea7e8e14f2a0 dto.json -s -o=output/path -d
+  $ galachain dto:sign ./testkey dto.json -s -o=output/path -d
 ```
 
 ## `galachain dto-verify KEY DATA`
@@ -171,7 +171,7 @@ USAGE
   $ galachain dto:sign KEY DATA [--json] [--log-level debug|info|warn|error] [-o <value>] [-d] [-s]
 
 ARGUMENTS
-  KEY   Private key string or path to the private key file.
+  KEY   Path to the private key file.
   DATA  Data representing an unsigned DTO object you wish to sign. Provide a JSON string or a path to a valid JSON file.
 
 FLAGS
@@ -203,7 +203,7 @@ EXAMPLES
 
   $ galachain dto:sign ./testkey dto.json -d
 
-  $ galachain dto:sign 04ea7e8e14f2a0 dto.json -s -o=output/path -d
+  $ galachain dto:sign ./testkey dto.json -s -o=output/path -d
 ```
 
 ## `galachain dto:verify KEY DATA`

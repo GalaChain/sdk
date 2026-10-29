@@ -34,7 +34,7 @@ export default class DtoSign extends BaseCommand<typeof DtoSign> {
     }'`,
     "galachain dto:sign ./testkey dto.json -o=output/path",
     "galachain dto:sign ./testkey dto.json -d",
-    "galachain dto:sign 04ea7e8e14f2a0 dto.json -s -o=output/path -d"
+    "galachain dto:sign ./testkey dto.json -s -o=output/path -d"
   ];
 
   static override flags = {
@@ -60,7 +60,7 @@ export default class DtoSign extends BaseCommand<typeof DtoSign> {
   static override args = {
     key: Args.string({
       char: "k",
-      description: "Private key string or path to the private key file.",
+      description: "Path to the private key file.",
       required: true
     }),
     data: Args.string({
@@ -74,6 +74,12 @@ export default class DtoSign extends BaseCommand<typeof DtoSign> {
 
   async run(): Promise<void> {
     const { flags, args } = await this.parse(DtoSign);
+
+    if (/^(0x)?[0-9a-fA-F]{64}$/.test(args.key.trim())) {
+      this.error("Pass a path to a key file. A raw private key is not accepted as the key argument.", {
+        exit: 1
+      });
+    }
 
     const privateKey = (await parseStringOrFileKey(args.key)) as string;
     const keyBuffer = signatures.normalizePrivateKey(privateKey);

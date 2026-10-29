@@ -68,7 +68,7 @@ export default class NetworkUp extends BaseCommand<typeof NetworkUp> {
     chaincodeDir: Flags.string({
       char: "d",
       description:
-        "Root directory of chaincode source, relative to fabloRoot. " +
+        "Root directory of chaincode source, relative to the current directory. " +
         `By default '${defaultChaincodeDir}' is used for every chaincode when this flag is omitted.`,
       multiple: true
     }),
@@ -405,7 +405,7 @@ export function customValidation(flags: any): void {
       }
     });
   }
-  if (envConfig && !fs.existsSync(envConfig)) {
+  if (envConfig && !fs.existsSync(path.resolve(fabloRoot, "..", envConfig))) {
     throw new Error(`Error: Env config file ${envConfig} does not exist.`);
   }
 

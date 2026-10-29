@@ -15,7 +15,6 @@
 
 export * from "./api";
 export * from "./bridge";
-export * from "./ccp";
 export * from "./ChainId";
 export * from "./ChainObject";
 export * from "./RangedChainObject";
