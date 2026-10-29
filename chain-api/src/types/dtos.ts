@@ -249,6 +249,7 @@ export class ChainCallDTO {
   @JSONSchema({
     description:
       "EIP-712 signing domain. Present when the DTO is signed as typed data. " +
+      "The name is GalaChain on mainnet, GalaChainStage on stage, and GalaChainDev otherwise. " +
       "Not a message field; ignored by personal_sign payloads."
   })
   @IsOptional()

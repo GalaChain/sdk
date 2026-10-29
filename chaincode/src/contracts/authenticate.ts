@@ -28,6 +28,7 @@ import {
 import { PkInvalidSignatureError, PublicKeyService, resolveUserAlias } from "../services";
 import { PkMissingError } from "../services/PublicKeyError";
 import { GalaChainContext } from "../types";
+import { assertEip712DomainName } from "./eip712DomainName";
 
 class MissingSignatureError extends ValidationFailedError {
   constructor() {
@@ -181,6 +182,7 @@ export async function authenticateSingleSignature(
   ctx: GalaChainContext,
   dto: ChainCallDTO & { signature: string }
 ): Promise<AuthenticateResult> {
+  assertEip712DomainName(dto);
   const recoveredEth = tryRecoverEthPublicKey(dto.signature, dto);
 
   if (recoveredEth !== undefined) {
@@ -260,6 +262,7 @@ async function authenticateMultipleSignatures(
 
   const signerProfiles: UserProfileStrict[] = [];
 
+  assertEip712DomainName(dto);
   for (const [index, signature] of dto.multisig.entries()) {
     const recoveredEth = tryRecoverEthPublicKey(signature, dto);
     if (recoveredEth === undefined) {
