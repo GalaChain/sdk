@@ -40,7 +40,14 @@ export function getPayloadToSign(obj: object, _eipOverride: { chainId?: number |
     throw new Error("EIP-712 typed data is not supported by the CLI signer");
   }
 
-  const dataString = `${prefix ?? ""}${serialize(plain)}`;
+  const serialized = serialize(plain);
+  if (typeof prefix === "string" && prefix.startsWith("0x")) {
+    const hex = prefix.slice(2);
+    if (hex.length === 0 || hex.length % 2 !== 0 || !/^[0-9a-fA-F]+$/.test(hex)) {
+      throw new Error("Invalid hexadecimal signing prefix");
+    }
+    return Buffer.concat([Buffer.from(hex, "hex"), Buffer.from(serialized, "utf8")]);
+  }
 
-  return dataString.startsWith("0x") ? Buffer.from(dataString.slice(2), "hex") : Buffer.from(dataString);
+  return Buffer.from(`${prefix ?? ""}${serialized}`);
 }

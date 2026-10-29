@@ -144,7 +144,56 @@ describe("creditFeeBalance", () => {
 
     const replayResponse = replay as { Status: GalaChainResponseType; Message?: string };
     expect(replayResponse.Status).toEqual(GalaChainResponseType.Error);
-    expect(replayResponse.Message).toContain(feeAuthorizationKey);
+    expect(replayResponse.Message).toContain(authDto.uniqueKey);
+  });
+
+  it("rejects the same signed authorization under a new key", async () => {
+    const authorizedFeeQuantity = new BigNumber("100");
+    const feeAuthority = randomUser("client|fee-authority", [UserRole.CURATOR]);
+    const authDto = await createValidSubmitDTO(FeeAuthorizationDto, {
+      authority: feeAuthority.identityKey,
+      quantity: authorizedFeeQuantity,
+      signerPublicKey: feeAuthority.publicKey
+    });
+    authDto.sign(feeAuthority.privateKey, true);
+
+    const savedPublicKey = new TestPublicKey();
+    savedPublicKey.publicKey = feeAuthority.publicKey;
+    savedPublicKey.userId = feeAuthority.identityKey;
+
+    const { ctx, contract } = fixture(GalaChainTokenContract)
+      .caClientIdentity("client|admin", "CuratorOrg")
+      .registeredUsers(feeAuthority)
+      .savedState(savedPublicKey);
+
+    const first = await createValidSubmitDTO(FeeVerificationDto, {
+      authorization: authDto.serialize(),
+      authority: feeAuthority.identityKey,
+      created: 1,
+      txId: "tx-1",
+      quantity: authorizedFeeQuantity,
+      feeAuthorizationKey: "outer-key-1"
+    }).signed(feeAuthority.privateKey);
+    const second = await createValidSubmitDTO(FeeVerificationDto, {
+      authorization: authDto.serialize(),
+      authority: feeAuthority.identityKey,
+      created: 1,
+      txId: "tx-1",
+      quantity: authorizedFeeQuantity,
+      feeAuthorizationKey: "outer-key-2",
+      uniqueKey: "verification-2"
+    }).signed(feeAuthority.privateKey);
+
+    const firstResponse = (await contract.CreditFeeBalance(ctx, first)) as {
+      Status: GalaChainResponseType;
+    };
+    expect(firstResponse.Status).toEqual(GalaChainResponseType.Success);
+    const replay = (await contract.CreditFeeBalance(ctx, second)) as {
+      Status: GalaChainResponseType;
+      Message?: string;
+    };
+    expect(replay.Status).toEqual(GalaChainResponseType.Error);
+    expect(replay.Message).toContain(authDto.uniqueKey);
   });
 
   it("should require a unique key when setting fee properties", async () => {

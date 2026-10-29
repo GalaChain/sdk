@@ -113,6 +113,23 @@ export function ArrayUniqueObjects(property: string, validationOptions?: Validat
   };
 }
 
+function fixedNotationSuggestion(value: unknown): string {
+  if (typeof value !== "string" && typeof value !== "number") {
+    return "";
+  }
+  if (typeof value === "string") {
+    const exponent = /e([+-]?\d+)\s*$/i.exec(value);
+    if (exponent !== null && Math.abs(Number(exponent[1])) > 20) {
+      return "";
+    }
+  }
+  const bn = new BigNumber(value);
+  if (!bn.isFinite()) {
+    return "";
+  }
+  return ` (valid value: ${bn.toFixed()})`;
+}
+
 export function IsBigNumber(validationOptions?: ValidationOptions) {
   return function (object: object, propertyName: string) {
     registerDecorator({
@@ -125,12 +142,7 @@ export function IsBigNumber(validationOptions?: ValidationOptions) {
           return BigNumber.isBigNumber(value);
         },
         defaultMessage(args: ValidationArguments) {
-          const bn =
-            typeof args.value === "string" || typeof args.value === "number"
-              ? new BigNumber(args.value)
-              : undefined;
-
-          const suggestion = bn && !bn.isNaN() ? ` (valid value: ${bn?.toFixed()})` : "";
+          const suggestion = fixedNotationSuggestion(args.value);
 
           return (
             `${args.property} should be a stringified number with fixed notation (not an exponential notation) ` +

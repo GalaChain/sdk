@@ -289,7 +289,10 @@ describe("GalaContract.DryRun", () => {
       Status: GalaChainResponseType.Success,
       Data: {
         response: { Status: GalaChainResponseType.Success },
-        reads: { [callerProfileKey]: "" },
+        reads: {
+          [callerProfileKey]: "",
+          [`\u0000UNTX\u0000${dto.uniqueKey}\u0000`]: ""
+        },
         writes: {
           [superhero.getCompositeKey()]: serialize({ age: 32, name: "Batman" }),
           [`\u0000UNTX\u0000${callerAlias}\u0000${dto.uniqueKey}\u0000`]: expect.any(String)

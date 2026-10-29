@@ -75,6 +75,15 @@ export async function creditFeeBalance(
     );
   }
 
+  const signedKey = authzDto.uniqueKey;
+  if (typeof signedKey !== "string" || signedKey.length === 0) {
+    throw new ValidationFailedError("Fee authorization is missing its unique key.");
+  }
+
+  // The caller-supplied key and the key inside the signed authorization are both consumed.
+  if (signedKey !== feeAuthorizationKey) {
+    await UniqueTransactionService.ensureUniqueTransaction(ctx, signedKey, { global: true });
+  }
   await UniqueTransactionService.ensureUniqueTransaction(ctx, feeAuthorizationKey, { global: true });
 
   const userPendingAuthorizationBalanceChainKeys = [authority];

@@ -13,9 +13,16 @@
  * limitations under the License.
  */
 import { createValidDTO } from "@gala-chain/api";
-import { TestChaincode, transactionError, transactionErrorKey, transactionSuccess } from "@gala-chain/test";
+import {
+  TestChaincode,
+  transactionError,
+  transactionErrorKey,
+  transactionSuccess,
+  writesMap
+} from "@gala-chain/test";
 
 import TestGalaContract, { KVDto, SuperheroDto } from "../__test__/TestGalaContract";
+import { UniqueTransaction } from "./UniqueTransaction";
 
 describe("UniqueTransactionService", () => {
   it("should not error if transaction with uniqueKey does not exist on chain", async () => {
@@ -68,5 +75,22 @@ describe("UniqueTransactionService", () => {
     expect(first).toEqual(transactionError());
     expect(chaincode.getStateAll()["should-not-persist"]).toBeUndefined();
     expect(second).toEqual(transactionErrorKey("UNIQUE_TRANSACTION_CONFLICT"));
+  });
+
+  it("rejects a key already stored without a caller", async () => {
+    const legacy = new UniqueTransaction();
+    legacy.uniqueKey = "legacy-uk";
+    legacy.created = 1;
+    legacy.transactionId = "old-tx";
+    const chaincode = new TestChaincode([TestGalaContract], writesMap(legacy));
+    const dto = await createValidDTO(KVDto, {
+      key: "legacy-key",
+      value: "v",
+      uniqueKey: "legacy-uk"
+    });
+
+    const response = await chaincode.invoke("TestGalaContract:PutKv", dto.serialize());
+
+    expect(response).toEqual(transactionErrorKey("UNIQUE_TRANSACTION_CONFLICT"));
   });
 });
