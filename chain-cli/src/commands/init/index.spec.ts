@@ -87,4 +87,17 @@ describe("Init Command", () => {
     const packageJson = JSON.parse(writeFileSync.mock.calls[0][1]);
     expect(packageJson.name).toEqual("@gala-chain/existing-project");
   });
+
+  it("rejects a path without a project name before copying any file", async () => {
+    // Given
+    const confirm = jest.spyOn(ux, "confirm").mockResolvedValue(true);
+    const cpMock = jest.spyOn(require("fs"), "cpSync").mockImplementation(() => {});
+    const mkdirMock = jest.spyOn(require("fs"), "mkdirSync").mockImplementation(() => {});
+
+    // When & Then
+    await expect(Init.run(["."])).rejects.toThrow(/Cannot derive a project name/);
+    expect(confirm).not.toHaveBeenCalled();
+    expect(mkdirMock).not.toHaveBeenCalled();
+    expect(cpMock).not.toHaveBeenCalled();
+  });
 });

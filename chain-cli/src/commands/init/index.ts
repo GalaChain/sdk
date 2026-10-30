@@ -40,12 +40,14 @@ export default class Init extends BaseCommand<typeof Init> {
     try {
       checkCliVersion(this.config.version);
 
+      // Derive the project name before anything is written, so an invalid path leaves no files behind.
+      const fileName = getPathFileName(args.path);
+
       await this.confirmOverwrite(args.path);
 
       this.copyChaincodeTemplate(args.path);
 
       // Update the name field in the package.json and the package-lock.json to be `@gala-chain/<project-name>`
-      const fileName = getPathFileName(args.path);
       const filesToUpdate = ["package.json", "package-lock.json"];
 
       filesToUpdate.forEach((fileToUpdate) => {
