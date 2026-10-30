@@ -19,7 +19,7 @@ import { TokenClassNotFoundError } from "../token/TokenError";
 import { GalaChainContext } from "../types";
 import { getObjectByKey } from "../utils";
 import { fetchMintAllowanceSupply } from "./fetchMintAllowanceSupply";
-import { fetchMintSupply } from "./fetchMintSupply";
+import { readMintSupply } from "./fetchMintSupply";
 
 export async function fetchTokenClassesWithSupply(
   ctx: GalaChainContext,
@@ -46,7 +46,7 @@ export async function fetchTokenClassWithKnownSupply(
 
   tokenClass.knownMintAllowanceSupply = knownMintAllowanceSupply;
 
-  const knownMintSupply = await fetchMintSupply(ctx, tokenClass, 0);
+  const knownMintSupply = await readMintSupply(ctx, tokenClass);
 
   tokenClass.knownMintSupply = knownMintSupply;
 
