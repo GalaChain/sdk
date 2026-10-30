@@ -12,7 +12,15 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-import { TokenClass, TokenClassKey, TokenInstance, UserAlias, createValidChainObject } from "@gala-chain/api";
+import {
+  ChainObject,
+  TokenClass,
+  TokenClassKey,
+  TokenInstance,
+  UserAlias,
+  ValidationFailedError,
+  createValidChainObject
+} from "@gala-chain/api";
 import BigNumber from "bignumber.js";
 
 import { GalaChainContext } from "../types";
@@ -47,6 +55,15 @@ export async function createTokenClass(
 ): Promise<TokenClassKey> {
   if (params.isNonFungible && params.decimals !== 0) {
     throw new NftDecimalError(params.decimals);
+  }
+
+  // String keys of a token class allow "$" only as the first character of a key field.
+  for (const field of ["collection", "category", "type", "additionalKey"] as const) {
+    if ((params.tokenClass[field] ?? "").indexOf(ChainObject.ID_SPLIT_CHAR) > 0) {
+      throw new ValidationFailedError(
+        `Token class ${field} may contain ${ChainObject.ID_SPLIT_CHAR} only as its first character`
+      );
+    }
   }
 
   const newToken: TokenClass = await createValidChainObject(TokenClass, {

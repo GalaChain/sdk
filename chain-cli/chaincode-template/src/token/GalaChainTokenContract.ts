@@ -34,7 +34,6 @@ import {
   FetchAllowancesResponse,
   FetchBalancesDto,
   FetchBalancesWithPaginationDto,
-  FetchBalancesWithPaginationResponse,
   FetchBalancesWithTokenMetadataResponse,
   FetchBurnsDto,
   FetchFeeScheduleDto,
@@ -406,21 +405,20 @@ export default class GalaChainTokenContract extends GalaContract {
   @GalaTransaction({
     type: EVALUATE,
     in: FetchBalancesDto,
-    out: FetchBalancesWithPaginationResponse,
+    out: { arrayOf: TokenBalance },
     description:
-      "Returns a page of balances. Provide limit and bookmark to page. " +
-      "When limit is omitted, the query uses the total results limit."
+      `Deprecated: returns at most ${FetchBalancesDto.MAX_RESULTS} matching balances, without pagination. ` +
+      "Use FetchBalancesWithTokenMetadata, which supports pagination, instead.",
+    deprecated: true
   })
-  public async FetchBalances(
-    ctx: GalaChainContext,
-    dto: FetchBalancesDto
-  ): Promise<FetchBalancesWithPaginationResponse> {
-    return fetchBalancesWithPagination(ctx, {
+  public async FetchBalances(ctx: GalaChainContext, dto: FetchBalancesDto): Promise<TokenBalance[]> {
+    const page = await fetchBalancesWithPagination(ctx, {
       ...dto,
       owner: await resolveUserAlias(ctx, dto.owner ?? ctx.callingUser),
-      bookmark: dto.bookmark,
-      limit: dto.limit
+      bookmark: undefined,
+      limit: FetchBalancesDto.MAX_RESULTS
     });
+    return page.results.slice(0, FetchBalancesDto.MAX_RESULTS);
   }
 
   @GalaTransaction({

@@ -17,11 +17,11 @@ import {
   ApplyRequestsDto,
   CreateTokenClassDto,
   FetchBalancesDto,
-  FetchBalancesWithPaginationResponse,
   GetMyProfileDto,
   GrantAllowanceDto,
   MintTokenDto,
   TokenAllowance,
+  TokenBalance,
   TokenClassKey,
   TokenInstance,
   TokenInstanceKey,
@@ -148,26 +148,28 @@ export async function createTransferDto(
  * @param client - Chain client for blockchain queries
  * @param nftClassKey - Token class identifier
  * @param owner - User identity key to query balances for
- * @returns Promise resolving to the token instance ids, sorted numerically
+ * @returns Promise resolving to array of token instance IDs sorted numerically
  *
  * @example
  * ```typescript
  * const instances = await fetchNFTInstances(client, nftClassKey, user.identityKey);
+ * console.log(instances); // ["1", "3", "7"]
  * ```
  */
 export async function fetchNFTInstances(
   client: ChainClient,
   nftClassKey: TokenClassKey,
   owner: string
-): Promise<BigNumber[]> {
+): Promise<string[]> {
   const dto = await createValidDTO(FetchBalancesDto, {
     ...instanceToPlain(nftClassKey),
     owner: asValidUserRef(owner)
   });
 
-  const resp = await client.evaluateTransaction("FetchBalances", dto, FetchBalancesWithPaginationResponse);
-  const balance = resp.Data?.results?.[0] as unknown as { instanceIds?: BigNumber[] } | undefined;
-  return (balance?.instanceIds ?? []).sort((a, b) => a.comparedTo(b));
+  const resp = await client.evaluateTransaction("FetchBalances", dto, TokenBalance);
+  expect(resp).toEqual(transactionSuccess([expect.anything()]));
+
+  return (resp.Data ?? [])[0].instanceIds.sort((a, b) => a.comparedTo(b));
 }
 
 /**

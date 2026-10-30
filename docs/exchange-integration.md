@@ -76,6 +76,8 @@ Yes, the API is **limited to 20 requests per minute**. Custom rate limits can be
 
 Use the **FetchBalances API**: [https://gateway-mainnet.galachain.com/api/asset/token-contract/FetchBalances](https://gateway-mainnet.galachain.com/api/asset/token-contract/FetchBalances)
 
+A single `FetchBalances` response contains at most 1000 balances. To get more, narrow the query with token class fields (`collection`, `category`, `type`, `additionalKey`) or use a paginated balance query.
+
 ### Does GalaChain provide transaction IDs (txIDs)?
 
 Yes, GalaChain transactions are each assigned a unique transaction ID. Each block can contain many transactions. Each transaction can contain many reads and writes. Because GalaChain is built on Hyperledger Fabric, more technical details can be found in their documentation: [https://hyperledger-fabric.readthedocs.io/en/release-2.4/txflow.html](https://hyperledger-fabric.readthedocs.io/en/release-2.4/txflow.html) , [https://hyperledger-fabric.readthedocs.io/en/release-2.4/readwrite.html](https://hyperledger-fabric.readthedocs.io/en/release-2.4/readwrite.html) 

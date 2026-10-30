@@ -375,9 +375,13 @@ export class UpdateTokenClassDto extends SubmitCallDTO {
 }
 
 @JSONSchema({
-  description: "Contains parameters for fetching balances. Each parameter is optional."
+  description:
+    "Contains parameters for fetching balances. Each parameter is optional. " +
+    "The response contains at most 1000 balances. Use a paginated balance query for more."
 })
 export class FetchBalancesDto extends ChainCallDTO {
+  public static readonly MAX_RESULTS = 1000;
+
   @JSONSchema({
     description: "Person who owns the balance. If the value is missing, chaincode caller is used."
   })
@@ -411,22 +415,6 @@ export class FetchBalancesDto extends ChainCallDTO {
   })
   @IsOptional()
   additionalKey?: string;
-
-  @JSONSchema({
-    description: "Page bookmark. If it is undefined, then the first page is returned."
-  })
-  @IsOptional()
-  @IsNotEmpty()
-  bookmark?: string;
-
-  @JSONSchema({
-    description: "Page size. When omitted, the query uses the total results limit. Maximum 10000."
-  })
-  @IsOptional()
-  @Max(10 * 1000)
-  @Min(1)
-  @IsInt()
-  limit?: number;
 }
 
 @JSONSchema({
