@@ -12,7 +12,13 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-import { DefaultError, MintTokenDto, TokenInstanceKey, ValidationFailedError } from "@gala-chain/api";
+import {
+  ConflictError,
+  DefaultError,
+  MintTokenDto,
+  TokenInstanceKey,
+  ValidationFailedError
+} from "@gala-chain/api";
 import { BigNumber } from "bignumber.js";
 
 export class NftMaxMintError extends ValidationFailedError {
@@ -24,6 +30,14 @@ export class NftMaxMintError extends ValidationFailedError {
         maxMint: MintTokenDto.MAX_NFT_MINT_SIZE
       }
     );
+  }
+}
+
+export class NftInstanceAlreadyExistsError extends ConflictError {
+  constructor(instanceKey: string) {
+    super(`NFT instance ${instanceKey} already exists. A new NFT cannot reuse its instance number.`, {
+      instanceKey
+    });
   }
 }
 

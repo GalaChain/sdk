@@ -33,8 +33,13 @@ import { checkAllowances, ensureQuantityCanBeMinted, fetchAllowances, useAllowan
 import { fetchOrCreateBalance } from "../balances";
 import { InvalidDecimalError } from "../token/TokenError";
 import { GalaChainContext } from "../types/GalaChainContext";
-import { ObjectNotFoundError, getObjectByKey, putChainObject } from "../utils";
-import { InsufficientMintAllowanceError, NftMaxMintError, UseAllowancesFailedError } from "./MintError";
+import { ObjectNotFoundError, getObjectByKey, objectExists, putChainObject } from "../utils";
+import {
+  InsufficientMintAllowanceError,
+  NftInstanceAlreadyExistsError,
+  NftMaxMintError,
+  UseAllowancesFailedError
+} from "./MintError";
 import { readMintSupply } from "./fetchMintSupply";
 import { writeMintRequest } from "./writeMintRequest";
 
@@ -184,6 +189,13 @@ export async function mintToken(
 
       // update balance
       userBalance.addInstance(nftInfo.instance);
+    }
+
+    // An existing instance with the same number would be overwritten. Fail instead.
+    for (const nft of mintedNFTs) {
+      if (await objectExists(ctx, nft.getCompositeKey())) {
+        throw new NftInstanceAlreadyExistsError(TokenInstance.buildInstanceKeyList(nft).join("|"));
+      }
     }
 
     // save instances
