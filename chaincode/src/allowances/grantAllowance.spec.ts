@@ -17,6 +17,7 @@ import {
   ChainObject,
   GalaChainResponse,
   GrantAllowanceDto,
+  RangedChainObject,
   TokenAllowance,
   TokenBalance,
   TokenInstance,
@@ -34,6 +35,7 @@ import BigNumber from "bignumber.js";
 import { instanceToInstance, instanceToPlain, plainToInstance } from "class-transformer";
 
 import GalaChainTokenContract from "../__test__/GalaChainTokenContract";
+import { fetchMintAllowanceSupply } from "../mint/fetchMintAllowanceSupply";
 import { currency, nft } from "../testdata/index";
 import { InvalidDecimalError, NotATokenAuthorityError } from "../token/TokenError";
 import { inverseEpoch, inverseTime } from "../utils";
@@ -741,6 +743,52 @@ describe("GrantAllowance", () => {
     expect(response).toEqual(GalaChainResponse.Success([allowance]));
 
     expect(getWrites()).toEqual(writesMap(allowance, mintAllowance, mintAllowanceRequest));
+  });
+
+  it("counts mint allowance grants from two issuers to one user in the same transaction", async () => {
+    // Given
+    const nftClass = nft.tokenClass((defaults) => ({
+      ...defaults,
+      authorities: [users.admin.identityKey, users.testUser2.identityKey]
+    }));
+    const { collection, category, type, additionalKey } = nft.tokenInstance1KeyPlain();
+    const tokenInstance = await createValidDTO(TokenInstanceQueryKey, {
+      collection,
+      category,
+      type,
+      additionalKey,
+      instance: TokenInstance.FUNGIBLE_TOKEN_INSTANCE
+    });
+
+    const { ctx, contract, getWrites } = fixture(GalaChainTokenContract)
+      .registeredUsers(users.admin, users.testUser2)
+      .savedState(nftClass, nft.tokenInstance1());
+
+    const grantDto = (issuer: typeof users.admin, quantity: BigNumber) =>
+      createValidSubmitDTO(GrantAllowanceDto, {
+        tokenInstance,
+        quantities: [{ user: users.testUser1.identityKey, quantity }],
+        allowanceType: AllowanceType.Mint,
+        uses: new BigNumber("1")
+      })
+        .withOperation("asset-channel_basic-asset_GalaChainToken:GrantAllowance")
+        .signed(issuer.privateKey);
+
+    // When
+    const first = await contract.GrantAllowance(ctx, await grantDto(users.admin, new BigNumber("100")));
+    const second = await contract.GrantAllowance(ctx, await grantDto(users.testUser2, new BigNumber("50")));
+
+    // Then
+    expect(first).toEqual(GalaChainResponse.Success(expect.any(Array)));
+    expect(second).toEqual(GalaChainResponse.Success(expect.any(Array)));
+
+    const requests = Object.entries(getWrites())
+      .filter(([key]) => key.startsWith(TokenMintAllowanceRequest.INDEX_KEY))
+      .map(([, value]) => RangedChainObject.deserialize(TokenMintAllowanceRequest, value));
+    expect(requests.map((r) => r.quantity.toString())).toEqual(["150"]);
+
+    const { ctx: nextCtx } = fixture(GalaChainTokenContract).savedRangeState(requests);
+    expect(await fetchMintAllowanceSupply(nextCtx, nftClass, 0)).toEqual(new BigNumber("150"));
   });
 
   it("rejects a second mint allowance grant to the same user in the same transaction", async () => {

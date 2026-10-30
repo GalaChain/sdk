@@ -48,6 +48,7 @@ import {
   ObjectNotFoundError,
   getObjectByKey,
   getObjectsByPartialCompositeKey,
+  getRangedObjectByKey,
   inverseEpoch,
   inverseTime,
   putChainObject,
@@ -431,6 +432,29 @@ export async function putMintAllowanceRequestsOnChain(
     });
 
     mintAllowanceEntry.id = mintAllowanceEntry.requestId();
+
+    // Grants to the same user in one transaction share this key, whoever grants them.
+    // Add the quantity to the record already written, so the allowance supply counts every grant.
+    const pending = await getRangedObjectByKey(
+      ctx,
+      TokenMintAllowanceRequest,
+      mintAllowanceEntry.getRangedKey()
+    ).catch((e) => {
+      if (e instanceof ObjectNotFoundError) {
+        return undefined;
+      }
+      throw e;
+    });
+
+    if (pending !== undefined) {
+      pending.quantity = pending.quantity.plus(mintAllowanceEntry.quantity);
+      await putRangedChainObject(ctx, pending);
+      // The mint allowance record is keyed by issuer, so it keeps the total only for the same issuer.
+      mintAllowanceQtyEntries.push(
+        pending.grantedBy === mintAllowanceEntry.grantedBy ? pending : mintAllowanceEntry
+      );
+      continue;
+    }
 
     await putRangedChainObject(ctx, mintAllowanceEntry);
 
