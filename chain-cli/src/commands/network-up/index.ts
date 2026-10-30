@@ -76,7 +76,8 @@ export default class NetworkUp extends BaseCommand<typeof NetworkUp> {
       char: "r",
       description:
         "Root directory of target network. " +
-        "Should not be the same as chaincodeDir and should not contain chaincodeDir. " +
+        "Must not be the same as chaincodeDir and must not contain chaincodeDir. " +
+        "It may be inside chaincodeDir, as the default is, if it is listed in that directory's .dockerignore. " +
         `By default '${defaultFabloRoot}' is used.`,
       default: defaultFabloRoot
     }),
@@ -342,6 +343,37 @@ export function assertNetworkRootOutsideChaincodeDirs(fabloRoot: string, chainco
   });
 }
 
+/**
+ * A network root inside a chaincode directory holds network crypto material, so it must be listed in that
+ * directory's .dockerignore. Otherwise the material is sent to the chaincode image build.
+ */
+export function assertNetworkRootIgnoredByDocker(fabloRoot: string, chaincodeDirs: string[]): void {
+  const networkRoot = path.resolve(fabloRoot);
+  new Set(chaincodeDirs.map((dir) => path.resolve(dir))).forEach((chaincodeDirectory) => {
+    if (!isEqualOrInside(chaincodeDirectory, networkRoot)) {
+      return;
+    }
+
+    const relativeRoot = path.relative(chaincodeDirectory, networkRoot).split(path.sep).join("/");
+    const dockerignorePath = path.join(chaincodeDirectory, ".dockerignore");
+    const patterns = fs.existsSync(dockerignorePath)
+      ? readFileSync(dockerignorePath, "utf-8")
+          .split(/\r?\n/)
+          .map((line) => line.trim())
+          .filter((line) => line.length > 0 && !line.startsWith("#") && !line.startsWith("!"))
+          .map((line) => line.replace(/^\.?\//, "").replace(/\/+$/, ""))
+      : [];
+
+    const ignored = patterns.some((p) => relativeRoot === p || relativeRoot.startsWith(`${p}/`));
+    if (!ignored) {
+      throw new Error(
+        `Error: Network root "${networkRoot}" is inside chaincode directory "${chaincodeDirectory}" ` +
+          `and is not listed in "${dockerignorePath}". Add "${relativeRoot}" to that file.`
+      );
+    }
+  });
+}
+
 function isEqualOrInside(directory: string, candidate: string): boolean {
   const relative = path.relative(directory, candidate);
   return (
@@ -473,6 +505,7 @@ export function customValidation(flags: any): void {
   }
 
   assertNetworkRootOutsideChaincodeDirs(fabloRoot, chaincodeDir);
+  assertNetworkRootIgnoredByDocker(fabloRoot, chaincodeDir);
 }
 
 function reduce(args: any): SingleArg[] {

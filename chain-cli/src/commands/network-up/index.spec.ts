@@ -66,18 +66,46 @@ describe("network path checks", () => {
     ).toThrow(/must not equal chaincode directory/);
   });
 
-  it("allows the default network directory inside the chaincode project", () => {
+  it("allows a network directory inside the chaincode project when .dockerignore lists it", () => {
+    // Given
+    const project = fs.mkdtempSync(path.join(os.tmpdir(), "gala-project-"));
+    fs.writeFileSync(path.join(project, ".dockerignore"), "lib\n/test-network/\n");
+
+    // When & Then
     expect(() =>
       customValidation(
         flags({
           channel: ["product-channel"],
           channelType: ["curator"],
           chaincodeName: ["product"],
-          chaincodeDir: ["."],
-          fabloRoot: "./test-network"
+          chaincodeDir: [project],
+          fabloRoot: path.join(project, "test-network")
         })
       )
     ).not.toThrow();
+
+    fs.rmSync(project, { recursive: true, force: true });
+  });
+
+  it("rejects a network directory inside the chaincode project that .dockerignore does not list", () => {
+    // Given
+    const project = fs.mkdtempSync(path.join(os.tmpdir(), "gala-project-"));
+    fs.writeFileSync(path.join(project, ".dockerignore"), "lib\ntest-network\n");
+
+    // When & Then
+    expect(() =>
+      customValidation(
+        flags({
+          channel: ["product-channel"],
+          channelType: ["curator"],
+          chaincodeName: ["product"],
+          chaincodeDir: [project],
+          fabloRoot: path.join(project, "net")
+        })
+      )
+    ).toThrow(/Add "net" to that file/);
+
+    fs.rmSync(project, { recursive: true, force: true });
   });
 
   it("checks the env file next to the network root", () => {

@@ -15,7 +15,6 @@
 import {
   AllowanceType,
   AuthorizedOnBehalf,
-  ChainObject,
   MintTokenDto,
   TokenAllowance,
   TokenClass,
@@ -251,15 +250,8 @@ export async function updateTotalSupply(
 
   const mintFulfillmentEntry: TokenMintFulfillment = mintRequest.fulfill(quantity);
 
-  // Fulfillments in one transaction share a key per requestor. A second mint for the same owner
-  // adds to the existing record. A mint for another owner gets its own key with the owner appended.
-  let key = mintFulfillmentEntry.getCompositeKey();
-  let pending = await findMintFulfillment(ctx, key);
-
-  if (pending !== undefined && pending.owner !== mintFulfillmentEntry.owner) {
-    key = `${key}${mintFulfillmentEntry.owner}${ChainObject.MIN_UNICODE_RUNE_VALUE}`;
-    pending = await findMintFulfillment(ctx, key);
-  }
+  // A second mint for the same owner in this transaction uses the same key. Add its quantity.
+  const pending = await findMintFulfillment(ctx, mintFulfillmentEntry.getCompositeKey());
 
   if (pending !== undefined) {
     mintFulfillmentEntry.quantity = pending.quantity.plus(quantity);
@@ -268,12 +260,7 @@ export async function updateTotalSupply(
       : TokenMintStatus.Minted;
   }
 
-  if (key === mintFulfillmentEntry.getCompositeKey()) {
-    await putChainObject(ctx, mintFulfillmentEntry);
-  } else {
-    await mintFulfillmentEntry.validateOrReject();
-    await ctx.stub.putState(key, Buffer.from(mintFulfillmentEntry.serialize()));
-  }
+  await putChainObject(ctx, mintFulfillmentEntry);
 }
 
 async function findMintFulfillment(

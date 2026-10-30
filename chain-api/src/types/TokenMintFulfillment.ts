@@ -52,6 +52,7 @@ export class TokenMintFulfillment extends ChainObject {
   @IsNotEmpty()
   public requestCreated: number;
 
+  @ChainKey({ position: 6 })
   @IsUserAlias()
   public owner: UserAlias;
 

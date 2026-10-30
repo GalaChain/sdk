@@ -414,8 +414,9 @@ FLAGS
   -e, --envConfig=<value>         Path to .env file to be used for chaincodes.
   -n, --chaincodeName=<value>...  (required) Chaincode name.
   -o, --contracts=<value>...      Contract names in a JSON format.
-  -r, --fabloRoot=<value>         [default: ./test-network] Root directory of target network. Should not be the same as
-                                  chaincodeDir and should not contain chaincodeDir. By default './test-network' is used.
+  -r, --fabloRoot=<value>         [default: ./test-network] Root directory of target network. Must not be the same as
+                                  chaincodeDir and must not contain chaincodeDir. It may be inside chaincodeDir, as the default
+                                  is, if it is listed in that directory's .dockerignore. By default './test-network' is used.
   -t, --channelType=<option>...   (required) Channel type. Can be "curator" or "partner". It means whether this is a
                                   chaincode managed by CuratorOrg or PartnerOrg.
                                   <options: curator|partner>
@@ -484,8 +485,9 @@ FLAGS
   -e, --envConfig=<value>         Path to .env file to be used for chaincodes.
   -n, --chaincodeName=<value>...  (required) Chaincode name.
   -o, --contracts=<value>...      Contract names in a JSON format.
-  -r, --fabloRoot=<value>         [default: ./test-network] Root directory of target network. Should not be the same as
-                                  chaincodeDir and should not contain chaincodeDir. By default './test-network' is used.
+  -r, --fabloRoot=<value>         [default: ./test-network] Root directory of target network. Must not be the same as
+                                  chaincodeDir and must not contain chaincodeDir. It may be inside chaincodeDir, as the default
+                                  is, if it is listed in that directory's .dockerignore. By default './test-network' is used.
   -t, --channelType=<option>...   (required) Channel type. Can be "curator" or "partner". It means whether this is a
                                   chaincode managed by CuratorOrg or PartnerOrg.
                                   <options: curator|partner>

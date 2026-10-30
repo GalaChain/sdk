@@ -32,6 +32,7 @@ import {
 } from "@gala-chain/api";
 import { fixture, users, writesMap } from "@gala-chain/test";
 import BigNumber from "bignumber.js";
+import { plainToInstance } from "class-transformer";
 
 import GalaChainTokenContract from "../__test__/GalaChainTokenContract";
 import { TotalSupplyExceededError } from "../allowances/AllowanceError";
@@ -259,6 +260,10 @@ describe("MintToken", () => {
       .filter(([key]) => key.startsWith(`\u0000${TokenMintFulfillment.INDEX_KEY}\u0000`))
       .map(([key, value]) => ({ key, ...(JSON.parse(value) as { owner: string; quantity: string }) }));
 
+    // Each fulfillment is stored under its own key, which includes the owner
+    fulfillments.forEach(({ key, ...plain }) => {
+      expect(key).toEqual(plainToInstance(TokenMintFulfillment, plain).getCompositeKey());
+    });
     expect(fulfillments).toEqual(
       expect.arrayContaining([
         expect.objectContaining({ owner: users.testUser1.identityKey, quantity: "1" }),
