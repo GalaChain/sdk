@@ -325,9 +325,38 @@ describe("MintToken", () => {
     expect(savedClass).toEqual([expect.objectContaining({ totalSupply: "16" })]);
   });
 
+  test("refuses to mint an NFT whose instance number already exists", async () => {
+    // Given
+    const nftClass = nft.tokenClass();
+    const existingInstance = nft.tokenInstance1();
+    const tokenAllowance = nft.tokenMintAllowance();
+
+    // The class total says nothing was minted, but instance 1 is already on the ledger
+    const { ctx, contract, getWrites } = fixture(GalaChainTokenContract)
+      .registeredUsers(users.admin)
+      .savedState(nftClass, existingInstance, tokenAllowance)
+      .savedRangeState([]);
+
+    const dto = await createValidSubmitDTO(MintTokenDto, {
+      tokenClass: nft.tokenClassKey(),
+      owner: users.testUser1.identityKey,
+      quantity: new BigNumber("1")
+    })
+      .withOperation("asset-channel_basic-asset_GalaChainToken:MintToken")
+      .signed(users.admin.privateKey);
+
+    // When
+    const response = await contract.MintToken(ctx, dto);
+
+    // Then
+    expect(response).toEqual(
+      expect.objectContaining({ Status: 0, Message: expect.stringContaining("already exists") })
+    );
+    expect(getWrites()).toEqual({});
+  });
+
   test("mints unique items, i.e. NFTs", async () => {
     // Given
-    const nftInstance = nft.tokenInstance1();
     const nftInstanceKey = nft.tokenInstance1Key();
     const nftClass = nft.tokenClass();
     const mintQty = new BigNumber("2");
@@ -335,7 +364,7 @@ describe("MintToken", () => {
 
     const { ctx, contract, getWrites } = fixture(GalaChainTokenContract)
       .registeredUsers(users.admin)
-      .savedState(nftClass, nftInstance, tokenAllowance)
+      .savedState(nftClass, tokenAllowance)
       .savedRangeState([]);
 
     const dto = await createValidSubmitDTO(MintTokenDto, {
@@ -502,7 +531,6 @@ describe("MintToken", () => {
 
   it("mints NFTs with an explicitly specified admin allowance", async () => {
     // Given
-    const nftInstance = nft.tokenInstance1();
     const nftInstanceKey = nft.tokenInstance1Key();
     const nftClass = nft.tokenClass();
     const mintQty = new BigNumber("2");
@@ -510,7 +538,7 @@ describe("MintToken", () => {
 
     const { ctx, contract, getWrites } = fixture(GalaChainTokenContract)
       .registeredUsers(users.admin)
-      .savedState(nftClass, nftInstance, tokenAllowance)
+      .savedState(nftClass, tokenAllowance)
       .savedRangeState([]);
 
     const dto = await createValidSubmitDTO(MintTokenDto, {
