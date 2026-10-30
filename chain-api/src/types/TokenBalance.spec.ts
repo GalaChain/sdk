@@ -469,6 +469,32 @@ describe("non-fungible", () => {
     expect(error).toThrow("is locked");
   });
 
+  it("should keep an nft locked until its vesting start, then allow spending it", () => {
+    // Given
+    const vestingStart = 1_000_000;
+    const vestingHold = new TokenHold({
+      createdBy: "client|user1" as UserAlias,
+      instanceId: new BigNumber(1),
+      quantity: new BigNumber(1),
+      created: 1,
+      expires: 0,
+      vestingPeriodStart: vestingStart
+    });
+    const balance = emptyBalance();
+    balance.addInstance(new BigNumber(1));
+    balance.lockInstance(vestingHold, 1);
+
+    // When
+    const beforeStart = () => balance.removeInstance(new BigNumber(1), vestingStart - 1, to);
+    const spendableAtStart = balance.isInstanceSpendable(new BigNumber(1), vestingStart);
+
+    // Then
+    expect(beforeStart).toThrow("is locked");
+    expect(spendableAtStart).toBe(true);
+    balance.removeInstance(new BigNumber(1), vestingStart, to);
+    expect(balance.getNftInstanceIds()).toEqual([]);
+  });
+
   it("should lock instance", () => {
     // Given
     const unexpiredHold = createHold(new BigNumber(1), 0);

@@ -302,7 +302,14 @@ export class TokenBalance extends ChainObject {
   }
 
   private isInstanceLocked(instanceId: BigNumber, currentTime: number): boolean {
-    return this.getUnexpiredLockedHolds(currentTime).some((h) => h.instanceId.isEqualTo(instanceId));
+    return this.findHoldLockingInstance(instanceId, currentTime) !== undefined;
+  }
+
+  // A vesting hold on an NFT stops locking it once the vesting start is reached.
+  private findHoldLockingInstance(instanceId: BigNumber, currentTime: number): TokenHold | undefined {
+    return this.getUnexpiredLockedHolds(currentTime).find(
+      (h) => h.instanceId.isEqualTo(instanceId) && !h.isVestingStarted(currentTime)
+    );
   }
 
   private ensureInstanceIsNft(instanceId: BigNumber): void {
@@ -330,7 +337,7 @@ export class TokenBalance extends ChainObject {
   }
 
   private ensureInstanceIsNotLocked(instanceId: BigNumber, currentTime: number): void {
-    const hold = this.getUnexpiredLockedHolds(currentTime).find((h) => h.instanceId.isEqualTo(instanceId));
+    const hold = this.findHoldLockingInstance(instanceId, currentTime);
     if (hold !== undefined) {
       throw new TokenLockedError(this.owner, this, instanceId, hold?.name);
     }
