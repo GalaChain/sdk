@@ -639,8 +639,7 @@ export class FreezeTokenBalanceDto extends SubmitCallDTO {
 }
 
 @JSONSchema({
-  description:
-    "Experimental: After submitting request to RequestMintAllowance, follow up with FulfillMintAllowance."
+  description: "Transfers a token from one owner to another."
 })
 export class TransferTokenDto extends SubmitCallDTO {
   @JSONSchema({

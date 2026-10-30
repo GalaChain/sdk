@@ -117,3 +117,18 @@ export async function fetchMintSupply(
 
   return updatedKnownMintsCount;
 }
+
+/**
+ * The token class total and the mint request records can disagree. A class minted through the removed
+ * high-throughput flow has a total that is behind its request records. The larger number is the supply,
+ * so a mint never reuses an NFT instance number or misses supply that was already minted.
+ */
+export async function readMintSupply(
+  ctx: GalaChainContext,
+  tokenClass: TokenClassKeyProperties & { totalSupply: BigNumber }
+): Promise<BigNumber> {
+  const fromClass = new BigNumber(tokenClass.totalSupply);
+  const fromRequests = await fetchMintSupply(ctx, tokenClass, 0);
+
+  return BigNumber.maximum(fromClass, fromRequests);
+}

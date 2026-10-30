@@ -33,7 +33,6 @@ import {
 import { JSONSchema } from "class-validator-jsonschema";
 
 import {
-  ArrayUniqueObjects,
   BigNumberIsNotNegative,
   BigNumberProperty,
   IsUserRef,
@@ -47,7 +46,6 @@ import {
   TokenMintConfiguration
 } from "./TokenMintConfiguration";
 import { UserRef } from "./UserRef";
-import { MintRequestDto } from "./common";
 import { ChainCallDTO, SubmitCallDTO } from "./dtos";
 
 @JSONSchema({
@@ -146,64 +144,6 @@ export class BatchMintTokenDto extends SubmitCallDTO {
   @ArrayNotEmpty()
   @ArrayMaxSize(BatchMintTokenDto.MAX_ARR_SIZE)
   mintDtos: MintTokenDto[];
-}
-
-/**
- * Experimental: Defines an action to mint a token. High-throughput implementation.
- *
- * @experimental 2023-03-23
- */
-@JSONSchema({
-  description:
-    "Experimental: Describes an action to mint a token. High-throughput implementation. " +
-    "DTO properties backwards-compatible with prior MintTokenDto,"
-})
-export class HighThroughputMintTokenDto extends SubmitCallDTO {
-  // todo: remove all these duplicated properties
-  // it seems something about our @GalaTransaction decorator does not pass through
-  // parent properties. Leaving this class empty with just the `extends MintTokenDto`
-  // results in an api definition with no property except the signature.
-  // update: seems extending MintTokenDto results in failures value.toFixed is not a function,
-  // presumably something about the quantity and our dynamic type/class validator
-  static MAX_NFT_MINT_SIZE = 1000;
-
-  @JSONSchema({
-    description: "Token class of token to be minted."
-  })
-  @ValidateNested()
-  @Type(() => TokenClassKey)
-  @IsNotEmpty()
-  tokenClass: TokenClassKey;
-
-  @JSONSchema({
-    description: "The owner of minted tokens. If the value is missing, chaincode caller is used."
-  })
-  @IsOptional()
-  @IsUserRef()
-  owner?: UserRef;
-
-  @JSONSchema({
-    description: "How many units of fungible token of how many NFTs are going to be minted."
-  })
-  @IsNotEmpty()
-  @BigNumberIsNotNegative()
-  @BigNumberProperty()
-  quantity: BigNumber;
-}
-
-@JSONSchema({
-  description:
-    "Experimental: After submitting request to RequestMintAllowance, follow up with FulfillMintAllowance."
-})
-export class FulfillMintDto extends SubmitCallDTO {
-  static MAX_ARR_SIZE = 1000;
-
-  @ValidateNested({ each: true })
-  @Type(() => MintRequestDto)
-  @ArrayNotEmpty()
-  @ArrayMaxSize(FulfillMintDto.MAX_ARR_SIZE)
-  @ArrayUniqueObjects("id")
-  requests: MintRequestDto[];
 }
 
 function EndNotBeforeStart(validationOptions?: ValidationOptions) {

@@ -101,22 +101,6 @@ export class TokenMintRequest extends RangedChainObject {
     ]);
   }
 
-  public fulfillmentKey(): string {
-    const { collection, category, type, additionalKey, totalKnownMintsCount, requestor, owner, created } =
-      this;
-
-    return ChainObject.getCompositeKeyFromParts(TokenMintFulfillment.INDEX_KEY, [
-      collection,
-      category,
-      type,
-      additionalKey,
-      totalKnownMintsCount.toString(),
-      requestor,
-      owner,
-      `${created}`
-    ]);
-  }
-
   public fulfill(qty: BigNumber): TokenMintFulfillment {
     const { collection, category, type, additionalKey, requestor, created, owner } = this;
 

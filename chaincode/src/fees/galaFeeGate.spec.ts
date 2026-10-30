@@ -245,10 +245,10 @@ describe("feeGate", () => {
       quantity: new BigNumber("10000")
     });
 
-    // baseQuantity * (feeAccelerationRate * (cumulativeUses + 1)) = expectedFeeAmount
-    // 2 * (2*4) = 16
+    // baseQuantity * (feeAccelerationRate * (chargeableUses + 1)) = expectedFeeAmount
+    // the threshold is 0 and this is use 4, so chargeableUses is 4: 2 * (2 * 5) = 20
     const expectedFeeAmount = feeCodeDefinition3.baseQuantity.multipliedBy(
-      feeCodeDefinition3.feeAccelerationRate.multipliedBy(userThresholdUses.cumulativeUses.plus("1"))
+      feeCodeDefinition3.feeAccelerationRate.multipliedBy(userThresholdUses.cumulativeUses.plus("2"))
     );
 
     const { ctx, getWrites } = fixture<GalaChainContext, GalaChainTokenContract>(GalaChainTokenContract)
@@ -818,6 +818,36 @@ describe("feeGate", () => {
         expectedUsageWrite
       )
     );
+  });
+
+  it.each([
+    ["before", 8, 0],
+    ["at", 9, 10],
+    ["one use after", 10, 20],
+    ["two uses after", 11, 30]
+  ])("charges a multiplicative tier %s its threshold", (_where, previousUses, expectedFee) => {
+    // Given
+    const definition = plainToInstance(FeeCodeDefinition, {
+      feeCode: feeCode1,
+      feeThresholdUses: new BigNumber("10"),
+      feeThresholdTimePeriod: 0,
+      baseQuantity: new BigNumber("5"),
+      maxQuantity: new BigNumber("1000"),
+      feeAccelerationRateType: FeeAccelerationRateType.Multiplicative,
+      feeAccelerationRate: new BigNumber("2")
+    });
+    const uses = plainToInstance(FeeThresholdUses, {
+      feeCode: feeCode1,
+      user: users.testUser1.identityKey,
+      cumulativeUses: new BigNumber(previousUses),
+      cumulativeFeeQuantity: new BigNumber("0")
+    });
+
+    // When
+    const result = incrementCumulativeUsesAndCalculateFee([definition], uses);
+
+    // Then
+    expect(result.feeAmount.toNumber()).toEqual(expectedFee);
   });
 
   it("stops the calculated fee at maxQuantity", () => {

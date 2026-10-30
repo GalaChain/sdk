@@ -189,13 +189,11 @@ function calculateFeeAmountBasedOnAccelerationRateType(
         ); // baseQuantity + (chargeableUses * feeAccelerationRate)
         break;
       case FeeAccelerationRateType.Multiplicative:
-        // At the tier threshold chargeableUses is zero. Count that first use so a
-        // configured base quantity is not dropped.
+        // The use at the threshold is the first chargeable use, so each use costs one step more than
+        // the previous one, starting from baseQuantity * feeAccelerationRate.
         feeAmount = billableCode.baseQuantity.multipliedBy(
-          (chargeableUses.isZero() ? new BigNumber(1) : chargeableUses).multipliedBy(
-            billableCode.feeAccelerationRate
-          )
-        );
+          chargeableUses.plus(1).multipliedBy(billableCode.feeAccelerationRate)
+        ); // baseQuantity * ((chargeableUses + 1) * feeAccelerationRate)
         feeAmount = feeAtThresholdOrBase(chargeableUses, billableCode.baseQuantity, feeAmount);
         break;
       case FeeAccelerationRateType.Exponential:

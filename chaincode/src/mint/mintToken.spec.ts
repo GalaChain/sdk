@@ -273,6 +273,58 @@ describe("MintToken", () => {
     expect(fulfillments).toHaveLength(2);
   });
 
+  test("numbers new NFTs after the larger of the class total and the mint requests", async () => {
+    // Given
+    const nftClass = nft.tokenClass();
+    nftClass.totalSupply = new BigNumber("2");
+    const tokenAllowance = nft.tokenMintAllowance();
+
+    const testFixture = fixture(GalaChainTokenContract)
+      .registeredUsers(users.admin)
+      .savedState(nftClass, nft.tokenInstance1(), tokenAllowance);
+    const { ctx, contract, getWrites } = testFixture;
+
+    // Request records from an earlier mint flow show 15 instances, while the class total says 2
+    const priorRequest = await createValidRangedChainObject(TokenMintRequest, {
+      id: "prior-mint",
+      collection: nftClass.collection,
+      category: nftClass.category,
+      type: nftClass.type,
+      additionalKey: nftClass.additionalKey,
+      timeKey: inverseTime(ctx, 1),
+      totalKnownMintsCount: new BigNumber("10"),
+      requestor: users.admin.identityKey,
+      owner: users.testUser1.identityKey,
+      created: ctx.txUnixTime - 1,
+      quantity: new BigNumber("5"),
+      state: TokenMintStatus.Minted,
+      epoch: inverseEpoch(ctx, 0)
+    });
+    testFixture.savedRangeState([priorRequest]);
+
+    const dto = await createValidSubmitDTO(MintTokenDto, {
+      tokenClass: nft.tokenClassKey(),
+      owner: users.testUser1.identityKey,
+      quantity: new BigNumber("1")
+    })
+      .withOperation("asset-channel_basic-asset_GalaChainToken:MintToken")
+      .signed(users.admin.privateKey);
+
+    // When
+    const response = await contract.MintToken(ctx, dto);
+
+    // Then
+    expect(response).toEqual(
+      GalaChainResponse.Success([expect.objectContaining({ instance: new BigNumber("16") })])
+    );
+
+    const writes = getWrites();
+    const savedClass = Object.entries(writes)
+      .filter(([key]) => key.startsWith(`\u0000${TokenClass.INDEX_KEY}\u0000`))
+      .map(([, value]) => JSON.parse(value) as { totalSupply: string });
+    expect(savedClass).toEqual([expect.objectContaining({ totalSupply: "16" })]);
+  });
+
   test("mints unique items, i.e. NFTs", async () => {
     // Given
     const nftInstance = nft.tokenInstance1();

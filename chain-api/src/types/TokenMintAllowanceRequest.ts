@@ -20,10 +20,8 @@ import { ChainKey } from "../utils";
 import { BigNumberIsNotNegative, BigNumberProperty, IsUserAlias } from "../validators";
 import { ChainObject } from "./ChainObject";
 import { RangedChainObject } from "./RangedChainObject";
-import { TokenAllowance } from "./TokenAllowance";
-import { TokenMintAllowance } from "./TokenMintAllowance";
 import { UserAlias } from "./UserAlias";
-import { AllowanceType, TokenMintStatus } from "./common";
+import { TokenMintStatus } from "./common";
 
 export class TokenMintAllowanceRequest extends RangedChainObject {
   public static INDEX_KEY = "GCTMAR";
@@ -114,80 +112,5 @@ export class TokenMintAllowanceRequest extends RangedChainObject {
       grantedBy,
       grantedTo
     ]);
-  }
-
-  public fulfillmentKey(): string {
-    const {
-      collection,
-      category,
-      type,
-      additionalKey,
-      totalKnownMintAllowancesCount,
-      created,
-      grantedBy,
-      grantedTo
-    } = this;
-
-    return ChainObject.getCompositeKeyFromParts(TokenMintAllowance.INDEX_KEY, [
-      collection,
-      category,
-      type,
-      additionalKey,
-      totalKnownMintAllowancesCount.toString(),
-      `${created}`,
-      grantedBy,
-      grantedTo
-    ]);
-  }
-
-  public fulfill(instance: BigNumber): [TokenMintAllowance, TokenAllowance] {
-    const {
-      collection,
-      category,
-      type,
-      additionalKey,
-      totalKnownMintAllowancesCount,
-      created,
-      grantedBy,
-      grantedTo,
-      quantity,
-      id,
-      uses,
-      expires
-    } = this;
-
-    const mintAllowanceEntry = new TokenMintAllowance();
-
-    mintAllowanceEntry.collection = collection;
-    mintAllowanceEntry.category = category;
-    mintAllowanceEntry.type = type;
-    mintAllowanceEntry.additionalKey = additionalKey;
-    mintAllowanceEntry.totalKnownMintAllowancesAtRequest = totalKnownMintAllowancesCount;
-    mintAllowanceEntry.grantedBy = grantedBy;
-    mintAllowanceEntry.grantedTo = grantedTo;
-    mintAllowanceEntry.created = created;
-    mintAllowanceEntry.reqId = id;
-    mintAllowanceEntry.quantity = quantity;
-
-    const allowance = new TokenAllowance();
-
-    allowance.grantedTo = grantedTo;
-    allowance.collection = collection;
-    allowance.category = category;
-    allowance.type = type;
-    allowance.additionalKey = additionalKey;
-    allowance.instance = instance;
-    allowance.allowanceType = AllowanceType.Mint;
-    allowance.grantedBy = grantedBy;
-    // todo: determine if using the created timestamp of the request is fine,
-    // or if we need to use the timestamp of the fulfillment.
-    allowance.created = created;
-    allowance.uses = uses;
-    allowance.usesSpent = new BigNumber("0");
-    allowance.expires = expires ?? 0;
-    allowance.quantity = quantity;
-    allowance.quantitySpent = new BigNumber("0");
-
-    return [mintAllowanceEntry, allowance];
   }
 }
