@@ -136,6 +136,16 @@ it("allows $ only as the first character of a string key part", () => {
   expect(() => ChainObject.getStringKeyFromParts(["a\u0000b"])).toThrow(/NUL/);
 });
 
+it("rejects an empty string key part that is not the last one", () => {
+  // "a" + "" + "b" would otherwise produce the same string as "a" + "$b"
+  expect(() => ChainObject.getStringKeyFromParts(["a", "", "b"])).toThrow(/index 1 is empty/);
+  expect(() => ChainObject.getStringKeyFromParts(["a", undefined as unknown as string, "b"])).toThrow(
+    /index 1 is empty/
+  );
+  expect(ChainObject.getStringKeyFromParts(["a", "$b"])).toEqual("a$$b");
+  expect(ChainObject.getStringKeyFromParts(["a", ""])).toEqual("a$");
+});
+
 it("rejects a NUL character in a joined query prefix", () => {
   expect(ChainObject.joinKeyParts(["a", "b_c", null])).toEqual("a\u0000b_c\u0000");
   expect(() => ChainObject.joinKeyParts(["a\u0000b", "c"])).toThrow(/NUL/);

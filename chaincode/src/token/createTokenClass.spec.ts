@@ -106,3 +106,44 @@ it("should CreateTokenClass when max supply is omitted", async () => {
   });
   expect(getWrites()).toEqual(writesMap(expectedInstance, expectedClass));
 });
+
+it.each([
+  ["at the start of", "$Currency", "Success"],
+  ["inside", "Curr$ency", "Error"]
+])("should handle $ %s a token class key field", async (_where, category, outcome) => {
+  // Given
+  const { ctx, contract, getWrites } = fixture(GalaChainTokenContract)
+    .caClientIdentity("test-admin", "CuratorOrg")
+    .registeredUsers(users.admin);
+
+  const tokenClassKey = currency.tokenClassKey();
+  tokenClassKey.category = category;
+
+  const dto: CreateTokenClassDto = await createValidSubmitDTO(CreateTokenClassDto, {
+    tokenClass: tokenClassKey,
+    maxCapacity: new BigNumber("1000000000"),
+    name: "TESTCURRENCY",
+    description: "A mock currency for automated tests.",
+    decimals: 4,
+    network: "GC",
+    image: "http://app.gala.games/some-test-image-url",
+    symbol: "AUTOTESTCOIN",
+    isNonFungible: false,
+    authorities: [users.admin.identityKey]
+  })
+    .withOperation("asset-channel_basic-asset_GalaChainToken:CreateTokenClass")
+    .signed(users.admin.privateKey);
+
+  // When
+  const response = await contract.CreateTokenClass(ctx, dto);
+
+  // Then
+  if (outcome === "Success") {
+    expect(response).toEqual(GalaChainResponse.Success(tokenClassKey));
+  } else {
+    expect(response).toEqual(
+      expect.objectContaining({ Status: 0, Message: expect.stringContaining("only as its first character") })
+    );
+    expect(getWrites()).toEqual({});
+  }
+});

@@ -170,8 +170,12 @@ export abstract class ChainObject {
   public static getStringKeyFromParts(parts: string[]): string {
     // "$" may be the first character of a part. "aaa" + "$bb" is "aaa$$bb".
     // A "$" later in the part is rejected, so "aaa$" + "bb" cannot produce the same string.
+    // An empty part may only be the last one, so "aaa" + "" + "bb" cannot produce "aaa$$bb" either.
     const texts = parts.map((part, index) => {
       const text = part === null || part === undefined ? "" : String(part);
+      if (text.length === 0 && index < parts.length - 1) {
+        throw new InvalidCompositeKeyError(`string key part at index ${index} is empty`);
+      }
       if (text.includes(ChainObject.MIN_UNICODE_RUNE_VALUE)) {
         throw new InvalidCompositeKeyError(`string key part at index ${index} contains a NUL character`);
       }
