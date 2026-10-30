@@ -12,13 +12,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-import {
-  FetchBalancesDto,
-  FetchBalancesWithPaginationResponse,
-  TokenBalance,
-  asValidUserRef,
-  createValidDTO
-} from "@gala-chain/api";
+import { FetchBalancesDto, TokenBalance, asValidUserRef, createValidDTO } from "@gala-chain/api";
 import { fixture, transactionSuccess, users } from "@gala-chain/test";
 import BigNumber from "bignumber.js";
 
@@ -39,9 +33,7 @@ it("should fetch balances by user alias", async () => {
   const result = await contract.FetchBalances(ctx, dto);
 
   // Then
-  expect(result).toEqual(
-    transactionSuccess(new FetchBalancesWithPaginationResponse({ results: [balance], nextPageBookmark: "" }))
-  );
+  expect(result).toEqual(transactionSuccess([balance]));
 });
 
 it("should fetch balances by empty signed dto", async () => {
@@ -60,9 +52,7 @@ it("should fetch balances by empty signed dto", async () => {
   const result = await contract.FetchBalances(ctx, dto);
 
   // Then
-  expect(result).toEqual(
-    transactionSuccess(new FetchBalancesWithPaginationResponse({ results: [balance], nextPageBookmark: "" }))
-  );
+  expect(result).toEqual(transactionSuccess([balance]));
 });
 
 it("should fetch balances by any user ref", async () => {
@@ -88,33 +78,31 @@ it("should fetch balances by any user ref", async () => {
   const results = await Promise.all(dtos.map((dto) => contract.FetchBalances(ctx, dto)));
 
   // Then
-  expect(results).toEqual(
-    validUserRefs.map(() =>
-      transactionSuccess(
-        new FetchBalancesWithPaginationResponse({ results: [balance], nextPageBookmark: "" })
-      )
-    )
-  );
+  expect(results).toEqual(validUserRefs.map(() => transactionSuccess([balance])));
 });
 
-it("passes a balance page size and bookmark through", async () => {
+it("should return at most the maximum number of balances", async () => {
   // Given
   const user = users.testUser1;
-  const balance = new TokenBalance({ ...currency.tokenClassKey(), owner: user.identityKey });
-  balance.addQuantity(new BigNumber(1000));
-  const { contract, ctx } = fixture(GalaChainTokenContract).registeredUsers(user).savedState(balance);
-  const dto = await createValidDTO(FetchBalancesDto, {
-    owner: user.identityKey,
-    limit: 2,
-    bookmark: "page-2"
+  const balances = Array.from({ length: FetchBalancesDto.MAX_RESULTS + 1 }, (_, i) => {
+    const balance = new TokenBalance({
+      ...currency.tokenClassKey(),
+      type: `Type${i}`,
+      owner: user.identityKey
+    });
+    balance.addQuantity(new BigNumber(1));
+    return balance;
   });
-  const page = jest.spyOn(ctx.stub, "getStateByPartialCompositeKeyWithPagination");
+
+  const { contract, ctx } = fixture(GalaChainTokenContract)
+    .registeredUsers(user)
+    .savedState(...balances);
+
+  const dto = await createValidDTO(FetchBalancesDto, { owner: user.identityKey });
 
   // When
-  await contract.FetchBalances(ctx, dto);
+  const result = await contract.FetchBalances(ctx, dto);
 
   // Then
-  expect(page.mock.calls[0]?.[0]).toEqual(TokenBalance.INDEX_KEY);
-  expect(page.mock.calls[0]?.[2]).toEqual(2);
-  expect(page.mock.calls[0]?.[3]).toEqual("page-2");
+  expect(result.Data).toHaveLength(FetchBalancesDto.MAX_RESULTS);
 });

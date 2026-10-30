@@ -15,6 +15,7 @@
 import {
   BurnTokensDto,
   FetchBalancesDto,
+  TokenBalance,
   TokenBurn,
   TokenClassKey,
   TokenInstanceKey,
@@ -88,10 +89,13 @@ describe("NFT Burn scenario", () => {
     });
 
     // When
-    const user1checkResponse = await client.assets.evaluateTransaction("FetchBalances", user1TokenInstances);
-    const page = user1checkResponse.Data as { results?: Array<{ instanceIds?: BigNumber[] }> };
+    const user1checkResponse = await client.assets.evaluateTransaction(
+      "FetchBalances",
+      user1TokenInstances,
+      TokenBalance
+    );
 
     // Then
-    expect(page.results?.[0].instanceIds).toEqual([]);
+    expect((user1checkResponse.Data ?? [])[0].instanceIds).toEqual([]);
   });
 });

@@ -166,7 +166,6 @@ export async function setupTransferFees(client: AdminChainClients, users: ChainU
       "FetchBalances",
       user.sign(userGalaBalancesDto.withOperation(mockedOperation("GalaChainToken:FetchBalances")))
     );
-    const page = userGalaBalanceResponse.Data as { results?: Array<{ quantity?: BigNumber }> };
-    expect(new BigNumber(page.results?.[0]?.quantity ?? 0).isGreaterThan(0)).toBe(true);
+    expect(new BigNumber(userGalaBalanceResponse.Data?.[0]?.quantity ?? 0).isGreaterThan(0)).toBe(true);
   }
 }
