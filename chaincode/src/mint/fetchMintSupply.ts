@@ -54,6 +54,7 @@ export async function fetchMintSupply(
   const iterator = ctx.stub.getStateByRange(startKey, endKey);
   const previousRequests: TokenMintRequest[] = [];
   let newestCreated: number | undefined;
+  let oldestCreated: number | undefined;
 
   try {
     for await (const kv of iterator) {
@@ -61,13 +62,18 @@ export async function fetchMintSupply(
         const stringResult = Buffer.from(kv.value).toString("utf8");
         const entry = RangedChainObject.deserialize(TokenMintRequest, stringResult);
 
-        // Keep every request within five seconds of the newest one. Older requests are represented
-        // by the baseline on the oldest request retained in this window.
-        if (newestCreated === undefined) {
+        // Keep every request within five seconds of the newest one. A request's baseline was read
+        // lookbackTimeOffset before it was created, so also keep any older request created after the
+        // oldest kept request's baseline cutoff. Stop at the first request its baseline already counts.
+        if (newestCreated === undefined || oldestCreated === undefined) {
           newestCreated = entry.created;
-        } else if (newestCreated - entry.created > supplyLookbackWindowMs) {
+        } else if (
+          newestCreated - entry.created > supplyLookbackWindowMs &&
+          oldestCreated - entry.created >= lookbackTimeOffset
+        ) {
           break;
         }
+        oldestCreated = entry.created;
 
         // inverted timeKeys read most recent first; using unshift sorts a new array as oldest first.
         // essentially, we rewind the tape and then play it forward.
