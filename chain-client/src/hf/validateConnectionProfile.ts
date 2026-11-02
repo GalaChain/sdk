@@ -73,9 +73,10 @@ export function validateConnectionProfile(profile: unknown, orgMsp: string): voi
   if (!Array.isArray(orgCAs) || orgCAs.length === 0 || !orgCAs.every(isNonEmptyString)) {
     fail(`.organizations.${orgMsp}.certificateAuthorities must be a non-empty array of names`);
   }
-  const orgPeers = org.peers;
-  if (!Array.isArray(orgPeers) || orgPeers.length === 0 || !orgPeers.every(isNonEmptyString)) {
-    fail(`.organizations.${orgMsp}.peers must be a non-empty array of names`);
+  // A client-only organization, such as the users organization, lists no peers of its own.
+  const orgPeers = org.peers ?? [];
+  if (!Array.isArray(orgPeers) || !orgPeers.every(isNonEmptyString)) {
+    fail(`.organizations.${orgMsp}.peers must be an array of names`);
   }
 
   const peers = profile.peers;

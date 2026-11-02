@@ -57,6 +57,18 @@ describe("validateConnectionProfile", () => {
     expect(() => validateConnectionProfile(profile, orgMsp)).not.toThrow();
   });
 
+  it("should accept a client-only organization without peers, like the users profile", () => {
+    // Given
+    const profile = sampleProfile();
+    profile.organizations.UsersOrg1 = {
+      mspid: "UsersOrg1",
+      certificateAuthorities: ["ca.curator.local"]
+    };
+
+    // When & Then
+    expect(() => validateConnectionProfile(profile, "UsersOrg1")).not.toThrow();
+  });
+
   it.each<[string, (p: Profile) => void, string]>([
     ["missing organizations", (p) => delete p.organizations, "missing .organizations"],
     [
@@ -70,9 +82,9 @@ describe("validateConnectionProfile", () => {
       ".organizations.CuratorOrg.mspid must equal CuratorOrg"
     ],
     [
-      "org without peers",
-      (p) => (p.organizations.CuratorOrg.peers = []),
-      ".organizations.CuratorOrg.peers must be a non-empty array of names"
+      "org with an empty peer name",
+      (p) => (p.organizations.CuratorOrg.peers = [""]),
+      ".organizations.CuratorOrg.peers must be an array of names"
     ],
     [
       "org referencing unknown peer",
