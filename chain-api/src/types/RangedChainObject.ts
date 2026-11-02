@@ -23,7 +23,7 @@ import {
   serialize,
   stripUnknownProperties
 } from "../utils";
-import { ChainObject, ObjectValidationFailedError } from "./ChainObject";
+import { ChainObject, NestedCompositeKeyPart, ObjectValidationFailedError } from "./ChainObject";
 import { ClassConstructor, Inferred } from "./dtos";
 
 export class InvalidRangedKeyError extends ValidationFailedError {
@@ -79,30 +79,18 @@ export abstract class RangedChainObject {
       .sort((a, b) => a.position - b.position)
       .map((field) => {
         const key = field.key.toString();
-        return typeof this[key]?.toStringKey === "function" ? this[key]?.toStringKey() : plain[key];
+        const value = typeof this[key]?.toStringKey === "function" ? this[key]?.toStringKey() : plain[key];
+        return field.nestedCompositeKey ? NestedCompositeKeyPart.from(String(value)) : value;
       });
 
     return RangedChainObject.getRangedKeyFromParts(classIndexKey, keyParts);
   }
 
   public static getRangedKeyFromParts(indexKey: string, parts: unknown[]): string {
-    ChainObject.rejectEmbeddedNul(indexKey, "index key");
+    const index = ChainObject.rejectEmbeddedNul(indexKey, "index key");
+    const texts = parts.map((part) => ChainObject.keyPartToString(part));
 
-    for (const part of parts) {
-      if (
-        part === null ||
-        part === undefined ||
-        typeof part === "object" ||
-        !(typeof part["toString"] === "function")
-      ) {
-        throw new InvalidRangedKeyError(
-          `Invalid part ${part} passed to getRangedKeyFromParts: ${parts.join(", ")}`
-        );
-      }
-      ChainObject.rejectEmbeddedNul(String(part), "key part");
-    }
-
-    return indexKey + ChainObject.MIN_UNICODE_RUNE_VALUE + parts.join(ChainObject.MIN_UNICODE_RUNE_VALUE);
+    return index + ChainObject.MIN_UNICODE_RUNE_VALUE + texts.join(ChainObject.MIN_UNICODE_RUNE_VALUE);
   }
 
   public static getStringKeyFromParts(parts: string[]): string {

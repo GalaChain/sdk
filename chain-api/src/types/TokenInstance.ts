@@ -51,15 +51,19 @@ export interface TokenInstanceKeyProperties {
   description: "Object representing the chain identifier of token instance."
 })
 export class TokenInstanceKey extends ChainCallDTO {
+  @IsString()
   @IsNotEmpty()
   public collection: string;
 
+  @IsString()
   @IsNotEmpty()
   public category: string;
 
+  @IsString()
   @IsNotEmpty()
   public type: string;
 
+  @IsString()
   @IsDefined()
   public additionalKey: string;
 

@@ -763,6 +763,8 @@ describe("GrantAllowance", () => {
     const { ctx, contract, getWrites } = fixture(GalaChainTokenContract)
       .registeredUsers(users.admin, users.testUser2)
       .savedState(nftClass, nft.tokenInstance1());
+    ctx.setContractName("GalaChainToken");
+    ctx.bindOperationMethod("GalaChainToken:GrantAllowance");
 
     const grantDto = (issuer: typeof users.admin, quantity: BigNumber) =>
       createValidSubmitDTO(GrantAllowanceDto, {
@@ -785,7 +787,13 @@ describe("GrantAllowance", () => {
     const requests = Object.entries(getWrites())
       .filter(([key]) => key.startsWith(TokenMintAllowanceRequest.INDEX_KEY))
       .map(([, value]) => RangedChainObject.deserialize(TokenMintAllowanceRequest, value));
-    expect(requests.map((r) => r.quantity.toString())).toEqual(["150"]);
+    expect(requests.map((r) => [r.grantedBy, r.quantity.toString()])).toEqual(
+      expect.arrayContaining([
+        [users.admin.identityKey, "100"],
+        [users.testUser2.identityKey, "50"]
+      ])
+    );
+    expect(requests).toHaveLength(2);
 
     const { ctx: nextCtx } = fixture(GalaChainTokenContract).savedRangeState(requests);
     expect(await fetchMintAllowanceSupply(nextCtx, nftClass, 0)).toEqual(new BigNumber("150"));

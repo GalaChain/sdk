@@ -50,7 +50,7 @@ export class TokenSwapRequestInstanceWanted extends ChainObject {
   @BigNumberProperty()
   public instance: BigNumber;
 
-  @ChainKey({ position: 5 })
+  @ChainKey({ position: 5, nestedCompositeKey: true })
   @IsNotEmpty()
   public swapRequestId: string;
 }

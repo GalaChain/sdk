@@ -15,7 +15,7 @@
 import { GalaChainResponse } from "../wire";
 import { ChainClientBuilder } from "./ChainClientBuilder";
 import { ContractConfig } from "./ContractConfig";
-import { ClassType, Inferred, Serializable } from "./types";
+import { ChainClientRequestOptions, ClassType, Inferred, Serializable } from "./types";
 
 export abstract class ChainClient {
   protected constructor(
@@ -33,6 +33,12 @@ export abstract class ChainClient {
     dto: Serializable,
     resp: ClassType<Inferred<T>>
   ): Promise<GalaChainResponse<T>>;
+  abstract submitTransaction<T>(
+    method: string,
+    dto: Serializable | ClassType<Inferred<T>> | undefined,
+    resp: ClassType<Inferred<T>> | undefined,
+    options?: ChainClientRequestOptions
+  ): Promise<GalaChainResponse<T>>;
 
   abstract evaluateTransaction(method: string): Promise<GalaChainResponse<unknown>>;
   abstract evaluateTransaction(method: string, dto: Serializable): Promise<GalaChainResponse<unknown>>;
@@ -44,6 +50,12 @@ export abstract class ChainClient {
     method: string,
     dto: Serializable,
     resp: ClassType<Inferred<T>>
+  ): Promise<GalaChainResponse<T>>;
+  abstract evaluateTransaction<T>(
+    method: string,
+    dto: Serializable | ClassType<Inferred<T>> | undefined,
+    resp: ClassType<Inferred<T>> | undefined,
+    options?: ChainClientRequestOptions
   ): Promise<GalaChainResponse<T>>;
 
   abstract disconnect(): Promise<void>;

@@ -26,6 +26,7 @@ interface LogQueryParams {
   endTime?: string;
   limit?: number;
   filter?: string;
+  signal?: AbortSignal;
 }
 
 interface SSEEvent {
@@ -85,10 +86,17 @@ export default class Log extends BaseCommand<typeof Log> {
 
     const chaincode = await getChaincodeDefinition();
     const developerPrivateKey = await getPrivateKey(flags.developerPrivateKey, chaincode.name);
+    const controller = new AbortController();
+    const cancel = () => {
+      process.exitCode = 130;
+      controller.abort();
+    };
+    process.once("SIGINT", cancel);
 
     const commonParams: LogQueryParams = {
       privateKey: developerPrivateKey,
-      filter: flags.filter
+      filter: flags.filter,
+      signal: controller.signal
     };
 
     try {
@@ -105,7 +113,12 @@ export default class Log extends BaseCommand<typeof Log> {
         await this.fetchLogs(params);
       }
     } catch (error: unknown) {
+      if (controller.signal.aborted) {
+        return;
+      }
       this.handleError(error);
+    } finally {
+      process.removeListener("SIGINT", cancel);
     }
   }
 

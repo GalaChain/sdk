@@ -20,6 +20,7 @@ import { saveOracleDefinition } from "./saveOracleDefinition";
 function curatorContext() {
   return fixture(GalaChainTokenContract)
     .caClientIdentity("client|curator", "CuratorOrg")
+    .registeredUsers(users.testUser1)
     .callingUser(users.testUser1);
 }
 
@@ -46,5 +47,28 @@ describe("saveOracleDefinition", () => {
     await expect(saveOracleDefinition(ctx, { name: "price", authorities: [""] })).rejects.toThrow(
       /authorities/
     );
+  });
+
+  it("accepts registered and self-authenticating authorities", async () => {
+    const { ctx } = curatorContext();
+    const ethAlias = `eth|${users.testUser2.ethAddress}`;
+
+    const saved = await saveOracleDefinition(ctx, {
+      name: "price",
+      authorities: [users.testUser1.identityKey, ethAlias]
+    });
+
+    expect(saved.authorities).toEqual([users.testUser1.identityKey, ethAlias]);
+  });
+
+  it("rejects an unregistered non-Ethereum authority", async () => {
+    const { ctx } = curatorContext();
+
+    await expect(
+      saveOracleDefinition(ctx, {
+        name: "price",
+        authorities: ["client|missing"]
+      })
+    ).rejects.toThrow(/not registered/);
   });
 });

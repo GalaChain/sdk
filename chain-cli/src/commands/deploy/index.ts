@@ -24,6 +24,8 @@ import {
   getPrivateKey
 } from "../../galachain-utils";
 
+const DEFAULT_DEPLOYMENT_DEADLINE_MS = 5 * 60 * 1000;
+
 export default class Deploy extends BaseCommand<typeof Deploy> {
   static override description =
     "Schedules deployment of published chaincode Docker image to GalaChain TNT network.";
@@ -96,29 +98,42 @@ export default class Deploy extends BaseCommand<typeof Deploy> {
         }
       }
 
-      const { operationId } = await deployChaincode({
-        privateKey: developerPrivateKey,
-        imageTag,
-        imageDigest,
-        chaincode: chaincode.name,
-        contracts
-      });
+      const controller = new AbortController();
+      const deadline = setTimeout(() => controller.abort(), deploymentDeadlineMs());
+      try {
+        const { operationId } = await deployChaincode({
+          privateKey: developerPrivateKey,
+          imageTag,
+          imageDigest,
+          chaincode: chaincode.name,
+          contracts,
+          signal: controller.signal
+        });
 
-      this.log(`Deployment scheduled to TNT. Waiting for deployment to complete...`);
+        this.log(`Deployment scheduled to TNT. Waiting for deployment to complete...`);
 
-      const pollInterval = process.env.NODE_ENV === "test" ? 100 : 1500;
-      const maxAttempts = process.env.NODE_ENV === "test" ? 4 : 100;
+        const pollInterval = process.env.NODE_ENV === "test" ? 100 : 1500;
+        const maxAttempts = process.env.NODE_ENV === "test" ? 4 : 100;
 
-      await this.verifyDeploymentStatus(
-        developerPrivateKey,
-        chaincode.name,
-        operationId,
-        imageTag,
-        imageDigest,
-        maxAttempts,
-        pollInterval,
-        undefined
-      );
+        await this.verifyDeploymentStatus(
+          developerPrivateKey,
+          chaincode.name,
+          operationId,
+          imageTag,
+          imageDigest,
+          maxAttempts,
+          pollInterval,
+          undefined,
+          controller.signal
+        );
+      } catch (error) {
+        if (controller.signal.aborted) {
+          throw new Error("Deployment command deadline exceeded.");
+        }
+        throw error;
+      } finally {
+        clearTimeout(deadline);
+      }
     } catch (error) {
       this.error(`${error?.message ?? error}`);
     }
@@ -132,8 +147,12 @@ export default class Deploy extends BaseCommand<typeof Deploy> {
     imageDigest: string,
     attemptsLeft: number,
     interval: number,
-    lastInfo: ChaincodeInfoDto | undefined
+    lastInfo: ChaincodeInfoDto | undefined,
+    signal: AbortSignal
   ): Promise<void> {
+    if (signal.aborted) {
+      throw new Error("Deployment command deadline exceeded.");
+    }
     if (attemptsLeft <= 0) {
       if (lastInfo) {
         this.log(`\nDeployment verification timeout. Final status:`);
@@ -149,7 +168,12 @@ export default class Deploy extends BaseCommand<typeof Deploy> {
       } else {
         this.log(`Verifying deployment...`);
       }
-      const chainCodeInfo = await getDeploymentResponse({ privateKey, chaincodeName, operationId });
+      const chainCodeInfo = await getDeploymentResponse({
+        privateKey,
+        chaincodeName,
+        operationId,
+        signal
+      });
       const matchesRequest =
         chainCodeInfo.operationId === operationId &&
         chainCodeInfo.imageName === imageTag &&
@@ -184,9 +208,13 @@ export default class Deploy extends BaseCommand<typeof Deploy> {
         imageDigest,
         attemptsLeft - 1,
         interval,
-        chainCodeInfo
+        chainCodeInfo,
+        signal
       );
     } catch (error) {
+      if (signal.aborted) {
+        throw new Error("Deployment command deadline exceeded.");
+      }
       const errorMessage = error instanceof Error ? error.message : String(error);
 
       if (
@@ -208,8 +236,14 @@ export default class Deploy extends BaseCommand<typeof Deploy> {
         imageDigest,
         attemptsLeft - 1,
         interval,
-        lastInfo
+        lastInfo,
+        signal
       );
     }
   }
+}
+
+function deploymentDeadlineMs(): number {
+  const configured = Number(process.env.DEPLOYMENT_DEADLINE_MS);
+  return Number.isFinite(configured) && configured > 0 ? configured : DEFAULT_DEPLOYMENT_DEADLINE_MS;
 }

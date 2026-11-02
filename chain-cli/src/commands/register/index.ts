@@ -18,7 +18,7 @@ import BaseCommand from "../../base-command";
 import {
   getChaincodeDefinition,
   getDeploymentResponse,
-  getDeveloperPublicKeys,
+  getDeveloperPublicKeyInfo,
   getPrivateKey,
   registerChaincode
 } from "../../galachain-utils";
@@ -63,12 +63,14 @@ export default class Register extends BaseCommand<typeof Register> {
       this.log(`  Chaincode name:\n    ${chaincode.name}`);
       this.log(`  Chaincode admin public key:\n    ${chaincode.adminPublicKey}`);
 
-      const developersPublicKeys = await getDeveloperPublicKeys();
-      if (developersPublicKeys.length === 0) {
+      const developerPublicKeyInfo = await getDeveloperPublicKeyInfo();
+      if (developerPublicKeyInfo.length === 0) {
         throw new Error("No developer public keys found.");
       }
 
-      const developerPublicKeysList = developersPublicKeys.map((d) => `    ${d}`).join("\n");
+      const developerPublicKeysList = developerPublicKeyInfo
+        .map(({ fileName, address, publicKey }) => `    ${fileName}: ${address}\n      ${publicKey}`)
+        .join("\n");
       this.log(`  Developer public keys:\n${developerPublicKeysList}\n`);
 
       if (!flags["no-prompt"]) {
@@ -80,6 +82,7 @@ export default class Register extends BaseCommand<typeof Register> {
       }
 
       const developerPrivateKey = await getPrivateKey(args.developerPrivateKey, chaincode.name);
+      const developersPublicKeys = developerPublicKeyInfo.map(({ publicKey }) => publicKey);
 
       await registerChaincode({
         privateKey: developerPrivateKey,

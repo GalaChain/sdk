@@ -40,14 +40,14 @@ function walletProfile(caName: string, tlsCACerts: { pem?: string; path?: string
   };
 }
 
-function orgProfile(orgMsp: string): Record<string, unknown> {
+function orgProfile(orgMsp: string, caUrl = "https://ca.example:7054"): Record<string, unknown> {
   return {
     organizations: {
       [orgMsp]: { certificateAuthorities: ["ca.example"] }
     },
     certificateAuthorities: {
       "ca.example": {
-        url: "https://ca.example:7054",
+        url: caUrl,
         caName: "ca.example"
       }
     }
@@ -155,6 +155,26 @@ describe("enrollment retry", () => {
     expect(register).toHaveBeenCalledTimes(1);
     expect(first).toEqual(second);
     expect(certificateOf(first)).toBe("alice-cert");
+  });
+
+  it("keeps provisioning separate for different CA endpoints with the same profile name", async () => {
+    enroll.mockImplementation(async ({ enrollmentID }: { enrollmentID: string }) => enrolled(enrollmentID));
+    const first = new CAClient(
+      "OrgScoped",
+      "admin",
+      "pw",
+      orgProfile("OrgScoped", "https://ca-one.example:7054")
+    );
+    const second = new CAClient(
+      "OrgScoped",
+      "admin",
+      "pw",
+      orgProfile("OrgScoped", "https://ca-two.example:7054")
+    );
+
+    await Promise.all([first.getIdentityOrRegisterUser("alice"), second.getIdentityOrRegisterUser("alice")]);
+
+    expect(register).toHaveBeenCalledTimes(2);
   });
 
   it("reuses the registration secret when enrollment fails", async () => {

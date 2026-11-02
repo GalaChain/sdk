@@ -29,7 +29,7 @@ export class TokenSwapRequestOfferedTo extends ChainObject {
   @IsNotEmpty()
   public offeredTo: string;
 
-  @ChainKey({ position: 1 })
+  @ChainKey({ position: 1, nestedCompositeKey: true })
   @IsNotEmpty()
   public swapRequestId: string;
 }

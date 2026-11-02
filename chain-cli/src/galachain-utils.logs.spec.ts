@@ -92,4 +92,17 @@ describe("log requests", () => {
     failing.emit("error", new Error("broken stream"));
     await expect(rejected).rejects.toThrow(/broken stream/);
   });
+
+  it("closes an active log stream when the caller cancels", async () => {
+    const stream = new PassThrough();
+    (axios.get as jest.Mock).mockResolvedValueOnce({ data: stream });
+    const controller = new AbortController();
+
+    const pending = streamLogs({ privateKey, signal: controller.signal }, () => undefined);
+    await new Promise((resolve) => setImmediate(resolve));
+    controller.abort();
+
+    await expect(pending).rejects.toThrow(/cancelled/);
+    expect(stream.destroyed).toBe(true);
+  });
 });

@@ -17,7 +17,13 @@ import fs from "fs";
 import os from "os";
 import path from "path";
 
-import { getDeveloperPublicKeys, getPrivateKey, saveApiConfig } from "./galachain-utils";
+import {
+  getDeveloperPublicKeyInfo,
+  getDeveloperPublicKeys,
+  getPrivateKey,
+  saveApiConfig
+} from "./galachain-utils";
+import signatures from "./signatures";
 
 describe("saveApiConfig contract names", () => {
   it("rejects a missing, empty, or duplicate contract name", async () => {
@@ -112,15 +118,48 @@ describe("getDeveloperPublicKeys", () => {
     const dir = fs.mkdtempSync(path.join(os.tmpdir(), "dev-keys-"));
     const keysDir = path.join(dir, "keys");
     fs.mkdirSync(keysDir);
-    const publicKey = secp.utils.bytesToHex(secp.getPublicKey(secp.utils.randomPrivateKey()));
+    const privateKey = secp.utils.randomPrivateKey();
+    const keyFileContents = secp.utils.bytesToHex(secp.getPublicKey(privateKey, true));
+    const publicKey = secp.utils.bytesToHex(secp.getPublicKey(privateKey, false));
 
-    fs.writeFileSync(path.join(keysDir, "gc-dev-key.pub"), `${publicKey}\n`);
-    fs.writeFileSync(path.join(keysDir, "notes-gc-dev-key.pub"), `${publicKey}\n`);
-    fs.writeFileSync(path.join(keysDir, "gc-dev-key.pub.bak"), `${publicKey}\n`);
-    fs.writeFileSync(path.join(keysDir, "gc-dev-other-key.pub"), "not-a-public-key\n");
+    fs.writeFileSync(path.join(keysDir, "gc-dev-key.pub"), `${keyFileContents}\n`);
+    fs.writeFileSync(path.join(keysDir, "notes-gc-dev-key.pub"), `${keyFileContents}\n`);
+    fs.writeFileSync(path.join(keysDir, "gc-dev-key.pub.bak"), `${keyFileContents}\n`);
     fs.mkdirSync(path.join(keysDir, "gc-dev-dir-key.pub"));
+    fs.symlinkSync("gc-dev-key.pub", path.join(keysDir, "gc-dev-link-key.pub"));
     process.chdir(dir);
 
     await expect(getDeveloperPublicKeys()).resolves.toEqual([publicKey]);
+    await expect(getDeveloperPublicKeyInfo()).resolves.toEqual([
+      {
+        fileName: "gc-dev-key.pub",
+        publicKey,
+        address: signatures.getEthAddress(publicKey)
+      }
+    ]);
+  });
+
+  it("reports an invalid matching key file", async () => {
+    const dir = fs.mkdtempSync(path.join(os.tmpdir(), "dev-keys-"));
+    const keysDir = path.join(dir, "keys");
+    fs.mkdirSync(keysDir);
+    fs.writeFileSync(path.join(keysDir, "gc-dev-other-key.pub"), "not-a-public-key\n");
+    process.chdir(dir);
+
+    await expect(getDeveloperPublicKeys()).rejects.toThrow(/gc-dev-other-key\.pub/);
+  });
+
+  it("rejects duplicate keys in different encodings", async () => {
+    const dir = fs.mkdtempSync(path.join(os.tmpdir(), "dev-keys-"));
+    const keysDir = path.join(dir, "keys");
+    fs.mkdirSync(keysDir);
+    const privateKey = secp.utils.randomPrivateKey();
+    const compressed = secp.utils.bytesToHex(secp.getPublicKey(privateKey, true));
+    const uncompressed = secp.utils.bytesToHex(secp.getPublicKey(privateKey, false));
+    fs.writeFileSync(path.join(keysDir, "gc-dev-a-key.pub"), compressed);
+    fs.writeFileSync(path.join(keysDir, "gc-dev-b-key.pub"), uncompressed);
+    process.chdir(dir);
+
+    await expect(getDeveloperPublicKeys()).rejects.toThrow(/Duplicate developer public key/);
   });
 });

@@ -34,11 +34,11 @@ jest.mock("fs", () => {
       }
       return actual.readdirSync(target, options);
     }),
-    statSync: jest.fn((target: string, options?: never) => {
+    lstatSync: jest.fn((target: string, options?: never) => {
       if (isDeveloperKey(target)) {
         return { isFile: () => true, isDirectory: () => false };
       }
-      return actual.statSync(target, options);
+      return actual.lstatSync(target, options);
     }),
     readFileSync: jest.fn((target: string, options?: never) => {
       if (isDeveloperKey(target)) {
@@ -106,7 +106,7 @@ it("should register a chaincode", async () => {
     `Chaincode admin public key:`,
     consts.chaincodeAdminPublicKey,
     `Developer public keys:`,
-    consts.developerPublicKey,
+    "gc-dev-key.pub:",
     `Chaincode ${consts.chaincodeName} has been registered:`,
     '"network": "TNT"',
     `"chaincode": "${consts.chaincodeName}"`,

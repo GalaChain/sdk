@@ -16,7 +16,7 @@ import { ChainObject, RangedChainObject, TokenClassKeyProperties, TokenMintReque
 import BigNumber from "bignumber.js";
 
 import { GalaChainContext } from "../types";
-import { inverseKeyLength, inverseTime, lookbackTimeOffset, lookbackTxCount } from "../utils";
+import { inverseKeyLength, inverseTime, lookbackTimeOffset, supplyLookbackWindowMs } from "../utils";
 
 export async function fetchMintSupply(
   ctx: GalaChainContext,
@@ -52,12 +52,8 @@ export async function fetchMintSupply(
   ]);
 
   const iterator = ctx.stub.getStateByRange(startKey, endKey);
-
-  let seekingFirstResult = true;
-  let resultsCount = 0;
-  const minResults = lookbackTxCount;
-
   const previousRequests: TokenMintRequest[] = [];
+  let newestCreated: number | undefined;
 
   try {
     for await (const kv of iterator) {
@@ -65,21 +61,13 @@ export async function fetchMintSupply(
         const stringResult = Buffer.from(kv.value).toString("utf8");
         const entry = RangedChainObject.deserialize(TokenMintRequest, stringResult);
 
-        // Stop only between time keys, so all records of the oldest transaction are read.
-        if (
-          !seekingFirstResult &&
-          resultsCount >= minResults &&
-          entry.timeKey !== previousRequests[0].timeKey
-        ) {
+        // Keep every request within five seconds of the newest one. Older requests are represented
+        // by the baseline on the oldest request retained in this window.
+        if (newestCreated === undefined) {
+          newestCreated = entry.created;
+        } else if (newestCreated - entry.created > supplyLookbackWindowMs) {
           break;
         }
-
-        // timeKey is a string padded with leading zeros. BigNumber will parse into an integer.
-        // const entryTime = new BigNumber(entry.timeKey);
-
-        seekingFirstResult = false;
-
-        resultsCount++;
 
         // inverted timeKeys read most recent first; using unshift sorts a new array as oldest first.
         // essentially, we rewind the tape and then play it forward.

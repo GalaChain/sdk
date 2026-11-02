@@ -17,6 +17,7 @@ import axios from "axios";
 import {
   ChainClient,
   ChainClientBuilder,
+  ChainClientRequestOptions,
   ClassType,
   ContractConfig,
   Inferred,
@@ -87,33 +88,36 @@ export class RestApiClient extends ChainClient {
   async submitTransaction<T>(
     method: string,
     dtoOrResp?: Serializable | ClassType<Inferred<T>>,
-    resp?: ClassType<Inferred<T>>
+    resp?: ClassType<Inferred<T>>,
+    options?: ChainClientRequestOptions
   ): Promise<GalaChainResponse<T>> {
     const path = await getPath(await this.restApiUrl, this.contractConfig, method, true);
 
-    return this.post(path, dtoOrResp, resp);
+    return this.post(path, dtoOrResp, resp, options);
   }
 
   async evaluateTransaction<T>(
     method: string,
     dtoOrResp?: Serializable | ClassType<Inferred<T>>,
-    resp?: ClassType<Inferred<T>>
+    resp?: ClassType<Inferred<T>>,
+    options?: ChainClientRequestOptions
   ): Promise<GalaChainResponse<T>> {
     const path = await getPath(await this.restApiUrl, this.contractConfig, method, false);
 
-    return this.post(path, dtoOrResp, resp);
+    return this.post(path, dtoOrResp, resp, options);
   }
 
   public async post<T>(
     path: string,
     dtoOrResp?: Serializable | ClassType<Inferred<T>>,
-    resp?: ClassType<Inferred<T>>
+    resp?: ClassType<Inferred<T>>,
+    options?: ChainClientRequestOptions
   ): Promise<GalaChainResponse<T>> {
     const [dto, responseType] = isClassType(dtoOrResp) ? [undefined, dtoOrResp] : [dtoOrResp, resp];
     const serialized = JSON.parse(dto ? serialize(dto) : "{}");
 
     const response = await axios
-      .post<Record<string, unknown>>(path, serialized, withRequestTimeout())
+      .post<Record<string, unknown>>(path, serialized, withRequestTimeout(undefined, options))
       .catch((e) => catchAxiosError(e));
 
     return GalaChainResponse.deserialize<T>(responseType, response.data ?? {});
@@ -122,7 +126,8 @@ export class RestApiClient extends ChainClient {
   public static async getContractApis(
     credentials: RestApiAdminCredentials,
     restApiUrl: string,
-    restApiConfig: RestApiConfig
+    restApiConfig: RestApiConfig,
+    options?: ChainClientRequestOptions
   ): Promise<SetContractApiParams[]> {
     requireSecureRestApiUrl(restApiUrl);
     const contractApis: SetContractApiParams[] = [];
@@ -131,7 +136,7 @@ export class RestApiClient extends ChainClient {
       for (const contract of channel.contracts) {
         const contractPath = `${channel.pathFragment}/${contract.pathFragment}`;
         const getApiPath = `${restApiUrl}/${contractPath}/GetContractAPI`;
-        const apiResponse = await axios.post(getApiPath, undefined, withRequestTimeout());
+        const apiResponse = await axios.post(getApiPath, undefined, withRequestTimeout(undefined, options));
 
         if (!GalaChainResponse.isSuccess<ContractAPI>(apiResponse.data)) {
           throw new Error(

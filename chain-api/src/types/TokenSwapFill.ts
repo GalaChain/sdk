@@ -26,7 +26,7 @@ export class TokenSwapFill extends ChainObject {
   @Exclude()
   public static INDEX_KEY = "GCTSF";
 
-  @ChainKey({ position: 0 })
+  @ChainKey({ position: 0, nestedCompositeKey: true })
   @IsNotEmpty()
   public swapRequestId: string;
 

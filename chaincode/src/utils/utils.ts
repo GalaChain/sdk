@@ -39,6 +39,7 @@ export const inversionHeight = 1.41912e20;
 export const inverseKeyLength = 22;
 export const lookbackTxCount = 200;
 export const lookbackTimeOffset = blockTimeout * 2;
+export const supplyLookbackWindowMs = 5_000;
 
 export function inverseEpoch(ctx: GalaChainContext, offset?: number): string {
   // assuming epoch is a growing integer tied to block height

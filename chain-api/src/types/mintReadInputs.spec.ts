@@ -89,5 +89,20 @@ describe("mint read inputs", () => {
         bookmark: ""
       })
     ).rejects.toThrow(/collection/);
+
+    await expect(
+      createValidDTO(FetchTokenMintConfigurationsDto, {
+        category: "",
+        bookmark: ""
+      })
+    ).rejects.toThrow(/collection|category/);
+
+    await expect(
+      createValidDTO(FetchTokenMintConfigurationsDto, {
+        collection: "GALA",
+        type: "none",
+        bookmark: ""
+      })
+    ).rejects.toThrow(/category/);
   });
 });

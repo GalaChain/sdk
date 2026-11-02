@@ -18,7 +18,7 @@ import { IsString } from "class-validator";
 
 import { ChainKey } from "../utils";
 import { BigNumberProperty } from "../validators";
-import { ChainObject, InvalidCompositeKeyError } from "./ChainObject";
+import { ChainObject, InvalidCompositeKeyError, NestedCompositeKeyPart } from "./ChainObject";
 
 class TestClass extends ChainObject {
   static INDEX_KEY = "test";
@@ -97,7 +97,7 @@ it("rejects a NUL character inside a composite key part", () => {
   expect(() => ChainObject.getCompositeKeyFromParts("id\u0000x", ["a"])).toThrow(/NUL/);
 
   const nested = ChainObject.getCompositeKeyFromParts("inner", ["created", "tx"]);
-  expect(() => ChainObject.getCompositeKeyFromParts("outer", [nested])).not.toThrow();
+  expect(() => ChainObject.getCompositeKeyFromParts("outer", [nested])).toThrow(/NUL/);
 });
 
 it("rejects composite key parts that only look like nested composite keys", () => {
@@ -117,13 +117,15 @@ it("rejects composite key parts that only look like nested composite keys", () =
 it("accepts a well-formed nested composite key as a part", () => {
   // Given
   const nested = ChainObject.getCompositeKeyFromParts("inner", ["1700000000000", "tx1"]);
+  const nestedPart = NestedCompositeKeyPart.from(nested);
 
   // When
-  const key = ChainObject.getCompositeKeyFromParts("outer", [nested, "client|user"]);
+  const key = ChainObject.getCompositeKeyFromParts("outer", [nestedPart, "client|user"]);
 
   // Then
   expect(key).toEqual(`\u0000outer\u0000${nested}\u0000client|user\u0000`);
-  expect(ChainObject.joinKeyParts([nested, "x"])).toEqual(`${nested}\u0000x`);
+  expect(ChainObject.joinKeyParts([nestedPart, "x"])).toEqual(`${nested}\u0000x`);
+  expect(() => NestedCompositeKeyPart.from("\u0000a\u0000\u0000b\u0000")).toThrow(/complete/);
 });
 
 it("allows $ only as the first character of a string key part", () => {

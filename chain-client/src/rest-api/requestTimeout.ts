@@ -12,9 +12,17 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+import { ChainClientRequestOptions } from "../generic";
 
 export const DEFAULT_REQUEST_TIMEOUT_MS = 30_000;
 
-export function withRequestTimeout<T extends object>(config?: T): T & { timeout: number } {
-  return { timeout: DEFAULT_REQUEST_TIMEOUT_MS, ...(config ?? ({} as T)) };
+export function withRequestTimeout<T extends object>(
+  config?: T,
+  options?: ChainClientRequestOptions
+): T & { timeout: number; signal?: AbortSignal } {
+  return {
+    ...(config ?? ({} as T)),
+    timeout: options?.timeoutMs ?? DEFAULT_REQUEST_TIMEOUT_MS,
+    signal: options?.signal
+  };
 }

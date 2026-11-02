@@ -326,9 +326,7 @@ export abstract class WebSigner extends CustomClient {
    * @returns Promise resolving to the public key and recovered address
    */
   async getPublicKey() {
-    return recoverPublicKeyFromPersonalSign("Sign this to retrieve your public key", (message) =>
-      this.signMessage(message)
-    );
+    return recoverPublicKeyFromPersonalSign((message) => this.signMessage(message));
   }
 
   /**

@@ -77,7 +77,8 @@ function sameFields(a: EIP712Field[], b: EIP712Field[]): boolean {
  * Empty arrays stay encodable without reading a missing element. Whole numbers
  * that fit in uint256 or int256 use those types; other numbers are strings.
  * Elements of an object array share one struct type with the fields of all
- * elements. A nested name may repeat when its fields are the same.
+ * elements. A nested name may repeat when its fields are the same. A conflicting
+ * repeated name gets a deterministic path suffix without renaming the first type.
  * @template T - The type of the object to generate types for
  * @param typeName - The name of the primary type
  * @param params - The object to analyze for type generation
@@ -86,19 +87,35 @@ function sameFields(a: EIP712Field[], b: EIP712Field[]): boolean {
 export function generateEIP712Types<T>(typeName: string, params: T): EIP712Types {
   const types: EIP712Types = Object.create(null);
 
-  function registerStruct(name: string, fields: EIP712Field[]): string {
+  function registerStruct(name: string, fields: EIP712Field[], path: string[]): string {
     if (hasOwn(types, name)) {
-      if (!sameFields(types[name], fields)) {
-        throw new Error(`Name collisions not yet supported: ${name} has different fields`);
+      if (sameFields(types[name], fields)) {
+        return name;
       }
-      return name;
+
+      const pathSuffix = path
+        .slice(0, -1)
+        .map((part) => part.replace(/[^a-zA-Z0-9_]/g, "_"))
+        .filter((part) => part.length > 0)
+        .join("_");
+      const stem = `${name}_${pathSuffix || "nested"}`;
+      let candidate = stem;
+      let ordinal = 2;
+      while (hasOwn(types, candidate) && !sameFields(types[candidate], fields)) {
+        candidate = `${stem}_${ordinal}`;
+        ordinal += 1;
+      }
+      if (!hasOwn(types, candidate)) {
+        types[candidate] = fields;
+      }
+      return candidate;
     }
     types[name] = fields;
     return name;
   }
 
   // One struct type for a list of objects: fields of all of them, in first-seen order.
-  function structType(name: string, objects: Record<string, unknown>[]): string {
+  function structType(name: string, objects: Record<string, unknown>[], path: string[]): string {
     const names: string[] = [];
     for (const object of objects) {
       for (const key of Object.keys(object)) {
@@ -109,18 +126,18 @@ export function generateEIP712Types<T>(typeName: string, params: T): EIP712Types
     }
     const fields = names.map((key) => {
       const values = objects.filter((object) => hasOwn(object, key)).map((object) => object[key]);
-      return { name: key, type: valuesType(key, values) };
+      return { name: key, type: valuesType(key, values, [...path, key]) };
     });
-    return registerStruct(name, fields);
+    return registerStruct(name, fields, path);
   }
 
   // A single type that encodes every value given for the same field.
-  function valuesType(name: string, values: unknown[]): string {
+  function valuesType(name: string, values: unknown[], path: string[]): string {
     if (values.every(isPlainObject)) {
-      return structType(name, values);
+      return structType(name, values, path);
     }
     if (values.every(Array.isArray)) {
-      return `${arrayElementType(name, values.flat())}[]`;
+      return `${arrayElementType(name, values.flat(), path)}[]`;
     }
     if (values.every((value) => typeof value === "number")) {
       return numericArrayType(values);
@@ -136,18 +153,18 @@ export function generateEIP712Types<T>(typeName: string, params: T): EIP712Types
     throw new Error(`Field ${name} has values of different types`);
   }
 
-  function arrayElementType(name: string, values: unknown[]): string {
+  function arrayElementType(name: string, values: unknown[], path: string[]): string {
     if (values.length === 0) {
       return "string";
     }
-    return valuesType(name, values);
+    return valuesType(name, values, path);
   }
 
   const excludedFromSchema = new Set(["signature", "multisig", "trace", "prefix"]);
   const message = Object.fromEntries(
     Object.entries(params as Record<string, unknown>).filter(([key]) => !excludedFromSchema.has(key))
   );
-  structType(typeName, [message]);
+  structType(typeName, [message], [typeName]);
 
   // Keep the primary type first, as before.
   const ordered: EIP712Types = Object.create(null);

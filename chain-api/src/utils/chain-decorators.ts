@@ -16,6 +16,7 @@ import "reflect-metadata";
 
 export interface ChainKeyConfig {
   position: number;
+  nestedCompositeKey?: boolean;
 }
 
 export interface ChainKeyMetadata extends ChainKeyConfig {

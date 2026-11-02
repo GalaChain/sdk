@@ -68,6 +68,7 @@ describe("Deploy Command", () => {
 
     process.env.DEV_PRIVATE_KEY = undefined;
     process.env.CHAINCODE_ADMIN_PUBLIC_KEY = undefined;
+    delete process.env.DEPLOYMENT_DEADLINE_MS;
   });
 
   function mockStatusResponses(
@@ -206,5 +207,19 @@ describe("Deploy Command", () => {
       "Deployment status was not verified."
     );
     expect(stdOut.join("\n")).not.toContain("Deployment successful!");
+  });
+
+  it("aborts a stalled deployment when the command deadline expires", async () => {
+    process.env.DEPLOYMENT_DEADLINE_MS = "10";
+    mockedAxios.post = jest.fn().mockImplementation((_url, _body, config) => {
+      return new Promise((_resolve, reject) => {
+        config.signal.addEventListener("abort", () => reject(new Error("aborted")));
+      });
+    });
+
+    await expect(Deploy.run(["--no-prompt", "some/image-name:1d"])).rejects.toThrow(
+      "Deployment command deadline exceeded."
+    );
+    expect(mockedAxios.post.mock.calls[0][2]?.signal?.aborted).toBe(true);
   });
 });

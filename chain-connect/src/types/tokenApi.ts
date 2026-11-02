@@ -156,6 +156,13 @@ class TokenBalance implements ConstructorArgs<TokenBalanceDto> {
   vestingPeriodStart?: number;
 }
 
+type MissingTokenBalancePublicFields = Exclude<
+  NonNullable<keyof ConstructorArgs<TokenBalanceDto>>,
+  keyof TokenBalance | "inUseHolds"
+>;
+const tokenBalancePublicFieldsAreComplete: Record<MissingTokenBalancePublicFields, never> = {};
+void tokenBalancePublicFieldsAreComplete;
+
 export {
   BatchMintTokenRequest,
   BurnTokensRequest,

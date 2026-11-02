@@ -26,7 +26,6 @@ import {
   Max,
   Min,
   Validate,
-  ValidateIf,
   ValidateNested,
   ValidationArguments,
   ValidatorConstraint,
@@ -36,6 +35,7 @@ import { JSONSchema } from "class-validator-jsonschema";
 
 import { ValidationFailedError } from "../utils";
 import { BigNumberProperty, IsUserAlias } from "../validators";
+import { AtMostOneBridgeExchangeRateConstraint } from "./OracleBridgeFeeAssertion";
 import { OracleDefinition } from "./OracleDefinition";
 import {
   ExactlyOneBaseTokenConstraint,
@@ -275,6 +275,18 @@ class CrossRateMatchesQuoteConstraint implements ValidatorConstraintInterface {
   }
 }
 
+@ValidatorConstraint({ name: "exactlyOneCrossRateToken", async: false })
+class ExactlyOneCrossRateTokenConstraint implements ValidatorConstraintInterface {
+  validate(_value: unknown, args: ValidationArguments): boolean {
+    const assertion = args.object as OraclePriceCrossRateAssertionDto;
+    return (assertion.crossRateToken !== undefined) !== (assertion.externalCrossRateToken !== undefined);
+  }
+
+  defaultMessage(): string {
+    return "exactly one of crossRateToken or externalCrossRateToken is required";
+  }
+}
+
 @JSONSchema({
   description: "Cross Rate Exchange price assertion. E.g. compare $GALA to $ETH via price in $USD for each."
 })
@@ -312,7 +324,7 @@ export class OraclePriceCrossRateAssertionDto extends SubmitCallDTO {
       "calculate an exchange cross-rate. Optional, but required if externalCrossRateToken is " +
       "not provided."
   })
-  @ValidateIf((assertion) => !!assertion.externalCrossRateToken)
+  @IsOptional()
   @ValidateNested()
   @Type(() => TokenInstanceKey)
   crossRateToken?: TokenInstanceKey;
@@ -322,7 +334,7 @@ export class OraclePriceCrossRateAssertionDto extends SubmitCallDTO {
       "Comparative token used to price both the base and quote tokens in order to " +
       "calculate an exchange cross-rate. Optional, but required if crossRateToken is not provided."
   })
-  @ValidateIf((assertion) => !!assertion.crossRateToken)
+  @IsOptional()
   @ValidateNested()
   @Type(() => ExternalToken)
   externalCrossRateToken?: ExternalToken;
@@ -331,6 +343,7 @@ export class OraclePriceCrossRateAssertionDto extends SubmitCallDTO {
     description: "Cross rate for baseToken and quoteToken, calculated from the crossRateToken exchange rates."
   })
   @Validate(CrossRateMatchesQuoteConstraint)
+  @Validate(ExactlyOneCrossRateTokenConstraint)
   @PositiveFiniteRate()
   @BigNumberProperty()
   crossRate: BigNumber;
@@ -497,6 +510,7 @@ export class OracleBridgeFeeAssertionDto extends SubmitCallDTO {
       "Rounding decimals used for estimatedTotalTxFeeInGala. " +
       "Expected to match $GALA TokenClass.decimals."
   })
+  @Validate(AtMostOneBridgeExchangeRateConstraint)
   @IsInt()
   @Min(0)
   @Max(32)

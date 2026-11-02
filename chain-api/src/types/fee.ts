@@ -610,6 +610,9 @@ export class FeeCodeDefinitionDto extends SubmitCallDTO {
   @BigNumberProperty()
   public baseQuantity: BigNumber;
 
+  @JSONSchema({
+    description: "Maximum fee quantity. A value of 0 means the fee has no maximum."
+  })
   @IsNotEmpty()
   @BigNumberIsNotNegative()
   @BigNumberProperty()
