@@ -15,6 +15,7 @@
 import {
   ChainClient,
   ChainClientBuilder,
+  ChainClientRequestOptions,
   ClassType,
   ContractConfig,
   Inferred,
@@ -46,7 +47,9 @@ export class RestApiClientBuilder extends ChainClientBuilder {
   }
 
   private ensureInitializedRestApi(): Promise<void> {
-    const initialization = globalRestApiConfig.initialize(this.restApiUrl, () => this.loadContractApis());
+    const initialization = globalRestApiConfig.initialize(this.restApiUrl, (signal) =>
+      this.loadContractApis(signal)
+    );
     return waitForInitialization(initialization, this.restApiUrl, REST_API_INIT_WAIT_MS).then(async () => {
       if (globalRestApiConfig.getStatus(this.restApiUrl) === RestApiStatus.INITIALIZED) {
         await this.publishBuilderApis();
@@ -54,17 +57,17 @@ export class RestApiClientBuilder extends ChainClientBuilder {
     });
   }
 
-  private async loadContractApis(): Promise<void> {
-    await this.publishBuilderApis();
+  private async loadContractApis(signal: AbortSignal): Promise<void> {
+    await this.publishBuilderApis(signal);
   }
 
-  private async publishBuilderApis(): Promise<void> {
+  private async publishBuilderApis(signal?: AbortSignal): Promise<void> {
     const scope = builderScopeKey(this.restApiUrl, this.orgMsp, this.credentials, this.restApiConfig);
     if (globalRestApiConfig.hasPublishedBuilderScope(scope)) {
       return;
     }
 
-    const apis = await this.getContractApisFromGCRestApi();
+    const apis = await this.getContractApisFromGCRestApi(signal);
 
     for (const api of apis) {
       globalRestApiConfig.setContractApi(this.restApiUrl, api);
@@ -73,8 +76,10 @@ export class RestApiClientBuilder extends ChainClientBuilder {
     globalRestApiConfig.markBuilderScopePublished(scope);
   }
 
-  private async getContractApisFromGCRestApi(): Promise<SetContractApiParams[]> {
-    return await RestApiClient.getContractApis(this.credentials, this.restApiUrl, this.restApiConfig);
+  private async getContractApisFromGCRestApi(signal?: AbortSignal): Promise<SetContractApiParams[]> {
+    return await RestApiClient.getContractApis(this.credentials, this.restApiUrl, this.restApiConfig, {
+      signal
+    });
   }
 
   public forContract(config: ContractConfig): ChainClient {
@@ -108,21 +113,21 @@ class AsyncProxyClient extends ChainClient {
   public async evaluateTransaction<T>(
     method: string,
     dtoOrResp?: Serializable | ClassType<Inferred<T>>,
-    resp?: ClassType<Inferred<T>>
+    resp?: ClassType<Inferred<T>>,
+    options?: ChainClientRequestOptions
   ): Promise<GalaChainResponse<T>> {
     const client = await this.clientPromise;
-    // @ts-expect-error - method overload signatures fail for some reason on dtoOrResp
-    return await client.evaluateTransaction(method, dtoOrResp, resp);
+    return await client.evaluateTransaction(method, dtoOrResp, resp, options);
   }
 
   public async submitTransaction<T>(
     method: string,
     dtoOrResp?: Serializable | ClassType<Inferred<T>>,
-    resp?: ClassType<Inferred<T>>
+    resp?: ClassType<Inferred<T>>,
+    options?: ChainClientRequestOptions
   ): Promise<GalaChainResponse<T>> {
     const client = await this.clientPromise;
-    // @ts-expect-error - method overload signatures fail for some reason on dtoOrResp
-    return await client.submitTransaction(method, dtoOrResp, resp);
+    return await client.submitTransaction(method, dtoOrResp, resp, options);
   }
 }
 
@@ -144,6 +149,7 @@ function builderScopeKey(
 function waitForInitialization(initialization: Promise<void>, apiUrl: string, waitMs: number): Promise<void> {
   return new Promise((resolve, reject) => {
     const timer = setTimeout(() => {
+      globalRestApiConfig.abortInitialization(apiUrl);
       reject(new Error(`Failed to initialize Rest API at ${apiUrl} after 50 retries`));
     }, waitMs);
 

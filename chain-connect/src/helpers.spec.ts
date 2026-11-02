@@ -15,7 +15,11 @@
 import { signatures } from "@gala-chain/api";
 import { Wallet } from "ethers";
 
-import { calculatePersonalSignPrefix, recoverPublicKeyFromPersonalSign } from "./helpers";
+import {
+  PUBLIC_KEY_RECOVERY_MESSAGE,
+  calculatePersonalSignPrefix,
+  recoverPublicKeyFromPersonalSign
+} from "./helpers";
 
 describe("calculatePersonalSignPrefix", () => {
   it.each([
@@ -51,11 +55,14 @@ describe("calculatePersonalSignPrefix", () => {
 describe("recoverPublicKeyFromPersonalSign", () => {
   it("recovers the signer public key and address from a personal sign", async () => {
     const wallet = new Wallet("0x3b19099e96dccf44e1dfc13c89c7e490d902a96b0791faf185e194ae0e71786d");
+    let signedMessage: string | undefined;
 
-    const result = await recoverPublicKeyFromPersonalSign("I <3 GalaChain", (message) =>
-      wallet.signMessage(message)
-    );
+    const result = await recoverPublicKeyFromPersonalSign((message) => {
+      signedMessage = message;
+      return wallet.signMessage(message);
+    });
 
+    expect(signedMessage).toBe(PUBLIC_KEY_RECOVERY_MESSAGE);
     expect(result.recoveredAddress).toEqual(wallet.address);
     expect(result.publicKey.startsWith("0x04")).toBe(true);
   });

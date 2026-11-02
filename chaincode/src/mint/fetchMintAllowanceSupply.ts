@@ -24,10 +24,13 @@ import {
 import BigNumber from "bignumber.js";
 
 import { GalaChainContext } from "../types/GalaChainContext";
-import { getObjectByKey, inverseKeyLength, inverseTime, lookbackTimeOffset } from "../utils";
-
-// A block can carry grants a few seconds apart. The walk keeps that span and then stops.
-export const allowanceSupplyWindowMs = 5_000;
+import {
+  getObjectByKey,
+  inverseKeyLength,
+  inverseTime,
+  lookbackTimeOffset,
+  supplyLookbackWindowMs
+} from "../utils";
 
 export async function fetchMintAllowanceSupply(
   ctx: GalaChainContext,
@@ -77,7 +80,7 @@ export async function fetchMintAllowanceSupply(
         // Anything older is already inside the oldest baseline in this window.
         if (newestCreated === undefined) {
           newestCreated = entry.created;
-        } else if (newestCreated - entry.created > allowanceSupplyWindowMs) {
+        } else if (newestCreated - entry.created > supplyLookbackWindowMs) {
           break;
         }
 

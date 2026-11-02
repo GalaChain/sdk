@@ -27,6 +27,11 @@ interface ContractApiValue {
   contractPath: string;
   api: ContractAPI;
 }
+
+interface RestApiInitialization {
+  promise: Promise<void>;
+  controller: AbortController;
+}
 export interface ContractApiConfig {
   readonly channelName: string;
   readonly chaincodeName: string;
@@ -43,7 +48,7 @@ export enum RestApiStatus {
 
 export class GlobalRestApiConfig {
   private isRestApiInitializedAndHealthy: Record<string, RestApiStatus | Error> = {};
-  private initialization: Record<string, Promise<void>> = {};
+  private initialization: Record<string, RestApiInitialization> = {};
   private contractApis: Record<string, ContractApiValue> = {};
   private authorizedFabloRest: Record<string, string> = {};
   private usesFabloRestByUrl: Record<string, boolean> = {};
@@ -63,10 +68,10 @@ export class GlobalRestApiConfig {
     return RestApiStatus.NONE;
   }
 
-  public initialize(apiUrl: string, load: () => Promise<void>): Promise<void> {
+  public initialize(apiUrl: string, load: (signal: AbortSignal) => Promise<void>): Promise<void> {
     const current = this.initialization[apiUrl];
     if (Object.prototype.hasOwnProperty.call(this.initialization, apiUrl)) {
-      return current;
+      return current.promise;
     }
 
     if (this.getStatus(apiUrl) === RestApiStatus.INITIALIZED) {
@@ -75,7 +80,8 @@ export class GlobalRestApiConfig {
 
     this.markPending(apiUrl);
 
-    const pending = load()
+    const controller = new AbortController();
+    const pending = load(controller.signal)
       .then(() => {
         this.markInitialized(apiUrl);
       })
@@ -84,13 +90,17 @@ export class GlobalRestApiConfig {
         throw error;
       })
       .finally(() => {
-        if (this.initialization[apiUrl] === pending) {
+        if (this.initialization[apiUrl]?.promise === pending) {
           delete this.initialization[apiUrl];
         }
       });
 
-    this.initialization[apiUrl] = pending;
+    this.initialization[apiUrl] = { promise: pending, controller };
     return pending;
+  }
+
+  public abortInitialization(apiUrl: string): void {
+    this.initialization[apiUrl]?.controller.abort();
   }
 
   public markInitialized(apiUrl: string) {

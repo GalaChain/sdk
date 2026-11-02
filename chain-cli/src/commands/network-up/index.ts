@@ -37,7 +37,8 @@ export interface SingleArg {
 export default class NetworkUp extends BaseCommand<typeof NetworkUp> {
   static override aliases = ["network:up"];
 
-  static override description = "Start the chaincode, browser-api, and ops-api (in non-watch mode).";
+  static override description =
+    "Start the chaincode, browser-api, and ops-api (in non-watch mode). Supported on macOS and Linux.";
 
   static override examples = [
     "galachain network:up -C=product-channel -t=curator -n=basic-product -d=./ --envConfig=./.dev-env --watch",
@@ -103,6 +104,7 @@ export default class NetworkUp extends BaseCommand<typeof NetworkUp> {
   };
 
   async run(): Promise<void> {
+    assertNetworkUpPlatform();
     const { flags } = await this.parse(NetworkUp);
     customValidation(flags);
 
@@ -147,6 +149,14 @@ export default class NetworkUp extends BaseCommand<typeof NetworkUp> {
     if (flags.watch) {
       startChaincodeInWatchMode(fabloRoot, singleArgs);
     }
+  }
+}
+
+export function assertNetworkUpPlatform(platform: NodeJS.Platform = process.platform): void {
+  if (platform === "win32") {
+    throw new Error(
+      "galachain network-up is not supported on Windows because the local network requires bash scripts."
+    );
   }
 }
 

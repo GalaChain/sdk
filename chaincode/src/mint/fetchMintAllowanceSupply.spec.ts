@@ -24,8 +24,8 @@ import BigNumber from "bignumber.js";
 import GalaChainTokenContract from "../__test__/GalaChainTokenContract";
 import { currency } from "../testdata/index";
 import { GalaChainContext } from "../types";
-import { inverseEpoch, inverseTime } from "../utils";
-import { allowanceSupplyWindowMs, fetchMintAllowanceSupply } from "./fetchMintAllowanceSupply";
+import { inverseEpoch, inverseTime, supplyLookbackWindowMs } from "../utils";
+import { fetchMintAllowanceSupply } from "./fetchMintAllowanceSupply";
 
 describe("fetchMintAllowanceSupply", () => {
   async function allowanceRequest(
@@ -108,14 +108,14 @@ describe("fetchMintAllowanceSupply", () => {
     const { ctx } = testFixture;
     const beyondWindow = await allowanceRequest(ctx, tokenClass, {
       id: "beyond-window",
-      ageMs: 1 + allowanceSupplyWindowMs + 1,
+      ageMs: 1 + supplyLookbackWindowMs + 1,
       grantedTo: users.admin.identityKey,
       baseline: "0",
       quantity: "100"
     });
     const edgeOfWindow = await allowanceRequest(ctx, tokenClass, {
       id: "edge-of-window",
-      ageMs: 1 + allowanceSupplyWindowMs,
+      ageMs: 1 + supplyLookbackWindowMs,
       grantedTo: users.testUser1.identityKey,
       baseline: "0",
       quantity: "7"

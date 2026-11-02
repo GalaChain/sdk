@@ -17,8 +17,9 @@ import { plainToInstance } from "class-transformer";
 import { validate } from "class-validator";
 
 import { OracleDefinition } from "./OracleDefinition";
-import { ExternalToken } from "./OraclePriceAssertion";
+import { ExternalToken, OraclePriceAssertion } from "./OraclePriceAssertion";
 import { TokenInstanceKey } from "./TokenInstance";
+import { createValidChainObject } from "./createValidChainObject";
 import { createValidDTO, createValidSubmitDTO } from "./dtos";
 import {
   FetchOracleAssertionsDto,
@@ -95,6 +96,37 @@ describe("oracle.ts", () => {
 
     expect(voidResult).toBeUndefined();
 
+    const crossRateFields = {
+      oracle: mockOracle,
+      identity: mockOracleIdentity,
+      baseTokenCrossRate: tonUsdPriceAssertion,
+      quoteTokenCrossRate: galaUsdPriceAssertion,
+      crossRate: new BigNumber("220")
+    };
+    await expect(createValidSubmitDTO(OraclePriceCrossRateAssertionDto, crossRateFields)).rejects.toThrow(
+      /exactly one of crossRateToken/
+    );
+    await expect(
+      createValidSubmitDTO(OraclePriceCrossRateAssertionDto, {
+        ...crossRateFields,
+        crossRateToken: galaTokenInstanceKey,
+        externalCrossRateToken: usdDetails
+      })
+    ).rejects.toThrow(/exactly one of crossRateToken/);
+
+    const bridgeWithBothRates = plainToInstance(OracleBridgeFeeAssertionDto, {
+      galaExchangeRate: galaUsdPriceAssertion,
+      galaExchangeCrossRate: mockAssertionDto,
+      galaDecimals: 8
+    });
+    const bridgeErrors = await validate(bridgeWithBothRates);
+    expect(
+      bridgeErrors.some(
+        (error) =>
+          error.property === "galaDecimals" && error.constraints?.atMostOneBridgeExchangeRate !== undefined
+      )
+    ).toBe(true);
+
     mockAssertionDto.crossRate = new BigNumber("42");
 
     expect(mockAssertionDto.validateCrossRate).toThrow();
@@ -163,11 +195,17 @@ describe("oracle.ts", () => {
 
     const fractional = plainToInstance(OracleBridgeFeeAssertionDto, { galaDecimals: 1.5 });
     const fractionalErrors = await validate(fractional);
-    expect(fractionalErrors.some((error) => error.property === "galaDecimals")).toBe(true);
+    expect(
+      fractionalErrors.some(
+        (error) => error.property === "galaDecimals" && error.constraints?.isInt !== undefined
+      )
+    ).toBe(true);
 
     const whole = plainToInstance(OracleBridgeFeeAssertionDto, { galaDecimals: 8 });
     const wholeErrors = await validate(whole);
-    expect(wholeErrors.some((error) => error.property === "galaDecimals")).toBe(false);
+    expect(
+      wholeErrors.some((error) => error.property === "galaDecimals" && error.constraints?.isInt !== undefined)
+    ).toBe(false);
   });
 
   test("price assertion requires exactly one token on each side", async () => {
@@ -201,6 +239,39 @@ describe("oracle.ts", () => {
         externalQuoteToken: usdDetails
       })
     ).rejects.toThrow(/exactly one of baseToken/);
+  });
+
+  test("price assertion token identifiers must be strings", async () => {
+    const shared = {
+      oracle: mockOracle,
+      identity: mockOracleIdentity,
+      exchangeRate: new BigNumber("1"),
+      timestamp: 0
+    };
+
+    await expect(
+      createValidSubmitDTO(OraclePriceAssertionDto, {
+        ...shared,
+        baseToken: {
+          ...galaTokenInstanceKey,
+          collection: 123 as unknown as string
+        } as TokenInstanceKey,
+        externalQuoteToken: usdDetails
+      })
+    ).rejects.toThrow(/collection/);
+
+    const malformedExternal = plainToInstance(ExternalToken, {
+      name: {} as unknown as string,
+      symbol: "USD"
+    });
+    await expect(
+      createValidChainObject(OraclePriceAssertion, {
+        ...shared,
+        txid: "tx-1",
+        externalBaseToken: malformedExternal,
+        externalQuoteToken: usdDetails
+      })
+    ).rejects.toThrow(/name/);
   });
 
   test("oracle authorities reject an empty list and invalid entries", async () => {

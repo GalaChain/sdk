@@ -207,7 +207,10 @@ function calculateFeeAmountBasedOnAccelerationRateType(
           ? billableCode.feeAccelerationRate
           : chargeableUses.multipliedBy(billableCode.feeAccelerationRate);
         const logValue = logArgument.isGreaterThan(0) ? Math.log(logArgument.toNumber()) : Number.NaN;
-        feeAmount = billableCode.baseQuantity.plus(Number.isFinite(logValue) ? logValue : 0);
+        feeAmount = BigNumber.maximum(
+          billableCode.baseQuantity,
+          billableCode.baseQuantity.plus(Number.isFinite(logValue) ? logValue : 0)
+        );
         feeAmount = feeAtThresholdOrBase(chargeableUses, billableCode.baseQuantity, feeAmount);
         break;
       }

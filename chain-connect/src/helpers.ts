@@ -25,10 +25,12 @@ export function calculatePersonalSignPrefix(payload: object): string {
   return signatures.ethereumPersonalSignPrefix(signatures.personalSignMessage(payload));
 }
 
+export const PUBLIC_KEY_RECOVERY_MESSAGE = "Sign this to retrieve your public key";
+
 export async function recoverPublicKeyFromPersonalSign(
-  message: string,
   sign: (message: string) => Promise<string>
 ): Promise<{ publicKey: string; recoveredAddress: string }> {
+  const message = PUBLIC_KEY_RECOVERY_MESSAGE;
   const signature = await sign(message);
   const publicKey = SigningKey.recoverPublicKey(getBytes(hashMessage(message)), signature);
   return { publicKey, recoveredAddress: computeAddress(publicKey) };

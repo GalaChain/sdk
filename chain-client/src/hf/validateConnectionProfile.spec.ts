@@ -57,12 +57,39 @@ describe("validateConnectionProfile", () => {
     expect(() => validateConnectionProfile(profile, orgMsp)).not.toThrow();
   });
 
+  it("should accept a client-only organization without peers, like the users profile", () => {
+    // Given
+    const profile = sampleProfile();
+    profile.organizations.UsersOrg1 = {
+      mspid: "UsersOrg1",
+      certificateAuthorities: ["ca.curator.local"]
+    };
+
+    // When & Then
+    expect(() => validateConnectionProfile(profile, "UsersOrg1")).not.toThrow();
+  });
+
   it.each<[string, (p: Profile) => void, string]>([
     ["missing organizations", (p) => delete p.organizations, "missing .organizations"],
     [
       "missing org",
       (p) => delete p.organizations.CuratorOrg,
       "missing organization .organizations.CuratorOrg"
+    ],
+    [
+      "wrong organization MSP ID",
+      (p) => (p.organizations.CuratorOrg.mspid = "OtherOrg"),
+      ".organizations.CuratorOrg.mspid must equal CuratorOrg"
+    ],
+    [
+      "org with an empty peer name",
+      (p) => (p.organizations.CuratorOrg.peers = [""]),
+      ".organizations.CuratorOrg.peers must be an array of names"
+    ],
+    [
+      "org referencing unknown peer",
+      (p) => (p.organizations.CuratorOrg.peers = ["peer9.local"]),
+      ".organizations.CuratorOrg.peers references unknown peer peer9.local"
     ],
     [
       "org without CAs",
@@ -92,9 +119,29 @@ describe("validateConnectionProfile", () => {
       ".certificateAuthorities.ca.curator.local.url must be a non-empty string"
     ],
     [
+      "CA without caName",
+      (p) => delete p.certificateAuthorities["ca.curator.local"].caName,
+      ".certificateAuthorities.ca.curator.local.caName must be a non-empty string"
+    ],
+    [
+      "CA with malformed TLS configuration",
+      (p) => (p.certificateAuthorities["ca.curator.local"].tlsCACerts = {}),
+      ".certificateAuthorities.ca.curator.local.tlsCACerts must provide pem or path"
+    ],
+    [
+      "CA with malformed HTTP verification option",
+      (p) => (p.certificateAuthorities["ca.curator.local"].httpOptions = { verify: "yes" }),
+      ".certificateAuthorities.ca.curator.local.httpOptions.verify must be a boolean"
+    ],
+    [
       "org referencing unknown CA",
       (p) => (p.organizations.CuratorOrg.certificateAuthorities = ["ca.other"]),
       ".organizations.CuratorOrg.certificateAuthorities references unknown CA ca.other"
+    ],
+    [
+      "orderer without url",
+      (p) => (p.orderers = { "orderer.local": {} }),
+      ".orderers.orderer.local.url must be a non-empty string"
     ],
     ["channels not an object", (p) => (p.channels = []), ".channels must be an object"],
     [
@@ -106,6 +153,11 @@ describe("validateConnectionProfile", () => {
       "channel referencing unknown peer",
       (p) => (p.channels["product-channel"].peers = { "peer9.local": {} }),
       ".channels.product-channel.peers references unknown peer peer9.local"
+    ],
+    [
+      "channel with malformed peer configuration",
+      (p) => (p.channels["product-channel"].peers["peer0.curator.local"] = true),
+      ".channels.product-channel.peers.peer0.curator.local must be an object"
     ]
   ])("should reject profile with %s", (_, mutate, message) => {
     // Given

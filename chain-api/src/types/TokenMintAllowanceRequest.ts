@@ -50,6 +50,10 @@ export class TokenMintAllowanceRequest extends RangedChainObject {
   @IsUserAlias()
   public grantedTo: UserAlias;
 
+  @ChainKey({ position: 6 })
+  @IsUserAlias()
+  public grantedBy: UserAlias;
+
   @IsNotEmpty()
   @BigNumberProperty()
   public totalKnownMintAllowancesCount: BigNumber;
@@ -59,9 +63,6 @@ export class TokenMintAllowanceRequest extends RangedChainObject {
   })
   @IsNotEmpty()
   public created: number;
-
-  @IsUserAlias()
-  public grantedBy: UserAlias;
 
   @IsNotEmpty()
   @BigNumberIsNotNegative()

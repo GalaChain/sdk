@@ -25,4 +25,9 @@ export interface Serializable {
   serialize?: () => string;
 }
 
+export interface ChainClientRequestOptions {
+  signal?: AbortSignal;
+  timeoutMs?: number;
+}
+
 export type UserAlias = string & { __userAlias__: void };

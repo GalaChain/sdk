@@ -18,9 +18,9 @@ import {
   IsNotEmpty,
   IsNumber,
   IsOptional,
+  IsString,
   Validate,
   ValidateBy,
-  ValidateIf,
   ValidateNested,
   ValidationArguments,
   ValidationOptions,
@@ -86,12 +86,14 @@ export class ExternalToken extends ChainObject {
   @JSONSchema({
     description: `Name of the external currency, e.g. "Ethereum"`
   })
+  @IsString()
   @IsNotEmpty()
   public name: string;
 
   @JSONSchema({
     description: `Symbol of the external currency, e.g. "ETH"`
   })
+  @IsString()
   @IsNotEmpty()
   public symbol: string;
 }

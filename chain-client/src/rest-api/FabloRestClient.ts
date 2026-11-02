@@ -17,6 +17,7 @@ import axios from "axios";
 import {
   ChainClient,
   ChainClientBuilder,
+  ChainClientRequestOptions,
   ClassType,
   ContractConfig,
   Inferred,
@@ -95,28 +96,31 @@ export class FabloRestClient extends ChainClient {
   async submitTransaction<T>(
     method: string,
     dtoOrResp?: Serializable | ClassType<Inferred<T>>,
-    resp?: ClassType<Inferred<T>>
+    resp?: ClassType<Inferred<T>>,
+    options?: ChainClientRequestOptions
   ): Promise<GalaChainResponse<T>> {
     const path = await getPath(await this.restApiUrl, this.contractConfig, method, true);
 
-    return this.post(path, method, dtoOrResp, resp);
+    return this.post(path, method, dtoOrResp, resp, options);
   }
 
   async evaluateTransaction<T>(
     method: string,
     dtoOrResp?: Serializable | ClassType<Inferred<T>>,
-    resp?: ClassType<Inferred<T>>
+    resp?: ClassType<Inferred<T>>,
+    options?: ChainClientRequestOptions
   ): Promise<GalaChainResponse<T>> {
     const path = await getPath(await this.restApiUrl, this.contractConfig, method, false);
 
-    return this.post(path, method, dtoOrResp, resp);
+    return this.post(path, method, dtoOrResp, resp, options);
   }
 
   private async post<T>(
     path: string,
     methodName: string,
     dtoOrResp?: Serializable | ClassType<Inferred<T>>,
-    resp?: ClassType<Inferred<T>>
+    resp?: ClassType<Inferred<T>>,
+    options?: ChainClientRequestOptions
   ): Promise<GalaChainResponse<T>> {
     const [dto, responseType] = isClassType(dtoOrResp) ? [undefined, dtoOrResp] : [dtoOrResp, resp];
     const args = dto ? [serialize(dto)] : [];
@@ -127,7 +131,7 @@ export class FabloRestClient extends ChainClient {
     };
 
     const response = await axios
-      .post(path, payload, withRequestTimeout({ headers }))
+      .post(path, payload, withRequestTimeout({ headers }, options))
       .catch((e) => catchAxiosError(e));
 
     const body = response?.data?.response ?? response?.data;
@@ -137,7 +141,8 @@ export class FabloRestClient extends ChainClient {
   public static async getContractApis(
     token: string,
     restApiUrl: string,
-    restApiConfig: RestApiConfig
+    restApiConfig: RestApiConfig,
+    options?: ChainClientRequestOptions
   ): Promise<SetContractApiParams[]> {
     requireSecureRestApiUrl(restApiUrl);
     const headers = {
@@ -153,7 +158,7 @@ export class FabloRestClient extends ChainClient {
         const payload = { method: `${contract.contractName}:GetContractAPI`, args: [] };
 
         const apiResponse = await axios
-          .post(getApiPath, payload, withRequestTimeout({ headers }))
+          .post(getApiPath, payload, withRequestTimeout({ headers }, options))
           .catch((e) => catchAxiosError(e));
 
         if (!GalaChainResponse.isSuccess<ContractAPI>(apiResponse.data.response)) {

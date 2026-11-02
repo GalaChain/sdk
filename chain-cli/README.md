@@ -399,7 +399,7 @@ EXAMPLES
 
 ## `galachain network-up`
 
-Start the chaincode, browser-api, and ops-api (in non-watch mode).
+Start the chaincode, browser-api, and ops-api (in non-watch mode). Supported on macOS and Linux.
 
 ```
 USAGE
@@ -430,7 +430,7 @@ GLOBAL FLAGS
                         <options: debug|info|warn|error>
 
 DESCRIPTION
-  Start the chaincode, browser-api, and ops-api (in non-watch mode).
+  Start the chaincode, browser-api, and ops-api (in non-watch mode). Supported on macOS and Linux.
 
 ALIASES
   $ galachain network:up
@@ -470,7 +470,7 @@ EXAMPLES
 
 ## `galachain network:up`
 
-Start the chaincode, browser-api, and ops-api (in non-watch mode).
+Start the chaincode, browser-api, and ops-api (in non-watch mode). Supported on macOS and Linux.
 
 ```
 USAGE
@@ -501,7 +501,7 @@ GLOBAL FLAGS
                         <options: debug|info|warn|error>
 
 DESCRIPTION
-  Start the chaincode, browser-api, and ops-api (in non-watch mode).
+  Start the chaincode, browser-api, and ops-api (in non-watch mode). Supported on macOS and Linux.
 
 ALIASES
   $ galachain network:up

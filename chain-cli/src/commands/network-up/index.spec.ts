@@ -16,7 +16,13 @@ import fs from "fs";
 import os from "os";
 import path from "path";
 
-import { SingleArg, chaincodeDirsForChannels, createConfigtxProfiles, customValidation } from "./index";
+import {
+  SingleArg,
+  assertNetworkUpPlatform,
+  chaincodeDirsForChannels,
+  createConfigtxProfiles,
+  customValidation
+} from "./index";
 
 function flags(overrides: Record<string, unknown> = {}): {
   channel: string[];
@@ -37,6 +43,12 @@ function flags(overrides: Record<string, unknown> = {}): {
 }
 
 describe("network path checks", () => {
+  it("fails fast on Windows and permits supported platforms", () => {
+    expect(() => assertNetworkUpPlatform("darwin")).not.toThrow();
+    expect(() => assertNetworkUpPlatform("linux")).not.toThrow();
+    expect(() => assertNetworkUpPlatform("win32")).toThrow(/not supported on Windows.*bash/);
+  });
+
   it("repeats the default chaincode directory once per chaincode", () => {
     const networkFlags = flags();
 

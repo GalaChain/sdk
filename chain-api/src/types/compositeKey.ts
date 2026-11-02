@@ -15,7 +15,7 @@
 import { classToPlain as instanceToPlain } from "class-transformer";
 
 import { ChainKeyMetadata } from "../utils";
-import { ChainObject } from "./ChainObject";
+import { ChainObject, NestedCompositeKeyPart } from "./ChainObject";
 
 export function compositeKeyOmittingUnset(
   instance: ChainObject,
@@ -39,13 +39,15 @@ export function compositeKeyOmittingUnset(
     .map((field) => {
       const key = field.key.toString();
       const live = instance[key];
+      let value: unknown;
       if (typeof live?.toStringKey === "function") {
-        return live.toStringKey();
+        value = live.toStringKey();
+      } else if (omitUnsetKeys.includes(key) && live !== undefined && live !== null && `${live}` !== "") {
+        value = `${live}`;
+      } else {
+        value = plain[key];
       }
-      if (omitUnsetKeys.includes(key) && live !== undefined && live !== null && `${live}` !== "") {
-        return `${live}`;
-      }
-      return plain[key];
+      return field.nestedCompositeKey ? NestedCompositeKeyPart.from(String(value)) : value;
     });
 
   return ChainObject.getCompositeKeyFromParts(indexKey, keyParts);

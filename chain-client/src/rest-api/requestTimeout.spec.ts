@@ -41,6 +41,28 @@ describe("REST request timeout", () => {
     );
   });
 
+  it("uses caller timeout and cancellation for a contract call", async () => {
+    const post = jest.spyOn(axios, "post").mockResolvedValue({ data: { Status: 1 } });
+    const client = new RestApiClient(
+      Promise.resolve({} as never),
+      "https://rest.example",
+      { channel: "product", chaincode: "basic", contract: "GalaChainToken" },
+      "Org1"
+    );
+    const controller = new AbortController();
+
+    await client.post("http://rest.example/product/GalaChainToken/Ping", undefined, undefined, {
+      signal: controller.signal,
+      timeoutMs: 1234
+    });
+
+    expect(post).toHaveBeenCalledWith(
+      "http://rest.example/product/GalaChainToken/Ping",
+      {},
+      expect.objectContaining({ timeout: 1234, signal: controller.signal })
+    );
+  });
+
   it("bounds contract discovery", async () => {
     const post = jest.spyOn(axios, "post").mockResolvedValue({
       data: { Status: 1, Data: { methods: [] } }

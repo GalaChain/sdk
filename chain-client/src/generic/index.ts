@@ -17,6 +17,13 @@ export { ChainClient } from "./ChainClient";
 export { ChainClientBuilder } from "./ChainClientBuilder";
 export { ChainUser } from "./ChainUser";
 export { ContractConfig } from "./ContractConfig";
-export { ClassType, Inferred, Serializable, UserAlias, isClassType } from "./types";
+export {
+  ChainClientRequestOptions,
+  ClassType,
+  Inferred,
+  Serializable,
+  UserAlias,
+  isClassType
+} from "./types";
 export { loadJson } from "./loadJson";
 export { genKeyPair, getEthAddress, getPublicKey } from "./keys";

@@ -21,8 +21,12 @@ import {
   IsNumber,
   Max,
   Min,
+  Validate,
   ValidateIf,
-  ValidateNested
+  ValidateNested,
+  ValidationArguments,
+  ValidatorConstraint,
+  ValidatorConstraintInterface
 } from "class-validator";
 import { JSONSchema } from "class-validator-jsonschema";
 
@@ -32,6 +36,18 @@ import { ChainObject } from "./ChainObject";
 import { OraclePriceAssertion } from "./OraclePriceAssertion";
 import { OraclePriceCrossRateAssertion } from "./OraclePriceCrossRateAssertion";
 import { TokenClassKey } from "./TokenClass";
+
+@ValidatorConstraint({ name: "atMostOneBridgeExchangeRate", async: false })
+export class AtMostOneBridgeExchangeRateConstraint implements ValidatorConstraintInterface {
+  validate(_value: unknown, args: ValidationArguments): boolean {
+    const assertion = args.object as OracleBridgeFeeAssertion;
+    return !(assertion.galaExchangeRate !== undefined && assertion.galaExchangeCrossRate !== undefined);
+  }
+
+  defaultMessage(): string {
+    return "galaExchangeRate and galaExchangeCrossRate cannot both be provided";
+  }
+}
 
 @JSONSchema({
   description: "Response with signed bridging fee data."
@@ -77,6 +93,7 @@ export class OracleBridgeFeeAssertion extends ChainObject {
       "Rounding decimals used for estimatedTotalTxFeeInGala. " +
       "Expected to match $GALA TokenClass.decimals."
   })
+  @Validate(AtMostOneBridgeExchangeRateConstraint)
   @IsInt()
   @Min(0)
   @Max(32)

@@ -14,6 +14,7 @@
  */
 import { BigNumber } from "bignumber.js";
 import { IsBoolean, IsNotEmpty, IsNumber, IsOptional, IsString } from "class-validator";
+import { JSONSchema } from "class-validator-jsonschema";
 
 import { ChainKey } from "../utils";
 import { BigNumberIsInteger, BigNumberIsNotNegative, BigNumberProperty, EnumProperty } from "../validators";
@@ -51,6 +52,9 @@ export class FeeCodeDefinition extends ChainObject {
   @BigNumberProperty()
   public baseQuantity: BigNumber;
 
+  @JSONSchema({
+    description: "Maximum fee quantity. A value of 0 means the fee has no maximum."
+  })
   @BigNumberIsNotNegative()
   @BigNumberProperty()
   public maxQuantity: BigNumber;

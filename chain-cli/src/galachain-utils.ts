@@ -41,8 +41,11 @@ const DEFAULT_ADMIN_PRIVATE_KEY_NAME = "gc-admin-key";
 const DEFAULT_DEV_PRIVATE_KEY_NAME = "gc-dev-key";
 const REQUEST_TIMEOUT_MS = 30_000;
 
-function requestConfig<T extends object>(config: T): T & { timeout: number } {
-  return { timeout: REQUEST_TIMEOUT_MS, ...config };
+function requestConfig<T extends object>(
+  config: T,
+  signal?: AbortSignal
+): T & { timeout: number; signal?: AbortSignal } {
+  return { timeout: REQUEST_TIMEOUT_MS, signal, ...config };
 }
 
 export interface Config {
@@ -91,6 +94,7 @@ export async function getDeploymentResponse(params: {
   privateKey: string;
   chaincodeName: string;
   operationId?: string;
+  signal?: AbortSignal;
 }): Promise<ChaincodeInfoDto> {
   const getChaincodeDeploymentDto: GetChaincodeDeploymentDto = {
     operationId: params.operationId ?? nanoid(),
@@ -104,12 +108,15 @@ export async function getDeploymentResponse(params: {
   const response = await axios
     .get(
       servicePortalURL,
-      requestConfig({
-        headers: {
-          [ServicePortal.AUTH_X_GC_KEY]: signature
+      requestConfig(
+        {
+          headers: {
+            [ServicePortal.AUTH_X_GC_KEY]: signature
+          },
+          params: getChaincodeDeploymentDto
         },
-        params: getChaincodeDeploymentDto
-      })
+        params.signal
+      )
     )
     .catch((error) => {
       throw new Error(axiosErrorMessage(error));
@@ -258,6 +265,7 @@ export async function deployChaincode(params: {
   imageDigest: string;
   chaincode: string;
   contracts: { contractName: string }[];
+  signal?: AbortSignal;
 }): Promise<{ operationId: string }> {
   const operationId = nanoid();
   const dto: DeployChaincodeDto = {
@@ -274,11 +282,14 @@ export async function deployChaincode(params: {
     .post(
       ServicePortal.DEPLOY_URL,
       dto,
-      requestConfig({
-        headers: {
-          [ServicePortal.AUTH_X_GC_KEY]: signature
-        }
-      })
+      requestConfig(
+        {
+          headers: {
+            [ServicePortal.AUTH_X_GC_KEY]: signature
+          }
+        },
+        params.signal
+      )
     )
     .catch((error) => {
       throw new Error(axiosErrorMessage(error));
@@ -291,6 +302,7 @@ export async function registerChaincode(params: {
   privateKey: string;
   adminPublicKey: string;
   developersPublicKeys: string[];
+  signal?: AbortSignal;
 }) {
   const dto: RegisterChaincodeDto = {
     operationId: nanoid(),
@@ -304,11 +316,14 @@ export async function registerChaincode(params: {
     .post(
       ServicePortal.REGISTER_URL,
       dto,
-      requestConfig({
-        headers: {
-          [ServicePortal.AUTH_X_GC_KEY]: signature
-        }
-      })
+      requestConfig(
+        {
+          headers: {
+            [ServicePortal.AUTH_X_GC_KEY]: signature
+          }
+        },
+        params.signal
+      )
     )
     .catch((error) => {
       throw new Error(axiosErrorMessage(error));
@@ -463,10 +478,16 @@ export async function getChaincodeDefinition(): Promise<{ name: string; adminPub
   return { name, adminPublicKey };
 }
 
-export async function getDeveloperPublicKeys(): Promise<string[]> {
+export interface DeveloperPublicKeyInfo {
+  fileName: string;
+  publicKey: string;
+  address: string;
+}
+
+export async function getDeveloperPublicKeyInfo(): Promise<DeveloperPublicKeyInfo[]> {
   const keysPath = path.join(process.cwd(), DEFAULT_PUBLIC_KEYS_DIR);
   const developerPublicKeyFile = /^gc-dev.*-key.*\.pub$/;
-  const publicKeys = new Set<string>();
+  const publicKeys = new Map<string, DeveloperPublicKeyInfo>();
 
   fs.readdirSync(keysPath).forEach((key) => {
     if (!developerPublicKeyFile.test(key)) {
@@ -474,20 +495,34 @@ export async function getDeveloperPublicKeys(): Promise<string[]> {
     }
 
     const keyPath = path.join(keysPath, key);
-    if (!fs.statSync(keyPath).isFile()) {
+    if (!fs.lstatSync(keyPath).isFile()) {
       return;
     }
 
     const contents = fs.readFileSync(keyPath, "utf8").trim();
+    let publicKey: string;
     try {
-      signatures.normalizePublicKey(contents);
-    } catch {
-      return;
+      publicKey = signatures.getNonCompactHexPublicKey(contents);
+    } catch (e) {
+      throw new Error(`Invalid developer public key file ${key}: ${e instanceof Error ? e.message : e}`);
     }
-    publicKeys.add(contents);
+
+    const duplicate = publicKeys.get(publicKey);
+    if (duplicate !== undefined) {
+      throw new Error(`Duplicate developer public key in ${duplicate.fileName} and ${key}`);
+    }
+    publicKeys.set(publicKey, {
+      fileName: key,
+      publicKey,
+      address: signatures.getEthAddress(publicKey)
+    });
   });
 
-  return [...publicKeys].sort();
+  return [...publicKeys.values()].sort((a, b) => a.fileName.localeCompare(b.fileName));
+}
+
+export async function getDeveloperPublicKeys(): Promise<string[]> {
+  return (await getDeveloperPublicKeyInfo()).map(({ publicKey }) => publicKey);
 }
 
 export async function getPrivateKey(keysFromArg: string | undefined, chaincodeName: string) {
@@ -616,6 +651,7 @@ export async function getLogs(params: {
   endTime?: string;
   limit?: number;
   filter?: string;
+  signal?: AbortSignal;
 }): Promise<LogEntry[]> {
   const requestParams = {
     operationId: nanoid(),
@@ -632,12 +668,15 @@ export async function getLogs(params: {
   try {
     const response = await axios.get(
       servicePortalURL,
-      requestConfig({
-        headers: {
-          [ServicePortal.AUTH_X_GC_KEY]: signature
+      requestConfig(
+        {
+          headers: {
+            [ServicePortal.AUTH_X_GC_KEY]: signature
+          },
+          params: requestParams
         },
-        params: requestParams
-      })
+        params.signal
+      )
     );
 
     return readLogEntries(response.data);
@@ -679,6 +718,7 @@ export async function streamLogs(
   params: {
     privateKey: string;
     filter?: string;
+    signal?: AbortSignal;
   },
   onData: (data: string) => void
 ): Promise<void> {
@@ -692,6 +732,12 @@ export async function streamLogs(
   const servicePortalURL = ServicePortal.STREAM_LOGS_URL;
 
   const controller = new AbortController();
+  const abortFromCaller = () => controller.abort(params.signal?.reason);
+  if (params.signal?.aborted) {
+    abortFromCaller();
+  } else {
+    params.signal?.addEventListener("abort", abortFromCaller, { once: true });
+  }
   const timer = setTimeout(() => controller.abort(), REQUEST_TIMEOUT_MS);
 
   try {
@@ -708,6 +754,8 @@ export async function streamLogs(
 
     const stream = response.data as Readable;
     const decoder = new StringDecoder("utf8");
+    const abortStream = () => stream.destroy(new Error("Log stream cancelled."));
+    controller.signal.addEventListener("abort", abortStream, { once: true });
 
     await new Promise<void>((resolve, reject) => {
       const fail = (error: unknown) => {
@@ -724,6 +772,7 @@ export async function streamLogs(
       });
 
       stream.on("end", () => {
+        controller.signal.removeEventListener("abort", abortStream);
         try {
           const rest = decoder.end();
           if (rest) {
@@ -753,6 +802,9 @@ export async function streamLogs(
     }
     const message = error instanceof Error ? error.message : String(error);
     throw new Error(`Failed to stream logs: ${message}`);
+  } finally {
+    clearTimeout(timer);
+    params.signal?.removeEventListener("abort", abortFromCaller);
   }
 }
 

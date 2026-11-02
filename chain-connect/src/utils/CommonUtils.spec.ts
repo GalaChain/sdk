@@ -352,17 +352,28 @@ describe("EIP-712 Signing", () => {
     expect("0x" + signatures.getEthAddress(recovered)).toBe(wallet.address);
   });
 
-  it("rejects a repeated nested name with different fields", () => {
+  it("disambiguates a repeated nested name with different fields", async () => {
     // Given
     const params = {
       offered: { tokenInstance: { collection: "GALA" } },
       wanted: { tokenInstance: { collection: "GALA", instance: "1" } }
     };
+    const domain = { name: "GalaChain" };
+    const wallet = new ethers.Wallet("0x0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef");
 
-    // When & Then
-    expect(() => generateEIP712Types("RequestTokenSwap", params)).toThrow(
-      "Name collisions not yet supported"
-    );
+    // When
+    const types = generateEIP712Types("RequestTokenSwap", params);
+    const signature = await wallet.signTypedData(domain, types, params);
+
+    // Then
+    expect(types.offered).toEqual([{ name: "tokenInstance", type: "tokenInstance" }]);
+    expect(types.wanted).toEqual([{ name: "tokenInstance", type: "tokenInstance_RequestTokenSwap_wanted" }]);
+    expect(types.tokenInstance).toEqual([{ name: "collection", type: "string" }]);
+    expect(types.tokenInstance_RequestTokenSwap_wanted).toEqual([
+      { name: "collection", type: "string" },
+      { name: "instance", type: "string" }
+    ]);
+    expect(ethers.verifyTypedData(domain, types, params, signature)).toBe(wallet.address);
   });
 
   it("replaces only a leading 0x when converting to a GalaChain address", () => {

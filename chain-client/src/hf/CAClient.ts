@@ -25,6 +25,7 @@ export class CAClient {
   public readonly adminId: string;
   private readonly adminSecret: string;
   private readonly caClient: FabricCAServices;
+  private readonly provisioningScope: string;
   private adminEnrollment: Promise<Identity> | undefined;
 
   constructor(
@@ -35,6 +36,7 @@ export class CAClient {
   ) {
     this.orgMsp = orgMsp;
     this.caHostName = getCAHostName(connectionProfile, orgMsp);
+    this.provisioningScope = walletCacheKey(orgMsp, connectionProfile);
     this.caClient = buildCAClient(connectionProfile, this.caHostName);
     this.wallet = getGlobalWallet(this.orgMsp, connectionProfile);
     this.adminId = adminId;
@@ -71,7 +73,7 @@ export class CAClient {
   }
 
   async getIdentityOrRegisterUser(userId: string): Promise<Identity> {
-    const key = onboardingKey(this.orgMsp, this.caHostName, userId);
+    const key = onboardingKey(this.provisioningScope, userId);
     const current = userProvisioning.get(key);
     if (current) {
       return current;
@@ -95,7 +97,7 @@ export class CAClient {
       return identity;
     }
 
-    const key = onboardingKey(this.orgMsp, this.caHostName, userId);
+    const key = onboardingKey(this.provisioningScope, userId);
     let userSecret = registrationSecrets.get(key);
     if (userSecret === undefined) {
       // The CA uses the registrar's affiliation when this request does not set one.
@@ -112,8 +114,8 @@ export class CAClient {
 const userProvisioning = new Map<string, Promise<Identity>>();
 const registrationSecrets = new Map<string, string>();
 
-function onboardingKey(orgMsp: string, caHostName: string, userId: string): string {
-  return JSON.stringify([orgMsp, caHostName, userId]);
+function onboardingKey(provisioningScope: string, userId: string): string {
+  return JSON.stringify([provisioningScope, userId]);
 }
 
 function getCAHostName(connectionProfile: Record<string, unknown>, orgMsp: string): string {

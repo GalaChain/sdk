@@ -418,21 +418,30 @@ export class FetchTokenMintConfigurationsDto extends ChainCallDTO {
   @JSONSchema({
     description: "Token Class collection. Optional, but required if category is provided."
   })
-  @ValidateIf((c) => !!c.category)
+  @ValidateIf(
+    (c) =>
+      c.collection !== undefined ||
+      c.category !== undefined ||
+      c.type !== undefined ||
+      c.additionalKey !== undefined
+  )
+  @IsString()
   @IsNotEmpty()
   collection?: string;
 
   @JSONSchema({
     description: "Token Class category. Optional, but required if type is provided."
   })
-  @ValidateIf((c) => !!c.type)
+  @ValidateIf((c) => c.category !== undefined || c.type !== undefined || c.additionalKey !== undefined)
+  @IsString()
   @IsNotEmpty()
   category?: string;
 
   @JSONSchema({
     description: "Token Class type. Optional, but required if additionalKey is provided."
   })
-  @ValidateIf((c) => !!c.additionalKey)
+  @ValidateIf((c) => c.type !== undefined || c.additionalKey !== undefined)
+  @IsString()
   @IsNotEmpty()
   type?: string;
 
@@ -440,6 +449,7 @@ export class FetchTokenMintConfigurationsDto extends ChainCallDTO {
     description: "Token Class additionalKey."
   })
   @IsOptional()
+  @IsString()
   @IsNotEmpty()
   additionalKey?: string;
 

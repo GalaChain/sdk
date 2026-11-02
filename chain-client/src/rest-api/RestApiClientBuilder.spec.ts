@@ -68,10 +68,16 @@ describe("chain REST client", () => {
     expect(globalRestApiConfig.getStatus(url)).toBe(RestApiStatus.INITIALIZED);
   });
 
-  it("does not mark initialization failed when a waiter times out", async () => {
+  it("aborts discovery when an initialization waiter times out", async () => {
     jest.useFakeTimers();
     const url = "https://slow-init.example";
-    jest.spyOn(axios, "post").mockImplementation(() => new Promise(() => undefined));
+    let discoverySignal: AbortSignal | undefined;
+    jest.spyOn(axios, "post").mockImplementation((_url, _body, config) => {
+      discoverySignal = config?.signal as AbortSignal | undefined;
+      return new Promise((_resolve, reject) => {
+        discoverySignal?.addEventListener("abort", () => reject(new Error("discovery aborted")));
+      });
+    });
 
     const builder = new RestApiClientBuilder(url, "Org1", credentials, restConfig);
     const client = builder.forContract(contract);
@@ -82,6 +88,8 @@ describe("chain REST client", () => {
 
     await jest.advanceTimersByTimeAsync(10_000);
     await assertion;
-    expect(globalRestApiConfig.getStatus(url)).toBe(RestApiStatus.PENDING);
+    expect(discoverySignal?.aborted).toBe(true);
+    await Promise.resolve();
+    expect(globalRestApiConfig.getStatus(url)).toBe(RestApiStatus.NONE);
   });
 });

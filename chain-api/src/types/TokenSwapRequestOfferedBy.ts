@@ -30,7 +30,7 @@ export class TokenSwapRequestOfferedBy extends ChainObject {
   @IsUserAlias()
   public offeredBy: string;
 
-  @ChainKey({ position: 1 })
+  @ChainKey({ position: 1, nestedCompositeKey: true })
   @IsNotEmpty()
   public swapRequestId: string;
 }

@@ -664,85 +664,89 @@ describe("feeGate", () => {
     );
   });
 
-  it("should charge a logarithmic tier at its threshold", async () => {
-    const definition = plainToInstance(FeeCodeDefinition, {
-      feeCode: feeCode1,
-      feeThresholdUses: new BigNumber("10"),
-      feeThresholdTimePeriod: 0,
-      baseQuantity: new BigNumber("2"),
-      maxQuantity: new BigNumber("1000"),
-      feeAccelerationRateType: FeeAccelerationRateType.Logarithmic,
-      feeAccelerationRate: new BigNumber("2"),
-      isCrossChannel: true
-    });
+  it.each(["2", "0.5"])(
+    "should charge a logarithmic tier at its threshold with acceleration rate %s",
+    async (feeAccelerationRate) => {
+      const definition = plainToInstance(FeeCodeDefinition, {
+        feeCode: feeCode1,
+        feeThresholdUses: new BigNumber("10"),
+        feeThresholdTimePeriod: 0,
+        baseQuantity: new BigNumber("2"),
+        maxQuantity: new BigNumber("1000"),
+        feeAccelerationRateType: FeeAccelerationRateType.Logarithmic,
+        feeAccelerationRate: new BigNumber(feeAccelerationRate),
+        isCrossChannel: true
+      });
 
-    const userThresholdUses = await createValidChainObject(FeeThresholdUses, {
-      feeCode: feeCode1,
-      user: users.testUser1.identityKey,
-      cumulativeUses: new BigNumber("9"),
-      cumulativeFeeQuantity: new BigNumber("0")
-    });
+      const userThresholdUses = await createValidChainObject(FeeThresholdUses, {
+        feeCode: feeCode1,
+        user: users.testUser1.identityKey,
+        cumulativeUses: new BigNumber("9"),
+        cumulativeFeeQuantity: new BigNumber("0")
+      });
 
-    const userPendingBalance = await createValidChainObject(FeePendingBalance, {
-      owner: users.testUser1.identityKey,
-      quantity: new BigNumber("1000")
-    });
+      const userPendingBalance = await createValidChainObject(FeePendingBalance, {
+        owner: users.testUser1.identityKey,
+        quantity: new BigNumber("1000")
+      });
 
-    const expectedFeeAmount = new BigNumber(2)
-      .plus(Math.log(2))
-      .decimalPlaces(FeeCodeDefinition.DECIMAL_PRECISION);
+      const expectedFeeAmount = BigNumber.maximum(
+        definition.baseQuantity,
+        definition.baseQuantity.plus(Math.log(Number(feeAccelerationRate)))
+      ).decimalPlaces(FeeCodeDefinition.DECIMAL_PRECISION);
 
-    const { ctx, getWrites } = fixture<GalaChainContext, GalaChainTokenContract>(GalaChainTokenContract)
-      .callingUser(users.testUser1)
-      .savedState(definition, userThresholdUses, userPendingBalance);
+      const { ctx, getWrites } = fixture<GalaChainContext, GalaChainTokenContract>(GalaChainTokenContract)
+        .callingUser(users.testUser1)
+        .savedState(definition, userThresholdUses, userPendingBalance);
 
-    const { year, month, day } = txUnixTimeToDateIndexKeys(ctx.txUnixTime);
+      const { year, month, day } = txUnixTimeToDateIndexKeys(ctx.txUnixTime);
 
-    const result = await galaFeeGate(ctx, { feeCode: feeCode1 })
-      .then(() => ctx.stub.flushWrites())
-      .catch((e) => e);
+      const result = await galaFeeGate(ctx, { feeCode: feeCode1 })
+        .then(() => ctx.stub.flushWrites())
+        .catch((e) => e);
 
-    const expectedUsageWrite = instanceToInstance(userThresholdUses);
-    expectedUsageWrite.cumulativeUses = new BigNumber("10");
-    expectedUsageWrite.cumulativeFeeQuantity = expectedFeeAmount;
+      const expectedUsageWrite = instanceToInstance(userThresholdUses);
+      expectedUsageWrite.cumulativeUses = new BigNumber("10");
+      expectedUsageWrite.cumulativeFeeQuantity = expectedFeeAmount;
 
-    const expectedBalanceWrite = instanceToInstance(userPendingBalance);
-    expectedBalanceWrite.quantity = userPendingBalance.quantity.minus(expectedFeeAmount);
+      const expectedBalanceWrite = instanceToInstance(userPendingBalance);
+      expectedBalanceWrite.quantity = userPendingBalance.quantity.minus(expectedFeeAmount);
 
-    const expectedChannelPaymentReceipt = plainToInstance(FeeChannelPaymentReceipt, {
-      year,
-      month,
-      day,
-      paidByUser: users.testUser1.identityKey,
-      txId: ctx.stub.getTxID(),
-      feeCode: feeCode1,
-      quantity: expectedFeeAmount,
-      status: FeeReceiptStatus.Open
-    });
+      const expectedChannelPaymentReceipt = plainToInstance(FeeChannelPaymentReceipt, {
+        year,
+        month,
+        day,
+        paidByUser: users.testUser1.identityKey,
+        txId: ctx.stub.getTxID(),
+        feeCode: feeCode1,
+        quantity: expectedFeeAmount,
+        status: FeeReceiptStatus.Open
+      });
 
-    const expectedUserPaymentReceipt = plainToInstance(FeeUserPaymentReceipt, {
-      year,
-      month,
-      day,
-      paidByUser: users.testUser1.identityKey,
-      txId: ctx.stub.getTxID(),
-      feeCode: feeCode1,
-      quantity: expectedFeeAmount,
-      status: FeeReceiptStatus.Open
-    });
+      const expectedUserPaymentReceipt = plainToInstance(FeeUserPaymentReceipt, {
+        year,
+        month,
+        day,
+        paidByUser: users.testUser1.identityKey,
+        txId: ctx.stub.getTxID(),
+        feeCode: feeCode1,
+        quantity: expectedFeeAmount,
+        status: FeeReceiptStatus.Open
+      });
 
-    expect(result).toEqual(undefined);
-    expect(expectedFeeAmount.isFinite()).toBe(true);
-    expect(expectedFeeAmount.isGreaterThan(0)).toBe(true);
-    expect(getWrites()).toEqual(
-      writesMap(
-        expectedBalanceWrite,
-        expectedChannelPaymentReceipt,
-        expectedUserPaymentReceipt,
-        expectedUsageWrite
-      )
-    );
-  });
+      expect(result).toEqual(undefined);
+      expect(expectedFeeAmount.isFinite()).toBe(true);
+      expect(expectedFeeAmount.isGreaterThan(0)).toBe(true);
+      expect(getWrites()).toEqual(
+        writesMap(
+          expectedBalanceWrite,
+          expectedChannelPaymentReceipt,
+          expectedUserPaymentReceipt,
+          expectedUsageWrite
+        )
+      );
+    }
+  );
 
   it("caps a non-finite accelerated fee at maxQuantity", async () => {
     const definition = plainToInstance(FeeCodeDefinition, {

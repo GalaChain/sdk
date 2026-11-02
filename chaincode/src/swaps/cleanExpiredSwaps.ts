@@ -16,6 +16,7 @@ import {
   ChainObject,
   CleanTokenSwapsResponse,
   Inferred,
+  NestedCompositeKeyPart,
   TokenSwapRequest,
   TokenSwapRequestInstanceOffered,
   TokenSwapRequestInstanceWanted,
@@ -88,10 +89,11 @@ async function deleteIndexIfExists<T extends ChainObject>(
 
 export async function deindexTokenSwapRequest(ctx: GalaChainContext, swap: TokenSwapRequest) {
   const { offeredBy, offeredTo, offered, wanted, swapRequestId } = swap;
+  const nestedSwapRequestId = NestedCompositeKeyPart.from(swapRequestId);
 
   const offeredByIndexKey = ChainObject.getCompositeKeyFromParts(TokenSwapRequestOfferedBy.INDEX_KEY, [
     offeredBy,
-    swapRequestId
+    nestedSwapRequestId
   ]);
 
   await deleteIndexIfExists(ctx, TokenSwapRequestOfferedBy, offeredByIndexKey);
@@ -99,7 +101,7 @@ export async function deindexTokenSwapRequest(ctx: GalaChainContext, swap: Token
   if (offeredTo) {
     const offeredToIndexKey = ChainObject.getCompositeKeyFromParts(TokenSwapRequestOfferedTo.INDEX_KEY, [
       offeredTo,
-      swapRequestId
+      nestedSwapRequestId
     ]);
 
     await deleteIndexIfExists(ctx, TokenSwapRequestOfferedTo, offeredToIndexKey);
@@ -110,7 +112,7 @@ export async function deindexTokenSwapRequest(ctx: GalaChainContext, swap: Token
 
     const offeredInstanceIndexKey = ChainObject.getCompositeKeyFromParts(
       TokenSwapRequestInstanceOffered.INDEX_KEY,
-      [collection, category, type, additionalKey, instance.toString(), swapRequestId]
+      [collection, category, type, additionalKey, instance.toString(), nestedSwapRequestId]
     );
 
     await deleteIndexIfExists(ctx, TokenSwapRequestInstanceOffered, offeredInstanceIndexKey);
@@ -121,7 +123,7 @@ export async function deindexTokenSwapRequest(ctx: GalaChainContext, swap: Token
 
     const wantedInstanceIndexKey = ChainObject.getCompositeKeyFromParts(
       TokenSwapRequestInstanceWanted.INDEX_KEY,
-      [collection, category, type, additionalKey, instance.toString(), swapRequestId]
+      [collection, category, type, additionalKey, instance.toString(), nestedSwapRequestId]
     );
 
     await deleteIndexIfExists(ctx, TokenSwapRequestInstanceWanted, wantedInstanceIndexKey);

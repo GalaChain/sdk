@@ -41,6 +41,19 @@ export class InvalidCompositeKeyError extends ValidationFailedError {
   }
 }
 
+export class NestedCompositeKeyPart {
+  private constructor(public readonly value: string) {}
+
+  public static from(value: string): NestedCompositeKeyPart {
+    const nul = ChainObject.MIN_UNICODE_RUNE_VALUE;
+    const segments = value.startsWith(nul) && value.endsWith(nul) ? value.slice(1, -1).split(nul) : [];
+    if (segments.length === 0 || segments.some((segment) => segment.length === 0)) {
+      throw new InvalidCompositeKeyError("nested composite key part is not a complete composite key");
+    }
+    return new NestedCompositeKeyPart(value);
+  }
+}
+
 export abstract class ChainObject {
   public static MIN_UNICODE_RUNE_VALUE = "\u0000";
 
@@ -104,7 +117,8 @@ export abstract class ChainObject {
       .sort((a, b) => a.position - b.position)
       .map((field) => {
         const key = field.key.toString();
-        return typeof this[key]?.toStringKey === "function" ? this[key]?.toStringKey() : plain[key];
+        const value = typeof this[key]?.toStringKey === "function" ? this[key]?.toStringKey() : plain[key];
+        return field.nestedCompositeKey ? NestedCompositeKeyPart.from(String(value)) : value;
       });
 
     return ChainObject.getCompositeKeyFromParts(classIndexKey, keyParts);
@@ -115,21 +129,26 @@ export abstract class ChainObject {
     let compositeKey = ChainObject.COMPOSITEKEY_NS + index + ChainObject.MIN_UNICODE_RUNE_VALUE;
 
     for (const part of parts) {
-      if (
-        part === null ||
-        part === undefined ||
-        typeof part === "object" ||
-        !(typeof part["toString"] === "function")
-      ) {
-        throw new InvalidCompositeKeyError(
-          `Invalid part ${part} passed to getCompositeKeyFromParts: ${parts.join(", ")}`
-        );
-      }
-      const text = ChainObject.rejectEmbeddedNul(String(part), "key part");
+      const text = ChainObject.keyPartToString(part);
       compositeKey = compositeKey + text + ChainObject.MIN_UNICODE_RUNE_VALUE;
     }
 
     return compositeKey;
+  }
+
+  public static keyPartToString(part: unknown): string {
+    if (part instanceof NestedCompositeKeyPart) {
+      return part.value;
+    }
+    if (
+      part === null ||
+      part === undefined ||
+      typeof part === "object" ||
+      !(typeof part["toString"] === "function")
+    ) {
+      throw new InvalidCompositeKeyError(`Invalid key part ${String(part)}`);
+    }
+    return ChainObject.rejectEmbeddedNul(String(part), "key part");
   }
 
   public static joinKeyParts(parts: readonly unknown[]): string {
@@ -138,33 +157,16 @@ export abstract class ChainObject {
         if (part === null || part === undefined) {
           return "";
         }
-        return ChainObject.rejectEmbeddedNul(String(part), "key part");
+        return ChainObject.keyPartToString(part);
       })
       .join(ChainObject.MIN_UNICODE_RUNE_VALUE);
   }
 
   public static rejectEmbeddedNul(text: string, label: string): string {
-    const nul = ChainObject.MIN_UNICODE_RUNE_VALUE;
-    if (!text.includes(nul)) {
-      return text;
-    }
-
-    // A complete composite key is sometimes stored as one component of another key.
-    // It must be well formed: the separator, then non-empty segments each followed by the separator.
-    // Any other embedded separator is ambiguous.
-    if (!ChainObject.isNestedCompositeKey(text)) {
+    if (text.includes(ChainObject.MIN_UNICODE_RUNE_VALUE)) {
       throw new InvalidCompositeKeyError(`${label} contains a NUL character`);
     }
     return text;
-  }
-
-  private static isNestedCompositeKey(text: string): boolean {
-    const nul = ChainObject.MIN_UNICODE_RUNE_VALUE;
-    if (text.length < 3 || !text.startsWith(nul) || !text.endsWith(nul)) {
-      return false;
-    }
-    const segments = text.slice(1, -1).split(nul);
-    return segments.every((segment) => segment.length > 0);
   }
 
   public static getStringKeyFromParts(parts: string[]): string {

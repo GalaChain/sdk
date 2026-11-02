@@ -433,7 +433,7 @@ export async function putMintAllowanceRequestsOnChain(
 
     mintAllowanceEntry.id = mintAllowanceEntry.requestId();
 
-    // Grants to the same user in one transaction share this key, whoever grants them.
+    // Grants from the same issuer to the same user in one transaction share this key.
     // Add the quantity to the record already written, so the allowance supply counts every grant.
     const pending = await getRangedObjectByKey(
       ctx,
@@ -449,10 +449,7 @@ export async function putMintAllowanceRequestsOnChain(
     if (pending !== undefined) {
       pending.quantity = pending.quantity.plus(mintAllowanceEntry.quantity);
       await putRangedChainObject(ctx, pending);
-      // The mint allowance record is keyed by issuer, so it keeps the total only for the same issuer.
-      mintAllowanceQtyEntries.push(
-        pending.grantedBy === mintAllowanceEntry.grantedBy ? pending : mintAllowanceEntry
-      );
+      mintAllowanceQtyEntries.push(pending);
       continue;
     }
 

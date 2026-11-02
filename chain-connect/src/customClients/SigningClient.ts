@@ -30,7 +30,7 @@ export class SigningClient extends CustomClient {
   }
 
   async getPublicKey(): Promise<{ publicKey: string; recoveredAddress: string }> {
-    return recoverPublicKeyFromPersonalSign("I <3 GalaChain", (message) => this.wallet.signMessage(message));
+    return recoverPublicKeyFromPersonalSign((message) => this.wallet.signMessage(message));
   }
 
   private wallet: ethers.Wallet;

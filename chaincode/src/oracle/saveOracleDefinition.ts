@@ -17,10 +17,13 @@ import {
   ErrorCode,
   OracleDefinition,
   UnauthorizedError,
-  ValidationFailedError
+  ValidationFailedError,
+  isValidSystemUser
 } from "@gala-chain/api";
 import { plainToInstance } from "class-transformer";
 
+import { PublicKeyService } from "../services/PublicKeyService";
+import { resolveUserAlias } from "../services/resolveUserAlias";
 import { GalaChainContext } from "../types";
 import { getObjectByKey, putChainObject } from "../utils";
 
@@ -69,6 +72,26 @@ export async function saveOracleDefinition(
   ) {
     throw new ValidationFailedError("authorities must be an array of non-empty strings");
   }
+
+  data.authorities = await Promise.all(
+    data.authorities.map(async (authority) => {
+      const alias = await resolveUserAlias(ctx, authority);
+      if (alias.startsWith("eth|") || isValidSystemUser(alias)) {
+        return alias;
+      }
+
+      const [publicKey, profile] = await Promise.all([
+        PublicKeyService.getPublicKey(ctx, alias),
+        PublicKeyService.getUserProfile(ctx, alias)
+      ]);
+      if (publicKey === undefined && profile?.alias !== alias) {
+        throw new ValidationFailedError(`Oracle authority is not registered: ${alias}`, {
+          authority: alias
+        });
+      }
+      return alias;
+    })
+  );
 
   const oracle = plainToInstance(OracleDefinition, {
     name: data.name,
