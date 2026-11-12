@@ -25,6 +25,28 @@ import { nanoid } from "nanoid";
 import { FabricIterable, asyncIterator, fabricIterable, filter } from "./FabricIterable";
 
 /**
+ * Minimal protobuf encoding of a ChaincodeInvocationSpec with the chaincode name and arguments.
+ */
+function encodeInvocationSpec(chaincodeName: string, args: string[]): Buffer {
+  const varint = (n: number): Buffer => {
+    const bytes: number[] = [];
+    while (n > 127) {
+      bytes.push((n & 127) | 128);
+      n >>>= 7;
+    }
+    bytes.push(n);
+    return Buffer.from(bytes);
+  };
+  const field = (num: number, value: Uint8Array): Buffer =>
+    Buffer.concat([varint((num << 3) | 2), varint(value.length), value]);
+
+  const chaincodeId = field(2, Buffer.from(chaincodeName));
+  const input = Buffer.concat(args.map((a) => field(1, Buffer.from(a))));
+  const chaincodeSpec = Buffer.concat([field(2, chaincodeId), field(3, input)]);
+  return field(1, chaincodeSpec);
+}
+
+/**
  * Interface for the Hyperledger Fabric ChaincodeStub class type.
  * Extends the base FChaincodeStub with constructor and additional properties needed for testing.
  * @internal
@@ -155,13 +177,10 @@ export class TestChaincodeStub extends ChaincodeStub {
             epoch: 0
           }
         },
+        // Same shape as the generated ChaincodeProposalPayload set by fabric-shim.
+        // The proposal carries the stub arguments, as for a direct client request.
         payload: {
-          array: [
-            Buffer.from(
-              "CusECAESEQoAEgtiYXNpYy1hc3NldBoAGtMECh9HYWxhQ2hhaW5Ub2tlbjpDcmVhdGVUb2tlbkNsYXNzCq0EeyJkZWNpbWFscyI6MCwiZGVzY3JpcHRpb24iOiJUaGlzIGlzIGEgdGVzdCBkZXNjcmlwdGlvbiEiLCJpbWFnZSI6Imh0dHBzOi8vYXBwLmdhbGEuZ2FtZXMvX251eHQvaW1nL2dhbGEtbG9nb19ob3Jpem9udGFsX3doaXRlLjhiMDQwOWMucG5nIiwiaXNOb25GdW5naWJsZSI6dHJ1ZSwibWF4Q2FwYWNpdHkiOiIxMCIsIm1heFN1cHBseSI6IjEwIiwibmFtZSI6Ik1lZ2FBeGUiLCJuZXR3b3JrIjoiR0MiLCJzaWduYXR1cmUiOiIwYTRhODRmYWRjNDI0NDdjNjFhNjg3ZTJkNDA1YTZjNDc5ZGY3OTllMmQ4OWNkNzliNTRjMzU5MjVjZDA5ZWI3NGVlN2Q0MGYyNGIwNjg0OWExNDc2NDZjZDM0ZWM1NzY5YmE3ZmY1MjA1Nzk2ZjFhYWJjYTI2MzYyNWRiZGE3YjFiIiwic3ltYm9sIjoiTUEiLCJ0b2tlbkNsYXNzIjp7ImFkZGl0aW9uYWxLZXkiOiJub25lIiwiY2F0ZWdvcnkiOiJXZWFwb24iLCJjb2xsZWN0aW9uIjoiTWlyYW5kdXNnY29sdHNkbWppYyIsInR5cGUiOiJNZWdhQXhlIn0sInVuaXF1ZUtleSI6IkxDd2xXQmVoS3JyQnlPZytCNWtvQk92MFhGNXJRT0tQMDhxYmQ0UGZCOWM9In0YAA==",
-              "base64"
-            )
-          ]
+          getInput_asU8: () => encodeInvocationSpec("basic-asset", args)
         }
       }
     };

@@ -75,9 +75,17 @@ function assertNoUnsignedFields(
   path: string
 ): void {
   const fields = encoder.types[typeName];
-  // Atomic type or non-object value: nothing to enumerate.
-  if (!Array.isArray(fields) || value === null || typeof value !== "object" || Array.isArray(value)) {
+  // Atomic type: nothing to enumerate.
+  if (!Array.isArray(fields)) {
     return;
+  }
+  // A declared struct only covers a plain record. A primitive, array or byte value
+  // would be hashed through the struct's members instead of its own value.
+  if (!isPlainRecord(value)) {
+    const where = path ? `"${path.slice(0, -1)}"` : "root";
+    throw new Error(
+      `EIP-712 payload value at ${where} is declared as struct "${typeName}" and must be an object.`
+    );
   }
   const record = value as Record<string, unknown>;
   const declared = new Set(fields.map((f) => f.name));
@@ -94,7 +102,7 @@ function assertNoUnsignedFields(
   // Recurse into struct-typed fields so nested injection is caught too.
   for (const f of fields) {
     const base = f.type.replace(/(\[\d*\])+$/, ""); // strip any array suffixes: "quantities[]" -> "quantities"
-    const values = structValues(f.type, record[f.name]);
+    const values = structValues(f.type, record[f.name], `${path}${f.name}`);
     if (!encoder.types[base]) {
       for (const item of values) {
         if (item !== null && typeof item === "object" && !(item instanceof Uint8Array)) {
@@ -119,24 +127,30 @@ function arrayDepth(type: string): number {
   return suffix[0].split("[").length - 1;
 }
 
-function structValues(type: string, value: unknown): unknown[] {
+function isPlainRecord(value: unknown): value is Record<string, unknown> {
+  return (
+    value !== null && typeof value === "object" && !Array.isArray(value) && !(value instanceof Uint8Array)
+  );
+}
+
+function structValues(type: string, value: unknown, path: string): unknown[] {
   const depth = arrayDepth(type);
   if (depth === 0) {
     return [value];
   }
-  return flattenArrays(value, depth);
+  return flattenArrays(value, depth, path, type);
 }
 
-function flattenArrays(value: unknown, depth: number): unknown[] {
+function flattenArrays(value: unknown, depth: number, path: string, type: string): unknown[] {
   if (depth === 0) {
     return [value];
   }
   if (!Array.isArray(value)) {
-    return [];
+    throw new Error(`EIP-712 payload field "${path}" is declared as type "${type}" and must be an array.`);
   }
   const leaves: unknown[] = [];
   for (const item of value) {
-    for (const leaf of flattenArrays(item, depth - 1)) {
+    for (const leaf of flattenArrays(item, depth - 1, path, type)) {
       leaves.push(leaf);
     }
   }

@@ -210,6 +210,78 @@ describe("getPayloadToSign", () => {
 
       expect(getPayloadToSign(obj).toString("hex")).toHaveLength(132);
     });
+
+    it("rejects a primitive value for a field declared as a struct", () => {
+      // Given
+      const obj = {
+        domain,
+        types: {
+          Transfer: [
+            { name: "to", type: "Boxed" },
+            { name: "uniqueKey", type: "string" }
+          ],
+          Boxed: [{ name: "length", type: "uint256" }]
+        },
+        to: "client|recipient",
+        uniqueKey: "boxed-1"
+      };
+
+      // When & Then
+      expect(() => getPayloadToSign(obj)).toThrow(
+        /value at "to" is declared as struct "Boxed" and must be an object/
+      );
+    });
+
+    it("rejects a primitive value for a field declared as an empty struct", () => {
+      // Given
+      const obj = {
+        domain,
+        types: {
+          Transfer: [
+            { name: "quantity", type: "Empty" },
+            { name: "uniqueKey", type: "string" }
+          ],
+          Empty: []
+        },
+        quantity: "1000",
+        uniqueKey: "empty-1"
+      };
+
+      // When & Then
+      expect(() => getPayloadToSign(obj)).toThrow(/value at "quantity" is declared as struct "Empty"/);
+    });
+
+    it("rejects primitive elements in a struct array", () => {
+      // Given
+      const obj = {
+        domain,
+        types: {
+          Batch: [{ name: "rows", type: "Row[]" }],
+          Row: [{ name: "id", type: "string" }]
+        },
+        rows: ["1", "2"]
+      };
+
+      // When & Then
+      expect(() => getPayloadToSign(obj)).toThrow(/value at "rows" is declared as struct "Row"/);
+    });
+
+    it("rejects a non-array value for a field declared as an array", () => {
+      // Given
+      const obj = {
+        domain,
+        types: {
+          Batch: [{ name: "rows", type: "Row[]" }],
+          Row: [{ name: "id", type: "string" }]
+        },
+        rows: { id: "1" }
+      };
+
+      // When & Then
+      expect(() => getPayloadToSign(obj)).toThrow(
+        /"rows" is declared as type "Row\[\]" and must be an array/
+      );
+    });
   });
 
   it("should use 'prefix' field", () => {
