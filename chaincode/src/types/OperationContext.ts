@@ -15,6 +15,7 @@
 import { RuntimeError } from "@gala-chain/api";
 import { Context } from "fabric-contract-api";
 import { protos } from "fabric-protos";
+import { ChaincodeStub } from "fabric-shim";
 
 export interface OperationContext {
   channelId: string;
@@ -40,22 +41,7 @@ export function getChaincodeId(ctx: Context): string {
     return process.env.GC_CHAINCODE_ID;
   }
 
-  const signedProposal = ctx.stub.getSignedProposal();
-  if (!signedProposal) {
-    const message = "Cannot get chaincode id: got empty signed proposal.";
-    throw new RuntimeError(message);
-  }
-
-  // @ts-expect-error error in fabric types mapping
-  const proposalPayload = signedProposal.proposal.payload?.array?.[0];
-
-  if (!proposalPayload) {
-    const message = "Cannot get chaincode id: got empty proposal payload in signed proposal.";
-    throw new RuntimeError(message);
-  }
-
-  const decodedProposal = protos.ChaincodeProposalPayload.decode(proposalPayload);
-  const invocationSpec = protos.ChaincodeInvocationSpec.decode(decodedProposal.input);
+  const invocationSpec = decodeProposalInvocationSpec(ctx.stub, "Cannot get chaincode id");
   const chaincodeId = invocationSpec.chaincode_spec?.chaincode_id?.name;
 
   if (!chaincodeId) {
@@ -64,4 +50,37 @@ export function getChaincodeId(ctx: Context): string {
   }
 
   return chaincodeId;
+}
+
+/**
+ * Arguments of the client's original request, as recorded in the signed proposal.
+ *
+ * A chaincode invoked directly by the client receives these same arguments.
+ * A chaincode reached through `invokeChaincode` receives the caller's arguments
+ * instead, while the signed proposal still describes the original request.
+ */
+export function getProposalArgs(stub: ChaincodeStub): Uint8Array[] {
+  const invocationSpec = decodeProposalInvocationSpec(stub, "Cannot get proposal arguments");
+  return invocationSpec.chaincode_spec?.input?.args ?? [];
+}
+
+function decodeProposalInvocationSpec(
+  stub: ChaincodeStub,
+  errorPrefix: string
+): protos.ChaincodeInvocationSpec {
+  const signedProposal = stub.getSignedProposal();
+  if (!signedProposal) {
+    throw new RuntimeError(`${errorPrefix}: got empty signed proposal.`);
+  }
+
+  // fabric-shim sets the payload to the generated ChaincodeProposalPayload message,
+  // so the invocation spec bytes are read through its accessor.
+  const payload = signedProposal.proposal?.payload as unknown as { getInput_asU8?: () => Uint8Array };
+  const input = typeof payload?.getInput_asU8 === "function" ? payload.getInput_asU8() : undefined;
+
+  if (!input || input.length === 0) {
+    throw new RuntimeError(`${errorPrefix}: got empty proposal payload in signed proposal.`);
+  }
+
+  return protos.ChaincodeInvocationSpec.decode(input);
 }

@@ -18,6 +18,7 @@ import { ChaincodeResponse, ChaincodeStub } from "fabric-shim";
 
 import { formatOtelStateKey, withSpan } from "../tracing";
 import { CachedKV, FabricIterable, fabricIterable, filter, prepend, readBeforeClose } from "./FabricIterable";
+import { getProposalArgs } from "./OperationContext";
 
 const stateKeyAttr = formatOtelStateKey;
 
@@ -43,6 +44,8 @@ class StubCache {
   private deletes: Record<string, true> = {};
 
   private invokeChaincodeCalls: Record<string, string[]> = {};
+
+  private isEntryInvocation: boolean | undefined = undefined;
 
   /** Fallback parent when AsyncLocalStorage is missing (Fabric lifecycle). */
   private activeOtelSpan: Span | undefined = undefined;
@@ -194,6 +197,8 @@ class StubCache {
         const targetName = nameChannel ? chaincodeName.slice(0, separator) : chaincodeName;
         const effectiveChannel = channel || nameChannel || this.stub.getChannelID();
         const key = `${effectiveChannel}/${targetName}`;
+        this.ensureInvocationCanCallOut(targetName, args, effectiveChannel);
+
         const prevCall = this.invokeChaincodeCalls[key];
 
         if (prevCall) {
@@ -209,6 +214,34 @@ class StubCache {
       },
       this.activeOtelSpan
     );
+  }
+
+  /**
+   * Only the chaincode that received the client's request may call other chaincodes.
+   *
+   * Calls into other chaincodes are tracked per invocation, so a chaincode reached
+   * through invokeChaincode could reach the same destination again by another path
+   * (A -> B -> D and A -> C -> D). Fabric keeps only the last write per key in the
+   * transaction, and each entry into D reads committed state, so the second entry
+   * would work on stale values. Limiting calls to one level keeps every destination
+   * visible to the single tracker of the entry chaincode.
+   *
+   * The entry chaincode is the one whose arguments match the signed proposal.
+   * Forwarding those same arguments is refused, so a called chaincode never looks
+   * like the entry chaincode.
+   */
+  private ensureInvocationCanCallOut(chaincodeName: string, args: string[], channel: string): void {
+    if (this.isEntryInvocation === undefined) {
+      this.isEntryInvocation = sameArgs(this.stub.getArgs(), getProposalArgs(this.stub));
+    }
+
+    if (!this.isEntryInvocation) {
+      throw new NestedInvokeChaincodeError(chaincodeName, args, channel);
+    }
+
+    if (sameArgs(this.stub.getArgs(), args)) {
+      throw new ForwardedInvokeChaincodeError(chaincodeName, args, channel);
+    }
   }
 
   get externalChaincodeWasInvoked(): boolean {
@@ -322,6 +355,29 @@ export class DuplicateInvokeChaincodeError extends NotImplementedError {
     const msg = `Chaincode ${chaincodeName} on channel ${channel} was already invoked in the transaction (method: ${args[0]})`;
     super(msg, { chaincodeName, args, channel });
   }
+}
+
+export class NestedInvokeChaincodeError extends NotImplementedError {
+  constructor(chaincodeName: string, args: string[], channel: string) {
+    const msg =
+      `Chaincode ${chaincodeName} on channel ${channel} cannot be invoked (method: ${args[0]}): ` +
+      `this chaincode was itself invoked by another chaincode, and only the chaincode that ` +
+      `received the client request may invoke other chaincodes`;
+    super(msg, { chaincodeName, args, channel });
+  }
+}
+
+export class ForwardedInvokeChaincodeError extends NotImplementedError {
+  constructor(chaincodeName: string, args: string[], channel: string) {
+    const msg =
+      `Chaincode ${chaincodeName} on channel ${channel} cannot be invoked (method: ${args[0]}) ` +
+      `with the same arguments as the client request; build a request for the called method`;
+    super(msg, { chaincodeName, args, channel });
+  }
+}
+
+function sameArgs(a: ReadonlyArray<Uint8Array | string>, b: ReadonlyArray<Uint8Array | string>): boolean {
+  return a.length === b.length && a.every((arg, i) => Buffer.from(arg).equals(Buffer.from(b[i])));
 }
 
 export interface GalaChainStub extends ChaincodeStub {

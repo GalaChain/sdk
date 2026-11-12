@@ -17,14 +17,19 @@ import { TestChaincodeStub } from "@gala-chain/test";
 import { Buffer } from "buffer";
 
 import { CachedKV, FabricIterable } from "./FabricIterable";
-import { DuplicateInvokeChaincodeError, createGalaChainStub } from "./GalaChainStub";
+import {
+  DuplicateInvokeChaincodeError,
+  ForwardedInvokeChaincodeError,
+  NestedInvokeChaincodeError,
+  createGalaChainStub
+} from "./GalaChainStub";
 
-const setupTest = (initialState: Record<string, string> = {}) => {
+const setupTest = (initialState: Record<string, string> = {}, stubArgs: string[] = []) => {
   const state = { ...initialState }; // shallow copy
 
   /* eslint-disable  @typescript-eslint/ban-ts-comment */
   // @ts-ignore
-  const internalStub = new TestChaincodeStub([], state, undefined);
+  const internalStub = new TestChaincodeStub(stubArgs, state, undefined);
   internalStub.putState = jest.fn(internalStub.putState);
   internalStub.getState = jest.fn(internalStub.getState);
   internalStub.deleteState = jest.fn(internalStub.deleteState);
@@ -409,6 +414,68 @@ describe("cached range queries", () => {
 describe("invokeChaincode", () => {
   const successInvoke = expect.objectContaining({
     status: 200
+  });
+
+  // Stub of a chaincode reached through invokeChaincode: its own arguments come from
+  // the calling chaincode, while the signed proposal still holds the client request.
+  const setupCalledChaincode = (calledArgs: string[], clientArgs: string[]) => {
+    const { internalStub, gcStub } = setupTest({}, calledArgs);
+    const clientRequest = new TestChaincodeStub(clientArgs, {}, {});
+    internalStub.getSignedProposal = () => clientRequest.getSignedProposal();
+    return { internalStub, gcStub };
+  };
+
+  it("should not allow a chaincode invoked by another chaincode to invoke chaincodes", async () => {
+    // Given
+    const { internalStub, gcStub } = setupCalledChaincode(["B:Method", '{"from":"A"}'], ["A:Method", "{}"]);
+    const args = ["D:Transfer", "{}"];
+
+    // When
+    const result = await gcStub.invokeChaincode("chaincode-d", args, "channel-A").catch((e) => e);
+
+    // Then
+    expect(result).toEqual(new NestedInvokeChaincodeError("chaincode-d", args, "channel-A"));
+    expect(internalStub.invokeChaincode).not.toHaveBeenCalled();
+  });
+
+  it("should keep a converging call graph to a single invocation of the destination", async () => {
+    // Given A received the client request and calls B and C, which both try to call D
+    const clientArgs = ["A:Method", "{}"];
+    const a = setupTest({}, clientArgs);
+    const b = setupCalledChaincode(["B:Method", "{}"], clientArgs);
+    const c = setupCalledChaincode(["C:Method", "{}"], clientArgs);
+    const dArgs = ["D:Transfer", "{}"];
+
+    // When
+    const calls = [
+      await a.gcStub.invokeChaincode("chaincode-b", ["B:Method", "{}"], "channel-A"),
+      await b.gcStub.invokeChaincode("chaincode-d", dArgs, "channel-A").catch((e) => e),
+      await a.gcStub.invokeChaincode("chaincode-c", ["C:Method", "{}"], "channel-A"),
+      await c.gcStub.invokeChaincode("chaincode-d", dArgs, "channel-A").catch((e) => e)
+    ];
+
+    // Then
+    expect(calls).toEqual([
+      successInvoke,
+      new NestedInvokeChaincodeError("chaincode-d", dArgs, "channel-A"),
+      successInvoke,
+      new NestedInvokeChaincodeError("chaincode-d", dArgs, "channel-A")
+    ]);
+    expect(b.internalStub.invokeChaincode).not.toHaveBeenCalled();
+    expect(c.internalStub.invokeChaincode).not.toHaveBeenCalled();
+  });
+
+  it("should not forward the client request arguments to another chaincode", async () => {
+    // Given
+    const clientArgs = ["Contract:Method", "{}"];
+    const { internalStub, gcStub } = setupTest({}, clientArgs);
+
+    // When
+    const result = await gcStub.invokeChaincode("chaincode-1", clientArgs, "channel-A").catch((e) => e);
+
+    // Then
+    expect(result).toEqual(new ForwardedInvokeChaincodeError("chaincode-1", clientArgs, "channel-A"));
+    expect(internalStub.invokeChaincode).not.toHaveBeenCalled();
   });
 
   it("should allow to invoke other chaincode only once", async () => {

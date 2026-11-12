@@ -483,6 +483,15 @@ export class TypedDataEncoder {
     if (fields) {
       const encodedType = id(this.#fullTypes.get(type) as string);
       return (value: Record<string, any>) => {
+        assertArgument(
+          value !== null &&
+            typeof value === "object" &&
+            !Array.isArray(value) &&
+            !(value instanceof Uint8Array),
+          `invalid value for struct ${type}`,
+          "value",
+          value
+        );
         const values = fields.map(({ name, type }) => {
           const result = this.getEncoder(type)(value[name]);
           if (this.#fullTypes.has(type)) {
